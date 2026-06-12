@@ -1,0 +1,15 @@
+## Current market
+- Symbol: MNQM6
+- Current price: 21512.75
+
+## Indicator snapshot (1-minute timeframe)
+- EMA20: 21498.50 (current price above)
+- EMA50: 21472.25 (current price above)
+- EMA20 vs EMA50: bullish (20 > 50)
+- RSI14: 62.4 (neutral)
+- MACD: 4.85 (line only; signal/histogram require extended indicator API)
+- ATR14: 11.75 points
+- Bollinger Bands: upper 21545.00, lower 21455.50, position: inside bands
+
+## Decision
+Give me your trade decision in the JSON format specified by the system prompt.

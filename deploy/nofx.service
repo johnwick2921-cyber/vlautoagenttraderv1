@@ -1,0 +1,46 @@
+# NOFX trading backend — systemd unit TEMPLATE.
+# Do NOT copy this file by hand: the placeholders are filled in at install
+# time by deploy/install-autostart.sh (run: sudo bash deploy/install-autostart.sh),
+# which detects your user, clone path, and node location. Nothing
+# machine-specific is hardcoded here, so the same file works on any clone.
+#
+# LOGGING = THE JOURNAL, ON PURPOSE. Read with:  journalctl -u nofx -f
+# Two file-logging designs both died with exit 209/STDOUT BEFORE the binary
+# ever ran on this WSL2 systemd (proven 2026-06-10):
+#   1) StandardOutput=append:/tmp/backend.log — Ubuntu's fs.protected_regular
+#      sysctl denies opening a file you don't own in a sticky world-writable
+#      dir; /tmp log files end up owned by whichever side (root vs user)
+#      created them first, so the open fails as soon as ownership mismatches.
+#   2) StandardOutput=append:/var/log/nofx/... + a root ExecStartPre to
+#      prep the dir — ALSO 209, because StandardOutput= applies to EVERY
+#      Exec* line: systemd sets up the append-file stdout in the forked
+#      child BEFORE exec'ing the command, so even the root-prefixed
+#      ExecStartPre died at stdout setup without running one instruction.
+# The journal sink has no file-open step in the child → cannot 209. NEVER
+# reintroduce StandardOutput=/StandardError= file directives or a log-file
+# ExecStartPre here. (If app-level file logging is ever wanted, it belongs
+# INSIDE the Go app — it owns its cwd and opens files as itself.)
+#
+# - StartLimitIntervalSec=0 disables the start-rate limiter: with
+#   Restart=on-failure + RestartSec=5 a persistent failure retries forever
+#   (visible in journalctl -u nofx) instead of leaving the bot permanently
+#   dead. Tradeoff: a truly broken config loops every 5s until fixed.
+# - WorkingDirectory matters: .env (godotenv) + data/data.db resolve relative
+#   to it. Services never read ~/.bashrc — every env var the bot needs must
+#   be in .env (NT_TRANSPORT=tcp included; see .env.example).
+
+[Unit]
+Description=NOFX trading backend (NT8 TCP bridge, SIM-only)
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=__NOFX_USER__
+WorkingDirectory=__NOFX_DIR__
+ExecStart=__NOFX_DIR__/nofx-bin
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

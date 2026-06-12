@@ -1,0 +1,32 @@
+# NOFX frontend (Vite dev server :3000, proxies /api -> :8080) — systemd unit
+# TEMPLATE. The placeholders are filled in by deploy/install-autostart.sh;
+# nothing machine-specific is hardcoded here.
+#
+# __NODE_DIR__ is the ABSOLUTE directory containing node+npm, detected from
+# the target user's own shell at install time. This is deliberate: systemd
+# never reads ~/.bashrc, so nvm-managed node is invisible to services unless
+# the path is baked in. PATH= puts that directory first so npm's
+# `#!/usr/bin/env node` shebang resolves to the same node.
+#
+# LOGGING = THE JOURNAL (journalctl -u nofx-web -f). Unit-level file
+# redirection (append:/tmp, then append:/var/log + a root ExecStartPre)
+# failed twice on this WSL2 systemd with 209/STDOUT before npm ever ran —
+# full post-mortem in nofx.service. NEVER reintroduce StandardOutput=
+# file directives or a log-file ExecStartPre here.
+
+[Unit]
+Description=NOFX frontend (vite dev server :3000)
+After=network.target nofx.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=__NOFX_USER__
+WorkingDirectory=__NOFX_DIR__/web
+Environment=PATH=__NODE_DIR__:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=__NODE_DIR__/npm run dev
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

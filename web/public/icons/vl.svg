@@ -1,0 +1,40 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VL">
+  <defs>
+    <!-- Polished gold gradient: light highlight → core gold → dark warm shadow -->
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FFF4C2"/>
+      <stop offset="22%"  stop-color="#F2C75C"/>
+      <stop offset="55%"  stop-color="#D9A521"/>
+      <stop offset="80%"  stop-color="#B8860B"/>
+      <stop offset="100%" stop-color="#7C5A07"/>
+    </linearGradient>
+    <!-- Glossy top sheen overlay -->
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"  stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Deep background -->
+    <radialGradient id="bg" cx="50%" cy="38%" r="65%">
+      <stop offset="0%"   stop-color="#23253B"/>
+      <stop offset="100%" stop-color="#0A0B14"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Token: rounded-square base -->
+  <rect x="4" y="4" width="92" height="92" rx="20" ry="20" fill="url(#bg)"/>
+  <rect x="4" y="4" width="92" height="92" rx="20" ry="20"
+        fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+
+  <!-- VL monogram -->
+  <text x="50" y="68"
+        text-anchor="middle"
+        font-family="Inter, 'Helvetica Neue', Arial, sans-serif"
+        font-weight="800"
+        font-size="48"
+        letter-spacing="-2"
+        fill="url(#gold)">VL</text>
+
+  <!-- Top sheen for polished feel -->
+  <rect x="4" y="4" width="92" height="46" rx="20" ry="20"
+        fill="url(#sheen)" pointer-events="none"/>
+</svg>
