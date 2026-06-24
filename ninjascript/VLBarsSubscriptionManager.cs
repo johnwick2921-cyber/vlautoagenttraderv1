@@ -76,10 +76,15 @@ namespace NinjaTrader.NinjaScript.AddOns
             new Dictionary<string, BarsRequestEntry>();
         private readonly object subsLock = new object();
 
-        // Default historical depth when bars_subscribe.bars_back is omitted.
-        // The Plan 4.4 deep spec recommends 500 (~8.3 ETH hours at 1m,
-        // sufficient for EMA200/RSI14 warmup).
-        private const int DEFAULT_BARS_BACK = 500;
+        // Default historical depth when bars_subscribe.bars_back is omitted,
+        // AND the lookback used by the reconnect-rebuild path (OnConnectionReconnected).
+        // 2000 (~33 ETH hours at 1m) — was 500 (~8.3h). 500 was SHORTER than an
+        // overnight feed outage, so a reconnect-rebuilt request couldn't even reach
+        // back far enough to backfill last night's hole. 2000 spans an overnight gap
+        // so the fresh BarsRequest re-reads NT8's now-complete DB across the whole
+        // hole. Matches the Go side's defaultAutoBarsBack. Coarse timeframes are
+        // capped by the provider, so this is safe across the 14-tf set.
+        private const int DEFAULT_BARS_BACK = 2000;
 
         // Extended/overnight (Globex) session template. Applied to every
         // BarsRequest so the series includes the EVENING session and .Update
@@ -293,21 +298,31 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 if (active.ContainsKey(key))
                 {
-                    // N3 re-seed: the Go side re-subscribed to an already-active
-                    // subscription. This happens when the Go PROCESS restarts —
-                    // its in-memory BarCache is wiped, but our BarsRequest
-                    // survived (it is tied to NT8's data engine, not the Go TCP
-                    // socket). Re-emit the full historical window from the live
-                    // BarsRequest so the Go cache refills WITHOUT requiring a
-                    // full NT8 restart. We do NOT recreate the BarsRequest (the
-                    // live feed keeps running) — only resend the seed. Uses the
-                    // existing bars_historical frame, so it is wire-compatible
-                    // with any Go peer (no new frame type).
-                    var existing = active[key];
-                    existing.LastEmittedTimeUtcMs = 0; // reset dedup cursor -> full re-seed
-                    EmitHistorical(existing);          // resends bars_historical from req.Bars
-                    logInfo("VLBarsSubscriptionManager: re-seeded " + key + " on Go reconnect (N3)");
-                    return;
+                    // N4 (was N3 re-seed): the Go side re-subscribed to an
+                    // already-active subscription — its in-memory BarCache was
+                    // wiped on a Go PROCESS restart, but our BarsRequest survived
+                    // (it is tied to NT8's data engine, not the Go TCP socket).
+                    //
+                    // The old N3 path merely re-emitted the EXISTING request's
+                    // window without recreating it. That replays a FROZEN snapshot:
+                    // a BarsRequest that straddled a feed outage (NT8 feed drops
+                    // ~16:00, resumes the next afternoon) holds that hole forever
+                    // and never backfills — even though NT8's own DB fills the gap
+                    // from the provider's historical server. So a bot restart kept
+                    // re-sending last night's hole.
+                    //
+                    // Now we DISPOSE + RECREATE: a fresh BarsRequest re-reads NT8's
+                    // now-complete DB over the full barsBack lookback, so an
+                    // overnight gap SELF-HEALS on the next bot restart. The Go-side
+                    // mergeBarsByTime accepts the backfilled interior bars into the
+                    // existing hole (it is a time-ordered union, not append-only).
+                    // Cost: one full re-fetch per bot reconnect (heavier seed burst;
+                    // the FAST_STALL fast-guard covers the brief no-live-Update window).
+                    DisposeEntry(active[key]);
+                    active.Remove(key);
+                    logInfo("VLBarsSubscriptionManager: rebuilding " + key
+                            + " on Go reconnect — fresh BarsRequest re-reads NT8 DB (gap self-heal)");
+                    // fall through to the fresh-subscribe path below
                 }
 
                 BarsPeriod period;
