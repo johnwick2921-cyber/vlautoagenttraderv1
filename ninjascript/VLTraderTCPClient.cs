@@ -100,6 +100,16 @@ namespace NinjaTrader.NinjaScript.AddOns
         // only a genuine was-lost -> Connected transition fires the recreate.
         private readonly object connStatusLock = new object();
         private bool dataFeedWasLost = false;
+        // Debounce for the recreate-on-(re)connect path. The recreate is now a
+        // full multi-timeframe/multi-symbol BarsRequest refetch with a DEEP
+        // (2000-bar / ~33h) lookback so it can backfill an overnight feed-gap
+        // from NT8's DB. That depth makes thrashing expensive, so a rapidly
+        // flapping feed must coalesce into ONE rebuild per cooldown rather than
+        // rebuilding on every micro-blip. A genuine recovery (or startup) still
+        // fires once; the 20s FAST_STALL fast-guard backstops a .Update that dies
+        // inside the cooldown window.
+        private DateTime lastRecreateUtc = DateTime.MinValue;
+        private static readonly TimeSpan RecreateDebounce = TimeSpan.FromSeconds(30);
 
         protected override void OnStateChange()
         {
@@ -222,7 +232,22 @@ namespace NinjaTrader.NinjaScript.AddOns
                         if (dataFeedWasLost || freshConnect)
                         {
                             dataFeedWasLost = false;  // clear inside the lock -> no double-fire
-                            fireRecreate = true;
+                            // Flap debounce: skip the (deep, expensive) rebuild if one
+                            // fired within RecreateDebounce. The first connect
+                            // (lastRecreateUtc=MinValue) always passes; a genuine
+                            // resume-after-a-real-gap passes; only rapid flaps coalesce.
+                            DateTime nowUtc = DateTime.UtcNow;
+                            if (nowUtc - lastRecreateUtc >= RecreateDebounce)
+                            {
+                                lastRecreateUtc = nowUtc;
+                                fireRecreate = true;
+                            }
+                            else
+                            {
+                                LogInfo("VLTraderTCPClient: feed Connected but a BarsRequest rebuild "
+                                        + "fired <" + (int)RecreateDebounce.TotalSeconds
+                                        + "s ago — debounced (feed-flap guard)");
+                            }
                         }
                     }
                 }
