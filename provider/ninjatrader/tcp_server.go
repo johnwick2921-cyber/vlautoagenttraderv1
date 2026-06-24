@@ -307,7 +307,14 @@ var (
 	// supported by the AddOn's MapTimeframe + the Go normalizer; the running AddOn
 	// subscribes them on the bot's next reconnect (no NT8 redeploy needed for 4b).
 	defaultAutoBarsTimeframes = []string{"1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w"}
-	defaultAutoBarsBack       = 500
+	// 2000 (was 500): the default 500 1m-bars only reach ~8h of trading time —
+	// shorter than an overnight+ NT8 outage, so a re-seed never even requested
+	// the missing window and a feed-down gap could never self-heal. 2000 1m-bars
+	// span ~33h of trading, enough for a fresh BarsRequest to pull the gap window
+	// from the provider's (Tradovate) historical server and backfill holes left
+	// by NT8 downtime. Providers cap deep requests on coarse timeframes, so this
+	// is safe across the 14-tf set.
+	defaultAutoBarsBack       = 2000
 )
 
 // timedSignal pairs a signal payload with the wall-clock time SendSignal was

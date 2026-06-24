@@ -17,9 +17,11 @@ import (
 )
 
 // DefaultBarCacheMaxBars is the per-(symbol, timeframe) ring-buffer
-// capacity. 1024 covers EMA200 + ATR14 + 4-hour intraday history at 1m
-// granularity with comfortable headroom for the chart's lookback window.
-const DefaultBarCacheMaxBars = 1024
+// capacity. 2500 (was 1024) retains the deeper re-seed window
+// (defaultAutoBarsBack=2000) so a backfilled feed-down gap stays visible
+// in the chart instead of being trimmed off; still covers EMA200 + ATR14
+// with wide headroom.
+const DefaultBarCacheMaxBars = 2500
 
 // BarCache stores the most recent bars per (symbol, timeframe). Writes
 // from bars_historical SEED the slice; writes from bar_update UPSERT,
