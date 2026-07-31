@@ -250,6 +250,27 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	}, nil
 }
 
+// MoveStopToBreakeven asks the AddOn to move the resting stop for THIS trader's
+// current open position (the last entry's signal_id) to newStop, tick-rounded —
+// WITHOUT closing the position. Errors (no-op) if there is no tracked open entry.
+// Part 2 auto-breakeven. An OLD AddOn ignores the move_stop frame, so the
+// original protective stop keeps guarding the trade until the paired redeploy.
+func (t *TCPTrader) MoveStopToBreakeven(newStop float64) error {
+	t.mu.Lock()
+	sid := t.lastEntrySignalID
+	t.mu.Unlock()
+	if sid == "" {
+		return fmt.Errorf("ninjatrader/tcp: no open entry to move the stop for %s", t.symbol)
+	}
+	newStop = RoundToTick(newStop, InstrumentTickSize(t.symbol))
+	return t.server.SendMoveStop(ntwire.MoveStopPayload{
+		Symbol:      t.symbol,
+		SignalID:    sid,
+		NewStopLoss: newStop,
+		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
 func (t *TCPTrader) CloseLong(symbol string, quantity float64) (map[string]interface{}, error) {
 	return t.sendClose("long", quantity)
 }

@@ -255,6 +255,27 @@ Subscription lifecycle acks, sent by the AddOn in response to `bars_subscribe` /
 - `subscribe_error`: a FAILED subscribe (instrument unresolved / not in NT8's DB) — surfaces Go-side instead of dying silently in the NT8 Output window.
 - ADDITIVE: a pre-P5.3 AddOn never sends these (the Go state shows `pending`; bars still flow). A pre-P5.3 Go logs them as unknown frames (harmless warn) — ship Go before the AddOn F5, as with v2.
 
+### 10. `move_stop` (Go server → C# AddOn) — auto-breakeven
+
+Moves an OPEN position's resting stop-loss to a new price WITHOUT closing it.
+Used by auto-breakeven (once the trade is +N points in profit → stop → entry).
+
+```json
+{ "type": "move_stop",
+  "payload": { "symbol": "MNQ", "signal_id": "<entry uuid>",
+               "new_stop_loss": 30352.00, "timestamp": "RFC3339" } }
+```
+
+- The AddOn finds the live bracket by `signal_id`, submits a new `StopMarket` at
+  `new_stop_loss` in the SAME OCO group (so the take-profit still one-cancels it),
+  then cancels the old stop — the position is never momentarily unprotected.
+- No-op if the bracket already exited, or the stop is already at that price
+  (restart idempotency). Replies with an `ack`.
+- **Additive frame:** an OLD AddOn (pre-`move_stop`) logs "unknown frame type" and
+  ignores it — the original stop keeps protecting the trade. Activating breakeven
+  therefore REQUIRES the paired redeploy (cp `ninjascript/*.cs` → AddOns → F5 →
+  clean NT8 restart).
+
 ## Failure modes
 
 - **TCP disconnect**: the server holds the signal queue; on reconnect, it sends pending signals with their original timestamps. The C# AddOn may reject signals older than 60s as stale (emits a `status=rejected` fill).

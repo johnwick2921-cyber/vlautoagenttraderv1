@@ -243,6 +243,22 @@ type ClosePositionPayload struct {
 	SignalID string `json:"signal_id"`
 }
 
+// FrameMoveStop asks the AddOn to move a RESTING stop-loss order (keyed by the
+// entry's signal_id) to a new price WITHOUT closing the position — auto-breakeven.
+// Additive frame: an OLD AddOn (pre-move_stop) logs "unknown frame type" and
+// ignores it, so the original protective stop keeps guarding the trade — which is
+// exactly why the paired C# redeploy (cp → F5 → NT8 restart) is required to
+// activate breakeven.
+const FrameMoveStop FrameType = "move_stop"
+
+// MoveStopPayload is the Go-server → C#-AddOn move-stop request.
+type MoveStopPayload struct {
+	Symbol      string  `json:"symbol"`
+	SignalID    string  `json:"signal_id"`     // the entry's signal_id (the bracket key)
+	NewStopLoss float64 `json:"new_stop_loss"` // tick-rounded new stop price
+	Timestamp   string  `json:"timestamp"`     // RFC3339
+}
+
 // Open-position read-back — C#-AddOn → Go-server, additive snapshot frame (same
 // envelope: 4-byte BE length + JSON {type, payload}, snake_case). The AddOn
 // emits the selected account's CURRENT open positions: on account_select, on

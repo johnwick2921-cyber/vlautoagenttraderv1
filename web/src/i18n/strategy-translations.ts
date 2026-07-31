@@ -481,6 +481,23 @@ export const riskControl = {
     es: 'Cuando está ON: en posición, la IA no cierra antes; la operación va al stop/objetivo. Flat de emergencia sigue funcionando. Por defecto OFF.',
   },
 
+  // === Auto-breakeven ===
+  breakeven: {
+    zh: '止损移至保本',
+    en: 'Move stop to breakeven',
+    es: 'Mover stop a equilibrio',
+  },
+  breakevenDesc: {
+    zh: '当浮盈达到设定点数后，把止损移到开仓价（保本），让盈利单不再变亏。仅期货 (NT8)。默认关闭。',
+    en: "Once the trade is this many points in profit, move the stop to your entry (breakeven) so a winner can't turn into a loss. Futures (NT8) only. Default OFF.",
+    es: 'Cuando la operación gane estos puntos, mueve el stop a la entrada (equilibrio). Solo futuros (NT8). Por defecto OFF.',
+  },
+  breakevenTrigger: {
+    zh: '触发点数',
+    en: 'Trigger (points)',
+    es: 'Disparador (puntos)',
+  },
+
   // === Strategy Studio Phase 1 — prop-firm guardrails (Chunk 6) ===
   guardrailsTitle: {
     zh: '防护栏（Prop-Firm 规则）',

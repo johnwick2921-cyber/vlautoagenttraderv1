@@ -47,6 +47,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 		return
 	}
 
+	openKeys := make(map[string]bool)
 	for _, pos := range positions {
 		symbol := pos["symbol"].(string)
 		side := pos["side"].(string)
@@ -62,6 +63,11 @@ func (at *AutoTrader) checkPositionDrawdown() {
 			logger.Warnf("⚠️ Drawdown monitoring: %s %s has zero entry price, skipping", symbol, side)
 			continue
 		}
+
+		// Auto-breakeven: once far enough in profit, move the stop to entry (once
+		// per position; opt-in, default OFF). Runs alongside the drawdown check.
+		openKeys[symbol+"_"+side] = true
+		at.maybeMoveStopToBreakeven(symbol, side, entryPrice, markPrice)
 
 		// Calculate current P&L percentage
 		leverage := 10 // Default value
@@ -118,6 +124,8 @@ func (at *AutoTrader) checkPositionDrawdown() {
 				symbol, side, currentPnLPct, peakPnLPct, drawdownPct)
 		}
 	}
+	// Re-arm breakeven for any position that has since gone flat.
+	at.pruneBreakevenDone(openKeys)
 }
 
 // emergencyClosePosition emergency close position function

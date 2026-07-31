@@ -178,6 +178,40 @@ export function RiskControlEditor({
         </p>
       </div>
 
+      {/* Auto-breakeven — NT8 futures; default OFF */}
+      <div
+        className="p-4 rounded-lg"
+        style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-sm font-medium" style={{ color: '#EAECEF' }}>
+            🎯 {ts(riskControl.breakeven, language)}
+          </label>
+          <Toggle
+            on={config.breakeven_enabled === true}
+            onChange={(v) => updateField('breakeven_enabled', v)}
+            disabled={disabled}
+          />
+        </div>
+        <p className="text-xs mt-2" style={{ color: '#848E9C' }}>
+          {ts(riskControl.breakevenDesc, language)}
+        </p>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-xs" style={{ color: '#848E9C' }}>
+            {ts(riskControl.breakevenTrigger, language)}
+          </span>
+          <ClampedNumberInput
+            value={config.breakeven_trigger_points}
+            fallback={50}
+            min={1}
+            max={1000}
+            step={5}
+            disabled={disabled || config.breakeven_enabled !== true}
+            onCommit={(n) => updateField('breakeven_trigger_points', n)}
+          />
+        </div>
+      </div>
+
       {/* Position Limits */}
       <div>
         <div className="flex items-center gap-2 mb-4">

@@ -89,6 +89,22 @@ namespace NinjaTrader.NinjaScript.AddOns
             public Account     Account;   // PHASE 3: the routed submit account (SL/TP follow the entry)
         }
 
+        // A bracket whose entry has FILLED and whose SL/TP now rest at the exchange,
+        // keyed by signal_id. Populated in SubmitBracketOnEntryFill, removed on exit
+        // fill. Lets HandleMoveStop find the live resting stop to MOVE it (auto-
+        // breakeven) without closing the position.
+        private class PlacedBracket
+        {
+            public Order       SlOrder;     // the live resting stop order (movable)
+            public Account     Account;
+            public Instrument  Instrument;
+            public OrderAction ExitAction;
+            public int         Qty;
+            public string      ExitOco;     // the OCO group the SL + TP share
+            public double      TickSize;
+        }
+        private readonly Dictionary<string, PlacedBracket> placedBrackets = new Dictionary<string, PlacedBracket>();
+
         // Plan 4.4 Stage 1 — multi-timeframe BarsRequest subscriptions. Owns
         // its own state; calls back into SendFrame() which serializes through
         // writeLock so bar frames cannot interleave with signal/fill bytes.
@@ -492,6 +508,10 @@ namespace NinjaTrader.NinjaScript.AddOns
                 else if (type == "close_position")
                 {
                     HandleClosePosition(payload);
+                }
+                else if (type == "move_stop")
+                {
+                    HandleMoveStop(payload);
                 }
                 else if (type == "account_select")
                 {
@@ -942,6 +962,8 @@ namespace NinjaTrader.NinjaScript.AddOns
                     // PHASE 4: the position closed → drop its account ownership.
                     if (!string.IsNullOrEmpty(rootSymbol))
                         lock (posAcctLock) { positionAccountBySymbol.Remove(rootSymbol); }
+                    // Position closed → drop its bracket tracking (auto-breakeven).
+                    lock (signalMapLock) { placedBrackets.Remove(signalId); }
                 }
                 else if (e.OrderState == OrderState.Rejected)
                 {
@@ -1072,6 +1094,50 @@ namespace NinjaTrader.NinjaScript.AddOns
         // triggered, and — crucially — they are NOT in the entry's OCO group,
         // so the entry fill no longer cancels them. Names keep the -sl/-tp
         // suffix so OnOrderUpdate routes their fills to position_close.
+        // Auto-breakeven: move a live bracket's resting stop to a new price WITHOUT
+        // closing the position. The new StopMarket is submitted in the SAME OCO group
+        // FIRST, then the old one is cancelled — so the position is NEVER momentarily
+        // unprotected (and if anything throws, the original stop survives). No-op if
+        // the bracket is gone (already exited) or the stop is already at/better than
+        // the requested price (restart idempotency). Acks back to Go.
+        private void HandleMoveStop(Dictionary<string, object> p)
+        {
+            try
+            {
+                if (p == null) { LogWarn("VLTraderTCPClient: move_stop empty payload"); return; }
+                string signalId = GetString(p, "signal_id");
+                double newStop  = GetDouble(p, "new_stop_loss");
+                if (string.IsNullOrEmpty(signalId) || newStop <= 0)
+                { LogWarn("VLTraderTCPClient: move_stop bad payload (signal_id/new_stop_loss)"); return; }
+
+                PlacedBracket pb;
+                lock (signalMapLock)
+                {
+                    if (!placedBrackets.TryGetValue(signalId, out pb))
+                    { LogWarn("VLTraderTCPClient: move_stop no live bracket for " + signalId + " (already exited?)"); return; }
+                }
+                if (pb.SlOrder != null && Math.Abs(pb.SlOrder.StopPrice - newStop) < (pb.TickSize / 2.0))
+                { LogInfo("VLTraderTCPClient: move_stop no-op (stop already ~" + newStop + ")"); return; }
+
+                Account ba = pb.Account ?? account;
+                // New stop FIRST (same OCO group, same -sl name so exit-reason
+                // detection still tags it "sl"), THEN cancel the old → never a gap.
+                var newSl = ba.CreateOrder(pb.Instrument, pb.ExitAction, OrderType.StopMarket,
+                    OrderEntry.Manual, TimeInForce.Day, pb.Qty, 0, newStop, pb.ExitOco,
+                    signalId + "-sl", Core.Globals.MaxDate, null);
+                ba.Submit(new[] { newSl });
+                try { ba.Cancel(new[] { pb.SlOrder }); }
+                catch (Exception cx) { LogWarn("VLTraderTCPClient: move_stop cancel old SL failed: " + cx.Message); }
+                lock (signalMapLock) { pb.SlOrder = newSl; }
+                LogInfo("VLTraderTCPClient: move_stop → " + newStop + " for signal_id=" + signalId + " (auto-breakeven)");
+                SendAck("move_stop");
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: move_stop failed: " + ex.Message);
+            }
+        }
+
         private void SubmitBracketOnEntryFill(string signalId)
         {
             PendingBracket b;
@@ -1095,6 +1161,17 @@ namespace NinjaTrader.NinjaScript.AddOns
                     TimeInForce.Day, b.Qty, b.Tp, 0, exitOco, signalId + "-tp",
                     Core.Globals.MaxDate, null);
                 ba.Submit(new[] { slOrder, tpOrder });
+                // Track the live SL order so auto-breakeven can move it later.
+                double tick = 0.25;
+                try { tick = b.Instrument.MasterInstrument.TickSize; } catch { }
+                lock (signalMapLock)
+                {
+                    placedBrackets[signalId] = new PlacedBracket
+                    {
+                        SlOrder = slOrder, Account = ba, Instrument = b.Instrument,
+                        ExitAction = b.ExitAction, Qty = b.Qty, ExitOco = exitOco, TickSize = tick,
+                    };
+                }
                 LogInfo("VLTraderTCPClient: placed protective bracket signal_id=" + signalId
                         + " sl=" + b.Sl + " tp=" + b.Tp);
             }

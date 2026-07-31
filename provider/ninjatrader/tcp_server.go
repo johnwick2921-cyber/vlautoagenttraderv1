@@ -861,6 +861,23 @@ func (s *TCPServer) SendClosePosition(payload ClosePositionPayload) error {
 	return err
 }
 
+// SendMoveStop asks the AddOn to move a resting stop to a new price without
+// closing the position (auto-breakeven). Immediate command like
+// SendClosePosition; errors if no client is connected so the caller can report it.
+func (s *TCPServer) SendMoveStop(payload MoveStopPayload) error {
+	s.connMu.Lock()
+	c := s.conn
+	s.connMu.Unlock()
+	if c == nil {
+		return fmt.Errorf("ninjatrader/tcp: no NT client connected")
+	}
+	s.writeMu.Lock()
+	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	err := WriteFrame(c, FrameMoveStop, payload)
+	s.writeMu.Unlock()
+	return err
+}
+
 // SendAccountSelect tells the connected AddOn to switch to a different account.
 // Like SendClosePosition, this is an immediate command (not queued); if no
 // client is connected it errors so the caller can report it.

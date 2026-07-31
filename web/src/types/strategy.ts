@@ -210,6 +210,9 @@ export interface RiskControlConfig {
   // Hold-lock: once in a position, suppress AI-initiated closes so the trade
   // rides to the AI's stop/target (a real OCO bracket at the exchange). Default OFF.
   hold_discipline?: boolean
+  // Auto-breakeven (NT8 futures): once +N pts in profit, move the stop to entry.
+  breakeven_enabled?: boolean
+  breakeven_trigger_points?: number // default 50
   daily_loss_limit_usd?: number // daily realized-loss limit (USD)
   daily_loss_enabled?: boolean // default ON (preserves the live env gate)
   daily_profit_target_usd?: number // daily realized-profit target (USD)

@@ -70,6 +70,81 @@ func (at *AutoTrader) ninjaFeedDown() (bool, string) {
 	return true, status
 }
 
+// maybeMoveStopToBreakeven (auto-breakeven, NT8 futures only): once an open
+// position is at least breakeven_trigger_points in profit, move its stop to the
+// entry price (breakeven), ONCE per position. Opt-in per strategy, default OFF.
+// The move is a wire command to the AddOn (it modifies the live bracket in
+// place) — it never closes the position. Idempotent via breakevenDone, which is
+// cleared when the position goes flat (pruneBreakevenDone).
+func (at *AutoTrader) maybeMoveStopToBreakeven(symbol, side string, entryPrice, markPrice float64) {
+	if at.exchange != "ninjatrader" || at.config.StrategyConfig == nil {
+		return
+	}
+	fire, pts := breakevenTrigger(at.config.StrategyConfig.RiskControl, side, entryPrice, markPrice)
+	if !fire {
+		return
+	}
+	key := symbol + "_" + side
+	at.breakevenMu.Lock()
+	if at.breakevenDone == nil {
+		at.breakevenDone = make(map[string]bool)
+	}
+	if at.breakevenDone[key] {
+		at.breakevenMu.Unlock()
+		return
+	}
+	at.breakevenDone[key] = true
+	at.breakevenMu.Unlock()
+
+	ntTCP, ok := at.trader.(*ntTrader.TCPTrader)
+	if !ok {
+		return
+	}
+	if err := ntTCP.MoveStopToBreakeven(entryPrice); err != nil {
+		logger.Warnf("⚠️ auto-breakeven: move-stop send failed for %s %s: %v", symbol, side, err)
+		at.breakevenMu.Lock()
+		at.breakevenDone[key] = false // let it retry next cycle
+		at.breakevenMu.Unlock()
+		return
+	}
+	logger.Infof("🎯 auto-breakeven: %s %s +%.1f pts in profit → stop moved to breakeven (entry %.2f)",
+		symbol, side, pts, entryPrice)
+}
+
+// breakevenTrigger is the pure decision for auto-breakeven: given the strategy's
+// breakeven config and a position's side/entry/mark, it returns whether the stop
+// should move to breakeven now and the current points in profit. Default trigger
+// is 50 points when unset. Testable without any broker/NT8 dependency.
+func breakevenTrigger(rc store.RiskControlConfig, side string, entry, mark float64) (bool, float64) {
+	if !hlBool(rc.BreakevenEnabled, false) {
+		return false, 0
+	}
+	trigger := rc.BreakevenTriggerPoints
+	if trigger <= 0 {
+		trigger = 50
+	}
+	var pts float64
+	if side == "long" {
+		pts = mark - entry
+	} else {
+		pts = entry - mark
+	}
+	return pts >= trigger, pts
+}
+
+// pruneBreakevenDone clears the breakeven idempotency flag for any position that
+// is no longer open (so a fresh trade on the same symbol/side re-arms breakeven).
+// openKeys is the set of "symbol_side" currently open this cycle.
+func (at *AutoTrader) pruneBreakevenDone(openKeys map[string]bool) {
+	at.breakevenMu.Lock()
+	defer at.breakevenMu.Unlock()
+	for k := range at.breakevenDone {
+		if !openKeys[k] {
+			delete(at.breakevenDone, k)
+		}
+	}
+}
+
 // AutoTraderConfig auto trading configuration (simplified version - AI makes all decisions)
 type AutoTraderConfig struct {
 	// Trader identification
@@ -196,6 +271,8 @@ type AutoTrader struct {
 	monitorWg             sync.WaitGroup     // Used to wait for monitoring goroutine to finish
 	peakPnLCache          map[string]float64 // Peak profit cache (symbol -> peak P&L percentage)
 	peakPnLCacheMutex     sync.RWMutex       // Cache read-write lock
+	breakevenDone         map[string]bool    // auto-breakeven: "symbol_side" already moved to breakeven (idempotent; reset on flat)
+	breakevenMu           sync.Mutex         // guards breakevenDone (lazy-inited)
 	lastBalanceSyncTime   time.Time          // Last balance sync time
 	userID                string             // User ID
 	gridState             *GridState         // Grid trading state (only used when StrategyType == "grid_trading")

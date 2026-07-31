@@ -999,6 +999,13 @@ type RiskControlConfig struct {
 	// bailing on noise minutes in. Only AI decisions are gated; Emergency Flat
 	// and the drawdown monitor bypass it. New feature → default OFF (nil/false).
 	HoldDisciplineEnabled *bool `json:"hold_discipline,omitempty"`
+
+	// Auto-breakeven (NT8 futures): once an open position is BreakevenTriggerPoints
+	// in profit, move its stop to entry (breakeven) so a winner can't turn into a
+	// loss. The move is sent to the AddOn (move_stop frame), which modifies the
+	// resting bracket in place. New feature → default OFF; trigger defaults to 50.
+	BreakevenEnabled       *bool   `json:"breakeven_enabled,omitempty"`
+	BreakevenTriggerPoints float64 `json:"breakeven_trigger_points,omitempty"`
 }
 
 // NewStrategyStore creates a new StrategyStore
