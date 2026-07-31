@@ -207,6 +207,9 @@ export interface RiskControlConfig {
   // === Strategy Studio Phase 1 — prop-firm guardrails (Chunks 2-5; surfaced in Chunk 6).
   // The kernel gate reads these exact fields; the toggle (…_enabled) governs enforcement. ===
   guardrails_enabled?: boolean // master switch (default ON)
+  // Hold-lock: once in a position, suppress AI-initiated closes so the trade
+  // rides to the AI's stop/target (a real OCO bracket at the exchange). Default OFF.
+  hold_discipline?: boolean
   daily_loss_limit_usd?: number // daily realized-loss limit (USD)
   daily_loss_enabled?: boolean // default ON (preserves the live env gate)
   daily_profit_target_usd?: number // daily realized-profit target (USD)

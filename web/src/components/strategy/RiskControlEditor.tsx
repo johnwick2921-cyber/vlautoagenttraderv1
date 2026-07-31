@@ -158,6 +158,26 @@ export function RiskControlEditor({
 
   return (
     <div className="space-y-6">
+      {/* Hold discipline (hold-lock) — applies to futures + crypto; default OFF */}
+      <div
+        className="p-4 rounded-lg"
+        style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-sm font-medium" style={{ color: '#EAECEF' }}>
+            🔒 {ts(riskControl.holdDiscipline, language)}
+          </label>
+          <Toggle
+            on={config.hold_discipline === true}
+            onChange={(v) => updateField('hold_discipline', v)}
+            disabled={disabled}
+          />
+        </div>
+        <p className="text-xs mt-2" style={{ color: '#848E9C' }}>
+          {ts(riskControl.holdDisciplineDesc, language)}
+        </p>
+      </div>
+
       {/* Position Limits */}
       <div>
         <div className="flex items-center gap-2 mb-4">

@@ -469,6 +469,18 @@ export const riskControl = {
     es: 'Umbral de confianza AI',
   },
 
+  // === Hold discipline (hold-lock) ===
+  holdDiscipline: {
+    zh: '持仓纪律（锁仓）',
+    en: 'Hold discipline (hold-lock)',
+    es: 'Disciplina de retención',
+  },
+  holdDisciplineDesc: {
+    zh: '开启后：持仓期间禁止 AI 提前平仓，交易只按 AI 设定的止损/止盈（交易所挂单）离场；紧急平仓不受影响。默认关闭。',
+    en: 'When ON: once in a position, the AI cannot close early — the trade rides to the stop/target the AI set (a real order resting at the exchange). Emergency Flat still works. Default OFF.',
+    es: 'Cuando está ON: en posición, la IA no cierra antes; la operación va al stop/objetivo. Flat de emergencia sigue funcionando. Por defecto OFF.',
+  },
+
   // === Strategy Studio Phase 1 — prop-firm guardrails (Chunk 6) ===
   guardrailsTitle: {
     zh: '防护栏（Prop-Firm 规则）',

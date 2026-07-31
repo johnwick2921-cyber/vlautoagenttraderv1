@@ -48,6 +48,53 @@ func (at *AutoTrader) resolveMaxContracts() int {
 	return kernel.ResolveMaxContracts(rc.GuardrailsEnabled, rc.MaxContractsEnabled, rc.MaxContractsPerOrder, int(maxFuturesContracts))
 }
 
+// hlBool resolves a three-state *bool toggle (nil → default).
+func hlBool(p *bool, def bool) bool {
+	if p == nil {
+		return def
+	}
+	return *p
+}
+
+// holdLockSuppressesClose reports whether the "Hold discipline" hold-lock should
+// suppress this AI-initiated close: the per-strategy toggle is ON AND an OPEN
+// position exists for the decision's symbol/side. When it returns true it has
+// already logged the suppression loudly and marked the record as a deliberate
+// no-op (Success, no error). The trade then rides to the stop/target the AI set —
+// a real OCO bracket resting at the exchange (VLTraderTCPClient.SubmitBracketOnEntryFill),
+// so the position stays protected. Emergency Flat (handler_risk.go) and the
+// drawdown monitor call the trader directly and never reach this path, so human
+// and safety closes always go through. Default OFF ⇒ behavior byte-identical.
+func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.DecisionAction) bool {
+	if d.Action != "close_long" && d.Action != "close_short" {
+		return false
+	}
+	if at.store == nil || at.config.StrategyConfig == nil {
+		return false
+	}
+	if !hlBool(at.config.StrategyConfig.RiskControl.HoldDisciplineEnabled, false) {
+		return false
+	}
+	side := "LONG"
+	if d.Action == "close_short" {
+		side = "SHORT"
+	}
+	openPos, err := at.store.Position().GetOpenPositionBySymbol(at.id, market.Normalize(d.Symbol), side)
+	if err != nil || openPos == nil {
+		return false // flat for this side → nothing to hold; allow the (no-op) close
+	}
+	// Best-effort current price for the log line (non-fatal if unavailable).
+	px := 0.0
+	if md, e := market.GetWithExchange(d.Symbol, at.exchange); e == nil {
+		px = md.CurrentPrice
+	}
+	at.logWarnf("🔒 HOLD-LOCK: AI %s suppressed for %s (price %.2f, entry %.2f) — trade rides to stop/target.",
+		d.Action, d.Symbol, px, openPos.EntryPrice)
+	rec.Price = px
+	rec.Success = true // deliberate no-op, not a failure
+	return true
+}
+
 // executeDecisionWithRecord executes AI decision and records detailed information
 func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
 	// Feed-down gate (NinjaTrader, TRACK A): the SIM cannot fill without market

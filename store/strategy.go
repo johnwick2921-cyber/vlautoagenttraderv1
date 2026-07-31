@@ -992,6 +992,13 @@ type RiskControlConfig struct {
 	// → toggle defaults OFF.
 	ConsistencyMaxDayPct float64 `json:"consistency_max_day_pct,omitempty"`
 	ConsistencyEnabled   *bool   `json:"consistency_enabled,omitempty"`
+
+	// Hold-lock ("Hold discipline"): when ON, once a position is OPEN the bot
+	// SUPPRESSES an AI-initiated close — the trade rides to the stop/target the
+	// AI set (a real OCO bracket resting at the exchange), instead of the AI
+	// bailing on noise minutes in. Only AI decisions are gated; Emergency Flat
+	// and the drawdown monitor bypass it. New feature → default OFF (nil/false).
+	HoldDisciplineEnabled *bool `json:"hold_discipline,omitempty"`
 }
 
 // NewStrategyStore creates a new StrategyStore

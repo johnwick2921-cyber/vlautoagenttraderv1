@@ -341,6 +341,20 @@ func (at *AutoTrader) runCycle() error {
 			Success:    false,
 		}
 
+		// Hold-lock: once a position is OPEN, suppress an AI-initiated close so the
+		// trade rides to the stop/target the AI set (a real OCO bracket resting at
+		// the exchange). Opt-in per strategy, default OFF. Only AI decisions pass
+		// through here; Emergency Flat + the drawdown monitor call the trader
+		// directly and bypass this. Opening logic and closing a flat symbol are
+		// untouched.
+		if d.Action == "close_long" || d.Action == "close_short" {
+			if at.holdLockSuppressesClose(&d, &actionRecord) {
+				record.ExecutionLog = append(record.ExecutionLog, fmt.Sprintf("🔒 %s %s suppressed (hold-lock: riding to stop/target)", d.Symbol, d.Action))
+				record.Decisions = append(record.Decisions, actionRecord)
+				continue
+			}
+		}
+
 		if err := at.executeDecisionWithRecord(&d, &actionRecord); err != nil {
 			at.logErrorf("❌ Failed to execute decision (%s %s): %v", d.Symbol, d.Action, err)
 			actionRecord.Error = err.Error()
