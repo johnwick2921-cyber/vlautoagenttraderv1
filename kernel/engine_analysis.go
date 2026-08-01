@@ -275,6 +275,16 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	} else if len(ctx.CandidateCoins) > 0 && ctx.CandidateCoins[0].Symbol != "" {
 		activeSymbol = ctx.CandidateCoins[0].Symbol
 	}
+	// SVP (Part B3): when svp_enabled is ON and we're on the futures prompt,
+	// compute the session volume profile from the live 1m bars (same bar source
+	// the chart uses — ONE source of truth) and thread ONE line into the system
+	// prompt. OFF / insufficient bars → SetSVPContext("") keeps it byte-identical.
+	engine.SetSVPContext("")
+	if isFut, _ := futuresVariantMode(variant); isFut && boolOrDefault(riskConfig.SvpEnabled, false) && market.FuturesBarsProvider != nil {
+		if bars1m := market.FuturesBarsProvider(activeSymbol, "1m", 2000); len(bars1m) > 0 {
+			engine.SetSVPContext(FormatSVPLine(BuildSVPProfile(bars1m, time.Now())))
+		}
+	}
 	systemPrompt := engine.BuildSystemPrompt(ctx.Account.TotalEquity, variant, activeSymbol)
 
 	// 3. Build User Prompt using strategy engine

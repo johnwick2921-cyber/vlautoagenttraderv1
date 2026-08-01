@@ -141,6 +141,17 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	e.writeAvailableIndicators(&sb)
 	sb.WriteString(fmt.Sprintf("Use confluence across timeframes. Confidence ≥ %d required to open.\n\n", minConf))
 
+	// 3a. Volume Profile (SVP) — Part B3. Gated on per-strategy svp_enabled AND a
+	// non-empty computed line (threaded in from engine_analysis.go, empty on the
+	// preview/test paths). OFF or empty writes NOTHING, so the futures golden stays
+	// byte-identical. ONE context line + ONE legend line, consistent with the
+	// regime/decision framing above (POC as a magnet; balance vs trend).
+	if boolOrDefault(rc.SvpEnabled, false) && e.svpContextLine != "" {
+		sb.WriteString(e.svpContextLine)
+		sb.WriteString("\n")
+		sb.WriteString("Legend: POC = the session's highest-volume price (a magnet). Inside the value area (VAL–VAH) = balanced → fade the edges back toward POC. Holding OUTSIDE the value area on volume = trend → join the move, don't fade it.\n\n")
+	}
+
 	// 3b. Entry Standards (editable). Appended ONLY when set — empty = unchanged.
 	if ps.EntryStandards != "" {
 		sb.WriteString("# Entry Standards\n")

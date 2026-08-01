@@ -193,7 +193,18 @@ type OIDeltaData struct {
 type StrategyEngine struct {
 	config       *store.StrategyConfig
 	nofxosClient *nofxos.Client
+
+	// svpContextLine is the per-cycle Session Volume Profile line threaded in from
+	// the decision loop (engine_analysis.go), where the live bars are reachable.
+	// The engine itself has no bar access, so this is set right before
+	// BuildSystemPrompt and consumed by the futures prompt when svp_enabled is ON.
+	// Empty by default → the futures prompt is byte-identical (golden safe).
+	svpContextLine string
 }
+
+// SetSVPContext sets the Session Volume Profile line used by the futures prompt
+// for the next BuildSystemPrompt call. Pass "" to inject nothing.
+func (e *StrategyEngine) SetSVPContext(line string) { e.svpContextLine = line }
 
 // NewStrategyEngine creates strategy execution engine.
 // claw402WalletKey is optional — if provided, nofxos data requests are routed through claw402.

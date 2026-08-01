@@ -1006,6 +1006,13 @@ type RiskControlConfig struct {
 	// resting bracket in place. New feature → default OFF; trigger defaults to 50.
 	BreakevenEnabled       *bool   `json:"breakeven_enabled,omitempty"`
 	BreakevenTriggerPoints float64 `json:"breakeven_trigger_points,omitempty"`
+
+	// Volume Profile (SVP): when ON, inject a single session-volume-profile line
+	// (POC / VAH / VAL for the developing + prior RTH sessions) plus a legend
+	// line into the FUTURES system prompt. Prompt-only — it never touches a risk
+	// gate or an order. New feature → default OFF (nil/false): when OFF the prompt
+	// is byte-identical to before.
+	SvpEnabled *bool `json:"svp_enabled,omitempty"`
 }
 
 // NewStrategyStore creates a new StrategyStore

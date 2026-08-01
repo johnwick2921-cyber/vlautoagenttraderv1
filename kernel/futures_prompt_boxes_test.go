@@ -55,6 +55,41 @@ func TestFuturesPromptEmptyBoxesByteIdentical(t *testing.T) {
 	}
 }
 
+// TestFuturesSvpInjection proves Part B3: the SVP line + legend appear ONLY when
+// svp_enabled is ON and a non-empty line was threaded in; OFF (nil) or an empty
+// line inject nothing — which is what keeps the empty-box golden byte-identical.
+func TestFuturesSvpInjection(t *testing.T) {
+	tru := true
+	line := "SVP: dev POC 21500.62 VAH 21503.75 VAL 21497.50 | prior POC 21480.00 VAH 21490.00 VAL 21470.00"
+
+	// ON + non-empty line → both the data line and the legend appear.
+	on := emptyBoxFuturesEngine()
+	on.config.RiskControl.SvpEnabled = &tru
+	on.SetSVPContext(line)
+	got := on.BuildFuturesDecisionSystemPrompt("MNQ", 50000)
+	if !strings.Contains(got, line) {
+		t.Error("SVP line missing when svp_enabled is ON")
+	}
+	if !strings.Contains(got, "Legend: POC =") {
+		t.Error("SVP legend missing when svp_enabled is ON")
+	}
+
+	// OFF (nil) even with a context set → nothing injected.
+	off := emptyBoxFuturesEngine()
+	off.SetSVPContext(line)
+	if strings.Contains(off.BuildFuturesDecisionSystemPrompt("MNQ", 50000), line) {
+		t.Error("SVP line leaked while svp_enabled is OFF (golden would break)")
+	}
+
+	// ON but empty line (insufficient bars) → nothing injected.
+	onEmpty := emptyBoxFuturesEngine()
+	onEmpty.config.RiskControl.SvpEnabled = &tru
+	onEmpty.SetSVPContext("")
+	if strings.Contains(onEmpty.BuildFuturesDecisionSystemPrompt("MNQ", 50000), "Legend: POC =") {
+		t.Error("SVP legend appeared with an empty SVP line")
+	}
+}
+
 // TestFuturesPromptBoxesHonored proves A (full control restored): ALL 4 prompt
 // boxes reach the futures prompt — Role/Decision via override-or-default,
 // Frequency/Entry append-when-set. Empty boxes inject nothing (golden holds).

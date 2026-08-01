@@ -15,8 +15,10 @@ package kernel
 // the guardrails never disagree about what day/session it is.
 
 import (
+	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"time"
 
 	"nofx/market"
@@ -76,6 +78,28 @@ type SVPProfile struct {
 	RowHeight float64     `json:"rowHeight"`
 	Dev       *SVPSession `json:"dev"`
 	Prior     *SVPSession `json:"prior"`
+}
+
+// FormatSVPLine renders the profile as the single AI-prompt context line:
+//
+//	SVP: dev POC X VAH Y VAL Z (partial) | prior POC A VAH B VAL C
+//
+// The "(partial)" tag appears only when the developing session could not be
+// seen from its open. Returns "" when the developing session has no bars — the
+// prompt gate then injects nothing (keeping the OFF/insufficient case clean).
+func FormatSVPLine(p SVPProfile) string {
+	if p.Dev == nil || len(p.Dev.Bins) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "SVP: dev POC %.2f VAH %.2f VAL %.2f", p.Dev.POC, p.Dev.VAH, p.Dev.VAL)
+	if p.Dev.Partial {
+		sb.WriteString(" (partial)")
+	}
+	if p.Prior != nil && len(p.Prior.Bins) > 0 {
+		fmt.Fprintf(&sb, " | prior POC %.2f VAH %.2f VAL %.2f", p.Prior.POC, p.Prior.VAH, p.Prior.VAL)
+	}
+	return sb.String()
 }
 
 // ---- Histogram (B1) --------------------------------------------------------

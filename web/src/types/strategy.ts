@@ -213,6 +213,9 @@ export interface RiskControlConfig {
   // Auto-breakeven (NT8 futures): once +N pts in profit, move the stop to entry.
   breakeven_enabled?: boolean
   breakeven_trigger_points?: number // default 50
+  // Volume Profile (SVP): when ON, adds a POC/VAH/VAL line to the futures AI
+  // prompt (and drives the chart-toolbar SVP default). Prompt-only. Default OFF.
+  svp_enabled?: boolean
   daily_loss_limit_usd?: number // daily realized-loss limit (USD)
   daily_loss_enabled?: boolean // default ON (preserves the live env gate)
   daily_profit_target_usd?: number // daily realized-profit target (USD)

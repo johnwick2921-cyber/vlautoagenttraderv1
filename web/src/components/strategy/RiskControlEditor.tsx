@@ -212,6 +212,26 @@ export function RiskControlEditor({
         </div>
       </div>
 
+      {/* Volume Profile (SVP) — futures AI prompt line; default OFF */}
+      <div
+        className="p-4 rounded-lg"
+        style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-sm font-medium" style={{ color: '#EAECEF' }}>
+            📊 {ts(riskControl.svpEnabled, language)}
+          </label>
+          <Toggle
+            on={config.svp_enabled === true}
+            onChange={(v) => updateField('svp_enabled', v)}
+            disabled={disabled}
+          />
+        </div>
+        <p className="text-xs mt-2" style={{ color: '#848E9C' }}>
+          {ts(riskControl.svpEnabledDesc, language)}
+        </p>
+      </div>
+
       {/* Position Limits */}
       <div>
         <div className="flex items-center gap-2 mb-4">
