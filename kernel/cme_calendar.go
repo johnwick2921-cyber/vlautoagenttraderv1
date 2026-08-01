@@ -34,6 +34,64 @@ func IsCMEOpen(t time.Time) bool {
 	}
 }
 
+// CMEClosedReason mirrors IsCMEOpen and, when the market is closed, returns a
+// short human-readable reason for the transition log ("holiday" / "weekend" /
+// "Friday close" / "daily break"). Invariant (asserted by tests): the returned
+// bool is exactly !IsCMEOpen(t), so the two can never disagree.
+func CMEClosedReason(t time.Time) (closed bool, reason string) {
+	chicago, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		chicago = time.UTC
+	}
+	ct := t.In(chicago)
+	if isCMEHoliday(ct) {
+		return true, "holiday"
+	}
+	switch ct.Weekday() {
+	case time.Saturday:
+		return true, "weekend"
+	case time.Sunday:
+		if ct.Hour() < 17 {
+			return true, "weekend"
+		}
+		return false, ""
+	case time.Friday:
+		if ct.Hour() >= 16 {
+			return true, "Friday close"
+		}
+		return false, ""
+	default: // Mon-Thu
+		if ct.Hour() == 16 {
+			return true, "daily break"
+		}
+		return false, ""
+	}
+}
+
+// NextCMEOpen returns the earliest instant strictly after t at which the market
+// re-opens (IsCMEOpen flips true). It walks forward hour-by-hour using IsCMEOpen
+// itself as the oracle, so it stays exactly consistent with the gate — holidays
+// and DST included — instead of duplicating the schedule. Hour granularity is
+// exact: IsCMEOpen only changes state on hour boundaries (it inspects ct.Hour(),
+// the weekday, and the holiday date). The 14-day cap is a safety backstop; the
+// longest real closed stretch is ~3 days, so it never triggers in practice.
+func NextCMEOpen(t time.Time) time.Time {
+	chicago, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		chicago = time.UTC
+	}
+	ct := t.In(chicago)
+	// Truncate to the top of the current Chicago hour, then walk forward.
+	cur := time.Date(ct.Year(), ct.Month(), ct.Day(), ct.Hour(), 0, 0, 0, chicago)
+	for i := 0; i < 24*14; i++ {
+		cur = cur.Add(time.Hour)
+		if IsCMEOpen(cur) {
+			return cur
+		}
+	}
+	return t // unreachable in practice; sane fallback keeps callers total
+}
+
 // CMESessionDayStart returns the start of the CME trading session-day that
 // contains `now` — the most recent 17:00 America/Chicago boundary. The CME
 // index-futures session day rolls at 17:00 CT (the daily break), so daily

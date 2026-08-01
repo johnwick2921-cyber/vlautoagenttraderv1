@@ -286,6 +286,12 @@ type AutoTrader struct {
 	// If equity == 0 and this is false, we skip the cycle silently (no phantom HOLD record).
 	hasReceivedBalance bool
 	balanceMutex       sync.RWMutex
+
+	// PART A — CME session gate. Tracks the last-observed market open/closed
+	// state so the loop logs the open⇄closed transition once (not every cycle).
+	// nil = not yet observed. Touched only from runCycle (single goroutine), so
+	// no mutex is required.
+	cmePrevOpen *bool
 }
 
 // NewAutoTrader creates an automatic trader

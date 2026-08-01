@@ -3,6 +3,7 @@ package trader
 import (
 	"encoding/json"
 	"fmt"
+	"nofx/config"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/store"
@@ -42,6 +43,16 @@ func (at *AutoTrader) runCycle() error {
 	at.isRunningMutex.RUnlock()
 	if !running {
 		at.logInfof("⏹ Trader is stopped, aborting cycle #%d", at.callCount)
+		return nil
+	}
+
+	// 0a. PART A — CME SESSION GATE (hoisted to the TOP, before the account gate
+	// and buildTradingContext). When the futures market is closed we skip the
+	// ENTIRE cycle — no context build, no NT8 round-trips, no AI — and idle with
+	// a longer cadence, logging only on the open⇄closed edge. This is the
+	// approved fix for the "bot scans while the market is closed" symptom.
+	// Crypto (TradingMode != "futures") returns false here → byte-identical.
+	if at.cmeSessionClosedSkip() {
 		return nil
 	}
 
@@ -375,6 +386,64 @@ func (at *AutoTrader) runCycle() error {
 	}
 
 	return nil
+}
+
+// cmeSessionClosedSkip is the hoisted CME session gate (PART A). It returns true
+// when the whole cycle should be skipped because the futures market is closed —
+// after logging the open⇄closed edge and idling with a backoff. In non-futures
+// (crypto) mode it always returns false, so those traders are byte-identical.
+func (at *AutoTrader) cmeSessionClosedSkip() bool {
+	if config.Get().TradingMode != "futures" {
+		return false
+	}
+	open := kernel.IsCMEOpen(time.Now())
+	at.noteCMESessionEdge(open)
+	if open {
+		return false
+	}
+	at.backoffWhileClosed()
+	return true
+}
+
+// noteCMESessionEdge logs the market open⇄closed transition ONCE (not every
+// cycle). On a fresh start into a closed market it announces the closure + the
+// next open immediately; a fresh start into an open market stays silent (there
+// is nothing to "resume"). Single-goroutine (runCycle) → no locking on cmePrevOpen.
+func (at *AutoTrader) noteCMESessionEdge(open bool) {
+	prev := at.cmePrevOpen
+	at.cmePrevOpen = &open
+	if prev != nil && *prev == open {
+		return // no edge — stay quiet
+	}
+	if !open {
+		_, reason := kernel.CMEClosedReason(time.Now())
+		next := kernel.NextCMEOpen(time.Now())
+		chicago, err := time.LoadLocation("America/Chicago")
+		if err != nil {
+			chicago = time.UTC
+		}
+		at.logInfof("🌙 CME closed (%s) — next open %s", reason, next.In(chicago).Format("Mon 2006-01-02 15:04 MST"))
+	} else if prev != nil {
+		at.logInfof("☀️ CME open — resuming.")
+	}
+}
+
+// backoffWhileClosed idles for cmeClosedBackoff while the market is shut, in
+// short stop-responsive slices so Stop() returns promptly instead of the loop
+// spinning a full cycle every ScanInterval (~1 min) all weekend. Returns early
+// the moment the trader is stopped.
+func (at *AutoTrader) backoffWhileClosed() {
+	const slice = 10 * time.Second
+	const cmeClosedBackoff = 3 * time.Minute // within the ~2–5 min target
+	for waited := time.Duration(0); waited < cmeClosedBackoff; waited += slice {
+		at.isRunningMutex.RLock()
+		running := at.isRunning
+		at.isRunningMutex.RUnlock()
+		if !running {
+			return
+		}
+		time.Sleep(slice)
+	}
 }
 
 // buildTradingContext builds trading context
