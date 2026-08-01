@@ -11,6 +11,10 @@ import {
   createSeriesMarkers,
   TickMarkType,
 } from 'lightweight-charts'
+import {
+  SessionVolumeProfile,
+  type SvpProfileData,
+} from './primitives/SessionVolumeProfile'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { httpClient } from '../../lib/httpClient'
 import { REFRESH_CHART_MS, REFRESH_OPEN_ORDERS_MS } from '../../lib/autoRefresh'
@@ -127,6 +131,7 @@ export function AdvancedChart({
   const indicatorSeriesRef = useRef<Map<string, ISeriesApi<any>>>(new Map())
   const seriesMarkersRef = useRef<any>(null) // Markers primitive for v5
   const currentMarkersDataRef = useRef<any[]>([]) // Store current marker data
+  const svpPrimitiveRef = useRef<SessionVolumeProfile | null>(null) // SVP profile primitive
   const klineDataRef = useRef<
     Map<number, { volume: number; quoteVolume: number }>
   >(new Map()) // Store kline extra data
@@ -198,6 +203,9 @@ export function AdvancedChart({
       params: { period: 26 },
     },
     { id: 'bb', name: 'Bollinger Bands', enabled: false, color: '#9B59B6' },
+    // Session Volume Profile — server-computed (futures only). Default OFF, to
+    // match svp_enabled's default; the toggle draws the histogram + POC/VAH/VAL.
+    { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
   ])
   // Mirror indicators into a ref so updateIndicators always reads the CURRENT
   // config. updateIndicators is also called by the 5s data-refresh whose effect
@@ -748,6 +756,12 @@ export function AdvancedChart({
 
     return () => {
       resizeObserver.disconnect()
+      // Detach the SVP primitive before removing the chart to avoid a dangling
+      // reference across React StrictMode's mount→unmount→mount in dev.
+      if (svpPrimitiveRef.current && candlestickSeriesRef.current) {
+        candlestickSeriesRef.current.detachPrimitive(svpPrimitiveRef.current)
+        svpPrimitiveRef.current = null
+      }
       chart.remove()
     }
   }, []) // Chart is created once, ResizeObserver handles dimension changes
@@ -853,6 +867,11 @@ export function AdvancedChart({
 
         // 3. Add indicators
         updateIndicators(klineData)
+
+        // 3b. Sync the SVP profile (fetch fresh from the server + attach/update/
+        // detach). Runs on first load AND every 5s refresh, so the developing
+        // profile stays live without ever re-attaching (no duplicate drawings).
+        void syncSVP()
 
         // 4. Fetch and display order markers
         if (traderID && candlestickSeriesRef.current) {
@@ -1256,6 +1275,45 @@ export function AdvancedChart({
     })
   }
 
+  // SVP (Session Volume Profile) — drawn as a v5 series primitive on the candle
+  // series. ONE source of truth: fetch the SAME engine output the AI uses from
+  // /api/klines/svp (the chart NEVER recomputes). Attach ONCE then setData on
+  // each refresh (re-attaching would stack duplicate drawings); detach on
+  // toggle-off. Only futures (ninjatrader) has a profile — crypto returns empty.
+  const fetchSVP = async (): Promise<SvpProfileData | null> => {
+    if (exchange !== 'ninjatrader') return null
+    try {
+      const url = `/api/klines/svp?symbol=${encodeURIComponent(symbol)}&exchange=${exchange}`
+      const res = await httpClient.request(url, { silent: true })
+      if (!res.success || !res.data) return null
+      return res.data as SvpProfileData
+    } catch {
+      return null
+    }
+  }
+
+  const syncSVP = async () => {
+    const series = candlestickSeriesRef.current
+    if (!series) return
+    const enabled = indicatorsRef.current.find((i) => i.id === 'svp')?.enabled
+    if (!enabled) {
+      if (svpPrimitiveRef.current) {
+        series.detachPrimitive(svpPrimitiveRef.current)
+        svpPrimitiveRef.current = null
+      }
+      return
+    }
+    const data = await fetchSVP()
+    if (!data) return
+    // The series may have been torn down while the fetch was in flight.
+    if (!candlestickSeriesRef.current) return
+    if (!svpPrimitiveRef.current) {
+      svpPrimitiveRef.current = new SessionVolumeProfile()
+      candlestickSeriesRef.current.attachPrimitive(svpPrimitiveRef.current)
+    }
+    svpPrimitiveRef.current.setData(data)
+  }
+
   // 1b: redraw indicator overlays when the user toggles one. updateIndicators
   // is otherwise only invoked on (re)load, so a toggle alone never redrew the
   // series (stale closure). Idempotent — clears then re-adds enabled indicators.
@@ -1263,6 +1321,8 @@ export function AdvancedChart({
     if (latestKlinesRef.current.length > 0) {
       updateIndicators(latestKlinesRef.current)
     }
+    // Attach/update/detach the SVP primitive on toggle (idempotent).
+    void syncSVP()
   }, [indicators])
 
   // Toggle indicator

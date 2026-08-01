@@ -78,6 +78,10 @@ type SVPProfile struct {
 	RowHeight float64     `json:"rowHeight"`
 	Dev       *SVPSession `json:"dev"`
 	Prior     *SVPSession `json:"prior"`
+	// SessionStartTime is the developing session's RTH open as a UTC-seconds
+	// timestamp — the x-anchor the chart primitive uses for the developing
+	// histogram (matches the lightweight-charts UTCTimestamp unit).
+	SessionStartTime int64 `json:"sessionStartTime"`
 }
 
 // FormatSVPLine renders the profile as the single AI-prompt context line:
@@ -306,7 +310,12 @@ func BuildSVPProfile(bars []market.Kline, now time.Time) SVPProfile {
 	nowMs := now.UnixMilli()
 	dev := svpBuildSession(bars, curOpen, loc, nowMs, live)
 	prior := svpBuildSession(bars, priorOpen, loc, nowMs, false)
-	return SVPProfile{RowHeight: SVPRowHeight, Dev: dev, Prior: prior}
+	return SVPProfile{
+		RowHeight:        SVPRowHeight,
+		Dev:              dev,
+		Prior:            prior,
+		SessionStartTime: curOpen.Unix(),
+	}
 }
 
 // svpBuildSession windows the bars to one RTH session and builds its profile.

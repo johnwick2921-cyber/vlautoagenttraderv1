@@ -114,6 +114,7 @@ func (s *Server) setupRoutes() {
 
 		// Market data (no authentication required)
 		s.route(api, "GET", "/klines", "Candlestick data (?symbol=&interval=&limit=)", s.handleKlines)
+		s.route(api, "GET", "/klines/svp", "Session Volume Profile (?symbol=&exchange=ninjatrader) — server-computed POC/VAH/VAL + histogram bins", s.handleKlinesSVP)
 		s.route(api, "GET", "/symbols", "Available trading symbols", s.handleSymbols)
 
 		// Live NT8 bar stream over SSE (Plan 4.4 Stage 4). Self-authed via a
