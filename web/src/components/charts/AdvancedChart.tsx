@@ -1478,7 +1478,7 @@ export function AdvancedChart({
           style={{
             background: 'linear-gradient(135deg, #1A1E23 0%, #0F1215 100%)',
             border: '1px solid rgba(240, 185, 11, 0.2)',
-            maxHeight: '500px',
+            maxHeight: 'min(620px, 85vh)', // fit all indicators incl. SVP without scrolling past the fold
             minWidth: '280px',
             overflowY: 'auto',
           }}
