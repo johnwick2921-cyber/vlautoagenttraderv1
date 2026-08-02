@@ -41,7 +41,16 @@ func (s *Server) handleKlinesSVP(c *gin.Context) {
 		c.JSON(http.StatusOK, empty)
 		return
 	}
-	bars := provider(symbol, "1m", 2000) // profile granularity = 1m
+	// Profile the SAME timeframe the chart is displaying so the SVP covers the
+	// same visible range (like TradingView). A 5m chart spans ~5+ days → several
+	// session profiles; a 1m chart spans ~1 day. Default 5m. We pull up to 2000
+	// bars (the cache cap) so more historical sessions are available; sessions
+	// that fall off the visible chart are simply skipped by the renderer.
+	interval := c.Query("interval")
+	if interval == "" {
+		interval = "5m"
+	}
+	bars := provider(symbol, interval, 2000)
 	if len(bars) == 0 {
 		c.JSON(http.StatusOK, empty)
 		return

@@ -1283,7 +1283,7 @@ export function AdvancedChart({
   const fetchSVP = async (): Promise<SvpProfileData | null> => {
     if (exchange !== 'ninjatrader') return null
     try {
-      const url = `/api/klines/svp?symbol=${encodeURIComponent(symbol)}&exchange=${exchange}`
+      const url = `/api/klines/svp?symbol=${encodeURIComponent(symbol)}&interval=${interval}&exchange=${exchange}`
       const res = await httpClient.request(url, { silent: true })
       if (!res.success || !res.data) return null
       return res.data as SvpProfileData
