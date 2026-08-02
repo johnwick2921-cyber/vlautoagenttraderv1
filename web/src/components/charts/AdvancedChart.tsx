@@ -214,6 +214,18 @@ export function AdvancedChart({
   const indicatorsRef = useRef(indicators)
   indicatorsRef.current = indicators
 
+  // Guarantee the dropdown renders every canonical indicator even if a Vite
+  // hot-reload preserved an OLDER `indicators` state (Fast Refresh keeps useState
+  // across hot updates, so a newly-added item in the initial array would not
+  // appear without a full reload). Deriving it in the render side-steps that:
+  // HMR always re-runs the render, so SVP shows without a reload.
+  const displayIndicators = indicators.some((i) => i.id === 'svp')
+    ? indicators
+    : [
+        ...indicators,
+        { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
+      ]
+
   // Self-heal the indicator list: append any canonical indicator (e.g. SVP) that
   // is missing from the current state. Needed because the list lives in useState,
   // whose initial value is only read once at mount — a Vite hot-reload or a
@@ -1343,11 +1355,21 @@ export function AdvancedChart({
 
   // Toggle indicator
   const toggleIndicator = (id: string) => {
-    setIndicators((prev) =>
-      prev.map((ind) =>
+    setIndicators((prev) => {
+      // SVP may be shown from the derived display list but not yet present in
+      // state (stale hot-reload). Add it toggled-on on first click.
+      if (!prev.some((i) => i.id === id)) {
+        return id === 'svp'
+          ? [
+              ...prev,
+              { id: 'svp', name: 'SVP', enabled: true, color: '#F0B90B' },
+            ]
+          : prev
+      }
+      return prev.map((ind) =>
         ind.id === id ? { ...ind, enabled: !ind.enabled } : ind
       )
-    )
+    })
   }
 
   return (
@@ -1520,7 +1542,7 @@ export function AdvancedChart({
 
           {/* Indicator list */}
           <div className="p-3 space-y-1">
-            {indicators.map((indicator) => (
+            {displayIndicators.map((indicator) => (
               <label
                 key={indicator.id}
                 className="flex items-center gap-3 p-2.5 rounded-md hover:bg-white/5 cursor-pointer transition-all group"
