@@ -256,7 +256,12 @@ class SessionVolumeProfilePaneView implements IPrimitivePaneView {
 
     const bars: DevBarItem[] = []
     const dev = data.dev
-    if (dev && dev.bins.length > 0 && this._source.maxDevVol() > 0) {
+    if (
+      dev &&
+      dev.bins &&
+      dev.bins.length > 0 &&
+      this._source.maxDevVol() > 0
+    ) {
       const maxVol = this._source.maxDevVol()
       const pocPrice = dev.poc
       for (const bin of dev.bins) {
@@ -396,7 +401,7 @@ export class SessionVolumeProfile implements ISeriesPrimitive<Time> {
 
     // maxDevVol — used to normalize bar widths.
     let maxVol = 0
-    if (data.dev) {
+    if (data.dev && data.dev.bins) {
       for (const bin of data.dev.bins) {
         if (bin.vol > maxVol) maxVol = bin.vol
       }
@@ -478,7 +483,7 @@ export class SessionVolumeProfile implements ISeriesPrimitive<Time> {
       return Number.isInteger(p) ? String(p) : p.toFixed(2)
     }
     const dev = this._data.dev
-    if (dev) {
+    if (dev && dev.bins && dev.bins.length > 0) {
       views.push(
         new SvpPriceAxisView(
           this,

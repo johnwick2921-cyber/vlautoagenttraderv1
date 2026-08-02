@@ -286,8 +286,10 @@ func svpBuildSession(bars []market.Kline, sessStart time.Time, nowMs int64, live
 	}
 
 	if seen == 0 {
-		sess.Partial = live // a live session with no bars yet is "partial"
-		return sess
+		// No bars in this session window → no profile at all. Return nil (JSON
+		// dev:null) rather than a bins-less object, so the chart's `if (dev)`
+		// guard cleanly skips it instead of dereferencing a null bins array.
+		return nil
 	}
 
 	// partial: we could not see the session from its open.

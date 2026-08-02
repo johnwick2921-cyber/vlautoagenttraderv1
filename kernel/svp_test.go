@@ -174,7 +174,7 @@ func TestSVPSession_LivePartialReset(t *testing.T) {
 	// bars are before the new session open → dev is empty.
 	nextSession := time.Date(2026, 6, 16, 12, 0, 0, 0, loc)
 	np := BuildSVPProfile(full, nextSession)
-	if np.Dev == nil || len(np.Dev.Bins) != 0 {
-		t.Errorf("dev on the next session should be empty (reset at 17:00 CT), got %d bins", len(np.Dev.Bins))
+	if np.Dev != nil {
+		t.Errorf("dev on the next session should be nil (reset at 17:00 CT, no bars in window), got %+v", np.Dev)
 	}
 }
