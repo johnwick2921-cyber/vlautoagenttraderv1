@@ -100,81 +100,198 @@ func TestSVPPocTieBreak(t *testing.T) {
 	}
 }
 
-// mk1mBar builds a closed 1-minute bar at the given Chicago wall-clock minute.
+// mk1mBar builds a closed 1-minute UP bar (Close==high>=Open==low) at the given
+// Chicago wall-clock minute.
 func mk1mBar(loc *time.Location, y int, mo time.Month, d, h, mi int, low, high, vol float64) market.Kline {
+	return mk1mBarDir(loc, y, mo, d, h, mi, low, high, vol, true)
+}
+
+// mk1mBarDir builds a closed 1-minute bar with an explicit direction: up==true
+// → close>=open (up candle), up==false → close<open (down candle). Range stays
+// [low,high] either way so the histogram distribution is identical; only the
+// up/down split changes.
+func mk1mBarDir(loc *time.Location, y int, mo time.Month, d, h, mi int, low, high, vol float64, up bool) market.Kline {
 	open := time.Date(y, mo, d, h, mi, 0, 0, loc).UnixMilli()
+	o, c := low, high // up candle: open at low, close at high
+	if !up {
+		o, c = high, low // down candle: open at high, close at low
+	}
 	return market.Kline{
 		OpenTime:  open,
-		Open:      low,
+		Open:      o,
 		High:      high,
 		Low:       low,
-		Close:     high,
+		Close:     c,
 		Volume:    vol,
 		CloseTime: open + 60_000 - 1,
 	}
 }
 
-// TestSVPSession_LivePartialReset exercises the session windowing: a live
-// developing (current) futures session-day, the partial flag when the 17:00 CT
-// open is missing, that bars before the session open are ignored, that the
-// profile RESETS at the next 17:00 CT, and that Prior is always nil (one day).
-func TestSVPSession_LivePartialReset(t *testing.T) {
+// findSession returns the session with the given date (17:00 CT anchor) or nil.
+func findSession(p SVPProfile, date string) *SVPSession {
+	for i := range p.Sessions {
+		if p.Sessions[i].Date == date {
+			return &p.Sessions[i]
+		}
+	}
+	return nil
+}
+
+// TestSVPMultiSession exercises the multi-session grouping: bars spanning TWO
+// different CME session-days produce TWO sessions, each anchored to its own
+// 17:00 CT open, ascending by SessionStart; the live (current) session is not
+// frozen while a prior session is; the partial flag; and the up/down split (an
+// up candle's volume lands in UpVol, a down candle's in DownVol).
+func TestSVPMultiSession(t *testing.T) {
 	loc, _ := time.LoadLocation("America/Chicago")
-	// now = Mon 2026-06-15 12:00 CT. The CME futures session-day opened at the
-	// prior 17:00 CT → Sun 2026-06-14 17:00 (that is the session's label/anchor).
+	// now = Mon 2026-06-15 12:00 CT → live futures session opened Sun 2026-06-14
+	// 17:00 CT. The prior session opened Sat... no — the session before is the one
+	// that opened Fri 2026-06-12 17:00 CT (Sat is closed), but to keep the test
+	// deterministic we use two consecutive session-days that both have bars:
+	//   session A: opened Sat 2026-06-13 17:00 CT (label 2026-06-13) — FROZEN
+	//   session B (live): opened Sun 2026-06-14 17:00 CT (label 2026-06-14).
 	now := time.Date(2026, 6, 15, 12, 0, 0, 0, loc)
-	const sessDate = "2026-06-14"
+	const priorDate = "2026-06-13"
+	const liveDate = "2026-06-14"
 
-	// Full session: first bar AT the 17:00 CT open → not partial. Overnight bars
-	// ARE part of the futures session (unlike RTH).
-	var full []market.Kline
-	full = append(full, mk1mBar(loc, 2026, 6, 14, 17, 0, 100.0, 101.25, 30)) // session open
-	full = append(full, mk1mBar(loc, 2026, 6, 14, 20, 0, 101.0, 102.0, 10))  // overnight
-	full = append(full, mk1mBar(loc, 2026, 6, 15, 8, 30, 100.5, 101.0, 5))   // RTH morning
-	// A bar from BEFORE this session's open (Sun 16:00 = prior session) is ignored.
-	full = append(full, mk1mBar(loc, 2026, 6, 14, 16, 0, 90.0, 91.0, 999))
+	var bars []market.Kline
+	// Prior session (opened Sat 06-13 17:00): one UP bar at its open, one DOWN bar.
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 13, 17, 0, 100.0, 101.25, 30, true))  // up
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 13, 20, 0, 100.0, 101.25, 10, false)) // down
+	// Live session (opened Sun 06-14 17:00): first bar AT the open (not partial),
+	// an UP and a DOWN bar so both split channels are populated.
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 14, 17, 0, 200.0, 201.25, 40, true))  // up
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 14, 20, 0, 200.0, 201.25, 15, false)) // down
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 15, 8, 30, 200.0, 201.25, 5, true))   // up (RTH)
 
-	p := BuildSVPProfile(full, now)
+	p := BuildSVPProfile(bars, now)
 	if p.RowHeight != 1.25 {
 		t.Fatalf("rowHeight = %v, want 1.25", p.RowHeight)
 	}
-	if p.Prior != nil {
-		t.Error("Prior must be nil — only the current day is shown")
+	if p.Sessions == nil {
+		t.Fatal("Sessions must never be nil")
 	}
-	if p.Dev == nil {
-		t.Fatal("dev session nil")
-	}
-	if p.Dev.Frozen {
-		t.Error("dev should be live (not frozen) — market is open at Mon 12:00 CT")
-	}
-	if p.Dev.Partial {
-		t.Error("dev should NOT be partial: first bar is at the 17:00 CT open")
-	}
-	if p.Dev.Date != sessDate {
-		t.Errorf("dev date = %q, want %q (17:00 CT session anchor)", p.Dev.Date, sessDate)
-	}
-	// The pre-session 999-volume bar (Sun 16:00) must not appear.
-	for _, b := range p.Dev.Bins {
-		if b.Vol >= 999 {
-			t.Errorf("pre-session bar leaked into profile: bin %v vol %v", b.Price, b.Vol)
-		}
+	if len(p.Sessions) != 2 {
+		t.Fatalf("got %d sessions, want 2 (%+v)", len(p.Sessions), p.Sessions)
 	}
 
-	// Partial case: earliest bar is Mon 08:30 — hours after the Sun 17:00 open,
-	// so the overnight open is missing → partial.
+	// Ascending by SessionStart, and each anchored to its own 17:00 CT open.
+	if p.Sessions[0].SessionStart >= p.Sessions[1].SessionStart {
+		t.Error("sessions must be ascending by SessionStart")
+	}
+	wantPriorStart := time.Date(2026, 6, 13, 17, 0, 0, 0, loc).Unix()
+	wantLiveStart := time.Date(2026, 6, 14, 17, 0, 0, 0, loc).Unix()
+	prior := findSession(p, priorDate)
+	live := findSession(p, liveDate)
+	if prior == nil || live == nil {
+		t.Fatalf("expected sessions %q and %q, got %+v", priorDate, liveDate, p.Sessions)
+	}
+	if prior.SessionStart != wantPriorStart {
+		t.Errorf("prior SessionStart = %d, want %d (17:00 CT anchor)", prior.SessionStart, wantPriorStart)
+	}
+	if live.SessionStart != wantLiveStart {
+		t.Errorf("live SessionStart = %d, want %d (17:00 CT anchor)", live.SessionStart, wantLiveStart)
+	}
+
+	// Frozen: only the live (current) session is developing.
+	if !prior.Frozen {
+		t.Error("prior session must be frozen")
+	}
+	if live.Frozen {
+		t.Error("live session must NOT be frozen (market open Mon 12:00 CT)")
+	}
+	// Partial: live's first bar is AT the 17:00 CT open → not partial.
+	if live.Partial {
+		t.Error("live session should not be partial (first bar at the open)")
+	}
+
+	// Up/down split: the live session's up bars (40+5=45) and down bar (15) fall
+	// in the SAME price row [200,201.25] → one bin with UpVol=45, DownVol=15.
+	if len(live.Bins) != 1 {
+		t.Fatalf("live bins = %d, want 1 (all bars share the [200,201.25] row): %+v", len(live.Bins), live.Bins)
+	}
+	lb := live.Bins[0]
+	if lb.UpVol != 45 {
+		t.Errorf("live UpVol = %v, want 45 (two up candles)", lb.UpVol)
+	}
+	if lb.DownVol != 15 {
+		t.Errorf("live DownVol = %v, want 15 (one down candle)", lb.DownVol)
+	}
+	if lb.Vol != 60 {
+		t.Errorf("live Vol = %v, want 60 (up+down)", lb.Vol)
+	}
+}
+
+// TestSVPUpDownConservation proves the per-bin invariant Vol == UpVol + DownVol
+// across a realistic mixed session (bars spanning several rows, both directions).
+func TestSVPUpDownConservation(t *testing.T) {
+	loc, _ := time.LoadLocation("America/Chicago")
+	now := time.Date(2026, 6, 15, 12, 0, 0, 0, loc)
+
+	var bars []market.Kline
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 14, 17, 0, 100.0, 104.0, 120, true))
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 14, 18, 0, 101.0, 103.5, 80, false))
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 14, 19, 0, 99.5, 102.0, 60, true))
+	bars = append(bars, mk1mBarDir(loc, 2026, 6, 14, 20, 0, 100.5, 101.5, 25, false)) // down candle
+
+	p := BuildSVPProfile(bars, now)
+	if len(p.Sessions) != 1 {
+		t.Fatalf("got %d sessions, want 1", len(p.Sessions))
+	}
+	var totalUp, totalDown, totalVol float64
+	for _, b := range p.Sessions[0].Bins {
+		if math.Abs(b.Vol-(b.UpVol+b.DownVol)) > 1e-9 {
+			t.Errorf("bin %v: Vol=%v != UpVol+DownVol=%v", b.Price, b.Vol, b.UpVol+b.DownVol)
+		}
+		totalUp += b.UpVol
+		totalDown += b.DownVol
+		totalVol += b.Vol
+	}
+	// Session totals must match the input volumes (120+60 up, 80+25 down).
+	if math.Abs(totalUp-180) > 1e-9 {
+		t.Errorf("total UpVol = %v, want 180", totalUp)
+	}
+	if math.Abs(totalDown-105) > 1e-9 {
+		t.Errorf("total DownVol = %v, want 105", totalDown)
+	}
+	if math.Abs(totalVol-285) > 1e-9 {
+		t.Errorf("total Vol = %v, want 285", totalVol)
+	}
+}
+
+// TestSVPSession_PartialAndReset exercises the partial flag (session open missing)
+// and that a session-day with no bars simply does not appear in Sessions.
+func TestSVPSession_PartialAndReset(t *testing.T) {
+	loc, _ := time.LoadLocation("America/Chicago")
+	now := time.Date(2026, 6, 15, 12, 0, 0, 0, loc)
+
+	// Partial: earliest bar Mon 08:30 — hours after the Sun 06-14 17:00 open.
 	var late []market.Kline
 	late = append(late, mk1mBar(loc, 2026, 6, 15, 8, 30, 100.0, 101.25, 30))
 	late = append(late, mk1mBar(loc, 2026, 6, 15, 8, 31, 101.0, 102.0, 10))
 	lp := BuildSVPProfile(late, now)
-	if lp.Dev == nil || !lp.Dev.Partial {
-		t.Error("dev should be partial when the 17:00 CT session open is missing")
+	live := findSession(lp, "2026-06-14")
+	if live == nil || !live.Partial {
+		t.Errorf("live session should be partial when the 17:00 CT open is missing, got %+v", lp.Sessions)
 	}
 
-	// Reset: at the NEXT session (Tue 12:00, opened Mon 17:00 CT), all the `full`
-	// bars are before the new session open → dev is empty.
+	// A session-day with no bars in range never appears. Feed only Sun-session
+	// bars but evaluate on the NEXT session (Tue 12:00, opened Mon 17:00 CT):
+	// the live session-day has no bars, so it is absent; the prior Sun session is
+	// still present (frozen).
+	var full []market.Kline
+	full = append(full, mk1mBar(loc, 2026, 6, 14, 17, 0, 100.0, 101.25, 30))
+	full = append(full, mk1mBar(loc, 2026, 6, 14, 20, 0, 101.0, 102.0, 10))
 	nextSession := time.Date(2026, 6, 16, 12, 0, 0, 0, loc)
 	np := BuildSVPProfile(full, nextSession)
-	if np.Dev != nil {
-		t.Errorf("dev on the next session should be nil (reset at 17:00 CT, no bars in window), got %+v", np.Dev)
+	if findSession(np, "2026-06-15") != nil {
+		t.Error("the live (Mon 17:00) session has no bars → must be absent from Sessions")
+	}
+	prior := findSession(np, "2026-06-14")
+	if prior == nil {
+		t.Fatalf("prior Sun session should still be present, got %+v", np.Sessions)
+	}
+	if !prior.Frozen {
+		t.Error("prior Sun session must be frozen when evaluating a later session")
 	}
 }

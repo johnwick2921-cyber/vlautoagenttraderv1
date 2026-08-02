@@ -30,7 +30,7 @@ func (s *Server) handleKlinesSVP(c *gin.Context) {
 		symbol = "MNQ"
 	}
 
-	empty := kernel.SVPProfile{RowHeight: kernel.SVPRowHeight}
+	empty := kernel.SVPProfile{RowHeight: kernel.SVPRowHeight, Sessions: []kernel.SVPSession{}}
 
 	if !market.IsCMEFuturesSymbol(symbol) {
 		c.JSON(http.StatusOK, empty)

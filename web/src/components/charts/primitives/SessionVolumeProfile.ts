@@ -1,6 +1,9 @@
 /*
- * SessionVolumeProfile — a lightweight-charts v5 series primitive that renders a
- * Session Volume Profile (DEV + prior session POC/VAH/VAL) from OUR server-computed data.
+ * SessionVolumeProfile — a lightweight-charts v5 series primitive that renders
+ * MULTIPLE Session Volume Profiles (one histogram per session/day) from OUR
+ * server-computed data, in the style of TradingView's Session Volume Profile:
+ * each session gets its own self-scaled histogram anchored at its session start,
+ * a teal/red up-vs-down split per row, and a POC line spanning that session.
  *
  * Portions adapted (API shape only) from the Apache-2.0 licensed
  * tradingview/lightweight-charts plugin example
@@ -8,7 +11,7 @@
  * Copyright 2024 TradingView, Inc. Licensed under the Apache License, Version 2.0.
  *
  * The DATA contract below (SvpBin / SvpSession / SvpProfileData) matches the Go
- * backend JSON exactly and is NOT the example's shape.
+ * backend JSON exactly (kernel/svp.go) and is NOT the example's shape.
  */
 
 import { CanvasRenderingTarget2D } from 'fancy-canvas'
@@ -36,10 +39,15 @@ import { positionsBox } from './positions'
 export interface SvpBin {
   price: number
   vol: number
+  upVol: number
+  downVol: number
   inVA: boolean
 }
 
 export interface SvpSession {
+  /** UTC SECONDS — the chart x-anchor for this session. */
+  sessionStart: number
+  /** YYYY-MM-DD (session-day start, Chicago). */
   date: string
   partial: boolean
   poc: number
@@ -51,48 +59,54 @@ export interface SvpSession {
 
 export interface SvpProfileData {
   rowHeight: number
-  dev: SvpSession | null
-  prior: SvpSession | null
-  /** UTCTimestamp (seconds) x-anchor of the DEV histogram; may be null. */
-  sessionStartTime: number | null
+  /** ALL sessions in the bar range, ascending by time; never null. */
+  sessions: SvpSession[]
 }
 
 // ---------------------------------------------------------------------------
 // Colors (all rgba; kept here so the chart/theme can reference them if needed).
 // ---------------------------------------------------------------------------
 
-const COLOR_VA = 'rgba(38, 166, 154, 0.55)' // teal — bins inside the Value Area
-const COLOR_NON_VA = 'rgba(120, 123, 134, 0.35)' // muted grey — bins outside VA
-const COLOR_POC_BAR = 'rgba(240, 185, 11, 0.8)' // gold — the max-volume (POC) bar
-const COLOR_POC_LINE = 'rgba(240, 185, 11, 0.9)' // gold — POC level line
-const COLOR_VA_LINE = 'rgba(38, 166, 154, 0.9)' // teal — VAH/VAL dashed lines
-const COLOR_PRIOR_LINE = 'rgba(150, 150, 160, 0.6)' // muted — prior POC/VAH/VAL
+const COLOR_UP = 'rgba(38, 166, 154, 0.75)' // teal — up-candle volume
+const COLOR_DOWN = 'rgba(239, 83, 80, 0.75)' // red — down-candle volume
+const COLOR_UP_POC = 'rgba(64, 200, 188, 0.95)' // brighter teal for the POC row
+const COLOR_DOWN_POC = 'rgba(255, 110, 108, 0.95)' // brighter red for the POC row
+const COLOR_POC_LINE = 'rgba(255, 255, 255, 0.9)' // white — POC level line
+const COLOR_VA_LINE = 'rgba(38, 166, 154, 0.65)' // teal — VAH/VAL dashed lines
+const COLOR_DIVIDER = 'rgba(120, 123, 134, 0.25)' // faint vertical session divider
 const COLOR_LABEL_TEXT = 'rgba(0, 0, 0, 0.9)'
 
-// Fraction of the pane width the widest (max-vol) DEV bar may occupy.
-const MAX_BAR_WIDTH_FRACTION = 0.3
+// Fraction of the pane width the widest bar of any single session may occupy.
+const MAX_BAR_WIDTH_FRACTION = 0.18
+// Fraction of the gap to the next session anchor that a bar may occupy.
+const BAR_GAP_FRACTION = 0.9
+// Minimum bar-width budget so a session squeezed against its neighbour is still legible.
+const MIN_BAR_WIDTH_PX = 40
 
 // ---------------------------------------------------------------------------
 // Renderer data — everything the renderer needs, precomputed in media coords.
 // ---------------------------------------------------------------------------
 
-interface DevBarItem {
+interface RowItem {
   y: Coordinate | null // center y of the bin
   halfThicknessPx: number // half of rowHeight expressed in px
-  width: number // media px, already scaled to 0..(paneWidth*fraction)
-  color: string
+  totalWidth: number // media px, already scaled to this session's budget
+  upWidth: number // media px width of the teal (up-volume) segment
+  isPoc: boolean
 }
 
-interface LevelLine {
-  y: Coordinate | null
-  color: string
-  dashed: boolean
+interface SessionRenderItem {
+  anchorX: number // media x of this session's start
+  endX: number // media x where this session's span ends (next anchor / pane edge)
+  rows: RowItem[]
+  pocY: Coordinate | null
+  vahY: Coordinate | null
+  valY: Coordinate | null
 }
 
 interface SvpRendererData {
-  anchorX: Coordinate | null // DEV session-start x; null → fall back to left edge (0)
-  bars: DevBarItem[]
-  lines: LevelLine[]
+  sessions: SessionRenderItem[]
+  paneWidth: number
 }
 
 // ---------------------------------------------------------------------------
@@ -112,51 +126,92 @@ class SessionVolumeProfileRenderer implements IPrimitivePaneRenderer {
       const ctx = scope.context
       const hRatio = scope.horizontalPixelRatio
       const vRatio = scope.verticalPixelRatio
-      const paneWidthBitmap = scope.bitmapSize.width
 
-      // GUARD: null anchor → fall back to the left edge (media x = 0).
-      const anchorXMedia = data.anchorX ?? (0 as Coordinate)
-      const anchorXBitmap = Math.round(anchorXMedia * hRatio)
+      for (const session of data.sessions) {
+        const anchorXBitmap = Math.round(session.anchorX * hRatio)
+        const endXBitmap = Math.round(session.endX * hRatio)
 
-      // --- DEV histogram bars (draw first so level lines sit on top) ---
-      for (const bar of data.bars) {
-        if (bar.y === null || bar.width <= 0) continue
-
-        const vertical = positionsBox(
-          bar.y - bar.halfThicknessPx,
-          bar.y + bar.halfThicknessPx,
-          vRatio
-        )
-        const barWidthBitmap = Math.max(1, Math.round(bar.width * hRatio))
-
-        ctx.fillStyle = bar.color
-        ctx.fillRect(
-          anchorXBitmap,
-          vertical.position,
-          barWidthBitmap,
-          // shave 1px so adjacent rows don't visually merge
-          Math.max(1, vertical.length - 1)
-        )
-      }
-
-      // --- POC / VAH / VAL horizontal level lines across the full pane ---
-      for (const line of data.lines) {
-        if (line.y === null) continue
-
-        const lineY = Math.round(line.y * vRatio)
+        // --- faint vertical divider at the session anchor ---
         ctx.save()
-        ctx.strokeStyle = line.color
-        ctx.lineWidth = Math.max(1, Math.floor(vRatio))
-        if (line.dashed) {
-          ctx.setLineDash([Math.round(4 * hRatio), Math.round(4 * hRatio)])
-        } else {
-          ctx.setLineDash([])
-        }
+        ctx.strokeStyle = COLOR_DIVIDER
+        ctx.lineWidth = Math.max(1, Math.floor(hRatio))
+        ctx.setLineDash([])
         ctx.beginPath()
-        ctx.moveTo(0, lineY + 0.5)
-        ctx.lineTo(paneWidthBitmap, lineY + 0.5)
+        ctx.moveTo(anchorXBitmap + 0.5, 0)
+        ctx.lineTo(anchorXBitmap + 0.5, scope.bitmapSize.height)
         ctx.stroke()
         ctx.restore()
+
+        // --- histogram rows (two-tone: up teal then down red) ---
+        for (const row of session.rows) {
+          if (row.y === null || row.totalWidth <= 0) continue
+
+          const vertical = positionsBox(
+            row.y - row.halfThicknessPx,
+            row.y + row.halfThicknessPx,
+            vRatio
+          )
+          const height = Math.max(1, vertical.length - 1)
+
+          const upWidthBitmap = Math.max(0, Math.round(row.upWidth * hRatio))
+          const totalWidthBitmap = Math.max(
+            1,
+            Math.round(row.totalWidth * hRatio)
+          )
+          const downWidthBitmap = Math.max(0, totalWidthBitmap - upWidthBitmap)
+
+          // up segment (teal), extending RIGHT from the anchor
+          if (upWidthBitmap > 0) {
+            ctx.fillStyle = row.isPoc ? COLOR_UP_POC : COLOR_UP
+            ctx.fillRect(
+              anchorXBitmap,
+              vertical.position,
+              upWidthBitmap,
+              height
+            )
+          }
+          // down segment (red), stacked to the right of the up segment
+          if (downWidthBitmap > 0) {
+            ctx.fillStyle = row.isPoc ? COLOR_DOWN_POC : COLOR_DOWN
+            ctx.fillRect(
+              anchorXBitmap + upWidthBitmap,
+              vertical.position,
+              downWidthBitmap,
+              height
+            )
+          }
+        }
+
+        // --- VAH / VAL dashed lines within the session span ---
+        const dashOn = Math.round(3 * hRatio)
+        const dashOff = Math.round(3 * hRatio)
+        for (const levelY of [session.vahY, session.valY]) {
+          if (levelY === null) continue
+          const lineY = Math.round(levelY * vRatio)
+          ctx.save()
+          ctx.strokeStyle = COLOR_VA_LINE
+          ctx.lineWidth = Math.max(1, Math.floor(vRatio))
+          ctx.setLineDash([dashOn, dashOff])
+          ctx.beginPath()
+          ctx.moveTo(anchorXBitmap, lineY + 0.5)
+          ctx.lineTo(endXBitmap, lineY + 0.5)
+          ctx.stroke()
+          ctx.restore()
+        }
+
+        // --- POC line (solid, spanning this session) — drawn last, on top ---
+        if (session.pocY !== null) {
+          const lineY = Math.round(session.pocY * vRatio)
+          ctx.save()
+          ctx.strokeStyle = COLOR_POC_LINE
+          ctx.lineWidth = Math.max(1, Math.floor(vRatio))
+          ctx.setLineDash([])
+          ctx.beginPath()
+          ctx.moveTo(anchorXBitmap, lineY + 0.5)
+          ctx.lineTo(endXBitmap, lineY + 0.5)
+          ctx.stroke()
+          ctx.restore()
+        }
       }
     })
   }
@@ -218,11 +273,7 @@ class SvpPriceAxisView implements ISeriesPrimitiveAxisView {
 
 class SessionVolumeProfilePaneView implements IPrimitivePaneView {
   private _source: SessionVolumeProfile
-  private _rendererData: SvpRendererData = {
-    anchorX: null,
-    bars: [],
-    lines: [],
-  }
+  private _rendererData: SvpRendererData = { sessions: [], paneWidth: 0 }
 
   constructor(source: SessionVolumeProfile) {
     this._source = source
@@ -234,105 +285,122 @@ class SessionVolumeProfilePaneView implements IPrimitivePaneView {
     const data = this._source.data()
 
     if (chart === undefined || series === undefined) {
-      this._rendererData = { anchorX: null, bars: [], lines: [] }
+      this._rendererData = { sessions: [], paneWidth: 0 }
       return
     }
 
     const timeScale = chart.timeScale()
-
-    // x-anchor of the DEV histogram.
-    let anchorX: Coordinate | null = null
-    if (data.sessionStartTime !== null) {
-      anchorX = timeScale.timeToCoordinate(
-        data.sessionStartTime as UTCTimestamp
-      )
-    }
-
     const paneWidth = timeScale.width()
-    const maxBarWidth = paneWidth * MAX_BAR_WIDTH_FRACTION
-
-    // thickness (px) for a single row of height `rowHeight` in price space.
+    const sessions = data.sessions ?? []
+    const maxVols = this._source.sessionMaxVols()
     const rowHeight = data.rowHeight > 0 ? data.rowHeight : 0
 
-    const bars: DevBarItem[] = []
-    const dev = data.dev
-    if (
-      dev &&
-      dev.bins &&
-      dev.bins.length > 0 &&
-      this._source.maxDevVol() > 0
-    ) {
-      const maxVol = this._source.maxDevVol()
-      const pocPrice = dev.poc
-      for (const bin of dev.bins) {
-        const yCenter = series.priceToCoordinate(bin.price)
-        // rowHeight → px thickness via two priceToCoordinate probes.
-        let halfThickness = 1
-        if (rowHeight > 0) {
-          const yTop = series.priceToCoordinate(bin.price + rowHeight / 2)
-          const yBot = series.priceToCoordinate(bin.price - rowHeight / 2)
-          if (yTop !== null && yBot !== null) {
-            halfThickness = Math.max(0.5, Math.abs(yBot - yTop) / 2)
-          }
-        }
-        const isPoc = bin.price === pocPrice
-        const color = isPoc ? COLOR_POC_BAR : bin.inVA ? COLOR_VA : COLOR_NON_VA
-        bars.push({
-          y: yCenter,
-          halfThicknessPx: halfThickness,
-          width: (bin.vol / maxVol) * maxBarWidth,
-          color,
-        })
+    // 1st pass: resolve each session's anchor x. The 17:00 CT session open often
+    // isn't an EXACT chart bar (esp. on coarser intervals + the 16:00–17:00 CME
+    // break), and timeScale.timeToCoordinate() returns null for a non-bar time —
+    // so snap to the nearest actual bar within ±30 min (prefer forward = the
+    // session's first bar). Skip only if nothing resolves (session off-screen).
+    const resolveAnchor = (t0: number): number | null => {
+      const direct = timeScale.timeToCoordinate(t0 as UTCTimestamp)
+      if (direct !== null) return direct as number
+      for (let off = 60; off <= 1800; off += 60) {
+        const fwd = timeScale.timeToCoordinate((t0 + off) as UTCTimestamp)
+        if (fwd !== null) return fwd as number
+        const back = timeScale.timeToCoordinate((t0 - off) as UTCTimestamp)
+        if (back !== null) return back as number
       }
+      return null
+    }
+    const anchors: (number | null)[] = sessions.map((s) =>
+      resolveAnchor(s.sessionStart)
+    )
+
+    const rendered: SessionRenderItem[] = []
+
+    for (let i = 0; i < sessions.length; i++) {
+      const anchorX = anchors[i]
+      if (anchorX === null) continue // off the left edge — skip (never throw)
+
+      const session = sessions[i]
+      const maxVol = maxVols[i] ?? 0
+
+      // Find the next VISIBLE anchor to the right (for span + width budget).
+      let nextAnchorX: number | null = null
+      for (let j = i + 1; j < sessions.length; j++) {
+        if (anchors[j] !== null && (anchors[j] as number) > anchorX) {
+          nextAnchorX = anchors[j] as number
+          break
+        }
+      }
+
+      // Bar-width budget: min(gap*0.9, pane*0.18) with a floor; last session
+      // (no next anchor) uses pane*0.18. endX spans to next anchor / pane edge.
+      let maxBarWidth: number
+      let endX: number
+      if (nextAnchorX !== null) {
+        const gap = nextAnchorX - anchorX
+        maxBarWidth = Math.max(
+          MIN_BAR_WIDTH_PX,
+          Math.min(gap * BAR_GAP_FRACTION, paneWidth * MAX_BAR_WIDTH_FRACTION)
+        )
+        endX = nextAnchorX
+      } else {
+        maxBarWidth = Math.max(
+          MIN_BAR_WIDTH_PX,
+          paneWidth * MAX_BAR_WIDTH_FRACTION
+        )
+        endX = paneWidth // naked POC extends to the right pane edge
+      }
+
+      const rows: RowItem[] = []
+      if (maxVol > 0 && session.bins && session.bins.length > 0) {
+        for (const bin of session.bins) {
+          const yCenter = series.priceToCoordinate(bin.price)
+          if (yCenter === null) continue // skip rows off the price axis
+
+          // rowHeight → px thickness via two priceToCoordinate probes.
+          let halfThickness = 1
+          if (rowHeight > 0) {
+            const yTop = series.priceToCoordinate(bin.price + rowHeight / 2)
+            const yBot = series.priceToCoordinate(bin.price - rowHeight / 2)
+            if (yTop !== null && yBot !== null) {
+              halfThickness = Math.max(0.5, Math.abs(yBot - yTop) / 2)
+            }
+          }
+
+          const totalWidth = (bin.vol / maxVol) * maxBarWidth
+          // Split into up/down segments proportional to upVol/vol.
+          const vol = bin.vol > 0 ? bin.vol : 1
+          const upFrac = Math.min(1, Math.max(0, bin.upVol / vol))
+          rows.push({
+            y: yCenter,
+            halfThicknessPx: halfThickness,
+            totalWidth,
+            upWidth: totalWidth * upFrac,
+            isPoc: bin.price === session.poc,
+          })
+        }
+      }
+
+      rendered.push({
+        anchorX,
+        endX,
+        rows,
+        pocY: series.priceToCoordinate(session.poc),
+        vahY: series.priceToCoordinate(session.vah),
+        valY: series.priceToCoordinate(session.val),
+      })
     }
 
-    const lines: LevelLine[] = []
-    if (dev) {
-      lines.push(
-        {
-          y: series.priceToCoordinate(dev.poc),
-          color: COLOR_POC_LINE,
-          dashed: false,
-        },
-        {
-          y: series.priceToCoordinate(dev.vah),
-          color: COLOR_VA_LINE,
-          dashed: true,
-        },
-        {
-          y: series.priceToCoordinate(dev.val),
-          color: COLOR_VA_LINE,
-          dashed: true,
-        }
-      )
-    }
-    // PRIOR session: POC/VAH/VAL only (histogram intentionally skipped — see notes).
-    const prior = data.prior
-    if (prior) {
-      lines.push(
-        {
-          y: series.priceToCoordinate(prior.poc),
-          color: COLOR_PRIOR_LINE,
-          dashed: true,
-        },
-        {
-          y: series.priceToCoordinate(prior.vah),
-          color: COLOR_PRIOR_LINE,
-          dashed: true,
-        },
-        {
-          y: series.priceToCoordinate(prior.val),
-          color: COLOR_PRIOR_LINE,
-          dashed: true,
-        }
-      )
-    }
-
-    this._rendererData = { anchorX, bars, lines }
+    this._rendererData = { sessions: rendered, paneWidth }
   }
 
   renderer(): IPrimitivePaneRenderer | null {
     return new SessionVolumeProfileRenderer(this._rendererData)
+  }
+
+  zOrder(): 'top' {
+    return 'top'
   }
 }
 
@@ -347,13 +415,12 @@ export class SessionVolumeProfile implements ISeriesPrimitive<Time> {
 
   private _data: SvpProfileData = {
     rowHeight: 0,
-    dev: null,
-    prior: null,
-    sessionStartTime: null,
+    sessions: [],
   }
 
   // Precomputed (in setData) so updateAllViews()/autoscaleInfo() stay O(1).
-  private _maxDevVol = 0
+  // Per-session max(bin.vol), index-aligned with _data.sessions.
+  private _sessionMaxVols: number[] = []
   private _autoMin: number = Number.NaN
   private _autoMax: number = Number.NaN
 
@@ -392,37 +459,39 @@ export class SessionVolumeProfile implements ISeriesPrimitive<Time> {
   // --- data --------------------------------------------------------------
 
   /**
-   * Replace the profile data. Precomputes maxDevVol + autoscale min/max, then
-   * asks the chart to redraw. Safe to call on every poll — it mutates internal
-   * state instead of re-attaching (re-attaching would duplicate drawings).
+   * Replace the profile data. Precomputes per-session maxVol + autoscale
+   * min/max, then asks the chart to redraw. Safe to call on every poll — it
+   * mutates internal state instead of re-attaching (re-attaching would
+   * duplicate drawings).
    */
   setData(data: SvpProfileData): void {
-    this._data = data
-
-    // maxDevVol — used to normalize bar widths.
-    let maxVol = 0
-    if (data.dev && data.dev.bins) {
-      for (const bin of data.dev.bins) {
-        if (bin.vol > maxVol) maxVol = bin.vol
-      }
+    this._data = {
+      rowHeight: data.rowHeight,
+      sessions: data.sessions ?? [],
     }
-    this._maxDevVol = maxVol
 
-    // autoscale union of dev + prior VAL..VAH (O(1); never scans bins).
+    // Per-session max(bin.vol) — each histogram scales to itself.
+    const maxVols: number[] = []
     let min = Number.POSITIVE_INFINITY
     let max = Number.NEGATIVE_INFINITY
-    const consider = (s: SvpSession | null): void => {
-      if (!s) return
+    for (const s of this._data.sessions) {
+      let sMax = 0
+      if (s.bins) {
+        for (const bin of s.bins) {
+          if (bin.vol > sMax) sMax = bin.vol
+        }
+      }
+      maxVols.push(sMax)
+
+      // autoscale union of every session's VAL..VAH (+POC guard); O(#sessions).
       if (Number.isFinite(s.val)) min = Math.min(min, s.val)
       if (Number.isFinite(s.vah)) max = Math.max(max, s.vah)
-      // POC can sit outside VAL..VAH in edge cases; include it too.
       if (Number.isFinite(s.poc)) {
         min = Math.min(min, s.poc)
         max = Math.max(max, s.poc)
       }
     }
-    consider(data.dev)
-    consider(data.prior)
+    this._sessionMaxVols = maxVols
     this._autoMin = Number.isFinite(min) ? min : Number.NaN
     this._autoMax = Number.isFinite(max) ? max : Number.NaN
 
@@ -434,8 +503,8 @@ export class SessionVolumeProfile implements ISeriesPrimitive<Time> {
     return this._data
   }
 
-  maxDevVol(): number {
-    return this._maxDevVol
+  sessionMaxVols(): number[] {
+    return this._sessionMaxVols
   }
 
   chart(): IChartApi | undefined {
@@ -482,49 +551,28 @@ export class SessionVolumeProfile implements ISeriesPrimitive<Time> {
       // Trim to a sensible precision; futures like MNQ use quarter ticks.
       return Number.isInteger(p) ? String(p) : p.toFixed(2)
     }
-    const dev = this._data.dev
-    if (dev && dev.bins && dev.bins.length > 0) {
+    // Label the LAST (most recent) session's POC/VAH/VAL only — avoids clutter.
+    const sessions = this._data.sessions
+    const last = sessions.length > 0 ? sessions[sessions.length - 1] : null
+    if (last) {
       views.push(
         new SvpPriceAxisView(
           this,
-          dev.poc,
-          `POC ${fmt(dev.poc)}`,
+          last.poc,
+          `POC ${fmt(last.poc)}`,
           COLOR_POC_LINE
         ),
         new SvpPriceAxisView(
           this,
-          dev.vah,
-          `VAH ${fmt(dev.vah)}`,
+          last.vah,
+          `VAH ${fmt(last.vah)}`,
           COLOR_VA_LINE
         ),
         new SvpPriceAxisView(
           this,
-          dev.val,
-          `VAL ${fmt(dev.val)}`,
+          last.val,
+          `VAL ${fmt(last.val)}`,
           COLOR_VA_LINE
-        )
-      )
-    }
-    const prior = this._data.prior
-    if (prior) {
-      views.push(
-        new SvpPriceAxisView(
-          this,
-          prior.poc,
-          `pPOC ${fmt(prior.poc)}`,
-          COLOR_PRIOR_LINE
-        ),
-        new SvpPriceAxisView(
-          this,
-          prior.vah,
-          `pVAH ${fmt(prior.vah)}`,
-          COLOR_PRIOR_LINE
-        ),
-        new SvpPriceAxisView(
-          this,
-          prior.val,
-          `pVAL ${fmt(prior.val)}`,
-          COLOR_PRIOR_LINE
         )
       )
     }

@@ -49,53 +49,62 @@ const (
 
 // ---- Output types (also the JSON contract for the chart, Part C) -----------
 
-// SVPBin is one price row: Price is the row MIDPOINT, Vol its accumulated
-// volume, InVA whether the row is inside the Value Area.
+// SVPBin is one price row: Price is the row MIDPOINT; Vol its accumulated total
+// volume; UpVol/DownVol the split by candle direction (close>=open → up, else
+// down); InVA whether the row is inside the Value Area. Invariant: Vol ==
+// UpVol + DownVol.
 type SVPBin struct {
-	Price float64 `json:"price"`
-	Vol   float64 `json:"vol"`
-	InVA  bool    `json:"inVA"`
+	Price   float64 `json:"price"`
+	Vol     float64 `json:"vol"`     // total volume in the row (= UpVol + DownVol)
+	UpVol   float64 `json:"upVol"`   // volume from up candles (close>=open)
+	DownVol float64 `json:"downVol"` // volume from down candles (close<open)
+	InVA    bool    `json:"inVA"`
 }
 
-// SVPSession is a single session's profile. VAH is the TOP edge of the top VA
-// row, VAL the BOTTOM edge of the bottom VA row, POC the mid of the max-volume
-// row. Frozen is true once the session has closed (prior is always frozen).
+// SVPSession is a single CME futures trading day's profile. VAH is the TOP edge
+// of the top VA row, VAL the BOTTOM edge of the bottom VA row, POC the mid of
+// the max-volume row. Frozen is true once the session has closed (every session
+// except the current live one). SessionStart is the 17:00 CT session open as a
+// UTC-seconds timestamp — the chart x-anchor for this session's histogram.
 type SVPSession struct {
-	Date    string   `json:"date"` // RTH date in Chicago, YYYY-MM-DD
-	Partial bool     `json:"partial"`
-	POC     float64  `json:"poc"`
-	VAH     float64  `json:"vah"`
-	VAL     float64  `json:"val"`
-	Bins    []SVPBin `json:"bins"`
-	Frozen  bool     `json:"frozen"`
+	SessionStart int64    `json:"sessionStart"` // UTC SECONDS — chart x-anchor
+	Date         string   `json:"date"`         // YYYY-MM-DD (session-day start, Chicago)
+	Partial      bool     `json:"partial"`
+	POC          float64  `json:"poc"`
+	VAH          float64  `json:"vah"`
+	VAL          float64  `json:"val"`
+	Bins         []SVPBin `json:"bins"`
+	Frozen       bool     `json:"frozen"`
 }
 
-// SVPProfile bundles the developing (current) session and the frozen prior
-// session, with the row height so the renderer can size bars.
+// SVPProfile is the full multi-session profile: one SVPSession per CME futures
+// trading day present in the bar range, ascending by time (like TradingView's
+// Session Volume Profile). RowHeight sizes the bars for the renderer. Sessions
+// is NEVER nil (empty → []SVPSession{}).
 type SVPProfile struct {
-	RowHeight float64     `json:"rowHeight"`
-	Dev       *SVPSession `json:"dev"`
-	Prior     *SVPSession `json:"prior"`
-	// SessionStartTime is the developing session's RTH open as a UTC-seconds
-	// timestamp — the x-anchor the chart primitive uses for the developing
-	// histogram (matches the lightweight-charts UTCTimestamp unit).
-	SessionStartTime int64 `json:"sessionStartTime"`
+	RowHeight float64      `json:"rowHeight"`
+	Sessions  []SVPSession `json:"sessions"`
 }
 
-// FormatSVPLine renders the profile as the single AI-prompt context line:
+// FormatSVPLine renders the MOST RECENT session as the single AI-prompt context
+// line:
 //
-//	SVP: dev POC X VAH Y VAL Z (partial) | prior POC A VAH B VAL C
+//	SVP (today's session, since 17:00 CT open): POC X VAH Y VAL Z (partial)
 //
-// The "(partial)" tag appears only when the developing session could not be
-// seen from its open. Returns "" when the developing session has no bars — the
-// prompt gate then injects nothing (keeping the OFF/insufficient case clean).
+// The "(partial)" tag appears only when that session could not be seen from its
+// open. Returns "" when there are no sessions, or the last session has no bars —
+// the prompt gate then injects nothing (keeping the OFF/insufficient case clean).
 func FormatSVPLine(p SVPProfile) string {
-	if p.Dev == nil || len(p.Dev.Bins) == 0 {
+	if len(p.Sessions) == 0 {
 		return ""
 	}
-	s := fmt.Sprintf("SVP (today's session, since the 17:00 CT open): POC %.2f VAH %.2f VAL %.2f",
-		p.Dev.POC, p.Dev.VAH, p.Dev.VAL)
-	if p.Dev.Partial {
+	last := p.Sessions[len(p.Sessions)-1]
+	if len(last.Bins) == 0 {
+		return ""
+	}
+	s := fmt.Sprintf("SVP (today's session, since 17:00 CT open): POC %.2f VAH %.2f VAL %.2f",
+		last.POC, last.VAH, last.VAL)
+	if last.Partial {
 		s += " (partial)"
 	}
 	return s
@@ -135,6 +144,40 @@ func svpAddBar(hist map[int]float64, low, high, vol float64) {
 		}
 		hist[b] += vol * (overlap / span)
 	}
+}
+
+// svpDirBins holds the per-row up/down volume split for one session.
+type svpDirBins struct {
+	up   map[int]float64
+	down map[int]float64
+}
+
+func newSvpDirBins() *svpDirBins {
+	return &svpDirBins{up: map[int]float64{}, down: map[int]float64{}}
+}
+
+// addBar distributes one bar's volume into the UP or DOWN histogram (by candle
+// direction: close>=open → up, else down) using the same uniform row-overlap
+// logic as svpAddBar.
+func (s *svpDirBins) addBar(b market.Kline) {
+	hist := s.up
+	if b.Close < b.Open {
+		hist = s.down
+	}
+	svpAddBar(hist, b.Low, b.High, b.Volume)
+}
+
+// totals returns the combined UP+DOWN volume per occupied row — the input to
+// svpValueArea (POC/VA are computed on TOTAL volume).
+func (s *svpDirBins) totals() map[int]float64 {
+	tot := make(map[int]float64, len(s.up)+len(s.down))
+	for b, v := range s.up {
+		tot[b] += v
+	}
+	for b, v := range s.down {
+		tot[b] += v
+	}
+	return tot
 }
 
 // ---- POC + Value Area (B2, classic two-row) --------------------------------
@@ -239,79 +282,101 @@ func svpValueArea(hist map[int]float64, vaPercent float64) (poc, vaLow, vaHigh i
 
 // ---- Assembly (anchored to the CME session-day, cme_calendar.go) -----------
 
-// BuildSVPProfile computes the developing Session Volume Profile for the CURRENT
-// CME futures session-day from the supplied 1-minute bars (closed bars only).
-// The session anchors to the 17:00 CT open (CMESessionDayStart) and RESETS at
-// every 17:00 CT — one futures trading day. Bars before this session's open are
-// ignored, and ONLY the current day is returned (Prior is always nil — no
-// prior-session overlay).
+// BuildSVPProfile computes a MULTI-SESSION Session Volume Profile — one
+// SVPSession per CME futures trading day present in the supplied 1-minute bars
+// (CLOSED bars only). Bars are grouped by their CME session-day (the most-recent
+// 17:00 CT boundary, via CMESessionDayStart): two bars share a session iff their
+// CMESessionDayStart is equal, so each futures day (17:00 CT → 16:00 CT next
+// day, overnight included) is its own profile — matching TradingView's SVP.
+//
+// The current live session (the one containing `now` while IsCMEOpen(now)) is
+// Frozen=false; every other session is Frozen=true. Sessions are returned
+// ascending by SessionStart and the slice is NEVER nil.
 func BuildSVPProfile(bars []market.Kline, now time.Time) SVPProfile {
-	sessStart := CMESessionDayStart(now)
-	dev := svpBuildSession(bars, sessStart, now.UnixMilli(), IsCMEOpen(now))
+	nowMs := now.UnixMilli()
+
+	// The live session's anchor (only meaningful while the market is open): the
+	// session containing `now` is the developing one.
+	var liveStartMs int64 = math.MinInt64
+	if IsCMEOpen(now) {
+		liveStartMs = CMESessionDayStart(now).UnixMilli()
+	}
+
+	// Group CLOSED bars by session-day-start (ms).
+	type sessAgg struct {
+		start     time.Time
+		startMs   int64
+		firstOpen int64
+		dir       *svpDirBins
+	}
+	groups := make(map[int64]*sessAgg)
+	for i := range bars {
+		b := bars[i]
+		if b.CloseTime >= nowMs {
+			continue // in-progress / future bar (only CLOSED bars count)
+		}
+		start := CMESessionDayStart(time.UnixMilli(b.OpenTime))
+		startMs := start.UnixMilli()
+		g := groups[startMs]
+		if g == nil {
+			g = &sessAgg{start: start, startMs: startMs, firstOpen: b.OpenTime, dir: newSvpDirBins()}
+			groups[startMs] = g
+		} else if b.OpenTime < g.firstOpen {
+			g.firstOpen = b.OpenTime
+		}
+		g.dir.addBar(b)
+	}
+
+	sessions := make([]SVPSession, 0, len(groups))
+	for _, g := range groups {
+		sessions = append(sessions, svpFinalizeSession(g.start, g.startMs, g.firstOpen, g.dir, g.startMs == liveStartMs))
+	}
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].SessionStart < sessions[j].SessionStart
+	})
+
 	return SVPProfile{
-		RowHeight:        SVPRowHeight,
-		Dev:              dev,
-		Prior:            nil, // one futures day only
-		SessionStartTime: sessStart.Unix(),
+		RowHeight: SVPRowHeight,
+		Sessions:  sessions,
 	}
 }
 
-// svpBuildSession windows the bars to the current session-day [sessStart, now]
-// and builds its profile from CLOSED 1-minute bars. `sessStart` is the 17:00 CT
-// session open; `live` marks a still-open session (frozen once the market closes).
-func svpBuildSession(bars []market.Kline, sessStart time.Time, nowMs int64, live bool) *SVPSession {
-	startMs := sessStart.UnixMilli()
-
-	sess := &SVPSession{
-		Date:   sessStart.Format("2006-01-02"),
-		Frozen: !live,
+// svpFinalizeSession turns one session's accumulated up/down histogram into an
+// SVPSession: POC/VA from svpValueArea on the TOTAL volume, then per-row bins
+// carrying the up/down split. `live` marks the current developing session
+// (Frozen=false); every other session is frozen.
+func svpFinalizeSession(sessStart time.Time, startMs, firstOpen int64, dir *svpDirBins, live bool) SVPSession {
+	sess := SVPSession{
+		SessionStart: sessStart.Unix(),
+		Date:         sessStart.Format("2006-01-02"),
+		Frozen:       !live,
+		// partial: we could not see the session from its 17:00 CT open.
+		Partial: firstOpen > startMs+svpPartialToleranceMs,
+		Bins:    []SVPBin{},
 	}
 
-	hist := make(map[int]float64)
-	var firstOpen int64 = math.MaxInt64
-	var seen int
-	for i := range bars {
-		b := bars[i]
-		if b.OpenTime < startMs {
-			continue // before this session's 17:00 CT open
-		}
-		if b.CloseTime >= nowMs {
-			continue // in-progress / future bar
-		}
-		if b.OpenTime < firstOpen {
-			firstOpen = b.OpenTime
-		}
-		seen++
-		svpAddBar(hist, b.Low, b.High, b.Volume)
-	}
+	totals := dir.totals()
+	poc, vaLow, vaHigh, _, _ := svpValueArea(totals, SVPValueAreaPercent)
+	sess.POC = (float64(poc) + 0.5) * SVPRowHeight // row midpoint
+	sess.VAH = float64(vaHigh+1) * SVPRowHeight    // top edge of top VA row
+	sess.VAL = float64(vaLow) * SVPRowHeight       // bottom edge of bottom VA row
 
-	if seen == 0 {
-		// No bars in this session window → no profile at all. Return nil (JSON
-		// dev:null) rather than a bins-less object, so the chart's `if (dev)`
-		// guard cleanly skips it instead of dereferencing a null bins array.
-		return nil
-	}
-
-	// partial: we could not see the session from its open.
-	sess.Partial = firstOpen > startMs+svpPartialToleranceMs
-
-	poc, vaLow, vaHigh, _, _ := svpValueArea(hist, SVPValueAreaPercent)
-	sess.POC = (float64(poc) + 0.5) * SVPRowHeight     // row midpoint
-	sess.VAH = float64(vaHigh+1) * SVPRowHeight        // top edge of top VA row
-	sess.VAL = float64(vaLow) * SVPRowHeight           // bottom edge of bottom VA row
-
-	// Emit occupied rows ascending by price, tagged inVA.
-	idx := make([]int, 0, len(hist))
-	for b := range hist {
+	// Emit occupied rows ascending by price, tagged inVA, with the up/down split.
+	idx := make([]int, 0, len(totals))
+	for b := range totals {
 		idx = append(idx, b)
 	}
 	sort.Ints(idx)
 	sess.Bins = make([]SVPBin, 0, len(idx))
 	for _, b := range idx {
+		up := dir.up[b]
+		down := dir.down[b]
 		sess.Bins = append(sess.Bins, SVPBin{
-			Price: (float64(b) + 0.5) * SVPRowHeight,
-			Vol:   hist[b],
-			InVA:  b >= vaLow && b <= vaHigh,
+			Price:   (float64(b) + 0.5) * SVPRowHeight,
+			Vol:     up + down,
+			UpVol:   up,
+			DownVol: down,
+			InVA:    b >= vaLow && b <= vaHigh,
 		})
 	}
 	return sess
