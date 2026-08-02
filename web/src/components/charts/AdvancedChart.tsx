@@ -214,6 +214,22 @@ export function AdvancedChart({
   const indicatorsRef = useRef(indicators)
   indicatorsRef.current = indicators
 
+  // Self-heal the indicator list: append any canonical indicator (e.g. SVP) that
+  // is missing from the current state. Needed because the list lives in useState,
+  // whose initial value is only read once at mount — a Vite hot-reload or a
+  // persisted session preserves the OLD array, so a newly-added indicator would
+  // never appear without this reconciliation. Runs on mount (and re-runs on
+  // hot-reload), idempotent.
+  useEffect(() => {
+    const canonical = [
+      { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
+    ]
+    setIndicators((prev) => {
+      const missing = canonical.filter((c) => !prev.some((i) => i.id === c.id))
+      return missing.length ? [...prev, ...missing] : prev
+    })
+  }, [])
+
   // Fetch kline data from service
   const fetchKlineData = async (symbol: string, interval: string) => {
     try {
@@ -1478,7 +1494,7 @@ export function AdvancedChart({
           style={{
             background: 'linear-gradient(135deg, #1A1E23 0%, #0F1215 100%)',
             border: '1px solid rgba(240, 185, 11, 0.2)',
-            maxHeight: 'min(620px, 85vh)', // fit all indicators incl. SVP without scrolling past the fold
+            maxHeight: '500px',
             minWidth: '280px',
             overflowY: 'auto',
           }}
