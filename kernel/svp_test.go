@@ -115,62 +115,66 @@ func mk1mBar(loc *time.Location, y int, mo time.Month, d, h, mi int, low, high, 
 }
 
 // TestSVPSession_LivePartialReset exercises the session windowing: a live
-// developing session, the partial flag when early bars are missing, and that a
-// bar outside the RTH window is ignored.
+// developing (current) futures session-day, the partial flag when the 17:00 CT
+// open is missing, that bars before the session open are ignored, that the
+// profile RESETS at the next 17:00 CT, and that Prior is always nil (one day).
 func TestSVPSession_LivePartialReset(t *testing.T) {
 	loc, _ := time.LoadLocation("America/Chicago")
-	// 2026-06-15 is a Monday (RTH day). Session 08:30–15:00 CT.
-	// now = 12:00 CT → developing session is live.
+	// now = Mon 2026-06-15 12:00 CT. The CME futures session-day opened at the
+	// prior 17:00 CT → Sun 2026-06-14 17:00 (that is the session's label/anchor).
 	now := time.Date(2026, 6, 15, 12, 0, 0, 0, loc)
+	const sessDate = "2026-06-14"
 
-	// Full-session-start case: first bar at the 08:30 open → not partial.
+	// Full session: first bar AT the 17:00 CT open → not partial. Overnight bars
+	// ARE part of the futures session (unlike RTH).
 	var full []market.Kline
-	full = append(full, mk1mBar(loc, 2026, 6, 15, 8, 30, 100.0, 101.25, 30)) // POC-ish
-	full = append(full, mk1mBar(loc, 2026, 6, 15, 8, 31, 101.0, 102.0, 10))
-	full = append(full, mk1mBar(loc, 2026, 6, 15, 9, 0, 100.5, 101.0, 5))
-	// A bar OUTSIDE the RTH window (07:00 CT pre-open) must be ignored.
-	full = append(full, mk1mBar(loc, 2026, 6, 15, 7, 0, 90.0, 91.0, 999))
+	full = append(full, mk1mBar(loc, 2026, 6, 14, 17, 0, 100.0, 101.25, 30)) // session open
+	full = append(full, mk1mBar(loc, 2026, 6, 14, 20, 0, 101.0, 102.0, 10))  // overnight
+	full = append(full, mk1mBar(loc, 2026, 6, 15, 8, 30, 100.5, 101.0, 5))   // RTH morning
+	// A bar from BEFORE this session's open (Sun 16:00 = prior session) is ignored.
+	full = append(full, mk1mBar(loc, 2026, 6, 14, 16, 0, 90.0, 91.0, 999))
 
 	p := BuildSVPProfile(full, now)
 	if p.RowHeight != 1.25 {
 		t.Fatalf("rowHeight = %v, want 1.25", p.RowHeight)
 	}
+	if p.Prior != nil {
+		t.Error("Prior must be nil — only the current day is shown")
+	}
 	if p.Dev == nil {
 		t.Fatal("dev session nil")
 	}
 	if p.Dev.Frozen {
-		t.Error("dev should be live (not frozen) at 12:00 CT")
+		t.Error("dev should be live (not frozen) — market is open at Mon 12:00 CT")
 	}
 	if p.Dev.Partial {
-		t.Error("dev should NOT be partial: first bar is at the 08:30 open")
+		t.Error("dev should NOT be partial: first bar is at the 17:00 CT open")
 	}
-	if p.Dev.Date != "2026-06-15" {
-		t.Errorf("dev date = %q, want 2026-06-15", p.Dev.Date)
+	if p.Dev.Date != sessDate {
+		t.Errorf("dev date = %q, want %q (17:00 CT session anchor)", p.Dev.Date, sessDate)
 	}
-	// The pre-open 999-volume bar must not appear (no giant POC at ~90.5).
+	// The pre-session 999-volume bar (Sun 16:00) must not appear.
 	for _, b := range p.Dev.Bins {
 		if b.Vol >= 999 {
-			t.Errorf("pre-open bar leaked into RTH profile: bin %v vol %v", b.Price, b.Vol)
+			t.Errorf("pre-session bar leaked into profile: bin %v vol %v", b.Price, b.Vol)
 		}
 	}
 
-	// Partial case: earliest bar an hour after the open → partial.
+	// Partial case: earliest bar is Mon 08:30 — hours after the Sun 17:00 open,
+	// so the overnight open is missing → partial.
 	var late []market.Kline
-	late = append(late, mk1mBar(loc, 2026, 6, 15, 9, 30, 100.0, 101.25, 30))
-	late = append(late, mk1mBar(loc, 2026, 6, 15, 9, 31, 101.0, 102.0, 10))
+	late = append(late, mk1mBar(loc, 2026, 6, 15, 8, 30, 100.0, 101.25, 30))
+	late = append(late, mk1mBar(loc, 2026, 6, 15, 8, 31, 101.0, 102.0, 10))
 	lp := BuildSVPProfile(late, now)
 	if lp.Dev == nil || !lp.Dev.Partial {
-		t.Error("dev should be partial when the session start is missing")
+		t.Error("dev should be partial when the 17:00 CT session open is missing")
 	}
 
-	// Reset: on the next RTH day, the same bars fall in the PRIOR window, and the
-	// new day's dev has no bars.
-	nextDay := time.Date(2026, 6, 16, 12, 0, 0, 0, loc)
-	np := BuildSVPProfile(full, nextDay)
+	// Reset: at the NEXT session (Tue 12:00, opened Mon 17:00 CT), all the `full`
+	// bars are before the new session open → dev is empty.
+	nextSession := time.Date(2026, 6, 16, 12, 0, 0, 0, loc)
+	np := BuildSVPProfile(full, nextSession)
 	if np.Dev == nil || len(np.Dev.Bins) != 0 {
-		t.Errorf("dev on the next day should be empty (reset), got %d bins", len(np.Dev.Bins))
-	}
-	if np.Prior == nil || np.Prior.Date != "2026-06-15" || !np.Prior.Frozen {
-		t.Errorf("prior should be the frozen 2026-06-15 session, got %+v", np.Prior)
+		t.Errorf("dev on the next session should be empty (reset at 17:00 CT), got %d bins", len(np.Dev.Bins))
 	}
 }

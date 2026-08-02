@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strings"
 	"time"
 
 	"nofx/market"
@@ -38,11 +37,10 @@ const (
 	// Value Area (classic 70%).
 	SVPValueAreaPercent = 0.70
 
-	// RTH (Regular Trading Hours) for CME equity-index futures, Chicago time.
-	// Open 08:30 CT, close 15:00 CT (documented constants; Part D may reconcile a
-	// 15:15/16:00 variant by overriding these).
-	svpRTHOpenMinCT  = 8*60 + 30 // 08:30
-	svpRTHCloseMinCT = 15 * 60   // 15:00
+	// The SVP session is the CME futures trading day: it opens at 17:00 CT and
+	// RESETS every 17:00 CT (the daily-break roll). This is anchored to
+	// CMESessionDayStart in cme_calendar.go — NOT the 08:30 RTH open — so the
+	// profile matches the full futures session the bot actually trades.
 
 	// svpPartialToleranceMs: if the earliest cached bar starts more than this
 	// after the session open, we could not see the whole session → partial=true.
@@ -95,15 +93,12 @@ func FormatSVPLine(p SVPProfile) string {
 	if p.Dev == nil || len(p.Dev.Bins) == 0 {
 		return ""
 	}
-	var sb strings.Builder
-	fmt.Fprintf(&sb, "SVP: dev POC %.2f VAH %.2f VAL %.2f", p.Dev.POC, p.Dev.VAH, p.Dev.VAL)
+	s := fmt.Sprintf("SVP (today's session, since the 17:00 CT open): POC %.2f VAH %.2f VAL %.2f",
+		p.Dev.POC, p.Dev.VAH, p.Dev.VAL)
 	if p.Dev.Partial {
-		sb.WriteString(" (partial)")
+		s += " (partial)"
 	}
-	if p.Prior != nil && len(p.Prior.Bins) > 0 {
-		fmt.Fprintf(&sb, " | prior POC %.2f VAH %.2f VAL %.2f", p.Prior.POC, p.Prior.VAH, p.Prior.VAL)
-	}
-	return sb.String()
+	return s
 }
 
 // ---- Histogram (B1) --------------------------------------------------------
@@ -242,92 +237,33 @@ func svpValueArea(hist map[int]float64, vaPercent float64) (poc, vaLow, vaHigh i
 	return poc, vaLow, vaHigh, vaVol, total
 }
 
-// ---- RTH session windowing (anchored to cme_calendar.go) -------------------
+// ---- Assembly (anchored to the CME session-day, cme_calendar.go) -----------
 
-func svpChicago() *time.Location {
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		return time.UTC
-	}
-	return loc
-}
-
-// svpIsRTHDay reports whether the given Chicago date has a Regular Trading Hours
-// session: a weekday that is not a CME holiday. (Sunday has a Globex evening
-// session but no RTH; Friday RTH exists.)
-func svpIsRTHDay(ct time.Time) bool {
-	switch ct.Weekday() {
-	case time.Saturday, time.Sunday:
-		return false
-	}
-	return !isCMEHoliday(ct)
-}
-
-// svpPrevRTHDay returns 08:30 CT of the most recent RTH day STRICTLY before the
-// date of `from`.
-func svpPrevRTHDay(from time.Time) time.Time {
-	loc := from.Location()
-	d := time.Date(from.Year(), from.Month(), from.Day(), 8, 30, 0, 0, loc)
-	for i := 0; i < 14; i++ {
-		d = d.AddDate(0, 0, -1)
-		if svpIsRTHDay(d) {
-			return d
-		}
-	}
-	return d
-}
-
-// svpSessions resolves the current (developing) RTH day and the prior RTH day
-// for `now`, plus whether the current session is still live (building). If now
-// is before today's open or on a non-RTH day, the "current" session is the most
-// recent completed RTH day.
-func svpSessions(now time.Time) (curOpen, priorOpen time.Time, curLive bool) {
-	loc := svpChicago()
-	ct := now.In(loc)
-	todayOpen := time.Date(ct.Year(), ct.Month(), ct.Day(), 8, 30, 0, 0, loc)
-	todayClose := time.Date(ct.Year(), ct.Month(), ct.Day(), 15, 0, 0, 0, loc)
-
-	if svpIsRTHDay(ct) && !ct.Before(todayOpen) {
-		curOpen = todayOpen
-		curLive = ct.Before(todayClose)
-	} else {
-		curOpen = svpPrevRTHDay(todayOpen)
-		curLive = false
-	}
-	priorOpen = svpPrevRTHDay(curOpen)
-	return curOpen, priorOpen, curLive
-}
-
-// ---- Assembly --------------------------------------------------------------
-
-// BuildSVPProfile computes the developing + prior RTH volume profiles from the
-// supplied 1-minute bars (closed bars only, relative to `now`). Bars outside the
-// RTH windows are ignored. Pass the widest 1m history available; the engine
-// windows it itself.
+// BuildSVPProfile computes the developing Session Volume Profile for the CURRENT
+// CME futures session-day from the supplied 1-minute bars (closed bars only).
+// The session anchors to the 17:00 CT open (CMESessionDayStart) and RESETS at
+// every 17:00 CT — one futures trading day. Bars before this session's open are
+// ignored, and ONLY the current day is returned (Prior is always nil — no
+// prior-session overlay).
 func BuildSVPProfile(bars []market.Kline, now time.Time) SVPProfile {
-	loc := svpChicago()
-	curOpen, priorOpen, live := svpSessions(now)
-	nowMs := now.UnixMilli()
-	dev := svpBuildSession(bars, curOpen, loc, nowMs, live)
-	prior := svpBuildSession(bars, priorOpen, loc, nowMs, false)
+	sessStart := CMESessionDayStart(now)
+	dev := svpBuildSession(bars, sessStart, now.UnixMilli(), IsCMEOpen(now))
 	return SVPProfile{
 		RowHeight:        SVPRowHeight,
 		Dev:              dev,
-		Prior:            prior,
-		SessionStartTime: curOpen.Unix(),
+		Prior:            nil, // one futures day only
+		SessionStartTime: sessStart.Unix(),
 	}
 }
 
-// svpBuildSession windows the bars to one RTH session and builds its profile.
-// `open` is 08:30 CT of the session day; `live` marks the developing session
-// (its window is capped at `now`).
-func svpBuildSession(bars []market.Kline, open time.Time, loc *time.Location, nowMs int64, live bool) *SVPSession {
-	startMs := open.UnixMilli()
-	closeT := time.Date(open.Year(), open.Month(), open.Day(), 15, 0, 0, 0, loc)
-	endMs := closeT.UnixMilli()
+// svpBuildSession windows the bars to the current session-day [sessStart, now]
+// and builds its profile from CLOSED 1-minute bars. `sessStart` is the 17:00 CT
+// session open; `live` marks a still-open session (frozen once the market closes).
+func svpBuildSession(bars []market.Kline, sessStart time.Time, nowMs int64, live bool) *SVPSession {
+	startMs := sessStart.UnixMilli()
 
 	sess := &SVPSession{
-		Date:   open.Format("2006-01-02"),
+		Date:   sessStart.Format("2006-01-02"),
 		Frozen: !live,
 	}
 
@@ -336,9 +272,8 @@ func svpBuildSession(bars []market.Kline, open time.Time, loc *time.Location, no
 	var seen int
 	for i := range bars {
 		b := bars[i]
-		// RTH window, CLOSED bars only (exclude the in-progress bar).
-		if b.OpenTime < startMs || b.OpenTime >= endMs {
-			continue
+		if b.OpenTime < startMs {
+			continue // before this session's 17:00 CT open
 		}
 		if b.CloseTime >= nowMs {
 			continue // in-progress / future bar
@@ -351,8 +286,7 @@ func svpBuildSession(bars []market.Kline, open time.Time, loc *time.Location, no
 	}
 
 	if seen == 0 {
-		sess.Partial = live // a live session with no bars yet is "partial"; a
-		// closed prior session with no bars is just empty.
+		sess.Partial = live // a live session with no bars yet is "partial"
 		return sess
 	}
 
