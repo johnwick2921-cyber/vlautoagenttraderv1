@@ -160,6 +160,9 @@ export function AdvancedChart({
   // Indicator configuration
   const [indicators, setIndicators] = useState<IndicatorConfig[]>([
     { id: 'volume', name: 'Volume', enabled: true, color: '#3B82F6' },
+    // Session Volume Profile — right after Volume so it's visible without
+    // scrolling. Server-computed (futures only), draws histogram + POC/VAH/VAL.
+    { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
     {
       id: 'ma5',
       name: 'MA5',
@@ -203,9 +206,6 @@ export function AdvancedChart({
       params: { period: 26 },
     },
     { id: 'bb', name: 'Bollinger Bands', enabled: false, color: '#9B59B6' },
-    // Session Volume Profile — server-computed (futures only). Default OFF, to
-    // match the enable_svp indicator default; draws the histogram + POC/VAH/VAL.
-    { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
   ])
   // Mirror indicators into a ref so updateIndicators always reads the CURRENT
   // config. updateIndicators is also called by the 5s data-refresh whose effect
@@ -213,34 +213,6 @@ export function AdvancedChart({
   // refresh would clear the user's just-toggled indicators every 5s (1b).
   const indicatorsRef = useRef(indicators)
   indicatorsRef.current = indicators
-
-  // Guarantee the dropdown renders every canonical indicator even if a Vite
-  // hot-reload preserved an OLDER `indicators` state (Fast Refresh keeps useState
-  // across hot updates, so a newly-added item in the initial array would not
-  // appear without a full reload). Deriving it in the render side-steps that:
-  // HMR always re-runs the render, so SVP shows without a reload.
-  const displayIndicators = indicators.some((i) => i.id === 'svp')
-    ? indicators
-    : [
-        ...indicators,
-        { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
-      ]
-
-  // Self-heal the indicator list: append any canonical indicator (e.g. SVP) that
-  // is missing from the current state. Needed because the list lives in useState,
-  // whose initial value is only read once at mount — a Vite hot-reload or a
-  // persisted session preserves the OLD array, so a newly-added indicator would
-  // never appear without this reconciliation. Runs on mount (and re-runs on
-  // hot-reload), idempotent.
-  useEffect(() => {
-    const canonical = [
-      { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
-    ]
-    setIndicators((prev) => {
-      const missing = canonical.filter((c) => !prev.some((i) => i.id === c.id))
-      return missing.length ? [...prev, ...missing] : prev
-    })
-  }, [])
 
   // Fetch kline data from service
   const fetchKlineData = async (symbol: string, interval: string) => {
@@ -1355,21 +1327,11 @@ export function AdvancedChart({
 
   // Toggle indicator
   const toggleIndicator = (id: string) => {
-    setIndicators((prev) => {
-      // SVP may be shown from the derived display list but not yet present in
-      // state (stale hot-reload). Add it toggled-on on first click.
-      if (!prev.some((i) => i.id === id)) {
-        return id === 'svp'
-          ? [
-              ...prev,
-              { id: 'svp', name: 'SVP', enabled: true, color: '#F0B90B' },
-            ]
-          : prev
-      }
-      return prev.map((ind) =>
+    setIndicators((prev) =>
+      prev.map((ind) =>
         ind.id === id ? { ...ind, enabled: !ind.enabled } : ind
       )
-    })
+    )
   }
 
   return (
@@ -1542,7 +1504,7 @@ export function AdvancedChart({
 
           {/* Indicator list */}
           <div className="p-3 space-y-1">
-            {displayIndicators.map((indicator) => (
+            {indicators.map((indicator) => (
               <label
                 key={indicator.id}
                 className="flex items-center gap-3 p-2.5 rounded-md hover:bg-white/5 cursor-pointer transition-all group"
