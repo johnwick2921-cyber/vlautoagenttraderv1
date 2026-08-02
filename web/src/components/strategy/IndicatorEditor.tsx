@@ -1116,6 +1116,12 @@ export function IndicatorEditor({
                 periodKey: 'boll_periods',
                 defaultPeriods: '20',
               },
+              {
+                key: 'enable_svp',
+                label: 'svp',
+                desc: 'svpDesc',
+                color: '#F0B90B',
+              },
             ].map(({ key, label, desc, color, periodKey, defaultPeriods }) => (
               <div
                 key={key}

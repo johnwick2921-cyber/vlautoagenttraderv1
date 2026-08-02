@@ -280,7 +280,11 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// the chart uses — ONE source of truth) and thread ONE line into the system
 	// prompt. OFF / insufficient bars → SetSVPContext("") keeps it byte-identical.
 	engine.SetSVPContext("")
-	if isFut, _ := futuresVariantMode(variant); isFut && boolOrDefault(riskConfig.SvpEnabled, false) && market.FuturesBarsProvider != nil {
+	svpOn := false
+	if cfg := engine.GetConfig(); cfg != nil {
+		svpOn = cfg.Indicators.EnableSVP
+	}
+	if isFut, _ := futuresVariantMode(variant); isFut && svpOn && market.FuturesBarsProvider != nil {
 		if bars1m := market.FuturesBarsProvider(activeSymbol, "1m", 2000); len(bars1m) > 0 {
 			engine.SetSVPContext(FormatSVPLine(BuildSVPProfile(bars1m, time.Now())))
 		}

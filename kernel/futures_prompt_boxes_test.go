@@ -59,31 +59,30 @@ func TestFuturesPromptEmptyBoxesByteIdentical(t *testing.T) {
 // svp_enabled is ON and a non-empty line was threaded in; OFF (nil) or an empty
 // line inject nothing — which is what keeps the empty-box golden byte-identical.
 func TestFuturesSvpInjection(t *testing.T) {
-	tru := true
 	line := "SVP: dev POC 21500.62 VAH 21503.75 VAL 21497.50 | prior POC 21480.00 VAH 21490.00 VAL 21470.00"
 
-	// ON + non-empty line → both the data line and the legend appear.
+	// ON (enable_svp) + non-empty line → both the data line and the legend appear.
 	on := emptyBoxFuturesEngine()
-	on.config.RiskControl.SvpEnabled = &tru
+	on.config.Indicators.EnableSVP = true
 	on.SetSVPContext(line)
 	got := on.BuildFuturesDecisionSystemPrompt("MNQ", 50000)
 	if !strings.Contains(got, line) {
-		t.Error("SVP line missing when svp_enabled is ON")
+		t.Error("SVP line missing when enable_svp is ON")
 	}
 	if !strings.Contains(got, "Legend: POC =") {
-		t.Error("SVP legend missing when svp_enabled is ON")
+		t.Error("SVP legend missing when enable_svp is ON")
 	}
 
-	// OFF (nil) even with a context set → nothing injected.
+	// OFF (default) even with a context set → nothing injected.
 	off := emptyBoxFuturesEngine()
 	off.SetSVPContext(line)
 	if strings.Contains(off.BuildFuturesDecisionSystemPrompt("MNQ", 50000), line) {
-		t.Error("SVP line leaked while svp_enabled is OFF (golden would break)")
+		t.Error("SVP line leaked while enable_svp is OFF (golden would break)")
 	}
 
 	// ON but empty line (insufficient bars) → nothing injected.
 	onEmpty := emptyBoxFuturesEngine()
-	onEmpty.config.RiskControl.SvpEnabled = &tru
+	onEmpty.config.Indicators.EnableSVP = true
 	onEmpty.SetSVPContext("")
 	if strings.Contains(onEmpty.BuildFuturesDecisionSystemPrompt("MNQ", 50000), "Legend: POC =") {
 		t.Error("SVP legend appeared with an empty SVP line")

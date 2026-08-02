@@ -204,7 +204,7 @@ export function AdvancedChart({
     },
     { id: 'bb', name: 'Bollinger Bands', enabled: false, color: '#9B59B6' },
     // Session Volume Profile — server-computed (futures only). Default OFF, to
-    // match svp_enabled's default; the toggle draws the histogram + POC/VAH/VAL.
+    // match the enable_svp indicator default; draws the histogram + POC/VAH/VAL.
     { id: 'svp', name: 'SVP', enabled: false, color: '#F0B90B' },
   ])
   // Mirror indicators into a ref so updateIndicators always reads the CURRENT

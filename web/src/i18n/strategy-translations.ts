@@ -481,17 +481,6 @@ export const riskControl = {
     es: 'Cuando está ON: en posición, la IA no cierra antes; la operación va al stop/objetivo. Flat de emergencia sigue funcionando. Por defecto OFF.',
   },
 
-  svpEnabled: {
-    zh: '成交量分布 (SVP)',
-    en: 'Volume Profile (SVP)',
-    es: 'Perfil de Volumen (SVP)',
-  },
-  svpEnabledDesc: {
-    zh: '开启后：向期货 AI 提示词加入一行当日/前一日 RTH 成交量分布（POC/价值区 VAH·VAL），并作为图表 SVP 指标的默认开关。仅影响提示词，不触发任何风控或下单。默认关闭。',
-    en: 'When ON: adds one line of RTH volume profile (POC + value area VAH/VAL, developing + prior session) to the futures AI prompt, and sets the default for the chart SVP indicator. Prompt-only — never triggers a risk gate or an order. Default OFF.',
-    es: 'Cuando está ON: añade una línea de perfil de volumen RTH (POC + área de valor VAH/VAL, sesión actual + previa) al prompt de IA de futuros, y define el valor por defecto del indicador SVP del gráfico. Solo afecta al prompt. Por defecto OFF.',
-  },
-
   // === Auto-breakeven ===
   breakeven: {
     zh: '止损移至保本',
@@ -750,6 +739,16 @@ export const indicator = {
     zh: '布林带指标（上中下轨）',
     en: 'Upper/Middle/Lower Bands',
     es: 'Bandas Superior/Inferior',
+  },
+  svp: {
+    zh: 'SVP 成交量分布',
+    en: 'Volume Profile (SVP)',
+    es: 'Perfil de Volumen (SVP)',
+  },
+  svpDesc: {
+    zh: '当日/前一日 RTH 成交量分布：POC + 价值区(VAH/VAL)，加入期货 AI 提示词',
+    en: 'RTH volume-at-price: POC + value area (VAH/VAL), added to the futures AI prompt',
+    es: 'Volumen por precio RTH: POC + área de valor (VAH/VAL), al prompt de IA de futuros',
   },
   volume: { zh: '成交量', en: 'Volume', es: 'Volumen' },
   volumeDesc: {
