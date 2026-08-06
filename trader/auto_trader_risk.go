@@ -38,6 +38,18 @@ func (at *AutoTrader) startDrawdownMonitor() {
 	}()
 }
 
+// positionPnLPct computes a position's leveraged P&L percent. Side is normalized:
+// NT8 GetPositions/positionMap emits UPPERCASE "LONG"/"SHORT" (upperSideStr), so a
+// case-sensitive == "long" ran the SHORT formula for every NT8 long — inverting the
+// sign so a winning long produced negative pct and the drawdown-close condition
+// (>5% profit) could never fire on a long. Compare lowercase so either casing works.
+func positionPnLPct(side string, entryPrice, markPrice float64, leverage int) float64 {
+	if strings.ToLower(side) == "long" {
+		return ((markPrice - entryPrice) / entryPrice) * float64(leverage) * 100
+	}
+	return ((entryPrice - markPrice) / entryPrice) * float64(leverage) * 100
+}
+
 // checkPositionDrawdown checks position drawdown situation
 func (at *AutoTrader) checkPositionDrawdown() {
 	// Get current positions
@@ -75,12 +87,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 			leverage = int(lev)
 		}
 
-		var currentPnLPct float64
-		if side == "long" {
-			currentPnLPct = ((markPrice - entryPrice) / entryPrice) * float64(leverage) * 100
-		} else {
-			currentPnLPct = ((entryPrice - markPrice) / entryPrice) * float64(leverage) * 100
-		}
+		currentPnLPct := positionPnLPct(side, entryPrice, markPrice, leverage)
 
 		// Construct unique position identifier (distinguish long/short)
 		posKey := symbol + "_" + side
@@ -130,7 +137,10 @@ func (at *AutoTrader) checkPositionDrawdown() {
 
 // emergencyClosePosition emergency close position function
 func (at *AutoTrader) emergencyClosePosition(symbol, side string) error {
-	switch side {
+	// Normalize: NT8 GetPositions emits UPPERCASE side; a lowercase-only switch hit
+	// default → "unknown position direction" and the drawdown safety-close could not
+	// execute. Compare lowercase (the sole caller passes pos["side"] from GetPositions).
+	switch strings.ToLower(side) {
 	case "long":
 		order, err := at.trader.CloseLong(symbol, 0) // 0 = close all
 		if err != nil {
