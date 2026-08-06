@@ -7,6 +7,7 @@ import (
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
+	"strings"
 	"time"
 )
 
@@ -148,8 +149,13 @@ func (at *AutoTrader) ntHeldPosition(symbol string) string {
 		}
 		amt, _ := pos["positionAmt"].(float64)
 		if amt > 0 {
+			// Normalize casing: NT8 GetPositions/positionMap emits UPPERCASE
+			// "LONG"/"SHORT"; reconcileBeforeOpenNT compares held == "long", so an
+			// un-normalized "LONG" fell to the else branch and flattened the WRONG
+			// side (CloseShort on a long orphan) — the flatten never confirmed flat
+			// and the open was refused every cycle. Return lowercase to match.
 			if s, _ := pos["side"].(string); s != "" {
-				return s
+				return strings.ToLower(s)
 			}
 			return "long"
 		}
