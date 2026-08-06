@@ -512,7 +512,7 @@ func extractDecisions(response string) ([]Decision, error) {
 		}
 
 		fallbackDecision := Decision{
-			Symbol:    "ALL",
+			Symbol:    "(no decision)",
 			Action:    "wait",
 			Reasoning: fmt.Sprintf("Model didn't output structured JSON decision, entering safe wait; summary: %s", cotSummary),
 		}
