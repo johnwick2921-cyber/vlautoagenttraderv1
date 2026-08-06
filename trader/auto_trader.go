@@ -21,6 +21,7 @@ import (
 	ntTrader "nofx/trader/ninjatrader"
 	"nofx/trader/okx"
 	"nofx/wallet"
+	"strings"
 	"sync"
 	"time"
 )
@@ -123,8 +124,13 @@ func breakevenTrigger(rc store.RiskControlConfig, side string, entry, mark float
 	if trigger <= 0 {
 		trigger = 50
 	}
+	// Normalise side casing once. The sole production caller (checkPositionDrawdown)
+	// feeds pos["side"] from NT8's GetPositions/positionMap, which emits UPPERCASE
+	// "LONG"/"SHORT" (upperSideStr). A case-sensitive == "long" never matched, so the
+	// profit math was inverted: breakeven never armed on a winning trade and would
+	// only "fire" on a loser. Compare lowercase so either casing works.
 	var pts float64
-	if side == "long" {
+	if strings.ToLower(side) == "long" {
 		pts = mark - entry
 	} else {
 		pts = entry - mark
