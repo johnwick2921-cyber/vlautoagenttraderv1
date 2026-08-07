@@ -302,7 +302,7 @@ const barIngestChannelBuffer = 256
 // single value (the frozen wire carries one per envelope); 500 is the
 // spec-recommended depth across all timeframes.
 var (
-	defaultAutoBarsSymbol     = "MNQ"
+	defaultAutoBarsSymbol = "MNQ"
 	// Phase 4b — the 14-timeframe chart set (was 7). Every entry is already
 	// supported by the AddOn's MapTimeframe + the Go normalizer; the running AddOn
 	// subscribes them on the bot's next reconnect (no NT8 redeploy needed for 4b).
@@ -314,7 +314,7 @@ var (
 	// from the provider's (Tradovate) historical server and backfill holes left
 	// by NT8 downtime. Providers cap deep requests on coarse timeframes, so this
 	// is safe across the 14-tf set.
-	defaultAutoBarsBack       = 2000
+	defaultAutoBarsBack = 2000
 )
 
 // timedSignal pairs a signal payload with the wall-clock time SendSignal was
@@ -331,13 +331,13 @@ func NewTCPServer(logger *slog.Logger) *TCPServer {
 		logger = slog.Default()
 	}
 	return &TCPServer{
-		addr:        TCPListenAddr,
-		fillCh:      make(chan FillPayload, fillChannelBuffer),
-		closeCh:     make(chan PositionClosePayload, fillChannelBuffer),
-		rejectCh:    make(chan PositionCloseRejectedPayload, fillChannelBuffer),
-		instrCh:     make(chan InstrumentInfoPayload, fillChannelBuffer),
-		barCache:     NewBarCache(0),
-		barIngestCh:  make(chan barIngestMsg, barIngestChannelBuffer),
+		addr:          TCPListenAddr,
+		fillCh:        make(chan FillPayload, fillChannelBuffer),
+		closeCh:       make(chan PositionClosePayload, fillChannelBuffer),
+		rejectCh:      make(chan PositionCloseRejectedPayload, fillChannelBuffer),
+		instrCh:       make(chan InstrumentInfoPayload, fillChannelBuffer),
+		barCache:      NewBarCache(0),
+		barIngestCh:   make(chan barIngestMsg, barIngestChannelBuffer),
 		acctBalances:  make(map[string]AccountBalancePayload),
 		acctPositions: make(map[string][]OpenPosition),
 		barsSubscribe: BarsSubscribePayload{
@@ -976,6 +976,26 @@ func (s *TCPServer) SetStaleSignalAgeForTest(d time.Duration) {
 // need an ephemeral port via "127.0.0.1:0"). Production callers leave the
 // constructor default in place.
 func (s *TCPServer) SetAddrForTest(addr string) { s.addr = addr }
+
+// SeedPositionsForTest injects a per-account open-position snapshot without a wire
+// frame (mirrors the FramePositions receive path). Tests only; production is fed by
+// the C# AddOn's `positions` frames.
+func (s *TCPServer) SeedPositionsForTest(account string, ps []OpenPosition) {
+	s.acctMu.Lock()
+	if s.acctPositions == nil {
+		s.acctPositions = make(map[string][]OpenPosition)
+	}
+	s.acctPositions[account] = ps
+	s.acctMu.Unlock()
+}
+
+// SetCurrentAccountForTest sets the shared streamed "current"/display account
+// (normally set by account_balance / account_select frames). Tests only.
+func (s *TCPServer) SetCurrentAccountForTest(account string) {
+	s.accountsListMu.Lock()
+	s.currentAccount = account
+	s.accountsListMu.Unlock()
+}
 
 func (s *TCPServer) staleAge() time.Duration {
 	s.connMu.Lock()

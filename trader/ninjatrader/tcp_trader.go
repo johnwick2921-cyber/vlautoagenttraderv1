@@ -388,15 +388,16 @@ func (t *TCPTrader) IsFeedConnected() bool { return t.server.IsFeedConnected() }
 func (t *TCPTrader) FeedStatus() string { return t.server.FeedStatus() }
 
 func (t *TCPTrader) GetPositions() ([]map[string]interface{}, error) {
-	// Prefer the NT8-reported open positions for the SELECTED account — the
-	// source of truth. This survives account switch-back AND reflects positions
-	// opened MANUALLY in NT8 (the AddOn emits a `positions` snapshot on select /
-	// connect / PositionUpdate). The fill-derived cache below is only a fallback
-	// for before the position-reporting AddOn is deployed (no snapshot yet).
-	acct := ""
-	if a := t.server.CurrentAccount(); a != nil {
-		acct = *a
-	}
+	// Read positions for THIS trader's OWN bound account — NOT the shared connection
+	// CurrentAccount() (which the dashboard can switch for DISPLAY). Decoupling keeps
+	// each running trader's monitoring — drawdown (auto_trader_risk.go), decision
+	// context (auto_trader_loop.go) — reading its own account even while another
+	// account is being VIEWED. Empty boundAccount does NOT fall back to current (that
+	// would re-open the ef550df7 hole): PositionsFor("") returns !ok and we use the
+	// fill-derived cache below (an unbound trader refuses to trade anyway). Still
+	// reflects positions opened MANUALLY in NT8 (the AddOn emits a `positions`
+	// snapshot on select / connect / PositionUpdate).
+	acct := t.boundAccount
 	if snap, ok := t.server.PositionsFor(acct); ok {
 		// NT8-truth uPnL: the account_balance frame carries the account's LIVE
 		// unrealized P&L. When exactly ONE position is open, that total IS this

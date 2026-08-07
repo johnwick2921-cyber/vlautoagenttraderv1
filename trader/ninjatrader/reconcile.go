@@ -16,11 +16,11 @@ import (
 // entirely when NT8 stops streaming bars). This loop periodically compares the
 // open trader_positions rows against the NT8 positions snapshot (the truth) and:
 //
-//   (b) ENTRY TRUTH  — for a row NT8 still holds, replaces a stale entry_price
-//       with the NT8 position average (Position.AveragePrice). close-sync's
-//       realized-PnL formula is unchanged; it simply consumes a correct entry.
-//   ORPHAN CLEAR     — for an OPEN row NT8 reports FLAT, marks it closed so the
-//       phantom clears and GetPositions / the risk gate agree with NT8.
+//	(b) ENTRY TRUTH  — for a row NT8 still holds, replaces a stale entry_price
+//	    with the NT8 position average (Position.AveragePrice). close-sync's
+//	    realized-PnL formula is unchanged; it simply consumes a correct entry.
+//	ORPHAN CLEAR     — for an OPEN row NT8 reports FLAT, marks it closed so the
+//	    phantom clears and GetPositions / the risk gate agree with NT8.
 //
 // SAFETY: acts ONLY on a positive snapshot (PositionsFor ok == true). When NT8
 // has not reported positions (disconnected / not-yet-deployed), it does NOTHING
@@ -63,10 +63,12 @@ func (t *TCPTrader) StartPositionReconcile(traderID, exchangeID, exchangeType st
 
 // reconcilePositions runs one reconcile pass. See file header for semantics.
 func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
-	acct := ""
-	if a := t.server.CurrentAccount(); a != nil {
-		acct = *a
-	}
+	// Reconcile against THIS trader's OWN bound account, not the shared connection
+	// CurrentAccount() (display-switchable). Otherwise viewing another account would
+	// make reconcile read the WRONG account's positions and mis-clear this trader's
+	// DB rows as orphans. Empty boundAccount → PositionsFor("") !ok → early return
+	// (never touches the DB), preserving the ef550df7 refuse semantics.
+	acct := t.boundAccount
 	snap, ok := t.server.PositionsFor(acct)
 	if !ok {
 		// NT8 has not reported positions for this account — do NOT touch the DB.

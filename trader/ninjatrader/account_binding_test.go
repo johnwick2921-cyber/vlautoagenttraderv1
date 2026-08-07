@@ -59,3 +59,41 @@ func TestPlaceEntry_UnboundRefuses(t *testing.T) {
 		t.Fatalf("bound OpenLong must clear the empty-account gate; got err=%v", err)
 	}
 }
+
+// TestGetPositions_ReadsBoundAccountNotCurrent locks the decoupling: a trader reads
+// its OWN bound account's positions, NOT the shared connection "current" account
+// (which the dashboard can switch for display). Without this, viewing another
+// account would make a running trader read the wrong positions (see itself flat →
+// double-open / mis-reconcile).
+func TestGetPositions_ReadsBoundAccountNotCurrent(t *testing.T) {
+	s := ntwire.NewTCPServer(nil)
+	// Two accounts hold DIFFERENT positions; the shared "current" points at the OTHER one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{{Symbol: "MNQ", Side: "long", Quantity: 2, AvgPrice: 30550.25}})
+	s.SeedPositionsForTest("SimAccountX", []ntwire.OpenPosition{{Symbol: "MNQ", Side: "short", Quantity: 5, AvgPrice: 29000.00}})
+	s.SetCurrentAccountForTest("SimAccountX")
+
+	// A trader BOUND to Sim101 must return Sim101's position (entry 30550.25), NOT
+	// the shared current account's (SimAccountX @ 29000).
+	tr := NewTCPTrader(s, "MNQ", "Sim101")
+	pos, err := tr.GetPositions()
+	if err != nil {
+		t.Fatalf("GetPositions: %v", err)
+	}
+	if len(pos) != 1 {
+		t.Fatalf("want 1 position (Sim101), got %d — likely read the shared current account", len(pos))
+	}
+	if entry, _ := pos[0]["entryPrice"].(float64); entry != 30550.25 {
+		t.Fatalf("want Sim101 entry 30550.25, got %v — read the WRONG (current) account", entry)
+	}
+
+	// Empty-bound trader must NOT borrow the current account (ef550df7 refuse
+	// semantics): PositionsFor("") is !ok → fill-derived cache (empty here).
+	unbound := NewTCPTrader(s, "MNQ")
+	upos, err := unbound.GetPositions()
+	if err != nil {
+		t.Fatalf("GetPositions unbound: %v", err)
+	}
+	if len(upos) != 0 {
+		t.Fatalf("unbound trader must not read the shared current account's positions; got %d", len(upos))
+	}
+}
