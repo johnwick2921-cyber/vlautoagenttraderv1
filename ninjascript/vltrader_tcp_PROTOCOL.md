@@ -266,11 +266,21 @@ Used by auto-breakeven (once the trade is +N points in profit → stop → entry
                "new_stop_loss": 30352.00, "timestamp": "RFC3339" } }
 ```
 
-- The AddOn finds the live bracket by `signal_id`, submits a new `StopMarket` at
-  `new_stop_loss` in the SAME OCO group (so the take-profit still one-cancels it),
-  then cancels the old stop — the position is never momentarily unprotected.
-- No-op if the bracket already exited, or the stop is already at that price
-  (restart idempotency). Replies with an `ack`.
+- The AddOn finds the live bracket by `signal_id` and MODIFIES THE SAME resting
+  stop order IN PLACE: `SlOrder.StopPriceChanged = new_stop_loss` →
+  `account.Change(SlOrder)`. Same order object, same OCO group, no new order and no
+  cancel → the take-profit and the OCO group are never disturbed.
+- **Why not submit-new-then-cancel-old (the 2026-08-07 fix):** the old AddOn created
+  a NEW `StopMarket` in the SAME OCO group and cancelled the old stop. NT8 OCO
+  cancels the WHOLE group when any member is cancelled, so the take-profit AND the
+  new stop both died → NAKED position. Proven live 2026-08-07 11:25:05 (signal
+  `b846e082…`: `-tp` Cancelled + both `-sl` orders Cancelled). `account.Change`
+  never issues a cancel, so no cascade is possible.
+- Guards: only acts when the stop is in a changeable state (`Working`/`Accepted`);
+  no-op if the bracket already exited or the stop is already at that price (½-tick
+  idempotency); on a non-changeable stop or a `Change` exception it replies
+  `ack: move_stop_error` (not success) so Go re-arms/retries next cycle. Success
+  replies `ack: move_stop`.
 - **Additive frame:** an OLD AddOn (pre-`move_stop`) logs "unknown frame type" and
   ignores it — the original stop keeps protecting the trade. Activating breakeven
   therefore REQUIRES the paired redeploy (cp `ninjascript/*.cs` → AddOns → F5 →

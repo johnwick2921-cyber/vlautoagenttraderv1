@@ -1120,16 +1120,40 @@ namespace NinjaTrader.NinjaScript.AddOns
                 { LogInfo("VLTraderTCPClient: move_stop no-op (stop already ~" + newStop + ")"); return; }
 
                 Account ba = pb.Account ?? account;
-                // New stop FIRST (same OCO group, same -sl name so exit-reason
-                // detection still tags it "sl"), THEN cancel the old → never a gap.
-                var newSl = ba.CreateOrder(pb.Instrument, pb.ExitAction, OrderType.StopMarket,
-                    OrderEntry.Manual, TimeInForce.Day, pb.Qty, 0, newStop, pb.ExitOco,
-                    signalId + "-sl", Core.Globals.MaxDate, null);
-                ba.Submit(new[] { newSl });
-                try { ba.Cancel(new[] { pb.SlOrder }); }
-                catch (Exception cx) { LogWarn("VLTraderTCPClient: move_stop cancel old SL failed: " + cx.Message); }
-                lock (signalMapLock) { pb.SlOrder = newSl; }
-                LogInfo("VLTraderTCPClient: move_stop → " + newStop + " for signal_id=" + signalId + " (auto-breakeven)");
+
+                // GUARD: only a resting stop (Working/Accepted) can be modified in place.
+                // A Filled/Cancelled/pending stop means the position is already exiting or
+                // the order is gone — do NOT touch it; error-ACK so Go knows the move did
+                // not happen (it re-arms and retries on the next cycle).
+                OrderState st = pb.SlOrder != null ? pb.SlOrder.OrderState : OrderState.Unknown;
+                if (pb.SlOrder == null || (st != OrderState.Working && st != OrderState.Accepted))
+                {
+                    LogWarn("VLTraderTCPClient: move_stop refused — stop not changeable (state=" + st + ") for " + signalId);
+                    SendAck("move_stop_error");
+                    return;
+                }
+
+                // IN-PLACE modification (fix 2026-08-07): move the SAME resting stop's price
+                // via Account.Change — same Order object, same OCO group, NO new order and
+                // NO cancel. The target and the OCO group are NEVER disturbed.
+                //
+                // The previous code created a NEW stop INTO THE SAME OCO group (pb.ExitOco)
+                // and then cancelled the old stop. NT8 OCO cancels the WHOLE group when any
+                // member is cancelled, so the target AND the freshly-submitted stop both
+                // died → NAKED position. Proven live 2026-08-07 11:25:05 (signal b846e082…:
+                // -tp Cancelled + both -sl orders Cancelled within ~215ms → naked).
+                try
+                {
+                    pb.SlOrder.StopPriceChanged = newStop;
+                    ba.Change(new[] { pb.SlOrder });
+                }
+                catch (Exception cx)
+                {
+                    LogWarn("VLTraderTCPClient: move_stop Change failed: " + cx.Message + " for " + signalId);
+                    SendAck("move_stop_error");
+                    return;
+                }
+                LogInfo("VLTraderTCPClient: move_stop → " + newStop + " for signal_id=" + signalId + " (auto-breakeven, in-place Change — target + OCO preserved)");
                 SendAck("move_stop");
             }
             catch (Exception ex)
