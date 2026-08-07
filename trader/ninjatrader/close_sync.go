@@ -90,30 +90,6 @@ func (t *TCPTrader) recordClose(
 		qty = 1
 	}
 
-	// Realized PnL with the futures point value (PositionBuilder's fallback
-	// formula omits it). Entry from the open record; fall back to last fill.
-	entry := 0.0
-	if open, err := st.Position().GetOpenPositionBySymbol(traderID, symbol, side); err == nil && open != nil {
-		entry = open.EntryPrice
-	}
-	if entry == 0 {
-		t.mu.Lock()
-		entry = t.lastFill.FillPrice
-		t.mu.Unlock()
-	}
-	pv := market.FuturesPointValue(symbol)
-	if pv <= 0 {
-		pv = 1
-	}
-	realizedPnL := 0.0
-	if entry > 0 {
-		if side == "LONG" {
-			realizedPnL = (p.ExitPrice - entry) * qty * pv
-		} else {
-			realizedPnL = (entry - p.ExitPrice) * qty * pv
-		}
-	}
-
 	exitMs := time.Now().UTC().UnixMilli()
 	if p.ExitTime != "" {
 		if ts, err := time.Parse(time.RFC3339, p.ExitTime); err == nil {
@@ -121,12 +97,51 @@ func (t *TCPTrader) recordClose(
 		}
 	}
 
-	if err := pb.ProcessTrade(traderID, exchangeID, exchangeType, symbol, side, action,
+	// OWNER-ROUTING: a position_close routes by SYMBOL to ONE trader's close-sync,
+	// which may NOT own the open row when multiple traders share a symbol — recording
+	// against the RECEIVER's trader_id then missed and the priced close was lost
+	// (reconcile later wrote exit=entry pnl=0). Find the trader that actually OWNS the
+	// open (account, symbol, side) row across ALL traders and record against IT.
+	// Single-trader: owner == this trader → byte-identical.
+	owner, oerr := st.Position().GetOpenPositionByAccountSymbol(p.Account, symbol, side)
+	if oerr != nil {
+		logger.Warnf("ninjatrader/tcp: recordClose owner lookup failed (%s %s acct=%q): %v", symbol, side, p.Account, oerr)
+	}
+	if owner == nil {
+		// PRICED close with NO matching open row anywhere. The old code logged a FALSE
+		// "📕 pnl" here (ProcessTrade skipped silently) and reconcile later wrote
+		// exit=entry pnl=0. Instead: alarm loudly and PARK the price so reconcile's
+		// orphan-close consumes it (priced-frame fallback) rather than fabricate a 0.
+		logger.Warnf("⚠️ ninjatrader/tcp: priced close DROPPED — no matching open row (trader=%s acct=%q sym=%s side=%s exit=%.2f). Parked for reconcile fallback.",
+			traderID, p.Account, symbol, side, p.ExitPrice)
+		putPricedClose(p.Account, symbol, side, p.ExitPrice, qty, exitMs)
+		t.mu.Lock()
+		t.hasFill = false
+		t.mu.Unlock()
+		return
+	}
+
+	// Realized P&L with the futures point value (PositionBuilder's fallback omits it),
+	// computed from the OWNING row's entry.
+	pv := market.FuturesPointValue(symbol)
+	if pv <= 0 {
+		pv = 1
+	}
+	realizedPnL := 0.0
+	if owner.EntryPrice > 0 {
+		if side == "LONG" {
+			realizedPnL = (p.ExitPrice - owner.EntryPrice) * qty * pv
+		} else {
+			realizedPnL = (owner.EntryPrice - p.ExitPrice) * qty * pv
+		}
+	}
+
+	if err := pb.ProcessTrade(owner.TraderID, exchangeID, exchangeType, symbol, side, action,
 		qty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
 		logger.Warnf("ninjatrader/tcp: record close failed (%s %s): %v", symbol, side, err)
 	} else {
-		logger.Infof("📕 NT position closed: %s %s qty=%.0f exit=%.2f reason=%s pnl=%.2f",
-			symbol, side, qty, p.ExitPrice, p.ExitReason, realizedPnL)
+		logger.Infof("📕 NT position closed: %s %s qty=%.0f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
+			symbol, side, qty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
 	}
 
 	// Mark flat so GetPositions stops reporting the now-closed position.

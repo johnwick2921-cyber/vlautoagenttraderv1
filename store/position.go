@@ -105,8 +105,8 @@ const CloseReasonReconcileFlat = "reconcile_flat"
 // TraderPosition position record
 // All time fields use int64 millisecond timestamps (UTC) to avoid timezone issues
 type TraderPosition struct {
-	ID                 int64   `gorm:"primaryKey;autoIncrement" json:"id"`
-	TraderID           string  `gorm:"column:trader_id;not null;index:idx_positions_trader" json:"trader_id"`
+	ID       int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	TraderID string `gorm:"column:trader_id;not null;index:idx_positions_trader" json:"trader_id"`
 	// Account is the NT sub-account this position belongs to (ITEM 2 per-account).
 	// Empty for crypto and pre-migration rows; excluded by account-scoped reads.
 	Account            string  `gorm:"column:account;not null;default:''" json:"account"`
@@ -129,8 +129,8 @@ type TraderPosition struct {
 	Status             string  `gorm:"column:status;default:OPEN;index:idx_positions_status" json:"status"`
 	CloseReason        string  `gorm:"column:close_reason;default:''" json:"close_reason"`
 	Source             string  `gorm:"column:source;default:system" json:"source"`
-	CreatedAt          int64   `gorm:"column:created_at" json:"created_at"`   // Unix milliseconds UTC
-	UpdatedAt          int64   `gorm:"column:updated_at" json:"updated_at"`   // Unix milliseconds UTC
+	CreatedAt          int64   `gorm:"column:created_at" json:"created_at"` // Unix milliseconds UTC
+	UpdatedAt          int64   `gorm:"column:updated_at" json:"updated_at"` // Unix milliseconds UTC
 }
 
 // TableName returns the table name
@@ -218,14 +218,14 @@ func (s *PositionStore) Create(pos *TraderPosition) error {
 func (s *PositionStore) ClosePosition(id int64, exitPrice float64, exitOrderID string, realizedPnL float64, fee float64, closeReason string) (bool, error) {
 	nowMs := time.Now().UTC().UnixMilli()
 	res := s.db.Model(&TraderPosition{}).Where("id = ? AND status = ?", id, "OPEN").Updates(map[string]interface{}{
-		"exit_price":   exitPrice,
+		"exit_price":    exitPrice,
 		"exit_order_id": exitOrderID,
-		"exit_time":    nowMs,
-		"realized_pnl": realizedPnL,
-		"fee":          fee,
-		"status":       "CLOSED",
-		"close_reason": closeReason,
-		"updated_at":   nowMs,
+		"exit_time":     nowMs,
+		"realized_pnl":  realizedPnL,
+		"fee":           fee,
+		"status":        "CLOSED",
+		"close_reason":  closeReason,
+		"updated_at":    nowMs,
 	})
 	return res.RowsAffected > 0, res.Error
 }
@@ -343,15 +343,15 @@ func (s *PositionStore) ClosePositionFully(id int64, exitPrice float64, exitOrde
 	}
 
 	return s.db.Model(&TraderPosition{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"quantity":       quantity,
-		"exit_price":     exitPrice,
-		"exit_order_id":  exitOrderID,
-		"exit_time":      exitTimeMs,
-		"realized_pnl":   totalRealizedPnL,
-		"fee":            totalFee,
-		"status":         "CLOSED",
-		"close_reason":   closeReason,
-		"updated_at":     time.Now().UTC().UnixMilli(),
+		"quantity":      quantity,
+		"exit_price":    exitPrice,
+		"exit_order_id": exitOrderID,
+		"exit_time":     exitTimeMs,
+		"realized_pnl":  totalRealizedPnL,
+		"fee":           totalFee,
+		"status":        "CLOSED",
+		"close_reason":  closeReason,
+		"updated_at":    time.Now().UTC().UnixMilli(),
 	}).Error
 }
 
@@ -412,9 +412,45 @@ func (s *PositionStore) GetOpenPositionBySymbol(traderID, symbol, side string) (
 	return nil, err
 }
 
+// GetOpenPositionByAccountSymbol finds the OPEN position matching (account, symbol,
+// side) across ALL traders — the trader that actually OWNS the row. A position_close
+// frame routes by SYMBOL to ONE trader's close-sync (dispatchBySymbol), which may NOT
+// be the owner when multiple traders share a symbol; recording against the receiver's
+// trader_id then misses and the priced close is lost. This lets close-sync record
+// against the owning trader instead. account "" widens to (symbol, side). nil,nil = none.
+func (s *PositionStore) GetOpenPositionByAccountSymbol(account, symbol, side string) (*TraderPosition, error) {
+	find := func(sym string) (*TraderPosition, error) {
+		var pos TraderPosition
+		q := s.db.Where("symbol = ? AND side = ? AND status = ?", sym, side, "OPEN")
+		if account != "" {
+			q = q.Where("account = ?", account)
+		}
+		err := q.Order("entry_time DESC").First(&pos).Error
+		if err == nil {
+			if pos.EntryQuantity == 0 {
+				pos.EntryQuantity = pos.Quantity
+			}
+			return &pos, nil
+		}
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	pos, err := find(symbol)
+	if err != nil || pos != nil {
+		return pos, err
+	}
+	// Backward-compat: retry without the USDT suffix (mirrors GetOpenPositionBySymbol).
+	if strings.HasSuffix(symbol, "USDT") {
+		return find(strings.TrimSuffix(symbol, "USDT"))
+	}
+	return nil, nil
+}
+
 // GetClosedPositions gets closed positions (optionally scoped to one account).
 // account=="" → trader-global (crypto + legacy); account!="" → only that NT
-// account's positions, excluding pre-migration rows (account='').
+// account's positions, excluding pre-migration rows (account=”).
 func (s *PositionStore) GetClosedPositions(traderID string, limit int, account ...string) ([]*TraderPosition, error) {
 	var positions []*TraderPosition
 	q := s.db.Where("trader_id = ? AND status = ?", traderID, "CLOSED")

@@ -34,19 +34,19 @@ type Envelope struct {
 
 // SignalPayload is the Go-server → C#-AddOn signal frame per spec L4387-4396.
 type SignalPayload struct {
-	Symbol     string  `json:"symbol"`
+	Symbol string `json:"symbol"`
 	// Account (P5.4): the NT8 sub-account this order must submit on. EMPTY =
 	// legacy → the AddOn's active account (byte-identical wire via omitempty).
 	// When set, the AddOn's Phase-2/3 resolve+guard+route path (already
 	// shipped) submits to THIS account — per-(symbol,account) routing.
 	Account    string  `json:"account,omitempty"`
-	Side       string  `json:"side"`        // "long" | "short"
+	Side       string  `json:"side"` // "long" | "short"
 	Quantity   int     `json:"quantity"`
-	Entry      float64 `json:"entry"`       // tick-rounded
+	Entry      float64 `json:"entry"` // tick-rounded
 	StopLoss   float64 `json:"stop_loss"`
 	TakeProfit float64 `json:"take_profit"`
-	SignalID   string  `json:"signal_id"`   // UUID
-	Timestamp  string  `json:"timestamp"`   // RFC3339
+	SignalID   string  `json:"signal_id"` // UUID
+	Timestamp  string  `json:"timestamp"` // RFC3339
 }
 
 // FillPayload is the C#-AddOn → Go-server fill frame per spec L4398-4406.
@@ -152,7 +152,7 @@ const FrameAccountSelect FrameType = "account_select"
 // (cash + unrealized PnL); the C# side sends it directly if NT exposes it,
 // else the Go side derives it as CashValue + UnrealizedPnL.
 type AccountBalancePayload struct {
-	Account        string  `json:"account"`         // e.g. "Sim101"
+	Account        string  `json:"account"` // e.g. "Sim101"
 	CashValue      float64 `json:"cash_value"`
 	BuyingPower    float64 `json:"buying_power"`
 	RealizedPnL    float64 `json:"realized_pnl"`
@@ -180,6 +180,10 @@ type PositionClosePayload struct {
 	Quantity     int     `json:"quantity"`
 	ExitReason   string  `json:"exit_reason"` // "sl" | "tp" | "manual"
 	ExitTime     string  `json:"exit_time"`   // RFC3339
+	// Account: the NT8 sub-account this close is on. The C# AddOn already SENDS it
+	// (SendPositionCloseFrame ["account"]); Go simply wasn't parsing it. Used by
+	// close-sync owner-routing to match the close to the trader that OWNS the row.
+	Account string `json:"account"` // e.g. "Sim101"
 }
 
 // Rejected exit/flatten — C#-AddOn → Go-server, additive frame. The SIM (or
@@ -334,8 +338,8 @@ type BarsUnsubscribePayload struct {
 
 // AccountInfo carries a single NT account's name + SIM flag.
 type AccountInfo struct {
-	Name  string `json:"name"`    // e.g. "Sim101" or "PropAcct"
-	IsSim bool   `json:"is_sim"`  // true if this is a simulation account
+	Name  string `json:"name"`   // e.g. "Sim101" or "PropAcct"
+	IsSim bool   `json:"is_sim"` // true if this is a simulation account
 }
 
 // AccountsListPayload reports all available NT accounts discovered by the C# AddOn.

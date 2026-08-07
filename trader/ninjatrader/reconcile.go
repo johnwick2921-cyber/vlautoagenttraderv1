@@ -152,6 +152,34 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 			if nowMs-t.flatSince[row.ID] < flatGraceMs {
 				continue // within grace — keep deferring to close-sync
 			}
+			// PRICED-FRAME FALLBACK: before writing the unknown marker, check whether a
+			// position_close frame carrying the REAL exit price arrived for this
+			// (account,symbol,side) but found no open row when it landed (owner-routing
+			// miss / frame-before-entry race). If so, close with the REAL exit + P&L
+			// (reason "sync" → counted in stats, shown as a real number) instead of a
+			// fabricated exit=entry pnl=0. takePricedClose is idempotent (consumed once).
+			if exitPx, okp := takePricedClose(row.Account, row.Symbol, row.Side, nowMs); okp {
+				pv := market.FuturesPointValue(row.Symbol)
+				if pv <= 0 {
+					pv = 1
+				}
+				pnl := 0.0
+				if row.EntryPrice > 0 {
+					if row.Side == "LONG" {
+						pnl = (exitPx - row.EntryPrice) * row.Quantity * pv
+					} else {
+						pnl = (row.EntryPrice - exitPx) * row.Quantity * pv
+					}
+				}
+				closed, perr := st.Position().ClosePosition(row.ID, exitPx, "reconcile_priced", pnl, 0, "sync")
+				delete(t.flatSince, row.ID)
+				if perr != nil {
+					logger.Warnf("ninjatrader/tcp: reconcile priced-close failed (row %d): %v", row.ID, perr)
+				} else if closed {
+					logger.Infof("💵 reconcile: recovered PARKED exit price for %s %s row=%d exit=%.2f pnl=%.2f (close-sync frame had no open row when it arrived)", row.Symbol, row.Side, row.ID, exitPx, pnl)
+				}
+				continue
+			}
 			// Past the grace and still flat+open → the position_close frame was
 			// genuinely never captured. Record the honest marker (exit/P&L UNKNOWN →
 			// UI "—"; entry-as-exit / 0 are placeholders). ClosePosition is guarded on
