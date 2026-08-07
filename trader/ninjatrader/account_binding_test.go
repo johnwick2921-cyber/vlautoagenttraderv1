@@ -34,3 +34,28 @@ func TestNewTCPTrader_AccountBinding(t *testing.T) {
 		t.Fatalf("bound constructor must trim+bind; got %q", tr.boundAccount)
 	}
 }
+
+// TestPlaceEntry_UnboundRefuses locks the multi-account safety rail: an UNBOUND
+// trader (empty account) must REFUSE to place an entry — it must NOT fall back to
+// the shared active account (which could be another trader's account). A BOUND
+// trader passes the empty-account gate (and only then fails on a different gate),
+// proving the non-empty path is unchanged.
+func TestPlaceEntry_UnboundRefuses(t *testing.T) {
+	s := ntwire.NewTCPServer(nil)
+
+	// UNBOUND → hard refuse, before any signal frame is built.
+	unbound := NewTCPTrader(s, "MNQ")
+	if _, err := unbound.OpenLong("MNQ", 1, 1); err == nil || !strings.Contains(err.Error(), "no bound account") {
+		t.Fatalf("unbound OpenLong must refuse with 'no bound account'; got err=%v", err)
+	}
+	if _, err := unbound.OpenShort("MNQ", 1, 1); err == nil || !strings.Contains(err.Error(), "no bound account") {
+		t.Fatalf("unbound OpenShort must refuse with 'no bound account'; got err=%v", err)
+	}
+
+	// BOUND → passes the empty-account gate; it then fails on a DIFFERENT gate
+	// (account not in the mock's list / no SL-TP), never on 'no bound account'.
+	bound := NewTCPTrader(s, "MNQ", "Sim101")
+	if _, err := bound.OpenLong("MNQ", 1, 1); err == nil || strings.Contains(err.Error(), "no bound account") {
+		t.Fatalf("bound OpenLong must clear the empty-account gate; got err=%v", err)
+	}
+}

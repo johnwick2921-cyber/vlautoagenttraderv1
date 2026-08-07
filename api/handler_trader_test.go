@@ -57,3 +57,32 @@ func TestCreateTrader_NinjaTraderExchange(t *testing.T) {
 		t.Fatalf("expected unknown exchange type to be rejected with exchange_unsupported, got msg=%q code=%q", msg, code)
 	}
 }
+
+// TestValidateNTAccountBoundForStart locks the NT8 multi-account start guard: a
+// NinjaTrader trader with no bound account is refused (so it can never trade on the
+// shared active account); a bound one passes; non-NT exchanges are never blocked.
+func TestValidateNTAccountBoundForStart(t *testing.T) {
+	ntCfg := func(acct string) *store.TraderFullConfig {
+		return &store.TraderFullConfig{
+			Exchange: &store.Exchange{ExchangeType: "ninjatrader"},
+			Trader:   &store.Trader{Name: "t", Account: acct},
+		}
+	}
+	// Empty account → blocked with the actionable code.
+	if msg, code, _ := validateNTAccountBoundForStart(ntCfg(""), "t"); msg == "" || code != "trader.start.no_account" {
+		t.Fatalf("empty NT account must block start; got msg=%q code=%q", msg, code)
+	}
+	// Whitespace-only account → also blocked.
+	if msg, _, _ := validateNTAccountBoundForStart(ntCfg("   "), "t"); msg == "" {
+		t.Fatalf("whitespace-only NT account must block start")
+	}
+	// Bound account → allowed (no block).
+	if msg, code, _ := validateNTAccountBoundForStart(ntCfg("Sim101"), "t"); msg != "" || code != "" {
+		t.Fatalf("bound NT account must pass; got msg=%q code=%q", msg, code)
+	}
+	// Non-NinjaTrader exchange with empty account → not blocked (no account concept).
+	crypto := &store.TraderFullConfig{Exchange: &store.Exchange{ExchangeType: "binance"}, Trader: &store.Trader{Account: ""}}
+	if msg, _, _ := validateNTAccountBoundForStart(crypto, "t"); msg != "" {
+		t.Fatalf("non-NT exchange must not be blocked by the NT account rule; got msg=%q", msg)
+	}
+}

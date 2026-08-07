@@ -15,9 +15,9 @@ import (
 
 // AccountInfo mirrors the wire protocol struct for JSON response.
 type AccountInfo struct {
-	Name      string `json:"name"`        // e.g. "Sim101", "LiveAcct"
-	IsSim     bool   `json:"is_sim"`      // true if a SIM account
-	IsCurrent bool   `json:"is_current"`  // true if this is the currently selected account
+	Name      string `json:"name"`       // e.g. "Sim101", "LiveAcct"
+	IsSim     bool   `json:"is_sim"`     // true if a SIM account
+	IsCurrent bool   `json:"is_current"` // true if this is the currently selected account
 }
 
 // GetAccountsResponse is the response structure for GET /api/accounts.
@@ -187,10 +187,12 @@ func (s *Server) handleSelectAccount(c *gin.Context) {
 		logger.Infof("api/account/select: reset Go cached state for %s", req.Account)
 	}
 
-	// PERSIST the pick per-trader (multi-account Stage 1) so it STICKS: it survives
-	// restart and the account_balance stream can't unset it, and the trade gate
-	// (runCycle) opens for this trader. This is the stored CHOICE + the gate key;
-	// per-account order ROUTING is Stage 2 (the C# multi-account AddOn).
+	// PERSIST the pick per-trader so it STICKS: it survives restart and the
+	// account_balance stream can't unset it, and the trade gate (runCycle) opens for
+	// this trader. Per-account order ROUTING is DONE (P5.4): the signal carries this
+	// trader's account (tcp_trader.go SignalPayload.Account) and the C# AddOn routes
+	// each order to it (VLTraderTCPClient HandleSignal → per-order account). This
+	// SendAccountSelect only sets the connection's DISPLAY/active account.
 	if err := s.store.Trader().UpdateAccount(userID, traderID, req.Account); err != nil {
 		logger.Warnf("api/account/select: failed to persist account %s for trader %s: %v", req.Account, traderID, err)
 	} else {

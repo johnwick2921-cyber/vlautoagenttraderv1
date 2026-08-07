@@ -173,12 +173,12 @@ func validateExchangeForTraderCreation(exchange *store.Exchange) (string, string
 	missing := missingExchangeFields(exchange)
 	if len(missing) > 0 {
 		return formatTraderCreationError(
-			fmt.Sprintf("交易所账户「%s」的配置还不完整，缺少 %s", exchangeDisplayName(exchange), strings.Join(missing, "、")),
-			"请前往「设置 > 交易所配置」补全该账户的必填信息后，再重新创建机器人",
-		), "trader.create.exchange_missing_fields", mapStringPairs(
-			"exchange_name", exchangeDisplayName(exchange),
-			"missing_fields", strings.Join(missing, ", "),
-		)
+				fmt.Sprintf("交易所账户「%s」的配置还不完整，缺少 %s", exchangeDisplayName(exchange), strings.Join(missing, "、")),
+				"请前往「设置 > 交易所配置」补全该账户的必填信息后，再重新创建机器人",
+			), "trader.create.exchange_missing_fields", mapStringPairs(
+				"exchange_name", exchangeDisplayName(exchange),
+				"missing_fields", strings.Join(missing, ", "),
+			)
 	}
 
 	switch exchange.ExchangeType {
@@ -186,12 +186,12 @@ func validateExchangeForTraderCreation(exchange *store.Exchange) (string, string
 		return "", "", nil
 	default:
 		return formatTraderCreationError(
-			fmt.Sprintf("交易所账户「%s」使用了当前版本暂不支持的类型 %s", exchangeDisplayName(exchange), exchange.ExchangeType),
-			"请改用当前版本支持的交易所账户后，再重新创建机器人",
-		), "trader.create.exchange_unsupported", mapStringPairs(
-			"exchange_name", exchangeDisplayName(exchange),
-			"exchange_type", exchange.ExchangeType,
-		)
+				fmt.Sprintf("交易所账户「%s」使用了当前版本暂不支持的类型 %s", exchangeDisplayName(exchange), exchange.ExchangeType),
+				"请改用当前版本支持的交易所账户后，再重新创建机器人",
+			), "trader.create.exchange_unsupported", mapStringPairs(
+				"exchange_name", exchangeDisplayName(exchange),
+				"exchange_type", exchange.ExchangeType,
+			)
 	}
 }
 
@@ -310,6 +310,24 @@ func formatTraderStartError(reason, nextStep string) string {
 		return fmt.Sprintf("这次未能启动机器人：%s。", reason)
 	}
 	return fmt.Sprintf("这次未能启动机器人：%s。%s。", reason, nextStep)
+}
+
+// validateNTAccountBoundForStart blocks starting a NinjaTrader trader that has no
+// bound account. Multi-account safety: without an account the trader's orders are
+// refused at submit (tcp_trader.go placeEntry — no fallback to the shared active
+// account), so it could never trade and would confuse the display. Returns
+// ("","",nil) for any non-NinjaTrader exchange or a non-empty account.
+func validateNTAccountBoundForStart(fullCfg *store.TraderFullConfig, traderName string) (string, string, map[string]string) {
+	if fullCfg == nil || fullCfg.Exchange == nil || fullCfg.Exchange.ExchangeType != "ninjatrader" {
+		return "", "", nil
+	}
+	if fullCfg.Trader == nil || strings.TrimSpace(fullCfg.Trader.Account) != "" {
+		return "", "", nil
+	}
+	return formatTraderStartError(
+		fmt.Sprintf("机器人「%s」还没有绑定交易账户", traderName),
+		"请先在仪表盘为它选择一个 SIM 账户，然后再点击启动 (select an account first)",
+	), "trader.start.no_account", mapStringPairs("trader_name", traderName)
 }
 
 // handleCreateTrader Create new AI trader
@@ -533,14 +551,14 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 
 	if startupWarning == "" {
 		if loadErr := s.traderManager.GetLoadError(traderID); loadErr != nil {
-		logger.Infof("⚠️ Trader %s failed to load after creation: %v", traderID, loadErr)
+			logger.Infof("⚠️ Trader %s failed to load after creation: %v", traderID, loadErr)
 			startupWarning = describeTraderCreationWarning(req.Name, loadErr)
 		}
 	}
 
 	if startupWarning == "" {
 		if _, getErr := s.traderManager.GetTrader(traderID); getErr != nil {
-		logger.Infof("⚠️ Trader %s not found in memory after creation: %v", traderID, getErr)
+			logger.Infof("⚠️ Trader %s not found in memory after creation: %v", traderID, getErr)
 			startupWarning = describeTraderCreationWarning(req.Name, getErr)
 		}
 	}
@@ -548,11 +566,11 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 	logger.Infof("✓ Trader created successfully: %s (model: %s, exchange: %s)", req.Name, req.AIModelID, req.ExchangeID)
 
 	c.JSON(http.StatusCreated, gin.H{
-		"trader_id":        traderID,
-		"trader_name":      req.Name,
-		"ai_model":         req.AIModelID,
-		"is_running":       false,
-		"startup_warning":  startupWarning,
+		"trader_id":       traderID,
+		"trader_name":     req.Name,
+		"ai_model":        req.AIModelID,
+		"is_running":      false,
+		"startup_warning": startupWarning,
 	})
 }
 
@@ -766,6 +784,14 @@ func (s *Server) handleStartTrader(c *gin.Context) {
 	traderName := traderID
 	if fullCfg != nil && fullCfg.Trader != nil && fullCfg.Trader.Name != "" {
 		traderName = fullCfg.Trader.Name
+	}
+
+	// NT8 MULTI-ACCOUNT SAFETY: refuse to start a NinjaTrader trader with no bound
+	// account (its orders are refused at submit — no fallback to the shared active
+	// account — so it could never trade AND would confuse the display).
+	if msg, code, params := validateNTAccountBoundForStart(fullCfg, traderName); msg != "" {
+		SafeBadRequestWithDetails(c, msg, code, params)
+		return
 	}
 
 	// Check if trader exists in memory and if it's running

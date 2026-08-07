@@ -183,9 +183,13 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	// account that isn't tradeable (SIM + allow-listed). The C# AddOn enforces this
 	// again right before submit; this refuses in Go before the frame is even sent.
 	// The LIVE/funded account is never tradeable.
+	// MULTI-ACCOUNT SAFETY: an UNBOUND trader (empty boundAccount) must NOT borrow
+	// the connection's shared active account — that would execute on whatever account
+	// was last globally selected (i.e. ANOTHER trader's account). Refuse outright,
+	// replacing the old activeAccountName() fallback.
 	tradeAcct := t.boundAccount
 	if tradeAcct == "" {
-		tradeAcct = t.activeAccountName()
+		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s entry on %s — trader has no bound account (select an account first); NOT falling back to the shared active account", side, symbol)
 	}
 	if !t.isAccountTradeable(tradeAcct) {
 		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
@@ -220,7 +224,7 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	payload := ntwire.SignalPayload{
 		Symbol:     t.symbol,
 		Account:    t.boundAccount, // P5.4 — empty = legacy (AddOn's active account)
-		Side:       side, // lowercase per spec L4390
+		Side:       side,           // lowercase per spec L4390
 		Quantity:   int(quantity),
 		Entry:      entry,
 		StopLoss:   sl,
