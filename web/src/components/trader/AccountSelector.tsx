@@ -48,6 +48,11 @@ export function AccountSelector({
   // yet → the trader is GATED (does not trade). Show/highlight THIS, not the streamed
   // `current` (which can drift on the NT8 account_balance stream).
   const selectedAccount = accountsData?.selected || ''
+  // `current` is the ONE account the shared NT8 connection is streaming (balance /
+  // positions / PnL reflect it). It can differ from THIS trader's bound `selected`
+  // account when another trader/panel last switched the connection — so the on-screen
+  // numbers must be labeled with `current` to avoid masquerading as this trader's.
+  const currentAccount = accountsData?.current || ''
   const accounts = accountsData?.accounts || []
 
   // Memoize ref callback to prevent infinite setState loop
@@ -163,6 +168,20 @@ export function AccountSelector({
           )}
         />
       </button>
+
+      {/* Masquerade guard: the shared NT8 connection streams ONE account's balance /
+          positions. If it isn't this trader's bound account, say so explicitly so the
+          numbers can't be mistaken for this trader's account. */}
+      {selectedAccount &&
+        currentAccount &&
+        currentAccount !== selectedAccount && (
+          <div className="mt-1 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-[11px] leading-tight text-amber-400">
+            ⚠ Balance &amp; positions on screen are for{' '}
+            <span className="font-semibold">{currentAccount}</span> (the
+            connection&apos;s active account). This trader trades{' '}
+            <span className="font-semibold">{selectedAccount}</span>.
+          </div>
+        )}
 
       {/* Dropdown Menu — Portal to body to escape parent overflow */}
       {isOpen &&
