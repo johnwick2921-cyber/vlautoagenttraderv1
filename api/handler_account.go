@@ -84,6 +84,18 @@ func (s *Server) handleGetAccounts(c *gin.Context) {
 		selected = tr.Account
 	}
 
+	// `current` normally reflects the ONE account the shared connection streams.
+	// But GetBalance now serves THIS trader's bound account when that account has
+	// its own snapshot (tcp_trader.go decouple). Report that account as `current`
+	// here too, so the FE masquerade banner (`current != selected`) stays honest:
+	// silent when the on-screen numbers ARE this trader's account, warning only
+	// when we genuinely fell back to the streamed account.
+	if selected != "" {
+		if _, ok := tcpServer.AccountStateFor(selected); ok {
+			current = selected
+		}
+	}
+
 	c.JSON(http.StatusOK, GetAccountsResponse{
 		Current:  current,
 		Selected: selected,

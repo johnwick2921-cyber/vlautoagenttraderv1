@@ -989,6 +989,17 @@ func (s *TCPServer) SeedPositionsForTest(account string, ps []OpenPosition) {
 	s.acctMu.Unlock()
 }
 
+// SeedAccountBalanceForTest injects a per-account balance snapshot (normally set
+// by account_balance frames). Tests only.
+func (s *TCPServer) SeedAccountBalanceForTest(account string, p AccountBalancePayload) {
+	s.acctMu.Lock()
+	if s.acctBalances == nil {
+		s.acctBalances = make(map[string]AccountBalancePayload)
+	}
+	s.acctBalances[account] = p
+	s.acctMu.Unlock()
+}
+
 // SetCurrentAccountForTest sets the shared streamed "current"/display account
 // (normally set by account_balance / account_select frames). Tests only.
 func (s *TCPServer) SetCurrentAccountForTest(account string) {

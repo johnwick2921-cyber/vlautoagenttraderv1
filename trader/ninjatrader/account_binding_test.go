@@ -97,3 +97,46 @@ func TestGetPositions_ReadsBoundAccountNotCurrent(t *testing.T) {
 		t.Fatalf("unbound trader must not read the shared current account's positions; got %d", len(upos))
 	}
 }
+
+// TestGetBalance_ReadsBoundAccountNotCurrent locks the GetBalance decouple (the
+// twin of GetPositions above, previously missed): a trader's balance/equity must
+// come from its OWN bound account, NOT the shared streamed "current" account.
+// Without this a second trader on another sub-account displayed — and RISK-SIZED
+// off — the wrong account's equity.
+func TestGetBalance_ReadsBoundAccountNotCurrent(t *testing.T) {
+	s := ntwire.NewTCPServer(nil)
+	// Two accounts with DIFFERENT equity; the shared "current" points at the OTHER.
+	s.SeedAccountBalanceForTest("Sim101", ntwire.AccountBalancePayload{
+		Account: "Sim101", NetLiquidation: 70000, CashValue: 70000, BuyingPower: 70000,
+	})
+	s.SeedAccountBalanceForTest("SimAccountX", ntwire.AccountBalancePayload{
+		Account: "SimAccountX", NetLiquidation: 12345, CashValue: 12345, BuyingPower: 12345,
+	})
+	s.SetCurrentAccountForTest("SimAccountX")
+
+	// BOUND to Sim101 → must report Sim101's equity (70000) and tag the account,
+	// NOT the shared current (SimAccountX @ 12345).
+	tr := NewTCPTrader(s, "MNQ", "Sim101")
+	bal, err := tr.GetBalance()
+	if err != nil {
+		t.Fatalf("GetBalance: %v", err)
+	}
+	if eq, _ := bal["totalEquity"].(float64); eq != 70000 {
+		t.Fatalf("want Sim101 equity 70000, got %v — read the WRONG (current) account", eq)
+	}
+	if acct, _ := bal["account"].(string); acct != "Sim101" {
+		t.Fatalf("balance must be tagged with the bound account Sim101; got %q", acct)
+	}
+
+	// Graceful fallback: a bound account with NO snapshot yet falls back to the
+	// streamed current (never zero/no-data) so we don't regress before the frame
+	// arrives — mirrors today's behavior, just correctly labeled.
+	trNoSnap := NewTCPTrader(s, "MNQ", "SimNoSnapshot")
+	balF, err := trNoSnap.GetBalance()
+	if err != nil {
+		t.Fatalf("GetBalance fallback: %v", err)
+	}
+	if acct, _ := balF["account"].(string); acct != "SimAccountX" {
+		t.Fatalf("bound account without a snapshot must fall back to current (SimAccountX); got %q", acct)
+	}
+}

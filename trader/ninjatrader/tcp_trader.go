@@ -341,7 +341,21 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 	// frame (C# AddOn → tcp_server). No more $50k mock. Until the first frame
 	// arrives (AddOn connecting), report zeros so the dashboard shows "no data"
 	// rather than a fabricated balance; the C# emits on connect + periodically.
-	if acct, ok := t.server.AccountState(); ok {
+	//
+	// Read THIS trader's OWN bound account (P5.4), mirroring GetPositions'
+	// decouple (cb00347d) — GetBalance was the missed twin. The shared NT8
+	// connection streams ONE "current" account; using AccountState() (current)
+	// here showed a trader the WRONG account's equity when another trader/panel
+	// owned the connection (a display AND a risk-sizing bug). Prefer the bound
+	// account's own snapshot; fall back to the streamed `current` ONLY when the
+	// bound account has no snapshot yet (AddOn hasn't streamed it), so this never
+	// regresses to zeros vs today's behavior. The returned "account" field names
+	// which NT account these numbers actually reflect.
+	acct, ok := t.server.AccountStateFor(t.boundAccount)
+	if !ok || t.boundAccount == "" {
+		acct, ok = t.server.AccountState()
+	}
+	if ok {
 		// Plan 4 Stage 4 — notify parent AutoTrader that balance has arrived
 		// (used by defer-until-balance guard in runCycle).
 		// Use reflection to avoid circular import (trader/ninjatrader → trader).
@@ -364,6 +378,10 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 			"availableBalance":      avail,
 			"totalWalletBalance":    acct.CashValue,
 			"totalUnrealizedProfit": acct.UnrealizedPnL,
+			// Which NT account these numbers actually reflect (bound account when
+			// its snapshot exists, else the streamed current — see the decouple
+			// above). Lets the dashboard label/guard the balance accurately.
+			"account": acct.Account,
 			// Issue 2B — NT reports its own realized/unrealized P&L per account.
 			// brokerNativePnL signals GetAccountInfo to use realized+unrealized as
 			// the displayed P&L instead of (equity - global InitialBalance), which
