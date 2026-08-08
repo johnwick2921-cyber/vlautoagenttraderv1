@@ -454,6 +454,12 @@ export function SettingsPage() {
                 </button>
               </div>
 
+              {configuredModels.length > 0 && (
+                <p className="text-xs text-zinc-500 -mt-2">
+                  {t('multiKeyHint', language)}
+                </p>
+              )}
+
               {configuredModels.length === 0 ? (
                 <div className="text-center py-8 text-zinc-600 text-sm">
                   No AI models configured yet
@@ -501,9 +507,10 @@ export function SettingsPage() {
                           <button
                             onClick={() => openAddEntry(model.provider)}
                             title={t('addModelEntry', language)}
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-nofx-gold hover:bg-nofx-gold/10 transition-colors"
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-nofx-gold border border-nofx-gold/40 hover:bg-nofx-gold/10 transition-colors shrink-0"
                           >
-                            <Plus size={14} />
+                            <Plus size={12} />
+                            {t('addKeyShort', language)}
                           </button>
                           <button
                             onClick={() => handleDeleteModel(model.id)}

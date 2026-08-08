@@ -402,6 +402,9 @@ export const translations = {
     editAIModel: 'Edit AI Model',
     addAIModel: 'Add AI Model',
     addModelEntry: 'Add another key',
+    addKeyShort: 'Add key',
+    multiKeyHint:
+      'Each provider can hold multiple keys — click “+ Add key” on a row to add a named second entry.',
     entryName: 'Name (e.g. DeepSeek-backup)',
     deleteModelEntry: 'Delete this entry',
     confirmDeleteModel:
@@ -1770,6 +1773,9 @@ export const translations = {
     editAIModel: '编辑AI模型',
     addAIModel: '添加AI模型',
     addModelEntry: '添加另一个密钥',
+    addKeyShort: '添加密钥',
+    multiKeyHint:
+      '每个提供商可保存多个密钥 —— 点击某行的“+ 添加密钥”即可新增一个命名条目。',
     entryName: '名称（例如 DeepSeek-备用）',
     deleteModelEntry: '删除此条目',
     confirmDeleteModel: '确定要删除此AI模型配置吗？',
@@ -3100,6 +3106,9 @@ export const translations = {
     editAIModel: 'Edit Model AI',
     addAIModel: 'Tambah Model AI',
     addModelEntry: 'Tambah kunci lain',
+    addKeyShort: 'Tambah kunci',
+    multiKeyHint:
+      'Setiap penyedia dapat menyimpan beberapa kunci — klik “+ Tambah kunci” pada baris untuk menambah entri bernama.',
     entryName: 'Nama (mis. DeepSeek-cadangan)',
     deleteModelEntry: 'Hapus entri ini',
     confirmDeleteModel:
