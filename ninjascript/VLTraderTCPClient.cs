@@ -414,10 +414,12 @@ namespace NinjaTrader.NinjaScript.AddOns
                     SendAccountsList();
                     LogInfo("VLTraderTCPClient: SendAccountsList completed");
 
-                    // Plan 4.11 — push the current account balance immediately
-                    // on (re)connect so the dashboard shows the real SIM
-                    // account without waiting for the next AccountItemUpdate.
-                    SendAccountBalance();
+                    // Plan 4.11 — push account balances immediately on (re)connect
+                    // so the dashboard shows the real SIM balances without waiting
+                    // for the next AccountItemUpdate. Seed EVERY SIM account (not
+                    // just the active one) so a 2nd trader on another sub-account
+                    // isn't stuck on a stale/absent balance until it goes active.
+                    SendAllAccountBalances();
                     // Open-position read-back — snapshot the selected account's
                     // current open positions on (re)connect so the Go side
                     // re-syncs the AI's tracked position after a restart/feed
@@ -1491,16 +1493,23 @@ namespace NinjaTrader.NinjaScript.AddOns
         // possibly-absent AccountItem.NetLiquidation.
         private void SendAccountBalance()
         {
-            if (account == null) return;
+            SendAccountBalanceFor(account);
+        }
+
+        // Emit ONE account's balance snapshot. Parameterized so the heartbeat can
+        // stream EVERY account (not just the active one) — see SendAllAccountBalances.
+        private void SendAccountBalanceFor(Account a)
+        {
+            if (a == null) return;
             try
             {
-                double cash       = account.Get(AccountItem.CashValue, Currency.UsDollar);
-                double buying     = account.Get(AccountItem.BuyingPower, Currency.UsDollar);
-                double realized   = account.Get(AccountItem.RealizedProfitLoss, Currency.UsDollar);
-                double unrealized = account.Get(AccountItem.UnrealizedProfitLoss, Currency.UsDollar);
+                double cash       = a.Get(AccountItem.CashValue, Currency.UsDollar);
+                double buying     = a.Get(AccountItem.BuyingPower, Currency.UsDollar);
+                double realized   = a.Get(AccountItem.RealizedProfitLoss, Currency.UsDollar);
+                double unrealized = a.Get(AccountItem.UnrealizedProfitLoss, Currency.UsDollar);
                 var payload = new Dictionary<string, object>
                 {
-                    ["account"]         = account.Name,
+                    ["account"]         = a.Name,
                     ["cash_value"]      = cash,
                     ["buying_power"]    = buying,
                     ["realized_pnl"]    = realized,
@@ -1511,7 +1520,27 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
             catch (Exception ex)
             {
-                LogWarn("VLTraderTCPClient: account_balance emit failed: " + ex.Message);
+                LogWarn("VLTraderTCPClient: account_balance emit failed for "
+                        + (a != null ? a.Name : "<null>") + ": " + ex.Message);
+            }
+        }
+
+        // Stream EVERY SIM account's balance, not just the connection's active one.
+        // The active-account-only stream (AccountItemUpdate is hooked on `account`
+        // alone) left a SECOND trader on another sub-account reading a STALE/absent
+        // balance — the dashboard showed one account for everyone ("stale on 1
+        // account"). account.Get() reads any Account.All member's live values on
+        // demand (subscription is only needed for change callbacks), so polling them
+        // all here keeps every account's snapshot <=1 heartbeat fresh on the Go side,
+        // where GetBalance serves each trader its OWN bound account.
+        private void SendAllAccountBalances()
+        {
+            lock (Account.All)
+            {
+                foreach (var a in Account.All)
+                {
+                    if (IsSimAccount(a)) SendAccountBalanceFor(a);
+                }
             }
         }
 
@@ -1596,14 +1625,16 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // Periodic poll of account balance every heartbeat (30s) — Tradovate's
                 // AccountItemUpdate doesn't fire reliably, so poll to ensure real balance
                 // populates even if AccountItemUpdate misses + connect-seed failed.
-                // If account not ready yet, skip + retry next beat.
+                // Poll EVERY SIM account (not just the active one) so concurrent traders
+                // on different sub-accounts each get a fresh balance — the Go side keys
+                // snapshots per-account and serves each trader its own bound account.
                 try
                 {
-                    SendAccountBalance();
+                    SendAllAccountBalances();
                 }
                 catch (Exception ex)
                 {
-                    LogWarn($"RunHeartbeatLoop: SendAccountBalance poll failed (will retry): {ex.Message}");
+                    LogWarn($"RunHeartbeatLoop: SendAllAccountBalances poll failed (will retry): {ex.Message}");
                 }
             }
         }
