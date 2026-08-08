@@ -151,6 +151,36 @@ export function SettingsPage() {
         return
       }
 
+      // NEW-ENTRY GUARD (fixes "+ Add Model overwrites an existing provider"):
+      // when adding via the catalog (not editing a specific row) for a provider that
+      // ALREADY has a configured entry, CREATE a new named row instead of sending a
+      // bare-provider key that the backend's legacy-match would use to overwrite the
+      // existing entry. Wallet providers (claw402/blockrun) keep their reconfigure flow.
+      const provider = modelToUpdate.provider || ''
+      const isWalletProvider =
+        provider === 'claw402' || provider.startsWith('blockrun')
+      const providerAlreadyConfigured =
+        !existingModel && configuredModels.some((m) => m.provider === provider)
+      if (providerAlreadyConfigured && !isWalletProvider) {
+        const sameProviderCount = configuredModels.filter(
+          (m) => m.provider === provider
+        ).length
+        const baseName = modelToUpdate.name || provider
+        await api.createModelEntry({
+          provider,
+          name: `${baseName} ${sameProviderCount + 1}`,
+          api_key: apiKey,
+          custom_api_url: customApiUrl || undefined,
+          custom_model_name: customModelName || undefined,
+          enabled: true,
+        })
+        toast.success('Model entry added')
+        await refreshModelConfigs()
+        setShowModelModal(false)
+        setEditingModel(null)
+        return
+      }
+
       let updatedModels: AIModel[]
       if (existingModel) {
         updatedModels = configuredModels.map((m) =>
