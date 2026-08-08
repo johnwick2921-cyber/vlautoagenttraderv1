@@ -221,6 +221,27 @@ export function ModelConfigModal({
                 language={language}
               />
             )}
+
+          {/* Defensive fallback: in edit mode the config form only renders when the
+              row resolves in allModels/configuredModels. If a row is missing (e.g. an
+              old/legacy id not yet in the list, or a stale fetch), render a message +
+              close instead of a silent blank modal — the editor is never empty. */}
+          {editingModelId && !selectedModel && (
+            <div className="text-center py-10" style={{ color: '#848E9C' }}>
+              <p className="text-sm">
+                This model entry couldn’t be loaded (id not found in the current
+                list). Close this and reopen from the row.
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-4 px-4 py-2 rounded-lg text-sm"
+                style={{ background: '#2B3139', color: '#EAECEF' }}
+              >
+                {t('cancel', language)}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

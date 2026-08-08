@@ -19,7 +19,7 @@ import { api } from '../lib/api'
 import { ExchangeConfigModal } from '../components/trader/ExchangeConfigModal'
 import { TelegramConfigModal } from '../components/trader/TelegramConfigModal'
 import { ModelConfigModal } from '../components/trader/ModelConfigModal'
-import type { Exchange, AIModel } from '../types'
+import type { Exchange, AIModel, TraderInfo } from '../types'
 
 type Tab = 'account' | 'models' | 'exchanges' | 'telegram'
 
@@ -241,18 +241,32 @@ export function SettingsPage() {
   const handleDeleteModel = async (modelId: string) => {
     if (!window.confirm(t('confirmDeleteModel', language))) return
     try {
-      // Real row delete (not a soft-blank). Backend returns 409 when a trader
-      // is bound to this entry — surface that message.
+      // DETERMINISTIC binding pre-check: the backend 409 "in use by traders" was
+      // being silently swallowed, so the owner saw nothing on delete. Check the
+      // binding client-side and REFUSE with a clear, trader-named message that
+      // always renders — instead of relying on the swallowed 409.
+      const traders = await api.getTraders(true).catch(() => [] as TraderInfo[])
+      const bound = (traders || []).filter((tr) => tr.ai_model === modelId)
+      if (bound.length > 0) {
+        const names = bound.map((tr) => `"${tr.trader_name}"`).join(', ')
+        toast.error(
+          `Can't delete — trader ${names} uses this entry. Switch that trader's model first.`,
+          { duration: 8000 }
+        )
+        return
+      }
       await api.deleteModelEntry(modelId)
-      await refreshModelConfigs()
+      // Feedback BEFORE closing/refreshing — firing it after the refresh setState
+      // was preventing the toast from rendering at all.
+      toast.success('Model config removed', { duration: 4000 })
       setShowModelModal(false)
       setEditingModel(null)
-      toast.success('Model config removed')
+      await refreshModelConfigs()
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
-      // Server 409 message contains the trader-in-use reason; fall back to the
-      // localized "in use by traders" string when the message is generic.
-      toast.error(msg || t('cannotDeleteModelInUse', language))
+      toast.error(msg || t('cannotDeleteModelInUse', language), {
+        duration: 8000,
+      })
     }
   }
 

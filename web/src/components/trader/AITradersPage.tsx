@@ -185,10 +185,6 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     return { runningCount, totalCount, usingTraders }
   }
 
-  const isModelUsedByAnyTrader = (modelId: string) => {
-    return traders?.some((tr) => tr.ai_model === modelId) || false
-  }
-
   const isExchangeUsedByAnyTrader = (exchangeId: string) => {
     return traders?.some((tr) => tr.exchange_id === exchangeId) || false
   }
@@ -343,96 +339,33 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     }
   }
 
-  const handleDeleteConfig = async <T extends { id: string }>(config: {
-    id: string
-    type: 'model' | 'exchange'
-    checkInUse: (id: string) => boolean
-    getUsingTraders: (id: string) => any[]
-    cannotDeleteKey: string
-    confirmDeleteKey: string
-    allItems: T[] | undefined
-    clearFields: (item: T) => T
-    buildRequest: (items: T[]) => any
-    updateApi: (request: any) => Promise<void>
-    refreshApi: () => Promise<T[]>
-    setItems: (items: T[]) => void
-    closeModal: () => void
-    errorKey: string
-  }) => {
-    if (config.checkInUse(config.id)) {
-      const usingTraders = config.getUsingTraders(config.id)
-      const traderNames = usingTraders.map((tr) => tr.trader_name).join(', ')
+  const handleDeleteModelConfig = async (modelId: string) => {
+    if (!window.confirm(t('confirmDeleteModel', language))) return
+    // Deterministic binding refusal (the old path soft-blanked + PUT-by-provider,
+    // which corrupted multi-entry providers and never deleted). Refuse clearly when
+    // a trader is bound; otherwise do a REAL delete by exact id.
+    const bound = getTradersUsingModel(modelId)
+    if (bound.length > 0) {
+      const names = bound.map((tr) => `"${tr.trader_name}"`).join(', ')
       toast.error(
-        `${t(config.cannotDeleteKey, language)} · ${t('tradersUsing', language)}: ${traderNames} · ${t('pleaseDeleteTradersFirst', language)}`
+        `Can't delete — trader ${names} uses this entry. Switch that trader's model first.`,
+        { duration: 8000 }
       )
       return
     }
-
-    {
-      const ok = await confirmToast(t(config.confirmDeleteKey, language))
-      if (!ok) return
-    }
-
     try {
-      const updatedItems =
-        config.allItems?.map((item) =>
-          item.id === config.id ? config.clearFields(item) : item
-        ) || []
-
-      const request = config.buildRequest(updatedItems)
-      await config.updateApi(request)
-      toast.success(t('aiTradersToast.configUpdated', language))
-
-      const refreshedItems = await config.refreshApi()
-      config.setItems(refreshedItems)
-
-      config.closeModal()
-    } catch (error) {
-      console.error(`Failed to delete ${config.type} config:`, error)
-      toast.error(t(config.errorKey, language))
+      await api.deleteModelEntry(modelId)
+      toast.success('Model config removed', { duration: 4000 })
+      setShowModelModal(false)
+      setEditingModel(null)
+      const refreshed = await api.getModelConfigs()
+      setAllModels(refreshed)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      toast.error(msg || t('cannotDeleteModelInUse', language), {
+        duration: 8000,
+      })
     }
-  }
-
-  const handleDeleteModelConfig = async (modelId: string) => {
-    await handleDeleteConfig({
-      id: modelId,
-      type: 'model',
-      checkInUse: isModelUsedByAnyTrader,
-      getUsingTraders: getTradersUsingModel,
-      cannotDeleteKey: 'cannotDeleteModelInUse',
-      confirmDeleteKey: 'confirmDeleteModel',
-      allItems: allModels,
-      clearFields: (m) => ({
-        ...m,
-        apiKey: '',
-        customApiUrl: '',
-        customModelName: '',
-        enabled: false,
-      }),
-      buildRequest: (models) => ({
-        models: Object.fromEntries(
-          models.map((model) => [
-            model.provider,
-            {
-              enabled: model.enabled,
-              api_key: model.apiKey || '',
-              custom_api_url: model.customApiUrl || '',
-              custom_model_name: model.customModelName || '',
-            },
-          ])
-        ),
-      }),
-      updateApi: api.updateModelConfigs,
-      refreshApi: api.getModelConfigs,
-      setItems: (items) => {
-        setAllModels([...items])
-      },
-      closeModal: () => {
-        setShowModelModal(false)
-        setEditingModel(null)
-      },
-      errorKey: 'deleteConfigFailed',
-    })
   }
 
   const handleSaveModelConfig = async (
