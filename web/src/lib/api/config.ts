@@ -68,6 +68,65 @@ export const configApi = {
     if (!result.success) throw new Error('Failed to update model configs')
   },
 
+  async createModelEntry(request: {
+    provider: string
+    name: string
+    api_key: string
+    custom_api_url?: string
+    custom_model_name?: string
+    enabled?: boolean
+  }): Promise<{ id: string }> {
+    // Check if transport encryption is enabled
+    const config = await CryptoService.fetchCryptoConfig()
+
+    if (!config.transport_encryption) {
+      // Transport encryption disabled, send plaintext
+      const result = await httpClient.post<{ id: string }>(
+        `${API_BASE}/models/entry`,
+        request
+      )
+      if (!result.success) throw new Error('Failed to create model entry')
+      return result.data!
+    }
+
+    // Fetch RSA public key
+    const publicKey = await CryptoService.fetchPublicKey()
+
+    // Initialize crypto service
+    await CryptoService.initialize(publicKey)
+
+    // Get user info from localStorage
+    const userId = localStorage.getItem('user_id') || ''
+    const sessionId = sessionStorage.getItem('session_id') || ''
+
+    // Encrypt sensitive data
+    const encryptedPayload = await CryptoService.encryptSensitiveData(
+      JSON.stringify(request),
+      userId,
+      sessionId
+    )
+
+    // Send encrypted data
+    const result = await httpClient.post<{ id: string }>(
+      `${API_BASE}/models/entry`,
+      encryptedPayload
+    )
+    if (!result.success) throw new Error('Failed to create model entry')
+    return result.data!
+  },
+
+  async deleteModelEntry(id: string): Promise<void> {
+    // DELETE has no body → no encryption, just an authenticated DELETE.
+    const result = await httpClient.delete(
+      `${API_BASE}/models/${encodeURIComponent(id)}`
+    )
+    if (!result.success) {
+      // 409 → trader-in-use conflict; surface the server's error message so the
+      // UI can show "in use by traders".
+      throw new Error(result.message || 'Failed to delete model entry')
+    }
+  },
+
   async getExchangeConfigs(): Promise<Exchange[]> {
     const result = await httpClient.get<Exchange[]>(`${API_BASE}/exchanges`)
     if (!result.success) throw new Error('Failed to fetch exchange configs')
@@ -99,18 +158,28 @@ export const configApi = {
     if (!result.success) throw new Error('Failed to update exchange configs')
   },
 
-  async createExchange(request: CreateExchangeRequest): Promise<{ id: string }> {
-    const result = await httpClient.post<{ id: string }>(`${API_BASE}/exchanges`, request)
+  async createExchange(
+    request: CreateExchangeRequest
+  ): Promise<{ id: string }> {
+    const result = await httpClient.post<{ id: string }>(
+      `${API_BASE}/exchanges`,
+      request
+    )
     if (!result.success) throw new Error('Failed to create exchange account')
     return result.data!
   },
 
-  async createExchangeEncrypted(request: CreateExchangeRequest): Promise<{ id: string }> {
+  async createExchangeEncrypted(
+    request: CreateExchangeRequest
+  ): Promise<{ id: string }> {
     // Plan 4.2 fix (BUG 4.1.A.b1): NinjaTrader has no API key/secret to encrypt
     // (auths via Windows process / file CSV bridge per Task 14). Skip encryption
     // and POST plain JSON — backend accepts it directly.
     if (request.exchange_type === 'ninjatrader') {
-      const result = await httpClient.post<{ id: string }>(`${API_BASE}/exchanges`, request)
+      const result = await httpClient.post<{ id: string }>(
+        `${API_BASE}/exchanges`,
+        request
+      )
       if (!result.success) throw new Error('Failed to create exchange account')
       return result.data!
     }
@@ -120,7 +189,10 @@ export const configApi = {
 
     if (!config.transport_encryption) {
       // Transport encryption disabled, send plaintext
-      const result = await httpClient.post<{ id: string }>(`${API_BASE}/exchanges`, request)
+      const result = await httpClient.post<{ id: string }>(
+        `${API_BASE}/exchanges`,
+        request
+      )
       if (!result.success) throw new Error('Failed to create exchange account')
       return result.data!
     }
@@ -152,7 +224,9 @@ export const configApi = {
   },
 
   async deleteExchange(exchangeId: string): Promise<void> {
-    const result = await httpClient.delete(`${API_BASE}/exchanges/${exchangeId}`)
+    const result = await httpClient.delete(
+      `${API_BASE}/exchanges/${exchangeId}`
+    )
     if (!result.success) throw new Error('Failed to delete exchange account')
   },
 
@@ -221,7 +295,9 @@ export const configApi = {
       `${API_BASE}/onboarding/beginner/current`
     )
     if (!result.success || !result.data) {
-      throw new Error(result.message || 'Failed to fetch current beginner wallet')
+      throw new Error(
+        result.message || 'Failed to fetch current beginner wallet'
+      )
     }
     return result.data
   },

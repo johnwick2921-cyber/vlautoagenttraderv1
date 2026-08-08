@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"nofx/kernel"
+	"nofx/logger"
 	"nofx/mcp"
 	"nofx/safe"
 	"nofx/security"
@@ -186,21 +187,19 @@ func (a *Agent) ensureUniqueModelName(storeUserID, name, excludeID string) error
 	return nil
 }
 
+// findModelByProvider resolves the deterministic winner among rows sharing a provider
+// (enabled + most-recent, via store.PickProviderModel). With multiple entries per
+// provider this returns the primary — never a silent first-by-id — and logs the choice.
 func (a *Agent) findModelByProvider(storeUserID, provider string) (*store.AIModel, error) {
 	models, err := a.store.AIModel().List(storeUserID)
 	if err != nil {
 		return nil, err
 	}
-	normalizedProvider := strings.ToLower(strings.TrimSpace(provider))
-	for _, model := range models {
-		if model == nil {
-			continue
-		}
-		if strings.ToLower(strings.TrimSpace(model.Provider)) == normalizedProvider {
-			return model, nil
-		}
+	chosen, n := store.PickProviderModel(models, provider)
+	if chosen != nil && n > 1 {
+		logger.Warnf("⚠️ findModelByProvider %q → %d entries; using enabled+most-recent id=%s", provider, n, chosen.ID)
 	}
-	return nil, nil
+	return chosen, nil
 }
 
 func (a *Agent) ensureUniqueExchangeAccountName(storeUserID, accountName, excludeID string) error {

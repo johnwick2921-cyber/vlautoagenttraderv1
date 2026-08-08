@@ -401,6 +401,9 @@ export const translations = {
       '• Configured URLs will be used to fetch market data and trading signals',
     editAIModel: 'Edit AI Model',
     addAIModel: 'Add AI Model',
+    addModelEntry: 'Add another key',
+    entryName: 'Name (e.g. DeepSeek-backup)',
+    deleteModelEntry: 'Delete this entry',
     confirmDeleteModel:
       'Are you sure you want to delete this AI model configuration?',
     cannotDeleteModelInUse:
@@ -1766,6 +1769,9 @@ export const translations = {
     signalSourceInfo3: '• 配置的URL将用于获取市场数据和交易信号',
     editAIModel: '编辑AI模型',
     addAIModel: '添加AI模型',
+    addModelEntry: '添加另一个密钥',
+    entryName: '名称（例如 DeepSeek-备用）',
+    deleteModelEntry: '删除此条目',
     confirmDeleteModel: '确定要删除此AI模型配置吗？',
     cannotDeleteModelInUse: '无法删除此AI模型，因为有交易员正在使用',
     tradersUsing: '正在使用此配置的交易员',
@@ -3093,6 +3099,9 @@ export const translations = {
       '• URL yang dikonfigurasi akan digunakan untuk mengambil data pasar dan sinyal trading',
     editAIModel: 'Edit Model AI',
     addAIModel: 'Tambah Model AI',
+    addModelEntry: 'Tambah kunci lain',
+    entryName: 'Nama (mis. DeepSeek-cadangan)',
+    deleteModelEntry: 'Hapus entri ini',
     confirmDeleteModel:
       'Apakah Anda yakin ingin menghapus konfigurasi model AI ini?',
     cannotDeleteModelInUse:

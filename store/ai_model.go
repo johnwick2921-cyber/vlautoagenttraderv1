@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -59,7 +60,10 @@ func (s *AIModelStore) initDefaultData() error {
 // Used to recover wallets after account reset.
 func (s *AIModelStore) FindOrphanClaw402() (*AIModel, error) {
 	var model AIModel
+	// Deterministic pick when several orphan claw402 rows exist (multi-entry safe):
+	// most-recently-updated first, stable id tie-break.
 	err := s.db.Where("provider = ? AND api_key != '' AND user_id NOT IN (SELECT id FROM users)", "claw402").
+		Order("updated_at DESC, id ASC").
 		First(&model).Error
 	if err != nil {
 		return nil, err
@@ -197,6 +201,85 @@ func hasUsableAPIKey(model AIModel) bool {
 	return envKey != "" && strings.TrimSpace(os.Getenv(envKey)) != ""
 }
 
+// defaultProviderName returns the conventional display name for a provider.
+func defaultProviderName(provider string) string {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "deepseek":
+		return "DeepSeek AI"
+	case "qwen":
+		return "Qwen AI"
+	default:
+		return provider + " AI"
+	}
+}
+
+// PickProviderModel deterministically selects among models that share `provider`.
+// Preference order: enabled beats disabled; then most-recently-updated (UpdatedAt);
+// then lowest ID (stable tie-break). Returns the chosen model (nil if none match)
+// and the number of provider candidates seen. This is the single source of truth for
+// "which row wins" once multiple entries per provider exist — callers MUST log the
+// chosen id when candidates > 1 so there is never a silent first-row-wins.
+func PickProviderModel(models []*AIModel, provider string) (*AIModel, int) {
+	norm := strings.ToLower(strings.TrimSpace(provider))
+	var best *AIModel
+	count := 0
+	for _, m := range models {
+		if m == nil || strings.ToLower(strings.TrimSpace(m.Provider)) != norm {
+			continue
+		}
+		count++
+		if best == nil || betterProviderModel(m, best) {
+			best = m
+		}
+	}
+	return best, count
+}
+
+// betterProviderModel: enabled > disabled, then newer UpdatedAt, then lower ID.
+func betterProviderModel(a, b *AIModel) bool {
+	if a.Enabled != b.Enabled {
+		return a.Enabled
+	}
+	if !a.UpdatedAt.Equal(b.UpdatedAt) {
+		return a.UpdatedAt.After(b.UpdatedAt)
+	}
+	return a.ID < b.ID
+}
+
+// CreateEntry creates a NEW, independently-addressable AI model row for a provider,
+// enabling MULTIPLE entries per provider (e.g. "DeepSeek-main" + "DeepSeek-backup").
+// The id is always unique — userID_provider_<shortuuid> — so existing rows (which
+// traders reference by id) are never touched. Returns the new row id.
+func (s *AIModelStore) CreateEntry(userID, provider, name string, enabled bool, apiKey, customAPIURL, customModelName string) (string, error) {
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	if provider == "" {
+		return "", fmt.Errorf("provider is required")
+	}
+	if userID == "" {
+		userID = "default"
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = defaultProviderName(provider)
+	}
+	id := fmt.Sprintf("%s_%s_%s", userID, provider, uuid.NewString()[:8])
+	m := &AIModel{
+		ID:              id,
+		UserID:          userID,
+		Name:            name,
+		Provider:        provider,
+		Enabled:         enabled,
+		APIKey:          crypto.EncryptedString(apiKey),
+		CustomAPIURL:    customAPIURL,
+		CustomModelName: customModelName,
+	}
+	if err := s.db.Create(m).Error; err != nil {
+		return "", err
+	}
+	logger.Infof("✓ Created AI model ENTRY id=%s provider=%s name=%q enabled=%v", id, provider, name, enabled)
+	return id, nil
+}
+
 // Update updates AI model, creates if not exists
 // IMPORTANT: If apiKey is empty string, the existing API key will be preserved (not overwritten)
 func (s *AIModelStore) Update(userID, id string, enabled bool, apiKey, customAPIURL, customModelName string) error {
@@ -225,24 +308,38 @@ func (s *AIModelStore) UpdateWithName(userID, id, name string, enabled bool, api
 		return s.db.Model(&existingModel).Updates(updates).Error
 	}
 
-	// Try legacy logic compatibility: use id as provider to search
+	// LEGACY provider matching — SCOPED to genuinely-legacy BARE-provider ids only
+	// (e.g. "deepseek"), never composite row ids ("userID_provider[_uuid]"). This match
+	// is what let a second same-provider save silently overwrite the first; gating it on
+	// a bare id (no underscore) lets an explicit new entry (unique id via CreateEntry)
+	// keep its own row. When multiple rows share the provider, pick DETERMINISTICALLY
+	// (enabled + most-recent) and LOG it — no silent first-row-wins.
 	provider := id
-	err = s.db.Where("user_id = ? AND provider = ?", userID, provider).First(&existingModel).Error
-	if err == nil {
-		logger.Warnf("⚠️ Using legacy provider matching to update model: %s -> %s", provider, existingModel.ID)
-		updates := map[string]interface{}{
-			"enabled":           enabled,
-			"custom_api_url":    customAPIURL,
-			"custom_model_name": customModelName,
-			"updated_at":        time.Now().UTC(),
+	if !strings.Contains(id, "_") {
+		var providerRows []*AIModel
+		if e := s.db.Where("user_id = ? AND provider = ?", userID, provider).Find(&providerRows).Error; e == nil && len(providerRows) > 0 {
+			chosen, n := PickProviderModel(providerRows, provider)
+			if chosen != nil {
+				if n > 1 {
+					logger.Warnf("⚠️ legacy provider-match %q → %d entries; updating enabled+most-recent id=%s", provider, n, chosen.ID)
+				} else {
+					logger.Warnf("⚠️ Using legacy provider matching to update model: %s -> %s", provider, chosen.ID)
+				}
+				updates := map[string]interface{}{
+					"enabled":           enabled,
+					"custom_api_url":    customAPIURL,
+					"custom_model_name": customModelName,
+					"updated_at":        time.Now().UTC(),
+				}
+				if strings.TrimSpace(name) != "" {
+					updates["name"] = strings.TrimSpace(name)
+				}
+				if apiKey != "" {
+					updates["api_key"] = crypto.EncryptedString(apiKey)
+				}
+				return s.db.Model(chosen).Updates(updates).Error
+			}
 		}
-		if strings.TrimSpace(name) != "" {
-			updates["name"] = strings.TrimSpace(name)
-		}
-		if apiKey != "" {
-			updates["api_key"] = crypto.EncryptedString(apiKey)
-		}
-		return s.db.Model(&existingModel).Updates(updates).Error
 	}
 
 	// Create new record
@@ -321,13 +418,24 @@ func (s *AIModelStore) ResolveClaw402WalletKey(userID, preferredModelID string) 
 		return "", fmt.Errorf("failed to load AI models")
 	}
 
+	// Deterministic pick among claw402 rows carrying a wallet key: enabled +
+	// most-recent (same rule as PickProviderModel). No silent first-by-id wins.
+	var best *AIModel
+	n := 0
 	for _, model := range models {
-		if model == nil || model.Provider != "claw402" {
+		if model == nil || model.Provider != "claw402" || string(model.APIKey) == "" {
 			continue
 		}
-		if walletKey := string(model.APIKey); walletKey != "" {
-			return walletKey, nil
+		n++
+		if best == nil || betterProviderModel(model, best) {
+			best = model
 		}
+	}
+	if best != nil {
+		if n > 1 {
+			logger.Warnf("⚠️ claw402 wallet resolve: %d keyed entries; using enabled+most-recent id=%s", n, best.ID)
+		}
+		return string(best.APIKey), nil
 	}
 
 	return "", nil

@@ -269,7 +269,17 @@ export function TraderConfigModal({
                     className="w-full px-3 py-2 bg-[#0B0E11] border border-[#2B3139] rounded text-[#EAECEF]"
                     options={availableModels.map((model) => ({
                       value: model.id,
-                      label: getShortName(model.name || model.id).toUpperCase(),
+                      // Full name (not short-name) so two entries of the SAME
+                      // provider stay tellable apart; append provider in parens
+                      // when the name doesn't already mention it.
+                      label:
+                        (model.name || model.id) +
+                        (model.provider &&
+                        !(model.name || '')
+                          .toLowerCase()
+                          .includes(model.provider.toLowerCase())
+                          ? ` (${model.provider})`
+                          : ''),
                     }))}
                   />
                 </div>

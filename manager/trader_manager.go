@@ -453,10 +453,13 @@ func (tm *TraderManager) LoadUserTradersFromStore(st *store.Store, userID string
 			}
 		}
 		if aiModelCfg == nil {
-			for _, model := range aiModels {
-				if model.Provider == traderCfg.AIModelID {
-					aiModelCfg = model
-					break
+			// Legacy binding: trader.AIModelID holds a bare provider name. With multiple
+			// entries per provider, resolve DETERMINISTICALLY (enabled + most-recent) — a
+			// trader bound to a specific row id already matched exactly above.
+			if chosen, n := store.PickProviderModel(aiModels, traderCfg.AIModelID); chosen != nil {
+				aiModelCfg = chosen
+				if n > 1 {
+					logger.Infof("⚠️ Trader %s legacy provider-match %q → %d entries; using id=%s", traderCfg.Name, traderCfg.AIModelID, n, chosen.ID)
 				}
 			}
 		}
@@ -550,14 +553,12 @@ func (tm *TraderManager) LoadTradersFromStore(st *store.Store) error {
 				break
 			}
 		}
-		// If no exact match, try matching provider (for backward compatibility)
+		// If no exact match, try matching provider (backward compat, legacy bare-provider
+		// binding). Deterministic pick (enabled + most-recent) when multiple entries exist.
 		if aiModelCfg == nil {
-			for _, model := range aiModels {
-				if model.Provider == traderCfg.AIModelID {
-					aiModelCfg = model
-					logger.Infof("⚠️  Trader %s using legacy provider match: %s -> %s", traderCfg.Name, traderCfg.AIModelID, model.ID)
-					break
-				}
+			if chosen, n := store.PickProviderModel(aiModels, traderCfg.AIModelID); chosen != nil {
+				aiModelCfg = chosen
+				logger.Infof("⚠️  Trader %s using legacy provider match: %s -> %s (of %d)", traderCfg.Name, traderCfg.AIModelID, chosen.ID, n)
 			}
 		}
 

@@ -248,3 +248,104 @@ func (s *Server) handleGetSupportedModels(c *gin.Context) {
 
 	c.JSON(http.StatusOK, supportedModels)
 }
+
+// CreateModelEntryRequest is the body for POST /api/models/entry — create an
+// ADDITIONAL, independently-addressable entry for a provider (multi-key support).
+type CreateModelEntryRequest struct {
+	Provider        string `json:"provider"`
+	Name            string `json:"name"`
+	APIKey          string `json:"api_key"`
+	CustomAPIURL    string `json:"custom_api_url"`
+	CustomModelName string `json:"custom_model_name"`
+	Enabled         *bool  `json:"enabled"`
+}
+
+// handleCreateModelEntry creates a NEW model row (unique id) for a provider, so a
+// provider can hold multiple entries (e.g. DeepSeek-main + DeepSeek-backup). Existing
+// rows — which traders reference by id — are never touched.
+func (s *Server) handleCreateModelEntry(c *gin.Context) {
+	userID := c.GetString("user_id")
+	cfg := config.Get()
+
+	bodyBytes, err := c.GetRawData()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+		return
+	}
+
+	var req CreateModelEntryRequest
+	if !cfg.TransportEncryption {
+		if err := json.Unmarshal(bodyBytes, &req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+			return
+		}
+	} else {
+		var encryptedPayload crypto.EncryptedPayload
+		if err := json.Unmarshal(bodyBytes, &encryptedPayload); err != nil || encryptedPayload.WrappedKey == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Encrypted transmission required", "code": "ENCRYPTION_REQUIRED"})
+			return
+		}
+		decrypted, derr := s.cryptoHandler.cryptoService.DecryptSensitiveData(&encryptedPayload)
+		if derr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to decrypt data"})
+			return
+		}
+		if err := json.Unmarshal([]byte(decrypted), &req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse decrypted data"})
+			return
+		}
+	}
+
+	provider := strings.ToLower(strings.TrimSpace(req.Provider))
+	if provider == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "provider is required"})
+		return
+	}
+	if req.CustomAPIURL != "" {
+		if err := security.ValidateURL(strings.TrimSuffix(req.CustomAPIURL, "#")); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid custom_api_url: URL must be a valid HTTPS endpoint"})
+			return
+		}
+	}
+	enabled := true
+	if req.Enabled != nil {
+		enabled = *req.Enabled
+	}
+
+	id, err := s.store.AIModel().CreateEntry(userID, provider, req.Name, enabled, req.APIKey, req.CustomAPIURL, req.CustomModelName)
+	if err != nil {
+		SafeInternalError(c, "Create model entry", err)
+		return
+	}
+	logger.Infof("✓ Created AI model entry id=%s provider=%s (user %s)", id, provider, userID)
+	c.JSON(http.StatusOK, gin.H{"id": id})
+}
+
+// handleDeleteModelEntry deletes one model row by EXACT id. Refused if a trader is
+// still bound to it (bindings reference the row id).
+func (s *Server) handleDeleteModelEntry(c *gin.Context) {
+	userID := c.GetString("user_id")
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "model id is required"})
+		return
+	}
+
+	if traders, err := s.store.Trader().ListByAIModelID(userID, id); err == nil && len(traders) > 0 {
+		names := make([]string, 0, len(traders))
+		for _, t := range traders {
+			names = append(names, t.Name)
+		}
+		c.JSON(http.StatusConflict, gin.H{
+			"error":   "Cannot delete this AI model because it is being used by traders",
+			"traders": names,
+		})
+		return
+	}
+
+	if err := s.store.AIModel().Delete(userID, id); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "deleted", "id": id})
+}

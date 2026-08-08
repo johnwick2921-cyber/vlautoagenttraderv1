@@ -10,9 +10,11 @@ import {
   ChevronRight,
   Plus,
   Pencil,
+  Trash2,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
+import { t } from '../i18n/translations'
 import { api } from '../lib/api'
 import { ExchangeConfigModal } from '../components/trader/ExchangeConfigModal'
 import { TelegramConfigModal } from '../components/trader/TelegramConfigModal'
@@ -50,6 +52,14 @@ export function SettingsPage() {
   const [supportedModels, setSupportedModels] = useState<AIModel[]>([])
   const [showModelModal, setShowModelModal] = useState(false)
   const [editingModel, setEditingModel] = useState<string | null>(null)
+
+  // "Add another entry" inline form state (keyed by provider of the row it
+  // hangs off). A provider can now hold multiple rows, so this lets the user
+  // add a SECOND named key without touching the existing row.
+  const [addEntryProvider, setAddEntryProvider] = useState<string | null>(null)
+  const [addEntryName, setAddEntryName] = useState('')
+  const [addEntryKey, setAddEntryKey] = useState('')
+  const [addEntrySaving, setAddEntrySaving] = useState(false)
 
   // Exchanges state
   const [exchanges, setExchanges] = useState<Exchange[]>([])
@@ -170,7 +180,12 @@ export function SettingsPage() {
       const request = {
         models: Object.fromEntries(
           updatedModels.map((m) => [
-            m.provider,
+            // Key by row id so editing one entry updates exactly that row
+            // (a provider can now have multiple rows). Newly-configured
+            // providers whose row doesn't exist yet still send a bare-provider
+            // id from the supportedModels template — the backend's scoped
+            // legacy path handles bare ids.
+            m.id,
             {
               enabled: m.enabled,
               api_key: m.apiKey || '',
@@ -191,38 +206,54 @@ export function SettingsPage() {
   }
 
   const handleDeleteModel = async (modelId: string) => {
+    if (!window.confirm(t('confirmDeleteModel', language))) return
     try {
-      const updatedModels = configuredModels.map((m) =>
-        m.id === modelId
-          ? {
-              ...m,
-              apiKey: '',
-              customApiUrl: '',
-              customModelName: '',
-              enabled: false,
-            }
-          : m
-      )
-      const request = {
-        models: Object.fromEntries(
-          updatedModels.map((m) => [
-            m.provider,
-            {
-              enabled: m.enabled,
-              api_key: m.apiKey || '',
-              custom_api_url: m.customApiUrl || '',
-              custom_model_name: m.customModelName || '',
-            },
-          ])
-        ),
-      }
-      await api.updateModelConfigs(request)
+      // Real row delete (not a soft-blank). Backend returns 409 when a trader
+      // is bound to this entry — surface that message.
+      await api.deleteModelEntry(modelId)
       await refreshModelConfigs()
       setShowModelModal(false)
       setEditingModel(null)
       toast.success('Model config removed')
-    } catch {
-      toast.error('Failed to remove model config')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      // Server 409 message contains the trader-in-use reason; fall back to the
+      // localized "in use by traders" string when the message is generic.
+      toast.error(msg || t('cannotDeleteModelInUse', language))
+    }
+  }
+
+  const openAddEntry = (provider: string) => {
+    setAddEntryProvider(provider)
+    setAddEntryName('')
+    setAddEntryKey('')
+  }
+
+  const cancelAddEntry = () => {
+    setAddEntryProvider(null)
+    setAddEntryName('')
+    setAddEntryKey('')
+  }
+
+  const handleCreateEntry = async () => {
+    if (!addEntryProvider || !addEntryName.trim() || !addEntryKey.trim()) return
+    setAddEntrySaving(true)
+    try {
+      await api.createModelEntry({
+        provider: addEntryProvider,
+        name: addEntryName.trim(),
+        api_key: addEntryKey.trim(),
+        enabled: true,
+      })
+      toast.success('Model entry added')
+      cancelAddEntry()
+      await refreshModelConfigs()
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to add model entry'
+      )
+    } finally {
+      setAddEntrySaving(false)
     }
   }
 
@@ -430,48 +461,108 @@ export function SettingsPage() {
               ) : (
                 <div className="space-y-2">
                   {configuredModels.map((model) => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setEditingModel(model.id)
-                        setShowModelModal(true)
-                      }}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center">
-                          <Cpu size={14} className="text-zinc-300" />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-sm font-medium text-white">
-                            {model.name}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                            <p className="text-xs text-zinc-500">
-                              {model.provider}
+                    <div key={model.id}>
+                      <div className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 transition-colors group">
+                        {/* Clickable edit region */}
+                        <button
+                          onClick={() => {
+                            setEditingModel(model.id)
+                            setShowModelModal(true)
+                          }}
+                          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center shrink-0">
+                            <Cpu size={14} className="text-zinc-300" />
+                          </div>
+                          <div className="text-left min-w-0">
+                            <p className="text-sm font-medium text-white truncate">
+                              {model.name}
                             </p>
-                            {configBadge('API Key', !!model.has_api_key)}
-                            {model.customModelName
-                              ? configBadge('Custom Model', true)
-                              : null}
-                            {model.customApiUrl
-                              ? configBadge('Base URL', true)
-                              : null}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              <p className="text-xs text-zinc-500">
+                                {model.provider}
+                              </p>
+                              {configBadge('API Key', !!model.has_api_key)}
+                              {model.customModelName
+                                ? configBadge('Custom Model', true)
+                                : null}
+                              {model.customApiUrl
+                                ? configBadge('Base URL', true)
+                                : null}
+                            </div>
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${model.enabled ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-700 text-zinc-500'}`}
+                          >
+                            {model.enabled ? 'Active' : 'Inactive'}
+                          </span>
+                          <button
+                            onClick={() => openAddEntry(model.provider)}
+                            title={t('addModelEntry', language)}
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-nofx-gold hover:bg-nofx-gold/10 transition-colors"
+                          >
+                            <Plus size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteModel(model.id)}
+                            title={t('deleteModelEntry', language)}
+                            className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                          <Pencil
+                            size={14}
+                            className="text-zinc-600 group-hover:text-zinc-400 transition-colors"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Inline "add another entry" form for this provider */}
+                      {addEntryProvider === model.provider && (
+                        <div className="mt-2 mb-1 mx-1 p-3 rounded-xl bg-zinc-900/70 border border-zinc-700/60 space-y-2">
+                          <p className="text-xs text-zinc-400">
+                            {t('addModelEntry', language)} — {model.provider}
+                          </p>
+                          <input
+                            type="text"
+                            value={addEntryName}
+                            onChange={(e) => setAddEntryName(e.target.value)}
+                            placeholder={t('entryName', language)}
+                            className="w-full bg-zinc-950/80 border border-zinc-700/80 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nofx-gold/60"
+                          />
+                          <input
+                            type="password"
+                            value={addEntryKey}
+                            onChange={(e) => setAddEntryKey(e.target.value)}
+                            placeholder={t('enterAPIKey', language)}
+                            className="w-full bg-zinc-950/80 border border-zinc-700/80 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nofx-gold/60"
+                          />
+                          <div className="flex justify-end gap-2 pt-1">
+                            <button
+                              onClick={cancelAddEntry}
+                              className="px-3 py-1.5 text-xs rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors"
+                            >
+                              {t('cancel', language)}
+                            </button>
+                            <button
+                              onClick={handleCreateEntry}
+                              disabled={
+                                addEntrySaving ||
+                                !addEntryName.trim() ||
+                                !addEntryKey.trim()
+                              }
+                              className="px-3 py-1.5 text-xs rounded-lg bg-nofx-gold text-black font-medium hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {addEntrySaving
+                                ? t('saving', language)
+                                : t('addModelEntry', language)}
+                            </button>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${model.enabled ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-700 text-zinc-500'}`}
-                        >
-                          {model.enabled ? 'Active' : 'Inactive'}
-                        </span>
-                        <Pencil
-                          size={14}
-                          className="text-zinc-600 group-hover:text-zinc-400 transition-colors"
-                        />
-                      </div>
-                    </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
