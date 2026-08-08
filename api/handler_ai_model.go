@@ -40,6 +40,7 @@ type SafeModelConfig struct {
 
 type UpdateModelConfigRequest struct {
 	Models map[string]struct {
+		Name            string `json:"name"`
 		Enabled         bool   `json:"enabled"`
 		APIKey          string `json:"api_key"`
 		CustomAPIURL    string `json:"custom_api_url"`
@@ -205,7 +206,9 @@ func (s *Server) handleUpdateModelConfigs(c *gin.Context) {
 			tradersToReload[t.ID] = true
 		}
 
-		err := s.store.AIModel().Update(userID, modelID, modelData.Enabled, modelData.APIKey, modelData.CustomAPIURL, modelData.CustomModelName)
+		// UpdateWithName carries an optional display-name (rename); empty name preserves
+		// the existing name (UpdateWithName only sets name when non-blank).
+		err := s.store.AIModel().UpdateWithName(userID, modelID, modelData.Name, modelData.Enabled, modelData.APIKey, modelData.CustomAPIURL, modelData.CustomModelName)
 		if err != nil {
 			SafeInternalError(c, fmt.Sprintf("Update model %s", modelID), err)
 			return

@@ -439,7 +439,8 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
     modelId: string,
     apiKey: string,
     customApiUrl?: string,
-    customModelName?: string
+    customModelName?: string,
+    name?: string
   ) => {
     try {
       const existingModel = allModels?.find((m) => m.id === modelId)
@@ -492,6 +493,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
                   customApiUrl: customApiUrl || '',
                   customModelName: customModelName || '',
                   enabled: true,
+                  name: name?.trim() ? name.trim() : m.name,
                 }
               : m
           ) || []
@@ -514,6 +516,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
             // bare-provider template id which the backend's scoped legacy path creates.
             model.id,
             {
+              name: model.name || '',
               enabled: model.enabled,
               api_key: model.apiKey || '',
               custom_api_url: model.customApiUrl || '',

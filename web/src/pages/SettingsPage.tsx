@@ -140,7 +140,8 @@ export function SettingsPage() {
     modelId: string,
     apiKey: string,
     customApiUrl?: string,
-    customModelName?: string
+    customModelName?: string,
+    name?: string
   ) => {
     try {
       const existingModel = configuredModels.find((m) => m.id === modelId)
@@ -191,6 +192,7 @@ export function SettingsPage() {
                 customApiUrl: customApiUrl || '',
                 customModelName: customModelName || '',
                 enabled: true,
+                name: name?.trim() ? name.trim() : m.name,
               }
             : m
         )
@@ -217,6 +219,7 @@ export function SettingsPage() {
             // legacy path handles bare ids.
             m.id,
             {
+              name: m.name || '',
               enabled: m.enabled,
               api_key: m.apiKey || '',
               custom_api_url: m.customApiUrl || '',
