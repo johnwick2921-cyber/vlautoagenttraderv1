@@ -55,25 +55,10 @@ import {
   ROUTES,
   type Page,
 } from './paths'
+import { findTraderBySlug, getTraderSlug } from './traderSlug'
 
-function getTraderSlug(trader: TraderInfo) {
-  const idPrefix = trader.trader_id.slice(0, 4)
-  return `${trader.trader_name}-${idPrefix}`
-}
-
-function findTraderBySlug(slug: string, traderList: TraderInfo[]) {
-  const lastDashIndex = slug.lastIndexOf('-')
-  if (lastDashIndex === -1) {
-    return traderList.find((trader) => trader.trader_name === slug)
-  }
-
-  const name = slug.slice(0, lastDashIndex)
-  const idPrefix = slug.slice(lastDashIndex + 1)
-  return traderList.find(
-    (trader) =>
-      trader.trader_name === name && trader.trader_id.startsWith(idPrefix)
-  )
-}
+// getTraderSlug / findTraderBySlug live in ./traderSlug so the selection logic
+// is unit-testable in isolation (see traderSlug.test.ts).
 
 function LoadingScreen() {
   const { language } = useLanguage()
@@ -237,7 +222,7 @@ function DashboardRoute() {
   const { language } = useLanguage()
   const { user, token } = useAuth()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const selectedTraderSlug = searchParams.get('trader') || undefined
   const [selectedTraderId, setSelectedTraderId] = useState<string | undefined>()
   const [lastUpdate, setLastUpdate] = useState<string>('--:--:--')
@@ -276,24 +261,51 @@ function DashboardRoute() {
     }
   )
 
+  // Selection is OWNER-OWNED. The URL (?trader=) is the single source of truth,
+  // written only by explicit user action (a View click). This effect NEVER lets
+  // a poll/refresh/remount silently switch traders — it only (a) mirrors the URL
+  // into local state, (b) re-persists an existing valid selection into the URL
+  // when the param was dropped (e.g. the header "Dashboard" nav), and (c) picks
+  // a first-run default. It runs on the `traders` poll but is idempotent when the
+  // selection is stable, so a valid selection sticks across every poll cycle.
   useEffect(() => {
     if (!traders || traders.length === 0) {
       return
     }
 
+    // (a) URL names a trader that still exists → honor it EXACTLY. No fallback:
+    //     a stale/unresolvable slug must never hijack the view to traders[0].
     if (selectedTraderSlug) {
-      const trader = findTraderBySlug(selectedTraderSlug, traders)
-      const nextTraderId = trader?.trader_id || traders[0].trader_id
-      if (nextTraderId !== selectedTraderId) {
-        setSelectedTraderId(nextTraderId)
+      const fromUrl = findTraderBySlug(selectedTraderSlug, traders)
+      if (fromUrl) {
+        if (fromUrl.trader_id !== selectedTraderId) {
+          setSelectedTraderId(fromUrl.trader_id)
+        }
+        return
+      }
+    }
+
+    // (b) No usable slug (absent, or stale/deleted). Preserve an existing valid
+    //     selection by writing it BACK into the URL. This is what makes the
+    //     selection survive the header nav dropping ?trader= and a later reload.
+    const current =
+      selectedTraderId &&
+      traders.find((trader) => trader.trader_id === selectedTraderId)
+    if (current) {
+      const canonical = getTraderSlug(current)
+      if (selectedTraderSlug !== canonical) {
+        setSearchParams({ trader: canonical }, { replace: true })
       }
       return
     }
 
-    if (!selectedTraderId) {
-      setSelectedTraderId(traders[0].trader_id)
-    }
-  }, [selectedTraderId, selectedTraderSlug, traders])
+    // (c) Genuinely no selection (first visit, or the selected trader was
+    //     deleted) → default to the first trader and record it in the URL so it
+    //     persists across reloads instead of re-deriving every mount.
+    const fallback = traders[0]
+    setSelectedTraderId(fallback.trader_id)
+    setSearchParams({ trader: getTraderSlug(fallback) }, { replace: true })
+  }, [selectedTraderId, selectedTraderSlug, traders, setSearchParams])
 
   // Issue 2F — the currently selected NT account (from /api/accounts). Shares
   // the SWR cache with AccountSelector via the same key. Threaded into the

@@ -349,8 +349,12 @@ function TraderRow({
               if (onTraderSelect) {
                 onTraderSelect(trader.trader_id)
               } else {
-                const slug = `${trader.trader_name}-${trader.trader_id.slice(0, 4)}`
-                onNavigate(`/dashboard?trader=${encodeURIComponent(slug)}`)
+                // Slug is the full, unique trader_id (see getTraderSlug in
+                // AppRoutes) — never the name+short-prefix form, which collides
+                // because every trader shares the same id prefix.
+                onNavigate(
+                  `/dashboard?trader=${encodeURIComponent(trader.trader_id)}`
+                )
               }
             }}
             className="px-2 md:px-3 py-1.5 md:py-2 rounded text-xs md:text-sm font-semibold transition-all hover:scale-105 flex items-center gap-1 whitespace-nowrap"
