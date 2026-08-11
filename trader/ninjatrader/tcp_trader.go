@@ -109,13 +109,22 @@ func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *T
 		// P5.4 — router-fed per-symbol stream (no cross-trader racing). The
 		// channel CLOSES when a reloaded trader re-subscribes, ending this
 		// goroutine (fixes the pre-P5.4 reload leak).
-		for fill := range server.SubscribeFillsFor(symbol) {
+		for fill := range server.SubscribeFillsFor(symbol, t.boundAccount) {
 			// P5.2 split-brain defense: a symbol-tagged fill for a DIFFERENT
 			// instrument must never be attributed to this trader. Empty symbol
 			// = legacy (pre-P5.2) AddOn → assumed primary (back-compat).
 			if fill.Symbol != "" && !equalSymbol(fill.Symbol, symbol) {
 				logger.Warnf("⚠️ ninjatrader/tcp: REJECTED fill for symbol %q (this trader trades %q) — signal_id=%s (split-brain defense)",
 					fill.Symbol, symbol, fill.SignalID)
+				continue
+			}
+			// H3 account guard (defense in depth on top of the (symbol,account)
+			// routing): with two same-symbol traders, NEVER cache another account's
+			// fill as this trader's position. Empty account = legacy AddOn → trust
+			// the symbol routing.
+			if fill.Account != "" && t.boundAccount != "" && !strings.EqualFold(fill.Account, t.boundAccount) {
+				logger.Warnf("⚠️ ninjatrader/tcp: REJECTED fill for account %q (this trader is bound to %q) — signal_id=%s (H3 account guard)",
+					fill.Account, t.boundAccount, fill.SignalID)
 				continue
 			}
 			t.mu.Lock()

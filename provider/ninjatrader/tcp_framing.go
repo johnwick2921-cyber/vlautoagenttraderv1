@@ -54,8 +54,14 @@ type SignalPayload struct {
 // attributable. Empty = legacy AddOn (pre-P5.2) → consumers treat it as the
 // primary trading symbol (back-compat; new field is additive JSON).
 type FillPayload struct {
-	SignalID      string  `json:"signal_id"`
-	Symbol        string  `json:"symbol,omitempty"` // P5.2 — order's root symbol; empty = legacy (primary)
+	SignalID string `json:"signal_id"`
+	Symbol   string `json:"symbol,omitempty"` // P5.2 — order's root symbol; empty = legacy (primary)
+	// Account is the NT sub-account this fill executed on (H3 fix). The C# AddOn
+	// already sends it (VLTraderTCPClient SendFillFrame ["account"]); Go now parses
+	// it so fills route to the OWNING trader by (symbol,account) and a trader never
+	// caches another account's fill. omitempty keeps legacy (account-less) fill
+	// goldens byte-identical.
+	Account       string  `json:"account,omitempty"`
 	FillPrice     float64 `json:"fill_price"`
 	FillTime      string  `json:"fill_time"` // RFC3339
 	Side          string  `json:"side"`

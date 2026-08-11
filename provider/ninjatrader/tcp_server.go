@@ -194,53 +194,105 @@ func (s *TCPServer) runRouters(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case p := <-s.fillCh:
-			dispatchBySymbol(s, s.fillSubs, p.Symbol, p, "fill")
+			dispatchToOwner(s, s.fillSubs, p.Symbol, p.Account, p, "fill")
 		case p := <-s.closeCh:
-			dispatchBySymbol(s, s.closeSubs, p.Symbol, p, "position_close")
+			dispatchToOwner(s, s.closeSubs, p.Symbol, p.Account, p, "position_close")
 		case p := <-s.rejectCh:
-			dispatchBySymbol(s, s.rejectSubs, p.Symbol, p, "close_rejected")
+			dispatchToOwner(s, s.rejectSubs, p.Symbol, p.Account, p, "close_rejected")
 		case p := <-s.instrCh:
-			dispatchBySymbol(s, s.instrSubs, p.Symbol, p, "instrument_info")
+			// instrument_info carries no account (spec cross-check) → every
+			// subscriber of the symbol gets it (both same-symbol traders).
+			broadcastToSymbol(s, s.instrSubs, p.Symbol, p, "instrument_info")
 		}
 	}
 }
 
-// dispatchBySymbol routes one payload to the symbol's subscriber. EMPTY symbol
-// (legacy AddOn) routes to the PRIMARY trading symbol. No subscriber → logged
-// drop (Warn for order-path frames — those are never silent). The send happens
-// under subsMu, mutually exclusive with the close-on-resubscribe, so a send on
-// a closed channel is impossible.
-func dispatchBySymbol[T any](s *TCPServer, subs map[string]chan T, symbol string, p T, kind string) {
-	key := strings.ToUpper(strings.TrimSpace(symbol))
-	if key == "" {
-		key = strings.ToUpper(s.BarsSubscribeSymbol())
-	}
-	s.subsMu.Lock()
-	ch := subs[key]
-	if ch == nil {
-		s.subsMu.Unlock()
-		if kind == "instrument_info" {
-			s.logger.Info("tcp_server: instrument_info with no trader subscriber (data-only symbol)", "symbol", symbol)
-		} else {
-			s.logger.Warn("tcp_server: "+kind+" with NO subscriber — dropped", "symbol", symbol, "payload", fmt.Sprintf("%+v", p))
-		}
-		return
-	}
+// subKey composes the fan-out routing key. Two traders on the SAME symbol but
+// DIFFERENT accounts get DISTINCT keys, so re-subscription never evicts the other
+// trader's channel and each receives only its OWN account's fills/closes/rejects
+// (the H3 fix). account "" is the legacy/unbound key.
+func subKey(symbol, account string) string {
+	return strings.ToUpper(strings.TrimSpace(symbol)) + "\x00" + strings.TrimSpace(account)
+}
+
+// trySendLocked delivers one payload (subsMu held; mutually exclusive with the
+// close-on-resubscribe so a send on a closed channel is impossible).
+func trySendLocked[T any](s *TCPServer, ch chan T, p T, kind, symbol string) {
 	select {
 	case ch <- p:
 	default:
 		s.logger.Warn("tcp_server: "+kind+" subscriber full — dropped", "symbol", symbol)
 	}
-	s.subsMu.Unlock()
 }
 
-// subscribeFor installs (or REPLACES) the symbol's subscriber channel. The
-// previous channel is closed, which terminates a stale (reloaded-away) trader
-// instance's consumer goroutine — fixing the pre-P5.4 reload leak where every
-// trader reload added another competing consumer forever.
-func subscribeFor[T any](s *TCPServer, subs *map[string]chan T, symbol string) <-chan T {
+// broadcastLocked sends to EVERY subscriber of the symbol regardless of account
+// (subsMu held). Used for account-less frames (instrument_info) and the legacy
+// no-account fallback. Both same-symbol traders receive the payload.
+func broadcastLocked[T any](s *TCPServer, subs map[string]chan T, sym string, p T, kind, symbol string) {
+	prefix := sym + "\x00"
+	sent := false
+	for key, ch := range subs {
+		if strings.HasPrefix(key, prefix) {
+			trySendLocked(s, ch, p, kind, symbol)
+			sent = true
+		}
+	}
+	if sent {
+		return
+	}
+	if kind == "instrument_info" {
+		s.logger.Info("tcp_server: instrument_info with no trader subscriber (data-only symbol)", "symbol", symbol)
+	} else {
+		s.logger.Warn("tcp_server: "+kind+" with NO subscriber — dropped", "symbol", symbol, "payload", fmt.Sprintf("%+v", p))
+	}
+}
+
+// dispatchToOwner routes an account-tagged payload (fill / position_close /
+// close_rejected) to the subscriber that owns (symbol, account). With two
+// same-symbol traders this delivers each account's frames to its OWN trader.
+// EMPTY symbol (legacy AddOn) → primary trading symbol. EMPTY account (legacy
+// AddOn) → every subscriber of the symbol (single-trader back-compat). A specific
+// account with no subscriber is DROPPED — an account-tagged order frame is never
+// cross-delivered to a different account's trader.
+func dispatchToOwner[T any](s *TCPServer, subs map[string]chan T, symbol, account string, p T, kind string) {
+	sym := strings.ToUpper(strings.TrimSpace(symbol))
+	if sym == "" {
+		sym = strings.ToUpper(strings.TrimSpace(s.BarsSubscribeSymbol()))
+	}
+	acct := strings.TrimSpace(account)
+	s.subsMu.Lock()
+	defer s.subsMu.Unlock()
+	if acct != "" {
+		if ch := subs[sym+"\x00"+acct]; ch != nil {
+			trySendLocked(s, ch, p, kind, symbol)
+			return
+		}
+		s.logger.Warn("tcp_server: "+kind+" for account with NO subscriber — dropped (not cross-delivered)", "symbol", symbol, "account", acct)
+		return
+	}
+	broadcastLocked(s, subs, sym, p, kind, symbol)
+}
+
+// broadcastToSymbol routes an account-less payload (instrument_info) to every
+// subscriber of the symbol. EMPTY symbol → primary trading symbol.
+func broadcastToSymbol[T any](s *TCPServer, subs map[string]chan T, symbol string, p T, kind string) {
+	sym := strings.ToUpper(strings.TrimSpace(symbol))
+	if sym == "" {
+		sym = strings.ToUpper(strings.TrimSpace(s.BarsSubscribeSymbol()))
+	}
+	s.subsMu.Lock()
+	defer s.subsMu.Unlock()
+	broadcastLocked(s, subs, sym, p, kind, symbol)
+}
+
+// subscribeFor installs (or REPLACES) the (symbol, account) subscriber channel.
+// Re-subscribing the SAME (symbol, account) closes the previous channel —
+// terminating a reloaded-away trader instance's consumer goroutine (the pre-P5.4
+// reload-leak fix) — but a DIFFERENT account on the same symbol gets its own key
+// and is never evicted (the H3 same-symbol collision fix).
+func subscribeFor[T any](s *TCPServer, subs *map[string]chan T, symbol, account string) <-chan T {
 	s.ensureRouters()
-	key := strings.ToUpper(strings.TrimSpace(symbol))
+	key := subKey(symbol, account)
 	s.subsMu.Lock()
 	defer s.subsMu.Unlock()
 	if *subs == nil {
@@ -254,24 +306,26 @@ func subscribeFor[T any](s *TCPServer, subs *map[string]chan T, symbol string) <
 	return ch
 }
 
-// SubscribeFillsFor returns this symbol's fill stream (router-fed).
-func (s *TCPServer) SubscribeFillsFor(symbol string) <-chan FillPayload {
-	return subscribeFor(s, &s.fillSubs, symbol)
+// SubscribeFillsFor returns the fill stream for (symbol, account) — router-fed.
+func (s *TCPServer) SubscribeFillsFor(symbol, account string) <-chan FillPayload {
+	return subscribeFor(s, &s.fillSubs, symbol, account)
 }
 
-// SubscribeClosesFor returns this symbol's position_close stream.
-func (s *TCPServer) SubscribeClosesFor(symbol string) <-chan PositionClosePayload {
-	return subscribeFor(s, &s.closeSubs, symbol)
+// SubscribeClosesFor returns the position_close stream for (symbol, account).
+func (s *TCPServer) SubscribeClosesFor(symbol, account string) <-chan PositionClosePayload {
+	return subscribeFor(s, &s.closeSubs, symbol, account)
 }
 
-// SubscribeRejectsFor returns this symbol's close-rejection stream.
-func (s *TCPServer) SubscribeRejectsFor(symbol string) <-chan PositionCloseRejectedPayload {
-	return subscribeFor(s, &s.rejectSubs, symbol)
+// SubscribeRejectsFor returns the close-rejection stream for (symbol, account).
+func (s *TCPServer) SubscribeRejectsFor(symbol, account string) <-chan PositionCloseRejectedPayload {
+	return subscribeFor(s, &s.rejectSubs, symbol, account)
 }
 
-// SubscribeInstrumentInfoFor returns this symbol's instrument_info stream.
-func (s *TCPServer) SubscribeInstrumentInfoFor(symbol string) <-chan InstrumentInfoPayload {
-	return subscribeFor(s, &s.instrSubs, symbol)
+// SubscribeInstrumentInfoFor returns the instrument_info stream for (symbol,
+// account). instrument_info is broadcast to all accounts of the symbol, but the
+// subscription is still per-(symbol,account) so each trader has its own channel.
+func (s *TCPServer) SubscribeInstrumentInfoFor(symbol, account string) <-chan InstrumentInfoPayload {
+	return subscribeFor(s, &s.instrSubs, symbol, account)
 }
 
 // barIngestMsg is the internal envelope passed from the socket read loop

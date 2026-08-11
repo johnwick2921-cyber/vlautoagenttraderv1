@@ -25,7 +25,7 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 	pb := store.NewPositionBuilder(st.Position())
 	t.closeSyncOnce.Do(func() {
 		go func() {
-			for p := range t.server.SubscribeClosesFor(t.symbol) { // P5.4 router-fed (per-symbol)
+			for p := range t.server.SubscribeClosesFor(t.symbol, t.boundAccount) { // P5.4 router-fed (per-symbol)
 				t.recordClose(traderID, exchangeID, exchangeType, st, pb, p)
 			}
 		}()
@@ -37,7 +37,7 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 		// natural bounded retry) and the periodic reconcile keeps the DB anchored to
 		// NT8 truth, so the orphan can't be netted onto by the next entry.
 		go func() {
-			for r := range t.server.SubscribeRejectsFor(t.symbol) { // P5.4 router-fed (per-symbol)
+			for r := range t.server.SubscribeRejectsFor(t.symbol, t.boundAccount) { // P5.4 router-fed (per-symbol)
 				logger.Warnf("🚨 NT close REJECTED: %s %s — STILL OPEN in NT8, NOT recording closed (reason: %q, account: %s). Will retry on next decision cycle / reconnect.",
 					r.Symbol, r.PositionSide, r.Reason, r.Account)
 			}
@@ -48,7 +48,7 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 		// (no table entry) NT8 is the only source. The tables stay authoritative for
 		// the math; this is defense-in-depth + drift detection.
 		go func() {
-			for in := range t.server.SubscribeInstrumentInfoFor(t.symbol) { // P5.4 router-fed (per-symbol)
+			for in := range t.server.SubscribeInstrumentInfoFor(t.symbol, t.boundAccount) { // P5.4 router-fed (per-symbol)
 				tablePV := market.FuturesPointValue(in.Symbol)
 				tableTick := market.FuturesTickSize(in.Symbol)
 				switch {

@@ -14,8 +14,8 @@ func TestFanoutRouter_SymbolRouting(t *testing.T) {
 	s.SetBarsSubscribeSymbol("MNQ") // primary (trader 1)
 	s.SetBarsSubscribeSymbol("ES")  // trader 2 registers
 
-	mnq := s.SubscribeFillsFor("MNQ")
-	es := s.SubscribeFillsFor("ES")
+	mnq := s.SubscribeFillsFor("MNQ", "")
+	es := s.SubscribeFillsFor("ES", "")
 
 	// Inject through the source channel exactly as the readLoop does.
 	s.fillCh <- FillPayload{SignalID: "a", Symbol: "ES", Status: "filled"}
@@ -51,8 +51,8 @@ func TestFanoutRouter_ResubscribeClosesOld(t *testing.T) {
 	s := NewTCPServer(nil)
 	s.SetBarsSubscribeSymbol("MNQ")
 
-	old := s.SubscribeFillsFor("MNQ")
-	fresh := s.SubscribeFillsFor("MNQ") // the reload
+	old := s.SubscribeFillsFor("MNQ", "")
+	fresh := s.SubscribeFillsFor("MNQ", "") // the reload
 
 	select {
 	case _, open := <-old:
@@ -80,8 +80,8 @@ func TestFanoutRouter_CloseRouting(t *testing.T) {
 	s := NewTCPServer(nil)
 	s.SetBarsSubscribeSymbol("MNQ")
 	s.SetBarsSubscribeSymbol("ES")
-	mnq := s.SubscribeClosesFor("MNQ")
-	es := s.SubscribeClosesFor("ES")
+	mnq := s.SubscribeClosesFor("MNQ", "")
+	es := s.SubscribeClosesFor("ES", "")
 
 	s.closeCh <- PositionClosePayload{Symbol: "MNQ", PositionSide: "long", Quantity: 1}
 	s.closeCh <- PositionClosePayload{Symbol: "ES", PositionSide: "short", Quantity: 2}
