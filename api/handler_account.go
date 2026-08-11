@@ -182,18 +182,19 @@ func (s *Server) handleSelectAccount(c *gin.Context) {
 		}
 	}
 
-	// Send the account select command to the C# AddOn
-	payload := ntwire.AccountSelectPayload{Account: req.Account}
-	if err := tcpServer.SendAccountSelect(payload); err != nil {
-		logger.Warnf("api/account/select: failed to send account select: %v", err)
-		c.JSON(http.StatusServiceUnavailable,
-			gin.H{"error": fmt.Sprintf("NT client not connected: %v", err)})
-		return
-	}
-
-	// Reset Go-side cached position/fill state so GetPositions() fetches fresh data
-	// from the newly selected account (not stale cached fills from the old account).
-	// This ensures balance, positions, PnL, orders all reflect the NEW account.
+	// G7 account-select decouple: account select does exactly ONE thing — persist
+	// THIS trader's binding. It must NOT flip the shared connection's active/display
+	// account, because that is a per-CONNECTION state read by every trader and the
+	// record/stream layer, so flipping it for one trader disturbed the OTHER
+	// trader's display and (pre-G6) its record attribution. We therefore no longer
+	// send SendAccountSelect here: per-order routing already carries this trader's
+	// account (tcp_trader.go SignalPayload.Account → the AddOn's per-order routing),
+	// balances AND positions now stream for ALL accounts, and records stamp the
+	// trader's boundAccount (G6) — so nothing needs the shared active account moved.
+	//
+	// Reset THIS trader's own cached fill/position state so its card refreshes to
+	// the (now persisted) binding on the next reload — a self-only effect that never
+	// touches the shared stream or any other trader.
 	if tcpTrader, ok := autoTrader.GetUnderlyingTrader().(*ntTrader.TCPTrader); ok {
 		tcpTrader.ResetAccountState()
 		logger.Infof("api/account/select: reset Go cached state for %s", req.Account)
@@ -201,10 +202,7 @@ func (s *Server) handleSelectAccount(c *gin.Context) {
 
 	// PERSIST the pick per-trader so it STICKS: it survives restart and the
 	// account_balance stream can't unset it, and the trade gate (runCycle) opens for
-	// this trader. Per-account order ROUTING is DONE (P5.4): the signal carries this
-	// trader's account (tcp_trader.go SignalPayload.Account) and the C# AddOn routes
-	// each order to it (VLTraderTCPClient HandleSignal → per-order account). This
-	// SendAccountSelect only sets the connection's DISPLAY/active account.
+	// this trader.
 	if err := s.store.Trader().UpdateAccount(userID, traderID, req.Account); err != nil {
 		logger.Warnf("api/account/select: failed to persist account %s for trader %s: %v", req.Account, traderID, err)
 	} else {

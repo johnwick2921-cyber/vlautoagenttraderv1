@@ -895,13 +895,14 @@ namespace NinjaTrader.NinjaScript.AddOns
                 account.AccountItemUpdate += OnAccountItemUpdate;
                 account.PositionUpdate += OnPositionUpdate;
 
-                // Clear pending brackets and signal maps (tied to old account context)
-                lock (signalMapLock)
-                {
-                    signalEntryByOco.Clear();
-                    signalTickSizeByOco.Clear();
-                    pendingBrackets.Clear();
-                }
+                // G7 decouple: do NOT global-Clear the signal/bracket maps on an
+                // account switch. Those maps are keyed by unique signal_id/OCO and
+                // span ALL accounts, so a global Clear here dropped the OTHER trader's
+                // in-flight bracket/entry correlation (a cross-account side effect).
+                // Entries are removed on their own fill/close lifecycle, so leaving a
+                // switched-away account's entries in place is harmless and correct.
+                // (The Go side no longer sends account_select at all — G7 — so this
+                // path is unreachable in normal operation; the scoping is defensive.)
 
                 // Re-emit account_balance immediately for the new account
                 SendAccountBalance();
