@@ -592,6 +592,14 @@ func (t *TCPTrader) BarCache() *ntwire.BarCache { return t.server.BarCache() }
 // Used by the /api/accounts and /api/account/select handlers to interact with the NT AddOn.
 func (t *TCPTrader) GetServer() *ntwire.TCPServer { return t.server }
 
+// BoundAccount returns the NT sub-account THIS trader is bound to (P5.4), or ""
+// if unbound. Unlike server.CurrentAccount() (the shared, streamed/display
+// account that flaps to whichever account's frame arrived last), this is the
+// trader's OWN account — so record/stat/equity attribution stamps the correct
+// owner even while another account is being streamed/viewed. It is the missed
+// twin of the GetBalance/GetPositions/reconcile decouples.
+func (t *TCPTrader) BoundAccount() string { return t.boundAccount }
+
 // ResetAccountState clears cached fill/position state when switching accounts.
 // Called by the /api/account/select handler to ensure GetPositions() fetches fresh
 // data from the newly selected account (not stale cached fills from the old account).

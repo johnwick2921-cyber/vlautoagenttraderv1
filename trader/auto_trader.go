@@ -724,17 +724,20 @@ func (at *AutoTrader) GetUnderlyingTrader() Trader {
 	return at.trader
 }
 
-// currentAccountName returns the NT sub-account this trader is currently bound
-// to (ITEM 2 per-account attribution), or "" for crypto traders / before the
-// first account_balance frame. Stamped onto equity snapshots, positions, and
-// decision records so per-account reads can scope by it.
+// currentAccountName returns the NT sub-account THIS trader is bound to (ITEM 2
+// per-account attribution), or "" for crypto traders / an unbound trader.
+// Stamped onto equity snapshots, positions, and decision records, and used to
+// scope per-account stat reads — so it MUST be the trader's OWN bound account.
+//
+// G6 fix: reads the trader's boundAccount, NOT server.CurrentAccount(). The
+// shared streamed "current" account flaps to whichever account's account_balance
+// frame landed last (and, since 88b54e8b, ALL sim accounts stream), so stamping
+// it cross-attributed records between two same-symbol traders (15m's SimAccount1
+// orders recorded under Sim101, and vice-versa). boundAccount is stable per
+// trader and matches the account each order actually executes on.
 func (at *AutoTrader) currentAccountName() string {
 	if ntTCP, ok := at.trader.(*ntTrader.TCPTrader); ok {
-		if server := ntTCP.GetServer(); server != nil {
-			if acct := server.CurrentAccount(); acct != nil {
-				return *acct
-			}
-		}
+		return ntTCP.BoundAccount()
 	}
 	return ""
 }
