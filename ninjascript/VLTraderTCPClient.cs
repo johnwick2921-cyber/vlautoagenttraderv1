@@ -420,11 +420,12 @@ namespace NinjaTrader.NinjaScript.AddOns
                     // just the active one) so a 2nd trader on another sub-account
                     // isn't stuck on a stale/absent balance until it goes active.
                     SendAllAccountBalances();
-                    // Open-position read-back — snapshot the selected account's
-                    // current open positions on (re)connect so the Go side
-                    // re-syncs the AI's tracked position after a restart/feed
-                    // reconnect (companion to the Phase 0 reconnect fix).
-                    SendOpenPositions(account);
+                    // Open-position read-back — snapshot EVERY SIM account's open
+                    // positions on (re)connect so the Go side re-syncs each trader's
+                    // tracked position after a restart/feed reconnect, not just the
+                    // active account's (companion to the Phase 0 reconnect fix + the
+                    // BUG A all-account positions fix).
+                    SendAllOpenPositions();
                     RunReadLoop(ct);
                 }
                 catch (Exception ex)
@@ -1544,6 +1545,25 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
         }
 
+        // Stream EVERY SIM account's open positions, not just the active one — the
+        // positions analogue of SendAllAccountBalances. PositionUpdate is hooked on
+        // the active account only (P4), so a trader bound to a NON-active sub-account
+        // otherwise reads its own book as EMPTY (Go PositionsFor(boundAccount) !ok),
+        // goes blind, and COMPOUNDS (its never-compound / same-side / max-position
+        // gates all read that empty snapshot and pass). SendOpenPositions(acc) already
+        // tags the frame with acc.Name and enumerates acc.Positions under lock, so it
+        // is account-correct per call; here we just call it for every SIM account.
+        private void SendAllOpenPositions()
+        {
+            lock (Account.All)
+            {
+                foreach (var a in Account.All)
+                {
+                    if (IsSimAccount(a)) SendOpenPositions(a);
+                }
+            }
+        }
+
         private void OnAccountItemUpdate(object sender, AccountItemEventArgs e)
         {
             // Emit only on cash/PnL changes to limit frame churn.
@@ -1635,6 +1655,20 @@ namespace NinjaTrader.NinjaScript.AddOns
                 catch (Exception ex)
                 {
                     LogWarn($"RunHeartbeatLoop: SendAllAccountBalances poll failed (will retry): {ex.Message}");
+                }
+
+                // Periodic poll of open positions for EVERY SIM account (30s) — the
+                // positions analogue of the balance poll above. PositionUpdate is
+                // hooked on the active account only, so a trader on a non-active
+                // sub-account would otherwise never receive a positions frame and read
+                // its book as empty (BUG A: blindness → compounding). This closes it.
+                try
+                {
+                    SendAllOpenPositions();
+                }
+                catch (Exception ex)
+                {
+                    LogWarn($"RunHeartbeatLoop: SendAllOpenPositions poll failed (will retry): {ex.Message}");
                 }
             }
         }
