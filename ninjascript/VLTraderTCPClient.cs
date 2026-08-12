@@ -72,6 +72,13 @@ namespace NinjaTrader.NinjaScript.AddOns
         private readonly HashSet<Account> orderSubscribed = new HashSet<Account>();
         private readonly object orderSubLock = new object();
 
+        // PositionUpdate is subscribed for EVERY SIM account (not just the active
+        // one) so a trader bound to a non-active sub-account gets an on-change
+        // positions frame instantly — the reconcile-before-open flat signal no longer
+        // waits on the 30s heartbeat. Tracked here for clean unsubscribe on Terminate.
+        private readonly HashSet<Account> positionSubscribed = new HashSet<Account>();
+        private readonly object positionSubLock = new object();
+
         // PHASE 4 (per-account close) — which account holds each open position, keyed by
         // ROOT symbol (e.g. "MNQ"). Populated on entry-fill (from e.Order.Account) and
         // cleared on exit-fill, so HandleClosePosition flattens the CORRECT account
@@ -146,11 +153,13 @@ namespace NinjaTrader.NinjaScript.AddOns
                     // Plan 4.11 — emit the real account balance on cash/PnL
                     // changes so the dashboard reflects the live SIM account.
                     account.AccountItemUpdate += OnAccountItemUpdate;
-                    // Open-position read-back — emit the account's current open
-                    // positions on ANY change (incl. MANUAL trades in NT8) so the
-                    // Go side / AI always tracks NT8's real position. The initial
-                    // snapshot is also sent on connect + on account_select.
-                    account.PositionUpdate += OnPositionUpdate;
+                    // Open-position read-back — emit each account's open positions on
+                    // ANY change (incl. MANUAL trades in NT8) so the Go side / AI always
+                    // tracks NT8's real position. Subscribed for ALL SIM accounts (not
+                    // just the active one) so a non-active-account trader gets on-change
+                    // frames, not just the 30s heartbeat. Initial snapshot also on
+                    // connect (SendAllOpenPositions).
+                    SubscribePositionUpdatesAllSim();
                 }
                 // Plan 4.4 Stage 1 — instantiate the bars manager BEFORE the
                 // reader thread starts so an early bars_subscribe frame has a
@@ -190,10 +199,10 @@ namespace NinjaTrader.NinjaScript.AddOns
                     foreach (var a in orderSubscribed) { try { a.OrderUpdate -= OnOrderUpdate; } catch { } }
                     orderSubscribed.Clear();
                 }
+                UnsubscribeAllPositionUpdates();
                 if (account != null)
                 {
                     try { account.AccountItemUpdate -= OnAccountItemUpdate; } catch { }
-                    try { account.PositionUpdate -= OnPositionUpdate; } catch { }
                 }
                 try { Connection.ConnectionStatusUpdate -= OnVLConnectionStatusUpdate; } catch { }
                 try { barsManager?.DisposeAll(); } catch { }
@@ -364,7 +373,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         // so routing to the active account (or re-routing to an already-routed one) never
         // double-hooks OnOrderUpdate (which would duplicate fills). ALL OrderUpdate
         // subscribe/unsubscribe flows through these so `orderSubscribed` stays the single
-        // source of truth. (AccountItemUpdate/PositionUpdate stay active-account-only = P4.)
+        // source of truth. (AccountItemUpdate stays active-account-only; PositionUpdate
+        // is now all-SIM-accounts via SubscribePositionUpdatesAllSim — reconcile fix.)
         private void SubscribeOrderUpdate(Account a)
         {
             if (a == null) return;
@@ -388,6 +398,37 @@ namespace NinjaTrader.NinjaScript.AddOns
                 if (!orderSubscribed.Contains(a)) return;
                 try { a.OrderUpdate -= OnOrderUpdate; } catch { }
                 orderSubscribed.Remove(a);
+            }
+        }
+
+        // Subscribe OnPositionUpdate on EVERY SIM account (dedup'd via
+        // positionSubscribed), so on-change position frames flow for a non-active
+        // account too. Mirrors the balance all-account model; the reconcile-before-open
+        // flat signal then arrives on change, not on the 30s heartbeat.
+        private void SubscribePositionUpdatesAllSim()
+        {
+            lock (Account.All)
+            {
+                foreach (var a in Account.All)
+                {
+                    if (!IsSimAccount(a)) continue;
+                    lock (positionSubLock)
+                    {
+                        if (positionSubscribed.Add(a))
+                        {
+                            a.PositionUpdate += OnPositionUpdate;
+                            LogInfo("VLTraderTCPClient: subscribed PositionUpdate on account '" + a.Name + "'");
+                        }
+                    }
+                }
+            }
+        }
+        private void UnsubscribeAllPositionUpdates()
+        {
+            lock (positionSubLock)
+            {
+                foreach (var a in positionSubscribed) { try { a.PositionUpdate -= OnPositionUpdate; } catch { } }
+                positionSubscribed.Clear();
             }
         }
 
@@ -881,19 +922,21 @@ namespace NinjaTrader.NinjaScript.AddOns
                     return;
                 }
 
-                // Unsubscribe from the old account's events
+                // Unsubscribe from the old account's events. PositionUpdate is NOT
+                // touched here — it is subscribed for ALL SIM accounts globally
+                // (SubscribePositionUpdatesAllSim), so switching the active account must
+                // not unsubscribe/re-subscribe it (that would desync positionSubscribed
+                // and double-hook the new account).
                 if (account != null)
                 {
                     UnsubscribeOrderUpdate(account);   // PHASE 3: dedup'd
                     try { account.AccountItemUpdate -= OnAccountItemUpdate; } catch { }
-                    try { account.PositionUpdate -= OnPositionUpdate; } catch { }
                 }
 
-                // Switch to the new account and subscribe to its events
+                // Switch to the new account and subscribe to its (active-only) events.
                 account = newAccount;
                 SubscribeOrderUpdate(account);   // PHASE 3: dedup'd
                 account.AccountItemUpdate += OnAccountItemUpdate;
-                account.PositionUpdate += OnPositionUpdate;
 
                 // G7 decouple: do NOT global-Clear the signal/bracket maps on an
                 // account switch. Those maps are keyed by unique signal_id/OCO and
@@ -1386,7 +1429,9 @@ namespace NinjaTrader.NinjaScript.AddOns
         // bug). A close/flat arrives as MarketPosition.Flat or Quantity 0.
         private void OnPositionUpdate(object sender, PositionEventArgs e)
         {
-            try { SendOpenPositions(account, e); }
+            // Emit for the account that actually changed (sender) — PositionUpdate is
+            // now hooked on ALL SIM accounts, so this can fire for a non-active account.
+            try { SendOpenPositions((sender as Account) ?? account, e); }
             catch (Exception ex) { LogWarn("VLTraderTCPClient: OnPositionUpdate failed: " + ex.Message); }
         }
 
