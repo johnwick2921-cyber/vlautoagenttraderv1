@@ -7,6 +7,7 @@ import (
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
+	ntTrader "nofx/trader/ninjatrader"
 	"strings"
 	"time"
 )
@@ -132,7 +133,12 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 // reconcileFlattenTimeout / PollInterval bound the flatten-first await in
 // reconcileBeforeOpenNT — the auto-flatten polls NT8 net until flat, then opens.
 const (
-	reconcileFlattenTimeout      = 6 * time.Second
+	// Heartbeat-aware backstop: the primary confirmation is the fill-confirmed
+	// position_close FRAME (arrives ~instantly), so this timeout is only hit when no
+	// frame comes — in which case we must give the 30s all-account positions
+	// heartbeat a chance before refusing. 35s > the 30s heartbeat (was 6s, which
+	// starved a non-active account whose snapshot only refreshes every 30s).
+	reconcileFlattenTimeout      = 35 * time.Second
 	reconcileFlattenPollInterval = 500 * time.Millisecond
 )
 
@@ -189,6 +195,8 @@ func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
 		return nil // NT8 flat → proceed
 	}
 	at.logWarnf("🚨 reconcile-before-open: NT8 holds a %s %s before an intended %s open — flattening first (awaiting fill) to avoid compounding onto an orphan.", held, symbol, intendedSide)
+	// Timestamp BEFORE the flatten so we only accept a close that our flatten caused.
+	t0 := time.Now().UnixMilli()
 	var ferr error
 	if held == "long" {
 		_, ferr = at.trader.CloseLong(symbol, 0)
@@ -198,16 +206,26 @@ func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
 	if ferr != nil {
 		return fmt.Errorf("reconcile-before-open: flatten submit failed: %w", ferr)
 	}
-	// AWAIT its own fill: poll NT8 net until flat (bounded, feed-gated each tick).
-	// NOT fire-and-forget — the exact trap 0118ca77 fixed.
+	// AWAIT its own fill (NOT fire-and-forget — the trap 0118ca77 fixed). Prefer the
+	// FILL-CONFIRMED close FRAME (position_close), which arrives ~instantly for the
+	// bound account even when it is NOT the streamed/active account — so a non-active
+	// trader no longer waits on the 30s positions-snapshot heartbeat. The snapshot
+	// (ntHeldPosition) remains a fallback, and the timeout is heartbeat-aware.
+	ntTCP, _ := at.trader.(*ntTrader.TCPTrader)
 	deadline := time.Now().Add(reconcileFlattenTimeout)
 	for time.Now().Before(deadline) {
 		time.Sleep(reconcileFlattenPollInterval)
 		if down, _ := at.ninjaFeedDown(); down {
 			return fmt.Errorf("reconcile-before-open: feed dropped during flatten — refusing open")
 		}
+		// Frame path (fast, account-correct): our flatten's close was fill-confirmed.
+		if ntTCP != nil && ntTCP.CloseConfirmedSince(symbol, held, t0) {
+			at.logInfof("✅ reconcile-before-open: %s flatten fill-confirmed via position_close frame — proceeding to open.", symbol)
+			return nil
+		}
+		// Snapshot fallback (covers a manual/external flatten with no close frame).
 		if at.ntHeldPosition(symbol) == "" {
-			at.logInfof("✅ reconcile-before-open: %s flattened + confirmed flat — proceeding to open.", symbol)
+			at.logInfof("✅ reconcile-before-open: %s flattened + confirmed flat (snapshot) — proceeding to open.", symbol)
 			return nil
 		}
 	}

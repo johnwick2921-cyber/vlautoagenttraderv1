@@ -42,6 +42,14 @@ type TCPTrader struct {
 	lastFill ntwire.FillPayload
 	hasFill  bool
 
+	// closedAt records the wall-clock (ms) of the most recent FILL-CONFIRMED close
+	// (position_close frame) per "SYMBOL|SIDE" for THIS trader's bound account. The
+	// reconcile-before-open gate awaits this event — which arrives ~instantly on the
+	// flatten fill for the bound account REGARDLESS of which account is the streamed
+	// "active" one — instead of the positions snapshot, whose non-active-account
+	// refresh is only the 30s heartbeat (the 6s-vs-30s starvation). Guarded by mu.
+	closedAt map[string]int64
+
 	// lastEntrySignalID is the signal_id of the most recent ENTRY (open). It lets
 	// GetOrderStatus report ONLY the fill that belongs to the current entry (the
 	// fill frame echoes signal_id), so recordAndConfirmOrder records the real
@@ -608,6 +616,34 @@ func (t *TCPTrader) GetServer() *ntwire.TCPServer { return t.server }
 // owner even while another account is being streamed/viewed. It is the missed
 // twin of the GetBalance/GetPositions/reconcile decouples.
 func (t *TCPTrader) BoundAccount() string { return t.boundAccount }
+
+// flattenKey is the "SYMBOL|SIDE" key for closedAt (upper-cased, trimmed).
+func flattenKey(symbol, side string) string {
+	return strings.ToUpper(strings.TrimSpace(symbol)) + "|" + strings.ToUpper(strings.TrimSpace(side))
+}
+
+// MarkCloseConfirmed records that a FILL-CONFIRMED close (position_close frame)
+// arrived for (symbol, side) on this trader's bound account. Called from close-sync
+// on every position_close. This is the fast, account-correct flat signal the
+// reconcile-before-open gate awaits (the frame arrives on the flatten fill even for
+// a non-active account, unlike the positions snapshot which lags to the 30s
+// heartbeat).
+func (t *TCPTrader) MarkCloseConfirmed(symbol, side string) {
+	t.mu.Lock()
+	if t.closedAt == nil {
+		t.closedAt = make(map[string]int64)
+	}
+	t.closedAt[flattenKey(symbol, side)] = time.Now().UnixMilli()
+	t.mu.Unlock()
+}
+
+// CloseConfirmedSince reports whether a fill-confirmed close for (symbol, side)
+// arrived at or after sinceMs — the frame-path flat confirmation for reconcile.
+func (t *TCPTrader) CloseConfirmedSince(symbol, side string, sinceMs int64) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.closedAt != nil && t.closedAt[flattenKey(symbol, side)] >= sinceMs
+}
 
 // ResetAccountState clears cached fill/position state when switching accounts.
 // Called by the /api/account/select handler to ensure GetPositions() fetches fresh

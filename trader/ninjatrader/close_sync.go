@@ -27,6 +27,10 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 		go func() {
 			for p := range t.server.SubscribeClosesFor(t.symbol, t.boundAccount) { // P5.4 router-fed (per-symbol)
 				t.recordClose(traderID, exchangeID, exchangeType, st, pb, p)
+				// Fast, account-correct flat signal for reconcile-before-open: a
+				// position_close arrived for this trader's bound account (frame path
+				// beats the 30s positions-snapshot heartbeat on a non-active account).
+				t.MarkCloseConfirmed(p.Symbol, p.PositionSide)
 			}
 		}()
 		// Rejected exit/flatten watcher. The SIM/broker refused a close (e.g. "no
