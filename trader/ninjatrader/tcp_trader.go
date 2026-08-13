@@ -272,6 +272,16 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 		SignalID:   signalID,
 		Timestamp:  time.Now().UTC().Format(time.RFC3339),
 	}
+
+	// A1 (G3) — PRE-SUBMIT IDENTITY INVARIANT: the account on the outbound order MUST
+	// equal this trader's bound account. It is equal by construction above, but assert
+	// it at the send chokepoint so no present or future code path can ever emit an
+	// order for another trader's account. A mismatch is REFUSED loudly, never sent.
+	if err := assertBoundAccount("entry", symbol, payload.Account, t.boundAccount); err != nil {
+		logger.Errorf("🚨 %v — REFUSING to submit", err)
+		return nil, err
+	}
+
 	t.pendingMu.Lock()
 	t.pending[signalID] = upperSide
 	t.pendingMu.Unlock()
@@ -328,6 +338,19 @@ func (t *TCPTrader) MoveStopToBreakeven(side string, newStop float64) error {
 	t.mu.Lock()
 	t.stopLoss[key] = newStop
 	t.mu.Unlock()
+	return nil
+}
+
+// assertBoundAccount (A1/G3) is the pre-submit identity invariant: the account an
+// order/modify/cancel is being submitted on MUST equal the emitting trader's bound
+// account. Returns an error (the caller REFUSES + 🚨) on any mismatch — the
+// defense-in-depth chokepoint that makes cross-account emission structurally
+// impossible. An empty bound account is itself a mismatch unless the frame is also
+// account-less (legacy), which the entry path already refuses upstream.
+func assertBoundAccount(op, symbol, frameAccount, boundAccount string) error {
+	if frameAccount != boundAccount {
+		return fmt.Errorf("A1 pre-submit invariant: %s %s frame account %q ≠ bound account %q (cross-account emission blocked)", op, symbol, frameAccount, boundAccount)
+	}
 	return nil
 }
 
