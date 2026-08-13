@@ -1,0 +1,10 @@
+[Unit]
+Description=nofx SQLite online backup + retention prune (C1)
+Documentation=file:///home/hoang/nofx/deploy/nofx-db-backup.sh
+
+[Service]
+Type=oneshot
+ExecStart=/home/hoang/nofx/deploy/nofx-db-backup.sh
+# Be a good citizen: never contend with the live bot for CPU/IO.
+Nice=10
+IOSchedulingClass=idle

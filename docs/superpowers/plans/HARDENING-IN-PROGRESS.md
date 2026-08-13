@@ -17,7 +17,7 @@
 - [x] D4 — (F3) pre-prompt concurrent gate reads per-strategy max_positions (env = fallback); log source; tests ✅ committed
 
 ### PART C — OPS ARMOR
-- [ ] C1 — auto-backup systemd timer (2×/day, sqlite .backup API, prune keep-14 + weekly×8) + RESTORE.md
+- [x] C1 — auto-backup USER systemd timer (no sudo; linger=yes so it fires logged-out). deploy/nofx-db-backup.sh (python3 sqlite3.backup() online API — no sqlite3 CLI; integrity-checked; gzip; daily/ keep-14 + weekly/ keep-8 ISO-week promotion), deploy/systemd-user/nofx-backup.{service,timer} (OnCalendar 05:00+17:30 — host is America/Chicago so native CT; Persistent=true), deploy/install-db-backup.sh, deploy/RESTORE.md. INSTALLED+ENABLED (next Fri 05:00 CDT) + RAN ONCE NOW (402MB→34MB gz @ ~/nofx-backups/auto/daily + weekly promoted; Result=success). READ-BACK TESTED: gunzip→quick_check ok, 19 tables schema-identical to live, core rows readable (decisions 28042/pos 516/strat 9/exch 1). RESTORE.md also copied to ~/nofx-backups/. Backups are OUTSIDE the repo (not committed).
 - [ ] C2 — clock-drift guard (>60s → block new entries + 🚨) + test
 - [ ] C3 — journald persistent + SystemMaxUse=2G drop-in
 - [ ] C4 — AGENT TOOLBOX block appended to root CLAUDE.md
