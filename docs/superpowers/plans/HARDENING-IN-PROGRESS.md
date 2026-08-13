@@ -18,7 +18,7 @@
 
 ### PART C — OPS ARMOR
 - [x] C1 — auto-backup USER systemd timer (no sudo; linger=yes so it fires logged-out). deploy/nofx-db-backup.sh (python3 sqlite3.backup() online API — no sqlite3 CLI; integrity-checked; gzip; daily/ keep-14 + weekly/ keep-8 ISO-week promotion), deploy/systemd-user/nofx-backup.{service,timer} (OnCalendar 05:00+17:30 — host is America/Chicago so native CT; Persistent=true), deploy/install-db-backup.sh, deploy/RESTORE.md. INSTALLED+ENABLED (next Fri 05:00 CDT) + RAN ONCE NOW (402MB→34MB gz @ ~/nofx-backups/auto/daily + weekly promoted; Result=success). READ-BACK TESTED: gunzip→quick_check ok, 19 tables schema-identical to live, core rows readable (decisions 28042/pos 516/strat 9/exch 1). RESTORE.md also copied to ~/nofx-backups/. Backups are OUTSIDE the repo (not committed).
-- [ ] C2 — clock-drift guard (>60s → block new entries + 🚨) + test
+- [x] C2 — clock-drift guard: kernel/clock_drift.go applyClockDriftBlock (called after B4). Measures local-vs-feed skew as nowMs-(freshestBar+interval) [bar labeled at open → ~0 under correct clock+live feed]; |drift|>60s → neutralize open→wait + 🚨 + telemetry "clock_drift". Catches BOTH clock-ahead/feed-lag AND clock-behind/future-dated-bar (which B4 cannot). Fail-open no-data; exits never blocked; strict-> boundary. Injected-skew test (±5min both directions block, 60s boundary passes, close never blocked, no-data fail-open) PASS. Not deployed (running rev unchanged).
 - [ ] C3 — journald persistent + SystemMaxUse=2G drop-in
 - [ ] C4 — AGENT TOOLBOX block appended to root CLAUDE.md
 

@@ -370,6 +370,11 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// stale (feed frozen); exits / open-position management are never touched.
 	applyStaleDataBlock(decision, ctx, time.Now().UnixMilli())
 
+	// C2 — clock-drift guard: refuse a NEW entry when the local clock is skewed
+	// >60s from the freshest feed timestamp (either direction); signals would be
+	// mis-timed / NT8-rejected. Exits untouched.
+	applyClockDriftBlock(decision, ctx, time.Now().UnixMilli())
+
 	// B7 — re-entry cooldown: after a stop-loss exit, refuse a same-direction
 	// re-entry on that symbol until the cooldown elapses OR price moved ≥1×ATR15
 	// from the stop (whichever first). Per-strategy; 0 = OFF. Exits untouched.
