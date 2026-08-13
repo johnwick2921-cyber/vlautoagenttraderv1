@@ -27,7 +27,7 @@
 - [x] B2 — AI output armor COMPLETE: B2a bounded-retry (schema_parse_failed skip) + B2b price-sanity (one authority, >8×ATR15/entry>1%, neutralize→wait, fail-open) + B2c fuzz (162k parse + 416k sanity execs, 0 crashes); goldens byte-identical ✅
 - [x] B3 — dupe guard (idempotence key account|side|symbol|qty within ~1 bar → drop ⛔) + rate breaker (>10 order-actions/min → halt 🚨) at placeEntry chokepoint; orderGuard.admit tested (dedup + breaker, both recover) ✅
 - [x] B4 — stale-data entry block: applyStaleDataBlock neutralizes open_long/short→wait when freshest 1m/5m bar > 2×interval (pure barIsStale/staleEntryFeed); exits+position-mgmt untouched; no-data fail-open; tests fresh/stale/close/no-data ✅  → **B1-B4 ALL AT HEAD → F1 UNBLOCKED**
-- [ ] B5 — dead-man's watchdog (TCP disconnect → cancel unfilled + block) + test
+- [~] B5 — dead-man watchdog: pure state machine (dmLive→disconnect→dmDisconnected→reconnect→dmAwaitingReconcile→reconcile→dmLive; entriesBlocked until clean reconcile) + tests (both paths + flap + stray-reconcile) ✅ committed. WIRING into entry path (observe IsConnected / block opens / reconciled on positions-sync) + cancel-unfilled = next sub-step.
 - [ ] B6 — gate-block counters + API endpoint + daily journal summary
 - [ ] B7 — re-entry cooldown after stop-loss + tests
 - [x] B8 — (F4) funding-rate suppressed on futures (both emit sites via isFuturesInstrument); test absent-on-futures/present-on-crypto; goldens byte-identical (none asserted funding) ✅
