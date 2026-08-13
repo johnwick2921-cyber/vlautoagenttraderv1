@@ -30,7 +30,7 @@
 - [ ] B5 — dead-man's watchdog (TCP disconnect → cancel unfilled + block) + test
 - [ ] B6 — gate-block counters + API endpoint + daily journal summary
 - [ ] B7 — re-entry cooldown after stop-loss + tests
-- [ ] B8 — (F4) remove funding-rate from futures prompt (both emit sites); goldens updated
+- [x] B8 — (F4) funding-rate suppressed on futures (both emit sites via isFuturesInstrument); test absent-on-futures/present-on-crypto; goldens byte-identical (none asserted funding) ✅
 - [ ] B9 — (F6) INFO log when a toggle-ON prompt section renders empty
 - [ ] B10 — (F7) primary_timeframe always in Available-Data announcement; golden updated
 

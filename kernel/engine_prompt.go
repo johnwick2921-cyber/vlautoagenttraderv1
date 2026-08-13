@@ -233,7 +233,7 @@ func (e *StrategyEngine) writeAvailableIndicators(sb *strings.Builder) {
 		sb.WriteString("- Open Interest (OI) data\n")
 	}
 
-	if indicators.EnableFundingRate {
+	if indicators.EnableFundingRate && !e.isFuturesInstrument() {
 		sb.WriteString("- Funding rate\n")
 	}
 
@@ -526,6 +526,16 @@ func (e *StrategyEngine) formatCoinSourceTag(sources []string) string {
 // Market Data Formatting
 // ============================================================================
 
+// isFuturesInstrument reports whether this engine's primary instrument is a CME
+// futures contract. Crypto-only prompt content (funding rate — B8/audit F4) is
+// suppressed when true: the futures instrument block states there is no funding
+// rate, so emitting a "Funding rate" line was self-contradictory. Uses the
+// configured static symbol.
+func (e *StrategyEngine) isFuturesInstrument() bool {
+	coins := e.config.CoinSource.StaticCoins
+	return len(coins) > 0 && market.IsCMEFuturesSymbol(coins[0])
+}
+
 func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 	var sb strings.Builder
 	indicators := e.config.Indicators
@@ -559,7 +569,11 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 
 	sb.WriteString("\n\n")
 
-	if indicators.EnableOI || indicators.EnableFundingRate {
+	// B8 (audit F4): funding rate is a crypto-perp concept — suppress it entirely on
+	// CME futures even when the toggle is on (the instrument block states there is
+	// none), so the prompt is no longer self-contradictory.
+	fundingOn := indicators.EnableFundingRate && !e.isFuturesInstrument()
+	if indicators.EnableOI || fundingOn {
 		sb.WriteString(fmt.Sprintf("Additional data for %s:\n\n", data.Symbol))
 
 		if indicators.EnableOI && data.OpenInterest != nil {
@@ -567,7 +581,7 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 				data.OpenInterest.Latest, data.OpenInterest.Average))
 		}
 
-		if indicators.EnableFundingRate {
+		if fundingOn {
 			sb.WriteString(fmt.Sprintf("Funding Rate: %.2e\n\n", data.FundingRate))
 		}
 	}
