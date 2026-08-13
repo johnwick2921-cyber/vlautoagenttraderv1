@@ -350,7 +350,61 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		return decision, fmt.Errorf("failed to parse AI response: %w", err)
 	}
 
+	// B2b — price-sanity armor: neutralize an open decision whose stop/target/entry
+	// are physically implausible, using the freshest market data (fail-open).
+	applyPriceSanity(decision, ctx)
+
 	return decision, nil
+}
+
+// applyPriceSanity (B2b) neutralizes to `wait` any open decision whose stop /
+// target / entry are implausible per priceSanityViolation (the one authority),
+// using ctx.MarketDataMap for the reference price + ATR. It NEVER rewrites the
+// AI's prices — a violation becomes a loud ⛔ refusal, not a silent correction.
+// Missing market data → fail-open (log + leave the decision) so the cycle never
+// crashes. Composes with validateDecision's wrong-side authority.
+func applyPriceSanity(fd *FullDecision, ctx *Context) {
+	if fd == nil || ctx == nil {
+		return
+	}
+	for i := range fd.Decisions {
+		d := &fd.Decisions[i]
+		if d.Action != "open_long" && d.Action != "open_short" {
+			continue
+		}
+		md := ctx.MarketDataMap[d.Symbol]
+		if md == nil || md.CurrentPrice <= 0 {
+			logger.Infof("⚠️ price-sanity: no market data for %s — skipping sanity check (fail-open).", d.Symbol)
+			continue
+		}
+		side := "long"
+		if d.Action == "open_short" {
+			side = "short"
+		}
+		entryRef := md.CurrentPrice // market entry; explicit-entry paths pass their own ref
+		atr15 := atr15From(md)
+		if reason, bad := priceSanityViolation(side, entryRef, d.StopLoss, d.TakeProfit, atr15, md.CurrentPrice); bad {
+			logger.Warnf("⛔ price-sanity REJECT: %s %s → neutralized to WAIT — %s [AI stop=%.4f target=%.4f, price=%.4f, ATR15=%.4f].",
+				d.Symbol, d.Action, reason, d.StopLoss, d.TakeProfit, md.CurrentPrice, atr15)
+			d.Action = "wait"
+		}
+	}
+}
+
+// atr15From returns the 14-period ATR on the 15-minute timeframe (the design's
+// "atr15") from a symbol's multi-TF data, with a deterministic fallback to nearby
+// timeframes if 15m wasn't fetched. 0 → no ATR available (the caller's ATR-distance
+// check is then skipped, fail-open).
+func atr15From(md *market.Data) float64 {
+	if md == nil {
+		return 0
+	}
+	for _, tf := range []string{"15m", "5m", "3m", "1h", "4h", "1d"} {
+		if td := md.TimeframeData[tf]; td != nil && td.ATR14 > 0 {
+			return td.ATR14
+		}
+	}
+	return 0
 }
 
 // ============================================================================
