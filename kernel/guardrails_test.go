@@ -159,6 +159,20 @@ func TestResolveNotionalLeverage(t *testing.T) {
 	}
 }
 
+func TestResolveConcurrentCap(t *testing.T) {
+	// Hardening D4 (audit F3): per-strategy max_positions is authoritative; the env
+	// RISK_MAX_CONCURRENT_TRADES value is only the fallback.
+	if n, src := ResolveConcurrentCap(3, 2); n != 3 || src != "strategy max_positions" {
+		t.Fatalf("per-strategy 3 must govern over env 2, got %d/%q", n, src)
+	}
+	if n, src := ResolveConcurrentCap(0, 2); n != 2 || src != "env RISK_MAX_CONCURRENT_TRADES" {
+		t.Fatalf("unset per-strategy → env fallback 2, got %d/%q", n, src)
+	}
+	if n, _ := ResolveConcurrentCap(5, 2); n != 5 {
+		t.Fatalf("per-strategy 5 must reach the gate (was silently capped at env 2), got %d", n)
+	}
+}
+
 // --- Chunk 4 — time/news blackout window ---
 
 func TestInBlackoutWindow(t *testing.T) {

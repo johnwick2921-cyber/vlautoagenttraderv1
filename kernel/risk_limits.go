@@ -247,6 +247,19 @@ func ResolveMaxContracts(perStrategy, def int) int {
 	return def
 }
 
+// ResolveConcurrentCap returns the open-position cap for the pre-prompt gate and
+// which source governed it. Hardening D4 (audit F3): the PER-STRATEGY max_positions
+// is authoritative; the env RISK_MAX_CONCURRENT_TRADES is only the fallback when
+// the strategy did not set one (perStrategyMaxPositions <= 0). Previously the gate
+// always used the env value (default 2), so a configured max_positions of 3 was
+// unreachable — the effective cap silently disagreed with the UI.
+func ResolveConcurrentCap(perStrategyMaxPositions, envFallback int) (limit int, source string) {
+	if perStrategyMaxPositions > 0 {
+		return perStrategyMaxPositions, "strategy max_positions"
+	}
+	return envFallback, "env RISK_MAX_CONCURRENT_TRADES"
+}
+
 // ResolveNotionalLeverage returns the futures notional-ceiling multiplier
 // (max notional = equity × this). Hardening D3 (audit F2): ALWAYS ON for futures,
 // independent of the guardrails master switch/toggle (which govern only daily

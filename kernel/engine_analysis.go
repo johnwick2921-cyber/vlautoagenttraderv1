@@ -108,8 +108,18 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		// DAILY-LOSS is no longer enforced here on session-cumulative TotalPnL —
 		// Strategy Studio P1 EVOLVES it to TRUE daily-realized P&L below (pass 0
 		// for pnl so CheckPreTrade enforces ONLY the concurrent-position cap).
+		// D4 (audit F3): the concurrent-position cap is the PER-STRATEGY
+		// max_positions; env RISK_MAX_CONCURRENT_TRADES is only the fallback.
+		// Previously this gate always used the env value (default 2), so a
+		// configured max_positions of 3 was unreachable (effective cap ≠ UI).
+		perStrategyMaxPositions := 0
+		if engine != nil {
+			perStrategyMaxPositions = engine.GetRiskControlConfig().MaxPositions
+		}
+		concurrentCap, concurrentCapSource := ResolveConcurrentCap(perStrategyMaxPositions, limits.MaxConcurrentTrades)
+		limits.MaxConcurrentTrades = concurrentCap
 		if err := limits.CheckPreTrade(0, len(ctx.Positions), 0, 0); err != nil {
-			logger.Warnf("⚠️ Plan 3 T21 risk gate tripped: %v — skipping decision cycle (HOLD)", err)
+			logger.Warnf("⚠️ concurrent-position gate tripped: %v [cap source: %s] — skipping decision cycle (HOLD)", err, concurrentCapSource)
 			// Plan 4 Task 25 — gate instrumentation
 			telemetry.RiskGateTrips.WithLabelValues("task21_risk_limit").Inc()
 			return nil, nil
