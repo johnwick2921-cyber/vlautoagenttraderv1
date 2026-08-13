@@ -161,6 +161,32 @@ func GetWithExchange(symbol, exchange string) (*Data, error) {
 // timeframes: list of timeframes, e.g. ["5m", "15m", "1h", "4h"]
 // primaryTimeframe: primary timeframe (used for calculating current indicators), defaults to timeframes[0]
 // count: number of K-lines for each timeframe
+// clampInt clamps v to [lo, hi].
+func clampInt(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
+}
+
+// maxConfiguredPeriod returns the largest configured indicator period across all
+// families (EMA/RSI/ATR/BOLL), or 0 when none are configured. Drives the F8 fetch
+// depth so the longest-period series (e.g. EMA200) can fully warm up.
+func maxConfiguredPeriod(ip IndicatorPeriods) int {
+	m := 0
+	for _, fam := range [][]int{ip.EMA, ip.RSI, ip.ATR, ip.BOLL} {
+		for _, p := range fam {
+			if p > m {
+				m = p
+			}
+		}
+	}
+	return m
+}
+
 func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe string, count int, indPeriods ...IndicatorPeriods) (*Data, error) {
 	symbol = Normalize(symbol)
 
@@ -192,6 +218,13 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 		timeframes = append([]string{primaryTimeframe}, timeframes...)
 	}
 
+	// F8 — fetch depth. Each series value for a period-P indicator needs P prior
+	// bars, so to render a full `count`-length series for the LONGEST configured
+	// period (e.g. EMA200) we must fetch maxPeriod + count bars — not a flat 200,
+	// which left EMA200 a 1-value warm-up stub. Clamp to [200, 2500]: 200 = the
+	// legacy floor (never fetch less than before); 2500 = the BarCache cap.
+	fetchDepth := clampInt(maxConfiguredPeriod(ip)+count, 200, 2500)
+
 	// Store data for all timeframes
 	timeframeData := make(map[string]*TimeframeSeriesData)
 	var primaryKlines []Kline
@@ -214,21 +247,21 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 				logger.Infof("⚠️ %s %s: CME futures symbol but no NT8 bar provider wired; skipping", symbol, tf)
 				continue
 			}
-			klines = FuturesBarsProvider(symbol, tf, 200)
+			klines = FuturesBarsProvider(symbol, tf, fetchDepth)
 			if len(klines) == 0 {
 				logger.Infof("⚠️ %s %s: no NT8 bars cached yet", symbol, tf)
 				continue
 			}
 		} else if isXyzAsset {
 			// Use Hyperliquid API for xyz dex assets
-			klines, err = getKlinesFromHyperliquid(symbol, tf, 200)
+			klines, err = getKlinesFromHyperliquid(symbol, tf, fetchDepth)
 			if err != nil {
 				logger.Infof("⚠️ Failed to get %s %s K-line from Hyperliquid: %v", symbol, tf, err)
 				continue
 			}
 		} else {
 			// Use CoinAnk for regular crypto assets (default to Binance)
-			klines, err = getKlinesFromCoinAnk(symbol, tf, "binance", 200)
+			klines, err = getKlinesFromCoinAnk(symbol, tf, "binance", fetchDepth)
 			if err != nil {
 				logger.Infof("⚠️ Failed to get %s %s K-line from CoinAnk: %v", symbol, tf, err)
 				continue
