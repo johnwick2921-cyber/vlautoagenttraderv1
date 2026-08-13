@@ -18,6 +18,8 @@
 
 > This file is the heartbeat proving the run is alive. It is DELETED in the final commit when the run completes. A prior hardening session died silently — this prevents that.
 
+> **PROMPT-TRUTH + F-SWEEP COMPLETE (2026-08-13, HEAD 01fde6dc).** F1 (real R:R — synthetic-4.0 tautology KILLED; min_rr binds; rr_gate counter; 6 hand-computed cases), F8 (EMA200 fetch depth clamp(maxPeriod+count,200,2500); no golden drift — synthetic goldens), F9 (honest current_rsi<configured> label), F10 (guardrail-skip → execution_status=guardrail_skip + reason, no more ghost success=1 empties), F11a (dangling '(' → ':' + AI500/OI_Top futures-gated — the ONE golden diff: futures_mnq_empty.golden), F11b (type-switch preserves ai_config unless confirm + FE dialog en/zh/id), F11c (indicator periods 1..500 at save, 9999→error), F11d (0-EMA omitted + INFO). Config-truth 4-step on min_rr saved→row→read→ENFORCED-with-log PASSES → audit BROKEN verdict FLIPPED. Full go build/vet/test + -race(kernel/trader/market/store/api/telemetry/discipline) + tsc/npm GREEN. Deploy: rides the owner's NEXT flat-window Go restart (running rev still 74aac5b6, PID 190403 — nothing deployed). **vlauto propagation BLOCKED**: vlauto (HEAD 5199b7d) lacks the entire D/B/C foundation (no IncGateBlock / ctx.TraderID / discipline pkg), so the F-patches fail `git am` (sha1-lacking on kernel/b2c_fuzz_test.go); 9 patches staged in scratchpad — owner must land the hardening foundation in vlauto first (or a dedicated propagation session).
+
 ## Part list + status
 
 ### PART D — GUARDRAILS ARMED (instant protection)
