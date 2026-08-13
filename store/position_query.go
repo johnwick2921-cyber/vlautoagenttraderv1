@@ -54,6 +54,33 @@ func (s *PositionStore) GetPositionStats(traderID string) (map[string]interface{
 	return stats, nil
 }
 
+// CountConsecutiveLossesSince returns the number of consecutive LOSING closed
+// trades at the TAIL of this trader's closed-trade history since sinceMs (the CME
+// session-day start, Unix ms UTC). A winning or break-even close (realized_pnl >= 0)
+// ends the streak; reconcile_flat orphans (unknown P&L) are excluded. Used by the
+// D1 consecutive-loss halt. Scoped by trader_id (each trader's closes are recorded
+// under its own id).
+func (s *PositionStore) CountConsecutiveLossesSince(traderID string, sinceMs int64) (int, error) {
+	var rows []TraderPosition
+	err := s.db.
+		Where("trader_id = ? AND status = ? AND close_reason <> ? AND exit_time >= ?",
+			traderID, "CLOSED", CloseReasonReconcileFlat, sinceMs).
+		Order("exit_time DESC").
+		Find(&rows).Error
+	if err != nil {
+		return 0, err
+	}
+	n := 0
+	for _, r := range rows {
+		if r.RealizedPnL < 0 {
+			n++
+		} else {
+			break // a win / break-even ends the losing streak
+		}
+	}
+	return n, nil
+}
+
 // GetSessionDayActivity returns the realized P&L (CLOSED trades, excluding
 // reconcile-flat orphans whose P&L is UNKNOWN) and the entry count (positions
 // OPENED) since sinceMs (Unix ms UTC), optionally scoped to one NT account.

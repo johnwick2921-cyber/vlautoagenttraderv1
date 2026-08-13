@@ -97,6 +97,31 @@ func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.Dec
 	return true
 }
 
+// consecutiveLossHalted reports whether new entries are blocked by the D1
+// consecutive-loss halt: N consecutive LOSING closed trades in the current CME
+// session-day (0 = OFF; resets on a win/break-even close or a new session). It is
+// a per-strategy circuit breaker, NOT gated by the guardrails master switch.
+// Fail-OPEN on a query error — never block a trade because the DB hiccuped.
+func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
+	if at.store == nil || at.config.StrategyConfig == nil {
+		return "", false
+	}
+	n := at.config.StrategyConfig.RiskControl.ConsecutiveLossHalt
+	if n <= 0 {
+		return "", false // OFF
+	}
+	sinceMs := kernel.CMESessionDayStart(time.Now()).UnixMilli()
+	losses, err := at.store.Position().CountConsecutiveLossesSince(at.id, sinceMs)
+	if err != nil {
+		at.logWarnf("consecutive-loss halt: count query failed (%v) — allowing entry (fail-open)", err)
+		return "", false
+	}
+	if losses >= n {
+		return fmt.Sprintf("%d consecutive losing trades this session (limit %d)", losses, n), true
+	}
+	return "", false
+}
+
 // executeDecisionWithRecord executes AI decision and records detailed information
 func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
 	// Feed-down gate (NinjaTrader, TRACK A): the SIM cannot fill without market
@@ -109,6 +134,19 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 	case "open_long", "open_short", "close_long", "close_short":
 		if down, status := at.ninjaFeedDown(); down {
 			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", decision.Action, decision.Symbol, status)
+			return nil
+		}
+	}
+
+	// D1 — consecutive-loss halt: after N consecutive losing closed trades this CME
+	// session-day, block NEW entries until the next session. Closes (open-position
+	// management) are NEVER blocked. 0 = OFF.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, halted := at.consecutiveLossHalted(); halted {
+			at.logWarnf("🛑 consecutive-loss halt: %s entry REFUSED — %s. No new entries until the next CME session.", decision.Symbol, reason)
+			actionRecord.Success = false
+			actionRecord.Error = "consecutive_loss_halt: " + reason
 			return nil
 		}
 	}

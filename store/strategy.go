@@ -969,6 +969,13 @@ type RiskControlConfig struct {
 	MaxDailyTrades        int   `json:"max_daily_trades,omitempty"`
 	MaxDailyTradesEnabled *bool `json:"max_daily_trades_enabled,omitempty"`
 
+	// D1 — CONSECUTIVE-LOSS halt: after this many consecutive LOSING closed trades
+	// in the CME session-day, block NEW entries until the next session (open-pos
+	// management via SL/TP is unaffected). 0 = OFF. Resets on a winning/break-even
+	// close or a new session. New guardrail → default 0 (off). NOT gated by the
+	// guardrails master switch — it is a per-strategy circuit breaker.
+	ConsecutiveLossHalt int `json:"consecutive_loss_halt,omitempty"`
+
 	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 10-contract
 	// default (the prior hidden const maxFuturesContracts). Toggle default ON.
 	MaxContractsPerOrder int   `json:"max_contracts_per_order,omitempty"`
