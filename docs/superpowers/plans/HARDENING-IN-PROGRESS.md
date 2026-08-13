@@ -23,7 +23,7 @@
 - [ ] C4 — AGENT TOOLBOX block appended to root CLAUDE.md
 
 ### PART B — MACHINE ARMOR (deterministic invariants)
-- [ ] B1 — stop-widen ban (tighten-only) + tests
+- [x] B1 — stop-widen ban: MoveStopToBreakeven refuses a risk-increasing stop (pure stopWouldWiden long/short, cur-stop tracked + updated on move); tests long/short/equal + widen-refused ✅
 - [ ] B2 — AI output armor (schema-strict + price sanity bounds) + fuzz tests
 - [ ] B3 — duplicate-order guard + rate limiter + test
 - [ ] B4 — stale-data entry block + test

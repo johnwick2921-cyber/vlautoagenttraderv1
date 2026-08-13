@@ -101,7 +101,7 @@ func (at *AutoTrader) maybeMoveStopToBreakeven(symbol, side string, entryPrice, 
 	if !ok {
 		return
 	}
-	if err := ntTCP.MoveStopToBreakeven(entryPrice); err != nil {
+	if err := ntTCP.MoveStopToBreakeven(side, entryPrice); err != nil {
 		logger.Warnf("⚠️ auto-breakeven: move-stop send failed for %s %s: %v", symbol, side, err)
 		at.breakevenMu.Lock()
 		at.breakevenDone[key] = false // let it retry next cycle

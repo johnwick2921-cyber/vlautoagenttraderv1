@@ -276,20 +276,47 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 // WITHOUT closing the position. Errors (no-op) if there is no tracked open entry.
 // Part 2 auto-breakeven. An OLD AddOn ignores the move_stop frame, so the
 // original protective stop keeps guarding the trade until the paired redeploy.
-func (t *TCPTrader) MoveStopToBreakeven(newStop float64) error {
+func (t *TCPTrader) MoveStopToBreakeven(side string, newStop float64) error {
+	key := keyFor(t.symbol, upperSideStr(side))
 	t.mu.Lock()
 	sid := t.lastEntrySignalID
+	cur := t.stopLoss[key]
 	t.mu.Unlock()
 	if sid == "" {
 		return fmt.Errorf("ninjatrader/tcp: no open entry to move the stop for %s", t.symbol)
 	}
 	newStop = RoundToTick(newStop, InstrumentTickSize(t.symbol))
-	return t.server.SendMoveStop(ntwire.MoveStopPayload{
+	// B1 STOP-WIDEN BAN: a stop may only TIGHTEN (reduce risk), never widen. A widen
+	// attempt is a bug or bad input — REFUSE it and never send it to the broker.
+	if cur > 0 && stopWouldWiden(side, cur, newStop) {
+		logger.Warnf("⛔ stop-widen REFUSED: %s %s new stop %.2f would WIDEN from %.2f (risk-increasing) — NOT sent.",
+			t.symbol, side, newStop, cur)
+		return fmt.Errorf("ninjatrader/tcp: stop-widen ban — %s %s new stop %.2f widens from %.2f", t.symbol, side, newStop, cur)
+	}
+	if err := t.server.SendMoveStop(ntwire.MoveStopPayload{
 		Symbol:      t.symbol,
 		SignalID:    sid,
 		NewStopLoss: newStop,
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),
-	})
+	}); err != nil {
+		return err
+	}
+	// Track the new stop so a subsequent move is checked against it.
+	t.mu.Lock()
+	t.stopLoss[key] = newStop
+	t.mu.Unlock()
+	return nil
+}
+
+// stopWouldWiden reports whether moving a stop from cur→next WIDENS it (increases
+// risk) for the given side. Long: widen = next below cur (stop moves further from
+// price). Short: widen = next above cur. Equal or tighter → false. (B1 stop-widen
+// ban — the one authority for the tighten-only invariant.)
+func stopWouldWiden(side string, cur, next float64) bool {
+	if strings.EqualFold(strings.TrimSpace(side), "short") {
+		return next > cur
+	}
+	return next < cur // long (default)
 }
 
 func (t *TCPTrader) CloseLong(symbol string, quantity float64) (map[string]interface{}, error) {
