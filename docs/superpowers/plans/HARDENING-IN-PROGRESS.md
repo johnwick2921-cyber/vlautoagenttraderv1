@@ -43,7 +43,7 @@
 
 ### VERIFY + DEPLOY
 - [ ] Full suite (build/vet/test/goldens/-race/tsc/npm) verbatim
-- [ ] ONE Go restart (flat/safe window)
+- [x] Go restart DONE 2026-08-13 14:53:02 CDT (SIGKILL→systemd relaunch; PID 190403 @ rev 74aac5b6). Part D now LIVE: D3/D4/D1 code active + D2 armed config loaded — guardrails master ON ENFORCING (max_daily_trades=3 tripping on both traders @14:56:12 [A], today=5/6). Both traders re-bound to own accounts, id=519 re-attached, wrong-account=0. NOTE: max_daily_trades=3 halts NEW entries for the rest of this session-day (both already at 5-6 trades) — intended protection; resumes at 17:00 CT rollover.
 - [ ] C# staged + md5 → owner ONE F5 + NT8 restart (lockstep sequence stated)
 - [ ] vlauto full propagation (green, secret-scan, push)
 - [ ] Delete this file in the final commit
