@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"nofx/discipline"
 	"nofx/logger"
 	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
@@ -146,6 +147,15 @@ func (t *TCPTrader) recordClose(
 	} else {
 		logger.Infof("📕 NT position closed: %s %s qty=%.0f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
 			symbol, side, qty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
+	}
+
+	// B7 — re-entry cooldown: a STOP-LOSS exit (NT8 reason "sl") arms the
+	// same-direction re-entry cooldown for the OWNING trader on this symbol, measured
+	// from the SL fill price. Target/manual exits do NOT arm it. The kernel entry
+	// gate (applyReentryCooldown) enforces it; 0 = OFF disables it there.
+	if strings.EqualFold(p.ExitReason, "sl") {
+		discipline.NoteStopLossExit(owner.TraderID, symbol, side, p.ExitPrice, exitMs)
+		logger.Infof("⏳ re-entry cooldown armed: %s %s stop=%.2f (owner=%s)", symbol, side, p.ExitPrice, owner.TraderID)
 	}
 
 	// Mark flat so GetPositions stops reporting the now-closed position.

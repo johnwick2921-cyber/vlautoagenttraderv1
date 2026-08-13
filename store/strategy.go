@@ -976,6 +976,13 @@ type RiskControlConfig struct {
 	// guardrails master switch — it is a per-strategy circuit breaker.
 	ConsecutiveLossHalt int `json:"consecutive_loss_halt,omitempty"`
 
+	// B7 — RE-ENTRY COOLDOWN: after a STOP-LOSS exit, block a SAME-DIRECTION
+	// re-entry on that symbol for this many minutes OR until price moves ≥ 1×ATR15
+	// away from the stop — whichever comes first. Per-trader; opposite direction and
+	// other symbols are never blocked. FE default 20; 0 = OFF (existing strategies
+	// stay off until set). Not gated by the guardrails master switch.
+	ReentryCooldownMinutes int `json:"reentry_cooldown_minutes,omitempty"`
+
 	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 10-contract
 	// default (the prior hidden const maxFuturesContracts). Toggle default ON.
 	MaxContractsPerOrder int   `json:"max_contracts_per_order,omitempty"`

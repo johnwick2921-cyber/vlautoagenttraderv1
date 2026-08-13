@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"nofx/config"
+	"nofx/discipline"
 	"nofx/logger"
 	"nofx/market"
 	"nofx/mcp"
@@ -369,7 +370,45 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// stale (feed frozen); exits / open-position management are never touched.
 	applyStaleDataBlock(decision, ctx, time.Now().UnixMilli())
 
+	// B7 — re-entry cooldown: after a stop-loss exit, refuse a same-direction
+	// re-entry on that symbol until the cooldown elapses OR price moved ≥1×ATR15
+	// from the stop (whichever first). Per-strategy; 0 = OFF. Exits untouched.
+	if engine != nil {
+		applyReentryCooldown(decision, ctx, engine.GetRiskControlConfig().ReentryCooldownMinutes, time.Now().UnixMilli())
+	}
+
 	return decision, nil
+}
+
+// applyReentryCooldown (B7) neutralizes a same-direction re-entry to `wait` while
+// the re-entry cooldown for (trader, symbol, side) is active (see discipline.
+// ReentryBlocked). cooldownMinutes ≤ 0 → OFF. Missing market data → fail-open
+// (leave the decision). Only open_long/open_short are affected.
+func applyReentryCooldown(fd *FullDecision, ctx *Context, cooldownMinutes int, nowMs int64) {
+	if fd == nil || ctx == nil || cooldownMinutes <= 0 {
+		return
+	}
+	for i := range fd.Decisions {
+		d := &fd.Decisions[i]
+		side := ""
+		switch d.Action {
+		case "open_long":
+			side = "long"
+		case "open_short":
+			side = "short"
+		default:
+			continue
+		}
+		md := ctx.MarketDataMap[d.Symbol]
+		if md == nil || md.CurrentPrice <= 0 {
+			continue // no data → fail-open
+		}
+		if remaining, reason, blocked := discipline.ReentryBlocked(ctx.TraderID, d.Symbol, side, cooldownMinutes, atr15From(md), md.CurrentPrice, nowMs); blocked {
+			logger.Warnf("⛔ re-entry cooldown: %s %s → WAIT — %s (%ds left).", d.Symbol, d.Action, reason, remaining)
+			d.Action = "wait"
+			telemetry.IncGateBlock(ctx.TraderID, "reentry_cooldown")
+		}
+	}
 }
 
 // callWithSchemaRetry (B2a) calls the AI + parses, retrying up to maxRetries with

@@ -754,6 +754,37 @@ export function RiskControlEditor({
             />
           </GuardrailRow>
 
+          {isFutures && (
+            <GuardrailRow
+              label={ts(riskControl.reentryCooldown, language)}
+              enabled={(config.reentry_cooldown_minutes ?? 0) > 0}
+              onToggle={(v) =>
+                updateField('reentry_cooldown_minutes', v ? 20 : 0)
+              }
+              disabled={disabled}
+            >
+              <input
+                type="number"
+                value={config.reentry_cooldown_minutes || ''}
+                placeholder="e.g. 20"
+                onChange={(e) =>
+                  updateField(
+                    'reentry_cooldown_minutes',
+                    parseInt(e.target.value) || 0
+                  )
+                }
+                disabled={disabled}
+                min={0}
+                className="w-full px-3 py-2 rounded font-mono"
+                style={{
+                  background: '#1E2329',
+                  border: '1px solid #2B3139',
+                  color: '#EAECEF',
+                }}
+              />
+            </GuardrailRow>
+          )}
+
           <GuardrailRow
             label={ts(riskControl.consistencyPctField, language)}
             enabled={config.consistency_enabled ?? false}

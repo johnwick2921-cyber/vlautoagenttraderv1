@@ -539,6 +539,11 @@ export const riskControl = {
     en: 'Consecutive-loss halt (stop after N losers)',
     es: 'Freno por pérdidas seguidas (parar tras N)',
   },
+  reentryCooldown: {
+    zh: '止损后再入场冷却 (分钟, 或价格离止损 ≥1×ATR15)',
+    en: 'Re-entry cooldown after stop (min, or ≥1×ATR15 from stop)',
+    es: 'Enfriamiento de reingreso tras stop (min, o ≥1×ATR15)',
+  },
   maxContractsField: {
     zh: '单笔最大合约数',
     en: 'Max contracts / order',
