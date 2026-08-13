@@ -27,6 +27,10 @@ type Data struct {
 	CurrentEMAByPeriod map[int]float64
 	CurrentMACD        float64
 	CurrentRSI7        float64
+	// CurrentRSIByPeriod holds the latest RSI per CONFIGURED period (e.g. {14: …}).
+	// Populated only when RSI periods are supplied; empty → readers fall back to the
+	// legacy CurrentRSI7 (period 7). Prompt-data only. Mirrors CurrentEMAByPeriod.
+	CurrentRSIByPeriod map[int]float64
 	OpenInterest       *OIData
 	FundingRate        float64
 	IntradaySeries     *IntradayData

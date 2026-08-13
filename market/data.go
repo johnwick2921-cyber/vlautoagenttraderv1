@@ -312,6 +312,19 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 		}
 	}
 
+	// F9 — latest RSI per CONFIGURED period (e.g. {14}), so the snapshot label is
+	// honest (current_rsi14, not a hardcoded current_rsi7). Empty when no periods
+	// supplied → the prompt falls back to the legacy period-7 line.
+	var currentRSIByPeriod map[int]float64
+	if len(ip.RSI) > 0 {
+		currentRSIByPeriod = make(map[int]float64, len(ip.RSI))
+		for _, p := range ip.RSI {
+			if p > 0 {
+				currentRSIByPeriod[p] = calculateRSI(primaryKlines, p)
+			}
+		}
+	}
+
 	// Calculate price changes
 	priceChange1h := calculatePriceChangeByBars(primaryKlines, primaryTimeframe, 60) // 1 hour
 	priceChange4h := calculatePriceChangeByBars(primaryKlines, primaryTimeframe, 240) // 4 hours
@@ -338,6 +351,7 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 		CurrentEMAByPeriod: currentEMAByPeriod,
 		CurrentMACD:        currentMACD,
 		CurrentRSI7:        currentRSI7,
+		CurrentRSIByPeriod: currentRSIByPeriod,
 		OpenInterest:       oiData,
 		FundingRate:        fundingRate,
 		TimeframeData: timeframeData,

@@ -581,7 +581,20 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 	}
 
 	if indicators.EnableRSI {
-		sb.WriteString(fmt.Sprintf(", current_rsi7 = %.3f", data.CurrentRSI7))
+		// F9 — honest snapshot label: use the FIRST CONFIGURED RSI period (smallest,
+		// deterministic) so hoang's [14] renders current_rsi14, not a hardcoded
+		// current_rsi7. No configured periods → the legacy period-7 line.
+		if len(data.CurrentRSIByPeriod) > 0 {
+			periods := make([]int, 0, len(data.CurrentRSIByPeriod))
+			for p := range data.CurrentRSIByPeriod {
+				periods = append(periods, p)
+			}
+			sort.Ints(periods)
+			p := periods[0]
+			sb.WriteString(fmt.Sprintf(", current_rsi%d = %.3f", p, data.CurrentRSIByPeriod[p]))
+		} else {
+			sb.WriteString(fmt.Sprintf(", current_rsi7 = %.3f", data.CurrentRSI7))
+		}
 	}
 
 	sb.WriteString("\n\n")

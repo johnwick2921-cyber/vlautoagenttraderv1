@@ -124,3 +124,36 @@ func TestFormatMarketData_CurrentEMAByPeriod(t *testing.T) {
 		t.Fatalf("configured must NOT emit current_ema20; got:\n%s", cfg)
 	}
 }
+
+// TestFormatMarketData_CurrentRSIByPeriod (F9) locks the honest RSI snapshot:
+// configured periods → "current_rsi<first>="; none → legacy "current_rsi7 =".
+func TestFormatMarketData_CurrentRSIByPeriod(t *testing.T) {
+	eng := NewStrategyEngine(&store.StrategyConfig{Indicators: store.IndicatorConfig{EnableRSI: true}})
+
+	// No configured RSI period → legacy current_rsi7.
+	legacy := eng.formatMarketData(&market.Data{Symbol: "MNQ", CurrentPrice: 100, CurrentRSI7: 55.5})
+	if !strings.Contains(legacy, "current_rsi7 = 55.500") {
+		t.Fatalf("legacy must emit current_rsi7; got:\n%s", legacy)
+	}
+
+	// Configured [14] → current_rsi14 with the configured value, never current_rsi7.
+	cfg := eng.formatMarketData(&market.Data{
+		Symbol: "MNQ", CurrentPrice: 100, CurrentRSI7: 55.5,
+		CurrentRSIByPeriod: map[int]float64{14: 61.2},
+	})
+	if !strings.Contains(cfg, "current_rsi14 = 61.200") {
+		t.Fatalf("configured must emit current_rsi14 with the configured value; got:\n%s", cfg)
+	}
+	if strings.Contains(cfg, "current_rsi7 =") {
+		t.Fatalf("configured must NOT emit the hardcoded current_rsi7; got:\n%s", cfg)
+	}
+
+	// Multiple configured → the FIRST (smallest) period labels the snapshot.
+	multi := eng.formatMarketData(&market.Data{
+		Symbol: "MNQ", CurrentPrice: 100,
+		CurrentRSIByPeriod: map[int]float64{14: 61.2, 7: 48.0},
+	})
+	if !strings.Contains(multi, "current_rsi7 = 48.000") {
+		t.Fatalf("first configured period must label the snapshot; got:\n%s", multi)
+	}
+}
