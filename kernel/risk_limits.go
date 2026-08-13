@@ -234,28 +234,25 @@ func firstPositive(vals ...float64) float64 {
 	return 0
 }
 
-// ResolveMaxContracts (Chunk 3) returns the effective max-contracts clamp for a
-// futures order, respecting the master switch + the per-guardrail toggle. Returns
-// 0 = NO clamp (disabled by master/toggle). Per-strategy value overrides; def is
-// the fallback (the prior 10-contract default).
-func ResolveMaxContracts(masterEnabled, contractsEnabled *bool, perStrategy, def int) int {
-	if !boolOrDefault(masterEnabled, true) || !boolOrDefault(contractsEnabled, true) {
-		return 0
-	}
+// ResolveMaxContracts returns the per-order contract clamp for a FUTURES order.
+// Hardening D3 (audit F2): this SIZE cap is ALWAYS ON for futures — it is venue
+// safety, NOT a prop-firm rule, so the guardrails master switch and the
+// max-contracts toggle govern ONLY daily limits/blackout, never this clamp.
+// Per-strategy value overrides (>0); else the venue default (10-contract).
+// NEVER returns 0 — a futures order can never be left unclamped.
+func ResolveMaxContracts(perStrategy, def int) int {
 	if perStrategy > 0 {
 		return perStrategy
 	}
 	return def
 }
 
-// ResolveNotionalLeverage (Chunk 3) returns the effective futures notional-ceiling
-// multiplier (max notional = equity × this), respecting the master + toggle.
-// Returns 0 = NO cap (disabled by master/toggle). Per-strategy value overrides;
-// def is the fallback (the prior equity×20 const).
-func ResolveNotionalLeverage(masterEnabled, notionalEnabled *bool, perStrategy, def float64) float64 {
-	if !boolOrDefault(masterEnabled, true) || !boolOrDefault(notionalEnabled, true) {
-		return 0
-	}
+// ResolveNotionalLeverage returns the futures notional-ceiling multiplier
+// (max notional = equity × this). Hardening D3 (audit F2): ALWAYS ON for futures,
+// independent of the guardrails master switch/toggle (which govern only daily
+// limits/blackout). Per-strategy value overrides (>0); else the venue default
+// (equity×20). NEVER returns 0 — a futures order always has a notional ceiling.
+func ResolveNotionalLeverage(perStrategy, def float64) float64 {
 	if perStrategy > 0 {
 		return perStrategy
 	}

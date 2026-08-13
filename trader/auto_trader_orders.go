@@ -39,15 +39,15 @@ func futuresOrderQuantity(symbol string, notionalUSD, price float64, maxContract
 	return contracts
 }
 
-// resolveMaxContracts returns the effective futures max-contracts clamp for this
-// trader's strategy (per-strategy value, else the 10-contract default), respecting
-// the master switch + the max-contracts toggle. 0 = no clamp (disabled).
+// resolveMaxContracts returns the futures max-contracts clamp for this trader's
+// strategy (per-strategy value, else the 10-contract venue default). Hardening D3
+// (audit F2): ALWAYS ON — the guardrails master switch no longer disables it.
 func (at *AutoTrader) resolveMaxContracts() int {
 	if at.config.StrategyConfig == nil {
 		return int(maxFuturesContracts)
 	}
 	rc := at.config.StrategyConfig.RiskControl
-	return kernel.ResolveMaxContracts(rc.GuardrailsEnabled, rc.MaxContractsEnabled, rc.MaxContractsPerOrder, int(maxFuturesContracts))
+	return kernel.ResolveMaxContracts(rc.MaxContractsPerOrder, int(maxFuturesContracts))
 }
 
 // hlBool resolves a three-state *bool toggle (nil → default).

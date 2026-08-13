@@ -13,7 +13,7 @@
 ### PART D — GUARDRAILS ARMED (instant protection)
 - [ ] D1 — `consecutive_loss_halt` field + entry-gate + Strategy Studio field + tests
 - [ ] D2 — ARM both live strategies via API (master ON, max_daily_trades 3, daily_loss 450, max_contracts 2, daily_profit_halt 900 soft, consecutive_loss_halt 2, blackout OFF); persistence + hot-pickup proof
-- [ ] D3 — (F2) decouple futures size caps (notional×20 + 10-contract clamp) from master → always-on venue defaults; truthful guardrails-off log; tests
+- [x] D3 — (F2) decouple futures size caps (notional×20 + 10-contract clamp) from master → always-on venue defaults; truthful guardrails-off log; tests ✅ committed
 - [ ] D4 — (F3) pre-prompt concurrent gate reads per-strategy max_positions (env = fallback); log source; tests
 
 ### PART C — OPS ARMOR

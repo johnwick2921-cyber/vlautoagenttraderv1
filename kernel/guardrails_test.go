@@ -130,34 +130,32 @@ func TestCMESessionDayStart(t *testing.T) {
 // --- Chunk 3 — max contracts + visible equity×20 cap resolvers ---
 
 func TestResolveMaxContracts(t *testing.T) {
-	on, off := true, false
-	if got := ResolveMaxContracts(nil, nil, 4, 10); got != 4 { // per-strategy overrides
+	// Hardening D3 (audit F2): the futures contract clamp is ALWAYS ON — there is
+	// no master/toggle argument that can disable it. Per-strategy value overrides;
+	// unset/invalid → venue default; NEVER 0 (a futures order is never unclamped).
+	if got := ResolveMaxContracts(4, 10); got != 4 { // per-strategy overrides
 		t.Fatalf("per-strategy 4 → 4, got %d", got)
 	}
-	if got := ResolveMaxContracts(nil, nil, 0, 10); got != 10 { // unset → default
+	if got := ResolveMaxContracts(0, 10); got != 10 { // unset → venue default
 		t.Fatalf("unset → default 10, got %d", got)
 	}
-	if got := ResolveMaxContracts(nil, &off, 4, 10); got != 0 { // toggle off → no clamp
-		t.Fatalf("toggle off → 0 (no clamp), got %d", got)
-	}
-	if got := ResolveMaxContracts(&off, &on, 4, 10); got != 0 { // master off → no clamp
-		t.Fatalf("master off → 0 (no clamp), got %d", got)
+	if got := ResolveMaxContracts(-1, 10); got != 10 { // invalid → venue default, never 0
+		t.Fatalf("negative → default 10 (never unclamped), got %d", got)
 	}
 }
 
 func TestResolveNotionalLeverage(t *testing.T) {
-	off := false
-	if got := ResolveNotionalLeverage(nil, nil, 50, 20); got != 50 { // per-strategy overrides
+	// Hardening D3 (audit F2): the futures notional ceiling is ALWAYS ON —
+	// master-independent venue safety. Per-strategy overrides; unset/invalid →
+	// venue default; NEVER 0 (a futures order always has a notional ceiling).
+	if got := ResolveNotionalLeverage(50, 20); got != 50 { // per-strategy overrides
 		t.Fatalf("per-strategy 50 → 50, got %v", got)
 	}
-	if got := ResolveNotionalLeverage(nil, nil, 0, 20); got != 20 { // unset → default
+	if got := ResolveNotionalLeverage(0, 20); got != 20 { // unset → venue default
 		t.Fatalf("unset → default 20, got %v", got)
 	}
-	if got := ResolveNotionalLeverage(nil, &off, 50, 20); got != 0 { // toggle off → no cap
-		t.Fatalf("toggle off → 0 (no cap), got %v", got)
-	}
-	if got := ResolveNotionalLeverage(&off, nil, 50, 20); got != 0 { // master off → no cap
-		t.Fatalf("master off → 0 (no cap), got %v", got)
+	if got := ResolveNotionalLeverage(-5, 20); got != 20 { // invalid → venue default, never 0
+		t.Fatalf("negative → default 20 (never uncapped), got %v", got)
 	}
 }
 

@@ -225,13 +225,13 @@ func (at *AutoTrader) enforcePositionValueRatio(positionSizeUSD float64, equity 
 	var maxPositionValueRatio float64
 	switch {
 	case market.IsCMEFuturesSymbol(symbol):
-		// CME futures: the editable notional ceiling multiplier (Chunk 3): max
-		// notional = equity × this. 0 → cap DISABLED (master/toggle off) → use a
-		// huge ratio so it never binds. Per-strategy value, else the equity×20
-		// const fallback.
-		maxPositionValueRatio = kernel.ResolveNotionalLeverage(riskControl.GuardrailsEnabled, riskControl.NotionalCapEnabled, riskControl.MaxNotionalLeverage, futuresMaxNotionalLeverage)
+		// CME futures: the notional ceiling multiplier (max notional = equity ×
+		// this). Hardening D3 (audit F2): ALWAYS ON — master-independent venue
+		// safety. Per-strategy value overrides, else the equity×20 venue default.
+		// Never 0; the guard below is belt-and-suspenders.
+		maxPositionValueRatio = kernel.ResolveNotionalLeverage(riskControl.MaxNotionalLeverage, futuresMaxNotionalLeverage)
 		if maxPositionValueRatio <= 0 {
-			maxPositionValueRatio = 1e9
+			maxPositionValueRatio = futuresMaxNotionalLeverage
 		}
 	case isBTCETH(symbol):
 		maxPositionValueRatio = riskControl.BTCETHMaxPositionValueRatio

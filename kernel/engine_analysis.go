@@ -139,7 +139,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				MaxDailyTrades:        rc.MaxDailyTrades,
 			}
 			if !g.MasterEnabled {
-				logger.Warnf("⚠️ Strategy Studio: risk guardrails DISABLED by master switch — daily limits + blackout NOT enforced this cycle")
+				logger.Warnf("⚠️ Strategy Studio: risk guardrails master OFF — daily loss/profit/trade limits + blackout NOT enforced this cycle (futures SIZE caps — notional×N ceiling + per-order contract clamp — REMAIN enforced; master-independent venue safety, hardening D3)")
 			} else if _, gErr := g.Check(); gErr != nil {
 				logger.Warnf("⚠️ Strategy Studio daily guardrail tripped: %v — skipping decision cycle (HOLD)", gErr)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_daily").Inc()
@@ -315,7 +315,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		riskConfig.AltcoinMaxPositionValueRatio,
 		riskConfig.MinRiskRewardRatio,
 		riskConfig.MinConfidence,
-		ResolveNotionalLeverage(riskConfig.GuardrailsEnabled, riskConfig.NotionalCapEnabled, riskConfig.MaxNotionalLeverage, futuresMaxNotionalLeverage),
+		ResolveNotionalLeverage(riskConfig.MaxNotionalLeverage, futuresMaxNotionalLeverage),
 	)
 
 	if decision != nil {
