@@ -529,59 +529,65 @@ export function RiskControlEditor({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div
-            className="p-4 rounded-lg"
-            style={{ background: '#0B0E11', border: '1px solid #0ECB81' }}
-          >
-            <label className="block text-sm mb-1" style={{ color: '#EAECEF' }}>
-              {ts(riskControl.minPositionSize, language)}
-            </label>
-            <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
-              {ts(
-                isFutures
-                  ? riskControl.minPositionSizeDescFutures
-                  : riskControl.minPositionSizeDesc,
-                language
-              )}
-            </p>
-            <div className="flex items-center gap-2">
-              {/* User-set + code-enforced. ClampLimits bounds this to [10,1000]
-                  on save AND at decision time; the trader gate
-                  (enforceMinPositionSize) plus the kernel reject-floor (12 gen /
-                  60 BTC-ETH, engine_position.go) remain as defense-in-depth, so a
-                  user value only ever RAISES the effective minimum — never below
-                  the floor. The onChange clamp keeps shown == saved. */}
-              <input
-                type="number"
-                value={config.min_position_size ?? 12}
-                onChange={(e) =>
-                  updateField(
-                    'min_position_size',
-                    Math.min(
-                      1000,
-                      Math.max(10, parseFloat(e.target.value) || 12)
+          {/* Min position size — crypto-only. DEAD on futures: the min-size gate
+              (enforceMinPositionSize) runs ONLY in the crypto sizing branch;
+              futures size by contract count via futuresOrderQuantity, so this USD
+              floor has no futures reader. Hidden on futures like the leverage/PVR
+              tiles — showing an "enforced" USD floor there would be false. Crypto
+              keeps it (real). */}
+          {!isFutures && (
+            <div
+              className="p-4 rounded-lg"
+              style={{ background: '#0B0E11', border: '1px solid #0ECB81' }}
+            >
+              <label
+                className="block text-sm mb-1"
+                style={{ color: '#EAECEF' }}
+              >
+                {ts(riskControl.minPositionSize, language)}
+              </label>
+              <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
+                {ts(riskControl.minPositionSizeDesc, language)}
+              </p>
+              <div className="flex items-center gap-2">
+                {/* User-set + code-enforced. ClampLimits bounds this to [10,1000]
+                    on save AND at decision time; the trader gate
+                    (enforceMinPositionSize) plus the kernel reject-floor (12 gen /
+                    60 BTC-ETH, engine_position.go) remain as defense-in-depth, so
+                    a user value only ever RAISES the effective minimum — never
+                    below the floor. The onChange clamp keeps shown == saved. */}
+                <input
+                  type="number"
+                  value={config.min_position_size ?? 12}
+                  onChange={(e) =>
+                    updateField(
+                      'min_position_size',
+                      Math.min(
+                        1000,
+                        Math.max(10, parseFloat(e.target.value) || 12)
+                      )
                     )
-                  )
-                }
-                disabled={disabled}
-                min={10}
-                max={1000}
-                step={1}
-                className="w-24 px-3 py-2 rounded font-mono"
-                style={{
-                  background: '#1E2329',
-                  border: '1px solid #2B3139',
-                  color: '#EAECEF',
-                }}
-              />
-              <span className="ml-1" style={{ color: '#848E9C' }}>
-                {isFutures ? 'USD' : 'USDT'}
-              </span>
-              <span className="text-xs" style={{ color: '#848E9C' }}>
-                user-set · enforced
-              </span>
+                  }
+                  disabled={disabled}
+                  min={10}
+                  max={1000}
+                  step={1}
+                  className="w-24 px-3 py-2 rounded font-mono"
+                  style={{
+                    background: '#1E2329',
+                    border: '1px solid #2B3139',
+                    color: '#EAECEF',
+                  }}
+                />
+                <span className="ml-1" style={{ color: '#848E9C' }}>
+                  USDT
+                </span>
+                <span className="text-xs" style={{ color: '#848E9C' }}>
+                  user-set · enforced
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div
             className="p-4 rounded-lg"

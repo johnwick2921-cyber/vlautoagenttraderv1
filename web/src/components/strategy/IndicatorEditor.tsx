@@ -882,52 +882,62 @@ export function IndicatorEditor({
         </div>
 
         <div className="p-3 space-y-4">
-          {/* Raw Klines - Required, Always On */}
-          <div
-            className="flex items-center justify-between p-3 rounded-lg"
-            style={{
-              background: 'rgba(240, 185, 11, 0.08)',
-              border: '1px solid rgba(240, 185, 11, 0.2)',
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: 'rgba(240, 185, 11, 0.15)' }}
-              >
-                <TrendingUp className="w-4 h-4" style={{ color: '#F0B90B' }} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: '#EAECEF' }}
-                  >
-                    {ts(indicator.rawKlines, language)}
-                  </span>
-                  <span
-                    className="px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"
-                    style={{
-                      background: 'rgba(240, 185, 11, 0.2)',
-                      color: '#F0B90B',
-                    }}
-                  >
-                    <Lock className="w-2.5 h-2.5" />
-                    {ts(indicator.required, language)}
-                  </span>
+          {/* Raw Klines - Required, Always On.
+              DEAD lever on futures: enable_raw_klines is force-set true on mount
+              (ensureRawKlines) and no futures reader gates on it, so this locked
+              "Required" card is a switch that does nothing. Hidden on futures
+              (the flag stays true underneath); crypto keeps it — the card is the
+              honest "always-on" marker there. */}
+          {!isFutures && (
+            <div
+              className="flex items-center justify-between p-3 rounded-lg"
+              style={{
+                background: 'rgba(240, 185, 11, 0.08)',
+                border: '1px solid rgba(240, 185, 11, 0.2)',
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(240, 185, 11, 0.15)' }}
+                >
+                  <TrendingUp
+                    className="w-4 h-4"
+                    style={{ color: '#F0B90B' }}
+                  />
                 </div>
-                <p className="text-xs mt-0.5" style={{ color: '#848E9C' }}>
-                  {ts(indicator.rawKlinesDesc, language)}
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-sm font-medium"
+                      style={{ color: '#EAECEF' }}
+                    >
+                      {ts(indicator.rawKlines, language)}
+                    </span>
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"
+                      style={{
+                        background: 'rgba(240, 185, 11, 0.2)',
+                        color: '#F0B90B',
+                      }}
+                    >
+                      <Lock className="w-2.5 h-2.5" />
+                      {ts(indicator.required, language)}
+                    </span>
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: '#848E9C' }}>
+                    {ts(indicator.rawKlinesDesc, language)}
+                  </p>
+                </div>
               </div>
+              <input
+                type="checkbox"
+                checked={true}
+                disabled={true}
+                className="w-5 h-5 rounded accent-yellow-500 cursor-not-allowed"
+              />
             </div>
-            <input
-              type="checkbox"
-              checked={true}
-              disabled={true}
-              className="w-5 h-5 rounded accent-yellow-500 cursor-not-allowed"
-            />
-          </div>
+          )}
 
           {/* Timeframe Selection */}
           <div>
