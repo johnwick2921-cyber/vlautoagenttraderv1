@@ -1114,6 +1114,8 @@ export const translations = {
       tokenEstimate: 'Token Estimate',
       tokenExceedWarning:
         'Token estimate exceeds 128K. AI requests may fail for some models.',
+      gridSwitchConfirm:
+        'Switch to Grid trading? Your AI configuration (indicators, risk control, prompt, coin source) is set aside — it is preserved and restored if you switch back. Continue?',
       tokenEstimating: 'Estimating...',
       tokenTooltip: 'Based on 200K context',
     },
@@ -2448,6 +2450,8 @@ export const translations = {
       runAiTestHint: '点击运行 AI 测试',
       tokenEstimate: 'Token 预估',
       tokenExceedWarning: 'Token 估算超过 128K，部分模型请求可能失败',
+      gridSwitchConfirm:
+        '切换到网格交易？您的 AI 配置（指标、风控、提示词、币种来源）将被保留，切换回来时会自动恢复。是否继续？',
       tokenEstimating: '预估中...',
       tokenTooltip: '基于 200K 上下文计算',
     },
@@ -3727,6 +3731,8 @@ export const translations = {
       tokenEstimate: 'Estimasi Token',
       tokenExceedWarning:
         'Estimasi token melebihi 128K. Permintaan AI mungkin gagal untuk beberapa model.',
+      gridSwitchConfirm:
+        'Beralih ke perdagangan Grid? Konfigurasi AI Anda (indikator, kontrol risiko, prompt, sumber koin) disimpan — dipertahankan dan dipulihkan jika Anda beralih kembali. Lanjutkan?',
       tokenEstimating: 'Mengestimasi...',
       tokenTooltip: 'Berdasarkan konteks 200K',
     },

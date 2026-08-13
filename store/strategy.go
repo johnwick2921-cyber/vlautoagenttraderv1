@@ -476,6 +476,25 @@ func MergeStrategyConfig(base StrategyConfig, patch map[string]any) (StrategyCon
 	return merged, nil
 }
 
+// PreserveAIConfigOnTypeSwitch (F11b) guards against the grid-switch ai_config
+// DESTROYER: when a strategy's TYPE changes, the AI-config bundle (coin source,
+// indicators, risk control, prompt sections, custom prompt) must NOT be silently
+// destroyed. Unless the caller explicitly confirmed the loss, `merged` gets its AI
+// bundle restored from `base`, so switching ai→grid (and back) never loses it. With
+// confirmed==true (the FE sent it after showing a dialog naming what's lost), the
+// caller's merged config stands.
+func PreserveAIConfigOnTypeSwitch(base, merged StrategyConfig, confirmed bool) StrategyConfig {
+	if confirmed || base.StrategyType == merged.StrategyType {
+		return merged
+	}
+	merged.CoinSource = base.CoinSource
+	merged.Indicators = base.Indicators
+	merged.RiskControl = base.RiskControl
+	merged.PromptSections = base.PromptSections
+	merged.CustomPrompt = base.CustomPrompt
+	return merged
+}
+
 func DefaultGridStrategyConfig() GridStrategyConfig {
 	return GridStrategyConfig{
 		Symbol:                "BTCUSDT",

@@ -619,6 +619,17 @@ export function StrategyStudioPage() {
   ) => {
     if (selectedStrategy?.is_default) return
 
+    // F11b — switching AWAY from ai_trading sets aside the AI config; name it and
+    // confirm before proceeding (the backend preserves it unless explicitly
+    // confirmed, so a switch never silently destroys it).
+    if (
+      strategyType === 'grid_trading' &&
+      (editingConfig?.strategy_type ?? 'ai_trading') === 'ai_trading' &&
+      !window.confirm(tr('gridSwitchConfirm'))
+    ) {
+      return
+    }
+
     const cachedGridConfig = selectedStrategy?.id
       ? gridConfigCacheRef.current[selectedStrategy.id]
       : null

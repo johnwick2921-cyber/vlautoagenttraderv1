@@ -285,6 +285,10 @@ func (s *Server) handleUpdateStrategy(c *gin.Context) {
 		Config        json.RawMessage `json:"config"` // raw JSON so we can merge
 		IsPublic      bool            `json:"is_public"`
 		ConfigVisible bool            `json:"config_visible"`
+		// F11b — the FE sets this true only after the user confirms a strategy-type
+		// switch dialog that names the ai_config (indicators/risk/prompt) that would
+		// be lost. Absent/false → the AI config is preserved across the switch.
+		ConfirmTypeSwitch bool `json:"confirm_type_switch"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -298,6 +302,9 @@ func (s *Server) handleUpdateStrategy(c *gin.Context) {
 		// If existing config is corrupt, start from zero
 		mergedConfig = store.StrategyConfig{}
 	}
+	// F11b — snapshot the pre-patch config so a strategy-type switch can't destroy
+	// the AI-config bundle unless the user explicitly confirmed the loss.
+	baseConfig := mergedConfig
 
 	// Apply incoming config on top while preserving nested fields that were not sent.
 	if len(req.Config) > 0 && string(req.Config) != "null" {
@@ -311,6 +318,11 @@ func (s *Server) handleUpdateStrategy(c *gin.Context) {
 			SafeBadRequest(c, "Invalid config JSON")
 			return
 		}
+	}
+	// F11b — preserve the AI config across an unconfirmed strategy-type switch.
+	if mergedConfig.StrategyType != baseConfig.StrategyType && !req.ConfirmTypeSwitch {
+		mergedConfig = store.PreserveAIConfigOnTypeSwitch(baseConfig, mergedConfig, false)
+		logger.Warnf("🛡️ strategy %s: preserved ai_config across %q→%q type switch (no confirm_type_switch flag)", strategyID, baseConfig.StrategyType, mergedConfig.StrategyType)
 	}
 	beforeClamp := mergedConfig
 	mergedConfig.ClampLimits()
