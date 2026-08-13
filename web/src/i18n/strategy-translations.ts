@@ -534,6 +534,11 @@ export const riskControl = {
     en: 'Max daily trades',
     es: 'Máx. operaciones diarias',
   },
+  consecutiveLossHalt: {
+    zh: '连续亏损熔断 (N 笔后停止开仓)',
+    en: 'Consecutive-loss halt (stop after N losers)',
+    es: 'Freno por pérdidas seguidas (parar tras N)',
+  },
   maxContractsField: {
     zh: '单笔最大合约数',
     en: 'Max contracts / order',

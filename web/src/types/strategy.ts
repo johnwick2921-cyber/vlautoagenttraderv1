@@ -220,6 +220,7 @@ export interface RiskControlConfig {
   daily_profit_enabled?: boolean // default OFF
   max_daily_trades?: number // max entries per CME session-day
   max_daily_trades_enabled?: boolean // default OFF
+  consecutive_loss_halt?: number // D1: halt new entries after N consecutive losing trades this session (0=off; not master-gated)
   max_contracts_per_order?: number // futures contracts-per-order clamp
   max_contracts_enabled?: boolean // default ON
   max_notional_leverage?: number // futures notional ceiling = equity × this (default 20)

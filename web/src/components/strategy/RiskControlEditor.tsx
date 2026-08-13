@@ -728,6 +728,33 @@ export function RiskControlEditor({
           </GuardrailRow>
 
           <GuardrailRow
+            label={ts(riskControl.consecutiveLossHalt, language)}
+            enabled={(config.consecutive_loss_halt ?? 0) > 0}
+            onToggle={(v) => updateField('consecutive_loss_halt', v ? 2 : 0)}
+            disabled={disabled}
+          >
+            <input
+              type="number"
+              value={config.consecutive_loss_halt || ''}
+              placeholder="e.g. 2"
+              onChange={(e) =>
+                updateField(
+                  'consecutive_loss_halt',
+                  parseInt(e.target.value) || 0
+                )
+              }
+              disabled={disabled}
+              min={0}
+              className="w-full px-3 py-2 rounded font-mono"
+              style={{
+                background: '#1E2329',
+                border: '1px solid #2B3139',
+                color: '#EAECEF',
+              }}
+            />
+          </GuardrailRow>
+
+          <GuardrailRow
             label={ts(riskControl.consistencyPctField, language)}
             enabled={config.consistency_enabled ?? false}
             onToggle={(v) => updateField('consistency_enabled', v)}
