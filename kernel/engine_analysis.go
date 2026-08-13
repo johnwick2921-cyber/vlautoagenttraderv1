@@ -357,6 +357,9 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// B2b — price-sanity armor: neutralize an open decision whose stop/target/entry
 	// are physically implausible, using the freshest market data (fail-open).
 	applyPriceSanity(decision, ctx)
+	// B4 — stale-data entry block: refuse a NEW entry when the freshest 1m/5m bar is
+	// stale (feed frozen); exits / open-position management are never touched.
+	applyStaleDataBlock(decision, ctx, time.Now().UnixMilli())
 
 	return decision, nil
 }
