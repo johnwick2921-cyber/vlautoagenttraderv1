@@ -71,6 +71,72 @@ func (at *AutoTrader) ninjaFeedDown() (bool, string) {
 	return true, status
 }
 
+// ninjaLinkConnected reports the RAW NT8 TCP link status for this trader, and
+// whether the watchdog applies at all (ok=false for non-NT traders → the dead-man
+// watchdog is never engaged, so crypto is byte-identical).
+func (at *AutoTrader) ninjaLinkConnected() (connected, ok bool) {
+	if at.exchange != "ninjatrader" {
+		return false, false
+	}
+	ntTCP, isNT := at.trader.(*ntTrader.TCPTrader)
+	if !isNT {
+		return false, false
+	}
+	return ntTCP.IsConnected(), true
+}
+
+// driveDeadManWatchdog (B5) advances the dead-man watchdog once per cycle from the
+// NT8 TCP link. A dropped link blocks NEW entries (open-position management/exits
+// are never gated); on reconnect it sweeps any unfilled entries and holds entries
+// blocked until a clean positions/orders reconciliation, then auto-resumes. Called
+// from runCycle; non-NT traders are a no-op.
+func (at *AutoTrader) driveDeadManWatchdog() {
+	connected, ok := at.ninjaLinkConnected()
+	if !ok {
+		return
+	}
+	switch at.deadMan.step(connected, at.watchdogReconcileClean) {
+	case wdWentDown:
+		at.logWarnf("🚨 dead-man watchdog: NT8 TCP link DOWN — NEW entries BLOCKED until a clean reconciliation. Open positions & exits are unaffected.")
+	case wdReconnected:
+		at.logWarnf("🔌 dead-man watchdog: NT8 TCP link back UP — sweeping unfilled entries; entries stay BLOCKED until a clean positions/orders reconciliation.")
+		at.cancelUnfilledEntriesAfterReconnect()
+	case wdResumed:
+		at.logInfof("✅ dead-man watchdog: clean positions/orders reconciliation — NEW entries RESUMED.")
+	}
+}
+
+// watchdogReconcileClean is the reconcile probe: the link is considered reconciled
+// when it answers BOTH a positions and an open-orders query without error (the
+// fill-confirmed position source of truth is refreshed by StartPositionReconcile in
+// the background; here we just require the link to respond cleanly). A one-cycle
+// defer after reconnect (see deadManWatchdog.step) lets the 15s positions cache
+// expire and a fresh frame arrive before this probes.
+func (at *AutoTrader) watchdogReconcileClean() bool {
+	if _, err := at.trader.GetPositions(); err != nil {
+		return false
+	}
+	if _, err := at.trader.GetOpenOrders(""); err != nil {
+		return false
+	}
+	return true
+}
+
+// cancelUnfilledEntriesAfterReconnect sweeps resting UNFILLED entry orders on
+// reconnect. On the live NT8 path this is a documented no-op: entries are MARKET
+// orders that fill or reject instantly (no resting unfilled entries), and the Go
+// side has no order-cancel wire command (CancelAllOrders/CancelStopOrders return
+// "not supported"; GetOpenOrders is empty) — exposing one is a Part A (C# AddOn)
+// change. The real protection is the block-until-reconcile gate. If a future Part A
+// surfaces resting entry orders + a cancel frame, wire the cancellation HERE.
+func (at *AutoTrader) cancelUnfilledEntriesAfterReconnect() {
+	orders, err := at.trader.GetOpenOrders("")
+	if err != nil || len(orders) == 0 {
+		return
+	}
+	at.logWarnf("dead-man watchdog: %d working order(s) visible post-reconnect — entry cancellation is a Part A AddOn capability (no-op on the current market-order path).", len(orders))
+}
+
 // maybeMoveStopToBreakeven (auto-breakeven, NT8 futures only): once an open
 // position is at least breakeven_trigger_points in profit, move its stop to the
 // entry price (breakeven), ONCE per position. Opt-in per strategy, default OFF.
@@ -286,6 +352,7 @@ type AutoTrader struct {
 	consecutiveAIFailures int                // Consecutive AI call failures
 	safeMode              bool               // Safe mode: no new positions, protect existing ones
 	safeModeReason        string             // Why safe mode was activated
+	deadMan               deadManWatchdog    // B5 dead-man watchdog: NT8 link-gap → block NEW entries until reconciled (zero value = live/allowed; touched only from runCycle)
 
 	// Plan 4 Stage 4 — NinjaTrader TCP balance tracking (defer-until-balance guard)
 	// For NinjaTrader TCP traders, we track if account_balance frame has arrived yet.

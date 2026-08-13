@@ -466,6 +466,12 @@ func (t *TCPTrader) IsFeedConnected() bool { return t.server.IsFeedConnected() }
 // feed_status frame).
 func (t *TCPTrader) FeedStatus() string { return t.server.FeedStatus() }
 
+// IsConnected reports whether the NT8 C# AddOn's TCP socket is currently connected
+// — the RAW link, independent of feed/market-data status. The dead-man watchdog
+// (B5) gates NEW entries on this: a dropped link blocks entries until a clean
+// positions/orders reconciliation.
+func (t *TCPTrader) IsConnected() bool { return t.server.IsConnected() }
+
 func (t *TCPTrader) GetPositions() ([]map[string]interface{}, error) {
 	// Read positions for THIS trader's OWN bound account — NOT the shared connection
 	// CurrentAccount() (which the dashboard can switch for DISPLAY). Decoupling keeps

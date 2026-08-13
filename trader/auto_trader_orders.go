@@ -138,6 +138,21 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// B5 — dead-man watchdog: after an NT8 TCP disconnect, NEW entries stay blocked
+	// until a clean positions/orders reconciliation, so we never open on top of a
+	// state we haven't re-verified across a link gap. Closes / open-position
+	// management are NEVER blocked. State is advanced once per cycle in runCycle
+	// (driveDeadManWatchdog); here we only enforce the block.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if at.deadMan.entriesBlocked() {
+			at.logWarnf("⛔ dead-man watchdog: %s %s REFUSED — NT8 link not yet reconciled after a disconnect; entries resume after a clean reconciliation.", decision.Symbol, decision.Action)
+			actionRecord.Success = false
+			actionRecord.Error = "dead_man_watchdog: awaiting reconciliation after link gap"
+			return nil
+		}
+	}
+
 	// D1 — consecutive-loss halt: after N consecutive losing closed trades this CME
 	// session-day, block NEW entries until the next session. Closes (open-position
 	// management) are NEVER blocked. 0 = OFF.

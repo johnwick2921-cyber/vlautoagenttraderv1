@@ -72,6 +72,13 @@ func (at *AutoTrader) runCycle() error {
 		}
 	}
 
+	// 0c. B5 — DEAD-MAN WATCHDOG. Observe the NT8 TCP link each cycle: a dropped
+	// link blocks NEW entries (open-position management/exits are never gated) and,
+	// on reconnect, holds entries blocked until a clean positions/orders
+	// reconciliation, then auto-resumes. Non-NT traders are a no-op (crypto
+	// byte-identical). The block itself is enforced in executeDecisionWithRecord.
+	at.driveDeadManWatchdog()
+
 	// Check USDC balance periodically for claw402 users (every 10 cycles)
 	if at.callCount%10 == 0 && store.IsClaw402Config(at.config.AIModel) {
 		at.checkClaw402Balance()
