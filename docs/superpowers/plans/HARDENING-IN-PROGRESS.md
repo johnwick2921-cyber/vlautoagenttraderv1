@@ -25,7 +25,7 @@
 ### PART B — MACHINE ARMOR (deterministic invariants)
 - [x] B1 — stop-widen ban: MoveStopToBreakeven refuses a risk-increasing stop (pure stopWouldWiden long/short, cur-stop tracked + updated on move); tests long/short/equal + widen-refused ✅
 - [x] B2 — AI output armor COMPLETE: B2a bounded-retry (schema_parse_failed skip) + B2b price-sanity (one authority, >8×ATR15/entry>1%, neutralize→wait, fail-open) + B2c fuzz (162k parse + 416k sanity execs, 0 crashes); goldens byte-identical ✅
-- [ ] B3 — duplicate-order guard + rate limiter + test
+- [x] B3 — dupe guard (idempotence key account|side|symbol|qty within ~1 bar → drop ⛔) + rate breaker (>10 order-actions/min → halt 🚨) at placeEntry chokepoint; orderGuard.admit tested (dedup + breaker, both recover) ✅
 - [ ] B4 — stale-data entry block + test
 - [ ] B5 — dead-man's watchdog (TCP disconnect → cancel unfilled + block) + test
 - [ ] B6 — gate-block counters + API endpoint + daily journal summary

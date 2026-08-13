@@ -39,6 +39,7 @@ type TCPTrader struct {
 	mu       sync.Mutex
 	stopLoss map[string]float64 // key: "<symbol>:<side>"
 	takePrft map[string]float64
+	guard    *orderGuard // B3: dupe-drop + rate breaker at the order-submission chokepoint
 	lastFill ntwire.FillPayload
 	hasFill  bool
 
@@ -95,6 +96,7 @@ func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *T
 		symbol:   symbol,
 		stopLoss: map[string]float64{},
 		takePrft: map[string]float64{},
+		guard:    newOrderGuard(),
 		pending:  map[string]string{},
 	}
 	if len(account) > 0 {
@@ -210,6 +212,21 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	}
 	if !t.isAccountTradeable(tradeAcct) {
 		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
+	}
+
+	// B3 — dupe guard + rate limiter at the order-submission chokepoint: a
+	// replayed / double-fired entry (same account|side|symbol|qty within a bar) is
+	// DROPPED, and an order runaway trips the per-minute breaker.
+	if t.guard != nil {
+		key := fmt.Sprintf("%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
+		if reason, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
+			if strings.Contains(reason, "breaker") {
+				logger.Warnf("🚨 B3 %s", reason)
+			} else {
+				logger.Warnf("⛔ B3 %s", reason)
+			}
+			return nil, fmt.Errorf("ninjatrader/tcp: entry not admitted — %s", reason)
+		}
 	}
 
 	// Expiry warning — defense in depth (mirrors CSV Trader).
