@@ -15,7 +15,7 @@ func FuzzParseDecisionResponse(f *testing.F) {
 	f.Add(`<decision>` + `{"action":` + `}` + `</decision>`)
 	f.Fuzz(func(t *testing.T, resp string) {
 		// Must not panic on any input; error is fine (that triggers retry/skip).
-		_, _ = parseFullDecisionResponse(resp, 50000, 5, 5, 5, 1, 3, 65, 20)
+		_, _ = parseFullDecisionResponse(resp, 50000, 5, 5, 5, 1, 3, 65, 20, nil)
 	})
 }
 

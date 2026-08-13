@@ -21,7 +21,7 @@ func TestFuturesGate_AcceptsRealisticMNQOpen(t *testing.T) {
 		StopLoss:        21480.00,
 		TakeProfit:      21560.00, // SL<TP, 0.2-entry placement => R/R 4:1
 	}
-	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20); err != nil {
+	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20, nil); err != nil {
 		t.Fatalf("expected MNQ $60k open to PASS the futures gate, got: %v", err)
 	}
 }
@@ -39,7 +39,7 @@ func TestFuturesGate_RejectsAbsurdMNQNotional(t *testing.T) {
 		StopLoss:        21480.00,
 		TakeProfit:      21560.00,
 	}
-	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20); err == nil {
+	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20, nil); err == nil {
 		t.Fatal("expected absurd $2M MNQ notional to be REJECTED, but it passed")
 	}
 }
@@ -57,7 +57,7 @@ func TestFuturesGate_CryptoCapUnchanged(t *testing.T) {
 		StopLoss:        100.0,
 		TakeProfit:      130.0,
 	}
-	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20); err == nil {
+	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20, nil); err == nil {
 		t.Fatal("expected crypto SOLUSDT $60k open to STILL be rejected by the $50k cap")
 	}
 }
@@ -67,14 +67,14 @@ func TestFuturesGate_CryptoCapUnchanged(t *testing.T) {
 func TestFuturesGate_WaitAlwaysValid(t *testing.T) {
 	eq, btcEthLev, altLev, btcEthRatio, altRatio := gateArgs()
 	d := &Decision{Symbol: "MNQ", Action: "wait"}
-	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20); err != nil {
+	if err := validateDecision(d, eq, btcEthLev, altLev, btcEthRatio, altRatio, 0, 0, 20, nil); err != nil {
 		t.Fatalf("wait should always validate, got: %v", err)
 	}
 }
 
-// mnqOpen builds a valid 4:1 MNQ open with a given confidence (notional well
-// under the equity×20 ceiling). The validator derives the entry 0.2 into the
-// SL→TP range, so R/R is always 4:1 here.
+// mnqOpen builds a valid MNQ open with a given confidence (notional well under
+// the equity×20 ceiling). With the F1 real-R:R entry reference of 21496 (see
+// mnqRRCtx), SL 21480 / TP 21560 gives risk 16, reward 64 → R:R = 4.0.
 func mnqOpen(confidence int) *Decision {
 	return &Decision{
 		Symbol: "MNQ", Action: "open_long", Leverage: 1,
@@ -83,28 +83,32 @@ func mnqOpen(confidence int) *Decision {
 	}
 }
 
+// mnqRRCtx supplies an entry reference of 21496 → the mnqOpen decision computes a
+// real R:R of exactly 4.0 (64/16).
+func mnqRRCtx() *Context { return mdCtx("MNQ", 21496.00) }
+
 // TestStrategyStudio_MinRRConfigDriven proves the R/R floor is the CONFIGURED
-// value, not a hardcoded 3.0: the same 4:1 decision PASSES at minRR=3.0 and is
+// value, not a hardcoded 3.0: the same real-4:1 decision PASSES at minRR=3.0 and is
 // REJECTED at minRR=5.0.
 func TestStrategyStudio_MinRRConfigDriven(t *testing.T) {
 	eq, b, a, br, ar := gateArgs()
-	if err := validateDecision(mnqOpen(90), eq, b, a, br, ar, 3.0, 0, 20); err != nil {
-		t.Fatalf("4:1 decision should PASS at minRR=3.0, got: %v", err)
+	if err := validateDecision(mnqOpen(90), eq, b, a, br, ar, 3.0, 0, 20, mnqRRCtx()); err != nil {
+		t.Fatalf("real-4:1 decision should PASS at minRR=3.0, got: %v", err)
 	}
-	if err := validateDecision(mnqOpen(90), eq, b, a, br, ar, 5.0, 0, 20); err == nil {
-		t.Fatal("4:1 decision should be REJECTED at minRR=5.0 (config-driven, not hardcoded 3.0)")
+	if err := validateDecision(mnqOpen(90), eq, b, a, br, ar, 5.0, 0, 20, mnqRRCtx()); err == nil {
+		t.Fatal("real-4:1 decision should be REJECTED at minRR=5.0 (config-driven, not hardcoded 3.0)")
 	}
 }
 
 // TestStrategyStudio_MinConfidenceGate proves min_confidence is now ENFORCED:
 // a confidence-50 open PASSES when the gate is disabled (0) and is REJECTED at
-// min_confidence=75.
+// min_confidence=75. Entry ctx makes the R:R (4.0) pass so confidence is reached.
 func TestStrategyStudio_MinConfidenceGate(t *testing.T) {
 	eq, b, a, br, ar := gateArgs()
-	if err := validateDecision(mnqOpen(50), eq, b, a, br, ar, 0, 0, 20); err != nil {
+	if err := validateDecision(mnqOpen(50), eq, b, a, br, ar, 0, 0, 20, mnqRRCtx()); err != nil {
 		t.Fatalf("confidence-50 open should PASS with the gate disabled (0), got: %v", err)
 	}
-	if err := validateDecision(mnqOpen(50), eq, b, a, br, ar, 0, 75, 20); err == nil {
+	if err := validateDecision(mnqOpen(50), eq, b, a, br, ar, 0, 75, 20, mnqRRCtx()); err == nil {
 		t.Fatal("confidence-50 open should be REJECTED at min_confidence=75")
 	}
 }
