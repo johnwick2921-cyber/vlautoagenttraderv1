@@ -32,7 +32,7 @@
 - [ ] B7 — re-entry cooldown after stop-loss + tests
 - [x] B8 — (F4) funding-rate suppressed on futures (both emit sites via isFuturesInstrument); test absent-on-futures/present-on-crypto; goldens byte-identical (none asserted funding) ✅
 - [x] B9 — (F6) INFO log when SVP toggle-ON but omitted (live path engine_analysis.go, no preview noise). SCOPE: per-TF/array line-skips deferred (no clean live-path spot; 📊 Strategy timeframes already lists requested TFs) ✅
-- [ ] B10 — (F7) primary_timeframe always in Available-Data announcement; golden updated
+- [x] B10 — (F7) primary_timeframe always announced in Available-Data (formatKlineTimeframes appends it when absent from selected); 6 goldens byte-identical + new F7 case ✅
 
 ### PART A — IDENTITY GATES (wire change, lockstep)
 - [ ] A1 — G3 pre-submit invariant (signal.account == boundAccount) + test

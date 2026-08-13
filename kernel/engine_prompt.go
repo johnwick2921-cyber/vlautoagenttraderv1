@@ -173,7 +173,24 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant, symbo
 // wording, producing byte-identical output to the pre-fix code.
 func formatKlineTimeframes(kline store.KlineConfig) string {
 	if len(kline.SelectedTimeframes) > 0 {
-		return fmt.Sprintf("- %s price series\n", strings.Join(kline.SelectedTimeframes, ", "))
+		// B10 (audit F7): the primary_timeframe is ALWAYS fetched + rendered as a
+		// table, so announce it too — even when the user left it out of
+		// selected_timeframes — otherwise the model receives a table it was never
+		// told about. Appended at the end (copy; never mutate the config slice).
+		tfs := kline.SelectedTimeframes
+		if kline.PrimaryTimeframe != "" {
+			found := false
+			for _, tf := range tfs {
+				if tf == kline.PrimaryTimeframe {
+					found = true
+					break
+				}
+			}
+			if !found {
+				tfs = append(append([]string{}, tfs...), kline.PrimaryTimeframe)
+			}
+		}
+		return fmt.Sprintf("- %s price series\n", strings.Join(tfs, ", "))
 	}
 	// Legacy fallback (no SelectedTimeframes): primary + optional longer — the
 	// exact wording the code emitted before the SelectedTimeframes-aware fix.

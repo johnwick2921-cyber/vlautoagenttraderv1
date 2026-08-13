@@ -58,6 +58,17 @@ func TestFormatKlineTimeframes_Golden(t *testing.T) {
 			},
 			want: "- 1m, 5m, 15m, 1h, 4h, 1d, 1w price series\n",
 		},
+		{
+			// B10 (audit F7): primary_timeframe is always fetched + rendered, so it
+			// must be ANNOUNCED even when the user omitted it from
+			// selected_timeframes (the 15m case from the rules audit). Appended.
+			name: "primary not in selected (F7: 15m primary announced)",
+			in: store.KlineConfig{
+				PrimaryTimeframe: "15m", EnableMultiTimeframe: true,
+				SelectedTimeframes: []string{"5m", "1h", "3m", "4h", "1d"},
+			},
+			want: "- 5m, 1h, 3m, 4h, 1d, 15m price series\n",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
