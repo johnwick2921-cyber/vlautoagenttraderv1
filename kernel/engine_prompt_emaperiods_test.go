@@ -157,3 +157,32 @@ func TestFormatMarketData_CurrentRSIByPeriod(t *testing.T) {
 		t.Fatalf("first configured period must label the snapshot; got:\n%s", multi)
 	}
 }
+
+// TestFormatMarketData_EMA200ZeroGuard (F11d): a 0-valued EMA (thin bar depth) must
+// be OMITTED, never rendered as "current_ema200 = 0.000".
+func TestFormatMarketData_EMA200ZeroGuard(t *testing.T) {
+	eng := NewStrategyEngine(&store.StrategyConfig{Indicators: store.IndicatorConfig{EnableEMA: true}})
+
+	// EMA9 warmed up (100), EMA200 thin (0) → emit 9, omit 200.
+	out := eng.formatMarketData(&market.Data{
+		Symbol: "MNQ", CurrentPrice: 100,
+		CurrentEMAByPeriod: map[int]float64{9: 100.0, 200: 0.0},
+	})
+	if !strings.Contains(out, "current_ema9 = 100.000") {
+		t.Fatalf("warmed EMA9 must render; got:\n%s", out)
+	}
+	if strings.Contains(out, "current_ema200") {
+		t.Fatalf("a 0-valued EMA200 must be OMITTED, not rendered as 0.000; got:\n%s", out)
+	}
+
+	// Legacy fallback: CurrentEMA20 = 0 (thin) → omit the current_ema20 line.
+	thin := eng.formatMarketData(&market.Data{Symbol: "MNQ", CurrentPrice: 100, CurrentEMA20: 0})
+	if strings.Contains(thin, "current_ema20") {
+		t.Fatalf("a 0-valued CurrentEMA20 must be omitted; got:\n%s", thin)
+	}
+	// Legacy fallback still renders a real value.
+	warm := eng.formatMarketData(&market.Data{Symbol: "MNQ", CurrentPrice: 100, CurrentEMA20: 99})
+	if !strings.Contains(warm, "current_ema20 = 99.000") {
+		t.Fatalf("a warmed CurrentEMA20 must render; got:\n%s", warm)
+	}
+}

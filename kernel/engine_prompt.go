@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"fmt"
+	"nofx/logger"
 	"nofx/market"
 	"nofx/provider/nofxos"
 	"nofx/store"
@@ -572,10 +573,20 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 			}
 			sort.Ints(periods)
 			for _, p := range periods {
-				sb.WriteString(fmt.Sprintf(", current_ema%d = %.3f", p, data.CurrentEMAByPeriod[p]))
+				v := data.CurrentEMAByPeriod[p]
+				// F11d — never emit "current_ema200 = 0.000" on thin bar depth (an EMA
+				// can't be 0 for a real instrument; 0 means calculateEMA had <period
+				// bars). Omit it + log, rather than feeding the model a fake zero.
+				if v <= 0 {
+					logger.Infof("ℹ️ current_ema%d omitted for %s — thin bar depth (needs %d bars); EMA not warmed up.", p, data.Symbol, p)
+					continue
+				}
+				sb.WriteString(fmt.Sprintf(", current_ema%d = %.3f", p, v))
 			}
-		} else {
+		} else if data.CurrentEMA20 > 0 {
 			sb.WriteString(fmt.Sprintf(", current_ema20 = %.3f", data.CurrentEMA20))
+		} else {
+			logger.Infof("ℹ️ current_ema20 omitted for %s — thin bar depth (needs 20 bars); EMA not warmed up.", data.Symbol)
 		}
 	}
 
