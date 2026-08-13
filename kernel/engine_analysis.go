@@ -317,26 +317,34 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// 3. Build User Prompt using strategy engine
 	userPrompt := engine.BuildUserPrompt(ctx)
 
-	// 4. Call AI API
-	aiCallStart := time.Now()
-	aiResponse, err := mcpClient.CallWithMessages(systemPrompt, userPrompt)
-	aiCallDuration := time.Since(aiCallStart)
-	if err != nil {
-		return nil, fmt.Errorf("AI API call failed: %w", err)
+	// 4-5. Call AI + parse, with B2a schema-strict BOUNDED RETRY (callWithSchemaRetry):
+	// a malformed/missing-field/rule-invalid response is retried up to maxParseRetries
+	// with the parse error fed back; still bad → skip the cycle with a NAMED reason
+	// (HOLD, never crash). schema_parse_failed is the named reason B6 will count.
+	const maxParseRetries = 2
+	parse := func(resp string) (*FullDecision, error) {
+		return parseFullDecisionResponse(
+			resp,
+			ctx.Account.TotalEquity,
+			riskConfig.BTCETHMaxLeverage,
+			riskConfig.AltcoinMaxLeverage,
+			riskConfig.BTCETHMaxPositionValueRatio,
+			riskConfig.AltcoinMaxPositionValueRatio,
+			riskConfig.MinRiskRewardRatio,
+			riskConfig.MinConfidence,
+			ResolveNotionalLeverage(riskConfig.MaxNotionalLeverage, futuresMaxNotionalLeverage),
+		)
 	}
-
-	// 5. Parse AI response
-	decision, err := parseFullDecisionResponse(
-		aiResponse,
-		ctx.Account.TotalEquity,
-		riskConfig.BTCETHMaxLeverage,
-		riskConfig.AltcoinMaxLeverage,
-		riskConfig.BTCETHMaxPositionValueRatio,
-		riskConfig.AltcoinMaxPositionValueRatio,
-		riskConfig.MinRiskRewardRatio,
-		riskConfig.MinConfidence,
-		ResolveNotionalLeverage(riskConfig.MaxNotionalLeverage, futuresMaxNotionalLeverage),
-	)
+	decision, aiResponse, aiCallDuration, parseErr, callErr := callWithSchemaRetry(
+		mcpClient, systemPrompt, userPrompt, parse, maxParseRetries)
+	if callErr != nil {
+		return nil, fmt.Errorf("AI API call failed: %w", callErr)
+	}
+	if parseErr != nil {
+		logger.Warnf("🚫 schema_parse_failed: AI response unparseable after %d attempts — skipping decision cycle (HOLD). Last error: %v",
+			maxParseRetries+1, parseErr)
+		return nil, nil // skip-cycle, not a crash
+	}
 
 	if decision != nil {
 		decision.Timestamp = time.Now()
@@ -346,15 +354,40 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		decision.RawResponse = aiResponse
 	}
 
-	if err != nil {
-		return decision, fmt.Errorf("failed to parse AI response: %w", err)
-	}
-
 	// B2b — price-sanity armor: neutralize an open decision whose stop/target/entry
 	// are physically implausible, using the freshest market data (fail-open).
 	applyPriceSanity(decision, ctx)
 
 	return decision, nil
+}
+
+// callWithSchemaRetry (B2a) calls the AI + parses, retrying up to maxRetries with
+// the parse error appended to the user prompt (schema-strict bounded retry). It
+// returns the last decision, raw response, call duration, the final parseErr
+// (nil = success) and callErr (a transport error, returned immediately). A caller
+// that sees a non-nil parseErr should skip the cycle with a named reason.
+func callWithSchemaRetry(mcpClient mcp.AIClient, systemPrompt, userPrompt string, parse func(string) (*FullDecision, error), maxRetries int) (decision *FullDecision, raw string, dur time.Duration, parseErr, callErr error) {
+	for attempt := 0; ; attempt++ {
+		up := userPrompt
+		if attempt > 0 {
+			up = userPrompt + fmt.Sprintf(
+				"\n\n[RETRY %d/%d] Your previous reply could not be parsed: %v. Reply with ONLY the required decision JSON envelope — every required field present, correct types, prices as concrete numbers.",
+				attempt, maxRetries, parseErr)
+		}
+		start := time.Now()
+		resp, cErr := mcpClient.CallWithMessages(systemPrompt, up)
+		dur = time.Since(start)
+		if cErr != nil {
+			return nil, "", dur, nil, cErr
+		}
+		raw = resp
+		decision, parseErr = parse(resp)
+		if parseErr == nil || attempt >= maxRetries {
+			return decision, raw, dur, parseErr, nil
+		}
+		logger.Warnf("⚠️ AI response parse failed (attempt %d/%d) — retrying with the error fed back: %v",
+			attempt+1, maxRetries+1, parseErr)
+	}
 }
 
 // applyPriceSanity (B2b) neutralizes to `wait` any open decision whose stop /

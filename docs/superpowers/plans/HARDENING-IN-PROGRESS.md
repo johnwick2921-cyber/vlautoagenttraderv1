@@ -24,7 +24,7 @@
 
 ### PART B — MACHINE ARMOR (deterministic invariants)
 - [x] B1 — stop-widen ban: MoveStopToBreakeven refuses a risk-increasing stop (pure stopWouldWiden long/short, cur-stop tracked + updated on move); tests long/short/equal + widen-refused ✅
-- [~] B2 — AI output armor: B2b price-sanity ✅ (pure priceSanityViolation one-authority + applyPriceSanity post-parse wiring via ctx.MarketDataMap, atr15From 15m TF, neutralize→wait, fail-open; matrix+boundaries). B2a schema/retry + B2c fuzz = next sub-commits.
+- [~] B2 — AI output armor: B2a schema-strict bounded retry ✅ (callWithSchemaRetry: retry ≤2 w/ error fed back → skip-cycle "schema_parse_failed"; mock-client test) + B2b price-sanity ✅. B2c fuzz = next sub-commit.
 - [ ] B3 — duplicate-order guard + rate limiter + test
 - [ ] B4 — stale-data entry block + test
 - [ ] B5 — dead-man's watchdog (TCP disconnect → cancel unfilled + block) + test
