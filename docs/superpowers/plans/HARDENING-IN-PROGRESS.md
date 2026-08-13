@@ -2,6 +2,16 @@
 
 **Started:** 2026-08-13 14:03:40 CDT
 **Base HEAD:** 6378cdee (F5 landed)
+
+> **SESSION 8 CHECKPOINT (2026-08-13 18:xx CDT) — B5·B6·B7·C1·C2·C3·C4 ALL DONE.**
+> HEAD d816b502, tree clean, origin in sync. B5/B6/B7/C1/C2/C4 fully complete;
+> C3 owner-gated (`sudo bash deploy/install-journald.sh`). Running bot PID 190403
+> untouched (rev 74aac5b6) — NONE of Part B/C code is deployed (by design; needs a
+> flat-window rebuild+`kill -9`). REMAINING for the whole run: **deploy Part B/C**
+> (rebuild `nofx-bin` + kill -9 in a flat window) and **Part A** (wire bump + C#,
+> its own session). The F1 honest-min-R:R dispatch arrives from the owner between
+> this and Part A. build/vet/tests all green across kernel/trader/telemetry/
+> discipline/api/store.
 **Principle:** construction is not verification — every hop CHECKS identity and REFUSES on mismatch, loudly. Make this month's bug classes STRUCTURALLY IMPOSSIBLE.
 **Build order:** D → C → B → A (D first = instant risk reduction).
 **Rules:** additive; own commit per item, pushed as you go; goldens byte-identical except deliberate wire additions; both traders may be LIVE (no restarts outside a flat/safe window; C# staged+md5 for ONE owner F5 at the end); SIM-only.
