@@ -59,6 +59,40 @@ const (
 )
 
 // ClampLimits enforces product-level limits on strategy config to prevent token overflow.
+// MaxIndicatorPeriod is the largest allowed indicator period. Beyond this a series
+// can never warm up within the fetch/cache depth (2500 cap), so it would silently
+// render an EMPTY series — reject at save instead (F11c).
+const MaxIndicatorPeriod = 500
+
+// ValidateIndicatorPeriods (F11c) rejects out-of-range indicator periods at save:
+// each configured EMA/RSI/ATR/BOLL period must be > 0 and ≤ MaxIndicatorPeriod. An
+// absurd value like 9999 is a hard error here, never a silently-empty series.
+// Empty period lists are fine (they fall back to the legacy fixed periods).
+func (c *StrategyConfig) ValidateIndicatorPeriods() error {
+	check := func(name string, ps []int) error {
+		for _, p := range ps {
+			if p <= 0 || p > MaxIndicatorPeriod {
+				return fmt.Errorf("%s period %d is out of range — each indicator period must be between 1 and %d", name, p, MaxIndicatorPeriod)
+			}
+		}
+		return nil
+	}
+	for _, f := range []struct {
+		name string
+		ps   []int
+	}{
+		{"EMA", c.Indicators.EMAPeriods},
+		{"RSI", c.Indicators.RSIPeriods},
+		{"ATR", c.Indicators.ATRPeriods},
+		{"BOLL", c.Indicators.BOLLPeriods},
+	} {
+		if err := check(f.name, f.ps); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *StrategyConfig) ClampLimits() {
 	c.NormalizeProductSchema()
 
