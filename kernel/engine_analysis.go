@@ -297,9 +297,19 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	if cfg := engine.GetConfig(); cfg != nil {
 		svpOn = cfg.Indicators.EnableSVP
 	}
-	if isFut, _ := futuresVariantMode(variant); isFut && svpOn && market.FuturesBarsProvider != nil {
-		if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
-			engine.SetSVPContext(FormatSVPLine(BuildSVPProfile(bars, time.Now())))
+	if isFut, _ := futuresVariantMode(variant); isFut && svpOn {
+		svpLine := ""
+		if market.FuturesBarsProvider != nil {
+			if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
+				svpLine = FormatSVPLine(BuildSVPProfile(bars, time.Now()))
+			}
+		}
+		engine.SetSVPContext(svpLine)
+		if svpLine == "" {
+			// B9 (audit F6): SVP toggle ON but no line this cycle — make the
+			// otherwise-silent skip observable. Causes: no 1m bars provider, no
+			// bars, or no closed session bars (pre-open / maintenance / feed gap).
+			logger.Infof("📐 SVP ON but omitted this cycle for %s — no session profile available (no 1m bars / provider down / pre-open); prompt has no SVP line.", activeSymbol)
 		}
 	}
 	systemPrompt := engine.BuildSystemPrompt(ctx.Account.TotalEquity, variant, activeSymbol)
