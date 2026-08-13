@@ -30,6 +30,19 @@ func resolvePromptVariant(exchange, savedVariant string) string {
 }
 
 // runCycle runs one trading cycle (using AI full decision-making)
+// stampGuardrailSkip (F10) records the TRUTH for a cycle held by a guardrail/gate:
+// a named execution_status + the gate reason, never a silently-empty success (the
+// "ghost record" bug where guardrail-skip cycles were saved success=1 with an empty
+// prompt). An empty prompt on such a record is fine — the pre-prompt gates fire
+// before any prompt is built.
+func stampGuardrailSkip(record *store.DecisionRecord, reason string) {
+	record.Success = false
+	record.ExecutionStatus = "guardrail_skip"
+	record.RiskCheckPassed = false
+	record.RiskCheckError = reason
+	record.ErrorMessage = "guardrail_skip: " + reason
+}
+
 func (at *AutoTrader) runCycle() error {
 	at.callCount++
 
@@ -209,8 +222,11 @@ func (at *AutoTrader) runCycle() error {
 		}
 	}
 
-	// Record AI charge (track cost regardless of decision outcome)
-	if aiDecision != nil && at.store != nil {
+	// Record AI charge (track cost regardless of decision outcome). F10: a
+	// guardrail HOLD now returns a non-nil FullDecision (with SkipReason) instead of
+	// nil — only charge when a real decision cycle ran (SkipReason==""), preserving
+	// the prior "no charge on a HOLD" behavior for the pre-prompt gates.
+	if aiDecision != nil && aiDecision.SkipReason == "" && at.store != nil {
 		if chargeErr := at.store.AICharge().Record(at.id, at.aiModel, at.config.AIModel); chargeErr != nil {
 			at.logWarnf("⚠️ Failed to record AI charge: %v", chargeErr)
 		}
@@ -302,8 +318,17 @@ func (at *AutoTrader) runCycle() error {
 	// execute. Guard before dereferencing aiDecision.Decisions below. (A real
 	// $0 balance in the brief pre-first-account_balance-frame window, Plan
 	// 4.11, can trip the gate and surface this otherwise-latent nil deref.)
-	if aiDecision == nil {
-		at.logInfof("ℹ️ No actionable decision this cycle (risk gate HOLD); skipping execution")
+	if aiDecision == nil || aiDecision.SkipReason != "" {
+		// F10 — a guardrail/gate held the cycle. Record the TRUTH: stamp
+		// execution_status="guardrail_skip" + the gate reason instead of leaving a
+		// silently-empty success (the "ghost record" bug). The prompt may legitimately
+		// be empty (pre-prompt gates) or present (schema-parse hold, copied above).
+		reason := "risk_gate_hold"
+		if aiDecision != nil && aiDecision.SkipReason != "" {
+			reason = aiDecision.SkipReason
+		}
+		at.logInfof("ℹ️ No actionable decision this cycle (guardrail_skip: %s); skipping execution", reason)
+		stampGuardrailSkip(record, reason)
 		at.saveDecision(record)
 		return nil
 	}

@@ -38,6 +38,14 @@ var (
 
 // GetFullDecision gets AI's complete trading decision (batch analysis of all coins and positions)
 // Uses default strategy configuration - for production use GetFullDecisionWithStrategy with explicit config
+// holdCycle (F10) builds the no-actionable-decision result carrying the gate
+// reason, so the caller records execution_status="guardrail_skip" + reason instead
+// of a silently-empty success. systemPrompt/userPrompt are passed through when a
+// prompt was already built (e.g. a schema-parse hold), else empty.
+func holdCycle(reason string) *FullDecision {
+	return &FullDecision{SkipReason: reason}
+}
+
 func GetFullDecision(ctx *Context, mcpClient mcp.AIClient) (*FullDecision, error) {
 	defaultConfig := store.GetDefaultStrategyConfig("en")
 	engine := NewStrategyEngine(&defaultConfig)
@@ -55,7 +63,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		// Plan 4 Task 25 — gate instrumentation
 		telemetry.RiskGateTrips.WithLabelValues("task18_cme_closed").Inc()
 		telemetry.IncGateBlock(ctx.TraderID, "task18_cme_closed")
-		return nil, nil
+		return holdCycle("cme_closed"), nil
 	}
 	// Plan 2 Task 19: filter candidates near contract expiry (futures mode only).
 	// Within 5 days of the 3rd-Friday quarterly expiry, liquidity collapses on
@@ -79,7 +87,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			// Plan 4 Task 25 — gate instrumentation
 			telemetry.RiskGateTrips.WithLabelValues("task19_contract_roll").Inc()
 			telemetry.IncGateBlock(ctx.TraderID, "task19_contract_roll")
-			return nil, nil
+			return holdCycle("contract_roll"), nil
 		}
 	}
 	// ============================================================================
@@ -126,7 +134,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			// Plan 4 Task 25 — gate instrumentation
 			telemetry.RiskGateTrips.WithLabelValues("task21_risk_limit").Inc()
 			telemetry.IncGateBlock(ctx.TraderID, "task21_concurrent_cap")
-			return nil, nil
+			return holdCycle("concurrent_cap"), nil
 		}
 
 		// Strategy Studio P1 — per-strategy DAILY guardrails on TRUE daily-realized
@@ -158,7 +166,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				logger.Warnf("⚠️ Strategy Studio daily guardrail tripped: %v — skipping decision cycle (HOLD)", gErr)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_daily").Inc()
 				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_daily")
-				return nil, nil
+				return holdCycle("daily_guardrail"), nil
 			} else if boolOrDefault(rc.BlackoutEnabled, false) && InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT) {
 				// Chunk 4 — time/news blackout: go passive during a configured daily
 				// [start,end] CT window (master + toggle governed). NT8-side SL/TP
@@ -166,7 +174,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				logger.Warnf("⚠️ Strategy Studio blackout window active (%s–%s CT) — skipping decision cycle (HOLD)", rc.BlackoutStartCT, rc.BlackoutEndCT)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_blackout").Inc()
 				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_blackout")
-				return nil, nil
+				return holdCycle("blackout_window"), nil
 			} else if boolOrDefault(rc.ConsistencyEnabled, false) && ConsistencyBreached(ctx.DailyRealizedPnL, ctx.TotalRealizedPnL, rc.ConsistencyMaxDayPct) {
 				// Chunk 5 — consistency rule: today's realized profit is too large a
 				// share of total → go passive so this session-day does not exceed the
@@ -174,7 +182,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				logger.Warnf("⚠️ Strategy Studio consistency rule: today's realized profit %.2f ≥ %.0f%% of total %.2f — skipping decision cycle (HOLD)", ctx.DailyRealizedPnL, rc.ConsistencyMaxDayPct, ctx.TotalRealizedPnL)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_consistency").Inc()
 				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_consistency")
-				return nil, nil
+				return holdCycle("consistency_rule"), nil
 			}
 		}
 	}
@@ -217,13 +225,13 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 					// Plan 4 Task 25 — gate instrumentation
 					telemetry.RiskGateTrips.WithLabelValues("task22_drift").Inc()
 					telemetry.IncGateBlock(ctx.TraderID, "task22_drift")
-					return nil, nil
+					return holdCycle("stale_data"), nil
 				case market.HealthSuspiciousDrift:
 					logger.Warnf("⚠️ Plan 3 T22: suspicious drift for %s [%s] (prev=%.4f latest=%.4f) — skipping cycle", symbol, tf, prev.Close, latest.Close)
 					// Plan 4 Task 25 — gate instrumentation
 					telemetry.RiskGateTrips.WithLabelValues("task22_drift").Inc()
 					telemetry.IncGateBlock(ctx.TraderID, "task22_drift")
-					return nil, nil
+					return holdCycle("suspicious_drift"), nil
 				}
 			}
 		}
@@ -353,7 +361,9 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	if parseErr != nil {
 		logger.Warnf("🚫 schema_parse_failed: AI response unparseable after %d attempts — skipping decision cycle (HOLD). Last error: %v",
 			maxParseRetries+1, parseErr)
-		return nil, nil // skip-cycle, not a crash
+		// F10 — a real AI call happened; preserve the prompts/response so the record
+		// is truthful (not a silently-empty success), and stamp the skip reason.
+		return &FullDecision{SkipReason: "schema_parse_failed", SystemPrompt: systemPrompt, UserPrompt: userPrompt, RawResponse: aiResponse}, nil
 	}
 
 	if decision != nil {

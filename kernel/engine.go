@@ -154,6 +154,12 @@ type FullDecision struct {
 	RawResponse         string     `json:"raw_response"`
 	Timestamp           time.Time  `json:"timestamp"`
 	AIRequestDurationMs int64      `json:"ai_request_duration_ms,omitempty"`
+	// F10 — when a guardrail/gate holds the cycle (no actionable decision), the
+	// engine returns a FullDecision with SkipReason set (and empty Decisions)
+	// instead of (nil, nil), so the caller can stamp the record truthfully
+	// (execution_status="guardrail_skip" + reason) rather than leaving a
+	// silently-empty success. Empty on a normal decision cycle.
+	SkipReason string `json:"skip_reason,omitempty"`
 }
 
 // QuantData quantitative data structure (fund flow, position changes, price changes)
