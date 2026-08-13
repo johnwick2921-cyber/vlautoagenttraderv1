@@ -3,6 +3,7 @@ package kernel
 import (
 	"nofx/logger"
 	"nofx/market"
+	"nofx/telemetry"
 )
 
 // B4 — stale-data ENTRY block. A NEW entry requires the freshest intraday bar to
@@ -76,6 +77,7 @@ func applyStaleDataBlock(fd *FullDecision, ctx *Context, nowMs int64) {
 			logger.Warnf("⛔ stale-data ENTRY BLOCK: %s %s → WAIT — freshest %s bar is %dms old (>%dms = 2×interval); feed likely frozen. Exits/position-management unaffected.",
 				d.Symbol, d.Action, tf, age, limit)
 			d.Action = "wait"
+			telemetry.IncGateBlock(ctx.TraderID, "stale_data")
 		}
 	}
 }

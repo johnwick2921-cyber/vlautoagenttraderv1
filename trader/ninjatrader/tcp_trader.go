@@ -24,6 +24,7 @@ import (
 	"nofx/market"
 	"nofx/provider/databento"
 	ntwire "nofx/provider/ninjatrader"
+	"nofx/telemetry"
 	"nofx/trader/types"
 ) // reflect used in GetBalance to notify parent AutoTrader
 
@@ -220,11 +221,16 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	if t.guard != nil {
 		key := fmt.Sprintf("%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
 		if reason, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
+			gate := "b3_order_dedup"
 			if strings.Contains(reason, "breaker") {
+				gate = "b3_rate_breaker"
 				logger.Warnf("🚨 B3 %s", reason)
 			} else {
 				logger.Warnf("⛔ B3 %s", reason)
 			}
+			// B6: B3 fires at the shared submission chokepoint (bound to an account,
+			// not a trader), so it tallies under the process-wide "" trader bucket.
+			telemetry.IncGateBlock("", gate)
 			return nil, fmt.Errorf("ninjatrader/tcp: entry not admitted — %s", reason)
 		}
 	}

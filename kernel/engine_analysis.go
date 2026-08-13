@@ -53,6 +53,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	if ShouldSkipDecisionCycle() {
 		// Plan 4 Task 25 — gate instrumentation
 		telemetry.RiskGateTrips.WithLabelValues("task18_cme_closed").Inc()
+		telemetry.IncGateBlock(ctx.TraderID, "task18_cme_closed")
 		return nil, nil
 	}
 	// Plan 2 Task 19: filter candidates near contract expiry (futures mode only).
@@ -76,6 +77,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			logger.Info("Plan 2 T19: all candidates near expiry and no open positions — skipping cycle")
 			// Plan 4 Task 25 — gate instrumentation
 			telemetry.RiskGateTrips.WithLabelValues("task19_contract_roll").Inc()
+			telemetry.IncGateBlock(ctx.TraderID, "task19_contract_roll")
 			return nil, nil
 		}
 	}
@@ -122,6 +124,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			logger.Warnf("⚠️ concurrent-position gate tripped: %v [cap source: %s] — skipping decision cycle (HOLD)", err, concurrentCapSource)
 			// Plan 4 Task 25 — gate instrumentation
 			telemetry.RiskGateTrips.WithLabelValues("task21_risk_limit").Inc()
+			telemetry.IncGateBlock(ctx.TraderID, "task21_concurrent_cap")
 			return nil, nil
 		}
 
@@ -153,6 +156,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			} else if _, gErr := g.Check(); gErr != nil {
 				logger.Warnf("⚠️ Strategy Studio daily guardrail tripped: %v — skipping decision cycle (HOLD)", gErr)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_daily").Inc()
+				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_daily")
 				return nil, nil
 			} else if boolOrDefault(rc.BlackoutEnabled, false) && InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT) {
 				// Chunk 4 — time/news blackout: go passive during a configured daily
@@ -160,6 +164,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				// still protect open positions; the bot just makes no new decisions.
 				logger.Warnf("⚠️ Strategy Studio blackout window active (%s–%s CT) — skipping decision cycle (HOLD)", rc.BlackoutStartCT, rc.BlackoutEndCT)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_blackout").Inc()
+				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_blackout")
 				return nil, nil
 			} else if boolOrDefault(rc.ConsistencyEnabled, false) && ConsistencyBreached(ctx.DailyRealizedPnL, ctx.TotalRealizedPnL, rc.ConsistencyMaxDayPct) {
 				// Chunk 5 — consistency rule: today's realized profit is too large a
@@ -167,6 +172,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				// configured % of total realized profit.
 				logger.Warnf("⚠️ Strategy Studio consistency rule: today's realized profit %.2f ≥ %.0f%% of total %.2f — skipping decision cycle (HOLD)", ctx.DailyRealizedPnL, rc.ConsistencyMaxDayPct, ctx.TotalRealizedPnL)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_consistency").Inc()
+				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_consistency")
 				return nil, nil
 			}
 		}
@@ -209,11 +215,13 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 					logger.Warnf("⚠️ Plan 3 T22: stale data for %s [%s] (last bar %v old) — skipping cycle", symbol, tf, age)
 					// Plan 4 Task 25 — gate instrumentation
 					telemetry.RiskGateTrips.WithLabelValues("task22_drift").Inc()
+					telemetry.IncGateBlock(ctx.TraderID, "task22_drift")
 					return nil, nil
 				case market.HealthSuspiciousDrift:
 					logger.Warnf("⚠️ Plan 3 T22: suspicious drift for %s [%s] (prev=%.4f latest=%.4f) — skipping cycle", symbol, tf, prev.Close, latest.Close)
 					// Plan 4 Task 25 — gate instrumentation
 					telemetry.RiskGateTrips.WithLabelValues("task22_drift").Inc()
+					telemetry.IncGateBlock(ctx.TraderID, "task22_drift")
 					return nil, nil
 				}
 			}
@@ -423,6 +431,7 @@ func applyPriceSanity(fd *FullDecision, ctx *Context) {
 			logger.Warnf("⛔ price-sanity REJECT: %s %s → neutralized to WAIT — %s [AI stop=%.4f target=%.4f, price=%.4f, ATR15=%.4f].",
 				d.Symbol, d.Action, reason, d.StopLoss, d.TakeProfit, md.CurrentPrice, atr15)
 			d.Action = "wait"
+			telemetry.IncGateBlock(ctx.TraderID, "price_sanity")
 		}
 	}
 }

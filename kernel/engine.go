@@ -95,6 +95,7 @@ type Context struct {
 	CurrentTime        string                             `json:"current_time"`
 	RuntimeMinutes     int                                `json:"runtime_minutes"`
 	CallCount          int                                `json:"call_count"`
+	TraderID           string                             `json:"-"` // B6: identity for per-trader gate-block counters (set by the trader loop; never serialized)
 	Account            AccountInfo                        `json:"account"`
 	Positions          []PositionInfo                     `json:"positions"`
 	CandidateCoins     []CandidateCoin                    `json:"candidate_coins"`

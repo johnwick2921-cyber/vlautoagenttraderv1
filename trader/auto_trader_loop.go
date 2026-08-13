@@ -79,6 +79,14 @@ func (at *AutoTrader) runCycle() error {
 	// byte-identical). The block itself is enforced in executeDecisionWithRecord.
 	at.driveDeadManWatchdog()
 
+	// B6 — GATE-BLOCK COUNTERS: advance the per-trader/session-day tally to today's
+	// CME session-day. The first trader across the 17:00 CT rollover boundary logs a
+	// one-line journal summary of the ending day's gate blocks, then the table
+	// resets. Individual gate sites increment via telemetry.IncGateBlock.
+	if summary := telemetry.RolloverGateBlocks(kernel.CMESessionDayStart(time.Now()).UnixMilli()); summary != "" {
+		at.logInfof("📊 %s", summary)
+	}
+
 	// Check USDC balance periodically for claw402 users (every 10 cycles)
 	if at.callCount%10 == 0 && store.IsClaw402Config(at.config.AIModel) {
 		at.checkClaw402Balance()
@@ -625,6 +633,7 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 		CurrentTime:     time.Now().UTC().Format("2006-01-02 15:04:05 UTC"),
 		RuntimeMinutes:  int(time.Since(at.startTime).Minutes()),
 		CallCount:       at.callCount,
+		TraderID:        at.id, // B6: per-trader gate-block counters
 		BTCETHLeverage:  btcEthLeverage,
 		AltcoinLeverage: altcoinLeverage,
 		Account: kernel.AccountInfo{

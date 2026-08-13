@@ -7,6 +7,7 @@ import (
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
+	"nofx/telemetry"
 	ntTrader "nofx/trader/ninjatrader"
 	"strings"
 	"time"
@@ -134,6 +135,7 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 	case "open_long", "open_short", "close_long", "close_short":
 		if down, status := at.ninjaFeedDown(); down {
 			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", decision.Action, decision.Symbol, status)
+			telemetry.IncGateBlock(at.id, "feed_down")
 			return nil
 		}
 	}
@@ -147,6 +149,7 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 	case "open_long", "open_short":
 		if at.deadMan.entriesBlocked() {
 			at.logWarnf("⛔ dead-man watchdog: %s %s REFUSED — NT8 link not yet reconciled after a disconnect; entries resume after a clean reconciliation.", decision.Symbol, decision.Action)
+			telemetry.IncGateBlock(at.id, "dead_man")
 			actionRecord.Success = false
 			actionRecord.Error = "dead_man_watchdog: awaiting reconciliation after link gap"
 			return nil
@@ -160,6 +163,7 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 	case "open_long", "open_short":
 		if reason, halted := at.consecutiveLossHalted(); halted {
 			at.logWarnf("🛑 consecutive-loss halt: %s entry REFUSED — %s. No new entries until the next CME session.", decision.Symbol, reason)
+			telemetry.IncGateBlock(at.id, "consecutive_loss")
 			actionRecord.Success = false
 			actionRecord.Error = "consecutive_loss_halt: " + reason
 			return nil

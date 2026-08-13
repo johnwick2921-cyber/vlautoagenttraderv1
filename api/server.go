@@ -407,6 +407,11 @@ For non-ninjatrader brokers returns triggered=false with reason explaining why.`
 				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>
 Returns: {"trader_id":"<string>","daily_pnl_usd":<float>,"daily_loss_limit_usd":<float>,"concurrent_trades":<int>,"max_concurrent_trades":<int>,"current_notional_usd":<float>,"max_notional_usd":<float>,"kill_switch_armed":<bool>,"last_reset_utc":"<RFC3339>"}`,
 				s.handleRiskStatus)
+			s.routeWithSchema(protected, "GET", "/risk/gate-blocks", "Per-trader/session-day gate-block counters (B6)",
+				`No params. Returns today's tally of how many times each risk/safety gate blocked an entry or cycle.
+Returns: {"session_day_utc":"<RFC3339>","summary":"<one-line>","by_trader":{"<trader_id>":{"<gate>":<count>}}}
+The empty-string trader key holds process-wide gates (e.g. the B3 order guard). Resets at the 17:00 CT CME session rollover.`,
+				s.handleGateBlocks)
 			s.routeWithSchema(protected, "GET", "/audit/decisions", "Decision audit trail (Plan 4 T23)",
 				`Query: ?trader_id=<EXACT trader_id>&since=<YYYY-MM-DD, default 7d ago>&limit=<int, default 100, max 1000>
 Returns: []DecisionRecord JSON ordered by timestamp DESC, including PromptVersion, AIModel, AILatencyMs, RiskCheck*, ExecutionStatus, FillPrice, FillLatencyMs.`,
