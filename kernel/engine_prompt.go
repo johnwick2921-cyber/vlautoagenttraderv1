@@ -254,7 +254,10 @@ func (e *StrategyEngine) writeAvailableIndicators(sb *strings.Builder) {
 		sb.WriteString("- Funding rate\n")
 	}
 
-	if len(e.config.CoinSource.StaticCoins) > 0 || e.config.CoinSource.UseAI500 || e.config.CoinSource.UseOITop {
+	// F11a — AI500 / OI_Top are crypto screening concepts; a futures strategy trades
+	// a single static symbol and never screens by them, so suppress this line on
+	// futures (like funding via B8) instead of advertising a filter the model can't use.
+	if !e.isFuturesInstrument() && (len(e.config.CoinSource.StaticCoins) > 0 || e.config.CoinSource.UseAI500 || e.config.CoinSource.UseOITop) {
 		sb.WriteString("- AI500 / OI_Top filter tags (if available)\n")
 	}
 

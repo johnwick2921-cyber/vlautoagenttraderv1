@@ -137,7 +137,10 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 
 	// 3. Indicators available.
 	sb.WriteString("# Available Data\n")
-	sb.WriteString("Multi-timeframe " + sym + " bars (")
+	// F11a — was "bars (" with the '(' never closed (writeAvailableIndicators emits
+	// a bulleted list, not a parenthetical, so the paren dangled into "(- 5m price
+	// series ...". Use a colon: balanced + reads correctly.
+	sb.WriteString("Multi-timeframe " + sym + " bars:\n")
 	e.writeAvailableIndicators(&sb)
 	sb.WriteString(fmt.Sprintf("Use confluence across timeframes. Confidence ≥ %d required to open.\n\n", minConf))
 

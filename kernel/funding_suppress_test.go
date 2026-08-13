@@ -40,3 +40,26 @@ func TestFundingRateSuppressedOnFutures(t *testing.T) {
 		t.Errorf("crypto: funding rate must remain listed, got:\n%s", cb.String())
 	}
 }
+
+// TestAI500OITopSuppressedOnFutures (F11a): AI500 / OI_Top filter tags are a crypto
+// screening concept and must NOT be advertised on a futures strategy (which trades a
+// single static symbol), while crypto keeps them.
+func TestAI500OITopSuppressedOnFutures(t *testing.T) {
+	mk := func(symbol string) *StrategyEngine {
+		cfg := &store.StrategyConfig{}
+		cfg.CoinSource.StaticCoins = []string{symbol} // StaticCoins>0 → old code always emitted the tag line
+		return NewStrategyEngine(cfg)
+	}
+
+	var fb strings.Builder
+	mk("MNQ").writeAvailableIndicators(&fb)
+	if strings.Contains(fb.String(), "AI500 / OI_Top") {
+		t.Errorf("futures: AI500/OI_Top filter tags must be suppressed, got:\n%s", fb.String())
+	}
+
+	var cb strings.Builder
+	mk("BTCUSDT").writeAvailableIndicators(&cb)
+	if !strings.Contains(cb.String(), "AI500 / OI_Top") {
+		t.Errorf("crypto: AI500/OI_Top filter tags must remain, got:\n%s", cb.String())
+	}
+}

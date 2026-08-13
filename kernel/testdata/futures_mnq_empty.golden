@@ -19,7 +19,8 @@
 - position_size_usd: the contract notional you intend (≈ price × $2 × contracts). Keep it conservative (start with 1 contract).
 
 # Available Data
-Multi-timeframe MNQ bars (-  price series
+Multi-timeframe MNQ bars:
+-  price series
 Use confluence across timeframes. Confidence ≥ 75 required to open.
 
 # Decision Process
