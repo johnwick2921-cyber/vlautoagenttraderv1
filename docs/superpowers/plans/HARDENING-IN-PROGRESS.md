@@ -12,7 +12,7 @@
 
 ### PART D — GUARDRAILS ARMED (instant protection)
 - [~] D1 — `consecutive_loss_halt`: config field + store query + entry-gate + store test ✅ committed (c… backend); Strategy Studio FE field = next sub-step
-- [ ] D2 — ARM both live strategies via API (master ON, max_daily_trades 3, daily_loss 450, max_contracts 2, daily_profit_halt 900 soft, consecutive_loss_halt 2, blackout OFF); persistence + hot-pickup proof
+- [~] D2 — ARMED in DB (guarded write, backup data-20260813-1431-pre-D2-arm.db; both strategies: master ON, daily_loss 450, max_daily_trades 3, max_contracts 2, daily_profit 900 soft, consecutive_loss_halt 2, blackout OFF); persistence PROVEN. Hot pickup NOT achievable (config cached — running old binary still logs guardrails-DISABLED at 14:38:49 post-write [A]) → **RESTART-REQUIRED**; activates at the deploy restart. API hot-reload declined (would need a minted owner token to reload sacred live config; rail = never force).
 - [x] D3 — (F2) decouple futures size caps (notional×20 + 10-contract clamp) from master → always-on venue defaults; truthful guardrails-off log; tests ✅ committed
 - [x] D4 — (F3) pre-prompt concurrent gate reads per-strategy max_positions (env = fallback); log source; tests ✅ committed
 
