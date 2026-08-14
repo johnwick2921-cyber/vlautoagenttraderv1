@@ -168,7 +168,21 @@ type TCPServer struct {
 	logger     *slog.Logger
 	runCtx     context.Context // set in Start; the lazy router goroutine binds to it
 	routerOnce sync.Once
+
+	// A2 (G1) — echo-verify registry. Each outbound order/modify/cancel is assigned
+	// a monotonic seq and registered here by (trader_id, account, signal_id); the
+	// AddOn echoes seq on the paired ack/fill/close/reject, which the read loop
+	// verifies via checkEcho. Indexed by seq AND by signal_id (fills echo signal_id;
+	// a v3 AddOn also echoes seq). Bounded by pendingOpsCap (drop-oldest).
+	seqCounter   atomic.Uint64
+	pendingMu2   sync.Mutex
+	pendingOps   map[uint64]pendingOp
+	pendingBySig map[string]uint64
 }
+
+// pendingOpsCap bounds the echo-verify registry so a run of un-retired ops can never
+// grow it without limit (order volume is low; this is a backstop).
+const pendingOpsCap = 4096
 
 // ============================================================================
 // P5.4 — symbol-routed fan-out (fills / closes / rejects / instrument_info)
@@ -892,6 +906,9 @@ func (s *TCPServer) Stop() error {
 // client is currently connected, the signal is buffered and flushed on the
 // next successful accept (subject to TCPStaleSignalAge).
 func (s *TCPServer) SendSignal(payload SignalPayload) error {
+	// A2 (G1) — stamp the monotonic seq + register (trader_id, account, signal_id)
+	// so the AddOn's echo on the paired ack/fill/close can be verified.
+	payload.Seq = s.assignSeqRegister(payload.TraderID, payload.Account, payload.SignalID)
 	s.pendingMu.Lock()
 	s.pending = append(s.pending, timedSignal{payload: payload, timestamp: time.Now()})
 	s.pendingMu.Unlock()
@@ -908,6 +925,7 @@ func (s *TCPServer) SendClosePosition(payload ClosePositionPayload) error {
 	if c == nil {
 		return fmt.Errorf("ninjatrader/tcp: no NT client connected")
 	}
+	payload.Seq = s.assignSeqRegister(payload.TraderID, payload.Account, payload.SignalID) // A2 (G1)
 	s.writeMu.Lock()
 	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 	err := WriteFrame(c, FrameClosePosition, payload)
@@ -925,6 +943,7 @@ func (s *TCPServer) SendMoveStop(payload MoveStopPayload) error {
 	if c == nil {
 		return fmt.Errorf("ninjatrader/tcp: no NT client connected")
 	}
+	payload.Seq = s.assignSeqRegister(payload.TraderID, payload.Account, payload.SignalID) // A2 (G1)
 	s.writeMu.Lock()
 	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 	err := WriteFrame(c, FrameMoveStop, payload)
@@ -1326,6 +1345,17 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				s.logger.Warn("tcp_server: bad fill payload", "err", err)
 				continue
 			}
+			// A2 (G1) — verify the echoed identity against the pending op. A mismatch
+			// (forged/cross-wired fill) is NOT processed; the owning trader is frozen.
+			if !s.verifyInbound("fill", fill.Seq, fill.TraderID, fill.Account, fill.SignalID) {
+				continue
+			}
+			// Retire ONLY a rejected fill (terminal — no position opened). A filled
+			// entry keeps its pending op alive so the later position_close (keyed by
+			// the SAME entry signal_id) still verifies against it before retiring.
+			if fill.Status == "rejected" {
+				s.retirePending(fill.Seq, fill.SignalID)
+			}
 			select {
 			case s.fillCh <- fill:
 			default:
@@ -1336,6 +1366,12 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			s.connMu.Lock()
 			s.lastAckTime = time.Now()
 			s.connMu.Unlock()
+			// A2 (G1) — an ORDER ack (seq>0) echoes the identity; verify it (a
+			// heartbeat ack has seq==0 → tolerated). Non-terminal → do not retire.
+			var ack AckPayload
+			if err := json.Unmarshal(env.Payload, &ack); err == nil && ack.Seq != 0 {
+				_ = s.verifyInbound("ack", ack.Seq, ack.TraderID, ack.Account, ack.SignalID)
+			}
 
 		case FrameHeartbeat:
 			// Respond to peer heartbeat with an ack (spec L4410). Set our
@@ -1495,6 +1531,12 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				s.logger.Warn("tcp_server: bad position_close payload", "err", err)
 				continue
 			}
+			// A2 (G1) — verify the echoed identity; a mismatch freezes the trader and
+			// the close is NOT recorded (never record a close for the wrong originator).
+			if !s.verifyInbound("position_close", p.Seq, p.TraderID, p.Account, p.SignalID) {
+				continue
+			}
+			s.retirePending(p.Seq, p.SignalID)
 			select {
 			case s.closeCh <- p:
 			default:
@@ -1527,6 +1569,12 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			var p PositionCloseRejectedPayload
 			if err := json.Unmarshal(env.Payload, &p); err != nil {
 				s.logger.Warn("tcp_server: bad position_close_rejected payload", "err", err)
+				continue
+			}
+			// A2 (G1) — verify the echoed identity before alarming on the reject. Do
+			// NOT retire: a rejected close means the position is STILL OPEN, so the
+			// entry op stays pending for the eventual real position_close.
+			if !s.verifyInbound("position_close_rejected", p.Seq, p.TraderID, p.Account, p.SignalID) {
 				continue
 			}
 			select {

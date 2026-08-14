@@ -47,6 +47,12 @@ type SignalPayload struct {
 	TakeProfit float64 `json:"take_profit"`
 	SignalID   string  `json:"signal_id"` // UUID
 	Timestamp  string  `json:"timestamp"` // RFC3339
+	// A2 (G1, wire v3) — identity stamp. trader_id is the OWNING trader; seq is the
+	// server's monotonic per-connection op counter. The AddOn ECHOES (trader_id,
+	// account, seq) on the paired ack/fill/close/reject so Go can verify the AddOn
+	// acted for the originator. omitempty → a pre-v3 wire stays byte-identical.
+	TraderID string `json:"trader_id,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
 }
 
 // FillPayload is the C#-AddOn → Go-server fill frame per spec L4398-4406.
@@ -68,6 +74,11 @@ type FillPayload struct {
 	Quantity      int     `json:"quantity"`
 	SlippageTicks float64 `json:"slippage_ticks"`
 	Status        string  `json:"status"` // "filled" | "rejected" | "partial"
+	// A2 (G1, wire v3) — echoed identity from the originating signal. Go verifies
+	// (trader_id, account, seq) against the pending op; a present mismatch freezes the
+	// trader (A4). Empty = pre-v3 AddOn (echo absent) → tolerated in the deploy window.
+	TraderID string `json:"trader_id,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
 }
 
 // P5.2 — protocol handshake. The C# AddOn sends `hello` as the FIRST frame on
@@ -80,7 +91,10 @@ const FrameHello FrameType = "hello"
 
 // ProtocolVersion is the current wire protocol generation. v2 = P5.2
 // (symbol-tagged fills + hello handshake). Bump ONLY with a lockstep C#+Go ship.
-const ProtocolVersion = 2
+// v3 = A2 (G1) identity stamp + echo-verify: order/modify/cancel frames carry
+// (trader_id, account, seq) and the AddOn echoes all three on ack/fill/close/reject.
+// Both sides tolerate unknown fields, so a v2 peer only loses the echo check.
+const ProtocolVersion = 3
 
 // HelloPayload identifies the peer + its protocol generation.
 type HelloPayload struct {
@@ -121,8 +135,14 @@ type SubscribeErrorPayload struct {
 }
 
 // AckPayload acknowledges a heartbeat or a specific signal_id per spec L4410.
+// A2 (G1, wire v3): an order ack ALSO echoes the originating identity so Go can
+// verify it (the heartbeat ack leaves them empty). SignalID names the acked order.
 type AckPayload struct {
-	Acks string `json:"acks"` // "heartbeat" or "<signal_id>"
+	Acks     string `json:"acks"` // "heartbeat" or "<signal_id>"
+	SignalID string `json:"signal_id,omitempty"`
+	TraderID string `json:"trader_id,omitempty"`
+	Account  string `json:"account,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
 }
 
 // HeartbeatPayload is an empty struct — spec L4408 says empty payload.
@@ -190,6 +210,9 @@ type PositionClosePayload struct {
 	// (SendPositionCloseFrame ["account"]); Go simply wasn't parsing it. Used by
 	// close-sync owner-routing to match the close to the trader that OWNS the row.
 	Account string `json:"account"` // e.g. "Sim101"
+	// A2 (G1, wire v3) — echoed originator identity + op seq for echo-verify.
+	TraderID string `json:"trader_id,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
 }
 
 // Rejected exit/flatten — C#-AddOn → Go-server, additive frame. The SIM (or
@@ -209,6 +232,9 @@ type PositionCloseRejectedPayload struct {
 	Reason       string `json:"reason"`        // NT8 reject comment, e.g. "There is no market data..."
 	Account      string `json:"account"`       // e.g. "Sim101"
 	RejectTime   string `json:"reject_time"`   // RFC3339
+	// A2 (G1, wire v3) — echoed originator identity + op seq for echo-verify.
+	TraderID string `json:"trader_id,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
 }
 
 // Feed status — C#-AddOn → Go-server, additive frame. Carries the NT8 price-feed
@@ -251,6 +277,12 @@ type ClosePositionPayload struct {
 	Side     string `json:"side"` // "long" | "short" (informational)
 	Quantity int    `json:"quantity"`
 	SignalID string `json:"signal_id"`
+	// A2 (G1, wire v3) — identity stamp: the account this flatten targets + the
+	// owning trader + the op seq. The AddOn echoes them on the resulting
+	// position_close so Go verifies the close came back for the right originator.
+	Account  string `json:"account,omitempty"`
+	TraderID string `json:"trader_id,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
 }
 
 // FrameMoveStop asks the AddOn to move a RESTING stop-loss order (keyed by the
@@ -267,6 +299,10 @@ type MoveStopPayload struct {
 	SignalID    string  `json:"signal_id"`     // the entry's signal_id (the bracket key)
 	NewStopLoss float64 `json:"new_stop_loss"` // tick-rounded new stop price
 	Timestamp   string  `json:"timestamp"`     // RFC3339
+	// A2 (G1, wire v3) — identity stamp: target account + owning trader + op seq.
+	Account  string `json:"account,omitempty"`
+	TraderID string `json:"trader_id,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
 }
 
 // Open-position read-back — C#-AddOn → Go-server, additive snapshot frame (same

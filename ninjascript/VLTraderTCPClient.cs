@@ -38,10 +38,13 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const int    HEARTBEAT_INTERVAL_MS   = 30000; // spec L4408
         private const int    RECONNECT_INTERVAL_MS   = 5000;  // spec L4415
         private const int    STALE_SIGNAL_AGE_SECONDS = 60;   // spec L4414
-        // P5.2 wire-protocol generation. v2 = symbol-tagged fills + the hello
-        // handshake. MUST match provider/ninjatrader/tcp_framing.go
-        // ProtocolVersion — bump ONLY with a lockstep C#+Go ship.
-        private const int    PROTOCOL_VERSION        = 2;
+        // Wire-protocol generation. v2 = symbol-tagged fills + the hello handshake.
+        // v3 (A2/G1) = identity stamp + echo-verify: order/modify/cancel frames carry
+        // (trader_id, account, seq) and this AddOn echoes all three on fill/close/
+        // reject so Go verifies it acted for the originator. MUST match
+        // provider/ninjatrader/tcp_framing.go ProtocolVersion — bump ONLY with a
+        // lockstep C#+Go ship.
+        private const int    PROTOCOL_VERSION        = 3;
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -111,6 +114,12 @@ namespace NinjaTrader.NinjaScript.AddOns
             public double      TickSize;
         }
         private readonly Dictionary<string, PlacedBracket> placedBrackets = new Dictionary<string, PlacedBracket>();
+
+        // A2 (G1) — the identity (trader_id + seq) the Go side stamped on each order,
+        // keyed by signal_id. The AddOn echoes it on the paired fill/close/reject so
+        // Go verifies it acted for the ORIGINATING trader. Guarded by signalMapLock.
+        private class SignalIdentity { public string TraderId; public long Seq; }
+        private readonly Dictionary<string, SignalIdentity> signalIdentity = new Dictionary<string, SignalIdentity>();
 
         // Plan 4.4 Stage 1 — multi-timeframe BarsRequest subscriptions. Owns
         // its own state; calls back into SendFrame() which serializes through
@@ -643,6 +652,18 @@ namespace NinjaTrader.NinjaScript.AddOns
                 return;
             }
 
+            // A2 (G1) — capture the identity stamp (trader_id + seq) keyed by
+            // signal_id so every fill/close/reject for this order echoes it back for
+            // Go's echo-verify. Optional fields (pre-v3 Go omits them → empty/0).
+            {
+                string sigTrader = GetString(p, "trader_id");
+                long   sigSeq    = GetLong(p, "seq");
+                lock (signalMapLock)
+                {
+                    signalIdentity[signalId] = new SignalIdentity { TraderId = sigTrader, Seq = sigSeq };
+                }
+            }
+
             // PHASE 2 (parse only, back-compat) — optional target account. GetString
             // returns null when the field is absent (TryGetValue, not a throw), so
             // today's Go frames (which omit it) leave this null → it falls through to
@@ -1009,8 +1030,9 @@ namespace NinjaTrader.NinjaScript.AddOns
                     // PHASE 4: the position closed → drop its account ownership.
                     if (!string.IsNullOrEmpty(rootSymbol))
                         lock (posAcctLock) { positionAccountBySymbol.Remove(rootSymbol); }
-                    // Position closed → drop its bracket tracking (auto-breakeven).
-                    lock (signalMapLock) { placedBrackets.Remove(signalId); }
+                    // Position closed → drop its bracket tracking (auto-breakeven) and
+                    // its A2 identity (echoed on the close frame just sent above).
+                    lock (signalMapLock) { placedBrackets.Remove(signalId); signalIdentity.Remove(signalId); }
                 }
                 else if (e.OrderState == OrderState.Rejected)
                 {
@@ -1133,7 +1155,24 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // primary trading symbol (legacy-compatible).
                 ["symbol"]         = symbol ?? ""
             };
+            StampIdentity(payload, signalId); // A2 (G1) — echo trader_id + seq
             WriteEnvelope("fill", payload);
+        }
+
+        // A2 (G1) — echo the originating identity (trader_id + seq) onto an outbound
+        // fill/close/reject so Go can verify the AddOn acted for the right trader. The
+        // account is already on those payloads. No-op when the signal_id is unknown
+        // (a manual/uncorrelated exit) → Go treats the absent seq as legacy-tolerated.
+        private void StampIdentity(Dictionary<string, object> payload, string signalId)
+        {
+            if (payload == null || string.IsNullOrEmpty(signalId)) return;
+            SignalIdentity id = null;
+            lock (signalMapLock) { signalIdentity.TryGetValue(signalId, out id); }
+            if (id != null)
+            {
+                payload["trader_id"] = id.TraderId ?? "";
+                payload["seq"]       = id.Seq;
+            }
         }
 
         // Place the protective SL + TP once the entry has filled. They share
@@ -1276,6 +1315,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 ["account"]       = acctName ?? "",
                 ["exit_time"]     = DateTime.UtcNow.ToString("o")
             };
+            StampIdentity(payload, signalId); // A2 (G1) — echo trader_id + seq (entry identity)
             WriteEnvelope("position_close", payload);
         }
 
@@ -1300,6 +1340,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 ["account"]       = !string.IsNullOrEmpty(acctName) ? acctName : (account != null ? account.Name : ""),
                 ["reject_time"]   = DateTime.UtcNow.ToString("o")
             };
+            StampIdentity(payload, signalId); // A2 (G1) — echo trader_id + seq (entry identity)
             WriteEnvelope("position_close_rejected", payload);
         }
 
@@ -1857,6 +1898,19 @@ namespace NinjaTrader.NinjaScript.AddOns
                 if (v is int i) return i;
                 if (v is double d) return (int)d;
                 return Convert.ToInt32(v, CultureInfo.InvariantCulture);
+            }
+            return 0;
+        }
+
+        // A2 (G1) — parse the op seq (uint64 on the wire) as a long; 0 when absent.
+        private static long GetLong(Dictionary<string, object> obj, string key)
+        {
+            if (obj != null && obj.TryGetValue(key, out var v) && v != null)
+            {
+                if (v is long l) return l;
+                if (v is int i) return i;
+                if (v is double d) return (long)d;
+                return Convert.ToInt64(v, CultureInfo.InvariantCulture);
             }
             return 0;
         }

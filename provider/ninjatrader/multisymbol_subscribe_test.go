@@ -137,12 +137,13 @@ func TestIsSubscribedBarsSymbol_SplitBrainDefense(t *testing.T) {
 	}
 }
 
-// TestHelloFraming_RoundTrip locks the P5.2 handshake encoding: a hello frame
-// survives Write→Read with the version + source intact, and the current
-// ProtocolVersion constant is 2 (bump ONLY with a lockstep C#+Go ship).
+// TestHelloFraming_RoundTrip locks the handshake encoding: a hello frame survives
+// Write→Read with the version + source intact, and the current ProtocolVersion
+// constant is 3 (A2/G1 identity stamp + echo-verify; bump ONLY with a lockstep
+// C#+Go ship).
 func TestHelloFraming_RoundTrip(t *testing.T) {
-	if ProtocolVersion != 2 {
-		t.Fatalf("ProtocolVersion = %d; P5.2 ships v2 — a bump requires a lockstep C#+Go deploy", ProtocolVersion)
+	if ProtocolVersion != 3 {
+		t.Fatalf("ProtocolVersion = %d; A2 ships v3 — a bump requires a lockstep C#+Go deploy", ProtocolVersion)
 	}
 	var buf bytes.Buffer
 	if err := WriteFrame(&buf, FrameHello, HelloPayload{ProtocolVersion: ProtocolVersion, Source: "vltrader-addon"}); err != nil {
@@ -159,7 +160,7 @@ func TestHelloFraming_RoundTrip(t *testing.T) {
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		t.Fatal(err)
 	}
-	if p.ProtocolVersion != 2 || p.Source != "vltrader-addon" {
+	if p.ProtocolVersion != 3 || p.Source != "vltrader-addon" {
 		t.Fatalf("payload round-trip mismatch: %+v", p)
 	}
 }

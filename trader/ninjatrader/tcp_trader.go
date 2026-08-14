@@ -37,6 +37,11 @@ type TCPTrader struct {
 	// When set, signals carry it and the AddOn's Phase-3 routing submits there.
 	boundAccount string
 
+	// traderID (A2/G1): the OWNING trader's id, stamped on every order/modify/cancel
+	// frame so the AddOn can echo it back for identity verification. Set at
+	// StartCloseSync (which already receives it). Empty until then.
+	traderID string
+
 	mu       sync.Mutex
 	stopLoss map[string]float64 // key: "<symbol>:<side>"
 	takePrft map[string]float64
@@ -245,6 +250,7 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	t.mu.Lock()
 	sl := t.stopLoss[keyFor(symbol, upperSide)]
 	tp := t.takePrft[keyFor(symbol, upperSide)]
+	tid := t.traderID // A2 (G1) — captured under lock (set-once at StartCloseSync)
 	t.mu.Unlock()
 	if sl == 0 || tp == 0 {
 		return nil, fmt.Errorf("ninjatrader/tcp: SetStopLoss and SetTakeProfit must be called before %s", side)
@@ -264,6 +270,7 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	payload := ntwire.SignalPayload{
 		Symbol:     t.symbol,
 		Account:    t.boundAccount, // P5.4 — empty = legacy (AddOn's active account)
+		TraderID:   tid,            // A2 (G1) — identity stamp; server assigns Seq
 		Side:       side,           // lowercase per spec L4390
 		Quantity:   int(quantity),
 		Entry:      entry,
@@ -314,6 +321,7 @@ func (t *TCPTrader) MoveStopToBreakeven(side string, newStop float64) error {
 	t.mu.Lock()
 	sid := t.lastEntrySignalID
 	cur := t.stopLoss[key]
+	tid := t.traderID // A2 (G1)
 	t.mu.Unlock()
 	if sid == "" {
 		return fmt.Errorf("ninjatrader/tcp: no open entry to move the stop for %s", t.symbol)
@@ -331,6 +339,8 @@ func (t *TCPTrader) MoveStopToBreakeven(side string, newStop float64) error {
 		SignalID:    sid,
 		NewStopLoss: newStop,
 		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+		Account:     t.boundAccount, // A2 (G1) — identity stamp
+		TraderID:    tid,
 	}); err != nil {
 		return err
 	}
@@ -382,6 +392,7 @@ func (t *TCPTrader) sendClose(side string, quantity float64) (map[string]interfa
 	// is recorded by close-sync off the position_close frame.
 	t.mu.Lock()
 	t.lastEntrySignalID = ""
+	tid := t.traderID // A2 (G1)
 	t.mu.Unlock()
 
 	payload := ntwire.ClosePositionPayload{
@@ -389,6 +400,8 @@ func (t *TCPTrader) sendClose(side string, quantity float64) (map[string]interfa
 		Side:     side,
 		Quantity: int(quantity),
 		SignalID: uuid.NewString(),
+		Account:  t.boundAccount, // A2 (G1) — identity stamp
+		TraderID: tid,
 	}
 	if err := t.server.SendClosePosition(payload); err != nil {
 		return nil, fmt.Errorf("ninjatrader/tcp: send close: %w", err)
