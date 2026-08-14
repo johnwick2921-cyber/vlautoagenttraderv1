@@ -276,17 +276,20 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		activeSymbol = ctx.CandidateCoins[0].Symbol
 	}
 	// SVP (Part B3): when svp_enabled is ON and we're on the futures prompt,
-	// compute the session volume profile from the live 1m bars (same bar source
-	// the chart uses — ONE source of truth) and thread ONE line into the system
-	// prompt. OFF / insufficient bars → SetSVPContext("") keeps it byte-identical.
+	// compute the session volume profile from 1m bars (AISVPBarInterval/
+	// AISVPBarCount = "1m"/2000) and thread ONE line into the system prompt. This
+	// is the AI's OWN, fixed SVP input — INDEPENDENT of whatever timeframe the
+	// dashboard chart is displaying (the chart's SVP follows its own selected
+	// interval; see api/handler_svp.go). Keep this at 1m: changing it changes the
+	// AI prompt. OFF / insufficient bars → SetSVPContext("") keeps it byte-identical.
 	engine.SetSVPContext("")
 	svpOn := false
 	if cfg := engine.GetConfig(); cfg != nil {
 		svpOn = cfg.Indicators.EnableSVP
 	}
 	if isFut, _ := futuresVariantMode(variant); isFut && svpOn && market.FuturesBarsProvider != nil {
-		if bars1m := market.FuturesBarsProvider(activeSymbol, "1m", 2000); len(bars1m) > 0 {
-			engine.SetSVPContext(FormatSVPLine(BuildSVPProfile(bars1m, time.Now())))
+		if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
+			engine.SetSVPContext(FormatSVPLine(BuildSVPProfile(bars, time.Now())))
 		}
 	}
 	systemPrompt := engine.BuildSystemPrompt(ctx.Account.TotalEquity, variant, activeSymbol)

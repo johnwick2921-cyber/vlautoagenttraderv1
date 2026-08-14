@@ -14,11 +14,15 @@ import (
 // CME futures symbol: POC / VAH / VAL and the histogram bins for the developing
 // and prior RTH sessions.
 //
-// ONE source of truth: it reads the SAME live NT8 1-minute bars the AI kernel
-// uses (market.FuturesBarsProvider) and runs the SAME kernel.BuildSVPProfile
-// engine — the chart never recomputes the profile itself. The SVP is always
-// built from 1m bars regardless of the chart's display interval, so the ?interval
-// query param is intentionally ignored here.
+// The SVP is a CHART indicator: it profiles WHATEVER candle data the chart is
+// showing, at the chart's selected timeframe (?interval). More candles → more
+// session-days (1m ≈ ~1.4 days, 5m ≈ ~7 days), exactly like a TradingView Session
+// Volume Profile follows the chart. It reads live NT8 bars via
+// market.FuturesBarsProvider and runs kernel.BuildSVPProfile — the chart never
+// recomputes the profile client-side (so the dashboard and strategy-page charts
+// stay identical at the same timeframe). The AI computes its OWN, independent SVP
+// (always 1m — see kernel/engine_analysis.go) for its prompt line; that path is
+// unaffected by this display interval.
 //
 // A cold/empty cache, an unbound provider, or a non-futures symbol returns a
 // well-formed zero-value 200 (empty bins) — NEVER a 500 and never a crypto
@@ -41,11 +45,10 @@ func (s *Server) handleKlinesSVP(c *gin.Context) {
 		c.JSON(http.StatusOK, empty)
 		return
 	}
-	// Profile the SAME timeframe the chart is displaying so the SVP covers the
-	// same visible range (like TradingView). A 5m chart spans ~5+ days → several
-	// session profiles; a 1m chart spans ~1 day. Default 5m. We pull up to 2000
-	// bars (the cache cap) so more historical sessions are available; sessions
-	// that fall off the visible chart are simply skipped by the renderer.
+	// Profile the chart's DISPLAY timeframe so the SVP covers the same candle data
+	// the chart is showing (like TradingView): 1m → ~1.4 days, 5m → ~7 days, etc.
+	// Default 5m. Pull up to 2000 bars (the cache cap); sessions off the visible
+	// range are skipped by the renderer.
 	interval := c.Query("interval")
 	if interval == "" {
 		interval = "5m"

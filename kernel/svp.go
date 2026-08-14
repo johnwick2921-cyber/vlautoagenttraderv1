@@ -37,6 +37,15 @@ const (
 	// Value Area (classic 70%).
 	SVPValueAreaPercent = 0.70
 
+	// AISVPBarInterval / AISVPBarCount are the bars the AI computes its SVP prompt
+	// line from (kernel/engine_analysis.go). This is INDEPENDENT of the chart: the
+	// chart is a display indicator that profiles whatever candle data it is showing
+	// at its selected timeframe (see api/handler_svp.go), while the AI always
+	// profiles 1m bars for its own reasoning. Keep this AI value fixed — changing
+	// it alters the AI prompt (a trading-behavior change).
+	AISVPBarInterval = "1m"
+	AISVPBarCount    = 2000
+
 	// The SVP session is the CME futures trading day: it opens at 17:00 CT and
 	// RESETS every 17:00 CT (the daily-break roll). This is anchored to
 	// CMESessionDayStart in cme_calendar.go — NOT the 08:30 RTH open — so the
