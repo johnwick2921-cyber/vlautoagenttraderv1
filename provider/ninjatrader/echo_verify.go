@@ -1,6 +1,8 @@
 package ninjatrader
 
 import (
+	"net"
+	"sort"
 	"time"
 
 	"nofx/discipline"
@@ -51,6 +53,58 @@ func checkEcho(pending pendingOp, found bool, echoSeq uint64, echoTraderID, echo
 }
 
 func q(s string) string { return "\"" + s + "\"" }
+
+// RegisterBoundAccount (A3/G2) adds account to the session allowlist and, if a
+// client is connected, immediately re-declares the full set to the AddOn so a
+// late-binding trader's account is enforced without waiting for a reconnect. Empty
+// account is a no-op.
+func (s *TCPServer) RegisterBoundAccount(account string) {
+	if account == "" {
+		return
+	}
+	s.boundAcctMu.Lock()
+	if s.boundAccounts == nil {
+		s.boundAccounts = make(map[string]bool)
+	}
+	if s.boundAccounts[account] {
+		s.boundAcctMu.Unlock()
+		return // already declared — no frame needed
+	}
+	s.boundAccounts[account] = true
+	s.boundAcctMu.Unlock()
+
+	s.connMu.Lock()
+	c := s.conn
+	s.connMu.Unlock()
+	if c != nil {
+		s.sendAccountAllowlist(c)
+	}
+}
+
+// sendAccountAllowlist declares the current bound-account allowlist to the AddOn.
+// Best-effort: a failure here just means the AddOn keeps its prior set until the
+// next connect/register.
+func (s *TCPServer) sendAccountAllowlist(c net.Conn) {
+	s.boundAcctMu.Lock()
+	accts := make([]string, 0, len(s.boundAccounts))
+	for a := range s.boundAccounts {
+		accts = append(accts, a)
+	}
+	s.boundAcctMu.Unlock()
+	if len(accts) == 0 {
+		return // nothing declared yet — AddOn stays fail-open (legacy)
+	}
+	sort.Strings(accts) // deterministic frame
+	s.writeMu.Lock()
+	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	err := WriteFrame(c, FrameAccountRegister, AccountRegisterPayload{Accounts: accts})
+	s.writeMu.Unlock()
+	if err != nil {
+		s.logger.Warn("tcp_server: send account_register", "err", err)
+		return
+	}
+	s.logger.Info("tcp_server: sent account_register allowlist", "accounts", accts)
+}
 
 // assignSeqRegister assigns the next monotonic seq to an outbound op and registers
 // its identity for later echo-verify. Returns the seq to stamp on the frame.

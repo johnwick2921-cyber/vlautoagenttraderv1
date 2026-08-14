@@ -285,6 +285,21 @@ type ClosePositionPayload struct {
 	Seq      uint64 `json:"seq,omitempty"`
 }
 
+// A3 (G2) — account allowlist. The Go server sends this (once per connect, before
+// flushing queued signals, and again whenever a new trader binds) with the FULL set
+// of accounts this session's bound traders use. The AddOn REPLACES its allowlist
+// with this owner-declared set and refuses to execute on anything outside it — the
+// allowlist is thus established independently of the signal payload (never
+// self-registered from a signal, which would be vacuous). A pre-A3 Go never sends
+// it, so a new AddOn treats an all-absent allowlist as legacy → fail-open (allow),
+// keeping the lockstep deploy window safe.
+const FrameAccountRegister FrameType = "account_register"
+
+// AccountRegisterPayload carries the authoritative bound-account allowlist.
+type AccountRegisterPayload struct {
+	Accounts []string `json:"accounts"`
+}
+
 // FrameMoveStop asks the AddOn to move a RESTING stop-loss order (keyed by the
 // entry's signal_id) to a new price WITHOUT closing the position — auto-breakeven.
 // Additive frame: an OLD AddOn (pre-move_stop) logs "unknown frame type" and

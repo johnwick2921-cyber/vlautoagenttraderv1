@@ -130,15 +130,57 @@ namespace NinjaTrader.NinjaScript.AddOns
         // reach CreateOrder, on top of the SIM/connected/resolved guards.
         private readonly HashSet<string> sessionAccounts = new HashSet<string>();
         private readonly object sessionAccountsLock = new object();
+        // True once the Go side has DECLARED the allowlist (account_register). Until
+        // then the AddOn fails OPEN (a pre-A3 Go never declares → don't brick trading).
+        private bool sessionAccountsDeclared = false;
         private void RegisterSessionAccount(string name)
         {
             if (string.IsNullOrEmpty(name)) return;
             lock (sessionAccountsLock) { sessionAccounts.Add(name); }
         }
+        // IsSessionAccount enforces membership ONLY once the allowlist was declared by
+        // Go. Before declaration (legacy Go) it returns true (fail-open) so the deploy
+        // window never bricks; after declaration a non-member is refused.
         private bool IsSessionAccount(string name)
         {
-            if (string.IsNullOrEmpty(name)) return false;
-            lock (sessionAccountsLock) { return sessionAccounts.Contains(name); }
+            lock (sessionAccountsLock)
+            {
+                if (!sessionAccountsDeclared) return true; // legacy / not yet declared
+                return !string.IsNullOrEmpty(name) && sessionAccounts.Contains(name);
+            }
+        }
+
+        // A3 (G2) — Go declares the AUTHORITATIVE bound-account allowlist (sent on
+        // connect before any signal, and on each new bind). REPLACE the set with it;
+        // from now on execution is enforced against this owner-declared set — never a
+        // signal-derived one. account_select still adds the owner-selected active
+        // account as belt-and-suspenders.
+        private void HandleAccountRegister(Dictionary<string, object> p)
+        {
+            if (p == null) { LogWarn("VLTraderTCPClient: account_register empty payload"); return; }
+            var list = p.ContainsKey("accounts") ? p["accounts"] as List<object> : null;
+            var parsed = new HashSet<string>();
+            if (list != null)
+                foreach (var a in list)
+                {
+                    string name = a as string;
+                    if (!string.IsNullOrEmpty(name)) parsed.Add(name);
+                }
+            // SAFETY: never declare an EMPTY allowlist (would refuse every account and
+            // brick trading). Go only sends non-empty sets; a malformed/empty frame is
+            // ignored and the AddOn stays in its prior state (fail-open if never declared).
+            if (parsed.Count == 0)
+            {
+                LogWarn("VLTraderTCPClient: account_register carried no accounts — ignoring (allowlist unchanged)");
+                return;
+            }
+            lock (sessionAccountsLock)
+            {
+                sessionAccounts.Clear();
+                foreach (var n in parsed) sessionAccounts.Add(n);
+                sessionAccountsDeclared = true;
+            }
+            LogInfo("VLTraderTCPClient: account_register allowlist declared (" + parsed.Count + " accounts)");
         }
 
         // Plan 4.4 Stage 1 — multi-timeframe BarsRequest subscriptions. Owns
@@ -590,6 +632,10 @@ namespace NinjaTrader.NinjaScript.AddOns
                 {
                     HandleAccountSelect(payload);
                 }
+                else if (type == "account_register")
+                {
+                    HandleAccountRegister(payload);
+                }
                 else if (type == "heartbeat")
                 {
                     // Ack incoming heartbeats per spec L4410.
@@ -712,11 +758,10 @@ namespace NinjaTrader.NinjaScript.AddOns
                 SendFillFrame(signalId, 0.0, side, qty, 0.0, "rejected", symbol: symbol);
                 return;
             }
-            // A3 (G2) — register the accounts this signal legitimately declares (the
-            // active account for a legacy/empty-target signal, and the explicit target
-            // when present) into the session allowlist BEFORE the submit guard enforces it.
-            RegisterSessionAccount(account.Name);
-            RegisterSessionAccount(targetAccount);
+            // A3 (G2) — NOTE: the allowlist is NOT populated from the signal payload
+            // (that would be vacuous — a signal would authorize its own account). It is
+            // declared by Go via account_register (owner-driven) + account_select. The
+            // submit guard below enforces membership against that owner-declared set.
 
             // SAFETY RAIL (Stage-2 Phase-1, defense-in-depth) — the LAST line before an
             // order reaches NT8. NEVER submit on a non-SIM (live/funded) account, and

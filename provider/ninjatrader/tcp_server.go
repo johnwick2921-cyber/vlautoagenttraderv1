@@ -178,6 +178,13 @@ type TCPServer struct {
 	pendingMu2   sync.Mutex
 	pendingOps   map[uint64]pendingOp
 	pendingBySig map[string]uint64
+
+	// A3 (G2) — the bound-account allowlist this session's traders declare. Sent to
+	// the AddOn (account_register) on every connect BEFORE queued signals flush, and
+	// again whenever a new trader binds, so the AddOn enforces against an
+	// owner-declared set (never signal-self-registered). Guarded by boundAcctMu.
+	boundAcctMu   sync.Mutex
+	boundAccounts map[string]bool
 }
 
 // pendingOpsCap bounds the echo-verify registry so a run of un-retired ops can never
@@ -1132,6 +1139,9 @@ func (s *TCPServer) acceptLoop(ctx context.Context) {
 		s.wg.Add(2)
 		go s.readLoop(ctx, c)
 		go s.heartbeatLoop(ctx, c)
+		// A3 (G2) — declare the bound-account allowlist BEFORE flushing any queued
+		// signals, so the AddOn's allowlist is established before it can execute one.
+		s.sendAccountAllowlist(c)
 		// Flush any signals queued during the disconnect window.
 		_ = s.flushPending()
 		// Plan 4.4 Stage 2 — auto-subscribe to bars on every accept so

@@ -4,6 +4,8 @@
 package ninjatrader
 
 import (
+	"bytes"
+	"encoding/json"
 	"testing"
 
 	"nofx/discipline"
@@ -111,5 +113,43 @@ func TestEchoRegistry_SeqIsMonotonic(t *testing.T) {
 	c := s.assignSeqRegister("T2", "Sim102", "s3")
 	if !(a < b && b < c) {
 		t.Fatalf("seq must be strictly monotonic: %d %d %d", a, b, c)
+	}
+}
+
+// TestAccountAllowlist_RegistryAndFrame (A3 hardening) proves the allowlist is
+// owner/Go-declared: RegisterBoundAccount de-dupes into the set, and the
+// account_register frame round-trips the sorted set.
+func TestAccountAllowlist_RegistryAndFrame(t *testing.T) {
+	s := NewTCPServer(nil)
+	s.RegisterBoundAccount("Sim102")
+	s.RegisterBoundAccount("Sim101")
+	s.RegisterBoundAccount("Sim101") // dup — no-op
+
+	s.boundAcctMu.Lock()
+	n := len(s.boundAccounts)
+	has101, has102 := s.boundAccounts["Sim101"], s.boundAccounts["Sim102"]
+	s.boundAcctMu.Unlock()
+	if n != 2 || !has101 || !has102 {
+		t.Fatalf("bound-account set = %d entries (101=%v 102=%v), want {Sim101,Sim102}", n, has101, has102)
+	}
+
+	// The declared allowlist frame round-trips.
+	var buf bytes.Buffer
+	if err := WriteFrame(&buf, FrameAccountRegister, AccountRegisterPayload{Accounts: []string{"Sim101", "Sim102"}}); err != nil {
+		t.Fatal(err)
+	}
+	env, err := ReadFrame(&buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if env.Type != FrameAccountRegister {
+		t.Fatalf("type = %s; want account_register", env.Type)
+	}
+	var p AccountRegisterPayload
+	if err := json.Unmarshal(env.Payload, &p); err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Accounts) != 2 || p.Accounts[0] != "Sim101" || p.Accounts[1] != "Sim102" {
+		t.Fatalf("round-trip accounts = %v, want [Sim101 Sim102]", p.Accounts)
 	}
 }
