@@ -709,6 +709,13 @@ type StrategyConfig struct {
 	// stores the authoritative booleans on Strategy, but config JSON may carry
 	// this object for agent/frontend schema consistency.
 	PublishConfig *PublishStrategyConfig `json:"publish_config,omitempty"`
+
+	// DayPlan is the optional per-strategy Day Plan settings block (P0.1). ROOT
+	// placement (sibling of strategy_type) so a grid switch — which drops
+	// ai_config — never drops it (RECON #1). Additive + defaults-off: a nil
+	// pointer emits no day_plan key, keeping every existing strategy
+	// byte-identical.
+	DayPlan *DayPlanConfig `json:"day_plan,omitempty"`
 }
 
 // AIStrategyConfig contains fields only used by AI trading strategies.
@@ -741,11 +748,13 @@ func (c StrategyConfig) MarshalJSON() ([]byte, error) {
 		AIConfig      *AIStrategyConfig      `json:"ai_config,omitempty"`
 		GridConfig    *GridStrategyConfig    `json:"grid_config,omitempty"`
 		PublishConfig *PublishStrategyConfig `json:"publish_config,omitempty"`
+		DayPlan       *DayPlanConfig         `json:"day_plan,omitempty"`
 	}{
 		StrategyType:  strategyType,
 		Language:      c.Language,
 		PromptVariant: strings.TrimSpace(c.PromptVariant),
 		PublishConfig: c.PublishConfig,
+		DayPlan:       c.DayPlan,
 	}
 
 	if strategyType == "grid_trading" {
@@ -773,6 +782,7 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 		AIConfig      *AIStrategyConfig      `json:"ai_config"`
 		GridConfig    *GridStrategyConfig    `json:"grid_config"`
 		PublishConfig *PublishStrategyConfig `json:"publish_config"`
+		DayPlan       *DayPlanConfig         `json:"day_plan"`
 
 		CoinSource     *CoinSourceConfig     `json:"coin_source"`
 		Indicators     *IndicatorConfig      `json:"indicators"`
@@ -791,6 +801,7 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 	c.PromptVariant = strings.TrimSpace(raw.PromptVariant)
 	c.GridConfig = raw.GridConfig
 	c.PublishConfig = raw.PublishConfig
+	c.DayPlan = raw.DayPlan
 
 	if raw.AIConfig != nil {
 		c.CoinSource = raw.AIConfig.CoinSource
@@ -820,6 +831,75 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 		c.StrategyType = "grid_trading"
 	}
 	return nil
+}
+
+// DayPlanConfig is the per-strategy Day Plan settings block (spec PAGE 2 field
+// list). Additive + defaults-off: a nil *DayPlanConfig (absent day_plan) leaves
+// an existing strategy byte-identical, and PlanEnabled=false is the master
+// switch even when the block is present. Lives at ROOT of StrategyConfig.
+type DayPlanConfig struct {
+	// PlanEnabled is the master switch (default false = off).
+	PlanEnabled bool `json:"plan_enabled"`
+	// PlannerModel is the reasoner binding from the multi-key registry; empty
+	// falls back to the strategy's primary model (RECON #9).
+	PlannerModel string `json:"planner_model,omitempty"`
+	// PlanMode: advisory (default) | direction | strict. Promotion by evidence.
+	PlanMode string `json:"plan_mode,omitempty"`
+	// PlannerTimeframes are the structure-summary TFs (default D,4h,1h,15m).
+	PlannerTimeframes []string `json:"planner_timeframes,omitempty"`
+	// ProximityFilterATR: day-trade lock, 0.5–3.0 (default 1.5).
+	ProximityFilterATR float64 `json:"proximity_filter_atr,omitempty"`
+	// MaxLevels: level table cap, 3–12 (default 8).
+	MaxLevels int `json:"max_levels,omitempty"`
+	// ScenarioCap: scenarios cap, 1–5 (default 3).
+	ScenarioCap int `json:"scenario_cap,omitempty"`
+	// AcceptanceRule: 2x5m (default) | 15m-close.
+	AcceptanceRule string `json:"acceptance_rule,omitempty"`
+	// ReplanCap: re-reads per session, 0–4 (default 2).
+	ReplanCap int `json:"replan_cap,omitempty"`
+	// SessionsEnabled: subset of NY | ASIA | LONDON (default [NY]); each other
+	// session earns enablement via replay + NY match-rate evidence.
+	SessionsEnabled []string `json:"sessions_enabled,omitempty"`
+	// ApprovalRequired: OFF (default) = fully automatic.
+	ApprovalRequired bool `json:"approval_required"`
+	// EveningDigest: 17:30 evening digest (default true).
+	EveningDigest bool `json:"evening_digest"`
+	// Sessions holds minimal per-session overrides; absent/nil fields inherit
+	// from the strategy-level values above (⚪ inherit / 🔸 override).
+	Sessions []DayPlanSessionOverride `json:"sessions,omitempty"`
+}
+
+// DayPlanSessionOverride is a minimal per-session override. Every field is a
+// pointer: nil means "inherit from the strategy-level DayPlanConfig", a set
+// value overrides only that field for the named session.
+type DayPlanSessionOverride struct {
+	Session        string  `json:"session"` // NY | ASIA | LONDON
+	Enable         *bool   `json:"enable,omitempty"`
+	ReplanCap      *int    `json:"replan_cap,omitempty"`
+	PlanMode       *string `json:"plan_mode,omitempty"`
+	AcceptanceRule *string `json:"acceptance_rule,omitempty"`
+	MinGrade       *string `json:"min_grade,omitempty"` // A | B | C
+	MaxTrades      *int    `json:"max_trades,omitempty"`
+}
+
+// DefaultDayPlanConfig returns the spec default block (plan OFF). It is NOT
+// injected into GetDefaultStrategyConfig — creating a strategy leaves day_plan
+// absent (byte-identical) until the owner opts in; the frontend/creation flow
+// seeds this when the block is first turned on.
+func DefaultDayPlanConfig() *DayPlanConfig {
+	return &DayPlanConfig{
+		PlanEnabled:        false,
+		PlanMode:           "advisory",
+		PlannerTimeframes:  []string{"D", "4h", "1h", "15m"},
+		ProximityFilterATR: 1.5,
+		MaxLevels:          8,
+		ScenarioCap:        3,
+		AcceptanceRule:     "2x5m",
+		ReplanCap:          2,
+		SessionsEnabled:    []string{"NY"},
+		ApprovalRequired:   false,
+		EveningDigest:      true,
+	}
 }
 
 // GridStrategyConfig grid trading specific configuration
