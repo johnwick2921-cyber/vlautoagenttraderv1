@@ -15,6 +15,7 @@ export const translations = {
     logout: 'Logout',
     switchTrader: 'Switch Trader:',
     view: 'View',
+    viewing: 'Viewing',
 
     // Navigation
     realtimeNav: 'Leaderboard',
@@ -1414,6 +1415,7 @@ export const translations = {
     logout: '退出',
     switchTrader: '切换交易员:',
     view: '查看',
+    viewing: '查看中',
 
     // Navigation
     realtimeNav: '排行榜',
@@ -2734,6 +2736,7 @@ export const translations = {
     logout: 'Keluar',
     switchTrader: 'Ganti Trader:',
     view: 'Lihat',
+    viewing: 'Melihat',
 
     // Navigation
     realtimeNav: 'Papan Peringkat',
