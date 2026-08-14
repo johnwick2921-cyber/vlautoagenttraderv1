@@ -329,6 +329,15 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			logger.Infof("📐 SVP ON but omitted this cycle for %s — no session profile available (no 1m bars / provider down / pre-open); prompt has no SVP line.", activeSymbol)
 		}
 	}
+	// A5 (G5) — PROMPT-OWNERSHIP assertion: every account-scoped context field must
+	// be owned by the DECIDING trader. A field tagged with another trader_id is
+	// cross-trader contamination — skip the cycle rather than decide on foreign data.
+	if field, badOwner, violated := assertPromptOwnership(ctx); violated {
+		logger.Errorf("🚨 A5 prompt-ownership VIOLATION: context field %q is owned by %q ≠ deciding trader %q — SKIPPING cycle (cross-trader contamination).", field, badOwner, ctx.TraderID)
+		telemetry.IncGateBlock(ctx.TraderID, "prompt_ownership")
+		return holdCycle("prompt_ownership_violation"), nil
+	}
+
 	systemPrompt := engine.BuildSystemPrompt(ctx.Account.TotalEquity, variant, activeSymbol)
 
 	// 3. Build User Prompt using strategy engine

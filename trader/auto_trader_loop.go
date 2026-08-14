@@ -800,6 +800,18 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 		}
 	}
 
+	// A5 (G5) — tag every account-scoped context field with THIS trader's id. The
+	// kernel asserts all tags == the deciding trader (ctx.TraderID == at.id) before
+	// assembling the prompt; a field ever populated from another trader's data would
+	// carry a different owner and skip the cycle. Byte-identical (tags are json:"-").
+	ctx.OwnerTags = map[string]string{
+		"account":       at.id,
+		"positions":     at.id,
+		"market_data":   at.id,
+		"recent_orders": at.id,
+		"trading_stats": at.id,
+	}
+
 	return ctx, nil
 }
 

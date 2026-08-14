@@ -96,6 +96,12 @@ type Context struct {
 	RuntimeMinutes     int                                `json:"runtime_minutes"`
 	CallCount          int                                `json:"call_count"`
 	TraderID           string                             `json:"-"` // B6: identity for per-trader gate-block counters (set by the trader loop; never serialized)
+	// A5 (G5) — prompt-ownership tags: field-name → owning trader_id for each
+	// account-scoped context field the trader populates. Final prompt assembly
+	// asserts every tag == TraderID (the deciding trader); a mismatch is cross-trader
+	// contamination → the cycle is skipped. Prompt-data only (json:"-"), so a
+	// matching-tag context is byte-identical.
+	OwnerTags map[string]string `json:"-"`
 	Account            AccountInfo                        `json:"account"`
 	Positions          []PositionInfo                     `json:"positions"`
 	CandidateCoins     []CandidateCoin                    `json:"candidate_coins"`
