@@ -167,3 +167,39 @@ func TestDayPlanSessionOverrideInheritSemantics(t *testing.T) {
 		t.Fatalf("LONDON all-inherit row gained a non-nil override: %+v", london)
 	}
 }
+
+// TestDayPlanSurvivesMergeStrategyConfig is the config-truth persistence proof:
+// handleUpdateStrategy runs every edit through MergeStrategyConfig. An unrelated
+// edit must NOT wipe day_plan (the RECON #1 hazard class), and a partial day_plan
+// patch must deep-merge (keep sibling fields).
+func TestDayPlanSurvivesMergeStrategyConfig(t *testing.T) {
+	base := GetDefaultStrategyConfig("en")
+	base.DayPlan = fullDayPlan()
+
+	// (1) An unrelated edit preserves the whole day_plan block.
+	merged, err := MergeStrategyConfig(base, map[string]any{"prompt_variant": "aggressive"})
+	if err != nil {
+		t.Fatalf("merge unrelated: %v", err)
+	}
+	if merged.PromptVariant != "aggressive" {
+		t.Fatalf("unrelated field not applied: %q", merged.PromptVariant)
+	}
+	if merged.DayPlan == nil || !reflect.DeepEqual(merged.DayPlan, fullDayPlan()) {
+		t.Fatalf("unrelated edit wiped/changed day_plan: %+v", merged.DayPlan)
+	}
+
+	// (2) A partial day_plan patch deep-merges: toggles plan_enabled, keeps the
+	// rest (max_levels, sessions_enabled, etc.).
+	merged2, err := MergeStrategyConfig(base, map[string]any{
+		"day_plan": map[string]any{"plan_enabled": false},
+	})
+	if err != nil {
+		t.Fatalf("merge day_plan patch: %v", err)
+	}
+	if merged2.DayPlan == nil || merged2.DayPlan.PlanEnabled {
+		t.Fatalf("plan_enabled not toggled off: %+v", merged2.DayPlan)
+	}
+	if merged2.DayPlan.MaxLevels != 8 || len(merged2.DayPlan.SessionsEnabled) != 1 {
+		t.Fatalf("partial patch dropped sibling day_plan fields: %+v", merged2.DayPlan)
+	}
+}
