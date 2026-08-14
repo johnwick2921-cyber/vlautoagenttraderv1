@@ -412,6 +412,14 @@ Returns: {"trader_id":"<string>","daily_pnl_usd":<float>,"daily_loss_limit_usd":
 Returns: {"session_day_utc":"<RFC3339>","summary":"<one-line>","by_trader":{"<trader_id>":{"<gate>":<count>}}}
 The empty-string trader key holds process-wide gates (e.g. the B3 order guard). Resets at the 17:00 CT CME session rollover.`,
 				s.handleGateBlocks)
+			s.routeWithSchema(protected, "GET", "/risk/freezes", "List frozen traders (A4/G4)",
+				`No params. Returns traders frozen by an identity/account mismatch or reconcile divergence.
+Returns: {"frozen":{"<trader_id>":"<reason>"}}  (empty object = none frozen)`,
+				s.handleListFreezes)
+			s.routeWithSchema(protected, "POST", "/risk/clear-freeze", "Clear a trader freeze — owner action (A4/G4)",
+				`Query: ?trader_id=<EXACT trader_id>
+Clears the freeze so NEW entries resume. Returns: {"trader_id":"<id>","was_frozen":<bool>,"cleared":<bool>}`,
+				s.handleClearFreeze)
 			s.routeWithSchema(protected, "GET", "/audit/decisions", "Decision audit trail (Plan 4 T23)",
 				`Query: ?trader_id=<EXACT trader_id>&since=<YYYY-MM-DD, default 7d ago>&limit=<int, default 100, max 1000>
 Returns: []DecisionRecord JSON ordered by timestamp DESC, including PromptVersion, AIModel, AILatencyMs, RiskCheck*, ExecutionStatus, FillPrice, FillLatencyMs.`,

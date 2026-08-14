@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 
 	"nofx/config"
+	"nofx/discipline"
 	"nofx/logger"
 	"nofx/market"
 	"nofx/provider/databento"
@@ -85,6 +86,11 @@ type TCPTrader struct {
 	// ONLY from the single reconcile goroutine (reconcilePositions) → no lock needed.
 	flatSince map[int64]int64
 
+	// divergeSince (A4/G4) tracks, per open-position row id, the first time reconcile
+	// observed a qty divergence (NT8 held ≠ DB belief). It debounces the belief≠broker
+	// freeze so an in-flight fill doesn't false-freeze. Reconcile goroutine only → no lock.
+	divergeSince map[int64]int64
+
 	// Plan 4 Stage 4 — reference to the parent AutoTrader (optional).
 	// Used to notify the AutoTrader when the first account_balance frame arrives.
 	// Set by transport.go after creating the trader.
@@ -139,8 +145,17 @@ func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *T
 			// fill as this trader's position. Empty account = legacy AddOn → trust
 			// the symbol routing.
 			if fill.Account != "" && t.boundAccount != "" && !strings.EqualFold(fill.Account, t.boundAccount) {
-				logger.Warnf("⚠️ ninjatrader/tcp: REJECTED fill for account %q (this trader is bound to %q) — signal_id=%s (H3 account guard)",
-					fill.Account, t.boundAccount, fill.SignalID)
+				// A4 (G4) — a fill on an account this trader is NOT bound to reached it:
+				// the (symbol,account) routing should make this impossible, so a fire is
+				// a real cross-account event. Reject the fill AND FREEZE the trader (new
+				// entries blocked until the owner clears; open-position management goes on).
+				t.mu.Lock()
+				tid := t.traderID
+				t.mu.Unlock()
+				if discipline.FreezeTrader(tid, "post-fill account mismatch: fill account "+fill.Account+" ≠ bound "+t.boundAccount, time.Now().UnixMilli()) {
+					logger.Errorf("🚨 A4 FREEZE: fill for account %q reached trader bound to %q — signal_id=%s (post-fill account guard). Trader FROZEN.",
+						fill.Account, t.boundAccount, fill.SignalID)
+				}
 				continue
 			}
 			t.mu.Lock()

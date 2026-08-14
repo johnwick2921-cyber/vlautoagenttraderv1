@@ -1,9 +1,11 @@
 package ninjatrader
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
+	"nofx/discipline"
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
@@ -41,6 +43,11 @@ const (
 	// headroom for the frame + close-sync, while bounding how long a genuinely-
 	// uncaptured row lingers before it falls to reconcile_flat "—".
 	flatGraceMs = 60_000
+	// reconcileDivergenceGraceMs (A4/G4): a qty divergence (NT8 held ≠ DB belief)
+	// must PERSIST this long before it freezes the trader — a fill frame can be
+	// momentarily in flight, so a single-pass divergence is within tolerance. 60s
+	// (3 reconcile passes) matches the other reconcile grace windows.
+	reconcileDivergenceGraceMs = 60_000
 )
 
 // StartPositionReconcile launches the periodic reconcile goroutine (idempotent
@@ -127,6 +134,23 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 			if hq, ok := heldQty[key]; ok && row.Quantity > 0 && hq != row.Quantity {
 				logger.Warnf("🚨 reconcile QTY DIVERGENCE: %s %s — NT8 holds %.0f but DB row %d has %.0f. Likely an unclosed prior contract netted onto by a later entry (id=45→46 class). DB qty NOT auto-changed — investigate.",
 					row.Symbol, row.Side, hq, row.ID, row.Quantity)
+				// A4 (G4) — belief≠broker divergence. Debounce across passes (a fill
+				// frame may be momentarily in flight); once it PERSISTS beyond the grace,
+				// FREEZE the trader so it can't open on top of a mis-believed position.
+				// Open-position management continues; the owner clears via the API.
+				if t.divergeSince == nil {
+					t.divergeSince = make(map[int64]int64)
+				}
+				if t.divergeSince[row.ID] == 0 {
+					t.divergeSince[row.ID] = nowMs
+				} else if nowMs-t.divergeSince[row.ID] >= reconcileDivergenceGraceMs {
+					reason := fmt.Sprintf("reconcile qty divergence persisted: %s %s NT8=%.0f DB row %d=%.0f", row.Symbol, row.Side, hq, row.ID, row.Quantity)
+					if discipline.FreezeTrader(traderID, reason, nowMs) {
+						logger.Errorf("🚨 A4 FREEZE: %s — trader FROZEN (new entries blocked; management continues). Clear via /api/risk/clear-freeze after reconciling.", reason)
+					}
+				}
+			} else if t.divergeSince != nil {
+				delete(t.divergeSince, row.ID) // qty matches → reset the debounce
 			}
 		} else {
 			// Orphan — NT8 reports flat for this (symbol,side) but the row is OPEN.

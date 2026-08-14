@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"nofx/discipline"
 	"nofx/kernel"
 
 	"github.com/gin-gonic/gin"
@@ -174,5 +175,42 @@ func TestHandleDecisionAuditInvalidSince(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400 invalid since, got %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+// A4 (G4) — the freeze list + owner clear endpoints: a frozen trader appears in
+// GET /risk/freezes and POST /risk/clear-freeze resumes it.
+func TestHandleFreezeListAndClear(t *testing.T) {
+	discipline.ResetFreezeForTest()
+	defer discipline.ResetFreezeForTest()
+	discipline.FreezeTrader("trader-frozen", "echo mismatch on fill", 1000)
+
+	s := &Server{}
+	router := gin.New()
+	router.GET("/api/risk/freezes", s.handleListFreezes)
+	router.POST("/api/risk/clear-freeze", s.handleClearFreeze)
+
+	// List shows the frozen trader.
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/risk/freezes", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "trader-frozen") {
+		t.Fatalf("freezes list must include the frozen trader; code=%d body=%s", rec.Code, rec.Body.String())
+	}
+
+	// Clear without trader_id → 400.
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/risk/clear-freeze", nil))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("clear without trader_id must be 400, got %d", rec.Code)
+	}
+
+	// Clear with trader_id → resumes.
+	rec = httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/risk/clear-freeze?trader_id=trader-frozen", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"cleared":true`) {
+		t.Fatalf("clear must report cleared:true; code=%d body=%s", rec.Code, rec.Body.String())
+	}
+	if _, frozen := discipline.IsFrozen("trader-frozen"); frozen {
+		t.Fatal("trader must resume (not frozen) after clear")
 	}
 }

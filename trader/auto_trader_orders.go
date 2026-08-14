@@ -3,6 +3,7 @@ package trader
 import (
 	"fmt"
 	"math"
+	"nofx/discipline"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/market"
@@ -152,6 +153,22 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 			telemetry.IncGateBlock(at.id, "dead_man")
 			actionRecord.Success = false
 			actionRecord.Error = "dead_man_watchdog: awaiting reconciliation after link gap"
+			return nil
+		}
+	}
+
+	// A4 (G4) — FREEZE gate: a trader frozen by an identity/account echo mismatch
+	// (A2) or a reconcile belief≠broker divergence is blocked from NEW entries until
+	// the owner clears it (POST /api/risk/clear-freeze). Open-position management
+	// (closes/stop-moves/reconcile) is NEVER blocked — a frozen trader can still be
+	// brought flat.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, frozen := discipline.IsFrozen(at.id); frozen {
+			at.logErrorf("🚨 A4 FROZEN: %s %s REFUSED — trader is frozen (%s). Investigate, then clear via /api/risk/clear-freeze to resume.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "frozen")
+			actionRecord.Success = false
+			actionRecord.Error = "frozen: " + reason
 			return nil
 		}
 	}
