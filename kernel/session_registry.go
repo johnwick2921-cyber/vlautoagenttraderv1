@@ -1,0 +1,211 @@
+package kernel
+
+import (
+	"encoding/json"
+	"strings"
+	"time"
+)
+
+// P0.3 — SESSION REGISTRY (global-admin, CT-anchored).
+//
+// The day-plan system runs PER-SESSION reads (ASIA / LONDON / NY). This registry
+// is the single source of truth for each session's clock: window, planner read
+// time, session-flat time, killzones, and whether it is enabled. It follows the
+// NT8 Trading-Hours pattern — every time is America/Chicago wall-clock "HH:MM",
+// NEVER local machine time — so DST is handled by the tz database and the ~3
+// weeks US/UK diverge only surface as a London DST-drift warning (UI concern).
+//
+// This is FOUNDATION only: the struct, defaults, storage codec, and pure
+// evaluators. Wiring it into the live decision gate is P2 (THE CLOCK). Persisted
+// as JSON in system_config under SessionRegistryConfigKey; empty/absent → the
+// default (NY-only) registry, so nothing changes until an admin edits it.
+
+// SessionRegistryConfigKey is the system_config key holding the registry JSON.
+const SessionRegistryConfigKey = "session_registry"
+
+// Session names (CT-anchored windows; see DefaultSessionRegistry).
+const (
+	SessionAsia   = "ASIA"
+	SessionLondon = "LONDON"
+	SessionNY     = "NY"
+)
+
+// KillzoneCT is a high-probability CT [start,end) window inside a session.
+type KillzoneCT struct {
+	Name    string `json:"name"`
+	StartCT string `json:"start_ct"` // "HH:MM" America/Chicago
+	EndCT   string `json:"end_ct"`   // "HH:MM" America/Chicago
+}
+
+// SessionDef is one CT-anchored trading session. Windows may wrap midnight
+// (ASIA 17:00→02:00); all times are America/Chicago "HH:MM".
+type SessionDef struct {
+	Name          string       `json:"name"`
+	WindowStartCT string       `json:"window_start_ct"`
+	WindowEndCT   string       `json:"window_end_ct"`
+	ReadCT        string       `json:"read_ct"` // planner read time (≈5 min before open)
+	FlatCT        string       `json:"flat_ct"` // session-flat time
+	Killzones     []KillzoneCT `json:"killzones,omitempty"`
+	Enabled       bool         `json:"enabled"`
+}
+
+// SessionRegistry is the global-admin session config.
+type SessionRegistry struct {
+	Sessions []SessionDef `json:"sessions"`
+	// HalfDays maps a CME session-day key (YYYY-MM-DD, per CMESessionDayKey) to
+	// an early-close CT "HH:MM" that overrides the affected session's flat time.
+	// EMPTY BY DEFAULT (dormant) — the half-day truth hook (RECON #6). Nothing
+	// changes live while empty; the calendar feed populates it later.
+	HalfDays map[string]string `json:"half_days,omitempty"`
+}
+
+// DefaultSessionRegistry returns the shipped registry: three CT-anchored
+// sessions with only NY enabled (ASIA/LONDON earn enablement via replay +
+// NY match-rate evidence). Read/window/flat per the spec.
+//
+// NY flat is 14:45 CT — the "15:45 ET" eod-flat from the spec timeline converted
+// to CT (15 min before the 15:00 CT / 16:00 ET RTH close). Admin-editable.
+func DefaultSessionRegistry() SessionRegistry {
+	return SessionRegistry{
+		Sessions: []SessionDef{
+			{
+				Name:          SessionAsia,
+				WindowStartCT: "17:00",
+				WindowEndCT:   "02:00", // wraps midnight
+				ReadCT:        "16:55",
+				FlatCT:        "02:00",
+				Killzones:     []KillzoneCT{{Name: "asia_kz", StartCT: "19:00", EndCT: "23:00"}},
+				Enabled:       false,
+			},
+			{
+				Name:          SessionLondon,
+				WindowStartCT: "02:00",
+				WindowEndCT:   "08:30",
+				ReadCT:        "01:55",
+				FlatCT:        "08:30",
+				Killzones:     []KillzoneCT{{Name: "london_kz", StartCT: "02:00", EndCT: "05:00"}},
+				Enabled:       false,
+			},
+			{
+				Name:          SessionNY,
+				WindowStartCT: "08:30",
+				WindowEndCT:   "15:00", // RTH close 15:00 CT / 16:00 ET
+				ReadCT:        "08:25",
+				FlatCT:        "14:45", // 15:45 ET eod-flat
+				Killzones: []KillzoneCT{
+					{Name: "ny_am", StartCT: "08:30", EndCT: "11:00"},
+					{Name: "ny_pm", StartCT: "13:00", EndCT: "14:45"},
+				},
+				Enabled: true,
+			},
+		},
+	}
+}
+
+// Marshal serializes the registry to a JSON string for system_config.
+func (r SessionRegistry) Marshal() (string, error) {
+	b, err := json.Marshal(r)
+	return string(b), err
+}
+
+// LoadSessionRegistry parses a stored registry JSON. Empty input → the default
+// registry. On a parse error it returns the default AND the error so the caller
+// can log and never run with an empty registry (fail-safe, never silently off).
+func LoadSessionRegistry(raw string) (SessionRegistry, error) {
+	if strings.TrimSpace(raw) == "" {
+		return DefaultSessionRegistry(), nil
+	}
+	var r SessionRegistry
+	if err := json.Unmarshal([]byte(raw), &r); err != nil {
+		return DefaultSessionRegistry(), err
+	}
+	if len(r.Sessions) == 0 {
+		return DefaultSessionRegistry(), nil
+	}
+	return r, nil
+}
+
+// SessionByName returns the named session (case-insensitive), or (nil, false).
+func (r SessionRegistry) SessionByName(name string) (*SessionDef, bool) {
+	for i := range r.Sessions {
+		if strings.EqualFold(r.Sessions[i].Name, name) {
+			return &r.Sessions[i], true
+		}
+	}
+	return nil, false
+}
+
+// ActiveSession returns the session whose CT window contains now, or (nil,false)
+// if none (the 15:00–17:00 CT post-close gap, the daily break, etc.). First
+// match wins; the default windows tile without overlap.
+func (r SessionRegistry) ActiveSession(now time.Time) (*SessionDef, bool) {
+	for i := range r.Sessions {
+		if r.Sessions[i].InWindow(now) {
+			return &r.Sessions[i], true
+		}
+	}
+	return nil, false
+}
+
+// EnabledSessions returns the names of enabled sessions, in registry order.
+func (r SessionRegistry) EnabledSessions() []string {
+	var out []string
+	for i := range r.Sessions {
+		if r.Sessions[i].Enabled {
+			out = append(out, r.Sessions[i].Name)
+		}
+	}
+	return out
+}
+
+// EffectiveFlatCT returns the flat time for a session on a given CME session-day,
+// honoring a half-day early-close override when one is registered for that day.
+func (r SessionRegistry) EffectiveFlatCT(sessionName, sessionDayKey string) (string, bool) {
+	s, ok := r.SessionByName(sessionName)
+	if !ok {
+		return "", false
+	}
+	if r.HalfDays != nil {
+		if early, ok := r.HalfDays[sessionDayKey]; ok && strings.TrimSpace(early) != "" {
+			return early, true
+		}
+	}
+	return s.FlatCT, true
+}
+
+// InWindow reports whether now (America/Chicago) falls inside [start, end) —
+// reusing the midnight-wrap logic that InBlackoutWindow already proves.
+func (d SessionDef) InWindow(now time.Time) bool {
+	return InBlackoutWindow(now, d.WindowStartCT, d.WindowEndCT)
+}
+
+// InKillzone reports whether now falls inside any of the session's killzones.
+func (d SessionDef) InKillzone(now time.Time) bool {
+	for _, kz := range d.Killzones {
+		if InBlackoutWindow(now, kz.StartCT, kz.EndCT) {
+			return true
+		}
+	}
+	return false
+}
+
+// IsReadTime reports whether now's CT wall-clock minute equals the session's
+// read minute (the once-a-day planner-read trigger; P3 adds the "already read"
+// dedupe on top of this primitive).
+func (d SessionDef) IsReadTime(now time.Time) bool {
+	read, ok := parseHHMM(d.ReadCT)
+	if !ok {
+		return false
+	}
+	return minutesSinceMidnightCT(now) == read
+}
+
+// minutesSinceMidnightCT returns now's minutes-since-midnight in America/Chicago.
+func minutesSinceMidnightCT(now time.Time) int {
+	chicago, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		chicago = time.UTC
+	}
+	ct := now.In(chicago)
+	return ct.Hour()*60 + ct.Minute()
+}
