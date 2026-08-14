@@ -41,6 +41,13 @@ type DecisionRecordDB struct {
 	FillPrice       *float64  `gorm:"column:fill_price"`
 	FillLatencyMs   *int64    `gorm:"column:fill_latency_ms"`
 	CreatedAt       time.Time `json:"created_at"`
+	// P0.2 day-plan FK — attribute a decision to the exact plan+overlay+scenario
+	// it cited (join → plans / plan_overlays). Additive, defaults empty/zero:
+	// a decision that cited no plan is unchanged.
+	PlanID          string `gorm:"column:plan_id;default:''"`
+	PlanVersion     int    `gorm:"column:plan_version;default:0"`
+	OverlayVersion  int    `gorm:"column:overlay_version;default:0"`
+	CitedScenarioID string `gorm:"column:cited_scenario_id;default:''"`
 }
 
 func (DecisionRecordDB) TableName() string { return "decision_records" }
@@ -75,6 +82,11 @@ type DecisionRecord struct {
 	FillPrice       *float64  `json:"fill_price,omitempty"`
 	FillLatencyMs   *int64    `json:"fill_latency_ms,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
+	// P0.2 day-plan FK attribution (empty/zero when no plan was cited).
+	PlanID          string `json:"plan_id,omitempty"`
+	PlanVersion     int    `json:"plan_version,omitempty"`
+	OverlayVersion  int    `json:"overlay_version,omitempty"`
+	CitedScenarioID string `json:"cited_scenario_id,omitempty"`
 }
 
 // AccountSnapshot account state snapshot
@@ -169,6 +181,11 @@ func (db *DecisionRecordDB) toRecord() *DecisionRecord {
 		FillPrice:       db.FillPrice,
 		FillLatencyMs:   db.FillLatencyMs,
 		CreatedAt:       db.CreatedAt,
+		// P0.2 day-plan FK attribution
+		PlanID:          db.PlanID,
+		PlanVersion:     db.PlanVersion,
+		OverlayVersion:  db.OverlayVersion,
+		CitedScenarioID: db.CitedScenarioID,
 	}
 	json.Unmarshal([]byte(db.CandidateCoins), &record.CandidateCoins)
 	json.Unmarshal([]byte(db.ExecutionLog), &record.ExecutionLog)
@@ -214,6 +231,11 @@ func (s *DecisionStore) LogDecision(record *DecisionRecord) error {
 		ExecutionStatus: record.ExecutionStatus,
 		FillPrice:       record.FillPrice,
 		FillLatencyMs:   record.FillLatencyMs,
+		// P0.2 day-plan FK attribution
+		PlanID:          record.PlanID,
+		PlanVersion:     record.PlanVersion,
+		OverlayVersion:  record.OverlayVersion,
+		CitedScenarioID: record.CitedScenarioID,
 	}
 
 	if err := s.db.Create(dbRecord).Error; err != nil {

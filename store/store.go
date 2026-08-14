@@ -29,6 +29,7 @@ type Store struct {
 	order          *OrderStore
 	grid           *GridStore
 	aiCharge       *AIChargeStore
+	plan           *PlanStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -164,6 +165,9 @@ func (s *Store) initTables() error {
 	if err := s.AICharge().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize AI charge tables: %w", err)
 	}
+	if err := s.Plan().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize plan tables: %w", err)
+	}
 	return nil
 }
 
@@ -295,6 +299,16 @@ func (s *Store) AICharge() *AIChargeStore {
 		s.aiCharge = NewAIChargeStore(s.gdb)
 	}
 	return s.aiCharge
+}
+
+// Plan gets the Day Plan append-only storage (plans + plan_overlays).
+func (s *Store) Plan() *PlanStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.plan == nil {
+		s.plan = NewPlanStore(s.gdb)
+	}
+	return s.plan
 }
 
 // TelegramConfig gets Telegram bot configuration storage
