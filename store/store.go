@@ -30,6 +30,7 @@ type Store struct {
 	grid           *GridStore
 	aiCharge       *AIChargeStore
 	plan           *PlanStore
+	levelState     *LevelStateStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -167,6 +168,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.Plan().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize plan tables: %w", err)
+	}
+	if err := s.LevelState().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize level_state tables: %w", err)
 	}
 	return nil
 }
@@ -309,6 +313,16 @@ func (s *Store) Plan() *PlanStore {
 		s.plan = NewPlanStore(s.gdb)
 	}
 	return s.plan
+}
+
+// LevelState gets the cross-session level-state storage.
+func (s *Store) LevelState() *LevelStateStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.levelState == nil {
+		s.levelState = NewLevelStateStore(s.gdb)
+	}
+	return s.levelState
 }
 
 // TelegramConfig gets Telegram bot configuration storage
