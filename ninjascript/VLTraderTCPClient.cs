@@ -121,6 +121,26 @@ namespace NinjaTrader.NinjaScript.AddOns
         private class SignalIdentity { public string TraderId; public long Seq; }
         private readonly Dictionary<string, SignalIdentity> signalIdentity = new Dictionary<string, SignalIdentity>();
 
+        // A3 (G2) — session account ALLOWLIST. The AddOn executes ONLY on accounts
+        // this session's bound traders use: the active account, any account the owner
+        // account_selects, and any account a Go-stamped signal declares (A1 verifies
+        // signal.account == the trader's bound account on the Go side). A submit target
+        // outside this set is HARD-REFUSED with a rejected (error) fill frame —
+        // defense in depth so a routing bug or a rogue/mis-stamped account can never
+        // reach CreateOrder, on top of the SIM/connected/resolved guards.
+        private readonly HashSet<string> sessionAccounts = new HashSet<string>();
+        private readonly object sessionAccountsLock = new object();
+        private void RegisterSessionAccount(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            lock (sessionAccountsLock) { sessionAccounts.Add(name); }
+        }
+        private bool IsSessionAccount(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            lock (sessionAccountsLock) { return sessionAccounts.Contains(name); }
+        }
+
         // Plan 4.4 Stage 1 — multi-timeframe BarsRequest subscriptions. Owns
         // its own state; calls back into SendFrame() which serializes through
         // writeLock so bar frames cannot interleave with signal/fill bytes.
@@ -692,6 +712,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                 SendFillFrame(signalId, 0.0, side, qty, 0.0, "rejected", symbol: symbol);
                 return;
             }
+            // A3 (G2) — register the accounts this signal legitimately declares (the
+            // active account for a legacy/empty-target signal, and the explicit target
+            // when present) into the session allowlist BEFORE the submit guard enforces it.
+            RegisterSessionAccount(account.Name);
+            RegisterSessionAccount(targetAccount);
 
             // SAFETY RAIL (Stage-2 Phase-1, defense-in-depth) — the LAST line before an
             // order reaches NT8. NEVER submit on a non-SIM (live/funded) account, and
@@ -791,6 +816,17 @@ namespace NinjaTrader.NinjaScript.AddOns
                 LogWarn("VLTraderTCPClient: REFUSING order " + signalId + " — submit target '"
                         + (submitAccount != null ? submitAccount.Name : "<null>")
                         + "' failed the final SIM/connected guard");
+                SendFillFrame(signalId, 0.0, side, qty, 0.0, "rejected", symbol: symbol);
+                return;
+            }
+            // A3 (G2) — HARD REFUSE if the resolved submit account is not in this
+            // session's bound-trader allowlist (populated above + on account_select).
+            // Catches any routing bug or rogue account before CreateOrder; the rejected
+            // fill is the error frame back to Go.
+            if (!IsSessionAccount(submitAccount.Name))
+            {
+                LogWarn("VLTraderTCPClient: HARD-REFUSING order " + signalId + " — submit account '"
+                        + submitAccount.Name + "' is NOT in this session's bound-trader allowlist (A3/G2)");
                 SendFillFrame(signalId, 0.0, side, qty, 0.0, "rejected", symbol: symbol);
                 return;
             }
@@ -956,6 +992,7 @@ namespace NinjaTrader.NinjaScript.AddOns
 
                 // Switch to the new account and subscribe to its (active-only) events.
                 account = newAccount;
+                RegisterSessionAccount(account.Name); // A3 (G2) — an owner-selected account is a bound-trader account
                 SubscribeOrderUpdate(account);   // PHASE 3: dedup'd
                 account.AccountItemUpdate += OnAccountItemUpdate;
 
