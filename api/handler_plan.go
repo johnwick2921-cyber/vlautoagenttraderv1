@@ -459,7 +459,7 @@ func (s *Server) handlePlanAsk(c *gin.Context) {
 		bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount)
 		if len(bars) > 0 {
 			price, dATR := marketRef(symbol, now)
-			liveStatus = kernel.RenderPlanStatus(doc, bars, price, dATR, "2x5m", maxI(0, 2-(row.Version-1)), now.UnixMilli())
+			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, "2x5m", maxI(0, 2-(row.Version-1)), now.UnixMilli())
 		}
 	}
 	userPrompt := kernel.BuildAskPlannerUserPrompt(planBlock, liveStatus, body.Question)

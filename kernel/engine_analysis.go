@@ -379,7 +379,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			if market.FuturesBarsProvider != nil {
 				if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
 					_, price, dATR := AssembleScoredLevels(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now())
-					status = RenderPlanStatus(plan.Doc, bars, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
+					status = RenderPlanStatus(activeSymbol, plan.Doc, bars, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
 				}
 			}
 			engine.SetPlanContext(block, status)

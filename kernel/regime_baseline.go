@@ -23,6 +23,18 @@ import (
 // day and truncated history heads fall below this and are excluded).
 const rvBaselineMinBarsPerDay = 200
 
+// PriorCloseSessionOpen derives the overnight-gap inputs from daily bars (W11b):
+// the prior completed session's close and the current session's open (the last two
+// daily bars). Returns (0, 0) when fewer than two daily bars are present, so
+// ComputeRegime's guard (both > 0) naturally skips the gap. Feeds
+// RegimeInputs.PriorClose / SessionOpen → OvernightGapATR.
+func PriorCloseSessionOpen(daily []market.Kline) (priorClose, sessionOpen float64) {
+	if len(daily) < 2 {
+		return 0, 0
+	}
+	return daily[len(daily)-2].Close, daily[len(daily)-1].Open
+}
+
 // RVBaselineFrom5m returns (baselineRVPct, ok). ok=false means warming (too few
 // complete session-days). maxDays caps the lookback window; minDays is the minimum
 // complete days required before a baseline is trustworthy.

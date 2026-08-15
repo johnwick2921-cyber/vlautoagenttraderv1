@@ -48,7 +48,7 @@ func TestPlanRestartRecovery(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("append plan: %v", err)
 	}
-	status1 := kernel.RenderPlanStatus(doc, bars, price, dATR, rule, 2, nowMs)
+	status1 := kernel.RenderPlanStatus("MNQ", doc, bars, price, dATR, rule, 2, nowMs)
 	st1.Plan().Close()
 	_ = st1.Close()
 
@@ -70,7 +70,7 @@ func TestPlanRestartRecovery(t *testing.T) {
 	if err := json.Unmarshal([]byte(row.Doc), &reDoc); err != nil {
 		t.Fatalf("reload doc: %v", err)
 	}
-	status2 := kernel.RenderPlanStatus(reDoc, bars, price, dATR, rule, 2, nowMs)
+	status2 := kernel.RenderPlanStatus("MNQ", reDoc, bars, price, dATR, rule, 2, nowMs)
 
 	if status1 != status2 {
 		t.Fatalf("scenario states DIVERGED across restart:\n--- before ---\n%s\n--- after ---\n%s", status1, status2)

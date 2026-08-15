@@ -54,7 +54,7 @@ func RenderPlanBlock(doc PlanDoc, session string) string {
 // RenderPlanStatus renders the dynamic PLAN STATUS tail: current price, re-plans
 // left, and per-level Go facts (distance/sweep/closes-beyond/acceptance/valid)
 // from the P0.4 evaluator.
-func RenderPlanStatus(doc PlanDoc, bars []market.Kline, price, dATR float64, rule string, replansLeft int, now int64) string {
+func RenderPlanStatus(symbol string, doc PlanDoc, bars []market.Kline, price, dATR float64, rule string, replansLeft int, now int64) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# PLAN STATUS (live) — facts=Go, judgment=you\nprice %.2f · re-plans left %d\n", price, replansLeft)
 	if rule == "" {
@@ -66,6 +66,7 @@ func RenderPlanStatus(doc PlanDoc, bars []market.Kline, price, dATR float64, rul
 	if hidden := len(doc.Levels) - len(active); hidden > 0 {
 		fmt.Fprintf(&b, "(%d level(s) outside the %.1f×dATR activation window — re-arm when price returns)\n", hidden, ActivationWindowK)
 	}
+	fresh := levelFreshnessFn(symbol) // W11b — persisted cross-session state (nil → none)
 	for _, l := range active {
 		dir := DirAbove
 		if l.Price < price {
@@ -80,10 +81,36 @@ func RenderPlanStatus(doc PlanDoc, bars []market.Kline, price, dATR float64, rul
 		if !f.StillValid {
 			valid = "CONSUMED"
 		}
-		fmt.Fprintf(&b, "  %.2f %s: dist %+.1f · sweep=%s · closes-beyond %d · acceptance %d/%d · %s\n",
+		fmt.Fprintf(&b, "  %.2f %s: dist %+.1f · sweep=%s · closes-beyond %d · acceptance %d/%d · %s",
 			l.Price, l.Label, f.DistancePoints, sweep, maxInt(f.ClosesBeyondUp, f.ClosesBeyondDown), f.AcceptHave, f.AcceptNeed, valid)
+		// W11b — append persisted cross-session state so a level burned in an EARLIER
+		// session reads burned NOW (not just consumed-this-session). Only emitted when
+		// there IS persisted state → nil provider = byte-identical to the pre-W11b line.
+		if fresh != nil {
+			if state := planStateLabel(fresh(DetectedLevel{Price: l.Price, Label: l.Label})); state != "" {
+				b.WriteString(" · " + state)
+			}
+		}
+		b.WriteString("\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
+}
+
+// planStateLabel maps a persisted freshness grade to a PLAN-STATUS annotation.
+// "" / A / fresh → "" (no annotation, keeps the fresh line unchanged).
+func planStateLabel(grade string) string {
+	switch strings.ToLower(strings.TrimSpace(grade)) {
+	case "", "a", "fresh":
+		return ""
+	case "b":
+		return "state=B(tested)"
+	case "c", "tested":
+		return "state=C(tested×2)"
+	case "done", "consumed":
+		return "BURNED(prior session)"
+	default:
+		return "state=" + grade
+	}
 }
 
 // PlanCitationResult classifies an executor's plan citation (P3.5 advisory).

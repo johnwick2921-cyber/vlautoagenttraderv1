@@ -419,8 +419,12 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	// W10 — supply the realized-vol baseline (was never fed → RV stuck "warming").
 	// Same 5m estimator as the recent value; VIX stays honest n/a (no feed).
 	rvBaseline, _ := kernel.RVBaselineFrom5m(min5Long, 20, 5)
+	// W11b — supply overnight-gap inputs (prior close + session open, ×ATR) from the
+	// daily bars (was never fed → the gap field stayed inert).
+	priorClose, sessionOpen := kernel.PriorCloseSessionOpen(daily)
 	regime := kernel.ComputeRegime(kernel.RegimeInputs{
 		Price: price, DailyBars: daily, Hour1Bars: hour1, Min5Bars: min5, RVBaseline20d: rvBaseline,
+		PriorClose: priorClose, SessionOpen: sessionOpen,
 	})
 
 	var calEvents []kernel.PlannerCalendarEvent

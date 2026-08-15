@@ -61,8 +61,10 @@ func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol strin
 	all = append(all, OrderBlocks(bars, atr, now)...)
 	all = append(all, extraLevels...) // nPOC etc. from the durable store (P1.3)
 
-	// freshness=nil (all fresh) until the executor writes level-state (P3.6 loop).
-	scored = ScoreLevels(all, price, dATR, nil, maxLevels)
+	// W11b — persisted level-state (freshness A→B→C, consumed) now surfaces: the
+	// trader installs LevelStateProvider over store.LevelStateStore. Nil provider →
+	// all-fresh (byte-identical to the pre-W11b output the goldens capture).
+	scored = ScoreLevels(all, price, dATR, levelFreshnessFn(symbol), maxLevels)
 	return scored, price, dATR
 }
 

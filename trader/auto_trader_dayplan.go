@@ -43,6 +43,7 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 	nakedPOCProviderOnce.Do(func() {
 		installNakedPOCProvider(st)
 		installActivePlanProvider(st)
+		installLevelStateProvider(st) // W11b — surface persisted freshness/consumed
 	})
 
 	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)
@@ -98,6 +99,25 @@ func sessionHiLoFromBins(bins []kernel.SVPBin) (hi, lo float64) {
 		lo = 0
 	}
 	return hi, lo
+}
+
+// installLevelStateProvider wires kernel.LevelStateProvider to read this store's
+// cross-session level_state (freshness A→B→C, consumed) for a level identity — the
+// SAME identity (type-from-label + price-bin) W7's writer uses. This is the W11b
+// surfacing: the executor's KEY LEVELS drop consumed levels (freshMult 0) and show
+// tested/B; PLAN STATUS annotates burned levels. Unknown level → "" (fresh).
+func installLevelStateProvider(st *store.Store) {
+	kernel.LevelStateProvider = func(symbol string, l kernel.DetectedLevel) string {
+		key := store.MakeLevelKey(symbol, kernel.LevelTypeFromLabel(l.Label), "", kernel.LevelBinIndex(l.Price))
+		cur, err := st.LevelState().Get(key)
+		if err != nil || cur == nil {
+			return "" // no persisted state → fresh (pre-W11b behavior)
+		}
+		if cur.Consumed || cur.Freshness == store.FreshnessDone {
+			return "done"
+		}
+		return cur.Freshness // "A" | "B" | "C"
+	}
 }
 
 // installNakedPOCProvider wires kernel.NakedPOCProvider to read this store's
