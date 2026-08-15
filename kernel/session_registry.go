@@ -147,6 +147,15 @@ func (r SessionRegistry) ActiveSession(now time.Time) (*SessionDef, bool) {
 	return nil, false
 }
 
+// IsNightMode (P3.6-D) reports whether now is in NIGHT state: there is no ACTIVE
+// ENABLED session window (a disabled session window, an interim gap, or overnight
+// all count as night). During night the day-plan does no reads and takes no
+// entries. Derived purely from the clock → a restart re-derives it identically.
+func (r SessionRegistry) IsNightMode(now time.Time) bool {
+	sess, ok := r.ActiveSession(now)
+	return !ok || !sess.Enabled
+}
+
 // EnabledSessions returns the names of enabled sessions, in registry order.
 func (r SessionRegistry) EnabledSessions() []string {
 	var out []string

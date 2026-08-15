@@ -371,6 +371,11 @@ type AutoTrader struct {
 	// otherwise the scan timer drives the loop unchanged. Touched only from Run's
 	// single goroutine, so no mutex is required.
 	lastBarCloseMs int64
+
+	// P3.6-D — night mode: last-observed night/day state for edge-triggered
+	// transition events. nil = unobserved (a restart starts here → no spurious
+	// edge). Touched only from runCycle (single goroutine).
+	nightPrev *bool
 }
 
 // NewAutoTrader creates an automatic trader

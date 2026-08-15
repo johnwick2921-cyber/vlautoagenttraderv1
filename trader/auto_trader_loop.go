@@ -106,6 +106,11 @@ func (at *AutoTrader) runCycle() error {
 	// have cross-session memory (warms forward).
 	at.snapshotSessionProfiles()
 
+	// P3.6-D — NIGHT MODE: observe night↔day transitions (event on the edge).
+	// Reads + entries are already night-safe (session gate); this makes the state
+	// explicit. Gated → dormant. Restart during night resumes cleanly.
+	at.observeNightEdge()
+
 	// P3.3 — PLANNER READ JOBS: at each enabled session's registry read time, run
 	// the per-session planner read once (idempotent via the plan store) and persist
 	// the plan. GATED on day_plan → dormant by default; independent of position

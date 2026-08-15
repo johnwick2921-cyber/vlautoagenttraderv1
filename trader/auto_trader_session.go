@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"nofx/kernel"
+	"nofx/telemetry"
 )
 
 // P3.1 — SESSION GATES. Wire the P0 registry to live entry gating: entries are
@@ -59,4 +60,32 @@ func inSessionFirst5m(sess *kernel.SessionDef, now time.Time) bool {
 	}
 	cur := ctMinutesNow(now)
 	return cur >= start && cur < start+5
+}
+
+// ---- P3.6-D — night mode ------------------------------------------------------
+
+// nightEdgeDecision reports whether a night/day TRANSITION event should fire:
+// only when the prior state is known (prev != nil) and differs from now. A nil
+// prev (fresh (re)start) never emits — the restart resumes the current state
+// cleanly with no spurious edge.
+func nightEdgeDecision(prev *bool, night bool) bool {
+	return prev != nil && *prev != night
+}
+
+// observeNightEdge tracks the night/day state and logs an event on transitions.
+// Restart during night resumes cleanly (nil prev → no event). GATED on day_plan.
+func (at *AutoTrader) observeNightEdge() {
+	if !at.dayPlanEnabled() {
+		return
+	}
+	night := kernel.DefaultSessionRegistry().IsNightMode(time.Now())
+	if nightEdgeDecision(at.nightPrev, night) {
+		if night {
+			at.logInfof("🌙 NIGHT MODE — outside all enabled session windows; no reads, no entries until the next enabled window.")
+		} else {
+			at.logInfof("🌅 DAY MODE — an enabled session window opened.")
+		}
+		telemetry.IncGateBlock(at.id, "night_transition") // event row (until the P4 alert center)
+	}
+	at.nightPrev = &night
 }
