@@ -112,6 +112,10 @@ func (at *AutoTrader) runCycle() error {
 	// state (a read fires whether flat or holding).
 	at.maybeRunSessionReads()
 
+	// P3.6-A — DIGEST WRITERS: 3-line session digest at each session close + the
+	// daily roll-up at the trade-date close. Idempotent; gated → dormant.
+	at.maybeWriteDigests()
+
 	// P2.3 — EOD-FLAT: at/after the session flat time, force-close any open
 	// position via the trader close path (bypasses hold-lock naturally, RECON
 	// #10), then skip the rest of the cycle. Runs BEFORE skip-while-open so a held

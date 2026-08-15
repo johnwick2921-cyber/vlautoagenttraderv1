@@ -291,16 +291,66 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 		warming = fmt.Sprintf("session-profile store warming (%d/10)", n)
 	}
 
+	// P3.6-A — tapered week digest chain (current-date sessions + 3 full dailies +
+	// days 4-7 one-liners).
+	sessionDigests, _ := at.store.Digest().SessionDigests(symbol, tradeDate)
+	dailies, _ := at.store.Digest().RecentDailies(symbol, 7)
+	digestChain := kernel.BuildDigestChain(sessionDigests, dailies)
+
 	return kernel.PlannerInput{
-		TradeDate: tradeDate,
-		Session:   session,
-		ReadKind:  session + " scheduled read (stored+cached data)",
-		Price:     price,
-		DATR:      dATR,
-		Regime:    regime,
-		Levels:    scored,
-		Calendar:  calEvents,
-		Warming:   warming,
+		TradeDate:   tradeDate,
+		Session:     session,
+		ReadKind:    session + " scheduled read (stored+cached data)",
+		Price:       price,
+		DATR:        dATR,
+		Regime:      regime,
+		Levels:      scored,
+		Calendar:    calEvents,
+		DigestChain: digestChain,
+		Warming:     warming,
+	}
+}
+
+// maybeWriteDigests writes the 3-line session digest at each enabled session's
+// close and the daily roll-up at the trade-date close (16:00 CT). Idempotent
+// (SaveIfAbsent) → restart-safe. GATED on day_plan → dormant by default.
+func (at *AutoTrader) maybeWriteDigests() {
+	if !at.dayPlanEnabled() || at.store == nil {
+		return
+	}
+	reg := kernel.DefaultSessionRegistry()
+	now := time.Now()
+	tradeDate := plannerTradeDateCT(now)
+	symbol := at.futuresSymbol()
+	sinceMs := kernel.CMESessionDayStart(now).UnixMilli()
+	pnl, entries, _ := at.store.Position().GetSessionDayActivity(at.id, sinceMs)
+
+	for i := range reg.Sessions {
+		s := &reg.Sessions[i]
+		if !s.Enabled {
+			continue
+		}
+		end, ok := hhmmToMin(s.WindowEndCT)
+		if !ok || ctMinutesNow(now) < end {
+			continue // session not closed yet
+		}
+		text := kernel.FormatSessionDigest(s.Name, tradeDate, "", entries, pnl)
+		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{
+			Symbol: symbol, TradeDate: tradeDate, Session: s.Name, Kind: "session", Text: text, CreatedAt: now.UnixMilli(),
+		}); wrote {
+			at.logInfof("📓 session digest written %s %s.", tradeDate, s.Name)
+		}
+	}
+
+	// Daily roll-up at the 16:00 CT trade-date close.
+	if ctMinutesNow(now) >= 16*60 {
+		sessions, _ := at.store.Digest().SessionDigests(symbol, tradeDate)
+		text := kernel.FormatDailyDigest(tradeDate, "", len(sessions), entries, pnl)
+		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{
+			Symbol: symbol, TradeDate: tradeDate, Kind: "daily", Text: text, CreatedAt: now.UnixMilli(),
+		}); wrote {
+			at.logInfof("📓 daily digest written %s.", tradeDate)
+		}
 	}
 }
 

@@ -33,6 +33,7 @@ type Store struct {
 	levelState     *LevelStateStore
 	sessionProfile *SessionProfileStore
 	calendarSlice  *CalendarSliceStore
+	digest         *DigestStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -179,6 +180,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.Calendar().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize calendar_slices tables: %w", err)
+	}
+	if err := s.Digest().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize day_plan_digests tables: %w", err)
 	}
 	return nil
 }
@@ -351,6 +355,16 @@ func (s *Store) Calendar() *CalendarSliceStore {
 		s.calendarSlice = NewCalendarSliceStore(s.gdb)
 	}
 	return s.calendarSlice
+}
+
+// Digest gets the day-plan digest storage.
+func (s *Store) Digest() *DigestStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.digest == nil {
+		s.digest = NewDigestStore(s.gdb)
+	}
+	return s.digest
 }
 
 // TelegramConfig gets Telegram bot configuration storage
