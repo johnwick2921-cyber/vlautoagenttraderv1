@@ -149,6 +149,11 @@ type Decision struct {
 	Confidence int     `json:"confidence,omitempty"` // Confidence level (0-100)
 	RiskUSD    float64 `json:"risk_usd,omitempty"`   // Maximum USD risk
 	Reasoning  string  `json:"reasoning"`
+
+	// P3.5 (advisory) — the plan scenario the executor cited for this decision,
+	// or "off-plan". Empty when day_plan is inactive. Advisory only: it never
+	// gates the trade (plan restricts, never compels; hard gates outrank).
+	CitedScenario string `json:"cited_scenario,omitempty"`
 }
 
 // FullDecision AI's complete decision (including chain of thought)

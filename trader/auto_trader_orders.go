@@ -215,6 +215,11 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// P3.5 — ADVISORY: record the executor's plan citation for entries (cited/
+	// matched/off-plan match-rate via B6). Never gates — plan restricts, never
+	// compels; hard gates already ran above.
+	at.recordPlanCitation(decision)
+
 	switch decision.Action {
 	case "open_long":
 		return at.executeOpenLongWithRecord(decision, actionRecord)

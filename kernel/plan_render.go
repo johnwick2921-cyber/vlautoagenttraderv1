@@ -81,6 +81,40 @@ func RenderPlanStatus(doc PlanDoc, bars []market.Kline, price, dATR float64, rul
 	return strings.TrimRight(b.String(), "\n")
 }
 
+// PlanCitationResult classifies an executor's plan citation (P3.5 advisory).
+type PlanCitationResult struct {
+	Cited   string // the resolved scenario id, or "off-plan"
+	OffPlan bool
+	Matched bool // cited a real scenario whose direction aligns with the action
+}
+
+// ClassifyCitation resolves the executor's cited_scenario against the active
+// plan: empty/"off-plan"/unknown-id → off-plan; a known scenario → matched iff
+// the action's direction aligns with the scenario's. Advisory only — it never
+// gates the trade.
+func ClassifyCitation(action, cited string, doc PlanDoc) PlanCitationResult {
+	c := strings.TrimSpace(cited)
+	if c == "" || strings.EqualFold(c, "off-plan") || strings.EqualFold(c, "offplan") {
+		return PlanCitationResult{Cited: "off-plan", OffPlan: true}
+	}
+	for _, s := range doc.Scenarios {
+		if strings.EqualFold(s.ID, c) {
+			return PlanCitationResult{Cited: s.ID, Matched: actionMatchesDirection(action, s.Direction)}
+		}
+	}
+	return PlanCitationResult{Cited: "off-plan", OffPlan: true} // unknown id → off-plan
+}
+
+func actionMatchesDirection(action, dir string) bool {
+	switch action {
+	case "open_long":
+		return dir == "long"
+	case "open_short":
+		return dir == "short"
+	}
+	return false
+}
+
 func joinFloats(xs []float64) string {
 	if len(xs) == 0 {
 		return "—"

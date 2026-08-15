@@ -274,3 +274,34 @@ func installActivePlanProvider(st *store.Store) {
 		return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
 	}
 }
+
+// recordPlanCitation records the executor's plan citation for an entry decision
+// (P3.5 advisory): match-rate counters via B6 + a log line. Advisory only — it
+// never gates the trade (plan restricts, never compels). GATED on day_plan.
+func (at *AutoTrader) recordPlanCitation(d *kernel.Decision) {
+	if !at.dayPlanEnabled() || d == nil {
+		return
+	}
+	if d.Action != "open_long" && d.Action != "open_short" {
+		return
+	}
+	if kernel.ActivePlanProvider == nil {
+		return
+	}
+	ap := kernel.ActivePlanProvider(at.futuresSymbol())
+	if ap == nil {
+		return
+	}
+	res := kernel.ClassifyCitation(d.Action, d.CitedScenario, ap.Doc)
+	switch {
+	case res.OffPlan:
+		telemetry.IncGateBlock(at.id, "plan_off_plan")
+		at.logInfof("📋 advisory: %s cited off-plan (plan v%d).", d.Action, ap.Version)
+	case res.Matched:
+		telemetry.IncGateBlock(at.id, "plan_matched")
+		at.logInfof("📋 advisory: %s cited %s ✓ matched (plan v%d).", d.Action, res.Cited, ap.Version)
+	default:
+		telemetry.IncGateBlock(at.id, "plan_cited_mismatch")
+		at.logInfof("📋 advisory: %s cited %s (direction mismatch; plan v%d).", d.Action, res.Cited, ap.Version)
+	}
+}
