@@ -365,6 +365,12 @@ type AutoTrader struct {
 	// nil = not yet observed. Touched only from runCycle (single goroutine), so
 	// no mutex is required.
 	cmePrevOpen *bool
+
+	// P2.1 — bar-close cadence: CloseTime (ms) of the last primary-TF bar we ran
+	// a cycle for. Only meaningful when barCloseCadenceActive() (day_plan futures);
+	// otherwise the scan timer drives the loop unchanged. Touched only from Run's
+	// single goroutine, so no mutex is required.
+	lastBarCloseMs int64
 }
 
 // NewAutoTrader creates an automatic trader
@@ -725,16 +731,10 @@ func (at *AutoTrader) Run() error {
 		}
 	}
 
-	// Execute immediately on first run
-	if isGridStrategy {
-		if err := at.RunGridCycle(); err != nil {
-			at.logErrorf("❌ Grid execution failed: %v", err)
-		}
-	} else {
-		if err := at.runCycle(); err != nil {
-			at.logErrorf("❌ Execution failed: %v", err)
-		}
-	}
+	// Execute immediately on first run. Under bar-close cadence (P2.1) this runs
+	// once on the last CLOSED primary-TF bar and sets the watermark, then the loop
+	// idles until the next bar closes; the scan-timer default is unchanged.
+	at.tickOnce(isGridStrategy)
 
 	for {
 		at.isRunningMutex.RLock()
@@ -747,15 +747,7 @@ func (at *AutoTrader) Run() error {
 
 		select {
 		case <-ticker.C:
-			if isGridStrategy {
-				if err := at.RunGridCycle(); err != nil {
-					at.logErrorf("❌ Grid execution failed: %v", err)
-				}
-			} else {
-				if err := at.runCycle(); err != nil {
-					at.logErrorf("❌ Execution failed: %v", err)
-				}
-			}
+			at.tickOnce(isGridStrategy)
 		case <-at.stopMonitorCh:
 			at.logInfof("⏹ Stop signal received, exiting automatic trading main loop")
 			return nil
