@@ -35,6 +35,7 @@ type Store struct {
 	calendarSlice  *CalendarSliceStore
 	digest         *DigestStore
 	ownerLevel     *OwnerLevelStore
+	alert          *AlertStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -187,6 +188,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.OwnerLevel().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize owner_levels tables: %w", err)
+	}
+	if err := s.Alert().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize day_plan_alerts tables: %w", err)
 	}
 	return nil
 }
@@ -379,6 +383,16 @@ func (s *Store) OwnerLevel() *OwnerLevelStore {
 		s.ownerLevel = NewOwnerLevelStore(s.gdb)
 	}
 	return s.ownerLevel
+}
+
+// Alert gets the in-app alert storage.
+func (s *Store) Alert() *AlertStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.alert == nil {
+		s.alert = NewAlertStore(s.gdb)
+	}
+	return s.alert
 }
 
 // TelegramConfig gets Telegram bot configuration storage

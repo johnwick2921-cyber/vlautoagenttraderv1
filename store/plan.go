@@ -296,6 +296,20 @@ func (s *PlanStore) GetLatestPlanForSession(tradeDate, session string) (*PlanDB,
 	return &p, nil
 }
 
+// ListRecent returns the most recent plan rows (any session) newest-first, for
+// the plan-history view.
+func (s *PlanStore) ListRecent(limit int) ([]*PlanDB, error) {
+	if limit <= 0 {
+		limit = 30
+	}
+	var rows []*PlanDB
+	err := s.db.Order("created_at DESC").Limit(limit).Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // ListOverlays returns all overlay versions for (plan_id, plan_version) in
 // ascending overlay_version order.
 func (s *PlanStore) ListOverlays(planID string, planVersion int) ([]*PlanOverlayDB, error) {

@@ -425,6 +425,22 @@ Clears the freeze so NEW entries resume. Returns: {"trader_id":"<id>","was_froze
 Returns: []DecisionRecord JSON ordered by timestamp DESC, including PromptVersion, AIModel, AILatencyMs, RiskCheck*, ExecutionStatus, FillPrice, FillLatencyMs.`,
 				s.handleDecisionAudit)
 
+			// P4.1 — Day-Plan API (mirror /api/risk/* inline trader_id). Additive;
+			// found=false when day_plan enabled but no plan yet (pre-★2) or at night.
+			s.routeWithSchema(protected, "GET", "/plan/today", "Active day-plan (overlay-resolved) + live scenario facts",
+				`Query: ?trader_id=<EXACT trader_id>[&symbol=MNQ]
+Returns: {found, trade_date, session, version, lifecycle, model_id, mode, night, doc:{bias,levels,scenarios,no_trade,death_condition}, level_facts:[{price,label,grade,distance,sweep,closes_beyond,accept_have,accept_need,still_valid}], price, replans_left, warming}. found=false = no active plan (night/disabled/none-yet).`,
+				s.handlePlanToday)
+			s.routeWithSchema(protected, "GET", "/plan/history", "Recent plan versions (trade_date, session, version)",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {history:[{trade_date,session,version,lifecycle,model_id,trigger_reason}]}`,
+				s.handlePlanHistory)
+			s.routeWithSchema(protected, "GET", "/plan/alerts", "In-app alert feed (P0/P1/P2) + unacked count",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {alerts:[{id,level,kind,title,body,acked,created_at}], unacked:<int>}`,
+				s.handlePlanAlerts)
+			s.routeWithSchema(protected, "POST", "/plan/alert-ack", "Acknowledge an in-app alert",
+				`Body: {"trader_id":"<EXACT trader_id>","alert_id":<int>}. Returns: {acked:true, alert_id}`,
+				s.handlePlanAlertAck)
+
 			// Plan 4 Stage 4 — NinjaTrader account management
 			s.routeWithSchema(protected, "GET", "/accounts", "List available NT accounts (NinjaTrader TCP bridge only)",
 				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>
