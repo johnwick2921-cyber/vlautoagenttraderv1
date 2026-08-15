@@ -63,6 +63,25 @@ func TestInvalidEnumsRejected(t *testing.T) {
 	}
 }
 
+// hardening — a PROPOSE-MERGE whose patch has an unsupported/empty op is not
+// appliable, so it downgrades to DEFEND rather than exposing a dead Apply button.
+func TestMislabeledProposeMergeDowngrades(t *testing.T) {
+	for _, patch := range []string{
+		`[{"op":"move","path":"/levels/0","from":"/levels/1"}]`, // unsupported op
+		`[{"op":"","path":""}]`,                                 // empty op/path
+		`[{"op":"replace","path":"/x"}]`,                        // replace with no value
+	} {
+		raw := `{"evidence":"e","point_class":"NEW-INFO","verdict":"PROPOSE-MERGE","summary":"s","patch":` + patch + `}`
+		r, err := ParsePlannerReply(raw)
+		if err != nil {
+			t.Fatalf("parse: %v", err)
+		}
+		if r.Verdict != "DEFEND" || hasPatchOps(r.Patch) {
+			t.Fatalf("un-appliable patch must downgrade to DEFEND: patch=%s verdict=%s", patch, r.Verdict)
+		}
+	}
+}
+
 func TestParsePlannerReplyTolerantOfProse(t *testing.T) {
 	raw := "Here is my reply:\n```json\n{\"evidence\":\"e\",\"point_class\":\"BARE-DISAGREEMENT\",\"verdict\":\"DEFEND\",\"summary\":\"holding\"}\n```\n"
 	r, err := ParsePlannerReply(raw)

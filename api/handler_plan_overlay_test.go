@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"nofx/kernel"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,25 +49,27 @@ func TestHandlePlanOwnerLevelDeleteRequiresTraderID(t *testing.T) {
 	}
 }
 
-// overlayPriceViolations is the B2 armor over an owner patch — proven directly
-// (no server needed): a fat-finger level is flagged, a sane one passes.
-func TestOverlayPriceViolationsArmorsFatFinger(t *testing.T) {
+// mergedPriceViolations is the B2 armor over the RESOLVED plan_final — proven
+// directly: a fat-finger level (any patch shape) is flagged, a sane one passes,
+// and scenario target prices are swept too.
+func TestMergedPriceViolationsArmorsFatFinger(t *testing.T) {
 	// last price 30000, dATR 200 → 8×dATR = 1600 band.
-	sane := `[{"op":"add","path":"/levels/-","value":{"price":30150,"label":"X","grade":"A","instruction":"fade"}}]`
-	if v := overlayPriceViolations(sane, 30000, 200); len(v) != 0 {
+	sane := &kernel.PlanDoc{Levels: []kernel.PlanLevel{{Price: 30150}}}
+	if v := mergedPriceViolations(sane, 30000, 200); len(v) != 0 {
 		t.Fatalf("sane level should pass armor, got %v", v)
 	}
-	fat := `[{"op":"add","path":"/levels/-","value":{"price":3000,"label":"X","grade":"A","instruction":"fade"}}]`
-	if v := overlayPriceViolations(fat, 30000, 200); len(v) == 0 {
-		t.Fatal("fat-finger 3000 (10× band away) must be flagged by armor")
+	// a wildly implausible level (introduced via ANY patch shape) is flagged.
+	fat := &kernel.PlanDoc{Levels: []kernel.PlanLevel{{Price: 5000000}}}
+	if v := mergedPriceViolations(fat, 30000, 200); len(v) == 0 {
+		t.Fatal("fat-finger 5000000 must be flagged by armor")
 	}
-	// /price replace form is armored too.
-	pr := `[{"op":"replace","path":"/levels/0/price","value":3000}]`
-	if v := overlayPriceViolations(pr, 30000, 200); len(v) == 0 {
-		t.Fatal("/price replace fat-finger must be flagged")
+	// scenario target-chain prices are swept too.
+	tgt := &kernel.PlanDoc{Scenarios: []kernel.PlanScenario{{TargetChain: []float64{9999999}}}}
+	if v := mergedPriceViolations(tgt, 30000, 200); len(v) == 0 {
+		t.Fatal("implausible scenario target must be flagged")
 	}
 	// no market data → fail-open (armor can't judge).
-	if v := overlayPriceViolations(fat, 0, 0); len(v) != 0 {
+	if v := mergedPriceViolations(fat, 0, 0); len(v) != 0 {
 		t.Fatalf("armor must fail-open without market data, got %v", v)
 	}
 }

@@ -105,6 +105,12 @@ func ValidatePlanDoc(d *PlanDoc) error {
 		if !levelGrades[l.Grade] {
 			return fmt.Errorf("level[%d].grade %q invalid (A|B|C)", i, l.Grade)
 		}
+		// P5.1 hardening — a non-positive price is never a real level (armors both
+		// the write path and read-time plan_final re-validation, all overlay
+		// origins). Positive-but-implausible prices are caught by LevelPriceViolation.
+		if l.Price <= 0 {
+			return fmt.Errorf("level[%d].price %v invalid (must be > 0)", i, l.Price)
+		}
 	}
 	if len(d.Scenarios) < 1 || len(d.Scenarios) > planMaxScenarios {
 		return fmt.Errorf("scenarios count %d invalid (1..%d)", len(d.Scenarios), planMaxScenarios)
@@ -121,6 +127,11 @@ func ValidatePlanDoc(d *PlanDoc) error {
 		}
 		if !scenarioQualities[s.Quality] {
 			return fmt.Errorf("scenario[%d].quality %q invalid (A+|A|B)", i, s.Quality)
+		}
+		for j, t := range s.TargetChain {
+			if t <= 0 {
+				return fmt.Errorf("scenario[%d].target_chain[%d] %v invalid (must be > 0)", i, j, t)
+			}
 		}
 	}
 	return nil

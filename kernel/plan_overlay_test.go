@@ -135,3 +135,31 @@ func TestLeadingZeroIndexRejected(t *testing.T) {
 		t.Fatal("leading-zero index must be rejected")
 	}
 }
+
+// hardening — RFC-6901 canonical form: "-0" (signed) is not a valid index.
+func TestMinusZeroIndexRejected(t *testing.T) {
+	if _, err := ApplyPatchStrict([]byte(baseDoc), `[{"op":"remove","path":"/levels/-0"}]`); err == nil {
+		t.Fatal("signed '-0' index must be rejected (not index 0)")
+	}
+}
+
+// hardening — ValidatePlanDoc rejects non-positive level + target prices, closing
+// the armor gap for the whole-array replace / negative-price patch shapes.
+func TestValidateRejectsNonPositivePrices(t *testing.T) {
+	neg := PlanDoc{
+		Reasoning: "r", Bias: PlanBias{Direction: "long"}, DeathCondition: "d",
+		Levels:    []PlanLevel{{Price: -100, Grade: "A", Label: "X", Instruction: "fade"}},
+		Scenarios: []PlanScenario{{ID: "S1", Condition: "reclaim", Direction: "long", Quality: "A"}},
+	}
+	if err := ValidatePlanDoc(&neg); err == nil {
+		t.Fatal("negative level price must be rejected")
+	}
+	badTarget := PlanDoc{
+		Reasoning: "r", Bias: PlanBias{Direction: "long"}, DeathCondition: "d",
+		Levels:    []PlanLevel{{Price: 100, Grade: "A", Label: "X", Instruction: "fade"}},
+		Scenarios: []PlanScenario{{ID: "S1", Condition: "reclaim", Direction: "long", Quality: "A", TargetChain: []float64{-5}}},
+	}
+	if err := ValidatePlanDoc(&badTarget); err == nil {
+		t.Fatal("negative target_chain price must be rejected")
+	}
+}

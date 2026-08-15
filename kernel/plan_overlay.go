@@ -256,7 +256,8 @@ func parsePointer(p string) ([]string, error) {
 // arrayIndex parses a numeric array token. allowAppend permits index == length
 // (RFC-6902 add semantics). Rejects negatives, leading zeros, and out-of-range.
 func arrayIndex(token string, length int, allowAppend bool) (int, error) {
-	if token == "" || (len(token) > 1 && token[0] == '0') {
+	// RFC-6901 canonical form only: no empty, no sign ("-0"/"-1"), no leading zero.
+	if token == "" || token[0] == '-' || (len(token) > 1 && token[0] == '0') {
 		return 0, fmt.Errorf("invalid array index %q", token)
 	}
 	i, err := strconv.Atoi(token)

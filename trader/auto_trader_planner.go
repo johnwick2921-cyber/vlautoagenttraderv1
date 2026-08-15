@@ -416,6 +416,10 @@ func (at *AutoTrader) recordPlanCitation(d *kernel.Decision) {
 	if d.Action != "open_long" && d.Action != "open_short" {
 		return
 	}
+	// P5.5 hardening — a new open decision invalidates any citation a PRIOR
+	// rejected/failed open left valid, so an open with no active plan can't
+	// inherit a stale plan link. Only a live ActivePlan below re-arms it.
+	at.lastCitation.valid = false
 	if kernel.ActivePlanProvider == nil {
 		return
 	}

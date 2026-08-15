@@ -4,14 +4,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"nofx/kernel"
 	"nofx/market"
 	"nofx/store"
+	"nofx/trader"
 
 	"github.com/gin-gonic/gin"
 )
+
+// traderDayPlanEnabled reports whether a trader has the day-plan feature on — the
+// gate for mutating the (session-global) day plan.
+func traderDayPlanEnabled(at *trader.AutoTrader) bool {
+	cfg := at.GetStrategyConfig()
+	return cfg != nil && cfg.DayPlan != nil && cfg.DayPlan.PlanEnabled
+}
+
+// planOverlayMu serializes the read-fold-test-append span of an overlay write so
+// the §42 test-op concurrency guard is atomic (two racing writers can't both test
+// against the same stale plan_final and both append). Overlay writes are rare
+// (owner edits), so a single coarse mutex is ample.
+var planOverlayMu sync.Mutex
 
 // P4.1 — /api/plan/* (mirror /api/risk/* inline trader_id). Additive + read-only
 // except the alert ack. Handles the "day_plan enabled but no plan yet" pre-★2
@@ -251,40 +266,24 @@ func marketRef(symbol string, now time.Time) (lastPrice, dATR float64) {
 	return lastPrice, dATR
 }
 
-// overlayPriceViolations runs the B2 level armor over every price an owner patch
-// introduces (a level object's "price", or a "/price" replace value), so an owner
-// fat-finger is rejected exactly as an implausible AI price would be.
-func overlayPriceViolations(patchJSON string, lastPrice, dATR float64) []string {
-	var ops []struct {
-		Path  string          `json:"path"`
-		Value json.RawMessage `json:"value"`
-	}
-	if json.Unmarshal([]byte(patchJSON), &ops) != nil {
-		return nil
-	}
+// mergedPriceViolations runs the B2 level armor over every price in the RESOLVED
+// plan_final (level prices + scenario target-chain prices), so an implausible
+// owner/planner price is rejected regardless of which patch shape introduced it
+// (a whole-array /levels replace, a target_chain add, etc.) — armoring the result,
+// not the patch text.
+func mergedPriceViolations(doc *kernel.PlanDoc, lastPrice, dATR float64) []string {
 	var out []string
 	check := func(p float64) {
 		if reason, bad := kernel.LevelPriceViolation(p, lastPrice, dATR); bad {
 			out = append(out, reason)
 		}
 	}
-	for _, op := range ops {
-		if len(op.Value) == 0 {
-			continue
-		}
-		if strings.HasSuffix(op.Path, "/price") {
-			var f float64
-			if json.Unmarshal(op.Value, &f) == nil {
-				check(f)
-			}
-			continue
-		}
-		// a level object carrying a numeric price
-		var obj struct {
-			Price float64 `json:"price"`
-		}
-		if json.Unmarshal(op.Value, &obj) == nil && obj.Price > 0 {
-			check(obj.Price)
+	for _, l := range doc.Levels {
+		check(l.Price)
+	}
+	for _, s := range doc.Scenarios {
+		for _, t := range s.TargetChain {
+			check(t)
 		}
 	}
 	return out
@@ -310,8 +309,15 @@ func (s *Server) handlePlanOverlay(c *gin.Context) {
 		SafeBadRequest(c, "trader_id is required")
 		return
 	}
-	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
 		SafeNotFound(c, "Trader")
+		return
+	}
+	// Only a day-plan-owning trader may mutate the (session-global) day plan — a
+	// crypto / plan-off trader must not edit the futures plan.
+	if !traderDayPlanEnabled(at) {
+		SafeForbidden(c, "day_plan is not enabled for this trader")
 		return
 	}
 	if strings.TrimSpace(body.Patch) == "" {
@@ -344,6 +350,10 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 	if strings.TrimSpace(patchJSON) == "" {
 		return 0, 0, 400, "patch is required"
 	}
+	// Atomic read-fold-test-append (test-op concurrency is only a guard if the
+	// span can't interleave with another writer).
+	planOverlayMu.Lock()
+	defer planOverlayMu.Unlock()
 	reg := kernel.DefaultSessionRegistry()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
@@ -366,10 +376,13 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 	}
 	var merged kernel.PlanDoc
 	if json.Unmarshal(candidate, &merged) != nil || kernel.ValidatePlanDoc(&merged) != nil {
-		return 0, 0, 400, "patch produces an invalid plan (enum/count armor)"
+		return 0, 0, 400, "patch produces an invalid plan (enum/count/sign armor)"
 	}
+	// B2 price armor — sweep the RESULTING plan_final's prices (levels +
+	// scenario targets), robust to every patch shape (/levels, /levels/N,
+	// /levels/-, a whole-array /levels replace, /scenarios/N/target_chain/-…).
 	lastPrice, dATR := marketRef(symbol, now)
-	if v := overlayPriceViolations(patchJSON, lastPrice, dATR); len(v) > 0 {
+	if v := mergedPriceViolations(&merged, lastPrice, dATR); len(v) > 0 {
 		return 0, 0, 422, "⛔ price armor: " + strings.Join(v, "; ")
 	}
 	ov := &store.PlanOverlayDB{
@@ -561,11 +574,27 @@ func (s *Server) handlePlanAskApply(c *gin.Context) {
 		SafeBadRequest(c, "this reply has no patch to apply")
 		return
 	}
+	// One reply = one overlay: a re-tap / retry must not stack duplicate overlays.
+	if msg.Applied {
+		c.JSON(200, gin.H{"applied": true, "already_applied": true})
+		return
+	}
+	// Bind the apply to the plan the reply was authored against: a PROPOSE-MERGE
+	// from an earlier (rolled/expired) plan must not silently patch a different
+	// active plan.
+	now := time.Now()
+	reg := kernel.DefaultSessionRegistry()
+	tradeDate := now.In(planChicago()).Format("2006-01-02")
+	sess, ok := reg.ActiveSession(now)
+	if !ok || !sess.Enabled || store.MakePlanID(tradeDate, sess.Name) != msg.PlanID {
+		c.JSON(409, gin.H{"error": "this reply was authored against a plan that is no longer active"})
+		return
+	}
 	symbol := strings.TrimSpace(body.Symbol)
 	if symbol == "" {
 		symbol = "MNQ"
 	}
-	overlayVersion, planVersion, code, emsg := s.applyPlanOverlay(symbol, msg.Patch, "planner-revised", time.Now())
+	overlayVersion, planVersion, code, emsg := s.applyPlanOverlay(symbol, msg.Patch, "planner-revised", now)
 	if code != 0 {
 		c.JSON(code, gin.H{"error": emsg})
 		return

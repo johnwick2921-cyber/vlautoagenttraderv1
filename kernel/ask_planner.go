@@ -101,14 +101,26 @@ func ParsePlannerReply(raw string) (*PlannerReply, error) {
 	return &r, nil
 }
 
-// hasPatchOps reports whether the raw patch is a non-empty JSON op array.
+// hasPatchOps reports whether the raw patch is a non-empty array of STRUCTURALLY
+// VALID, APPLIABLE ops (supported op + non-empty path). A malformed/unsupported
+// patch → false, so ParsePlannerReply downgrades the verdict to DEFEND rather
+// than persisting a PROPOSE-MERGE with a dead Apply button (keeps the KPI honest).
 func hasPatchOps(raw json.RawMessage) bool {
 	if len(raw) == 0 {
 		return false
 	}
 	var ops []PatchOp
-	if json.Unmarshal(raw, &ops) != nil {
+	if json.Unmarshal(raw, &ops) != nil || len(ops) == 0 {
 		return false
 	}
-	return len(ops) > 0
+	supported := map[string]bool{"add": true, "remove": true, "replace": true, "test": true}
+	for _, op := range ops {
+		if !supported[op.Op] || strings.TrimSpace(op.Path) == "" {
+			return false
+		}
+		if (op.Op == "add" || op.Op == "replace" || op.Op == "test") && len(op.Value) == 0 {
+			return false
+		}
+	}
+	return true
 }
