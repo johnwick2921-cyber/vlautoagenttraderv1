@@ -10,6 +10,7 @@ import { SessionTimelineStrip } from './SessionTimelineStrip'
 import { SessionTabs, type SessionTab, type TabState } from './SessionTabs'
 import { HandoverBanner } from './HandoverBanner'
 import { SessionPlanCard } from './SessionPlanCard'
+import { AlertCenter } from './AlertCenter'
 import { SESSION_BANDS, type SessionName } from './sessionConfig'
 
 interface Props {
@@ -65,6 +66,7 @@ export function PlanCard({
         fontFamily: 'var(--vl-font-ui)',
       }}
     >
+      <AlertCenter traderId={traderId} language={language} />
       <SessionTimelineStrip activeSession={activeSession} language={language} />
       <SessionTabs
         tabs={tabs}
