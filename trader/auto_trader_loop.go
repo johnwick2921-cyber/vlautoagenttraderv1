@@ -100,6 +100,12 @@ func (at *AutoTrader) runCycle() error {
 		at.logInfof("📊 %s", summary)
 	}
 
+	// P1.3 — DURABLE SESSION-PROFILE SNAPSHOT (day-plan). Gated (futures +
+	// day_plan enabled) → DORMANT by default; idempotent → restart-safe, no
+	// dupes. Persists newly-completed session profiles so nPOC/multi-day levels
+	// have cross-session memory (warms forward).
+	at.snapshotSessionProfiles()
+
 	// Check USDC balance periodically for claw402 users (every 10 cycles)
 	if at.callCount%10 == 0 && store.IsClaw402Config(at.config.AIModel) {
 		at.checkClaw402Balance()

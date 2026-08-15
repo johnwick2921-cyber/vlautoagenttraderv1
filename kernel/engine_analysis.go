@@ -347,7 +347,13 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		klBlock := ""
 		if market.FuturesBarsProvider != nil {
 			if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
-				klBlock = BuildKeyLevelsBlock(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now())
+				// nPOC from the durable session-profile store (P1.3), when the
+				// trader layer has wired the provider; nil → none.
+				var extra []DetectedLevel
+				if NakedPOCProvider != nil {
+					extra = NakedPOCProvider(activeSymbol)
+				}
+				klBlock = BuildKeyLevelsBlock(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now(), extra...)
 			}
 		}
 		engine.SetKeyLevelsContext(klBlock)

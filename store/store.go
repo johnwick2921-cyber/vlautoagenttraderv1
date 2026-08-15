@@ -31,6 +31,7 @@ type Store struct {
 	aiCharge       *AIChargeStore
 	plan           *PlanStore
 	levelState     *LevelStateStore
+	sessionProfile *SessionProfileStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -171,6 +172,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.LevelState().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize level_state tables: %w", err)
+	}
+	if err := s.SessionProfile().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize session_profiles tables: %w", err)
 	}
 	return nil
 }
@@ -323,6 +327,16 @@ func (s *Store) LevelState() *LevelStateStore {
 		s.levelState = NewLevelStateStore(s.gdb)
 	}
 	return s.levelState
+}
+
+// SessionProfile gets the durable session-profile storage.
+func (s *Store) SessionProfile() *SessionProfileStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.sessionProfile == nil {
+		s.sessionProfile = NewSessionProfileStore(s.gdb)
+	}
+	return s.sessionProfile
 }
 
 // TelegramConfig gets Telegram bot configuration storage
