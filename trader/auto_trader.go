@@ -384,6 +384,13 @@ type AutoTrader struct {
 	// W3 — throttle for the calendar producer (retry the FF fetch ≤1/hour on
 	// outage; a stored slice short-circuits it). Touched only from runCycle.
 	lastCalFetch time.Time
+
+	// W8 — admin session-registry cache. Loaded from system_config and refreshed
+	// once per CME session-day so an edit is honored by the NEXT session-day's
+	// gates (never mid-session — a running session's windows never move under it).
+	regMu       sync.Mutex
+	regCache    kernel.SessionRegistry
+	regCacheDay string
 }
 
 // planCitation is the transient plan-link snapshot stamped onto a new position.

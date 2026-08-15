@@ -771,3 +771,73 @@ func (s *Server) handlePlanOwnerLevelDelete(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"deleted": true, "id": body.ID})
 }
+
+// handlePlanSessionRegistry GET /api/plan/session-registry?trader_id=xxx — returns
+// the EFFECTIVE admin session registry (stored or the shipped default) + whether the
+// default is in force. W8 — the read side of the admin-registry wire the gates honor.
+func (s *Server) handlePlanSessionRegistry(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	raw, _ := s.store.GetSystemConfig(kernel.SessionRegistryConfigKey)
+	reg, perr := kernel.LoadSessionRegistry(raw) // fail-safe to default
+	c.JSON(200, gin.H{
+		"registry":      reg,
+		"is_default":    strings.TrimSpace(raw) == "" || perr != nil,
+		"sessions":      len(reg.Sessions),
+		"parse_warning": errString(perr),
+	})
+}
+
+// handlePlanSessionRegistrySave POST /api/plan/session-registry — validate + persist
+// an admin-edited registry. Unlike the fail-safe loader, a MALFORMED edit is REFUSED
+// (400), never silently defaulted — an admin must not be able to disable the gates by
+// posting junk. The next CME session-day's gates pick it up (never mid-session).
+func (s *Server) handlePlanSessionRegistrySave(c *gin.Context) {
+	var body struct {
+		TraderID string                 `json:"trader_id"`
+		Registry kernel.SessionRegistry `json:"registry"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	if err := kernel.ValidateSessionRegistry(body.Registry); err != nil {
+		SafeBadRequest(c, "invalid registry: "+err.Error())
+		return
+	}
+	raw, err := body.Registry.Marshal()
+	if err != nil {
+		SafeInternalError(c, "marshal registry", err)
+		return
+	}
+	if err := s.store.SetSystemConfig(kernel.SessionRegistryConfigKey, raw); err != nil {
+		SafeInternalError(c, "save registry", err)
+		return
+	}
+	c.JSON(200, gin.H{"saved": true, "sessions": len(body.Registry.Sessions),
+		"note": "honored by the next CME session-day's gates (not mid-session)"})
+}
+
+// errString renders an error as a string ("" when nil) for JSON responses.
+func errString(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}

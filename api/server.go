@@ -466,6 +466,13 @@ Returns: {qa_id, plan_id, plan_version, reply:{evidence, point_class:NEW-INFO|BA
 			s.routeWithSchema(protected, "GET", "/plan/trades", "Graded closed trades + adherence summary (A–F, separate from P&L)",
 				`Query: ?trader_id=<id>. Returns: {trades:[{symbol,side,entry_price,exit_price,entry_time,exit_time,realized_pnl,mae,mfe,cited_scenario_id,plan_matched,adherence_grade,adherence_label}], summary:{counts,total,gpa}}.`,
 				s.handlePlanTrades)
+			// W8 — admin session registry (GLOBAL; the gates read it, fallback default).
+			s.routeWithSchema(protected, "GET", "/plan/session-registry", "Effective admin session registry (+ is_default)",
+				`Query: ?trader_id=<id>. Returns: {registry:{sessions:[{name,window_start_ct,window_end_ct,read_ct,flat_ct,killzones,enabled}],half_days}, is_default:<bool>, sessions:<int>}.`,
+				s.handlePlanSessionRegistry)
+			s.routeWithSchema(protected, "POST", "/plan/session-registry", "Save the admin session registry (validated; next-day gates honor it)",
+				`Body: {"trader_id":"<id>","registry":{sessions:[{name,window_start_ct,window_end_ct,read_ct,flat_ct,killzones,enabled}]}}. Malformed → 400 (never silently defaulted). Returns: {saved:true, sessions:<int>}.`,
+				s.handlePlanSessionRegistrySave)
 			// P5.6 — matched-random honesty gate (frozen weekly snapshot + WARMING progress).
 			s.routeWithSchema(protected, "GET", "/plan/stats", "Matched-random honesty gate (WARMING until pre-registered N)",
 				`Query: ?trader_id=<id>. Returns: {weekly:{iso_week,computed_at,verdicts:[{level_type,n,react_rate,delta_pp,p_value,status:WARMING|BEATS-RANDOM|NO-EDGE,label}]}|null, progress:[{level_type,n,target_n,react_rate,warming}], target_n, alpha}. No green on an underpowered sample, ever.`,

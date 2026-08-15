@@ -42,7 +42,7 @@ func (at *AutoTrader) recordLevelState() {
 	}
 	now := time.Now()
 	nowMs := now.UnixMilli()
-	_, price, dATR := kernel.AssembleScoredLevels(bars, kernel.DefaultSessionRegistry(), symbol, 8, now)
+	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now)
 	if price <= 0 {
 		return
 	}

@@ -54,7 +54,7 @@ func (at *AutoTrader) currentT1Windows(now time.Time) []kernel.CTWindow {
 	if at.store == nil {
 		return nil
 	}
-	reg := kernel.DefaultSessionRegistry()
+	reg := at.sessionRegistry(now) // W8
 	sess, ok := reg.ActiveSession(now)
 	if !ok {
 		return nil

@@ -29,8 +29,7 @@ func (at *AutoTrader) sessionEntryBlocked() (string, bool) {
 		return "", false
 	}
 	now := time.Now()
-	// TODO(P4): load the admin registry from system_config instead of the default.
-	return sessionGateDecision(kernel.DefaultSessionRegistry(), now, at.currentT1Windows(now))
+	return sessionGateDecision(at.sessionRegistry(now), now, at.currentT1Windows(now))
 }
 
 // sessionGateDecision is the pure session-gate logic: entries only inside an
@@ -84,7 +83,8 @@ func (at *AutoTrader) observeNightEdge() {
 	if !at.dayPlanEnabled() {
 		return
 	}
-	night := kernel.DefaultSessionRegistry().IsNightMode(time.Now())
+	now := time.Now()
+	night := at.sessionRegistry(now).IsNightMode(now)
 	if nightEdgeDecision(at.nightPrev, night) {
 		if night {
 			at.logInfof("🌙 NIGHT MODE — outside all enabled session windows; no reads, no entries until the next enabled window.")

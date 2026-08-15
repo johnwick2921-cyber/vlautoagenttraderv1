@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -123,6 +124,40 @@ func LoadSessionRegistry(raw string) (SessionRegistry, error) {
 		return DefaultSessionRegistry(), nil
 	}
 	return r, nil
+}
+
+// ValidateSessionRegistry rejects a registry that would break the gates — unlike
+// LoadSessionRegistry (which fail-safes to the default on bad input), an EDIT must
+// be refused, not silently defaulted. Requires ≥1 session, each with a name and
+// four parseable HH:MM CT anchors (window start/end, read, flat); killzone bounds
+// must parse too. Returns nil when safe to persist.
+func ValidateSessionRegistry(r SessionRegistry) error {
+	if len(r.Sessions) == 0 {
+		return fmt.Errorf("registry must have at least one session")
+	}
+	for i := range r.Sessions {
+		s := r.Sessions[i]
+		if strings.TrimSpace(s.Name) == "" {
+			return fmt.Errorf("session %d: name required", i)
+		}
+		for field, v := range map[string]string{
+			"window_start_ct": s.WindowStartCT, "window_end_ct": s.WindowEndCT,
+			"read_ct": s.ReadCT, "flat_ct": s.FlatCT,
+		} {
+			if _, ok := parseHHMM(v); !ok {
+				return fmt.Errorf("session %q: %s %q is not HH:MM", s.Name, field, v)
+			}
+		}
+		for _, kz := range s.Killzones {
+			if _, ok := parseHHMM(kz.StartCT); !ok {
+				return fmt.Errorf("session %q killzone %q: start %q is not HH:MM", s.Name, kz.Name, kz.StartCT)
+			}
+			if _, ok := parseHHMM(kz.EndCT); !ok {
+				return fmt.Errorf("session %q killzone %q: end %q is not HH:MM", s.Name, kz.Name, kz.EndCT)
+			}
+		}
+	}
+	return nil
 }
 
 // SessionByName returns the named session (case-insensitive), or (nil, false).

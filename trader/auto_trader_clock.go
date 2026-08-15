@@ -219,7 +219,7 @@ func (at *AutoTrader) enforceEODFlat() bool {
 		return false
 	}
 	now := time.Now()
-	flat := effectiveEODFlatCT(kernel.DefaultSessionRegistry(), kernel.CMESessionDayKey(now), at.eodFlatCT())
+	flat := effectiveEODFlatCT(at.sessionRegistry(now), kernel.CMESessionDayKey(now), at.eodFlatCT())
 	if !timeReachedCT(now, flat) {
 		return false
 	}
@@ -289,7 +289,7 @@ func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
 		return
 	}
 	// P5.5 — ADHERENCE GRADE (A–F), separate from P&L.
-	inKZ, inNoTrade := kernel.SessionWindowFacts(kernel.DefaultSessionRegistry(), time.UnixMilli(p.EntryTime))
+	inKZ, inNoTrade := kernel.SessionWindowFacts(at.sessionRegistry(time.Now()), time.UnixMilli(p.EntryTime))
 	grade, _ := kernel.GradeAdherence(kernel.AdherenceInput{
 		Cited:      p.CitedScenarioID != "",
 		Matched:    p.PlanMatched,

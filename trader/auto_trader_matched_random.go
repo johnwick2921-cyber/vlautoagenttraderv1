@@ -22,7 +22,7 @@ func (at *AutoTrader) recordMatchedRandomForClose(p *store.TraderPosition, ex ke
 		return
 	}
 	entryT := time.UnixMilli(p.EntryTime)
-	reg := kernel.DefaultSessionRegistry()
+	reg := at.sessionRegistry(time.Now()) // W8 — current registry, queried at entry time
 	sess, ok := reg.ActiveSession(entryT)
 	if !ok {
 		return

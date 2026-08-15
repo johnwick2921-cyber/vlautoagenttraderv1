@@ -153,8 +153,8 @@ func (at *AutoTrader) maybeRunSessionReads() {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
-	reg := kernel.DefaultSessionRegistry() // TODO(P4): admin registry from system_config
 	now := time.Now()
+	reg := at.sessionRegistry(now) // W8 — admin registry from system_config (fallback default)
 	tradeDate := plannerTradeDateCT(now)
 	for i := range reg.Sessions {
 		s := &reg.Sessions[i]
@@ -360,7 +360,7 @@ func resolveSessionPlanCfg(dp *store.DayPlanConfig, session string) (maxLevels i
 func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.PlannerInput {
 	symbol := at.futuresSymbol()
 	now := time.Now()
-	reg := kernel.DefaultSessionRegistry()
+	reg := at.sessionRegistry(now) // W8
 
 	var dp *store.DayPlanConfig
 	if at.config.StrategyConfig != nil {
@@ -466,8 +466,8 @@ func (at *AutoTrader) maybeWriteDigests() {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
-	reg := kernel.DefaultSessionRegistry()
 	now := time.Now()
+	reg := at.sessionRegistry(now) // W8
 	tradeDate := plannerTradeDateCT(now)
 	symbol := at.futuresSymbol()
 	sinceMs := kernel.CMESessionDayStart(now).UnixMilli()
@@ -509,8 +509,8 @@ func (at *AutoTrader) maybeWriteDigests() {
 // off-session return nil → the executor prompt is unchanged.
 func installActivePlanProvider(st *store.Store) {
 	kernel.ActivePlanProvider = func(symbol string) *kernel.ActivePlan {
-		reg := kernel.DefaultSessionRegistry()
 		now := time.Now()
+		reg := loadStoredRegistry(st) // W8 — provider honors the admin registry too
 		sess, ok := reg.ActiveSession(now)
 		if !ok || !sess.Enabled {
 			return nil
