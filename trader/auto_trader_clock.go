@@ -255,6 +255,9 @@ func (at *AutoTrader) recordExcursionForClosedSymbol(symbol string) {
 		return
 	}
 	at.logInfof("🎓 adherence %s: %s (%s) — cited=%q matched=%v", symbol, grade, kernel.AdherenceLabel(grade), p.CitedScenarioID, p.PlanMatched)
+
+	// P5.6 — record a matched-random reaction verdict for the traded level type.
+	at.recordMatchedRandomForClose(p, ex)
 }
 
 // tickOnce runs one loop iteration: a grid cycle, or (for AI strategies) a

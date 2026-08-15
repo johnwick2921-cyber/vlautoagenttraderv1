@@ -37,6 +37,7 @@ type Store struct {
 	ownerLevel     *OwnerLevelStore
 	alert          *AlertStore
 	planQA         *PlanQAStore
+	matchedRandom  *MatchedRandomStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -195,6 +196,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.PlanQA().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize plan_qa tables: %w", err)
+	}
+	if err := s.MatchedRandom().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize matched_random tables: %w", err)
 	}
 	return nil
 }
@@ -407,6 +411,16 @@ func (s *Store) PlanQA() *PlanQAStore {
 		s.planQA = NewPlanQAStore(s.gdb)
 	}
 	return s.planQA
+}
+
+// MatchedRandom gets the matched-random verdict storage (stats honesty gate).
+func (s *Store) MatchedRandom() *MatchedRandomStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.matchedRandom == nil {
+		s.matchedRandom = NewMatchedRandomStore(s.gdb)
+	}
+	return s.matchedRandom
 }
 
 // TelegramConfig gets Telegram bot configuration storage

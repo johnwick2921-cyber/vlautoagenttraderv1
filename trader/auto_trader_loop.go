@@ -121,6 +121,11 @@ func (at *AutoTrader) runCycle() error {
 	// daily roll-up at the trade-date close. Idempotent; gated → dormant.
 	at.maybeWriteDigests()
 
+	// P5.6 — WEEKLY matched-random eval (fixed cadence, never nightly re-peek):
+	// on Sundays, freeze one honesty-gate snapshot per ISO week. Idempotent
+	// (first-writer-wins across traders); gated → dormant.
+	at.maybeRunWeeklyMatchedRandom(time.Now())
+
 	// P2.3 — EOD-FLAT: at/after the session flat time, force-close any open
 	// position via the trader close path (bypasses hold-lock naturally, RECON
 	// #10), then skip the rest of the cycle. Runs BEFORE skip-while-open so a held

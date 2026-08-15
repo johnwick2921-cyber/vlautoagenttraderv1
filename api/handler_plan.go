@@ -611,6 +611,54 @@ func (s *Server) handlePlanTrades(c *gin.Context) {
 	c.JSON(200, gin.H{"trades": trades, "summary": kernel.SummarizeAdherence(grades)})
 }
 
+// handlePlanStats GET /api/plan/stats?trader_id=xxx — the matched-random honesty
+// gate. Returns the FROZEN weekly snapshot (the authoritative "beats random"
+// verdict — never recomputed live, so no optional-stopping) + live progress
+// counts (n/target) for the WARMING badges. Progress makes NO significance claim.
+func (s *Server) handlePlanStats(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	mr := s.store.MatchedRandom()
+
+	// The authoritative gate = the frozen weekly snapshot (may be null pre-first-eval).
+	var weekly gin.H
+	if row, _ := mr.LatestWeekly(); row != nil {
+		var verdicts []kernel.TypeVerdict
+		_ = json.Unmarshal([]byte(row.SummaryJSON), &verdicts)
+		weekly = gin.H{"iso_week": row.ISOWeek, "computed_at": row.ComputedAt, "verdicts": verdicts}
+	}
+
+	// Live progress: raw counts only (WARMING framing) — no green claim here.
+	progress := make([]gin.H, 0)
+	if counts, err := mr.CountsByType(); err == nil {
+		for t, cc := range counts {
+			rate := 0.0
+			if cc.Touches > 0 {
+				rate = float64(cc.Reactions) / float64(cc.Touches)
+			}
+			progress = append(progress, gin.H{
+				"level_type": t, "n": cc.Touches, "reactions": cc.Reactions,
+				"target_n": kernel.PreRegisteredN, "react_rate": rate,
+				"warming": cc.Touches < kernel.PreRegisteredN,
+			})
+		}
+	}
+
+	c.JSON(200, gin.H{
+		"weekly":   weekly, // null until the first Sunday eval
+		"progress": progress,
+		"target_n": kernel.PreRegisteredN,
+		"alpha":    kernel.BonferroniAlpha(),
+	})
+}
+
 // handlePlanOwnerLevel POST /api/plan/owner-level — add a STICKY owner level
 // (P3.6-C store). Guarded write: B2-armored price, WHERE-scoped by symbol, note +
 // scenario tag ride along to the planner. Owner data is SACRED — never a live acct.
