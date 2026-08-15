@@ -440,6 +440,17 @@ Returns: {found, trade_date, session, version, lifecycle, model_id, mode, night,
 			s.routeWithSchema(protected, "POST", "/plan/alert-ack", "Acknowledge an in-app alert",
 				`Body: {"trader_id":"<EXACT trader_id>","alert_id":<int>}. Returns: {acked:true, alert_id}`,
 				s.handlePlanAlertAck)
+			// P5.1 — overlay editing (RFC-6902 + test-op concurrency + B2 armor) + sticky owner levels.
+			s.routeWithSchema(protected, "POST", "/plan/overlay", "Append an RFC-6902 overlay to the active plan",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","patch":"<JSON array of RFC-6902 ops>","origin":"owner|planner-revised"}.
+Applies the patch strictly onto the current plan_final (test-op concurrency → 409 on conflict), armors owner prices (422 on 8×dATR fat-finger), validates enums/counts. Returns: {overlay_version, plan_version, origin}.`,
+				s.handlePlanOverlay)
+			s.routeWithSchema(protected, "POST", "/plan/owner-level", "Add a sticky owner level (note + scenario tag ride to the planner)",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","price":<float>,"label":"<str>","note":"<any-lang>","scenario_tag":"<S1|＋new>"}. B2-armored. Returns: {id, symbol, price}.`,
+				s.handlePlanOwnerLevel)
+			s.routeWithSchema(protected, "POST", "/plan/owner-level/delete", "Delete a sticky owner level by id",
+				`Body: {"trader_id":"<id>","id":<int>}. Returns: {deleted:true, id}.`,
+				s.handlePlanOwnerLevelDelete)
 
 			// Plan 4 Stage 4 — NinjaTrader account management
 			s.routeWithSchema(protected, "GET", "/accounts", "List available NT accounts (NinjaTrader TCP bridge only)",

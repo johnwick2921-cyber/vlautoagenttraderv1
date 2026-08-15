@@ -33,6 +33,13 @@ func resolvePlannerModelID(plannerModel, primaryModel string) (modelID string, u
 	return pm, false
 }
 
+// ResolvePlannerClient is the exported entry point (P5.4 Ask-Planner) so the API
+// layer can reach the SAME planner model that authored the plan. Read-only use:
+// the caller must never mutate traders/plans/bindings through it.
+func (at *AutoTrader) ResolvePlannerClient() (mcp.AIClient, string) {
+	return at.resolvePlannerClient()
+}
+
 // resolvePlannerClient returns the AI client for the planner + the resolved
 // (pinned) model ID. Empty binding → the executor's primary client. A model that
 // the registry can't resolve → the primary client (never a silent nil).
