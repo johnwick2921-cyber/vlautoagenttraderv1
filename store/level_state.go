@@ -60,8 +60,34 @@ type LevelStateDB struct {
 	TimesTested int       `gorm:"column:times_tested;not null;default:0"`
 	Consumed    bool      `gorm:"column:consumed;not null;default:false"`
 	Freshness   string    `gorm:"column:freshness;not null;default:'A';index:idx_levelstate_fresh"`
+	LastPlayMs  int64     `gorm:"column:last_play_ms;not null;default:0"` // P3.6-B: last play time (re-arm cooldown)
 	CreatedAt   time.Time `gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt   time.Time `gorm:"column:updated_at;autoUpdateTime"`
+}
+
+// ReArmCooldownMin is the minutes a level must wait between plays (P3.6-B).
+const ReArmCooldownMin = 20
+
+// ReArmEligible (P3.6-B) reports whether a level may re-arm for another play:
+// NOT consumed, freshness above the floor (not "done"), the setup has re-formed
+// (not a bare re-touch), and the re-arm cooldown has elapsed since the last play.
+func ReArmEligible(l *LevelStateDB, nowMs int64, cooldownMin int, setupReformed bool) (bool, string) {
+	if l == nil {
+		return false, "no level state"
+	}
+	if l.Consumed || l.Freshness == FreshnessDone {
+		return false, "consumed / below-floor (done for the day)"
+	}
+	if !setupReformed {
+		return false, "setup has not re-formed (bare re-touch)"
+	}
+	if cooldownMin <= 0 {
+		cooldownMin = ReArmCooldownMin
+	}
+	if l.LastPlayMs > 0 && nowMs-l.LastPlayMs < int64(cooldownMin)*60_000 {
+		return false, "within re-arm cooldown"
+	}
+	return true, ""
 }
 
 // TableName implements the gorm Tabler interface.
@@ -119,6 +145,20 @@ func (s *LevelStateStore) EnsureLevel(l *LevelStateDB) error {
 func (s *LevelStateStore) RecordTest(levelKey string) error {
 	return s.db.Model(&LevelStateDB{}).Where("level_key = ?", levelKey).
 		Updates(map[string]any{"times_tested": gorm.Expr("times_tested + 1")}).Error
+}
+
+// RecordPlay (P3.6-B) registers a play on a level: times_tested++, stamps the
+// last-play time (for the cooldown), and decays freshness one grade (A→B→C→done).
+// Returns the new freshness grade.
+func (s *LevelStateStore) RecordPlay(levelKey string, nowMs int64) (string, error) {
+	if err := s.db.Model(&LevelStateDB{}).Where("level_key = ?", levelKey).
+		Updates(map[string]any{
+			"times_tested": gorm.Expr("times_tested + 1"),
+			"last_play_ms": nowMs,
+		}).Error; err != nil {
+		return "", err
+	}
+	return s.DecrementFreshness(levelKey)
 }
 
 // MarkConsumed permanently consumes a level (price accepted through it).
