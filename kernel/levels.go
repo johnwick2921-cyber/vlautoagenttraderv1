@@ -44,6 +44,7 @@ const (
 	KindDemand LevelKind = "DEMAND" // demand zone
 	KindFVG    LevelKind = "FVG"    // fair-value gap
 	KindOB     LevelKind = "OB"     // order block
+	KindOwner  LevelKind = "OWNER"  // sticky owner-set level (P3.6-C)
 )
 
 // DetectedLevel is the uniform output of every detector (a line or a zone). For

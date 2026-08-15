@@ -34,6 +34,7 @@ type Store struct {
 	sessionProfile *SessionProfileStore
 	calendarSlice  *CalendarSliceStore
 	digest         *DigestStore
+	ownerLevel     *OwnerLevelStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -183,6 +184,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.Digest().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize day_plan_digests tables: %w", err)
+	}
+	if err := s.OwnerLevel().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize owner_levels tables: %w", err)
 	}
 	return nil
 }
@@ -365,6 +369,16 @@ func (s *Store) Digest() *DigestStore {
 		s.digest = NewDigestStore(s.gdb)
 	}
 	return s.digest
+}
+
+// OwnerLevel gets the sticky owner-level storage.
+func (s *Store) OwnerLevel() *OwnerLevelStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ownerLevel == nil {
+		s.ownerLevel = NewOwnerLevelStore(s.gdb)
+	}
+	return s.ownerLevel
 }
 
 // TelegramConfig gets Telegram bot configuration storage

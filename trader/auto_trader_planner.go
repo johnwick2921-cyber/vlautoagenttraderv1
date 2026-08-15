@@ -259,6 +259,23 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	}
 	scored, price, dATR := kernel.AssembleScoredLevels(bars, reg, symbol, kernel.DefaultMaxLevels, now, extra...)
 
+	// P3.6-C — STICKY OWNER LEVELS: always seated, tagged 👤, persisted across
+	// sessions. Prepended so they lead the ranked table.
+	if owned, err := at.store.OwnerLevel().ListActive(symbol); err == nil && len(owned) > 0 {
+		ownerScored := make([]kernel.ScoredLevel, 0, len(owned))
+		for _, o := range owned {
+			label := "👤 " + o.Label
+			if o.Note != "" {
+				label += " (" + o.Note + ")"
+			}
+			ownerScored = append(ownerScored, kernel.ScoredLevel{
+				DetectedLevel: kernel.DetectedLevel{Kind: kernel.KindOwner, Price: o.Price, Lo: o.Price, Hi: o.Price, Label: label, OriginDate: "owner", HTF: true, Info: o.ScenarioTag},
+				Grade:         "A", Fresh: "owner", Distance: o.Price - price,
+			})
+		}
+		scored = append(ownerScored, scored...)
+	}
+
 	var daily, hour1, min5 []market.Kline
 	if market.FuturesBarsProvider != nil {
 		daily = market.FuturesBarsProvider(symbol, "1d", 300)
