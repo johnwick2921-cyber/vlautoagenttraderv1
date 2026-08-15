@@ -266,7 +266,7 @@ func (at *AutoTrader) GetPositions() ([]map[string]interface{}, error) {
 // recordAndConfirmOrder polls order status for actual fill data and records position
 // action: open_long, open_short, close_long, close_short
 // entryPrice: entry price when closing (0 when opening)
-func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64) {
+func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64, confidence int) {
 	if at.store == nil {
 		return
 	}
@@ -380,7 +380,7 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 		orderID, action, actualPrice, actualQty, fee)
 
 	// Record position change with actual fill data (use normalized symbol)
-	at.recordPositionChange(orderID, normalizedSymbolForPosition, positionSide, action, actualQty, actualPrice, leverage, entryPrice, fee)
+	at.recordPositionChange(orderID, normalizedSymbolForPosition, positionSide, action, actualQty, actualPrice, leverage, entryPrice, fee, confidence)
 
 	// Send anonymous trade statistics for experience improvement (async, non-blocking)
 	// This helps us understand overall product usage across all deployments
@@ -396,7 +396,7 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 }
 
 // recordPositionChange records position change (create record on open, update record on close)
-func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64) {
+func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64, confidence int) {
 	if at.store == nil {
 		return
 	}
@@ -406,20 +406,21 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 		// Open position: create new position record
 		nowMs := time.Now().UTC().UnixMilli()
 		pos := &store.TraderPosition{
-			TraderID:     at.id,
-			Account:      at.currentAccountName(), // ITEM 2 per-account attribution
-			ExchangeID:   at.exchangeID, // Exchange account UUID
-			ExchangeType: at.exchange,   // Exchange type: binance/bybit/okx/etc
-			Symbol:       symbol,
-			Side:         side, // LONG or SHORT
-			Quantity:     quantity,
-			EntryPrice:   price,
-			EntryOrderID: orderID,
-			EntryTime:    nowMs,
-			Leverage:     leverage,
-			Status:       "OPEN",
-			CreatedAt:    nowMs,
-			UpdatedAt:    nowMs,
+			TraderID:        at.id,
+			Account:         at.currentAccountName(), // ITEM 2 per-account attribution
+			ExchangeID:      at.exchangeID, // Exchange account UUID
+			ExchangeType:    at.exchange,   // Exchange type: binance/bybit/okx/etc
+			Symbol:          symbol,
+			Side:            side, // LONG or SHORT
+			Quantity:        quantity,
+			EntryPrice:      price,
+			EntryOrderID:    orderID,
+			EntryTime:       nowMs,
+			Leverage:        leverage,
+			Status:          "OPEN",
+			EntryConfidence: confidence, // P2.4 — capture the AI's entry confidence
+			CreatedAt:       nowMs,
+			UpdatedAt:       nowMs,
 		}
 		if err := at.store.Position().Create(pos); err != nil {
 			logger.Infof("  ⚠️ Failed to record position: %v", err)
@@ -442,6 +443,8 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 			logger.Infof("  ⚠️ Failed to process close position: %v", err)
 		} else {
 			logger.Infof("  ✅ Position closed [%s] %s %s @ %.4f", at.id[:8], symbol, side, price)
+			// P2.4 — compute + store MAE/MFE over the hold (gated futures + day_plan).
+			at.recordExcursionForClosedSymbol(market.Normalize(symbol))
 		}
 	}
 }

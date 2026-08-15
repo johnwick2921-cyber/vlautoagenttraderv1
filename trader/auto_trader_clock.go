@@ -213,6 +213,34 @@ func (at *AutoTrader) enforceEODFlat() bool {
 	return true
 }
 
+// recordExcursionForClosedSymbol (P2.4) computes the MAE/MFE over the just-closed
+// trade's hold from 1m bars and stores them on the position row. Gated on
+// day_plan → dormant by default (crypto/plan-off write nothing).
+func (at *AutoTrader) recordExcursionForClosedSymbol(symbol string) {
+	if !at.dayPlanEnabled() || at.store == nil || market.FuturesBarsProvider == nil {
+		return
+	}
+	closed, err := at.store.Position().GetClosedPositions(at.id, 1)
+	if err != nil || len(closed) == 0 {
+		return
+	}
+	p := closed[0]
+	if p.Symbol != symbol || p.EntryPrice <= 0 || p.EntryTime <= 0 {
+		return // the latest close is a different symbol / incomplete
+	}
+	exitMs := p.ExitTime
+	if exitMs <= 0 {
+		exitMs = time.Now().UnixMilli()
+	}
+	bars := market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount)
+	ex := kernel.ComputeExcursion(p.EntryPrice, p.Side, bars, p.EntryTime, exitMs)
+	if err := at.store.Position().UpdateExcursion(p.ID, ex.MAE, ex.MFE); err != nil {
+		at.logWarnf("📐 excursion update failed for %s: %v", symbol, err)
+		return
+	}
+	at.logInfof("📐 excursion %s: MAE %.2f / MFE %.2f pts (entry conf %d)", symbol, ex.MAE, ex.MFE, p.EntryConfidence)
+}
+
 // tickOnce runs one loop iteration: a grid cycle, or (for AI strategies) a
 // decision cycle gated by bar-close cadence.
 func (at *AutoTrader) tickOnce(isGrid bool) {

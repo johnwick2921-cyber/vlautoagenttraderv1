@@ -131,6 +131,12 @@ type TraderPosition struct {
 	Source             string  `gorm:"column:source;default:system" json:"source"`
 	CreatedAt          int64   `gorm:"column:created_at" json:"created_at"` // Unix milliseconds UTC
 	UpdatedAt          int64   `gorm:"column:updated_at" json:"updated_at"` // Unix milliseconds UTC
+	// P2.4 — excursion analytics (additive, futures day-plan): max adverse /
+	// favorable excursion over the hold (points) + the AI's entry confidence.
+	// Zero when not computed (crypto / pre-migration).
+	MAE             float64 `gorm:"column:mae;default:0" json:"mae"`
+	MFE             float64 `gorm:"column:mfe;default:0" json:"mfe"`
+	EntryConfidence int     `gorm:"column:entry_confidence;default:0" json:"entry_confidence"`
 }
 
 // TableName returns the table name
@@ -141,6 +147,18 @@ func (TraderPosition) TableName() string {
 // PositionStore position storage
 type PositionStore struct {
 	db *gorm.DB
+}
+
+// SetEntryConfidence records the AI's entry confidence on a position (P2.4).
+func (s *PositionStore) SetEntryConfidence(id int64, confidence int) error {
+	return s.db.Model(&TraderPosition{}).Where("id = ?", id).
+		Update("entry_confidence", confidence).Error
+}
+
+// UpdateExcursion records the MAE/MFE (points) on a closed position (P2.4).
+func (s *PositionStore) UpdateExcursion(id int64, mae, mfe float64) error {
+	return s.db.Model(&TraderPosition{}).Where("id = ?", id).
+		Updates(map[string]any{"mae": mae, "mfe": mfe}).Error
 }
 
 // NewPositionStore creates position storage instance
