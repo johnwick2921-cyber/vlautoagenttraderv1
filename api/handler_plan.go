@@ -327,12 +327,105 @@ func (s *Server) handlePlanOverlay(c *gin.Context) {
 		symbol = "MNQ"
 	}
 
+	overlayVersion, planVersion, code, msg := s.applyPlanOverlay(symbol, body.Patch, origin, time.Now())
+	if code != 0 {
+		c.JSON(code, gin.H{"error": msg})
+		return
+	}
+	c.JSON(200, gin.H{"overlay_version": overlayVersion, "plan_version": planVersion, "origin": origin})
+}
+
+// applyPlanOverlay resolves the active plan, applies patchJSON strictly onto the
+// current plan_final (test-op concurrency guard), B2-armors every owner price,
+// validates enums/counts, then appends the overlay. Shared by the overlay POST
+// and the Ask-Planner Apply. Returns (overlayVersion, planVersion, httpCode, msg);
+// httpCode==0 means success.
+func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Time) (int, int, int, string) {
+	if strings.TrimSpace(patchJSON) == "" {
+		return 0, 0, 400, "patch is required"
+	}
+	reg := kernel.DefaultSessionRegistry()
+	tradeDate := now.In(planChicago()).Format("2006-01-02")
+	sess, ok := reg.ActiveSession(now)
+	if !ok || !sess.Enabled {
+		return 0, 0, 400, "no active plan to edit (night / disabled session)"
+	}
+	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+	if err != nil || row == nil {
+		return 0, 0, 404, "active plan not found"
+	}
+	overlays, _ := s.store.Plan().ListOverlays(row.PlanID, row.Version)
+	patches := make([]string, 0, len(overlays))
+	for _, ov := range overlays {
+		patches = append(patches, ov.Patch)
+	}
+	current, _ := kernel.ApplyOverlayPatches([]byte(row.Doc), patches)
+	candidate, err := kernel.ApplyPatchStrict(current, patchJSON)
+	if err != nil {
+		return 0, 0, 409, "overlay rejected: " + err.Error() // test-op / validity conflict
+	}
+	var merged kernel.PlanDoc
+	if json.Unmarshal(candidate, &merged) != nil || kernel.ValidatePlanDoc(&merged) != nil {
+		return 0, 0, 400, "patch produces an invalid plan (enum/count armor)"
+	}
+	lastPrice, dATR := marketRef(symbol, now)
+	if v := overlayPriceViolations(patchJSON, lastPrice, dATR); len(v) > 0 {
+		return 0, 0, 422, "⛔ price armor: " + strings.Join(v, "; ")
+	}
+	ov := &store.PlanOverlayDB{
+		OverlayID:   fmt.Sprintf("%s:o:%d", row.PlanID, now.UnixNano()),
+		PlanID:      row.PlanID,
+		PlanVersion: row.Version,
+		Patch:       patchJSON,
+		Origin:      origin,
+	}
+	overlayVersion, err := s.store.Plan().AppendOverlay(ov)
+	if err != nil {
+		return 0, 0, 500, "append overlay: " + err.Error()
+	}
+	return overlayVersion, row.Version, 0, ""
+}
+
+// handlePlanAsk POST /api/plan/ask — a plan-scoped Q&A with the planner. The
+// verbatim anti-sycophancy contract is the system prompt AND enforced in code
+// (kernel.ParsePlannerReply): a bare disagreement never yields a patch. The owner
+// question + structured reply are persisted; the verdict is logged for the KPI.
+func (s *Server) handlePlanAsk(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+		Symbol   string `json:"symbol"`
+		Question string `json:"question"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	if strings.TrimSpace(body.Question) == "" {
+		SafeBadRequest(c, "question is required")
+		return
+	}
+	symbol := strings.TrimSpace(body.Symbol)
+	if symbol == "" {
+		symbol = "MNQ"
+	}
+
+	// Resolve the SAME active plan the card shows.
 	now := time.Now()
 	reg := kernel.DefaultSessionRegistry()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
 	if !ok || !sess.Enabled {
-		SafeBadRequest(c, "no active plan to edit (night / disabled session)")
+		SafeBadRequest(c, "no active plan to ask about (night / disabled session)")
 		return
 	}
 	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
@@ -340,47 +433,145 @@ func (s *Server) handlePlanOverlay(c *gin.Context) {
 		SafeNotFound(c, "Active plan")
 		return
 	}
-
-	// Build the current plan_final (base + existing overlays), then apply the new
-	// patch STRICTLY on top — this runs the test-op concurrency guard + validity.
-	overlays, _ := s.store.Plan().ListOverlays(row.PlanID, row.Version)
-	patches := make([]string, 0, len(overlays))
-	for _, ov := range overlays {
-		patches = append(patches, ov.Patch)
+	var doc kernel.PlanDoc
+	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+		SafeInternalError(c, "parse plan", fmt.Errorf("bad plan doc"))
+		return
 	}
-	current, _ := kernel.ApplyOverlayPatches([]byte(row.Doc), patches)
-	candidate, err := kernel.ApplyPatchStrict(current, body.Patch)
+
+	// Build the plan block + live status for the planner's context.
+	planBlock := kernel.RenderPlanBlock(doc, sess.Name)
+	liveStatus := ""
+	if market.FuturesBarsProvider != nil {
+		bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount)
+		if len(bars) > 0 {
+			price, dATR := marketRef(symbol, now)
+			liveStatus = kernel.RenderPlanStatus(doc, bars, price, dATR, "2x5m", maxI(0, 2-(row.Version-1)), now.UnixMilli())
+		}
+	}
+	userPrompt := kernel.BuildAskPlannerUserPrompt(planBlock, liveStatus, body.Question)
+
+	// Call the SAME planner model that authored the plan.
+	client, _ := at.ResolvePlannerClient()
+	if client == nil {
+		SafeInternalError(c, "resolve planner client", fmt.Errorf("no planner client"))
+		return
+	}
+	raw, err := client.CallWithMessages(kernel.AskPlannerSystemPrompt, userPrompt)
 	if err != nil {
-		// A failed test-op or bad path is a concurrency/validity conflict.
-		c.JSON(409, gin.H{"error": "overlay rejected: " + err.Error()})
+		SafeInternalError(c, "ask planner", err)
 		return
 	}
-	var merged kernel.PlanDoc
-	if json.Unmarshal(candidate, &merged) != nil || kernel.ValidatePlanDoc(&merged) != nil {
-		SafeBadRequest(c, "patch produces an invalid plan (enum/count armor)")
-		return
-	}
-
-	// B2 price armor on every owner-entered price in the patch.
-	lastPrice, dATR := marketRef(symbol, now)
-	if v := overlayPriceViolations(body.Patch, lastPrice, dATR); len(v) > 0 {
-		c.JSON(422, gin.H{"error": "⛔ price armor: " + strings.Join(v, "; ")})
-		return
-	}
-
-	ov := &store.PlanOverlayDB{
-		OverlayID:   fmt.Sprintf("%s:o:%d", row.PlanID, now.UnixNano()),
-		PlanID:      row.PlanID,
-		PlanVersion: row.Version,
-		Patch:       body.Patch,
-		Origin:      origin,
-	}
-	overlayVersion, err := s.store.Plan().AppendOverlay(ov)
+	reply, err := kernel.ParsePlannerReply(raw)
 	if err != nil {
-		SafeInternalError(c, "append overlay", err)
+		c.JSON(502, gin.H{"error": "planner reply malformed", "raw": raw})
 		return
 	}
-	c.JSON(200, gin.H{"overlay_version": overlayVersion, "plan_version": row.Version, "origin": origin})
+
+	// Persist the owner question + the structured planner reply (verdict logged).
+	_, _ = s.store.PlanQA().Append(&store.PlanQADB{
+		TraderID: traderID, PlanID: row.PlanID, TradeDate: tradeDate, Session: sess.Name,
+		Role: "owner", Content: body.Question, CreatedAt: now.Unix(),
+	})
+	patchStr := ""
+	if len(reply.Patch) > 0 {
+		patchStr = string(reply.Patch)
+	}
+	qaID, _ := s.store.PlanQA().Append(&store.PlanQADB{
+		TraderID: traderID, PlanID: row.PlanID, TradeDate: tradeDate, Session: sess.Name,
+		Role: "planner", Content: reply.Summary, Evidence: reply.Evidence,
+		PointClass: reply.PointClass, Verdict: reply.Verdict, Patch: patchStr,
+		CreatedAt: now.Unix() + 1, // keep the reply after the question in id/time order
+	})
+
+	c.JSON(200, gin.H{
+		"qa_id":        qaID,
+		"plan_id":      row.PlanID,
+		"plan_version": row.Version,
+		"reply": gin.H{
+			"evidence": reply.Evidence, "point_class": reply.PointClass,
+			"verdict": reply.Verdict, "summary": reply.Summary, "patch": patchStr,
+		},
+	})
+}
+
+// handlePlanThread GET /api/plan/ask?trader_id=xxx — the plan's Q&A thread + the
+// sycophancy KPI (verdict counts).
+func (s *Server) handlePlanThread(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	planID := strings.TrimSpace(c.Query("plan_id"))
+	if planID == "" {
+		// default to today's active plan id
+		now := time.Now()
+		reg := kernel.DefaultSessionRegistry()
+		tradeDate := now.In(planChicago()).Format("2006-01-02")
+		if sess, ok := reg.ActiveSession(now); ok {
+			planID = store.MakePlanID(tradeDate, sess.Name)
+		}
+	}
+	msgs, _ := s.store.PlanQA().ListForPlan(traderID, planID, 200)
+	kpi, _ := s.store.PlanQA().VerdictStats(traderID)
+	c.JSON(200, gin.H{"thread": msgs, "kpi": kpi})
+}
+
+// handlePlanAskApply POST /api/plan/ask/apply — apply a PROPOSE-MERGE patch as an
+// overlay (origin planner-revised) and mark the reply applied. Bare-disagreement
+// replies carry no patch, so there is nothing to apply (guarded here too).
+func (s *Server) handlePlanAskApply(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+		Symbol   string `json:"symbol"`
+		QaID     int64  `json:"qa_id"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	if body.QaID <= 0 {
+		SafeBadRequest(c, "qa_id is required")
+		return
+	}
+	msg, err := s.store.PlanQA().GetForTrader(traderID, body.QaID)
+	if err != nil {
+		SafeInternalError(c, "get qa message", err)
+		return
+	}
+	if msg == nil {
+		SafeNotFound(c, "Ask-Planner message")
+		return
+	}
+	if msg.Verdict != "PROPOSE-MERGE" || strings.TrimSpace(msg.Patch) == "" {
+		SafeBadRequest(c, "this reply has no patch to apply")
+		return
+	}
+	symbol := strings.TrimSpace(body.Symbol)
+	if symbol == "" {
+		symbol = "MNQ"
+	}
+	overlayVersion, planVersion, code, emsg := s.applyPlanOverlay(symbol, msg.Patch, "planner-revised", time.Now())
+	if code != 0 {
+		c.JSON(code, gin.H{"error": emsg})
+		return
+	}
+	_ = s.store.PlanQA().MarkApplied(traderID, body.QaID)
+	c.JSON(200, gin.H{"applied": true, "overlay_version": overlayVersion, "plan_version": planVersion})
 }
 
 // handlePlanOwnerLevel POST /api/plan/owner-level — add a STICKY owner level

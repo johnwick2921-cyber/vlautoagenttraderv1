@@ -36,6 +36,7 @@ type Store struct {
 	digest         *DigestStore
 	ownerLevel     *OwnerLevelStore
 	alert          *AlertStore
+	planQA         *PlanQAStore
 	telegramConfig TelegramConfigStore
 
 	mu sync.RWMutex
@@ -191,6 +192,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.Alert().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize day_plan_alerts tables: %w", err)
+	}
+	if err := s.PlanQA().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize plan_qa tables: %w", err)
 	}
 	return nil
 }
@@ -393,6 +397,16 @@ func (s *Store) Alert() *AlertStore {
 		s.alert = NewAlertStore(s.gdb)
 	}
 	return s.alert
+}
+
+// PlanQA gets the Ask-Planner thread storage.
+func (s *Store) PlanQA() *PlanQAStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.planQA == nil {
+		s.planQA = NewPlanQAStore(s.gdb)
+	}
+	return s.planQA
 }
 
 // TelegramConfig gets Telegram bot configuration storage

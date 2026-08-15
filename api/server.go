@@ -451,6 +451,17 @@ Applies the patch strictly onto the current plan_final (test-op concurrency → 
 			s.routeWithSchema(protected, "POST", "/plan/owner-level/delete", "Delete a sticky owner level by id",
 				`Body: {"trader_id":"<id>","id":<int>}. Returns: {deleted:true, id}.`,
 				s.handlePlanOwnerLevelDelete)
+			// P5.4 — Ask-Planner (plan-scoped Q&A, anti-sycophancy contract, verdict log).
+			s.routeWithSchema(protected, "POST", "/plan/ask", "Ask the planner about today's plan (anti-sycophancy)",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","question":"<any language>"}.
+Returns: {qa_id, plan_id, plan_version, reply:{evidence, point_class:NEW-INFO|BARE-DISAGREEMENT, verdict:DEFEND|CONCEDE|PROPOSE-MERGE, summary, patch}}. A bare disagreement never carries a patch.`,
+				s.handlePlanAsk)
+			s.routeWithSchema(protected, "GET", "/plan/ask", "Ask-Planner thread + sycophancy KPI",
+				`Query: ?trader_id=<id>[&plan_id=<trade_date:session>]. Returns: {thread:[{role,content,evidence,point_class,verdict,patch,applied,created_at}], kpi:{total,new_info,bare_disagreement,defend,concede,propose_merge,applied,defend_on_bare}}.`,
+				s.handlePlanThread)
+			s.routeWithSchema(protected, "POST", "/plan/ask/apply", "Apply a PROPOSE-MERGE patch as a planner-revised overlay",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","qa_id":<int>}. Applies the reply's patch (origin planner-revised) + marks it applied. Returns: {applied:true, overlay_version, plan_version}.`,
+				s.handlePlanAskApply)
 
 			// Plan 4 Stage 4 — NinjaTrader account management
 			s.routeWithSchema(protected, "GET", "/accounts", "List available NT accounts (NinjaTrader TCP bridge only)",
