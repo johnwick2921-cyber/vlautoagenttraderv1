@@ -106,6 +106,12 @@ func (at *AutoTrader) runCycle() error {
 	// have cross-session memory (warms forward).
 	at.snapshotSessionProfiles()
 
+	// P3.3 — PLANNER READ JOBS: at each enabled session's registry read time, run
+	// the per-session planner read once (idempotent via the plan store) and persist
+	// the plan. GATED on day_plan → dormant by default; independent of position
+	// state (a read fires whether flat or holding).
+	at.maybeRunSessionReads()
+
 	// P2.3 — EOD-FLAT: at/after the session flat time, force-close any open
 	// position via the trader close path (bypasses hold-lock naturally, RECON
 	// #10), then skip the rest of the cycle. Runs BEFORE skip-while-open so a held

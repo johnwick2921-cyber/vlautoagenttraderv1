@@ -16,15 +16,27 @@ import (
 // renders the executor prompt block. Returns "" when there is nothing to show
 // (no closed bars / no in-band levels) so the caller injects nothing.
 func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, extraLevels ...DetectedLevel) string {
-	cb := closedBars(bars, now)
-	if len(cb) == 0 {
-		return ""
-	}
-	price := cb[len(cb)-1].Close
+	scored, price, _ := AssembleScoredLevels(bars, reg, symbol, maxLevels, now, extraLevels...)
 	if price <= 0 {
 		return ""
 	}
-	dATR := DailyATRProxy(bars, now)
+	return RenderKeyLevelsBlock(scored, price)
+}
+
+// AssembleScoredLevels runs every detector, scores them, and returns the graded
+// TOP-N levels + the reference price + the daily-ATR used. Shared by the executor
+// KEY LEVELS block (P1.7) and the planner input package (P3.3). Returns
+// (nil, 0, 0) when there are no closed bars.
+func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, extraLevels ...DetectedLevel) (scored []ScoredLevel, price, dATR float64) {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil, 0, 0
+	}
+	price = cb[len(cb)-1].Close
+	if price <= 0 {
+		return nil, 0, 0
+	}
+	dATR = DailyATRProxy(bars, now)
 	if dATR <= 0 {
 		dATR = 0.008 * price // fallback until the map warms
 	}
@@ -49,9 +61,9 @@ func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string
 	all = append(all, OrderBlocks(bars, atr, now)...)
 	all = append(all, extraLevels...) // nPOC etc. from the durable store (P1.3)
 
-	// freshness=nil (all fresh) until the executor writes level-state (P3 loop).
-	scored := ScoreLevels(all, price, dATR, nil, maxLevels)
-	return RenderKeyLevelsBlock(scored, price)
+	// freshness=nil (all fresh) until the executor writes level-state (P3.6 loop).
+	scored = ScoreLevels(all, price, dATR, nil, maxLevels)
+	return scored, price, dATR
 }
 
 // DailyATRProxy estimates the daily ATR from intraday bars by averaging each
