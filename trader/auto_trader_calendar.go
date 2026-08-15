@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"os"
 	"time"
 
 	"nofx/calendar"
@@ -62,9 +63,27 @@ func (at *AutoTrader) maybeFetchCalendar(now time.Time) {
 	}
 }
 
-// calendarStaticLoader is the owner-editable static T1 fallback. No file yet →
-// nil, so FetchWeek uses the live feed and only warns on outage (never fabricates).
-func calendarStaticLoader() []calendar.Event { return nil }
+// calendarStaticLoader loads the owner-editable static T1 fallback file (F0.2)
+// so blackout coverage never depends on feed availability: on a feed 404/outage
+// the static events STORE as source=static rows. Path: env NOFX_CALENDAR_STATIC,
+// else ./calendar_static_t1.json (repo-shipped template). Shape: JSON array of
+// calendar.Event ({"time": RFC3339-UTC, "currency", "title", "impact":"T1"}).
+// Missing/unreadable/invalid file → nil (FetchWeek reports SourceNone + warns).
+func calendarStaticLoader() []calendar.Event {
+	path := os.Getenv("NOFX_CALENDAR_STATIC")
+	if path == "" {
+		path = "calendar_static_t1.json"
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var evs []calendar.Event
+	if err := json.Unmarshal(raw, &evs); err != nil {
+		return nil
+	}
+	return evs
+}
 
 // currentT1Windows returns the red-news HARD no-trade windows for the active
 // session at `now` (empty when no slice / no T1 events).
