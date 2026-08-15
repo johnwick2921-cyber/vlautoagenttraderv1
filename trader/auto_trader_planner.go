@@ -435,4 +435,11 @@ func (at *AutoTrader) recordPlanCitation(d *kernel.Decision) {
 		telemetry.IncGateBlock(at.id, "plan_cited_mismatch")
 		at.logInfof("📋 advisory: %s cited %s (direction mismatch; plan v%d).", d.Action, res.Cited, ap.Version)
 	}
+	// P5.5 — capture the citation so the next position-open stamps its plan link.
+	at.lastCitation = planCitation{
+		planVersion: ap.Version,
+		scenarioID:  res.Cited, // "" when off-plan
+		matched:     res.Matched,
+		valid:       true,
+	}
 }

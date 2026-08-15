@@ -426,6 +426,12 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 			logger.Infof("  ⚠️ Failed to record position: %v", err)
 		} else {
 			logger.Infof("  📊 Position recorded [%s] %s %s @ %.4f", at.id[:8], symbol, side, price)
+			// P5.5 — stamp the plan link captured in recordPlanCitation onto this
+			// open (day_plan-gated → dormant for crypto). Consumed once.
+			if at.dayPlanEnabled() && at.lastCitation.valid {
+				_ = at.store.Position().SetPlanLink(pos.ID, at.lastCitation.planVersion, at.lastCitation.scenarioID, at.lastCitation.matched)
+				at.lastCitation.valid = false
+			}
 		}
 
 	case "close_long", "close_short":

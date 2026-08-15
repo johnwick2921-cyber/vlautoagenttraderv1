@@ -574,6 +574,43 @@ func (s *Server) handlePlanAskApply(c *gin.Context) {
 	c.JSON(200, gin.H{"applied": true, "overlay_version": overlayVersion, "plan_version": planVersion})
 }
 
+// handlePlanTrades GET /api/plan/trades?trader_id=xxx — graded closed trades (the
+// trade-review feed) + an adherence summary (counts + GPA). Grade is SEPARATE
+// from P&L; both are shown so discipline and outcome can be compared.
+func (s *Server) handlePlanTrades(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	rows, err := s.store.Position().GetGradedClosedPositions(traderID, 50)
+	if err != nil {
+		SafeInternalError(c, "list graded trades", err)
+		return
+	}
+	trades := make([]gin.H, 0, len(rows))
+	grades := make([]string, 0, len(rows))
+	for _, p := range rows {
+		grades = append(grades, p.AdherenceGrade)
+		trades = append(trades, gin.H{
+			"symbol": p.Symbol, "side": p.Side,
+			"entry_price": p.EntryPrice, "exit_price": p.ExitPrice,
+			"entry_time": p.EntryTime, "exit_time": p.ExitTime,
+			"realized_pnl": p.RealizedPnL, "mae": p.MAE, "mfe": p.MFE,
+			"entry_confidence":  p.EntryConfidence,
+			"cited_scenario_id": p.CitedScenarioID, "plan_matched": p.PlanMatched,
+			"plan_version":    p.PlanVersion,
+			"adherence_grade": p.AdherenceGrade,
+			"adherence_label": kernel.AdherenceLabel(p.AdherenceGrade),
+		})
+	}
+	c.JSON(200, gin.H{"trades": trades, "summary": kernel.SummarizeAdherence(grades)})
+}
+
 // handlePlanOwnerLevel POST /api/plan/owner-level — add a STICKY owner level
 // (P3.6-C store). Guarded write: B2-armored price, WHERE-scoped by symbol, note +
 // scenario tag ride along to the planner. Owner data is SACRED — never a live acct.

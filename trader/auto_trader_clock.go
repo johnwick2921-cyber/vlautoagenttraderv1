@@ -239,6 +239,22 @@ func (at *AutoTrader) recordExcursionForClosedSymbol(symbol string) {
 		return
 	}
 	at.logInfof("📐 excursion %s: MAE %.2f / MFE %.2f pts (entry conf %d)", symbol, ex.MAE, ex.MFE, p.EntryConfidence)
+
+	// P5.5 — ADHERENCE GRADE (A–F), separate from P&L: from the plan link stamped
+	// at open + the entry-time window facts (killzone / no-trade).
+	inKZ, inNoTrade := kernel.SessionWindowFacts(kernel.DefaultSessionRegistry(), time.UnixMilli(p.EntryTime))
+	grade, _ := kernel.GradeAdherence(kernel.AdherenceInput{
+		Cited:      p.CitedScenarioID != "",
+		Matched:    p.PlanMatched,
+		OffPlan:    p.CitedScenarioID == "",
+		InNoTrade:  inNoTrade,
+		InKillzone: inKZ,
+	})
+	if err := at.store.Position().SetAdherence(p.ID, grade); err != nil {
+		at.logWarnf("🎓 adherence grade update failed for %s: %v", symbol, err)
+		return
+	}
+	at.logInfof("🎓 adherence %s: %s (%s) — cited=%q matched=%v", symbol, grade, kernel.AdherenceLabel(grade), p.CitedScenarioID, p.PlanMatched)
 }
 
 // tickOnce runs one loop iteration: a grid cycle, or (for AI strategies) a

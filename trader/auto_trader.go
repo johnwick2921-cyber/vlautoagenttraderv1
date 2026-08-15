@@ -376,6 +376,18 @@ type AutoTrader struct {
 	// transition events. nil = unobserved (a restart starts here → no spurious
 	// edge). Touched only from runCycle (single goroutine).
 	nightPrev *bool
+
+	// P5.5 — the last entry's plan citation, captured in recordPlanCitation and
+	// consumed once by the very next position-open stamp (single-goroutine loop).
+	lastCitation planCitation
+}
+
+// planCitation is the transient plan-link snapshot stamped onto a new position.
+type planCitation struct {
+	planVersion int
+	scenarioID  string
+	matched     bool
+	valid       bool
 }
 
 // NewAutoTrader creates an automatic trader

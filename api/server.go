@@ -462,6 +462,10 @@ Returns: {qa_id, plan_id, plan_version, reply:{evidence, point_class:NEW-INFO|BA
 			s.routeWithSchema(protected, "POST", "/plan/ask/apply", "Apply a PROPOSE-MERGE patch as a planner-revised overlay",
 				`Body: {"trader_id":"<id>","symbol":"MNQ","qa_id":<int>}. Applies the reply's patch (origin planner-revised) + marks it applied. Returns: {applied:true, overlay_version, plan_version}.`,
 				s.handlePlanAskApply)
+			// P5.5 — adherence grade feed (graded closed trades + GPA, separate from P&L).
+			s.routeWithSchema(protected, "GET", "/plan/trades", "Graded closed trades + adherence summary (A–F, separate from P&L)",
+				`Query: ?trader_id=<id>. Returns: {trades:[{symbol,side,entry_price,exit_price,entry_time,exit_time,realized_pnl,mae,mfe,cited_scenario_id,plan_matched,adherence_grade,adherence_label}], summary:{counts,total,gpa}}.`,
+				s.handlePlanTrades)
 
 			// Plan 4 Stage 4 — NinjaTrader account management
 			s.routeWithSchema(protected, "GET", "/accounts", "List available NT accounts (NinjaTrader TCP bridge only)",

@@ -44,3 +44,14 @@ func TestHandlePlanAskApplyRequiresTraderID(t *testing.T) {
 		t.Fatalf("expected 400 missing trader_id, got %d", rec.Code)
 	}
 }
+
+func TestHandlePlanTradesRequiresTraderID(t *testing.T) {
+	s := &Server{}
+	router := gin.New()
+	router.GET("/api/plan/trades", s.handlePlanTrades)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/plan/trades", nil))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 missing trader_id, got %d", rec.Code)
+	}
+}

@@ -1,0 +1,152 @@
+package kernel
+
+import (
+	"fmt"
+	"time"
+)
+
+// P5.5 — ADHERENCE GRADE (A–F) per closed trade: did the trade FOLLOW the plan?
+// Deterministic, computed from the plan-link facts, and SEPARATE from P&L (a
+// well-followed plan can still lose; a lucky off-plan trade still grades low).
+// The learning loop's v1 — it measures discipline, not outcome.
+
+// AdherenceInput are the plan-link facts of a closed trade.
+type AdherenceInput struct {
+	Cited      bool // the entry cited a plan scenario at all
+	Matched    bool // the cited scenario's direction matched the trade side
+	OffPlan    bool // no scenario cited (traded outside the plan)
+	InNoTrade  bool // entered inside a no-trade window (first 5m / lunch / blackout)
+	InKillzone bool // entered inside an active killzone (the plan's high-prob window)
+}
+
+// gradeLetters is the A→F ladder; stepDown moves toward F.
+var gradeLetters = []string{"A", "B", "C", "D", "F"}
+
+func stepDown(grade string, n int) string {
+	idx := len(gradeLetters) - 1
+	for i, g := range gradeLetters {
+		if g == grade {
+			idx = i
+			break
+		}
+	}
+	idx += n
+	if idx > len(gradeLetters)-1 {
+		idx = len(gradeLetters) - 1
+	}
+	if idx < 0 {
+		idx = 0
+	}
+	return gradeLetters[idx]
+}
+
+// GradeAdherence returns the A–F grade + the reasons. Base grade from citation/
+// direction, then penalties for trading a no-trade window or outside a killzone.
+func GradeAdherence(in AdherenceInput) (string, []string) {
+	var reasons []string
+	var base string
+	switch {
+	case in.OffPlan || !in.Cited:
+		base = "D"
+		reasons = append(reasons, "off-plan (no scenario cited)")
+	case in.Matched:
+		base = "A"
+		reasons = append(reasons, "cited a scenario, direction matched")
+	default:
+		base = "C"
+		reasons = append(reasons, "cited a scenario but the direction mismatched")
+	}
+
+	grade := base
+	if in.InNoTrade {
+		grade = stepDown(grade, 1)
+		reasons = append(reasons, "entered in a no-trade window")
+	}
+	if !in.InKillzone {
+		grade = stepDown(grade, 1)
+		reasons = append(reasons, "entered outside a killzone")
+	}
+	return grade, reasons
+}
+
+// AdherenceSummary rolls a set of grades into counts + a GPA (A=4…F=0), for the
+// trade-review panel + the weekly digest.
+type AdherenceSummary struct {
+	Counts map[string]int `json:"counts"`
+	Total  int            `json:"total"`
+	GPA    float64        `json:"gpa"`
+}
+
+var gradePoints = map[string]float64{"A": 4, "B": 3, "C": 2, "D": 1, "F": 0}
+
+// SummarizeAdherence aggregates grades into counts + GPA.
+func SummarizeAdherence(grades []string) AdherenceSummary {
+	s := AdherenceSummary{Counts: map[string]int{}}
+	var sum float64
+	for _, g := range grades {
+		if _, ok := gradePoints[g]; !ok {
+			continue
+		}
+		s.Counts[g]++
+		s.Total++
+		sum += gradePoints[g]
+	}
+	if s.Total > 0 {
+		s.GPA = sum / float64(s.Total)
+	}
+	return s
+}
+
+// SessionWindowFacts derives the two entry-window adherence inputs from an entry
+// timestamp: was it inside an active killzone, and inside a no-trade sub-window
+// (first 5m of the session, or lunch 12:00–13:30 CT). Returns (false,false) when
+// no session is active at t.
+func SessionWindowFacts(reg SessionRegistry, t time.Time) (inKillzone, inNoTrade bool) {
+	sess, ok := reg.ActiveSession(t)
+	if !ok {
+		return false, false
+	}
+	inKillzone = sess.InKillzone(t)
+	if InBlackoutWindow(t, "12:00", "13:30") {
+		inNoTrade = true
+	}
+	if inFirst5m(sess.WindowStartCT, t) {
+		inNoTrade = true
+	}
+	return inKillzone, inNoTrade
+}
+
+// inFirst5m reports whether t is within the first 5 minutes of a CT window start.
+func inFirst5m(startCT string, t time.Time) bool {
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		return false
+	}
+	var sh, sm int
+	if _, err := fmt.Sscanf(startCT, "%d:%d", &sh, &sm); err != nil {
+		return false
+	}
+	ct := t.In(loc)
+	startMin := sh*60 + sm
+	nowMin := ct.Hour()*60 + ct.Minute()
+	d := nowMin - startMin
+	return d >= 0 && d < 5
+}
+
+// AdherenceLabel is a short human label for a grade.
+func AdherenceLabel(grade string) string {
+	switch grade {
+	case "A":
+		return "followed the plan"
+	case "B":
+		return "mostly on-plan"
+	case "C":
+		return "loose adherence"
+	case "D":
+		return "off-plan"
+	case "F":
+		return "ignored the plan"
+	default:
+		return fmt.Sprintf("grade %s", grade)
+	}
+}

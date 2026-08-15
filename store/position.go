@@ -137,6 +137,13 @@ type TraderPosition struct {
 	MAE             float64 `gorm:"column:mae;default:0" json:"mae"`
 	MFE             float64 `gorm:"column:mfe;default:0" json:"mfe"`
 	EntryConfidence int     `gorm:"column:entry_confidence;default:0" json:"entry_confidence"`
+	// P5.5 — plan link (additive, futures day-plan): the cited scenario + plan
+	// version stamped at OPEN, and the adherence grade (A–F) computed at CLOSE.
+	// Empty/zero for crypto / off-plan trades.
+	PlanVersion     int    `gorm:"column:plan_version;default:0" json:"plan_version"`
+	CitedScenarioID string `gorm:"column:cited_scenario_id;default:''" json:"cited_scenario_id"`
+	PlanMatched     bool   `gorm:"column:plan_matched;default:false" json:"plan_matched"`
+	AdherenceGrade  string `gorm:"column:adherence_grade;default:''" json:"adherence_grade"`
 }
 
 // TableName returns the table name
@@ -159,6 +166,38 @@ func (s *PositionStore) SetEntryConfidence(id int64, confidence int) error {
 func (s *PositionStore) UpdateExcursion(id int64, mae, mfe float64) error {
 	return s.db.Model(&TraderPosition{}).Where("id = ?", id).
 		Updates(map[string]any{"mae": mae, "mfe": mfe}).Error
+}
+
+// SetPlanLink stamps the cited scenario + plan version + direction-match onto a
+// position at OPEN (P5.5). Additive; only called when day_plan is enabled.
+func (s *PositionStore) SetPlanLink(id int64, planVersion int, citedScenarioID string, matched bool) error {
+	return s.db.Model(&TraderPosition{}).Where("id = ?", id).
+		Updates(map[string]any{
+			"plan_version":      planVersion,
+			"cited_scenario_id": citedScenarioID,
+			"plan_matched":      matched,
+		}).Error
+}
+
+// SetAdherence records the A–F adherence grade on a closed position (P5.5).
+func (s *PositionStore) SetAdherence(id int64, grade string) error {
+	return s.db.Model(&TraderPosition{}).Where("id = ?", id).
+		Update("adherence_grade", grade).Error
+}
+
+// GetGradedClosedPositions returns a trader's most-recent closed positions that
+// carry an adherence grade (the trade-review feed), newest exit first.
+func (s *PositionStore) GetGradedClosedPositions(traderID string, limit int) ([]*TraderPosition, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	var rows []*TraderPosition
+	err := s.db.Where("trader_id = ? AND status = ? AND adherence_grade <> ''", traderID, "CLOSED").
+		Order("exit_time DESC").Limit(limit).Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 // NewPositionStore creates position storage instance
