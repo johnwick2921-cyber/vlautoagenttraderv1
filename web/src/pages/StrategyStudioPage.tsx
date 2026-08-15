@@ -42,6 +42,8 @@ import { isCMEFutures } from '../lib/instrument'
 import { CoinSourceEditor } from '../components/strategy/CoinSourceEditor'
 import { IndicatorEditor } from '../components/strategy/IndicatorEditor'
 import { RiskControlEditor } from '../components/strategy/RiskControlEditor'
+import { DayPlanEditor } from '../components/strategy/DayPlanEditor'
+import { tp } from '../i18n/plan-translations'
 import { PromptSectionsEditor } from '../components/strategy/PromptSectionsEditor'
 import { PublishSettingsEditor } from '../components/strategy/PublishSettingsEditor'
 import {
@@ -127,6 +129,7 @@ export function StrategyStudioPage() {
     coinSource: true,
     indicators: false,
     riskControl: false,
+    dayPlan: false,
     promptSections: false,
     customPrompt: false,
     publishSettings: false,
@@ -846,6 +849,22 @@ export function StrategyStudioPage() {
       ),
     },
     {
+      // P4.5 — Day Plan block (futures-only; dropped for non-futures below).
+      key: 'dayPlan' as const,
+      icon: Target,
+      color: '#C9A24B',
+      title: tp('dayPlanBlock', language),
+      forStrategyType: 'ai_trading' as const,
+      content: (
+        <DayPlanEditor
+          config={editingConfig?.day_plan}
+          onChange={(dayPlan) => updateConfig('day_plan', dayPlan)}
+          disabled={selectedStrategy?.is_default}
+          language={language}
+        />
+      ),
+    },
+    {
       key: 'promptSections' as const,
       icon: FileText,
       color: '#a855f7',
@@ -915,8 +934,10 @@ export function StrategyStudioPage() {
     },
   ].filter(
     (section) =>
-      section.forStrategyType === 'both' ||
-      section.forStrategyType === currentStrategyType
+      (section.forStrategyType === 'both' ||
+        section.forStrategyType === currentStrategyType) &&
+      // Day Plan is futures-only (drop it for non-futures strategies).
+      (section.key !== 'dayPlan' || isFuturesStrategy)
   )
 
   return (

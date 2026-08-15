@@ -59,6 +59,41 @@ export interface StrategyConfig {
   // Grid trading configuration (only used when strategy_type is 'grid_trading')
   grid_config?: GridStrategyConfig | null
   publish_config?: PublishStrategyConfig
+  // Day Plan settings block (root-level, additive; mirrors Go DayPlanConfig).
+  // Absent/undefined = feature off (byte-identical to a pre-day-plan strategy).
+  day_plan?: DayPlanConfig
+}
+
+// DayPlanSessionOverride — per-session overrides; an ABSENT field inherits the
+// strategy-level value (⚪ inherit), a present field overrides it (🔸 override).
+export interface DayPlanSessionOverride {
+  session: string // NY | ASIA | LONDON
+  enable?: boolean
+  replan_cap?: number
+  plan_mode?: string
+  acceptance_rule?: string
+  min_grade?: string // A | B | C
+  max_trades?: number
+}
+
+// DayPlanConfig — mirrors Go store.DayPlanConfig. plan_enabled=false is the
+// master switch (off). Additive + defaults-off.
+export interface DayPlanConfig {
+  plan_enabled: boolean
+  planner_model?: string
+  plan_mode?: string // advisory | direction | strict
+  planner_timeframes?: string[]
+  proximity_filter_atr?: number
+  max_levels?: number
+  scenario_cap?: number
+  acceptance_rule?: string // 2x5m | 15m-close
+  replan_cap?: number
+  sessions_enabled?: string[]
+  approval_required?: boolean
+  evening_digest?: boolean
+  last_entry_ct?: string
+  eod_flat_ct?: string
+  sessions?: DayPlanSessionOverride[]
 }
 
 export interface AIStrategyConfig {
