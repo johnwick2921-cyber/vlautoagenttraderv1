@@ -185,6 +185,22 @@ func (s *PositionStore) SetAdherence(id int64, grade string) error {
 		Update("adherence_grade", grade).Error
 }
 
+// GetUngradedClosedPositions returns a trader's closed positions that have NO
+// adherence grade yet and closed at/after sinceMs (W5 — the loop poll grades every
+// real exit; the epoch excludes pre-day-plan history). Oldest exit first.
+func (s *PositionStore) GetUngradedClosedPositions(traderID string, sinceMs int64, limit int) ([]*TraderPosition, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	var rows []*TraderPosition
+	err := s.db.Where("trader_id = ? AND status = ? AND adherence_grade = '' AND exit_time >= ?", traderID, "CLOSED", sinceMs).
+		Order("exit_time ASC").Limit(limit).Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // GetGradedClosedPositions returns a trader's most-recent closed positions that
 // carry an adherence grade (the trade-review feed), newest exit first.
 func (s *PositionStore) GetGradedClosedPositions(traderID string, limit int) ([]*TraderPosition, error) {

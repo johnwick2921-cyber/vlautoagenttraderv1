@@ -125,6 +125,11 @@ func (at *AutoTrader) runCycle() error {
 	// daily roll-up at the trade-date close. Idempotent; gated → dormant.
 	at.maybeWriteDigests()
 
+	// W5 — LEARNING LOOP on REAL exits: grade every ungraded closed trade (NT8 OCO
+	// SL/TP, EOD-flat, manual) — the paths the AI decision cycle never sees.
+	// Idempotent; gated → dormant.
+	at.maybeRecordClosedTradeAnalytics()
+
 	// P5.6 — WEEKLY matched-random eval (fixed cadence, never nightly re-peek):
 	// on Sundays, freeze one honesty-gate snapshot per ISO week. Idempotent
 	// (first-writer-wins across traders); gated → dormant.

@@ -2,11 +2,13 @@ package trader
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"nofx/kernel"
 	"nofx/market"
+	"nofx/store"
 )
 
 // P2 — THE CLOCK. Bar-close cadence + the skip-while-open gate. Both are GATED on
@@ -246,20 +248,35 @@ func (at *AutoTrader) enforceEODFlat() bool {
 	return true
 }
 
-// recordExcursionForClosedSymbol (P2.4) computes the MAE/MFE over the just-closed
-// trade's hold from 1m bars and stores them on the position row. Gated on
-// day_plan → dormant by default (crypto/plan-off write nothing).
+// recordExcursionForClosedSymbol (P2.4) processes the just-closed trade for the
+// AI-emitted-close path. W5 — the SAME analytics also fire from the loop poll for
+// real exits (NT8 OCO / EOD-flat / manual), so no exit path is missed.
 func (at *AutoTrader) recordExcursionForClosedSymbol(symbol string) {
-	if !at.dayPlanEnabled() || at.store == nil || market.FuturesBarsProvider == nil {
+	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
 	closed, err := at.store.Position().GetClosedPositions(at.id, 1)
 	if err != nil || len(closed) == 0 {
 		return
 	}
-	p := closed[0]
-	if p.Symbol != symbol || p.EntryPrice <= 0 || p.EntryTime <= 0 {
-		return // the latest close is a different symbol / incomplete
+	if p := closed[0]; p.Symbol == symbol {
+		at.recordClosedTradeAnalytics(p)
+	}
+}
+
+// recordClosedTradeAnalytics (W5) computes MAE/MFE + the A–F adherence grade +
+// the matched-random reaction verdict for ONE closed trade. Idempotent (a graded
+// row is skipped), so the AI-close call and the loop poll never double-process.
+// Gated on day_plan → dormant for crypto / plan-off.
+func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
+	if p == nil || p.AdherenceGrade != "" { // already processed
+		return
+	}
+	if !at.dayPlanEnabled() || at.store == nil || market.FuturesBarsProvider == nil {
+		return
+	}
+	if p.EntryPrice <= 0 || p.EntryTime <= 0 {
+		return
 	}
 	exitMs := p.ExitTime
 	if exitMs <= 0 {
@@ -268,13 +285,10 @@ func (at *AutoTrader) recordExcursionForClosedSymbol(symbol string) {
 	bars := market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount)
 	ex := kernel.ComputeExcursion(p.EntryPrice, p.Side, bars, p.EntryTime, exitMs)
 	if err := at.store.Position().UpdateExcursion(p.ID, ex.MAE, ex.MFE); err != nil {
-		at.logWarnf("📐 excursion update failed for %s: %v", symbol, err)
+		at.logWarnf("📐 excursion update failed for %s: %v", p.Symbol, err)
 		return
 	}
-	at.logInfof("📐 excursion %s: MAE %.2f / MFE %.2f pts (entry conf %d)", symbol, ex.MAE, ex.MFE, p.EntryConfidence)
-
-	// P5.5 — ADHERENCE GRADE (A–F), separate from P&L: from the plan link stamped
-	// at open + the entry-time window facts (killzone / no-trade).
+	// P5.5 — ADHERENCE GRADE (A–F), separate from P&L.
 	inKZ, inNoTrade := kernel.SessionWindowFacts(kernel.DefaultSessionRegistry(), time.UnixMilli(p.EntryTime))
 	grade, _ := kernel.GradeAdherence(kernel.AdherenceInput{
 		Cited:      p.CitedScenarioID != "",
@@ -284,13 +298,43 @@ func (at *AutoTrader) recordExcursionForClosedSymbol(symbol string) {
 		InKillzone: inKZ,
 	})
 	if err := at.store.Position().SetAdherence(p.ID, grade); err != nil {
-		at.logWarnf("🎓 adherence grade update failed for %s: %v", symbol, err)
+		at.logWarnf("🎓 adherence grade update failed for %s: %v", p.Symbol, err)
 		return
 	}
-	at.logInfof("🎓 adherence %s: %s (%s) — cited=%q matched=%v", symbol, grade, kernel.AdherenceLabel(grade), p.CitedScenarioID, p.PlanMatched)
+	at.logInfof("📐🎓 %s close: MAE %.2f / MFE %.2f pts · adherence %s (%s) cited=%q matched=%v",
+		p.Symbol, ex.MAE, ex.MFE, grade, kernel.AdherenceLabel(grade), p.CitedScenarioID, p.PlanMatched)
 
-	// P5.6 — record a matched-random reaction verdict for the traded level type.
+	// P5.6 — matched-random reaction verdict for the traded level type.
 	at.recordMatchedRandomForClose(p, ex)
+}
+
+// maybeRecordClosedTradeAnalytics (W5) is the LOOP POLL that catches trades closed
+// on the REAL exit paths (NT8 OCO SL/TP, EOD-flat, manual) — none of which run the
+// AI decision cycle. It grades every ungraded close since the analytics epoch
+// (set on first run so pre-existing history is ignored). Idempotent via the grade
+// flag; gated on day_plan.
+func (at *AutoTrader) maybeRecordClosedTradeAnalytics() {
+	if !at.dayPlanEnabled() || at.store == nil {
+		return
+	}
+	const key = "dayplan_analytics_since"
+	sinceStr, _ := at.store.GetSystemConfig(key)
+	if sinceStr == "" {
+		// First run: stamp the epoch + skip all pre-existing closes (not day-plan trades).
+		_ = at.store.SetSystemConfig(key, strconv.FormatInt(time.Now().UnixMilli(), 10))
+		return
+	}
+	sinceMs, err := strconv.ParseInt(sinceStr, 10, 64)
+	if err != nil {
+		return
+	}
+	rows, err := at.store.Position().GetUngradedClosedPositions(at.id, sinceMs, 20)
+	if err != nil {
+		return
+	}
+	for _, p := range rows {
+		at.recordClosedTradeAnalytics(p)
+	}
 }
 
 // tickOnce runs one loop iteration: a grid cycle, or (for AI strategies) a
