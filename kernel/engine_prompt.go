@@ -726,6 +726,19 @@ func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *ma
 		}
 	}
 
+	// W11 — the indicator-state lines are extracted to FormatIndicatorState so the
+	// day-plan planner prompt can mirror the EXACT block the executor renders.
+	FormatIndicatorState(sb, data, indicators)
+
+	sb.WriteString("\n")
+}
+
+// FormatIndicatorState writes the toggle-gated, configured-period-aware indicator
+// lines (EMA/MACD/RSI/ATR/BOLL) for one timeframe's series — the SAME indicator
+// state the executor prompt renders. Extracted (W11) so the planner INDICATORS
+// mirror is byte-identical to the executor's, never a re-derivation. Pure: reads
+// only `data` + `indicators`; emits nothing for disabled toggles / empty series.
+func FormatIndicatorState(sb *strings.Builder, data *market.TimeframeSeriesData, indicators store.IndicatorConfig) {
 	if indicators.EnableEMA {
 		if len(data.EMAByPeriod) > 0 {
 			// Configured periods drive the labels + values (e.g. EMA9/EMA21/EMA200),
@@ -812,8 +825,6 @@ func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *ma
 			sb.WriteString(fmt.Sprintf("BOLL Lower: %s\n", formatFloatSlice(data.BOLLLower)))
 		}
 	}
-
-	sb.WriteString("\n")
 }
 
 func (e *StrategyEngine) formatQuantData(data *QuantData) string {

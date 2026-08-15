@@ -42,7 +42,12 @@ type PlanDB struct {
 	ModelID       string    `gorm:"column:model_id;not null;default:''"`        // resolved planner model id
 	PromptHash    string    `gorm:"column:prompt_hash;not null;default:''"`
 	Doc           string    `gorm:"column:doc;not null;default:'{}'"` // plan JSON; CHECK(json_valid(doc)) added in DDL
-	CreatedAt     time.Time `gorm:"column:created_at;autoCreateTime"`
+	// W11 — the indicator mirror the planner saw, FROZEN at read time (replay-safe:
+	// later ai_config toggle changes never rewrite history) + the ai_config
+	// fingerprint (which indicator config produced this plan).
+	IndicatorsBlock string    `gorm:"column:indicators_block;not null;default:''"`
+	AIConfigHash    string    `gorm:"column:ai_config_hash;not null;default:''"`
+	CreatedAt       time.Time `gorm:"column:created_at;autoCreateTime"`
 }
 
 // TableName implements the gorm Tabler interface.
@@ -80,6 +85,8 @@ CREATE TABLE IF NOT EXISTS plans (
 	model_id       TEXT    NOT NULL DEFAULT '',
 	prompt_hash    TEXT    NOT NULL DEFAULT '',
 	doc            TEXT    NOT NULL DEFAULT '{}' CHECK (json_valid(doc)),
+	indicators_block TEXT  NOT NULL DEFAULT '',
+	ai_config_hash TEXT    NOT NULL DEFAULT '',
 	created_at     DATETIME,
 	PRIMARY KEY (plan_id, version)
 )`
@@ -137,6 +144,12 @@ func (s *PlanStore) initTables() error {
 		s.db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_date_session_version ON plans(trade_date, session, version)`)
 		s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_plans_strategy ON plans(strategy_id)`)
 		s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_overlays_plan ON plan_overlays(plan_id, plan_version)`)
+		// W11 — idempotent additive columns for EXISTING sqlite DBs (CREATE TABLE IF
+		// NOT EXISTS won't add them). SQLite has no ADD COLUMN IF NOT EXISTS, so the
+		// duplicate-column error on re-run is expected + swallowed (same as the
+		// index Execs above).
+		s.db.Exec(`ALTER TABLE plans ADD COLUMN indicators_block TEXT NOT NULL DEFAULT ''`)
+		s.db.Exec(`ALTER TABLE plans ADD COLUMN ai_config_hash TEXT NOT NULL DEFAULT ''`)
 		return nil
 	}
 	return s.db.AutoMigrate(&PlanDB{}, &PlanOverlayDB{})

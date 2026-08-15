@@ -34,6 +34,12 @@ type PlannerInput struct {
 	DigestChain      []string               // session digests + dailies + one-liners
 	OwnerNote        string
 	Warming          string // non-empty → cold-start / WARMING annotation
+	// W11 — the executor's indicator mirror (per-TF EMA/RSI/ATR/BOLL/MACD, driven by
+	// ai_config toggles), rendered once by RenderPlannerIndicatorBlock. Empty → the
+	// block is omitted (disabled state = byte-identical prompt). AIConfigHash is the
+	// fingerprint of the indicator config that produced it (frozen on the plan row).
+	IndicatorsBlock string
+	AIConfigHash    string
 }
 
 // BuildPlannerPrompt assembles the planner prompt: reasoning-first instruction,
@@ -53,6 +59,14 @@ func BuildPlannerPrompt(in PlannerInput) string {
 	b.WriteString("\n")
 
 	b.WriteString("## Regime\n" + in.Regime.Render() + "\n\n")
+
+	// W11 — INDICATORS mirror: the SAME per-timeframe indicator state the executor
+	// sees, so the planner reasons on the exact indicators the trader trades on.
+	// Omitted when no indicator is enabled (disabled state = pre-W11 prompt).
+	if in.IndicatorsBlock != "" {
+		b.WriteString("## Indicators (executor mirror — your ai_config toggles, computed values)\n")
+		b.WriteString(in.IndicatorsBlock + "\n\n")
+	}
 
 	// Ranked level table — the decision-critical block, high-salience.
 	b.WriteString("## Ranked levels (Go-graded; you never re-sort)\n")

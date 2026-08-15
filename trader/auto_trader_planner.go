@@ -248,7 +248,8 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 	hash := shortHash(prompt)
 	// W3 — HARD red-news blackout lines auto-written into the plan (§80).
 	t1Lines := kernel.T1NoTradeLines(input.Calendar)
-	at.runPlannerReadCore(session, tradeDate, modelID, hash, func() (string, error) {
+	// W11 — carry the frozen indicator mirror + ai_config hash to the write site.
+	at.runPlannerReadCore(session, tradeDate, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, func() (string, error) {
 		return client.CallWithMessages(plannerSystemPrompt, prompt)
 	}, t1Lines...)
 }
@@ -256,7 +257,7 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 // runPlannerReadCore is the testable core: ≤2 retries, then FAIL-CLOSED to a
 // NO-TRADE plan (never a stale plan, never nothing). Writes the append-only plan
 // row. Returns (version, lifecycle, err).
-func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash string, call func() (string, error), extraNoTrade ...string) (int, string, error) {
+func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash, indicatorsBlock, aiConfigHash string, call func() (string, error), extraNoTrade ...string) (int, string, error) {
 	var doc *kernel.PlanDoc
 	var lastErr error
 	for attempt := 1; attempt <= 3; attempt++ { // 1 + ≤2 retries
@@ -317,16 +318,18 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 		TradeDate:     tradeDate,
 		Session:       session,
 		TriggerReason: trigger,
-		Lifecycle:     lifecycle,
-		ModelID:       modelID,
-		PromptHash:    promptHash,
-		Doc:           string(docJSON),
+		Lifecycle:       lifecycle,
+		ModelID:         modelID,
+		PromptHash:      promptHash,
+		IndicatorsBlock: indicatorsBlock, // W11 — frozen at read time (replay-safe)
+		AIConfigHash:    aiConfigHash,
+		Doc:             string(docJSON),
 	})
 	if err != nil {
 		at.logErrorf("🗓️ planner: write plan row failed for %s %s: %v", tradeDate, session, err)
 		return 0, lifecycle, err
 	}
-	at.logInfof("🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s)", tradeDate, session, version, modelID, lifecycle, promptHash)
+	at.logInfof("🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s, ai_config %s)", tradeDate, session, version, modelID, lifecycle, promptHash, aiConfigHash)
 	// W6 — P1 plan-born/armed alert (active plans only; fail-closed already alerted P0).
 	if lifecycle == "active" {
 		at.emitAlert("P1", "armed", fmt.Sprintf("planborn:%s:%s:%d", tradeDate, session, version),
@@ -458,6 +461,10 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 		structure = append(structure, tf+": structure read")
 	}
 
+	// W11 — INDICATOR MIRROR: render the executor's per-TF indicator state + the
+	// ai_config fingerprint (both frozen onto the plan row downstream).
+	indicatorsBlock, aiConfigHash := at.renderIndicatorMirror(symbol)
+
 	return kernel.PlannerInput{
 		TradeDate:        tradeDate,
 		Session:          session,
@@ -470,6 +477,8 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 		Calendar:         calEvents,
 		DigestChain:      digestChain,
 		Warming:          warming,
+		IndicatorsBlock:  indicatorsBlock,
+		AIConfigHash:     aiConfigHash,
 	}
 }
 

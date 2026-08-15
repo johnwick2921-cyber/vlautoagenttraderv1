@@ -33,7 +33,7 @@ func plannerTestTrader(t *testing.T) *AutoTrader {
 
 func TestRunPlannerReadCoreSuccess(t *testing.T) {
 	at := plannerTestTrader(t)
-	ver, lc, err := at.runPlannerReadCore("NY", "2026-08-14", "deepseek-reasoner", "hashA",
+	ver, lc, err := at.runPlannerReadCore("NY", "2026-08-14", "deepseek-reasoner", "hashA", "", "",
 		func() (string, error) { return validTraderPlanJSON, nil })
 	if err != nil || ver != 1 || lc != "active" {
 		t.Fatalf("success: ver=%d lc=%q err=%v", ver, lc, err)
@@ -46,7 +46,7 @@ func TestRunPlannerReadCoreSuccess(t *testing.T) {
 
 func TestRunPlannerReadCoreFailClosed(t *testing.T) {
 	at := plannerTestTrader(t)
-	ver, lc, err := at.runPlannerReadCore("NY", "2026-08-14", "deepseek-reasoner", "hashB",
+	ver, lc, err := at.runPlannerReadCore("NY", "2026-08-14", "deepseek-reasoner", "hashB", "", "",
 		func() (string, error) { return "", errors.New("timeout") })
 	if err != nil || lc != "no_trade" {
 		t.Fatalf("fail-closed: ver=%d lc=%q err=%v want no_trade", ver, lc, err)
@@ -60,7 +60,7 @@ func TestRunPlannerReadCoreFailClosed(t *testing.T) {
 func TestRunPlannerReadCoreRetryThenSuccess(t *testing.T) {
 	at := plannerTestTrader(t)
 	n := 0
-	_, lc, err := at.runPlannerReadCore("NY", "2026-08-14", "m", "hashC", func() (string, error) {
+	_, lc, err := at.runPlannerReadCore("NY", "2026-08-14", "m", "hashC", "", "", func() (string, error) {
 		n++
 		if n < 3 {
 			return "not json", nil // 2 invalid → retried
