@@ -248,13 +248,46 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 	return version, lifecycle, nil
 }
 
+// resolveSessionPlanCfg resolves the effective planner config for a session:
+// strategy-level day_plan values + the per-session override (min_grade). Nil /
+// unset fields fall back to the spec defaults, so a default config reproduces the
+// prior behavior byte-for-byte (max_levels 8, no min_grade filter, D/4h/1h/15m).
+// Pure — unit-tested without an AutoTrader.
+func resolveSessionPlanCfg(dp *store.DayPlanConfig, session string) (maxLevels int, minGrade string, timeframes []string) {
+	maxLevels = kernel.DefaultMaxLevels
+	timeframes = []string{"D", "4h", "1h", "15m"}
+	if dp == nil {
+		return maxLevels, minGrade, timeframes
+	}
+	if dp.MaxLevels > 0 {
+		maxLevels = dp.MaxLevels
+	}
+	if len(dp.PlannerTimeframes) > 0 {
+		timeframes = dp.PlannerTimeframes
+	}
+	for _, so := range dp.Sessions {
+		if so.Session == session && so.MinGrade != nil {
+			minGrade = *so.MinGrade
+		}
+	}
+	return maxLevels, minGrade, timeframes
+}
+
 // assemblePlannerInput builds the input package from stored + cached data (the
 // 16:55 read builds entirely from stored data). Digests + owner note arrive with
-// P3.6; regime daily/1h fields degrade to n/a until those TFs are fetched.
+// P3.6; regime daily/1h fields degrade to n/a until those TFs are fetched. It
+// HONORS the day_plan config (max_levels, per-session min_grade, timeframes) —
+// edits apply at the NEXT read (never mid-plan).
 func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.PlannerInput {
 	symbol := at.futuresSymbol()
 	now := time.Now()
 	reg := kernel.DefaultSessionRegistry()
+
+	var dp *store.DayPlanConfig
+	if at.config.StrategyConfig != nil {
+		dp = at.config.StrategyConfig.DayPlan
+	}
+	maxLevels, minGrade, timeframes := resolveSessionPlanCfg(dp, session)
 
 	var bars []market.Kline
 	if market.FuturesBarsProvider != nil {
@@ -264,7 +297,7 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	if kernel.NakedPOCProvider != nil {
 		extra = kernel.NakedPOCProvider(symbol)
 	}
-	scored, price, dATR := kernel.AssembleScoredLevels(bars, reg, symbol, kernel.DefaultMaxLevels, now, extra...)
+	scored, price, dATR := kernel.AssembleScoredLevels(bars, reg, symbol, maxLevels, now, extra...)
 
 	// P3.6-C — STICKY OWNER LEVELS: always seated, tagged 👤, persisted across
 	// sessions. Prepended so they lead the ranked table.
@@ -282,6 +315,9 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 		}
 		scored = append(ownerScored, scored...)
 	}
+
+	// Per-session min_grade filter (owner levels grade A → always survive).
+	scored = kernel.FilterLevelsByMinGrade(scored, minGrade)
 
 	var daily, hour1, min5 []market.Kline
 	if market.FuturesBarsProvider != nil {
@@ -321,17 +357,26 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	dailies, _ := at.store.Digest().RecentDailies(symbol, 7)
 	digestChain := kernel.BuildDigestChain(sessionDigests, dailies)
 
+	// StructureSummary declares which timeframes the planner read (honors the
+	// configured planner_timeframes). Real per-TF structure lines land later; for
+	// now the header makes the read-set explicit + config-driven.
+	structure := make([]string, 0, len(timeframes))
+	for _, tf := range timeframes {
+		structure = append(structure, tf+": structure read")
+	}
+
 	return kernel.PlannerInput{
-		TradeDate:   tradeDate,
-		Session:     session,
-		ReadKind:    session + " scheduled read (stored+cached data)",
-		Price:       price,
-		DATR:        dATR,
-		Regime:      regime,
-		Levels:      scored,
-		Calendar:    calEvents,
-		DigestChain: digestChain,
-		Warming:     warming,
+		TradeDate:        tradeDate,
+		Session:          session,
+		ReadKind:         session + " scheduled read (stored+cached data)",
+		Price:            price,
+		DATR:             dATR,
+		Regime:           regime,
+		Levels:           scored,
+		StructureSummary: structure,
+		Calendar:         calEvents,
+		DigestChain:      digestChain,
+		Warming:          warming,
 	}
 }
 

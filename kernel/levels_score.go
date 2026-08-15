@@ -42,6 +42,25 @@ func freshLabel(f string) string {
 // DefaultMaxLevels is the KEY LEVELS table cap (spec max_levels default 8).
 const DefaultMaxLevels = 8
 
+var levelGradeRank = map[string]int{"A": 3, "B": 2, "C": 1}
+
+// FilterLevelsByMinGrade drops levels graded below minGrade (A > B > C). An empty
+// or unknown minGrade is a no-op (no filter). Owner levels grade "A", so they
+// survive any minGrade (they are always seated by design).
+func FilterLevelsByMinGrade(scored []ScoredLevel, minGrade string) []ScoredLevel {
+	min, ok := levelGradeRank[strings.ToUpper(strings.TrimSpace(minGrade))]
+	if !ok {
+		return scored
+	}
+	out := make([]ScoredLevel, 0, len(scored))
+	for _, l := range scored {
+		if levelGradeRank[strings.ToUpper(l.Grade)] >= min {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
 // typeEvidence weights a level kind's standalone evidence.
 func typeEvidence(k LevelKind) float64 {
 	switch k {
