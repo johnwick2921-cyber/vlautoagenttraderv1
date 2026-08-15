@@ -59,6 +59,14 @@ func (at *AutoTrader) runCycle() error {
 		return nil
 	}
 
+	// W3/F0 — CALENDAR PRODUCER, hoisted ABOVE the session gate: fetching the
+	// week's calendar needs no market, no NT8 and no account, and MUST run on a
+	// weekend/closed-hours boot so the T1 blackout slices exist BEFORE the next
+	// open (the F0 live finding: a Saturday restart never reached the producer —
+	// the session gate below skipped the entire cycle all weekend). Gated on
+	// day_plan; throttled; idempotent (skip-fresh).
+	at.maybeFetchCalendar(time.Now())
+
 	// 0a. PART A — CME SESSION GATE (hoisted to the TOP, before the account gate
 	// and buildTradingContext). When the futures market is closed we skip the
 	// ENTIRE cycle — no context build, no NT8 round-trips, no AI — and idle with
@@ -114,11 +122,8 @@ func (at *AutoTrader) runCycle() error {
 	// P3.3 — PLANNER READ JOBS: at each enabled session's registry read time, run
 	// the per-session planner read once (idempotent via the plan store) and persist
 	// the plan. GATED on day_plan → dormant by default; independent of position
-	// state (a read fires whether flat or holding).
-	// W3 — calendar producer: store this week's FF slices so the planner read + the
-	// T1 red-news blackout gate have data. Gated + throttled + idempotent.
-	at.maybeFetchCalendar(time.Now())
-
+	// state (a read fires whether flat or holding). (The W3 calendar producer runs
+	// earlier, above the session gate — F0.)
 	at.maybeRunSessionReads()
 
 	// P3.6-A — DIGEST WRITERS: 3-line session digest at each session close + the

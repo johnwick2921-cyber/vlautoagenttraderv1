@@ -15,32 +15,50 @@ import (
 // on day_plan → dormant by default; idempotent (SaveSliceIfAbsent); throttled.
 
 // maybeFetchCalendar stores the week's calendar slices when the current
-// trade-date's slice is missing (covers on-boot + each new day). Network attempts
-// are throttled to ≤1/hour so an outage doesn't hammer the feed.
+// trade-date's slice is missing (covers on-boot + each new day — F0: it is called
+// ABOVE the session gate, so a weekend/closed-hours boot still ignites it).
+// Network attempts are throttled to ≤1/hour so an outage doesn't hammer the feed.
+// Every outcome logs plainly: fetched / fallback static / skip-fresh (F0.1).
 func (at *AutoTrader) maybeFetchCalendar(now time.Time) {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
 	tradeDate := plannerTradeDateCT(now)
 	if slice, _ := at.store.Calendar().GetSlice(tradeDate); slice != nil {
-		return // already have today's slice
+		// skip-fresh — logged once per trade date, not every 3-min cycle.
+		if at.lastCalSkipDate != tradeDate {
+			at.lastCalSkipDate = tradeDate
+			at.logInfof("📅 calendar: skip-fresh — slice for %s already stored (src %s)", tradeDate, slice.Source)
+		}
+		return
 	}
 	if !at.lastCalFetch.IsZero() && now.Sub(at.lastCalFetch) < time.Hour {
 		return // throttle outage retries
 	}
 	at.lastCalFetch = now
 
-	res := calendar.FetchWeek(calendar.DefaultFetch, calendarStaticLoader)
-	if res.Warning != "" {
-		at.logWarnf("🗓️ calendar: %s", res.Warning)
+	fetch := at.calFetch // test seam (F0); nil → live FF fetch
+	if fetch == nil {
+		fetch = calendar.DefaultFetch
 	}
+	res := calendar.FetchWeek(fetch, calendarStaticLoader)
+	stored, events := 0, 0
 	for date, evs := range res.Days {
 		js, _ := json.Marshal(evs)
 		if wrote, err := at.store.Calendar().SaveSliceIfAbsent(&store.CalendarSliceDB{
 			TradeDate: date, Source: string(res.Source), EventsJSON: string(js), CreatedAt: now.UnixMilli(),
 		}); err == nil && wrote {
-			at.logInfof("🗓️ calendar slice stored %s (%d events, src %s).", date, len(evs), res.Source)
+			stored++
+			events += len(evs)
 		}
+	}
+	switch {
+	case res.Source == calendar.SourceLive:
+		at.logInfof("📅 calendar: fetched %d events — stored %d day slice(s) (src forexfactory)", events, stored)
+	case stored > 0:
+		at.logWarnf("📅 calendar: fallback static — stored %d day slice(s), %d events (%s)", stored, events, res.Warning)
+	default:
+		at.logWarnf("📅 calendar: fetch failed, no static rows to store (%s) — retry in ≤1h", res.Warning)
 	}
 }
 
