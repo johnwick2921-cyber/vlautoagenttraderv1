@@ -44,6 +44,26 @@ describe('DayPlanEditor', () => {
     expect(call.sessions?.find((s) => s.session === 'NY')?.min_grade).toBe('B')
   })
 
+  it('planner timeframes are an editable multiselect (toggle in/out)', () => {
+    const onChange = vi.fn()
+    const cfg: DayPlanConfig = {
+      plan_enabled: true,
+      planner_timeframes: ['D', '4h', '1h', '15m'],
+    }
+    render(<DayPlanEditor config={cfg} onChange={onChange} language="en" />)
+    // toggling an OFF tf ('5m') adds it, preserving order
+    const tf5 = screen.getByRole('switch', { name: '5m' })
+    expect(tf5).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(tf5)
+    let next = onChange.mock.calls[0][0] as DayPlanConfig
+    expect(next.planner_timeframes).toEqual(['D', '4h', '1h', '15m', '5m'])
+    // toggling an ON tf ('1h') removes it
+    onChange.mockClear()
+    fireEvent.click(screen.getByRole('switch', { name: '1h' }))
+    next = onChange.mock.calls[0][0] as DayPlanConfig
+    expect(next.planner_timeframes).toEqual(['D', '4h', '15m'])
+  })
+
   it('the whole body is disabled when the plan is off', () => {
     const onChange = vi.fn()
     render(

@@ -82,6 +82,10 @@ const normalizeStrategyConfig = (config: StrategyConfig): StrategyConfig => {
     ai_config: aiConfig || undefined,
     grid_config: config.grid_config,
     publish_config: config.publish_config,
+    // Root-level Day Plan settings block — MUST be listed or normalize silently
+    // drops it on BOTH load (editor sees undefined → master OFF, body disabled)
+    // AND save (edits never persist). Additive; undefined for non-day-plan rows.
+    day_plan: config.day_plan,
   }
 }
 

@@ -206,6 +206,11 @@ export const planStrings = {
     id: 'Perencana membaca',
   },
   autoLabel: { en: 'AUTO', zh: '自动', id: 'OTOMATIS' },
+  autoTooltip: {
+    en: 'auto-computed — not a setting',
+    zh: '自动计算 — 非可配置项',
+    id: 'dihitung otomatis — bukan pengaturan',
+  },
   regime: { en: 'Regime', zh: '市况', id: 'Rezim' },
   filters: { en: 'Filters', zh: '筛选', id: 'Filter' },
   proximity: { en: 'Proximity', zh: '邻近度', id: 'Kedekatan' },

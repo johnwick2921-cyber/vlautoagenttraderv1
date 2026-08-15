@@ -44,6 +44,9 @@ const DEFAULT_DAY_PLAN: DayPlanConfig = {
 
 const ALL_SESSIONS: SessionName[] = ['NY', 'ASIA', 'LONDON']
 
+// The structure-summary timeframes the planner may read (mockup: Daily…5m).
+const PLANNER_TFS = ['D', '4h', '1h', '15m', '5m']
+
 // ── primitives ──
 function Toggle({
   on,
@@ -233,6 +236,16 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
     update('sessions', list)
   }
 
+  // planner-reads multiselect: toggle a TF in/out, preserving PLANNER_TFS order.
+  const toggleTimeframe = (tf: string) => {
+    const cur =
+      cfg.planner_timeframes ?? DEFAULT_DAY_PLAN.planner_timeframes ?? []
+    const next = cur.includes(tf)
+      ? cur.filter((t) => t !== tf)
+      : PLANNER_TFS.filter((t) => t === tf || cur.includes(t))
+    update('planner_timeframes', next)
+  }
+
   const bodyDisabled = disabled || !enabled
 
   return (
@@ -281,38 +294,50 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
           />
         </FieldRow>
 
-        {/* planner reads — AUTO chips, zero toggles */}
+        {/* planner reads — an EDITABLE timeframe multiselect (which structure
+            TFs the planner summarizes). Applies at the NEXT read, never mid-plan. */}
         <div className="py-1.5">
           <span className="text-[11px]" style={{ color: 'var(--vl-muted)' }}>
             {tp('plannerReads', language)}
           </span>
           <div className="mt-1 flex flex-wrap gap-1">
-            {(
-              cfg.planner_timeframes ??
-              DEFAULT_DAY_PLAN.planner_timeframes ??
-              []
-            ).map((tf) => (
-              <span
-                key={tf}
-                className="vl-num text-[10px]"
-                style={{
-                  color: 'var(--vl-faint)',
-                  border: '1px solid var(--vl-hair)',
-                  borderRadius: 'var(--vl-radius-chip)',
-                  padding: '0 5px',
-                }}
-              >
-                {tf} · {tp('autoLabel', language)}
-              </span>
-            ))}
+            {PLANNER_TFS.map((tf) => {
+              const on = (
+                cfg.planner_timeframes ??
+                DEFAULT_DAY_PLAN.planner_timeframes ??
+                []
+              ).includes(tf)
+              return (
+                <button
+                  key={tf}
+                  type="button"
+                  role="switch"
+                  aria-checked={on}
+                  disabled={bodyDisabled}
+                  onClick={() => toggleTimeframe(tf)}
+                  className="vl-num text-[10px] px-2 py-1"
+                  style={{
+                    color: on ? 'var(--vl-gold)' : 'var(--vl-faint)',
+                    border: `1px solid ${on ? 'var(--vl-gold-line)' : 'var(--vl-hair)'}`,
+                    background: on ? 'var(--vl-gold-dim)' : 'transparent',
+                    borderRadius: 'var(--vl-radius-chip)',
+                    opacity: bodyDisabled ? 0.5 : 1,
+                    cursor: bodyDisabled ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {tf}
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* one-line regime (read-only, AUTO) */}
+        {/* one-line regime (read-only, AUTO — auto-computed, not a setting) */}
         <FieldRow label={tp('regime', language)}>
           <span
-            className="text-[10px] uppercase"
+            className="text-[10px] uppercase cursor-help"
             style={{ color: 'var(--vl-faint)' }}
+            title={tp('autoTooltip', language)}
           >
             {tp('autoLabel', language)}
           </span>
