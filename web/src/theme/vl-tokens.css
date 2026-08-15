@@ -1,0 +1,100 @@
+/* VL DESIGN SYSTEM — Plan Card tokens (single source of truth).
+ * Formalized from PLAN-CARD-DESIGN-SYSTEM.md (the LAW). Components consume
+ * these tokens ONLY — any raw hex/px in a Plan Card component is a review flag.
+ * App is dark-only (no light/dark swap), matching the existing index.css. */
+
+:root {
+  /* ── color ── */
+  --vl-ink: #0c0e12;
+  --vl-card: #14171d;
+  --vl-card-2: #181c23;
+  --vl-gold: #c9a24b;
+  --vl-gold-dim: rgba(201, 162, 75, 0.14);
+  --vl-gold-line: rgba(201, 162, 75, 0.22);
+  --vl-ivory: #e8e3d8;
+  --vl-muted: #8a8f98;
+  --vl-faint: #5a6069;
+  --vl-long: #3fbf8f;
+  --vl-short: #e06c6c;
+  --vl-hair: rgba(232, 227, 216, 0.08);
+
+  /* ── semantic aliases (never use raw hex in components) ── */
+  --vl-grade-a: var(--vl-gold);
+  --vl-grade-b: #9aa3ae;
+  --vl-grade-c: var(--vl-faint);
+  --vl-status-armed: var(--vl-gold);
+  --vl-status-triggered: var(--vl-long);
+  --vl-status-invalid: var(--vl-short);
+
+  /* ── multi-session (Multi-Session Handoff research) ── */
+  --vl-session-asia: #5b7fb0;
+  --vl-session-london: #c98a4b;
+  --vl-session-ny: #3fbf8f;
+  --vl-shade-active: rgba(201, 162, 75, 0.1);
+  --vl-shade-prior: rgba(232, 227, 216, 0.05);
+  --vl-night-wash: rgba(12, 14, 18, 0.55);
+  --vl-killzone-fill: rgba(201, 162, 75, 0.22);
+
+  /* ── type (3-font system) ── */
+  --vl-font-display:
+    'Cormorant Garamond', Georgia, serif; /* card titles, bias word */
+  --vl-font-ui: 'Inter', system-ui, sans-serif; /* labels, body */
+  --vl-font-data:
+    'JetBrains Mono', 'IBM Plex Mono', monospace; /* ALL prices/numerics */
+
+  /* ── spacing: 4-base scale · radius · motion ── */
+  --vl-sp-1: 4px;
+  --vl-sp-2: 8px;
+  --vl-sp-3: 12px;
+  --vl-sp-4: 16px;
+  --vl-radius-card: 14px;
+  --vl-radius-inner: 10px;
+  --vl-radius-chip: 6px;
+  --vl-motion-pulse: 2.2s;
+  --vl-motion-sheet: 200ms;
+}
+
+/* ALL prices/numerics render tabular so columns align (design-system a11y note). */
+.vl-num {
+  font-family: var(--vl-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pulse for the active-session dot / triggered scenario — honors reduced-motion. */
+@keyframes vl-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.vl-pulse {
+  animation: vl-pulse var(--vl-motion-pulse) ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vl-pulse {
+    animation: none;
+  }
+}
+
+/* Bottom-sheet / side-panel slide (EditSheet, AskPlanner) — reduced-motion safe. */
+@keyframes vl-sheet-up {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.vl-sheet-in {
+  animation: vl-sheet-up var(--vl-motion-sheet) ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vl-sheet-in {
+    animation: none;
+  }
+}
