@@ -110,7 +110,10 @@ func (at *AutoTrader) maybeRunSessionReads() {
 	tradeDate := plannerTradeDateCT(now)
 	for i := range reg.Sessions {
 		s := &reg.Sessions[i]
-		if !s.Enabled || !timeReachedCT(now, s.ReadCT) {
+		// W1 — fire the read ONLY inside this session's own read window on a live
+		// (holiday-aware) CME day. inSessionReadWindow stops the Sunday-17:00 NY
+		// read; IsCMEOpen stops holiday/weekend reads independently of loop order.
+		if !s.Enabled || !kernel.IsCMEOpen(now) || !inSessionReadWindow(now, s.ReadCT, s.WindowEndCT) {
 			continue
 		}
 		existing, err := at.store.Plan().GetLatestPlanForSession(tradeDate, s.Name)
@@ -411,8 +414,10 @@ func (at *AutoTrader) maybeWriteDigests() {
 		}
 	}
 
-	// Daily roll-up at the 16:00 CT trade-date close.
-	if ctMinutesNow(now) >= 16*60 {
+	// W1 — daily roll-up in the [15:00,16:00) RTH-close→break window, where
+	// tradeDate + the P&L window are still the CLOSING day's (they roll at 17:00).
+	// Reachable Mon–Fri; idempotent (SaveIfAbsent).
+	if inDailyRollWindow(now) {
 		sessions, _ := at.store.Digest().SessionDigests(symbol, tradeDate)
 		text := kernel.FormatDailyDigest(tradeDate, "", len(sessions), entries, pnl)
 		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{

@@ -124,13 +124,46 @@ func ctMinutesNow(now time.Time) int {
 	return ct.Hour()*60 + ct.Minute()
 }
 
-// timeReachedCT reports whether now's CT wall-clock is at/after hhmm.
+// timeReachedCT reports whether now's CT wall-clock is at/after hhmm. Correct for
+// all-day-after-threshold gates (last-entry, eod-flat) — NOT for the planner read,
+// which must fire only inside its session's window (see inSessionReadWindow).
 func timeReachedCT(now time.Time, hhmm string) bool {
 	target, ok := hhmmToMin(hhmm)
 	if !ok {
 		return false
 	}
 	return ctMinutesNow(now) >= target
+}
+
+// inSessionReadWindow (W1) reports whether now (CT) is inside a session's read
+// window [ReadCT, WindowEndCT) — wrap-aware for midnight-spanning sessions (ASIA
+// 16:55→02:00). This is the correct "should the planner read THIS session now"
+// gate: it fires at the session's read time and stays valid through the session,
+// but NEVER during another session's hours. This kills the spurious Sunday-17:00
+// NY read (17:00 is past NY's 15:00 window end, so NY never fires there), so
+// Monday's plan is built at the real 08:25 read, not from stale Sunday-evening data.
+func inSessionReadWindow(now time.Time, readCT, windowEndCT string) bool {
+	read, ok1 := hhmmToMin(readCT)
+	end, ok2 := hhmmToMin(windowEndCT)
+	if !ok1 || !ok2 {
+		return false
+	}
+	n := ctMinutesNow(now)
+	if end > read {
+		return n >= read && n < end // same-day window (NY 08:25→15:00)
+	}
+	return n >= read || n < end // wraps midnight (ASIA 16:55→02:00)
+}
+
+// inDailyRollWindow (W1) reports whether now (CT) is in the trade-date roll-up
+// window [15:00, 16:00) — after the RTH close, BEFORE the 16:00 CME maintenance
+// break/17:00 roll. The current trade_date + P&L window are still the CLOSING
+// day's here (they roll at 17:00), so the daily digest summarizes the RIGHT day;
+// and it is reachable Mon–FRI (the old >=16:00 trigger fell inside the break, so
+// it fired at 17:00+ with the NEW day's empty window, and Friday's never fired).
+func inDailyRollWindow(now time.Time) bool {
+	n := ctMinutesNow(now)
+	return n >= 15*60 && n < 16*60
 }
 
 // effectiveEODFlatCT returns the flat time, pulled IN by a registered half-day
