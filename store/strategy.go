@@ -864,6 +864,12 @@ type DayPlanConfig struct {
 	ApprovalRequired bool `json:"approval_required"`
 	// EveningDigest: 17:30 evening digest (default true).
 	EveningDigest bool `json:"evening_digest"`
+	// LastEntryCT (P2.3) blocks NEW entries after this America/Chicago time
+	// (default 13:00 CT = 14:00 ET). Empty → the default.
+	LastEntryCT string `json:"last_entry_ct,omitempty"`
+	// EODFlatCT (P2.3) force-flattens open positions at this America/Chicago time
+	// (default 14:45 CT = 15:45 ET); a registered half-day early-close pulls it in.
+	EODFlatCT string `json:"eod_flat_ct,omitempty"`
 	// Sessions holds minimal per-session overrides; absent/nil fields inherit
 	// from the strategy-level values above (⚪ inherit / 🔸 override).
 	Sessions []DayPlanSessionOverride `json:"sessions,omitempty"`
@@ -899,6 +905,8 @@ func DefaultDayPlanConfig() *DayPlanConfig {
 		SessionsEnabled:    []string{"NY"},
 		ApprovalRequired:   false,
 		EveningDigest:      true,
+		LastEntryCT:        "13:00", // 14:00 ET
+		EODFlatCT:          "14:45", // 15:45 ET
 	}
 }
 

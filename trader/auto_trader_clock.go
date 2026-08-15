@@ -2,8 +2,10 @@ package trader
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
+	"nofx/kernel"
 	"nofx/market"
 )
 
@@ -98,6 +100,117 @@ func barCloseGate(active bool, lastCloseMs, latestClosedMs int64, haveBar bool) 
 		return false, lastCloseMs
 	}
 	return true, latestClosedMs
+}
+
+// ---- P2.3 — day-trader clock: last_entry + eod_flat ------------------------
+
+// hhmmToMin parses "HH:MM" (24h) into minutes-since-midnight; ok=false on bad input.
+func hhmmToMin(s string) (int, bool) {
+	var h, m int
+	n, err := fmt.Sscanf(strings.TrimSpace(s), "%d:%d", &h, &m)
+	if err != nil || n != 2 || h < 0 || h > 23 || m < 0 || m > 59 {
+		return 0, false
+	}
+	return h*60 + m, true
+}
+
+// ctMinutesNow returns now's minutes-since-midnight in America/Chicago.
+func ctMinutesNow(now time.Time) int {
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		loc = time.UTC
+	}
+	ct := now.In(loc)
+	return ct.Hour()*60 + ct.Minute()
+}
+
+// timeReachedCT reports whether now's CT wall-clock is at/after hhmm.
+func timeReachedCT(now time.Time, hhmm string) bool {
+	target, ok := hhmmToMin(hhmm)
+	if !ok {
+		return false
+	}
+	return ctMinutesNow(now) >= target
+}
+
+// effectiveEODFlatCT returns the flat time, pulled IN by a registered half-day
+// early-close for the current CME session-day (holiday/half-day awareness via the
+// P0 registry, which the P1.8 calendar populates). Empty HalfDays → configFlat.
+func effectiveEODFlatCT(reg kernel.SessionRegistry, sessionDayKey, configFlat string) string {
+	if early, ok := reg.HalfDays[sessionDayKey]; ok && strings.TrimSpace(early) != "" {
+		em, ok1 := hhmmToMin(early)
+		cm, ok2 := hhmmToMin(configFlat)
+		if ok1 && (!ok2 || em < cm) {
+			return early // half-day closes earlier → pull the flat in
+		}
+	}
+	return configFlat
+}
+
+func (at *AutoTrader) lastEntryCT() string {
+	if dp := at.config.StrategyConfig.DayPlan; dp != nil && strings.TrimSpace(dp.LastEntryCT) != "" {
+		return dp.LastEntryCT
+	}
+	return "13:00" // 14:00 ET
+}
+
+func (at *AutoTrader) eodFlatCT() string {
+	if dp := at.config.StrategyConfig.DayPlan; dp != nil && strings.TrimSpace(dp.EODFlatCT) != "" {
+		return dp.EODFlatCT
+	}
+	return "14:45" // 15:45 ET
+}
+
+// entryBlockedByLastEntry (P2.3) reports (reason, blocked): whether NEW entries
+// are blocked because the last-entry CT time has passed. Gated on day_plan →
+// dormant by default. (reason, ok) order matches the sibling entry gates.
+func (at *AutoTrader) entryBlockedByLastEntry() (string, bool) {
+	if !at.dayPlanEnabled() {
+		return "", false
+	}
+	last := at.lastEntryCT()
+	if timeReachedCT(time.Now(), last) {
+		return fmt.Sprintf("past last-entry %s CT", last), true
+	}
+	return "", false
+}
+
+// enforceEODFlat (P2.3) force-flattens any open position at/after the effective
+// EOD-flat time (config, pulled in on a half-day) by routing DIRECTLY through the
+// trader close path — bypassing hold-lock naturally (RECON #10). Returns true
+// when it acted (the caller then skips the rest of the cycle). Gated on day_plan.
+func (at *AutoTrader) enforceEODFlat() bool {
+	if !at.dayPlanEnabled() || at.store == nil || at.trader == nil {
+		return false
+	}
+	now := time.Now()
+	flat := effectiveEODFlatCT(kernel.DefaultSessionRegistry(), kernel.CMESessionDayKey(now), at.eodFlatCT())
+	if !timeReachedCT(now, flat) {
+		return false
+	}
+	positions, err := at.store.Position().GetOpenPositions(at.id)
+	if err != nil || len(positions) == 0 {
+		return false
+	}
+	at.logWarnf("🕒 EOD-FLAT (%s CT): session close — flattening %d open position(s) via the trader close path.", flat, len(positions))
+	for _, p := range positions {
+		var e error
+		if strings.EqualFold(p.Side, "LONG") {
+			_, e = at.trader.CloseLong(p.Symbol, 0) // 0 = close all
+		} else {
+			_, e = at.trader.CloseShort(p.Symbol, 0)
+		}
+		if e != nil {
+			at.logErrorf("🕒 EOD-FLAT: close %s %s failed: %v", p.Symbol, p.Side, e)
+			continue
+		}
+		// Cancel the resting OCO bracket after the flatten (belt-and-suspenders;
+		// the OCO also auto-cancels its other leg on the close fill).
+		if err := at.trader.CancelStopOrders(p.Symbol); err != nil {
+			at.logWarnf("🕒 EOD-FLAT: cancel bracket %s failed (non-fatal): %v", p.Symbol, err)
+		}
+	}
+	return true
 }
 
 // tickOnce runs one loop iteration: a grid cycle, or (for AI strategies) a

@@ -187,6 +187,20 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// P2.3 — LAST-ENTRY cutoff: block NEW entries after the day-trader last-entry
+	// time (default 13:00 CT = 14:00 ET). Gated on day_plan → dormant by default.
+	// Closes (open-position management) are NEVER blocked.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, blocked := at.entryBlockedByLastEntry(); blocked {
+			at.logWarnf("🕒 last-entry cutoff: %s %s REFUSED — %s. Entries reopen next session.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "last_entry")
+			actionRecord.Success = false
+			actionRecord.Error = "last_entry_cutoff: " + reason
+			return nil
+		}
+	}
+
 	switch decision.Action {
 	case "open_long":
 		return at.executeOpenLongWithRecord(decision, actionRecord)

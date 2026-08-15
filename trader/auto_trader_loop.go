@@ -106,6 +106,14 @@ func (at *AutoTrader) runCycle() error {
 	// have cross-session memory (warms forward).
 	at.snapshotSessionProfiles()
 
+	// P2.3 — EOD-FLAT: at/after the session flat time, force-close any open
+	// position via the trader close path (bypasses hold-lock naturally, RECON
+	// #10), then skip the rest of the cycle. Runs BEFORE skip-while-open so a held
+	// trade is FLATTENED at the close, not merely skipped. Gated → dormant.
+	if at.enforceEODFlat() {
+		return nil
+	}
+
 	// P2.2 — SKIP-WHILE-OPEN. When day_plan is on and the strategy is already
 	// holding, skip the AI decision cycle entirely (calmer + cheaper than
 	// same-side refusal). The open trade is still managed by the NT8 bracket,

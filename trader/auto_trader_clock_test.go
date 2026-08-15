@@ -4,9 +4,68 @@ import (
 	"testing"
 	"time"
 
+	"nofx/kernel"
 	"nofx/market"
 	"nofx/store"
 )
+
+func ctAt(t *testing.T, h, m int) time.Time {
+	t.Helper()
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		t.Fatalf("load chicago: %v", err)
+	}
+	return time.Date(2026, 8, 14, h, m, 0, 0, loc)
+}
+
+func TestClockHelpers(t *testing.T) {
+	if v, ok := hhmmToMin("14:45"); !ok || v != 885 {
+		t.Fatalf("hhmmToMin(14:45) = %d,%v want 885,true", v, ok)
+	}
+	if _, ok := hhmmToMin("nope"); ok {
+		t.Fatalf("bad input should fail")
+	}
+	if !timeReachedCT(ctAt(t, 14, 0), "13:00") {
+		t.Fatalf("14:00 CT should be past 13:00")
+	}
+	if timeReachedCT(ctAt(t, 14, 0), "15:00") {
+		t.Fatalf("14:00 CT should NOT be past 15:00")
+	}
+	if !timeReachedCT(ctAt(t, 13, 0), "13:00") {
+		t.Fatalf("13:00 CT should count as reached (>=)")
+	}
+}
+
+func TestEffectiveEODFlat(t *testing.T) {
+	reg := kernel.DefaultSessionRegistry()
+	if got := effectiveEODFlatCT(reg, "2026-08-14", "14:45"); got != "14:45" {
+		t.Fatalf("normal day = %q want 14:45", got)
+	}
+	reg.HalfDays = map[string]string{"2026-11-27": "12:00"}
+	if got := effectiveEODFlatCT(reg, "2026-11-27", "14:45"); got != "12:00" {
+		t.Fatalf("half-day should pull flat in to 12:00, got %q", got)
+	}
+	// A half-day close LATER than the config flat keeps the config flat.
+	reg.HalfDays = map[string]string{"2026-11-27": "16:00"}
+	if got := effectiveEODFlatCT(reg, "2026-11-27", "14:45"); got != "14:45" {
+		t.Fatalf("later half-day must not push flat out, got %q", got)
+	}
+}
+
+func TestClockConfigDefaultsAndGetters(t *testing.T) {
+	// No day_plan → getters return the spec defaults.
+	base := mkTrader("ninjatrader", nil, "5m")
+	if base.lastEntryCT() != "13:00" || base.eodFlatCT() != "14:45" {
+		t.Fatalf("defaults = %s/%s want 13:00/14:45", base.lastEntryCT(), base.eodFlatCT())
+	}
+	yes := true
+	at := mkTrader("ninjatrader", &yes, "5m")
+	at.config.StrategyConfig.DayPlan.LastEntryCT = "13:30"
+	at.config.StrategyConfig.DayPlan.EODFlatCT = "14:30"
+	if at.lastEntryCT() != "13:30" || at.eodFlatCT() != "14:30" {
+		t.Fatalf("configured = %s/%s", at.lastEntryCT(), at.eodFlatCT())
+	}
+}
 
 func TestBarCloseGate(t *testing.T) {
 	// Not active → always run; watermark unchanged.
