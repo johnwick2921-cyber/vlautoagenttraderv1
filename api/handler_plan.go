@@ -201,8 +201,14 @@ func (s *Server) handlePlanAlertAck(c *gin.Context) {
 		SafeBadRequest(c, "alert_id is required")
 		return
 	}
-	if err := s.store.Alert().Ack(body.AlertID); err != nil {
+	// Scope the ack to the caller's trader (IDOR guard) — 404 if not owned.
+	found, err := s.store.Alert().AckForTrader(traderID, body.AlertID)
+	if err != nil {
 		SafeInternalError(c, "ack alert", err)
+		return
+	}
+	if !found {
+		SafeNotFound(c, "Alert")
 		return
 	}
 	c.JSON(200, gin.H{"acked": true, "alert_id": body.AlertID})

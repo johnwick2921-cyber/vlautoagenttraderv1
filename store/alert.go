@@ -84,7 +84,21 @@ func (s *AlertStore) UnackedCount(traderID string) (int, error) {
 	return int(n), err
 }
 
-// Ack marks an alert acknowledged.
+// Ack marks an alert acknowledged (unscoped; internal callers only).
 func (s *AlertStore) Ack(id int64) error {
 	return s.db.Model(&AlertDB{}).Where("id = ?", id).Update("acked", true).Error
+}
+
+// AckForTrader marks an alert acknowledged ONLY if it belongs to traderID
+// (IDOR guard — the bell feed is per-trader, so acks must be too). Returns
+// found=false when no row matched the (id, trader_id) pair, so the handler can
+// 404 instead of silently acking nothing (or another trader's alert).
+func (s *AlertStore) AckForTrader(traderID string, id int64) (bool, error) {
+	res := s.db.Model(&AlertDB{}).
+		Where("id = ? AND trader_id = ?", id, traderID).
+		Update("acked", true)
+	if res.Error != nil {
+		return false, res.Error
+	}
+	return res.RowsAffected > 0, nil
 }

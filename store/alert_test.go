@@ -130,3 +130,40 @@ func TestAlertUnackedCountAndAck(t *testing.T) {
 		t.Fatalf("other trader unacked = %d want 0", m)
 	}
 }
+
+// TestAlertAckForTraderScoping is the IDOR guard: AckForTrader only acks a row
+// owned by the caller; a foreign trader_id matches nothing (found=false) and
+// leaves the alert unacked.
+func TestAlertAckForTraderScoping(t *testing.T) {
+	st := newAlertTestStore(t)
+	as := st.Alert()
+	if _, err := as.Emit(&AlertDB{TraderID: "owner", Level: "P0", Kind: "halt"}); err != nil {
+		t.Fatalf("emit: %v", err)
+	}
+	rows, _ := as.List("owner", 10)
+	id := rows[0].ID
+
+	// Wrong trader → no row matched, alert stays unacked.
+	found, err := as.AckForTrader("attacker", id)
+	if err != nil {
+		t.Fatalf("ack (wrong trader): %v", err)
+	}
+	if found {
+		t.Fatal("AckForTrader must NOT ack another trader's alert")
+	}
+	if n, _ := as.UnackedCount("owner"); n != 1 {
+		t.Fatalf("alert must remain unacked after foreign ack; unacked=%d want 1", n)
+	}
+
+	// Correct trader → acked.
+	found, err = as.AckForTrader("owner", id)
+	if err != nil {
+		t.Fatalf("ack (owner): %v", err)
+	}
+	if !found {
+		t.Fatal("AckForTrader must ack the owner's own alert")
+	}
+	if n, _ := as.UnackedCount("owner"); n != 0 {
+		t.Fatalf("alert must be acked; unacked=%d want 0", n)
+	}
+}
