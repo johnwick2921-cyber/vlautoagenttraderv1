@@ -509,8 +509,10 @@ func installActivePlanProvider(st *store.Store) {
 		if err != nil || row == nil || row.Lifecycle != "active" {
 			return nil
 		}
-		var doc kernel.PlanDoc
-		if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+		// W4 — the executor cites the OVERLAY-RESOLVED plan_final (owner edits reach
+		// the brain), not the base doc. resolveActivePlanDoc folds overlays + armors.
+		doc, ok := resolveActivePlanDoc(st, row)
+		if !ok {
 			return nil
 		}
 		replansLeft := 2 - (row.Version - 1) // default replan_cap 2 (P3.6 refines)
@@ -519,6 +521,32 @@ func installActivePlanProvider(st *store.Store) {
 		}
 		return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
 	}
+}
+
+// resolveActivePlanDoc folds a plan's overlays (RFC-6902) into plan_final and
+// armors the result via ValidatePlanDoc (falling back to the base doc on any
+// failure) — the SAME resolution GET /api/plan/today does, so the card and the
+// executor can never diverge. Returns (doc, ok=false) only when the base itself is
+// unparseable.
+func resolveActivePlanDoc(st *store.Store, row *store.PlanDB) (kernel.PlanDoc, bool) {
+	var base kernel.PlanDoc
+	if json.Unmarshal([]byte(row.Doc), &base) != nil {
+		return kernel.PlanDoc{}, false
+	}
+	overlays, _ := st.Plan().ListOverlays(row.PlanID, row.Version)
+	if len(overlays) == 0 {
+		return base, true
+	}
+	patches := make([]string, 0, len(overlays))
+	for _, o := range overlays {
+		patches = append(patches, o.Patch)
+	}
+	final, _ := kernel.ApplyOverlayPatches([]byte(row.Doc), patches)
+	var merged kernel.PlanDoc
+	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDoc(&merged) == nil {
+		return merged, true // plan_final
+	}
+	return base, true // armor: a bad overlay never corrupts the executor's plan
 }
 
 // recordPlanCitation records the executor's plan citation for an entry decision
