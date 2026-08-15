@@ -155,6 +155,16 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 		sb.WriteString("Legend: POC = the session's highest-volume price (a magnet). Inside the value area (VAL–VAH) = balanced → fade the edges back toward POC. Holding OUTSIDE the value area on volume = trend → join the move, don't fade it.\n\n")
 	}
 
+	// 3a-bis. KEY LEVELS (day-plan map, P1.7). Gated on day_plan being ENABLED AND
+	// a non-empty computed block (threaded in from engine_analysis.go). OFF (the
+	// default: no day_plan or plan_enabled=false) or empty writes NOTHING, so the
+	// futures golden stays byte-identical. These are Go-computed FACTS (levels +
+	// grades + distances); the AI judges, it does not re-derive the map.
+	if e.config.DayPlan != nil && e.config.DayPlan.PlanEnabled && e.keyLevelsContextLine != "" {
+		sb.WriteString(e.keyLevelsContextLine)
+		sb.WriteString("\n\n")
+	}
+
 	// 3b. Entry Standards (editable). Appended ONLY when set — empty = unchanged.
 	if ps.EntryStandards != "" {
 		sb.WriteString("# Entry Standards\n")

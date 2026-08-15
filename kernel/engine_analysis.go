@@ -329,6 +329,33 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			logger.Infof("📐 SVP ON but omitted this cycle for %s — no session profile available (no 1m bars / provider down / pre-open); prompt has no SVP line.", activeSymbol)
 		}
 	}
+
+	// KEY LEVELS (day-plan map, P1.7): when day_plan is ENABLED and we're on the
+	// futures prompt, assemble the detected+scored structural level map from the
+	// same 1m bars and thread ONE block into the system prompt. Gated identically
+	// to SVP → disabled (the default) / empty keeps the golden byte-identical.
+	engine.SetKeyLevelsContext("")
+	planOn := false
+	maxLevels := DefaultMaxLevels
+	if cfg := engine.GetConfig(); cfg != nil && cfg.DayPlan != nil {
+		planOn = cfg.DayPlan.PlanEnabled
+		if cfg.DayPlan.MaxLevels > 0 {
+			maxLevels = cfg.DayPlan.MaxLevels
+		}
+	}
+	if isFut, _ := futuresVariantMode(variant); isFut && planOn {
+		klBlock := ""
+		if market.FuturesBarsProvider != nil {
+			if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
+				klBlock = BuildKeyLevelsBlock(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now())
+			}
+		}
+		engine.SetKeyLevelsContext(klBlock)
+		if klBlock == "" {
+			// B9-style: day_plan ON but no KEY LEVELS this cycle — observable skip.
+			logger.Infof("🗺️ day-plan KEY LEVELS ON but omitted this cycle for %s — no levels available (no 1m bars / provider down / warming forward); prompt has no KEY LEVELS block.", activeSymbol)
+		}
+	}
 	// A5 (G5) — PROMPT-OWNERSHIP assertion: every account-scoped context field must
 	// be owned by the DECIDING trader. A field tagged with another trader_id is
 	// cross-trader contamination — skip the cycle rather than decide on foreign data.

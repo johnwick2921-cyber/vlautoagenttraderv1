@@ -1,0 +1,98 @@
+package kernel
+
+import (
+	"math"
+	"time"
+
+	"nofx/market"
+)
+
+// P1.7 — assemble every detector → confluence scorer → the KEY LEVELS prompt
+// block. One entry point the decision loop calls (mirror of FormatSVPLine +
+// BuildSVPProfile). Pure: no LLM, no DB. Warms forward with the bar cache; the
+// durable session-profile store (P1.3) feeds nPOC via extraLevels.
+
+// BuildKeyLevelsBlock assembles the structural map from `bars`, scores it, and
+// renders the executor prompt block. Returns "" when there is nothing to show
+// (no closed bars / no in-band levels) so the caller injects nothing.
+func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, extraLevels ...DetectedLevel) string {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return ""
+	}
+	price := cb[len(cb)-1].Close
+	if price <= 0 {
+		return ""
+	}
+	dATR := DailyATRProxy(bars, now)
+	if dATR <= 0 {
+		dATR = 0.008 * price // fallback until the map warms
+	}
+	atr := market.ExportCalculateATR(cb, 14)
+	if atr <= 0 {
+		atr = dATR / 20
+	}
+	tick := market.FuturesTickSize(symbol)
+	if tick <= 0 {
+		tick = 0.25
+	}
+	tol := 3 * tick
+
+	var all []DetectedLevel
+	all = append(all, ExtractMultiDayLevels(bars, reg, now)...)
+	all = append(all, RoundNumberLevels(price, dATR)...)
+	all = append(all, OpeningRangeLevels(bars, reg, now)...)
+	all = append(all, GapLevels(bars, atr, 1.0, now)...)
+	all = append(all, EqualHighsLows(bars, tol, now)...)
+	all = append(all, SupplyDemandZones(bars, atr, now)...)
+	all = append(all, FairValueGaps(bars, atr, now)...)
+	all = append(all, OrderBlocks(bars, atr, now)...)
+	all = append(all, extraLevels...) // nPOC etc. from the durable store (P1.3)
+
+	// freshness=nil (all fresh) until the executor writes level-state (P3 loop).
+	scored := ScoreLevels(all, price, dATR, nil, maxLevels)
+	return RenderKeyLevelsBlock(scored, price)
+}
+
+// DailyATRProxy estimates the daily ATR from intraday bars by averaging each
+// COMPLETED CME session-day's range (the developing day is skipped). 0 when no
+// completed day is present — the caller falls back. Improves as the cache /
+// durable store warms forward.
+func DailyATRProxy(bars []market.Kline, now time.Time) float64 {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return 0
+	}
+	type dayRange struct{ hi, lo float64 }
+	days := map[string]*dayRange{}
+	for _, b := range cb {
+		key := CMESessionDayKey(time.UnixMilli(b.OpenTime))
+		d := days[key]
+		if d == nil {
+			d = &dayRange{hi: math.Inf(-1), lo: math.Inf(1)}
+			days[key] = d
+		}
+		d.hi = math.Max(d.hi, b.High)
+		d.lo = math.Min(d.lo, b.Low)
+	}
+	nowFut := CMESessionDayKey(now)
+	var sum float64
+	var n int
+	for key, d := range days {
+		if key == nowFut {
+			continue // developing day is not a completed range
+		}
+		if d.hi > d.lo {
+			sum += d.hi - d.lo
+			n++
+		}
+	}
+	if n > 0 {
+		return sum / float64(n)
+	}
+	// Fallback: the developing day's range so far.
+	if d := days[nowFut]; d != nil && d.hi > d.lo {
+		return d.hi - d.lo
+	}
+	return 0
+}

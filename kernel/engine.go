@@ -213,11 +213,21 @@ type StrategyEngine struct {
 	// BuildSystemPrompt and consumed by the futures prompt when svp_enabled is ON.
 	// Empty by default → the futures prompt is byte-identical (golden safe).
 	svpContextLine string
+
+	// keyLevelsContextLine is the per-cycle day-plan KEY LEVELS block (P1.7),
+	// threaded in from the decision loop like svpContextLine. Consumed by the
+	// futures prompt ONLY when day_plan is enabled AND the line is non-empty, so
+	// the default (day_plan off) keeps the futures prompt byte-identical.
+	keyLevelsContextLine string
 }
 
 // SetSVPContext sets the Session Volume Profile line used by the futures prompt
 // for the next BuildSystemPrompt call. Pass "" to inject nothing.
 func (e *StrategyEngine) SetSVPContext(line string) { e.svpContextLine = line }
+
+// SetKeyLevelsContext sets the day-plan KEY LEVELS block used by the futures
+// prompt for the next BuildSystemPrompt call. Pass "" to inject nothing.
+func (e *StrategyEngine) SetKeyLevelsContext(line string) { e.keyLevelsContextLine = line }
 
 // NewStrategyEngine creates strategy execution engine.
 // claw402WalletKey is optional — if provided, nofxos data requests are routed through claw402.
