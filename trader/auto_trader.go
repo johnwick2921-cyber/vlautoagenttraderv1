@@ -380,6 +380,10 @@ type AutoTrader struct {
 	// P5.5 — the last entry's plan citation, captured in recordPlanCitation and
 	// consumed once by the very next position-open stamp (single-goroutine loop).
 	lastCitation planCitation
+
+	// W3 — throttle for the calendar producer (retry the FF fetch ≤1/hour on
+	// outage; a stored slice short-circuits it). Touched only from runCycle.
+	lastCalFetch time.Time
 }
 
 // planCitation is the transient plan-link snapshot stamped onto a new position.

@@ -24,7 +24,7 @@ func TestSessionGateDecision(t *testing.T) {
 		{"overnight gap blocked", 16, 0, true, "outside"},
 	}
 	for _, c := range cases {
-		reason, blocked := sessionGateDecision(reg, ctAt(t, c.h, c.m))
+		reason, blocked := sessionGateDecision(reg, ctAt(t, c.h, c.m), nil)
 		if blocked != c.wantBlock {
 			t.Fatalf("%s: blocked=%v want %v (reason %q)", c.name, blocked, c.wantBlock, reason)
 		}

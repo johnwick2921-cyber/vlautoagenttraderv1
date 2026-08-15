@@ -28,13 +28,15 @@ func (at *AutoTrader) sessionEntryBlocked() (string, bool) {
 	if !at.dayPlanEnabled() {
 		return "", false
 	}
+	now := time.Now()
 	// TODO(P4): load the admin registry from system_config instead of the default.
-	return sessionGateDecision(kernel.DefaultSessionRegistry(), time.Now())
+	return sessionGateDecision(kernel.DefaultSessionRegistry(), now, at.currentT1Windows(now))
 }
 
 // sessionGateDecision is the pure session-gate logic: entries only inside an
-// ENABLED session window and outside the no-trade sub-windows (first-5m, lunch).
-func sessionGateDecision(reg kernel.SessionRegistry, now time.Time) (string, bool) {
+// ENABLED session window and outside the no-trade sub-windows (first-5m, lunch,
+// and W3 red-news T1 blackouts).
+func sessionGateDecision(reg kernel.SessionRegistry, now time.Time, t1Windows []kernel.CTWindow) (string, bool) {
 	sess, ok := reg.ActiveSession(now)
 	if !ok {
 		return "outside all session windows (overnight/interim)", true
@@ -47,6 +49,10 @@ func sessionGateDecision(reg kernel.SessionRegistry, now time.Time) (string, boo
 	}
 	if kernel.InBlackoutWindow(now, "12:00", "13:30") {
 		return "lunch no-trade window (12:00–13:30 CT)", true
+	}
+	// W3 — HARD red-news blackout: no entry within ±T1BlackoutMinutes of a T1 event.
+	if label, blocked := kernel.InT1Blackout(ctMinutesNow(now), t1Windows); blocked {
+		return "🔴 red-news blackout: " + label, true
 	}
 	return "", false
 }

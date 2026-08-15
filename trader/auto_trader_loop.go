@@ -115,6 +115,10 @@ func (at *AutoTrader) runCycle() error {
 	// the per-session planner read once (idempotent via the plan store) and persist
 	// the plan. GATED on day_plan → dormant by default; independent of position
 	// state (a read fires whether flat or holding).
+	// W3 — calendar producer: store this week's FF slices so the planner read + the
+	// T1 red-news blackout gate have data. Gated + throttled + idempotent.
+	at.maybeFetchCalendar(time.Now())
+
 	at.maybeRunSessionReads()
 
 	// P3.6-A — DIGEST WRITERS: 3-line session digest at each session close + the

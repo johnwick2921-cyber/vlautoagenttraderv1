@@ -243,15 +243,17 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 	input := at.assemblePlannerInput(session, tradeDate)
 	prompt := kernel.BuildPlannerPrompt(input)
 	hash := shortHash(prompt)
+	// W3 — HARD red-news blackout lines auto-written into the plan (§80).
+	t1Lines := kernel.T1NoTradeLines(input.Calendar)
 	at.runPlannerReadCore(session, tradeDate, modelID, hash, func() (string, error) {
 		return client.CallWithMessages(plannerSystemPrompt, prompt)
-	})
+	}, t1Lines...)
 }
 
 // runPlannerReadCore is the testable core: ≤2 retries, then FAIL-CLOSED to a
 // NO-TRADE plan (never a stale plan, never nothing). Writes the append-only plan
 // row. Returns (version, lifecycle, err).
-func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash string, call func() (string, error)) (int, string, error) {
+func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash string, call func() (string, error), extraNoTrade ...string) (int, string, error) {
 	var doc *kernel.PlanDoc
 	var lastErr error
 	for attempt := 1; attempt <= 3; attempt++ { // 1 + ≤2 retries
@@ -267,6 +269,21 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 		}
 		doc = d
 		break
+	}
+
+	// W3 — auto-write the HARD red-news no-trade blackouts into the plan (§80),
+	// deduped. The fail-closed NO-TRADE plan already sits out the whole session.
+	if doc != nil && len(extraNoTrade) > 0 {
+		have := map[string]bool{}
+		for _, nt := range doc.NoTrade {
+			have[nt] = true
+		}
+		for _, nt := range extraNoTrade {
+			if !have[nt] {
+				doc.NoTrade = append(doc.NoTrade, nt)
+				have[nt] = true
+			}
+		}
 	}
 
 	lifecycle := "active"
