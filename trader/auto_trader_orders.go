@@ -201,6 +201,20 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// P3.1 — SESSION GATE: entries only inside an ENABLED session window (NY-only
+	// default → closes the overnight/interim window) and outside the no-trade
+	// sub-windows (first-5m, lunch). Gated on day_plan → dormant by default.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, blocked := at.sessionEntryBlocked(); blocked {
+			at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "session_gate")
+			actionRecord.Success = false
+			actionRecord.Error = "session_gate: " + reason
+			return nil
+		}
+	}
+
 	switch decision.Action {
 	case "open_long":
 		return at.executeOpenLongWithRecord(decision, actionRecord)
