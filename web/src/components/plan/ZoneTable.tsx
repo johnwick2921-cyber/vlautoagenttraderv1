@@ -125,11 +125,13 @@ export function ZoneTable({
   language,
   onEdit,
   onAdd,
+  onBulkAdd,
 }: {
   facts: PlanLevelFact[]
   language: Language
   onEdit?: (fact: PlanLevelFact, index: number) => void
   onAdd?: () => void
+  onBulkAdd?: () => void
 }) {
   const { ghosted, flagged } = detectConflicts(facts)
   return (
@@ -152,6 +154,18 @@ export function ZoneTable({
               }}
             >
               ＋ {tp('addLevel', language)}
+            </button>
+          )}
+          {onBulkAdd && (
+            <button
+              onClick={onBulkAdd}
+              className="text-[10px]"
+              style={{
+                color: 'var(--vl-muted)',
+                fontFamily: 'var(--vl-font-ui)',
+              }}
+            >
+              {tp('bulkAdd', language)}
             </button>
           )}
           <span

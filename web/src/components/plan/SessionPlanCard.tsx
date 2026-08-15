@@ -15,6 +15,7 @@ import { RulesBlock } from './RulesBlock'
 import { PlanFooter } from './PlanFooter'
 import { PlanMiniChart } from './PlanMiniChart'
 import { EditSheet } from './EditSheet'
+import { BulkAddSheet } from './BulkAddSheet'
 import { AskPlannerPanel } from './AskPlannerPanel'
 
 interface Props {
@@ -100,6 +101,7 @@ export function SessionPlanCard({
     index?: number
   }>({ open: false })
   const [askOpen, setAskOpen] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
   const doorEnabled = !!traderId
 
   // ── non-plan states ──
@@ -283,6 +285,7 @@ export function SessionPlanCard({
             : undefined
         }
         onAdd={doorEnabled ? () => setEdit({ open: true }) : undefined}
+        onBulkAdd={doorEnabled ? () => setBulkOpen(true) : undefined}
       />
 
       {/* scenarios */}
@@ -322,6 +325,14 @@ export function SessionPlanCard({
             levelIndex={edit.index}
             scenarioIds={(doc.scenarios ?? []).map((s) => s.id)}
             onClose={() => setEdit({ open: false })}
+            onSaved={() => onChanged?.()}
+          />
+          <BulkAddSheet
+            open={bulkOpen}
+            traderId={traderId!}
+            symbol={symbol}
+            language={language}
+            onClose={() => setBulkOpen(false)}
             onSaved={() => onChanged?.()}
           />
           <AskPlannerPanel
