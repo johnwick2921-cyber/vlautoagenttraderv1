@@ -246,3 +246,31 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 		Warming:   warming,
 	}
 }
+
+// installActivePlanProvider wires kernel.ActivePlanProvider to read this store's
+// latest ACTIVE plan for the current session (P3.4). no_trade/died plans and
+// off-session return nil → the executor prompt is unchanged.
+func installActivePlanProvider(st *store.Store) {
+	kernel.ActivePlanProvider = func(symbol string) *kernel.ActivePlan {
+		reg := kernel.DefaultSessionRegistry()
+		now := time.Now()
+		sess, ok := reg.ActiveSession(now)
+		if !ok || !sess.Enabled {
+			return nil
+		}
+		tradeDate := plannerTradeDateCT(now)
+		row, err := st.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+		if err != nil || row == nil || row.Lifecycle != "active" {
+			return nil
+		}
+		var doc kernel.PlanDoc
+		if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+			return nil
+		}
+		replansLeft := 2 - (row.Version - 1) // default replan_cap 2 (P3.6 refines)
+		if replansLeft < 0 {
+			replansLeft = 0
+		}
+		return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
+	}
+}

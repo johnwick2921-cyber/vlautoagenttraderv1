@@ -219,6 +219,14 @@ type StrategyEngine struct {
 	// futures prompt ONLY when day_plan is enabled AND the line is non-empty, so
 	// the default (day_plan off) keeps the futures prompt byte-identical.
 	keyLevelsContextLine string
+
+	// planBlockLine / planStatusLine are the P3.4 executor plan injection: the
+	// byte-stable PLAN BLOCK (cached prefix) and the dynamic PLAN STATUS tail.
+	// Non-empty planBlockLine (day_plan on + an active plan) triggers the RECON #4
+	// reorder — SVP/KEY-LEVELS move to the end alongside PLAN STATUS. Empty (no
+	// active plan) → the prompt is unchanged.
+	planBlockLine  string
+	planStatusLine string
 }
 
 // SetSVPContext sets the Session Volume Profile line used by the futures prompt
@@ -228,6 +236,14 @@ func (e *StrategyEngine) SetSVPContext(line string) { e.svpContextLine = line }
 // SetKeyLevelsContext sets the day-plan KEY LEVELS block used by the futures
 // prompt for the next BuildSystemPrompt call. Pass "" to inject nothing.
 func (e *StrategyEngine) SetKeyLevelsContext(line string) { e.keyLevelsContextLine = line }
+
+// SetPlanContext sets the P3.4 executor plan injection: the byte-stable PLAN
+// BLOCK (prefix) and the dynamic PLAN STATUS tail. Pass ("","") for no active
+// plan (prompt unchanged).
+func (e *StrategyEngine) SetPlanContext(planBlock, planStatus string) {
+	e.planBlockLine = planBlock
+	e.planStatusLine = planStatus
+}
 
 // NewStrategyEngine creates strategy execution engine.
 // claw402WalletKey is optional — if provided, nofxos data requests are routed through claw402.

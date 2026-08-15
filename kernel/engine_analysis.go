@@ -362,6 +362,29 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			logger.Infof("🗺️ day-plan KEY LEVELS ON but omitted this cycle for %s — no levels available (no 1m bars / provider down / warming forward); prompt has no KEY LEVELS block.", activeSymbol)
 		}
 	}
+
+	// P3.4 — EXECUTOR PLAN INJECTION: resolve the active plan and thread the
+	// byte-stable PLAN BLOCK (cached prefix) + dynamic PLAN STATUS (tail from the
+	// P0.4 evaluator). Gated on day_plan; no active plan → cleared (prompt
+	// unchanged). When present, this triggers the RECON #4 reorder.
+	engine.SetPlanContext("", "")
+	if isFut, _ := futuresVariantMode(variant); isFut && planOn && ActivePlanProvider != nil {
+		if plan := ActivePlanProvider(activeSymbol); plan != nil {
+			rule := ""
+			if cfg := engine.GetConfig(); cfg != nil && cfg.DayPlan != nil {
+				rule = cfg.DayPlan.AcceptanceRule
+			}
+			block := RenderPlanBlock(plan.Doc, plan.Session)
+			status := ""
+			if market.FuturesBarsProvider != nil {
+				if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
+					_, price, dATR := AssembleScoredLevels(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now())
+					status = RenderPlanStatus(plan.Doc, bars, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
+				}
+			}
+			engine.SetPlanContext(block, status)
+		}
+	}
 	// A5 (G5) — PROMPT-OWNERSHIP assertion: every account-scoped context field must
 	// be owned by the DECIDING trader. A field tagged with another trader_id is
 	// cross-trader contamination — skip the cycle rather than decide on foreign data.

@@ -38,9 +38,12 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		symbol = "MNQ"
 	}
 
-	// Install the nPOC provider once, closing over this process's store.
+	// Install the nPOC + active-plan providers once, closing over this store.
 	st := at.store
-	nakedPOCProviderOnce.Do(func() { installNakedPOCProvider(st) })
+	nakedPOCProviderOnce.Do(func() {
+		installNakedPOCProvider(st)
+		installActivePlanProvider(st)
+	})
 
 	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)
 	if len(bars) == 0 {

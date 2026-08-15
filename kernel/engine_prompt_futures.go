@@ -135,6 +135,16 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 		sb.WriteString("\n\n")
 	}
 
+	// P3.4 — day-plan executor injection (RECON #4 reorder). planActive (day_plan
+	// on + an active plan) joins the byte-stable PLAN BLOCK to the cached prefix
+	// HERE, and moves SVP/KEY-LEVELS + PLAN STATUS to the prompt END. No active
+	// plan → prompt unchanged (goldens byte-identical).
+	planActive := e.config.DayPlan != nil && e.config.DayPlan.PlanEnabled && e.planBlockLine != ""
+	if planActive {
+		sb.WriteString(e.planBlockLine)
+		sb.WriteString("\n\n")
+	}
+
 	// 3. Indicators available.
 	sb.WriteString("# Available Data\n")
 	// F11a — was "bars (" with the '(' never closed (writeAvailableIndicators emits
@@ -149,7 +159,7 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	// empty on the preview/test paths). OFF or empty writes NOTHING, so the futures
 	// golden stays byte-identical. ONE context line + ONE legend line, consistent
 	// with the regime/decision framing above (POC as a magnet; balance vs trend).
-	if e.config.Indicators.EnableSVP && e.svpContextLine != "" {
+	if e.config.Indicators.EnableSVP && e.svpContextLine != "" && !planActive {
 		sb.WriteString(e.svpContextLine)
 		sb.WriteString("\n")
 		sb.WriteString("Legend: POC = the session's highest-volume price (a magnet). Inside the value area (VAL–VAH) = balanced → fade the edges back toward POC. Holding OUTSIDE the value area on volume = trend → join the move, don't fade it.\n\n")
@@ -160,7 +170,7 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	// default: no day_plan or plan_enabled=false) or empty writes NOTHING, so the
 	// futures golden stays byte-identical. These are Go-computed FACTS (levels +
 	// grades + distances); the AI judges, it does not re-derive the map.
-	if e.config.DayPlan != nil && e.config.DayPlan.PlanEnabled && e.keyLevelsContextLine != "" {
+	if e.config.DayPlan != nil && e.config.DayPlan.PlanEnabled && e.keyLevelsContextLine != "" && !planActive {
 		sb.WriteString(e.keyLevelsContextLine)
 		sb.WriteString("\n\n")
 	}
@@ -215,6 +225,22 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 		sb.WriteString("# Personalized Strategy\n\n")
 		sb.WriteString(e.config.CustomPrompt)
 		sb.WriteString("\n\nNote: supplements the rules above; cannot violate the risk-control constraints.\n")
+	}
+
+	// P3.4 — RECON #4 dynamic tail: with an active plan, SVP + KEY LEVELS + PLAN
+	// STATUS live at the very END, so the cached prefix (rules + PLAN BLOCK) stays
+	// byte-stable all session and only this tail changes per cycle.
+	if planActive {
+		sb.WriteString("\n# Live map (dynamic — re-read each bar)\n")
+		if e.config.Indicators.EnableSVP && e.svpContextLine != "" {
+			sb.WriteString(e.svpContextLine + "\n\n")
+		}
+		if e.keyLevelsContextLine != "" {
+			sb.WriteString(e.keyLevelsContextLine + "\n\n")
+		}
+		if e.planStatusLine != "" {
+			sb.WriteString(e.planStatusLine + "\n")
+		}
 	}
 
 	return sb.String()
