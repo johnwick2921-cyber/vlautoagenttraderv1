@@ -161,7 +161,10 @@ func (at *AutoTrader) maybeRunSessionReads() {
 		// W1 — fire the read ONLY inside this session's own read window on a live
 		// (holiday-aware) CME day. inSessionReadWindow stops the Sunday-17:00 NY
 		// read; IsCMEOpen stops holiday/weekend reads independently of loop order.
-		if !s.Enabled || !kernel.IsCMEOpen(now) || !inSessionReadWindow(now, s.ReadCT, s.WindowEndCT) {
+		// W9 — the strategy's sessions_enabled subset (default [NY]) + per-session
+		// Enable override gate which sessions THIS trader reads, on top of the
+		// registry Enabled flag.
+		if !s.Enabled || !at.sessionEnabledForStrategy(s.Name) || !kernel.IsCMEOpen(now) || !inSessionReadWindow(now, s.ReadCT, s.WindowEndCT) {
 			continue
 		}
 		existing, err := at.store.Plan().GetLatestPlanForSession(tradeDate, s.Name)
@@ -177,10 +180,7 @@ func (at *AutoTrader) maybeRunSessionReads() {
 		}
 		// P3.6 — RE-PLAN ON DEATH (cap replan_cap/session → NO-TRADE).
 		if at.activePlanIsDead(existing) {
-			replanCap := 2
-			if dp := at.config.StrategyConfig.DayPlan; dp != nil && dp.ReplanCap > 0 {
-				replanCap = dp.ReplanCap
-			}
+			replanCap := at.replanCapFor(s.Name) // W9 — per-session override wins
 			if existing.Version-1 >= replanCap {
 				at.writeNoTradePlan(s.Name, tradeDate, "re-plans exhausted after death condition")
 			} else {
@@ -302,6 +302,14 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 			fmt.Sprintf("%s planner fail-closed — NO-TRADE", session), "read failed after retries")
 	}
 
+	// W9 — scenario_cap: keep at most N scenarios (default 3 = the schema hardcap,
+	// so a no-op unless the owner lowered it). Applied post-parse so the executor
+	// prompt reflects the cap.
+	if doc != nil {
+		if cap := at.scenarioCap(); cap > 0 && len(doc.Scenarios) > cap {
+			doc.Scenarios = doc.Scenarios[:cap]
+		}
+	}
 	docJSON, _ := json.Marshal(doc)
 	version, err := at.store.Plan().AppendPlan(&store.PlanDB{
 		PlanID:        store.MakePlanID(tradeDate, session),
@@ -492,8 +500,9 @@ func (at *AutoTrader) maybeWriteDigests() {
 
 	// W1 — daily roll-up in the [15:00,16:00) RTH-close→break window, where
 	// tradeDate + the P&L window are still the CLOSING day's (they roll at 17:00).
-	// Reachable Mon–Fri; idempotent (SaveIfAbsent).
-	if inDailyRollWindow(now) {
+	// Reachable Mon–Fri; idempotent (SaveIfAbsent). W9 — gated on evening_digest
+	// (default true; the end-of-day roll-up IS the "evening digest" toggle).
+	if inDailyRollWindow(now) && at.eveningDigestEnabled() {
 		sessions, _ := at.store.Digest().SessionDigests(symbol, tradeDate)
 		text := kernel.FormatDailyDigest(tradeDate, "", len(sessions), entries, pnl)
 		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{

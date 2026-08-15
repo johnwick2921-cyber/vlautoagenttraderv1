@@ -29,7 +29,13 @@ func (at *AutoTrader) sessionEntryBlocked() (string, bool) {
 		return "", false
 	}
 	now := time.Now()
-	return sessionGateDecision(at.sessionRegistry(now), now, at.currentT1Windows(now))
+	reg := at.sessionRegistry(now)
+	// W9 — the strategy's sessions_enabled subset gates ENTRIES too (not just reads),
+	// so an advisory-mode entry in a strategy-disabled session is still refused.
+	if sess, ok := reg.ActiveSession(now); ok && !at.sessionEnabledForStrategy(sess.Name) {
+		return fmt.Sprintf("%s not in this strategy's sessions_enabled", sess.Name), true
+	}
+	return sessionGateDecision(reg, now, at.currentT1Windows(now))
 }
 
 // sessionGateDecision is the pure session-gate logic: entries only inside an

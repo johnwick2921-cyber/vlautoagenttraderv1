@@ -52,7 +52,7 @@ func (at *AutoTrader) recordLevelState() {
 	}
 
 	ls := at.store.LevelState()
-	active := kernel.ActivePlanLevels(plan.Doc.Levels, price, dATR, kernel.ActivationWindowK)
+	active := kernel.ActivePlanLevels(plan.Doc.Levels, price, dATR, at.proximityFilterATR()) // W9
 	for _, l := range active {
 		typ := kernel.LevelTypeFromLabel(l.Label)
 		bin := kernel.LevelBinIndex(l.Price)

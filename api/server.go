@@ -473,6 +473,11 @@ Returns: {qa_id, plan_id, plan_version, reply:{evidence, point_class:NEW-INFO|BA
 			s.routeWithSchema(protected, "POST", "/plan/session-registry", "Save the admin session registry (validated; next-day gates honor it)",
 				`Body: {"trader_id":"<id>","registry":{sessions:[{name,window_start_ct,window_end_ct,read_ct,flat_ct,killzones,enabled}]}}. Malformed → 400 (never silently defaulted). Returns: {saved:true, sessions:<int>}.`,
 				s.handlePlanSessionRegistrySave)
+			// W9 — approval gate: owner approves entries for the current session-day
+			// (only meaningful when approval_required is ON).
+			s.routeWithSchema(protected, "POST", "/plan/approve", "Approve entries for this trader's current CME session-day",
+				`Body: {"trader_id":"<id>"}. Grants entries for the current CME session-day (when approval_required is ON). Returns: {approved:true, session_day}.`,
+				s.handlePlanApprove)
 			// P5.6 — matched-random honesty gate (frozen weekly snapshot + WARMING progress).
 			s.routeWithSchema(protected, "GET", "/plan/stats", "Matched-random honesty gate (WARMING until pre-registered N)",
 				`Query: ?trader_id=<id>. Returns: {weekly:{iso_week,computed_at,verdicts:[{level_type,n,react_rate,delta_pp,p_value,status:WARMING|BEATS-RANDOM|NO-EDGE,label}]}|null, progress:[{level_type,n,target_n,react_rate,warming}], target_n, alpha}. No green on an underpowered sample, ever.`,

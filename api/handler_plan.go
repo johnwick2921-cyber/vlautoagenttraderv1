@@ -841,3 +841,32 @@ func errString(err error) string {
 	}
 	return err.Error()
 }
+
+// handlePlanApprove POST /api/plan/approve — grant entries for THIS trader's current
+// CME session-day when approval_required is ON (W9). The owner clicks it after
+// reviewing the plan; the entry gate then lets entries through for that session-day.
+func (s *Server) handlePlanApprove(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	dayKey := kernel.CMESessionDayKey(time.Now())
+	if err := s.store.SetSystemConfig(trader.ApprovalKey(traderID, dayKey), "granted"); err != nil {
+		SafeInternalError(c, "grant approval", err)
+		return
+	}
+	c.JSON(200, gin.H{"approved": true, "session_day": dayKey,
+		"note": "entries flow for this CME session-day"})
+}

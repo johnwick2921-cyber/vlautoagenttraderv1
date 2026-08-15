@@ -218,6 +218,36 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// W9 — PLAN-MODE gate: advisory (default) never gates; direction blocks entries
+	// against the plan bias; strict blocks entries with no matched scenario cited.
+	// Gated on day_plan → dormant by default.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, blocked := at.planModeBlocked(decision); blocked {
+			at.logWarnf("📐 plan-mode: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "plan_mode")
+			actionRecord.Success = false
+			actionRecord.Error = "plan_mode: " + reason
+			return nil
+		}
+	}
+
+	// W9 — APPROVAL gate: when approval_required is ON, entries are HELD until the
+	// owner approves this CME session-day (POST /api/plan/approve). Default OFF =
+	// fully automatic. Closes are never held.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if at.approvalRequired() && !at.approvalGranted(time.Now()) {
+			at.logWarnf("✋ approval required: %s %s HELD — awaiting owner approval for this session.", decision.Symbol, decision.Action)
+			telemetry.IncGateBlock(at.id, "approval_required")
+			at.emitAlert("P0", "approval", "approval:"+kernel.CMESessionDayKey(time.Now()),
+				"✋ Entry held — approval required", decision.Symbol+" "+decision.Action)
+			actionRecord.Success = false
+			actionRecord.Error = "approval_required"
+			return nil
+		}
+	}
+
 	// P3.5 — ADVISORY: record the executor's plan citation for entries (cited/
 	// matched/off-plan match-rate via B6). Never gates — plan restricts, never
 	// compels; hard gates already ran above.
