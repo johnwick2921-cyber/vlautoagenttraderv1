@@ -1,6 +1,10 @@
 package trader
 
-import "testing"
+import (
+	"testing"
+
+	"nofx/mcp"
+)
 
 func TestResolvePlannerModelID(t *testing.T) {
 	// Empty binding → primary.
@@ -17,19 +21,21 @@ func TestResolvePlannerModelID(t *testing.T) {
 }
 
 func TestResolvePlannerClientEmptyUsesPrimary(t *testing.T) {
-	// Empty planner_model → returns the primary client + primary model id (no
-	// registry call). mcpClient nil is fine here — we only assert the model id.
+	// W2 — empty planner_model → primary client, but the stamped id is the EXACT
+	// model, NEVER the provider alias (§125). "deepseek" pins to "deepseek-v4-pro".
 	at := mkTrader("ninjatrader", boolp(true), "5m")
 	at.aiModel = "deepseek"
 	_, id := at.resolvePlannerClient()
-	if id != "deepseek" {
-		t.Fatalf("empty binding should use primary model id, got %q", id)
+	if mcp.IsProviderAlias(id) || id == "" {
+		t.Fatalf("empty binding must resolve an EXACT model id (not an alias), got %q", id)
 	}
-	// A set planner_model returns that pinned id (registry may or may not resolve
-	// a client; on failure it falls back to primary — either way not a crash).
+	if id != mcp.DefaultModelForAlias("deepseek") {
+		t.Fatalf("primary 'deepseek' should pin to %q, got %q", mcp.DefaultModelForAlias("deepseek"), id)
+	}
+	// A set planner_model resolves an exact, non-empty id too.
 	at.config.StrategyConfig.DayPlan.PlannerModel = "deepseek"
 	_, id2 := at.resolvePlannerClient()
-	if id2 == "" {
-		t.Fatalf("resolved planner model id must be non-empty")
+	if id2 == "" || mcp.IsProviderAlias(id2) {
+		t.Fatalf("resolved planner model id must be an exact non-empty string, got %q", id2)
 	}
 }

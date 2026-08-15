@@ -167,6 +167,10 @@ func (client *Client) SetAPIKey(apiKey, apiURL, customModel string) {
 	client.Model = customModel
 }
 
+// ResolvedModel returns the EXACT model string this client calls (client.Model,
+// set to the provider default or a custom override) — never a provider alias.
+func (client *Client) ResolvedModel() string { return client.Model }
+
 func (client *Client) SetTimeout(timeout time.Duration) {
 	client.HTTPClient.Timeout = timeout
 }

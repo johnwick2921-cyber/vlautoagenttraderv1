@@ -105,6 +105,17 @@ func (s *MatchedRandomStore) SaveWeeklyIfAbsent(isoWeek, summaryJSON string, com
 	return true, nil
 }
 
+// ResetWindow clears all matched-random verdicts + weekly snapshots (§128 — a
+// planner model change starts a fresh window, no pooling across models). Both
+// tables are day-plan learning data (not owner-sacred), so a full reset is the
+// intended semantics.
+func (s *MatchedRandomStore) ResetWindow() error {
+	if err := s.db.Where("1 = 1").Delete(&MatchedRandomDB{}).Error; err != nil {
+		return err
+	}
+	return s.db.Where("1 = 1").Delete(&MatchedRandomWeeklyDB{}).Error
+}
+
 // HasWeekly reports whether a snapshot already exists for an ISO week (a cheap
 // pre-check so the weekly job skips recompute after the first write).
 func (s *MatchedRandomStore) HasWeekly(isoWeek string) bool {

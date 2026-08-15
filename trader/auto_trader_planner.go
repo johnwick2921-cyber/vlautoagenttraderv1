@@ -55,14 +55,16 @@ func (at *AutoTrader) resolvePlannerClient() (mcp.AIClient, string) {
 
 	modelID, usePrimary := resolvePlannerModelID(plannerModel, primaryModel)
 	if usePrimary {
-		at.logInfof("🧠 planner model: empty binding → using primary %q", modelID)
-		return at.mcpClient, modelID
+		exact := at.pinExactModel(at.mcpClient, modelID)
+		at.logInfof("🧠 planner model: empty binding → using primary, pinned %q", exact)
+		return at.mcpClient, exact
 	}
 
 	client := mcp.NewAIClientByProvider(modelID)
 	if client == nil {
-		at.logWarnf("🧠 planner model %q unresolved by the registry → falling back to primary %q", modelID, primaryModel)
-		return at.mcpClient, primaryModel
+		exact := at.pinExactModel(at.mcpClient, primaryModel)
+		at.logWarnf("🧠 planner model %q unresolved by the registry → falling back to primary %q", modelID, exact)
+		return at.mcpClient, exact
 	}
 	// Mirror the primary key resolution (provider-specific overrides).
 	apiKey := at.config.CustomAPIKey
@@ -78,8 +80,54 @@ func (at *AutoTrader) resolvePlannerClient() (mcp.AIClient, string) {
 		}
 	}
 	client.SetAPIKey(apiKey, customURL, at.config.CustomModelName)
-	at.logInfof("🧠 planner model resolved (pinned): %q", modelID)
-	return client, modelID
+	exact := at.pinExactModel(client, modelID)
+	at.logInfof("🧠 planner model resolved (pinned): %q", exact)
+	return client, exact
+}
+
+// pinExactModel resolves a possibly-alias model id to the EXACT model string
+// (§125 — never stamp a provider alias on a plan): prefer the client's own
+// resolved model, else map the alias to its provider default, else keep it as-is
+// with a warning. Also records the model + resets the matched-random stats window
+// on a model change (§128 — no pooling across models).
+func (at *AutoTrader) pinExactModel(client mcp.AIClient, modelID string) string {
+	exact := modelID
+	if client != nil {
+		if rm := strings.TrimSpace(client.ResolvedModel()); rm != "" && !mcp.IsProviderAlias(rm) {
+			exact = rm
+		}
+	}
+	if mcp.IsProviderAlias(exact) {
+		if def := mcp.DefaultModelForAlias(exact); def != "" {
+			at.logInfof("🧠 model %q is a provider alias → pinned exact %q", exact, def)
+			exact = def
+		} else {
+			at.logWarnf("⚠️ planner model %q is a provider alias and could not be pinned to an exact string", exact)
+		}
+	}
+	at.maybeResetStatsOnModelChange(exact)
+	return exact
+}
+
+// maybeResetStatsOnModelChange resets the matched-random window when the pinned
+// planner model changes (§128). Idempotent; the first-ever pin only records.
+func (at *AutoTrader) maybeResetStatsOnModelChange(exactModel string) {
+	if at.store == nil || strings.TrimSpace(exactModel) == "" {
+		return
+	}
+	const key = "dayplan_pinned_model"
+	prev, _ := at.store.GetSystemConfig(key)
+	if prev == exactModel {
+		return
+	}
+	if prev != "" {
+		if err := at.store.MatchedRandom().ResetWindow(); err != nil {
+			at.logWarnf("📊 stats-window reset on model change failed: %v", err)
+		} else {
+			at.logInfof("📊 planner model changed %q → %q — matched-random stats window RESET (no cross-model pooling).", prev, exactModel)
+		}
+	}
+	_ = at.store.SetSystemConfig(key, exactModel)
 }
 
 // ---- P3.3 — read jobs + the planner call --------------------------------------

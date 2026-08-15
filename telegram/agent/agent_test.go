@@ -22,6 +22,7 @@ type mockLLM struct {
 
 func (m *mockLLM) SetAPIKey(_, _, _ string)   {}
 func (m *mockLLM) SetTimeout(_ time.Duration) {}
+func (m *mockLLM) ResolvedModel() string      { return "mock-model" }
 
 func (m *mockLLM) CallWithMessages(_, _ string) (string, error) { return "", nil }
 
