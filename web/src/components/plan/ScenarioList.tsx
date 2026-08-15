@@ -1,0 +1,138 @@
+// P4.3 — scenario rows: StatusDot · id · quality · name/grammar + the target
+// (uses) chain. Status is READ-ONLY from the backend (single-authority rule) —
+// absent → 'armed' (plan-born). The UI never computes trading state.
+
+import type { Language } from '../../i18n/translations'
+import { tp } from '../../i18n/plan-translations'
+import type { PlanScenario, ScenarioStatusValue } from '../../lib/api/plan'
+import { StatusDot, type ScenarioStatus } from './chips'
+import { fmtPrice } from './levelState'
+
+function QualityChip({ quality }: { quality: string }) {
+  const q = quality || 'B'
+  const color =
+    q === 'A+'
+      ? 'var(--vl-gold)'
+      : q === 'A'
+        ? 'var(--vl-grade-b)'
+        : 'var(--vl-faint)'
+  return (
+    <span
+      className="text-[10px] font-bold"
+      style={{
+        color,
+        border: `1px solid ${color}`,
+        borderRadius: 'var(--vl-radius-chip)',
+        padding: '0 4px',
+        fontFamily: 'var(--vl-font-ui)',
+      }}
+    >
+      {q}
+    </span>
+  )
+}
+
+function ScenarioRow({
+  scenario,
+  status,
+  language,
+}: {
+  scenario: PlanScenario
+  status: ScenarioStatus
+  language: Language
+}) {
+  const dir = (scenario.direction || '').toLowerCase()
+  const dirColor = dir === 'long' ? 'var(--vl-long)' : 'var(--vl-short)'
+  return (
+    <div
+      role="row"
+      className="py-2"
+      style={{ borderBottom: '1px solid var(--vl-hair)' }}
+    >
+      <div className="flex items-center gap-2">
+        <StatusDot status={status} language={language} />
+        <span
+          className="text-[11px] font-bold"
+          style={{ color: 'var(--vl-gold)', fontFamily: 'var(--vl-font-data)' }}
+        >
+          {scenario.id}
+        </span>
+        <QualityChip quality={scenario.quality} />
+        <span
+          className="text-[11px] uppercase"
+          style={{ color: dirColor, fontFamily: 'var(--vl-font-ui)' }}
+        >
+          {dir}
+        </span>
+      </div>
+      {/* grammar line: trigger + condition */}
+      <div
+        className="mt-1 text-[11px]"
+        style={{ color: 'var(--vl-muted)', fontFamily: 'var(--vl-font-ui)' }}
+      >
+        {scenario.trigger}
+        {scenario.condition ? ` · ${scenario.condition}` : ''}
+      </div>
+      {/* uses-chain (targets) + invalidation */}
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+        {scenario.target_chain && scenario.target_chain.length > 0 && (
+          <span
+            style={{
+              color: 'var(--vl-faint)',
+              fontFamily: 'var(--vl-font-ui)',
+            }}
+          >
+            {tp('targets', language)}:{' '}
+            <span className="vl-num" style={{ color: 'var(--vl-long)' }}>
+              {scenario.target_chain.map((t) => fmtPrice(t)).join(' → ')}
+            </span>
+          </span>
+        )}
+        {scenario.invalid && scenario.invalid !== 'n/a' && (
+          <span
+            style={{
+              color: 'var(--vl-faint)',
+              fontFamily: 'var(--vl-font-ui)',
+            }}
+          >
+            {tp('invalidates', language)}:{' '}
+            <span className="vl-num" style={{ color: 'var(--vl-short)' }}>
+              {scenario.invalid}
+            </span>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function ScenarioList({
+  scenarios,
+  statusMap,
+  language,
+}: {
+  scenarios: PlanScenario[]
+  statusMap?: Record<string, ScenarioStatusValue>
+  language: Language
+}) {
+  return (
+    <div role="table" aria-label={tp('scenarios', language)}>
+      <span
+        className="text-[10px] uppercase tracking-widest"
+        style={{ color: 'var(--vl-faint)', fontFamily: 'var(--vl-font-ui)' }}
+      >
+        {tp('scenarios', language)}
+      </span>
+      <div className="mt-1">
+        {scenarios.map((s) => (
+          <ScenarioRow
+            key={s.id}
+            scenario={s}
+            status={(statusMap?.[s.id] as ScenarioStatus) ?? 'armed'}
+            language={language}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}

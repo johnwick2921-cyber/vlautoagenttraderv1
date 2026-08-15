@@ -52,7 +52,22 @@ export interface PlanLevelFact {
   accept_have: number
   accept_need: number
   still_valid: boolean
+  // Owner-overlay fields (populated once P5 overlays land; absent pre-★2). The
+  // card renders 👤 / 📝 / an S-tag only when these are present.
+  origin?: 'AI' | 'OWNER'
+  note?: string
+  scenario_id?: string
 }
+
+// Backend-owned scenario status (the state machine ships in the executor phase;
+// absent for now → the card renders every scenario as 'armed', the plan-born
+// initial state). The UI never computes trading state itself.
+export type ScenarioStatusValue =
+  | 'armed'
+  | 'waiting'
+  | 'triggered'
+  | 'invalidated'
+  | 'expired'
 
 // ── GET /api/plan/today ──
 export interface PlanToday {
@@ -70,6 +85,8 @@ export interface PlanToday {
   price?: number
   replans_left?: number
   warming?: string // "n/10" while the SVP is uncalibrated; "" once warm
+  // Per-scenario live status keyed by scenario id (executor-phase; absent now).
+  scenario_status?: Record<string, ScenarioStatusValue>
 }
 
 // ── GET /api/plan/history ──

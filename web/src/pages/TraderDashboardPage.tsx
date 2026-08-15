@@ -15,6 +15,7 @@ import { LogOut, Loader2, Eye, EyeOff, Copy, Check } from 'lucide-react'
 import { DeepVoidBackground } from '../components/common/DeepVoidBackground'
 import { NofxSelect } from '../components/ui/select'
 import { GridRiskPanel } from '../components/strategy/GridRiskPanel'
+import { PlanCard } from '../components/plan/PlanCard'
 import type {
   SystemStatus,
   AccountInfo,
@@ -693,6 +694,19 @@ export function TraderDashboardPage({
         >
           {/* Left Column: Charts + Positions */}
           <div className="space-y-6">
+            {/* Day Plan card — futures only (day_plan is a futures feature);
+                additive + dormant: renders its no-plan state until a plan arms. */}
+            {isFutures && selectedTrader.trader_id && (
+              <PlanCard
+                traderId={selectedTrader.trader_id}
+                symbol={selectedChartSymbol || 'MNQ'}
+                exchange={getExchangeTypeFromList(
+                  selectedTrader.exchange_id,
+                  exchanges
+                )}
+              />
+            )}
+
             {/* Chart Tabs (Equity / K-line) */}
             <div
               ref={chartSectionRef}
