@@ -64,6 +64,14 @@ func lineLevel(kind LevelKind, price float64, label, origin string, htf bool) De
 	return DetectedLevel{Kind: kind, Price: price, Lo: price, Hi: price, Label: label, OriginDate: origin, HTF: htf}
 }
 
+// zoneLevel builds a banded DetectedLevel (Price = midpoint of [lo,hi]).
+func zoneLevel(kind LevelKind, lo, hi float64, label, origin string) DetectedLevel {
+	if hi < lo {
+		lo, hi = hi, lo
+	}
+	return DetectedLevel{Kind: kind, Price: (lo + hi) / 2, Lo: lo, Hi: hi, Label: label, OriginDate: origin}
+}
+
 // chicago returns the cached America/Chicago location (UTC fallback), avoiding a
 // LoadLocation per call and a first-call data race.
 var (
