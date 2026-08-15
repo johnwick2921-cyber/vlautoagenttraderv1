@@ -107,11 +107,68 @@ func (at *AutoTrader) maybeRunSessionReads() {
 			continue
 		}
 		existing, err := at.store.Plan().GetLatestPlanForSession(tradeDate, s.Name)
-		if err == nil && existing != nil {
-			continue // already read this session-day
+		if err != nil {
+			continue
 		}
-		at.runPlannerRead(s.Name, tradeDate)
+		if existing == nil {
+			at.runPlannerRead(s.Name, tradeDate) // first read this session-day
+			continue
+		}
+		if existing.Lifecycle != "active" {
+			continue // no_trade / died → done for the session
+		}
+		// P3.6 — RE-PLAN ON DEATH (cap replan_cap/session → NO-TRADE).
+		if at.activePlanIsDead(existing) {
+			replanCap := 2
+			if dp := at.config.StrategyConfig.DayPlan; dp != nil && dp.ReplanCap > 0 {
+				replanCap = dp.ReplanCap
+			}
+			if existing.Version-1 >= replanCap {
+				at.writeNoTradePlan(s.Name, tradeDate, "re-plans exhausted after death condition")
+			} else {
+				at.logInfof("🗓️ plan %s %s v%d DIED — re-planning (cap %d/session).", tradeDate, s.Name, existing.Version, replanCap)
+				at.runPlannerRead(s.Name, tradeDate) // appends a new version
+			}
+		}
 	}
+}
+
+// activePlanIsDead reports whether the stored plan's thesis is spent (all its
+// levels accepted through) per the P0.4 evaluator over the live bars.
+func (at *AutoTrader) activePlanIsDead(row *store.PlanDB) bool {
+	if market.FuturesBarsProvider == nil {
+		return false
+	}
+	var doc kernel.PlanDoc
+	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+		return false
+	}
+	bars := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	if len(bars) == 0 {
+		return false
+	}
+	rule := ""
+	if dp := at.config.StrategyConfig.DayPlan; dp != nil {
+		rule = dp.AcceptanceRule
+	}
+	return kernel.PlanIsDead(doc, bars, rule, time.Now().UnixMilli())
+}
+
+// writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.
+func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
+	doc := kernel.NoTradePlanDoc(reason)
+	docJSON, _ := json.Marshal(doc)
+	_, err := at.store.Plan().AppendPlan(&store.PlanDB{
+		PlanID: store.MakePlanID(tradeDate, session), StrategyID: at.id,
+		TradeDate: tradeDate, Session: session, TriggerReason: "replans_exhausted",
+		Lifecycle: "no_trade", Doc: string(docJSON),
+	})
+	if err != nil {
+		at.logErrorf("🗓️ planner: write NO-TRADE plan failed %s %s: %v", tradeDate, session, err)
+		return
+	}
+	at.logErrorf("🚨 PLAN NO-TRADE %s %s: %s — session sits out.", tradeDate, session, reason)
+	telemetry.IncGateBlock(at.id, "plan_replans_exhausted")
 }
 
 // runPlannerRead assembles the input package, calls the pinned planner client,

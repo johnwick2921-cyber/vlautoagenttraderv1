@@ -61,7 +61,12 @@ func RenderPlanStatus(doc PlanDoc, bars []market.Kline, price, dATR float64, rul
 		rule = "2x5m"
 	}
 	lookback := 3
-	for _, l := range doc.Levels {
+	// Activation window (P3.6): only levels within 1.5×dATR are live candidates.
+	active := ActivePlanLevels(doc.Levels, price, dATR, ActivationWindowK)
+	if hidden := len(doc.Levels) - len(active); hidden > 0 {
+		fmt.Fprintf(&b, "(%d level(s) outside the %.1f×dATR activation window — re-arm when price returns)\n", hidden, ActivationWindowK)
+	}
+	for _, l := range active {
 		dir := DirAbove
 		if l.Price < price {
 			dir = DirBelow
