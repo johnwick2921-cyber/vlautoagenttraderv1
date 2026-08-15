@@ -130,6 +130,12 @@ func (at *AutoTrader) runCycle() error {
 	// Idempotent; gated → dormant.
 	at.maybeRecordClosedTradeAnalytics()
 
+	// W7 — LEVEL-STATE WRITER: persist each active level's cross-session identity +
+	// state (times-tested / consumed / freshness) so a level burned in one session
+	// can't return fresh in the next; re-arm reads the persisted cooldown. Gated →
+	// dormant; idempotent (EnsureLevel preserves prior state).
+	at.recordLevelState()
+
 	// P5.6 — WEEKLY matched-random eval (fixed cadence, never nightly re-peek):
 	// on Sundays, freeze one honesty-gate snapshot per ISO week. Idempotent
 	// (first-writer-wins across traders); gated → dormant.
