@@ -406,13 +406,19 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	// Per-session min_grade filter (owner levels grade A → always survive).
 	scored = kernel.FilterLevelsByMinGrade(scored, minGrade)
 
-	var daily, hour1, min5 []market.Kline
+	var daily, hour1, min5, min5Long []market.Kline
 	if market.FuturesBarsProvider != nil {
 		daily = market.FuturesBarsProvider(symbol, "1d", 300)
 		hour1 = market.FuturesBarsProvider(symbol, "1h", 300)
-		min5 = market.FuturesBarsProvider(symbol, "5m", 300)
+		min5 = market.FuturesBarsProvider(symbol, "5m", 300) // recent (~1 day) → RV recent
+		min5Long = market.FuturesBarsProvider(symbol, "5m", 3000) // multi-day → RV baseline
 	}
-	regime := kernel.ComputeRegime(kernel.RegimeInputs{Price: price, DailyBars: daily, Hour1Bars: hour1, Min5Bars: min5})
+	// W10 — supply the realized-vol baseline (was never fed → RV stuck "warming").
+	// Same 5m estimator as the recent value; VIX stays honest n/a (no feed).
+	rvBaseline, _ := kernel.RVBaselineFrom5m(min5Long, 20, 5)
+	regime := kernel.ComputeRegime(kernel.RegimeInputs{
+		Price: price, DailyBars: daily, Hour1Bars: hour1, Min5Bars: min5, RVBaseline20d: rvBaseline,
+	})
 
 	var calEvents []kernel.PlannerCalendarEvent
 	if slice, err := at.store.Calendar().GetSlice(tradeDate); err == nil && slice != nil {
