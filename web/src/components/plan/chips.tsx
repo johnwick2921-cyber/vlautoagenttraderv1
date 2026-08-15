@@ -193,6 +193,28 @@ export function VersionChips({ version }: { version: number }) {
   )
 }
 
+// ── ConflictChip (P5.3): ⚡ overlapping owner/AI elements with opposing
+// instructions. Owner wins on execution; the AI element is ghosted, both kept
+// visible + logged. Text+shape (never color alone). ──
+export function ConflictChip({ language }: { language: Language }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider"
+      style={{
+        color: 'var(--vl-short)',
+        border: '1px solid rgba(224,108,108,0.4)',
+        background: 'rgba(224,108,108,0.08)',
+        borderRadius: 'var(--vl-radius-chip)',
+        padding: '1px 5px',
+        fontFamily: 'var(--vl-font-ui)',
+      }}
+      title={tp('conflictHint', language)}
+    >
+      ⚡ {tp('conflict', language)}
+    </span>
+  )
+}
+
 // ── LifecycleChip: active(gold) · expired/died/superseded(faint/short) ──
 export function LifecycleChip({
   lifecycle,

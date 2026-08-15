@@ -37,3 +37,32 @@ export function fmtDistance(distance: number): string {
 export function fmtPrice(price: number): string {
   return Number.isInteger(price) ? String(price) : price.toFixed(2)
 }
+
+// P5.3 — detect owner/AI level conflicts: an OWNER level and an AI level at
+// (nearly) the same price with DIFFERENT instructions. Owner wins → the AI index
+// is ghosted; both indices are flagged for the ⚡ chip. Priced band ≈ tick noise.
+export function detectConflicts(
+  facts: PlanLevelFact[],
+  bandPts = 3
+): { ghosted: Set<number>; flagged: Set<number> } {
+  const ghosted = new Set<number>()
+  const flagged = new Set<number>()
+  for (let i = 0; i < facts.length; i++) {
+    const a = facts[i]
+    if (a.origin !== 'OWNER') continue
+    for (let j = 0; j < facts.length; j++) {
+      if (i === j) continue
+      const b = facts[j]
+      if (b.origin === 'OWNER') continue // only owner-vs-AI
+      if (
+        Math.abs(a.price - b.price) <= bandPts &&
+        a.instruction !== b.instruction
+      ) {
+        ghosted.add(j) // AI element loses
+        flagged.add(i)
+        flagged.add(j)
+      }
+    }
+  }
+  return { ghosted, flagged }
+}

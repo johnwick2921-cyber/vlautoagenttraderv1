@@ -229,6 +229,150 @@ export const planStrings = {
   inherit: { en: 'inherit', zh: '继承', id: 'warisi' },
   override: { en: 'override', zh: '覆盖', id: 'ganti' },
   windows: { en: 'Windows', zh: '时间窗口', id: 'Jendela' },
+
+  // ── P5.2 edit sheet + bulk add (LABELS translate; stored tokens stay English) ──
+  editLevel: { en: 'Edit level', zh: '编辑价位', id: 'Ubah level' },
+  addLevel: { en: 'Add level', zh: '添加价位', id: 'Tambah level' },
+  priceRange: {
+    en: 'Price / zone range',
+    zh: '价格 / 区间',
+    id: 'Harga / rentang zona',
+  },
+  levelType: { en: 'Type', zh: '类型', id: 'Tipe' },
+  instructionLabel: {
+    en: 'Instruction (what the AI does here)',
+    zh: '指令（AI 在此如何操作）',
+    id: 'Instruksi (aksi AI di sini)',
+  },
+  gradeLabel: { en: 'Grade', zh: '评级', id: 'Nilai' },
+  noteLabel: {
+    en: 'Note (goes to the AI)',
+    zh: '备注（发送给 AI）',
+    id: 'Catatan (untuk AI)',
+  },
+  scenarioTag: { en: 'Scenario tag', zh: '情景标签', id: 'Tag skenario' },
+  newPlay: { en: '＋ new play', zh: '＋ 新剧本', id: '＋ play baru' },
+  save: { en: 'Save', zh: '保存', id: 'Simpan' },
+  cancel: { en: 'Cancel', zh: '取消', id: 'Batal' },
+  deleteLevel: { en: 'Delete', zh: '删除', id: 'Hapus' },
+  armorWarn: {
+    en: '⛔ armor check runs on save — a price ~8×ATR away gets rejected, same as the AI’s would',
+    zh: '⛔ 保存时进行护栏检查 — 距价约 8×ATR 的价位会被拒绝，与 AI 的一样',
+    id: '⛔ cek armor saat simpan — harga ~8×ATR jauh ditolak, sama seperti AI',
+  },
+  bulkAdd: { en: 'Bulk add', zh: '批量添加', id: 'Tambah massal' },
+  bulkAddHint: {
+    en: 'One level per line: price [type] [note]',
+    zh: '每行一个价位：价格 [类型] [备注]',
+    id: 'Satu level per baris: harga [tipe] [catatan]',
+  },
+  preview: { en: 'Preview', zh: '预览', id: 'Pratinjau' },
+  overlayApplied: {
+    en: 'Plan updated',
+    zh: '计划已更新',
+    id: 'Rencana diperbarui',
+  },
+  saveFailed: { en: 'Save rejected', zh: '保存被拒', id: 'Simpan ditolak' },
+
+  // ── level type labels (values stay English tokens) ──
+  typeDzone: { en: 'D-zone', zh: '需求区', id: 'Zona-D' },
+  typeSzone: { en: 'S-zone', zh: '供给区', id: 'Zona-S' },
+  typeLevel: { en: 'Level', zh: '价位', id: 'Level' },
+  typeLiquidity: { en: 'Liquidity', zh: '流动性', id: 'Likuiditas' },
+  typeMyLevel: { en: 'My level', zh: '我的价位', id: 'Level saya' },
+
+  // ── instruction verb labels ──
+  instrSweepReclaim: {
+    en: 'sweep+reclaim = entry',
+    zh: '扫单+夺回 = 进场',
+    id: 'sweep+reclaim = masuk',
+  },
+  instrWatchReclaim: {
+    en: 'watch reclaim',
+    zh: '观察夺回',
+    id: 'pantau reclaim',
+  },
+  instrFadeFirst: {
+    en: 'fade first touch',
+    zh: '首次触及反向',
+    id: 'fade sentuhan pertama',
+  },
+  instrTargetOnly: { en: 'target only', zh: '仅作目标', id: 'target saja' },
+  instrMagnet: {
+    en: 'magnet — no entries',
+    zh: '磁吸 — 不进场',
+    id: 'magnet — tanpa entri',
+  },
+  instrNoTouch: { en: 'no touch', zh: '勿触及', id: 'jangan sentuh' },
+
+  // ── P5.3 conflict chip ──
+  conflict: { en: 'conflict', zh: '冲突', id: 'konflik' },
+  conflictHint: {
+    en: 'Owner wins on execution; the AI element is ghosted (both logged).',
+    zh: '执行以所有者为准；AI 元素被虚化（均记录）。',
+    id: 'Pemilik menang saat eksekusi; elemen AI diredupkan (keduanya dicatat).',
+  },
+
+  // ── P5.4 Ask-Planner ──
+  askPlannerTitle: {
+    en: 'Ask Planner',
+    zh: '询问规划师',
+    id: 'Tanya Perencana',
+  },
+  askEvidence: { en: 'Evidence', zh: '依据', id: 'Bukti' },
+  askYourPoint: { en: 'Your point', zh: '你的观点', id: 'Poin Anda' },
+  askVerdict: { en: 'Verdict', zh: '裁决', id: 'Putusan' },
+  clsNewInfo: { en: 'NEW INFO', zh: '新信息', id: 'INFO BARU' },
+  clsBare: { en: 'BARE DISAGREEMENT', zh: '无据反对', id: 'BEDA TANPA BUKTI' },
+  vDefend: { en: 'DEFEND', zh: '坚持', id: 'PERTAHANKAN' },
+  vConcede: { en: 'CONCEDE', zh: '让步', id: 'MENGALAH' },
+  vMerge: { en: 'PROPOSE-MERGE', zh: '提议合并', id: 'USUL-GABUNG' },
+  applyMerge: { en: 'Apply merge', zh: '应用合并', id: 'Terapkan gabungan' },
+  keepAsIs: { en: 'Keep as-is', zh: '保持不变', id: 'Biarkan' },
+  patchNote: {
+    en: 'nothing changes until you Apply',
+    zh: '在你应用前不会改变任何内容',
+    id: 'tidak ada perubahan sampai Anda Terapkan',
+  },
+  askApplied: {
+    en: 'Applied — card updated',
+    zh: '已应用 — 计划已更新',
+    id: 'Diterapkan — kartu diperbarui',
+  },
+  askPlaceholder: {
+    en: "ask about today's plan… (any language)",
+    zh: '询问今日计划…（任何语言）',
+    id: 'tanya rencana hari ini… (bahasa apa saja)',
+  },
+  send: { en: 'Send', zh: '发送', id: 'Kirim' },
+  qcWhyLevel: {
+    en: 'why this level?',
+    zh: '为何是这个价位？',
+    id: 'kenapa level ini?',
+  },
+  qcWhatKills: {
+    en: 'what kills the plan?',
+    zh: '什么会让计划失效？',
+    id: 'apa yang mematikan rencana?',
+  },
+  sycophancyKPI: {
+    en: 'defends-on-bare',
+    zh: '无据坚持',
+    id: 'pertahankan-tanpa-bukti',
+  },
+  thinking: { en: 'thinking…', zh: '思考中…', id: 'berpikir…' },
+
+  // ── P5.5 / P5.6 badges ──
+  adherence: { en: 'Adherence', zh: '计划遵守', id: 'Kepatuhan' },
+  gpa: { en: 'GPA', zh: '平均分', id: 'IPK' },
+  tradeReview: { en: 'Trade review', zh: '交易复盘', id: 'Tinjauan trade' },
+  beatsRandom: { en: 'beats random', zh: '优于随机', id: 'kalahkan acak' },
+  noEdge: { en: 'no edge', zh: '无优势', id: 'tanpa edge' },
+  statsWarming: {
+    en: 'WARMING {n}/{target}',
+    zh: '预热中 {n}/{target}',
+    id: 'PEMANASAN {n}/{target}',
+  },
 } satisfies Record<string, TranslationEntry>
 
 // tp(key, lang, params?) — resolve a plan string, fall back to English, then to

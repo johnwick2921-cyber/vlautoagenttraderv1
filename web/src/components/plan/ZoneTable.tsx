@@ -1,44 +1,64 @@
-// P4.3 — the level table (one of the three renderers of the SAME level array).
-// Columns: price · provenance · grade · fresh · instruction · distance, plus
-// 👤 (owner) and 📝 (note) markers when the owner-overlay fields are present.
-// A "near" level (|distance| < threshold) turns its distance chip gold. A
-// "consumed" level dims 50% but stays legible (audit trail — never deleted).
+// P4.3 / P5.2-3 — the level table (one of the three renderers of the SAME level
+// array). Columns: price · provenance · grade · fresh · instruction · distance,
+// plus 👤 (owner) and 📝 (note) markers. A near level turns its distance gold; a
+// consumed level dims 50% (audit trail). P5: tapping a row opens the edit sheet;
+// an owner/AI conflict ghosts the AI row + shows the ⚡ conflict chip (owner wins).
 
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
 import type { PlanLevelFact } from '../../lib/api/plan'
-import { GradeChip, ProvenanceChip, FreshDot } from './chips'
-import { levelFresh, levelNear, fmtDistance, fmtPrice } from './levelState'
+import { GradeChip, ProvenanceChip, FreshDot, ConflictChip } from './chips'
+import {
+  levelFresh,
+  levelNear,
+  fmtDistance,
+  fmtPrice,
+  detectConflicts,
+} from './levelState'
 
 function ZoneRow({
   fact,
+  index,
   language,
+  onEdit,
+  ghosted,
+  flagged,
 }: {
   fact: PlanLevelFact
+  index: number
   language: Language
+  onEdit?: (fact: PlanLevelFact, index: number) => void
+  ghosted?: boolean
+  flagged?: boolean
 }) {
   const fresh = levelFresh(fact)
   const near = levelNear(fact)
   const consumed = fresh === 'consumed'
   const isOwner = fact.origin === 'OWNER'
   const priceWords = `${fmtPrice(fact.price)}` // announced value
+  const editable = !!onEdit
 
   return (
     <div
       role="row"
       aria-label={`${fact.label} ${priceWords}, grade ${fact.grade}, ${fresh}, ${fact.instruction}, ${fmtDistance(fact.distance)} points`}
+      onClick={editable ? () => onEdit!(fact, index) : undefined}
       className="grid items-center gap-2 py-1.5"
       style={{
         gridTemplateColumns: 'minmax(64px,auto) auto auto 1fr auto',
-        opacity: consumed ? 0.5 : 1,
+        opacity: ghosted ? 0.35 : consumed ? 0.5 : 1,
         borderBottom: '1px solid var(--vl-hair)',
+        cursor: editable ? 'pointer' : undefined,
       }}
     >
       {/* price + owner/note markers */}
       <div className="flex items-center gap-1">
         <span
           className="vl-num text-[13px]"
-          style={{ color: 'var(--vl-ivory)' }}
+          style={{
+            color: 'var(--vl-ivory)',
+            textDecoration: ghosted ? 'line-through' : undefined,
+          }}
         >
           {fmtPrice(fact.price)}
         </span>
@@ -60,6 +80,7 @@ function ZoneRow({
             📝
           </span>
         )}
+        {flagged && <ConflictChip language={language} />}
       </div>
 
       <ProvenanceChip label={fact.label} />
@@ -102,10 +123,15 @@ function ZoneRow({
 export function ZoneTable({
   facts,
   language,
+  onEdit,
+  onAdd,
 }: {
   facts: PlanLevelFact[]
   language: Language
+  onEdit?: (fact: PlanLevelFact, index: number) => void
+  onAdd?: () => void
 }) {
+  const { ghosted, flagged } = detectConflicts(facts)
   return (
     <div role="table" aria-label={tp('keyLevels', language)}>
       <div className="flex items-center justify-between mb-1">
@@ -115,12 +141,29 @@ export function ZoneTable({
         >
           {tp('keyLevels', language)}
         </span>
-        <span
-          className="text-[10px] uppercase"
-          style={{ color: 'var(--vl-faint)', fontFamily: 'var(--vl-font-ui)' }}
-        >
-          {tp('colDistance', language)}
-        </span>
+        <div className="flex items-center gap-2">
+          {onAdd && (
+            <button
+              onClick={onAdd}
+              className="text-[10px]"
+              style={{
+                color: 'var(--vl-gold)',
+                fontFamily: 'var(--vl-font-ui)',
+              }}
+            >
+              ＋ {tp('addLevel', language)}
+            </button>
+          )}
+          <span
+            className="text-[10px] uppercase"
+            style={{
+              color: 'var(--vl-faint)',
+              fontFamily: 'var(--vl-font-ui)',
+            }}
+          >
+            {tp('colDistance', language)}
+          </span>
+        </div>
       </div>
       {facts.length === 0 ? (
         <div
@@ -134,7 +177,11 @@ export function ZoneTable({
           <ZoneRow
             key={`${f.label}-${f.price}-${i}`}
             fact={f}
+            index={i}
             language={language}
+            onEdit={onEdit}
+            ghosted={ghosted.has(i)}
+            flagged={flagged.has(i)}
           />
         ))
       )}

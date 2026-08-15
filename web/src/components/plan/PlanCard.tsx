@@ -27,7 +27,7 @@ export function PlanCard({
   exchange = 'ninjatrader',
 }: Props) {
   const { language } = useLanguage()
-  const { plan, isLoading, error } = usePlanToday(traderId, symbol)
+  const { plan, isLoading, error, mutate } = usePlanToday(traderId, symbol)
 
   const activeSession =
     (plan?.found ? (plan.session as SessionName) : null) || null
@@ -83,11 +83,13 @@ export function PlanCard({
       )}
       <SessionPlanCard
         plan={plan}
+        traderId={traderId}
         symbol={symbol}
         exchange={exchange}
         language={language}
         isLoading={isLoading}
         errored={!!error && !plan}
+        onChanged={() => mutate()}
       />
     </div>
   )

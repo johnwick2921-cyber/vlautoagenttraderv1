@@ -1,12 +1,12 @@
-// P4.3 — the SessionPlanCard: composes bias / mini-chart / levels / scenarios /
-// rules / footer, and renders every lifecycle state. It is a pure VIEW of
-// plan_final from the API — computes nothing tradable. The edit/re-read/approve
-// door is P5, so those buttons are present-but-disabled here (dormant).
+// P4.3 / P5 — the SessionPlanCard: composes bias / mini-chart / levels /
+// scenarios / rules / footer, and renders every lifecycle state. It is a pure
+// VIEW of plan_final; the OWNER DOOR (P5) hangs off the header: ✎ opens the edit
+// sheet, 💬 opens Ask-Planner. Edits/applies bump the version via onChanged.
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
-import type { PlanToday } from '../../lib/api/plan'
+import type { PlanToday, PlanLevelFact } from '../../lib/api/plan'
 import { LifecycleChip, VersionChips } from './chips'
 import { BiasBlock } from './BiasBlock'
 import { ZoneTable } from './ZoneTable'
@@ -14,14 +14,18 @@ import { ScenarioList } from './ScenarioList'
 import { RulesBlock } from './RulesBlock'
 import { PlanFooter } from './PlanFooter'
 import { PlanMiniChart } from './PlanMiniChart'
+import { EditSheet } from './EditSheet'
+import { AskPlannerPanel } from './AskPlannerPanel'
 
 interface Props {
   plan: PlanToday | null
+  traderId?: string
   symbol: string
   exchange: string
   language: Language
   isLoading?: boolean
   errored?: boolean
+  onChanged?: () => void // re-fetch after an edit / apply so the card version-bumps
 }
 
 // A centered state panel (loading / night / no-plan / error).
@@ -81,12 +85,23 @@ function Badge({ children, color }: { children: ReactNode; color: string }) {
 
 export function SessionPlanCard({
   plan,
+  traderId,
   symbol,
   exchange,
   language,
   isLoading,
   errored,
+  onChanged,
 }: Props) {
+  // P5 owner-door state (hooks before the early state-returns, unconditional).
+  const [edit, setEdit] = useState<{
+    open: boolean
+    level?: PlanLevelFact
+    index?: number
+  }>({ open: false })
+  const [askOpen, setAskOpen] = useState(false)
+  const doorEnabled = !!traderId
+
   // ── non-plan states ──
   if (errored) {
     return (
@@ -169,28 +184,35 @@ export function SessionPlanCard({
           />
         </div>
         <div className="flex items-center gap-1">
-          {/* the owner door — P5; present but disabled/dormant here */}
+          {/* the OWNER DOOR (P5): 💬 Ask-Planner + ✎ add level. Enabled once a
+              trader is present; the level rows themselves are tap-to-edit. */}
           <button
-            disabled
-            className="text-[11px] px-2 py-1 opacity-40 cursor-not-allowed"
+            onClick={() => doorEnabled && setAskOpen(true)}
+            disabled={!doorEnabled}
+            className="text-[13px] px-2 py-1"
             style={{
-              color: 'var(--vl-muted)',
+              color: doorEnabled ? 'var(--vl-gold)' : 'var(--vl-faint)',
+              opacity: doorEnabled ? 1 : 0.4,
               fontFamily: 'var(--vl-font-ui)',
+              cursor: doorEnabled ? 'pointer' : 'not-allowed',
+            }}
+            title={tp('askPlannerTitle', language)}
+          >
+            💬
+          </button>
+          <button
+            onClick={() => doorEnabled && setEdit({ open: true })}
+            disabled={!doorEnabled}
+            className="text-[13px] px-2 py-1"
+            style={{
+              color: doorEnabled ? 'var(--vl-gold)' : 'var(--vl-faint)',
+              opacity: doorEnabled ? 1 : 0.4,
+              fontFamily: 'var(--vl-font-ui)',
+              cursor: doorEnabled ? 'pointer' : 'not-allowed',
             }}
             title={tp('edit', language)}
           >
             ✎
-          </button>
-          <button
-            disabled
-            className="text-[11px] px-2 py-1 opacity-40 cursor-not-allowed"
-            style={{
-              color: 'var(--vl-muted)',
-              fontFamily: 'var(--vl-font-ui)',
-            }}
-            title={tp('reread', language)}
-          >
-            ↻
           </button>
         </div>
       </div>
@@ -251,8 +273,17 @@ export function SessionPlanCard({
         />
       )}
 
-      {/* levels */}
-      <ZoneTable facts={facts} language={language} />
+      {/* levels — tap a row to edit (P5), ＋ to add an owner level */}
+      <ZoneTable
+        facts={facts}
+        language={language}
+        onEdit={
+          doorEnabled
+            ? (level, index) => setEdit({ open: true, level, index })
+            : undefined
+        }
+        onAdd={doorEnabled ? () => setEdit({ open: true }) : undefined}
+      />
 
       {/* scenarios */}
       {doc.scenarios && doc.scenarios.length > 0 && (
@@ -278,6 +309,32 @@ export function SessionPlanCard({
         replansLeft={plan.replans_left}
         language={language}
       />
+
+      {/* P5 owner door — portaled sheets */}
+      {doorEnabled && (
+        <>
+          <EditSheet
+            open={edit.open}
+            traderId={traderId!}
+            symbol={symbol}
+            language={language}
+            level={edit.level}
+            levelIndex={edit.index}
+            scenarioIds={(doc.scenarios ?? []).map((s) => s.id)}
+            onClose={() => setEdit({ open: false })}
+            onSaved={() => onChanged?.()}
+          />
+          <AskPlannerPanel
+            open={askOpen}
+            traderId={traderId!}
+            symbol={symbol}
+            planVersion={plan.version}
+            language={language}
+            onClose={() => setAskOpen(false)}
+            onApplied={() => onChanged?.()}
+          />
+        </>
+      )}
     </div>
   )
 }

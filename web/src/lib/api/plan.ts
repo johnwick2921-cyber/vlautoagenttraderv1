@@ -167,4 +167,251 @@ export const planApi = {
     )
     return res.success && !!res.data?.acked
   },
+
+  // ── P5.1 overlay editing ──
+  // Post an RFC-6902 overlay. Returns {ok, error?} — non-silent so armor/conflict
+  // rejections (409/422) surface their message for the sheet to show inline.
+  async postOverlay(
+    traderId: string,
+    patch: PatchOp[],
+    origin: 'owner' | 'planner-revised' = 'owner',
+    symbol = 'MNQ'
+  ): Promise<{ ok: boolean; error?: string; overlay_version?: number }> {
+    const res = await httpClient.request<{ overlay_version: number }>(
+      `${API_BASE}/plan/overlay`,
+      {
+        method: 'POST',
+        data: {
+          trader_id: traderId,
+          symbol,
+          patch: JSON.stringify(patch),
+          origin,
+        },
+        silent: true,
+      }
+    )
+    if (res.success)
+      return { ok: true, overlay_version: res.data?.overlay_version }
+    return { ok: false, error: res.message }
+  },
+
+  async addOwnerLevel(
+    traderId: string,
+    level: {
+      price: number
+      label?: string
+      note?: string
+      scenario_tag?: string
+    },
+    symbol = 'MNQ'
+  ): Promise<{ ok: boolean; error?: string; id?: number }> {
+    const res = await httpClient.request<{ id: number }>(
+      `${API_BASE}/plan/owner-level`,
+      {
+        method: 'POST',
+        data: { trader_id: traderId, symbol, ...level },
+        silent: true,
+      }
+    )
+    if (res.success) return { ok: true, id: res.data?.id }
+    return { ok: false, error: res.message }
+  },
+
+  async deleteOwnerLevel(traderId: string, id: number): Promise<boolean> {
+    const res = await httpClient.request<{ deleted: boolean }>(
+      `${API_BASE}/plan/owner-level/delete`,
+      { method: 'POST', data: { trader_id: traderId, id }, silent: true }
+    )
+    return res.success && !!res.data?.deleted
+  },
+
+  // ── P5.4 Ask-Planner ──
+  async askPlanner(
+    traderId: string,
+    question: string,
+    symbol = 'MNQ'
+  ): Promise<{ ok: boolean; error?: string; data?: AskPlannerResponse }> {
+    const res = await httpClient.request<AskPlannerResponse>(
+      `${API_BASE}/plan/ask`,
+      {
+        method: 'POST',
+        data: { trader_id: traderId, symbol, question },
+        silent: true,
+      }
+    )
+    if (res.success && res.data) return { ok: true, data: res.data }
+    return { ok: false, error: res.message }
+  },
+
+  async getPlanThread(
+    traderId: string,
+    planId?: string,
+    silent = true
+  ): Promise<{ thread: PlanQAMessage[]; kpi: SycophancyKPI }> {
+    const q = planId ? `&plan_id=${enc(planId)}` : ''
+    const res = await httpClient.request<{
+      thread: PlanQAMessage[]
+      kpi: SycophancyKPI
+    }>(`${API_BASE}/plan/ask?trader_id=${enc(traderId)}${q}`, { silent })
+    if (res.success && res.data) return res.data
+    return { thread: [], kpi: EMPTY_KPI }
+  },
+
+  async applyAsk(
+    traderId: string,
+    qaId: number,
+    symbol = 'MNQ'
+  ): Promise<{ ok: boolean; error?: string }> {
+    const res = await httpClient.request<{ applied: boolean }>(
+      `${API_BASE}/plan/ask/apply`,
+      {
+        method: 'POST',
+        data: { trader_id: traderId, symbol, qa_id: qaId },
+        silent: true,
+      }
+    )
+    if (res.success && res.data?.applied) return { ok: true }
+    return { ok: false, error: res.message }
+  },
+
+  // ── P5.5 / P5.6 read models ──
+  async getPlanTrades(
+    traderId: string,
+    silent = true
+  ): Promise<PlanTradesResponse> {
+    const res = await httpClient.request<PlanTradesResponse>(
+      `${API_BASE}/plan/trades?trader_id=${enc(traderId)}`,
+      { silent }
+    )
+    return res.success && res.data
+      ? res.data
+      : { trades: [], summary: { counts: {}, total: 0, gpa: 0 } }
+  },
+
+  async getPlanStats(
+    traderId: string,
+    silent = true
+  ): Promise<PlanStatsResponse> {
+    const res = await httpClient.request<PlanStatsResponse>(
+      `${API_BASE}/plan/stats?trader_id=${enc(traderId)}`,
+      { silent }
+    )
+    return res.success && res.data
+      ? res.data
+      : { weekly: null, progress: [], target_n: 1565, alpha: 0.00625 }
+  },
+}
+
+// ── P5 types ──
+export interface PatchOp {
+  op: 'add' | 'remove' | 'replace' | 'test'
+  path: string
+  value?: unknown
+  from?: string
+}
+
+export type PointClass = 'NEW-INFO' | 'BARE-DISAGREEMENT'
+export type Verdict = 'DEFEND' | 'CONCEDE' | 'PROPOSE-MERGE'
+
+export interface AskPlannerReply {
+  evidence: string
+  point_class: PointClass | ''
+  verdict: Verdict | ''
+  summary: string
+  patch: string // JSON string of RFC-6902 ops ('' when none)
+}
+export interface AskPlannerResponse {
+  qa_id: number
+  plan_id: string
+  plan_version: number
+  reply: AskPlannerReply
+}
+export interface PlanQAMessage {
+  id: number
+  role: 'owner' | 'planner'
+  content: string
+  evidence: string
+  point_class: string
+  verdict: string
+  patch: string
+  applied: boolean
+  created_at: number
+}
+export interface SycophancyKPI {
+  total: number
+  new_info: number
+  bare_disagreement: number
+  defend: number
+  concede: number
+  propose_merge: number
+  applied: number
+  defend_on_bare: number
+}
+const EMPTY_KPI: SycophancyKPI = {
+  total: 0,
+  new_info: 0,
+  bare_disagreement: 0,
+  defend: 0,
+  concede: 0,
+  propose_merge: 0,
+  applied: 0,
+  defend_on_bare: 0,
+}
+
+export interface PlanTrade {
+  symbol: string
+  side: string
+  entry_price: number
+  exit_price: number
+  entry_time: number
+  exit_time: number
+  realized_pnl: number
+  mae: number
+  mfe: number
+  entry_confidence: number
+  cited_scenario_id: string
+  plan_matched: boolean
+  plan_version: number
+  adherence_grade: string
+  adherence_label: string
+}
+export interface AdherenceSummaryFE {
+  counts: Record<string, number>
+  total: number
+  gpa: number
+}
+export interface PlanTradesResponse {
+  trades: PlanTrade[]
+  summary: AdherenceSummaryFE
+}
+
+export type MatchedRandomStatus = 'WARMING' | 'BEATS-RANDOM' | 'NO-EDGE'
+export interface TypeVerdict {
+  level_type: string
+  n: number
+  reactions: number
+  react_rate: number
+  delta_pp: number
+  p_value: number
+  status: MatchedRandomStatus
+  label: string
+  target_n: number
+}
+export interface StatsProgress {
+  level_type: string
+  n: number
+  reactions: number
+  target_n: number
+  react_rate: number
+  warming: boolean
+}
+export interface PlanStatsResponse {
+  weekly: {
+    iso_week: string
+    computed_at: number
+    verdicts: TypeVerdict[]
+  } | null
+  progress: StatsProgress[]
+  target_n: number
+  alpha: number
 }
