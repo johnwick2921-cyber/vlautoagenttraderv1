@@ -106,6 +106,16 @@ func (at *AutoTrader) runCycle() error {
 	// have cross-session memory (warms forward).
 	at.snapshotSessionProfiles()
 
+	// P2.2 — SKIP-WHILE-OPEN. When day_plan is on and the strategy is already
+	// holding, skip the AI decision cycle entirely (calmer + cheaper than
+	// same-side refusal). The open trade is still managed by the NT8 bracket,
+	// auto-breakeven, and close-sync — all independent of this cycle. Gated →
+	// dormant by default.
+	if skip, why := at.skipWhileOpen(); skip {
+		at.logInfof("🧘 skip-while-open: holding %s — skipping decision cycle #%d (bracket/breakeven still manage the trade).", why, at.callCount)
+		return nil
+	}
+
 	// Check USDC balance periodically for claw402 users (every 10 cycles)
 	if at.callCount%10 == 0 && store.IsClaw402Config(at.config.AIModel) {
 		at.checkClaw402Balance()
