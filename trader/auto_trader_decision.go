@@ -432,6 +432,9 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 				_ = at.store.Position().SetPlanLink(pos.ID, at.lastCitation.planVersion, at.lastCitation.scenarioID, at.lastCitation.matched)
 				at.lastCitation.valid = false
 			}
+			// W6 — P0 fill alert.
+			at.emitAlert("P0", "fill", fmt.Sprintf("fill:%d", pos.ID),
+				fmt.Sprintf("Filled %s %s @ %.2f", side, symbol, price), "")
 		}
 
 	case "close_long", "close_short":

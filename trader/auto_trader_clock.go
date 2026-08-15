@@ -304,6 +304,11 @@ func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
 	at.logInfof("📐🎓 %s close: MAE %.2f / MFE %.2f pts · adherence %s (%s) cited=%q matched=%v",
 		p.Symbol, ex.MAE, ex.MFE, grade, kernel.AdherenceLabel(grade), p.CitedScenarioID, p.PlanMatched)
 
+	// W6 — P0 close+P&L alert.
+	at.emitAlert("P0", "close", fmt.Sprintf("close:%d", p.ID),
+		fmt.Sprintf("Closed %s — P&L %.2f", p.Symbol, p.RealizedPnL),
+		fmt.Sprintf("adherence %s (%s)", grade, kernel.AdherenceLabel(grade)))
+
 	// P5.6 — matched-random reaction verdict for the traded level type.
 	at.recordMatchedRandomForClose(p, ex)
 }

@@ -227,6 +227,9 @@ func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
 	}
 	at.logErrorf("🚨 PLAN NO-TRADE %s %s: %s — session sits out.", tradeDate, session, reason)
 	telemetry.IncGateBlock(at.id, "plan_replans_exhausted")
+	// W6 — P0 plan-died → no-trade alert.
+	at.emitAlert("P0", "plan-died", "notrade:"+tradeDate+":"+session,
+		fmt.Sprintf("%s plan died — sitting out", session), reason)
 }
 
 // runPlannerRead assembles the input package, calls the pinned planner client,
@@ -293,7 +296,10 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 		lifecycle = "no_trade"
 		trigger = "planner_fail_closed"
 		at.logErrorf("🚨 PLANNER FAIL-CLOSED %s %s: %v — writing a NO-TRADE plan (never stale, never uncalibrated).", tradeDate, session, lastErr)
-		telemetry.IncGateBlock(at.id, "planner_fail_closed") // alert-event proxy until the P4 alert center
+		telemetry.IncGateBlock(at.id, "planner_fail_closed")
+		// W6 — P0 read-fail / fail-closed alert.
+		at.emitAlert("P0", "read-fail", "failclosed:"+tradeDate+":"+session,
+			fmt.Sprintf("%s planner fail-closed — NO-TRADE", session), "read failed after retries")
 	}
 
 	docJSON, _ := json.Marshal(doc)
@@ -313,6 +319,11 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 		return 0, lifecycle, err
 	}
 	at.logInfof("🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s)", tradeDate, session, version, modelID, lifecycle, promptHash)
+	// W6 — P1 plan-born/armed alert (active plans only; fail-closed already alerted P0).
+	if lifecycle == "active" {
+		at.emitAlert("P1", "armed", fmt.Sprintf("planborn:%s:%s:%d", tradeDate, session, version),
+			fmt.Sprintf("%s plan v%d armed", session, version), fmt.Sprintf("model %s", modelID))
+	}
 	return version, lifecycle, nil
 }
 

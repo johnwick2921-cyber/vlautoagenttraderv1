@@ -181,6 +181,9 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		if reason, halted := at.consecutiveLossHalted(); halted {
 			at.logWarnf("🛑 consecutive-loss halt: %s entry REFUSED — %s. No new entries until the next CME session.", decision.Symbol, reason)
 			telemetry.IncGateBlock(at.id, "consecutive_loss")
+			// W6 — P0 halt alert, deduped to once per CME session-day.
+			at.emitAlert("P0", "halt", "halt:"+kernel.CMESessionDayKey(time.Now()),
+				"🛑 Consecutive-loss halt", reason)
 			actionRecord.Success = false
 			actionRecord.Error = "consecutive_loss_halt: " + reason
 			return nil
