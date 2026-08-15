@@ -66,6 +66,40 @@ func (s *CalendarSliceStore) SaveSliceIfAbsent(p *CalendarSliceDB) (bool, error)
 	return true, nil
 }
 
+// UpsertSliceUpgrade stores a LIVE-source slice, additionally replacing an
+// existing row ONLY when that row is non-live (static/none) — F0.3: an outage
+// day's static guess upgrades to the real feed as soon as it recovers, while
+// forexfactory rows stay frozen (replay integrity, same rule as SaveSliceIfAbsent).
+// Returns (wrote, upgraded, err); wrote=false means a frozen live row existed.
+func (s *CalendarSliceStore) UpsertSliceUpgrade(p *CalendarSliceDB) (bool, bool, error) {
+	if p == nil || p.TradeDate == "" {
+		return false, false, fmt.Errorf("trade_date required")
+	}
+	if p.EventsJSON == "" {
+		p.EventsJSON = "[]"
+	}
+	var existing CalendarSliceDB
+	err := s.db.Where("trade_date = ?", p.TradeDate).First(&existing).Error
+	if err == gorm.ErrRecordNotFound {
+		if cerr := s.db.Create(p).Error; cerr != nil {
+			return false, false, cerr
+		}
+		return true, false, nil
+	}
+	if err != nil {
+		return false, false, err
+	}
+	if existing.Source == "forexfactory" {
+		return false, false, nil // frozen — live rows never overwritten
+	}
+	if uerr := s.db.Model(&CalendarSliceDB{}).Where("trade_date = ?", p.TradeDate).Updates(map[string]interface{}{
+		"source": p.Source, "events_json": p.EventsJSON, "created_at": p.CreatedAt,
+	}).Error; uerr != nil {
+		return false, false, uerr
+	}
+	return true, true, nil
+}
+
 // GetSlice returns a stored slice, or (nil, nil) if absent.
 func (s *CalendarSliceStore) GetSlice(tradeDate string) (*CalendarSliceDB, error) {
 	var p CalendarSliceDB

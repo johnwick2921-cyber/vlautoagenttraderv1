@@ -25,8 +25,10 @@ func (at *AutoTrader) maybeFetchCalendar(now time.Time) {
 		return
 	}
 	tradeDate := plannerTradeDateCT(now)
-	if slice, _ := at.store.Calendar().GetSlice(tradeDate); slice != nil {
-		// skip-fresh — logged once per trade date, not every 3-min cycle.
+	if slice, _ := at.store.Calendar().GetSlice(tradeDate); slice != nil && slice.Source == string(calendar.SourceLive) {
+		// skip-fresh — only a LIVE-source slice is fresh (F0.3: a static/none
+		// slice is stale and keeps re-fetching for upgrade, throttled below).
+		// Logged once per trade date, not every 3-min cycle.
 		if at.lastCalSkipDate != tradeDate {
 			at.lastCalSkipDate = tradeDate
 			at.logInfof("📅 calendar: skip-fresh — slice for %s already stored (src %s)", tradeDate, slice.Source)
@@ -43,17 +45,29 @@ func (at *AutoTrader) maybeFetchCalendar(now time.Time) {
 		fetch = calendar.DefaultFetch
 	}
 	res := calendar.FetchWeek(fetch, calendarStaticLoader)
-	stored, events := 0, 0
+	stored, upgraded, events := 0, 0, 0
 	for date, evs := range res.Days {
 		js, _ := json.Marshal(evs)
-		if wrote, err := at.store.Calendar().SaveSliceIfAbsent(&store.CalendarSliceDB{
+		row := &store.CalendarSliceDB{
 			TradeDate: date, Source: string(res.Source), EventsJSON: string(js), CreatedAt: now.UnixMilli(),
-		}); err == nil && wrote {
+		}
+		if res.Source == calendar.SourceLive {
+			// live wins over a prior static/none guess; live-over-live stays frozen.
+			if wrote, up, err := at.store.Calendar().UpsertSliceUpgrade(row); err == nil && wrote {
+				stored++
+				events += len(evs)
+				if up {
+					upgraded++
+				}
+			}
+		} else if wrote, err := at.store.Calendar().SaveSliceIfAbsent(row); err == nil && wrote {
 			stored++
 			events += len(evs)
 		}
 	}
 	switch {
+	case res.Source == calendar.SourceLive && upgraded > 0:
+		at.logInfof("📅 calendar: fetched %d events — stored %d day slice(s) (src forexfactory, %d upgraded from static)", events, stored, upgraded)
 	case res.Source == calendar.SourceLive:
 		at.logInfof("📅 calendar: fetched %d events — stored %d day slice(s) (src forexfactory)", events, stored)
 	case stored > 0:
