@@ -215,7 +215,16 @@ func (at *AutoTrader) activePlanIsDead(row *store.PlanDB) bool {
 	}
 	now := time.Now()
 	rule := at.acceptanceRuleFor(at.activeSessionName(now)) // W15.B — per-session
-	return kernel.PlanIsDead(doc, bars, rule, now.UnixMilli())
+	// Judge the plan ONLY on what happened AFTER it was written. Feeding the full
+	// 2000-bar cache asked "was this level ever traded through in the last ~33
+	// hours", which is true of nearly any level once real history exists — so a
+	// brand-new plan was born dead and burned the whole re-plan budget in minutes
+	// (2026-08-16:ASIA v1..v5, then a levels:null NO-TRADE plan).
+	sinceMs := row.CreatedAt.UnixMilli()
+	if row.CreatedAt.IsZero() {
+		sinceMs = 0 // unknown write time → fall back to the old whole-window behavior
+	}
+	return kernel.PlanIsDeadSince(doc, bars, rule, sinceMs, now.UnixMilli())
 }
 
 // writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.

@@ -37,9 +37,42 @@ func ActivePlanLevels(levels []PlanLevel, price, dATR, k float64) []PlanLevel {
 // detected death signal that triggers a re-plan (P3.6). A level price never
 // reached is NOT consumed (being consistently on one side of a distant level is
 // not "acceptance through" it). A plan with no levels never dies this way.
+//
+// Deprecated in favour of PlanIsDeadSince: judging a plan against the WHOLE bar
+// cache asks "was this level ever traded through in the last ~33 hours", which is
+// true of almost any level the moment real history exists. Retained so existing
+// callers/tests keep compiling; it passes sinceMs=0 (no lower bound).
 func PlanIsDead(doc PlanDoc, bars []market.Kline, rule string, now int64) bool {
+	return PlanIsDeadSince(doc, bars, rule, 0, now)
+}
+
+// PlanIsDeadSince is PlanIsDead judged ONLY on bars that closed at/after sinceMs
+// — normally the moment the plan was written.
+//
+// THE BUG THIS FIXES (2026-08-17): the caller fed the full 2000×1m cache (~33
+// hours), so every level inside the last day and a half's range counted as both
+// touched and accepted-through the instant a plan was born. 2026-08-16:ASIA died
+// five times in a row that way — v1..v5 each held 6 perfectly good levels
+// (EQL 30199.5 / ONH 30203 / ONL 30166.25 …) clustered in a ~57pt band that the
+// session had obviously traded through earlier — until the re-plan budget ran out
+// and writeNoTradePlan stored a levels:null NO-TRADE plan. The card then showed
+// "No levels in this plan", which is what the owner saw on "every version".
+//
+// It is latent whenever the cache is thin and fires the moment real history
+// arrives, which is exactly what happened when the weekend bar-starvation
+// (AddOn watchdog livelock, 7aa521a1) ended and 2000 bars/TF were seeded.
+//
+// A plan can only be invalidated by what the market did AFTER it was written.
+func PlanIsDeadSince(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now int64) bool {
 	if len(doc.Levels) == 0 {
 		return false
+	}
+	if sinceMs > 0 {
+		bars = barsSince(bars, sinceMs)
+		// Too little post-plan history to judge — a plan is never dead on no evidence.
+		if len(bars) == 0 {
+			return false
+		}
 	}
 	for _, l := range doc.Levels {
 		touched := levelTouched(bars, l.Price, now)
@@ -49,6 +82,17 @@ func PlanIsDead(doc PlanDoc, bars []market.Kline, rule string, now int64) bool {
 		}
 	}
 	return true // every level touched AND accepted through → dead
+}
+
+// barsSince returns the bars whose OPEN time is at/after sinceMs — the window a
+// plan may legitimately be judged on. Ascending order is preserved.
+func barsSince(bars []market.Kline, sinceMs int64) []market.Kline {
+	for i := range bars {
+		if bars[i].OpenTime >= sinceMs {
+			return bars[i:]
+		}
+	}
+	return nil
 }
 
 // levelTouched reports whether any closed bar's range bracketed the level.
