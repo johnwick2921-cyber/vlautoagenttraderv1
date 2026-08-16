@@ -9,13 +9,19 @@ import type { PlanToday, PlanAlertsResponse } from '../../lib/api/plan'
 const PLAN_REFRESH_MS = 15_000
 const ALERTS_REFRESH_MS = 20_000
 
-export function usePlanToday(traderId?: string, symbol?: string) {
+export function usePlanToday(
+  traderId?: string,
+  symbol?: string,
+  session?: string
+) {
+  // session is part of the KEY: switching tabs must refetch, not reuse the
+  // previous session's cached plan.
   const key = traderId
-    ? `plan-today-${traderId}${symbol ? `-${symbol}` : ''}`
+    ? `plan-today-${traderId}${symbol ? `-${symbol}` : ''}${session ? `-${session}` : ''}`
     : null
   const { data, error, isLoading, mutate } = useSWR<PlanToday | null>(
     key,
-    () => api.getPlanToday(traderId as string, symbol),
+    () => api.getPlanToday(traderId as string, symbol, true, session),
     {
       refreshInterval: PLAN_REFRESH_MS,
       revalidateOnFocus: false,

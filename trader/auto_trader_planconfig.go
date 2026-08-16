@@ -228,3 +228,19 @@ func (at *AutoTrader) RealignCap() int {
 // DayPlanOn reports whether the day-plan feature is enabled for this trader —
 // the API uses it to skip re-align entirely on non-day-plan traders.
 func (at *AutoTrader) DayPlanOn() bool { return at.dayPlanEnabled() }
+
+// RunnableSessions returns the session names THIS strategy actually runs, in
+// registry order. Exported so the plan card's session tabs reflect the owner's
+// real configuration instead of a hardcoded frontend constant — and so they
+// resolve it through the SAME sessionRunnable the gates use, which is the whole
+// point of having one resolver.
+func (at *AutoTrader) RunnableSessions() []string {
+	reg := at.sessionRegistry(time.Now())
+	out := make([]string, 0, len(reg.Sessions))
+	for i := range reg.Sessions {
+		if ok, _ := at.sessionRunnable(&reg.Sessions[i]); ok {
+			out = append(out, reg.Sessions[i].Name)
+		}
+	}
+	return out
+}

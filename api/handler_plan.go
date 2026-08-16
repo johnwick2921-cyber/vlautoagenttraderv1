@@ -70,6 +70,27 @@ func (s *Server) planRules(traderID, session string, version int) (rule, mode st
 	return rule, mode, replansLeft
 }
 
+// resolveRequestedSession applies an OPTIONAL ?session=NY|ASIA|LONDON to the
+// plan lookup. W15.B — the card's session tabs used to be pure highlighting:
+// clicking ASIA moved the chip and NOTHING else, because the request had no
+// session dimension and always returned the ACTIVE session's plan. With the
+// param the tab shows that session's plan for the trade date.
+//
+// Absent or unrecognized → the live session, i.e. unchanged behavior. The
+// explicit flag lets the caller read a session that is not currently live, which
+// is the entire point of the tabs.
+func resolveRequestedSession(reg kernel.SessionRegistry, want, activeName string, active *kernel.SessionDef) (string, *kernel.SessionDef, bool) {
+	want = strings.ToUpper(strings.TrimSpace(want))
+	if want == "" {
+		return activeName, active, false
+	}
+	def, found := reg.SessionByName(want)
+	if !found {
+		return activeName, active, false
+	}
+	return def.Name, def, true
+}
+
 // handlePlanToday GET /api/plan/today?trader_id=xxx[&symbol=MNQ] — the active
 // plan (overlay-resolved) + live per-level facts from the P0.4 evaluator.
 func (s *Server) handlePlanToday(c *gin.Context) {
@@ -97,13 +118,34 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	}
 	night := reg.IsNightMode(now)
 
+	// W15.B — which sessions THIS strategy runs, resolved by the same gate the
+	// bot uses. The card's tabs used to derive this from a hardcoded FE constant,
+	// so switching ASIA on left its tab permanently greyed out.
+	runnable := []string{}
+	if at, err := s.traderManager.GetTrader(traderID); err == nil && at != nil {
+		runnable = at.RunnableSessions()
+	}
+	activeName := sessName
+	sessName, sess, explicit := resolveRequestedSession(reg, c.Query("session"), sessName, sess)
+
 	// W15.B — the card narrates THE REAL RULEBOOK (acceptance rule / plan mode /
 	// re-plan budget), resolved per trader+session, instead of the hardcoded
 	// "2x5m" + "advisory" + budget-of-2 it used to show.
 	rule, mode, _ := s.planRules(traderID, sessName, 1)
-	base := gin.H{"found": false, "trade_date": tradeDate, "session": sessName, "night": night, "mode": mode, "acceptance_rule": rule}
-	if !ok || !sess.Enabled {
+	base := gin.H{
+		"found": false, "trade_date": tradeDate, "session": sessName, "night": night,
+		"mode": mode, "acceptance_rule": rule,
+		"active_session": activeName, "is_active": sessName != "" && sessName == activeName,
+		"runnable_sessions": runnable,
+	}
+	// An EXPLICITLY requested session is readable whether or not it is the live one
+	// (that is the point of the tabs); without the param we keep the old gate.
+	if !explicit && (!ok || !sess.Enabled) {
 		c.JSON(200, base) // night / disabled session → no active plan
+		return
+	}
+	if explicit && sessName == "" {
+		c.JSON(200, base)
 		return
 	}
 	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sessName)
@@ -158,10 +200,14 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"model_id":      row.ModelID,
 		"night":         false,
 		"mode":          mode,
-		"doc":           doc,
-		"level_facts":   facts,
-		"price":         price,
-		"replans_left":  replansLeft,
+		// which session this payload IS, vs which one is live right now
+		"active_session":    activeName,
+		"is_active":         sessName == activeName,
+		"runnable_sessions": runnable,
+		"doc":               doc,
+		"level_facts":       facts,
+		"price":             price,
+		"replans_left":      replansLeft,
 		// The acceptance rule the executor evaluates these levels with — the card
 		// used to imply 2x5m unconditionally.
 		"acceptance_rule": rule,

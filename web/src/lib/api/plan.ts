@@ -91,6 +91,14 @@ export interface PlanToday {
   degraded?: boolean
   // Per-scenario live status keyed by scenario id (executor-phase; absent now).
   scenario_status?: Record<string, ScenarioStatusValue>
+  /** W15.B — the acceptance rule the executor evaluates these levels with. */
+  acceptance_rule?: string
+  /** W15.B — which session is LIVE right now, regardless of the tab requested. */
+  active_session?: string
+  /** W15.B — true when the payload IS the live session (false = viewing a sibling). */
+  is_active?: boolean
+  /** W15.B — sessions THIS strategy runs, resolved by the same gate the bot uses. */
+  runnable_sessions?: string[]
 }
 
 // ── GET /api/plan/history ──
@@ -129,11 +137,15 @@ export const planApi = {
   async getPlanToday(
     traderId: string,
     symbol?: string,
-    silent = true
+    silent = true,
+    session?: string
   ): Promise<PlanToday | null> {
     const q = symbol ? `&symbol=${enc(symbol)}` : ''
+    // W15.B — an explicit session makes the card's tabs real (they used to be
+    // pure highlighting). Omitted → the live session, i.e. unchanged.
+    const sq = session ? `&session=${enc(session)}` : ''
     const res = await httpClient.request<PlanToday>(
-      `${API_BASE}/plan/today?trader_id=${enc(traderId)}${q}`,
+      `${API_BASE}/plan/today?trader_id=${enc(traderId)}${q}${sq}`,
       { silent }
     )
     return res.success && res.data ? res.data : null

@@ -27,26 +27,26 @@ export function PlanCard({
   exchange = 'ninjatrader',
 }: Props) {
   const { language } = useLanguage()
-  const { plan, isLoading, error, mutate } = usePlanToday(traderId, symbol)
+  // W15.B — `selected` now drives the FETCH, not just the highlight. Before this
+  // the tabs were a lie: clicking ASIA moved the chip while the card kept showing
+  // the live session's plan, because the request had no session dimension.
+  const [selected, setSelected] = useState<SessionName | null>(null)
+  const { plan, isLoading, error, mutate } = usePlanToday(
+    traderId,
+    symbol,
+    selected ?? undefined
+  )
 
-  const activeSession =
-    (plan?.found ? (plan.session as SessionName) : null) || null
-  const [selected, setSelected] = useState<SessionName>('NY')
+  // Which session is LIVE right now (server-told), independent of what tab the
+  // owner is looking at.
+  const activeSession = (plan?.active_session as SessionName) || null
 
-  // auto-advance: follow the backend active session when it changes.
+  // auto-advance: follow the backend active session until the owner picks a tab.
   useEffect(() => {
-    if (activeSession) setSelected(activeSession)
-  }, [activeSession])
+    if (activeSession && selected === null) setSelected(activeSession)
+  }, [activeSession, selected])
 
-  // tab states: the live active session is 'active'; enabled-but-inactive is
-  // 'inactive'; disabled sessions (not enabled in the registry) are 'disabled'.
-  const tabs: SessionTab[] = ALL_SESSIONS.map((name) => {
-    const band = SESSION_BANDS.find((b) => b.name === name)
-    let state: TabState = 'disabled'
-    if (activeSession === name) state = 'active'
-    else if (band?.enabled) state = 'inactive'
-    return { name, state }
-  })
+  const tabs = computeSessionTabs(activeSession, plan?.runnable_sessions)
 
   // handover banner: only the data-detectable transition (expired) is shown from
   // a poll; reading/born/read-failed are event-driven (P4.4 alerts).
@@ -70,7 +70,7 @@ export function PlanCard({
       <SessionTimelineStrip activeSession={activeSession} language={language} />
       <SessionTabs
         tabs={tabs}
-        selected={selected}
+        selected={selected ?? activeSession ?? 'NY'}
         onSelect={setSelected}
         language={language}
       />
@@ -93,6 +93,29 @@ export function PlanCard({
       />
     </div>
   )
+}
+
+// tab states: the live active session is 'active'; runnable-but-inactive is
+// 'inactive'; everything else is 'disabled' (SessionTabs refuses the click).
+//
+// W15.B — enablement comes from the SERVER (`runnable_sessions`, resolved by the
+// same gate the bot runs). It used to come from the hardcoded SESSION_BANDS
+// constant, so a session the owner switched on stayed greyed out forever. No
+// server list (older payload / still loading) → fall back to the constant, which
+// keeps the pre-W15 rendering.
+export function computeSessionTabs(
+  activeSession: SessionName | null,
+  runnable?: string[]
+): SessionTab[] {
+  return ALL_SESSIONS.map((name) => {
+    const on = runnable
+      ? runnable.includes(name)
+      : !!SESSION_BANDS.find((b) => b.name === name)?.enabled
+    let state: TabState = 'disabled'
+    if (activeSession === name) state = 'active'
+    else if (on) state = 'inactive'
+    return { name, state }
+  })
 }
 
 export default PlanCard
