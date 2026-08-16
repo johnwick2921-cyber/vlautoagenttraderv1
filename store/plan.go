@@ -32,21 +32,26 @@ import (
 
 // PlanDB is one immutable plan version. TableName → "plans".
 type PlanDB struct {
-	PlanID        string    `gorm:"column:plan_id;primaryKey"`               // stable per (trade_date, session); see MakePlanID
-	Version       int       `gorm:"column:version;primaryKey"`               // append-only, 1-based
-	StrategyID    string    `gorm:"column:strategy_id;not null;default:''"`  // owning strategy
-	TradeDate     string    `gorm:"column:trade_date;not null;default:''"`   // CME session-day YYYY-MM-DD
-	Session       string    `gorm:"column:session;not null;default:'NY'"`    // NY|ASIA|LONDON
-	TriggerReason string    `gorm:"column:trigger_reason;not null;default:''"`
-	Lifecycle     string    `gorm:"column:lifecycle;not null;default:'active'"` // active|expired|died|superseded
-	ModelID       string    `gorm:"column:model_id;not null;default:''"`        // resolved planner model id
-	PromptHash    string    `gorm:"column:prompt_hash;not null;default:''"`
-	Doc           string    `gorm:"column:doc;not null;default:'{}'"` // plan JSON; CHECK(json_valid(doc)) added in DDL
+	PlanID        string `gorm:"column:plan_id;primaryKey"`              // stable per (trade_date, session); see MakePlanID
+	Version       int    `gorm:"column:version;primaryKey"`              // append-only, 1-based
+	StrategyID    string `gorm:"column:strategy_id;not null;default:''"` // owning strategy
+	TradeDate     string `gorm:"column:trade_date;not null;default:''"`  // CME session-day YYYY-MM-DD
+	Session       string `gorm:"column:session;not null;default:'NY'"`   // NY|ASIA|LONDON
+	TriggerReason string `gorm:"column:trigger_reason;not null;default:''"`
+	Lifecycle     string `gorm:"column:lifecycle;not null;default:'active'"` // active|expired|died|superseded
+	ModelID       string `gorm:"column:model_id;not null;default:''"`        // resolved planner model id
+	PromptHash    string `gorm:"column:prompt_hash;not null;default:''"`
+	Doc           string `gorm:"column:doc;not null;default:'{}'"` // plan JSON; CHECK(json_valid(doc)) added in DDL
 	// W11 — the indicator mirror the planner saw, FROZEN at read time (replay-safe:
 	// later ai_config toggle changes never rewrite history) + the ai_config
 	// fingerprint (which indicator config produced this plan).
-	IndicatorsBlock string    `gorm:"column:indicators_block;not null;default:''"`
-	AIConfigHash    string    `gorm:"column:ai_config_hash;not null;default:''"`
+	IndicatorsBlock string `gorm:"column:indicators_block;not null;default:''"`
+	AIConfigHash    string `gorm:"column:ai_config_hash;not null;default:''"`
+	// P2 — how much of the 7-field regime map was DARK when this plan was written,
+	// and whether that crossed the "don't fully trust this" threshold. Stamped at
+	// write so a replay can tell a full-map plan from a half-blind one.
+	DarkRegimeCount int       `gorm:"column:dark_regime_count;not null;default:0"`
+	Degraded        bool      `gorm:"column:degraded;not null;default:false"`
 	CreatedAt       time.Time `gorm:"column:created_at;autoCreateTime"`
 }
 
@@ -87,6 +92,8 @@ CREATE TABLE IF NOT EXISTS plans (
 	doc            TEXT    NOT NULL DEFAULT '{}' CHECK (json_valid(doc)),
 	indicators_block TEXT  NOT NULL DEFAULT '',
 	ai_config_hash TEXT    NOT NULL DEFAULT '',
+	dark_regime_count INTEGER NOT NULL DEFAULT 0,
+	degraded       INTEGER NOT NULL DEFAULT 0,
 	created_at     DATETIME,
 	PRIMARY KEY (plan_id, version)
 )`
@@ -150,6 +157,8 @@ func (s *PlanStore) initTables() error {
 		// index Execs above).
 		s.db.Exec(`ALTER TABLE plans ADD COLUMN indicators_block TEXT NOT NULL DEFAULT ''`)
 		s.db.Exec(`ALTER TABLE plans ADD COLUMN ai_config_hash TEXT NOT NULL DEFAULT ''`)
+		s.db.Exec(`ALTER TABLE plans ADD COLUMN dark_regime_count INTEGER NOT NULL DEFAULT 0`)
+		s.db.Exec(`ALTER TABLE plans ADD COLUMN degraded INTEGER NOT NULL DEFAULT 0`)
 		return nil
 	}
 	return s.db.AutoMigrate(&PlanDB{}, &PlanOverlayDB{})

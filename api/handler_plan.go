@@ -135,6 +135,10 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"price":         price,
 		"replans_left":  maxI(0, 2-(row.Version-1)),
 		"warming":       warming,
+		// P2 — how blind the planner was when it wrote this plan. The card shows a
+		// DEGRADED badge past the threshold so a half-map plan says so out loud.
+		"dark_regime_count": row.DarkRegimeCount,
+		"degraded":          row.Degraded,
 		// SCENARIO STATUS (○waiting ◉armed ●triggered ✕invalid). There is no Go
 		// state machine yet, so this is a passthrough of an explicitly-stored map
 		// (system_config "scenario_status:<plan_id>"); absent in production → the

@@ -85,6 +85,10 @@ export interface PlanToday {
   price?: number
   replans_left?: number
   warming?: string // "n/10" while the SVP is uncalibrated; "" once warm
+  /** P2 — regime fields unavailable when this plan was written (of 7). */
+  dark_regime_count?: number
+  /** P2 — true when too much of the regime map was dark to fully trust the plan. */
+  degraded?: boolean
   // Per-scenario live status keyed by scenario id (executor-phase; absent now).
   scenario_status?: Record<string, ScenarioStatusValue>
 }

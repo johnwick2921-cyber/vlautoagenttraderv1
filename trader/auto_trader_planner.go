@@ -313,16 +313,18 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 	}
 	docJSON, _ := json.Marshal(doc)
 	version, err := at.store.Plan().AppendPlan(&store.PlanDB{
-		PlanID:        store.MakePlanID(tradeDate, session),
-		StrategyID:    at.id,
-		TradeDate:     tradeDate,
-		Session:       session,
-		TriggerReason: trigger,
+		PlanID:          store.MakePlanID(tradeDate, session),
+		StrategyID:      at.id,
+		TradeDate:       tradeDate,
+		Session:         session,
+		TriggerReason:   trigger,
 		Lifecycle:       lifecycle,
 		ModelID:         modelID,
 		PromptHash:      promptHash,
 		IndicatorsBlock: indicatorsBlock, // W11 — frozen at read time (replay-safe)
 		AIConfigHash:    aiConfigHash,
+		DarkRegimeCount: at.lastRegimeHealth.DarkCount, // P2
+		Degraded:        at.lastRegimeHealth.Degraded,
 		Doc:             string(docJSON),
 	})
 	if err != nil {
@@ -413,7 +415,7 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	if market.FuturesBarsProvider != nil {
 		daily = market.FuturesBarsProvider(symbol, "1d", 300)
 		hour1 = market.FuturesBarsProvider(symbol, "1h", 300)
-		min5 = market.FuturesBarsProvider(symbol, "5m", 300) // recent (~1 day) → RV recent
+		min5 = market.FuturesBarsProvider(symbol, "5m", 300)      // recent (~1 day) → RV recent
 		min5Long = market.FuturesBarsProvider(symbol, "5m", 3000) // multi-day → RV baseline
 	}
 	// W10 — supply the realized-vol baseline (was never fed → RV stuck "warming").
@@ -468,6 +470,22 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	// W11 — INDICATOR MIRROR: render the executor's per-TF indicator state + the
 	// ai_config fingerprint (both frozen onto the plan row downstream).
 	indicatorsBlock, aiConfigHash := at.renderIndicatorMirror(symbol)
+
+	// P2 — DARK REGIME: name what the planner could NOT see, alert on it, and carry
+	// the verdict to the write site so it lands on the plan row.
+	at.lastRegimeHealth = kernel.AssessRegime(regime, 0)
+	if at.lastRegimeHealth.DarkCount > 0 {
+		body := at.lastRegimeHealth.AlertBody()
+		level := "P1"
+		if at.lastRegimeHealth.Degraded {
+			level = "P0" // a half-blind plan is a decision-quality event, not FYI
+		}
+		at.logWarnf("🌑 dark regime at the %s read: %s", session, body)
+		at.emitAlert(level, "regime-dark",
+			fmt.Sprintf("regime-dark:%s:%s", tradeDate, session),
+			fmt.Sprintf("%s plan: %d/%d regime fields dark", session, at.lastRegimeHealth.DarkCount, kernel.RegimeFieldCount),
+			body)
+	}
 
 	return kernel.PlannerInput{
 		TradeDate:        tradeDate,

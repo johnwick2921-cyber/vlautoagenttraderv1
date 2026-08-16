@@ -390,6 +390,10 @@ type AutoTrader struct {
 	calFetch        func() ([]byte, error)
 	lastCalSkipDate string
 
+	// P2 — regime health from the most recent planner read (dark-field count +
+	// DEGRADED verdict), stamped onto the plan row at the write site.
+	lastRegimeHealth kernel.RegimeHealth
+
 	// W8 — admin session-registry cache. Loaded from system_config and refreshed
 	// once per CME session-day so an edit is honored by the NEXT session-day's
 	// gates (never mid-session — a running session's windows never move under it).

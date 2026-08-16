@@ -212,6 +212,24 @@ export function SessionPlanCard({
             lifecycle={plan.lifecycle ?? 'active'}
             language={language}
           />
+          {plan.degraded && (
+            <span
+              data-testid="degraded-badge"
+              title={`${plan.dark_regime_count ?? 0}/7 regime fields were unavailable at the read`}
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '.1em',
+                color: 'var(--vl-short)',
+                border: '1px solid rgba(224,108,108,.4)',
+                background: 'rgba(224,108,108,.08)',
+                borderRadius: 5,
+                padding: '2px 6px',
+              }}
+            >
+              ⚠ DEGRADED {plan.dark_regime_count ?? 0}/7
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           {/* the OWNER DOOR (P5): 💬 Ask-Planner + ✎ add level. Enabled once a
