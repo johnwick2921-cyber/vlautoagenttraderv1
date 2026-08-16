@@ -270,3 +270,62 @@ func doResetAccount(s *Server, body string) *httptest.ResponseRecorder {
 	router.ServeHTTP(rec, req)
 	return rec
 }
+
+// --- S5: credentials must never reach the logs ------------------------------
+
+// TestConfigUpdateHandlersDoNotLogSecrets is a source lint over the two handlers
+// that previously did `logger.Infof(..., "%+v", req.Models/req.Exchanges)` and
+// wrote PLAINTEXT provider keys, exchange secret keys and wallet private keys
+// into data/nofx_*.log (mode 0644). Real keys were recovered from three log
+// files during the P0 sweep. A %+v of a credential-bearing request struct must
+// never come back.
+func TestConfigUpdateHandlersDoNotLogSecrets(t *testing.T) {
+	for _, f := range []string{"handler_ai_model.go", "handler_exchange.go"} {
+		src, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatalf("read %s: %v", f, err)
+		}
+		// Scan CODE only — the fix's own comments quote the banned pattern to
+		// explain what was removed, and that must not trip the lint.
+		var code []string
+		for _, line := range strings.Split(string(src), "\n") {
+			if trimmed := strings.TrimSpace(line); !strings.HasPrefix(trimmed, "//") {
+				code = append(code, line)
+			}
+		}
+		text := strings.Join(code, "\n")
+
+		// NOTE the pattern shape: the real call was
+		//   logger.Infof("...updated: %+v", req.Models)
+		// so the verb is followed by the CLOSING quote. An earlier version of this
+		// lint looked for a quote BEFORE %+v, which matched only this file's own
+		// prose and silently passed when the leak was reintroduced.
+		for _, banned := range []string{`%+v", req.Models`, `%+v", req.Exchanges`} {
+			if strings.Contains(text, banned) {
+				t.Errorf("REGRESSION: %s logs a credential-bearing struct verbatim (%s)", f, banned)
+			}
+		}
+		if !strings.Contains(text, "MaskSensitiveString") {
+			t.Errorf("%s no longer masks secrets before logging", f)
+		}
+	}
+}
+
+// TestMaskSensitiveStringHidesTheMiddle guards the masking primitive both fixed
+// call sites now depend on.
+func TestMaskSensitiveStringHidesTheMiddle(t *testing.T) {
+	secret := "sk-abcdefghijklmnopqrstuvwxyz0123"
+	masked := MaskSensitiveString(secret)
+	if strings.Contains(masked, "efghijklmnopqrstuvwxyz") {
+		t.Fatalf("mask leaked the body of the secret: %q", masked)
+	}
+	if masked == secret {
+		t.Fatalf("mask returned the secret unchanged")
+	}
+	if got := MaskSensitiveString("short"); got != "****" {
+		t.Fatalf("short secrets must be fully hidden, got %q", got)
+	}
+	if got := MaskSensitiveString(""); got != "" {
+		t.Fatalf("empty stays empty, got %q", got)
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"nofx/config"
@@ -228,7 +229,17 @@ func (s *Server) handleUpdateModelConfigs(c *gin.Context) {
 		// Don't return error here since model config was successfully updated to database
 	}
 
-	logger.Infof("✓ AI model config updated: %+v", req.Models)
+	// SECURITY (P0 S5): this used to be `logger.Infof(... "%+v", req.Models)`,
+	// which wrote PLAINTEXT provider API keys into data/nofx_*.log (mode 0644,
+	// retained indefinitely — real keys were found in three existing log files).
+	// Mask via the same helper the (previously unused) sanitizers use.
+	safe := make([]string, 0, len(req.Models))
+	for modelID, m := range req.Models {
+		safe = append(safe, fmt.Sprintf("%s{enabled:%v key:%s url:%s}",
+			modelID, m.Enabled, MaskSensitiveString(m.APIKey), m.CustomAPIURL))
+	}
+	sort.Strings(safe)
+	logger.Infof("✓ AI model config updated: %s", strings.Join(safe, " "))
 	c.JSON(http.StatusOK, gin.H{"message": "Model configuration updated"})
 }
 
