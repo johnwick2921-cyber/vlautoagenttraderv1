@@ -173,6 +173,24 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// P1 — BOOT INTEGRITY: a binary that is not the intended release, or whose
+	// prompt goldens drifted, must not open positions. This outranks every other
+	// gate (it means we cannot trust WHAT this process is). Closes stay allowed so
+	// an existing position can still be managed out.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, refused := kernel.TradingRefused(); refused {
+			at.logErrorf("🔐 BOOT INTEGRITY REFUSAL: %s %s BLOCKED — %s. Fix the deploy and restart; closes still work.",
+				decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "boot_integrity")
+			at.emitAlert("P0", "boot-integrity", "boot-integrity:"+kernel.CMESessionDayKey(time.Now()),
+				"🔐 Trading refused — boot integrity", reason)
+			actionRecord.Success = false
+			actionRecord.Error = "boot_integrity_refused: " + reason
+			return nil
+		}
+	}
+
 	// D1 — consecutive-loss halt: after N consecutive losing closed trades this CME
 	// session-day, block NEW entries until the next session. Closes (open-position
 	// management) are NEVER blocked. 0 = OFF.
@@ -780,4 +798,12 @@ func (at *AutoTrader) executeCloseShortWithRecord(decision *kernel.Decision, act
 
 	logger.Infof("  ✓ Position closed successfully")
 	return nil
+}
+
+// isBootIntegrityGatedAction documents (and lets tests assert) which actions the
+// P1 boot-integrity refusal blocks: NEW ENTRIES ONLY. Closes, holds and waits are
+// never gated — a refused process must still be able to manage an open position
+// down to flat.
+func isBootIntegrityGatedAction(action string) bool {
+	return action == "open_long" || action == "open_short"
 }

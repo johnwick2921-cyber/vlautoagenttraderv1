@@ -2,18 +2,19 @@ package main
 
 import (
 	"log/slog"
-	"nofx/api"
 	nofxiagent "nofx/agent"
+	"nofx/api"
 	"nofx/auth"
 	"nofx/config"
 	"nofx/crypto"
+	"nofx/kernel"
 	"nofx/logger"
 	"nofx/manager"
-	"nofx/telemetry"
 	_ "nofx/mcp/payment"
 	_ "nofx/mcp/provider"
 	"nofx/store"
 	"nofx/telegram"
+	"nofx/telemetry"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -136,6 +137,18 @@ func main() {
 	// Plan 4 Task 25 — Prometheus metrics endpoint (T25 owns this marker; T23 leaves space below).
 
 	// Start API server
+	// P1 — BOOT INTEGRITY ASSERTION. Runs before any trader cycles. A mismatch
+	// with the intended release, or a drifted prompt golden, REFUSES TRADING for
+	// this process (entries blocked; everything else stays read-only usable).
+	integrity := kernel.AssertBootIntegrity()
+	if integrity.Refused {
+		logger.Errorf("%s", integrity.Line())
+		logger.Errorf("🔐 TRADING REFUSED — %s", integrity.Reason)
+		logger.Errorf("🔐 No new positions will be opened until this is fixed and the bot is restarted.")
+	} else {
+		logger.Infof("%s", integrity.Line())
+	}
+
 	// SANDBOX: a demo instance has no NT8 wire, so install a deterministic
 	// synthetic bar feed — without it level_facts/price/chart/armor are all empty.
 	if cfg.SandboxMode {
