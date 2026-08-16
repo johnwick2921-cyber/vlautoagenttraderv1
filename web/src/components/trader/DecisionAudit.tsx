@@ -24,6 +24,11 @@ interface DecisionActionRecord {
   take_profit?: number
   confidence?: number
   reasoning?: string
+  // W16/R3 — already on the wire (store.DecisionAction Success/Error), never
+  // declared here, so a REFUSED action rendered identically to an executed one.
+  // The reason names the gate: "session_gate: ASIA session not enabled".
+  success?: boolean
+  error?: string
 }
 
 interface DecisionAuditRow {
@@ -278,9 +283,23 @@ export function DecisionAudit({ traderId, account }: Props) {
                     </span>
                   </td>
                   <td className="px-2 py-2 whitespace-nowrap">
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-black/40 border border-white/10 text-nofx-text-muted">
-                      {p.execution_status || '—'}
-                    </span>
+                    {/* W16/R3 — a gate refusal is now visible AS a refusal, with the
+                        gate that caused it. Before this the column showed the
+                        execution status only, so a blocked entry was indistinguishable
+                        from an executed one. */}
+                    {a.error ? (
+                      <span
+                        data-testid={`decision-refused-${row.cycleId}`}
+                        title={a.error}
+                        className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-nofx-red/15 border border-nofx-red/30 text-nofx-red"
+                      >
+                        ⛔ {a.error.split(':')[0]}
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-black/40 border border-white/10 text-nofx-text-muted">
+                        {p.execution_status || '—'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-2 py-2 font-mono text-right text-nofx-text-main whitespace-nowrap">
                     {p.fill_price != null ? fmtNum(p.fill_price) : '—'}

@@ -484,6 +484,15 @@ func (at *AutoTrader) runCycle() error {
 			// Leave Success=false and say what stopped it.
 			record.ExecutionLog = append(record.ExecutionLog,
 				fmt.Sprintf("⛔ %s %s refused: %s", d.Symbol, d.Action, actionRecord.Error))
+			// W16/R3 — the PARENT record must agree with its children. It is born
+			// Success:true and nothing downgraded it, so a cycle whose only action
+			// was refused still rendered a green SUCCESS pill over a ⛔ row, and the
+			// audit's Execution Status column stayed blank. Carry the first refusal
+			// reason up so the row itself says why.
+			record.Success = false
+			if record.RiskCheckError == "" {
+				record.RiskCheckError = actionRecord.Error
+			}
 		} else {
 			actionRecord.Success = true
 			record.ExecutionLog = append(record.ExecutionLog, fmt.Sprintf("✓ %s %s succeeded", d.Symbol, d.Action))

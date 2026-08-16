@@ -313,6 +313,21 @@ export const planApi = {
     return { ok: false, error: res.message }
   },
 
+  // W16/R3 — the gate-block tally (in-memory, per CME session-day). It has been
+  // served since B6 with no frontend consumer at all.
+  async getGateBlocks(): Promise<{
+    session_day_utc?: string
+    summary?: string
+    by_trader?: Record<string, Record<string, number>>
+  } | null> {
+    const res = await httpClient.request<{
+      session_day_utc?: string
+      summary?: string
+      by_trader?: Record<string, Record<string, number>>
+    }>(`${API_BASE}/risk/gate-blocks`, { silent: true })
+    return res.success && res.data ? res.data : null
+  },
+
   async applyAsk(
     traderId: string,
     qaId: number,

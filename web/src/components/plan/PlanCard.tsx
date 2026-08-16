@@ -11,6 +11,7 @@ import { SessionTabs, type SessionTab, type TabState } from './SessionTabs'
 import { HandoverBanner } from './HandoverBanner'
 import { SessionPlanCard } from './SessionPlanCard'
 import { AlertCenter } from './AlertCenter'
+import { GateBlocksPanel } from './GateBlocksPanel'
 import { SESSION_BANDS, type SessionName } from './sessionConfig'
 
 interface Props {
@@ -81,6 +82,8 @@ export function PlanCard({
           language={language}
         />
       )}
+      {/* W16/R3 — refusals, where the owner already looks for plan state. */}
+      <GateBlocksPanel traderId={traderId} language={language} />
       <SessionPlanCard
         plan={plan}
         traderId={traderId}

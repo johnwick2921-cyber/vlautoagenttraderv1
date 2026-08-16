@@ -137,6 +137,12 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		if down, status := at.ninjaFeedDown(); down {
 			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", decision.Action, decision.Symbol, status)
 			telemetry.IncGateBlock(at.id, "feed_down")
+			// W16/R3 — stamp the refusal like every sibling gate. This was the ONE
+			// gate that returned nil without touching actionRecord, so after
+			// f7fa2d3c (which classifies on Error != "") a feed-down skip still fell
+			// into the success branch and was recorded as an executed trade.
+			actionRecord.Success = false
+			actionRecord.Error = fmt.Sprintf("feed_down: NT8 price feed not Connected (status=%q)", status)
 			return nil
 		}
 	}

@@ -270,6 +270,22 @@ export const planStrings = {
     zh: '你保留了原计划。该决定已记录，未做任何改动。',
     id: 'Anda mempertahankan rencana. Keputusan dicatat; tidak ada yang diubah.',
   },
+  // W16/R3 — refusals, made visible
+  gateBlocksHeader: {
+    en: 'Refused this session',
+    zh: '本时段被拒绝',
+    id: 'Ditolak sesi ini',
+  },
+  gateBlocksNone: {
+    en: 'No entries refused so far this session.',
+    zh: '本时段暂无入场被拒绝。',
+    id: 'Belum ada entri yang ditolak sesi ini.',
+  },
+  gateBlocksNote: {
+    en: 'Counts reset at the 17:00 CT session roll and on restart. Per-decision reasons appear on each decision row.',
+    zh: '计数在 17:00 CT 时段切换及重启时重置。每条决策的原因显示在对应决策行。',
+    id: 'Hitungan direset pada pergantian sesi 17:00 CT dan saat restart. Alasan tiap keputusan ada di barisnya.',
+  },
   sessionsHeader: { en: 'Sessions', zh: '交易时段', id: 'Sesi' },
   inherit: { en: 'inherit', zh: '继承', id: 'warisi' },
   override: { en: 'override', zh: '覆盖', id: 'ganti' },
