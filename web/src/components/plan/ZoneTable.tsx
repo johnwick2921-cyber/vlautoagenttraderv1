@@ -127,6 +127,7 @@ export function ZoneTable({
   onAdd,
   onBulkAdd,
   flashKey = 0,
+  emptyReason,
 }: {
   facts: PlanLevelFact[]
   language: Language
@@ -135,6 +136,13 @@ export function ZoneTable({
   onBulkAdd?: () => void
   /** W13 — bump to flash the rows gold once after an applied re-align. */
   flashKey?: number
+  /**
+   * FAIL LOUD (P0 2026-08-17): why this plan has no levels. A bare "No levels in
+   * this plan" is indistinguishable from a rendering bug — it read as one for a
+   * whole session while the planner was in fact killing every version on arrival.
+   * The card ALWAYS supplies this; an unexplained emptiness says so explicitly.
+   */
+  emptyReason?: string
 }) {
   const { ghosted, flagged } = detectConflicts(facts)
   return (
@@ -184,10 +192,21 @@ export function ZoneTable({
       </div>
       {facts.length === 0 ? (
         <div
-          className="py-3 text-[12px]"
-          style={{ color: 'var(--vl-faint)', fontFamily: 'var(--vl-font-ui)' }}
+          data-testid="zone-table-empty"
+          className="flex flex-col gap-1 py-3"
+          style={{ fontFamily: 'var(--vl-font-ui)' }}
         >
-          {tp('noLevels', language)}
+          <span className="text-[12px]" style={{ color: 'var(--vl-faint)' }}>
+            {tp('noLevels', language)}
+          </span>
+          <span
+            data-testid="zone-table-empty-reason"
+            className="text-[11px]"
+            style={{ color: 'var(--vl-short)' }}
+          >
+            {tp('noLevelsWhy', language)}:{' '}
+            {emptyReason || tp('noLevelsUnknown', language)}
+          </span>
         </div>
       ) : (
         facts.map((f, i) => (

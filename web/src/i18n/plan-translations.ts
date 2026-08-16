@@ -117,6 +117,19 @@ export const planStrings = {
     zh: '此计划无价位',
     id: 'Tidak ada level di rencana ini',
   },
+  // A levels-less plan must always say WHY. Silence here is what let a
+  // born-dead plan loop look like a rendering bug for a whole session.
+  noLevelsWhy: { en: 'Why', zh: '原因', id: 'Alasan' },
+  noLevelsUnknown: {
+    en: 'The planner returned zero levels and gave no reason — this is a fault, not a quiet session.',
+    zh: '规划器返回了零个价位且未说明原因 — 这是故障，而非平静时段。',
+    id: 'Planner mengembalikan nol level tanpa alasan — ini kesalahan, bukan sesi sepi.',
+  },
+  chartNoLevels: {
+    en: 'Bars only — this plan has no levels to overlay',
+    zh: '仅K线 — 此计划无价位可叠加',
+    id: 'Hanya bar — rencana ini tanpa level untuk ditumpuk',
+  },
 
   // ── scenarios ──
   scenarios: { en: 'Scenarios', zh: '情景', id: 'Skenario' },

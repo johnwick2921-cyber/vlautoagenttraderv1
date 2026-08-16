@@ -195,6 +195,16 @@ export function SessionPlanCard({
     plan.lifecycle === 'superseded'
   const warming = plan.warming && plan.warming !== ''
   const facts = plan.level_facts ?? []
+  // FAIL LOUD (P0 2026-08-17): a plan with no levels must say WHY on the card.
+  // v6 of 2026-08-16:ASIA stored `levels: null` with the reason sitting unread in
+  // doc.reasoning ("FAIL-CLOSED: re-plans exhausted after death condition …"),
+  // so the card showed a bare "No levels in this plan" and the actual fault — the
+  // planner killing every version on arrival — stayed invisible for a session.
+  const emptyReason =
+    facts.length > 0
+      ? undefined
+      : doc.reasoning?.trim() ||
+        (doc.no_trade?.length ? doc.no_trade.join(' · ') : '')
 
   return (
     <div
@@ -313,26 +323,48 @@ export function SessionPlanCard({
             fontFamily: 'var(--vl-font-ui)',
           }}
         >
-          ⛔ {tp('errorFailClosed', language)} — {tp('errorHint', language)}
+          ⛔ {tp('errorFailClosed', language)} —{' '}
+          <span data-testid="fail-closed-reason">
+            {doc.reasoning?.trim() || tp('errorHint', language)}
+          </span>
         </div>
       )}
 
       {/* bias */}
       <BiasBlock bias={doc.bias} language={language} />
 
-      {/* mini chart (levels shared with the table) */}
-      {facts.length > 0 && exchange === 'ninjatrader' && (
-        <PlanMiniChart
-          symbol={symbol}
-          exchange={exchange}
-          facts={facts}
-          language={language}
-        />
+      {/* Mini chart (levels shared with the table). It is NOT gated on having
+          levels: the bars are real regardless, and hiding the whole chart when a
+          plan came back empty removed the one view that would have shown the
+          owner the market was fine and the PLAN was the problem. Zero levels →
+          bars with no overlay, plus a caption saying so. */}
+      {exchange === 'ninjatrader' && (
+        <div className="flex flex-col gap-1">
+          <PlanMiniChart
+            symbol={symbol}
+            exchange={exchange}
+            facts={facts}
+            language={language}
+          />
+          {facts.length === 0 && (
+            <span
+              data-testid="mini-chart-no-levels"
+              className="text-[10px]"
+              style={{
+                color: 'var(--vl-faint)',
+                fontFamily: 'var(--vl-font-ui)',
+              }}
+            >
+              {tp('chartNoLevels', language)}
+            </span>
+          )}
+        </div>
       )}
 
       {/* levels — tap a row to edit (P5), ＋ to add an owner level */}
       <ZoneTable
         facts={facts}
+        emptyReason={emptyReason}
         language={language}
         onEdit={
           doorEnabled
