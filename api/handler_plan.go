@@ -108,7 +108,13 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		}
 	}
 
-	facts, price := planLevelFacts(symbol, doc, now)
+	owners := map[int64]*store.OwnerLevelDB{}
+	if rows, oErr := s.store.OwnerLevel().ListActive(symbol); oErr == nil {
+		for _, r := range rows {
+			owners[roundKey(r.Price)] = r
+		}
+	}
+	facts, price := planLevelFacts(symbol, doc, now, owners)
 	warming := ""
 	if n, _ := s.store.SessionProfile().Count(symbol); n < 10 {
 		warming = fmt.Sprintf("%d/10", n)
@@ -129,11 +135,17 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"price":         price,
 		"replans_left":  maxI(0, 2-(row.Version-1)),
 		"warming":       warming,
+		// SCENARIO STATUS (○waiting ◉armed ●triggered ✕invalid). There is no Go
+		// state machine yet, so this is a passthrough of an explicitly-stored map
+		// (system_config "scenario_status:<plan_id>"); absent in production → the
+		// FE keeps its current fallback. The sandbox seeds it so all four states
+		// are visible. Replace the source when the executor computes it for real.
+		"scenario_status": s.scenarioStatus(row.PlanID),
 	})
 }
 
 // planLevelFacts computes per-level live facts from the latest 1m bars.
-func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time) ([]gin.H, float64) {
+func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, owners map[int64]*store.OwnerLevelDB) ([]gin.H, float64) {
 	if market.FuturesBarsProvider == nil {
 		return nil, 0
 	}
@@ -156,7 +168,7 @@ func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time) ([]gin.H, 
 			dir = kernel.DirBelow
 		}
 		f := kernel.EvaluateLevelFacts(bars, l.Price, dir, "2x5m", 3, nowMs)
-		out = append(out, gin.H{
+		row := gin.H{
 			"price":         l.Price,
 			"label":         l.Label,
 			"grade":         l.Grade,
@@ -167,10 +179,31 @@ func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time) ([]gin.H, 
 			"accept_have":   f.AcceptHave,
 			"accept_need":   f.AcceptNeed,
 			"still_valid":   f.StillValid,
-		})
+		}
+		// OWNER PROVENANCE: the card renders 👤 / 📝 / an S-tag and the ⚡ conflict
+		// chip from these three fields. They were typed as optional on the FE from
+		// the start but never emitted, so the whole owner-attribution layer was
+		// unreachable (design-conformance audit, D1/D6). Matched by price against
+		// the sticky owner-level store, which is where note + scenario tag live.
+		if ow, ok := owners[roundKey(l.Price)]; ok {
+			row["origin"] = "OWNER"
+			if ow.Note != "" {
+				row["note"] = ow.Note
+			}
+			if ow.ScenarioTag != "" {
+				row["scenario_id"] = ow.ScenarioTag
+			}
+		} else {
+			row["origin"] = "AI"
+		}
+		out = append(out, row)
 	}
 	return out, price
 }
+
+// roundKey buckets a price to the instrument tick so an owner level entered as
+// 30156 matches a plan level stored as 30156.00.
+func roundKey(p float64) int64 { return int64(p*4 + 0.5) }
 
 // handlePlanHistory GET /api/plan/history?trader_id=xxx — recent plan versions.
 func (s *Server) handlePlanHistory(c *gin.Context) {
@@ -1166,4 +1199,21 @@ func estimateRealignCostUSD(prompt, reply string) float64 {
 	inTok := float64(len(prompt)) / charsPerTok
 	outTok := float64(len(reply)) / charsPerTok
 	return (inTok*inPerMTok + outTok*outPerMTok) / 1_000_000
+}
+
+// scenarioStatus reads the stored per-scenario live status map for a plan, or nil.
+// See the note at its call site: this is a passthrough, not a computation.
+func (s *Server) scenarioStatus(planID string) map[string]string {
+	if s.store == nil {
+		return nil
+	}
+	raw, _ := s.store.GetSystemConfig("scenario_status:" + planID)
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	var m map[string]string
+	if json.Unmarshal([]byte(raw), &m) != nil || len(m) == 0 {
+		return nil
+	}
+	return m
 }

@@ -3,6 +3,9 @@ package api
 import (
 	"os"
 	"strings"
+	"time"
+
+	"nofx/market"
 )
 
 // SANDBOX MODE — an isolated demo instance (its own DB, its own port, no NT8
@@ -56,5 +59,52 @@ func sandboxPlannerRaw(userPrompt string) string {
 "patch":[{"op":"replace","path":"/scenarios/0/trigger","value":"sweep 30160-30156 (4h OB) then reclaim"},
          {"op":"replace","path":"/scenarios/0/quality","value":"A+"},
          {"op":"replace","path":"/levels/2/instruction","value":"magnet - expect touch; no entries at it (S1 target 1)"}]}`
+	}
+}
+
+// InstallSandboxBars gives a sandbox process a deterministic synthetic bar feed.
+//
+// WHY: level_facts, the mini-chart, the live price and the B2 price-armor are all
+// computed from the NT8 BarCache at request time. A sandbox has no NT8 wire, so
+// without this the plan card renders an EMPTY levels table, no chart, and the armor
+// silently accepts a fat-fingered price (nothing to compare against). The synthetic
+// series walks around anchor with realistic 1m structure so every panel has content.
+//
+// Called ONLY when SANDBOX_MODE=1 — the live bot never reaches this.
+func InstallSandboxBars(symbol string, anchor float64) {
+	market.FuturesBarsProvider = func(sym, tf string, count int) []market.Kline {
+		if count <= 0 || count > 4000 {
+			count = 400
+		}
+		step := int64(60_000) // 1m
+		switch tf {
+		case "5m":
+			step = 300_000
+		case "15m":
+			step = 900_000
+		case "1h":
+			step = 3_600_000
+		case "4h":
+			step = 14_400_000
+		case "1d":
+			step = 86_400_000
+		}
+		end := time.Now().UnixMilli()
+		out := make([]market.Kline, 0, count)
+		px := anchor
+		for i := count - 1; i >= 0; i-- {
+			t := end - int64(i)*step
+			// deterministic pseudo-random walk: no rand, so a reset reproduces it
+			n := float64((t/step)%97) - 48
+			px = anchor + n*0.75
+			hi := px + 3.25
+			lo := px - 3.25
+			op := px - 1.0
+			out = append(out, market.Kline{
+				OpenTime: t, Open: op, High: hi, Low: lo, Close: px,
+				Volume: 850 + float64((t/step)%140), CloseTime: t + step - 1,
+			})
+		}
+		return out
 	}
 }

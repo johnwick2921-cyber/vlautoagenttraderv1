@@ -136,6 +136,13 @@ func main() {
 	// Plan 4 Task 25 — Prometheus metrics endpoint (T25 owns this marker; T23 leaves space below).
 
 	// Start API server
+	// SANDBOX: a demo instance has no NT8 wire, so install a deterministic
+	// synthetic bar feed — without it level_facts/price/chart/armor are all empty.
+	if cfg.SandboxMode {
+		api.InstallSandboxBars("MNQ", 30231.5)
+		logger.Warnf("🧪 SANDBOX MODE — synthetic bars installed, canned planner replies, no live trading")
+	}
+
 	server := api.NewServer(traderManager, st, cryptoService, cfg.APIServerHost, cfg.APIServerPort)
 
 	// Create hot-reload channel for Telegram bot; wire it to the API server

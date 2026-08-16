@@ -87,11 +87,12 @@ func main() {
 	v2.DayType = "balance→trend?"
 	v2.Levels = []kernel.PlanLevel{
 		{Price: 30288.00, Label: "PDH", Grade: "A", Instruction: "target only — trim into it, never chase"},
-		{Price: 30246.25, Label: "RTH-H", Grade: "B", Instruction: "supply — long only on acceptance above (2×5m)"},
+		{Price: 30246.25, Label: "RTH-H", Grade: "B", Instruction: "fade first touch"}, // AI half of the ⚡ pair
 		{Price: 30214.25, Label: "nPOC·Tue", Grade: "A", Instruction: "magnet — expect touch; no entries at it"},
 		{Price: 30188.50, Label: "ONL", Grade: "B", Instruction: "overnight low — sweep candidate"},
 		{Price: 30156.00, Label: "D-4h", Grade: "A", Instruction: "demand — the long POI: sweep + reclaim = entry"},
 		{Price: 30124.75, Label: "EQH", Grade: "C", Instruction: "equal highs — liquidity only, confluence"},
+		{Price: 30246.00, Label: "watch reclaim", Grade: "B", Instruction: "watch reclaim"}, // owner half of the ⚡ pair
 		{Price: 30100.00, Label: "RN", Grade: "C", Instruction: "round number — below = bear day"},
 		{Price: 30061.25, Label: "PDL", Grade: "B", Instruction: "prior-day low — last support before the flush"},
 	}
@@ -102,6 +103,8 @@ func main() {
 			TargetChain: []float64{30288, 30330}, Invalid: "close back inside the zone", Quality: "B"},
 		{ID: "S3", Trigger: "acceptance below 30148", Condition: "acceptance", Direction: "short",
 			TargetChain: []float64{30100, 30061.25}, Invalid: "reclaim 30160", Quality: "B"},
+		{ID: "S4", Trigger: "reject the EQH shelf", Condition: "reject", Direction: "short",
+			TargetChain: []float64{30100}, Invalid: "acceptance above 30130", Quality: "B"},
 	}
 	v2.NoTrade = []string{
 		"first 5 min", "lunch 12:00–13:30 CT",
@@ -126,12 +129,29 @@ func main() {
 		}
 	}
 
-	// ── OWNER LEVEL (👤 + 📝 note + [S1] tag) ─────────────────────────────────
-	must("owner level", st.OwnerLevel().Save(&store.OwnerLevelDB{
-		Symbol: *symbol, Price: 30156.00, Label: "D-4h",
-		Note: "strong 4h OB — tôi tin zone này", ScenarioTag: "S1",
-		CreatedAt: now.Add(-90 * time.Minute).UnixMilli(),
-	}))
+	// ── OWNER LEVELS (origin=OWNER → 👤 + 📝 note + [S-tag] on the card) ──────
+	// Includes the ⚡ CONFLICT PAIR: an owner level at 30246 ("watch reclaim")
+	// against the AI's 30246.25 ("fade first touch") — opposing instructions at
+	// the same price, so the chip fires and the AI row ghosts. And a STICKY level
+	// carried from an earlier session (owner levels persist across reads).
+	ownerLevels := []struct {
+		price       float64
+		label, note string
+		tag         string
+		ageMin      int
+	}{
+		{30156.00, "D-4h", "strong 4h OB — tôi tin zone này", "S1", 90},
+		{30288.00, "PDH", "PDH magnet — trim, never chase", "S2", 75},
+		{30100.00, "RN", "", "", 60},
+		{30246.00, "watch reclaim", "my read: reclaim, not a fade", "S2", 45}, // ⚡ vs AI 30246.25
+		{30061.25, "PDL·sticky", "carried from yesterday — still my line", "S3", 1500},
+	}
+	for _, ol := range ownerLevels {
+		must("owner level", st.OwnerLevel().Save(&store.OwnerLevelDB{
+			Symbol: *symbol, Price: ol.price, Label: ol.label, Note: ol.note,
+			ScenarioTag: ol.tag, CreatedAt: now.Add(-time.Duration(ol.ageMin) * time.Minute).UnixMilli(),
+		}))
+	}
 
 	// ── LEVEL STATE: a BURNED level (consumed in an earlier session) + a tested one
 	for _, ls := range []struct {
@@ -249,6 +269,10 @@ func main() {
 			TradeDate: key, Source: "sandbox", EventsJSON: string(js), CreatedAt: now.UnixMilli(),
 		})
 	}
+
+	// ── SCENARIO LIVE STATUS (the four dot states) ────────────────────────────
+	must("scenario status", st.SetSystemConfig("scenario_status:"+planID,
+		`{"S1":"triggered","S2":"armed","S3":"waiting","S4":"invalidated"}`))
 
 	fmt.Printf("✅ sandbox seeded: %s\n   plan %s v1+v2 · 8 levels · 3 scenarios · owner level · %d alerts · 3 graded trades · digests · calendar · level-state\n",
 		*dbPath, planID, len(alerts))
