@@ -251,6 +251,13 @@ export const planStrings = {
     zh: '最大重新校准次数',
     id: 'Maks penyelarasan ulang',
   },
+  // W15.C follow-up — the owner door only opens on the LIVE session, because every
+  // mutating endpoint resolves the active session server-side.
+  siblingReadOnly: {
+    en: 'Viewing another session — read-only. Switch to the live session to edit.',
+    zh: '正在查看其他时段——只读。切换到当前时段才能编辑。',
+    id: 'Melihat sesi lain — hanya-baca. Beralih ke sesi aktif untuk mengubah.',
+  },
   sessionsHeader: { en: 'Sessions', zh: '交易时段', id: 'Sesi' },
   inherit: { en: 'inherit', zh: '继承', id: 'warisi' },
   override: { en: 'override', zh: '覆盖', id: 'ganti' },

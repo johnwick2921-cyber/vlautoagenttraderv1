@@ -130,7 +130,16 @@ export function SessionPlanCard({
         setRealign({ phase: 'idle' })
     }
   }
-  const doorEnabled = !!traderId
+  // The owner door (edit / add / bulk / delete / Ask-Planner / re-align) may only
+  // be opened while we are looking at the LIVE session. Every mutating endpoint
+  // resolves reg.ActiveSession(now) SERVER-SIDE and writes the active session's
+  // plan — it takes no session argument. Once the tabs became real (W15.C) the
+  // card could display a sibling session, so leaving the door enabled there would
+  // let an edit made against ASIA's levels land silently on NY's plan.
+  // is_active comes from /api/plan/today; an older payload omits it (undefined),
+  // which keeps the pre-W15.C behavior rather than locking the door.
+  const viewingLiveSession = plan?.is_active !== false
+  const doorEnabled = !!traderId && viewingLiveSession
 
   // ── non-plan states ──
   if (errored) {
@@ -363,6 +372,18 @@ export function SessionPlanCard({
             </div>
           )}
         </>
+      )}
+
+      {/* Why the door is shut — never leave a disabled surface unexplained. Sits
+          OUTSIDE the doorEnabled block, which is exactly what is false here. */}
+      {!!traderId && !viewingLiveSession && (
+        <div
+          className="px-3 pb-2 text-[10px]"
+          style={{ color: 'var(--vl-faint)' }}
+          data-testid="sibling-session-readonly"
+        >
+          {tp('siblingReadOnly', language)}
+        </div>
       )}
 
       {/* scenarios */}
