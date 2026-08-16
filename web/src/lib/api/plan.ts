@@ -295,6 +295,24 @@ export const planApi = {
     return res.data
   },
 
+  // W16/R2 — declining a proposal is a RECORDED decision, not local UI state.
+  // The plan is untouched; the row keeps the KPI series honest about rejections.
+  async declineAsk(
+    traderId: string,
+    qaId: number
+  ): Promise<{ ok: boolean; error?: string }> {
+    const res = await httpClient.request<{ declined: boolean }>(
+      `${API_BASE}/plan/ask/decline`,
+      {
+        method: 'POST',
+        data: { trader_id: traderId, qa_id: qaId },
+        silent: true,
+      }
+    )
+    if (res.success && res.data?.declined) return { ok: true }
+    return { ok: false, error: res.message }
+  },
+
   async applyAsk(
     traderId: string,
     qaId: number,

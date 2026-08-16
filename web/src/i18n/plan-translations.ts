@@ -259,6 +259,17 @@ export const planStrings = {
     zh: '正在查看其他时段——只读。切换到当前时段才能编辑。',
     id: 'Melihat sesi lain — hanya-baca. Beralih ke sesi aktif untuk mengubah.',
   },
+  // W16/R2 — declining is its own recorded outcome, never "applied"
+  askDeclined: {
+    en: 'Proposal declined — plan unchanged',
+    zh: '已拒绝提议——计划未改动',
+    id: 'Usulan ditolak — rencana tidak berubah',
+  },
+  askDeclinedNote: {
+    en: 'You kept the plan as it was. The decision was recorded; nothing was changed.',
+    zh: '你保留了原计划。该决定已记录，未做任何改动。',
+    id: 'Anda mempertahankan rencana. Keputusan dicatat; tidak ada yang diubah.',
+  },
   sessionsHeader: { en: 'Sessions', zh: '交易时段', id: 'Sesi' },
   inherit: { en: 'inherit', zh: '继承', id: 'warisi' },
   override: { en: 'override', zh: '覆盖', id: 'ganti' },

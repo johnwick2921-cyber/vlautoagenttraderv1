@@ -665,6 +665,87 @@ func (s *Server) handlePlanThread(c *gin.Context) {
 // handlePlanAskApply POST /api/plan/ask/apply — apply a PROPOSE-MERGE patch as an
 // overlay (origin planner-revised) and mark the reply applied. Bare-disagreement
 // replies carry no patch, so there is nothing to apply (guarded here too).
+// handlePlanAskDecline POST /api/plan/ask/decline — the owner declines a
+// PROPOSE-MERGE proposal.
+//
+// W16/R2. Declining used to be pure local React state: the panel set the same
+// flag Apply sets, so the card claimed "Applied — card updated" while NOTHING
+// was persisted. Two things were wrong with that. The copy lied, and the KPI
+// series lost half its signal: a proposal the owner explicitly REJECTED and one
+// they simply never answered both sat at applied=false, indistinguishable.
+//
+// The decline is recorded as an OWNER-role row carrying the same plan/trigger
+// provenance as the planner reply it answers, with verdict DECLINED. Owner rows
+// are excluded from the planner-reply counters (VerdictStats filters
+// role='planner'), so DEFEND/CONCEDE/PROPOSE-MERGE keep their existing meaning
+// and the decline count joins the same series without redefining it.
+//
+// The plan is never touched — declining is the absence of a mutation, by design.
+func (s *Server) handlePlanAskDecline(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+		QaID     int64  `json:"qa_id"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	if body.QaID <= 0 {
+		SafeBadRequest(c, "qa_id is required")
+		return
+	}
+	msg, err := s.store.PlanQA().GetForTrader(traderID, body.QaID)
+	if err != nil {
+		SafeInternalError(c, "get qa message", err)
+		return
+	}
+	if msg == nil {
+		SafeNotFound(c, "Ask-Planner message")
+		return
+	}
+	if msg.Verdict != "PROPOSE-MERGE" {
+		SafeBadRequest(c, "this reply has no proposal to decline")
+		return
+	}
+	// An applied proposal cannot then be declined — the overlay already exists.
+	if msg.Applied {
+		c.JSON(200, gin.H{"declined": false, "already_applied": true})
+		return
+	}
+	// Idempotent: a re-tap must not stack duplicate decline rows.
+	if n, _ := s.store.PlanQA().CountOwnerDeclines(traderID, msg.PlanID, body.QaID); n > 0 {
+		c.JSON(200, gin.H{"declined": true, "already_declined": true})
+		return
+	}
+	id, aerr := s.store.PlanQA().Append(&store.PlanQADB{
+		TraderID:      traderID,
+		PlanID:        msg.PlanID,
+		TradeDate:     msg.TradeDate,
+		Session:       msg.Session,
+		Role:          "owner",
+		Content:       store.DeclineContentFor(body.QaID),
+		Verdict:       store.VerdictDeclined,
+		Trigger:       msg.Trigger,       // same provenance as the reply it answers
+		ChallengeType: msg.ChallengeType, // …so the series stays comparable
+		Applied:       false,
+	})
+	if aerr != nil {
+		SafeInternalError(c, "record decline", aerr)
+		return
+	}
+	logger.Infof("🙅 Ask-Planner proposal qa_id=%d DECLINED by owner (plan %s) — plan untouched.", body.QaID, msg.PlanID)
+	c.JSON(200, gin.H{"declined": true, "qa_id": id})
+}
+
 func (s *Server) handlePlanAskApply(c *gin.Context) {
 	var body struct {
 		TraderID string `json:"trader_id"`

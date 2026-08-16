@@ -485,6 +485,9 @@ Returns: {qa_id, plan_id, plan_version, reply:{evidence, point_class:NEW-INFO|BA
 			s.routeWithSchema(protected, "POST", "/plan/ask/apply", "Apply a PROPOSE-MERGE patch as a planner-revised overlay",
 				`Body: {"trader_id":"<id>","symbol":"MNQ","qa_id":<int>}. Applies the reply's patch (origin planner-revised) + marks it applied. Returns: {applied:true, overlay_version, plan_version}.`,
 				s.handlePlanAskApply)
+			s.routeWithSchema(protected, "POST", "/plan/ask/decline", "Decline a PROPOSE-MERGE proposal (recorded, plan untouched)",
+				`Body: {"trader_id":"<id>","qa_id":<int>}. Records an owner-role DECLINED row carrying the reply's plan/trigger provenance so the KPI series counts rejections, not just silence. The plan is NOT modified. Idempotent. Returns: {declined:true, qa_id}.`,
+				s.handlePlanAskDecline)
 			// P5.5 — adherence grade feed (graded closed trades + GPA, separate from P&L).
 			s.routeWithSchema(protected, "GET", "/plan/trades", "Graded closed trades + adherence summary (A–F, separate from P&L)",
 				`Query: ?trader_id=<id>. Returns: {trades:[{symbol,side,entry_price,exit_price,entry_time,exit_time,realized_pnl,mae,mfe,cited_scenario_id,plan_matched,adherence_grade,adherence_label}], summary:{counts,total,gpa}}.`,

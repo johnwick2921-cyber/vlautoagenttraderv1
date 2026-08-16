@@ -115,17 +115,60 @@ type VerdictStats struct {
 	ProposeMerge   int `json:"propose_merge"`
 	Applied        int `json:"applied"`
 	DefendOnBare   int `json:"defend_on_bare"` // the anti-sycophancy signal
+	// Declined counts proposals the owner explicitly REJECTED (owner rows). It is
+	// the missing half of Applied: before W16 a rejected proposal and one never
+	// answered were both just "not applied", so the series could not measure
+	// whether the owner actually agreed with the planner.
+	Declined int `json:"declined"`
+}
+
+// W16/R2 — the owner's DECLINE of a PROPOSE-MERGE proposal.
+//
+// Declining was previously local UI state only, so the KPI could not tell a
+// REJECTED proposal from one the owner never answered — both sat at
+// applied=false. A decline is now an OWNER-role row carrying the same
+// plan/trigger provenance as the reply it answers.
+const (
+	// VerdictDeclined marks an owner row rejecting a proposal. It never appears on
+	// a planner row, so the DEFEND / CONCEDE / PROPOSE-MERGE counts are untouched.
+	VerdictDeclined = "DECLINED"
+	declinePrefix   = "declined:"
+)
+
+// DeclineContentFor builds the owner row's content, which doubles as the link
+// back to the planner reply being declined (the table has no parent-id column).
+func DeclineContentFor(qaID int64) string {
+	return fmt.Sprintf("%s%d", declinePrefix, qaID)
+}
+
+// CountOwnerDeclines reports how many decline rows already exist for one reply —
+// the idempotency guard, so a re-tap cannot stack duplicates.
+func (s *PlanQAStore) CountOwnerDeclines(traderID, planID string, qaID int64) (int, error) {
+	var n int64
+	err := s.db.Model(&PlanQADB{}).
+		Where("trader_id = ? AND plan_id = ? AND role = ? AND verdict = ? AND content = ?",
+			traderID, planID, "owner", VerdictDeclined, DeclineContentFor(qaID)).
+		Count(&n).Error
+	return int(n), err
 }
 
 // VerdictStats aggregates a trader's planner replies for the sycophancy KPI.
 func (s *PlanQAStore) VerdictStats(traderID string) (VerdictStats, error) {
 	var rows []*PlanQADB
-	err := s.db.Where("trader_id = ? AND role = ?", traderID, "planner").Find(&rows).Error
+	err := s.db.Where("trader_id = ?", traderID).Find(&rows).Error
 	if err != nil {
 		return VerdictStats{}, err
 	}
 	var st VerdictStats
 	for _, r := range rows {
+		// Owner rows carry only the decline signal; every other counter below is
+		// defined over PLANNER replies and must keep its pre-W16 meaning.
+		if r.Role != "planner" {
+			if r.Verdict == VerdictDeclined {
+				st.Declined++
+			}
+			continue
+		}
 		st.Total++
 		switch r.PointClass {
 		case "NEW-INFO":

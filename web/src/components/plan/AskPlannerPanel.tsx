@@ -96,7 +96,12 @@ function PlannerReply({
   language: Language
   onApplied: () => void
 }) {
-  const [applied, setApplied] = useState(m.applied)
+  // W16/R2 — TRI-state. This used to be one boolean that BOTH buttons set, so
+  // declining rendered the applied confirmation ("Applied — card updated") while
+  // persisting nothing. 'declined' is now its own outcome and its own record.
+  const [outcome, setOutcome] = useState<'applied' | 'declined' | null>(
+    m.applied ? 'applied' : null
+  )
   const [busy, setBusy] = useState(false)
   const isNewInfo = m.point_class === 'NEW-INFO'
   const vColor =
@@ -120,9 +125,21 @@ function PlannerReply({
       toast.error(tp('saveFailed', language), { description: res.error })
       return
     }
-    setApplied(true)
+    setOutcome('applied')
     toast.success(tp('askApplied', language))
     onApplied()
+  }
+
+  const decline = async () => {
+    setBusy(true)
+    const res = await api.declineAsk(traderId, m.id)
+    setBusy(false)
+    if (!res.ok) {
+      toast.error(tp('saveFailed', language), { description: res.error })
+      return // stay undecided rather than claim an outcome we did not persist
+    }
+    setOutcome('declined')
+    toast.success(tp('askDeclined', language))
   }
 
   return (
@@ -210,7 +227,7 @@ function PlannerReply({
       {m.verdict === 'PROPOSE-MERGE' && m.patch && (
         <div className="px-3">
           <PatchPreview patch={m.patch} />
-          {!applied ? (
+          {outcome === null ? (
             <div className="flex gap-2 pb-3">
               <button
                 onClick={apply}
@@ -226,7 +243,9 @@ function PlannerReply({
                 ✅ {tp('applyMerge', language)}
               </button>
               <button
-                onClick={() => setApplied(true)}
+                onClick={decline}
+                disabled={busy}
+                data-testid="ask-keep-as-is"
                 className="flex-1 text-[11px] py-2"
                 style={{
                   border: '1px solid var(--vl-hair)',
@@ -237,9 +256,10 @@ function PlannerReply({
                 {tp('keepAsIs', language)}
               </button>
             </div>
-          ) : (
+          ) : outcome === 'applied' ? (
             <div
               className="mb-3 text-[10.5px] px-3 py-2"
+              data-testid="ask-outcome-applied"
               style={{
                 color: 'var(--vl-long)',
                 border: '1px solid rgba(63,191,143,0.25)',
@@ -248,6 +268,18 @@ function PlannerReply({
               }}
             >
               ✔ {tp('askApplied', language)}
+            </div>
+          ) : (
+            <div
+              className="mb-3 text-[10.5px] px-3 py-2"
+              data-testid="ask-outcome-declined"
+              style={{
+                color: 'var(--vl-muted)',
+                border: '1px solid var(--vl-hair)',
+                borderRadius: 10,
+              }}
+            >
+              — {tp('askDeclinedNote', language)}
             </div>
           )}
         </div>
