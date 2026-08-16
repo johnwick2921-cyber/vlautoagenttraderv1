@@ -615,6 +615,35 @@ func (at *AutoTrader) maybeWriteDigests() {
 	}
 }
 
+// storedReplanCap resolves the re-plan cap for (plan owner, session) from the
+// LIVE stored strategy config — the same resolver GET /api/plan/today uses, so
+// the executor prompt and the owner's card can never narrate different numbers.
+//
+// It reads the store rather than a cached struct on purpose: a mid-session cap
+// edit is exactly the case that exposed the divergence. Note that plans.strategy_id
+// holds the TRADER id (the column is misnamed), hence the trader→strategy hop.
+// Every failure path falls back to DayPlanConfig's shipped default, which is what
+// the literal it replaces assumed anyway.
+func storedReplanCap(st *store.Store, traderID, session string) int {
+	var dp *store.DayPlanConfig // nil → ReplanCapFor returns the shipped default
+	if st == nil || traderID == "" {
+		return dp.ReplanCapFor(session)
+	}
+	tr, err := st.Trader().GetByID(traderID)
+	if err != nil || tr == nil || tr.StrategyID == "" {
+		return dp.ReplanCapFor(session)
+	}
+	var strat store.Strategy
+	if err := st.GormDB().Where("id = ?", tr.StrategyID).First(&strat).Error; err != nil {
+		return dp.ReplanCapFor(session)
+	}
+	var cfg store.StrategyConfig
+	if json.Unmarshal([]byte(strat.Config), &cfg) != nil {
+		return dp.ReplanCapFor(session)
+	}
+	return cfg.DayPlan.ReplanCapFor(session)
+}
+
 // installActivePlanProvider wires kernel.ActivePlanProvider to read this store's
 // latest ACTIVE plan for the current session (P3.4). no_trade/died plans and
 // off-session return nil → the executor prompt is unchanged.
@@ -637,7 +666,12 @@ func installActivePlanProvider(st *store.Store) {
 		if !ok {
 			return nil
 		}
-		replansLeft := 2 - (row.Version - 1) // default replan_cap 2 (P3.6 refines)
+		// The cap must come from the SAME resolver the card uses. A literal 2 here
+		// meant the executor prompt and the dashboard narrated different rulebooks
+		// the moment a session overrode replan_cap: on 2026-08-16 the owner raised
+		// ASIA to 4 mid-session, so at v3 the card said "replans left 2" while the
+		// AI was being told 0.
+		replansLeft := storedReplanCap(st, row.StrategyID, sess.Name) - (row.Version - 1)
 		if replansLeft < 0 {
 			replansLeft = 0
 		}
