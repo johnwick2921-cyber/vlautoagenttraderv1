@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -153,6 +155,30 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		c.JSON(200, base) // enabled but no plan yet (pre-★2) → graceful
 		return
 	}
+	// ITEM 15 — ?version=N serves a HISTORICAL version instead of the latest.
+	// Every version has always been stored; nothing could ask for one. Reusing this
+	// handler (rather than adding a parallel one) means a historical view resolves
+	// overlays, facts, degradation and scenario status through exactly the same
+	// code as the live card — including the requirement that owner overlays render
+	// on the version they belonged to, since overlays are keyed (plan_id, version).
+	latestVersion := row.Version
+	historical := false
+	if raw := strings.TrimSpace(c.Query("version")); raw != "" {
+		want, convErr := strconv.Atoi(raw)
+		if convErr != nil || want < 1 {
+			SafeBadRequest(c, "version must be a positive integer")
+			return
+		}
+		if want != row.Version {
+			old, gErr := s.store.Plan().GetPlan(row.PlanID, want)
+			if gErr != nil || old == nil {
+				SafeNotFound(c, "Plan version")
+				return
+			}
+			row = old
+			historical = true
+		}
+	}
 	var doc kernel.PlanDoc
 	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
 		c.JSON(200, base)
@@ -191,11 +217,16 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"found":         true,
-		"trade_date":    tradeDate,
-		"session":       sessName,
-		"version":       row.Version,
-		"overlay_count": len(overlays),
+		"found":      true,
+		"trade_date": tradeDate,
+		"session":    sessName,
+		"version":    row.Version,
+		// ITEM 15 — the card marks itself HISTORICAL and offers the way back.
+		"historical":     historical,
+		"latest_version": latestVersion,
+		"trigger_reason": row.TriggerReason,
+		"created_at":     row.CreatedAt,
+		"overlay_count":  len(overlays),
 		"lifecycle":     row.Lifecycle,
 		"model_id":      row.ModelID,
 		"night":         false,
@@ -285,6 +316,152 @@ func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, rule strin
 // roundKey buckets a price to the instrument tick so an owner level entered as
 // 30156 matches a plan level stored as 30156.00.
 func roundKey(p float64) int64 { return int64(p*4 + 0.5) }
+
+// handlePlanVersions GET /api/plan/versions?trader_id=xxx&session=NY[&trade_date=]
+// — every stored version of ONE session's plan, oldest first, with the metadata
+// the version chips need to be more than decoration.
+//
+// ITEM 15. The chips used to fabricate their labels from a single integer
+// (Array.from({length: version})), so they could not say which versions existed,
+// when they were written, why each one died, or what changed. All of that has
+// been in the database since P3.6 — this is purely the missing read path.
+func (s *Server) handlePlanVersions(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	session := strings.ToUpper(strings.TrimSpace(c.Query("session")))
+	if session == "" {
+		SafeBadRequest(c, "session is required")
+		return
+	}
+	tradeDate := strings.TrimSpace(c.Query("trade_date"))
+	if tradeDate == "" {
+		tradeDate = time.Now().In(planChicago()).Format("2006-01-02")
+	}
+
+	rows, err := s.store.Plan().ListVersions(tradeDate, session)
+	if err != nil {
+		SafeInternalError(c, "list plan versions", err)
+		return
+	}
+	docs := make([]*kernel.PlanDoc, len(rows))
+	for i, r := range rows {
+		var d kernel.PlanDoc
+		if json.Unmarshal([]byte(r.Doc), &d) == nil {
+			docs[i] = &d
+		}
+	}
+
+	out := make([]gin.H, 0, len(rows))
+	for i, r := range rows {
+		item := gin.H{
+			"version":        r.Version,
+			"lifecycle":      r.Lifecycle,
+			"trigger_reason": r.TriggerReason,
+			"created_at":     r.CreatedAt,
+			"model_id":       r.ModelID,
+			"degraded":       r.Degraded,
+			"is_latest":      i == len(rows)-1,
+		}
+		if d := docs[i]; d != nil {
+			item["level_count"] = len(d.Levels)
+			item["scenario_count"] = len(d.Scenarios)
+			item["bias"] = d.Bias.Direction
+			item["day_type"] = d.DayType
+			item["death_condition"] = d.DeathCondition
+			// WHY this version stopped being the plan: the successor's
+			// trigger_reason is the record of what replaced it. A superseded
+			// version whose successor says nothing still names its own stated
+			// death condition, which is the checkable claim it was judged on.
+			if i < len(rows)-1 {
+				item["superseded_by"] = rows[i+1].Version
+				reason := strings.TrimSpace(rows[i+1].TriggerReason)
+				if reason == "" {
+					reason = "replaced by v" + strconv.Itoa(rows[i+1].Version)
+				}
+				item["death_reason"] = reason
+				item["diff_vs_next"] = planDocDiff(docs[i], docs[i+1])
+			}
+		}
+		out = append(out, item)
+	}
+	c.JSON(200, gin.H{
+		"trade_date": tradeDate, "session": session, "versions": out,
+		"latest_version": func() int {
+			if len(rows) == 0 {
+				return 0
+			}
+			return rows[len(rows)-1].Version
+		}(),
+	})
+}
+
+// planDocDiff describes, in plain language, what changed between two plan
+// versions. It is deliberately coarse — the point is for the owner to see at a
+// glance WHY a re-plan happened, not to reconstruct a patch.
+func planDocDiff(from, to *kernel.PlanDoc) []string {
+	if from == nil || to == nil {
+		return nil
+	}
+	var out []string
+	if from.Bias.Direction != to.Bias.Direction {
+		out = append(out, fmt.Sprintf("bias %s → %s", from.Bias.Direction, to.Bias.Direction))
+	}
+	if from.Bias.Conviction != to.Bias.Conviction {
+		out = append(out, fmt.Sprintf("conviction %s → %s", from.Bias.Conviction, to.Bias.Conviction))
+	}
+	if from.DayType != to.DayType && to.DayType != "" {
+		out = append(out, fmt.Sprintf("day type %s → %s", orNone(from.DayType), to.DayType))
+	}
+
+	had := map[int64]string{}
+	for _, l := range from.Levels {
+		had[roundKey(l.Price)] = l.Label
+	}
+	kept, added := 0, []string{}
+	for _, l := range to.Levels {
+		if _, ok := had[roundKey(l.Price)]; ok {
+			kept++
+			delete(had, roundKey(l.Price))
+			continue
+		}
+		added = append(added, fmt.Sprintf("%s %g", l.Label, l.Price))
+	}
+	if len(added) > 0 {
+		out = append(out, "added "+strings.Join(added, ", "))
+	}
+	if len(had) > 0 {
+		dropped := make([]string, 0, len(had))
+		for k, label := range had {
+			dropped = append(dropped, fmt.Sprintf("%s %g", label, float64(k)/4))
+		}
+		sort.Strings(dropped)
+		out = append(out, "dropped "+strings.Join(dropped, ", "))
+	}
+	if len(added) == 0 && len(had) == 0 && len(from.Levels) > 0 {
+		out = append(out, fmt.Sprintf("same %d levels", kept))
+	}
+	if len(to.Levels) == 0 && len(from.Levels) > 0 {
+		out = append(out, "NO LEVELS in the replacement")
+	}
+	if len(from.Scenarios) != len(to.Scenarios) {
+		out = append(out, fmt.Sprintf("scenarios %d → %d", len(from.Scenarios), len(to.Scenarios)))
+	}
+	return out
+}
+
+func orNone(s string) string {
+	if strings.TrimSpace(s) == "" {
+		return "(none)"
+	}
+	return s
+}
 
 // handlePlanHistory GET /api/plan/history?trader_id=xxx — recent plan versions.
 func (s *Server) handlePlanHistory(c *gin.Context) {

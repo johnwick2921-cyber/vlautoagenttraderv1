@@ -451,9 +451,19 @@ Returns: []DecisionRecord JSON ordered by timestamp DESC, including PromptVersio
 			// P4.1 — Day-Plan API (mirror /api/risk/* inline trader_id). Additive;
 			// found=false when day_plan enabled but no plan yet (pre-★2) or at night.
 			s.routeWithSchema(protected, "GET", "/plan/today", "Active day-plan (overlay-resolved) + live scenario facts",
-				`Query: ?trader_id=<EXACT trader_id>[&symbol=MNQ]
-Returns: {found, trade_date, session, version, lifecycle, model_id, mode, night, doc:{bias,levels,scenarios,no_trade,death_condition}, level_facts:[{price,label,grade,distance,sweep,closes_beyond,accept_have,accept_need,still_valid}], price, replans_left, warming}. found=false = no active plan (night/disabled/none-yet).`,
+				`Query: ?trader_id=<EXACT trader_id>[&symbol=MNQ][&session=NY|ASIA|LONDON][&version=<n>]
+Returns: {found, trade_date, session, version, historical, latest_version, trigger_reason, created_at, lifecycle, model_id, mode, night, doc:{bias,levels,scenarios,no_trade,death_condition}, level_facts:[{price,label,grade,distance,sweep,closes_beyond,accept_have,accept_need,still_valid}], price, replans_left, warming}. found=false = no active plan (night/disabled/none-yet).
+version=<n> serves that HISTORICAL version (overlays resolved on the version they belonged to); omit for the latest. List versions with GET /plan/versions.`,
 				s.handlePlanToday)
+			// ITEM 15 — every stored version of ONE session's plan, with each
+			// version's death reason and a plain-language diff vs its successor.
+			// /plan/history is a global 30-row feed and strips the doc; this is
+			// the per-session read path the version chips need.
+			s.routeWithSchema(protected, "GET", "/plan/versions", "All stored versions of one session's plan",
+				`Query: ?trader_id=<EXACT trader_id>&session=<NY|ASIA|LONDON>[&trade_date=YYYY-MM-DD]
+Returns: {trade_date, session, latest_version, versions:[{version, lifecycle, trigger_reason, created_at, model_id, degraded, is_latest, level_count, scenario_count, bias, day_type, death_condition, superseded_by, death_reason, diff_vs_next:[string]}]} oldest first.
+Fetch a specific version's full doc with GET /plan/today?version=<n>.`,
+				s.handlePlanVersions)
 			s.routeWithSchema(protected, "GET", "/plan/history", "Recent plan versions (trade_date, session, version)",
 				`Query: ?trader_id=<EXACT trader_id>. Returns: {history:[{trade_date,session,version,lifecycle,model_id,trigger_reason}]}`,
 				s.handlePlanHistory)

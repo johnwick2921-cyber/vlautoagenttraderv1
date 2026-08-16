@@ -332,6 +332,24 @@ func (s *PlanStore) ListRecent(limit int) ([]*PlanDB, error) {
 	return rows, nil
 }
 
+// ListVersions returns EVERY stored version of one session's plan, oldest first.
+//
+// The plans table has always been append-only (PRIMARY KEY (plan_id, version);
+// AppendPlan assigns max(version)+1 and only ever INSERTs), so the full history
+// of a session — including each superseded version's doc and the trigger_reason
+// that produced its successor — has been durable all along. Nothing could read
+// it: GetLatestPlanForSession returns exactly one row and ListRecent is a global
+// 30-row feed across every plan_id and trader. This is the missing read path.
+func (s *PlanStore) ListVersions(tradeDate, session string) ([]*PlanDB, error) {
+	var rows []*PlanDB
+	err := s.db.Where("plan_id = ?", MakePlanID(tradeDate, session)).
+		Order("version ASC").Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // ListOverlays returns all overlay versions for (plan_id, plan_version) in
 // ascending overlay_version order.
 func (s *PlanStore) ListOverlays(planID string, planVersion int) ([]*PlanOverlayDB, error) {
