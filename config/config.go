@@ -23,6 +23,11 @@ type Config struct {
 	// Database configuration
 	DBType     string // sqlite or postgres
 	DBPath     string // SQLite database file path
+	// SandboxMode (SANDBOX_MODE=1) turns this process into an isolated demo: the
+	// trading loop never places an order, the planner uses canned replies unless
+	// SANDBOX_LLM=real, and the UI paints a SANDBOX banner. Default OFF — the live
+	// bot is byte-identical unless the env var is set.
+	SandboxMode bool
 	DBHost     string // PostgreSQL host
 	DBPort     int    // PostgreSQL port
 	DBUser     string // PostgreSQL user
@@ -155,6 +160,9 @@ func Init() {
 	// Database configuration
 	if v := os.Getenv("DB_TYPE"); v != "" {
 		cfg.DBType = strings.ToLower(v)
+	}
+	if v := os.Getenv("SANDBOX_MODE"); v == "1" || strings.EqualFold(v, "true") {
+		cfg.SandboxMode = true
 	}
 	if v := os.Getenv("DB_PATH"); v != "" {
 		cfg.DBPath = v

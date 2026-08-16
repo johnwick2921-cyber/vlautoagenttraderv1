@@ -544,6 +544,9 @@ func (s *Server) handleGetSystemConfig(c *gin.Context) {
 		"initialized":      userCount > 0,
 		"btc_eth_leverage": 10,
 		"altcoin_leverage": 5,
+		// SANDBOX (isolated demo instance) → the UI paints a permanent banner so a
+		// sandbox can never be mistaken for the live system. false in production.
+		"sandbox": SandboxMode(),
 	})
 }
 

@@ -467,14 +467,20 @@ func (s *Server) handlePlanAsk(c *gin.Context) {
 
 	// Call the SAME planner model that authored the plan.
 	client, _ := at.ResolvePlannerClient()
-	if client == nil {
+	if client == nil && !(SandboxMode() && !SandboxRealLLM()) {
 		SafeInternalError(c, "resolve planner client", fmt.Errorf("no planner client"))
 		return
 	}
-	raw, err := client.CallWithMessages(kernel.AskPlannerSystemPrompt, userPrompt)
-	if err != nil {
-		SafeInternalError(c, "ask planner", err)
-		return
+	var raw string
+	if SandboxMode() && !SandboxRealLLM() {
+		raw = sandboxPlannerRaw(userPrompt) // canned, zero cost
+	} else {
+		var callErr error
+		raw, callErr = client.CallWithMessages(kernel.AskPlannerSystemPrompt, userPrompt)
+		if callErr != nil {
+			SafeInternalError(c, "ask planner", callErr)
+			return
+		}
 	}
 	reply, err := kernel.ParsePlannerReply(raw)
 	if err != nil {
@@ -1061,7 +1067,7 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 	userPrompt := kernel.BuildRealignUserPrompt(planBlock, liveStatus, change)
 
 	client, modelID := at.ResolvePlannerClient()
-	if client == nil {
+	if client == nil && !(SandboxMode() && !SandboxRealLLM()) {
 		s.realignFailClosed(traderID, row, sess.Name, tradeDate, "no planner client")
 		c.JSON(200, gin.H{"status": "failed", "reason": "no_planner_client"})
 		return
@@ -1069,7 +1075,13 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 
 	// FAIL-CLOSED: any error or malformed reply → no proposal, plan untouched.
 	started := time.Now()
-	raw, callErr := client.CallWithMessages(kernel.AskPlannerSystemPrompt, userPrompt)
+	var raw string
+	var callErr error
+	if SandboxMode() && !SandboxRealLLM() {
+		raw = sandboxPlannerRaw(userPrompt) // canned, zero cost
+	} else {
+		raw, callErr = client.CallWithMessages(kernel.AskPlannerSystemPrompt, userPrompt)
+	}
 	latencyMs := time.Since(started).Milliseconds()
 	if callErr != nil {
 		s.realignFailClosed(traderID, row, sess.Name, tradeDate, "planner call failed: "+callErr.Error())
