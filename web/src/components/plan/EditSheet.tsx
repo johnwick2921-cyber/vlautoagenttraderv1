@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
 import { api } from '../../lib/api'
-import type { PlanLevelFact } from '../../lib/api/plan'
+import type { PlanLevelFact, RealignChange } from '../../lib/api/plan'
 import { LEVEL_TYPES, INSTRUCTION_VERBS, GRADES } from './vocab'
 import { fmtPrice } from './levelState'
 
@@ -24,7 +24,7 @@ interface Props {
   levelIndex?: number
   scenarioIds?: string[]
   onClose: () => void
-  onSaved: () => void // parent re-fetches so the card version-bumps
+  onSaved: (change?: RealignChange) => void // parent re-fetches + W13 re-align
 }
 
 function ChipRow({
@@ -147,7 +147,17 @@ export function EditSheet({
       }
       toast.success(tp('overlayApplied', language))
     }
-    onSaved()
+    // W13 — hand the planner exactly what changed (its NOTE included).
+    onSaved({
+      kind: isEdit ? 'edit-level' : 'add-level',
+      summary: `${isEdit ? 'changed' : 'added'} ${type || 'level'} @ ${priceNum}`,
+      price: priceNum,
+      label: isEdit ? level?.label : type,
+      grade,
+      instruction,
+      note,
+      scenario_tag: scenarioTag,
+    })
     onClose()
   }
 
@@ -166,7 +176,12 @@ export function EditSheet({
       return
     }
     toast.success(tp('overlayApplied', language))
-    onSaved()
+    onSaved({
+      kind: 'delete-level',
+      summary: `deleted ${level?.label ?? 'level'} @ ${level?.price ?? ''}`,
+      price: level?.price,
+      label: level?.label,
+    })
     onClose()
   }
 

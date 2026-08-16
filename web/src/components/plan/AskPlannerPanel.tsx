@@ -35,7 +35,7 @@ function useIsWide(threshold = 1200) {
   return wide
 }
 
-function PatchPreview({ patch }: { patch: string }) {
+export function PatchPreview({ patch }: { patch: string }) {
   let ops: PatchOp[] = []
   try {
     ops = JSON.parse(patch)

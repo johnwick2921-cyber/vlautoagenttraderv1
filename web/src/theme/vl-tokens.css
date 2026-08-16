@@ -98,3 +98,34 @@
     animation: none;
   }
 }
+
+/* W13 — a row flashes gold ONCE when an applied re-align changed it, and the
+   inline "reviewing" glyph spins. Both honor prefers-reduced-motion. */
+@keyframes vl-flash-gold {
+  0% {
+    background: var(--vl-gold-dim);
+  }
+  100% {
+    background: transparent;
+  }
+}
+[data-flash='1'] {
+  animation: vl-flash-gold 1.1s ease-out 1;
+}
+@keyframes vl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.vl-spin {
+  display: inline-block;
+  animation: vl-spin 1.1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-flash='1'] {
+    animation: none;
+  }
+  .vl-spin {
+    animation: none;
+  }
+}

@@ -257,6 +257,28 @@ export const planApi = {
     return { thread: [], kpi: EMPTY_KPI }
   },
 
+  // W13 — ask the planner to re-examine the whole plan after an owner edit.
+  // Never throws and never mutates: the response is a PROPOSAL the owner applies.
+  async realignPlan(
+    traderId: string,
+    change: RealignChange,
+    symbol = 'MNQ',
+    manual = false
+  ): Promise<RealignResponse> {
+    const res = await httpClient.request<RealignResponse>(
+      `${API_BASE}/plan/realign`,
+      {
+        method: 'POST',
+        data: { trader_id: traderId, symbol, manual, change },
+        silent: true,
+      }
+    )
+    if (!res.success || !res.data) {
+      return { status: 'failed', reason: res.message || 'request failed' }
+    }
+    return res.data
+  },
+
   async applyAsk(
     traderId: string,
     qaId: number,
@@ -326,6 +348,45 @@ export interface AskPlannerResponse {
   plan_version: number
   reply: AskPlannerReply
 }
+// W13 — plan re-alignment on owner edit. Always resolves; `status` drives the UI.
+export interface RealignChange {
+  kind: 'add-level' | 'edit-level' | 'delete-level' | 'bulk-add'
+  summary?: string
+  price?: number
+  label?: string
+  grade?: string
+  instruction?: string
+  note?: string
+  scenario_tag?: string
+  batch_count?: number
+}
+export type RealignStatus =
+  | 'proposal'
+  | 'no-change'
+  | 'skipped'
+  | 'debounced'
+  | 'capped'
+  | 'failed'
+export interface RealignResponse {
+  status: RealignStatus
+  qa_id?: number
+  plan_id?: string
+  plan_version?: number
+  would_become?: string
+  latency_ms?: number
+  cost_usd?: number
+  used?: number
+  cap?: number
+  reason?: string
+  reply?: {
+    evidence: string
+    point_class: string
+    verdict: string
+    summary: string
+    patch: string
+  }
+}
+
 export interface PlanQAMessage {
   id: number
   role: 'owner' | 'planner'

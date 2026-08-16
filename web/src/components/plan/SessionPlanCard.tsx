@@ -17,6 +17,9 @@ import { PlanMiniChart } from './PlanMiniChart'
 import { EditSheet } from './EditSheet'
 import { BulkAddSheet } from './BulkAddSheet'
 import { AskPlannerPanel } from './AskPlannerPanel'
+import { RealignPanel, RealignButton, type RealignState } from './RealignPanel'
+import { api } from '../../lib/api'
+import type { RealignChange } from '../../lib/api/plan'
 
 interface Props {
   plan: PlanToday | null
@@ -102,6 +105,31 @@ export function SessionPlanCard({
   }>({ open: false })
   const [askOpen, setAskOpen] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
+  // W13 — plan re-alignment after an owner edit.
+  const [realign, setRealign] = useState<RealignState>({ phase: 'idle' })
+  const [flash, setFlash] = useState(0) // bump → changed rows flash gold once
+
+  const runRealign = async (change: RealignChange, manual = false) => {
+    if (!traderId) return
+    setRealign({ phase: 'reviewing' })
+    const res = await api.realignPlan(traderId, change, symbol, manual)
+    switch (res.status) {
+      case 'proposal':
+        setRealign({ phase: 'proposal', res })
+        break
+      case 'no-change':
+        setRealign({ phase: 'no-change' })
+        break
+      case 'capped':
+        setRealign({ phase: 'capped' })
+        break
+      case 'failed':
+        setRealign({ phase: 'failed' })
+        break
+      default: // skipped / debounced → stay quiet, the batch is already covered
+        setRealign({ phase: 'idle' })
+    }
+  }
   const doorEnabled = !!traderId
 
   // ── non-plan states ──
@@ -286,7 +314,38 @@ export function SessionPlanCard({
         }
         onAdd={doorEnabled ? () => setEdit({ open: true }) : undefined}
         onBulkAdd={doorEnabled ? () => setBulkOpen(true) : undefined}
+        flashKey={flash}
       />
+
+      {/* W13 — re-align status / proposal, in place under the levels */}
+      {doorEnabled && (
+        <>
+          <RealignPanel
+            state={realign}
+            traderId={traderId}
+            symbol={symbol}
+            language={language}
+            onDismiss={() => setRealign({ phase: 'idle' })}
+            onApplied={() => {
+              setFlash((n) => n + 1)
+              onChanged?.()
+            }}
+          />
+          {realign.phase === 'idle' && (
+            <div className="px-3 pb-1">
+              <RealignButton
+                language={language}
+                onClick={() =>
+                  runRealign(
+                    { kind: 'edit-level', summary: 'manual re-align' },
+                    true
+                  )
+                }
+              />
+            </div>
+          )}
+        </>
+      )}
 
       {/* scenarios */}
       {doc.scenarios && doc.scenarios.length > 0 && (
@@ -325,7 +384,10 @@ export function SessionPlanCard({
             levelIndex={edit.index}
             scenarioIds={(doc.scenarios ?? []).map((s) => s.id)}
             onClose={() => setEdit({ open: false })}
-            onSaved={() => onChanged?.()}
+            onSaved={(change) => {
+              onChanged?.()
+              if (change) void runRealign(change)
+            }}
           />
           <BulkAddSheet
             open={bulkOpen}
@@ -333,7 +395,10 @@ export function SessionPlanCard({
             symbol={symbol}
             language={language}
             onClose={() => setBulkOpen(false)}
-            onSaved={() => onChanged?.()}
+            onSaved={(change) => {
+              onChanged?.()
+              if (change) void runRealign(change)
+            }}
           />
           <AskPlannerPanel
             open={askOpen}

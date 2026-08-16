@@ -332,6 +332,38 @@ export const planStrings = {
   vDefend: { en: 'DEFEND', zh: '坚持', id: 'PERTAHANKAN' },
   vConcede: { en: 'CONCEDE', zh: '让步', id: 'MENGALAH' },
   vMerge: { en: 'PROPOSE-MERGE', zh: '提议合并', id: 'USUL-GABUNG' },
+  // W13 — plan re-alignment on owner edit
+  realignReviewing: {
+    en: 'planner reviewing your change…',
+    zh: '规划器正在复核你的修改…',
+    id: 'planner meninjau perubahan Anda…',
+  },
+  realignNoChange: {
+    en: 'planner: no plan change needed',
+    zh: '规划器：计划无需改动',
+    id: 'planner: rencana tidak perlu diubah',
+  },
+  realignProposal: {
+    en: 'Planner proposes a plan change',
+    zh: '规划器建议修改计划',
+    id: 'Planner mengusulkan perubahan rencana',
+  },
+  realignWouldBecome: { en: 'would become', zh: '将变为', id: 'akan menjadi' },
+  realignButton: {
+    en: 'Re-align plan',
+    zh: '重新对齐计划',
+    id: 'Selaraskan ulang',
+  },
+  realignCapped: {
+    en: 'auto re-aligns used up — tap Re-align plan',
+    zh: '自动对齐次数已用完 — 点击重新对齐计划',
+    id: 'auto re-align habis — ketuk Selaraskan ulang',
+  },
+  realignFailed: {
+    en: 'planner unavailable — plan unchanged',
+    zh: '规划器不可用 — 计划未改动',
+    id: 'planner tidak tersedia — rencana tidak berubah',
+  },
   applyMerge: { en: 'Apply merge', zh: '应用合并', id: 'Terapkan gabungan' },
   keepAsIs: { en: 'Keep as-is', zh: '保持不变', id: 'Biarkan' },
   patchNote: {

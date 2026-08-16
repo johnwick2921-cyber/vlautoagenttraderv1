@@ -126,12 +126,15 @@ export function ZoneTable({
   onEdit,
   onAdd,
   onBulkAdd,
+  flashKey = 0,
 }: {
   facts: PlanLevelFact[]
   language: Language
   onEdit?: (fact: PlanLevelFact, index: number) => void
   onAdd?: () => void
   onBulkAdd?: () => void
+  /** W13 — bump to flash the rows gold once after an applied re-align. */
+  flashKey?: number
 }) {
   const { ghosted, flagged } = detectConflicts(facts)
   return (
@@ -189,7 +192,8 @@ export function ZoneTable({
       ) : (
         facts.map((f, i) => (
           <ZoneRow
-            key={`${f.label}-${f.price}-${i}`}
+            key={`${f.label}-${f.price}-${i}-${flashKey}`}
+            data-flash={flashKey > 0 ? '1' : undefined}
             fact={f}
             index={i}
             language={language}

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import type { Language } from '../../i18n/translations'
+import type { RealignChange } from '../../lib/api/plan'
 import { tp } from '../../i18n/plan-translations'
 import { api } from '../../lib/api'
 import { parseBulkLevels } from './bulkParse'
@@ -17,7 +18,7 @@ interface Props {
   symbol: string
   language: Language
   onClose: () => void
-  onSaved: () => void
+  onSaved: (change?: RealignChange) => void
 }
 
 export function BulkAddSheet({
@@ -68,7 +69,15 @@ export function BulkAddSheet({
       toast.success(tp('overlayApplied', language), {
         description: `${ok}/${rows.length}`,
       })
-      onSaved()
+      // W13 — ONE re-examination for the whole batch, never per row.
+      onSaved({
+        kind: 'bulk-add',
+        summary: `bulk-added ${ok} level(s): ${rows
+          .slice(0, 6)
+          .map((r) => `${r.type || 'level'} ${r.price}`)
+          .join(' · ')}`,
+        batch_count: ok,
+      })
       onClose()
     } else {
       toast.error(tp('saveFailed', language), { description: firstErr })
