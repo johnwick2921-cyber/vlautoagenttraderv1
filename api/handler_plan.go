@@ -561,8 +561,13 @@ func (s *Server) handlePlanAsk(c *gin.Context) {
 		SafeNotFound(c, "Active plan")
 		return
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	// Ask the planner about plan_final — the doc the OWNER sees — not the base row.
+	// This handler used to unmarshal row.Doc directly while handlePlanToday folded
+	// overlays and handlePlanRealign used resolvePlanFinal, so every owner edit was
+	// invisible here: Ask-Planner defended levels the owner had already changed or
+	// deleted. Same resolution as the card and re-align now, so all three agree.
+	doc, okDoc := s.resolvePlanFinal(row)
+	if !okDoc {
 		SafeInternalError(c, "parse plan", fmt.Errorf("bad plan doc"))
 		return
 	}
