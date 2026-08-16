@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"nofx/calendar"
@@ -237,12 +238,50 @@ func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
 		fmt.Sprintf("%s plan died — sitting out", session), reason)
 }
 
+// plannerReadInFlight claims a planner read for one (trade_date, session) for as
+// long as the AI call is running. W16/R6.
+//
+// The dedupe in maybeRunSessionReads is `GetLatestPlanForSession(...) == nil`,
+// but that check and the AppendPlan that satisfies it are separated by a FULL AI
+// round trip (up to 3 attempts — seconds to minutes). Nothing held a claim across
+// that window.
+//
+// Intra-trader this was safe: each trader drives one sequential loop goroutine
+// (auto_trader.go:776-790), so its cycles cannot overlap. The exposure is
+// CROSS-TRADER: plan identity is MakePlanID(tradeDate, session) — session-GLOBAL,
+// not per-trader — so two day-plan traders on the same symbol both see "no plan
+// yet" at the read time, both pay for a full planner call, and both append a
+// version of the same session's plan. That is the live configuration today (two
+// MNQ day-plan traders).
+//
+// All traders share one process, so a process-wide claim covers both axes. The
+// key deliberately excludes the trader id: two traders reading the SAME session
+// is exactly what must be collapsed to one call.
+var plannerReadInFlight sync.Map // "tradeDate:session" -> struct{}
+
+// claimPlannerRead returns false when another read for this session is already
+// running. The winner must call releasePlannerRead.
+func claimPlannerRead(key string) bool {
+	_, loaded := plannerReadInFlight.LoadOrStore(key, struct{}{})
+	return !loaded
+}
+
+func releasePlannerRead(key string) { plannerReadInFlight.Delete(key) }
+
 // runPlannerRead assembles the input package, calls the pinned planner client,
 // and persists the plan (or a fail-closed NO-TRADE plan).
 func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
+	// W16/R6 — one planner call per (trade_date, session) at a time. Claimed here
+	// rather than at the call sites so no future caller can forget it.
+	key := store.MakePlanID(tradeDate, session)
+	if !claimPlannerRead(key) {
+		at.logInfof("🗓️ planner read for %s already in flight — skipping duplicate call.", key)
+		return
+	}
+	defer releasePlannerRead(key)
 	client, modelID := at.resolvePlannerClient()
 	if client == nil {
 		at.logErrorf("🗓️ planner: no client resolved for %s %s", tradeDate, session)
