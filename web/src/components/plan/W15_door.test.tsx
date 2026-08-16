@@ -73,3 +73,22 @@ describe('SessionPlanCard · owner door is scoped to the live session', () => {
     expect(screen.queryByTestId('sibling-session-readonly')).toBeNull()
   })
 })
+
+// A fail-closed / re-plans-exhausted plan writes lifecycle='no_trade' — the ONE
+// non-active value production ever writes. It was missing from LifecycleChip's
+// map, so the `?? map.active` fallback painted it GOLD "ACTIVE": a plan sitting
+// the session out looked live.
+describe('LifecycleChip · no_trade must not look active', () => {
+  it('renders NO-TRADE, not ACTIVE', async () => {
+    const { LifecycleChip } = await import('./chips')
+    render(<LifecycleChip lifecycle="no_trade" language="en" />)
+    expect(screen.getByText('NO-TRADE')).toBeTruthy()
+    expect(screen.queryByText('ACTIVE')).toBeNull()
+  })
+
+  it('still renders ACTIVE for an active plan', async () => {
+    const { LifecycleChip } = await import('./chips')
+    render(<LifecycleChip lifecycle="active" language="en" />)
+    expect(screen.getByText('ACTIVE')).toBeTruthy()
+  })
+})

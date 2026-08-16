@@ -232,12 +232,19 @@ export function LifecycleChip({
         | 'lifecycleExpired'
         | 'lifecycleDied'
         | 'lifecycleSuperseded'
+        | 'lifecycleNoTrade'
     }
   > = {
     active: { color: 'var(--vl-gold)', key: 'lifecycleActive' },
     expired: { color: 'var(--vl-faint)', key: 'lifecycleExpired' },
     died: { color: 'var(--vl-short)', key: 'lifecycleDied' },
     superseded: { color: 'var(--vl-faint)', key: 'lifecycleSuperseded' },
+    // 'no_trade' is written by the fail-closed / re-plans-exhausted path
+    // (trader/auto_trader_planner.go:227). It was missing from this map, so the
+    // `?? map.active` fallback painted a NO-TRADE plan with the GOLD "ACTIVE"
+    // chip — the one lifecycle value production actually writes, displayed as its
+    // opposite. A plan that is sitting the session out must never look live.
+    no_trade: { color: 'var(--vl-short)', key: 'lifecycleNoTrade' },
   }
   const m = map[lifecycle] ?? map.active
   return (

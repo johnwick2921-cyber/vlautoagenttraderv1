@@ -27,6 +27,7 @@ export const planStrings = {
   lifecycleExpired: { en: 'EXPIRED', zh: '已过期', id: 'KEDALUWARSA' },
   lifecycleDied: { en: 'DIED', zh: '已失效', id: 'MATI' },
   lifecycleSuperseded: { en: 'SUPERSEDED', zh: '已替换', id: 'DIGANTI' },
+  lifecycleNoTrade: { en: 'NO-TRADE', zh: '禁止交易', id: 'TANPA TRADE' },
 
   // ── card states ──
   noPlanYet: { en: 'No plan yet', zh: '尚无计划', id: 'Belum ada rencana' },
