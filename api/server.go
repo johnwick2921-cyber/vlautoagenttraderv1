@@ -131,10 +131,16 @@ func (s *Server) setupRoutes() {
 		s.route(api, "POST", "/strategies/estimate-tokens", "Estimate token usage for a strategy config", s.handleEstimateTokens)
 
 		// Authentication related routes (no authentication required)
-		s.route(api, "POST", "/register", "Register new user", s.handleRegister)
+		s.route(api, "POST", "/register", "Register new user (first-time setup only)", s.handleRegister)
 		s.route(api, "POST", "/login", "User login, returns JWT token", s.handleLogin)
-		s.route(api, "POST", "/reset-password", "Reset password", s.handleResetPassword)
-		s.route(api, "POST", "/reset-account", "Clear all users and reset system to allow re-registration", s.handleResetAccount)
+		// SECURITY (P0 S2): /reset-password and /reset-account used to live HERE,
+		// unauthenticated. reset-password reset ANY account from an email alone;
+		// reset-account deleted every user, and a follow-up /register then adopted
+		// the orphaned credential rows. Together: unauthenticated account takeover.
+		// reset-password is now permanently disabled (no mail/token path exists to
+		// make it safe); reset-account moved into the protected group below and is
+		// additionally env-gated + confirm-token gated.
+		s.route(api, "POST", "/reset-password", "DISABLED — always 410 (no verification path)", s.handleResetPasswordDisabled)
 
 		// Routes requiring authentication
 		protected := api.Group("/", s.authMiddleware())
@@ -153,6 +159,14 @@ func (s *Server) setupRoutes() {
 			s.routeWithSchema(protected, "PUT", "/user/password", "Change current user password",
 				`Body: {"new_password":"<string, min 8 chars>"}`,
 				s.handleChangePassword)
+
+			// SECURITY (P0 S2): destructive account reset — JWT + env flag +
+			// confirm token. Deletes every user/trader/strategy, so it is OFF
+			// unless ALLOW_ACCOUNT_RESET=1 is set in the environment.
+			s.routeWithSchema(protected, "POST", "/reset-account",
+				"DESTRUCTIVE — delete all users/traders/strategies (env-gated, confirm-token required)",
+				`Body: {"confirm":"RESET-ALL-DATA"}. Requires ALLOW_ACCOUNT_RESET=1 in the server environment.`,
+				s.handleResetAccount)
 
 			// Server IP query (requires authentication, for whitelist configuration)
 			s.route(protected, "GET", "/server-ip", "Get server public IP (for exchange whitelist)", s.handleGetServerIP)
