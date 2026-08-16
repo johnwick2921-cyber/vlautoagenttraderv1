@@ -64,7 +64,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		symbol = "MNQ"
 	}
 
-	reg := kernel.DefaultSessionRegistry()
+	reg := s.planRegistry()
 	now := time.Now()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
@@ -354,7 +354,7 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 	// span can't interleave with another writer).
 	planOverlayMu.Lock()
 	defer planOverlayMu.Unlock()
-	reg := kernel.DefaultSessionRegistry()
+	reg := s.planRegistry()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
 	if !ok || !sess.Enabled {
@@ -434,7 +434,7 @@ func (s *Server) handlePlanAsk(c *gin.Context) {
 
 	// Resolve the SAME active plan the card shows.
 	now := time.Now()
-	reg := kernel.DefaultSessionRegistry()
+	reg := s.planRegistry()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
 	if !ok || !sess.Enabled {
@@ -524,7 +524,7 @@ func (s *Server) handlePlanThread(c *gin.Context) {
 	if planID == "" {
 		// default to today's active plan id
 		now := time.Now()
-		reg := kernel.DefaultSessionRegistry()
+		reg := s.planRegistry()
 		tradeDate := now.In(planChicago()).Format("2006-01-02")
 		if sess, ok := reg.ActiveSession(now); ok {
 			planID = store.MakePlanID(tradeDate, sess.Name)
@@ -583,7 +583,7 @@ func (s *Server) handlePlanAskApply(c *gin.Context) {
 	// from an earlier (rolled/expired) plan must not silently patch a different
 	// active plan.
 	now := time.Now()
-	reg := kernel.DefaultSessionRegistry()
+	reg := s.planRegistry()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
 	if !ok || !sess.Enabled || store.MakePlanID(tradeDate, sess.Name) != msg.PlanID {
@@ -869,4 +869,21 @@ func (s *Server) handlePlanApprove(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"approved": true, "session_day": dayKey,
 		"note": "entries flow for this CME session-day"})
+}
+
+// planRegistry returns the EFFECTIVE session registry for the read-side plan
+// APIs: the admin-edited registry stored in system_config (the same source the
+// trader gates read since W8), falling back to the shipped default when the key
+// is absent or malformed. Before this, every /api/plan/* handler hardcoded
+// DefaultSessionRegistry, so an admin who edited the registry got a card, an
+// overlay gate and an Ask-Planner scope running on a DIFFERENT clock than the
+// executor — two clocks, silently disagreeing (design-conformance audit, D7).
+// Empty key → byte-identical to the previous behavior.
+func (s *Server) planRegistry() kernel.SessionRegistry {
+	if s.store == nil {
+		return kernel.DefaultSessionRegistry()
+	}
+	raw, _ := s.store.GetSystemConfig(kernel.SessionRegistryConfigKey)
+	reg, _ := kernel.LoadSessionRegistry(raw) // fail-safe to the default
+	return reg
 }

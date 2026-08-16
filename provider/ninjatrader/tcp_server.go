@@ -18,6 +18,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -399,14 +400,28 @@ type timedSignal struct {
 	timestamp time.Time
 }
 
-// NewTCPServer constructs a server bound to TCPListenAddr. The listener is
+// ListenAddr returns the NT8 bridge listen address: TCPListenAddr unless
+// NT_TCP_LISTEN_ADDR overrides it. The listener is a process-singleton, so a
+// SECOND backend on the same host (demo preview, sandbox, integration test)
+// could never create a NinjaTrader trader — "bind: address already in use"
+// failed trader creation, which then 404s every /api/plan/* call for it. The
+// override lets a second instance bind elsewhere; unset = byte-identical
+// behavior for the live bot.
+func ListenAddr() string {
+	if v := strings.TrimSpace(os.Getenv("NT_TCP_LISTEN_ADDR")); v != "" {
+		return v
+	}
+	return TCPListenAddr
+}
+
+// NewTCPServer constructs a server bound to ListenAddr(). The listener is
 // not opened until Start. Pass nil to use the default slog logger.
 func NewTCPServer(logger *slog.Logger) *TCPServer {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &TCPServer{
-		addr:          TCPListenAddr,
+		addr:          ListenAddr(),
 		fillCh:        make(chan FillPayload, fillChannelBuffer),
 		closeCh:       make(chan PositionClosePayload, fillChannelBuffer),
 		rejectCh:      make(chan PositionCloseRejectedPayload, fillChannelBuffer),
