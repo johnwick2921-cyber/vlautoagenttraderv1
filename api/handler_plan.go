@@ -221,7 +221,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		// (system_config "scenario_status:<plan_id>"); absent in production → the
 		// FE keeps its current fallback. The sandbox seeds it so all four states
 		// are visible. Replace the source when the executor computes it for real.
-		"scenario_status": s.scenarioStatus(row.PlanID),
+		"scenario_status": scenarioStatusForLifecycle(s.scenarioStatus(row.PlanID), row.Lifecycle, doc),
 	})
 }
 
@@ -1370,8 +1370,32 @@ func estimateRealignCostUSD(prompt, reply string) float64 {
 	return (inTok*inPerMTok + outTok*outPerMTok) / 1_000_000
 }
 
+// scenarioStatusForLifecycle projects the stored statuses onto the PLAN's
+// lifecycle. W16/R1 — a plan that is no longer active has no armed plays, so a
+// non-active lifecycle overrides every scenario to "expired" rather than leaving
+// yesterday's dots looking live. Scenarios with no stored status stay absent.
+func scenarioStatusForLifecycle(m map[string]string, lifecycle string, doc kernel.PlanDoc) map[string]string {
+	if strings.TrimSpace(lifecycle) == "" || lifecycle == "active" {
+		return m
+	}
+	out := make(map[string]string, len(doc.Scenarios))
+	for _, sc := range doc.Scenarios {
+		out[sc.ID] = kernel.ScenarioExpired
+	}
+	if len(out) == 0 {
+		return m
+	}
+	return out
+}
+
 // scenarioStatus reads the stored per-scenario live status map for a plan, or nil.
-// See the note at its call site: this is a passthrough, not a computation.
+//
+// W16/R1 — this is no longer a sandbox-only passthrough: the trader writes the
+// map every cycle from the SAME P0.4 facts the executor sees
+// (trader/auto_trader_levelstate.go recordScenarioState → kernel/scenario_state.go).
+// A scenario whose anchor level could not be resolved is deliberately ABSENT
+// from the map, and the card's fallback covers it — saying nothing beats
+// inventing a status.
 func (s *Server) scenarioStatus(planID string) map[string]string {
 	if s.store == nil {
 		return nil

@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"encoding/json"
 	"time"
 
 	"nofx/kernel"
@@ -115,5 +116,74 @@ func gradeToFreshness(grade string) string {
 		return store.FreshnessC
 	default:
 		return store.FreshnessA
+	}
+}
+
+// recordScenarioState (W16/R1) persists each scenario's live status for the
+// active plan, so the card can stop painting every play "armed".
+//
+// Runs beside recordLevelState on the same cadence and behind the same gates.
+// Storage is the system_config key the API already reads
+// ("scenario_status:<plan_id>"), whose only writer until now was the sandbox
+// seeder — so this needs no new table, no migration, and no API change: the
+// existing passthrough starts returning real data the moment this writes.
+//
+// It NEVER touches the executor prompt (same discipline as recordLevelState) —
+// scenario status is a reporting surface, so no golden can move.
+//
+// Scenarios whose anchor level cannot be resolved are OMITTED from the map.
+// The FE falls back for a missing id, which is the honest outcome: better to
+// keep saying nothing than to invent a status. If NO scenario resolves, the key
+// is not written at all.
+func (at *AutoTrader) recordScenarioState() {
+	if !at.dayPlanEnabled() || at.store == nil || kernel.ActivePlanProvider == nil {
+		return
+	}
+	symbol := at.config.NinjaTraderSymbol
+	if symbol == "" || market.FuturesBarsProvider == nil {
+		return
+	}
+	plan := kernel.ActivePlanProvider(symbol)
+	if plan == nil {
+		return
+	}
+	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	if len(bars) == 0 {
+		return
+	}
+	now := time.Now()
+	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now)
+	if price <= 0 {
+		return
+	}
+	rule := at.acceptanceRuleFor(at.activeSessionName(now))
+
+	// ActivePlanProvider only ever returns a live plan, so planLive is true here;
+	// the expired projection is the API's job when it serves a rolled plan.
+	statuses, evals := kernel.EvaluatePlanScenarios(
+		plan.Doc, bars, price, dATR, at.proximityFilterATR(), rule, true, now.UnixMilli())
+
+	if len(statuses) == 0 {
+		// Nothing resolvable — say nothing rather than write an empty verdict.
+		return
+	}
+	blob, err := json.Marshal(statuses)
+	if err != nil {
+		return
+	}
+	key := "scenario_status:" + store.MakePlanID(plannerTradeDateCT(now), plan.Session)
+	if err := at.store.SetSystemConfig(key, string(blob)); err != nil {
+		at.logWarnf("🎯 scenario-state write failed for %s: %v", key, err)
+		return
+	}
+	if at.scenarioStateLog != string(blob) {
+		at.scenarioStateLog = string(blob)
+		for _, e := range evals {
+			if e.HasAnchor {
+				at.logInfof("🎯 scenario %s → %s @ %.2f (%s)", e.ID, e.Status, e.Anchor, e.Reason)
+			} else {
+				at.logInfof("🎯 scenario %s → (no status) %s", e.ID, e.Reason)
+			}
+		}
 	}
 }

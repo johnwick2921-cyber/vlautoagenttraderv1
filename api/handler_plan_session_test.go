@@ -71,3 +71,29 @@ func TestW15PlanRulesFallsBackToShippedDefaults(t *testing.T) {
 		}
 	}
 }
+
+// W16/R1 — a plan that is no longer active has no armed plays.
+func TestW16ScenarioStatusExpiresWithThePlan(t *testing.T) {
+	doc := kernel.PlanDoc{Scenarios: []kernel.PlanScenario{{ID: "S1"}, {ID: "S2"}}}
+	stored := map[string]string{"S1": kernel.ScenarioArmed, "S2": kernel.ScenarioTriggered}
+
+	// active → untouched
+	if got := scenarioStatusForLifecycle(stored, "active", doc); got["S1"] != kernel.ScenarioArmed {
+		t.Fatalf("an active plan must keep its live statuses, got %v", got)
+	}
+	// empty lifecycle behaves as active (back-compat)
+	if got := scenarioStatusForLifecycle(stored, "", doc); got["S2"] != kernel.ScenarioTriggered {
+		t.Fatalf("an unset lifecycle must not expire anything, got %v", got)
+	}
+	// rolled / dead → every scenario expires
+	for _, lc := range []string{"expired", "died", "superseded", "no_trade"} {
+		got := scenarioStatusForLifecycle(stored, lc, doc)
+		if got["S1"] != kernel.ScenarioExpired || got["S2"] != kernel.ScenarioExpired {
+			t.Errorf("lifecycle %q must expire every scenario, got %v", lc, got)
+		}
+	}
+	// a doc with no scenarios cannot invent rows
+	if got := scenarioStatusForLifecycle(stored, "expired", kernel.PlanDoc{}); len(got) != len(stored) {
+		t.Errorf("no scenarios in the doc → fall back to the stored map, got %v", got)
+	}
+}

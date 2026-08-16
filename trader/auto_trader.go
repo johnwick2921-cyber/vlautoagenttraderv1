@@ -376,6 +376,9 @@ type AutoTrader struct {
 	// transition events. nil = unobserved (a restart starts here → no spurious
 	// edge). Touched only from runCycle (single goroutine).
 	nightPrev *bool
+	// W16/R1 — last scenario-status blob written, so the per-scenario log line
+	// fires on CHANGE rather than every cycle.
+	scenarioStateLog string
 
 	// P5.5 — the last entry's plan citation, captured in recordPlanCitation and
 	// consumed once by the very next position-open stamp (single-goroutine loop).

@@ -141,6 +141,11 @@ func (at *AutoTrader) runCycle() error {
 	// dormant; idempotent (EnsureLevel preserves prior state).
 	at.recordLevelState()
 
+	// W16/R1 — SCENARIO-STATE WRITER: derive each scenario's live status from the
+	// same P0.4 facts and persist it, so the card stops painting every play
+	// "armed". Reporting only — never touches the prompt. Gated → dormant.
+	at.recordScenarioState()
+
 	// P5.6 — WEEKLY matched-random eval (fixed cadence, never nightly re-peek):
 	// on Sundays, freeze one honesty-gate snapshot per ISO week. Idempotent
 	// (first-writer-wins across traders); gated → dormant.
