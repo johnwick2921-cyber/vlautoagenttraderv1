@@ -474,6 +474,16 @@ func (at *AutoTrader) runCycle() error {
 			at.logErrorf("❌ Failed to execute decision (%s %s): %v", d.Symbol, d.Action, err)
 			actionRecord.Error = err.Error()
 			record.ExecutionLog = append(record.ExecutionLog, fmt.Sprintf("❌ %s %s failed: %v", d.Symbol, d.Action, err))
+		} else if actionRecord.Error != "" {
+			// A GATE REFUSED IT. Every entry gate in executeDecisionWithRecord sets
+			// Success=false + Error="<gate>: <reason>" and returns nil — a refusal is
+			// not an error. This branch used to be the plain else below, so it
+			// overwrote Success with true and logged "✓ succeeded": a blocked entry
+			// was recorded, and rendered in the UI, as an executed one. That made
+			// "why was my entry refused?" unanswerable and every gate invisible.
+			// Leave Success=false and say what stopped it.
+			record.ExecutionLog = append(record.ExecutionLog,
+				fmt.Sprintf("⛔ %s %s refused: %s", d.Symbol, d.Action, actionRecord.Error))
 		} else {
 			actionRecord.Success = true
 			record.ExecutionLog = append(record.ExecutionLog, fmt.Sprintf("✓ %s %s succeeded", d.Symbol, d.Action))
