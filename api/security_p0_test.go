@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	"nofx/config"
 	"nofx/store"
 
 	"github.com/gin-gonic/gin"
@@ -327,5 +328,50 @@ func TestMaskSensitiveStringHidesTheMiddle(t *testing.T) {
 	}
 	if got := MaskSensitiveString(""); got != "" {
 		t.Fatalf("empty stays empty, got %q", got)
+	}
+}
+
+// --- S4: the RSA decryption oracle is closed --------------------------------
+
+// TestCryptoDecryptIsNotPublic locks the two guards on POST /api/crypto/decrypt.
+// It used to sit on the PUBLIC group with no feature check, so anyone reaching
+// the port could have the server decrypt arbitrary payloads with its long-term
+// RSA private key — the same key that protects exchange credentials in transit.
+func TestCryptoDecryptIsNotPublic(t *testing.T) {
+	src, err := os.ReadFile("server.go")
+	if err != nil {
+		t.Fatalf("read server.go: %v", err)
+	}
+	text := string(src)
+
+	if strings.Contains(text, `api.POST("/crypto/decrypt"`) {
+		t.Error("REGRESSION: /crypto/decrypt is registered on the PUBLIC api group")
+	}
+	if !strings.Contains(text, `protected.POST("/crypto/decrypt"`) {
+		t.Error("/crypto/decrypt is not registered on the protected group")
+	}
+}
+
+// TestCryptoDecryptRefusedWhenTransportEncryptionOff proves the handler's own
+// guard, independent of routing: with the feature off (the live default) it must
+// refuse before touching the private key.
+func TestCryptoDecryptRefusedWhenTransportEncryptionOff(t *testing.T) {
+	config.Init() // TRANSPORT_ENCRYPTION unset in the test env → false
+	if config.Get().TransportEncryption {
+		t.Skip("TRANSPORT_ENCRYPTION is enabled in this environment")
+	}
+
+	h := &CryptoHandler{}
+	router := gin.New()
+	router.POST("/api/crypto/decrypt", h.HandleDecryptSensitiveData)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/crypto/decrypt",
+		strings.NewReader(`{"ciphertext":"x","wrapped_key":"y","iv":"z"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 when transport encryption is off, got %d (%s)", rec.Code, rec.Body.String())
 	}
 }

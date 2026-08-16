@@ -106,7 +106,8 @@ func (s *Server) setupRoutes() {
 		// Crypto related endpoints (no authentication required, not exposed to bot)
 		api.GET("/crypto/config", s.cryptoHandler.HandleGetCryptoConfig)
 		api.GET("/crypto/public-key", s.cryptoHandler.HandleGetPublicKey)
-		api.POST("/crypto/decrypt", s.cryptoHandler.HandleDecryptSensitiveData)
+		// NOTE: POST /crypto/decrypt was here (public). It is a decryption oracle
+		// for the server's RSA key — moved into the protected group below (P0 S4).
 
 		// Public competition data (no authentication required)
 		s.route(api, "GET", "/traders", "Public trader list", s.handlePublicTraderList)
@@ -159,6 +160,10 @@ func (s *Server) setupRoutes() {
 			s.routeWithSchema(protected, "PUT", "/user/password", "Change current user password",
 				`Body: {"new_password":"<string, min 8 chars>"}`,
 				s.handleChangePassword)
+
+			// SECURITY (P0 S4): RSA decryption oracle — JWT + only when transport
+			// encryption is actually enabled (the handler re-checks).
+			protected.POST("/crypto/decrypt", s.cryptoHandler.HandleDecryptSensitiveData)
 
 			// SECURITY (P0 S2): destructive account reset — JWT + env flag +
 			// confirm token. Deletes every user/trader/strategy, so it is OFF
