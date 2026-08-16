@@ -52,15 +52,23 @@ function Toggle({
   on,
   onChange,
   disabled,
+  testId,
+  ariaLabel,
 }: {
   on: boolean
   onChange: (v: boolean) => void
   disabled?: boolean
+  /** stable hook for tests/Playwright */
+  testId?: string
+  /** accessible name — a bare role=switch announces as "switch" with no label */
+  ariaLabel?: string
 }) {
   return (
     <button
       role="switch"
       aria-checked={on}
+      data-testid={testId}
+      aria-label={ariaLabel}
       disabled={disabled}
       onClick={() => !disabled && onChange(!on)}
       style={{
@@ -234,6 +242,16 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
       x.session === s ? { ...x, [field]: undefined } : x
     )
     update('sessions', list)
+  }
+
+  // Mirrors trader.sessionRunnable: an explicit per-session enable wins; otherwise
+  // inherit the registry default AND the sessions_enabled subset (default [NY]).
+  const sessionRunnableUI = (s: SessionName): boolean => {
+    const ov = cfg.sessions?.find((x) => x.session === s)
+    if (ov?.enable !== undefined) return ov.enable
+    const band = SESSION_BANDS.find((b) => b.name === s)
+    const subset = cfg.sessions_enabled ?? ['NY']
+    return !!band?.enabled && subset.some((x) => x.toUpperCase() === s)
   }
 
   // planner-reads multiselect: toggle a TF in/out, preserving PLANNER_TFS order.
@@ -453,32 +471,57 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                   borderRadius: 'var(--vl-radius-inner)',
                 }}
               >
-                <button
-                  onClick={() => setOpenSession(isOpen ? null : s)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5"
-                  aria-expanded={isOpen}
-                  disabled={bodyDisabled}
-                >
-                  <span
-                    className="text-[11px] font-semibold uppercase tracking-wide"
-                    style={{ color: 'var(--vl-ivory)' }}
+                <div className="w-full flex items-center gap-2 px-2.5 py-1.5">
+                  {/* PART A — the per-session ENABLE toggle. Explicit ON/OFF is
+                      authoritative for this strategy (🔸override); clearing it
+                      returns the row to ⚪inherit (registry + sessions_enabled).
+                      ASIA/LONDON inherit OFF, so they stay off until switched on. */}
+                  <Toggle
+                    testId={`session-enable-${s}`}
+                    ariaLabel={`${s} session enabled`}
+                    on={sessionRunnableUI(s)}
+                    onChange={(on) => setSessionField(s, 'enable', on)}
+                    disabled={bodyDisabled}
+                  />
+                  <button
+                    onClick={() => setOpenSession(isOpen ? null : s)}
+                    className="flex-1 flex items-center justify-between"
+                    aria-expanded={isOpen}
+                    disabled={bodyDisabled}
                   >
-                    {tp(
-                      s === 'ASIA'
-                        ? 'sessionAsia'
-                        : s === 'LONDON'
-                          ? 'sessionLondon'
-                          : 'sessionNY',
-                      language
-                    )}
-                  </span>
-                  <span
-                    className="text-[10px]"
-                    style={{ color: 'var(--vl-faint)' }}
-                  >
-                    {isOpen ? '▾' : '▸'}
-                  </span>
-                </button>
+                    <span
+                      className="text-[11px] font-semibold uppercase tracking-wide"
+                      style={{ color: 'var(--vl-ivory)' }}
+                    >
+                      {tp(
+                        s === 'ASIA'
+                          ? 'sessionAsia'
+                          : s === 'LONDON'
+                            ? 'sessionLondon'
+                            : 'sessionNY',
+                        language
+                      )}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {ov?.enable !== undefined && (
+                        <span
+                          data-testid={`session-enable-chip-${s}`}
+                          className="text-[9px]"
+                          style={{ color: 'var(--vl-gold)' }}
+                          title="explicit override — clear to inherit"
+                        >
+                          🔸
+                        </span>
+                      )}
+                      <span
+                        className="text-[10px]"
+                        style={{ color: 'var(--vl-faint)' }}
+                      >
+                        {isOpen ? '▾' : '▸'}
+                      </span>
+                    </span>
+                  </button>
+                </div>
                 {isOpen && (
                   <div className="px-2.5 pb-2 flex flex-col gap-1">
                     {/* ACTIVE windows (killzones, spec wording) */}

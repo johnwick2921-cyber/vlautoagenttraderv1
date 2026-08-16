@@ -81,6 +81,41 @@ func (at *AutoTrader) sessionEnabledForStrategy(session string) bool {
 	return false
 }
 
+// sessionRunnable resolves whether THIS strategy runs a session, combining the two
+// enable layers the spec defines, with the inherit/override model the accordion
+// chips already show:
+//
+//	EXPLICIT per-session override (sessions[].enable) → authoritative. 🔸override
+//	otherwise → inherit: the admin registry's Enabled AND the sessions_enabled
+//	                     subset (default [NY]).                            ⚪inherit
+//
+// Before this, the read scheduler ANDed the registry flag in unconditionally, so a
+// strategy-level "turn ASIA on" could never take effect — the hardcoded
+// DefaultSessionRegistry (ASIA/LONDON false) vetoed it forever. That is what made
+// the session toggle dead on arrival. The registry still owns the CLOCK (window /
+// read / flat / killzones) and still supplies the default; an explicit owner choice
+// now wins for that strategy.
+//
+// Returns (runnable, why) — why is a short reason for the gate log when false.
+func (at *AutoTrader) sessionRunnable(s *kernel.SessionDef) (bool, string) {
+	if s == nil {
+		return false, "no session"
+	}
+	if ov := at.sessionOverride(s.Name); ov != nil && ov.Enable != nil {
+		if *ov.Enable {
+			return true, ""
+		}
+		return false, s.Name + " switched off for this strategy"
+	}
+	if !s.Enabled {
+		return false, s.Name + " not enabled in the session registry"
+	}
+	if !at.sessionEnabledForStrategy(s.Name) {
+		return false, s.Name + " not in this strategy's sessions_enabled"
+	}
+	return true, ""
+}
+
 // proximityFilterATR is the level activation half-width in daily-ATR multiples
 // (day-trade lock). Valid 0.5–3.0; anything else → the default 1.5.
 func (at *AutoTrader) proximityFilterATR() float64 {

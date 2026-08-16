@@ -78,3 +78,96 @@ describe('DayPlanEditor', () => {
     expect(levels.disabled).toBe(true)
   })
 })
+
+// PART A — the reported bug: no enable toggle on ANY session row. These lock the
+// fix: a toggle on every row, defaults matching the resolver, and a flip that
+// writes the per-session `enable` override (the field the Go gates read).
+describe('DayPlanEditor · session enable toggles', () => {
+  it('renders an enable toggle on ALL THREE session rows', () => {
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    for (const s of ['NY', 'ASIA', 'LONDON']) {
+      const el = screen.getByTestId(`session-enable-${s}`)
+      expect(el).toBeTruthy()
+      expect(el.getAttribute('role')).toBe('switch')
+      // accessible name (a bare role=switch announces as just "switch")
+      expect(el.getAttribute('aria-label')).toContain(s)
+    }
+  })
+
+  it('defaults mirror the Go resolver: NY on, ASIA/LONDON off', () => {
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(
+      screen.getByTestId('session-enable-NY').getAttribute('aria-checked')
+    ).toBe('true')
+    expect(
+      screen.getByTestId('session-enable-ASIA').getAttribute('aria-checked')
+    ).toBe('false')
+    expect(
+      screen.getByTestId('session-enable-LONDON').getAttribute('aria-checked')
+    ).toBe('false')
+  })
+
+  it('flipping ASIA on writes sessions[].enable = true (what the gates read)', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    fireEvent.click(screen.getByTestId('session-enable-ASIA'))
+    const next = onChange.mock.calls[0][0] as DayPlanConfig
+    const asia = next.sessions?.find((x) => x.session === 'ASIA')
+    expect(asia?.enable).toBe(true)
+  })
+
+  it('flipping NY off writes an explicit false (not just an absent field)', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    fireEvent.click(screen.getByTestId('session-enable-NY'))
+    const next = onChange.mock.calls[0][0] as DayPlanConfig
+    const ny = next.sessions?.find((x) => x.session === 'NY')
+    expect(ny?.enable).toBe(false) // explicit off — an absent field would inherit ON
+  })
+
+  it('an explicit override shows the 🔸 chip; inherit shows none', () => {
+    const { rerender } = render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(screen.queryByTestId('session-enable-chip-ASIA')).toBeNull()
+    rerender(
+      <DayPlanEditor
+        config={{
+          plan_enabled: true,
+          sessions: [{ session: 'ASIA', enable: true }],
+        }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(screen.getByTestId('session-enable-chip-ASIA')).toBeTruthy()
+  })
+})
