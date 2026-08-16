@@ -58,6 +58,22 @@ const (
 	MaxConfidence     = 100
 )
 
+// SAFE DEFAULTS FOR AN UNSET RISK FIELD (P0 follow-up, 2026-08-17).
+//
+// ClampLimits used to treat "unset" and "explicitly low" identically: a zero
+// value was raised only to the RANGE FLOOR (R:R 1.0 / confidence 50), which is
+// the LOOSEST setting the system permits. So a strategy that simply never set
+// these ran at the most permissive bar available — unset silently WIDENED risk.
+//
+// An absent value now resolves to the RESEARCHED value instead
+// (docs/VL-DAYPLAN-FULL-SPEC.md: R:R ≥ 3.0, confidence ≥ 65). An EXPLICIT value
+// is untouched apart from the existing range clamp, so an owner who deliberately
+// configures 1.5 still gets 1.5 — this changes the default, never a choice.
+const (
+	SafeDefaultMinRiskReward = 3.0
+	SafeDefaultMinConfidence = 65
+)
+
 // ClampLimits enforces product-level limits on strategy config to prevent token overflow.
 // MaxIndicatorPeriod is the largest allowed indicator period. Beyond this a series
 // can never warm up within the fetch/cache depth (2500 cap), so it would silently
@@ -165,6 +181,12 @@ func (c *StrategyConfig) ClampLimits() {
 	}
 
 	// Clamp risk parameters and entry requirements.
+	// UNSET (zero) → the researched default, NOT the range floor. See the
+	// SafeDefault* block: the old behavior made "never configured" the loosest
+	// possible setting.
+	if c.RiskControl.MinRiskRewardRatio == 0 {
+		c.RiskControl.MinRiskRewardRatio = SafeDefaultMinRiskReward
+	}
 	if c.RiskControl.MinRiskRewardRatio < MinRiskReward {
 		c.RiskControl.MinRiskRewardRatio = MinRiskReward
 	}
@@ -182,6 +204,9 @@ func (c *StrategyConfig) ClampLimits() {
 	}
 	if c.RiskControl.MinPositionSize > MaxPositionSize {
 		c.RiskControl.MinPositionSize = MaxPositionSize
+	}
+	if c.RiskControl.MinConfidence == 0 {
+		c.RiskControl.MinConfidence = SafeDefaultMinConfidence
 	}
 	if c.RiskControl.MinConfidence < MinConfidence {
 		c.RiskControl.MinConfidence = MinConfidence

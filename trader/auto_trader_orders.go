@@ -17,7 +17,12 @@ import (
 // maxFuturesContracts caps the per-order contract count for CME futures
 // (SIM-conservative). Tune per account size; 10 MNQ ≈ $600k notional ≈ $22k
 // intraday margin, comfortably within a $50k SIM account.
-const maxFuturesContracts = 10.0
+// P0 follow-up 2026-08-17: an UNSET per-order cap used to fall back to 10 — five
+// times the researched value, i.e. "never configured" was the most permissive
+// setting. The fallback is now the researched 2. An explicit
+// max_contracts_per_order still wins (ResolveMaxContracts), so this changes the
+// default, never a choice.
+const maxFuturesContracts = 2.0
 
 // futuresOrderQuantity converts a decision's notional (position_size_usd) into
 // a clamped contract count for CME futures: contracts = notional / (price ×
