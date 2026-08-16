@@ -64,8 +64,17 @@ type SessionRegistry struct {
 // sessions with only NY enabled (ASIA/LONDON earn enablement via replay +
 // NY match-rate evidence). Read/window/flat per the spec.
 //
-// NY flat is 14:45 CT — the "15:45 ET" eod-flat from the spec timeline converted
-// to CT (15 min before the 15:00 CT / 16:00 ET RTH close). Admin-editable.
+// SINGLE SOURCE OF TRUTH for session clocks. Everything else — the trader gates,
+// the EOD flat, the FE strip/tabs (web/src/components/plan/sessionConfig.ts) and
+// the spec — MIRRORS this table and is asserted against it by
+// TestSessionEndSingleSourceOfTruth. Every value is America/Chicago ("CT"),
+// never ET, never local.
+//
+// NY CONTRACT (owner, 2026-08-16): the NY session ENDS at 15:45 ET = 14:45 CT and
+// the EOD flat is at that same instant. Window end and FlatCT are therefore the
+// SAME value: before this they drifted (window ran to 15:00 CT while the flat
+// fired at 14:45), leaving a 15-minute band where the gate still called the
+// session open even though positions had already been flattened.
 func DefaultSessionRegistry() SessionRegistry {
 	return SessionRegistry{
 		Sessions: []SessionDef{
@@ -90,9 +99,9 @@ func DefaultSessionRegistry() SessionRegistry {
 			{
 				Name:          SessionNY,
 				WindowStartCT: "08:30",
-				WindowEndCT:   "15:00", // RTH close 15:00 CT / 16:00 ET
+				WindowEndCT:   "14:45", // = 15:45 ET — session end == EOD flat (owner contract)
 				ReadCT:        "08:25",
-				FlatCT:        "14:45", // 15:45 ET eod-flat
+				FlatCT:        "14:45", // = 15:45 ET — same instant as WindowEndCT by contract
 				Killzones: []KillzoneCT{
 					{Name: "ny_am", StartCT: "08:30", EndCT: "11:00"},
 					{Name: "ny_pm", StartCT: "13:00", EndCT: "14:45"},

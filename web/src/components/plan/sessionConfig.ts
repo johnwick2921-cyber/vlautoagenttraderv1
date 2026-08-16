@@ -62,7 +62,7 @@ export const SESSION_BANDS: SessionBand[] = [
   {
     name: 'NY',
     startMin: ctToMinutes('08:30'),
-    endMin: ctToMinutes('15:00'),
+    endMin: ctToMinutes('14:45'), // = 15:45 ET; MUST equal flatMin (owner contract)
     readMin: ctToMinutes('08:25'),
     flatMin: ctToMinutes('14:45'),
     killzones: [kz('ny_am', '08:30', '11:00'), kz('ny_pm', '13:00', '14:45')],
