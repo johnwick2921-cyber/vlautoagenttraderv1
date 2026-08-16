@@ -214,7 +214,12 @@ func (at *AutoTrader) activePlanIsDead(row *store.PlanDB) bool {
 		return false
 	}
 	now := time.Now()
-	rule := at.acceptanceRuleFor(at.activeSessionName(now)) // W15.B — per-session
+	// Use the rule of the session whose plan this IS, not whichever session happens
+	// to be live at the check. activeSessionName returns "" outside every window,
+	// which silently fell back to the strategy-level rule — benign while every
+	// session shares "2x5m", but the moment one sets "15m-close" (need=1) the wrong
+	// rulebook would decide whether that session's plan lives or dies.
+	rule := at.acceptanceRuleFor(row.Session) // W15.B — per-session
 	// Judge the plan ONLY on what happened AFTER it was written. Feeding the full
 	// 2000-bar cache asked "was this level ever traded through in the last ~33
 	// hours", which is true of nearly any level once real history exists — so a

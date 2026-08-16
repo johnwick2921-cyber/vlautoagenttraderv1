@@ -55,6 +55,22 @@ func acceptanceNeed(rule string) int {
 	}
 }
 
+// acceptanceTFMinutes maps an acceptance rule to the BAR TIMEFRAME its N closes
+// are meant to be counted in. "2x5m" → 5-minute bars; "15m-close" → 15.
+//
+// This exists because the rule names a timeframe and the counting function does
+// not: ClosesBeyond counts *bars*, whatever length they happen to be. Feeding it
+// the 1-minute SVP series silently turned "2 five-minute closes" (10 minutes of
+// acceptance) into "2 one-minute closes" (2 minutes) — see PlanIsDeadSince.
+func acceptanceTFMinutes(rule string) int {
+	switch strings.ReplaceAll(strings.ToLower(strings.TrimSpace(rule)), "×", "x") {
+	case "15m-close", "15m", "15mclose", "15m_close":
+		return 15
+	default:
+		return 5 // "2x5m" and the default rule
+	}
+}
+
 // SignedDistancePoints returns price - level (positive = price above level).
 func SignedDistancePoints(price, level float64) float64 { return price - level }
 

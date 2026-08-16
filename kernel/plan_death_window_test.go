@@ -34,9 +34,10 @@ func asiaV5Levels() []PlanLevel {
 
 // priorHistory reproduces the live cache the planner actually ran against: 2000
 // one-minute bars (~33h) that sweep the whole level band again and again — so
-// every level is TOUCHED — and then run clear ABOVE the band and stay there. That
+// every level is TOUCHED — and then run clear ABOVE the band for 20 minutes. That
 // trailing run is what LevelStillValid reads: `need` consecutive closes beyond on
-// one side means the level was accepted through, i.e. consumed.
+// one side (counted on the RULE's timeframe — 5m for "2x5m") means the level was
+// accepted through, i.e. consumed.
 //
 // planWrittenMs is the last bar's open time: the plan is born at the right edge.
 func priorHistory(planWrittenMs int64) []market.Kline {
@@ -45,7 +46,7 @@ func priorHistory(planWrittenMs int64) []market.Kline {
 	t := planWrittenMs - (n-1)*60_000
 	for i := 0; i < n; i++ {
 		switch {
-		case i < n-8:
+		case i < n-20:
 			// Oscillate across the whole band (30140..30210) — brackets every level.
 			if i%2 == 0 {
 				bars = append(bars, dbar(t, 30150, 30210, 30140, 30200))
@@ -98,14 +99,14 @@ func TestPlanStillDiesOnPostPlanEvidence(t *testing.T) {
 
 	var bars []market.Kline
 	bars = append(bars, priorHistory(planWrittenMs)...)
-	// AFTER the plan: touch the level, then accept decisively above it.
+	// AFTER the plan: touch the level, then hold above it long enough for TWO
+	// five-minute closes — real acceptance under the "2x5m" rule.
 	t0 := planWrittenMs
-	bars = append(bars,
-		dbar(t0, 30195, 30205, 30190, 30201),         // touched
-		dbar(t0+60_000, 30210, 30225, 30208, 30220),  // beyond
-		dbar(t0+120_000, 30222, 30240, 30220, 30235), // accepted through
-	)
-	if !PlanIsDeadSince(doc, bars, "2x5m", planWrittenMs, t0+300_000) {
+	bars = append(bars, dbar(t0, 30195, 30205, 30190, 30201)) // touched, closed above
+	for i := 1; i < 16; i++ {
+		bars = append(bars, dbar(t0+int64(i)*60_000, 30210, 30225, 30208, 30220))
+	}
+	if !PlanIsDeadSince(doc, bars, "2x5m", planWrittenMs, t0+16*60_000) {
 		t.Fatal("a level touched AND accepted through AFTER the write must still kill the plan")
 	}
 }
@@ -126,6 +127,83 @@ func TestPlanIsDeadWrapperKeepsWholeWindow(t *testing.T) {
 	bars := priorHistory(now)
 	if PlanIsDead(doc, bars, "2x5m", now) != PlanIsDeadSince(doc, bars, "2x5m", 0, now) {
 		t.Fatal("PlanIsDead must equal PlanIsDeadSince(sinceMs=0)")
+	}
+}
+
+// SECOND ROOT CAUSE — "2x5m" must mean two FIVE-minute closes.
+//
+// Measured at the real v5 death check (22:37:29Z), with price at 30193.50 sitting
+// INSIDE the level stack, every level read "consumed": PDL 30146.75 had 997
+// consecutive 1m closes above it, EQL 30199.50 had 1275 below. Counting bars
+// instead of minutes turned the acceptance rule into "is this level more than two
+// minutes of price action away", which every level in a day plan trivially is.
+func TestAcceptanceIsCountedOnTheRuleTimeframe(t *testing.T) {
+	const level = 30200.0
+	// Bucket-aligned so "one complete 5m bar" is exactly five 1m bars.
+	planWrittenMs := int64(1_760_000_000_000) / 300_000 * 300_000
+
+	// Six 1-minute bars after the write: the level is touched, then price closes
+	// above it for five straight MINUTES — but that is only ONE completed 5m bar,
+	// so "2x5m" acceptance is NOT met yet.
+	var bars []market.Kline
+	t0 := planWrittenMs
+	bars = append(bars, dbar(t0, 30195, 30205, 30190, 30202)) // touch + close above
+	for i := 1; i < 6; i++ {
+		bars = append(bars, dbar(t0+int64(i)*60_000, 30202, 30208, 30201, 30206))
+	}
+	now := t0 + 6*60_000
+	doc := PlanDoc{Levels: []PlanLevel{{Price: level, Label: "ONH", Grade: "A"}}}
+
+	if PlanIsDeadSince(doc, bars, "2x5m", planWrittenMs, now) {
+		t.Fatal("five one-minute closes beyond is ONE 5m close — 2x5m acceptance must not be satisfied yet")
+	}
+
+	// Extend past the second completed 5-minute bucket → now it is genuinely dead.
+	for i := 6; i < 16; i++ {
+		bars = append(bars, dbar(t0+int64(i)*60_000, 30206, 30212, 30205, 30210))
+	}
+	if !PlanIsDeadSince(doc, bars, "2x5m", planWrittenMs, t0+16*60_000) {
+		t.Fatal("two completed 5-minute closes beyond a touched level IS acceptance — the plan must die")
+	}
+}
+
+func TestAggregateToMinutes(t *testing.T) {
+	// Three 1m bars inside one 5m bucket, then one in the next.
+	base := int64(1_760_000_000_000) / 300_000 * 300_000 // bucket-aligned
+	bars := []market.Kline{
+		{OpenTime: base, CloseTime: base + 60_000, Open: 10, High: 12, Low: 9, Close: 11, Volume: 3},
+		{OpenTime: base + 60_000, CloseTime: base + 120_000, Open: 11, High: 15, Low: 8, Close: 14, Volume: 5},
+		{OpenTime: base + 120_000, CloseTime: base + 180_000, Open: 14, High: 14, Low: 13, Close: 13, Volume: 2},
+		{OpenTime: base + 300_000, CloseTime: base + 360_000, Open: 20, High: 21, Low: 19, Close: 20, Volume: 7},
+	}
+	got := aggregateToMinutes(bars, 5)
+	if len(got) != 2 {
+		t.Fatalf("want 2 five-minute bars, got %d", len(got))
+	}
+	b := got[0]
+	if b.Open != 10 || b.High != 15 || b.Low != 8 || b.Close != 13 || b.Volume != 10 {
+		t.Errorf("bucket 1 OHLCV = %v/%v/%v/%v vol %v, want 10/15/8/13 vol 10", b.Open, b.High, b.Low, b.Close, b.Volume)
+	}
+	// CloseTime is the last instant INSIDE the bucket (repo bar convention), so a
+	// bucket counts as closed the moment `now` reaches its end — not a tick later.
+	if b.OpenTime != base || b.CloseTime != base+300_000-1 {
+		t.Errorf("bucket 1 times = %d..%d, want %d..%d", b.OpenTime, b.CloseTime, base, base+300_000-1)
+	}
+	// A closed market must NOT produce a bucket: there is no bar between the two.
+	if got[1].OpenTime != base+300_000 {
+		t.Errorf("bucket 2 starts %d, want %d — no empty bucket may be invented", got[1].OpenTime, base+300_000)
+	}
+
+	// Gaps stay gaps: a 40-minute hole yields no filler buckets.
+	sparse := []market.Kline{
+		{OpenTime: base, CloseTime: base + 60_000, Open: 1, High: 1, Low: 1, Close: 1},
+		{OpenTime: base + 40*60_000, CloseTime: base + 41*60_000, Open: 2, High: 2, Low: 2, Close: 2},
+	}
+	if got := aggregateToMinutes(sparse, 5); len(got) != 2 {
+		t.Errorf("a 40-minute gap must yield 2 buckets, not %d — no synthetic bars, ever", len(got))
+	}
+	if got := aggregateToMinutes(bars, 1); len(got) != len(bars) {
+		t.Errorf("tf=1 must pass through unchanged")
 	}
 }
 

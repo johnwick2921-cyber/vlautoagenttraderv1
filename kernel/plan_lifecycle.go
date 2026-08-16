@@ -74,14 +74,70 @@ func PlanIsDeadSince(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now
 			return false
 		}
 	}
+	// SECOND ROOT CAUSE, same P0: acceptance must be counted on the timeframe the
+	// rule names. ClosesBeyond counts BARS, not minutes, and the series handed in
+	// is the 1-minute SVP cache — so "2x5m" (two 5-minute closes = 10 minutes of
+	// acceptance) was being decided by two ONE-minute closes. Measured at v5's real
+	// death check: every level in the stack read "consumed" while price sat at
+	// 30193.50, inside the stack — PDL had 997 consecutive closes above it, EQL
+	// 1275 below. That is a proximity test, not a consumption test: any level more
+	// than two 1m closes away from price is automatically "accepted through".
+	judge := aggregateToMinutes(bars, acceptanceTFMinutes(rule))
 	for _, l := range doc.Levels {
-		touched := levelTouched(bars, l.Price, now)
-		consumed := !LevelStillValid(bars, l.Price, rule, now)
+		touched := levelTouched(judge, l.Price, now)
+		consumed := !LevelStillValid(judge, l.Price, rule, now)
 		if !(touched && consumed) {
 			return false // this level is still in play → plan not dead
 		}
 	}
 	return true // every level touched AND accepted through → dead
+}
+
+// aggregateToMinutes groups bars into fixed wall-clock buckets of tfMinutes and
+// returns one OHLC bar per NON-EMPTY bucket.
+//
+// It never invents a bucket: a closed market produces no bar, exactly as the
+// source series does. Buckets are keyed on absolute epoch minutes so the result
+// is independent of where the input window happens to start, and CloseTime is the
+// bucket's true end so the "closed bar" tests downstream stay honest — a
+// half-formed final bucket is correctly ignored until it completes.
+//
+// tfMinutes <= 1, or a source series already coarser than the bucket, makes this
+// a pass-through in effect (one bar per bucket).
+func aggregateToMinutes(bars []market.Kline, tfMinutes int) []market.Kline {
+	if tfMinutes <= 1 || len(bars) == 0 {
+		return bars
+	}
+	span := int64(tfMinutes) * 60_000
+	out := make([]market.Kline, 0, len(bars)/tfMinutes+1)
+	var curBucket int64 = -1
+	for i := range bars {
+		b := bars[i]
+		bucket := b.OpenTime / span
+		if bucket != curBucket {
+			out = append(out, market.Kline{
+				OpenTime: bucket * span,
+				// -1 matches the repo's bar convention (CloseTime is the last
+				// instant INSIDE the bar): a bucket counts as closed the moment
+				// now reaches its end, and a still-forming final bucket does not.
+				CloseTime: bucket*span + span - 1,
+				Open:      b.Open, High: b.High, Low: b.Low, Close: b.Close,
+				Volume: b.Volume,
+			})
+			curBucket = bucket
+			continue
+		}
+		agg := &out[len(out)-1]
+		if b.High > agg.High {
+			agg.High = b.High
+		}
+		if b.Low < agg.Low {
+			agg.Low = b.Low
+		}
+		agg.Close = b.Close
+		agg.Volume += b.Volume
+	}
+	return out
 }
 
 // barsSince returns the bars whose OPEN time is at/after sinceMs — the window a
