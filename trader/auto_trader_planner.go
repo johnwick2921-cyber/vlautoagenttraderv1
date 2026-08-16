@@ -499,8 +499,10 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 
 	// P3.6-A — tapered week digest chain (current-date sessions + 3 full dailies +
 	// days 4-7 one-liners).
-	sessionDigests, _ := at.store.Digest().SessionDigests(symbol, tradeDate)
-	dailies, _ := at.store.Digest().RecentDailies(symbol, 7)
+	// W16/R4 — digests are per-TRADER: the text reports this trader's entries and
+	// realized P&L, so another trader's day must never seed this planner read.
+	sessionDigests, _ := at.store.Digest().SessionDigests(at.id, symbol, tradeDate)
+	dailies, _ := at.store.Digest().RecentDailies(at.id, symbol, 7)
 	digestChain := kernel.BuildDigestChain(sessionDigests, dailies)
 
 	// StructureSummary declares which timeframes the planner read (honors the
@@ -560,7 +562,10 @@ func (at *AutoTrader) maybeWriteDigests() {
 	tradeDate := plannerTradeDateCT(now)
 	symbol := at.futuresSymbol()
 	sinceMs := kernel.CMESessionDayStart(now).UnixMilli()
-	pnl, entries, _ := at.store.Position().GetSessionDayActivity(at.id, sinceMs)
+	// W16/R4 — scope the P&L to the ACTIVE ACCOUNT too, matching every other
+	// session-day activity call (loop.go, auto_trader_session.go). Without it a
+	// two-account trader's digest mixed both accounts' numbers.
+	pnl, entries, _ := at.store.Position().GetSessionDayActivity(at.id, sinceMs, at.currentAccountName())
 
 	for i := range reg.Sessions {
 		s := &reg.Sessions[i]
@@ -573,7 +578,8 @@ func (at *AutoTrader) maybeWriteDigests() {
 		}
 		text := kernel.FormatSessionDigest(s.Name, tradeDate, "", entries, pnl)
 		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{
-			Symbol: symbol, TradeDate: tradeDate, Session: s.Name, Kind: "session", Text: text, CreatedAt: now.UnixMilli(),
+			TraderID: at.id,
+			Symbol:   symbol, TradeDate: tradeDate, Session: s.Name, Kind: "session", Text: text, CreatedAt: now.UnixMilli(),
 		}); wrote {
 			at.logInfof("📓 session digest written %s %s.", tradeDate, s.Name)
 		}
@@ -584,10 +590,11 @@ func (at *AutoTrader) maybeWriteDigests() {
 	// Reachable Mon–Fri; idempotent (SaveIfAbsent). W9 — gated on evening_digest
 	// (default true; the end-of-day roll-up IS the "evening digest" toggle).
 	if inDailyRollWindow(now) && at.eveningDigestEnabled() {
-		sessions, _ := at.store.Digest().SessionDigests(symbol, tradeDate)
+		sessions, _ := at.store.Digest().SessionDigests(at.id, symbol, tradeDate)
 		text := kernel.FormatDailyDigest(tradeDate, "", len(sessions), entries, pnl)
 		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{
-			Symbol: symbol, TradeDate: tradeDate, Kind: "daily", Text: text, CreatedAt: now.UnixMilli(),
+			TraderID: at.id,
+			Symbol:   symbol, TradeDate: tradeDate, Kind: "daily", Text: text, CreatedAt: now.UnixMilli(),
 		}); wrote {
 			at.logInfof("📓 daily digest written %s.", tradeDate)
 		}
