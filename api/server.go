@@ -10,6 +10,7 @@ import (
 	"nofx/logger"
 	"nofx/manager"
 	"nofx/store"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,12 +26,14 @@ type Server struct {
 	cryptoHandler             *CryptoHandler
 	exchangeAccountStateCache *ExchangeAccountStateCache
 	httpServer                *http.Server
+	host                      string // bind interface; "" → 127.0.0.1 (loopback-only default)
 	port                      int
 	telegramReloadCh          chan<- struct{} // signal Telegram bot to reload
 }
 
-// NewServer Creates API server
-func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoService *crypto.CryptoService, port int) *Server {
+// NewServer Creates API server. host is the bind interface — pass
+// cfg.APIServerHost; an empty value falls back to the loopback-only default.
+func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoService *crypto.CryptoService, host string, port int) *Server {
 	// Set to Release mode (reduce log output)
 	gin.SetMode(gin.ReleaseMode)
 
@@ -48,6 +51,7 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 		store:                     st,
 		cryptoHandler:             cryptoHandler,
 		exchangeAccountStateCache: NewExchangeAccountStateCache(),
+		host:                      host,
 		port:                      port,
 	}
 
@@ -722,8 +726,16 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 
 // Start Start server
 func (s *Server) Start() error {
-	addr := fmt.Sprintf(":%d", s.port)
-	logger.Infof("🌐 API server starting at http://localhost%s", addr)
+	// SECURITY (P0 S1): bind the configured interface — 127.0.0.1 by default, so
+	// the API is loopback-only unless the operator sets API_SERVER_HOST. The old
+	// code bound ":port" (0.0.0.0, every interface) while logging "localhost",
+	// which read as safe and was not.
+	host := s.host
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	addr := net.JoinHostPort(host, strconv.Itoa(s.port))
+	logger.Infof("🌐 API server starting at http://%s", addr)
 	logger.Infof("📊 API Documentation:")
 	logger.Infof("  • GET  /api/health           - Health check")
 	logger.Infof("  • GET  /api/traders          - Public AI trader leaderboard top 50 (no auth required)")

@@ -16,6 +16,7 @@ var global *Config
 // Only contains truly global config, trading related config is at trader/strategy level
 type Config struct {
 	// Service configuration
+	APIServerHost string // interface the HTTP API binds to; default 127.0.0.1 (loopback only)
 	APIServerPort int
 	JWTSecret     string
 
@@ -73,6 +74,10 @@ type Config struct {
 // Init initializes global configuration (from .env)
 func Init() {
 	cfg := &Config{
+		// SECURITY: loopback by default. The API carries broker/model credentials
+		// and trader control; it must never be reachable off-host unless the
+		// operator opts in explicitly via API_SERVER_HOST.
+		APIServerHost:         "127.0.0.1",
 		APIServerPort:         8080,
 		ExperienceImprovement: true, // Default: enabled to help improve the product
 		// Database defaults
@@ -99,6 +104,17 @@ func Init() {
 	if v := os.Getenv("API_SERVER_PORT"); v != "" {
 		if port, err := strconv.Atoi(v); err == nil && port > 0 {
 			cfg.APIServerPort = port
+		}
+	}
+
+	// API_SERVER_HOST overrides the bind interface. "0.0.0.0" (or any non-loopback
+	// address) exposes the API to the network — warn loudly, since the surface
+	// includes trader control and credential-bearing config endpoints.
+	if v := strings.TrimSpace(os.Getenv("API_SERVER_HOST")); v != "" {
+		cfg.APIServerHost = v
+		if v != "127.0.0.1" && v != "localhost" && v != "::1" {
+			logger.Warnf("⚠️  API_SERVER_HOST=%q — the API is bound OFF-LOOPBACK and reachable from the network. "+
+				"Ensure JWT_SECRET is strong and a firewall/reverse proxy fronts it.", v)
 		}
 	}
 
