@@ -187,55 +187,32 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		}
 	}
 	// ============================================================================
-	// Plan 3 Task 22 — Stale-data + drift detection (owned by T22)
+	// Plan 3 Task 22 — stale-data + drift detection: REMOVED AS DEAD CODE (W16/R7)
 	// ============================================================================
-	// Verify the latest OHLCV bar is fresh and free of suspicious limit-move-
-	// style drift before feeding it to the AI. RTH gets a tight 90s tolerance;
-	// ETH gets 5min. A >5% close-to-close move inside 60s trips the drift gate.
-	// On any HOLD here we return (nil, nil) so the loop treats it as a clean
-	// skip — same convention as T18/T19/T21.
+	// The T22 block used to sit HERE, guarded by `len(ctx.MarketDataMap) > 0`.
+	// That guard was false on 100% of production evaluations, so the gate never
+	// once ran:
 	//
-	// Skipped silently when MarketDataMap is empty (data not yet fetched in
-	// this cycle); the downstream fetch will populate it and the next cycle
-	// will gate normally. We deliberately check pre-fetch in case the loop
-	// pre-populated the map from a hotter source.
-	if ctx != nil && len(ctx.MarketDataMap) > 0 {
-		cfg := market.DefaultFreshnessConfig()
-		now := time.Now()
-		for symbol, data := range ctx.MarketDataMap {
-			if data == nil || data.TimeframeData == nil {
-				continue
-			}
-			for tf, tfData := range data.TimeframeData {
-				if tfData == nil || len(tfData.Klines) < 2 {
-					continue
-				}
-				bars := tfData.Klines
-				latest := bars[len(bars)-1]
-				prev := bars[len(bars)-2]
-				health := market.CheckDataHealth(
-					latest.Time, latest.Close,
-					prev.Time, prev.Close,
-					now, cfg,
-				)
-				switch health {
-				case market.HealthStale:
-					age := now.Sub(time.UnixMilli(latest.Time))
-					logger.Warnf("⚠️ Plan 3 T22: stale data for %s [%s] (last bar %v old) — skipping cycle", symbol, tf, age)
-					// Plan 4 Task 25 — gate instrumentation
-					telemetry.RiskGateTrips.WithLabelValues("task22_drift").Inc()
-					telemetry.IncGateBlock(ctx.TraderID, "task22_drift")
-					return holdCycle("stale_data"), nil
-				case market.HealthSuspiciousDrift:
-					logger.Warnf("⚠️ Plan 3 T22: suspicious drift for %s [%s] (prev=%.4f latest=%.4f) — skipping cycle", symbol, tf, prev.Close, latest.Close)
-					// Plan 4 Task 25 — gate instrumentation
-					telemetry.RiskGateTrips.WithLabelValues("task22_drift").Inc()
-					telemetry.IncGateBlock(ctx.TraderID, "task22_drift")
-					return holdCycle("suspicious_drift"), nil
-				}
-			}
-		}
-	}
+	//   - the map is created and filled by fetchMarketDataWithStrategy, called
+	//     ~70 lines BELOW this point in this same function;
+	//   - a fresh Context is built every cycle (trader/auto_trader_loop.go), so
+	//     nothing carries over from the previous cycle;
+	//   - grep for MarketDataMap under trader/ returns zero hits — the loop has
+	//     never pre-populated it, which is the case the old comment hoped for.
+	//
+	// Keeping unreachable safety code is worse than not having it: it reads like
+	// a live gate in review and in audits, and nothing fails when it rots.
+	//
+	// WHAT ACTUALLY PROTECTS ENTRIES (and does run): applyStaleDataBlock (B4) at
+	// the bottom of this function, AFTER the fetch — it neutralizes open_long /
+	// open_short to `wait` when the freshest 1m/5m bar is older than 2× its
+	// interval, and files a `stale_data` gate block. See kernel/stale_data.go.
+	//
+	// WHAT IS NOT REPLACED: suspicious-DRIFT detection (a >5% close-to-close move
+	// inside 60s). It never ran either, and re-landing it belongs after the fetch
+	// with timeframe-aware thresholds — market.DefaultFreshnessConfig's flat
+	// 90s/5m limits would spuriously hold cycles on higher timeframes, which is
+	// why this must not simply be moved. Tracked in the W16 report.
 
 	if engine == nil {
 		defaultConfig := store.GetDefaultStrategyConfig("en")
