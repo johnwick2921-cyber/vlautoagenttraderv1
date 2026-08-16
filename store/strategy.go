@@ -892,6 +892,77 @@ type DayPlanSessionOverride struct {
 	MaxTrades      *int    `json:"max_trades,omitempty"`
 }
 
+// SessionOverride returns the named session's override block, or nil. Shared by
+// the trader gates, the kernel prompt path, and the API card renderer so all
+// three resolve a per-session setting the SAME way.
+func (c *DayPlanConfig) SessionOverride(session string) *DayPlanSessionOverride {
+	if c == nil {
+		return nil
+	}
+	for i := range c.Sessions {
+		if strings.EqualFold(c.Sessions[i].Session, session) {
+			return &c.Sessions[i]
+		}
+	}
+	return nil
+}
+
+// DefaultAcceptanceRule is the shipped acceptance rule (2 consecutive 5m closes
+// beyond the level). The alternative is "15m-close".
+const DefaultAcceptanceRule = "2x5m"
+
+// AcceptanceRuleFor resolves the acceptance rule for a session: per-session
+// override → strategy-level → the shipped default. Before this existed, the
+// per-session override was persisted and rendered but read by NOTHING — every
+// consumer went straight to the strategy-level field.
+func (c *DayPlanConfig) AcceptanceRuleFor(session string) string {
+	rule := DefaultAcceptanceRule
+	if c != nil && strings.TrimSpace(c.AcceptanceRule) != "" {
+		rule = c.AcceptanceRule
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.AcceptanceRule != nil && strings.TrimSpace(*ov.AcceptanceRule) != "" {
+		rule = *ov.AcceptanceRule
+	}
+	return strings.TrimSpace(rule)
+}
+
+// ReplanCapFor resolves the re-read cap for a session: per-session override →
+// strategy-level → the shipped default of 2. A 0 override is meaningful (no
+// re-plan after death), hence the >= 0 test rather than > 0.
+func (c *DayPlanConfig) ReplanCapFor(session string) int {
+	n := 2
+	if c != nil && c.ReplanCap > 0 {
+		n = c.ReplanCap
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
+		n = *ov.ReplanCap
+	}
+	return n
+}
+
+// MaxTradesFor resolves the per-session entry cap. ok=false means NO cap is
+// configured for this session (the shipped behavior — the strategy-level daily
+// guardrail still applies). A 0 cap is meaningful: no entries this session.
+func (c *DayPlanConfig) MaxTradesFor(session string) (int, bool) {
+	if ov := c.SessionOverride(session); ov != nil && ov.MaxTrades != nil && *ov.MaxTrades >= 0 {
+		return *ov.MaxTrades, true
+	}
+	return 0, false
+}
+
+// PlanModeFor resolves the plan-restriction mode for a session: per-session
+// override → strategy-level → "advisory".
+func (c *DayPlanConfig) PlanModeFor(session string) string {
+	mode := "advisory"
+	if c != nil && strings.TrimSpace(c.PlanMode) != "" {
+		mode = c.PlanMode
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.PlanMode != nil && strings.TrimSpace(*ov.PlanMode) != "" {
+		mode = *ov.PlanMode
+	}
+	return strings.ToLower(strings.TrimSpace(mode))
+}
+
 // DefaultDayPlanConfig returns the spec default block (plan OFF). It is NOT
 // injected into GetDefaultStrategyConfig — creating a strategy leaves day_plan
 // absent (byte-identical) until the owner opts in; the frontend/creation flow

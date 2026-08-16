@@ -14,11 +14,11 @@ import (
 // callers). Runs each bar-close cycle while a plan is active. It:
 //
 //   - EnsureLevel   → persists a level's durable identity (type|price-bin),
-//                     PRESERVING prior-session state so a burned level stays burned.
+//     PRESERVING prior-session state so a burned level stays burned.
 //   - MarkConsumed  → when the evaluator shows price accepted THROUGH the level.
 //   - RecordPlay    → on a fresh sweep/rejection, decays freshness one grade.
-//                     Debounced by re-arm: RecordPlay fires only when ReArmEligible
-//                     (persisted cooldown elapsed) — this is the READER of the state.
+//     Debounced by re-arm: RecordPlay fires only when ReArmEligible
+//     (persisted cooldown elapsed) — this is the READER of the state.
 //
 // A burned level re-touched inside the active window emits a telemetry gate-block +
 // a P1 alert. It does NOT touch the executor prompt (no golden change); surfacing
@@ -46,10 +46,9 @@ func (at *AutoTrader) recordLevelState() {
 	if price <= 0 {
 		return
 	}
-	rule := "2x5m"
-	if sc := at.config.StrategyConfig; sc != nil && sc.DayPlan != nil && sc.DayPlan.AcceptanceRule != "" {
-		rule = sc.DayPlan.AcceptanceRule
-	}
+	// W15.B — per-SESSION acceptance rule (the override was persisted + rendered
+	// but read by nothing); falls back to strategy-level, then 2x5m.
+	rule := at.acceptanceRuleFor(at.activeSessionName(now))
 
 	ls := at.store.LevelState()
 	active := kernel.ActivePlanLevels(plan.Doc.Levels, price, dATR, at.proximityFilterATR()) // W9

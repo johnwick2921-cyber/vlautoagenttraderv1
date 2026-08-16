@@ -48,6 +48,28 @@ func maxI(a, b int) int {
 	return b
 }
 
+// planRules resolves THE RULEBOOK THE GATES ACTUALLY RUN for one trader+session:
+// the acceptance rule, the plan-restriction mode, and the remaining re-plan
+// budget. W15.B — every one of these was HARDCODED here ("2x5m", "advisory", a
+// budget of 2), so a strategy configured for 15m-close acceptance, strict mode,
+// or a non-default replan_cap was narrated WRONG on the card the owner reads,
+// while the executor ran the real values. Per-session overrides resolve too.
+//
+// An unknown trader falls back to the shipped defaults, which is what the card
+// showed before, so the no-config path is unchanged.
+func (s *Server) planRules(traderID, session string, version int) (rule, mode string, replansLeft int) {
+	var dp *store.DayPlanConfig
+	if at, err := s.traderManager.GetTrader(traderID); err == nil && at != nil {
+		if cfg := at.GetStrategyConfig(); cfg != nil {
+			dp = cfg.DayPlan
+		}
+	}
+	rule = dp.AcceptanceRuleFor(session)
+	mode = dp.PlanModeFor(session)
+	replansLeft = maxI(0, dp.ReplanCapFor(session)-(version-1))
+	return rule, mode, replansLeft
+}
+
 // handlePlanToday GET /api/plan/today?trader_id=xxx[&symbol=MNQ] — the active
 // plan (overlay-resolved) + live per-level facts from the P0.4 evaluator.
 func (s *Server) handlePlanToday(c *gin.Context) {
@@ -75,7 +97,11 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	}
 	night := reg.IsNightMode(now)
 
-	base := gin.H{"found": false, "trade_date": tradeDate, "session": sessName, "night": night, "mode": "advisory"}
+	// W15.B — the card narrates THE REAL RULEBOOK (acceptance rule / plan mode /
+	// re-plan budget), resolved per trader+session, instead of the hardcoded
+	// "2x5m" + "advisory" + budget-of-2 it used to show.
+	rule, mode, _ := s.planRules(traderID, sessName, 1)
+	base := gin.H{"found": false, "trade_date": tradeDate, "session": sessName, "night": night, "mode": mode, "acceptance_rule": rule}
 	if !ok || !sess.Enabled {
 		c.JSON(200, base) // night / disabled session → no active plan
 		return
@@ -114,7 +140,9 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 			owners[roundKey(r.Price)] = r
 		}
 	}
-	facts, price := planLevelFacts(symbol, doc, now, owners)
+	facts, price := planLevelFacts(symbol, doc, now, rule, owners)
+	// The budget depends on the plan's version, known only now.
+	_, _, replansLeft := s.planRules(traderID, sessName, row.Version)
 	warming := ""
 	if n, _ := s.store.SessionProfile().Count(symbol); n < 10 {
 		warming = fmt.Sprintf("%d/10", n)
@@ -129,12 +157,15 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"lifecycle":     row.Lifecycle,
 		"model_id":      row.ModelID,
 		"night":         false,
-		"mode":          "advisory", // P3.5 wired advisory only
+		"mode":          mode,
 		"doc":           doc,
 		"level_facts":   facts,
 		"price":         price,
-		"replans_left":  maxI(0, 2-(row.Version-1)),
-		"warming":       warming,
+		"replans_left":  replansLeft,
+		// The acceptance rule the executor evaluates these levels with — the card
+		// used to imply 2x5m unconditionally.
+		"acceptance_rule": rule,
+		"warming":         warming,
 		// P2 — how blind the planner was when it wrote this plan. The card shows a
 		// DEGRADED badge past the threshold so a half-map plan says so out loud.
 		"dark_regime_count": row.DarkRegimeCount,
@@ -149,7 +180,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 }
 
 // planLevelFacts computes per-level live facts from the latest 1m bars.
-func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, owners map[int64]*store.OwnerLevelDB) ([]gin.H, float64) {
+func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, rule string, owners map[int64]*store.OwnerLevelDB) ([]gin.H, float64) {
 	if market.FuturesBarsProvider == nil {
 		return nil, 0
 	}
@@ -171,7 +202,7 @@ func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, owners map
 		if l.Price < price {
 			dir = kernel.DirBelow
 		}
-		f := kernel.EvaluateLevelFacts(bars, l.Price, dir, "2x5m", 3, nowMs)
+		f := kernel.EvaluateLevelFacts(bars, l.Price, dir, rule, 3, nowMs)
 		row := gin.H{
 			"price":         l.Price,
 			"label":         l.Label,
@@ -497,7 +528,8 @@ func (s *Server) handlePlanAsk(c *gin.Context) {
 		bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount)
 		if len(bars) > 0 {
 			price, dATR := marketRef(symbol, now)
-			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, "2x5m", maxI(0, 2-(row.Version-1)), now.UnixMilli())
+			rule, _, left := s.planRules(traderID, sess.Name, row.Version) // W15.B
+			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, rule, left, now.UnixMilli())
 		}
 	}
 	userPrompt := kernel.BuildAskPlannerUserPrompt(planBlock, liveStatus, body.Question)
@@ -1093,7 +1125,8 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 	if market.FuturesBarsProvider != nil {
 		if bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount); len(bars) > 0 {
 			price, dATR := marketRef(symbol, now)
-			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, "2x5m", maxI(0, 2-(row.Version-1)), now.UnixMilli())
+			rule, _, left := s.planRules(traderID, sess.Name, row.Version) // W15.B
+			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, rule, left, now.UnixMilli())
 		}
 	}
 	change := kernel.OwnerChange{

@@ -39,27 +39,31 @@ func (at *AutoTrader) sessionOverride(session string) *store.DayPlanSessionOverr
 // planModeFor resolves the plan-restriction mode for a session: per-session override
 // → strategy PlanMode → "advisory". advisory (default) never gates.
 func (at *AutoTrader) planModeFor(session string) string {
-	mode := "advisory"
-	if dp := at.dayPlanCfg(); dp != nil && strings.TrimSpace(dp.PlanMode) != "" {
-		mode = dp.PlanMode
-	}
-	if ov := at.sessionOverride(session); ov != nil && ov.PlanMode != nil && strings.TrimSpace(*ov.PlanMode) != "" {
-		mode = *ov.PlanMode
-	}
-	return strings.ToLower(strings.TrimSpace(mode))
+	return at.dayPlanCfg().PlanModeFor(session)
 }
 
 // replanCapFor resolves the per-session re-read cap (default 2); a per-session
 // override wins (0 = no re-plan after death).
 func (at *AutoTrader) replanCapFor(session string) int {
-	cap := 2
-	if dp := at.dayPlanCfg(); dp != nil && dp.ReplanCap > 0 {
-		cap = dp.ReplanCap
+	return at.dayPlanCfg().ReplanCapFor(session)
+}
+
+// acceptanceRuleFor resolves the per-session acceptance rule (W15.B — the
+// override was persisted and rendered but read by NOTHING; every consumer went
+// straight to the strategy-level field). One resolver, shared with the kernel
+// prompt path and the API card renderer so all three narrate the same rulebook.
+func (at *AutoTrader) acceptanceRuleFor(session string) string {
+	return at.dayPlanCfg().AcceptanceRuleFor(session)
+}
+
+// activeSessionName returns the currently-active session's name, or "" when we
+// are outside every window (night/interim). "" resolves to strategy-level
+// settings, which is the correct fallback for an off-hours evaluation.
+func (at *AutoTrader) activeSessionName(now time.Time) string {
+	if s, ok := at.sessionRegistry(now).ActiveSession(now); ok {
+		return s.Name
 	}
-	if ov := at.sessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
-		cap = *ov.ReplanCap
-	}
-	return cap
+	return ""
 }
 
 // sessionEnabledForStrategy gates which sessions THIS trader runs (on top of the

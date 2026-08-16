@@ -93,6 +93,9 @@ export interface DayPlanConfig {
   evening_digest?: boolean
   last_entry_ct?: string
   eod_flat_ct?: string
+  /** W13 auto re-align ceiling per plan (default 5). Go reads it; the FE type
+   *  was missing it entirely, so the value could never be edited from the app. */
+  realign_cap?: number
   sessions?: DayPlanSessionOverride[]
 }
 

@@ -370,9 +370,12 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	engine.SetPlanContext("", "")
 	if isFut, _ := futuresVariantMode(variant); isFut && planOn && ActivePlanProvider != nil {
 		if plan := ActivePlanProvider(activeSymbol); plan != nil {
+			// W15.B — resolve the acceptance rule for THE PLAN'S OWN SESSION, so a
+			// per-session override reaches the executor prompt (it previously read
+			// only the strategy-level field, making the override inert).
 			rule := ""
 			if cfg := engine.GetConfig(); cfg != nil && cfg.DayPlan != nil {
-				rule = cfg.DayPlan.AcceptanceRule
+				rule = cfg.DayPlan.AcceptanceRuleFor(plan.Session)
 			}
 			block := RenderPlanBlock(plan.Doc, plan.Session)
 			status := ""

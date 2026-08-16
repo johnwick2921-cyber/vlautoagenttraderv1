@@ -230,6 +230,27 @@ export const planStrings = {
     id: 'Perlu persetujuan',
   },
   digest: { en: 'Digest', zh: '摘要', id: 'Ringkasan' },
+  // W15.B — the day-trader clock (both times were live in Go, uneditable in the app)
+  lastEntry: {
+    en: 'Last entry (CT)',
+    zh: '最后入场 (CT)',
+    id: 'Entri terakhir (CT)',
+  },
+  eodFlat: {
+    en: 'EOD flat (CT)',
+    zh: '收盘平仓 (CT)',
+    id: 'Tutup akhir hari (CT)',
+  },
+  eodFlatWarning: {
+    en: 'EOD flat is after the NY window ends (14:45 CT) — the session gate would call NY open on an already-flat day.',
+    zh: '收盘平仓时间晚于纽约时段结束 (14:45 CT)——时段闸门会在已平仓的日子里判定纽约仍开放。',
+    id: 'Tutup akhir hari melewati akhir jendela NY (14:45 CT) — gerbang sesi akan menganggap NY masih buka pada hari yang sudah rata.',
+  },
+  realignCap: {
+    en: 'Max re-alignments',
+    zh: '最大重新校准次数',
+    id: 'Maks penyelarasan ulang',
+  },
   sessionsHeader: { en: 'Sessions', zh: '交易时段', id: 'Sesi' },
   inherit: { en: 'inherit', zh: '继承', id: 'warisi' },
   override: { en: 'override', zh: '覆盖', id: 'ganti' },

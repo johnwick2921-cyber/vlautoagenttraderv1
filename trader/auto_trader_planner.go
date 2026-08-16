@@ -212,11 +212,9 @@ func (at *AutoTrader) activePlanIsDead(row *store.PlanDB) bool {
 	if len(bars) == 0 {
 		return false
 	}
-	rule := ""
-	if dp := at.config.StrategyConfig.DayPlan; dp != nil {
-		rule = dp.AcceptanceRule
-	}
-	return kernel.PlanIsDead(doc, bars, rule, time.Now().UnixMilli())
+	now := time.Now()
+	rule := at.acceptanceRuleFor(at.activeSessionName(now)) // W15.B — per-session
+	return kernel.PlanIsDead(doc, bars, rule, now.UnixMilli())
 }
 
 // writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.

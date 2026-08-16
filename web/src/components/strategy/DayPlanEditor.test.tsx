@@ -171,3 +171,69 @@ describe('DayPlanEditor · session enable toggles', () => {
     expect(screen.getByTestId('session-enable-chip-ASIA')).toBeTruthy()
   })
 })
+
+// W15.B — controls the Go side ALREADY read but the app could not edit. Before
+// these existed the only way to change a last-entry cutoff or the forced EOD
+// flatten was a CLI (cmd/dayplan-arm), and realign_cap was not even in the FE type.
+describe('DayPlanEditor · the day-trader clock + re-align cap', () => {
+  it('renders last-entry / EOD-flat / max re-alignments with the live defaults', () => {
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(
+      (screen.getByTestId('last-entry-ct') as HTMLInputElement).value
+    ).toBe('13:00') // == Go lastEntryCT() default
+    expect((screen.getByTestId('eod-flat-ct') as HTMLInputElement).value).toBe(
+      '14:45'
+    ) // == Go eodFlatCT() default == NY window end
+  })
+
+  it('editing a time writes the CT key the Go gate reads', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    fireEvent.change(screen.getByTestId('last-entry-ct'), {
+      target: { value: '12:30' },
+    })
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ last_entry_ct: '12:30' })
+    )
+  })
+
+  it('warns when the EOD flat is set AFTER the NY window ends (the P3 drift band)', () => {
+    const { rerender } = render(
+      <DayPlanEditor
+        config={{ plan_enabled: true, eod_flat_ct: '14:45' }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(screen.queryByTestId('eod-flat-warning')).toBeNull()
+    rerender(
+      <DayPlanEditor
+        config={{ plan_enabled: true, eod_flat_ct: '15:30' }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(screen.getByTestId('eod-flat-warning')).toBeTruthy()
+    // earlier than the window end is legitimate (half-days pull it in) — no warning
+    rerender(
+      <DayPlanEditor
+        config={{ plan_enabled: true, eod_flat_ct: '11:00' }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(screen.queryByTestId('eod-flat-warning')).toBeNull()
+  })
+})

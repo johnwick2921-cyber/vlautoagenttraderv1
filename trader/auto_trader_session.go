@@ -38,8 +38,63 @@ func (at *AutoTrader) sessionEntryBlocked() (string, bool) {
 		if runnable, why := at.sessionRunnable(sess); !runnable {
 			return why, true
 		}
+		// W15.B — per-session trade cap (the override was persisted + rendered but
+		// enforced by NOTHING). Absent → no cap, shipped behavior unchanged.
+		if why, blocked := at.sessionTradeCapBlocked(sess, now); blocked {
+			return why, true
+		}
 	}
 	return sessionGateDecision(reg, now, at.currentT1Windows(now))
+}
+
+// sessionWindowStart returns the wall-clock start of the CURRENTLY-RUNNING
+// instance of a session's window. Wrap-aware: at 01:00 CT inside ASIA's
+// 17:00→02:00 window, the instance started at 17:00 YESTERDAY, so the naive
+// "today at 17:00" would be in the future and would count zero trades.
+func sessionWindowStart(sess *kernel.SessionDef, now time.Time) (time.Time, bool) {
+	start, ok := hhmmToMin(sess.WindowStartCT)
+	if !ok {
+		return time.Time{}, false
+	}
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		return time.Time{}, false
+	}
+	ct := now.In(loc)
+	t := time.Date(ct.Year(), ct.Month(), ct.Day(), start/60, start%60, 0, 0, loc)
+	if t.After(ct) {
+		t = t.AddDate(0, 0, -1) // window opened yesterday and wrapped midnight
+	}
+	return t, true
+}
+
+// sessionTradeCapBlocked reports (reason, blocked): whether NEW entries are
+// blocked because this session's own max_trades cap is reached. The count is
+// entries since THIS session instance opened — not since the session-day start,
+// which would make a late session inherit the earlier ones' trades. Scoped to the
+// active NT account, mirroring the daily guardrail. No cap configured → never
+// blocks; a cap of 0 means "no entries this session" and is honored as written.
+func (at *AutoTrader) sessionTradeCapBlocked(sess *kernel.SessionDef, now time.Time) (string, bool) {
+	if sess == nil || at.store == nil {
+		return "", false
+	}
+	capN, ok := at.dayPlanCfg().MaxTradesFor(sess.Name)
+	if !ok {
+		return "", false
+	}
+	start, ok := sessionWindowStart(sess, now)
+	if !ok {
+		return "", false
+	}
+	_, entries, err := at.store.Position().GetSessionDayActivity(at.id, start.UnixMilli(), at.currentAccountName())
+	if err != nil {
+		at.logWarnf("⚠️ session trade cap: entry count failed (not blocking): %v", err)
+		return "", false
+	}
+	if entries >= capN {
+		return fmt.Sprintf("%s trade cap reached (%d/%d this session)", sess.Name, entries, capN), true
+	}
+	return "", false
 }
 
 // sessionGateDecision is the pure session-gate logic: entries only inside an
