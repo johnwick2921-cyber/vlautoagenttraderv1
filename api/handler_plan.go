@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"nofx/kernel"
+	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
 	"nofx/trader"
@@ -886,4 +887,271 @@ func (s *Server) planRegistry() kernel.SessionRegistry {
 	raw, _ := s.store.GetSystemConfig(kernel.SessionRegistryConfigKey)
 	reg, _ := kernel.LoadSessionRegistry(raw) // fail-safe to the default
 	return reg
+}
+
+// ─── W13 · PLAN RE-ALIGNMENT ON OWNER EDIT ────────────────────────────────────
+// Owner decision 2026-08-16: an overlay save AUTO-triggers a whole-plan
+// re-examination that returns a PROPOSAL. Nothing changes without an Apply tap —
+// the apply path is the existing POST /api/plan/ask/apply (same qa row, same
+// planner-revised overlay), so there is exactly one mutation door.
+
+// resolvePlanFinal folds a plan row's overlays into plan_final (the doc the card
+// and the executor see), armored: a bad overlay falls back to the base doc.
+func (s *Server) resolvePlanFinal(row *store.PlanDB) (kernel.PlanDoc, bool) {
+	var doc kernel.PlanDoc
+	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+		return kernel.PlanDoc{}, false
+	}
+	overlays, _ := s.store.Plan().ListOverlays(row.PlanID, row.Version)
+	if len(overlays) == 0 {
+		return doc, true
+	}
+	patches := make([]string, 0, len(overlays))
+	for _, ov := range overlays {
+		patches = append(patches, ov.Patch)
+	}
+	base, err := json.Marshal(doc)
+	if err != nil {
+		return doc, true
+	}
+	final, _ := kernel.ApplyOverlayPatches(base, patches)
+	var merged kernel.PlanDoc
+	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDoc(&merged) == nil {
+		return merged, true
+	}
+	return doc, true
+}
+
+// RealignDebounceSec collapses rapid saves (bulk-add rows, fast successive edits)
+// into ONE call.
+const RealignDebounceSec int64 = 20
+
+// realignGateDecision is the pure auto-trigger gate: "" = proceed with the call,
+// "debounced" = an auto re-align already ran inside the window (this is what makes
+// a bulk-add batch ONE call), "capped" = the auto budget for this plan is spent and
+// the owner should use the manual button. A MANUAL re-align bypasses both — the
+// owner asked for it explicitly. lastAt < 0 means "no previous auto re-align".
+func realignGateDecision(manual bool, used, capN int, lastAt, nowUnix int64) string {
+	if manual {
+		return ""
+	}
+	if lastAt >= 0 && nowUnix-lastAt < RealignDebounceSec {
+		return "debounced"
+	}
+	if capN > 0 && used >= capN {
+		return "capped"
+	}
+	return ""
+}
+
+// handlePlanRealign POST /api/plan/realign — re-examine the whole plan after an
+// owner edit. Always 200 with a `status` the FE renders:
+//
+//	proposal   → PROPOSE-MERGE + patch (the card slides in; Apply-gated)
+//	no-change  → the plan stands (quiet auto-fading chip)
+//	skipped    → no active plan / night / disabled / expired / day-plan off
+//	debounced  → an identical-window call already ran (bulk-add safety)
+//	capped     → auto budget spent → the FE shows the manual "Re-align plan" button
+//	failed     → fail-closed: plan untouched, alert row written, NO partial patch
+func (s *Server) handlePlanRealign(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+		Symbol   string `json:"symbol"`
+		Manual   bool   `json:"manual"` // owner tapped Re-align → bypasses the cap
+		Change   struct {
+			Kind        string  `json:"kind"`
+			Summary     string  `json:"summary"`
+			Price       float64 `json:"price"`
+			Label       string  `json:"label"`
+			Grade       string  `json:"grade"`
+			Instruction string  `json:"instruction"`
+			Note        string  `json:"note"`
+			ScenarioTag string  `json:"scenario_tag"`
+			BatchCount  int     `json:"batch_count"`
+		} `json:"change"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	symbol := strings.TrimSpace(body.Symbol)
+	if symbol == "" {
+		symbol = "MNQ"
+	}
+	if !at.DayPlanOn() {
+		c.JSON(200, gin.H{"status": "skipped", "reason": "day_plan_off"})
+		return
+	}
+
+	// SKIP: no active plan · night / disabled session · expired plan.
+	now := time.Now()
+	reg := s.planRegistry()
+	tradeDate := now.In(planChicago()).Format("2006-01-02")
+	sess, ok := reg.ActiveSession(now)
+	if !ok || !sess.Enabled {
+		c.JSON(200, gin.H{"status": "skipped", "reason": "night_or_disabled_session"})
+		return
+	}
+	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+	if err != nil || row == nil {
+		c.JSON(200, gin.H{"status": "skipped", "reason": "no_active_plan"})
+		return
+	}
+	if row.Lifecycle != "active" {
+		c.JSON(200, gin.H{"status": "skipped", "reason": "plan_" + row.Lifecycle})
+		return
+	}
+
+	trigger := kernel.TriggerOwnerEdit
+	if body.Manual {
+		trigger = kernel.TriggerManual
+	}
+
+	// DEBOUNCE + CAP (auto only). The debounce is what makes a bulk-add batch ONE
+	// call even if the FE fires per row; the cap bounds automation spend.
+	var lastAt int64 = -1
+	var lastID int64
+	used := 0
+	if !body.Manual {
+		if last, _ := s.store.PlanQA().LastPlannerByTrigger(traderID, row.PlanID, trigger); last != nil {
+			lastAt, lastID = last.CreatedAt, last.ID
+		}
+		used, _ = s.store.PlanQA().CountPlannerByTrigger(traderID, row.PlanID, trigger)
+	}
+	capN := at.RealignCap()
+	switch realignGateDecision(body.Manual, used, capN, lastAt, now.Unix()) {
+	case "debounced":
+		c.JSON(200, gin.H{"status": "debounced", "window_sec": RealignDebounceSec, "qa_id": lastID})
+		return
+	case "capped":
+		c.JSON(200, gin.H{"status": "capped", "used": used, "cap": capN})
+		return
+	}
+
+	doc, okDoc := s.resolvePlanFinal(row) // overlay-resolved: what the owner sees
+	if !okDoc {
+		c.JSON(200, gin.H{"status": "failed", "reason": "bad_plan_doc"})
+		return
+	}
+
+	// SAME context blocks Ask-Planner uses.
+	planBlock := kernel.RenderPlanBlock(doc, sess.Name)
+	liveStatus := ""
+	if market.FuturesBarsProvider != nil {
+		if bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount); len(bars) > 0 {
+			price, dATR := marketRef(symbol, now)
+			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, "2x5m", maxI(0, 2-(row.Version-1)), now.UnixMilli())
+		}
+	}
+	change := kernel.OwnerChange{
+		Kind: body.Change.Kind, Summary: body.Change.Summary, Price: body.Change.Price,
+		Label: body.Change.Label, Grade: body.Change.Grade, Instruction: body.Change.Instruction,
+		Note: body.Change.Note, ScenarioTag: body.Change.ScenarioTag, BatchCount: body.Change.BatchCount,
+	}
+	userPrompt := kernel.BuildRealignUserPrompt(planBlock, liveStatus, change)
+
+	client, modelID := at.ResolvePlannerClient()
+	if client == nil {
+		s.realignFailClosed(traderID, row, sess.Name, tradeDate, "no planner client")
+		c.JSON(200, gin.H{"status": "failed", "reason": "no_planner_client"})
+		return
+	}
+
+	// FAIL-CLOSED: any error or malformed reply → no proposal, plan untouched.
+	started := time.Now()
+	raw, callErr := client.CallWithMessages(kernel.AskPlannerSystemPrompt, userPrompt)
+	latencyMs := time.Since(started).Milliseconds()
+	if callErr != nil {
+		s.realignFailClosed(traderID, row, sess.Name, tradeDate, "planner call failed: "+callErr.Error())
+		c.JSON(200, gin.H{"status": "failed", "reason": "planner_call_failed", "latency_ms": latencyMs})
+		return
+	}
+	reply, perr := kernel.ParsePlannerReply(raw)
+	if perr != nil {
+		s.realignFailClosed(traderID, row, sess.Name, tradeDate, "planner reply malformed")
+		c.JSON(200, gin.H{"status": "failed", "reason": "planner_reply_malformed", "latency_ms": latencyMs})
+		return
+	}
+
+	// LOG into the SAME KPI table as Ask-Planner (one comparable series).
+	patchStr := ""
+	if len(reply.Patch) > 0 {
+		patchStr = string(reply.Patch)
+	}
+	noChange := kernel.IsNoChange(reply)
+	if noChange {
+		patchStr = "" // a no-change verdict never carries a patch
+	}
+	costUSD := estimateRealignCostUSD(userPrompt, raw)
+	qaID, _ := s.store.PlanQA().Append(&store.PlanQADB{
+		TraderID: traderID, PlanID: row.PlanID, TradeDate: tradeDate, Session: sess.Name,
+		Role: "planner", Content: reply.Summary, Evidence: reply.Evidence,
+		PointClass: reply.PointClass, Verdict: reply.Verdict, Patch: patchStr,
+		Trigger: trigger, ChallengeType: strings.TrimSpace(body.Change.Kind),
+		CostUSD: costUSD, LatencyMs: latencyMs, CreatedAt: now.Unix(),
+	})
+	logger.Infof("🔄 plan re-align (%s/%s) %s → %s · %dms · ~$%.4f · model %s",
+		trigger, body.Change.Kind, row.PlanID, reply.Verdict, latencyMs, costUSD, modelID)
+
+	status := "proposal"
+	if noChange {
+		status = "no-change"
+	}
+	c.JSON(200, gin.H{
+		"status": status, "qa_id": qaID,
+		"plan_id": row.PlanID, "plan_version": row.Version,
+		"would_become": fmt.Sprintf("v%d+o%d", row.Version, s.nextOverlayVersion(row)),
+		"latency_ms":   latencyMs, "cost_usd": costUSD,
+		"reply": gin.H{
+			"evidence": reply.Evidence, "point_class": reply.PointClass,
+			"verdict": reply.Verdict, "summary": reply.Summary, "patch": patchStr,
+		},
+	})
+}
+
+// realignFailClosed records the failure as a P1 alert row so a silent-failing
+// automation is visible. The plan is never touched on this path.
+func (s *Server) realignFailClosed(traderID string, row *store.PlanDB, session, tradeDate, reason string) {
+	logger.Warnf("🔄 plan re-align FAIL-CLOSED (%s %s): %s — plan untouched", tradeDate, session, reason)
+	if s.store == nil {
+		return
+	}
+	_, _ = s.store.Alert().Emit(&store.AlertDB{
+		TraderID: traderID, Level: "P1", Kind: "realign-failed",
+		EventID: fmt.Sprintf("realign-fail:%s:%d", row.PlanID, time.Now().Unix()),
+		Title:   "Plan re-align failed — plan unchanged", Body: reason,
+		CreatedAt: time.Now().Unix(),
+	})
+}
+
+// nextOverlayVersion is the overlay version an Apply would create (for the card's
+// "would become v1+oN" header).
+func (s *Server) nextOverlayVersion(row *store.PlanDB) int {
+	overlays, _ := s.store.Plan().ListOverlays(row.PlanID, row.Version)
+	return len(overlays) + 1
+}
+
+// estimateRealignCostUSD approximates the spend of one re-align call from prompt +
+// reply size (~4 chars/token) at the pinned reasoner's published rate. Approximate
+// by construction — it exists so the owner can see the automation's running cost,
+// not for billing.
+func estimateRealignCostUSD(prompt, reply string) float64 {
+	const (
+		inPerMTok   = 0.28 // deepseek-v4-pro input, USD / 1M tokens
+		outPerMTok  = 0.42 // deepseek-v4-pro output
+		charsPerTok = 4.0
+	)
+	inTok := float64(len(prompt)) / charsPerTok
+	outTok := float64(len(reply)) / charsPerTok
+	return (inTok*inPerMTok + outTok*outPerMTok) / 1_000_000
 }

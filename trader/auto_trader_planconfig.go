@@ -173,3 +173,19 @@ func (at *AutoTrader) planModeBlocked(d *kernel.Decision) (string, bool) {
 	}
 	return "", false
 }
+
+// DefaultRealignCap is the shipped ceiling on AUTO plan re-alignments per plan.
+const DefaultRealignCap = 5
+
+// RealignCap returns this strategy's auto re-align ceiling (W13). Exported because
+// the API layer enforces the cap at the /api/plan/realign entry point.
+func (at *AutoTrader) RealignCap() int {
+	if dp := at.dayPlanCfg(); dp != nil && dp.RealignCap > 0 {
+		return dp.RealignCap
+	}
+	return DefaultRealignCap
+}
+
+// DayPlanOn reports whether the day-plan feature is enabled for this trader —
+// the API uses it to skip re-align entirely on non-day-plan traders.
+func (at *AutoTrader) DayPlanOn() bool { return at.dayPlanEnabled() }

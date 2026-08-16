@@ -30,7 +30,17 @@ type PlanQADB struct {
 	Verdict    string `gorm:"column:verdict;not null;default:''" json:"verdict"`         // DEFEND | CONCEDE | PROPOSE-MERGE
 	Patch      string `gorm:"column:patch;not null;default:''" json:"patch"`            // RFC-6902 (PROPOSE-MERGE only)
 	Applied    bool   `gorm:"column:applied;not null;default:false" json:"applied"`
-	CreatedAt  int64  `gorm:"column:created_at" json:"created_at"`
+	// W13 — re-alignment provenance. Trigger "" = an owner-typed Ask-Planner
+	// question (the original path); "owner-edit" = auto re-align after an overlay
+	// save; "manual-realign" = the owner tapped Re-align. ChallengeType records the
+	// edit kind (add-level | edit-level | delete-level | bulk-add). Cost/latency are
+	// per-call so the owner can see what the automation spends. Every re-align lands
+	// in THIS table so the sycophancy KPI stays one comparable series.
+	Trigger       string  `gorm:"column:trigger_kind;not null;default:''" json:"trigger"`
+	ChallengeType string  `gorm:"column:challenge_type;not null;default:''" json:"challenge_type"`
+	CostUSD       float64 `gorm:"column:cost_usd;not null;default:0" json:"cost_usd"`
+	LatencyMs     int64   `gorm:"column:latency_ms;not null;default:0" json:"latency_ms"`
+	CreatedAt     int64   `gorm:"column:created_at" json:"created_at"`
 }
 
 // TableName implements the gorm Tabler interface.
@@ -139,4 +149,31 @@ func (s *PlanQAStore) VerdictStats(traderID string) (VerdictStats, error) {
 		}
 	}
 	return st, nil
+}
+
+// CountPlannerByTrigger returns how many PLANNER replies with this trigger exist
+// for a plan — the per-session re-align cap counts these (W13). Counting rows is
+// restart-safe and needs no separate counter table.
+func (s *PlanQAStore) CountPlannerByTrigger(traderID, planID, trigger string) (int, error) {
+	var n int64
+	err := s.db.Model(&PlanQADB{}).
+		Where("trader_id = ? AND plan_id = ? AND trigger_kind = ? AND role = ?", traderID, planID, trigger, "planner").
+		Count(&n).Error
+	return int(n), err
+}
+
+// LastPlannerByTrigger returns the most recent planner reply for (plan, trigger),
+// or (nil, nil) when there is none. The W13 debounce reads its CreatedAt so rapid
+// saves collapse into one call even across a restart.
+func (s *PlanQAStore) LastPlannerByTrigger(traderID, planID, trigger string) (*PlanQADB, error) {
+	var m PlanQADB
+	err := s.db.Where("trader_id = ? AND plan_id = ? AND trigger_kind = ? AND role = ?", traderID, planID, trigger, "planner").
+		Order("created_at DESC, id DESC").First(&m).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
 }

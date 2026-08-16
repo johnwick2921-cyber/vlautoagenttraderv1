@@ -496,6 +496,12 @@ Returns: {qa_id, plan_id, plan_version, reply:{evidence, point_class:NEW-INFO|BA
 			s.routeWithSchema(protected, "POST", "/plan/session-registry", "Save the admin session registry (validated; next-day gates honor it)",
 				`Body: {"trader_id":"<id>","registry":{sessions:[{name,window_start_ct,window_end_ct,read_ct,flat_ct,killzones,enabled}]}}. Malformed → 400 (never silently defaulted). Returns: {saved:true, sessions:<int>}.`,
 				s.handlePlanSessionRegistrySave)
+			// W13 — plan re-alignment on owner edit (auto after an overlay save, or
+			// the manual "Re-align plan" fallback once the auto cap is spent).
+			s.routeWithSchema(protected, "POST", "/plan/realign", "Re-examine the whole plan after an owner edit (proposal only)",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","manual":<bool>,"change":{"kind":"add-level|edit-level|delete-level|bulk-add","summary":"<str>","price":<float>,"label":"<str>","grade":"A|B|C","instruction":"<str>","note":"<any-lang>","scenario_tag":"<S1|+new>","batch_count":<int>}}.
+Always 200. status: proposal (PROPOSE-MERGE + RFC-6902 patch, Apply via POST /plan/ask/apply) | no-change | skipped | debounced | capped | failed (fail-closed: plan untouched + alert row). Returns {qa_id, plan_version, would_become, latency_ms, cost_usd, reply{evidence,point_class,verdict,summary,patch}}.`,
+				s.handlePlanRealign)
 			// W9 — approval gate: owner approves entries for the current session-day
 			// (only meaningful when approval_required is ON).
 			s.routeWithSchema(protected, "POST", "/plan/approve", "Approve entries for this trader's current CME session-day",

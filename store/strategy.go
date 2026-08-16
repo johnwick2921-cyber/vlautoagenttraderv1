@@ -864,6 +864,10 @@ type DayPlanConfig struct {
 	ApprovalRequired bool `json:"approval_required"`
 	// EveningDigest: 17:30 evening digest (default true).
 	EveningDigest bool `json:"evening_digest"`
+	// RealignCap (W13): max AUTO plan re-alignments per plan/session (default 5,
+	// 0 → default). Beyond it the card falls back to a manual "Re-align plan"
+	// button, so the owner keeps the capability without unbounded spend.
+	RealignCap int `json:"realign_cap,omitempty"`
 	// LastEntryCT (P2.3) blocks NEW entries after this America/Chicago time
 	// (default 13:00 CT = 14:00 ET). Empty → the default.
 	LastEntryCT string `json:"last_entry_ct,omitempty"`
@@ -905,6 +909,7 @@ func DefaultDayPlanConfig() *DayPlanConfig {
 		SessionsEnabled:    []string{"NY"},
 		ApprovalRequired:   false,
 		EveningDigest:      true,
+		RealignCap:         5,
 		LastEntryCT:        "13:00", // 14:00 ET
 		EODFlatCT:          "14:45", // 15:45 ET
 	}
