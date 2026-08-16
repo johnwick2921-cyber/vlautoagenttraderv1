@@ -28,7 +28,7 @@ type PlanQADB struct {
 	Evidence   string `gorm:"column:evidence;not null;default:''" json:"evidence"`
 	PointClass string `gorm:"column:point_class;not null;default:''" json:"point_class"` // NEW-INFO | BARE-DISAGREEMENT
 	Verdict    string `gorm:"column:verdict;not null;default:''" json:"verdict"`         // DEFEND | CONCEDE | PROPOSE-MERGE
-	Patch      string `gorm:"column:patch;not null;default:''" json:"patch"`            // RFC-6902 (PROPOSE-MERGE only)
+	Patch      string `gorm:"column:patch;not null;default:''" json:"patch"`             // RFC-6902 (PROPOSE-MERGE only)
 	Applied    bool   `gorm:"column:applied;not null;default:false" json:"applied"`
 	// W13 — re-alignment provenance. Trigger "" = an owner-typed Ask-Planner
 	// question (the original path); "owner-edit" = auto re-align after an overlay
@@ -107,14 +107,14 @@ func (s *PlanQAStore) MarkApplied(traderID string, id int64) error {
 
 // VerdictStats is the sycophancy KPI: counts across a trader's planner replies.
 type VerdictStats struct {
-	Total          int `json:"total"`
-	NewInfo        int `json:"new_info"`
-	BareDisagree   int `json:"bare_disagreement"`
-	Defend         int `json:"defend"`
-	Concede        int `json:"concede"`
-	ProposeMerge   int `json:"propose_merge"`
-	Applied        int `json:"applied"`
-	DefendOnBare   int `json:"defend_on_bare"` // the anti-sycophancy signal
+	Total        int `json:"total"`
+	NewInfo      int `json:"new_info"`
+	BareDisagree int `json:"bare_disagreement"`
+	Defend       int `json:"defend"`
+	Concede      int `json:"concede"`
+	ProposeMerge int `json:"propose_merge"`
+	Applied      int `json:"applied"`
+	DefendOnBare int `json:"defend_on_bare"` // the anti-sycophancy signal
 	// Declined counts proposals the owner explicitly REJECTED (owner rows). It is
 	// the missing half of Applied: before W16 a rejected proposal and one never
 	// answered were both just "not applied", so the series could not measure
