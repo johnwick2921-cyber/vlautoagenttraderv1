@@ -3,11 +3,12 @@ package trader
 import (
 	"fmt"
 	"math"
-	"nofx/telemetry"
+	"nofx/discipline"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
+	"nofx/telemetry"
 	"time"
 )
 
@@ -408,8 +409,8 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 		pos := &store.TraderPosition{
 			TraderID:        at.id,
 			Account:         at.currentAccountName(), // ITEM 2 per-account attribution
-			ExchangeID:      at.exchangeID, // Exchange account UUID
-			ExchangeType:    at.exchange,   // Exchange type: binance/bybit/okx/etc
+			ExchangeID:      at.exchangeID,           // Exchange account UUID
+			ExchangeType:    at.exchange,             // Exchange type: binance/bybit/okx/etc
 			Symbol:          symbol,
 			Side:            side, // LONG or SHORT
 			Quantity:        quantity,
@@ -423,7 +424,31 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 			UpdatedAt:       nowMs,
 		}
 		if err := at.store.Position().Create(pos); err != nil {
-			logger.Infof("  ⚠️ Failed to record position: %v", err)
+			// W16/R5 — THE WORST CASE, previously the quietest.
+			//
+			// The order already FILLED at the broker. Failing to write the row means
+			// a REAL live position exists that this process does not know about:
+			// it is absent from the position list, the reconcile's belief side, the
+			// daily-loss and trade-count accounting, EOD-flat's work list (which
+			// sources from GetOpenPositions), and MAE/MFE + adherence. Every
+			// downstream number is now wrong and the position will not be flattened
+			// by us. This used to log at INFO and continue — and the P0 fill alert
+			// lived in the else-branch, so the one failure mode that most needs an
+			// alert emitted none.
+			//
+			// Now: loud log + a P0 the owner sees + FREEZE the trader. The freeze is
+			// the same A4 mechanism the reconcile divergence uses; it blocks NEW
+			// entries only (closes / stop-moves / reconcile are never blocked, see
+			// auto_trader_orders.go:163-174), so the owner can still be brought flat.
+			// It persists until explicitly cleared via /api/risk/clear-freeze, which
+			// is the "flag the UI shows until resolved".
+			reason := fmt.Sprintf("untracked live position: %s %s @ %.2f filled but the DB write failed (%v)", side, symbol, price, err)
+			logger.Errorf("🚨 UNTRACKED LIVE POSITION — %s. This process cannot see, size, close or account for it. Trader FROZEN for new entries; reconcile from NT8 and clear via /api/risk/clear-freeze.", reason)
+			discipline.FreezeTrader(at.id, reason, nowMs)
+			at.emitAlert("P0", "untracked-position",
+				fmt.Sprintf("untracked:%s:%s:%d", symbol, side, nowMs),
+				fmt.Sprintf("UNTRACKED %s %s @ %.2f — fill recorded at the broker, not in the DB", side, symbol, price),
+				"trader frozen for new entries · reconcile from NT8, then clear the freeze")
 		} else {
 			logger.Infof("  📊 Position recorded [%s] %s %s @ %.4f", at.id[:8], symbol, side, price)
 			// P5.5 — stamp the plan link captured in recordPlanCitation onto this
