@@ -398,6 +398,16 @@ func (at *AutoTrader) runCycle() error {
 		}
 		at.logInfof("ℹ️ No actionable decision this cycle (guardrail_skip: %s); skipping execution", reason)
 		stampGuardrailSkip(record, reason)
+		// P0 — a model that emitted reasoning but NO parseable JSON is a lost
+		// setup, never a deliberate "no trade". Make every such miss visible to
+		// the owner (P1 feed), so "how many setups is the format eating?" is
+		// answerable instead of invisible. Deduped per cycle so each loss shows.
+		if reason == "schema_parse_failed" {
+			at.emitAlert("P1", "decision-unparseable",
+				fmt.Sprintf("unparseable:%s:%d", at.id, at.callCount),
+				"Decision unparseable — safe wait",
+				fmt.Sprintf("cycle %d: the model produced reasoning but its decision JSON could not be parsed after retries; no trade was taken.", at.callCount))
+		}
 		at.saveDecision(record)
 		return nil
 	}

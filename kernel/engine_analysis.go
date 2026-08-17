@@ -756,20 +756,24 @@ func extractDecisions(response string) ([]Decision, error) {
 
 	jsonContent := strings.TrimSpace(reJSONArray.FindString(jsonPart))
 	if jsonContent == "" {
-		logger.Infof("⚠️  [SafeFallback] AI didn't output JSON decision, entering safe wait mode")
-
-		cotSummary := jsonPart
-		if len(cotSummary) > 240 {
-			cotSummary = cotSummary[:240] + "..."
+		// Robust recovery before declaring a miss: the model may have emitted a
+		// SINGLE decision object (not wrapped in an array) anywhere in the prose.
+		// Recover it with the same brace-balanced technique ParsePlanDoc uses,
+		// then wrap it into the array shape the decision schema expects. A prose
+		// sentence can never false-positive here: the object must be valid JSON
+		// AND carry a non-empty `action`.
+		if obj := extractJSONObject(jsonPart); obj != "" {
+			var d Decision
+			if err := json.Unmarshal([]byte(obj), &d); err == nil && d.Action != "" {
+				logger.Infof("✓ Recovered a single decision object embedded in prose")
+				return []Decision{d}, nil
+			}
 		}
-
-		fallbackDecision := Decision{
-			Symbol:    "(no decision)",
-			Action:    "wait",
-			Reasoning: fmt.Sprintf("Model didn't output structured JSON decision, entering safe wait; summary: %s", cotSummary),
-		}
-
-		return []Decision{fallbackDecision}, nil
+		// No JSON anywhere → a real parse miss, not a wait. Return an error so
+		// callWithSchemaRetry RETRIES with "reply JSON only" instead of silently
+		// swallowing the decision into a wait. Before this, a fully-reasoned setup
+		// was lost to a format failure with no retry and no record of the loss.
+		return nil, fmt.Errorf("no decision JSON found in AI response (prose-only)")
 	}
 
 	jsonContent = compactArrayOpen(jsonContent)
