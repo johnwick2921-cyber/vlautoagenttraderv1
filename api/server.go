@@ -467,6 +467,14 @@ Fetch a specific version's full doc with GET /plan/today?version=<n>.`,
 			s.routeWithSchema(protected, "GET", "/plan/history", "Recent plan versions (trade_date, session, version)",
 				`Query: ?trader_id=<EXACT trader_id>. Returns: {history:[{trade_date,session,version,lifecycle,model_id,trigger_reason}]}`,
 				s.handlePlanHistory)
+			// ITEM 3 — the owner's manual re-read. GET reports whether it is
+			// available and what it costs; POST spends one re-plan.
+			s.routeWithSchema(protected, "GET", "/plan/reread", "May the owner force a planner re-read now?",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {allowed, reason, session, replans_left, replan_cap, version}.`,
+				s.handlePlanRereadStatus)
+			s.routeWithSchema(protected, "POST", "/plan/reread", "Force a fresh planner read for the current session",
+				`Body: {"trader_id":"<id>"}. SPENDS one re-plan from the session budget and writes a new version with trigger_reason "owner_reread". 409 with {error, gate} when refused (budget spent, session closed/disabled, market closed, already NO-TRADE).`,
+				s.handlePlanReread)
 			s.routeWithSchema(protected, "GET", "/plan/alerts", "In-app alert feed (P0/P1/P2) + unacked count",
 				`Query: ?trader_id=<EXACT trader_id>. Returns: {alerts:[{id,level,kind,title,body,acked,created_at}], unacked:<int>}`,
 				s.handlePlanAlerts)

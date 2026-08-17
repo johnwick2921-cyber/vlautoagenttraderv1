@@ -166,6 +166,16 @@ export interface PlanAlertsResponse {
   unacked: number
 }
 
+// ITEM 3 — the owner's manual re-read.
+export interface RereadGate {
+  allowed: boolean
+  reason?: string
+  session?: string
+  replans_left: number
+  replan_cap: number
+  version: number
+}
+
 const enc = encodeURIComponent
 
 export const planApi = {
@@ -216,6 +226,31 @@ export const planApi = {
       { silent }
     )
     return res.success && res.data?.history ? res.data.history : []
+  },
+
+  // May the owner force a fresh planner read right now, and what does it cost?
+  async getRereadGate(
+    traderId: string,
+    silent = true
+  ): Promise<RereadGate | null> {
+    const res = await httpClient.request<RereadGate>(
+      `${API_BASE}/plan/reread?trader_id=${enc(traderId)}`,
+      { silent }
+    )
+    return res.success && res.data ? res.data : null
+  },
+
+  // SPENDS one re-plan. The server re-checks eligibility, so a stale gate on the
+  // client cannot buy an extra read.
+  async forceReread(
+    traderId: string
+  ): Promise<{ ok: boolean; error?: string; gate?: RereadGate }> {
+    const res = await httpClient.request<{ ok: boolean; gate: RereadGate }>(
+      `${API_BASE}/plan/reread`,
+      { method: 'POST', data: { trader_id: traderId }, silent: true }
+    )
+    if (res.success && res.data) return { ok: true, gate: res.data.gate }
+    return { ok: false, error: res.message || 'reread refused' }
   },
 
   async getPlanAlerts(

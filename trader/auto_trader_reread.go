@@ -1,0 +1,105 @@
+package trader
+
+import (
+	"fmt"
+	"time"
+
+	"nofx/kernel"
+	"nofx/store"
+)
+
+// ITEM 3 (2026-08-17) — THE OWNER'S MANUAL ESCAPE HATCH.
+//
+// The planner only reads on its own schedule and on death. When a plan is wrong
+// but not dead — or the owner has just learned something the plan does not know —
+// there was no way to ask for a fresh read short of waiting. This is that button.
+//
+// It SPENDS one re-plan from the same budget the automatic path uses, so it can
+// never be used to talk the bot past its own limits, and the new version is
+// written through the NORMAL path with trigger_reason "owner_reread" so the
+// history shows who asked.
+
+// RereadRefusal explains why a manual re-read is not available, in the owner's
+// language. Empty Reason means it IS available.
+type RereadRefusal struct {
+	Allowed bool   `json:"allowed"`
+	Reason  string `json:"reason,omitempty"`
+	Session string `json:"session,omitempty"`
+	// Budget as it stands right now, so the confirm step can say what it costs.
+	ReplansLeft int `json:"replans_left"`
+	ReplanCap   int `json:"replan_cap"`
+	Version     int `json:"version"`
+}
+
+// CanForceReread reports whether a manual re-read may run right now, and why not
+// when it may not. Read-only: it never writes.
+func (at *AutoTrader) CanForceReread(now time.Time) RereadRefusal {
+	if !at.dayPlanEnabled() || at.store == nil {
+		return RereadRefusal{Reason: "the day plan is off for this trader"}
+	}
+	reg := at.sessionRegistry(now)
+	sess, ok := reg.ActiveSession(now)
+	if !ok {
+		return RereadRefusal{Reason: "no session is active right now — the planner reads at the session open"}
+	}
+	if runnable, why := at.sessionRunnable(sess); !runnable {
+		reason := why
+		if reason == "" {
+			reason = fmt.Sprintf("the %s session is not enabled for this strategy", sess.Name)
+		}
+		return RereadRefusal{Session: sess.Name, Reason: reason}
+	}
+	if !kernel.IsCMEOpen(now) {
+		return RereadRefusal{Session: sess.Name, Reason: "the market is closed (holiday or weekend)"}
+	}
+
+	tradeDate := plannerTradeDateCT(now)
+	cap := at.replanCapFor(sess.Name)
+	row, err := at.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+	if err != nil {
+		return RereadRefusal{Session: sess.Name, Reason: "could not read the current plan"}
+	}
+	if row == nil {
+		// No plan yet today: the first read is not a re-plan and costs no budget.
+		return RereadRefusal{Allowed: true, Session: sess.Name, ReplanCap: cap, ReplansLeft: cap, Version: 0}
+	}
+	out := RereadRefusal{
+		Session:     sess.Name,
+		Version:     row.Version,
+		ReplanCap:   cap,
+		ReplansLeft: store.ReplansLeftFor(row.Version, cap),
+	}
+	if row.Lifecycle == "no_trade" {
+		out.Reason = "this session has already been closed out with a NO-TRADE plan"
+		return out
+	}
+	if !store.MayReplan(row.Version, cap) {
+		out.Reason = fmt.Sprintf("the re-read budget for %s is spent (%d of %d used)",
+			sess.Name, store.ReplansUsed(row.Version), cap)
+		return out
+	}
+	out.Allowed = true
+	return out
+}
+
+// ForceReread runs a planner read for the CURRENT session on the owner's demand.
+// It re-checks eligibility itself — the caller's earlier check may be stale — and
+// returns the refusal it acted on. Fail-closed: the planner's own write path
+// handles a bad read by storing a NO-TRADE plan and alerting, and the previous
+// plan is never mutated either way.
+func (at *AutoTrader) ForceReread(now time.Time) (RereadRefusal, error) {
+	gate := at.CanForceReread(now)
+	if !gate.Allowed {
+		return gate, fmt.Errorf("%s", gate.Reason)
+	}
+	tradeDate := plannerTradeDateCT(now)
+	at.logInfof("🗓️ OWNER RE-READ requested for %s %s (v%d, %d of %d re-reads left) — spending one.",
+		tradeDate, gate.Session, gate.Version, gate.ReplansLeft, gate.ReplanCap)
+	at.emitAlert("P2", "owner-reread",
+		fmt.Sprintf("reread:%s:%s:v%d", tradeDate, gate.Session, gate.Version),
+		fmt.Sprintf("%s plan re-read on request", gate.Session),
+		fmt.Sprintf("You asked for a fresh read of the %s plan. It spends one of the %d re-reads for this session.",
+			gate.Session, gate.ReplanCap))
+	at.runPlannerReadWithTrigger(gate.Session, tradeDate, "owner_reread")
+	return gate, nil
+}

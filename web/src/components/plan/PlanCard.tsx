@@ -10,6 +10,7 @@ import { SessionTimelineStrip } from './SessionTimelineStrip'
 import { SessionTabs, type SessionTab, type TabState } from './SessionTabs'
 import { HandoverBanner } from './HandoverBanner'
 import { SessionPlanCard } from './SessionPlanCard'
+import { RereadButton } from './RereadButton'
 import { AlertCenter } from './AlertCenter'
 import { GateBlocksPanel } from './GateBlocksPanel'
 import { SESSION_BANDS, type SessionName } from './sessionConfig'
@@ -98,6 +99,14 @@ export function PlanCard({
       )}
       {/* W16/R3 — refusals, where the owner already looks for plan state. */}
       <GateBlocksPanel traderId={traderId} language={language} />
+      {/* ITEM 3 — the owner's manual re-read, next to the plan it acts on. */}
+      <div className="flex justify-end">
+        <RereadButton
+          traderId={traderId}
+          language={language}
+          onDone={() => mutate()}
+        />
+      </div>
       <SessionPlanCard
         plan={plan}
         traderId={traderId}

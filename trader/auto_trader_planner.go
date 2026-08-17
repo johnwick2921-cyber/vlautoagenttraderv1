@@ -360,6 +360,11 @@ func releasePlannerRead(key string) { plannerReadInFlight.Delete(key) }
 // runPlannerRead assembles the input package, calls the pinned planner client,
 // and persists the plan (or a fail-closed NO-TRADE plan).
 func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
+	at.runPlannerReadWithTrigger(session, tradeDate, "")
+}
+
+// runPlannerReadWithTrigger is runPlannerRead with an explicit trigger_reason.
+func (at *AutoTrader) runPlannerReadWithTrigger(session, tradeDate, triggerOverride string) {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
@@ -382,7 +387,7 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 	// W3 — HARD red-news blackout lines auto-written into the plan (§80).
 	t1Lines := kernel.T1NoTradeLines(input.Calendar)
 	// W11 — carry the frozen indicator mirror + ai_config hash to the write site.
-	at.runPlannerReadCore(session, tradeDate, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, func() (string, error) {
+	at.runPlannerReadCoreWithTrigger(session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, func() (string, error) {
 		return client.CallWithMessages(plannerSystemPrompt, prompt)
 	}, t1Lines...)
 }
@@ -391,6 +396,14 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 // NO-TRADE plan (never a stale plan, never nothing). Writes the append-only plan
 // row. Returns (version, lifecycle, err).
 func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash, indicatorsBlock, aiConfigHash string, call func() (string, error), extraNoTrade ...string) (int, string, error) {
+	return at.runPlannerReadCoreWithTrigger(session, tradeDate, "", modelID, promptHash, indicatorsBlock, aiConfigHash, call, extraNoTrade...)
+}
+
+// runPlannerReadCoreWithTrigger is runPlannerReadCore with an explicit
+// trigger_reason. ITEM 3 (2026-08-17): an owner-forced re-read must be
+// distinguishable in the stored history from the scheduled one, so the version
+// list can show WHO asked for it. An empty override keeps the scheduled label.
+func (at *AutoTrader) runPlannerReadCoreWithTrigger(session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash string, call func() (string, error), extraNoTrade ...string) (int, string, error) {
 	var doc *kernel.PlanDoc
 	var lastErr error
 	for attempt := 1; attempt <= 3; attempt++ { // 1 + ≤2 retries
@@ -425,6 +438,9 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 
 	lifecycle := "active"
 	trigger := session + "_scheduled_read"
+	if strings.TrimSpace(triggerOverride) != "" {
+		trigger = triggerOverride
+	}
 	if doc == nil {
 		doc = kernel.NoTradePlanDoc(fmt.Sprintf("read failed after retries: %v", lastErr))
 		lifecycle = "no_trade"

@@ -162,6 +162,25 @@ export const planStrings = {
     zh: '本时段剩余重规划',
     id: 'Sisa rencana ulang sesi ini',
   },
+  rereadTitle: { en: 'Re-read', zh: '重新解读', id: 'Baca ulang' },
+  rereadConfirm: {
+    en: 'Spend one of {left} re-reads?',
+    zh: '消耗 {left} 次重读中的一次？',
+    id: 'Pakai satu dari {left} baca ulang?',
+  },
+  rereadConfirmHint: {
+    en: 'This calls the planner again and writes a new version. It costs an API call and one re-read from this session budget.',
+    zh: '这将再次调用规划师并写入新版本，消耗一次 API 调用和本时段的一次重读额度。',
+    id: 'Ini memanggil perencana lagi dan menulis versi baru — biaya satu panggilan API dan satu jatah baca ulang sesi ini.',
+  },
+  rereadGo: { en: 'Yes, re-read', zh: '确认重读', id: 'Ya, baca ulang' },
+  rereadCancel: { en: 'Cancel', zh: '取消', id: 'Batal' },
+  rereadRunning: { en: 'Re-reading…', zh: '正在重读…', id: 'Membaca ulang…' },
+  rereadDone: {
+    en: 'Re-read requested',
+    zh: '已请求重读',
+    id: 'Baca ulang diminta',
+  },
   askAnyway: { en: 'Ask the planner', zh: '询问规划师', id: 'Tanya perencana' },
   askContextHistorical: {
     en: 'HISTORICAL CONTEXT — answering about the last stored plan, not a live one',

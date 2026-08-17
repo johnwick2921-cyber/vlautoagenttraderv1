@@ -703,6 +703,53 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 	return overlayVersion, row.Version, 0, ""
 }
 
+// handlePlanRereadStatus GET /api/plan/reread?trader_id=xxx — may the owner force
+// a fresh planner read right now, and what would it cost? Read-only.
+func (s *Server) handlePlanRereadStatus(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil || at == nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	c.JSON(200, at.CanForceReread(time.Now()))
+}
+
+// handlePlanReread POST /api/plan/reread — ITEM 3, the owner's manual escape
+// hatch. SPENDS one re-plan from the same budget the automatic path uses, so it
+// can never talk the bot past its own limits, and writes through the normal path
+// with trigger_reason "owner_reread" so the history shows who asked.
+func (s *Server) handlePlanReread(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil || at == nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	// The trader re-checks eligibility itself; the FE's earlier check may be stale.
+	gate, rErr := at.ForceReread(time.Now())
+	if rErr != nil {
+		c.JSON(409, gin.H{"error": gate.Reason, "gate": gate})
+		return
+	}
+	c.JSON(200, gin.H{"ok": true, "gate": gate})
+}
+
 // ── ITEM 2 — Ask-Planner context resolution ────────────────────────────────
 //
 // The thread used to be hard-gated on an ACTIVE plan (400 on night/disabled,
