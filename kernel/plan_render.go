@@ -179,6 +179,9 @@ func RenderPlanStatus(symbol string, doc PlanDoc, bars []market.Kline, price, dA
 
 // planStateLabel maps a persisted freshness grade to a PLAN-STATUS annotation.
 // "" / A / fresh → "" (no annotation, keeps the fresh line unchanged).
+// P1c design rule: a consumed level ROLE-FLIPS and stays on the map — the label
+// says "flipped", never "burned", because a consumed level is an OPPORTUNITY
+// (the trap S1 trades), not a scar.
 func planStateLabel(grade string) string {
 	switch strings.ToLower(strings.TrimSpace(grade)) {
 	case "", "a", "fresh":
@@ -188,7 +191,7 @@ func planStateLabel(grade string) string {
 	case "c", "tested":
 		return "state=C(tested×2)"
 	case "done", "consumed":
-		return "BURNED(prior session)"
+		return "flipped(consumed — watch the trap)"
 	default:
 		return "state=" + grade
 	}

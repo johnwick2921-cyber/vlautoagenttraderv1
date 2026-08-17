@@ -82,24 +82,37 @@ func (at *AutoTrader) recordLevelState() {
 		if l.Price < price {
 			dir = kernel.DirBelow
 		}
-		f := kernel.EvaluateLevelFacts(bars, l.Price, dir, rule, 3, nowMs)
 
 		cur, err := ls.Get(key)
 		if err != nil || cur == nil {
 			continue
 		}
 
+		// P1c — WINDOWED consumption. The old evaluation fed the FULL ~33h
+		// 1-minute cache into EvaluateLevelFacts, so any level that price merely
+		// SAT beyond (support below price all session) read "accepted through"
+		// and burned within minutes of the plan's birth — 2026-08-17 NY burned
+		// 12 of 12 levels this way (pre-H10 rows additionally counted 2×1m as
+		// 2×5m). The verdict is now: touched in-window AND accepted through on
+		// rule-TF closes, judged ONLY on bars since this level row was born.
+		sinceMs := int64(0)
+		if !cur.CreatedAt.IsZero() {
+			sinceMs = cur.CreatedAt.UnixMilli()
+		}
+		f := kernel.EvaluateLevelFacts(kernel.BarsSince(bars, sinceMs), l.Price, dir, rule, 3, nowMs)
+
 		// A burned level (persisted consumed/done) re-entering the active window and
 		// re-touched is a fact the state is meant to catch — surface it (no prompt change).
 		if (cur.Consumed || cur.Freshness == store.FreshnessDone) && f.StillValid {
 			telemetry.IncGateBlock(at.id, "level_burned_retouch")
 			at.emitAlert("P1", "level-burned", "burned:"+key,
-				"Burned level re-touched: "+l.Label, "consumed in a prior session — no fresh play")
-			continue
+				"Consumed level re-touched: "+l.Label, "role-flipped — watch the trap")
+			// P1c — a consumed level is never deleted: it role-flips and stays on
+			// the map; the retouch is exactly the tradeable event. No `continue`.
 		}
 
-		if !f.StillValid {
-			_ = ls.MarkConsumed(key) // accepted through → burned for the day (and forward)
+		if kernel.ConsumedSince(bars, l.Price, rule, sinceMs, nowMs) {
+			_ = ls.MarkConsumed(key) // touched AND accepted through in-window → role-flip
 			continue
 		}
 

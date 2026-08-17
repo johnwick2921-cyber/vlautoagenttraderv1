@@ -145,6 +145,30 @@ func barsSince(bars []market.Kline, sinceMs int64) []market.Kline {
 	return nil
 }
 
+// BarsSince is the EXPORTED window helper (P1c): every consumer that judges
+// acceptance/consumption must window the series to what happened AFTER the
+// thing it is judging was born — the full-cache, windowless evaluation is what
+// burned fresh levels in minutes (2026-08-17 NY: 12 of 12 levels "done").
+func BarsSince(bars []market.Kline, sinceMs int64) []market.Kline {
+	return barsSince(bars, sinceMs)
+}
+
+// LevelTouchedOn reports whether price reached (touched) the level on the
+// RULE-TIMEFRAME series since the window start — the gate that separates
+// "accepted through" from "price merely sits beyond the level".
+func LevelTouchedOn(bars []market.Kline, level float64, rule string, nowMs int64) bool {
+	return levelTouched(AcceptanceBars(bars, rule), level, nowMs)
+}
+
+// ConsumedSince reports the P1c consumption verdict for one level, windowed:
+// the level is consumed ONLY IF it was touched in-window AND then accepted
+// through (need consecutive rule-TF closes beyond) — a wick alone never
+// consumes, and sitting beyond the level without touching it never consumes.
+func ConsumedSince(bars []market.Kline, level float64, rule string, sinceMs, nowMs int64) bool {
+	w := BarsSince(bars, sinceMs)
+	return LevelTouchedOn(w, level, rule, nowMs) && !LevelStillValidOn(w, level, rule, nowMs)
+}
+
 // levelTouched reports whether any closed bar's range bracketed the level.
 func levelTouched(bars []market.Kline, level float64, now int64) bool {
 	for i := range bars {

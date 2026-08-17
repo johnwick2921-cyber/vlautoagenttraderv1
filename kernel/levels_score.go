@@ -34,6 +34,10 @@ func freshLabel(f string) string {
 		return "B"
 	case "c", "tested":
 		return "tested"
+	case "done", "consumed":
+		// P1c design rule — a consumed level ROLE-FLIPS (support↔resistance) and
+		// STAYS on the map; it is never deleted, and the label says what it is.
+		return "flipped"
 	default:
 		return f
 	}
@@ -97,6 +101,8 @@ func isTodayPriority(k LevelKind) bool {
 }
 
 // freshMult maps a freshness grade to a score multiplier. "" → fresh.
+// P1c design rule: a consumed level is NOT zeroed (that deleted the map's best
+// levels) — it role-flips and stays seated at a reduced score.
 func freshMult(f string) float64 {
 	switch strings.ToLower(strings.TrimSpace(f)) {
 	case "", "a", "fresh":
@@ -106,7 +112,7 @@ func freshMult(f string) float64 {
 	case "c", "tested":
 		return 0.6
 	case "done", "consumed":
-		return 0.0 // consumed → dropped
+		return 0.5 // role-flipped, still on the map
 	default:
 		return 1.0
 	}
