@@ -156,6 +156,45 @@ export function SessionPlanCard({
   const viewingLiveSession = plan?.is_active !== false
   const doorEnabled = !!traderId && viewingLiveSession && !plan?.historical
 
+  // ITEM 2 (2026-08-17) — the 💬 must be reachable with NO PLAN.
+  //
+  // Every no-plan state returned a bare StatePanel, so there was no ask
+  // affordance at all — and "why did the plan die?" / "why no levels tonight?"
+  // are exactly the questions that only exist once the plan is gone. The backend
+  // now answers in a labelled HISTORICAL / NO-PLAN context and strips any patch,
+  // so opening the thread here cannot be mistaken for, or act on, a live plan.
+  const noPlanAsk = traderId ? (
+    <>
+      <div className="flex justify-center pb-4">
+        <button
+          type="button"
+          data-testid="ask-anyway"
+          onClick={() => setAskOpen(true)}
+          className="text-[12px] px-3 py-2"
+          style={{
+            color: 'var(--vl-gold)',
+            border: '1px solid var(--vl-gold-line)',
+            borderRadius: 'var(--vl-radius-chip)',
+            background: 'transparent',
+            cursor: 'pointer',
+            minHeight: 44,
+          }}
+        >
+          💬 {tp('askAnyway', language)}
+        </button>
+      </div>
+      <AskPlannerPanel
+        open={askOpen}
+        traderId={traderId}
+        symbol={symbol}
+        language={language}
+        contextLabel={tp('askContextNoPlan', language)}
+        onClose={() => setAskOpen(false)}
+        onApplied={() => onChanged?.()}
+      />
+    </>
+  ) : null
+
   // ── non-plan states ──
   if (errored) {
     return (
@@ -173,31 +212,40 @@ export function SessionPlanCard({
   if (!plan || !plan.found) {
     if (plan?.night || !plan?.session) {
       return (
-        <StatePanel
-          icon="🌙"
-          title={tp('night', language)}
-          hint={tp('nightHint', language)}
-        />
+        <>
+          <StatePanel
+            icon="🌙"
+            title={tp('night', language)}
+            hint={tp('nightHint', language)}
+          />
+          {noPlanAsk}
+        </>
       )
     }
     // enabled session, plan not armed yet (pre-★2 graceful state)
     return (
-      <StatePanel
-        icon="🕗"
-        title={tp('noPlanYet', language)}
-        hint={tp('noPlanYetHint', language)}
-      />
+      <>
+        <StatePanel
+          icon="🕗"
+          title={tp('noPlanYet', language)}
+          hint={tp('noPlanYetHint', language)}
+        />
+        {noPlanAsk}
+      </>
     )
   }
 
   const doc = plan.doc
   if (!doc) {
     return (
-      <StatePanel
-        icon="🕗"
-        title={tp('noPlanYet', language)}
-        hint={tp('noPlanYetHint', language)}
-      />
+      <>
+        <StatePanel
+          icon="🕗"
+          title={tp('noPlanYet', language)}
+          hint={tp('noPlanYetHint', language)}
+        />
+        {noPlanAsk}
+      </>
     )
   }
 
@@ -711,6 +759,11 @@ export function SessionPlanCard({
             symbol={symbol}
             planVersion={plan.version}
             language={language}
+            contextLabel={
+              plan.lifecycle && plan.lifecycle !== 'active'
+                ? tp('askContextHistorical', language)
+                : undefined
+            }
             onClose={() => setAskOpen(false)}
             onApplied={() => onChanged?.()}
           />

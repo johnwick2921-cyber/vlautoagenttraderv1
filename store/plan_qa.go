@@ -30,6 +30,12 @@ type PlanQADB struct {
 	Verdict    string `gorm:"column:verdict;not null;default:''" json:"verdict"`         // DEFEND | CONCEDE | PROPOSE-MERGE
 	Patch      string `gorm:"column:patch;not null;default:''" json:"patch"`             // RFC-6902 (PROPOSE-MERGE only)
 	Applied    bool   `gorm:"column:applied;not null;default:false" json:"applied"`
+	// ContextType records WHAT the question was asked against: active | historical
+	// | no-plan. Empty on rows written before ITEM 2 (2026-08-17), which were all
+	// necessarily "active" because the handler refused every other case. Kept on
+	// the row so the sycophancy KPI can be read per context instead of pooling a
+	// live-plan challenge with a post-mortem question.
+	ContextType string `gorm:"column:context_type;not null;default:''" json:"context_type"`
 	// W13 — re-alignment provenance. Trigger "" = an owner-typed Ask-Planner
 	// question (the original path); "owner-edit" = auto re-align after an overlay
 	// save; "manual-realign" = the owner tapped Re-align. ChallengeType records the

@@ -703,6 +703,118 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 	return overlayVersion, row.Version, 0, ""
 }
 
+// ── ITEM 2 — Ask-Planner context resolution ────────────────────────────────
+//
+// The thread used to be hard-gated on an ACTIVE plan (400 on night/disabled,
+// 404 when no row existed), which locked it at exactly the moment it is most
+// useful. It now degrades through three clearly-labelled contexts instead.
+
+const (
+	askContextActive     = "active"     // a live plan for the live session
+	askContextHistorical = "historical" // the most recent stored plan, possibly dead
+	askContextNoPlan     = "no-plan"    // nothing stored — market facts only
+)
+
+type askContext struct {
+	kind       string
+	label      string
+	tradeDate  string
+	session    string
+	planID     string
+	row        *store.PlanDB
+	doc        kernel.PlanDoc
+	planBlock  string
+	liveStatus string
+}
+
+// resolveAskContext never fails: worst case it returns a no-plan context carrying
+// only live market facts, which is still a useful thing to ask about.
+func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askContext {
+	reg := s.planRegistry()
+	tradeDate := now.In(planChicago()).Format("2006-01-02")
+	ctx := askContext{kind: askContextNoPlan, tradeDate: tradeDate}
+
+	// 1) The live session's plan, if there is one.
+	if sess, ok := reg.ActiveSession(now); ok && sess.Enabled {
+		ctx.session = sess.Name
+		if row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name); err == nil && row != nil {
+			ctx.row, ctx.planID = row, row.PlanID
+			if doc, okDoc := s.resolvePlanFinal(row); okDoc {
+				ctx.doc = doc
+				// A dead / no-trade row is NOT the live plan the executor follows.
+				if row.Lifecycle == "active" {
+					ctx.kind = askContextActive
+				} else {
+					ctx.kind = askContextHistorical
+				}
+			}
+		}
+	}
+
+	// 2) Nothing for the live session → the most recent stored plan, even dead.
+	if ctx.row == nil {
+		if rows, err := s.store.Plan().ListRecent(1); err == nil && len(rows) > 0 {
+			row := rows[0]
+			ctx.row, ctx.planID = row, row.PlanID
+			ctx.session, ctx.tradeDate = row.Session, row.TradeDate
+			if doc, okDoc := s.resolvePlanFinal(row); okDoc {
+				ctx.doc = doc
+				ctx.kind = askContextHistorical
+			}
+		}
+	}
+
+	// Label + context blocks.
+	switch ctx.kind {
+	case askContextActive:
+		ctx.label = fmt.Sprintf("ACTIVE PLAN — %s v%d", ctx.session, ctx.row.Version)
+		ctx.planBlock = kernel.RenderPlanBlock(ctx.doc, ctx.session)
+	case askContextHistorical:
+		lifecycle := ""
+		if ctx.row != nil {
+			lifecycle = strings.ToUpper(ctx.row.Lifecycle)
+		}
+		ctx.label = fmt.Sprintf("HISTORICAL CONTEXT — %s %s v%d (%s), NOT the live plan",
+			ctx.tradeDate, ctx.session, ctx.row.Version, lifecycle)
+		var b strings.Builder
+		fmt.Fprintf(&b, "# CONTEXT: THIS IS NOT A LIVE PLAN\nYou are answering about a STORED plan that is no longer active (%s %s v%d, lifecycle %s).\nThere is nothing to patch. Explain what happened; do NOT propose changes.\n",
+			ctx.tradeDate, ctx.session, ctx.row.Version, ctx.row.Lifecycle)
+		if r := strings.TrimSpace(ctx.row.TriggerReason); r != "" {
+			fmt.Fprintf(&b, "why this version was written: %s\n", r)
+		}
+		if r := strings.TrimSpace(ctx.doc.Reasoning); r != "" {
+			fmt.Fprintf(&b, "the plan's own reasoning: %s\n", r)
+		}
+		if r := strings.TrimSpace(ctx.doc.DeathCondition); r != "" {
+			fmt.Fprintf(&b, "its stated death condition: %s\n", r)
+		}
+		b.WriteString("\n")
+		b.WriteString(kernel.RenderPlanBlock(ctx.doc, ctx.session))
+		ctx.planBlock = b.String()
+	default:
+		ctx.label = "NO PLAN — market facts only"
+		ctx.planBlock = "# CONTEXT: NO PLAN EXISTS\nNo plan is stored for this session. Answer from the live market facts below.\nThere is nothing to patch; do NOT propose changes.\n"
+	}
+
+	// Live facts are attached in EVERY context — they are the part that is always
+	// true, and the no-plan case has nothing else.
+	if market.FuturesBarsProvider != nil {
+		if bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount); len(bars) > 0 {
+			price, dATR := marketRef(symbol, now)
+			version := 1
+			if ctx.row != nil {
+				version = ctx.row.Version
+			}
+			rule, _, left := s.planRules(traderID, ctx.session, version)
+			ctx.liveStatus = kernel.RenderPlanStatus(symbol, ctx.doc, bars, price, dATR, rule, left, now.UnixMilli())
+		}
+	}
+	if ctx.planID == "" {
+		ctx.planID = store.MakePlanID(ctx.tradeDate, ctx.session)
+	}
+	return ctx
+}
+
 // handlePlanAsk POST /api/plan/ask — a plan-scoped Q&A with the planner. The
 // verbatim anti-sycophancy contract is the system prompt AND enforced in code
 // (kernel.ParsePlannerReply): a bare disagreement never yields a patch. The owner
@@ -736,43 +848,17 @@ func (s *Server) handlePlanAsk(c *gin.Context) {
 		symbol = "MNQ"
 	}
 
-	// Resolve the SAME active plan the card shows.
+	// ITEM 2 (2026-08-17) — ASKING IS ALLOWED WITH NO ACTIVE PLAN.
+	//
+	// This used to 400 on night/disabled and 404 when no plan row existed, which
+	// locked the thread at exactly the moment the owner most wants it: "why did
+	// the plan die?", "why no levels tonight?". The thread now opens scoped to
+	// whatever DOES exist — the most recent stored plan, even dead — and says so.
 	now := time.Now()
-	reg := s.planRegistry()
-	tradeDate := now.In(planChicago()).Format("2006-01-02")
-	sess, ok := reg.ActiveSession(now)
-	if !ok || !sess.Enabled {
-		SafeBadRequest(c, "no active plan to ask about (night / disabled session)")
-		return
-	}
-	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
-	if err != nil || row == nil {
-		SafeNotFound(c, "Active plan")
-		return
-	}
-	// Ask the planner about plan_final — the doc the OWNER sees — not the base row.
-	// This handler used to unmarshal row.Doc directly while handlePlanToday folded
-	// overlays and handlePlanRealign used resolvePlanFinal, so every owner edit was
-	// invisible here: Ask-Planner defended levels the owner had already changed or
-	// deleted. Same resolution as the card and re-align now, so all three agree.
-	doc, okDoc := s.resolvePlanFinal(row)
-	if !okDoc {
-		SafeInternalError(c, "parse plan", fmt.Errorf("bad plan doc"))
-		return
-	}
+	askCtx := s.resolveAskContext(traderID, symbol, now)
+	tradeDate, sessName, row, doc := askCtx.tradeDate, askCtx.session, askCtx.row, askCtx.doc
 
-	// Build the plan block + live status for the planner's context.
-	planBlock := kernel.RenderPlanBlock(doc, sess.Name)
-	liveStatus := ""
-	if market.FuturesBarsProvider != nil {
-		bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount)
-		if len(bars) > 0 {
-			price, dATR := marketRef(symbol, now)
-			rule, _, left := s.planRules(traderID, sess.Name, row.Version) // W15.B
-			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, rule, left, now.UnixMilli())
-		}
-	}
-	userPrompt := kernel.BuildAskPlannerUserPrompt(planBlock, liveStatus, body.Question)
+	userPrompt := kernel.BuildAskPlannerUserPrompt(askCtx.planBlock, askCtx.liveStatus, body.Question)
 
 	// Call the SAME planner model that authored the plan.
 	client, _ := at.ResolvePlannerClient()
@@ -796,27 +882,46 @@ func (s *Server) handlePlanAsk(c *gin.Context) {
 		c.JSON(502, gin.H{"error": "planner reply malformed", "raw": raw})
 		return
 	}
+	// CODE-ENFORCED, not prompt-enforced: a proposal only exists against an ACTIVE
+	// plan. Outside that there is nothing to patch, so any patch the model emits is
+	// discarded here rather than trusted to the prompt or hidden by the UI.
+	if askCtx.kind != askContextActive {
+		reply.Patch = nil
+		if reply.Verdict == "PROPOSE-MERGE" {
+			reply.Verdict = "DEFEND"
+		}
+	}
 
 	// Persist the owner question + the structured planner reply (verdict logged).
 	_, _ = s.store.PlanQA().Append(&store.PlanQADB{
-		TraderID: traderID, PlanID: row.PlanID, TradeDate: tradeDate, Session: sess.Name,
-		Role: "owner", Content: body.Question, CreatedAt: now.Unix(),
+		TraderID: traderID, PlanID: askCtx.planID, TradeDate: tradeDate, Session: sessName,
+		Role: "owner", Content: body.Question, ContextType: askCtx.kind, CreatedAt: now.Unix(),
 	})
 	patchStr := ""
 	if len(reply.Patch) > 0 {
 		patchStr = string(reply.Patch)
 	}
 	qaID, _ := s.store.PlanQA().Append(&store.PlanQADB{
-		TraderID: traderID, PlanID: row.PlanID, TradeDate: tradeDate, Session: sess.Name,
+		TraderID: traderID, PlanID: askCtx.planID, TradeDate: tradeDate, Session: sessName,
 		Role: "planner", Content: reply.Summary, Evidence: reply.Evidence,
 		PointClass: reply.PointClass, Verdict: reply.Verdict, Patch: patchStr,
-		CreatedAt: now.Unix() + 1, // keep the reply after the question in id/time order
+		ContextType: askCtx.kind,
+		CreatedAt:   now.Unix() + 1, // keep the reply after the question in id/time order
 	})
 
+	planVersion := 0
+	if row != nil {
+		planVersion = row.Version
+	}
+	_ = doc
 	c.JSON(200, gin.H{
 		"qa_id":        qaID,
-		"plan_id":      row.PlanID,
-		"plan_version": row.Version,
+		"plan_id":      askCtx.planID,
+		"plan_version": planVersion,
+		// The owner must never mistake a historical/no-plan answer for one about
+		// the live plan.
+		"context_type":  askCtx.kind,
+		"context_label": askCtx.label,
 		"reply": gin.H{
 			"evidence": reply.Evidence, "point_class": reply.PointClass,
 			"verdict": reply.Verdict, "summary": reply.Summary, "patch": patchStr,

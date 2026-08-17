@@ -162,6 +162,17 @@ export const planStrings = {
     zh: '本时段剩余重规划',
     id: 'Sisa rencana ulang sesi ini',
   },
+  askAnyway: { en: 'Ask the planner', zh: '询问规划师', id: 'Tanya perencana' },
+  askContextHistorical: {
+    en: 'HISTORICAL CONTEXT — answering about the last stored plan, not a live one',
+    zh: '历史上下文 — 回答的是最近存储的计划，而非实时计划',
+    id: 'KONTEKS HISTORIS — menjawab tentang rencana tersimpan terakhir, bukan yang aktif',
+  },
+  askContextNoPlan: {
+    en: 'NO PLAN — answering from live market facts only',
+    zh: '无计划 — 仅根据实时市场数据回答',
+    id: 'TANPA RENCANA — menjawab dari fakta pasar saja',
+  },
   noTradeChip: { en: 'NO-TRADE', zh: '禁止交易', id: 'TANPA TRADE' },
   noTradeBanner: {
     en: 'NO-TRADE — re-read budget exhausted',

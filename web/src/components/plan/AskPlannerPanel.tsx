@@ -21,6 +21,12 @@ interface Props {
   language: Language
   onClose: () => void
   onApplied: () => void // parent re-fetches so the card version-bumps
+  /**
+   * ITEM 2 — set when the thread is NOT about a live plan. The backend already
+   * strips any patch outside an ACTIVE context (so Apply is structurally absent,
+   * not merely disabled); this is the human-readable half of that contract.
+   */
+  contextLabel?: string
 }
 
 function useIsWide(threshold = 1200) {
@@ -297,6 +303,7 @@ export function AskPlannerPanel({
   language,
   onClose,
   onApplied,
+  contextLabel,
 }: Props) {
   const wide = useIsWide()
   const [thread, setThread] = useState<PlanQAMessage[]>([])
@@ -410,6 +417,20 @@ export function AskPlannerPanel({
             ✕
           </button>
         </div>
+        {contextLabel && (
+          <div
+            data-testid="ask-context-label"
+            className="px-4 py-2 text-[11px]"
+            style={{
+              background: 'rgba(224,108,108,0.08)',
+              borderBottom: '1px solid rgba(224,108,108,0.3)',
+              color: 'var(--vl-short)',
+              fontFamily: 'var(--vl-font-ui)',
+            }}
+          >
+            ⚠ {contextLabel}
+          </div>
+        )}
 
         <div
           ref={bodyRef}
