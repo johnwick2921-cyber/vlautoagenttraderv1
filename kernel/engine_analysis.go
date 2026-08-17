@@ -661,6 +661,10 @@ func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthL
 		}, fmt.Errorf("failed to extract decisions: %w", err)
 	}
 
+	// Backfill BEFORE validation so a REJECTED decision keeps its "why" too — the
+	// refusals panel is exactly where the owner asks why something was refused.
+	backfillReasoningFromCoT(decisions, cotTrace)
+
 	if err := validateDecisions(decisions, accountEquity, btcEthLeverage, altcoinLeverage, btcEthPosRatio, altcoinPosRatio, minRiskReward, minConfidence, maxNotionalLev, ctx); err != nil {
 		return &FullDecision{
 			CoTTrace:  cotTrace,
@@ -672,6 +676,32 @@ func parseFullDecisionResponse(aiResponse string, accountEquity float64, btcEthL
 		CoTTrace:  cotTrace,
 		Decisions: decisions,
 	}, nil
+}
+
+// backfillReasoningFromCoT gives every decision the "why" the model actually
+// wrote (ITEM 6, 2026-08-17).
+//
+// The model puts its analysis in the <reasoning> block and — for `wait`
+// especially — leaves the decision JSON's own `reasoning` field empty. That
+// field is what the dashboard renders, so the screen could not answer "why did
+// it wait?" even though the answer was sitting in the SAME response, correctly
+// extracted into cot_trace. Live evidence: decision_records rows whose
+// raw_response opens "<reasoning> Current price 30195.75 is sitting almost
+// exactly on the session POC…" every one of which stored reasoning "".
+//
+// Nothing is invented: the text is copied from the same response, only when the
+// model left the field empty. When one response carries several decisions they
+// share the trace, which is accurate — it is the reasoning for that cycle.
+func backfillReasoningFromCoT(decisions []Decision, cotTrace string) {
+	trace := strings.TrimSpace(cotTrace)
+	if trace == "" {
+		return
+	}
+	for i := range decisions {
+		if strings.TrimSpace(decisions[i].Reasoning) == "" {
+			decisions[i].Reasoning = trace
+		}
+	}
 }
 
 func extractCoTTrace(response string) string {
