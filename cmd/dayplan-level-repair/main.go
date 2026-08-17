@@ -1,4 +1,3 @@
-package main
 // Command dayplan-level-repair clears FALSE burned marks from the level_state
 // table (2026-08-17 NY: 12 of 12 levels consumed/done, written by the pre-fix
 // windowless logic) and lets the bot's P1c windowed evaluator rebuild honest
