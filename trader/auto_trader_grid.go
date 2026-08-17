@@ -583,8 +583,7 @@ func (at *AutoTrader) saveGridDecisionRecord(decision *kernel.FullDecision) {
 		InputPrompt:         decision.UserPrompt,
 		CoTTrace:            decision.CoTTrace,
 		RawResponse:         decision.RawResponse,
-		AIRequestDurationMs: decision.AIRequestDurationMs,
-		Success:             true,
+		AIRequestDurationMs: decision.AIRequestDurationMs,			AILatencyMs:         decision.AIRequestDurationMs, // C-fix: the UI reads ai_latency_ms		Success:             true,
 	}
 
 	if len(decision.Decisions) > 0 {

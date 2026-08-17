@@ -20,7 +20,9 @@ func bar(base time.Time, i int, o, h, l, c float64) market.Kline {
 // consecutive RULE-TIMEFRAME closes beyond, and a bar whose close returns
 // to the near side breaks the count.
 func TestP1CWickDoesNotConsume(t *testing.T) {
-	base := time.Now().Add(-30 * time.Minute)
+	// Fixed base (not time.Now()-relative) so bucket completion never depends
+	// on the wall-clock second the test happens to run at.
+	base := time.Date(2026, 8, 18, 10, 0, 0, 0, time.UTC)
 	const level = 30000.0
 	bars := []market.Kline{
 		bar(base, 0, level-2, level+2, level-4, level-1), // straddle = touch
