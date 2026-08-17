@@ -40,6 +40,11 @@ type PlannerInput struct {
 	// fingerprint of the indicator config that produced it (frozen on the plan row).
 	IndicatorsBlock string
 	AIConfigHash    string
+	// H4/H5 — the RESOLVED caps the planner is asked to write within (max_levels,
+	// scenario_cap). 0 → shipped defaults, so default callers render the same
+	// "max 8 / 1..3" contract as before.
+	MaxLevels   int
+	ScenarioCap int
 }
 
 // BuildPlannerPrompt assembles the planner prompt: reasoning-first instruction,
@@ -128,22 +133,29 @@ func BuildPlannerPrompt(in PlannerInput) string {
 		b.WriteString("## Owner note\n  " + in.OwnerNote + "\n\n")
 	}
 
-	b.WriteString(plannerOutputContract)
+	b.WriteString(plannerOutputContract(in.MaxLevels, in.ScenarioCap))
 	return b.String()
 }
 
-// plannerOutputContract is the schema-strict, reasoning-first output spec.
-const plannerOutputContract = "## OUTPUT — one JSON object, reasoning FIRST, no prose outside it\n" +
-	"{\n" +
-	`  "reasoning": "<your read: what the auction is doing and why this plan>",` + "\n" +
-	`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
-	`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max 8` + "\n" +
-	`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B"}],  // 1..3` + "\n" +
-	`  "no_trade": ["first 5m", "12:00-13:30 lunch", "<calendar blackouts>"],` + "\n" +
-	`  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
-	`  "day_type": "trend|balance|<optional>"` + "\n" +
-	"}\n" +
-	"Rules: levels chosen ONLY from the ranked table above; S/D & FVG are confluence, never standalone. Respect the no-trade windows. If you cannot form a credible plan, say so in reasoning and output a neutral/no-trade plan.\n"
+// plannerOutputContract is the schema-strict, reasoning-first output spec. The
+// level/scenario caps are the RESOLVED config values (H4/H5) — the prompt must
+// ask for what validation will accept, so a raised max_levels/scenario_cap both
+// gets requested AND passes instead of fail-closing every read against a
+// hardcoded 8/3.
+func plannerOutputContract(maxLevels, maxScenarios int) string {
+	maxL, maxS := resolvePlanCaps(maxLevels, maxScenarios)
+	return "## OUTPUT — one JSON object, reasoning FIRST, no prose outside it\n" +
+		"{\n" +
+		`  "reasoning": "<your read: what the auction is doing and why this plan>",` + "\n" +
+		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
+		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d`, maxL) + "\n" +
+		fmt.Sprintf(`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B"}],  // 1..%d`, maxS) + "\n" +
+		`  "no_trade": ["first 5m", "12:00-13:30 lunch", "<calendar blackouts>"],` + "\n" +
+		`  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
+		`  "day_type": "trend|balance|<optional>"` + "\n" +
+		"}\n" +
+		"Rules: levels chosen ONLY from the ranked table above; S/D & FVG are confluence, never standalone. Respect the no-trade windows. If you cannot form a credible plan, say so in reasoning and output a neutral/no-trade plan.\n"
+}
 
 func absF(x float64) float64 {
 	if x < 0 {

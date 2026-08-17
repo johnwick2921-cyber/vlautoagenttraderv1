@@ -57,15 +57,50 @@ var (
 )
 
 const (
-	planMaxLevels    = 8
-	planMaxScenarios = 3
+	planMaxLevels    = 8 // shipped default; the owner's max_levels (3–12) may raise it
+	planMaxScenarios = 3 // shipped default; the owner's scenario_cap (1–5) may raise it
+
+	// PlanHardMaxLevels / PlanHardMaxScenarios are the HARD CEILINGS no plan may
+	// ever exceed — the UI range's top (max_levels 3–12, scenario_cap 1–5). The
+	// resolved config can raise the shipped default up to these, never past.
+	PlanHardMaxLevels    = 12
+	PlanHardMaxScenarios = 5
 )
+
+// resolvePlanCaps turns resolved config values into effective caps: ≤0 → shipped
+// defaults; above the hard ceilings → clamped DOWN to them (a bad config value
+// can never widen the schema past what the UI offers).
+func resolvePlanCaps(maxLevels, maxScenarios int) (maxL, maxS int) {
+	maxL = planMaxLevels
+	if maxLevels > 0 {
+		maxL = maxLevels
+	}
+	if maxL > PlanHardMaxLevels {
+		maxL = PlanHardMaxLevels
+	}
+	maxS = planMaxScenarios
+	if maxScenarios > 0 {
+		maxS = maxScenarios
+	}
+	if maxS > PlanHardMaxScenarios {
+		maxS = PlanHardMaxScenarios
+	}
+	return maxL, maxS
+}
 
 // ParsePlanDoc extracts the JSON object from raw model output (tolerating
 // surrounding prose / code fences), unmarshals it, and validates it against the
-// schema. Any failure → error, which the planner treats as a retryable/fail-closed
-// event.
+// schema at the SHIPPED caps (8 levels / 3 scenarios). Any failure → error, which
+// the planner treats as a retryable/fail-closed event.
 func ParsePlanDoc(raw string) (*PlanDoc, error) {
+	return ParsePlanDocCapped(raw, 0, 0)
+}
+
+// ParsePlanDocCapped is ParsePlanDoc with the RESOLVED config caps (max_levels,
+// scenario_cap). H4/H5: the owner's raised caps (9–12 levels, 4–5 scenarios) must
+// pass validation instead of making every read fail-closed against the hardcoded
+// 8/3.
+func ParsePlanDocCapped(raw string, maxLevels, maxScenarios int) (*PlanDoc, error) {
 	js := extractJSONObject(raw)
 	if js == "" {
 		return nil, fmt.Errorf("no JSON object found in planner output")
@@ -74,15 +109,23 @@ func ParsePlanDoc(raw string) (*PlanDoc, error) {
 	if err := json.Unmarshal([]byte(js), &doc); err != nil {
 		return nil, fmt.Errorf("plan JSON unmarshal: %w", err)
 	}
-	if err := ValidatePlanDoc(&doc); err != nil {
+	if err := ValidatePlanDocWithCaps(&doc, maxLevels, maxScenarios); err != nil {
 		return nil, err
 	}
 	return &doc, nil
 }
 
-// ValidatePlanDoc enforces the schema-strict rules: required fields, enum values,
-// and counts (levels ≤8, scenarios 1–3).
+// ValidatePlanDoc enforces the schema-strict rules at the SHIPPED caps (levels
+// ≤8, scenarios 1–3).
 func ValidatePlanDoc(d *PlanDoc) error {
+	return ValidatePlanDocWithCaps(d, 0, 0)
+}
+
+// ValidatePlanDocWithCaps enforces the schema-strict rules: required fields, enum
+// values, and counts at the RESOLVED caps (clamped to the 12/5 hard ceilings).
+// ≤0 → shipped defaults, so default callers are byte-identical to before.
+func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
+	maxL, maxS := resolvePlanCaps(maxLevels, maxScenarios)
 	if d == nil {
 		return fmt.Errorf("nil plan")
 	}
@@ -98,8 +141,8 @@ func ValidatePlanDoc(d *PlanDoc) error {
 	if strings.TrimSpace(d.DeathCondition) == "" {
 		return fmt.Errorf("death_condition is required")
 	}
-	if len(d.Levels) > planMaxLevels {
-		return fmt.Errorf("too many levels: %d (max %d)", len(d.Levels), planMaxLevels)
+	if len(d.Levels) > maxL {
+		return fmt.Errorf("too many levels: %d (max %d)", len(d.Levels), maxL)
 	}
 	for i, l := range d.Levels {
 		if !levelGrades[l.Grade] {
@@ -112,8 +155,8 @@ func ValidatePlanDoc(d *PlanDoc) error {
 			return fmt.Errorf("level[%d].price %v invalid (must be > 0)", i, l.Price)
 		}
 	}
-	if len(d.Scenarios) < 1 || len(d.Scenarios) > planMaxScenarios {
-		return fmt.Errorf("scenarios count %d invalid (1..%d)", len(d.Scenarios), planMaxScenarios)
+	if len(d.Scenarios) < 1 || len(d.Scenarios) > maxS {
+		return fmt.Errorf("scenarios count %d invalid (1..%d)", len(d.Scenarios), maxS)
 	}
 	for i, s := range d.Scenarios {
 		if strings.TrimSpace(s.ID) == "" {

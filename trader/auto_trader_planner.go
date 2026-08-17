@@ -297,7 +297,11 @@ func (at *AutoTrader) carryOwnerEditsInto(planID string, oldVersion, newVersion 
 	if merged, mErr := json.Marshal(oldBase); mErr == nil {
 		if applied, _ := kernel.ApplyOverlayPatches(merged, patches); len(applied) > 0 {
 			var f kernel.PlanDoc
-			if json.Unmarshal(applied, &f) == nil && kernel.ValidatePlanDoc(&f) == nil {
+			// Re-validation of an overlay-resolved doc is an integrity check, not
+			// the write-time policy gate — use the HARD ceilings (12/5) so a plan
+			// validly written under a raised max_levels/scenario_cap never fails
+			// here.
+			if json.Unmarshal(applied, &f) == nil && kernel.ValidatePlanDocWithCaps(&f, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
 				oldFinal, resolved = f, true
 			}
 		}
@@ -508,6 +512,13 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 // distinguishable in the stored history from the scheduled one, so the version
 // list can show WHO asked for it. An empty override keeps the scheduled label.
 func (at *AutoTrader) runPlannerReadCoreWithTrigger(session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash string, call func() (string, error), extraNoTrade ...string) (int, string, error) {
+	// H4/H5 — validation must accept EXACTLY what the config allows: the resolved
+	// max_levels / scenario_cap (hard ceilings 12/5). Before this the parse
+	// hardcoded 8/3, so raising either setting made EVERY read fail-closed into a
+	// NO-TRADE plan + P0 alert — the upper half of the UI range was unreachable.
+	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), session)
+	scenarioCap := at.scenarioCap()
+
 	var doc *kernel.PlanDoc
 	var lastErr error
 	for attempt := 1; attempt <= 3; attempt++ { // 1 + ≤2 retries
@@ -516,7 +527,7 @@ func (at *AutoTrader) runPlannerReadCoreWithTrigger(session, tradeDate, triggerO
 			lastErr = err
 			continue
 		}
-		d, perr := kernel.ParsePlanDoc(raw)
+		d, perr := kernel.ParsePlanDocCapped(raw, maxLevels, scenarioCap)
 		if perr != nil {
 			lastErr = perr
 			continue
@@ -787,6 +798,11 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 		Warming:          warming,
 		IndicatorsBlock:  indicatorsBlock,
 		AIConfigHash:     aiConfigHash,
+		// H4/H5 — the prompt asks for EXACTLY what validation accepts: the
+		// resolved max_levels / scenario_cap (never a hardcoded 8/3 the owner
+		// cannot raise).
+		MaxLevels:   maxLevels,
+		ScenarioCap: at.scenarioCap(),
 	}
 }
 
@@ -929,7 +945,9 @@ func resolveActivePlanDoc(st *store.Store, row *store.PlanDB) (kernel.PlanDoc, b
 	}
 	final, _ := kernel.ApplyOverlayPatches([]byte(row.Doc), patches)
 	var merged kernel.PlanDoc
-	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDoc(&merged) == nil {
+	// H4/H5 — re-validation integrity check at the HARD ceilings (12/5): a plan
+	// validly written under raised caps must survive overlay resolution.
+	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
 		return merged, true // plan_final
 	}
 	return base, true // armor: a bad overlay never corrupts the executor's plan

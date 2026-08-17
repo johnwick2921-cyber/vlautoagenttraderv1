@@ -205,7 +205,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		if base, mErr := json.Marshal(doc); mErr == nil {
 			final, _ := kernel.ApplyOverlayPatches(base, patches)
 			var merged kernel.PlanDoc
-			if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDoc(&merged) == nil {
+			if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
 				doc = merged // plan_final
 			}
 		}
@@ -683,7 +683,7 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 		return 0, 0, 409, "overlay rejected: " + err.Error() // test-op / validity conflict
 	}
 	var merged kernel.PlanDoc
-	if json.Unmarshal(candidate, &merged) != nil || kernel.ValidatePlanDoc(&merged) != nil {
+	if json.Unmarshal(candidate, &merged) != nil || kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) != nil {
 		return 0, 0, 400, "patch produces an invalid plan (enum/count/sign armor)"
 	}
 	// B2 price armor — sweep the RESULTING plan_final's prices (levels +
@@ -1547,7 +1547,7 @@ func (s *Server) resolvePlanFinal(row *store.PlanDB) (kernel.PlanDoc, bool) {
 	}
 	final, _ := kernel.ApplyOverlayPatches(base, patches)
 	var merged kernel.PlanDoc
-	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDoc(&merged) == nil {
+	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
 		return merged, true
 	}
 	return doc, true
