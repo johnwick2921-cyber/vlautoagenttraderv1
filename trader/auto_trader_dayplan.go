@@ -49,6 +49,10 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		// resolver every other site uses), so the config governs which levels
 		// are generated and seated everywhere.
 		kernel.PlanProximityKProvider = func() float64 { return at.proximityFilterATR() }
+		// H7 — the executor prompt resolves the PERSISTED admin registry (per
+		// session-day cache, same resolver the gates read), never the hardcoded
+		// default that would ignore an admin edit.
+		kernel.SessionRegistryProvider = func() kernel.SessionRegistry { return at.sessionRegistry(time.Now()) }
 	})
 
 	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)

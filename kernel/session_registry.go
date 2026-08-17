@@ -60,6 +60,26 @@ type SessionRegistry struct {
 	HalfDays map[string]string `json:"half_days,omitempty"`
 }
 
+// SessionRegistryProvider supplies the PERSISTED admin registry to kernel code
+// that has no trader handle (the executor prompt path in engine_analysis) —
+// the same seam as FuturesBarsProvider / NakedPOCProvider / PlanProximityKProvider.
+// The trader installs it from loadStoredRegistry. nil → DefaultSessionRegistry()
+// (byte-identical pre-H7 behavior; crypto never installs one).
+var SessionRegistryProvider func() SessionRegistry
+
+// resolvedSessionRegistry returns the provider's registry when installed, else
+// the shipped default. H7: the executor prompt previously always read
+// DefaultSessionRegistry(), so an admin-edited registry would have been ignored
+// by the one surface that renders the plan to the AI.
+func resolvedSessionRegistry() SessionRegistry {
+	if SessionRegistryProvider != nil {
+		if reg := SessionRegistryProvider(); len(reg.Sessions) > 0 {
+			return reg
+		}
+	}
+	return DefaultSessionRegistry()
+}
+
 // DefaultSessionRegistry returns the shipped registry: three CT-anchored
 // sessions with only NY enabled (ASIA/LONDON earn enablement via replay +
 // NY match-rate evidence). Read/window/flat per the spec.
