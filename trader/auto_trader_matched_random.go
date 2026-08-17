@@ -27,11 +27,7 @@ func (at *AutoTrader) recordMatchedRandomForClose(p *store.TraderPosition, ex ke
 	if !ok {
 		return
 	}
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		return
-	}
-	tradeDate := entryT.In(loc).Format("2006-01-02")
+	tradeDate := sessionChainDate(sess, entryT)
 	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 	if err != nil || row == nil {
 		return

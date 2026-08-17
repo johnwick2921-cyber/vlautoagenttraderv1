@@ -53,7 +53,7 @@ func (at *AutoTrader) CanForceReread(now time.Time) RereadRefusal {
 		return RereadRefusal{Session: sess.Name, Reason: "the market is closed (holiday or weekend)"}
 	}
 
-	tradeDate := plannerTradeDateCT(now)
+	tradeDate := sessionChainDate(sess, now)
 	cap := at.replanCapFor(sess.Name)
 	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 	if err != nil {
@@ -92,7 +92,9 @@ func (at *AutoTrader) ForceReread(now time.Time) (RereadRefusal, error) {
 	if !gate.Allowed {
 		return gate, fmt.Errorf("%s", gate.Reason)
 	}
-	tradeDate := plannerTradeDateCT(now)
+	reg := at.sessionRegistry(now)
+	sess, _ := reg.ActiveSession(now)
+	tradeDate := sessionChainDate(sess, now)
 	at.logInfof("🗓️ OWNER RE-READ requested for %s %s (v%d, %d of %d re-reads left) — spending one.",
 		tradeDate, gate.Session, gate.Version, gate.ReplansLeft, gate.ReplanCap)
 	at.emitAlert("P2", "owner-reread",

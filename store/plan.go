@@ -353,6 +353,19 @@ func (s *PlanStore) ListRecent(limit int) ([]*PlanDB, error) {
 	return rows, nil
 }
 
+// ListRecentForTrader is ListRecent scoped to one trader (P0-A).
+func (s *PlanStore) ListRecentForTrader(traderID string, limit int) ([]*PlanDB, error) {
+	if limit <= 0 {
+		limit = 30
+	}
+	var rows []*PlanDB
+	err := s.db.Where("strategy_id = ?", traderID).Order("created_at DESC").Limit(limit).Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
 // UncarriedEditsKey is the system_config key holding the owner edits that could
 // not be carried into a plan version (ITEM 4). Mirrors the scenario_status
 // precedent so the review list needs no migration.
@@ -371,6 +384,19 @@ func UncarriedEditsKey(planID string, version int) string {
 func (s *PlanStore) ListVersions(tradeDate, session string) ([]*PlanDB, error) {
 	var rows []*PlanDB
 	err := s.db.Where("plan_id = ?", MakePlanID(tradeDate, session)).
+		Order("version ASC").Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// ListVersionsForTrader is ListVersions scoped to ONE trader's chain (P0-A):
+// two traders running the same session share a plan_id, and the version chips
+// must never list another trader's versions.
+func (s *PlanStore) ListVersionsForTrader(tradeDate, session, strategyID string) ([]*PlanDB, error) {
+	var rows []*PlanDB
+	err := s.db.Where("plan_id = ? AND strategy_id = ?", MakePlanID(tradeDate, session), strategyID).
 		Order("version ASC").Find(&rows).Error
 	if err != nil {
 		return nil, err

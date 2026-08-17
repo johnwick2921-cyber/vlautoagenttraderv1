@@ -123,7 +123,6 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 
 	reg := s.planRegistry()
 	now := time.Now()
-	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
 	sessName := ""
 	if ok {
@@ -140,6 +139,14 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	}
 	activeName := sessName
 	sessName, sess, explicit := resolveRequestedSession(reg, c.Query("session"), sessName, sess)
+
+	// P0-B — the chain identity is the SESSION INSTANCE's date (wrap-aware):
+	// an ASIA card opened at 00:30 CT reads the instance that opened 17:00
+	// yesterday, never tomorrow's empty chain.
+	tradeDate := now.In(planChicago()).Format("2006-01-02")
+	if d, okD := kernel.PlanChainTradeDate(sess, now); okD {
+		tradeDate = d
+	}
 
 	// W15.B — the card narrates THE REAL RULEBOOK (acceptance rule / plan mode /
 	// re-plan budget), resolved per trader+session, instead of the hardcoded
@@ -360,10 +367,16 @@ func (s *Server) handlePlanVersions(c *gin.Context) {
 	}
 	tradeDate := strings.TrimSpace(c.Query("trade_date"))
 	if tradeDate == "" {
-		tradeDate = time.Now().In(planChicago()).Format("2006-01-02")
+		now := time.Now()
+		tradeDate = now.In(planChicago()).Format("2006-01-02")
+		if def, found := s.planRegistry().SessionByName(session); found {
+			if d, okD := kernel.PlanChainTradeDate(def, now); okD {
+				tradeDate = d
+			}
+		}
 	}
 
-	rows, err := s.store.Plan().ListVersions(tradeDate, session)
+	rows, err := s.store.Plan().ListVersionsForTrader(tradeDate, session, traderID)
 	if err != nil {
 		SafeInternalError(c, "list plan versions", err)
 		return
@@ -492,7 +505,7 @@ func (s *Server) handlePlanHistory(c *gin.Context) {
 		SafeNotFound(c, "Trader")
 		return
 	}
-	rows, err := s.store.Plan().ListRecent(30)
+	rows, err := s.store.Plan().ListRecentForTrader(traderID, 30)
 	if err != nil {
 		SafeInternalError(c, "list plans", err)
 		return
@@ -665,10 +678,13 @@ func (s *Server) applyPlanOverlay(traderID, symbol, patchJSON, origin string, no
 	planOverlayMu.Lock()
 	defer planOverlayMu.Unlock()
 	reg := s.planRegistry()
-	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
 	if !ok || !sess.Enabled {
 		return 0, 0, 400, "no active plan to edit (night / disabled session)"
+	}
+	tradeDate := now.In(planChicago()).Format("2006-01-02")
+	if d, okD := kernel.PlanChainTradeDate(sess, now); okD {
+		tradeDate = d
 	}
 	row, err := s.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, traderID)
 	if err != nil || row == nil {
@@ -911,12 +927,16 @@ type askContext struct {
 // only live market facts, which is still a useful thing to ask about.
 func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askContext {
 	reg := s.planRegistry()
-	tradeDate := now.In(planChicago()).Format("2006-01-02")
-	ctx := askContext{kind: askContextNoPlan, tradeDate: tradeDate}
+	ctx := askContext{kind: askContextNoPlan, tradeDate: now.In(planChicago()).Format("2006-01-02")}
 
 	// 1) The live session's plan, if there is one.
 	if sess, ok := reg.ActiveSession(now); ok && sess.Enabled {
 		ctx.session = sess.Name
+		tradeDate := ctx.tradeDate
+		if d, okD := kernel.PlanChainTradeDate(sess, now); okD {
+			tradeDate = d
+		}
+		ctx.tradeDate = tradeDate
 		if row, err := s.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, traderID); err == nil && row != nil {
 			ctx.row, ctx.planID = row, row.PlanID
 			if doc, okDoc := s.resolvePlanFinal(row); okDoc {
@@ -1128,6 +1148,9 @@ func (s *Server) handlePlanThread(c *gin.Context) {
 		reg := s.planRegistry()
 		tradeDate := now.In(planChicago()).Format("2006-01-02")
 		if sess, ok := reg.ActiveSession(now); ok {
+			if d, okD := kernel.PlanChainTradeDate(sess, now); okD {
+				tradeDate = d
+			}
 			planID = store.MakePlanID(tradeDate, sess.Name)
 		}
 	}

@@ -37,16 +37,18 @@ func scanProductionGo(t *testing.T, root string, fn func(path string, lines []st
 }
 
 func TestP0AUnscopedLookupBannedInProduction(t *testing.T) {
+	banned := []string{"GetLatestPlanForSession(", "ListVersions(", "ListRecent("}
 	for _, root := range p0aScanRoots {
 		scanProductionGo(t, root, func(p string, lines []string) error {
 			for i, ln := range lines {
-				if strings.Contains(ln, "GetLatestPlanForSession(") {
-					// The definition itself + its doc comment live in store/plan.go.
-					if strings.Contains(p, "store/plan.go") {
-						return nil
+				if strings.Contains(p, "store/plan.go") {
+					return nil // the definitions themselves live here
+				}
+				for _, b := range banned {
+					if strings.Contains(ln, b) && !strings.Contains(ln, "ForTrader") {
+						t.Errorf("%s:%d — UNscoped plan lookup in production: %s\n"+
+							"Use the trader-scoped variant (…ForTraderSession / …ForTrader).", p, i+1, strings.TrimSpace(ln))
 					}
-					t.Errorf("%s:%d — UNscoped plan lookup in production: %s\n"+
-						"Use GetLatestPlanForTraderSession(tradeDate, session, traderID).", p, i+1, strings.TrimSpace(ln))
 				}
 			}
 			return nil

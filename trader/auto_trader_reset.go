@@ -57,7 +57,7 @@ func (at *AutoTrader) CanForceReset(now time.Time) ResetRefusal {
 	if !kernel.IsCMEOpen(now) {
 		return ResetRefusal{Session: sess.Name, Reason: "the market is closed (holiday or weekend)"}
 	}
-	tradeDate := plannerTradeDateCT(now)
+	tradeDate := sessionChainDate(sess, now)
 	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 	if err != nil {
 		return ResetRefusal{Session: sess.Name, Reason: "could not read the current plan"}
@@ -84,7 +84,9 @@ func (at *AutoTrader) ForceReset(now time.Time) (ResetRefusal, error) {
 	if !gate.Allowed {
 		return gate, fmt.Errorf("%s", gate.Reason)
 	}
-	tradeDate := plannerTradeDateCT(now)
+	reg := at.sessionRegistry(now)
+	sess, _ := reg.ActiveSession(now)
+	tradeDate := sessionChainDate(sess, now)
 	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, gate.Session, at.id)
 	if err != nil || row == nil {
 		return gate, fmt.Errorf("could not read the current plan")

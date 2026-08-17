@@ -69,6 +69,16 @@ func (at *AutoTrader) futuresSymbol() string {
 	return s
 }
 
+// sessionChainDate is the plan-chain identity date for a session: the CT date
+// of the session INSTANCE the moment belongs to (P0-B), falling back to the
+// midnight-roll planner date when the session has no parseable window.
+func sessionChainDate(sess *kernel.SessionDef, now time.Time) string {
+	if d, ok := kernel.PlanChainTradeDate(sess, now); ok {
+		return d
+	}
+	return plannerTradeDateCT(now)
+}
+
 // latestClosedPrimaryBarMs returns the CloseTime (ms) of the most recent CLOSED
 // primary-TF bar, ok=false when none is available (provider down / warming).
 func (at *AutoTrader) latestClosedPrimaryBarMs() (int64, bool) {

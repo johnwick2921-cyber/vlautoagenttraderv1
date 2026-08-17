@@ -151,17 +151,35 @@ func shortHash(s string) string {
 // time for each ENABLED session, once per session-day (idempotent via the plan
 // store). GATED on day_plan → dormant by default. Called per-cycle.
 func (at *AutoTrader) maybeRunSessionReads() {
+	at.maybeRunSessionReadsAt(time.Now())
+}
+
+// maybeRunSessionReadsAt is maybeRunSessionReads with an injectable clock
+// (P0-B: the 16:55 closed-market read and the midnight wrap are time-sensitive
+// and unit-tested against a fixed `now`).
+func (at *AutoTrader) maybeRunSessionReadsAt(now time.Time) {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
-	now := time.Now()
 	reg := at.sessionRegistry(now) // W8 — admin registry from system_config (fallback default)
-	tradeDate := plannerTradeDateCT(now)
 	for i := range reg.Sessions {
 		s := &reg.Sessions[i]
-		// W1 — fire the read ONLY inside this session's own read window on a live
-		// (holiday-aware) CME day. inSessionReadWindow stops the Sunday-17:00 NY
-		// read; IsCMEOpen stops holiday/weekend reads independently of loop order.
+		// W1 — fire the read ONLY inside this session's own read window. The
+		// market-open test is made against the SESSION INSTANCE'S OPEN (P0-B):
+		// the ASIA read is designed for 16:55 CT, inside the 16:00–17:00 CME
+		// maintenance break, and the contract says it builds from STORED data
+		// while the market is closed — gating on IsCMEOpen(now) made that read
+		// UNREACHABLE (first ASIA read fired 17:12, post-open). Weekend/holiday
+		// protection is preserved: a session instance whose OPEN falls on a
+		// closed day never reads, and the death-check still runs through the
+		// wrapped tail (Friday 00:30 → Thursday 17:00 open → live).
+		if !inSessionReadWindow(now, s.ReadCT, s.WindowEndCT) {
+			continue
+		}
+		instOpen, okOpen := kernel.SessionInstanceStart(s, now)
+		if !okOpen || !kernel.IsCMEOpen(instOpen) {
+			continue
+		}
 		// W9 — the strategy's sessions_enabled subset (default [NY]) + per-session
 		// Enable override gate which sessions THIS trader reads, on top of the
 		// registry Enabled flag.
@@ -172,8 +190,12 @@ func (at *AutoTrader) maybeRunSessionReads() {
 		if runnable, _ := at.sessionRunnable(s); !runnable {
 			continue
 		}
-		if !kernel.IsCMEOpen(now) || !inSessionReadWindow(now, s.ReadCT, s.WindowEndCT) {
-			continue
+		// P0-B — the chain identity is the SESSION INSTANCE's date (wrap-aware),
+		// never the midnight-roll calendar date: at 00:30 CT the cycle still
+		// belongs to the ASIA instance that opened 17:00 yesterday.
+		tradeDate, okDate := kernel.PlanChainTradeDate(s, now)
+		if !okDate {
+			tradeDate = plannerTradeDateCT(now)
 		}
 		existing, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, s.Name, at.id)
 		if err != nil {
@@ -875,12 +897,16 @@ func (at *AutoTrader) maybeWriteDigests() {
 		if !ok || ctMinutesNow(now) < end {
 			continue // session not closed yet
 		}
-		text := kernel.FormatSessionDigest(s.Name, tradeDate, "", entries, pnl)
+		// P0-B — a session digest carries the SESSION INSTANCE's date, so the
+		// next read of the SAME session picks it up (ASIA closes 02:00 CT, after
+		// the midnight roll; its digest must land on the day the plan was keyed).
+		sessTradeDate := sessionChainDate(s, now)
+		text := kernel.FormatSessionDigest(s.Name, sessTradeDate, "", entries, pnl)
 		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{
 			TraderID: at.id,
-			Symbol:   symbol, TradeDate: tradeDate, Session: s.Name, Kind: "session", Text: text, CreatedAt: now.UnixMilli(),
+			Symbol:   symbol, TradeDate: sessTradeDate, Session: s.Name, Kind: "session", Text: text, CreatedAt: now.UnixMilli(),
 		}); wrote {
-			at.logInfof("📓 session digest written %s %s.", tradeDate, s.Name)
+			at.logInfof("📓 session digest written %s %s.", sessTradeDate, s.Name)
 		}
 	}
 
@@ -954,7 +980,13 @@ func installActivePlanProvider(at *AutoTrader, st *store.Store) {
 			if runnable, _ := at.sessionRunnable(sess); !runnable {
 				return nil
 			}
-			tradeDate := plannerTradeDateCT(now)
+			// P0-B — chain identity is the session INSTANCE's date (wrap-aware):
+			// at 00:30 CT the provider still resolves the ASIA instance that
+			// opened 17:00 yesterday, never tomorrow's empty chain.
+			tradeDate, okDate := kernel.PlanChainTradeDate(sess, now)
+			if !okDate {
+				tradeDate = plannerTradeDateCT(now)
+			}
 			// P0-A — trader-scoped lookup: THIS trader's row only.
 			row, err := st.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 			if err != nil || row == nil || row.Lifecycle != "active" {
