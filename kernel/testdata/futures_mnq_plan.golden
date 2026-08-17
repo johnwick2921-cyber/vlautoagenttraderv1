@@ -18,7 +18,7 @@
 - leverage: always 1 for futures (margin is contract-based; the broker handles it). Do NOT use crypto leverage tiers.
 - position_size_usd: the contract notional you intend (≈ price × $2 × contracts). Keep it conservative (start with 1 contract).
 
-# DAY PLAN (NY) — follow it; entries per plan only
+# DAY PLAN (NY) — preferred: follow it · a valid off-plan setup may still be traded (cite "off-plan")
 Bias: long (medium) · flips: 2x5m < 21480
 Levels:
   21520.00 PDH [A] fade
@@ -80,7 +80,7 @@ KEY LEVELS (map, nearest-first; price 21500.00):
   21500.00  PDC            A  fresh     +0.0
   21520.00  PDH            A  fresh·x2  +20.0
   21480.00  RTH-L          B  fresh     -20.0
-Anchor: react AT these levels (grade A>B>C); do not chase price between them.
+Anchor: react AT these levels (grade A>B>C); between them, a confirmed momentum/breakout may still be traded.
 
 # PLAN STATUS (live)
 price 21500.00 · re-plans left 2

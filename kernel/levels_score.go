@@ -246,6 +246,10 @@ func RenderKeyLevelsBlock(scored []ScoredLevel, price float64) string {
 		fmt.Fprintf(&b, "  %-9.2f %-14s %s  %-9s %s%.1f\n",
 			s.Price, s.Label, s.Grade, fresh, sign, math.Abs(s.Distance))
 	}
-	b.WriteString("Anchor: react AT these levels (grade A>B>C); do not chase price between them.")
+	// W-why-no-trades (2026-08-18): "do not chase price between them" was the
+	// base-prompt line the model quoted while waiting cycle after cycle (0/3
+	// stripped-prompt replays produced an entry). Between levels, a confirmed
+	// momentum/breakout setup stays tradeable.
+	b.WriteString("Anchor: react AT these levels (grade A>B>C); between them, a confirmed momentum/breakout may still be traded.")
 	return b.String()
 }

@@ -111,7 +111,11 @@ func ResolvedSessionRegistryFor(traderID string) SessionRegistry {
 // RenderPlanBlock renders the byte-stable PLAN BLOCK for the cached prefix.
 func RenderPlanBlock(doc PlanDoc, session string) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "# DAY PLAN (%s) — follow it; entries per plan only\n", session)
+	// W-why-no-trades (2026-08-18): "follow it; entries per plan only" read as
+	// DIRECTION by persuasion — the advisory plan was cited by the model as the
+	// reason to refuse every setup. The plan stays informative; valid off-plan
+	// entries are now explicitly permitted (cite "off-plan").
+	fmt.Fprintf(&b, "# DAY PLAN (%s) — preferred: follow it · a valid off-plan setup may still be traded (cite \"off-plan\")\n", session)
 	fmt.Fprintf(&b, "Bias: %s (%s) · flips: %s\n", doc.Bias.Direction, doc.Bias.Conviction, doc.Bias.FlipCondition)
 	if len(doc.Levels) > 0 {
 		b.WriteString("Levels:\n")
@@ -191,7 +195,9 @@ func planStateLabel(grade string) string {
 	case "c", "tested":
 		return "state=C(tested×2)"
 	case "done", "consumed":
-		return "flipped(consumed — watch the trap)"
+		// W-why-no-trades: "watch the trap" made the model AVOID the level — a
+		// consumed level is a role-flipped opportunity, not a hazard to flee.
+		return "flipped(consumed — tradeable both directions)"
 	default:
 		return "state=" + grade
 	}

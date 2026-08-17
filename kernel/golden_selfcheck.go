@@ -29,7 +29,7 @@ const sampleKeyLevelsBlockSelfCheck = "KEY LEVELS (map, nearest-first; price 215
 	"  21500.00  PDC            A  fresh     +0.0\n" +
 	"  21520.00  PDH            A  fresh·x2  +20.0\n" +
 	"  21480.00  RTH-L          B  fresh     -20.0\n" +
-	"Anchor: react AT these levels (grade A>B>C); do not chase price between them."
+	"Anchor: react AT these levels (grade A>B>C); between them, a confirmed momentum/breakout may still be traded."
 
 // selfCheckEngine rebuilds the futures fixture engine used by the golden tests.
 func selfCheckEngine() *StrategyEngine {
