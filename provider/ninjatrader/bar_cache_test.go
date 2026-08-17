@@ -154,11 +154,16 @@ func TestBarCache_Upsert_MultiBar(t *testing.T) {
 
 func TestBarCache_RingBound(t *testing.T) {
 	c := NewBarCache(3) // tiny ring
+	// Real prices, not zero-valued structs: a bar with no range and no volume is
+	// an NT8 empty-minute placeholder and is refused at ingest (see
+	// isPlaceholderBar). This test is about ring bounds, so give it real bars.
 	c.SeedHistorical("MNQ", "1m", []Bar{
-		{T: 1}, {T: 2}, {T: 3},
+		{T: 1, O: 100, H: 101, L: 99, C: 100, V: 5},
+		{T: 2, O: 100, H: 102, L: 99, C: 101, V: 5},
+		{T: 3, O: 101, H: 103, L: 100, C: 102, V: 5},
 	})
 	// 4th bar — oldest must drop.
-	c.Upsert("MNQ", "1m", []Bar{{T: 4}})
+	c.Upsert("MNQ", "1m", []Bar{{T: 4, O: 102, H: 104, L: 101, C: 103, V: 5}})
 	got := c.Get("MNQ", "1m")
 	if len(got) != 3 {
 		t.Fatalf("len=%d, want 3 (ring bounded)", len(got))
@@ -170,8 +175,11 @@ func TestBarCache_RingBound(t *testing.T) {
 
 func TestBarCache_Seed_TruncatesOversized(t *testing.T) {
 	c := NewBarCache(2)
-	c.SeedHistorical("MNQ", "1m", []Bar{
-		{T: 1}, {T: 2}, {T: 3}, {T: 4}, // 4 bars, ring is 2
+	c.SeedHistorical("MNQ", "1m", []Bar{ // 4 real bars, ring is 2
+		{T: 1, O: 100, H: 101, L: 99, C: 100, V: 5},
+		{T: 2, O: 100, H: 102, L: 99, C: 101, V: 5},
+		{T: 3, O: 101, H: 103, L: 100, C: 102, V: 5},
+		{T: 4, O: 102, H: 104, L: 101, C: 103, V: 5},
 	})
 	got := c.Get("MNQ", "1m")
 	if len(got) != 2 {

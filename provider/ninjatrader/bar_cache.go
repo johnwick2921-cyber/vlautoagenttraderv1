@@ -31,6 +31,8 @@ type BarCache struct {
 	mu      sync.RWMutex
 	bars    map[string][]Bar // key: "SYMBOL|TIMEFRAME"
 	maxBars int
+	// dropped counts NT8 empty-minute placeholder bars refused at ingest.
+	dropped int64
 }
 
 // NewBarCache constructs an empty cache. maxBars <= 0 uses
@@ -43,6 +45,63 @@ func NewBarCache(maxBars int) *BarCache {
 		bars:    make(map[string][]Bar),
 		maxBars: maxBars,
 	}
+}
+
+// NO SYNTHETIC BARS, EVER (P0 2026-08-17).
+//
+// NinjaTrader's own minute store keeps EMPTY-MINUTE PLACEHOLDER records, and its
+// bar builder materialises each one as a bar with open==high==low==close (the
+// .ncd file's base price) and volume 0. Whenever a declared-open session has no
+// real ticks, NT8 therefore hands us a flat line rather than a gap.
+//
+// That is exactly what the owner saw. After the AddOn watchdog livelock
+// (7aa521a1) forced NT8 to re-fetch Friday 2026-08-14 into an all-placeholder
+// file, /api/klines returned 959 of 1500 one-minute bars with O=H=L=C=30147.50
+// and volume 0, contiguous from 00:02 to 16:00 CT — a 16-hour horizontal line
+// across the chart where TradingView (and this chart, before) would simply skip
+// to the next real candle.
+//
+// Every hop we own is a verbatim pass-through, so nothing in our code invents
+// these bars — but nothing rejected them either, and they reach the chart AND
+// the kernel's detectors. A bar with no volume and no range carries no
+// information by construction; the only thing it can do is lie. Drop it at
+// ingest, which is the one place that protects both consumers at once.
+//
+// The test is deliberately narrow: BOTH zero volume AND zero range. A real but
+// illiquid minute that still printed a range is kept, and so is a zero-volume
+// bar that somehow carries one.
+func isPlaceholderBar(b Bar) bool {
+	return b.V == 0 && b.H == b.L && b.O == b.C && b.O == b.H
+}
+
+// dropPlaceholderBars returns bars with NT8's empty-minute placeholders removed,
+// plus how many were dropped. It allocates only when something is actually
+// dropped, so the healthy path stays free.
+func dropPlaceholderBars(bars []Bar) ([]Bar, int) {
+	bad := 0
+	for i := range bars {
+		if isPlaceholderBar(bars[i]) {
+			bad++
+		}
+	}
+	if bad == 0 {
+		return bars, 0
+	}
+	out := make([]Bar, 0, len(bars)-bad)
+	for i := range bars {
+		if !isPlaceholderBar(bars[i]) {
+			out = append(out, bars[i])
+		}
+	}
+	return out, bad
+}
+
+// DroppedPlaceholders reports how many NT8 empty-minute placeholder bars this
+// cache has refused, so the condition is observable instead of silent.
+func (c *BarCache) DroppedPlaceholders() int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.dropped
 }
 
 // SeedHistorical MERGES the provided bars into the cache for (symbol,
@@ -65,8 +124,10 @@ func (c *BarCache) SeedHistorical(symbol, timeframe string, bars []Bar) {
 	if symbol == "" || timeframe == "" {
 		return
 	}
+	bars, bad := dropPlaceholderBars(bars)
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.dropped += int64(bad)
 	key := barKey(symbol, timeframe)
 	existing := c.bars[key]
 	if len(existing) == 0 {
@@ -141,8 +202,13 @@ func (c *BarCache) Upsert(symbol, timeframe string, bars []Bar) {
 	if symbol == "" || timeframe == "" || len(bars) == 0 {
 		return
 	}
+	bars, bad := dropPlaceholderBars(bars)
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.dropped += int64(bad)
+	if len(bars) == 0 {
+		return // the whole update was placeholders
+	}
 	key := barKey(symbol, timeframe)
 	existing := c.bars[key]
 	for _, b := range bars {
