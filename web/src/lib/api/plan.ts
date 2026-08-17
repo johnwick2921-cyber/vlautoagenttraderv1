@@ -229,6 +229,35 @@ export const planApi = {
   },
 
   // May the owner force a fresh planner read right now, and what does it cost?
+  // ITEM 5a — hide one alert from the feed (soft-delete; the row survives).
+  async dismissAlert(
+    traderId: string,
+    alertId: number
+  ): Promise<{ ok: boolean; needsAck?: boolean; error?: string }> {
+    const res = await httpClient.request<{ dismissed: boolean }>(
+      `${API_BASE}/plan/alert-dismiss`,
+      {
+        method: 'POST',
+        data: { trader_id: traderId, alert_id: alertId },
+        silent: true,
+      }
+    )
+    if (res.success && res.data?.dismissed) return { ok: true }
+    const msg = res.message ?? ''
+    return { ok: false, needsAck: /acknowledg/i.test(msg), error: msg }
+  },
+
+  // ITEM 5b — clear every ACKNOWLEDGED alert, leaving unacked ones in place.
+  async clearReadAlerts(
+    traderId: string
+  ): Promise<{ ok: boolean; cleared: number }> {
+    const res = await httpClient.request<{ cleared: number }>(
+      `${API_BASE}/plan/alert-clear-read`,
+      { method: 'POST', data: { trader_id: traderId }, silent: true }
+    )
+    return { ok: !!res.success, cleared: res.data?.cleared ?? 0 }
+  },
+
   async getRereadGate(
     traderId: string,
     silent = true

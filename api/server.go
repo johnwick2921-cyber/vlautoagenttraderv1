@@ -481,6 +481,13 @@ Fetch a specific version's full doc with GET /plan/today?version=<n>.`,
 			s.routeWithSchema(protected, "POST", "/plan/alert-ack", "Acknowledge an in-app alert",
 				`Body: {"trader_id":"<EXACT trader_id>","alert_id":<int>}. Returns: {acked:true, alert_id}`,
 				s.handlePlanAlertAck)
+			// ITEM 5 — the feed can be cleared; the event rows survive (soft-delete).
+			s.routeWithSchema(protected, "POST", "/plan/alert-dismiss", "Hide one alert from the feed",
+				`Body: {"trader_id":"<id>","alert_id":<int>}. Soft-delete: the row stays for audit. 404 if the alert is not the caller's. 409 {needs_ack:true} for an UNACKNOWLEDGED P0 — acknowledge it first.`,
+				s.handlePlanAlertDismiss)
+			s.routeWithSchema(protected, "POST", "/plan/alert-clear-read", "Clear every acknowledged alert",
+				`Body: {"trader_id":"<id>"}. Returns {cleared:<int>}. Unacknowledged alerts (especially P0) are left in place.`,
+				s.handlePlanAlertClearRead)
 			// P5.1 — overlay editing (RFC-6902 + test-op concurrency + B2 armor) + sticky owner levels.
 			s.routeWithSchema(protected, "POST", "/plan/overlay", "Append an RFC-6902 overlay to the active plan",
 				`Body: {"trader_id":"<id>","symbol":"MNQ","patch":"<JSON array of RFC-6902 ops>","origin":"owner|planner-revised"}.

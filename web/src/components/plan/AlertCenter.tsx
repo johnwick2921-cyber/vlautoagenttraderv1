@@ -30,10 +30,13 @@ function relTime(unixSec: number): string {
 function AlertRow({
   alert,
   onAck,
+  onDismiss,
   language,
 }: {
   alert: PlanAlert
   onAck: (id: number) => void
+  /** ITEM 5a — remove this alert from the feed (the event row survives). */
+  onDismiss: (alert: PlanAlert) => void
   language: Language
 }) {
   return (
@@ -99,6 +102,24 @@ function AlertRow({
           {tp('markRead', language)}
         </button>
       )}
+      {/* ITEM 5a/5c — ✕ removes the alert from the feed. An UNACKNOWLEDGED P0
+          keeps its ✕ but the server refuses it, and the refusal explains why:
+          hiding the control would leave the owner guessing. */}
+      <button
+        data-testid={`alert-dismiss-${alert.id}`}
+        aria-label="remove alert"
+        title={tp('alertDismiss', language)}
+        onClick={() => onDismiss(alert)}
+        className="text-[11px] px-1.5 py-0.5 shrink-0"
+        style={{
+          color: 'var(--vl-faint)',
+          background: 'transparent',
+          border: 0,
+          cursor: 'pointer',
+        }}
+      >
+        ✕
+      </button>
     </div>
   )
 }
@@ -111,6 +132,27 @@ export function AlertCenter({
   language: Language
 }) {
   const { alerts, unacked, mutate } = usePlanAlerts(traderId)
+
+  // ITEM 5 — the feed can be cleared; the underlying event rows survive.
+  const dismiss = async (alert: PlanAlert) => {
+    if (!traderId) return
+    const res = await api.dismissAlert(traderId, alert.id)
+    if (!res.ok) {
+      toast.error(
+        res.needsAck
+          ? tp('alertP0NeedsAck', language)
+          : (res.error ?? tp('alertDismiss', language))
+      )
+      return
+    }
+    await mutate()
+  }
+  const clearRead = async () => {
+    if (!traderId) return
+    const res = await api.clearReadAlerts(traderId)
+    if (res.ok) toast.success(tp('alertCleared', language, { n: res.cleared }))
+    await mutate()
+  }
   const [open, setOpen] = useState(false)
   // ids we've already toasted — seeded on first load so the backlog never toasts.
   const toastedRef = useRef<Set<number>>(new Set())
@@ -162,6 +204,7 @@ export function AlertCenter({
       {/* header row: bell + unacked badge */}
       <div className="flex items-center justify-between">
         <button
+          data-testid="alert-bell"
           onClick={() => setOpen((o) => !o)}
           className="relative inline-flex items-center gap-1.5 text-[12px]"
           aria-label={tp('bellLabel', language, { n: unacked })}
@@ -251,6 +294,24 @@ export function AlertCenter({
             overflowY: 'auto',
           }}
         >
+          {feedAlerts.some((a) => a.acked) && (
+            <div className="flex justify-end pb-1">
+              <button
+                data-testid="alert-clear-read"
+                onClick={clearRead}
+                className="text-[10px] px-2 py-1"
+                style={{
+                  color: 'var(--vl-muted)',
+                  border: '1px solid var(--vl-hair)',
+                  borderRadius: 'var(--vl-radius-chip)',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                }}
+              >
+                {tp('alertClearRead', language)}
+              </button>
+            </div>
+          )}
           {feedAlerts.length === 0 && p2Count === 0 ? (
             <div
               className="py-4 text-center text-[11px]"
@@ -268,6 +329,7 @@ export function AlertCenter({
                   key={a.id}
                   alert={a}
                   onAck={ack}
+                  onDismiss={dismiss}
                   language={language}
                 />
               ))}

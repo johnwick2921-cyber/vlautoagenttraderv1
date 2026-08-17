@@ -162,6 +162,18 @@ export const planStrings = {
     zh: '本时段剩余重规划',
     id: 'Sisa rencana ulang sesi ini',
   },
+  alertDismiss: { en: 'Remove', zh: '移除', id: 'Hapus' },
+  alertClearRead: { en: 'Clear read', zh: '清除已读', id: 'Bersihkan terbaca' },
+  alertP0NeedsAck: {
+    en: 'Acknowledge this P0 first — a halt cannot be dismissed unseen.',
+    zh: '请先确认此 P0 — 停止事件不能未读即移除。',
+    id: 'Akui P0 ini dulu — penghentian tidak bisa dibuang tanpa dilihat.',
+  },
+  alertCleared: {
+    en: '{n} cleared',
+    zh: '已清除 {n} 条',
+    id: '{n} dibersihkan',
+  },
   rereadTitle: { en: 'Re-read', zh: '重新解读', id: 'Baca ulang' },
   rereadConfirm: {
     en: 'Spend one of {left} re-reads?',

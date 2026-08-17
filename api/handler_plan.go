@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -701,6 +702,68 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 		return 0, 0, 500, "append overlay: " + err.Error()
 	}
 	return overlayVersion, row.Version, 0, ""
+}
+
+// handlePlanAlertDismiss POST /api/plan/alert-dismiss — ITEM 5a. Hides ONE alert
+// from the owner's feed. Trader-scoped like the ack (IDOR guard): 404 on an
+// alert the caller does not own. An UNACKNOWLEDGED P0 refuses — the persistent
+// banner exists so a halt cannot be swiped away unseen.
+func (s *Server) handlePlanAlertDismiss(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+		AlertID  int64  `json:"alert_id"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if body.AlertID <= 0 {
+		SafeBadRequest(c, "alert_id is required")
+		return
+	}
+	found, err := s.store.Alert().DismissForTrader(traderID, body.AlertID, time.Now().Unix())
+	if errors.Is(err, store.ErrP0NotAcked) {
+		c.JSON(409, gin.H{"error": err.Error(), "needs_ack": true})
+		return
+	}
+	if err != nil {
+		SafeInternalError(c, "dismiss alert", err)
+		return
+	}
+	if !found {
+		SafeNotFound(c, "Alert")
+		return
+	}
+	c.JSON(200, gin.H{"dismissed": true, "alert_id": body.AlertID})
+}
+
+// handlePlanAlertClearRead POST /api/plan/alert-clear-read — ITEM 5b. Clears
+// every ACKNOWLEDGED alert in one tap, leaving unacknowledged ones (especially
+// P0) in place.
+func (s *Server) handlePlanAlertClearRead(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	n, err := s.store.Alert().DismissAckedForTrader(traderID, time.Now().Unix())
+	if err != nil {
+		SafeInternalError(c, "clear read alerts", err)
+		return
+	}
+	c.JSON(200, gin.H{"cleared": n})
 }
 
 // handlePlanRereadStatus GET /api/plan/reread?trader_id=xxx — may the owner force

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -24,7 +25,13 @@ type AlertDB struct {
 	Title     string `gorm:"column:title;not null;default:''" json:"title"`
 	Body      string `gorm:"column:body;not null;default:''" json:"body"`
 	Acked     bool   `gorm:"column:acked;not null;default:false" json:"acked"`
-	CreatedAt int64  `gorm:"column:created_at" json:"created_at"`
+	// Dismissed hides the alert from the owner's FEED without destroying the
+	// event (ITEM 5, 2026-08-17). AUDIT, NOT AMNESIA: the row stays, so history
+	// and any later analysis are intact — a P0 halt that was dismissed is still
+	// discoverable. Nothing in the codebase deletes an alert row.
+	Dismissed   bool  `gorm:"column:dismissed;not null;default:false" json:"dismissed"`
+	DismissedAt int64 `gorm:"column:dismissed_at;not null;default:0" json:"dismissed_at"`
+	CreatedAt   int64 `gorm:"column:created_at" json:"created_at"`
 }
 
 // TableName implements the gorm Tabler interface.
@@ -69,7 +76,7 @@ func (s *AlertStore) List(traderID string, limit int) ([]*AlertDB, error) {
 		limit = 50
 	}
 	var rows []*AlertDB
-	err := s.db.Where("trader_id = ?", traderID).
+	err := s.db.Where("trader_id = ? AND dismissed = ?", traderID, false).
 		Order("id DESC").Limit(limit).Find(&rows).Error
 	if err != nil {
 		return nil, err
@@ -80,7 +87,8 @@ func (s *AlertStore) List(traderID string, limit int) ([]*AlertDB, error) {
 // UnackedCount returns the number of un-acked alerts (the bell badge).
 func (s *AlertStore) UnackedCount(traderID string) (int, error) {
 	var n int64
-	err := s.db.Model(&AlertDB{}).Where("trader_id = ? AND acked = ?", traderID, false).Count(&n).Error
+	err := s.db.Model(&AlertDB{}).
+		Where("trader_id = ? AND acked = ? AND dismissed = ?", traderID, false, false).Count(&n).Error
 	return int(n), err
 }
 
@@ -101,4 +109,64 @@ func (s *AlertStore) AckForTrader(traderID string, id int64) (bool, error) {
 		return false, res.Error
 	}
 	return res.RowsAffected > 0, nil
+}
+
+// ── ITEM 5 (2026-08-17) — the feed can be cleared, the record cannot ─────────
+//
+// Alerts could be acknowledged but never removed, so the feed only grew. These
+// SOFT-delete: the row is flagged dismissed and disappears from List/UnackedCount
+// while remaining in storage for audit.
+
+// ErrP0NotAcked is returned when an UNACKNOWLEDGED P0 is dismissed. The whole
+// point of the persistent P0 banner is that a halt, a fill or a read failure
+// cannot be swiped away unseen — so it must be acknowledged first. Dismissing an
+// ACKNOWLEDGED P0 is fine.
+var ErrP0NotAcked = errors.New("an unacknowledged P0 alert must be acknowledged before it can be dismissed")
+
+// DismissForTrader hides ONE alert from traderID's feed. found=false when no row
+// matches the (id, trader_id) pair, so the handler 404s instead of silently
+// dismissing nothing — or another trader's alert (the same IDOR guard as
+// AckForTrader).
+func (s *AlertStore) DismissForTrader(traderID string, id int64, now int64) (found bool, err error) {
+	var row AlertDB
+	if e := s.db.Where("id = ? AND trader_id = ?", id, traderID).First(&row).Error; e != nil {
+		if errors.Is(e, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, e
+	}
+	if row.Level == "P0" && !row.Acked {
+		return true, ErrP0NotAcked
+	}
+	res := s.db.Model(&AlertDB{}).
+		Where("id = ? AND trader_id = ?", id, traderID).
+		Updates(map[string]any{"dismissed": true, "dismissed_at": now})
+	if res.Error != nil {
+		return true, res.Error
+	}
+	return res.RowsAffected > 0, nil
+}
+
+// DismissAckedForTrader clears every ACKNOWLEDGED alert from the feed in one
+// action, leaving unacknowledged ones — especially P0 — exactly where they are.
+// Returns how many were hidden.
+func (s *AlertStore) DismissAckedForTrader(traderID string, now int64) (int64, error) {
+	res := s.db.Model(&AlertDB{}).
+		Where("trader_id = ? AND acked = ? AND dismissed = ?", traderID, true, false).
+		Updates(map[string]any{"dismissed": true, "dismissed_at": now})
+	return res.RowsAffected, res.Error
+}
+
+// PruneAckedOlderThan hides ACKNOWLEDGED low-priority alerts (P2 and digests)
+// older than cutoff so the feed cannot grow without bound. P0/P1 are never
+// auto-pruned — those are the ones worth scrolling back to — and, as everywhere
+// else here, the rows survive.
+func (s *AlertStore) PruneAckedOlderThan(traderID string, cutoff, now int64) (int64, error) {
+	q := s.db.Model(&AlertDB{}).
+		Where("acked = ? AND dismissed = ? AND created_at < ? AND level = ?", true, false, cutoff, "P2")
+	if traderID != "" {
+		q = q.Where("trader_id = ?", traderID)
+	}
+	res := q.Updates(map[string]any{"dismissed": true, "dismissed_at": now})
+	return res.RowsAffected, res.Error
 }
