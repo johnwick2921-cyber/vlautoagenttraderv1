@@ -108,7 +108,7 @@ func (at *AutoTrader) recordLevelState() {
 		if (cur.Consumed || cur.Freshness == store.FreshnessDone) && f.StillValid {
 			telemetry.IncGateBlock(at.id, "level_burned_retouch")
 			at.emitAlert("P1", "level-burned", "burned:"+key,
-				"Consumed level re-touched: "+l.Label, "role-flipped — watch the trap")
+				"Consumed level re-touched: "+l.Label, "role-flipped — tradeable both directions")
 			// P1c — a consumed level is never deleted: it role-flips and stays on
 			// the map; the retouch is exactly the tradeable event. No `continue`.
 		}

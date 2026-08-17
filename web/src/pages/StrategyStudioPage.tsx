@@ -1231,6 +1231,17 @@ export function StrategyStudioPage() {
 
               {/* Config Sections */}
               <div className="space-y-2">
+                {/* UI-verification (2026-08-18): every editor below locks when the
+                    selected strategy is the DEFAULT template — before this the
+                    page said nothing and a fully-grey editor read as broken. */}
+                {selectedStrategy?.is_default && (
+                  <div
+                    data-testid="default-lock-banner"
+                    className="rounded-lg px-3 py-2 text-xs border border-nofx-gold/30 bg-nofx-gold/10 text-nofx-gold"
+                  >
+                    🔒 {tr('defaultLocked')}
+                  </div>
+                )}
                 {configSections.map(
                   ({ key, icon: Icon, color, title, content }) => (
                     <div

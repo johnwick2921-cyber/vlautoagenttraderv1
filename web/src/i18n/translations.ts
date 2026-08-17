@@ -1107,6 +1107,8 @@ export const translations = {
       unsaved: 'Unsaved',
       discardChanges: 'Discard',
       selectOrCreate: 'Select or create a strategy',
+      defaultLocked:
+        'This is the DEFAULT strategy template — read-only. Select or clone a non-default strategy to edit settings.',
       customPromptDesc:
         'Extra prompt appended to System Prompt for personalized trading style',
       customPromptPlaceholder: 'Enter custom prompt...',
@@ -2445,6 +2447,8 @@ export const translations = {
       unsaved: '未保存',
       discardChanges: '撤销',
       selectOrCreate: '选择或创建策略',
+      defaultLocked:
+        '这是默认策略模板 —— 只读。请选择或复制一个非默认策略来编辑设置。',
       customPromptDesc:
         '附加在 System Prompt 末尾的额外提示，用于补充个性化交易风格',
       customPromptPlaceholder: '输入自定义提示词...',
