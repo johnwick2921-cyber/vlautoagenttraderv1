@@ -162,6 +162,16 @@ export const planStrings = {
     zh: '本时段剩余重规划',
     id: 'Sisa rencana ulang sesi ini',
   },
+  deathHistory: {
+    en: 'This session already lost {n} plan(s)',
+    zh: '本时段已有 {n} 个计划失效',
+    id: 'Sesi ini sudah kehilangan {n} rencana',
+  },
+  deathHistoryHint: {
+    en: 'Tap a version to read it as it was.',
+    zh: '点击版本可查看当时的计划。',
+    id: 'Ketuk versi untuk membacanya seperti dulu.',
+  },
   chartNoLevels: {
     en: 'Bars only — this plan has no levels to overlay',
     zh: '仅K线 — 此计划无价位可叠加',

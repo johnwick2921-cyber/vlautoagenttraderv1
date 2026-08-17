@@ -1,6 +1,7 @@
 package kernel
 
 import (
+	"fmt"
 	"math"
 
 	"nofx/market"
@@ -138,6 +139,46 @@ func aggregateToMinutes(bars []market.Kline, tfMinutes int) []market.Kline {
 		agg.Volume += b.Volume
 	}
 	return out
+}
+
+// PlanDeathDetail names WHAT killed a plan, so a death can never again be a bare
+// "DIED" line. 2026-08-16 lost a whole session to six deaths whose only record
+// was five identical log lines carrying no condition and no price.
+type PlanDeathDetail struct {
+	// Killer is the human-readable condition, e.g.
+	// "all 6 levels touched and accepted through (last: ONH 30203.00)".
+	Killer string
+	// Price is the latest closed price at the moment of the check.
+	Price float64
+	// Levels lists each level with the evidence that consumed it.
+	Levels []string
+}
+
+// DescribePlanDeath explains a death decision using the SAME window and timeframe
+// the decision itself used, so the explanation can never disagree with the
+// verdict. Returns ok=false when the plan is not dead.
+func DescribePlanDeath(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now int64) (PlanDeathDetail, bool) {
+	if !PlanIsDeadSince(doc, bars, rule, sinceMs, now) {
+		return PlanDeathDetail{}, false
+	}
+	judge := aggregateToMinutes(barsSince(bars, sinceMs), acceptanceTFMinutes(rule))
+	price, _ := latestClosedClose(judge, now)
+	d := PlanDeathDetail{Price: price}
+	last := ""
+	for _, l := range doc.Levels {
+		up := ClosesBeyond(judge, l.Price, DirAbove, now)
+		dn := ClosesBeyond(judge, l.Price, DirBelow, now)
+		side, n := "above", up
+		if dn > up {
+			side, n = "below", dn
+		}
+		d.Levels = append(d.Levels, fmt.Sprintf("%s %.2f accepted %s (%d× %dm closes)",
+			l.Label, l.Price, side, n, acceptanceTFMinutes(rule)))
+		last = fmt.Sprintf("%s %.2f", l.Label, l.Price)
+	}
+	d.Killer = fmt.Sprintf("all %d levels touched and accepted through on %s bars (last: %s); price %.2f",
+		len(doc.Levels), rule, last, price)
+	return d, true
 }
 
 // barsSince returns the bars whose OPEN time is at/after sinceMs — the window a

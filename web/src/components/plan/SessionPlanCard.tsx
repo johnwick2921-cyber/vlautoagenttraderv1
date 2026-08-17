@@ -230,6 +230,8 @@ export function SessionPlanCard({
     latestVersion || plan.latest_version || plan.version || 1
   const versionCount =
     versions.length || latestVersion || plan.latest_version || plan.version || 1
+  // Every version that has been superseded — i.e. the deaths this session.
+  const deadVersions = versions.filter((v) => !v.is_latest)
   const versionTitle = (v: number) => {
     const rec = versions.find((x) => x.version === v)
     if (!rec) return undefined
@@ -456,6 +458,55 @@ export function SessionPlanCard({
               </>
             )
           })()}
+        </div>
+      )}
+
+      {/* ITEM 2d — DEATH HISTORY on the live card. Six plans died in 25 minutes
+          on 2026-08-16 and the card showed nothing about it; the owner only saw
+          the final levels-less v6. Every superseded version and the condition
+          that killed it is now visible without leaving the active plan. */}
+      {!plan.historical && deadVersions.length > 0 && (
+        <div
+          data-testid="death-history"
+          className="flex flex-col gap-1 px-2.5 py-2"
+          style={{
+            background: 'var(--vl-card-2)',
+            border: '1px solid rgba(224,108,108,0.28)',
+            borderRadius: 'var(--vl-radius-inner)',
+            fontFamily: 'var(--vl-font-ui)',
+          }}
+        >
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--vl-short)' }}
+          >
+            ☠ {tp('deathHistory', language, { n: String(deadVersions.length) })}
+          </span>
+          {deadVersions.map((v) => (
+            <button
+              key={v.version}
+              type="button"
+              data-testid={`death-row-v${v.version}`}
+              onClick={
+                onSelectVersion ? () => onSelectVersion(v.version) : undefined
+              }
+              disabled={!onSelectVersion}
+              className="text-[11px] text-left"
+              style={{
+                color: 'var(--vl-muted)',
+                background: 'transparent',
+                border: 0,
+                padding: '2px 0',
+                cursor: onSelectVersion ? 'pointer' : 'default',
+              }}
+            >
+              <span style={{ color: 'var(--vl-gold)' }}>v{v.version}</span>{' '}
+              {v.death_reason || v.lifecycle}
+            </button>
+          ))}
+          <span className="text-[10px]" style={{ color: 'var(--vl-faint)' }}>
+            {tp('deathHistoryHint', language)}
+          </span>
         </div>
       )}
 

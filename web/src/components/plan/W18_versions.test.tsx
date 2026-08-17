@@ -243,3 +243,69 @@ describe('SessionPlanCard — both chip rows are live', () => {
     })
   })
 })
+
+// ITEM 2d — the death history must be visible on the LIVE card.
+//
+// Six plans died in 25 minutes on 2026-08-16 and the card said nothing about it:
+// the owner saw only the final levels-less v6. A death streak must never again be
+// invisible.
+describe('SessionPlanCard — death history', () => {
+  it('lists every superseded version with the condition that killed it', () => {
+    render(
+      <SessionPlanCard
+        plan={historicalPlan(6)}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    const panel = screen.getByTestId('death-history')
+    expect(panel.textContent).toContain('lost 5 plan(s)')
+    for (const v of [1, 2, 3, 4, 5]) {
+      expect(screen.getByTestId(`death-row-v${v}`)).toBeInTheDocument()
+    }
+    expect(screen.getByTestId('death-row-v5').textContent).toContain(
+      'replans_exhausted'
+    )
+    // The current version is not a death.
+    expect(screen.queryByTestId('death-row-v6')).toBeNull()
+  })
+
+  it('opens a dead version straight from its row', () => {
+    const onSelectVersion = vi.fn()
+    render(
+      <SessionPlanCard
+        plan={historicalPlan(6)}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={onSelectVersion}
+      />
+    )
+    fireEvent.click(screen.getByTestId('death-row-v4'))
+    expect(onSelectVersion).toHaveBeenCalledWith(4)
+  })
+
+  it('shows nothing when the session has lost no plans', () => {
+    render(
+      <SessionPlanCard
+        plan={historicalPlan(1)}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={[{ ...asiaVersions[0], version: 1, is_latest: true }]}
+        latestVersion={1}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    expect(screen.queryByTestId('death-history')).toBeNull()
+  })
+})

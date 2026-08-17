@@ -187,13 +187,30 @@ func (at *AutoTrader) maybeRunSessionReads() {
 			continue // no_trade / died → done for the session
 		}
 		// P3.6 — RE-PLAN ON DEATH (cap replan_cap/session → NO-TRADE).
-		if at.activePlanIsDead(existing) {
+		if detail, dead := at.describeActivePlanDeath(existing); dead {
 			replanCap := at.replanCapFor(s.Name) // W9 — per-session override wins
+			// A death must never again be an unexplained line. On 2026-08-16 six
+			// plans died in 25 minutes and the only record was five identical
+			// "DIED" lines with no condition and no price.
+			at.logInfof("🗓️ plan %s %s v%d DIED — %s. Re-planning (cap %d/session).",
+				tradeDate, s.Name, existing.Version, detail.Killer, replanCap)
+			for _, l := range detail.Levels {
+				at.logInfof("🗓️   ↳ %s", l)
+			}
 			if existing.Version-1 >= replanCap {
-				at.writeNoTradePlan(s.Name, tradeDate, "re-plans exhausted after death condition")
+				at.writeNoTradePlan(s.Name, tradeDate,
+					fmt.Sprintf("re-plans exhausted (%d/%d) after %d deaths — last: %s",
+						existing.Version-1, replanCap, existing.Version, detail.Killer))
 			} else {
-				at.logInfof("🗓️ plan %s %s v%d DIED — re-planning (cap %d/session).", tradeDate, s.Name, existing.Version, replanCap)
 				at.warnIfReplanOrphansOverlays(existing)
+				// The guard the owner asked for: once deaths reach the cap, the alert
+				// NAMES the killing condition and the price rather than the count.
+				if existing.Version-1 >= replanCap-1 {
+					at.emitAlert("P1", "plan-death-streak",
+						fmt.Sprintf("deaths:%s:%s:v%d", tradeDate, s.Name, existing.Version),
+						fmt.Sprintf("%s plan died %d× this session", s.Name, existing.Version),
+						fmt.Sprintf("Killed by: %s. This is the last re-plan before the session sits out.", detail.Killer))
+				}
 				at.runPlannerRead(s.Name, tradeDate) // appends a new version
 			}
 		}
@@ -265,6 +282,29 @@ func (at *AutoTrader) activePlanIsDead(row *store.PlanDB) bool {
 		sinceMs = 0 // unknown write time → fall back to the old whole-window behavior
 	}
 	return kernel.PlanIsDeadSince(doc, bars, rule, sinceMs, now.UnixMilli())
+}
+
+// describeActivePlanDeath is activePlanIsDead plus the EVIDENCE. Same window,
+// same timeframe, same verdict — the explanation is derived from the decision
+// rather than reconstructed alongside it, so the two cannot disagree.
+func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDeathDetail, bool) {
+	if market.FuturesBarsProvider == nil || row == nil {
+		return kernel.PlanDeathDetail{}, false
+	}
+	var doc kernel.PlanDoc
+	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+		return kernel.PlanDeathDetail{}, false
+	}
+	bars := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	if len(bars) == 0 {
+		return kernel.PlanDeathDetail{}, false
+	}
+	now := time.Now()
+	sinceMs := row.CreatedAt.UnixMilli()
+	if row.CreatedAt.IsZero() {
+		sinceMs = 0
+	}
+	return kernel.DescribePlanDeath(doc, bars, at.acceptanceRuleFor(row.Session), sinceMs, now.UnixMilli())
 }
 
 // writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.
