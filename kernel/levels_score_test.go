@@ -22,7 +22,7 @@ func TestScoreLevels(t *testing.T) {
 		}
 		return "" // fresh
 	}
-	scored := ScoreLevels(levels, 15530, 200, freshness, 8)
+	scored := ScoreLevels(levels, 15530, 200, freshness, 8, 1.5)
 
 	grades := map[LevelKind]string{}
 	present := map[LevelKind]bool{}
@@ -67,7 +67,7 @@ func TestScoreLevelsCapAndPriority(t *testing.T) {
 		lineLevel(KindRound, 15625, "RN 15625 (25)", "", false),
 		lineLevel(KindRound, 15475, "RN 15475 (25)", "", false),
 	}
-	scored := ScoreLevels(levels, 15530, 200, nil, 3)
+	scored := ScoreLevels(levels, 15530, 200, nil, 3, 1.5)
 	if len(scored) != 3 {
 		t.Fatalf("cap 3 not honored: got %d", len(scored))
 	}
@@ -82,7 +82,7 @@ func TestRenderKeyLevelsBlock(t *testing.T) {
 	scored := ScoreLevels([]DetectedLevel{
 		lineLevel(KindPDH, 15600, "PDH", "d", true),
 		lineLevel(KindPDC, 15555, "PDC", "d", true),
-	}, 15530, 200, nil, 8)
+	}, 15530, 200, nil, 8, 1.5)
 	block := RenderKeyLevelsBlock(scored, 15530)
 	if !strings.HasPrefix(block, "KEY LEVELS (map, nearest-first; price 15530.00):") {
 		t.Fatalf("block header wrong:\n%s", block)

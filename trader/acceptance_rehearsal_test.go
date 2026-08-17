@@ -245,7 +245,7 @@ func TestAcceptanceRehearsal(t *testing.T) {
 	if len(seedBars) == 0 {
 		t.Fatal("no live 1m bars from the deployed binary — cannot seed A6 or assemble (is NT8/BarCache cold?)")
 	}
-	_, seedPrice, seedDATR := kernel.AssembleScoredLevels(seedBars, kernel.DefaultSessionRegistry(), symbolForSeed, 8, time.Now())
+	_, seedPrice, seedDATR := kernel.AssembleScoredLevels(seedBars, kernel.DefaultSessionRegistry(), symbolForSeed, 8, time.Now(), kernel.ActivationWindowK)
 	seedLevelPrice := float64(int(seedPrice/25.0)) * 25.0 // a round-ish level near price
 	if reason, bad := kernel.LevelPriceViolation(seedLevelPrice, seedPrice, seedDATR); bad {
 		t.Fatalf("A6 seed price %.2f rejected by the same armor the API applies: %s", seedLevelPrice, reason)
@@ -372,7 +372,7 @@ func TestAcceptanceRehearsal(t *testing.T) {
 			if kernel.NakedPOCProvider != nil {
 				extra = kernel.NakedPOCProvider(symbol)
 			}
-			engine.SetKeyLevelsContext(kernel.BuildKeyLevelsBlock(b, kernel.DefaultSessionRegistry(), symbol, maxLevels, time.Now(), extra...))
+			engine.SetKeyLevelsContext(kernel.BuildKeyLevelsBlock(b, kernel.DefaultSessionRegistry(), symbol, maxLevels, time.Now(), kernel.ActivationWindowK, extra...))
 		}
 		engine.SetPlanContext("", "")
 		if plan := kernel.ActivePlanProvider(symbol); plan != nil {
@@ -383,7 +383,7 @@ func TestAcceptanceRehearsal(t *testing.T) {
 			block := kernel.RenderPlanBlock(plan.Doc, plan.Session)
 			status := ""
 			if b := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount); len(b) > 0 {
-				_, price, dATR := kernel.AssembleScoredLevels(b, kernel.DefaultSessionRegistry(), symbol, maxLevels, time.Now())
+				_, price, dATR := kernel.AssembleScoredLevels(b, kernel.DefaultSessionRegistry(), symbol, maxLevels, time.Now(), kernel.ActivationWindowK)
 				status = kernel.RenderPlanStatus(symbol, plan.Doc, b, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
 			}
 			engine.SetPlanContext(block, status)

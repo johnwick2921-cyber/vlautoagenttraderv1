@@ -679,7 +679,7 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	if kernel.NakedPOCProvider != nil {
 		extra = kernel.NakedPOCProvider(symbol)
 	}
-	scored, price, dATR := kernel.AssembleScoredLevels(bars, reg, symbol, maxLevels, now, extra...)
+	scored, price, dATR := kernel.AssembleScoredLevels(bars, reg, symbol, maxLevels, now, at.proximityFilterATR(), extra...)
 
 	// P3.6-C — STICKY OWNER LEVELS: always seated, tagged 👤, persisted across
 	// sessions. Prepended so they lead the ranked table.

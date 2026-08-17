@@ -29,10 +29,10 @@ func TestSampleKeyLevelsBlock(t *testing.T) {
 
 	var all []DetectedLevel
 	all = append(all, ExtractMultiDayLevels(bars, reg, now)...)
-	all = append(all, RoundNumberLevels(price, dATR)...)
+	all = append(all, RoundNumberLevels(price, dATR, 1.5)...)
 	all = append(all, OpeningRangeLevels(bars, reg, now)...)
 
-	scored := ScoreLevels(all, price, dATR, nil, DefaultMaxLevels)
+	scored := ScoreLevels(all, price, dATR, nil, DefaultMaxLevels, 1.5)
 	block := RenderKeyLevelsBlock(scored, price)
 	if block == "" {
 		t.Fatal("expected a non-empty KEY LEVELS block")

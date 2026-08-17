@@ -44,6 +44,11 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		installNakedPOCProvider(st)
 		installActivePlanProvider(at, st)
 		installLevelStateProvider(st) // W11b — surface persisted freshness/consumed
+		// H1/H2 — the kernel's executor-prompt level assembly resolves the
+		// day-trade lock from THIS trader's proximity_filter_atr (the same
+		// resolver every other site uses), so the config governs which levels
+		// are generated and seated everywhere.
+		kernel.PlanProximityKProvider = func() float64 { return at.proximityFilterATR() }
 	})
 
 	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)

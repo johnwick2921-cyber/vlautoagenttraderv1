@@ -14,14 +14,18 @@ import (
 // (dATR) scale where proximity/size thresholds apply.
 
 // RoundNumberLevels emits round-number levels at 100/50/25 spacing within
-// 1.5×dATR of price. A price that is a multiple of a larger step is claimed by
-// that step (100 > 50 > 25), so each round price appears once, tagged with its
-// strongest granularity.
-func RoundNumberLevels(price, dATR float64) []DetectedLevel {
+// proximityK×dATR of price. proximityK is the resolved day-trade lock width
+// (proximity_filter_atr, default 1.5); k≤0 → the spec constant. A price that is
+// a multiple of a larger step is claimed by that step (100 > 50 > 25), so each
+// round price appears once, tagged with its strongest granularity.
+func RoundNumberLevels(price, dATR, proximityK float64) []DetectedLevel {
 	if price <= 0 || dATR <= 0 {
 		return nil
 	}
-	band := 1.5 * dATR
+	if proximityK <= 0 {
+		proximityK = ActivationWindowK
+	}
+	band := proximityK * dATR
 	lo, hi := price-band, price+band
 	steps := []struct {
 		step float64

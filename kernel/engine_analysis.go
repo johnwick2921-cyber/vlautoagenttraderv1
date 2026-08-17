@@ -330,7 +330,10 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				if NakedPOCProvider != nil {
 					extra = NakedPOCProvider(activeSymbol)
 				}
-				klBlock = BuildKeyLevelsBlock(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now(), extra...)
+				// H1/H2 — proximity is the RESOLVED day-trade lock (the provider
+				// the trader installs), never a hardcoded 1.5 the config cannot
+				// move.
+				klBlock = BuildKeyLevelsBlock(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now(), resolvedProximityK(), extra...)
 			}
 		}
 		engine.SetKeyLevelsContext(klBlock)
@@ -358,7 +361,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			status := ""
 			if market.FuturesBarsProvider != nil {
 				if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
-					_, price, dATR := AssembleScoredLevels(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now())
+					_, price, dATR := AssembleScoredLevels(bars, DefaultSessionRegistry(), activeSymbol, maxLevels, time.Now(), resolvedProximityK())
 					status = RenderPlanStatus(activeSymbol, plan.Doc, bars, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
 				}
 			}

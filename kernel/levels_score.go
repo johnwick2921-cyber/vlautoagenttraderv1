@@ -115,14 +115,20 @@ func freshMult(f string) float64 {
 // ScoreLevels applies the day-trade lock + confluence grading and returns the
 // seated TOP-N graded levels, nearest-first. `freshness` returns a level's grade
 // from the level-state table (nil → everything fresh). maxLevels ≤ 0 → default 8.
-func ScoreLevels(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int) []ScoredLevel {
+// proximityK is the resolved day-trade lock half-width in daily-ATR multiples
+// (the owner's proximity_filter_atr; ≤0 → the spec constant 1.5) — the band
+// OUTSIDE which no level is generated or seated.
+func ScoreLevels(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int, proximityK float64) []ScoredLevel {
 	if price <= 0 || dATR <= 0 {
 		return nil
 	}
 	if maxLevels <= 0 {
 		maxLevels = DefaultMaxLevels
 	}
-	band := 1.5 * dATR
+	if proximityK <= 0 {
+		proximityK = ActivationWindowK
+	}
+	band := proximityK * dATR
 	confBand := 0.10 * dATR // cluster tolerance
 
 	// Proximity filter (day-trade lock).

@@ -18,7 +18,7 @@ func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 
 	// baseline: no provider → both fresh, both seated.
 	LevelStateProvider = nil
-	base := ScoreLevels(levels, 30000, 100, levelFreshnessFn("MNQ"), 8)
+	base := ScoreLevels(levels, 30000, 100, levelFreshnessFn("MNQ"), 8, 1.5)
 	if len(base) != 2 {
 		t.Fatalf("no provider → both levels fresh+seated, got %d", len(base))
 	}
@@ -33,7 +33,7 @@ func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 		}
 		return ""
 	}
-	got := ScoreLevels(levels, 30000, 100, levelFreshnessFn("MNQ"), 8)
+	got := ScoreLevels(levels, 30000, 100, levelFreshnessFn("MNQ"), 8, 1.5)
 	if len(got) != 1 {
 		t.Fatalf("burned PDH must be dropped → 1 level, got %d", len(got))
 	}

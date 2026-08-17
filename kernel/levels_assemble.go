@@ -12,11 +12,30 @@ import (
 // BuildSVPProfile). Pure: no LLM, no DB. Warms forward with the bar cache; the
 // durable session-profile store (P1.3) feeds nPOC via extraLevels.
 
+// PlanProximityKProvider supplies the RESOLVED day-trade lock width
+// (proximity_filter_atr in daily-ATR multiples, valid 0.5–3.0) to kernel call
+// sites that have no trader handle — the executor prompt path in
+// engine_analysis. The trader installs it (mirrors FuturesBarsProvider /
+// NakedPOCProvider / ActivePlanProvider). nil → the spec constant 1.5.
+var PlanProximityKProvider func() float64
+
+// resolvedProximityK returns the configured day-trade lock k, falling back to
+// the spec constant when no provider is installed or it returns an invalid value.
+func resolvedProximityK() float64 {
+	if PlanProximityKProvider != nil {
+		if k := PlanProximityKProvider(); k > 0 {
+			return k
+		}
+	}
+	return ActivationWindowK
+}
+
 // BuildKeyLevelsBlock assembles the structural map from `bars`, scores it, and
 // renders the executor prompt block. Returns "" when there is nothing to show
 // (no closed bars / no in-band levels) so the caller injects nothing.
-func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, extraLevels ...DetectedLevel) string {
-	scored, price, _ := AssembleScoredLevels(bars, reg, symbol, maxLevels, now, extraLevels...)
+// proximityK is the resolved day-trade lock width (≤0 → spec constant 1.5).
+func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, extraLevels ...DetectedLevel) string {
+	scored, price, _ := AssembleScoredLevels(bars, reg, symbol, maxLevels, now, proximityK, extraLevels...)
 	if price <= 0 {
 		return ""
 	}
@@ -26,8 +45,11 @@ func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string
 // AssembleScoredLevels runs every detector, scores them, and returns the graded
 // TOP-N levels + the reference price + the daily-ATR used. Shared by the executor
 // KEY LEVELS block (P1.7) and the planner input package (P3.3). Returns
-// (nil, 0, 0) when there are no closed bars.
-func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, extraLevels ...DetectedLevel) (scored []ScoredLevel, price, dATR float64) {
+// (nil, 0, 0) when there are no closed bars. proximityK is the resolved day-trade
+// lock width (≤0 → spec constant 1.5) and threads into BOTH the round-number
+// generator and the scorer — H1/H2: the config must govern which levels are
+// generated AND which are seated, not just the activation-window paths.
+func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, extraLevels ...DetectedLevel) (scored []ScoredLevel, price, dATR float64) {
 	cb := closedBars(bars, now)
 	if len(cb) == 0 {
 		return nil, 0, 0
@@ -52,7 +74,7 @@ func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol strin
 
 	var all []DetectedLevel
 	all = append(all, ExtractMultiDayLevels(bars, reg, now)...)
-	all = append(all, RoundNumberLevels(price, dATR)...)
+	all = append(all, RoundNumberLevels(price, dATR, proximityK)...)
 	all = append(all, OpeningRangeLevels(bars, reg, now)...)
 	all = append(all, GapLevels(bars, atr, 1.0, now)...)
 	all = append(all, EqualHighsLows(bars, tol, now)...)
@@ -64,7 +86,7 @@ func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol strin
 	// W11b — persisted level-state (freshness A→B→C, consumed) now surfaces: the
 	// trader installs LevelStateProvider over store.LevelStateStore. Nil provider →
 	// all-fresh (byte-identical to the pre-W11b output the goldens capture).
-	scored = ScoreLevels(all, price, dATR, levelFreshnessFn(symbol), maxLevels)
+	scored = ScoreLevels(all, price, dATR, levelFreshnessFn(symbol), maxLevels, proximityK)
 	return scored, price, dATR
 }
 

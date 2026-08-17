@@ -10,7 +10,7 @@ import (
 
 func TestRoundNumberLevels(t *testing.T) {
 	// price 15530, dATR 200 → band ±300 → [15230, 15830].
-	levels := RoundNumberLevels(15530, 200)
+	levels := RoundNumberLevels(15530, 200, 1.5)
 	byPrice := map[float64]string{}
 	for _, l := range levels {
 		byPrice[l.Price] = l.Label
@@ -33,7 +33,7 @@ func TestRoundNumberLevels(t *testing.T) {
 		t.Fatalf("15900 is above the band, must not appear")
 	}
 	// Degenerate inputs → nil.
-	if RoundNumberLevels(0, 200) != nil || RoundNumberLevels(15000, 0) != nil {
+	if RoundNumberLevels(0, 200, 1.5) != nil || RoundNumberLevels(15000, 0, 1.5) != nil {
 		t.Fatalf("degenerate inputs should return nil")
 	}
 }

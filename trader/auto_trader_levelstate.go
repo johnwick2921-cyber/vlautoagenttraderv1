@@ -43,7 +43,10 @@ func (at *AutoTrader) recordLevelState() {
 	}
 	now := time.Now()
 	nowMs := now.UnixMilli()
-	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now)
+	// H1/H2 — the day-trade lock that seats levels is the OWNER's resolved
+	// proximity_filter_atr, threaded into the detector/scorer (never a hardcoded
+	// 1.5 that the config cannot move).
+	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now, at.proximityFilterATR())
 	if price <= 0 {
 		return
 	}
@@ -52,7 +55,13 @@ func (at *AutoTrader) recordLevelState() {
 	rule := at.acceptanceRuleFor(at.activeSessionName(now))
 
 	ls := at.store.LevelState()
-	active := kernel.ActivePlanLevels(plan.Doc.Levels, price, dATR, at.proximityFilterATR()) // W9
+	// H3 — the ACTIVATION WINDOW (hide levels >1.5×ATR from the candidate set) is
+	// a SPEC INTERNAL CONSTANT, not the owner's proximity_filter_atr. The two were
+	// cross-fed here: proximity_filter_atr governs which levels are GENERATED and
+	// SEATED (above), ActivationWindowK governs which seated levels are currently
+	// LIVE near price (here). Naming the constant at the call site kills the
+	// ambiguity.
+	active := kernel.ActivePlanLevels(plan.Doc.Levels, price, dATR, kernel.ActivationWindowK)
 	for _, l := range active {
 		typ := kernel.LevelTypeFromLabel(l.Label)
 		bin := kernel.LevelBinIndex(l.Price)
@@ -152,7 +161,7 @@ func (at *AutoTrader) recordScenarioState() {
 		return
 	}
 	now := time.Now()
-	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now)
+	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now, at.proximityFilterATR())
 	if price <= 0 {
 		return
 	}
@@ -160,8 +169,10 @@ func (at *AutoTrader) recordScenarioState() {
 
 	// ActivePlanProvider only ever returns a live plan, so planLive is true here;
 	// the expired projection is the API's job when it serves a rolled plan.
+	// H3 — the activation-window k is the SPEC INTERNAL CONSTANT (see
+	// recordLevelState); proximity_filter_atr governs generation/seating only.
 	statuses, evals := kernel.EvaluatePlanScenarios(
-		plan.Doc, bars, price, dATR, at.proximityFilterATR(), rule, true, now.UnixMilli())
+		plan.Doc, bars, price, dATR, kernel.ActivationWindowK, rule, true, now.UnixMilli())
 
 	if len(statuses) == 0 {
 		// Nothing resolvable — say nothing rather than write an empty verdict.

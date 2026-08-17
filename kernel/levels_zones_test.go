@@ -103,7 +103,7 @@ func TestOrderBlocks(t *testing.T) {
 func TestZonesAreConfluenceOnlyInScorer(t *testing.T) {
 	// A standalone supply zone must NOT survive scoring (confluence-only rule).
 	zone := zoneLevel(KindSupply, 15540, 15560, "Supply", "d")
-	scored := ScoreLevels([]DetectedLevel{zone}, 15530, 200, nil, 8)
+	scored := ScoreLevels([]DetectedLevel{zone}, 15530, 200, nil, 8, 1.5)
 	if len(scored) != 0 {
 		t.Fatalf("standalone zone must be excluded by the scorer, got %v", scored)
 	}
