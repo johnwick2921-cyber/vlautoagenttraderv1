@@ -162,3 +162,56 @@ func chicagoLoc() *time.Location {
 	}
 	return loc
 }
+
+// UI-verification (2026-08-18) — the live finding: the owner's reset reported
+// success while a concurrent death re-plan held the read claim, so the fresh
+// plan was written by that OTHER read (wrong trigger_reason) with zero UI
+// feedback. The reset now waits briefly for the claim and, if a concurrent read
+// wins the whole window, says so in Note instead of lying.
+func TestForceResetNotesWhenClaimHeld(t *testing.T) {
+	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	old := resetClaimWaitMax
+	resetClaimWaitMax = 10 * time.Millisecond
+	defer func() { resetClaimWaitMax = old }()
+
+	tradeDate := "2026-08-18"
+	if _, err := at.store.Plan().AppendPlan(&store.PlanDB{
+		PlanID: store.MakePlanID(tradeDate, "NY"), StrategyID: "trader-1",
+		TradeDate: tradeDate, Session: "NY", Lifecycle: "active", Doc: "{}",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// A concurrent read holds the claim for the whole window.
+	key := store.MakePlanIDForTrader("trader-1", tradeDate, "NY")
+	claimPlannerRead(key)
+	defer releasePlannerRead(key)
+
+	now := time.Date(2026, 8, 18, 14, 0, 0, 0, chicagoLoc())
+	gate, err := at.ForceReset(now)
+	if err != nil {
+		t.Fatalf("a claim-held reset must succeed honestly (budget still re-armed): %v", err)
+	}
+	if gate.Note == "" {
+		t.Fatalf("claim-held reset must carry a Note, got %+v", gate)
+	}
+	if !at.PlannerReadInFlight(tradeDate, "NY") {
+		t.Fatal("PlannerReadInFlight must report the held claim")
+	}
+}
+
+// PlannerReadInFlight mirrors the claim map for the API's reading flag.
+func TestPlannerReadInFlight(t *testing.T) {
+	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}})
+	if at.PlannerReadInFlight("2026-08-18", "NY") {
+		t.Fatal("no claim held → must report idle")
+	}
+	key := store.MakePlanIDForTrader("trader-1", "2026-08-18", "NY")
+	claimPlannerRead(key)
+	if !at.PlannerReadInFlight("2026-08-18", "NY") {
+		t.Fatal("held claim → must report in flight")
+	}
+	releasePlannerRead(key)
+	if at.PlannerReadInFlight("2026-08-18", "NY") {
+		t.Fatal("released claim → must report idle")
+	}
+}

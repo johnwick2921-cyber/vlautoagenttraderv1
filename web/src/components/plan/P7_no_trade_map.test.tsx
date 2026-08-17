@@ -120,3 +120,20 @@ describe('SessionPlanCard — NO-TRADE with a map', () => {
     )
   })
 })
+
+describe('SessionPlanCard — planner mid-read (UI verification 2026-08-18)', () => {
+  it('says so out loud instead of silently showing the old plan', () => {
+    render(
+      <SessionPlanCard
+        plan={{ ...noTradeWithMap, reading: true }}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+      />
+    )
+    expect(screen.getByTestId('reading-banner').textContent).toContain(
+      'writing a fresh plan'
+    )
+  })
+})

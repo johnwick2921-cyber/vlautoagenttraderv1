@@ -27,14 +27,24 @@ import (
 // the new chain starts measuring from; every budget consumer reads it.
 
 // ResetRefusal explains why an owner reset is not available, in the owner's
-// language. Empty Reason means it IS available.
+// language. Empty Reason means it IS available. Note (when set) is an honest
+// post-condition the FE should surface even on success.
 type ResetRefusal struct {
 	Allowed   bool   `json:"allowed"`
 	Reason    string `json:"reason,omitempty"`
+	Note      string `json:"note,omitempty"`
 	Session   string `json:"session,omitempty"`
 	Version   int    `json:"version"`
 	ReplanCap int    `json:"replan_cap"`
 }
+
+// resetClaimPollInterval / resetClaimWaitMax are the claim-retry cadence the
+// reset uses before accepting that a concurrent read won the race. Package vars
+// so tests can compress them.
+var (
+	resetClaimPollInterval = 2 * time.Second
+	resetClaimWaitMax      = 30 * time.Second
+)
 
 // CanForceReset reports whether an owner reset may run right now, and why not
 // when it may not. Read-only: it never writes.
@@ -106,9 +116,21 @@ func (at *AutoTrader) ForceReset(now time.Time) (ResetRefusal, error) {
 		fmt.Sprintf("You reset the %s plan. The old chain (through v%d) is preserved in history; a fresh plan is being read now.",
 			gate.Session, row.Version))
 
-	// Fresh read through the NORMAL path (fail-closed inside: a bad read writes a
-	// NO-TRADE plan + alert and never mutates anything else).
-	at.runPlannerReadWithTrigger(gate.Session, tradeDate, "owner_reset")
+	// UI-verification fix (2026-08-18): a concurrent death re-plan can hold the
+	// read claim, and the old code silently skipped — the reset reported success
+	// while the OTHER read wrote the fresh plan with the wrong trigger_reason.
+	// Wait briefly for the claim; if a concurrent read wins the whole window,
+	// say so in Note (the outcome — a fresh plan on the re-armed chain — is the
+	// same, but the owner is never lied to about who wrote it).
+	deadline := time.Now().Add(resetClaimWaitMax)
+	for at.PlannerReadInFlight(tradeDate, gate.Session) && time.Now().Before(deadline) {
+		time.Sleep(resetClaimPollInterval)
+	}
+	claimed := at.runPlannerReadWithTriggerClaimed(gate.Session, tradeDate, "owner_reset")
+	if !claimed {
+		gate.Note = "a concurrent re-plan was already writing the fresh plan; your reset re-armed the budget and that plan is the new chain"
+		return gate, nil
+	}
 
 	// ITEM 4 — owner sticky levels carry across the seam, re-anchored by price
 	// identity (never index), exactly like a re-plan.

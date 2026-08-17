@@ -152,9 +152,16 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	// re-plan budget), resolved per trader+session, instead of the hardcoded
 	// "2x5m" + "advisory" + budget-of-2 it used to show.
 	rule, mode, _ := s.planRules(traderID, sessName, tradeDate, 1)
+	// UI-verification (2026-08-18): the card must SAY when a planner read is in
+	// flight — the owner reset while a death re-plan was writing and the UI
+	// showed nothing for minutes, which read as "the button does nothing".
+	reading := false
+	if at, aErr := s.traderManager.GetTrader(traderID); aErr == nil && at != nil {
+		reading = at.PlannerReadInFlight(tradeDate, sessName)
+	}
 	base := gin.H{
 		"found": false, "trade_date": tradeDate, "session": sessName, "night": night,
-		"mode": mode, "acceptance_rule": rule,
+		"mode": mode, "acceptance_rule": rule, "reading": reading,
 		"active_session": activeName, "is_active": sessName != "" && sessName == activeName,
 		"runnable_sessions": runnable,
 	}
@@ -248,6 +255,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"trade_date": tradeDate,
 		"session":    sessName,
 		"version":    row.Version,
+		"reading":    reading,
 		// ITEM 15 — the card marks itself HISTORICAL and offers the way back.
 		"historical":     historical,
 		"latest_version": latestVersion,

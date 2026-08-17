@@ -55,6 +55,9 @@ export function ResetButton({
     setConfirming(false)
     if (res.ok) {
       toast.success(tp('resetDone', language))
+      if (res.note) {
+        toast.warning(res.note)
+      }
       setTimeout(() => onDone?.(), 1500)
       setGate(await api.getResetGate(traderId))
     } else {

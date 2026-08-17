@@ -214,6 +214,11 @@ export const planStrings = {
   resetGo: { en: 'Yes, reset', zh: '确认重置', id: 'Ya, reset' },
   resetRunning: { en: 'Resetting…', zh: '正在重置…', id: 'Mereset…' },
   resetDone: { en: 'Reset requested', zh: '已请求重置', id: 'Reset diminta' },
+  readingBanner: {
+    en: 'The planner is writing a fresh plan — this card updates in a minute or two.',
+    zh: '规划器正在生成新计划 —— 卡片将在一两分钟内更新。',
+    id: 'Planner sedang menulis rencana baru — kartu akan diperbarui dalam satu-dua menit.',
+  },
   resetCaption: {
     en: 'Abandons the chain · restores the full budget · new plan',
     zh: '放弃计划链 · 恢复全部额度 · 新计划',

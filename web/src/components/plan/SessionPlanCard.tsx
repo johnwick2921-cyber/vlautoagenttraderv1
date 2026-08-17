@@ -314,6 +314,27 @@ export function SessionPlanCard({
       role="region"
       aria-label={`${tp('title', language)}, v${plan.version ?? 1}, ${plan.lifecycle ?? 'active'}`}
     >
+      {/* UI-verification (2026-08-18): the owner tapped Reset while a death
+          re-plan was writing and the card showed NOTHING for minutes — the reset
+          worked but read as "does nothing". Say it out loud whenever the
+          planner is mid-read. */}
+      {plan.reading && (
+        <div
+          data-testid="reading-banner"
+          className="flex items-center gap-2 px-3 py-2 text-[12px]"
+          style={{
+            background: 'rgba(212,175,55,0.08)',
+            border: '1px solid var(--vl-gold-line)',
+            borderRadius: 'var(--vl-radius-chip)',
+            color: 'var(--vl-gold)',
+          }}
+        >
+          <span className="vl-spin" aria-hidden>
+            ◌
+          </span>
+          {tp('readingBanner', language)}
+        </div>
+      )}
       {/* header — wraps: at 390px a v6 chip row + SUPERSEDED + DEGRADED overflowed
           the 316px card interior by ~41px and pushed the ✎/💬 buttons off the card. */}
       <div className="flex flex-wrap items-center justify-between gap-2">

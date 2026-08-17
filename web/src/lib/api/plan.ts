@@ -76,6 +76,8 @@ export interface PlanToday {
   session: string
   night: boolean
   mode: string // advisory | direction | strict
+  /** UI-verification (2026-08-18) — a planner read is in flight for this chain. */
+  reading?: boolean
   version?: number
   overlay_count?: number
   lifecycle?: string // active | expired | died | superseded
@@ -190,6 +192,7 @@ export interface RereadGate {
 export interface ResetGate {
   allowed: boolean
   reason?: string
+  note?: string
   session?: string
   version: number
   replan_cap: number
@@ -317,12 +320,14 @@ export const planApi = {
   // fresh read (trigger_reason "owner reset"). The server re-checks eligibility.
   async forceReset(
     traderId: string
-  ): Promise<{ ok: boolean; error?: string; gate?: ResetGate }> {
+  ): Promise<{ ok: boolean; error?: string; note?: string; gate?: ResetGate }> {
     const res = await httpClient.request<{ ok: boolean; gate: ResetGate }>(
       `${API_BASE}/plan/reset`,
       { method: 'POST', data: { trader_id: traderId }, silent: true }
     )
-    if (res.success && res.data) return { ok: true, gate: res.data.gate }
+    if (res.success && res.data) {
+      return { ok: true, gate: res.data.gate, note: res.data.gate?.note }
+    }
     return { ok: false, error: res.message || 'reset refused' }
   },
 

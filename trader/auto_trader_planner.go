@@ -528,32 +528,34 @@ func claimPlannerRead(key string) bool {
 
 func releasePlannerRead(key string) { plannerReadInFlight.Delete(key) }
 
-// runPlannerRead assembles the input package, calls the pinned planner client,
-// and persists the plan (or a fail-closed NO-TRADE plan).
-func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
-	at.runPlannerReadWithTrigger(session, tradeDate, "")
+// PlannerReadInFlight reports whether a planner read for this trader's chain is
+// currently running (the claim is held). The API exposes it as the card's
+// "reading…" state; ForceReset uses it to avoid a silent claim-skip — the
+// 2026-08-18 live finding: the owner's reset read silently no-op'd because a
+// death re-plan held the claim, and the fresh plan was written by that OTHER
+// read (wrong trigger_reason, zero UI feedback).
+func (at *AutoTrader) PlannerReadInFlight(tradeDate, session string) bool {
+	_, held := plannerReadInFlight.Load(store.MakePlanIDForTrader(at.id, tradeDate, session))
+	return held
 }
 
-// runPlannerReadWithTrigger is runPlannerRead with an explicit trigger_reason.
-func (at *AutoTrader) runPlannerReadWithTrigger(session, tradeDate, triggerOverride string) {
+// runPlannerReadWithTriggerClaimed is runPlannerReadWithTrigger returning whether
+// THIS call claimed the read (false = another read was already in flight and
+// this one skipped). The wrapper keeps the old signature for existing callers.
+func (at *AutoTrader) runPlannerReadWithTriggerClaimed(session, tradeDate, triggerOverride string) bool {
 	if !at.dayPlanEnabled() || at.store == nil {
-		return
+		return false
 	}
-	// W16/R6 — one planner call per (trader, trade_date, session) at a time.
-	// Claimed here rather than at the call sites so no future caller can forget
-	// it. P0-A2: the key IS trader-scoped now — with trader-scoped plan rows, a
-	// session-global claim would let one trader's in-flight read silently
-	// suppress another trader's read (the D4 sweep's new-instance catch).
 	key := store.MakePlanIDForTrader(at.id, tradeDate, session)
 	if !claimPlannerRead(key) {
 		at.logInfof("🗓️ planner read for %s already in flight — skipping duplicate call.", key)
-		return
+		return false
 	}
 	defer releasePlannerRead(key)
 	client, modelID := at.resolvePlannerClient()
 	if client == nil {
 		at.logErrorf("🗓️ planner: no client resolved for %s %s", tradeDate, session)
-		return
+		return true
 	}
 	input := at.assemblePlannerInput(session, tradeDate)
 	prompt := kernel.BuildPlannerPrompt(input)
@@ -564,6 +566,19 @@ func (at *AutoTrader) runPlannerReadWithTrigger(session, tradeDate, triggerOverr
 	at.runPlannerReadCoreWithTrigger(session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, func() (string, error) {
 		return client.CallWithMessages(plannerSystemPrompt, prompt)
 	}, t1Lines...)
+	return true
+}
+
+// runPlannerRead assembles the input package, calls the pinned planner client,
+// and persists the plan (or a fail-closed NO-TRADE plan).
+func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
+	at.runPlannerReadWithTrigger(session, tradeDate, "")
+}
+
+// runPlannerReadWithTrigger is runPlannerReadWithTriggerClaimed with the old
+// signature (claim result discarded) for existing callers.
+func (at *AutoTrader) runPlannerReadWithTrigger(session, tradeDate, triggerOverride string) {
+	_ = at.runPlannerReadWithTriggerClaimed(session, tradeDate, triggerOverride)
 }
 
 // runPlannerReadCore is the testable core: ≤2 retries, then FAIL-CLOSED to a
