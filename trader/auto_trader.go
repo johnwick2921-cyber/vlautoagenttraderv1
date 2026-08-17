@@ -392,6 +392,9 @@ type AutoTrader struct {
 	// "skip-fresh" line log once per trade date, not every 3-min cycle.
 	calFetch        func() ([]byte, error)
 	lastCalSkipDate string
+	// lastAlertPruneDay throttles the acked-P2 alert-feed prune to once per
+	// CME session-day (B-fix: PruneAckedOlderThan had no production caller).
+	lastAlertPruneDay string
 
 	// P2 — regime health from the most recent planner read (dark-field count +
 	// DEGRADED verdict), stamped onto the plan row at the write site.

@@ -1,7 +1,9 @@
 // P4.3 — the dashboard panel. Self-fetches the plan (usePlanToday), and composes
-// the SessionTimelineStrip + SessionTabs + HandoverBanner + SessionPlanCard. This
-// is what mounts top-left in TraderDashboardPage. Additive + dormant: it only
-// renders when a trader is present; every no-plan state degrades gracefully.
+// the SessionTimelineStrip + SessionTabs + SessionPlanCard. This is what mounts
+// top-left in TraderDashboardPage. Additive + dormant: it only renders when a
+// trader is present; every no-plan state degrades gracefully.
+// (HandoverBanner deleted 2026-08-18: its only trigger was lifecycle
+// expired|died|superseded, which no writer ever produces.)
 
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
@@ -9,8 +11,8 @@ import { tp } from '../../i18n/plan-translations'
 import { usePlanToday, usePlanVersions } from './usePlan'
 import { SessionTimelineStrip } from './SessionTimelineStrip'
 import { SessionTabs, type SessionTab, type TabState } from './SessionTabs'
-import { HandoverBanner } from './HandoverBanner'
 import { SessionPlanCard } from './SessionPlanCard'
+import { DisciplinePanel } from './DisciplinePanel'
 import { RereadButton } from './RereadButton'
 import { ResetButton } from './ResetButton'
 import { AlertCenter } from './AlertCenter'
@@ -66,14 +68,6 @@ export function PlanCard({
 
   const tabs = computeSessionTabs(activeSession, plan?.runnable_sessions)
 
-  // handover banner: only the data-detectable transition (expired) is shown from
-  // a poll; reading/born/read-failed are event-driven (P4.4 alerts).
-  const showExpired =
-    plan?.found &&
-    (plan.lifecycle === 'expired' ||
-      plan.lifecycle === 'died' ||
-      plan.lifecycle === 'superseded')
-
   return (
     <div
       className="p-5 flex flex-col gap-3 animate-slide-in"
@@ -92,15 +86,10 @@ export function PlanCard({
         onSelect={setSelected}
         language={language}
       />
-      {showExpired && activeSession && (
-        <HandoverBanner
-          phase="expired"
-          session={activeSession}
-          language={language}
-        />
-      )}
       {/* W16/R3 — refusals, where the owner already looks for plan state. */}
       <GateBlocksPanel traderId={traderId} language={language} />
+      {/* C-fix — adherence GPA + matched-random verdicts (real data, formerly zero FE readers). */}
+      <DisciplinePanel traderId={traderId} language={language} />
       {/* ITEM 3 — the owner's manual re-read, next to the plan it acts on.
           P6 — the owner RESET sits beside it: both visible, one explanatory
           line each, so the two escape hatches can never be mistaken for one

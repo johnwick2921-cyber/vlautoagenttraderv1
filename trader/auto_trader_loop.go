@@ -162,6 +162,10 @@ func (at *AutoTrader) runCycle() error {
 	// daily roll-up at the trade-date close. Idempotent; gated → dormant.
 	at.maybeWriteDigests()
 
+	// B-fix — ALERT-FEED PRUNE: hides ACKED P2 alerts older than 7 days, once
+	// per CME session-day (PruneAckedOlderThan previously had no caller).
+	at.maybePruneAckedAlerts(time.Now())
+
 	// W5 — LEARNING LOOP on REAL exits: grade every ungraded closed trade (NT8 OCO
 	// SL/TP, EOD-flat, manual) — the paths the AI decision cycle never sees.
 	// Idempotent; gated → dormant.
@@ -310,6 +314,10 @@ func (at *AutoTrader) runCycle() error {
 
 	if aiDecision != nil && aiDecision.AIRequestDurationMs > 0 {
 		record.AIRequestDurationMs = aiDecision.AIRequestDurationMs
+		// C-fix (2026-08-18): ai_latency_ms is the field the DecisionAudit UI
+		// actually reads; it was never written in production (always 0). Mirror
+		// the measured duration so the audit column shows the real number.
+		record.AILatencyMs = aiDecision.AIRequestDurationMs
 		at.logInfof("⏱️ AI call duration: %.2f seconds", float64(record.AIRequestDurationMs)/1000)
 		record.ExecutionLog = append(record.ExecutionLog,
 			fmt.Sprintf("AI call duration: %d ms", record.AIRequestDurationMs))

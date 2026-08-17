@@ -4,7 +4,6 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { SessionTimelineStrip } from './SessionTimelineStrip'
 import { SessionTabs, type SessionTab } from './SessionTabs'
-import { HandoverBanner } from './HandoverBanner'
 import {
   ctToMinutes,
   toSegments,
@@ -90,35 +89,5 @@ describe('SessionTabs', () => {
     )
     fireEvent.click(screen.getByRole('tab', { name: /Asia/i }))
     expect(onSelect).not.toHaveBeenCalled()
-  })
-})
-
-describe('HandoverBanner', () => {
-  it('renders the born phase with the session name', () => {
-    render(<HandoverBanner phase="born" session="NY" language="en" />)
-    expect(screen.getByRole('status')).toHaveTextContent(
-      /New York plan is live/i
-    )
-  })
-
-  it('renders the read-failed phase (fail-closed)', () => {
-    render(
-      <HandoverBanner phase="read-failed" session="LONDON" language="en" />
-    )
-    expect(screen.getByRole('status')).toHaveTextContent(/read failed/i)
-  })
-
-  it('fires onDismiss when the close button is clicked', () => {
-    const onDismiss = vi.fn()
-    render(
-      <HandoverBanner
-        phase="expired"
-        session="NY"
-        language="en"
-        onDismiss={onDismiss}
-      />
-    )
-    fireEvent.click(screen.getByLabelText(/Dismiss/i))
-    expect(onDismiss).toHaveBeenCalled()
   })
 })
