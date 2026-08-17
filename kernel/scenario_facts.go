@@ -71,6 +71,77 @@ func acceptanceTFMinutes(rule string) int {
 	}
 }
 
+// AcceptanceIntervalMinutes returns the bar length (in minutes) the rule's N
+// consecutive closes are meant to be counted on: 5 for "2x5m" (and the default),
+// 15 for "15m-close". This is the single source of truth for the acceptance
+// interval — no call site may pick its own bar length.
+func AcceptanceIntervalMinutes(rule string) int {
+	return acceptanceTFMinutes(rule)
+}
+
+// AcceptanceBars resolves the series acceptance facts must be counted on.
+//
+// The acceptance rule NAMES the timeframe — "2x5m" means two consecutive
+// 5-MINUTE closes, "15m-close" means one 15-minute close — while the raw
+// counters (ClosesBeyond / Acceptance / LevelStillValid) count BARS of whatever
+// series they are handed. This is the single resolver: every acceptance /
+// closes-beyond consumer must pass its bars through here (directly or via
+// EvaluateLevelFacts / LevelStillValidOn) and never feed a raw series straight
+// to the counters. Routing the 1-minute SVP cache through here is what keeps
+// "two 5-minute closes" (10 minutes of acceptance) from being satisfied by two
+// 1-minute closes — the executor prompt and the card used to announce acceptance
+// ~5× early.
+func AcceptanceBars(bars []market.Kline, rule string) []market.Kline {
+	return aggregateToMinutes(bars, acceptanceTFMinutes(rule))
+}
+
+// aggregateToMinutes groups bars into fixed wall-clock buckets of tfMinutes and
+// returns one OHLC bar per NON-EMPTY bucket.
+//
+// It never invents a bucket: a closed market produces no bar, exactly as the
+// source series does. Buckets are keyed on absolute epoch minutes so the result
+// is independent of where the input window happens to start, and CloseTime is the
+// bucket's true end so the "closed bar" tests downstream stay honest — a
+// half-formed final bucket is correctly ignored until it completes.
+//
+// tfMinutes <= 1, or a source series already coarser than the bucket, makes this
+// a pass-through in effect (one bar per bucket).
+func aggregateToMinutes(bars []market.Kline, tfMinutes int) []market.Kline {
+	if tfMinutes <= 1 || len(bars) == 0 {
+		return bars
+	}
+	span := int64(tfMinutes) * 60_000
+	out := make([]market.Kline, 0, len(bars)/tfMinutes+1)
+	var curBucket int64 = -1
+	for i := range bars {
+		b := bars[i]
+		bucket := b.OpenTime / span
+		if bucket != curBucket {
+			out = append(out, market.Kline{
+				OpenTime: bucket * span,
+				// -1 matches the repo's bar convention (CloseTime is the last
+				// instant INSIDE the bar): a bucket counts as closed the moment
+				// now reaches its end, and a still-forming final bucket does not.
+				CloseTime: bucket*span + span - 1,
+				Open:      b.Open, High: b.High, Low: b.Low, Close: b.Close,
+				Volume: b.Volume,
+			})
+			curBucket = bucket
+			continue
+		}
+		agg := &out[len(out)-1]
+		if b.High > agg.High {
+			agg.High = b.High
+		}
+		if b.Low < agg.Low {
+			agg.Low = b.Low
+		}
+		agg.Close = b.Close
+		agg.Volume += b.Volume
+	}
+	return out
+}
+
 // SignedDistancePoints returns price - level (positive = price above level).
 func SignedDistancePoints(price, level float64) float64 { return price - level }
 
@@ -228,25 +299,37 @@ func LevelStillValid(bars []market.Kline, level float64, rule string, nowMs int6
 		ClosesBeyond(bars, level, DirBelow, nowMs) < need
 }
 
+// LevelStillValidOn reports validity after resolving the rule timeframe from the
+// RAW series, so callers can hand it the 1-minute SVP cache unmodified.
+func LevelStillValidOn(bars []market.Kline, level float64, rule string, nowMs int64) bool {
+	return LevelStillValid(AcceptanceBars(bars, rule), level, rule, nowMs)
+}
+
 // EvaluateLevelFacts computes the full fact snapshot for a level in one pass —
-// the block the executor prompt tail consumes per scenario. dir is the scenario's
-// expected direction; rule is the acceptance rule; lookback bounds sweep/reclaim/
-// reject scans (0 → default 3).
+// the block the executor prompt tail and the card consume per scenario. dir is
+// the scenario's expected direction; rule is the acceptance rule; lookback bounds
+// sweep/reclaim/reject scans (0 → default 3).
 func EvaluateLevelFacts(bars []market.Kline, level float64, dir int, rule string, lookback int, nowMs int64) LevelFacts {
 	lc, _ := latestClosedClose(bars, nowMs)
-	accepted, have, need := Acceptance(bars, level, dir, rule, nowMs)
+	// Acceptance, closes-beyond and validity are counted on the timeframe the
+	// RULE names (2x5m → 5-minute bars; 15m-close → 15-minute bars), never on
+	// the source series' own length. Sweep/reclaim/reject stay on the source
+	// series: their lookback is a fixed 3-bar event window, not an acceptance
+	// horizon, and resolving them to rule-length bars would silently widen it.
+	judge := AcceptanceBars(bars, rule)
+	accepted, have, need := Acceptance(judge, level, dir, rule, nowMs)
 	return LevelFacts{
 		Level:            level,
 		LatestClose:      lc,
 		DistancePoints:   lc - level,
-		ClosesBeyondUp:   ClosesBeyond(bars, level, DirAbove, nowMs),
-		ClosesBeyondDown: ClosesBeyond(bars, level, DirBelow, nowMs),
+		ClosesBeyondUp:   ClosesBeyond(judge, level, DirAbove, nowMs),
+		ClosesBeyondDown: ClosesBeyond(judge, level, DirBelow, nowMs),
 		Swept:            Swept(bars, level, dir, lookback, nowMs),
 		Reclaimed:        Reclaimed(bars, level, dir, lookback, nowMs),
 		Rejected:         Rejected(bars, level, dir, lookback, nowMs),
 		Accepted:         accepted,
 		AcceptHave:       have,
 		AcceptNeed:       need,
-		StillValid:       LevelStillValid(bars, level, rule, nowMs),
+		StillValid:       LevelStillValid(judge, level, rule, nowMs),
 	}
 }

@@ -83,62 +83,15 @@ func PlanIsDeadSince(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now
 	// 30193.50, inside the stack — PDL had 997 consecutive closes above it, EQL
 	// 1275 below. That is a proximity test, not a consumption test: any level more
 	// than two 1m closes away from price is automatically "accepted through".
-	judge := aggregateToMinutes(bars, acceptanceTFMinutes(rule))
+	judge := AcceptanceBars(bars, rule)
 	for _, l := range doc.Levels {
 		touched := levelTouched(judge, l.Price, now)
-		consumed := !LevelStillValid(judge, l.Price, rule, now)
+		consumed := !LevelStillValidOn(judge, l.Price, rule, now)
 		if !(touched && consumed) {
 			return false // this level is still in play → plan not dead
 		}
 	}
 	return true // every level touched AND accepted through → dead
-}
-
-// aggregateToMinutes groups bars into fixed wall-clock buckets of tfMinutes and
-// returns one OHLC bar per NON-EMPTY bucket.
-//
-// It never invents a bucket: a closed market produces no bar, exactly as the
-// source series does. Buckets are keyed on absolute epoch minutes so the result
-// is independent of where the input window happens to start, and CloseTime is the
-// bucket's true end so the "closed bar" tests downstream stay honest — a
-// half-formed final bucket is correctly ignored until it completes.
-//
-// tfMinutes <= 1, or a source series already coarser than the bucket, makes this
-// a pass-through in effect (one bar per bucket).
-func aggregateToMinutes(bars []market.Kline, tfMinutes int) []market.Kline {
-	if tfMinutes <= 1 || len(bars) == 0 {
-		return bars
-	}
-	span := int64(tfMinutes) * 60_000
-	out := make([]market.Kline, 0, len(bars)/tfMinutes+1)
-	var curBucket int64 = -1
-	for i := range bars {
-		b := bars[i]
-		bucket := b.OpenTime / span
-		if bucket != curBucket {
-			out = append(out, market.Kline{
-				OpenTime: bucket * span,
-				// -1 matches the repo's bar convention (CloseTime is the last
-				// instant INSIDE the bar): a bucket counts as closed the moment
-				// now reaches its end, and a still-forming final bucket does not.
-				CloseTime: bucket*span + span - 1,
-				Open:      b.Open, High: b.High, Low: b.Low, Close: b.Close,
-				Volume: b.Volume,
-			})
-			curBucket = bucket
-			continue
-		}
-		agg := &out[len(out)-1]
-		if b.High > agg.High {
-			agg.High = b.High
-		}
-		if b.Low < agg.Low {
-			agg.Low = b.Low
-		}
-		agg.Close = b.Close
-		agg.Volume += b.Volume
-	}
-	return out
 }
 
 // PlanDeathDetail names WHAT killed a plan, so a death can never again be a bare
@@ -161,19 +114,19 @@ func DescribePlanDeath(doc PlanDoc, bars []market.Kline, rule string, sinceMs, n
 	if !PlanIsDeadSince(doc, bars, rule, sinceMs, now) {
 		return PlanDeathDetail{}, false
 	}
-	judge := aggregateToMinutes(barsSince(bars, sinceMs), acceptanceTFMinutes(rule))
+	judge := AcceptanceBars(barsSince(bars, sinceMs), rule)
 	price, _ := latestClosedClose(judge, now)
 	d := PlanDeathDetail{Price: price}
 	last := ""
 	for _, l := range doc.Levels {
-		up := ClosesBeyond(judge, l.Price, DirAbove, now)
-		dn := ClosesBeyond(judge, l.Price, DirBelow, now)
+		f := EvaluateLevelFacts(judge, l.Price, DirAbove, rule, 3, now)
+		up, dn := f.ClosesBeyondUp, f.ClosesBeyondDown
 		side, n := "above", up
 		if dn > up {
 			side, n = "below", dn
 		}
 		d.Levels = append(d.Levels, fmt.Sprintf("%s %.2f accepted %s (%d× %dm closes)",
-			l.Label, l.Price, side, n, acceptanceTFMinutes(rule)))
+			l.Label, l.Price, side, n, AcceptanceIntervalMinutes(rule)))
 		last = fmt.Sprintf("%s %.2f", l.Label, l.Price)
 	}
 	d.Killer = fmt.Sprintf("all %d levels touched and accepted through on %s bars (last: %s); price %.2f",
