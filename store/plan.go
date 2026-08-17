@@ -332,6 +332,13 @@ func (s *PlanStore) ListRecent(limit int) ([]*PlanDB, error) {
 	return rows, nil
 }
 
+// UncarriedEditsKey is the system_config key holding the owner edits that could
+// not be carried into a plan version (ITEM 4). Mirrors the scenario_status
+// precedent so the review list needs no migration.
+func UncarriedEditsKey(planID string, version int) string {
+	return fmt.Sprintf("uncarried_edits:%s:v%d", planID, version)
+}
+
 // ListVersions returns EVERY stored version of one session's plan, oldest first.
 //
 // The plans table has always been append-only (PRIMARY KEY (plan_id, version);

@@ -606,6 +606,40 @@ export function SessionPlanCard({
         </div>
       )}
 
+      {/* ITEM 4 — owner edits a re-plan could not re-anchor. NEVER dropped
+          silently and never mis-applied: they wait here for the owner's eye. */}
+      {!!plan.uncarried_edits?.length && (
+        <div
+          data-testid="uncarried-edits"
+          className="flex flex-col gap-1 px-2.5 py-2"
+          style={{
+            background: 'var(--vl-gold-dim)',
+            border: '1px solid var(--vl-gold-line)',
+            borderRadius: 'var(--vl-radius-inner)',
+            fontFamily: 'var(--vl-font-ui)',
+          }}
+        >
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--vl-gold)' }}
+          >
+            ✎{' '}
+            {tp('uncarriedTitle', language, {
+              n: String(plan.uncarried_edits.length),
+            })}
+          </span>
+          {plan.uncarried_edits.map((u, i) => (
+            <span
+              key={`${u.path}-${i}`}
+              className="text-[11px]"
+              style={{ color: 'var(--vl-muted)' }}
+            >
+              • {u.summary}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* bias */}
       <BiasBlock bias={doc.bias} language={language} />
 

@@ -212,6 +212,12 @@ func (at *AutoTrader) maybeRunSessionReads() {
 						fmt.Sprintf("Killed by: %s. This is the last re-plan before the session sits out.", detail.Killer))
 				}
 				at.runPlannerRead(s.Name, tradeDate) // appends a new version
+				// ITEM 4 — the owner's levels are sticky: re-establish them on the
+				// version just written, re-anchored by price. Anything that cannot
+				// be re-anchored is parked for review, never dropped.
+				if fresh, fErr := at.store.Plan().GetLatestPlanForSession(tradeDate, s.Name); fErr == nil && fresh != nil {
+					at.carryOwnerEditsInto(fresh.PlanID, existing.Version, fresh.Version)
+				}
 			}
 		}
 	}
@@ -242,13 +248,111 @@ func (at *AutoTrader) warnIfReplanOrphansOverlays(row *store.PlanDB) {
 	if err != nil || len(overlays) == 0 {
 		return
 	}
-	at.logErrorf("🚨 re-plan %s v%d strands %d owner overlay(s) — edits are keyed to the version they were made on.",
+	at.logInfof("🗓️ re-plan %s v%d carries %d owner overlay(s) forward by price identity.",
 		row.PlanID, row.Version, len(overlays))
-	at.emitAlert("P1", "overlays-orphaned",
-		fmt.Sprintf("orphan:%s:v%d", row.PlanID, row.Version),
-		fmt.Sprintf("%d owner edit(s) dropped by the re-plan", len(overlays)),
-		fmt.Sprintf("Your edits were attached to %s v%d. The plan has been re-read as v%d, and overlays do not carry across versions — re-apply them on the new version if you still want them.",
-			row.PlanID, row.Version, row.Version+1))
+}
+
+// carryOwnerEditsInto re-establishes the PREVIOUS version's owner edits on the
+// version just written (ITEM 4, 2026-08-17).
+//
+// Owner levels are sticky by contract. Before this, a re-plan silently stranded
+// them: overlays are keyed (plan_id, plan_version) and every reader resolves
+// against the LATEST version, so the owner's levels quietly left the plan the bot
+// was trading. The carry re-anchors by PRICE, never by array index — replaying
+// `/levels/3` against a re-planned doc would move an edit onto a different level,
+// which is worse than losing it.
+//
+// Anything that cannot be re-anchored (structural edits, and deletes the planner
+// has undone) is recorded for REVIEW and alerted, never silently dropped.
+func (at *AutoTrader) carryOwnerEditsInto(planID string, oldVersion, newVersion int) {
+	if at.store == nil || oldVersion <= 0 || newVersion <= oldVersion {
+		return
+	}
+	overlays, err := at.store.Plan().ListOverlays(planID, oldVersion)
+	if err != nil || len(overlays) == 0 {
+		return
+	}
+	oldRow, err := at.store.Plan().GetPlan(planID, oldVersion)
+	if err != nil || oldRow == nil {
+		return
+	}
+	newRow, err := at.store.Plan().GetPlan(planID, newVersion)
+	if err != nil || newRow == nil {
+		return
+	}
+	var oldBase, newDoc kernel.PlanDoc
+	if json.Unmarshal([]byte(oldRow.Doc), &oldBase) != nil || json.Unmarshal([]byte(newRow.Doc), &newDoc) != nil {
+		return
+	}
+	patches := make([]string, 0, len(overlays))
+	for _, ov := range overlays {
+		patches = append(patches, ov.Patch)
+	}
+	// Resolve what the owner actually SAW on the old version. If that resolution
+	// fails, oldFinal stays equal to oldBase, which carries nothing — fail-safe
+	// (an edit is never mis-applied) but worth saying out loud, because silently
+	// carrying nothing is the very failure this whole item exists to end.
+	oldFinal := oldBase
+	resolved := false
+	if merged, mErr := json.Marshal(oldBase); mErr == nil {
+		if applied, _ := kernel.ApplyOverlayPatches(merged, patches); len(applied) > 0 {
+			var f kernel.PlanDoc
+			if json.Unmarshal(applied, &f) == nil && kernel.ValidatePlanDoc(&f) == nil {
+				oldFinal, resolved = f, true
+			}
+		}
+	}
+	if !resolved {
+		at.logErrorf("🚨 %s v%d: plan_final would not resolve, so %d owner overlay(s) cannot be carried into v%d — re-apply them by hand.",
+			planID, oldVersion, len(overlays), newVersion)
+		at.emitAlert("P1", "overlays-need-review",
+			fmt.Sprintf("review:%s:v%d", planID, newVersion),
+			fmt.Sprintf("%d owner edit(s) could not be carried into v%d", len(overlays), newVersion),
+			"The previous version's edits could not be resolved, so nothing was carried forward. Re-apply them on the new version.")
+		return
+	}
+
+	res := kernel.CarryOwnerEdits(oldBase, oldFinal, newDoc, patches)
+
+	if res.Patch != "" {
+		if _, aErr := at.store.Plan().AppendOverlay(&store.PlanOverlayDB{
+			PlanID: planID, PlanVersion: newVersion,
+			Patch: res.Patch, Origin: "owner-carried",
+		}); aErr != nil {
+			at.logErrorf("🚨 carrying %d owner level(s) into %s v%d FAILED: %v",
+				len(res.Carried), planID, newVersion, aErr)
+			at.emitAlert("P1", "overlays-orphaned",
+				fmt.Sprintf("orphan:%s:v%d", planID, oldVersion),
+				fmt.Sprintf("%d owner edit(s) could not be carried into v%d", len(res.Carried), newVersion),
+				"The re-plan could not re-apply your levels. Re-add them on the new version.")
+			return
+		}
+		at.logInfof("🗓️ carried %d owner level(s) into %s v%d.", len(res.Carried), planID, newVersion)
+	}
+
+	if len(res.Uncarried) > 0 {
+		lines := make([]string, 0, len(res.Uncarried))
+		for _, u := range res.Uncarried {
+			lines = append(lines, "• "+u.Summary)
+		}
+		at.storeUncarriedEdits(planID, newVersion, res.Uncarried)
+		at.logErrorf("🚨 %d owner edit(s) could NOT carry into %s v%d — awaiting review.",
+			len(res.Uncarried), planID, newVersion)
+		at.emitAlert("P1", "overlays-need-review",
+			fmt.Sprintf("review:%s:v%d", planID, newVersion),
+			fmt.Sprintf("%d edit(s) could not carry into v%d — review", len(res.Uncarried), newVersion),
+			strings.Join(lines, "\n"))
+	}
+}
+
+// storeUncarriedEdits parks the review list where the card can read it. Follows
+// the scenario_status precedent (system_config keyed by plan), so no migration.
+func (at *AutoTrader) storeUncarriedEdits(planID string, version int, items []kernel.UncarriedEdit) {
+	blob, err := json.Marshal(items)
+	if err != nil {
+		return
+	}
+	_ = at.store.SetSystemConfig(store.UncarriedEditsKey(planID, version), string(blob))
 }
 
 // activePlanIsDead reports whether the stored plan's thesis is spent (all its

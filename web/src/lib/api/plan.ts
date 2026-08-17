@@ -101,6 +101,8 @@ export interface PlanToday {
   runnable_sessions?: string[]
   /** The RESOLVED re-plan cap (config, never a literal). */
   replan_cap?: number
+  /** ITEM 4 — owner edits a re-plan could not re-anchor onto this version. */
+  uncarried_edits?: UncarriedEdit[]
   /** ITEM 15 — true when ?version= served a superseded version, not the latest. */
   historical?: boolean
   /** ITEM 15 — the newest stored version, so the card can offer the way back. */
@@ -136,6 +138,14 @@ export interface PlanVersionsResponse {
   session: string
   latest_version: number
   versions: PlanVersionItem[]
+}
+
+// ITEM 4 — an owner edit that could not carry into a new plan version.
+export interface UncarriedEdit {
+  op: string
+  path: string
+  reason: string
+  summary: string
 }
 
 // ── GET /api/plan/history ──

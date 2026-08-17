@@ -266,6 +266,9 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		// FE keeps its current fallback. The sandbox seeds it so all four states
 		// are visible. Replace the source when the executor computes it for real.
 		"scenario_status": scenarioStatusForLifecycle(s.scenarioStatus(row.PlanID), row.Lifecycle, doc),
+		// ITEM 4 — owner edits that could NOT be re-anchored onto this version.
+		// Never dropped silently: the card asks for review.
+		"uncarried_edits": s.uncarriedEdits(row.PlanID, row.Version),
 	})
 }
 
@@ -811,6 +814,23 @@ func (s *Server) handlePlanReread(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{"ok": true, "gate": gate})
+}
+
+// uncarriedEdits reads the review list a re-plan parked for this version.
+// Absent (the normal case) → nil, and the card shows nothing.
+func (s *Server) uncarriedEdits(planID string, version int) []kernel.UncarriedEdit {
+	if s.store == nil {
+		return nil
+	}
+	raw, _ := s.store.GetSystemConfig(store.UncarriedEditsKey(planID, version))
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	var out []kernel.UncarriedEdit
+	if json.Unmarshal([]byte(raw), &out) != nil {
+		return nil
+	}
+	return out
 }
 
 // ── ITEM 2 — Ask-Planner context resolution ────────────────────────────────

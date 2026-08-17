@@ -406,3 +406,59 @@ describe('SessionPlanCard — the NO-TRADE marker', () => {
     expect(document.querySelectorAll('[data-no-trade="1"]').length).toBe(0)
   })
 })
+
+// ITEM 4 (2026-08-17) — edits that could not carry must be VISIBLE, never dropped.
+describe('SessionPlanCard — uncarried owner edits', () => {
+  it('asks for review, naming each edit', () => {
+    render(
+      <SessionPlanCard
+        plan={{
+          ...historicalPlan(6),
+          lifecycle: 'active',
+          uncarried_edits: [
+            {
+              op: 'replace',
+              path: '/bias/direction',
+              reason: 'structural edits have no price to re-anchor to',
+              summary: 'your edit to /bias/direction could not carry — review',
+            },
+            {
+              op: 'remove',
+              path: '/levels[30100]',
+              reason: 'you removed this level and the new plan re-added it',
+              summary:
+                'you removed junk at 30100; the new plan added it back — review',
+            },
+          ],
+        }}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    const panel = screen.getByTestId('uncarried-edits')
+    expect(panel.textContent).toContain('2 edit(s) could not carry')
+    expect(panel.textContent).toContain('/bias/direction')
+    expect(panel.textContent).toContain('added it back')
+  })
+
+  it('shows nothing when everything carried', () => {
+    render(
+      <SessionPlanCard
+        plan={{ ...historicalPlan(6), lifecycle: 'active' }}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    expect(screen.queryByTestId('uncarried-edits')).toBeNull()
+  })
+})

@@ -3,6 +3,7 @@ package trader
 import (
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"nofx/store"
@@ -89,11 +90,14 @@ func TestStoredReplanCapFallsBackSafely(t *testing.T) {
 	}
 }
 
-// A re-plan silently orphans every owner overlay attached to the outgoing
-// version (they are keyed (plan_id, plan_version) and every reader resolves
-// against the LATEST). The rebase is sized M and deliberately deferred; what
-// must not happen is the loss being SILENT.
-func TestReplanOrphanWarningFiresOnlyWhenOverlaysExist(t *testing.T) {
+// ITEM 4 (2026-08-17) — a re-plan CARRIES the owner's levels forward.
+//
+// This test previously pinned the interim behaviour: a P1 alert naming how many
+// edits a re-plan was about to strand. That was the honest stopgap while the
+// rebase was unbuilt. The edits are now re-established by price identity, so the
+// contract it guarded is superseded — what must hold is that the carry actually
+// writes the owner's level onto the new version.
+func TestReplanCarriesOwnerLevelsForward(t *testing.T) {
 	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -108,39 +112,78 @@ func TestReplanOrphanWarningFiresOnlyWhenOverlaysExist(t *testing.T) {
 	at := &AutoTrader{id: "trader-1", store: st, exchange: "ninjatrader"}
 	at.config.StrategyConfig = &cfg
 
-	row := &store.PlanDB{
-		PlanID: store.MakePlanID("2026-08-16", "ASIA"), StrategyID: "trader-1",
-		TradeDate: "2026-08-16", Session: "ASIA", Lifecycle: "active", Doc: `{}`,
-	}
-	if _, err := st.Plan().AppendPlan(row); err != nil {
-		t.Fatal(err)
-	}
-
-	countAlerts := func() int {
-		alerts, _ := st.Alert().List("trader-1", 50)
-		n := 0
-		for _, a := range alerts {
-			if a.Kind == "overlays-orphaned" {
-				n++
-			}
-		}
-		return n
-	}
-
-	// No overlays → nothing to warn about; a re-plan on a clean plan is normal.
-	at.warnIfReplanOrphansOverlays(row)
-	if got := countAlerts(); got != 0 {
-		t.Fatalf("warned %d times with zero overlays — a clean re-plan must stay quiet", got)
-	}
-
-	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{
-		PlanID: row.PlanID, PlanVersion: row.Version,
-		Patch: `[{"op":"add","path":"/levels/-","value":{}}]`, Origin: "owner",
+	planID := store.MakePlanID("2026-08-16", "ASIA")
+	base := `{"reasoning":"r","bias":{"direction":"long","conviction":"low","flip_condition":"n/a"},` +
+		`"levels":[{"price":30200,"label":"ONH","grade":"A","instruction":"fade"}],` +
+		`"scenarios":[{"id":"S1","trigger":"t","condition":"hold","direction":"long","invalid":"n","quality":"A"}],` +
+		`"no_trade":[],"death_condition":"x"}`
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{
+		PlanID: planID, StrategyID: "trader-1", TradeDate: "2026-08-16",
+		Session: "ASIA", Lifecycle: "active", Doc: base,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	at.warnIfReplanOrphansOverlays(row)
-	if got := countAlerts(); got != 1 {
-		t.Fatalf("owner edits = %d alerts, want exactly 1 — the loss must not be silent", got)
+	// The owner adds a level of their own to v1.
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{
+		PlanID: planID, PlanVersion: 1, Origin: "owner",
+		Patch: `[{"op":"add","path":"/levels/-","value":{"price":30250,"label":"my line","grade":"A","instruction":"reclaim-long"}}]`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// A re-plan writes v2 WITHOUT that level.
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{
+		PlanID: planID, StrategyID: "trader-1", TradeDate: "2026-08-16",
+		Session: "ASIA", Lifecycle: "active", Doc: base,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	at.carryOwnerEditsInto(planID, 1, 2)
+
+	overlays, err := st.Plan().ListOverlays(planID, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(overlays) == 0 {
+		t.Fatal("the owner's level did not carry into v2 — it was stranded, which is the whole bug")
+	}
+	found := false
+	for _, ov := range overlays {
+		if strings.Contains(ov.Patch, "30250") && strings.Contains(ov.Patch, "my line") {
+			found = true
+			if !strings.Contains(ov.Patch, `"path":"/levels/-"`) {
+				t.Errorf("the carry must APPEND by identity, not re-point an index: %s", ov.Patch)
+			}
+		}
+	}
+	if !found {
+		t.Errorf("v2 overlays do not contain the owner's level: %+v", overlays)
+	}
+}
+
+// Nothing to carry → no overlay written, no noise.
+func TestReplanWithNoOwnerEditsCarriesNothing(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "t2.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}
+	seedTraderWithDayPlan(t, st, "trader-1", "strat-1", cfg)
+	at := &AutoTrader{id: "trader-1", store: st, exchange: "ninjatrader"}
+	at.config.StrategyConfig = &cfg
+
+	planID := store.MakePlanID("2026-08-16", "NY")
+	for i := 0; i < 2; i++ {
+		if _, err := st.Plan().AppendPlan(&store.PlanDB{
+			PlanID: planID, StrategyID: "trader-1", TradeDate: "2026-08-16",
+			Session: "NY", Lifecycle: "active", Doc: "{}",
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	at.carryOwnerEditsInto(planID, 1, 2)
+	if ovs, _ := st.Plan().ListOverlays(planID, 2); len(ovs) != 0 {
+		t.Errorf("a clean re-plan must write no overlay, got %d", len(ovs))
 	}
 }

@@ -162,6 +162,11 @@ export const planStrings = {
     zh: '本时段剩余重规划',
     id: 'Sisa rencana ulang sesi ini',
   },
+  uncarriedTitle: {
+    en: '{n} edit(s) could not carry into this version — review',
+    zh: '{n} 处修改无法沿用到此版本 — 请复核',
+    id: '{n} suntingan tidak bisa dibawa ke versi ini — tinjau',
+  },
   alertDismiss: { en: 'Remove', zh: '移除', id: 'Hapus' },
   alertClearRead: { en: 'Clear read', zh: '清除已读', id: 'Bersihkan terbaca' },
   alertP0NeedsAck: {
