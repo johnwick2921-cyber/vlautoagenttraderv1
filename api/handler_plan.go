@@ -673,10 +673,63 @@ func (s *Server) handlePlanOverlay(c *gin.Context) {
 		symbol = "MNQ"
 	}
 
-	overlayVersion, planVersion, code, msg := s.applyPlanOverlay(traderID, symbol, body.Patch, origin, time.Now())
+	// UI-verification (2026-08-18): the edit sheet rides note + scenario_tag on
+	// the replace value for OWNER-origin levels. The plan doc has no such fields
+	// — strip them from the stored patch and write them through to the sticky
+	// owner row (price identity + label) after a successful apply, so editing a
+	// note can never be a silent no-op and the overlay history stays schema-pure.
+	type opShape struct {
+		Op    string         `json:"op"`
+		Path  string         `json:"path"`
+		Value map[string]any `json:"value,omitempty"`
+	}
+	var ops []opShape
+	cleanPatch := body.Patch
+	type writeThrough struct {
+		price float64
+		label string
+		note  string
+		tag   string
+	}
+	var throughs []writeThrough
+	if json.Unmarshal([]byte(body.Patch), &ops) == nil {
+		for i := range ops {
+			if ops[i].Op != "replace" || !strings.HasPrefix(ops[i].Path, "/levels/") {
+				continue
+			}
+			note, hasNote := ops[i].Value["note"].(string)
+			tag, hasTag := ops[i].Value["scenario_tag"].(string)
+			if !hasNote && !hasTag {
+				continue
+			}
+			var price float64
+			switch p := ops[i].Value["price"].(type) {
+			case float64:
+				price = p
+			case json.Number:
+				price, _ = p.Float64()
+			}
+			label, _ := ops[i].Value["label"].(string)
+			throughs = append(throughs, writeThrough{price: price, label: label, note: note, tag: tag})
+			delete(ops[i].Value, "note")
+			delete(ops[i].Value, "scenario_tag")
+		}
+		if len(throughs) > 0 {
+			if b, mErr := json.Marshal(ops); mErr == nil {
+				cleanPatch = string(b)
+			}
+		}
+	}
+
+	overlayVersion, planVersion, code, msg := s.applyPlanOverlay(traderID, symbol, cleanPatch, origin, time.Now())
 	if code != 0 {
 		c.JSON(code, gin.H{"error": msg})
 		return
+	}
+	for _, wt := range throughs {
+		if wt.price > 0 && wt.label != "" {
+			_, _ = s.store.OwnerLevel().UpdateNoteTag(symbol, wt.price, wt.label, wt.note, wt.tag)
+		}
 	}
 	c.JSON(200, gin.H{"overlay_version": overlayVersion, "plan_version": planVersion, "origin": origin})
 }

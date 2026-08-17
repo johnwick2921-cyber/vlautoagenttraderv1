@@ -71,6 +71,17 @@ func (s *OwnerLevelStore) MarkConsumed(id int64) error {
 	return s.db.Model(&OwnerLevelDB{}).Where("id = ?", id).Update("consumed", true).Error
 }
 
+// UpdateNoteTag (UI-verification 2026-08-18) writes the edit sheet's note +
+// scenario-tag changes through to the sticky owner row, re-anchored by PRICE
+// IDENTITY + label (never index), WHERE-scoped to the symbol. Returns whether
+// a row matched.
+func (s *OwnerLevelStore) UpdateNoteTag(symbol string, price float64, label, note, tag string) (bool, error) {
+	res := s.db.Model(&OwnerLevelDB{}).
+		Where("symbol = ? AND price = ? AND label = ?", symbol, price, label).
+		Updates(map[string]any{"note": note, "scenario_tag": tag})
+	return res.RowsAffected > 0, res.Error
+}
+
 // Delete removes an owner level (owner deletion).
 func (s *OwnerLevelStore) Delete(id int64) error {
 	return s.db.Where("id = ?", id).Delete(&OwnerLevelDB{}).Error
