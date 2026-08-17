@@ -38,22 +38,17 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		symbol = "MNQ"
 	}
 
-	// Install the nPOC + active-plan providers once, closing over this store.
+	// Install the nPOC + level-state providers once (store-backed, symbol-scoped
+	// market facts — shared across traders by design). The ACTIVE-PLAN +
+	// SESSION-REGISTRY providers are PER-TRADER (P0-A): re-registered
+	// idempotently every cycle under THIS trader's id, never a process-global
+	// singleton closing over whoever arrived first.
 	st := at.store
 	nakedPOCProviderOnce.Do(func() {
 		installNakedPOCProvider(st)
-		installActivePlanProvider(at, st)
 		installLevelStateProvider(st) // W11b — surface persisted freshness/consumed
-		// H1/H2 — the kernel's executor-prompt level assembly resolves the
-		// day-trade lock from THIS trader's proximity_filter_atr (the same
-		// resolver every other site uses), so the config governs which levels
-		// are generated and seated everywhere.
-		kernel.PlanProximityKProvider = func() float64 { return at.proximityFilterATR() }
-		// H7 — the executor prompt resolves the PERSISTED admin registry (per
-		// session-day cache, same resolver the gates read), never the hardcoded
-		// default that would ignore an admin edit.
-		kernel.SessionRegistryProvider = func() kernel.SessionRegistry { return at.sessionRegistry(time.Now()) }
 	})
+	installActivePlanProvider(at, st)
 
 	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)
 	if len(bars) == 0 {

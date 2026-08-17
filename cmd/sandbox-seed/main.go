@@ -271,7 +271,7 @@ func main() {
 	}
 
 	// ── SCENARIO LIVE STATUS (the four dot states) ────────────────────────────
-	must("scenario status", st.SetSystemConfig("scenario_status:"+planID,
+	must("scenario status", st.SetSystemConfig(store.ScenarioStatusKey(*traderID, planID),
 		`{"S1":"triggered","S2":"armed","S3":"waiting","S4":"invalidated"}`))
 
 	fmt.Printf("✅ sandbox seeded: %s\n   plan %s v1+v2 · 8 levels · 3 scenarios · owner level · %d alerts · 3 graded trades · digests · calendar · level-state\n",

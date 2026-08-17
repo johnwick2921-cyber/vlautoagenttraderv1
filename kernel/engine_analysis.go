@@ -314,10 +314,17 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	engine.SetKeyLevelsContext("")
 	planOn := false
 	maxLevels := DefaultMaxLevels
+	proximityK := ActivationWindowK
 	if cfg := engine.GetConfig(); cfg != nil && cfg.DayPlan != nil {
 		planOn = cfg.DayPlan.PlanEnabled
 		if cfg.DayPlan.MaxLevels > 0 {
 			maxLevels = cfg.DayPlan.MaxLevels
+		}
+		// H1/H2 — the day-trade lock is THIS ENGINE's config (the deciding
+		// trader's strategy), never a process-global provider that could close
+		// over a different trader (P0-A).
+		if cfg.DayPlan.ProximityFilterATR >= 0.5 && cfg.DayPlan.ProximityFilterATR <= 3.0 {
+			proximityK = cfg.DayPlan.ProximityFilterATR
 		}
 	}
 	if isFut, _ := futuresVariantMode(variant); isFut && planOn {
@@ -330,11 +337,9 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				if NakedPOCProvider != nil {
 					extra = NakedPOCProvider(activeSymbol)
 				}
-				// H1/H2 — proximity is the RESOLVED day-trade lock (the provider
-				// the trader installs), never a hardcoded 1.5 the config cannot
-				// move. H7 — the registry is the PERSISTED admin registry (the
-				// provider), never the hardcoded default that ignores edits.
-				klBlock = BuildKeyLevelsBlock(bars, resolvedSessionRegistry(), activeSymbol, maxLevels, time.Now(), resolvedProximityK(), extra...)
+				// H7 — the registry is the admin registry the DECIDING trader
+				// resolves (per-trader provider; never another trader's).
+				klBlock = BuildKeyLevelsBlock(bars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, time.Now(), proximityK, extra...)
 			}
 		}
 		engine.SetKeyLevelsContext(klBlock)
@@ -348,9 +353,11 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// byte-stable PLAN BLOCK (cached prefix) + dynamic PLAN STATUS (tail from the
 	// P0.4 evaluator). Gated on day_plan; no active plan → cleared (prompt
 	// unchanged). When present, this triggers the RECON #4 reorder.
+	// P0-A — the plan is resolved for the DECIDING trader (ctx.TraderID); the
+	// provider is per-trader, so one trader's plan can never reach another.
 	engine.SetPlanContext("", "")
-	if isFut, _ := futuresVariantMode(variant); isFut && planOn && ActivePlanProvider != nil {
-		if plan := ActivePlanProvider(activeSymbol); plan != nil {
+	if isFut, _ := futuresVariantMode(variant); isFut && planOn {
+		if plan := ActivePlanFor(ctx.TraderID, activeSymbol); plan != nil {
 			// W15.B — resolve the acceptance rule for THE PLAN'S OWN SESSION, so a
 			// per-session override reaches the executor prompt (it previously read
 			// only the strategy-level field, making the override inert).
@@ -362,7 +369,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			status := ""
 			if market.FuturesBarsProvider != nil {
 				if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
-					_, price, dATR := AssembleScoredLevels(bars, resolvedSessionRegistry(), activeSymbol, maxLevels, time.Now(), resolvedProximityK())
+					_, price, dATR := AssembleScoredLevels(bars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, time.Now(), proximityK)
 					status = RenderPlanStatus(activeSymbol, plan.Doc, bars, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
 				}
 			}

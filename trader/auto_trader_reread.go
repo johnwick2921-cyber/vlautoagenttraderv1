@@ -55,7 +55,7 @@ func (at *AutoTrader) CanForceReread(now time.Time) RereadRefusal {
 
 	tradeDate := plannerTradeDateCT(now)
 	cap := at.replanCapFor(sess.Name)
-	row, err := at.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 	if err != nil {
 		return RereadRefusal{Session: sess.Name, Reason: "could not read the current plan"}
 	}

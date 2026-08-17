@@ -1036,6 +1036,15 @@ func ResetBaselineKey(tradeDate, session string) string {
 	return "dayplan_reset:" + tradeDate + ":" + session
 }
 
+// ScenarioStatusKey is the system_config key holding a trader's live scenario
+// statuses. P0-A (2026-08-18): the key used to be "scenario_status:<plan_id>"
+// — with two day-plan traders sharing a plan_id, the last writer's statuses
+// governed both cards. Trader-scoped so one trader's scenario facts can never
+// reach another's card.
+func ScenarioStatusKey(traderID, planID string) string {
+	return "scenario_status:" + traderID + ":" + planID
+}
+
 // SetResetBaseline records the version the reset chain starts measuring from.
 func SetResetBaseline(st *Store, tradeDate, session string, version int) error {
 	if st == nil {

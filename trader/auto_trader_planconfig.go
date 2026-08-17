@@ -186,10 +186,10 @@ func (at *AutoTrader) planModeBlocked(d *kernel.Decision) (string, bool) {
 	if mode == "" || mode == "advisory" {
 		return "", false
 	}
-	if kernel.ActivePlanProvider == nil {
+	if !kernel.HasTraderPlanProvider(at.id) {
 		return "", false // provider not installed (e.g. tests) → don't block
 	}
-	ap := kernel.ActivePlanProvider(at.futuresSymbol())
+	ap := kernel.ActivePlanFor(at.id, at.futuresSymbol())
 	if ap == nil {
 		return "no active plan (" + mode + " mode restricts to the plan)", true
 	}

@@ -58,7 +58,7 @@ func (at *AutoTrader) CanForceReset(now time.Time) ResetRefusal {
 		return ResetRefusal{Session: sess.Name, Reason: "the market is closed (holiday or weekend)"}
 	}
 	tradeDate := plannerTradeDateCT(now)
-	row, err := at.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 	if err != nil {
 		return ResetRefusal{Session: sess.Name, Reason: "could not read the current plan"}
 	}
@@ -85,7 +85,7 @@ func (at *AutoTrader) ForceReset(now time.Time) (ResetRefusal, error) {
 		return gate, fmt.Errorf("%s", gate.Reason)
 	}
 	tradeDate := plannerTradeDateCT(now)
-	row, err := at.store.Plan().GetLatestPlanForSession(tradeDate, gate.Session)
+	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, gate.Session, at.id)
 	if err != nil || row == nil {
 		return gate, fmt.Errorf("could not read the current plan")
 	}
@@ -110,7 +110,7 @@ func (at *AutoTrader) ForceReset(now time.Time) (ResetRefusal, error) {
 
 	// ITEM 4 — owner sticky levels carry across the seam, re-anchored by price
 	// identity (never index), exactly like a re-plan.
-	if fresh, fErr := at.store.Plan().GetLatestPlanForSession(tradeDate, gate.Session); fErr == nil && fresh != nil && fresh.Version > row.Version {
+	if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, gate.Session, at.id); fErr == nil && fresh != nil && fresh.Version > row.Version {
 		at.carryOwnerEditsInto(fresh.PlanID, row.Version, fresh.Version)
 	}
 	return gate, nil

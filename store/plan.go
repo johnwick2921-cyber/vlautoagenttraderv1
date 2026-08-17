@@ -318,6 +318,27 @@ func (s *PlanStore) GetLatestPlanForSession(tradeDate, session string) (*PlanDB,
 	return &p, nil
 }
 
+// GetLatestPlanForTraderSession returns the newest plan version for ONE trader
+// (strategy_id holds the trader id — the column is misnamed) within a
+// (trade_date, session), or (nil, nil) if none.
+//
+// P0-A (2026-08-18): the unscoped GetLatestPlanForSession let two day-plan
+// traders share one plan chain — the last writer's version governed BOTH
+// executors. Every production plan reader must use THIS scoped form, pinned by
+// a source-scan test.
+func (s *PlanStore) GetLatestPlanForTraderSession(tradeDate, session, strategyID string) (*PlanDB, error) {
+	var p PlanDB
+	err := s.db.Where("trade_date = ? AND session = ? AND strategy_id = ?", tradeDate, session, strategyID).
+		Order("version DESC").First(&p).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
 // ListRecent returns the most recent plan rows (any session) newest-first, for
 // the plan-history view.
 func (s *PlanStore) ListRecent(limit int) ([]*PlanDB, error) {

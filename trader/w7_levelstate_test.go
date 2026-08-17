@@ -68,15 +68,14 @@ func TestW7LevelBurnedStaysBurnedAcrossSessions(t *testing.T) {
 	label := "nPOC·Tue"
 	key := store.MakeLevelKey("MNQ", kernel.LevelTypeFromLabel(label), "", kernel.LevelBinIndex(levelPx))
 
-	// A fixed active plan with one level; restore the global provider after.
-	prevProv := kernel.ActivePlanProvider
-	defer func() { kernel.ActivePlanProvider = prevProv }()
-	kernel.ActivePlanProvider = func(string) *kernel.ActivePlan {
+	// A fixed active plan with one level; restore the provider after.
+	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: func(string) *kernel.ActivePlan {
 		return &kernel.ActivePlan{
 			Doc:     kernel.PlanDoc{Levels: []kernel.PlanLevel{{Price: levelPx, Label: label, Grade: "A"}}},
 			Session: "NY", Version: 1, ReplansLeft: 2,
 		}
-	}
+	}})
+	t.Cleanup(func() { kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{}) })
 	prevBars := market.FuturesBarsProvider
 	defer func() { market.FuturesBarsProvider = prevBars }()
 
@@ -136,11 +135,10 @@ func TestW7GatedOff(t *testing.T) {
 	at.store = st
 	at.id = "t1"
 
-	prevProv := kernel.ActivePlanProvider
-	defer func() { kernel.ActivePlanProvider = prevProv }()
-	kernel.ActivePlanProvider = func(string) *kernel.ActivePlan {
+	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: func(string) *kernel.ActivePlan {
 		return &kernel.ActivePlan{Doc: kernel.PlanDoc{Levels: []kernel.PlanLevel{{Price: 30050, Label: "PDH", Grade: "A"}}}, Session: "NY", Version: 1}
-	}
+	}})
+	t.Cleanup(func() { kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{}) })
 	prevBars := market.FuturesBarsProvider
 	defer func() { market.FuturesBarsProvider = prevBars }()
 	market.FuturesBarsProvider = func(string, string, int) []market.Kline { return barsClosingAbove(30050, 20) }

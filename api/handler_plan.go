@@ -161,7 +161,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		c.JSON(200, base)
 		return
 	}
-	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sessName)
+	row, err := s.store.Plan().GetLatestPlanForTraderSession(tradeDate, sessName, traderID)
 	if err != nil || row == nil {
 		c.JSON(200, base) // enabled but no plan yet (pre-★2) → graceful
 		return
@@ -267,7 +267,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		// (system_config "scenario_status:<plan_id>"); absent in production → the
 		// FE keeps its current fallback. The sandbox seeds it so all four states
 		// are visible. Replace the source when the executor computes it for real.
-		"scenario_status": scenarioStatusForLifecycle(s.scenarioStatus(row.PlanID), row.Lifecycle, doc),
+		"scenario_status": scenarioStatusForLifecycle(s.scenarioStatus(traderID, row.PlanID), row.Lifecycle, doc),
 		// ITEM 4 — owner edits that could NOT be re-anchored onto this version.
 		// Never dropped silently: the card asks for review.
 		"uncarried_edits": s.uncarriedEdits(row.PlanID, row.Version),
@@ -643,7 +643,7 @@ func (s *Server) handlePlanOverlay(c *gin.Context) {
 		symbol = "MNQ"
 	}
 
-	overlayVersion, planVersion, code, msg := s.applyPlanOverlay(symbol, body.Patch, origin, time.Now())
+	overlayVersion, planVersion, code, msg := s.applyPlanOverlay(traderID, symbol, body.Patch, origin, time.Now())
 	if code != 0 {
 		c.JSON(code, gin.H{"error": msg})
 		return
@@ -656,7 +656,7 @@ func (s *Server) handlePlanOverlay(c *gin.Context) {
 // validates enums/counts, then appends the overlay. Shared by the overlay POST
 // and the Ask-Planner Apply. Returns (overlayVersion, planVersion, httpCode, msg);
 // httpCode==0 means success.
-func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Time) (int, int, int, string) {
+func (s *Server) applyPlanOverlay(traderID, symbol, patchJSON, origin string, now time.Time) (int, int, int, string) {
 	if strings.TrimSpace(patchJSON) == "" {
 		return 0, 0, 400, "patch is required"
 	}
@@ -670,7 +670,7 @@ func (s *Server) applyPlanOverlay(symbol, patchJSON, origin string, now time.Tim
 	if !ok || !sess.Enabled {
 		return 0, 0, 400, "no active plan to edit (night / disabled session)"
 	}
-	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+	row, err := s.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, traderID)
 	if err != nil || row == nil {
 		return 0, 0, 404, "active plan not found"
 	}
@@ -917,7 +917,7 @@ func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askCo
 	// 1) The live session's plan, if there is one.
 	if sess, ok := reg.ActiveSession(now); ok && sess.Enabled {
 		ctx.session = sess.Name
-		if row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name); err == nil && row != nil {
+		if row, err := s.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, traderID); err == nil && row != nil {
 			ctx.row, ctx.planID = row, row.PlanID
 			if doc, okDoc := s.resolvePlanFinal(row); okDoc {
 				ctx.doc = doc
@@ -1276,7 +1276,7 @@ func (s *Server) handlePlanAskApply(c *gin.Context) {
 	if symbol == "" {
 		symbol = "MNQ"
 	}
-	overlayVersion, planVersion, code, emsg := s.applyPlanOverlay(symbol, msg.Patch, "planner-revised", now)
+	overlayVersion, planVersion, code, emsg := s.applyPlanOverlay(traderID, symbol, msg.Patch, "planner-revised", now)
 	if code != 0 {
 		c.JSON(code, gin.H{"error": emsg})
 		return
@@ -1683,7 +1683,7 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "skipped", "reason": "night_or_disabled_session"})
 		return
 	}
-	row, err := s.store.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
+	row, err := s.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, traderID)
 	if err != nil || row == nil {
 		c.JSON(200, gin.H{"status": "skipped", "reason": "no_active_plan"})
 		return
@@ -1870,11 +1870,11 @@ func scenarioStatusForLifecycle(m map[string]string, lifecycle string, doc kerne
 // A scenario whose anchor level could not be resolved is deliberately ABSENT
 // from the map, and the card's fallback covers it — saying nothing beats
 // inventing a status.
-func (s *Server) scenarioStatus(planID string) map[string]string {
+func (s *Server) scenarioStatus(traderID, planID string) map[string]string {
 	if s.store == nil {
 		return nil
 	}
-	raw, _ := s.store.GetSystemConfig("scenario_status:" + planID)
+	raw, _ := s.store.GetSystemConfig(store.ScenarioStatusKey(traderID, planID))
 	if strings.TrimSpace(raw) == "" {
 		return nil
 	}

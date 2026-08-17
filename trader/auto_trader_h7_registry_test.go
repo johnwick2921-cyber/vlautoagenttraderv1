@@ -31,12 +31,9 @@ func TestH7SessionRegistryProviderWired(t *testing.T) {
 	}
 
 	prevBars := market.FuturesBarsProvider
-	prevReg := kernel.SessionRegistryProvider
-	prevK := kernel.PlanProximityKProvider
 	t.Cleanup(func() {
 		market.FuturesBarsProvider = prevBars
-		kernel.SessionRegistryProvider = prevReg
-		kernel.PlanProximityKProvider = prevK
+		kernel.SetTraderPlanProviders("t1", kernel.TraderPlanProviders{})
 	})
 	market.FuturesBarsProvider = func(string, string, int) []market.Kline { return nil }
 
@@ -46,12 +43,12 @@ func TestH7SessionRegistryProviderWired(t *testing.T) {
 			DayPlan: &store.DayPlanConfig{PlanEnabled: true},
 		}},
 	}
-	at.snapshotSessionProfiles() // the sync.Once that installs every kernel provider
+	at.snapshotSessionProfiles() // installs THIS trader's per-trader providers
 
-	if kernel.SessionRegistryProvider == nil {
-		t.Fatalf("SessionRegistryProvider was never installed")
+	if _, ok := kernel.TraderPlanProvidersFor("t1"); !ok {
+		t.Fatalf("t1's providers were never installed")
 	}
-	got := kernel.SessionRegistryProvider()
+	got := kernel.ResolvedSessionRegistryFor("t1")
 	var london *kernel.SessionDef
 	for i := range got.Sessions {
 		if got.Sessions[i].Name == kernel.SessionLondon {
@@ -59,11 +56,10 @@ func TestH7SessionRegistryProviderWired(t *testing.T) {
 		}
 	}
 	if london == nil || !london.Enabled {
-		t.Fatalf("the persisted admin registry (LONDON enabled) must reach the kernel executor path, got %+v", got.Sessions)
+		t.Fatalf("the persisted admin registry (LONDON enabled) must reach the kernel executor path for t1, got %+v", got.Sessions)
 	}
-	if kernel.PlanProximityKProvider == nil {
-		t.Fatalf("PlanProximityKProvider was never installed alongside")
+	// A DIFFERENT trader has no providers and gets the default — no leakage.
+	if other := kernel.ResolvedSessionRegistryFor("t2"); len(other.Sessions) != 3 {
+		t.Fatalf("t2 must resolve the default, got %d sessions", len(other.Sessions))
 	}
-	// The kernel-side consumer (resolvedSessionRegistry) honors the provider —
-	// proven in kernel/session_registry_provider_test.go.
 }

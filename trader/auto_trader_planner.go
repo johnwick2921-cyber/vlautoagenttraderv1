@@ -175,7 +175,7 @@ func (at *AutoTrader) maybeRunSessionReads() {
 		if !kernel.IsCMEOpen(now) || !inSessionReadWindow(now, s.ReadCT, s.WindowEndCT) {
 			continue
 		}
-		existing, err := at.store.Plan().GetLatestPlanForSession(tradeDate, s.Name)
+		existing, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, s.Name, at.id)
 		if err != nil {
 			continue
 		}
@@ -219,7 +219,7 @@ func (at *AutoTrader) maybeRunSessionReads() {
 				// ITEM 4 — the owner's levels are sticky: re-establish them on the
 				// version just written, re-anchored by price. Anything that cannot
 				// be re-anchored is parked for review, never dropped.
-				if fresh, fErr := at.store.Plan().GetLatestPlanForSession(tradeDate, s.Name); fErr == nil && fresh != nil {
+				if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, s.Name, at.id); fErr == nil && fresh != nil {
 					at.carryOwnerEditsInto(fresh.PlanID, existing.Version, fresh.Version)
 				}
 			}
@@ -929,45 +929,60 @@ func storedReplanCap(st *store.Store, traderID, session string) int {
 	return cfg.DayPlan.ReplanCapFor(session)
 }
 
-// installActivePlanProvider wires kernel.ActivePlanProvider to read this store's
-// latest ACTIVE plan for the current session (P3.4). no_trade/died plans and
-// off-session return nil → the executor prompt is unchanged.
+// installActivePlanProvider registers THIS trader's active-plan provider with
+// the kernel (P3.4). P0-A (2026-08-18): this used to write a PROCESS-GLOBAL
+// singleton closing over whichever trader reached the sync.Once first — so a
+// second day-plan trader's executor read the first trader's plan, session
+// enablement and budget. Now the provider is registered per-traderID and its
+// plan lookup is trader-scoped: a trader can NEVER receive another trader's
+// plan row. no_trade/died plans and off-session return nil → the executor
+// prompt is unchanged.
 func installActivePlanProvider(at *AutoTrader, st *store.Store) {
-	kernel.ActivePlanProvider = func(symbol string) *kernel.ActivePlan {
-		now := time.Now()
-		reg := loadStoredRegistry(st) // W8 — provider honors the admin registry too
-		sess, ok := reg.ActiveSession(now)
-		if !ok {
-			return nil
-		}
-		// H8 — the executor must honor the SAME resolver the read scheduler uses.
-		// The registry flag is a DEFAULT, never a veto: a session the owner switched
-		// on at the strategy level must reach the executor (before this it was
-		// written by the read and then dropped here).
-		if runnable, _ := at.sessionRunnable(sess); !runnable {
-			return nil
-		}
-		tradeDate := plannerTradeDateCT(now)
-		row, err := st.Plan().GetLatestPlanForSession(tradeDate, sess.Name)
-		if err != nil || row == nil || row.Lifecycle != "active" {
-			return nil
-		}
-		// W4 — the executor cites the OVERLAY-RESOLVED plan_final (owner edits reach
-		// the brain), not the base doc. resolveActivePlanDoc folds overlays + armors.
-		doc, ok := resolveActivePlanDoc(st, row)
-		if !ok {
-			return nil
-		}
-		// The cap must come from the SAME resolver the card uses. A literal 2 here
-		// meant the executor prompt and the dashboard narrated different rulebooks
-		// the moment a session overrode replan_cap: on 2026-08-16 the owner raised
-		// ASIA to 4 mid-session, so at v3 the card said "replans left 2" while the
-		// AI was being told 0. P6 — the budget is measured from the chain baseline
-		// (an owner reset re-arms it), same seam the death path reads.
-		replansLeft := store.ReplansLeftFrom(row.Version,
-			store.GetResetBaseline(st, row.TradeDate, sess.Name),
-			storedReplanCap(st, row.StrategyID, sess.Name))
-		return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
+	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{
+		SessionRegistry: func() kernel.SessionRegistry { return at.sessionRegistry(time.Now()) },
+		ActivePlan: func(symbol string) *kernel.ActivePlan {
+			now := time.Now()
+			reg := at.sessionRegistry(now) // W8 — provider honors the admin registry too
+			sess, ok := reg.ActiveSession(now)
+			if !ok {
+				return nil
+			}
+			// H8 — the executor must honor the SAME resolver the read scheduler uses.
+			// The registry flag is a DEFAULT, never a veto: a session the owner switched
+			// on at the strategy level must reach the executor (before this it was
+			// written by the read and then dropped here).
+			if runnable, _ := at.sessionRunnable(sess); !runnable {
+				return nil
+			}
+			tradeDate := plannerTradeDateCT(now)
+			// P0-A — trader-scoped lookup: THIS trader's row only.
+			row, err := st.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
+			if err != nil || row == nil || row.Lifecycle != "active" {
+				return nil
+			}
+			// W4 — the executor cites the OVERLAY-RESOLVED plan_final (owner edits reach
+			// the brain), not the base doc. resolveActivePlanDoc folds overlays + armors.
+			doc, ok := resolveActivePlanDoc(st, row)
+			if !ok {
+				return nil
+			}
+			// The cap must come from the SAME resolver the card uses. A literal 2 here
+			// meant the executor prompt and the dashboard narrated different rulebooks
+			// the moment a session overrode replan_cap: on 2026-08-16 the owner raised
+			// ASIA to 4 mid-session, so at v3 the card said "replans left 2" while the
+			// AI was being told 0. P6 — the budget is measured from the chain baseline
+			// (an owner reset re-arms it), same seam the death path reads.
+			replansLeft := store.ReplansLeftFrom(row.Version,
+				store.GetResetBaseline(st, row.TradeDate, sess.Name),
+				storedReplanCap(st, row.StrategyID, sess.Name))
+			return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
+		},
+	})
+	// P0-A — loud startup/runtime assertion: if MORE THAN ONE day-plan trader
+	// has registered providers, announce per-trader isolation so the state is
+	// visible in the journal on day one, not discovered after the fact.
+	if n := kernel.TraderPlanProviderCount(); n > 1 {
+		at.logWarnf("🔀 %d day-plan traders registered — per-trader plan/provider isolation is in force (P0-A); no shared plan or provider state.", n)
 	}
 }
 
@@ -1013,10 +1028,10 @@ func (at *AutoTrader) recordPlanCitation(d *kernel.Decision) {
 	// rejected/failed open left valid, so an open with no active plan can't
 	// inherit a stale plan link. Only a live ActivePlan below re-arms it.
 	at.lastCitation.valid = false
-	if kernel.ActivePlanProvider == nil {
+	if !kernel.HasTraderPlanProvider(at.id) {
 		return
 	}
-	ap := kernel.ActivePlanProvider(at.futuresSymbol())
+	ap := kernel.ActivePlanFor(at.id, at.futuresSymbol())
 	if ap == nil {
 		return
 	}

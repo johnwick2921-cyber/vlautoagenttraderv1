@@ -12,24 +12,6 @@ import (
 // BuildSVPProfile). Pure: no LLM, no DB. Warms forward with the bar cache; the
 // durable session-profile store (P1.3) feeds nPOC via extraLevels.
 
-// PlanProximityKProvider supplies the RESOLVED day-trade lock width
-// (proximity_filter_atr in daily-ATR multiples, valid 0.5–3.0) to kernel call
-// sites that have no trader handle — the executor prompt path in
-// engine_analysis. The trader installs it (mirrors FuturesBarsProvider /
-// NakedPOCProvider / ActivePlanProvider). nil → the spec constant 1.5.
-var PlanProximityKProvider func() float64
-
-// resolvedProximityK returns the configured day-trade lock k, falling back to
-// the spec constant when no provider is installed or it returns an invalid value.
-func resolvedProximityK() float64 {
-	if PlanProximityKProvider != nil {
-		if k := PlanProximityKProvider(); k > 0 {
-			return k
-		}
-	}
-	return ActivationWindowK
-}
-
 // BuildKeyLevelsBlock assembles the structural map from `bars`, scores it, and
 // renders the executor prompt block. Returns "" when there is nothing to show
 // (no closed bars / no in-band levels) so the caller injects nothing.

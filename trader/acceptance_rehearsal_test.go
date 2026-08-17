@@ -331,9 +331,8 @@ func TestAcceptanceRehearsal(t *testing.T) {
 	// ═══ ④ + A7: EXECUTOR PROMPT DOUBLE-ASSEMBLY carrying the plan ═══
 	// Pinned ActivePlanProvider: the production body (installActivePlanProvider)
 	// with session/date fixed to the rehearsal keys — clock is the only divergence.
-	prevPlanProvider := kernel.ActivePlanProvider
-	kernel.ActivePlanProvider = func(symbol string) *kernel.ActivePlan {
-		r, e := st.Plan().GetLatestPlanForSession(rehearsalTradeDate, rehearsalSession)
+	kernel.SetTraderPlanProviders(cfg.ID, kernel.TraderPlanProviders{ActivePlan: func(symbol string) *kernel.ActivePlan {
+		r, e := st.Plan().GetLatestPlanForTraderSession(rehearsalTradeDate, rehearsalSession, cfg.ID)
 		if e != nil || r == nil || r.Lifecycle != "active" {
 			return nil
 		}
@@ -346,8 +345,8 @@ func TestAcceptanceRehearsal(t *testing.T) {
 			replansLeft = 0
 		}
 		return &kernel.ActivePlan{Doc: doc, Session: rehearsalSession, Version: r.Version, ReplansLeft: replansLeft}
-	}
-	t.Cleanup(func() { kernel.ActivePlanProvider = prevPlanProvider })
+	}})
+	t.Cleanup(func() { kernel.SetTraderPlanProviders(cfg.ID, kernel.TraderPlanProviders{}) })
 
 	buildExecutorPrompt := func() string {
 		// verbatim replica of the engine_analysis.go futures context compute
@@ -375,7 +374,7 @@ func TestAcceptanceRehearsal(t *testing.T) {
 			engine.SetKeyLevelsContext(kernel.BuildKeyLevelsBlock(b, kernel.DefaultSessionRegistry(), symbol, maxLevels, time.Now(), kernel.ActivationWindowK, extra...))
 		}
 		engine.SetPlanContext("", "")
-		if plan := kernel.ActivePlanProvider(symbol); plan != nil {
+		if plan := kernel.ActivePlanFor(cfg.ID, symbol); plan != nil {
 			rule := ""
 			if dp := strategyConfig.DayPlan; dp != nil {
 				rule = dp.AcceptanceRule

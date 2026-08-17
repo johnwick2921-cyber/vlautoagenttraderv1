@@ -3,6 +3,7 @@ package kernel
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"nofx/market"
 )
@@ -23,9 +24,89 @@ type ActivePlan struct {
 	ReplansLeft int
 }
 
-// ActivePlanProvider, when set by the trader layer, returns the active plan for a
-// symbol's current session (nil → no plan → the executor prompt is unchanged).
-var ActivePlanProvider func(symbol string) *ActivePlan
+// TraderPlanProviders is the per-trader seam between the trader layer and the
+// kernel's executor-prompt assembly. P0-A (2026-08-18): these used to be
+// PROCESS-GLOBAL singletons installed once under a sync.Once closing over the
+// FIRST day-plan trader — so with two live day-plan traders, one trader's plan,
+// session enablement and proximity governed the other's executor. Now every
+// kernel consumer resolves by traderID: a trader can NEVER receive another
+// trader's plan, registry view or config.
+type TraderPlanProviders struct {
+	// ActivePlan returns THIS trader's current plan for a symbol's session
+	// (nil → no plan → the executor prompt is unchanged).
+	ActivePlan func(symbol string) *ActivePlan
+	// SessionRegistry returns the admin registry THIS trader resolves (the
+	// registry is admin-global data, but the seam is per-trader so no
+	// process-global singleton can ever again close over one trader).
+	SessionRegistry func() SessionRegistry
+}
+
+// traderPlanProviders maps traderID → providers. traderID == "" is never stored
+// (the empty key would be the same cross-trader hole in disguise).
+var traderPlanProviders sync.Map
+
+// SetTraderPlanProviders registers (or replaces) one trader's providers. A nil
+// fn removes the trader's registration.
+func SetTraderPlanProviders(traderID string, p TraderPlanProviders) {
+	if strings.TrimSpace(traderID) == "" {
+		return
+	}
+	if p.ActivePlan == nil && p.SessionRegistry == nil {
+		traderPlanProviders.Delete(traderID)
+		return
+	}
+	traderPlanProviders.Store(traderID, p)
+}
+
+// TraderPlanProvidersFor returns the providers registered for traderID
+// (ok=false → none → callers fall back to default behavior).
+func TraderPlanProvidersFor(traderID string) (TraderPlanProviders, bool) {
+	if strings.TrimSpace(traderID) == "" {
+		return TraderPlanProviders{}, false
+	}
+	if v, ok := traderPlanProviders.Load(traderID); ok {
+		return v.(TraderPlanProviders), true
+	}
+	return TraderPlanProviders{}, false
+}
+
+// ActivePlanFor resolves the ACTIVE PLAN for the DECIDING trader: the trader's
+// own provider, never another trader's. nil provider → nil plan.
+func ActivePlanFor(traderID, symbol string) *ActivePlan {
+	p, ok := TraderPlanProvidersFor(traderID)
+	if !ok || p.ActivePlan == nil {
+		return nil
+	}
+	return p.ActivePlan(symbol)
+}
+
+// HasTraderPlanProvider reports whether ANY provider is registered for the
+// trader (used by trader-side writers that need the active plan).
+func HasTraderPlanProvider(traderID string) bool {
+	_, ok := TraderPlanProvidersFor(traderID)
+	return ok
+}
+
+// TraderPlanProviderCount returns how many traders have providers registered
+// (P0-A: the trader layer announces loudly when this exceeds 1).
+func TraderPlanProviderCount() int {
+	n := 0
+	traderPlanProviders.Range(func(_, _ any) bool { n++; return true })
+	return n
+}
+
+// ResolvedSessionRegistryFor returns the registry the DECIDING trader resolves
+// (per-trader provider; admin-global data). No provider / empty registry → the
+// shipped default (byte-identical pre-H7 behavior; crypto never installs one).
+func ResolvedSessionRegistryFor(traderID string) SessionRegistry {
+	p, ok := TraderPlanProvidersFor(traderID)
+	if ok && p.SessionRegistry != nil {
+		if reg := p.SessionRegistry(); len(reg.Sessions) > 0 {
+			return reg
+		}
+	}
+	return DefaultSessionRegistry()
+}
 
 // RenderPlanBlock renders the byte-stable PLAN BLOCK for the cached prefix.
 func RenderPlanBlock(doc PlanDoc, session string) string {

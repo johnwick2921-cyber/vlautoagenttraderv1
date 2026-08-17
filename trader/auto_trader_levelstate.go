@@ -26,14 +26,14 @@ import (
 // persisted freshness INTO RenderPlanStatus is a deliberate prompt-regression
 // follow-up, flagged in the W7 report — not silently done here.
 func (at *AutoTrader) recordLevelState() {
-	if !at.dayPlanEnabled() || at.store == nil || kernel.ActivePlanProvider == nil {
+	if !at.dayPlanEnabled() || at.store == nil || !kernel.HasTraderPlanProvider(at.id) {
 		return
 	}
 	symbol := at.config.NinjaTraderSymbol
 	if symbol == "" || market.FuturesBarsProvider == nil {
 		return
 	}
-	plan := kernel.ActivePlanProvider(symbol)
+	plan := kernel.ActivePlanFor(at.id, symbol)
 	if plan == nil {
 		return
 	}
@@ -145,14 +145,14 @@ func gradeToFreshness(grade string) string {
 // keep saying nothing than to invent a status. If NO scenario resolves, the key
 // is not written at all.
 func (at *AutoTrader) recordScenarioState() {
-	if !at.dayPlanEnabled() || at.store == nil || kernel.ActivePlanProvider == nil {
+	if !at.dayPlanEnabled() || at.store == nil || !kernel.HasTraderPlanProvider(at.id) {
 		return
 	}
 	symbol := at.config.NinjaTraderSymbol
 	if symbol == "" || market.FuturesBarsProvider == nil {
 		return
 	}
-	plan := kernel.ActivePlanProvider(symbol)
+	plan := kernel.ActivePlanFor(at.id, symbol)
 	if plan == nil {
 		return
 	}
@@ -182,7 +182,7 @@ func (at *AutoTrader) recordScenarioState() {
 	if err != nil {
 		return
 	}
-	key := "scenario_status:" + store.MakePlanID(plannerTradeDateCT(now), plan.Session)
+	key := store.ScenarioStatusKey(at.id, store.MakePlanID(plannerTradeDateCT(now), plan.Session))
 	if err := at.store.SetSystemConfig(key, string(blob)); err != nil {
 		at.logWarnf("🎯 scenario-state write failed for %s: %v", key, err)
 		return

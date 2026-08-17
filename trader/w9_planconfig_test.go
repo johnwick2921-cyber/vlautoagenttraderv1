@@ -89,9 +89,6 @@ func TestW9Resolvers(t *testing.T) {
 // W9 — the plan-mode entry gate: advisory never blocks; direction blocks entries
 // against the plan bias; strict blocks entries with no matched scenario cited.
 func TestW9PlanModeBlocked(t *testing.T) {
-	prev := kernel.ActivePlanProvider
-	defer func() { kernel.ActivePlanProvider = prev }()
-
 	longBiasPlan := func(string) *kernel.ActivePlan {
 		return &kernel.ActivePlan{Doc: kernel.PlanDoc{
 			Bias:      kernel.PlanBias{Direction: "long"},
@@ -101,7 +98,8 @@ func TestW9PlanModeBlocked(t *testing.T) {
 
 	// advisory → never blocks even against the bias.
 	at := mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "advisory"})
-	kernel.ActivePlanProvider = longBiasPlan
+	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: longBiasPlan})
+	t.Cleanup(func() { kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{}) })
 	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_short"}); blocked {
 		t.Fatal("advisory mode must never block")
 	}
@@ -125,11 +123,12 @@ func TestW9PlanModeBlocked(t *testing.T) {
 	}
 
 	// direction/strict with NO active plan → block (nothing authorized).
-	kernel.ActivePlanProvider = func(string) *kernel.ActivePlan { return nil }
 	at = mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "strict"})
+	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: func(string) *kernel.ActivePlan { return nil }})
 	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_long", CitedScenario: "S1"}); !blocked {
 		t.Fatal("strict mode with no active plan must block")
 	}
+	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{})
 }
 
 // W9 — the approval gate: entries flow only after the owner grants the session-day.

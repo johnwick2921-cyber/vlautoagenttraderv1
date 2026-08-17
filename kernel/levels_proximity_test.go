@@ -58,22 +58,3 @@ func containsPrice(levels []DetectedLevel, price float64) bool {
 	}
 	return false
 }
-
-func TestResolvedProximityKFallbacks(t *testing.T) {
-	prev := PlanProximityKProvider
-	defer func() { PlanProximityKProvider = prev }()
-
-	PlanProximityKProvider = nil
-	if k := resolvedProximityK(); k != ActivationWindowK {
-		t.Fatalf("nil provider must fall back to the spec constant, got %v", k)
-	}
-	PlanProximityKProvider = func() float64 { return 2.5 }
-	if k := resolvedProximityK(); k != 2.5 {
-		t.Fatalf("provider value must win, got %v", k)
-	}
-	// A broken provider (0/negative) can never silently zero the band.
-	PlanProximityKProvider = func() float64 { return 0 }
-	if k := resolvedProximityK(); k != ActivationWindowK {
-		t.Fatalf("invalid provider value must fall back, got %v", k)
-	}
-}
