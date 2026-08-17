@@ -120,6 +120,13 @@ func (at *AutoTrader) sessionRunnable(s *kernel.SessionDef) (bool, string) {
 	return true, ""
 }
 
+// SessionRunnable is the EXPORTED form of sessionRunnable for the API layer
+// (P1/H8-residuals): the card/edit/ask/apply handlers must resolve enablement
+// through the SAME resolver the bot gates use, never the raw registry flag.
+func (at *AutoTrader) SessionRunnable(s *kernel.SessionDef) (bool, string) {
+	return at.sessionRunnable(s)
+}
+
 // proximityFilterATR is the level activation half-width in daily-ATR multiples
 // (day-trade lock). Valid 0.5–3.0; anything else → the default 1.5.
 func (at *AutoTrader) proximityFilterATR() float64 {

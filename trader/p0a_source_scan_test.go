@@ -93,3 +93,19 @@ func TestP0ASyncOnceProviderInstallBanned(t *testing.T) {
 		})
 	}
 }
+
+// TestP1RawRegistryFlagBanned — H8 residuals (P1): no API-layer production code
+// may decide on the RAW registry flag (sess.Enabled). Enablement must route
+// through the trader's SessionRunnable (the resolver's own internals and the
+// sessionGateDecision fallback live in trader/, outside this scan's scope).
+func TestP1RawRegistryFlagBanned(t *testing.T) {
+	scanProductionGo(t, "api", func(p string, lines []string) error {
+		for i, ln := range lines {
+			if strings.Contains(ln, "sess.Enabled") {
+				t.Errorf("%s:%d — raw registry flag decides a plan surface: %s\n"+
+					"Resolve via the trader's SessionRunnable(sess), never sess.Enabled.", p, i+1, strings.TrimSpace(ln))
+			}
+		}
+		return nil
+	})
+}

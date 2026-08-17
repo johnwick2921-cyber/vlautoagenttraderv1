@@ -160,7 +160,16 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	}
 	// An EXPLICITLY requested session is readable whether or not it is the live one
 	// (that is the point of the tabs); without the param we keep the old gate.
-	if !explicit && (!ok || !sess.Enabled) {
+	// P1 — enablement is resolved through the trader's sessionRunnable (the bot's
+	// own resolver), never the raw registry flag: a strategy-enabled session the
+	// bot RUNS must never read found:false on its card.
+	runnableOK := true
+	if at, err := s.traderManager.GetTrader(traderID); err == nil && at != nil {
+		if okR, _ := at.SessionRunnable(sess); !okR {
+			runnableOK = false
+		}
+	}
+	if !explicit && (!ok || !runnableOK) {
 		c.JSON(200, base) // night / disabled session → no active plan
 		return
 	}
@@ -679,7 +688,17 @@ func (s *Server) applyPlanOverlay(traderID, symbol, patchJSON, origin string, no
 	defer planOverlayMu.Unlock()
 	reg := s.planRegistry()
 	sess, ok := reg.ActiveSession(now)
-	if !ok || !sess.Enabled {
+	// P1 — enablement via the trader's sessionRunnable (never the raw registry
+	// flag): an edit must be allowed for a session the bot actually runs.
+	runnable := true
+	if s.traderManager != nil {
+		if at, aErr := s.traderManager.GetTrader(traderID); aErr == nil && at != nil {
+			if okR, _ := at.SessionRunnable(sess); !okR {
+				runnable = false
+			}
+		}
+	}
+	if !ok || !runnable {
 		return 0, 0, 400, "no active plan to edit (night / disabled session)"
 	}
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
@@ -930,7 +949,20 @@ func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askCo
 	ctx := askContext{kind: askContextNoPlan, tradeDate: now.In(planChicago()).Format("2006-01-02")}
 
 	// 1) The live session's plan, if there is one.
-	if sess, ok := reg.ActiveSession(now); ok && sess.Enabled {
+	// P1 — resolve enablement through the trader's sessionRunnable; the raw
+	// registry flag used to demote a strategy-enabled session to 'historical'.
+	if sess, ok := reg.ActiveSession(now); ok {
+		runnable := true
+		if s.traderManager != nil {
+			if at, aErr := s.traderManager.GetTrader(traderID); aErr == nil && at != nil {
+				if okR, _ := at.SessionRunnable(sess); !okR {
+					runnable = false
+				}
+			}
+		}
+		if !runnable {
+			return ctx
+		}
 		ctx.session = sess.Name
 		tradeDate := ctx.tradeDate
 		if d, okD := kernel.PlanChainTradeDate(sess, now); okD {
@@ -1291,7 +1323,16 @@ func (s *Server) handlePlanAskApply(c *gin.Context) {
 	reg := s.planRegistry()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
-	if !ok || !sess.Enabled || store.MakePlanID(tradeDate, sess.Name) != msg.PlanID {
+	// P1 — sessionRunnable, not the raw registry flag.
+	runnable := true
+	if s.traderManager != nil {
+		if at, aErr := s.traderManager.GetTrader(traderID); aErr == nil && at != nil {
+			if okR, _ := at.SessionRunnable(sess); !okR {
+				runnable = false
+			}
+		}
+	}
+	if !ok || !runnable || store.MakePlanID(tradeDate, sess.Name) != msg.PlanID {
 		c.JSON(409, gin.H{"error": "this reply was authored against a plan that is no longer active"})
 		return
 	}
@@ -1702,7 +1743,16 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 	reg := s.planRegistry()
 	tradeDate := now.In(planChicago()).Format("2006-01-02")
 	sess, ok := reg.ActiveSession(now)
-	if !ok || !sess.Enabled {
+	// P1 — sessionRunnable, not the raw registry flag.
+	runnable := true
+	if s.traderManager != nil {
+		if at, aErr := s.traderManager.GetTrader(traderID); aErr == nil && at != nil {
+			if okR, _ := at.SessionRunnable(sess); !okR {
+				runnable = false
+			}
+		}
+	}
+	if !ok || !runnable {
 		c.JSON(200, gin.H{"status": "skipped", "reason": "night_or_disabled_session"})
 		return
 	}
