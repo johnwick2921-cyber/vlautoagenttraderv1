@@ -88,3 +88,59 @@ func TestStoredReplanCapFallsBackSafely(t *testing.T) {
 		}
 	}
 }
+
+// A re-plan silently orphans every owner overlay attached to the outgoing
+// version (they are keyed (plan_id, plan_version) and every reader resolves
+// against the LATEST). The rebase is sized M and deliberately deferred; what
+// must not happen is the loss being SILENT.
+func TestReplanOrphanWarningFiresOnlyWhenOverlaysExist(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+
+	cfg := store.StrategyConfig{
+		StrategyType: "ai_trading",
+		DayPlan:      &store.DayPlanConfig{PlanEnabled: true},
+	}
+	seedTraderWithDayPlan(t, st, "trader-1", "strat-1", cfg)
+	at := &AutoTrader{id: "trader-1", store: st, exchange: "ninjatrader"}
+	at.config.StrategyConfig = &cfg
+
+	row := &store.PlanDB{
+		PlanID: store.MakePlanID("2026-08-16", "ASIA"), StrategyID: "trader-1",
+		TradeDate: "2026-08-16", Session: "ASIA", Lifecycle: "active", Doc: `{}`,
+	}
+	if _, err := st.Plan().AppendPlan(row); err != nil {
+		t.Fatal(err)
+	}
+
+	countAlerts := func() int {
+		alerts, _ := st.Alert().List("trader-1", 50)
+		n := 0
+		for _, a := range alerts {
+			if a.Kind == "overlays-orphaned" {
+				n++
+			}
+		}
+		return n
+	}
+
+	// No overlays → nothing to warn about; a re-plan on a clean plan is normal.
+	at.warnIfReplanOrphansOverlays(row)
+	if got := countAlerts(); got != 0 {
+		t.Fatalf("warned %d times with zero overlays — a clean re-plan must stay quiet", got)
+	}
+
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{
+		PlanID: row.PlanID, PlanVersion: row.Version,
+		Patch: `[{"op":"add","path":"/levels/-","value":{}}]`, Origin: "owner",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	at.warnIfReplanOrphansOverlays(row)
+	if got := countAlerts(); got != 1 {
+		t.Fatalf("owner edits = %d alerts, want exactly 1 — the loss must not be silent", got)
+	}
+}

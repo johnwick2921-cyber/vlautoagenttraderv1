@@ -193,10 +193,45 @@ func (at *AutoTrader) maybeRunSessionReads() {
 				at.writeNoTradePlan(s.Name, tradeDate, "re-plans exhausted after death condition")
 			} else {
 				at.logInfof("🗓️ plan %s %s v%d DIED — re-planning (cap %d/session).", tradeDate, s.Name, existing.Version, replanCap)
+				at.warnIfReplanOrphansOverlays(existing)
 				at.runPlannerRead(s.Name, tradeDate) // appends a new version
 			}
 		}
 	}
+}
+
+// warnIfReplanOrphansOverlays makes a known data loss AUDIBLE.
+//
+// Owner overlays are keyed (plan_id, plan_version) and every reader resolves
+// them against the LATEST version, so appending a new version silently orphans
+// every edit attached to the old one: the card stops showing them and, worse, the
+// executor stops citing them — the owner's levels quietly leave the plan the bot
+// is trading. Nothing carries, re-points or rebases them.
+//
+// The real fix is a rebase (an index-based RFC-6902 patch like /levels/3 cannot
+// simply be re-pointed at a doc whose level array changed) and is sized M in the
+// report. It is deliberately NOT attempted here: getting it wrong would move an
+// owner's edit onto a DIFFERENT level, which is worse than dropping it.
+//
+// What ships now is the honesty: a P1 alert naming exactly how many edits the
+// re-plan is about to strand. The defect is live in code but has never fired in
+// production — plan_overlays holds one demo-seeded row — so the first REAL owner
+// edit is the one at risk, and this is what will tell them.
+func (at *AutoTrader) warnIfReplanOrphansOverlays(row *store.PlanDB) {
+	if at.store == nil || row == nil {
+		return
+	}
+	overlays, err := at.store.Plan().ListOverlays(row.PlanID, row.Version)
+	if err != nil || len(overlays) == 0 {
+		return
+	}
+	at.logErrorf("🚨 re-plan %s v%d strands %d owner overlay(s) — edits are keyed to the version they were made on.",
+		row.PlanID, row.Version, len(overlays))
+	at.emitAlert("P1", "overlays-orphaned",
+		fmt.Sprintf("orphan:%s:v%d", row.PlanID, row.Version),
+		fmt.Sprintf("%d owner edit(s) dropped by the re-plan", len(overlays)),
+		fmt.Sprintf("Your edits were attached to %s v%d. The plan has been re-read as v%d, and overlays do not carry across versions — re-apply them on the new version if you still want them.",
+			row.PlanID, row.Version, row.Version+1))
 }
 
 // activePlanIsDead reports whether the stored plan's thesis is spent (all its
