@@ -183,3 +183,119 @@ func TestEvaluateLevelFactsAggregate(t *testing.T) {
 		t.Fatalf("accepted-through level must be consumed (not still valid)")
 	}
 }
+
+// ---- H10 — acceptance is counted on the timeframe the RULE names ------------
+//
+// The executor prompt tail and the card feed the 1-minute SVP cache straight
+// into EvaluateLevelFacts. Two 1-minute closes beyond must NEVER read as
+// "acceptance 2/2" under 2x5m — the two closes must be two 5-MINUTE closes.
+
+// oneMinSeries builds chronological 1m bars from [o,h,l,c] rows — the bar length
+// the SVP cache actually hands the prompt/status/card paths.
+func oneMinSeries(rows [][4]float64) []market.Kline {
+	const oneMinMs = 60 * 1000
+	bars := make([]market.Kline, len(rows))
+	for i, r := range rows {
+		open := int64(i) * oneMinMs
+		bars[i] = market.Kline{
+			OpenTime:  open,
+			Open:      r[0],
+			High:      r[1],
+			Low:       r[2],
+			Close:     r[3],
+			CloseTime: open + oneMinMs - 1,
+		}
+	}
+	return bars
+}
+
+// flatRows fills n 1m bars with [c-0.5, c+0.5, c-0.5, c].
+func flatRows(n int, c float64) [][4]float64 {
+	rows := make([][4]float64, n)
+	for i := range rows {
+		rows[i] = [4]float64{c - 0.5, c + 0.5, c - 0.5, c}
+	}
+	return rows
+}
+
+func TestEvaluateLevelFactsTwoOneMinuteClosesDoNotAccept(t *testing.T) {
+	// Minutes 0-4 below 100; minutes 5-6 close ABOVE 100; minutes 7-9 back below.
+	// On the raw 1m series the old code read two consecutive closes beyond. On
+	// the rule's timeframe the only 5m buckets are: bucket0 (close 99, below)
+	// and bucket1 (close 99, below) → zero 5m closes beyond → no acceptance.
+	rows := flatRows(5, 99)
+	rows = append(rows, [][4]float64{{100.5, 101, 100, 101}, {100.5, 101.5, 100.5, 101.5}}...)
+	rows = append(rows, flatRows(3, 99)...)
+	bars := oneMinSeries(rows)
+	f := EvaluateLevelFacts(bars, 100, DirAbove, "2x5m", 3, nowAfter(bars))
+	if f.Accepted {
+		t.Fatalf("two 1m closes beyond must NOT accept under 2x5m (have=%d/%d)", f.AcceptHave, f.AcceptNeed)
+	}
+	if f.AcceptHave != 0 || f.ClosesBeyondUp != 0 {
+		t.Fatalf("expected 0 acceptance closes on the 5m series, got have=%d closesUp=%d", f.AcceptHave, f.ClosesBeyondUp)
+	}
+}
+
+func TestEvaluateLevelFactsTwoFiveMinuteClosesAccept(t *testing.T) {
+	// Two complete 5m buckets closing above 100 → two 5m closes beyond → 2/2.
+	rows := append(flatRows(5, 101), flatRows(5, 101.5)...)
+	bars := oneMinSeries(rows)
+	f := EvaluateLevelFacts(bars, 100, DirAbove, "2x5m", 3, nowAfter(bars))
+	if !f.Accepted || f.AcceptHave != 2 || f.AcceptNeed != 2 {
+		t.Fatalf("two 5m closes must accept under 2x5m: %v have=%d/%d closesUp=%d", f.Accepted, f.AcceptHave, f.AcceptNeed, f.ClosesBeyondUp)
+	}
+	if f.StillValid {
+		t.Fatalf("accepted-through level must be consumed")
+	}
+}
+
+func TestEvaluateLevelFacts15mCloseCountsOne15mClose(t *testing.T) {
+	// One complete 15m bucket above → accepted (need=1 on 15m bars).
+	rows := flatRows(15, 101)
+	bars := oneMinSeries(rows)
+	f := EvaluateLevelFacts(bars, 100, DirAbove, "15m-close", 3, nowAfter(bars))
+	if !f.Accepted || f.AcceptHave != 1 || f.AcceptNeed != 1 {
+		t.Fatalf("one 15m close must accept under 15m-close: %v have=%d/%d", f.Accepted, f.AcceptHave, f.AcceptNeed)
+	}
+	// Four 1m closes above but the bucket closes back below → no acceptance.
+	rows2 := flatRows(5, 99)
+	rows2 = append(rows2, flatRows(4, 101)...)
+	rows2 = append(rows2, flatRows(6, 99)...)
+	bars2 := oneMinSeries(rows2)
+	f2 := EvaluateLevelFacts(bars2, 100, DirAbove, "15m-close", 3, nowAfter(bars2))
+	if f2.Accepted || f2.AcceptHave != 0 {
+		t.Fatalf("four 1m closes must not accept under 15m-close: %v have=%d", f2.Accepted, f2.AcceptHave)
+	}
+}
+
+func TestAcceptanceBarsBucketsByRule(t *testing.T) {
+	rows := append(flatRows(5, 101), flatRows(5, 101.5)...)
+	bars := oneMinSeries(rows)
+	judge := AcceptanceBars(bars, "2x5m")
+	if len(judge) != 2 {
+		t.Fatalf("10 1m bars → 2 5m buckets, got %d", len(judge))
+	}
+	if judge[1].Close != 101.5 {
+		t.Fatalf("bucket1 close = %v want 101.5", judge[1].Close)
+	}
+	// A 15m-close rule buckets the same series into one 15m bar.
+	wide := AcceptanceBars(bars, "15m-close")
+	if len(wide) != 1 || wide[0].Close != 101.5 {
+		t.Fatalf("15m bucket = %d bars close %v, want 1 bar close 101.5", len(wide), wide[0].Close)
+	}
+	// Already-rule-length series is a pass-through (existing 5m fixtures keep
+	// their exact behavior).
+	same := AcceptanceBars(series([][4]float64{{99, 99, 98, 99}, {100, 102, 100, 101}}), "2x5m")
+	if len(same) != 2 {
+		t.Fatalf("5m source must pass through, got %d bars", len(same))
+	}
+}
+
+func TestAcceptanceIntervalMinutes(t *testing.T) {
+	cases := map[string]int{"2x5m": 5, "2×5m": 5, "15m-close": 15, "": 5, "bogus": 5}
+	for rule, want := range cases {
+		if got := AcceptanceIntervalMinutes(rule); got != want {
+			t.Fatalf("AcceptanceIntervalMinutes(%q) = %d want %d", rule, got, want)
+		}
+	}
+}
