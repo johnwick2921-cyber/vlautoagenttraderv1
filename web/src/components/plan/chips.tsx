@@ -155,40 +155,54 @@ export function StatusDot({
   )
 }
 
-// ── VersionChip: v1 · v2 … collapses at 4 (design-system Open Q #2) ──
-export function VersionChips({ version }: { version: number }) {
-  const chip = (label: string, active: boolean) => (
-    <span
-      key={label}
-      className="text-[10px]"
-      style={{
-        color: active ? 'var(--vl-gold)' : 'var(--vl-faint)',
-        border: `1px solid ${active ? 'var(--vl-gold-line)' : 'var(--vl-hair)'}`,
-        borderRadius: 'var(--vl-radius-chip)',
-        padding: '0 5px',
-        fontFamily: 'var(--vl-font-data)',
-      }}
-    >
-      {label}
-    </span>
-  )
-  if (version <= 0) return null
-  if (version >= 4) {
-    return (
-      <span className="inline-flex items-center gap-1">
-        {chip('v1', false)}
-        <span className="text-[10px]" style={{ color: 'var(--vl-faint)' }}>
-          …
-        </span>
-        {chip(`v${version}`, true)}
-      </span>
-    )
-  }
+// ── VersionChips (ITEM 15) ──
+//
+// These used to be inert <span>s whose labels were FABRICATED from a single
+// integer — `Array.from({length: version})` — and collapsed at n>=4 to "v1 … vN",
+// which hid v2..v5 behind an ellipsis with no way to reach them. So the component
+// had never seen the list of versions, only how many there were: it could not say
+// which existed, when they were written, or why any of them died.
+//
+// Now each chip is a real button over a real record. The row wraps instead of
+// collapsing (see .vl-version-row) so no version is unreachable, and the count is
+// bounded in practice by replan_cap + 1.
+export function VersionChips({
+  version,
+  latest,
+  count,
+  onSelect,
+  titleFor,
+}: {
+  /** the version currently being VIEWED */
+  version: number
+  /** the newest stored version (defaults to `version`) */
+  latest?: number
+  /** how many versions exist (defaults to `latest`) — chips render 1..count */
+  count?: number
+  /** omit to keep the chips read-only (the pre-ITEM-15 behavior) */
+  onSelect?: (version: number) => void
+  /** tooltip per version — the death reason, when one is known */
+  titleFor?: (version: number) => string | undefined
+}) {
+  const newest = latest ?? version
+  const total = count ?? newest
+  if (total <= 0) return null
   return (
-    <span className="inline-flex items-center gap-1">
-      {Array.from({ length: version }, (_, i) =>
-        chip(`v${i + 1}`, i + 1 === version)
-      )}
+    <span className="vl-version-row" role="group" aria-label="plan versions">
+      {Array.from({ length: total }, (_, i) => i + 1).map((v) => (
+        <button
+          key={v}
+          type="button"
+          className="vl-version-chip"
+          aria-current={v === version}
+          aria-label={`plan version ${v}${v === newest ? ' (current)' : ''}`}
+          title={titleFor?.(v)}
+          disabled={!onSelect}
+          onClick={onSelect ? () => onSelect(v) : undefined}
+        >
+          v{v}
+        </button>
+      ))}
     </span>
   )
 }

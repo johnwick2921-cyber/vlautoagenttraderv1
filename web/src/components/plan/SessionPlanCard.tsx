@@ -6,7 +6,11 @@
 import { useState, type ReactNode } from 'react'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
-import type { PlanToday, PlanLevelFact } from '../../lib/api/plan'
+import type {
+  PlanToday,
+  PlanLevelFact,
+  PlanVersionItem,
+} from '../../lib/api/plan'
 import { LifecycleChip, VersionChips } from './chips'
 import { BiasBlock } from './BiasBlock'
 import { ZoneTable } from './ZoneTable'
@@ -30,6 +34,11 @@ interface Props {
   isLoading?: boolean
   errored?: boolean
   onChanged?: () => void // re-fetch after an edit / apply so the card version-bumps
+  /** ITEM 15 — every stored version of this session's plan (chips + history). */
+  versions?: PlanVersionItem[]
+  latestVersion?: number
+  /** omit to keep the chips read-only */
+  onSelectVersion?: (version: number) => void
 }
 
 // A centered state panel (loading / night / no-plan / error).
@@ -96,6 +105,9 @@ export function SessionPlanCard({
   isLoading,
   errored,
   onChanged,
+  versions = [],
+  latestVersion = 0,
+  onSelectVersion,
 }: Props) {
   // P5 owner-door state (hooks before the early state-returns, unconditional).
   const [edit, setEdit] = useState<{
@@ -138,8 +150,11 @@ export function SessionPlanCard({
   // let an edit made against ASIA's levels land silently on NY's plan.
   // is_active comes from /api/plan/today; an older payload omits it (undefined),
   // which keeps the pre-W15.C behavior rather than locking the door.
+  // ITEM 15 adds the same hazard on a second axis: every mutating endpoint writes
+  // the LATEST version of the active session, so an edit made while reading v2
+  // would silently land on v6. A historical view is strictly read-only.
   const viewingLiveSession = plan?.is_active !== false
-  const doorEnabled = !!traderId && viewingLiveSession
+  const doorEnabled = !!traderId && viewingLiveSession && !plan?.historical
 
   // ── non-plan states ──
   if (errored) {
@@ -213,9 +228,10 @@ export function SessionPlanCard({
       role="region"
       aria-label={`${tp('title', language)}, v${plan.version ?? 1}, ${plan.lifecycle ?? 'active'}`}
     >
-      {/* header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {/* header — wraps: at 390px a v6 chip row + SUPERSEDED + DEGRADED overflowed
+          the 316px card interior by ~41px and pushed the ✎/💬 buttons off the card. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span
             style={{
               fontFamily: 'var(--vl-font-display)',
@@ -226,7 +242,25 @@ export function SessionPlanCard({
           >
             {tp('title', language)}
           </span>
-          <VersionChips version={plan.version ?? 1} />
+          <VersionChips
+            version={plan.version ?? 1}
+            latest={latestVersion || plan.latest_version || plan.version || 1}
+            count={
+              versions.length ||
+              latestVersion ||
+              plan.latest_version ||
+              plan.version ||
+              1
+            }
+            onSelect={onSelectVersion}
+            titleFor={(v) => {
+              const rec = versions.find((x) => x.version === v)
+              if (!rec) return undefined
+              return rec.death_reason
+                ? `v${v} — ${rec.death_reason}`
+                : `v${v} — ${rec.lifecycle}`
+            }}
+          />
           <LifecycleChip
             lifecycle={plan.lifecycle ?? 'active'}
             language={language}
@@ -327,6 +361,96 @@ export function SessionPlanCard({
           <span data-testid="fail-closed-reason">
             {doc.reasoning?.trim() || tp('errorHint', language)}
           </span>
+        </div>
+      )}
+
+      {/* ITEM 15 — viewing a superseded version. It must be unmistakable that this
+          is NOT what the bot is trading, must say why the version ended, and must
+          offer the way back. */}
+      {plan.historical && (
+        <div
+          data-testid="historical-banner"
+          className="flex flex-col gap-1.5 px-2.5 py-2"
+          style={{
+            background: 'var(--vl-card-2)',
+            border: '1px solid var(--vl-gold-line)',
+            borderRadius: 'var(--vl-radius-inner)',
+            fontFamily: 'var(--vl-font-ui)',
+          }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span
+              className="text-[10px] font-bold uppercase tracking-wider"
+              style={{ color: 'var(--vl-gold)' }}
+            >
+              🕘 {tp('historicalTitle', language)} · v{plan.version}
+            </span>
+            {onSelectVersion && (
+              <button
+                type="button"
+                data-testid="back-to-active"
+                onClick={() => onSelectVersion(latestVersion || 0)}
+                className="text-[11px] px-2 py-1"
+                style={{
+                  color: 'var(--vl-gold)',
+                  border: '1px solid var(--vl-gold-line)',
+                  borderRadius: 'var(--vl-radius-chip)',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                }}
+              >
+                ← {tp('backToActive', language)}
+              </button>
+            )}
+          </div>
+          <span className="text-[11px]" style={{ color: 'var(--vl-muted)' }}>
+            {tp('historicalHint', language)}
+          </span>
+          {(() => {
+            const rec = versions.find((v) => v.version === plan.version)
+            if (!rec) return null
+            return (
+              <>
+                {rec.death_reason && (
+                  <span
+                    data-testid="death-reason"
+                    className="text-[11px]"
+                    style={{ color: 'var(--vl-short)' }}
+                  >
+                    {tp('whyItDied', language)}: {rec.death_reason}
+                    {rec.superseded_by
+                      ? ` · ${tp('supersededBy', language, { n: String(rec.superseded_by) })}`
+                      : ''}
+                  </span>
+                )}
+                {rec.death_condition && (
+                  <span
+                    className="text-[11px]"
+                    style={{ color: 'var(--vl-faint)' }}
+                  >
+                    {tp('planDies', language)}: {rec.death_condition}
+                  </span>
+                )}
+                {!!rec.diff_vs_next?.length && (
+                  <span
+                    data-testid="version-diff"
+                    className="text-[11px]"
+                    style={{ color: 'var(--vl-muted)' }}
+                  >
+                    {tp('whatChanged', language)}:{' '}
+                    {rec.diff_vs_next.join(' · ')}
+                  </span>
+                )}
+                <span
+                  className="text-[10px]"
+                  style={{ color: 'var(--vl-faint)' }}
+                >
+                  {tp('writtenAt', language)} {rec.created_at} ·{' '}
+                  {tp('replansLeftLabel', language)}: {plan.replans_left ?? 0}
+                </span>
+              </>
+            )
+          })()}
         </div>
       )}
 

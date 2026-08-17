@@ -60,6 +60,56 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ITEM 15 — version chips.
+   The row WRAPS: with six versions in a 316px card interior a nowrap row pushed
+   the header buttons off the card. Every chip is a real button so a version can
+   be opened by tap and by keyboard; on touch pointers the hit area grows to the
+   44px minimum without inflating the dense desktop layout. */
+.vl-version-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.vl-version-chip {
+  font-family: var(--vl-font-data);
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: var(--vl-radius-chip);
+  border: 1px solid var(--vl-hair);
+  color: var(--vl-muted); /* was --vl-faint: 2.83:1 on --vl-card, below AA */
+  background: transparent;
+  cursor: pointer;
+}
+.vl-version-chip:hover {
+  color: var(--vl-ivory);
+  border-color: var(--vl-gold-line);
+}
+.vl-version-chip:focus-visible {
+  outline: 2px solid var(--vl-gold);
+  outline-offset: 1px;
+}
+/* Active is NOT signalled by color alone (chips.tsx's own stated rule): it also
+   carries weight, a filled ground and aria-current. */
+.vl-version-chip[aria-current='true'] {
+  color: var(--vl-gold);
+  border-color: var(--vl-gold-line);
+  background: var(--vl-gold-dim);
+  font-weight: 700;
+}
+.vl-version-chip[disabled] {
+  cursor: default;
+}
+@media (pointer: coarse) {
+  .vl-version-chip {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 8px;
+  }
+}
+
 /* Pulse for the active-session dot / triggered scenario — honors reduced-motion. */
 @keyframes vl-pulse {
   0%,

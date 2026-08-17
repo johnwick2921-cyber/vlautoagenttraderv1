@@ -125,6 +125,43 @@ export const planStrings = {
     zh: '规划器返回了零个价位且未说明原因 — 这是故障，而非平静时段。',
     id: 'Planner mengembalikan nol level tanpa alasan — ini kesalahan, bukan sesi sepi.',
   },
+  // ITEM 15 — version history.
+  historicalTitle: {
+    en: 'HISTORICAL VERSION — read only',
+    zh: '历史版本 — 只读',
+    id: 'VERSI HISTORIS — hanya baca',
+  },
+  historicalHint: {
+    en: 'This is the plan as it was. It is not the plan the bot is trading.',
+    zh: '这是当时的计划，并非机器人正在交易的计划。',
+    id: 'Ini rencana sebagaimana adanya dulu, bukan yang sedang dijalankan bot.',
+  },
+  backToActive: {
+    en: 'Back to current',
+    zh: '返回当前',
+    id: 'Kembali ke saat ini',
+  },
+  whyItDied: {
+    en: 'Why this version ended',
+    zh: '此版本结束的原因',
+    id: 'Mengapa versi ini berakhir',
+  },
+  whatChanged: {
+    en: 'What changed next',
+    zh: '之后的变化',
+    id: 'Apa yang berubah',
+  },
+  writtenAt: { en: 'Written', zh: '写入时间', id: 'Ditulis' },
+  supersededBy: {
+    en: 'Replaced by v{n}',
+    zh: '被 v{n} 取代',
+    id: 'Digantikan v{n}',
+  },
+  replansLeftLabel: {
+    en: 'Re-plans left this session',
+    zh: '本时段剩余重规划',
+    id: 'Sisa rencana ulang sesi ini',
+  },
   chartNoLevels: {
     en: 'Bars only — this plan has no levels to overlay',
     zh: '仅K线 — 此计划无价位可叠加',

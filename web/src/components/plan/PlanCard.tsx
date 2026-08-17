@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
-import { usePlanToday } from './usePlan'
+import { usePlanToday, usePlanVersions } from './usePlan'
 import { SessionTimelineStrip } from './SessionTimelineStrip'
 import { SessionTabs, type SessionTab, type TabState } from './SessionTabs'
 import { HandoverBanner } from './HandoverBanner'
@@ -32,9 +32,18 @@ export function PlanCard({
   // the tabs were a lie: clicking ASIA moved the chip while the card kept showing
   // the live session's plan, because the request had no session dimension.
   const [selected, setSelected] = useState<SessionName | null>(null)
+  // ITEM 15 — which VERSION is being viewed. null = the live/latest one, which
+  // is the only state that existed before: the chips were inert spans, so a past
+  // version could not be opened at all.
+  const [viewVersion, setViewVersion] = useState<number | null>(null)
   const { plan, isLoading, error, mutate } = usePlanToday(
     traderId,
     symbol,
+    selected ?? undefined,
+    viewVersion ?? undefined
+  )
+  const { versions, latestVersion } = usePlanVersions(
+    traderId,
     selected ?? undefined
   )
 
@@ -46,6 +55,11 @@ export function PlanCard({
   useEffect(() => {
     if (activeSession && selected === null) setSelected(activeSession)
   }, [activeSession, selected])
+
+  // Switching sessions must drop the version pin — v3 of NY is not v3 of ASIA.
+  useEffect(() => {
+    setViewVersion(null)
+  }, [selected])
 
   const tabs = computeSessionTabs(activeSession, plan?.runnable_sessions)
 
@@ -93,6 +107,9 @@ export function PlanCard({
         isLoading={isLoading}
         errored={!!error && !plan}
         onChanged={() => mutate()}
+        versions={versions}
+        latestVersion={latestVersion}
+        onSelectVersion={(v) => setViewVersion(v === latestVersion ? null : v)}
       />
     </div>
   )

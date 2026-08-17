@@ -99,6 +99,41 @@ export interface PlanToday {
   is_active?: boolean
   /** W15.B — sessions THIS strategy runs, resolved by the same gate the bot uses. */
   runnable_sessions?: string[]
+  /** ITEM 15 — true when ?version= served a superseded version, not the latest. */
+  historical?: boolean
+  /** ITEM 15 — the newest stored version, so the card can offer the way back. */
+  latest_version?: number
+  /** ITEM 15 — why this version was written (session open / death condition / …). */
+  trigger_reason?: string
+  created_at?: string
+}
+
+// ── GET /api/plan/versions — every stored version of ONE session's plan ──
+export interface PlanVersionItem {
+  version: number
+  lifecycle: string
+  trigger_reason: string
+  created_at: string
+  model_id: string
+  degraded?: boolean
+  is_latest: boolean
+  level_count?: number
+  scenario_count?: number
+  bias?: string
+  day_type?: string
+  death_condition?: string
+  /** the version that replaced this one (absent on the latest) */
+  superseded_by?: number
+  /** WHY it stopped being the plan — the successor's trigger_reason */
+  death_reason?: string
+  /** plain-language change list vs the version that replaced it */
+  diff_vs_next?: string[]
+}
+export interface PlanVersionsResponse {
+  trade_date: string
+  session: string
+  latest_version: number
+  versions: PlanVersionItem[]
 }
 
 // ── GET /api/plan/history ──
@@ -138,14 +173,33 @@ export const planApi = {
     traderId: string,
     symbol?: string,
     silent = true,
-    session?: string
+    session?: string,
+    version?: number
   ): Promise<PlanToday | null> {
     const q = symbol ? `&symbol=${enc(symbol)}` : ''
     // W15.B — an explicit session makes the card's tabs real (they used to be
     // pure highlighting). Omitted → the live session, i.e. unchanged.
     const sq = session ? `&session=${enc(session)}` : ''
+    // ITEM 15 — an explicit version serves that HISTORICAL plan; omitted = latest.
+    const vq = version ? `&version=${version}` : ''
     const res = await httpClient.request<PlanToday>(
-      `${API_BASE}/plan/today?trader_id=${enc(traderId)}${q}${sq}`,
+      `${API_BASE}/plan/today?trader_id=${enc(traderId)}${q}${sq}${vq}`,
+      { silent }
+    )
+    return res.success && res.data ? res.data : null
+  },
+
+  // Every stored version of one session's plan, oldest first, with each
+  // version's death reason and a plain-language diff vs its successor.
+  async getPlanVersions(
+    traderId: string,
+    session: string,
+    tradeDate?: string,
+    silent = true
+  ): Promise<PlanVersionsResponse | null> {
+    const dq = tradeDate ? `&trade_date=${enc(tradeDate)}` : ''
+    const res = await httpClient.request<PlanVersionsResponse>(
+      `${API_BASE}/plan/versions?trader_id=${enc(traderId)}&session=${enc(session)}${dq}`,
       { silent }
     )
     return res.success && res.data ? res.data : null
