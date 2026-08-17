@@ -208,3 +208,96 @@ describe('AskPlannerPanel', () => {
     expect(screen.queryByText(/Apply merge/i)).not.toBeInTheDocument()
   })
 })
+
+describe('EditSheet — prefill integrity (UI verification 2026-08-18)', () => {
+  beforeEach(() => {
+    postOverlay.mockClear()
+    addOwnerLevel.mockClear()
+  })
+
+  it('AI level: the sheet shows the EXACT instruction the card shows', () => {
+    const lvl = fact({
+      price: 30217.75,
+      label: 'EQH',
+      origin: 'AI',
+      instruction: 'hold / defend for long structure',
+    })
+    render(
+      <EditSheet
+        open
+        traderId="t1"
+        symbol="MNQ"
+        language="en"
+        level={lvl}
+        levelIndex={0}
+        onClose={() => {}}
+        onSaved={() => {}}
+      />
+    )
+    const input = screen.getByTestId('instruction-input') as HTMLInputElement
+    expect(input.value).toBe('hold / defend for long structure')
+  })
+
+  it('AI level save preserves the prose instruction (never rewritten by the vocab)', async () => {
+    const lvl = fact({
+      price: 30217.75,
+      label: 'EQH',
+      origin: 'AI',
+      instruction: 'hold / defend for long structure',
+    })
+    render(
+      <EditSheet
+        open
+        traderId="t1"
+        symbol="MNQ"
+        language="en"
+        level={lvl}
+        levelIndex={0}
+        onClose={() => {}}
+        onSaved={() => {}}
+      />
+    )
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() => expect(postOverlay).toHaveBeenCalled())
+    const [, patch] = postOverlay.mock.calls[0]
+    expect(patch[0].value.instruction).toBe('hold / defend for long structure')
+    // AI-origin: no owner write-through keys.
+    expect(patch[0].value.note).toBeUndefined()
+    expect(patch[0].value.scenario_tag).toBeUndefined()
+  })
+
+  it('OWNER level: scenario tag prefills and note+tag ride the save patch', async () => {
+    const lvl = fact({
+      price: 30166.25,
+      label: '👤 PDL',
+      origin: 'OWNER',
+      note: 'my shelf',
+      scenario_id: 'S1',
+      instruction: 'reclaim',
+    })
+    render(
+      <EditSheet
+        open
+        traderId="t1"
+        symbol="MNQ"
+        language="en"
+        level={lvl}
+        levelIndex={3}
+        scenarioIds={['S1', 'S2']}
+        onClose={() => {}}
+        onSaved={() => {}}
+      />
+    )
+    // note input prefilled
+    const noteInput = screen.getByDisplayValue('my shelf')
+    expect(noteInput).toBeTruthy()
+    // S1 chip selected
+    const s1 = screen.getAllByText('S1')
+    expect(s1.length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() => expect(postOverlay).toHaveBeenCalled())
+    const [, patch] = postOverlay.mock.calls[0]
+    expect(patch[0].value.note).toBe('my shelf')
+    expect(patch[0].value.scenario_tag).toBe('S1')
+  })
+})

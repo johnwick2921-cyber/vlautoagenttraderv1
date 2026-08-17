@@ -113,16 +113,25 @@ export function EditSheet({
     if (!validPrice || busy) return
     setBusy(true)
     if (isEdit) {
-      // overlay replace on the plan doc level.
+      // overlay replace on the plan doc level. The instruction is the EXACT
+      // string the card shows (planner prose for AI levels) — never re-mapped
+      // through the verb vocabulary, so an untouched field is byte-preserved
+      // and a blank chip can never silently rewrite prose. For OWNER-origin
+      // levels the note + scenario tag ride along and the server writes them
+      // through to the sticky owner row (price identity).
+      const value: Record<string, unknown> = {
+        price: priceNum,
+        label: level!.label,
+        grade,
+        instruction,
+      }
+      if (level?.origin === 'OWNER') {
+        value.note = note
+        value.scenario_tag = scenarioTag
+      }
       const res = await api.postOverlay(
         traderId,
-        [
-          {
-            op: 'replace',
-            path: `/levels/${levelIndex}`,
-            value: { price: priceNum, label: level!.label, grade, instruction },
-          },
-        ],
+        [{ op: 'replace', path: `/levels/${levelIndex}`, value }],
         'owner',
         symbol
       )
@@ -298,12 +307,31 @@ export function EditSheet({
             >
               {tp('instructionLabel', language)}
             </span>
+            {/* The instruction the card shows is planner PROSE for AI levels —
+                an editable text field seeded with the exact string, with the
+                researched verbs as quick-fill (not an exclusive picker). */}
+            <input
+              data-testid="instruction-input"
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              className="text-[12px] px-3 py-2"
+              style={{
+                background: 'rgba(201,162,75,0.05)',
+                border: '1px solid var(--vl-gold-line)',
+                borderRadius: 8,
+                color: 'var(--vl-ivory)',
+              }}
+            />
             <ChipRow
               items={INSTRUCTION_VERBS.map((v) => ({
                 value: v.value,
                 label: tp(v.key, language),
               }))}
-              value={instruction}
+              value={
+                INSTRUCTION_VERBS.some((v) => v.value === instruction)
+                  ? instruction
+                  : ''
+              }
               onChange={setInstruction}
             />
           </div>
@@ -343,7 +371,7 @@ export function EditSheet({
             />
           </label>
 
-          {!isEdit && scenarioIds.length > 0 && (
+          {scenarioIds.length > 0 || (isEdit && scenarioTag) ? (
             <div className="flex flex-col gap-1">
               <span
                 className="text-[9.5px] font-semibold tracking-wider uppercase"
@@ -353,6 +381,11 @@ export function EditSheet({
               </span>
               <ChipRow
                 items={[
+                  ...(isEdit &&
+                  scenarioTag &&
+                  !scenarioIds.includes(scenarioTag)
+                    ? [{ value: scenarioTag, label: scenarioTag }]
+                    : []),
                   ...scenarioIds.map((s) => ({ value: s, label: s })),
                   { value: 'new', label: tp('newPlay', language) },
                 ]}
@@ -360,7 +393,7 @@ export function EditSheet({
                 onChange={setScenarioTag}
               />
             </div>
-          )}
+          ) : null}
 
           <div
             className="text-[10.5px] px-3 py-2"
