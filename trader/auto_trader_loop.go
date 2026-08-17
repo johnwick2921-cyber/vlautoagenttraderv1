@@ -580,6 +580,15 @@ func (at *AutoTrader) runCycle() error {
 	}
 
 	// 9. Save decision record
+	// D3-fix (2026-08-18) — the audit columns must reflect what happened:
+	// risk_check_passed was only ever written false (guardrail skip), so every
+	// normal cycle rendered as FAILED in the audit UI; prompt_version and
+	// ai_model were never populated at all.
+	if record.RiskCheckError == "" {
+		record.RiskCheckPassed = true
+	}
+	record.PromptVersion = promptVariant
+	record.AIModel = at.aiModel
 	if err := at.saveDecision(record); err != nil {
 		at.logWarnf("⚠ Failed to save decision record: %v", err)
 	}

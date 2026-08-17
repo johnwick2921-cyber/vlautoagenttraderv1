@@ -539,9 +539,12 @@ func (at *AutoTrader) runPlannerReadWithTrigger(session, tradeDate, triggerOverr
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
-	// W16/R6 — one planner call per (trade_date, session) at a time. Claimed here
-	// rather than at the call sites so no future caller can forget it.
-	key := store.MakePlanID(tradeDate, session)
+	// W16/R6 — one planner call per (trader, trade_date, session) at a time.
+	// Claimed here rather than at the call sites so no future caller can forget
+	// it. P0-A2: the key IS trader-scoped now — with trader-scoped plan rows, a
+	// session-global claim would let one trader's in-flight read silently
+	// suppress another trader's read (the D4 sweep's new-instance catch).
+	key := store.MakePlanIDForTrader(at.id, tradeDate, session)
 	if !claimPlannerRead(key) {
 		at.logInfof("🗓️ planner read for %s already in flight — skipping duplicate call.", key)
 		return

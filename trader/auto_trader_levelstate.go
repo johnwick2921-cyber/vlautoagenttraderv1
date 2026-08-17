@@ -45,8 +45,10 @@ func (at *AutoTrader) recordLevelState() {
 	nowMs := now.UnixMilli()
 	// H1/H2 — the day-trade lock that seats levels is the OWNER's resolved
 	// proximity_filter_atr, threaded into the detector/scorer (never a hardcoded
-	// 1.5 that the config cannot move).
-	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now, at.proximityFilterATR())
+	// 1.5 that the config cannot move). max_levels resolves from config (D2 —
+	// the planner and the state writers must seat the SAME count).
+	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
+	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
 	if price <= 0 {
 		return
 	}
@@ -174,7 +176,8 @@ func (at *AutoTrader) recordScenarioState() {
 		return
 	}
 	now := time.Now()
-	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, 8, now, at.proximityFilterATR())
+	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
+	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
 	if price <= 0 {
 		return
 	}
