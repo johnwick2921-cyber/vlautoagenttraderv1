@@ -76,7 +76,11 @@
   font-family: var(--vl-font-data);
   font-size: 10px;
   line-height: 1;
-  padding: 3px 6px;
+  /* WCAG 2.2 SC 2.5.8 floor is 24x24 — the chip was 26x18 and missed it on
+     height even at desktop. */
+  min-height: 24px;
+  min-width: 24px;
+  padding: 0 7px;
   border-radius: var(--vl-radius-chip);
   border: 1px solid var(--vl-hair);
   color: var(--vl-muted); /* was --vl-faint: 2.83:1 on --vl-card, below AA */
@@ -102,7 +106,10 @@
 .vl-version-chip[disabled] {
   cursor: default;
 }
-@media (pointer: coarse) {
+/* 44x44 on touch AND on narrow viewports. Keying only on `pointer: coarse` left
+   the target at 26x18 for anyone on a narrow window or a touch laptop reporting
+   a fine pointer — which is also what a headless verification run measures. */
+@media (pointer: coarse), (max-width: 640px) {
   .vl-version-chip {
     min-width: 44px;
     min-height: 44px;

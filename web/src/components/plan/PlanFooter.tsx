@@ -10,12 +10,24 @@ export function PlanFooter({
   modelId,
   replansLeft,
   language,
+  latestVersion,
+  versionCount,
+  onSelectVersion,
+  titleForVersion,
 }: {
   version: number
   dayType?: string
   modelId?: string
   replansLeft?: number
   language: Language
+  // ITEM 1 (2026-08-17): the card renders TWO chip rows — the header and this
+  // one. Only the header was wired when click-to-open shipped, so tapping the
+  // FOOTER chips did nothing, which is exactly what "still not clickable" looks
+  // like from the owner's chair. Both rows now share one handler.
+  latestVersion?: number
+  versionCount?: number
+  onSelectVersion?: (version: number) => void
+  titleForVersion?: (version: number) => string | undefined
 }) {
   return (
     <div
@@ -27,7 +39,13 @@ export function PlanFooter({
       }}
     >
       <div className="flex items-center gap-3">
-        <VersionChips version={version} />
+        <VersionChips
+          version={version}
+          latest={latestVersion}
+          count={versionCount}
+          onSelect={onSelectVersion}
+          titleFor={titleForVersion}
+        />
         {dayType && (
           <span>
             {tp('dayType', language)}:{' '}

@@ -181,3 +181,65 @@ describe('SessionPlanCard — historical version', () => {
     expect(screen.queryByTestId('historical-banner')).toBeNull()
   })
 })
+
+// ITEM 1 (2026-08-17) — THE CARD RENDERS TWO CHIP ROWS.
+//
+// Click-to-open shipped wired to the header only, so the FOOTER row stayed a set
+// of disabled buttons. Tapping those did nothing — indistinguishable, from the
+// owner's chair, from "the chips are still not clickable". Both rows must work.
+describe('SessionPlanCard — both chip rows are live', () => {
+  it('every version chip on the card is clickable, header AND footer', () => {
+    const onSelectVersion = vi.fn()
+    render(
+      <SessionPlanCard
+        plan={historicalPlan(6)}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={onSelectVersion}
+      />
+    )
+    const rows = document.querySelectorAll('.vl-version-row')
+    expect(rows.length).toBe(2) // header + footer
+
+    rows.forEach((row, i) => {
+      const chips = row.querySelectorAll<HTMLButtonElement>('.vl-version-chip')
+      expect(chips).toHaveLength(6)
+      chips.forEach((c) =>
+        expect(
+          c.disabled,
+          `row ${i} chip ${c.textContent} must not be disabled`
+        ).toBe(false)
+      )
+    })
+
+    // A click on the FOOTER row opens that version, exactly like the header.
+    const footerChips =
+      rows[1].querySelectorAll<HTMLButtonElement>('.vl-version-chip')
+    fireEvent.click(footerChips[2])
+    expect(onSelectVersion).toHaveBeenCalledWith(3)
+  })
+
+  it('both rows agree on which version is current', () => {
+    render(
+      <SessionPlanCard
+        plan={historicalPlan(2)}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    document.querySelectorAll('.vl-version-row').forEach((row) => {
+      const current = row.querySelectorAll('[aria-current="true"]')
+      expect(current).toHaveLength(1)
+      expect(current[0].textContent).toBe('v2')
+    })
+  })
+})

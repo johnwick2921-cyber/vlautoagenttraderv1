@@ -1,0 +1,23 @@
+<!doctype html>
+<!--
+  COMPONENT HARNESS (dev-only) — version-chip verification, ITEM 1c.
+
+  The live app cannot be driven headlessly: it is behind auth and httpClient
+  redirects to /login on 401. This mounts the REAL VersionChips module from the
+  running Vite dev server (not a hand-built replica) at n=1, 2 and 6 so the
+  layout claims — no overlap, every version reachable, tap-target size, contrast,
+  active version distinct — can be measured in a real browser instead of asserted.
+
+  Vite only builds index.html, so this never ships in the production bundle.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VL — version chip harness</title>
+  </head>
+  <body style="margin: 0; background: #0e1116">
+    <div id="root"></div>
+    <script type="module" src="/src/chips-harness.tsx"></script>
+  </body>
+</html>

@@ -221,6 +221,23 @@ export function SessionPlanCard({
       : doc.reasoning?.trim() ||
         (doc.no_trade?.length ? doc.no_trade.join(' · ') : '')
 
+  // ITEM 1 (2026-08-17) — ONE derivation, used by BOTH chip rows. The card
+  // renders version chips twice (header + footer); only the header was wired when
+  // click-to-open shipped, so the footer row stayed a set of disabled buttons.
+  // Tapping those did nothing, which from the owner's chair is indistinguishable
+  // from "the chips are still not clickable".
+  const newestVersion =
+    latestVersion || plan.latest_version || plan.version || 1
+  const versionCount =
+    versions.length || latestVersion || plan.latest_version || plan.version || 1
+  const versionTitle = (v: number) => {
+    const rec = versions.find((x) => x.version === v)
+    if (!rec) return undefined
+    return rec.death_reason
+      ? `v${v} — ${rec.death_reason}`
+      : `v${v} — ${rec.lifecycle}`
+  }
+
   return (
     <div
       className="flex flex-col gap-3"
@@ -244,22 +261,10 @@ export function SessionPlanCard({
           </span>
           <VersionChips
             version={plan.version ?? 1}
-            latest={latestVersion || plan.latest_version || plan.version || 1}
-            count={
-              versions.length ||
-              latestVersion ||
-              plan.latest_version ||
-              plan.version ||
-              1
-            }
+            latest={newestVersion}
+            count={versionCount}
             onSelect={onSelectVersion}
-            titleFor={(v) => {
-              const rec = versions.find((x) => x.version === v)
-              if (!rec) return undefined
-              return rec.death_reason
-                ? `v${v} — ${rec.death_reason}`
-                : `v${v} — ${rec.lifecycle}`
-            }}
+            titleFor={versionTitle}
           />
           <LifecycleChip
             lifecycle={plan.lifecycle ?? 'active'}
@@ -565,6 +570,10 @@ export function SessionPlanCard({
         modelId={plan.model_id}
         replansLeft={plan.replans_left}
         language={language}
+        latestVersion={newestVersion}
+        versionCount={versionCount}
+        onSelectVersion={onSelectVersion}
+        titleForVersion={versionTitle}
       />
 
       {/* P5 owner door — portaled sheets */}
