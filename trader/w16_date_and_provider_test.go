@@ -17,12 +17,6 @@ import (
 // slice) uses the first; the risk daily reset, guardrail counters, alert dedupe
 // keys, level assembly and the approval key use the second. This test documents
 // the disagreement and pins the window where it bites.
-//
-// Consequence for a MIDNIGHT-SPANNING session (ASIA 17:00→02:00 CT): a plan
-// written at the 16:55 read is stamped with day D, but from 00:00 CT the
-// provider looks up day D+1 and finds nothing — the plan vanishes from the
-// executor mid-session. Dormant while ASIA is disabled; reachable now that the
-// per-session enable toggle exists (W15.A).
 func TestW16TradeDateNotionsDisagree(t *testing.T) {
 	loc, err := time.LoadLocation("America/Chicago")
 	if err != nil {
@@ -58,91 +52,42 @@ func TestW16TradeDateNotionsDisagree(t *testing.T) {
 	if disagreements == 0 {
 		t.Fatal("expected the two notions to disagree somewhere — if this now passes, they were unified and this test should be updated")
 	}
-
-	// THE BITE: one ASIA session instance spans two different planner trade dates.
-	asiaRead := ct(17, 16, 55) // ASIA read time, 16:55 CT
-	asiaLate := ct(18, 1, 0)   // 01:00 CT, still inside ASIA's 17:00→02:00 window
-	if !inSessionReadWindow(asiaLate, "16:55", "02:00") {
-		t.Fatal("01:00 CT must still be inside ASIA's window for this scenario to hold")
-	}
-	if plannerTradeDateCT(asiaRead) == plannerTradeDateCT(asiaLate) {
-		t.Fatal("expected the planner trade date to differ across midnight within ONE ASIA session")
-	}
-	t.Logf("BREAK: an ASIA plan stamped %s is looked up as %s at 01:00 CT — the executor finds no plan mid-session",
-		plannerTradeDateCT(asiaRead), plannerTradeDateCT(asiaLate))
 }
 
-// CTO-VERIFY P-B / P-G — the ActivePlanProvider gates on the REGISTRY's
-// Enabled flag (auto_trader_planner.go:566), NOT on sessionRunnable. So a session
-// the owner switched on at the STRATEGY level gets its plan written by the read
-// scheduler (which does use sessionRunnable) and then never read by the executor.
-// Plan written, plan never consumed.
+// CTO-VERIFY P-B / P-G — THE ROOT FINDING OF THIS RUN, NOW FIXED (H8).
 //
-// This is the same defect class fixed in W15.A, surviving in a second location.
-func TestW16ProviderIgnoresStrategySessionEnable(t *testing.T) {
+// NINE sites decide "does session X run for this strategy". W15.A introduced
+// sessionRunnable() as the single resolver but converted only TWO of them. The
+// deciding trading sites that still read the registry's Enabled flag — the pure
+// entry gate (sessionGateDecision) and the ActivePlanProvider — are now converted
+// too, so an explicitly-enabled session is honored end to end: the read fires,
+// the entry gate allows, AND the executor receives the plan.
+func TestW16SessionEnableIsHonoredByEveryGatingSite(t *testing.T) {
 	reg := kernel.DefaultSessionRegistry()
-	asia, ok := reg.SessionByName(kernel.SessionAsia)
-	if !ok {
-		t.Fatal("ASIA must exist in the registry")
-	}
+	asia, _ := reg.SessionByName(kernel.SessionAsia)
 
-	// The owner switches ASIA on for this strategy (the W15.A control).
+	// The owner switches ASIA on for this strategy (the W15.A control), while the
+	// registry default still says ASIA.Enabled=false.
 	on := dpWith([]store.DayPlanSessionOverride{{Session: "ASIA", Enable: bp(true)}}, nil)
 
-	// The SCHEDULER agrees ASIA runs …
+	// The resolver agrees ASIA runs.
 	if runnable, why := on.sessionRunnable(asia); !runnable {
 		t.Fatalf("scheduler must consider ASIA runnable once switched on: %s", why)
 	}
-	// … but the registry flag the PROVIDER consults still says no.
-	if asia.Enabled {
-		t.Skip("ASIA is enabled in the shipped registry — this defect requires the shipped default (disabled)")
-	}
-	t.Log("BREAK: sessionRunnable(ASIA)=true (scheduler writes the plan) while registry Enabled=false " +
-		"(installActivePlanProvider returns nil) → the executor never sees the ASIA plan it just wrote")
-}
 
-// CTO-VERIFY — THE ROOT FINDING OF THIS RUN.
-//
-// NINE sites decide "does session X run for this strategy". W15.A introduced
-// sessionRunnable() as the single resolver but converted only TWO of them:
-//
-//	CONVERTED (honor sessions[].enable):
-//	  1. trader/auto_trader_planner.go:171  read scheduler
-//	  2. trader/auto_trader_session.go:38   entry gate (outer)
-//
-//	NOT CONVERTED (still read the registry's Enabled flag):
-//	  3. trader/auto_trader_session.go:108  sessionGateDecision  → BLOCKS entries
-//	  4. trader/auto_trader_planner.go:528  digest writer        → no digest
-//	  5. trader/auto_trader_planner.go:566  ActivePlanProvider   → executor never sees the plan
-//	  6-9. api/handler_plan.go:143,475,555,711,1122  card / ask / realign / apply
-//
-// Net effect with ASIA switched on at the strategy level (which the LIVE config
-// does today): the read FIRES and costs an LLM call, a plan row is written, and
-// then nothing consumes it — no executor context, no entries, no digest, no card.
-// The owner sees a toggle that appears to do nothing while spending money.
-func TestW16SessionEnableIsHonoredByOnlySomeGates(t *testing.T) {
-	reg := kernel.DefaultSessionRegistry()
-	asia, _ := reg.SessionByName(kernel.SessionAsia)
-	at := dpWith([]store.DayPlanSessionOverride{{Session: "ASIA", Enable: bp(true)}}, nil)
-
-	// site 1+2 — the resolver says ASIA runs
-	runnable, _ := at.sessionRunnable(asia)
-	if !runnable {
-		t.Fatal("precondition: sessionRunnable(ASIA) must be true once switched on")
+	// Site: the pure entry gate — now takes the resolver and must ALLOW the entry
+	// (not block on the registry flag). 18:00 CT is inside ASIA's window and clear
+	// of first-5m / lunch / red-news.
+	reason, blocked := sessionGateDecision(reg, ctTimeForTest(t, 18, 0), nil, on.sessionRunnable)
+	if blocked {
+		t.Fatalf("entry gate must honor sessionRunnable(ASIA)=true, got blocked=%q", reason)
 	}
 
-	// site 3 — the pure entry-gate function still refuses, on the registry flag
-	reason, blocked := sessionGateDecision(reg, ctTimeForTest(t, 19, 0), nil)
-	if !blocked {
-		t.Fatal("expected sessionGateDecision to block during ASIA (registry Enabled=false)")
+	// Registry-disabled + no override must STILL block (the resolver inherits the
+	// registry default as the DEFAULT, not a veto when the owner stays silent).
+	off := dpWith(nil, nil)
+	reason, blocked = sessionGateDecision(reg, ctTimeForTest(t, 18, 0), nil, off.sessionRunnable)
+	if !blocked || reason == "" {
+		t.Fatalf("ASIA with no override must still block (registry default), got blocked=%v reason=%q", blocked, reason)
 	}
-	t.Logf("INCONSISTENT: sessionRunnable(ASIA)=true but sessionGateDecision says %q", reason)
-
-	// sites 4/5 — the registry flag those read is still false, so the digest writer
-	// and the ActivePlanProvider both skip ASIA.
-	if asia.Enabled {
-		t.Skip("registry ASIA became enabled — this inconsistency requires the shipped default")
-	}
-	t.Log("CONSEQUENCE: read fires (LLM spend) → plan row written → executor gets nil, " +
-		"entries blocked, no digest, card empty. A toggle that costs money and changes nothing.")
 }

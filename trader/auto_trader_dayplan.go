@@ -42,7 +42,7 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 	st := at.store
 	nakedPOCProviderOnce.Do(func() {
 		installNakedPOCProvider(st)
-		installActivePlanProvider(st)
+		installActivePlanProvider(at, st)
 		installLevelStateProvider(st) // W11b — surface persisted freshness/consumed
 	})
 

@@ -778,7 +778,7 @@ func (at *AutoTrader) maybeWriteDigests() {
 
 	for i := range reg.Sessions {
 		s := &reg.Sessions[i]
-		if !s.Enabled {
+		if runnable, _ := at.sessionRunnable(s); !runnable {
 			continue
 		}
 		end, ok := hhmmToMin(s.WindowEndCT)
@@ -842,12 +842,19 @@ func storedReplanCap(st *store.Store, traderID, session string) int {
 // installActivePlanProvider wires kernel.ActivePlanProvider to read this store's
 // latest ACTIVE plan for the current session (P3.4). no_trade/died plans and
 // off-session return nil → the executor prompt is unchanged.
-func installActivePlanProvider(st *store.Store) {
+func installActivePlanProvider(at *AutoTrader, st *store.Store) {
 	kernel.ActivePlanProvider = func(symbol string) *kernel.ActivePlan {
 		now := time.Now()
 		reg := loadStoredRegistry(st) // W8 — provider honors the admin registry too
 		sess, ok := reg.ActiveSession(now)
-		if !ok || !sess.Enabled {
+		if !ok {
+			return nil
+		}
+		// H8 — the executor must honor the SAME resolver the read scheduler uses.
+		// The registry flag is a DEFAULT, never a veto: a session the owner switched
+		// on at the strategy level must reach the executor (before this it was
+		// written by the read and then dropped here).
+		if runnable, _ := at.sessionRunnable(sess); !runnable {
 			return nil
 		}
 		tradeDate := plannerTradeDateCT(now)

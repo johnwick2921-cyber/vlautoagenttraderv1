@@ -45,11 +45,11 @@ func TestW3RedNewsEndToEnd(t *testing.T) {
 	reg := kernel.DefaultSessionRegistry()
 
 	// HARD block inside the FOMC ±15m window (08:45–09:15).
-	if reason, blocked := sessionGateDecision(reg, ctAt(t, 9, 0), windows); !blocked || !strings.Contains(reason, "red-news") {
+	if reason, blocked := sessionGateDecision(reg, ctAt(t, 9, 0), windows, nil); !blocked || !strings.Contains(reason, "red-news") {
 		t.Fatalf("entry must be red-news-blocked at 09:00, got blocked=%v reason=%q", blocked, reason)
 	}
 	// clear at 10:00 (NY session, no red news, not lunch/first-5m).
-	if reason, blocked := sessionGateDecision(reg, ctAt(t, 10, 0), windows); blocked {
+	if reason, blocked := sessionGateDecision(reg, ctAt(t, 10, 0), windows, nil); blocked {
 		t.Fatalf("entry must be clear at 10:00, got blocked: %s", reason)
 	}
 

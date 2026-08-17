@@ -44,7 +44,7 @@ func (at *AutoTrader) sessionEntryBlocked() (string, bool) {
 			return why, true
 		}
 	}
-	return sessionGateDecision(reg, now, at.currentT1Windows(now))
+	return sessionGateDecision(reg, now, at.currentT1Windows(now), at.sessionRunnable)
 }
 
 // sessionWindowStart returns the wall-clock start of the CURRENTLY-RUNNING
@@ -100,12 +100,21 @@ func (at *AutoTrader) sessionTradeCapBlocked(sess *kernel.SessionDef, now time.T
 // sessionGateDecision is the pure session-gate logic: entries only inside an
 // ENABLED session window and outside the no-trade sub-windows (first-5m, lunch,
 // and W3 red-news T1 blackouts).
-func sessionGateDecision(reg kernel.SessionRegistry, now time.Time, t1Windows []kernel.CTWindow) (string, bool) {
+func sessionGateDecision(reg kernel.SessionRegistry, now time.Time, t1Windows []kernel.CTWindow, runnable func(*kernel.SessionDef) (bool, string)) (string, bool) {
 	sess, ok := reg.ActiveSession(now)
 	if !ok {
 		return "outside all session windows (overnight/interim)", true
 	}
-	if !sess.Enabled {
+	// H8 — enablement is resolved by sessionRunnable (explicit per-session toggle
+	// wins over the registry). The registry's Enabled flag is only the DEFAULT the
+	// resolver consults; it must never VETO a session the resolver already said
+	// runs. When no resolver is supplied (pure callers/tests), the registry flag
+	// is the answer.
+	if runnable != nil {
+		if ok, why := runnable(sess); !ok {
+			return why, true
+		}
+	} else if !sess.Enabled {
 		return fmt.Sprintf("%s session not enabled", sess.Name), true
 	}
 	if inSessionFirst5m(sess, now) {
