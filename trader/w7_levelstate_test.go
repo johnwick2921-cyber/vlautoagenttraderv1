@@ -13,10 +13,23 @@ import (
 // barsClosingAbove builds n 1m bars ending ~2m before now, all CLOSED, each closing
 // `above` the level (a clean acceptance-through → the level is consumed).
 func barsClosingAbove(level float64, n int) []market.Kline {
-	base := time.Now().Add(-time.Duration(n+2) * time.Minute)
+	return barsClosingAboveSince(time.Now().Add(-time.Duration(n+2)*time.Minute), level, n)
+}
+
+// barsClosingAboveSince builds n CLOSED bars that STRADDLE the level once
+// (the touch that gates acceptance) and then close strictly above it,
+// starting at `base` — the honest "accepted through" sequence.
+func barsClosingAboveSince(base time.Time, level float64, n int) []market.Kline {
 	var bars []market.Kline
 	for i := 0; i < n; i++ {
 		ct := base.Add(time.Duration(i) * time.Minute)
+		if i == 0 {
+			bars = append(bars, market.Kline{ // straddle = touch
+				OpenTime: ct.UnixMilli(), Open: level - 2, High: level + 2, Low: level - 4, Close: level - 1,
+				CloseTime: ct.Add(time.Minute).UnixMilli(),
+			})
+			continue
+		}
 		px := level + 8 + float64(i) // strictly above, trending up
 		bars = append(bars, market.Kline{
 			OpenTime: ct.UnixMilli(), Open: px - 1, High: px + 2, Low: px - 3, Close: px,
@@ -79,9 +92,11 @@ func TestW7LevelBurnedStaysBurnedAcrossSessions(t *testing.T) {
 	prevBars := market.FuturesBarsProvider
 	defer func() { market.FuturesBarsProvider = prevBars }()
 
-	// SESSION 1 — price accepts THROUGH the level → consumed.
+	// SESSION 1a — the plan is born and the level row is CREATED while price
+	// hovers at the level. Windowed (P1c): nothing has touched+accepted yet →
+	// must NOT be consumed at creation time.
 	market.FuturesBarsProvider = func(string, string, int) []market.Kline {
-		return barsClosingAbove(levelPx, 20)
+		return barsHoveringAt(levelPx, 20)
 	}
 	at.recordLevelState()
 
@@ -89,8 +104,24 @@ func TestW7LevelBurnedStaysBurnedAcrossSessions(t *testing.T) {
 	if cur == nil {
 		t.Fatalf("level %s must be persisted after session 1", key)
 	}
+	if cur.Consumed {
+		t.Fatalf("a just-created, untouched level must NOT be consumed, got %+v", cur)
+	}
+
+	// SESSION 1b — bars SINCE the row's birth accept through (close beyond on
+	// the rule timeframe) → consumed (role-flip). Consumption is windowed on
+	// created_at (P1c), so backdate the row to when the synthetic bars began.
+	if err := st.LevelState().Backdate(key, time.Now().Add(-30*time.Minute)); err != nil {
+		t.Fatalf("backdate: %v", err)
+	}
+	market.FuturesBarsProvider = func(string, string, int) []market.Kline {
+		return barsClosingAboveSince(time.Now().Add(-22*time.Minute), levelPx, 20)
+	}
+	at.recordLevelState()
+
+	cur, _ = st.LevelState().Get(key)
 	if !cur.Consumed {
-		t.Fatalf("accepted-through level must be consumed, got consumed=%v freshness=%s", cur.Consumed, cur.Freshness)
+		t.Fatalf("touched-and-accepted-through level must be consumed, got consumed=%v freshness=%s", cur.Consumed, cur.Freshness)
 	}
 
 	// re-arm must refuse a consumed level regardless of cooldown/re-form.

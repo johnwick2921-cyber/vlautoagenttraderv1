@@ -7,8 +7,9 @@ import (
 	"nofx/market"
 )
 
-// W11b — with a LevelStateProvider installed, ScoreLevels DROPS a consumed/burned
-// level (freshMult 0) and LABELS a decayed one (B/tested); nil provider → all fresh.
+// W11b — with a LevelStateProvider installed, ScoreLevels keeps a consumed/burned
+// level SEATED with the "flipped" label (P1c role-flip, reduced multiplier) and
+// LABELS a decayed one (B/tested); nil provider → all fresh.
 func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 	defer func() { LevelStateProvider = nil }() // never leak into the golden tests
 
@@ -34,11 +35,20 @@ func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 		return ""
 	}
 	got := ScoreLevels(levels, 30000, 100, levelFreshnessFn("MNQ"), 8, 1.5)
-	if len(got) != 1 {
-		t.Fatalf("burned PDH must be dropped → 1 level, got %d", len(got))
+	if len(got) != 2 {
+		t.Fatalf("P1c: a consumed level role-flips and STAYS → 2 levels, got %d", len(got))
 	}
-	if got[0].Label != "PDL" || got[0].Fresh != "B" {
-		t.Fatalf("PDL must survive labeled B, got label=%q fresh=%q", got[0].Label, got[0].Fresh)
+	var seenFlipped, seenB bool
+	for _, l := range got {
+		if l.Label == "PDH" && l.Fresh == "flipped" {
+			seenFlipped = true
+		}
+		if l.Label == "PDL" && l.Fresh == "B" {
+			seenB = true
+		}
+	}
+	if !seenFlipped || !seenB {
+		t.Fatalf("PDH must be seated as flipped, PDL as B, got %+v", got)
 	}
 }
 
@@ -70,8 +80,8 @@ func TestW11bPlanStatusAnnotation(t *testing.T) {
 		return ""
 	}
 	s := RenderPlanStatus("MNQ", doc, bars, 30000, 100, "2x5m", 2, 100)
-	if !strings.Contains(s, "BURNED(prior session)") {
-		t.Fatalf("burned PDH must be annotated BURNED:\n%s", s)
+	if !strings.Contains(s, "flipped(consumed") {
+		t.Fatalf("consumed PDH must be annotated flipped (P1c):\n%s", s)
 	}
 	if !strings.Contains(s, "state=B(tested)") {
 		t.Fatalf("decayed PDL must be annotated state=B:\n%s", s)

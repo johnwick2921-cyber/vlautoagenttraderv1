@@ -18,24 +18,26 @@ func TestScoreLevels(t *testing.T) {
 	}
 	freshness := func(l DetectedLevel) string {
 		if l.Kind == KindONH {
-			return "done" // consumed → dropped
+			return "done" // consumed → role-flip, stays on the map (P1c)
 		}
 		return "" // fresh
 	}
 	scored := ScoreLevels(levels, 15530, 200, freshness, 8, 1.5)
 
 	grades := map[LevelKind]string{}
+	fresh := map[LevelKind]string{}
 	present := map[LevelKind]bool{}
 	for _, s := range scored {
 		grades[s.Kind] = s.Grade
+		fresh[s.Kind] = s.Fresh
 		present[s.Kind] = true
 	}
 
 	if present[KindPWH] {
 		t.Fatalf("PWH is beyond ±1.5×dATR → must be proximity-filtered")
 	}
-	if present[KindONH] {
-		t.Fatalf("consumed ONH must be dropped")
+	if !present[KindONH] || fresh[KindONH] != "flipped" {
+		t.Fatalf("consumed ONH must be seated as flipped (P1c), got present=%v fresh=%q", present[KindONH], fresh[KindONH])
 	}
 	if present[KindDemand] {
 		t.Fatalf("standalone demand zone must be excluded (confluence-only)")
