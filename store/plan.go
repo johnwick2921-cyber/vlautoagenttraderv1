@@ -78,6 +78,31 @@ func MakePlanID(tradeDate, session string) string {
 	return tradeDate + ":" + session
 }
 
+// MakePlanIDForTrader builds the trader-scoped plan identity (P0-A2). Legacy
+// rows use MakePlanID(tradeDate, session) — session-GLOBAL — so two day-plan
+// traders shared one plan chain and the last writer's version governed both.
+// All NEW writers must use the trader-scoped form; readers match on
+// (trade_date, session, strategy_id) so both id forms keep working.
+func MakePlanIDForTrader(traderID, tradeDate, session string) string {
+	return tradeDate + ":" + session + ":" + traderID
+}
+
+// ResolvePlanID returns the plan_id a writer must append under: the trader's
+// EXISTING chain id for this (trade_date, session) if one exists — version
+// continuity across owner resets depends on it (a reset starts a new chain at
+// v1 only when there is nothing to continue) — otherwise a fresh trader-scoped
+// id. Two traders on the same session can never land on the same chain.
+func (s *PlanStore) ResolvePlanID(tradeDate, session, strategyID string) string {
+	var row PlanDB
+	err := s.db.Select("plan_id").
+		Where("trade_date = ? AND session = ? AND strategy_id = ?", tradeDate, session, strategyID).
+		Order("version DESC").First(&row).Error
+	if err == nil && row.PlanID != "" {
+		return row.PlanID // continue the trader's chain (legacy or scoped id)
+	}
+	return MakePlanIDForTrader(strategyID, tradeDate, session)
+}
+
 const plansDDL = `
 CREATE TABLE IF NOT EXISTS plans (
 	plan_id        TEXT    NOT NULL,
@@ -146,9 +171,14 @@ func (s *PlanStore) initTables() error {
 		if err := s.db.Exec(planOverlaysDDL).Error; err != nil {
 			return fmt.Errorf("create plan_overlays table: %w", err)
 		}
-		// Enforce the campaign key (trade_date, session, version) explicitly, and
-		// index the common lookups.
-		s.db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_date_session_version ON plans(trade_date, session, version)`)
+		// P0-A2 — the campaign key now includes strategy_id. The legacy unique
+		// (trade_date, session, version) made two day-plan traders on one
+		// session fight over the SAME version number, which forced them to
+		// share a plan chain. Drop it (existing rows cannot violate the new
+		// key: the old index is exactly what kept them apart) and enforce the
+		// trader-scoped key.
+		s.db.Exec(`DROP INDEX IF EXISTS idx_plans_date_session_version`)
+		s.db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_plans_date_session_strategy_version ON plans(trade_date, session, strategy_id, version)`)
 		s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_plans_strategy ON plans(strategy_id)`)
 		s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_overlays_plan ON plan_overlays(plan_id, plan_version)`)
 		// W11 — idempotent additive columns for EXISTING sqlite DBs (CREATE TABLE IF
@@ -392,11 +422,12 @@ func (s *PlanStore) ListVersions(tradeDate, session string) ([]*PlanDB, error) {
 }
 
 // ListVersionsForTrader is ListVersions scoped to ONE trader's chain (P0-A):
-// two traders running the same session share a plan_id, and the version chips
-// must never list another trader's versions.
+// the version chips must never list another trader's versions. Matches on
+// (trade_date, session, strategy_id) so both legacy (date:session) and
+// trader-scoped (date:session:trader) plan_ids are found.
 func (s *PlanStore) ListVersionsForTrader(tradeDate, session, strategyID string) ([]*PlanDB, error) {
 	var rows []*PlanDB
-	err := s.db.Where("plan_id = ? AND strategy_id = ?", MakePlanID(tradeDate, session), strategyID).
+	err := s.db.Where("trade_date = ? AND session = ? AND strategy_id = ?", tradeDate, session, strategyID).
 		Order("version ASC").Find(&rows).Error
 	if err != nil {
 		return nil, err

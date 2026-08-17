@@ -482,7 +482,7 @@ func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
 	doc := kernel.NoTradePlanDocWithLevels(reason, at.noTradeLevelMap())
 	docJSON, _ := json.Marshal(doc)
 	_, err := at.store.Plan().AppendPlan(&store.PlanDB{
-		PlanID: store.MakePlanID(tradeDate, session), StrategyID: at.id,
+		PlanID: at.store.Plan().ResolvePlanID(tradeDate, session, at.id), StrategyID: at.id,
 		TradeDate: tradeDate, Session: session, TriggerReason: "replans_exhausted",
 		Lifecycle: "no_trade", Doc: string(docJSON),
 	})
@@ -507,15 +507,16 @@ func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
 //
 // Intra-trader this was safe: each trader drives one sequential loop goroutine
 // (auto_trader.go:776-790), so its cycles cannot overlap. The exposure is
-// CROSS-TRADER: plan identity is MakePlanID(tradeDate, session) — session-GLOBAL,
-// not per-trader — so two day-plan traders on the same symbol both see "no plan
+// CROSS-TRADER: two day-plan traders on the same symbol both see "no plan
 // yet" at the read time, both pay for a full planner call, and both append a
 // version of the same session's plan. That is the live configuration today (two
 // MNQ day-plan traders).
 //
 // All traders share one process, so a process-wide claim covers both axes. The
 // key deliberately excludes the trader id: two traders reading the SAME session
-// is exactly what must be collapsed to one call.
+// is exactly what must be collapsed to one call. (P0-A2: the PLAN ROWS are now
+// trader-scoped — MakePlanIDForTrader — while this claim collapses only the AI
+// call, not the identity.)
 var plannerReadInFlight sync.Map // "tradeDate:session" -> struct{}
 
 // claimPlannerRead returns false when another read for this session is already
@@ -642,7 +643,7 @@ func (at *AutoTrader) runPlannerReadCoreWithTrigger(session, tradeDate, triggerO
 	}
 	docJSON, _ := json.Marshal(doc)
 	version, err := at.store.Plan().AppendPlan(&store.PlanDB{
-		PlanID:          store.MakePlanID(tradeDate, session),
+		PlanID:          at.store.Plan().ResolvePlanID(tradeDate, session, at.id),
 		StrategyID:      at.id,
 		TradeDate:       tradeDate,
 		Session:         session,

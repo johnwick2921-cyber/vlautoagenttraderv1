@@ -195,7 +195,7 @@ func (at *AutoTrader) recordScenarioState() {
 	if err != nil {
 		return
 	}
-	key := store.ScenarioStatusKey(at.id, store.MakePlanID(plannerTradeDateCT(now), plan.Session))
+	key := store.ScenarioStatusKey(at.id, at.store.Plan().ResolvePlanID(plannerTradeDateCT(now), plan.Session, at.id))
 	if err := at.store.SetSystemConfig(key, string(blob)); err != nil {
 		at.logWarnf("🎯 scenario-state write failed for %s: %v", key, err)
 		return

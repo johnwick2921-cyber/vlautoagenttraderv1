@@ -1042,7 +1042,7 @@ func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askCo
 		}
 	}
 	if ctx.planID == "" {
-		ctx.planID = store.MakePlanID(ctx.tradeDate, ctx.session)
+		ctx.planID = s.store.Plan().ResolvePlanID(ctx.tradeDate, ctx.session, traderID)
 	}
 	return ctx
 }
@@ -1183,7 +1183,7 @@ func (s *Server) handlePlanThread(c *gin.Context) {
 			if d, okD := kernel.PlanChainTradeDate(sess, now); okD {
 				tradeDate = d
 			}
-			planID = store.MakePlanID(tradeDate, sess.Name)
+			planID = s.store.Plan().ResolvePlanID(tradeDate, sess.Name, traderID)
 		}
 	}
 	msgs, _ := s.store.PlanQA().ListForPlan(traderID, planID, 200)
@@ -1332,7 +1332,9 @@ func (s *Server) handlePlanAskApply(c *gin.Context) {
 			}
 		}
 	}
-	if !ok || !runnable || store.MakePlanID(tradeDate, sess.Name) != msg.PlanID {
+	legacy := store.MakePlanID(tradeDate, sess.Name)
+	scoped := store.MakePlanIDForTrader(traderID, tradeDate, sess.Name)
+	if !ok || !runnable || (msg.PlanID != legacy && msg.PlanID != scoped) {
 		c.JSON(409, gin.H{"error": "this reply was authored against a plan that is no longer active"})
 		return
 	}

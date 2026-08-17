@@ -111,7 +111,7 @@ func main() {
 		"🔴 red-news blackout 13:15–13:45 CT (FOMC minutes)",
 	}
 
-	planID := store.MakePlanID(tradeDate, sess)
+	planID := store.MakePlanIDForTrader(*traderID, tradeDate, sess)
 	for i, doc := range []kernel.PlanDoc{v1, v2} {
 		js, _ := json.Marshal(doc)
 		trigger := "NY_scheduled_read"
