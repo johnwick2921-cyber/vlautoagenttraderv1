@@ -108,8 +108,9 @@ func sessionHiLoFromBins(bins []kernel.SVPBin) (hi, lo float64) {
 // installLevelStateProvider wires kernel.LevelStateProvider to read this store's
 // cross-session level_state (freshness A→B→C, consumed) for a level identity — the
 // SAME identity (type-from-label + price-bin) W7's writer uses. This is the W11b
-// surfacing: the executor's KEY LEVELS drop consumed levels (freshMult 0) and show
-// tested/B; PLAN STATUS annotates burned levels. Unknown level → "" (fresh).
+// surfacing: consumed levels ROLE-FLIP (flipped label, reduced score) instead of
+// disappearing; PLAN STATUS annotates them; P1d aging heals scars across
+// session-days. Unknown level → "" (fresh).
 func installLevelStateProvider(st *store.Store) {
 	kernel.LevelStateProvider = func(symbol string, l kernel.DetectedLevel) string {
 		key := store.MakeLevelKey(symbol, kernel.LevelTypeFromLabel(l.Label), "", kernel.LevelBinIndex(l.Price))
@@ -117,10 +118,7 @@ func installLevelStateProvider(st *store.Store) {
 		if err != nil || cur == nil {
 			return "" // no persisted state → fresh (pre-W11b behavior)
 		}
-		if cur.Consumed || cur.Freshness == store.FreshnessDone {
-			return "done"
-		}
-		return cur.Freshness // "A" | "B" | "C"
+		return store.AgedFreshness(cur, time.Now())
 	}
 }
 

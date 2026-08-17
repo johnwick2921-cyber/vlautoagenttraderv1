@@ -161,10 +161,79 @@ func (s *LevelStateStore) RecordPlay(levelKey string, nowMs int64) (string, erro
 	return s.DecrementFreshness(levelKey)
 }
 
-// MarkConsumed permanently consumes a level (price accepted through it).
+// MarkConsumed consumes a level (price accepted through it) — it ROLE-FLIPS
+// (support↔resistance) and stays on the map; it is never deleted. Ageing
+// (AgedFreshness) later heals the scar across sessions.
 func (s *LevelStateStore) MarkConsumed(levelKey string) error {
 	return s.db.Model(&LevelStateDB{}).Where("level_key = ?", levelKey).
 		Updates(map[string]any{"consumed": true, "freshness": FreshnessDone}).Error
+}
+
+// ResetBurns (P1b repair) clears every burned mark so the WINDOWED
+// re-evaluation can rebuild consumption honestly from bars. Decayed rows land
+// on FreshnessC (tested×2) — a repair never resurrects a level as fresh A.
+// cutoffMs > 0 limits the reset to rows last updated before that instant
+// (the purge of pre-fix burns). Returns rows affected.
+func (s *LevelStateStore) ResetBurns(cutoffMs int64) (int64, error) {
+	q := s.db.Model(&LevelStateDB{}).
+		Where("consumed = ? OR freshness = ?", true, FreshnessDone)
+	if cutoffMs > 0 {
+		q = q.Where("updated_at < ?", time.UnixMilli(cutoffMs))
+	}
+	res := q.Updates(map[string]any{"consumed": false, "freshness": FreshnessC})
+	return res.RowsAffected, res.Error
+}
+
+// cmeDayKey mirrors kernel.CMESessionDayKey (17:00 America/Chicago boundary)
+// without importing kernel (store is imported BY kernel).
+func cmeDayKey(t time.Time) string {
+	chicago, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		chicago = time.UTC
+	}
+	ct := t.In(chicago)
+	boundary := time.Date(ct.Year(), ct.Month(), ct.Day(), 17, 0, 0, 0, chicago)
+	if ct.Hour() < 17 {
+		boundary = boundary.AddDate(0, 0, -1)
+	}
+	return boundary.Format("2006-01-02")
+}
+
+// AgedFreshness (P1d) applies the explicit prior-session aging rule to a level's
+// persisted state. A CONSUMED level role-flips for the rest of its session-day
+// ("done"); once the CME session rolls, the scar heals one grade per period:
+// next 1–2 session-days → "C" (tested×2, still flipped), and from the third
+// session-day on → "B" (tested) so the level re-enters as a normal candidate.
+// Non-consumed rows are returned unchanged.
+func AgedFreshness(cur *LevelStateDB, now time.Time) string {
+	if cur == nil {
+		return ""
+	}
+	if !cur.Consumed && cur.Freshness != FreshnessDone {
+		return cur.Freshness
+	}
+	last := cur.UpdatedAt
+	if last.IsZero() {
+		last = cur.CreatedAt
+	}
+	if last.IsZero() {
+		return FreshnessDone
+	}
+	days := 0
+	for cmeDayKey(now.AddDate(0, 0, -days)) != cmeDayKey(last) {
+		days++
+		if days > 366 { // future / garbage timestamp → treat as fully healed
+			return FreshnessB
+		}
+	}
+	switch {
+	case days == 0:
+		return FreshnessDone // burned this session-day: still flipped
+	case days <= 2:
+		return FreshnessC // yesterday / day before: scar fading
+	default:
+		return FreshnessB // ≥3 session-days: healed to tested
+	}
 }
 
 // DecrementFreshness decays a level one grade (A→B→C→done) and returns the new
@@ -207,6 +276,14 @@ func (s *LevelStateStore) Get(levelKey string) (*LevelStateDB, error) {
 		return nil, err
 	}
 	return &l, nil
+}
+
+// Backdate rewrites a row's created/updated timestamps. TEST SUPPORT ONLY:
+// consumption is windowed on created_at (P1c), and tests need a row to look
+// like it was born when the synthetic bars began. Not for production use.
+func (s *LevelStateStore) Backdate(levelKey string, t time.Time) error {
+	return s.db.Model(&LevelStateDB{}).Where("level_key = ?", levelKey).
+		Updates(map[string]any{"created_at": t, "updated_at": t}).Error
 }
 
 // ListForSymbol returns all stored levels for a symbol (any state).
