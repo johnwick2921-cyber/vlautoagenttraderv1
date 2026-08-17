@@ -618,6 +618,32 @@ func resolveSessionPlanCfg(dp *store.DayPlanConfig, session string) (maxLevels i
 	return maxLevels, minGrade, timeframes
 }
 
+// structureSummaryLines fetches one bar request per CONFIGURED planner timeframe
+// and returns one honest prompt line per TF: "<tf>: structure read" when bars
+// came back, "<tf>: unavailable" otherwise. "D" maps to the provider's "1d"
+// interval; every other configured TF is requested verbatim. A nil fetch (no
+// bars provider) marks every TF unavailable — the planner is told the read-set
+// truth instead of a hardcoded claim that diverges from planner_timeframes (H9).
+func structureSummaryLines(fetch func(tf string, count int) []market.Kline, timeframes []string) []string {
+	lines := make([]string, 0, len(timeframes))
+	for _, tf := range timeframes {
+		req := tf
+		if tf == "D" {
+			req = "1d"
+		}
+		read := false
+		if fetch != nil {
+			read = len(fetch(req, 300)) > 0
+		}
+		if read {
+			lines = append(lines, tf+": structure read")
+		} else {
+			lines = append(lines, tf+": unavailable")
+		}
+	}
+	return lines
+}
+
 // assemblePlannerInput builds the input package from stored + cached data (the
 // 16:55 read builds entirely from stored data). Digests + owner note arrive with
 // P3.6; regime daily/1h fields degrade to n/a until those TFs are fetched. It
@@ -714,13 +740,18 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	dailies, _ := at.store.Digest().RecentDailies(at.id, symbol, 7)
 	digestChain := kernel.BuildDigestChain(sessionDigests, dailies)
 
-	// StructureSummary declares which timeframes the planner read (honors the
-	// configured planner_timeframes). Real per-TF structure lines land later; for
-	// now the header makes the read-set explicit + config-driven.
-	structure := make([]string, 0, len(timeframes))
-	for _, tf := range timeframes {
-		structure = append(structure, tf+": structure read")
+	// H9 — the structure summary must only claim what was actually fetched. Each
+	// CONFIGURED timeframe gets one honest line: "4h: structure read" when bars
+	// came back, "4h: unavailable" when the provider is down or the TF is dark.
+	// Before this the fetch was hardcoded 1d/1h/5m while the lines asserted the
+	// configured set — the planner was told it read structure it never saw.
+	var structureFetch func(tf string, count int) []market.Kline
+	if market.FuturesBarsProvider != nil {
+		structureFetch = func(tf string, count int) []market.Kline {
+			return market.FuturesBarsProvider(symbol, tf, count)
+		}
 	}
+	structure := structureSummaryLines(structureFetch, timeframes)
 
 	// W11 — INDICATOR MIRROR: render the executor's per-TF indicator state + the
 	// ai_config fingerprint (both frozen onto the plan row downstream).
