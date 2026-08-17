@@ -415,9 +415,45 @@ func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDea
 	return kernel.DescribePlanDeath(doc, bars, at.acceptanceRuleFor(row.Session), sinceMs, now.UnixMilli())
 }
 
+// noTradeLevelMap assembles the CURRENT detector/scorer output as plan levels
+// for a NO-TRADE doc (P7) — the same pipeline every other surface uses
+// (bars → AssembleScoredLevels at the resolved proximity + max_levels), with the
+// sticky owner levels prepended like the planner input. Returns nil when the
+// detector genuinely has nothing (no bars provider / no bars), which the doc
+// turns into the explicit "detector data unavailable" line.
+func (at *AutoTrader) noTradeLevelMap() []kernel.PlanLevel {
+	symbol := at.futuresSymbol()
+	if market.FuturesBarsProvider == nil {
+		return nil
+	}
+	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	if len(bars) == 0 {
+		return nil
+	}
+	now := time.Now()
+	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), "")
+	scored, _, _ := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
+
+	out := make([]kernel.PlanLevel, 0, len(scored)+4)
+	if owned, err := at.store.OwnerLevel().ListActive(symbol); err == nil {
+		for _, o := range owned {
+			label := "👤 " + o.Label
+			out = append(out, kernel.PlanLevel{Price: o.Price, Label: label, Grade: "A", Instruction: "monitor"})
+		}
+	}
+	for _, s := range scored {
+		out = append(out, kernel.PlanLevel{Price: s.Price, Label: s.Label, Grade: s.Grade, Instruction: "monitor"})
+	}
+	return out
+}
+
 // writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.
 func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
-	doc := kernel.NoTradePlanDoc(reason)
+	// P7 — levels are market FACTS; the plan is an opinion about them. A no-trade
+	// decision must never erase the map: the fail-closed doc carries the current
+	// detector/scorer output (owner sticky levels included) so the card keeps
+	// showing the map under the NO-TRADE banner. Unavailable detector data says so.
+	doc := kernel.NoTradePlanDocWithLevels(reason, at.noTradeLevelMap())
 	docJSON, _ := json.Marshal(doc)
 	_, err := at.store.Plan().AppendPlan(&store.PlanDB{
 		PlanID: store.MakePlanID(tradeDate, session), StrategyID: at.id,
@@ -557,7 +593,10 @@ func (at *AutoTrader) runPlannerReadCoreWithTrigger(session, tradeDate, triggerO
 		trigger = triggerOverride
 	}
 	if doc == nil {
-		doc = kernel.NoTradePlanDoc(fmt.Sprintf("read failed after retries: %v", lastErr))
+		// P7 — the fail-closed doc still carries the map: levels from the current
+		// detector/scorer output (same pipeline), scenarios empty, explicit reason.
+		doc = kernel.NoTradePlanDocWithLevels(
+			fmt.Sprintf("read failed after retries: %v", lastErr), at.noTradeLevelMap())
 		lifecycle = "no_trade"
 		trigger = "planner_fail_closed"
 		at.logErrorf("🚨 PLANNER FAIL-CLOSED %s %s: %v — writing a NO-TRADE plan (never stale, never uncalibrated).", tradeDate, session, lastErr)

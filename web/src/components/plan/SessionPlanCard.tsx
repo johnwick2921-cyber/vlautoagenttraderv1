@@ -153,8 +153,15 @@ export function SessionPlanCard({
   // ITEM 15 adds the same hazard on a second axis: every mutating endpoint writes
   // the LATEST version of the active session, so an edit made while reading v2
   // would silently land on v6. A historical view is strictly read-only.
+  // P7 (2026-08-17) adds the third axis: a NO-TRADE plan is the terminal marker,
+  // not a tradeable plan — its levels are the MAP (market facts), read-only under
+  // the ⛔ banner. Editing them would edit a plan the bot is not trading.
   const viewingLiveSession = plan?.is_active !== false
-  const doorEnabled = !!traderId && viewingLiveSession && !plan?.historical
+  const doorEnabled =
+    !!traderId &&
+    viewingLiveSession &&
+    !plan?.historical &&
+    plan?.lifecycle !== 'no_trade'
 
   // ITEM 2 (2026-08-17) — the 💬 must be reachable with NO PLAN.
   //

@@ -232,3 +232,18 @@ func NoTradePlanDoc(reason string) *PlanDoc {
 		DayType:        "no-trade",
 	}
 }
+
+// NoTradePlanDocWithLevels is the P7 form: a NO-TRADE plan that still CARRIES THE
+// MAP. Levels are market FACTS; the plan is an opinion about them — a no-trade
+// decision must never erase the map. The caller passes the current
+// detector/scorer output; when genuinely unavailable, the doc says so explicitly
+// (an empty levels section must never render without a reason).
+func NoTradePlanDocWithLevels(reason string, levels []PlanLevel) *PlanDoc {
+	doc := NoTradePlanDoc(reason)
+	if len(levels) == 0 {
+		doc.NoTrade = append(doc.NoTrade, "detector data unavailable — no level map could be assembled")
+		return doc
+	}
+	doc.Levels = levels
+	return doc
+}
