@@ -6,6 +6,7 @@ import (
 	"nofx/config"
 	"nofx/kernel"
 	"nofx/logger"
+	"nofx/mcp"
 	"nofx/store"
 	"nofx/telemetry"
 	"nofx/wallet"
@@ -41,6 +42,37 @@ func stampGuardrailSkip(record *store.DecisionRecord, reason string) {
 	record.RiskCheckPassed = false
 	record.RiskCheckError = reason
 	record.ErrorMessage = "guardrail_skip: " + reason
+}
+
+// decisionCallTimeout caps ONE AI decision call so a cycle can always finish
+// inside the primary bar window. Owner evidence over 14 live days: normal calls
+// avg ~51s (max 293.7s), parse failures avg ~110s (max 182.2s) — a 294s call
+// exceeds an entire 5-minute bar window, so the decision would arrive after the
+// NEXT bar closed. 180s leaves ≥120s of a 5m bar for context build + execution
+// + order round-trips; a call that would run longer gets cut and (on parse
+// failure) retried with the JSON-only re-ask instead of silently eating the bar.
+// Crypto cadence is untouched — this is applied to the futures decision client.
+const decisionCallTimeout = 180 * time.Second
+
+// staleBarDiscard reports whether a decision must be DISCARDED because the bar
+// it was computed on (decisionBarCloseMs) is no longer the latest closed primary
+// bar (latestClosedMs > decisionBarCloseMs) — the AI call spanned a bar close,
+// so acting on it would trade on data the market has already moved past.
+// haveBar=false (no bars / provider down) never discards: absent evidence, the
+// existing stale-data armor (B4) is the only judge. decisionBarCloseMs==0 means
+// the cycle never captured a bar (e.g. crypto) → never discards.
+func staleBarDiscard(decisionBarCloseMs, latestClosedMs int64, haveBar bool) bool {
+	return haveBar && decisionBarCloseMs > 0 && latestClosedMs > decisionBarCloseMs
+}
+
+// applyDecisionCallTimeout caps ONE AI decision call to fit inside the primary
+// bar window — futures (ninjatrader) only. Crypto and the planner client (a
+// separate client, auto_trader_planner.go) are untouched.
+func applyDecisionCallTimeout(mcpClient mcp.AIClient, exchange string) {
+	if mcpClient == nil || exchange != "ninjatrader" {
+		return
+	}
+	mcpClient.SetTimeout(decisionCallTimeout)
 }
 
 func (at *AutoTrader) runCycle() error {
@@ -248,6 +280,10 @@ func (at *AutoTrader) runCycle() error {
 	at.logInfof("🤖 Requesting AI analysis and decision... [Strategy Engine]")
 	// Plan 4 Task 25 — decision latency timer (start)
 	decisionStart := time.Now()
+	// P0-latency — capture the bar this decision will be computed on (the latest
+	// closed primary bar). If a NEWER bar closes while the AI call is in flight,
+	// the decision is discarded below instead of being acted on stale data.
+	decisionBarCloseMs, _ := at.latestClosedPrimaryBarMs()
 	// Prompt mode (Strategy Studio Phase 2): a per-strategy saved variant wins;
 	// when NONE is saved we keep the original venue rule EXACTLY (see
 	// resolvePromptVariant) so strategies with no saved variant are byte-
@@ -408,6 +444,23 @@ func (at *AutoTrader) runCycle() error {
 				"Decision unparseable — safe wait",
 				fmt.Sprintf("cycle %d: the model produced reasoning but its decision JSON could not be parsed after retries; no trade was taken.", at.callCount))
 		}
+		at.saveDecision(record)
+		return nil
+	}
+
+	// P0-latency — a decision whose bar has already closed is DISCARDED, never
+	// acted on. The AI call spanned a primary-bar close: the decision was computed
+	// on data the market has already moved past, so executing it would trade on a
+	// stale bar. The loss is visible (P1 feed + gate-block counter) and the next
+	// cycle re-decides on the fresh bar. Crypto never captures a bar (0) → no-op.
+	if latest, ok := at.latestClosedPrimaryBarMs(); staleBarDiscard(decisionBarCloseMs, latest, ok) {
+		at.logWarnf("⏰ decision bar (close %d) is no longer the latest (close %d) — the AI call spanned a bar close; DISCARDING the decision.", decisionBarCloseMs, latest)
+		stampGuardrailSkip(record, "stale_bar_discarded")
+		telemetry.IncGateBlock(at.id, "stale_bar_discarded")
+		at.emitAlert("P1", "decision-stale-bar",
+			fmt.Sprintf("stalebar:%s:%d", at.id, at.callCount),
+			"Decision discarded — bar closed during AI call",
+			fmt.Sprintf("cycle %d: the AI call spanned a primary-bar close, so the decision was computed on a stale bar and was NOT acted on; the next cycle re-decides.", at.callCount))
 		at.saveDecision(record)
 		return nil
 	}

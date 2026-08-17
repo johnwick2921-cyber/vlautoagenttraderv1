@@ -465,6 +465,14 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		mcpClient = mcp.New()
 	}
 
+	// P0-latency — the futures decision call must finish inside the primary bar
+	// window, or the decision arrives on a bar the market has already left (owner
+	// evidence: worst normal call 293.7s > a whole 5m bar). The planner read uses
+	// its OWN client (auto_trader_planner.go), so this never caps a planner read.
+	// Crypto cadence is untouched. The stale-bar discard in runCycle is the second
+	// half of the same guarantee.
+	applyDecisionCallTimeout(mcpClient, config.Exchange)
+
 	// Payment providers (claw402) ignore customURL
 	switch aiModel {
 	case "claw402":
