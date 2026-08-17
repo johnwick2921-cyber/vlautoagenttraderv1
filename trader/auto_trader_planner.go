@@ -197,15 +197,15 @@ func (at *AutoTrader) maybeRunSessionReads() {
 			for _, l := range detail.Levels {
 				at.logInfof("🗓️   ↳ %s", l)
 			}
-			if existing.Version-1 >= replanCap {
+			if !store.MayReplan(existing.Version, replanCap) {
 				at.writeNoTradePlan(s.Name, tradeDate,
 					fmt.Sprintf("re-plans exhausted (%d/%d) after %d deaths — last: %s",
-						existing.Version-1, replanCap, existing.Version, detail.Killer))
+						store.ReplansUsed(existing.Version), replanCap, existing.Version, detail.Killer))
 			} else {
 				at.warnIfReplanOrphansOverlays(existing)
 				// The guard the owner asked for: once deaths reach the cap, the alert
 				// NAMES the killing condition and the price rather than the count.
-				if existing.Version-1 >= replanCap-1 {
+				if !store.MayReplan(existing.Version+1, replanCap) {
 					at.emitAlert("P1", "plan-death-streak",
 						fmt.Sprintf("deaths:%s:%s:v%d", tradeDate, s.Name, existing.Version),
 						fmt.Sprintf("%s plan died %d× this session", s.Name, existing.Version),
@@ -746,10 +746,7 @@ func installActivePlanProvider(st *store.Store) {
 		// the moment a session overrode replan_cap: on 2026-08-16 the owner raised
 		// ASIA to 4 mid-session, so at v3 the card said "replans left 2" while the
 		// AI was being told 0.
-		replansLeft := storedReplanCap(st, row.StrategyID, sess.Name) - (row.Version - 1)
-		if replansLeft < 0 {
-			replansLeft = 0
-		}
+		replansLeft := store.ReplansLeftFor(row.Version, storedReplanCap(st, row.StrategyID, sess.Name))
 		return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
 	}
 }

@@ -103,6 +103,16 @@
   background: var(--vl-gold-dim);
   font-weight: 700;
 }
+.vl-version-chip[data-no-trade='1'] {
+  color: var(--vl-short);
+  border-color: rgba(224, 108, 108, 0.4);
+  letter-spacing: 0.04em;
+}
+.vl-version-chip[data-no-trade='1'][aria-current='true'] {
+  color: var(--vl-short);
+  background: rgba(224, 108, 108, 0.12);
+  border-color: rgba(224, 108, 108, 0.55);
+}
 .vl-version-chip[disabled] {
   cursor: default;
 }

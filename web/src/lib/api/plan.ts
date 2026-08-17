@@ -99,6 +99,8 @@ export interface PlanToday {
   is_active?: boolean
   /** W15.B — sessions THIS strategy runs, resolved by the same gate the bot uses. */
   runnable_sessions?: string[]
+  /** The RESOLVED re-plan cap (config, never a literal). */
+  replan_cap?: number
   /** ITEM 15 — true when ?version= served a superseded version, not the latest. */
   historical?: boolean
   /** ITEM 15 — the newest stored version, so the card can offer the way back. */

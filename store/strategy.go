@@ -965,6 +965,45 @@ func (c *DayPlanConfig) ReplanCapFor(session string) int {
 	return n
 }
 
+// ReplansUsed / MayReplan / ReplansLeft are the ONE definition of the re-plan
+// budget. Every consumer — the enforcer, the card and the executor prompt — must
+// go through these, so a literal budget can never disagree with the config again
+// (installActivePlanProvider once carried a hardcoded 2 and told the AI it had 0
+// re-plans left while the card said 2).
+//
+// SEMANTICS, settled 2026-08-17. The cap counts RE-PLANS, not versions and not
+// deaths. Version 1 is the session's first read and costs nothing; each
+// subsequent REAL plan version is one re-plan. So:
+//
+//	replan_cap = N  ⇒  at most N re-plans  ⇒  real versions v1…v(N+1)
+//	the (N+1)th death  ⇒  NO-TRADE for the session
+//
+// The NO-TRADE row is a TERMINAL MARKER, not a re-plan. It consumes a version
+// number because the plans table is append-only, which is why cap=4 legitimately
+// produces a row labelled "v6": v1…v5 are the five real plans (four re-plans) and
+// v6 is the marker. That is correct behaviour, and it is exactly what read as
+// "the cap didn't work" on 2026-08-16.
+
+// ReplansUsed is how many re-plans a version number represents.
+func ReplansUsed(version int) int {
+	if version < 1 {
+		return 0
+	}
+	return version - 1
+}
+
+// MayReplan reports whether another REAL plan version may be written after the
+// given version died. False ⇒ the session sits out with a NO-TRADE marker.
+func MayReplan(version, cap int) bool { return ReplansUsed(version) < cap }
+
+// ReplansLeftFor is what the card and the executor prompt must both display.
+func ReplansLeftFor(version, cap int) int {
+	if n := cap - ReplansUsed(version); n > 0 {
+		return n
+	}
+	return 0
+}
+
 // MaxTradesFor resolves the per-session entry cap. ok=false means NO cap is
 // configured for this session (the shipped behavior — the strategy-level daily
 // guardrail still applies). A 0 cap is meaningful: no entries this session.

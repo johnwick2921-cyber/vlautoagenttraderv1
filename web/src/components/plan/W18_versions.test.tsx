@@ -309,3 +309,100 @@ describe('SessionPlanCard — death history', () => {
     expect(screen.queryByTestId('death-history')).toBeNull()
   })
 })
+
+// ITEM 1 — THE NO-TRADE ROW IS A TERMINAL MARKER, NOT A PLAN VERSION.
+//
+// The owner set replan_cap = 4, saw a row labelled "v6", and read it as "the cap
+// didn't work". It did: cap N allows N re-plans, i.e. real versions v1..v(N+1),
+// and the (N+1)th death writes a NO-TRADE marker which consumes a version number
+// because the plans table is append-only. Showing that marker as a plain "v6" is
+// what made correct behaviour look broken.
+describe('SessionPlanCard — the NO-TRADE marker', () => {
+  const noTradePlan: PlanToday = {
+    ...historicalPlan(6),
+    lifecycle: 'no_trade',
+    replan_cap: 4,
+    replans_left: 0,
+    doc: {
+      ...historicalPlan(6).doc!,
+      reasoning:
+        'FAIL-CLOSED: re-plans exhausted (4/4) after 5 deaths — last: all 6 levels touched and accepted through',
+    },
+  }
+
+  it('renders the marker as NO-TRADE, never as a version number', () => {
+    render(
+      <SessionPlanCard
+        plan={noTradePlan}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    const marker = document.querySelectorAll('[data-no-trade="1"]')
+    expect(marker.length).toBe(2) // header + footer rows
+    marker.forEach((m) => expect(m.textContent).toContain('NO-TRADE'))
+    // No chip anywhere may still call it "v6".
+    document
+      .querySelectorAll('.vl-version-chip')
+      .forEach((c) => expect(c.textContent).not.toBe('v6'))
+  })
+
+  it('states the budget honestly: 4 of 4 spent, not 5', () => {
+    render(
+      <SessionPlanCard
+        plan={noTradePlan}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    const banner = screen.getByTestId('no-trade-banner').textContent!
+    expect(banner).toContain('re-read budget exhausted')
+    // The marker consumes a version, so version-1 would overcount by one.
+    expect(banner).toContain('4 of 4 re-plans')
+  })
+
+  it('keeps the planner reason visible under the new framing', () => {
+    render(
+      <SessionPlanCard
+        plan={noTradePlan}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    expect(screen.getByTestId('fail-closed-reason').textContent).toContain(
+      're-plans exhausted (4/4)'
+    )
+  })
+
+  it('shows no NO-TRADE framing on a normal active plan', () => {
+    render(
+      <SessionPlanCard
+        plan={{ ...historicalPlan(6), lifecycle: 'active' }}
+        traderId="t1"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+        versions={asiaVersions.map((v) => ({ ...v, lifecycle: 'active' }))}
+        latestVersion={6}
+        onSelectVersion={vi.fn()}
+      />
+    )
+    expect(screen.queryByTestId('no-trade-banner')).toBeNull()
+    expect(document.querySelectorAll('[data-no-trade="1"]').length).toBe(0)
+  })
+})

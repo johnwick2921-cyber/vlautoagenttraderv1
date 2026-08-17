@@ -162,6 +162,17 @@ export const planStrings = {
     zh: '本时段剩余重规划',
     id: 'Sisa rencana ulang sesi ini',
   },
+  noTradeChip: { en: 'NO-TRADE', zh: '禁止交易', id: 'TANPA TRADE' },
+  noTradeBanner: {
+    en: 'NO-TRADE — re-read budget exhausted',
+    zh: '禁止交易 — 重读次数已用尽',
+    id: 'TANPA TRADE — jatah baca ulang habis',
+  },
+  noTradeBannerHint: {
+    en: 'This is not a plan. It is the marker written after {used} of {cap} re-plans were spent and the last one died — the session sits out.',
+    zh: '这不是计划，而是在用尽 {cap} 次重读中的 {used} 次且最后一版失效后写入的标记 — 本时段观望。',
+    id: 'Ini bukan rencana, melainkan penanda setelah {used} dari {cap} baca ulang terpakai dan yang terakhir mati — sesi ini libur.',
+  },
   deathHistory: {
     en: 'This session already lost {n} plan(s)',
     zh: '本时段已有 {n} 个计划失效',

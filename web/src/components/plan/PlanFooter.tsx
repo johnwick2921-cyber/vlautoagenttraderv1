@@ -14,6 +14,8 @@ export function PlanFooter({
   versionCount,
   onSelectVersion,
   titleForVersion,
+  noTradeVersion,
+  noTradeLabel,
 }: {
   version: number
   dayType?: string
@@ -28,6 +30,8 @@ export function PlanFooter({
   versionCount?: number
   onSelectVersion?: (version: number) => void
   titleForVersion?: (version: number) => string | undefined
+  noTradeVersion?: number
+  noTradeLabel?: string
 }) {
   return (
     <div
@@ -45,6 +49,8 @@ export function PlanFooter({
           count={versionCount}
           onSelect={onSelectVersion}
           titleFor={titleForVersion}
+          noTradeVersion={noTradeVersion}
+          noTradeLabel={noTradeLabel}
         />
         {dayType && (
           <span>

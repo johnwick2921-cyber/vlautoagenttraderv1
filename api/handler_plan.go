@@ -60,6 +60,13 @@ func maxI(a, b int) int {
 // An unknown trader falls back to the shipped defaults, which is what the card
 // showed before, so the no-config path is unchanged.
 func (s *Server) planRules(traderID, session string, version int) (rule, mode string, replansLeft int) {
+	rule, mode, replansLeft, _ = s.planRulesWithCap(traderID, session, version)
+	return rule, mode, replansLeft
+}
+
+// planRulesWithCap also returns the RESOLVED re-plan cap, so the card can say
+// "4 of 4 re-plans spent" instead of re-deriving a number it does not have.
+func (s *Server) planRulesWithCap(traderID, session string, version int) (rule, mode string, replansLeft, replanCap int) {
 	var dp *store.DayPlanConfig
 	if at, err := s.traderManager.GetTrader(traderID); err == nil && at != nil {
 		if cfg := at.GetStrategyConfig(); cfg != nil {
@@ -68,8 +75,9 @@ func (s *Server) planRules(traderID, session string, version int) (rule, mode st
 	}
 	rule = dp.AcceptanceRuleFor(session)
 	mode = dp.PlanModeFor(session)
-	replansLeft = maxI(0, dp.ReplanCapFor(session)-(version-1))
-	return rule, mode, replansLeft
+	replanCap = dp.ReplanCapFor(session)
+	replansLeft = store.ReplansLeftFor(version, replanCap)
+	return rule, mode, replansLeft, replanCap
 }
 
 // resolveRequestedSession applies an OPTIONAL ?session=NY|ASIA|LONDON to the
@@ -210,7 +218,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	}
 	facts, price := planLevelFacts(symbol, doc, now, rule, owners)
 	// The budget depends on the plan's version, known only now.
-	_, _, replansLeft := s.planRules(traderID, sessName, row.Version)
+	_, _, replansLeft, replanCap := s.planRulesWithCap(traderID, sessName, row.Version)
 	warming := ""
 	if n, _ := s.store.SessionProfile().Count(symbol); n < 10 {
 		warming = fmt.Sprintf("%d/10", n)
@@ -239,6 +247,10 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"level_facts":       facts,
 		"price":             price,
 		"replans_left":      replansLeft,
+		// The RESOLVED cap (config, never a literal) so the card can state the
+		// budget instead of inferring it from a version number — a NO-TRADE marker
+		// consumes a version, so version-1 overcounts by exactly one.
+		"replan_cap": replanCap,
 		// The acceptance rule the executor evaluates these levels with — the card
 		// used to imply 2x5m unconditionally.
 		"acceptance_rule": rule,

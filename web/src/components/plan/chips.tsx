@@ -172,6 +172,8 @@ export function VersionChips({
   count,
   onSelect,
   titleFor,
+  noTradeVersion,
+  noTradeLabel,
 }: {
   /** the version currently being VIEWED */
   version: number
@@ -183,26 +185,43 @@ export function VersionChips({
   onSelect?: (version: number) => void
   /** tooltip per version — the death reason, when one is known */
   titleFor?: (version: number) => string | undefined
+  /**
+   * The version that is the NO-TRADE TERMINAL MARKER, not a real plan.
+   * replan_cap=4 legitimately ends at a row called "v6" (v1..v5 real, v6 the
+   * marker), and showing that as a plain "v6" is what read as "the cap didn't
+   * work". It renders as ⛔ NO-TRADE instead of a version number.
+   */
+  noTradeVersion?: number
+  /** label for the NO-TRADE chip, already localised by the caller */
+  noTradeLabel?: string
 }) {
   const newest = latest ?? version
   const total = count ?? newest
   if (total <= 0) return null
   return (
     <span className="vl-version-row" role="group" aria-label="plan versions">
-      {Array.from({ length: total }, (_, i) => i + 1).map((v) => (
-        <button
-          key={v}
-          type="button"
-          className="vl-version-chip"
-          aria-current={v === version}
-          aria-label={`plan version ${v}${v === newest ? ' (current)' : ''}`}
-          title={titleFor?.(v)}
-          disabled={!onSelect}
-          onClick={onSelect ? () => onSelect(v) : undefined}
-        >
-          v{v}
-        </button>
-      ))}
+      {Array.from({ length: total }, (_, i) => i + 1).map((v) => {
+        const isNoTrade = noTradeVersion === v
+        return (
+          <button
+            key={v}
+            type="button"
+            className="vl-version-chip"
+            data-no-trade={isNoTrade ? '1' : undefined}
+            aria-current={v === version}
+            aria-label={
+              isNoTrade
+                ? `no-trade marker (version ${v})`
+                : `plan version ${v}${v === newest ? ' (current)' : ''}`
+            }
+            title={titleFor?.(v)}
+            disabled={!onSelect}
+            onClick={onSelect ? () => onSelect(v) : undefined}
+          >
+            {isNoTrade ? `⛔ ${noTradeLabel ?? 'NO-TRADE'}` : `v${v}`}
+          </button>
+        )
+      })}
     </span>
   )
 }

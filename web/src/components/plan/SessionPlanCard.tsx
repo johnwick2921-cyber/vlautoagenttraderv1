@@ -232,6 +232,18 @@ export function SessionPlanCard({
     versions.length || latestVersion || plan.latest_version || plan.version || 1
   // Every version that has been superseded — i.e. the deaths this session.
   const deadVersions = versions.filter((v) => !v.is_latest)
+  // The NO-TRADE TERMINAL MARKER, if the session ended that way. It is NOT a
+  // re-plan: cap=4 legitimately produces v1..v5 real + v6 marker, and rendering
+  // that marker as a plain "v6" is what read as "the cap didn't work".
+  const noTradeVersion =
+    versions.find((v) => v.lifecycle === 'no_trade')?.version ??
+    (plan.lifecycle === 'no_trade' ? plan.version : undefined)
+  // The marker consumes a version, so version-1 overcounts by exactly one: with
+  // cap=4 the marker is v6 and the re-plans actually spent are 4 (v1..v5 real).
+  const replanCap = plan.replan_cap ?? 0
+  const replansSpent = noTradeVersion
+    ? Math.max(0, noTradeVersion - 2)
+    : Math.max(0, (plan.version ?? 1) - 1)
   const versionTitle = (v: number) => {
     const rec = versions.find((x) => x.version === v)
     if (!rec) return undefined
@@ -267,6 +279,8 @@ export function SessionPlanCard({
             count={versionCount}
             onSelect={onSelectVersion}
             titleFor={versionTitle}
+            noTradeVersion={noTradeVersion}
+            noTradeLabel={tp('noTradeChip', language)}
           />
           <LifecycleChip
             lifecycle={plan.lifecycle ?? 'active'}
@@ -353,7 +367,41 @@ export function SessionPlanCard({
           {tp('advisoryMode', language)}
         </div>
       )}
-      {failClosed && (
+      {plan.lifecycle === 'no_trade' && (
+        <div
+          data-testid="no-trade-banner"
+          className="flex flex-col gap-1 px-2.5 py-2"
+          style={{
+            background: 'rgba(224,108,108,0.08)',
+            border: '1px solid rgba(224,108,108,0.4)',
+            borderRadius: 'var(--vl-radius-inner)',
+            fontFamily: 'var(--vl-font-ui)',
+          }}
+        >
+          <span
+            className="text-[11px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--vl-short)' }}
+          >
+            ⛔ {tp('noTradeBanner', language)}
+          </span>
+          <span className="text-[11px]" style={{ color: 'var(--vl-muted)' }}>
+            {tp('noTradeBannerHint', language, {
+              used: String(replansSpent),
+              cap: String(replanCap || replansSpent),
+            })}
+          </span>
+          {/* The planner's own reason must survive the reframing — it is the
+              only place the killing condition is written down. */}
+          <span
+            data-testid="fail-closed-reason"
+            className="text-[11px]"
+            style={{ color: 'var(--vl-faint)' }}
+          >
+            {doc.reasoning?.trim() || tp('errorHint', language)}
+          </span>
+        </div>
+      )}
+      {failClosed && plan.lifecycle !== 'no_trade' && (
         <div
           className="text-[11px] px-2.5 py-1.5"
           style={{
@@ -625,6 +673,8 @@ export function SessionPlanCard({
         versionCount={versionCount}
         onSelectVersion={onSelectVersion}
         titleForVersion={versionTitle}
+        noTradeVersion={noTradeVersion}
+        noTradeLabel={tp('noTradeChip', language)}
       />
 
       {/* P5 owner door — portaled sheets */}
