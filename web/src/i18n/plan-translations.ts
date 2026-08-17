@@ -198,6 +198,32 @@ export const planStrings = {
     zh: '已请求重读',
     id: 'Baca ulang diminta',
   },
+  // P6 — the owner reset (distinct from re-read: abandons the chain + restores
+  // the full budget).
+  resetTitle: { en: 'Reset planner', zh: '重置规划器', id: 'Reset perencana' },
+  resetConfirm: {
+    en: 'Abandon this plan chain and start fresh?',
+    zh: '放弃当前计划链并重新开始？',
+    id: 'Buang rantai rencana ini dan mulai ulang?',
+  },
+  resetConfirmHint: {
+    en: 'The current chain is marked ABANDONED (history and death reasons are preserved). The full re-plan budget is restored and a fresh plan is read now. Open positions and their brackets are never touched.',
+    zh: '当前计划链将被标记为已放弃（历史与死亡原因保留）。重读额度完全恢复并立即重新读取计划。持仓及其止盈止损不受影响。',
+    id: 'Rantai saat ini ditandai DIBUANG (riwayat dan alasan kematian dipertahankan). Jatah baca ulang dipulihkan penuh dan rencana baru dibaca sekarang. Posisi terbuka dan bracketnya tidak pernah disentuh.',
+  },
+  resetGo: { en: 'Yes, reset', zh: '确认重置', id: 'Ya, reset' },
+  resetRunning: { en: 'Resetting…', zh: '正在重置…', id: 'Mereset…' },
+  resetDone: { en: 'Reset requested', zh: '已请求重置', id: 'Reset diminta' },
+  resetCaption: {
+    en: 'Abandons the chain · restores the full budget · new plan',
+    zh: '放弃计划链 · 恢复全部额度 · 新计划',
+    id: 'Buang rantai · pulihkan jatah penuh · rencana baru',
+  },
+  rereadCaption: {
+    en: 'One more plan on the same chain · spends budget',
+    zh: '同一计划链再读一次 · 消耗额度',
+    id: 'Satu rencana lagi di rantai yang sama · pakai jatah',
+  },
   askAnyway: { en: 'Ask the planner', zh: '询问规划师', id: 'Tanya perencana' },
   askContextHistorical: {
     en: 'HISTORICAL CONTEXT — answering about the last stored plan, not a live one',

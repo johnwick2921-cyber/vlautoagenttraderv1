@@ -5,12 +5,14 @@
 
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
+import { tp } from '../../i18n/plan-translations'
 import { usePlanToday, usePlanVersions } from './usePlan'
 import { SessionTimelineStrip } from './SessionTimelineStrip'
 import { SessionTabs, type SessionTab, type TabState } from './SessionTabs'
 import { HandoverBanner } from './HandoverBanner'
 import { SessionPlanCard } from './SessionPlanCard'
 import { RereadButton } from './RereadButton'
+import { ResetButton } from './ResetButton'
 import { AlertCenter } from './AlertCenter'
 import { GateBlocksPanel } from './GateBlocksPanel'
 import { SESSION_BANDS, type SessionName } from './sessionConfig'
@@ -99,13 +101,44 @@ export function PlanCard({
       )}
       {/* W16/R3 — refusals, where the owner already looks for plan state. */}
       <GateBlocksPanel traderId={traderId} language={language} />
-      {/* ITEM 3 — the owner's manual re-read, next to the plan it acts on. */}
-      <div className="flex justify-end">
-        <RereadButton
-          traderId={traderId}
-          language={language}
-          onDone={() => mutate()}
-        />
+      {/* ITEM 3 — the owner's manual re-read, next to the plan it acts on.
+          P6 — the owner RESET sits beside it: both visible, one explanatory
+          line each, so the two escape hatches can never be mistaken for one
+          another (re-read = one more plan on the same chain, spends budget ·
+          reset = abandons the chain, restores the full budget). */}
+      <div className="flex items-start justify-end gap-4">
+        <div className="flex flex-col items-end gap-1">
+          <RereadButton
+            traderId={traderId}
+            language={language}
+            onDone={() => mutate()}
+          />
+          <span
+            className="text-[9px]"
+            style={{
+              color: 'var(--vl-faint)',
+              fontFamily: 'var(--vl-font-ui)',
+            }}
+          >
+            {tp('rereadCaption', language)}
+          </span>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <ResetButton
+            traderId={traderId}
+            language={language}
+            onDone={() => mutate()}
+          />
+          <span
+            className="text-[9px]"
+            style={{
+              color: 'var(--vl-faint)',
+              fontFamily: 'var(--vl-font-ui)',
+            }}
+          >
+            {tp('resetCaption', language)}
+          </span>
+        </div>
       </div>
       <SessionPlanCard
         plan={plan}

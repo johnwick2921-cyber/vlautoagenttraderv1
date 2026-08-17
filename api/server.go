@@ -475,6 +475,16 @@ Fetch a specific version's full doc with GET /plan/today?version=<n>.`,
 			s.routeWithSchema(protected, "POST", "/plan/reread", "Force a fresh planner read for the current session",
 				`Body: {"trader_id":"<id>"}. SPENDS one re-plan from the session budget and writes a new version with trigger_reason "owner_reread". 409 with {error, gate} when refused (budget spent, session closed/disabled, market closed, already NO-TRADE).`,
 				s.handlePlanReread)
+			// P6 — the owner reset: ABANDON the chain (history preserved), re-arm
+			// the whole re-plan budget, clear NO-TRADE, fresh plan via the normal
+			// path with trigger_reason "owner reset". Never touches positions,
+			// brackets, guardrail counters or the daily cage.
+			s.routeWithSchema(protected, "GET", "/plan/reset", "May the owner reset this session's plan chain now?",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {allowed, reason, session, version, replan_cap}.`,
+				s.handlePlanResetStatus)
+			s.routeWithSchema(protected, "POST", "/plan/reset", "Reset the session's plan chain (abandon + fresh budget + fresh plan)",
+				`Body: {"trader_id":"<id>"}. Marks the current chain ABANDONED (append-only history preserved), restores the budget to replan_cap, clears NO-TRADE state, and runs a fresh read with trigger_reason "owner reset". 409 with {error, gate} when refused. Owner sticky levels carry by price identity.`,
+				s.handlePlanReset)
 			s.routeWithSchema(protected, "GET", "/plan/alerts", "In-app alert feed (P0/P1/P2) + unacked count",
 				`Query: ?trader_id=<EXACT trader_id>. Returns: {alerts:[{id,level,kind,title,body,acked,created_at}], unacked:<int>}`,
 				s.handlePlanAlerts)

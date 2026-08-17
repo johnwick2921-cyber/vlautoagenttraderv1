@@ -186,6 +186,15 @@ export interface RereadGate {
   version: number
 }
 
+// P6 — the owner reset: abandon the chain, restore the budget, fresh plan.
+export interface ResetGate {
+  allowed: boolean
+  reason?: string
+  session?: string
+  version: number
+  replan_cap: number
+}
+
 const enc = encodeURIComponent
 
 export const planApi = {
@@ -290,6 +299,31 @@ export const planApi = {
     )
     if (res.success && res.data) return { ok: true, gate: res.data.gate }
     return { ok: false, error: res.message || 'reread refused' }
+  },
+
+  // P6 — may the owner reset this session's plan chain right now?
+  async getResetGate(
+    traderId: string,
+    silent = true
+  ): Promise<ResetGate | null> {
+    const res = await httpClient.request<ResetGate>(
+      `${API_BASE}/plan/reset?trader_id=${enc(traderId)}`,
+      { silent }
+    )
+    return res.success && res.data ? res.data : null
+  },
+
+  // ABANDONS the current chain, restores the full re-plan budget, and runs a
+  // fresh read (trigger_reason "owner reset"). The server re-checks eligibility.
+  async forceReset(
+    traderId: string
+  ): Promise<{ ok: boolean; error?: string; gate?: ResetGate }> {
+    const res = await httpClient.request<{ ok: boolean; gate: ResetGate }>(
+      `${API_BASE}/plan/reset`,
+      { method: 'POST', data: { trader_id: traderId }, silent: true }
+    )
+    if (res.success && res.data) return { ok: true, gate: res.data.gate }
+    return { ok: false, error: res.message || 'reset refused' }
   },
 
   async getPlanAlerts(

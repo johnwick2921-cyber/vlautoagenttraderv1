@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -986,22 +987,78 @@ func (c *DayPlanConfig) ReplanCapFor(session string) int {
 
 // ReplansUsed is how many re-plans a version number represents.
 func ReplansUsed(version int) int {
-	if version < 1 {
-		return 0
-	}
-	return version - 1
+	return ReplansUsedFrom(version, 1)
 }
 
 // MayReplan reports whether another REAL plan version may be written after the
 // given version died. False ⇒ the session sits out with a NO-TRADE marker.
-func MayReplan(version, cap int) bool { return ReplansUsed(version) < cap }
+func MayReplan(version, cap int) bool { return MayReplanFrom(version, 1, cap) }
 
 // ReplansLeftFor is what the card and the executor prompt must both display.
 func ReplansLeftFor(version, cap int) int {
-	if n := cap - ReplansUsed(version); n > 0 {
+	return ReplansLeftFrom(version, 1, cap)
+}
+
+// ── OWNER RESET (2026-08-17) — a reset re-opens the budget for ONE chain ──────
+//
+// The owner reset marks the current chain ABANDONED (the rows stay — plans are
+// append-only, history and death reasons preserved) and re-arms the session's
+// re-plan budget from a new baseline: the version at which the reset happened.
+// Everything above (ReplansUsed/MayReplan/ReplansLeftFor) is baseline 1 — the
+// original chain — and these From-variants are the SAME math from a later
+// baseline, so every consumer reads one consistent budget.
+
+// ReplansUsedFrom counts re-plans relative to a baseline version.
+func ReplansUsedFrom(version, baseline int) int {
+	if baseline < 1 {
+		baseline = 1
+	}
+	if version < baseline {
+		return 0
+	}
+	return version - baseline
+}
+
+// MayReplanFrom is MayReplan measured from a baseline version (the reset seam).
+func MayReplanFrom(version, baseline, cap int) bool { return ReplansUsedFrom(version, baseline) < cap }
+
+// ReplansLeftFrom is ReplansLeftFor measured from a baseline version.
+func ReplansLeftFrom(version, baseline, cap int) int {
+	if n := cap - ReplansUsedFrom(version, baseline); n > 0 {
 		return n
 	}
 	return 0
+}
+
+// ResetBaselineKey is the system_config key holding the reset seam version for
+// one (trade_date, session).
+func ResetBaselineKey(tradeDate, session string) string {
+	return "dayplan_reset:" + tradeDate + ":" + session
+}
+
+// SetResetBaseline records the version the reset chain starts measuring from.
+func SetResetBaseline(st *Store, tradeDate, session string, version int) error {
+	if st == nil {
+		return fmt.Errorf("store required")
+	}
+	if version < 1 {
+		return fmt.Errorf("baseline version must be >= 1, got %d", version)
+	}
+	return st.SetSystemConfig(ResetBaselineKey(tradeDate, session), strconv.Itoa(version))
+}
+
+// GetResetBaseline returns the reset baseline for (trade_date, session); 1 when
+// none was recorded (the original chain). A malformed value falls back to 1 —
+// a bad marker can never inflate or destroy budget.
+func GetResetBaseline(st *Store, tradeDate, session string) int {
+	if st == nil {
+		return 1
+	}
+	raw, _ := st.GetSystemConfig(ResetBaselineKey(tradeDate, session))
+	if n, err := strconv.Atoi(strings.TrimSpace(raw)); err == nil && n >= 1 {
+		return n
+	}
+	return 1
 }
 
 // MaxTradesFor resolves the per-session entry cap. ok=false means NO cap is

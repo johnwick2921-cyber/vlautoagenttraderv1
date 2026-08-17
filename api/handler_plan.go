@@ -60,14 +60,16 @@ func maxI(a, b int) int {
 //
 // An unknown trader falls back to the shipped defaults, which is what the card
 // showed before, so the no-config path is unchanged.
-func (s *Server) planRules(traderID, session string, version int) (rule, mode string, replansLeft int) {
-	rule, mode, replansLeft, _ = s.planRulesWithCap(traderID, session, version)
+func (s *Server) planRules(traderID, session, tradeDate string, version int) (rule, mode string, replansLeft int) {
+	rule, mode, replansLeft, _ = s.planRulesWithCap(traderID, session, tradeDate, version)
 	return rule, mode, replansLeft
 }
 
 // planRulesWithCap also returns the RESOLVED re-plan cap, so the card can say
 // "4 of 4 re-plans spent" instead of re-deriving a number it does not have.
-func (s *Server) planRulesWithCap(traderID, session string, version int) (rule, mode string, replansLeft, replanCap int) {
+// The budget is measured from the chain baseline (P6 owner reset) — the same
+// seam the death path and the executor provider read.
+func (s *Server) planRulesWithCap(traderID, session, tradeDate string, version int) (rule, mode string, replansLeft, replanCap int) {
 	var dp *store.DayPlanConfig
 	if at, err := s.traderManager.GetTrader(traderID); err == nil && at != nil {
 		if cfg := at.GetStrategyConfig(); cfg != nil {
@@ -77,7 +79,7 @@ func (s *Server) planRulesWithCap(traderID, session string, version int) (rule, 
 	rule = dp.AcceptanceRuleFor(session)
 	mode = dp.PlanModeFor(session)
 	replanCap = dp.ReplanCapFor(session)
-	replansLeft = store.ReplansLeftFor(version, replanCap)
+	replansLeft = store.ReplansLeftFrom(version, store.GetResetBaseline(s.store, tradeDate, session), replanCap)
 	return rule, mode, replansLeft, replanCap
 }
 
@@ -142,7 +144,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	// W15.B — the card narrates THE REAL RULEBOOK (acceptance rule / plan mode /
 	// re-plan budget), resolved per trader+session, instead of the hardcoded
 	// "2x5m" + "advisory" + budget-of-2 it used to show.
-	rule, mode, _ := s.planRules(traderID, sessName, 1)
+	rule, mode, _ := s.planRules(traderID, sessName, tradeDate, 1)
 	base := gin.H{
 		"found": false, "trade_date": tradeDate, "session": sessName, "night": night,
 		"mode": mode, "acceptance_rule": rule,
@@ -219,7 +221,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	}
 	facts, price := planLevelFacts(symbol, doc, now, rule, owners)
 	// The budget depends on the plan's version, known only now.
-	_, _, replansLeft, replanCap := s.planRulesWithCap(traderID, sessName, row.Version)
+	_, _, replansLeft, replanCap := s.planRulesWithCap(traderID, sessName, tradeDate, row.Version)
 	warming := ""
 	if n, _ := s.store.SessionProfile().Count(symbol); n < 10 {
 		warming = fmt.Sprintf("%d/10", n)
@@ -816,6 +818,54 @@ func (s *Server) handlePlanReread(c *gin.Context) {
 	c.JSON(200, gin.H{"ok": true, "gate": gate})
 }
 
+// handlePlanResetStatus GET /api/plan/reset?trader_id=xxx — may the owner reset
+// this session's plan chain right now, and what does the reset do? Read-only.
+func (s *Server) handlePlanResetStatus(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil || at == nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	c.JSON(200, at.CanForceReset(time.Now()))
+}
+
+// handlePlanReset POST /api/plan/reset — P6, the owner reset. Abandons the
+// current chain (history + death reasons preserved), re-arms the re-plan budget,
+// clears NO-TRADE, and runs a fresh planner read (trigger_reason "owner reset")
+// through the normal fail-closed path. Plan rows + one marker only — positions,
+// brackets, guardrail counters and the daily cage are never touched.
+func (s *Server) handlePlanReset(c *gin.Context) {
+	var body struct {
+		TraderID string `json:"trader_id"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		traderID = strings.TrimSpace(body.TraderID)
+	}
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil || at == nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	// The trader re-checks eligibility itself; the FE's earlier check may be stale.
+	gate, rErr := at.ForceReset(time.Now())
+	if rErr != nil {
+		c.JSON(409, gin.H{"error": gate.Reason, "gate": gate})
+		return
+	}
+	c.JSON(200, gin.H{"ok": true, "gate": gate})
+}
+
 // uncarriedEdits reads the review list a re-plan parked for this version.
 // Absent (the normal case) → nil, and the card shows nothing.
 func (s *Server) uncarriedEdits(planID string, version int) []kernel.UncarriedEdit {
@@ -935,7 +985,7 @@ func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askCo
 			if ctx.row != nil {
 				version = ctx.row.Version
 			}
-			rule, _, left := s.planRules(traderID, ctx.session, version)
+			rule, _, left := s.planRules(traderID, ctx.session, ctx.tradeDate, version)
 			ctx.liveStatus = kernel.RenderPlanStatus(symbol, ctx.doc, bars, price, dATR, rule, left, now.UnixMilli())
 		}
 	}
@@ -1681,7 +1731,7 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 	if market.FuturesBarsProvider != nil {
 		if bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount); len(bars) > 0 {
 			price, dATR := marketRef(symbol, now)
-			rule, _, left := s.planRules(traderID, sess.Name, row.Version) // W15.B
+			rule, _, left := s.planRules(traderID, sess.Name, row.TradeDate, row.Version) // W15.B
 			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, rule, left, now.UnixMilli())
 		}
 	}

@@ -189,6 +189,10 @@ func (at *AutoTrader) maybeRunSessionReads() {
 		// P3.6 — RE-PLAN ON DEATH (cap replan_cap/session → NO-TRADE).
 		if detail, dead := at.describeActivePlanDeath(existing); dead {
 			replanCap := at.replanCapFor(s.Name) // W9 — per-session override wins
+			// P6 — the budget is measured from the CURRENT chain baseline (an
+			// owner reset re-arms it; the default baseline is 1 = the original
+			// chain). Every consumer reads the same seam.
+			baseline := store.GetResetBaseline(at.store, tradeDate, s.Name)
 			// A death must never again be an unexplained line. On 2026-08-16 six
 			// plans died in 25 minutes and the only record was five identical
 			// "DIED" lines with no condition and no price.
@@ -197,15 +201,15 @@ func (at *AutoTrader) maybeRunSessionReads() {
 			for _, l := range detail.Levels {
 				at.logInfof("🗓️   ↳ %s", l)
 			}
-			if !store.MayReplan(existing.Version, replanCap) {
+			if !store.MayReplanFrom(existing.Version, baseline, replanCap) {
 				at.writeNoTradePlan(s.Name, tradeDate,
 					fmt.Sprintf("re-plans exhausted (%d/%d) after %d deaths — last: %s",
-						store.ReplansUsed(existing.Version), replanCap, existing.Version, detail.Killer))
+						store.ReplansUsedFrom(existing.Version, baseline), replanCap, existing.Version-baseline, detail.Killer))
 			} else {
 				at.warnIfReplanOrphansOverlays(existing)
 				// The guard the owner asked for: once deaths reach the cap, the alert
 				// NAMES the killing condition and the price rather than the count.
-				if !store.MayReplan(existing.Version+1, replanCap) {
+				if !store.MayReplanFrom(existing.Version+1, baseline, replanCap) {
 					at.emitAlert("P1", "plan-death-streak",
 						fmt.Sprintf("deaths:%s:%s:v%d", tradeDate, s.Name, existing.Version),
 						fmt.Sprintf("%s plan died %d× this session", s.Name, existing.Version),
@@ -958,8 +962,11 @@ func installActivePlanProvider(at *AutoTrader, st *store.Store) {
 		// meant the executor prompt and the dashboard narrated different rulebooks
 		// the moment a session overrode replan_cap: on 2026-08-16 the owner raised
 		// ASIA to 4 mid-session, so at v3 the card said "replans left 2" while the
-		// AI was being told 0.
-		replansLeft := store.ReplansLeftFor(row.Version, storedReplanCap(st, row.StrategyID, sess.Name))
+		// AI was being told 0. P6 — the budget is measured from the chain baseline
+		// (an owner reset re-arms it), same seam the death path reads.
+		replansLeft := store.ReplansLeftFrom(row.Version,
+			store.GetResetBaseline(st, row.TradeDate, sess.Name),
+			storedReplanCap(st, row.StrategyID, sess.Name))
 		return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
 	}
 }

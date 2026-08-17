@@ -67,15 +67,15 @@ func (at *AutoTrader) CanForceReread(now time.Time) RereadRefusal {
 		Session:     sess.Name,
 		Version:     row.Version,
 		ReplanCap:   cap,
-		ReplansLeft: store.ReplansLeftFor(row.Version, cap),
+		ReplansLeft: store.ReplansLeftFrom(row.Version, store.GetResetBaseline(at.store, tradeDate, sess.Name), cap),
 	}
 	if row.Lifecycle == "no_trade" {
-		out.Reason = "this session has already been closed out with a NO-TRADE plan"
+		out.Reason = "this session has already been closed out with a NO-TRADE plan (the owner reset is the escape hatch)"
 		return out
 	}
-	if !store.MayReplan(row.Version, cap) {
+	if !store.MayReplanFrom(row.Version, store.GetResetBaseline(at.store, tradeDate, sess.Name), cap) {
 		out.Reason = fmt.Sprintf("the re-read budget for %s is spent (%d of %d used)",
-			sess.Name, store.ReplansUsed(row.Version), cap)
+			sess.Name, store.ReplansUsedFrom(row.Version, store.GetResetBaseline(at.store, tradeDate, sess.Name)), cap)
 		return out
 	}
 	out.Allowed = true
