@@ -357,7 +357,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			}
 			// H7 — the registry is the admin registry the DECIDING trader
 			// resolves (per-trader provider; never another trader's).
-			klBlock = BuildKeyLevelsBlock(snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK, extra...)
+			klBlock = BuildKeyLevelsBlock(ctx.TraderID, snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK, extra...)
 		}
 		engine.SetKeyLevelsContext(klBlock)
 		if klBlock == "" {
@@ -385,8 +385,8 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			block := RenderPlanBlock(plan.Doc, plan.Session)
 			status := ""
 			if len(snapshotBars) > 0 {
-				_, price, dATR := AssembleScoredLevels(snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK)
-				status = RenderPlanStatus(activeSymbol, plan.Doc, snapshotBars, price, dATR, rule, plan.ReplansLeft, snapshotNow.UnixMilli(), plan.BirthMs)
+				_, price, dATR := AssembleScoredLevels(ctx.TraderID, snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK)
+				status = RenderPlanStatus(ctx.TraderID, activeSymbol, plan.Doc, snapshotBars, price, dATR, rule, plan.ReplansLeft, snapshotNow.UnixMilli(), plan.BirthMs)
 			}
 			engine.SetPlanContext(block, status)
 		}

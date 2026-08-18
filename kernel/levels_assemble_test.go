@@ -18,7 +18,7 @@ func TestBuildKeyLevelsBlock(t *testing.T) {
 		barAt(loc, 2026, 8, 14, 4, 0, 15550, 15590, 15480, 15500),
 		barAt(loc, 2026, 8, 14, 9, 0, 15590, 15650, 15550, 15600),
 	}
-	block := BuildKeyLevelsBlock(bars, DefaultSessionRegistry(), "MNQ", 8, now, 1.5)
+	block := BuildKeyLevelsBlock("", bars, DefaultSessionRegistry(), "MNQ", 8, now, 1.5)
 	if !strings.HasPrefix(block, "KEY LEVELS (map, nearest-first;") {
 		t.Fatalf("assembled block header wrong:\n%s", block)
 	}
@@ -26,7 +26,7 @@ func TestBuildKeyLevelsBlock(t *testing.T) {
 		t.Fatalf("assembled block missing anchor:\n%s", block)
 	}
 	// No closed bars → empty block (dormant / warming).
-	if BuildKeyLevelsBlock(nil, DefaultSessionRegistry(), "MNQ", 8, now, 1.5) != "" {
+	if BuildKeyLevelsBlock("", nil, DefaultSessionRegistry(), "MNQ", 8, now, 1.5) != "" {
 		t.Fatalf("no bars must render an empty block")
 	}
 }

@@ -1095,7 +1095,7 @@ func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askCo
 				version = ctx.row.Version
 			}
 			rule, _, left := s.planRules(traderID, ctx.session, ctx.tradeDate, version)
-			ctx.liveStatus = kernel.RenderPlanStatus(symbol, ctx.doc, bars, price, dATR, rule, left, now.UnixMilli(), ctx.row.CreatedAt.UnixMilli())
+			ctx.liveStatus = kernel.RenderPlanStatus(traderID, symbol, ctx.doc, bars, price, dATR, rule, left, now.UnixMilli(), ctx.row.CreatedAt.UnixMilli())
 		}
 	}
 	if ctx.planID == "" {
@@ -1864,7 +1864,7 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 		if bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount); len(bars) > 0 {
 			price, dATR := marketRef(symbol, now)
 			rule, _, left := s.planRules(traderID, sess.Name, row.TradeDate, row.Version) // W15.B
-			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, rule, left, now.UnixMilli(), row.CreatedAt.UnixMilli())
+			liveStatus = kernel.RenderPlanStatus(traderID, symbol, doc, bars, price, dATR, rule, left, now.UnixMilli(), row.CreatedAt.UnixMilli())
 		}
 	}
 	change := kernel.OwnerChange{

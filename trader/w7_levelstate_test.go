@@ -79,7 +79,7 @@ func TestW7LevelBurnedStaysBurnedAcrossSessions(t *testing.T) {
 
 	const levelPx = 30050.0
 	label := "nPOC·Tue"
-	key := store.MakeLevelKey("MNQ", kernel.LevelTypeFromLabel(label), "", kernel.LevelBinIndex(levelPx))
+	key := store.MakeLevelKey("t1", "MNQ", kernel.LevelTypeFromLabel(label), "", kernel.LevelBinIndex(levelPx))
 
 	// A fixed active plan with one level; restore the provider after.
 	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: func(string) *kernel.ActivePlan {

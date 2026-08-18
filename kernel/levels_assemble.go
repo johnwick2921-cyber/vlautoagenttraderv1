@@ -16,8 +16,8 @@ import (
 // renders the executor prompt block. Returns "" when there is nothing to show
 // (no closed bars / no in-band levels) so the caller injects nothing.
 // proximityK is the resolved day-trade lock width (≤0 → spec constant 1.5).
-func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, extraLevels ...DetectedLevel) string {
-	scored, price, _ := AssembleScoredLevels(bars, reg, symbol, maxLevels, now, proximityK, extraLevels...)
+func BuildKeyLevelsBlock(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, extraLevels ...DetectedLevel) string {
+	scored, price, _ := AssembleScoredLevels(traderID, bars, reg, symbol, maxLevels, now, proximityK, extraLevels...)
 	if price <= 0 {
 		return ""
 	}
@@ -31,7 +31,7 @@ func BuildKeyLevelsBlock(bars []market.Kline, reg SessionRegistry, symbol string
 // lock width (≤0 → spec constant 1.5) and threads into BOTH the round-number
 // generator and the scorer — H1/H2: the config must govern which levels are
 // generated AND which are seated, not just the activation-window paths.
-func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, extraLevels ...DetectedLevel) (scored []ScoredLevel, price, dATR float64) {
+func AssembleScoredLevels(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, extraLevels ...DetectedLevel) (scored []ScoredLevel, price, dATR float64) {
 	cb := closedBars(bars, now)
 	if len(cb) == 0 {
 		return nil, 0, 0
@@ -68,7 +68,7 @@ func AssembleScoredLevels(bars []market.Kline, reg SessionRegistry, symbol strin
 	// W11b — persisted level-state (freshness A→B→C, consumed) now surfaces: the
 	// trader installs LevelStateProvider over store.LevelStateStore. Nil provider →
 	// all-fresh (byte-identical to the pre-W11b output the goldens capture).
-	scored = ScoreLevels(all, price, dATR, levelFreshnessFn(symbol), maxLevels, proximityK)
+	scored = ScoreLevels(all, price, dATR, levelFreshnessFn(traderID, symbol), maxLevels, proximityK)
 	return scored, price, dATR
 }
 

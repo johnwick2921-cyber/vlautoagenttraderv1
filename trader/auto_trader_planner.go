@@ -476,7 +476,7 @@ func (at *AutoTrader) noTradeLevelMap() []kernel.PlanLevel {
 	}
 	now := time.Now()
 	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), "")
-	scored, _, _ := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
+	scored, _, _ := kernel.AssembleScoredLevels(at.id, bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
 
 	out := make([]kernel.PlanLevel, 0, len(scored)+4)
 	if owned, err := at.store.OwnerLevel().ListActive(symbol); err == nil {
@@ -805,7 +805,7 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	if kernel.NakedPOCProvider != nil {
 		extra = kernel.NakedPOCProvider(symbol)
 	}
-	scored, price, dATR := kernel.AssembleScoredLevels(bars, reg, symbol, maxLevels, now, at.proximityFilterATR(), extra...)
+	scored, price, dATR := kernel.AssembleScoredLevels(at.id, bars, reg, symbol, maxLevels, now, at.proximityFilterATR(), extra...)
 
 	// P3.6-C — STICKY OWNER LEVELS: always seated, tagged 👤, persisted across
 	// sessions. Prepended so they lead the ranked table.

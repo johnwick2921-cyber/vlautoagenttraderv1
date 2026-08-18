@@ -89,8 +89,8 @@ func TestP1DAgedFreshness(t *testing.T) {
 // cutoff limits the blast radius to pre-fix rows.
 func TestP1BResetBurns(t *testing.T) {
 	ls := newLS(t)
-	oldKey := MakeLevelKey("MNQ", "equal-H/L", "", 1)
-	newKey := MakeLevelKey("MNQ", "equal-H/L", "", 2)
+	oldKey := MakeLevelKey("", "MNQ", "equal-H/L", "", 1)
+	newKey := MakeLevelKey("", "MNQ", "equal-H/L", "", 2)
 	_ = seeded(t, ls, oldKey, true, "done", 30*time.Hour) // burned "pre-fix"
 	_ = seeded(t, ls, newKey, true, "done", time.Minute)  // burned "post-fix"
 

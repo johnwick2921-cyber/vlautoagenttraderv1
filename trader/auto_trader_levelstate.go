@@ -48,7 +48,7 @@ func (at *AutoTrader) recordLevelState() {
 	// 1.5 that the config cannot move). max_levels resolves from config (D2 —
 	// the planner and the state writers must seat the SAME count).
 	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
-	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
+	_, price, dATR := kernel.AssembleScoredLevels(at.id, bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
 	if price <= 0 {
 		return
 	}
@@ -67,10 +67,11 @@ func (at *AutoTrader) recordLevelState() {
 	for _, l := range active {
 		typ := kernel.LevelTypeFromLabel(l.Label)
 		bin := kernel.LevelBinIndex(l.Price)
-		key := store.MakeLevelKey(symbol, typ, "", bin)
+		key := store.MakeLevelKey(at.id, symbol, typ, "", bin)
 
 		// Identity: create fresh (grade→initial freshness) or preserve prior state.
 		if err := ls.EnsureLevel(&store.LevelStateDB{
+			TraderID:   at.id, // P0-cleanup — trader-scoped identity
 			Symbol:    symbol,
 			LevelType: typ,
 			BinIndex:  bin,
@@ -177,7 +178,7 @@ func (at *AutoTrader) recordScenarioState() {
 	}
 	now := time.Now()
 	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
-	_, price, dATR := kernel.AssembleScoredLevels(bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
+	_, price, dATR := kernel.AssembleScoredLevels(at.id, bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
 	if price <= 0 {
 		return
 	}

@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -51,7 +52,8 @@ type LevelStateStore struct {
 
 // LevelStateDB is one level's durable identity + state.
 type LevelStateDB struct {
-	LevelKey    string    `gorm:"column:level_key;primaryKey"` // symbol|type|origin_date|bin_index
+	LevelKey    string    `gorm:"column:level_key;primaryKey"` // traderID|symbol|type|origin_date|bin_index (P0-cleanup: trader-scoped)
+	TraderID    string    `gorm:"column:trader_id;not null;default:'';index:idx_levelstate_trader"`
 	Symbol      string    `gorm:"column:symbol;not null;default:'';index:idx_levelstate_symbol"`
 	LevelType   string    `gorm:"column:level_type;not null;default:''"`
 	OriginDate  string    `gorm:"column:origin_date;not null;default:''"` // YYYY-MM-DD CME session-day of formation
@@ -93,9 +95,15 @@ func ReArmEligible(l *LevelStateDB, nowMs int64, cooldownMin int, setupReformed 
 // TableName implements the gorm Tabler interface.
 func (LevelStateDB) TableName() string { return "level_state" }
 
-// MakeLevelKey builds the stable identity key for a level.
-func MakeLevelKey(symbol, levelType, originDate string, binIndex int) string {
-	return fmt.Sprintf("%s|%s|%s|%d", symbol, levelType, originDate, binIndex)
+// MakeLevelKey builds the stable identity key for a level. P0-cleanup
+// (2026-08-19): trader-scoped — two day-plan traders never share burn/freshness
+// state (the cross-trader class the disease sweep flagged). An empty traderID
+// yields the legacy unscoped key (pre-migration rows).
+func MakeLevelKey(traderID, symbol, levelType, originDate string, binIndex int) string {
+	if traderID == "" {
+		return fmt.Sprintf("%s|%s|%s|%d", symbol, levelType, originDate, binIndex)
+	}
+	return fmt.Sprintf("%s|%s|%s|%s|%d", traderID, symbol, levelType, originDate, binIndex)
 }
 
 // NewLevelStateStore creates a LevelStateStore.
@@ -103,7 +111,10 @@ func NewLevelStateStore(db *gorm.DB) *LevelStateStore {
 	return &LevelStateStore{db: db}
 }
 
-// initTables initializes the level_state table.
+// initTables initializes the level_state table and runs the additive
+// trader-scope migration: existing rows are backfilled to the SINGLE day-plan
+// trader when exactly one exists (safe); otherwise their keys stay unscoped
+// (legacy rows become cold — never shared).
 func (s *LevelStateStore) initTables() error {
 	if s.db.Dialector.Name() == "postgres" {
 		var tableExists int64
@@ -112,7 +123,35 @@ func (s *LevelStateStore) initTables() error {
 			return nil
 		}
 	}
-	return s.db.AutoMigrate(&LevelStateDB{})
+	if err := s.db.AutoMigrate(&LevelStateDB{}); err != nil {
+		return err
+	}
+	s.backfillTraderScope()
+	return nil
+}
+
+// backfillTraderScope assigns unscoped level-state rows to the single day-plan
+// trader when exactly one exists (additive; never shares across traders).
+func (s *LevelStateStore) backfillTraderScope() {
+	var ids []string
+	if err := s.db.Table("traders").Pluck("id", &ids).Error; err != nil || len(ids) != 1 {
+		return // zero or multiple traders → leave legacy rows cold
+	}
+	trader := ids[0]
+	var rows []LevelStateDB
+	if err := s.db.Where("trader_id = ''").Find(&rows).Error; err != nil {
+		return
+	}
+	for i := range rows {
+		oldKey := rows[i].LevelKey
+		if strings.Contains(oldKey, trader+"|") {
+			continue
+		}
+		s.db.Model(&LevelStateDB{}).Where("level_key = ?", oldKey).Updates(map[string]any{
+			"trader_id": trader,
+			"level_key": trader + "|" + oldKey,
+		})
+	}
 }
 
 // EnsureLevel creates the level with fresh state if its identity is new; if it
@@ -123,7 +162,7 @@ func (s *LevelStateStore) EnsureLevel(l *LevelStateDB) error {
 		return fmt.Errorf("symbol and level_type required")
 	}
 	if l.LevelKey == "" {
-		l.LevelKey = MakeLevelKey(l.Symbol, l.LevelType, l.OriginDate, l.BinIndex)
+		l.LevelKey = MakeLevelKey(l.TraderID, l.Symbol, l.LevelType, l.OriginDate, l.BinIndex)
 	}
 	if l.Freshness == "" {
 		l.Freshness = FreshnessA

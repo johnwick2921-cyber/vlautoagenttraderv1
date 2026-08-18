@@ -165,7 +165,7 @@ func main() {
 		{30246.25, "PDH/PDL/PDC", store.FreshnessB, false, 1},    // tested once
 	} {
 		bin := kernel.LevelBinIndex(ls.price)
-		key := store.MakeLevelKey(*symbol, ls.typ, "", bin)
+		key := store.MakeLevelKey("", *symbol, ls.typ, "", bin)
 		_ = st.LevelState().EnsureLevel(&store.LevelStateDB{
 			Symbol: *symbol, LevelType: ls.typ, BinIndex: bin, Price: ls.price, Freshness: ls.fresh,
 		})
@@ -205,12 +205,12 @@ func main() {
 
 	// ── CLOSED TRADES with MAE/MFE + adherence grades ─────────────────────────
 	trades := []struct {
-		side              string
-		entry, exit, pnl  float64
-		mae, mfe          float64
-		grade, scenario   string
-		matched           bool
-		minsAgo           int
+		side             string
+		entry, exit, pnl float64
+		mae, mfe         float64
+		grade, scenario  string
+		matched          bool
+		minsAgo          int
 	}{
 		{"LONG", 30162.25, 30214.25, 104.0, -8.5, 62.0, "A", "S1", true, 210},
 		{"LONG", 30251.00, 30239.50, -23.0, -18.0, 6.5, "C", "S2", true, 140},

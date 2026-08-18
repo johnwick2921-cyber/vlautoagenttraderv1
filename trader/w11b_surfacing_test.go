@@ -22,11 +22,11 @@ func TestW11bLevelStateProviderReadsStore(t *testing.T) {
 
 	const px = 30050.0
 	label := "PDH"
-	key := store.MakeLevelKey("MNQ", kernel.LevelTypeFromLabel(label), "", kernel.LevelBinIndex(px))
+	key := store.MakeLevelKey("t1", "MNQ", kernel.LevelTypeFromLabel(label), "", kernel.LevelBinIndex(px))
 
 	// seed a consumed level.
 	if err := st.LevelState().EnsureLevel(&store.LevelStateDB{
-		Symbol: "MNQ", LevelType: kernel.LevelTypeFromLabel(label), BinIndex: kernel.LevelBinIndex(px), Price: px,
+		TraderID: "t1", Symbol: "MNQ", LevelType: kernel.LevelTypeFromLabel(label), BinIndex: kernel.LevelBinIndex(px), Price: px,
 	}); err != nil {
 		t.Fatalf("ensure: %v", err)
 	}
@@ -34,13 +34,13 @@ func TestW11bLevelStateProviderReadsStore(t *testing.T) {
 		t.Fatalf("consume: %v", err)
 	}
 
-	installLevelStateProvider(st)
+	installLevelStateProvider(nil, st)
 
-	if got := kernel.LevelStateProvider("MNQ", kernel.DetectedLevel{Price: px, Label: label}); got != "done" {
+	if got := kernel.LevelStateProvider("t1", "MNQ", kernel.DetectedLevel{Price: px, Label: label}); got != "done" {
 		t.Fatalf("consumed level must read done, got %q", got)
 	}
 	// an unknown level → fresh ("").
-	if got := kernel.LevelStateProvider("MNQ", kernel.DetectedLevel{Price: 12345, Label: "RN"}); got != "" {
+	if got := kernel.LevelStateProvider("t1", "MNQ", kernel.DetectedLevel{Price: 12345, Label: "RN"}); got != "" {
 		t.Fatalf("unknown level must read fresh (\"\"), got %q", got)
 	}
 }

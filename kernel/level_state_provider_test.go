@@ -19,13 +19,13 @@ func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 
 	// baseline: no provider → both fresh, both seated.
 	LevelStateProvider = nil
-	base := ScoreLevels(levels, 30000, 100, levelFreshnessFn("MNQ"), 8, 1.5)
+	base := ScoreLevels(levels, 30000, 100, levelFreshnessFn("t1", "MNQ"), 8, 1.5)
 	if len(base) != 2 {
 		t.Fatalf("no provider → both levels fresh+seated, got %d", len(base))
 	}
 
 	// provider: PDH burned (done), PDL decayed (B).
-	LevelStateProvider = func(symbol string, l DetectedLevel) string {
+	LevelStateProvider = func(traderID, symbol string, l DetectedLevel) string {
 		switch l.Label {
 		case "PDH":
 			return "done"
@@ -34,7 +34,7 @@ func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 		}
 		return ""
 	}
-	got := ScoreLevels(levels, 30000, 100, levelFreshnessFn("MNQ"), 8, 1.5)
+	got := ScoreLevels(levels, 30000, 100, levelFreshnessFn("t1", "MNQ"), 8, 1.5)
 	if len(got) != 2 {
 		t.Fatalf("P1c: a consumed level role-flips and STAYS → 2 levels, got %d", len(got))
 	}
@@ -65,12 +65,12 @@ func TestW11bPlanStatusAnnotation(t *testing.T) {
 
 	// nil provider → no persisted annotation.
 	LevelStateProvider = nil
-	if s := RenderPlanStatus("MNQ", doc, bars, 30000, 100, "2x5m", 2, 100, 0); strings.Contains(s, "BURNED") || strings.Contains(s, "state=") {
+	if s := RenderPlanStatus("", "MNQ", doc, bars, 30000, 100, "2x5m", 2, 100, 0); strings.Contains(s, "BURNED") || strings.Contains(s, "state=") {
 		t.Fatalf("nil provider must not annotate:\n%s", s)
 	}
 
 	// provider → burned/decayed annotations on the matching level lines.
-	LevelStateProvider = func(symbol string, l DetectedLevel) string {
+	LevelStateProvider = func(traderID, symbol string, l DetectedLevel) string {
 		if l.Label == "PDH" {
 			return "done"
 		}
@@ -79,7 +79,7 @@ func TestW11bPlanStatusAnnotation(t *testing.T) {
 		}
 		return ""
 	}
-	s := RenderPlanStatus("MNQ", doc, bars, 30000, 100, "2x5m", 2, 100, 0)
+	s := RenderPlanStatus("", "MNQ", doc, bars, 30000, 100, "2x5m", 2, 100, 0)
 	if !strings.Contains(s, "flipped(consumed") {
 		t.Fatalf("consumed PDH must be annotated flipped (P1c):\n%s", s)
 	}

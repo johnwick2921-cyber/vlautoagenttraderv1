@@ -144,7 +144,7 @@ func RenderPlanBlock(doc PlanDoc, session string) string {
 // RenderPlanStatus renders the dynamic PLAN STATUS tail: current price, re-plans
 // left, and per-level Go facts (distance/sweep/closes-beyond/acceptance/valid)
 // from the P0.4 evaluator.
-func RenderPlanStatus(symbol string, doc PlanDoc, bars []market.Kline, price, dATR float64, rule string, replansLeft int, now, birthMs int64) string {
+func RenderPlanStatus(traderID, symbol string, doc PlanDoc, bars []market.Kline, price, dATR float64, rule string, replansLeft int, now, birthMs int64) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# PLAN STATUS (live) — facts=Go, judgment=you\nprice %.2f · re-plans left %d\n", price, replansLeft)
 	if rule == "" {
@@ -156,7 +156,7 @@ func RenderPlanStatus(symbol string, doc PlanDoc, bars []market.Kline, price, dA
 	if hidden := len(doc.Levels) - len(active); hidden > 0 {
 		fmt.Fprintf(&b, "(%d level(s) outside the %.1f×dATR activation window — re-arm when price returns)\n", hidden, ActivationWindowK)
 	}
-	fresh := levelFreshnessFn(symbol) // W11b — persisted cross-session state (nil → none)
+		fresh := levelFreshnessFn(traderID, symbol) // W11b — persisted cross-session state (nil → none)
 	for _, l := range active {
 		dir := DirAbove
 		if l.Price < price {

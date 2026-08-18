@@ -25,7 +25,7 @@ func TestP1CWickDoesNotConsume(t *testing.T) {
 	base := time.Date(2026, 8, 18, 10, 0, 0, 0, time.UTC)
 	const level = 30000.0
 	bars := []market.Kline{
-		bar(base, 0, level-2, level+2, level-4, level-1), // straddle = touch
+		bar(base, 0, level-2, level+2, level-4, level-1),  // straddle = touch
 		bar(base, 1, level-1, level+25, level-2, level+1), // WICK through, close back
 		bar(base, 2, level-1, level+30, level-3, level-1), // WICK again, close back
 		bar(base, 3, level-2, level+1, level-4, level+1),

@@ -29,8 +29,8 @@ func poc(symbol, originDate string, bin int, price float64) *LevelStateDB {
 }
 
 func TestMakeLevelKeyDeterministic(t *testing.T) {
-	a := MakeLevelKey("MNQ", LevelTypePOC, "2026-08-14", 12345)
-	b := MakeLevelKey("MNQ", LevelTypePOC, "2026-08-14", 12345)
+	a := MakeLevelKey("", "MNQ", LevelTypePOC, "2026-08-14", 12345)
+	b := MakeLevelKey("", "MNQ", LevelTypePOC, "2026-08-14", 12345)
 	if a != b || a != "MNQ|POC|2026-08-14|12345" {
 		t.Fatalf("level key = %q", a)
 	}

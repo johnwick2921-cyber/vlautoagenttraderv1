@@ -25,16 +25,16 @@ func TestRenderPlanStatusCountsClosesSinceBirth(t *testing.T) {
 	now := nowAfter(bars)
 	birth := bars[12].OpenTime
 
-	whole := RenderPlanStatus("MNQ", doc, bars, 30401, 300, "2x5m", 2, now, 0)
+	whole := RenderPlanStatus("", "MNQ", doc, bars, 30401, 300, "2x5m", 2, now, 0)
 	if !strings.Contains(whole, "closes-beyond 4") {
 		t.Fatalf("whole-cache count should be 4 closes above, got: %s", whole)
 	}
-	since := RenderPlanStatus("MNQ", doc, bars, 30401, 300, "2x5m", 2, now, birth)
+	since := RenderPlanStatus("", "MNQ", doc, bars, 30401, 300, "2x5m", 2, now, birth)
 	if !strings.Contains(since, "closes-beyond 4") {
 		t.Fatalf("birth-scoped count should be 4, got: %s", since)
 	}
 	doc2 := PlanDoc{Levels: []PlanLevel{{Price: 30200, Label: "ONL", Grade: "A"}}}
-	since2 := RenderPlanStatus("MNQ", doc2, bars, 30401, 300, "2x5m", 2, now, birth)
+	since2 := RenderPlanStatus("", "MNQ", doc2, bars, 30401, 300, "2x5m", 2, now, birth)
 	if !strings.Contains(since2, "closes-beyond 4") {
 		t.Fatalf("birth-scoped count should be 4 closes above since birth, got: %s", since2)
 	}
