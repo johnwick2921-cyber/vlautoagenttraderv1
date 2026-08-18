@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -49,6 +50,14 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		installLevelStateProvider(st) // W11b — surface persisted freshness/consumed
 	})
 	installActivePlanProvider(at, st)
+	// P0-cleanup (2026-08-19) — soft-alert: guardrails that WOULD have tripped
+	// (master OFF) reach the owner's alert feed; they never block.
+	kernel.SoftGuardrailFunc = func(trader, what string) {
+		at.emitAlert("P1", "guardrail-would-have-tripped",
+			fmt.Sprintf("soft-guardrail:%s:%s", trader, shortHash(what)),
+			"Guardrail would have tripped (not enforced)",
+			what+" — the guardrails master is OFF (owner decision); nothing was blocked. This is what the cage would have caught.")
+	}
 
 	bars := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)
 	if len(bars) == 0 {

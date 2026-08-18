@@ -162,6 +162,15 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			}
 			if !g.MasterEnabled {
 				logger.Warnf("⚠️ Strategy Studio: risk guardrails master OFF — daily loss/profit/trade limits + blackout NOT enforced this cycle (futures SIZE caps — notional×N ceiling + per-order contract clamp — REMAIN enforced; master-independent venue safety, hardening D3)")
+				// P0-cleanup (2026-08-19) — SOFT-ALERT: show what the cage
+				// WOULD have caught without ever blocking.
+				for _, hit := range g.CheckSoft() {
+					logger.Warnf("🔍 guardrail WOULD have tripped (master OFF, not enforced): %s", hit)
+					telemetry.RecordError(ctx.TraderID, "guardrail_would_trip", hit, telemetry.CostNone)
+					if SoftGuardrailFunc != nil {
+						SoftGuardrailFunc(ctx.TraderID, hit)
+					}
+				}
 			} else if _, gErr := g.Check(); gErr != nil {
 				logger.Warnf("⚠️ Strategy Studio daily guardrail tripped: %v — skipping decision cycle (HOLD)", gErr)
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_daily").Inc()

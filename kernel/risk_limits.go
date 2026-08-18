@@ -45,10 +45,10 @@ const (
 // Inputs are plain primitives so this can be exercised in a unit test
 // without a full engine.Context.
 //
-//   totalPnL          — account.TotalPnL (negative = losing)
-//   openPositions     — len(ctx.Positions)
-//   requestedNotional — abs(decision.PositionSizeUSD) for the proposed entry
-//   existingNotional  — sum of MarkPrice*Quantity over existing positions
+//	totalPnL          — account.TotalPnL (negative = losing)
+//	openPositions     — len(ctx.Positions)
+//	requestedNotional — abs(decision.PositionSizeUSD) for the proposed entry
+//	existingNotional  — sum of MarkPrice*Quantity over existing positions
 //
 // Semantics:
 //   - PnL strictly LESS THAN -MaxDailyLossUSD trips the daily-loss limit.
@@ -190,7 +190,24 @@ type DailyGuardrails struct {
 	MaxDailyTrades        int
 }
 
-// Check evaluates the ENABLED daily guardrails. Master OFF → always allow (the
+// CheckSoft evaluates every CONFIGURED limit (value > 0) regardless of toggles
+// and returns the "would have tripped" reasons. P0-cleanup (2026-08-19): the
+// guardrails master stays OFF by the owner's dated decision, but the owner must
+// SEE what the cage would have caught. It never blocks anything.
+func (g DailyGuardrails) CheckSoft() []string {
+	var hits []string
+	if g.DailyLossLimitUSD > 0 && g.DailyRealizedPnL <= -g.DailyLossLimitUSD {
+		hits = append(hits, fmt.Sprintf("daily loss would trip (realized today=%.2f, limit=-%.2f)", g.DailyRealizedPnL, g.DailyLossLimitUSD))
+	}
+	if g.DailyProfitTargetUSD > 0 && g.DailyRealizedPnL >= g.DailyProfitTargetUSD {
+		hits = append(hits, fmt.Sprintf("daily profit target would trip (realized today=%.2f, target=%.2f)", g.DailyRealizedPnL, g.DailyProfitTargetUSD))
+	}
+	if g.MaxDailyTrades > 0 && g.TradesToday >= g.MaxDailyTrades {
+		hits = append(hits, fmt.Sprintf("max daily trades would trip (today=%d, max=%d)", g.TradesToday, g.MaxDailyTrades))
+	}
+	return hits
+}
+
 // caller logs the bypass). Each guardrail is evaluated only when its toggle is
 // ON AND its value is configured (>0); a tripped guardrail returns a non-nil err
 // with a clear reason. Daily-loss → ForceFlat; profit-target / max-trades →
@@ -289,3 +306,8 @@ func ConsistencyBreached(todayProfit, totalProfit, pct float64) bool {
 	}
 	return todayProfit >= (pct/100.0)*totalProfit
 }
+
+// SoftGuardrailFunc is installed by the trader layer: a guardrail that WOULD
+// have tripped (but is disabled — master OFF or toggle OFF) is announced to the
+// owner's alert feed. Never blocks. P0-cleanup (2026-08-19).
+var SoftGuardrailFunc func(trader, what string)
