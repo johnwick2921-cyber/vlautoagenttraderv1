@@ -350,6 +350,12 @@ func (at *AutoTrader) runCycle() error {
 		record.Success = false
 		record.ErrorMessage = fmt.Sprintf("Failed to get AI decision: %v", err)
 
+		// P0 2026-08-18 — DeepSeek "Insufficient Balance" (HTTP 402) silently
+		// killed 139 overnight cycles today. Make it unmissable.
+		if strings.Contains(err.Error(), "402") || strings.Contains(err.Error(), "Insufficient Balance") {
+			at.logErrorf("💸 DEEPSEEK PAYMENT FAILURE (402 Insufficient Balance) — cycles are dying with NO decision. Top up the DeepSeek account (api.deepseek.com). trader=%s", at.id)
+		}
+
 		// Activate safe mode after 3 consecutive failures
 		if at.consecutiveAIFailures >= 3 && !at.safeMode {
 			at.safeMode = true

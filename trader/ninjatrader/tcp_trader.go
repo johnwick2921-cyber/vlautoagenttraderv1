@@ -190,6 +190,25 @@ func (t *TCPTrader) activeAccountName() string {
 	return ""
 }
 
+// feedNowUTC stamps outgoing signals with the MARKET's own clock (freshest NT8
+// bar close) instead of the local WSL clock, which drifts minutes behind the
+// Windows/NT8 clock on this box. NT8 rejects signals older than 60s, and the
+// C2 guard then pre-emptively blocked every entry — the Aug-13→18 zero-trade
+// chain. Falls back to the local clock when no bar exists (fail-open, matching
+// the old behavior).
+func (t *TCPTrader) feedNowUTC(symbol string) time.Time {
+	if t.server != nil {
+		for _, tf := range []string{"1m", "5m"} {
+			bars := t.server.BarCache().Get(symbol, tf)
+			if len(bars) > 0 {
+				open := time.UnixMilli(bars[len(bars)-1].T).UTC()
+				return open.Add(time.Duration(timeframeDurationMs(tf)) * time.Millisecond)
+			}
+		}
+	}
+	return time.Now().UTC()
+}
+
 // isAccountTradeable reports whether an order may be sent for `name`: it must be a
 // SIM account (per the C#-reported accounts list, which uses Account.Simulation) AND,
 // if NT_ALLOWED_ACCOUNTS is configured, on that allow-list. This is the hard
@@ -296,7 +315,7 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 		StopLoss:   sl,
 		TakeProfit: tp,
 		SignalID:   signalID,
-		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		Timestamp:  t.feedNowUTC(symbol).Format(time.RFC3339),
 	}
 
 	// A1 (G3) — PRE-SUBMIT IDENTITY INVARIANT: the account on the outbound order MUST
@@ -357,7 +376,7 @@ func (t *TCPTrader) MoveStopToBreakeven(side string, newStop float64) error {
 		Symbol:      t.symbol,
 		SignalID:    sid,
 		NewStopLoss: newStop,
-		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+		Timestamp:   t.feedNowUTC(t.symbol).Format(time.RFC3339),
 		Account:     t.boundAccount, // A2 (G1) — identity stamp
 		TraderID:    tid,
 	}); err != nil {
