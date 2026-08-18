@@ -291,12 +291,19 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	if cfg := engine.GetConfig(); cfg != nil {
 		svpOn = cfg.Indicators.EnableSVP
 	}
+	// P5.4 — ONE PROMPT, ONE SNAPSHOT: SVP, KEY LEVELS and PLAN STATUS used to
+	// call FuturesBarsProvider separately, so one prompt carried prices ~2pt /
+	// ~2min apart and distances were computed off the older snapshot. Fetch the
+	// 1m cache ONCE per cycle; every section derives from it at a single now.
+	var snapshotBars []market.Kline
+	snapshotNow := time.Now()
+	if market.FuturesBarsProvider != nil {
+		snapshotBars = market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount)
+	}
 	if isFut, _ := futuresVariantMode(variant); isFut && svpOn {
 		svpLine := ""
-		if market.FuturesBarsProvider != nil {
-			if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
-				svpLine = FormatSVPLine(BuildSVPProfile(bars, time.Now()))
-			}
+		if len(snapshotBars) > 0 {
+			svpLine = FormatSVPLine(BuildSVPProfile(snapshotBars, snapshotNow))
 		}
 		engine.SetSVPContext(svpLine)
 		if svpLine == "" {
@@ -329,18 +336,16 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	}
 	if isFut, _ := futuresVariantMode(variant); isFut && planOn {
 		klBlock := ""
-		if market.FuturesBarsProvider != nil {
-			if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
-				// nPOC from the durable session-profile store (P1.3), when the
-				// trader layer has wired the provider; nil → none.
-				var extra []DetectedLevel
-				if NakedPOCProvider != nil {
-					extra = NakedPOCProvider(activeSymbol)
-				}
-				// H7 — the registry is the admin registry the DECIDING trader
-				// resolves (per-trader provider; never another trader's).
-				klBlock = BuildKeyLevelsBlock(bars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, time.Now(), proximityK, extra...)
+		if len(snapshotBars) > 0 {
+			// nPOC from the durable session-profile store (P1.3), when the
+			// trader layer has wired the provider; nil → none.
+			var extra []DetectedLevel
+			if NakedPOCProvider != nil {
+				extra = NakedPOCProvider(activeSymbol)
 			}
+			// H7 — the registry is the admin registry the DECIDING trader
+			// resolves (per-trader provider; never another trader's).
+			klBlock = BuildKeyLevelsBlock(snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK, extra...)
 		}
 		engine.SetKeyLevelsContext(klBlock)
 		if klBlock == "" {
@@ -367,11 +372,9 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			}
 			block := RenderPlanBlock(plan.Doc, plan.Session)
 			status := ""
-			if market.FuturesBarsProvider != nil {
-				if bars := market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount); len(bars) > 0 {
-					_, price, dATR := AssembleScoredLevels(bars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, time.Now(), proximityK)
-					status = RenderPlanStatus(activeSymbol, plan.Doc, bars, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
-				}
+			if len(snapshotBars) > 0 {
+				_, price, dATR := AssembleScoredLevels(snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK)
+				status = RenderPlanStatus(activeSymbol, plan.Doc, snapshotBars, price, dATR, rule, plan.ReplansLeft, snapshotNow.UnixMilli())
 			}
 			engine.SetPlanContext(block, status)
 		}
