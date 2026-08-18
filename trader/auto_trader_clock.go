@@ -128,10 +128,7 @@ func hhmmToMin(s string) (int, bool) {
 
 // ctMinutesNow returns now's minutes-since-midnight in America/Chicago.
 func ctMinutesNow(now time.Time) int {
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		loc = time.UTC
-	}
+	loc := kernel.CTLocation()
 	ct := now.In(loc)
 	return ct.Hour()*60 + ct.Minute()
 }
