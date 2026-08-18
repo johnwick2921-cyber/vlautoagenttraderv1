@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -284,6 +286,21 @@ func ValidatePlanDocWithFacts(d *PlanDoc, facts PlanFacts, maxLevels, maxScenari
 	if facts.PDH > 0 && facts.Price > facts.PDH && !hasDirection(d.Scenarios, "long") {
 		return fmt.Errorf("price %.2f is ABOVE PDH %.2f (gap-up) — the plan MUST include a continuation/breakout long scenario", facts.Price, facts.PDH)
 	}
+	// P0.2-c — the continuation scenario must be REACHABLE from here: a gap-down
+	// short whose trigger needs a rally back above price (the 2026-08-18 S3
+	// pathology: "rally into 29853/29919" while price sat at 29687) is not a
+	// continuation play, it is a re-entry into the old range. The trigger's
+	// nearest numeric level must sit AT or beyond price in the gap direction.
+	if facts.PDL > 0 && facts.Price < facts.PDL {
+		if !continuationReachable(d.Scenarios, "short", facts.Price) {
+			return fmt.Errorf("gap-down at %.2f (< PDL %.2f): the short scenario's trigger must reference a level ≤ current price (breakdown/retest), not a rally back above", facts.Price, facts.PDL)
+		}
+	}
+	if facts.PDH > 0 && facts.Price > facts.PDH {
+		if !continuationReachable(d.Scenarios, "long", facts.Price) {
+			return fmt.Errorf("gap-up at %.2f (> PDH %.2f): the long scenario's trigger must reference a level ≥ current price (breakout/retest), not a dip back below", facts.Price, facts.PDH)
+		}
+	}
 	// P0.2b — targets must be reachable: inside the proximity band.
 	band := 1.5 * facts.DATR
 	if band <= 0 {
@@ -303,6 +320,40 @@ func hasDirection(scenarios []PlanScenario, dir string) bool {
 	for _, s := range scenarios {
 		if s.Direction == dir {
 			return true
+		}
+	}
+	return false
+}
+
+// triggerNumbers extracts the numeric levels (≥3 digits, >100 — filters clock
+// times like "08:35") mentioned in a trigger's prose.
+func triggerNumbers(trigger string) []float64 {
+	var out []float64
+	for _, m := range reTriggerNumber.FindAllString(trigger, -1) {
+		if v, err := strconv.ParseFloat(m, 64); err == nil && v > 100 {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+var reTriggerNumber = regexp.MustCompile(`\d{3,}(?:\.\d+)?`)
+
+// continuationReachable reports whether at least one scenario in `dir` has a
+// trigger whose nearest numeric level sits AT or beyond price in that direction
+// (a play reachable without crossing the whole map).
+func continuationReachable(scenarios []PlanScenario, dir string, price float64) bool {
+	for _, s := range scenarios {
+		if s.Direction != dir {
+			continue
+		}
+		for _, n := range triggerNumbers(s.Trigger) {
+			if dir == "short" && n <= price {
+				return true
+			}
+			if dir == "long" && n >= price {
+				return true
+			}
 		}
 	}
 	return false
