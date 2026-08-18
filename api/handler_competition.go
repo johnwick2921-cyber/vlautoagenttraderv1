@@ -359,8 +359,11 @@ func (s *Server) getEquityHistoryForTraders(traderIDs []string, hours int) map[s
 			startTime := now.Add(-time.Duration(hours) * time.Hour)
 			snapshots, err = s.store.Equity().GetByTimeRange(traderID, startTime, now)
 		} else {
-			// Default: get latest 500 records
-			snapshots, err = s.store.Equity().GetLatest(traderID, 500)
+			// Default: the last 90 days. The old default (latest 500
+			// snapshots) silently truncated the chart to ~3 days of
+			// history and looked like data loss (owner 2026-08-17).
+			startTime := now.Add(-90 * 24 * time.Hour)
+			snapshots, err = s.store.Equity().GetByTimeRange(traderID, startTime, now)
 		}
 		if err != nil {
 			logger.Errorf("[API] Failed to get equity history for %s: %v", traderID, err)
