@@ -48,6 +48,11 @@ var (
 	errorDay    int64 // active session-day (ms at the 17:00 CT rollover); 0 = unset
 	errorEvents = map[errorEventKey]*errorEventAgg{}
 	errorSeen   = map[string]bool{} // per-session-day: trader|type seen
+
+	// ErrorAnnounceFunc is called on the FIRST occurrence of an error type in
+	// a session-day — the trader installs it to emit a P1 alert so a NEW error
+	// class announces itself the same day instead of a week later.
+	ErrorAnnounceFunc func(trader, typ, cause string, cost ErrorCost)
 )
 
 // SetErrorSessionDay adopts/rolls the error-event day (called from the same
@@ -88,6 +93,10 @@ func RecordError(trader, typ, cause string, cost ErrorCost) (firstSeen bool) {
 	}
 	if cost == CostTradeLost {
 		a.tradesLost++
+	}
+	ann := ErrorAnnounceFunc
+	if firstSeen && ann != nil {
+		ann(trader, typ, cause, cost)
 	}
 	return firstSeen
 }

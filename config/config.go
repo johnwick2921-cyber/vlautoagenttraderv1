@@ -21,19 +21,19 @@ type Config struct {
 	JWTSecret     string
 
 	// Database configuration
-	DBType     string // sqlite or postgres
-	DBPath     string // SQLite database file path
+	DBType string // sqlite or postgres
+	DBPath string // SQLite database file path
 	// SandboxMode (SANDBOX_MODE=1) turns this process into an isolated demo: the
 	// trading loop never places an order, the planner uses canned replies unless
 	// SANDBOX_LLM=real, and the UI paints a SANDBOX banner. Default OFF — the live
 	// bot is byte-identical unless the env var is set.
 	SandboxMode bool
-	DBHost     string // PostgreSQL host
-	DBPort     int    // PostgreSQL port
-	DBUser     string // PostgreSQL user
-	DBPassword string // PostgreSQL password
-	DBName     string // PostgreSQL database name
-	DBSSLMode  string // PostgreSQL SSL mode
+	DBHost      string // PostgreSQL host
+	DBPort      int    // PostgreSQL port
+	DBUser      string // PostgreSQL user
+	DBPassword  string // PostgreSQL password
+	DBName      string // PostgreSQL database name
+	DBSSLMode   string // PostgreSQL SSL mode
 
 	// Security configuration
 	// TransportEncryption enables browser-side encryption for API keys
@@ -202,6 +202,11 @@ func Init() {
 			InputTokens:   usage.PromptTokens,
 			OutputTokens:  usage.CompletionTokens,
 		})
+	}
+
+	// P0-cleanup (2026-08-19) — a NEW error class announces itself the same day.
+	telemetry.ErrorAnnounceFunc = func(trader, typ, cause string, cost telemetry.ErrorCost) {
+		logger.Warnf("🚨 NEW ERROR CLASS %q (trader %s): %s [cost %s]", typ, trader, cause, cost)
 	}
 }
 

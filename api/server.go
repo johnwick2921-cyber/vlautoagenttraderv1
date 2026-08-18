@@ -435,6 +435,11 @@ Returns: {"trader_id":"<string>","daily_pnl_usd":<float>,"daily_loss_limit_usd":
 Returns: {"session_day_utc":"<RFC3339>","summary":"<one-line>","by_trader":{"<trader_id>":{"<gate>":<count>}}}
 The empty-string trader key holds process-wide gates (e.g. the B3 order guard). Resets at the 17:00 CT CME session rollover.`,
 				s.handleGateBlocks)
+			s.routeWithSchema(protected, "GET", "/risk/errors", "Per-trader/session-day structured error events (P0-cleanup)",
+				`No params. Returns structured error events: stable type, plain cause, cost.
+Returns: {"rows":[{"trader","type","cause","cost","count","decisions_lost","trades_lost"}],"summary":"errors today: N (types: …), decisions lost: N"}
+Resets at the 17:00 CT CME session rollover.`,
+				s.handleErrors)
 			s.routeWithSchema(protected, "GET", "/risk/freezes", "List frozen traders (A4/G4)",
 				`No params. Returns traders frozen by an identity/account mismatch or reconcile divergence.
 Returns: {"frozen":{"<trader_id>":"<reason>"}}  (empty object = none frozen)`,

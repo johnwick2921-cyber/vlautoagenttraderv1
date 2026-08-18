@@ -979,6 +979,12 @@ func (at *AutoTrader) maybeWriteDigests() {
 	if inDailyRollWindow(now) && at.eveningDigestEnabled() {
 		sessions, _ := at.store.Digest().SessionDigests(at.id, symbol, tradeDate)
 		text := kernel.FormatDailyDigest(tradeDate, "", len(sessions), entries, pnl)
+		if el := telemetry.ErrorDigestLine(at.id); el != "" {
+			text += "\n" + el
+		}
+		if el := telemetry.ErrorDigestLine(at.id); el != "" {
+			text += "\n" + el
+		}
 		if wrote, _ := at.store.Digest().SaveIfAbsent(&store.DigestDB{
 			TraderID: at.id,
 			Symbol:   symbol, TradeDate: tradeDate, Kind: "daily", Text: text, CreatedAt: now.UnixMilli(),
