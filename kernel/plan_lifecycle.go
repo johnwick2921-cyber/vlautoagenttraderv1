@@ -182,3 +182,76 @@ func levelTouched(bars []market.Kline, level float64, now int64) bool {
 	}
 	return false
 }
+
+// conditionRule maps a PlanCondition.Rule to the acceptance-rule string the
+// counters understand. "15m_close" → one 15-minute close; everything else →
+// the default "2x5m" (two consecutive 5-minute closes).
+func conditionRule(c PlanCondition) string {
+	if c.Rule == "15m_close" {
+		return "15m-close"
+	}
+	return "2x5m"
+}
+
+// PlanConditionFiredSince evaluates a STRUCTURED death/flip predicate on the
+// rule timeframe, windowed to what happened AFTER the plan was written
+// (P1c touch-gate: the level must have been touched in-window before acceptance
+// counts). Returns (fired, human reason).
+func PlanConditionFiredSince(c PlanCondition, bars []market.Kline, sinceMs, nowMs int64) (bool, string) {
+	if c.Price <= 0 {
+		return false, ""
+	}
+	rule := conditionRule(c)
+	w := BarsSince(bars, sinceMs)
+	if len(w) == 0 {
+		return false, ""
+	}
+	judge := AcceptanceBars(w, rule)
+	if !levelTouched(judge, c.Price, nowMs) {
+		return false, ""
+	}
+	dir := DirBelow
+	if c.Side == "above" {
+		dir = DirAbove
+	}
+	f := EvaluateLevelFacts(w, c.Price, dir, rule, 3, nowMs)
+	sideWord := "below"
+	n := f.ClosesBeyondDown
+	if c.Side == "above" {
+		sideWord = "above"
+		n = f.ClosesBeyondUp
+	}
+	if n >= f.AcceptNeed {
+		return true, fmt.Sprintf("%s close %s %.2f (%d× %dm closes)", c.Rule, sideWord, c.Price, n, AcceptanceIntervalMinutes(rule))
+	}
+	return false, ""
+}
+
+// PlanDeathOrFlipSince reports whether the plan died by ANY machine path since
+// its birth: (1) the planner's own structured death condition (P0.3),
+// (2) the structured flip condition (a fired flip IS a death — the plan's
+// thesis inverted), (3) the legacy all-levels-consumed fallback. Returns the
+// killer line for the log/card.
+func PlanDeathOrFlipSince(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now int64) (string, bool) {
+	if fired, reason := PlanConditionFiredSince(orZero(doc.DeathStructured), bars, sinceMs, now); fired {
+		return "death-condition: " + reason, true
+	}
+	if fired, reason := PlanConditionFiredSince(orZero(doc.FlipStructured), bars, sinceMs, now); fired {
+		to := doc.FlipStructured.FlipTo
+		if to == "" {
+			to = "the other side"
+		}
+		return "flip-condition: " + reason + " → bias " + to, true
+	}
+	if PlanIsDeadSince(doc, bars, rule, sinceMs, now) {
+		return "all levels consumed", true
+	}
+	return "", false
+}
+
+func orZero(c *PlanCondition) PlanCondition {
+	if c == nil {
+		return PlanCondition{}
+	}
+	return *c
+}
