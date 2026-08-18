@@ -156,7 +156,7 @@ export function EquityChart({
 
   // 限制显示最近的数据点（性能优化）
   // 如果数据超过2000个点，只显示最近2000个
-  const MAX_DISPLAY_POINTS = 2000
+  const MAX_DISPLAY_POINTS = 10000
   const displayHistory =
     validHistory.length > MAX_DISPLAY_POINTS
       ? validHistory.slice(-MAX_DISPLAY_POINTS)
