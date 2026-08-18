@@ -131,6 +131,11 @@ type Context struct {
 type Decision struct {
 	Symbol string `json:"symbol"`
 	Action string `json:"action"` // Standard: "open_long", "open_short", "close_long", "close_short", "hold", "wait"
+
+	// P0-cleanup (2026-08-19) — when a gate/armor rewrites an entry to wait,
+	// the refusal reason rides the decision so the record shows WHY, never a
+	// bare unexplained wait (the C2 lesson).
+	RefusalReason string `json:"refusal_reason,omitempty"`
 	// Grid actions: "place_buy_limit", "place_sell_limit", "cancel_order", "cancel_all_orders", "pause_grid", "resume_grid", "adjust_grid"
 
 	// Opening position parameters

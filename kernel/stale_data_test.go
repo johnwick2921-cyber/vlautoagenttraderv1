@@ -50,6 +50,11 @@ func TestApplyStaleDataBlock(t *testing.T) {
 	if stale.Decisions[0].Action != "wait" {
 		t.Fatalf("stale feed must block the entry (→wait), got %q", stale.Decisions[0].Action)
 	}
+	// P0-cleanup (2026-08-19) — a refusal must NEVER be a plain wait: the
+	// reason rides the decision (the C2 lesson: six days of silent rewrites).
+	if stale.Decisions[0].RefusalReason == "" {
+		t.Fatalf("a stale-data refusal must carry RefusalReason — bare wait is forbidden")
+	}
 
 	// A CLOSE on a stale feed is NEVER blocked (exits/position-management untouched).
 	closing := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "close_long"}}}

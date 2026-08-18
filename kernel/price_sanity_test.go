@@ -53,6 +53,9 @@ func TestApplyPriceSanity_NeutralizesAndFailsOpen(t *testing.T) {
 	if fd.Decisions[0].Action != "wait" {
 		t.Fatalf("absurd stop must be neutralized to wait, got %q", fd.Decisions[0].Action)
 	}
+	if fd.Decisions[0].RefusalReason == "" {
+		t.Fatalf("a price-sanity refusal must carry RefusalReason — bare wait is forbidden")
+	}
 
 	// Sane stop stays open.
 	fd2 := &FullDecision{Decisions: []Decision{

@@ -139,6 +139,9 @@ func (at *AutoTrader) runCycle() error {
 	if summary := telemetry.RolloverGateBlocks(kernel.CMESessionDayStart(time.Now()).UnixMilli()); summary != "" {
 		at.logInfof("📊 %s", summary)
 	}
+	// P0-cleanup — the structured error-event day rolls on the same boundary
+	// (idempotent: same-day calls adopt the day; a changed day resets the table).
+	telemetry.SetErrorSessionDay(kernel.CMESessionDayStart(time.Now()).UnixMilli())
 
 	// P1.3 — DURABLE SESSION-PROFILE SNAPSHOT (day-plan). Gated (futures +
 	// day_plan enabled) → DORMANT by default; idempotent → restart-safe, no
@@ -248,7 +251,10 @@ func (at *AutoTrader) runCycle() error {
 	// This prevents phantom HOLD decisions while waiting for the AddOn to connect.
 	// Once the first account_balance arrives, equity > 0, and the gate opens normally.
 	if ctx.Account.TotalEquity == 0 && !at.HasReceivedBalance() {
-		// Silent return: no decision record, no log entry (to avoid noise during startup)
+		// P0-cleanup (2026-08-19) — was a completely silent return (no row,
+		// no log). Now it logs once per boot and records the skip.
+		at.logWarnf("⏳ skipping decision cycle #%d — no balance frame yet (equity 0, waiting for the NT8 AddOn)", at.callCount)
+		telemetry.RecordError(at.id, "no_balance_frame", "equity 0 and no account_balance frame received yet", telemetry.CostNone)
 		return nil
 	}
 
@@ -349,6 +355,14 @@ func (at *AutoTrader) runCycle() error {
 		at.consecutiveAIFailures++
 		record.Success = false
 		record.ErrorMessage = fmt.Sprintf("Failed to get AI decision: %v", err)
+
+		// P0-cleanup — structured error event (type stable, cause plain,
+		// cost named). 402 = payment; else decision lost.
+		if strings.Contains(err.Error(), "402") || strings.Contains(err.Error(), "Insufficient Balance") {
+			telemetry.RecordError(at.id, "ai_payment_402", err.Error(), telemetry.CostDecisionLost)
+		} else {
+			telemetry.RecordError(at.id, "ai_call_failed", err.Error(), telemetry.CostDecisionLost)
+		}
 
 		// P0 2026-08-18 — DeepSeek "Insufficient Balance" (HTTP 402) silently
 		// killed 139 overnight cycles today. Make it unmissable.

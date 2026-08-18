@@ -483,8 +483,10 @@ func applyReentryCooldown(fd *FullDecision, ctx *Context, cooldownMinutes int, n
 		}
 		if remaining, reason, blocked := discipline.ReentryBlocked(ctx.TraderID, d.Symbol, side, cooldownMinutes, atr15From(md), md.CurrentPrice, nowMs); blocked {
 			logger.Warnf("⛔ re-entry cooldown: %s %s → WAIT — %s (%ds left).", d.Symbol, d.Action, reason, remaining)
+			d.RefusalReason = "re-entry cooldown: " + reason
 			d.Action = "wait"
 			telemetry.IncGateBlock(ctx.TraderID, "reentry_cooldown")
+			telemetry.RecordError(ctx.TraderID, "entry_refused", "re-entry cooldown: "+reason, telemetry.CostTradeLost)
 		}
 	}
 }
@@ -554,8 +556,10 @@ func applyPriceSanity(fd *FullDecision, ctx *Context) {
 		if reason, bad := priceSanityViolation(side, entryRef, d.StopLoss, d.TakeProfit, atr15, md.CurrentPrice); bad {
 			logger.Warnf("⛔ price-sanity REJECT: %s %s → neutralized to WAIT — %s [AI stop=%.4f target=%.4f, price=%.4f, ATR15=%.4f].",
 				d.Symbol, d.Action, reason, d.StopLoss, d.TakeProfit, md.CurrentPrice, atr15)
+			d.RefusalReason = "price-sanity: " + reason
 			d.Action = "wait"
 			telemetry.IncGateBlock(ctx.TraderID, "price_sanity")
+			telemetry.RecordError(ctx.TraderID, "entry_refused", "price-sanity: "+reason, telemetry.CostTradeLost)
 		}
 	}
 }

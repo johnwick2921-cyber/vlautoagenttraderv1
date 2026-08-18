@@ -196,6 +196,10 @@ func (at *AutoTrader) maybeRunSessionReadsAt(now time.Time) {
 		}
 		existing, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, s.Name, at.id)
 		if err != nil {
+			// P0-cleanup — a DB read error must not silently skip the
+			// session's plan read (the plan simply never appears).
+			at.logErrorf("🚨 planner session-read skipped: GetLatestPlanForTraderSession %s %s failed: %v", tradeDate, s.Name, err)
+			telemetry.RecordError(at.id, "plan_read_failed", "GetLatestPlanForTraderSession: "+err.Error(), telemetry.CostDecisionLost)
 			continue
 		}
 		if existing == nil {

@@ -1,6 +1,8 @@
 package kernel
 
 import (
+	"fmt"
+
 	"nofx/logger"
 	"nofx/market"
 	"nofx/telemetry"
@@ -76,8 +78,11 @@ func applyStaleDataBlock(fd *FullDecision, ctx *Context, nowMs int64) {
 		if tf, age, limit, stale := staleEntryFeed(md, nowMs); stale {
 			logger.Warnf("⛔ stale-data ENTRY BLOCK: %s %s → WAIT — freshest %s bar is %dms old (>%dms = 2×interval); feed likely frozen. Exits/position-management unaffected.",
 				d.Symbol, d.Action, tf, age, limit)
+			reason := fmt.Sprintf("freshest %s bar %dms old (>%dms)", tf, age, limit)
+			d.RefusalReason = "stale-data: " + reason
 			d.Action = "wait"
 			telemetry.IncGateBlock(ctx.TraderID, "stale_data")
+			telemetry.RecordError(ctx.TraderID, "entry_refused", "stale-data: "+reason, telemetry.CostTradeLost)
 		}
 	}
 }

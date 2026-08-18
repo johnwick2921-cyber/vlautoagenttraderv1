@@ -316,7 +316,11 @@ const (
 func (at *AutoTrader) ntHeldPosition(symbol string) string {
 	positions, err := at.trader.GetPositions()
 	if err != nil {
-		return "" // read error → treat as flat; the existing open-path checks + reconcile cover it
+		// P0-cleanup — read error is NOT flat; say so (it changes the
+		// reconcile decision downstream).
+		at.logWarnf("⚠️ positions read failed — reconcile treats as flat, reason: %v", err)
+		telemetry.RecordError(at.id, "positions_read_failed", err.Error(), telemetry.CostNone)
+		return ""
 	}
 	for _, pos := range positions {
 		if pos["symbol"] != symbol {
@@ -507,8 +511,14 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 	// this, placeEntry errors "SetStopLoss and SetTakeProfit must be called
 	// before long".
 	if market.IsCMEFuturesSymbol(decision.Symbol) {
-		_ = at.trader.SetStopLoss(decision.Symbol, "LONG", quantity, decision.StopLoss)
-		_ = at.trader.SetTakeProfit(decision.Symbol, "LONG", quantity, decision.TakeProfit)
+		if err := at.trader.SetStopLoss(decision.Symbol, "LONG", quantity, decision.StopLoss); err != nil {
+			at.logErrorf("🚨 pre-entry bracket STOP set FAILED for LONG — %v (entry proceeds without the protective stop)", err)
+			telemetry.RecordError(at.id, "bracket_set_failed", "pre-entry SetStopLoss: "+err.Error(), telemetry.CostTradeLost)
+		}
+		if err := at.trader.SetTakeProfit(decision.Symbol, "LONG", quantity, decision.TakeProfit); err != nil {
+			at.logErrorf("🚨 pre-entry bracket TARGET set FAILED for LONG — %v (entry proceeds without the protective target)", err)
+			telemetry.RecordError(at.id, "bracket_set_failed", "pre-entry SetTakeProfit: "+err.Error(), telemetry.CostTradeLost)
+		}
 	}
 
 	// Open position
