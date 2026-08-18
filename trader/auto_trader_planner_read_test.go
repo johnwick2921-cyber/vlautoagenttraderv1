@@ -11,10 +11,19 @@ import (
 const validTraderPlanJSON = `{
   "reasoning": "Balance below PDH; fade edges, long the reclaim.",
   "bias": {"direction": "long", "conviction": "medium", "flip_condition": "2x5m < 15480"},
-  "levels": [{"price": 15620, "label": "PDH", "grade": "A", "instruction": "fade"}],
-  "scenarios": [{"id": "S1", "trigger": "sweep 15480 reclaim", "condition": "sweep_reclaim", "direction": "long", "target_chain": [15550], "invalid": "2x5m<15470", "quality": "A"}],
+  "levels": [
+    {"price": 15480, "label": "PWL", "grade": "A", "instruction": "fade"},
+    {"price": 15520, "label": "RN 15525", "grade": "B", "instruction": "fade"},
+    {"price": 15575, "label": "RN 15575", "grade": "B", "instruction": "fade"},
+    {"price": 15620, "label": "PDH", "grade": "A", "instruction": "fade"},
+    {"price": 15650, "label": "RN 15650", "grade": "B", "instruction": "fade"},
+    {"price": 15700, "label": "RN 15700", "grade": "B", "instruction": "fade"}
+  ],
+  "scenarios": [{"id": "S1", "trigger": "sweep 15480 reclaim", "condition": "sweep_reclaim", "direction": "long", "target_chain": [15550, 15620], "invalid": "2x5m<15470", "quality": "A"}],
   "no_trade": ["first 5m"],
   "death_condition": "acceptance above 15620",
+  "death": {"price": 15620, "side": "above", "rule": "2x5m"},
+  "flip": {"price": 15480, "side": "below", "rule": "2x5m", "flip_to": "short"},
   "day_type": "balance"
 }`
 

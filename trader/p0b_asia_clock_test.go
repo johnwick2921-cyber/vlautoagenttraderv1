@@ -50,9 +50,17 @@ func TestP0BAsiaReadFiresAt1655WhileMarketClosed(t *testing.T) {
 	prev := market.FuturesBarsProvider
 	t.Cleanup(func() { market.FuturesBarsProvider = prev })
 	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline {
-		// Stored-data path: the planner input only needs SOME bars; keep it thin.
+		// Stored-data path: supply a realistic prior session so DailyATRProxy
+		// resolves (~100 pts) instead of the thin one-bar fallback that the
+		// P0.2 target-reachability rule would trip over.
 		now := time.Now().UnixMilli()
-		return []market.Kline{{OpenTime: now - 600_000, High: 15610, Low: 15590, Close: 15600, CloseTime: now - 300_000}}
+		bars := make([]market.Kline, 0, 390)
+		base := now - 400*60_000
+		for i := 0; i < 390; i++ {
+			o := base + int64(i)*60_000
+			bars = append(bars, market.Kline{OpenTime: o, High: 15650 + float64(i%10), Low: 15550 + float64(i%10), Close: 15600 + float64(i%10), CloseTime: o + 59_000})
+		}
+		return bars
 	}
 
 	// Tuesday 16:55 CT — the CME maintenance break. IsCMEOpen(now) == false.

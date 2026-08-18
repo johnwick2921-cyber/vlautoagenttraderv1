@@ -435,7 +435,24 @@ func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDea
 	if row.CreatedAt.IsZero() {
 		sinceMs = 0
 	}
+	// P0.3 (2026-08-19) — the planner's own stated death/flip conditions are now
+	// MACHINE-EVALUATED (they used to be display-only prose; on 2026-08-18 the
+	// plan's death text fired at ~09:00 and nothing re-planned). The structured
+	// predicate runs first; the legacy all-levels-consumed check stays as the
+	// fallback for old stored plans.
+	killer, fired := kernel.PlanDeathOrFlipSince(doc, bars, at.acceptanceRuleFor(row.Session), sinceMs, now.UnixMilli())
+	if fired {
+		return kernel.PlanDeathDetail{Killer: killer, Price: priceOf(bars)}, true
+	}
 	return kernel.DescribePlanDeath(doc, bars, at.acceptanceRuleFor(row.Session), sinceMs, now.UnixMilli())
+}
+
+// priceOf returns the latest closed close of the bar series (0 if empty).
+func priceOf(bars []market.Kline) float64 {
+	if len(bars) == 0 {
+		return 0
+	}
+	return bars[len(bars)-1].Close
 }
 
 // noTradeLevelMap assembles the CURRENT detector/scorer output as plan levels
@@ -559,8 +576,19 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimed(session, tradeDate, trigg
 	hash := shortHash(prompt)
 	// W3 — HARD red-news blackout lines auto-written into the plan (§80).
 	t1Lines := kernel.T1NoTradeLines(input.Calendar)
+	// P0.1/P0.2 (2026-08-19) — write-time facts: both-side levels, continuation
+	// scenario on gaps. PDH/PDL come from the detector universe (seated or raw).
+	facts := kernel.PlanFacts{Price: input.Price, DATR: input.DATR}
+	for _, l := range input.Levels {
+		switch l.Kind {
+		case kernel.KindPDH:
+			facts.PDH = l.Price
+		case kernel.KindPDL:
+			facts.PDL = l.Price
+		}
+	}
 	// W11 — carry the frozen indicator mirror + ai_config hash to the write site.
-	at.runPlannerReadCoreWithTrigger(session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, func() (string, error) {
+	at.runPlannerReadCoreWithFacts(session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, facts, func() (string, error) {
 		return client.CallWithMessages(plannerSystemPrompt, prompt)
 	}, t1Lines...)
 	return true
@@ -586,10 +614,16 @@ func (at *AutoTrader) runPlannerReadCore(session, tradeDate, modelID, promptHash
 }
 
 // runPlannerReadCoreWithTrigger is runPlannerReadCore with an explicit
-// trigger_reason. ITEM 3 (2026-08-17): an owner-forced re-read must be
-// distinguishable in the stored history from the scheduled one, so the version
-// list can show WHO asked for it. An empty override keeps the scheduled label.
+// trigger_reason and NO facts (schema-only validation — legacy callers/tests).
 func (at *AutoTrader) runPlannerReadCoreWithTrigger(session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash string, call func() (string, error), extraNoTrade ...string) (int, string, error) {
+	return at.runPlannerReadCoreWithFacts(session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, kernel.PlanFacts{}, call, extraNoTrade...)
+}
+
+// runPlannerReadCoreWithFacts is the production core: same retry/fail-closed
+// loop PLUS the P0.1/P0.2 facts validation (both-side levels, continuation
+// scenario on gaps, duplicate/target reachability). Legacy callers keep the
+// facts-free signature (schema-only validation).
+func (at *AutoTrader) runPlannerReadCoreWithFacts(session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash string, facts kernel.PlanFacts, call func() (string, error), extraNoTrade ...string) (int, string, error) {
 	// H4/H5 — validation must accept EXACTLY what the config allows: the resolved
 	// max_levels / scenario_cap (hard ceilings 12/5). Before this the parse
 	// hardcoded 8/3, so raising either setting made EVERY read fail-closed into a
@@ -608,6 +642,13 @@ func (at *AutoTrader) runPlannerReadCoreWithTrigger(session, tradeDate, triggerO
 		d, perr := kernel.ParsePlanDocCapped(raw, maxLevels, scenarioCap)
 		if perr != nil {
 			lastErr = perr
+			continue
+		}
+		// P0.1/P0.2 (2026-08-19) — facts rules: both-side levels, continuation
+		// scenario on a gap out of the prior range, no duplicate seats, reachable
+		// targets. A plan that fails these is NOT shipped (retry → fail-closed).
+		if verr := kernel.ValidatePlanDocWithFacts(d, facts, maxLevels, scenarioCap); verr != nil {
+			lastErr = verr
 			continue
 		}
 		doc = d

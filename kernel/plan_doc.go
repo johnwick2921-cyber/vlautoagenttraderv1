@@ -3,6 +3,7 @@ package kernel
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -45,7 +46,31 @@ type PlanDoc struct {
 	NoTrade        []string       `json:"no_trade"`
 	DeathCondition string         `json:"death_condition"`
 	DayType        string         `json:"day_type,omitempty"`
+
+	// P0.3 (2026-08-19) — MACHINE-EVALUABLE death/flip. The prose fields above
+	// stay (card display + back-compat); these structured fields are what Go
+	// evaluates every cycle. Empty → the old all-levels-consumed fallback
+	// remains for legacy stored plans.
+	DeathStructured *PlanCondition `json:"death,omitempty"`
+	FlipStructured  *PlanCondition `json:"flip,omitempty"`
 }
+
+// PlanCondition is a checkable predicate: price closes beyond `Price` on the
+// rule timeframe (`Rule`: "2x5m" | "15m_close" | "5m_close"), on `Side`
+// ("below" | "above"). `FlipTo` names the direction the bias flips to when the
+// flip condition fires ("" for death).
+type PlanCondition struct {
+	Price  float64 `json:"price"`
+	Side   string  `json:"side"` // below | above
+	Rule   string  `json:"rule"` // 2x5m | 15m_close | 5m_close
+	FlipTo string  `json:"flip_to,omitempty"`
+}
+
+// conditionRules / conditionSides are the enums PlanCondition validates against.
+var (
+	conditionRules = map[string]bool{"2x5m": true, "15m_close": true, "5m_close": true}
+	conditionSides = map[string]bool{"below": true, "above": true}
+)
 
 var (
 	biasDirections    = map[string]bool{"long": true, "short": true, "neutral": true}
@@ -177,7 +202,110 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 			}
 		}
 	}
+	// P0.3 (2026-08-19) — structured conditions validate when PRESENT (legacy
+	// stored plans without them still pass — the all-levels-consumed fallback
+	// governs those).
+	for _, cond := range []struct {
+		name string
+		c    *PlanCondition
+	}{{"death", d.DeathStructured}, {"flip", d.FlipStructured}} {
+		if cond.c == nil {
+			continue
+		}
+		if cond.c.Price <= 0 {
+			return fmt.Errorf("%s.price %v invalid (must be > 0)", cond.name, cond.c.Price)
+		}
+		if !conditionSides[cond.c.Side] {
+			return fmt.Errorf("%s.side %q invalid (below|above)", cond.name, cond.c.Side)
+		}
+		if !conditionRules[cond.c.Rule] {
+			return fmt.Errorf("%s.rule %q invalid (2x5m|15m_close|5m_close)", cond.name, cond.c.Rule)
+		}
+		if cond.name == "flip" && cond.c.FlipTo != "" && !biasDirections[cond.c.FlipTo] {
+			return fmt.Errorf("flip.flip_to %q invalid (long|short)", cond.c.FlipTo)
+		}
+	}
 	return nil
+}
+
+// PlanFacts is the Go-computed reality the planner's plan must conform to —
+// written at plan time so the P0.1/P0.2 rules are enforced, not requested.
+type PlanFacts struct {
+	Price float64 // reference price at read time
+	DATR  float64 // daily ATR proxy
+	PDH   float64 // prior day high (0 = unknown → gap rules skipped)
+	PDL   float64 // prior day low (0 = unknown → gap rules skipped)
+}
+
+// ValidatePlanDocWithFacts = schema rules + P0.1/P0.2 facts rules:
+//   - levels must carry ≥ MinSideLevels on EACH side of price (one-sided maps
+//     are the 2026-08-18 pathology — a 110-point breakdown with zero downside
+//     levels);
+//   - price BELOW PDL (gap-down) → a continuation SHORT scenario is mandatory;
+//     price ABOVE PDH (gap-up) → a continuation LONG scenario is mandatory;
+//   - no two levels within the cluster tolerance (duplicate seats);
+//   - every scenario target must sit within the proximity band of price.
+func ValidatePlanDocWithFacts(d *PlanDoc, facts PlanFacts, maxLevels, maxScenarios int) error {
+	if err := ValidatePlanDocWithCaps(d, maxLevels, maxScenarios); err != nil {
+		return err
+	}
+	if facts.Price <= 0 {
+		return nil // no facts → schema-only (legacy callers/tests)
+	}
+	// P0.4 — duplicate-level rejection (the planner copied an EQ family 4×).
+	for i := 0; i < len(d.Levels); i++ {
+		for j := i + 1; j < len(d.Levels); j++ {
+			if math.Abs(d.Levels[i].Price-d.Levels[j].Price) <= LevelClusterTicks*0.25 {
+				return fmt.Errorf("levels[%d] and [%d] are %.2f apart — duplicates within the cluster tolerance; collapse them into one entry",
+					i, j, math.Abs(d.Levels[i].Price-d.Levels[j].Price))
+			}
+		}
+	}
+	// P0.1 — both-side minimum.
+	below, above := 0, 0
+	for _, l := range d.Levels {
+		switch {
+		case l.Price < facts.Price:
+			below++
+		case l.Price > facts.Price:
+			above++
+		}
+	}
+	if below < MinSideLevels {
+		return fmt.Errorf("only %d levels below price %.2f — the plan must carry ≥%d on EACH side (add prior week/month lows, swing lows, round numbers or value-area edges below)", below, facts.Price, MinSideLevels)
+	}
+	if above < MinSideLevels {
+		return fmt.Errorf("only %d levels above price %.2f — the plan must carry ≥%d on EACH side", above, facts.Price, MinSideLevels)
+	}
+	// P0.2 — continuation scenario on a gap out of the prior range.
+	if facts.PDL > 0 && facts.Price < facts.PDL && !hasDirection(d.Scenarios, "short") {
+		return fmt.Errorf("price %.2f is BELOW PDL %.2f (gap-down) — the plan MUST include a continuation/breakdown short scenario", facts.Price, facts.PDL)
+	}
+	if facts.PDH > 0 && facts.Price > facts.PDH && !hasDirection(d.Scenarios, "long") {
+		return fmt.Errorf("price %.2f is ABOVE PDH %.2f (gap-up) — the plan MUST include a continuation/breakout long scenario", facts.Price, facts.PDH)
+	}
+	// P0.2b — targets must be reachable: inside the proximity band.
+	band := 1.5 * facts.DATR
+	if band <= 0 {
+		band = 0.012 * facts.Price // warm-up fallback
+	}
+	for i, s := range d.Scenarios {
+		for _, t := range s.TargetChain {
+			if math.Abs(t-facts.Price) > band {
+				return fmt.Errorf("scenario[%d] target %.2f is %.0f pts from price %.2f — outside the %.0f-pt proximity band (unreachable target)", i, t, math.Abs(t-facts.Price), facts.Price, band)
+			}
+		}
+	}
+	return nil
+}
+
+func hasDirection(scenarios []PlanScenario, dir string) bool {
+	for _, s := range scenarios {
+		if s.Direction == dir {
+			return true
+		}
+	}
+	return false
 }
 
 // extractJSONObject returns the substring from the first '{' to the matching
