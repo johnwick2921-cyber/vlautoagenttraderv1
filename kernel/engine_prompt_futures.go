@@ -99,6 +99,13 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	} else {
 		sb.WriteString("# You are a professional CME " + category + " trading AI specializing in the " + inst.Desc + " (" + sym + ").\n\n")
 	}
+	// P0 timezone fix — labelled clock before every window bound, right after
+	// the persona header (owner rule: CT is canonical everywhere).
+	if e.clockContextLine != "" {
+		sb.WriteString(e.clockContextLine)
+		sb.WriteString("\n\n")
+	}
+
 	sb.WriteString("## Instrument\n")
 	sb.WriteString("- Symbol: " + sym + " (" + inst.Desc + " futures)\n")
 	sb.WriteString("- Tick size: " + tickStr + " " + pointWord + "s\n")

@@ -40,10 +40,7 @@ func SessionInstanceStart(sess *SessionDef, now time.Time) (time.Time, bool) {
 	if !ok {
 		return time.Time{}, false
 	}
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		return time.Time{}, false
-	}
+	loc := CTLocation()
 	ct := now.In(loc)
 	todayStart := time.Date(ct.Year(), ct.Month(), ct.Day(), startMin/60, startMin%60, 0, 0, loc)
 	switch {

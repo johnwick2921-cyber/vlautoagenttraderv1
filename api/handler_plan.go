@@ -37,11 +37,7 @@ var planOverlayMu sync.Mutex
 // state gracefully: found=false, so the card renders its no-plan-yet state.
 
 func planChicago() *time.Location {
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		return time.UTC
-	}
-	return loc
+	return kernel.CTLocation()
 }
 
 func maxI(a, b int) int {

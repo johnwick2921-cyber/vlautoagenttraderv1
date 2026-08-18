@@ -135,10 +135,7 @@ func (at *AutoTrader) maybeResetStatsOnModelChange(exactModel string) {
 
 // plannerTradeDateCT returns the trade_date (CT calendar date) a read belongs to.
 func plannerTradeDateCT(now time.Time) string {
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		loc = time.UTC
-	}
+	loc := kernel.CTLocation()
 	return now.In(loc).Format("2006-01-02")
 }
 
@@ -807,7 +804,7 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	if slice, err := at.store.Calendar().GetSlice(tradeDate); err == nil && slice != nil {
 		var evs []calendar.Event
 		if json.Unmarshal([]byte(slice.EventsJSON), &evs) == nil {
-			loc, _ := time.LoadLocation("America/Chicago")
+			loc := kernel.CTLocation()
 			if loc == nil {
 				loc = time.UTC
 			}
@@ -871,6 +868,7 @@ func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.Pla
 	return kernel.PlannerInput{
 		TradeDate:        tradeDate,
 		Session:          session,
+		Now:              now, // P0 timezone — the planner's labelled CT clock
 		ReadKind:         session + " scheduled read (stored+cached data)",
 		Price:            price,
 		DATR:             dATR,

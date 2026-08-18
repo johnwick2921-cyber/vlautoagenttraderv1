@@ -1,6 +1,7 @@
 package api
 
 import (
+	"nofx/kernel"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -173,7 +174,7 @@ func (s *Server) handleEquityHistory(c *gin.Context) {
 		}
 
 		history = append(history, EquityPoint{
-			Timestamp:        snap.Timestamp.Format("2006-01-02 15:04:05"),
+			Timestamp:        kernel.FormatCT(snap.Timestamp),
 			TotalEquity:      snap.TotalEquity,
 			AvailableBalance: snap.Balance,
 			TotalPnL:         snap.UnrealizedPnL,

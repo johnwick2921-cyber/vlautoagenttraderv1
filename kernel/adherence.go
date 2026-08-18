@@ -118,10 +118,7 @@ func SessionWindowFacts(reg SessionRegistry, t time.Time) (inKillzone, inNoTrade
 
 // inFirst5m reports whether t is within the first 5 minutes of a CT window start.
 func inFirst5m(startCT string, t time.Time) bool {
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		return false
-	}
+	loc := CTLocation()
 	var sh, sm int
 	if _, err := fmt.Sscanf(startCT, "%d:%d", &sh, &sm); err != nil {
 		return false

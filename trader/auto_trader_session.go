@@ -56,10 +56,7 @@ func sessionWindowStart(sess *kernel.SessionDef, now time.Time) (time.Time, bool
 	if !ok {
 		return time.Time{}, false
 	}
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		return time.Time{}, false
-	}
+	loc := kernel.CTLocation()
 	ct := now.In(loc)
 	t := time.Date(ct.Year(), ct.Month(), ct.Day(), start/60, start%60, 0, 0, loc)
 	if t.After(ct) {

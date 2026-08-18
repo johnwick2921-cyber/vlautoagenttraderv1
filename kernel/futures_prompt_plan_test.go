@@ -16,7 +16,7 @@ func samplePlanDoc() PlanDoc {
 		Bias:           PlanBias{Direction: "long", Conviction: "medium", FlipCondition: "2x5m < 21480"},
 		Levels:         []PlanLevel{{Price: 21520, Label: "PDH", Grade: "A", Instruction: "fade"}, {Price: 21480, Label: "ONL", Grade: "B", Instruction: "reclaim-long"}},
 		Scenarios:      []PlanScenario{{ID: "S1", Trigger: "sweep 21480 reclaim", Condition: "sweep_reclaim", Direction: "long", TargetChain: []float64{21500, 21520}, Invalid: "2x5m<21470", Quality: "A"}},
-		NoTrade:        []string{"first 5m", "12:00-13:30 lunch"},
+		NoTrade:        []string{"first 5m", "12:00-13:30 CT lunch"},
 		DeathCondition: "acceptance above 21520",
 		DayType:        "balance",
 	}

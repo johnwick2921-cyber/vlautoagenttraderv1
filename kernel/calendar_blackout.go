@@ -36,7 +36,7 @@ func T1BlackoutWindows(events []PlannerCalendarEvent) []CTWindow {
 		out = append(out, CTWindow{
 			Start: ((m-T1BlackoutMinutes)%1440 + 1440) % 1440,
 			End:   ((m+T1BlackoutMinutes)%1440 + 1440) % 1440,
-			Label: fmt.Sprintf("%s %s ±%dm", strings.TrimSpace(e.Title), e.TimeCT, T1BlackoutMinutes),
+			Label: fmt.Sprintf("%s %s CT ±%dm", strings.TrimSpace(e.Title), e.TimeCT, T1BlackoutMinutes),
 		})
 	}
 	return out

@@ -25,7 +25,7 @@ Levels:
   21480.00 ONL [B] reclaim-long
 Scenarios:
   S1 [A] sweep_reclaim long: sweep 21480 reclaim → 21500.00,21520.00 · invalid 2x5m<21470
-No-trade: first 5m · 12:00-13:30 lunch
+No-trade: first 5m · 12:00-13:30 CT lunch
 Plan dies if: acceptance above 21520
 Cite rule: your decision JSON MUST include "cited_scenario" = "S1"|"S2"|…|"off-plan".
 

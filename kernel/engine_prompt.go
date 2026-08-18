@@ -39,6 +39,14 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant, symbo
 	sb.WriteString("\n\n")
 	sb.WriteString("---\n\n")
 
+	// P0 timezone fix — the labelled clock goes FIRST, before any window
+	// bound, so the model can never pair an unlabelled window with a UTC
+	// clock (owner rule: CT is canonical everywhere).
+	if e.clockContextLine != "" {
+		sb.WriteString(e.clockContextLine)
+		sb.WriteString("\n\n")
+	}
+
 	// 1. Role definition (editable)
 	if promptSections.RoleDefinition != "" {
 		sb.WriteString(promptSections.RoleDefinition)
@@ -707,10 +715,10 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 
 func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *market.TimeframeSeriesData, indicators store.IndicatorConfig) {
 	if len(data.Klines) > 0 {
-		sb.WriteString("Time(UTC)      Open      High      Low       Close     Volume\n")
+		sb.WriteString("Time(CT)       Open      High      Low       Close     Volume\n")
 		for i, k := range data.Klines {
-			t := time.Unix(k.Time/1000, 0).UTC()
-			timeStr := t.Format("01-02 15:04")
+			t := time.Unix(k.Time/1000, 0).In(CTLocation())
+			timeStr := TableTimeCT(t)
 			marker := ""
 			if i == len(data.Klines)-1 {
 				marker = "  <- current"

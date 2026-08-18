@@ -79,7 +79,7 @@ func (at *AutoTrader) runCycle() error {
 	at.callCount++
 
 	logger.Info("\n" + strings.Repeat("=", 70) + "\n")
-	logger.Infof("⏰ %s - AI decision cycle #%d", time.Now().Format("2006-01-02 15:04:05"), at.callCount)
+	logger.Infof("⏰ %s - AI decision cycle #%d", kernel.FormatCT(time.Now()), at.callCount)
 	logger.Info(strings.Repeat("=", 70))
 
 	// 0. Check if trader is stopped (early exit to prevent trades after Stop() is called)
@@ -636,10 +636,7 @@ func (at *AutoTrader) noteCMESessionEdge(open bool) {
 	if !open {
 		_, reason := kernel.CMEClosedReason(time.Now())
 		next := kernel.NextCMEOpen(time.Now())
-		chicago, err := time.LoadLocation("America/Chicago")
-		if err != nil {
-			chicago = time.UTC
-		}
+		chicago := kernel.CTLocation()
 		at.logInfof("🌙 CME closed (%s) — next open %s", reason, next.In(chicago).Format("Mon 2006-01-02 15:04 MST"))
 	} else if prev != nil {
 		at.logInfof("☀️ CME open — resuming.")
@@ -833,7 +830,7 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 
 	// 6. Build context
 	ctx := &kernel.Context{
-		CurrentTime:     time.Now().UTC().Format("2006-01-02 15:04:05 UTC"),
+		CurrentTime:     kernel.FormatCT(time.Now()), // CT canonical (P0 timezone)
 		RuntimeMinutes:  int(time.Since(at.startTime).Minutes()),
 		CallCount:       at.callCount,
 		TraderID:        at.id, // B6: per-trader gate-block counters
@@ -878,11 +875,11 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 				// Convert Unix timestamps to formatted strings for AI readability
 				entryTimeStr := ""
 				if trade.EntryTime > 0 {
-					entryTimeStr = time.Unix(trade.EntryTime, 0).UTC().Format("01-02 15:04 UTC")
+					entryTimeStr = kernel.FormatCT(time.Unix(trade.EntryTime, 0))
 				}
 				exitTimeStr := ""
 				if trade.ExitTime > 0 {
-					exitTimeStr = time.Unix(trade.ExitTime, 0).UTC().Format("01-02 15:04 UTC")
+					exitTimeStr = kernel.FormatCT(time.Unix(trade.ExitTime, 0))
 				}
 
 				ctx.RecentOrders = append(ctx.RecentOrders, kernel.RecentOrder{

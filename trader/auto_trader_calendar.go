@@ -126,10 +126,7 @@ func (at *AutoTrader) currentT1Windows(now time.Time) []kernel.CTWindow {
 // (session-sliced, CT time). Shared by the gate + the planner input + the plan
 // no-trade injection so all three agree.
 func sessionPlannerEvents(evs []calendar.Event, session string) []kernel.PlannerCalendarEvent {
-	loc, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		loc = time.UTC
-	}
+	loc := kernel.CTLocation()
 	var out []kernel.PlannerCalendarEvent
 	for _, e := range calendar.EventsForSession(evs, session) {
 		out = append(out, kernel.PlannerCalendarEvent{

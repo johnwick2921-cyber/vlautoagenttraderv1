@@ -15,7 +15,7 @@ import (
 // Christmas Day, New Year's Eve. Each may have shortened hours; for v1 we treat them
 // as full closures and refuse to trade. Refine in Plan 3 if it becomes restrictive.
 func IsCMEOpen(t time.Time) bool {
-	chicago, _ := time.LoadLocation("America/Chicago")
+	chicago := CTLocation()
 	ct := t.In(chicago)
 	if isCMEHoliday(ct) {
 		return false
@@ -39,10 +39,7 @@ func IsCMEOpen(t time.Time) bool {
 // "Friday close" / "daily break"). Invariant (asserted by tests): the returned
 // bool is exactly !IsCMEOpen(t), so the two can never disagree.
 func CMEClosedReason(t time.Time) (closed bool, reason string) {
-	chicago, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		chicago = time.UTC
-	}
+	chicago := CTLocation()
 	ct := t.In(chicago)
 	if isCMEHoliday(ct) {
 		return true, "holiday"
@@ -76,10 +73,7 @@ func CMEClosedReason(t time.Time) (closed bool, reason string) {
 // the weekday, and the holiday date). The 14-day cap is a safety backstop; the
 // longest real closed stretch is ~3 days, so it never triggers in practice.
 func NextCMEOpen(t time.Time) time.Time {
-	chicago, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		chicago = time.UTC
-	}
+	chicago := CTLocation()
 	ct := t.In(chicago)
 	// Truncate to the top of the current Chicago hour, then walk forward.
 	cur := time.Date(ct.Year(), ct.Month(), ct.Day(), ct.Hour(), 0, 0, 0, chicago)
@@ -98,10 +92,7 @@ func NextCMEOpen(t time.Time) time.Time {
 // realized-P&L / trade-count guardrails measure realized P&L and entries from
 // this instant (not midnight UTC).
 func CMESessionDayStart(now time.Time) time.Time {
-	chicago, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		chicago = time.UTC
-	}
+	chicago := CTLocation()
 	ct := now.In(chicago)
 	boundary := time.Date(ct.Year(), ct.Month(), ct.Day(), 17, 0, 0, 0, chicago)
 	if ct.Hour() < 17 {
@@ -128,10 +119,7 @@ func InBlackoutWindow(now time.Time, startCT, endCT string) bool {
 	if !ok1 || !ok2 || start == end {
 		return false
 	}
-	chicago, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		chicago = time.UTC
-	}
+	chicago := CTLocation()
 	ct := now.In(chicago)
 	cur := ct.Hour()*60 + ct.Minute()
 	if start < end {

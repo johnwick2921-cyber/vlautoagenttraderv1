@@ -297,6 +297,9 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// 1m cache ONCE per cycle; every section derives from it at a single now.
 	var snapshotBars []market.Kline
 	snapshotNow := time.Now()
+	// P0 timezone — ONE labelled clock per prompt, derived from the same
+	// snapshot instant as every other section (one snapshot → one clock).
+	engine.SetClockContext("## Clock\n" + ClockCTAndUTC(snapshotNow) + " — ALL times in this prompt are CT (America/Chicago), including every session/window bound. Never apply CT window numbers to a UTC clock.")
 	if market.FuturesBarsProvider != nil {
 		snapshotBars = market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount)
 	}

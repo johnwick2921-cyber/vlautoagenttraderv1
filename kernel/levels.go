@@ -1,7 +1,6 @@
 package kernel
 
 import (
-	"sync"
 	"time"
 )
 
@@ -16,30 +15,30 @@ import (
 type LevelKind string
 
 const (
-	KindPDH  LevelKind = "PDH"   // prior calendar-day high
-	KindPDL  LevelKind = "PDL"   // prior calendar-day low
-	KindPDC  LevelKind = "PDC"   // prior calendar-day close
-	KindRTHH LevelKind = "RTH-H" // prior regular-hours (NY) high
-	KindRTHL LevelKind = "RTH-L" // prior regular-hours (NY) low
-	KindASH  LevelKind = "AS-H"  // overnight Asia high
-	KindASL  LevelKind = "AS-L"  // overnight Asia low
-	KindLDNH LevelKind = "LDN-H" // overnight London high
-	KindLDNL LevelKind = "LDN-L" // overnight London low
-	KindONH  LevelKind = "ONH"   // overnight (Asia+London) composite high
-	KindONL  LevelKind = "ONL"   // overnight composite low
-	KindPWH  LevelKind = "PWH"   // prior week high
-	KindPWL  LevelKind = "PWL"   // prior week low
-	KindPMH  LevelKind = "PMH"   // prior month high
-	KindPML  LevelKind = "PML"   // prior month low
-	KindRound LevelKind = "RN"   // round number
-	KindGap   LevelKind = "GAP"  // unfilled gap edge
-	KindORH   LevelKind = "OR-H" // opening-range high
-	KindORL   LevelKind = "OR-L" // opening-range low
-	KindIBH   LevelKind = "IB-H" // initial-balance high
-	KindIBL   LevelKind = "IB-L" // initial-balance low
-	KindNPOC  LevelKind = "nPOC" // naked point of control
-	KindEQH   LevelKind = "EQH"  // equal highs (liquidity)
-	KindEQL   LevelKind = "EQL"  // equal lows (liquidity)
+	KindPDH    LevelKind = "PDH"    // prior calendar-day high
+	KindPDL    LevelKind = "PDL"    // prior calendar-day low
+	KindPDC    LevelKind = "PDC"    // prior calendar-day close
+	KindRTHH   LevelKind = "RTH-H"  // prior regular-hours (NY) high
+	KindRTHL   LevelKind = "RTH-L"  // prior regular-hours (NY) low
+	KindASH    LevelKind = "AS-H"   // overnight Asia high
+	KindASL    LevelKind = "AS-L"   // overnight Asia low
+	KindLDNH   LevelKind = "LDN-H"  // overnight London high
+	KindLDNL   LevelKind = "LDN-L"  // overnight London low
+	KindONH    LevelKind = "ONH"    // overnight (Asia+London) composite high
+	KindONL    LevelKind = "ONL"    // overnight composite low
+	KindPWH    LevelKind = "PWH"    // prior week high
+	KindPWL    LevelKind = "PWL"    // prior week low
+	KindPMH    LevelKind = "PMH"    // prior month high
+	KindPML    LevelKind = "PML"    // prior month low
+	KindRound  LevelKind = "RN"     // round number
+	KindGap    LevelKind = "GAP"    // unfilled gap edge
+	KindORH    LevelKind = "OR-H"   // opening-range high
+	KindORL    LevelKind = "OR-L"   // opening-range low
+	KindIBH    LevelKind = "IB-H"   // initial-balance high
+	KindIBL    LevelKind = "IB-L"   // initial-balance low
+	KindNPOC   LevelKind = "nPOC"   // naked point of control
+	KindEQH    LevelKind = "EQH"    // equal highs (liquidity)
+	KindEQL    LevelKind = "EQL"    // equal lows (liquidity)
 	KindSupply LevelKind = "SUPPLY" // supply zone
 	KindDemand LevelKind = "DEMAND" // demand zone
 	KindFVG    LevelKind = "FVG"    // fair-value gap
@@ -73,20 +72,7 @@ func zoneLevel(kind LevelKind, lo, hi float64, label, origin string) DetectedLev
 	return DetectedLevel{Kind: kind, Price: (lo + hi) / 2, Lo: lo, Hi: hi, Label: label, OriginDate: origin}
 }
 
-// chicago returns the cached America/Chicago location (UTC fallback), avoiding a
-// LoadLocation per call and a first-call data race.
-var (
-	chicagoOnce sync.Once
-	chicagoLoc  *time.Location
-)
-
-func chicago() *time.Location {
-	chicagoOnce.Do(func() {
-		loc, err := time.LoadLocation("America/Chicago")
-		if err != nil {
-			loc = time.UTC
-		}
-		chicagoLoc = loc
-	})
-	return chicagoLoc
-}
+// chicago is the legacy name for the canonical CT location — it delegates
+// to CTLocation() (kernel/tz.go), the SINGLE timezone source every renderer
+// must go through (owner rule 2026-08-19: CT is canonical everywhere).
+func chicago() *time.Location { return CTLocation() }

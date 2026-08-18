@@ -16,7 +16,7 @@ const validPlanJSON = `{
     {"id": "S1", "trigger": "sweep 15480 then reclaim", "condition": "sweep_reclaim", "direction": "long", "target_chain": [15550, 15620], "invalid": "2x5m < 15470", "quality": "A"},
     {"id": "S2", "trigger": "reject 15620", "condition": "reject", "direction": "short", "target_chain": [15550], "invalid": "acceptance > 15625", "quality": "B"}
   ],
-  "no_trade": ["first 5m", "12:00-13:30 lunch"],
+  "no_trade": ["first 5m", "12:00-13:30 CT lunch"],
   "death_condition": "acceptance above 15620 kills the fade thesis",
   "day_type": "balance"
 }`

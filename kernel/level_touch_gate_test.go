@@ -24,8 +24,8 @@ func TestP1CStillValidRequiresTouch(t *testing.T) {
 	for i := 0; i < 40; i++ {
 		px := level + 20 + float64(i)
 		bars = append(bars, market.Kline{
-			OpenTime:  base.Add(time.Duration(i) * time.Minute).UnixMilli(),
-			Open:      px - 1, High: px + 2, Low: px - 3, Close: px,
+			OpenTime: base.Add(time.Duration(i) * time.Minute).UnixMilli(),
+			Open:     px - 1, High: px + 2, Low: px - 3, Close: px,
 			CloseTime: base.Add(time.Duration(i+1) * time.Minute).UnixMilli(),
 		})
 	}
@@ -49,15 +49,15 @@ func TestP1CStillValidFalseOnlyAfterTouchAndAcceptance(t *testing.T) {
 	base := time.Date(2026, 8, 18, 10, 0, 0, 0, time.UTC)
 	const level = 30000.0
 	bars := []market.Kline{{
-		OpenTime:  base.UnixMilli(),
-		Open:      level - 2, High: level + 2, Low: level - 4, Close: level - 1,
+		OpenTime: base.UnixMilli(),
+		Open:     level - 2, High: level + 2, Low: level - 4, Close: level - 1,
 		CloseTime: base.Add(time.Minute).UnixMilli(),
 	}} // straddle = touch
 	for i := 1; i < 40; i++ {
 		px := level + 10 + float64(i)
 		bars = append(bars, market.Kline{
-			OpenTime:  base.Add(time.Duration(i) * time.Minute).UnixMilli(),
-			Open:      px - 1, High: px + 2, Low: px - 3, Close: px,
+			OpenTime: base.Add(time.Duration(i) * time.Minute).UnixMilli(),
+			Open:     px - 1, High: px + 2, Low: px - 3, Close: px,
 			CloseTime: base.Add(time.Duration(i+1) * time.Minute).UnixMilli(),
 		})
 	}

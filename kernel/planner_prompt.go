@@ -3,6 +3,7 @@ package kernel
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // P3.3 — the planner input package (assembled into ONE prompt for the reasoner).
@@ -21,8 +22,9 @@ type PlannerCalendarEvent struct {
 // PlannerInput is everything the reasoner reads to write a plan.
 type PlannerInput struct {
 	TradeDate        string
-	Session          string // NY | ASIA | LONDON
-	ReadKind         string // e.g. "closed-market 16:55 CT read (from stored data)"
+	Session          string    // NY | ASIA | LONDON
+	Now              time.Time // labelled CT clock line (zero → omitted)
+	ReadKind         string    // e.g. "closed-market 16:55 CT read (from stored data)"
 	Price            float64
 	DATR             float64
 	Regime           RegimeBlock
@@ -58,6 +60,10 @@ func BuildPlannerPrompt(in PlannerInput) string {
 
 	fmt.Fprintf(&b, "## Session\ntrade_date %s · session %s · %s · price %.2f · dATR %.1f\n",
 		in.TradeDate, in.Session, in.ReadKind, in.Price, in.DATR)
+	if !in.Now.IsZero() {
+		fmt.Fprintf(&b, "clock %s — EVERY time in this prompt is CT (America/Chicago): session windows, read/flat times and the lunch no-trade (12:00–13:30 CT) are CT wall-clock. Never apply these numbers to a UTC clock.\n",
+			ClockCTAndUTC(in.Now))
+	}
 	if in.Warming != "" {
 		fmt.Fprintf(&b, "WARMING: %s (first-week honesty — narrate the machinery, not an edge).\n", in.Warming)
 	}
@@ -107,8 +113,8 @@ func BuildPlannerPrompt(in PlannerInput) string {
 		b.WriteString("\n")
 	}
 
-	// Session-sliced calendar: T1 = HARD blackout, T2 = caution.
-	b.WriteString("## Calendar (this session's window)\n")
+	// Session-sliced calendar: T1 = HARD blackout, T2 = caution. Times CT.
+	b.WriteString("## Calendar (this session's window — times CT)\n")
 	if len(in.Calendar) == 0 {
 		b.WriteString("  (no filtered events)\n")
 	} else {
@@ -150,7 +156,7 @@ func plannerOutputContract(maxLevels, maxScenarios int) string {
 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
 		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d`, maxL) + "\n" +
 		fmt.Sprintf(`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B"}],  // 1..%d`, maxS) + "\n" +
-		`  "no_trade": ["first 5m", "12:00-13:30 lunch", "<calendar blackouts>"],` + "\n" +
+		`  "no_trade": ["first 5m (CT)", "12:00-13:30 CT lunch", "<calendar blackouts>"],` + "\n" +
 		`  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
 		`  "day_type": "trend|balance|<optional>"` + "\n" +
 		"}\n" +

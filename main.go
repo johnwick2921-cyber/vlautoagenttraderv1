@@ -90,6 +90,10 @@ func main() {
 	auth.SetJWTSecret(cfg.JWTSecret)
 	logger.Info("🔑 JWT secret configured")
 
+	// P0 timezone — CT is canonical for EVERY rendered time (owner rule
+	// 2026-08-19). The host's local zone is ignored by every renderer.
+	logger.Infof("🕐 Timezone pinned: %s (CT) — all prompts, cards, digests and logs render CT, host TZ ignored", kernel.CanonicalZone)
+
 	// WebSocket market monitor is NO LONGER USED
 	// All K-line data now comes from CoinAnk API instead of Binance WebSocket cache
 	// Commented out to reduce unnecessary connections:

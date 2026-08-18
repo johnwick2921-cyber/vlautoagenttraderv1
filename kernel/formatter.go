@@ -323,7 +323,7 @@ func formatKlineDataZH(symbol string, tfData map[string]*market.TimeframeSeriesD
 		if data, ok := tfData[tf]; ok && len(data.Klines) > 0 {
 			sb.WriteString(fmt.Sprintf("#### %s 时间框架 (从旧到新)\n\n", tf))
 			sb.WriteString("```\n")
-			sb.WriteString("时间(UTC)      开盘      最高      最低      收盘      成交量\n")
+			sb.WriteString("时间(CT)      开盘      最高      最低      收盘      成交量\n")
 
 			// Only show the latest 30 klines
 			startIdx := 0
@@ -333,9 +333,9 @@ func formatKlineDataZH(symbol string, tfData map[string]*market.TimeframeSeriesD
 
 			for i := startIdx; i < len(data.Klines); i++ {
 				k := data.Klines[i]
-				t := time.UnixMilli(k.Time).UTC()
+				t := time.UnixMilli(k.Time).In(CTLocation())
 				sb.WriteString(fmt.Sprintf("%s    %.4f    %.4f    %.4f    %.4f    %.2f\n",
-					t.Format("01-02 15:04"),
+					TableTimeCT(t),
 					k.Open,
 					k.High,
 					k.Low,
@@ -355,7 +355,6 @@ func formatKlineDataZH(symbol string, tfData map[string]*market.TimeframeSeriesD
 
 	return sb.String()
 }
-
 
 // getOIInterpretationZH returns OI change interpretation (Chinese)
 func getOIInterpretationZH(oiChange, priceChange string) string {
@@ -590,7 +589,7 @@ func formatKlineDataEN(symbol string, tfData map[string]*market.TimeframeSeriesD
 		if data, ok := tfData[tf]; ok && len(data.Klines) > 0 {
 			sb.WriteString(fmt.Sprintf("#### %s Timeframe (oldest → latest)\n\n", tf))
 			sb.WriteString("```\n")
-			sb.WriteString("Time(UTC)      Open      High      Low       Close     Volume\n")
+			sb.WriteString("Time(CT)      Open      High      Low       Close     Volume\n")
 
 			startIdx := 0
 			if len(data.Klines) > 30 {
@@ -599,9 +598,9 @@ func formatKlineDataEN(symbol string, tfData map[string]*market.TimeframeSeriesD
 
 			for i := startIdx; i < len(data.Klines); i++ {
 				k := data.Klines[i]
-				t := time.UnixMilli(k.Time).UTC()
+				t := time.UnixMilli(k.Time).In(CTLocation())
 				sb.WriteString(fmt.Sprintf("%s    %.4f    %.4f    %.4f    %.4f    %.2f\n",
-					t.Format("01-02 15:04"),
+					TableTimeCT(t),
 					k.Open,
 					k.High,
 					k.Low,
@@ -620,7 +619,6 @@ func formatKlineDataEN(symbol string, tfData map[string]*market.TimeframeSeriesD
 
 	return sb.String()
 }
-
 
 // getOIInterpretationEN returns OI change interpretation (English)
 func getOIInterpretationEN(oiChange, priceChange string) string {

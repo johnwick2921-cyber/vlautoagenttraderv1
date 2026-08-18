@@ -92,16 +92,16 @@ type RecentOrder struct {
 
 // Context trading context (complete information passed to AI)
 type Context struct {
-	CurrentTime        string                             `json:"current_time"`
-	RuntimeMinutes     int                                `json:"runtime_minutes"`
-	CallCount          int                                `json:"call_count"`
-	TraderID           string                             `json:"-"` // B6: identity for per-trader gate-block counters (set by the trader loop; never serialized)
+	CurrentTime    string `json:"current_time"`
+	RuntimeMinutes int    `json:"runtime_minutes"`
+	CallCount      int    `json:"call_count"`
+	TraderID       string `json:"-"` // B6: identity for per-trader gate-block counters (set by the trader loop; never serialized)
 	// A5 (G5) — prompt-ownership tags: field-name → owning trader_id for each
 	// account-scoped context field the trader populates. Final prompt assembly
 	// asserts every tag == TraderID (the deciding trader); a mismatch is cross-trader
 	// contamination → the cycle is skipped. Prompt-data only (json:"-"), so a
 	// matching-tag context is byte-identical.
-	OwnerTags map[string]string `json:"-"`
+	OwnerTags          map[string]string                  `json:"-"`
 	Account            AccountInfo                        `json:"account"`
 	Positions          []PositionInfo                     `json:"positions"`
 	CandidateCoins     []CandidateCoin                    `json:"candidate_coins"`
@@ -232,6 +232,12 @@ type StrategyEngine struct {
 	// active plan) → the prompt is unchanged.
 	planBlockLine  string
 	planStatusLine string
+
+	// clockContextLine is the per-cycle labelled clock (P0 timezone fix):
+	// "## Clock\n07:06 CT (12:06 UTC) — ALL times in this prompt are CT…".
+	// Threaded in from the decision loop (one snapshot → one clock) and emitted
+	// by BOTH the futures and crypto prompt builders. Empty → byte-identical.
+	clockContextLine string
 }
 
 // SetSVPContext sets the Session Volume Profile line used by the futures prompt
@@ -249,6 +255,10 @@ func (e *StrategyEngine) SetPlanContext(planBlock, planStatus string) {
 	e.planBlockLine = planBlock
 	e.planStatusLine = planStatus
 }
+
+// SetClockContext sets the labelled per-cycle clock line (P0 timezone fix)
+// emitted by both prompt builders. Pass "" to inject nothing.
+func (e *StrategyEngine) SetClockContext(line string) { e.clockContextLine = line }
 
 // NewStrategyEngine creates strategy execution engine.
 // claw402WalletKey is optional — if provided, nofxos data requests are routed through claw402.

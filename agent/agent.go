@@ -6,6 +6,7 @@
 package agent
 
 import (
+	"nofx/kernel"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -638,7 +639,7 @@ func (a *Agent) buildSystemPromptForStoreUser(lang, storeUserID string) string {
 - **诚实是第一原则** — 不确定就说不确定，没数据就说没数据。绝不编造。
 - 用中文回复。
 
-当前时间: %s`, traderInfo, watchlist, skillCatalog, time.Now().Format("2006-01-02 15:04:05"))
+当前时间: %s`, traderInfo, watchlist, skillCatalog, kernel.FormatCT(time.Now()))
 	}
 
 	return fmt.Sprintf(`You are NOFXi, a professional AI trading agent. Not a chatbot — a trading partner.
@@ -725,7 +726,7 @@ You can call these tools to take action:
 - Lead with the conclusion, then the reason.
 - **Honesty is rule #1** — uncertain = say uncertain, no data = say no data.
 
-Current time: %s`, traderInfo, watchlist, skillCatalog, time.Now().Format("2006-01-02 15:04:05"))
+Current time: %s`, traderInfo, watchlist, skillCatalog, kernel.FormatCT(time.Now()))
 }
 
 // gatherContext collects real-time market data relevant to the user's message.
@@ -891,7 +892,7 @@ func (a *Agent) handleStatus(L string) string {
 	if a.aiClient != nil {
 		ai = "✅"
 	}
-	return fmt.Sprintf(a.msg(L, "status"), rc, tc, wc, ai, time.Now().Format("2006-01-02 15:04:05"))
+	return fmt.Sprintf(a.msg(L, "status"), rc, tc, wc, ai, kernel.FormatCT(time.Now()))
 }
 
 // noAIFallback — when no AI is available, still try to be useful.

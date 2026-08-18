@@ -255,10 +255,7 @@ func (d SessionDef) IsReadTime(now time.Time) bool {
 
 // minutesSinceMidnightCT returns now's minutes-since-midnight in America/Chicago.
 func minutesSinceMidnightCT(now time.Time) int {
-	chicago, err := time.LoadLocation("America/Chicago")
-	if err != nil {
-		chicago = time.UTC
-	}
+	chicago := CTLocation()
 	ct := now.In(chicago)
 	return ct.Hour()*60 + ct.Minute()
 }
