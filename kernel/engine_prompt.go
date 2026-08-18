@@ -141,6 +141,9 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant, symbo
 	// 7. Output format
 	sb.WriteString("# Output Format (Strictly Follow)\n\n")
 	sb.WriteString("**Must use XML tags <reasoning> and <decision> to separate chain of thought and decision JSON, avoiding parsing errors**\n\n")
+	// P0 2026-08-19 — same truncation guard as the futures builder: keep
+	// reasoning short and always emit the decision block.
+	sb.WriteString("Keep your chain-of-thought reasoning under 200 words. You MUST end your response with the <decision> JSON block — never stop without it.\n\n")
 	sb.WriteString("## Format Requirements\n\n")
 	sb.WriteString("<reasoning>\n")
 	sb.WriteString("Your chain of thought analysis...\n")

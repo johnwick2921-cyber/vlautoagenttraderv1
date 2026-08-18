@@ -207,6 +207,11 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	// 5. Output format — MUST match the existing parser exactly.
 	sb.WriteString("# Output Format (Strictly Follow)\n\n")
 	sb.WriteString("**Must use XML tags <reasoning> and <decision> to separate chain of thought and decision JSON, avoiding parsing errors**\n\n")
+	// P0 2026-08-19 — the model's entire output budget was being spent on
+	// chain-of-thought and the decision never got emitted (finish_reason=length,
+	// then a bare `wait` on retry). Keep reasoning tight and ALWAYS end with the
+	// decision block.
+	sb.WriteString("Keep your chain-of-thought reasoning under 200 words. You MUST end your response with the <decision> JSON block — never stop without it.\n\n")
 	sb.WriteString("<reasoning>\n")
 	sb.WriteString("Your chain-of-thought analysis of the " + sym + " bars and indicators.\n")
 	sb.WriteString("</reasoning>\n\n")

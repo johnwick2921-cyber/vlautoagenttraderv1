@@ -39,6 +39,8 @@ Anchor: react AT these levels (grade A>B>C); between them, a confirmed momentum/
 
 **Must use XML tags <reasoning> and <decision> to separate chain of thought and decision JSON, avoiding parsing errors**
 
+Keep your chain-of-thought reasoning under 200 words. You MUST end your response with the <decision> JSON block — never stop without it.
+
 <reasoning>
 Your chain-of-thought analysis of the MNQ bars and indicators.
 </reasoning>

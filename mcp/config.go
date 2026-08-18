@@ -41,7 +41,12 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		// Default values
-		MaxTokens:      getEnvInt("AI_MAX_TOKENS", 2000),
+		// P0 2026-08-19: deepseek-v4-pro is a REASONING model — it burns the entire
+		// output budget on chain-of-thought. 2000 tokens truncated every first-pass
+		// response (finish_reason=length, no decision emitted) and the retry then
+		// defaulted to `wait`. 8000 gives the reasoning + decision JSON room to
+		// finish (wire-proven: stop at ~3-4k with the short-reasoning instruction).
+		MaxTokens:      getEnvInt("AI_MAX_TOKENS", 8000),
 		Temperature:    MCPClientTemperature,
 		MaxRetries:     MaxRetryTimes,
 		RetryWaitBase:  2 * time.Second,
