@@ -195,7 +195,10 @@ Output JSON array, each decision contains:
 - level_index: Grid level index
 - order_id: Order ID (for cancel)
 - confidence: Confidence 0-100
-- reasoning: Decision reason
+- reasoning: Decision reason (≤200 words, decision-focused — no restating the input)
+
+The JSON array is MANDATORY — output it FIRST, before any other text. If you are
+running out of room, drop everything else; never drop the JSON.
 
 Example:
 [

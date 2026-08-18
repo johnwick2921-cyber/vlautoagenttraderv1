@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	nofxiagent "nofx/agent"
 	"nofx/api"
@@ -10,6 +11,7 @@ import (
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/manager"
+	"nofx/mcp"
 	_ "nofx/mcp/payment"
 	_ "nofx/mcp/provider"
 	"nofx/store"
@@ -93,6 +95,35 @@ func main() {
 	// P0 timezone — CT is canonical for EVERY rendered time (owner rule
 	// 2026-08-19). The host's local zone is ignored by every renderer.
 	logger.Infof("🕐 Timezone pinned: %s (CT) — all prompts, cards, digests and logs render CT, host TZ ignored", kernel.CanonicalZone)
+
+	// P0 2026-08-19 — print every effective AI parameter at startup so a silent
+	// default can never hide again (the max_tokens=2000 disease). Any knob the
+	// operator did NOT set explicitly is called out as a WARNING.
+	ai := mcp.EffectiveAIParamsSnapshot(mcp.DefaultDeepSeekModel)
+	logger.Infof("🧠 AI params in force: model=%s max_tokens=%d temperature=%.2f top_p=%s timeout=%ds retries=%d backoff=%ds · truncated-responses=%d",
+		ai.Model, ai.MaxTokens, ai.Temperature, formatTopP(ai.TopP), ai.TimeoutSeconds, ai.MaxRetries, ai.RetryBackoffSeconds, mcp.TruncatedResponses.Load())
+	unset := []string{}
+	if !ai.MaxTokensSet {
+		unset = append(unset, "AI_MAX_TOKENS")
+	}
+	if !ai.TemperatureSet {
+		unset = append(unset, "AI_TEMPERATURE")
+	}
+	if !ai.TopPSet {
+		unset = append(unset, "AI_TOP_P")
+	}
+	if !ai.TimeoutSet {
+		unset = append(unset, "AI_TIMEOUT_SECONDS")
+	}
+	if !ai.MaxRetriesSet {
+		unset = append(unset, "AI_MAX_RETRIES")
+	}
+	if !ai.RetryBackoffSet {
+		unset = append(unset, "AI_RETRY_BACKOFF_SECONDS")
+	}
+	if len(unset) > 0 {
+		logger.Warnf("⚠️ AI params at UNSET defaults (nobody chose these explicitly): %v — set them in .env if the defaults are not what you intend", unset)
+	}
 
 	// WebSocket market monitor is NO LONGER USED
 	// All K-line data now comes from CoinAnk API instead of Binance WebSocket cache
@@ -227,4 +258,12 @@ func initInstallationID(st *store.Store) {
 
 	// Set installation ID in experience module
 	telemetry.SetInstallationID(installationID)
+}
+
+// formatTopP renders the top_p value for the startup log (0 = omitted).
+func formatTopP(v float64) string {
+	if v <= 0 {
+		return "omitted"
+	}
+	return fmt.Sprintf("%.2f", v)
 }

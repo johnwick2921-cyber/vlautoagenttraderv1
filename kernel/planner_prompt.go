@@ -152,7 +152,7 @@ func plannerOutputContract(maxLevels, maxScenarios int) string {
 	maxL, maxS := resolvePlanCaps(maxLevels, maxScenarios)
 	return "## OUTPUT — one JSON object, reasoning FIRST, no prose outside it\n" +
 		"{\n" +
-		`  "reasoning": "<your read: what the auction is doing and why this plan>",` + "\n" +
+		`  "reasoning": "<your read: what the auction is doing and why this plan — ≤200 words, decision-focused>",` + "\n" +
 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
 		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d`, maxL) + "\n" +
 		fmt.Sprintf(`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B"}],  // 1..%d`, maxS) + "\n" +

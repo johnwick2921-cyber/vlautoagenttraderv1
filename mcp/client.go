@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -48,6 +49,12 @@ var (
 
 	// TokenUsageCallback is called after each AI request with token usage info
 	TokenUsageCallback func(usage TokenUsage)
+
+	// TruncatedResponses counts finish_reason=length responses — the P0
+	// 2026-08-19 disease where the whole output budget was spent on reasoning
+	// and the decision block never got emitted. Surfaced in the startup AI-params
+	// line and bumped with a WARN log on every occurrence.
+	TruncatedResponses atomic.Int64
 )
 
 // TokenUsage represents token usage from AI API response
@@ -255,6 +262,10 @@ func (client *Client) BuildMCPRequestBody(systemPrompt, userPrompt string) map[s
 		"messages":    messages,
 		"temperature": client.Cfg.Temperature, // Use configured temperature
 	}
+	// P0 2026-08-19 — top_p only when the operator set it (0 = omit, provider default).
+	if client.Cfg.TopP > 0 {
+		requestBody["top_p"] = client.Cfg.TopP
+	}
 	// OpenAI newer models use max_completion_tokens instead of max_tokens
 	if client.Provider == ProviderOpenAI {
 		requestBody["max_completion_tokens"] = client.MaxTokens
@@ -291,6 +302,7 @@ func (client *Client) ParseMCPResponseFull(body []byte) (*LLMResponse, error) {
 				ReasoningContent string     `json:"reasoning_content"`
 				ToolCalls        []ToolCall `json:"tool_calls"`
 			} `json:"message"`
+			FinishReason *string `json:"finish_reason"`
 		} `json:"choices"`
 		Usage struct {
 			PromptTokens     int `json:"prompt_tokens"`
@@ -316,6 +328,17 @@ func (client *Client) ParseMCPResponseFull(body []byte) (*LLMResponse, error) {
 			CompletionTokens: result.Usage.CompletionTokens,
 			TotalTokens:      result.Usage.TotalTokens,
 		})
+	}
+
+	// P0 2026-08-19 — finish_reason=length means the decision was TRUNCATED
+	// (the max_tokens=2000 disease). Count it, shout about it, and surface the
+	// effective parameters so the owner can see what is in force.
+	if len(result.Choices) > 0 && result.Choices[0].FinishReason != nil {
+		if *result.Choices[0].FinishReason == "length" {
+			TruncatedResponses.Add(1)
+			client.Log.Warnf("🚨 [%s] finish_reason=length — response TRUNCATED at %d completion tokens (prompt %d). The decision block may be missing.",
+				client.String(), result.Usage.CompletionTokens, result.Usage.PromptTokens)
+		}
 	}
 
 	msg := result.Choices[0].Message

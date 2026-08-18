@@ -20,13 +20,14 @@ type Config struct {
 
 	// Behavior configuration
 	MaxTokens   int
-	MaxContext  int     // Model's max context window in tokens (0 = no limit)
+	MaxContext  int // Model's max context window in tokens (0 = no limit)
 	Temperature float64
+	TopP        float64 // 0 = not sent
 	UseFullURL  bool
 
 	// Retry configuration
-	MaxRetries     int
-	RetryWaitBase  time.Duration
+	MaxRetries      int
+	RetryWaitBase   time.Duration
 	RetryableErrors []string
 
 	// Timeout configuration
@@ -37,20 +38,24 @@ type Config struct {
 	HTTPClient *http.Client
 }
 
-// DefaultConfig returns default configuration
+// DefaultConfig returns default configuration.
+// P0 2026-08-19 — NO silent defaults: every behaviour knob is env-driven with a
+// consciously chosen safe default, and EffectiveAIParams() reports which of them
+// the operator actually set (an unset param is logged as a WARNING at startup so
+// the max_tokens=2000 accident class can never hide again).
 func DefaultConfig() *Config {
 	return &Config{
 		// Default values
-		// P0 2026-08-19: deepseek-v4-pro is a REASONING model — it burns the entire
-		// output budget on chain-of-thought. 2000 tokens truncated every first-pass
-		// response (finish_reason=length, no decision emitted) and the retry then
-		// defaulted to `wait`. 8000 gives the reasoning + decision JSON room to
-		// finish (wire-proven: stop at ~3-4k with the short-reasoning instruction).
-		MaxTokens:      getEnvInt("AI_MAX_TOKENS", 8000),
-		Temperature:    MCPClientTemperature,
-		MaxRetries:     MaxRetryTimes,
-		RetryWaitBase:  2 * time.Second,
-		Timeout:        DefaultTimeout,
+		// MaxTokens: the provider empirically accepts [1, 393216] (probed 2026-08-19:
+		// 393216 accepted, 1048576 rejected). The ceiling is set well above any observed
+		// completion (~3-4k) so a decision can never be truncated again; the 300s
+		// timeout is the real bound.
+		MaxTokens:       getEnvInt("AI_MAX_TOKENS", 32768),
+		Temperature:     getEnvFloat("AI_TEMPERATURE", MCPClientTemperature),
+		TopP:            getEnvFloat("AI_TOP_P", 0), // 0 = omit from the request
+		MaxRetries:      getEnvInt("AI_MAX_RETRIES", MaxRetryTimes),
+		RetryWaitBase:   time.Duration(getEnvInt("AI_RETRY_BACKOFF_SECONDS", 2)) * time.Second,
+		Timeout:         time.Duration(getEnvInt("AI_TIMEOUT_SECONDS", 300)) * time.Second,
 		RetryableErrors: retryableErrors,
 
 		// Default dependencies (use global logger)
@@ -67,6 +72,57 @@ func getEnvInt(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+// getEnvFloat reads a float from an environment variable, returns default if failed.
+func getEnvFloat(key string, defaultValue float64) float64 {
+	if val := os.Getenv(key); val != "" {
+		if parsed, err := strconv.ParseFloat(val, 64); err == nil {
+			return parsed
+		}
+	}
+	return defaultValue
+}
+
+// EffectiveAIParams describes the effective AI-call parameters and which of them
+// the operator set explicitly (false = the default is in force — logged as a
+// WARNING at startup so silent defaults can never again hide a harmful value).
+type EffectiveAIParams struct {
+	Model               string
+	MaxTokens           int
+	Temperature         float64
+	TopP                float64
+	TimeoutSeconds      int
+	MaxRetries          int
+	RetryBackoffSeconds int
+
+	MaxTokensSet    bool
+	TemperatureSet  bool
+	TopPSet         bool
+	TimeoutSet      bool
+	MaxRetriesSet   bool
+	RetryBackoffSet bool
+}
+
+// EffectiveAIParamsSnapshot reports the env-driven values currently in force,
+// including which knobs the operator explicitly set.
+func EffectiveAIParamsSnapshot(model string) EffectiveAIParams {
+	cfg := DefaultConfig()
+	return EffectiveAIParams{
+		Model:               model,
+		MaxTokens:           cfg.MaxTokens,
+		Temperature:         cfg.Temperature,
+		TopP:                cfg.TopP,
+		TimeoutSeconds:      int(cfg.Timeout / time.Second),
+		MaxRetries:          cfg.MaxRetries,
+		RetryBackoffSeconds: int(cfg.RetryWaitBase / time.Second),
+		MaxTokensSet:        os.Getenv("AI_MAX_TOKENS") != "",
+		TemperatureSet:      os.Getenv("AI_TEMPERATURE") != "",
+		TopPSet:             os.Getenv("AI_TOP_P") != "",
+		TimeoutSet:          os.Getenv("AI_TIMEOUT_SECONDS") != "",
+		MaxRetriesSet:       os.Getenv("AI_MAX_RETRIES") != "",
+		RetryBackoffSet:     os.Getenv("AI_RETRY_BACKOFF_SECONDS") != "",
+	}
 }
 
 // getEnvString reads string from environment variable, returns default value if empty
