@@ -121,6 +121,20 @@ func main() {
 	if !ai.RetryBackoffSet {
 		unset = append(unset, "AI_RETRY_BACKOFF_SECONDS")
 	}
+	// P0 2026-08-19 — agent sub-call token caps are AI parameters too; audit
+	// them the same way.
+	ac := nofxiagent.AITokenCapsSnapshot()
+	logger.Infof("🤖 agent sub-call caps: taskstate_summary=%d taskstate_incremental=%d replanner=%d",
+		ac.TaskStateSummary, ac.TaskStateIncremental, ac.Replanner)
+	if !ac.SummarySet {
+		unset = append(unset, "AI_TASKSTATE_SUMMARY_MAX_TOKENS")
+	}
+	if !ac.IncrementalSet {
+		unset = append(unset, "AI_TASKSTATE_INCREMENTAL_MAX_TOKENS")
+	}
+	if !ac.ReplannerSet {
+		unset = append(unset, "AI_REPLANNER_MAX_TOKENS")
+	}
 	if len(unset) > 0 {
 		logger.Warnf("⚠️ AI params at UNSET defaults (nobody chose these explicitly): %v — set them in .env if the defaults are not what you intend", unset)
 	}

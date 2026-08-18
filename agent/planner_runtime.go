@@ -3416,7 +3416,7 @@ Rules:
 			mcp.NewUserMessage(userPrompt),
 		},
 		Ctx:       stageCtx,
-		MaxTokens: intPtr(500),
+		MaxTokens: intPtr(aiEnvInt("AI_REPLANNER_MAX_TOKENS", 500)),
 	})
 	a.logPlannerTiming(state.SessionID, userID, "replan_after_step_llm", startedAt, err)
 	if err != nil {
