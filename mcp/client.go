@@ -341,6 +341,19 @@ func (client *Client) ParseMCPResponseFull(body []byte) (*LLMResponse, error) {
 		}
 	}
 
+	// P0 2026-08-19 — local per-call evidence for the live-verification report:
+	// completion tokens + finish_reason on every response, so median tokens and
+	// stop/length counts are computable from journalctl (telemetry only ships
+	// off-box, which left this invisible before).
+	if client.Log != nil {
+		finish := "unset"
+		if len(result.Choices) > 0 && result.Choices[0].FinishReason != nil {
+			finish = *result.Choices[0].FinishReason
+		}
+		client.Log.Infof("📊 AI call complete: completion=%d prompt=%d finish_reason=%s",
+			result.Usage.CompletionTokens, result.Usage.PromptTokens, finish)
+	}
+
 	msg := result.Choices[0].Message
 	return &LLMResponse{
 		Content:          msg.Content,
