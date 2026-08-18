@@ -979,6 +979,9 @@ func (at *AutoTrader) maybeWriteDigests() {
 	if inDailyRollWindow(now) && at.eveningDigestEnabled() {
 		sessions, _ := at.store.Digest().SessionDigests(at.id, symbol, tradeDate)
 		text := kernel.FormatDailyDigest(tradeDate, "", len(sessions), entries, pnl)
+		if ll := at.learningDigestLine(); ll != "" {
+			text += "\n" + ll
+		}
 		if el := telemetry.ErrorDigestLine(at.id); el != "" {
 			text += "\n" + el
 		}
@@ -992,6 +995,26 @@ func (at *AutoTrader) maybeWriteDigests() {
 			at.logInfof("📓 daily digest written %s.", tradeDate)
 		}
 	}
+}
+
+// learningDigestLine renders the learning-loop line (avg MAE/MFE + adherence
+// grades, linkable to plan versions) from the last graded closed positions.
+// P0-cleanup (2026-08-19) — MAE/MFE + grades now reach the digest.
+func (at *AutoTrader) learningDigestLine() string {
+	if at.store == nil {
+		return ""
+	}
+	rows, err := at.store.Position().GetGradedClosedPositions(at.id, 20)
+	if err != nil || len(rows) == 0 {
+		return ""
+	}
+	trades := make([]kernel.LearningTrade, 0, len(rows))
+	for _, p := range rows {
+		trades = append(trades, kernel.LearningTrade{
+			MAE: p.MAE, MFE: p.MFE, Grade: p.AdherenceGrade, PlanVersion: p.PlanVersion,
+		})
+	}
+	return kernel.LearningLine(trades)
 }
 
 // storedReplanCap resolves the re-plan cap for (plan owner, session) from the
@@ -1075,7 +1098,13 @@ func installActivePlanProvider(at *AutoTrader, st *store.Store) {
 			replansLeft := store.ReplansLeftFrom(row.Version,
 				store.GetResetBaseline(st, row.TradeDate, sess.Name),
 				storedReplanCap(st, row.StrategyID, sess.Name))
-			return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft, BirthMs: row.CreatedAt.UnixMilli()}
+			// P0-cleanup — decision records carry the full plan attribution
+			// (plan_id, plan_version, overlay_version).
+			overlayVersion := 0
+			if ovs, err := st.Plan().ListOverlays(row.PlanID, row.Version); err == nil {
+				overlayVersion = len(ovs)
+			}
+			return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft, BirthMs: row.CreatedAt.UnixMilli(), PlanID: row.PlanID, OverlayVersion: overlayVersion}
 		},
 	})
 	// P0-A — loud startup/runtime assertion: if MORE THAN ONE day-plan trader

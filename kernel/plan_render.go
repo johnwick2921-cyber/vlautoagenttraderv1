@@ -23,6 +23,10 @@ type ActivePlan struct {
 	Version     int
 	ReplansLeft int
 	BirthMs     int64 // plan-row created_at; consumption is judged from here
+
+	// P0-cleanup (2026-08-19) — full attribution for decision records.
+	PlanID         string
+	OverlayVersion int
 }
 
 // TraderPlanProviders is the per-trader seam between the trader layer and the

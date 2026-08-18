@@ -63,3 +63,48 @@ func pnlWord(p float64) string {
 		return "flat"
 	}
 }
+
+// LearningTrade is one closed trade's learning snapshot for the digest line.
+type LearningTrade struct {
+	MAE, MFE    float64
+	Grade       string // adherence grade A-F ("" = ungraded)
+	PlanVersion int
+}
+
+// LearningLine renders the learning-loop digest line: average MAE/MFE and the
+// adherence-grade distribution, with per-trade plan versions so the grades are
+// linkable to the plan that governed them.
+//
+// P0-cleanup (2026-08-19) — before this, MAE/MFE and adherence were computed and
+// stored but never reached the digest (the learning loop was half-blind).
+func LearningLine(trades []LearningTrade) string {
+	if len(trades) == 0 {
+		return ""
+	}
+	var smae, smfe float64
+	n := 0
+	grades := map[string]int{}
+	var versions []int
+	for _, t := range trades {
+		if t.MAE > 0 || t.MFE > 0 {
+			smae += t.MAE
+			smfe += t.MFE
+			n++
+		}
+		if t.Grade != "" {
+			grades[t.Grade]++
+		}
+		if t.PlanVersion > 0 {
+			versions = append(versions, t.PlanVersion)
+		}
+	}
+	if n == 0 {
+		return ""
+	}
+	line := fmt.Sprintf("learning: avg MAE %.1f · avg MFE %.1f · adherence %v",
+		smae/float64(n), smfe/float64(n), grades)
+	if len(versions) > 0 {
+		line += fmt.Sprintf(" · plan v%v", versions)
+	}
+	return line
+}

@@ -56,3 +56,24 @@ func TestBuildDigestChainShort(t *testing.T) {
 		t.Fatalf("short chain len = %d want 2", len(chain))
 	}
 }
+
+// P0-cleanup (2026-08-19) — a closed trade's MAE/MFE + adherence grade must be
+// visible in the digest line and linkable to its plan version.
+func TestLearningLine(t *testing.T) {
+	trades := []LearningTrade{
+		{MAE: 12, MFE: 90, Grade: "A", PlanVersion: 2},
+		{MAE: 30, MFE: 45, Grade: "C", PlanVersion: 2},
+	}
+	line := LearningLine(trades)
+	if line == "" {
+		t.Fatalf("learning line must render for graded trades")
+	}
+	for _, want := range []string{"avg MAE 21.0", "avg MFE 67.5", "adherence map[A:1 C:1]", "plan v[2 2]"} {
+		if !strings.Contains(line, want) {
+			t.Fatalf("learning line %q missing %q", line, want)
+		}
+	}
+	if LearningLine(nil) != "" {
+		t.Fatalf("empty trades → empty line")
+	}
+}

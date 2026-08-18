@@ -338,6 +338,24 @@ func (at *AutoTrader) runCycle() error {
 		if len(aiDecision.Decisions) > 0 {
 			decisionJSON, _ := json.MarshalIndent(aiDecision.Decisions, "", "  ")
 			record.DecisionJSON = string(decisionJSON)
+			// P0-cleanup (2026-08-19) — a gate/armor refusal must never
+			// look like a plain wait: every rewrite carries its reason
+			// into the execution log.
+			for _, d := range aiDecision.Decisions {
+				if d.RefusalReason != "" {
+					record.ExecutionLog = append(record.ExecutionLog, "ENTRY REFUSED: "+d.RefusalReason)
+				}
+			}
+			// P0-cleanup — plan attribution: every decision names the plan
+			// it followed (plan_id/version/overlay) + the cited scenario.
+			if ap := kernel.ActivePlanFor(at.id, at.futuresSymbol()); ap != nil {
+				record.PlanID = ap.PlanID
+				record.PlanVersion = ap.Version
+				record.OverlayVersion = ap.OverlayVersion
+			}
+			if aiDecision.Decisions[0].CitedScenario != "" {
+				record.CitedScenarioID = aiDecision.Decisions[0].CitedScenario
+			}
 		}
 	}
 
