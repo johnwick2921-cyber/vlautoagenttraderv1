@@ -244,8 +244,10 @@ func TestEvaluateLevelFactsTwoFiveMinuteClosesAccept(t *testing.T) {
 	if !f.Accepted || f.AcceptHave != 2 || f.AcceptNeed != 2 {
 		t.Fatalf("two 5m closes must accept under 2x5m: %v have=%d/%d closesUp=%d", f.Accepted, f.AcceptHave, f.AcceptNeed, f.ClosesBeyondUp)
 	}
-	if f.StillValid {
-		t.Fatalf("accepted-through level must be consumed")
+	// P1c — acceptance alone does NOT consume: price never touched 100 here,
+	// it merely sat beyond. Consumption = touch AND acceptance-through.
+	if !f.StillValid {
+		t.Fatalf("accepted-through but UNTOUCHED level must stay valid (P1c: sitting beyond never consumes)")
 	}
 }
 

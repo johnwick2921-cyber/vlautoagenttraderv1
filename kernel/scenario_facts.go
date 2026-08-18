@@ -39,7 +39,7 @@ type LevelFacts struct {
 	Accepted         bool    `json:"accepted"`  // accepted through in dir per rule
 	AcceptHave       int     `json:"accept_have"`
 	AcceptNeed       int     `json:"accept_need"`
-	StillValid       bool    `json:"still_valid"` // not yet accepted through either side
+	StillValid       bool    `json:"still_valid"` // not (touched in-window AND accepted through)
 }
 
 // acceptanceNeed maps an acceptance rule to the number of consecutive closes
@@ -318,6 +318,13 @@ func EvaluateLevelFacts(bars []market.Kline, level float64, dir int, rule string
 	// horizon, and resolving them to rule-length bars would silently widen it.
 	judge := AcceptanceBars(bars, rule)
 	accepted, have, need := Acceptance(judge, level, dir, rule, nowMs)
+	// P1c — validity is touch-gated: a level that price merely SITS beyond
+	// (support below price all session, resistance above) is not consumed.
+	// Consumption = touched in-window AND accepted through on rule-TF closes;
+	// a wick alone never consumes and sitting-beyond alone never consumes.
+	// This keeps the card / PLAN STATUS block aligned with ConsumedSince and
+	// PlanIsDeadSince, which already require the touch.
+	touched := levelTouched(judge, level, nowMs)
 	return LevelFacts{
 		Level:            level,
 		LatestClose:      lc,
@@ -330,6 +337,6 @@ func EvaluateLevelFacts(bars []market.Kline, level float64, dir int, rule string
 		Accepted:         accepted,
 		AcceptHave:       have,
 		AcceptNeed:       need,
-		StillValid:       LevelStillValid(judge, level, rule, nowMs),
+		StillValid:       LevelStillValid(judge, level, rule, nowMs) || !touched,
 	}
 }
