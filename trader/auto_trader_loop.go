@@ -447,6 +447,16 @@ func (at *AutoTrader) runCycle() error {
 		// the owner (P1 feed), so "how many setups is the format eating?" is
 		// answerable instead of invisible. Deduped per cycle so each loss shows.
 		if reason == "schema_parse_failed" {
+			// P5.5 — keep a truncated copy of the decision-less output on
+			// the record itself, so the owner sees WHAT was lost without
+			// opening the raw-response blob.
+			if snip := aiDecision.RawResponse; snip != "" {
+				if len(snip) > 240 {
+					snip = snip[:240] + "…"
+				}
+				record.ExecutionLog = append(record.ExecutionLog,
+					"last model output (truncated): "+strings.ReplaceAll(snip, "\n", " "))
+			}
 			at.emitAlert("P1", "decision-unparseable",
 				fmt.Sprintf("unparseable:%s:%d", at.id, at.callCount),
 				"Decision unparseable — safe wait",

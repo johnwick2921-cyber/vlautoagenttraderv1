@@ -74,3 +74,46 @@ func TestCallWithSchemaRetry(t *testing.T) {
 		t.Fatalf("happy path: 1 call, no error; got calls=%d perr=%v", m3.calls, perr3)
 	}
 }
+
+// errClient is a tiny AIClient whose calls fail from attempt N on.
+type errClient struct {
+	first string
+	calls int
+	fail  bool
+}
+
+func (e *errClient) SetAPIKey(_, _, _ string)                         {}
+func (e *errClient) SetTimeout(_ time.Duration)                       {}
+func (e *errClient) ResolvedModel() string                            { return "stub" }
+func (e *errClient) CallWithRequest(_ *mcp.Request) (string, error)   { return "", nil }
+func (e *errClient) CallWithRequestStream(_ *mcp.Request, _ func(string)) (string, error) {
+	return "", nil
+}
+func (e *errClient) CallWithRequestFull(_ *mcp.Request) (*mcp.LLMResponse, error) {
+	return nil, nil
+}
+func (e *errClient) CallWithMessages(_, _ string) (string, error) {
+	if e.fail {
+		return "", errors.New("call timeout")
+	}
+	e.fail = true
+	return e.first, nil
+}
+
+// TestSchemaRetryPreservesLastOutput — P5.5: when a later retry ERRORS (e.g. the
+// 180s cap), the last non-empty model output must survive into the record, so
+// the owner can see what was actually lost instead of an empty raw_response.
+func TestSchemaRetryPreservesLastOutput(t *testing.T) {
+	first := "reasoning prose with no decision json anywhere"
+	client := &errClient{first: first}
+	alwaysFail := func(resp string) (*FullDecision, error) {
+		return nil, errors.New("no decision json")
+	}
+	dec, raw, _, parseErr, callErr := callWithSchemaRetry(client, "sys", "usr", alwaysFail, 1)
+	if dec != nil || callErr == nil || parseErr != nil {
+		t.Fatalf("expected call error state, got dec=%v parseErr=%v callErr=%v", dec, parseErr, callErr)
+	}
+	if raw != first {
+		t.Fatalf("last non-empty output lost: got %q want %q", raw, first)
+	}
+}

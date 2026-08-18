@@ -492,6 +492,10 @@ func applyReentryCooldown(fd *FullDecision, ctx *Context, cooldownMinutes int, n
 // (nil = success) and callErr (a transport error, returned immediately). A caller
 // that sees a non-nil parseErr should skip the cycle with a named reason.
 func callWithSchemaRetry(mcpClient mcp.AIClient, systemPrompt, userPrompt string, parse func(string) (*FullDecision, error), maxRetries int) (decision *FullDecision, raw string, dur time.Duration, parseErr, callErr error) {
+	// P5.5 — the last non-empty output survives even when a LATER retry errors
+	// (e.g. the 180s cap): the owner's record keeps what the model actually
+	// said, instead of an empty raw_response with no explanation.
+	lastRaw := ""
 	for attempt := 0; ; attempt++ {
 		up := userPrompt
 		if attempt > 0 {
@@ -503,12 +507,15 @@ func callWithSchemaRetry(mcpClient mcp.AIClient, systemPrompt, userPrompt string
 		resp, cErr := mcpClient.CallWithMessages(systemPrompt, up)
 		dur = time.Since(start)
 		if cErr != nil {
-			return nil, "", dur, nil, cErr
+			return nil, lastRaw, dur, nil, cErr
+		}
+		if strings.TrimSpace(resp) != "" {
+			lastRaw = resp
 		}
 		raw = resp
 		decision, parseErr = parse(resp)
 		if parseErr == nil || attempt >= maxRetries {
-			return decision, raw, dur, parseErr, nil
+			return decision, lastRaw, dur, parseErr, nil
 		}
 		logger.Warnf("⚠️ AI response parse failed (attempt %d/%d) — retrying with the error fed back: %v",
 			attempt+1, maxRetries+1, parseErr)
