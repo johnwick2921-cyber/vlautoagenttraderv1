@@ -165,7 +165,12 @@ func ScoreLevels(levels []DetectedLevel, price, dATR float64, freshness func(Det
 			}
 		}
 		if isZoneKind(l.Kind) && conf == 0 {
-			continue // S/D + FVG/OB never stand alone
+			// P0.1 (2026-08-19) — a zone with an HTF origin seats on its own
+			// merit (grade C): large-account auctions don't need a crowd. Pure
+			// intraday S/D + FVG/OB remain confluence-only, never standalone.
+			if !(l.HTF) {
+				continue
+			}
 		}
 		htf := 1.0
 		if l.HTF {
@@ -186,6 +191,14 @@ func ScoreLevels(levels []DetectedLevel, price, dATR float64, freshness func(Det
 		})
 	}
 
+	// P0.4 (2026-08-19) — CLUSTER COLLAPSE: levels within LevelClusterTolerance
+	// merge into ONE entry keeping the strongest provenance (highest score,
+	// then today-priority kind, then nearer distance). Before this, an equal-
+	// high/low family 3 points wide shipped as 4 separate "A" rows and the
+	// planner copied every duplicate into the plan (grade inflation + wasted
+	// seats).
+	scored = collapseLevelClusters(scored, clusterToleranceFor(price))
+
 	// Seat: today's priority kinds first, then the rest, both by score desc
 	// (deterministic tie-break: nearer distance, then lower price).
 	sort.SliceStable(scored, func(i, j int) bool {
@@ -202,6 +215,15 @@ func ScoreLevels(levels []DetectedLevel, price, dATR float64, freshness func(Det
 		}
 		return scored[i].Price < scored[j].Price
 	})
+
+	// P0.1 (2026-08-19) — BOTH-SIDE SEATING: the plan must always carry levels
+	// on BOTH sides of price. On a gap-down day every today-priority kind sits
+	// above price and used to fill all 8 seats (the 2026-08-18 one-sided map
+	// that left the model with "no trigger" for 110 points of breakdown). When
+	// the pure top-N leaves one side under-supplied while candidates exist,
+	// swap in the best in-band levels from the missing side.
+	scored = seatBothSides(scored, maxLevels)
+
 	if len(scored) > maxLevels {
 		scored = scored[:maxLevels]
 	}
@@ -222,6 +244,153 @@ func gradeFromScore(s float64) string {
 	default:
 		return "C"
 	}
+}
+
+// LevelClusterTicks is the P0.4 cluster-collapse width in ticks (12 MNQ ticks =
+// 3.00 points): levels closer than this are the SAME reference on an intraday
+// map, not separate seats. An equal-high/low family within 3 points collapses to
+// one entry instead of four separate "A" rows.
+const LevelClusterTicks = 12
+
+// clusterToleranceFor derives the cluster width from the MNQ tick size (0.25;
+// fallback when price is unset). 12 ticks = 3.00 points.
+func clusterToleranceFor(price float64) float64 {
+	_ = price
+	return LevelClusterTicks * 0.25
+}
+
+// collapseLevelClusters merges levels within tol of a STRONGER survivor (kept in
+// the same relative position). Kept: highest score, then today-priority kind,
+// then nearer distance, then lower price. The survivor's confluence absorbs the
+// merged member count; duplicates are removed before seating.
+func collapseLevelClusters(scored []ScoredLevel, tol float64) []ScoredLevel {
+	if len(scored) < 2 || tol <= 0 {
+		return scored
+	}
+	// Prefer survivors: sort by strength so the first member of any cluster is
+	// the keeper.
+	order := append([]ScoredLevel(nil), scored...)
+	sort.SliceStable(order, func(i, j int) bool {
+		a, b := order[i], order[j]
+		ai, bi := isTodayPriority(a.Kind), isTodayPriority(b.Kind)
+		if ai != bi {
+			return ai
+		}
+		if a.Score != b.Score {
+			return a.Score > b.Score
+		}
+		di, dj := math.Abs(a.Distance), math.Abs(b.Distance)
+		if di != dj {
+			return di < dj
+		}
+		return a.Price < b.Price
+	})
+	kept := make([]ScoredLevel, 0, len(scored))
+	for _, cand := range order {
+		if isZoneKind(cand.Kind) {
+			// Zones are BANDS with their own semantics (proximal/distal),
+			// never duplicates of a line level — they survive collapse.
+			kept = append(kept, cand)
+			continue
+		}
+		merged := false
+		for i := range kept {
+			if isZoneKind(kept[i].Kind) {
+				continue
+			}
+			if math.Abs(kept[i].Price-cand.Price) <= tol {
+				kept[i].Confluence += cand.Confluence + 1
+				merged = true
+				break
+			}
+		}
+		if !merged {
+			kept = append(kept, cand)
+		}
+	}
+	return kept
+}
+
+// MinSideLevels is the P0.1 floor: the plan must carry at least this many levels
+// on EACH side of price (when the in-band universe can supply them).
+const MinSideLevels = 3
+
+// seatBothSides rebalances the seated top-N so each side of price keeps at least
+// MinSideLevels when candidates exist. The input must already be in seating
+// order (priority, then score). Pure + deterministic: only swaps the WEAKEST
+// currently-seated entries of the over-supplied side for the STRONGEST
+// un-seated candidates of the under-supplied side.
+func seatBothSides(scored []ScoredLevel, maxLevels int) []ScoredLevel {
+	if maxLevels <= 0 {
+		maxLevels = DefaultMaxLevels
+	}
+	n := len(scored)
+	if n <= maxLevels || maxLevels < 2*MinSideLevels {
+		// Nothing was cut (the cap is not the constraint) or the cap is too
+		// small to hold MinSideLevels on each side — no rebalance.
+		return scored
+	}
+	seated := append([]ScoredLevel(nil), scored[:maxLevels]...)
+	rest := append([]ScoredLevel(nil), scored[maxLevels:]...)
+	for side := 0; side < 2; side++ {
+		count := func(s []ScoredLevel, below bool) int {
+			c := 0
+			for _, l := range s {
+				if (l.Distance < 0) == below {
+					c++
+				}
+			}
+			return c
+		}
+		for _, below := range []bool{true, false} {
+			if count(seated, below) >= MinSideLevels {
+				continue
+			}
+			need := MinSideLevels - count(seated, below)
+			// Candidates from the missing side, in seating order (strongest
+			// first, since rest preserves the sorted order).
+			cands := make([]ScoredLevel, 0)
+			for _, l := range rest {
+				if (l.Distance < 0) == below {
+					cands = append(cands, l)
+				}
+			}
+			// Drop the weakest seated levels of the OPPOSITE side to make room.
+			for len(cands) > 0 && need > 0 {
+				dropIdx := -1
+				for i := len(seated) - 1; i >= 0; i-- {
+					if (seated[i].Distance < 0) != below {
+						dropIdx = i
+						break
+					}
+				}
+				if dropIdx < 0 {
+					break
+				}
+				rest = append(rest, seated[dropIdx])
+				seated = append(seated[:dropIdx], seated[dropIdx+1:]...)
+				seated = append(seated, cands[0])
+				cands = cands[1:]
+				need--
+			}
+		}
+	}
+	// Restore strict seating order for the final nearest-first pass downstream.
+	sort.SliceStable(seated, func(i, j int) bool {
+		pi, pj := isTodayPriority(seated[i].Kind), isTodayPriority(seated[j].Kind)
+		if pi != pj {
+			return pi
+		}
+		if seated[i].Score != seated[j].Score {
+			return seated[i].Score > seated[j].Score
+		}
+		di, dj := math.Abs(seated[i].Distance), math.Abs(seated[j].Distance)
+		if di != dj {
+			return di < dj
+		}
+		return seated[i].Price < seated[j].Price
+	})
+	return seated
 }
 
 // RenderKeyLevelsBlock renders the seated levels as the executor prompt block

@@ -100,3 +100,88 @@ func TestRenderKeyLevelsBlock(t *testing.T) {
 		t.Fatalf("empty scored set must render an empty block")
 	}
 }
+
+// P0.1 (2026-08-19) — a gap-down day must NOT ship a one-sided map.
+func TestScoreLevelsBothSideSeating(t *testing.T) {
+	price := 29600.0
+	dATR := 300.0
+	// Every today-priority kind above price (the 2026-08-18 pathology) +
+	// round numbers and a prior-week low below.
+	above := []DetectedLevel{
+		lineLevel(KindONL, 29680.75, "ONL", "", false),
+		lineLevel(KindPDL, 29853.0, "PDL", "", false),
+		lineLevel(KindPDC, 29919.0, "PDC", "", false),
+		lineLevel(KindPDH, 30054.0, "PDH", "", false),
+		lineLevel(KindRTHH, 30079.0, "RTH-H", "", false),
+		lineLevel(KindORH, 29644.5, "OR-H", "", false),
+		lineLevel(KindORL, 29590.0, "OR-L", "", false),
+		lineLevel(KindEQL, 29380.0, "EQL", "", false),
+	}
+	below := []DetectedLevel{
+		lineLevel(KindPWL, 29360.0, "PWL", "", true),
+		lineLevel(KindRound, 29400.0, "RN 29400", "", false),
+		lineLevel(KindRound, 29300.0, "RN 29300", "", false),
+	}
+	levels := append(append([]DetectedLevel{}, above...), below...)
+	got := ScoreLevels(levels, price, dATR, nil, 8, 1.5)
+	belowCount := 0
+	for _, l := range got {
+		if l.Distance < 0 {
+			belowCount++
+		}
+	}
+	if belowCount < MinSideLevels {
+		t.Fatalf("gap-down seating kept only %d levels below price, want >= %d: %+v", belowCount, MinSideLevels, got)
+	}
+	if len(got) > 8 {
+		t.Fatalf("cap violated: %d", len(got))
+	}
+}
+
+// P0.4 (2026-08-19) — an EQ family within 3 points must collapse to ONE entry.
+func TestScoreLevelsClusterCollapse(t *testing.T) {
+	price := 30000.0
+	dATR := 300.0
+	levels := []DetectedLevel{
+		lineLevel(KindEQL, 30089.25, "EQL", "d1", false),
+		lineLevel(KindEQL, 30090.75, "EQL", "d2", false),
+		lineLevel(KindEQH, 30091.5, "EQH", "d3", false),
+		lineLevel(KindEQL, 30092.0, "EQL", "d4", false),
+		lineLevel(KindPDH, 30150.0, "PDH", "", false),
+	}
+	got := ScoreLevels(levels, price, dATR, nil, 8, 1.5)
+	eq := 0
+	for _, l := range got {
+		if l.Kind == KindEQL || l.Kind == KindEQH {
+			eq++
+		}
+	}
+	if eq != 1 {
+		t.Fatalf("EQ cluster within 3pts must collapse to one entry, got %d: %+v", eq, got)
+	}
+}
+
+// P0.5 (2026-08-19) — an HTF zone seats on its own merit (grade C) even with
+// zero confluence; a pure intraday zone still does not.
+func TestScoreLevelsHTFZoneSeatsAlone(t *testing.T) {
+	price := 30000.0
+	dATR := 300.0
+	htfZone := DetectedLevel{Kind: KindSupply, Price: 30050, Lo: 30040, Hi: 30060, Label: "S/D", HTF: true}
+	intradayZone := DetectedLevel{Kind: KindDemand, Price: 29950, Lo: 29940, Hi: 29960, Label: "S/D", HTF: false}
+	got := ScoreLevels([]DetectedLevel{htfZone, intradayZone}, price, dATR, nil, 8, 1.5)
+	seatedHTF := false
+	for _, l := range got {
+		if l.Kind == KindSupply {
+			seatedHTF = true
+			if l.Grade != "C" {
+				t.Fatalf("HTF zone must be capped at C, got %s", l.Grade)
+			}
+		}
+		if l.Kind == KindDemand {
+			t.Fatalf("zero-confluence intraday zone must NOT seat: %+v", got)
+		}
+	}
+	if !seatedHTF {
+		t.Fatalf("HTF zone did not seat: %+v", got)
+	}
+}
