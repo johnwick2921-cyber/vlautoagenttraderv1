@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 
@@ -100,7 +101,12 @@ func calendarStaticLoader() []calendar.Event {
 }
 
 // currentT1Windows returns the red-news HARD no-trade windows for the active
-// session at `now` (empty when no slice / no T1 events).
+// session at `now`.
+//
+// P0.6 (2026-08-19) — FAIL-CLOSED: a missing/undecodable slice used to return
+// nil (entries allowed, blackouts silently gone). Everything else in this
+// system fails closed; now this does too — the owner-editable static T1
+// fallback supplies the windows and a P0 alert fires (once per session-day).
 func (at *AutoTrader) currentT1Windows(now time.Time) []kernel.CTWindow {
 	if at.store == nil {
 		return nil
@@ -112,14 +118,27 @@ func (at *AutoTrader) currentT1Windows(now time.Time) []kernel.CTWindow {
 	}
 	tradeDate := plannerTradeDateCT(now)
 	slice, err := at.store.Calendar().GetSlice(tradeDate)
-	if err != nil || slice == nil {
-		return nil
-	}
 	var evs []calendar.Event
-	if json.Unmarshal([]byte(slice.EventsJSON), &evs) != nil {
-		return nil
+	fromStatic := false
+	if err != nil || slice == nil || json.Unmarshal([]byte(slice.EventsJSON), &evs) != nil {
+		// P0.6 fail-closed: static T1 fallback + alert instead of silent nil.
+		evs = calendarStaticLoader()
+		fromStatic = true
+		if at.lastCalFailClosedAlert != tradeDate {
+			at.lastCalFailClosedAlert = tradeDate
+			at.emitAlert("P0", "calendar-slice-missing",
+				fmt.Sprintf("calendar-fail-closed:%s:%s", tradeDate, sess.Name),
+				"Calendar slice missing",
+				fmt.Sprintf("No stored calendar slice for %s — session %s is now BLACKED OUT around the static T1 fallback times (fail-closed). Fix the calendar feed; this alert repeats daily until the slice exists.",
+					tradeDate, sess.Name))
+		}
 	}
-	return kernel.T1BlackoutWindows(sessionPlannerEvents(evs, sess.Name))
+	windows := kernel.T1BlackoutWindows(sessionPlannerEvents(evs, sess.Name))
+	if fromStatic {
+		at.logWarnf("📅 calendar FAIL-CLOSED: no slice for %s — using the static T1 fallback (%d window(s)) instead of zero protection",
+			tradeDate, len(windows))
+	}
+	return windows
 }
 
 // sessionPlannerEvents maps stored calendar.Event → kernel.PlannerCalendarEvent

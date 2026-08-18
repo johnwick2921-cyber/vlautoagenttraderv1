@@ -2,7 +2,6 @@ package trader
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/mcp"
@@ -24,6 +23,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func (at *AutoTrader) logTag() string {
@@ -387,6 +388,8 @@ type AutoTrader struct {
 	// W3 — throttle for the calendar producer (retry the FF fetch ≤1/hour on
 	// outage; a stored slice short-circuits it). Touched only from runCycle.
 	lastCalFetch time.Time
+	// P0.6 (2026-08-19) — calendar fail-closed alert, once per trade date.
+	lastCalFailClosedAlert string
 	// F0 — calendar test seams + log dedupe: calFetch overrides the live FF
 	// fetch in tests (nil → calendar.DefaultFetch); lastCalSkipDate makes the
 	// "skip-fresh" line log once per trade date, not every 3-min cycle.
