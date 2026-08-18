@@ -242,7 +242,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 			owners[roundKey(r.Price)] = r
 		}
 	}
-	facts, price := planLevelFacts(symbol, doc, now, rule, owners)
+	facts, price := planLevelFacts(symbol, doc, now, rule, owners, row.CreatedAt.UnixMilli())
 	// The budget depends on the plan's version, known only now.
 	_, _, replansLeft, replanCap := s.planRulesWithCap(traderID, sessName, tradeDate, row.Version)
 	warming := ""
@@ -262,10 +262,10 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"trigger_reason": row.TriggerReason,
 		"created_at":     row.CreatedAt,
 		"overlay_count":  len(overlays),
-		"lifecycle":     row.Lifecycle,
-		"model_id":      row.ModelID,
-		"night":         false,
-		"mode":          mode,
+		"lifecycle":      row.Lifecycle,
+		"model_id":       row.ModelID,
+		"night":          false,
+		"mode":           mode,
 		// which session this payload IS, vs which one is live right now
 		"active_session":    activeName,
 		"is_active":         sessName == activeName,
@@ -299,7 +299,7 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 }
 
 // planLevelFacts computes per-level live facts from the latest 1m bars.
-func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, rule string, owners map[int64]*store.OwnerLevelDB) ([]gin.H, float64) {
+func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, rule string, owners map[int64]*store.OwnerLevelDB, birthMs int64) ([]gin.H, float64) {
 	if market.FuturesBarsProvider == nil {
 		return nil, 0
 	}
@@ -321,7 +321,7 @@ func planLevelFacts(symbol string, doc kernel.PlanDoc, now time.Time, rule strin
 		if l.Price < price {
 			dir = kernel.DirBelow
 		}
-		f := kernel.EvaluateLevelFacts(bars, l.Price, dir, rule, 3, nowMs)
+		f := kernel.EvaluateLevelFacts(kernel.BarsSince(bars, birthMs), l.Price, dir, rule, 3, nowMs)
 		row := gin.H{
 			"price":         l.Price,
 			"label":         l.Label,
@@ -1099,7 +1099,7 @@ func (s *Server) resolveAskContext(traderID, symbol string, now time.Time) askCo
 				version = ctx.row.Version
 			}
 			rule, _, left := s.planRules(traderID, ctx.session, ctx.tradeDate, version)
-			ctx.liveStatus = kernel.RenderPlanStatus(symbol, ctx.doc, bars, price, dATR, rule, left, now.UnixMilli())
+			ctx.liveStatus = kernel.RenderPlanStatus(symbol, ctx.doc, bars, price, dATR, rule, left, now.UnixMilli(), ctx.row.CreatedAt.UnixMilli())
 		}
 	}
 	if ctx.planID == "" {
@@ -1868,7 +1868,7 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 		if bars := market.FuturesBarsProvider(symbol, "1m", kernel.AISVPBarCount); len(bars) > 0 {
 			price, dATR := marketRef(symbol, now)
 			rule, _, left := s.planRules(traderID, sess.Name, row.TradeDate, row.Version) // W15.B
-			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, rule, left, now.UnixMilli())
+			liveStatus = kernel.RenderPlanStatus(symbol, doc, bars, price, dATR, rule, left, now.UnixMilli(), row.CreatedAt.UnixMilli())
 		}
 	}
 	change := kernel.OwnerChange{

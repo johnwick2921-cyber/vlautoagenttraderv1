@@ -65,7 +65,7 @@ func TestW11bPlanStatusAnnotation(t *testing.T) {
 
 	// nil provider → no persisted annotation.
 	LevelStateProvider = nil
-	if s := RenderPlanStatus("MNQ", doc, bars, 30000, 100, "2x5m", 2, 100); strings.Contains(s, "BURNED") || strings.Contains(s, "state=") {
+	if s := RenderPlanStatus("MNQ", doc, bars, 30000, 100, "2x5m", 2, 100, 0); strings.Contains(s, "BURNED") || strings.Contains(s, "state=") {
 		t.Fatalf("nil provider must not annotate:\n%s", s)
 	}
 
@@ -79,7 +79,7 @@ func TestW11bPlanStatusAnnotation(t *testing.T) {
 		}
 		return ""
 	}
-	s := RenderPlanStatus("MNQ", doc, bars, 30000, 100, "2x5m", 2, 100)
+	s := RenderPlanStatus("MNQ", doc, bars, 30000, 100, "2x5m", 2, 100, 0)
 	if !strings.Contains(s, "flipped(consumed") {
 		t.Fatalf("consumed PDH must be annotated flipped (P1c):\n%s", s)
 	}

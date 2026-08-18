@@ -22,6 +22,7 @@ type ActivePlan struct {
 	Session     string
 	Version     int
 	ReplansLeft int
+	BirthMs     int64 // plan-row created_at; consumption is judged from here
 }
 
 // TraderPlanProviders is the per-trader seam between the trader layer and the
@@ -139,7 +140,7 @@ func RenderPlanBlock(doc PlanDoc, session string) string {
 // RenderPlanStatus renders the dynamic PLAN STATUS tail: current price, re-plans
 // left, and per-level Go facts (distance/sweep/closes-beyond/acceptance/valid)
 // from the P0.4 evaluator.
-func RenderPlanStatus(symbol string, doc PlanDoc, bars []market.Kline, price, dATR float64, rule string, replansLeft int, now int64) string {
+func RenderPlanStatus(symbol string, doc PlanDoc, bars []market.Kline, price, dATR float64, rule string, replansLeft int, now, birthMs int64) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# PLAN STATUS (live) — facts=Go, judgment=you\nprice %.2f · re-plans left %d\n", price, replansLeft)
 	if rule == "" {
@@ -157,7 +158,7 @@ func RenderPlanStatus(symbol string, doc PlanDoc, bars []market.Kline, price, dA
 		if l.Price < price {
 			dir = DirBelow
 		}
-		f := EvaluateLevelFacts(bars, l.Price, dir, rule, lookback, now)
+		f := EvaluateLevelFacts(BarsSince(bars, birthMs), l.Price, dir, rule, lookback, now)
 		sweep := "F"
 		if f.Swept {
 			sweep = "T"

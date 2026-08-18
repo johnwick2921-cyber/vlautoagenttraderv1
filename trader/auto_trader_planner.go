@@ -1026,7 +1026,7 @@ func installActivePlanProvider(at *AutoTrader, st *store.Store) {
 			replansLeft := store.ReplansLeftFrom(row.Version,
 				store.GetResetBaseline(st, row.TradeDate, sess.Name),
 				storedReplanCap(st, row.StrategyID, sess.Name))
-			return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft}
+			return &kernel.ActivePlan{Doc: doc, Session: sess.Name, Version: row.Version, ReplansLeft: replansLeft, BirthMs: row.CreatedAt.UnixMilli()}
 		},
 	})
 	// P0-A — loud startup/runtime assertion: if MORE THAN ONE day-plan trader

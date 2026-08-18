@@ -383,7 +383,7 @@ func TestAcceptanceRehearsal(t *testing.T) {
 			status := ""
 			if b := market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount); len(b) > 0 {
 				_, price, dATR := kernel.AssembleScoredLevels(b, kernel.DefaultSessionRegistry(), symbol, maxLevels, time.Now(), kernel.ActivationWindowK)
-				status = kernel.RenderPlanStatus(symbol, plan.Doc, b, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli())
+				status = kernel.RenderPlanStatus(symbol, plan.Doc, b, price, dATR, rule, plan.ReplansLeft, time.Now().UnixMilli(), 0)
 			}
 			engine.SetPlanContext(block, status)
 		}

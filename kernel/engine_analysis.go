@@ -374,7 +374,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			status := ""
 			if len(snapshotBars) > 0 {
 				_, price, dATR := AssembleScoredLevels(snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK)
-				status = RenderPlanStatus(activeSymbol, plan.Doc, snapshotBars, price, dATR, rule, plan.ReplansLeft, snapshotNow.UnixMilli())
+				status = RenderPlanStatus(activeSymbol, plan.Doc, snapshotBars, price, dATR, rule, plan.ReplansLeft, snapshotNow.UnixMilli(), plan.BirthMs)
 			}
 			engine.SetPlanContext(block, status)
 		}
