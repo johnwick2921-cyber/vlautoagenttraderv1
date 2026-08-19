@@ -3,6 +3,7 @@ package trader
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"nofx/kernel"
@@ -123,6 +124,49 @@ func pauseStatusString(at *AutoTrader) string {
 		return until.Format(time.RFC3339)
 	}
 	return time.Time{}.Format(time.RFC3339)
+}
+
+// logLedgerBootBlock (E1, ledger-close 2026-08-19) — the per-trader half of
+// the boot integrity block: session windows + resolved cutoffs, stop_until
+// state, cadence, roll status, balance-alert arming. Called once from Run();
+// the process half (build hash, clock, half-days, log-shipping) prints in
+// main.go.
+func (at *AutoTrader) logLedgerBootBlock(now time.Time) {
+	if at.config.Exchange != "ninjatrader" {
+		return
+	}
+	reg := at.sessionRegistry(now)
+	sessions := make([]string, 0, len(reg.Sessions))
+	for i := range reg.Sessions {
+		s := reg.Sessions[i]
+		le, fl := "", ""
+		if at.config.StrategyConfig != nil && at.config.StrategyConfig.DayPlan != nil {
+			if m, hh, ok := sessionCutoffCT(&s, at.config.StrategyConfig.DayPlan.LastEntryOffsetFor(s.Name)); ok {
+				_ = m
+				le = hh
+			}
+			if m, hh, ok := sessionCutoffCT(&s, at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(s.Name)); ok {
+				_ = m
+				fl = hh
+			}
+		}
+		sessions = append(sessions, fmt.Sprintf("%s %s→%s CT (last-entry %s, flat %s)", s.Name, s.WindowStartCT, s.WindowEndCT, le, fl))
+	}
+	pause := "none"
+	if until, active := at.PauseState(); active {
+		pause = "until " + kernel.FormatCT(until)
+	}
+	balanceAlert := "off"
+	if th, on := aiBalanceWarnThreshold(); on {
+		balanceAlert = fmt.Sprintf("armed (<%.2f)", th)
+	}
+	roll := "pending AddOn ACK"
+	if rs := at.RollStatus(now); rs["resolved"] == true {
+		roll = fmt.Sprintf("%v expires %v (window from %v, %v days left)",
+			rs["resolved_contract"], rs["contract_expiry"], rs["roll_window_start"], rs["roll_days_left"])
+	}
+	at.logInfof("🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · roll=%s · balance-alert=%s",
+		strings.Join(sessions, " | "), pause, at.cadenceMode(), at.config.ScanInterval, roll, balanceAlert)
 }
 
 // SessionEndTime resolves the ACTIVE session's window end as a wall-clock

@@ -97,6 +97,13 @@ func main() {
 			TraderID: traderID, Message: message, FieldsJSON: fieldsJSON,
 		})
 	})
+	logger.Infof("🧾 log-shipping active: WARN+ → log_events (retention %s days; async, drop-on-overload)",
+		func() string {
+			if v := os.Getenv("LOG_DB_RETENTION_DAYS"); v != "" {
+				return v
+			}
+			return "30"
+		}())
 
 	// Initialize installation ID for experience improvement (anonymous statistics)
 	initInstallationID(st)

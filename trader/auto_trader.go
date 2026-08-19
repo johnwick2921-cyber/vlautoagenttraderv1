@@ -689,6 +689,9 @@ func (at *AutoTrader) Run() error {
 
 	// P2 (ledger-close 2026-08-19) — restore an owner pause across restart.
 	at.loadPersistedPause()
+	// E1 — the per-trader ledger boot block (sessions/cutoffs, pause, cadence,
+	// roll, balance-alert). The process half prints in main.go.
+	at.logLedgerBootBlock(time.Now())
 
 	logger.Info("🚀 AI-driven automatic trading system started")
 	at.logInfof("💰 Initial balance: %.2f USDT", at.initialBalance)
