@@ -12,6 +12,11 @@ import {
   type ISeriesApi,
   type UTCTimestamp,
 } from 'lightweight-charts'
+import {
+  ctTickMarkFormatter,
+  ctCrosshairTimeFormatter,
+  logBarDebug,
+} from '../../lib/chartTime'
 import { httpClient } from '../../lib/httpClient'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
@@ -96,7 +101,11 @@ export function PlanMiniChart({
           borderColor: 'rgba(232,227,216,0.08)',
           timeVisible: true,
           secondsVisible: false,
+          // CT labels via THE ONE shared chart-tz site. Without a formatter the
+          // lib renders UTC — this chart showed +5h vs the NT8 chart (S1).
+          tickMarkFormatter: ctTickMarkFormatter,
         },
+        localization: { timeFormatter: ctCrosshairTimeFormatter },
         crosshair: { mode: 0 },
       })
       const series = chart.addSeries(CandlestickSeries, {
@@ -169,6 +178,12 @@ export function PlanMiniChart({
           .sort((a, b) => (a.time as number) - (b.time as number))
           .filter((c, i, arr) => i === 0 || c.time !== arr[i - 1].time)
         seriesRef.current.setData(candles)
+        logBarDebug(
+          'PlanMiniChart',
+          candles.length
+            ? (candles[candles.length - 1].time as number) * 1000
+            : undefined
+        )
       } catch {
         /* silent — the table still shows the levels */
       }
