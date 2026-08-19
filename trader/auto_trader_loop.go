@@ -901,7 +901,8 @@ func (at *AutoTrader) buildTradingContext() (*kernel.Context, error) {
 		CurrentTime:     kernel.FormatCT(time.Now()), // CT canonical (P0 timezone)
 		RuntimeMinutes:  int(time.Since(at.startTime).Minutes()),
 		CallCount:       at.callCount,
-		TraderID:        at.id, // B6: per-trader gate-block counters
+		TraderID:        at.id,                  // B6: per-trader gate-block counters
+		SnapshotMs:      time.Now().UnixMilli(), // B4 evaluates the feed at THIS instant, not post-call
 		BTCETHLeverage:  btcEthLeverage,
 		AltcoinLeverage: altcoinLeverage,
 		Account: kernel.AccountInfo{

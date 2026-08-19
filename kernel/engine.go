@@ -96,6 +96,11 @@ type Context struct {
 	RuntimeMinutes int    `json:"runtime_minutes"`
 	CallCount      int    `json:"call_count"`
 	TraderID       string `json:"-"` // B6: identity for per-trader gate-block counters (set by the trader loop; never serialized)
+	// SnapshotMs is WHEN this context's market data was assembled (epoch ms).
+	// The B4 stale-feed guard evaluates against THIS clock, not post-AI-call
+	// time, so a legal slow call can never turn a live-at-snapshot feed into
+	// "stale" (stale-bar dispatch 2026-08-19). Prompt-invisible (json:"-").
+	SnapshotMs int64 `json:"-"`
 	// A5 (G5) — prompt-ownership tags: field-name → owning trader_id for each
 	// account-scoped context field the trader populates. Final prompt assembly
 	// asserts every tag == TraderID (the deciding trader); a mismatch is cross-trader
