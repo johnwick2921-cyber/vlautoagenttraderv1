@@ -255,11 +255,37 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			estimate.Total, providerName, contextLimit)
 	}
 
+	// P7 (ledger-close 2026-08-19) — ONE SNAPSHOT INSTANT for the whole cycle.
+	// Previously the cycle carried four clocks (loop stamp T0 → market fetch T1
+	// → level/SVP snapshot T2 → post-AI gates T3): plan/level distance math read
+	// the bar cache seconds-to-minutes AFTER the market block in the SAME
+	// prompt (U4, the 2-min map skew). Capture ONE instant here, run the market
+	// fetch and the 1m snapshot window back-to-back against it, and re-stamp
+	// ctx.SnapshotMs so B4 evaluates at the instant the data was ACTUALLY
+	// assembled — which makes engine.go's SnapshotMs comment true.
+	snapshotNow := time.Now()
+	ctx.SnapshotMs = snapshotNow.UnixMilli()
+
 	// 1. Fetch market data using strategy config
 	if len(ctx.MarketDataMap) == 0 {
 		if err := fetchMarketDataWithStrategy(ctx, engine); err != nil {
 			return nil, fmt.Errorf("failed to fetch market data: %w", err)
 		}
+	}
+
+	// Active symbol for the futures system prompt (Phase 3): the open position's
+	// symbol, else the first candidate, else "MNQ". Ignored on the crypto path.
+	// (P7: hoisted next to the fetch so the 1m snapshot window below is read
+	// back-to-back with the market block — no second capture point.)
+	activeSymbol := "MNQ"
+	if len(ctx.Positions) > 0 && ctx.Positions[0].Symbol != "" {
+		activeSymbol = ctx.Positions[0].Symbol
+	} else if len(ctx.CandidateCoins) > 0 && ctx.CandidateCoins[0].Symbol != "" {
+		activeSymbol = ctx.CandidateCoins[0].Symbol
+	}
+	var snapshotBars []market.Kline
+	if market.FuturesBarsProvider != nil {
+		snapshotBars = market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount)
 	}
 
 	// Ensure OITopDataMap is initialized
@@ -280,14 +306,6 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 
 	// 2. Build System Prompt using strategy engine
 	riskConfig := engine.GetRiskControlConfig()
-	// Active symbol for the futures system prompt (Phase 3): the open position's
-	// symbol, else the first candidate, else "MNQ". Ignored on the crypto path.
-	activeSymbol := "MNQ"
-	if len(ctx.Positions) > 0 && ctx.Positions[0].Symbol != "" {
-		activeSymbol = ctx.Positions[0].Symbol
-	} else if len(ctx.CandidateCoins) > 0 && ctx.CandidateCoins[0].Symbol != "" {
-		activeSymbol = ctx.CandidateCoins[0].Symbol
-	}
 	// SVP (Part B3): when svp_enabled is ON and we're on the futures prompt,
 	// compute the session volume profile from 1m bars (AISVPBarInterval/
 	// AISVPBarCount = "1m"/2000) and thread ONE line into the system prompt. This
@@ -300,18 +318,12 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	if cfg := engine.GetConfig(); cfg != nil {
 		svpOn = cfg.Indicators.EnableSVP
 	}
-	// P5.4 — ONE PROMPT, ONE SNAPSHOT: SVP, KEY LEVELS and PLAN STATUS used to
-	// call FuturesBarsProvider separately, so one prompt carried prices ~2pt /
-	// ~2min apart and distances were computed off the older snapshot. Fetch the
-	// 1m cache ONCE per cycle; every section derives from it at a single now.
-	var snapshotBars []market.Kline
-	snapshotNow := time.Now()
-	// P0 timezone — ONE labelled clock per prompt, derived from the same
-	// snapshot instant as every other section (one snapshot → one clock).
-	engine.SetClockContext("## Clock\n" + ClockCTAndUTC(snapshotNow) + " — ALL times in this prompt are CT (America/Chicago), including every session/window bound. Never apply CT window numbers to a UTC clock.")
-	if market.FuturesBarsProvider != nil {
-		snapshotBars = market.FuturesBarsProvider(activeSymbol, AISVPBarInterval, AISVPBarCount)
-	}
+	// P5.4 — ONE PROMPT, ONE SNAPSHOT — extended by P7 (ledger-close 2026-08-19)
+	// to the WHOLE cycle: snapshotNow + snapshotBars are captured next to the
+	// market-block fetch above, so SVP, KEY LEVELS, PLAN STATUS *and* the
+	// market block all derive from one instant. The prompt self-documents that
+	// instant ("Snapshot: HH:MM:SS CT") so every stored prompt names its clock.
+	engine.SetClockContext("## Clock\n" + ClockCTAndUTC(snapshotNow) + " · Snapshot: " + ClockCTSeconds(snapshotNow) + " — ALL times in this prompt are CT (America/Chicago), including every session/window bound. Never apply CT window numbers to a UTC clock.")
 	if isFut, _ := futuresVariantMode(variant); isFut && svpOn {
 		svpLine := ""
 		if len(snapshotBars) > 0 {

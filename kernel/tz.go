@@ -51,6 +51,14 @@ func ClockCTAndUTC(t time.Time) string {
 	return ClockCT(t) + " (" + t.UTC().Format("15:04") + " UTC)"
 }
 
+// ClockCTSeconds renders t at SECONDS resolution, "15:04:05 CT" — added for
+// the P7 prompt Snapshot line (ledger-close 2026-08-19) so every stored prompt
+// self-documents the exact instant its data was assembled. New layouts live
+// ONLY here (the TZ-guard test enforces it).
+func ClockCTSeconds(t time.Time) string {
+	return t.In(CTLocation()).Format("15:04:05") + " CT"
+}
+
 // TableTimeCT renders a bar timestamp for the labelled "Time(CT)" table
 // rows: "01-02 15:04" in the canonical zone. The zone label lives in the
 // table header; the conversion still routes through CTLocation.
