@@ -176,7 +176,11 @@ func (at *AutoTrader) maybeMoveStopToBreakeven(symbol, side string, entryPrice, 
 		at.breakevenMu.Unlock()
 		return
 	}
-	logger.Infof("🎯 auto-breakeven: %s %s +%.1f pts in profit → stop moved to breakeven (entry %.2f)",
+	// WARN (honest-logs 2026-08-19): a stop amendment is an owner-visible event —
+	// WARN reaches the log_events DB sink + dashboard even when journald's
+	// frame-flood suppression is dropping INFO lines (the "breakeven not
+	// moving" false alarm was exactly this line being invisible).
+	logger.Warnf("🎯 auto-breakeven: %s %s +%.1f pts in profit → stop moved to breakeven (entry %.2f)",
 		symbol, side, pts, entryPrice)
 }
 

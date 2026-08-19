@@ -459,7 +459,9 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 				fmt.Sprintf("UNTRACKED %s %s @ %.2f — fill recorded at the broker, not in the DB", side, symbol, price),
 				"trader frozen for new entries · reconcile from NT8, then clear the freeze")
 		} else {
-			logger.Infof("  📊 Position recorded [%s] %s %s @ %.4f", at.id[:8], symbol, side, price)
+			// WARN (honest-logs 2026-08-19): a confirmed open is owner-visible
+			// truth — survives journald flood via the log_events sink.
+			logger.Warnf("📗 Position OPENED [%s] %s %s qty=%.2f @ %.4f", at.id[:8], symbol, side, quantity, price)
 			// P5.5 — stamp the plan link captured in recordPlanCitation onto this
 			// open (day_plan-gated → dormant for crypto). Consumed once.
 			if at.dayPlanEnabled() && at.lastCitation.valid {

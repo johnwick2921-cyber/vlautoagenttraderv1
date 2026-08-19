@@ -149,7 +149,10 @@ func (t *TCPTrader) recordClose(
 		qty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
 		logger.Warnf("ninjatrader/tcp: record close failed (%s %s): %v", symbol, side, err)
 	} else {
-		logger.Infof("📕 NT position closed: %s %s qty=%.0f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
+		// WARN (honest-logs 2026-08-19): a position close with realized P&L is
+		// owner-visible truth — must reach the log_events sink + dashboard even
+		// under journald frame-flood suppression.
+		logger.Warnf("📕 NT position closed: %s %s qty=%.0f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
 			symbol, side, qty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
 	}
 
