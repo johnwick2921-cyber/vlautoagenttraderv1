@@ -340,7 +340,7 @@ func (at *AutoTrader) entryBlockedByLastEntryAt(now time.Time) (string, bool) {
 	// cutoff in too: the cutoff resolves against early_close_CT − offset when
 	// that is earlier (min semantics, same raw-minute convention as the flat
 	// pull-in). Sessions that end before the early close are unaffected.
-	if adj, adjHHMM, okH := halfDayCutoffMin(at.sessionRegistry(now), kernel.CMESessionDayKey(now), offset); okH && adj < cutoffMin {
+	if adj, adjHHMM, okH := halfDayCutoffMin(at.sessionRegistry(now), kernel.CMESessionDayKey(now), offset); okH && halfDayPullsIn(sess, adj, cutoffMin) {
 		cutoffMin, hhmm = adj, adjHHMM
 	}
 	if pastSessionCutoff(now, sess, cutoffMin) {
@@ -362,6 +362,26 @@ func halfDayCutoffMin(reg kernel.SessionRegistry, sessionDayKey string, offsetMi
 	}
 	adj := ((em-offsetMin)%1440 + 1440) % 1440
 	return adj, fmt.Sprintf("%02d:%02d", adj/60, adj%60), true
+}
+
+// halfDayPullsIn (E7-v2 fix) decides whether the half-day cutoff REPLACES the
+// session-resolved one — compared in SESSION-RELATIVE minutes, wrap-safe. The
+// raw-minute `adj < cutoff` compare could (a) map an out-of-window early close
+// into a bogus earlier cutoff that pastSessionCutoff can never fire (silently
+// REMOVING the original protection on custom registries) and (b) invert
+// ordering across midnight-wrapped sessions. An early close outside this
+// session's window truncates nothing → no pull-in (the dispatch 4.4 contract:
+// only the session(s) the early close truncates move).
+func halfDayPullsIn(sess *kernel.SessionDef, adjMin, cutoffMin int) bool {
+	startMin, okS := hhmmToMin(sess.WindowStartCT)
+	endMin, okE := hhmmToMin(sess.WindowEndCT)
+	if !okS || !okE {
+		return false
+	}
+	sessLen := ((endMin-startMin)%1440 + 1440) % 1440
+	relAdj := ((adjMin-startMin)%1440 + 1440) % 1440
+	relCut := ((cutoffMin-startMin)%1440 + 1440) % 1440
+	return relAdj < sessLen && relAdj < relCut
 }
 
 // enforceEODFlat (P2.3, session-scoped 2026-08-18) force-flattens any open
@@ -402,7 +422,7 @@ func (at *AutoTrader) enforceEODFlatAt(now time.Time) bool {
 		// the flat now resolves against early_close_CT − eod_flat_offset (the
 		// dispatch 4.4 contract) — with the default offset 0 this is byte-
 		// identical to the original effectiveEODFlatCT pull-in.
-		if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && adj < flatMin {
+		if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && halfDayPullsIn(sess, adj, flatMin) {
 			flatMin, hhmm = adj, adjHHMM
 		}
 		if !pastSessionCutoff(now, sess, flatMin) {

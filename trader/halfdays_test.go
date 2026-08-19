@@ -177,3 +177,30 @@ func TestHalfDaySeedUsesSessionDayKeys(t *testing.T) {
 		t.Fatal("Tuesday (a normal full session) must MISS — the wrong-day 12:00 flatten class")
 	}
 }
+
+// E7-v2 fix — the pull-in compares in SESSION-RELATIVE space: an early close
+// outside the session's window truncates nothing (no pull-in, original cutoff
+// KEPT), and wrapped sessions order correctly.
+func TestHalfDayPullsInSessionRelative(t *testing.T) {
+	ny := &kernel.SessionDef{Name: "NY", WindowStartCT: "08:30", WindowEndCT: "14:45"}
+	// 12:00 early close, NY cutoff 14:15 → pulls in.
+	if !halfDayPullsIn(ny, 12*60, 14*60+15) {
+		t.Fatal("an in-window earlier close must pull the NY cutoff in")
+	}
+	// Custom evening session entirely AFTER the 12:00 early close: no pull-in —
+	// previously the raw compare replaced 22:30 with 12:00 and pastSessionCutoff
+	// could never fire (protection silently REMOVED).
+	evening := &kernel.SessionDef{Name: "EVE", WindowStartCT: "18:00", WindowEndCT: "23:00"}
+	if halfDayPullsIn(evening, 12*60, 22*60+30) {
+		t.Fatal("an out-of-window early close must NOT touch the session's cutoff")
+	}
+	// Wrapped ASIA (17:00→02:00): a 01:30 early close vs 01:45 cutoff → pulls in
+	// (session-relative beats the raw-minute inversion), and 12:00 does not.
+	asia := &kernel.SessionDef{Name: "ASIA", WindowStartCT: "17:00", WindowEndCT: "02:00"}
+	if !halfDayPullsIn(asia, 1*60+30, 1*60+45) {
+		t.Fatal("wrapped session: 01:30 must pull in a 01:45 cutoff")
+	}
+	if halfDayPullsIn(asia, 12*60, 1*60+45) {
+		t.Fatal("wrapped session: an out-of-window 12:00 close must not touch ASIA")
+	}
+}
