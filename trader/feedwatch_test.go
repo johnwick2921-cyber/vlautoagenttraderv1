@@ -93,6 +93,25 @@ func TestFeedDownAlertRespectsTheCalendar(t *testing.T) {
 	}
 }
 
+// In-position silence fix (2026-08-19): the feed watch beats on the 60s
+// wall-clock monitor ticker, NOT inside runCycle — while HOLDING a position,
+// skip-while-open silenced the cycle, and a dead feed stops the bar-close
+// cadence entirely, so the in-cycle call could never report the outage that
+// mattered most (position #522: 1 scan in 16 minutes).
+func TestFeedWatchBeatsWhileHoldingAPosition(t *testing.T) {
+	at, st := feedTrader(t)
+	now := cmeOpenNow(t)
+	openAPosition(t, st, "t1") // holding — runCycle is skip-while-open silenced
+	withProvider(t, []market.Kline{{OpenTime: now.UnixMilli() - 11*60_000 - 60_000}})
+
+	// monitorTick is the drawdown-monitor beat: it must carry the feed watch
+	// (at.trader is nil here — the guard must not panic on a bare harness).
+	at.monitorTick(now)
+	if got := feedAlerts(t, st, "feed-down"); got != 1 {
+		t.Fatalf("the monitor beat must fire the feed-down alert while holding, got %d", got)
+	}
+}
+
 // T7b — the planner preflight refuses on an EMPTY cache with the provider
 // wired (the exact 08-19 incident shape), alerts P1, and passes when bars are
 // fresh. A nil provider (test/crypto) fails open.

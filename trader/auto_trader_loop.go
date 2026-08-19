@@ -210,6 +210,22 @@ func (at *AutoTrader) runCycle() error {
 		return nil
 	}
 
+	// PHASE 3.5 — clock health at each SESSION ROLL (log-only). Detects the
+	// active-session name changing between cycles (incl. →night as ""). Hoisted
+	// ABOVE skip-while-open (in-position silence fix 2026-08-19): a session roll
+	// during a held trade must still be observed.
+	if at.config.Exchange == "ninjatrader" {
+		nowRoll := time.Now()
+		cur := ""
+		if sess, ok := at.sessionRegistry(nowRoll).ActiveSession(nowRoll); ok {
+			cur = sess.Name
+		}
+		if cur != at.lastClockHealthSession {
+			kernel.LogClockHealth("session-roll:"+orNight(cur), at.futuresSymbol())
+			at.lastClockHealthSession = cur
+		}
+	}
+
 	// P2.2 — SKIP-WHILE-OPEN. When day_plan is on and the strategy is already
 	// holding, skip the AI decision cycle entirely (calmer + cheaper than
 	// same-side refusal). The open trade is still managed by the NT8 bracket,
@@ -241,25 +257,11 @@ func (at *AutoTrader) runCycle() error {
 		return nil
 	}
 
-	// U1 3.1 — feed-down watch: P0 alert when no bar arrives for >10 min while
-	// CME is open (the 08-19 00:53 outage surfaced only as mystery artifacts).
-	if at.config.Exchange == "ninjatrader" {
-		at.checkFeedDown(time.Now())
-	}
-
-	// PHASE 3.5 — clock health at each SESSION ROLL (log-only). Detects the
-	// active-session name changing between cycles (incl. →night as "").
-	if at.config.Exchange == "ninjatrader" {
-		nowRoll := time.Now()
-		cur := ""
-		if sess, ok := at.sessionRegistry(nowRoll).ActiveSession(nowRoll); ok {
-			cur = sess.Name
-		}
-		if cur != at.lastClockHealthSession {
-			kernel.LogClockHealth("session-roll:"+orNight(cur), at.futuresSymbol())
-			at.lastClockHealthSession = cur
-		}
-	}
+	// U1 3.1 — the feed-down watch moved to monitorTick (the 60s wall-clock
+	// ticker in auto_trader_risk.go): inside this cycle it was doubly dead —
+	// skip-while-open returned before it while holding, and a dead feed stops
+	// the bar-close cadence, so the cycle that would report the outage never
+	// fired (in-position silence fix 2026-08-19).
 
 	// 2. Reset daily P&L. AUDIT NOTE (2026-08-18, report-only): this is a
 	// rolling-24h window where CME session-day scope is intended, AND nothing
