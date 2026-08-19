@@ -159,6 +159,12 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 
 				MaxDailyTradesEnabled: boolOrDefault(rc.MaxDailyTradesEnabled, false),
 				MaxDailyTrades:        rc.MaxDailyTrades,
+
+				// 6.3 — soft-audit inputs for the two silent checks.
+				BlackoutConfigured:   rc.BlackoutStartCT != "" && rc.BlackoutEndCT != "",
+				InBlackoutNow:        InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT),
+				ConsistencyMaxDayPct: rc.ConsistencyMaxDayPct,
+				TotalRealizedPnL:     ctx.TotalRealizedPnL,
 			}
 			if !g.MasterEnabled {
 				logger.Warnf("⚠️ Strategy Studio: risk guardrails master OFF — daily loss/profit/trade limits + blackout NOT enforced this cycle (futures SIZE caps — notional×N ceiling + per-order contract clamp — REMAIN enforced; master-independent venue safety, hardening D3)")

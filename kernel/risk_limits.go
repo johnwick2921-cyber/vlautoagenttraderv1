@@ -188,6 +188,14 @@ type DailyGuardrails struct {
 	DailyProfitTargetUSD  float64 // positive USD; profit ≥ this trips (block-entry)
 	MaxDailyTradesEnabled bool
 	MaxDailyTrades        int
+
+	// 6.3 (final-bundle 2026-08-19) — blackout + consistency join the soft
+	// audit. The caller precomputes the window/breach facts (CheckSoft stays
+	// pure); CONFIGURED means the owner set the values, regardless of toggles.
+	BlackoutConfigured   bool // start+end CT both set
+	InBlackoutNow        bool // precomputed InBlackoutWindow(now, …)
+	ConsistencyMaxDayPct float64
+	TotalRealizedPnL     float64
 }
 
 // CheckSoft evaluates every CONFIGURED limit (value > 0) regardless of toggles
@@ -204,6 +212,14 @@ func (g DailyGuardrails) CheckSoft() []string {
 	}
 	if g.MaxDailyTrades > 0 && g.TradesToday >= g.MaxDailyTrades {
 		hits = append(hits, fmt.Sprintf("max daily trades would trip (today=%d, max=%d)", g.TradesToday, g.MaxDailyTrades))
+	}
+	// 6.3 — the two checks that used to die SILENTLY under master OFF (PR #54:
+	// 69 live would-trip lines were trio-only; blackout/consistency never spoke).
+	if g.BlackoutConfigured && g.InBlackoutNow {
+		hits = append(hits, "blackout window would trip (inside the configured CT window)")
+	}
+	if g.ConsistencyMaxDayPct > 0 && ConsistencyBreached(g.DailyRealizedPnL, g.TotalRealizedPnL, g.ConsistencyMaxDayPct) {
+		hits = append(hits, fmt.Sprintf("consistency rule would trip (today=%.2f vs %.0f%% of total=%.2f)", g.DailyRealizedPnL, g.ConsistencyMaxDayPct, g.TotalRealizedPnL))
 	}
 	return hits
 }
