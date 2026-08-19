@@ -36,6 +36,7 @@ type Store struct {
 	digest         *DigestStore
 	ownerLevel     *OwnerLevelStore
 	alert          *AlertStore
+	logEvent       *LogEventStore
 	planQA         *PlanQAStore
 	matchedRandom  *MatchedRandomStore
 	telegramConfig TelegramConfigStore
@@ -193,6 +194,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.Alert().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize day_plan_alerts tables: %w", err)
+	}
+	if err := s.LogEvent().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize log_events tables: %w", err)
 	}
 	if err := s.PlanQA().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize plan_qa tables: %w", err)
@@ -401,6 +405,16 @@ func (s *Store) Alert() *AlertStore {
 		s.alert = NewAlertStore(s.gdb)
 	}
 	return s.alert
+}
+
+// LogEvent gets the P6 log-shipping storage (WARN+ → DB, async).
+func (s *Store) LogEvent() *LogEventStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.logEvent == nil {
+		s.logEvent = NewLogEventStore(s.gdb)
+	}
+	return s.logEvent
 }
 
 // PlanQA gets the Ask-Planner thread storage.

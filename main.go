@@ -87,6 +87,17 @@ func main() {
 	}
 	defer st.Close()
 
+	// P6 (ledger-close 2026-08-19) — WARN+ERROR→DB log shipping. Attached
+	// AFTER the store exists (the logger boots first); non-blocking by the
+	// LogEventStore contract (select-default drop + single writer + daily
+	// LOG_DB_RETENTION_DAYS prune).
+	logger.AttachDBSink(func(tsMs int64, level, component, traderID, message, fieldsJSON string) {
+		st.LogEvent().Enqueue(store.LogEventDB{
+			TsUTC: tsMs, Level: level, Component: component,
+			TraderID: traderID, Message: message, FieldsJSON: fieldsJSON,
+		})
+	})
+
 	// Initialize installation ID for experience improvement (anonymous statistics)
 	initInstallationID(st)
 
