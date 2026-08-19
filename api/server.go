@@ -202,6 +202,12 @@ Only include fields you want to change.`,
 			s.routeWithSchema(protected, "POST", "/traders/:id/stop", "Stop trader — halts live trading",
 				`:id = trader_id from GET /api/my-traders. No request body needed. Gracefully stops the trading loop.`,
 				s.handleStopTrader)
+			s.routeWithSchema(protected, "POST", "/traders/:id/pause", "Pause NEW entries (stop_until) — position management continues",
+				`:id = trader_id. Body: exactly one of {"minutes":30} | {"until_ct":"HH:MM"} (CT, wraps to tomorrow if past) | {"until":"session_end"}. Blocks NEW entries only; stops/targets/EOD-flat/closes continue. Survives restart; auto-resumes on expiry.`,
+				s.handlePauseTrader)
+			s.routeWithSchema(protected, "POST", "/traders/:id/resume", "Clear the stop_until pause — entries resume immediately",
+				`:id = trader_id. No request body needed.`,
+				s.handleResumeTrader)
 			s.routeWithSchema(protected, "PUT", "/traders/:id/prompt", "Override the trader's AI system prompt",
 				`Body: {"prompt":"<string — the full custom prompt text>"}`,
 				s.handleUpdateTraderPrompt)

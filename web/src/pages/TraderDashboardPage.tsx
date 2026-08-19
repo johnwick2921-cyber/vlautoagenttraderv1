@@ -5,6 +5,11 @@ import { ChartTabs } from '../components/charts/ChartTabs'
 import { DecisionCard } from '../components/trader/DecisionCard'
 import { DecisionAudit } from '../components/trader/DecisionAudit'
 import { EmergencyFlatButton } from '../components/trader/EmergencyFlatButton'
+import {
+  PauseButton,
+  isPauseActive,
+  pauseUntilCT,
+} from '../components/trader/PauseButton'
 import { PositionHistory } from '../components/trader/PositionHistory'
 import { AccountSelector } from '../components/trader/AccountSelector'
 import { PunkAvatar, getTraderAvatar } from '../components/common/PunkAvatar'
@@ -372,6 +377,17 @@ export function TraderDashboardPage({
   return (
     <DeepVoidBackground className="min-h-screen pb-12" disableAnimation>
       <div className="w-full px-4 md:px-8 relative z-10 pt-6">
+        {/* P2 ledger-close — live pause banner on the trading view (CT-pinned) */}
+        {isPauseActive(status?.stop_until) && (
+          <div
+            data-testid="pause-banner"
+            className="mb-4 rounded-lg border border-nofx-gold/60 bg-nofx-gold/10 px-4 py-3 text-nofx-gold font-bold text-center animate-scale-in"
+          >
+            ⏸ PAUSED until {pauseUntilCT(status!.stop_until)} CT (owner) — new
+            entries blocked; stops, targets and position management continue
+          </div>
+        )}
+
         {/* Trader Header */}
         <div
           className="mb-6 rounded-lg p-6 animate-scale-in nofx-glass group"
@@ -402,6 +418,19 @@ export function TraderDashboardPage({
             </h2>
 
             <div className="flex items-center gap-4">
+              {/* P2 ledger-close — stop_until pause (owner control) */}
+              <PauseButton
+                traderId={selectedTrader.trader_id}
+                stopUntil={status?.stop_until}
+                onChanged={() =>
+                  mutate(
+                    (key) =>
+                      typeof key === 'string' &&
+                      key.startsWith(`status-${selectedTraderId}`)
+                  )
+                }
+              />
+
               {/* Plan 4 T23 — Emergency Flat (red, prominent, top-right) */}
               <EmergencyFlatButton traderId={selectedTrader.trader_id} />
 

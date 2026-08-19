@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"nofx/kernel"
 	"nofx/logger"
 	"nofx/store"
 
@@ -911,4 +912,89 @@ func (s *Server) handleStopTrader(c *gin.Context) {
 
 	logger.Infof("⏹  Trader %s stopped", trader.GetName())
 	c.JSON(http.StatusOK, gin.H{"message": "Trader stopped"})
+}
+
+// ── P2 (ledger-close 2026-08-19) — owner pause control (stop_until producer).
+// POST /traders/:id/pause  body: {"minutes":30} | {"until_ct":"HH:MM"} |
+// {"until":"session_end"} — exactly one. POST /traders/:id/resume clears it.
+// Semantics: NEW entries refused while paused; closes, EOD-flat, brackets and
+// the 60s monitor guards continue (see trader/auto_trader_pause.go).
+
+func (s *Server) handlePauseTrader(c *gin.Context) {
+	userID := c.GetString("user_id")
+	traderID := c.Param("id")
+	if _, err := s.store.Trader().GetFullConfig(userID, traderID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist or no access permission"})
+		return
+	}
+	tr, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist"})
+		return
+	}
+
+	var body struct {
+		Minutes int    `json:"minutes"`
+		UntilCT string `json:"until_ct"`
+		Until   string `json:"until"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body: " + err.Error()})
+		return
+	}
+
+	now := time.Now()
+	var until time.Time
+	switch {
+	case body.Minutes > 0:
+		until = now.Add(time.Duration(body.Minutes) * time.Minute)
+	case body.Until == "session_end":
+		end, ok := tr.SessionEndTime(now)
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no active session to pause until (overnight/interim)"})
+			return
+		}
+		until = end
+	case body.UntilCT != "":
+		// "HH:MM" CT today; a time at/before now means tomorrow (wrap-safe).
+		t, err := time.ParseInLocation("15:04", body.UntilCT, kernel.CTLocation())
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "until_ct must be HH:MM (CT)"})
+			return
+		}
+		ct := now.In(kernel.CTLocation())
+		until = time.Date(ct.Year(), ct.Month(), ct.Day(), t.Hour(), t.Minute(), 0, 0, kernel.CTLocation())
+		if !until.After(now) {
+			until = until.Add(24 * time.Hour)
+		}
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "provide one of: minutes>0, until_ct:\"HH:MM\", until:\"session_end\""})
+		return
+	}
+
+	if err := tr.PauseEntriesUntil(until, "owner"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "paused",
+		"pause_until":   until.Format(time.RFC3339),
+		"pause_until_ct": kernel.FormatCT(until),
+	})
+}
+
+func (s *Server) handleResumeTrader(c *gin.Context) {
+	userID := c.GetString("user_id")
+	traderID := c.Param("id")
+	if _, err := s.store.Trader().GetFullConfig(userID, traderID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist or no access permission"})
+		return
+	}
+	tr, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist"})
+		return
+	}
+	tr.ResumeEntries("owner")
+	c.JSON(http.StatusOK, gin.H{"message": "resumed"})
 }

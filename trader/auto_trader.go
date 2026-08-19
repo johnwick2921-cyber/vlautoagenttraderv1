@@ -22,6 +22,7 @@ import (
 	"nofx/wallet"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -337,7 +338,8 @@ type AutoTrader struct {
 	customPrompt           string // Custom trading strategy prompt
 	overrideBasePrompt     bool   // Whether to override base prompt
 	lastResetTime          time.Time
-	stopUntil              time.Time
+	stopUntil              time.Time // LEGACY, dormant: consumer at loop:248, no producer — superseded by pauseUntilMs (P2 ledger-close)
+	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
 	isRunning              bool
 	isRunningMutex         sync.RWMutex       // Mutex to protect isRunning flag
 	startTime              time.Time          // System start time
@@ -673,6 +675,9 @@ func (at *AutoTrader) Run() error {
 
 	at.stopMonitorCh = make(chan struct{})
 	at.startTime = time.Now()
+
+	// P2 (ledger-close 2026-08-19) — restore an owner pause across restart.
+	at.loadPersistedPause()
 
 	logger.Info("🚀 AI-driven automatic trading system started")
 	at.logInfof("💰 Initial balance: %.2f USDT", at.initialBalance)
