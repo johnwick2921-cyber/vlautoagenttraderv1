@@ -226,15 +226,12 @@ func (at *AutoTrader) runCycle() error {
 		}
 	}
 
-	// P2.2 — SKIP-WHILE-OPEN. When day_plan is on and the strategy is already
-	// holding, skip the AI decision cycle entirely (calmer + cheaper than
-	// same-side refusal). The open trade is still managed by the NT8 bracket,
-	// auto-breakeven, and close-sync — all independent of this cycle. Gated →
-	// dormant by default.
-	if skip, why := at.skipWhileOpen(); skip {
-		at.logInfof("🧘 skip-while-open: holding %s — skipping decision cycle #%d (bracket/breakeven still manage the trade).", why, at.callCount)
-		return nil
-	}
+	// P2.2 note — skip-while-open RELOCATED below buildTradingContext +
+	// saveEquitySnapshot (in-position silence fix 2026-08-19). Skipping HERE
+	// froze the equity curve and the decision feed for the whole life of every
+	// position (#521: 1 scan in 82 min; #522: 1 scan in 16 min — the owner's
+	// "updates stop while position open"). Only the AI call may be skipped, and
+	// only AFTER snapshot+broadcast.
 
 	// Check USDC balance periodically for claw402 users (every 10 cycles)
 	if at.callCount%10 == 0 && store.IsClaw402Config(at.config.AIModel) {
@@ -299,6 +296,30 @@ func (at *AutoTrader) runCycle() error {
 	// Save equity snapshot independently (decoupled from AI decision, used for drawing profit curve)
 	// NOTE: Must be called BEFORE candidate coins check to ensure equity is always recorded
 	at.saveEquitySnapshot(ctx)
+
+	// P2.2 — SKIP-WHILE-OPEN (relocated 2026-08-19, in-position silence fix).
+	// IN-POSITION CONTRACT: while holding, everything above still ran — session
+	// reads, EOD-flat, clock health, context build, equity snapshot — so the
+	// guards stay live and the dashboard keeps moving. ONLY the AI decision is
+	// skipped (spend saving), as a documented branch AFTER snapshot+broadcast,
+	// never before. The trade itself is managed outside this cycle: the NT8 OCO
+	// bracket, auto-breakeven (60s risk loop), and close-sync/reconcile. Gated
+	// on day_plan → dormant by default.
+	if skip, why := at.skipWhileOpen(); skip {
+		at.logInfof("🧘 skip-while-open: holding %s — AI decision skipped for cycle #%d (snapshot+equity recorded; bracket/breakeven manage the trade).", why, at.callCount)
+		record.Success = true
+		record.ExecutionLog = append(record.ExecutionLog,
+			fmt.Sprintf("skip-while-open: holding %s — AI decision skipped after snapshot+equity (in-position heartbeat)", why))
+		record.AccountState = store.AccountSnapshot{
+			TotalBalance:          ctx.Account.TotalEquity,
+			AvailableBalance:      ctx.Account.AvailableBalance,
+			TotalUnrealizedProfit: ctx.Account.UnrealizedPnL,
+			PositionCount:         ctx.Account.PositionCount,
+			InitialBalance:        at.initialBalance,
+		}
+		at.saveDecision(record)
+		return nil
+	}
 
 	// If no candidate coins available, log but do not error
 	if len(ctx.CandidateCoins) == 0 {
