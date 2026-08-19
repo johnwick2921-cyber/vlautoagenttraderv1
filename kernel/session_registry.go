@@ -41,13 +41,18 @@ type KillzoneCT struct {
 // SessionDef is one CT-anchored trading session. Windows may wrap midnight
 // (ASIA 17:00→02:00); all times are America/Chicago "HH:MM".
 type SessionDef struct {
-	Name          string       `json:"name"`
-	WindowStartCT string       `json:"window_start_ct"`
-	WindowEndCT   string       `json:"window_end_ct"`
-	ReadCT        string       `json:"read_ct"` // planner read time (≈5 min before open)
-	FlatCT        string       `json:"flat_ct"` // session-flat time
-	Killzones     []KillzoneCT `json:"killzones,omitempty"`
-	Enabled       bool         `json:"enabled"`
+	Name          string `json:"name"`
+	WindowStartCT string `json:"window_start_ct"`
+	WindowEndCT   string `json:"window_end_ct"`
+	ReadCT        string `json:"read_ct"` // planner read time (≈5 min before open)
+	// FlatCT: session-flat time. AUDIT NOTE (2026-08-18): no production path
+	// consumes this field or EffectiveFlatCT — the live flatten is session-
+	// scoped in trader/auto_trader_clock.go (enforceEODFlatAt: session end −
+	// eod_flat_offset_min), which by the WindowEndCT==FlatCT contract lands on
+	// the same instants. If these ever diverge, wire this field there first.
+	FlatCT    string       `json:"flat_ct"`
+	Killzones []KillzoneCT `json:"killzones,omitempty"`
+	Enabled   bool         `json:"enabled"`
 }
 
 // SessionRegistry is the global-admin session config.

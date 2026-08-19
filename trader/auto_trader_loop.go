@@ -234,7 +234,11 @@ func (at *AutoTrader) runCycle() error {
 		return nil
 	}
 
-	// 2. Reset daily P&L (reset every day)
+	// 2. Reset daily P&L. AUDIT NOTE (2026-08-18, report-only): this is a
+	// rolling-24h window where CME session-day scope is intended, AND nothing
+	// ever writes at.dailyPnL (grep: reset + one display read only) — it is a
+	// permanently-zero display field. Every real daily guard reads the store.
+	// Left as-is: wiring it up is a behavior change outside the timegate train.
 	if time.Since(at.lastResetTime) > 24*time.Hour {
 		at.dailyPnL = 0
 		at.lastResetTime = time.Now()
