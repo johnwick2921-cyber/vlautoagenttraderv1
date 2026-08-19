@@ -422,6 +422,9 @@ export const planApi = {
         method: 'POST',
         data: { trader_id: traderId, symbol, question },
         silent: true,
+        // The planner's backend AI budget is 300s — the 30s instance default
+        // aborted every slow ask and latched the panel (stuck-send bug).
+        timeoutMs: 320_000,
       }
     )
     if (res.success && res.data) return { ok: true, data: res.data }
