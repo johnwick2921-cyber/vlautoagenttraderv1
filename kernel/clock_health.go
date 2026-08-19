@@ -2,7 +2,10 @@ package kernel
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +26,33 @@ import (
 // C2ToleranceMs exposes the EXISTING C2 tolerance for log-only consumers.
 // Additive accessor; the guard's own threshold is untouched.
 func C2ToleranceMs() int64 { return clockDriftToleranceMs }
+
+// clockWarnMs is the P1.3 early-warning threshold (ledger-close 2026-08-19):
+// CRITICAL fires at HALF the C2 tolerance so the operator hears about drift
+// BEFORE staleness verdicts and clock-health truth degrade. Env CLOCK_WARN_MS,
+// default 30000 (50% of C2's 60s) — same env pattern as STALE_BAR_GRACE_S.
+func clockWarnMs() int64 {
+	if v := os.Getenv("CLOCK_WARN_MS"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 30_000
+}
+
+// classifyClockDrift is the pure decision (test hook per dispatch P1: injected
+// fake drift, never the real clock): "" below warn, "warn" in [warn, tolerance],
+// "critical" above tolerance.
+func classifyClockDrift(absDriftMs, warnMs, toleranceMs int64) string {
+	switch {
+	case absDriftMs > toleranceMs:
+		return "critical"
+	case absDriftMs >= warnMs:
+		return "warn"
+	default:
+		return ""
+	}
+}
 
 // timesyncStatus reports systemd-timesyncd's view, best-effort with a hard
 // 2s ceiling ("unknown" on any failure — WSL2 setups vary).
@@ -66,10 +96,66 @@ func LogClockHealth(tag, symbol string) {
 	// A stale-but-live feed inflates "drift" honestly (the bar IS old); the
 	// CRITICAL only means "Go clock vs newest feed evidence disagree beyond C2
 	// tolerance" — exactly what the operator must look at either way.
-	if haveBar && absI64(drift) > C2ToleranceMs() {
-		logger.Errorf("🚨 CLOCK CRITICAL [%s]: |drift| %dms exceeds C2 tolerance %dms — check WSL2 time-sync (systemd-timesyncd) and the NT8 feed. Log-only: no trading gate added.",
-			tag, absI64(drift), C2ToleranceMs())
+	// P1.3 (ledger-close 2026-08-19): an EARLY-WARNING tier fires at
+	// CLOCK_WARN_MS (default 30s = 50% of tolerance) so drift is heard BEFORE
+	// truth degrades. Both tiers stay log-only (no trading gate).
+	if haveBar {
+		switch classifyClockDrift(absI64(drift), clockWarnMs(), C2ToleranceMs()) {
+		case "critical":
+			logger.Errorf("🚨 CLOCK CRITICAL [%s]: |drift| %dms exceeds C2 tolerance %dms — check WSL2 time-sync (systemd-timesyncd) and the NT8 feed. Log-only: no trading gate added.",
+				tag, absI64(drift), C2ToleranceMs())
+		case "warn":
+			logger.Errorf("🚨 CLOCK EARLY-WARNING [%s]: |drift| %dms exceeds CLOCK_WARN_MS %dms (tolerance %dms not yet breached) — fix WSL2 time-sync NOW, before staleness verdicts degrade. Log-only.",
+				tag, absI64(drift), clockWarnMs(), C2ToleranceMs())
+		}
 	}
+}
+
+// clockGuardState mirrors the JSON written by deploy/nofx-clock-guard.sh.
+type clockGuardState struct {
+	LastRunUTC  string `json:"last_run_utc"`
+	LastRunUnix int64  `json:"last_run_unix"`
+	Status      string `json:"status"`
+	RTCvsWSLs   string `json:"rtc_vs_wsl_s"`
+	NTPOffset   string `json:"ntp_offset"`
+}
+
+// LogClockGuardBoot is the P1.4 boot integrity extension: one line stating the
+// live host-RTC drift, whether the clock-guard timer is running, and its last
+// check. Everything is best-effort — a missing guard reads as timer=inactive,
+// never an error (the bot must boot identically without it).
+func LogClockGuardBoot() {
+	// Live drift, same channel as the guard script: host RTC vs Go clock.
+	rtcDrift := "n/a"
+	if raw, err := os.ReadFile("/sys/class/rtc/rtc0/since_epoch"); err == nil {
+		if rtcS, err := strconv.ParseInt(strings.TrimSpace(string(raw)), 10, 64); err == nil {
+			rtcDrift = i64str(time.Now().Unix()-rtcS) + "s"
+		}
+	}
+
+	// Guard timer state, judged by state-file freshness (the bot runs as a
+	// SYSTEM service and cannot reliably reach the user systemd manager, so the
+	// file the 15-min timer writes is the honest signal: fresh = active).
+	statePath := os.Getenv("NOFX_CLOCK_STATE")
+	if statePath == "" {
+		statePath = "data/clock-guard-state.json"
+	}
+	timer, lastCheck, lastStatus := "inactive-or-not-installed", "never", ""
+	if raw, err := os.ReadFile(statePath); err == nil {
+		var st clockGuardState
+		if json.Unmarshal(raw, &st) == nil && st.LastRunUnix > 0 {
+			age := time.Since(time.Unix(st.LastRunUnix, 0))
+			lastCheck = st.LastRunUTC + " (" + age.Round(time.Second).String() + " ago)"
+			lastStatus = " last_status=" + st.Status + " rtc_vs_wsl_s=" + st.RTCvsWSLs + " ntp_offset=" + st.NTPOffset
+			if age <= 20*time.Minute { // 15-min cadence + 5-min slack
+				timer = "active"
+			} else {
+				timer = "stale"
+			}
+		}
+	}
+	logger.Infof("🛡 clock-guard [boot] rtc_vs_go=%s timer=%s last_check=%s%s warn_ms=%d tolerance_ms=%d resync=unavailable-no-root (timesyncd slews; owner root unit is the escalation path)",
+		rtcDrift, timer, lastCheck, lastStatus, clockWarnMs(), C2ToleranceMs())
 }
 
 func i64str(v int64) string {

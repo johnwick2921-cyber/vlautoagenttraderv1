@@ -201,6 +201,9 @@ func main() {
 	// by the trader loop). At boot the NT8 wire may not be up yet — the line
 	// says "none" honestly rather than waiting.
 	kernel.LogClockHealth("boot", "MNQ")
+	// P1.4 (ledger-close 2026-08-19) — clock-guard block: live host-RTC drift,
+	// guard-timer freshness, last resync/check state. Log-only, best-effort.
+	kernel.LogClockGuardBoot()
 
 	// SANDBOX: a demo instance has no NT8 wire, so install a deterministic
 	// synthetic bar feed — without it level_facts/price/chart/armor are all empty.
