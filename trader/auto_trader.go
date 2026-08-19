@@ -382,15 +382,15 @@ type AutoTrader struct {
 	trailMu                sync.Mutex             // guards trailStates
 	postExitSeen           map[int64]bool         // Phase 4: position IDs whose post-exit rescan already fired (guarded by postExitMu)
 	postExitMu             sync.Mutex
-	breakevenMu            sync.Mutex             // guards breakevenDone (lazy-inited)
-	lastBalanceSyncTime    time.Time              // Last balance sync time
-	userID                 string                 // User ID
-	gridState              *GridState             // Grid trading state (only used when StrategyType == "grid_trading")
-	claw402WalletAddr      string                 // Claw402 wallet address (derived from private key at start)
-	consecutiveAIFailures  int                    // Consecutive AI call failures
-	safeMode               bool                   // Safe mode: no new positions, protect existing ones
-	safeModeReason         string                 // Why safe mode was activated
-	deadMan                deadManWatchdog        // B5 dead-man watchdog: NT8 link-gap → block NEW entries until reconciled (zero value = live/allowed; touched only from runCycle)
+	breakevenMu            sync.Mutex      // guards breakevenDone (lazy-inited)
+	lastBalanceSyncTime    time.Time       // Last balance sync time
+	userID                 string          // User ID
+	gridState              *GridState      // Grid trading state (only used when StrategyType == "grid_trading")
+	claw402WalletAddr      string          // Claw402 wallet address (derived from private key at start)
+	consecutiveAIFailures  int             // Consecutive AI call failures
+	safeMode               bool            // Safe mode: no new positions, protect existing ones
+	safeModeReason         string          // Why safe mode was activated
+	deadMan                deadManWatchdog // B5 dead-man watchdog: NT8 link-gap → block NEW entries until reconciled (zero value = live/allowed; touched only from runCycle)
 
 	// Plan 4 Stage 4 — NinjaTrader TCP balance tracking (defer-until-balance guard)
 	// For NinjaTrader TCP traders, we track if account_balance frame has arrived yet.
@@ -889,8 +889,8 @@ func (at *AutoTrader) Stop() {
 	at.isRunningMutex.Unlock()
 
 	unregisterPostExitDispatch(at) // Phase 4: stop routing close events here
-	close(at.stopMonitorCh) // Notify monitoring goroutine to stop
-	at.monitorWg.Wait()     // Wait for monitoring goroutine to finish
+	close(at.stopMonitorCh)        // Notify monitoring goroutine to stop
+	at.monitorWg.Wait()            // Wait for monitoring goroutine to finish
 	logger.Info("⏹ Automatic trading system stopped")
 }
 

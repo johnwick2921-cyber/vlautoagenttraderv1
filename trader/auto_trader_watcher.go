@@ -59,9 +59,15 @@ func envIntDefault(name string, def int) int {
 	return def
 }
 
-func watchInvalidateMinConf() int { return envIntDefault("WATCH_INVALIDATE_MIN_CONF", defaultWatchInvalidateMinConf) }
-func watchMinHoldCycles() int     { return envIntDefault("WATCH_MIN_HOLD_CYCLES", defaultWatchMinHoldCycles) }
-func watchWarnConsecutive() int   { return envIntDefault("WATCH_WARN_CONSECUTIVE", defaultWatchWarnConsecutive) }
+func watchInvalidateMinConf() int {
+	return envIntDefault("WATCH_INVALIDATE_MIN_CONF", defaultWatchInvalidateMinConf)
+}
+func watchMinHoldCycles() int {
+	return envIntDefault("WATCH_MIN_HOLD_CYCLES", defaultWatchMinHoldCycles)
+}
+func watchWarnConsecutive() int {
+	return envIntDefault("WATCH_WARN_CONSECUTIVE", defaultWatchWarnConsecutive)
+}
 
 // ---- entry thesis (the anchor the observer judges against) ----
 
