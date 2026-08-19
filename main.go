@@ -105,6 +105,11 @@ func main() {
 			return "30"
 		}())
 
+	// 6.7 (final-bundle) — one-time entry_confidence backfill from decision
+	// records (flag-guarded, WHERE-scoped, additive; feeds the watcher scoring
+	// table's history).
+	st.BackfillEntryConfidence()
+
 	// Initialize installation ID for experience improvement (anonymous statistics)
 	initInstallationID(st)
 
