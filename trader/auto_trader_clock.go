@@ -579,12 +579,17 @@ func (at *AutoTrader) tickOnce(isGrid bool) {
 		}
 		return
 	}
+	// U2 (watcher-eyes hotfix): a post_exit kick is a PROMISED immediate rescan
+	// — it bypasses the bar-close gate and the no-new-data dedup exactly once
+	// (the dodge bypass rides skipDodgeOnce, set together in noteKick).
+	bypassCadence := at.skipCadenceOnce
+	at.skipCadenceOnce = false
 	active := at.barCloseCadenceActive()
 	// P10 (owner ruling 2026-08-19): the bar-close gate is a MODE now, not a
 	// hard gate. mode=bar_close keeps the legacy behavior byte-identical (E14);
 	// mode=interval (default) runs a full cycle every tick on the latest bar
 	// state — forming bar included — subject only to the no-new-data dedup.
-	if active && at.cadenceMode() == CadenceBarClose {
+	if !bypassCadence && active && at.cadenceMode() == CadenceBarClose {
 		latest, have := at.latestClosedPrimaryBarMs()
 		run, newLast := barCloseGate(true, at.lastBarCloseMs, latest, have)
 		at.lastBarCloseMs = newLast
@@ -592,7 +597,7 @@ func (at *AutoTrader) tickOnce(isGrid bool) {
 			return // bar-close mode: no new primary-TF bar closed → idle this tick
 		}
 	}
-	if active && at.cadenceMode() == CadenceInterval && at.skipNoNewData(time.Now()) {
+	if !bypassCadence && active && at.cadenceMode() == CadenceInterval && at.skipNoNewData(time.Now()) {
 		return
 	}
 	// Discard-burn 2.1 — DODGE: starting a cycle just before the decision-TF's

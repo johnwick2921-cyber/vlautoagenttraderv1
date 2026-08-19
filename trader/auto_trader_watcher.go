@@ -236,6 +236,21 @@ func (at *AutoTrader) runWatchCycle(ctx *kernel.Context, record *store.DecisionR
 	}
 	p := positions[0]
 	key := p.Symbol + "_" + p.Side
+
+	// U1 (watcher-eyes hotfix): the loop-built ctx has NO market data — that
+	// only exists on the decision path. Fetch it (and stamp SnapshotMs + the
+	// prompt snapshot) so the observer sees real bars, forming labels, and a
+	// live price. Fail-safe: on fetch failure the cycle records honestly and
+	// skips the AI call rather than observing blind.
+	if err := kernel.EnsureMarketData(ctx, at.strategyEngine); err != nil {
+		at.logWarnf("👁 watch cycle: market fetch failed (%v) — recording heartbeat without an observer read.", err)
+		record.CycleType = "watch"
+		record.ExecutionStatus = "watch"
+		record.Success = true
+		record.ExecutionLog = append(record.ExecutionLog, "watch: market fetch failed — no observer call this cycle")
+		at.saveDecision(record)
+		return nil
+	}
 	if at.watchStates == nil {
 		at.watchStates = make(map[string]*watchState)
 	}
@@ -310,7 +325,9 @@ func (at *AutoTrader) runWatchCycle(ctx *kernel.Context, record *store.DecisionR
 	raw, dur, callErr := kernel.CallObserver(at.mcpClient, systemPrompt, userPrompt)
 	record.RawResponse = raw
 	record.AIRequestDurationMs = dur.Milliseconds()
-	at.recordAICallMs(dur.Milliseconds())
+	// U3 (watcher-eyes): watch-call latencies deliberately do NOT feed the
+	// dodge's rolling average — observer prompts are a different shape, and a
+	// long hold would mis-size the dodge window for the next DECISION cycle.
 	if callErr != nil {
 		record.Success = false
 		record.ErrorMessage = "watch call failed: " + callErr.Error()

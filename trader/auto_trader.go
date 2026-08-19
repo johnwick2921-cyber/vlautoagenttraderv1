@@ -368,6 +368,7 @@ type AutoTrader struct {
 	kickCh                 chan string           // discard-burn/post-exit: one-shot deferred-cycle kicks into the run loop (reason payload)
 	kickPending            atomic.Bool           // at most one kick armed at a time (CAS)
 	skipDodgeOnce          bool                  // a dodge-kicked cycle must not re-dodge at the boundary (run-loop goroutine only)
+	skipCadenceOnce        bool                  // U2: a post_exit kick bypasses the cadence gates exactly once (run-loop goroutine only)
 	cycleTrigger           string                // why this cycle fired: "" (timer) | "stale_dodge" | "post_exit" (run-loop goroutine only)
 	aiCallMs               [aiCallRingSize]int64 // last-N AI call durations (run-loop goroutine only)
 	aiCallIdx              int
@@ -865,9 +866,7 @@ func (at *AutoTrader) Run() error {
 			// mid-cycle waits here, never cancels in-flight work.
 			at.kickPending.Store(false)
 			at.cycleTrigger = reason
-			if reason == "stale_dodge" {
-				at.skipDodgeOnce = true // the dodged cycle runs now; no re-dodge at the boundary
-			}
+			at.noteKick(reason)
 			at.tickOnce(isGridStrategy)
 			at.cycleTrigger = ""
 		case <-at.stopMonitorCh:

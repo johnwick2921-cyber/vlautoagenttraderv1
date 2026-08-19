@@ -245,3 +245,19 @@ func (at *AutoTrader) reevalSupersededEntries(ds []kernel.Decision, ctx *kernel.
 // is a DISPLAY conflation, fixed frontend-side: DecisionCard renders
 // execution_status=guardrail_skip as a neutral ℹ️ skip, reserving the red badge
 // for real failures (and ❌ for verdict_hint=feed|clock). DB semantics unchanged.
+
+// noteKick arms the one-shot bypass flags for a consumed kick (run-loop
+// goroutine only). U2 (watcher-eyes hotfix): a post_exit kick used to enter
+// tickOnce UPSTREAM of the cadence gates — bar_close mode dropped the promised
+// rescan unconditionally, interval mode's no-new-data dedup could eat it (flat
+// + unchanged sig IS the post-close state in quiet tape), and the dodge could
+// re-defer it. The rescan now bypasses all three, exactly once.
+func (at *AutoTrader) noteKick(reason string) {
+	switch reason {
+	case "stale_dodge":
+		at.skipDodgeOnce = true // the dodged cycle runs now; no re-dodge at the boundary
+	case "post_exit":
+		at.skipCadenceOnce = true
+		at.skipDodgeOnce = true
+	}
+}
