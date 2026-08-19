@@ -140,9 +140,14 @@ func EffectiveAIParamsSnapshot(model string) EffectiveAIParams {
 		MaxTokensSet:        os.Getenv("AI_MAX_TOKENS") != "",
 		TemperatureSet:      os.Getenv("AI_TEMPERATURE") != "",
 		TopPSet:             os.Getenv("AI_TOP_P") != "",
-		TimeoutSet:          os.Getenv("AI_TIMEOUT_SECONDS") != "",
-		MaxRetriesSet:       os.Getenv("AI_MAX_RETRIES") != "",
-		RetryBackoffSet:     os.Getenv("AI_RETRY_BACKOFF_SECONDS") != "",
+		// Both names count as "operator set": ResolvedAITimeout honors the
+		// canonical AI_HTTP_TIMEOUT_SECONDS first, then the legacy name — a
+		// startup WARNING claiming the default is in force while the canonical
+		// env drives the transport would be the honesty bug this report exists
+		// to prevent.
+		TimeoutSet:      os.Getenv("AI_HTTP_TIMEOUT_SECONDS") != "" || os.Getenv("AI_TIMEOUT_SECONDS") != "",
+		MaxRetriesSet:   os.Getenv("AI_MAX_RETRIES") != "",
+		RetryBackoffSet: os.Getenv("AI_RETRY_BACKOFF_SECONDS") != "",
 	}
 }
 

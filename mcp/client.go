@@ -768,6 +768,11 @@ func (client *Client) BuildRequestBodyFromRequest(req *Request) map[string]any {
 
 	if req.TopP != nil {
 		requestBody["top_p"] = *req.TopP
+	} else if client.Cfg != nil && client.Cfg.TopP > 0 {
+		// Same fallback temperature and max_tokens already have on this path:
+		// the Request builder used to DROP the configured AI_TOP_P entirely
+		// (class 7 — the Call path honored it, this one didn't).
+		requestBody["top_p"] = client.Cfg.TopP
 	}
 
 	if req.FrequencyPenalty != nil {
