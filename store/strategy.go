@@ -1372,7 +1372,7 @@ type RiskControlConfig struct {
 	// stay off until set). Not gated by the guardrails master switch.
 	ReentryCooldownMinutes int `json:"reentry_cooldown_minutes,omitempty"`
 
-	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 10-contract
+	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 2-contract
 	// default (the prior hidden const maxFuturesContracts). Toggle default ON.
 	MaxContractsPerOrder int `json:"max_contracts_per_order,omitempty"`
 	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the

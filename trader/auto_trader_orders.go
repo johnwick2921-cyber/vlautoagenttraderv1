@@ -47,7 +47,7 @@ func futuresOrderQuantity(symbol string, notionalUSD, price float64, maxContract
 }
 
 // resolveMaxContracts returns the futures max-contracts clamp for this trader's
-// strategy (per-strategy value, else the 10-contract venue default). Hardening D3
+// strategy (per-strategy value, else the 2-contract venue default; 6.6 comment-truth fix). Hardening D3
 // (audit F2): ALWAYS ON — the guardrails master switch no longer disables it.
 func (at *AutoTrader) resolveMaxContracts() int {
 	if at.config.StrategyConfig == nil {

@@ -271,7 +271,8 @@ func firstPositive(vals ...float64) float64 {
 // Hardening D3 (audit F2): this SIZE cap is ALWAYS ON for futures — it is venue
 // safety, NOT a prop-firm rule, so the guardrails master switch and the
 // max-contracts toggle govern ONLY daily limits/blackout, never this clamp.
-// Per-strategy value overrides (>0); else the venue default (10-contract).
+// Per-strategy value overrides (>0); else the venue default (2 contracts —
+// the researched fallback; 6.6: the old '10-contract' text was a comment lie).
 // NEVER returns 0 — a futures order can never be left unclamped.
 func ResolveMaxContracts(perStrategy, def int) int {
 	if perStrategy > 0 {
