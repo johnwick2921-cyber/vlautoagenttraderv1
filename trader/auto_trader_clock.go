@@ -45,6 +45,14 @@ func (at *AutoTrader) skipWhileOpen() (bool, string) {
 	if err != nil || len(positions) == 0 {
 		return false, ""
 	}
+	// P0 hotfix (2026-08-19) — the gate never trusts a stale local row against
+	// live NT8 truth: bracket exits land in the store via the reconcile "sync"
+	// path (≤~80s), and during that window this row is a phantom. On desync
+	// (broker flat, store open): CRITICAL + no skip; the reconciler keeps
+	// closing authority. See position_desync.go. POSITION_RECONCILE default on.
+	if at.skipGateDesync(positions) {
+		return false, ""
+	}
 	p := positions[0]
 	return true, fmt.Sprintf("%d open (%s %s)", len(positions), p.Symbol, p.Side)
 }
