@@ -179,17 +179,31 @@ func (at *AutoTrader) logLedgerBootBlock(now time.Time) {
 	if !postExitRescanEnabled() {
 		postExit = "off"
 	}
+	// 6.5 — the silent $500 env fallback becomes visible: when the Studio
+	// daily-loss value is 0/unset, RISK_MAX_DAILY_LOSS_USD (default 500) is the
+	// enforced limit (only while the guardrails master is ON).
+	guardrails := "master=OFF (soft-audit only)"
+	if at.config.StrategyConfig != nil {
+		rc := at.config.StrategyConfig.RiskControl
+		if hlBool(rc.GuardrailsEnabled, true) {
+			if rc.DailyLossLimitUSD > 0 {
+				guardrails = fmt.Sprintf("master=ON daily_loss=$%.0f (studio)", rc.DailyLossLimitUSD)
+			} else {
+				guardrails = fmt.Sprintf("master=ON daily_loss=$%.0f (env RISK_MAX_DAILY_LOSS_USD fallback — Studio value unset)", kernel.LoadRiskLimitsFromConfig().MaxDailyLossUSD)
+			}
+		}
+	}
 	trailing := "OFF"
 	if at.config.StrategyConfig != nil {
 		if en, mult, period, arm, _ := trailingConfig(at.config.StrategyConfig.RiskControl); en {
 			trailing = fmt.Sprintf("%.1f×ATR%d arm=%s (source: studio)", mult, period, arm)
 		}
 	}
-	at.logInfof("🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · position_mode=%s (source: %s) · watcher[min_conf=%d hold=%d warn_consec=%d] · trailing=%s · stale_dodge=%s reeval_drift=%.2f×ATR%d · post_exit_rescan=%s delay=%dms · roll=%s · balance-alert=%s",
+	at.logInfof("🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · position_mode=%s (source: %s) · watcher[min_conf=%d hold=%d warn_consec=%d] · trailing=%s · stale_dodge=%s reeval_drift=%.2f×ATR%d · post_exit_rescan=%s delay=%dms · guardrails=%s · roll=%s · balance-alert=%s",
 		strings.Join(sessions, " | "), pause, at.cadenceMode(), at.config.ScanInterval,
 		at.positionMode(), pmSource,
 		watchInvalidateMinConf(), watchMinHoldCycles(), watchWarnConsecutive(),
-		trailing, dodge, reevalDriftATRMult(), reevalATRPeriod, postExit, postExitDelayMs(), roll, balanceAlert)
+		trailing, dodge, reevalDriftATRMult(), reevalATRPeriod, postExit, postExitDelayMs(), guardrails, roll, balanceAlert)
 }
 
 // SessionEndTime resolves the ACTIVE session's window end as a wall-clock

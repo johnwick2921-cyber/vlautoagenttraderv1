@@ -794,6 +794,14 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            {/* 6.5 — the silent env fallback, stated (only enforced while the
+                guardrails master is ON) */}
+            {!config.daily_loss_limit_usd && (
+              <p className="text-xs mt-1" style={{ color: '#848E9C' }}>
+                empty/0 → $500 env default (RISK_MAX_DAILY_LOSS_USD) while the
+                master switch is ON
+              </p>
+            )}
           </GuardrailRow>
 
           <GuardrailRow
