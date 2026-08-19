@@ -88,6 +88,12 @@ func (at *AutoTrader) GetStatus() map[string]interface{} {
 		"ai_provider":     aiProvider,
 	}
 
+	// P3 (ledger-close 2026-08-19) — roll picture for the dashboard (3.6):
+	// resolved contract, expiry, window start, days remaining.
+	if at.exchange == "ninjatrader" {
+		result["roll"] = at.RollStatus(time.Now())
+	}
+
 	// Add strategy info
 	if at.config.StrategyConfig != nil {
 		result["strategy_type"] = at.config.StrategyConfig.StrategyType
