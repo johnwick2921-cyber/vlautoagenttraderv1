@@ -252,6 +252,12 @@ export interface RiskControlConfig {
   // Auto-breakeven (NT8 futures): once +N pts in profit, move the stop to entry.
   breakeven_enabled?: boolean
   breakeven_trigger_points?: number // default 50
+  // Trailing profit (Phase 3B, NT8 futures only; default OFF)
+  trailing_enabled?: boolean
+  trailing_atr_mult?: number // default 2.0
+  trailing_atr_period?: number // default 14 (5m ATR)
+  trailing_arm?: string // 'after_breakeven' (default) | 'after_trigger_points' | 'immediate'
+  trailing_arm_points?: number // used iff after_trigger_points
   daily_loss_limit_usd?: number // daily realized-loss limit (USD)
   daily_loss_enabled?: boolean // default ON (preserves the live env gate)
   daily_profit_target_usd?: number // daily realized-profit target (USD)

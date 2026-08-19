@@ -212,6 +212,85 @@ export function RiskControlEditor({
         </div>
       </div>
 
+      {/* Trailing profit (Phase 3B) — NT8 futures; mechanical, default OFF */}
+      <div
+        className="p-4 rounded-lg"
+        style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-sm font-medium" style={{ color: '#EAECEF' }}>
+            📈 {ts(riskControl.trailing, language)}
+          </label>
+          <Toggle
+            on={config.trailing_enabled === true}
+            onChange={(v) => updateField('trailing_enabled', v)}
+            disabled={disabled}
+          />
+        </div>
+        <p className="text-xs mt-2" style={{ color: '#848E9C' }}>
+          {ts(riskControl.trailingDesc, language)}
+        </p>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          <span className="text-xs" style={{ color: '#848E9C' }}>
+            {ts(riskControl.trailingMult, language)}
+          </span>
+          <ClampedNumberInput
+            value={config.trailing_atr_mult}
+            fallback={2.0}
+            min={0.5}
+            max={10}
+            step={0.5}
+            disabled={disabled || config.trailing_enabled !== true}
+            onCommit={(n) => updateField('trailing_atr_mult', n)}
+          />
+          <span className="text-xs" style={{ color: '#848E9C' }}>
+            {ts(riskControl.trailingPeriod, language)}
+          </span>
+          <ClampedNumberInput
+            value={config.trailing_atr_period}
+            fallback={14}
+            min={5}
+            max={50}
+            step={1}
+            disabled={disabled || config.trailing_enabled !== true}
+            onCommit={(n) => updateField('trailing_atr_period', n)}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          <span className="text-xs" style={{ color: '#848E9C' }}>
+            {ts(riskControl.trailingArm, language)}
+          </span>
+          <select
+            data-testid="trailing-arm"
+            value={config.trailing_arm || 'after_breakeven'}
+            onChange={(e) => updateField('trailing_arm', e.target.value)}
+            disabled={disabled || config.trailing_enabled !== true}
+            className="bg-[#181C21] text-xs text-[#EAECEF] border border-[#2B3139] rounded px-2 py-1"
+          >
+            <option value="after_breakeven">
+              {ts(riskControl.trailingArmBE, language)}
+            </option>
+            <option value="after_trigger_points">
+              {ts(riskControl.trailingArmPts, language)}
+            </option>
+            <option value="immediate">
+              {ts(riskControl.trailingArmNow, language)}
+            </option>
+          </select>
+          {config.trailing_arm === 'after_trigger_points' && (
+            <ClampedNumberInput
+              value={config.trailing_arm_points}
+              fallback={50}
+              min={1}
+              max={1000}
+              step={5}
+              disabled={disabled || config.trailing_enabled !== true}
+              onCommit={(n) => updateField('trailing_arm_points', n)}
+            />
+          )}
+        </div>
+      </div>
+
       {/* Position Limits */}
       <div>
         <div className="flex items-center gap-2 mb-4">

@@ -1404,6 +1404,18 @@ type RiskControlConfig struct {
 	// resting bracket in place. New feature → default OFF; trigger defaults to 50.
 	BreakevenEnabled       *bool   `json:"breakeven_enabled,omitempty"`
 	BreakevenTriggerPoints float64 `json:"breakeven_trigger_points,omitempty"`
+
+	// Trailing profit (final-bundle Phase 3B, 2026-08-19; NT8 futures only).
+	// Mechanical, deterministic, zero AI: once ARMED (per trailing_arm), each 60s
+	// monitor beat computes trail = best_price_since_entry ∓ mult×ATR(period,5m)
+	// and ratchets the resting stop via the proven move_stop path — never
+	// backward, never below entry after breakeven fired. DEFAULT OFF.
+	TrailingEnabled   *bool   `json:"trailing_enabled,omitempty"`
+	TrailingATRMult   float64 `json:"trailing_atr_mult,omitempty"`   // default 2.0
+	TrailingATRPeriod int     `json:"trailing_atr_period,omitempty"` // default 14 (5m ATR)
+	// TrailingArm: "after_breakeven" (default) | "after_trigger_points" | "immediate".
+	TrailingArm       string  `json:"trailing_arm,omitempty"`
+	TrailingArmPoints float64 `json:"trailing_arm_points,omitempty"` // used iff after_trigger_points
 }
 
 // NewStrategyStore creates a new StrategyStore

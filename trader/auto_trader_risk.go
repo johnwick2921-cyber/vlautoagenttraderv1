@@ -93,6 +93,9 @@ func (at *AutoTrader) checkPositionDrawdown() {
 		// per position; opt-in, default OFF). Runs alongside the drawdown check.
 		openKeys[symbol+"_"+side] = true
 		at.maybeMoveStopToBreakeven(symbol, side, entryPrice, markPrice)
+		// Phase 3B — trailing profit (opt-in, default OFF): additive beat on the
+		// same monitor, after breakeven so the BE floor is visible to the rails.
+		at.maybeTrailStop(symbol, side, entryPrice, markPrice)
 
 		// Calculate current P&L percentage
 		leverage := 10 // Default value
@@ -146,6 +149,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 	}
 	// Re-arm breakeven for any position that has since gone flat.
 	at.pruneBreakevenDone(openKeys)
+	at.pruneTrailStates(openKeys)
 }
 
 // emergencyClosePosition emergency close position function

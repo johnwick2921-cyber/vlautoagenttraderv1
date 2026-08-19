@@ -175,11 +175,17 @@ func (at *AutoTrader) logLedgerBootBlock(now time.Time) {
 	if !staleDodgeEnabled() {
 		dodge = "off"
 	}
-	at.logInfof("🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · position_mode=%s (source: %s) · watcher[min_conf=%d hold=%d warn_consec=%d] · stale_dodge=%s reeval_drift=%.2f×ATR%d · roll=%s · balance-alert=%s",
+	trailing := "OFF"
+	if at.config.StrategyConfig != nil {
+		if en, mult, period, arm, _ := trailingConfig(at.config.StrategyConfig.RiskControl); en {
+			trailing = fmt.Sprintf("%.1f×ATR%d arm=%s (source: studio)", mult, period, arm)
+		}
+	}
+	at.logInfof("🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · position_mode=%s (source: %s) · watcher[min_conf=%d hold=%d warn_consec=%d] · trailing=%s · stale_dodge=%s reeval_drift=%.2f×ATR%d · roll=%s · balance-alert=%s",
 		strings.Join(sessions, " | "), pause, at.cadenceMode(), at.config.ScanInterval,
 		at.positionMode(), pmSource,
 		watchInvalidateMinConf(), watchMinHoldCycles(), watchWarnConsecutive(),
-		dodge, reevalDriftATRMult(), reevalATRPeriod, roll, balanceAlert)
+		trailing, dodge, reevalDriftATRMult(), reevalATRPeriod, roll, balanceAlert)
 }
 
 // SessionEndTime resolves the ACTIVE session's window end as a wall-clock

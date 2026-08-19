@@ -498,6 +498,48 @@ export const riskControl = {
     es: 'Disparador (puntos)',
   },
 
+  // === Trailing profit (Phase 3B) ===
+  trailing: {
+    zh: '移动止盈（追踪止损）',
+    en: 'Trailing profit (trailing stop)',
+    es: 'Trailing stop',
+  },
+  trailingDesc: {
+    zh: '启用后：按 最优价 ∓ 倍数×ATR(周期,5m) 逐级收紧止损（只收紧、永不后退；保本触发后永不低于开仓价）。与保本止损共用同一 move_stop 通道。仅期货 (NT8)。默认关闭。',
+    en: 'When ON: the stop ratchets to best-price ∓ mult×ATR(period, 5m) each minute — tighten-only, never backward, never below entry once breakeven fired. Shares the proven move_stop path with auto-breakeven. Futures (NT8) only. Default OFF.',
+    es: 'Cuando está ON: el stop se ajusta a mejor-precio ∓ mult×ATR — solo se aprieta, nunca retrocede, nunca bajo la entrada tras el breakeven. Solo futuros (NT8). Por defecto OFF.',
+  },
+  trailingMult: {
+    zh: 'ATR 倍数',
+    en: 'ATR multiple',
+    es: 'Múltiplo ATR',
+  },
+  trailingPeriod: {
+    zh: 'ATR 周期 (5m)',
+    en: 'ATR period (5m)',
+    es: 'Período ATR (5m)',
+  },
+  trailingArm: {
+    zh: '启动条件',
+    en: 'Arms',
+    es: 'Se activa',
+  },
+  trailingArmBE: {
+    zh: '保本触发后（默认）',
+    en: 'after breakeven (default)',
+    es: 'tras breakeven (defecto)',
+  },
+  trailingArmPts: {
+    zh: '浮盈达到点数',
+    en: 'after N points in profit',
+    es: 'tras N puntos',
+  },
+  trailingArmNow: {
+    zh: '立即',
+    en: 'immediately',
+    es: 'inmediato',
+  },
+
   // === Strategy Studio Phase 1 — prop-firm guardrails (Chunk 6) ===
   guardrailsTitle: {
     zh: '防护栏（Prop-Firm 规则）',

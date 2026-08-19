@@ -377,6 +377,8 @@ type AutoTrader struct {
 	breakevenDone          map[string]bool        // auto-breakeven: "symbol_side" already moved to breakeven (idempotent; reset on flat)
 	entryTheses            map[string]entryThesis // Phase 3: original entry decision per "symbol_side" (run-loop goroutine)
 	watchStates            map[string]*watchState // Phase 3: watcher hysteresis state per "symbol_side" (run-loop goroutine)
+	trailStates            map[string]*trailState // Phase 3B: trailing-stop state per "symbol_SIDE" (guarded by trailMu — monitor + watcher goroutines)
+	trailMu                sync.Mutex             // guards trailStates
 	breakevenMu            sync.Mutex             // guards breakevenDone (lazy-inited)
 	lastBalanceSyncTime    time.Time              // Last balance sync time
 	userID                 string                 // User ID
