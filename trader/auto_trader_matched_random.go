@@ -58,10 +58,16 @@ func (at *AutoTrader) maybeRunWeeklyMatchedRandom(now time.Time) {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return
 	}
-	if now.Weekday() != time.Sunday {
+	// CT, not host-local (audit finding, class 1 latent): Weekday/ISOWeek were
+	// evaluated in the HOST zone — correct only while the host happens to run
+	// CDT. On a UTC host, Sunday-evening CT is already Monday UTC and the weekly
+	// freeze would silently never fire. Every timeline aligns to America/Chicago
+	// (owner contract), including this one.
+	nowCT := now.In(kernel.CTLocation())
+	if nowCT.Weekday() != time.Sunday {
 		return
 	}
-	year, week := now.ISOWeek()
+	year, week := nowCT.ISOWeek()
 	isoWeek := fmt.Sprintf("%d-W%02d", year, week)
 	mr := at.store.MatchedRandom()
 	if mr.HasWeekly(isoWeek) {
