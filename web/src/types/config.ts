@@ -101,6 +101,7 @@ export interface CreateTraderRequest {
   exchange_id: string
   strategy_id?: string // 策略ID（新版，使用保存的策略配置）
   scan_interval_minutes?: number
+  cadence_mode?: string // P10: 'interval' (default) | 'bar_close' (legacy)
   is_cross_margin?: boolean
   show_in_competition?: boolean // 是否在竞技场显示
   // 以下字段为向后兼容保留，新版使用策略配置

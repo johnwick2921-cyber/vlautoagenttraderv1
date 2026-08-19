@@ -28,6 +28,7 @@ type CreateTraderRequest struct {
 	StrategyID          string  `json:"strategy_id"` // Strategy ID (new version)
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
+	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" (default) | "bar_close" (legacy); empty keeps existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`     // Pointer type, nil means use default value true
 	ShowInCompetition   *bool   `json:"show_in_competition"` // Pointer type, nil means use default value true
 	// The following fields are kept for backward compatibility, new version uses strategy config
@@ -49,6 +50,7 @@ type UpdateTraderRequest struct {
 	StrategyID          string  `json:"strategy_id"` // Strategy ID (new version)
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
+	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" | "bar_close"; empty keeps existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`
 	ShowInCompetition   *bool   `json:"show_in_competition"`
 	// The following fields are kept for backward compatibility, new version uses strategy config
@@ -522,6 +524,7 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		IsCrossMargin:        isCrossMargin,
 		ShowInCompetition:    showInCompetition,
 		ScanIntervalMinutes:  scanIntervalMinutes,
+		CadenceMode:          req.CadenceMode, // P10 (store validates the enum)
 		IsRunning:            false,
 	}
 
@@ -641,6 +644,12 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 	// Minimum lowered 3 → 1 (2026-06-09): any positive value is accepted.
 	logger.Infof("📊 Final scan_interval_minutes: %d", scanIntervalMinutes)
 
+	// P10 — cadence mode: explicit values only; empty keeps the existing mode.
+	cadenceMode := existingTrader.CadenceMode
+	if req.CadenceMode == "interval" || req.CadenceMode == "bar_close" {
+		cadenceMode = req.CadenceMode
+	}
+
 	// Set system prompt template
 	systemPromptTemplate := req.SystemPromptTemplate
 	if systemPromptTemplate == "" {
@@ -682,6 +691,7 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		IsCrossMargin:        isCrossMargin,
 		ShowInCompetition:    showInCompetition,
 		ScanIntervalMinutes:  scanIntervalMinutes,
+		CadenceMode:          cadenceMode, // P10
 		IsRunning:            existingTrader.IsRunning, // Keep original value
 	}
 

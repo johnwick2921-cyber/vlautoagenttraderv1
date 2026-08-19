@@ -71,6 +71,7 @@ interface FormState {
   is_cross_margin: boolean
   show_in_competition: boolean
   scan_interval_minutes: number
+  cadence_mode: string
 }
 
 interface TraderConfigModalProps {
@@ -101,6 +102,7 @@ export function TraderConfigModal({
     is_cross_margin: true,
     show_in_competition: true,
     scan_interval_minutes: 3,
+    cadence_mode: 'interval',
   })
   const [isSaving, setIsSaving] = useState(false)
   const [strategies, setStrategies] = useState<Strategy[]>([])
@@ -145,6 +147,7 @@ export function TraderConfigModal({
       setFormData({
         ...traderData,
         strategy_id: traderData.strategy_id || '',
+        cadence_mode: (traderData as { cadence_mode?: string }).cadence_mode || 'interval',
       })
     } else if (!isEditMode) {
       setFormData({
@@ -155,6 +158,7 @@ export function TraderConfigModal({
         is_cross_margin: true,
         show_in_competition: true,
         scan_interval_minutes: 3,
+        cadence_mode: 'interval',
       })
     }
   }, [traderData, isEditMode, availableModels, availableExchanges])
@@ -182,6 +186,7 @@ export function TraderConfigModal({
         is_cross_margin: formData.is_cross_margin,
         show_in_competition: formData.show_in_competition,
         scan_interval_minutes: formData.scan_interval_minutes,
+        cadence_mode: formData.cadence_mode,
       }
 
       await onSave(saveData)
@@ -502,6 +507,53 @@ export function TraderConfigModal({
                   <p className="text-xs text-gray-500 mt-1">
                     {t('scanIntervalRecommend', language)}
                   </p>
+                  {/* P10 (owner ruling 2026-08-19) — cadence mode, with the
+                      help text that kills the interval-vs-bar-close ambiguity.
+                      Inline en/zh/id (PauseButton precedent). */}
+                  <div className="mt-3">
+                    <label className="text-sm text-[#EAECEF] block mb-2">
+                      {language === 'zh' ? '决策节奏模式' : language === 'id' ? 'Mode irama keputusan' : 'Decision cadence mode'}
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        data-testid="cadence-interval"
+                        onClick={() => handleInputChange('cadence_mode', 'interval')}
+                        className={`flex-1 px-3 py-2 rounded text-sm ${
+                          formData.cadence_mode !== 'bar_close'
+                            ? 'bg-[#F0B90B] text-black'
+                            : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
+                        }`}
+                      >
+                        Interval
+                      </button>
+                      <button
+                        type="button"
+                        data-testid="cadence-bar-close"
+                        onClick={() => handleInputChange('cadence_mode', 'bar_close')}
+                        className={`flex-1 px-3 py-2 rounded text-sm ${
+                          formData.cadence_mode === 'bar_close'
+                            ? 'bg-[#F0B90B] text-black'
+                            : 'bg-[#0B0E11] text-[#848E9C] border border-[#2B3139]'
+                        }`}
+                      >
+                        Bar close
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.cadence_mode !== 'bar_close'
+                        ? (language === 'zh'
+                            ? `AI 每 ${formData.scan_interval_minutes} 分钟评估一次（mode=interval），包含未收盘的当前K线。`
+                            : language === 'id'
+                              ? `AI mengevaluasi setiap ${formData.scan_interval_minutes} menit (mode=interval), termasuk bar yang sedang terbentuk.`
+                              : `AI evaluates every ${formData.scan_interval_minutes} minutes (mode=interval), including the forming bar.`)
+                        : (language === 'zh'
+                            ? '每根主周期K线收盘后评估一次；间隔只决定检查频率（mode=bar_close）。'
+                            : language === 'id'
+                              ? 'AI mengevaluasi sekali per bar utama yang tertutup; interval hanya frekuensi pengecekan (mode=bar_close).'
+                              : 'AI evaluates once per closed primary bar; the interval only sets check frequency (mode=bar_close).')}
+                    </p>
+                  </div>
                 </div>
               </div>
 
