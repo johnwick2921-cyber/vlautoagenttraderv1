@@ -349,7 +349,9 @@ export function DecisionCard({
               {t('cycle', language)} #{decision.cycle_number}
             </div>
             <div className="text-xs" style={{ color: '#848E9C' }}>
-              {new Date(decision.timestamp).toLocaleString()}
+              {new Date(decision.timestamp).toLocaleString(undefined, {
+                timeZone: 'America/Chicago',
+              })}
             </div>
           </div>
         </div>

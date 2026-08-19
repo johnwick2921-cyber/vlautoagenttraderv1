@@ -234,7 +234,11 @@ export function DecisionAudit({ traderId, account }: Props) {
             const a = row.action
             const isExpanded = expandedKey === row.rowKey
             const tsRaw = p.created_at || p.timestamp
-            const tsDisplay = tsRaw ? new Date(tsRaw).toLocaleString() : '—'
+            const tsDisplay = tsRaw
+              ? new Date(tsRaw).toLocaleString(undefined, {
+                  timeZone: 'America/Chicago',
+                })
+              : '—'
             const latencyMs =
               p.fill_latency_ms != null ? p.fill_latency_ms : p.ai_latency_ms
             const riskOk = p.risk_check_passed

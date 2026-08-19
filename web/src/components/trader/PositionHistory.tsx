@@ -42,6 +42,7 @@ function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('zh-CN', {
+    timeZone: 'America/Chicago', // owner contract: Houston time for every viewer
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
