@@ -149,6 +149,10 @@ func (t *TCPTrader) recordClose(
 		qty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
 		logger.Warnf("ninjatrader/tcp: record close failed (%s %s): %v", symbol, side, err)
 	} else {
+		// Phase 4 (final-bundle): notify the owning trader — one post-exit rescan.
+		if OnPositionClosed != nil {
+			OnPositionClosed(owner.TraderID, owner.ID)
+		}
 		// WARN (honest-logs 2026-08-19): a position close with realized P&L is
 		// owner-visible truth — must reach the log_events sink + dashboard even
 		// under journald frame-flood suppression.
@@ -170,3 +174,9 @@ func (t *TCPTrader) recordClose(
 	t.hasFill = false
 	t.mu.Unlock()
 }
+
+// OnPositionClosed (Phase 4, final-bundle 2026-08-19) is the package-level
+// close-event hook: the trader layer registers a dispatcher so a confirmed
+// position close (close_sync priced close, reconcile priced/flat close)
+// triggers exactly one post-exit rescan for the OWNING trader. Nil = no-op.
+var OnPositionClosed func(traderID string, positionID int64)

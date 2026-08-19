@@ -251,6 +251,10 @@ func (at *AutoTrader) runCycle() error {
 	record := &store.DecisionRecord{
 		ExecutionLog: []string{},
 		Success:      true,
+		CycleTrigger: at.cycleTrigger, // Phase 2/4: "" (timer) | "stale_dodge" | "post_exit"
+	}
+	if at.cycleTrigger == "post_exit" {
+		at.logInfof("↻ cycle_trigger=post_exit — immediate rescan after a position close (all gates apply; prompt identical to a timer cycle).")
 	}
 
 	// 1. Check if trading needs to be stopped

@@ -196,6 +196,9 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 					}
 				}
 				closed, perr := st.Position().ClosePosition(row.ID, exitPx, "reconcile_priced", pnl, 0, "sync")
+			if perr == nil && closed && OnPositionClosed != nil {
+				OnPositionClosed(row.TraderID, row.ID) // Phase 4: post-exit rescan
+			}
 				delete(t.flatSince, row.ID)
 				if perr != nil {
 					logger.Warnf("ninjatrader/tcp: reconcile priced-close failed (row %d): %v", row.ID, perr)
@@ -210,6 +213,9 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 			// status='OPEN' (PART-1a), so a last-moment close-sync win is still kept.
 			// Never fabricate an exit NT8 didn't give us.
 			closed, err := st.Position().ClosePosition(row.ID, row.EntryPrice, "reconcile", 0, 0, store.CloseReasonReconcileFlat)
+			if err == nil && closed && OnPositionClosed != nil {
+				OnPositionClosed(row.TraderID, row.ID) // Phase 4: post-exit rescan
+			}
 			delete(t.flatSince, row.ID)
 			switch {
 			case err != nil:

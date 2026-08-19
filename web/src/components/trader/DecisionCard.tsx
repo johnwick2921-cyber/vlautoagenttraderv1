@@ -347,6 +347,19 @@ export function DecisionCard({
           <div>
             <div className="font-bold" style={{ color: '#EAECEF' }}>
               {t('cycle', language)} #{decision.cycle_number}
+              {(decision as { cycle_trigger?: string }).cycle_trigger ===
+                'post_exit' && (
+                <span
+                  className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-mono align-middle"
+                  style={{
+                    background: 'rgba(240,185,11,0.15)',
+                    color: '#F0B90B',
+                  }}
+                  title="post-exit rescan — one immediate cycle after a position close (all gates applied)"
+                >
+                  ↻ post-exit
+                </span>
+              )}
             </div>
             <div className="text-xs" style={{ color: '#848E9C' }}>
               {new Date(decision.timestamp).toLocaleString(undefined, {

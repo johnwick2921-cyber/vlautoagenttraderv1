@@ -379,6 +379,8 @@ type AutoTrader struct {
 	watchStates            map[string]*watchState // Phase 3: watcher hysteresis state per "symbol_side" (run-loop goroutine)
 	trailStates            map[string]*trailState // Phase 3B: trailing-stop state per "symbol_SIDE" (guarded by trailMu — monitor + watcher goroutines)
 	trailMu                sync.Mutex             // guards trailStates
+	postExitSeen           map[int64]bool         // Phase 4: position IDs whose post-exit rescan already fired (guarded by postExitMu)
+	postExitMu             sync.Mutex
 	breakevenMu            sync.Mutex             // guards breakevenDone (lazy-inited)
 	lastBalanceSyncTime    time.Time              // Last balance sync time
 	userID                 string                 // User ID
@@ -706,6 +708,7 @@ func (at *AutoTrader) Run() error {
 	at.stopMonitorCh = make(chan struct{})
 	at.kickCh = make(chan string, 4) // fresh kick channel per Run (restart-safe)
 	at.kickPending.Store(false)
+	registerPostExitDispatch(at) // Phase 4: close events → one post-exit rescan
 	at.startTime = time.Now()
 
 	// P2 (ledger-close 2026-08-19) — restore an owner pause across restart.
@@ -886,6 +889,7 @@ func (at *AutoTrader) Stop() {
 	at.isRunning = false
 	at.isRunningMutex.Unlock()
 
+	unregisterPostExitDispatch(at) // Phase 4: stop routing close events here
 	close(at.stopMonitorCh) // Notify monitoring goroutine to stop
 	at.monitorWg.Wait()     // Wait for monitoring goroutine to finish
 	logger.Info("⏹ Automatic trading system stopped")
