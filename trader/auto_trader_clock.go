@@ -229,6 +229,9 @@ func pastSessionCutoff(now time.Time, sess *kernel.SessionDef, cutoffMin int) bo
 	return nowOff < sessLen && nowOff >= cutOff
 }
 
+// eodFlatCT — LEGACY day-scoped flat time. UNREACHABLE since the session-scope
+// redesign (2026-08-18); enforceEODFlatAt resolves per session. Kept for
+// visibility of an old dp.EODFlatCT config value only.
 func (at *AutoTrader) eodFlatCT() string {
 	if dp := at.config.StrategyConfig.DayPlan; dp != nil && strings.TrimSpace(dp.EODFlatCT) != "" {
 		return dp.EODFlatCT
@@ -275,24 +278,62 @@ func (at *AutoTrader) entryBlockedByLastEntryAt(now time.Time) (string, bool) {
 	return "", false
 }
 
-// enforceEODFlat (P2.3) force-flattens any open position at/after the effective
-// EOD-flat time (config, pulled in on a half-day) by routing DIRECTLY through the
-// trader close path — bypassing hold-lock naturally (RECON #10). Returns true
-// when it acted (the caller then skips the rest of the cycle). Gated on day_plan.
+// enforceEODFlat (P2.3, session-scoped 2026-08-18) force-flattens any open
+// position at/after the ACTIVE session's flat time (session end −
+// eod_flat_offset_min, half-day pull-in preserved) by routing DIRECTLY through
+// the trader close path — bypassing hold-lock naturally (RECON #10). Returns
+// true when it acted (the caller then skips the rest of the cycle). Gated on
+// day_plan.
+//
+// THE TWIN BUG (class 7 of the last-entry fix): the old body was
+// timeReachedCT(now, "14:45") — day-scoped, true 14:45 CT → midnight — which
+// never mattered while the 13:00 last-entry bug guaranteed no Asia positions,
+// but the moment Asia entries flow it would flatten each one ON SIGHT at, say,
+// 21:00 CT. Fixing last-entry without this would have been worse than fixing
+// neither.
+//
+// Scope: INSIDE the active session, flatten past its resolved flat time.
+// BETWEEN sessions (the 14:45→17:00 CT gap, weekends) any open position is
+// flattened too — that is by definition past the previous session's flat, and
+// it preserves the old rule's one virtue: nothing rides through the close.
 func (at *AutoTrader) enforceEODFlat() bool {
+	return at.enforceEODFlatAt(time.Now())
+}
+
+func (at *AutoTrader) enforceEODFlatAt(now time.Time) bool {
 	if !at.dayPlanEnabled() || at.store == nil || at.trader == nil {
 		return false
 	}
-	now := time.Now()
-	flat := effectiveEODFlatCT(at.sessionRegistry(now), kernel.CMESessionDayKey(now), at.eodFlatCT())
-	if !timeReachedCT(now, flat) {
-		return false
+	reg := at.sessionRegistry(now)
+	flat := "" // resolved wall-clock, for the log only
+	if sess, ok := reg.ActiveSession(now); ok {
+		offset := at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(sess.Name)
+		flatMin, hhmm, okC := sessionCutoffCT(sess, offset)
+		if !okC {
+			return false // malformed registry times — never invent a flatten
+		}
+		// Half-day early close pulls the flat IN (existing behavior, kept):
+		// effectiveEODFlatCT picks the earlier of the half-day close and the
+		// session-resolved flat.
+		eff := effectiveEODFlatCT(reg, kernel.CMESessionDayKey(now), hhmm)
+		if eff != hhmm {
+			if m, okM := hhmmToMin(eff); okM {
+				flatMin, hhmm = m, eff
+			}
+		}
+		if !pastSessionCutoff(now, sess, flatMin) {
+			return false
+		}
+		flat = fmt.Sprintf("%s CT (%s)", hhmm, sess.Name)
+	} else {
+		// No active session: past every session's flat by definition.
+		flat = "no active session"
 	}
 	positions, err := at.store.Position().GetOpenPositions(at.id)
 	if err != nil || len(positions) == 0 {
 		return false
 	}
-	at.logWarnf("🕒 EOD-FLAT (%s CT): session close — flattening %d open position(s) via the trader close path.", flat, len(positions))
+	at.logWarnf("🕒 EOD-FLAT (%s): session close — flattening %d open position(s) via the trader close path.", flat, len(positions))
 	for _, p := range positions {
 		var e error
 		if strings.EqualFold(p.Side, "LONG") {
