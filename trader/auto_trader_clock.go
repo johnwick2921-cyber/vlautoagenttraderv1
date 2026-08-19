@@ -189,11 +189,44 @@ func effectiveEODFlatCT(reg kernel.SessionRegistry, sessionDayKey, configFlat st
 	return configFlat
 }
 
+// lastEntryCT — the LEGACY day-scoped cutoff. UNREACHABLE since the P2
+// session-scope redesign (2026-08-18): entryBlockedByLastEntry resolves the
+// cutoff per session via sessionCutoffCT below. Kept only so an old
+// dp.LastEntryCT config value is visible to a reader; nothing evaluates it.
+// See sessionCutoffCT + entryBlockedByLastEntry for the live path.
 func (at *AutoTrader) lastEntryCT() string {
 	if dp := at.config.StrategyConfig.DayPlan; dp != nil && strings.TrimSpace(dp.LastEntryCT) != "" {
 		return dp.LastEntryCT
 	}
-	return "13:00" // 14:00 ET
+	return "13:00" // 14:00 ET (NY-only era)
+}
+
+// sessionCutoffCT resolves "session end − offsetMin" as CT wall-clock minutes
+// and as an "HH:MM" string, wrap-aware for midnight-spanning sessions (ASIA
+// 17:00→02:00, offset 15 → 01:45). ok=false on malformed registry times.
+func sessionCutoffCT(sess *kernel.SessionDef, offsetMin int) (cutoffMin int, hhmm string, ok bool) {
+	endMin, okE := hhmmToMin(sess.WindowEndCT)
+	if !okE {
+		return 0, "", false
+	}
+	cutoffMin = ((endMin-offsetMin)%1440 + 1440) % 1440
+	return cutoffMin, fmt.Sprintf("%02d:%02d", cutoffMin/60, cutoffMin%60), true
+}
+
+// pastSessionCutoff reports whether now (CT) is INSIDE the session window and
+// at/after the session-relative cutoff. Comparison is done in minutes-since-
+// session-start so a midnight wrap cannot invert it. Outside the window it is
+// always false — the session-open gate, not last-entry, owns that refusal.
+func pastSessionCutoff(now time.Time, sess *kernel.SessionDef, cutoffMin int) bool {
+	startMin, okS := hhmmToMin(sess.WindowStartCT)
+	endMin, okE := hhmmToMin(sess.WindowEndCT)
+	if !okS || !okE {
+		return false
+	}
+	sessLen := ((endMin-startMin)%1440 + 1440) % 1440
+	nowOff := ((ctMinutesNow(now)-startMin)%1440 + 1440) % 1440
+	cutOff := ((cutoffMin-startMin)%1440 + 1440) % 1440
+	return nowOff < sessLen && nowOff >= cutOff
 }
 
 func (at *AutoTrader) eodFlatCT() string {
@@ -203,16 +236,41 @@ func (at *AutoTrader) eodFlatCT() string {
 	return "14:45" // 15:45 ET
 }
 
-// entryBlockedByLastEntry (P2.3) reports (reason, blocked): whether NEW entries
-// are blocked because the last-entry CT time has passed. Gated on day_plan →
-// dormant by default. (reason, ok) order matches the sibling entry gates.
+// entryBlockedByLastEntry (P2.3, session-scoped 2026-08-18) reports (reason,
+// blocked): whether NEW entries are blocked because the ACTIVE session's
+// last-entry cutoff (session end − last_entry_offset_min, America/Chicago,
+// DST-correct via kernel.CTLocation) has passed. Gated on day_plan.
+//
+// THE BUG THIS REPLACES (incident B, zero-trade cause): the old body was
+// timeReachedCT(now, "13:00") — a DAY-scoped comparison that stayed true from
+// 13:00 CT to midnight, so the single NY-era cutoff refused every Asia-evening
+// entry (live refusal observed at ~21:00 CT). Defect classes 2 (day-scope where
+// session-scope required) and 3 (the 13:00 literal shadowing per-session
+// config). The old lastEntryCT path is now unreachable from any gate.
+//
+// Outside every session window this gate never fires — the session gate owns
+// that refusal — and the message names the session + resolved time.
 func (at *AutoTrader) entryBlockedByLastEntry() (string, bool) {
+	return at.entryBlockedByLastEntryAt(time.Now())
+}
+
+// entryBlockedByLastEntryAt is the injectable-clock body, so the T1–T4 table
+// tests can pin real CT instants (including a DST-transition date).
+func (at *AutoTrader) entryBlockedByLastEntryAt(now time.Time) (string, bool) {
 	if !at.dayPlanEnabled() {
 		return "", false
 	}
-	last := at.lastEntryCT()
-	if timeReachedCT(time.Now(), last) {
-		return fmt.Sprintf("past last-entry %s CT", last), true
+	sess, ok := at.sessionRegistry(now).ActiveSession(now)
+	if !ok {
+		return "", false // no session → the session-open gate is the refusal
+	}
+	offset := at.config.StrategyConfig.DayPlan.LastEntryOffsetFor(sess.Name)
+	cutoffMin, hhmm, okC := sessionCutoffCT(sess, offset)
+	if !okC {
+		return "", false // malformed registry times — never invent a block
+	}
+	if pastSessionCutoff(now, sess, cutoffMin) {
+		return fmt.Sprintf("past last-entry %s CT (%s)", hhmm, sess.Name), true
 	}
 	return "", false
 }

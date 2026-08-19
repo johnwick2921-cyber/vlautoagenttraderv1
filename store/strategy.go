@@ -916,6 +916,42 @@ type DayPlanSessionOverride struct {
 	AcceptanceRule *string `json:"acceptance_rule,omitempty"`
 	MinGrade       *string `json:"min_grade,omitempty"` // A | B | C
 	MaxTrades      *int    `json:"max_trades,omitempty"`
+	// LastEntryOffsetMin: minutes BEFORE this session's end after which NEW
+	// entries are refused (P2 session-scope redesign, 2026-08-18). Replaces the
+	// old day-scoped 13:00 CT cutoff, which blocked every entry from 13:00 CT to
+	// midnight — i.e. permanently blocked Asia evenings. nil → default 15.
+	LastEntryOffsetMin *int `json:"last_entry_offset_min,omitempty"`
+	// EODFlatOffsetMin: minutes before this session's end at which any open
+	// position is force-flattened. Same day-scope disease as last-entry (the
+	// 14:45 CT literal would have flattened an Asia position on sight the moment
+	// the last-entry fix landed). nil → default 15.
+	EODFlatOffsetMin *int `json:"eod_flat_offset_min,omitempty"`
+}
+
+// DefaultLastEntryOffsetMin / DefaultEODFlatOffsetMin are the session-relative
+// defaults (minutes before session end). 15 preserves the NY flat feel
+// (15:00−15 = 14:45, exactly the old EODFlatCT default).
+const (
+	DefaultLastEntryOffsetMin = 15
+	DefaultEODFlatOffsetMin   = 15
+)
+
+// LastEntryOffsetFor resolves the per-session last-entry offset (minutes before
+// session end). Override → default. Config only — no caller may carry a literal.
+func (c *DayPlanConfig) LastEntryOffsetFor(session string) int {
+	if ov := c.SessionOverride(session); ov != nil && ov.LastEntryOffsetMin != nil && *ov.LastEntryOffsetMin >= 0 {
+		return *ov.LastEntryOffsetMin
+	}
+	return DefaultLastEntryOffsetMin
+}
+
+// EODFlatOffsetFor resolves the per-session EOD-flat offset (minutes before
+// session end). Override → default.
+func (c *DayPlanConfig) EODFlatOffsetFor(session string) int {
+	if ov := c.SessionOverride(session); ov != nil && ov.EODFlatOffsetMin != nil && *ov.EODFlatOffsetMin >= 0 {
+		return *ov.EODFlatOffsetMin
+	}
+	return DefaultEODFlatOffsetMin
 }
 
 // SessionOverride returns the named session's override block, or nil. Shared by
