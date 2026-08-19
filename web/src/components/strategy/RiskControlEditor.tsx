@@ -140,6 +140,45 @@ function GuardrailRow({
   )
 }
 
+// 6.4 (final-bundle 2026-08-19, ruling B): the size-cap "enabled" toggles were
+// DEAD controls — zero Go readers, the clamps are deliberately always-on venue
+// safety (census #53 register rows 1-2). The fake toggles are gone; the row
+// states the truth instead. Old stored *_enabled values are ignored harmlessly
+// (schema-tolerant: the Go fields still parse, nothing reads them).
+function AlwaysOnRow({
+  label,
+  badge,
+  children,
+}: {
+  label: string
+  badge: string
+  children: ReactNode
+}) {
+  return (
+    <div
+      className="p-4 rounded-lg"
+      style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <label className="text-sm" style={{ color: '#EAECEF' }}>
+          {label}
+        </label>
+        <span
+          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+          style={{
+            color: '#0ECB81',
+            background: 'rgba(14,203,129,0.12)',
+            border: '1px solid rgba(14,203,129,0.3)',
+          }}
+        >
+          {badge}
+        </span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
 export function RiskControlEditor({
   config,
   onChange,
@@ -894,16 +933,14 @@ export function RiskControlEditor({
             />
           </GuardrailRow>
 
-          <GuardrailRow
+          <AlwaysOnRow
             label={ts(riskControl.maxContractsField, language)}
-            enabled={config.max_contracts_enabled ?? true}
-            onToggle={(v) => updateField('max_contracts_enabled', v)}
-            disabled={disabled}
+            badge={ts(riskControl.alwaysActive, language)}
           >
             <input
               type="number"
               value={config.max_contracts_per_order ?? ''}
-              placeholder="10"
+              placeholder="2"
               onChange={(e) =>
                 updateField(
                   'max_contracts_per_order',
@@ -919,13 +956,11 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
-          </GuardrailRow>
+          </AlwaysOnRow>
 
-          <GuardrailRow
+          <AlwaysOnRow
             label={ts(riskControl.notionalCapField, language)}
-            enabled={config.notional_cap_enabled ?? true}
-            onToggle={(v) => updateField('notional_cap_enabled', v)}
-            disabled={disabled}
+            badge={ts(riskControl.alwaysActive, language)}
           >
             <input
               type="number"
@@ -946,7 +981,7 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
-          </GuardrailRow>
+          </AlwaysOnRow>
 
           <div className="col-span-2">
             <GuardrailRow

@@ -540,6 +540,12 @@ export const riskControl = {
     es: 'inmediato',
   },
 
+  alwaysActive: {
+    zh: '始终生效（安全）',
+    en: 'always active (safety)',
+    es: 'siempre activo (seguridad)',
+  },
+
   // === Strategy Studio Phase 1 — prop-firm guardrails (Chunk 6) ===
   guardrailsTitle: {
     zh: '防护栏（Prop-Firm 规则）',

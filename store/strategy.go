@@ -1374,14 +1374,18 @@ type RiskControlConfig struct {
 
 	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 10-contract
 	// default (the prior hidden const maxFuturesContracts). Toggle default ON.
-	MaxContractsPerOrder int   `json:"max_contracts_per_order,omitempty"`
-	MaxContractsEnabled  *bool `json:"max_contracts_enabled,omitempty"`
+	MaxContractsPerOrder int `json:"max_contracts_per_order,omitempty"`
+	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
+	// contracts clamp is always-on venue safety. Field kept so old stored
+	// configs still parse; nothing reads it, the UI no longer writes it.
+	MaxContractsEnabled *bool `json:"max_contracts_enabled,omitempty"`
 
 	// Chunk 3 — futures NOTIONAL ceiling multiplier: max position notional =
 	// equity × this. Unset → 20 (the prior hidden const futuresMaxNotionalLeverage),
 	// now VISIBLE + EDITABLE. Toggle default ON (safety backstop).
 	MaxNotionalLeverage float64 `json:"max_notional_leverage,omitempty"`
-	NotionalCapEnabled  *bool   `json:"notional_cap_enabled,omitempty"`
+	// Deprecated (6.4 ruling B): same as MaxContractsEnabled — parse-only.
+	NotionalCapEnabled *bool `json:"notional_cap_enabled,omitempty"`
 
 	// Chunk 4 — time/news BLACKOUT window (daily, HH:MM in America/Chicago). When
 	// enabled, the bot makes no new decisions inside [start,end] CT (NT8-side SL/TP
