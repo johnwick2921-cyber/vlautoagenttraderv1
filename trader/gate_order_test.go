@@ -16,9 +16,11 @@ func TestOwnerGateOrderPauseBeforeRoll(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := string(b)
-	pause := strings.Index(s, "stop_until OWNER PAUSE")
-	roll := strings.Index(s, "CONTRACT-ROLL gate")
-	loss := strings.Index(s, "consecutive-loss halt")
+	// Anchor on the emitted refusal strings — unique to each gate's block (the
+	// helper definitions earlier in the file reuse the phrase in comments).
+	pause := strings.Index(s, `⏸ stop_until: %s %s REFUSED`)
+	roll := strings.Index(s, `📅 contract-roll: %s %s REFUSED`)
+	loss := strings.Index(s, `🛑 consecutive-loss halt: %s entry REFUSED`)
 	if pause < 0 || roll < 0 || loss < 0 {
 		t.Fatalf("gate anchors missing: pause=%d roll=%d loss=%d", pause, roll, loss)
 	}
