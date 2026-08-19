@@ -350,7 +350,7 @@ type AutoTrader struct {
 	customPrompt           string // Custom trading strategy prompt
 	overrideBasePrompt     bool   // Whether to override base prompt
 	lastResetTime          time.Time
-	stopUntil              time.Time // LEGACY, dormant: consumer at loop:248, no producer — superseded by pauseUntilMs (P2 ledger-close)
+	stopUntil              time.Time    // LEGACY, dormant: consumer at loop:248, no producer — superseded by pauseUntilMs (P2 ledger-close)
 	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
 	pauseStoreMu           sync.Mutex   // E7-v2: orders memory-vs-store pause writes (expiry CAS vs concurrent re-pause)
 	lastRollWarnContract   string       // P3 roll gate: dedupes the unresolved-contract WARN per contract-string change
@@ -359,33 +359,33 @@ type AutoTrader struct {
 	ai402OutageStartMs     int64        // P5 402-outage latch (0 = no outage) — one banner per outage
 	lastAIBalanceDay       string       // P5 daily balance poll throttle (AI_BALANCE_WARN)
 	isRunning              bool
-	isRunningMutex         sync.RWMutex       // Mutex to protect isRunning flag
-	startTime              time.Time          // System start time
-	callCount              int                // AI call count
-	positionFirstSeenTime  map[string]int64   // Position first seen time (symbol_side -> timestamp in milliseconds)
-	stopMonitorCh          chan struct{}      // Used to stop monitoring goroutine
-	monitorWg              sync.WaitGroup     // Used to wait for monitoring goroutine to finish
-	kickCh                 chan string        // discard-burn/post-exit: one-shot deferred-cycle kicks into the run loop (reason payload)
-	kickPending            atomic.Bool        // at most one kick armed at a time (CAS)
-	skipDodgeOnce          bool               // a dodge-kicked cycle must not re-dodge at the boundary (run-loop goroutine only)
-	cycleTrigger           string             // why this cycle fired: "" (timer) | "stale_dodge" | "post_exit" (run-loop goroutine only)
+	isRunningMutex         sync.RWMutex          // Mutex to protect isRunning flag
+	startTime              time.Time             // System start time
+	callCount              int                   // AI call count
+	positionFirstSeenTime  map[string]int64      // Position first seen time (symbol_side -> timestamp in milliseconds)
+	stopMonitorCh          chan struct{}         // Used to stop monitoring goroutine
+	monitorWg              sync.WaitGroup        // Used to wait for monitoring goroutine to finish
+	kickCh                 chan string           // discard-burn/post-exit: one-shot deferred-cycle kicks into the run loop (reason payload)
+	kickPending            atomic.Bool           // at most one kick armed at a time (CAS)
+	skipDodgeOnce          bool                  // a dodge-kicked cycle must not re-dodge at the boundary (run-loop goroutine only)
+	cycleTrigger           string                // why this cycle fired: "" (timer) | "stale_dodge" | "post_exit" (run-loop goroutine only)
 	aiCallMs               [aiCallRingSize]int64 // last-N AI call durations (run-loop goroutine only)
 	aiCallIdx              int
 	aiCallN                int
-	peakPnLCache           map[string]float64 // Peak profit cache (symbol -> peak P&L percentage)
-	peakPnLCacheMutex      sync.RWMutex       // Cache read-write lock
-	breakevenDone          map[string]bool    // auto-breakeven: "symbol_side" already moved to breakeven (idempotent; reset on flat)
-	entryTheses            map[string]entryThesis  // Phase 3: original entry decision per "symbol_side" (run-loop goroutine)
-	watchStates            map[string]*watchState  // Phase 3: watcher hysteresis state per "symbol_side" (run-loop goroutine)
-	breakevenMu            sync.Mutex         // guards breakevenDone (lazy-inited)
-	lastBalanceSyncTime    time.Time          // Last balance sync time
-	userID                 string             // User ID
-	gridState              *GridState         // Grid trading state (only used when StrategyType == "grid_trading")
-	claw402WalletAddr      string             // Claw402 wallet address (derived from private key at start)
-	consecutiveAIFailures  int                // Consecutive AI call failures
-	safeMode               bool               // Safe mode: no new positions, protect existing ones
-	safeModeReason         string             // Why safe mode was activated
-	deadMan                deadManWatchdog    // B5 dead-man watchdog: NT8 link-gap → block NEW entries until reconciled (zero value = live/allowed; touched only from runCycle)
+	peakPnLCache           map[string]float64     // Peak profit cache (symbol -> peak P&L percentage)
+	peakPnLCacheMutex      sync.RWMutex           // Cache read-write lock
+	breakevenDone          map[string]bool        // auto-breakeven: "symbol_side" already moved to breakeven (idempotent; reset on flat)
+	entryTheses            map[string]entryThesis // Phase 3: original entry decision per "symbol_side" (run-loop goroutine)
+	watchStates            map[string]*watchState // Phase 3: watcher hysteresis state per "symbol_side" (run-loop goroutine)
+	breakevenMu            sync.Mutex             // guards breakevenDone (lazy-inited)
+	lastBalanceSyncTime    time.Time              // Last balance sync time
+	userID                 string                 // User ID
+	gridState              *GridState             // Grid trading state (only used when StrategyType == "grid_trading")
+	claw402WalletAddr      string                 // Claw402 wallet address (derived from private key at start)
+	consecutiveAIFailures  int                    // Consecutive AI call failures
+	safeMode               bool                   // Safe mode: no new positions, protect existing ones
+	safeModeReason         string                 // Why safe mode was activated
+	deadMan                deadManWatchdog        // B5 dead-man watchdog: NT8 link-gap → block NEW entries until reconciled (zero value = live/allowed; touched only from runCycle)
 
 	// Plan 4 Stage 4 — NinjaTrader TCP balance tracking (defer-until-balance guard)
 	// For NinjaTrader TCP traders, we track if account_balance frame has arrived yet.
