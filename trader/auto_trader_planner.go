@@ -570,6 +570,12 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimed(session, tradeDate, trigg
 		return false
 	}
 	defer releasePlannerRead(key)
+	// U1 3.2 — never call the LLM on an empty/stale bar window (the 08-19
+	// outage produced 0-scenario fail-closed stubs this way). No plan row is
+	// written and no budget consumed; the read window retries next cycle.
+	if !at.plannerPreflight(session, tradeDate) {
+		return false
+	}
 	client, modelID := at.resolvePlannerClient()
 	if client == nil {
 		at.logErrorf("🗓️ planner: no client resolved for %s %s", tradeDate, session)

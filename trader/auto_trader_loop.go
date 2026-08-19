@@ -241,6 +241,12 @@ func (at *AutoTrader) runCycle() error {
 		return nil
 	}
 
+	// U1 3.1 — feed-down watch: P0 alert when no bar arrives for >10 min while
+	// CME is open (the 08-19 00:53 outage surfaced only as mystery artifacts).
+	if at.config.Exchange == "ninjatrader" {
+		at.checkFeedDown(time.Now())
+	}
+
 	// PHASE 3.5 — clock health at each SESSION ROLL (log-only). Detects the
 	// active-session name changing between cycles (incl. →night as "").
 	if at.config.Exchange == "ninjatrader" {
