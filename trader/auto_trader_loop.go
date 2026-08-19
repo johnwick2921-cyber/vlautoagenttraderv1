@@ -315,6 +315,12 @@ func (at *AutoTrader) runCycle() error {
 	// bracket, auto-breakeven (60s risk loop), and close-sync/reconcile. Gated
 	// on day_plan → dormant by default.
 	if skip, why := at.skipWhileOpen(); skip {
+		// Phase 3 (final-bundle): ai_watch is the DEFAULT in-position mode — a
+		// full WATCH-ONLY cycle replaces the silent skip (the watch row IS the
+		// heartbeat). bracket_only keeps the legacy skip byte-identical below.
+		if at.positionMode() == PositionModeWatch {
+			return at.runWatchCycle(ctx, record)
+		}
 		at.logInfof("🧘 skip-while-open: holding %s — AI decision skipped for cycle #%d (snapshot+equity recorded; bracket/breakeven manage the trade).", why, at.callCount)
 		record.Success = true
 		record.ExecutionLog = append(record.ExecutionLog,
@@ -329,6 +335,10 @@ func (at *AutoTrader) runCycle() error {
 		at.saveDecision(record)
 		return nil
 	}
+
+	// Phase 3 — flat again: clear watcher hysteresis + thesis memory so the next
+	// position starts a fresh episode.
+	at.pruneWatchState()
 
 	// If no candidate coins available, log but do not error
 	if len(ctx.CandidateCoins) == 0 {

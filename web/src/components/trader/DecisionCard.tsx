@@ -360,6 +360,41 @@ export function DecisionCard({
             badge is reserved for real failures; feed/clock-diagnosed staleness
             (verdict_hint=feed|clock) keeps the hard ❌. */}
         {(() => {
+          // Phase 3 — watch rows: the in-position observer's heartbeat. 👁 badge
+          // colored by thesis status; the note lives in watch_json.
+          const wj = (decision as { watch_json?: string }).watch_json
+          if (
+            (decision as { cycle_type?: string }).cycle_type === 'watch' &&
+            wj
+          ) {
+            let ws = ''
+            try {
+              ws =
+                (JSON.parse(wj) as { accepted_status?: string })
+                  .accepted_status || ''
+            } catch {
+              /* raw */
+            }
+            const c =
+              ws === 'invalidated'
+                ? '#F6465D'
+                : ws === 'weakening'
+                  ? '#F0B90B'
+                  : '#0ECB81'
+            return (
+              <div
+                className="px-4 py-1.5 rounded-full text-xs font-bold tracking-wider"
+                style={{
+                  background: `${c}26`,
+                  color: c,
+                  border: `1px solid ${c}4D`,
+                }}
+                title={wj}
+              >
+                👁 {ws || 'watch'}
+              </div>
+            )
+          }
           const em = decision.error_message || ''
           const isSkip = em.startsWith('guardrail_skip:')
           const isHard = /verdict_hint=(feed|clock)/.test(em)

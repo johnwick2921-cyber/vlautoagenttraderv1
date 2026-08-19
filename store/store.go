@@ -18,28 +18,29 @@ type Store struct {
 	driver *DBDriver // Database driver for abstraction (legacy)
 
 	// Sub-stores (lazy initialization)
-	user           *UserStore
-	aiModel        *AIModelStore
-	exchange       *ExchangeStore
-	trader         *TraderStore
-	decision       *DecisionStore
-	position       *PositionStore
-	strategy       *StrategyStore
-	equity         *EquityStore
-	order          *OrderStore
-	grid           *GridStore
-	aiCharge       *AIChargeStore
-	plan           *PlanStore
-	levelState     *LevelStateStore
-	sessionProfile *SessionProfileStore
-	calendarSlice  *CalendarSliceStore
-	digest         *DigestStore
-	ownerLevel     *OwnerLevelStore
-	alert          *AlertStore
-	logEvent       *LogEventStore
-	planQA         *PlanQAStore
-	matchedRandom  *MatchedRandomStore
-	telegramConfig TelegramConfigStore
+	user            *UserStore
+	aiModel         *AIModelStore
+	exchange        *ExchangeStore
+	trader          *TraderStore
+	decision        *DecisionStore
+	position        *PositionStore
+	strategy        *StrategyStore
+	equity          *EquityStore
+	order           *OrderStore
+	grid            *GridStore
+	aiCharge        *AIChargeStore
+	plan            *PlanStore
+	levelState      *LevelStateStore
+	sessionProfile  *SessionProfileStore
+	calendarSlice   *CalendarSliceStore
+	digest          *DigestStore
+	ownerLevel      *OwnerLevelStore
+	alert           *AlertStore
+	logEvent        *LogEventStore
+	watchAssessment *WatchAssessmentStore
+	planQA          *PlanQAStore
+	matchedRandom   *MatchedRandomStore
+	telegramConfig  TelegramConfigStore
 
 	mu sync.RWMutex
 }
@@ -194,6 +195,9 @@ func (s *Store) initTables() error {
 	}
 	if err := s.Alert().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize day_plan_alerts tables: %w", err)
+	}
+	if err := s.WatchAssessment().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize watch assessment tables: %w", err)
 	}
 	if err := s.LogEvent().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize log_events tables: %w", err)
@@ -405,6 +409,16 @@ func (s *Store) Alert() *AlertStore {
 		s.alert = NewAlertStore(s.gdb)
 	}
 	return s.alert
+}
+
+// WatchAssessment gets the Phase-3.6 watcher scoring storage.
+func (s *Store) WatchAssessment() *WatchAssessmentStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.watchAssessment == nil {
+		s.watchAssessment = NewWatchAssessmentStore(s.gdb)
+	}
+	return s.watchAssessment
 }
 
 // LogEvent gets the P6 log-shipping storage (WARN+ → DB, async).

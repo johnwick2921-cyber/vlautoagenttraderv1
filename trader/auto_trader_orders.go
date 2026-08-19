@@ -568,6 +568,7 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
 
 	// Record order to database and poll for confirmation
+	at.captureEntryThesis(decision, "LONG", marketData.CurrentPrice) // Phase 3: the watcher's anchor
 	at.recordAndConfirmOrder(order, decision.Symbol, "open_long", quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence)
 
 	// Record position opening time
@@ -709,6 +710,7 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
 
 	// Record order to database and poll for confirmation
+	at.captureEntryThesis(decision, "SHORT", marketData.CurrentPrice) // Phase 3: the watcher's anchor
 	at.recordAndConfirmOrder(order, decision.Symbol, "open_short", quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence)
 
 	// Record position opening time

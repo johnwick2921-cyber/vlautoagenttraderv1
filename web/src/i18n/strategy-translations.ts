@@ -476,9 +476,9 @@ export const riskControl = {
     es: 'Disciplina de retención',
   },
   holdDisciplineDesc: {
-    zh: '开启后：持仓期间禁止 AI 提前平仓，交易只按 AI 设定的止损/止盈（交易所挂单）离场；紧急平仓不受影响。默认关闭。',
-    en: 'When ON: once in a position, the AI cannot close early — the trade rides to the stop/target the AI set (a real order resting at the exchange). Emergency Flat still works. Default OFF.',
-    es: 'Cuando está ON: en posición, la IA no cierra antes; la operación va al stop/objetivo. Flat de emergencia sigue funcionando. Por defecto OFF.',
+    zh: '开启后：持仓期间禁止 AI 提前平仓，交易只按 AI 设定的止损/止盈（交易所挂单）离场；紧急平仓不受影响。在 ai_watch 持仓模式下这是真正生效的底线保护（观察员只记录、无下单权限，此开关拦截任何 AI 平仓）。默认关闭。',
+    en: 'When ON: once in a position, the AI cannot close early — the trade rides to the stop/target the AI set (a real order resting at the exchange). In ai_watch position mode this is the ACTIVE bottom-rail protection: the observer only records (zero order authority) and this switch blocks any AI close. Emergency Flat still works. Default OFF.',
+    es: 'Cuando está ON: en posición, la IA no cierra antes; la operación va al stop/objetivo. En modo ai_watch es la protección de fondo activa (el observador solo registra). Flat de emergencia sigue funcionando. Por defecto OFF.',
   },
 
   // === Auto-breakeven ===

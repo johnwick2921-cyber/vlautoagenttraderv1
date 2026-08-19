@@ -29,6 +29,7 @@ type CreateTraderRequest struct {
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
 	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" (default) | "bar_close" (legacy); empty keeps existing
+	PositionMode        string  `json:"position_mode"` // Phase 3: "ai_watch" (default) | "bracket_only"; empty keeps default/existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`     // Pointer type, nil means use default value true
 	ShowInCompetition   *bool   `json:"show_in_competition"` // Pointer type, nil means use default value true
 	// The following fields are kept for backward compatibility, new version uses strategy config
@@ -51,6 +52,7 @@ type UpdateTraderRequest struct {
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
 	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" | "bar_close"; empty keeps existing
+	PositionMode        string  `json:"position_mode"` // Phase 3: "ai_watch" | "bracket_only"; empty keeps existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`
 	ShowInCompetition   *bool   `json:"show_in_competition"`
 	// The following fields are kept for backward compatibility, new version uses strategy config
@@ -524,7 +526,8 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		IsCrossMargin:        isCrossMargin,
 		ShowInCompetition:    showInCompetition,
 		ScanIntervalMinutes:  scanIntervalMinutes,
-		CadenceMode:          req.CadenceMode, // P10 (store validates the enum)
+		CadenceMode:          req.CadenceMode,  // P10 (store validates the enum)
+		PositionMode:         req.PositionMode, // Phase 3 (store validates the enum)
 		IsRunning:            false,
 	}
 
@@ -650,6 +653,12 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		cadenceMode = req.CadenceMode
 	}
 
+	// Phase 3 — position mode: explicit values only; empty keeps the existing mode.
+	positionMode := existingTrader.PositionMode
+	if req.PositionMode == "ai_watch" || req.PositionMode == "bracket_only" {
+		positionMode = req.PositionMode
+	}
+
 	// Set system prompt template
 	systemPromptTemplate := req.SystemPromptTemplate
 	if systemPromptTemplate == "" {
@@ -691,7 +700,8 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		IsCrossMargin:        isCrossMargin,
 		ShowInCompetition:    showInCompetition,
 		ScanIntervalMinutes:  scanIntervalMinutes,
-		CadenceMode:          cadenceMode, // P10
+		CadenceMode:          cadenceMode,  // P10
+		PositionMode:         positionMode, // Phase 3
 		IsRunning:            existingTrader.IsRunning, // Keep original value
 	}
 

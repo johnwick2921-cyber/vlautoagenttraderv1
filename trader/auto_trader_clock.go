@@ -521,6 +521,24 @@ func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
 
 	// P5.6 — matched-random reaction verdict for the traded level type.
 	at.recordMatchedRandomForClose(p, ex)
+
+	// Phase 3.6 (final-bundle) — watcher scoring backfill: stamp this position's
+	// watch assessments with the final outcome and, best-effort, the excursion
+	// AFTER each read (1m bars may have rotated out of the cache — rows keep 0).
+	outcome := "win"
+	if p.RealizedPnL < 0 {
+		outcome = "loss"
+	}
+	_ = at.store.WatchAssessment().BackfillClose(p.ID, fmt.Sprintf("%s:%+.2f", outcome, p.RealizedPnL))
+	if rows, err := at.store.WatchAssessment().ByPosition(p.ID); err == nil && len(rows) > 0 && len(bars) > 0 {
+		for _, row := range rows {
+			if row.MFEAfterPts != 0 || row.MAEAfterPts != 0 {
+				continue // idempotent
+			}
+			exAfter := kernel.ComputeExcursion(row.PriceAtRead, p.Side, bars, row.Timestamp, exitMs)
+			_ = at.store.WatchAssessment().SetExcursionAfter(row.ID, exAfter.MFE, exAfter.MAE)
+		}
+	}
 }
 
 // maybeRecordClosedTradeAnalytics (W5) is the LOOP POLL that catches trades closed

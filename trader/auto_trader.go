@@ -306,6 +306,9 @@ type AutoTraderConfig struct {
 	// primary-TF bar). Resolved via cadenceMode(); only meaningful for day-plan
 	// futures traders (crypto/plan-off always ran per-tick).
 	CadenceMode string
+	// PositionMode (Phase 3): "ai_watch" (default — watch cycles while holding,
+	// zero order authority) | "bracket_only" (legacy skip-while-open).
+	PositionMode string
 
 	// Account configuration
 	InitialBalance float64 // Initial balance (for P&L calculation, must be set manually)
@@ -372,6 +375,8 @@ type AutoTrader struct {
 	peakPnLCache           map[string]float64 // Peak profit cache (symbol -> peak P&L percentage)
 	peakPnLCacheMutex      sync.RWMutex       // Cache read-write lock
 	breakevenDone          map[string]bool    // auto-breakeven: "symbol_side" already moved to breakeven (idempotent; reset on flat)
+	entryTheses            map[string]entryThesis  // Phase 3: original entry decision per "symbol_side" (run-loop goroutine)
+	watchStates            map[string]*watchState  // Phase 3: watcher hysteresis state per "symbol_side" (run-loop goroutine)
 	breakevenMu            sync.Mutex         // guards breakevenDone (lazy-inited)
 	lastBalanceSyncTime    time.Time          // Last balance sync time
 	userID                 string             // User ID

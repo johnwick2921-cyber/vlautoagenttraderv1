@@ -262,6 +262,9 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
         scan_interval_minutes: data.scan_interval_minutes,
         is_cross_margin: data.is_cross_margin,
         show_in_competition: data.show_in_competition,
+        // Phase 3: in-position mode must survive EDIT, not just create (the
+        // cadence_mode drop lesson — 6.2 fixes that field in its own commit).
+        position_mode: (data as { position_mode?: string }).position_mode,
       }
 
       await api.updateTrader(editingTrader.trader_id, request)

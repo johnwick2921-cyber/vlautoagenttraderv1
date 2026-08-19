@@ -34,6 +34,14 @@ type DecisionRecordDB struct {
 	// outage in one query (the 08-18 402 storm needed LIKE-matching free text).
 	// "" | "ai_payment_402" | "ai_call_failed". Additive column.
 	ErrorClass          string    `gorm:"column:error_class;default:''"`
+	// Phase 3/4 (final-bundle 2026-08-19) — additive cycle attribution.
+	// CycleType: "" (entry cycle) | "watch" (in-position observer, zero order
+	// authority). CycleTrigger: "" (timer) | "stale_dodge" | "post_exit".
+	// WatchJSON: the observer assessment (thesis_status/note/confidence) for
+	// cycle_type=watch rows — the dashboard's 👁 badge reads it.
+	CycleType           string    `gorm:"column:cycle_type;default:''"`
+	CycleTrigger        string    `gorm:"column:cycle_trigger;default:''"`
+	WatchJSON           string    `gorm:"column:watch_json;default:''"`
 	AIRequestDurationMs int64     `gorm:"column:ai_request_duration_ms;default:0"`
 	// Plan 4 Task 23 — decision audit trail fields
 	PromptVersion   string    `gorm:"column:prompt_version;default:''"`
@@ -73,6 +81,9 @@ type DecisionRecord struct {
 	Success             bool               `json:"success"`
 	ErrorMessage        string             `json:"error_message"`
 	ErrorClass          string             `json:"error_class,omitempty"` // P5 typed class ("ai_payment_402" | "ai_call_failed")
+	CycleType           string             `json:"cycle_type,omitempty"`    // "" | "watch"
+	CycleTrigger        string             `json:"cycle_trigger,omitempty"` // "" | "stale_dodge" | "post_exit"
+	WatchJSON           string             `json:"watch_json,omitempty"`    // observer assessment for watch rows
 	AIRequestDurationMs int64              `json:"ai_request_duration_ms"`
 	AccountState        AccountSnapshot    `json:"account_state"`
 	Positions           []PositionSnapshot `json:"positions"`
@@ -176,6 +187,9 @@ func (db *DecisionRecordDB) toRecord() *DecisionRecord {
 		Success:             db.Success,
 		ErrorMessage:        db.ErrorMessage,
 		ErrorClass:          db.ErrorClass,
+		CycleType:           db.CycleType,
+		CycleTrigger:        db.CycleTrigger,
+		WatchJSON:           db.WatchJSON,
 		AIRequestDurationMs: db.AIRequestDurationMs,
 		// Plan 4 Task 23 — audit trail fields
 		PromptVersion:   db.PromptVersion,
@@ -228,6 +242,9 @@ func (s *DecisionStore) LogDecision(record *DecisionRecord) error {
 		Success:             record.Success,
 		ErrorMessage:        record.ErrorMessage,
 		ErrorClass:          record.ErrorClass,
+		CycleType:           record.CycleType,
+		CycleTrigger:        record.CycleTrigger,
+		WatchJSON:           record.WatchJSON,
 		AIRequestDurationMs: record.AIRequestDurationMs,
 		// Plan 4 Task 23 — audit trail fields
 		PromptVersion:   record.PromptVersion,

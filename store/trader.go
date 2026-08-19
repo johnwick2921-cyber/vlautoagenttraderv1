@@ -33,6 +33,15 @@ type Trader struct {
 	// behavior: one cycle per closed primary-TF bar; interval only sets check
 	// frequency). Empty resolves to "interval".
 	CadenceMode         string    `gorm:"column:cadence_mode;default:''" json:"cadence_mode"`
+	// PositionMode (final-bundle Phase 3, 2026-08-19): what happens to the AI
+	// while a position is OPEN on a day-plan futures trader.
+	//   "ai_watch" (DEFAULT, empty resolves here): full watch cycles run — the
+	//     AI observes against the ORIGINAL entry thesis, assessments recorded,
+	//     ZERO order authority (nothing is ever emitted to NT8 from a watch).
+	//   "bracket_only": the legacy skip-while-open — no AI call while holding;
+	//     the NT8 bracket + breakeven/trailing manage the trade byte-identically
+	//     to the pre-watcher behavior.
+	PositionMode        string    `gorm:"column:position_mode;default:''" json:"position_mode"`
 	IsRunning           bool      `gorm:"column:is_running;default:false" json:"is_running"`
 	IsCrossMargin       bool      `gorm:"column:is_cross_margin;default:true" json:"is_cross_margin"`
 	ShowInCompetition   bool      `gorm:"column:show_in_competition;default:true" json:"show_in_competition"`
@@ -153,6 +162,10 @@ func (s *TraderStore) Update(trader *Trader) error {
 	// empty means "not changing" on update.
 	if trader.CadenceMode == "interval" || trader.CadenceMode == "bar_close" {
 		updates["cadence_mode"] = trader.CadenceMode
+	}
+	// Phase 3 — position mode: persist only explicit values; empty = "not changing".
+	if trader.PositionMode == "ai_watch" || trader.PositionMode == "bracket_only" {
+		updates["position_mode"] = trader.PositionMode
 	}
 
 	return s.db.Model(&Trader{}).

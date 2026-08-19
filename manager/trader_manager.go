@@ -650,6 +650,7 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		CustomModelName:       aiModelCfg.CustomModelName,
 		ScanInterval:          time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
 		CadenceMode:           traderCfg.CadenceMode,
+		PositionMode:          traderCfg.PositionMode,
 		InitialBalance:        traderCfg.InitialBalance,
 		IsCrossMargin:         traderCfg.IsCrossMargin,
 		ShowInCompetition:     traderCfg.ShowInCompetition,

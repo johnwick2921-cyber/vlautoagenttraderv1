@@ -165,8 +165,21 @@ func (at *AutoTrader) logLedgerBootBlock(now time.Time) {
 		roll = fmt.Sprintf("%v expires %v (window from %v, %v days left)",
 			rs["resolved_contract"], rs["contract_expiry"], rs["roll_window_start"], rs["roll_days_left"])
 	}
-	at.logInfof("🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · roll=%s · balance-alert=%s",
-		strings.Join(sessions, " | "), pause, at.cadenceMode(), at.config.ScanInterval, roll, balanceAlert)
+	// Phase 3/2 (final-bundle): every new mode/knob prints value + source so the
+	// boot block stays the one-glance truth (E1 contract).
+	pmSource := "db"
+	if at.config.PositionMode == "" {
+		pmSource = "default"
+	}
+	dodge := "on"
+	if !staleDodgeEnabled() {
+		dodge = "off"
+	}
+	at.logInfof("🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · position_mode=%s (source: %s) · watcher[min_conf=%d hold=%d warn_consec=%d] · stale_dodge=%s reeval_drift=%.2f×ATR%d · roll=%s · balance-alert=%s",
+		strings.Join(sessions, " | "), pause, at.cadenceMode(), at.config.ScanInterval,
+		at.positionMode(), pmSource,
+		watchInvalidateMinConf(), watchMinHoldCycles(), watchWarnConsecutive(),
+		dodge, reevalDriftATRMult(), reevalATRPeriod, roll, balanceAlert)
 }
 
 // SessionEndTime resolves the ACTIVE session's window end as a wall-clock
