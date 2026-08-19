@@ -112,6 +112,43 @@ func TestFeedWatchBeatsWhileHoldingAPosition(t *testing.T) {
 	}
 }
 
+// IN-POSITION CONTRACT: liveness is STRICTER while holding — a 3-minute gap is
+// quiet when flat (< 10m) but LOUD with a position open (> 120s default), and
+// INTRADE_FEED_ALERT_S overrides the tightened threshold.
+func TestInPositionFeedAlertTightens(t *testing.T) {
+	at, st := feedTrader(t)
+	now := cmeOpenNow(t)
+	withProvider(t, []market.Kline{{OpenTime: now.UnixMilli() - 3*60_000 - 60_000}})
+
+	at.checkFeedDown(now) // flat: 3 min < 10 min → quiet
+	if got := feedAlerts(t, st, "feed-down"); got != 0 {
+		t.Fatalf("a 3-min gap while FLAT must stay quiet, got %d", got)
+	}
+
+	openAPosition(t, st, "t1")
+	at.checkFeedDown(now) // holding: 3 min > 120s → loud
+	if got := feedAlerts(t, st, "feed-down"); got != 1 {
+		t.Fatalf("a 3-min gap while HOLDING must alert (120s threshold), got %d", got)
+	}
+	alerts, _ := st.Alert().List("t1", 5)
+	if len(alerts) == 0 || alerts[0].Title != "⚠ NO DATA WHILE POSITION OPEN — check NT8" {
+		t.Fatalf("the in-position alert must carry the dispatch banner title, got %+v", alerts)
+	}
+}
+
+func TestInPositionFeedAlertEnvOverride(t *testing.T) {
+	at, st := feedTrader(t)
+	t.Setenv("INTRADE_FEED_ALERT_S", "300")
+	now := cmeOpenNow(t)
+	openAPosition(t, st, "t1")
+	withProvider(t, []market.Kline{{OpenTime: now.UnixMilli() - 3*60_000 - 60_000}})
+
+	at.checkFeedDown(now) // 3 min < the 300s override → quiet even while holding
+	if got := feedAlerts(t, st, "feed-down"); got != 0 {
+		t.Fatalf("INTRADE_FEED_ALERT_S=300 must keep a 3-min gap quiet, got %d", got)
+	}
+}
+
 // T7b — the planner preflight refuses on an EMPTY cache with the provider
 // wired (the exact 08-19 incident shape), alerts P1, and passes when bars are
 // fresh. A nil provider (test/crypto) fails open.
