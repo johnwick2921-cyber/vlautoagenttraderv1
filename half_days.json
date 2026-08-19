@@ -1,0 +1,22 @@
+[
+  {
+    "date": "2026-09-07",
+    "early_close_ct": "12:00",
+    "label": "Labor Day — equity futures halt 12:00 CT, reopen 17:00 CT"
+  },
+  {
+    "date": "2026-11-26",
+    "early_close_ct": "12:00",
+    "label": "Thanksgiving Day — equity futures halt 12:00 CT"
+  },
+  {
+    "date": "2026-11-27",
+    "early_close_ct": "12:15",
+    "label": "Day after Thanksgiving — equity final close 12:15 CT (settlement 12:00)"
+  },
+  {
+    "date": "2026-12-24",
+    "early_close_ct": "12:15",
+    "label": "Christmas Eve — equity final close 12:15 CT (settlement 12:00)"
+  }
+]

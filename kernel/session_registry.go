@@ -171,6 +171,17 @@ func ValidateSessionRegistry(r SessionRegistry) error {
 			}
 		}
 	}
+	// P4 (ledger-close 2026-08-19) — validate HalfDays too: keys are session-day
+	// dates (YYYY-MM-DD), values early-close CT (HH:MM). Garbage was previously
+	// persistable through the API door and silently ignored at consumption.
+	for k, v := range r.HalfDays {
+		if _, err := time.Parse("2006-01-02", k); err != nil {
+			return fmt.Errorf("half_days key %q is not YYYY-MM-DD", k)
+		}
+		if _, ok := parseHHMM(v); !ok {
+			return fmt.Errorf("half_days[%q]: %q is not HH:MM (CT)", k, v)
+		}
+	}
 	return nil
 }
 

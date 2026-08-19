@@ -17,10 +17,12 @@ import (
 	"nofx/store"
 	"nofx/telegram"
 	"nofx/telemetry"
+	"nofx/trader"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -204,6 +206,9 @@ func main() {
 	// P1.4 (ledger-close 2026-08-19) — clock-guard block: live host-RTC drift,
 	// guard-timer freshness, last resync/check state. Log-only, best-effort.
 	kernel.LogClockGuardBoot()
+	// P4 (ledger-close 2026-08-19) — half-days boot line: loaded count + the
+	// next upcoming early close. Fail-open on a bad file.
+	trader.LogHalfDaysBoot(time.Now())
 
 	// SANDBOX: a demo instance has no NT8 wire, so install a deterministic
 	// synthetic bar feed — without it level_facts/price/chart/armor are all empty.

@@ -186,6 +186,8 @@ func inDailyRollWindow(now time.Time) bool {
 // effectiveEODFlatCT returns the flat time, pulled IN by a registered half-day
 // early-close for the current CME session-day (holiday/half-day awareness via the
 // P0 registry, which the P1.8 calendar populates). Empty HalfDays → configFlat.
+// P4 note (2026-08-19): the live flatten now resolves through halfDayCutoffMin
+// (early_close − offset); this zero-offset form is kept for its tests/API.
 func effectiveEODFlatCT(reg kernel.SessionRegistry, sessionDayKey, configFlat string) string {
 	if early, ok := reg.HalfDays[sessionDayKey]; ok && strings.TrimSpace(early) != "" {
 		em, ok1 := hhmmToMin(early)
@@ -280,10 +282,32 @@ func (at *AutoTrader) entryBlockedByLastEntryAt(now time.Time) (string, bool) {
 	if !okC {
 		return "", false // malformed registry times — never invent a block
 	}
+	// P4 (ledger-close 2026-08-19) — a registered half-day pulls the LAST-ENTRY
+	// cutoff in too: the cutoff resolves against early_close_CT − offset when
+	// that is earlier (min semantics, same raw-minute convention as the flat
+	// pull-in). Sessions that end before the early close are unaffected.
+	if adj, adjHHMM, okH := halfDayCutoffMin(at.sessionRegistry(now), kernel.CMESessionDayKey(now), offset); okH && adj < cutoffMin {
+		cutoffMin, hhmm = adj, adjHHMM
+	}
 	if pastSessionCutoff(now, sess, cutoffMin) {
 		return fmt.Sprintf("past last-entry %s CT (%s)", hhmm, sess.Name), true
 	}
 	return "", false
+}
+
+// halfDayCutoffMin resolves "early_close_CT − offset" for the session-day's
+// registered half-day (P4). ok=false when no half-day / unparseable value.
+func halfDayCutoffMin(reg kernel.SessionRegistry, sessionDayKey string, offsetMin int) (int, string, bool) {
+	early, ok := reg.HalfDays[sessionDayKey]
+	if !ok || strings.TrimSpace(early) == "" {
+		return 0, "", false
+	}
+	em, okE := hhmmToMin(early)
+	if !okE {
+		return 0, "", false // fail-safe: garbage half-day never invents a cutoff
+	}
+	adj := ((em-offsetMin)%1440 + 1440) % 1440
+	return adj, fmt.Sprintf("%02d:%02d", adj/60, adj%60), true
 }
 
 // enforceEODFlat (P2.3, session-scoped 2026-08-18) force-flattens any open
@@ -320,14 +344,12 @@ func (at *AutoTrader) enforceEODFlatAt(now time.Time) bool {
 		if !okC {
 			return false // malformed registry times — never invent a flatten
 		}
-		// Half-day early close pulls the flat IN (existing behavior, kept):
-		// effectiveEODFlatCT picks the earlier of the half-day close and the
-		// session-resolved flat.
-		eff := effectiveEODFlatCT(reg, kernel.CMESessionDayKey(now), hhmm)
-		if eff != hhmm {
-			if m, okM := hhmmToMin(eff); okM {
-				flatMin, hhmm = m, eff
-			}
+		// Half-day early close pulls the flat IN. P4 (ledger-close 2026-08-19):
+		// the flat now resolves against early_close_CT − eod_flat_offset (the
+		// dispatch 4.4 contract) — with the default offset 0 this is byte-
+		// identical to the original effectiveEODFlatCT pull-in.
+		if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && adj < flatMin {
+			flatMin, hhmm = adj, adjHHMM
 		}
 		if !pastSessionCutoff(now, sess, flatMin) {
 			return false

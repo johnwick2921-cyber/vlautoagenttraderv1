@@ -111,6 +111,11 @@ func (at *AutoTrader) runCycle() error {
 	// day_plan; throttled; idempotent (skip-fresh).
 	at.maybeFetchCalendar(time.Now())
 
+	// P4 (ledger-close 2026-08-19) — HALF-DAYS PRODUCER, also above the session
+	// gate (same F0 reasoning: a weekend boot must seed Monday's early close
+	// BEFORE the open). Once per session-day; idempotent merge; fail-open.
+	at.maybeSeedHalfDays(time.Now())
+
 	// 0a. PART A — CME SESSION GATE (hoisted to the TOP, before the account gate
 	// and buildTradingContext). When the futures market is closed we skip the
 	// ENTIRE cycle — no context build, no NT8 round-trips, no AI — and idle with
