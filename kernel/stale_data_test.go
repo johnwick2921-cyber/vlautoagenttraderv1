@@ -134,14 +134,14 @@ func TestApplyStaleDataBlock(t *testing.T) {
 
 	// Fresh 1m bar (30s old) → open stays.
 	fresh := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "open_long"}}}
-	applyStaleDataBlock(fresh, &Context{MarketDataMap: map[string]*market.Data{"MNQ": mdWith1mBar(now - 30_000)}}, now)
+	applyStaleDataBlock(fresh, &Context{SnapshotMs: now, MarketDataMap: map[string]*market.Data{"MNQ": mdWith1mBar(now - 30_000)}}, now)
 	if fresh.Decisions[0].Action != "open_long" {
 		t.Fatalf("fresh feed must leave the entry, got %q", fresh.Decisions[0].Action)
 	}
 
 	// Stale 1m bar (5 min old > 120s) → entry neutralized to wait.
 	stale := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "open_short"}}}
-	applyStaleDataBlock(stale, &Context{MarketDataMap: map[string]*market.Data{"MNQ": mdWith1mBar(now - 300_000)}}, now)
+	applyStaleDataBlock(stale, &Context{SnapshotMs: now, MarketDataMap: map[string]*market.Data{"MNQ": mdWith1mBar(now - 300_000)}}, now)
 	if stale.Decisions[0].Action != "wait" {
 		t.Fatalf("stale feed must block the entry (→wait), got %q", stale.Decisions[0].Action)
 	}
@@ -153,15 +153,35 @@ func TestApplyStaleDataBlock(t *testing.T) {
 
 	// A CLOSE on a stale feed is NEVER blocked (exits/position-management untouched).
 	closing := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "close_long"}}}
-	applyStaleDataBlock(closing, &Context{MarketDataMap: map[string]*market.Data{"MNQ": mdWith1mBar(now - 300_000)}}, now)
+	applyStaleDataBlock(closing, &Context{SnapshotMs: now, MarketDataMap: map[string]*market.Data{"MNQ": mdWith1mBar(now - 300_000)}}, now)
 	if closing.Decisions[0].Action != "close_long" {
 		t.Fatalf("a close must never be blocked by stale data, got %q", closing.Decisions[0].Action)
 	}
 
 	// No 1m/5m data → fail-open (entry left intact).
 	nodata := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "open_long"}}}
-	applyStaleDataBlock(nodata, &Context{MarketDataMap: map[string]*market.Data{"MNQ": {Symbol: "MNQ"}}}, now)
+	applyStaleDataBlock(nodata, &Context{SnapshotMs: now, MarketDataMap: map[string]*market.Data{"MNQ": {Symbol: "MNQ"}}}, now)
 	if nodata.Decisions[0].Action != "open_long" {
 		t.Fatalf("no bar data must fail-open (leave the entry), got %q", nodata.Decisions[0].Action)
+	}
+}
+
+// P8 (ledger-close 2026-08-19) — SnapshotMs ABSENT is a WARN + fail-open pass,
+// never a silent time.Now() evaluation (the hidden-clock defect class). The
+// injected fake clock proves the predicate cannot run without a snapshot: a
+// feed that WOULD read stale on the caller's clock still passes.
+func TestStaleGateFailsOpenWithoutSnapshotMs(t *testing.T) {
+	now := int64(20_000_000)
+	fd := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "open_long"}}}
+	ctx := &Context{ // SnapshotMs deliberately absent
+		TraderID:      "t1",
+		MarketDataMap: map[string]*market.Data{"MNQ": mdWith1mBar(now - 300_000)},
+	}
+	applyStaleDataBlock(fd, ctx, now)
+	if fd.Decisions[0].Action != "open_long" {
+		t.Fatalf("absent SnapshotMs must fail OPEN (pass unassessed), got %q", fd.Decisions[0].Action)
+	}
+	if fd.Decisions[0].RefusalReason != "" {
+		t.Fatalf("fail-open must not stamp a refusal, got %q", fd.Decisions[0].RefusalReason)
 	}
 }

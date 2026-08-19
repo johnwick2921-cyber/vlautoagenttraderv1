@@ -116,13 +116,20 @@ func applyStaleDataBlock(fd *FullDecision, ctx *Context, nowMs int64) {
 		return
 	}
 	// Measure the FEED at snapshot-build time, not after the AI call: a legal
-	// slow call must never turn a live-at-snapshot feed into "stale". Contexts
-	// that predate the SnapshotMs field (or crypto paths that never set it)
-	// keep the caller's clock.
-	evalMs := nowMs
-	if ctx.SnapshotMs > 0 {
-		evalMs = ctx.SnapshotMs
+	// slow call must never turn a live-at-snapshot feed into "stale".
+	//
+	// P8 (ledger-close 2026-08-19, the #48 leftover): SnapshotMs is now ALWAYS
+	// stamped at data assembly (P7 — GetFullDecisionWithStrategy re-stamps it
+	// next to the market fetch), so an absent value means a context that never
+	// went through assembly. Evaluating those on the post-call wall clock was
+	// the hidden-clock defect class: WARN + fail-open instead — entries pass
+	// unassessed rather than being judged on a clock nobody chose. The nowMs
+	// parameter stays for the post-verdict diagnostics line only.
+	if ctx.SnapshotMs <= 0 {
+		logger.Warnf("⚠️ B4 stale-data gate: ctx.SnapshotMs absent (context skipped data assembly) — fail-open, entries pass unassessed (trader=%s)", ctx.TraderID)
+		return
 	}
+	evalMs := ctx.SnapshotMs
 	for i := range fd.Decisions {
 		d := &fd.Decisions[i]
 		if d.Action != "open_long" && d.Action != "open_short" {

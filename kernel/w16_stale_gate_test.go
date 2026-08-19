@@ -23,7 +23,7 @@ func TestW16StaleEntriesAreStillBlockedAfterT22Removal(t *testing.T) {
 	stale := &market.Data{TimeframeData: map[string]*market.TimeframeSeriesData{
 		"1m": {Klines: []market.KlineBar{{Time: nowMs - 5*60_000, Close: 30000}}},
 	}}
-	ctx := &Context{TraderID: "t1", MarketDataMap: map[string]*market.Data{"MNQ": stale}}
+	ctx := &Context{TraderID: "t1", SnapshotMs: nowMs, MarketDataMap: map[string]*market.Data{"MNQ": stale}}
 
 	fd := &FullDecision{Decisions: []Decision{
 		{Action: "open_long", Symbol: "MNQ"},
@@ -54,7 +54,7 @@ func TestW16FreshFeedIsNotBlocked(t *testing.T) {
 	fresh := &market.Data{TimeframeData: map[string]*market.TimeframeSeriesData{
 		"1m": {Klines: []market.KlineBar{{Time: nowMs - 30_000, Close: 30000}}},
 	}}
-	ctx := &Context{TraderID: "t1", MarketDataMap: map[string]*market.Data{"MNQ": fresh}}
+	ctx := &Context{TraderID: "t1", SnapshotMs: nowMs, MarketDataMap: map[string]*market.Data{"MNQ": fresh}}
 	fd := &FullDecision{Decisions: []Decision{{Action: "open_long", Symbol: "MNQ"}}}
 	applyStaleDataBlock(fd, ctx, nowMs)
 	if fd.Decisions[0].Action != "open_long" {
@@ -70,7 +70,7 @@ func TestW16NoIntradayDataFailsOpen(t *testing.T) {
 	only15m := &market.Data{TimeframeData: map[string]*market.TimeframeSeriesData{
 		"15m": {Klines: []market.KlineBar{{Time: nowMs - 10*60_000, Close: 30000}}},
 	}}
-	ctx := &Context{TraderID: "t1", MarketDataMap: map[string]*market.Data{"MNQ": only15m}}
+	ctx := &Context{TraderID: "t1", SnapshotMs: nowMs, MarketDataMap: map[string]*market.Data{"MNQ": only15m}}
 	fd := &FullDecision{Decisions: []Decision{{Action: "open_long", Symbol: "MNQ"}}}
 	applyStaleDataBlock(fd, ctx, nowMs)
 	if fd.Decisions[0].Action != "open_long" {
