@@ -297,6 +297,11 @@ type AutoTraderConfig struct {
 
 	// Scan configuration
 	ScanInterval time.Duration // Scan interval (recommended 3 minutes)
+	// CadenceMode (P10): "interval" (default — every tick runs a full cycle on
+	// the latest bar state) | "bar_close" (legacy: one cycle per closed
+	// primary-TF bar). Resolved via cadenceMode(); only meaningful for day-plan
+	// futures traders (crypto/plan-off always ran per-tick).
+	CadenceMode string
 
 	// Account configuration
 	InitialBalance float64 // Initial balance (for P&L calculation, must be set manually)
@@ -342,6 +347,7 @@ type AutoTrader struct {
 	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
 	lastRollWarnContract   string       // P3 roll gate: dedupes the unresolved-contract WARN per contract-string change
 	lastHalfDaySeedDay     string       // P4 half-days producer: once-per-CME-session-day throttle
+	lastCycleBarSig        string       // P10.4 no-new-data dedup: newest primary-TF bar signature at last cycle
 	ai402OutageStartMs     int64        // P5 402-outage latch (0 = no outage) — one banner per outage
 	lastAIBalanceDay       string       // P5 daily balance poll throttle (AI_BALANCE_WARN)
 	isRunning              bool

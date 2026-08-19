@@ -649,14 +649,22 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		CustomAPIURL:          aiModelCfg.CustomAPIURL,
 		CustomModelName:       aiModelCfg.CustomModelName,
 		ScanInterval:          time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
+		CadenceMode:           traderCfg.CadenceMode,
 		InitialBalance:        traderCfg.InitialBalance,
 		IsCrossMargin:         traderCfg.IsCrossMargin,
 		ShowInCompetition:     traderCfg.ShowInCompetition,
 		StrategyConfig:        strategyConfig,
 	}
 
-	logger.Infof("📊 Loading trader %s: ScanIntervalMinutes=%d (from DB), ScanInterval=%v",
-		traderCfg.Name, traderCfg.ScanIntervalMinutes, traderConfig.ScanInterval)
+	// P10 — the boot line names the cadence SOURCE + resolved behavior, so the
+	// interval-vs-bar-close ambiguity that confused the owner can't recur.
+	resolvedMode := traderCfg.CadenceMode
+	if resolvedMode == "" {
+		resolvedMode = "interval"
+	}
+	logger.Infof("📊 Loading trader %s: ScanIntervalMinutes=%d (source=Studio/DB), cadence=interval %v, mode=%s%s",
+		traderCfg.Name, traderCfg.ScanIntervalMinutes, traderConfig.ScanInterval, resolvedMode,
+		map[bool]string{true: "", false: " (DB empty → default)"}[traderCfg.CadenceMode != ""])
 
 	// Set API keys based on exchange type (convert EncryptedString to string)
 	switch exchangeCfg.ExchangeType {

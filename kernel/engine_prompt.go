@@ -568,6 +568,28 @@ func (e *StrategyEngine) isFuturesInstrument() bool {
 	return len(coins) > 0 && market.IsCMEFuturesSymbol(coins[0])
 }
 
+// formingBarLine (P10.2) renders the newest bar's honesty label for one
+// timeframe: "current 5m bar: FORMING (closes 10:35 CT) — prior bars closed"
+// while the bar is still open at the snapshot instant, else a CLOSED line
+// naming the next close. Empty when snapshot/interval/bars are unavailable.
+func formingBarLine(tf string, tfData *market.TimeframeSeriesData, snapshotMs int64) string {
+	if snapshotMs <= 0 || tfData == nil || len(tfData.Klines) == 0 {
+		return ""
+	}
+	iv := tfIntervalMs(tf)
+	if iv <= 0 {
+		return "" // only intraday TFs carry the label (1m/5m/15m…)
+	}
+	newest := tfData.Klines[len(tfData.Klines)-1]
+	closeMs := newest.Time + iv
+	if closeMs > snapshotMs {
+		return fmt.Sprintf("current %s bar: FORMING (closes %s) — prior bars closed\n\n",
+			tf, ClockCT(time.UnixMilli(closeMs)))
+	}
+	return fmt.Sprintf("current %s bar: CLOSED at %s (next close %s)\n\n",
+		tf, ClockCT(time.UnixMilli(closeMs)), ClockCT(time.UnixMilli(closeMs+iv)))
+}
+
 func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 	var sb strings.Builder
 	indicators := e.config.Indicators
@@ -647,6 +669,14 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 			if tfData, ok := data.TimeframeData[tf]; ok {
 				sb.WriteString(fmt.Sprintf("=== %s Timeframe (oldest → latest) ===\n\n", strings.ToUpper(tf)))
 				e.formatTimeframeSeriesData(&sb, tfData, indicators)
+				// P10.2 — prompt honesty (owner ruling: interval cadence runs
+				// cycles MID-BAR): label the newest bar FORMING/CLOSED so the
+				// AI knows what it is looking at and may itself choose to wait
+				// for the close — its judgment now, not a code gate. Futures
+				// only; snapshot 0 (tests/legacy) renders nothing.
+				if e.isFuturesInstrument() {
+					sb.WriteString(formingBarLine(tf, tfData, e.promptSnapshotMs))
+				}
 			}
 		}
 	} else {

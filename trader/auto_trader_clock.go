@@ -29,7 +29,61 @@ func (at *AutoTrader) dayPlanEnabled() bool {
 
 // barCloseCadenceActive reports whether this trader should fire cycles on
 // primary-TF bar closes instead of the scan timer.
+// P10 note: since the owner ruling (2026-08-19) this only ARMS the cadence
+// machinery; the MODE below decides whether the bar-close gate actually gates.
 func (at *AutoTrader) barCloseCadenceActive() bool { return at.dayPlanEnabled() }
+
+// Cadence modes (P10 — OWNER RULING 2026-08-19): the Studio scan interval is
+// the ACTUAL decision cadence. "interval" (default) runs a full cycle every
+// scheduler tick on the LATEST bar state including the forming primary-TF bar;
+// "bar_close" is the legacy day-plan P2 gate (one cycle per closed primary
+// bar), selectable per-trader in Studio, stored in traders.cadence_mode.
+const (
+	CadenceInterval = "interval"
+	CadenceBarClose = "bar_close"
+)
+
+// cadenceMode resolves the trader's mode: explicit "bar_close" keeps the
+// legacy gate; everything else (empty, "interval", garbage) is interval — the
+// P10 default. Garbage never invents the stricter gate silently.
+func (at *AutoTrader) cadenceMode() string {
+	if at.config.CadenceMode == CadenceBarClose {
+		return CadenceBarClose
+	}
+	return CadenceInterval
+}
+
+// skipNoNewData (P10.4) is the ONLY allowed interval-mode skip besides the
+// existing gates: when a tick finds a byte-identical world — same newest
+// primary-TF bar (open/high/low/close/volume, forming or not), and FLAT — the
+// cycle is skipped with a logged reason instead of burning a paid AI call on
+// an identical snapshot. Any bar mutation (a forming bar's close/volume moves
+// on every real tick) or an open position runs the cycle.
+func (at *AutoTrader) skipNoNewData(now time.Time) bool {
+	if market.FuturesBarsProvider == nil {
+		return false // no bar state to compare — never invent a skip
+	}
+	bars := market.FuturesBarsProvider(at.futuresSymbol(), at.primaryTimeframe(), 1)
+	if len(bars) == 0 {
+		return false
+	}
+	b := bars[len(bars)-1]
+	sig := fmt.Sprintf("%d|%.4f|%.4f|%.4f|%.4f|%.4f", b.OpenTime, b.Open, b.High, b.Low, b.Close, b.Volume)
+	if sig != at.lastCycleBarSig {
+		at.lastCycleBarSig = sig
+		return false
+	}
+	// Identical bar state — only skip when flat (in-position cycles are the
+	// dashboard heartbeat and must keep running; PR #49 contract).
+	if at.store != nil {
+		if positions, err := at.store.Position().GetOpenPositions(at.id); err == nil && len(positions) > 0 {
+			return false
+		}
+	}
+	at.logInfof("⏭ cycle_skip=no_new_data — newest %s bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (%s)",
+		at.primaryTimeframe(), kernel.FormatCT(now))
+	return true
+}
 
 // skipWhileOpen (P2.2) reports whether the AI decision cycle should be skipped
 // because the strategy is already holding a position — calmer and cheaper than
@@ -488,15 +542,20 @@ func (at *AutoTrader) tickOnce(isGrid bool) {
 		return
 	}
 	active := at.barCloseCadenceActive()
-	var latest int64
-	var have bool
-	if active {
-		latest, have = at.latestClosedPrimaryBarMs()
+	// P10 (owner ruling 2026-08-19): the bar-close gate is a MODE now, not a
+	// hard gate. mode=bar_close keeps the legacy behavior byte-identical (E14);
+	// mode=interval (default) runs a full cycle every tick on the latest bar
+	// state — forming bar included — subject only to the no-new-data dedup.
+	if active && at.cadenceMode() == CadenceBarClose {
+		latest, have := at.latestClosedPrimaryBarMs()
+		run, newLast := barCloseGate(true, at.lastBarCloseMs, latest, have)
+		at.lastBarCloseMs = newLast
+		if !run {
+			return // bar-close mode: no new primary-TF bar closed → idle this tick
+		}
 	}
-	run, newLast := barCloseGate(active, at.lastBarCloseMs, latest, have)
-	at.lastBarCloseMs = newLast
-	if !run {
-		return // bar-close cadence: no new primary-TF bar closed → idle this tick
+	if active && at.cadenceMode() == CadenceInterval && at.skipNoNewData(time.Now()) {
+		return
 	}
 	if err := at.runCycle(); err != nil {
 		at.logErrorf("❌ Execution failed: %v", err)

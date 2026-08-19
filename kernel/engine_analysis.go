@@ -324,6 +324,9 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// market block all derive from one instant. The prompt self-documents that
 	// instant ("Snapshot: HH:MM:SS CT") so every stored prompt names its clock.
 	engine.SetClockContext("## Clock\n" + ClockCTAndUTC(snapshotNow) + " · Snapshot: " + ClockCTSeconds(snapshotNow) + " — ALL times in this prompt are CT (America/Chicago), including every session/window bound. Never apply CT window numbers to a UTC clock.")
+	// P10.2 — the market block labels the newest bar FORMING/CLOSED against
+	// this same instant (interval cadence runs cycles mid-bar).
+	engine.SetPromptSnapshotMs(snapshotNow.UnixMilli())
 	if isFut, _ := futuresVariantMode(variant); isFut && svpOn {
 		svpLine := ""
 		if len(snapshotBars) > 0 {

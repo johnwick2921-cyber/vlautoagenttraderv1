@@ -27,6 +27,12 @@ type Trader struct {
 	StrategyID          string    `gorm:"column:strategy_id;default:''" json:"strategy_id"`
 	InitialBalance      float64   `gorm:"column:initial_balance;not null" json:"initial_balance"`
 	ScanIntervalMinutes int       `gorm:"column:scan_interval_minutes;default:3" json:"scan_interval_minutes"`
+	// CadenceMode (P10 owner ruling 2026-08-19): "interval" (DEFAULT — the Studio
+	// scan interval IS the decision cadence; every tick runs a full cycle on the
+	// latest bar state incl. the forming bar) | "bar_close" (legacy day-plan P2
+	// behavior: one cycle per closed primary-TF bar; interval only sets check
+	// frequency). Empty resolves to "interval".
+	CadenceMode         string    `gorm:"column:cadence_mode;default:''" json:"cadence_mode"`
 	IsRunning           bool      `gorm:"column:is_running;default:false" json:"is_running"`
 	IsCrossMargin       bool      `gorm:"column:is_cross_margin;default:true" json:"is_cross_margin"`
 	ShowInCompetition   bool      `gorm:"column:show_in_competition;default:true" json:"show_in_competition"`
@@ -142,6 +148,11 @@ func (s *TraderStore) Update(trader *Trader) error {
 		fmt.Printf("📊 TraderStore.Update: scan_interval_minutes=%d will be saved\n", trader.ScanIntervalMinutes)
 	} else {
 		fmt.Printf("⚠️ TraderStore.Update: scan_interval_minutes=%d (<=0, NOT updating)\n", trader.ScanIntervalMinutes)
+	}
+	// P10 — cadence mode: persist only explicit values ("interval"/"bar_close");
+	// empty means "not changing" on update.
+	if trader.CadenceMode == "interval" || trader.CadenceMode == "bar_close" {
+		updates["cadence_mode"] = trader.CadenceMode
 	}
 
 	return s.db.Model(&Trader{}).
