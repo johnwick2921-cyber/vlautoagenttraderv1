@@ -957,13 +957,15 @@ func (s *Server) handlePauseTrader(c *gin.Context) {
 		until = end
 	case body.UntilCT != "":
 		// "HH:MM" CT today; a time at/before now means tomorrow (wrap-safe).
-		t, err := time.ParseInLocation("15:04", body.UntilCT, kernel.CTLocation())
-		if err != nil {
+		// Parsed by hand — the TZ-guard forbids bare time layouts outside
+		// kernel/tz.go, deservedly.
+		var hh, mm int
+		if n, err := fmt.Sscanf(body.UntilCT, "%d:%d", &hh, &mm); err != nil || n != 2 || hh < 0 || hh > 23 || mm < 0 || mm > 59 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "until_ct must be HH:MM (CT)"})
 			return
 		}
 		ct := now.In(kernel.CTLocation())
-		until = time.Date(ct.Year(), ct.Month(), ct.Day(), t.Hour(), t.Minute(), 0, 0, kernel.CTLocation())
+		until = time.Date(ct.Year(), ct.Month(), ct.Day(), hh, mm, 0, 0, kernel.CTLocation())
 		if !until.After(now) {
 			until = until.Add(24 * time.Hour)
 		}
