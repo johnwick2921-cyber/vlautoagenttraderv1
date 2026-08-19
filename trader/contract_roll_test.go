@@ -122,3 +122,18 @@ func TestRollWindowEnvOverride(t *testing.T) {
 		t.Fatal("malformed env must fall back to 3")
 	}
 }
+
+// E7-v2 fix — daysLeft must count CALENDAR days across DST transitions: the
+// CT-midnight span 2026-03-06 → 2026-03-20 (MAR26-era front) is 335h (spring
+// forward eats one), which plain truncation read as 13 days.
+func TestRollDaysLeftAcrossDST(t *testing.T) {
+	_, _, daysLeft, _, resolved := rollVerdict("MNQ 03-26", ctDate(t, "2026-03-06 10:00"), 3)
+	if !resolved || daysLeft != 14 {
+		t.Fatalf("Mar 6 → Mar 20 expiry must be 14 calendar days (DST-safe), got %d resolved=%v", daysLeft, resolved)
+	}
+	// Fall-back direction (extra hour) must also land exact.
+	_, _, daysLeft, _, resolved = rollVerdict("MNQ 12-26", ctDate(t, "2026-10-30 10:00"), 3)
+	if !resolved || daysLeft != 49 {
+		t.Fatalf("Oct 30 → Dec 18 must be 49 calendar days, got %d resolved=%v", daysLeft, resolved)
+	}
+}

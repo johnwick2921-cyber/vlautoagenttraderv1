@@ -98,7 +98,11 @@ func rollVerdict(resolvedContract string, now time.Time, windowDays int) (displa
 	display = rootSym + " " + monthCodes[m] + strconv.Itoa(y%100)
 	ct := now.In(kernel.CTLocation())
 	nowDate := time.Date(ct.Year(), ct.Month(), ct.Day(), 0, 0, 0, 0, kernel.CTLocation())
-	daysLeft = int(expiry.Sub(nowDate).Hours() / 24)
+	// E7-v2 fix: round to the nearest day — the CT-midnight difference is
+	// N×24h ∓ 1h across DST transitions, and plain truncation read one day LOW
+	// from ~Dec (front = MAR contract) until spring-forward, off-by-one-ing
+	// both roll_days_left and a widened block window.
+	daysLeft = int((expiry.Sub(nowDate) + 12*time.Hour) / (24 * time.Hour))
 	blocked = daysLeft >= 0 && daysLeft <= windowDays
 	return display, expiry, daysLeft, blocked, true
 }
