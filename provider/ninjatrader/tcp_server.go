@@ -947,8 +947,10 @@ func (s *TCPServer) livenessReporter(ctx context.Context) {
 					tfAges += " " + tf + "=none"
 					continue
 				}
-				// newest open + interval = the NT8 stamp of the newest bar.
-				age := (nowMs - (bars[len(bars)-1].T + timeframeMs(tf))) / 1000
+				// Age of the newest bar's OPEN: 0..period while the forming bar
+				// is live — always non-negative and readable at a glance. (The
+				// close-stamp variant went negative for forming bars.)
+				age := (nowMs - bars[len(bars)-1].T) / 1000
 				tfAges += fmt.Sprintf(" %s=%ds", tf, age)
 			}
 			if last == 0 && tfAges == " 1m=none 5m=none 15m=none" {
