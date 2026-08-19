@@ -197,6 +197,10 @@ func main() {
 	} else {
 		logger.Infof("%s", integrity.Line())
 	}
+	// PHASE 3.5 — clock health at boot (log-only; repeated at each session roll
+	// by the trader loop). At boot the NT8 wire may not be up yet — the line
+	// says "none" honestly rather than waiting.
+	kernel.LogClockHealth("boot", "MNQ")
 
 	// SANDBOX: a demo instance has no NT8 wire, so install a deterministic
 	// synthetic bar feed — without it level_facts/price/chart/armor are all empty.

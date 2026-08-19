@@ -64,6 +64,13 @@ func stampGuardrailSkip(record *store.DecisionRecord, reason string) {
 // haveBar=false (no bars / provider down) never discards: absent evidence, the
 // existing stale-data armor (B4) is the only judge. decisionBarCloseMs==0 means
 // the cycle never captured a bar (e.g. crypto) → never discards.
+func orNight(s string) string {
+	if s == "" {
+		return "night"
+	}
+	return s
+}
+
 func staleBarDiscard(decisionBarCloseMs, latestClosedMs int64, haveBar bool) bool {
 	return haveBar && decisionBarCloseMs > 0 && latestClosedMs > decisionBarCloseMs
 }
@@ -232,6 +239,20 @@ func (at *AutoTrader) runCycle() error {
 		record.ErrorMessage = fmt.Sprintf("Risk control paused, remaining %.0f minutes", remaining.Minutes())
 		at.saveDecision(record)
 		return nil
+	}
+
+	// PHASE 3.5 — clock health at each SESSION ROLL (log-only). Detects the
+	// active-session name changing between cycles (incl. →night as "").
+	if at.config.Exchange == "ninjatrader" {
+		nowRoll := time.Now()
+		cur := ""
+		if sess, ok := at.sessionRegistry(nowRoll).ActiveSession(nowRoll); ok {
+			cur = sess.Name
+		}
+		if cur != at.lastClockHealthSession {
+			kernel.LogClockHealth("session-roll:"+orNight(cur), at.futuresSymbol())
+			at.lastClockHealthSession = cur
+		}
 	}
 
 	// 2. Reset daily P&L. AUDIT NOTE (2026-08-18, report-only): this is a
