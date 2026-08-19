@@ -57,13 +57,32 @@ func (f *fakeDecisionClient) CallWithRequestFull(*mcp.Request) (*mcp.LLMResponse
 }
 
 func TestApplyDecisionCallTimeout(t *testing.T) {
-	// Futures: the decision client is capped so a call fits inside the primary
-	// bar window (180s of a 5-minute bar leaves ≥120s for the rest of the cycle).
+	// Futures: the decision client is aligned with the ONE config-driven AI
+	// timeout (env AI_HTTP_TIMEOUT_SECONDS → AI_TIMEOUT_SECONDS → 300s). The old
+	// behavior pinned here was a hardcoded 180s that killed DeepSeek reads
+	// mid-body once max_tokens was raised and reasoning calls ran 150s+.
 	nt := &fakeDecisionClient{}
 	applyDecisionCallTimeout(nt, "ninjatrader")
-	if !nt.set || nt.timeout != decisionCallTimeout {
-		t.Fatalf("ninjatrader client must be capped at decisionCallTimeout (%v), got set=%v timeout=%v",
-			decisionCallTimeout, nt.set, nt.timeout)
+	if !nt.set || nt.timeout != mcp.ResolvedAITimeout() {
+		t.Fatalf("ninjatrader client must carry the config-driven timeout (%v), got set=%v timeout=%v",
+			mcp.ResolvedAITimeout(), nt.set, nt.timeout)
+	}
+
+	// The env var actually drives it — owner config wins over the default.
+	t.Setenv("AI_HTTP_TIMEOUT_SECONDS", "451")
+	nt2 := &fakeDecisionClient{}
+	applyDecisionCallTimeout(nt2, "ninjatrader")
+	if nt2.timeout != 451*time.Second {
+		t.Fatalf("AI_HTTP_TIMEOUT_SECONDS=451 must reach the decision client, got %v", nt2.timeout)
+	}
+
+	// The legacy name still works when the canonical one is unset.
+	t.Setenv("AI_HTTP_TIMEOUT_SECONDS", "")
+	t.Setenv("AI_TIMEOUT_SECONDS", "452")
+	nt3 := &fakeDecisionClient{}
+	applyDecisionCallTimeout(nt3, "ninjatrader")
+	if nt3.timeout != 452*time.Second {
+		t.Fatalf("legacy AI_TIMEOUT_SECONDS must be honored, got %v", nt3.timeout)
 	}
 
 	// Crypto: byte-identical to the pre-change behavior (no cap).
@@ -75,9 +94,4 @@ func TestApplyDecisionCallTimeout(t *testing.T) {
 
 	// nil client is a no-op, never a panic.
 	applyDecisionCallTimeout(nil, "ninjatrader")
-
-	// The cap really fits inside the 5-minute primary bar window.
-	if decisionCallTimeout >= 5*time.Minute {
-		t.Fatalf("decisionCallTimeout %v must be smaller than the 5m bar window", decisionCallTimeout)
-	}
 }

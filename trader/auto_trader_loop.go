@@ -44,15 +44,18 @@ func stampGuardrailSkip(record *store.DecisionRecord, reason string) {
 	record.ErrorMessage = "guardrail_skip: " + reason
 }
 
-// decisionCallTimeout caps ONE AI decision call so a cycle can always finish
-// inside the primary bar window. Owner evidence over 14 live days: normal calls
-// avg ~51s (max 293.7s), parse failures avg ~110s (max 182.2s) — a 294s call
-// exceeds an entire 5-minute bar window, so the decision would arrive after the
-// NEXT bar closed. 180s leaves ≥120s of a 5m bar for context build + execution
-// + order round-trips; a call that would run longer gets cut and (on parse
-// failure) retried with the JSON-only re-ask instead of silently eating the bar.
-// Crypto cadence is untouched — this is applied to the futures decision client.
-const decisionCallTimeout = 180 * time.Second
+// The decision-call timeout is CONFIG-DRIVEN (mcp.ResolvedAITimeout — env
+// AI_HTTP_TIMEOUT_SECONDS, default 300s), no literal left on the path.
+//
+// HISTORY of the literal this replaces: a 180s cap was chosen when normal calls
+// averaged ~51s, to keep a cycle inside one 5m bar. Then max_tokens was raised
+// from the truncating 2000 default and reasoning responses legitimately run
+// 150s+ — the observed 150565ms SUCCESSFUL call sat 30s under the cap, and the
+// slower tail died mid-read ("failed to read response: context deadline
+// exceeded"), every death a missed decision (incident 2026-08-18, zero-trade
+// cause A). A slow call that finishes is handled: staleBarDiscard() throws away
+// a decision computed on a bar the market has already moved past, so completing
+// late is safe while dying mid-read never is.
 
 // staleBarDiscard reports whether a decision must be DISCARDED because the bar
 // it was computed on (decisionBarCloseMs) is no longer the latest closed primary
@@ -65,14 +68,16 @@ func staleBarDiscard(decisionBarCloseMs, latestClosedMs int64, haveBar bool) boo
 	return haveBar && decisionBarCloseMs > 0 && latestClosedMs > decisionBarCloseMs
 }
 
-// applyDecisionCallTimeout caps ONE AI decision call to fit inside the primary
-// bar window — futures (ninjatrader) only. Crypto and the planner client (a
-// separate client, auto_trader_planner.go) are untouched.
+// applyDecisionCallTimeout aligns the futures decision client with the ONE
+// config-driven AI timeout — futures (ninjatrader) only. Crypto and the planner
+// client (a separate client, auto_trader_planner.go) already inherit the same
+// resolved value through DefaultConfig, so executor and planner can no longer
+// diverge (the 180s-vs-300s split was defect class 7).
 func applyDecisionCallTimeout(mcpClient mcp.AIClient, exchange string) {
 	if mcpClient == nil || exchange != "ninjatrader" {
 		return
 	}
-	mcpClient.SetTimeout(decisionCallTimeout)
+	mcpClient.SetTimeout(mcp.ResolvedAITimeout())
 }
 
 func (at *AutoTrader) runCycle() error {

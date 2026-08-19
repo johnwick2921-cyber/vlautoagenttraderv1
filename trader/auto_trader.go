@@ -801,7 +801,16 @@ func (at *AutoTrader) Run() error {
 
 		select {
 		case <-ticker.C:
+			// The loop is single-goroutine: a tick that fires while a cycle is
+			// still running WAITS here (the ticker drops missed ticks), so an
+			// in-flight AI read is structurally never cancelled by the next
+			// tick. Log the overrun so a slow call is visible, not mysterious.
+			tickStart := time.Now()
 			at.tickOnce(isGridStrategy)
+			if d := time.Since(tickStart); d > at.config.ScanInterval {
+				at.logWarnf("⏱ cycle overran the scan interval (%v > %v) — next tick delayed, in-flight work never cancelled; intervening ticks skipped",
+					d.Round(time.Millisecond), at.config.ScanInterval)
+			}
 		case <-at.stopMonitorCh:
 			at.logInfof("⏹ Stop signal received, exiting automatic trading main loop")
 			return nil

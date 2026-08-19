@@ -94,6 +94,12 @@ type Client struct {
 	// When provider.DeepSeekClient embeds Client, Hooks point to DeepSeekClient
 	// This way methods called in Call() are automatically dispatched to the overridden version
 	Hooks ClientHooks
+
+	// lastFinishReason holds the most recent response's finish_reason for the
+	// structured ai_call log (atomic: the planner client is shared between the
+	// executor loop and the Ask-Planner API). Claude overrides ParseMCPResponse
+	// and does not set it — those calls log finish_reason=unknown.
+	lastFinishReason atomic.Value
 }
 
 // New creates default client (backward compatible)
@@ -182,6 +188,44 @@ func (client *Client) SetTimeout(timeout time.Duration) {
 	client.HTTPClient.Timeout = timeout
 }
 
+// logAICall emits ONE structured line per AI call so the next timeout is
+// self-diagnosing instead of a forensic hunt (incident 2026-08-18: the only
+// evidence was a bare duration and a generic net/http error string).
+//
+//	ai_call model=<m> duration_ms=<d> finish_reason=<r> ok=<bool>
+//	  + on failure: timeout_source=client|context|transport deadline_s=<n>
+func (client *Client) logAICall(start time.Time, callErr error) {
+	if client.Log == nil {
+		return
+	}
+	durMs := time.Since(start).Milliseconds()
+	finish := "unknown"
+	if v, ok := client.lastFinishReason.Load().(string); ok && callErr == nil {
+		finish = v
+	}
+	if callErr == nil {
+		client.Log.Infof("ai_call model=%s duration_ms=%d finish_reason=%s ok=true",
+			client.Model, durMs, finish)
+		return
+	}
+	// Which deadline actually fired. net/http wraps them all in the same
+	// "context deadline exceeded" text, hence the incident's ambiguity.
+	msg := callErr.Error()
+	source := "transport"
+	switch {
+	case strings.Contains(msg, "Client.Timeout"):
+		source = "client" // http.Client.Timeout — the whole-request ceiling
+	case strings.Contains(msg, "context deadline exceeded"), strings.Contains(msg, "context canceled"):
+		source = "context" // a caller-supplied ctx (stream idle watchdog, agent paths)
+	}
+	deadline := int64(0)
+	if client.HTTPClient != nil {
+		deadline = int64(client.HTTPClient.Timeout / time.Second)
+	}
+	client.Log.Warnf("ai_call model=%s duration_ms=%d finish_reason=n/a ok=false timeout_source=%s deadline_s=%d err=%q",
+		client.Model, durMs, source, deadline, msg)
+}
+
 // CallWithMessages template method - fixed retry flow (cannot be overridden)
 func (client *Client) CallWithMessages(systemPrompt, userPrompt string) (string, error) {
 	if client.APIKey == "" {
@@ -198,7 +242,9 @@ func (client *Client) CallWithMessages(systemPrompt, userPrompt string) (string,
 		}
 
 		// Call the fixed single-call flow
+		callStart := time.Now()
 		result, err := client.Hooks.Call(systemPrompt, userPrompt)
+		client.logAICall(callStart, err)
 		if err == nil {
 			if attempt > 1 {
 				client.Log.Infof("✓ AI API retry succeeded")
@@ -352,6 +398,7 @@ func (client *Client) ParseMCPResponseFull(body []byte) (*LLMResponse, error) {
 		}
 		client.Log.Infof("📊 AI call complete: completion=%d prompt=%d finish_reason=%s",
 			result.Usage.CompletionTokens, result.Usage.PromptTokens, finish)
+		client.lastFinishReason.Store(finish)
 	}
 
 	msg := result.Choices[0].Message

@@ -55,13 +55,34 @@ func DefaultConfig() *Config {
 		TopP:            getEnvFloat("AI_TOP_P", 0), // 0 = omit from the request
 		MaxRetries:      getEnvInt("AI_MAX_RETRIES", MaxRetryTimes),
 		RetryWaitBase:   time.Duration(getEnvInt("AI_RETRY_BACKOFF_SECONDS", 2)) * time.Second,
-		Timeout:         time.Duration(getEnvInt("AI_TIMEOUT_SECONDS", 300)) * time.Second,
+		Timeout:         ResolvedAITimeout(),
 		RetryableErrors: retryableErrors,
 
 		// Default dependencies (use global logger)
-		Logger:     logger.NewMCPLogger(),
-		HTTPClient: security.SafeHTTPClient(DefaultTimeout),
+		Logger: logger.NewMCPLogger(),
+		// The SAME resolved timeout the config carries. This used to be
+		// SafeHTTPClient(DefaultTimeout) — the package constant — so the
+		// AI_TIMEOUT_SECONDS value above was computed and then DISCARDED
+		// (defect class 4): no env setting ever reached the transport.
+		HTTPClient: security.SafeHTTPClient(ResolvedAITimeout()),
 	}
+}
+
+// ResolvedAITimeout is the ONE resolution of the AI HTTP timeout, used by the
+// config, the transport, and the per-exchange decision client alike so a literal
+// can never shadow the owner's setting again (incident 2026-08-18: a hardcoded
+// 180s decision-call cap killed DeepSeek reads mid-body once max_tokens was
+// raised and reasoning responses started running 150s+).
+//
+// Precedence: AI_HTTP_TIMEOUT_SECONDS (canonical) → AI_TIMEOUT_SECONDS
+// (pre-existing name, honored for backward compatibility) → 300s.
+func ResolvedAITimeout() time.Duration {
+	if v := os.Getenv("AI_HTTP_TIMEOUT_SECONDS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return time.Duration(n) * time.Second
+		}
+	}
+	return time.Duration(getEnvInt("AI_TIMEOUT_SECONDS", 300)) * time.Second
 }
 
 // getEnvInt reads integer from environment variable, returns default value if failed
