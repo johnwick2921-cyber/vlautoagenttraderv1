@@ -104,6 +104,68 @@ func (c *BarCache) DroppedPlaceholders() int64 {
 	return c.dropped
 }
 
+// ── CANONICAL TIME CONTRACT (2026-08-19, chart-timestamp dispatch) ──────────
+//
+//	A Bar's T in THIS CACHE is the bar's OPEN time, epoch ms UTC.
+//
+// NT8 stamps bars at their period END (NinjaScript Bars.GetTime(i) is the
+// close; proven live: a forming 5m bar covering 01:30–01:35 CT arrives stamped
+// 01:35 while the clock reads 01:31). The C# AddOn forwards that close stamp
+// verbatim, and this cache used to store it unchanged while every reader —
+// barsToKlines, /api/klines, the SSE relay, the kernel detectors, the charts —
+// treated T as the OPEN. Net effect: every bar was labelled one full period
+// late everywhere downstream.
+//
+// The conversion happens HERE, once, at ingest, because every consumer reads
+// this cache (the SSE relay polls it; REST serves it; the kernel bridges it).
+// Converting in any single reader would leave the twins wrong (the multi-
+// instance defect class). The C# side and its LastEmittedTimeUtcMs dedup
+// cursor stay in close-stamp domain untouched — no wire change.
+//
+// Side effect worth naming: C2's clockDriftMs and the clock-health line both
+// compute "feed now" as newestT + interval. Under close stamps that OVERSHOT
+// the true close by one interval; with open stamps it lands exactly on NT8's
+// own stamp again — a strict accuracy improvement, thresholds untouched.
+func openStampBars(bars []Bar, timeframe string) []Bar {
+	dur := timeframeMs(timeframe)
+	if dur <= 0 || len(bars) == 0 {
+		return bars
+	}
+	out := make([]Bar, len(bars))
+	for i, b := range bars {
+		b.T -= dur
+		out[i] = b
+	}
+	return out
+}
+
+// timeframeMs mirrors the coded TF vocabulary (bars_market_bridge.go keeps the
+// kernel-side twin; both fall back to 1m).
+func timeframeMs(timeframe string) int64 {
+	switch timeframe {
+	case "1m":
+		return 60_000
+	case "3m":
+		return 180_000
+	case "5m":
+		return 300_000
+	case "15m":
+		return 900_000
+	case "30m":
+		return 1_800_000
+	case "1h":
+		return 3_600_000
+	case "2h":
+		return 7_200_000
+	case "4h":
+		return 14_400_000
+	case "1d", "1D":
+		return 86_400_000
+	default:
+		return 60_000
+	}
+}
+
 // SeedHistorical MERGES the provided bars into the cache for (symbol,
 // timeframe). Called when the C# AddOn emits a bars_historical frame: the
 // initial seed after a fresh BarsRequest, a Go-reconnect re-seed (N3), OR a
@@ -125,6 +187,7 @@ func (c *BarCache) SeedHistorical(symbol, timeframe string, bars []Bar) {
 		return
 	}
 	bars, bad := dropPlaceholderBars(bars)
+	bars = openStampBars(bars, timeframe) // close-stamp → OPEN-stamp, once, for every reader
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.dropped += int64(bad)
@@ -203,6 +266,7 @@ func (c *BarCache) Upsert(symbol, timeframe string, bars []Bar) {
 		return
 	}
 	bars, bad := dropPlaceholderBars(bars)
+	bars = openStampBars(bars, timeframe) // close-stamp → OPEN-stamp, once, for every reader
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.dropped += int64(bad)

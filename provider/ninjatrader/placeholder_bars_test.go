@@ -23,13 +23,15 @@ const (
 	sunOpen  = int64(1_755_378_000_000) // Sun 2026-08-16 17:00 CT
 )
 
+// Fixtures model the WIRE convention (close stamps); ingest converts to the
+// open stamps every assertion below reads (canonical time contract).
 func realBar(t int64, px float64) Bar {
-	return Bar{T: t, O: px, H: px + 2, L: px - 2, C: px + 1, V: 120}
+	return Bar{T: t + 60_000, O: px, H: px + 2, L: px - 2, C: px + 1, V: 120}
 }
 
 // NT8's placeholder: no range, no volume, the file's base price.
 func placeholder(t int64, base float64) Bar {
-	return Bar{T: t, O: base, H: base, L: base, C: base, V: 0}
+	return Bar{T: t + 60_000, O: base, H: base, L: base, C: base, V: 0}
 }
 
 func TestWeekendGapStaysAGapNotAFlatLine(t *testing.T) {
