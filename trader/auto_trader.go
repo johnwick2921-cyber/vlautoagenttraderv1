@@ -362,6 +362,13 @@ type AutoTrader struct {
 	positionFirstSeenTime  map[string]int64   // Position first seen time (symbol_side -> timestamp in milliseconds)
 	stopMonitorCh          chan struct{}      // Used to stop monitoring goroutine
 	monitorWg              sync.WaitGroup     // Used to wait for monitoring goroutine to finish
+	kickCh                 chan string        // discard-burn/post-exit: one-shot deferred-cycle kicks into the run loop (reason payload)
+	kickPending            atomic.Bool        // at most one kick armed at a time (CAS)
+	skipDodgeOnce          bool               // a dodge-kicked cycle must not re-dodge at the boundary (run-loop goroutine only)
+	cycleTrigger           string             // why this cycle fired: "" (timer) | "stale_dodge" | "post_exit" (run-loop goroutine only)
+	aiCallMs               [aiCallRingSize]int64 // last-N AI call durations (run-loop goroutine only)
+	aiCallIdx              int
+	aiCallN                int
 	peakPnLCache           map[string]float64 // Peak profit cache (symbol -> peak P&L percentage)
 	peakPnLCacheMutex      sync.RWMutex       // Cache read-write lock
 	breakevenDone          map[string]bool    // auto-breakeven: "symbol_side" already moved to breakeven (idempotent; reset on flat)
@@ -674,6 +681,7 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		isRunning:             false,
 		positionFirstSeenTime: make(map[string]int64),
 		stopMonitorCh:         make(chan struct{}),
+		kickCh:                make(chan string, 4),
 		monitorWg:             sync.WaitGroup{},
 		peakPnLCache:          make(map[string]float64),
 		peakPnLCacheMutex:     sync.RWMutex{},
@@ -689,6 +697,8 @@ func (at *AutoTrader) Run() error {
 	at.isRunningMutex.Unlock()
 
 	at.stopMonitorCh = make(chan struct{})
+	at.kickCh = make(chan string, 4) // fresh kick channel per Run (restart-safe)
+	at.kickPending.Store(false)
 	at.startTime = time.Now()
 
 	// P2 (ledger-close 2026-08-19) — restore an owner pause across restart.
@@ -839,6 +849,17 @@ func (at *AutoTrader) Run() error {
 				at.logWarnf("⏱ cycle overran the scan interval (%v > %v) — next tick delayed, in-flight work never cancelled; intervening ticks skipped",
 					d.Round(time.Millisecond), at.config.ScanInterval)
 			}
+		case reason := <-at.kickCh:
+			// Discard-burn 2.1 / post-exit 4.x: a deferred one-shot cycle. Same
+			// single-goroutine guarantee as the ticker case — a kick that fires
+			// mid-cycle waits here, never cancels in-flight work.
+			at.kickPending.Store(false)
+			at.cycleTrigger = reason
+			if reason == "stale_dodge" {
+				at.skipDodgeOnce = true // the dodged cycle runs now; no re-dodge at the boundary
+			}
+			at.tickOnce(isGridStrategy)
+			at.cycleTrigger = ""
 		case <-at.stopMonitorCh:
 			at.logInfof("⏹ Stop signal received, exiting automatic trading main loop")
 			return nil

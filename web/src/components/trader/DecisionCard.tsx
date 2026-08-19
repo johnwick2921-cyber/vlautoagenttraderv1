@@ -355,24 +355,45 @@ export function DecisionCard({
             </div>
           </div>
         </div>
-        <div
-          className="px-4 py-1.5 rounded-full text-xs font-bold tracking-wider"
-          style={
-            decision.success
+        {/* Discard-burn 2.3 (status honesty): a guardrail_skip is a rail doing
+            its job, not a failure — render it as a neutral ℹ️ skip. The red ❌
+            badge is reserved for real failures; feed/clock-diagnosed staleness
+            (verdict_hint=feed|clock) keeps the hard ❌. */}
+        {(() => {
+          const em = decision.error_message || ''
+          const isSkip = em.startsWith('guardrail_skip:')
+          const isHard = /verdict_hint=(feed|clock)/.test(em)
+          const style = decision.success
+            ? {
+                background: 'rgba(14, 203, 129, 0.15)',
+                color: '#0ECB81',
+                border: '1px solid rgba(14, 203, 129, 0.3)',
+              }
+            : isSkip && !isHard
               ? {
-                  background: 'rgba(14, 203, 129, 0.15)',
-                  color: '#0ECB81',
-                  border: '1px solid rgba(14, 203, 129, 0.3)',
+                  background: 'rgba(132, 142, 156, 0.15)',
+                  color: '#848E9C',
+                  border: '1px solid rgba(132, 142, 156, 0.3)',
                 }
               : {
                   background: 'rgba(246, 70, 93, 0.15)',
                   color: '#F6465D',
                   border: '1px solid rgba(246, 70, 93, 0.3)',
                 }
-          }
-        >
-          {t(decision.success ? 'success' : 'failed', language)}
-        </div>
+          const label = decision.success
+            ? t('success', language)
+            : isSkip && !isHard
+              ? `ℹ️ ${em.replace('guardrail_skip: ', '').split(':')[0].slice(0, 24)}`
+              : `❌ ${t('failed', language)}`
+          return (
+            <div
+              className="px-4 py-1.5 rounded-full text-xs font-bold tracking-wider"
+              style={style}
+            >
+              {label}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Decision Actions - Beautiful Grid */}

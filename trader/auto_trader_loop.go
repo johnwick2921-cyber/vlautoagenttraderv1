@@ -376,6 +376,8 @@ func (at *AutoTrader) runCycle() error {
 	aiDecision, err := kernel.GetFullDecisionWithStrategy(ctx, at.mcpClient, at.strategyEngine, promptVariant)
 	// Plan 4 Task 25 — decision metrics
 	telemetry.DecisionLatency.WithLabelValues(at.id).Observe(time.Since(decisionStart).Seconds())
+	// Discard-burn 2.1 — feed the dodge's rolling average (last 20 calls).
+	at.recordAICallMs(time.Since(decisionStart).Milliseconds())
 	if aiDecision != nil {
 		for _, d := range aiDecision.Decisions {
 			status := "queued"
@@ -585,15 +587,44 @@ func (at *AutoTrader) runCycle() error {
 	// stale bar. The loss is visible (P1 feed + gate-block counter) and the next
 	// cycle re-decides on the fresh bar. Crypto never captures a bar (0) → no-op.
 	if latest, ok := at.latestClosedPrimaryBarMs(); staleBarDiscard(decisionBarCloseMs, latest, ok) {
-		at.logWarnf("⏰ decision bar (close %d) is no longer the latest (close %d) — the AI call spanned a bar close; DISCARDING the decision.", decisionBarCloseMs, latest)
-		stampGuardrailSkip(record, "stale_bar_discarded")
-		telemetry.IncGateBlock(at.id, "stale_bar_discarded")
-		at.emitAlert("P1", "decision-stale-bar",
-			fmt.Sprintf("stalebar:%s:%d", at.id, at.callCount),
-			"Decision discarded — bar closed during AI call",
-			fmt.Sprintf("cycle %d: the AI call spanned a primary-bar close, so the decision was computed on a stale bar and was NOT acted on; the next cycle re-decides.", at.callCount))
-		at.saveDecision(record)
-		return nil
+		// Discard-burn 2.2 — the superseded set is no longer thrown away
+		// wholesale. Three classes:
+		//   wait/hold-only  → free, QUIET discard (no WARN, no alert — #51 E17
+		//                     showed these were pure noise, all supersessions
+		//                     were logged as losses).
+		//   entries-only    → mechanical re-eval against the fresh CLOSED bar;
+		//                     pass = execute, refuse = clean skip with reason.
+		//   contains close_* → legacy conservative discard, unchanged.
+		entries, closes := classifyDecisions(aiDecision.Decisions)
+		switch {
+		case closes > 0:
+			at.logWarnf("⏰ decision bar (close %d) is no longer the latest (close %d) — the AI call spanned a bar close; DISCARDING the decision (contains close actions).", decisionBarCloseMs, latest)
+			stampGuardrailSkip(record, "stale_bar_discarded")
+			telemetry.IncGateBlock(at.id, "stale_bar_discarded")
+			at.emitAlert("P1", "decision-stale-bar",
+				fmt.Sprintf("stalebar:%s:%d", at.id, at.callCount),
+				"Decision discarded — bar closed during AI call",
+				fmt.Sprintf("cycle %d: the AI call spanned a primary-bar close, so the decision was computed on a stale bar and was NOT acted on; the next cycle re-decides.", at.callCount))
+			at.saveDecision(record)
+			return nil
+		case entries == 0:
+			at.logInfof("ℹ️ superseded_wait — the AI call spanned a %s close but the decision was wait/hold-only; discarded quietly (free).", at.primaryTimeframe())
+			stampGuardrailSkip(record, "superseded_wait")
+			telemetry.IncGateBlock(at.id, "superseded_wait")
+			at.saveDecision(record)
+			return nil
+		default:
+			if v := at.reevalSupersededEntries(aiDecision.Decisions, ctx); !v.pass {
+				at.logWarnf("⛔ stale_reeval outcome=refused reason=%s — superseded entry did not survive the fresh %s bar; clean skip.", v.reason, at.primaryTimeframe())
+				stampGuardrailSkip(record, "stale_reeval_refused: "+v.reason)
+				telemetry.IncGateBlock(at.id, "stale_reeval_refused")
+				at.saveDecision(record)
+				return nil
+			}
+			at.logInfof("✅ stale_reeval outcome=pass — superseded entry re-validated against the fresh %s bar (stop untouched, drift < %.2f×ATR%d); executing.",
+				at.primaryTimeframe(), reevalDriftATRMult(), reevalATRPeriod)
+			record.ExecutionLog = append(record.ExecutionLog, "stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)")
+		}
 	}
 
 	// 8. Sort decisions: ensure close positions first, then open positions (prevent position stacking overflow)

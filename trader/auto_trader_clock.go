@@ -577,6 +577,22 @@ func (at *AutoTrader) tickOnce(isGrid bool) {
 	if active && at.cadenceMode() == CadenceInterval && at.skipNoNewData(time.Now()) {
 		return
 	}
+	// Discard-burn 2.1 — DODGE: starting a cycle just before the decision-TF's
+	// close is a near-guaranteed supersession discard (the AI call spans the
+	// close). Defer the start to close+1s instead of burning the call. A cycle
+	// kicked BY the dodge runs immediately (skipDodgeOnce) so it can never
+	// re-defer at the next boundary. Futures-only (crypto never discards).
+	if at.skipDodgeOnce {
+		at.skipDodgeOnce = false
+	} else if at.exchange == "ninjatrader" && staleDodgeEnabled() {
+		if deferMs, dodge := at.staleDodgeCheck(time.Now()); dodge {
+			if at.scheduleKick(time.Duration(deferMs)*time.Millisecond, "stale_dodge") {
+				at.logInfof("⏳ stale_dodge deferred_ms=%d — cycle start within avg_call×%.1f of the %s close; deferring to close+1s (avg_call=%dms over last %d)",
+					deferMs, staleDodgeSafetyFactor, at.primaryTimeframe(), at.avgAICallMs(), at.aiCallN)
+				return
+			}
+		}
+	}
 	if err := at.runCycle(); err != nil {
 		at.logErrorf("❌ Execution failed: %v", err)
 	}
