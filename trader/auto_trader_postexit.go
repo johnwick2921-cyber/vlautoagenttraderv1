@@ -46,12 +46,17 @@ func postExitDelayMs() int64 {
 
 // postExitRegistry routes close notifications (which carry only a traderID)
 // back to the live AutoTrader instances.
-var postExitRegistry sync.Map // traderID -> *AutoTrader
+var (
+	postExitRegistry sync.Map // traderID -> *AutoTrader
+	postExitHookOnce sync.Once
+)
 
 func registerPostExitDispatch(at *AutoTrader) {
 	postExitRegistry.Store(at.id, at)
-	// Idempotent global hook assignment (same function every time).
-	ntTrader.OnPositionClosed = dispatchPositionClosed
+	// E7 self-grep fix: the package-var hook is written exactly ONCE (multiple
+	// traders' Run() racing an idempotent assignment was still a data race by
+	// the memory model; close-sync goroutines read it concurrently).
+	postExitHookOnce.Do(func() { ntTrader.OnPositionClosed = dispatchPositionClosed })
 }
 
 func unregisterPostExitDispatch(at *AutoTrader) {
