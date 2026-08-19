@@ -60,6 +60,23 @@ func halfDaysPath() string {
 	return "half_days.json"
 }
 
+// sessionDayKeyForCalendarDate converts an owner-facing CALENDAR date
+// ("2026-09-07" — the day the early close actually happens, as CME publishes
+// it) into the registry's session-day KEY: the date of the containing
+// session's 17:00 CT START (calendar date D's daytime began at 17:00 on D−1,
+// so the key is D−1). Routed through the REAL CMESessionDayKey so the two can
+// never diverge again — E7-v2 HIGH finding: seeding calendar dates verbatim
+// made the pull-in MISS the actual half-day and fire on the NEXT full session
+// (a wrong-day 12:00 flatten on Tue Sep 8).
+func sessionDayKeyForCalendarDate(date string) (string, bool) {
+	d, err := time.ParseInLocation("2006-01-02", date, kernel.CTLocation())
+	if err != nil {
+		return "", false
+	}
+	noon := time.Date(d.Year(), d.Month(), d.Day(), 12, 0, 0, 0, kernel.CTLocation())
+	return kernel.CMESessionDayKey(noon), true
+}
+
 // LoadHalfDaysFile reads + validates the owner file. Invalid entries are
 // dropped (CRITICAL-logged); a missing file returns (nil, nil) — not an error.
 func LoadHalfDaysFile() ([]HalfDayEntry, error) {
@@ -89,9 +106,11 @@ func LoadHalfDaysFile() ([]HalfDayEntry, error) {
 	return valid, nil
 }
 
-// NextUpcomingHalfDay returns the first entry at/after now's CME session-day.
+// NextUpcomingHalfDay returns the first entry at/after now — compared in
+// CALENDAR-date space (entries carry CME calendar dates; the session-day KEY
+// conversion happens only at seed time).
 func NextUpcomingHalfDay(entries []HalfDayEntry, now time.Time) (HalfDayEntry, bool) {
-	today := kernel.CMESessionDayKey(now)
+	today := now.In(kernel.CTLocation()).Format("2006-01-02")
 	sorted := append([]HalfDayEntry(nil), entries...)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Date < sorted[j].Date })
 	for _, e := range sorted {
@@ -117,8 +136,12 @@ func SeedHalfDaysIntoRegistry(st *store.Store, entries []HalfDayEntry) (int, err
 	}
 	changed := 0
 	for _, e := range entries {
-		if reg.HalfDays[e.Date] != e.EarlyCloseCT {
-			reg.HalfDays[e.Date] = e.EarlyCloseCT
+		key, okK := sessionDayKeyForCalendarDate(e.Date)
+		if !okK {
+			continue // validated upstream; never seed an unconvertible date
+		}
+		if reg.HalfDays[key] != e.EarlyCloseCT {
+			reg.HalfDays[key] = e.EarlyCloseCT
 			changed++
 		}
 	}

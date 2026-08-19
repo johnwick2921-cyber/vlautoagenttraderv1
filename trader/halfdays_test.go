@@ -90,8 +90,10 @@ func TestSeedHalfDaysMergeIsIdempotentAndAdditive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.HalfDays["2026-09-07"] != "12:00" || got.HalfDays["2026-10-01"] != "11:00" {
-		t.Fatalf("merge must be additive (file keys land, DB-only keys survive): %+v", got.HalfDays)
+	// E7-v2 HIGH fix: the file's CALENDAR date 2026-09-07 lands under the
+	// session-day KEY 2026-09-06 (the 17:00 Sun start of Monday's session).
+	if got.HalfDays["2026-09-06"] != "12:00" || got.HalfDays["2026-10-01"] != "11:00" {
+		t.Fatalf("merge must land calendar dates under session-day keys and keep DB-only keys: %+v", got.HalfDays)
 	}
 }
 
@@ -148,4 +150,30 @@ func TestValidateSessionRegistryChecksHalfDays(t *testing.T) {
 func jsonMarshalForTest(reg kernel.SessionRegistry) (string, error) {
 	b, err := json.Marshal(reg)
 	return string(b), err
+}
+
+
+// E7-v2 HIGH regression — the calendar-vs-session-day-key skew: seeding the
+// CME calendar date must protect the REAL half-day (Monday daytime) and never
+// the next full session (Tuesday).
+func TestHalfDaySeedUsesSessionDayKeys(t *testing.T) {
+	key, ok := sessionDayKeyForCalendarDate("2026-09-07")
+	if !ok || key != "2026-09-06" {
+		t.Fatalf("calendar 2026-09-07 must convert to session-day key 2026-09-06, got %q ok=%v", key, ok)
+	}
+
+	reg := kernel.DefaultSessionRegistry()
+	reg.HalfDays = map[string]string{key: "12:00"}
+
+	monday := ctDate(t, "2026-09-07 11:00") // the actual Labor Day daytime
+	if got := kernel.CMESessionDayKey(monday); got != key {
+		t.Fatalf("Monday daytime must key the Sunday-start session, got %q", got)
+	}
+	if _, _, ok := halfDayCutoffMin(reg, kernel.CMESessionDayKey(monday), 0); !ok {
+		t.Fatal("the pull-in must HIT on the real half-day")
+	}
+	tuesday := ctDate(t, "2026-09-08 11:00") // full session — must be untouched
+	if _, _, ok := halfDayCutoffMin(reg, kernel.CMESessionDayKey(tuesday), 0); ok {
+		t.Fatal("Tuesday (a normal full session) must MISS — the wrong-day 12:00 flatten class")
+	}
 }
