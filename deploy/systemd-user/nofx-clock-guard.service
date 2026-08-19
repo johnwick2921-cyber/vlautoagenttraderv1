@@ -1,0 +1,12 @@
+# P1 (ledger-close 2026-08-19) — clock drift detector, oneshot payload.
+# Root-free by design: measures host-vs-WSL drift, never mutates the clock
+# (no root resync exists in this env — see nofx-clock-guard.sh header).
+[Unit]
+Description=nofx clock drift guard (measure + alert, root-free)
+
+[Service]
+Type=oneshot
+ExecStart=%h/nofx/deploy/nofx-clock-guard.sh
+# Never contend with the live bot (same posture as nofx-backup).
+Nice=10
+IOSchedulingClass=idle
