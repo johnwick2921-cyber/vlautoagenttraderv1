@@ -345,6 +345,7 @@ type AutoTrader struct {
 	lastResetTime          time.Time
 	stopUntil              time.Time // LEGACY, dormant: consumer at loop:248, no producer — superseded by pauseUntilMs (P2 ledger-close)
 	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
+	pauseStoreMu           sync.Mutex   // E7-v2: orders memory-vs-store pause writes (expiry CAS vs concurrent re-pause)
 	lastRollWarnContract   string       // P3 roll gate: dedupes the unresolved-contract WARN per contract-string change
 	lastHalfDaySeedDay     string       // P4 half-days producer: once-per-CME-session-day throttle
 	lastCycleBarSig        string       // P10.4 no-new-data dedup: newest primary-TF bar signature at last cycle

@@ -968,16 +968,21 @@ func (s *Server) handlePauseTrader(c *gin.Context) {
 	case body.UntilCT != "":
 		// "HH:MM" CT today; a time at/before now means tomorrow (wrap-safe).
 		// Parsed by hand — the TZ-guard forbids bare time layouts outside
-		// kernel/tz.go, deservedly.
+		// kernel/tz.go, deservedly. E7-v2: STRICT parse (Sscanf alone accepted
+		// trailing garbage like "12:34xyz") and the tomorrow-wrap reconstructs
+		// the wall-clock via time.Date day+1 — Add(24h) lands one wall hour off
+		// across a DST transition.
 		var hh, mm int
-		if n, err := fmt.Sscanf(body.UntilCT, "%d:%d", &hh, &mm); err != nil || n != 2 || hh < 0 || hh > 23 || mm < 0 || mm > 59 {
+		var tail string
+		n, err := fmt.Sscanf(body.UntilCT, "%d:%d%s", &hh, &mm, &tail)
+		if !(err != nil && n == 2) || tail != "" || hh < 0 || hh > 23 || mm < 0 || mm > 59 {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "until_ct must be HH:MM (CT)"})
 			return
 		}
 		ct := now.In(kernel.CTLocation())
 		until = time.Date(ct.Year(), ct.Month(), ct.Day(), hh, mm, 0, 0, kernel.CTLocation())
 		if !until.After(now) {
-			until = until.Add(24 * time.Hour)
+			until = time.Date(ct.Year(), ct.Month(), ct.Day()+1, hh, mm, 0, 0, kernel.CTLocation())
 		}
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "provide one of: minutes>0, until_ct:\"HH:MM\", until:\"session_end\""})

@@ -35,11 +35,15 @@ func (at *AutoTrader) PauseEntriesUntil(until time.Time, source string) error {
 	if !until.After(time.Now()) {
 		return fmt.Errorf("pause deadline %s is not in the future", until.Format(time.RFC3339))
 	}
+	at.pauseStoreMu.Lock()
 	at.pauseUntilMs.Store(until.UnixMilli())
+	var persistErr error
 	if at.store != nil {
-		if err := at.store.SetSystemConfig(pauseConfigKey(at.id), strconv.FormatInt(until.UnixMilli(), 10)); err != nil {
-			return fmt.Errorf("pause persisted in memory but store write failed: %w", err)
-		}
+		persistErr = at.store.SetSystemConfig(pauseConfigKey(at.id), strconv.FormatInt(until.UnixMilli(), 10))
+	}
+	at.pauseStoreMu.Unlock()
+	if persistErr != nil {
+		return fmt.Errorf("pause persisted in memory but store write failed: %w", persistErr)
 	}
 	at.logWarnf("⏸ stop_until ARMED (%s): NEW entries paused until %s CT. Stops, targets, EOD-flat and position management continue.",
 		source, kernel.FormatCT(until))
@@ -48,10 +52,12 @@ func (at *AutoTrader) PauseEntriesUntil(until time.Time, source string) error {
 
 // ResumeEntries clears the pause immediately.
 func (at *AutoTrader) ResumeEntries(source string) {
+	at.pauseStoreMu.Lock()
 	at.pauseUntilMs.Store(0)
 	if at.store != nil {
 		_ = at.store.SetSystemConfig(pauseConfigKey(at.id), "0")
 	}
+	at.pauseStoreMu.Unlock()
 	at.logInfof("▶️ stop_until CLEARED (%s): entries resume.", source)
 }
 
@@ -92,9 +98,15 @@ func (at *AutoTrader) entryPaused() (string, bool) {
 	if time.Now().UnixMilli() >= ms {
 		// Expiry: only the winner of the CAS clears + logs (loop vs API race).
 		if at.pauseUntilMs.CompareAndSwap(ms, 0) {
-			if at.store != nil {
+			// E7-v2 fix: a concurrent RE-PAUSE may land between the CAS and the
+			// store write — clearing the store then would strand the new
+			// deadline in memory only (lost on restart). Re-check under the
+			// same lock the producers persist under.
+			at.pauseStoreMu.Lock()
+			if at.store != nil && at.pauseUntilMs.Load() == 0 {
 				_ = at.store.SetSystemConfig(pauseConfigKey(at.id), "0")
 			}
+			at.pauseStoreMu.Unlock()
 			at.logInfof("▶️ stop_until EXPIRED: pause until %s CT elapsed — entries auto-resume.",
 				kernel.FormatCT(time.UnixMilli(ms)))
 		}
