@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"nofx/market"
+	"nofx/store"
 )
 
 // BuildFuturesDecisionSystemPrompt builds the CME index-futures (MNQ) system
@@ -61,7 +62,9 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	ps := e.config.PromptSections // the 4 editable prompt boxes (Change 4)
 	minConf := rc.MinConfidence
 	if minConf <= 0 {
-		minConf = 60
+		// 6.1 — the SAME constant the gate's clamp uses (store.SafeDefaultMinConfidence):
+		// prompt promise and gate threshold can no longer diverge for unset strategies.
+		minConf = store.SafeDefaultMinConfidence
 	}
 	minRR := rc.MinRiskRewardRatio
 	if minRR <= 0 {

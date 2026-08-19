@@ -72,7 +72,13 @@ const (
 // configures 1.5 still gets 1.5 — this changes the default, never a choice.
 const (
 	SafeDefaultMinRiskReward = 3.0
-	SafeDefaultMinConfidence = 65
+	// SafeDefaultMinConfidence — 6.1 (final-bundle 2026-08-19): ONE default,
+	// shared by the ClampLimits gate default AND the futures prompt default.
+	// Was 65 here vs a literal 60 in engine_prompt_futures.go — an UNSET
+	// strategy was told "open ≥60" and then judged at ≥65, silently discarding
+	// 60-64 setups (PR #54 finding). Aligned to 60 per owner ruling; an
+	// explicitly stored value (the active strategy stores 60) is untouched.
+	SafeDefaultMinConfidence = 60
 )
 
 // ClampLimits enforces product-level limits on strategy config to prevent token overflow.

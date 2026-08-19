@@ -677,6 +677,8 @@ export function RiskControlEditor({
             </label>
             <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
               {ts(riskControl.minConfidenceDesc, language)}
+              {/* 6.1: the unset default is ONE shared constant (gate + prompt) */}
+              {!config.min_confidence && ' · unset/0 → default 60'}
             </p>
             <div className="flex items-center gap-2">
               <input
