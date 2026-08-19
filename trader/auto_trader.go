@@ -342,6 +342,8 @@ type AutoTrader struct {
 	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
 	lastRollWarnContract   string       // P3 roll gate: dedupes the unresolved-contract WARN per contract-string change
 	lastHalfDaySeedDay     string       // P4 half-days producer: once-per-CME-session-day throttle
+	ai402OutageStartMs     int64        // P5 402-outage latch (0 = no outage) — one banner per outage
+	lastAIBalanceDay       string       // P5 daily balance poll throttle (AI_BALANCE_WARN)
 	isRunning              bool
 	isRunningMutex         sync.RWMutex       // Mutex to protect isRunning flag
 	startTime              time.Time          // System start time

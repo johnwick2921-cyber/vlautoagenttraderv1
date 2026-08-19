@@ -116,6 +116,10 @@ func (at *AutoTrader) runCycle() error {
 	// BEFORE the open). Once per session-day; idempotent merge; fail-open.
 	at.maybeSeedHalfDays(time.Now())
 
+	// P5 (ledger-close 2026-08-19) — optional daily AI balance check
+	// (AI_BALANCE_WARN, default OFF). Never blocks; WARN + P1 below threshold.
+	at.maybeCheckAIBalance(time.Now())
+
 	// 0a. PART A — CME SESSION GATE (hoisted to the TOP, before the account gate
 	// and buildTradingContext). When the futures market is closed we skip the
 	// ENTIRE cycle — no context build, no NT8 round-trips, no AI — and idle with
@@ -437,19 +441,24 @@ func (at *AutoTrader) runCycle() error {
 		at.consecutiveAIFailures++
 		record.Success = false
 		record.ErrorMessage = fmt.Sprintf("Failed to get AI decision: %v", err)
+		// P5 (ledger-close 2026-08-19) — typed class for one-query forensics.
+		record.ErrorClass = classifyAIError(err)
 
 		// P0-cleanup — structured error event (type stable, cause plain,
 		// cost named). 402 = payment; else decision lost.
-		if strings.Contains(err.Error(), "402") || strings.Contains(err.Error(), "Insufficient Balance") {
+		if record.ErrorClass == "ai_payment_402" {
 			telemetry.RecordError(at.id, "ai_payment_402", err.Error(), telemetry.CostDecisionLost)
 		} else {
 			telemetry.RecordError(at.id, "ai_call_failed", err.Error(), telemetry.CostDecisionLost)
 		}
 
 		// P0 2026-08-18 — DeepSeek "Insufficient Balance" (HTTP 402) silently
-		// killed 139 overnight cycles today. Make it unmissable.
-		if strings.Contains(err.Error(), "402") || strings.Contains(err.Error(), "Insufficient Balance") {
+		// killed 139 overnight cycles today. Make it unmissable. P5 adds the
+		// OUTAGE latch: one P0 banner per outage (event-id dedup), auto-cleared
+		// by the first successful call.
+		if record.ErrorClass == "ai_payment_402" {
 			at.logErrorf("💸 DEEPSEEK PAYMENT FAILURE (402 Insufficient Balance) — cycles are dying with NO decision. Top up the DeepSeek account (api.deepseek.com). trader=%s", at.id)
+			at.on402Failure(time.Now(), err)
 		}
 
 		// Activate safe mode after 3 consecutive failures
@@ -493,6 +502,8 @@ func (at *AutoTrader) runCycle() error {
 	if at.consecutiveAIFailures > 0 {
 		at.logInfof("✅ AI recovered after %d consecutive failures", at.consecutiveAIFailures)
 	}
+	// P5 — a success ends any latched 402 outage (banner auto-ack).
+	at.onAISuccess(time.Now())
 	at.consecutiveAIFailures = 0
 	if at.safeMode {
 		at.logInfof("🛡️ SAFE MODE DEACTIVATED — AI is working again. Resuming normal trading.")

@@ -30,6 +30,10 @@ type DecisionRecordDB struct {
 	Decisions           string    `gorm:"column:decisions;default:'[]'"`
 	Success             bool      `gorm:"default:false"`
 	ErrorMessage        string    `gorm:"column:error_message;default:''"`
+	// P5 (ledger-close 2026-08-19) — TYPED error class so forensics count an
+	// outage in one query (the 08-18 402 storm needed LIKE-matching free text).
+	// "" | "ai_payment_402" | "ai_call_failed". Additive column.
+	ErrorClass          string    `gorm:"column:error_class;default:''"`
 	AIRequestDurationMs int64     `gorm:"column:ai_request_duration_ms;default:0"`
 	// Plan 4 Task 23 — decision audit trail fields
 	PromptVersion   string    `gorm:"column:prompt_version;default:''"`
@@ -68,6 +72,7 @@ type DecisionRecord struct {
 	ExecutionLog        []string           `json:"execution_log"`
 	Success             bool               `json:"success"`
 	ErrorMessage        string             `json:"error_message"`
+	ErrorClass          string             `json:"error_class,omitempty"` // P5 typed class ("ai_payment_402" | "ai_call_failed")
 	AIRequestDurationMs int64              `json:"ai_request_duration_ms"`
 	AccountState        AccountSnapshot    `json:"account_state"`
 	Positions           []PositionSnapshot `json:"positions"`
@@ -170,6 +175,7 @@ func (db *DecisionRecordDB) toRecord() *DecisionRecord {
 		RawResponse:         db.RawResponse,
 		Success:             db.Success,
 		ErrorMessage:        db.ErrorMessage,
+		ErrorClass:          db.ErrorClass,
 		AIRequestDurationMs: db.AIRequestDurationMs,
 		// Plan 4 Task 23 — audit trail fields
 		PromptVersion:   db.PromptVersion,
@@ -221,6 +227,7 @@ func (s *DecisionStore) LogDecision(record *DecisionRecord) error {
 		Decisions:           string(decisionsJSON),
 		Success:             record.Success,
 		ErrorMessage:        record.ErrorMessage,
+		ErrorClass:          record.ErrorClass,
 		AIRequestDurationMs: record.AIRequestDurationMs,
 		// Plan 4 Task 23 — audit trail fields
 		PromptVersion:   record.PromptVersion,

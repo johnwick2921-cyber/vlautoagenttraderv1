@@ -92,6 +92,17 @@ func (s *AlertStore) UnackedCount(traderID string) (int, error) {
 	return int(n), err
 }
 
+// AckByEvent acknowledges every unacked alert matching (trader, event_id) —
+// P5 (ledger-close 2026-08-19): a recovered condition (the first successful AI
+// call after a 402 outage) clears its own banner instead of waiting for a
+// human ack. Returns rows acked.
+func (s *AlertStore) AckByEvent(traderID, eventID string) (int64, error) {
+	res := s.db.Model(&AlertDB{}).
+		Where("trader_id = ? AND event_id = ? AND acked = ?", traderID, eventID, false).
+		Update("acked", true)
+	return res.RowsAffected, res.Error
+}
+
 // Ack marks an alert acknowledged (unscoped; internal callers only).
 func (s *AlertStore) Ack(id int64) error {
 	return s.db.Model(&AlertDB{}).Where("id = ?", id).Update("acked", true).Error
