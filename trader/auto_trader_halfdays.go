@@ -121,12 +121,19 @@ func NextUpcomingHalfDay(entries []HalfDayEntry, now time.Time) (HalfDayEntry, b
 	return HalfDayEntry{}, false
 }
 
+// halfDaysOwnedKeysKey tracks which registry keys THIS producer wrote (comma-
+// joined), so a row DELETED from half_days.json is pruned from the registry on
+// the next seed instead of surviving forever (E7-v2 medium finding) — while
+// DB-only keys (admin-written, never in the ledger) stay untouched.
+const halfDaysOwnedKeysKey = "half_days_seeded_keys"
+
 // SeedHalfDaysIntoRegistry merges the file entries into the STORED session
-// registry (system_config), file-wins per key, never deleting DB-only keys.
-// Returns (added-or-updated count, error). Idempotent — a no-change merge does
-// not rewrite the row.
+// registry (system_config): file-wins per key; keys the producer previously
+// seeded but that left the file are PRUNED; DB-only keys survive. Returns
+// (added/updated/pruned count, error). Idempotent — a no-change merge does not
+// rewrite the row.
 func SeedHalfDaysIntoRegistry(st *store.Store, entries []HalfDayEntry) (int, error) {
-	if st == nil || len(entries) == 0 {
+	if st == nil {
 		return 0, nil
 	}
 	raw, _ := st.GetSystemConfig(kernel.SessionRegistryConfigKey)
@@ -135,15 +142,38 @@ func SeedHalfDaysIntoRegistry(st *store.Store, entries []HalfDayEntry) (int, err
 		reg.HalfDays = map[string]string{}
 	}
 	changed := 0
+	owned := make([]string, 0, len(entries))
+	ownedSet := map[string]bool{}
 	for _, e := range entries {
 		key, okK := sessionDayKeyForCalendarDate(e.Date)
 		if !okK {
 			continue // validated upstream; never seed an unconvertible date
 		}
+		if !ownedSet[key] {
+			ownedSet[key] = true
+			owned = append(owned, key)
+		}
 		if reg.HalfDays[key] != e.EarlyCloseCT {
 			reg.HalfDays[key] = e.EarlyCloseCT
 			changed++
 		}
+	}
+	// Prune producer-owned keys that are no longer in the file.
+	prevOwned, _ := st.GetSystemConfig(halfDaysOwnedKeysKey)
+	for _, k := range strings.Split(prevOwned, ",") {
+		if k == "" || ownedSet[k] {
+			continue
+		}
+		if _, exists := reg.HalfDays[k]; exists {
+			delete(reg.HalfDays, k)
+			changed++
+			logger.Infof("📅 half-days: %s removed from %s — pruned from the registry (deletion honored)", k, halfDaysPath())
+		}
+	}
+	sort.Strings(owned)
+	ledger := strings.Join(owned, ",")
+	if ledger != prevOwned {
+		_ = st.SetSystemConfig(halfDaysOwnedKeysKey, ledger)
 	}
 	if changed == 0 {
 		return 0, nil

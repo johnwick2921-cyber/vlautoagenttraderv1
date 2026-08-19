@@ -204,3 +204,39 @@ func TestHalfDayPullsInSessionRelative(t *testing.T) {
 		t.Fatal("wrapped session: an out-of-window 12:00 close must not touch ASIA")
 	}
 }
+
+// E7-v2 medium fix — deleting a row from half_days.json prunes the producer-
+// owned registry key on the next seed; DB-only (admin) keys survive.
+func TestHalfDayDeletionHonored(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "hdp.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	// Admin-written key, never owned by the producer.
+	reg := kernel.DefaultSessionRegistry()
+	reg.HalfDays = map[string]string{"2026-10-01": "11:00"}
+	raw, _ := jsonMarshalForTest(reg)
+	_ = st.SetSystemConfig(kernel.SessionRegistryConfigKey, raw)
+
+	both := []HalfDayEntry{
+		{Date: "2026-09-07", EarlyCloseCT: "12:00", Label: "Labor Day"},
+		{Date: "2026-11-26", EarlyCloseCT: "12:00", Label: "Thanksgiving"},
+	}
+	if _, err := SeedHalfDaysIntoRegistry(st, both); err != nil {
+		t.Fatal(err)
+	}
+	// The owner deletes Thanksgiving from the file → next seed prunes its key.
+	if changed, err := SeedHalfDaysIntoRegistry(st, both[:1]); err != nil || changed != 1 {
+		t.Fatalf("prune must count as a change: changed=%d err=%v", changed, err)
+	}
+	stored, _ := st.GetSystemConfig(kernel.SessionRegistryConfigKey)
+	got, _ := kernel.LoadSessionRegistry(stored)
+	if _, alive := got.HalfDays["2026-11-25"]; alive { // 11-26's session-day key
+		t.Fatal("deleted file row must leave the registry")
+	}
+	if got.HalfDays["2026-09-06"] != "12:00" || got.HalfDays["2026-10-01"] != "11:00" {
+		t.Fatalf("kept file key + admin key must survive: %+v", got.HalfDays)
+	}
+}
