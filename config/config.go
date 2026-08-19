@@ -52,10 +52,8 @@ type Config struct {
 
 	// Databento (NQ futures data)
 	DatabentoAPIKey  string
-	DatabentoDataset string // e.g., "GLBX.MDP3"
 
 	// NinjaTrader (CSV bridge for execution)
-	NinjaTraderDataDir string // e.g., "/mnt/c/Users/<u>/NofxTrader/data"
 
 	// AllowedNTAccounts is the allow-list of NT8 sub-account names a trader may be
 	// bound to (multi-account safety rail; env NT_ALLOWED_ACCOUNTS, comma-separated).
@@ -142,8 +140,10 @@ func Init() {
 
 	// Databento + NinjaTrader (NQ futures path)
 	cfg.DatabentoAPIKey = os.Getenv("DATABENTO_API_KEY")
-	cfg.DatabentoDataset = getEnvOrDefault("DATABENTO_DATASET", "GLBX.MDP3")
-	cfg.NinjaTraderDataDir = os.Getenv("NINJATRADER_DATA_DIR")
+	// (6.8) DATABENTO_DATASET + NINJATRADER_DATA_DIR loads removed — zero live
+	// readers [A, PR #54]: the databento client hardcodes its dataset and the
+	// NT8 data dir comes from the exchange row; only cmd/nq_smoke reads the env
+	// directly.
 	for _, a := range strings.Split(os.Getenv("NT_ALLOWED_ACCOUNTS"), ",") {
 		if a = strings.TrimSpace(a); a != "" {
 			cfg.AllowedNTAccounts = append(cfg.AllowedNTAccounts, a)
@@ -154,7 +154,12 @@ func Init() {
 	// Plan 3 Task 21 — Risk limits
 	cfg.RiskMaxDailyLossUSD = getEnvFloat("RISK_MAX_DAILY_LOSS_USD", 500)
 	cfg.RiskMaxConcurrentTrades = getEnvInt("RISK_MAX_CONCURRENT_TRADES", 2)
+	// Deprecated-in-practice (6.8): loaded but enforced nowhere — the only
+	// CheckPreTrade caller passes 0 notional by design; futures notional is
+	// capped by strategy max_notional_leverage instead. Kept for struct compat.
 	cfg.RiskMaxNotionalUSD = getEnvFloat("RISK_MAX_NOTIONAL_USD", 50_000)
+	// Deprecated-in-practice (6.8): loaded, never read by any clamp (the real
+	// clamp is strategy max_contracts_per_order else the researched 2).
 	cfg.RiskMaxContractsPerOrder = getEnvInt("RISK_MAX_CONTRACTS_PER_ORDER", 5)
 
 	// Database configuration

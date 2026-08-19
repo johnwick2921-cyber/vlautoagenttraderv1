@@ -114,48 +114,10 @@ func (tm *TraderManager) StopAll() {
 	}
 }
 
-// AutoStartRunningTraders automatically starts traders marked as running in the database
-func (tm *TraderManager) AutoStartRunningTraders(st *store.Store) {
-	// Get all trader configurations (single query)
-	traderList, err := st.Trader().ListAll()
-	if err != nil {
-		logger.Infof("⚠️ Failed to get trader list: %v", err)
-		return
-	}
+// (6.8 deprecation sweep) AutoStartRunningTraders removed — zero callers
+// [A, PR #54]: the real boot restore reads is_running directly in
+// addTraderFromStore (see the auto-start goroutine below in this file).
 
-	// Build set of running trader IDs
-	runningTraderIDs := make(map[string]bool)
-	for _, traderCfg := range traderList {
-		if traderCfg.IsRunning {
-			runningTraderIDs[traderCfg.ID] = true
-		}
-	}
-
-	if len(runningTraderIDs) == 0 {
-		logger.Info("📋 No traders to auto-restore")
-		return
-	}
-
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
-	startedCount := 0
-	for id, t := range tm.traders {
-		if runningTraderIDs[id] {
-			go func(traderID string, at *trader.AutoTrader) {
-				logger.Infof("%s ▶️ Auto-restoring trader runtime", traderLogTag(traderID, at.GetName()))
-				if err := at.Run(); err != nil {
-					logger.Warnf("%s runtime error: %v", traderLogTag(traderID, at.GetName()), err)
-				}
-			}(id, t)
-			startedCount++
-		}
-	}
-
-	if startedCount > 0 {
-		logger.Infof("✓ Auto-restored %d traders", startedCount)
-	}
-}
 
 // GetComparisonData retrieves comparison data
 func (tm *TraderManager) GetComparisonData() (map[string]interface{}, error) {

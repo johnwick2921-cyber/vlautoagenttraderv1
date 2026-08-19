@@ -601,7 +601,7 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	case "ninjatrader":
 		logger.Infof("🏦 [%s] Using NinjaTrader (transport via NT_TRANSPORT env, CME futures via SIM)", config.Name)
 		if config.NinjaTraderDataDir == "" {
-			return nil, fmt.Errorf("ninjatrader requires NinjaTraderDataDir (set NINJATRADER_DATA_DIR in env or per-exchange config)")
+			return nil, fmt.Errorf("ninjatrader requires NinjaTraderDataDir (set the NT8 data dir on the exchange row (Settings → Exchange → nt_data_dir); the NINJATRADER_DATA_DIR env is not read by the live path)")
 		}
 		trader, err = ntTrader.NewTraderFromEnv(ntTrader.Config{
 			DataDir: config.NinjaTraderDataDir,
