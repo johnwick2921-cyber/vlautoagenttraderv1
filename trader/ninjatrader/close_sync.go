@@ -131,7 +131,23 @@ func (t *TCPTrader) recordClose(
 	}
 
 	// Realized P&L with the futures point value (PositionBuilder's fallback omits it),
-	// computed from the OWNING row's entry.
+	// computed from the OWNING row's entry — and the OWNING ROW's QUANTITY.
+	//
+	// P0 pnl-record-integrity (2026-08-20): a MANUAL flatten in NT8 emits ONE
+	// position_close frame for the account's WHOLE flattened size. Position
+	// #526 proved it live: the bot held 1 lot short, the owner's manual
+	// activity flattened 21 contracts, the frame said qty=21 avg=29660.96, and
+	// this code recorded −$1,458 on a 1-lot row whose true loss was −$69.43.
+	// The frame's qty belongs to the NT8 POSITION EVENT; only the row's own
+	// size may ever be attributed to the row.
+	attributedQty := owner.Quantity
+	if attributedQty <= 0 {
+		attributedQty = 1
+	}
+	if qty > attributedQty {
+		logger.Warnf("⚖️ pnl-attribution: position_close frame carries qty=%.0f but the owning row holds %.2f — attributing the ROW's size only (the excess is foreign/manual activity on the same account; exit price %.2f is the frame's average).",
+			qty, attributedQty, p.ExitPrice)
+	}
 	pv := market.FuturesPointValue(symbol)
 	if pv <= 0 {
 		pv = 1
@@ -139,14 +155,14 @@ func (t *TCPTrader) recordClose(
 	realizedPnL := 0.0
 	if owner.EntryPrice > 0 {
 		if side == "LONG" {
-			realizedPnL = (p.ExitPrice - owner.EntryPrice) * qty * pv
+			realizedPnL = (p.ExitPrice - owner.EntryPrice) * attributedQty * pv
 		} else {
-			realizedPnL = (owner.EntryPrice - p.ExitPrice) * qty * pv
+			realizedPnL = (owner.EntryPrice - p.ExitPrice) * attributedQty * pv
 		}
 	}
 
 	if err := pb.ProcessTrade(owner.TraderID, exchangeID, exchangeType, symbol, side, action,
-		qty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
+		attributedQty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
 		logger.Warnf("ninjatrader/tcp: record close failed (%s %s): %v", symbol, side, err)
 	} else {
 		// Phase 4 (final-bundle): notify the owning trader — one post-exit rescan.
@@ -156,8 +172,8 @@ func (t *TCPTrader) recordClose(
 		// WARN (honest-logs 2026-08-19): a position close with realized P&L is
 		// owner-visible truth — must reach the log_events sink + dashboard even
 		// under journald frame-flood suppression.
-		logger.Warnf("📕 NT position closed: %s %s qty=%.0f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
-			symbol, side, qty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
+		logger.Warnf("📕 NT position closed: %s %s qty=%.2f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
+			symbol, side, attributedQty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
 	}
 
 	// B7 — re-entry cooldown: a STOP-LOSS exit (NT8 reason "sl") arms the
