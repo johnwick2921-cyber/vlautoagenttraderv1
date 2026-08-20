@@ -350,23 +350,18 @@ export function AskPlannerPanel({
     setBusy(true)
     setInput('')
     try {
-      const res = await api.askPlanner(traderId, question, symbol)
-      if (!res.ok) {
-        toast.error(tp('saveFailed', language), { description: res.error })
+      // Shared never-latch pattern (guardedCall — reset-dialog hotfix, twin rule).
+      const g = await guardedCall(() =>
+        api.askPlanner(traderId, question, symbol)
+      )
+      const err = !g.ok ? g.error : g.value.ok ? null : g.value.error
+      if (err !== null) {
+        toast.error(tp('saveFailed', language), { description: err })
         setInput(question) // the question is never lost
       }
       await refresh().catch(() => {
         /* thread refresh failure is non-fatal — the reply lands on the next open */
       })
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      toast.error(tp('saveFailed', language), {
-        description:
-          msg.includes('timeout') || msg.includes('Network')
-            ? 'Planner did not answer in time (backend budget is 300s) — your question was kept, try again.'
-            : msg,
-      })
-      setInput(question) // recover the input, never require F5
     } finally {
       setBusy(false) // the button can never latch disabled again
     }
