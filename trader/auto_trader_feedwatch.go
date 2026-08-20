@@ -2,8 +2,6 @@ package trader
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"time"
 
 	"nofx/kernel"
@@ -18,9 +16,12 @@ import (
 // forensics filed it as U1: feed loss must announce itself, and the planner
 // must refuse to spend an API call on an empty window.
 
-// feedDownAfter is how long the newest bar may age (while CME is OPEN) before
-// the feed is declared down. 10 minutes per the dispatch.
-const feedDownAfter = 10 * time.Minute
+// feedDownAfter() — B2 (T6): the flat-state threshold now comes from the ONE
+// feed policy (kernel.LoadFeedPolicy, env FEED_ALERT_S, default 600s — the
+// same 10 minutes as before, env-tunable and shared with the B4 fallback).
+func feedDownAfter() time.Duration {
+	return time.Duration(kernel.LoadFeedPolicy().FlatAlertMs) * time.Millisecond
+}
 
 // intradeFeedAlertDefault is the TIGHTENED threshold while a position is open
 // (in-position silence fix 2026-08-19). Fail-open posture does NOT apply to
@@ -28,14 +29,9 @@ const feedDownAfter = 10 * time.Minute
 // never quieter. Override with INTRADE_FEED_ALERT_S.
 const intradeFeedAlertDefault = 120 * time.Second
 
-// intradeFeedAlertAfter reads INTRADE_FEED_ALERT_S (seconds), default 120.
+// intradeFeedAlertAfter — B2 (T6): same env, resolved through the ONE policy.
 func intradeFeedAlertAfter() time.Duration {
-	if v := os.Getenv("INTRADE_FEED_ALERT_S"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			return time.Duration(n) * time.Second
-		}
-	}
-	return intradeFeedAlertDefault
+	return time.Duration(kernel.LoadFeedPolicy().InPositionAlertMs) * time.Millisecond
 }
 
 // holdingOpenPosition reports whether this trader has any OPEN position row.
@@ -74,7 +70,7 @@ func (at *AutoTrader) checkFeedDown(now time.Time) {
 	}
 	// IN-POSITION CONTRACT: liveness gets STRICTER while holding — the normal
 	// 10-minute threshold drops to INTRADE_FEED_ALERT_S (default 120s).
-	threshold := feedDownAfter
+	threshold := feedDownAfter()
 	holding := at.holdingOpenPosition()
 	if holding {
 		threshold = intradeFeedAlertAfter()
@@ -119,7 +115,7 @@ func (at *AutoTrader) plannerPreflight(session, tradeDate string) (ok bool) {
 	}
 	now := time.Now()
 	age, haveBars := at.feedNewestBarAge(now)
-	if haveBars && age <= feedDownAfter {
+	if haveBars && age <= feedDownAfter() {
 		return true
 	}
 	reason := "no_bars"

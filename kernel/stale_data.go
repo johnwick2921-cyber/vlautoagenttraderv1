@@ -102,6 +102,13 @@ func staleEntryFeed(md *market.Data, nowMs int64) (tf string, ageMs, limitMs int
 		limit := (nowMs - expectedOpen) + iv + staleBarGraceMs()
 		return cand, nowMs - bMs, limit, barIsStale(bMs, iv, nowMs)
 	}
+	// B2 (T6): no 1m/5m subscribed — the gate used to be BLIND here (fail-open
+	// with {15m,1h}-only selections). Fallback: the freshest bar of ANY
+	// subscribed TF against the unified flat-state feed policy.
+	if age, anyTF, ok := FreshestSubscribedAge(md, nowMs); ok {
+		limit := LoadFeedPolicy().FlatAlertMs
+		return anyTF, age, limit, age > limit
+	}
 	return "", 0, 0, false
 }
 
