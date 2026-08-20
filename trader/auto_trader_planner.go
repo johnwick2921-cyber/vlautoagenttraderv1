@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"nofx/logger"
 	"strings"
 	"sync"
 	"time"
@@ -389,7 +390,6 @@ func (at *AutoTrader) storeUncarriedEdits(planID string, version int, items []ke
 // (A7/F13, fail-register wave) activePlanIsDead removed — a second, WEAKER
 // death definition with zero production callers; the live path is
 // describeActivePlanDeath (structured death → flip → legacy consumption).
-
 
 // describeActivePlanDeath is activePlanIsDead plus the EVIDENCE. Same window,
 // same timeframe, same verdict — the explanation is derived from the decision
