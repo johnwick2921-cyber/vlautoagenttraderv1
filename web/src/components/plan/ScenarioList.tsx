@@ -109,10 +109,13 @@ function ScenarioRow({
 export function ScenarioList({
   scenarios,
   statusMap,
+  meta,
   language,
 }: {
   scenarios: PlanScenario[]
   statusMap?: Record<string, ScenarioStatusValue>
+  /** A1/A4 (fail-register wave): verdict basis + unevaluable ids */
+  meta?: { basis?: Record<string, string>; unevaluable?: string[] }
   language: Language
 }) {
   return (
@@ -124,14 +127,43 @@ export function ScenarioList({
         {tp('scenarios', language)}
       </span>
       <div className="mt-1">
-        {scenarios.map((s) => (
-          <ScenarioRow
-            key={s.id}
-            scenario={s}
-            status={(statusMap?.[s.id] as ScenarioStatus) ?? 'armed'}
-            language={language}
-          />
-        ))}
+        {scenarios.map((s) => {
+          const stored = statusMap?.[s.id] as ScenarioStatus | undefined
+          const unevaluable =
+            !stored || meta?.unevaluable?.includes(s.id) === true
+          const heuristic = meta?.basis?.[s.id] === 'heuristic'
+          return (
+            <div
+              key={s.id}
+              title={
+                unevaluable
+                  ? 'unevaluable — no price in the trigger/invalid text snaps to a plan level (±2pts); status is unknown, not "armed"'
+                  : heuristic
+                    ? 'anchor heuristic (AI-judged prose) — NOT the machine death/flip evaluation'
+                    : 'machine verdict (shares the plan-death evaluation)'
+              }
+              style={heuristic ? { opacity: 0.75 } : undefined}
+            >
+              {unevaluable ? (
+                <div
+                  className="flex items-center gap-1.5 text-[11px] py-0.5"
+                  style={{ color: 'var(--vl-faint)' }}
+                  data-testid={`scenario-unevaluable-${s.id}`}
+                >
+                  <span>?</span>
+                  <span className="font-bold">{s.id}</span>
+                  <span className="truncate">{s.trigger}</span>
+                </div>
+              ) : (
+                <ScenarioRow
+                  scenario={s}
+                  status={stored as ScenarioStatus}
+                  language={language}
+                />
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

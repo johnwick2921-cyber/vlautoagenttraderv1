@@ -771,6 +771,16 @@ export function SessionPlanCard({
         <ScenarioList
           scenarios={doc.scenarios}
           statusMap={plan.scenario_status}
+          meta={
+            (
+              plan as {
+                scenario_meta?: {
+                  basis?: Record<string, string>
+                  unevaluable?: string[]
+                }
+              }
+            ).scenario_meta
+          }
           language={language}
         />
       )}

@@ -93,6 +93,8 @@ export interface PlanToday {
   degraded?: boolean
   // Per-scenario live status keyed by scenario id (executor-phase; absent now).
   scenario_status?: Record<string, ScenarioStatusValue>
+  // A1/A4: verdict basis ("machine"|"heuristic") + scenarios with no anchor
+  scenario_meta?: { basis?: Record<string, string>; unevaluable?: string[] }
   /** W15.B — the acceptance rule the executor evaluates these levels with. */
   acceptance_rule?: string
   /** W15.B — which session is LIVE right now, regardless of the tab requested. */

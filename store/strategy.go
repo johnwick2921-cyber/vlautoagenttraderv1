@@ -1087,6 +1087,13 @@ func ScenarioStatusKey(traderID, planID string) string {
 	return "scenario_status:" + traderID + ":" + planID
 }
 
+// ScenarioMetaKey (A1/A4, fail-register wave) — sibling of ScenarioStatusKey:
+// {"basis":{"S1":"machine|heuristic"},"unevaluable":["S3"]} so the card can
+// render heuristic verdicts distinctly and name unevaluable scenarios.
+func ScenarioMetaKey(traderID, planID string) string {
+	return "scenario_meta:" + traderID + ":" + planID
+}
+
 // SetResetBaseline records the version the reset chain starts measuring from.
 func SetResetBaseline(st *Store, tradeDate, session string, version int) error {
 	if st == nil {

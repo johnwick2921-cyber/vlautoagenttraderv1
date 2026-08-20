@@ -130,11 +130,13 @@ describe('ZoneTable', () => {
 })
 
 describe('ScenarioList', () => {
-  it('renders scenario id + targets + defaults to armed status', () => {
+  it('renders scenario id; NO stored status renders unevaluable, never a fake armed (A1/A4)', () => {
+    // The old contract defaulted to 'armed' when no status was stored — the
+    // exact dishonesty the fail-register wave removed: unknown ≠ armed.
     render(<ScenarioList scenarios={[scenario]} language="en" />)
     expect(screen.getByText('S1')).toBeInTheDocument()
-    expect(screen.getByText(/29950 → 29900/)).toBeInTheDocument()
-    expect(screen.getAllByText(/armed/i).length).toBeGreaterThan(0)
+    expect(screen.getByTestId('scenario-unevaluable-S1')).toBeInTheDocument()
+    expect(screen.queryAllByText(/armed/i).length).toBe(0)
   })
   it('honors a backend status map', () => {
     render(

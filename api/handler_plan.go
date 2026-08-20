@@ -288,6 +288,10 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		// FE keeps its current fallback. The sandbox seeds it so all four states
 		// are visible. Replace the source when the executor computes it for real.
 		"scenario_status": scenarioStatusForLifecycle(s.scenarioStatus(traderID, row.PlanID), row.Lifecycle, doc),
+		// A1/A4 (fail-register wave): verdict basis (machine vs prose-anchor
+		// heuristic) + unevaluable scenario ids — the card renders them
+		// distinctly instead of dressing a heuristic as a machine verdict.
+		"scenario_meta": s.scenarioMeta(traderID, row.PlanID),
 		// ITEM 4 — owner edits that could NOT be re-anchored onto this version.
 		// Never dropped silently: the card asks for review.
 		"uncarried_edits": s.uncarriedEdits(row.PlanID, row.Version),
@@ -2016,3 +2020,19 @@ func (s *Server) scenarioStatus(traderID, planID string) map[string]string {
 	}
 	return m
 }
+// scenarioMeta (A1/A4) reads the basis/unevaluable envelope; nil when absent.
+func (s *Server) scenarioMeta(traderID, planID string) map[string]any {
+	if s.store == nil {
+		return nil
+	}
+	raw, _ := s.store.GetSystemConfig(store.ScenarioMetaKey(traderID, planID))
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	var m map[string]any
+	if json.Unmarshal([]byte(raw), &m) != nil || len(m) == 0 {
+		return nil
+	}
+	return m
+}
+

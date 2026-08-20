@@ -44,14 +44,26 @@ type ScenarioEval struct {
 	ID        string
 	Status    string
 	Anchor    float64    // the level price this scenario was judged against
-	HasAnchor bool       // false → caller MUST NOT store a status
+	HasAnchor bool       // false → caller MUST NOT store a status (render "unevaluable")
 	Facts     LevelFacts // the P0.4 facts the status was derived from
 	Reason    string     // short human explanation, for logs and debugging
+	// Basis (A1/F2, fail-register wave): what the status verdict rests on.
+	//   "machine" — the anchor price matches a STRUCTURED object (death/flip),
+	//     so the invalidation verdict shares plan-death's machine evaluation.
+	//   "heuristic" — the anchor was mined from prose; the dot is an
+	//     anchor-acceptance heuristic, NOT the written invalidation (which only
+	//     the AI judges). The card must render these distinctly.
+	Basis string
 }
 
-// priceToken matches a price-shaped number inside free text: 21480, 21480.25.
-// Deliberately requires 4+ leading digits so "2x5m" and "15m" cannot match.
-var priceToken = regexp.MustCompile(`\b\d{4,}(?:\.\d+)?\b`)
+// priceToken matches a price-shaped number inside free text: 21480, 98.75, 6.5.
+// A4 (fail-register wave): widened from \d{4,} — the old 4-digit floor made
+// every sub-1000-priced instrument unevaluable by construction. Rule-vocabulary
+// numbers ("2x5m", "15m") are excluded by the unit-suffix filter in
+// ScenarioAnchor (RE2 has no lookahead) and, decisively, by the ±2pt
+// snap-to-a-plan-level requirement below (a bare "2" or "15" never sits
+// within 2 points of a real level on a priced instrument).
+var priceToken = regexp.MustCompile(`\b\d+(?:\.\d+)?\b`)
 
 // anchorTolerance is how close a number in the trigger text must be to a plan
 // level (in points) to be considered a reference TO that level rather than a
@@ -72,7 +84,19 @@ const anchorTolerance = 2.0
 // actually identified.
 func ScenarioAnchor(s PlanScenario, levels []PlanLevel) (float64, bool) {
 	for _, text := range []string{s.Trigger, s.Invalid} {
-		for _, tok := range priceToken.FindAllString(text, -1) {
+		for _, loc := range priceToken.FindAllStringIndex(text, -1) {
+			tok := text[loc[0]:loc[1]]
+			// unit-suffix filter (A4): "2x5m"/"15m"/"5×" tokens are rule
+			// vocabulary, not prices.
+			if loc[1] < len(text) {
+				switch text[loc[1]] {
+				case 'm', 'x', 'h', 'd':
+					continue
+				}
+				if strings.HasPrefix(text[loc[1]:], "×") {
+					continue
+				}
+			}
 			v, err := strconv.ParseFloat(tok, 64)
 			if err != nil || v <= 0 {
 				continue
@@ -206,6 +230,18 @@ func EvaluatePlanScenarios(doc PlanDoc, bars []market.Kline,
 	statuses := make(map[string]string, len(doc.Scenarios))
 	for _, s := range doc.Scenarios {
 		e := EvaluateScenario(s, doc.Levels, bars, price, dATR, k, rule, planLive, nowMs)
+		// A1 (F2): name the verdict's basis. If the anchor coincides with a
+		// STRUCTURED death/flip price, the invalidation shares plan-death's
+		// machine evaluation; otherwise it is an anchor-acceptance HEURISTIC
+		// mined from prose — the card renders these distinctly, never as a
+		// machine verdict.
+		if e.HasAnchor {
+			e.Basis = "heuristic"
+			if (doc.DeathStructured != nil && absF(doc.DeathStructured.Price-e.Anchor) <= anchorTolerance) ||
+				(doc.FlipStructured != nil && absF(doc.FlipStructured.Price-e.Anchor) <= anchorTolerance) {
+				e.Basis = "machine"
+			}
+		}
 		evals = append(evals, e)
 		if e.HasAnchor && e.Status != "" {
 			statuses[e.ID] = e.Status
