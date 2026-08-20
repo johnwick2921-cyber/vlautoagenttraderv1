@@ -13,6 +13,7 @@ import { toast } from 'sonner'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
 import { api } from '../../lib/api'
+import { guardedCall } from '../../lib/api/guarded'
 import type { ResetGate } from '../../lib/api/plan'
 
 export function ResetButton({
@@ -48,21 +49,33 @@ export function ResetButton({
 
   const disabled = !gate.allowed || busy
 
+  // Stuck-dialog fix (2026-08-19): the await used to sit between setBusy(true)
+  // and setBusy(false) with no try — the 30s axios default vs the reset's
+  // SYNCHRONOUS 60-300s planner read threw, latched busy, froze the confirm
+  // box (F5-only), and the unguarded Yes button double-fired resets (the
+  // 01:27/01:30 same-pair duplicates in the owner log). Now: dedupe at entry,
+  // guardedCall never throws, busy ALWAYS resets, the dialog always recovers.
   const run = async () => {
+    if (busy) return // double-click dedupe — one reset per confirmation
     setBusy(true)
-    const res = await api.forceReset(traderId)
-    setBusy(false)
-    setConfirming(false)
-    if (res.ok) {
-      toast.success(tp('resetDone', language))
-      if (res.note) {
-        toast.warning(res.note)
+    try {
+      const g = await guardedCall(() => api.forceReset(traderId))
+      if (g.ok && g.value.ok) {
+        setConfirming(false)
+        toast.success(tp('resetDone', language))
+        if (g.value.note) {
+          toast.warning(g.value.note)
+        }
+        setTimeout(() => onDone?.(), 1500)
+      } else {
+        const err = g.ok ? g.value.error : g.error
+        toast.error(err || tp('errorFailClosed', language))
+        // dialog RECOVERS: confirm stays open, buttons re-enable
       }
-      setTimeout(() => onDone?.(), 1500)
-      setGate(await api.getResetGate(traderId))
-    } else {
-      toast.error(res.error || tp('errorFailClosed', language))
-      setGate(res.gate ?? (await api.getResetGate(traderId)))
+      const fresh = await guardedCall(() => api.getResetGate(traderId))
+      if (fresh.ok) setGate(fresh.value)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -131,12 +144,13 @@ export function ResetButton({
             <button
               type="button"
               onClick={() => setConfirming(false)}
+              disabled={busy}
               className="text-[11px] px-2 py-1"
               style={{
                 color: 'var(--vl-muted)',
                 background: 'transparent',
                 border: 0,
-                cursor: 'pointer',
+                cursor: busy ? 'not-allowed' : 'pointer',
               }}
             >
               {tp('rereadCancel', language)}
@@ -145,6 +159,7 @@ export function ResetButton({
               type="button"
               data-testid="reset-go"
               onClick={run}
+              disabled={busy}
               className="text-[11px] px-2 py-1"
               style={{
                 color: 'var(--vl-ink)',
@@ -154,7 +169,7 @@ export function ResetButton({
                 cursor: 'pointer',
               }}
             >
-              {tp('resetGo', language)}
+              {busy ? '◌ …' : tp('resetGo', language)}
             </button>
           </div>
         </div>
