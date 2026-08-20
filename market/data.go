@@ -536,9 +536,13 @@ func Format(data *Data) string {
 func formatTimeframeData(sb *strings.Builder, data *TimeframeSeriesData) {
 	// Use OHLCV table format if kline data is available
 	if len(data.Klines) > 0 {
-		sb.WriteString("Time(UTC)      Open      High      Low       Close     Volume\n")
+		sb.WriteString("Time(CT)       Open      High      Low       Close     Volume\n")
 		for i, k := range data.Klines {
-			t := time.Unix(k.Time/1000, 0).UTC()
+			// v1-audit #4 (fail-register wave): the chat table now renders CT
+			// like every trading prompt (kernel/tz.go is the contract; market/
+			// cannot import kernel, so the location loads here with the same
+			// canonical zone name).
+			t := time.Unix(k.Time/1000, 0).In(chatTableCT())
 			timeStr := t.Format("01-02 15:04")
 			marker := ""
 			if i == len(data.Klines)-1 {
@@ -806,4 +810,14 @@ func isStaleData(klines []Kline, symbol string) bool {
 	// Price frozen but has volume: might be extremely low volatility market, allow but log warning
 	logger.Infof("⚠️  %s detected extreme price stability (no fluctuation for %d consecutive periods), but volume is normal", symbol, stalePriceThreshold)
 	return false
+}
+
+
+// chatTableCT loads America/Chicago for the chat-path OHLCV table (the one
+// former Time(UTC) site outside the tz-guard dirs — v1 audit §1.1).
+func chatTableCT() *time.Location {
+	if loc, err := time.LoadLocation("America/Chicago"); err == nil {
+		return loc
+	}
+	return time.UTC
 }
