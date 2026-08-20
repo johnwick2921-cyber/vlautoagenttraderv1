@@ -517,7 +517,7 @@ func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
 
 	// W6 — P0 close+P&L alert.
 	at.emitAlert("P0", "close", fmt.Sprintf("close:%d", p.ID),
-		fmt.Sprintf("Closed %s — P&L %.2f", p.Symbol, p.RealizedPnL),
+		fmt.Sprintf("Closed %s — P&L %.2f", p.Symbol, p.EffectivePnL()),
 		fmt.Sprintf("adherence %s (%s)", grade, kernel.AdherenceLabel(grade)))
 
 	// P5.6 — matched-random reaction verdict for the traded level type.
@@ -527,10 +527,10 @@ func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
 	// watch assessments with the final outcome and, best-effort, the excursion
 	// AFTER each read (1m bars may have rotated out of the cache — rows keep 0).
 	outcome := "win"
-	if p.RealizedPnL < 0 {
+	if p.EffectivePnL() < 0 {
 		outcome = "loss"
 	}
-	_ = at.store.WatchAssessment().BackfillClose(p.ID, fmt.Sprintf("%s:%+.2f", outcome, p.RealizedPnL))
+	_ = at.store.WatchAssessment().BackfillClose(p.ID, fmt.Sprintf("%s:%+.2f", outcome, p.EffectivePnL()))
 	if rows, err := at.store.WatchAssessment().ByPosition(p.ID); err == nil && len(rows) > 0 && len(bars) > 0 {
 		for _, row := range rows {
 			if row.MFEAfterPts != 0 || row.MAEAfterPts != 0 {

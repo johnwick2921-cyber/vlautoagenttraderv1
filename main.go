@@ -110,6 +110,10 @@ func main() {
 	// table's history).
 	st.BackfillEntryConfidence()
 
+	// P0 pnl-record-integrity (2026-08-20) — one-time additive correction of
+	// the 37 wrong recorded-PnL rows (originals preserved; readers COALESCE).
+	st.CorrectHistoricalPnL()
+
 	// Initialize installation ID for experience improvement (anonymous statistics)
 	initInstallationID(st)
 

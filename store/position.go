@@ -124,6 +124,12 @@ type TraderPosition struct {
 	ExitOrderID        string  `gorm:"column:exit_order_id;default:''" json:"exit_order_id"`
 	ExitTime           int64   `gorm:"column:exit_time;index:idx_positions_exit" json:"exit_time"` // Unix milliseconds UTC, 0 means not set
 	RealizedPnL        float64 `gorm:"column:realized_pnl;default:0" json:"realized_pnl"`
+	// P0 pnl-record-integrity (2026-08-20): a wrong recorded PnL is corrected
+	// by a NEW value + note — the original is NEVER destructively edited
+	// (audit trail). Readers use EffectivePnL / COALESCE(pnl_corrected,
+	// realized_pnl).
+	PnlCorrected       *float64 `gorm:"column:pnl_corrected" json:"pnl_corrected,omitempty"`
+	PnlCorrectionNote  string   `gorm:"column:pnl_correction_note;default:''" json:"pnl_correction_note,omitempty"`
 	Fee                float64 `gorm:"column:fee;default:0" json:"fee"`
 	Leverage           int     `gorm:"column:leverage;default:1" json:"leverage"`
 	Status             string  `gorm:"column:status;default:OPEN;index:idx_positions_status" json:"status"`
@@ -665,4 +671,14 @@ func (s *PositionStore) ClosePositionWithAccurateData(id int64, exitPrice float6
 		"close_reason":  closeReason,
 		"updated_at":    time.Now().UTC().UnixMilli(),
 	}).Error
+}
+
+
+// EffectivePnL returns the corrected realized P&L when a correction exists,
+// else the original (P0 pnl-record-integrity, 2026-08-20).
+func (p *TraderPosition) EffectivePnL() float64 {
+	if p.PnlCorrected != nil {
+		return *p.PnlCorrected
+	}
+	return p.RealizedPnL
 }
