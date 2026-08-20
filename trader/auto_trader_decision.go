@@ -86,6 +86,9 @@ func (at *AutoTrader) GetStatus() map[string]interface{} {
 		"stop_until":      pauseStatusString(at),
 		"last_reset_time": at.lastResetTime.Format(time.RFC3339),
 		"ai_provider":     aiProvider,
+		// v1 audit §5.6 (E5): the running binary's revision, so a bug report
+		// can be checked against what is actually deployed without a shell.
+		"revision": kernel.RunningRevision(),
 	}
 
 	// P3 (ledger-close 2026-08-19) — roll picture for the dashboard (3.6):

@@ -153,6 +153,7 @@ func AssertBootIntegrity() BootIntegrity {
 		tradingRefused.Store(false)
 		refusalReason.Store("")
 	}
+	lastBootRevision.Store(shortRev(b.Revision))
 	return b
 }
 
@@ -184,4 +185,27 @@ func TradingRefused() (string, bool) {
 func SetTradingRefusedForTest(refused bool, reason string) {
 	tradingRefused.Store(refused)
 	refusalReason.Store(reason)
+}
+
+
+// lastBootRevision caches the asserted revision for API exposure (v1 audit
+// §5.6 — bug reports could not be checked against the running rev without a
+// shell). Set once at boot.
+var lastBootRevision atomic.Value // string
+
+// RunningRevision returns the short revision of the running binary ("" before
+// the boot assertion runs).
+func RunningRevision() string {
+	if v, ok := lastBootRevision.Load().(string); ok {
+		return v
+	}
+	return ""
+}
+
+
+func shortRev(r string) string {
+	if len(r) > 12 {
+		return r[:12]
+	}
+	return r
 }
