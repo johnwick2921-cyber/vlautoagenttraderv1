@@ -523,6 +523,23 @@ func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
 	// P5.6 — matched-random reaction verdict for the traded level type.
 	at.recordMatchedRandomForClose(p, ex)
 
+	// P0 pnl-record-integrity (2026-08-20) — the class-killer: every close is
+	// verified recorded-vs-recomputed (stored prices × ROW qty × point value);
+	// any delta > $0.50 WARNs to log_events + dashboard. Wrong PnL can never
+	// again sit silent (the #526 −$1,458-on-a-−$69 trade class).
+	if pv := market.FuturesPointValue(p.Symbol); pv > 0 && p.EntryPrice > 0 && p.ExitPrice > 0 {
+		pts := p.ExitPrice - p.EntryPrice
+		if p.Side == "SHORT" {
+			pts = -pts
+		}
+		recomputed := pts * p.Quantity * pv
+		if d := p.EffectivePnL() - recomputed; d > 0.5 || d < -0.5 {
+			at.logWarnf("⚖️ pnl_integrity MISMATCH on close #%d: recorded %.2f vs recomputed %.2f (Δ %+.2f) — stored prices × row qty disagree with the recorded P&L; investigate the writer path.",
+				p.ID, p.EffectivePnL(), recomputed, d)
+			telemetry.IncGateBlock(at.id, "pnl_integrity_mismatch")
+		}
+	}
+
 	// Phase 3.6 (final-bundle) — watcher scoring backfill: stamp this position's
 	// watch assessments with the final outcome and, best-effort, the excursion
 	// AFTER each read (1m bars may have rotated out of the cache — rows keep 0).
