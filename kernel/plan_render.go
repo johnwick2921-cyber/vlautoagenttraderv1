@@ -136,7 +136,13 @@ func RenderPlanBlock(doc PlanDoc, session string) string {
 	if len(doc.NoTrade) > 0 {
 		b.WriteString("No-trade: " + strings.Join(doc.NoTrade, " · ") + "\n")
 	}
-	b.WriteString("Plan dies if: " + doc.DeathCondition + "\n")
+	deathSuffix := ""
+	if doc.DeathStructured == nil {
+		// A3 (F5): no structured object → nothing machine-evaluates this line;
+		// say so, so nobody (owner or model) assumes machine enforcement.
+		deathSuffix = " (prose-only — AI-judged, no machine evaluation)"
+	}
+	b.WriteString("Plan dies if: " + doc.DeathCondition + deathSuffix + "\n")
 	b.WriteString(`Cite rule: your decision JSON MUST include "cited_scenario" = "S1"|"S2"|…|"off-plan".`)
 	return b.String()
 }

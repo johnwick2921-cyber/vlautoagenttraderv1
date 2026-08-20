@@ -189,6 +189,11 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 		if strings.TrimSpace(s.ID) == "" {
 			return fmt.Errorf("scenario[%d].id is required", i)
 		}
+		// A5 (F11, fail-register wave): the id format is a contract now — the
+		// cite rule, the status map, the chips and adherence all key on it.
+		if !scenarioIDRe.MatchString(strings.TrimSpace(s.ID)) {
+			return fmt.Errorf("scenario[%d].id %q invalid (format: S1..S99)", i, s.ID)
+		}
 		if !scenarioConds[s.Condition] {
 			return fmt.Errorf("scenario[%d].condition %q invalid", i, s.Condition)
 		}
@@ -225,6 +230,20 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 		}
 		if cond.name == "flip" && cond.c.FlipTo != "" && !biasDirections[cond.c.FlipTo] {
 			return fmt.Errorf("flip.flip_to %q invalid (long|short)", cond.c.FlipTo)
+		}
+	}
+	// A3 (F5, fail-register wave): the prompt has always CLAIMED "death/flip
+	// objects must match the prose lines" — nothing checked it. Now the
+	// validator does: a structured price must appear (±2pts) among the numbers
+	// in its prose twin, else the planner retries with a named error.
+	if d.DeathStructured != nil && strings.TrimSpace(d.DeathCondition) != "" {
+		if !numberNearInText(d.DeathCondition, d.DeathStructured.Price, 2.0) {
+			return fmt.Errorf("death{price %.2f} does not match any number in death_condition prose %q (object and prose must agree)", d.DeathStructured.Price, d.DeathCondition)
+		}
+	}
+	if d.FlipStructured != nil && strings.TrimSpace(d.Bias.FlipCondition) != "" {
+		if !numberNearInText(d.Bias.FlipCondition, d.FlipStructured.Price, 2.0) {
+			return fmt.Errorf("flip{price %.2f} does not match any number in bias.flip_condition prose %q", d.FlipStructured.Price, d.Bias.FlipCondition)
 		}
 	}
 	return nil
@@ -330,14 +349,18 @@ func hasDirection(scenarios []PlanScenario, dir string) bool {
 func triggerNumbers(trigger string) []float64 {
 	var out []float64
 	for _, m := range reTriggerNumber.FindAllString(trigger, -1) {
-		if v, err := strconv.ParseFloat(m, 64); err == nil && v > 100 {
+		// A4-consistent (fail-register wave): any positive decimal counts — the
+		// old v>100 floor made sub-1000-priced instruments unminable. Callers
+		// that need price-magnitude filtering do it themselves
+		// (continuationReachable keeps its beyond-price comparison).
+		if v, err := strconv.ParseFloat(m, 64); err == nil && v > 0 {
 			out = append(out, v)
 		}
 	}
 	return out
 }
 
-var reTriggerNumber = regexp.MustCompile(`\d{3,}(?:\.\d+)?`)
+var reTriggerNumber = regexp.MustCompile(`\d+(?:\.\d+)?`)
 
 // continuationReachable reports whether at least one scenario in `dir` has a
 // trigger whose nearest numeric level sits AT or beyond price in that direction
@@ -348,6 +371,13 @@ func continuationReachable(scenarios []PlanScenario, dir string, price float64) 
 			continue
 		}
 		for _, n := range triggerNumbers(s.Trigger) {
+			// Price-magnitude band (A4-consistent widening moved the >100
+			// filter out of the miner): only numbers in the same magnitude as
+			// price count as price references — "2x5m"-style vocabulary
+			// digits ("2", "5", "15") can never satisfy reachability.
+			if n < price*0.5 || n > price*1.5 {
+				continue
+			}
 			if dir == "short" && n <= price {
 				return true
 			}
@@ -425,4 +455,20 @@ func NoTradePlanDocWithLevels(reason string, levels []PlanLevel) *PlanDoc {
 	}
 	doc.Levels = levels
 	return doc
+}
+
+
+// scenarioIDRe — A5 (F11): "S1".."S99", the convention everything keys on.
+// S0 is reserved for the Go-authored fail-closed NO-TRADE stub plan.
+var scenarioIDRe = regexp.MustCompile(`^S\d{1,2}$`)
+
+// numberNearInText — A3 (F5): does any number token in the prose sit within
+// tol points of want? Reuses the trigger-mining tokenizer.
+func numberNearInText(text string, want, tol float64) bool {
+	for _, v := range triggerNumbers(text) {
+		if v >= want-tol && v <= want+tol {
+			return true
+		}
+	}
+	return false
 }

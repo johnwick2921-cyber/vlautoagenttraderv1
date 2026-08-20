@@ -636,6 +636,11 @@ func (at *AutoTrader) runPlannerReadCoreWithFacts(session, tradeDate, triggerOve
 		doc = d
 		break
 	}
+	// A3 (F5, fail-register wave): a plan whose death/flip is prose-only has NO
+	// machine evaluation — the owner must know (the prompt line says it too).
+	if doc != nil && doc.DeathStructured == nil {
+		at.logWarnf("📜 plan death is PROSE-ONLY (no structured death{} object) — AI-judged, not machine-evaluated; only the all-levels-consumed fallback protects the chain.")
+	}
 
 	// W3 — auto-write the HARD red-news no-trade blackouts into the plan (§80),
 	// deduped. The fail-closed NO-TRADE plan already sits out the whole session.
