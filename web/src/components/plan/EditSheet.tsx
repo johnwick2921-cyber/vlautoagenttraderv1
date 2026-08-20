@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
 import { api } from '../../lib/api'
+import { guardedCall } from '../../lib/api/guarded'
 import type { PlanLevelFact, RealignChange } from '../../lib/api/plan'
 import { LEVEL_TYPES, INSTRUCTION_VERBS, GRADES } from './vocab'
 import { fmtPrice } from './levelState'
@@ -129,29 +130,37 @@ export function EditSheet({
         value.note = note
         value.scenario_tag = scenarioTag
       }
-      const res = await api.postOverlay(
-        traderId,
-        [{ op: 'replace', path: `/levels/${levelIndex}`, value }],
-        'owner',
-        symbol
+      const g = await guardedCall(() =>
+        api.postOverlay(
+          traderId,
+          [{ op: 'replace', path: `/levels/${levelIndex}`, value }],
+          'owner',
+          symbol
+        )
       )
       setBusy(false)
-      if (!res.ok) {
-        toast.error(tp('saveFailed', language), { description: res.error })
-        return
+      if (!g.ok || !g.value.ok) {
+        toast.error(tp('saveFailed', language), {
+          description: g.ok ? g.value.error : g.error,
+        })
+        return // sheet stays open, inputs intact — never latches
       }
       toast.success(tp('overlayApplied', language))
     } else {
       // Add = sticky owner level (appears at the next read with 👤).
       const label = type === 'My level' ? '👤' : type
-      const res = await api.addOwnerLevel(
-        traderId,
-        { price: priceNum, label, note, scenario_tag: scenarioTag },
-        symbol
+      const g = await guardedCall(() =>
+        api.addOwnerLevel(
+          traderId,
+          { price: priceNum, label, note, scenario_tag: scenarioTag },
+          symbol
+        )
       )
       setBusy(false)
-      if (!res.ok) {
-        toast.error(tp('saveFailed', language), { description: res.error })
+      if (!g.ok || !g.value.ok) {
+        toast.error(tp('saveFailed', language), {
+          description: g.ok ? g.value.error : g.error,
+        })
         return
       }
       toast.success(tp('overlayApplied', language))
@@ -173,15 +182,19 @@ export function EditSheet({
   const del = async () => {
     if (!isEdit || busy) return
     setBusy(true)
-    const res = await api.postOverlay(
-      traderId,
-      [{ op: 'remove', path: `/levels/${levelIndex}` }],
-      'owner',
-      symbol
+    const g = await guardedCall(() =>
+      api.postOverlay(
+        traderId,
+        [{ op: 'remove', path: `/levels/${levelIndex}` }],
+        'owner',
+        symbol
+      )
     )
     setBusy(false)
-    if (!res.ok) {
-      toast.error(tp('saveFailed', language), { description: res.error })
+    if (!g.ok || !g.value.ok) {
+      toast.error(tp('saveFailed', language), {
+        description: g.ok ? g.value.error : g.error,
+      })
       return
     }
     toast.success(tp('overlayApplied', language))
