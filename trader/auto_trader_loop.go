@@ -257,15 +257,11 @@ func (at *AutoTrader) runCycle() error {
 		at.logInfof("↻ cycle_trigger=post_exit — immediate rescan after a position close (all gates apply; prompt identical to a timer cycle).")
 	}
 
-	// 1. Check if trading needs to be stopped
-	if time.Now().Before(at.stopUntil) {
-		remaining := at.stopUntil.Sub(time.Now())
-		at.logWarnf("⏸ Risk control: Trading paused, remaining %.0f minutes", remaining.Minutes())
-		record.Success = false
-		record.ErrorMessage = fmt.Sprintf("Risk control paused, remaining %.0f minutes", remaining.Minutes())
-		at.saveDecision(record)
-		return nil
-	}
+	// (A11, fail-register wave) The legacy at.stopUntil consumer that sat here
+	// is GONE — it had no producer anywhere (a pause switch that never was,
+	// anatomy order-correction #5) and blocked the WHOLE cycle, contradicting
+	// the owner pause contract. The ONE live pause is pauseUntilMs
+	// (auto_trader_pause.go), enforced entry-only in executeDecisionWithRecord.
 
 	// U1 3.1 — the feed-down watch moved to monitorTick (the 60s wall-clock
 	// ticker in auto_trader_risk.go): inside this cycle it was doubly dead —

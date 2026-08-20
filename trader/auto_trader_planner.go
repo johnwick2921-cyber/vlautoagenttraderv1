@@ -386,38 +386,10 @@ func (at *AutoTrader) storeUncarriedEdits(planID string, version int, items []ke
 	_ = at.store.SetSystemConfig(store.UncarriedEditsKey(planID, version), string(blob))
 }
 
-// activePlanIsDead reports whether the stored plan's thesis is spent (all its
-// levels accepted through) per the P0.4 evaluator over the live bars.
-func (at *AutoTrader) activePlanIsDead(row *store.PlanDB) bool {
-	if market.FuturesBarsProvider == nil {
-		return false
-	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
-		return false
-	}
-	bars := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
-	if len(bars) == 0 {
-		return false
-	}
-	now := time.Now()
-	// Use the rule of the session whose plan this IS, not whichever session happens
-	// to be live at the check. activeSessionName returns "" outside every window,
-	// which silently fell back to the strategy-level rule — benign while every
-	// session shares "2x5m", but the moment one sets "15m-close" (need=1) the wrong
-	// rulebook would decide whether that session's plan lives or dies.
-	rule := at.acceptanceRuleFor(row.Session) // W15.B — per-session
-	// Judge the plan ONLY on what happened AFTER it was written. Feeding the full
-	// 2000-bar cache asked "was this level ever traded through in the last ~33
-	// hours", which is true of nearly any level once real history exists — so a
-	// brand-new plan was born dead and burned the whole re-plan budget in minutes
-	// (2026-08-16:ASIA v1..v5, then a levels:null NO-TRADE plan).
-	sinceMs := row.CreatedAt.UnixMilli()
-	if row.CreatedAt.IsZero() {
-		sinceMs = 0 // unknown write time → fall back to the old whole-window behavior
-	}
-	return kernel.PlanIsDeadSince(doc, bars, rule, sinceMs, now.UnixMilli())
-}
+// (A7/F13, fail-register wave) activePlanIsDead removed — a second, WEAKER
+// death definition with zero production callers; the live path is
+// describeActivePlanDeath (structured death → flip → legacy consumption).
+
 
 // describeActivePlanDeath is activePlanIsDead plus the EVIDENCE. Same window,
 // same timeframe, same verdict — the explanation is derived from the decision

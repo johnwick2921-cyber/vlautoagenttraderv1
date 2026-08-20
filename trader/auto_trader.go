@@ -350,7 +350,6 @@ type AutoTrader struct {
 	customPrompt           string // Custom trading strategy prompt
 	overrideBasePrompt     bool   // Whether to override base prompt
 	lastResetTime          time.Time
-	stopUntil              time.Time    // LEGACY, dormant: consumer at loop:248, no producer — superseded by pauseUntilMs (P2 ledger-close)
 	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
 	pauseStoreMu           sync.Mutex   // E7-v2: orders memory-vs-store pause writes (expiry CAS vs concurrent re-pause)
 	lastRollWarnContract   string       // P3 roll gate: dedupes the unresolved-contract WARN per contract-string change
