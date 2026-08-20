@@ -1168,6 +1168,9 @@ func (at *AutoTrader) recordPlanCitation(d *kernel.Decision) {
 		return
 	}
 	res := kernel.ClassifyCitation(d.Action, d.CitedScenario, ap.Doc)
+	// B3 (F6): structural verdict — entry in the cited scenario's band, SL/TP
+	// consistent. Forward-only; "" = unknown/fail-open.
+	band := kernel.CitationStructure(d.Action, d.CitedScenario, ap.Doc, d.Price, d.StopLoss, d.TakeProfit, kernel.PlanDATRFor(at.id))
 	switch {
 	case res.OffPlan:
 		telemetry.IncGateBlock(at.id, "plan_off_plan")
@@ -1184,6 +1187,7 @@ func (at *AutoTrader) recordPlanCitation(d *kernel.Decision) {
 		planVersion: ap.Version,
 		scenarioID:  res.Cited, // "" when off-plan
 		matched:     res.Matched,
+		band:        band,
 		valid:       true,
 	}
 }

@@ -465,7 +465,7 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 			// P5.5 — stamp the plan link captured in recordPlanCitation onto this
 			// open (day_plan-gated → dormant for crypto). Consumed once.
 			if at.dayPlanEnabled() && at.lastCitation.valid {
-				_ = at.store.Position().SetPlanLink(pos.ID, at.lastCitation.planVersion, at.lastCitation.scenarioID, at.lastCitation.matched)
+				_ = at.store.Position().SetPlanLink(pos.ID, at.lastCitation.planVersion, at.lastCitation.scenarioID, at.lastCitation.matched, at.lastCitation.band)
 				at.lastCitation.valid = false
 			}
 			// W6 — P0 fill alert.

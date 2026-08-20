@@ -17,6 +17,9 @@ type AdherenceInput struct {
 	OffPlan    bool // no scenario cited (traded outside the plan)
 	InNoTrade  bool // entered inside a no-trade window (first 5m / lunch / blackout)
 	InKillzone bool // entered inside an active killzone (the plan's high-prob window)
+	// Band (B3/F6, forward-only): the entry's structural verdict against the
+	// cited scenario — "" legacy/unknown | "ok" | "off_band" | "struct".
+	Band string
 }
 
 // gradeLetters is the A→F ladder; stepDown moves toward F.
@@ -49,6 +52,14 @@ func GradeAdherence(in AdherenceInput) (string, []string) {
 	case in.OffPlan || !in.Cited:
 		base = "D"
 		reasons = append(reasons, "off-plan (no scenario cited)")
+	case in.Matched && in.Band == "off_band":
+		// B3 (F6): same direction but the entry sits outside the cited
+		// scenario's activation band — discipline says B, not A.
+		base = "B"
+		reasons = append(reasons, "cited + direction matched, but entry outside the scenario's activation band")
+	case in.Matched && in.Band == "struct":
+		base = "B"
+		reasons = append(reasons, "cited + direction matched, but SL/TP inconsistent with the scenario's stated structure")
 	case in.Matched:
 		base = "A"
 		reasons = append(reasons, "cited a scenario, direction matched")

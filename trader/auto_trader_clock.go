@@ -506,6 +506,7 @@ func (at *AutoTrader) recordClosedTradeAnalytics(p *store.TraderPosition) {
 		OffPlan:    p.CitedScenarioID == "",
 		InNoTrade:  inNoTrade,
 		InKillzone: inKZ,
+		Band:       p.PlanBand, // B3 (F6): forward-only — legacy rows carry ""
 	})
 	if err := at.store.Position().SetAdherence(p.ID, grade); err != nil {
 		at.logWarnf("🎓 adherence grade update failed for %s: %v", p.Symbol, err)

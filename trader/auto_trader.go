@@ -452,6 +452,7 @@ type planCitation struct {
 	planVersion int
 	scenarioID  string
 	matched     bool
+	band        string // B3 (F6): "" | "ok" | "off_band" | "struct"
 	valid       bool
 }
 

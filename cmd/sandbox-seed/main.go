@@ -229,7 +229,7 @@ func main() {
 		_, _ = st.Position().ClosePosition(pos.ID, tr.exit, "sbx", tr.pnl, 0, "target")
 		_ = st.Position().UpdateExcursion(pos.ID, tr.mae, tr.mfe)
 		_ = st.Position().SetAdherence(pos.ID, tr.grade)
-		_ = st.Position().SetPlanLink(pos.ID, 2, tr.scenario, tr.matched)
+		_ = st.Position().SetPlanLink(pos.ID, 2, tr.scenario, tr.matched, "")
 	}
 
 	// ── DIGESTS: this session + daily + a tapered week ────────────────────────

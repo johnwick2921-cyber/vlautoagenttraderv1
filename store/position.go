@@ -143,6 +143,9 @@ type TraderPosition struct {
 	PlanVersion     int    `gorm:"column:plan_version;default:0" json:"plan_version"`
 	CitedScenarioID string `gorm:"column:cited_scenario_id;default:''" json:"cited_scenario_id"`
 	PlanMatched     bool   `gorm:"column:plan_matched;default:false" json:"plan_matched"`
+	// PlanBand (B3/F6, fail-register wave): structural verdict of the entry vs
+	// the cited scenario — "" legacy | "ok" | "off_band" | "struct".
+	PlanBand        string `gorm:"column:plan_band;default:''" json:"plan_band,omitempty"`
 	AdherenceGrade  string `gorm:"column:adherence_grade;default:''" json:"adherence_grade"`
 }
 
@@ -170,12 +173,13 @@ func (s *PositionStore) UpdateExcursion(id int64, mae, mfe float64) error {
 
 // SetPlanLink stamps the cited scenario + plan version + direction-match onto a
 // position at OPEN (P5.5). Additive; only called when day_plan is enabled.
-func (s *PositionStore) SetPlanLink(id int64, planVersion int, citedScenarioID string, matched bool) error {
+func (s *PositionStore) SetPlanLink(id int64, planVersion int, citedScenarioID string, matched bool, band string) error {
 	return s.db.Model(&TraderPosition{}).Where("id = ?", id).
 		Updates(map[string]any{
 			"plan_version":      planVersion,
 			"cited_scenario_id": citedScenarioID,
 			"plan_matched":      matched,
+			"plan_band":         band, // B3 (F6) — structural verdict, forward-only
 		}).Error
 }
 
