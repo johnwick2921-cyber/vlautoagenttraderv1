@@ -411,6 +411,11 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				_, price, dATR := AssembleScoredLevels(ctx.TraderID, snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK)
 				SetPlanDATR(ctx.TraderID, dATR) // B3: the citation band check reads this
 				status = RenderPlanStatus(ctx.TraderID, activeSymbol, plan.Doc, snapshotBars, price, dATR, rule, plan.ReplansLeft, snapshotNow.UnixMilli(), plan.BirthMs)
+				// C1 (F3): machine-computed confirmation lines per scenario —
+				// advisory truth the model reasons FROM, never a gate.
+				if cl := RenderConfirmLines(plan.Doc, snapshotBars, plan.BirthMs, snapshotNow.UnixMilli()); cl != "" {
+					status += "\n" + cl
+				}
 			}
 			engine.SetPlanContext(block, status)
 		}

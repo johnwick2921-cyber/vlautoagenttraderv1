@@ -114,8 +114,21 @@ export function ScenarioList({
 }: {
   scenarios: PlanScenario[]
   statusMap?: Record<string, ScenarioStatusValue>
-  /** A1/A4 (fail-register wave): verdict basis + unevaluable ids */
-  meta?: { basis?: Record<string, string>; unevaluable?: string[] }
+  /** A1/A4/C1 (fail-register wave): verdict basis, unevaluable ids, confirm verdicts */
+  meta?: {
+    basis?: Record<string, string>
+    unevaluable?: string[]
+    confirm?: Record<
+      string,
+      {
+        rule: string
+        ref_price: number
+        side: string
+        met: boolean
+        detail: string
+      }
+    >
+  }
   language: Language
 }) {
   return (
@@ -155,11 +168,35 @@ export function ScenarioList({
                   <span className="truncate">{s.trigger}</span>
                 </div>
               ) : (
-                <ScenarioRow
-                  scenario={s}
-                  status={stored as ScenarioStatus}
-                  language={language}
-                />
+                <div className="flex items-center gap-1.5">
+                  <ScenarioRow
+                    scenario={s}
+                    status={stored as ScenarioStatus}
+                    language={language}
+                  />
+                  {meta?.confirm?.[s.id] && (
+                    <span
+                      data-testid={`confirm-chip-${s.id}`}
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                      title={`${meta.confirm[s.id].rule} ${meta.confirm[s.id].side} ${meta.confirm[s.id].ref_price} — ${meta.confirm[s.id].detail} (machine-computed, advisory)`}
+                      style={
+                        meta.confirm[s.id].met
+                          ? {
+                              color: 'var(--vl-long)',
+                              border: '1px solid rgba(63,191,143,0.35)',
+                            }
+                          : {
+                              color: 'var(--vl-muted)',
+                              border: '1px solid var(--vl-hair)',
+                            }
+                      }
+                    >
+                      {meta.confirm[s.id].met
+                        ? 'CONFIRM MET'
+                        : 'confirm not met'}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           )

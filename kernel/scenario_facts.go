@@ -342,3 +342,29 @@ func EvaluateLevelFacts(bars []market.Kline, level float64, dir int, rule string
 		StillValid:       LevelStillValid(judge, level, rule, nowMs) || !touched,
 	}
 }
+
+// AcceptanceRunEver (C1, fail-register wave) — the EVER-fired variant of the
+// acceptance question: the best consecutive run of rule-TF closes beyond ref
+// on the given side anywhere in the window, plus the rule's required count.
+// Plan death judges the run ending NOW; a scenario CONFIRMATION that printed
+// and pulled back still happened — the executor AI weighs the pullback itself.
+func AcceptanceRunEver(bars []market.Kline, rule string, ref float64, above bool) (best, need int, lastClose float64) {
+	judge := AcceptanceBars(bars, rule)
+	need = acceptanceNeed(rule)
+	if len(judge) == 0 {
+		return 0, need, 0
+	}
+	run := 0
+	for i := range judge {
+		beyond := (above && judge[i].Close > ref) || (!above && judge[i].Close < ref)
+		if beyond {
+			run++
+			if run > best {
+				best = run
+			}
+		} else {
+			run = 0
+		}
+	}
+	return best, need, judge[len(judge)-1].Close
+}

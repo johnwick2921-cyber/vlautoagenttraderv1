@@ -71,7 +71,7 @@ func (at *AutoTrader) recordLevelState() {
 
 		// Identity: create fresh (grade→initial freshness) or preserve prior state.
 		if err := ls.EnsureLevel(&store.LevelStateDB{
-			TraderID:   at.id, // P0-cleanup — trader-scoped identity
+			TraderID:  at.id, // P0-cleanup — trader-scoped identity
 			Symbol:    symbol,
 			LevelType: typ,
 			BinIndex:  bin,
@@ -217,7 +217,14 @@ func (at *AutoTrader) recordScenarioState() {
 			unevaluable = append(unevaluable, e.ID)
 		}
 	}
-	if metaBlob, mErr := json.Marshal(map[string]any{"basis": basis, "unevaluable": unevaluable}); mErr == nil {
+	// C1: per-scenario confirm verdicts (MET / NOT MET) for the card chips.
+	confirms := map[string]kernel.ConfirmVerdict{}
+	for _, sc := range plan.Doc.Scenarios {
+		if sc.Confirm != nil {
+			confirms[sc.ID] = kernel.EvaluateConfirm(*sc.Confirm, bars, plan.BirthMs, now.UnixMilli())
+		}
+	}
+	if metaBlob, mErr := json.Marshal(map[string]any{"basis": basis, "unevaluable": unevaluable, "confirm": confirms}); mErr == nil {
 		_ = at.store.SetSystemConfig(store.ScenarioMetaKey(at.id, resolvedPlanID), string(metaBlob))
 	}
 	if at.scenarioStateLog != string(blob) {

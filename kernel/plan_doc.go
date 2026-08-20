@@ -29,6 +29,19 @@ type PlanLevel struct {
 }
 
 // PlanScenario is one if/then play in the formal grammar.
+// PlanConfirm (C1/F3, fail-register wave 2026-08-20) — the STRUCTURED
+// confirmation the owner asked for ("2x5m vs 15m close — I need to totally
+// understand"). The prose trigger/invalid REMAIN AI-judged; this object is
+// machine-computed into an advisory prompt line + card chip (MET / NOT MET)
+// using the same acceptance machinery as plan death — the AI stays the final
+// judge (no new hard gate; the suppression class stays dead), but it reasons
+// from machine truth instead of re-deriving closes itself.
+type PlanConfirm struct {
+	Rule     string  `json:"rule"`      // touch | 1x5m_close | 2x5m_close | 15m_close
+	RefPrice float64 `json:"ref_price"` // the price the closes are counted against
+	Side     string  `json:"side"`      // above | below
+}
+
 type PlanScenario struct {
 	ID          string    `json:"id"`           // S1, S2, S3
 	Trigger     string    `json:"trigger"`      // the setup description
@@ -36,7 +49,9 @@ type PlanScenario struct {
 	Direction   string    `json:"direction"`    // long | short
 	TargetChain []float64 `json:"target_chain"` // ordered targets
 	Invalid     string    `json:"invalid"`      // invalidation
-	Quality     string    `json:"quality"`      // A+ | A | B
+	// Confirm (C1) — REQUIRED after the grace window; see PlanConfirm.
+	Confirm *PlanConfirm `json:"confirm,omitempty"`
+	Quality string       `json:"quality"` // A+ | A | B
 }
 
 // PlanDoc is the full plan (stored as the plans.doc JSON).
@@ -206,6 +221,24 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 		for j, t := range s.TargetChain {
 			if t <= 0 {
 				return fmt.Errorf("scenario[%d].target_chain[%d] %v invalid (must be > 0)", i, j, t)
+			}
+		}
+		// C1 (F3): when authored, the structured confirmation must be coherent
+		// AND its number must appear in the prose trigger/invalid (the A3
+		// object↔prose contract). Absence is judged at the WRITE SITE (grace
+		// window), not here.
+		if s.Confirm != nil {
+			if !confirmRules[s.Confirm.Rule] {
+				return fmt.Errorf("scenario[%d].confirm.rule %q invalid (touch|1x5m_close|2x5m_close|15m_close)", i, s.Confirm.Rule)
+			}
+			if s.Confirm.Side != "above" && s.Confirm.Side != "below" {
+				return fmt.Errorf("scenario[%d].confirm.side %q invalid (above|below)", i, s.Confirm.Side)
+			}
+			if s.Confirm.RefPrice <= 0 {
+				return fmt.Errorf("scenario[%d].confirm.ref_price %v invalid", i, s.Confirm.RefPrice)
+			}
+			if !numberNearInText(s.Trigger+" "+s.Invalid, s.Confirm.RefPrice, 2.0) {
+				return fmt.Errorf("scenario[%d].confirm.ref_price %.2f does not match any number in the trigger/invalid prose (object and prose must agree)", i, s.Confirm.RefPrice)
 			}
 		}
 	}
@@ -457,7 +490,6 @@ func NoTradePlanDocWithLevels(reason string, levels []PlanLevel) *PlanDoc {
 	return doc
 }
 
-
 // scenarioIDRe — A5 (F11): "S1".."S99", the convention everything keys on.
 // S0 is reserved for the Go-authored fail-closed NO-TRADE stub plan.
 var scenarioIDRe = regexp.MustCompile(`^S\d{1,2}$`)
@@ -472,3 +504,7 @@ func numberNearInText(text string, want, tol float64) bool {
 	}
 	return false
 }
+
+// confirmRules — C1 vocabulary. 1x5m_close maps to the A2-fixed "5m-close"
+// acceptance rule; 2x5m_close → "2x5m"; 15m_close → "15m-close".
+var confirmRules = map[string]bool{"touch": true, "1x5m_close": true, "2x5m_close": true, "15m_close": true}

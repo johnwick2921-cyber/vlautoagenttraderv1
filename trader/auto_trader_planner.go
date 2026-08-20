@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"nofx/logger"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -641,6 +643,29 @@ func (at *AutoTrader) runPlannerReadCoreWithFacts(session, tradeDate, triggerOve
 	if doc != nil && doc.DeathStructured == nil {
 		at.logWarnf("📜 plan death is PROSE-ONLY (no structured death{} object) — AI-judged, not machine-evaluated; only the all-levels-consumed fallback protects the chain.")
 	}
+	// C1 (F3) — DUAL-ACCEPT window: scenarios missing confirm{} are accepted
+	// with a WARN for the first CONFIRM_GRACE_SESSIONS (default 3) distinct
+	// plan sessions after this feature landed; afterwards the plan is REJECTED
+	// back into the retry loop (the planner model may lag the contract).
+	if doc != nil {
+		missing := 0
+		for _, sc := range doc.Scenarios {
+			if sc.Confirm == nil {
+				missing++
+			}
+		}
+		if missing > 0 {
+			if at.confirmGraceExhausted() {
+				lastErr = fmt.Errorf("%d scenario(s) missing the REQUIRED confirm{} object (grace window over)", missing)
+				at.logWarnf("📐 plan REJECTED: %v", lastErr)
+				doc = nil
+			} else {
+				at.logWarnf("📐 confirm-grace: %d scenario(s) missing confirm{} — accepted during the grace window (CONFIRM_GRACE_SESSIONS).", missing)
+			}
+		} else {
+			at.noteConfirmCompliantSession()
+		}
+	}
 
 	// W3 — auto-write the HARD red-news no-trade blackouts into the plan (§80),
 	// deduped. The fail-closed NO-TRADE plan already sits out the whole session.
@@ -1190,4 +1215,42 @@ func (at *AutoTrader) recordPlanCitation(d *kernel.Decision) {
 		band:        band,
 		valid:       true,
 	}
+}
+
+// ---- C1 (F3) confirm-grace window ------------------------------------------
+
+// confirmGraceSessions resolves CONFIRM_GRACE_SESSIONS (default 3).
+func confirmGraceSessions() int {
+	if v := os.Getenv("CONFIRM_GRACE_SESSIONS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			return n
+		}
+	}
+	return 3
+}
+
+const confirmGraceKey = "confirm_grace_sessions_seen"
+
+// confirmGraceExhausted reports whether the dual-accept window is over: after
+// CONFIRM_GRACE_SESSIONS distinct plan-write sessions, confirm{} is REQUIRED.
+func (at *AutoTrader) confirmGraceExhausted() bool {
+	if at.store == nil {
+		return false
+	}
+	raw, _ := at.store.GetSystemConfig(confirmGraceKey)
+	n, _ := strconv.Atoi(strings.TrimSpace(raw))
+	if n >= confirmGraceSessions() {
+		return true
+	}
+	_ = at.store.SetSystemConfig(confirmGraceKey, strconv.Itoa(n+1))
+	return false
+}
+
+// noteConfirmCompliantSession fast-forwards the grace window once the model
+// proves it authors confirm{} — no reason to keep accepting regressions.
+func (at *AutoTrader) noteConfirmCompliantSession() {
+	if at.store == nil {
+		return
+	}
+	_ = at.store.SetSystemConfig(confirmGraceKey, strconv.Itoa(confirmGraceSessions()))
 }
