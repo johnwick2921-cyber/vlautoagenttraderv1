@@ -48,7 +48,9 @@ func acceptanceNeed(rule string) int {
 	switch strings.ReplaceAll(strings.ToLower(strings.TrimSpace(rule)), "×", "x") {
 	case "15m-close", "15m", "15mclose", "15m_close":
 		return 1
-	case "2x5m", "2x_5m", "":
+	case "5m-close", "5m_close", "1x5m", "1x5m_close":
+		return 1 // A2: one 5m close, as authored
+	case "2x5m", "2x_5m", "2x5m_close", "":
 		return 2
 	default:
 		return 2
@@ -67,7 +69,7 @@ func acceptanceTFMinutes(rule string) int {
 	case "15m-close", "15m", "15mclose", "15m_close":
 		return 15
 	default:
-		return 5 // "2x5m" and the default rule
+		return 5 // "2x5m", "5m-close" and the default rule
 	}
 }
 

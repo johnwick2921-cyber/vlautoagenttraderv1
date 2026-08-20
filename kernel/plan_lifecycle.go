@@ -187,8 +187,15 @@ func levelTouched(bars []market.Kline, level float64, now int64) bool {
 // counters understand. "15m_close" → one 15-minute close; everything else →
 // the default "2x5m" (two consecutive 5-minute closes).
 func conditionRule(c PlanCondition) string {
-	if c.Rule == "15m_close" {
+	switch c.Rule {
+	case "15m_close":
 		return "15m-close"
+	case "5m_close":
+		// A2 (fail-register wave, 2026-08-20): 5m_close used to silently map to
+		// "2x5m" — a plan authored to die on ONE 5m close required TWO, and the
+		// death log printed the author's rule next to the count it did not use
+		// (anatomy FAIL F4). It now evaluates AS AUTHORED: one 5m close.
+		return "5m-close"
 	}
 	return "2x5m"
 }
