@@ -84,21 +84,11 @@ func (at *AutoTrader) avgAICallMs() int64 {
 
 // ---- 2.1 DODGE ----
 
-// tfMs maps a timeframe label to its period in ms (period math, not a tunable).
+// tfMs maps a timeframe label to its period in ms. B1 (T3): delegates to THE
+// one table (kernel.TFDurationMs) — private copies drifted three ways.
 func tfMs(tf string) int64 {
-	switch tf {
-	case "1m":
-		return 60_000
-	case "3m":
-		return 180_000
-	case "5m":
-		return 300_000
-	case "15m":
-		return 900_000
-	case "30m":
-		return 1_800_000
-	case "1h":
-		return 3_600_000
+	if ms, ok := kernel.TFDurationMs(tf); ok {
+		return ms
 	}
 	return 0
 }

@@ -1,6 +1,8 @@
 package ninjatrader
 
 import (
+	"nofx/kernel"
+	"nofx/logger"
 	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
 )
@@ -58,36 +60,14 @@ func barsToKlines(bars []ntwire.Bar, timeframe string) []market.Kline {
 // back to 60_000 (1m) for unrecognized values. Covers the coded TF
 // vocabulary (store/strategy.go::normalizeTimeframe).
 func timeframeDurationMs(timeframe string) int64 {
-	switch timeframe {
-	case "1m":
-		return 60_000
-	case "3m":
-		return 180_000
-	case "5m":
-		return 300_000
-	case "15m":
-		return 900_000
-	case "30m":
-		return 1_800_000
-	case "1h":
-		return 3_600_000
-	case "2h":
-		return 7_200_000
-	case "4h":
-		return 14_400_000
-	case "6h":
-		return 21_600_000
-	case "8h":
-		return 28_800_000
-	case "12h":
-		return 43_200_000
-	case "1d":
-		return 86_400_000
-	case "3d":
-		return 259_200_000
-	case "1w":
-		return 604_800_000
-	default:
-		return 60_000
+	// B1 (T3): delegate to THE one table. The old unknown→60_000 default made
+	// the bridge fabricate CloseTimes for unmapped TFs (a forming bar could
+	// count as closed, corrupting the bar-close gate + supersession watermark).
+	// Unknown now returns 0 and the caller logs loudly; the PRIMARY timeframe
+	// is boot-validated upstream so this is a defensive edge only.
+	if ms, ok := kernel.TFDurationMs(timeframe); ok {
+		return ms
 	}
+	logger.Warnf("🧪 bars bridge: UNMAPPED timeframe %q — bars passed through without a derived CloseTime (add it to kernel/timeframes.go)", timeframe)
+	return 0
 }

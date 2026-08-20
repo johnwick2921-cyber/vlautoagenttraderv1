@@ -705,6 +705,13 @@ func (at *AutoTrader) Run() error {
 	at.isRunning = true
 	at.isRunningMutex.Unlock()
 
+	// B1 (T3): an unmapped primary timeframe is a BOOT FAIL, never a silent
+	// 60s default corrupting the bar-close gate / supersession watermark.
+	if at.exchange == "ninjatrader" {
+		if _, ok := kernel.TFDurationMs(at.primaryTimeframe()); !ok {
+			return fmt.Errorf("primary_timeframe %q is not in the timeframe table (kernel/timeframes.go) — refusing to run on a corrupt bar clock", at.primaryTimeframe())
+		}
+	}
 	at.stopMonitorCh = make(chan struct{})
 	at.kickCh = make(chan string, 4) // fresh kick channel per Run (restart-safe)
 	at.kickPending.Store(false)

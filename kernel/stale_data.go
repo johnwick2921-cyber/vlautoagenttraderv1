@@ -55,15 +55,12 @@ func staleBarGraceMs() int64 {
 	return DefaultStaleBarGraceSeconds * 1000
 }
 
-// tfIntervalMs returns the bar interval in ms for an intraday timeframe, 0 unknown.
+// tfIntervalMs returns the bar interval in ms, 0 unknown. B1 (T3): delegates
+// to THE one table (kernel/timeframes.go) — the 1m/5m/15m-only private copy
+// made every other legal primary TF invisible to forming labels + B4.
 func tfIntervalMs(tf string) int64 {
-	switch tf {
-	case "1m":
-		return 60_000
-	case "5m":
-		return 300_000
-	case "15m":
-		return 900_000
+	if ms, ok := TFDurationMs(tf); ok {
+		return ms
 	}
 	return 0
 }
