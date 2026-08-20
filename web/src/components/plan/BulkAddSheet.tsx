@@ -9,6 +9,7 @@ import type { Language } from '../../i18n/translations'
 import type { RealignChange } from '../../lib/api/plan'
 import { tp } from '../../i18n/plan-translations'
 import { api } from '../../lib/api'
+import { guardedCall } from '../../lib/api/guarded'
 import { parseBulkLevels } from './bulkParse'
 import { fmtPrice } from './levelState'
 
@@ -56,13 +57,17 @@ export function BulkAddSheet({
     let firstErr = ''
     for (const r of rows) {
       const label = r.type || '👤'
-      const res = await api.addOwnerLevel(
-        traderId,
-        { price: r.price, label, note: r.note },
-        symbol
+      // Never-latch (reset hotfix class): one thrown request must not freeze
+      // the sheet mid-batch — it counts as a row failure and the loop goes on.
+      const g = await guardedCall(() =>
+        api.addOwnerLevel(
+          traderId,
+          { price: r.price, label, note: r.note },
+          symbol
+        )
       )
-      if (res.ok) ok++
-      else if (!firstErr) firstErr = res.error || ''
+      if (g.ok && g.value.ok) ok++
+      else if (!firstErr) firstErr = (g.ok ? g.value.error : g.error) || ''
     }
     setBusy(false)
     if (ok > 0) {

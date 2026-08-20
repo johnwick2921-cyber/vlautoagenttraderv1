@@ -126,11 +126,14 @@ function PlannerReply({
         : tp('vConcede', language)
 
   const apply = async () => {
+    if (busy) return
     setBusy(true)
-    const res = await api.applyAsk(traderId, m.id, symbol)
+    const g = await guardedCall(() => api.applyAsk(traderId, m.id, symbol))
     setBusy(false)
-    if (!res.ok) {
-      toast.error(tp('saveFailed', language), { description: res.error })
+    if (!g.ok || !g.value.ok) {
+      toast.error(tp('saveFailed', language), {
+        description: g.ok ? g.value.error : g.error,
+      })
       return
     }
     setOutcome('applied')
@@ -139,11 +142,14 @@ function PlannerReply({
   }
 
   const decline = async () => {
+    if (busy) return
     setBusy(true)
-    const res = await api.declineAsk(traderId, m.id)
+    const g = await guardedCall(() => api.declineAsk(traderId, m.id))
     setBusy(false)
-    if (!res.ok) {
-      toast.error(tp('saveFailed', language), { description: res.error })
+    if (!g.ok || !g.value.ok) {
+      toast.error(tp('saveFailed', language), {
+        description: g.ok ? g.value.error : g.error,
+      })
       return // stay undecided rather than claim an outcome we did not persist
     }
     setOutcome('declined')
