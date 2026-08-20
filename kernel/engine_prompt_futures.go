@@ -234,6 +234,7 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	sb.WriteString("- `leverage`: 1 (futures)\n")
 	sb.WriteString("- Required when opening: stop_loss, take_profit, confidence (absolute tick-aligned prices)\n")
 	sb.WriteString("- **IMPORTANT**: all numeric values must be concrete numbers, NOT formulas (e.g. `21480.00`, not `21500 - 20`).\n")
+	sb.WriteString("- Plan target chains are guidance — YOU set take_profit (D2 ruling); the R:R gate is the only TP constraint.\n")
 	sb.WriteString("- `cited_scenario`: REQUIRED on every open when a DAY PLAN is shown — the plan scenario id (\"S1\"…) you are trading, or \"off-plan\" for a valid non-plan setup. (A6/F12: this used to live only inside the plan block; a contract-literal model omitted it and every adherence grade silently degraded to D.)\n")
 	sb.WriteString("- The <decision> block MUST be a JSON array, even for a single decision.\n\n")
 
