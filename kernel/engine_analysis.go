@@ -473,10 +473,17 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// stale (feed frozen); exits / open-position management are never touched.
 	applyStaleDataBlock(decision, ctx, time.Now().UnixMilli())
 
-	// C2 — clock-drift guard: refuse a NEW entry when the local clock is skewed
-	// >60s from the freshest feed timestamp (either direction); signals would be
-	// mis-timed / NT8-rejected. Exits untouched.
-	applyClockDriftBlock(decision, ctx, time.Now().UnixMilli())
+	// C2 — clock-drift OBSERVER (log-only; the entry block was retired — the
+	// stale "refuse a NEW entry" text was anatomy FAIL A10's comment lie).
+	// A9 (T5): evaluate the SNAPSHOT clock against the SNAPSHOT bars — the old
+	// post-call time.Now() read a legal 200-300s AI call as "drift", the exact
+	// hidden-clock defect class B4 was cured of (P8). Fail-open when the
+	// snapshot instant is absent.
+	c2Now := ctx.SnapshotMs
+	if c2Now <= 0 {
+		c2Now = time.Now().UnixMilli()
+	}
+	applyClockDriftBlock(decision, ctx, c2Now)
 
 	// B7 — re-entry cooldown: after a stop-loss exit, refuse a same-direction
 	// re-entry on that symbol until the cooldown elapses OR price moved ≥1×ATR15
