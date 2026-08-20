@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
 import { api } from '../../lib/api'
+import { guardedCall } from '../../lib/api/guarded'
 import type { RereadGate } from '../../lib/api/plan'
 
 export function RereadButton({
@@ -49,20 +50,28 @@ export function RereadButton({
 
   const disabled = !gate.allowed || busy
 
+  // Stuck-dialog fix (2026-08-19, ResetButton twin): guardedCall + finally —
+  // busy can never latch, the dialog always recovers, one re-read per confirm.
   const run = async () => {
+    if (busy) return
     setBusy(true)
-    const res = await api.forceReread(traderId)
-    setBusy(false)
-    setConfirming(false)
-    if (res.ok) {
-      toast.success(tp('rereadDone', language))
-      // The planner call is asynchronous on the server; give it a beat before
-      // re-fetching so the new version is likely to be there.
-      setTimeout(() => onDone?.(), 1500)
-      setGate(await api.getRereadGate(traderId))
-    } else {
-      toast.error(res.error || tp('errorFailClosed', language))
-      setGate(res.gate ?? (await api.getRereadGate(traderId)))
+    try {
+      const g = await guardedCall(() => api.forceReread(traderId))
+      if (g.ok && g.value.ok) {
+        setConfirming(false)
+        toast.success(tp('rereadDone', language))
+        // The planner call is asynchronous on the server; give it a beat before
+        // re-fetching so the new version is likely to be there.
+        setTimeout(() => onDone?.(), 1500)
+      } else {
+        toast.error(
+          (g.ok ? g.value.error : g.error) || tp('errorFailClosed', language)
+        )
+      }
+      const fresh = await guardedCall(() => api.getRereadGate(traderId))
+      if (fresh.ok) setGate(fresh.value)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -145,6 +154,7 @@ export function RereadButton({
               type="button"
               data-testid="reread-go"
               onClick={run}
+              disabled={busy}
               className="text-[11px] px-2 py-1"
               style={{
                 color: 'var(--vl-ink)',
