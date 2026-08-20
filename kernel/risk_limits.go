@@ -28,7 +28,6 @@ type RiskLimits struct {
 	MaxDailyLossUSD      float64 // hard stop for the trading day (USD, positive number)
 	MaxConcurrentTrades  int     // open position cap (count)
 	MaxNotionalUSD       float64 // sum of (entry price * quantity) cap across open positions
-	MaxContractsPerOrder int     // single-order contract size cap
 }
 
 // RiskLimitDecision is the qualitative outcome of a pre-trade check.
@@ -103,7 +102,6 @@ func LoadRiskLimitsFromConfig() RiskLimits {
 		MaxDailyLossUSD:      c.RiskMaxDailyLossUSD,
 		MaxConcurrentTrades:  c.RiskMaxConcurrentTrades,
 		MaxNotionalUSD:       c.RiskMaxNotionalUSD,
-		MaxContractsPerOrder: c.RiskMaxContractsPerOrder,
 	}
 }
 

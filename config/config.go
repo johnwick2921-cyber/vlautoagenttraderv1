@@ -71,7 +71,6 @@ type Config struct {
 	RiskMaxDailyLossUSD      float64 // RISK_MAX_DAILY_LOSS_USD
 	RiskMaxConcurrentTrades  int     // RISK_MAX_CONCURRENT_TRADES
 	RiskMaxNotionalUSD       float64 // RISK_MAX_NOTIONAL_USD
-	RiskMaxContractsPerOrder int     // RISK_MAX_CONTRACTS_PER_ORDER
 }
 
 // Init initializes global configuration (from .env)
@@ -158,9 +157,9 @@ func Init() {
 	// CheckPreTrade caller passes 0 notional by design; futures notional is
 	// capped by strategy max_notional_leverage instead. Kept for struct compat.
 	cfg.RiskMaxNotionalUSD = getEnvFloat("RISK_MAX_NOTIONAL_USD", 50_000)
-	// Deprecated-in-practice (6.8): loaded, never read by any clamp (the real
-	// clamp is strategy max_contracts_per_order else the researched 2).
-	cfg.RiskMaxContractsPerOrder = getEnvInt("RISK_MAX_CONTRACTS_PER_ORDER", 5)
+	// (E2, fail-register wave): RISK_MAX_CONTRACTS_PER_ORDER removed — zero
+	// readers ever (the live clamp is strategy max_contracts_per_order else the
+	// researched 2).
 
 	// Database configuration
 	if v := os.Getenv("DB_TYPE"); v != "" {
