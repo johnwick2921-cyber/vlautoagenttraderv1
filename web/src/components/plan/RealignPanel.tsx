@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import type { Language } from '../../i18n/translations'
 import { tp } from '../../i18n/plan-translations'
 import { api } from '../../lib/api'
+import { guardedCall } from '../../lib/api/guarded'
 import type { RealignResponse } from '../../lib/api/plan'
 import { PatchPreview } from './AskPlannerPanel'
 
@@ -106,11 +107,15 @@ export function RealignPanel({
   const apply = async () => {
     if (!traderId || !res.qa_id || busy) return
     setBusy(true)
-    const r = await api.applyAsk(traderId, res.qa_id, symbol)
+    const g = await guardedCall(() =>
+      api.applyAsk(traderId, res.qa_id!, symbol)
+    )
     setBusy(false)
-    if (!r.ok) {
-      toast.error(tp('saveFailed', language), { description: r.error })
-      return
+    if (!g.ok || !g.value.ok) {
+      toast.error(tp('saveFailed', language), {
+        description: g.ok ? g.value.error : g.error,
+      })
+      return // panel recovers; apply stays available
     }
     toast.success(tp('overlayApplied', language))
     onApplied()

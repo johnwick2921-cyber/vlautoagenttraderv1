@@ -23,6 +23,7 @@ import { BulkAddSheet } from './BulkAddSheet'
 import { AskPlannerPanel } from './AskPlannerPanel'
 import { RealignPanel, RealignButton, type RealignState } from './RealignPanel'
 import { api } from '../../lib/api'
+import { guardedCall } from '../../lib/api/guarded'
 import type { RealignChange } from '../../lib/api/plan'
 
 interface Props {
@@ -124,7 +125,16 @@ export function SessionPlanCard({
   const runRealign = async (change: RealignChange, manual = false) => {
     if (!traderId) return
     setRealign({ phase: 'reviewing' })
-    const res = await api.realignPlan(traderId, change, symbol, manual)
+    // Stuck-dialog class (reset hotfix): the realign is planner-backed (long);
+    // a thrown timeout used to strand the phase at 'reviewing' forever.
+    const g = await guardedCall(() =>
+      api.realignPlan(traderId, change, symbol, manual)
+    )
+    if (!g.ok) {
+      setRealign({ phase: 'failed' })
+      return
+    }
+    const res = g.value
     switch (res.status) {
       case 'proposal':
         setRealign({ phase: 'proposal', res })
