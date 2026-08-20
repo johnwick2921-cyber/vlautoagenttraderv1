@@ -32,7 +32,11 @@ func wireFuturesBarsProvider(server *ntwire.TCPServer) {
 // barsToKlines adapts the NT8 wire Bar shape to market.Kline. NT8 bars carry
 // no quote-volume / trade-count / taker-split, so those Kline fields stay
 // zero — the indicator engine reads only OHLCV. CloseTime is derived from
-// OpenTime + the timeframe duration (NT8 bars are closed bars).
+// OpenTime + the timeframe duration. A10 (T7) comment-truth: the NEWEST bar is
+// usually FORMING — the AddOn re-emits the same-open bar as it builds and the
+// cache replaces it in place; CloseTime here is the bar's SCHEDULED close, not
+// proof it closed. Consumers that need closed bars filter CloseTime < now
+// (latestClosedPrimaryBarMs, closedBars, acceptance buckets).
 func barsToKlines(bars []ntwire.Bar, timeframe string) []market.Kline {
 	durMs := timeframeDurationMs(timeframe)
 	out := make([]market.Kline, len(bars))

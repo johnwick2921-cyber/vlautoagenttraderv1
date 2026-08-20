@@ -57,10 +57,12 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	if ctx == nil {
 		return nil, fmt.Errorf("context is nil")
 	}
-	// Plan 2 Task 18: skip decision cycle when CME is closed (futures mode only).
-	// Returns nil decision + nil error so callers treat it as a clean no-op cycle.
+	// A10 (anatomy dedup ruling): the PRIMARY CME gate is the loop's
+	// cmeSessionClosedSkip (before context build/AI cost). This kernel twin is
+	// ASSERT-ONLY now: reaching it means the loop gate failed — it still HOLDs
+	// (safety preserved) but logs the assert so the dedup stays honest.
 	if ShouldSkipDecisionCycle() {
-		// Plan 4 Task 25 — gate instrumentation
+		logger.Warnf("🧪 assert: CME-closed reached the kernel gate — the loop's cmeSessionClosedSkip should have caught this cycle upstream")
 		telemetry.RiskGateTrips.WithLabelValues("task18_cme_closed").Inc()
 		telemetry.IncGateBlock(ctx.TraderID, "task18_cme_closed")
 		return holdCycle("cme_closed"), nil
