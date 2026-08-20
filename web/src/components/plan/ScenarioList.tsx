@@ -57,7 +57,9 @@ function ScenarioRow({
         >
           {scenario.id}
         </span>
-        <QualityChip quality={scenario.quality} />
+        <span title="quality is INFORMATIONAL (D3 ruling) — the planner's own read; no gate, sizing, or filter consumes it">
+          <QualityChip quality={scenario.quality} />
+        </span>
         <span
           className="text-[11px] uppercase"
           style={{ color: dirColor, fontFamily: 'var(--vl-font-ui)' }}
