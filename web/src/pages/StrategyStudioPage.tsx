@@ -1,3 +1,4 @@
+import { guardedCall } from '../lib/api/guarded'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -561,29 +562,44 @@ export function StrategyStudioPage() {
         ...normalizeStrategyConfig(editingConfig),
         language: language as 'zh' | 'en',
       }
-      const response = await fetch(
-        `${API_BASE}/api/strategies/${selectedStrategy.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: selectedStrategy.name,
-            description: selectedStrategy.description,
-            config: configWithLanguage,
-            is_public: selectedStrategy.is_public,
-            config_visible: selectedStrategy.config_visible,
-          }),
-        }
-      )
-      if (!response.ok) throw new Error('Failed to save strategy')
+      // E1 (fail-register wave): the shared never-latch pattern (#58). Success
+      // toast fires ONLY on HTTP 200; ANY failure toasts loudly with the edits
+      // preserved (editingConfig is untouched on failure) — the silent
+      // setError-banner-only path let a failed save masquerade as done.
+      const g = await guardedCall(async () => {
+        const response = await fetch(
+          `${API_BASE}/api/strategies/${selectedStrategy.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              name: selectedStrategy.name,
+              description: selectedStrategy.description,
+              config: configWithLanguage,
+              is_public: selectedStrategy.is_public,
+              config_visible: selectedStrategy.config_visible,
+            }),
+          }
+        )
+        if (!response.ok)
+          throw new Error(`save failed (HTTP ${response.status})`)
+        return true
+      })
+      if (!g.ok) {
+        setError(g.error)
+        notify.error(g.error)
+        return
+      }
       setHasChanges(false)
       notify.success(tr('strategySaved'))
       await fetchStrategies()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      setError(msg)
+      notify.error(msg)
     } finally {
       setIsSaving(false)
     }
@@ -1158,6 +1174,31 @@ export function StrategyStudioPage() {
                       <Save className="w-3 h-3" />
                       {isSaving ? tr('saving') : tr('save')}
                     </button>
+                  )}
+                  {/* E1: the owner can SEE the last save — the Aug-19 mystery
+                      was a toggle that never generated a save request; now a
+                      missing bump here is visible at a glance. CT per the UI
+                      pin. */}
+                  {selectedStrategy.updated_at && (
+                    <span
+                      data-testid="strategy-last-saved"
+                      className="text-[10px] text-nofx-text-muted self-center"
+                      title="last successful save (server updated_at, CT)"
+                    >
+                      saved{' '}
+                      {new Date(selectedStrategy.updated_at).toLocaleString(
+                        undefined,
+                        {
+                          timeZone: 'America/Chicago',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )}{' '}
+                      CT
+                      {hasChanges && ' · unsaved changes'}
+                    </span>
                   )}
                 </div>
               </div>
