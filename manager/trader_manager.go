@@ -700,16 +700,10 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		return fmt.Errorf("failed to create trader: %w", err)
 	}
 
-	// Set custom prompt (if exists)
-	if traderCfg.CustomPrompt != "" {
-		at.SetCustomPrompt(traderCfg.CustomPrompt)
-		at.SetOverrideBasePrompt(traderCfg.OverrideBasePrompt)
-		if traderCfg.OverrideBasePrompt {
-			logger.Infof("✓ Set custom trading strategy prompt (overriding base prompt)")
-		} else {
-			logger.Infof("✓ Set custom trading strategy prompt (supplementing base prompt)")
-		}
-	}
+	// (E3, fail-register wave): the trader-row custom_prompt/override_base_prompt
+	// loads are GONE — write-only since birth (census #53/#54 [A]: zero readers;
+	// the live prompt text is StrategyConfig.CustomPrompt). The columns stay for
+	// API/schema compat; physical drop parked for a maintenance window (ruling).
 
 	tm.traders[traderCfg.ID] = at
 	logger.Infof("✓ Trader '%s' (%s + %s/%s) loaded to memory", traderCfg.Name, aiModelCfg.Provider, exchangeCfg.ExchangeType, exchangeCfg.AccountName)

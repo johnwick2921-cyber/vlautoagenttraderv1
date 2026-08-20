@@ -347,8 +347,6 @@ type AutoTrader struct {
 	// lastClockHealthSession: which session the last clock-health line was
 	// logged for (PHASE 3.5) — one line per session roll, not per tick.
 	lastClockHealthSession string
-	customPrompt           string // Custom trading strategy prompt
-	overrideBasePrompt     bool   // Whether to override base prompt
 	lastResetTime          time.Time
 	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
 	pauseStoreMu           sync.Mutex   // E7-v2: orders memory-vs-store pause writes (expiry CAS vs concurrent re-pause)
@@ -969,16 +967,6 @@ func (at *AutoTrader) GetShowInCompetition() bool {
 // SetShowInCompetition sets whether trader should be shown in competition
 func (at *AutoTrader) SetShowInCompetition(show bool) {
 	at.showInCompetition = show
-}
-
-// SetCustomPrompt sets custom trading strategy prompt
-func (at *AutoTrader) SetCustomPrompt(prompt string) {
-	at.customPrompt = prompt
-}
-
-// SetOverrideBasePrompt sets whether to override base prompt
-func (at *AutoTrader) SetOverrideBasePrompt(override bool) {
-	at.overrideBasePrompt = override
 }
 
 // GetSystemPromptTemplate gets current system prompt template name (from strategy config)
