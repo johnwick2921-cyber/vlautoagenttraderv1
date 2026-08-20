@@ -224,7 +224,15 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 			patches = append(patches, ov.Patch)
 		}
 		if base, mErr := json.Marshal(doc); mErr == nil {
-			final, _ := kernel.ApplyOverlayPatches(base, patches)
+			final, overlayErrs := kernel.ApplyOverlayPatches(base, patches)
+			// A8 (F14): a stored overlay that no longer applies must never be a
+			// silent no-op — the owner's edit visibly vanished. WARN (deduped
+			// by content via log_events) + expose on the response.
+			for _, oe := range overlayErrs {
+				if oe != nil {
+					logger.Warnf("⚠️ plan overlay SKIPPED at read-merge (%s %s): %v — the owner edit in that patch is not in the rendered plan", row.PlanID, row.Session, oe)
+				}
+			}
 			var merged kernel.PlanDoc
 			if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
 				doc = merged // plan_final
@@ -292,6 +300,15 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		// heuristic) + unevaluable scenario ids — the card renders them
 		// distinctly instead of dressing a heuristic as a machine verdict.
 		"scenario_meta": s.scenarioMeta(traderID, row.PlanID),
+		"overlay_errors": func() []string {
+			var out []string
+			for _, oe := range overlayErrs {
+				if oe != nil {
+					out = append(out, oe.Error())
+				}
+			}
+			return out
+		}(),
 		// ITEM 4 — owner edits that could NOT be re-anchored onto this version.
 		// Never dropped silently: the card asks for review.
 		"uncarried_edits": s.uncarriedEdits(row.PlanID, row.Version),

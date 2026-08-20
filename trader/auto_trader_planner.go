@@ -1129,6 +1129,17 @@ func resolveActivePlanDoc(st *store.Store, row *store.PlanDB) (kernel.PlanDoc, b
 	var merged kernel.PlanDoc
 	// H4/H5 — re-validation integrity check at the HARD ceilings (12/5): a plan
 	// validly written under raised caps must survive overlay resolution.
+	if vErrDoc := func() error {
+		if err := json.Unmarshal(final, &merged); err != nil {
+			return err
+		}
+		return kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios)
+	}(); vErrDoc != nil {
+		// A8 (F14): the fallback-to-base is no longer silent — the owner's
+		// overlay is NOT in what the executor reads, and they must know.
+		// (free function — package logger, still WARN → log_events sink)
+		logger.Warnf("⚠️ merged plan+overlay FAILED re-validation for %s v%d (%v) — falling back to the BASE plan; the overlay edits are NOT active.", row.PlanID, row.Version, vErrDoc)
+	}
 	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
 		return merged, true // plan_final
 	}
