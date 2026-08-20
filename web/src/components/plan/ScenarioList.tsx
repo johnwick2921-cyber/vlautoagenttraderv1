@@ -138,6 +138,10 @@ export function ScenarioList({
         style={{ color: 'var(--vl-faint)', fontFamily: 'var(--vl-font-ui)' }}
       >
         {tp('scenarios', language)}
+        <span title="Scenario dots and confirm chips are ADVISORY — they inform the card and the AI's prompt, they never hard-gate an entry (a hard scenario-state gate would recreate the suppression class; AI judgment + plan discipline already gate).">
+          {' '}
+          (advisory)
+        </span>
       </span>
       <div className="mt-1">
         {scenarios.map((s) => {
