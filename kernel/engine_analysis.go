@@ -431,8 +431,13 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	// with the parse error fed back; still bad → skip the cycle with a NAMED reason
 	// (HOLD, never crash). schema_parse_failed is the named reason B6 will count.
 	const maxParseRetries = 2
+	// A6 (F12): with an ACTIVE plan, an open decision MUST carry cited_scenario
+	// ("S1"… or "off-plan") — the retry loop feeds the miss back to the model
+	// instead of letting every adherence grade silently degrade to D.
+	isFutForCite, _ := futuresVariantMode(variant)
+	planActiveForCite := isFutForCite && ActivePlanFor(ctx.TraderID, activeSymbol) != nil
 	parse := func(resp string) (*FullDecision, error) {
-		return parseFullDecisionResponse(
+		fd, err := parseFullDecisionResponse(
 			resp,
 			ctx.Account.TotalEquity,
 			riskConfig.BTCETHMaxLeverage,
@@ -444,6 +449,12 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			ResolveNotionalLeverage(riskConfig.MaxNotionalLeverage, futuresMaxNotionalLeverage),
 			ctx, // F1: entry reference (current-price snapshot) + TraderID for rr_gate
 		)
+		if err == nil && fd != nil && planActiveForCite {
+			if cErr := requireCitedScenario(fd); cErr != nil {
+				return fd, cErr
+			}
+		}
+		return fd, err
 	}
 	decision, aiResponse, aiCallDuration, parseErr, callErr := callWithSchemaRetry(
 		mcpClient, systemPrompt, userPrompt, parse, maxParseRetries)
@@ -962,5 +973,19 @@ func MaybeForceFlat(traderID string, signaler ForceFlatSignaler) error {
 	// After a force-flat, reset the daily PnL window so the operator can
 	// resume after they have addressed whatever tripped the kill switch.
 	ResetDailyPnL()
+	return nil
+}
+
+// requireCitedScenario (A6/F12, fail-register wave): with an active plan every
+// OPEN decision must name the scenario it trades ("S1"… or "off-plan"). Fed
+// back through the schema-retry loop, so a compliant model self-corrects
+// instead of silently costing every adherence grade.
+func requireCitedScenario(fd *FullDecision) error {
+	for i := range fd.Decisions {
+		d := &fd.Decisions[i]
+		if (d.Action == "open_long" || d.Action == "open_short") && strings.TrimSpace(d.CitedScenario) == "" {
+			return fmt.Errorf("missing required field cited_scenario on %s %s — set the plan scenario id (\"S1\"…) or \"off-plan\"", d.Action, d.Symbol)
+		}
+	}
 	return nil
 }
