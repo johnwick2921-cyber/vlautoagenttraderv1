@@ -72,7 +72,7 @@ func (s *PositionStore) CountConsecutiveLossesSince(traderID string, sinceMs int
 	}
 	n := 0
 	for _, r := range rows {
-		if r.RealizedPnL < 0 {
+		if r.EffectivePnL() < 0 {
 			n++
 		} else {
 			break // a win / break-even ends the losing streak
@@ -160,16 +160,16 @@ func (s *PositionStore) GetFullStats(traderID string, account ...string) (*Trade
 
 	for _, pos := range positions {
 		stats.TotalTrades++
-		stats.TotalPnL += pos.RealizedPnL
+		stats.TotalPnL += pos.EffectivePnL()
 		stats.TotalFee += pos.Fee
-		pnls = append(pnls, pos.RealizedPnL)
+		pnls = append(pnls, pos.EffectivePnL())
 
-		if pos.RealizedPnL > 0 {
+		if pos.EffectivePnL() > 0 {
 			stats.WinTrades++
-			totalWin += pos.RealizedPnL
-		} else if pos.RealizedPnL < 0 {
+			totalWin += pos.EffectivePnL()
+		} else if pos.EffectivePnL() < 0 {
 			stats.LossTrades++
-			totalLoss += -pos.RealizedPnL
+			totalLoss += -pos.EffectivePnL()
 		}
 	}
 
@@ -232,7 +232,7 @@ func (s *PositionStore) GetRecentTrades(traderID string, limit int, account ...s
 			Side:        strings.ToLower(pos.Side),
 			EntryPrice:  pos.EntryPrice,
 			ExitPrice:   pos.ExitPrice,
-			RealizedPnL: pos.RealizedPnL,
+			RealizedPnL: pos.EffectivePnL(),
 			EntryTime:   pos.EntryTime / 1000, // Convert ms to seconds for API compatibility
 		}
 
@@ -339,8 +339,8 @@ func (s *PositionStore) GetSymbolStats(traderID string, limit int) ([]SymbolStat
 		}
 		s := symbolMap[pos.Symbol]
 		s.TotalTrades++
-		s.TotalPnL += pos.RealizedPnL
-		if pos.RealizedPnL > 0 {
+		s.TotalPnL += pos.EffectivePnL()
+		if pos.EffectivePnL() > 0 {
 			s.WinTrades++
 		}
 
@@ -429,8 +429,8 @@ func (s *PositionStore) GetHoldingTimeStats(traderID string) ([]HoldingTimeStats
 
 		r := rangeStats[rangeKey]
 		r.count++
-		r.totalPnL += pos.RealizedPnL
-		if pos.RealizedPnL > 0 {
+		r.totalPnL += pos.EffectivePnL()
+		if pos.EffectivePnL() > 0 {
 			r.wins++
 		}
 	}
@@ -476,8 +476,8 @@ func (s *PositionStore) GetDirectionStats(traderID string) ([]DirectionStats, er
 		}
 		s := sideStats[pos.Side]
 		s.TradeCount++
-		s.TotalPnL += pos.RealizedPnL
-		if pos.RealizedPnL > 0 {
+		s.TotalPnL += pos.EffectivePnL()
+		if pos.EffectivePnL() > 0 {
 			s.WinRate++
 		}
 	}
