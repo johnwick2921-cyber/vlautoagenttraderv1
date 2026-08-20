@@ -298,7 +298,12 @@ export const planApi = {
   ): Promise<{ ok: boolean; error?: string; gate?: RereadGate }> {
     const res = await httpClient.request<{ ok: boolean; gate: RereadGate }>(
       `${API_BASE}/plan/reread`,
-      { method: 'POST', data: { trader_id: traderId }, silent: true }
+      {
+        method: 'POST',
+        data: { trader_id: traderId },
+        silent: true,
+        timeoutMs: 320_000,
+      }
     )
     if (res.success && res.data) return { ok: true, gate: res.data.gate }
     return { ok: false, error: res.message || 'reread refused' }
@@ -323,7 +328,14 @@ export const planApi = {
   ): Promise<{ ok: boolean; error?: string; note?: string; gate?: ResetGate }> {
     const res = await httpClient.request<{ ok: boolean; gate: ResetGate }>(
       `${API_BASE}/plan/reset`,
-      { method: 'POST', data: { trader_id: traderId }, silent: true }
+      // The reset runs a SYNCHRONOUS planner read server-side (60-300s) — the
+      // 30s axios default was the stuck-dialog trigger (reset-dialog hotfix).
+      {
+        method: 'POST',
+        data: { trader_id: traderId },
+        silent: true,
+        timeoutMs: 320_000,
+      }
     )
     if (res.success && res.data) {
       return { ok: true, gate: res.data.gate, note: res.data.gate?.note }
@@ -459,6 +471,7 @@ export const planApi = {
         method: 'POST',
         data: { trader_id: traderId, symbol, manual, change },
         silent: true,
+        timeoutMs: 320_000,
       }
     )
     if (!res.success || !res.data) {
