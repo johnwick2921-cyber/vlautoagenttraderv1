@@ -257,7 +257,27 @@ func (client *Client) BuildMCPRequestBody(systemPrompt, userPrompt string) map[s
 	} else {
 		requestBody["max_tokens"] = client.MaxTokens
 	}
+	if client.Provider == ProviderDeepSeek {
+		applyDeepSeekThinkingDefaults(requestBody, client.Cfg)
+	}
 	return requestBody
+}
+
+// applyDeepSeekThinkingDefaults injects the DeepSeek thinking-mode parameters
+// into the request body for deepseek providers. Docs:
+// https://api-docs.deepseek.com/guides/thinking_mode — thinking {type: enabled/
+// disabled} + reasoning_effort low|high|max (max is the true maximum; medium/
+// xhigh map to high). Empty cfg values omit the key.
+func applyDeepSeekThinkingDefaults(body map[string]any, cfg *Config) {
+	if cfg == nil {
+		return
+	}
+	if cfg.ThinkingMode != "" {
+		body["thinking"] = map[string]any{"type": cfg.ThinkingMode}
+	}
+	if cfg.ReasoningEffort != "" {
+		body["reasoning_effort"] = cfg.ReasoningEffort
+	}
 }
 
 // MarshalRequestBody can be used to marshal the request body and can be overridden
@@ -705,6 +725,10 @@ func (client *Client) BuildRequestBodyFromRequest(req *Request) map[string]any {
 
 	if req.Stream {
 		requestBody["stream"] = true
+	}
+
+	if client.Provider == ProviderDeepSeek {
+		applyDeepSeekThinkingDefaults(requestBody, client.Cfg)
 	}
 
 	return requestBody

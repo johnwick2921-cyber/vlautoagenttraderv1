@@ -20,13 +20,20 @@ type Config struct {
 
 	// Behavior configuration
 	MaxTokens   int
-	MaxContext  int     // Model's max context window in tokens (0 = no limit)
+	MaxContext  int // Model's max context window in tokens (0 = no limit)
 	Temperature float64
 	UseFullURL  bool
 
+	// DeepSeek thinking mode (https://api-docs.deepseek.com/guides/thinking_mode):
+	// thinking {type: enabled|disabled} + reasoning_effort low|high|max.
+	// Docs: thinking mode is ON by default with effort high; "max" is the true
+	// maximum (medium/xhigh map to high). Empty string = omit from the request.
+	ThinkingMode    string // "enabled" (default) | "disabled" | ""
+	ReasoningEffort string // "max" (default) | "high" | "low" | ""
+
 	// Retry configuration
-	MaxRetries     int
-	RetryWaitBase  time.Duration
+	MaxRetries      int
+	RetryWaitBase   time.Duration
 	RetryableErrors []string
 
 	// Timeout configuration
@@ -41,11 +48,13 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		// Default values
-		MaxTokens:      getEnvInt("AI_MAX_TOKENS", 2000),
-		Temperature:    MCPClientTemperature,
-		MaxRetries:     MaxRetryTimes,
-		RetryWaitBase:  2 * time.Second,
-		Timeout:        DefaultTimeout,
+		MaxTokens:       getEnvInt("AI_MAX_TOKENS", 2000),
+		Temperature:     MCPClientTemperature,
+		ThinkingMode:    getEnvString("DEEPSEEK_THINKING_MODE", "enabled"),
+		ReasoningEffort: getEnvString("AI_REASONING_EFFORT", "max"),
+		MaxRetries:      MaxRetryTimes,
+		RetryWaitBase:   2 * time.Second,
+		Timeout:         DefaultTimeout,
 		RetryableErrors: retryableErrors,
 
 		// Default dependencies (use global logger)
