@@ -26,3 +26,24 @@ type AIClient interface {
 	// (LLMResponse.ToolCalls), but not both.
 	CallWithRequestFull(req *Request) (*LLMResponse, error)
 }
+
+// ThinkingTuner lets a call site override the env-default DeepSeek thinking
+// knobs with per-model values (4.5 API auto max). Empty strings keep the
+// env-derived default (empty also means "omit from the request"). Only the
+// base DeepSeek client implements it; other providers are unaffected.
+type ThinkingTuner interface {
+	SetThinking(mode, effort string)
+}
+
+// ApplyThinking pushes per-model DeepSeek thinking knobs onto any client that
+// implements ThinkingTuner (a no-op for every other provider). Empty values
+// keep the env-derived defaults — call it unconditionally with the model row's
+// values, never with guessed strings.
+func ApplyThinking(client AIClient, mode, effort string) {
+	if client == nil {
+		return
+	}
+	if tuner, ok := client.(ThinkingTuner); ok {
+		tuner.SetThinking(mode, effort)
+	}
+}

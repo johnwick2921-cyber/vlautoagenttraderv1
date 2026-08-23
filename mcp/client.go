@@ -905,3 +905,32 @@ func ReportStreamUsage(usage *TokenUsage, provider, model string) {
 		TotalTokens:      usage.TotalTokens,
 	})
 }
+
+// SetThinking overrides the env-default DeepSeek thinking knobs with per-model
+// values (4.5 API auto max). Empty keeps the env-derived default.
+func (c *Client) SetThinking(mode, effort string) {
+	if c == nil {
+		return
+	}
+	if mode != "" {
+		c.Cfg.ThinkingMode = mode
+	}
+	if effort != "" {
+		c.Cfg.ReasoningEffort = effort
+	}
+}
+
+// ValidateThinkingKnobs whitelists the two DeepSeek fields; empty = inherit.
+func ValidateThinkingKnobs(mode, effort string) error {
+	switch mode {
+	case "", "enabled", "disabled":
+	default:
+		return fmt.Errorf("thinking_mode must be enabled|disabled (got %q)", mode)
+	}
+	switch effort {
+	case "", "low", "high", "max":
+	default:
+		return fmt.Errorf("reasoning_effort must be low|high|max (got %q)", effort)
+	}
+	return nil
+}

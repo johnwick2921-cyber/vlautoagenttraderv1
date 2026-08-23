@@ -606,6 +606,16 @@ func buildAgentTools() []mcp.Tool {
 						"api_key":           modelConfigFieldsSchema()["api_key"],
 						"custom_api_url":    modelConfigFieldsSchema()["custom_api_url"],
 						"custom_model_name": modelConfigFieldsSchema()["custom_model_name"],
+						"thinking_mode": map[string]any{
+							"type":        "string",
+							"enum":        []string{"enabled", "disabled"},
+							"description": "DeepSeek thinking mode override for THIS model (omit = inherit env default DEEPSEEK_THINKING_MODE).",
+						},
+						"reasoning_effort": map[string]any{
+							"type":        "string",
+							"enum":        []string{"low", "high", "max"},
+							"description": "DeepSeek reasoning effort override for THIS model; max is the true maximum (omit = inherit env default AI_REASONING_EFFORT).",
+						},
 					},
 					"required": []string{"action"},
 				},
@@ -948,6 +958,8 @@ type safeModelToolConfig struct {
 	HasAPIKey       bool   `json:"has_api_key"`
 	CustomAPIURL    string `json:"custom_api_url,omitempty"`
 	CustomModelName string `json:"custom_model_name,omitempty"`
+	ThinkingMode    string `json:"thinking_mode,omitempty"`
+	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 	WalletAddress   string `json:"wallet_address,omitempty"`
 	BalanceUSDC     string `json:"balance_usdc,omitempty"`
 }
@@ -1743,9 +1755,17 @@ func (a *Agent) toolManageModelConfig(storeUserID, argsJSON string) string {
 		APIKey          string `json:"api_key"`
 		CustomAPIURL    string `json:"custom_api_url"`
 		CustomModelName string `json:"custom_model_name"`
+		ThinkingMode    string `json:"thinking_mode"`
+		ReasoningEffort string `json:"reasoning_effort"`
 	}
 	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
 		return fmt.Sprintf(`{"error":"invalid arguments: %s"}`, err)
+	}
+	// 4.5 — per-model DeepSeek thinking knobs (empty = inherit env defaults).
+	thinkingMode := strings.ToLower(strings.TrimSpace(args.ThinkingMode))
+	reasoningEffort := strings.ToLower(strings.TrimSpace(args.ReasoningEffort))
+	if err := mcp.ValidateThinkingKnobs(thinkingMode, reasoningEffort); err != nil {
+		return fmt.Sprintf(`{"error":%q}`, err.Error())
 	}
 	if trimmed := strings.TrimSpace(args.CustomAPIURL); trimmed != "" {
 		if err := security.ValidateURL(strings.TrimSuffix(trimmed, "#")); err != nil {
@@ -1827,6 +1847,9 @@ func (a *Agent) toolManageModelConfig(storeUserID, argsJSON string) string {
 		if modelID == provider {
 			createdID = fmt.Sprintf("%s_%s", storeUserID, provider)
 		}
+		if err := a.store.AIModel().UpdateThinking(storeUserID, createdID, thinkingMode, reasoningEffort); err != nil {
+			a.log().Warn("thinking knobs not persisted", "model_id", createdID, "error", err)
+		}
 		model, err := a.store.AIModel().Get(storeUserID, createdID)
 		if err != nil {
 			model, err = a.store.AIModel().Get(storeUserID, modelID)
@@ -1895,6 +1918,9 @@ func (a *Agent) toolManageModelConfig(storeUserID, argsJSON string) string {
 			customModelName,
 		); err != nil {
 			return fmt.Sprintf(`{"error":"failed to update model config: %s"}`, err)
+		}
+		if err := a.store.AIModel().UpdateThinking(storeUserID, existing.ID, thinkingMode, reasoningEffort); err != nil {
+			a.log().Warn("thinking knobs not persisted", "model_id", existing.ID, "error", err)
 		}
 		updated, err := a.store.AIModel().Get(storeUserID, existing.ID)
 		if err != nil {

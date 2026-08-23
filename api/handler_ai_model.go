@@ -9,6 +9,7 @@ import (
 	"nofx/config"
 	"nofx/crypto"
 	"nofx/logger"
+	"nofx/mcp"
 	"nofx/security"
 	"nofx/store"
 	"nofx/wallet"
@@ -34,6 +35,10 @@ type SafeModelConfig struct {
 	HasAPIKey       bool   `json:"has_api_key"`
 	CustomAPIURL    string `json:"customApiUrl"`    // Custom API URL (usually not sensitive)
 	CustomModelName string `json:"customModelName"` // Custom model name (not sensitive)
+	// DeepSeek thinking knobs (4.5 API auto max). Empty = inherit the env
+	// defaults; a set value overrides per-model without env/redeploy.
+	ThinkingMode    string `json:"thinkingMode,omitempty"`
+	ReasoningEffort string `json:"reasoningEffort,omitempty"`
 	WalletAddress   string `json:"walletAddress,omitempty"`
 	BalanceUSDC     string `json:"balanceUsdc,omitempty"`
 }
@@ -45,6 +50,8 @@ type UpdateModelConfigRequest struct {
 		APIKey          string `json:"api_key"`
 		CustomAPIURL    string `json:"custom_api_url"`
 		CustomModelName string `json:"custom_model_name"`
+		ThinkingMode    string `json:"thinking_mode"`
+		ReasoningEffort string `json:"reasoning_effort"`
 	} `json:"models"`
 }
 
@@ -92,6 +99,8 @@ func (s *Server) handleGetModelConfigs(c *gin.Context) {
 			HasAPIKey:       model.APIKey != "",
 			CustomAPIURL:    model.CustomAPIURL,
 			CustomModelName: model.CustomModelName,
+			ThinkingMode:    model.ThinkingMode,
+			ReasoningEffort: model.ReasoningEffort,
 		}
 
 		if model.Provider == "claw402" {
@@ -212,6 +221,16 @@ func (s *Server) handleUpdateModelConfigs(c *gin.Context) {
 		if err != nil {
 			SafeInternalError(c, fmt.Sprintf("Update model %s", modelID), err)
 			return
+		}
+		// 4.5 — per-model thinking knobs (empty = inherit env defaults).
+		thinkingMode := strings.ToLower(strings.TrimSpace(modelData.ThinkingMode))
+		reasoningEffort := strings.ToLower(strings.TrimSpace(modelData.ReasoningEffort))
+		if err := mcp.ValidateThinkingKnobs(thinkingMode, reasoningEffort); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if err := s.store.AIModel().UpdateThinking(userID, modelID, thinkingMode, reasoningEffort); err != nil {
+			logger.Warnf("⚠️ thinking knobs not persisted for model %s: %v", modelID, err)
 		}
 	}
 

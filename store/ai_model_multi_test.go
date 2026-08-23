@@ -134,3 +134,37 @@ func TestPickProviderModel_Determinism(t *testing.T) {
 		t.Fatalf("qwen expected (nil,0), got (%v,%d)", got, n0)
 	}
 }
+// UpdateThinking must persist per-model DeepSeek knobs on the exact row and
+// CLEAR them back to empty (inherit env) — 4.5 API auto max.
+func TestUpdateThinking_RoundTripAndClear(t *testing.T) {
+        st := newAIModelTestStore(t)
+        id, err := st.AIModel().CreateEntry("u1", "deepseek", "DeepSeek-main", true, "KEY1", "", "")
+        if err != nil {
+                t.Fatalf("CreateEntry: %v", err)
+        }
+        if err := st.AIModel().UpdateThinking("u1", id, "enabled", "max"); err != nil {
+                t.Fatalf("UpdateThinking: %v", err)
+        }
+        m, err := st.AIModel().GetByID(id)
+        if err != nil {
+                t.Fatalf("GetByID: %v", err)
+        }
+        if m.ThinkingMode != "enabled" || m.ReasoningEffort != "max" {
+                t.Fatalf("round-trip mismatch: mode=%q effort=%q", m.ThinkingMode, m.ReasoningEffort)
+        }
+        // Clearing back to empty (inherit env) must persist, not no-op.
+        if err := st.AIModel().UpdateThinking("u1", id, "", ""); err != nil {
+                t.Fatalf("UpdateThinking(clear): %v", err)
+        }
+        m, err = st.AIModel().GetByID(id)
+        if err != nil {
+                t.Fatalf("GetByID(2): %v", err)
+        }
+        if m.ThinkingMode != "" || m.ReasoningEffort != "" {
+                t.Fatalf("clear mismatch: mode=%q effort=%q", m.ThinkingMode, m.ReasoningEffort)
+        }
+        // A miss must surface as an error, never a silent create.
+        if err := st.AIModel().UpdateThinking("u1", "no-such-model", "enabled", "max"); err == nil {
+                t.Fatal("UpdateThinking on a missing id must return an error")
+        }
+}

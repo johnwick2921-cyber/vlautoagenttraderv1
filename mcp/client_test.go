@@ -422,3 +422,39 @@ func findSubstring(s, substr string) bool {
 	}
 	return false
 }
+
+func TestValidateThinkingKnobs(t *testing.T) {
+	for _, tc := range []struct {
+		mode, effort string
+		wantErr      bool
+	}{
+		{"", "", false},
+		{"enabled", "max", false},
+		{"disabled", "low", false},
+		{"enabled", "high", false},
+		{"", "max", false},
+		{"enabled", "", false},
+		{"banana", "", true},
+		{"", "ultra", true},
+		{"ENABLED", "", true}, // case must be normalized by callers
+	} {
+		err := ValidateThinkingKnobs(tc.mode, tc.effort)
+		if (err != nil) != tc.wantErr {
+			t.Errorf("ValidateThinkingKnobs(%q,%q) err=%v wantErr=%v", tc.mode, tc.effort, err, tc.wantErr)
+		}
+	}
+}
+
+func TestSetThinkingOverridesOnlyWhenSet(t *testing.T) {
+	c := &Client{Cfg: DefaultConfig()}
+	c.Cfg.ThinkingMode = "enabled"
+	c.Cfg.ReasoningEffort = "max"
+	c.SetThinking("", "") // empty = inherit env defaults
+	if c.Cfg.ThinkingMode != "enabled" || c.Cfg.ReasoningEffort != "max" {
+		t.Fatalf("empty SetThinking must keep env defaults, got %q/%q", c.Cfg.ThinkingMode, c.Cfg.ReasoningEffort)
+	}
+	c.SetThinking("disabled", "low")
+	if c.Cfg.ThinkingMode != "disabled" || c.Cfg.ReasoningEffort != "low" {
+		t.Fatalf("SetThinking must override, got %q/%q", c.Cfg.ThinkingMode, c.Cfg.ReasoningEffort)
+	}
+}

@@ -1,6 +1,7 @@
 package ninjatrader
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -131,7 +132,20 @@ func (t *TCPTrader) recordClose(
 	}
 
 	// Realized P&L with the futures point value (PositionBuilder's fallback omits it),
-	// computed from the OWNING row's entry.
+	// computed from the OWNING row's entry — and the OWNING ROW's QUANTITY.
+	//
+	// P0 pnl-record-integrity (2026-08-20): a MANUAL flatten in NT8 emits ONE
+	// position_close frame for the account's WHOLE flattened size. The frame's
+	// qty belongs to the NT8 POSITION EVENT; only the row's own size may ever be
+	// attributed to the row.
+	attributedQty := owner.Quantity
+	if attributedQty <= 0 {
+		attributedQty = 1
+	}
+	if qty > attributedQty {
+		logger.Warnf("⚖️ pnl-attribution: position_close frame carries qty=%.0f but the owning row holds %.2f — attributing the ROW's size only (the excess is foreign/manual activity on the same account; exit price %.2f is the frame's average).",
+			qty, attributedQty, p.ExitPrice)
+	}
 	pv := market.FuturesPointValue(symbol)
 	if pv <= 0 {
 		pv = 1
@@ -139,18 +153,35 @@ func (t *TCPTrader) recordClose(
 	realizedPnL := 0.0
 	if owner.EntryPrice > 0 {
 		if side == "LONG" {
-			realizedPnL = (p.ExitPrice - owner.EntryPrice) * qty * pv
+			realizedPnL = (p.ExitPrice - owner.EntryPrice) * attributedQty * pv
 		} else {
-			realizedPnL = (owner.EntryPrice - p.ExitPrice) * qty * pv
+			realizedPnL = (owner.EntryPrice - p.ExitPrice) * attributedQty * pv
 		}
 	}
 
 	if err := pb.ProcessTrade(owner.TraderID, exchangeID, exchangeType, symbol, side, action,
-		qty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
+		attributedQty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
 		logger.Warnf("ninjatrader/tcp: record close failed (%s %s): %v", symbol, side, err)
 	} else {
-		logger.Infof("📕 NT position closed: %s %s qty=%.0f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
-			symbol, side, qty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
+		// 4.2 — exit-fill persistence (NT8 SIM lineage): entries record fills in
+		// trader_fills, exits NEVER did — NT closes return early in the decision
+		// path and wait for THIS frame. Write the tick-exact exit fill now, keyed
+		// deterministically on the owning position row so a retransmitted
+		// position_close frame can never double-count (CreateFill dedupes on
+		// exchange_trade_id).
+		if fill := buildExitFill(owner, exchangeID, exchangeType, symbol, side,
+			p.ExitPrice, attributedQty, realizedPnL, exitMs, p.SignalID); fill != nil {
+			if err := st.Order().CreateFill(fill); err != nil {
+				logger.Warnf("ninjatrader/tcp: exit fill record failed (%s %s): %v", symbol, side, err)
+			} else {
+				logger.Infof("📊 exit fill recorded: %s %s qty=%.2f @ %.2f (tick-exact, pnl %.2f)",
+					symbol, side, attributedQty, p.ExitPrice, realizedPnL)
+			}
+		}
+		// WARN (honest-logs): a position close with realized P&L is owner-visible
+		// truth — must reach the log_events sink even under frame-flood suppression.
+		logger.Warnf("📕 NT position closed: %s %s qty=%.2f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
+			symbol, side, attributedQty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
 	}
 
 	// B7 — re-entry cooldown: a STOP-LOSS exit (NT8 reason "sl") arms the
@@ -166,4 +197,39 @@ func (t *TCPTrader) recordClose(
 	t.mu.Lock()
 	t.hasFill = false
 	t.mu.Unlock()
+}
+
+// buildExitFill constructs the deterministic trader_fills row for an NT8 exit
+// (4.2). The exchange_trade_id is keyed on the owning position row id — one
+// close, one row, no double-count even if the position_close frame retransmits
+// (CreateFill dedupes). Side uses the fill convention (close_long = SELL,
+// close_short = BUY), matching recordOrderFill. Nil only when the owner row is
+// absent (callers already dropped those closes).
+func buildExitFill(owner *store.TraderPosition, exchangeID, exchangeType, symbol, side string,
+	exitPrice, qty, pnl float64, exitMs int64, signalID string) *store.TraderFill {
+	if owner == nil {
+		return nil
+	}
+	fillSide := "BUY"
+	if side == "LONG" {
+		fillSide = "SELL"
+	}
+	return &store.TraderFill{
+		TraderID:        owner.TraderID,
+		ExchangeID:      exchangeID,
+		ExchangeType:    exchangeType,
+		OrderID:         0,
+		ExchangeOrderID: signalID,
+		ExchangeTradeID: fmt.Sprintf("nt8-exit-%d", owner.ID),
+		Symbol:          market.Normalize(symbol),
+		Side:            fillSide,
+		Price:           exitPrice,
+		Quantity:        qty,
+		QuoteQuantity:   exitPrice * qty,
+		Commission:      0,
+		CommissionAsset: "USD",
+		RealizedPnL:     pnl,
+		IsMaker:         false,
+		CreatedAt:       exitMs,
+	}
 }

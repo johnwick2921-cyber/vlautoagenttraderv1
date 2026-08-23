@@ -28,8 +28,13 @@ type AIModel struct {
 	APIKey          crypto.EncryptedString `gorm:"column:api_key;default:''" json:"apiKey"`
 	CustomAPIURL    string                 `gorm:"column:custom_api_url;default:''" json:"customApiUrl"`
 	CustomModelName string                 `gorm:"column:custom_model_name;default:''" json:"customModelName"`
-	CreatedAt       time.Time              `json:"created_at"`
-	UpdatedAt       time.Time              `json:"updated_at"`
+	// DeepSeek thinking knobs (4.5 API auto max): empty = inherit the env
+	// defaults (DEEPSEEK_THINKING_MODE / AI_REASONING_EFFORT). A set value
+	// overrides the env for THIS model only — no restart/redeploy needed.
+	ThinkingMode    string    `gorm:"column:thinking_mode;default:''" json:"thinkingMode"`
+	ReasoningEffort string    `gorm:"column:reasoning_effort;default:''" json:"reasoningEffort"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 func (AIModel) TableName() string { return "ai_models" }
@@ -390,6 +395,36 @@ func (s *AIModelStore) UpdateWithName(userID, id, name string, enabled bool, api
 		CustomModelName: customModelName,
 	}
 	return s.db.Create(newModel).Error
+}
+
+// UpdateThinking writes the per-model DeepSeek thinking knobs (4.5 API auto
+// max). Empty values are WRITTEN as-is — empty means "inherit the env default",
+// and clearing an override back to inherit is a supported transition. Mirrors
+// UpdateWithName's two-step lookup (exact id → scoped legacy bare-provider); a
+// missing row is returned as gorm.ErrRecordNotFound and the caller decides.
+func (s *AIModelStore) UpdateThinking(userID, id, mode, effort string) error {
+	var existingModel AIModel
+	err := s.db.Where("user_id = ? AND id = ?", userID, id).First(&existingModel).Error
+	if err != nil {
+		if !strings.Contains(id, "_") {
+			var providerRows []*AIModel
+			if e := s.db.Where("user_id = ? AND provider = ?", userID, id).Find(&providerRows).Error; e == nil && len(providerRows) > 0 {
+				if chosen, _ := PickProviderModel(providerRows, id); chosen != nil {
+					return s.db.Model(chosen).Updates(map[string]interface{}{
+						"thinking_mode":    mode,
+						"reasoning_effort": effort,
+						"updated_at":       time.Now().UTC(),
+					}).Error
+				}
+			}
+		}
+		return err
+	}
+	return s.db.Model(&existingModel).Updates(map[string]interface{}{
+		"thinking_mode":    mode,
+		"reasoning_effort": effort,
+		"updated_at":       time.Now().UTC(),
+	}).Error
 }
 
 // Create creates an AI model

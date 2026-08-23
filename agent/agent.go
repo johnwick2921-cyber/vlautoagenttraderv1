@@ -177,6 +177,7 @@ func (a *Agent) loadAIClientFromStoreUser(storeUserID string) (mcp.AIClient, str
 				// model.ID — a DB row id ("<uuid>_deepseek") is not an API model
 				// name and providers reject it with a 400.
 				client.SetAPIKey(apiKey, customAPIURL, modelName)
+				mcp.ApplyThinking(client, model.ThinkingMode, model.ReasoningEffort)
 				if modelName == "" {
 					if embedder, ok := client.(mcp.ClientEmbedder); ok {
 						modelName = embedder.BaseClient().Model
@@ -202,6 +203,7 @@ func (a *Agent) loadAIClientFromStoreUser(storeUserID string) (mcp.AIClient, str
 			httpClient := &http.Client{Timeout: 60 * time.Second}
 			client := mcp.NewClient(mcp.WithHTTPClient(httpClient))
 			client.SetAPIKey(apiKey, customAPIURL, modelName)
+			mcp.ApplyThinking(client, model.ThinkingMode, model.ReasoningEffort)
 			a.log().Info("agent AI client selected", "store_user_id", candidateUserID, "model_id", model.ID, "model", modelName)
 			return client, modelName, true
 		}
