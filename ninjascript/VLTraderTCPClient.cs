@@ -106,6 +106,9 @@ namespace NinjaTrader.NinjaScript.AddOns
         private class PlacedBracket
         {
             public Order       SlOrder;     // the live resting stop order (movable)
+            public Order       TpOrder;     // 4.3: the live take-profit order — tracked so
+                                           // CancelBracketFor can cancel BOTH legs after a
+                                           // limit exit fills (an orphaned TP could re-enter)
             public Account     Account;
             public Instrument  Instrument;
             public OrderAction ExitAction;
@@ -938,6 +941,37 @@ namespace NinjaTrader.NinjaScript.AddOns
         // SL/TP, so no orphaned exit orders are left to re-open a position. The
         // flatten's market fill arrives in OnOrderUpdate as an exit (Sell /
         // BuyToCover) and is reported as a position_close with reason "manual".
+
+        // CancelBracketFor (4.3): cancel the still-live SL/TP legs tracked for a
+        // signalId — used when the limit exit fills so the protective bracket can
+        // never re-enter the now-flat position. Best-effort; OCO fills already
+        // cancel their own sibling.
+        private void CancelBracketFor(string signalId)
+        {
+            if (string.IsNullOrEmpty(signalId)) return;
+            PlacedBracket pb = null;
+            lock (signalMapLock)
+            {
+                placedBrackets.TryGetValue(signalId, out pb);
+            }
+            if (pb == null) return;
+            Account ba = pb.Account ?? account;
+            var toCancel = new List<Order>();
+            if (pb.SlOrder != null) toCancel.Add(pb.SlOrder);
+            if (pb.TpOrder != null) toCancel.Add(pb.TpOrder);
+            if (toCancel.Count > 0 && ba != null)
+            {
+                try
+                {
+                    ba.Cancel(toCancel);
+                    LogInfo("VLTraderTCPClient: bracket legs cancelled after limit exit (signal_id=" + signalId + ")");
+                }
+                catch (Exception ex)
+                {
+                    LogWarn("VLTraderTCPClient: bracket cancel after limit exit failed: " + ex.Message);
+                }
+            }
+        }
         private void HandleClosePosition(Dictionary<string, object> p)
         {
             if (p == null) { LogWarn("VLTraderTCPClient: close_position empty payload"); return; }
@@ -972,6 +1006,38 @@ namespace NinjaTrader.NinjaScript.AddOns
                             + (closeTarget != null ? closeTarget.Name : "<null>")
                             + "' is not a SIM account; position left OPEN");
                     return;
+                }
+                // 4.3 limit-then-market: when limit_price > 0, submit a LIMIT exit
+                // (favorable side) instead of an immediate market flatten. Go sends the
+                // market fallback as a later close_position frame WITHOUT limit_price,
+                // whose Flatten cancels this resting limit. The -lx name routes its fill
+                // to position_close with reason "limit" and cancels the bracket legs.
+                double limitPrice = GetDouble(p, "limit_price");
+                if (limitPrice > 0)
+                {
+                    try
+                    {
+                        string sideStr = GetString(p, "side");
+                        string signalId = GetString(p, "signal_id");
+                        int closeQty = GetInt(p, "quantity");
+                        if (closeQty <= 0) closeQty = 1;
+                        OrderAction exitAction = string.Equals(sideStr, "long", StringComparison.OrdinalIgnoreCase)
+                            ? OrderAction.Sell : OrderAction.BuyToCover;
+                        var limitOrder = closeTarget.CreateOrder(
+                            instrument, exitAction, OrderType.Limit, OrderEntry.Manual,
+                            TimeInForce.Day, closeQty, limitPrice, 0, string.Empty, signalId + "-lx",
+                            Core.Globals.MaxDate, null);
+                        closeTarget.Submit(new[] { limitOrder });
+                        LogInfo("VLTraderTCPClient: limit exit submitted " + symbol + " " + sideStr
+                                + " qty=" + closeQty + " @ " + limitPrice + " on account=" + closeTarget.Name
+                                + " — Go schedules the market fallback (not yet closed)");
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        LogWarn("VLTraderTCPClient: limit exit submit failed (" + ex.Message
+                                + ") — falling back to market flatten");
+                    }
                 }
                 closeTarget.Flatten(new[] { instrument });
                 // Flatten is async fire-and-forget: the actual fill (or a REJECT, e.g. "no
@@ -1089,11 +1155,18 @@ namespace NinjaTrader.NinjaScript.AddOns
             string exitReason = null;
             if (signalId.EndsWith("-sl")) { exitReason = "sl"; signalId = signalId.Substring(0, signalId.Length - 3); }
             else if (signalId.EndsWith("-tp")) { exitReason = "tp"; signalId = signalId.Substring(0, signalId.Length - 3); }
+            else if (signalId.EndsWith("-lx"))
+            {
+                // 4.3 limit-then-market exit fill — cancel the still-live bracket
+                // legs so they can never re-enter the now-flat position.
+                exitReason = "limit";
+                signalId = signalId.Substring(0, signalId.Length - 3);
+                CancelBracketFor(signalId);
+            }
 
             var action = e.Order.OrderAction;
             bool isExit = (action == OrderAction.Sell || action == OrderAction.BuyToCover);
 
-            // Exit fill (SL, TP, or manual flatten) → the position closed. Emit
             // position_close with the real exit price (reason from the leg name,
             // else "manual"). Only on a full Filled — PartFilled is transient (NT
             // sends a final Filled; per-partial would duplicate the close) and a
@@ -1360,7 +1433,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 {
                     placedBrackets[signalId] = new PlacedBracket
                     {
-                        SlOrder = slOrder, Account = ba, Instrument = b.Instrument,
+                        SlOrder = slOrder, TpOrder = tpOrder, Account = ba, Instrument = b.Instrument,
                         ExitAction = b.ExitAction, Qty = b.Qty, ExitOco = exitOco, TickSize = tick,
                     };
                 }

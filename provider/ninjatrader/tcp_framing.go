@@ -276,7 +276,12 @@ type ClosePositionPayload struct {
 	Symbol   string `json:"symbol"`
 	Side     string `json:"side"` // "long" | "short" (informational)
 	Quantity int    `json:"quantity"`
-	SignalID string `json:"signal_id"`
+	// LimitPrice (4.3): when > 0, the AddOn submits a LIMIT exit at this price
+	// instead of an immediate market flatten. A follow-up close_position frame
+	// WITHOUT limit_price is the market fallback (Go owns the timing). 0 =
+	// historical market flatten, byte-identical framing.
+	LimitPrice float64 `json:"limit_price,omitempty"`
+	SignalID   string  `json:"signal_id"`
 	// A2 (G1, wire v3) — identity stamp: the account this flatten targets + the
 	// owning trader + the op seq. The AddOn echoes them on the resulting
 	// position_close so Go verifies the close came back for the right originator.
