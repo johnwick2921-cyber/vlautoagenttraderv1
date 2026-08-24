@@ -135,9 +135,12 @@ func (t *TCPTrader) recordClose(
 	// computed from the OWNING row's entry — and the OWNING ROW's QUANTITY.
 	//
 	// P0 pnl-record-integrity (2026-08-20): a MANUAL flatten in NT8 emits ONE
-	// position_close frame for the account's WHOLE flattened size. The frame's
-	// qty belongs to the NT8 POSITION EVENT; only the row's own size may ever be
-	// attributed to the row.
+	// position_close frame for the account's WHOLE flattened size. Position
+	// #526 proved it live: the bot held 1 lot short, the owner's manual
+	// activity flattened 21 contracts, the frame said qty=21 avg=29660.96, and
+	// this code recorded −$1,458 on a 1-lot row whose true loss was −$69.43.
+	// The frame's qty belongs to the NT8 POSITION EVENT; only the row's own
+	// size may ever be attributed to the row.
 	attributedQty := owner.Quantity
 	if attributedQty <= 0 {
 		attributedQty = 1
@@ -164,11 +167,11 @@ func (t *TCPTrader) recordClose(
 		logger.Warnf("ninjatrader/tcp: record close failed (%s %s): %v", symbol, side, err)
 	} else {
 		// 4.2 — exit-fill persistence (NT8 SIM lineage): entries record fills in
-		// trader_fills, exits NEVER did — NT closes return early in the decision
-		// path and wait for THIS frame. Write the tick-exact exit fill now, keyed
-		// deterministically on the owning position row so a retransmitted
-		// position_close frame can never double-count (CreateFill dedupes on
-		// exchange_trade_id).
+		// trader_fills (executeDecisionWithRecord poll path), exits NEVER did — NT
+		// closes return early there and wait for THIS frame. Write the tick-exact
+		// exit fill now, keyed deterministically on the owning position row so a
+		// retransmitted position_close frame can never double-count (CreateFill
+		// dedupes on exchange_trade_id).
 		if fill := buildExitFill(owner, exchangeID, exchangeType, symbol, side,
 			p.ExitPrice, attributedQty, realizedPnL, exitMs, p.SignalID); fill != nil {
 			if err := st.Order().CreateFill(fill); err != nil {
@@ -178,8 +181,13 @@ func (t *TCPTrader) recordClose(
 					symbol, side, attributedQty, p.ExitPrice, realizedPnL)
 			}
 		}
-		// WARN (honest-logs): a position close with realized P&L is owner-visible
-		// truth — must reach the log_events sink even under frame-flood suppression.
+		// Phase 4 (final-bundle): notify the owning trader — one post-exit rescan.
+		if OnPositionClosed != nil {
+			OnPositionClosed(owner.TraderID, owner.ID)
+		}
+		// WARN (honest-logs 2026-08-19): a position close with realized P&L is
+		// owner-visible truth — must reach the log_events sink + dashboard even
+		// under journald frame-flood suppression.
 		logger.Warnf("📕 NT position closed: %s %s qty=%.2f exit=%.2f reason=%s pnl=%.2f (owner=%s)",
 			symbol, side, attributedQty, p.ExitPrice, p.ExitReason, realizedPnL, owner.TraderID)
 	}
@@ -199,12 +207,18 @@ func (t *TCPTrader) recordClose(
 	t.mu.Unlock()
 }
 
+// OnPositionClosed (Phase 4, final-bundle 2026-08-19) is the package-level
+// close-event hook: the trader layer registers a dispatcher so a confirmed
+// position close (close_sync priced close, reconcile priced/flat close)
+// triggers exactly one post-exit rescan for the OWNING trader. Nil = no-op.
+var OnPositionClosed func(traderID string, positionID int64)
+
 // buildExitFill constructs the deterministic trader_fills row for an NT8 exit
 // (4.2). The exchange_trade_id is keyed on the owning position row id — one
 // close, one row, no double-count even if the position_close frame retransmits
 // (CreateFill dedupes). Side uses the fill convention (close_long = SELL,
 // close_short = BUY), matching recordOrderFill. Nil only when the owner row is
-// absent (callers already dropped those closes).
+// absent (caller already dropped those closes).
 func buildExitFill(owner *store.TraderPosition, exchangeID, exchangeType, symbol, side string,
 	exitPrice, qty, pnl float64, exitMs int64, signalID string) *store.TraderFill {
 	if owner == nil {

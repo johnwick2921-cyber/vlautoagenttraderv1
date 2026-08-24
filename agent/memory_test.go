@@ -18,6 +18,7 @@ type fakeAIClient struct {
 
 func (f *fakeAIClient) SetAPIKey(string, string, string) {}
 func (f *fakeAIClient) SetTimeout(time.Duration)         {}
+func (f *fakeAIClient) ResolvedModel() string            { return "mock" }
 func (f *fakeAIClient) CallWithMessages(string, string) (string, error) {
 	return "", nil
 }

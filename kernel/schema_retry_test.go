@@ -25,6 +25,7 @@ func (m *mockAIClient) CallWithMessages(_, _ string) (string, error) {
 	return m.replies[i], nil
 }
 func (m *mockAIClient) SetAPIKey(string, string, string)             {}
+func (m *mockAIClient) ResolvedModel() string                        { return "mock" }
 func (m *mockAIClient) SetTimeout(time.Duration)                     {}
 func (m *mockAIClient) CallWithRequest(*mcp.Request) (string, error) { return "", nil }
 func (m *mockAIClient) CallWithRequestStream(*mcp.Request, func(string)) (string, error) {

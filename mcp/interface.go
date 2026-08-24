@@ -14,6 +14,9 @@ type ClientEmbedder interface {
 type AIClient interface {
 	SetAPIKey(apiKey string, customURL string, customModel string)
 	SetTimeout(timeout time.Duration)
+	// ResolvedModel returns the EXACT model string this client will call (never a
+	// provider alias). Used for model-id pinning on the day plan (§125).
+	ResolvedModel() string
 	CallWithMessages(systemPrompt, userPrompt string) (string, error)
 	CallWithRequest(req *Request) (string, error)
 	// CallWithRequestStream streams the LLM response via SSE.
