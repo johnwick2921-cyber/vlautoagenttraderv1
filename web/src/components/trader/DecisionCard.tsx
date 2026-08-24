@@ -347,30 +347,122 @@ export function DecisionCard({
           <div>
             <div className="font-bold" style={{ color: '#EAECEF' }}>
               {t('cycle', language)} #{decision.cycle_number}
+              {(decision as { cycle_trigger?: string }).cycle_trigger ===
+                'post_exit' && (
+                <span
+                  className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-mono align-middle"
+                  style={{
+                    background: 'rgba(240,185,11,0.15)',
+                    color: '#F0B90B',
+                  }}
+                  title="post-exit rescan — one immediate cycle after a position close (all gates applied)"
+                >
+                  ↻ post-exit
+                </span>
+              )}
             </div>
             <div className="text-xs" style={{ color: '#848E9C' }}>
-              {new Date(decision.timestamp).toLocaleString()}
+              {new Date(decision.timestamp).toLocaleString(undefined, {
+                timeZone: 'America/Chicago',
+              })}
             </div>
           </div>
         </div>
-        <div
-          className="px-4 py-1.5 rounded-full text-xs font-bold tracking-wider"
-          style={
-            decision.success
+        {/* Discard-burn 2.3 (status honesty): a guardrail_skip is a rail doing
+            its job, not a failure — render it as a neutral ℹ️ skip. The red ❌
+            badge is reserved for real failures; feed/clock-diagnosed staleness
+            (verdict_hint=feed|clock) keeps the hard ❌. */}
+        {(() => {
+          // Phase 3 — watch rows: the in-position observer's heartbeat. 👁 badge
+          // colored by thesis status; the note lives in watch_json.
+          const wj = (decision as { watch_json?: string }).watch_json
+          if (
+            (decision as { cycle_type?: string }).cycle_type === 'watch' &&
+            wj
+          ) {
+            let ws = ''
+            let sc = 'none'
+            try {
+              const parsed = JSON.parse(wj) as {
+                accepted_status?: string
+                structure_conflict?: string
+              }
+              ws = parsed.accepted_status || ''
+              sc = parsed.structure_conflict || 'none'
+            } catch {
+              /* raw */
+            }
+            const c =
+              ws === 'invalidated'
+                ? '#F6465D'
+                : ws === 'weakening'
+                  ? '#F0B90B'
+                  : '#0ECB81'
+            // G8 — structure dot beside the 👁 badge: none/warning/confirmed
+            // (2-consecutive hysteresis applied backend-side).
+            const scc =
+              sc === 'confirmed'
+                ? '#F6465D'
+                : sc === 'warning'
+                  ? '#F0B90B'
+                  : '#0ECB81'
+            return (
+              <div
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider"
+                style={{
+                  background: `${c}26`,
+                  color: c,
+                  border: `1px solid ${c}4D`,
+                }}
+                title={wj}
+              >
+                👁 {ws || 'watch'}
+                <span
+                  title={`structure_conflict: ${sc}`}
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 999,
+                    background: scc,
+                  }}
+                />
+              </div>
+            )
+          }
+          const em = decision.error_message || ''
+          const isSkip = em.startsWith('guardrail_skip:')
+          const isHard = /verdict_hint=(feed|clock)/.test(em)
+          const style = decision.success
+            ? {
+                background: 'rgba(14, 203, 129, 0.15)',
+                color: '#0ECB81',
+                border: '1px solid rgba(14, 203, 129, 0.3)',
+              }
+            : isSkip && !isHard
               ? {
-                  background: 'rgba(14, 203, 129, 0.15)',
-                  color: '#0ECB81',
-                  border: '1px solid rgba(14, 203, 129, 0.3)',
+                  background: 'rgba(132, 142, 156, 0.15)',
+                  color: '#848E9C',
+                  border: '1px solid rgba(132, 142, 156, 0.3)',
                 }
               : {
                   background: 'rgba(246, 70, 93, 0.15)',
                   color: '#F6465D',
                   border: '1px solid rgba(246, 70, 93, 0.3)',
                 }
-          }
-        >
-          {t(decision.success ? 'success' : 'failed', language)}
-        </div>
+          const label = decision.success
+            ? t('success', language)
+            : isSkip && !isHard
+              ? `ℹ️ ${em.replace('guardrail_skip: ', '').split(':')[0].slice(0, 24)}`
+              : `❌ ${t('failed', language)}`
+          return (
+            <div
+              className="px-4 py-1.5 rounded-full text-xs font-bold tracking-wider"
+              style={style}
+            >
+              {label}
+            </div>
+          )
+        })()}
       </div>
 
       {/* Decision Actions - Beautiful Grid */}
