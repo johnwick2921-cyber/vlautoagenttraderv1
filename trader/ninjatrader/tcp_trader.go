@@ -432,8 +432,7 @@ func (t *TCPTrader) sendCloseAt(side string, quantity float64, limitPrice float6
                 LimitPrice: limitPrice,
                 SignalID:   uuid.NewString(),
                 Account:    t.boundAccount, // A2 (G1) — identity stamp
-                TraderID:   tid,
-	if err := t.server.SendClosePosition(payload); err != nil {
+                TraderID:   tid,        }	if err := t.server.SendClosePosition(payload); err != nil {
 		return nil, fmt.Errorf("ninjatrader/tcp: send close: %w", err)
 	}
 	return map[string]interface{}{
