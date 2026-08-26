@@ -13,6 +13,9 @@
 
 package ninjatrader
 
+// Fixtures below use WIRE stamps (NT8 close convention, +60_000 for the 1m
+// key); BarCache ingest converts to OPEN stamps, so assertions read T as-is.
+
 import (
 	"context"
 	"testing"
@@ -49,9 +52,9 @@ func TestTCPServer_BarsReceivePath_Historical(t *testing.T) {
 	// use WriteFrame directly. (See TestTCPServer_FillRoundTrip for
 	// precedent: SendFill is exactly this pattern.)
 	historicalBars := []Bar{
-		{T: 1000, O: 21500.00, H: 21500.50, L: 21499.75, C: 21500.25, V: 42},
-		{T: 1060, O: 21500.25, H: 21501.00, L: 21500.00, C: 21500.75, V: 38},
-		{T: 1120, O: 21500.75, H: 21501.25, L: 21500.50, C: 21501.00, V: 51},
+		{T: 1000 + 60_000, O: 21500.00, H: 21500.50, L: 21499.75, C: 21500.25, V: 42},
+		{T: 1060 + 60_000, O: 21500.25, H: 21501.00, L: 21500.00, C: 21500.75, V: 38},
+		{T: 1120 + 60_000, O: 21500.75, H: 21501.25, L: 21500.50, C: 21501.00, V: 51},
 	}
 	if err := writeFromMock(client, FrameBarsHistorical, BarsHistoricalPayload{
 		Symbol:    "MNQ",
@@ -95,7 +98,7 @@ func TestTCPServer_BarsReceivePath_UpdateMultiBar(t *testing.T) {
 	waitForConnected(t, srv, 2*time.Second)
 
 	// Seed with one bar so the upsert has a baseline.
-	seed := []Bar{{T: 1000, C: 21500}}
+	seed := []Bar{{T: 1000 + 60_000, C: 21500}}
 	if err := writeFromMock(client, FrameBarsHistorical, BarsHistoricalPayload{
 		Symbol:    "MNQ",
 		Timeframe: "1m",
@@ -107,9 +110,9 @@ func TestTCPServer_BarsReceivePath_UpdateMultiBar(t *testing.T) {
 
 	// Multi-bar update: replace bar at t=1000, append two new bars.
 	update := []Bar{
-		{T: 1000, C: 21500.5}, // replace
-		{T: 1060, C: 21501},   // append
-		{T: 1120, C: 21502},   // append
+		{T: 1000 + 60_000, C: 21500.5}, // replace
+		{T: 1060 + 60_000, C: 21501},   // append
+		{T: 1120 + 60_000, C: 21502},   // append
 	}
 	if err := writeFromMock(client, FrameBarUpdate, BarUpdatePayload{
 		Symbol:    "MNQ",

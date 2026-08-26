@@ -19,8 +19,8 @@ type staticAIClient struct {
 }
 
 func (c *staticAIClient) SetAPIKey(apiKey string, customURL string, customModel string) {}
+func (c *staticAIClient) ResolvedModel() string { return "mock-model" }
 func (c *staticAIClient) SetTimeout(timeout time.Duration)                              {}
-func (m *staticAIClient) ResolvedModel() string { return "mock" }
 func (c *staticAIClient) CallWithMessages(systemPrompt, userPrompt string) (string, error) {
 	return c.response, nil
 }

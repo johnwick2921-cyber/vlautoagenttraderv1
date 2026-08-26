@@ -30,13 +30,10 @@ func (s *Server) handleUpdateTraderPrompt(c *gin.Context) {
 		return
 	}
 
-	// If trader is in memory, update its custom prompt and override settings
-	trader, err := s.traderManager.GetTrader(traderID)
-	if err == nil {
-		trader.SetCustomPrompt(req.CustomPrompt)
-		trader.SetOverrideBasePrompt(req.OverrideBasePrompt)
-		logger.Infof("✓ Updated trader %s custom prompt (override base=%v)", trader.GetName(), req.OverrideBasePrompt)
-	}
+	// (E3): the in-memory copy is gone — it was write-only since birth. The
+	// column persists above for compat; the LIVE prompt text is the strategy's
+	// ai_config.custom_prompt (edit it in Studio → Extra Prompt).
+	logger.Infof("✓ Persisted trader custom_prompt column (compat only — the live prompt text is the strategy's Extra Prompt)")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Custom prompt updated"})
 }

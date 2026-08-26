@@ -107,7 +107,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             public Order       SlOrder;     // the live resting stop order (movable)
             public Order       TpOrder;     // 4.3: the live take-profit order — tracked so
-                                           // CancelBracketFor can cancel BOTH legs after a
+                                           // CancelBracketsFor can cancel BOTH legs after a
                                            // limit exit fills (an orphaned TP could re-enter)
             public Account     Account;
             public Instrument  Instrument;
@@ -942,33 +942,70 @@ namespace NinjaTrader.NinjaScript.AddOns
         // flatten's market fill arrives in OnOrderUpdate as an exit (Sell /
         // BuyToCover) and is reported as a position_close with reason "manual".
 
-        // CancelBracketFor (4.3): cancel the still-live SL/TP legs tracked for a
-        // signalId — used when the limit exit fills so the protective bracket can
-        // never re-enter the now-flat position. Best-effort; OCO fills already
-        // cancel their own sibling.
-        private void CancelBracketFor(string signalId)
+        // CancelBracketsFor (4.3 + 2026-08-25 orphan fix): cancel the still-live
+        // SL/TP legs tracked for a signalId — used when the limit exit fills so
+        // the protective bracket can never re-enter the now-flat position.
+        // Best-effort; OCO fills already cancel their own sibling.
+        //
+        // 2026-08-25 fix: the close_position frame carries a FRESH signal id (Go
+        // generates a new uuid per close), so the -lx leg id never matches the
+        // ENTRY's bracket key — the bracket survived and left 1 limit + 1 stop
+        // resting after the position closed (and could re-enter a flat account).
+        // Fall back to the tracked bracket for the SAME (account, instrument
+        // root) so the protective legs are always cancelled on a bot exit.
+        private void CancelBracketsFor(string signalId, string rootSymbol, string acctName)
         {
             if (string.IsNullOrEmpty(signalId)) return;
             PlacedBracket pb = null;
+            List<string> keysToRemove = new List<string>();
             lock (signalMapLock)
             {
                 placedBrackets.TryGetValue(signalId, out pb);
-            }
-            if (pb == null) return;
-            Account ba = pb.Account ?? account;
-            var toCancel = new List<Order>();
-            if (pb.SlOrder != null) toCancel.Add(pb.SlOrder);
-            if (pb.TpOrder != null) toCancel.Add(pb.TpOrder);
-            if (toCancel.Count > 0 && ba != null)
-            {
-                try
+                if (pb == null)
                 {
-                    ba.Cancel(toCancel);
-                    LogInfo("VLTraderTCPClient: bracket legs cancelled after limit exit (signal_id=" + signalId + ")");
+                    // Fresh close id → find the entry bracket by (account, instrument).
+                    foreach (var kv in placedBrackets)
+                    {
+                        var cand = kv.Value;
+                        if (cand == null) continue;
+                        string candRoot = "";
+                        string candAcct = "";
+                        try { candRoot = cand.Instrument.MasterInstrument.Name; } catch { }
+                        try { candAcct = cand.Account != null ? cand.Account.Name : ""; } catch { }
+                        if (string.Equals(candRoot, rootSymbol, StringComparison.OrdinalIgnoreCase)
+                            && (string.IsNullOrEmpty(acctName) || string.Equals(candAcct, acctName, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            pb = cand;
+                            keysToRemove.Add(kv.Key);
+                        }
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    LogWarn("VLTraderTCPClient: bracket cancel after limit exit failed: " + ex.Message);
+                    keysToRemove.Add(signalId);
+                }
+                if (pb != null)
+                {
+                    Account ba = pb.Account ?? account;
+                    var toCancel = new List<Order>();
+                    if (pb.SlOrder != null) toCancel.Add(pb.SlOrder);
+                    if (pb.TpOrder != null) toCancel.Add(pb.TpOrder);
+                    if (toCancel.Count > 0 && ba != null)
+                    {
+                        try
+                        {
+                            ba.Cancel(toCancel);
+                            LogInfo("VLTraderTCPClient: bracket legs cancelled after exit (signal_id=" + signalId + ")");
+                        }
+                        catch (Exception ex)
+                        {
+                            LogWarn("VLTraderTCPClient: bracket cancel after exit failed: " + ex.Message);
+                        }
+                    }
+                    foreach (var k in keysToRemove)
+                    {
+                        placedBrackets.Remove(k);
+                    }
                 }
             }
         }
@@ -1158,10 +1195,16 @@ namespace NinjaTrader.NinjaScript.AddOns
             else if (signalId.EndsWith("-lx"))
             {
                 // 4.3 limit-then-market exit fill — cancel the still-live bracket
-                // legs so they can never re-enter the now-flat position.
+                // legs so they can never re-enter the now-flat position. The
+                // close id is FRESH (Go uuid per close), so fall back to the
+                // (account, instrument) bracket lookup.
                 exitReason = "limit";
                 signalId = signalId.Substring(0, signalId.Length - 3);
-                CancelBracketFor(signalId);
+                string lxRoot = "";
+                string lxAcct = "";
+                try { lxRoot = e.Order.Instrument.MasterInstrument.Name; } catch { }
+                try { lxAcct = e.Order.Account != null ? e.Order.Account.Name : ""; } catch { }
+                CancelBracketsFor(signalId, lxRoot, lxAcct);
             }
 
             var action = e.Order.OrderAction;

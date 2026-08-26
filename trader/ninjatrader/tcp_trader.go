@@ -70,6 +70,11 @@ type TCPTrader struct {
 	// interface, but cheap insurance.
 	pendingMu sync.Mutex
 	pending   map[string]string // signal_id -> side
+	// C8 (2026-08-25) — pendingAt stamps each pending entry's submit time (Unix
+	// ms) so the reconcile sweep can drop entries NT8 never confirmed (rejected
+	// silently / AddOn drop) instead of letting them linger as would-be
+	// positions. Same pendingMu.
+	pendingAt map[string]int64
 
 	// closeSyncOnce guards StartCloseSync so a re-entrant AutoTrader.Run never
 	// spawns a second consumer racing on the single ClosedPositions() channel.
@@ -91,6 +96,15 @@ type TCPTrader struct {
 	// freeze so an in-flight fill doesn't false-freeze. Reconcile goroutine only → no lock.
 	divergeSince map[int64]int64
 
+	// untrackedSince tracks, per "SYMBOL|SIDE" key, the first time reconcile
+	// observed NT8 HOLDING a position for which this trader has NO open row
+	// (a manual NT8 entry, or an entry whose fill was never recorded). It
+	// debounces materializing an OPEN row (Source="reconcile") so a bot-opened
+	// row — which lands within seconds — is never double-created, while a
+	// genuinely untracked position becomes trackable (and its later close
+	// records real P&L instead of being dropped). Reconcile goroutine only.
+	untrackedSince map[string]int64
+
 	// Plan 4 Stage 4 — reference to the parent AutoTrader (optional).
 	// Used to notify the AutoTrader when the first account_balance frame arrives.
 	// Set by transport.go after creating the trader.
@@ -104,12 +118,13 @@ var _ types.Trader = (*TCPTrader)(nil)
 // The server's lifecycle is owned by the caller (transport.go).
 func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *TCPTrader {
 	t := &TCPTrader{
-		server:   server,
-		symbol:   symbol,
-		stopLoss: map[string]float64{},
-		takePrft: map[string]float64{},
-		guard:    newOrderGuard(),
-		pending:  map[string]string{},
+		server:    server,
+		symbol:    symbol,
+		stopLoss:  map[string]float64{},
+		takePrft:  map[string]float64{},
+		guard:     newOrderGuard(),
+		pending:   map[string]string{},
+		pendingAt: map[string]int64{},
 	}
 	if len(account) > 0 {
 		t.boundAccount = strings.TrimSpace(account[0])
@@ -162,6 +177,39 @@ func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *T
 				}
 				continue
 			}
+			// C8 (2026-08-25) — a REJECTED entry must never become the
+			// fill-derived position (the phantom-position class). NT8 truth: NO
+			// position exists. Drop the pending marker, clear any cached fill for
+			// that signal, and alarm.
+			if strings.EqualFold(fill.Status, "rejected") {
+				t.pendingMu.Lock()
+				if fill.SignalID != "" {
+					delete(t.pending, fill.SignalID)
+					delete(t.pendingAt, fill.SignalID)
+				}
+				t.pendingMu.Unlock()
+				t.mu.Lock()
+				if t.lastFill.SignalID == fill.SignalID {
+					t.lastFill = ntwire.FillPayload{}
+					t.hasFill = false
+				}
+				if t.lastEntrySignalID == fill.SignalID {
+					t.lastEntrySignalID = ""
+				}
+				tid := t.traderID
+				t.mu.Unlock()
+				logger.Errorf("🚨 C8 ENTRY REJECTED by NT8: %s %s qty=%d signal_id=%s — no position exists; pending entry dropped (no phantom).",
+					fill.Symbol, fill.Side, fill.Quantity, fill.SignalID)
+				telemetry.RecordError(tid, "nt_entry_rejected", fmt.Sprintf("%s %s rejected (signal %s)", fill.Symbol, fill.Side, fill.SignalID), telemetry.CostNone)
+				continue
+			}
+			// A CONFIRMED fill resolves its pending entry marker.
+			t.pendingMu.Lock()
+			if fill.SignalID != "" {
+				delete(t.pending, fill.SignalID)
+				delete(t.pendingAt, fill.SignalID)
+			}
+			t.pendingMu.Unlock()
 			t.mu.Lock()
 			t.lastFill = fill
 			t.hasFill = true
@@ -329,6 +377,7 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 
 	t.pendingMu.Lock()
 	t.pending[signalID] = upperSide
+	t.pendingAt[signalID] = time.Now().UTC().UnixMilli()
 	t.pendingMu.Unlock()
 
 	// Mark this as the current entry so GetOrderStatus reports its fill (and only
@@ -799,6 +848,7 @@ func (t *TCPTrader) ResetAccountState() {
 	t.stopLoss = map[string]float64{}
 	t.takePrft = map[string]float64{}
 	t.pending = map[string]string{}
+	t.pendingAt = map[string]int64{}
 }
 
 // SetParentAutoTrader sets the parent AutoTrader reference (Plan 4 Stage 4).

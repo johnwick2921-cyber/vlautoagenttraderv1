@@ -28,7 +28,6 @@ type RiskLimits struct {
 	MaxDailyLossUSD      float64 // hard stop for the trading day (USD, positive number)
 	MaxConcurrentTrades  int     // open position cap (count)
 	MaxNotionalUSD       float64 // sum of (entry price * quantity) cap across open positions
-	MaxContractsPerOrder int     // single-order contract size cap
 }
 
 // RiskLimitDecision is the qualitative outcome of a pre-trade check.
@@ -45,10 +44,10 @@ const (
 // Inputs are plain primitives so this can be exercised in a unit test
 // without a full engine.Context.
 //
-//   totalPnL          — account.TotalPnL (negative = losing)
-//   openPositions     — len(ctx.Positions)
-//   requestedNotional — abs(decision.PositionSizeUSD) for the proposed entry
-//   existingNotional  — sum of MarkPrice*Quantity over existing positions
+//	totalPnL          — account.TotalPnL (negative = losing)
+//	openPositions     — len(ctx.Positions)
+//	requestedNotional — abs(decision.PositionSizeUSD) for the proposed entry
+//	existingNotional  — sum of MarkPrice*Quantity over existing positions
 //
 // Semantics:
 //   - PnL strictly LESS THAN -MaxDailyLossUSD trips the daily-loss limit.
@@ -103,7 +102,6 @@ func LoadRiskLimitsFromConfig() RiskLimits {
 		MaxDailyLossUSD:      c.RiskMaxDailyLossUSD,
 		MaxConcurrentTrades:  c.RiskMaxConcurrentTrades,
 		MaxNotionalUSD:       c.RiskMaxNotionalUSD,
-		MaxContractsPerOrder: c.RiskMaxContractsPerOrder,
 	}
 }
 
@@ -188,9 +186,42 @@ type DailyGuardrails struct {
 	DailyProfitTargetUSD  float64 // positive USD; profit ≥ this trips (block-entry)
 	MaxDailyTradesEnabled bool
 	MaxDailyTrades        int
+
+	// 6.3 (final-bundle 2026-08-19) — blackout + consistency join the soft
+	// audit. The caller precomputes the window/breach facts (CheckSoft stays
+	// pure); CONFIGURED means the owner set the values, regardless of toggles.
+	BlackoutConfigured   bool // start+end CT both set
+	InBlackoutNow        bool // precomputed InBlackoutWindow(now, …)
+	ConsistencyMaxDayPct float64
+	TotalRealizedPnL     float64
 }
 
-// Check evaluates the ENABLED daily guardrails. Master OFF → always allow (the
+// CheckSoft evaluates every CONFIGURED limit (value > 0) regardless of toggles
+// and returns the "would have tripped" reasons. P0-cleanup (2026-08-19): the
+// guardrails master stays OFF by the owner's dated decision, but the owner must
+// SEE what the cage would have caught. It never blocks anything.
+func (g DailyGuardrails) CheckSoft() []string {
+	var hits []string
+	if g.DailyLossLimitUSD > 0 && g.DailyRealizedPnL <= -g.DailyLossLimitUSD {
+		hits = append(hits, fmt.Sprintf("daily loss would trip (realized today=%.2f, limit=-%.2f)", g.DailyRealizedPnL, g.DailyLossLimitUSD))
+	}
+	if g.DailyProfitTargetUSD > 0 && g.DailyRealizedPnL >= g.DailyProfitTargetUSD {
+		hits = append(hits, fmt.Sprintf("daily profit target would trip (realized today=%.2f, target=%.2f)", g.DailyRealizedPnL, g.DailyProfitTargetUSD))
+	}
+	if g.MaxDailyTrades > 0 && g.TradesToday >= g.MaxDailyTrades {
+		hits = append(hits, fmt.Sprintf("max daily trades would trip (today=%d, max=%d)", g.TradesToday, g.MaxDailyTrades))
+	}
+	// 6.3 — the two checks that used to die SILENTLY under master OFF (PR #54:
+	// 69 live would-trip lines were trio-only; blackout/consistency never spoke).
+	if g.BlackoutConfigured && g.InBlackoutNow {
+		hits = append(hits, "blackout window would trip (inside the configured CT window)")
+	}
+	if g.ConsistencyMaxDayPct > 0 && ConsistencyBreached(g.DailyRealizedPnL, g.TotalRealizedPnL, g.ConsistencyMaxDayPct) {
+		hits = append(hits, fmt.Sprintf("consistency rule would trip (today=%.2f vs %.0f%% of total=%.2f)", g.DailyRealizedPnL, g.ConsistencyMaxDayPct, g.TotalRealizedPnL))
+	}
+	return hits
+}
+
 // caller logs the bypass). Each guardrail is evaluated only when its toggle is
 // ON AND its value is configured (>0); a tripped guardrail returns a non-nil err
 // with a clear reason. Daily-loss → ForceFlat; profit-target / max-trades →
@@ -238,7 +269,8 @@ func firstPositive(vals ...float64) float64 {
 // Hardening D3 (audit F2): this SIZE cap is ALWAYS ON for futures — it is venue
 // safety, NOT a prop-firm rule, so the guardrails master switch and the
 // max-contracts toggle govern ONLY daily limits/blackout, never this clamp.
-// Per-strategy value overrides (>0); else the venue default (10-contract).
+// Per-strategy value overrides (>0); else the venue default (2 contracts —
+// the researched fallback; 6.6: the old '10-contract' text was a comment lie).
 // NEVER returns 0 — a futures order can never be left unclamped.
 func ResolveMaxContracts(perStrategy, def int) int {
 	if perStrategy > 0 {
@@ -289,3 +321,8 @@ func ConsistencyBreached(todayProfit, totalProfit, pct float64) bool {
 	}
 	return todayProfit >= (pct/100.0)*totalProfit
 }
+
+// SoftGuardrailFunc is installed by the trader layer: a guardrail that WOULD
+// have tripped (but is disabled — master OFF or toggle OFF) is announced to the
+// owner's alert feed. Never blocks. P0-cleanup (2026-08-19).
+var SoftGuardrailFunc func(trader, what string)

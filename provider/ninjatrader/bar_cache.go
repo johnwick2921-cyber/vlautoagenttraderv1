@@ -31,6 +31,8 @@ type BarCache struct {
 	mu      sync.RWMutex
 	bars    map[string][]Bar // key: "SYMBOL|TIMEFRAME"
 	maxBars int
+	// dropped counts NT8 empty-minute placeholder bars refused at ingest.
+	dropped int64
 }
 
 // NewBarCache constructs an empty cache. maxBars <= 0 uses
@@ -42,6 +44,137 @@ func NewBarCache(maxBars int) *BarCache {
 	return &BarCache{
 		bars:    make(map[string][]Bar),
 		maxBars: maxBars,
+	}
+}
+
+// NO SYNTHETIC BARS, EVER (P0 2026-08-17).
+//
+// NinjaTrader's own minute store keeps EMPTY-MINUTE PLACEHOLDER records, and its
+// bar builder materialises each one as a bar with open==high==low==close (the
+// .ncd file's base price) and volume 0. Whenever a declared-open session has no
+// real ticks, NT8 therefore hands us a flat line rather than a gap.
+//
+// That is exactly what the owner saw. After the AddOn watchdog livelock
+// (7aa521a1) forced NT8 to re-fetch Friday 2026-08-14 into an all-placeholder
+// file, /api/klines returned 959 of 1500 one-minute bars with O=H=L=C=30147.50
+// and volume 0, contiguous from 00:02 to 16:00 CT — a 16-hour horizontal line
+// across the chart where TradingView (and this chart, before) would simply skip
+// to the next real candle.
+//
+// Every hop we own is a verbatim pass-through, so nothing in our code invents
+// these bars — but nothing rejected them either, and they reach the chart AND
+// the kernel's detectors. A bar with no volume and no range carries no
+// information by construction; the only thing it can do is lie. Drop it at
+// ingest, which is the one place that protects both consumers at once.
+//
+// The test is deliberately narrow: BOTH zero volume AND zero range. A real but
+// illiquid minute that still printed a range is kept, and so is a zero-volume
+// bar that somehow carries one.
+func isPlaceholderBar(b Bar) bool {
+	return b.V == 0 && b.H == b.L && b.O == b.C && b.O == b.H
+}
+
+// dropPlaceholderBars returns bars with NT8's empty-minute placeholders removed,
+// plus how many were dropped. It allocates only when something is actually
+// dropped, so the healthy path stays free.
+func dropPlaceholderBars(bars []Bar) ([]Bar, int) {
+	bad := 0
+	for i := range bars {
+		if isPlaceholderBar(bars[i]) {
+			bad++
+		}
+	}
+	if bad == 0 {
+		return bars, 0
+	}
+	out := make([]Bar, 0, len(bars)-bad)
+	for i := range bars {
+		if !isPlaceholderBar(bars[i]) {
+			out = append(out, bars[i])
+		}
+	}
+	return out, bad
+}
+
+// DroppedPlaceholders reports how many NT8 empty-minute placeholder bars this
+// cache has refused, so the condition is observable instead of silent.
+func (c *BarCache) DroppedPlaceholders() int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.dropped
+}
+
+// ── CANONICAL TIME CONTRACT (2026-08-19, chart-timestamp dispatch) ──────────
+//
+//	A Bar's T in THIS CACHE is the bar's OPEN time, epoch ms UTC.
+//
+// NT8 stamps bars at their period END (NinjaScript Bars.GetTime(i) is the
+// close; proven live: a forming 5m bar covering 01:30–01:35 CT arrives stamped
+// 01:35 while the clock reads 01:31). The C# AddOn forwards that close stamp
+// verbatim, and this cache used to store it unchanged while every reader —
+// barsToKlines, /api/klines, the SSE relay, the kernel detectors, the charts —
+// treated T as the OPEN. Net effect: every bar was labelled one full period
+// late everywhere downstream.
+//
+// The conversion happens HERE, once, at ingest, because every consumer reads
+// this cache (the SSE relay polls it; REST serves it; the kernel bridges it).
+// Converting in any single reader would leave the twins wrong (the multi-
+// instance defect class). The C# side and its LastEmittedTimeUtcMs dedup
+// cursor stay in close-stamp domain untouched — no wire change.
+//
+// Side effect worth naming: C2's clockDriftMs and the clock-health line both
+// compute "feed now" as newestT + interval. Under close stamps that OVERSHOT
+// the true close by one interval; with open stamps it lands exactly on NT8's
+// own stamp again — a strict accuracy improvement, thresholds untouched.
+func openStampBars(bars []Bar, timeframe string) []Bar {
+	dur := timeframeMs(timeframe)
+	if dur <= 0 || len(bars) == 0 {
+		return bars
+	}
+	out := make([]Bar, len(bars))
+	for i, b := range bars {
+		b.T -= dur
+		out[i] = b
+	}
+	return out
+}
+
+// timeframeMs mirrors the coded TF vocabulary (bars_market_bridge.go keeps the
+// kernel-side twin; both fall back to 1m).
+func timeframeMs(timeframe string) int64 {
+	switch timeframe {
+	case "1m":
+		return 60_000
+	case "2m": // parity with kernel.TFDurationMs
+		return 120_000
+	case "3m":
+		return 180_000
+	case "5m":
+		return 300_000
+	case "15m":
+		return 900_000
+	case "30m":
+		return 1_800_000
+	case "1h":
+		return 3_600_000
+	case "2h":
+		return 7_200_000
+	case "4h":
+		return 14_400_000
+	case "6h": // C11 (2026-08-25) — previously fell through to 1m
+		return 21_600_000
+	case "8h":
+		return 28_800_000
+	case "12h":
+		return 43_200_000
+	case "1d", "1D":
+		return 86_400_000
+	case "3d": // C11 — previously fell through to 1m
+		return 259_200_000
+	case "1w", "1W":
+		return 604_800_000
+	default:
+		return 60_000
 	}
 }
 
@@ -65,8 +198,11 @@ func (c *BarCache) SeedHistorical(symbol, timeframe string, bars []Bar) {
 	if symbol == "" || timeframe == "" {
 		return
 	}
+	bars, bad := dropPlaceholderBars(bars)
+	bars = openStampBars(bars, timeframe) // close-stamp → OPEN-stamp, once, for every reader
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.dropped += int64(bad)
 	key := barKey(symbol, timeframe)
 	existing := c.bars[key]
 	if len(existing) == 0 {
@@ -141,8 +277,14 @@ func (c *BarCache) Upsert(symbol, timeframe string, bars []Bar) {
 	if symbol == "" || timeframe == "" || len(bars) == 0 {
 		return
 	}
+	bars, bad := dropPlaceholderBars(bars)
+	bars = openStampBars(bars, timeframe) // close-stamp → OPEN-stamp, once, for every reader
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.dropped += int64(bad)
+	if len(bars) == 0 {
+		return // the whole update was placeholders
+	}
 	key := barKey(symbol, timeframe)
 	existing := c.bars[key]
 	for _, b := range bars {

@@ -39,6 +39,14 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant, symbo
 	sb.WriteString("\n\n")
 	sb.WriteString("---\n\n")
 
+	// P0 timezone fix — the labelled clock goes FIRST, before any window
+	// bound, so the model can never pair an unlabelled window with a UTC
+	// clock (owner rule: CT is canonical everywhere).
+	if e.clockContextLine != "" {
+		sb.WriteString(e.clockContextLine)
+		sb.WriteString("\n\n")
+	}
+
 	// 1. Role definition (editable)
 	if promptSections.RoleDefinition != "" {
 		sb.WriteString(promptSections.RoleDefinition)
@@ -133,6 +141,9 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant, symbo
 	// 7. Output format
 	sb.WriteString("# Output Format (Strictly Follow)\n\n")
 	sb.WriteString("**Must use XML tags <reasoning> and <decision> to separate chain of thought and decision JSON, avoiding parsing errors**\n\n")
+	// P0 2026-08-19 — decision-FIRST strict contract (same truncation guard as
+	// the futures builder).
+	sb.WriteString("Output the <decision> JSON block FIRST — it is MANDATORY and must appear in every response. THEN write <reasoning>: ≤200 words, decision-focused, no restating the input data. If you are running out of room, drop reasoning — never drop <decision>.\n\n")
 	sb.WriteString("## Format Requirements\n\n")
 	sb.WriteString("<reasoning>\n")
 	sb.WriteString("Your chain of thought analysis...\n")
@@ -419,6 +430,13 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	}
 	sb.WriteString("\n")
 
+	// G2 (regime wave 2026-08-21) — the machine structure line, advisory:
+	// per-TF trend + swings + the latest BOS/CHoCH/MSS/SWEEP event. The AI
+	// judges; no gate lives here (G1/G4 consume the same snapshot in Go).
+	if e.isFuturesInstrument() && len(ctx.Structure) > 0 {
+		sb.WriteString(StructurePromptLine(ctx.Structure) + "\n\n")
+	}
+
 	// Get language for market data formatting
 	nofxosLang := nofxos.LangEnglish
 	if e.GetLanguage() == LangChinese {
@@ -557,6 +575,54 @@ func (e *StrategyEngine) isFuturesInstrument() bool {
 	return len(coins) > 0 && market.IsCMEFuturesSymbol(coins[0])
 }
 
+// formingBarLine (P10.2) renders the newest bar's honesty label for one
+// timeframe: "current 5m bar: FORMING (closes 10:35 CT) — prior bars closed"
+// while the bar is still open at the snapshot instant, else a CLOSED line
+// naming the next close. Empty when snapshot/interval/bars are unavailable.
+func formingBarLine(tf string, tfData *market.TimeframeSeriesData, snapshotMs int64) string {
+	if snapshotMs <= 0 || tfData == nil || len(tfData.Klines) == 0 {
+		return ""
+	}
+	iv := tfIntervalMs(tf)
+	if iv <= 0 {
+		return "" // only intraday TFs carry the label (1m/5m/15m…)
+	}
+	newest := tfData.Klines[len(tfData.Klines)-1]
+	closeMs := newest.Time + iv
+	if closeMs > snapshotMs {
+		return fmt.Sprintf("current %s bar: FORMING (closes %s) — prior bars closed\n\n",
+			tf, ClockCT(time.UnixMilli(closeMs)))
+	}
+	return fmt.Sprintf("current %s bar: CLOSED at %s (next close %s)\n\n",
+		tf, ClockCT(time.UnixMilli(closeMs)), ClockCT(time.UnixMilli(closeMs+iv)))
+}
+
+// staleTFLabel (G7) appends a staleness warning under a TF table when the
+// newest CLOSED bar is older than period + FLIP_EVAL_MAX_STALE_S — the same
+// cap the flip/death evaluator uses, so the prompt and the evaluator can never
+// disagree about what "stale" means. Futures only; renders nothing when fresh.
+func staleTFLabel(tf string, tfData *market.TimeframeSeriesData, snapshotMs int64) string {
+	if snapshotMs <= 0 || tfData == nil || len(tfData.Klines) == 0 {
+		return ""
+	}
+	iv := tfIntervalMs(tf)
+	if iv <= 0 {
+		return ""
+	}
+	newest := tfData.Klines[len(tfData.Klines)-1]
+	closeMs := newest.Time + iv
+	if closeMs > snapshotMs {
+		return "" // forming — not stale by definition
+	}
+	age := snapshotMs - closeMs
+	capMs := FlipEvalMaxStaleMs()
+	if age <= iv+capMs {
+		return ""
+	}
+	return fmt.Sprintf("⚠️ %s data stale: newest close %s is %.0fs old (period %.0fs + cap %.0fs)\n\n",
+		tf, ClockCT(time.UnixMilli(closeMs)), float64(age)/1000, float64(iv)/1000, float64(capMs)/1000)
+}
+
 func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 	var sb strings.Builder
 	indicators := e.config.Indicators
@@ -636,6 +702,21 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 			if tfData, ok := data.TimeframeData[tf]; ok {
 				sb.WriteString(fmt.Sprintf("=== %s Timeframe (oldest → latest) ===\n\n", strings.ToUpper(tf)))
 				e.formatTimeframeSeriesData(&sb, tfData, indicators)
+				// P10.3 — no-data honesty: a timeframe with
+				// neither bars nor mid prices is stated, never
+				// silently omitted (master-audit v1 finding 8.5).
+				if len(tfData.Klines) == 0 && len(tfData.MidPrices) == 0 {
+					sb.WriteString("⚠️ no data available for this timeframe this cycle (feed warming up or down) — do NOT infer prices.\n\n")
+				}
+				// P10.2 — prompt honesty (owner ruling: interval cadence runs
+				// cycles MID-BAR): label the newest bar FORMING/CLOSED so the
+				// AI knows what it is looking at and may itself choose to wait
+				// for the close — its judgment now, not a code gate. Futures
+				// only; snapshot 0 (tests/legacy) renders nothing.
+				if e.isFuturesInstrument() {
+					sb.WriteString(formingBarLine(tf, tfData, e.promptSnapshotMs))
+					sb.WriteString(staleTFLabel(tf, tfData, e.promptSnapshotMs))
+				}
 			}
 		}
 	} else {
@@ -707,10 +788,10 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 
 func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *market.TimeframeSeriesData, indicators store.IndicatorConfig) {
 	if len(data.Klines) > 0 {
-		sb.WriteString("Time(UTC)      Open      High      Low       Close     Volume\n")
+		sb.WriteString("Time(CT)       Open      High      Low       Close     Volume\n")
 		for i, k := range data.Klines {
-			t := time.Unix(k.Time/1000, 0).UTC()
-			timeStr := t.Format("01-02 15:04")
+			t := time.Unix(k.Time/1000, 0).In(CTLocation())
+			timeStr := TableTimeCT(t)
 			marker := ""
 			if i == len(data.Klines)-1 {
 				marker = "  <- current"
@@ -726,6 +807,19 @@ func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *ma
 		}
 	}
 
+	// W11 — the indicator-state lines are extracted to FormatIndicatorState so the
+	// day-plan planner prompt can mirror the EXACT block the executor renders.
+	FormatIndicatorState(sb, data, indicators)
+
+	sb.WriteString("\n")
+}
+
+// FormatIndicatorState writes the toggle-gated, configured-period-aware indicator
+// lines (EMA/MACD/RSI/ATR/BOLL) for one timeframe's series — the SAME indicator
+// state the executor prompt renders. Extracted (W11) so the planner INDICATORS
+// mirror is byte-identical to the executor's, never a re-derivation. Pure: reads
+// only `data` + `indicators`; emits nothing for disabled toggles / empty series.
+func FormatIndicatorState(sb *strings.Builder, data *market.TimeframeSeriesData, indicators store.IndicatorConfig) {
 	if indicators.EnableEMA {
 		if len(data.EMAByPeriod) > 0 {
 			// Configured periods drive the labels + values (e.g. EMA9/EMA21/EMA200),
@@ -812,8 +906,6 @@ func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *ma
 			sb.WriteString(fmt.Sprintf("BOLL Lower: %s\n", formatFloatSlice(data.BOLLLower)))
 		}
 	}
-
-	sb.WriteString("\n")
 }
 
 func (e *StrategyEngine) formatQuantData(data *QuantData) string {

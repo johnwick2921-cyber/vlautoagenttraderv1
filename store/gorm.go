@@ -41,7 +41,13 @@ func InitGorm(dbPath string) (*gorm.DB, error) {
 
 	// Enable foreign keys for SQLite
 	db.Exec("PRAGMA foreign_keys = ON")
-	db.Exec("PRAGMA journal_mode = DELETE")
+	// WAL (day-plan P0.2 storage requirement): append-only plans/overlays/
+	// decisions writes no longer block card/replay readers, and online
+	// sqlite3.backup() (the C1 timer) works better under WAL. The single-writer
+	// property is preserved by SetMaxOpenConns(1) above plus the plan store's
+	// dedicated writer goroutine (store/plan.go); WAL is safe on the ext4 DB
+	// path and survives WAL↔DELETE rollbacks (SQLite checkpoints on open).
+	db.Exec("PRAGMA journal_mode = WAL")
 	db.Exec("PRAGMA synchronous = FULL")
 	db.Exec("PRAGMA busy_timeout = 5000")
 

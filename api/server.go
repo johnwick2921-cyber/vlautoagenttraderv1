@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"nofx/auth"
 	"nofx/crypto"
+	"nofx/kernel"
 	"nofx/logger"
 	"nofx/manager"
 	"nofx/store"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,12 +27,14 @@ type Server struct {
 	cryptoHandler             *CryptoHandler
 	exchangeAccountStateCache *ExchangeAccountStateCache
 	httpServer                *http.Server
+	host                      string // bind interface; "" → 127.0.0.1 (loopback-only default)
 	port                      int
 	telegramReloadCh          chan<- struct{} // signal Telegram bot to reload
 }
 
-// NewServer Creates API server
-func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoService *crypto.CryptoService, port int) *Server {
+// NewServer Creates API server. host is the bind interface — pass
+// cfg.APIServerHost; an empty value falls back to the loopback-only default.
+func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoService *crypto.CryptoService, host string, port int) *Server {
 	// Set to Release mode (reduce log output)
 	gin.SetMode(gin.ReleaseMode)
 
@@ -48,6 +52,7 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 		store:                     st,
 		cryptoHandler:             cryptoHandler,
 		exchangeAccountStateCache: NewExchangeAccountStateCache(),
+		host:                      host,
 		port:                      port,
 	}
 
@@ -102,7 +107,8 @@ func (s *Server) setupRoutes() {
 		// Crypto related endpoints (no authentication required, not exposed to bot)
 		api.GET("/crypto/config", s.cryptoHandler.HandleGetCryptoConfig)
 		api.GET("/crypto/public-key", s.cryptoHandler.HandleGetPublicKey)
-		api.POST("/crypto/decrypt", s.cryptoHandler.HandleDecryptSensitiveData)
+		// NOTE: POST /crypto/decrypt was here (public). It is a decryption oracle
+		// for the server's RSA key — moved into the protected group below (P0 S4).
 
 		// Public competition data (no authentication required)
 		s.route(api, "GET", "/traders", "Public trader list", s.handlePublicTraderList)
@@ -113,8 +119,6 @@ func (s *Server) setupRoutes() {
 		s.route(api, "GET", "/traders/:id/public-config", "Public trader configuration", s.handleGetPublicTraderConfig)
 
 		// Market data (no authentication required)
-		s.route(api, "GET", "/klines", "Candlestick data (?symbol=&interval=&limit=)", s.handleKlines)
-		s.route(api, "GET", "/klines/svp", "Session Volume Profile (?symbol=&exchange=ninjatrader) — server-computed POC/VAH/VAL + histogram bins", s.handleKlinesSVP)
 		s.route(api, "GET", "/symbols", "Available trading symbols", s.handleSymbols)
 
 		// Live NT8 bar stream over SSE (Plan 4.4 Stage 4). Self-authed via a
@@ -127,14 +131,25 @@ func (s *Server) setupRoutes() {
 		s.route(api, "POST", "/strategies/estimate-tokens", "Estimate token usage for a strategy config", s.handleEstimateTokens)
 
 		// Authentication related routes (no authentication required)
-		s.route(api, "POST", "/register", "Register new user", s.handleRegister)
+		s.route(api, "POST", "/register", "Register new user (first-time setup only)", s.handleRegister)
 		s.route(api, "POST", "/login", "User login, returns JWT token", s.handleLogin)
-		s.route(api, "POST", "/reset-password", "Reset password", s.handleResetPassword)
-		s.route(api, "POST", "/reset-account", "Clear all users and reset system to allow re-registration", s.handleResetAccount)
+		// SECURITY (P0 S2): /reset-password and /reset-account used to live HERE,
+		// unauthenticated. reset-password reset ANY account from an email alone;
+		// reset-account deleted every user, and a follow-up /register then adopted
+		// the orphaned credential rows. Together: unauthenticated account takeover.
+		// reset-password is now permanently disabled (no mail/token path exists to
+		// make it safe); reset-account moved into the protected group below and is
+		// additionally env-gated + confirm-token gated.
+		s.route(api, "POST", "/reset-password", "DISABLED — always 410 (no verification path)", s.handleResetPasswordDisabled)
 
 		// Routes requiring authentication
-		protected := api.Group("/", s.authMiddleware())
+		protected := api.Group("/", s.authMiddleware(), s.planTraderOwnership())
 		{
+			// Market data — JWT-protected (C4, 2026-08-25): candle history +
+			// SVP moved out of the public group; the FE httpClient always
+			// attaches the Bearer token, and the agent calls handlers in-process.
+			s.route(protected, "GET", "/klines", "Candlestick data (?symbol=&interval=&limit=)", s.handleKlines)
+			s.route(protected, "GET", "/klines/svp", "Session Volume Profile (?symbol=&exchange=ninjatrader) — server-computed POC/VAH/VAL + histogram bins", s.handleKlinesSVP)
 			// Logout (add to blacklist)
 			s.route(protected, "POST", "/logout", "Logout (blacklist token)", s.handleLogout)
 			// Mint a short-lived single-use SSE ticket for the live bar stream (Stage 4).
@@ -149,6 +164,18 @@ func (s *Server) setupRoutes() {
 			s.routeWithSchema(protected, "PUT", "/user/password", "Change current user password",
 				`Body: {"new_password":"<string, min 8 chars>"}`,
 				s.handleChangePassword)
+
+			// SECURITY (P0 S4): RSA decryption oracle — JWT + only when transport
+			// encryption is actually enabled (the handler re-checks).
+			protected.POST("/crypto/decrypt", s.cryptoHandler.HandleDecryptSensitiveData)
+
+			// SECURITY (P0 S2): destructive account reset — JWT + env flag +
+			// confirm token. Deletes every user/trader/strategy, so it is OFF
+			// unless ALLOW_ACCOUNT_RESET=1 is set in the environment.
+			s.routeWithSchema(protected, "POST", "/reset-account",
+				"DESTRUCTIVE — delete all users/traders/strategies (env-gated, confirm-token required)",
+				`Body: {"confirm":"RESET-ALL-DATA"}. Requires ALLOW_ACCOUNT_RESET=1 in the server environment.`,
+				s.handleResetAccount)
 
 			// Server IP query (requires authentication, for whitelist configuration)
 			s.route(protected, "GET", "/server-ip", "Get server public IP (for exchange whitelist)", s.handleGetServerIP)
@@ -179,6 +206,12 @@ Only include fields you want to change.`,
 			s.routeWithSchema(protected, "POST", "/traders/:id/stop", "Stop trader — halts live trading",
 				`:id = trader_id from GET /api/my-traders. No request body needed. Gracefully stops the trading loop.`,
 				s.handleStopTrader)
+			s.routeWithSchema(protected, "POST", "/traders/:id/pause", "Pause NEW entries (stop_until) — position management continues",
+				`:id = trader_id. Body: exactly one of {"minutes":30} | {"until_ct":"HH:MM"} (CT, wraps to tomorrow if past) | {"until":"session_end"}. Blocks NEW entries only; stops/targets/EOD-flat/closes continue. Survives restart; auto-resumes on expiry.`,
+				s.handlePauseTrader)
+			s.routeWithSchema(protected, "POST", "/traders/:id/resume", "Clear the stop_until pause — entries resume immediately",
+				`:id = trader_id. No request body needed.`,
+				s.handleResumeTrader)
 			s.routeWithSchema(protected, "PUT", "/traders/:id/prompt", "Override the trader's AI system prompt",
 				`Body: {"prompt":"<string — the full custom prompt text>"}`,
 				s.handleUpdateTraderPrompt)
@@ -352,7 +385,7 @@ Returns: {"balance":<float>,"equity":<float>,"unrealized_pnl":<float>,"initial_b
 				s.handleAccount)
 			s.routeWithSchema(protected, "GET", "/positions", "Current open positions",
 				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>
-Returns: [{"symbol":"<string>","side":"long|short","size":<float>,"entry_price":<float>,"mark_price":<float>,"unrealized_pnl":<float>,"leverage":<int>}]`,
+Returns: [{"symbol":"<string>","side":"long|short","quantity":<float>,"entry_price":<float>,"mark_price":<float>,"unrealized_pnl":<float>,"leverage":<int>}]`,
 				s.handlePositions)
 			s.routeWithSchema(protected, "GET", "/positions/history", "Closed position history",
 				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>&limit=<int, default 20>`,
@@ -412,6 +445,11 @@ Returns: {"trader_id":"<string>","daily_pnl_usd":<float>,"daily_loss_limit_usd":
 Returns: {"session_day_utc":"<RFC3339>","summary":"<one-line>","by_trader":{"<trader_id>":{"<gate>":<count>}}}
 The empty-string trader key holds process-wide gates (e.g. the B3 order guard). Resets at the 17:00 CT CME session rollover.`,
 				s.handleGateBlocks)
+			s.routeWithSchema(protected, "GET", "/risk/errors", "Per-trader/session-day structured error events (P0-cleanup)",
+				`No params. Returns structured error events: stable type, plain cause, cost.
+Returns: {"rows":[{"trader","type","cause","cost","count","decisions_lost","trades_lost"}],"summary":"errors today: N (types: …), decisions lost: N"}
+Resets at the 17:00 CT CME session rollover.`,
+				s.handleErrors)
 			s.routeWithSchema(protected, "GET", "/risk/freezes", "List frozen traders (A4/G4)",
 				`No params. Returns traders frozen by an identity/account mismatch or reconcile divergence.
 Returns: {"frozen":{"<trader_id>":"<reason>"}}  (empty object = none frozen)`,
@@ -424,6 +462,108 @@ Clears the freeze so NEW entries resume. Returns: {"trader_id":"<id>","was_froze
 				`Query: ?trader_id=<EXACT trader_id>&since=<YYYY-MM-DD, default 7d ago>&limit=<int, default 100, max 1000>
 Returns: []DecisionRecord JSON ordered by timestamp DESC, including PromptVersion, AIModel, AILatencyMs, RiskCheck*, ExecutionStatus, FillPrice, FillLatencyMs.`,
 				s.handleDecisionAudit)
+
+			// P4.1 — Day-Plan API (mirror /api/risk/* inline trader_id). Additive;
+			// found=false when day_plan enabled but no plan yet (pre-★2) or at night.
+			s.routeWithSchema(protected, "GET", "/plan/today", "Active day-plan (overlay-resolved) + live scenario facts",
+				`Query: ?trader_id=<EXACT trader_id>[&symbol=MNQ][&session=NY|ASIA|LONDON][&version=<n>]
+Returns: {found, trade_date, session, version, historical, latest_version, trigger_reason, created_at, lifecycle, model_id, mode, night, doc:{bias,levels,scenarios,no_trade,death_condition}, level_facts:[{price,label,grade,distance,sweep,closes_beyond,accept_have,accept_need,still_valid}], price, replans_left, warming}. found=false = no active plan (night/disabled/none-yet).
+version=<n> serves that HISTORICAL version (overlays resolved on the version they belonged to); omit for the latest. List versions with GET /plan/versions.`,
+				s.handlePlanToday)
+			// ITEM 15 — every stored version of ONE session's plan, with each
+			// version's death reason and a plain-language diff vs its successor.
+			// /plan/history is a global 30-row feed and strips the doc; this is
+			// the per-session read path the version chips need.
+			s.routeWithSchema(protected, "GET", "/plan/versions", "All stored versions of one session's plan",
+				`Query: ?trader_id=<EXACT trader_id>&session=<NY|ASIA|LONDON>[&trade_date=YYYY-MM-DD]
+Returns: {trade_date, session, latest_version, versions:[{version, lifecycle, trigger_reason, created_at, model_id, degraded, is_latest, level_count, scenario_count, bias, day_type, death_condition, superseded_by, death_reason, diff_vs_next:[string]}]} oldest first.
+Fetch a specific version's full doc with GET /plan/today?version=<n>.`,
+				s.handlePlanVersions)
+			s.routeWithSchema(protected, "GET", "/plan/history", "Recent plan versions (trade_date, session, version)",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {history:[{trade_date,session,version,lifecycle,model_id,trigger_reason}]}`,
+				s.handlePlanHistory)
+			// ITEM 3 — the owner's manual re-read. GET reports whether it is
+			// available and what it costs; POST spends one re-plan.
+			s.routeWithSchema(protected, "GET", "/plan/reread", "May the owner force a planner re-read now?",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {allowed, reason, session, replans_left, replan_cap, version}.`,
+				s.handlePlanRereadStatus)
+			s.routeWithSchema(protected, "POST", "/plan/reread", "Force a fresh planner read for the current session",
+				`Body: {"trader_id":"<id>"}. SPENDS one re-plan from the session budget and writes a new version with trigger_reason "owner_reread". 409 with {error, gate} when refused (budget spent, session closed/disabled, market closed, already NO-TRADE).`,
+				s.handlePlanReread)
+			// P6 — the owner reset: ABANDON the chain (history preserved), re-arm
+			// the whole re-plan budget, clear NO-TRADE, fresh plan via the normal
+			// path with trigger_reason "owner reset". Never touches positions,
+			// brackets, guardrail counters or the daily cage.
+			s.routeWithSchema(protected, "GET", "/plan/reset", "May the owner reset this session's plan chain now?",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {allowed, reason, session, version, replan_cap}.`,
+				s.handlePlanResetStatus)
+			s.routeWithSchema(protected, "POST", "/plan/reset", "Reset the session's plan chain (abandon + fresh budget + fresh plan)",
+				`Body: {"trader_id":"<id>"}. Marks the current chain ABANDONED (append-only history preserved), restores the budget to replan_cap, clears NO-TRADE state, and runs a fresh read with trigger_reason "owner reset". 409 with {error, gate} when refused. Owner sticky levels carry by price identity.`,
+				s.handlePlanReset)
+			s.routeWithSchema(protected, "GET", "/plan/alerts", "In-app alert feed (P0/P1/P2) + unacked count",
+				`Query: ?trader_id=<EXACT trader_id>. Returns: {alerts:[{id,level,kind,title,body,acked,created_at}], unacked:<int>}`,
+				s.handlePlanAlerts)
+			s.routeWithSchema(protected, "POST", "/plan/alert-ack", "Acknowledge an in-app alert",
+				`Body: {"trader_id":"<EXACT trader_id>","alert_id":<int>}. Returns: {acked:true, alert_id}`,
+				s.handlePlanAlertAck)
+			// ITEM 5 — the feed can be cleared; the event rows survive (soft-delete).
+			s.routeWithSchema(protected, "POST", "/plan/alert-dismiss", "Hide one alert from the feed",
+				`Body: {"trader_id":"<id>","alert_id":<int>}. Soft-delete: the row stays for audit. 404 if the alert is not the caller's. 409 {needs_ack:true} for an UNACKNOWLEDGED P0 — acknowledge it first.`,
+				s.handlePlanAlertDismiss)
+			s.routeWithSchema(protected, "POST", "/plan/alert-clear-read", "Clear every acknowledged alert",
+				`Body: {"trader_id":"<id>"}. Returns {cleared:<int>}. Unacknowledged alerts (especially P0) are left in place.`,
+				s.handlePlanAlertClearRead)
+			// P5.1 — overlay editing (RFC-6902 + test-op concurrency + B2 armor) + sticky owner levels.
+			s.routeWithSchema(protected, "POST", "/plan/overlay", "Append an RFC-6902 overlay to the active plan",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","patch":"<JSON array of RFC-6902 ops>","origin":"owner|planner-revised"}.
+Applies the patch strictly onto the current plan_final (test-op concurrency → 409 on conflict), armors owner prices (422 on 8×dATR fat-finger), validates enums/counts. Returns: {overlay_version, plan_version, origin}.`,
+				s.handlePlanOverlay)
+			s.routeWithSchema(protected, "POST", "/plan/owner-level", "Add a sticky owner level (note + scenario tag ride to the planner)",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","price":<float>,"label":"<str>","note":"<any-lang>","scenario_tag":"<S1|＋new>"}. B2-armored. Returns: {id, symbol, price}.`,
+				s.handlePlanOwnerLevel)
+			s.routeWithSchema(protected, "POST", "/plan/owner-level/delete", "Delete a sticky owner level by id",
+				`Body: {"trader_id":"<id>","id":<int>}. Returns: {deleted:true, id}.`,
+				s.handlePlanOwnerLevelDelete)
+			// P5.4 — Ask-Planner (plan-scoped Q&A, anti-sycophancy contract, verdict log).
+			s.routeWithSchema(protected, "POST", "/plan/ask", "Ask the planner about today's plan (anti-sycophancy)",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","question":"<any language>"}.
+Returns: {qa_id, plan_id, plan_version, reply:{evidence, point_class:NEW-INFO|BARE-DISAGREEMENT, verdict:DEFEND|CONCEDE|PROPOSE-MERGE, summary, patch}}. A bare disagreement never carries a patch.`,
+				s.handlePlanAsk)
+			s.routeWithSchema(protected, "GET", "/plan/ask", "Ask-Planner thread + sycophancy KPI",
+				`Query: ?trader_id=<id>[&plan_id=<trade_date:session>]. Returns: {thread:[{role,content,evidence,point_class,verdict,patch,applied,created_at}], kpi:{total,new_info,bare_disagreement,defend,concede,propose_merge,applied,defend_on_bare}}.`,
+				s.handlePlanThread)
+			s.routeWithSchema(protected, "POST", "/plan/ask/apply", "Apply a PROPOSE-MERGE patch as a planner-revised overlay",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","qa_id":<int>}. Applies the reply's patch (origin planner-revised) + marks it applied. Returns: {applied:true, overlay_version, plan_version}.`,
+				s.handlePlanAskApply)
+			s.routeWithSchema(protected, "POST", "/plan/ask/decline", "Decline a PROPOSE-MERGE proposal (recorded, plan untouched)",
+				`Body: {"trader_id":"<id>","qa_id":<int>}. Records an owner-role DECLINED row carrying the reply's plan/trigger provenance so the KPI series counts rejections, not just silence. The plan is NOT modified. Idempotent. Returns: {declined:true, qa_id}.`,
+				s.handlePlanAskDecline)
+			// P5.5 — adherence grade feed (graded closed trades + GPA, separate from P&L).
+			s.routeWithSchema(protected, "GET", "/plan/trades", "Graded closed trades + adherence summary (A–F, separate from P&L)",
+				`Query: ?trader_id=<id>. Returns: {trades:[{symbol,side,entry_price,exit_price,entry_time,exit_time,realized_pnl,mae,mfe,cited_scenario_id,plan_matched,adherence_grade,adherence_label}], summary:{counts,total,gpa}}.`,
+				s.handlePlanTrades)
+			// W8 — admin session registry (GLOBAL; the gates read it, fallback default).
+			s.routeWithSchema(protected, "GET", "/plan/session-registry", "Effective admin session registry (+ is_default)",
+				`Query: ?trader_id=<id>. Returns: {registry:{sessions:[{name,window_start_ct,window_end_ct,read_ct,flat_ct,killzones,enabled}],half_days}, is_default:<bool>, sessions:<int>}.`,
+				s.handlePlanSessionRegistry)
+			s.routeWithSchema(protected, "POST", "/plan/session-registry", "Save the admin session registry (validated; next-day gates honor it)",
+				`Body: {"trader_id":"<id>","registry":{sessions:[{name,window_start_ct,window_end_ct,read_ct,flat_ct,killzones,enabled}]}}. Malformed → 400 (never silently defaulted). Returns: {saved:true, sessions:<int>}.`,
+				s.handlePlanSessionRegistrySave)
+			// W13 — plan re-alignment on owner edit (auto after an overlay save, or
+			// the manual "Re-align plan" fallback once the auto cap is spent).
+			s.routeWithSchema(protected, "POST", "/plan/realign", "Re-examine the whole plan after an owner edit (proposal only)",
+				`Body: {"trader_id":"<id>","symbol":"MNQ","manual":<bool>,"change":{"kind":"add-level|edit-level|delete-level|bulk-add","summary":"<str>","price":<float>,"label":"<str>","grade":"A|B|C","instruction":"<str>","note":"<any-lang>","scenario_tag":"<S1|+new>","batch_count":<int>}}.
+Always 200. status: proposal (PROPOSE-MERGE + RFC-6902 patch, Apply via POST /plan/ask/apply) | no-change | skipped | debounced | capped | failed (fail-closed: plan untouched + alert row). Returns {qa_id, plan_version, would_become, latency_ms, cost_usd, reply{evidence,point_class,verdict,summary,patch}}.`,
+				s.handlePlanRealign)
+			// W9 — approval gate: owner approves entries for the current session-day
+			// (only meaningful when approval_required is ON).
+			s.routeWithSchema(protected, "POST", "/plan/approve", "Approve entries for this trader's current CME session-day",
+				`Body: {"trader_id":"<id>"}. Grants entries for the current CME session-day (when approval_required is ON). Returns: {approved:true, session_day}.`,
+				s.handlePlanApprove)
+			// P5.6 — matched-random honesty gate (frozen weekly snapshot + WARMING progress).
+			s.routeWithSchema(protected, "GET", "/plan/stats", "Matched-random honesty gate (WARMING until pre-registered N)",
+				`Query: ?trader_id=<id>. Returns: {weekly:{iso_week,computed_at,verdicts:[{level_type,n,react_rate,delta_pp,p_value,status:WARMING|BEATS-RANDOM|NO-EDGE,label}]}|null, progress:[{level_type,n,target_n,react_rate,warming}], target_n, alpha}. No green on an underpowered sample, ever.`,
+				s.handlePlanStats)
 
 			// Plan 4 Stage 4 — NinjaTrader account management
 			s.routeWithSchema(protected, "GET", "/accounts", "List available NT accounts (NinjaTrader TCP bridge only)",
@@ -445,8 +585,9 @@ Server rejects non-SIM accounts (is_sim == false) with HTTP 400.`,
 // handleHealth Health check
 func (s *Server) handleHealth(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": "ok",
-		"time":   c.Request.Context().Value("time"),
+		"status":   "ok",
+		"time":     c.Request.Context().Value("time"),
+		"revision": kernel.RunningRevision(),
 	})
 }
 
@@ -454,9 +595,16 @@ func (s *Server) handleHealth(c *gin.Context) {
 func (s *Server) handleGetSystemConfig(c *gin.Context) {
 	userCount, _ := s.store.User().Count()
 	c.JSON(http.StatusOK, gin.H{
-		"initialized":      userCount > 0,
-		"btc_eth_leverage": 10,
+		"initialized": userCount > 0,
+		// RunningRevision is the vcs.revision embedded in THIS binary — bug
+		// reports can now be checked against the running rev without a shell
+		// (master-audit v1 finding 5.6).
+		"revision":          kernel.RunningRevision(),
+		"btc_eth_leverage":  10,
 		"altcoin_leverage": 5,
+		// SANDBOX (isolated demo instance) → the UI paints a permanent banner so a
+		// sandbox can never be mistaken for the live system. false in production.
+		"sandbox": SandboxMode(),
 	})
 }
 
@@ -595,28 +743,51 @@ func (s *Server) getTraderFromQuery(c *gin.Context) (*manager.TraderManager, str
 	traderID := c.Query("trader_id")
 
 	// Ensure user's traders are loaded into memory
-	err := s.traderManager.LoadUserTradersFromStore(s.store, userID)
-	if err != nil {
-		logger.Infof("⚠️ Failed to load traders for user %s: %v", userID, err)
+	if s.traderManager != nil {
+		if err := s.traderManager.LoadUserTradersFromStore(s.store, userID); err != nil {
+			logger.Infof("⚠️ Failed to load traders for user %s: %v", userID, err)
+		}
+	}
+
+	// C3 (2026-08-25) — PUBLIC endpoints (competition, equity-history, SSE
+	// ticket) have NO JWT user_id, so there is no ownership to enforce: return
+	// the explicitly-queried trader after an existence check. An empty
+	// trader_id stays an error — public callers must name the trader they want
+	// (the old ids[0] global fallback is gone).
+	if userID == "" {
+		if traderID == "" {
+			return nil, "", fmt.Errorf("No available traders")
+		}
+		t, gerr := s.store.Trader().Get(traderID)
+		if gerr != nil || t == nil {
+			return nil, "", fmt.Errorf("No available traders")
+		}
+		return s.traderManager, traderID, nil
 	}
 
 	if traderID == "" {
-		// If no trader_id specified, return first trader for this user
-		ids := s.traderManager.GetTraderIDs()
-		if len(ids) == 0 {
-			return nil, "", fmt.Errorf("No available traders")
-		}
-
-		// Get user's trader list, prioritize returning user's own traders
+		// C3 (2026-08-25) — NO global fallback: a user with no traders used to
+		// receive ids[0] — the FIRST trader in the process, i.e. ANOTHER user's
+		// trader (cross-user leak). Now the answer is strictly the user's own.
 		userTraders, err := s.store.Trader().List(userID)
 		if err == nil && len(userTraders) > 0 {
 			traderID = userTraders[0].ID
 		} else {
-			traderID = ids[0]
+			return nil, "", fmt.Errorf("No available traders")
 		}
 	}
-
-	return s.traderManager, traderID, nil
+	// C1/C3 — an explicit ?trader_id must belong to the JWT user (404-class
+	// error; the handler maps it without leaking trader existence).
+	userTraders, err := s.store.Trader().List(userID)
+	if err != nil || len(userTraders) == 0 {
+		return nil, "", fmt.Errorf("No available traders")
+	}
+	for _, t := range userTraders {
+		if t.ID == traderID {
+			return s.traderManager, traderID, nil
+		}
+	}
+	return nil, "", fmt.Errorf("No available traders")
 }
 
 // authMiddleware JWT authentication middleware
@@ -664,8 +835,16 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 
 // Start Start server
 func (s *Server) Start() error {
-	addr := fmt.Sprintf(":%d", s.port)
-	logger.Infof("🌐 API server starting at http://localhost%s", addr)
+	// SECURITY (P0 S1): bind the configured interface — 127.0.0.1 by default, so
+	// the API is loopback-only unless the operator sets API_SERVER_HOST. The old
+	// code bound ":port" (0.0.0.0, every interface) while logging "localhost",
+	// which read as safe and was not.
+	host := s.host
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	addr := net.JoinHostPort(host, strconv.Itoa(s.port))
+	logger.Infof("🌐 API server starting at http://%s", addr)
 	logger.Infof("📊 API Documentation:")
 	logger.Infof("  • GET  /api/health           - Health check")
 	logger.Infof("  • GET  /api/traders          - Public AI trader leaderboard top 50 (no auth required)")

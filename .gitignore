@@ -131,6 +131,19 @@ dmypy.json
 .pyre/
 PR_DESCRIPTION.md
 
+# 调试截图 / one-off debug + verification screenshots dropped at repo ROOT during
+# agent sessions (not versioned). Tracked doc assets under screenshots/, docs/,
+# and the referenced inventory_*.png are already tracked and unaffected by this.
+/*.png
+/*.jpg
+/*.jpeg
+
+# 一次性补丁文件 / stray format-patch artifacts
+*.patch
+
+# Playwright MCP output (screenshots, snapshots, console logs — tool artifacts)
+.playwright-mcp/
+
 # Go build artifacts
 /nofx-server
 
@@ -144,3 +157,7 @@ PR_DESCRIPTION.md
 
 # Playwright MCP cache (per-session, not for commit)
 .playwright-mcp/
+
+# sandbox (isolated test instance) — never commit its DB or binary
+data/sandbox.db*
+.sandbox/

@@ -34,9 +34,7 @@ var (
 )
 
 // IncGateBlock records one block of the named gate for the given trader on the
-// CURRENT session-day (set by RolloverGateBlocks, called once per cycle before any
-// gate can fire). trader may be "" for gates with no per-trader identity — they
-// tally under the empty-string trader bucket.
+// current session-day.
 func IncGateBlock(trader, gate string) {
 	if gate == "" {
 		return
@@ -44,6 +42,13 @@ func IncGateBlock(trader, gate string) {
 	gateBlockMu.Lock()
 	gateBlockCnts[gateBlockKey{trader: trader, gate: gate}]++
 	gateBlockMu.Unlock()
+}
+
+// IncClockSkewObserved records one observed local-vs-feed clock skew event that
+// did NOT block an entry (signals are feed-stamped since 2026-08-18). It feeds
+// the same per-trader session table under the gate name "clock_skew_observed".
+func IncClockSkewObserved(trader string) {
+	IncGateBlock(trader, "clock_skew_observed")
 }
 
 // RolloverGateBlocks sets the active session-day to sessionDayMs. On the FIRST call

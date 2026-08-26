@@ -42,6 +42,18 @@ export function SettingsPage() {
   const { language } = useLanguage()
   const [activeTab, setActiveTab] = useState<Tab>('account')
 
+  // Running revision (vcs.revision of the deployed binary) — bug reports can be
+  // checked against this without a shell (master-audit finding 5.6).
+  const [revision, setRevision] = useState('')
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then((c) => {
+        if (c && c.revision) setRevision(c.revision)
+      })
+      .catch(() => {})
+  }, [])
+
   // Account state
   const [newPassword, setNewPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -141,7 +153,9 @@ export function SettingsPage() {
     apiKey: string,
     customApiUrl?: string,
     customModelName?: string,
-    name?: string
+    name?: string,
+    thinkingMode?: string,
+    reasoningEffort?: string
   ) => {
     try {
       const existingModel = configuredModels.find((m) => m.id === modelId)
@@ -191,6 +205,8 @@ export function SettingsPage() {
                 apiKey,
                 customApiUrl: customApiUrl || '',
                 customModelName: customModelName || '',
+                thinkingMode: thinkingMode || '',
+                reasoningEffort: reasoningEffort || '',
                 enabled: true,
                 name: name?.trim() ? name.trim() : m.name,
               }
@@ -204,6 +220,8 @@ export function SettingsPage() {
             apiKey,
             customApiUrl: customApiUrl || '',
             customModelName: customModelName || '',
+            thinkingMode: thinkingMode || '',
+            reasoningEffort: reasoningEffort || '',
             enabled: true,
           },
         ]
@@ -224,6 +242,8 @@ export function SettingsPage() {
               api_key: m.apiKey || '',
               custom_api_url: m.customApiUrl || '',
               custom_model_name: m.customModelName || '',
+              thinking_mode: m.thinkingMode || undefined,
+              reasoning_effort: m.reasoningEffort || undefined,
             },
           ])
         ),
@@ -542,6 +562,12 @@ export function SettingsPage() {
                               {model.customApiUrl
                                 ? configBadge('Base URL', true)
                                 : null}
+                              {model.reasoningEffort
+                                ? configBadge(
+                                    `think:${model.reasoningEffort}`,
+                                    true
+                                  )
+                                : null}
                             </div>
                           </div>
                         </button>
@@ -788,6 +814,11 @@ export function SettingsPage() {
             language={language}
           />
         </div>
+      )}
+      {revision && (
+        <p className="mt-4 text-center text-[10px] text-zinc-600 font-mono">
+          running rev {revision}
+        </p>
       )}
     </div>
   )

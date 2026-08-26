@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,6 +57,28 @@ const (
 	MaxPositionSize   = 1000.0
 	MinConfidence     = 50
 	MaxConfidence     = 100
+)
+
+// SAFE DEFAULTS FOR AN UNSET RISK FIELD (P0 follow-up, 2026-08-17).
+//
+// ClampLimits used to treat "unset" and "explicitly low" identically: a zero
+// value was raised only to the RANGE FLOOR (R:R 1.0 / confidence 50), which is
+// the LOOSEST setting the system permits. So a strategy that simply never set
+// these ran at the most permissive bar available — unset silently WIDENED risk.
+//
+// An absent value now resolves to the RESEARCHED value instead
+// (docs/VL-DAYPLAN-FULL-SPEC.md: R:R ≥ 3.0, confidence ≥ 65). An EXPLICIT value
+// is untouched apart from the existing range clamp, so an owner who deliberately
+// configures 1.5 still gets 1.5 — this changes the default, never a choice.
+const (
+	SafeDefaultMinRiskReward = 3.0
+	// SafeDefaultMinConfidence — 6.1 (final-bundle 2026-08-19): ONE default,
+	// shared by the ClampLimits gate default AND the futures prompt default.
+	// Was 65 here vs a literal 60 in engine_prompt_futures.go — an UNSET
+	// strategy was told "open ≥60" and then judged at ≥65, silently discarding
+	// 60-64 setups (PR #54 finding). Aligned to 60 per owner ruling; an
+	// explicitly stored value (the active strategy stores 60) is untouched.
+	SafeDefaultMinConfidence = 60
 )
 
 // ClampLimits enforces product-level limits on strategy config to prevent token overflow.
@@ -165,6 +188,12 @@ func (c *StrategyConfig) ClampLimits() {
 	}
 
 	// Clamp risk parameters and entry requirements.
+	// UNSET (zero) → the researched default, NOT the range floor. See the
+	// SafeDefault* block: the old behavior made "never configured" the loosest
+	// possible setting.
+	if c.RiskControl.MinRiskRewardRatio == 0 {
+		c.RiskControl.MinRiskRewardRatio = SafeDefaultMinRiskReward
+	}
 	if c.RiskControl.MinRiskRewardRatio < MinRiskReward {
 		c.RiskControl.MinRiskRewardRatio = MinRiskReward
 	}
@@ -182,6 +211,9 @@ func (c *StrategyConfig) ClampLimits() {
 	}
 	if c.RiskControl.MinPositionSize > MaxPositionSize {
 		c.RiskControl.MinPositionSize = MaxPositionSize
+	}
+	if c.RiskControl.MinConfidence == 0 {
+		c.RiskControl.MinConfidence = SafeDefaultMinConfidence
 	}
 	if c.RiskControl.MinConfidence < MinConfidence {
 		c.RiskControl.MinConfidence = MinConfidence
@@ -709,6 +741,48 @@ type StrategyConfig struct {
 	// stores the authoritative booleans on Strategy, but config JSON may carry
 	// this object for agent/frontend schema consistency.
 	PublishConfig *PublishStrategyConfig `json:"publish_config,omitempty"`
+
+	// DayPlan is the optional per-strategy Day Plan settings block (P0.1). ROOT
+	// placement (sibling of strategy_type) so a grid switch — which drops
+	// ai_config — never drops it (RECON #1). Additive + defaults-off: a nil
+	// pointer emits no day_plan key, keeping every existing strategy
+	// byte-identical.
+	DayPlan *DayPlanConfig `json:"day_plan,omitempty"`
+
+	// Regime (G1, regime wave 2026-08-21) — the regime gates' Studio block.
+	// Additive + nil-pointer-safe: a nil block emits no regime key, keeping
+	// every existing strategy byte-identical. Pointer fields resolve shipped
+	// defaults in the accessors (HTFVetoEnabled: nil → ON — dispatch 1.3).
+	Regime *RegimeConfig `json:"regime,omitempty"`
+}
+
+// RegimeConfig holds the regime-wave Studio toggles (G1 HTF veto now; G4
+// transition stand-down joins later in the wave).
+type RegimeConfig struct {
+	// HTFVeto: refuse NEW entries opposing the CONFIRMED HTF trend (G2
+	// structure). nil → ON (shipped default per dispatch 1.3); false = today's
+	// pre-wave behavior.
+	HTFVeto *bool `json:"htf_veto,omitempty"`
+	// TransitionStanddown (G4): pause plan-direction entries while an
+	// unconfirmed counter-trend CHoCH/MSS is outstanding. nil → ON; false =
+	// today's pre-wave behavior.
+	TransitionStanddown *bool `json:"transition_standdown,omitempty"`
+}
+
+// HTFVetoEnabled resolves the shipped default (nil/absent → ON).
+func (c *StrategyConfig) HTFVetoEnabled() bool {
+	if c.Regime == nil || c.Regime.HTFVeto == nil {
+		return true
+	}
+	return *c.Regime.HTFVeto
+}
+
+// TransitionStanddownEnabled resolves the shipped default (nil/absent → ON).
+func (c *StrategyConfig) TransitionStanddownEnabled() bool {
+	if c.Regime == nil || c.Regime.TransitionStanddown == nil {
+		return true
+	}
+	return *c.Regime.TransitionStanddown
 }
 
 // AIStrategyConfig contains fields only used by AI trading strategies.
@@ -741,11 +815,15 @@ func (c StrategyConfig) MarshalJSON() ([]byte, error) {
 		AIConfig      *AIStrategyConfig      `json:"ai_config,omitempty"`
 		GridConfig    *GridStrategyConfig    `json:"grid_config,omitempty"`
 		PublishConfig *PublishStrategyConfig `json:"publish_config,omitempty"`
+		DayPlan       *DayPlanConfig         `json:"day_plan,omitempty"`
+		Regime        *RegimeConfig          `json:"regime,omitempty"`
 	}{
 		StrategyType:  strategyType,
 		Language:      c.Language,
 		PromptVariant: strings.TrimSpace(c.PromptVariant),
 		PublishConfig: c.PublishConfig,
+		DayPlan:       c.DayPlan,
+		Regime:        c.Regime,
 	}
 
 	if strategyType == "grid_trading" {
@@ -773,6 +851,8 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 		AIConfig      *AIStrategyConfig      `json:"ai_config"`
 		GridConfig    *GridStrategyConfig    `json:"grid_config"`
 		PublishConfig *PublishStrategyConfig `json:"publish_config"`
+		DayPlan       *DayPlanConfig         `json:"day_plan"`
+		Regime        *RegimeConfig          `json:"regime"`
 
 		CoinSource     *CoinSourceConfig     `json:"coin_source"`
 		Indicators     *IndicatorConfig      `json:"indicators"`
@@ -791,6 +871,8 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 	c.PromptVariant = strings.TrimSpace(raw.PromptVariant)
 	c.GridConfig = raw.GridConfig
 	c.PublishConfig = raw.PublishConfig
+	c.DayPlan = raw.DayPlan
+	c.Regime = raw.Regime
 
 	if raw.AIConfig != nil {
 		c.CoinSource = raw.AIConfig.CoinSource
@@ -820,6 +902,425 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 		c.StrategyType = "grid_trading"
 	}
 	return nil
+}
+
+// DayPlanConfig is the per-strategy Day Plan settings block (spec PAGE 2 field
+// list). Additive + defaults-off: a nil *DayPlanConfig (absent day_plan) leaves
+// an existing strategy byte-identical, and PlanEnabled=false is the master
+// switch even when the block is present. Lives at ROOT of StrategyConfig.
+type DayPlanConfig struct {
+	// PlanEnabled is the master switch (default false = off).
+	PlanEnabled bool `json:"plan_enabled"`
+	// PlannerModel is the reasoner binding from the multi-key registry; empty
+	// falls back to the strategy's primary model (RECON #9).
+	PlannerModel string `json:"planner_model,omitempty"`
+	// PlanMode: advisory (default) | direction | strict. Promotion by evidence.
+	PlanMode string `json:"plan_mode,omitempty"`
+	// PlannerTimeframes are the structure-summary TFs (default D,4h,1h,15m).
+	PlannerTimeframes []string `json:"planner_timeframes,omitempty"`
+	// ProximityFilterATR: day-trade lock, 0.5–3.0 (default 1.5).
+	ProximityFilterATR float64 `json:"proximity_filter_atr,omitempty"`
+	// MaxLevels: level table cap, 3–12 (default 8).
+	MaxLevels int `json:"max_levels,omitempty"`
+	// ScenarioCap: scenarios cap, 1–5 (default 3).
+	ScenarioCap int `json:"scenario_cap,omitempty"`
+	// AcceptanceRule: 2x5m (default) | 15m-close.
+	AcceptanceRule string `json:"acceptance_rule,omitempty"`
+	// ReplanCap: re-reads per session, 0–4 (default 2).
+	ReplanCap int `json:"replan_cap,omitempty"`
+	// SessionsEnabled: subset of NY | ASIA | LONDON (default [NY]); each other
+	// session earns enablement via replay + NY match-rate evidence.
+	SessionsEnabled []string `json:"sessions_enabled,omitempty"`
+	// ApprovalRequired: OFF (default) = fully automatic.
+	ApprovalRequired bool `json:"approval_required"`
+	// EveningDigest: 17:30 evening digest (default true).
+	EveningDigest bool `json:"evening_digest"`
+	// RealignCap (W13): max AUTO plan re-alignments per plan/session (default 5,
+	// 0 → default). Beyond it the card falls back to a manual "Re-align plan"
+	// button, so the owner keeps the capability without unbounded spend.
+	RealignCap int `json:"realign_cap,omitempty"`
+	// LastEntryCT (P2.3) blocks NEW entries after this America/Chicago time
+	// (default 13:00 CT = 14:00 ET). Empty → the default.
+	LastEntryCT string `json:"last_entry_ct,omitempty"`
+	// EODFlatCT (P2.3) force-flattens open positions at this America/Chicago time
+	// (default 14:45 CT = 15:45 ET); a registered half-day early-close pulls it in.
+	EODFlatCT string `json:"eod_flat_ct,omitempty"`
+	// Sessions holds minimal per-session overrides; absent/nil fields inherit
+	// from the strategy-level values above (⚪ inherit / 🔸 override).
+	Sessions []DayPlanSessionOverride `json:"sessions,omitempty"`
+	// ── W6 wake wave (2026-08-25) — event-diff planner wake-ups. All knobs, no
+	// hardcode. Pointer bools are ON by default (an explicit false disables);
+	// WakeOnHTFOB is a plain bool (OFF by default). WakeMinIntervalMin ≤ 0 → 10.
+	WakeOn15mZone            *bool `json:"wake_on_15m_zone,omitempty"`            // 15m reversal S/D zones + 15m FVG formations
+	WakeOnHTFZone            *bool `json:"wake_on_htf_zone,omitempty"`            // 1h/4h S/D zones (any pattern)
+	WakeOnHTFOB              bool  `json:"wake_on_htf_ob,omitempty"`              // 1h/4h order blocks (OFF default)
+	WakeOnSeatedInvalidation *bool `json:"wake_on_seated_invalidation,omitempty"` // seated zone-kind level closed beyond noise band
+	WakeOnIFVG               *bool `json:"wake_on_ifvg,omitempty"`                // filled→inverted FVGs, any tier
+	WakeMinIntervalMin       int   `json:"wake_min_interval_min,omitempty"`       // minutes between ANY planner wakes (default 10)
+	// Seat1HZone (1h wave, 2026-08-25) — reserve one of the two HTF seats for
+	// an in-band 1h S/D zone when one exists (pointer-bool, DEFAULT ON).
+	Seat1HZone *bool `json:"seat_1h_zone,omitempty"`
+	// MinScenarioQuality (R4, 2026-08-25) — the per-strategy scenario quality
+	// floor (A | B | C). Default C = no restriction (today's behavior,
+	// byte-identical). Per-session override below (like min_grade).
+	MinScenarioQuality string `json:"min_scenario_quality,omitempty"`
+}
+
+// DayPlanSessionOverride is a minimal per-session override. Every field is a
+// pointer: nil means "inherit from the strategy-level DayPlanConfig", a set
+// value overrides only that field for the named session.
+type DayPlanSessionOverride struct {
+	Session        string  `json:"session"` // NY | ASIA | LONDON
+	Enable         *bool   `json:"enable,omitempty"`
+	ReplanCap      *int    `json:"replan_cap,omitempty"`
+	PlanMode       *string `json:"plan_mode,omitempty"`
+	AcceptanceRule *string `json:"acceptance_rule,omitempty"`
+	MinGrade       *string `json:"min_grade,omitempty"` // A | B | C
+	MaxTrades      *int    `json:"max_trades,omitempty"`
+	// MinScenarioQuality (R4, 2026-08-25) — per-session scenario quality floor
+	// (A | B | C); nil inherits the strategy-level value.
+	MinScenarioQuality *string `json:"min_scenario_quality,omitempty"`
+	// LastEntryOffsetMin: minutes BEFORE this session's end after which NEW
+	// entries are refused (P2 session-scope redesign, 2026-08-18). Replaces the
+	// old day-scoped 13:00 CT cutoff, which blocked every entry from 13:00 CT to
+	// midnight — i.e. permanently blocked Asia evenings. nil → default 15.
+	LastEntryOffsetMin *int `json:"last_entry_offset_min,omitempty"`
+	// EODFlatOffsetMin: minutes before this session's end at which any open
+	// position is force-flattened. Same day-scope disease as last-entry (the
+	// 14:45 CT literal would have flattened an Asia position on sight the moment
+	// the last-entry fix landed). nil → default 15.
+	EODFlatOffsetMin *int `json:"eod_flat_offset_min,omitempty"`
+}
+
+// DefaultLastEntryOffsetMin / DefaultEODFlatOffsetMin are the session-relative
+// defaults (minutes before session end). 15 preserves the NY flat feel
+// (15:00−15 = 14:45, exactly the old EODFlatCT default).
+const (
+	DefaultLastEntryOffsetMin = 15
+	DefaultEODFlatOffsetMin   = 15
+)
+
+// LastEntryOffsetFor resolves the per-session last-entry offset (minutes before
+// session end). Override → default. Config only — no caller may carry a literal.
+func (c *DayPlanConfig) LastEntryOffsetFor(session string) int {
+	if ov := c.SessionOverride(session); ov != nil && ov.LastEntryOffsetMin != nil && *ov.LastEntryOffsetMin >= 0 {
+		return *ov.LastEntryOffsetMin
+	}
+	return DefaultLastEntryOffsetMin
+}
+
+// EODFlatOffsetFor resolves the per-session EOD-flat offset (minutes before
+// session end). Override → default.
+func (c *DayPlanConfig) EODFlatOffsetFor(session string) int {
+	if ov := c.SessionOverride(session); ov != nil && ov.EODFlatOffsetMin != nil && *ov.EODFlatOffsetMin >= 0 {
+		return *ov.EODFlatOffsetMin
+	}
+	return DefaultEODFlatOffsetMin
+}
+
+// SessionOverride returns the named session's override block, or nil. Shared by
+// the trader gates, the kernel prompt path, and the API card renderer so all
+// three resolve a per-session setting the SAME way.
+func (c *DayPlanConfig) SessionOverride(session string) *DayPlanSessionOverride {
+	if c == nil {
+		return nil
+	}
+	for i := range c.Sessions {
+		if strings.EqualFold(c.Sessions[i].Session, session) {
+			return &c.Sessions[i]
+		}
+	}
+	return nil
+}
+
+// DefaultAcceptanceRule is the shipped acceptance rule (2 consecutive 5m closes
+// beyond the level). The alternative is "15m-close".
+const DefaultAcceptanceRule = "2x5m"
+
+// AcceptanceRuleFor resolves the acceptance rule for a session: per-session
+// override → strategy-level → the shipped default. Before this existed, the
+// per-session override was persisted and rendered but read by NOTHING — every
+// consumer went straight to the strategy-level field.
+func (c *DayPlanConfig) AcceptanceRuleFor(session string) string {
+	rule := DefaultAcceptanceRule
+	if c != nil && strings.TrimSpace(c.AcceptanceRule) != "" {
+		rule = c.AcceptanceRule
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.AcceptanceRule != nil && strings.TrimSpace(*ov.AcceptanceRule) != "" {
+		rule = *ov.AcceptanceRule
+	}
+	return strings.TrimSpace(rule)
+}
+
+// ReplanCapFor resolves the re-read cap for a session: per-session override →
+// strategy-level → the shipped default of 2. A 0 override is meaningful (no
+// re-plan after death), hence the >= 0 test rather than > 0.
+func (c *DayPlanConfig) ReplanCapFor(session string) int {
+	n := 2
+	if c != nil && c.ReplanCap > 0 {
+		n = c.ReplanCap
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
+		n = *ov.ReplanCap
+	}
+	return n
+}
+
+// ReplansUsed / MayReplan / ReplansLeft are the ONE definition of the re-plan
+// budget. Every consumer — the enforcer, the card and the executor prompt — must
+// go through these, so a literal budget can never disagree with the config again
+// (installActivePlanProvider once carried a hardcoded 2 and told the AI it had 0
+// re-plans left while the card said 2).
+//
+// SEMANTICS, settled 2026-08-17. The cap counts RE-PLANS, not versions and not
+// deaths. Version 1 is the session's first read and costs nothing; each
+// subsequent REAL plan version is one re-plan. So:
+//
+//	replan_cap = N  ⇒  at most N re-plans  ⇒  real versions v1…v(N+1)
+//	the (N+1)th death  ⇒  NO-TRADE for the session
+//
+// The NO-TRADE row is a TERMINAL MARKER, not a re-plan. It consumes a version
+// number because the plans table is append-only, which is why cap=4 legitimately
+// produces a row labelled "v6": v1…v5 are the five real plans (four re-plans) and
+// v6 is the marker. That is correct behaviour, and it is exactly what read as
+// "the cap didn't work" on 2026-08-16.
+
+// ReplansUsed is how many re-plans a version number represents.
+func ReplansUsed(version int) int {
+	return ReplansUsedFrom(version, 1)
+}
+
+// MayReplan reports whether another REAL plan version may be written after the
+// given version died. False ⇒ the session sits out with a NO-TRADE marker.
+func MayReplan(version, cap int) bool { return MayReplanFrom(version, 1, cap) }
+
+// ReplansLeftFor is what the card and the executor prompt must both display.
+func ReplansLeftFor(version, cap int) int {
+	return ReplansLeftFrom(version, 1, cap)
+}
+
+// ── OWNER RESET (2026-08-17) — a reset re-opens the budget for ONE chain ──────
+//
+// The owner reset marks the current chain ABANDONED (the rows stay — plans are
+// append-only, history and death reasons preserved) and re-arms the session's
+// re-plan budget from a new baseline: the version at which the reset happened.
+// Everything above (ReplansUsed/MayReplan/ReplansLeftFor) is baseline 1 — the
+// original chain — and these From-variants are the SAME math from a later
+// baseline, so every consumer reads one consistent budget.
+
+// ReplansUsedFrom counts re-plans relative to a baseline version.
+func ReplansUsedFrom(version, baseline int) int {
+	if baseline < 1 {
+		baseline = 1
+	}
+	if version < baseline {
+		return 0
+	}
+	return version - baseline
+}
+
+// MayReplanFrom is MayReplan measured from a baseline version (the reset seam).
+func MayReplanFrom(version, baseline, cap int) bool { return ReplansUsedFrom(version, baseline) < cap }
+
+// ReplansLeftFrom is ReplansLeftFor measured from a baseline version.
+func ReplansLeftFrom(version, baseline, cap int) int {
+	if n := cap - ReplansUsedFrom(version, baseline); n > 0 {
+		return n
+	}
+	return 0
+}
+
+// ResetBaselineKey is the system_config key holding the reset seam version for
+// one (trader, trade_date, session). C7 (2026-08-25) — trader-scoped: the key
+// used to be (trade_date, session), so two day-plan traders sharing a session
+// shared the reset seam and one trader's reset re-armed the other's budget.
+func ResetBaselineKey(traderID, tradeDate, session string) string {
+	return "dayplan_reset:" + traderID + ":" + tradeDate + ":" + session
+}
+
+// ScenarioStatusKey is the system_config key holding a trader's live scenario
+// statuses. P0-A (2026-08-18): the key used to be "scenario_status:<plan_id>"
+// — with two day-plan traders sharing a plan_id, the last writer's statuses
+// governed both cards. Trader-scoped so one trader's scenario facts can never
+// reach another's card.
+func ScenarioStatusKey(traderID, planID string) string {
+	return "scenario_status:" + traderID + ":" + planID
+}
+
+// ScenarioMetaKey (A1/A4, fail-register wave) — sibling of ScenarioStatusKey:
+// {"basis":{"S1":"machine|heuristic"},"unevaluable":["S3"]} so the card can
+// render heuristic verdicts distinctly and name unevaluable scenarios.
+func ScenarioMetaKey(traderID, planID string) string {
+	return "scenario_meta:" + traderID + ":" + planID
+}
+
+// SetResetBaseline records the version the reset chain starts measuring from.
+func SetResetBaseline(st *Store, traderID, tradeDate, session string, version int) error {
+	if st == nil {
+		return fmt.Errorf("store required")
+	}
+	if version < 1 {
+		return fmt.Errorf("baseline version must be >= 1, got %d", version)
+	}
+	return st.SetSystemConfig(ResetBaselineKey(traderID, tradeDate, session), strconv.Itoa(version))
+}
+
+// GetResetBaseline returns the reset baseline for (trade_date, session); 1 when
+// none was recorded (the original chain). A malformed value falls back to 1 —
+// a bad marker can never inflate or destroy budget.
+func GetResetBaseline(st *Store, traderID, tradeDate, session string) int {
+	if st == nil {
+		return 1
+	}
+	raw, _ := st.GetSystemConfig(ResetBaselineKey(traderID, tradeDate, session))
+	if n, err := strconv.Atoi(strings.TrimSpace(raw)); err == nil && n >= 1 {
+		return n
+	}
+	return 1
+}
+
+// MaxTradesFor resolves the per-session entry cap. ok=false means NO cap is
+// configured for this session (the shipped behavior — the strategy-level daily
+// guardrail still applies). A 0 cap is meaningful: no entries this session.
+func (c *DayPlanConfig) MaxTradesFor(session string) (int, bool) {
+	if ov := c.SessionOverride(session); ov != nil && ov.MaxTrades != nil && *ov.MaxTrades >= 0 {
+		return *ov.MaxTrades, true
+	}
+	return 0, false
+}
+
+// MinGradeFor (grading audit §4.7, 2026-08-25) resolves the per-session
+// min_grade floor: per-session override → "" (no filter). The ONE resolution
+// seam so the kernel executor path (KEY LEVELS + PLAN STATUS) and the trader
+// planner path can never disagree on the floor.
+func (c *DayPlanConfig) MinGradeFor(session string) string {
+	if ov := c.SessionOverride(session); ov != nil && ov.MinGrade != nil {
+		return strings.ToUpper(strings.TrimSpace(*ov.MinGrade))
+	}
+	return ""
+}
+
+// PlanModeFor resolves the plan-restriction mode for a session: per-session
+// override → strategy-level → "advisory".
+func (c *DayPlanConfig) PlanModeFor(session string) string {
+	mode := "advisory"
+	if c != nil && strings.TrimSpace(c.PlanMode) != "" {
+		mode = c.PlanMode
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.PlanMode != nil && strings.TrimSpace(*ov.PlanMode) != "" {
+		mode = *ov.PlanMode
+	}
+	return strings.ToLower(strings.TrimSpace(mode))
+}
+
+// DefaultDayPlanConfig returns the spec default block (plan OFF). It is NOT
+// injected into GetDefaultStrategyConfig — creating a strategy leaves day_plan
+// absent (byte-identical) until the owner opts in; the frontend/creation flow
+// seeds this when the block is first turned on.
+func DefaultDayPlanConfig() *DayPlanConfig {
+	return &DayPlanConfig{
+		PlanEnabled:        false,
+		PlanMode:           "advisory",
+		PlannerTimeframes:  []string{"D", "4h", "1h", "15m"},
+		ProximityFilterATR: 1.5,
+		MaxLevels:          8,
+		ScenarioCap:        3,
+		AcceptanceRule:     "2x5m",
+		ReplanCap:          2,
+		SessionsEnabled:    []string{"NY"},
+		ApprovalRequired:   false,
+		EveningDigest:      true,
+		RealignCap:         5,
+		LastEntryCT:        "13:00", // 14:00 ET
+		EODFlatCT:          "14:45", // 15:45 ET
+		// W6 (2026-08-25) — wake wave defaults: ON except HTF OBs; 10-min
+		// minimum spacing between planner wake-ups.
+		WakeOn15mZone:            wakeBoolPtr(true),
+		WakeOnHTFZone:            wakeBoolPtr(true),
+		WakeOnHTFOB:              false,
+		WakeOnSeatedInvalidation: wakeBoolPtr(true),
+		WakeOnIFVG:               wakeBoolPtr(true),
+		WakeMinIntervalMin:       30,
+		// 1h wave (2026-08-25) — seat guarantee DEFAULT ON.
+		Seat1HZone: wakeBoolPtr(true),
+		// R4 (2026-08-25) — scenario quality floor DEFAULT C (no restriction).
+		MinScenarioQuality: "C",
+	}
+}
+
+func wakeBoolPtr(v bool) *bool { return &v }
+
+// DefaultWakeMinIntervalMin is the shipped wake spacing (minutes). W6-D
+// (2026-08-25): raised 10 → 30 — wakes are unlimited (no budget), so the
+// interval is the ONLY frequency guard; 30 min keeps unlimited wakes from
+// churning the plan book.
+const DefaultWakeMinIntervalMin = 30
+
+// WakeOn15mZoneEnabled / WakeOnHTFZoneEnabled / WakeOnHTFOBEnabled /
+// WakeOnSeatedInvalidationEnabled / WakeOnIFVGEnabled / WakeMinIntervalMinutes
+// are the ONE resolution seam for the W6 wake knobs: nil config or unset
+// pointer → the shipped default (ON, except HTF OBs). Every consumer must go
+// through these so a knob can never silently flip between callers.
+func (c *DayPlanConfig) WakeOn15mZoneEnabled() bool {
+	if c == nil || c.WakeOn15mZone == nil {
+		return true
+	}
+	return *c.WakeOn15mZone
+}
+
+func (c *DayPlanConfig) WakeOnHTFZoneEnabled() bool {
+	if c == nil || c.WakeOnHTFZone == nil {
+		return true
+	}
+	return *c.WakeOnHTFZone
+}
+
+func (c *DayPlanConfig) WakeOnHTFOBEnabled() bool {
+	return c != nil && c.WakeOnHTFOB
+}
+
+func (c *DayPlanConfig) WakeOnSeatedInvalidationEnabled() bool {
+	if c == nil || c.WakeOnSeatedInvalidation == nil {
+		return true
+	}
+	return *c.WakeOnSeatedInvalidation
+}
+
+func (c *DayPlanConfig) WakeOnIFVGEnabled() bool {
+	if c == nil || c.WakeOnIFVG == nil {
+		return true
+	}
+	return *c.WakeOnIFVG
+}
+
+func (c *DayPlanConfig) WakeMinIntervalMinutes() int {
+	if c == nil || c.WakeMinIntervalMin <= 0 {
+		return DefaultWakeMinIntervalMin
+	}
+	return c.WakeMinIntervalMin
+}
+
+// Seat1HZoneEnabled is the ONE resolution seam for the 1h-wave seat knob:
+// nil config or unset pointer → ON (the shipped default).
+func (c *DayPlanConfig) Seat1HZoneEnabled() bool {
+	if c == nil || c.Seat1HZone == nil {
+		return true
+	}
+	return *c.Seat1HZone
+}
+
+// MinScenarioQualityFor (R4, 2026-08-25) resolves the scenario quality floor:
+// per-session override → strategy-level → "C" (no restriction). The ONE
+// resolution seam so the kernel gate and the Studio card can never disagree.
+func (c *DayPlanConfig) MinScenarioQualityFor(session string) string {
+	floor := "C"
+	if c != nil && strings.TrimSpace(c.MinScenarioQuality) != "" {
+		floor = strings.ToUpper(strings.TrimSpace(c.MinScenarioQuality))
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.MinScenarioQuality != nil && strings.TrimSpace(*ov.MinScenarioQuality) != "" {
+		floor = strings.ToUpper(strings.TrimSpace(*ov.MinScenarioQuality))
+	}
+	return floor
 }
 
 // GridStrategyConfig grid trading specific configuration
@@ -1036,16 +1537,20 @@ type RiskControlConfig struct {
 	// stay off until set). Not gated by the guardrails master switch.
 	ReentryCooldownMinutes int `json:"reentry_cooldown_minutes,omitempty"`
 
-	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 10-contract
+	// Chunk 3 — max CONTRACTS per futures order (clamp). Unset → the 2-contract
 	// default (the prior hidden const maxFuturesContracts). Toggle default ON.
-	MaxContractsPerOrder int   `json:"max_contracts_per_order,omitempty"`
-	MaxContractsEnabled  *bool `json:"max_contracts_enabled,omitempty"`
+	MaxContractsPerOrder int `json:"max_contracts_per_order,omitempty"`
+	// Deprecated (6.4 ruling B): the enabled toggle never had a reader — the
+	// contracts clamp is always-on venue safety. Field kept so old stored
+	// configs still parse; nothing reads it, the UI no longer writes it.
+	MaxContractsEnabled *bool `json:"max_contracts_enabled,omitempty"`
 
 	// Chunk 3 — futures NOTIONAL ceiling multiplier: max position notional =
 	// equity × this. Unset → 20 (the prior hidden const futuresMaxNotionalLeverage),
 	// now VISIBLE + EDITABLE. Toggle default ON (safety backstop).
 	MaxNotionalLeverage float64 `json:"max_notional_leverage,omitempty"`
-	NotionalCapEnabled  *bool   `json:"notional_cap_enabled,omitempty"`
+	// Deprecated (6.4 ruling B): same as MaxContractsEnabled — parse-only.
+	NotionalCapEnabled *bool `json:"notional_cap_enabled,omitempty"`
 
 	// Chunk 4 — time/news BLACKOUT window (daily, HH:MM in America/Chicago). When
 	// enabled, the bot makes no new decisions inside [start,end] CT (NT8-side SL/TP
@@ -1074,6 +1579,18 @@ type RiskControlConfig struct {
 	// resting bracket in place. New feature → default OFF; trigger defaults to 50.
 	BreakevenEnabled       *bool   `json:"breakeven_enabled,omitempty"`
 	BreakevenTriggerPoints float64 `json:"breakeven_trigger_points,omitempty"`
+
+	// Trailing profit (final-bundle Phase 3B, 2026-08-19; NT8 futures only).
+	// Mechanical, deterministic, zero AI: once ARMED (per trailing_arm), each 60s
+	// monitor beat computes trail = best_price_since_entry ∓ mult×ATR(period,5m)
+	// and ratchets the resting stop via the proven move_stop path — never
+	// backward, never below entry after breakeven fired. DEFAULT OFF.
+	TrailingEnabled   *bool   `json:"trailing_enabled,omitempty"`
+	TrailingATRMult   float64 `json:"trailing_atr_mult,omitempty"`   // default 2.0
+	TrailingATRPeriod int     `json:"trailing_atr_period,omitempty"` // default 14 (5m ATR)
+	// TrailingArm: "after_breakeven" (default) | "after_trigger_points" | "immediate".
+	TrailingArm       string  `json:"trailing_arm,omitempty"`
+	TrailingArmPoints float64 `json:"trailing_arm_points,omitempty"` // used iff after_trigger_points
 }
 
 // NewStrategyStore creates a new StrategyStore

@@ -18,6 +18,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -59,6 +60,11 @@ const (
 type TCPServer struct {
 	addr     string
 	listener net.Listener
+
+	// U1 wire-liveness (stale-bar dispatch 2026-08-19): every inbound frame
+	// bumps these; a 60s reporter line answers "feed or math" in one glance.
+	framesTotal     atomic.Int64
+	lastFrameUnixMs atomic.Int64
 
 	// Pending signals to flush on (re)connect (spec L4414).
 	pendingMu sync.Mutex
@@ -399,14 +405,28 @@ type timedSignal struct {
 	timestamp time.Time
 }
 
-// NewTCPServer constructs a server bound to TCPListenAddr. The listener is
+// ListenAddr returns the NT8 bridge listen address: TCPListenAddr unless
+// NT_TCP_LISTEN_ADDR overrides it. The listener is a process-singleton, so a
+// SECOND backend on the same host (demo preview, sandbox, integration test)
+// could never create a NinjaTrader trader — "bind: address already in use"
+// failed trader creation, which then 404s every /api/plan/* call for it. The
+// override lets a second instance bind elsewhere; unset = byte-identical
+// behavior for the live bot.
+func ListenAddr() string {
+	if v := strings.TrimSpace(os.Getenv("NT_TCP_LISTEN_ADDR")); v != "" {
+		return v
+	}
+	return TCPListenAddr
+}
+
+// NewTCPServer constructs a server bound to ListenAddr(). The listener is
 // not opened until Start. Pass nil to use the default slog logger.
 func NewTCPServer(logger *slog.Logger) *TCPServer {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &TCPServer{
-		addr:          TCPListenAddr,
+		addr:          ListenAddr(),
 		fillCh:        make(chan FillPayload, fillChannelBuffer),
 		closeCh:       make(chan PositionClosePayload, fillChannelBuffer),
 		rejectCh:      make(chan PositionCloseRejectedPayload, fillChannelBuffer),
@@ -891,8 +911,55 @@ func (s *TCPServer) Start(ctx context.Context) error {
 	// Plan 4.4 Stage 2 — bar ingest drain goroutine, decouples cache
 	// writes from the socket read loop.
 	go s.drainBarIngest(cctx)
+	// U1 3.3 — wire-liveness line every 60s (not wg-tracked: exits with ctx).
+	go s.livenessReporter(cctx)
 	s.logger.Info("tcp_server: listening", "addr", s.addr)
 	return nil
+}
+
+// livenessReporter (U1 3.3, stale-bar dispatch 2026-08-19) emits one line per
+// minute answering "feed or math" at a glance: how long since ANY frame, the
+// frame rate, and each TF's newest bar age (open-stamp + interval = NT8's own
+// stamp of the bar). Silent only when the server has never seen a frame AND
+// holds no bars (pre-first-connect boot).
+func (s *TCPServer) livenessReporter(ctx context.Context) {
+	tick := time.NewTicker(60 * time.Second)
+	defer tick.Stop()
+	var prevTotal int64
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+			total := s.framesTotal.Load()
+			perMin := total - prevTotal
+			prevTotal = total
+			last := s.lastFrameUnixMs.Load()
+			nowMs := time.Now().UnixMilli()
+			lastAge := "never"
+			if last > 0 {
+				lastAge = fmt.Sprintf("%ds", (nowMs-last)/1000)
+			}
+			tfAges := ""
+			for _, tf := range []string{"1m", "5m", "15m"} {
+				bars := s.BarCache().Get("MNQ", tf)
+				if len(bars) == 0 {
+					tfAges += " " + tf + "=none"
+					continue
+				}
+				// Age of the newest bar's OPEN: 0..period while the forming bar
+				// is live — always non-negative and readable at a glance. (The
+				// close-stamp variant went negative for forming bars.)
+				age := (nowMs - bars[len(bars)-1].T) / 1000
+				tfAges += fmt.Sprintf(" %s=%ds", tf, age)
+			}
+			if last == 0 && tfAges == " 1m=none 5m=none 15m=none" {
+				continue // pre-first-connect boot — nothing to report yet
+			}
+			s.logger.Info("wire_liveness",
+				"last_frame_age", lastAge, "frames_per_min", perMin, "bar_age", strings.TrimSpace(tfAges))
+		}
+	}
 }
 
 // Stop cancels the accept loop, closes the listener, drops any active
@@ -1294,6 +1361,10 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 		// by the peer). The watcher provides the shutdown-responsiveness
 		// the old 2s polling deadline used to.
 		env, err := ReadFrame(c)
+		if err == nil {
+			s.framesTotal.Add(1)
+			s.lastFrameUnixMs.Store(time.Now().UnixMilli())
+		}
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) {
 				s.logger.Info("tcp_server: client disconnected")

@@ -7,11 +7,17 @@ import (
 	"testing"
 )
 
+// wireCloseStamp1m: fixtures in this file model the WIRE convention — NT8
+// stamps a bar at its period END, and ingest converts to OPEN stamps
+// (openStampBars, canonical time contract 2026-08-19). Seeding T+60000 means
+// every pre-existing expectation below still reads in OPEN-stamp terms.
+const wireCloseStamp1m = 60_000
+
 func TestBarCache_SeedAndGet(t *testing.T) {
 	c := NewBarCache(0) // default max
 	bars := []Bar{
-		{T: 1, O: 100, H: 101, L: 99, C: 100.5, V: 10},
-		{T: 2, O: 100.5, H: 102, L: 100, C: 101.5, V: 12},
+		{T: 1 + wireCloseStamp1m, O: 100, H: 101, L: 99, C: 100.5, V: 10},
+		{T: 2 + wireCloseStamp1m, O: 100.5, H: 102, L: 100, C: 101.5, V: 12},
 	}
 	c.SeedHistorical("MNQ", "1m", bars)
 
@@ -29,7 +35,7 @@ func TestBarCache_SeedAndGet(t *testing.T) {
 
 func TestBarCache_Get_ReturnsSnapshotCopy(t *testing.T) {
 	c := NewBarCache(0)
-	c.SeedHistorical("MNQ", "1m", []Bar{{T: 1, C: 100}})
+	c.SeedHistorical("MNQ", "1m", []Bar{{T: 1 + wireCloseStamp1m, C: 100}})
 	snap1 := c.Get("MNQ", "1m")
 	if len(snap1) != 1 {
 		t.Fatalf("len=%d", len(snap1))
@@ -51,8 +57,9 @@ func TestBarCache_SeedHistorical_MergePreservesDepth(t *testing.T) {
 
 	// Initial deep seed: bars T=1..100.
 	deep := make([]Bar, 0, 100)
+	const wire5m = 300_000 // this test seeds the 5m key — wire stamps shift by 5m
 	for i := int64(1); i <= 100; i++ {
-		deep = append(deep, Bar{T: i, C: float64(i)})
+		deep = append(deep, Bar{T: i + wire5m, C: float64(i)})
 	}
 	c.SeedHistorical("MNQ", "5m", deep)
 	if c.Count("MNQ", "5m") != 100 {
@@ -62,7 +69,7 @@ func TestBarCache_SeedHistorical_MergePreservesDepth(t *testing.T) {
 	// Reconnect recreate re-seeds a THINNER frame: only the recent tail +
 	// one new bar (T=99,100,101). Must NOT wipe the deeper 1..98.
 	c.SeedHistorical("MNQ", "5m", []Bar{
-		{T: 99, C: 99}, {T: 100, C: 100.5}, {T: 101, C: 101},
+		{T: 99 + wire5m, C: 99}, {T: 100 + wire5m, C: 100.5}, {T: 101 + wire5m, C: 101},
 	})
 	got := c.Get("MNQ", "5m")
 	if len(got) != 101 {
@@ -85,7 +92,7 @@ func TestBarCache_SeedHistorical_MergePreservesDepth(t *testing.T) {
 	}
 
 	// A DEEPER (older) re-seed merges in front — proves future deepening works.
-	c.SeedHistorical("MNQ", "5m", []Bar{{T: -2, C: -2}, {T: -1, C: -1}, {T: 1, C: 1}})
+	c.SeedHistorical("MNQ", "5m", []Bar{{T: -2 + wire5m, C: -2}, {T: -1 + wire5m, C: -1}, {T: 1 + wire5m, C: 1}})
 	got = c.Get("MNQ", "5m")
 	if got[0].T != -2 || got[1].T != -1 {
 		t.Errorf("older bars not prepended: %d,%d want -2,-1", got[0].T, got[1].T)
@@ -97,9 +104,9 @@ func TestBarCache_SeedHistorical_MergePreservesDepth(t *testing.T) {
 
 func TestBarCache_Upsert_ReplaceSameT(t *testing.T) {
 	c := NewBarCache(0)
-	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100, C: 21500.0}})
+	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100 + wireCloseStamp1m, C: 21500.0}})
 	// Same t — in-progress update.
-	c.Upsert("MNQ", "1m", []Bar{{T: 100, C: 21500.75, H: 21501.0}})
+	c.Upsert("MNQ", "1m", []Bar{{T: 100 + wireCloseStamp1m, C: 21500.75, H: 21501.0}})
 
 	got := c.Get("MNQ", "1m")
 	if len(got) != 1 {
@@ -112,8 +119,8 @@ func TestBarCache_Upsert_ReplaceSameT(t *testing.T) {
 
 func TestBarCache_Upsert_AppendNewT(t *testing.T) {
 	c := NewBarCache(0)
-	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100, C: 21500}})
-	c.Upsert("MNQ", "1m", []Bar{{T: 160, C: 21501}})
+	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100 + wireCloseStamp1m, C: 21500}})
+	c.Upsert("MNQ", "1m", []Bar{{T: 160 + wireCloseStamp1m, C: 21501}})
 	got := c.Get("MNQ", "1m")
 	if len(got) != 2 || got[1].T != 160 {
 		t.Errorf("expected append at T=160, got %+v", got)
@@ -122,9 +129,9 @@ func TestBarCache_Upsert_AppendNewT(t *testing.T) {
 
 func TestBarCache_Upsert_IgnoreOutOfOrder(t *testing.T) {
 	c := NewBarCache(0)
-	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100, C: 21500}, {T: 160, C: 21501}})
+	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100 + wireCloseStamp1m, C: 21500}, {T: 160 + wireCloseStamp1m, C: 21501}})
 	// t < last.t — defensive: ignore.
-	c.Upsert("MNQ", "1m", []Bar{{T: 50, C: 9999}})
+	c.Upsert("MNQ", "1m", []Bar{{T: 50 + wireCloseStamp1m, C: 9999}})
 	got := c.Get("MNQ", "1m")
 	if len(got) != 2 {
 		t.Fatalf("len=%d, expected 2 (no append)", len(got))
@@ -137,11 +144,11 @@ func TestBarCache_Upsert_IgnoreOutOfOrder(t *testing.T) {
 func TestBarCache_Upsert_MultiBar(t *testing.T) {
 	// Multi-bar gotcha: a single tick can deliver multiple bars.
 	c := NewBarCache(0)
-	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100, C: 21500}})
+	c.SeedHistorical("MNQ", "1m", []Bar{{T: 100 + wireCloseStamp1m, C: 21500}})
 	c.Upsert("MNQ", "1m", []Bar{
-		{T: 100, C: 21500.5}, // replace
-		{T: 160, C: 21501},   // append
-		{T: 220, C: 21502},   // append
+		{T: 100 + wireCloseStamp1m, C: 21500.5}, // replace
+		{T: 160 + wireCloseStamp1m, C: 21501},   // append
+		{T: 220 + wireCloseStamp1m, C: 21502},   // append
 	})
 	got := c.Get("MNQ", "1m")
 	if len(got) != 3 {
@@ -154,11 +161,16 @@ func TestBarCache_Upsert_MultiBar(t *testing.T) {
 
 func TestBarCache_RingBound(t *testing.T) {
 	c := NewBarCache(3) // tiny ring
+	// Real prices, not zero-valued structs: a bar with no range and no volume is
+	// an NT8 empty-minute placeholder and is refused at ingest (see
+	// isPlaceholderBar). This test is about ring bounds, so give it real bars.
 	c.SeedHistorical("MNQ", "1m", []Bar{
-		{T: 1}, {T: 2}, {T: 3},
+		{T: 1 + wireCloseStamp1m, O: 100, H: 101, L: 99, C: 100, V: 5},
+		{T: 2 + wireCloseStamp1m, O: 100, H: 102, L: 99, C: 101, V: 5},
+		{T: 3 + wireCloseStamp1m, O: 101, H: 103, L: 100, C: 102, V: 5},
 	})
 	// 4th bar — oldest must drop.
-	c.Upsert("MNQ", "1m", []Bar{{T: 4}})
+	c.Upsert("MNQ", "1m", []Bar{{T: 4 + wireCloseStamp1m, O: 102, H: 104, L: 101, C: 103, V: 5}})
 	got := c.Get("MNQ", "1m")
 	if len(got) != 3 {
 		t.Fatalf("len=%d, want 3 (ring bounded)", len(got))
@@ -170,8 +182,11 @@ func TestBarCache_RingBound(t *testing.T) {
 
 func TestBarCache_Seed_TruncatesOversized(t *testing.T) {
 	c := NewBarCache(2)
-	c.SeedHistorical("MNQ", "1m", []Bar{
-		{T: 1}, {T: 2}, {T: 3}, {T: 4}, // 4 bars, ring is 2
+	c.SeedHistorical("MNQ", "1m", []Bar{ // 4 real bars, ring is 2
+		{T: 1 + wireCloseStamp1m, O: 100, H: 101, L: 99, C: 100, V: 5},
+		{T: 2 + wireCloseStamp1m, O: 100, H: 102, L: 99, C: 101, V: 5},
+		{T: 3 + wireCloseStamp1m, O: 101, H: 103, L: 100, C: 102, V: 5},
+		{T: 4 + wireCloseStamp1m, O: 102, H: 104, L: 101, C: 103, V: 5},
 	})
 	got := c.Get("MNQ", "1m")
 	if len(got) != 2 {
@@ -184,9 +199,9 @@ func TestBarCache_Seed_TruncatesOversized(t *testing.T) {
 
 func TestBarCache_MultipleKeys(t *testing.T) {
 	c := NewBarCache(0)
-	c.SeedHistorical("MNQ", "1m", []Bar{{T: 1, C: 100}})
-	c.SeedHistorical("MNQ", "5m", []Bar{{T: 1, C: 200}})
-	c.SeedHistorical("ES", "1m", []Bar{{T: 1, C: 4500}})
+	c.SeedHistorical("MNQ", "1m", []Bar{{T: 1 + wireCloseStamp1m, C: 100}})
+	c.SeedHistorical("MNQ", "5m", []Bar{{T: 1 + wireCloseStamp1m, C: 200}})
+	c.SeedHistorical("ES", "1m", []Bar{{T: 1 + wireCloseStamp1m, C: 4500}})
 
 	if c.Get("MNQ", "1m")[0].C != 100 {
 		t.Error("MNQ 1m wrong")
@@ -213,10 +228,10 @@ func TestBarCache_Get_EmptyKey(t *testing.T) {
 
 func TestBarCache_EmptyInputsIgnored(t *testing.T) {
 	c := NewBarCache(0)
-	c.SeedHistorical("", "1m", []Bar{{T: 1}})  // empty symbol
-	c.SeedHistorical("MNQ", "", []Bar{{T: 1}}) // empty timeframe
-	c.Upsert("MNQ", "1m", nil)                 // nil bars
-	c.Upsert("MNQ", "1m", []Bar{})             // empty bars
+	c.SeedHistorical("", "1m", []Bar{{T: 1 + wireCloseStamp1m}})  // empty symbol
+	c.SeedHistorical("MNQ", "", []Bar{{T: 1 + wireCloseStamp1m}}) // empty timeframe
+	c.Upsert("MNQ", "1m", nil)                                    // nil bars
+	c.Upsert("MNQ", "1m", []Bar{})                                // empty bars
 	if len(c.Keys()) != 0 {
 		t.Errorf("expected no keys, got %+v", c.Keys())
 	}
@@ -227,7 +242,7 @@ func TestBarCache_EmptyInputsIgnored(t *testing.T) {
 // briefly, race-clean.
 func TestBarCache_Concurrent(t *testing.T) {
 	c := NewBarCache(100)
-	c.SeedHistorical("MNQ", "1m", []Bar{{T: 0, C: 21500}})
+	c.SeedHistorical("MNQ", "1m", []Bar{{T: 0 + wireCloseStamp1m, C: 21500}})
 	var wg sync.WaitGroup
 	const N = 50
 	for w := 0; w < 4; w++ {
@@ -255,5 +270,26 @@ func TestBarCache_Concurrent(t *testing.T) {
 	got := c.Get("MNQ", "1m")
 	if len(got) == 0 {
 		t.Error("cache empty after concurrent writes")
+	}
+}
+
+// C11 (2026-08-25) — per-TF close-time math: every subscribed timeframe in
+// defaultAutoBarsTimeframes must map to its exact millisecond duration (the
+// pre-C11 fallthrough silently treated 6h/8h/12h/3d/1w as 1m, shifting open
+// stamps and CloseTime).
+func TestTimeframeMsAllAutoBarsTFs(t *testing.T) {
+	want := map[string]int64{
+		"1m": 60_000, "3m": 180_000, "5m": 300_000, "15m": 900_000,
+		"30m": 1_800_000, "1h": 3_600_000, "2h": 7_200_000, "4h": 14_400_000,
+		"6h": 21_600_000, "8h": 28_800_000, "12h": 43_200_000,
+		"1d": 86_400_000, "3d": 259_200_000, "1w": 604_800_000,
+	}
+	for _, tf := range defaultAutoBarsTimeframes {
+		if got := timeframeMs(tf); got != want[tf] {
+			t.Fatalf("timeframeMs(%q) = %d, want %d", tf, got, want[tf])
+		}
+	}
+	if got := timeframeMs("unknown"); got != 60_000 {
+		t.Fatalf("unknown TF must fall back to 1m, got %d", got)
 	}
 }

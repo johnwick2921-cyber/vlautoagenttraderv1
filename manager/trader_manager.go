@@ -3,6 +3,7 @@ package manager
 import (
 	"context"
 	"fmt"
+	"nofx/config"
 	"nofx/logger"
 	"nofx/store"
 	"nofx/trader"
@@ -114,48 +115,9 @@ func (tm *TraderManager) StopAll() {
 	}
 }
 
-// AutoStartRunningTraders automatically starts traders marked as running in the database
-func (tm *TraderManager) AutoStartRunningTraders(st *store.Store) {
-	// Get all trader configurations (single query)
-	traderList, err := st.Trader().ListAll()
-	if err != nil {
-		logger.Infof("⚠️ Failed to get trader list: %v", err)
-		return
-	}
-
-	// Build set of running trader IDs
-	runningTraderIDs := make(map[string]bool)
-	for _, traderCfg := range traderList {
-		if traderCfg.IsRunning {
-			runningTraderIDs[traderCfg.ID] = true
-		}
-	}
-
-	if len(runningTraderIDs) == 0 {
-		logger.Info("📋 No traders to auto-restore")
-		return
-	}
-
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
-	startedCount := 0
-	for id, t := range tm.traders {
-		if runningTraderIDs[id] {
-			go func(traderID string, at *trader.AutoTrader) {
-				logger.Infof("%s ▶️ Auto-restoring trader runtime", traderLogTag(traderID, at.GetName()))
-				if err := at.Run(); err != nil {
-					logger.Warnf("%s runtime error: %v", traderLogTag(traderID, at.GetName()), err)
-				}
-			}(id, t)
-			startedCount++
-		}
-	}
-
-	if startedCount > 0 {
-		logger.Infof("✓ Auto-restored %d traders", startedCount)
-	}
-}
+// (6.8 deprecation sweep) AutoStartRunningTraders removed — zero callers
+// [A, PR #54]: the real boot restore reads is_running directly in
+// addTraderFromStore (see the auto-start goroutine below in this file).
 
 // GetComparisonData retrieves comparison data
 func (tm *TraderManager) GetComparisonData() (map[string]interface{}, error) {
@@ -649,14 +611,26 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		CustomAPIURL:          aiModelCfg.CustomAPIURL,
 		CustomModelName:       aiModelCfg.CustomModelName,
 		ScanInterval:          time.Duration(traderCfg.ScanIntervalMinutes) * time.Minute,
-		InitialBalance:        traderCfg.InitialBalance,
-		IsCrossMargin:         traderCfg.IsCrossMargin,
-		ShowInCompetition:     traderCfg.ShowInCompetition,
-		StrategyConfig:        strategyConfig,
+		CadenceMode:           traderCfg.CadenceMode,
+		// 4.3 — limit-then-market flatten knobs (dormant 0/0 = market flatten).
+		LimitCloseTicks:        config.Get().LimitCloseTicks,
+		LimitCloseMarketAfterS: config.Get().LimitCloseMarketAfterS,
+		PositionMode:           traderCfg.PositionMode,
+		InitialBalance:         traderCfg.InitialBalance,
+		IsCrossMargin:          traderCfg.IsCrossMargin,
+		ShowInCompetition:      traderCfg.ShowInCompetition,
+		StrategyConfig:         strategyConfig,
 	}
 
-	logger.Infof("📊 Loading trader %s: ScanIntervalMinutes=%d (from DB), ScanInterval=%v",
-		traderCfg.Name, traderCfg.ScanIntervalMinutes, traderConfig.ScanInterval)
+	// P10 — the boot line names the cadence SOURCE + resolved behavior, so the
+	// interval-vs-bar-close ambiguity that confused the owner can't recur.
+	resolvedMode := traderCfg.CadenceMode
+	if resolvedMode == "" {
+		resolvedMode = "interval"
+	}
+	logger.Infof("📊 Loading trader %s: ScanIntervalMinutes=%d (source=Studio/DB), cadence=interval %v, mode=%s%s",
+		traderCfg.Name, traderCfg.ScanIntervalMinutes, traderConfig.ScanInterval, resolvedMode,
+		map[bool]string{true: "", false: " (DB empty → default)"}[traderCfg.CadenceMode != ""])
 
 	// Set API keys based on exchange type (convert EncryptedString to string)
 	switch exchangeCfg.ExchangeType {
@@ -729,16 +703,10 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		return fmt.Errorf("failed to create trader: %w", err)
 	}
 
-	// Set custom prompt (if exists)
-	if traderCfg.CustomPrompt != "" {
-		at.SetCustomPrompt(traderCfg.CustomPrompt)
-		at.SetOverrideBasePrompt(traderCfg.OverrideBasePrompt)
-		if traderCfg.OverrideBasePrompt {
-			logger.Infof("✓ Set custom trading strategy prompt (overriding base prompt)")
-		} else {
-			logger.Infof("✓ Set custom trading strategy prompt (supplementing base prompt)")
-		}
-	}
+	// (E3, fail-register wave): the trader-row custom_prompt/override_base_prompt
+	// loads are GONE — write-only since birth (census #53/#54 [A]: zero readers;
+	// the live prompt text is StrategyConfig.CustomPrompt). The columns stay for
+	// API/schema compat; physical drop parked for a maintenance window (ruling).
 
 	tm.traders[traderCfg.ID] = at
 	logger.Infof("✓ Trader '%s' (%s + %s/%s) loaded to memory", traderCfg.Name, aiModelCfg.Provider, exchangeCfg.ExchangeType, exchangeCfg.AccountName)

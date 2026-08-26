@@ -49,10 +49,13 @@ func absI64(v int64) int64 {
 	return v
 }
 
-// applyClockDriftBlock (C2) neutralizes an open decision to `wait` when the local
-// clock is skewed from the freshest feed timestamp by more than the tolerance in
-// EITHER direction. Only open_long/open_short are affected. No 1m/5m data → fail-
-// open (can't assess → never block).
+// applyClockDriftBlock (C2) detects local-vs-feed clock skew. Since 2026-08-18
+// outgoing NT8 signals are stamped with the FEED clock (trader/ninjatrader
+// tcp_trader.go feedNowUTC), so a skewed local clock can no longer age a signal
+// into NT8's 60s stale rejection. The guard no longer converts entries to wait —
+// it logs the skew as a warning so the operator still sees when NTP needs
+// attention. Only open_long/open_short are examined; no 1m/5m data → nothing
+// to compare (never blocks).
 func applyClockDriftBlock(fd *FullDecision, ctx *Context, nowMs int64) {
 	if fd == nil || ctx == nil {
 		return
@@ -74,9 +77,8 @@ func applyClockDriftBlock(fd *FullDecision, ctx *Context, nowMs int64) {
 		if drift < 0 {
 			dir = "BEHIND"
 		}
-		logger.Warnf("🚨 clock-drift ENTRY BLOCK: %s %s → WAIT — local clock is %s the feed by %ds (>%ds); signals would be mis-timed / NT8-rejected. Check NTP / system time. Exits unaffected.",
-			d.Symbol, d.Action, dir, absI64(drift)/1000, clockDriftToleranceMs/1000)
-		d.Action = "wait"
-		telemetry.IncGateBlock(ctx.TraderID, "clock_drift")
+		logger.Warnf("⚠️ clock-drift DETECTED (no entry block): local clock is %s the feed by %ds (>%ds) — signals are feed-stamped so entries proceed; fix the host clock / NTP. Exits unaffected.",
+			dir, absI64(drift)/1000, clockDriftToleranceMs/1000)
+		telemetry.IncClockSkewObserved(ctx.TraderID)
 	}
 }

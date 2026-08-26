@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"nofx/kernel"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -231,7 +232,7 @@ func (b *Brain) sendBrief(hour int) {
 	}
 
 	brief := fmt.Sprintf("%s\n\n• BTC: $%s (%s%%)\n• ETH: $%s (%s%%)\n\n_%s_",
-		title, btcPrice, btcChg, ethPrice, ethChg, time.Now().Format("2006-01-02 15:04"))
+		title, btcPrice, btcChg, ethPrice, ethChg, kernel.FormatCT(time.Now()))
 
 	b.agent.notifyAll(brief)
 }

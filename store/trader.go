@@ -19,28 +19,47 @@ func NewTraderStore(db *gorm.DB) *TraderStore {
 
 // Trader trader configuration
 type Trader struct {
-	ID                  string    `gorm:"primaryKey" json:"id"`
-	UserID              string    `gorm:"column:user_id;not null;default:default;index" json:"user_id"`
-	Name                string    `gorm:"column:name;not null" json:"name"`
-	AIModelID           string    `gorm:"column:ai_model_id;not null" json:"ai_model_id"`
-	ExchangeID          string    `gorm:"column:exchange_id;not null" json:"exchange_id"`
-	StrategyID          string    `gorm:"column:strategy_id;default:''" json:"strategy_id"`
-	InitialBalance      float64   `gorm:"column:initial_balance;not null" json:"initial_balance"`
-	ScanIntervalMinutes int       `gorm:"column:scan_interval_minutes;default:3" json:"scan_interval_minutes"`
-	IsRunning           bool      `gorm:"column:is_running;default:false" json:"is_running"`
-	IsCrossMargin       bool      `gorm:"column:is_cross_margin;default:true" json:"is_cross_margin"`
-	ShowInCompetition   bool      `gorm:"column:show_in_competition;default:true" json:"show_in_competition"`
+	ID                  string  `gorm:"primaryKey" json:"id"`
+	UserID              string  `gorm:"column:user_id;not null;default:default;index" json:"user_id"`
+	Name                string  `gorm:"column:name;not null" json:"name"`
+	AIModelID           string  `gorm:"column:ai_model_id;not null" json:"ai_model_id"`
+	ExchangeID          string  `gorm:"column:exchange_id;not null" json:"exchange_id"`
+	StrategyID          string  `gorm:"column:strategy_id;default:''" json:"strategy_id"`
+	InitialBalance      float64 `gorm:"column:initial_balance;not null" json:"initial_balance"`
+	ScanIntervalMinutes int     `gorm:"column:scan_interval_minutes;default:3" json:"scan_interval_minutes"`
+	// CadenceMode (P10 owner ruling 2026-08-19): "interval" (DEFAULT — the Studio
+	// scan interval IS the decision cadence; every tick runs a full cycle on the
+	// latest bar state incl. the forming bar) | "bar_close" (legacy day-plan P2
+	// behavior: one cycle per closed primary-TF bar; interval only sets check
+	// frequency). Empty resolves to "interval".
+	CadenceMode string `gorm:"column:cadence_mode;default:''" json:"cadence_mode"`
+	// PositionMode (final-bundle Phase 3, 2026-08-19): what happens to the AI
+	// while a position is OPEN on a day-plan futures trader.
+	//   "ai_watch" (DEFAULT, empty resolves here): full watch cycles run — the
+	//     AI observes against the ORIGINAL entry thesis, assessments recorded,
+	//     ZERO order authority (nothing is ever emitted to NT8 from a watch).
+	//   "bracket_only": the legacy skip-while-open — no AI call while holding;
+	//     the NT8 bracket + breakeven/trailing manage the trade byte-identically
+	//     to the pre-watcher behavior.
+	PositionMode      string `gorm:"column:position_mode;default:''" json:"position_mode"`
+	IsRunning         bool   `gorm:"column:is_running;default:false" json:"is_running"`
+	IsCrossMargin     bool   `gorm:"column:is_cross_margin;default:true" json:"is_cross_margin"`
+	ShowInCompetition bool   `gorm:"column:show_in_competition;default:true" json:"show_in_competition"`
 	// Account is the NT8 sub-account this trader is EXPLICITLY bound to trade on
 	// (multi-account Stage 1). Empty = none chosen yet → the trader is GATED (does
 	// not trade) until the user picks one. Persisted so the choice survives restart
 	// and is NOT overwritten by the NT8 account_balance stream. NOTE (Stage 1): this
 	// is the stored CHOICE + the trade gate; true per-trader order ROUTING to this
 	// account is Stage 2 (the wire-frame `account` field + the C# multi-account AddOn).
-	Account             string    `gorm:"column:account;default:''" json:"account"`
-	CreatedAt           time.Time `gorm:"column:created_at;autoCreateTime" json:"created_at"`
-	UpdatedAt           time.Time `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
+	Account   string    `gorm:"column:account;default:''" json:"account"`
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
 
-	// Following fields are deprecated, kept for backward compatibility, new traders should use StrategyID
+	// Following fields are deprecated, kept for backward compatibility, new traders should use StrategyID.
+	// 6.8 (census #53/#54 [A]): all eight are DEAD at runtime — only API CRUD/
+	// display touches them; the strategy-config twins are the live source
+	// (kernel reads StrategyConfig.CoinSource/RiskControl/CustomPrompt, never
+	// these). Do not wire new consumers.
 	BTCETHLeverage       int    `gorm:"column:btc_eth_leverage;default:5" json:"btc_eth_leverage,omitempty"`
 	AltcoinLeverage      int    `gorm:"column:altcoin_leverage;default:5" json:"altcoin_leverage,omitempty"`
 	TradingSymbols       string `gorm:"column:trading_symbols;default:''" json:"trading_symbols,omitempty"`
@@ -98,6 +117,21 @@ func (s *TraderStore) List(userID string) ([]*Trader, error) {
 }
 
 // UpdateStatus updates trader running status
+// Get loads ONE trader by id (no user filter — callers must own-scope; the API
+// ownership gates do). Used by the C1/C2 ownership checks and the planner's
+// owner-level scoping.
+func (s *TraderStore) Get(id string) (*Trader, error) {
+	var t Trader
+	err := s.db.Where("id = ?", id).First(&t).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &t, nil
+}
+
 func (s *TraderStore) UpdateStatus(userID, id string, isRunning bool) error {
 	return s.db.Model(&Trader{}).
 		Where("id = ? AND user_id = ?", id, userID).
@@ -142,6 +176,15 @@ func (s *TraderStore) Update(trader *Trader) error {
 		fmt.Printf("📊 TraderStore.Update: scan_interval_minutes=%d will be saved\n", trader.ScanIntervalMinutes)
 	} else {
 		fmt.Printf("⚠️ TraderStore.Update: scan_interval_minutes=%d (<=0, NOT updating)\n", trader.ScanIntervalMinutes)
+	}
+	// P10 — cadence mode: persist only explicit values ("interval"/"bar_close");
+	// empty means "not changing" on update.
+	if trader.CadenceMode == "interval" || trader.CadenceMode == "bar_close" {
+		updates["cadence_mode"] = trader.CadenceMode
+	}
+	// Phase 3 — position mode: persist only explicit values; empty = "not changing".
+	if trader.PositionMode == "ai_watch" || trader.PositionMode == "bracket_only" {
+		updates["position_mode"] = trader.PositionMode
 	}
 
 	return s.db.Model(&Trader{}).

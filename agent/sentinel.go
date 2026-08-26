@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"nofx/kernel"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -125,7 +126,7 @@ func (s *Sentinel) FormatWatchlist(L string) string {
 	for _, sym := range s.symbols {
 		if pts, ok := s.history[sym]; ok && len(pts) > 0 {
 			last := pts[len(pts)-1]
-			sb.WriteString(fmt.Sprintf("• *%s*: $%.4f (%s)\n", sym, last.Price, last.Time.Format("15:04")))
+			sb.WriteString(fmt.Sprintf("• *%s*: $%.4f (%s)\n", sym, last.Price, kernel.ClockCT(last.Time)))
 		} else {
 			sb.WriteString(fmt.Sprintf("• *%s*: waiting...\n", sym))
 		}

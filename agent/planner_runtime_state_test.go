@@ -368,8 +368,8 @@ func TestShouldAttemptReplan(t *testing.T) {
 type failingAIClient struct{}
 
 func (f *failingAIClient) SetAPIKey(string, string, string) {}
+func (f *failingAIClient) ResolvedModel() string { return "mock-model" }
 func (f *failingAIClient) SetTimeout(_ time.Duration)       {}
-func (m *failingAIClient) ResolvedModel() string { return "mock" }
 func (f *failingAIClient) CallWithMessages(string, string) (string, error) {
 	return "", errors.New("unexpected CallWithMessages")
 }
@@ -389,8 +389,8 @@ type capturePlannerAIClient struct {
 }
 
 func (c *capturePlannerAIClient) SetAPIKey(string, string, string) {}
+func (c *capturePlannerAIClient) ResolvedModel() string { return "mock-model" }
 func (c *capturePlannerAIClient) SetTimeout(time.Duration)         {}
-func (m *capturePlannerAIClient) ResolvedModel() string { return "mock" }
 func (c *capturePlannerAIClient) CallWithMessages(string, string) (string, error) {
 	return "", errors.New("unexpected CallWithMessages")
 }
@@ -413,8 +413,8 @@ func (c *capturePlannerAIClient) CallWithRequestFull(*mcp.Request) (*mcp.LLMResp
 type blockingAIClient struct{}
 
 func (b *blockingAIClient) SetAPIKey(string, string, string) {}
+func (b *blockingAIClient) ResolvedModel() string { return "mock-model" }
 func (b *blockingAIClient) SetTimeout(time.Duration)         {}
-func (m *blockingAIClient) ResolvedModel() string { return "mock" }
 func (b *blockingAIClient) CallWithMessages(string, string) (string, error) {
 	return "", errors.New("unexpected CallWithMessages")
 }
@@ -438,8 +438,8 @@ type directReplyAIClient struct {
 }
 
 func (d *directReplyAIClient) SetAPIKey(string, string, string) {}
+func (d *directReplyAIClient) ResolvedModel() string { return "mock-model" }
 func (d *directReplyAIClient) SetTimeout(time.Duration)         {}
-func (d *directReplyAIClient) ResolvedModel() string { return "mock" }
 func (d *directReplyAIClient) CallWithMessages(string, string) (string, error) {
 	return "", errors.New("unexpected CallWithMessages")
 }

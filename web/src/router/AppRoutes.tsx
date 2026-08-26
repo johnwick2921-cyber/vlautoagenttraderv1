@@ -55,7 +55,13 @@ import {
   ROUTES,
   type Page,
 } from './paths'
-import { findTraderBySlug, getTraderSlug } from './traderSlug'
+import { getTraderSlug } from './traderSlug'
+import {
+  resolveSelectedTrader,
+  loadStoredTraderId,
+  saveStoredTraderId,
+  clearStoredTraderId,
+} from './selectedTrader'
 
 // getTraderSlug / findTraderBySlug live in ./traderSlug so the selection logic
 // is unit-testable in isolation (see traderSlug.test.ts).
@@ -261,50 +267,39 @@ function DashboardRoute() {
     }
   )
 
-  // Selection is OWNER-OWNED. The URL (?trader=) is the single source of truth,
-  // written only by explicit user action (a View click). This effect NEVER lets
-  // a poll/refresh/remount silently switch traders — it only (a) mirrors the URL
-  // into local state, (b) re-persists an existing valid selection into the URL
-  // when the param was dropped (e.g. the header "Dashboard" nav), and (c) picks
-  // a first-run default. It runs on the `traders` poll but is idempotent when the
-  // selection is stable, so a valid selection sticks across every poll cycle.
+  // Selection is OWNER-OWNED and FIRST-CLASS. Priority (resolveSelectedTrader):
+  // URL (?trader=, explicit View/bookmark) → in-memory → localStorage → a STABLE
+  // first trader (never creation-order traders[0]). Every resolution is persisted
+  // to BOTH the URL and localStorage, so the choice survives a poll, a header nav
+  // that drops ?trader=, a refresh, a new tab, and a bookmark. The effect is
+  // idempotent when the selection is stable — a valid selection sticks across
+  // every poll cycle and never silently switches on a refresh/remount.
   useEffect(() => {
     if (!traders || traders.length === 0) {
       return
     }
-
-    // (a) URL names a trader that still exists → honor it EXACTLY. No fallback:
-    //     a stale/unresolvable slug must never hijack the view to traders[0].
-    if (selectedTraderSlug) {
-      const fromUrl = findTraderBySlug(selectedTraderSlug, traders)
-      if (fromUrl) {
-        if (fromUrl.trader_id !== selectedTraderId) {
-          setSelectedTraderId(fromUrl.trader_id)
-        }
-        return
-      }
+    const storedId = loadStoredTraderId()
+    const { trader, clearStored } = resolveSelectedTrader(
+      traders,
+      selectedTraderSlug,
+      selectedTraderId,
+      storedId
+    )
+    if (clearStored) {
+      clearStoredTraderId() // a persisted id no longer resolves (deleted) → drop it
     }
-
-    // (b) No usable slug (absent, or stale/deleted). Preserve an existing valid
-    //     selection by writing it BACK into the URL. This is what makes the
-    //     selection survive the header nav dropping ?trader= and a later reload.
-    const current =
-      selectedTraderId &&
-      traders.find((trader) => trader.trader_id === selectedTraderId)
-    if (current) {
-      const canonical = getTraderSlug(current)
-      if (selectedTraderSlug !== canonical) {
-        setSearchParams({ trader: canonical }, { replace: true })
-      }
+    if (!trader) {
       return
     }
-
-    // (c) Genuinely no selection (first visit, or the selected trader was
-    //     deleted) → default to the first trader and record it in the URL so it
-    //     persists across reloads instead of re-deriving every mount.
-    const fallback = traders[0]
-    setSelectedTraderId(fallback.trader_id)
-    setSearchParams({ trader: getTraderSlug(fallback) }, { replace: true })
+    if (trader.trader_id !== selectedTraderId) {
+      setSelectedTraderId(trader.trader_id)
+    }
+    // Persist so a fresh load (new tab / bare /dashboard / bookmark) restores it.
+    saveStoredTraderId(trader.trader_id)
+    const canonical = getTraderSlug(trader)
+    if (selectedTraderSlug !== canonical) {
+      setSearchParams({ trader: canonical }, { replace: true })
+    }
   }, [selectedTraderId, selectedTraderSlug, traders, setSearchParams])
 
   // Issue 2F — the currently selected NT account (from /api/accounts). Shares
