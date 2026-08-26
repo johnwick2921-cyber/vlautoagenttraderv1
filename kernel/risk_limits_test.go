@@ -8,10 +8,9 @@ import (
 
 func TestRiskLimitsCheckPreTrade(t *testing.T) {
 	base := RiskLimits{
-		MaxDailyLossUSD:      500,
-		MaxConcurrentTrades:  2,
-		MaxNotionalUSD:       50_000,
-		MaxContractsPerOrder: 5,
+		MaxDailyLossUSD:     500,
+		MaxConcurrentTrades: 2,
+		MaxNotionalUSD:      50_000,
 	}
 
 	cases := []struct {

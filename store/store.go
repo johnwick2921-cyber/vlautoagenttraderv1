@@ -18,18 +18,29 @@ type Store struct {
 	driver *DBDriver // Database driver for abstraction (legacy)
 
 	// Sub-stores (lazy initialization)
-	user           *UserStore
-	aiModel        *AIModelStore
-	exchange       *ExchangeStore
-	trader         *TraderStore
-	decision       *DecisionStore
-	position       *PositionStore
-	strategy       *StrategyStore
-	equity         *EquityStore
-	order          *OrderStore
-	grid           *GridStore
-	aiCharge       *AIChargeStore
-	telegramConfig TelegramConfigStore
+	user            *UserStore
+	aiModel         *AIModelStore
+	exchange        *ExchangeStore
+	trader          *TraderStore
+	decision        *DecisionStore
+	position        *PositionStore
+	strategy        *StrategyStore
+	equity          *EquityStore
+	order           *OrderStore
+	grid            *GridStore
+	aiCharge        *AIChargeStore
+	plan            *PlanStore
+	levelState      *LevelStateStore
+	sessionProfile  *SessionProfileStore
+	calendarSlice   *CalendarSliceStore
+	digest          *DigestStore
+	ownerLevel      *OwnerLevelStore
+	alert           *AlertStore
+	logEvent        *LogEventStore
+	watchAssessment *WatchAssessmentStore
+	planQA          *PlanQAStore
+	matchedRandom   *MatchedRandomStore
+	telegramConfig  TelegramConfigStore
 
 	mu sync.RWMutex
 }
@@ -164,6 +175,39 @@ func (s *Store) initTables() error {
 	if err := s.AICharge().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize AI charge tables: %w", err)
 	}
+	if err := s.Plan().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize plan tables: %w", err)
+	}
+	if err := s.LevelState().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize level_state tables: %w", err)
+	}
+	if err := s.SessionProfile().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize session_profiles tables: %w", err)
+	}
+	if err := s.Calendar().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize calendar_slices tables: %w", err)
+	}
+	if err := s.Digest().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize day_plan_digests tables: %w", err)
+	}
+	if err := s.OwnerLevel().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize owner_levels tables: %w", err)
+	}
+	if err := s.Alert().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize day_plan_alerts tables: %w", err)
+	}
+	if err := s.WatchAssessment().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize watch assessment tables: %w", err)
+	}
+	if err := s.LogEvent().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize log_events tables: %w", err)
+	}
+	if err := s.PlanQA().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize plan_qa tables: %w", err)
+	}
+	if err := s.MatchedRandom().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize matched_random tables: %w", err)
+	}
 	return nil
 }
 
@@ -295,6 +339,116 @@ func (s *Store) AICharge() *AIChargeStore {
 		s.aiCharge = NewAIChargeStore(s.gdb)
 	}
 	return s.aiCharge
+}
+
+// Plan gets the Day Plan append-only storage (plans + plan_overlays).
+func (s *Store) Plan() *PlanStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.plan == nil {
+		s.plan = NewPlanStore(s.gdb)
+	}
+	return s.plan
+}
+
+// LevelState gets the cross-session level-state storage.
+func (s *Store) LevelState() *LevelStateStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.levelState == nil {
+		s.levelState = NewLevelStateStore(s.gdb)
+	}
+	return s.levelState
+}
+
+// SessionProfile gets the durable session-profile storage.
+func (s *Store) SessionProfile() *SessionProfileStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.sessionProfile == nil {
+		s.sessionProfile = NewSessionProfileStore(s.gdb)
+	}
+	return s.sessionProfile
+}
+
+// Calendar gets the per-day calendar-slice storage.
+func (s *Store) Calendar() *CalendarSliceStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.calendarSlice == nil {
+		s.calendarSlice = NewCalendarSliceStore(s.gdb)
+	}
+	return s.calendarSlice
+}
+
+// Digest gets the day-plan digest storage.
+func (s *Store) Digest() *DigestStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.digest == nil {
+		s.digest = NewDigestStore(s.gdb)
+	}
+	return s.digest
+}
+
+// OwnerLevel gets the sticky owner-level storage.
+func (s *Store) OwnerLevel() *OwnerLevelStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ownerLevel == nil {
+		s.ownerLevel = NewOwnerLevelStore(s.gdb)
+	}
+	return s.ownerLevel
+}
+
+// Alert gets the in-app alert storage.
+func (s *Store) Alert() *AlertStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.alert == nil {
+		s.alert = NewAlertStore(s.gdb)
+	}
+	return s.alert
+}
+
+// WatchAssessment gets the Phase-3.6 watcher scoring storage.
+func (s *Store) WatchAssessment() *WatchAssessmentStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.watchAssessment == nil {
+		s.watchAssessment = NewWatchAssessmentStore(s.gdb)
+	}
+	return s.watchAssessment
+}
+
+// LogEvent gets the P6 log-shipping storage (WARN+ → DB, async).
+func (s *Store) LogEvent() *LogEventStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.logEvent == nil {
+		s.logEvent = NewLogEventStore(s.gdb)
+	}
+	return s.logEvent
+}
+
+// PlanQA gets the Ask-Planner thread storage.
+func (s *Store) PlanQA() *PlanQAStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.planQA == nil {
+		s.planQA = NewPlanQAStore(s.gdb)
+	}
+	return s.planQA
+}
+
+// MatchedRandom gets the matched-random verdict storage (stats honesty gate).
+func (s *Store) MatchedRandom() *MatchedRandomStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.matchedRandom == nil {
+		s.matchedRandom = NewMatchedRandomStore(s.gdb)
+	}
+	return s.matchedRandom
 }
 
 // TelegramConfig gets Telegram bot configuration storage

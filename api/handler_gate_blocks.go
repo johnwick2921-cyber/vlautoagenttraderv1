@@ -39,3 +39,22 @@ func (s *Server) handleGateBlocks(c *gin.Context) {
 		"by_trader":       table,
 	})
 }
+
+// P0-cleanup (2026-08-19) — the ONE error surface: structured error events
+// (type / cause / cost) per trader per session-day, plus the daily summary
+// line. Mirrors the gate-blocks endpoint.
+//
+//	GET /api/risk/errors
+//	Returns: {"rows":[{trader,type,cause,cost,count,decisions_lost,trades_lost}],
+//	          "summary":"errors today: N (types: …), decisions lost: N"}
+func (s *Server) handleErrors(c *gin.Context) {
+	trader := c.Query("trader_id")
+	rows := telemetry.ErrorSummary(trader)
+	if rows == nil {
+		rows = []telemetry.ErrorEventRow{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"rows":    rows,
+		"summary": telemetry.ErrorDigestLine(trader),
+	})
+}

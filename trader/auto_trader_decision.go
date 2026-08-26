@@ -3,11 +3,12 @@ package trader
 import (
 	"fmt"
 	"math"
-	"nofx/telemetry"
+	"nofx/discipline"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
+	"nofx/telemetry"
 	"time"
 )
 
@@ -79,9 +80,21 @@ func (at *AutoTrader) GetStatus() map[string]interface{} {
 		"call_count":      at.callCount,
 		"initial_balance": at.initialBalance,
 		"scan_interval":   at.config.ScanInterval.String(),
-		"stop_until":      at.stopUntil.Format(time.RFC3339),
+		// P2 (ledger-close 2026-08-19): stop_until now reports the REAL owner
+		// pause (auto_trader_pause.go). The legacy at.stopUntil field is dormant
+		// (never assigned) so the unpaused rendering is byte-identical.
+		"stop_until":      pauseStatusString(at),
 		"last_reset_time": at.lastResetTime.Format(time.RFC3339),
 		"ai_provider":     aiProvider,
+		// v1 audit §5.6 (E5): the running binary's revision, so a bug report
+		// can be checked against what is actually deployed without a shell.
+		"revision": kernel.RunningRevision(),
+	}
+
+	// P3 (ledger-close 2026-08-19) — roll picture for the dashboard (3.6):
+	// resolved contract, expiry, window start, days remaining.
+	if at.exchange == "ninjatrader" {
+		result["roll"] = at.RollStatus(time.Now())
 	}
 
 	// Add strategy info
@@ -220,6 +233,12 @@ func (at *AutoTrader) GetPositions() ([]map[string]interface{}, error) {
 	}
 
 	var result []map[string]interface{}
+	// Non-nil empty slice: the /api/positions route documents an ARRAY ([]), and
+	// some clients (and the dashboard's defensive .map paths) mishandle a JSON
+	// null when flat. Encode the flat state as [] — never null.
+	if len(positions) == 0 {
+		return []map[string]interface{}{}, nil
+	}
 	for _, pos := range positions {
 		// Comma-ok asserts: NT futures positions may omit some Binance-style
 		// keys (e.g. liquidationPrice); a hard assert would panic the API
@@ -266,7 +285,7 @@ func (at *AutoTrader) GetPositions() ([]map[string]interface{}, error) {
 // recordAndConfirmOrder polls order status for actual fill data and records position
 // action: open_long, open_short, close_long, close_short
 // entryPrice: entry price when closing (0 when opening)
-func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64) {
+func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64, confidence int) {
 	if at.store == nil {
 		return
 	}
@@ -380,7 +399,7 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 		orderID, action, actualPrice, actualQty, fee)
 
 	// Record position change with actual fill data (use normalized symbol)
-	at.recordPositionChange(orderID, normalizedSymbolForPosition, positionSide, action, actualQty, actualPrice, leverage, entryPrice, fee)
+	at.recordPositionChange(orderID, normalizedSymbolForPosition, positionSide, action, actualQty, actualPrice, leverage, entryPrice, fee, confidence)
 
 	// Send anonymous trade statistics for experience improvement (async, non-blocking)
 	// This helps us understand overall product usage across all deployments
@@ -396,7 +415,7 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 }
 
 // recordPositionChange records position change (create record on open, update record on close)
-func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64) {
+func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64, confidence int) {
 	if at.store == nil {
 		return
 	}
@@ -406,25 +425,61 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 		// Open position: create new position record
 		nowMs := time.Now().UTC().UnixMilli()
 		pos := &store.TraderPosition{
-			TraderID:     at.id,
-			Account:      at.currentAccountName(), // ITEM 2 per-account attribution
-			ExchangeID:   at.exchangeID, // Exchange account UUID
-			ExchangeType: at.exchange,   // Exchange type: binance/bybit/okx/etc
-			Symbol:       symbol,
-			Side:         side, // LONG or SHORT
-			Quantity:     quantity,
-			EntryPrice:   price,
-			EntryOrderID: orderID,
-			EntryTime:    nowMs,
-			Leverage:     leverage,
-			Status:       "OPEN",
-			CreatedAt:    nowMs,
-			UpdatedAt:    nowMs,
+			TraderID:        at.id,
+			Account:         at.currentAccountName(), // ITEM 2 per-account attribution
+			ExchangeID:      at.exchangeID,           // Exchange account UUID
+			ExchangeType:    at.exchange,             // Exchange type: binance/bybit/okx/etc
+			Symbol:          symbol,
+			Side:            side, // LONG or SHORT
+			Quantity:        quantity,
+			EntryPrice:      price,
+			EntryOrderID:    orderID,
+			EntryTime:       nowMs,
+			Leverage:        leverage,
+			Status:          "OPEN",
+			EntryConfidence: confidence, // P2.4 — capture the AI's entry confidence
+			CreatedAt:       nowMs,
+			UpdatedAt:       nowMs,
 		}
 		if err := at.store.Position().Create(pos); err != nil {
-			logger.Infof("  ⚠️ Failed to record position: %v", err)
+			// W16/R5 — THE WORST CASE, previously the quietest.
+			//
+			// The order already FILLED at the broker. Failing to write the row means
+			// a REAL live position exists that this process does not know about:
+			// it is absent from the position list, the reconcile's belief side, the
+			// daily-loss and trade-count accounting, EOD-flat's work list (which
+			// sources from GetOpenPositions), and MAE/MFE + adherence. Every
+			// downstream number is now wrong and the position will not be flattened
+			// by us. This used to log at INFO and continue — and the P0 fill alert
+			// lived in the else-branch, so the one failure mode that most needs an
+			// alert emitted none.
+			//
+			// Now: loud log + a P0 the owner sees + FREEZE the trader. The freeze is
+			// the same A4 mechanism the reconcile divergence uses; it blocks NEW
+			// entries only (closes / stop-moves / reconcile are never blocked, see
+			// auto_trader_orders.go:163-174), so the owner can still be brought flat.
+			// It persists until explicitly cleared via /api/risk/clear-freeze, which
+			// is the "flag the UI shows until resolved".
+			reason := fmt.Sprintf("untracked live position: %s %s @ %.2f filled but the DB write failed (%v)", side, symbol, price, err)
+			logger.Errorf("🚨 UNTRACKED LIVE POSITION — %s. This process cannot see, size, close or account for it. Trader FROZEN for new entries; reconcile from NT8 and clear via /api/risk/clear-freeze.", reason)
+			discipline.FreezeTrader(at.id, reason, nowMs)
+			at.emitAlert("P0", "untracked-position",
+				fmt.Sprintf("untracked:%s:%s:%d", symbol, side, nowMs),
+				fmt.Sprintf("UNTRACKED %s %s @ %.2f — fill recorded at the broker, not in the DB", side, symbol, price),
+				"trader frozen for new entries · reconcile from NT8, then clear the freeze")
 		} else {
-			logger.Infof("  📊 Position recorded [%s] %s %s @ %.4f", at.id[:8], symbol, side, price)
+			// WARN (honest-logs 2026-08-19): a confirmed open is owner-visible
+			// truth — survives journald flood via the log_events sink.
+			logger.Warnf("📗 Position OPENED [%s] %s %s qty=%.2f @ %.4f", at.id[:8], symbol, side, quantity, price)
+			// P5.5 — stamp the plan link captured in recordPlanCitation onto this
+			// open (day_plan-gated → dormant for crypto). Consumed once.
+			if at.dayPlanEnabled() && at.lastCitation.valid {
+				_ = at.store.Position().SetPlanLink(pos.ID, at.lastCitation.planVersion, at.lastCitation.scenarioID, at.lastCitation.matched, at.lastCitation.band)
+				at.lastCitation.valid = false
+			}
+			// W6 — P0 fill alert.
+			at.emitAlert("P0", "fill", fmt.Sprintf("fill:%d", pos.ID),
+				fmt.Sprintf("Filled %s %s @ %.2f", side, symbol, price), "")
 		}
 
 	case "close_long", "close_short":
@@ -442,6 +497,8 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 			logger.Infof("  ⚠️ Failed to process close position: %v", err)
 		} else {
 			logger.Infof("  ✅ Position closed [%s] %s %s @ %.4f", at.id[:8], symbol, side, price)
+			// P2.4 — compute + store MAE/MFE over the hold (gated futures + day_plan).
+			at.recordExcursionForClosedSymbol(market.Normalize(symbol))
 		}
 	}
 }

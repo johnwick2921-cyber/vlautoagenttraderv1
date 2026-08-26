@@ -140,6 +140,45 @@ function GuardrailRow({
   )
 }
 
+// 6.4 (final-bundle 2026-08-19, ruling B): the size-cap "enabled" toggles were
+// DEAD controls — zero Go readers, the clamps are deliberately always-on venue
+// safety (census #53 register rows 1-2). The fake toggles are gone; the row
+// states the truth instead. Old stored *_enabled values are ignored harmlessly
+// (schema-tolerant: the Go fields still parse, nothing reads them).
+function AlwaysOnRow({
+  label,
+  badge,
+  children,
+}: {
+  label: string
+  badge: string
+  children: ReactNode
+}) {
+  return (
+    <div
+      className="p-4 rounded-lg"
+      style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <label className="text-sm" style={{ color: '#EAECEF' }}>
+          {label}
+        </label>
+        <span
+          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+          style={{
+            color: '#0ECB81',
+            background: 'rgba(14,203,129,0.12)',
+            border: '1px solid rgba(14,203,129,0.3)',
+          }}
+        >
+          {badge}
+        </span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
 export function RiskControlEditor({
   config,
   onChange,
@@ -209,6 +248,85 @@ export function RiskControlEditor({
             disabled={disabled || config.breakeven_enabled !== true}
             onCommit={(n) => updateField('breakeven_trigger_points', n)}
           />
+        </div>
+      </div>
+
+      {/* Trailing profit (Phase 3B) — NT8 futures; mechanical, default OFF */}
+      <div
+        className="p-4 rounded-lg"
+        style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <label className="text-sm font-medium" style={{ color: '#EAECEF' }}>
+            📈 {ts(riskControl.trailing, language)}
+          </label>
+          <Toggle
+            on={config.trailing_enabled === true}
+            onChange={(v) => updateField('trailing_enabled', v)}
+            disabled={disabled}
+          />
+        </div>
+        <p className="text-xs mt-2" style={{ color: '#848E9C' }}>
+          {ts(riskControl.trailingDesc, language)}
+        </p>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          <span className="text-xs" style={{ color: '#848E9C' }}>
+            {ts(riskControl.trailingMult, language)}
+          </span>
+          <ClampedNumberInput
+            value={config.trailing_atr_mult}
+            fallback={2.0}
+            min={0.5}
+            max={10}
+            step={0.5}
+            disabled={disabled || config.trailing_enabled !== true}
+            onCommit={(n) => updateField('trailing_atr_mult', n)}
+          />
+          <span className="text-xs" style={{ color: '#848E9C' }}>
+            {ts(riskControl.trailingPeriod, language)}
+          </span>
+          <ClampedNumberInput
+            value={config.trailing_atr_period}
+            fallback={14}
+            min={5}
+            max={50}
+            step={1}
+            disabled={disabled || config.trailing_enabled !== true}
+            onCommit={(n) => updateField('trailing_atr_period', n)}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          <span className="text-xs" style={{ color: '#848E9C' }}>
+            {ts(riskControl.trailingArm, language)}
+          </span>
+          <select
+            data-testid="trailing-arm"
+            value={config.trailing_arm || 'after_breakeven'}
+            onChange={(e) => updateField('trailing_arm', e.target.value)}
+            disabled={disabled || config.trailing_enabled !== true}
+            className="bg-[#181C21] text-xs text-[#EAECEF] border border-[#2B3139] rounded px-2 py-1"
+          >
+            <option value="after_breakeven">
+              {ts(riskControl.trailingArmBE, language)}
+            </option>
+            <option value="after_trigger_points">
+              {ts(riskControl.trailingArmPts, language)}
+            </option>
+            <option value="immediate">
+              {ts(riskControl.trailingArmNow, language)}
+            </option>
+          </select>
+          {config.trailing_arm === 'after_trigger_points' && (
+            <ClampedNumberInput
+              value={config.trailing_arm_points}
+              fallback={50}
+              min={1}
+              max={1000}
+              step={5}
+              disabled={disabled || config.trailing_enabled !== true}
+              onCommit={(n) => updateField('trailing_arm_points', n)}
+            />
+          )}
         </div>
       </div>
 
@@ -598,11 +716,13 @@ export function RiskControlEditor({
             </label>
             <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
               {ts(riskControl.minConfidenceDesc, language)}
+              {/* 6.1: the unset default is ONE shared constant (gate + prompt) */}
+              {!config.min_confidence && ' · unset/0 → default 60'}
             </p>
             <div className="flex items-center gap-2">
               <input
                 type="range"
-                value={config.min_confidence ?? 75}
+                value={config.min_confidence ?? 60}
                 onChange={(e) =>
                   updateField('min_confidence', parseInt(e.target.value))
                 }
@@ -615,7 +735,7 @@ export function RiskControlEditor({
                 className="w-12 text-center font-mono"
                 style={{ color: '#0ECB81' }}
               >
-                {config.min_confidence ?? 75}
+                {config.min_confidence ?? 60}
               </span>
             </div>
           </div>
@@ -674,6 +794,14 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            {/* 6.5 — the silent env fallback, stated (only enforced while the
+                guardrails master is ON) */}
+            {!config.daily_loss_limit_usd && (
+              <p className="text-xs mt-1" style={{ color: '#848E9C' }}>
+                empty/0 → $500 env default (RISK_MAX_DAILY_LOSS_USD) while the
+                master switch is ON
+              </p>
+            )}
           </GuardrailRow>
 
           <GuardrailRow
@@ -813,16 +941,14 @@ export function RiskControlEditor({
             />
           </GuardrailRow>
 
-          <GuardrailRow
+          <AlwaysOnRow
             label={ts(riskControl.maxContractsField, language)}
-            enabled={config.max_contracts_enabled ?? true}
-            onToggle={(v) => updateField('max_contracts_enabled', v)}
-            disabled={disabled}
+            badge={ts(riskControl.alwaysActive, language)}
           >
             <input
               type="number"
               value={config.max_contracts_per_order ?? ''}
-              placeholder="10"
+              placeholder="2"
               onChange={(e) =>
                 updateField(
                   'max_contracts_per_order',
@@ -838,13 +964,11 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
-          </GuardrailRow>
+          </AlwaysOnRow>
 
-          <GuardrailRow
+          <AlwaysOnRow
             label={ts(riskControl.notionalCapField, language)}
-            enabled={config.notional_cap_enabled ?? true}
-            onToggle={(v) => updateField('notional_cap_enabled', v)}
-            disabled={disabled}
+            badge={ts(riskControl.alwaysActive, language)}
           >
             <input
               type="number"
@@ -865,7 +989,7 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
-          </GuardrailRow>
+          </AlwaysOnRow>
 
           <div className="col-span-2">
             <GuardrailRow

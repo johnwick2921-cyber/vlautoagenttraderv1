@@ -56,7 +56,10 @@ export function FAQContent({
   return (
     <div className="space-y-12">
       {categories.map((category) => (
-        <div key={category.id} className="nofx-glass p-8 rounded-xl border border-white/5">
+        <div
+          key={category.id}
+          className="nofx-glass p-8 rounded-xl border border-white/5"
+        >
           {/* Category Header */}
           <div className="flex items-center gap-3 mb-6 pb-3 border-b border-white/10">
             <category.icon className="w-7 h-7 text-nofx-gold" />
@@ -87,7 +90,7 @@ export function FAQContent({
                       <div className="text-base">
                         {language === 'zh' ? '链接：' : 'Links:'}{' '}
                         <a
-                          href="https://github.com/orgs/NoFxAiOS/projects/3"
+                          href="https://github.com/johnwick2921-cyber/nofx/3"
                           target="_blank"
                           rel="noreferrer"
                           style={{ color: '#F0B90B' }}
@@ -96,7 +99,7 @@ export function FAQContent({
                         </a>
                         {'  |  '}
                         <a
-                          href="https://github.com/orgs/NoFxAiOS/projects/5"
+                          href="https://github.com/johnwick2921-cyber/nofx/5"
                           target="_blank"
                           rel="noreferrer"
                           style={{ color: '#F0B90B' }}
@@ -121,8 +124,7 @@ export function FAQContent({
                               同步你的 fork 的 <code>dev</code>{' '}
                               分支与上游保持一致：
                               <code className="ml-2">
-                                git remote add upstream
-                                #
+                                git remote add upstream #
                               </code>
                               <br />
                               <code>git fetch upstream</code>
@@ -146,9 +148,10 @@ export function FAQContent({
                               </code>
                             </li>
                             <li>
-                              打开 PR：base 选择 <code>NoFxAiOS/nofx:dev</code>{' '}
-                              ← compare 选择{' '}
-                              <code>你的用户名/nofx:feat/your-topic</code>。
+                              打开 PR：base 选择{' '}
+                              <code>johnwick2921-cyber/nofx:dev</code> ← compare
+                              选择 <code>你的用户名/nofx:feat/your-topic</code>
+                              。
                             </li>
                             <li>
                               在 PR 中关联 Issue（示例：
@@ -175,8 +178,7 @@ export function FAQContent({
                             <li>
                               Sync your fork's <code>dev</code> with upstream:
                               <code className="ml-2">
-                                git remote add upstream
-                                #
+                                git remote add upstream #
                               </code>
                               <br />
                               <code>git fetch upstream</code>
@@ -201,8 +203,8 @@ export function FAQContent({
                               </code>
                             </li>
                             <li>
-                              Open a PR: base <code>NoFxAiOS/nofx:dev</code> ←
-                              compare{' '}
+                              Open a PR: base{' '}
+                              <code>johnwick2921-cyber/nofx:dev</code> ← compare{' '}
                               <code>your-username/nofx:feat/your-topic</code>.
                             </li>
                             <li>
@@ -324,7 +326,8 @@ export function FAQContent({
                             <li>
                               在 PR 中关联 Issue（示例：
                               <code className="ml-1">Closes #123</code>），PR
-                              目标选择 <code>NoFxAiOS/nofx:dev</code>。
+                              目标选择 <code>johnwick2921-cyber/nofx:dev</code>
+                              。
                             </li>
                             <li>
                               保持与 <code>upstream/dev</code>{' '}
@@ -361,7 +364,7 @@ export function FAQContent({
                             <li>
                               Link the Issue in PR (e.g.,{' '}
                               <code className="ml-1">Closes #123</code>) and
-                              target <code>NoFxAiOS/nofx:dev</code>.
+                              target <code>johnwick2921-cyber/nofx:dev</code>.
                             </li>
                             <li>
                               Keep rebasing onto <code>upstream/dev</code>,

@@ -598,12 +598,18 @@ namespace NinjaTrader.NinjaScript.AddOns
                 long oldest = long.MaxValue;
                 string staleKey = null;
                 bool anyDead = false; // (re)subscribed + historical sent, but NO live .Update within FAST_STALL_MS
+                bool anyLive = false; // at least one subscription has seen a REAL live .Update
                 int deadCount = 0;
                 lock (subsLock)
                 {
                     foreach (var kv in active)
                     {
                         var e = kv.Value;
+                        // Counted BEFORE the seeding filter below: the re-arm test must
+                        // mean "a live update actually arrived", never "nothing currently
+                        // looks dead" (see the re-arm block for why that distinction is
+                        // the whole bug).
+                        if (e.LiveUpdateSeen) anyLive = true;
                         if (!e.HistoricalSent) continue;
                         if (!e.LiveUpdateSeen && now - e.SubscribedAtUtcMs >= FAST_STALL_MS) { anyDead = true; deadCount++; }
                         if (e.LastUpdateUtcMs != 0 && e.LastUpdateUtcMs < oldest) { oldest = e.LastUpdateUtcMs; staleKey = e.Key; }
@@ -622,11 +628,38 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // no live .Update arrived: recreate quickly (the proven OnConnectionReconnected
                 // revival). Bounded by FAST_MAX_ATTEMPTS so a real no-data window (halt/closed)
                 // cannot churn; the counter re-arms once a live .Update is seen anywhere.
-                if (!anyDead)
+                // RE-ARM ONLY WHEN GENUINELY HEALTHY — three states, not two.
+                //
+                //   healthy  : nothing dead AND something live   → re-arm the budget
+                //   seeding  : nothing dead AND nothing live yet → do nothing
+                //   degraded : something dead                    → spend the budget
+                //
+                // The old test re-armed on `!anyDead` alone, which merged "healthy"
+                // with "seeding". The loop above skips entries whose HistoricalSent is
+                // false, so in the moments right after a recreate NOTHING qualifies as
+                // dead — the old test read that as healthy and reset the very counter
+                // it had just incremented, so each recreate re-armed the next one and
+                // FAST_MAX_ATTEMPTS became unreachable.
+                //
+                // With the market closed there are no live updates BY DEFINITION, so
+                // every subscription looks dead forever and the loop never exits.
+                // Observed 2026-08-14..16: the guard fired at the Friday 16:00 CT close
+                // and ran ~120x/hour for 48 hours — 807 recreates Friday, 80,444
+                // Saturday, >100k rebuilds, every one logging "attempt 1/3" and never
+                // once reaching 2/3. It stopped only when NT8 was restarted.
+                //
+                // Re-arming on anyLive ALONE would be a second livelock, during market
+                // hours: a coarse timeframe (1W/3D) can sit without a live .Update while
+                // 1M ticks, so anyDead stays true and the budget would refill every tick.
+                // Requiring BOTH conditions bounds a genuine dead window to
+                // FAST_MAX_ATTEMPTS recreates and then goes quiet until real data
+                // returns — which is also the right behavior for a closed market, with
+                // no session-hours lookup needed.
+                if (!anyDead && anyLive)
                 {
-                    if (fastRecreateAttempts != 0) fastRecreateAttempts = 0; // healthy → re-arm
+                    if (fastRecreateAttempts != 0) fastRecreateAttempts = 0; // genuinely healthy → re-arm
                 }
-                else
+                else if (anyDead)
                 {
                     bool doFast = false;
                     lock (watchdogLock)

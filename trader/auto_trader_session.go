@@ -1,0 +1,168 @@
+package trader
+
+import (
+	"fmt"
+	"time"
+
+	"nofx/kernel"
+	"nofx/telemetry"
+)
+
+// P3.1 — SESSION GATES. Wire the P0 registry to live entry gating: entries are
+// allowed ONLY inside an ENABLED session's window (NY-only by default), which
+// closes the interim/overnight window, plus the spec's no-trade sub-windows
+// (first 5m of the session, lunch 12:00–13:30 CT). GATED on day_plan → dormant
+// by default. Session-flat at the enabled session's boundary is covered by P2.3's
+// eod_flat (the NY flat 14:45 CT sits inside the NY window); multi-session flats
+// arrive when ASIA/LONDON earn enablement.
+//
+// NOTE: the registry's `Killzones` currently hold high-probability ACTIVE windows
+// (ny_am/ny_pm), so they are NOT used to block here — the dispatch's "no-trade
+// sub-windows" are the spec-card-#5 windows below. Reconciling the killzone
+// semantics is a P4 admin decision.
+
+// sessionEntryBlocked reports (reason, blocked): whether NEW entries are blocked
+// because we are outside an enabled session window or inside a no-trade
+// sub-window. Gated on day_plan → dormant by default.
+func (at *AutoTrader) sessionEntryBlocked() (string, bool) {
+	if !at.dayPlanEnabled() {
+		return "", false
+	}
+	now := time.Now()
+	reg := at.sessionRegistry(now)
+	// W9 + PART A — the strategy's session enable gates ENTRIES too (not just reads),
+	// through the SAME resolver the read scheduler uses: an explicit per-session
+	// toggle wins, otherwise registry + sessions_enabled. A session the owner
+	// switched off admits no entries even in advisory mode.
+	if sess, ok := reg.ActiveSession(now); ok {
+		if runnable, why := at.sessionRunnable(sess); !runnable {
+			return why, true
+		}
+		// W15.B — per-session trade cap (the override was persisted + rendered but
+		// enforced by NOTHING). Absent → no cap, shipped behavior unchanged.
+		if why, blocked := at.sessionTradeCapBlocked(sess, now); blocked {
+			return why, true
+		}
+	}
+	return sessionGateDecision(reg, now, at.currentT1Windows(now), at.sessionRunnable)
+}
+
+// sessionWindowStart returns the wall-clock start of the CURRENTLY-RUNNING
+// instance of a session's window. Wrap-aware: at 01:00 CT inside ASIA's
+// 17:00→02:00 window, the instance started at 17:00 YESTERDAY, so the naive
+// "today at 17:00" would be in the future and would count zero trades.
+func sessionWindowStart(sess *kernel.SessionDef, now time.Time) (time.Time, bool) {
+	start, ok := hhmmToMin(sess.WindowStartCT)
+	if !ok {
+		return time.Time{}, false
+	}
+	loc := kernel.CTLocation()
+	ct := now.In(loc)
+	t := time.Date(ct.Year(), ct.Month(), ct.Day(), start/60, start%60, 0, 0, loc)
+	if t.After(ct) {
+		t = t.AddDate(0, 0, -1) // window opened yesterday and wrapped midnight
+	}
+	return t, true
+}
+
+// sessionTradeCapBlocked reports (reason, blocked): whether NEW entries are
+// blocked because this session's own max_trades cap is reached. The count is
+// entries since THIS session instance opened — not since the session-day start,
+// which would make a late session inherit the earlier ones' trades. Scoped to the
+// active NT account, mirroring the daily guardrail. No cap configured → never
+// blocks; a cap of 0 means "no entries this session" and is honored as written.
+func (at *AutoTrader) sessionTradeCapBlocked(sess *kernel.SessionDef, now time.Time) (string, bool) {
+	if sess == nil || at.store == nil {
+		return "", false
+	}
+	capN, ok := at.dayPlanCfg().MaxTradesFor(sess.Name)
+	if !ok {
+		return "", false
+	}
+	start, ok := sessionWindowStart(sess, now)
+	if !ok {
+		return "", false
+	}
+	_, entries, err := at.store.Position().GetSessionDayActivity(at.id, start.UnixMilli(), at.currentAccountName())
+	if err != nil {
+		at.logWarnf("⚠️ session trade cap: entry count failed (not blocking): %v", err)
+		return "", false
+	}
+	if entries >= capN {
+		return fmt.Sprintf("%s trade cap reached (%d/%d this session)", sess.Name, entries, capN), true
+	}
+	return "", false
+}
+
+// sessionGateDecision is the pure session-gate logic: entries only inside an
+// ENABLED session window and outside the no-trade sub-windows (first-5m, lunch,
+// and W3 red-news T1 blackouts).
+func sessionGateDecision(reg kernel.SessionRegistry, now time.Time, t1Windows []kernel.CTWindow, runnable func(*kernel.SessionDef) (bool, string)) (string, bool) {
+	sess, ok := reg.ActiveSession(now)
+	if !ok {
+		return "outside all session windows (overnight/interim)", true
+	}
+	// H8 — enablement is resolved by sessionRunnable (explicit per-session toggle
+	// wins over the registry). The registry's Enabled flag is only the DEFAULT the
+	// resolver consults; it must never VETO a session the resolver already said
+	// runs. When no resolver is supplied (pure callers/tests), the registry flag
+	// is the answer.
+	if runnable != nil {
+		if ok, why := runnable(sess); !ok {
+			return why, true
+		}
+	} else if !sess.Enabled {
+		return fmt.Sprintf("%s session not enabled", sess.Name), true
+	}
+	if inSessionFirst5m(sess, now) {
+		return fmt.Sprintf("%s first-5m no-trade window", sess.Name), true
+	}
+	if kernel.InBlackoutWindow(now, "12:00", "13:30") {
+		return "lunch no-trade window (12:00–13:30 CT)", true
+	}
+	// W3 — HARD red-news blackout: no entry within ±T1BlackoutMinutes of a T1 event.
+	if label, blocked := kernel.InT1Blackout(ctMinutesNow(now), t1Windows); blocked {
+		return "🔴 red-news blackout: " + label, true
+	}
+	return "", false
+}
+
+// inSessionFirst5m reports whether now falls in the first 5 minutes of the
+// session window (a no-trade sub-window).
+func inSessionFirst5m(sess *kernel.SessionDef, now time.Time) bool {
+	start, ok := hhmmToMin(sess.WindowStartCT)
+	if !ok {
+		return false
+	}
+	cur := ctMinutesNow(now)
+	return cur >= start && cur < start+5
+}
+
+// ---- P3.6-D — night mode ------------------------------------------------------
+
+// nightEdgeDecision reports whether a night/day TRANSITION event should fire:
+// only when the prior state is known (prev != nil) and differs from now. A nil
+// prev (fresh (re)start) never emits — the restart resumes the current state
+// cleanly with no spurious edge.
+func nightEdgeDecision(prev *bool, night bool) bool {
+	return prev != nil && *prev != night
+}
+
+// observeNightEdge tracks the night/day state and logs an event on transitions.
+// Restart during night resumes cleanly (nil prev → no event). GATED on day_plan.
+func (at *AutoTrader) observeNightEdge() {
+	if !at.dayPlanEnabled() {
+		return
+	}
+	now := time.Now()
+	night := at.sessionRegistry(now).IsNightMode(now)
+	if nightEdgeDecision(at.nightPrev, night) {
+		if night {
+			at.logInfof("🌙 NIGHT MODE — outside all enabled session windows; no reads, no entries until the next enabled window.")
+		} else {
+			at.logInfof("🌅 DAY MODE — an enabled session window opened.")
+		}
+		telemetry.IncGateBlock(at.id, "night_transition") // event row (until the P4 alert center)
+	}
+	at.nightPrev = &night
+}

@@ -12,26 +12,32 @@ func TestFuturesOrderQuantity(t *testing.T) {
 		symbol      string
 		notionalUSD float64
 		price       float64
-		want        float64
+		// cap is the per-order clamp under test. Most cases exercise the SIZING
+		// math and pass a deliberately generous cap so the clamp cannot interfere;
+		// only "clamp at max" exercises the clamp itself. (Before the 2026-08-17
+		// safe-default change these all shared maxFuturesContracts, which silently
+		// coupled the sizing assertions to the default's value.)
+		cap  int
+		want float64
 	}{
 		// ~1 contract: 60000 / (30323.75 × 2) = 0.989 → round → 1
-		{"one contract", "MNQ", 60000, mnqPrice, 1},
+		{"one contract", "MNQ", 60000, mnqPrice, 99, 1},
 		// ~3 contracts: 180000 / (30323.75 × 2) = 2.97 → 3
-		{"three contracts", "MNQ", 180000, mnqPrice, 3},
+		{"three contracts", "MNQ", 180000, mnqPrice, 99, 3},
 		// Floor at 1 even for tiny notional
-		{"floor at one", "MNQ", 1000, mnqPrice, 1},
-		// Clamp at maxFuturesContracts (10) for huge notional
-		{"clamp at max", "MNQ", 5_000_000, mnqPrice, maxFuturesContracts},
+		{"floor at one", "MNQ", 1000, mnqPrice, 99, 1},
+		// Clamp at the DEFAULT per-order cap (2 since 2026-08-17) for huge notional
+		{"clamp at max", "MNQ", 5_000_000, mnqPrice, int(maxFuturesContracts), maxFuturesContracts},
 		// NQ ($20/pt): 1 contract notional ≈ $606k; 600000/(30323.75×20)=0.989→1
-		{"NQ one contract", "NQ", 600000, mnqPrice, 1},
+		{"NQ one contract", "NQ", 600000, mnqPrice, 99, 1},
 		// Safe default 1 when point value unknown (non-futures shouldn't reach
 		// here, but defend): pv=0 → 1
-		{"unknown pv default", "BTCUSDT", 60000, mnqPrice, 1},
+		{"unknown pv default", "BTCUSDT", 60000, mnqPrice, 99, 1},
 		// Safe default when price is 0 (avoid div-by-zero)
-		{"zero price default", "MNQ", 60000, 0, 1},
+		{"zero price default", "MNQ", 60000, 0, 99, 1},
 	}
 	for _, c := range cases {
-		got := futuresOrderQuantity(c.symbol, c.notionalUSD, c.price, int(maxFuturesContracts))
+		got := futuresOrderQuantity(c.symbol, c.notionalUSD, c.price, c.cap)
 		if got != c.want {
 			t.Errorf("%s: futuresOrderQuantity(%q, %.0f, %.2f) = %v, want %v",
 				c.name, c.symbol, c.notionalUSD, c.price, got, c.want)

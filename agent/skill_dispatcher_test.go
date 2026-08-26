@@ -700,8 +700,8 @@ type skillSessionClassifierAIClient struct {
 	response         string
 }
 
-func (c *skillSessionClassifierAIClient) ResolvedModel() string { return "mock" }
 func (c *skillSessionClassifierAIClient) SetAPIKey(string, string, string) {}
+func (c *skillSessionClassifierAIClient) ResolvedModel() string { return "mock-model" }
 func (c *skillSessionClassifierAIClient) SetTimeout(time.Duration)         {}
 func (c *skillSessionClassifierAIClient) CallWithMessages(string, string) (string, error) {
 	return "", errors.New("unexpected CallWithMessages")

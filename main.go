@@ -1,23 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
-	"nofx/api"
 	nofxiagent "nofx/agent"
+	"nofx/api"
 	"nofx/auth"
 	"nofx/config"
 	"nofx/crypto"
+	"nofx/kernel"
 	"nofx/logger"
 	"nofx/manager"
-	"nofx/telemetry"
+	"nofx/mcp"
 	_ "nofx/mcp/payment"
 	_ "nofx/mcp/provider"
 	"nofx/store"
 	"nofx/telegram"
+	"nofx/telemetry"
+	"nofx/trader"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -82,12 +87,86 @@ func main() {
 	}
 	defer st.Close()
 
+	// P6 (ledger-close 2026-08-19) — WARN+ERROR→DB log shipping. Attached
+	// AFTER the store exists (the logger boots first); non-blocking by the
+	// LogEventStore contract (select-default drop + single writer + daily
+	// LOG_DB_RETENTION_DAYS prune).
+	logger.AttachDBSink(func(tsMs int64, level, component, traderID, message, fieldsJSON string) {
+		st.LogEvent().Enqueue(store.LogEventDB{
+			TsUTC: tsMs, Level: level, Component: component,
+			TraderID: traderID, Message: message, FieldsJSON: fieldsJSON,
+		})
+	})
+	logger.Infof("🧾 log-shipping active: WARN+ → log_events (retention %s days; async, drop-on-overload)",
+		func() string {
+			if v := os.Getenv("LOG_DB_RETENTION_DAYS"); v != "" {
+				return v
+			}
+			return "30"
+		}())
+
+	// 6.7 (final-bundle) — one-time entry_confidence backfill from decision
+	// records (flag-guarded, WHERE-scoped, additive; feeds the watcher scoring
+	// table's history).
+	st.BackfillEntryConfidence()
+
+	// P0 pnl-record-integrity (2026-08-20) — one-time additive correction of
+	// the 37 wrong recorded-PnL rows (originals preserved; readers COALESCE).
+	st.CorrectHistoricalPnL()
+
 	// Initialize installation ID for experience improvement (anonymous statistics)
 	initInstallationID(st)
 
 	// Set JWT secret
 	auth.SetJWTSecret(cfg.JWTSecret)
 	logger.Info("🔑 JWT secret configured")
+
+	// P0 timezone — CT is canonical for EVERY rendered time (owner rule
+	// 2026-08-19). The host's local zone is ignored by every renderer.
+	logger.Infof("🕐 Timezone pinned: %s (CT) — all prompts, cards, digests and logs render CT, host TZ ignored", kernel.CanonicalZone)
+
+	// P0 2026-08-19 — print every effective AI parameter at startup so a silent
+	// default can never hide again (the max_tokens=2000 disease). Any knob the
+	// operator did NOT set explicitly is called out as a WARNING.
+	ai := mcp.EffectiveAIParamsSnapshot(mcp.DefaultDeepSeekModel)
+	logger.Infof("🧠 AI params in force: model=%s max_tokens=%d temperature=%.2f top_p=%s timeout=%ds retries=%d backoff=%ds · truncated-responses=%d",
+		ai.Model, ai.MaxTokens, ai.Temperature, formatTopP(ai.TopP), ai.TimeoutSeconds, ai.MaxRetries, ai.RetryBackoffSeconds, mcp.TruncatedResponses.Load())
+	unset := []string{}
+	if !ai.MaxTokensSet {
+		unset = append(unset, "AI_MAX_TOKENS")
+	}
+	if !ai.TemperatureSet {
+		unset = append(unset, "AI_TEMPERATURE")
+	}
+	if !ai.TopPSet {
+		unset = append(unset, "AI_TOP_P")
+	}
+	if !ai.TimeoutSet {
+		unset = append(unset, "AI_TIMEOUT_SECONDS")
+	}
+	if !ai.MaxRetriesSet {
+		unset = append(unset, "AI_MAX_RETRIES")
+	}
+	if !ai.RetryBackoffSet {
+		unset = append(unset, "AI_RETRY_BACKOFF_SECONDS")
+	}
+	// P0 2026-08-19 — agent sub-call token caps are AI parameters too; audit
+	// them the same way.
+	ac := nofxiagent.AITokenCapsSnapshot()
+	logger.Infof("🤖 agent sub-call caps: taskstate_summary=%d taskstate_incremental=%d replanner=%d",
+		ac.TaskStateSummary, ac.TaskStateIncremental, ac.Replanner)
+	if !ac.SummarySet {
+		unset = append(unset, "AI_TASKSTATE_SUMMARY_MAX_TOKENS")
+	}
+	if !ac.IncrementalSet {
+		unset = append(unset, "AI_TASKSTATE_INCREMENTAL_MAX_TOKENS")
+	}
+	if !ac.ReplannerSet {
+		unset = append(unset, "AI_REPLANNER_MAX_TOKENS")
+	}
+	if len(unset) > 0 {
+		logger.Warnf("⚠️ AI params at UNSET defaults (nobody chose these explicitly): %v — set them in .env if the defaults are not what you intend", unset)
+	}
 
 	// WebSocket market monitor is NO LONGER USED
 	// All K-line data now comes from CoinAnk API instead of Binance WebSocket cache
@@ -136,7 +215,39 @@ func main() {
 	// Plan 4 Task 25 — Prometheus metrics endpoint (T25 owns this marker; T23 leaves space below).
 
 	// Start API server
-	server := api.NewServer(traderManager, st, cryptoService, cfg.APIServerPort)
+	// P1 — BOOT INTEGRITY ASSERTION. Runs before any trader cycles. A mismatch
+	// with the intended release, or a drifted prompt golden, REFUSES TRADING for
+	// this process (entries blocked; everything else stays read-only usable).
+	integrity := kernel.AssertBootIntegrity()
+	if integrity.Refused {
+		logger.Errorf("%s", integrity.Line())
+		logger.Errorf("🔐 TRADING REFUSED — %s", integrity.Reason)
+		logger.Errorf("🔐 No new positions will be opened until this is fixed and the bot is restarted.")
+	} else {
+		logger.Infof("%s", integrity.Line())
+	}
+	// PHASE 3.5 — clock health at boot (log-only; repeated at each session roll
+	// by the trader loop). At boot the NT8 wire may not be up yet — the line
+	// says "none" honestly rather than waiting.
+	kernel.LogClockHealth("boot", "MNQ")
+	// REGIME WAVE (Cutover 2, 2026-08-21) — one boot line per regime knob:
+	// value + source, so the boot block self-documents the wave's enforcement.
+	kernel.LogRegimeBootLedger()
+	// P1.4 (ledger-close 2026-08-19) — clock-guard block: live host-RTC drift,
+	// guard-timer freshness, last resync/check state. Log-only, best-effort.
+	kernel.LogClockGuardBoot()
+	// P4 (ledger-close 2026-08-19) — half-days boot line: loaded count + the
+	// next upcoming early close. Fail-open on a bad file.
+	trader.LogHalfDaysBoot(time.Now())
+
+	// SANDBOX: a demo instance has no NT8 wire, so install a deterministic
+	// synthetic bar feed — without it level_facts/price/chart/armor are all empty.
+	if cfg.SandboxMode {
+		api.InstallSandboxBars("MNQ", 30231.5)
+		logger.Warnf("🧪 SANDBOX MODE — synthetic bars installed, canned planner replies, no live trading")
+	}
+
+	server := api.NewServer(traderManager, st, cryptoService, cfg.APIServerHost, cfg.APIServerPort)
 
 	// Create hot-reload channel for Telegram bot; wire it to the API server
 	// so that POST /api/telegram can trigger a bot restart when the token changes.
@@ -203,4 +314,12 @@ func initInstallationID(st *store.Store) {
 
 	// Set installation ID in experience module
 	telemetry.SetInstallationID(installationID)
+}
+
+// formatTopP renders the top_p value for the startup log (0 = omitted).
+func formatTopP(v float64) string {
+	if v <= 0 {
+		return "omitted"
+	}
+	return fmt.Sprintf("%.2f", v)
 }

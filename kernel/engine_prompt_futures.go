@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"nofx/market"
+	"nofx/store"
 )
 
 // BuildFuturesDecisionSystemPrompt builds the CME index-futures (MNQ) system
@@ -61,7 +62,9 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	ps := e.config.PromptSections // the 4 editable prompt boxes (Change 4)
 	minConf := rc.MinConfidence
 	if minConf <= 0 {
-		minConf = 60
+		// 6.1 — the SAME constant the gate's clamp uses (store.SafeDefaultMinConfidence):
+		// prompt promise and gate threshold can no longer diverge for unset strategies.
+		minConf = store.SafeDefaultMinConfidence
 	}
 	minRR := rc.MinRiskRewardRatio
 	if minRR <= 0 {
@@ -99,6 +102,13 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	} else {
 		sb.WriteString("# You are a professional CME " + category + " trading AI specializing in the " + inst.Desc + " (" + sym + ").\n\n")
 	}
+	// P0 timezone fix — labelled clock before every window bound, right after
+	// the persona header (owner rule: CT is canonical everywhere).
+	if e.clockContextLine != "" {
+		sb.WriteString(e.clockContextLine)
+		sb.WriteString("\n\n")
+	}
+
 	sb.WriteString("## Instrument\n")
 	sb.WriteString("- Symbol: " + sym + " (" + inst.Desc + " futures)\n")
 	sb.WriteString("- Tick size: " + tickStr + " " + pointWord + "s\n")
@@ -135,6 +145,16 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 		sb.WriteString("\n\n")
 	}
 
+	// P3.4 — day-plan executor injection (RECON #4 reorder). planActive (day_plan
+	// on + an active plan) joins the byte-stable PLAN BLOCK to the cached prefix
+	// HERE, and moves SVP/KEY-LEVELS + PLAN STATUS to the prompt END. No active
+	// plan → prompt unchanged (goldens byte-identical).
+	planActive := e.config.DayPlan != nil && e.config.DayPlan.PlanEnabled && e.planBlockLine != ""
+	if planActive {
+		sb.WriteString(e.planBlockLine)
+		sb.WriteString("\n\n")
+	}
+
 	// 3. Indicators available.
 	sb.WriteString("# Available Data\n")
 	// F11a — was "bars (" with the '(' never closed (writeAvailableIndicators emits
@@ -149,10 +169,20 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	// empty on the preview/test paths). OFF or empty writes NOTHING, so the futures
 	// golden stays byte-identical. ONE context line + ONE legend line, consistent
 	// with the regime/decision framing above (POC as a magnet; balance vs trend).
-	if e.config.Indicators.EnableSVP && e.svpContextLine != "" {
+	if e.config.Indicators.EnableSVP && e.svpContextLine != "" && !planActive {
 		sb.WriteString(e.svpContextLine)
 		sb.WriteString("\n")
 		sb.WriteString("Legend: POC = the session's highest-volume price (a magnet). Inside the value area (VAL–VAH) = balanced → fade the edges back toward POC. Holding OUTSIDE the value area on volume = trend → join the move, don't fade it.\n\n")
+	}
+
+	// 3a-bis. KEY LEVELS (day-plan map, P1.7). Gated on day_plan being ENABLED AND
+	// a non-empty computed block (threaded in from engine_analysis.go). OFF (the
+	// default: no day_plan or plan_enabled=false) or empty writes NOTHING, so the
+	// futures golden stays byte-identical. These are Go-computed FACTS (levels +
+	// grades + distances); the AI judges, it does not re-derive the map.
+	if e.config.DayPlan != nil && e.config.DayPlan.PlanEnabled && e.keyLevelsContextLine != "" && !planActive {
+		sb.WriteString(e.keyLevelsContextLine)
+		sb.WriteString("\n\n")
 	}
 
 	// 3b. Entry Standards (editable). Appended ONLY when set — empty = unchanged.
@@ -180,12 +210,17 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	// 5. Output format — MUST match the existing parser exactly.
 	sb.WriteString("# Output Format (Strictly Follow)\n\n")
 	sb.WriteString("**Must use XML tags <reasoning> and <decision> to separate chain of thought and decision JSON, avoiding parsing errors**\n\n")
+	// P0 2026-08-19 — decision-FIRST strict contract: the <decision> block is
+	// MANDATORY and must be emitted before any reasoning, so even a truncated
+	// response still carries the decision. Reasoning is brief and decision-focused;
+	// never restate the input data.
+	sb.WriteString("Output the <decision> JSON block FIRST — it is MANDATORY and must appear in every response. THEN write <reasoning>: ≤200 words, decision-focused, no restating the input data. If you are running out of room, drop reasoning — never drop <decision>.\n\n")
 	sb.WriteString("<reasoning>\n")
 	sb.WriteString("Your chain-of-thought analysis of the " + sym + " bars and indicators.\n")
 	sb.WriteString("</reasoning>\n\n")
 	sb.WriteString("<decision>\n")
 	sb.WriteString("```json\n[\n")
-	sb.WriteString("  {\"symbol\": \"" + sym + "\", \"action\": \"open_long\", \"leverage\": 1, \"position_size_usd\": 60000, \"stop_loss\": 21480.00, \"take_profit\": 21560.00, \"confidence\": 80}\n")
+	sb.WriteString("  {\"symbol\": \"" + sym + "\", \"action\": \"open_long\", \"leverage\": 1, \"position_size_usd\": 60000, \"stop_loss\": 21480.00, \"take_profit\": 21560.00, \"confidence\": 80, \"cited_scenario\": \"S1\"}\n")
 	sb.WriteString("]\n```\n")
 	sb.WriteString("</decision>\n\n")
 	sb.WriteString("When there is no good setup, output a single wait decision:\n")
@@ -199,12 +234,30 @@ func (e *StrategyEngine) buildFuturesPrompt(symbol string, accountEquity float64
 	sb.WriteString("- `leverage`: 1 (futures)\n")
 	sb.WriteString("- Required when opening: stop_loss, take_profit, confidence (absolute tick-aligned prices)\n")
 	sb.WriteString("- **IMPORTANT**: all numeric values must be concrete numbers, NOT formulas (e.g. `21480.00`, not `21500 - 20`).\n")
+	sb.WriteString("- Plan target chains are guidance — YOU set take_profit (D2 ruling); the R:R gate is the only TP constraint.\n")
+	sb.WriteString("- `cited_scenario`: REQUIRED on every open when a DAY PLAN is shown — the plan scenario id (\"S1\"…) you are trading, or \"off-plan\" for a valid non-plan setup. (A6/F12: this used to live only inside the plan block; a contract-literal model omitted it and every adherence grade silently degraded to D.)\n")
 	sb.WriteString("- The <decision> block MUST be a JSON array, even for a single decision.\n\n")
 
 	if e.config.CustomPrompt != "" {
 		sb.WriteString("# Personalized Strategy\n\n")
 		sb.WriteString(e.config.CustomPrompt)
 		sb.WriteString("\n\nNote: supplements the rules above; cannot violate the risk-control constraints.\n")
+	}
+
+	// P3.4 — RECON #4 dynamic tail: with an active plan, SVP + KEY LEVELS + PLAN
+	// STATUS live at the very END, so the cached prefix (rules + PLAN BLOCK) stays
+	// byte-stable all session and only this tail changes per cycle.
+	if planActive {
+		sb.WriteString("\n# Live map (dynamic — re-read each bar)\n")
+		if e.config.Indicators.EnableSVP && e.svpContextLine != "" {
+			sb.WriteString(e.svpContextLine + "\n\n")
+		}
+		if e.keyLevelsContextLine != "" {
+			sb.WriteString(e.keyLevelsContextLine + "\n\n")
+		}
+		if e.planStatusLine != "" {
+			sb.WriteString(e.planStatusLine + "\n")
+		}
 	}
 
 	return sb.String()

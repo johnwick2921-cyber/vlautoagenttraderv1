@@ -3402,11 +3402,11 @@ func (a *Agent) toolGetTradeHistory(argsJSON string) string {
 
 			entryTime := ""
 			if pos.EntryTime > 0 {
-				entryTime = time.Unix(pos.EntryTime/1000, 0).Format("2006-01-02 15:04")
+				entryTime = kernel.FormatCT(time.Unix(pos.EntryTime/1000, 0))
 			}
 			exitTime := ""
 			if pos.ExitTime > 0 {
-				exitTime = time.Unix(pos.ExitTime/1000, 0).Format("2006-01-02 15:04")
+				exitTime = kernel.FormatCT(time.Unix(pos.ExitTime/1000, 0))
 			}
 
 			trades = append(trades, map[string]any{

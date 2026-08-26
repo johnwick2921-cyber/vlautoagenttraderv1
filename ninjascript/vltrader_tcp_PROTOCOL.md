@@ -63,6 +63,39 @@ Outgoing trade signal. Each numeric field is tick-rounded by the Go side before 
 - `signal_id`: UUID. Used as the OCO group ID and as the fill correlation key.
 - `timestamp`: RFC3339 UTC. The AddOn rejects signals older than 60 seconds as stale.
 
+### 1b. `close_position` (Go server → C# AddOn)
+
+Flatten a held position. Historical behavior: immediate market flatten +
+working-order cancel. **4.3 (limit-then-market, dormant):** `limit_price > 0`
+submits a LIMIT exit at that price instead — the Go side owns the timing and
+sends the market fallback as a later `close_position` frame WITHOUT
+`limit_price`, whose Flatten cancels the resting limit.
+
+```json
+{
+  "type": "close_position",
+  "payload": {
+    "symbol": "MNQ",
+    "side": "long",
+    "quantity": 1,
+    "limit_price": 0,
+    "signal_id": "uuid-v4-string",
+    "account": "Sim101",
+    "trader_id": "hoang",
+    "seq": 42
+  }
+}
+```
+
+**Field semantics:**
+
+- `limit_price` (4.3): 0/absent = market flatten (historical, byte-identical
+  framing). `> 0` = submit a LIMIT exit at this price. The order is named
+  `<signal_id>-lx`; its fill routes to `position_close` with reason `"limit"`
+  and cancels the still-live SL/TP bracket legs (`CancelBracketsFor`) so they
+  can never re-enter the now-flat position.
+- All other fields unchanged (identity stamp, account routing, SIM-only guard).
+
 ### 2. `fill` (C# AddOn → Go server)
 
 Outgoing fill notification.

@@ -15,6 +15,7 @@ export const translations = {
     logout: 'Logout',
     switchTrader: 'Switch Trader:',
     view: 'View',
+    viewing: 'Viewing',
 
     // Navigation
     realtimeNav: 'Leaderboard',
@@ -1106,6 +1107,8 @@ export const translations = {
       unsaved: 'Unsaved',
       discardChanges: 'Discard',
       selectOrCreate: 'Select or create a strategy',
+      defaultLocked:
+        'This is the DEFAULT strategy template — read-only. Select or clone a non-default strategy to edit settings.',
       customPromptDesc:
         'Extra prompt appended to System Prompt for personalized trading style',
       customPromptPlaceholder: 'Enter custom prompt...',
@@ -1116,6 +1119,12 @@ export const translations = {
         'Token estimate exceeds 128K. AI requests may fail for some models.',
       gridSwitchConfirm:
         'Switch to Grid trading? Your AI configuration (indicators, risk control, prompt, coin source) is set aside — it is preserved and restored if you switch back. Continue?',
+      gridFuturesDisabled:
+        'Grid needs resting limit orders; the NinjaTrader futures path is market-only',
+      gridFuturesDesc:
+        'Grid cannot run on CME futures — use AI Trading with protective stops.',
+      duplicateToEditHint:
+        'This default strategy is locked (shared fallback). Duplicate to edit a copy.',
       tokenEstimating: 'Estimating...',
       tokenTooltip: 'Based on 200K context',
     },
@@ -1414,6 +1423,7 @@ export const translations = {
     logout: '退出',
     switchTrader: '切换交易员:',
     view: '查看',
+    viewing: '查看中',
 
     // Navigation
     realtimeNav: '排行榜',
@@ -2443,6 +2453,8 @@ export const translations = {
       unsaved: '未保存',
       discardChanges: '撤销',
       selectOrCreate: '选择或创建策略',
+      defaultLocked:
+        '这是默认策略模板 —— 只读。请选择或复制一个非默认策略来编辑设置。',
       customPromptDesc:
         '附加在 System Prompt 末尾的额外提示，用于补充个性化交易风格',
       customPromptPlaceholder: '输入自定义提示词...',
@@ -2452,6 +2464,11 @@ export const translations = {
       tokenExceedWarning: 'Token 估算超过 128K，部分模型请求可能失败',
       gridSwitchConfirm:
         '切换到网格交易？您的 AI 配置（指标、风控、提示词、币种来源）将被保留，切换回来时会自动恢复。是否继续？',
+      gridFuturesDisabled:
+        '网格需要挂单限价单；NinjaTrader 期货路径仅支持市价单',
+      gridFuturesDesc: '网格无法运行于 CME 期货——请使用带保护止损的 AI 交易。',
+      duplicateToEditHint:
+        '此默认策略已锁定（共享回退）。请复制副本后进行编辑。',
       tokenEstimating: '预估中...',
       tokenTooltip: '基于 200K 上下文计算',
     },
@@ -2734,6 +2751,7 @@ export const translations = {
     logout: 'Keluar',
     switchTrader: 'Ganti Trader:',
     view: 'Lihat',
+    viewing: 'Melihat',
 
     // Navigation
     realtimeNav: 'Papan Peringkat',

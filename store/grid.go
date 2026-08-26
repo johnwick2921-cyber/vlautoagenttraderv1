@@ -11,7 +11,14 @@ import (
 // These models mirror the grid package types but are defined here
 // to avoid import cycles between store and grid packages.
 
-// GridConfigModel GORM model for grid_configs table
+// GridConfigModel GORM model for grid_configs table.
+//
+// LEGACY NOTE (master-audit finding 3.4): this TABLE has no production writer —
+// the live grid path carries its config inside StrategyConfig.grid_config (see
+// web StrategyStudioPage + auto_trader_grid.go). The table exists only for the
+// auto-migration and for agent-layer display of grid counts; it is expected to
+// stay empty until a dedicated grid-config persistence surface is ever built
+// (grid is parked for CME futures anyway — market-only bridge).
 type GridConfigModel struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
 	UserID    string    `json:"user_id" gorm:"index"`

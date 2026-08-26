@@ -1,6 +1,7 @@
 package api
 
 import (
+	"nofx/kernel"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -173,7 +174,7 @@ func (s *Server) handleEquityHistory(c *gin.Context) {
 		}
 
 		history = append(history, EquityPoint{
-			Timestamp:        snap.Timestamp.Format("2006-01-02 15:04:05"),
+			Timestamp:        kernel.FormatCT(snap.Timestamp),
 			TotalEquity:      snap.TotalEquity,
 			AvailableBalance: snap.Balance,
 			TotalPnL:         snap.UnrealizedPnL,
@@ -359,8 +360,11 @@ func (s *Server) getEquityHistoryForTraders(traderIDs []string, hours int) map[s
 			startTime := now.Add(-time.Duration(hours) * time.Hour)
 			snapshots, err = s.store.Equity().GetByTimeRange(traderID, startTime, now)
 		} else {
-			// Default: get latest 500 records
-			snapshots, err = s.store.Equity().GetLatest(traderID, 500)
+			// Default: the last 90 days. The old default (latest 500
+			// snapshots) silently truncated the chart to ~3 days of
+			// history and looked like data loss (owner 2026-08-17).
+			startTime := now.Add(-90 * 24 * time.Hour)
+			snapshots, err = s.store.Equity().GetByTimeRange(traderID, startTime, now)
 		}
 		if err != nil {
 			logger.Errorf("[API] Failed to get equity history for %s: %v", traderID, err)

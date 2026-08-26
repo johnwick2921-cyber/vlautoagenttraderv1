@@ -31,6 +31,8 @@ interface TradersListProps {
   visibleTraderAddresses: Set<string>
   copiedId: string | null
   language: Language
+  // The currently-selected trader (persisted selection) — marked active in the list.
+  activeTraderId?: string
   onTraderSelect?: (traderId: string) => void
   onNavigate: (path: string) => void
   onEditTrader: (traderId: string) => void
@@ -54,6 +56,7 @@ export function TradersList({
   visibleTraderAddresses,
   copiedId,
   language,
+  activeTraderId,
   onTraderSelect,
   onNavigate,
   onEditTrader,
@@ -86,6 +89,7 @@ export function TradersList({
             <TraderRow
               key={trader.trader_id}
               trader={trader}
+              isActive={trader.trader_id === activeTraderId}
               allExchanges={allExchanges}
               models={models}
               visibleTraderAddresses={visibleTraderAddresses}
@@ -173,6 +177,7 @@ function TradersEmptyState({
 
 function TraderRow({
   trader,
+  isActive,
   allExchanges,
   models,
   visibleTraderAddresses,
@@ -188,6 +193,7 @@ function TraderRow({
   onCopyAddress,
 }: {
   trader: TraderInfo
+  isActive?: boolean
   allExchanges: Exchange[]
   models: AIModel[]
   visibleTraderAddresses: Set<string>
@@ -214,7 +220,10 @@ function TraderRow({
   return (
     <div
       className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 rounded transition-all hover:translate-y-[-1px] gap-3 md:gap-4"
-      style={{ background: '#0B0E11', border: '1px solid #2B3139' }}
+      style={{
+        background: isActive ? 'rgba(240, 185, 11, 0.06)' : '#0B0E11',
+        border: isActive ? '1px solid #F0B90B' : '1px solid #2B3139',
+      }}
     >
       <div className="flex items-center gap-3 md:gap-4">
         <div className="flex-shrink-0">
@@ -230,11 +239,25 @@ function TraderRow({
           />
         </div>
         <div className="min-w-0">
-          <div
-            className="font-bold text-base md:text-lg truncate"
-            style={{ color: '#EAECEF' }}
-          >
-            {trader.trader_name}
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="font-bold text-base md:text-lg truncate"
+              style={{ color: '#EAECEF' }}
+            >
+              {trader.trader_name}
+            </div>
+            {isActive && (
+              <span
+                className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] md:text-xs font-semibold"
+                style={{
+                  background: 'rgba(240, 185, 11, 0.15)',
+                  color: '#F0B90B',
+                  border: '1px solid rgba(240, 185, 11, 0.4)',
+                }}
+              >
+                {t('viewing', language)}
+              </span>
+            )}
           </div>
           <div
             className="text-xs md:text-sm truncate"

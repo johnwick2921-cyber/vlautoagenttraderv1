@@ -47,7 +47,7 @@ func TestRoundTrip_Fill(t *testing.T) {
 		FillPrice:     21500.50,
 		FillTime:      "2026-05-26T12:00:01Z",
 		Side:          "long",
-		Quantity:     1,
+		Quantity:      1,
 		SlippageTicks: 1.0,
 		Status:        "filled",
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,14 +13,53 @@ import (
 )
 
 const (
-	recentConversationRounds       = 6
-	recentConversationMessages     = recentConversationRounds * 2
-	chatHistoryMaxTurns            = recentConversationMessages * 2 // fallback cap when compression is unavailable
-	taskStateSummaryTokenLimit     = 1200
-	shortTermCompressThreshold     = 900
-	incrementalTaskStateMessages   = 6
-	incrementalTaskStateTokenLimit = 500
+	recentConversationRounds     = 6
+	recentConversationMessages   = recentConversationRounds * 2
+	chatHistoryMaxTurns          = recentConversationMessages * 2 // fallback cap when compression is unavailable
+	shortTermCompressThreshold   = 900
+	incrementalTaskStateMessages = 6
 )
+
+// P0 2026-08-19 — no hardcoded AI parameters. These sub-call token caps are
+// env-driven (defaults preserve the previous values exactly).
+var (
+	taskStateSummaryTokenLimit     = aiEnvInt("AI_TASKSTATE_SUMMARY_MAX_TOKENS", 1200)
+	incrementalTaskStateTokenLimit = aiEnvInt("AI_TASKSTATE_INCREMENTAL_MAX_TOKENS", 500)
+)
+
+// aiEnvInt reads an integer AI knob from the environment, falling back to def.
+func aiEnvInt(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
+
+// AITokenCaps is the effective set of agent sub-call token caps, for the
+// startup audit line.
+type AITokenCaps struct {
+	TaskStateSummary     int
+	TaskStateIncremental int
+	Replanner            int
+	SummarySet           bool
+	IncrementalSet       bool
+	ReplannerSet         bool
+}
+
+// AITokenCapsSnapshot reports the effective caps and which of them the operator
+// explicitly set via environment variables.
+func AITokenCapsSnapshot() AITokenCaps {
+	return AITokenCaps{
+		TaskStateSummary:     taskStateSummaryTokenLimit,
+		TaskStateIncremental: incrementalTaskStateTokenLimit,
+		Replanner:            aiEnvInt("AI_REPLANNER_MAX_TOKENS", 500),
+		SummarySet:           os.Getenv("AI_TASKSTATE_SUMMARY_MAX_TOKENS") != "",
+		IncrementalSet:       os.Getenv("AI_TASKSTATE_INCREMENTAL_MAX_TOKENS") != "",
+		ReplannerSet:         os.Getenv("AI_REPLANNER_MAX_TOKENS") != "",
+	}
+}
 
 type DecisionMemory struct {
 	Action     string `json:"action,omitempty"`

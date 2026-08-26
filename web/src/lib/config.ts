@@ -1,6 +1,8 @@
 export interface SystemConfig {
   initialized: boolean
   beta_mode?: boolean
+  /** true when this instance is an isolated SANDBOX (own DB, no live trading). */
+  sandbox?: boolean
 }
 
 let configPromise: Promise<SystemConfig> | null = null

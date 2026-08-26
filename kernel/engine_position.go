@@ -190,6 +190,55 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 		if minConfidence > 0 && d.Confidence < minConfidence {
 			return fmt.Errorf("confidence too low (%d), must be ≥%d to open position", d.Confidence, minConfidence)
 		}
+
+		// G1 (regime wave 2026-08-21) — HTF VETO. Position in the gate chain:
+		// AFTER the min-confidence gate, BEFORE the decision proceeds to sizing
+		// and execution. An entry opposing the CONFIRMED HTF trend (G2) is
+		// refused; RANGING/unconfirmed and detector-unavailable FAIL OPEN
+		// (WARN + pass). ctx == nil (unit tests) → gate dormant.
+		if ctx != nil && ctx.HTFVetoEnabled {
+			if blocked, msg := HTFVetoVerdict(ctx.Structure, d.Action, ctx.HTFVetoTF); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "htf_veto")
+				logger.Warnf("🛡️ HTF VETO %s %s: %s", d.Symbol, d.Action, msg)
+				return fmt.Errorf("%s", msg)
+			}
+		}
+
+		// G4 (regime wave 2026-08-21) — TRANSITION STAND-DOWN: while an
+		// unconfirmed counter-trend CHoCH/MSS is outstanding on the plan's bias
+		// TF, NEW entries in the PLAN'S direction are paused (the card shows
+		// "⏸ TRANSITION"). Counter-direction entries are never paused by this —
+		// the flip owns that job. ctx == nil → dormant.
+		if ctx != nil && ctx.TransitionActive {
+			if blocked, msg := TransitionStanddownVerdict(d.Action, ctx.TransitionActive, ctx.TransitionDir, ctx.TransitionDetail); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "transition_standdown")
+				logger.Warnf("⏸ TRANSITION STAND-DOWN %s %s: %s", d.Symbol, d.Action, msg)
+				return fmt.Errorf("%s", msg)
+			}
+		}
+
+		// C6 (2026-08-25) — EXECUTOR DEAD-PLAN GATE: when the active day plan
+		// is machine-dead (or planless with day_plan on), NEW entries are
+		// refused. Position management (closes/trails) is NOT blocked.
+		if ctx != nil && ctx.ExecutorPlanDead != "" {
+			if blocked, msg := ExecutorPlanDeadVerdict(d.Action, ctx.ExecutorPlanDead); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "executor_plan_dead")
+				logger.Warnf("🚧 EXECUTOR PLAN GATE %s %s: %s", d.Symbol, d.Action, msg)
+				return fmt.Errorf("%s", msg)
+			}
+		}
+
+		// R4 (2026-08-25) — min_scenario_quality gate: with a floor of A or B,
+		// an entry citing a scenario graded below the floor is refused. Default
+		// C = no restriction (today's behavior byte-identical). ctx == nil →
+		// dormant. Position management is NOT blocked.
+		if ctx != nil && ctx.MinScenarioQuality != "" && ctx.MinScenarioQuality != "C" {
+			if blocked, msg := MinScenarioQualityVerdict(d.Action, d.CitedScenario, ctx.MinScenarioQuality, ctx.PlanScenarioQuality); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "scenario_below_min_quality")
+				logger.Warnf("🚧 SCENARIO QUALITY GATE %s %s: %s", d.Symbol, d.Action, msg)
+				return fmt.Errorf("%s", msg)
+			}
+		}
 	}
 
 	return nil

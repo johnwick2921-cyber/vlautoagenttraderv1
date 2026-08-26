@@ -198,6 +198,20 @@ export function CoinSourceEditor({
 
   return (
     <div className="space-y-6">
+      {/* Venue badge — Studio Phase 3: a futures strategy must SHOW its real
+          venue instead of a crypto "Static List" source (Strategy-Studio plan).
+          Display only; the backend infers the venue from the symbol. */}
+      {isFutures && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-nofx-gold/30 bg-nofx-gold/10">
+          <Database className="w-4 h-4 text-nofx-gold" />
+          <span className="text-xs font-medium text-nofx-gold">
+            NinjaTrader · CME futures
+          </span>
+          <span className="text-[10px] text-nofx-text-muted ml-auto">
+            real-time bars + SIM execution via the NT8 TCP bridge
+          </span>
+        </div>
+      )}
       {/* Source Type Selector */}
       <div>
         <label className="block text-sm font-medium mb-3 text-nofx-text">

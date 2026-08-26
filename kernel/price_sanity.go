@@ -57,3 +57,21 @@ func priceSanityViolation(side string, entryRef, stopLoss, takeProfit, atr15, la
 	}
 	return "", false
 }
+
+// LevelPriceViolation is the B2 armor for an OWNER-entered plan level price
+// (P5.1): a level farther than 8 × the DAILY ATR from the last price is a
+// fat-finger, rejected exactly as an implausible AI price would be. Level-scale
+// (dATR), not execution-scale (atr15) — a legitimate PDL can sit far from price,
+// but not 8× the whole day's range. Fail-open when dATR<=0 or lastPrice<=0 (no
+// live market data — the caller notes it), mirroring priceSanityViolation.
+func LevelPriceViolation(price, lastPrice, dATR float64) (string, bool) {
+	if dATR <= 0 || lastPrice <= 0 || price <= 0 {
+		return "", false // insufficient market data → fail-open (caller logs)
+	}
+	maxDist := atrSanityMultiple * dATR
+	if d := math.Abs(price - lastPrice); d > maxDist {
+		return fmt.Sprintf("level %.2f is %.2f from price %.2f (>8×dATR=%.2f)",
+			price, d, lastPrice, maxDist), true
+	}
+	return "", false
+}

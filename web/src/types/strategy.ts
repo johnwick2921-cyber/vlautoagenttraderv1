@@ -59,6 +59,59 @@ export interface StrategyConfig {
   // Grid trading configuration (only used when strategy_type is 'grid_trading')
   grid_config?: GridStrategyConfig | null
   publish_config?: PublishStrategyConfig
+  // Day Plan settings block (root-level, additive; mirrors Go DayPlanConfig).
+  // Absent/undefined = feature off (byte-identical to a pre-day-plan strategy).
+  day_plan?: DayPlanConfig
+}
+
+// DayPlanSessionOverride — per-session overrides; an ABSENT field inherits the
+// strategy-level value (⚪ inherit), a present field overrides it (🔸 override).
+export interface DayPlanSessionOverride {
+  session: string // NY | ASIA | LONDON
+  enable?: boolean
+  replan_cap?: number
+  plan_mode?: string
+  acceptance_rule?: string
+  min_grade?: string // A | B | C
+  min_scenario_quality?: string // A | B | C (R4, 2026-08-25)
+  max_trades?: number
+}
+
+// DayPlanConfig — mirrors Go store.DayPlanConfig. plan_enabled=false is the
+// master switch (off). Additive + defaults-off.
+export interface DayPlanConfig {
+  plan_enabled: boolean
+  planner_model?: string
+  plan_mode?: string // advisory | direction | strict
+  planner_timeframes?: string[]
+  proximity_filter_atr?: number
+  max_levels?: number
+  scenario_cap?: number
+  acceptance_rule?: string // 2x5m | 15m-close
+  replan_cap?: number
+  sessions_enabled?: string[]
+  approval_required?: boolean
+  evening_digest?: boolean
+  last_entry_ct?: string
+  eod_flat_ct?: string
+  /** W13 auto re-align ceiling per plan (default 5). Go reads it; the FE type
+   *  was missing it entirely, so the value could never be edited from the app. */
+  realign_cap?: number
+  /** W6 (2026-08-25) — planner wake-up knobs (level events). Pointer-bool
+   *  semantics mirror Go: absent = ON for these five except HTF OBs (OFF). */
+  wake_on_15m_zone?: boolean
+  wake_on_htf_zone?: boolean
+  wake_on_htf_ob?: boolean
+  wake_on_seated_invalidation?: boolean
+  wake_on_ifvg?: boolean
+  wake_min_interval_min?: number
+  /** 1h wave (2026-08-25) — reserve one of the two HTF seats for an in-band
+   *  1h S/D zone when one exists. Absent = ON (mirrors Go pointer-bool). */
+  seat_1h_zone?: boolean
+  /** R4 (2026-08-25) — scenario quality floor: A | B | C. Default C = no
+   *  restriction. */
+  min_scenario_quality?: string
+  sessions?: DayPlanSessionOverride[]
 }
 
 export interface AIStrategyConfig {
@@ -214,6 +267,12 @@ export interface RiskControlConfig {
   // Auto-breakeven (NT8 futures): once +N pts in profit, move the stop to entry.
   breakeven_enabled?: boolean
   breakeven_trigger_points?: number // default 50
+  // Trailing profit (Phase 3B, NT8 futures only; default OFF)
+  trailing_enabled?: boolean
+  trailing_atr_mult?: number // default 2.0
+  trailing_atr_period?: number // default 14 (5m ATR)
+  trailing_arm?: string // 'after_breakeven' (default) | 'after_trigger_points' | 'immediate'
+  trailing_arm_points?: number // used iff after_trigger_points
   daily_loss_limit_usd?: number // daily realized-loss limit (USD)
   daily_loss_enabled?: boolean // default ON (preserves the live env gate)
   daily_profit_target_usd?: number // daily realized-profit target (USD)
