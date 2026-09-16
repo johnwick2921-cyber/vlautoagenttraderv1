@@ -1,0 +1,25 @@
+file,commit,time,subject
+kernel/confirmation_bucket.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+kernel/confirmation_evidence.go,b99963857c453f909570eba7a854a8ec23eed087,2026-09-08T14:30:06-05:00,test(confirmation): pin the ruled carve-out and publish mutation evidence
+kernel/confirmation_telemetry.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+kernel/confirmation_truth_test.go,b99963857c453f909570eba7a854a8ec23eed087,2026-09-08T14:30:06-05:00,test(confirmation): pin the ruled carve-out and publish mutation evidence
+kernel/plan_confirm.go,b99963857c453f909570eba7a854a8ec23eed087,2026-09-08T14:30:06-05:00,test(confirmation): pin the ruled carve-out and publish mutation evidence
+kernel/scenario_facts.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+kernel/breakdown_continue.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+kernel/class45_feeds_forward.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+kernel/displacement_feeds_forward.go,b99963857c453f909570eba7a854a8ec23eed087,2026-09-08T14:30:06-05:00,test(confirmation): pin the ruled carve-out and publish mutation evidence
+kernel/mss.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+trader/armed_executor.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+trader/confirmation_desk.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+trader/confirmation_truth_test.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+trader/auto_trader_levelstate.go,5710cb5d353046aca531eb9ce049ab3bd780fdcb,2026-09-08T09:00:25-05:00,test(plan-liveness): pin unknown qualifiers and versioned readers
+trader/desk_facts.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+api/handler_plan.go,5710cb5d353046aca531eb9ce049ab3bd780fdcb,2026-09-08T09:00:25-05:00,test(plan-liveness): pin unknown qualifiers and versioned readers
+main.go,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+clock-seams.list,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+web/src/components/plan/ScenarioList.tsx,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+web/src/lib/api/plan.ts,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+web/src/guide/content/planCard.ts,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+docs/superpowers/SYSTEM-MAP.md,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+docs/superpowers/AUDIT-CHECKLIST.md,78eed09b7969022408e3279d89c895c553885843,2026-09-08T14:32:14-05:00,docs(confirmation): assign class 91 at integration
+kernel/class38_contract_test.go,2166a072339131fdb0a8e8e816e12148b261872b,2026-09-08T14:35:49-05:00,test(confirmation): require mode-specific displacement facts

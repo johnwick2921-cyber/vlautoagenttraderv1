@@ -23,6 +23,10 @@ func TestCountConsecutiveLossesSince(t *testing.T) {
 			Status: "CLOSED", CloseReason: reason,
 			EntryTime: exitMs - 1, ExitTime: exitMs, CreatedAt: exitMs, UpdatedAt: exitMs,
 		}
+		// A-2 (2026-08-28): rows ruled-from must carry a verified correction —
+		// NULL pnl_corrected rows are EXCLUDED from the streak query.
+		pnlCopy := pnl
+		p.PnlCorrected = &pnlCopy
 		// Insert the CLOSED row directly — PositionStore.Create is the entry-path
 		// constructor and force-sets status=OPEN, which this query filters out.
 		if err := ps.db.Create(p).Error; err != nil {
@@ -67,10 +71,25 @@ func TestCountConsecutiveLossesSince(t *testing.T) {
 		t.Fatalf("trB → 2, got %d", n)
 	}
 
-	// A reconcile_flat orphan (unknown P&L) at the tail is excluded, so trA's real
-	// tail loss (1400) still governs → 1.
+	// A reconcile_flat orphan (unknown P&L) at the tail ENDS the run.
+	//
+	// CHANGED 2026-09-09 (dispatch 104 D2, owner-ruled). This asserted 1: the
+	// orphan was excluded by the WHERE, so trA's earlier loss still governed.
+	// Excluding a row from the scan does not make it neutral — it makes it
+	// TRANSPARENT, and a transparent unknown BRIDGES two runs into one longer
+	// one (3 losses + an orphan + 3 losses counted as SIX). Bridging makes a
+	// halt MORE likely, and blocking is this counter's destructive branch, so
+	// the old semantics had UNKNOWN pushing toward the harmful side — the thing
+	// A24 forbids. "We do not know whether that trade won" ends a run of KNOWN
+	// losses, so the answer is now 0.
 	mk("trA", 1700, -1, CloseReasonReconcileFlat)
+	if n, _ := ps.CountConsecutiveLossesSince("trA", since); n != 0 {
+		t.Fatalf("an unknown-P&L close at the tail must END the run → 0, got %d", n)
+	}
+	// ...and a real loss after it starts a fresh run of 1, so the break is a
+	// break and not a permanent mute.
+	mk("trA", 1800, -40, "sync")
 	if n, _ := ps.CountConsecutiveLossesSince("trA", since); n != 1 {
-		t.Fatalf("reconcile_flat excluded → still 1, got %d", n)
+		t.Fatalf("a loss after the unknown starts a new run → 1, got %d", n)
 	}
 }

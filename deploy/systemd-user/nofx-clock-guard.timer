@@ -1,0 +1,13 @@
+# P1 (ledger-close 2026-08-19) — every 15 minutes, per dispatch 1.2.
+# Persistent=true: a missed window (laptop sleep) fires on wake — exactly the
+# moment clock drift is most likely.
+[Unit]
+Description=nofx clock drift guard — every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

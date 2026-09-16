@@ -1,0 +1,62 @@
+kernel/levels.go
+ceb8ad4d6adadc3e371995d9d07691f829741812 feat(identity): capture separate formation close and preserve trading inputs
+kernel/levels_score.go
+0a260391698d3bc0cbb0b0f45df2149913d971c1 fix(collapse): a cross-timeframe cluster collapse carries the loser's name to the map
+kernel/levels_assemble.go
+285838b5a1359f0dee56a8cb12a9880250113ced fix(identity): retain exact merged-member provenance beside the primary id
+kernel/levels_intraday.go
+ceb8ad4d6adadc3e371995d9d07691f829741812 feat(identity): capture separate formation close and preserve trading inputs
+kernel/levels_swing.go
+ceb8ad4d6adadc3e371995d9d07691f829741812 feat(identity): capture separate formation close and preserve trading inputs
+kernel/map_candidates.go
+285838b5a1359f0dee56a8cb12a9880250113ced fix(identity): retain exact merged-member provenance beside the primary id
+kernel/planner_prompt.go
+ceb8ad4d6adadc3e371995d9d07691f829741812 feat(identity): capture separate formation close and preserve trading inputs
+kernel/stage_a_parity_test.go
+0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb feat(research): link attempts, permissions, broker receipts and corrected outcomes
+trader/auto_trader_planner.go
+71d0c259958e9613f609ebe3c2bf78542be0e447 B3: installActivePlanProvider has a clock seam, and its nil path says why — once per reason
+trader/research_snapshot.go
+e75a0667ed696e8fe5e6a9e258e67542dc9a3ac9 feat(identity): record versioned WARN events and expose candidate attribution
+store/touch_outcomes.go
+69164e1e19c89849c7c9969742000d23f46e27b8 one-setup: store side — episode columns (verdict + follow-plan, all NULL until known), stamp-once writer, price-proximity link, counters, knobs registered + resolver
+docs/superpowers/AUDIT-CHECKLIST.md
+9d0dc81969018c8807c9ec510804a9e02bc43764 cleanup batch 2: closeout report, class 122 (assigned at merge; census 121 highest), guide note for the reclassified knobs
+docs/superpowers/reports/2026-09-09-candidates-not-entitlements.md
+d0df134d8badc10704b178442111338a179e3bd1 docs(class 99): correct 11 -> 10, record the mirror-image instance, name the direction
+docs/superpowers/reports/2026-09-10-every-detector-every-timeframe.md
+050cd5c1549b656ed06f6eaae8954b55a723ede4 docs(report): A15 — nofx/trader is RED on dev, and it is not the lunch band
+docs/superpowers/reports/2026-09-11-provenance-merged-label.md
+616b52a9def4042ce40308deba46529723ba01d7 marker(provenance): boot 802fb00b verified — PID 3366586 08:58 CT, five references + md5 agree, sweep 0, book empty; live proof owed to the next read with a merged structural label
+trader/arm_test_clock_test.go (accepted source)
+7871a1d20d232544270ecf09927a4d6327279391 fix(trader tests): the split-arm tape depends on now MODULO 5 MINUTES, and on today's trade date
+trader/shadow_demotion_test.go (accepted source)
+d4ab87db8ad3445ccd76477b4321d7aec9597139 one-setup: five pre-existing wide-book fixtures (fvg_entry, sweep_reclaim split, R:R at the seam, loopback placement, config flip) declare one_setup OFF — their subject is not one-setup and E2 proves OFF is today's book byte for byte
+trader/one_setup_retire_test.go (accepted source)
+6fe2c11c1b0dc0618ea029bf8e4eff7337829b02 one-setup: the gap the first boot found, closed (owner ruling (b), scoped) — at placement time an authorization whose scenario is currently DECLINED is retired by ledger state with the owner's reason and its three verdicts, never placed, nothing at the broker; an allowed one still places (pinned on the loopback wire, RED first, 2 mutants killed); boot-line key fix folded; CLASS 121; A29 registered; MAPCHECK recomputed; SYSTEM-MAP + RULEBOOK
+docs/superpowers/SYSTEM-MAP.md (accepted source)
+6fe2c11c1b0dc0618ea029bf8e4eff7337829b02 one-setup: the gap the first boot found, closed (owner ruling (b), scoped) — at placement time an authorization whose scenario is currently DECLINED is retired by ledger state with the owner's reason and its three verdicts, never placed, nothing at the broker; an allowed one still places (pinned on the loopback wire, RED first, 2 mutants killed); boot-line key fix folded; CLASS 121; A29 registered; MAPCHECK recomputed; SYSTEM-MAP + RULEBOOK
+docs/superpowers/VL-TRADING-RULEBOOK-v1.md (accepted source)
+6fe2c11c1b0dc0618ea029bf8e4eff7337829b02 one-setup: the gap the first boot found, closed (owner ruling (b), scoped) — at placement time an authorization whose scenario is currently DECLINED is retired by ledger state with the owner's reason and its three verdicts, never placed, nothing at the broker; an allowed one still places (pinned on the loopback wire, RED first, 2 mutants killed); boot-line key fix folded; CLASS 121; A29 registered; MAPCHECK recomputed; SYSTEM-MAP + RULEBOOK
+web/src/guide/content/candidates.ts (accepted source)
+22270ec1b64e9813d1ec0509669bfd6c8b657886 candidates(A12 Guide): section 15 'Candidates, Not Entitlements' + its vitest
+
+Authorized fixture correction: running-source freshness
+
+git log -1 802fb00b09e51f9801e8d4fbd1bf156c86865d95 -- trader/one_setup_retire_test.go
+commit 6fe2c11c1b0dc0618ea029bf8e4eff7337829b02
+Author: johnwick2921-cyber <johnwick2921@gmail.com>
+Date:   Fri Sep 11 01:55:36 2026 -0500
+
+    one-setup: the gap the first boot found, closed (owner ruling (b), scoped) — at placement time an authorization whose scenario is currently DECLINED is retired by ledger state with the owner's reason and its three verdicts, never placed, nothing at the broker; an allowed one still places (pinned on the loopback wire, RED first, 2 mutants killed); boot-line key fix folded; CLASS 121; A29 registered; MAPCHECK recomputed; SYSTEM-MAP + RULEBOOK
+
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+git log -1 802fb00b09e51f9801e8d4fbd1bf156c86865d95 -- trader/shadow_demotion_test.go
+commit d4ab87db8ad3445ccd76477b4321d7aec9597139
+Author: johnwick2921-cyber <johnwick2921@gmail.com>
+Date:   Fri Sep 11 01:29:22 2026 -0500
+
+    one-setup: five pre-existing wide-book fixtures (fvg_entry, sweep_reclaim split, R:R at the seam, loopback placement, config flip) declare one_setup OFF — their subject is not one-setup and E2 proves OFF is today's book byte for byte
+
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>

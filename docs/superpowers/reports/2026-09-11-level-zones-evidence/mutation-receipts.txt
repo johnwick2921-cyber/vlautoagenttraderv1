@@ -1,0 +1,132 @@
+── mutating trader/auto_trader.go
+   edit landed:
+     -	at.logLevelZonesBootAt(time.Now())
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesProductionWiring (0.00s)
+     FAIL
+     FAIL	nofx/trader	0.010s
+     FAIL
+
+── mutating kernel/level_zones.go
+   edit landed:
+     -		z.FamilyCount = min(len(z.Families), o.FamilyCap)
+     +		z.FamilyCount = min(len(z.Sources), o.FamilyCap)
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
+     FAIL
+     FAIL	nofx/kernel	0.017s
+     FAIL
+
+── mutating kernel/level_zones.go
+   edit landed:
+     -		z.Families = appendDistinct(z.Families, ZoneFamily(l.Kind))
+     +		z.Families = appendDistinct(z.Families, "all-one-family")
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
+     FAIL
+     FAIL	nofx/kernel	0.017s
+     FAIL
+
+── mutating trader/auto_trader_planner.go
+   edit landed:
+     -	zoneView := kernel.BuildLevelZones(researchRaw, price, in.ATR5m, kernel.LevelZoneInputs(researchRaw, zoneSeries, now), kernel.ResolveZoneOptions(maxLevels), now)
+     +	zoneView := kernel.BuildLevelZones(researchRaw, price, in.ATR5m, kernel.LevelZoneInputs(nil, zoneSeries, now), kernel.ResolveZoneOptions(maxLevels), now)
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesProductionWiring (0.00s)
+     FAIL
+     FAIL	nofx/trader	0.010s
+     FAIL
+
+── mutating trader/auto_trader_planner.go
+   edit landed:
+     -	zoneView := kernel.BuildLevelZones(researchRaw, price, in.ATR5m, kernel.LevelZoneInputs(researchRaw, zoneSeries, now), kernel.ResolveZoneOptions(maxLevels), now)
+     +	zoneView := kernel.BuildLevelZones(nil, price, in.ATR5m, kernel.LevelZoneInputs(researchRaw, zoneSeries, now), kernel.ResolveZoneOptions(maxLevels), now)
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesProductionWiring (0.00s)
+     FAIL
+     FAIL	nofx/trader	0.010s
+     FAIL
+
+── mutating kernel/level_zones.go
+   edit landed:
+     -				if d > o.MergeATR*atr5m {
+     +				if d > .01*atr5m {
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesOwnerSnapshot (0.01s)
+     --- FAIL: TestLevelZonesCompatibilityAndNoChain (0.00s)
+     FAIL
+     FAIL	nofx/kernel	0.017s
+     FAIL
+
+── mutating kernel/level_zones.go
+   edit landed:
+     -	s := ZoneSource{Kind: l.Kind, TF: l.TF, Price: l.Price, Label: l.Label, FormedAt: identityInt64(l.FormedAtMs), PriorTouches: in.PriorTouches}
+     +	s := ZoneSource{Kind: l.Kind, TF: l.TF, Price: l.Price, Label: "lost", FormedAt: identityInt64(l.FormedAtMs), PriorTouches: in.PriorTouches}
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesOwnerSnapshot (0.01s)
+     FAIL
+     FAIL	nofx/kernel	0.016s
+     FAIL
+
+── mutating kernel/level_zones.go
+   edit landed:
+     +			if z.Sources[0].TF == "1d" { rank *= 1.2 }
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesRankingIgnoresHTFAndKeepsAllReferences (0.00s)
+     FAIL
+     FAIL	nofx/kernel	0.016s
+     FAIL
+
+── mutating kernel/planner_prompt.go
+   edit landed:
+     -		b.WriteString(in.Zones.Render())
+     +		b.WriteString("")
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesProductionWiring (0.00s)
+     FAIL
+     FAIL	nofx/trader	0.010s
+     FAIL
+
+── mutating kernel/level_zones.go
+   edit landed:
+     -		s := zoneSource(l, inputs[ZoneSourceKey(l)], o)
+     +		s := zoneSource(l, ZoneWidthInput{}, o)
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesOwnerSnapshot (0.01s)
+     --- FAIL: TestLevelZonesRankingIgnoresHTFAndKeepsAllReferences (0.00s)
+     --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
+     FAIL
+     FAIL	nofx/kernel	0.017s
+     FAIL
+
+── mutating kernel/level_zones.go
+   edit landed:
+     -		width := math.Max(*in.Wick, o.WidthK*in.ATR)
+     +		width := math.Max(*in.Wick, .01*in.ATR)
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestLevelZonesWidthFamilyAndUnknown (0.00s)
+     FAIL
+     FAIL	nofx/kernel	0.017s
+     FAIL

@@ -42,11 +42,11 @@ func TestF1_RealRR_HandComputedMatrix(t *testing.T) {
 	}{
 		// LONG: risk = entry-SL, reward = TP-entry.
 		{"long 3.0 exact-threshold PASS", "open_long", 100, 90, 130, 3.0, 3.0, false}, // 30/10=3.0 ≥ 3.0
-		{"long 2.5 below-min FAIL", "open_long", 100, 90, 125, 3.0, 2.5, true},         // 25/10=2.5 < 3.0
-		{"long 2.0 above-min PASS", "open_long", 100, 80, 140, 1.5, 2.0, false},        // 40/20=2.0 ≥ 1.5
+		{"long 2.5 below-min FAIL", "open_long", 100, 90, 125, 3.0, 2.5, true},        // 25/10=2.5 < 3.0
+		{"long 2.0 above-min PASS", "open_long", 100, 80, 140, 1.5, 2.0, false},       // 40/20=2.0 ≥ 1.5
 		// SHORT: risk = SL-entry, reward = entry-TP.
 		{"short 3.0 exact-threshold PASS", "open_short", 100, 110, 70, 3.0, 3.0, false}, // 30/10=3.0 ≥ 3.0
-		{"short 1.5 below-min FAIL", "open_short", 100, 110, 85, 3.0, 1.5, true},         // 15/10=1.5 < 3.0
+		{"short 1.5 below-min FAIL", "open_short", 100, 110, 85, 3.0, 1.5, true},        // 15/10=1.5 < 3.0
 		// Zero/negative risk: stop ABOVE entry for a long (SL<TP still holds, so the
 		// SL-vs-TP check passes; the entry-vs-SL wrong side is validateDecision's).
 		{"long stop-through-entry REJECT", "open_long", 100, 105, 130, 3.0, 0, true}, // risk = -5 ≤ 0

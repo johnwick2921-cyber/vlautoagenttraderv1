@@ -8,6 +8,8 @@ import (
 	"nofx/market"
 
 	"github.com/gin-gonic/gin"
+	"nofx/kernel"
+	"time"
 )
 
 // handleTraderList Trader list
@@ -144,6 +146,27 @@ func (s *Server) handleAccount(c *gin.Context) {
 	if err != nil {
 		SafeInternalError(c, "Get account info", err)
 		return
+	}
+	// P&L-TRUTH WAVE (2026-09-01): the dashboard header used to show the
+	// NT8-native daily_pnl (permanently 0.00) beside a +212.00 ledger day
+	// total. The ledger figure — the SAME rule as the position-history footer
+	// (rows closed today CT, unknown-P&L / test-seam reasons out, strict
+	// pnl_corrected, unresolved counted + excluded) — now rides beside it,
+	// labelled. The NT8 fields stay for their other readers.
+	if s.store != nil {
+		nowCT := time.Now().In(kernel.CTLocation())
+		dayStart := time.Date(nowCT.Year(), nowCT.Month(), nowCT.Day(), 0, 0, 0, 0, kernel.CTLocation())
+		ledger, lerr := s.store.Position().GetLedgerDayTotal(traderID, c.Query("account"), dayStart.UnixMilli(), dayStart.Add(24*time.Hour).UnixMilli())
+		if lerr != nil {
+			logger.Warnf("🧾 ledger day total unavailable for %s: %v", traderID, lerr)
+			account["ledger_day_status"] = "UNRESOLVED: " + lerr.Error()
+		} else {
+			account["ledger_day_pnl"] = ledger.Total
+			account["ledger_day_resolved"] = ledger.Resolved
+			account["ledger_day_unresolved"] = ledger.Unresolved
+			account["ledger_day_date"] = dayStart.Format("2006-01-02")
+			account["ledger_day_source"] = "trader_positions.pnl_corrected (strict; same rule as the position-history footer)"
+		}
 	}
 
 	logger.Infof("✓ Returning account info [%s]: equity=%.2f, available=%.2f, pnl=%.2f (%.2f%%)",
@@ -370,6 +393,26 @@ func (s *Server) handleOrderFills(c *gin.Context) {
 }
 
 // handleOpenOrders Get open orders (pending SL/TP) from exchange
+// handleCutoverGate (CLASS 33, 2026-09-02) answers the FIVE-leg pre-cutover
+// gate in ONE payload so an agent cannot quote four legs and skip the fifth.
+// Leg 4 now reads the armed_orders ledger (it was a stub returning empty and
+// passed vacuously at every cutover 35 → 41); leg 5 is in-flight planner work,
+// which the rite never checked at all (2026-08-31 17:34 CT: a kill landed on
+// attempt 3/3 and the chain died silently).
+func (s *Server) handleCutoverGate(c *gin.Context) {
+	_, traderID, err := s.getTraderFromQuery(c)
+	if err != nil {
+		SafeBadRequest(c, "Invalid trader ID")
+		return
+	}
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil || at == nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	c.JSON(http.StatusOK, at.CutoverGateStatus())
+}
+
 func (s *Server) handleOpenOrders(c *gin.Context) {
 	_, traderID, err := s.getTraderFromQuery(c)
 	if err != nil {

@@ -1,0 +1,29 @@
+import collections,datetime,json,pathlib,re,sqlite3,zoneinfo
+c=sqlite3.connect('file:/home/hoang/nofx/data/data.db?mode=ro',uri=True);c.row_factory=sqlite3.Row;c.execute('PRAGMA query_only=ON');c.execute('BEGIN')
+CT=zoneinfo.ZoneInfo('America/Chicago');out=pathlib.Path('/tmp/confirmation-truth-blast')
+def ms(s):return int(datetime.datetime.fromisoformat(s.replace('Z','+00:00')).timestamp()*1000)
+plans=[];known=set()
+for r in c.execute('SELECT rowid,plan_id,version,trade_date,session,created_at,doc FROM plans ORDER BY rowid'):
+ d=json.loads(r['doc']);plans.append({'rowid':r['rowid'],'plan_id':r['plan_id'],'version':r['version'],'trade_date':r['trade_date'],'session':r['session'],'birth_ms':ms(r['created_at']),'doc':d});known.add((r['plan_id'],r['version']))
+bars=[dict(r) for r in c.execute("SELECT open_time_ms,o,h,l,c,v FROM bars WHERE symbol='MNQ' AND tf='1m' ORDER BY open_time_ms")]
+counts=collections.Counter();decisions=[]
+for r in c.execute("SELECT id,plan_id,plan_version,timestamp,system_prompt,input_prompt FROM decision_records WHERE plan_id IS NOT NULL AND plan_id<>'' ORDER BY id"):
+ if (r['plan_id'],r['plan_version']) not in known:counts['unmatched_plan']+=1;continue
+ counts['matched_decisions']+=1
+ clock=re.search(r'Snapshot: (\d\d:\d\d:\d\d) CT',r['system_prompt'] or '')
+ date=re.search(r'Time: (\d{4}-\d\d-\d\d) \d\d:\d\d CT',r['input_prompt'] or '')
+ now=0;why=''
+ if clock and date:now=ms(date.group(1)+'T'+clock.group(1)+'-05:00')
+ else:why='missing recorded snapshot clock';counts['missing_snapshot_clock']+=1
+ # All corpus dates fall in August/September 2026 (CDT); verify offset rather than infer it.
+ if now:assert datetime.datetime.fromtimestamp(now/1000,CT).utcoffset()==datetime.timedelta(hours=-5)
+ lines=[x.strip() for x in (r['system_prompt'] or '').splitlines() if re.match(r'\s*S\d+ confirm:',x)]
+ decisions.append({'id':r['id'],'plan_id':r['plan_id'],'version':r['plan_version'],'snapshot_ms':now,'recorded_ms':ms(r['timestamp']),'clock_error':why,'confirm_lines':lines})
+settings={}
+for line in pathlib.Path('/home/hoang/nofx/.env').read_text().splitlines():
+ if '=' in line:
+  k,v=line.split('=',1)
+  if k in ['BD_MIN_CLOSES','BD_MIN_DISP_ATR','BD_MAX_LEVEL_DIST_ATR','VOID_SCOPE_BARS','ACCEPT_HOLD_MIN']:settings[k]=v.strip().strip('\"\'')
+payload={'captured_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'plans':plans,'bars':bars,'decisions':decisions,'settings':settings,'counts':dict(counts)}
+(out/'input.json').write_text(json.dumps(payload,separators=(',',':')))
+print(json.dumps({'plans':len(plans),'scenarios':sum(len(p['doc'].get('scenarios',[])) for p in plans),'bars_1m':len(bars),'decisions':len(decisions),'counts':dict(counts),'settings':settings,'bytes':(out/'input.json').stat().st_size}))

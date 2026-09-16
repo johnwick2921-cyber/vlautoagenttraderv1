@@ -42,11 +42,109 @@ function formatDate(dateStr: string): string {
   const date = new Date(dateStr)
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('zh-CN', {
+    timeZone: 'America/Chicago', // owner contract: Houston time for every viewer
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+// ── LEDGER-SURFACE HONESTY (2026-08-31, no engine changes) ─────────────────
+// The ledger excludes close_reason IN (reconcile_flat, unresolved) from every
+// P&L sum, and the E7 closeout promised e7_farside_test rows are excluded from
+// strategy P&L. This surface mirrors those rules so the VISIBLE rows and the
+// VISIBLE totals agree with the ledger.
+
+// Reasons whose P&L is UNKNOWN (rendered "—", never summed).
+export const UNKNOWN_PNL_REASONS = ['reconcile_flat', 'unresolved']
+// Test-seam rows (E7 far-side experiments) — never real trades, never summed.
+export const TEST_SEAM_REASONS = ['e7_farside_test']
+
+export type PositionKind = 'normal' | 'unresolved' | 'duplicate' | 'hidden'
+
+// effectivePnl mirrors the store aggregate rule: corrections win, then realized.
+export function effectivePnl(p: HistoricalPosition): number {
+  if (typeof p.pnl_corrected === 'number' && !isNaN(p.pnl_corrected)) {
+    return p.pnl_corrected
+  }
+  return p.realized_pnl || 0
+}
+
+// classifyPosition — deterministic state per the dispatch:
+//   unresolved  → shown, "—" + "exit unknown" badge
+//   duplicate   → hidden unless the "show duplicates" toggle; greyed + "duplicate of #N"
+//   hidden      → reconcile_flat without duplicate evidence + test-seam rows — excluded entirely
+//   normal      → shown, P&L rendered
+// A duplicate is a reconcile_flat row whose entry_order_id matches a REAL
+// (non-unknown, non-test) close — the 575/576 and 578/577 pairs.
+export function classifyPosition(
+  p: HistoricalPosition,
+  all: HistoricalPosition[]
+): PositionKind {
+  const reason = (p.close_reason || '').trim()
+  if (reason === 'unresolved') return 'unresolved'
+  if (TEST_SEAM_REASONS.includes(reason)) return 'hidden'
+  if (UNKNOWN_PNL_REASONS.includes(reason)) {
+    const dupeOf = all.find(
+      (q) =>
+        q.id !== p.id &&
+        !!q.entry_order_id &&
+        q.entry_order_id === p.entry_order_id &&
+        !UNKNOWN_PNL_REASONS.includes((q.close_reason || '').trim()) &&
+        !TEST_SEAM_REASONS.includes((q.close_reason || '').trim())
+    )
+    return dupeOf ? 'duplicate' : 'hidden'
+  }
+  return 'normal'
+}
+
+// duplicateOfId returns the REAL row id a duplicate row shadows (0 = none).
+export function duplicateOfId(
+  p: HistoricalPosition,
+  all: HistoricalPosition[]
+): number {
+  const reason = (p.close_reason || '').trim()
+  if (!UNKNOWN_PNL_REASONS.includes(reason)) return 0
+  const dupeOf = all.find(
+    (q) =>
+      q.id !== p.id &&
+      !!q.entry_order_id &&
+      q.entry_order_id === p.entry_order_id &&
+      !UNKNOWN_PNL_REASONS.includes((q.close_reason || '').trim()) &&
+      !TEST_SEAM_REASONS.includes((q.close_reason || '').trim())
+  )
+  return dupeOf ? dupeOf.id : 0
+}
+
+// isTodayCT reports whether an epoch-ms timestamp falls on today's CT date.
+function isTodayCT(ms: number): boolean {
+  if (!ms || ms <= 0) return false
+  const today = new Date().toLocaleDateString('en-US', {
+    timeZone: 'America/Chicago',
+  })
+  const day = new Date(ms).toLocaleDateString('en-US', {
+    timeZone: 'America/Chicago',
+  })
+  return day === today
+}
+
+// computeDayTotal mirrors the ledger's GetSessionDayActivity rule exactly:
+// rows closed today (CT), close_reason NOT unknown/test-seam, not a duplicate,
+// and pnl_corrected present (legacy unverified rows excluded — the A-2 rule).
+export function computeDayTotal(positions: HistoricalPosition[]): number {
+  const kinds = new Map<number, PositionKind>()
+  for (const p of positions) {
+    kinds.set(p.id, classifyPosition(p, positions))
+  }
+  let total = 0
+  for (const p of positions) {
+    if (kinds.get(p.id) !== 'normal') continue
+    if (!isTodayCT(new Date(p.exit_time || 0).getTime())) continue
+    if (typeof p.pnl_corrected !== 'number' || isNaN(p.pnl_corrected)) continue
+    total += p.pnl_corrected
+  }
+  return Math.round(total * 100) / 100
 }
 
 // Stats Card Component with formula tooltip
@@ -240,13 +338,21 @@ function DirectionStatsCard({
 }
 
 // Position Row Component
-function PositionRow({ position }: { position: HistoricalPosition }) {
+function PositionRow({
+  position,
+  kind,
+  duplicateOf,
+}: {
+  position: HistoricalPosition
+  kind: PositionKind
+  duplicateOf: number
+}) {
   const side = position.side || ''
   const isLong = side.toUpperCase() === 'LONG'
-  const realizedPnl = position.realized_pnl || 0
-  // Reconcile-flat orphan closes have NO captured exit fill → realized P&L is
-  // UNKNOWN, not a real $0. Render "—" instead of a misleading breakeven.
-  const pnlUnknown = (position.close_reason || '') === 'reconcile_flat'
+  const realizedPnl = effectivePnl(position)
+  // unresolved and duplicate rows render "—" (their P&L is unknown / not a
+  // real trade). normal rows render the ledger-effective number.
+  const pnlUnknown = kind === 'unresolved' || kind === 'duplicate'
   const isProfitable = realizedPnl >= 0
   const sideColor = isLong ? '#0ECB81' : '#F6465D'
   const pnlColor = isProfitable ? '#0ECB81' : '#F6465D'
@@ -281,7 +387,10 @@ function PositionRow({ position }: { position: HistoricalPosition }) {
   return (
     <tr
       className="transition-all duration-200 hover:bg-white/5"
-      style={{ borderBottom: '1px solid #2B3139' }}
+      style={{
+        borderBottom: '1px solid #2B3139',
+        opacity: kind === 'duplicate' ? 0.55 : 1,
+      }}
     >
       {/* Symbol */}
       <td className="py-3 px-4">
@@ -302,6 +411,32 @@ function PositionRow({ position }: { position: HistoricalPosition }) {
           >
             {side}
           </span>
+          {kind === 'duplicate' && duplicateOf > 0 && (
+            <span
+              className="px-2 py-0.5 rounded text-xs font-semibold"
+              style={{
+                background: '#2B3139',
+                color: '#848E9C',
+                border: '1px solid #3A424B',
+              }}
+              title="Same NT8 position as another row — not a separate trade"
+            >
+              duplicate of #{duplicateOf}
+            </span>
+          )}
+          {kind === 'unresolved' && (
+            <span
+              className="px-2 py-0.5 rounded text-xs font-semibold"
+              style={{
+                background: '#2B3139',
+                color: '#F0B90B',
+                border: '1px solid #3A424B',
+              }}
+              title="NT8 went flat but no close frame and no netting fill exist — the real exit price is unknown"
+            >
+              exit unknown
+            </span>
+          )}
         </div>
       </td>
 
@@ -343,7 +478,11 @@ function PositionRow({ position }: { position: HistoricalPosition }) {
           <div
             className="font-mono font-semibold"
             style={{ color: '#848E9C' }}
-            title="Exit fill not captured (NT8 reported flat on reconcile) — realized P&L unknown"
+            title={
+              kind === 'duplicate'
+                ? 'Duplicate row — the P&L belongs to the real trade it shadows'
+                : 'Exit unknown — NT8 went flat without a close frame or netting fill'
+            }
           >
             —
           </div>
@@ -409,6 +548,7 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
   const [filterSide, setFilterSide] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'time' | 'pnl' | 'pnl_pct'>('time')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [showDuplicates, setShowDuplicates] = useState<boolean>(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -460,9 +600,33 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
     return Array.from(symbols).sort()
   }, [positions])
 
+  // LEDGER-SURFACE HONESTY — classify every row once. hidden rows (test-seam +
+  // evidence-less reconcile_flat) never render; duplicates render only when the
+  // toggle is on; totals only ever sum normal rows.
+  const classified = useMemo(() => {
+    const kinds = new Map<number, PositionKind>()
+    const dupes = new Map<number, number>()
+    for (const p of positions) {
+      kinds.set(p.id, classifyPosition(p, positions))
+      if (kinds.get(p.id) === 'duplicate') {
+        dupes.set(p.id, duplicateOfId(p, positions))
+      }
+    }
+    return { kinds, dupes }
+  }, [positions])
+
   // Filtered and sorted positions (before pagination)
   const filteredAndSortedPositions = useMemo(() => {
     let result = [...positions]
+
+    // Ledger-honesty exclusions: test-seam + evidence-less reconcile_flat rows
+    // are never visible; duplicates only when the toggle is on.
+    result = result.filter((p) => {
+      const kind = classified.kinds.get(p.id) ?? 'normal'
+      if (kind === 'hidden') return false
+      if (kind === 'duplicate' && !showDuplicates) return false
+      return true
+    })
 
     // Apply filters
     if (filterSymbol !== 'all') {
@@ -499,7 +663,31 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
     })
 
     return result
-  }, [positions, filterSymbol, filterSide, sortBy, sortOrder])
+  }, [
+    positions,
+    classified,
+    showDuplicates,
+    filterSymbol,
+    filterSide,
+    sortBy,
+    sortOrder,
+  ])
+
+  // The visible total sums ONLY normal rows — so the rows on screen and the
+  // number beneath them always agree (duplicates/"—" rows contribute nothing).
+  const visibleTotal = useMemo(() => {
+    let sum = 0
+    for (const p of filteredAndSortedPositions) {
+      if (classified.kinds.get(p.id) === 'normal') {
+        sum += effectivePnl(p)
+      }
+    }
+    return Math.round(sum * 100) / 100
+  }, [filteredAndSortedPositions, classified])
+
+  // Day total — the SAME rule the ledger's session-day query uses
+  // (unknown/test-seam/duplicate excluded, corrections win, A-2 NULLs out).
+  const dayTotal = useMemo(() => computeDayTotal(positions), [positions])
 
   // Pagination calculations
   const totalFilteredCount = filteredAndSortedPositions.length
@@ -839,6 +1027,18 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={() => setShowDuplicates((v) => !v)}
+              className="px-3 py-1.5 text-sm rounded transition-colors"
+              style={{
+                background: showDuplicates ? '#2B3139' : 'transparent',
+                border: '1px solid #2B3139',
+                color: showDuplicates ? '#EAECEF' : '#848E9C',
+              }}
+              title="Duplicate rows shadow the same NT8 position as a real trade (their P&L belongs to the real row)"
+            >
+              duplicates: {showDuplicates ? 'shown' : 'hidden'}
+            </button>
             <span className="text-sm" style={{ color: '#848E9C' }}>
               {t('positionHistory.sort', language)}:
             </span>
@@ -943,7 +1143,12 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
             </thead>
             <tbody>
               {filteredPositions.map((position) => (
-                <PositionRow key={position.id} position={position} />
+                <PositionRow
+                  key={position.id}
+                  position={position}
+                  kind={classified.kinds.get(position.id) ?? 'normal'}
+                  duplicateOf={classified.dupes.get(position.id) ?? 0}
+                />
               ))}
             </tbody>
           </table>
@@ -967,42 +1172,24 @@ export function PositionHistory({ traderId }: PositionHistoryProps) {
                 {t('positionHistory.totalPnL', language)}:{' '}
                 <span
                   style={{
-                    color:
-                      filteredAndSortedPositions.reduce(
-                        (sum, p) =>
-                          sum +
-                          ((p.close_reason || '') === 'reconcile_flat'
-                            ? 0
-                            : p.realized_pnl || 0),
-                        0
-                      ) >= 0
-                        ? '#0ECB81'
-                        : '#F6465D',
+                    color: visibleTotal >= 0 ? '#0ECB81' : '#F6465D',
                   }}
                 >
-                  {filteredAndSortedPositions.reduce(
-                    (sum, p) =>
-                      sum +
-                      ((p.close_reason || '') === 'reconcile_flat'
-                        ? 0
-                        : p.realized_pnl || 0),
-                    0
-                  ) >= 0
-                    ? '+'
-                    : ''}
-                  {formatNumber(
-                    filteredAndSortedPositions.reduce(
-                      (sum, p) =>
-                        sum +
-                        ((p.close_reason || '') === 'reconcile_flat'
-                          ? 0
-                          : p.realized_pnl || 0),
-                      0
-                    )
-                  )}
+                  {visibleTotal >= 0 ? '+' : ''}
+                  {formatNumber(visibleTotal)}
                 </span>
               </span>
             )}
+            <span title="Same exclusion rule as the ledger (unknown / test-seam / duplicate rows excluded, corrections win)">
+              Today (CT):{' '}
+              <span
+                className="font-mono font-semibold"
+                style={{ color: dayTotal >= 0 ? '#0ECB81' : '#F6465D' }}
+              >
+                {dayTotal >= 0 ? '+' : ''}
+                {formatNumber(dayTotal)}
+              </span>
+            </span>
           </div>
 
           {/* Right: Pagination controls */}

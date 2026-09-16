@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"nofx/config"
@@ -316,7 +317,27 @@ func (s *Server) handleUpdateExchangeConfigs(c *gin.Context) {
 		// Don't return error here since exchange config was successfully updated to database
 	}
 
-	logger.Infof("✓ Exchange config updated: %+v", req.Exchanges)
+	// SECURITY (P0 S5): this used to be `logger.Infof(... "%+v", req.Exchanges)`,
+	// which wrote PLAINTEXT exchange API keys, secret keys, passphrases and wallet
+	// private keys into data/nofx_*.log (mode 0644, retained indefinitely). Every
+	// secret-bearing field is masked; non-secret fields stay readable for support.
+	safe := make([]string, 0, len(req.Exchanges))
+	for exchangeID, e := range req.Exchanges {
+		parts := []string{fmt.Sprintf("enabled:%v", e.Enabled)}
+		for label, secret := range map[string]string{
+			"key": e.APIKey, "secret": e.SecretKey, "pass": e.Passphrase,
+			"aster_pk": e.AsterPrivateKey, "lighter_pk": e.LighterPrivateKey,
+			"lighter_api_pk": e.LighterAPIKeyPrivateKey,
+		} {
+			if secret != "" {
+				parts = append(parts, label+":"+MaskSensitiveString(secret))
+			}
+		}
+		sort.Strings(parts)
+		safe = append(safe, fmt.Sprintf("%s{%s}", exchangeID, strings.Join(parts, " ")))
+	}
+	sort.Strings(safe)
+	logger.Infof("✓ Exchange config updated: %s", strings.Join(safe, " "))
 	c.JSON(http.StatusOK, gin.H{"message": "Exchange configuration updated"})
 }
 

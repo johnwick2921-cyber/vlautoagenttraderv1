@@ -72,6 +72,25 @@ export const traderApi = {
     if (!result.success) throw new Error('Failed to stop trader')
   },
 
+  // P2 (ledger-close 2026-08-19) — stop_until pause: NEW entries only.
+  async pauseTrader(
+    traderId: string,
+    body: { minutes?: number; until_ct?: string; until?: string }
+  ): Promise<void> {
+    const result = await httpClient.post(
+      `${API_BASE}/traders/${traderId}/pause`,
+      body
+    )
+    if (!result.success) throw new Error('Failed to pause trader')
+  },
+
+  async resumeTrader(traderId: string): Promise<void> {
+    const result = await httpClient.post(
+      `${API_BASE}/traders/${traderId}/resume`
+    )
+    if (!result.success) throw new Error('Failed to resume trader')
+  },
+
   async toggleCompetition(
     traderId: string,
     showInCompetition: boolean

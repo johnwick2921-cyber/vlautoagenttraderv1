@@ -3378,10 +3378,9 @@ func (a *Agent) toolGetTradeHistory(argsJSON string) string {
 		return `{"error": "no trader manager configured"}`
 	}
 
-	var trades []map[string]any
-	var totalPnL float64
-	var wins, losses int
-
+	// P&L-TRUTH WAVE: gather the sources, then build the payload through the
+	// pure, fixture-tested builder (buildTradeHistory).
+	var sources []tradeHistorySource
 	for id, t := range a.traderManager.GetAllTraders() {
 		positions, err := a.store.Position().GetClosedPositions(id, args.Limit)
 		if err != nil {
@@ -3391,73 +3390,107 @@ func (a *Agent) toolGetTradeHistory(argsJSON string) string {
 		if len(tid) > 8 {
 			tid = tid[:8]
 		}
-		for _, pos := range positions {
-			pnl := pos.RealizedPnL
-			totalPnL += pnl
-			if pnl >= 0 {
-				wins++
-			} else {
-				losses++
-			}
+		sources = append(sources, tradeHistorySource{Name: t.GetName(), TID: tid, Positions: positions})
+	}
+	payload := buildTradeHistory(sources, args.Limit)
+	if payload == nil {
+		return `{"trades": [], "message": "no closed trades found"}`
+	}
+	result, _ := json.Marshal(payload)
+	return string(result)
+}
 
+// tradeHistorySource is one trader's closed rows for the trade-history tool.
+type tradeHistorySource struct {
+	Name      string
+	TID       string
+	Positions []*store.TraderPosition
+}
+
+// buildTradeHistory (P&L-TRUTH WAVE, 2026-09-01, corrected-column law) is the
+// AgentBeta trade tool's payload: every figure is computed over RESOLVED rows
+// (pnl_corrected present); an UNRESOLVED row is listed with pnl=null and
+// resolved=false and excluded from every summary figure; test-seam rows are
+// quarantined. The summary carries figure + resolved n + unresolved count —
+// the strict shape. Returns nil when there are no rows at all.
+func buildTradeHistory(sources []tradeHistorySource, limit int) map[string]any {
+	var trades []map[string]any
+	var totalPnL float64
+	var wins, losses, unresolved int
+	for _, src := range sources {
+		for _, pos := range src.Positions {
+			if pos.CloseReason == store.CloseReasonTestSeam {
+				continue
+			}
+			pnl, resolved := pos.CorrectedPnL()
+			var pnlField any
+			if resolved {
+				pnlField = pnl
+				totalPnL += pnl
+				if pnl >= 0 {
+					wins++
+				} else {
+					losses++
+				}
+			} else {
+				unresolved++
+			}
 			entryTime := ""
 			if pos.EntryTime > 0 {
-				entryTime = time.Unix(pos.EntryTime/1000, 0).Format("2006-01-02 15:04")
+				entryTime = kernel.FormatCT(time.Unix(pos.EntryTime/1000, 0))
 			}
 			exitTime := ""
 			if pos.ExitTime > 0 {
-				exitTime = time.Unix(pos.ExitTime/1000, 0).Format("2006-01-02 15:04")
+				exitTime = kernel.FormatCT(time.Unix(pos.ExitTime/1000, 0))
 			}
-
 			trades = append(trades, map[string]any{
-				"trader":      t.GetName(),
-				"trader_id":   tid,
+				"id":          pos.ID,
+				"trader":      src.Name,
+				"trader_id":   src.TID,
 				"symbol":      pos.Symbol,
 				"side":        pos.Side,
 				"entry_price": pos.EntryPrice,
 				"exit_price":  pos.ExitPrice,
 				"quantity":    pos.Quantity,
 				"leverage":    pos.Leverage,
-				"pnl":         pnl,
+				"pnl":         pnlField, // corrected value, or null when unresolved
+				"resolved":    resolved,
 				"entry_time":  entryTime,
 				"exit_time":   exitTime,
 			})
 		}
 	}
-
 	if len(trades) == 0 {
-		return `{"trades": [], "message": "no closed trades found"}`
+		return nil
 	}
-
-	// Sort trades by exit time (most recent first) for consistent ordering across traders
+	// Most recent first, consistent across traders.
 	sort.Slice(trades, func(i, j int) bool {
 		ti, _ := trades[i]["exit_time"].(string)
 		tj, _ := trades[j]["exit_time"].(string)
-		return ti > tj // reverse chronological
+		return ti > tj
 	})
-
-	// Only return up to the limit
-	if len(trades) > args.Limit {
-		trades = trades[:args.Limit]
+	if limit > 0 && len(trades) > limit {
+		trades = trades[:limit]
 	}
-
 	winRate := 0.0
 	total := wins + losses
 	if total > 0 {
 		winRate = float64(wins) / float64(total) * 100
 	}
-
-	result, _ := json.Marshal(map[string]any{
+	return map[string]any{
 		"trades": trades,
 		"summary": map[string]any{
-			"total_trades": total,
-			"wins":         wins,
-			"losses":       losses,
-			"win_rate":     fmt.Sprintf("%.1f%%", winRate),
-			"total_pnl":    totalPnL,
+			// the strict shape — total_trades == resolved_trades (compat)
+			"total_trades":        total,
+			"resolved_trades":     total,
+			"unresolved_excluded": unresolved,
+			"wins":                wins,
+			"losses":              losses,
+			"win_rate":            fmt.Sprintf("%.1f%%", winRate),
+			"total_pnl":           totalPnL,
+			"pnl_column":          "pnl_corrected (strict; unresolved rows excluded, never coerced)",
 		},
-	})
-	return string(result)
+	}
 }
 
 func (a *Agent) toolGetCandidateCoins(storeUserID string, userID int64, argsJSON string) string {

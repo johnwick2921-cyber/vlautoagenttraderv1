@@ -1,0 +1,9 @@
+package main
+import("encoding/json";"os";"time";"nofx/kernel";"nofx/market")
+func main(){
+ b:=time.Date(2026,9,8,13,15,0,0,time.UTC).UnixMilli()
+ bars:=[]market.Kline{{OpenTime:b,CloseTime:b+59999,Open:100,High:100,Low:98,Close:99,Volume:1}}
+ sc:=kernel.PlanScenario{ID:"scope-probe",Condition:"breakdown_continue",Direction:"short",Breakdown:&kernel.PlanBreakdownContinue{Level:100,EntryMode:"immediate"}}
+ v:=kernel.EvaluateScenarioConfirm(sc,bars,b,b+60000)
+ json.NewEncoder(os.Stdout).Encode(struct{Now string `json:"evaluated_at"`; BucketClose string `json:"five_minute_bucket_close"`; Verdict kernel.ConfirmVerdict `json:"verdict"`}{time.UnixMilli(b+60000).UTC().Format(time.RFC3339),time.UnixMilli(b+300000).UTC().Format(time.RFC3339),v})
+}

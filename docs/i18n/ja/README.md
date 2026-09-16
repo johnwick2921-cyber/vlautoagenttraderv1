@@ -1,4 +1,4 @@
-<h1 align="center">NOFX</h1>
+<h1 align="center">VL Intelligent</h1>
 
 <p align="center">
   <strong>あなた専属の AI トレーディングアシスタント。</strong><br/>
@@ -31,7 +31,7 @@
 
 ---
 
-NOFX はオープンソースの**自律型** AI トレーディングアシスタントです。従来の AI ツールのように手動でモデルを設定し、API キーを管理し、データソースを接続する必要はありません — NOFX の AI は**市場を自ら認識し、モデルを自ら選択し、データを自ら取得します**。人間の介入はゼロ。あなたは戦略を設定するだけ、残りは AI が処理します。
+VL Intelligent はオープンソースの**自律型** AI トレーディングアシスタントです。従来の AI ツールのように手動でモデルを設定し、API キーを管理し、データソースを接続する必要はありません — VL Intelligent の AI は**市場を自ら認識し、モデルを自ら選択し、データを自ら取得します**。人間の介入はゼロ。あなたは戦略を設定するだけ、残りは AI が処理します。
 
 **完全自律**: AI がどのモデルを使うか、どの市場データを取得するか、いつ取引するかを自ら判断します。手動のモデル設定不要。複数サービスの API キー管理不要。USDC ウォレットに入金して実行するだけ。
 
@@ -49,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 <p align="center">
   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
-    <img src="../../../screenshots/demo-cover.png" alt="NOFX クイックデモ動画" width="900"/>
+    <img src="../../../screenshots/demo-cover.png" alt="VL Intelligent クイックデモ動画" width="900"/>
   </a>
 </p>
 

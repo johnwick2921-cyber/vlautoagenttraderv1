@@ -1,0 +1,198 @@
+/* VL DESIGN SYSTEM — Plan Card tokens (single source of truth).
+ * Formalized from PLAN-CARD-DESIGN-SYSTEM.md (the LAW). Components consume
+ * these tokens ONLY — any raw hex/px in a Plan Card component is a review flag.
+ * App is dark-only (no light/dark swap), matching the existing index.css. */
+
+:root {
+  /* ── color ── */
+  --vl-ink: #0c0e12;
+  --vl-card: #14171d;
+  --vl-card-2: #181c23;
+  --vl-gold: #c9a24b;
+  --vl-gold-dim: rgba(201, 162, 75, 0.14);
+  --vl-gold-line: rgba(201, 162, 75, 0.22);
+  --vl-ivory: #e8e3d8;
+  --vl-muted: #8a8f98;
+  --vl-faint: #5a6069;
+  --vl-long: #3fbf8f;
+  --vl-short: #e06c6c;
+  --vl-hair: rgba(232, 227, 216, 0.08);
+
+  /* ── semantic aliases (never use raw hex in components) ── */
+  --vl-grade-a: var(--vl-gold);
+  --vl-grade-b: #9aa3ae;
+  --vl-grade-c: var(--vl-faint);
+  --vl-status-armed: var(--vl-gold);
+  --vl-status-triggered: var(--vl-long);
+  --vl-status-invalid: var(--vl-short);
+
+  /* ── multi-session (Multi-Session Handoff research) ── */
+  --vl-session-asia: #5b7fb0;
+  --vl-session-london: #c98a4b;
+  --vl-session-ny: #3fbf8f;
+  --vl-shade-active: rgba(201, 162, 75, 0.1);
+  --vl-shade-prior: rgba(232, 227, 216, 0.05);
+  --vl-night-wash: rgba(12, 14, 18, 0.55);
+  --vl-killzone-fill: rgba(201, 162, 75, 0.22);
+
+  /* ── type (3-font system) ── */
+  --vl-font-display:
+    'Cormorant Garamond', Georgia, serif; /* card titles, bias word */
+  --vl-font-ui: 'Inter', system-ui, sans-serif; /* labels, body */
+  --vl-font-data:
+    'JetBrains Mono', 'IBM Plex Mono', monospace; /* ALL prices/numerics */
+
+  /* ── spacing: 4-base scale · radius · motion ── */
+  --vl-sp-1: 4px;
+  --vl-sp-2: 8px;
+  --vl-sp-3: 12px;
+  --vl-sp-4: 16px;
+  --vl-radius-card: 14px;
+  --vl-radius-inner: 10px;
+  --vl-radius-chip: 6px;
+  --vl-motion-pulse: 2.2s;
+  --vl-motion-sheet: 200ms;
+}
+
+/* ALL prices/numerics render tabular so columns align (design-system a11y note). */
+.vl-num {
+  font-family: var(--vl-font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ITEM 15 — version chips.
+   The row WRAPS: with six versions in a 316px card interior a nowrap row pushed
+   the header buttons off the card. Every chip is a real button so a version can
+   be opened by tap and by keyboard; on touch pointers the hit area grows to the
+   44px minimum without inflating the dense desktop layout. */
+.vl-version-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.vl-version-chip {
+  font-family: var(--vl-font-data);
+  font-size: 10px;
+  line-height: 1;
+  /* WCAG 2.2 SC 2.5.8 floor is 24x24 — the chip was 26x18 and missed it on
+     height even at desktop. */
+  min-height: 24px;
+  min-width: 24px;
+  padding: 0 7px;
+  border-radius: var(--vl-radius-chip);
+  border: 1px solid var(--vl-hair);
+  color: var(--vl-muted); /* was --vl-faint: 2.83:1 on --vl-card, below AA */
+  background: transparent;
+  cursor: pointer;
+}
+.vl-version-chip:hover {
+  color: var(--vl-ivory);
+  border-color: var(--vl-gold-line);
+}
+.vl-version-chip:focus-visible {
+  outline: 2px solid var(--vl-gold);
+  outline-offset: 1px;
+}
+/* Active is NOT signalled by color alone (chips.tsx's own stated rule): it also
+   carries weight, a filled ground and aria-current. */
+.vl-version-chip[aria-current='true'] {
+  color: var(--vl-gold);
+  border-color: var(--vl-gold-line);
+  background: var(--vl-gold-dim);
+  font-weight: 700;
+}
+.vl-version-chip[data-no-trade='1'] {
+  color: var(--vl-short);
+  border-color: rgba(224, 108, 108, 0.4);
+  letter-spacing: 0.04em;
+}
+.vl-version-chip[data-no-trade='1'][aria-current='true'] {
+  color: var(--vl-short);
+  background: rgba(224, 108, 108, 0.12);
+  border-color: rgba(224, 108, 108, 0.55);
+}
+.vl-version-chip[disabled] {
+  cursor: default;
+}
+/* 44x44 on touch AND on narrow viewports. Keying only on `pointer: coarse` left
+   the target at 26x18 for anyone on a narrow window or a touch laptop reporting
+   a fine pointer — which is also what a headless verification run measures. */
+@media (pointer: coarse), (max-width: 640px) {
+  .vl-version-chip {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 8px;
+  }
+}
+
+/* Pulse for the active-session dot / triggered scenario — honors reduced-motion. */
+@keyframes vl-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.vl-pulse {
+  animation: vl-pulse var(--vl-motion-pulse) ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vl-pulse {
+    animation: none;
+  }
+}
+
+/* Bottom-sheet / side-panel slide (EditSheet, AskPlanner) — reduced-motion safe. */
+@keyframes vl-sheet-up {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.vl-sheet-in {
+  animation: vl-sheet-up var(--vl-motion-sheet) ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vl-sheet-in {
+    animation: none;
+  }
+}
+
+/* W13 — a row flashes gold ONCE when an applied re-align changed it, and the
+   inline "reviewing" glyph spins. Both honor prefers-reduced-motion. */
+@keyframes vl-flash-gold {
+  0% {
+    background: var(--vl-gold-dim);
+  }
+  100% {
+    background: transparent;
+  }
+}
+[data-flash='1'] {
+  animation: vl-flash-gold 1.1s ease-out 1;
+}
+@keyframes vl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.vl-spin {
+  display: inline-block;
+  animation: vl-spin 1.1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-flash='1'] {
+    animation: none;
+  }
+  .vl-spin {
+    animation: none;
+  }
+}

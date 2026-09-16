@@ -1,3 +1,4 @@
+import { PERSONA_NAME } from '../../constants/branding'
 import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -92,7 +93,9 @@ export default function HeaderBar({
           className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
         >
           <img src="/icons/vl.svg" alt="VL" className="w-7 h-7" />
-          <span className="text-lg font-bold text-nofx-gold">VL</span>
+          <span className="text-lg font-bold text-nofx-gold">
+            {PERSONA_NAME}
+          </span>
         </div>
 
         {/* Desktop Menu */}
@@ -135,6 +138,12 @@ export default function HeaderBar({
                   label: t('strategyNav', language),
                   requiresAuth: true,
                 },
+                {
+                  page: 'guide',
+                  path: ROUTES.guide,
+                  label: '📖 Guide',
+                  requiresAuth: true,
+                },
               ]
 
               const handleNavClick = (tab: (typeof navTabs)[0]) => {
@@ -150,24 +159,26 @@ export default function HeaderBar({
                 navigateInApp(tab.path)
               }
 
-              return navTabs.filter((tab) => !tab.hidden).map((tab) => (
-                <button
-                  key={tab.page}
-                  onClick={() => handleNavClick(tab)}
-                  className={`text-sm font-bold transition-all duration-300 relative focus:outline-2 focus:outline-yellow-500 px-3 py-2 rounded-lg
+              return navTabs
+                .filter((tab) => !tab.hidden)
+                .map((tab) => (
+                  <button
+                    key={tab.page}
+                    onClick={() => handleNavClick(tab)}
+                    className={`text-sm font-bold transition-all duration-300 relative focus:outline-2 focus:outline-yellow-500 px-3 py-2 rounded-lg
                     ${resolvedCurrentPage === tab.page ? 'text-nofx-gold' : 'text-nofx-text-muted hover:text-nofx-gold'}`}
-                >
-                  {resolvedCurrentPage === tab.page && (
-                    <span className="absolute inset-0 rounded-lg bg-nofx-gold/15 -z-10" />
-                  )}
-                  {tab.label}
-                  {tab.badge && (
-                    <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-nofx-gold/20 text-nofx-gold font-semibold uppercase align-top relative -top-1">
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              ))
+                  >
+                    {resolvedCurrentPage === tab.page && (
+                      <span className="absolute inset-0 rounded-lg bg-nofx-gold/15 -z-10" />
+                    )}
+                    {tab.label}
+                    {tab.badge && (
+                      <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-nofx-gold/20 text-nofx-gold font-semibold uppercase align-top relative -top-1">
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                ))
             })()}
           </div>
 
@@ -378,6 +389,12 @@ export default function HeaderBar({
                       label: t('strategyNav', language),
                       requiresAuth: true,
                     },
+                    {
+                      page: 'guide',
+                      path: ROUTES.guide,
+                      label: '📖 Guide',
+                      requiresAuth: true,
+                    },
                   ]
 
                   const handleMobileNavClick = (tab: (typeof navTabs)[0]) => {
@@ -393,35 +410,37 @@ export default function HeaderBar({
                     setMobileMenuOpen(false)
                   }
 
-                  return navTabs.filter((tab) => !tab.hidden).map((tab, i) => (
-                    <motion.button
-                      key={tab.page}
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.1 + i * 0.05 }}
-                      onClick={() => handleMobileNavClick(tab)}
-                      className={`text-2xl font-black tracking-tight text-left flex items-center gap-3
+                  return navTabs
+                    .filter((tab) => !tab.hidden)
+                    .map((tab, i) => (
+                      <motion.button
+                        key={tab.page}
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.1 + i * 0.05 }}
+                        onClick={() => handleMobileNavClick(tab)}
+                        className={`text-2xl font-black tracking-tight text-left flex items-center gap-3
                         ${resolvedCurrentPage === tab.page ? 'text-nofx-gold' : 'text-zinc-500'}`}
-                    >
-                      {resolvedCurrentPage === tab.page && (
-                        <motion.div
-                          layoutId="active-indicator"
-                          className="w-1.5 h-1.5 rounded-full bg-nofx-gold"
-                        />
-                      )}
-                      {tab.label}
-                      {tab.badge && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-nofx-gold/20 text-nofx-gold font-semibold uppercase align-middle relative -top-1">
-                          {tab.badge}
-                        </span>
-                      )}
-                      {tab.requiresAuth && !isLoggedIn && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-500 font-normal tracking-wide uppercase align-middle relative -top-1">
-                          LOGIN_REQ
-                        </span>
-                      )}
-                    </motion.button>
-                  ))
+                      >
+                        {resolvedCurrentPage === tab.page && (
+                          <motion.div
+                            layoutId="active-indicator"
+                            className="w-1.5 h-1.5 rounded-full bg-nofx-gold"
+                          />
+                        )}
+                        {tab.label}
+                        {tab.badge && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-nofx-gold/20 text-nofx-gold font-semibold uppercase align-middle relative -top-1">
+                            {tab.badge}
+                          </span>
+                        )}
+                        {tab.requiresAuth && !isLoggedIn && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-500 font-normal tracking-wide uppercase align-middle relative -top-1">
+                            LOGIN_REQ
+                          </span>
+                        )}
+                      </motion.button>
+                    ))
                 })()}
 
                 {/* Original Page Links */}

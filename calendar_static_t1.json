@@ -1,0 +1,18 @@
+[
+  {"time": "2026-09-01T14:00:00Z", "currency": "USD", "title": "ISM Manufacturing PMI (static fallback)", "impact": "T1"},
+  {"time": "2026-09-01T14:00:00Z", "currency": "USD", "title": "JOLTS Job Openings (static fallback)", "impact": "T2"},
+  {"time": "2026-09-02T12:15:00Z", "currency": "USD", "title": "ADP Non-Farm Employment Change (static fallback)", "impact": "T2"},
+  {"time": "2026-09-03T14:00:00Z", "currency": "USD", "title": "ISM Services PMI (static fallback)", "impact": "T1"},
+  {"time": "2026-09-03T12:30:00Z", "currency": "USD", "title": "Unemployment Claims (static fallback)", "impact": "T2"},
+  {"time": "2026-09-04T12:30:00Z", "currency": "USD", "title": "Non-Farm Payrolls (NFP) (static fallback)", "impact": "T1"},
+  {"time": "2026-09-07T00:00:00Z", "currency": "USD", "title": "NOTE: Labor Day — CME closed (static)", "impact": "note"},
+  {"time": "2026-09-10T12:30:00Z", "currency": "USD", "title": "PPI m/m (static fallback)", "impact": "T1"},
+  {"time": "2026-09-10T12:30:00Z", "currency": "USD", "title": "Unemployment Claims (static fallback)", "impact": "T2"},
+  {"time": "2026-09-11T12:30:00Z", "currency": "USD", "title": "CPI m/m (static fallback)", "impact": "T1"},
+  {"time": "2026-09-14T00:00:00Z", "currency": "USD", "title": "NOTE: NQ roll U6→Z6 (static)", "impact": "note"},
+  {"time": "2026-09-16T12:30:00Z", "currency": "USD", "title": "Retail Sales m/m (static fallback)", "impact": "T1"},
+  {"time": "2026-09-16T18:00:00Z", "currency": "USD", "title": "FOMC Statement (static fallback)", "impact": "T1"},
+  {"time": "2026-09-16T18:30:00Z", "currency": "USD", "title": "FOMC Press Conference (static fallback)", "impact": "T1"},
+  {"time": "2026-09-17T12:30:00Z", "currency": "USD", "title": "Unemployment Claims (static fallback)", "impact": "T2"},
+  {"time": "2026-09-18T00:00:00Z", "currency": "USD", "title": "NOTE: quad-witching (static)", "impact": "note"}
+]

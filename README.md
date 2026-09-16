@@ -1,9 +1,12 @@
-<h1 align="center">NOFX</h1>
+<h1 align="center">VL Intelligent</h1>
 
 <p align="center">
   <strong>Your personal AI trading assistant.</strong><br/>
   <strong>Any market. Any model. Pay with USDC, not API keys.</strong>
 </p>
+
+> **Operator's manual + full UI reference (verified against code):**
+> [docs/README-VL-SYSTEM.md](docs/README-VL-SYSTEM.md)
 
 <p align="center">
   <a href="https://github.com/NoFxAiOS/nofx/stargazers"><img src="https://img.shields.io/github/stars/NoFxAiOS/nofx?style=for-the-badge" alt="Stars"></a>
@@ -31,7 +34,7 @@
 
 ---
 
-NOFX is an open-source **autonomous** AI trading assistant. Unlike traditional AI tools that require you to manually configure models, manage API keys, and wire up data sources — NOFX's AI **perceives markets, selects models, and fetches data entirely on its own**. Zero human intervention. You set the strategy, the AI handles everything else.
+VL Intelligent is an open-source **autonomous** AI trading assistant. Unlike traditional AI tools that require you to manually configure models, manage API keys, and wire up data sources — VL Intelligent's AI **perceives markets, selects models, and fetches data entirely on its own**. Zero human intervention. You set the strategy, the AI handles everything else.
 
 **Fully autonomous**: The AI decides which model to use, what market data to pull, when to trade — all by itself. No manual model configuration. No juggling API keys for different services. Just fund a USDC wallet and let it run.
 
@@ -49,7 +52,7 @@ Open **http://127.0.0.1:3000**. Done.
 
 <p align="center">
   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
-    <img src="screenshots/demo-cover.png" alt="NOFX quick demo video" width="900"/>
+    <img src="screenshots/demo-cover.png" alt="VL Intelligent quick demo video" width="900"/>
   </a>
 </p>
 
@@ -265,7 +268,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 ## Architecture
 
 ```
-                              NOFX
+                              VL Intelligent
     ┌─────────────────────────────────────────────────┐
     │                 Web Dashboard                     │
     │           React + TypeScript + TradingView        │
@@ -307,7 +310,7 @@ See [Contributing Guide](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.m
 
 ### Contributor Airdrop Program
 
-All contributions are tracked. When NOFX generates revenue, contributors receive airdrops.
+All contributions are tracked. When VL Intelligent generates revenue, contributors receive airdrops.
 
 **[Pinned Issues](https://github.com/NoFxAiOS/nofx/issues) get the highest rewards.**
 

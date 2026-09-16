@@ -17,7 +17,12 @@ import (
 // maxFuturesContracts caps the per-order contract count for CME futures
 // (SIM-conservative). Tune per account size; 10 MNQ ≈ $600k notional ≈ $22k
 // intraday margin, comfortably within a $50k SIM account.
-const maxFuturesContracts = 10.0
+// P0 follow-up 2026-08-17: an UNSET per-order cap used to fall back to 10 — five
+// times the researched value, i.e. "never configured" was the most permissive
+// setting. The fallback is now the researched 2. An explicit
+// max_contracts_per_order still wins (ResolveMaxContracts), so this changes the
+// default, never a choice.
+const maxFuturesContracts = 2.0
 
 // futuresOrderQuantity converts a decision's notional (position_size_usd) into
 // a clamped contract count for CME futures: contracts = notional / (price ×
@@ -42,7 +47,7 @@ func futuresOrderQuantity(symbol string, notionalUSD, price float64, maxContract
 }
 
 // resolveMaxContracts returns the futures max-contracts clamp for this trader's
-// strategy (per-strategy value, else the 10-contract venue default). Hardening D3
+// strategy (per-strategy value, else the 2-contract venue default; 6.6 comment-truth fix). Hardening D3
 // (audit F2): ALWAYS ON — the guardrails master switch no longer disables it.
 func (at *AutoTrader) resolveMaxContracts() int {
 	if at.config.StrategyConfig == nil {
@@ -108,9 +113,14 @@ func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
 	if at.store == nil || at.config.StrategyConfig == nil {
 		return "", false
 	}
-	n := at.config.StrategyConfig.RiskControl.ConsecutiveLossHalt
+	// D2 (2026-09-09) — ONE RESOLUTION, BOTH PATHS. This read the knob directly
+	// and treated 0 as OFF; the ARM path resolves N through breakerHaltN, which
+	// falls back to the [I] default when the owner has not set a value. Two
+	// resolutions of one threshold is how the two paths come to disagree about
+	// whether the desk is halted (A24: never a second copy).
+	n := breakerHaltN(at.config.StrategyConfig)
 	if n <= 0 {
-		return "", false // OFF
+		return "", false // explicitly OFF (BREAKER_HALT_N=0)
 	}
 	sinceMs := kernel.CMESessionDayStart(time.Now()).UnixMilli()
 	losses, err := at.store.Position().CountConsecutiveLossesSince(at.id, sinceMs)
@@ -126,6 +136,13 @@ func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
 
 // executeDecisionWithRecord executes AI decision and records detailed information
 func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
+	// W5.2 (weekly-bias wave) — SHADOW counter-trend annotation for entries.
+	// Log/counters ONLY: this call can never block, resize or re-grade the trade
+	// (the real gates below are untouched — W5.4 THE LAW).
+	if decision.Action == "open_long" || decision.Action == "open_short" {
+		at.applyWeeklyDecisionShadow(decision)
+	}
+
 	// Feed-down gate (NinjaTrader, TRACK A): the SIM cannot fill without market
 	// data, so an entry/flatten issued while the feed is down is rejected ("no
 	// market data") — the upstream condition behind the phantom-close mess. Refuse
@@ -137,6 +154,12 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		if down, status := at.ninjaFeedDown(); down {
 			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", decision.Action, decision.Symbol, status)
 			telemetry.IncGateBlock(at.id, "feed_down")
+			// W16/R3 — stamp the refusal like every sibling gate. This was the ONE
+			// gate that returned nil without touching actionRecord, so after
+			// f7fa2d3c (which classifies on Error != "") a feed-down skip still fell
+			// into the success branch and was recorded as an executed trade.
+			actionRecord.Success = false
+			actionRecord.Error = fmt.Sprintf("feed_down: NT8 price feed not Connected (status=%q)", status)
 			return nil
 		}
 	}
@@ -173,6 +196,57 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// P1 — BOOT INTEGRITY: a binary that is not the intended release, or whose
+	// prompt goldens drifted, must not open positions. This outranks every other
+	// gate (it means we cannot trust WHAT this process is). Closes stay allowed so
+	// an existing position can still be managed out.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, refused := kernel.TradingRefused(); refused {
+			at.logErrorf("🔐 BOOT INTEGRITY REFUSAL: %s %s BLOCKED — %s. Fix the deploy and restart; closes still work.",
+				decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "boot_integrity")
+			at.emitAlert("P0", "boot-integrity", "boot-integrity:"+kernel.CMESessionDayKey(time.Now()),
+				"🔐 Trading refused — boot integrity", reason)
+			actionRecord.Success = false
+			actionRecord.Error = "boot_integrity_refused: " + reason
+			return nil
+		}
+	}
+
+	// P2 (ledger-close 2026-08-19) — stop_until OWNER PAUSE: the FIRST owner/
+	// policy gate (system-integrity gates above rank it; every policy gate below
+	// defers to it, so a paused refusal always NAMES the pause — gate-order
+	// contract 2.4/E5). Blocks NEW entries only; closes, EOD-flat, the 60s
+	// monitor guards, and NT8 brackets continue. Master-INDEPENDENT.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, paused := at.entryPaused(); paused {
+			at.logWarnf("⏸ stop_until: %s %s REFUSED — %s. Position management continues; entries resume on expiry or POST /api/traders/:id/resume.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "stop_until")
+			actionRecord.Success = false
+			actionRecord.Error = "stop_until: " + reason
+			return nil
+		}
+	}
+
+	// P3 (ledger-close 2026-08-19) — CONTRACT-ROLL gate for the continuous
+	// symbol: within ROLL_BLOCK_DAYS_BEFORE_EXPIRY of the ACK-resolved front
+	// contract's third-Friday expiry, NEW entries are refused (the dated-code
+	// T19 gate never fires on bare "MNQ"). Runs AFTER stop_until (a paused
+	// refusal must name the pause — E5) and fail-opens when unresolved. Closes
+	// and position management are NEVER blocked; existing positions may exit.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, blocked := at.entryBlockedByRoll(time.Now()); blocked {
+			at.logWarnf("📅 contract-roll: %s %s REFUSED — %s. Position management continues; the resolver rolls to the next quarterly.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "contract_roll_resolved")
+			actionRecord.Success = false
+			actionRecord.Error = "contract_roll: " + reason
+			return nil
+		}
+	}
+
 	// D1 — consecutive-loss halt: after N consecutive losing closed trades this CME
 	// session-day, block NEW entries until the next session. Closes (open-position
 	// management) are NEVER blocked. 0 = OFF.
@@ -181,11 +255,98 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		if reason, halted := at.consecutiveLossHalted(); halted {
 			at.logWarnf("🛑 consecutive-loss halt: %s entry REFUSED — %s. No new entries until the next CME session.", decision.Symbol, reason)
 			telemetry.IncGateBlock(at.id, "consecutive_loss")
+			// W6 — P0 halt alert, deduped to once per CME session-day.
+			at.emitAlert("P0", "halt", "halt:"+kernel.CMESessionDayKey(time.Now()),
+				"🛑 Consecutive-loss halt", reason)
 			actionRecord.Success = false
 			actionRecord.Error = "consecutive_loss_halt: " + reason
 			return nil
 		}
 	}
+
+	// P2.3 — LAST-ENTRY cutoff: block NEW entries after the day-trader last-entry
+	// time (default 13:00 CT = 14:00 ET). Gated on day_plan → dormant by default.
+	// Closes (open-position management) are NEVER blocked.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, blocked := at.entryBlockedByLastEntry(); blocked {
+			at.logWarnf("🕒 last-entry cutoff: %s %s REFUSED — %s. Entries reopen next session.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "last_entry")
+			actionRecord.Success = false
+			actionRecord.Error = "last_entry_cutoff: " + reason
+			return nil
+		}
+	}
+
+	// P3.1 — SESSION GATE: entries only inside an ENABLED session window (NY-only
+	// default → closes the overnight/interim window) and outside the no-trade
+	// sub-windows (first-5m, lunch). Gated on day_plan → dormant by default.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, blocked := at.sessionEntryBlocked(); blocked {
+			at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "session_gate")
+			actionRecord.Success = false
+			actionRecord.Error = "session_gate: " + reason
+			return nil
+		}
+	}
+
+	// W9 — PLAN-MODE gate: advisory (default) never gates; direction blocks entries
+	// against the plan bias; strict blocks entries with no matched scenario cited.
+	// Gated on day_plan → dormant by default.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, blocked := at.planModeBlocked(decision); blocked {
+			at.logWarnf("📐 plan-mode: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "plan_mode")
+			actionRecord.Success = false
+			actionRecord.Error = "plan_mode: " + reason
+			return nil
+		}
+	}
+
+	// W9 — APPROVAL gate: when approval_required is ON, entries are HELD until the
+	// owner approves this CME session-day (POST /api/plan/approve). Default OFF =
+	// fully automatic. Closes are never held.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if at.approvalRequired() && !at.approvalGranted(time.Now()) {
+			at.logWarnf("✋ approval required: %s %s HELD — awaiting owner approval for this session.", decision.Symbol, decision.Action)
+			telemetry.IncGateBlock(at.id, "approval_required")
+			at.emitAlert("P0", "approval", "approval:"+kernel.CMESessionDayKey(time.Now()),
+				"✋ Entry held — approval required", decision.Symbol+" "+decision.Action)
+			actionRecord.Success = false
+			actionRecord.Error = "approval_required"
+			return nil
+		}
+	}
+
+	// CLASS 48 — the ONE canonical entry gate, shared with the arm seam. Runs
+	// AFTER the legacy decision gates and BEFORE any order leaves: scenario
+	// direction, shadow map (0C), R:R at the LIVE execution price (fixes the
+	// snapshot-reference sub-floor fills of 587/589), min-SL ×ATR5m, and
+	// one-live-arm. Refusals are logged AND recorded per path: the refusal is
+	// stamped into actionRecord (→ decision_records.execution_log +
+	// risk_check_error) with a gate-block counter.
+	switch decision.Action {
+	case "open_long", "open_short":
+		live := 0.0
+		if md, merr := market.GetWithExchange(decision.Symbol, at.exchange); merr == nil && md != nil {
+			live = md.CurrentPrice
+		}
+		reason, refused := at.entryGateForDecision(decision, live)
+		recordResearchGate("decision", "", 0, decision.CitedScenario, reason, refused)
+		if refused {
+			entryGateDecisionTelemetry(at, actionRecord, reason)
+			return nil
+		}
+	}
+
+	// P3.5 — ADVISORY: record the executor's plan citation for entries (cited/
+	// matched/off-plan match-rate via B6). Never gates — plan restricts, never
+	// compels; hard gates already ran above.
+	at.recordPlanCitation(decision)
 
 	switch decision.Action {
 	case "open_long":
@@ -221,7 +382,11 @@ const (
 func (at *AutoTrader) ntHeldPosition(symbol string) string {
 	positions, err := at.trader.GetPositions()
 	if err != nil {
-		return "" // read error → treat as flat; the existing open-path checks + reconcile cover it
+		// P0-cleanup — read error is NOT flat; say so (it changes the
+		// reconcile decision downstream).
+		at.logWarnf("⚠️ positions read failed — reconcile treats as flat, reason: %v", err)
+		telemetry.RecordError(at.id, "positions_read_failed", err.Error(), telemetry.CostNone)
+		return ""
 	}
 	for _, pos := range positions {
 		if pos["symbol"] != symbol {
@@ -412,8 +577,14 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 	// this, placeEntry errors "SetStopLoss and SetTakeProfit must be called
 	// before long".
 	if market.IsCMEFuturesSymbol(decision.Symbol) {
-		_ = at.trader.SetStopLoss(decision.Symbol, "LONG", quantity, decision.StopLoss)
-		_ = at.trader.SetTakeProfit(decision.Symbol, "LONG", quantity, decision.TakeProfit)
+		if err := at.trader.SetStopLoss(decision.Symbol, "LONG", quantity, decision.StopLoss); err != nil {
+			at.logErrorf("🚨 pre-entry bracket STOP set FAILED for LONG — %v (entry proceeds without the protective stop)", err)
+			telemetry.RecordError(at.id, "bracket_set_failed", "pre-entry SetStopLoss: "+err.Error(), telemetry.CostTradeLost)
+		}
+		if err := at.trader.SetTakeProfit(decision.Symbol, "LONG", quantity, decision.TakeProfit); err != nil {
+			at.logErrorf("🚨 pre-entry bracket TARGET set FAILED for LONG — %v (entry proceeds without the protective target)", err)
+			telemetry.RecordError(at.id, "bracket_set_failed", "pre-entry SetTakeProfit: "+err.Error(), telemetry.CostTradeLost)
+		}
 	}
 
 	// Open position
@@ -430,7 +601,8 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
 
 	// Record order to database and poll for confirmation
-	at.recordAndConfirmOrder(order, decision.Symbol, "open_long", quantity, marketData.CurrentPrice, decision.Leverage, 0)
+	at.captureEntryThesis(decision, "LONG", marketData.CurrentPrice) // Phase 3: the watcher's anchor
+	at.recordAndConfirmOrder(order, decision.Symbol, "open_long", quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence)
 
 	// Record position opening time
 	posKey := decision.Symbol + "_long"
@@ -571,7 +743,8 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
 
 	// Record order to database and poll for confirmation
-	at.recordAndConfirmOrder(order, decision.Symbol, "open_short", quantity, marketData.CurrentPrice, decision.Leverage, 0)
+	at.captureEntryThesis(decision, "SHORT", marketData.CurrentPrice) // Phase 3: the watcher's anchor
+	at.recordAndConfirmOrder(order, decision.Symbol, "open_short", quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence)
 
 	// Record position opening time
 	posKey := decision.Symbol + "_short"
@@ -646,7 +819,7 @@ func (at *AutoTrader) executeCloseLongWithRecord(decision *kernel.Decision, acti
 	}
 
 	// Record order to database and poll for confirmation
-	at.recordAndConfirmOrder(order, decision.Symbol, "close_long", quantity, marketData.CurrentPrice, 0, entryPrice)
+	at.recordAndConfirmOrder(order, decision.Symbol, "close_long", quantity, marketData.CurrentPrice, 0, entryPrice, 0)
 
 	logger.Infof("  ✓ Position closed successfully")
 	return nil
@@ -710,8 +883,16 @@ func (at *AutoTrader) executeCloseShortWithRecord(decision *kernel.Decision, act
 	}
 
 	// Record order to database and poll for confirmation
-	at.recordAndConfirmOrder(order, decision.Symbol, "close_short", quantity, marketData.CurrentPrice, 0, entryPrice)
+	at.recordAndConfirmOrder(order, decision.Symbol, "close_short", quantity, marketData.CurrentPrice, 0, entryPrice, 0)
 
 	logger.Infof("  ✓ Position closed successfully")
 	return nil
+}
+
+// isBootIntegrityGatedAction documents (and lets tests assert) which actions the
+// P1 boot-integrity refusal blocks: NEW ENTRIES ONLY. Closes, holds and waits are
+// never gated — a refused process must still be able to manage an open position
+// down to flat.
+func isBootIntegrityGatedAction(action string) bool {
+	return action == "open_long" || action == "open_short"
 }

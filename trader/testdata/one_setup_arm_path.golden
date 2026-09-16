@@ -1,0 +1,27 @@
+{
+  "rows": [
+    {
+      "condition": "reject",
+      "entry": 29490,
+      "kind": "limit",
+      "leg": 0,
+      "scenario": "S1",
+      "side": "LONG",
+      "state": "armed",
+      "stop": 29480,
+      "target": 29530
+    },
+    {
+      "condition": "reject",
+      "entry": 29500,
+      "kind": "limit",
+      "leg": 0,
+      "scenario": "S2",
+      "side": "SHORT",
+      "state": "armed",
+      "stop": 29510,
+      "target": 29460
+    }
+  ],
+  "counters": {}
+}

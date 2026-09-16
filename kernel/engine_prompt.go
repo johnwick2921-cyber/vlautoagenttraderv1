@@ -39,6 +39,14 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant, symbo
 	sb.WriteString("\n\n")
 	sb.WriteString("---\n\n")
 
+	// P0 timezone fix — the labelled clock goes FIRST, before any window
+	// bound, so the model can never pair an unlabelled window with a UTC
+	// clock (owner rule: CT is canonical everywhere).
+	if e.clockContextLine != "" {
+		sb.WriteString(e.clockContextLine)
+		sb.WriteString("\n\n")
+	}
+
 	// 1. Role definition (editable)
 	if promptSections.RoleDefinition != "" {
 		sb.WriteString(promptSections.RoleDefinition)
@@ -133,6 +141,9 @@ func (e *StrategyEngine) BuildSystemPrompt(accountEquity float64, variant, symbo
 	// 7. Output format
 	sb.WriteString("# Output Format (Strictly Follow)\n\n")
 	sb.WriteString("**Must use XML tags <reasoning> and <decision> to separate chain of thought and decision JSON, avoiding parsing errors**\n\n")
+	// P0 2026-08-19 — decision-FIRST strict contract (same truncation guard as
+	// the futures builder).
+	sb.WriteString("Output the <decision> JSON block FIRST — it is MANDATORY and must appear in every response. THEN write <reasoning>: ≤200 words, decision-focused, no restating the input data. If you are running out of room, drop reasoning — never drop <decision>.\n\n")
 	sb.WriteString("## Format Requirements\n\n")
 	sb.WriteString("<reasoning>\n")
 	sb.WriteString("Your chain of thought analysis...\n")
@@ -299,6 +310,15 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	if len(ctx.RecentOrders) > 0 {
 		sb.WriteString("## Recent Completed Trades\n")
 		for i, order := range ctx.RecentOrders {
+			// P&L-TRUTH WAVE: an UNRESOLVED row (pnl_corrected NULL) has no
+			// captured exit — it renders as UNRESOLVED with no P&L and no
+			// percentage (the old code showed "+0.00 USDT (+100.00%)").
+			if !order.Resolved {
+				sb.WriteString(fmt.Sprintf("%d. #%d %s %s | Entry %.4f→? UNRESOLVED (exit unknown) | %s→%s (%s)\n",
+					i+1, order.ID, order.Symbol, order.Side, order.EntryPrice,
+					order.EntryTime, order.ExitTime, order.HoldDuration))
+				continue
+			}
 			resultStr := "Profit"
 			if order.RealizedPnL < 0 {
 				resultStr = "Loss"
@@ -313,7 +333,9 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 	}
 
 	// Historical trading statistics (helps AI understand past performance)
-	if ctx.TradingStats != nil && ctx.TradingStats.TotalTrades > 0 {
+	// P&L-TRUTH WAVE: the block renders whenever there is ANY closed history —
+	// a session with 0 resolved and K unresolved must say so, not go silent.
+	if ctx.TradingStats != nil && (ctx.TradingStats.TotalTrades > 0 || ctx.TradingStats.UnresolvedExcluded > 0) {
 		// Get language from strategy config
 		lang := e.GetLanguage()
 
@@ -325,16 +347,17 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 
 		if lang == LangChinese {
 			sb.WriteString("## 历史交易统计\n")
-			sb.WriteString(fmt.Sprintf("总交易: %d 笔 | 盈利因子: %.2f | 夏普比率: %.2f | 盈亏比: %.2f\n",
+			sb.WriteString(fmt.Sprintf("已结算交易: %d 笔 | 盈利因子: %.2f | 夏普比率: %.2f | 盈亏比: %.2f\n",
 				ctx.TradingStats.TotalTrades,
 				ctx.TradingStats.ProfitFactor,
 				ctx.TradingStats.SharpeRatio,
 				winLossRatio))
-			sb.WriteString(fmt.Sprintf("总盈亏: %+.2f USDT | 平均盈利: +%.2f | 平均亏损: -%.2f | 最大回撤: %.1f%%\n",
-				ctx.TradingStats.TotalPnL,
+			sb.WriteString(TrackRecordLine(ctx.TradingStats, LangChinese) + "\n")
+			sb.WriteString(fmt.Sprintf("平均盈利: +%.2f | 平均亏损: -%.2f | 最大回撤: %.1f%%\n",
 				ctx.TradingStats.AvgWin,
 				ctx.TradingStats.AvgLoss,
 				ctx.TradingStats.MaxDrawdownPct))
+			sb.WriteString(TrackRecordNote(LangChinese) + "\n")
 
 			// Performance hints based on profit factor, sharpe, and drawdown
 			if ctx.TradingStats.ProfitFactor >= 1.5 && ctx.TradingStats.SharpeRatio >= 1 {
@@ -348,16 +371,19 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 			}
 		} else {
 			sb.WriteString("## Historical Trading Statistics\n")
-			sb.WriteString(fmt.Sprintf("Total Trades: %d | Profit Factor: %.2f | Sharpe: %.2f | Win/Loss Ratio: %.2f\n",
+			sb.WriteString(fmt.Sprintf("Resolved Trades: %d | Profit Factor: %.2f | Sharpe: %.2f | Win/Loss Ratio: %.2f\n",
 				ctx.TradingStats.TotalTrades,
 				ctx.TradingStats.ProfitFactor,
 				ctx.TradingStats.SharpeRatio,
 				winLossRatio))
-			sb.WriteString(fmt.Sprintf("Total PnL: %+.2f USDT | Avg Win: +%.2f | Avg Loss: -%.2f | Max Drawdown: %.1f%%\n",
-				ctx.TradingStats.TotalPnL,
+			// P&L-TRUTH WAVE: never a bare total — the figure, its resolved n and
+			// the unresolved exclusion count, in one line the model can use.
+			sb.WriteString(TrackRecordLine(ctx.TradingStats, LangEnglish) + "\n")
+			sb.WriteString(fmt.Sprintf("Avg Win: +%.2f | Avg Loss: -%.2f | Max Drawdown: %.1f%%\n",
 				ctx.TradingStats.AvgWin,
 				ctx.TradingStats.AvgLoss,
 				ctx.TradingStats.MaxDrawdownPct))
+			sb.WriteString(TrackRecordNote(LangEnglish) + "\n")
 
 			// Performance hints based on profit factor, sharpe, and drawdown
 			if ctx.TradingStats.ProfitFactor >= 1.5 && ctx.TradingStats.SharpeRatio >= 1 {
@@ -418,6 +444,13 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 		sb.WriteString("\n")
 	}
 	sb.WriteString("\n")
+
+	// G2 (regime wave 2026-08-21) — the machine structure line, advisory:
+	// per-TF trend + swings + the latest BOS/CHoCH/MSS/SWEEP event. The AI
+	// judges; no gate lives here (G1/G4 consume the same snapshot in Go).
+	if e.isFuturesInstrument() && len(ctx.Structure) > 0 {
+		sb.WriteString(StructurePromptLine(ctx.Structure) + "\n\n")
+	}
 
 	// Get language for market data formatting
 	nofxosLang := nofxos.LangEnglish
@@ -557,6 +590,54 @@ func (e *StrategyEngine) isFuturesInstrument() bool {
 	return len(coins) > 0 && market.IsCMEFuturesSymbol(coins[0])
 }
 
+// formingBarLine (P10.2) renders the newest bar's honesty label for one
+// timeframe: "current 5m bar: FORMING (closes 10:35 CT) — prior bars closed"
+// while the bar is still open at the snapshot instant, else a CLOSED line
+// naming the next close. Empty when snapshot/interval/bars are unavailable.
+func formingBarLine(tf string, tfData *market.TimeframeSeriesData, snapshotMs int64) string {
+	if snapshotMs <= 0 || tfData == nil || len(tfData.Klines) == 0 {
+		return ""
+	}
+	iv := tfIntervalMs(tf)
+	if iv <= 0 {
+		return "" // only intraday TFs carry the label (1m/5m/15m…)
+	}
+	newest := tfData.Klines[len(tfData.Klines)-1]
+	closeMs := newest.Time + iv
+	if closeMs > snapshotMs {
+		return fmt.Sprintf("current %s bar: FORMING (closes %s) — prior bars closed\n\n",
+			tf, ClockCT(time.UnixMilli(closeMs)))
+	}
+	return fmt.Sprintf("current %s bar: CLOSED at %s (next close %s)\n\n",
+		tf, ClockCT(time.UnixMilli(closeMs)), ClockCT(time.UnixMilli(closeMs+iv)))
+}
+
+// staleTFLabel (G7) appends a staleness warning under a TF table when the
+// newest CLOSED bar is older than period + FLIP_EVAL_MAX_STALE_S — the same
+// cap the flip/death evaluator uses, so the prompt and the evaluator can never
+// disagree about what "stale" means. Futures only; renders nothing when fresh.
+func staleTFLabel(tf string, tfData *market.TimeframeSeriesData, snapshotMs int64) string {
+	if snapshotMs <= 0 || tfData == nil || len(tfData.Klines) == 0 {
+		return ""
+	}
+	iv := tfIntervalMs(tf)
+	if iv <= 0 {
+		return ""
+	}
+	newest := tfData.Klines[len(tfData.Klines)-1]
+	closeMs := newest.Time + iv
+	if closeMs > snapshotMs {
+		return "" // forming — not stale by definition
+	}
+	age := snapshotMs - closeMs
+	capMs := FlipEvalMaxStaleMs()
+	if age <= iv+capMs {
+		return ""
+	}
+	return fmt.Sprintf("⚠️ %s data stale: newest close %s is %.0fs old (period %.0fs + cap %.0fs)\n\n",
+		tf, ClockCT(time.UnixMilli(closeMs)), float64(age)/1000, float64(iv)/1000, float64(capMs)/1000)
+}
+
 func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 	var sb strings.Builder
 	indicators := e.config.Indicators
@@ -636,6 +717,21 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 			if tfData, ok := data.TimeframeData[tf]; ok {
 				sb.WriteString(fmt.Sprintf("=== %s Timeframe (oldest → latest) ===\n\n", strings.ToUpper(tf)))
 				e.formatTimeframeSeriesData(&sb, tfData, indicators)
+				// P10.3 — no-data honesty: a timeframe with
+				// neither bars nor mid prices is stated, never
+				// silently omitted (master-audit v1 finding 8.5).
+				if len(tfData.Klines) == 0 && len(tfData.MidPrices) == 0 {
+					sb.WriteString("⚠️ no data available for this timeframe this cycle (feed warming up or down) — do NOT infer prices.\n\n")
+				}
+				// P10.2 — prompt honesty (owner ruling: interval cadence runs
+				// cycles MID-BAR): label the newest bar FORMING/CLOSED so the
+				// AI knows what it is looking at and may itself choose to wait
+				// for the close — its judgment now, not a code gate. Futures
+				// only; snapshot 0 (tests/legacy) renders nothing.
+				if e.isFuturesInstrument() {
+					sb.WriteString(formingBarLine(tf, tfData, e.promptSnapshotMs))
+					sb.WriteString(staleTFLabel(tf, tfData, e.promptSnapshotMs))
+				}
 			}
 		}
 	} else {
@@ -707,18 +803,7 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 
 func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *market.TimeframeSeriesData, indicators store.IndicatorConfig) {
 	if len(data.Klines) > 0 {
-		sb.WriteString("Time(UTC)      Open      High      Low       Close     Volume\n")
-		for i, k := range data.Klines {
-			t := time.Unix(k.Time/1000, 0).UTC()
-			timeStr := t.Format("01-02 15:04")
-			marker := ""
-			if i == len(data.Klines)-1 {
-				marker = "  <- current"
-			}
-			sb.WriteString(fmt.Sprintf("%-14s %-9.4f %-9.4f %-9.4f %-9.4f %-12.2f%s\n",
-				timeStr, k.Open, k.High, k.Low, k.Close, k.Volume, marker))
-		}
-		sb.WriteString("\n")
+		FormatCandleTable(sb, data.Klines, true)
 	} else if len(data.MidPrices) > 0 {
 		sb.WriteString(fmt.Sprintf("Mid prices: %s\n\n", formatFloatSlice(data.MidPrices)))
 		if indicators.EnableVolume && len(data.Volume) > 0 {
@@ -726,6 +811,78 @@ func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *ma
 		}
 	}
 
+	// W11 — the indicator-state lines are extracted to FormatIndicatorState so the
+	// day-plan planner prompt can mirror the EXACT block the executor renders.
+	FormatIndicatorState(sb, data, indicators)
+
+	sb.WriteString("\n")
+}
+
+// FormatCandleTable renders a labelled "Time(CT) Open High Low Close [Volume]"
+// table (oldest → latest) from klines — the ONE candle-table formatter the
+// repo uses. Extracted (W2b, weekly-bias wave 2026-08-30) so the session
+// planner's ## Candles block is rendered by the SAME code as the executor's
+// per-timeframe tables (never a second formatter). The newest row carries the
+// "  <- current" marker exactly as the executor always rendered it.
+func FormatCandleTable(sb *strings.Builder, klines []market.KlineBar, volume bool) {
+	FormatCandleTableNoted(sb, klines, volume, nil)
+}
+
+// FormatCandleTableNoted is the SAME formatter with a per-row note appended
+// (BARS HORIZON, 2026-09-09 — D1). notes[i] is written verbatim after row i;
+// a nil/short slice notes nothing, which is exactly what FormatCandleTable
+// passes. Adding a second formatter here was not an option: the repo renders
+// every candle table through this one function so a row can never be shaped
+// two ways.
+//
+// A24: a note NEVER changes a rendered O/H/L/C/V. It is appended text only.
+func FormatCandleTableNoted(sb *strings.Builder, klines []market.KlineBar, volume bool, notes []string) {
+	if len(klines) == 0 {
+		return
+	}
+	if volume {
+		sb.WriteString("Time(CT)       Open      High      Low       Close     Volume\n")
+	} else {
+		sb.WriteString("Time(CT)       Open      High      Low       Close\n")
+	}
+	for i, k := range klines {
+		t := time.Unix(k.Time/1000, 0).In(CTLocation())
+		timeStr := TableTimeCT(t)
+		marker := ""
+		if i == len(klines)-1 {
+			marker = "  <- current"
+		}
+		if i < len(notes) {
+			marker += notes[i]
+		}
+		if volume {
+			sb.WriteString(fmt.Sprintf("%-14s %-9.4f %-9.4f %-9.4f %-9.4f %-12.2f%s\n",
+				timeStr, k.Open, k.High, k.Low, k.Close, k.Volume, marker))
+		} else {
+			sb.WriteString(fmt.Sprintf("%-14s %-9.4f %-9.4f %-9.4f %-9.4f%s\n",
+				timeStr, k.Open, k.High, k.Low, k.Close, marker))
+		}
+	}
+	sb.WriteString("\n")
+}
+
+// KlineBars converts bar-cache Klines to prompt-table KlineBars
+// (Time = OpenTime) so the planner's candle tables and the executor's
+// timeframe tables share the ONE formatter.
+func KlineBars(klines []market.Kline) []market.KlineBar {
+	out := make([]market.KlineBar, 0, len(klines))
+	for _, k := range klines {
+		out = append(out, market.KlineBar{Time: k.OpenTime, Open: k.Open, High: k.High, Low: k.Low, Close: k.Close, Volume: k.Volume})
+	}
+	return out
+}
+
+// FormatIndicatorState writes the toggle-gated, configured-period-aware indicator
+// lines (EMA/MACD/RSI/ATR/BOLL) for one timeframe's series — the SAME indicator
+// state the executor prompt renders. Extracted (W11) so the planner INDICATORS
+// mirror is byte-identical to the executor's, never a re-derivation. Pure: reads
+// only `data` + `indicators`; emits nothing for disabled toggles / empty series.
+func FormatIndicatorState(sb *strings.Builder, data *market.TimeframeSeriesData, indicators store.IndicatorConfig) {
 	if indicators.EnableEMA {
 		if len(data.EMAByPeriod) > 0 {
 			// Configured periods drive the labels + values (e.g. EMA9/EMA21/EMA200),
@@ -812,8 +969,6 @@ func (e *StrategyEngine) formatTimeframeSeriesData(sb *strings.Builder, data *ma
 			sb.WriteString(fmt.Sprintf("BOLL Lower: %s\n", formatFloatSlice(data.BOLLLower)))
 		}
 	}
-
-	sb.WriteString("\n")
 }
 
 func (e *StrategyEngine) formatQuantData(data *QuantData) string {
@@ -926,4 +1081,32 @@ func formatFloatSlice(values []float64) string {
 		strValues[i] = fmt.Sprintf("%.4f", v)
 	}
 	return "[" + strings.Join(strValues, ", ") + "]"
+}
+
+// TrackRecordLine (P&L-TRUTH WAVE, 2026-09-01) — the ONE track-record line
+// every prompt surface renders: the strict corrected figure, the resolved
+// count it is measured over, and the unresolved exclusion count. Never a bare
+// total; a resolved count of zero says so rather than rendering nothing.
+func TrackRecordLine(st *TradingStats, lang Language) string {
+	if st == nil {
+		return ""
+	}
+	if lang == LangChinese {
+		if st.TotalTrades == 0 {
+			return fmt.Sprintf("战绩: 未结算 — 0 笔已结算交易（%d 笔未结算交易已排除 — 见注）", st.UnresolvedExcluded)
+		}
+		return fmt.Sprintf("战绩: %+.2f，基于 %d 笔已结算交易（%d 笔未结算交易已排除 — 见注）", st.TotalPnL, st.TotalTrades, st.UnresolvedExcluded)
+	}
+	if st.TotalTrades == 0 {
+		return fmt.Sprintf("Track record: UNRESOLVED — 0 resolved trades (%d unresolved trades excluded — see note).", st.UnresolvedExcluded)
+	}
+	return fmt.Sprintf("Track record: %+.2f over %d resolved trades (%d unresolved trades excluded — see note).", st.TotalPnL, st.TotalTrades, st.UnresolvedExcluded)
+}
+
+// TrackRecordNote explains the exclusion in one line.
+func TrackRecordNote(lang Language) string {
+	if lang == LangChinese {
+		return "注: 未结算交易没有已核实的出场成交，其盈亏未知 — 永远不计入、不折算为原始值。"
+	}
+	return "Note: an unresolved trade has no verified exit fill; its P&L is UNKNOWN and is never counted, never coerced to a raw value."
 }

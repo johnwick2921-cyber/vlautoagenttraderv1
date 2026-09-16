@@ -1,0 +1,22 @@
+package main
+import("encoding/json";"fmt";"os";"time";"nofx/kernel";"nofx/market")
+type item struct{Name string `json:"name"`;Met bool `json:"met"`}
+func main(){base:=time.Date(2026,9,8,13,0,0,0,time.UTC).UnixMilli();now:=base+15*60000
+ mk:=func(i int,c float64)market.Kline{return market.Kline{OpenTime:base+int64(i)*60000,CloseTime:base+int64(i+1)*60000-1,Open:c,High:c+.25,Low:c-.25,Close:c}}
+ var out []item
+ for _,rule:=range []string{"1x5m_close","2x5m_close","15m_close","time_hold","touch"}{for _,side:=range []string{"above","below"}{for variant:=0;variant<4;variant++{
+  good,bad:=101.0,99.0;if side=="below"{good,bad=bad,good};var bars []market.Kline
+  for i:=0;i<15;i++{c:=good;if variant==1||(variant==2&&i>=5){c=bad};b:=mk(i,c);if variant==3{b.High,b.Low=101,99};bars=append(bars,b)}
+  v:=kernel.EvaluateConfirm(kernel.PlanConfirm{Rule:rule,RefPrice:100,Side:side},bars,base,now);out=append(out,item{fmt.Sprintf("%s/%s/%d",rule,side,variant),v.Met})
+ }}}
+ for _,short:=range []bool{true,false}{side,dir:="above","long";good,bad:=101.0,99.0;if short{side,dir="below","short";good,bad=99,101};var bars []market.Kline
+  for i:=0;i<15;i++{b:=mk(i,good);if i==0{b=mk(i,bad);b.Low,b.High=99,101};bars=append(bars,b)}
+  s:=kernel.PlanScenario{ID:"S1",Condition:"sweep_reclaim",Direction:dir,Confirm:&kernel.PlanConfirm{Rule:"touch",RefPrice:100},Confirm2:&kernel.PlanConfirm{Rule:"1x5m_close",RefPrice:100,Side:side}}
+  out=append(out,item{"ordered/"+dir,kernel.EvaluateScenarioConfirm(s,bars,base,now).Met})
+  for _,mode:=range []string{"pullback","immediate"}{for _,met:=range []bool{true,false}{var tape []market.Kline;for i:=0;i<15;i++{c:=good;if !met{c=bad};b:=mk(i,c);b.Low,b.High=98,102;tape=append(tape,b)}
+   condition:="breakup_continue";if short{condition="breakdown_continue"};s:=kernel.PlanScenario{ID:"S1",Condition:condition,Direction:dir,Breakdown:&kernel.PlanBreakdownContinue{Level:100,EntryMode:mode}}
+   out=append(out,item{fmt.Sprintf("waterfall/%s/%s/%t",dir,mode,met),kernel.EvaluateScenarioConfirm(s,tape,base,now).Met})
+  }}
+ }
+ f,err:=os.Create(os.Args[1]);if err!=nil{panic(err)};enc:=json.NewEncoder(f);enc.SetIndent("","  ");if err=enc.Encode(out);err!=nil{panic(err)};fmt.Printf("%d completed-bucket cases\n",len(out))
+}

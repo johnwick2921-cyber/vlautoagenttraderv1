@@ -14,11 +14,11 @@ func TestSplitSymbolList(t *testing.T) {
 		primary string
 		extras  []string
 	}{
-		{"MNQ", "MNQ", nil},                         // legacy single — the compat shim
-		{"MNQ,ES", "MNQ", []string{"ES"}},           // list
+		{"MNQ", "MNQ", nil},                              // legacy single — the compat shim
+		{"MNQ,ES", "MNQ", []string{"ES"}},                // list
 		{" MNQ , ES , NQ ", "MNQ", []string{"ES", "NQ"}}, // whitespace
-		{"MNQ,,ES", "MNQ", []string{"ES"}},          // empty element skipped
-		{"", "", nil},                               // empty config (caller's guard)
+		{"MNQ,,ES", "MNQ", []string{"ES"}},               // empty element skipped
+		{"", "", nil},                                    // empty config (caller's guard)
 	}
 	for _, tc := range cases {
 		p, e := SplitSymbolList(tc.in)

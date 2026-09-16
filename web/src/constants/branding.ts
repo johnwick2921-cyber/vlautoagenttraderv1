@@ -1,3 +1,9 @@
+import productName from '../../../branding/product.txt?raw'
+import personaName from '../../../branding/persona.txt?raw'
+
+export const PRODUCT_NAME = productName
+export const PERSONA_NAME = personaName
+
 // Project branding constants.
 //
 // This is a personal fork; original NoFx-era external links (twitter / telegram
@@ -12,7 +18,7 @@ export const OFFICIAL_LINKS = {
 } as const
 
 export const BRAND_INFO = {
-  name: 'VL',
+  name: PERSONA_NAME,
   tagline: 'AI Trading Dashboard',
   version: '1.0.0',
 } as const

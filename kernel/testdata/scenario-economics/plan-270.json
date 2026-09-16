@@ -1,0 +1,246 @@
+{
+  "reasoning": "bias-tree: branch 3 inside-day short LOW, but branch 5 puts price at 32% of range (discount; shorts only above 29643), so I trade neutral. Tape: overnight sweep of 29764.75 PDH failed, 5m is trending down but 1h/15m are ranging; 29600 sits above VWAP−1σ and PDL inside value. This is a balance/pullback day, not a waterfall. No fresh FVGs, so no fvg_entry. Plan fades extremes: longs at the discount shelf (29579.75 touch, 29546.25 sweep-reclaim); shorts at the upper range (29646 with Supply·1h, 29736.75 PDC). Death on a 5m close below 29518.22; flip long on 5m close above 29736.75.",
+  "bias": {
+    "direction": "neutral",
+    "conviction": "low",
+    "flip_condition": "5m close above 29736.75 PDC flips long; 5m close below 29518.22 kills the plan"
+  },
+  "levels": [
+    {
+      "price": 29518.22,
+      "label": "VWAP−2σ",
+      "grade": "A",
+      "instruction": "invalidation",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29521.75,
+      "label": "PDL",
+      "grade": "A",
+      "instruction": "watch",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29546.25,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "sweep",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29563.75,
+      "label": "RTH-L",
+      "grade": "B",
+      "instruction": "watch",
+      "machine_grade": "B"
+    },
+    {
+      "price": 29575.5,
+      "label": "EQH·1h (HTF)",
+      "grade": "A",
+      "instruction": "confluence",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29579.75,
+      "label": "VWAP−1σ",
+      "grade": "A",
+      "instruction": "fade",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29611,
+      "label": "OB(bull)·1h",
+      "grade": "C",
+      "instruction": "confluence",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29620.75,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29646,
+      "label": "RTH-H",
+      "grade": "B",
+      "instruction": "fade",
+      "machine_grade": "B"
+    },
+    {
+      "price": 29657.38,
+      "label": "Supply·1h",
+      "grade": "C",
+      "instruction": "confluence",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29675.75,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29736.75,
+      "label": "PDC",
+      "grade": "A",
+      "instruction": "fade",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Sweep of 29546.25 SWG-L·5m, then 1m MSS back above 29546.25",
+      "condition": "sweep_reclaim",
+      "direction": "long",
+      "target_chain": [
+        29579.75,
+        29620.75,
+        29646
+      ],
+      "invalid": "5m close below 29518.22",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29546.25,
+        "side": "below"
+      },
+      "quality": "A",
+      "confirm2": {
+        "rule": "1m_mss",
+        "ref_price": 29546.25,
+        "side": "above"
+      },
+      "arm": {
+        "enabled": true,
+        "entry": 29546.25,
+        "stop": 29510,
+        "target": 29620.75,
+        "wait_confirm": true,
+        "legs": [
+          {
+            "entry": 29546.25,
+            "stop": 29510,
+            "target": 29620.75,
+            "size": 1,
+            "rule": "touch"
+          },
+          {
+            "entry": 29546.25,
+            "stop": 29510,
+            "target": 29646,
+            "size": 1,
+            "wait_confirm": true,
+            "rule": "1m_mss"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "First touch of 29579.75 VWAP−1σ from above",
+      "condition": "reject",
+      "direction": "long",
+      "target_chain": [
+        29620.75,
+        29657.38
+      ],
+      "invalid": "5m close below 29543.75",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29579.75,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29579.75,
+        "stop": 29543.75,
+        "target": 29657.38,
+        "wait_confirm": true
+      }
+    },
+    {
+      "id": "S3",
+      "trigger": "First touch of 29646.00 RTH-H with 29657.38 Supply·1h overhead",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29579.75,
+        29546.25
+      ],
+      "invalid": "5m close above 29675.75",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29646,
+        "side": "above"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29646,
+        "stop": 29682.25,
+        "target": 29546.25,
+        "wait_confirm": true
+      }
+    },
+    {
+      "id": "S4",
+      "trigger": "First touch of 29736.75 PDC from below",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29646,
+        29579.75
+      ],
+      "invalid": "5m close above 29764.75",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29736.75,
+        "side": "above"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29736.75,
+        "stop": 29773.25,
+        "target": 29646,
+        "wait_confirm": true
+      }
+    }
+  ],
+  "no_trade": [],
+  "death_condition": "5m close below 29518.22 VWAP−2σ invalidates this balance plan.",
+  "day_type": "balance",
+  "death": {
+    "price": 29518.22,
+    "side": "below",
+    "rule": "5m_close"
+  },
+  "flip": {
+    "price": 29736.75,
+    "side": "above",
+    "rule": "5m_close",
+    "flip_to": "long"
+  },
+  "bias_label": "bias: AI neutral · tree neutral · regime up",
+  "no_trade_windows": [
+    {
+      "start_min": 120,
+      "end_min": 125,
+      "kind": "first_n",
+      "label": "first 5m after the LONDON open (02:00–02:05 CT)",
+      "source": "code-constant"
+    },
+    {
+      "start_min": 720,
+      "end_min": 810,
+      "kind": "lunch",
+      "label": "lunch 12:00–13:30 CT",
+      "source": "code-constant"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+file,commit,committed_at,subject
+kernel/plan_confirm.go,60faefbddad38f734621b75267afa7e17e8bcc41,2026-08-30T16:12:05-05:00,"kernel: E1-E3+E5-E6 entry law — 15m confirm dead (named reject), per-condition entry law (fade_requires_touch / 2x5m_reserved), BD_MIN_CLOSES=1, 1m-MSS + time_hold primitives, acceptance-rule migration (ADDENDUM) + FE selector; twin fixtures"
+kernel/scenario_facts.go,60faefbddad38f734621b75267afa7e17e8bcc41,2026-08-30T16:12:05-05:00,"kernel: E1-E3+E5-E6 entry law — 15m confirm dead (named reject), per-condition entry law (fade_requires_touch / 2x5m_reserved), BD_MIN_CLOSES=1, 1m-MSS + time_hold primitives, acceptance-rule migration (ADDENDUM) + FE selector; twin fixtures"
+kernel/breakdown_continue.go,4659874a2dcf41fcb0e0d8194df5d2918afd27fc,2026-09-02T22:38:48-05:00,"fix(void-parity): one resolver for the void scope — the prompt reads the validator's tape, and every read records what the model was told"
+kernel/class45_feeds_forward.go,1c3740b8e34ea32038050c48522b0ca01fc1121e,2026-09-03T10:21:03-05:00,"merge fix/no-trade-band-rider (combined boot 2026-09-03, money-danger exception; verified green before merge)"
+kernel/displacement_feeds_forward.go,8cbac0a17f925ecc8889984f4d524abe8897b3eb,2026-09-03T00:56:54-05:00,"feat(prompt): the waterfall displacement floor feeds forward, per level"
+kernel/engine_analysis.go,01ce808839becd61120140e178bffa7cbc225d30,2026-09-05T12:12:00+00:00,"fix(risk,planner): wire RiskForceFlat and BiasArmWarning — both shipped uncalled"
+kernel/planner_prompt.go,0e01663558afdd106abb6a9b6cd1729aaf9d4ad7,2026-09-04T09:32:21-05:00,"fix(prompt/boot): read the floor, read the seats, say the refusal, derive the set"
+kernel/void_scope.go,60f214d988bc492dee97037b5ae992a44315df04,2026-09-02T22:38:48-05:00,"fix(void-parity): the scope VALUE is the session day — the validator narrows to match, and the render is compact"
+kernel/plan_lifecycle.go,1a6878bc3dcd05d97111be99101e426172e9bd1f,2026-08-30T16:42:02-05:00,"docs: entry-mechanics wave park report (E1-E9 + acceptance-rule ADDENDUM, D-rule sequencing); gofmt touched files"
+kernel/mss.go,1a6878bc3dcd05d97111be99101e426172e9bd1f,2026-08-30T16:42:02-05:00,"docs: entry-mechanics wave park report (E1-E9 + acceptance-rule ADDENDUM, D-rule sequencing); gofmt touched files"
+kernel/fvg_entry.go,dc2465d89254aa31a4b5be032a855a3a4d743fe2,2026-08-27T11:23:08-05:00,fix: flip.rule 2x5m_close alias + FRESH FVGs planner grounding + E2 test-arm seam (b1+a+b2)
+trader/armed_executor.go,6310eaf8941f53194fa2c5e7368552eed1ed8d64,2026-09-07T23:51:51-05:00,merge: reconcile placement confirmation with pre-send identity and owner ruling
+trader/auto_trader_loop.go,0eddf90e95184c106d5a8c6f8fabaa8059d667f5,2026-09-07T19:30:13-05:00,"feat(session-calendar): D5 the MODE line, D6 the boot line, the Guide, the map and class 84"
+trader/auto_trader_levelstate.go,d280540835f2ddfc09a17497df45359084a8f95f,2026-09-03T10:54:48-05:00,feat(invalidation-wired): the system's own verdict refuses the arm; a position states the version it was armed under
+trader/auto_trader_planner.go,01ce808839becd61120140e178bffa7cbc225d30,2026-09-05T12:12:00+00:00,"fix(risk,planner): wire RiskForceFlat and BiasArmWarning — both shipped uncalled"
+trader/rootfix_shadow_ab.go,60f214d988bc492dee97037b5ae992a44315df04,2026-09-02T22:38:48-05:00,"fix(void-parity): the scope VALUE is the session day — the validator narrows to match, and the render is compact"
+trader/desk_facts.go,1064dca0e734d4caca8450533c64756b8331abbc,2026-09-07T21:52:21-05:00,fix(desk): date broker facts and distinguish scenario activation
+api/handler_plan.go,ae9bd136d1d20df072d4a5d95c30e0beb08eb749,2026-09-07T22:11:20-05:00,fix(plan): select placement by version and expose three price sources
+web/src/components/plan/ScenarioList.tsx,6262bf427276d3e00102de64247b122af743c1fe,2026-09-07T23:34:58-05:00,fix: stamp entry creation time and await received placement truth
+kernel/breakdown_continue_test.go,60f214d988bc492dee97037b5ae992a44315df04,2026-09-02T22:38:48-05:00,"fix(void-parity): the scope VALUE is the session day — the validator narrows to match, and the render is compact"
+kernel/class45_pin_test.go,6d21e0717e6137b24e0e8740e917bc04bcfa8918,2026-09-03T00:10:30-05:00,fix(prompt): collapse both-way voids into ONE chop line that names the alternative
+kernel/displacement_feeds_forward_test.go,8cbac0a17f925ecc8889984f4d524abe8897b3eb,2026-09-03T00:56:54-05:00,"feat(prompt): the waterfall displacement floor feeds forward, per level"
+kernel/entry_law_test.go,60f214d988bc492dee97037b5ae992a44315df04,2026-09-02T22:38:48-05:00,"fix(void-parity): the scope VALUE is the session day — the validator narrows to match, and the render is compact"
+docs/superpowers/SYSTEM-MAP.md,6310eaf8941f53194fa2c5e7368552eed1ed8d64,2026-09-07T23:51:51-05:00,merge: reconcile placement confirmation with pre-send identity and owner ruling
+docs/superpowers/AUDIT-CHECKLIST.md,33672fdd2cd2fee60a2c562a9693e06ab3b13551,2026-09-08T01:30:26-05:00,"docs(signal-clock): correct the 180s record, and class 89 gains its second pin"

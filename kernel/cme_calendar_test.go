@@ -15,22 +15,31 @@ func TestIsCMEOpen(t *testing.T) {
 		when time.Time
 		want bool
 	}{
+		// 2026-09-07 (session calendar): these expectations CHANGED with the wave
+		// that made shortened sessions trading sessions. Every date below is still
+		// pinned — none was deleted — but a date the calendar classes SHORTENED is
+		// now OPEN before its stated close and CLOSED after it, and each such case
+		// carries both halves. The dates classed CLOSED are unchanged.
 		{"Mon 10am normal trading", time.Date(2026, 6, 15, 10, 0, 0, 0, chicago), true},
 		{"Mon daily break 4:30pm CT", time.Date(2026, 6, 15, 16, 30, 0, 0, chicago), false},
 		{"Saturday closed", time.Date(2026, 6, 20, 12, 0, 0, 0, chicago), false},
 		{"New Year's Day", time.Date(2026, 1, 1, 10, 0, 0, 0, chicago), false},
-		{"MLK Day 2026 (Jan 19)", time.Date(2026, 1, 19, 10, 0, 0, 0, chicago), false},
-		{"Presidents Day 2026 (Feb 16)", time.Date(2026, 2, 16, 10, 0, 0, 0, chicago), false},
+		{"MLK Day 2026 — UNESTABLISHED, closed under C4", time.Date(2026, 1, 19, 10, 0, 0, 0, chicago), false},
+		{"Presidents Day 2026 — UNESTABLISHED, closed under C4", time.Date(2026, 2, 16, 10, 0, 0, 0, chicago), false},
 		{"Good Friday 2026 (Apr 3)", time.Date(2026, 4, 3, 10, 0, 0, 0, chicago), false},
-		{"Memorial Day 2026 (May 25)", time.Date(2026, 5, 25, 10, 0, 0, 0, chicago), false},
-		{"Juneteenth", time.Date(2026, 6, 19, 10, 0, 0, 0, chicago), false},
-		{"Independence Day", time.Date(2026, 7, 4, 10, 0, 0, 0, chicago), false},
-		{"Labor Day 2026 (Sep 7)", time.Date(2026, 9, 7, 10, 0, 0, 0, chicago), false},
+		{"Memorial Day 2026 — UNESTABLISHED, closed under C4", time.Date(2026, 5, 25, 10, 0, 0, 0, chicago), false},
+		{"Juneteenth 2026 — UNESTABLISHED, closed under C4", time.Date(2026, 6, 19, 10, 0, 0, 0, chicago), false},
+		{"Independence Day 2026 (Jul 4) — falls SATURDAY, closed by the weekly rule", time.Date(2026, 7, 4, 10, 0, 0, 0, chicago), false},
+		{"Independence Day observed 2026 (Jul 3) — UNESTABLISHED, closed under C4", time.Date(2026, 7, 3, 10, 0, 0, 0, chicago), false},
+		{"Labor Day 2026 (Sep 7) — SHORTENED, before close (THE DAY THIS WAVE WAS BORN)", time.Date(2026, 9, 7, 10, 0, 0, 0, chicago), true},
+		{"Labor Day 2026 — after its 12:00 CT close", time.Date(2026, 9, 7, 12, 30, 0, 0, chicago), false},
 		{"Thanksgiving 2026 (Nov 26)", time.Date(2026, 11, 26, 10, 0, 0, 0, chicago), false},
-		{"Day after Thanksgiving 2026 (Nov 27)", time.Date(2026, 11, 27, 10, 0, 0, 0, chicago), false},
-		{"Christmas Eve", time.Date(2026, 12, 24, 10, 0, 0, 0, chicago), false},
+		{"Day after Thanksgiving 2026 — SHORTENED, before its SOURCED 12:15 close", time.Date(2026, 11, 27, 12, 10, 0, 0, chicago), true},
+		{"Day after Thanksgiving 2026 — after 12:15 CT (not 12:00: the sourced time won the fold)", time.Date(2026, 11, 27, 12, 20, 0, 0, chicago), false},
+		{"Christmas Eve 2026 — SHORTENED, before its SOURCED 12:15 close", time.Date(2026, 12, 24, 12, 10, 0, 0, chicago), true},
+		{"Christmas Eve 2026 — after 12:15 CT (not 12:00: the sourced time won the fold)", time.Date(2026, 12, 24, 12, 20, 0, 0, chicago), false},
 		{"Christmas Day", time.Date(2026, 12, 25, 10, 0, 0, 0, chicago), false},
-		{"New Year's Eve", time.Date(2026, 12, 31, 10, 0, 0, 0, chicago), false},
+		{"New Year's Eve 2026 — SOURCED NORMAL session (only rates settle early)", time.Date(2026, 12, 31, 10, 0, 0, 0, chicago), true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

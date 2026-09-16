@@ -8,6 +8,8 @@ import { BarChart3, CandlestickChart, ChevronDown, Search } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface ChartTabsProps {
+  /** Show only the market when the caller renders account equity beside it. */
+  marketOnly?: boolean
   traderId: string
   selectedSymbol?: string // Externally selected symbol
   updateKey?: number // Force update key
@@ -138,6 +140,7 @@ function getMarketTypeFromExchange(exchangeId: string | undefined): MarketType {
 }
 
 export function ChartTabs({
+  marketOnly = false,
   traderId,
   selectedSymbol,
   updateKey,
@@ -146,6 +149,7 @@ export function ChartTabs({
 }: ChartTabsProps) {
   const { language } = useLanguage()
   const [activeTab, setActiveTab] = useState<ChartTab>('equity')
+  const visibleTab = marketOnly ? 'kline' : activeTab
   const [chartSymbol, setChartSymbol] = useState<string>(
     () => MARKET_CONFIG[getMarketTypeFromExchange(exchangeId)].defaultSymbol
   )
@@ -272,43 +276,69 @@ export function ChartTabs({
         Desktop: Standard flex-wrap/nowrap
       */}
       <div
-        className="relative z-20 flex flex-wrap md:flex-nowrap items-center justify-between gap-y-2 px-3 py-2 shrink-0 backdrop-blur-md bg-[#0B0E11]/80 rounded-t-lg"
+        className="relative z-20 flex flex-wrap items-center justify-between gap-y-2 px-3 py-2 shrink-0 backdrop-blur-md bg-[#0B0E11]/80 rounded-t-lg"
         style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}
       >
         {/* Left: Tab Switcher */}
         <div className="flex flex-wrap items-center gap-1">
-          <button
-            onClick={() => setActiveTab('equity')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-              activeTab === 'equity'
-                ? 'bg-nofx-gold/10 text-nofx-gold border border-nofx-gold/20 shadow-[0_0_10px_rgba(240,185,11,0.1)]'
-                : 'text-nofx-text-muted hover:text-nofx-text-main hover:bg-white/5'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">
-              {t('accountEquityCurve', language)}
-            </span>
-            <span className="md:hidden">Eq</span>
-          </button>
+          {!marketOnly && (
+            <>
+              <button
+                onClick={() => setActiveTab('equity')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                  visibleTab === 'equity'
+                    ? 'bg-nofx-gold/10 text-nofx-gold border border-nofx-gold/20 shadow-[0_0_10px_rgba(240,185,11,0.1)]'
+                    : 'text-nofx-text-muted hover:text-nofx-text-main hover:bg-white/5'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">
+                  {t('accountEquityCurve', language)}
+                </span>
+                <span className="md:hidden">Eq</span>
+              </button>
 
-          <button
-            onClick={() => setActiveTab('kline')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
-              activeTab === 'kline'
-                ? 'bg-nofx-gold/10 text-nofx-gold border border-nofx-gold/20 shadow-[0_0_10px_rgba(240,185,11,0.1)]'
-                : 'text-nofx-text-muted hover:text-nofx-text-main hover:bg-white/5'
-            }`}
-          >
-            <CandlestickChart className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">
+              <button
+                onClick={() => setActiveTab('kline')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                  visibleTab === 'kline'
+                    ? 'bg-nofx-gold/10 text-nofx-gold border border-nofx-gold/20 shadow-[0_0_10px_rgba(240,185,11,0.1)]'
+                    : 'text-nofx-text-muted hover:text-nofx-text-main hover:bg-white/5'
+                }`}
+              >
+                <CandlestickChart className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">
+                  {t('marketChart', language)}
+                </span>
+                <span className="md:hidden">Kline</span>
+              </button>
+            </>
+          )}
+          {marketOnly && (
+            <strong className="text-[13px] text-nofx-text-main whitespace-nowrap">
               {t('marketChart', language)}
-            </span>
-            <span className="md:hidden">Kline</span>
-          </button>
-
-          {/* Market Type Pills - Only when kline active, HIDDEN on mobile to save space */}
-          {activeTab === 'kline' && (
+            </strong>
+          )}
+          {visibleTab === 'kline' && (
+            <label className="md:hidden flex items-center gap-2 text-xs text-nofx-text-muted">
+              {t('marketChart', language)}
+              <select
+                value={marketType}
+                onChange={(e) =>
+                  handleMarketTypeChange(e.target.value as MarketType)
+                }
+                className="max-w-[160px] rounded border border-white/20 bg-[#172330] px-2 py-1 text-white"
+              >
+                {(Object.keys(MARKET_CONFIG) as MarketType[]).map((type) => (
+                  <option key={type} value={type}>
+                    {ts(chartTabs[MARKET_CONFIG[type].labelKey], language)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {/* Desktop pills and mobile select use the same market handler. */}
+          {visibleTab === 'kline' && (
             <div className="hidden md:flex items-center gap-1 ml-2 border-l border-white/10 pl-2">
               {(Object.keys(MARKET_CONFIG) as MarketType[]).map((type) => {
                 const config = MARKET_CONFIG[type]
@@ -333,7 +363,7 @@ export function ChartTabs({
         </div>
 
         {/* Right: Symbol + Interval */}
-        {activeTab === 'kline' && (
+        {visibleTab === 'kline' && (
           <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto min-w-0">
             {/* Symbol Dropdown */}
             <div className="shrink-0 relative" ref={dropdownRef}>
@@ -461,7 +491,7 @@ export function ChartTabs({
       {/* Tab Content - Chart autosizes to this container */}
       <div className="relative flex-1 bg-[#0B0E11]/50 rounded-b-lg overflow-hidden h-full min-h-0">
         <AnimatePresence mode="wait">
-          {activeTab === 'equity' ? (
+          {visibleTab === 'equity' ? (
             <motion.div
               key="equity"
               initial={{ opacity: 0 }}

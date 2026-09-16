@@ -25,11 +25,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # B8 (2026-09-11): branding/scope_test.go diffs every .go file
+          # against base 954f11b1 to prove no import target was renamed; on a
+          # depth-1 checkout that sha is absent and `git diff` exits 128.
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version-file: 'go.mod'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,14 +46,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r .github/workflows/scripts/requirements.txt
 
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
+      # setup-go already restores the module/build caches. A second module-cache
+      # restore collided with those files and stalled before the tests (PR #116).
       - name: Download dependencies
         run: go mod download
 

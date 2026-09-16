@@ -1,0 +1,162 @@
+{
+  "reasoning": "bias-tree: close < PDL (branch 1 mirror) — continuation short. Price 29127.25 sits 226.8 pts below PDL 29354.00; 15m/5m are TRENDING_DOWN with last BOS-down 5m at 07:50 and the tape has already moved 81.2 pts. Extended discount lowers conviction but candles trump branch 5, and the below-PDL rule mandates a short plan. No fvg_entry: fresh FVG list is empty. Two short paths: reject at ONL 29123.25, and a pullback fade at 29138.00 SWG-L·5m. Death above 29212.50 HTF 1h OB; local flip above 29138.00.",
+  "bias": {
+    "direction": "short",
+    "conviction": "medium",
+    "flip_condition": "5m close above 29138.00 flips local bias to long/bounce"
+  },
+  "levels": [
+    {
+      "price": 29123.25,
+      "label": "ONL",
+      "grade": "A",
+      "instruction": "break/sweep-reclaim reference",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29100.81,
+      "label": "VWAP−2σ",
+      "grade": "A",
+      "instruction": "target / first-touch reaction",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29085,
+      "label": "OB(bull)·1h (HTF)",
+      "grade": "A",
+      "instruction": "target only",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29076.5,
+      "label": "Demand·1h (HTF)",
+      "grade": "A",
+      "instruction": "target only",
+      "machine_grade": "A"
+    },
+    {
+      "price": 28970.38,
+      "label": "OB(bull)·4h",
+      "grade": "C",
+      "instruction": "target only",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29138,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "reject reference",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29177.5,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "reject reference",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29182,
+      "label": "SWG-L·15m",
+      "grade": "A",
+      "instruction": "reject reference",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29212.5,
+      "label": "OB(bull)·1h",
+      "grade": "C",
+      "instruction": "confluence reference",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29241.4,
+      "label": "VWAP−1σ",
+      "grade": "A",
+      "instruction": "mean-revert magnet",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29324.5,
+      "label": "OB(bull)·1h (HTF)",
+      "grade": "A",
+      "instruction": "target only",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29354,
+      "label": "RTH-L",
+      "grade": "A",
+      "instruction": "react zone / invalid if reclaimed",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Price retests ONL 29123.25 and rejects with a 5m close below it; one-sided delivery continues",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29100.81,
+        29085,
+        29076.5
+      ],
+      "invalid": "5m close back above 29123.25",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29123.25,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29123.25,
+        "stop": 29147.25,
+        "target": 29085
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "Rally into 29138.00 SWG-L·5m and stall/reject with 5m close below it",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29123.25,
+        29085
+      ],
+      "invalid": "5m close above 29138.00",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29138,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29138,
+        "stop": 29162,
+        "target": 29085
+      }
+    }
+  ],
+  "no_trade": [
+    "first 5m (CT)",
+    "12:00-13:30 CT lunch",
+    "09:00 CT USD T1 ISM Manufacturing PMI blackout",
+    "🔴 ISM Manufacturing PMI 09:00 CT ±15m +1m (clock drift) — HARD no-trade (red news)"
+  ],
+  "death_condition": "5m close above 29212.50 invalidates the entire short plan",
+  "day_type": "trend",
+  "death": {
+    "price": 29212.5,
+    "side": "above",
+    "rule": "5m_close"
+  },
+  "flip": {
+    "price": 29138,
+    "side": "above",
+    "rule": "5m_close",
+    "flip_to": "long"
+  }
+}

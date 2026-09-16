@@ -19,16 +19,16 @@ func TestUpdateEntryPrice(t *testing.T) {
 
 	// Open row written with the stale decision-time mark (as the AI-decision path does).
 	pos := &TraderPosition{
-		TraderID:  "tr1",
-		Account:   "Sim101",
-		Symbol:    "MNQ",
-		Side:      "SHORT",
-		Quantity:  1,
+		TraderID:   "tr1",
+		Account:    "Sim101",
+		Symbol:     "MNQ",
+		Side:       "SHORT",
+		Quantity:   1,
 		EntryPrice: 30523.75, // frozen 5m-mark
-		Status:    "OPEN",
-		EntryTime: 1,
-		CreatedAt: 1,
-		UpdatedAt: 1,
+		Status:     "OPEN",
+		EntryTime:  1,
+		CreatedAt:  1,
+		UpdatedAt:  1,
 	}
 	if err := ps.Create(pos); err != nil {
 		t.Fatalf("Create: %v", err)

@@ -108,12 +108,14 @@ export class HttpClient {
    */
   private async handleError(error: AxiosError): Promise<any> {
     const isSilent = (error.config as any)?.silentError === true
-    const errorData = error.response?.data as {
-      error?: string
-      message?: string
-      error_key?: string
-      error_params?: Record<string, string>
-    } | undefined
+    const errorData = error.response?.data as
+      | {
+          error?: string
+          message?: string
+          error_key?: string
+          error_params?: Record<string, string>
+        }
+      | undefined
     const serverMessage = errorData?.error || errorData?.message
 
     // Network error (no response from server)
@@ -215,6 +217,10 @@ export class HttpClient {
       params?: any
       headers?: Record<string, string>
       silent?: boolean
+      // Per-request timeout override (ms). The instance default is 30s, which
+      // is far below the planner's legitimate 300s AI budget — long-running
+      // endpoints pass their own budget here (Ask-Planner stuck-send fix).
+      timeoutMs?: number
     } = {}
   ): Promise<ApiResponse<T>> {
     try {
@@ -224,6 +230,7 @@ export class HttpClient {
         data: options.data,
         params: options.params,
         headers: options.headers,
+        ...(options.timeoutMs ? { timeout: options.timeoutMs } : {}),
         ...(options.silent && { silentError: true }),
       })
 

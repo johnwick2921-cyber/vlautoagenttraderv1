@@ -1,0 +1,73 @@
+{
+  "BucketClose.String": [
+    "kernel/confirmation_evidence.go:113"
+  ],
+  "ConfirmReferenceInstant": [
+    "kernel/breakdown_continue.go:151",
+    "kernel/confirmation_evidence.go:132"
+  ],
+  "ConfirmationBootLine": [
+    "main.go:328"
+  ],
+  "Evaluate1mDisplacement": [
+    "kernel/breakdown_continue.go:253",
+    "kernel/displacement_feeds_forward.go:73"
+  ],
+  "EvaluateBucketClose": [
+    "kernel/breakdown_continue.go:156",
+    "kernel/confirmation_bucket.go:47",
+    "kernel/confirmation_bucket.go:71",
+    "kernel/confirmation_evidence.go:32",
+    "kernel/confirmation_evidence.go:55",
+    "kernel/confirmation_evidence.go:66",
+    "kernel/mss.go:117",
+    "kernel/plan_confirm.go:167",
+    "kernel/plan_confirm.go:171",
+    "kernel/scenario_facts.go:458"
+  ],
+  "closedConfirmationBuckets": [
+    "kernel/breakdown_continue.go:152"
+  ],
+  "confirmationBuckets": [
+    "kernel/confirmation_bucket.go:46",
+    "kernel/confirmation_bucket.go:70"
+  ],
+  "declineHadFreshMetAt": [
+    "trader/armed_executor.go:159"
+  ],
+  "deskConfirmation": [
+    "trader/desk_facts.go:150"
+  ],
+  "evaluateConfirmAfter": [
+    "kernel/confirmation_evidence.go:128",
+    "kernel/confirmation_evidence.go:139",
+    "kernel/confirmation_evidence.go:146",
+    "kernel/plan_confirm.go:63",
+    "kernel/plan_confirm.go:147",
+    "kernel/plan_confirm.go:204"
+  ],
+  "evaluateMSSAfter": [
+    "kernel/confirmation_evidence.go:52",
+    "kernel/mss.go:102"
+  ],
+  "finishConfirmation": [
+    "kernel/confirmation_evidence.go:19",
+    "kernel/confirmation_evidence.go:137",
+    "kernel/plan_confirm.go:174"
+  ],
+  "maybeManageArmedOrdersAt": [
+    "trader/armed_executor.go:194"
+  ],
+  "orderedScenarioConfirm": [
+    "kernel/plan_confirm.go:185"
+  ],
+  "recordConfirmationVerdict": [
+    "kernel/plan_confirm.go:64",
+    "kernel/plan_confirm.go:179",
+    "kernel/plan_confirm.go:186"
+  ],
+  "renderImmediateDisplacement": [
+    "kernel/displacement_feeds_forward.go:111",
+    "kernel/displacement_feeds_forward.go:123"
+  ]
+}

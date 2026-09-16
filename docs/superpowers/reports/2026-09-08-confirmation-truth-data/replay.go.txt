@@ -1,0 +1,136 @@
+package main
+import("encoding/json";"fmt";"os";"sort";"strings";"time";"nofx/kernel";"nofx/market")
+type Plan struct{RowID int `json:"rowid"`;ID string `json:"plan_id"`;Version int `json:"version"`;Birth int64 `json:"birth_ms"`;Session string `json:"session"`;Date string `json:"trade_date"`;Doc struct{Scenarios []kernel.PlanScenario `json:"scenarios"`} `json:"doc"`}
+type Bar struct{T int64 `json:"open_time_ms"`;O,H,L,C,V float64}
+type Decision struct{ID int `json:"id"`;PlanID string `json:"plan_id"`;Version int `json:"version"`;Now int64 `json:"snapshot_ms"`;Lines []string `json:"confirm_lines"`}
+type Input struct{Plans []Plan;Bars []Bar;Decisions []Decision;Settings map[string]string}
+type Observation struct{PlanRow int `json:"plan_row"`;Scenario string `json:"scenario"`;Condition string `json:"condition"`;DecisionID int `json:"decision_id"`;Now int64 `json:"snapshot_ms"`;OldMet bool `json:"old_met"`;NewMet bool `json:"new_met"`;RecordMet *bool `json:"record_met,omitempty"`;OldState *kernel.BreakdownState `json:"old_state,omitempty"`;NewState *kernel.BreakdownState `json:"new_state,omitempty"`;ValidationOld string `json:"validation_old,omitempty"`;ValidationNew string `json:"validation_new,omitempty"`;ArmOld *bool `json:"arm_old,omitempty"`;ArmNew *bool `json:"arm_new,omitempty"`}
+func key(p string,v int)string{return fmt.Sprintf("%s/%d",p,v)}
+func closedRule(bars []market.Kline,rule string,now int64)[]market.Kline{var out []market.Kline;for _,b:=range kernel.AcceptanceBars(bars,rule){if b.CloseTime+1<=now{out=append(out,b)}};return out}
+func closeRule(rule string)bool{return rule!="touch"&&rule!="1m_mss"&&rule!="time_hold"}
+func auditConfirm(c kernel.PlanConfirm,bars []market.Kline,since,now int64)kernel.ConfirmVerdict{if !closeRule(c.Rule){return kernel.EvaluateConfirm(c,bars,since,now)};w:=kernel.BarsSince(bars,since);return kernel.EvaluateConfirm(c,closedRule(w,c.Rule,now),0,now)}
+func auditScenario(s kernel.PlanScenario,bars []market.Kline,since,now int64)kernel.ConfirmVerdict{
+ if kernel.IsBreakdownCondition(s.Condition)&&s.Breakdown!=nil{return kernel.EvaluateScenarioConfirm(s,closedRule(kernel.BarsSince(bars,since),"5m-close",now),0,now)}
+ if s.Confirm==nil{return kernel.ConfirmVerdict{}}
+ v1:=auditConfirm(*s.Confirm,bars,since,now);if s.Confirm2==nil{return v1}
+ since2:=baselineFirstConfirmFireMs(*s.Confirm,bars,since,now);if since2<=0{since2=since}
+ v2:=auditConfirm(*s.Confirm2,bars,since2,now);v2.Met=v1.Met&&v2.Met
+ return kernel.ConfirmVerdict{Rule:v1.Rule,Met:v1.Met&&v2.Met,Legs:[]kernel.ConfirmVerdict{v1,v2}}
+}
+func recorded(lines []string,id string)*bool{for _,s:=range lines{if !strings.HasPrefix(s,id+" confirm:"){continue};v:=false;if strings.Contains(s,"overall MET"){v=true}else if strings.Contains(s,"overall NOT MET"){v=false}else{v=strings.Contains(s,"— MET")};return &v};return nil}
+func reason(err error)string{if err==nil{return "PASS"};return err.Error()}
+func main(){
+ var in Input;f,err:=os.Open(os.Args[1]);if err!=nil{panic(err)};if err=json.NewDecoder(f).Decode(&in);err!=nil{panic(err)};for k,v:=range in.Settings{os.Setenv(k,v)}
+ plans:=map[string]Plan{};for _,p:=range in.Plans{plans[key(p.ID,p.Version)]=p}
+ bars:=make([]market.Kline,0,len(in.Bars));for _,b:=range in.Bars{bars=append(bars,market.Kline{OpenTime:b.T,CloseTime:b.T+59999,Open:b.O,High:b.H,Low:b.L,Close:b.C,Volume:b.V})}
+ var obs []Observation;skips:=map[string]int{};evaluated:=map[string]bool{};changed:=map[string]bool{};recordChanged:=map[string]bool{};breakChanged:=map[string]bool{};fieldsChanged:=map[string]bool{};armChanged:=map[string]bool{};validationChanged:=map[string]bool{};nMatch,nRecord:=0,0
+ for _,d:=range in.Decisions{
+  if d.Now==0{skips["missing_snapshot_clock"]++;continue};p,ok:=plans[key(d.PlanID,d.Version)];if !ok{panic("unmatched plan")};if d.Now<p.Birth{skips["snapshot_precedes_bound_plan_publication"]++;continue}
+  end:=sort.Search(len(bars),func(i int)bool{return bars[i].CloseTime>=d.Now});if end==0||d.Now>bars[len(bars)-1].CloseTime+120000{skips["outside_retained_bar_range"]++;continue}
+  start:=end-kernel.AISVPBarCount;if start<0{start=0};tape:=bars[start:end]
+  if d.Now-tape[len(tape)-1].CloseTime>120000{skips["last_completed_minute_more_than_120s_old"]++;continue}
+  if p.Birth<bars[0].OpenTime{skips["plan_birth_precedes_retained_tape"]++;continue}
+  for _,s:=range p.Doc.Scenarios{
+   sk:=fmt.Sprintf("%d/%s",p.RowID,s.ID);evaluated[sk]=true
+   old:=kernel.EvaluateScenarioConfirm(s,tape,p.Birth,d.Now);nv:=auditScenario(s,tape,p.Birth,d.Now)
+   ob:=Observation{PlanRow:p.RowID,Scenario:s.ID,Condition:s.Condition,DecisionID:d.ID,Now:d.Now,OldMet:old.Met,NewMet:nv.Met,RecordMet:recorded(d.Lines,s.ID)}
+   if ob.RecordMet!=nil{nRecord++;if *ob.RecordMet==old.Met{nMatch++};if *ob.RecordMet!=nv.Met{recordChanged[sk]=true}}
+   if old.Met!=nv.Met{changed[sk]=true}
+   if kernel.IsBreakdownCondition(s.Condition)&&s.Breakdown!=nil{
+    a:=kernel.BreakdownContinueState(s,tape,p.Birth,d.Now);b:=kernel.BreakdownContinueState(s,closedRule(kernel.BarsSince(tape,p.Birth),"5m-close",d.Now),0,d.Now);ob.OldState=&a;ob.NewState=&b
+    if a.Leg1Met!=b.Leg1Met||a.Leg2Met!=b.Leg2Met||a.Reclaimed!=b.Reclaimed{breakChanged[sk]=true}
+    if a!=b{fieldsChanged[sk]=true}
+    // Same validator, price and ATR. Only its input tape becomes closed 5m buckets.
+    scope:=kernel.VoidScopeOf(tape,time.UnixMilli(d.Now));atr:=kernel.StaleConfirmATR5m(scope.Bars);price:=tape[len(tape)-1].Close
+    doc:=kernel.PlanDoc{Scenarios:[]kernel.PlanScenario{s}}
+    ob.ValidationOld=reason(kernel.ValidateBreakdownContinueScenarios(&doc,scope,atr,price,d.Now));scope.Bars=closedRule(kernel.BarsSince(scope.Bars,scope.SinceMs),"5m-close",d.Now);scope.SinceMs=0
+    ob.ValidationNew=reason(kernel.ValidateBreakdownContinueScenarios(&doc,scope,atr,price,d.Now))
+    if (ob.ValidationOld=="PASS")!=(ob.ValidationNew=="PASS"){validationChanged[sk]=true}
+   }
+   if s.Arm!=nil&&s.Arm.Enabled&&s.Arm.WaitConfirm&&s.Confirm!=nil{
+    a:=kernel.EvaluateConfirm(*s.Confirm,tape,p.Birth,d.Now).Met;b:=auditConfirm(*s.Confirm,tape,p.Birth,d.Now).Met;ob.ArmOld=&a;ob.ArmNew=&b;if a!=b{armChanged[sk]=true}
+   }
+   obs=append(obs,ob)
+  }
+ }
+ result:=map[string]any{"observations":obs,"plans":in.Plans,"skipped_decisions":skips,"evaluated_unique_scenarios":len(evaluated),"changed_unique_scenarios":len(changed),"changed_scenario_keys":changed,"recorded_to_counterfactual_changed_unique":len(recordChanged),"recorded_baseline_matches":nMatch,"recorded_baseline_comparisons":nRecord,"breakdown_boolean_changed":breakChanged,"breakdown_any_field_changed":fieldsChanged,"validation_pass_changed":validationChanged,"arm_confirm_changed":armChanged,"evaluated_keys":evaluated,"counterfactual":"Only input transformations; existing kernel functions unchanged. Closed 1m reconstruction for baseline; closed rule-TF aggregation for counterfactual. Sequence-reference fallback intentionally retained; current defaults, not historical config."}
+ enc:=json.NewEncoder(os.Stdout);if err:=enc.Encode(result);err!=nil{panic(err)}
+}
+
+func confirmAcceptanceRule(rule string) string {
+	switch rule {
+	case "15m_close": // legacy: stored docs only
+		return "15m-close"
+	case "1x5m_close":
+		return "5m-close" // the A2-fixed one-close rule
+	default:
+		return "2x5m" // "2x5m_close"
+	}
+}
+
+func baselineFirstConfirmFireMs(c kernel.PlanConfirm, bars []market.Kline, sinceMs, nowMs int64) int64 {
+	if c.Rule == "touch" {
+		return 0
+	}
+	w := kernel.BarsSince(bars, sinceMs)
+	if len(w) == 0 {
+		return 0
+	}
+	// E5 — 1m_mss fires at the breaking bar.
+	if c.Rule == "1m_mss" {
+		m := kernel.EvaluateMSS(w, c.Side, nowMs)
+		if m.Met {
+			return m.BreakTimeMs
+		}
+		return 0
+	}
+	// E6 — time_hold fires when the qualifying run completes (its first bar).
+	if c.Rule == "time_hold" {
+		need := kernel.AcceptHoldMin()
+		above := strings.EqualFold(c.Side, "above")
+		run := 0
+		for i, b := range w {
+			if b.CloseTime >= nowMs {
+				continue
+			}
+			beyond := (above && b.Close > c.RefPrice) || (!above && b.Close < c.RefPrice)
+			if beyond {
+				run++
+				if run >= need {
+					return w[i-run+1].OpenTime
+				}
+			} else {
+				run = 0
+			}
+		}
+		return 0
+	}
+	rule := confirmAcceptanceRule(c.Rule)
+	var dur, need int64
+	switch rule {
+	case "5m-close":
+		dur, need = 5*60_000, 1
+	case "2x5m":
+		dur, need = 5*60_000, 2
+	default:
+		return 0
+	}
+	buckets := kernel.AggregateBars(w, dur)
+	above := strings.EqualFold(c.Side, "above")
+	run := int64(0)
+	for _, b := range buckets {
+		if b.CloseTime > nowMs {
+			continue
+		}
+		beyond := (above && b.Close > c.RefPrice) || (!above && b.Close < c.RefPrice)
+		if beyond {
+			run++
+			if run >= need {
+				return b.OpenTime
+			}
+		} else {
+			run = 0
+		}
+	}
+	return 0
+}

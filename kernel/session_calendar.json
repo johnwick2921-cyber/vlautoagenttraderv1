@@ -1,0 +1,125 @@
+{
+  "_about": [
+    "THE CME SESSION CALENDAR — data, not code (owner ruling 2026-09-07).",
+    "",
+    "It replaced a boolean. isCMEHoliday() returned true for every holiday and the",
+    "gate treated all of them as FULL closures, with the code's own comment saying",
+    "so: 'for v1 we treat them as full closures and refuse to trade. Refine in",
+    "Plan 3 if it becomes restrictive.' On 2026-09-07 it became restrictive: the",
+    "bot skipped every cycle of a Labor Day session in which MNQ traded 980 bars",
+    "across 153.50 points, and no LONDON plan was ever read.",
+    "",
+    "SHORTENED SESSIONS ARE TRADING SESSIONS. A date is one of three things:",
+    "  closed     — no trading at all",
+    "  shortened  — trades normally until close_ct, then flat",
+    "  (absent)   — a normal date; the weekly rules alone decide",
+    "",
+    "EVERY ENTRY CITES A SOURCE. Where the source is an owner ruling rather than a",
+    "published schedule it says so, so a later reader can tell what was verified",
+    "from what was decided. CME republishes these each year: BEFORE A NEW YEAR IS",
+    "TRADED, the next year's block must be checked against CME Group's published",
+    "holiday calendar and its source lines updated. An absent year is not a year of",
+    "normal days — SessionCalendar reports the year as UNCOVERED and the caller",
+    "decides; it never silently assumes.",
+    "",
+    "FOLD 2026-09-07 (owner ruling): half_days.json was a SECOND dated calendar with its own key convention and, on three dates, different times. It is folded in here verbatim WITH its archived CME citations, and deleted. One fact, one owner: the gate, the session registry and the EOD flat now read this file. Where the two disagreed, half_days.json's SOURCED close times win (12:15, not the 12:00 convention guess). Rows whose only basis was 'the equity-index convention' are demoted to closed and flagged unestablished — a guessed trading day is worse than a missed one."
+  ],
+  "covered_years": [
+    2026
+  ],
+  "dates": [
+    {
+      "date": "2026-01-01",
+      "class": "closed",
+      "name": "New Year's Day",
+      "source": "owner ruling 2026-09-07 — full closure"
+    },
+    {
+      "date": "2026-01-19",
+      "class": "closed",
+      "name": "MLK Day",
+      "source": "UNESTABLISHED — the row previously asserted a 12:00 CT early close from the equity-index convention and said so ('NOT owner-verified'). Owner ruling 2026-09-07: an unsourced trading day is worse than a missed one, so it falls to CLOSED under C4 until someone checks CME's published 2026 calendar. RESOLVE: replace with the verified class and close_ct.",
+      "unestablished": true
+    },
+    {
+      "date": "2026-02-16",
+      "class": "closed",
+      "name": "Presidents Day",
+      "source": "UNESTABLISHED — same as MLK: a 12:00 CT convention guess, self-declared NOT owner-verified, demoted to CLOSED under C4 (owner ruling 2026-09-07) until sourced.",
+      "unestablished": true
+    },
+    {
+      "date": "2026-04-03",
+      "class": "closed",
+      "name": "Good Friday",
+      "source": "owner ruling 2026-09-07 — full closure"
+    },
+    {
+      "date": "2026-05-25",
+      "class": "closed",
+      "name": "Memorial Day",
+      "source": "UNESTABLISHED — asserted as shortened 12:00 by convention with no citation; demoted to CLOSED under C4 pending a source.",
+      "unestablished": true
+    },
+    {
+      "date": "2026-06-19",
+      "class": "closed",
+      "name": "Juneteenth",
+      "source": "UNESTABLISHED — same as MLK: a 12:00 CT convention guess, self-declared NOT owner-verified, demoted to CLOSED under C4 (owner ruling 2026-09-07) until sourced.",
+      "unestablished": true
+    },
+    {
+      "date": "2026-07-03",
+      "class": "closed",
+      "name": "Independence Day (observed)",
+      "source": "UNESTABLISHED — asserted as shortened 12:00 by convention with no citation; demoted to CLOSED under C4 pending a source.",
+      "unestablished": true
+    },
+    {
+      "date": "2026-07-04",
+      "class": "closed",
+      "name": "Independence Day (falls Saturday)",
+      "source": "Independence Day 2026 falls on a SATURDAY, already closed by the weekly Globex rule. Listed so the calendar does not appear to have dropped a holiday the superseded boolean covered."
+    },
+    {
+      "date": "2026-09-07",
+      "class": "shortened",
+      "close_ct": "12:00",
+      "name": "Labor Day",
+      "source": "CME Group holiday calendar 2026 (archived): equities halt 12:00 CT, reopen 17:00 CT — https://www.cmegroup.com/tools-information/holiday-calendar/files/2026/labor-day-holiday-settlement-times-2026.pdf. Corroborated live on the day: the feed carried 980 session bars over 153.50 pts while the superseded boolean called the market closed."
+    },
+    {
+      "date": "2026-11-26",
+      "class": "closed",
+      "name": "Thanksgiving Day",
+      "source": "OWNER RULING 2026-09-07: FULL CLOSURE for equity index.",
+      "superseded": "SUPERSEDED VALUE, recorded not dropped: the folded half_days.json carried early_close_ct 12:00 with the label 'Thanksgiving Day — equity futures halt 12:00 CT', citing https://www.cmegroup.com/tools-information/holiday-calendar/files/2026/thanksgiving-holiday-settlement-times-2026.pdf. The owner ruled that row wrong and this date a full closure. The citation is preserved here so the ruling can be revisited against the source rather than re-litigated from memory."
+    },
+    {
+      "date": "2026-11-27",
+      "class": "shortened",
+      "close_ct": "12:15",
+      "name": "Day after Thanksgiving",
+      "source": "CME Group holiday calendar 2026 (archived): equity FINAL close 12:15 CT (settlement 12:00) — https://www.cmegroup.com/tools-information/holiday-calendar/files/2026/thanksgiving-holiday-settlement-times-2026.pdf. Folded verbatim from half_days.json, whose sourced 12:15 supersedes this calendar's earlier 12:00 convention guess (owner ruling 2026-09-07)."
+    },
+    {
+      "date": "2026-12-24",
+      "class": "shortened",
+      "close_ct": "12:15",
+      "name": "Christmas Eve",
+      "source": "CME Group holiday calendar 2026 (archived): equity FINAL close 12:15 CT (settlement 12:00) — https://www.cmegroup.com/tools-information/holiday-calendar/files/2026/christmas-holiday-settlement-times-2026.pdf. Folded verbatim from half_days.json; its sourced 12:15 supersedes this calendar's earlier 12:00 convention guess (owner ruling 2026-09-07)."
+    },
+    {
+      "date": "2026-12-25",
+      "class": "closed",
+      "name": "Christmas Day",
+      "source": "owner ruling 2026-09-07 — full closure"
+    },
+    {
+      "date": "2026-12-31",
+      "class": "normal",
+      "name": "New Year's Eve",
+      "source": "CME Group holiday calendar (archived): NORMAL equity session — only rates settle early, so this is NOT a half-day — https://www.cmegroup.com/tools-information/holiday-calendar/files/2026/new-years-eve-holiday-settlement-times-2027.pdf. Listed explicitly as NORMAL rather than omitted: the superseded boolean closed this date, and an absent row would leave a reader unable to tell a researched normal day from an unconsidered one. This CORRECTS an earlier unestablished-CLOSED default in this file: the date IS established, by the citation above."
+    }
+  ]
+}

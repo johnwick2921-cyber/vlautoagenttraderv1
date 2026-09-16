@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -14,6 +15,11 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+// accountResetConfirmToken is the literal a caller must echo in the request body
+// to run the destructive account reset — a deliberate speed bump so the endpoint
+// can never be triggered by a stray click or a replayed empty POST.
+const accountResetConfirmToken = "RESET-ALL-DATA"
 
 // handleLogout Add current token to blacklist
 func (s *Server) handleLogout(c *gin.Context) {
@@ -102,9 +108,16 @@ func (s *Server) handleRegister(c *gin.Context) {
 		return
 	}
 
-	// Adopt orphan records from previous account (e.g. after account reset)
-	// This preserves wallet keys and exchange configs so funds are not lost.
-	s.adoptOrphanRecords(userID)
+	// SECURITY (P0 S3): registration deliberately does NOT adopt pre-existing
+	// ai_models/exchanges rows. It used to call adoptOrphanRecords(userID), which
+	// re-assigned every orphaned credential row — model API keys, exchange API
+	// keys, wallet private keys — to whoever registered next. Combined with the
+	// then-public reset-account, that was the payoff step of an unauthenticated
+	// takeover: wipe the users, register, inherit the keys.
+	//
+	// A fresh account now starts with only its own defaults (initUserDefaultConfigs
+	// below). Recovering credentials from a previous install is an explicit,
+	// operator-side action against the database, not a side effect of signup.
 
 	// Generate JWT token
 	token, err := auth.GenerateJWT(user.ID, user.Email)
@@ -189,47 +202,60 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated"})
 }
 
-// handleResetPassword Reset password via email and new password
-func (s *Server) handleResetPassword(c *gin.Context) {
-	var req struct {
-		Email       string `json:"email" binding:"required,email"`
-		NewPassword string `json:"new_password" binding:"required,min=6"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		SafeBadRequest(c, "Invalid request parameters")
-		return
-	}
-
-	// Query user
-	user, err := s.store.User().GetByEmail(req.Email)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Email does not exist"})
-		return
-	}
-
-	// Generate new password hash
-	newPasswordHash, err := auth.HashPassword(req.NewPassword)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password processing failed"})
-		return
-	}
-
-	// Update password
-	err = s.store.User().UpdatePassword(user.ID, newPasswordHash)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password update failed"})
-		return
-	}
-
-	logger.Infof("✓ User %s password has been reset", user.Email)
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful, please login with new password"})
+// handleResetPasswordDisabled permanently refuses password resets.
+//
+// SECURITY (P0 S2): the previous handler took {email, new_password} on a PUBLIC
+// route and reset that account immediately — no token, no old password, no mail
+// verification, no rate limit. Anyone who could reach the port owned every
+// account. This deployment has no mail path (repo-wide: no smtp/sendgrid/mailgun
+// client), so there is no way to verify ownership out-of-band and no safe way to
+// keep the endpoint. It answers 410 Gone and logs the attempt.
+//
+// An authenticated user changes their own password via PUT /api/user/password.
+func (s *Server) handleResetPasswordDisabled(c *gin.Context) {
+	logger.Warnf("🔒 blocked POST /api/reset-password from %s — endpoint permanently disabled (P0 S2)", c.ClientIP())
+	c.JSON(http.StatusGone, gin.H{
+		"error": "Password reset by email is disabled. Sign in and use PUT /api/user/password, " +
+			"or reset the password directly in the database if you are locked out.",
+	})
 }
 
 // handleResetAccount clears user authentication data so the system returns to
-// uninitialized state for re-registration. Wallet keys (ai_models) are preserved
-// so funds are not lost — they will be adopted by the new account during onboarding.
+// uninitialized state for re-registration.
+//
+// SECURITY (P0 S2): this is the most destructive endpoint in the system — it
+// deletes EVERY user, trader and strategy. It used to be public. It now requires
+// all three of:
+//   - a valid JWT (it is registered in the `protected` group), AND
+//   - ALLOW_ACCOUNT_RESET=1 in the server environment (default OFF), AND
+//   - an explicit {"confirm":"RESET-ALL-DATA"} body.
+//
+// Note also that registration no longer adopts orphaned credential rows (S3), so
+// a reset no longer hands the next registrant the previous owner's keys.
 func (s *Server) handleResetAccount(c *gin.Context) {
+	if os.Getenv("ALLOW_ACCOUNT_RESET") != "1" {
+		logger.Warnf("🔒 blocked POST /api/reset-account from %s (user %s) — ALLOW_ACCOUNT_RESET is not enabled",
+			c.ClientIP(), c.GetString("user_id"))
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Account reset is disabled. Set ALLOW_ACCOUNT_RESET=1 in the server environment and restart to enable it.",
+		})
+		return
+	}
+
+	var req struct {
+		Confirm string `json:"confirm"`
+	}
+	_ = c.ShouldBindJSON(&req)
+	if req.Confirm != accountResetConfirmToken {
+		logger.Warnf("🔒 blocked POST /api/reset-account from %s (user %s) — missing/incorrect confirm token",
+			c.ClientIP(), c.GetString("user_id"))
+		SafeBadRequest(c, `Account reset requires {"confirm":"`+accountResetConfirmToken+`"}`)
+		return
+	}
+
+	logger.Warnf("⚠️  ACCOUNT RESET authorized by user %s from %s — deleting all users/traders/strategies",
+		c.GetString("user_id"), c.ClientIP())
+
 	err := s.store.Transaction(func(tx *gorm.DB) error {
 		// Delete traders and strategies (config, not funds)
 		tx.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&store.Trader{})
@@ -250,25 +276,17 @@ func (s *Server) handleResetAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Account reset successful, you can now register a new account"})
 }
 
-// adoptOrphanRecords re-assigns ai_models and exchanges whose user_id no longer
-// exists in the users table. This happens after account reset so the new user
-// inherits the previous wallet keys and exchange configurations.
-func (s *Server) adoptOrphanRecords(newUserID string) {
-	db := s.store.GormDB()
-	result := db.Model(&store.AIModel{}).
-		Where("user_id NOT IN (SELECT id FROM users)").
-		Update("user_id", newUserID)
-	if result.RowsAffected > 0 {
-		logger.Infof("✓ Adopted %d orphan ai_model(s) for new user %s", result.RowsAffected, newUserID)
-	}
-
-	result = db.Model(&store.Exchange{}).
-		Where("user_id NOT IN (SELECT id FROM users)").
-		Update("user_id", newUserID)
-	if result.RowsAffected > 0 {
-		logger.Infof("✓ Adopted %d orphan exchange(s) for new user %s", result.RowsAffected, newUserID)
-	}
-}
+// adoptOrphanRecords was DELETED (P0 S3, 2026-08-16).
+//
+// It re-assigned every ai_models/exchanges row whose user_id no longer existed —
+// model API keys, exchange API keys, wallet private keys — to a newly registered
+// user. That made credential inheritance an automatic side effect of signup and
+// was the payoff step of the unauthenticated-takeover chain in
+// docs/superpowers/reports/2026-08-16-acceptance-gate-v2.md (finding #1).
+//
+// Do not reintroduce it. If an operator genuinely needs to re-home credentials
+// after a reset, that is a deliberate database action taken with knowledge of
+// which rows are being moved and to whom.
 
 // initUserDefaultConfigs Initialize default configs for new user
 func (s *Server) initUserDefaultConfigs(userID string, lang string) error {

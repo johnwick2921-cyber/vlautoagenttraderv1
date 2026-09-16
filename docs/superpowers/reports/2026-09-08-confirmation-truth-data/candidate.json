@@ -1,0 +1,31 @@
+{
+  "source_revision": "2166a072339131fdb0a8e8e816e12148b261872b",
+  "binary_path": "/tmp/nofx-confirmation-build/nofx/nofx-bin",
+  "binary_sha256": "26cecc0f0513482c88ec695051b9585f179cef53806b86f74e43645ecd770292",
+  "binary_bytes": 72204224,
+  "vcs_modified": false,
+  "vcs_time": "2026-09-08T19:35:49Z",
+  "verified_at_ct": "2026-09-08T14:41:54.715194-05:00",
+  "guide_revision_read_from_binary": "2166a072339131fdb0a8e8e816e12148b261872b",
+  "go_suite_before_build": {
+    "revision": "2166a072339131fdb0a8e8e816e12148b261872b",
+    "exit_code": 0,
+    "log": "/tmp/confirmation-truth-blast/final-merged-go.log"
+  },
+  "frontend_suite": {
+    "files": 51,
+    "tests": 368,
+    "exit_code": 0
+  },
+  "typescript_exit_code": 0,
+  "deployment": "not attempted; owner cutover GO pending",
+  "dist": {
+    "build_exit_code": 0,
+    "built_after_guide_stamp": true,
+    "verified_at_ct": "2026-09-08T14:47:01.521503-05:00",
+    "files": 92,
+    "bytes": 7896609,
+    "guide_revision_found": "2166a072339131fdb0a8e8e816e12148b261872b",
+    "manifest_sha256": "1e2b1a96b9efd71975d2acacf635299a40b088eaae27bccd5eefe7402454f09d"
+  }
+}

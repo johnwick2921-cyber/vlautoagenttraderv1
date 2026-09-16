@@ -1,0 +1,39 @@
+{
+  "red-kernel": [
+    "--- FAIL: TestConfirmationTruthLive38329 (0.00s)",
+    "    confirmation_truth_test.go:33: decision 38329 at 08:16:59: forming 08:15\u201308:20 reclaim must NOT MET: {Rule:touch RefPrice:29661.25 Side:above Met:true Detail:last 1x5m close 29659.00 (best run 48/1 closes below 29661.25 since plan birth) Legs:[{Rule:touch RefPrice:29661.25 Side:above Met:true Detail:level touched Legs:[]} {Rule:1x5m_close RefPrice:29661.25 Side:below Met:true Detail:last 1x5m close 29659.00 (best run 48/1 closes below 29661.25 since plan birth) Legs:[]}]}",
+    "--- FAIL: TestConfirmationTruthBucketBoundary (0.00s)",
+    "    --- FAIL: TestConfirmationTruthBucketBoundary/1x5m_close-1s (0.00s)",
+    "        confirmation_truth_test.go:55: 1x5m_close at boundary -1000ms: MET=true detail=last 1x5m close 99.00 (best run 1/1 closes below 100.00 since plan birth)",
+    "    --- FAIL: TestConfirmationTruthBucketBoundary/2x5m_close-1s (0.00s)",
+    "        confirmation_truth_test.go:55: 2x5m_close at boundary -1000ms: MET=true detail=last 2x5m close 99.00 (best run 2/2 closes below 100.00 since plan birth)",
+    "    --- FAIL: TestConfirmationTruthBucketBoundary/15m_close-1s (0.00s)",
+    "        confirmation_truth_test.go:55: 15m_close at boundary -1000ms: MET=true detail=last 15m close 99.00 (best run 1/1 closes below 100.00 since plan birth)",
+    "--- FAIL: TestConfirmationTruthSequenceOrder (0.00s)",
+    "    confirmation_truth_test.go:72: reclaim BEFORE touch must be out of order: {Rule:touch RefPrice:100 Side:above Met:true Detail:last 1x5m close 101.00 (best run 1/1 closes below 100.00 since plan birth) Legs:[{Rule:touch RefPrice:100 Side:above Met:true Detail:level touched Legs:[]} {Rule:1x5m_close RefPrice:100 Side:below Met:true Detail:last 1x5m close 101.00 (best run 1/1 closes below 100.00 since plan birth) Legs:[]}]}",
+    "--- FAIL: TestConfirmationTruthMissingReference (0.00s)",
+    "    confirmation_truth_test.go:93: missing touch reference must UNKNOWN, never plan birth: {\"rule\":\"touch\",\"ref_price\":100,\"side\":\"above\",\"met\":false,\"detail\":\"last 1x5m close 99.00 (best run 1/1 closes below 100.00 since plan birth)\",\"legs\":[{\"rule\":\"touch\",\"ref_price\":100,\"side\":\"above\",\"met\":false,\"detail\":\"not touched since plan birth\"},{\"rule\":\"1x5m_close\",\"ref_price\":100,\"side\":\"below\",\"met\":false,\"detail\":\"last 1x5m close 99.00 (best run 1/1 closes below 100.00 since plan birth)\"}]}",
+    "--- FAIL: TestConfirmationTruthBreakdownAndVoidConsumers (0.00s)",
+    "    confirmation_truth_test.go:103: one 1m close cannot satisfy 1x5m_close: {Rule:1x5m_close RefPrice:100 Side:below Met:true Detail:immediate mode \u2014 entry signal is the confirming close Legs:[{Rule:1x5m_close RefPrice:100 Side:below Met:true Detail:displacement 2.00 pts, no reclaim Legs:[]} {Rule:retest_fail RefPrice:100 Side:below Met:true Detail:immediate mode \u2014 entry signal is the confirming close Legs:[]}]}",
+    "--- FAIL: TestConfirmationTruthImmediateDisplacementBeforeClose (0.00s)",
+    "    confirmation_truth_test.go:133: authorability is not confirmation: {Rule:1x5m_close RefPrice:100 Side:below Met:true Detail:immediate mode \u2014 entry signal is the confirming close Legs:[{Rule:1x5m_close RefPrice:100 Side:below Met:true Detail:displacement 11.00 pts, no reclaim Legs:[]} {Rule:retest_fail RefPrice:100 Side:below Met:true Detail:immediate mode \u2014 entry signal is the confirming close Legs:[]}]}"
+  ],
+  "red-arm-baseline": [
+    "--- FAIL: TestConfirmationTruthArmAndDeclineCallSites (0.89s)",
+    "    confirmation_truth_test.go:52: forming 5m bucket must not authorize an arm: rows=1 err=<nil>",
+    "--- FAIL: TestConfirmationTruthArmSequenceCallSite (0.91s)",
+    "    confirmation_truth_test.go:80: arm must not authorize an out-of-order sequence"
+  ],
+  "trader-first": [
+    "--- FAIL: TestConfirmationTruthStoredVerdictAndDesk (0.17s)",
+    "    confirmation_truth_test.go:108: desk is missing the recorded confirmation row"
+  ],
+  "red-ui": [
+    "AssertionError: expected '1\u00d75m not met' to contain '08:20 CT'",
+    "Expected: \"08:20 CT\"",
+    "Received: \"1\u00d75m not met\"",
+    "AssertionError: expected 'touch not met' to contain 'UNKNOWN'",
+    "Expected: \"UNKNOWN\"",
+    "Received: \"touch not met\""
+  ]
+}

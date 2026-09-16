@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+/* VL Plan Card fonts (design-system 3-font system: display + data). */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* VL Plan Card design tokens (the LAW). */
+@import './theme/vl-tokens.css';
 
 @tailwind base;
 @tailwind components;
@@ -12,9 +16,9 @@ html {
 
 :root {
   /* NoFX Neo-Gold Design System */
-  --nofx-gold: #F0B90B;
-  --nofx-bg: #0B0E11;
-  --nofx-accent: #00F0FF;
+  --nofx-gold: #f0b90b;
+  --nofx-bg: #0b0e11;
+  --nofx-accent: #00f0ff;
   --nofx-glass: rgba(5, 7, 10, 0.7);
   --nofx-border: rgba(240, 185, 11, 0.2);
 
@@ -23,7 +27,7 @@ html {
   --glow-accent: 0 0 20px rgba(0, 240, 255, 0.3);
   --glow-text: 0 0 10px rgba(240, 185, 11, 0.5);
 
-  --background: #0B0E11;
+  --background: #0b0e11;
   --header-bg: rgba(2, 3, 4, 0.85);
   /* Deep Abyssal */
 
@@ -35,20 +39,20 @@ html {
   --panel-border: rgba(255, 255, 255, 0.1);
   --panel-border-hover: rgba(240, 185, 11, 0.5);
 
-  --foreground: #EAECEF;
-  --text-primary: #EAECEF;
-  --text-secondary: #848E9C;
-  --text-tertiary: #5E6673;
-  --text-disabled: #474D57;
+  --foreground: #eaecef;
+  --text-primary: #eaecef;
+  --text-secondary: #848e9c;
+  --text-tertiary: #5e6673;
+  --text-disabled: #474d57;
 
   /* Trading Colors */
-  --binance-green: #0ECB81;
+  --binance-green: #0ecb81;
   --binance-green-bg: rgba(14, 203, 129, 0.12);
   --binance-green-border: rgba(14, 203, 129, 0.3);
-  --binance-red: #F6465D;
+  --binance-red: #f6465d;
   --binance-red-bg: rgba(246, 70, 93, 0.12);
   --binance-red-border: rgba(246, 70, 93, 0.3);
-  --binance-yellow: #F0B90B;
+  --binance-yellow: #f0b90b;
 
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -56,7 +60,12 @@ html {
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
   --shadow-glow: 0 0 30px rgba(240, 185, 11, 0.15);
 
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   line-height: 1.6;
   font-weight: 400;
   color-scheme: dark;
@@ -72,8 +81,15 @@ html {
 .crt-overlay {
   background:
     linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
-    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-  background-size: 100% 2px, 3px 100%;
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.03),
+      rgba(0, 255, 0, 0.01),
+      rgba(0, 0, 255, 0.03)
+    );
+  background-size:
+    100% 2px,
+    3px 100%;
   pointer-events: none;
 }
 
@@ -115,7 +131,12 @@ html {
 }
 
 .bg-vignette {
-  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.6) 80%, #000000 100%);
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.6) 80%,
+    #000000 100%
+  );
   pointer-events: none;
 }
 
@@ -136,14 +157,14 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--background);
-  background-image: radial-gradient(circle at 50% 0%, #151921 0%, #0B0E11 60%);
+  background-image: radial-gradient(circle at 50% 0%, #151921 0%, #0b0e11 60%);
   background-attachment: fixed;
 }
 
 /* Premium Selection Styles — gold to match brand */
 ::selection {
   background: rgba(240, 185, 11, 0.3);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 #root {
@@ -209,7 +230,6 @@ body {
 }
 
 @keyframes pulse-glow {
-
   0%,
   100% {
     opacity: 1;
@@ -233,7 +253,6 @@ body {
 }
 
 @keyframes pulse-scale {
-
   0%,
   100% {
     transform: scale(1);
@@ -391,7 +410,7 @@ button:disabled {
 /* Button Variants */
 .btn-success {
   background: rgba(14, 203, 129, 0.1);
-  color: #0ECB81;
+  color: #0ecb81;
   border: 1px solid rgba(14, 203, 129, 0.3);
 }
 
@@ -402,7 +421,7 @@ button:disabled {
 
 .btn-danger {
   background: rgba(246, 70, 93, 0.1);
-  color: #F6465D;
+  color: #f6465d;
   border: 1px solid rgba(246, 70, 93, 0.3);
 }
 
@@ -413,13 +432,13 @@ button:disabled {
 
 .btn-outline {
   background: transparent;
-  color: #848E9C;
-  border: 1px solid #2B3139;
+  color: #848e9c;
+  border: 1px solid #2b3139;
 }
 
 .btn-outline:hover:not(:disabled) {
-  border-color: #F0B90B;
-  color: #F0B90B;
+  border-color: #f0b90b;
+  color: #f0b90b;
   background: rgba(240, 185, 11, 0.1);
 }
 
@@ -497,7 +516,9 @@ textarea::placeholder {
 
 .premium-input:focus {
   border-color: var(--binance-yellow);
-  box-shadow: 0 0 0 1px rgba(240, 185, 11, 0.2), 0 0 15px rgba(240, 185, 11, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(240, 185, 11, 0.2),
+    0 0 15px rgba(240, 185, 11, 0.1);
   background: rgba(11, 14, 17, 0.9);
 }
 
@@ -511,7 +532,9 @@ textarea::placeholder {
   border-radius: 12px;
   /* More modern radius */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   overflow: hidden;
   /* Ensure rounded corners contain content */
 }
@@ -639,15 +662,19 @@ textarea::placeholder {
 
 /* Binance gradient backgrounds */
 .binance-gradient {
-  background: linear-gradient(135deg,
-      var(--binance-yellow) 0%,
-      var(--binance-yellow-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--binance-yellow) 0%,
+    var(--binance-yellow-light) 100%
+  );
 }
 
 .binance-gradient-subtle {
-  background: linear-gradient(135deg,
-      rgba(240, 185, 11, 0.15) 0%,
-      rgba(252, 213, 53, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(240, 185, 11, 0.15) 0%,
+    rgba(252, 213, 53, 0.05) 100%
+  );
   border: 1px solid rgba(240, 185, 11, 0.2);
 }
 
@@ -681,10 +708,12 @@ textarea::placeholder {
 /* Skeleton loading */
 .skeleton {
   background: var(--panel-bg);
-  background-image: linear-gradient(90deg,
-      transparent,
-      rgba(240, 185, 11, 0.05),
-      transparent);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(240, 185, 11, 0.05),
+    transparent
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
@@ -814,8 +843,20 @@ tr:hover {
 
 /* Linear Fade Mask for Scrollable Areas */
 .mask-linear-fade {
-  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
 }
 
 /* Divider */
@@ -869,10 +910,12 @@ tr:hover {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg,
-      transparent,
-      var(--binance-yellow),
-      transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--binance-yellow),
+    transparent
+  );
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -926,7 +969,6 @@ tr:hover {
 }
 
 @keyframes holo-flicker {
-
   0%,
   100% {
     opacity: 0.7;
@@ -943,7 +985,9 @@ tr:hover {
 
 .animate-holo {
   background-size: 200% 200%;
-  animation: holo-shift 8s ease infinite, holo-flicker 4s infinite;
+  animation:
+    holo-shift 8s ease infinite,
+    holo-flicker 4s infinite;
 }
 
 /* Holographic overlay effect */
@@ -951,11 +995,13 @@ tr:hover {
   /* Complex gradient + noise for texture */
   background:
     url('https://grainy-gradients.vercel.app/noise.svg'),
-    conic-gradient(from 0deg at 50% 50%,
+    conic-gradient(
+      from 0deg at 50% 50%,
       rgba(240, 185, 11, 0.1) 0deg,
       rgba(0, 240, 255, 0.1) 120deg,
       rgba(240, 185, 11, 0.1) 240deg,
-      rgba(240, 185, 11, 0.1) 360deg);
+      rgba(240, 185, 11, 0.1) 360deg
+    );
   mix-blend-mode: overlay;
   background-blend-mode: overlay, normal;
 }

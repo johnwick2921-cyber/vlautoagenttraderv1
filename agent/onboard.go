@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"nofx/branding"
 	"strings"
 	"time"
 
@@ -528,11 +529,11 @@ func containsAny(s string, words []string) bool {
 
 var setupMessages = map[string]map[string]string{
 	"welcome": {
-		"zh": "👋 你好！我是 *NOFXi*，你的 AI 交易 Agent。\n\n" +
+		"zh": "👋 你好！我是 *" + branding.PersonaName() + "*，你的 AI 交易 Agent。\n\n" +
 			"我发现你还没有配置交易所，让我帮你搞定吧！\n\n" +
 			"发送 *开始配置* 或 *setup* 开始\n" +
 			"发送 *取消* 随时退出",
-		"en": "👋 Hi! I'm *NOFXi*, your AI trading agent.\n\n" +
+		"en": "👋 Hi! I'm *" + branding.PersonaName() + "*, your AI trading agent.\n\n" +
 			"I see you haven't configured an exchange yet. Let me help!\n\n" +
 			"Send *setup* to begin\n" +
 			"Send *cancel* to exit anytime",

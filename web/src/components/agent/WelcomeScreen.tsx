@@ -1,3 +1,4 @@
+import { PERSONA_NAME } from '../../constants/branding'
 import { motion } from 'framer-motion'
 import { Zap, BarChart3, Lightbulb, Search } from 'lucide-react'
 
@@ -115,7 +116,9 @@ export function WelcomeScreen({ language, onSend }: WelcomeScreenProps) {
             letterSpacing: '-0.02em',
           }}
         >
-          {language === 'zh' ? '跟 NOFXi 聊点什么' : 'What can I help with?'}
+          {language === 'zh'
+            ? `跟 ${PERSONA_NAME} 聊点什么`
+            : 'What can I help with?'}
         </h1>
         <p
           style={{

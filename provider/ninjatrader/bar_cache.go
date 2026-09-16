@@ -14,6 +14,7 @@ package ninjatrader
 import (
 	"strings"
 	"sync"
+	"time"
 )
 
 // DefaultBarCacheMaxBars is the per-(symbol, timeframe) ring-buffer
@@ -31,6 +32,17 @@ type BarCache struct {
 	mu      sync.RWMutex
 	bars    map[string][]Bar // key: "SYMBOL|TIMEFRAME"
 	maxBars int
+	// dropped counts NT8 empty-minute placeholder bars refused at ingest.
+	dropped int64
+	// BAR-SOURCE WAVE: per key, whether a live bar has been seen this process
+	// (the scale-mismatch check runs once, on the first), and every mismatch
+	// detected, for the boot line.
+	liveSeen   map[string]bool
+	mismatches map[string]ScaleMismatch
+	// seedOffScale is set when the CURRENT seed for a key was found on another
+	// scale, and cleared by the next SeedHistorical. mismatches keeps every
+	// detection for the boot line; this answers "is the seed I hold bad NOW".
+	seedOffScale map[string]bool
 }
 
 // NewBarCache constructs an empty cache. maxBars <= 0 uses
@@ -42,6 +54,160 @@ func NewBarCache(maxBars int) *BarCache {
 	return &BarCache{
 		bars:    make(map[string][]Bar),
 		maxBars: maxBars,
+	}
+}
+
+// NO SYNTHETIC BARS, EVER (P0 2026-08-17).
+//
+// NinjaTrader's own minute store keeps EMPTY-MINUTE PLACEHOLDER records, and its
+// bar builder materialises each one as a bar with open==high==low==close (the
+// .ncd file's base price) and volume 0. Whenever a declared-open session has no
+// real ticks, NT8 therefore hands us a flat line rather than a gap.
+//
+// That is exactly what the owner saw. After the AddOn watchdog livelock
+// (7aa521a1) forced NT8 to re-fetch Friday 2026-08-14 into an all-placeholder
+// file, /api/klines returned 959 of 1500 one-minute bars with O=H=L=C=30147.50
+// and volume 0, contiguous from 00:02 to 16:00 CT — a 16-hour horizontal line
+// across the chart where TradingView (and this chart, before) would simply skip
+// to the next real candle.
+//
+// Every hop we own is a verbatim pass-through, so nothing in our code invents
+// these bars — but nothing rejected them either, and they reach the chart AND
+// the kernel's detectors. A bar with no volume and no range carries no
+// information by construction; the only thing it can do is lie. Drop it at
+// ingest, which is the one place that protects both consumers at once.
+//
+// The test is deliberately narrow: BOTH zero volume AND zero range. A real but
+// illiquid minute that still printed a range is kept, and so is a zero-volume
+// bar that somehow carries one.
+func isPlaceholderBar(b Bar) bool {
+	return b.V == 0 && b.H == b.L && b.O == b.C && b.O == b.H
+}
+
+// dropPlaceholderBars returns bars with NT8's empty-minute placeholders removed,
+// plus how many were dropped. It allocates only when something is actually
+// dropped, so the healthy path stays free.
+func dropPlaceholderBars(bars []Bar) ([]Bar, int) {
+	bad := 0
+	for i := range bars {
+		if isPlaceholderBar(bars[i]) {
+			bad++
+		}
+	}
+	if bad == 0 {
+		return bars, 0
+	}
+	out := make([]Bar, 0, len(bars)-bad)
+	for i := range bars {
+		if !isPlaceholderBar(bars[i]) {
+			out = append(out, bars[i])
+		}
+	}
+	return out, bad
+}
+
+// DroppedPlaceholders reports how many NT8 empty-minute placeholder bars this
+// cache has refused, so the condition is observable instead of silent.
+func (c *BarCache) DroppedPlaceholders() int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.dropped
+}
+
+// AllPairs enumerates every (symbol, timeframe) pair currently held — the
+// boot-backfill entry point for bar persistence.
+func (c *BarCache) AllPairs() [][2]string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	out := make([][2]string, 0, len(c.bars))
+	for k := range c.bars {
+		parts := strings.SplitN(k, "|", 2)
+		if len(parts) == 2 {
+			out = append(out, [2]string{parts[0], parts[1]})
+		}
+	}
+	return out
+}
+
+// ── CANONICAL TIME CONTRACT (2026-08-19, chart-timestamp dispatch) ──────────
+//
+//	A Bar's T in THIS CACHE is the bar's OPEN time, epoch ms UTC.
+//
+// NT8 stamps bars at their period END (NinjaScript Bars.GetTime(i) is the
+// close; proven live: a forming 5m bar covering 01:30–01:35 CT arrives stamped
+// 01:35 while the clock reads 01:31). The C# AddOn forwards that close stamp
+// verbatim, and this cache used to store it unchanged while every reader —
+// barsToKlines, /api/klines, the SSE relay, the kernel detectors, the charts —
+// treated T as the OPEN. Net effect: every bar was labelled one full period
+// late everywhere downstream.
+//
+// The conversion happens HERE, once, at ingest, because every consumer reads
+// this cache (the SSE relay polls it; REST serves it; the kernel bridges it).
+// Converting in any single reader would leave the twins wrong (the multi-
+// instance defect class). The C# side and its LastEmittedTimeUtcMs dedup
+// cursor stay in close-stamp domain untouched — no wire change.
+//
+// Side effect worth naming: C2's clockDriftMs and the clock-health line both
+// compute "feed now" as newestT + interval. Under close stamps that OVERSHOT
+// the true close by one interval; with open stamps it lands exactly on NT8's
+// own stamp again — a strict accuracy improvement, thresholds untouched.
+func openStampBars(bars []Bar, timeframe string) []Bar {
+	dur := timeframeMs(timeframe)
+	if dur <= 0 || len(bars) == 0 {
+		return bars
+	}
+	out := make([]Bar, len(bars))
+	for i, b := range bars {
+		b.T -= dur
+		out[i] = b
+	}
+	return out
+}
+
+// OpenStampBars (exported, BAR-TRUTH 2026-08-28) applies the canonical
+// close-stamp → open-stamp conversion ONCE for every reader. The persistence
+// path must use it too — historical replay frames arrive close-stamped, and
+// without it the DB rows landed at T+1m (2499/2500 common-window mismatches).
+func OpenStampBars(bars []Bar, timeframe string) []Bar {
+	return openStampBars(bars, timeframe)
+}
+
+// timeframeMs mirrors the coded TF vocabulary (bars_market_bridge.go keeps the
+// kernel-side twin; both fall back to 1m).
+func timeframeMs(timeframe string) int64 {
+	switch timeframe {
+	case "1m":
+		return 60_000
+	case "2m": // parity with kernel.TFDurationMs
+		return 120_000
+	case "3m":
+		return 180_000
+	case "5m":
+		return 300_000
+	case "15m":
+		return 900_000
+	case "30m":
+		return 1_800_000
+	case "1h":
+		return 3_600_000
+	case "2h":
+		return 7_200_000
+	case "4h":
+		return 14_400_000
+	case "6h": // C11 (2026-08-25) — previously fell through to 1m
+		return 21_600_000
+	case "8h":
+		return 28_800_000
+	case "12h":
+		return 43_200_000
+	case "1d", "1D":
+		return 86_400_000
+	case "3d": // C11 — previously fell through to 1m
+		return 259_200_000
+	case "1w", "1W":
+		return 604_800_000
+	default:
+		return 60_000
 	}
 }
 
@@ -65,9 +231,23 @@ func (c *BarCache) SeedHistorical(symbol, timeframe string, bars []Bar) {
 	if symbol == "" || timeframe == "" {
 		return
 	}
+	bars, bad := dropPlaceholderBars(bars)
+	bars = openStampBars(bars, timeframe)         // close-stamp → OPEN-stamp, once, for every reader
+	bars = stampSource(bars, BarSourceHistorical) // BAR-SOURCE WAVE: a replay is a replay
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.dropped += int64(bad)
 	key := barKey(symbol, timeframe)
+	// Every replay re-arms the scale check: the FIRST live bar after THIS seed
+	// is compared against it. Per-process arming would let a mid-session
+	// reconnect re-seed on a different scale and never be caught — a mutation
+	// survived on exactly that gap.
+	if c.liveSeen != nil {
+		delete(c.liveSeen, key)
+	}
+	if c.seedOffScale != nil {
+		delete(c.seedOffScale, key)
+	}
 	existing := c.bars[key]
 	if len(existing) == 0 {
 		// First seed for this key — copy the tail (detaches from caller's array).
@@ -83,7 +263,10 @@ func (c *BarCache) SeedHistorical(symbol, timeframe string, bars []Bar) {
 		// Empty re-seed (cursor-deduped reconnect frame) — keep what we have.
 		return
 	}
-	merged := mergeBarsByTime(existing, bars)
+	// A REPLAY NEVER OVERWRITES A LIVE BAR (bar-source wave). mergeBarsByTime
+	// said "incoming is freshest"; for a replay landing on minutes that already
+	// traded live, that put a back-adjusted bar over a real one.
+	merged := mergeSeedKeepingLive(existing, bars)
 	if len(merged) > c.maxBars {
 		merged = merged[len(merged)-c.maxBars:]
 	}
@@ -141,9 +324,23 @@ func (c *BarCache) Upsert(symbol, timeframe string, bars []Bar) {
 	if symbol == "" || timeframe == "" || len(bars) == 0 {
 		return
 	}
+	bars, bad := dropPlaceholderBars(bars)
+	bars = openStampBars(bars, timeframe)   // close-stamp → OPEN-stamp, once, for every reader
+	bars = stampSource(bars, BarSourceLive) // BAR-SOURCE WAVE: the minute as it traded
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.dropped += int64(bad)
+	if len(bars) == 0 {
+		return // the whole update was placeholders
+	}
 	key := barKey(symbol, timeframe)
+	now := time.Now()
+	for i := range bars {
+		// THE BOOT MINUTE IS NEVER A MIXED BAR — detected on the first live bar
+		// after a historical seed; on a mismatch the seed is dropped and this
+		// bar is labelled mixed (values untouched, A24).
+		bars[i], _ = c.detectScaleMismatch(key, bars[i], now)
+	}
 	existing := c.bars[key]
 	for _, b := range bars {
 		if len(existing) == 0 {
@@ -194,6 +391,15 @@ func (c *BarCache) Count(symbol, timeframe string) int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.bars[barKey(symbol, timeframe)])
+}
+
+// MaxBars is this cache's ring capacity — READ, not assumed.
+// DefaultBarCacheMaxBars is the DEFAULT; NewBarCache accepts any value, so a
+// line that names the ring must ask the cache rather than the constant (A11).
+func (c *BarCache) MaxBars() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.maxBars
 }
 
 // Keys returns the list of currently-populated (symbol, timeframe) pairs.
@@ -252,4 +458,72 @@ func splitBarKey(k string) (symbol, timeframe string, ok bool) {
 		}
 	}
 	return "", "", false
+}
+
+// RehydrateOlder EXTENDS an already-live ring BACKWARDS with older bars — the
+// D3 half of the BARS HORIZON wave (2026-09-09, owner-authorised).
+//
+// THE PROBLEM: a Go restart drops the ring to the AddOn's 2000-bar seed
+// (defaultAutoBarsBack, tcp_server.go) while the persisted `bars` table holds
+// 21 days. SeedHistorical merges WITHIN a process, so the ring climbs 2000 →
+// 2500 across a session, but nothing rehydrates it from the store — every
+// restart shortened the horizon again, silently.
+//
+// IT IS NOT SeedHistorical, AND THE DIFFERENCE IS DELIBERATE:
+//
+//   - A COLD KEY IS A NO-OP. SeedHistorical seeds an empty key; this refuses
+//     to. An empty ring means the feed is down or the AddOn replay has not
+//     landed, and filling it from the store would make a dead feed look alive
+//     to every reader downstream. The store DEEPENS a live tape; it never
+//     stands in for one.
+//   - EXISTING WINS ON OVERLAP. SeedHistorical lets `incoming` win because
+//     incoming is the freshest wire OHLCV; here `incoming` is the STORE, which
+//     is by definition not fresher than the live ring. Only bars strictly
+//     OLDER than the ring's oldest are taken, so no live or forming bar can be
+//     replaced by a stored one.
+//
+// Placeholder bars are refused at this door exactly as at every other (NO
+// SYNTHETIC BARS, EVER — isPlaceholderBar). Nothing is invented, interpolated
+// or carried forward: only bars the caller actually handed over are stored.
+//
+// Returns how many bars were ACTUALLY added, so the boot line can report a
+// resolved count rather than an intention (A11).
+func (c *BarCache) RehydrateOlder(symbol, timeframe string, bars []Bar) int {
+	if c == nil || symbol == "" || timeframe == "" || len(bars) == 0 {
+		return 0
+	}
+	bars, bad := dropPlaceholderBars(bars)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.dropped += int64(bad)
+	key := barKey(symbol, timeframe)
+	existing := c.bars[key]
+	if len(existing) == 0 {
+		return 0 // COLD KEY — the store never substitutes for the live feed.
+	}
+	oldest := existing[0].T
+	older := make([]Bar, 0, len(bars))
+	for _, b := range bars {
+		if b.T < oldest {
+			older = append(older, b)
+		}
+	}
+	if len(older) == 0 {
+		return 0
+	}
+	// EXISTING is `incoming` here, so the live ring wins every overlap. The
+	// filter above already removed every overlapping bar, so this is a plain
+	// ascending splice — mergeBarsByTime is reused rather than re-derived so
+	// the ordering rule has exactly one implementation.
+	merged := mergeBarsByTime(older, existing)
+	if len(merged) > c.maxBars {
+		// Trim the OLDEST. The live tail is never the part that goes.
+		merged = merged[len(merged)-c.maxBars:]
+	}
+	added := len(merged) - len(existing)
+	if added < 0 {
+		added = 0
+	}
+	c.bars[key] = merged
+	return added
 }

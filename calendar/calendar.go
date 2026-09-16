@@ -1,0 +1,203 @@
+// Package calendar fetches the economic calendar (ForexFactory weekly JSON) with
+// a static T1 fallback, so day-plan no-trade blackouts never silently vanish.
+//
+// P1.8. Pure + injectable: FetchWeek takes a FetchFunc (real HTTP by default,
+// a stub in tests) and a static-fallback path. A feed outage or a parse error
+// falls back to the owner-editable static T1 file and sets a Warning — it never
+// returns an error and never panics. The caller stores the per-day slice with
+// the trade date (replay-frozen, append-only).
+package calendar
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"sort"
+	"strings"
+	"time"
+)
+
+// Impact tiers. T1 (red / High) auto-writes a hard no-trade blackout; T2 (orange
+// / Medium) is a caution. Low / Holiday (yellow) are ignored.
+type Impact string
+
+const (
+	T1 Impact = "T1"
+	T2 Impact = "T2"
+)
+
+// Source records where a week's data came from.
+type Source string
+
+const (
+	SourceLive   Source = "forexfactory"
+	SourceStatic Source = "static"
+	SourceNone   Source = "none"
+)
+
+// ForexFactory weekly JSON URL (the standard public feed).
+const ForexFactoryWeeklyURL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+
+// Currencies the day-plan cares about (union of all session filters).
+var interestCurrencies = map[string]bool{
+	"USD": true, "EUR": true, "GBP": true, "JPY": true, "CNY": true,
+}
+
+// Event is one calendar entry (post-filter).
+type Event struct {
+	Time     time.Time `json:"time"`
+	Currency string    `json:"currency"`
+	Title    string    `json:"title"`
+	Impact   Impact    `json:"impact"`
+}
+
+// Result is the fetched week grouped by CT calendar date (YYYY-MM-DD).
+type Result struct {
+	Days    map[string][]Event `json:"days"`
+	Source  Source             `json:"source"`
+	Warning string             `json:"warning,omitempty"` // non-empty on outage/fallback
+}
+
+// FetchFunc returns the raw weekly JSON bytes (or an error). Injectable for tests.
+type FetchFunc func() ([]byte, error)
+
+// StaticLoader returns the static T1 fallback events (or nil). Injectable.
+type StaticLoader func() []Event
+
+// ffEvent is the raw ForexFactory JSON shape.
+type ffEvent struct {
+	Title   string `json:"title"`
+	Country string `json:"country"` // currency code
+	Date    string `json:"date"`    // ISO-8601
+	Impact  string `json:"impact"`  // High | Medium | Low | Holiday
+}
+
+// DefaultFetch GETs the ForexFactory weekly JSON with a short timeout.
+func DefaultFetch() ([]byte, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(ForexFactoryWeeklyURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("forexfactory HTTP %d", resp.StatusCode)
+	}
+	return io.ReadAll(io.LimitReader(resp.Body, 5<<20))
+}
+
+// FetchWeek fetches + filters the week. On any failure it falls back to `static`
+// and sets Warning (never errors, never panics).
+func FetchWeek(fetch FetchFunc, static StaticLoader) Result {
+	loc := chicagoLoc()
+	fallback := func(reason string) Result {
+		var ev []Event
+		if static != nil {
+			ev = static()
+		}
+		src := SourceStatic
+		if len(ev) == 0 {
+			src = SourceNone
+		}
+		return Result{
+			Days:    groupByCTDate(ev, loc),
+			Source:  src,
+			Warning: reason,
+		}
+	}
+
+	if fetch == nil {
+		return fallback("no calendar fetcher configured; used static T1 fallback")
+	}
+	data, err := fetch()
+	if err != nil || len(data) == 0 {
+		return fallback(fmt.Sprintf("calendar feed unavailable (%v); used static T1 fallback", err))
+	}
+	events, perr := parseForexFactory(data)
+	if perr != nil {
+		return fallback(fmt.Sprintf("calendar feed unparseable (%v); used static T1 fallback", perr))
+	}
+	return Result{Days: groupByCTDate(events, loc), Source: SourceLive}
+}
+
+// parseForexFactory parses + filters raw FF JSON: keep High→T1 / Medium→T2 for
+// currencies of interest; drop Low/Holiday (yellow) and off-list currencies.
+func parseForexFactory(data []byte) ([]Event, error) {
+	var raw []ffEvent
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	var out []Event
+	for _, r := range raw {
+		cur := strings.ToUpper(strings.TrimSpace(r.Country))
+		if !interestCurrencies[cur] {
+			continue
+		}
+		var imp Impact
+		switch strings.ToLower(strings.TrimSpace(r.Impact)) {
+		case "high":
+			imp = T1
+		case "medium":
+			imp = T2
+		default:
+			continue // low / holiday / unknown → ignored
+		}
+		t, err := time.Parse(time.RFC3339, r.Date)
+		if err != nil {
+			// tolerate a date-only form
+			if t, err = time.Parse("2006-01-02", r.Date); err != nil {
+				continue
+			}
+		}
+		out = append(out, Event{Time: t.UTC(), Currency: cur, Title: strings.TrimSpace(r.Title), Impact: imp})
+	}
+	return out, nil
+}
+
+// groupByCTDate buckets events by their America/Chicago calendar date and sorts
+// each day by time.
+func groupByCTDate(events []Event, loc *time.Location) map[string][]Event {
+	days := map[string][]Event{}
+	for _, e := range events {
+		key := e.Time.In(loc).Format("2006-01-02")
+		days[key] = append(days[key], e)
+	}
+	for k := range days {
+		sort.SliceStable(days[k], func(i, j int) bool { return days[k][i].Time.Before(days[k][j].Time) })
+	}
+	return days
+}
+
+// SessionCurrencies returns the currency filter for a session: USD always; +JPY/
+// CNY for Asia; +EUR/GBP for London; NY = USD only.
+func SessionCurrencies(session string) map[string]bool {
+	m := map[string]bool{"USD": true}
+	switch strings.ToUpper(session) {
+	case "ASIA":
+		m["JPY"], m["CNY"] = true, true
+	case "LONDON":
+		m["EUR"], m["GBP"] = true, true
+	}
+	return m
+}
+
+// EventsForSession filters a day's events to a session's currency set.
+func EventsForSession(day []Event, session string) []Event {
+	cur := SessionCurrencies(session)
+	var out []Event
+	for _, e := range day {
+		if cur[e.Currency] {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func chicagoLoc() *time.Location {
+	loc, err := time.LoadLocation("America/Chicago")
+	if err != nil {
+		return time.UTC
+	}
+	return loc
+}

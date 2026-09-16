@@ -24,6 +24,15 @@ export interface AccountInfo {
   total_pnl_pct: number
   initial_balance: number
   daily_pnl: number
+  // P&L-TRUTH WAVE (2026-09-01): the ledger day total — the SAME rule as the
+  // position-history footer (rows closed today CT, unknown-P&L / test-seam
+  // reasons out, strict pnl_corrected; unresolved rows counted + excluded).
+  // Absent when the backend could not compute it (never a fabricated 0).
+  ledger_day_pnl?: number
+  ledger_day_resolved?: number
+  ledger_day_unresolved?: number
+  ledger_day_date?: string
+  ledger_day_status?: string
   position_count: number
   margin_used: number
   margin_used_pct: number
@@ -179,6 +188,10 @@ export interface HistoricalPosition {
   exit_order_id: string
   exit_time: string
   realized_pnl: number
+  // pnl_corrected wins over realized_pnl in every ledger aggregate (store COALESCE).
+  // null = legacy unverified row (excluded from ledger sums).
+  pnl_corrected?: number | null
+  pnl_correction_note?: string
   fee: number
   leverage: number
   status: string

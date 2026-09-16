@@ -15,9 +15,39 @@ import (
 	"nofx/provider/coinank/coinank_enum"
 	"nofx/provider/hyperliquid"
 	"nofx/provider/twelvedata"
+	"nofx/trader"
 
 	"github.com/gin-gonic/gin"
 )
+
+// resolveKlinesLimit parses and clamps the klines `limit` query per exchange.
+//
+// Coinank (and the other external providers routed through it) caps a request
+// at 1500 klines. The ninjatrader path serves from the live ring PLUS our own
+// bars store (F1, 2026-09-14 — the dashboard asks 5,000 so the store splice has
+// room past the 2,500-bar ring ceiling), so it keeps its own ceiling instead of
+// inheriting the Coinank one. A bad or missing value falls back to 1000.
+func resolveKlinesLimit(exchange, limitStr string) int {
+	const (
+		defaultLimit     = 1000
+		coinankMax       = 1500
+		ntKlinesMaxLimit = 20000 // bounded by store retention and payload size
+	)
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit <= 0 {
+		return defaultLimit
+	}
+	if strings.EqualFold(strings.TrimSpace(exchange), "ninjatrader") {
+		if limit > ntKlinesMaxLimit {
+			return ntKlinesMaxLimit
+		}
+		return limit
+	}
+	if limit > coinankMax {
+		return coinankMax
+	}
+	return limit
+}
 
 // handleKlines K-line data (supports multiple exchanges via coinank)
 func (s *Server) handleKlines(c *gin.Context) {
@@ -30,18 +60,10 @@ func (s *Server) handleKlines(c *gin.Context) {
 
 	interval := c.DefaultQuery("interval", "5m")
 	exchange := c.DefaultQuery("exchange", "binance") // Default to binance for backward compatibility
-	limitStr := c.DefaultQuery("limit", "1000")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 1000
-	}
-
-	// Coinank API has a maximum limit of 1500 klines per request
-	if limit > 1500 {
-		limit = 1500
-	}
+	limit := resolveKlinesLimit(exchange, c.DefaultQuery("limit", "1000"))
 
 	var klines []market.Kline
+	var err error
 	exchangeLower := strings.ToLower(exchange)
 
 	// Route to appropriate data source based on exchange type
@@ -354,9 +376,93 @@ func (s *Server) getKlinesFromNinjaTrader(symbol, interval string, limit int) []
 	}
 	klines := provider(symbol, interval, limit)
 	if klines == nil {
-		return []market.Kline{}
+		klines = []market.Kline{}
+	}
+	// F1 (2026-09-14) — DASHBOARD DEPTH. The ring caps at
+	// DefaultBarCacheMaxBars (2,500) per (symbol, timeframe), so after a
+	// restart — or any ask past the ceiling — the chart was shallow although
+	// the store held the bars. When the ask exceeds what the ring served,
+	// splice the CURRENT contract's stored bars onto the older end. The
+	// contract is the store's own fallback (newest usable bar) — the same
+	// shadow the trader's currentContract uses when no ACK has arrived. An
+	// unnamed contract or a failed store read degrades to the ring alone: the
+	// chart may be shallow, it is never mixed-scale (A10/A24, roll wave).
+	if s.store != nil && len(klines) < limit {
+		if contract, ok := s.store.BarHistory().LatestContract(symbol); ok {
+			klines = trader.BarsWithStoreDepthDisplay(klines, s.store, contract, symbol, interval, limit, time.Now())
+		}
+	}
+	// F1.1 (2026-09-14) — COARSE-TF AGGREGATION. On a young contract NT8's
+	// replay is deep on 1m/5m/15m/1h but nearly empty on 2h/4h/1d (measured
+	// live 2026-09-14: the 4h ring held 10 bars while the 1h ring held 1,500,
+	// so a 4h chart showed a handful of candles although weeks of 4h exist in
+	// the finer rungs). When the series is still short of the ask, aggregate
+	// the first finer ladder rung with depth into the requested TF — CLOSED
+	// buckets, strictly older than the series' oldest — and prepend. The ring
+	// is contract-pure (purged on roll), so the aggregate never mixes
+	// contracts, and a forming bucket is never served.
+	if len(klines) < limit {
+		klines = klinesWithAggregatedDepth(klines, provider, symbol, interval, limit, time.Now())
 	}
 	return klines
+}
+
+// klinesFinerRungFetch is how many bars the finer aggregation rung may fetch
+// from the ring — comfortably past the 2,500-bar ring ceiling.
+const klinesFinerRungFetch = 5000
+
+// klinesWithAggregatedDepth extends a thin coarse-TF series backwards by
+// aggregating a finer ladder rung that has depth. PURE so a pin drives it.
+func klinesWithAggregatedDepth(base []market.Kline, provider func(string, string, int) []market.Kline, symbol, tf string, limit int, now time.Time) []market.Kline {
+	mins := market.TFMinutes(tf)
+	if mins == 0 || limit <= 0 {
+		return base
+	}
+	span := int64(mins) * 60000
+	nowMs := now.UnixMilli()
+	// An EMPTY native ring is not a dead chart: on a young contract NT8 can
+	// return zero bars for the requested TF itself (measured 2026-09-14: 2h
+	// and 4h EMPTY on re-subscribe) while a finer rung is deep. Aggregating
+	// the finer LIVE rung is contract-pure ring data — not a store substitute
+	// — so an empty base is aggregated, never left empty when a finer rung can
+	// answer (closed buckets only).
+	oldest := int64(0)
+	haveBase := len(base) > 0
+	if haveBase {
+		oldest = base[0].OpenTime
+	}
+	for _, finer := range market.LadderFor(tf) {
+		if finer == tf {
+			continue
+		}
+		finerMins := market.TFMinutes(finer)
+		if finerMins == 0 || finerMins >= mins {
+			continue
+		}
+		raw := provider(symbol, finer, klinesFinerRungFetch)
+		if len(raw) == 0 {
+			continue
+		}
+		agg := market.AggregateToTF(raw, finerMins, mins)
+		older := make([]market.Kline, 0, len(agg))
+		for _, k := range agg {
+			// Closed buckets only; when the base exists, only buckets strictly
+			// older than its oldest bar — a forming bucket is never served and
+			// a bucket the ring already covers is never duplicated.
+			if k.OpenTime+span <= nowMs && (!haveBase || k.OpenTime < oldest) {
+				older = append(older, k)
+			}
+		}
+		if len(older) == 0 {
+			continue
+		}
+		out := append(older, base...)
+		if len(out) > limit {
+			out = out[len(out)-limit:]
+		}
+		return out
+	}
+	return base
 }
 
 // handleSymbols returns available symbols for a given exchange

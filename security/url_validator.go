@@ -41,8 +41,8 @@ func init() {
 
 // SSRFError represents a Server-Side Request Forgery attempt
 type SSRFError struct {
-	URL     string
-	Reason  string
+	URL    string
+	Reason string
 }
 
 func (e *SSRFError) Error() string {
@@ -155,10 +155,21 @@ func ValidateURL(rawURL string) error {
 
 // SafeHTTPClient returns an HTTP client with SSRF protection
 // It validates URLs and blocks requests to private networks
+// DialerKeepAlive is the ONE source of the TCP keepalive the safe client's
+// dialer sets. CLASS 46: the class-41 boot line printed "keepalive=30s" as a
+// LITERAL passed at the call site, while the wire showed 14-20 s — the line
+// asserted a value nothing read. Every printer now reads THIS.
+//
+// Note what it does and does not promise: this is the interval Go asks the OS
+// for on the socket. The interval OBSERVED on the wire is the OS's business
+// and can differ; the boot line reports both, and says n/a when it cannot
+// observe one, rather than implying the set value is the seen value.
+const DialerKeepAlive = 30 * time.Second
+
 func SafeHTTPClient(timeout time.Duration) *http.Client {
 	dialer := &net.Dialer{
 		Timeout:   timeout,
-		KeepAlive: 30 * time.Second,
+		KeepAlive: DialerKeepAlive,
 	}
 
 	transport := &http.Transport{

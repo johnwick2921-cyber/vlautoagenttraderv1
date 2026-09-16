@@ -18,6 +18,12 @@ COPY web/package*.json ./
 RUN npm ci
 
 COPY web/ ./
+# B8 (2026-09-11): web/src/constants/branding.ts and web/vite.config.ts read
+# ../../../branding/product.txt (repo root). With WORKDIR /build that resolves
+# to /branding/product.txt, which this stage never copied — the build failed
+# with `Could not resolve "../../../branding/product.txt?raw"` on every run
+# since the rebrand wave.
+COPY branding/ /branding/
 RUN npm run build
 
 # ──────────────────────────────────────────────────────────────

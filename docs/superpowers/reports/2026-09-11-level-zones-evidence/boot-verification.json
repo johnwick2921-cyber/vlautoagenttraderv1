@@ -1,0 +1,16 @@
+{
+  "pid": 3497330,
+  "release": "6c96683c",
+  "head_release": "6c96683c",
+  "guide": "6c96683c704f9a9ea5267af0ea33f0c5df631261",
+  "health": {
+    "revision": "6c96683c704f",
+    "status": "ok",
+    "time": null
+  },
+  "exe_revision": "6c96683c704f9a9ea5267af0ea33f0c5df631261",
+  "vcs_modified": false,
+  "binary_md5": "838ae0762ef5f00e04d857c18eabe033",
+  "process_md5": "838ae0762ef5f00e04d857c18eabe033",
+  "head": "aa5e90dbdfbe548710dcc462960b762cd0755186"
+}

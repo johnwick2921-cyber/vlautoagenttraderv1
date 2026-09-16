@@ -18,18 +18,43 @@ type Store struct {
 	driver *DBDriver // Database driver for abstraction (legacy)
 
 	// Sub-stores (lazy initialization)
-	user           *UserStore
-	aiModel        *AIModelStore
-	exchange       *ExchangeStore
-	trader         *TraderStore
-	decision       *DecisionStore
-	position       *PositionStore
-	strategy       *StrategyStore
-	equity         *EquityStore
-	order          *OrderStore
-	grid           *GridStore
-	aiCharge       *AIChargeStore
-	telegramConfig TelegramConfigStore
+	user              *UserStore
+	aiModel           *AIModelStore
+	exchange          *ExchangeStore
+	trader            *TraderStore
+	decision          *DecisionStore
+	position          *PositionStore
+	strategy          *StrategyStore
+	equity            *EquityStore
+	order             *OrderStore
+	grid              *GridStore
+	aiCharge          *AIChargeStore
+	plan              *PlanStore
+	levelState        *LevelStateStore
+	sessionProfile    *SessionProfileStore
+	barHistory        *BarHistoryStore
+	armedOrders       *ArmedOrderStore
+	abConfirm         *AbConfirmStore
+	tradeExcursions   *TradeExcursionStore
+	nt8OrderSnapshots *NT8OrderSnapshotStore
+	acceptedRisk      *AcceptedRiskStore
+	plannerRejected   *PlannerRejectedStore
+	plannerReadFacts  *PlannerReadFactsStore
+	touchOutcomes     *TouchOutcomeStore
+	candidatePool     *CandidatePoolStore
+	configChanges     *ConfigChangeStore
+	watchdogFires     *WatchdogFireStore
+	levelStats        *LevelStatsStore
+	touchEpisodes     *TouchEpisodeStore
+	calendarSlice     *CalendarSliceStore
+	digest            *DigestStore
+	ownerLevel        *OwnerLevelStore
+	alert             *AlertStore
+	logEvent          *LogEventStore
+	watchAssessment   *WatchAssessmentStore
+	planQA            *PlanQAStore
+	matchedRandom     *MatchedRandomStore
+	telegramConfig    TelegramConfigStore
 
 	mu sync.RWMutex
 }
@@ -164,6 +189,59 @@ func (s *Store) initTables() error {
 	if err := s.AICharge().initTables(); err != nil {
 		return fmt.Errorf("failed to initialize AI charge tables: %w", err)
 	}
+	if err := s.Plan().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize plan tables: %w", err)
+	}
+	if err := s.LevelState().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize level_state tables: %w", err)
+	}
+	if err := s.SessionProfile().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize session_profiles tables: %w", err)
+	}
+	if err := s.Calendar().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize calendar_slices tables: %w", err)
+	}
+	if err := s.Digest().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize day_plan_digests tables: %w", err)
+	}
+	if err := s.OwnerLevel().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize owner_levels tables: %w", err)
+	}
+	if err := s.Alert().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize day_plan_alerts tables: %w", err)
+	}
+	if err := s.WatchAssessment().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize watch assessment tables: %w", err)
+	}
+	if err := s.LogEvent().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize log_events tables: %w", err)
+	}
+	if err := s.PlanQA().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize plan_qa tables: %w", err)
+	}
+	if err := s.MatchedRandom().initTables(); err != nil {
+		return fmt.Errorf("failed to initialize matched_random tables: %w", err)
+	}
+	if err := s.ArmedOrders().Migrate(); err != nil {
+		return fmt.Errorf("failed to initialize armed_orders table: %w", err)
+	}
+	if err := s.AbConfirm().Migrate(); err != nil {
+		return fmt.Errorf("failed to initialize ab_confirm_log table: %w", err)
+	}
+	if err := s.Plan().MigrateLifecycleLog(); err != nil {
+		return fmt.Errorf("failed to initialize plan_lifecycle_log table: %w", err)
+	}
+	if err := s.NT8OrderSnapshots().Migrate(); err != nil {
+		return fmt.Errorf("failed to initialize nt8_order_snapshots table: %w", err)
+	}
+	if err := s.TradeExcursions().Migrate(); err != nil {
+		return fmt.Errorf("failed to initialize trade_excursions table: %w", err)
+	}
+	// E4 (wave 1A, 2026-09-02) — retire the never-computed mae/mfe zeros on
+	// trader_positions. Idempotent: a second boot matches nothing.
+	if _, err := s.Position().MigrateExcursionZerosToNull(); err != nil {
+		logger.Warnf("📐 excursion zero→NULL migration skipped: %v", err)
+	}
 	return nil
 }
 
@@ -295,6 +373,261 @@ func (s *Store) AICharge() *AIChargeStore {
 		s.aiCharge = NewAIChargeStore(s.gdb)
 	}
 	return s.aiCharge
+}
+
+// Plan gets the Day Plan append-only storage (plans + plan_overlays).
+func (s *Store) Plan() *PlanStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.plan == nil {
+		s.plan = NewPlanStore(s.gdb)
+	}
+	return s.plan
+}
+
+// LevelState gets the cross-session level-state storage.
+func (s *Store) LevelState() *LevelStateStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.levelState == nil {
+		s.levelState = NewLevelStateStore(s.gdb)
+	}
+	return s.levelState
+}
+
+// BarHistory gets the closed-bar persistence store (2026-08-26).
+func (s *Store) BarHistory() *BarHistoryStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.barHistory == nil {
+		s.barHistory = NewBarHistoryStore(s.gdb)
+	}
+	return s.barHistory
+}
+
+// ArmedOrders gets the armed-orders ledger (Wave 2, 2026-08-27).
+func (s *Store) ArmedOrders() *ArmedOrderStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.armedOrders == nil {
+		s.armedOrders = NewArmedOrderStore(s.gdb)
+	}
+	return s.armedOrders
+}
+
+// PlannerRejected returns the rejected-planner-prompt store (lazy, planner-speed
+// wave 1.4).
+// WatchdogFires — the stream-watchdog fire log (owner ruling 2026-09-02).
+func (s *Store) WatchdogFires() *WatchdogFireStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.watchdogFires == nil {
+		s.watchdogFires = NewWatchdogFireStore(s.gdb)
+	}
+	return s.watchdogFires
+}
+
+// ConfigChanges (REPAIR-PARSE E5) — the per-save resolved-knob diff.
+func (s *Store) ConfigChanges() *ConfigChangeStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.configChanges == nil {
+		s.configChanges = NewConfigChangeStore(s.gdb)
+	}
+	return s.configChanges
+}
+
+// PlannerReadFacts gets the per-read facts table (VOID PARITY, 2026-09-02) —
+// what the model was TOLD on every read, accepted or rejected.
+// TouchOutcomes gets the D1′ episode table (1B D2).
+func (s *Store) TouchOutcomes() *TouchOutcomeStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.touchOutcomes == nil {
+		s.touchOutcomes = NewTouchOutcomeStore(s.gdb)
+	}
+	return s.touchOutcomes
+}
+
+// CandidatePool gets the per-read candidate pool (1B D3).
+func (s *Store) CandidatePool() *CandidatePoolStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.candidatePool == nil {
+		s.candidatePool = NewCandidatePoolStore(s.gdb)
+	}
+	return s.candidatePool
+}
+
+func (s *Store) PlannerReadFacts() *PlannerReadFactsStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.plannerReadFacts == nil {
+		s.plannerReadFacts = NewPlannerReadFactsStore(s.gdb)
+	}
+	return s.plannerReadFacts
+}
+
+func (s *Store) PlannerRejected() *PlannerRejectedStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.plannerRejected == nil {
+		s.plannerRejected = NewPlannerRejectedStore(s.gdb)
+	}
+	return s.plannerRejected
+}
+
+// TradeExcursions gets the per-position excursion table (wave 1A, 2026-09-02).
+// AcceptedRisk (WAVE A / D4) is the APPEND-ONLY record of what the broker
+// actually accepted. The mutable armed_orders ledger stays as it is; this is
+// the row no later cycle may rewrite.
+func (s *Store) AcceptedRisk() *AcceptedRiskStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.acceptedRisk == nil {
+		s.acceptedRisk = NewAcceptedRiskStore(s.gdb)
+	}
+	return s.acceptedRisk
+}
+
+// NT8OrderSnapshots (F12) is the forensic record of the broker's working-order
+// book. The cutover gate reads the in-memory cache, not this table.
+func (s *Store) NT8OrderSnapshots() *NT8OrderSnapshotStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.nt8OrderSnapshots == nil {
+		s.nt8OrderSnapshots = NewNT8OrderSnapshotStore(s.gdb)
+	}
+	return s.nt8OrderSnapshots
+}
+
+func (s *Store) TradeExcursions() *TradeExcursionStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.tradeExcursions == nil {
+		s.tradeExcursions = NewTradeExcursionStore(s.gdb)
+	}
+	return s.tradeExcursions
+}
+
+// AbConfirm gets the E8 shadow A/B counterfactual table (2026-08-30).
+func (s *Store) AbConfirm() *AbConfirmStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.abConfirm == nil {
+		s.abConfirm = NewAbConfirmStore(s.gdb)
+	}
+	return s.abConfirm
+}
+
+// LevelStats gets the B4 forward-validation store (2026-08-26).
+func (s *Store) LevelStats() *LevelStatsStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.levelStats == nil {
+		s.levelStats = NewLevelStatsStore(s.gdb)
+	}
+	return s.levelStats
+}
+
+// TouchEpisodes gets the T1 touch-telemetry store (2026-08-26).
+func (s *Store) TouchEpisodes() *TouchEpisodeStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.touchEpisodes == nil {
+		s.touchEpisodes = NewTouchEpisodeStore(s.gdb)
+	}
+	return s.touchEpisodes
+}
+
+// SessionProfile gets the durable session-profile storage.
+func (s *Store) SessionProfile() *SessionProfileStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.sessionProfile == nil {
+		s.sessionProfile = NewSessionProfileStore(s.gdb)
+	}
+	return s.sessionProfile
+}
+
+// Calendar gets the per-day calendar-slice storage.
+func (s *Store) Calendar() *CalendarSliceStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.calendarSlice == nil {
+		s.calendarSlice = NewCalendarSliceStore(s.gdb)
+	}
+	return s.calendarSlice
+}
+
+// Digest gets the day-plan digest storage.
+func (s *Store) Digest() *DigestStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.digest == nil {
+		s.digest = NewDigestStore(s.gdb)
+	}
+	return s.digest
+}
+
+// OwnerLevel gets the sticky owner-level storage.
+func (s *Store) OwnerLevel() *OwnerLevelStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ownerLevel == nil {
+		s.ownerLevel = NewOwnerLevelStore(s.gdb)
+	}
+	return s.ownerLevel
+}
+
+// Alert gets the in-app alert storage.
+func (s *Store) Alert() *AlertStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.alert == nil {
+		s.alert = NewAlertStore(s.gdb)
+	}
+	return s.alert
+}
+
+// WatchAssessment gets the Phase-3.6 watcher scoring storage.
+func (s *Store) WatchAssessment() *WatchAssessmentStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.watchAssessment == nil {
+		s.watchAssessment = NewWatchAssessmentStore(s.gdb)
+	}
+	return s.watchAssessment
+}
+
+// LogEvent gets the P6 log-shipping storage (WARN+ → DB, async).
+func (s *Store) LogEvent() *LogEventStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.logEvent == nil {
+		s.logEvent = NewLogEventStore(s.gdb)
+	}
+	return s.logEvent
+}
+
+// PlanQA gets the Ask-Planner thread storage.
+func (s *Store) PlanQA() *PlanQAStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.planQA == nil {
+		s.planQA = NewPlanQAStore(s.gdb)
+	}
+	return s.planQA
+}
+
+// MatchedRandom gets the matched-random verdict storage (stats honesty gate).
+func (s *Store) MatchedRandom() *MatchedRandomStore {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.matchedRandom == nil {
+		s.matchedRandom = NewMatchedRandomStore(s.gdb)
+	}
+	return s.matchedRandom
 }
 
 // TelegramConfig gets Telegram bot configuration storage

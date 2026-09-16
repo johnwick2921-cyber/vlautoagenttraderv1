@@ -168,6 +168,11 @@ type riskStatusResponse struct {
 	MaxNotionalUSD      float64 `json:"max_notional_usd"`
 	KillSwitchArmed     bool    `json:"kill_switch_armed"`
 	LastResetUTC        string  `json:"last_reset_utc"`
+	// NotEnforced names the fields above that a reader would take for risk
+	// controls and that nothing on this response actually enforces (D6d,
+	// 2026-09-06). A number that looks like a limit and gates nothing is worse
+	// than no number, because it is acted on.
+	NotEnforced []string `json:"not_enforced,omitempty"`
 }
 
 // handleRiskStatus handles GET /api/risk/status?trader_id=xxx.
@@ -190,6 +195,28 @@ func (s *Server) handleRiskStatus(c *gin.Context) {
 
 	limits := kernel.LoadRiskLimitsFromConfig()
 
+	// D6(d), desk-strip wave 2026-09-06 — WHAT ON THIS RESPONSE IS ACTUALLY
+	// ENFORCED. The pre-prompt gate calls CheckPreTrade(0, positions, 0, 0)
+	// (kernel/engine_analysis.go:118-136): zero for both notional arguments and
+	// zero for pnl. So at that gate ONLY the concurrent-position cap applies.
+	//
+	//   max_notional_usd     NOT enforced anywhere as published. It is the
+	//                        futures-unaware CRYPTO cap (default $50k) that a
+	//                        single MNQ contract (~$61k) exceeds; passing it
+	//                        used to skip every cycle while a position was open.
+	//                        Notional IS enforced at EXECUTION time, futures-
+	//                        aware, as equity × max_notional_leverage — a
+	//                        DIFFERENT number from this one.
+	//   kill_switch_armed    a derived boolean (limit > 0), not an armed state.
+	//                        The limit that actually gates is the Studio
+	//                        guardrail, and only while the guardrails master is
+	//                        ON; this field cannot see either.
+	//   daily_loss_limit_usd the ENV value. When a Studio guardrail is set, THAT
+	//                        is the enforced number and this one is not.
+	//
+	// The fields stay (removing them would break existing readers) and now say
+	// so in their own names. The DESK strip renders the RESOLVED enforced limit
+	// with its source instead.
 	resp := riskStatusResponse{
 		TraderID:            traderID,
 		DailyLossLimitUSD:   limits.MaxDailyLossUSD,
@@ -197,6 +224,11 @@ func (s *Server) handleRiskStatus(c *gin.Context) {
 		MaxNotionalUSD:      limits.MaxNotionalUSD,
 		KillSwitchArmed:     limits.MaxDailyLossUSD > 0,
 		LastResetUTC:        time.Now().UTC().Format(time.RFC3339),
+		NotEnforced: []string{
+			"max_notional_usd: the crypto cap is not applied at the pre-prompt gate; notional is enforced at execution time as equity × max_notional_leverage",
+			"kill_switch_armed: derived from the env limit being non-zero — it is not an armed state and does not see the Studio guardrail or its master toggle",
+			"daily_loss_limit_usd: the ENV value; when a Studio guardrail is set that value is the enforced one. GET /api/desk renders the resolved limit with its source",
+		},
 	}
 
 	// Best-effort populate live values; failures don't 500 the endpoint.

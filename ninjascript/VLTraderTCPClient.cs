@@ -36,6 +36,10 @@ namespace NinjaTrader.NinjaScript.AddOns
         private const string GO_SERVER_HOST          = "127.0.0.1";
         private const int    GO_SERVER_PORT          = 36974; // NOT NT's ATI port 36973
         private const int    HEARTBEAT_INTERVAL_MS   = 30000; // spec L4408
+        // F12: the working-order snapshot period. The Go side calls a book older
+        // than 2x this STALE (trader.DefaultOrderSnapshotSecs = 30). Changing one
+        // without the other changes what "stale" means on only one side.
+        private const int    ORDER_SNAPSHOT_INTERVAL_MS = 30000;
         private const int    RECONNECT_INTERVAL_MS   = 5000;  // spec L4415
         private const int    STALE_SIGNAL_AGE_SECONDS = 60;   // spec L4414
         // Wire-protocol generation. v2 = symbol-tagged fills + the hello handshake.
@@ -45,6 +49,10 @@ namespace NinjaTrader.NinjaScript.AddOns
         // provider/ninjatrader/tcp_framing.go ProtocolVersion — bump ONLY with a
         // lockstep C#+Go ship.
         private const int    PROTOCOL_VERSION        = 3;
+        // E7 capability handshake (2026-08-30): reported on every heartbeat so
+        // the Go side refuses frame types this build hasn't proven. Bump on any
+        // additive wire change; Go gates on FarSideBuildE7 in tcp_framing.go.
+        private const string  VL_BUILD_ID             = "2026-09-07-h1";
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -107,7 +115,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         {
             public Order       SlOrder;     // the live resting stop order (movable)
             public Order       TpOrder;     // 4.3: the live take-profit order — tracked so
-                                           // CancelBracketFor can cancel BOTH legs after a
+                                           // CancelBracketsFor can cancel BOTH legs after a
                                            // limit exit fills (an orphaned TP could re-enter)
             public Account     Account;
             public Instrument  Instrument;
@@ -117,6 +125,14 @@ namespace NinjaTrader.NinjaScript.AddOns
             public double      TickSize;
         }
         private readonly Dictionary<string, PlacedBracket> placedBrackets = new Dictionary<string, PlacedBracket>();
+
+        // PHASE 2 armed orders — resting LIMIT entries keyed by signal_id, so Go's
+        // cancel_order can pull them before they fill. Removed on entry fill/reject.
+        private readonly Dictionary<string, Order> workingEntries = new Dictionary<string, Order>();
+
+        // PHASE 2 armed orders — per-order last STATE (order_update dedup): the
+        // order_update frame emits every state change exactly once per order name.
+        private readonly Dictionary<string, string> lastOrderState = new Dictionary<string, string>();
 
         // A2 (G1) — the identity (trader_id + seq) the Go side stamped on each order,
         // keyed by signal_id. The AddOn echoes it on the paired fill/close/reject so
@@ -191,6 +207,10 @@ namespace NinjaTrader.NinjaScript.AddOns
         // writeLock so bar frames cannot interleave with signal/fill bytes.
         private VLBarsSubscriptionManager barsManager;
 
+        // HISTORY IMPORT (wave 101) — named-contract historical pulls, kept
+        // strictly separate from the live subscription manager.
+        private VLHistoryPullManager historyPulls;
+
         // Phase 0 — data-feed reconnect recovery state. NT8 does NOT auto-resume
         // a BarsRequest after the price feed drops, so we recreate them on
         // recovery (VLBarsSubscriptionManager.OnConnectionReconnected). Guard so
@@ -242,6 +262,12 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // proven signal/fill/heartbeat path.
                 barsManager = new VLBarsSubscriptionManager(SendFrame, LogInfo, LogWarn);
 
+                // HISTORY IMPORT (wave 101) — instantiate the named-contract
+                // history pull manager beside the bars manager. It owns ONLY
+                // disposable, per-request BarsRequests for EXPLICIT contract
+                // names; it never touches the live subscriptions.
+                historyPulls = new VLHistoryPullManager(SendFrame, LogInfo, LogWarn);
+
                 // Phase 0 — hook the NT8 data-feed status so BarsRequests get
                 // recreated when the NT8<->provider price feed recovers. Without
                 // this, NT8 silently stops delivering bars after a feed reconnect
@@ -280,6 +306,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 }
                 try { Connection.ConnectionStatusUpdate -= OnVLConnectionStatusUpdate; } catch { }
                 try { barsManager?.DisposeAll(); } catch { }
+                try { historyPulls?.DisposeAll(); } catch { }
                 try { stream?.Close(); } catch { }
                 try { client?.Close(); } catch { }
                 LogInfo("VLTraderTCPClient: AddOn Terminated");
@@ -631,6 +658,24 @@ namespace NinjaTrader.NinjaScript.AddOns
                 {
                     HandleMoveStop(payload);
                 }
+                else if (type == "cancel_order")
+                {
+                    // PHASE 2 armed orders — cancel a working limit entry and/or
+                    // its protective bracket legs (managed Account.Cancel).
+                    HandleCancelOrder(payload);
+                }
+                else if (type == "place_protective_stop")
+                {
+                    // D5 (2026-09-07) — restore a stop for a position the broker
+                    // is holding UNPROTECTED. Standalone: no bracket, no OCO group.
+                    HandlePlaceProtectiveStop(payload);
+                }
+                else if (type == "modify_bracket")
+                {
+                    // PHASE 2 armed orders — in-place SL/TP modify on the LIVE
+                    // bracket (same safe Change pattern as move_stop).
+                    HandleModifyBracket(payload);
+                }
                 else if (type == "account_select")
                 {
                     HandleAccountSelect(payload);
@@ -657,6 +702,12 @@ namespace NinjaTrader.NinjaScript.AddOns
                 {
                     // Plan 4.4 Stage 1 — forward to the bars manager.
                     barsManager?.HandleBarsUnsubscribe(payload);
+                }
+                else if (type == "bars_history_request")
+                {
+                    // HISTORY IMPORT (wave 101) — named-contract pull. Zero
+                    // interaction with the live subscription state.
+                    historyPulls?.HandleBarsHistoryRequest(payload);
                 }
                 else if (type == "hello")
                 {
@@ -704,6 +755,13 @@ namespace NinjaTrader.NinjaScript.AddOns
             double tp;
             string signalId;
             string ts;
+            // PHASE 2 armed orders (additive, back-compat): order_type
+            // "market" (default) | "limit" + limit_price for resting entries.
+            // E7 (entry-mechanics 2026-08-30): "stop_entry" + stop_price for
+            // STOP-MARKET entries (breakout-retest fallback).
+            string orderType = "market";
+            double limitPx = 0.0;
+            double stopPx = 0.0;
             try
             {
                 symbol   = GetString(p, "symbol");
@@ -714,6 +772,31 @@ namespace NinjaTrader.NinjaScript.AddOns
                 tp       = GetDouble(p, "take_profit");
                 signalId = GetString(p, "signal_id");
                 ts       = GetString(p, "timestamp");
+                string ot = GetString(p, "order_type");
+                if (!string.IsNullOrEmpty(ot)) orderType = ot;
+                if (orderType == "limit")
+                {
+                    limitPx = GetDouble(p, "limit_price");
+                    if (limitPx <= 0)
+                    {
+                        LogWarn("VLTraderTCPClient: limit signal " + signalId + " missing limit_price — rejecting");
+                        SendFillFrame(signalId, 0.0, side, qty, 0.0, "rejected", symbol: symbol);
+                        return;
+                    }
+                }
+                // E7 — a "stop_entry" signal places a STOP-MARKET entry at the
+                // trigger price (the tick offset was applied Go-side). Bracket
+                // on fill is identical to limits (SubmitBracketOnEntryFill).
+                if (orderType == "stop_entry")
+                {
+                    stopPx = GetDouble(p, "stop_price");
+                    if (stopPx <= 0)
+                    {
+                        LogWarn("VLTraderTCPClient: stop_entry signal " + signalId + " missing stop_price — rejecting");
+                        SendFillFrame(signalId, 0.0, side, qty, 0.0, "rejected", symbol: symbol);
+                        return;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -839,8 +922,10 @@ namespace NinjaTrader.NinjaScript.AddOns
             // symbol on the wire stays "MNQ"; contract form only exists
             // inside this GetInstrument call.
             string contract = VLContractResolver.ResolveFrontMonthContract(symbol);
-            LogInfo("VLTraderTCPClient: resolved " + symbol + " -> " + contract);
-            var instrument = Instrument.GetInstrument(contract);
+            string how;
+            var instrument = VLInstrumentLookup.Resolve(symbol, LogWarn, out how);
+            LogInfo("VLTraderTCPClient: resolved " + symbol + " -> " + contract + " => "
+                    + (instrument != null ? VLInstrumentLookup.ContractName(instrument) : "<null>") + " (" + how + ")");
             if (instrument == null)
             {
                 LogWarn("VLTraderTCPClient: instrument " + symbol
@@ -901,12 +986,47 @@ namespace NinjaTrader.NinjaScript.AddOns
             // entry stands alone (empty OCO); SL+TP get their own OCO pair.
             try
             {
-                var entryAction = side == "long" ? OrderAction.Buy : OrderAction.SellShort;
-                var exitAction  = side == "long" ? OrderAction.Sell : OrderAction.BuyToCover;
+                // WAVE B / class 77 (2026-09-05) — FOLD THE CASE. These two
+                // ternaries were ORDINAL: "LONG" is not "long", so an uppercase
+                // side fell to the else branch and a LONG entry was submitted as
+                // a live SellShort. The Go ledger canonicalizes side to
+                // UPPERCASE at the write (store/armed_orders.go:181, 2026-09-03)
+                // and the armed placement path handed that value straight to the
+                // wire. Go now folds before it sends; this folds again on
+                // arrival, because a ternary whose UNKNOWN branch opens a
+                // position in the opposite direction must not be the last line
+                // of defence. The same file already does this at the
+                // close-position handler (string.Equals + OrdinalIgnoreCase).
+                bool isLongSide = string.Equals(side, "long", StringComparison.OrdinalIgnoreCase);
+                var entryAction = isLongSide ? OrderAction.Buy : OrderAction.SellShort;
+                var exitAction  = isLongSide ? OrderAction.Sell : OrderAction.BuyToCover;
 
+                // PHASE 2 armed orders — a "limit" signal places a RESTING limit
+                // entry (fills fire OnOrderUpdate exactly like market entries;
+                // the SL/TP bracket still defers to SubmitBracketOnEntryFill).
+                // E7 — a "stop_entry" signal places a STOP-MARKET entry at the
+                // trigger price (the tick offset was applied Go-side).
+                bool isLimit    = orderType == "limit" && limitPx > 0;
+                bool isStopEntry = orderType == "stop_entry" && stopPx > 0;
+                OrderType orderT = isLimit ? OrderType.Limit : (isStopEntry ? OrderType.StopMarket : OrderType.Market);
+                // WAVE B / D1 (2026-09-05) — ONE ORDER, CORRECT SLOTS.
+                // Account.CreateOrder is POSITIONAL: after `quantity` come
+                // (limitPrice, stopPrice, oco, name, gtd, customOrder). Until
+                // today this call computed a single `orderPx` and passed it into
+                // the limitPrice slot for BOTH kinds, with a literal 0 in
+                // stopPrice — so every StopMarket entry reached NT8 as
+                // `Limit price=<trigger> Stop price=0`. A stop with a ZERO
+                // trigger is not rejected and not worked; it rests inert forever
+                // (22 of 22 lifetime submissions, 0 fills, 2026-08-31 + 09-04).
+                // The correct shape was always in this file: the bracket stop
+                // loss below builds a StopMarket as (b.Qty, 0, b.Sl) and fills.
+                // A limit entry keeps the shape it has today: price in
+                // limitPrice, 0 in stopPrice. StopMarket only — no stop-limit.
+                double limitArg = isLimit ? limitPx : 0;
+                double stopArg  = isStopEntry ? stopPx : 0;
                 var entryOrder = submitAccount.CreateOrder(
-                    instrument, entryAction, OrderType.Market, OrderEntry.Manual,
-                    TimeInForce.Day, qty, 0, 0, string.Empty, signalId,
+                    instrument, entryAction, orderT, OrderEntry.Manual,
+                    TimeInForce.Day, qty, limitArg, stopArg, string.Empty, signalId,
                     Core.Globals.MaxDate, null);
 
                 lock (signalMapLock)
@@ -920,13 +1040,33 @@ namespace NinjaTrader.NinjaScript.AddOns
                         Tp         = tp,
                         Account    = submitAccount,   // PHASE 3: the bracket follows the entry's account
                     };
+                    // PHASE 2 armed orders — resting limit entries are cancelable.
+                    if (isLimit) { workingEntries[signalId] = entryOrder; }
+                    // E7 — stop-market entries are cancelable the same way.
+                    if (isStopEntry) { workingEntries[signalId] = entryOrder; }
                 }
 
                 submitAccount.Submit(new[] { entryOrder });
+                // A9 — LOG WHAT WAS SENT, NOT WHAT WAS PARSED. The old line printed
+                // "stop@29590.5" (the parsed variable) on all 21 malformed
+                // submissions while handing NT8 a zero stop slot, which is why a
+                // slot bug survived in a file that logs every placement. These
+                // four values are the arguments actually given to CreateOrder, so
+                // the AddOn log and the NT8 order log must now agree or disagree
+                // visibly.
                 LogInfo("VLTraderTCPClient: submitted entry signal_id=" + signalId
                         + " on account=" + submitAccount.Name
                         + " " + side + " " + qty + " " + symbol
-                        + " entry≈" + entry + " (SL=" + sl + " TP=" + tp + " on fill)");
+                        + " action=" + entryAction + " type=" + orderT
+                        + " limitPrice=" + limitArg + " stopPrice=" + stopArg
+                        // A MARKET entry has 0 in BOTH price slots by
+                        // construction, so the four argument fields alone would
+                        // name no price at all on the path that carries almost
+                        // every live entry. Keep the reference entry for that
+                        // case only — it is not an argument to CreateOrder and
+                        // must not read as one.
+                        + (isLimit || isStopEntry ? "" : " entry~=" + entry)
+                        + " (SL=" + sl + " TP=" + tp + " on fill)");
             }
             catch (Exception ex)
             {
@@ -942,33 +1082,70 @@ namespace NinjaTrader.NinjaScript.AddOns
         // flatten's market fill arrives in OnOrderUpdate as an exit (Sell /
         // BuyToCover) and is reported as a position_close with reason "manual".
 
-        // CancelBracketFor (4.3): cancel the still-live SL/TP legs tracked for a
-        // signalId — used when the limit exit fills so the protective bracket can
-        // never re-enter the now-flat position. Best-effort; OCO fills already
-        // cancel their own sibling.
-        private void CancelBracketFor(string signalId)
+        // CancelBracketsFor (4.3 + 2026-08-25 orphan fix): cancel the still-live
+        // SL/TP legs tracked for a signalId — used when the limit exit fills so
+        // the protective bracket can never re-enter the now-flat position.
+        // Best-effort; OCO fills already cancel their own sibling.
+        //
+        // 2026-08-25 fix: the close_position frame carries a FRESH signal id (Go
+        // generates a new uuid per close), so the -lx leg id never matches the
+        // ENTRY's bracket key — the bracket survived and left 1 limit + 1 stop
+        // resting after the position closed (and could re-enter a flat account).
+        // Fall back to the tracked bracket for the SAME (account, instrument
+        // root) so the protective legs are always cancelled on a bot exit.
+        private void CancelBracketsFor(string signalId, string rootSymbol, string acctName)
         {
             if (string.IsNullOrEmpty(signalId)) return;
             PlacedBracket pb = null;
+            List<string> keysToRemove = new List<string>();
             lock (signalMapLock)
             {
                 placedBrackets.TryGetValue(signalId, out pb);
-            }
-            if (pb == null) return;
-            Account ba = pb.Account ?? account;
-            var toCancel = new List<Order>();
-            if (pb.SlOrder != null) toCancel.Add(pb.SlOrder);
-            if (pb.TpOrder != null) toCancel.Add(pb.TpOrder);
-            if (toCancel.Count > 0 && ba != null)
-            {
-                try
+                if (pb == null)
                 {
-                    ba.Cancel(toCancel);
-                    LogInfo("VLTraderTCPClient: bracket legs cancelled after limit exit (signal_id=" + signalId + ")");
+                    // Fresh close id → find the entry bracket by (account, instrument).
+                    foreach (var kv in placedBrackets)
+                    {
+                        var cand = kv.Value;
+                        if (cand == null) continue;
+                        string candRoot = "";
+                        string candAcct = "";
+                        try { candRoot = cand.Instrument.MasterInstrument.Name; } catch { }
+                        try { candAcct = cand.Account != null ? cand.Account.Name : ""; } catch { }
+                        if (string.Equals(candRoot, rootSymbol, StringComparison.OrdinalIgnoreCase)
+                            && (string.IsNullOrEmpty(acctName) || string.Equals(candAcct, acctName, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            pb = cand;
+                            keysToRemove.Add(kv.Key);
+                        }
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    LogWarn("VLTraderTCPClient: bracket cancel after limit exit failed: " + ex.Message);
+                    keysToRemove.Add(signalId);
+                }
+                if (pb != null)
+                {
+                    Account ba = pb.Account ?? account;
+                    var toCancel = new List<Order>();
+                    if (pb.SlOrder != null) toCancel.Add(pb.SlOrder);
+                    if (pb.TpOrder != null) toCancel.Add(pb.TpOrder);
+                    if (toCancel.Count > 0 && ba != null)
+                    {
+                        try
+                        {
+                            ba.Cancel(toCancel);
+                            LogInfo("VLTraderTCPClient: bracket legs cancelled after exit (signal_id=" + signalId + ")");
+                        }
+                        catch (Exception ex)
+                        {
+                            LogWarn("VLTraderTCPClient: bracket cancel after exit failed: " + ex.Message);
+                        }
+                    }
+                    foreach (var k in keysToRemove)
+                    {
+                        placedBrackets.Remove(k);
+                    }
                 }
             }
         }
@@ -980,10 +1157,11 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 string symbol = GetString(p, "symbol");
                 string contract = VLContractResolver.ResolveFrontMonthContract(symbol);
-                var instrument = Instrument.GetInstrument(contract);
+                string how;
+                var instrument = VLInstrumentLookup.Resolve(symbol, LogWarn, out how);
                 if (instrument == null)
                 {
-                    LogWarn("VLTraderTCPClient: close_position instrument not found " + symbol);
+                    LogWarn("VLTraderTCPClient: close_position instrument not found " + symbol + " (" + contract + ", " + how + ")");
                     return;
                 }
                 // PHASE 4 — resolve the account that actually HOLDS this symbol's open
@@ -1135,6 +1313,11 @@ namespace NinjaTrader.NinjaScript.AddOns
         // === Fill subscription (spec L4398-4406) ===
         private void OnOrderUpdate(object sender, OrderEventArgs e)
         {
+            // PHASE 2 armed orders — emit EVERY state change (deduped) so Go can
+            // track working/cancelled resting entries + bracket legs. The fill /
+            // position_close terminal frames below stay the entry/exit path.
+            SendOrderUpdateFrame(e);
+
             // Only act on filled/rejected states; ignore accepted/working.
             if (e.OrderState != OrderState.Filled
                 && e.OrderState != OrderState.Rejected
@@ -1158,10 +1341,38 @@ namespace NinjaTrader.NinjaScript.AddOns
             else if (signalId.EndsWith("-lx"))
             {
                 // 4.3 limit-then-market exit fill — cancel the still-live bracket
-                // legs so they can never re-enter the now-flat position.
+                // legs so they can never re-enter the now-flat position. The
+                // close id is FRESH (Go uuid per close), so fall back to the
+                // (account, instrument) bracket lookup.
                 exitReason = "limit";
                 signalId = signalId.Substring(0, signalId.Length - 3);
-                CancelBracketFor(signalId);
+                // 2026-09-07 — ONLY ON A REAL FILL.
+                //
+                // The state gate above admits Filled, Rejected AND PartFilled,
+                // and this branch had no state check at all. A limit exit the
+                // SIM REJECTS — and this file documents that exact rejection,
+                // "There is no market data available to drive the simulation
+                // engine" — cancelled the position's stop and target while the
+                // position was still OPEN. The 2026-09-06 naked position,
+                // reached from the exit side instead of the cancel side.
+                //
+                // The justification for cancelling here is "the position is now
+                // flat". A rejected exit means it is not, and a PART fill means
+                // it is not YET: the remaining quantity still needs its stop.
+                if (e.OrderState == OrderState.Filled)
+                {
+                    string lxRoot = "";
+                    string lxAcct = "";
+                    try { lxRoot = e.Order.Instrument.MasterInstrument.Name; } catch { }
+                    try { lxAcct = e.Order.Account != null ? e.Order.Account.Name : ""; } catch { }
+                    CancelBracketsFor(signalId, lxRoot, lxAcct);
+                }
+                else
+                {
+                    LogWarn("VLTraderTCPClient: limit exit " + signalId + "-lx is " + e.OrderState
+                            + ", NOT Filled — the position is still open, so its bracket is LEFT ALONE"
+                            + " (protective orders are not cancelled by an exit that did not happen)");
+                }
             }
 
             var action = e.Order.OrderAction;
@@ -1225,9 +1436,17 @@ namespace NinjaTrader.NinjaScript.AddOns
             // Entry just filled → place the protective SL/TP now that the
             // position exists (deferred from HandleSignal to dodge the OCO
             // cancel-on-entry-fill bug). On rejection, drop the pending bracket.
+            // D2 (2026-09-07) — a PART fill is protected too. The bracket is
+            // placed for whatever has filled so far and amended as more arrives;
+            // waiting for OrderState.Filled left a partially filled position
+            // naked for the width of the remaining fill.
+            if (e.OrderState == OrderState.Filled || e.OrderState == OrderState.PartFilled)
+            {
+                SubmitBracketOnEntryFill(signalId, e.Filled, e.AverageFillPrice);
+            }
             if (e.OrderState == OrderState.Filled)
             {
-                SubmitBracketOnEntryFill(signalId);
+                lock (signalMapLock) { workingEntries.Remove(signalId); } // PHASE 2: resting limit consumed
                 // PHASE 4: record which account now holds this symbol's open position so a
                 // later close flattens the RIGHT account (not the active one). Sourced from
                 // the order's own account — account-agnostic, correct per routed account.
@@ -1245,7 +1464,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
             else if (e.OrderState == OrderState.Rejected)
             {
-                lock (signalMapLock) { pendingBrackets.Remove(signalId); }
+                lock (signalMapLock) { pendingBrackets.Remove(signalId); workingEntries.Remove(signalId); } // PHASE 2: resting limit rejected → gone
             }
 
             string sideStr = (action == OrderAction.Buy) ? "long" : "short";
@@ -1285,7 +1504,11 @@ namespace NinjaTrader.NinjaScript.AddOns
             WriteEnvelope("hello", new Dictionary<string, object>
             {
                 ["protocol_version"] = PROTOCOL_VERSION,
-                ["source"]           = "vltrader-addon"
+                ["source"]           = "vltrader-addon",
+                // F12: the running DLL identifies itself on the FIRST frame, so
+                // the Go boot line can answer "which build is NT8 running"
+                // without waiting for a heartbeat or a snapshot.
+                ["build_id"]         = VL_BUILD_ID
             });
         }
 
@@ -1330,6 +1553,442 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
         }
 
+        // PHASE 2 armed orders — push every order state change to Go (deduped
+        // per order name) so the armed engine sees working/cancelled resting
+        // entries and bracket legs. signal_id is the bare order name minus the
+        // -sl/-tp/-lx suffix (same derivation as the fill path).
+        // ── F12: the working-order SNAPSHOT ──────────────────────────────────
+        //
+        // Every other frame this AddOn sends is an EVENT. order_update fires on a
+        // state change, so a Go-side restart loses the picture until the next
+        // change happens — which on a quiet book may be never. Cutover leg 4
+        // therefore had to read the Go side's own armed_orders ledger and call it
+        // the broker's book.
+        //
+        // This frame is the broker's answer: every working/accepted order on the
+        // account, emitted every ORDER_SNAPSHOT_INTERVAL_MS and immediately on any
+        // order state change. It is ACCOUNT-scoped and each order carries its own
+        // symbol; the Go side filters by instrument. That keeps an empty book
+        // representable — orders: [] is an explicit empty, and "no orders" and "no
+        // answer" must never render as the same thing.
+        private void SendOrderSnapshot(Account acc, string reason)
+        {
+            if (acc == null) return;
+            try
+            {
+                var orders = new List<object>();
+                // Copy under the collection's lock: NT8 mutates account
+                // collections from its own threads and a bare foreach throws.
+                lock (acc.Orders)
+                {
+                    foreach (Order o in acc.Orders)
+                    {
+                        if (o == null) continue;
+                        string st = o.OrderState.ToString();
+                        // Terminal orders are history. The Go side filters again
+                        // (one definition of "working" lives there), but shipping
+                        // the whole history every 30s would grow without bound.
+                        //
+                        // D3 (2026-09-07) — "Unknown" WAS in this list and is not
+                        // any more. It is not history; it is the state we are
+                        // least entitled to act on. Dropped here it did not reach
+                        // Go as unknown, it reached Go as ABSENT — and absence is
+                        // what every "this order is gone" branch keys on: the
+                        // stale reaper cancels and marks the row cancelled,
+                        // cancel_pending is promoted to cancelled, entryIsResting
+                        // sees no children and allows the cancel, leg 4 counts
+                        // zero working orders, and the D5 reconciler concludes a
+                        // position is unprotected and places a SECOND stop beside
+                        // an invisible live one. Owner ruling 2026-09-07: UNKNOWN
+                        // is non-terminal and takes no destructive branch. That
+                        // is decided HERE, not in Go.
+                        if (st == "Filled" || st == "Cancelled" || st == "Rejected" ||
+                            st == "Expired")
+                            continue;
+
+                        string sym = "";
+                        try { sym = o.Instrument.MasterInstrument.Name; } catch { }
+
+                        string otype = "market";
+                        try
+                        {
+                            if (o.OrderType == OrderType.Limit)           otype = "limit";
+                            else if (o.OrderType == OrderType.StopMarket) otype = "stop";
+                            else if (o.OrderType == OrderType.StopLimit)  otype = "stop_limit";
+                        }
+                        catch { }
+
+                        string act = "sell";
+                        try
+                        {
+                            if (o.OrderAction == OrderAction.Buy || o.OrderAction == OrderAction.BuyToCover)
+                                act = "buy";
+                        }
+                        catch { }
+
+                        string tif = "";
+                        try { tif = o.TimeInForce.ToString(); } catch { }
+
+                        orders.Add(new Dictionary<string, object>
+                        {
+                            ["order_id"]    = o.OrderId ?? "",
+                            ["name"]        = o.Name ?? "",
+                            ["action"]      = act,
+                            ["type"]        = otype,
+                            ["limit_price"] = o.LimitPrice,
+                            ["stop_price"]  = o.StopPrice,
+                            ["quantity"]    = o.Quantity,
+                            ["filled"]      = o.Filled,
+                            ["state"]       = st,
+                            ["oco"]         = o.Oco ?? "",
+                            // D6 (2026-09-07) — the TIF rides the book so the boot
+                            // line can READ whether protective orders are actually
+                            // GTC instead of asserting it (A11). Additive: an older
+                            // Go build ignores it, and an older AddOn simply omits
+                            // it, which reads as "n/a" rather than as "Day".
+                            ["tif"]         = tif,
+                            ["symbol"]      = sym ?? ""
+                        });
+                    }
+                }
+
+                WriteEnvelope("order_snapshot", new Dictionary<string, object>
+                {
+                    ["account"]       = acc.Name ?? "",
+                    ["build_id"]      = VL_BUILD_ID,
+                    ["emitted_at_ms"] = SnapshotNowUtcMs(),
+                    ["reason"]        = reason ?? "periodic",
+                    ["orders"]        = orders
+                });
+            }
+            catch (Exception ex)
+            {
+                // A10 — never fatal. A dropped snapshot ages out on the Go side
+                // and leg 4 fails closed; a throw here would take the AddOn down.
+                LogWarn("VLTraderTCPClient: order_snapshot frame failed: " + ex.Message);
+            }
+        }
+
+        // Epoch milliseconds. Same derivation VLBarsSubscriptionManager.NowUtcMs
+        // uses; duplicated rather than shared because the two files are compiled
+        // as independent AddOns and NT8 does not link them.
+        private static long SnapshotNowUtcMs()
+        {
+            return (long)((DateTime.UtcNow
+                - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds);
+        }
+
+        private void SendOrderUpdateFrame(OrderEventArgs e)
+        {
+            try
+            {
+                if (e.Order == null) return;
+                string orderName = e.Order.Name ?? "";
+                string state = e.OrderState.ToString().ToLowerInvariant();
+                string key = orderName.Length > 0 ? orderName : (e.Order.Oco ?? "");
+                if (string.IsNullOrEmpty(key)) return;
+                lock (signalMapLock)
+                {
+                    if (lastOrderState.TryGetValue(key, out var prev) && prev == state) return;
+                    lastOrderState[key] = state;
+                }
+                string signalId = orderName.Length > 0 ? orderName : (e.Order.Oco ?? "");
+                if (signalId.EndsWith("-sl") || signalId.EndsWith("-tp") || signalId.EndsWith("-lx"))
+                    signalId = signalId.Substring(0, signalId.Length - 3);
+                string sym = "";
+                try { sym = e.Order.Instrument.MasterInstrument.Name; } catch { }
+                var payload = new Dictionary<string, object>
+                {
+                    ["signal_id"]  = signalId,
+                    ["order_name"] = orderName,
+                    ["state"]      = state,
+                    ["fill_price"] = e.AverageFillPrice,
+                    ["quantity"]   = e.Filled,
+                    ["symbol"]     = sym ?? "",
+                    ["account"]    = e.Order.Account != null ? e.Order.Account.Name
+                                         : (account != null ? account.Name : "")
+                };
+                StampIdentity(payload, signalId);
+                WriteEnvelope("order_update", payload);
+                // F12 — a state change makes the book stale the instant it
+                // happens, so the snapshot follows the event rather than waiting
+                // up to 30s. The Go side is idempotent: a snapshot simply
+                // replaces the cached book.
+                try
+                {
+                    SendOrderSnapshot(e.Order.Account != null ? e.Order.Account : account, "state_change");
+                }
+                catch (Exception exSnap)
+                {
+                    LogWarn("VLTraderTCPClient: post-update order_snapshot failed: " + exSnap.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: order_update frame failed: " + ex.Message);
+            }
+        }
+
+        // PHASE 2 armed orders — cancel a working resting limit entry and/or its
+        // live protective bracket legs (managed Account.Cancel). Idempotent: a
+        // no-op (with ack) when nothing is working for the signal id.
+        private void HandleCancelOrder(Dictionary<string, object> p)
+        {
+            try
+            {
+                if (p == null) { LogWarn("VLTraderTCPClient: cancel_order empty payload"); return; }
+                string signalId = GetString(p, "signal_id");
+                if (string.IsNullOrEmpty(signalId)) { LogWarn("VLTraderTCPClient: cancel_order missing signal_id"); return; }
+
+                // ── D1 (2026-09-07) — A CANCEL TARGETS THE ENTRY. FULL STOP. ──
+                //
+                // This handler used to be a TWO-PART cancel: the resting entry
+                // from workingEntries, and then, unconditionally, the SL and TP
+                // from placedBrackets.
+                //
+                // 2026-09-06 23:37:02 a cancel_order arrived for signal
+                // aa07e583 whose entry had filled ~100 seconds earlier.
+                // workingEntries.Remove had already fired on that fill (see the
+                // Filled branch of OnOrderUpdate), so part one found nothing and
+                // ONLY THE SECOND HALF RAN — cancelling accepted stop 29554 and
+                // working target 29623. Position 592 ran unprotected for 8h19m,
+                // through the Monday open, and the owner flattened it by hand.
+                //
+                // This was never OCO propagation. The entry carries an EMPTY oco
+                // group and the children their own shared "<signal>-exit" id
+                // (SubmitBracketOnEntryFill). Our own code reached across and
+                // killed them.
+                //
+                // OWNER RULING 2026-09-07: cancelling a bracket leg is its own
+                // explicit call, never a side effect of cancelling an entry. The
+                // two places that legitimately retire protection — closing a
+                // position, and the netting-flat sweep — still do so, because
+                // retiring protection is what those handlers ARE.
+                Order working = null;
+                lock (signalMapLock)
+                {
+                    workingEntries.TryGetValue(signalId, out working);
+                    workingEntries.Remove(signalId);
+                }
+                if (working != null)
+                {
+                    OrderState wst = OrderState.Unknown;
+                    try { wst = working.OrderState; } catch { }
+                    try
+                    {
+                        var acct = working.Account ?? account;
+                        acct.Cancel(new[] { working });
+                        LogInfo("VLTraderTCPClient: cancel_order cancelled resting ENTRY " + signalId
+                                + " state=" + wst + " source=workingEntries (bracket legs untouched)");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogWarn("VLTraderTCPClient: cancel_order entry Cancel failed: " + signalId
+                                + " state=" + wst + ": " + ex.Message);
+                    }
+                }
+                else
+                {
+                    // NOT AN ERROR, AND NOT A LICENCE. The entry is not resting:
+                    // it filled, or it was already cancelled. Either way there is
+                    // no entry to cancel and the protections are not ours to
+                    // touch from here.
+                    // This handler does not READ placedBrackets either. A read
+                    // is one edit away from a cancel, and the rule is that the
+                    // bracket is not this handler's business at all.
+                    LogInfo("VLTraderTCPClient: cancel_order found NO resting entry for " + signalId
+                            + " source=workingEntries — nothing cancelled (a filled entry's"
+                            + " protections are never cancelled by an entry cancel;"
+                            + " 2026-09-06 23:37:02)");
+                }
+                // The DEFERRED bracket for this entry is not a live order — it is
+                // our own note to place one WHEN the entry fills. A cancelled
+                // entry must not leave that note behind: SubmitBracketOnEntryFill
+                // fires on ANY later Filled for the same key, and nothing else
+                // clears it (only a REJECT did), so the map also grew for the
+                // life of the AddOn. Bookkeeping, not an order — and emphatically
+                // NOT the placedBrackets walk this handler no longer does. A
+                // no-op when the entry already filled, because the bracket was
+                // placed and the note consumed at that moment.
+                lock (signalMapLock) { pendingBrackets.Remove(signalId); }
+                SendAck("cancel_order");
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: cancel_order failed: " + ex.Message);
+            }
+        }
+
+        // D3 (2026-09-07) — THE ADDON'S ONE DEFINITION OF "LIVE AT THE EXCHANGE".
+        //
+        // HandleModifyBracket and HandleMoveStop each carried their own copy of
+        // `st != Working && st != Accepted`. Two copies of a two-state whitelist
+        // is how the tree ended up disagreeing with itself about TriggerPending —
+        // which NT8 holds on THIS PC and which neither side should treat as
+        // protection at the exchange. Mirrors ClassifyOrderState's LivenessLive
+        // in provider/ninjatrader/order_state.go; change them together.
+        private static bool IsLiveAtExchange(OrderState st)
+        {
+            return st == OrderState.Working || st == OrderState.Accepted;
+        }
+
+        // ── D5 (2026-09-07) — PLACE A STOP FOR AN UNPROTECTED POSITION ──
+        //
+        // The reconciler on the Go side has established, from the broker's own
+        // book, that a position is open and NOTHING protective is resting for
+        // it. That is the one case where acting beats reporting (owner ruling).
+        //
+        // STANDALONE BY DESIGN. This order joins no OCO group. A group is what
+        // lets one cancel take another order with it, and this stop exists
+        // precisely because the last one went away. It is GTC for the same
+        // reason the bracket legs are: a protective order must not expire while
+        // the position it protects survives.
+        //
+        // It is named "<signal>-sl" so every existing reader — accepted_risk's
+        // leg naming, entryIsResting's child detection, the reconciler's own
+        // next pass — sees it as the protection it is.
+        private void HandlePlaceProtectiveStop(Dictionary<string, object> p)
+        {
+            try
+            {
+                if (p == null) { LogWarn("VLTraderTCPClient: place_protective_stop empty payload"); return; }
+                string signalId = GetString(p, "signal_id");
+                string symbol   = GetString(p, "symbol");
+                string side     = (GetString(p, "position_side") ?? "").ToUpperInvariant();
+                string acctName = GetString(p, "account");
+                string reason   = GetString(p, "reason");
+                double stopPx   = 0.0;
+                double qtyD     = 0.0;
+                try { stopPx = GetDouble(p, "stop_price"); } catch { }
+                try { qtyD   = GetDouble(p, "quantity"); } catch { }
+                int qty = (int)qtyD;
+
+                if (string.IsNullOrEmpty(signalId) || string.IsNullOrEmpty(symbol)
+                    || (side != "LONG" && side != "SHORT") || qty <= 0 || stopPx <= 0)
+                {
+                    LogWarn("VLTraderTCPClient: place_protective_stop REFUSED — incomplete request"
+                            + " signal_id=" + signalId + " symbol=" + symbol + " side=" + side
+                            + " qty=" + qty + " stop=" + stopPx
+                            + " (a protective order is never sized or priced from a zero)");
+                    SendAck("place_protective_stop_error");
+                    return;
+                }
+
+                // Resolve the account the SAME way an entry does, and re-assert
+                // every guard on the exact submit target.
+                Account resolved = null;
+                if (!string.IsNullOrEmpty(acctName))
+                {
+                    lock (Account.All)
+                    {
+                        foreach (var a in Account.All)
+                            if (a.Name == acctName) { resolved = a; break; }
+                    }
+                }
+                Account ba = resolved ?? account;
+                if (ba == null || !IsSimAccount(ba)
+                    || ba.Connection == null || ba.Connection.Status != ConnectionStatus.Connected
+                    || !IsSessionAccount(ba.Name))
+                {
+                    LogWarn("VLTraderTCPClient: place_protective_stop HARD-REFUSED for " + signalId
+                            + " — submit target failed the SIM/connected/allowlist guard");
+                    SendAck("place_protective_stop_error");
+                    return;
+                }
+
+                string contract = VLContractResolver.ResolveFrontMonthContract(symbol);
+                string how;
+                var instrument = VLInstrumentLookup.Resolve(symbol, LogWarn, out how);
+                if (instrument == null)
+                {
+                    LogWarn("VLTraderTCPClient: place_protective_stop — instrument " + symbol
+                            + " (resolved to " + contract + ", " + how + ") not found; position stays UNPROTECTED");
+                    SendAck("place_protective_stop_error");
+                    return;
+                }
+
+                OrderAction exitAction = (side == "LONG") ? OrderAction.Sell : OrderAction.BuyToCover;
+                SubscribeOrderUpdate(ba);
+                var slOrder = ba.CreateOrder(
+                    instrument, exitAction, OrderType.StopMarket, OrderEntry.Manual,
+                    TimeInForce.Gtc, qty, 0, stopPx, string.Empty, signalId + "-sl",
+                    Core.Globals.MaxDate, null);
+                ba.Submit(new[] { slOrder });
+                LogInfo("VLTraderTCPClient: PLACED protective stop signal_id=" + signalId
+                        + " " + side + " " + symbol + " qty=" + qty + " stop=" + stopPx
+                        + " oco=<none> tif=Gtc name=" + signalId + "-sl"
+                        + " reason=" + (reason ?? "reconciler"));
+                SendAck("place_protective_stop");
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: place_protective_stop FAILED: " + ex.Message
+                        + " — the position remains UNPROTECTED");
+                SendAck("place_protective_stop_error");
+            }
+        }
+
+        // PHASE 2 armed orders — in-place SL/TP modify on the LIVE bracket: the
+        // SAME safe Change pattern as move_stop (new_stop_loss / new_take_profit
+        // optional; missing = leave untouched). Refuses with modify_bracket_error
+        // when no live bracket exists or a leg is not Working/Accepted.
+        private void HandleModifyBracket(Dictionary<string, object> p)
+        {
+            try
+            {
+                if (p == null) { LogWarn("VLTraderTCPClient: modify_bracket empty payload"); return; }
+                string signalId = GetString(p, "signal_id");
+                if (string.IsNullOrEmpty(signalId)) { LogWarn("VLTraderTCPClient: modify_bracket missing signal_id"); return; }
+                double newSl = 0.0, newTp = 0.0;
+                try { newSl = GetDouble(p, "new_stop_loss"); } catch { }
+                try { newTp = GetDouble(p, "new_take_profit"); } catch { }
+                if (newSl <= 0 && newTp <= 0) { LogWarn("VLTraderTCPClient: modify_bracket nothing to change"); return; }
+
+                PlacedBracket pb;
+                lock (signalMapLock)
+                {
+                    if (!placedBrackets.TryGetValue(signalId, out pb))
+                    {
+                        LogWarn("VLTraderTCPClient: modify_bracket no live bracket for " + signalId);
+                        SendAck("modify_bracket_error");
+                        return;
+                    }
+                }
+                Account ba = pb.Account ?? account;
+                if (newSl > 0 && pb.SlOrder != null)
+                {
+                    OrderState st = pb.SlOrder.OrderState;
+                    if (!IsLiveAtExchange(st))
+                    {
+                        LogWarn("VLTraderTCPClient: modify_bracket refused — stop not changeable (state=" + st + ") for " + signalId);
+                        SendAck("modify_bracket_error");
+                        return;
+                    }
+                    pb.SlOrder.StopPriceChanged = newSl;
+                    ba.Change(new[] { pb.SlOrder });
+                }
+                if (newTp > 0 && pb.TpOrder != null)
+                {
+                    OrderState st = pb.TpOrder.OrderState;
+                    if (!IsLiveAtExchange(st))
+                    {
+                        LogWarn("VLTraderTCPClient: modify_bracket refused — target not changeable (state=" + st + ") for " + signalId);
+                        SendAck("modify_bracket_error");
+                        return;
+                    }
+                    pb.TpOrder.LimitPriceChanged = newTp;
+                    ba.Change(new[] { pb.TpOrder });
+                }
+                LogInfo("VLTraderTCPClient: modify_bracket → SL=" + newSl + " TP=" + newTp + " for " + signalId + " (in-place Change — OCO preserved)");
+                SendAck("modify_bracket");
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: modify_bracket failed: " + ex.Message);
+                SendAck("modify_bracket_error");
+            }
+        }
+
         // Place the protective SL + TP once the entry has filled. They share
         // their OWN OCO group (signal_id-exit) so one cancels the other when
         // triggered, and — crucially — they are NOT in the entry's OCO group,
@@ -1367,7 +2026,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // the order is gone — do NOT touch it; error-ACK so Go knows the move did
                 // not happen (it re-arms and retries on the next cycle).
                 OrderState st = pb.SlOrder != null ? pb.SlOrder.OrderState : OrderState.Unknown;
-                if (pb.SlOrder == null || (st != OrderState.Working && st != OrderState.Accepted))
+                if (pb.SlOrder == null || !IsLiveAtExchange(st))
                 {
                     LogWarn("VLTraderTCPClient: move_stop refused — stop not changeable (state=" + st + ") for " + signalId);
                     SendAck("move_stop_error");
@@ -1403,8 +2062,39 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
         }
 
-        private void SubmitBracketOnEntryFill(string signalId)
+        // D2 (2026-09-07) — THE BRACKET COVERS WHAT FILLED, SIZED FROM THE EVENT.
+        //
+        // This used to size the pair from the cached PendingBracket captured when
+        // the entry was SUBMITTED. NinjaTrader staff guidance is to update from
+        // the passed-in event parameters rather than a cached mirror or the
+        // return of Submit: ordering across OrderUpdate / ExecutionUpdate /
+        // PositionUpdate is not guaranteed, and on a part-fill the quantity we
+        // asked for is not the quantity that needs protecting.
+        //
+        // filledQty is the order's CUMULATIVE filled quantity (OrderEventArgs
+        // .Filled), so a completing part-fill AMENDS the existing pair to the new
+        // absolute quantity instead of placing a second bracket. A second bracket
+        // in the same exit OCO group would be worse than none: one stop firing
+        // would cancel the other and leave the rest of the position naked.
+        private void SubmitBracketOnEntryFill(string signalId, int filledQty, double avgFillPx)
         {
+            if (filledQty <= 0)
+            {
+                LogWarn("VLTraderTCPClient: bracket NOT placed for " + signalId
+                        + " — fill event reported quantity " + filledQty
+                        + "; refusing to size a protective order from a non-positive fill");
+                return;
+            }
+
+            // A later fill on the same entry amends what is already resting.
+            PlacedBracket already = null;
+            lock (signalMapLock) { placedBrackets.TryGetValue(signalId, out already); }
+            if (already != null)
+            {
+                AmendBracketQuantity(signalId, already, filledQty);
+                return;
+            }
+
             PendingBracket b;
             lock (signalMapLock)
             {
@@ -1417,13 +2107,22 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // routed to (stored in PendingBracket), not necessarily the active one.
                 Account ba = b.Account ?? account;
                 string exitOco = signalId + "-exit";
+                // D6 (2026-09-07) — PROTECTIVE ORDERS ARE GTC.
+                //
+                // These were TimeInForce.Day. A Day order is dropped at session
+                // end; GTC survives NT8's daily maintenance window. A stop that
+                // expires while the position it protects does not is a naked
+                // position on a timer — the 09-06 exposure arriving by the
+                // calendar instead of by a cancel. The ENTRY stays Day (see
+                // HandleSignal): an unfilled entry must die with its session
+                // rather than wake up and fire into a market its plan never saw.
                 var slOrder = ba.CreateOrder(
                     b.Instrument, b.ExitAction, OrderType.StopMarket, OrderEntry.Manual,
-                    TimeInForce.Day, b.Qty, 0, b.Sl, exitOco, signalId + "-sl",
+                    TimeInForce.Gtc, filledQty, 0, b.Sl, exitOco, signalId + "-sl",
                     Core.Globals.MaxDate, null);
                 var tpOrder = ba.CreateOrder(
                     b.Instrument, b.ExitAction, OrderType.Limit, OrderEntry.Manual,
-                    TimeInForce.Day, b.Qty, b.Tp, 0, exitOco, signalId + "-tp",
+                    TimeInForce.Gtc, filledQty, b.Tp, 0, exitOco, signalId + "-tp",
                     Core.Globals.MaxDate, null);
                 ba.Submit(new[] { slOrder, tpOrder });
                 // Track the live SL order so auto-breakeven can move it later.
@@ -1434,16 +2133,64 @@ namespace NinjaTrader.NinjaScript.AddOns
                     placedBrackets[signalId] = new PlacedBracket
                     {
                         SlOrder = slOrder, TpOrder = tpOrder, Account = ba, Instrument = b.Instrument,
-                        ExitAction = b.ExitAction, Qty = b.Qty, ExitOco = exitOco, TickSize = tick,
+                        ExitAction = b.ExitAction, Qty = filledQty, ExitOco = exitOco, TickSize = tick,
                     };
                 }
                 LogInfo("VLTraderTCPClient: placed protective bracket signal_id=" + signalId
-                        + " sl=" + b.Sl + " tp=" + b.Tp);
+                        + " sl=" + b.Sl + " tp=" + b.Tp
+                        + " qty=" + filledQty + " (requested " + b.Qty + ")"
+                        + " avg_fill=" + avgFillPx
+                        + " entry_oco=<none> exit_oco=" + exitOco + " tif=Gtc");
             }
             catch (Exception ex)
             {
                 LogWarn("VLTraderTCPClient: bracket submit failed signal_id=" + signalId
                         + ": " + ex.Message);
+            }
+        }
+
+        // D2 (2026-09-07) — a completing part-fill AMENDS the resting pair.
+        //
+        // NEVER cancel-and-replace: that leaves the filled quantity unprotected
+        // for the width of the round trip, which is the exposure this whole wave
+        // exists to remove. NEVER add a second pair to the same exit OCO group
+        // either — one stop firing would cancel the other and leave the rest of
+        // the position naked.
+        //
+        // filledQty is the order's CUMULATIVE filled quantity, so this sets an
+        // ABSOLUTE quantity, not a delta. QuantityChanged + Account.Change is the
+        // same staging pattern move_stop and modify_bracket already use for
+        // prices.
+        private void AmendBracketQuantity(string signalId, PlacedBracket pb, int filledQty)
+        {
+            if (pb == null || filledQty <= 0) return;
+            if (filledQty == pb.Qty) return; // nothing changed; stay quiet
+            Account ba = pb.Account ?? account;
+            if (ba == null) return;
+            try
+            {
+                var changed = new List<Order>();
+                if (pb.SlOrder != null) { pb.SlOrder.QuantityChanged = filledQty; changed.Add(pb.SlOrder); }
+                if (pb.TpOrder != null) { pb.TpOrder.QuantityChanged = filledQty; changed.Add(pb.TpOrder); }
+                if (changed.Count == 0)
+                {
+                    LogWarn("VLTraderTCPClient: bracket amend found NO legs for " + signalId
+                            + " — the position may be holding " + filledQty + " unprotected");
+                    return;
+                }
+                ba.Change(changed.ToArray());
+                int was = pb.Qty;
+                lock (signalMapLock) { pb.Qty = filledQty; }
+                LogInfo("VLTraderTCPClient: bracket amended signal_id=" + signalId
+                        + " qty " + was + " -> " + filledQty
+                        + " legs=" + changed.Count + " exit_oco=" + pb.ExitOco
+                        + " (cumulative fill from the event)");
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: bracket amend FAILED signal_id=" + signalId
+                        + " target_qty=" + filledQty + ": " + ex.Message
+                        + " — the resting pair still covers " + pb.Qty);
             }
         }
 
@@ -1625,10 +2372,90 @@ namespace NinjaTrader.NinjaScript.AddOns
         // bug). A close/flat arrives as MarketPosition.Flat or Quantity 0.
         private void OnPositionUpdate(object sender, PositionEventArgs e)
         {
+            var acc = (sender as Account) ?? account;
             // Emit for the account that actually changed (sender) — PositionUpdate is
             // now hooked on ALL SIM accounts, so this can fire for a non-active account.
-            try { SendOpenPositions((sender as Account) ?? account, e); }
+            try { SendOpenPositions(acc, e); }
             catch (Exception ex) { LogWarn("VLTraderTCPClient: OnPositionUpdate failed: " + ex.Message); }
+            // CLASS-27 (2026-08-31 netting-orphan): the instant a position goes
+            // FLAT — whether closed by an SL/TP leg, a manual flatten, or NETTED
+            // by an opposite-side ENTRY fill — sweep EVERY tracked protective
+            // bracket for this (account, instrument). A netting close emits no
+            // exit-order fill, so the old position's SL/TP would otherwise rest
+            // as orphans and re-enter a flat account (live proof 2026-08-31
+            // 13:35:47: the S1 stop fired 26 minutes after its long was netted).
+            try
+            {
+                if (e != null && e.MarketPosition == MarketPosition.Flat)
+                {
+                    string flatRoot = null;
+                    try { if (e.Position != null) flatRoot = e.Position.Instrument.MasterInstrument.Name; } catch { }
+                    if (!string.IsNullOrEmpty(flatRoot))
+                    {
+                        CancelAllBracketsFor(flatRoot, acc != null ? acc.Name : "");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogWarn("VLTraderTCPClient: netting-flat bracket sweep failed: " + ex.Message);
+            }
+        }
+
+        // CLASS-27 (2026-08-31): cancel EVERY tracked bracket for (account,
+        // instrument). Used when the account went flat by NETTING (an
+        // opposite-side entry fill) — there is no exit order whose name can
+        // route us, so sweep by (root, account) instead of by signal id.
+        private void CancelAllBracketsFor(string rootSymbol, string acctName)
+        {
+            if (string.IsNullOrEmpty(rootSymbol)) return;
+            List<PlacedBracket> victims = new List<PlacedBracket>();
+            List<string> keysToRemove = new List<string>();
+            lock (signalMapLock)
+            {
+                foreach (var kv in placedBrackets)
+                {
+                    var cand = kv.Value;
+                    if (cand == null) continue;
+                    string candRoot = "";
+                    string candAcct = "";
+                    try { candRoot = cand.Instrument.MasterInstrument.Name; } catch { }
+                    try { candAcct = cand.Account != null ? cand.Account.Name : ""; } catch { }
+                    if (string.Equals(candRoot, rootSymbol, StringComparison.OrdinalIgnoreCase)
+                        && (string.IsNullOrEmpty(acctName) || string.Equals(candAcct, acctName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        victims.Add(cand);
+                        keysToRemove.Add(kv.Key);
+                    }
+                }
+                if (victims.Count == 0) return;
+                int cancelled = 0;
+                foreach (var pb in victims)
+                {
+                    Account ba = pb.Account ?? account;
+                    var toCancel = new List<Order>();
+                    if (pb.SlOrder != null) toCancel.Add(pb.SlOrder);
+                    if (pb.TpOrder != null) toCancel.Add(pb.TpOrder);
+                    if (toCancel.Count > 0 && ba != null)
+                    {
+                        try
+                        {
+                            ba.Cancel(toCancel);
+                            cancelled += toCancel.Count;
+                        }
+                        catch (Exception ex)
+                        {
+                            LogWarn("VLTraderTCPClient: netting-flat bracket cancel failed: " + ex.Message);
+                        }
+                    }
+                }
+                foreach (var k in keysToRemove)
+                {
+                    placedBrackets.Remove(k);
+                }
+                LogInfo("VLTraderTCPClient: netting-flat bracket sweep cancelled " + cancelled
+                        + " leg(s) for " + rootSymbol + " (" + victims.Count + " bracket(s))");
+            }
         }
 
         // Emit the accounts_list frame reporting all available NT accounts with
@@ -1874,7 +2701,22 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 Thread.Sleep(HEARTBEAT_INTERVAL_MS);
                 if (ct.IsCancellationRequested) return;
-                WriteEnvelope("heartbeat", new Dictionary<string, object>());
+                WriteEnvelope("heartbeat", new Dictionary<string, object>
+                {
+                    ["build_id"] = VL_BUILD_ID,
+                });
+
+                // F12 — the PERIODIC working-order snapshot. It rides this loop
+                // because HEARTBEAT_INTERVAL_MS and ORDER_SNAPSHOT_INTERVAL_MS are
+                // both 30s; a second thread on the same period would buy nothing
+                // but another thing to get out of step. If the periods ever
+                // diverge this needs its own timer, and the constants sit beside
+                // each other so that is visible.
+                try { SendOrderSnapshot(account, "periodic"); }
+                catch (Exception exSnap)
+                {
+                    LogWarn("RunHeartbeatLoop: order_snapshot failed (will retry): " + exSnap.Message);
+                }
 
                 // Periodic re-emit of accounts every 3 heartbeats (90s) to ensure
                 // Go always has them after a restart (not just on connect/change)

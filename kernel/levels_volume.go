@@ -1,0 +1,429 @@
+package kernel
+
+import (
+	"math"
+	"sync"
+	"time"
+
+	"nofx/market"
+)
+
+// Pack B — VOLUME FAMILY detectors (owner override 2026-08-26, research
+// authority). The backward Phase-0 replay is WAIVED (no historical bars
+// existed when the volume wave was first scoped) — forward validation via the
+// B4 level_stats table replaces it.
+//
+// Phase 0(a) re-confirmed on live frames 2026-08-26: NT8 bar_update/bars_historical
+// frames carry real per-minute V (1m MNQ: V=460 / 728 / 631 observed), and the
+// bars table persists them. The volume substrate is REAL, not simulated.
+// Phase 0(b): session VWAP / POC profile need only 1m OHLCV — computable from
+// the bars table + BarCache, no tick data required.
+//
+// All detectors here are pure and deterministic on the closed 1m slice the
+// kernel already holds. VWAP is anchored at the CME session-day boundary
+// (17:00 CT, kernel/cme_calendar.go — the same roll the rest of the system
+// uses), so it re-emits dynamically every cycle as bars close.
+
+// ── session VWAP + σ bands ─────────────────────────────────────────────────
+
+// SessionVWAPLevels (B1) — session-anchored VWAP (17:00 CT roll) plus the
+// ±1σ fair-value bands, emitted as lines. Dynamic re-emit: recomputed from
+// the closed bars on EVERY cycle, so the level moves with the auction.
+// VWAP bands are the institutional mean-reversion envelope (research: the
+// bulk of session volume trades inside ±1σ; rejection there is the classic
+// fade signal). Emits nothing until ≥2 closed bars exist in the session.
+func SessionVWAPLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil
+	}
+	sessStart := CMESessionDayStart(now).UnixMilli()
+	session := make([]market.Kline, 0, len(cb))
+	for _, b := range cb {
+		if b.OpenTime >= sessStart {
+			session = append(session, b)
+		}
+	}
+	vwap, sd := vwapAndStdev(session)
+	if vwap <= 0 || len(session) < 2 {
+		return nil
+	}
+	day := time.UnixMilli(sessStart).In(CTLocation()).Format("2006-01-02")
+	anchor := int64(0)
+	if session[0].OpenTime == sessStart {
+		anchor = sessStart
+	}
+	return captureFormationGroup([]DetectedLevel{
+		lineLevel(KindVWAP, vwap, "VWAP", day, false),
+		lineLevel(KindVWAP, vwap+sd, "VWAP+1σ", day, false),
+		lineLevel(KindVWAP, vwap-sd, "VWAP−1σ", day, false),
+		// Level-truth wave (2026-08-27) — ±2σ bands EMITTED at 0.85 per owner
+		// ruling (the dispatched spec listed them; the emission was missing).
+		lineLevel(KindVWAP2S, vwap+2*sd, "VWAP+2σ", day, false),
+		lineLevel(KindVWAP2S, vwap-2*sd, "VWAP−2σ", day, false),
+	}, anchor, len(session), "session_anchor", now)
+}
+
+// vwapAndStdev computes the session VWAP (typical price = (H+L+C)/3, weighted
+// by volume) and the volume-weighted standard deviation of typical prices.
+func vwapAndStdev(bars []market.Kline) (vwap, sd float64) {
+	var pv, v float64
+	for _, b := range bars {
+		tp := (b.High + b.Low + b.Close) / 3
+		pv += tp * b.Volume
+		v += b.Volume
+	}
+	if v <= 0 {
+		return 0, 0
+	}
+	vwap = pv / v
+	var acc float64
+	for _, b := range bars {
+		tp := (b.High + b.Low + b.Close) / 3
+		d := tp - vwap
+		acc += b.Volume * d * d
+	}
+	sd = math.Sqrt(acc / v)
+	return vwap, sd
+}
+
+// ── extended VWAP (since-cash-close anchor) ────────────────────────────────
+
+// EVWAPLevels (B1) — extended VWAP anchored at the most recent 15:00 CT CASH
+// CLOSE (RTH close), spanning the close hour + the whole overnight + today's
+// session. Overnight-positioned funds mark eVWAP; the distance between session
+// VWAP and eVWAP measures overnight inventory.
+//
+// A2 (mega-research 2026-08-26) — the old 16:00 CT anchor was a DEGENERATE
+// DUPLICATE of session VWAP: no bars exist 16:00–17:00 CT (maintenance halt),
+// so both windows were byte-identical and eVWAP burned a seat for nothing.
+// 15:00 CT makes it a real, distinct object ("since-cash-close" VWAP).
+func EVWAPLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil
+	}
+	ct := now.In(CTLocation())
+	anchorCT := time.Date(ct.Year(), ct.Month(), ct.Day(), 15, 0, 0, 0, CTLocation())
+	if ct.Hour() < 15 {
+		anchorCT = anchorCT.AddDate(0, 0, -1)
+	}
+	anchorMs := anchorCT.UnixMilli()
+	win := make([]market.Kline, 0, len(cb))
+	for _, b := range cb {
+		if b.OpenTime >= anchorMs {
+			win = append(win, b)
+		}
+	}
+	ev, _ := vwapAndStdev(win)
+	if ev <= 0 || len(win) < 2 {
+		return nil
+	}
+	anchor := int64(0)
+	if win[0].OpenTime == anchorMs {
+		anchor = anchorMs
+	}
+	return captureFormationGroup([]DetectedLevel{lineLevel(KindEVWAP, ev, "eVWAP", anchorCT.Format("2006-01-02"), false)}, anchor, len(win), "cash_close_anchor", now)
+}
+
+// ── prior-day volume profile (pdPOC / VAH / VAL) ───────────────────────────
+
+// pdProfileCache memoizes a COMPLETED prior session-day's profile (cached at
+// roll — spec B1). A prior session-day's bars are immutable once the current
+// day's 17:00 CT roll passed, so the cache is safe forever.
+var pdProfileCache sync.Map // dayKey → []DetectedLevel
+
+// PriorDayProfileLevels (B1) — the prior CME session-day's point of control
+// (max-volume price) and the 70% value area (VAH/VAL). Cached per day at roll.
+// POC/VAH/VAL are the auction's accepted-value references: the open inside/
+// outside value area is the single most robust day-type classifier.
+func PriorDayProfileLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil
+	}
+	curDay := CMESessionDayStart(now)
+	priorStart := curDay.AddDate(0, 0, -1).UnixMilli()
+	priorEnd := curDay.UnixMilli()
+	dayKey := time.UnixMilli(priorStart).In(CTLocation()).Format("2006-01-02")
+	if v, ok := pdProfileCache.Load(dayKey); ok {
+		return v.([]DetectedLevel)
+	}
+	var prior []market.Kline
+	for _, b := range cb {
+		if b.OpenTime >= priorStart && b.OpenTime < priorEnd {
+			prior = append(prior, b)
+		}
+	}
+	if len(prior) == 0 {
+		return nil
+	}
+	out := profileLevels(prior, dayKey, "")
+	out = captureFormationGroup(out, prior[len(prior)-1].CloseTime, len(prior), "prior_profile_last_source_close", now)
+	if len(out) > 0 {
+		pdProfileCache.Store(dayKey, out)
+	}
+	return out
+}
+
+// profileLevels computes POC + 70% value area from a closed 1m series.
+// prefix labels the rows ("pd" for the prior-day profile, "" for session).
+func profileLevels(bars []market.Kline, dayKey, prefix string) []DetectedLevel {
+	if len(bars) == 0 {
+		return nil
+	}
+	const binCount = 120
+	var hi, lo float64
+	for i, b := range bars {
+		if i == 0 || b.High > hi {
+			hi = b.High
+		}
+		if i == 0 || b.Low < lo {
+			lo = b.Low
+		}
+	}
+	if hi <= lo {
+		return nil
+	}
+	bin := (hi - lo) / binCount
+	if bin <= 0 {
+		bin = 0.25
+	}
+	vols := make([]float64, binCount)
+	total := 0.0
+	for _, b := range bars {
+		idx := int((b.Close - lo) / bin)
+		if idx < 0 {
+			idx = 0
+		}
+		if idx >= binCount {
+			idx = binCount - 1
+		}
+		vols[idx] += b.Volume
+		total += b.Volume
+	}
+	if total <= 0 {
+		return nil
+	}
+	pocIdx, pocV := 0, vols[0]
+	for i, v := range vols {
+		if v > pocV {
+			pocIdx, pocV = i, v
+		}
+	}
+	poc := lo + (float64(pocIdx)+0.5)*bin
+	// 70% value area: walk down/up from the POC bin until ≥70% of volume.
+	need := 0.70 * total
+	acc := pocV
+	loIdx, hiIdx := pocIdx, pocIdx
+	for acc < need {
+		below := loIdx - 1
+		above := hiIdx + 1
+		up := 0.0
+		down := 0.0
+		if above < binCount {
+			up = vols[above]
+		}
+		if below >= 0 {
+			down = vols[below]
+		}
+		if up >= down && above < binCount {
+			hiIdx = above
+			acc += up
+		} else if below >= 0 {
+			loIdx = below
+			acc += down
+		} else if above < binCount {
+			hiIdx = above
+			acc += up
+		} else {
+			break
+		}
+	}
+	vah := lo + (float64(hiIdx)+1)*bin
+	val := lo + float64(loIdx)*bin
+	return []DetectedLevel{
+		lineLevel(KindPOC, poc, prefix+"POC", dayKey, false),
+		lineLevel(KindVAH, vah, prefix+"VAH", dayKey, false),
+		lineLevel(KindVAL, val, prefix+"VAL", dayKey, false),
+	}
+}
+
+// ── naked POC (10-session retire-on-touch) ────────────────────────────────
+
+// nPOCRetireTick is the retire-on-touch tolerance (register A4: the spec's
+// ±1-tick rule). A bar retires a naked POC only when it brackets BEYOND
+// ±1 tick — a 0.01-pt graze no longer consumes the magnet. MNQ tick = 0.25.
+const nPOCRetireTick = 0.25
+
+// NakedPOCLevels (B1) — prior session-days' POC that price has NOT traded
+// back through since birth = naked POC (unfinished business; price revisits).
+// RETIRE-ON-TOUCH: any later session bar whose range covers the POC ±1 tick
+// retires it (it has been revisited → no longer naked). Older than 10 sessions
+// → retired regardless (spec). The live cache covers ~2 sessions; the
+// 10-session window becomes fully exercisable as the 90-day bars table warms
+// forward (validation, B4).
+func NakedPOCLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil
+	}
+	curDay := CMESessionDayStart(now)
+	type dayPOC struct {
+		day   string
+		poc   float64
+		birth int64 // first bar open of the day (touch comparisons start after)
+		bars  int   // recording-only source window size
+	}
+	var days []dayPOC
+	for d := 1; d <= 10; d++ {
+		dayStart := curDay.AddDate(0, 0, -d)
+		startMs, endMs := dayStart.UnixMilli(), dayStart.AddDate(0, 0, 1).UnixMilli()
+		var dayBars []market.Kline
+		for _, b := range cb {
+			if b.OpenTime >= startMs && b.OpenTime < endMs {
+				dayBars = append(dayBars, b)
+			}
+		}
+		if len(dayBars) == 0 {
+			continue
+		}
+		prof := profileLevels(dayBars, "", "")
+		if len(prof) == 0 {
+			continue
+		}
+		days = append(days, dayPOC{
+			day:   dayStart.In(CTLocation()).Format("2006-01-02"),
+			poc:   prof[0].Price,
+			birth: dayBars[len(dayBars)-1].CloseTime,
+			bars:  len(dayBars),
+		})
+	}
+	var out []DetectedLevel
+	for _, d := range days {
+		touched := false
+		for _, b := range cb {
+			if b.OpenTime <= d.birth {
+				continue
+			}
+			// A4/S4 — ±1-tick tolerance: a graze inside the tick band does NOT
+			// retire the POC; the bar must bracket beyond ±1 tick.
+			if b.Low <= d.poc-nPOCRetireTick && b.High >= d.poc+nPOCRetireTick {
+				touched = true
+				break
+			}
+		}
+		if touched {
+			continue // retire-on-touch
+		}
+		out = append(out, WithFormationClose(lineLevel(KindNPOC, d.poc, "nPOC·"+d.day, d.day, false), d.birth, d.bars, "prior_profile_last_source_close", now))
+	}
+	return out
+}
+
+// ── pdVWAP · SETT · MID-O ──────────────────────────────────────────────────
+
+// PDVWAPLevels (B1) — the prior session-day's session VWAP (17:00-anchored).
+// Prior-day VWAP is the inventory line overnight desks still mark the next
+// morning.
+func PDVWAPLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil
+	}
+	curDay := CMESessionDayStart(now)
+	startMs, endMs := curDay.AddDate(0, 0, -1).UnixMilli(), curDay.UnixMilli()
+	var prior []market.Kline
+	for _, b := range cb {
+		if b.OpenTime >= startMs && b.OpenTime < endMs {
+			prior = append(prior, b)
+		}
+	}
+	v, _ := vwapAndStdev(prior)
+	if v <= 0 || len(prior) < 2 {
+		return nil
+	}
+	day := curDay.AddDate(0, 0, -1).In(CTLocation()).Format("2006-01-02")
+	return captureFormationGroup([]DetectedLevel{lineLevel(KindPDVWAP, v, "pdVWAP", day, false)}, prior[len(prior)-1].CloseTime, len(prior), "prior_vwap_last_source_close", now)
+}
+
+// SETTLevels (B1) — prior settlement, approximated by the prior session-day's
+// FINAL 1m close (the 16:00 CT CME settle). Settlement is the official
+// overnight reference — breakouts are measured against it, not midnight.
+func SETTLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil
+	}
+	curDay := CMESessionDayStart(now)
+	endMs := curDay.UnixMilli()
+	var sett float64
+	var day string
+	var sourceClose int64
+	var sourceCount int
+	for _, b := range cb {
+		if b.OpenTime < endMs && b.OpenTime >= curDay.AddDate(0, 0, -1).UnixMilli() {
+			sett = b.Close
+			sourceClose = b.CloseTime
+			sourceCount++
+			day = time.UnixMilli(b.OpenTime).In(CTLocation()).Format("2006-01-02")
+		}
+	}
+	if sett <= 0 {
+		return nil
+	}
+	return captureFormationGroup([]DetectedLevel{lineLevel(KindSETT, sett, "SETT", day, false)}, sourceClose, sourceCount, "settlement_proxy_source_close", now)
+}
+
+// MIDOLevels (B1) — the overnight range midpoint: (ONH+ONL)/2 for the CURRENT
+// session-day's overnight window (17:00→08:30 CT). The auction's overnight
+// balance point; price spends most of RTH revisiting it.
+func MIDOLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	cb := closedBars(bars, now)
+	if len(cb) == 0 {
+		return nil
+	}
+	ct := now.In(CTLocation())
+	cutover := time.Date(ct.Year(), ct.Month(), ct.Day(), 8, 30, 0, 0, CTLocation())
+	if ct.Hour() < 8 || (ct.Hour() == 8 && ct.Minute() < 30) {
+		// Overnight window still open — use bars so far.
+		cutover = now
+	}
+	sessStart := CMESessionDayStart(now)
+	hi, lo := math.Inf(-1), math.Inf(1)
+	var sourceClose int64
+	var sourceCount int
+	for _, b := range cb {
+		if b.OpenTime >= sessStart.UnixMilli() && b.OpenTime <= cutover.UnixMilli() {
+			sourceCount++
+			if b.CloseTime > sourceClose {
+				sourceClose = b.CloseTime
+			}
+			hi = math.Max(hi, b.High)
+			lo = math.Min(lo, b.Low)
+		}
+	}
+	if math.IsInf(hi, 0) || math.IsInf(lo, 0) {
+		return nil
+	}
+	mid := (hi + lo) / 2
+	// The existing inclusive-open detector includes the 08:30 bar. Record its
+	// actual later close; never stamp 08:30 while a contributing bar is future.
+	if !cutover.Before(now) || sourceClose <= cutover.UnixMilli() {
+		sourceClose = 0
+	}
+	return captureFormationGroup([]DetectedLevel{lineLevel(KindMIDO, mid, "MID-O", sessStart.In(CTLocation()).Format("2006-01-02"), false)}, sourceClose, sourceCount, "inclusive_overnight_last_source_close", now)
+}
+
+// VolumeLevels (B1) — the full volume family for one cycle (all detectors).
+func VolumeLevels(bars []market.Kline, now time.Time) []DetectedLevel {
+	var out []DetectedLevel
+	out = append(out, SessionVWAPLevels(bars, now)...)
+	out = append(out, EVWAPLevels(bars, now)...)
+	out = append(out, PriorDayProfileLevels(bars, now)...)
+	out = append(out, NakedPOCLevels(bars, now)...)
+	out = append(out, PDVWAPLevels(bars, now)...)
+	out = append(out, SETTLevels(bars, now)...)
+	out = append(out, MIDOLevels(bars, now)...)
+	return out
+}

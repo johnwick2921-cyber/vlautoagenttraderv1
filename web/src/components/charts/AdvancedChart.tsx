@@ -9,8 +9,12 @@ import {
   LineSeries,
   HistogramSeries,
   createSeriesMarkers,
-  TickMarkType,
 } from 'lightweight-charts'
+import {
+  ctTickMarkFormatter,
+  ctCrosshairTimeFormatter,
+  logBarDebug,
+} from '../../lib/chartTime'
 import {
   SessionVolumeProfile,
   type SvpProfileData,
@@ -26,13 +30,6 @@ import {
   type Kline,
 } from '../../utils/indicators'
 import { Settings, BarChart2 } from 'lucide-react'
-
-// CHART_TZ pins the chart's time axis + crosshair to an explicit timezone so the
-// displayed time is deterministic regardless of the viewing browser's locale.
-// lightweight-charts does NO timezone conversion — its time axis defaults to UTC.
-// We render in America/Chicago, which is both the operator's local zone AND the
-// CME exchange zone for the NT8 futures (MNQ) charts, so axis + crosshair agree.
-const CHART_TZ = 'America/Chicago'
 
 // Order marker interface
 interface OrderMarker {
@@ -217,7 +214,9 @@ export function AdvancedChart({
   // Fetch kline data from service
   const fetchKlineData = async (symbol: string, interval: string) => {
     try {
-      const limit = 1500
+      // F1 (2026-09-14) — ask past the 2,500-bar ring ceiling so the backend
+      // splices the store's contract-filtered depth onto the older end.
+      const limit = 5000
       const klineUrl = `/api/klines?symbol=${symbol}&interval=${interval}&limit=${limit}&exchange=${exchange}`
       const result = await httpClient.request(klineUrl, { silent: true })
 
@@ -609,44 +608,10 @@ export function AdvancedChart({
         borderVisible: true,
         rightOffset: 5,
         barSpacing: 8,
-        // Render the X-AXIS tick labels in CHART_TZ. Without this, lightweight-charts
-        // formats the axis in UTC (it does no timezone conversion), so a 05:10 UTC bar
-        // showed "05:10" instead of the local/exchange "00:10". Respect the tick
-        // granularity the library asks for (year/month/day/time).
-        tickMarkFormatter: (time: Time, tickMarkType: TickMarkType): string => {
-          const ms =
-            typeof time === 'number'
-              ? time * 1000
-              : typeof time === 'string'
-                ? new Date(time).getTime() // business-day string "YYYY-MM-DD"
-                : Date.UTC(time.year, time.month - 1, time.day) // BusinessDay
-          const d = new Date(ms)
-          switch (tickMarkType) {
-            case TickMarkType.Year:
-              return d.toLocaleString('zh-CN', {
-                year: 'numeric',
-                timeZone: CHART_TZ,
-              })
-            case TickMarkType.Month:
-              return d.toLocaleString('zh-CN', {
-                month: 'short',
-                timeZone: CHART_TZ,
-              })
-            case TickMarkType.DayOfMonth:
-              return d.toLocaleString('zh-CN', {
-                month: '2-digit',
-                day: '2-digit',
-                timeZone: CHART_TZ,
-              })
-            default: // Time / TimeWithSeconds — intraday ticks
-              return d.toLocaleString('zh-CN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false,
-                timeZone: CHART_TZ,
-              })
-          }
-        },
+        // X-axis tick labels in CT via THE ONE shared chart-timezone site
+        // (src/lib/chartTime.ts) — extracted from here so PlanMiniChart renders
+        // through the identical implementation.
+        tickMarkFormatter: ctTickMarkFormatter,
       },
       handleScroll: {
         mouseWheel: true,
@@ -660,19 +625,8 @@ export function AdvancedChart({
         pinch: true,
       },
       localization: {
-        // Crosshair time label — pinned to the SAME CHART_TZ as the axis above so
-        // the two always agree (and are deterministic regardless of browser TZ).
-        timeFormatter: (time: number) => {
-          const date = new Date(time * 1000)
-          return date.toLocaleString('zh-CN', {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-            timeZone: CHART_TZ,
-          })
-        },
+        // Crosshair label — same shared CT site as the axis.
+        timeFormatter: ctCrosshairTimeFormatter,
       },
     })
 
@@ -802,6 +756,12 @@ export function AdvancedChart({
         const klineData = await fetchKlineData(symbol, interval)
         console.log('[AdvancedChart] Loaded', klineData.length, 'klines')
         candlestickSeriesRef.current.setData(klineData)
+        logBarDebug(
+          'AdvancedChart',
+          klineData.length
+            ? (klineData[klineData.length - 1].time as number) * 1000
+            : undefined
+        )
         latestKlinesRef.current = klineData // keep latest for indicator toggle re-render (1b)
 
         // Store volume/quoteVolume data for tooltip
@@ -1110,9 +1070,30 @@ export function AdvancedChart({
 
         if (openOrders.length > 0 && candlestickSeriesRef.current) {
           openOrders.forEach((order) => {
-            // Get trigger price (SL/TP use stop_price, limit orders use price)
+            // A ROW THAT IS NOT AT THE BROKER IS NOT AN ORDER (2026-09-07).
+            // ARMED = authorized, never sent. PENDING = sent, no confirming
+            // frame yet. Drawing either as a price line tells the owner an
+            // order rests at a price where none does — which is exactly what
+            // happened to arm 117: a line at 29751 labelled "Limit" while NT8
+            // had refused the signal and the book was empty for 33 minutes.
+            const notAtBroker =
+              order.status === 'ARMED' ||
+              (order.status ?? '').startsWith('PENDING')
+            if (notAtBroker) return
+
+            // THE PRICE AND THE LABEL MUST COME FROM THE SAME QUESTION. This
+            // took stop_price for the line and the TYPE for the title, so a
+            // resting LIMIT entry (type "LIMIT", stop_price = its protective
+            // stop) drew ONE line at the STOP labelled "Limit" and never drew
+            // the entry at all. A stop line belongs to a STOP order.
+            const isStopKind =
+              order.type.includes('STOP') || order.type.includes('SL')
             const linePrice =
-              order.stop_price > 0 ? order.stop_price : order.price
+              isStopKind && order.stop_price > 0
+                ? order.stop_price
+                : order.price > 0
+                  ? order.price
+                  : order.stop_price
             if (linePrice <= 0) return
 
             // Determine order type

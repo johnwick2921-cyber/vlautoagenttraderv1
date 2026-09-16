@@ -1,0 +1,14 @@
+feature full suite
+09-11 12:57:37 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🔒 armed S1 limit REFUSED — refused: account unverifiable — book age 35m0s exceeds the 1m0s bound (an unverifiable book is not an empty book)
+--- FAIL: TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced (2.84s)
+    one_setup_retire_test.go:77: the allowed scenario's pre-boot authorization did NOT place — the retire pass over-reached
+09-11 12:58:28 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🔒 armed S1 limit REFUSED — refused: account unverifiable — book age 35m0s exceeds the 1m0s bound (an unverifiable book is not an empty book)
+--- FAIL: TestLiveConditionPlacesOnLoopback (2.24s)
+    shadow_demotion_test.go:254: live condition did NOT place — regression in the arm seam
+running revision targeted tests
+09-11 13:01:32 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🔒 armed S1 limit REFUSED — refused: account unverifiable — book age 30m0s exceeds the 1m0s bound (an unverifiable book is not an empty book)
+--- FAIL: TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced (2.23s)
+    one_setup_retire_test.go:77: the allowed scenario's pre-boot authorization did NOT place — the retire pass over-reached
+09-11 13:01:34 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🔒 armed S1 limit REFUSED — refused: account unverifiable — book age 30m0s exceeds the 1m0s bound (an unverifiable book is not an empty book)
+--- FAIL: TestLiveConditionPlacesOnLoopback (2.17s)
+    shadow_demotion_test.go:254: live condition did NOT place — regression in the arm seam

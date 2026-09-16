@@ -1,0 +1,55 @@
+[
+  {
+    "mutation": "closed_bucket",
+    "file": "kernel/confirmation_bucket.go",
+    "line": 34,
+    "actual_changed_line": "b.Closed = true",
+    "test": "^TestConfirmationTruthBucketBoundary$",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestConfirmationTruthBucketBoundary (0.00s)",
+      "    --- FAIL: TestConfirmationTruthBucketBoundary/1x5m_close-1s (0.00s)",
+      "        confirmation_truth_test.go:55: 1x5m_close at boundary -1000ms: MET=true detail=best run 1/1 completed closes below 100.00 \u00b7 5m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:20 CT \u00b7 close 2026-09-08 08:20 CT \u00b7 closed=true \u00b7 reference=2026-09-08 08:15 CT (plan publication)",
+      "    --- FAIL: TestConfirmationTruthBucketBoundary/2x5m_close-1s (0.00s)",
+      "        confirmation_truth_test.go:55: 2x5m_close at boundary -1000ms: MET=true detail=best run 2/2 completed closes below 100.00 \u00b7 5m bucket 2026-09-08 08:20 CT\u20132026-09-08 08:25 CT \u00b7 close 2026-09-08 08:25 CT \u00b7 closed=true \u00b7 reference=2026-09-08 08:15 CT (plan publication)",
+      "    --- FAIL: TestConfirmationTruthBucketBoundary/15m_close-1s (0.00s)",
+      "        confirmation_truth_test.go:55: 15m_close at boundary -1000ms: MET=true detail=best run 1/1 completed closes below 100.00 \u00b7 15m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:30 CT \u00b7 close 2026-09-08 08:30 CT \u00b7 closed=true \u00b7 reference=2026-09-08 08:15 CT (plan publication)"
+    ]
+  },
+  {
+    "mutation": "sequence_order",
+    "file": "kernel/confirmation_bucket.go",
+    "line": 11,
+    "actual_changed_line": "const confirmationOrderedSequence = false",
+    "test": "^TestConfirmationTruthSequenceOrder$",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestConfirmationTruthSequenceOrder (0.00s)",
+      "    confirmation_truth_test.go:72: reclaim BEFORE touch must be out of order: {Outcome:MET Bucket:5m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:20 CT \u00b7 close 2026-09-08 08:20 CT \u00b7 closed=true EvaluatedMs:1788873660000 ReferenceMs:0xc000315528 ReferenceSource:part one recorded event EventMs:1788873600000 EventKnown:true Refusal: Rule:touch RefPrice:100 Side:above Met:true Detail:best run 1/1 completed closes below 100.00 \u00b7 5m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:20 CT \u00b7 close 2026-09-08 08:20 CT \u00b7 closed=true \u00b7 reference=2026-09-08 08:21 CT (part one recorded event) Legs:[{Outcome:MET Bucket:1m bucket 2026-09-08 08:20 CT\u20132026-09-08 08:21 CT \u00b7 close 2026-09-08 08:21 CT \u00b7 closed=true EvaluatedMs:1788873660000 ReferenceMs:0xc000315500 ReferenceSource:plan publication EventMs:1788873660000 EventKnown:true Refusal: Rule:touch RefPrice:100 Side:above Met:true Detail:level touched \u00b7 1m bucket 2026-09-08 08:20 CT\u20132026-09-08 08:21 CT \u00b7 close 2026-09-08 08:21 CT \u00b7 closed=true \u00b7 reference=2026-09-08 08:15 CT (plan publication) Legs:[]} {Outcome:MET Bucket:5m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:20 CT \u00b7 close 2026-09-08 08:20 CT \u00b7 closed=true EvaluatedMs:1788873660000 ReferenceMs:0xc000315528 ReferenceSource:part one recorded event EventMs:1788873600000 EventKnown:true Refusal: Rule:1x5m_close RefPrice:100 Side:below Met:true Detail:best run 1/1 completed closes below 100.00 \u00b7 5m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:20 CT \u00b7 close 2026-09-08 08:20 CT \u00b7 closed=true \u00b7 reference=2026-09-08 08:21 CT (part one recorded event) Legs:[]}]}"
+    ]
+  },
+  {
+    "mutation": "reference_lookup",
+    "file": "kernel/plan_confirm.go",
+    "line": 204,
+    "actual_changed_line": "return v.EventMs, false",
+    "test": "^TestConfirmationTruthSequenceOrder$",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestConfirmationTruthSequenceOrder (0.00s)",
+      "    confirmation_truth_test.go:72: reclaim BEFORE touch must be out of order: {Outcome:UNKNOWN Bucket:<nil> EvaluatedMs:1788873660000 ReferenceMs:<nil> ReferenceSource:part one unavailable EventMs:0 EventKnown:false Refusal:missing_reference Rule:touch RefPrice:100 Side:above Met:false Detail:part one reference instant is missing; UNKNOWN does not satisfy \u00b7 bucket=UNKNOWN (no eligible bucket evidence) \u00b7 reference=UNKNOWN Legs:[{Outcome:MET Bucket:1m bucket 2026-09-08 08:20 CT\u20132026-09-08 08:21 CT \u00b7 close 2026-09-08 08:21 CT \u00b7 closed=true EvaluatedMs:1788873660000 ReferenceMs:0xc000139520 ReferenceSource:plan publication EventMs:1788873660000 EventKnown:true Refusal: Rule:touch RefPrice:100 Side:above Met:true Detail:level touched \u00b7 1m bucket 2026-09-08 08:20 CT\u20132026-09-08 08:21 CT \u00b7 close 2026-09-08 08:21 CT \u00b7 closed=true \u00b7 reference=2026-09-08 08:15 CT (plan publication) Legs:[]} {Outcome:UNKNOWN Bucket:<nil> EvaluatedMs:1788873660000 ReferenceMs:<nil> ReferenceSource:part one unavailable EventMs:0 EventKnown:false Refusal:missing_reference Rule:1x5m_close RefPrice:100 Side:below Met:false Detail:part one reference instant is missing; UNKNOWN does not satisfy \u00b7 bucket=UNKNOWN (no eligible bucket evidence) \u00b7 reference=UNKNOWN Legs:[]}]}"
+    ]
+  },
+  {
+    "mutation": "minute_displacement",
+    "file": "kernel/confirmation_bucket.go",
+    "line": 72,
+    "actual_changed_line": "if false {",
+    "test": "^TestConfirmationTruthNamedMinuteDisplacement$",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestConfirmationTruthNamedMinuteDisplacement (0.00s)",
+      "    confirmation_truth_test.go:153: separate minute observation boundary short=true: before={Rule:1m_displacement Pts:11 Observed:true Bucket:1m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:16 CT \u00b7 close 2026-09-08 08:16 CT \u00b7 closed=false} at={Rule:1m_displacement Pts:11 Observed:true Bucket:1m bucket 2026-09-08 08:15 CT\u20132026-09-08 08:16 CT \u00b7 close 2026-09-08 08:16 CT \u00b7 closed=true}"
+    ]
+  }
+]

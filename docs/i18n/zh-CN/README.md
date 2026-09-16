@@ -1,4 +1,4 @@
-<h1 align="center">NOFX</h1>
+<h1 align="center">VL Intelligent</h1>
 
 <p align="center">
   <strong>你的个人 AI 交易助手。</strong><br/>
@@ -33,7 +33,7 @@
 
 ---
 
-NOFX 是一个开源的**自主式** AI 交易助手。与需要手动配置模型、管理 API Key、接入数据源的传统 AI 工具不同 —— NOFX 的 AI **自主感知市场、自选模型、自动获取数据**。零人工干预。你只需设定策略，AI 负责一切。
+VL Intelligent 是一个开源的**自主式** AI 交易助手。与需要手动配置模型、管理 API Key、接入数据源的传统 AI 工具不同 —— VL Intelligent 的 AI **自主感知市场、自选模型、自动获取数据**。零人工干预。你只需设定策略，AI 负责一切。
 
 **完全自主**：AI 自行决定使用哪个模型、获取什么市场数据、何时交易。无需手动配置模型，无需管理各种服务的 API Key。只需充值 USDC 钱包，一键启动。
 
@@ -51,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 <p align="center">
   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
-    <img src="../../../screenshots/demo-cover.png" alt="NOFX 快速演示视频" width="900"/>
+    <img src="../../../screenshots/demo-cover.png" alt="VL Intelligent 快速演示视频" width="900"/>
   </a>
 </p>
 
@@ -216,7 +216,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
 
 ### 贡献者空投计划
 
-所有贡献在 GitHub 上追踪。当 NOFX 产生收入时，贡献者将获得空投。
+所有贡献在 GitHub 上追踪。当 VL Intelligent 产生收入时，贡献者将获得空投。
 
 **解决 [置顶 Issue](https://github.com/NoFxAiOS/nofx/issues) 的 PR 获得最高奖励！**
 

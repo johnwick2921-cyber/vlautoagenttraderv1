@@ -126,7 +126,7 @@ func TestTCPServer_SendSignal_QueuedOnDisconnect(t *testing.T) {
 	sig := SignalPayload{
 		Symbol: "MNQ", Side: "long", Quantity: 1,
 		Entry: 21500.00, StopLoss: 21485.00, TakeProfit: 21525.00,
-		SignalID: "queued-sig", Timestamp: time.Now().UTC().Format(time.RFC3339),
+		SignalID: "queued-sig", Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	if err := srv.SendSignal(sig); err != nil {
 		t.Fatalf("SendSignal pre-connect: %v", err)
@@ -169,7 +169,7 @@ func TestTCPServer_StaleSignalDropped(t *testing.T) {
 	sig := SignalPayload{
 		Symbol: "MNQ", Side: "long", Quantity: 1,
 		Entry: 21500.00, StopLoss: 21485.00, TakeProfit: 21525.00,
-		SignalID: "stale-sig", Timestamp: time.Now().UTC().Format(time.RFC3339),
+		SignalID: "stale-sig", Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	if err := srv.SendSignal(sig); err != nil {
 		t.Fatalf("SendSignal: %v", err)
@@ -221,7 +221,7 @@ func TestTCPServer_FillRoundTrip(t *testing.T) {
 	sig := SignalPayload{
 		Symbol: "MNQ", Side: "long", Quantity: 1,
 		Entry: 21500.00, StopLoss: 21485.00, TakeProfit: 21525.00,
-		SignalID: "roundtrip-1", Timestamp: time.Now().UTC().Format(time.RFC3339),
+		SignalID: "roundtrip-1", Timestamp: time.Now().UTC().Format(time.RFC3339Nano),
 	}
 	if err := srv.SendSignal(sig); err != nil {
 		t.Fatalf("SendSignal: %v", err)

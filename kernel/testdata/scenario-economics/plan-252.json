@@ -1,0 +1,229 @@
+{
+  "reasoning": "bias-tree: branch 1 (close > PDH 29607.75>29601.00) — bull continuation, but branch 5 premium (price above dealing-range top) forbids chasing strength, so long only via OR-L sweep/reclaim, no OR-H chase. Post-NFP flush printed (29720→29502) and price reclaimed 29553.75; 15m ranges while 1h stays up. S1 buys the failed sweep of OR-L toward upper liquidity; S2 fades a failed ONH sweep as the draw. No fvg_entry: fresh FVG list is empty. Death below ONL; flip to short on VWAP−1σ close.",
+  "bias": {
+    "direction": "long",
+    "conviction": "medium",
+    "flip_condition": "5m close below 29532.64 VWAP−1σ flips bias to short"
+  },
+  "levels": [
+    {
+      "price": 29611.25,
+      "label": "OR-H",
+      "grade": "A",
+      "instruction": "break",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29720,
+      "label": "ONH",
+      "grade": "A",
+      "instruction": "sweep",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29863.5,
+      "label": "OB(bull)·4h",
+      "grade": "C",
+      "instruction": "confluence",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29601,
+      "label": "PDH",
+      "grade": "B",
+      "instruction": "target",
+      "machine_grade": "B"
+    },
+    {
+      "price": 29597.25,
+      "label": "PDC",
+      "grade": "B",
+      "instruction": "target",
+      "machine_grade": "B"
+    },
+    {
+      "price": 29585,
+      "label": "RTH-H",
+      "grade": "B",
+      "instruction": "target",
+      "machine_grade": "B"
+    },
+    {
+      "price": 29553.75,
+      "label": "OR-L",
+      "grade": "A",
+      "instruction": "sweep_entry",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29532.64,
+      "label": "VWAP−1σ",
+      "grade": "A",
+      "instruction": "magnet",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29503.38,
+      "label": "OB(bear)·4h",
+      "grade": "C",
+      "instruction": "confluence",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29481.5,
+      "label": "ONL",
+      "grade": "A",
+      "instruction": "invalidate",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "breakout above 29611.25 OR-H, then retest of 29611.25 as support confirmed by a 1m MSS back above 29611.25",
+      "condition": "sweep_reclaim",
+      "direction": "long",
+      "target_chain": [
+        29720
+      ],
+      "invalid": "5m close below 29481.50 ONL",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29611.25,
+        "side": "above"
+      },
+      "quality": "A",
+      "confirm2": {
+        "rule": "1m_mss",
+        "ref_price": 29611.25,
+        "side": "above"
+      },
+      "arm": {
+        "enabled": true,
+        "entry": 29611.25,
+        "stop": 29481.5,
+        "target": 29720,
+        "wait_confirm": true,
+        "legs": [
+          {
+            "entry": 29611.25,
+            "stop": 29481.5,
+            "target": 29720,
+            "size": 1,
+            "rule": "touch"
+          },
+          {
+            "entry": 29611.25,
+            "stop": 29481.5,
+            "target": 29720,
+            "size": 1,
+            "wait_confirm": true,
+            "rule": "1m_mss"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "sweep of 29720.00 ONH that fails with a 1m close back below 29720.00",
+      "condition": "sweep_reclaim",
+      "direction": "short",
+      "target_chain": [
+        29611.25,
+        29601
+      ],
+      "invalid": "5m close back above 29720.00 ONH",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29720,
+        "side": "above"
+      },
+      "quality": "B",
+      "confirm2": {
+        "rule": "1m_mss",
+        "ref_price": 29720,
+        "side": "below"
+      },
+      "arm": {
+        "enabled": true,
+        "entry": 29720,
+        "stop": 29770,
+        "target": 29601,
+        "wait_confirm": true,
+        "legs": [
+          {
+            "entry": 29720,
+            "stop": 29770,
+            "target": 29601,
+            "size": 1,
+            "rule": "touch"
+          },
+          {
+            "entry": 29720,
+            "stop": 29770,
+            "target": 29601,
+            "size": 1,
+            "wait_confirm": true,
+            "rule": "1m_mss"
+          }
+        ]
+      }
+    }
+  ],
+  "no_trade": [
+    "🔴 Average Hourly Earnings m/m 07:30 CT ±15m — HARD no-trade (red news)",
+    "🔴 Non-Farm Employment Change 07:30 CT ±15m — HARD no-trade (red news)",
+    "🔴 Unemployment Rate 07:30 CT ±15m — HARD no-trade (red news)"
+  ],
+  "death_condition": "2x5m closes below 29481.50 ONL voids this plan",
+  "day_type": "balance",
+  "death": {
+    "price": 29481.5,
+    "side": "below",
+    "rule": "2x5m"
+  },
+  "flip": {
+    "price": 29532.64,
+    "side": "below",
+    "rule": "5m_close",
+    "flip_to": "short"
+  },
+  "bias_label": "bias: AI long · tree long · regime up",
+  "no_trade_windows": [
+    {
+      "start_min": 510,
+      "end_min": 515,
+      "kind": "first_n",
+      "label": "first 5m after the NY open (08:30–08:35 CT)",
+      "source": "code-constant"
+    },
+    {
+      "start_min": 720,
+      "end_min": 810,
+      "kind": "lunch",
+      "label": "lunch 12:00–13:30 CT",
+      "source": "code-constant"
+    },
+    {
+      "start_min": 435,
+      "end_min": 465,
+      "kind": "t1",
+      "label": "🔴 Average Hourly Earnings m/m 07:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 435,
+      "end_min": 465,
+      "kind": "t1",
+      "label": "🔴 Non-Farm Employment Change 07:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 435,
+      "end_min": 465,
+      "kind": "t1",
+      "label": "🔴 Unemployment Rate 07:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    }
+  ]
+}

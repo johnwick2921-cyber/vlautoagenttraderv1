@@ -476,9 +476,9 @@ export const riskControl = {
     es: 'Disciplina de retención',
   },
   holdDisciplineDesc: {
-    zh: '开启后：持仓期间禁止 AI 提前平仓，交易只按 AI 设定的止损/止盈（交易所挂单）离场；紧急平仓不受影响。默认关闭。',
-    en: 'When ON: once in a position, the AI cannot close early — the trade rides to the stop/target the AI set (a real order resting at the exchange). Emergency Flat still works. Default OFF.',
-    es: 'Cuando está ON: en posición, la IA no cierra antes; la operación va al stop/objetivo. Flat de emergencia sigue funcionando. Por defecto OFF.',
+    zh: '开启后：持仓期间禁止 AI 提前平仓，交易只按 AI 设定的止损/止盈（交易所挂单）离场；紧急平仓不受影响。在 ai_watch 持仓模式下这是真正生效的底线保护（观察员只记录、无下单权限，此开关拦截任何 AI 平仓）。默认关闭。',
+    en: 'When ON: once in a position, the AI cannot close early — the trade rides to the stop/target the AI set (a real order resting at the exchange). In ai_watch position mode this is the ACTIVE bottom-rail protection: the observer only records (zero order authority) and this switch blocks any AI close. Emergency Flat still works. Default OFF.',
+    es: 'Cuando está ON: en posición, la IA no cierra antes; la operación va al stop/objetivo. En modo ai_watch es la protección de fondo activa (el observador solo registra). Flat de emergencia sigue funcionando. Por defecto OFF.',
   },
 
   // === Auto-breakeven ===
@@ -496,6 +496,54 @@ export const riskControl = {
     zh: '触发点数',
     en: 'Trigger (points)',
     es: 'Disparador (puntos)',
+  },
+
+  // === Trailing profit (Phase 3B) ===
+  trailing: {
+    zh: '移动止盈（追踪止损）',
+    en: 'Trailing profit (trailing stop)',
+    es: 'Trailing stop',
+  },
+  trailingDesc: {
+    zh: '启用后：按 最优价 ∓ 倍数×ATR(周期,5m) 逐级收紧止损（只收紧、永不后退；保本触发后永不低于开仓价）。与保本止损共用同一 move_stop 通道。仅期货 (NT8)。默认关闭。',
+    en: 'When ON: the stop ratchets to best-price ∓ mult×ATR(period, 5m) each minute — tighten-only, never backward, never below entry once breakeven fired. Shares the proven move_stop path with auto-breakeven. Futures (NT8) only. Default OFF.',
+    es: 'Cuando está ON: el stop se ajusta a mejor-precio ∓ mult×ATR — solo se aprieta, nunca retrocede, nunca bajo la entrada tras el breakeven. Solo futuros (NT8). Por defecto OFF.',
+  },
+  trailingMult: {
+    zh: 'ATR 倍数',
+    en: 'ATR multiple',
+    es: 'Múltiplo ATR',
+  },
+  trailingPeriod: {
+    zh: 'ATR 周期 (5m)',
+    en: 'ATR period (5m)',
+    es: 'Período ATR (5m)',
+  },
+  trailingArm: {
+    zh: '启动条件',
+    en: 'Arms',
+    es: 'Se activa',
+  },
+  trailingArmBE: {
+    zh: '保本触发后（默认）',
+    en: 'after breakeven (default)',
+    es: 'tras breakeven (defecto)',
+  },
+  trailingArmPts: {
+    zh: '浮盈达到点数',
+    en: 'after N points in profit',
+    es: 'tras N puntos',
+  },
+  trailingArmNow: {
+    zh: '立即',
+    en: 'immediately',
+    es: 'inmediato',
+  },
+
+  alwaysActive: {
+    zh: '始终生效（安全）',
+    en: 'always active (safety)',
+    es: 'siempre activo (seguridad)',
   },
 
   // === Strategy Studio Phase 1 — prop-firm guardrails (Chunk 6) ===

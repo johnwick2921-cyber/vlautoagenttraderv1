@@ -1,0 +1,186 @@
+{
+  "reasoning": "bias-tree: branch 1 mirror (close < PDL) — price is extended below the prior range. Branch 5 discount warns against chasing shorts, but the 5m tape is one-sided down (LH 29162) and below PDL, so the plan is short reject at 29100.50 and lower-high rejection at 29162. The discount alternative is a sweep-reclaim long of ONL 29082.75. No fvg_entry: FRESH FVG list is empty.",
+  "bias": {
+    "direction": "short",
+    "conviction": "low",
+    "flip_condition": "5m close above 29162.00"
+  },
+  "levels": [
+    {
+      "price": 29125,
+      "label": "OR-H",
+      "grade": "C",
+      "instruction": "target",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29130,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "react",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29162,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "react",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29197.5,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "react",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29209.25,
+      "label": "Supply·1h",
+      "grade": "C",
+      "instruction": "confluence",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29248.19,
+      "label": "eVWAP",
+      "grade": "A",
+      "instruction": "fade",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29100.5,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "react",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29082.75,
+      "label": "ONL",
+      "grade": "A",
+      "instruction": "sweep",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29062.75,
+      "label": "OR-L",
+      "grade": "A",
+      "instruction": "sweep",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29040,
+      "label": "SWG-L·15m",
+      "grade": "A",
+      "instruction": "react",
+      "machine_grade": "A"
+    },
+    {
+      "price": 28960.89,
+      "label": "VWAP−2σ",
+      "grade": "A",
+      "instruction": "react",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "first touch of 29100.50 after the failed breakdown",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29082.75,
+        29062.75,
+        29040
+      ],
+      "invalid": "5m close back above 29130.00",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29100.5,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29100.5,
+        "stop": 29130,
+        "target": 29082.75
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "first touch of 29162.00 after lunch",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29100.5,
+        29082.75,
+        29040
+      ],
+      "invalid": "5m close above 29197.50",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29162,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29162,
+        "stop": 29189,
+        "target": 29100.5
+      }
+    },
+    {
+      "id": "S3",
+      "trigger": "sweep of 29082.75 ONL and 5m close back above 29082.75",
+      "condition": "sweep_reclaim",
+      "direction": "long",
+      "target_chain": [
+        29130,
+        29162,
+        29197.5
+      ],
+      "invalid": "5m close below 29040.00",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29082.75,
+        "side": "below"
+      },
+      "quality": "B",
+      "confirm2": {
+        "rule": "1x5m_close",
+        "ref_price": 29082.75,
+        "side": "above"
+      },
+      "arm": {
+        "enabled": true,
+        "entry": 29082.75,
+        "stop": 29055.75,
+        "target": 29162,
+        "wait_confirm": true
+      }
+    }
+  ],
+  "no_trade": [
+    "first 5m (CT)",
+    "12:00-13:30 CT lunch",
+    "09:00 CT T1 ISM Manufacturing PMI blackout",
+    "🔴 ISM Manufacturing PMI 09:00 CT ±15m +1m (clock drift) — HARD no-trade (red news)"
+  ],
+  "death_condition": "Plan void if any 5m close above 29197.50 clears the 5m supply/lower-high shelf and opens the eVWAP magnet.",
+  "day_type": "trend",
+  "death": {
+    "price": 29197.5,
+    "side": "above",
+    "rule": "5m_close"
+  },
+  "flip": {
+    "price": 29162,
+    "side": "above",
+    "rule": "5m_close",
+    "flip_to": "long"
+  }
+}

@@ -55,6 +55,7 @@ function stopActiveAgentStream(userId?: string, language = 'zh') {
   const stoppedText =
     language === 'zh' ? '已中止当前回复。' : 'Stopped the current response.'
   const now = new Date().toLocaleTimeString([], {
+    timeZone: 'America/Chicago', // owner contract: Houston time for every viewer
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -110,6 +111,7 @@ async function runAgentStream(params: {
   if (!text || useAgentChatStore.getState().loading) return
 
   const time = new Date().toLocaleTimeString([], {
+    timeZone: 'America/Chicago', // owner contract: Houston time for every viewer
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -182,6 +184,7 @@ async function runAgentStream(params: {
     let stepCounter = 0
     const now = () =>
       new Date().toLocaleTimeString([], {
+        timeZone: 'America/Chicago', // owner contract: Houston time for every viewer
         hour: '2-digit',
         minute: '2-digit',
       })
@@ -339,6 +342,7 @@ async function runAgentStream(params: {
                   time:
                     m.time ||
                     new Date().toLocaleTimeString([], {
+                      timeZone: 'America/Chicago', // owner contract: Houston time for every viewer
                       hour: '2-digit',
                       minute: '2-digit',
                     }),
@@ -356,6 +360,7 @@ async function runAgentStream(params: {
                   ...m,
                   text: '⚠️ Error: ' + e.message,
                   time: new Date().toLocaleTimeString([], {
+                    timeZone: 'America/Chicago', // owner contract: Houston time for every viewer
                     hour: '2-digit',
                     minute: '2-digit',
                   }),

@@ -80,7 +80,7 @@ func TestFormatTimeframeSeriesData_BollRsiAtrLabels(t *testing.T) {
 	var cfg strings.Builder
 	eng.formatTimeframeSeriesData(&cfg, &market.TimeframeSeriesData{
 		RSI7Values: []float64{50}, RSI14Values: []float64{55}, // present but ignored
-		ATR14: 12.5,
+		ATR14:       12.5,
 		RSIByPeriod: map[int][]float64{21: {60, 61}, 9: {40, 41}},
 		ATRByPeriod: map[int]float64{10: 9.9},
 		BOLLByPeriod: map[int]*market.BollBands{

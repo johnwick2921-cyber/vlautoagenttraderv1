@@ -1,0 +1,317 @@
+package trader
+
+import (
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"nofx/kernel"
+	"nofx/market"
+	"nofx/store"
+)
+
+// ── D2 PINS (wave BARS HORIZON, 2026-09-09) ─────────────────────────────────
+//
+// THREE CALL SITES WERE UNREACHABLE BY CONSTRUCTION, NOT BY MARKET CONDITIONS.
+// The ring ceiling is DefaultBarCacheMaxBars = 2500 (bar_cache.go:24):
+//
+//	trader/auto_trader_planner.go  1m × 12000 = 200.0 h  vs 41.7 h ceiling
+//	trader/auto_trader_weekly.go   1m × 12000 = 200.0 h  vs 41.7 h ceiling
+//	trader/auto_trader_planner.go  5m ×  3000 = 250.0 h  vs 208.3 h ceiling
+//
+// No market condition can satisfy any of them. THE STORE IS THE HORIZON; THE
+// RING IS THE CACHE (owner ruling 2026-09-09) — measured 2026-09-09, the bars
+// table holds MNQ 1m 20,043 rows back to 2026-08-19 CT (21 days).
+
+func d2Bars(startCT time.Time, n int, step time.Duration) []market.Kline {
+	out := make([]market.Kline, 0, n)
+	for i := 0; i < n; i++ {
+		ts := startCT.Add(time.Duration(i) * step)
+		o := 29000 + float64(i)
+		out = append(out, market.Kline{OpenTime: ts.UnixMilli(), Open: o, High: o + 2, Low: o - 2, Close: o + 1, Volume: 7})
+	}
+	return out
+}
+
+// PIN D2-A — THE STORE FILLS THE OLDER END, AND NEVER OVERWRITES A LIVE BAR.
+func TestStoreDepthPrependsOlderAndNeverReplacesRing(t *testing.T) {
+	now := time.Date(2026, 9, 9, 13, 18, 0, 0, kernel.CTLocation())
+	ringStart := now.Add(-100 * time.Minute)
+	ring := d2Bars(ringStart, 100, time.Minute)
+	// The store holds 400 bars covering the SAME window and 300 minutes before
+	// it — and its overlapping copies carry a different Close, so a merge that
+	// preferred the store would be visible.
+	stored := d2Bars(ringStart.Add(-300*time.Minute), 400, time.Minute)
+	for i := range stored {
+		stored[i].Close = -1
+	}
+
+	out := barsWithStoreDepthFrom(ring, func(int) ([]market.Kline, error) { return stored, nil },
+		"MNQ", "1m", 400, now)
+
+	if len(out) != 400 {
+		t.Fatalf("served %d bars, want 400 (300 from the store + 100 from the ring)", len(out))
+	}
+	for i := 1; i < len(out); i++ {
+		if out[i].OpenTime <= out[i-1].OpenTime {
+			t.Fatalf("result is not strictly ascending at %d (%d <= %d)", i, out[i].OpenTime, out[i-1].OpenTime)
+		}
+	}
+	// Every RING bar must survive byte-identically — the ring is the live tape.
+	tail := out[len(out)-len(ring):]
+	for i := range ring {
+		if tail[i] != ring[i] {
+			t.Fatalf("ring bar %d was replaced by a stored one: got %+v want %+v", i, tail[i], ring[i])
+		}
+	}
+	if out[0].OpenTime != stored[0].OpenTime {
+		t.Fatalf("oldest served bar is %d, want the store's oldest %d", out[0].OpenTime, stored[0].OpenTime)
+	}
+}
+
+// PIN D2-B — AN EMPTY RING IS NOT SUBSTITUTED BY THE STORE.
+//
+// The store is a DEPTH source, never a stand-in for a live feed. If the ring is
+// empty the feed is down or the seed has not landed, and handing the planner
+// 12,000 stale bars would let it write a plan on a dead tape — the exact
+// failure "no NT8 → no decisions" exists to prevent.
+func TestEmptyRingIsNeverSubstitutedByTheStore(t *testing.T) {
+	now := time.Date(2026, 9, 9, 13, 18, 0, 0, kernel.CTLocation())
+	stored := d2Bars(now.Add(-500*time.Minute), 500, time.Minute)
+	read := 0
+	out := barsWithStoreDepthFrom(nil, func(int) ([]market.Kline, error) { read++; return stored, nil },
+		"MNQ", "1m", 500, now)
+	if len(out) != 0 {
+		t.Fatalf("an EMPTY ring was backfilled from the store with %d bars — the store must never substitute for the live feed", len(out))
+	}
+	if read != 0 {
+		t.Fatalf("the store was read %d time(s) for an empty ring", read)
+	}
+}
+
+// PIN D2-C — A RING THAT ALREADY SERVES THE ASK IS NOT SECOND-GUESSED.
+func TestSatisfiedRingSkipsTheStoreEntirely(t *testing.T) {
+	now := time.Date(2026, 9, 9, 13, 18, 0, 0, kernel.CTLocation())
+	ring := d2Bars(now.Add(-200*time.Minute), 200, time.Minute)
+	read := 0
+	out := barsWithStoreDepthFrom(ring, func(int) ([]market.Kline, error) { read++; return nil, nil },
+		"MNQ", "1m", 200, now)
+	if read != 0 {
+		t.Fatalf("the store was read %d time(s) although the ring already served 200 of 200", read)
+	}
+	if len(out) != len(ring) {
+		t.Fatalf("served %d, want the ring's %d unchanged", len(out), len(ring))
+	}
+}
+
+// PIN D2-D — A STORE READ THAT FAILS WARNS AND DEGRADES TO THE RING (A10).
+func TestStoreReadFailureFallsBackToTheRing(t *testing.T) {
+	now := time.Date(2026, 9, 9, 13, 18, 0, 0, kernel.CTLocation())
+	ring := d2Bars(now.Add(-100*time.Minute), 100, time.Minute)
+	out := barsWithStoreDepthFrom(ring, func(int) ([]market.Kline, error) { return nil, errors.New("db locked") },
+		"MNQ", "1m", 400, now)
+	if len(out) != len(ring) {
+		t.Fatalf("a failed store read served %d bars, want the ring's %d — it must never blank or block (A10)", len(out), len(ring))
+	}
+}
+
+// PIN D2-E — THE RV BASELINE STOPS PROMISING 20 DAYS IT WAS NEVER FED.
+//
+// WHAT THIS PIN IS, AND WHAT IT IS NOT (relabeled in review, 2026-09-09). It is
+// the ESTIMATOR PARITY anchor: it proves RVBaselineFrom5mDays returns the same
+// VALUE as the pre-wave RVBaselineFrom5m for the same slice, and that the day
+// count it reports is the count it was FED and not the count it was ASKED.
+// It builds BOTH sides' inputs itself, so BY CONSTRUCTION it cannot see the
+// production INPUT move — that is the class-53 trap, and it is not a defect
+// here as long as nobody cites this pin as evidence that the rendered value is
+// unchanged. It was cited that way, and the claim was false. The CALL-SITE
+// golden is TestRegimeLabelUnchangedWhenTheWindowDoesNotChange
+// (trader/regime_input_window_test.go), owner condition (d).
+//
+// RVBaselineFrom5m(min5Long, 20, 5) filled the struct field RVBaseline20d from
+// about 7 complete session-days. The value is honest internally (incomplete
+// days are dropped, and it returns ok=false below minDays) but nothing carried
+// the actual day count to the reader, and the ask above it — 5m × 3000 = 250.0
+// h against a 208.3 h ring — could never have delivered 20 days anyway.
+func TestRVBaselineCarriesItsActualDayCount(t *testing.T) {
+	// Seven complete session-days of 5m bars.
+	var min5 []market.Kline
+	start := time.Date(2026, 8, 31, 17, 0, 0, 0, kernel.CTLocation())
+	for d := 0; d < 7; d++ {
+		day := start.AddDate(0, 0, d)
+		for i := 0; i < 280; i++ {
+			ts := day.Add(time.Duration(i) * 5 * time.Minute)
+			o := 29000 + float64(i%20)
+			min5 = append(min5, market.Kline{OpenTime: ts.UnixMilli(), Open: o, High: o + 3, Low: o - 3, Close: o + 1, Volume: 5})
+		}
+	}
+	base, days, ok := kernel.RVBaselineFrom5mDays(min5, 20, 5)
+	if !ok {
+		t.Fatalf("baseline not computed from 7 complete days")
+	}
+	// EXACT, not a range. The first version asserted 1..20 and a mutation that
+	// returned maxDays (20 — the ASK) instead of len(perDay) passed green: the
+	// wave's entire point is that the fed count and the asked count DIFFER, so
+	// a pin that tolerates the ask cannot see the defect (class 89).
+	if days != 7 {
+		t.Fatalf("complete-day count = %d, want exactly 7 (the fixture builds 7 complete session-days)", days)
+	}
+	if days >= 20 {
+		t.Fatalf("the reported count (%d) equals the ASK — it must report what was FED", days)
+	}
+	// The value itself must be byte-identical to the pre-wave helper.
+	old, oldOK := kernel.RVBaselineFrom5m(min5, 20, 5)
+	if !oldOK || old != base {
+		t.Fatalf("RVBaselineFrom5mDays changed the COMPUTED value: %v vs %v — D2 may only move the input or the name", base, old)
+	}
+	// The regime the model reads must NAME the window it was actually fed.
+	r := kernel.ComputeRegime(kernel.RegimeInputs{
+		Price: 29000, Min5Bars: min5, RVBaseline: base, RVBaselineDays: days,
+	})
+	if !strings.Contains(r.Render(), fmt.Sprintf("%d complete session-days", days)) {
+		t.Errorf("the regime line does not name the baseline's real window (%d days): %s", days, r.Render())
+	}
+	if strings.Contains(r.Render(), "of-normal") {
+		t.Errorf("the regime line still says \"of-normal\" — a baseline with no stated window: %s", r.Render())
+	}
+}
+
+// PIN D2-F — A29. The new depth path and the day-count helper are WIRED.
+func TestD2WiredAtTheThreeCallSites(t *testing.T) {
+	for fn, wantIn := range map[string]string{
+		"barsWithStoreDepth(":     "trader/auto_trader_planner.go",
+		"barsWithStoreDepthFrom(": "trader/bars_store_depth.go",
+		// ROLL WAVE — the depth path reads the CONTRACT-FILTERED form. The bare
+		// LastNBars( no longer appears here (and the reader-filter lint fails
+		// if it ever does); the wiring this pins is that the store read exists
+		// on the depth path at all.
+		"LastNBarsOn(":                "trader/bars_store_depth.go",
+		"RVBaselineFrom5mDays(":       "trader/regime_input_window.go",
+		"rvBaselineFallback5mBarsAsk": "trader/auto_trader_planner.go",
+		"at.barsWithStoreDepth(at.fu": "trader/auto_trader_weekly.go",
+	} {
+		n, where := d2ProdCallSites(t, fn)
+		if n == 0 {
+			t.Errorf("%s: 0 production call sites (A29)", fn)
+			continue
+		}
+		if !strings.Contains(strings.Join(where, " "), wantIn) {
+			t.Errorf("%s: production call sites %v, want one in %s", fn, where, wantIn)
+		}
+	}
+	// The three unreachable asks are GONE.
+	for _, gone := range []string{`"1m", 12000`, `"5m", 3000`} {
+		n, where := d2ProdCallSites(t, gone)
+		if n > 0 {
+			t.Errorf("an ask above the ring ceiling survives: %s in %v", gone, where)
+		}
+	}
+}
+
+// PIN D2-G — THE SPLICE NEVER SERVES MORE THAN IT WAS ASKED FOR.
+//
+// THE DEFECT THIS CATCHES (found by a reviewer's mutation, 2026-09-09): the
+// tail cap at the end of barsWithStoreDepthFrom could be deleted and the whole
+// trader package stayed green, because D2-A's fixture picks an n large enough
+// that the cap never engages. Without it `older` (bounded by n) plus the ring
+// can reach 2n, and the TAPE line one layer up would then read "14000 1m bars
+// HELD of 12000 requested" — a disclosure that contradicts itself, which is the
+// exact class this wave exists to remove.
+func TestStoreDepthNeverServesMoreThanAsked(t *testing.T) {
+	now := time.Date(2026, 9, 9, 13, 18, 0, 0, kernel.CTLocation())
+	ringStart := now.Add(-100 * time.Minute)
+	ring := d2Bars(ringStart, 100, time.Minute)                         // 100 live bars
+	stored := d2Bars(ringStart.Add(-300*time.Minute), 300, time.Minute) // 300 older bars
+	const n = 250                                                       // < 300 + 100
+
+	out := barsWithStoreDepthFrom(ring, func(int) ([]market.Kline, error) { return stored, nil },
+		"MNQ", "1m", n, now)
+
+	if len(out) != n {
+		t.Fatalf("served %d bars for an ask of %d — the splice over-serves", len(out), n)
+	}
+	// And what survives must be the NEWEST n, live tail included.
+	if out[len(out)-1].OpenTime != ring[len(ring)-1].OpenTime {
+		t.Fatalf("the live tail was trimmed: newest served %d, newest ring %d", out[len(out)-1].OpenTime, ring[len(ring)-1].OpenTime)
+	}
+	wantOldest := ring[len(ring)-1].OpenTime - int64(n-1)*60_000
+	if out[0].OpenTime != wantOldest {
+		t.Fatalf("the trim kept the wrong end: oldest served %d, want %d (the newest %d bars)", out[0].OpenTime, wantOldest, n)
+	}
+}
+
+// F1 (2026-09-14) — the API/dashboard seam must degrade to the ring whenever it
+// cannot answer: nil store, or no contract named, or a store with nothing to
+// add. The splice itself is pinned by D2-A..D2-G; these guard the NEW surface.
+func TestBarsWithStoreDepthSeamDegradesWhenUnanswerable(t *testing.T) {
+	now := time.Date(2026, 9, 14, 10, 0, 0, 0, kernel.CTLocation())
+	ring := d2Bars(now.Add(-100*time.Minute), 100, time.Minute)
+
+	if out := BarsWithStoreDepth(ring, nil, "MNQ 12-26", "MNQ", "1m", 200, now); len(out) != 100 {
+		t.Fatalf("a nil store must serve the ring alone: %d bars", len(out))
+	}
+
+	st, err := store.New(filepath.Join(t.TempDir(), "seam.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = st.Close() }()
+	if err := st.BarHistory().Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	// A real store but NO contract named — UNKNOWN is not "everything" (A24).
+	if out := BarsWithStoreDepth(ring, st, "   ", "MNQ", "1m", 200, now); len(out) != 100 {
+		t.Fatalf("an unnamed contract must serve the ring alone: %d bars", len(out))
+	}
+	// A real store + a named contract, but the table has no bars — ring alone.
+	if out := BarsWithStoreDepth(ring, st, "MNQ 12-26", "MNQ", "1m", 200, now); len(out) != 100 {
+		t.Fatalf("an empty store must serve the ring alone: %d bars", len(out))
+	}
+}
+
+func d2ProdCallSites(t *testing.T, needle string) (int, []string) {
+	t.Helper()
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatalf("repo root: %v", err)
+	}
+	n := 0
+	var where []string
+	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			switch d.Name() {
+			case ".git", "node_modules", "web", "docs", ".understand-anything", ".claude":
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		b, rerr := os.ReadFile(path)
+		if rerr != nil {
+			return nil
+		}
+		for _, line := range strings.Split(string(b), "\n") {
+			if strings.Contains(line, needle) && !strings.HasPrefix(strings.TrimSpace(line), "//") {
+				if strings.HasPrefix(strings.TrimSpace(line), "func ") {
+					continue
+				}
+				rel, _ := filepath.Rel(root, path)
+				n++
+				where = append(where, rel)
+				break
+			}
+		}
+		return nil
+	})
+	return n, where
+}

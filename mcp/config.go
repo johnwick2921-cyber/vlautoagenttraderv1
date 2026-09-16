@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"nofx/logger"
@@ -36,6 +37,13 @@ type Config struct {
 	MaxRetries      int
 	RetryWaitBase   time.Duration
 	RetryableErrors []string
+	// CLASS 41 (2026-09-02) — the planner STREAM path's own retry policy:
+	// StreamTries counts CALLS (default 3 = two retries); StreamBackoff is the
+	// exponential wait schedule between them (default 2s → 15s → 45s; the last
+	// value repeats). A flapping edge needs time — the fixed 2s wait let call 2
+	// die 18s after call 1 on 2026-09-01 23:47 CT.
+	StreamTries   int
+	StreamBackoff []time.Duration
 
 	// Timeout configuration
 	Timeout time.Duration
@@ -64,6 +72,8 @@ func DefaultConfig() *Config {
 		ReasoningEffort: getEnvString("AI_REASONING_EFFORT", "max"),
 		MaxRetries:      getEnvInt("AI_MAX_RETRIES", MaxRetryTimes),
 		RetryWaitBase:   time.Duration(getEnvInt("AI_RETRY_BACKOFF_SECONDS", 2)) * time.Second,
+		StreamTries:     StreamRetryTries(),
+		StreamBackoff:   StreamRetryBackoffSchedule(),
 		Timeout:         ResolvedAITimeout(),
 		RetryableErrors: retryableErrors,
 
@@ -174,4 +184,57 @@ func getEnvString(key string, defaultValue string) string {
 		return val
 	}
 	return defaultValue
+}
+
+// StreamRetryTries (class 41) — AI_PLAN_STREAM_TRIES, the number of CALLS the
+// planner stream path makes per planner attempt before giving up (default 3 =
+// two retries). Bounded 1..6.
+func StreamRetryTries() int {
+	n := getEnvInt("AI_PLAN_STREAM_TRIES", 3)
+	if n < 1 {
+		n = 1
+	}
+	if n > 6 {
+		n = 6
+	}
+	return n
+}
+
+// StreamRetryBackoffSchedule (class 41) — AI_PLAN_STREAM_BACKOFF, a comma list
+// of Go durations waited before retry 1, 2, 3… on the planner stream path
+// (default "2s,15s,45s"). Unparseable entries are skipped; an empty result
+// falls back to the default. Beyond the list the last value repeats.
+func StreamRetryBackoffSchedule() []time.Duration {
+	def := []time.Duration{2 * time.Second, 15 * time.Second, 45 * time.Second}
+	raw := strings.TrimSpace(os.Getenv("AI_PLAN_STREAM_BACKOFF"))
+	if raw == "" {
+		return def
+	}
+	var out []time.Duration
+	for _, part := range strings.Split(raw, ",") {
+		d, err := time.ParseDuration(strings.TrimSpace(part))
+		if err != nil || d <= 0 {
+			continue
+		}
+		out = append(out, d)
+	}
+	if len(out) == 0 {
+		return def
+	}
+	return out
+}
+
+// streamBackoffFor returns the wait before retry number n (1-based) from the
+// schedule; past the end the last entry repeats; never zero.
+func streamBackoffFor(n int, sched []time.Duration) time.Duration {
+	if len(sched) == 0 {
+		return 2 * time.Second
+	}
+	if n < 1 {
+		n = 1
+	}
+	if n > len(sched) {
+		n = len(sched)
+	}
+	return sched[n-1]
 }

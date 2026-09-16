@@ -29,13 +29,37 @@ func (at *AutoTrader) startDrawdownMonitor() {
 		for {
 			select {
 			case <-ticker.C:
-				at.checkPositionDrawdown()
+				at.monitorTick(time.Now())
 			case <-at.stopMonitorCh:
 				logger.Info("⏹ Stopped position drawdown monitoring")
 				return
 			}
 		}
 	}()
+}
+
+// monitorTick is one wall-clock monitor beat (every minute, independent of the
+// decision cycle). The feed watch lives HERE, not in runCycle (in-position
+// silence fix 2026-08-19): under bar-close cadence a dead feed stops the
+// cycles themselves, and skip-while-open silenced them while holding — so the
+// decision cycle could never report the outage that mattered most.
+func (at *AutoTrader) monitorTick(now time.Time) {
+	at.checkFeedDown(now)
+	at.checkPositionDrawdown()
+	// TRADE EXCURSION LOGGING (wave 1A, 2026-09-02) — E2. This tick is the
+	// ~1m cadence the excursion path is recomputed on while a position lives.
+	// The whole path is rebuilt from stored bars each time, so a missed tick,
+	// a restart or a late bar costs nothing. Telemetry: it can WARN, never
+	// panic, and never blocks the guards above it (class 23).
+	at.excursionOnBarTick()
+	// D5 (2026-09-07) — IS THE OPEN POSITION ACTUALLY PROTECTED?
+	//
+	// Deliberately HERE and not in maybeManageArmedOrders, which returns early
+	// unless day_plan is enabled. A position is unprotected regardless of
+	// day_plan, and a safety check a config flag can silence is not one. This
+	// beat is wall-clock and runs while a position is held — which is exactly
+	// the window position 592 spent naked with nothing looking.
+	at.reconcileProtectionAt(now, "monitor")
 }
 
 // positionPnLPct computes a position's leveraged P&L percent. Side is normalized:
@@ -52,6 +76,9 @@ func positionPnLPct(side string, entryPrice, markPrice float64, leverage int) fl
 
 // checkPositionDrawdown checks position drawdown situation
 func (at *AutoTrader) checkPositionDrawdown() {
+	if at.trader == nil {
+		return // no broker bound (shutdown race / test harness)
+	}
 	// Get current positions
 	positions, err := at.trader.GetPositions()
 	if err != nil {
@@ -80,6 +107,9 @@ func (at *AutoTrader) checkPositionDrawdown() {
 		// per position; opt-in, default OFF). Runs alongside the drawdown check.
 		openKeys[symbol+"_"+side] = true
 		at.maybeMoveStopToBreakeven(symbol, side, entryPrice, markPrice)
+		// Phase 3B — trailing profit (opt-in, default OFF): additive beat on the
+		// same monitor, after breakeven so the BE floor is visible to the rails.
+		at.maybeTrailStop(symbol, side, entryPrice, markPrice)
 
 		// Calculate current P&L percentage
 		leverage := 10 // Default value
@@ -133,6 +163,7 @@ func (at *AutoTrader) checkPositionDrawdown() {
 	}
 	// Re-arm breakeven for any position that has since gone flat.
 	at.pruneBreakevenDone(openKeys)
+	at.pruneTrailStates(openKeys)
 }
 
 // emergencyClosePosition emergency close position function

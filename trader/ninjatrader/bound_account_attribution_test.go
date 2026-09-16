@@ -73,7 +73,7 @@ func TestReconcile_ProcessesOwnAccount_SkipsMisstamped(t *testing.T) {
 	s.SeedPositionsForTest("SimAccount1", []ntwire.OpenPosition{})
 	tr := NewTCPTrader(s, "MNQ", "SimAccount1")
 
-	tr.reconcilePositions(traderID, st)
+	tr.reconcilePositions(traderID, "nt", "ninjatrader", st)
 
 	// Own-account orphan is a candidate: its flat-timer was recorded (deferring to close-sync).
 	if tr.flatSince[own.ID] == 0 {

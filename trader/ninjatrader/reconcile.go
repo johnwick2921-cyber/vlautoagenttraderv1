@@ -2,6 +2,7 @@ package ninjatrader
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
+	"nofx/telemetry"
 )
 
 // Position reconcile — the durable single-source-of-truth anchor for NT8.
@@ -48,6 +50,18 @@ const (
 	// momentarily in flight, so a single-pass divergence is within tolerance. 60s
 	// (3 reconcile passes) matches the other reconcile grace windows.
 	reconcileDivergenceGraceMs = 60_000
+	// untrackedGraceMs: an NT8-held position with NO open DB row (manual NT8
+	// entry / unrecorded fill) must PERSIST this long before reconcile
+	// materializes an OPEN row for it. A bot-opened row lands within seconds of
+	// its fill, so 60s (3 passes) only ever fires for genuinely untracked
+	// positions — and still beats the 120s priced-close park grace, so a close
+	// frame that arrived while the position was untracked can be consumed with
+	// its real exit price.
+	untrackedGraceMs = 60_000
+	// entryConfirmGraceMs (C8, 2026-08-25): an entry whose signal never produced
+	// a fill within this window is dropped from the pending map (rejected /
+	// AddOn drop) — it must never linger as a would-be position.
+	entryConfirmGraceMs = 45_000
 )
 
 // StartPositionReconcile launches the periodic reconcile goroutine (idempotent
@@ -56,12 +70,27 @@ func (t *TCPTrader) StartPositionReconcile(traderID, exchangeID, exchangeType st
 	if st == nil {
 		return
 	}
+	// GAR-F1 — wire the store handle BEFORE the repair pass so the reconcile
+	// goroutine and MoveStopToBreakeven can resolve materialized rows' entry
+	// identities (the #566 dead-cell fix).
+	t.mu.Lock()
+	t.st = st
+	if t.entryOrderID == nil {
+		t.entryOrderID = make(map[string]string)
+	}
+	t.mu.Unlock()
 	t.reconcileOnce.Do(func() {
+		// F3 (LONDON-FORENSICS 2026-08-28) — one-time idempotent repair: positions
+		// materialized before the lineage stamp existed (live proof: pos #567)
+		// get their armed-fill plan linkage back from the armed ledger.
+		if n := RepairArmedLineage(st, traderID); n > 0 {
+			logger.Infof("🩹 RepairArmedLineage: stamped %d position(s) with their armed-fill plan linkage (the #567 class)", n)
+		}
 		go func() {
 			ticker := time.NewTicker(reconcileInterval)
 			defer ticker.Stop()
 			for range ticker.C {
-				t.reconcilePositions(traderID, st)
+				t.reconcilePositions(traderID, exchangeID, exchangeType, st)
 			}
 		}()
 		logger.Infof("🔧 NinjaTrader position-reconcile started (anchors entry_price to NT8 avg + clears orphan rows)")
@@ -69,7 +98,7 @@ func (t *TCPTrader) StartPositionReconcile(traderID, exchangeID, exchangeType st
 }
 
 // reconcilePositions runs one reconcile pass. See file header for semantics.
-func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
+func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string, st *store.Store) {
 	// Reconcile against THIS trader's OWN bound account, not the shared connection
 	// CurrentAccount() (display-switchable). Otherwise viewing another account would
 	// make reconcile read the WRONG account's positions and mis-clear this trader's
@@ -80,6 +109,38 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 	if !ok {
 		// NT8 has not reported positions for this account — do NOT touch the DB.
 		return
+	}
+
+	// C8 (2026-08-25) — sweep stale UNCONFIRMED entries: a pending signal that
+	// never produced a fill (NT8 rejected it, or the AddOn dropped the frame)
+	// must not linger as a would-be position. Drop it and alarm; NT8 truth is
+	// what the snapshot below says.
+	t.pendingMu.Lock()
+	var staleSignals []string
+	cutoff := time.Now().UTC().UnixMilli() - entryConfirmGraceMs
+	for sid, atMs := range t.pendingAt {
+		if atMs < cutoff {
+			staleSignals = append(staleSignals, sid)
+		}
+	}
+	for _, sid := range staleSignals {
+		delete(t.pending, sid)
+		delete(t.pendingAt, sid)
+		// Hygiene: a swept signal can never fill, so it must not stay as the
+		// "current entry" for GetOrderStatus either.
+		t.mu.Lock()
+		if t.lastEntrySignalID == sid {
+			t.lastEntrySignalID = ""
+		}
+		t.mu.Unlock()
+	}
+	t.pendingMu.Unlock()
+	if len(staleSignals) > 0 {
+		suffix := "y"
+		if len(staleSignals) > 1 {
+			suffix = "ies"
+		}
+		logger.Warnf("🧹 C8 reconcile: dropped %d UNCONFIRMED pending entr%s (no fill within %ds) — NT8 never confirmed; no position recorded.", len(staleSignals), suffix, entryConfirmGraceMs/1000)
 	}
 
 	// NT8-held positions keyed "SYMBOL|SIDE" → average price (canonical form).
@@ -196,6 +257,9 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 					}
 				}
 				closed, perr := st.Position().ClosePosition(row.ID, exitPx, "reconcile_priced", pnl, 0, "sync")
+				if perr == nil && closed && OnPositionClosed != nil {
+					OnPositionClosed(row.TraderID, row.ID) // Phase 4: post-exit rescan
+				}
 				delete(t.flatSince, row.ID)
 				if perr != nil {
 					logger.Warnf("ninjatrader/tcp: reconcile priced-close failed (row %d): %v", row.ID, perr)
@@ -204,18 +268,58 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 				}
 				continue
 			}
-			// Past the grace and still flat+open → the position_close frame was
-			// genuinely never captured. Record the honest marker (exit/P&L UNKNOWN →
-			// UI "—"; entry-as-exit / 0 are placeholders). ClosePosition is guarded on
-			// status='OPEN' (PART-1a), so a last-moment close-sync win is still kept.
-			// Never fabricate an exit NT8 didn't give us.
-			closed, err := st.Position().ClosePosition(row.ID, row.EntryPrice, "reconcile", 0, 0, store.CloseReasonReconcileFlat)
+			// CLASS-27 NETTING-FILL FALLBACK (2026-08-31): a NETTING close emits
+			// NO position_close frame at all — an opposite-side ENTRY fill
+			// flattened the account (live proof: the S1 long closed by the S3
+			// SellShort @ 29459). Derive the real exit from the fill ring; the
+			// LATEST opposite-side fill in the flat window IS the close.
+			if exitPx, okn := t.takeNettingExit(row.Account, row.Symbol, row.Side, t.flatSince[row.ID], nowMs); okn {
+				pv := market.FuturesPointValue(row.Symbol)
+				if pv <= 0 {
+					pv = 1
+				}
+				pnl := 0.0
+				if row.EntryPrice > 0 {
+					if row.Side == "LONG" {
+						pnl = (exitPx - row.EntryPrice) * row.Quantity * pv
+					} else {
+						pnl = (row.EntryPrice - exitPx) * row.Quantity * pv
+					}
+				}
+				closed, nerr := st.Position().ClosePosition(row.ID, exitPx, "netting_fill", pnl, 0, "sync")
+				delete(t.flatSince, row.ID)
+				if nerr == nil && closed && OnPositionClosed != nil {
+					OnPositionClosed(row.TraderID, row.ID) // Phase 4: post-exit rescan
+				}
+				switch {
+				case nerr != nil:
+					logger.Warnf("ninjatrader/tcp: reconcile netting-close failed (row %d): %v", row.ID, nerr)
+				case closed:
+					logger.Infof("💵 reconcile: recovered NETTING exit for %s %s row=%d exit=%.2f pnl=%.2f (opposite-side entry fill flattened the account; no close frame exists)", row.Symbol, row.Side, row.ID, exitPx, pnl)
+				default:
+					logger.Infof("✓ reconcile: row=%d already closed by close-sync (kept real P&L); skip", row.ID)
+				}
+				continue
+			}
+			// Past the grace, no priced frame, no netting fill → the exit is
+			// GENUINELY unknown. Mark UNRESOLVED and alarm. NEVER fabricate
+			// exit=entry (the old fake-$0 that hid today's +$92.00 for 26
+			// minutes). ClosePositionUnresolved is guarded on status='OPEN'
+			// (PART-1a), so a last-moment close-sync win is still kept.
+			closed, err := st.Position().ClosePositionUnresolved(row.ID,
+				"class-27: NT8 flat, no close frame, no netting fill — exit price UNKNOWN")
 			delete(t.flatSince, row.ID)
 			switch {
 			case err != nil:
-				logger.Warnf("ninjatrader/tcp: reconcile orphan-close failed (row %d): %v", row.ID, err)
+				logger.Warnf("ninjatrader/tcp: reconcile unresolved-close failed (row %d): %v", row.ID, err)
 			case closed:
-				logger.Infof("🔧 reconcile: closed orphan %s %s (NT8 flat ≥%ds, no frame) row=%d", row.Symbol, row.Side, flatGraceMs/1000, row.ID)
+				logger.Errorf("🚨 class-27 UNRESOLVED EXIT: %s %s row=%d closed with close_reason=unresolved — NT8 flat ≥%ds with NO close frame and NO netting fill. Real P&L is unknown (visible gap, not a fake zero).",
+					row.Symbol, row.Side, row.ID, flatGraceMs/1000)
+				telemetry.RecordError(traderID, "exit_unresolved",
+					fmt.Sprintf("%s %s row=%d flat with no close frame and no netting fill", row.Symbol, row.Side, row.ID), telemetry.CostNone)
+				if OnPositionClosed != nil {
+					OnPositionClosed(row.TraderID, row.ID) // Phase 4: post-exit rescan
+				}
 			default:
 				// Row was already closed by close-sync between the snapshot and now —
 				// the status guard preserved close-sync's real ×pv P&L. No clobber.
@@ -231,4 +335,278 @@ func (t *TCPTrader) reconcilePositions(traderID string, st *store.Store) {
 			delete(t.flatSince, id)
 		}
 	}
+
+	// (e) UNTRACKED NT8 POSITIONS — NT8 holds a position this trader has NO open
+	// row for (a MANUAL NT8 entry, or an entry whose fill was never recorded).
+	// The row-driven loop above never sees these, so they were invisible to
+	// history: when they later closed, close-sync found no owner row, DROPPED
+	// the priced close, and the real P&L was lost forever (2026-08-25 incident:
+	// manual SHORT @29310 held 8.5 min, closed by the bot @29350.50 → −81.00
+	// realized, never recorded). Fix: after untrackedGraceMs of persistence —
+	// a bot-opened row lands within seconds of its fill, so this only fires for
+	// genuinely untracked positions — materialize an OPEN row anchored to the
+	// NT8 average (Source="reconcile", Account=bound account) so close-sync can
+	// record the real exit + ×pv P&L. A priced close parked while the position
+	// was still untracked is consumed immediately, preserving the real exit.
+	if t.untrackedSince == nil {
+		t.untrackedSince = make(map[string]int64)
+	}
+	seenHeld := make(map[string]bool)
+	for key, avg := range held {
+		seenHeld[key] = true
+		sym, side := key, "LONG"
+		if i := strings.LastIndex(key, "|"); i >= 0 {
+			sym, side = key[:i], key[i+1:]
+		}
+		// Authoritative account-aware check (not the row list): a row owned by a
+		// different account must not mask a held position on OUR bound account.
+		owner, oerr := st.Position().GetOpenPositionByAccountSymbol(acct, sym, side)
+		if oerr != nil {
+			logger.Warnf("ninjatrader/tcp: reconcile untracked owner lookup failed (%s %s acct=%q): %v", sym, side, acct, oerr)
+			continue
+		}
+		if owner == nil {
+			// CLASS-27 FIX 3 (2026-08-31): the dedupe race that birthed the
+			// 577+578 duplicates — an armed-materialized row can carry
+			// account="" (its order_update frame predates the account binding),
+			// so the account-scoped lookup above misses it and reconcile
+			// materializes a SECOND row for the same NT8 position. Retry
+			// account-agnostically; if found, backfill the bound account so the
+			// later close-sync frame (which carries the account) finds its owner.
+			owner, oerr = st.Position().GetOpenPositionByAccountSymbol("", sym, side)
+			if oerr != nil {
+				logger.Warnf("ninjatrader/tcp: reconcile untracked owner lookup (account-agnostic) failed (%s %s): %v", sym, side, oerr)
+				continue
+			}
+			if owner != nil && owner.Account == "" && acct != "" {
+				if aerr := st.Position().SetPositionAccount(owner.ID, acct); aerr != nil {
+					logger.Warnf("ninjatrader/tcp: reconcile account backfill failed (row %d): %v", owner.ID, aerr)
+				} else {
+					logger.Infof("🔧 reconcile: backfilled account %q on armed row %d (%s %s) — dedupe + close-sync ownership", acct, owner.ID, sym, side)
+				}
+			}
+		}
+		if owner != nil {
+			delete(t.untrackedSince, key) // tracked now — drop any debounce
+			continue
+		}
+		if t.untrackedSince[key] == 0 {
+			t.untrackedSince[key] = nowMs
+			logger.Infof("🧩 reconcile: NT8 holds UNTRACKED position %s %s @ avg %.2f (no open row) — materializing after %ds if it persists", sym, side, avg, untrackedGraceMs/1000)
+			continue
+		}
+		if nowMs-t.untrackedSince[key] < untrackedGraceMs {
+			continue
+		}
+		qty := heldQty[key]
+		if qty <= 0 {
+			qty = 1
+		}
+		row := &store.TraderPosition{
+			TraderID:           traderID,
+			ExchangeID:         exchangeID,
+			ExchangeType:       exchangeType,
+			ExchangePositionID: fmt.Sprintf("reconcile_%s_%s_%d", sym, side, nowMs),
+			Symbol:             sym,
+			Side:               side,
+			Quantity:           qty,
+			EntryQuantity:      qty,
+			EntryPrice:         avg,
+			EntryTime:          nowMs,
+			Leverage:           1,
+			Status:             "OPEN",
+			Source:             "reconcile",
+			// ATTRIBUTION E1-lite (2026-09-02): this path knows an account, a
+			// symbol, a side and an average price — no order of ours, so no
+			// lineage to recover. It is stamped UNRESOLVABLE rather than left
+			// "", which is indistinguishable from "not yet stamped". Measured:
+			// 3 rows in three weeks reached the DB this way (566, 571, 580),
+			// none with an arm within 30 minutes. We never guess a link.
+			PlanID:    store.PlanUnresolvable,
+			Account:   acct,
+			CreatedAt: nowMs,
+			UpdatedAt: nowMs,
+		}
+		logger.Warnf("🔗 attribution: materialized %s %s @ %.2f with NO recoverable lineage — plan_id=%s (never joinable; counted in the boot line)",
+			sym, side, avg, store.PlanUnresolvable)
+		if err := st.Position().CreateOpenPosition(row); err != nil {
+			logger.Warnf("ninjatrader/tcp: reconcile materialize untracked %s %s failed: %v", sym, side, err)
+			delete(t.untrackedSince, key) // retry on a later pass
+			continue
+		}
+		// F3 (LONDON-FORENSICS 2026-08-28) — stamp the armed-fill lineage NOW:
+		// the fill-time stamp failed because this row did not exist yet (live proof:
+		// pos #567 landed with plan_version 0 / adherence grade F).
+		// GAR-F1 (2026-08-28) — the returned signal identity is cached on the
+		// trader so move_stop/trailing can address the live bracket.
+		if _, sig := StampArmedLineageIfMatched(st, traderID, row.ID, sym, side, avg); sig != "" {
+			t.rememberEntryOrderID(sym, side, sig)
+		}
+		logger.Warnf("🧩 reconcile: MATERIALIZED untracked NT8 position %s %s qty=%.0f @ %.2f (acct=%s) — manual/NT8-side entry now tracked; its close will record real P&L", sym, side, qty, avg, acct)
+		delete(t.untrackedSince, key)
+		// A close frame may have arrived while the row was still untracked (the
+		// DROPPED → parked path). Consume it now with the real exit + ×pv P&L.
+		if exitPx, okp := takePricedClose(acct, sym, side, nowMs); okp {
+			pv := market.FuturesPointValue(sym)
+			if pv <= 0 {
+				pv = 1
+			}
+			pnl := 0.0
+			if side == "LONG" {
+				pnl = (exitPx - avg) * qty * pv
+			} else {
+				pnl = (avg - exitPx) * qty * pv
+			}
+			if closed, perr := st.Position().ClosePosition(row.ID, exitPx, "reconcile_priced", pnl, 0, "sync"); perr == nil && closed {
+				if OnPositionClosed != nil {
+					OnPositionClosed(traderID, row.ID)
+				}
+				logger.Infof("💵 reconcile: untracked %s %s closed with parked exit %.2f pnl=%.2f (was untracked when the frame arrived)", sym, side, exitPx, pnl)
+			} else if perr != nil {
+				logger.Warnf("ninjatrader/tcp: reconcile untracked priced-close failed (row %d): %v", row.ID, perr)
+			}
+		}
+	}
+	// Prune untracked debounces for positions NT8 no longer holds (closed before
+	// materialization) so the map can't leak.
+	for key := range t.untrackedSince {
+		if !seenHeld[key] {
+			delete(t.untrackedSince, key)
+		}
+	}
+}
+
+// ── F3 (LONDON-FORENSICS 2026-08-28) — armed-fill lineage stamping ──────────
+// The fill-time stamp (armed executor) runs when the order_update frame lands,
+// but a reconcile-materialized position row does not exist yet at that instant
+// — live proof: pos #567, the first live armed fill, landed with
+// plan_version 0 / plan_band "" / adherence grade F. The materialization site
+// now stamps from the armed ledger, and the repair pass back-fills the class.
+
+// StampArmedLineageIfMatched stamps one position row with its armed-fill plan
+// linkage when a matching FILLED ledger row exists: same trader, same side, and
+// entry price within one tick of the ledger's entry. Returns (true, signalID)
+// when stamped — the signalID is the armed ledger's entry identity, persisted
+// as the row's entry_order_id (GAR-F1) so move_stop/trailing can address the
+// position on the wire.
+// armedFillPriceFor resolves the TRUE fill price of a filled ledger row.
+// PRE-SUNDAY F2 (2026-08-28): entry_px DRIFTS on re-arm — the v6 re-spec
+// overwrote the v1 entry that actually filled (#568: row entry 29702 vs real
+// fill 29642.00; #570: row entry 29480 vs fill 29463.25). The authoritative
+// value is fill_price (written at fill time) or the "fill@…" reason.
+func armedFillPriceFor(r store.ArmedOrderDB) float64 {
+	if r.FillPrice > 0 {
+		return r.FillPrice
+	}
+	if i := strings.Index(r.StateReason, "fill@"); i >= 0 {
+		rest := r.StateReason[i+len("fill@"):]
+		end := 0
+		for end < len(rest) && ((rest[end] >= '0' && rest[end] <= '9') || rest[end] == '.') {
+			end++
+		}
+		if v, err := strconv.ParseFloat(rest[:end], 64); err == nil && v > 0 {
+			return v
+		}
+	}
+	return r.EntryPx
+}
+
+func StampArmedLineageIfMatched(st *store.Store, traderID string, posID int64, sym, side string, entryPx float64) (bool, string) {
+	rows, err := st.ArmedOrders().ListFilled(traderID, 20)
+	if err != nil || len(rows) == 0 {
+		return false, ""
+	}
+	tick := market.FuturesTickSize(sym)
+	if tick <= 0 {
+		tick = 0.25
+	}
+	for _, r := range rows {
+		if !strings.EqualFold(r.Side, side) {
+			continue
+		}
+		fillPx := armedFillPriceFor(r)
+		if fillPx < entryPx-tick || fillPx > entryPx+tick {
+			continue
+		}
+		tradeDate := r.PlanID
+		if i := strings.Index(r.PlanID, ":"); i > 0 {
+			tradeDate = r.PlanID[:i]
+		}
+		if err := st.Position().SetPlanLinkFull(posID, r.Version, r.Scenario, true, "armed_fill", r.PlanID, tradeDate, r.Session); err != nil {
+			logger.Warnf("🧩 reconcile: armed lineage stamp failed (pos %d): %v", posID, err)
+			return false, ""
+		}
+		// GAR-F1 — the materialized row gets the armed ledger's signal identity
+		// so move_stop/trailing can find the live bracket (the #566 dead cell).
+		if r.SignalID != "" {
+			if err := st.Position().SetEntryOrderID(posID, r.SignalID); err != nil {
+				logger.Warnf("🧩 reconcile: armed entry-order-id stamp failed (pos %d): %v", posID, err)
+			}
+		}
+		// PRE-REOPEN F4 — the fill-time stamp deferred (position row didn't
+		// exist yet) leaves a stamp_pending marker on the ledger row; the
+		// materialization completes the stamp NOW and clears it.
+		if strings.HasSuffix(r.StateReason, ";stamp_pending") {
+			_ = st.ArmedOrders().SetState(r.ID, "filled", strings.TrimSuffix(r.StateReason, ";stamp_pending"))
+		}
+		// F3 GAP (2026-09-03, found via nofx-89's 09-01 audit): fill_quantity is
+		// stamped HERE too. The fill-time stamp in stampArmedFillLineage returns
+		// early on this very path — the position row is not materialized when the
+		// fill frame lands — so stamping only there covered the minority case.
+		// The 09-01 audit recorded 584 of 586 armed fills carrying
+		// ";stamp_pending", and armed row 35 today took the same path and still
+		// reads fill_quantity=0 with the stamp live.
+		if qty := st.Position().QuantityOf(posID); qty > 0 {
+			if err := st.ArmedOrders().SetFillQuantity(r.ID, int(qty)); err != nil {
+				logger.Warnf("🧩 reconcile: armed fill-quantity stamp failed (row %d): %v", r.ID, err)
+			}
+		}
+		logger.Infof("🧩 reconcile: armed-fill lineage stamped — pos %d ← %s v%d %s (fill %.2f, entry_id %s)", posID, r.PlanID, r.Version, r.Scenario, armedFillPriceFor(r), r.SignalID)
+		return true, r.SignalID
+	}
+	return false, ""
+}
+
+// RepairArmedLineage back-fills plan linkage for this trader's positions that
+// have none (plan_version = 0). Idempotent: a stamped row leaves the scan.
+func RepairArmedLineage(st *store.Store, traderID string) int {
+	rows, err := st.Position().ListUnlinked(traderID, 200)
+	if err != nil {
+		logger.Warnf("🧩 reconcile: armed-lineage repair scan failed: %v", err)
+		return 0
+	}
+	n := 0
+	for _, p := range rows {
+		if p.PlanVersion != 0 {
+			continue
+		}
+		if stamped, _ := StampArmedLineageIfMatched(st, traderID, p.ID, p.Symbol, p.Side, p.EntryPrice); stamped {
+			n++
+			// REGRADE RESET (owner ruling 2026-09-03) — keyed on "lineage
+			// was just stamped on this row", NEVER on a grade letter.
+			//
+			// The predecessor read `AdherenceGrade == "F"`. That is not an
+			// impossible value but a SUBSET: an uncited close grades base D
+			// and steps to F under either penalty (InNoTrade, !InKillzone),
+			// so the repair silently SUCCEEDED on penalised uncited rows
+			// (566, 571 → F) and silently FAILED on clean ones (580 → D) —
+			// which is why it survived, since a spot-check lands on a
+			// working case.
+			//
+			// Keying on the stamp is also the only correct rule: if lineage
+			// was just written onto this row, whatever grade it carries was
+			// computed WITHOUT that lineage and is stale by construction,
+			// whatever letter it happens to be. A row nothing stamps is not
+			// touched — 580 is uncited and has EARNED its D.
+			if p.Status == "CLOSED" && p.AdherenceGrade != "" {
+				if err := st.Position().SetAdherence(p.ID, ""); err != nil {
+					logger.Warnf("🩹 RepairArmedLineage: adherence reset failed (pos %d): %v", p.ID, err)
+				} else {
+					logger.Infof("🩹 RepairArmedLineage: pos %d lineage stamped (v%d %s) — grade %q cleared for regrading",
+						p.ID, p.PlanVersion, p.CitedScenarioID, p.AdherenceGrade)
+				}
+			}
+		}
+	}
+	return n
 }

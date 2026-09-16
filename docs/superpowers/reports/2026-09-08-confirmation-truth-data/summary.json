@@ -1,0 +1,57 @@
+{
+  "arm_confirm_changed": {
+    "141/S1": true,
+    "142/S2": true,
+    "143/S1": true,
+    "143/S2": true,
+    "143/S3": true,
+    "145/S3": true,
+    "153/S4": true,
+    "253/S2": true,
+    "258/S2": true,
+    "259/S2": true,
+    "273/S1": true
+  },
+  "breakdown_any_field_changed": {
+    "163/S1": true,
+    "181/S1": true,
+    "183/S1": true,
+    "273/S2": true
+  },
+  "breakdown_boolean_changed": {
+    "183/S1": true
+  },
+  "changed_unique_scenarios": 176,
+  "closure_only": true,
+  "corpus_captured_utc": "2026-09-08T13:48:08.110310+00:00",
+  "counterfactual": "Only input transformations; existing kernel functions unchanged. Closed 1m reconstruction for baseline; closed rule-TF aggregation for counterfactual. Sequence-reference fallback intentionally retained; current defaults, not historical config.",
+  "decision_ids": [
+    30261,
+    38342
+  ],
+  "evaluated_unique_scenarios": 627,
+  "matched_record_changed_unique_scenarios": 168,
+  "matched_record_flip_observations": 285,
+  "met_flip_observations": 299,
+  "not_replayed_scenarios": 162,
+  "ordered_sequence_fix_included": false,
+  "production_shared_path_changed": false,
+  "recorded_baseline_comparisons": 12550,
+  "recorded_baseline_matches": 12260,
+  "recorded_to_counterfactual_changed_unique": 249,
+  "replayed_decisions": 4246,
+  "scenario_evaluations": 13160,
+  "skipped_decisions": {
+    "last_completed_minute_more_than_120s_old": 2,
+    "missing_snapshot_clock": 138,
+    "plan_birth_precedes_retained_tape": 95,
+    "snapshot_precedes_bound_plan_publication": 73
+  },
+  "stored_breakdown_scenarios": 4,
+  "stored_plans": 272,
+  "stored_scenarios": 789,
+  "validation_pass_changed": {
+    "163/S1": true,
+    "183/S1": true
+  }
+}

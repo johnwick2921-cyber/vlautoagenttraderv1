@@ -5,12 +5,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptrace"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -100,6 +103,34 @@ type Client struct {
 	// executor loop and the Ask-Planner API). Claude overrides ParseMCPResponse
 	// and does not set it — those calls log finish_reason=unknown.
 	lastFinishReason atomic.Value
+
+	// Per-call latency telemetry (atomics — the shared client serves the
+	// executor loop, the planner goroutine, and API ask-planner concurrently;
+	// these are read immediately after each single call returns).
+	lastTTFBMs         atomic.Int64 // time-to-first-byte of the last single call (0 = never measured)
+	lastReasoningChars atomic.Int64 // reasoning_content chars of the last single call
+	// The connection the last single call rode (owner ruling 2026-09-03).
+	// Hoisted out of the conn-trace line so the ai_call record can carry — and
+	// a table can count — the one number that might explain the peer-FIN cuts.
+	lastIdleBeforeMs atomic.Int64
+	lastConnReused   atomic.Bool
+	// stormCount (class 46 D5) — provider calls made in the CURRENT read.
+	// Reset by the planner at the start of each read via ResetStormCounter.
+	stormCount atomic.Int64
+	// lastCompletionTokens (root-fix part B) — the provider's completion token
+	// count for the last stream call (reasoning + visible output).
+	lastCompletionTokens atomic.Int64
+
+	// Class 37 (2026-09-01) — failure-class telemetry for the ai_call line: the
+	// HTTP status and provider request id of the last response (0/"" when no
+	// response arrived) and the classified error of the last FAILED call.
+	lastHTTPStatus atomic.Int64
+	lastRequestID  atomic.Value // string
+	lastErrClass   atomic.Value // string
+
+	// reasoningTokensAbsentLogged ensures the explicit one-time "the provider
+	// usage carries no reasoning_tokens field" note is printed once per client.
+	reasoningTokensAbsentLogged sync.Once
 }
 
 // New creates default client (backward compatible)
@@ -188,13 +219,157 @@ func (client *Client) SetTimeout(timeout time.Duration) {
 	client.HTTPClient.Timeout = timeout
 }
 
+// Class 37 (2026-09-01) — the two split deadlines on the planner stream carry
+// sentinels so the ai_call line can name the killer instead of the generic
+// net/http "context deadline exceeded" text.
+var (
+	// ErrStreamIdleDeadline — the idle watchdog cancelled a SILENT stream.
+	ErrStreamIdleDeadline = errors.New("stream idle deadline exceeded")
+	// ErrStreamTotalDeadline — the planner's whole-call ceiling fired on a
+	// LIVE stream (distinct from http.Client.Timeout, the executor's ceiling).
+	ErrStreamTotalDeadline = errors.New("stream total deadline exceeded")
+)
+
+// classifyAIError is RETIRED (class 46): the single classifier is
+// ClassifyFailure(err, httpStatus) in failure_class.go, which sees the HTTP
+// status and therefore cannot call a 503 body "transport". This shim remains
+// only for the legacy call sites inside this file.
+func classifyAIError(err error) string { return string(ClassifyFailure(err, 0)) }
+
+// ClassifyAIError (class 41) exports the ai_call class token for callers
+// outside mcp (the planner attempt loop decides resend-vs-repair on it).
+func ClassifyAIError(err error) string { return string(ClassifyFailure(err, 0)) }
+
+// IsProviderFailure (class 41, owner ruling class 37 M4) — true when a failed
+// call never produced a model answer to repair: transport cut, idle/total
+// deadline, http.Client.Timeout, context. The planner re-sends the IDENTICAL
+// prompt on these; validator/parse rejects (class=other, http_status…) keep
+// the reject/repair flow.
+func IsProviderFailure(err error) bool {
+	if err == nil {
+		return false
+	}
+	// CLASS 46 — one vocabulary, one predicate. empty_200, too_long and parse
+	// are now provider-side: the model never produced a document those errors
+	// are ABOUT, so appending them as "your plan's defect" is poisoned
+	// feedback (class 34/37, still open before this wave).
+	return FailureIsProviderSide(ClassifyFailure(err, 0))
+}
+
+// httpStatusFrom extracts NNN from "(status NNN)" in an API error message; 0
+// when absent.
+func httpStatusFrom(msg string) int {
+	i := strings.Index(msg, "(status ")
+	if i < 0 {
+		return 0
+	}
+	n := 0
+	for _, r := range msg[i+len("(status "):] {
+		if r < '0' || r > '9' {
+			break
+		}
+		n = n*10 + int(r-'0')
+		if n > 999 {
+			return 0
+		}
+	}
+	return n
+}
+
+// requestIDFrom returns the provider's request id header when present (the
+// attributable handle for a provider-side ticket); "" otherwise.
+func requestIDFrom(h http.Header) string {
+	for _, k := range []string{"X-Request-Id", "Request-Id", "X-Amzn-Requestid", "Cf-Ray"} {
+		if v := strings.TrimSpace(h.Get(k)); v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func (client *Client) lastRequestIDString() string {
+	if v := client.lastRequestID.Load(); v != nil {
+		s, _ := v.(string)
+		return s
+	}
+	return ""
+}
+
+// resetCallTelemetry clears the per-call atomics so a FAILED call never
+// reports the previous call's ttfb/reasoning/status/request-id (observed
+// 2026-09-01 06:10:36 CT: an executor transport reset logged
+// reasoning_chars=7092 inherited from the planner stream that ended 06:09:33).
+func (client *Client) resetCallTelemetry() {
+	client.lastTTFBMs.Store(0)
+	client.lastReasoningChars.Store(0)
+	client.lastIdleBeforeMs.Store(0)
+	client.lastConnReused.Store(false)
+	client.lastCompletionTokens.Store(0)
+	client.lastHTTPStatus.Store(0)
+	client.lastRequestID.Store("")
+}
+
+// LastErrClass / LastHTTPStatus / LastRequestID — read-only helpers for the
+// planner's failure line (class 37): the class of the last FAILED call ("" after
+// a success), and the status / provider request id of the last response.
+func LastErrClass(c AIClient) string {
+	bc, ok := c.(interface{ BaseClient() *Client })
+	if !ok {
+		return ""
+	}
+	if v := bc.BaseClient().lastErrClass.Load(); v != nil {
+		s, _ := v.(string)
+		return s
+	}
+	return ""
+}
+
+// LastReasoningChars / LastCompletionTokens (ROOT-FIX part B, 2026-09-02)
+// expose the last call's OUTPUT size so the shadow A/B can compare fast vs max
+// on the same prompt. The measured split matters: on 67 full-author calls the
+// plan JSON was ~920 tokens of a 23,769-token p50 output — reasoning is ~96%,
+// so the reasoning MODE is the only lever that moves wall time.
+func LastReasoningChars(c AIClient) int {
+	bc, ok := c.(interface{ BaseClient() *Client })
+	if !ok {
+		return 0
+	}
+	return int(bc.BaseClient().lastReasoningChars.Load())
+}
+
+func LastCompletionTokens(c AIClient) int {
+	bc, ok := c.(interface{ BaseClient() *Client })
+	if !ok {
+		return 0
+	}
+	return int(bc.BaseClient().lastCompletionTokens.Load())
+}
+
+func LastHTTPStatus(c AIClient) int {
+	bc, ok := c.(interface{ BaseClient() *Client })
+	if !ok {
+		return 0
+	}
+	return int(bc.BaseClient().lastHTTPStatus.Load())
+}
+
+func LastRequestID(c AIClient) string {
+	bc, ok := c.(interface{ BaseClient() *Client })
+	if !ok {
+		return ""
+	}
+	return bc.BaseClient().lastRequestIDString()
+}
+
 // logAICall emits ONE structured line per AI call so the next timeout is
 // self-diagnosing instead of a forensic hunt (incident 2026-08-18: the only
 // evidence was a bare duration and a generic net/http error string).
 //
 //	ai_call model=<m> duration_ms=<d> finish_reason=<r> ok=<bool>
-//	  + on failure: timeout_source=client|context|transport deadline_s=<n>
-func (client *Client) logAICall(start time.Time, callErr error) {
+//	  retries=<n> ttfb_ms=<t> reasoning_chars=<c>
+//	  + on failure: timeout_source=planner_total|stream_idle|client|context|transport
+//	    deadline_s=<n> class=<token> http_status=<n> request_id=<id> (class 37)
+func (client *Client) logAICall(start time.Time, callErr error, retries int) {
 	if client.Log == nil {
 		return
 	}
@@ -204,26 +379,45 @@ func (client *Client) logAICall(start time.Time, callErr error) {
 		finish = v
 	}
 	if callErr == nil {
-		client.Log.Infof("ai_call model=%s duration_ms=%d finish_reason=%s ok=true",
-			client.Model, durMs, finish)
+		client.lastErrClass.Store("")
+		client.Log.Infof("%s", AiCallLine(AiCallFields{
+			Model: client.Model, DurationMs: durMs, FinishReason: finish, OK: true,
+			Retries: retries, TTFBMs: client.lastTTFBMs.Load(),
+			ReasoningChars: client.lastReasoningChars.Load(),
+			IdleBeforeMs:   client.lastIdleBeforeMs.Load(),
+			ConnReused:     client.lastConnReused.Load(),
+			HTTPStatus:     int(client.lastHTTPStatus.Load()),
+			RequestID:      client.lastRequestIDString(),
+		}))
 		return
 	}
 	// Which deadline actually fired. net/http wraps them all in the same
 	// "context deadline exceeded" text, hence the incident's ambiguity.
 	msg := callErr.Error()
-	source := "transport"
-	switch {
-	case strings.Contains(msg, "Client.Timeout"):
-		source = "client" // http.Client.Timeout — the whole-request ceiling
-	case strings.Contains(msg, "context deadline exceeded"), strings.Contains(msg, "context canceled"):
-		source = "context" // a caller-supplied ctx (stream idle watchdog, agent paths)
-	}
+	// CLASS 46 — `timeout_source` is DELETED. It defaulted to "transport" and
+	// was overridden for four sentinels only, so it tagged 5xx, parse failures
+	// and empty 200s as transport: right on 5 of 50 audited failures, wrong on
+	// 23. `class=` is now the only label, from ONE function.
 	deadline := int64(0)
 	if client.HTTPClient != nil {
 		deadline = int64(client.HTTPClient.Timeout / time.Second)
 	}
-	client.Log.Warnf("ai_call model=%s duration_ms=%d finish_reason=n/a ok=false timeout_source=%s deadline_s=%d err=%q",
-		client.Model, durMs, source, deadline, msg)
+	// Class 37 — ONE class token per failure so "the API keeps failing" can
+	// never again be the whole diagnosis; status + provider request id ride
+	// along when a response arrived at all.
+	status := int(client.lastHTTPStatus.Load())
+	class := string(ClassifyFailure(callErr, status))
+	client.lastErrClass.Store(class)
+	client.Log.Warnf("%s", AiCallLine(AiCallFields{
+		Model: client.Model, DurationMs: durMs, OK: false,
+		Retries: retries, TTFBMs: client.lastTTFBMs.Load(),
+		ReasoningChars: client.lastReasoningChars.Load(),
+		IdleBeforeMs:   client.lastIdleBeforeMs.Load(),
+		ConnReused:     client.lastConnReused.Load(),
+		DeadlineS:      deadline, Class: class,
+		ProviderSide: FailureIsProviderSide(FailureClass(class)),
+		HTTPStatus:   status, RequestID: client.lastRequestIDString(), Err: msg,
+	}))
 }
 
 // CallWithMessages template method - fixed retry flow (cannot be overridden)
@@ -244,7 +438,7 @@ func (client *Client) CallWithMessages(systemPrompt, userPrompt string) (string,
 		// Call the fixed single-call flow
 		callStart := time.Now()
 		result, err := client.Hooks.Call(systemPrompt, userPrompt)
-		client.logAICall(callStart, err)
+		client.logAICall(callStart, err, attempt)
 		if err == nil {
 			if attempt > 1 {
 				client.Log.Infof("✓ AI API retry succeeded")
@@ -368,6 +562,8 @@ func (client *Client) ParseMCPResponseFull(body []byte) (*LLMResponse, error) {
 		return nil, fmt.Errorf("API returned empty response")
 	}
 
+	msg := result.Choices[0].Message
+
 	// Report token usage if callback is set
 	if TokenUsageCallback != nil && result.Usage.TotalTokens > 0 {
 		TokenUsageCallback(TokenUsage{
@@ -399,12 +595,19 @@ func (client *Client) ParseMCPResponseFull(body []byte) (*LLMResponse, error) {
 		if len(result.Choices) > 0 && result.Choices[0].FinishReason != nil {
 			finish = *result.Choices[0].FinishReason
 		}
-		client.Log.Infof("📊 AI call complete: completion=%d prompt=%d finish_reason=%s",
-			result.Usage.CompletionTokens, result.Usage.PromptTokens, finish)
+		rc := len(msg.ReasoningContent)
+		client.lastReasoningChars.Store(int64(rc))
+		// PLANNER SPEED WAVE 1.3 — the provider's usage block carries NO
+		// reasoning-token count (deepseek returns reasoning_content text only);
+		// reasoning_chars is the proxy. Say so once per client.
+		client.reasoningTokensAbsentLogged.Do(func() {
+			client.Log.Infof("📊 provider usage carries no reasoning_tokens field (deepseek) — reasoning_chars is the logged proxy")
+		})
+		client.Log.Infof("📊 AI call complete: completion=%d prompt=%d finish_reason=%s reasoning_chars=%d",
+			result.Usage.CompletionTokens, result.Usage.PromptTokens, finish, rc)
 		client.lastFinishReason.Store(finish)
 	}
 
-	msg := result.Choices[0].Message
 	return &LLMResponse{
 		Content:          msg.Content,
 		ReasoningContent: msg.ReasoningContent,
@@ -475,6 +678,8 @@ func (client *Client) Call(systemPrompt, userPrompt string) (string, error) {
 		client.Log.Debugf("[%s]   API Key: %s...%s", client.String(), client.APIKey[:4], client.APIKey[len(client.APIKey)-4:])
 	}
 
+	client.resetCallTelemetry() // class 37: a failed call must not inherit the previous call's numbers
+
 	// Step 1: Build request body (via hooks for dynamic dispatch)
 	requestBody := client.Hooks.BuildMCPRequestBody(systemPrompt, userPrompt)
 
@@ -500,9 +705,11 @@ func (client *Client) Call(systemPrompt, userPrompt string) (string, error) {
 		return "", fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+	client.lastHTTPStatus.Store(int64(resp.StatusCode))
+	client.lastRequestID.Store(requestIDFrom(resp.Header))
 
-	// Step 6: Read response body (fixed logic)
-	body, err := io.ReadAll(resp.Body)
+	// Step 6: Read response body (fixed logic) — stamp time-to-first-byte.
+	body, err := readWithTTFB(resp.Body, &client.lastTTFBMs)
 	if err != nil {
 		return "", fmt.Errorf("failed to read response: %w", err)
 	}
@@ -521,6 +728,27 @@ func (client *Client) Call(systemPrompt, userPrompt string) (string, error) {
 	return result, nil
 }
 
+// ttfbReader stamps elapsed-since-request time on the first Read — the
+// time-to-first-byte (T4) evidence for the queue-vs-generation split.
+type ttfbReader struct {
+	r       io.Reader
+	start   time.Time
+	stamped *atomic.Int64
+	once    bool
+}
+
+func (t *ttfbReader) Read(p []byte) (int, error) {
+	if !t.once {
+		t.once = true
+		t.stamped.Store(time.Since(t.start).Milliseconds())
+	}
+	return t.r.Read(p)
+}
+
+func readWithTTFB(r io.Reader, stamped *atomic.Int64) ([]byte, error) {
+	return io.ReadAll(&ttfbReader{r: r, start: time.Now(), stamped: stamped})
+}
+
 func (client *Client) String() string {
 	return fmt.Sprintf("[Provider: %s, Model: %s]",
 		client.Provider, client.Model)
@@ -528,6 +756,37 @@ func (client *Client) String() string {
 
 // BaseClient returns the underlying *Client (satisfies ClientEmbedder interface).
 func (c *Client) BaseClient() *Client { return c }
+
+// ApplyMaxTokens overrides the completion cap on a concrete client for the
+// duration of one call scope and returns a restore func (LONDON-FORENSICS F1a,
+// 2026-08-28): planner reads get a bigger budget (AI_PLAN_MAX_TOKENS) without
+// permanently changing the shared executor client's cap. Follows the existing
+// ApplyThinking precedent (per-call mutation of the shared client).
+func ApplyMaxTokens(c AIClient, tokens int) func() {
+	bc, ok := c.(interface{ BaseClient() *Client })
+	if !ok || tokens <= 0 {
+		return func() {}
+	}
+	cl := bc.BaseClient()
+	prev := cl.MaxTokens
+	cl.MaxTokens = tokens
+	return func() { cl.MaxTokens = prev }
+}
+
+// LastFinishReason returns the most recent response's finish_reason for a
+// client ("" when the client never completed a call). Read-only helper for
+// the planner's truncation-aware diagnostics.
+func LastFinishReason(c AIClient) string {
+	bc, ok := c.(interface{ BaseClient() *Client })
+	if !ok {
+		return ""
+	}
+	if v := bc.BaseClient().lastFinishReason.Load(); v != nil {
+		s, _ := v.(string)
+		return s
+	}
+	return ""
+}
 
 // IsRetryableError determines if error is retryable (network errors, timeouts, etc.)
 func (client *Client) IsRetryableError(err error) bool {
@@ -648,7 +907,7 @@ func (client *Client) callWithRequestFull(req *Request) (*LLMResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := readWithTTFB(resp.Body, &client.lastTTFBMs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
@@ -686,7 +945,7 @@ func (client *Client) callWithRequest(req *Request) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := readWithTTFB(resp.Body, &client.lastTTFBMs)
 	if err != nil {
 		return "", fmt.Errorf("failed to read response: %w", err)
 	}
@@ -860,9 +1119,40 @@ func ValidateThinkingKnobs(mode, effort string) error {
 // onChunk is called with the full accumulated text so far after each received chunk.
 // Returns the complete final text when the stream ends.
 //
-// Idle timeout: if no chunk arrives for 30 seconds the stream is cancelled automatically.
-// This prevents the scanner from blocking indefinitely on a hung or stalled connection.
+// Idle timeout: if no chunk arrives for AI_STREAM_IDLE_TIMEOUT_SECS (default
+// 180s — generous because reasoning models think before the first token) the
+// stream is cancelled automatically. The planner path passes its own ~30s idle
+// via CallWithRequestStreamIdle (split deadlines, planner-speed wave 4.2).
 func (client *Client) CallWithRequestStream(req *Request, onChunk func(string)) (string, error) {
+	idle := 180 * time.Second
+	if v := os.Getenv("AI_STREAM_IDLE_TIMEOUT_SECS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			idle = time.Duration(n) * time.Second
+		}
+	}
+	return client.CallWithRequestStreamIdle(req, onChunk, idle)
+}
+
+// CallWithRequestStreamIdle is CallWithRequestStream with an explicit
+// idle-chunk deadline and NO planner total deadline — the whole-request ceiling
+// stays http.Client.Timeout (legacy callers: agent paths, tests). The planner
+// uses CallWithRequestStreamDeadlines (class 37).
+func (client *Client) CallWithRequestStreamIdle(req *Request, onChunk func(string), idle time.Duration) (string, error) {
+	return client.CallWithRequestStreamDeadlines(req, onChunk, idle, 0)
+}
+
+// CallWithRequestStreamDeadlines (class 37, 2026-09-01) is the split-deadline
+// stream call with an EXPLICIT whole-call ceiling: `idle` kills a silent
+// stream, `total` kills a live-but-endless one. When total > 0 the request runs
+// on a shallow copy of the HTTP client with Timeout=0 (same Transport, same
+// pool) so http.Client.Timeout — the executor's 600s ceiling — no longer bounds
+// the body read: it killed 11 of 80 live max-reasoning planner streams at
+// exactly 600.0s between 2026-08-30 and 2026-09-01 while the speed-wave
+// comments claimed "a live-but-slow stream is never killed". total <= 0 keeps
+// the legacy behaviour (http.Client.Timeout applies). Every failure is
+// classified (idle_deadline / total_deadline / client_timeout / transport /
+// http_status) on the ai_call line via context.Cause + classifyAIError.
+func (client *Client) CallWithRequestStreamDeadlines(req *Request, onChunk func(string), idle, total time.Duration) (string, error) {
 	if client.APIKey == "" {
 		return "", fmt.Errorf("AI API key not set")
 	}
@@ -870,6 +1160,7 @@ func (client *Client) CallWithRequestStream(req *Request, onChunk func(string)) 
 		req.Model = client.Model
 	}
 	req.Stream = true
+	client.resetCallTelemetry()
 
 	requestBody := client.Hooks.BuildRequestBodyFromRequest(req)
 	jsonData, err := client.Hooks.MarshalRequestBody(requestBody)
@@ -878,68 +1169,324 @@ func (client *Client) CallWithRequestStream(req *Request, onChunk func(string)) 
 	}
 
 	url := client.Hooks.BuildUrl()
-	httpReq, err := client.buildHTTPRequestWithContext(contextFromRequest(req), url, jsonData)
+	if total > 0 {
+		client.Log.Infof("📡 [MCP %s] Request URL (stream idle=%ds total=%ds): %s", client.String(), int(idle.Seconds()), int(total.Seconds()), url)
+	} else {
+		client.Log.Infof("📡 [MCP %s] Request URL (stream idle=%ds): %s", client.String(), int(idle.Seconds()), url)
+	}
+
+	if idle <= 0 {
+		idle = 180 * time.Second
+	}
+	parent := contextFromRequest(req)
+	hc := client.HTTPClient
+	if total > 0 {
+		var cancelTotal context.CancelFunc
+		parent, cancelTotal = context.WithTimeoutCause(parent, total, ErrStreamTotalDeadline)
+		defer cancelTotal()
+		if hc != nil {
+			// A shallow copy shares Transport/CheckRedirect/Jar; only the
+			// whole-request Timeout is lifted for THIS call. The shared client
+			// is never mutated — the executor keeps its ceiling.
+			cp := *hc
+			cp.Timeout = 0
+			hc = &cp
+		}
+	}
+	httpReq, err := client.buildHTTPRequestWithContext(parent, url, jsonData)
 	if err != nil {
 		return "", err
 	}
-
-	// Idle-timeout watchdog: cancel the request if no SSE line arrives within
-	// the window. This breaks the scanner out of an indefinitely blocking Read
-	// on a hung connection. Reasoning models (e.g. deepseek-v4-pro) can spend
-	// well over a minute on hidden reasoning before the first token streams, so
-	// the default is generous; tune via AI_STREAM_IDLE_TIMEOUT_SECS.
-	idleTimeout := 180 * time.Second
-	if v := os.Getenv("AI_STREAM_IDLE_TIMEOUT_SECS"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			idleTimeout = time.Duration(n) * time.Second
-		}
-	}
-	ctx, cancel := context.WithCancel(contextFromRequest(req))
-	defer cancel()
+	ctx, cancel := context.WithCancelCause(parent)
+	defer cancel(nil)
 	resetCh := make(chan struct{}, 1)
+	dataCh := make(chan struct{}, 1)
+	callStart := time.Now()
+	// CLASS 46 D4 — TWO timers, because "idle" means two different things
+	// before and after the model starts answering:
+	//   pre-token  — a QUEUED request. Heartbeat comments legitimately keep it
+	//                alive; the limit is DeepSeek's own ~10 min queue close.
+	//   post-token — a STALLED generation. Only real content/reasoning deltas
+	//                reset it; comment lines do NOT.
+	preLimit := time.Duration(WatchdogPreTokenSeconds()) * time.Second
+	postLimit := time.Duration(WatchdogPostTokenSeconds()) * time.Second
+	if idle > 0 && idle < postLimit {
+		postLimit = idle // an explicit caller idle stays the tighter bound
+	}
 	go func() {
-		t := time.NewTimer(idleTimeout)
+		mode := "pre"
+		t := time.NewTimer(preLimit)
 		defer t.Stop()
+		last := callStart
+		reset := func(d time.Duration) {
+			if !t.Stop() {
+				select {
+				case <-t.C:
+				default:
+				}
+			}
+			t.Reset(d)
+			last = time.Now()
+		}
 		for {
 			select {
 			case <-ctx.Done():
 				return
+			case <-dataCh:
+				if mode == "pre" {
+					mode = "post" // first real byte — switch to the stall timer
+				}
+				reset(postLimit)
 			case <-t.C:
-				cancel() // idle timeout: kill the connection
-				return
-			case <-resetCh:
-				// received a line — reset the idle timer
-				if !t.Stop() {
-					select {
-					case <-t.C:
-					default:
+				// The gap is measured against what the MODE means: silence in a
+				// queue, or a stalled generation. Both are logged with the mode
+				// so "it fired" is never ambiguous.
+				lim := preLimit
+				if mode == "post" {
+					lim = postLimit
+				}
+				if client.Log != nil {
+					client.Log.Warnf("⏱ watchdog fired: %s gap=%.1fs (limit %v, call age %.1fs, bytes=%d) — closing the stream (class=idle)",
+						mode, time.Since(last).Seconds(), lim, time.Since(callStart).Seconds(), client.lastReasoningChars.Load())
+				}
+				// OWNER RULING 2026-09-02 — every fire is RECORDED with its call
+				// age and the bytes already received, so a week of fires can be
+				// read as a table instead of grepped out of the journal. The
+				// resend outcome is attached later by the planner loop.
+				// Kind is stamped at the emission site so the recorder never
+				// has to infer which event it is looking at.
+				if h := watchdogFireHook.Load(); h != nil {
+					if fn, ok := h.(func(WatchdogFire)); ok && fn != nil {
+						fn(WatchdogFire{
+							Kind: "watchdog",
+							Mode: mode, GapMs: time.Since(last).Milliseconds(),
+							LimitMs: lim.Milliseconds(), CallAgeMs: time.Since(callStart).Milliseconds(),
+							Bytes:        client.lastReasoningChars.Load(),
+							IdleBeforeMs: client.lastIdleBeforeMs.Load(),
+							Reused:       client.lastConnReused.Load(),
+							ClosedBy:     "local_close",
+						})
 					}
 				}
-				t.Reset(idleTimeout)
+				cancel(ErrWatchdogIdle) // distinct from a peer EOF — see ErrWatchdogIdle
+				return
+			case <-resetCh:
+				// A scanned LINE. It proves the socket is alive, so it resets
+				// the PRE timer; it proves nothing about generation, so once we
+				// are past the first token it does NOT reset the post timer.
+				if mode == "pre" {
+					reset(preLimit)
+				}
 			}
 		}
 	}()
 
-	httpReq = httpReq.WithContext(ctx)
-	resp, err := client.HTTPClient.Do(httpReq)
+	// CLASS 46 D6 — trace the connection from inside the process.
+	//
+	// The traced context is bound to its OWN name and never assigned back over
+	// ctx: the watchdog goroutine above closed over the ctx VARIABLE and reads
+	// it (`case <-ctx.Done()`), so reassigning ctx here is a data race between
+	// this goroutine and the watchdog — `go test -race ./mcp/...` reports it on
+	// every streaming test. reqCtx derives from ctx, so cancel() still cancels
+	// the request, and the trace is only ever needed for the HTTP call itself;
+	// context.Cause(ctx) and wrapStreamDeadlineErr(ctx, ...) below want the
+	// cancellation, not the trace.
+	tr, ctrace, _ := newConnTrace()
+	reqCtx := ctx
+	if TransportTraceEnabled() {
+		reqCtx = httptrace.WithClientTrace(ctx, ctrace)
+	}
+	httpReq = httpReq.WithContext(reqCtx)
+	reqStart := time.Now()
+	resp, err := hc.Do(httpReq)
 	if err != nil {
-		return "", fmt.Errorf("streaming request failed: %w", err)
+		return "", wrapStreamDeadlineErr(ctx, fmt.Errorf("streaming request failed: %w", err), idle, total)
 	}
 	defer resp.Body.Close()
+	client.lastHTTPStatus.Store(int64(resp.StatusCode))
+	client.lastRequestID.Store(requestIDFrom(resp.Header))
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
 	}
 
-	text, usage, err := ParseSSEStream(resp.Body, onChunk, func() {
+	sr, err := ParseSSEStreamFullData(resp.Body, onChunk, reqStart, func() {
 		select {
 		case resetCh <- struct{}{}:
 		default:
 		}
+	}, func() {
+		select {
+		case dataCh <- struct{}{}:
+		default:
+		}
 	})
-	ReportStreamUsage(usage, client.Provider, client.Model)
-	return text, err
+	if sr != nil {
+		client.lastTTFBMs.Store(sr.TTFBMs)
+		client.lastReasoningChars.Store(int64(sr.ReasoningChars))
+		if sr.FinishReason != "" {
+			client.lastFinishReason.Store(sr.FinishReason)
+		}
+		if client.Log != nil {
+			pt, ct := 0, 0
+			if sr.Usage != nil {
+				pt, ct = sr.Usage.PromptTokens, sr.Usage.CompletionTokens
+			}
+			client.Log.Infof("📊 AI call complete (stream): completion=%d prompt=%d finish_reason=%s reasoning_chars=%d ttfb_ms=%d wall_ms=%d",
+				ct, pt, sr.FinishReason, sr.ReasoningChars, sr.TTFBMs, time.Since(reqStart).Milliseconds())
+		}
+	}
+	if sr != nil && sr.Usage != nil {
+		client.lastCompletionTokens.Store(int64(sr.Usage.CompletionTokens))
+		ReportStreamUsage(sr.Usage, client.Provider, client.Model)
+	}
+	{
+		var chars int64
+		var ttfb time.Duration
+		if sr != nil {
+			chars = int64(sr.ReasoningChars + len(sr.Text))
+			ttfb = time.Duration(sr.TTFBMs) * time.Millisecond
+		}
+		tr.finish(err, context.Cause(ctx), chars, ttfb, time.Since(reqStart))
+		// Captured unconditionally: the ai_call line carries these now, and
+		// gating them on TransportTraceEnabled would silently zero the column
+		// wherever the trace is off — a plausible zero (A24).
+		client.lastIdleBeforeMs.Store(tr.WasIdleMs)
+		client.lastConnReused.Store(tr.Reused)
+		// A PEER-side end of a live stream is recorded the same way a watchdog
+		// fire is (owner ruling 2026-09-03): same table, same resend question,
+		// so idle_before can be read against the outcome for both.
+		if err != nil && tr.ClosedBy == "peer_fin" {
+			if h := watchdogFireHook.Load(); h != nil {
+				if fn, ok := h.(func(WatchdogFire)); ok && fn != nil {
+					fn(WatchdogFire{
+						Kind: "cut", Mode: "n/a",
+						CallAgeMs:    time.Since(reqStart).Milliseconds(),
+						Bytes:        chars,
+						IdleBeforeMs: tr.WasIdleMs,
+						Reused:       tr.Reused,
+						ClosedBy:     tr.ClosedBy,
+					})
+				}
+			}
+		}
+		if TransportTraceEnabled() && client.Log != nil {
+			client.Log.Infof("%s", tr.TraceLine())
+		}
+	}
+	if err != nil {
+		return "", wrapStreamDeadlineErr(ctx, err, idle, total)
+	}
+	if sr == nil {
+		return "", fmt.Errorf("stream produced no result")
+	}
+	return sr.Text, nil
+}
+
+// wrapStreamDeadlineErr names WHICH of the two split deadlines cancelled the
+// stream (context.Cause carries the sentinel; a parent total-deadline cause
+// propagates to the idle child). Every other error passes through untouched so
+// the transport/retry classification keeps working.
+func wrapStreamDeadlineErr(ctx context.Context, err error, idle, total time.Duration) error {
+	// Go ≥1.21 net/http surfaces context.Cause (our sentinel) as the read
+	// error, so ctx.Err() is appended explicitly: the legacy
+	// "context canceled" / "context deadline exceeded" greps keep working.
+	cause := context.Cause(ctx)
+	switch {
+	case errors.Is(cause, ErrStreamTotalDeadline):
+		return fmt.Errorf("%w (total %v, stream was live, %v): %v", ErrStreamTotalDeadline, total, ctx.Err(), err)
+	case errors.Is(cause, ErrWatchdogIdle):
+		return fmt.Errorf("%w (watchdog, %v): %v", ErrWatchdogIdle, ctx.Err(), err)
+	case errors.Is(cause, ErrStreamIdleDeadline):
+		return fmt.Errorf("%w (idle %v of silence, %v): %v", ErrStreamIdleDeadline, idle, ctx.Err(), err)
+	}
+	return err
+}
+
+// CallWithRequestStreamRetry wraps the streaming call in the same fixed retry
+// flow CallWithMessages uses (MaxRetries + exponential backoff + retryable
+// classification). Phase 4.4 — the transport-reset class must still retry.
+func (client *Client) CallWithRequestStreamRetry(req *Request, onChunk func(string), idle time.Duration) (string, error) {
+	return client.CallWithRequestStreamRetryDeadlines(req, onChunk, idle, 0)
+}
+
+// CallWithRequestStreamRetryDeadlines (class 37) is CallWithRequestStreamRetry
+// with the planner's whole-call ceiling (see CallWithRequestStreamDeadlines).
+// Deadline kills (idle / total / client_timeout) are NOT retried here — none of
+// them match the retryable transport tokens — so the planner loop, not the
+// client, owns that retry (3 attempts); transport resets still retry in place.
+// Worst case per planner attempt therefore stays 1 + (MaxRetries−1) calls on
+// resets only, never MaxRetries × total.
+func (client *Client) CallWithRequestStreamRetryDeadlines(req *Request, onChunk func(string), idle, total time.Duration) (string, error) {
+	if client.APIKey == "" {
+		return "", fmt.Errorf("AI API key not set")
+	}
+	var lastErr error
+	// CLASS 41 (2026-09-02): the stream path counts CALLS via StreamTries and
+	// waits an EXPONENTIAL schedule (StreamBackoff, default 2s → 15s → 45s)
+	// instead of RetryWaitBase×attempt. MaxRetries (AI_MAX_RETRIES) still
+	// governs the non-stream paths only.
+	maxRetries := client.Cfg.StreamTries
+	if maxRetries < 1 {
+		maxRetries = client.Cfg.MaxRetries
+	}
+	if maxRetries < 1 {
+		maxRetries = 1
+	}
+	sched := client.Cfg.StreamBackoff
+	if len(sched) == 0 {
+		sched = StreamRetryBackoffSchedule()
+	}
+	// CLASS 46 D5 — bound the PROVIDER CALLS one read may make. Observed
+	// 2026-09-02 01:15 CT: a 503 burst produced 3 planner attempts × 3 client
+	// tries = 9 calls in ~7 s against an edge that was already shedding load,
+	// and every one failed. The cap is per READ, so it holds across attempts.
+	cap := StormCapPerRead()
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if n := client.stormCount.Load(); n >= int64(cap) {
+			client.Log.Warnf("🌩 storm cap reached: %d provider call(s) this read ≥ cap %d — refusing another try (AI_PLAN_STORM_CAP). Last error: %v", n, cap, lastErr)
+			if lastErr == nil {
+				lastErr = fmt.Errorf("storm cap %d reached", cap)
+			}
+			return "", lastErr
+		}
+		client.stormCount.Add(1)
+		if attempt > 1 {
+			client.Log.Warnf("⚠️  AI API stream failed, retrying (%d/%d)...", attempt, maxRetries)
+		}
+		start := time.Now()
+		result, err := client.CallWithRequestStreamDeadlines(req, onChunk, idle, total)
+		client.logAICall(start, err, attempt)
+		if err == nil {
+			if attempt > 1 {
+				client.Log.Infof("✓ AI API stream retry succeeded")
+			}
+			return result, nil
+		}
+		lastErr = err
+		if !client.Hooks.IsRetryableError(err) {
+			return "", err
+		}
+		if attempt < maxRetries {
+			waitTime := streamBackoffFor(attempt, sched) // class 41: 2s → 15s → 45s
+			client.Log.Infof("⏳ Waiting %v before retry...", waitTime)
+			if err := sleepWithContext(contextFromRequest(req), waitTime); err != nil {
+				return "", err
+			}
+		}
+	}
+	return "", fmt.Errorf("still failed after %d retries: %w", maxRetries, lastErr)
+}
+
+// SSEStreamResult is ParseSSEStreamFull's output: accumulated text, reasoning
+// chars, finish_reason, usage, and time-to-first-byte.
+type SSEStreamResult struct {
+	Text           string
+	ReasoningChars int
+	FinishReason   string
+	Usage          *TokenUsage
+	TTFBMs         int64
 }
 
 // ParseSSEStream reads an SSE response body, accumulates text deltas,
@@ -948,13 +1495,43 @@ func (client *Client) CallWithRequestStream(req *Request, onChunk func(string)) 
 // (useful for resetting idle-timeout watchdogs).
 // Returns the complete accumulated text and any parsed token usage (nil if absent).
 func ParseSSEStream(body io.Reader, onChunk func(string), onLine func()) (string, *TokenUsage, error) {
+	sr, err := ParseSSEStreamFull(body, onChunk, time.Now(), onLine)
+	if sr == nil {
+		return "", nil, err
+	}
+	return sr.Text, sr.Usage, err
+}
+
+// ParseSSEStreamFull is the planner-speed-wave (2026-08-31) extension:
+// additionally captures reasoning_content chars, finish_reason, and
+// time-to-first-byte (the T4 evidence the latency autopsy was missing).
+// `start` anchors the ttfb measurement — pass the request-sent time so the
+// queue (Do → first chunk) is included, not just the body-read latency.
+func ParseSSEStreamFull(body io.Reader, onChunk func(string), start time.Time, onLine func()) (*SSEStreamResult, error) {
+	return ParseSSEStreamFullData(body, onChunk, start, onLine, nil)
+}
+
+// ParseSSEStreamFullData (CLASS 46 D4) is ParseSSEStreamFull plus onData,
+// called ONLY when a real content or reasoning delta arrives — never for a
+// heartbeat comment line. The old watchdog reset on every scanned LINE, so
+// DeepSeek's ": keep-alive" comments kept a stalled generation alive to the
+// 1200 s ceiling and the watchdog had never once fired.
+func ParseSSEStreamFullData(body io.Reader, onChunk func(string), start time.Time, onLine func(), onData func()) (*SSEStreamResult, error) {
 	var accumulated strings.Builder
+	var reasoning strings.Builder
 	var usage *TokenUsage
+	var finish string
 	scanner := bufio.NewScanner(body)
+	var ttfbMs int64
+	haveFirst := false
 
 	for scanner.Scan() {
 		if onLine != nil {
 			onLine()
+		}
+		if !haveFirst {
+			haveFirst = true
+			ttfbMs = time.Since(start).Milliseconds()
 		}
 
 		line := scanner.Text()
@@ -969,7 +1546,8 @@ func ParseSSEStream(body io.Reader, onChunk func(string), onLine func()) (string
 		var chunk struct {
 			Choices []struct {
 				Delta struct {
-					Content string `json:"content"`
+					Content          string `json:"content"`
+					ReasoningContent string `json:"reasoning_content"`
 				} `json:"delta"`
 				FinishReason *string `json:"finish_reason"`
 			} `json:"choices"`
@@ -995,22 +1573,37 @@ func ParseSSEStream(body io.Reader, onChunk func(string), onLine func()) (string
 			continue
 		}
 
-		delta := chunk.Choices[0].Delta.Content
-		if delta == "" {
+		if chunk.Choices[0].FinishReason != nil && *chunk.Choices[0].FinishReason != "" {
+			finish = *chunk.Choices[0].FinishReason
+		}
+		delta := chunk.Choices[0].Delta
+		if onData != nil && (delta.ReasoningContent != "" || delta.Content != "") {
+			onData() // a real byte of model output — this is what "not stalled" means
+		}
+		if delta.ReasoningContent != "" {
+			reasoning.WriteString(delta.ReasoningContent)
+		}
+		if delta.Content == "" {
 			continue
 		}
 
-		accumulated.WriteString(delta)
+		accumulated.WriteString(delta.Content)
 		if onChunk != nil {
 			onChunk(accumulated.String())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return accumulated.String(), usage, fmt.Errorf("stream interrupted: %w", err)
+		return &SSEStreamResult{
+			Text: accumulated.String(), Usage: usage, FinishReason: finish,
+			ReasoningChars: reasoning.Len(), TTFBMs: ttfbMs,
+		}, fmt.Errorf("stream interrupted: %w", err)
 	}
 
-	return accumulated.String(), usage, nil
+	return &SSEStreamResult{
+		Text: accumulated.String(), Usage: usage, FinishReason: finish,
+		ReasoningChars: reasoning.Len(), TTFBMs: ttfbMs,
+	}, nil
 }
 
 // ReportStreamUsage fires TokenUsageCallback with the given usage, provider, and model.
@@ -1027,3 +1620,40 @@ func ReportStreamUsage(usage *TokenUsage, provider, model string) {
 		TotalTokens:      usage.TotalTokens,
 	})
 }
+
+// ResetStormCounter starts a new read's provider-call budget (class 46 D5).
+func (client *Client) ResetStormCounter() { client.stormCount.Store(0) }
+
+// StormCount reports provider calls made in the current read.
+func (client *Client) StormCount() int { return int(client.stormCount.Load()) }
+
+// ResetStormCounterFor resets the budget on any AIClient that wraps a Client.
+func ResetStormCounterFor(c AIClient) {
+	if bc, ok := c.(interface{ BaseClient() *Client }); ok {
+		bc.BaseClient().ResetStormCounter()
+	}
+}
+
+// WatchdogFire is one fire's measurements, handed to the recorder hook.
+type WatchdogFire struct {
+	// Kind (owner ruling 2026-09-03): "watchdog" when we closed the stream,
+	// "cut" when the peer did. Both end a call early and both are answered by
+	// the same identical resend, so they share one record.
+	Kind      string
+	Mode      string
+	GapMs     int64
+	LimitMs   int64
+	CallAgeMs int64
+	Bytes     int64
+	// The connection the dead call rode.
+	IdleBeforeMs int64
+	Reused       bool
+	ClosedBy     string
+}
+
+// watchdogFireHook is set once by the trader layer so mcp never imports store.
+// nil = nothing recorded (tests, agent paths) — the log line still prints.
+var watchdogFireHook atomic.Value
+
+// SetWatchdogFireHook installs the recorder. Safe to call more than once.
+func SetWatchdogFireHook(fn func(WatchdogFire)) { watchdogFireHook.Store(fn) }

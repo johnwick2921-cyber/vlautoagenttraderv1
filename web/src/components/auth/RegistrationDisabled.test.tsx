@@ -46,9 +46,12 @@ describe('RegistrationDisabled Component', () => {
       expect(container).toBeTruthy()
     })
 
-    it('should display the NoFx logo', () => {
+    it('should display the brand logo', () => {
       renderComponent()
-      const logo = screen.getByAltText('NoFx Logo')
+      // E4 (fail-register wave): the component was rebranded to alt="VL" —
+      // the test asserted the pre-rebrand alt text and failed on every run
+      // since; assert what the component actually renders.
+      const logo = screen.getByAltText('VL')
       expect(logo).toBeTruthy()
       expect(logo.getAttribute('src')).toBe('/icons/vl.svg')
     })

@@ -1,0 +1,15 @@
+{
+  "report_commit": "ba833a9d4113c792432cb08cf2ca238c8a07b01b",
+  "validation_reject_to_pass": 23,
+  "validation_scenarios": 2,
+  "evaluated_scenarios": 627,
+  "unevaluated_scenarios": 162,
+  "kind": "pre-change closure-only replay; not live counters",
+  "final_validation_reject_to_pass": 24,
+  "immediate_displacement_additional": 1,
+  "additional_case": {
+    "plan_row": 163,
+    "scenario": "S1",
+    "decision_id": 34790
+  }
+}

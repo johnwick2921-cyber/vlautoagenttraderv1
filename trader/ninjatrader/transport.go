@@ -34,6 +34,17 @@ var (
 	tcpServerErr  error
 )
 
+// orderSnapshotSink (F12) is the optional persistence hook for received
+// order_snapshot frames. Registered by main.go before the server starts; nil
+// disables persistence WITHOUT disabling the cache, because the cutover gate
+// reads the cache and must never depend on a database being reachable.
+var orderSnapshotSink func(ntwire.OrderSnapshotPayload)
+
+// SetOrderSnapshotSink registers the hook. Call before the first trader is
+// built; later calls are ignored by design, since the server is a singleton
+// started once.
+func SetOrderSnapshotSink(fn func(ntwire.OrderSnapshotPayload)) { orderSnapshotSink = fn }
+
 // getOrStartTCPServer lazily starts the singleton TCP server on first call.
 // Subsequent calls return the same instance. The startup error (if any) is
 // cached and returned to every caller so a bind failure surfaces consistently.
@@ -45,12 +56,26 @@ func getOrStartTCPServer() (*ntwire.TCPServer, error) {
 			return
 		}
 		tcpServerInst = server
+		// F12 — install the forensic sink if one was registered. The store is
+		// NOT imported here: main.go owns the closure, so this package keeps its
+		// single responsibility and the gate's in-memory read stays independent
+		// of whether persistence is wired at all.
+		if fn := orderSnapshotSink; fn != nil {
+			server.SetOrderSnapshotSink(fn)
+		}
 		// Stage 3: route the kernel's futures kline reads to this server's
 		// live BarCache (NT8 bars), bypassing CoinAnk. Crypto path untouched.
 		wireFuturesBarsProvider(server)
 	})
 	return tcpServerInst, tcpServerErr
 }
+
+// TCPServer exposes the singleton wire server for maintenance paths that ride
+// the running process (HISTORY IMPORT, wave 101): the wire holds exactly one
+// connected client, so a named-contract historical pull must go through the
+// live server, never a second process. Returns the server, or the cached bind
+// error.
+func TCPServer() (*ntwire.TCPServer, error) { return getOrStartTCPServer() }
 
 // SplitSymbolList parses the P5.2 symbol-as-list config form: the Exchange
 // row's NT instrument field may be a comma-separated list ("MNQ,ES,NQ"). The

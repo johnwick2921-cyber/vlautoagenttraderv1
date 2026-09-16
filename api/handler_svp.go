@@ -47,13 +47,21 @@ func (s *Server) handleKlinesSVP(c *gin.Context) {
 	}
 	// Profile the chart's DISPLAY timeframe so the SVP covers the same candle data
 	// the chart is showing (like TradingView): 1m → ~1.4 days, 5m → ~7 days, etc.
-	// Default 5m. Pull up to 2000 bars (the cache cap); sessions off the visible
-	// range are skipped by the renderer.
+	// Default 5m. Pull up to 2000 bars — that is kernel.AISVPBarCount, the SVP
+	// profile depth, and it is the CORRECT argument here. It is NOT "the cache
+	// cap": the ring's capacity is provider/ninjatrader.DefaultBarCacheMaxBars
+	// = 2500, a different number for a different purpose. (Class 105: this
+	// comment said "the cache cap" from 2026-08-02 until 2026-09-10, and was
+	// wrong from 2026-08-27, when the ring moved 1024 → 2500 and nothing could
+	// compare the prose to the code.) Cleanup batch 2 (2026-09-11): the
+	// literal IS the constant now — kernel.AISVPBarCount — so the two cannot
+	// drift; api/handler_svp_test.go asserts no bare 2000 remains in this file.
+	// Sessions off the visible range are skipped by the renderer.
 	interval := c.Query("interval")
 	if interval == "" {
 		interval = "5m"
 	}
-	bars := provider(symbol, interval, 2000)
+	bars := provider(symbol, interval, kernel.AISVPBarCount)
 	if len(bars) == 0 {
 		c.JSON(http.StatusOK, empty)
 		return

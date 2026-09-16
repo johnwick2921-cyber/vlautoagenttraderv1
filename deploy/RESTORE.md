@@ -54,6 +54,43 @@ journalctl -u nofx -n 20 --no-pager
 and core tables read back cleanly (`decision_records` 28042, `trader_positions` 516,
 `strategies` 9, `exchanges` 1). The backup is fully restorable.
 
+## Roll back the BINARY (and why you must re-arm `deploy/RELEASE`)
+
+The DB restore above is only half a rollback. If you also go back to an earlier
+binary, **`deploy/RELEASE` must be re-armed to the revision you are actually
+running** — otherwise the boot assertion sees a mismatch and **REFUSES TRADING**
+(`kernel/boot_integrity.go:135-138`: entries blocked, P0 alert, everything else
+read-only). A rollback that skips this step comes up looking healthy and silently
+takes no trades.
+
+```bash
+# 1. Pick the revision to go back to (e.g. the previous release).
+cd ~/nofx && git log --oneline -5
+TARGET=<sha>
+
+# 2. Build that revision. (Checkout only if you intend to move the working tree;
+#    otherwise build from a worktree so main stays where it is.)
+git stash list && git status --porcelain      # know what you would disturb
+git checkout "$TARGET" -- . 2>/dev/null || git checkout "$TARGET"
+go build -o nofx-bin . && echo BUILD OK
+
+# 3. RE-ARM the expected release to MATCH the binary you just built.  ← never skip
+git rev-parse HEAD > /tmp/rel
+{ grep '^#' deploy/RELEASE; cat /tmp/rel; } > deploy/RELEASE.new && mv deploy/RELEASE.new deploy/RELEASE
+
+# 4. Relaunch and CONFIRM the assertion passed.
+kill -9 "$(pgrep -f nofx-bin)"                # systemd Restart=on-failure relaunches
+journalctl -u nofx --since '2 min ago' | grep 'BOOT INTEGRITY'
+#   → must read "BOOT INTEGRITY OK — rev <X> · expected <X> · goldens PASS"
+#   → "TRADING REFUSED" means step 3 was missed or the goldens drifted
+```
+
+To disable the assertion deliberately (e.g. while bisecting), leave the value in
+`deploy/RELEASE` **blank** — it then logs the revision and never refuses.
+
+Rolling the binary back across a schema migration also needs the matching DB
+snapshot from above; restore the DB **first**, then the binary, then re-arm.
+
 ## Notes
 
 - Backups are **gzip'd** (~402 MB DB → ~34 MB). Always `gunzip` before opening.

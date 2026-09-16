@@ -1,0 +1,22 @@
+from pathlib import Path
+import subprocess,json
+root=Path('/tmp/nofx-confirmation-truth-0908');out=Path('/tmp/confirmation-truth-blast');receipt=[]
+cases=[
+ ('closed_bucket','kernel/confirmation_bucket.go','b.Closed = nowMs >= b.CloseMs','b.Closed = true','^TestConfirmationTruthBucketBoundary$'),
+ ('sequence_order','kernel/confirmation_bucket.go','const confirmationOrderedSequence = true','const confirmationOrderedSequence = false','^TestConfirmationTruthSequenceOrder$'),
+ ('reference_lookup','kernel/plan_confirm.go','return v.EventMs, v.EventKnown','return v.EventMs, false','^TestConfirmationTruthSequenceOrder$'),
+ ('minute_displacement','kernel/confirmation_bucket.go','if !e.Closed {','if false {','^TestConfirmationTruthNamedMinuteDisplacement$')]
+for name,fn,old,new,test in cases:
+ p=root/fn;original=p.read_text();assert original.count(old)==1,(name,original.count(old))
+ try:
+  p.write_text(original.replace(old,new,1));actual=p.read_text();assert new in actual
+  line=next((i+1,s.strip()) for i,s in enumerate(actual.splitlines()) if new in s)
+  result=subprocess.run(['go','test','./kernel','-run',test,'-count=1'],cwd=root,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+  (out/f'mutation-{name}.log').write_text(result.stdout)
+  failures=[s for s in result.stdout.splitlines() if '--- FAIL:' in s or '_test.go:' in s]
+  assert result.returncode!=0 and any('--- FAIL:' in s for s in failures),(name,'SURVIVED or did not reach assertion')
+  receipt.append({'mutation':name,'file':fn,'line':line[0],'actual_changed_line':line[1],'test':test,'exit_code':result.returncode,'failures':failures})
+  print(name,'changed',fn+':'+str(line[0]),line[1],'exit',result.returncode,flush=True)
+ finally:
+  p.write_text(original);assert p.read_text()==original
+(out/'mutations.json').write_text(json.dumps(receipt,indent=2)+'\n')

@@ -18,6 +18,9 @@ import (
 	"fmt"
 	"nofx/config"
 	"nofx/logger"
+	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -25,10 +28,9 @@ import (
 // RiskLimits caps the risk a strategy can take before the engine intervenes.
 // Zero values disable the corresponding check (so partial config is safe).
 type RiskLimits struct {
-	MaxDailyLossUSD      float64 // hard stop for the trading day (USD, positive number)
-	MaxConcurrentTrades  int     // open position cap (count)
-	MaxNotionalUSD       float64 // sum of (entry price * quantity) cap across open positions
-	MaxContractsPerOrder int     // single-order contract size cap
+	MaxDailyLossUSD     float64 // hard stop for the trading day (USD, positive number)
+	MaxConcurrentTrades int     // open position cap (count)
+	MaxNotionalUSD      float64 // sum of (entry price * quantity) cap across open positions
 }
 
 // RiskLimitDecision is the qualitative outcome of a pre-trade check.
@@ -45,10 +47,10 @@ const (
 // Inputs are plain primitives so this can be exercised in a unit test
 // without a full engine.Context.
 //
-//   totalPnL          — account.TotalPnL (negative = losing)
-//   openPositions     — len(ctx.Positions)
-//   requestedNotional — abs(decision.PositionSizeUSD) for the proposed entry
-//   existingNotional  — sum of MarkPrice*Quantity over existing positions
+//	totalPnL          — account.TotalPnL (negative = losing)
+//	openPositions     — len(ctx.Positions)
+//	requestedNotional — abs(decision.PositionSizeUSD) for the proposed entry
+//	existingNotional  — sum of MarkPrice*Quantity over existing positions
 //
 // Semantics:
 //   - PnL strictly LESS THAN -MaxDailyLossUSD trips the daily-loss limit.
@@ -100,10 +102,9 @@ func (r *RiskLimits) Classify(totalPnL float64, openPositions int, requestedNoti
 func LoadRiskLimitsFromConfig() RiskLimits {
 	c := config.Get()
 	return RiskLimits{
-		MaxDailyLossUSD:      c.RiskMaxDailyLossUSD,
-		MaxConcurrentTrades:  c.RiskMaxConcurrentTrades,
-		MaxNotionalUSD:       c.RiskMaxNotionalUSD,
-		MaxContractsPerOrder: c.RiskMaxContractsPerOrder,
+		MaxDailyLossUSD:     c.RiskMaxDailyLossUSD,
+		MaxConcurrentTrades: c.RiskMaxConcurrentTrades,
+		MaxNotionalUSD:      c.RiskMaxNotionalUSD,
 	}
 }
 
@@ -142,10 +143,81 @@ var (
 // ResetDailyPnL marks "now" as the new day-start. Cheap, idempotent.
 // Operators call this from the force-flat API endpoint or at the
 // CME Sunday 18:00 ET open.
+// Clock seam (class 60): the entry point owns the wall clock and does nothing
+// else; the rule lives in the …At body so a test can state its own hour.
+// ---------------------------------------------------------------------------
+// DAILY FORCE-FLAT TRIP STATE (wiring wave 2026-09-05)
+//
+// DailyGuardrails.Check() has always returned RiskForceFlat on a daily-loss
+// trip, and its ONLY production caller discarded the value:
+//
+//	} else if _, gErr := g.Check(); gErr != nil {   // engine_analysis.go
+//
+// so the trip skipped the decision cycle and nothing else. The ARM path never
+// consulted the guardrail at all (entry_gate.go contained neither "daily" nor
+// "guardrail"), which meant a RESTING ARM FILLED STRAIGHT THROUGH A TRIPPED
+// DAILY LOSS LIMIT. The limit was believed and did not hold.
+//
+// The caller now publishes the trip here and EntryGate reads it, so both order
+// paths — arm seam and decision path — refuse new entries once it is set.
+//
+// SCOPE, deliberately: this blocks NEW ENTRIES only. Open positions are NOT
+// closed. Closing them stays operator-initiated via POST /api/risk/force-flat,
+// per the ForceFlatSignaler contract documented in engine_analysis.go — that
+// policy is unchanged by this wave.
+//
+// Cleared by the CME session-day reset (ResetDailyPnLAt), so a trip lasts the
+// session-day and lifts with the daily window.
+var (
+	forceFlatMu     sync.RWMutex
+	forceFlatReason = map[string]string{}
+)
+
+// SetDailyForceFlat records that traderID tripped its daily loss limit.
+func SetDailyForceFlat(traderID, reason string) {
+	forceFlatMu.Lock()
+	defer forceFlatMu.Unlock()
+	if _, already := forceFlatReason[traderID]; !already {
+		logger.Warnf("🔴 daily force-flat ARMED for trader %s: %s — NEW ENTRIES BLOCKED on both order paths until the daily window resets", traderID, reason)
+	}
+	forceFlatReason[traderID] = reason
+}
+
+// DailyForceFlatReason returns the trip reason for traderID, or "" when the
+// daily loss limit has not tripped. "" is the fail-open answer: no evidence of
+// a trip is never a refusal.
+func DailyForceFlatReason(traderID string) string {
+	forceFlatMu.RLock()
+	defer forceFlatMu.RUnlock()
+	return forceFlatReason[traderID]
+}
+
+// ClearDailyForceFlat lifts the trip for one trader (operator resume).
+func ClearDailyForceFlat(traderID string) {
+	forceFlatMu.Lock()
+	defer forceFlatMu.Unlock()
+	delete(forceFlatReason, traderID)
+}
+
+// clearAllDailyForceFlat lifts every trip; called by the daily reset.
+func clearAllDailyForceFlat() {
+	forceFlatMu.Lock()
+	defer forceFlatMu.Unlock()
+	if n := len(forceFlatReason); n > 0 {
+		logger.Infof("daily force-flat cleared for %d trader(s) by the daily window reset", n)
+	}
+	forceFlatReason = map[string]string{}
+}
+
 func ResetDailyPnL() {
+	ResetDailyPnLAt(time.Now())
+}
+
+func ResetDailyPnLAt(now time.Time) {
+	clearAllDailyForceFlat()
 	dailyResetMu.Lock()
 	defer dailyResetMu.Unlock()
-	lastDailyResetDate = CMESessionDayKey(time.Now())
+	lastDailyResetDate = CMESessionDayKey(now)
 	logger.Infof("Plan 3 T21: daily window manually reset to CME session-day %s", lastDailyResetDate)
 }
 
@@ -162,7 +234,30 @@ func MaybeResetDaily(now time.Time) bool {
 	defer dailyResetMu.Unlock()
 	if lastDailyResetDate == "" || lastDailyResetDate != today {
 		lastDailyResetDate = today
-		logger.Infof("Plan 3 T21 / Strategy Studio: daily window reset to CME session-day %s", today)
+		// D4(c) (2026-09-09, dispatch 104) — THE ROLL LIFTS THE TRIP.
+		//
+		// This rolled the DATE and left forceFlatReason untouched, so a daily
+		// force-flat never cleared automatically at all: clearAllDailyForceFlat
+		// had exactly one caller, ResetDailyPnLAt, reachable only from the
+		// operator's force-flat endpoint. A tripped desk stayed blocked across
+		// the roll, the next session and the one after, until a human reset it
+		// or the process restarted.
+		//
+		// vet-06 called this "clears only at the first AI cycle after the roll";
+		// the truth was that it did not clear on any cycle. The comment above
+		// forceFlatReason has promised since #91 that a trip "lifts with the
+		// daily window" — this is the line that makes that true. It has never
+		// been seen because the guardrails master is OFF and the trip has never
+		// fired: a latent halt waiting for the day the owner turns it on.
+		//
+		// The unlock is deliberate: clearAllDailyForceFlat takes forceFlatMu,
+		// and holding dailyResetMu across it is a lock-order the manual path
+		// (ResetDailyPnLAt: clear FIRST, then take dailyResetMu) does not use.
+		// One order, both paths.
+		dailyResetMu.Unlock()
+		clearAllDailyForceFlat()
+		dailyResetMu.Lock()
+		logger.Infof("Plan 3 T21 / Strategy Studio: daily window reset to CME session-day %s (force-flat trips lifted)", today)
 		return true
 	}
 	return false
@@ -188,9 +283,42 @@ type DailyGuardrails struct {
 	DailyProfitTargetUSD  float64 // positive USD; profit ≥ this trips (block-entry)
 	MaxDailyTradesEnabled bool
 	MaxDailyTrades        int
+
+	// 6.3 (final-bundle 2026-08-19) — blackout + consistency join the soft
+	// audit. The caller precomputes the window/breach facts (CheckSoft stays
+	// pure); CONFIGURED means the owner set the values, regardless of toggles.
+	BlackoutConfigured   bool // start+end CT both set
+	InBlackoutNow        bool // precomputed InBlackoutWindow(now, …)
+	ConsistencyMaxDayPct float64
+	TotalRealizedPnL     float64
 }
 
-// Check evaluates the ENABLED daily guardrails. Master OFF → always allow (the
+// CheckSoft evaluates every CONFIGURED limit (value > 0) regardless of toggles
+// and returns the "would have tripped" reasons. P0-cleanup (2026-08-19): the
+// guardrails master stays OFF by the owner's dated decision, but the owner must
+// SEE what the cage would have caught. It never blocks anything.
+func (g DailyGuardrails) CheckSoft() []string {
+	var hits []string
+	if g.DailyLossLimitUSD > 0 && g.DailyRealizedPnL <= -g.DailyLossLimitUSD {
+		hits = append(hits, fmt.Sprintf("daily loss would trip (realized today=%.2f, limit=-%.2f)", g.DailyRealizedPnL, g.DailyLossLimitUSD))
+	}
+	if g.DailyProfitTargetUSD > 0 && g.DailyRealizedPnL >= g.DailyProfitTargetUSD {
+		hits = append(hits, fmt.Sprintf("daily profit target would trip (realized today=%.2f, target=%.2f)", g.DailyRealizedPnL, g.DailyProfitTargetUSD))
+	}
+	if g.MaxDailyTrades > 0 && g.TradesToday >= g.MaxDailyTrades {
+		hits = append(hits, fmt.Sprintf("max daily trades would trip (today=%d, max=%d)", g.TradesToday, g.MaxDailyTrades))
+	}
+	// 6.3 — the two checks that used to die SILENTLY under master OFF (PR #54:
+	// 69 live would-trip lines were trio-only; blackout/consistency never spoke).
+	if g.BlackoutConfigured && g.InBlackoutNow {
+		hits = append(hits, "blackout window would trip (inside the configured CT window)")
+	}
+	if g.ConsistencyMaxDayPct > 0 && ConsistencyBreached(g.DailyRealizedPnL, g.TotalRealizedPnL, g.ConsistencyMaxDayPct) {
+		hits = append(hits, fmt.Sprintf("consistency rule would trip (today=%.2f vs %.0f%% of total=%.2f)", g.DailyRealizedPnL, g.ConsistencyMaxDayPct, g.TotalRealizedPnL))
+	}
+	return hits
+}
+
 // caller logs the bypass). Each guardrail is evaluated only when its toggle is
 // ON AND its value is configured (>0); a tripped guardrail returns a non-nil err
 // with a clear reason. Daily-loss → ForceFlat; profit-target / max-trades →
@@ -238,13 +366,48 @@ func firstPositive(vals ...float64) float64 {
 // Hardening D3 (audit F2): this SIZE cap is ALWAYS ON for futures — it is venue
 // safety, NOT a prop-firm rule, so the guardrails master switch and the
 // max-contracts toggle govern ONLY daily limits/blackout, never this clamp.
-// Per-strategy value overrides (>0); else the venue default (10-contract).
+// Per-strategy value overrides (>0); else the venue default (2 contracts —
+// the researched fallback; 6.6: the old '10-contract' text was a comment lie).
 // NEVER returns 0 — a futures order can never be left unclamped.
 func ResolveMaxContracts(perStrategy, def int) int {
+	n := def
 	if perStrategy > 0 {
-		return perStrategy
+		n = perStrategy
 	}
-	return def
+	return ClampStageAContracts(n)
+}
+
+// StageAContractCap (0B, owner ruling 2026-09-02) is the survival-first size
+// ceiling: ONE contract until n≥30 closed trades with a positive lower-CI
+// expectancy. Kelly and optimal-f are undefined without an edge estimate, so
+// size does not move on intuition. It also holds the line under 0B's stop
+// floor: 1.0→1.5×ATR5m raises dollar risk per trade by ~50% at constant size,
+// which is exactly why size stays at 1.
+//
+// Before 0B the resolvers disagreed in production: arm-leg capacity resolved to
+// 1 (splitLegCapacity, unset max_contracts_per_order) while order sizing
+// resolved to 2 (this function's `def` = maxFuturesContracts) — the boot line
+// said capacity=1 while a market entry could size 2.
+//
+// Env STAGE_A_CONTRACT_CAP raises the ceiling for Stage B; 0 or unset = 1.
+const StageAContractCapDefault = 1
+
+// StageAContractCap resolves the Stage-A ceiling (env STAGE_A_CONTRACT_CAP).
+func StageAContractCap() int {
+	if v := os.Getenv("STAGE_A_CONTRACT_CAP"); v != "" {
+		if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && n > 0 {
+			return n
+		}
+	}
+	return StageAContractCapDefault
+}
+
+// ClampStageAContracts applies the Stage-A ceiling to any resolved size.
+func ClampStageAContracts(n int) int {
+	if cap := StageAContractCap(); n > cap {
+		return cap
+	}
+	return n
 }
 
 // ResolveConcurrentCap returns the open-position cap for the pre-prompt gate and
@@ -289,3 +452,8 @@ func ConsistencyBreached(todayProfit, totalProfit, pct float64) bool {
 	}
 	return todayProfit >= (pct/100.0)*totalProfit
 }
+
+// SoftGuardrailFunc is installed by the trader layer: a guardrail that WOULD
+// have tripped (but is disabled — master OFF or toggle OFF) is announced to the
+// owner's alert feed. Never blocks. P0-cleanup (2026-08-19).
+var SoftGuardrailFunc func(trader, what string)

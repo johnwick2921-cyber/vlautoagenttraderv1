@@ -1,6 +1,9 @@
 package kernel
 
 import (
+	"sync/atomic"
+	"time"
+
 	"nofx/logger"
 	"nofx/market"
 	"nofx/telemetry"
@@ -49,10 +52,13 @@ func absI64(v int64) int64 {
 	return v
 }
 
-// applyClockDriftBlock (C2) neutralizes an open decision to `wait` when the local
-// clock is skewed from the freshest feed timestamp by more than the tolerance in
-// EITHER direction. Only open_long/open_short are affected. No 1m/5m data → fail-
-// open (can't assess → never block).
+// applyClockDriftBlock (C2) detects local-vs-feed clock skew. Since 2026-08-18
+// outgoing NT8 signals are stamped with the FEED clock (trader/ninjatrader
+// tcp_trader.go feedNowUTC), so a skewed local clock can no longer age a signal
+// into NT8's 60s stale rejection. The guard no longer converts entries to wait —
+// it logs the skew as a warning so the operator still sees when NTP needs
+// attention. Only open_long/open_short are examined; no 1m/5m data → nothing
+// to compare (never blocks).
 func applyClockDriftBlock(fd *FullDecision, ctx *Context, nowMs int64) {
 	if fd == nil || ctx == nil {
 		return
@@ -74,9 +80,99 @@ func applyClockDriftBlock(fd *FullDecision, ctx *Context, nowMs int64) {
 		if drift < 0 {
 			dir = "BEHIND"
 		}
-		logger.Warnf("🚨 clock-drift ENTRY BLOCK: %s %s → WAIT — local clock is %s the feed by %ds (>%ds); signals would be mis-timed / NT8-rejected. Check NTP / system time. Exits unaffected.",
-			d.Symbol, d.Action, dir, absI64(drift)/1000, clockDriftToleranceMs/1000)
-		d.Action = "wait"
-		telemetry.IncGateBlock(ctx.TraderID, "clock_drift")
+		logger.Warnf("⚠️ clock-drift DETECTED (no entry block): local clock is %s the feed by %ds (>%ds) — signals are feed-stamped so entries proceed; fix the host clock / NTP. Exits unaffected.",
+			dir, absI64(drift)/1000, clockDriftToleranceMs/1000)
+		telemetry.IncClockSkewObserved(ctx.TraderID)
 	}
+}
+
+// ── F6 CLOCK-HOLD (2026-08-30) — escalation layer ─────────────────────────────
+//
+// Root cause of the 2026-08-30 regression: the OS-level fix (chrony) was
+// HANDCUFFED — chronyd-starter.sh detected WSL2 as a container and appended
+// `-x` ("Disabled control of system clock"), so `makestep 1 -1` never stepped;
+// the cron belt-and-suspenders called `hwclock`, which does not exist in this
+// WSL2 rootfs. The machine therefore protects ITSELF at the tolerance breach:
+//
+//   • below CLOCK_WARN_MS (30s): nothing changes.
+//   • warn band (30-60s):   log-only (P1.3, unchanged) + news windows widened
+//                           by the measured drift so red-news protection
+//                           survives a skewed clock.
+//   • tolerance breach (>60s): DEFER NEW PLAN AUTHORING (no plan written, no
+//                           budget consumed — never author on a clock known
+//                           broken) + news windows widened by the drift.
+//
+// Exits / armed-order management / open-position management are never touched
+// (same blast-radius contract as C2). Fail-open on no measurement, exactly like
+// C2 ("no data → nothing to compare, never blocks").
+
+// clockDriftStore keeps the last measured local-vs-feed drift (ms, sign
+// preserved), written by every clock-health read (boot + session-roll) and by
+// on-demand FeedClockDriftMs measurements. 0/have=false = never measured.
+var clockDriftStore atomic.Int64
+var clockDriftHave atomic.Bool
+
+// RecordClockDrift persists a drift measurement for F6 consumers
+// (authoring gate, news-window widening).
+func RecordClockDrift(driftMs int64, have bool) {
+	clockDriftHave.Store(have)
+	if have {
+		clockDriftStore.Store(driftMs)
+	}
+}
+
+// LastClockDrift returns the most recent persisted measurement, or
+// (0, false) when nothing was measured yet.
+func LastClockDrift() (driftMs int64, ok bool) {
+	if !clockDriftHave.Load() {
+		return 0, false
+	}
+	return clockDriftStore.Load(), true
+}
+
+// FeedClockDriftMs measures the drift RIGHT NOW from the freshest 1m bar of
+// symbol (the same channel LogClockHealth uses: local clock vs the bar's
+// approximate close). (0, false) when the feed is unavailable — fail-open.
+func FeedClockDriftMs(symbol string) (int64, bool) {
+	if market.FuturesBarsProvider == nil {
+		return 0, false
+	}
+	bars := market.FuturesBarsProvider(symbol, "1m", 3)
+	if len(bars) == 0 {
+		return 0, false
+	}
+	last := bars[len(bars)-1]
+	drift := time.Now().UnixMilli() - (last.OpenTime + 60_000)
+	RecordClockDrift(drift, true)
+	return drift, true
+}
+
+// ClockHoldDecision is the pure F6 decision: (deferAuthoring, widenMs).
+//
+//   - no measurement        → (false, 0)   fail-open (C2 contract)
+//   - |drift| <  warn       → (false, 0)
+//   - warn ≤ |drift| ≤ tol  → (false, |drift|)  author, windows widened
+//   - |drift| > tol, drift < 0 → (true, |drift|)  authoring deferred
+//   - |drift| > tol, drift > 0 → (false, |drift|) author, windows widened
+//
+// The asymmetry is deliberate. NEGATIVE drift means the feed labeled bars in
+// the FUTURE — impossible unless the local clock is broken (the 2026-08-30
+// incident class: -41s, NTPSynchronized=no). POSITIVE drift is ambiguous: it
+// is also exactly what a CLOSED market's old bars look like (the P0B 16:55
+// Sunday read must fire with 10-min-old bars). C2 already covers the
+// positive-skew entry risk via feed-stamped signals, so authoring is never
+// deferred on the ambiguous sign; the news windows still widen so a mis-timed
+// red event cannot slip through the blackout.
+func ClockHoldDecision(driftMs int64, have bool, warnMs, toleranceMs int64) (deferAuthoring bool, widenMs int64) {
+	if !have {
+		return false, 0
+	}
+	abs := absI64(driftMs)
+	if abs >= warnMs {
+		widenMs = abs
+	}
+	if driftMs < 0 && abs > toleranceMs {
+		return true, abs
+	}
+	return false, widenMs
 }

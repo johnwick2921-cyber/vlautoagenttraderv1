@@ -11,7 +11,14 @@ import (
 // These models mirror the grid package types but are defined here
 // to avoid import cycles between store and grid packages.
 
-// GridConfigModel GORM model for grid_configs table
+// GridConfigModel GORM model for grid_configs table.
+//
+// LEGACY NOTE (master-audit finding 3.4): this TABLE has no production writer —
+// the live grid path carries its config inside StrategyConfig.grid_config (see
+// web StrategyStudioPage + auto_trader_grid.go). The table exists only for the
+// auto-migration and for agent-layer display of grid counts; it is expected to
+// stay empty until a dedicated grid-config persistence surface is ever built
+// (grid is parked for CME futures anyway — market-only bridge).
 type GridConfigModel struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
 	UserID    string    `json:"user_id" gorm:"index"`
@@ -40,9 +47,9 @@ type GridConfigModel struct {
 	TrendResumeThreshold int  `json:"trend_resume_threshold" gorm:"default:70"`
 
 	// Box indicator periods (1h candles)
-	ShortBoxPeriod int `json:"short_box_period" gorm:"default:72"`  // 3 days
-	MidBoxPeriod   int `json:"mid_box_period" gorm:"default:240"`   // 10 days
-	LongBoxPeriod  int `json:"long_box_period" gorm:"default:500"`  // 21 days
+	ShortBoxPeriod int `json:"short_box_period" gorm:"default:72"` // 3 days
+	MidBoxPeriod   int `json:"mid_box_period" gorm:"default:240"`  // 10 days
+	LongBoxPeriod  int `json:"long_box_period" gorm:"default:500"` // 21 days
 
 	// Effective leverage limits by regime level
 	NarrowRegimeLeverage   int `json:"narrow_regime_leverage" gorm:"default:2"`
@@ -83,14 +90,14 @@ type GridInstanceModel struct {
 	StoppedAt *time.Time `json:"stopped_at,omitempty"`
 	UpdatedAt time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 
-	CurrentUpperPrice   float64 `json:"current_upper_price"`
-	CurrentLowerPrice   float64 `json:"current_lower_price"`
-	CurrentGridSpacing  float64 `json:"current_grid_spacing"`
-	ActiveLevelCount    int     `json:"active_level_count"`
-	CurrentRegime       string  `json:"current_regime"`
-	RegimeScore         int     `json:"regime_score"`
+	CurrentUpperPrice   float64   `json:"current_upper_price"`
+	CurrentLowerPrice   float64   `json:"current_lower_price"`
+	CurrentGridSpacing  float64   `json:"current_grid_spacing"`
+	ActiveLevelCount    int       `json:"active_level_count"`
+	CurrentRegime       string    `json:"current_regime"`
+	RegimeScore         int       `json:"regime_score"`
 	LastRegimeCheck     time.Time `json:"last_regime_check"`
-	ConsecutiveTrending int     `json:"consecutive_trending"`
+	ConsecutiveTrending int       `json:"consecutive_trending"`
 
 	// Current regime level (narrow/standard/wide/volatile/trending)
 	CurrentRegimeLevel string `json:"current_regime_level" gorm:"default:standard"`
@@ -113,9 +120,9 @@ type GridInstanceModel struct {
 	PositionReductionPct float64 `json:"position_reduction_pct" gorm:"default:0"` // 0 = normal, 50 = reduced
 
 	// Grid direction adjustment state
-	CurrentDirection       string    `json:"current_direction" gorm:"default:neutral"`
-	DirectionChangedAt     time.Time `json:"direction_changed_at"`
-	DirectionChangeCount   int       `json:"direction_change_count" gorm:"default:0"`
+	CurrentDirection     string    `json:"current_direction" gorm:"default:neutral"`
+	DirectionChangedAt   time.Time `json:"direction_changed_at"`
+	DirectionChangeCount int       `json:"direction_change_count" gorm:"default:0"`
 
 	TotalProfit     float64   `json:"total_profit" gorm:"default:0"`
 	TotalFees       float64   `json:"total_fees" gorm:"default:0"`

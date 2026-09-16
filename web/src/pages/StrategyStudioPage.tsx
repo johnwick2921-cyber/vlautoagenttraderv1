@@ -1,3 +1,4 @@
+import { guardedCall } from '../lib/api/guarded'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -42,6 +43,8 @@ import { isCMEFutures } from '../lib/instrument'
 import { CoinSourceEditor } from '../components/strategy/CoinSourceEditor'
 import { IndicatorEditor } from '../components/strategy/IndicatorEditor'
 import { RiskControlEditor } from '../components/strategy/RiskControlEditor'
+import { DayPlanEditor } from '../components/strategy/DayPlanEditor'
+import { tp } from '../i18n/plan-translations'
 import { PromptSectionsEditor } from '../components/strategy/PromptSectionsEditor'
 import { PublishSettingsEditor } from '../components/strategy/PublishSettingsEditor'
 import {
@@ -80,6 +83,10 @@ const normalizeStrategyConfig = (config: StrategyConfig): StrategyConfig => {
     ai_config: aiConfig || undefined,
     grid_config: config.grid_config,
     publish_config: config.publish_config,
+    // Root-level Day Plan settings block — MUST be listed or normalize silently
+    // drops it on BOTH load (editor sees undefined → master OFF, body disabled)
+    // AND save (edits never persist). Additive; undefined for non-day-plan rows.
+    day_plan: config.day_plan,
   }
 }
 
@@ -127,6 +134,7 @@ export function StrategyStudioPage() {
     coinSource: true,
     indicators: false,
     riskControl: false,
+    dayPlan: false,
     promptSections: false,
     customPrompt: false,
     publishSettings: false,
@@ -554,29 +562,44 @@ export function StrategyStudioPage() {
         ...normalizeStrategyConfig(editingConfig),
         language: language as 'zh' | 'en',
       }
-      const response = await fetch(
-        `${API_BASE}/api/strategies/${selectedStrategy.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: selectedStrategy.name,
-            description: selectedStrategy.description,
-            config: configWithLanguage,
-            is_public: selectedStrategy.is_public,
-            config_visible: selectedStrategy.config_visible,
-          }),
-        }
-      )
-      if (!response.ok) throw new Error('Failed to save strategy')
+      // E1 (fail-register wave): the shared never-latch pattern (#58). Success
+      // toast fires ONLY on HTTP 200; ANY failure toasts loudly with the edits
+      // preserved (editingConfig is untouched on failure) — the silent
+      // setError-banner-only path let a failed save masquerade as done.
+      const g = await guardedCall(async () => {
+        const response = await fetch(
+          `${API_BASE}/api/strategies/${selectedStrategy.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              name: selectedStrategy.name,
+              description: selectedStrategy.description,
+              config: configWithLanguage,
+              is_public: selectedStrategy.is_public,
+              config_visible: selectedStrategy.config_visible,
+            }),
+          }
+        )
+        if (!response.ok)
+          throw new Error(`save failed (HTTP ${response.status})`)
+        return true
+      })
+      if (!g.ok) {
+        setError(g.error)
+        notify.error(g.error)
+        return
+      }
       setHasChanges(false)
       notify.success(tr('strategySaved'))
       await fetchStrategies()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      setError(msg)
+      notify.error(msg)
     } finally {
       setIsSaving(false)
     }
@@ -846,6 +869,22 @@ export function StrategyStudioPage() {
       ),
     },
     {
+      // P4.5 — Day Plan block (futures-only; dropped for non-futures below).
+      key: 'dayPlan' as const,
+      icon: Target,
+      color: '#C9A24B',
+      title: tp('dayPlanBlock', language),
+      forStrategyType: 'ai_trading' as const,
+      content: (
+        <DayPlanEditor
+          config={editingConfig?.day_plan}
+          onChange={(dayPlan) => updateConfig('day_plan', dayPlan)}
+          disabled={selectedStrategy?.is_default}
+          language={language}
+        />
+      ),
+    },
+    {
       key: 'promptSections' as const,
       icon: FileText,
       color: '#a855f7',
@@ -915,8 +954,10 @@ export function StrategyStudioPage() {
     },
   ].filter(
     (section) =>
-      section.forStrategyType === 'both' ||
-      section.forStrategyType === currentStrategyType
+      (section.forStrategyType === 'both' ||
+        section.forStrategyType === currentStrategyType) &&
+      // Day Plan is futures-only (drop it for non-futures strategies).
+      (section.key !== 'dayPlan' || isFuturesStrategy)
   )
 
   return (
@@ -1016,34 +1057,38 @@ export function StrategyStudioPage() {
                       >
                         <Download className="w-3 h-3" />
                       </button>
+                      {/* Duplicate is the escape hatch for the locked default
+                          (Studio Phase 6): make the copy visible on it too. */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDuplicateStrategy(strategy.id)
+                        }}
+                        className="p-1 rounded hover:bg-white/10 text-nofx-text-muted hover:text-white"
+                        title={
+                          strategy.is_default
+                            ? tr('duplicateToEditHint')
+                            : tr('duplicate')
+                        }
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
                       {!strategy.is_default && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDuplicateStrategy(strategy.id)
-                            }}
-                            className="p-1 rounded hover:bg-white/10 text-nofx-text-muted hover:text-white"
-                            title={tr('duplicate')}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteStrategy(strategy.id)
-                            }}
-                            disabled={strategy.is_active}
-                            className="p-1 rounded hover:bg-nofx-danger/20 text-nofx-danger disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                            title={
-                              strategy.is_active
-                                ? tr('cannotDeleteActiveStrategy')
-                                : tr('deleteTooltip')
-                            }
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteStrategy(strategy.id)
+                          }}
+                          disabled={strategy.is_active}
+                          className="p-1 rounded hover:bg-nofx-danger/20 text-nofx-danger disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          title={
+                            strategy.is_active
+                              ? tr('cannotDeleteActiveStrategy')
+                              : tr('deleteTooltip')
+                          }
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -1134,6 +1179,31 @@ export function StrategyStudioPage() {
                       {isSaving ? tr('saving') : tr('save')}
                     </button>
                   )}
+                  {/* E1: the owner can SEE the last save — the Aug-19 mystery
+                      was a toggle that never generated a save request; now a
+                      missing bump here is visible at a glance. CT per the UI
+                      pin. */}
+                  {selectedStrategy.updated_at && (
+                    <span
+                      data-testid="strategy-last-saved"
+                      className="text-[10px] text-nofx-text-muted self-center"
+                      title="last successful save (server updated_at, CT)"
+                    >
+                      saved{' '}
+                      {new Date(selectedStrategy.updated_at).toLocaleString(
+                        undefined,
+                        {
+                          timeZone: 'America/Chicago',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )}{' '}
+                      CT
+                      {hasChanges && ' · unsaved changes'}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1180,11 +1250,20 @@ export function StrategyStudioPage() {
                     </button>
                     <button
                       onClick={() => handleStrategyTypeChange('grid_trading')}
-                      disabled={selectedStrategy?.is_default}
+                      disabled={
+                        selectedStrategy?.is_default || isFuturesStrategy
+                      }
+                      title={
+                        isFuturesStrategy
+                          ? tr('gridFuturesDisabled')
+                          : undefined
+                      }
                       className={`p-3 rounded-lg border transition-all ${
-                        editingConfig.strategy_type === 'grid_trading'
-                          ? 'border-nofx-gold bg-nofx-gold/10'
-                          : 'border-nofx-border hover:border-nofx-gold/50'
+                        isFuturesStrategy
+                          ? 'border-nofx-border opacity-50 cursor-not-allowed'
+                          : editingConfig.strategy_type === 'grid_trading'
+                            ? 'border-nofx-gold bg-nofx-gold/10'
+                            : 'border-nofx-border hover:border-nofx-gold/50'
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
@@ -1197,7 +1276,9 @@ export function StrategyStudioPage() {
                         </span>
                       </div>
                       <p className="text-xs text-nofx-text-muted text-left">
-                        {tr('gridTradingDesc')}
+                        {isFuturesStrategy
+                          ? tr('gridFuturesDesc')
+                          : tr('gridTradingDesc')}
                       </p>
                     </button>
                   </div>
@@ -1206,6 +1287,17 @@ export function StrategyStudioPage() {
 
               {/* Config Sections */}
               <div className="space-y-2">
+                {/* UI-verification (2026-08-18): every editor below locks when the
+                    selected strategy is the DEFAULT template — before this the
+                    page said nothing and a fully-grey editor read as broken. */}
+                {selectedStrategy?.is_default && (
+                  <div
+                    data-testid="default-lock-banner"
+                    className="rounded-lg px-3 py-2 text-xs border border-nofx-gold/30 bg-nofx-gold/10 text-nofx-gold"
+                  >
+                    🔒 {tr('defaultLocked')}
+                  </div>
+                )}
                 {configSections.map(
                   ({ key, icon: Icon, color, title, content }) => (
                     <div

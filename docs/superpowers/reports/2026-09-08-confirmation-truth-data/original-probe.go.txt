@@ -1,0 +1,24 @@
+package main
+import("encoding/json";"os";"time";"nofx/kernel";"nofx/market")
+type result struct{Name string `json:"name"`; Expected bool `json:"expected_met"`; Actual bool `json:"actual_met"`; Detail string `json:"detail"`}
+func main(){
+ b:=time.Date(2026,9,8,3,0,0,0,time.UTC).UnixMilli()
+ bar:=func(i int,lo,hi,cl float64)market.Kline{return market.Kline{OpenTime:b+int64(i)*60000,CloseTime:b+int64(i+1)*60000-1,Open:cl,High:hi,Low:lo,Close:cl,Volume:1}}
+ var out []result
+ for _,side:=range []string{"below","above"}{
+  low,high,close:=99.0,99.75,99.5
+  if side=="above"{low,high,close=100.25,101,100.5}
+  c:=kernel.PlanConfirm{Rule:"1x5m_close",RefPrice:100,Side:side}
+  early:=kernel.EvaluateConfirm(c,[]market.Kline{bar(0,low,high,close)},b,b+60001)
+  out=append(out,result{"incomplete_5m_"+side,false,early.Met,early.Detail})
+  bars:=[]market.Kline{}
+  for i:=0;i<5;i++{bars=append(bars,bar(i,low,high,close))}
+  sweepClose:=100.75;if side=="above"{sweepClose=99.25}
+  bars=append(bars,bar(5,99.25,100.75,sweepClose))
+  sweepSide:="above";direction:="short";if side=="above"{sweepSide="below";direction="long"}
+  s:=kernel.PlanScenario{ID:"S1",Condition:"sweep_reclaim",Direction:direction,Confirm:&kernel.PlanConfirm{Rule:"touch",RefPrice:100,Side:sweepSide},Confirm2:&c}
+  v:=kernel.EvaluateScenarioConfirm(s,bars,b,b+6*60000+1)
+  out=append(out,result{"reclaim_before_sweep_"+direction,false,v.Met,v.Detail})
+ }
+ json.NewEncoder(os.Stdout).Encode(out)
+}

@@ -1,0 +1,30 @@
+package main
+import("bufio";"encoding/json";"fmt";"os";"sort";"time";"nofx/kernel";"nofx/market")
+type Plan struct{RowID int `json:"rowid"`;ID string `json:"plan_id"`;Version int `json:"version"`;Birth int64 `json:"birth_ms"`;Session string `json:"session"`;Date string `json:"trade_date"`;Doc struct{Scenarios []kernel.PlanScenario `json:"scenarios"`} `json:"doc"`}
+type Bar struct{T int64 `json:"open_time_ms"`;O,H,L,C,V float64}
+type Decision struct{ID int `json:"id"`;PlanID string `json:"plan_id"`;Version int `json:"version"`;Now int64 `json:"snapshot_ms"`;Lines []string `json:"confirm_lines"`}
+type Input struct{Plans []Plan;Bars []Bar;Decisions []Decision;Settings map[string]string}
+
+type Select struct{PlanRow int `json:"plan_row"`; Scenario string `json:"scenario"`; DecisionID int `json:"decision_id"`}
+func main(){
+ var in Input;f,e:=os.Open(os.Args[1]);if e!=nil{panic(e)};if e=json.NewDecoder(f).Decode(&in);e!=nil{panic(e)}
+ sel,e:=os.Open(os.Args[2]);if e!=nil{panic(e)};scan:=bufio.NewScanner(sel);wanted:=map[string]bool{}
+ for scan.Scan(){var s Select;if e=json.Unmarshal(scan.Bytes(),&s);e!=nil{panic(e)};wanted[fmt.Sprintf("%d/%s/%d",s.PlanRow,s.Scenario,s.DecisionID)]=true}
+ for k,v:=range in.Settings{os.Setenv(k,v)}
+ var bars []market.Kline;for _,b:=range in.Bars{bars=append(bars,market.Kline{OpenTime:b.T,CloseTime:b.T+59999,Open:b.O,High:b.H,Low:b.L,Close:b.C,Volume:b.V})}
+ plans:=map[string]Plan{};for _,p:=range in.Plans{plans[fmt.Sprintf("%s/%d",p.ID,p.Version)]=p}
+ var out []map[string]any
+ for _,d:=range in.Decisions{p,ok:=plans[fmt.Sprintf("%s/%d",d.PlanID,d.Version)];if !ok{continue}
+  for _,s:=range p.Doc.Scenarios{if !wanted[fmt.Sprintf("%d/%s/%d",p.RowID,s.ID,d.ID)]{continue}
+   end:=sort.Search(len(bars),func(i int)bool{return bars[i].CloseTime>=d.Now});start:=end-kernel.AISVPBarCount;if start<0{start=0};tape:=bars[start:end]
+   scope:=kernel.VoidScopeOf(tape,time.UnixMilli(d.Now));atr:=kernel.StaleConfirmATR5m(scope.Bars)
+   levels:=[]kernel.ScoredLevel{{DetectedLevel:kernel.DetectedLevel{Price:s.Breakdown.Level,Label:"audited scenario level"}}}
+   state:=kernel.BreakdownContinueState(s,tape,p.Birth,d.Now)
+   voids:=kernel.ComputeVoidBreakdownLevels(levels,scope,d.Now);disp:=kernel.ComputeLevelDisplacements(levels,scope,d.Now)
+   verdict:="PASS";if err:=kernel.ValidateBreakdownContinueScenarios(&kernel.PlanDoc{Scenarios:[]kernel.PlanScenario{s}},scope,atr,tape[len(tape)-1].Close,d.Now);err!=nil{verdict=err.Error()}
+   out=append(out,map[string]any{"plan_row":p.RowID,"scenario":s.ID,"decision_id":d.ID,"snapshot_ms":d.Now,"scope_since_ms":scope.SinceMs,"state":state,"void_facts":kernel.RenderVoidBreakdownLevels(voids,1),"displacement_facts":kernel.RenderDisplacementLines(disp,atr),"displacement":disp,"validation":verdict})
+  }
+ }
+ target,e:=os.Create(os.Args[3]);if e!=nil{panic(e)};enc:=json.NewEncoder(target);enc.SetIndent("","  ");if e=enc.Encode(out);e!=nil{panic(e)}
+ fmt.Printf("recorded %d observations\n",len(out))
+}

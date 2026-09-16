@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"nofx/kernel"
 	"nofx/logger"
 	"nofx/store"
 
@@ -27,6 +28,8 @@ type CreateTraderRequest struct {
 	StrategyID          string  `json:"strategy_id"` // Strategy ID (new version)
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
+	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" (default) | "bar_close" (legacy); empty keeps existing
+	PositionMode        string  `json:"position_mode"` // Phase 3: "ai_watch" (default) | "bracket_only"; empty keeps default/existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`     // Pointer type, nil means use default value true
 	ShowInCompetition   *bool   `json:"show_in_competition"` // Pointer type, nil means use default value true
 	// The following fields are kept for backward compatibility, new version uses strategy config
@@ -48,6 +51,8 @@ type UpdateTraderRequest struct {
 	StrategyID          string  `json:"strategy_id"` // Strategy ID (new version)
 	InitialBalance      float64 `json:"initial_balance"`
 	ScanIntervalMinutes int     `json:"scan_interval_minutes"`
+	CadenceMode         string  `json:"cadence_mode"` // P10: "interval" | "bar_close"; empty keeps existing
+	PositionMode        string  `json:"position_mode"` // Phase 3: "ai_watch" | "bracket_only"; empty keeps existing
 	IsCrossMargin       *bool   `json:"is_cross_margin"`
 	ShowInCompetition   *bool   `json:"show_in_competition"`
 	// The following fields are kept for backward compatibility, new version uses strategy config
@@ -521,6 +526,8 @@ func (s *Server) handleCreateTrader(c *gin.Context) {
 		IsCrossMargin:        isCrossMargin,
 		ShowInCompetition:    showInCompetition,
 		ScanIntervalMinutes:  scanIntervalMinutes,
+		CadenceMode:          req.CadenceMode,  // P10 (store validates the enum)
+		PositionMode:         req.PositionMode, // Phase 3 (store validates the enum)
 		IsRunning:            false,
 	}
 
@@ -640,6 +647,18 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 	// Minimum lowered 3 → 1 (2026-06-09): any positive value is accepted.
 	logger.Infof("📊 Final scan_interval_minutes: %d", scanIntervalMinutes)
 
+	// P10 — cadence mode: explicit values only; empty keeps the existing mode.
+	cadenceMode := existingTrader.CadenceMode
+	if req.CadenceMode == "interval" || req.CadenceMode == "bar_close" {
+		cadenceMode = req.CadenceMode
+	}
+
+	// Phase 3 — position mode: explicit values only; empty keeps the existing mode.
+	positionMode := existingTrader.PositionMode
+	if req.PositionMode == "ai_watch" || req.PositionMode == "bracket_only" {
+		positionMode = req.PositionMode
+	}
+
 	// Set system prompt template
 	systemPromptTemplate := req.SystemPromptTemplate
 	if systemPromptTemplate == "" {
@@ -681,6 +700,8 @@ func (s *Server) handleUpdateTrader(c *gin.Context) {
 		IsCrossMargin:        isCrossMargin,
 		ShowInCompetition:    showInCompetition,
 		ScanIntervalMinutes:  scanIntervalMinutes,
+		CadenceMode:          cadenceMode,  // P10
+		PositionMode:         positionMode, // Phase 3
 		IsRunning:            existingTrader.IsRunning, // Keep original value
 	}
 
@@ -911,4 +932,96 @@ func (s *Server) handleStopTrader(c *gin.Context) {
 
 	logger.Infof("⏹  Trader %s stopped", trader.GetName())
 	c.JSON(http.StatusOK, gin.H{"message": "Trader stopped"})
+}
+
+// ── P2 (ledger-close 2026-08-19) — owner pause control (stop_until producer).
+// POST /traders/:id/pause  body: {"minutes":30} | {"until_ct":"HH:MM"} |
+// {"until":"session_end"} — exactly one. POST /traders/:id/resume clears it.
+// Semantics: NEW entries refused while paused; closes, EOD-flat, brackets and
+// the 60s monitor guards continue (see trader/auto_trader_pause.go).
+
+func (s *Server) handlePauseTrader(c *gin.Context) {
+	userID := c.GetString("user_id")
+	traderID := c.Param("id")
+	if _, err := s.store.Trader().GetFullConfig(userID, traderID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist or no access permission"})
+		return
+	}
+	tr, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist"})
+		return
+	}
+
+	var body struct {
+		Minutes int    `json:"minutes"`
+		UntilCT string `json:"until_ct"`
+		Until   string `json:"until"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body: " + err.Error()})
+		return
+	}
+
+	now := time.Now()
+	var until time.Time
+	switch {
+	case body.Minutes > 0:
+		until = now.Add(time.Duration(body.Minutes) * time.Minute)
+	case body.Until == "session_end":
+		end, ok := tr.SessionEndTime(now)
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "no active session to pause until (overnight/interim)"})
+			return
+		}
+		until = end
+	case body.UntilCT != "":
+		// "HH:MM" CT today; a time at/before now means tomorrow (wrap-safe).
+		// Parsed by hand — the TZ-guard forbids bare time layouts outside
+		// kernel/tz.go, deservedly. E7-v2: STRICT parse (Sscanf alone accepted
+		// trailing garbage like "12:34xyz") and the tomorrow-wrap reconstructs
+		// the wall-clock via time.Date day+1 — Add(24h) lands one wall hour off
+		// across a DST transition.
+		var hh, mm int
+		var tail string
+		n, err := fmt.Sscanf(body.UntilCT, "%d:%d%s", &hh, &mm, &tail)
+		if !(err != nil && n == 2) || tail != "" || hh < 0 || hh > 23 || mm < 0 || mm > 59 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "until_ct must be HH:MM (CT)"})
+			return
+		}
+		ct := now.In(kernel.CTLocation())
+		until = time.Date(ct.Year(), ct.Month(), ct.Day(), hh, mm, 0, 0, kernel.CTLocation())
+		if !until.After(now) {
+			until = time.Date(ct.Year(), ct.Month(), ct.Day()+1, hh, mm, 0, 0, kernel.CTLocation())
+		}
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "provide one of: minutes>0, until_ct:\"HH:MM\", until:\"session_end\""})
+		return
+	}
+
+	if err := tr.PauseEntriesUntil(until, "owner"); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "paused",
+		"pause_until":   until.Format(time.RFC3339),
+		"pause_until_ct": kernel.FormatCT(until),
+	})
+}
+
+func (s *Server) handleResumeTrader(c *gin.Context) {
+	userID := c.GetString("user_id")
+	traderID := c.Param("id")
+	if _, err := s.store.Trader().GetFullConfig(userID, traderID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist or no access permission"})
+		return
+	}
+	tr, err := s.traderManager.GetTrader(traderID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Trader does not exist"})
+		return
+	}
+	tr.ResumeEntries("owner")
+	c.JSON(http.StatusOK, gin.H{"message": "resumed"})
 }

@@ -17,7 +17,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -60,15 +63,41 @@ type TCPServer struct {
 	addr     string
 	listener net.Listener
 
+	// U1 wire-liveness (stale-bar dispatch 2026-08-19): every inbound frame
+	// bumps these; a 60s reporter line answers "feed or math" in one glance.
+	framesTotal     atomic.Int64
+	lastFrameUnixMs atomic.Int64
+	// T8 (2026-08-27) — bar_update frame-log sampler (INFO spam ate the
+	// journald cap in <1 day; the frame is DEBUG-sampled 1-in-N now).
+	frameLogN atomic.Int64
+
 	// Pending signals to flush on (re)connect (spec L4414).
 	pendingMu sync.Mutex
 	pending   []timedSignal
 
+	// E7 capability handshake (2026-08-30): the far-side AddOn's build id,
+	// reported on every heartbeat. Empty until the first heartbeat carries it.
+	// Frame types are gated on it (FarSideBuildE7) — an old AddOn that would
+	// mis-execute an unknown frame must never receive it (the 22:32 stop_entry
+	// test executed as MARKET on the pre-E7 AddOn).
+	farSideBuild atomic.Value // string
+
+	// F12 — the broker's working-order book, latest per account+symbol. Read by
+	// cutover leg 4 and the override guard; nil-safe because an older AddOn
+	// sends no snapshots at all and leg 4 must then say so out loud rather than
+	// silently falling back.
+	orderSnaps *OrderSnapshotCache
+	// orderSnapCB is the optional persistence hook (the store writes one row
+	// per snapshot). Optional so the provider package keeps no store import and
+	// the parse path stays testable without a database.
+	orderSnapCB func(OrderSnapshotPayload)
+
 	// Inbound fills — TCPTrader subscribes via Fills().
-	fillCh   chan FillPayload
-	closeCh  chan PositionClosePayload
-	rejectCh chan PositionCloseRejectedPayload
-	instrCh  chan InstrumentInfoPayload
+	fillCh     chan FillPayload
+	closeCh    chan PositionClosePayload
+	orderUpdCh chan OrderUpdatePayload
+	rejectCh   chan PositionCloseRejectedPayload
+	instrCh    chan InstrumentInfoPayload
 
 	// Latest NT8 price-feed status (from the feed_status frame). Empty until the
 	// first frame; consumers DEFAULT-ALLOW on empty (never false-halt at startup).
@@ -115,7 +144,20 @@ type TCPServer struct {
 	// (subscribed / unsubscribed / subscribe_error). "pending" until an ack
 	// arrives (a pre-P5.3 AddOn never acks → stays pending; bars still flow).
 	subStateMu sync.RWMutex
-	subStates  map[string]SymbolSubState
+	// ROLL WAVE — the last contract each symbol's ACK named, and observed rolls.
+	rollMu    sync.RWMutex
+	lastNamed map[string]string
+	rolls     map[string]rollEvent
+	subStates map[string]SymbolSubState
+
+	// HISTORY IMPORT (wave 101) — request-id-keyed streams for the
+	// bars_history_data / bars_history_error frames. Nothing here feeds the
+	// live bar ingest; the importer (trader/historical_import.go) is the ONLY
+	// consumer, and the server only fans frames out. Rows are written by the
+	// importer via store.ImportBars — never by this server.
+	histSubMu       sync.RWMutex
+	historyDataSubs map[string]chan BarsHistoryDataPayload
+	historyErrSubs  map[string]chan BarsHistoryErrorPayload
 
 	// Plan 4.11 — latest real account snapshot from the C# AddOn
 	// (account_balance frame). Replaces the $50k mock in
@@ -142,11 +184,12 @@ type TCPServer struct {
 	// contamination bug). Legacy EMPTY-symbol payloads route to the PRIMARY
 	// trading symbol. Re-subscribing a symbol CLOSES the prior channel, which
 	// terminates a dead (reloaded-away) trader instance's consumer goroutine.
-	subsMu     sync.Mutex
-	fillSubs   map[string]chan FillPayload
-	closeSubs  map[string]chan PositionClosePayload
-	rejectSubs map[string]chan PositionCloseRejectedPayload
-	instrSubs  map[string]chan InstrumentInfoPayload
+	subsMu       sync.Mutex
+	fillSubs     map[string]chan FillPayload
+	closeSubs    map[string]chan PositionClosePayload
+	rejectSubs   map[string]chan PositionCloseRejectedPayload
+	instrSubs    map[string]chan InstrumentInfoPayload
+	orderUpdSubs map[string]chan OrderUpdatePayload
 
 	// Connection state — single concurrent client (spec L4359).
 	connMu        sync.Mutex
@@ -201,6 +244,15 @@ const pendingOpsCap = 4096
 // exists, ALL production consumption goes through the router.
 func (s *TCPServer) ensureRouters() {
 	s.routerOnce.Do(func() {
+		// Map pointers must be stable before runRouters evaluates its dispatch
+		// arguments. Locking only inside dispatch was too late for lazy init.
+		s.subsMu.Lock()
+		s.fillSubs = make(map[string]chan FillPayload)
+		s.closeSubs = make(map[string]chan PositionClosePayload)
+		s.rejectSubs = make(map[string]chan PositionCloseRejectedPayload)
+		s.instrSubs = make(map[string]chan InstrumentInfoPayload)
+		s.orderUpdSubs = make(map[string]chan OrderUpdatePayload)
+		s.subsMu.Unlock()
 		ctx := s.runCtx
 		if ctx == nil {
 			ctx = context.Background()
@@ -224,6 +276,10 @@ func (s *TCPServer) runRouters(ctx context.Context) {
 			// instrument_info carries no account (spec cross-check) → every
 			// subscriber of the symbol gets it (both same-symbol traders).
 			broadcastToSymbol(s, s.instrSubs, p.Symbol, p, "instrument_info")
+		case p := <-s.orderUpdCh:
+			// PHASE 2 armed orders — order state changes route per (symbol,account)
+			// like fills, so each trader sees only its own working orders.
+			dispatchToOwner(s, s.orderUpdSubs, p.Symbol, p.Account, p, "order_update")
 		}
 	}
 }
@@ -332,6 +388,12 @@ func (s *TCPServer) SubscribeFillsFor(symbol, account string) <-chan FillPayload
 	return subscribeFor(s, &s.fillSubs, symbol, account)
 }
 
+// SubscribeOrderUpdatesFor returns the order-state stream for (symbol, account)
+// — PHASE 2 armed orders.
+func (s *TCPServer) SubscribeOrderUpdatesFor(symbol, account string) <-chan OrderUpdatePayload {
+	return subscribeFor(s, &s.orderUpdSubs, symbol, account)
+}
+
 // SubscribeClosesFor returns the position_close stream for (symbol, account).
 func (s *TCPServer) SubscribeClosesFor(symbol, account string) <-chan PositionClosePayload {
 	return subscribeFor(s, &s.closeSubs, symbol, account)
@@ -349,6 +411,65 @@ func (s *TCPServer) SubscribeInstrumentInfoFor(symbol, account string) <-chan In
 	return subscribeFor(s, &s.instrSubs, symbol, account)
 }
 
+// SubscribeBarsHistoryFor returns the data and error streams for one named-
+// contract pull, keyed by the caller's request id. HISTORY IMPORT (wave 101):
+// the importer installs a subscription BEFORE sending the request frame. Both
+// channels are buffered so the C# side's chunk stream never stalls the read
+// loop.
+func (s *TCPServer) SubscribeBarsHistoryFor(requestID string) (<-chan BarsHistoryDataPayload, <-chan BarsHistoryErrorPayload) {
+	s.ensureRouters()
+	key := strings.TrimSpace(requestID)
+	s.histSubMu.Lock()
+	defer s.histSubMu.Unlock()
+	if s.historyDataSubs == nil {
+		s.historyDataSubs = make(map[string]chan BarsHistoryDataPayload)
+		s.historyErrSubs = make(map[string]chan BarsHistoryErrorPayload)
+	}
+	if old, ok := s.historyDataSubs[key]; ok {
+		close(old)
+	}
+	if old, ok := s.historyErrSubs[key]; ok {
+		close(old)
+	}
+	dataCh := make(chan BarsHistoryDataPayload, 32)
+	errCh := make(chan BarsHistoryErrorPayload, 4)
+	s.historyDataSubs[key] = dataCh
+	s.historyErrSubs[key] = errCh
+	return dataCh, errCh
+}
+
+// UnsubscribeBarsHistoryFor removes one pull's channels (importer teardown).
+func (s *TCPServer) UnsubscribeBarsHistoryFor(requestID string) {
+	key := strings.TrimSpace(requestID)
+	s.histSubMu.Lock()
+	defer s.histSubMu.Unlock()
+	if ch, ok := s.historyDataSubs[key]; ok {
+		close(ch)
+		delete(s.historyDataSubs, key)
+	}
+	if ch, ok := s.historyErrSubs[key]; ok {
+		close(ch)
+		delete(s.historyErrSubs, key)
+	}
+}
+
+// SendBarsHistoryRequest asks the AddOn to pull one named contract's history
+// over [from, to). Immediate command: errors if no NT client is connected, so
+// the importer can state `unavailable` instead of hanging (three-state honesty).
+func (s *TCPServer) SendBarsHistoryRequest(payload BarsHistoryRequestPayload) error {
+	s.connMu.Lock()
+	c := s.conn
+	s.connMu.Unlock()
+	if c == nil {
+		return fmt.Errorf("ninjatrader/tcp: no NT client connected")
+	}
+	s.writeMu.Lock()
+	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	err := WriteFrame(c, FrameBarsHistoryRequest, payload)
+	s.writeMu.Unlock()
+	return err
+}
+
 // barIngestMsg is the internal envelope passed from the socket read loop
 // to the drain goroutine that writes into barCache. The historical flag
 // distinguishes the one-shot seed batch from streaming updates so the
@@ -360,11 +481,22 @@ type barIngestMsg struct {
 	bars       []Bar
 }
 
-// barIngestChannelBuffer caps the bar ingest channel. Sized so a brief
-// scheduler hiccup in the drain goroutine doesn't drop bar_updates on the
-// floor under normal load; a sustained backlog under pathological load
-// will drop oldest-first to keep the socket read responsive.
-const barIngestChannelBuffer = 256
+// barIngestChannelBuffer caps the bar ingest channel. FORENSICS HYGIENE
+// (2026-08-28): the 2026-08-27 17:00 CT Globex reopen flooded ~507 frames/s
+// and overran the old fixed 256 — 1399 drop-oldest evictions in ~4 minutes
+// (zero closes lost, but the margin was structurally thin). The cap is
+// INGEST_QUEUE_CAP. S-LIST CLOSER (2026-08-27): the default was raised
+// 1024 → 4096 after the 2026-08-27 21:42 flood touched 1024/1024 (1
+// intrabar drop); the live high-water mark stays surfaced in the 1-line/min
+// ingest summary (peak_depth).
+func ingestQueueCap() int {
+	if v := os.Getenv("INGEST_QUEUE_CAP"); v != "" {
+		if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 4096
+}
 
 // Plan 4.4 Stage 2 — default auto-subscribe parameters. The auto-subscribed set
 // is the CHART display set (the dashboard MNQ chart offers these timeframe
@@ -392,27 +524,54 @@ var (
 	defaultAutoBarsBack = 2000
 )
 
-// timedSignal pairs a signal payload with the wall-clock time SendSignal was
-// called, so the flush path can drop stale-on-reconnect entries.
+// timedSignal retains enqueue metadata across retries. Freshness is proved
+// exclusively by payload.Timestamp, never by the queue timestamp.
 type timedSignal struct {
 	payload   SignalPayload
 	timestamp time.Time
 }
 
-// NewTCPServer constructs a server bound to TCPListenAddr. The listener is
+// ListenAddr returns the NT8 bridge listen address: TCPListenAddr unless
+// NT_TCP_LISTEN_ADDR overrides it. The listener is a process-singleton, so a
+// SECOND backend on the same host (demo preview, sandbox, integration test)
+// could never create a NinjaTrader trader — "bind: address already in use"
+// failed trader creation, which then 404s every /api/plan/* call for it. The
+// override lets a second instance bind elsewhere; unset = byte-identical
+// behavior for the live bot.
+func ListenAddr() string {
+	if v := strings.TrimSpace(os.Getenv("NT_TCP_LISTEN_ADDR")); v != "" {
+		return v
+	}
+	return TCPListenAddr
+}
+
+// NewTCPServer constructs a server bound to ListenAddr(). The listener is
 // not opened until Start. Pass nil to use the default slog logger.
+
+// barUpdateLogSample — T8 (2026-08-27): the per-frame bar_update log sampler
+// (INFO spam ate the journald cap; DEBUG + 1-in-N now). Zero literals.
+func barUpdateLogSample() int64 {
+	if v := os.Getenv("BAR_UPDATE_LOG_SAMPLE"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 500
+}
+
 func NewTCPServer(logger *slog.Logger) *TCPServer {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return &TCPServer{
-		addr:          TCPListenAddr,
-		fillCh:        make(chan FillPayload, fillChannelBuffer),
-		closeCh:       make(chan PositionClosePayload, fillChannelBuffer),
+		addr:       ListenAddr(),
+		orderSnaps: NewOrderSnapshotCache(),
+		fillCh:     make(chan FillPayload, fillChannelBuffer),
+		orderUpdCh: make(chan OrderUpdatePayload, fillChannelBuffer), closeCh: make(chan PositionClosePayload, fillChannelBuffer),
 		rejectCh:      make(chan PositionCloseRejectedPayload, fillChannelBuffer),
 		instrCh:       make(chan InstrumentInfoPayload, fillChannelBuffer),
 		barCache:      NewBarCache(0),
-		barIngestCh:   make(chan barIngestMsg, barIngestChannelBuffer),
+		barIngestCh:   make(chan barIngestMsg, ingestQueueCap()),
 		acctBalances:  make(map[string]AccountBalancePayload),
 		acctPositions: make(map[string][]OpenPosition),
 		barsSubscribe: BarsSubscribePayload{
@@ -428,6 +587,13 @@ func NewTCPServer(logger *slog.Logger) *TCPServer {
 // relay (Stage 4). The cache is goroutine-safe; readers receive snapshot
 // copies via Get and never block writers for long.
 func (s *TCPServer) BarCache() *BarCache { return s.barCache }
+
+// FarSideBuildID returns the far-side AddOn's reported build id ("" until the
+// first heartbeat carries it). E7 capability handshake (2026-08-30).
+func (s *TCPServer) FarSideBuildID() string {
+	v, _ := s.farSideBuild.Load().(string)
+	return v
+}
 
 // AccountState returns the latest account_balance snapshot received from the
 // C# AddOn (Plan 4.11) and whether one has arrived yet. TCPTrader.GetBalance
@@ -891,8 +1057,55 @@ func (s *TCPServer) Start(ctx context.Context) error {
 	// Plan 4.4 Stage 2 — bar ingest drain goroutine, decouples cache
 	// writes from the socket read loop.
 	go s.drainBarIngest(cctx)
+	// U1 3.3 — wire-liveness line every 60s (not wg-tracked: exits with ctx).
+	go s.livenessReporter(cctx)
 	s.logger.Info("tcp_server: listening", "addr", s.addr)
 	return nil
+}
+
+// livenessReporter (U1 3.3, stale-bar dispatch 2026-08-19) emits one line per
+// minute answering "feed or math" at a glance: how long since ANY frame, the
+// frame rate, and each TF's newest bar age (open-stamp + interval = NT8's own
+// stamp of the bar). Silent only when the server has never seen a frame AND
+// holds no bars (pre-first-connect boot).
+func (s *TCPServer) livenessReporter(ctx context.Context) {
+	tick := time.NewTicker(60 * time.Second)
+	defer tick.Stop()
+	var prevTotal int64
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+			total := s.framesTotal.Load()
+			perMin := total - prevTotal
+			prevTotal = total
+			last := s.lastFrameUnixMs.Load()
+			nowMs := time.Now().UnixMilli()
+			lastAge := "never"
+			if last > 0 {
+				lastAge = fmt.Sprintf("%ds", (nowMs-last)/1000)
+			}
+			tfAges := ""
+			for _, tf := range []string{"1m", "5m", "15m"} {
+				bars := s.BarCache().Get("MNQ", tf)
+				if len(bars) == 0 {
+					tfAges += " " + tf + "=none"
+					continue
+				}
+				// Age of the newest bar's OPEN: 0..period while the forming bar
+				// is live — always non-negative and readable at a glance. (The
+				// close-stamp variant went negative for forming bars.)
+				age := (nowMs - bars[len(bars)-1].T) / 1000
+				tfAges += fmt.Sprintf(" %s=%ds", tf, age)
+			}
+			if last == 0 && tfAges == " 1m=none 5m=none 15m=none" {
+				continue // pre-first-connect boot — nothing to report yet
+			}
+			s.logger.Info("wire_liveness",
+				"last_frame_age", lastAge, "frames_per_min", perMin, "bar_age", strings.TrimSpace(tfAges))
+		}
+	}
 }
 
 // Stop cancels the accept loop, closes the listener, drops any active
@@ -913,13 +1126,18 @@ func (s *TCPServer) Stop() error {
 // client is currently connected, the signal is buffered and flushed on the
 // next successful accept (subject to TCPStaleSignalAge).
 func (s *TCPServer) SendSignal(payload SignalPayload) error {
+	if err := s.checkSignalAge(payload, time.Now()); err != nil {
+		return err
+	}
 	// A2 (G1) — stamp the monotonic seq + register (trader_id, account, signal_id)
 	// so the AddOn's echo on the paired ack/fill/close can be verified.
 	payload.Seq = s.assignSeqRegister(payload.TraderID, payload.Account, payload.SignalID)
 	s.pendingMu.Lock()
 	s.pending = append(s.pending, timedSignal{payload: payload, timestamp: time.Now()})
 	s.pendingMu.Unlock()
-	return s.flushPending()
+	err := s.flushPending()
+	recordResearchSignal(payload, err)
+	return err
 }
 
 // SendClosePosition tells the connected AddOn to flatten the symbol's position.
@@ -954,6 +1172,56 @@ func (s *TCPServer) SendMoveStop(payload MoveStopPayload) error {
 	s.writeMu.Lock()
 	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 	err := WriteFrame(c, FrameMoveStop, payload)
+	s.writeMu.Unlock()
+	return err
+}
+
+// SendCancelOrder (PHASE 2 armed orders) asks the AddOn to cancel a working
+// resting limit entry and/or its bracket legs. Immediate command.
+// SendPlaceProtectiveStop puts a standalone protective stop on the wire (D5).
+func (s *TCPServer) SendPlaceProtectiveStop(payload PlaceProtectiveStopPayload) error {
+	s.connMu.Lock()
+	c := s.conn
+	s.connMu.Unlock()
+	if c == nil {
+		return fmt.Errorf("ninjatrader/tcp: no NT client connected")
+	}
+	payload.Seq = s.assignSeqRegister(payload.TraderID, payload.Account, payload.SignalID)
+	s.writeMu.Lock()
+	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	err := WriteFrame(c, FramePlaceProtectiveStop, payload)
+	s.writeMu.Unlock()
+	return err
+}
+
+func (s *TCPServer) SendCancelOrder(payload CancelOrderPayload) error {
+	s.connMu.Lock()
+	c := s.conn
+	s.connMu.Unlock()
+	if c == nil {
+		return fmt.Errorf("ninjatrader/tcp: no NT client connected")
+	}
+	payload.Seq = s.assignSeqRegister(payload.TraderID, payload.Account, payload.SignalID)
+	s.writeMu.Lock()
+	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	err := WriteFrame(c, FrameCancelOrder, payload)
+	s.writeMu.Unlock()
+	return err
+}
+
+// SendModifyBracket (PHASE 2 armed orders) asks the AddOn to modify the live
+// bracket SL/TP in place (the safe Change pattern). Immediate command.
+func (s *TCPServer) SendModifyBracket(payload ModifyBracketPayload) error {
+	s.connMu.Lock()
+	c := s.conn
+	s.connMu.Unlock()
+	if c == nil {
+		return fmt.Errorf("ninjatrader/tcp: no NT client connected")
+	}
+	payload.Seq = s.assignSeqRegister(payload.TraderID, payload.Account, payload.SignalID)
+	s.writeMu.Lock()
+	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	err := WriteFrame(c, FrameModifyBracket, payload)
 	s.writeMu.Unlock()
 	return err
 }
@@ -1057,6 +1325,12 @@ func (s *TCPServer) SetStaleSignalAgeForTest(d time.Duration) {
 // constructor default in place.
 func (s *TCPServer) SetAddrForTest(addr string) { s.addr = addr }
 
+// ListenAddrForTest returns the bound listen address (valid after Start) so
+// in-process fixtures can dial the real accept loop and observe sent frames.
+func (s *TCPServer) ListenAddrForTest() net.Addr {
+	return s.listener.Addr()
+}
+
 // SeedPositionsForTest injects a per-account open-position snapshot without a wire
 // frame (mirrors the FramePositions receive path). Tests only; production is fed by
 // the C# AddOn's `positions` frames.
@@ -1152,7 +1426,136 @@ func (s *TCPServer) acceptLoop(ctx context.Context) {
 	}
 }
 
-// sendAutoBarsSubscribe emits the configured bars_subscribe frame(s) on a
+// ── BAR-TRUTH WAVE (2026-08-28) — deep backfill + three-way arbiter ────────
+// S-1 demanded an arbiter: NT8 truth (the deep replay frames) vs the kernel
+// cache vs the persisted bars table. The replay capture records count + FNV
+// hash per (symbol,tf) during a capture window; the API then diffs the three.
+
+type barTruthCapture struct {
+	mu      sync.Mutex
+	active  bool
+	batches map[string]BarTruthBatch
+}
+
+type BarTruthBatch struct {
+	Count  int    `json:"count"`
+	Hash   uint64 `json:"hash"` // FNV-1a over T,O,H,L,C,V
+	LastT  int64  `json:"last_t"`
+	Symbol string `json:"symbol"`
+	TF     string `json:"tf"`
+}
+
+// fnvAddBar folds one bar into an FNV-1a running hash (bit-exact over the
+// 8-byte fields) so two bar sets with identical content always hash equal.
+func fnvAddBar(h uint64, b Bar) uint64 {
+	if h == 0 {
+		h = 14695981039346656037
+	}
+	write := func(v float64) uint64 {
+		u := math.Float64bits(v)
+		for i := 0; i < 8; i++ {
+			h ^= (u >> (8 * i)) & 0xFF
+			h *= 1099511628211
+		}
+		return h
+	}
+	h = write(float64(b.T))
+	h = write(b.O)
+	h = write(b.H)
+	h = write(b.L)
+	h = write(b.C)
+	h = write(b.V)
+	return h
+}
+
+var truthCapture barTruthCapture
+
+func (s *TCPServer) beginBarTruthCapture(symbol, tf string) {
+	truthCapture.mu.Lock()
+	defer truthCapture.mu.Unlock()
+	truthCapture.active = true
+	truthCapture.batches = map[string]BarTruthBatch{}
+	_ = symbol
+	_ = tf
+}
+
+func (s *TCPServer) captureBarTruthReplay(symbol, tf string, bars []Bar) {
+	truthCapture.mu.Lock()
+	defer truthCapture.mu.Unlock()
+	if !truthCapture.active || len(bars) == 0 {
+		return
+	}
+	key := symbol + "|" + tf
+	b := truthCapture.batches[key]
+	b.Symbol, b.TF = symbol, tf
+	b.Count += len(bars)
+	for _, x := range bars {
+		b.Hash = fnvAddBar(b.Hash, x)
+		if x.T > b.LastT {
+			b.LastT = x.T
+		}
+	}
+	truthCapture.batches[key] = b
+}
+
+func (s *TCPServer) endBarTruthCapture() map[string]BarTruthBatch {
+	truthCapture.mu.Lock()
+	defer truthCapture.mu.Unlock()
+	truthCapture.active = false
+	out := truthCapture.batches
+	truthCapture.batches = nil
+	return out
+}
+
+// EndBarTruthCapture (exported) returns the captured replay batches and closes
+// the window. Empty when no capture was active.
+func (s *TCPServer) EndBarTruthCapture() map[string]BarTruthBatch {
+	return s.endBarTruthCapture()
+}
+
+// BarTruthDrops returns the BAR-TRUTH drop counters (ingest oldest/current/
+// historical + persist queue) for the E-proof drop-zero check.
+func (s *TCPServer) BarTruthDrops() (oldest, current, historical, persist int64) {
+	return ingestDropOld.Load(), ingestDropCur.Load(), ingestDropHist.Load(), persistDropped.Load()
+}
+
+// FNVBarSet folds a bar set into (count, FNV-1a hash) for the three-way diff.
+func FNVBarSet(bars []Bar) (int, uint64) {
+	h := uint64(14695981039346656037)
+	for _, b := range bars {
+		h = fnvAddBar(h, b)
+	}
+	return len(bars), h
+}
+
+// RequestDeepBarsBackfill sends a one-shot bars_subscribe on the LIVE
+// connection with an enlarged BarsBack for one symbol/timeframe so the AddOn
+// replays deep history (the auto-subscribe state is untouched — the next
+// reconnect restores the standard back).
+func (s *TCPServer) RequestDeepBarsBackfill(symbol, timeframe string, barsBack int) error {
+	if barsBack <= 0 {
+		barsBack = 8640 // 6 days of 1m — covers the 08-24+ retention window
+	}
+	s.beginBarTruthCapture(symbol, timeframe)
+	s.connMu.Lock()
+	c := s.conn
+	s.connMu.Unlock()
+	if c == nil {
+		return fmt.Errorf("no live NT8 connection")
+	}
+	payload := BarsSubscribePayload{Symbol: symbol, Timeframes: []string{timeframe}, BarsBack: barsBack}
+	s.writeMu.Lock()
+	_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second)) // the conn's last deadline may be stale/expired
+	err := WriteFrame(c, FrameBarsSubscribe, payload)
+	s.writeMu.Unlock()
+	if err != nil {
+		return fmt.Errorf("bars_subscribe write: %w", err)
+	}
+	s.logger.Info("tcp_server: sent DEEP bars_subscribe (bar-truth arbiter)",
+		"symbol", symbol, "timeframe", timeframe, "bars_back", barsBack)
+	return nil
+}
+
 // freshly-accepted connection — the primary symbol first, then one frame per
 // extra root (P5.1). Failure here is non-fatal — the C# side will simply not
 // start streaming bars; the next reconnect retries. We log a warn so the
@@ -1198,6 +1601,21 @@ func (s *TCPServer) drainBarIngest(ctx context.Context) {
 			} else {
 				s.barCache.Upsert(msg.symbol, msg.timeframe, msg.bars)
 			}
+			// Bar persistence (2026-08-26) — fan-out AFTER the cache write, in
+			// its own goroutine: a slow/failing DB must never stall the drain
+			// (backpressure invariant) or the socket read loop.
+			//
+			// Live bar_update frames carry ONLY the forming bar (NT8 does not
+			// re-emit the just-closed bar at the boundary), so live candidates
+			// come from the cache tail — the cache always holds the final
+			// closed bars. Historical replays persist from the frame batch.
+			var persistBars []Bar
+			if msg.historical {
+				persistBars = ClosedBarsOnly(msg.bars, msg.timeframe, time.Now().UnixMilli())
+			} else {
+				persistBars = ClosedCacheTail(s.barCache.Get, msg.symbol, msg.timeframe, time.Now().UnixMilli(), 8)
+			}
+			fanOutBarPersist(s.logger.Warn, msg.historical, msg.symbol, msg.timeframe, persistBars)
 		}
 	}
 }
@@ -1212,6 +1630,32 @@ func (s *TCPServer) drainBarIngest(ctx context.Context) {
 // This path MUST NOT block the socket read loop. Blocking the read
 // loop stalls heartbeat receive → 60s ack timeout → server closes the
 // conn → spurious reconnect cycle.
+// ingestPeakDepth is the high-water mark of the ingest channel (session-
+// scoped: reset at the 17:00 CT CME session roll). ingestPeakDay is the
+// session-day the peak belongs to.
+var (
+	ingestPeakDepth atomic.Int64
+	ingestPeakDay   atomic.Int64 // yyyymmdd at last reset
+)
+
+// sampleIngestDepth updates the peak-depth high-water mark and resets it at
+// the CME 17:00 CT session roll (per-session peak, FORENSICS HYGIENE).
+func sampleIngestDepth(depth int) {
+	now := time.Now()
+	day := int64(now.Year()*10000 + int(now.Month())*100 + now.Day())
+	if now.Hour() == 17 {
+		if ingestPeakDay.CompareAndSwap(ingestPeakDay.Load(), day) && ingestPeakDay.Load() == day {
+			ingestPeakDepth.Store(0)
+		}
+	}
+	for {
+		cur := ingestPeakDepth.Load()
+		if int64(depth) <= cur || ingestPeakDepth.CompareAndSwap(cur, int64(depth)) {
+			return
+		}
+	}
+}
+
 func (s *TCPServer) enqueueBarUpdate(symbol, timeframe string, bars []Bar) {
 	// Stamp the live-feed freshness signal (IsFeedConnected uses it to override a
 	// stale edge-triggered feed_status). Cheap atomic store on the hot path.
@@ -1219,21 +1663,27 @@ func (s *TCPServer) enqueueBarUpdate(symbol, timeframe string, bars []Bar) {
 	msg := barIngestMsg{historical: false, symbol: symbol, timeframe: timeframe, bars: bars}
 	select {
 	case s.barIngestCh <- msg:
+		sampleIngestDepth(len(s.barIngestCh))
+		// S-LIST CLOSER: the 1-line/min summary also fires on the CLEAN path
+		// (rate-limited inside), so peak_depth is observable after a reopen
+		// even when zero drops occurred — the E-proof line for FIX3.
+		ingestDropSummary()
 		return
 	default:
 	}
-	// Channel full — drop oldest, log once, retry.
+	// Channel full — drop oldest (counted, summarized 1-line/min), retry.
+	sampleIngestDepth(len(s.barIngestCh))
 	select {
 	case <-s.barIngestCh:
-		s.logger.Warn("tcp_server: bar ingest backpressure — dropped oldest update",
-			"symbol", symbol, "timeframe", timeframe)
+		ingestDropOld.Add(1)
+		ingestDropSummary()
 	default:
 	}
 	select {
 	case s.barIngestCh <- msg:
 	default:
-		s.logger.Warn("tcp_server: bar ingest backpressure — dropping current update",
-			"symbol", symbol, "timeframe", timeframe)
+		ingestDropCur.Add(1)
+		ingestDropSummary()
 	}
 }
 
@@ -1250,12 +1700,13 @@ func (s *TCPServer) enqueueBarHistorical(symbol, timeframe string, bars []Bar) {
 	case s.barIngestCh <- msg:
 		return
 	case <-time.After(2 * time.Second):
-		s.logger.Warn("tcp_server: bar ingest backpressure — dropped historical (drain stuck)",
-			"symbol", symbol, "timeframe", timeframe, "bars", len(bars))
+		ingestDropHist.Add(1)
+		ingestDropSummary()
 	}
 }
 
 func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
+	researchWire := newResearchWire()
 	defer s.wg.Done()
 	defer s.closeConn()
 
@@ -1294,6 +1745,11 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 		// by the peer). The watcher provides the shutdown-responsiveness
 		// the old 2s polling deadline used to.
 		env, err := ReadFrame(c)
+		if err == nil {
+			researchWire.observe(env.Type, env.Payload)
+			s.framesTotal.Add(1)
+			s.lastFrameUnixMs.Store(time.Now().UnixMilli())
+		}
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) {
 				s.logger.Info("tcp_server: client disconnected")
@@ -1307,7 +1763,19 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			return
 		}
 
-		s.logger.Info("tcp_server: received frame", "type", env.Type)
+		// T8 (2026-08-27) — per-frame INFO spam (7.5M bar_update lines/day)
+		// consumed the journald 2G cap in <24h, destroying forensics. bar_update
+		// now logs at DEBUG, sampled 1-in-N (BAR_UPDATE_LOG_SAMPLE, default 500
+		// ≈ one line per ~2 min at 4 bars/s); every other frame type keeps its
+		// unconditional INFO.
+		if env.Type == FrameBarUpdate {
+			n := s.frameLogN.Add(1)
+			if n%barUpdateLogSample() == 0 {
+				s.logger.Debug("tcp_server: received frame (sampled)", "type", env.Type, "sample_every", barUpdateLogSample())
+			}
+		} else {
+			s.logger.Info("tcp_server: received frame", "type", env.Type)
+		}
 
 		// P5.2 — legacy detection: a data frame before any hello means a
 		// pre-P5.2 AddOn. Tolerated (warn once per connection) so the lockstep
@@ -1338,8 +1806,16 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				return // closes the connection via the deferred cleanup
 			}
 			helloSeen = true
+			// F12 — the handshake carries build_id, so the running DLL is
+			// identifiable from the FIRST frame instead of only after a
+			// heartbeat or a snapshot.
+			if p.BuildID != "" {
+				if prev, _ := s.farSideBuild.Load().(string); prev != p.BuildID {
+					s.farSideBuild.Store(p.BuildID)
+				}
+			}
 			s.logger.Info("tcp_server: hello handshake OK",
-				"protocol_version", p.ProtocolVersion, "source", p.Source)
+				"protocol_version", p.ProtocolVersion, "source", p.Source, "build_id", p.BuildID)
 			s.writeMu.Lock()
 			_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			err := WriteFrame(c, FrameHello, HelloPayload{ProtocolVersion: ProtocolVersion, Source: "nofx-go"})
@@ -1354,10 +1830,11 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			if err := json.Unmarshal(env.Payload, &fill); err != nil {
 				s.logger.Warn("tcp_server: bad fill payload", "err", err)
 				continue
-			}
-			// A2 (G1) — verify the echoed identity against the pending op. A mismatch
+			} // A2 (G1) — verify the echoed identity against the pending op. A mismatch
 			// (forged/cross-wired fill) is NOT processed; the owning trader is frozen.
-			if !s.verifyInbound("fill", fill.Seq, fill.TraderID, fill.Account, fill.SignalID) {
+			// W3 — pass the frame status: a rejected fill may echo account "" (the C#
+			// guard-reject path); the account leg alone is then tolerated.
+			if !s.verifyInbound("fill", fill.Seq, fill.TraderID, fill.Account, fill.SignalID, fill.Status) {
 				continue
 			}
 			// Retire ONLY a rejected fill (terminal — no position opened). A filled
@@ -1372,6 +1849,45 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				s.logger.Warn("tcp_server: fill channel full, dropping", "signal_id", fill.SignalID)
 			}
 
+		case FrameOrderUpdate:
+			// PHASE 2 armed orders — informational state-change frame; routes
+			// to per-(symbol,account) subscribers like fills. No strict echo
+			// verify (advisory event; the terminal fill/close frames keep it).
+			var oup OrderUpdatePayload
+			if err := json.Unmarshal(env.Payload, &oup); err != nil {
+				s.logger.Warn("tcp_server: bad order_update payload", "err", err)
+				continue
+			}
+			select {
+			case s.orderUpdCh <- oup:
+			default:
+				s.logger.Warn("tcp_server: order_update channel full, dropping", "signal_id", oup.SignalID)
+			}
+
+		case FrameOrderSnapshot:
+			// F12 — the BROKER's book. A malformed frame is logged and dropped
+			// (A10): the previous snapshot stays, and leg 4 will age it out
+			// rather than trusting a half-parsed one.
+			p, perr := ParseOrderSnapshot(env.Payload)
+			if perr != nil {
+				s.logger.Warn("tcp_server: bad order_snapshot payload", "err", perr)
+				continue
+			}
+			if s.orderSnaps != nil {
+				s.orderSnaps.PutAt(p, time.Now())
+			}
+			// The snapshot's build_id feeds the SAME far-side field the E7
+			// heartbeat handshake owns — one received value, one source.
+			if p.BuildID != "" {
+				if prev, _ := s.farSideBuild.Load().(string); prev != p.BuildID {
+					s.farSideBuild.Store(p.BuildID)
+					s.logger.Info("tcp_server: far-side AddOn build_id=" + p.BuildID + " (from order_snapshot)")
+				}
+			}
+			if s.orderSnapCB != nil {
+				s.orderSnapCB(p)
+			}
+
 		case FrameAck:
 			s.connMu.Lock()
 			s.lastAckTime = time.Now()
@@ -1380,10 +1896,18 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			// heartbeat ack has seq==0 → tolerated). Non-terminal → do not retire.
 			var ack AckPayload
 			if err := json.Unmarshal(env.Payload, &ack); err == nil && ack.Seq != 0 {
-				_ = s.verifyInbound("ack", ack.Seq, ack.TraderID, ack.Account, ack.SignalID)
+				_ = s.verifyInbound("ack", ack.Seq, ack.TraderID, ack.Account, ack.SignalID, "")
 			}
 
 		case FrameHeartbeat:
+			// E7 capability handshake — the AddOn's build id (see farSideBuild).
+			var hb HeartbeatPayload
+			if err := json.Unmarshal(env.Payload, &hb); err == nil && hb.BuildID != "" {
+				if prev, _ := s.farSideBuild.Load().(string); prev != hb.BuildID {
+					s.farSideBuild.Store(hb.BuildID)
+					s.logger.Info("tcp_server: far-side AddOn build_id=" + hb.BuildID)
+				}
+			}
 			// Respond to peer heartbeat with an ack (spec L4410). Set our
 			// own write deadline — Go's net.Conn deadlines are PERSISTENT
 			// until reset, so without this the ack inherits whatever
@@ -1412,8 +1936,11 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				s.logger.Warn("tcp_server: bad subscribed payload", "err", err)
 				continue
 			}
-			s.setSubState(p.Symbol, "subscribed", p.ResolvedContract, "")
 			s.logger.Info("tcp_server: subscription ACK", "symbol", p.Symbol, "contract", p.ResolvedContract)
+			// ROLL WAVE — this ACK is the ONE frame that names the contract.
+			// observeContract records the subscription state AND detects a
+			// roll (a different name than last time → purge, record, notify).
+			s.observeContract(p.Symbol, p.ResolvedContract, time.Now())
 
 		case FrameUnsubscribed:
 			var p UnsubscribedPayload
@@ -1451,6 +1978,48 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				continue
 			}
 			s.enqueueBarHistorical(p.Symbol, p.Timeframe, p.Bars)
+
+		case FrameBarsHistoryData:
+			// HISTORY IMPORT (wave 101) — fan one chunk out to the importer
+			// that owns the request id. No live-bar path reads these frames.
+			var p BarsHistoryDataPayload
+			if err := json.Unmarshal(env.Payload, &p); err != nil {
+				s.logger.Warn("tcp_server: bad bars_history_data payload", "err", err)
+				continue
+			}
+			s.histSubMu.RLock()
+			ch, ok := s.historyDataSubs[strings.TrimSpace(p.RequestID)]
+			s.histSubMu.RUnlock()
+			if !ok {
+				s.logger.Warn("tcp_server: bars_history_data for unknown request id — dropped",
+					"request_id", p.RequestID, "contract", p.Contract, "bars", len(p.Bars))
+				continue
+			}
+			select {
+			case ch <- p:
+			default:
+				s.logger.Warn("tcp_server: bars_history_data channel full — chunk dropped (importer too slow)",
+					"request_id", p.RequestID, "contract", p.Contract)
+			}
+
+		case FrameBarsHistoryError:
+			var p BarsHistoryErrorPayload
+			if err := json.Unmarshal(env.Payload, &p); err != nil {
+				s.logger.Warn("tcp_server: bad bars_history_error payload", "err", err)
+				continue
+			}
+			s.histSubMu.RLock()
+			ch, ok := s.historyErrSubs[strings.TrimSpace(p.RequestID)]
+			s.histSubMu.RUnlock()
+			if !ok {
+				s.logger.Warn("tcp_server: bars_history_error for unknown request id — dropped",
+					"request_id", p.RequestID, "contract", p.Contract, "reason", p.Reason)
+				continue
+			}
+			select {
+			case ch <- p:
+			default:
+			}
 
 		case FrameBarUpdate:
 			// Plan 4.4 Stage 2 — streaming updates. The bars array may
@@ -1543,7 +2112,7 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			}
 			// A2 (G1) — verify the echoed identity; a mismatch freezes the trader and
 			// the close is NOT recorded (never record a close for the wrong originator).
-			if !s.verifyInbound("position_close", p.Seq, p.TraderID, p.Account, p.SignalID) {
+			if !s.verifyInbound("position_close", p.Seq, p.TraderID, p.Account, p.SignalID, "") {
 				continue
 			}
 			s.retirePending(p.Seq, p.SignalID)
@@ -1584,7 +2153,7 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			// A2 (G1) — verify the echoed identity before alarming on the reject. Do
 			// NOT retire: a rejected close means the position is STILL OPEN, so the
 			// entry op stays pending for the eventual real position_close.
-			if !s.verifyInbound("position_close_rejected", p.Seq, p.TraderID, p.Account, p.SignalID) {
+			if !s.verifyInbound("position_close_rejected", p.Seq, p.TraderID, p.Account, p.SignalID, "") {
 				continue
 			}
 			select {
@@ -1694,6 +2263,22 @@ func (s *TCPServer) handleAccountSelect(p AccountSelectPayload) {
 	s.logger.Info("tcp_server: account selected", "account", p.Account)
 }
 
+// checkSignalAge enforces h1's 60s payload-age ceiling on our side. Row and
+// queue timestamps cannot prove freshness. Missing/malformed clocks are refused.
+func (s *TCPServer) checkSignalAge(sig SignalPayload, now time.Time) error {
+	created, err := time.Parse(time.RFC3339Nano, sig.Timestamp)
+	if err != nil {
+		s.logger.Warn("tcp_server: refusing signal: payload age unavailable", "signal_id", sig.SignalID, "timestamp", sig.Timestamp)
+		return fmt.Errorf("signal %s refused: payload age unavailable (invalid timestamp)", sig.SignalID)
+	}
+	age := now.Sub(created)
+	if age > s.staleAge() || age < 0 {
+		s.logger.Warn("tcp_server: refusing stale/future signal", "signal_id", sig.SignalID, "payload_age_ms", age.Milliseconds(), "threshold_ms", s.staleAge().Milliseconds())
+		return fmt.Errorf("signal %s refused: payload age %s outside [0,%s]", sig.SignalID, age, s.staleAge())
+	}
+	return nil
+}
+
 // flushPending writes any non-stale queued signals to the connected client.
 // No-op if disconnected. Stale entries (>TCPStaleSignalAge) are dropped.
 func (s *TCPServer) flushPending() error {
@@ -1704,35 +2289,32 @@ func (s *TCPServer) flushPending() error {
 		return nil
 	}
 
-	cutoff := s.staleAge()
-	now := time.Now()
-
 	s.pendingMu.Lock()
-	kept := s.pending[:0]
-	toSend := make([]SignalPayload, 0, len(s.pending))
-	for _, ts := range s.pending {
-		if now.Sub(ts.timestamp) > cutoff {
-			s.logger.Warn("tcp_server: dropping stale signal", "signal_id", ts.payload.SignalID, "age", now.Sub(ts.timestamp))
-			continue
-		}
-		toSend = append(toSend, ts.payload)
-		_ = kept
-	}
-	// Drain pending: anything not stale is being sent now; anything stale was logged + dropped.
+	toSend := append([]timedSignal(nil), s.pending...)
 	s.pending = s.pending[:0]
 	s.pendingMu.Unlock()
 
-	for _, sig := range toSend {
+	for i, queued := range toSend {
+		sig := queued.payload
 		s.writeMu.Lock()
+		// Check after waiting for the writer, using the command's original
+		// timestamp. Neither enqueue nor retry is allowed to renew its lease.
+		if err := s.checkSignalAge(sig, time.Now()); err != nil {
+			s.writeMu.Unlock()
+			continue
+		}
 		_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		err := WriteFrame(c, FrameSignal, sig)
 		s.writeMu.Unlock()
 		if err != nil {
-			// Re-queue the un-sent signals (including this one) for next flush.
+			// W2 (SUNDAY-SHIELD) — re-queue this signal AND the remaining
+			// unsent tail. The old code re-queued only the current one and
+			// DROPPED every later queued signal on a mid-flush conn death —
+			// a reconnect right after could lose armed entries silently.
 			s.pendingMu.Lock()
-			s.pending = append(s.pending, timedSignal{payload: sig, timestamp: now})
+			s.pending = append(s.pending, toSend[i:]...)
 			s.pendingMu.Unlock()
-			s.logger.Warn("tcp_server: flush signal failed", "err", err, "signal_id", sig.SignalID)
+			s.logger.Warn("tcp_server: flush signal failed", "err", err, "signal_id", sig.SignalID, "requeued", len(toSend)-i)
 			s.closeConn()
 			return err
 		}

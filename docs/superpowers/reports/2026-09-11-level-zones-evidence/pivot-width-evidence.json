@@ -1,0 +1,35 @@
+{
+  "basis": "Store rows read during audit, matched to archived swing price and confirmation close with existing k=2. ATR5m from archived planner input; ATR15m from its IndicatorsBlock (four decimals). This supplements missing output-only wick metadata; it is not a claim those fields were serialized in the old raw detector JSON.",
+  "rows": [
+    {
+      "candidate_row": 23094164,
+      "symbol": "MNQ",
+      "tf": "5m",
+      "atr": 42.11359506516323,
+      "bar": {
+        "open_time_ms": 1789134900000,
+        "open": 29426.25,
+        "high": 29475.0,
+        "low": 29415.25,
+        "close": 29472.0,
+        "contract": "MNQ 09-26",
+        "source": "live"
+      }
+    },
+    {
+      "candidate_row": 23094168,
+      "symbol": "MNQ",
+      "tf": "15m",
+      "atr": 65.0852,
+      "bar": {
+        "open_time_ms": 1789134300000,
+        "open": 29434.0,
+        "high": 29475.0,
+        "low": 29383.25,
+        "close": 29472.0,
+        "contract": "MNQ 09-26",
+        "source": "live"
+      }
+    }
+  ]
+}

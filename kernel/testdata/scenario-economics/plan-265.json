@@ -1,0 +1,294 @@
+{
+  "reasoning": "bias-tree: close > PDH (29683.75) → branch 1 bull-continuation, trimmed to MEDIUM by branch 5 premium (29687 beyond dealing range 29531.50–29664.33; longs only via discount pullbacks, shorts above the mark). Tape: ONL 29521.75 swept at 18:30, +200 impulse printed ONH 29721.25, 15m CHoCH-up 21:30; now digesting 29686–29693 under the 29708 4h OB. Both daily sides swept and a full ATR already spent — late ASIA argues two-way at the top, not expansion. Plan: armed pullback-longs at VWAP+1σ 29671.42 and SWG-H·15m 29664.50 (reject/touch — VOID-reclaimed levels used as fades only, no waterfall), an armed first-touch reject short of ONH 29721.25 (premium fade — touch only), and an armed sweep_reclaim short of ONH (premium draw fade — close-back below required, never the wick alone). No fvg_entry: FRESH FVGs empty.",
+  "bias": {
+    "direction": "long",
+    "conviction": "medium",
+    "flip_condition": "A 5m close below 29671.42 (VWAP+1σ) flips the working bias to short mean-reversion"
+  },
+  "levels": [
+    {
+      "price": 29750.62,
+      "label": "OB(bear)·1h",
+      "grade": "C",
+      "instruction": "HTF confluence — breakout target only",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29724.57,
+      "label": "VWAP+2σ",
+      "grade": "A",
+      "instruction": "fade on reject",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29721.25,
+      "label": "ONH",
+      "grade": "A",
+      "instruction": "break or sweep-reclaim decision",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29715.75,
+      "label": "OB(bull)·1h",
+      "grade": "A",
+      "instruction": "target only",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29708.25,
+      "label": "OB(bear)·4h",
+      "grade": "A",
+      "instruction": "first-touch fade only",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29671.42,
+      "label": "VWAP+1σ",
+      "grade": "A",
+      "instruction": "long on reject",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29664.5,
+      "label": "SWG-H·15m",
+      "grade": "A",
+      "instruction": "long on reject",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29646,
+      "label": "OR-H",
+      "grade": "A",
+      "instruction": "watch — losing it kills longs",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29583.34,
+      "label": "POC",
+      "grade": "A",
+      "instruction": "magnet target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29521.75,
+      "label": "ONL",
+      "grade": "C",
+      "instruction": "target only",
+      "machine_grade": "C"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Pullback to VWAP+1σ 29671.42 magnet — touch and hold = long back toward ONH",
+      "condition": "reject",
+      "direction": "long",
+      "target_chain": [
+        29708.25,
+        29715.75,
+        29721.25
+      ],
+      "invalid": "5m close below 29664.50 (SWG-H·15m) kills the setup",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29671.42,
+        "side": "above"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29671.42,
+        "stop": 29647,
+        "target": 29721.25,
+        "wait_confirm": true
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "Deeper pullback to reclaimed SWG-H·15m 29664.50 — first-touch reject = long",
+      "condition": "reject",
+      "direction": "long",
+      "target_chain": [
+        29671.42,
+        29708.25,
+        29721.25
+      ],
+      "invalid": "5m close below 29646.00 (OR-H) kills the setup",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29664.5,
+        "side": "above"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29664.5,
+        "stop": 29640,
+        "target": 29721.25,
+        "wait_confirm": true
+      }
+    },
+    {
+      "id": "S3",
+      "trigger": "First touch of ONH 29721.25 — rejection = short back toward the range",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29708.25,
+        29671.42,
+        29664.5
+      ],
+      "invalid": "5m close above 29724.57 (VWAP+2σ) voids the short",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29721.25,
+        "side": "below"
+      },
+      "quality": "C",
+      "arm": {
+        "enabled": true,
+        "entry": 29721.25,
+        "stop": 29746.5,
+        "target": 29664.5,
+        "wait_confirm": true
+      }
+    },
+    {
+      "id": "S4",
+      "trigger": "Sweep of ONH 29721.25 toward 29722.62–29724.57 that fails and closes back below 29721.25 on 5m",
+      "condition": "sweep_reclaim",
+      "direction": "short",
+      "target_chain": [
+        29708.25,
+        29671.42,
+        29664.5
+      ],
+      "invalid": "5m close above 29724.57 (VWAP+2σ) voids the short",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29721.25,
+        "side": "below"
+      },
+      "quality": "B",
+      "confirm2": {
+        "rule": "1x5m_close",
+        "ref_price": 29721.25,
+        "side": "below"
+      },
+      "arm": {
+        "enabled": true,
+        "entry": 29721.25,
+        "stop": 29746.5,
+        "target": 29664.5,
+        "wait_confirm": true,
+        "legs": [
+          {
+            "entry": 29721.25,
+            "stop": 29746.5,
+            "target": 29664.5,
+            "size": 1,
+            "rule": "touch"
+          },
+          {
+            "entry": 29721.25,
+            "stop": 29746.5,
+            "target": 29664.5,
+            "size": 1,
+            "wait_confirm": true,
+            "rule": "1x5m_close"
+          }
+        ]
+      }
+    }
+  ],
+  "no_trade": [
+    "Stand aside from new longs after two consecutive failed ONH attempts (5m close back below 29721.25 each time)",
+    "If both S1 and S2 pullback-long arms are stopped, no re-entry longs this session"
+  ],
+  "death_condition": "Two 5m closes below 29664.50 (SWG-H·15m) invalidate the whole plan",
+  "day_type": "trend",
+  "death": {
+    "price": 29664.5,
+    "side": "below",
+    "rule": "2x5m"
+  },
+  "flip": {
+    "price": 29671.42,
+    "side": "below",
+    "rule": "5m_close",
+    "flip_to": "short"
+  },
+  "bias_label": "bias: AI long · tree neutral · regime up",
+  "no_trade_windows": [
+    {
+      "start_min": 1020,
+      "end_min": 1025,
+      "kind": "first_n",
+      "label": "first 5m after the ASIA open (17:00–17:05 CT)",
+      "source": "code-constant"
+    },
+    {
+      "start_min": 720,
+      "end_min": 810,
+      "kind": "lunch",
+      "label": "lunch 12:00–13:30 CT",
+      "source": "code-constant"
+    },
+    {
+      "start_min": 525,
+      "end_min": 555,
+      "kind": "t1",
+      "label": "🔴 ISM Manufacturing PMI (static fallback) 09:00 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 525,
+      "end_min": 555,
+      "kind": "t1",
+      "label": "🔴 ISM Services PMI (static fallback) 09:00 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 435,
+      "end_min": 465,
+      "kind": "t1",
+      "label": "🔴 Non-Farm Payrolls (NFP) (static fallback) 07:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 435,
+      "end_min": 465,
+      "kind": "t1",
+      "label": "🔴 PPI m/m (static fallback) 07:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 435,
+      "end_min": 465,
+      "kind": "t1",
+      "label": "🔴 CPI m/m (static fallback) 07:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 435,
+      "end_min": 465,
+      "kind": "t1",
+      "label": "🔴 Retail Sales m/m (static fallback) 07:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 765,
+      "end_min": 795,
+      "kind": "t1",
+      "label": "🔴 FOMC Statement (static fallback) 13:00 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 795,
+      "end_min": 825,
+      "kind": "t1",
+      "label": "🔴 FOMC Press Conference (static fallback) 13:30 CT ±15m — HARD no-trade (red news)",
+      "source": "calendar"
+    }
+  ]
+}

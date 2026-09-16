@@ -103,7 +103,7 @@ func (m *MockTrader) GetOpenOrders(symbol string) ([]types.OpenOrder, error) {
 func TestTraderGetBalanceReturnsErrorBeforeReceived(t *testing.T) {
 	mockTrader := &MockTrader{
 		balanceReady: false, // Simulate no balance yet
-		positions:   []map[string]interface{}{},
+		positions:    []map[string]interface{}{},
 	}
 
 	balance, err := mockTrader.GetBalance()
@@ -147,7 +147,7 @@ func TestTraderGetBalanceSucceedsWhenReady(t *testing.T) {
 func TestDeferUntilBalanceTransition(t *testing.T) {
 	mockTrader := &MockTrader{
 		balanceReady: false, // Start with no balance
-		positions:   []map[string]interface{}{},
+		positions:    []map[string]interface{}{},
 	}
 
 	// First call: no balance available (simulates first decision cycle)

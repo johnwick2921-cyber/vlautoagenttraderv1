@@ -53,6 +53,17 @@ type SignalPayload struct {
 	// acted for the originator. omitempty → a pre-v3 wire stays byte-identical.
 	TraderID string `json:"trader_id,omitempty"`
 	Seq      uint64 `json:"seq,omitempty"`
+	// PHASE 2 armed orders (additive, back-compat): OrderType "market" (default)
+	// | "limit" + LimitPrice for RESTING limit entries. A pre-Phase-2 AddOn
+	// ignores unknown fields → market, byte-identical to today.
+	// E7 (entry-mechanics 2026-08-30, additive): OrderType "stop_entry" +
+	// StopPrice for STOP-MARKET entries (breakout-retest fallback). A
+	// pre-E7 AddOn ignores the new fields and would place a MARKET order —
+	// the Go side therefore NEVER sends stop_entry frames unless the
+	// STOP_ENTRY_SEAM is ON (owner-enabled, proven far-side frames first).
+	OrderType  string  `json:"order_type,omitempty"`
+	LimitPrice float64 `json:"limit_price,omitempty"`
+	StopPrice  float64 `json:"stop_price,omitempty"`
 }
 
 // FillPayload is the C#-AddOn → Go-server fill frame per spec L4398-4406.
@@ -60,6 +71,7 @@ type SignalPayload struct {
 // attributable. Empty = legacy AddOn (pre-P5.2) → consumers treat it as the
 // primary trading symbol (back-compat; new field is additive JSON).
 type FillPayload struct {
+	Reason   string `json:"reason,omitempty"` // Optional; h1 omits rejection reasons.
 	SignalID string `json:"signal_id"`
 	Symbol   string `json:"symbol,omitempty"` // P5.2 — order's root symbol; empty = legacy (primary)
 	// Account is the NT sub-account this fill executed on (H3 fix). The C# AddOn
@@ -100,10 +112,65 @@ const ProtocolVersion = 3
 type HelloPayload struct {
 	ProtocolVersion int    `json:"protocol_version"`
 	Source          string `json:"source"` // "vltrader-addon" | "nofx-go"
+	// BuildID (F12) is the AddOn's VL_BUILD_ID, carried on the handshake so the
+	// running DLL is identifiable from the FIRST received frame rather than
+	// only after a snapshot arrives. omitempty keeps the wire byte-identical
+	// for an older AddOn that does not send it.
+	BuildID string `json:"build_id,omitempty"`
 }
 
-// P5.3 — subscription acks (C#-AddOn → Go-server). The AddOn confirms or
-// rejects each bars_subscribe/bars_unsubscribe so the Go side (and the owner
+// PHASE 2 armed orders — order-management frames (Go-server → C#-AddOn) +
+// the order_update event frame (C#-AddOn → Go-server).
+const (
+	FrameCancelOrder   FrameType = "cancel_order"
+	FrameModifyBracket FrameType = "modify_bracket"
+	FrameOrderUpdate   FrameType = "order_update"
+	// FrameOrderSnapshot (F12) is the AddOn's periodic + on-change dump of the
+	// BROKER's working-order book. order_update is per-event and a Go restart
+	// loses the picture until the next event; the snapshot makes the book
+	// re-derivable at any moment. Payload: OrderSnapshotPayload.
+	FrameOrderSnapshot FrameType = "order_snapshot"
+)
+
+// CancelOrderPayload asks the AddOn to cancel a working resting limit entry
+// and/or its live bracket legs (managed Account.Cancel, idempotent).
+type CancelOrderPayload struct {
+	Symbol   string `json:"symbol"`
+	SignalID string `json:"signal_id"`
+	Account  string `json:"account,omitempty"`
+	TraderID string `json:"trader_id,omitempty"`
+	Seq      uint64 `json:"seq,omitempty"`
+}
+
+// ModifyBracketPayload asks the AddOn to modify the live bracket IN PLACE
+// (same safe Change pattern as move_stop). NewStopLoss/NewTakeProfit ≤ 0 =
+// leave that leg untouched.
+type ModifyBracketPayload struct {
+	Symbol        string  `json:"symbol"`
+	SignalID      string  `json:"signal_id"`
+	NewStopLoss   float64 `json:"new_stop_loss,omitempty"`
+	NewTakeProfit float64 `json:"new_take_profit,omitempty"`
+	Account       string  `json:"account,omitempty"`
+	TraderID      string  `json:"trader_id,omitempty"`
+	Seq           uint64  `json:"seq,omitempty"`
+}
+
+// OrderUpdatePayload is every NT8 order-state change (deduped per order name)
+// — the armed engine's working/cancelled/filled visibility.
+type OrderUpdatePayload struct {
+	Reason    string  `json:"reason,omitempty"` // Additive Go receive support; next AddOn wave emits it.
+	SignalID  string  `json:"signal_id"`
+	OrderName string  `json:"order_name"`
+	State     string  `json:"state"` // accepted|working|partfilled|filled|rejected|cancelled
+	FillPrice float64 `json:"fill_price"`
+	Quantity  int     `json:"quantity"`
+	Symbol    string  `json:"symbol"`
+	Account   string  `json:"account"`
+	TraderID  string  `json:"trader_id,omitempty"`
+	Seq       uint64  `json:"seq,omitempty"`
+}
+
+// P5.3 — subscription acks (C#-AddOn → Go-server). The AddOn confirms or// rejects each bars_subscribe/bars_unsubscribe so the Go side (and the owner
 // API) sees subscription state without reading the NT8 Output window. ADDITIVE:
 // a pre-P5.3 AddOn simply never sends them (state shows "pending").
 const (
@@ -145,8 +212,60 @@ type AckPayload struct {
 	Seq      uint64 `json:"seq,omitempty"`
 }
 
-// HeartbeatPayload is an empty struct — spec L4408 says empty payload.
-type HeartbeatPayload struct{}
+// HeartbeatPayload is the client (AddOn) heartbeat body. E7 CAPABILITY
+// HANDSHAKE (2026-08-30): the AddOn reports its BUILD_ID on every heartbeat;
+// the Go side refuses frame types the far side hasn't proven (see
+// FarSideBuildE7 / FarSideProven). Old AddOns send no build_id → "".
+type HeartbeatPayload struct {
+	BuildID string `json:"build_id,omitempty"`
+}
+
+// FarSideBuildE7 is the ORIGINAL stop-entry floor (2026-08-30). It proved the
+// AddOn PARSED a stop_entry frame and built an OrderType.StopMarket — and that
+// is ALL it proved. It did not prove the trigger reached NinjaTrader's stopPrice
+// argument, and it did not: every stop entry this build family sent went out as
+// `Limit price=<trigger> Stop price=0` (22 of 22 lifetime submissions, 0 fills,
+// 2026-08-31 and 2026-09-04). SUPERSEDED by MinAddonBuildStopSlot, which is the
+// value the gate now reads; E7 is retained as the named historical floor (it is
+// referenced by tcp_server.go's farSideBuild comment) and as the negative
+// fixture in the stop-entry wire pins. It gates nothing.
+const FarSideBuildE7 = "2026-08-30-e7"
+
+// MinAddonBuildStopSlot is the minimum AddOn build that proves a stop entry is
+// CONSTRUCTED correctly: the trigger passed in CreateOrder's stopPrice argument
+// rather than its limitPrice one (WAVE B / D1, 2026-09-05). This is the value
+// PlaceStopEntry gates on.
+//
+// THE DATE PREFIX IS WHAT DECIDES. FarSideProven compares strings bytewise and
+// build suffixes are NOT zero-padded — "2026-09-03-f9" >= "2026-09-03-f12" is
+// TRUE, so an older same-date build would satisfy a newer same-date minimum.
+// Every future minimum MUST advance the ISO DATE, never only the suffix.
+const MinAddonBuildStopSlot = "2026-09-05-g2"
+
+// MinAddonBuildProtectiveStop is the minimum AddOn build that can honour
+// place_protective_stop — the frame D5's reconciler uses to restore a stop for a
+// position the broker holds unprotected. There was NO wire command for this
+// before 2026-09-07: SetStopLoss writes a local map that a later entry reads
+// (trader/ninjatrader/tcp_trader.go), move_stop needs a stop that already
+// exists, and modify_bracket needs a live bracket. So an older AddOn cannot
+// place one, and the reconciler must REFUSE to send rather than log a placement
+// that never happened.
+//
+// The ISO DATE advances, per the rule above: a suffix-only bump would let an
+// older same-date build satisfy this.
+const MinAddonBuildProtectiveStop = "2026-09-07-h1"
+
+// ErrAddonBuildTooOld is the sentinel behind a stop entry refused because the
+// AddOn NT8 has loaded predates the stop-slot fix. Callers errors.Is on it so a
+// build refusal is counted apart from a transport or account failure.
+var ErrAddonBuildTooOld = errors.New("addon build predates the stop-slot fix")
+
+// FarSideProven reports whether the far-side build id satisfies a minimum
+// build requirement. Unknown ("") NEVER satisfies — capability is proven by
+// receipt, not assumed.
+func FarSideProven(buildID, minBuild string) bool {
+	return buildID != "" && buildID >= minBuild
+}
 
 // Plan 4.4 Stage 2 — bar frame types (envelope format identical to signal/fill/heartbeat/ack: 4-byte big-endian length + JSON {type, payload}).
 // See ninjascript/vltrader_tcp_PROTOCOL.md sections 5-8 for field semantics.
@@ -156,6 +275,63 @@ const (
 	FrameBarUpdate       FrameType = "bar_update"
 	FrameBarsUnsubscribe FrameType = "bars_unsubscribe"
 )
+
+// HISTORY IMPORT (wave 101, 2026-09-11) — contract-qualified historical pull,
+// Go-server → C#-AddOn → Go-server. The live bars_subscribe path resolves the
+// PLATFORM's front month (VLInstrumentLookup.cs) and can never ask for an
+// expired contract; a backtest needs years, contract by contract. These three
+// frames are the named-contract channel:
+//
+//	bars_history_request  Go → C# : ask for one named contract, one timeframe,
+//	                               one [from, to) window. The contract is the
+//	                               EXPLICIT name ("MNQ 09-23") — never derived
+//	                               from a date (that is the 09-10 roll bug).
+//	bars_history_data     C# → Go : one chunk of the answer, ascending by time.
+//	                               The C# side chunks at ~8k bars to stay under
+//	                               the 1 MB envelope; seq/last terminate the
+//	                               stream.
+//	bars_history_error    C# → Go : the contract/timeframe could not be served
+//	                               (three-state honesty: unavailable is named).
+//
+// A bars_history_request NEVER touches the live BarsRequest subscriptions and
+// never mutates NT8 state; the AddOn disposes its request on completion.
+const (
+	FrameBarsHistoryRequest FrameType = "bars_history_request"
+	FrameBarsHistoryData    FrameType = "bars_history_data"
+	FrameBarsHistoryError   FrameType = "bars_history_error"
+)
+
+// BarsHistoryRequestPayload is one named-contract historical pull. FromMs/ToMs
+// are the CLOSED bar open-time window [from, to).
+type BarsHistoryRequestPayload struct {
+	RequestID string `json:"request_id"` // caller-chosen correlation id
+	Symbol    string `json:"symbol"`     // root, e.g. "MNQ"
+	Contract  string `json:"contract"`   // EXPLICIT name, e.g. "MNQ 09-23"
+	Timeframe string `json:"timeframe"`  // "1m" | "5m" | "15m" | "1h" | ...
+	FromMs    int64  `json:"from_ms"`    // first bar open, epoch ms UTC
+	ToMs      int64  `json:"to_ms"`      // exclusive end, epoch ms UTC
+}
+
+// BarsHistoryDataPayload is one chunk of a named-contract pull. Seq numbers the
+// chunks from 1; Last=true ends the stream. Contract echoes the ACKed name the
+// bars were actually served from (the C# side sends the instrument's real
+// ContractName — never the request string).
+type BarsHistoryDataPayload struct {
+	RequestID string `json:"request_id"`
+	Symbol    string `json:"symbol"`
+	Contract  string `json:"contract"`
+	Timeframe string `json:"timeframe"`
+	Seq       int    `json:"seq"`
+	Last      bool   `json:"last"`
+	Bars      []Bar  `json:"bars"` // ascending by time
+}
+
+// BarsHistoryErrorPayload names a pull the AddOn could not serve, and why.
+type BarsHistoryErrorPayload struct {
+	RequestID string `json:"request_id"`
+	Contract  string `json:"contract"`
+	Reason    string `json:"reason"`
+}
 
 // Plan 4.11 — real NT account balance. C#-AddOn → Go-server, additive frame
 // (same envelope: 4-byte BE length + JSON {type, payload}). The C# AddOn emits
@@ -313,6 +489,27 @@ type AccountRegisterPayload struct {
 // activate breakeven.
 const FrameMoveStop FrameType = "move_stop"
 
+// FramePlaceProtectiveStop asks the AddOn to place a STANDALONE protective stop
+// for a position that has none — D5, 2026-09-07. It is not part of a bracket
+// and joins no existing OCO group: it exists because the position is naked, and
+// a group is what would let something else cancel it.
+const FramePlaceProtectiveStop FrameType = "place_protective_stop"
+
+// PlaceProtectiveStopPayload is the Go-server → C#-AddOn request. Quantity is
+// the position size to cover; StopPrice is tick-rounded by the caller.
+type PlaceProtectiveStopPayload struct {
+	Symbol       string  `json:"symbol"`
+	SignalID     string  `json:"signal_id"`     // names the order "<signal>-sl"
+	PositionSide string  `json:"position_side"` // LONG | SHORT — the side HELD
+	Quantity     int     `json:"quantity"`
+	StopPrice    float64 `json:"stop_price"`
+	Reason       string  `json:"reason,omitempty"`
+	Timestamp    string  `json:"timestamp"`
+	Account      string  `json:"account,omitempty"`
+	TraderID     string  `json:"trader_id,omitempty"`
+	Seq          uint64  `json:"seq,omitempty"`
+}
+
 // MoveStopPayload is the Go-server → C#-AddOn move-stop request.
 type MoveStopPayload struct {
 	Symbol      string  `json:"symbol"`
@@ -362,6 +559,14 @@ type Bar struct {
 	L float64 `json:"l"`
 	C float64 `json:"c"`
 	V float64 `json:"v"` // volume can be tick-volume (fractional)
+	// Source is GO-SIDE ONLY (never on the wire; the AddOn does not send it):
+	// which feed delivered this bar — "live" (bar_update), "historical"
+	// (bars_historical replay) or "mixed" (a boot minute whose open came from a
+	// replay and whose close from live). Stamped by the cache at Seed/Upsert.
+	// BAR-SOURCE WAVE 2026-09-10: NT8's replay served the same minutes ~290
+	// points from the live feed under one label, and nothing could tell which
+	// it was holding.
+	Source string `json:"-"`
 }
 
 // BarsSubscribePayload is the Go-server → C#-AddOn subscribe frame per

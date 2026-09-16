@@ -1,0 +1,23 @@
+NT8 db/minute MNQ inventory — measured 2026-09-11 21:5x CT (this account, WSL view of the Windows db)
+MNQ ##-##|files=0|first=|last=
+MNQ 03-21|files=0|first=|last=
+MNQ 03-23|files=80|first=20221211.Last.ncd|last=20230310.Last.ncd
+MNQ 03-24|files=80|first=20231210.Last.ncd|last=20240308.Last.ncd
+MNQ 03-25|files=81|first=20241215.Last.ncd|last=20250314.Last.ncd
+MNQ 03-26|files=80|first=20251214.Last.ncd|last=20260313.Last.ncd
+MNQ 06-19|files=0|first=|last=
+MNQ 06-22|files=53|first=20220411.Last.ncd|last=20220608.Last.ncd
+MNQ 06-23|files=80|first=20230312.Last.ncd|last=20230609.Last.ncd
+MNQ 06-24|files=85|first=20240310.Last.ncd|last=20240614.Last.ncd
+MNQ 06-25|files=84|first=20250316.Last.ncd|last=20250613.Last.ncd
+MNQ 06-26|files=78|first=20260315.Last.ncd|last=20260611.Last.ncd
+MNQ 09-22|files=85|first=20220608.Last.ncd|last=20220907.Last.ncd
+MNQ 09-23|files=79|first=20230611.Last.ncd|last=20230908.Last.ncd
+MNQ 09-24|files=78|first=20240616.Last.ncd|last=20240913.Last.ncd
+MNQ 09-25|files=84|first=20250615.Last.ncd|last=20250912.Last.ncd
+MNQ 09-26|files=158|first=20260313.Last.ncd|last=20260911.Last.ncd
+MNQ 12-22|files=87|first=20220907.Last.ncd|last=20221209.Last.ncd
+MNQ 12-23|files=82|first=20230910.Last.ncd|last=20231208.Last.ncd
+MNQ 12-24|files=83|first=20240915.Last.ncd|last=20241213.Last.ncd
+MNQ 12-25|files=86|first=20250914.Last.ncd|last=20251214.Last.ncd
+MNQ 12-26|files=6|first=20260906.Last.ncd|last=20260911.Last.ncd

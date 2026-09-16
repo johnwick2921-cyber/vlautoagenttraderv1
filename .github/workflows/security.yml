@@ -1,0 +1,50 @@
+name: Security Scan (govulncheck + npm audit)
+
+# F1c (2026-08-29) — supply-chain gate: Go symbol-level vuln scan + npm
+# production audit. Weekly on dev + on every PR. Fails on CRITICAL/HIGH.
+on:
+  schedule:
+    - cron: '30 9 * * 1' # weekly, Monday 09:30 UTC
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  govulncheck:
+    name: govulncheck (Go)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      # The scanner needs a newer parser than v1.1.4 provides. Its build
+      # toolchain is isolated; analysis still uses the application's go.mod.
+      # Findings continue to fail the job; no suppression or version spoofing.
+      - name: Install pinned govulncheck
+        run: GOTOOLCHAIN=go1.26.7 go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - name: Run govulncheck
+        run: govulncheck ./...
+
+  npm-audit:
+    name: npm audit --production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # B8: `npm ci --omit=dev` omits husky (a devDependency) and then runs the
+      # package's `prepare` script, which IS husky → "sh: 1: husky: not found".
+      # Lifecycle scripts have no place in an audit install.
+      - name: Install production deps
+        working-directory: web
+        run: npm ci --omit=dev --ignore-scripts
+      - name: Audit (fails on HIGH/CRITICAL)
+        working-directory: web
+        run: npm audit --omit=dev --audit-level=high

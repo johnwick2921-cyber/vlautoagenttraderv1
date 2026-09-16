@@ -12,8 +12,8 @@ func TestAssertBoundAccount(t *testing.T) {
 		wantErr      bool
 	}{
 		{"match", "Sim101", "Sim101", false},
-		{"mismatch", "Sim102", "Sim101", true},   // the cross-account emission this blocks
-		{"both empty legacy", "", "", false},      // account-less legacy frame on an unbound trader
+		{"mismatch", "Sim102", "Sim101", true}, // the cross-account emission this blocks
+		{"both empty legacy", "", "", false},   // account-less legacy frame on an unbound trader
 		{"frame set, bound empty", "Sim101", "", true},
 		{"frame empty, bound set", "", "Sim101", true},
 		{"case-different is a mismatch", "sim101", "Sim101", true}, // exact-match; NT account names are case-exact

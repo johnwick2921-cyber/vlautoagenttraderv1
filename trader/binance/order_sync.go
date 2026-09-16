@@ -47,18 +47,18 @@ func (t *FuturesTrader) SyncOrdersFromBinance(traderID string, exchangeID string
 				// Add 1 second buffer to avoid re-fetching the same fill
 				lastSyncTimeMs = lastFillTimeMs + 1000
 				logger.Infof("📅 Recovered last sync time from DB: %s (UTC)",
-					time.UnixMilli(lastSyncTimeMs).UTC().Format("2006-01-02 15:04:05"))
+					time.UnixMilli(lastSyncTimeMs).UTC().Format("2006-01-02 15:04:05 UTC"))
 			}
 		} else {
 			// First sync: go back 24 hours
 			lastSyncTimeMs = nowMs - 24*60*60*1000
 			logger.Infof("📅 First sync, starting from 24 hours ago: %s (UTC)",
-				time.UnixMilli(lastSyncTimeMs).UTC().Format("2006-01-02 15:04:05"))
+				time.UnixMilli(lastSyncTimeMs).UTC().Format("2006-01-02 15:04:05 UTC"))
 		}
 	}
 
 	logger.Infof("🔄 Syncing Binance trades from: %s (UTC) [ms: %d, now: %d]",
-		time.UnixMilli(lastSyncTimeMs).UTC().Format("2006-01-02 15:04:05"), lastSyncTimeMs, nowMs)
+		time.UnixMilli(lastSyncTimeMs).UTC().Format("2006-01-02 15:04:05 UTC"), lastSyncTimeMs, nowMs)
 
 	// Step 1: Get max trade IDs from local DB for incremental sync
 	maxTradeIDs, err := orderStore.GetMaxTradeIDsByExchange(exchangeID)
@@ -269,7 +269,7 @@ func (t *FuturesTrader) SyncOrdersFromBinance(traderID string, exchangeID string
 		syncedCount++
 		logger.Infof("  ✅ Synced trade: %s %s %s qty=%.6f price=%.6f pnl=%.2f fee=%.6f action=%s time=%s(UTC)",
 			trade.TradeID, symbol, side, trade.Quantity, trade.Price, trade.RealizedPnL, trade.Fee, orderAction,
-			trade.Time.UTC().Format("01-02 15:04:05"))
+			trade.Time.UTC().Format("01-02 15:04:05 UTC"))
 	}
 
 	// Update lastSyncTime to the LATEST trade time (not current time!)
@@ -281,7 +281,7 @@ func (t *FuturesTrader) SyncOrdersFromBinance(traderID string, exchangeID string
 		binanceSyncState[exchangeID] = latestTradeTimeMs
 		binanceSyncStateMutex.Unlock()
 		logger.Infof("📅 Updated lastSyncTime to latest trade: %s (UTC)",
-			time.UnixMilli(latestTradeTimeMs).UTC().Format("2006-01-02 15:04:05"))
+			time.UnixMilli(latestTradeTimeMs).UTC().Format("2006-01-02 15:04:05 UTC"))
 	} else if len(failedSymbols) > 0 {
 		logger.Infof("  ⚠️ %d symbols failed, not updating lastSyncTime to retry next time: %v", len(failedSymbols), failedSymbols)
 	}

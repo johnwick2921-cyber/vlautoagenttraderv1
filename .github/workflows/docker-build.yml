@@ -99,7 +99,12 @@ jobs:
             type=semver,pattern={{version}},suffix=-${{ matrix.arch_tag }}
             type=semver,pattern={{major}}.{{minor}},suffix=-${{ matrix.arch_tag }}
             type=semver,pattern={{major}},suffix=-${{ matrix.arch_tag }}
-            type=sha,prefix={{branch}}-,suffix=-${{ matrix.arch_tag }}
+            # B8 (2026-09-11): on pull_request events {{branch}} is EMPTY, so the
+            # old `prefix={{branch}}-` produced ":-c36ad43-amd64" — "invalid
+            # reference format" on every PR. A PR gets its own ref tag; the sha
+            # tag carries a constant prefix.
+            type=ref,event=pr,suffix=-${{ matrix.arch_tag }}
+            type=sha,prefix=sha-,suffix=-${{ matrix.arch_tag }}
 
       - name: Build and push ${{ matrix.name }}-${{ matrix.arch_tag }} image
         uses: docker/build-push-action@v5

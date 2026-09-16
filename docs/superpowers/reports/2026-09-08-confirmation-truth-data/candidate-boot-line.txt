@@ -1,0 +1,1 @@
+🔎 confirmation: close-requires-closed-bucket=on · sequence-order=enforced · missing-reference=UNKNOWN(not met) · immediate-displacement=1m_displacement · forming-bucket refusals=0 · out-of-order refusals=0 · validation-REJECT→PASS=23 observations/2 scenarios (closure-only audit; evaluated=627 unevaluated=162) · with-1m_displacement=24 (+1 audit observation)

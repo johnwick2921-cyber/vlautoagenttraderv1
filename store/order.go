@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -37,9 +38,9 @@ type TraderOrder struct {
 	PriceProtect      bool    `gorm:"column:price_protect;default:false" json:"price_protect"`
 	OrderAction       string  `gorm:"column:order_action;default:''" json:"order_action"`
 	RelatedPositionID int64   `gorm:"column:related_position_id;default:0" json:"related_position_id"`
-	CreatedAt         int64   `gorm:"column:created_at" json:"created_at"`         // Unix milliseconds UTC
-	UpdatedAt         int64   `gorm:"column:updated_at" json:"updated_at"`         // Unix milliseconds UTC
-	FilledAt          int64   `gorm:"column:filled_at" json:"filled_at"`           // Unix milliseconds UTC
+	CreatedAt         int64   `gorm:"column:created_at" json:"created_at"` // Unix milliseconds UTC
+	UpdatedAt         int64   `gorm:"column:updated_at" json:"updated_at"` // Unix milliseconds UTC
+	FilledAt          int64   `gorm:"column:filled_at" json:"filled_at"`   // Unix milliseconds UTC
 }
 
 // TableName returns the table name for TraderOrder
@@ -420,4 +421,23 @@ func (s *OrderStore) GetRecentFillSymbolsByExchange(exchangeID string, sinceMs i
 		return nil, err
 	}
 	return symbols, nil
+}
+
+// LatestFillForTrader returns this trader's newest recorded fill, or nil when
+// none exists. READ-ONLY, added for the desk strip (2026-09-06): a nil result
+// means "no fill has ever been recorded", which the strip renders as UNKNOWN
+// with that reason — never as a zero price.
+func (s *OrderStore) LatestFillForTrader(traderID string) (*TraderFill, error) {
+	if s == nil || s.db == nil {
+		return nil, nil
+	}
+	var f TraderFill
+	err := s.db.Where("trader_id = ?", traderID).Order("created_at DESC, id DESC").First(&f).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &f, nil
 }

@@ -32,10 +32,37 @@ func (pb *PositionBuilder) ProcessTrade(
 	tradeTimeMs int64,
 	orderID string,
 ) error {
+	// The eleven CEX/DEX sync paths have no broker OCO event to report, so they
+	// keep today's value exactly. Only NT8 can name a cause (D3).
+	return pb.ProcessTradeWithExitReason(traderID, exchangeID, exchangeType, symbol, side, action,
+		quantity, price, fee, realizedPnL, tradeTimeMs, orderID, "")
+}
+
+// ProcessTradeWithExitReason is ProcessTrade plus the BROKER's own exit cause.
+//
+// WAVE A / D3 — every one of the 58 eligible closed positions carries
+// close_reason='sync', a word that says how the ROW was written and nothing
+// about why the TRADE ended. The cause then had to be reconstructed from raw
+// NT8 logs. It never needed reconstructing: NT8 sends it
+// (provider/ninjatrader/tcp_framing.go:288, `exit_reason` = "sl"|"tp"|"manual"),
+// Go parses it, and trader/ninjatrader/close_sync.go:204 already uses it to arm
+// the re-entry cooldown — eight lines after handing this builder the literal
+// "sync". The value was in the same function, in the same variable, and was
+// dropped on the way to the column.
+//
+// exitReason is the BROKER's word or "" when there is none. It is never
+// inferred from price proximity (D3a).
+func (pb *PositionBuilder) ProcessTradeWithExitReason(
+	traderID, exchangeID, exchangeType, symbol, side, action string,
+	quantity, price, fee, realizedPnL float64,
+	tradeTimeMs int64,
+	orderID string,
+	exitReason string,
+) error {
 	if strings.HasPrefix(action, "open_") {
 		return pb.handleOpen(traderID, exchangeID, exchangeType, symbol, side, quantity, price, fee, tradeTimeMs, orderID)
 	} else if strings.HasPrefix(action, "close_") {
-		return pb.handleClose(traderID, exchangeID, exchangeType, symbol, side, quantity, price, fee, realizedPnL, tradeTimeMs, orderID)
+		return pb.handleClose(traderID, exchangeID, exchangeType, symbol, side, quantity, price, fee, realizedPnL, tradeTimeMs, orderID, exitReason)
 	}
 	return nil
 }
@@ -99,6 +126,7 @@ func (pb *PositionBuilder) handleClose(
 	quantity, price, fee, realizedPnL float64,
 	tradeTimeMs int64,
 	orderID string,
+	exitReason string,
 ) error {
 	// Get OPEN position
 	position, err := pb.positionStore.GetOpenPositionBySymbol(traderID, symbol, side)
@@ -130,7 +158,7 @@ func (pb *PositionBuilder) handleClose(
 		// Partial close: reduce quantity and update weighted average exit price
 		logger.Infof("  📉 Partial close: %s %s %.6f → %.6f (closed %.6f @ %.2f, PnL: %.2f)",
 			symbol, side, position.Quantity, position.Quantity-quantity, quantity, price, realizedPnL)
-		return pb.positionStore.ReducePositionQuantity(position.ID, quantity, price, fee, realizedPnL)
+		return pb.positionStore.ReducePositionQuantity(position.ID, quantity, price, fee, realizedPnL, exitReason)
 	} else {
 		// Full close (or close with tolerance): mark as CLOSED
 		closeQty := quantity
@@ -162,6 +190,8 @@ func (pb *PositionBuilder) handleClose(
 		logger.Infof("  ✅ Full close: %s %s %.6f @ %.2f (avg exit: %.2f, entry: %.2f, PnL: %.2f)",
 			symbol, side, closeQty, price, finalExitPrice, position.EntryPrice, totalPnL)
 
+		// D3 — THE BROKER'S WORD, NOT A LITERAL. "sync" described how the row
+		// was written and was recorded as though it described the trade.
 		return pb.positionStore.ClosePositionFully(
 			position.ID,
 			finalExitPrice,
@@ -169,7 +199,7 @@ func (pb *PositionBuilder) handleClose(
 			tradeTimeMs,
 			totalPnL,
 			totalFee,
-			"sync",
+			ExitCauseFromBroker(exitReason),
 		)
 	}
 }

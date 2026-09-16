@@ -31,17 +31,31 @@ func InitGorm(dbPath string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
 	}
 
-	// Set connection pool for SQLite
+	// Set connection pool for SQLite. PRE-REOPEN F2 (2026-08-28): the old
+	// MaxOpenConns(1) serialized EVERYTHING on one connection — cycle-time
+	// reads/writes (position queries, level-state, decision_records) starved
+	// the bar-persist writer during Friday's 100k-frames/min spikes, stalling
+	// flushes 2–6s and dropping 8 closed bars at 11:20:06. SQLite WAL already
+	// enforces single-writer concurrency at the database level (readers share,
+	// writers serialize with busy_timeout=5000), so a small pool is safe and
+	// removes the artificial writer starvation.
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
 	}
-	sqlDB.SetMaxOpenConns(1)
-	sqlDB.SetMaxIdleConns(1)
+	sqlDB.SetMaxOpenConns(4)
+	sqlDB.SetMaxIdleConns(4)
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 
 	// Enable foreign keys for SQLite
 	db.Exec("PRAGMA foreign_keys = ON")
-	db.Exec("PRAGMA journal_mode = DELETE")
+	// WAL (day-plan P0.2 storage requirement): append-only plans/overlays/
+	// decisions writes no longer block card/replay readers, and online
+	// sqlite3.backup() (the C1 timer) works better under WAL. The single-writer
+	// property is preserved by SetMaxOpenConns(1) above plus the plan store's
+	// dedicated writer goroutine (store/plan.go); WAL is safe on the ext4 DB
+	// path and survives WAL↔DELETE rollbacks (SQLite checkpoints on open).
+	db.Exec("PRAGMA journal_mode = WAL")
 	db.Exec("PRAGMA synchronous = FULL")
 	db.Exec("PRAGMA busy_timeout = 5000")
 

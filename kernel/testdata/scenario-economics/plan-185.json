@@ -1,0 +1,154 @@
+{
+  "reasoning": "bias-tree: branch-1 mirror / close below PDL (extended continuation short, LOW). 15m and 1h are down, 5m ranging after the 09:15 sweep-up; price sits below prior value, but the discount branch counsels against chasing shorts. No fresh FVGs → no fvg_entry. Plan: fade first touch at 29182/29177 supply and take the breakdown below 29085 HTF OB; targets 29101/29085/29062. Death above 29212.",
+  "bias": {
+    "direction": "short",
+    "conviction": "low",
+    "flip_condition": "2x5m close above 29177.50 flips bias long"
+  },
+  "levels": [
+    {
+      "price": 29157.75,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "first downside support / target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29125,
+      "label": "OR-H",
+      "grade": "C",
+      "instruction": "target only (flipped)",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29101.38,
+      "label": "VWAP−1σ",
+      "grade": "A",
+      "instruction": "mean-revert magnet below",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29085,
+      "label": "OB(bull)·1h",
+      "grade": "C",
+      "instruction": "HTF confluence / breakdown trigger",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29062.75,
+      "label": "OR-L",
+      "grade": "A",
+      "instruction": "liquidity break target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29177.5,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "first-touch supply / short reject",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29182,
+      "label": "SWG-L·15m",
+      "grade": "A",
+      "instruction": "first-touch supply / short reject",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29212.5,
+      "label": "OB(bull)·1h",
+      "grade": "C",
+      "instruction": "HTF invalidation reference",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29238.25,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "supply above",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29258,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "supply above",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29274.42,
+      "label": "VWAP",
+      "grade": "A",
+      "instruction": "mean-revert magnet above",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Price rallies into 29182.00 SWG-L·15m; fade the first touch with a structure stop above 29220.75.",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29157.75,
+        29125,
+        29085
+      ],
+      "invalid": "1x5m close above 29182.00 rejects the fade.",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29182,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29182,
+        "stop": 29220.75,
+        "target": 29085
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "Price rallies into 29085.00 OB(bull)·1h; fade the first touch with a structure stop above.",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29062.75
+      ],
+      "invalid": "1x5m close above 29085.00 rejects the fade.",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29085,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29085,
+        "stop": 29125,
+        "target": 29062.75
+      }
+    }
+  ],
+  "no_trade": [
+    "first 5m (CT)",
+    "12:00-13:30 CT lunch",
+    "09:00 CT ISM Manufacturing PMI T1 blackout",
+    "🔴 ISM Manufacturing PMI 09:00 CT ±15m +1m (clock drift) — HARD no-trade (red news)"
+  ],
+  "death_condition": "1x5m close above 29212.50 reclaims the broken HTF OB and ends the plan.",
+  "day_type": "trend-down",
+  "death": {
+    "price": 29212.5,
+    "side": "above",
+    "rule": "5m_close"
+  },
+  "flip": {
+    "price": 29177.5,
+    "side": "above",
+    "rule": "2x5m",
+    "flip_to": "long"
+  }
+}

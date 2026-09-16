@@ -1,0 +1,8 @@
+Running production source: 802fb00b09e51f9801e8d4fbd1bf156c86865d95
+Only the attached two-file _test.go patch applied.
+=== RUN   TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced
+--- PASS: TestOneSetupDeclinedPreBootAuthorizationRetiredNeverPlaced (1.55s)
+=== RUN   TestLiveConditionPlacesOnLoopback
+--- PASS: TestLiveConditionPlacesOnLoopback (0.93s)
+PASS
+ok  	nofx/trader	2.489s

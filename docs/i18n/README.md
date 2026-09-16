@@ -1,8 +1,8 @@
 # 🌍 International Documentation / 国际化文档
 
-NOFX documentation is available in multiple languages.
+VL Intelligent documentation is available in multiple languages.
 
-NOFX 文档提供多种语言版本。
+VL Intelligent 文档提供多种语言版本。
 
 ---
 
@@ -130,7 +130,7 @@ faq.zh-CN.md                 → Chinese FAQ
 
 ## 🌐 Request a New Language / 请求新语言
 
-### Want NOFX in your language? / 希望 NOFX 支持你的语言？
+### Want VL Intelligent in your language? / 希望 VL Intelligent 支持你的语言？
 
 **Steps / 步骤:**
 

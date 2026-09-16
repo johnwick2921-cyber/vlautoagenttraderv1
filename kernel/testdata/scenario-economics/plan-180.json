@@ -1,0 +1,185 @@
+{
+  "reasoning": "bias-tree: branch 1 mirror (close < PDL) — bear-continuation, LOW. Overnight broke PDL 29354 and value low, but the drop stalled exactly at ONL 29182 with shrinking volume and recovering 5m RSI, so this is late liquidation. Branch 5 discount below the 50% mark means no blind short chasing: the tradeable short paths are the failed retest of 29354 RTH-L (above mid) and a C-grade acceptance breakdown below ONL 29182. A long exists only on a sweep-reclaim holding 29201.25 and reclaiming 29212.50 Demand·1h. No fvg_entry: FRESH FVGs list is empty. ISM at 09:00 CT is a hard blackout.",
+  "bias": {
+    "direction": "short",
+    "conviction": "low",
+    "flip_condition": "2x5m closes above 29354.00 RTH-L flip to long; any 5m close above 29433.23 VWAP kills the plan"
+  },
+  "levels": [
+    {
+      "price": 29154.38,
+      "label": "OB(bear)·4h",
+      "grade": "C",
+      "instruction": "target",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29182,
+      "label": "ONL",
+      "grade": "A",
+      "instruction": "break-or-sweep",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29201.25,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "hold",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29212.5,
+      "label": "Demand·1h",
+      "grade": "C",
+      "instruction": "confluence-long",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29227.75,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "first-resistance",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29246.75,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "reaction",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29280,
+      "label": "SWG-H·5m",
+      "grade": "A",
+      "instruction": "target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29323.92,
+      "label": "VWAP−1σ",
+      "grade": "A",
+      "instruction": "magnet",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29354,
+      "label": "RTH-L",
+      "grade": "A",
+      "instruction": "reject-short",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29433.23,
+      "label": "VWAP",
+      "grade": "A",
+      "instruction": "death-line",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29462.5,
+      "label": "Supply·4h",
+      "grade": "A",
+      "instruction": "target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29473.25,
+      "label": "PDC",
+      "grade": "A",
+      "instruction": "pivot",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Pullback stalls at 29182.00 ONL and rejects; short the touch",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29154.38
+      ],
+      "invalid": "5m close back above 29182.00",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29182,
+        "side": "below"
+      },
+      "quality": "C",
+      "arm": {
+        "enabled": true,
+        "entry": 29182,
+        "stop": 29212.5,
+        "target": 29154.38
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "Sweep-reclaim of ONL is intact and price reclaims 29212.50 Demand·1h after holding 29201.25 SWG-L·5m",
+      "condition": "sweep_reclaim",
+      "direction": "long",
+      "target_chain": [
+        29280,
+        29323.92,
+        29354
+      ],
+      "invalid": "5m close below 29182.00",
+      "confirm": {
+        "rule": "1x5m_close",
+        "ref_price": 29212.5,
+        "side": "above"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29212.5,
+        "stop": 29170,
+        "target": 29323.92,
+        "wait_confirm": true
+      }
+    },
+    {
+      "id": "S3",
+      "trigger": "Pullback stalls at 29354.00 RTH-L/PDL and rejects; short the touch",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29280,
+        29182
+      ],
+      "invalid": "5m close above 29354.00",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29354,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29354,
+        "stop": 29385,
+        "target": 29280
+      }
+    }
+  ],
+  "no_trade": [
+    "first 5m (CT)",
+    "12:00-13:30 CT lunch",
+    "09:00 CT ISM Manufacturing PMI (T1 HARD blackout)",
+    "🔴 ISM Manufacturing PMI 09:00 CT ±15m +1m (clock drift) — HARD no-trade (red news)"
+  ],
+  "death_condition": "Plan invalid if a 5m bar closes above 29433.23 VWAP.",
+  "day_type": "trend-down",
+  "death": {
+    "price": 29433.23,
+    "side": "above",
+    "rule": "5m_close"
+  },
+  "flip": {
+    "price": 29354,
+    "side": "above",
+    "rule": "2x5m",
+    "flip_to": "long"
+  }
+}

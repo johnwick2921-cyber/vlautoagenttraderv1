@@ -1,10 +1,19 @@
+import { PRODUCT_NAME } from '../constants/branding'
+import { LedgerDayPnl } from '../components/trader/LedgerDayPnl'
 import { useEffect, useState, useRef } from 'react'
 import { mutate } from 'swr'
 import { api } from '../lib/api'
+import { planApi } from '../lib/api/plan'
+import { EquityChart } from '../components/charts/EquityChart'
 import { ChartTabs } from '../components/charts/ChartTabs'
 import { DecisionCard } from '../components/trader/DecisionCard'
 import { DecisionAudit } from '../components/trader/DecisionAudit'
 import { EmergencyFlatButton } from '../components/trader/EmergencyFlatButton'
+import {
+  PauseButton,
+  isPauseActive,
+  pauseUntilCT,
+} from '../components/trader/PauseButton'
 import { PositionHistory } from '../components/trader/PositionHistory'
 import { AccountSelector } from '../components/trader/AccountSelector'
 import { PunkAvatar, getTraderAvatar } from '../components/common/PunkAvatar'
@@ -15,6 +24,7 @@ import { LogOut, Loader2, Eye, EyeOff, Copy, Check } from 'lucide-react'
 import { DeepVoidBackground } from '../components/common/DeepVoidBackground'
 import { NofxSelect } from '../components/ui/select'
 import { GridRiskPanel } from '../components/strategy/GridRiskPanel'
+import { PlanCard } from '../components/plan/PlanCard'
 import type {
   SystemStatus,
   AccountInfo,
@@ -147,6 +157,49 @@ export function TraderDashboardPage({
     string | undefined
   >(undefined)
   const [chartUpdateKey, setChartUpdateKey] = useState<number>(0)
+  // C4 (README §9) — the debug strip's SYSTEM_STATUS was a static lie.
+  // Poll the real /api/health (status + running revision) every 30s.
+  const [health, setHealth] = useState<{ status?: string; revision?: string }>(
+    {}
+  )
+  useEffect(() => {
+    let live = true
+    const poll = () => {
+      fetch('/api/health')
+        .then((r) => r.json())
+        .then((j) => live && setHealth(j))
+        .catch(() => live && setHealth({ status: 'unreachable' }))
+    }
+    poll()
+    const iv = setInterval(poll, 30_000)
+    return () => {
+      live = false
+      clearInterval(iv)
+    }
+  }, [])
+
+  // C8 (README §9) — restore the 402 banner: poll the structured risk-error
+  // table; any ai_payment_402 row for THIS trader latches a red banner until
+  // the first successful call clears it (backend auto-acks the P0 alert).
+  const [ai402, setAi402] = useState<{ cause: string; count: number } | null>(
+    null
+  )
+  useEffect(() => {
+    if (!selectedTraderId) return
+    let live = true
+    const poll = async () => {
+      const res = await planApi.getRiskErrors(selectedTraderId)
+      if (!live) return
+      const row = res?.rows?.find((r) => r.type === 'ai_payment_402')
+      setAi402(row ? { cause: row.cause, count: row.count } : null)
+    }
+    void poll()
+    const iv = setInterval(poll, 30_000)
+    return () => {
+      live = false
+      clearInterval(iv)
+    }
+  }, [selectedTraderId])
   const chartSectionRef = useRef<HTMLDivElement>(null)
   const [showWalletAddress, setShowWalletAddress] = useState<boolean>(false)
   const [copiedAddress, setCopiedAddress] = useState<boolean>(false)
@@ -371,6 +424,17 @@ export function TraderDashboardPage({
   return (
     <DeepVoidBackground className="min-h-screen pb-12" disableAnimation>
       <div className="w-full px-4 md:px-8 relative z-10 pt-6">
+        {/* P2 ledger-close — live pause banner on the trading view (CT-pinned) */}
+        {isPauseActive(status?.stop_until) && (
+          <div
+            data-testid="pause-banner"
+            className="mb-4 rounded-lg border border-nofx-gold/60 bg-nofx-gold/10 px-4 py-3 text-nofx-gold font-bold text-center animate-scale-in"
+          >
+            ⏸ PAUSED until {pauseUntilCT(status!.stop_until)} CT (owner) — new
+            entries blocked; stops, targets and position management continue
+          </div>
+        )}
+
         {/* Trader Header */}
         <div
           className="mb-6 rounded-lg p-6 animate-scale-in nofx-glass group"
@@ -395,12 +459,27 @@ export function TraderDashboardPage({
               <div className="flex flex-col">
                 <span className="text-xs font-mono text-nofx-text-muted opacity-60 flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-nofx-gold rounded-full" />
-                  ID: {selectedTrader.trader_id.slice(0, 8)}...
+                  {PRODUCT_NAME} · {t('dashboardNav', language)} ·{' '}
+                  {selectedTrader.trader_name} · ID:{' '}
+                  {selectedTrader.trader_id.slice(0, 8)}...
                 </span>
               </div>
             </h2>
 
             <div className="flex items-center gap-4">
+              {/* P2 ledger-close — stop_until pause (owner control) */}
+              <PauseButton
+                traderId={selectedTrader.trader_id}
+                stopUntil={status?.stop_until}
+                onChanged={() =>
+                  mutate(
+                    (key) =>
+                      typeof key === 'string' &&
+                      key.startsWith(`status-${selectedTraderId}`)
+                  )
+                }
+              />
+
               {/* Plan 4 T23 — Emergency Flat (red, prominent, top-right) */}
               <EmergencyFlatButton traderId={selectedTrader.trader_id} />
 
@@ -539,14 +618,62 @@ export function TraderDashboardPage({
           </div>
         </div>
 
+        {/* C8 — AI 402 banner: latched while the risk-error table holds an
+            ai_payment_402 row for this trader; clears on the first success. */}
+        {ai402 && (
+          <div
+            data-testid="ai-402-banner"
+            className="mb-4 px-3 py-2 rounded border text-xs font-mono flex items-center gap-2"
+            style={{
+              background: 'rgba(240,70,93,0.08)',
+              border: '1px solid #F6465D',
+              color: '#F6465D',
+            }}
+          >
+            <span aria-hidden>⚠</span>
+            <span>
+              AI CREDIT EXHAUSTED — provider returned HTTP 402 (Insufficient
+              Balance); decision cycles are failing ({ai402.count} this
+              session). Top up, then the banner clears on the first successful
+              call.
+            </span>
+          </div>
+        )}
+
         {/* Debug Info */}
         <div className="mb-4 px-3 py-1.5 rounded bg-black/40 border border-white/5 text-[10px] font-mono text-nofx-text-muted flex justify-between items-center opacity-60 hover:opacity-100 transition-opacity">
-          <span style={{ color: '#0ECB81' }}>SYSTEM_STATUS::ONLINE</span>
+          <span
+            style={{
+              color:
+                health.status === undefined
+                  ? '#8C8C8C'
+                  : health.status === 'ok'
+                    ? '#0ECB81'
+                    : '#F6465D',
+            }}
+          >
+            {/* 2026-09-06 (desk strip, D6b): this said ONLINE, which reads as
+                "the system is working". /api/health reports ONE thing — that the
+                HTTP process answered. It stayed green through 113 minutes of
+                feed silence on 09-03. The word now names the question it
+                actually answers; the feed, the link and the broker book are
+                separate facts and the DESK strip states each of them. */}
+            PROCESS::
+            {health.status === undefined
+              ? '…'
+              : health.status === 'ok'
+                ? 'RESPONDING'
+                : String(health.status).toUpperCase()}
+            {health.revision ? ` · REV::${health.revision}` : ''}
+          </span>
           {account ? (
             <div className="flex gap-4">
               <span>LAST_UPDATE::{lastUpdate}</span>
               <span>EQ::{account.total_equity?.toFixed(2)}</span>
-              <span>PNL::{account.total_pnl?.toFixed(2)}</span>
+              <span title="NT8-native total P&L (equity − initial balance)">
+                PNL::{account.total_pnl?.toFixed(2)}
+              </span>
+              <LedgerDayPnl account={account} />
             </div>
           ) : accountFailed ? (
             <span style={{ color: '#F6465D' }}>
@@ -689,326 +816,347 @@ export function TraderDashboardPage({
 
         {/* Main Content Area */}
         <div
-          className={`grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 ${dashboardTab === 'overview' ? '' : 'hidden'}`}
+          className={`grid grid-cols-1 lg:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] items-start gap-6 mb-6 ${dashboardTab === 'overview' ? '' : 'hidden'}`}
         >
-          {/* Left Column: Charts + Positions */}
-          <div className="space-y-6">
-            {/* Chart Tabs (Equity / K-line) */}
-            <div
-              ref={chartSectionRef}
-              className="chart-container animate-slide-in scroll-mt-32 backdrop-blur-sm"
-              style={{ animationDelay: '0.1s' }}
-            >
-              <ChartTabs
+          {/* Market and equity occupy separate cells; exactly one of each. */}
+          <div
+            ref={chartSectionRef}
+            className="min-w-0 chart-container animate-slide-in scroll-mt-32 backdrop-blur-sm"
+            style={{ animationDelay: '0.1s' }}
+          >
+            <ChartTabs
+              marketOnly
+              traderId={selectedTrader.trader_id}
+              selectedSymbol={selectedChartSymbol}
+              updateKey={chartUpdateKey}
+              exchangeId={getExchangeTypeFromList(
+                selectedTrader.exchange_id,
+                exchanges
+              )}
+              isFutures={isFutures}
+            />
+          </div>
+
+          <section
+            className="min-w-0"
+            aria-label={t('accountEquityCurve', language)}
+          >
+            <EquityChart
+              traderId={selectedTrader.trader_id}
+              isFutures={isFutures}
+            />
+          </section>
+          {/* Day Plan card — futures only (day_plan is a futures feature);
+                additive + dormant: renders its no-plan state until a plan arms. */}
+          {isFutures && selectedTrader.trader_id && (
+            <section id="planner" className="min-w-0 lg:col-span-2">
+              {/* Keep mounted under the CSS-hidden overview, including Desk polling and local drafts. */}
+              <PlanCard
                 traderId={selectedTrader.trader_id}
-                selectedSymbol={selectedChartSymbol}
-                updateKey={chartUpdateKey}
-                exchangeId={getExchangeTypeFromList(
+                symbol={selectedChartSymbol || 'MNQ'}
+                exchange={getExchangeTypeFromList(
                   selectedTrader.exchange_id,
                   exchanges
                 )}
-                isFutures={isFutures}
               />
+            </section>
+          )}
+
+          {/* Current Positions */}
+          <div
+            className="min-w-0 nofx-glass p-6 animate-slide-in relative overflow-hidden group"
+            style={{ animationDelay: '0.15s' }}
+          >
+            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+              <div className="w-24 h-24 rounded-full bg-blue-500 blur-3xl" />
             </div>
-
-            {/* Current Positions */}
-            <div
-              className="nofx-glass p-6 animate-slide-in relative overflow-hidden group"
-              style={{ animationDelay: '0.15s' }}
-            >
-              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                <div className="w-24 h-24 rounded-full bg-blue-500 blur-3xl" />
-              </div>
-              <div className="flex items-center justify-between mb-5 relative z-10">
-                <h2 className="text-lg font-bold flex items-center gap-2 text-nofx-text-main uppercase tracking-wide">
-                  <span className="text-blue-500">◈</span>{' '}
-                  {t('currentPositions', language)}
-                </h2>
-                {positions && positions.length > 0 && (
-                  <div className="text-xs px-2 py-1 rounded bg-nofx-gold/10 text-nofx-gold border border-nofx-gold/20 font-mono shadow-[0_0_10px_rgba(240,185,11,0.1)]">
-                    {positions.length} {t('active', language)}
-                  </div>
-                )}
-              </div>
-              {positions && positions.length > 0 ? (
-                <div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead className="text-left border-b border-white/5">
-                        <tr>
-                          <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-left">
-                            {t('symbol', language)}
-                          </th>
-                          <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-center">
-                            {t('side', language)}
-                          </th>
-                          <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-center">
-                            {t('traderDashboard.action', language)}
-                          </th>
-                          <th
-                            className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right hidden md:table-cell"
-                            title={t('entryPrice', language)}
-                          >
-                            {t('traderDashboard.entry', language)}
-                          </th>
-                          <th
-                            className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right hidden md:table-cell"
-                            title={t('markPrice', language)}
-                          >
-                            {t('traderDashboard.mark', language)}
-                          </th>
-                          <th
-                            className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right"
-                            title={t('quantity', language)}
-                          >
-                            {t('traderDashboard.qty', language)}
-                          </th>
-                          <th
-                            className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right hidden md:table-cell"
-                            title={t('positionValue', language)}
-                          >
-                            {t('traderDashboard.value', language)}
-                          </th>
-                          {!isFutures && (
-                            <th
-                              className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-center hidden md:table-cell"
-                              title={t('leverage', language)}
-                            >
-                              {t('traderDashboard.lev', language)}
-                            </th>
-                          )}
-                          <th
-                            className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right"
-                            title={t('unrealizedPnL', language)}
-                          >
-                            {t('traderDashboard.uPnL', language)}
-                          </th>
-                          {!isFutures && (
-                            <th
-                              className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right hidden md:table-cell"
-                              title={t('liqPrice', language)}
-                            >
-                              {t('traderDashboard.liq', language)}
-                            </th>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedPositions.map((pos, i) => (
-                          <tr
-                            key={i}
-                            className="border-b border-white/5 last:border-0 transition-all hover:bg-white/5 cursor-pointer group/row"
-                            onClick={() => {
-                              setSelectedChartSymbol(pos.symbol)
-                              setChartUpdateKey(Date.now())
-                              if (chartSectionRef.current) {
-                                chartSectionRef.current.scrollIntoView({
-                                  behavior: 'smooth',
-                                  block: 'start',
-                                })
-                              }
-                            }}
-                          >
-                            <td className="px-1 py-3 font-mono font-semibold whitespace-nowrap text-left text-nofx-text-main group-hover/row:text-white transition-colors">
-                              {pos.symbol}
-                            </td>
-                            <td className="px-1 py-3 whitespace-nowrap text-center">
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${(pos.side || '').toLowerCase() === 'long' ? 'bg-nofx-green/10 text-nofx-green shadow-[0_0_8px_rgba(14,203,129,0.2)]' : 'bg-nofx-red/10 text-nofx-red shadow-[0_0_8px_rgba(246,70,93,0.2)]'}`}
-                              >
-                                {t(
-                                  (pos.side || '').toLowerCase() === 'long'
-                                    ? 'long'
-                                    : 'short',
-                                  language
-                                )}
-                              </span>
-                            </td>
-                            <td className="px-1 py-3 whitespace-nowrap text-center">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleClosePosition(
-                                    pos.symbol,
-                                    pos.side.toUpperCase()
-                                  )
-                                }}
-                                disabled={closingPosition === pos.symbol}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mx-auto bg-nofx-red/10 text-nofx-red border border-nofx-red/30 hover:bg-nofx-red/20"
-                                title={t(
-                                  'traderDashboard.closePosition',
-                                  language
-                                )}
-                              >
-                                {closingPosition === pos.symbol ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <LogOut className="w-3 h-3" />
-                                )}
-                                {t('traderDashboard.close', language)}
-                              </button>
-                            </td>
-                            <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-main hidden md:table-cell">
-                              {formatPrice(pos.entry_price)}
-                            </td>
-                            <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-main hidden md:table-cell">
-                              {formatPrice(pos.mark_price)}
-                            </td>
-                            <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-main">
-                              {formatQuantity(pos.quantity)}
-                            </td>
-                            <td className="px-1 py-3 font-mono font-bold whitespace-nowrap text-right text-nofx-text-main hidden md:table-cell">
-                              {(pos.quantity * pos.mark_price).toFixed(2)}
-                            </td>
-                            {!isFutures && (
-                              <td className="px-1 py-3 font-mono whitespace-nowrap text-center text-nofx-gold hidden md:table-cell">
-                                {pos.leverage}x
-                              </td>
-                            )}
-                            <td className="px-1 py-3 font-mono whitespace-nowrap text-right">
-                              <span
-                                className={`font-bold ${(pos.unrealized_pnl ?? 0) >= 0 ? 'text-nofx-green shadow-nofx-green' : 'text-nofx-red shadow-nofx-red'}`}
-                                style={{
-                                  textShadow:
-                                    (pos.unrealized_pnl ?? 0) >= 0
-                                      ? '0 0 10px rgba(14,203,129,0.3)'
-                                      : '0 0 10px rgba(246,70,93,0.3)',
-                                }}
-                              >
-                                {(pos.unrealized_pnl ?? 0) >= 0 ? '+' : ''}
-                                {(pos.unrealized_pnl ?? 0).toFixed(2)}
-                              </span>
-                            </td>
-                            {!isFutures && (
-                              <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-muted hidden md:table-cell">
-                                {formatPrice(pos.liquidation_price)}
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {/* Pagination footer */}
-                  {totalPositions > 10 && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-4 mt-4 text-xs border-t border-white/5 text-nofx-text-muted">
-                      <span>
-                        {t('traderDashboard.showingPositions', language, {
-                          shown: paginatedPositions.length,
-                          total: totalPositions,
-                        })}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <span>{t('traderDashboard.perPage', language)}:</span>
-                          <NofxSelect
-                            value={positionsPageSize}
-                            onChange={(val) =>
-                              setPositionsPageSize(Number(val))
-                            }
-                            options={[
-                              { value: 20, label: '20' },
-                              { value: 50, label: '50' },
-                              { value: 100, label: '100' },
-                            ]}
-                            className="bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-nofx-text-main transition-colors"
-                          />
-                        </div>
-                        {totalPositionPages > 1 && (
-                          <div className="flex items-center gap-1">
-                            {[
-                              '«',
-                              '‹',
-                              `${positionsCurrentPage} / ${totalPositionPages}`,
-                              '›',
-                              '»',
-                            ].map((label, idx) => {
-                              const isText = idx === 2
-                              const isFirst = idx === 0
-                              const isPrev = idx === 1
-                              const isNext = idx === 3
-                              const isLast = idx === 4
-                              if (isText)
-                                return (
-                                  <span
-                                    key={idx}
-                                    className="px-3 text-nofx-text-main"
-                                  >
-                                    {label}
-                                  </span>
-                                )
-
-                              let onClick = () => {}
-                              let disabled = false
-
-                              if (isFirst) {
-                                onClick = () => setPositionsCurrentPage(1)
-                                disabled = positionsCurrentPage === 1
-                              }
-                              if (isPrev) {
-                                onClick = () =>
-                                  setPositionsCurrentPage((p) =>
-                                    Math.max(1, p - 1)
-                                  )
-                                disabled = positionsCurrentPage === 1
-                              }
-                              if (isNext) {
-                                onClick = () =>
-                                  setPositionsCurrentPage((p) =>
-                                    Math.min(totalPositionPages, p + 1)
-                                  )
-                                disabled =
-                                  positionsCurrentPage === totalPositionPages
-                              }
-                              if (isLast) {
-                                onClick = () =>
-                                  setPositionsCurrentPage(totalPositionPages)
-                                disabled =
-                                  positionsCurrentPage === totalPositionPages
-                              }
-
-                              return (
-                                <button
-                                  key={idx}
-                                  onClick={onClick}
-                                  disabled={disabled}
-                                  className={`px-2 py-1 rounded transition-colors ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/10 text-nofx-text-main bg-white/5'}`}
-                                >
-                                  {label}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : positionsFailed ? (
-                <div className="text-center py-16 text-nofx-text-muted opacity-60">
-                  <div className="text-4xl mb-4">⚠️</div>
-                  <div className="text-lg font-semibold mb-2">
-                    {t('traderDashboard.positionsFetchFailed', language)}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-16 text-nofx-text-muted opacity-60">
-                  <div className="text-6xl mb-4 opacity-50 grayscale">📊</div>
-                  <div className="text-lg font-semibold mb-2">
-                    {t('noPositions', language)}
-                  </div>
-                  <div className="text-sm">
-                    {t('noActivePositions', language)}
-                  </div>
+            <div className="flex items-center justify-between mb-5 relative z-10">
+              <h2 className="text-lg font-bold flex items-center gap-2 text-nofx-text-main uppercase tracking-wide">
+                <span className="text-blue-500">◈</span>{' '}
+                {t('currentPositions', language)}
+              </h2>
+              {positions && positions.length > 0 && (
+                <div className="text-xs px-2 py-1 rounded bg-nofx-gold/10 text-nofx-gold border border-nofx-gold/20 font-mono shadow-[0_0_10px_rgba(240,185,11,0.1)]">
+                  {positions.length} {t('active', language)}
                 </div>
               )}
             </div>
-          </div>
+            {positions && positions.length > 0 ? (
+              <div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="text-left border-b border-white/5">
+                      <tr>
+                        <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-left">
+                          {t('symbol', language)}
+                        </th>
+                        <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-center">
+                          {t('side', language)}
+                        </th>
+                        <th className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-center">
+                          {t('traderDashboard.action', language)}
+                        </th>
+                        <th
+                          className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right"
+                          title={t('entryPrice', language)}
+                        >
+                          {t('traderDashboard.entry', language)}
+                        </th>
+                        <th
+                          className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right"
+                          title={t('markPrice', language)}
+                        >
+                          {t('traderDashboard.mark', language)}
+                        </th>
+                        <th
+                          className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right"
+                          title={t('quantity', language)}
+                        >
+                          {t('traderDashboard.qty', language)}
+                        </th>
+                        <th
+                          className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right"
+                          title={t('positionValue', language)}
+                        >
+                          {t('traderDashboard.value', language)}
+                        </th>
+                        {!isFutures && (
+                          <th
+                            className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-center hidden md:table-cell"
+                            title={t('leverage', language)}
+                          >
+                            {t('traderDashboard.lev', language)}
+                          </th>
+                        )}
+                        <th
+                          className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right"
+                          title={t('unrealizedPnL', language)}
+                        >
+                          {t('traderDashboard.uPnL', language)}
+                        </th>
+                        {!isFutures && (
+                          <th
+                            className="px-1 pb-3 font-semibold text-nofx-text-muted whitespace-nowrap text-right hidden md:table-cell"
+                            title={t('liqPrice', language)}
+                          >
+                            {t('traderDashboard.liq', language)}
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedPositions.map((pos, i) => (
+                        <tr
+                          key={i}
+                          className="border-b border-white/5 last:border-0 transition-all hover:bg-white/5 cursor-pointer group/row"
+                          onClick={() => {
+                            setSelectedChartSymbol(pos.symbol)
+                            setChartUpdateKey(Date.now())
+                            if (chartSectionRef.current) {
+                              chartSectionRef.current.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start',
+                              })
+                            }
+                          }}
+                        >
+                          <td className="px-1 py-3 font-mono font-semibold whitespace-nowrap text-left text-nofx-text-main group-hover/row:text-white transition-colors">
+                            {pos.symbol}
+                          </td>
+                          <td className="px-1 py-3 whitespace-nowrap text-center">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${(pos.side || '').toLowerCase() === 'long' ? 'bg-nofx-green/10 text-nofx-green shadow-[0_0_8px_rgba(14,203,129,0.2)]' : 'bg-nofx-red/10 text-nofx-red shadow-[0_0_8px_rgba(246,70,93,0.2)]'}`}
+                            >
+                              {t(
+                                (pos.side || '').toLowerCase() === 'long'
+                                  ? 'long'
+                                  : 'short',
+                                language
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-1 py-3 whitespace-nowrap text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleClosePosition(
+                                  pos.symbol,
+                                  pos.side.toUpperCase()
+                                )
+                              }}
+                              disabled={closingPosition === pos.symbol}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mx-auto bg-nofx-red/10 text-nofx-red border border-nofx-red/30 hover:bg-nofx-red/20"
+                              title={t(
+                                'traderDashboard.closePosition',
+                                language
+                              )}
+                            >
+                              {closingPosition === pos.symbol ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <LogOut className="w-3 h-3" />
+                              )}
+                              {t('traderDashboard.close', language)}
+                            </button>
+                          </td>
+                          <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-main">
+                            {formatPrice(pos.entry_price)}
+                          </td>
+                          <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-main">
+                            {formatPrice(pos.mark_price)}
+                          </td>
+                          <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-main">
+                            {formatQuantity(pos.quantity)}
+                          </td>
+                          <td className="px-1 py-3 font-mono font-bold whitespace-nowrap text-right text-nofx-text-main">
+                            {(pos.quantity * pos.mark_price).toFixed(2)}
+                          </td>
+                          {!isFutures && (
+                            <td className="px-1 py-3 font-mono whitespace-nowrap text-center text-nofx-gold hidden md:table-cell">
+                              {pos.leverage}x
+                            </td>
+                          )}
+                          <td className="px-1 py-3 font-mono whitespace-nowrap text-right">
+                            <span
+                              className={`font-bold ${(pos.unrealized_pnl ?? 0) >= 0 ? 'text-nofx-green shadow-nofx-green' : 'text-nofx-red shadow-nofx-red'}`}
+                              style={{
+                                textShadow:
+                                  (pos.unrealized_pnl ?? 0) >= 0
+                                    ? '0 0 10px rgba(14,203,129,0.3)'
+                                    : '0 0 10px rgba(246,70,93,0.3)',
+                              }}
+                            >
+                              {(pos.unrealized_pnl ?? 0) >= 0 ? '+' : ''}
+                              {(pos.unrealized_pnl ?? 0).toFixed(2)}
+                            </span>
+                          </td>
+                          {!isFutures && (
+                            <td className="px-1 py-3 font-mono whitespace-nowrap text-right text-nofx-text-muted hidden md:table-cell">
+                              {formatPrice(pos.liquidation_price)}
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Pagination footer */}
+                {totalPositions > 10 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-4 mt-4 text-xs border-t border-white/5 text-nofx-text-muted">
+                    <span>
+                      {t('traderDashboard.showingPositions', language, {
+                        shown: paginatedPositions.length,
+                        total: totalPositions,
+                      })}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span>{t('traderDashboard.perPage', language)}:</span>
+                        <NofxSelect
+                          value={positionsPageSize}
+                          onChange={(val) => setPositionsPageSize(Number(val))}
+                          options={[
+                            { value: 20, label: '20' },
+                            { value: 50, label: '50' },
+                            { value: 100, label: '100' },
+                          ]}
+                          className="bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-nofx-text-main transition-colors"
+                        />
+                      </div>
+                      {totalPositionPages > 1 && (
+                        <div className="flex items-center gap-1">
+                          {[
+                            '«',
+                            '‹',
+                            `${positionsCurrentPage} / ${totalPositionPages}`,
+                            '›',
+                            '»',
+                          ].map((label, idx) => {
+                            const isText = idx === 2
+                            const isFirst = idx === 0
+                            const isPrev = idx === 1
+                            const isNext = idx === 3
+                            const isLast = idx === 4
+                            if (isText)
+                              return (
+                                <span
+                                  key={idx}
+                                  className="px-3 text-nofx-text-main"
+                                >
+                                  {label}
+                                </span>
+                              )
 
-          {/* Right Column: Recent Decisions */}
+                            let onClick = () => {}
+                            let disabled = false
+
+                            if (isFirst) {
+                              onClick = () => setPositionsCurrentPage(1)
+                              disabled = positionsCurrentPage === 1
+                            }
+                            if (isPrev) {
+                              onClick = () =>
+                                setPositionsCurrentPage((p) =>
+                                  Math.max(1, p - 1)
+                                )
+                              disabled = positionsCurrentPage === 1
+                            }
+                            if (isNext) {
+                              onClick = () =>
+                                setPositionsCurrentPage((p) =>
+                                  Math.min(totalPositionPages, p + 1)
+                                )
+                              disabled =
+                                positionsCurrentPage === totalPositionPages
+                            }
+                            if (isLast) {
+                              onClick = () =>
+                                setPositionsCurrentPage(totalPositionPages)
+                              disabled =
+                                positionsCurrentPage === totalPositionPages
+                            }
+
+                            return (
+                              <button
+                                key={idx}
+                                onClick={onClick}
+                                disabled={disabled}
+                                className={`px-2 py-1 rounded transition-colors ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white/10 text-nofx-text-main bg-white/5'}`}
+                              >
+                                {label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : positionsFailed ? (
+              <div className="text-center py-16 text-nofx-text-muted opacity-60">
+                <div className="text-4xl mb-4">⚠️</div>
+                <div className="text-lg font-semibold mb-2">
+                  {t('traderDashboard.positionsFetchFailed', language)}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-16 text-nofx-text-muted opacity-60">
+                <div className="text-6xl mb-4 opacity-50 grayscale">📊</div>
+                <div className="text-lg font-semibold mb-2">
+                  {t('noPositions', language)}
+                </div>
+                <div className="text-sm">
+                  {t('noActivePositions', language)}
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Activity follows Planner and Positions in DOM order. */}
           <div
-            className="nofx-glass p-6 animate-slide-in h-fit lg:sticky lg:top-24 lg:max-h-[calc(100vh-120px)] flex flex-col"
+            id="activity"
+            className="min-w-0 nofx-glass p-6 animate-slide-in h-fit flex flex-col"
             style={{ animationDelay: '0.2s' }}
           >
             {/* Header */}

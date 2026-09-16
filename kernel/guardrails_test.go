@@ -72,8 +72,8 @@ func TestDailyGuardrails_MaxTrades(t *testing.T) {
 func TestDailyGuardrails_MasterSwitchBypassesAll(t *testing.T) {
 	// Master OFF must bypass EVERY guardrail, even ones that would otherwise trip.
 	g := DailyGuardrails{
-		MasterEnabled:         false,
-		DailyLossEnabled:      true, DailyLossLimitUSD: 100, DailyRealizedPnL: -9999,
+		MasterEnabled:    false,
+		DailyLossEnabled: true, DailyLossLimitUSD: 100, DailyRealizedPnL: -9999,
 		MaxDailyTradesEnabled: true, MaxDailyTrades: 1, TradesToday: 99,
 	}
 	if d, err := g.Check(); err != nil || d != RiskAllow {
@@ -133,6 +133,11 @@ func TestResolveMaxContracts(t *testing.T) {
 	// Hardening D3 (audit F2): the futures contract clamp is ALWAYS ON — there is
 	// no master/toggle argument that can disable it. Per-strategy value overrides;
 	// unset/invalid → venue default; NEVER 0 (a futures order is never unclamped).
+	// 0B (2026-09-02): the Stage-A ceiling (StageAContractCap, default 1) is
+	// applied LAST — survival-first until n≥30 with a positive lower-CI
+	// expectancy. The precedence below is unchanged; it is verified with the
+	// ceiling raised, then the ceiling itself is pinned.
+	t.Setenv("STAGE_A_CONTRACT_CAP", "10")
 	if got := ResolveMaxContracts(4, 10); got != 4 { // per-strategy overrides
 		t.Fatalf("per-strategy 4 → 4, got %d", got)
 	}
@@ -141,6 +146,13 @@ func TestResolveMaxContracts(t *testing.T) {
 	}
 	if got := ResolveMaxContracts(-1, 10); got != 10 { // invalid → venue default, never 0
 		t.Fatalf("negative → default 10 (never unclamped), got %d", got)
+	}
+	// The shipped ceiling: whatever the precedence resolves, Stage A caps it at 1.
+	t.Setenv("STAGE_A_CONTRACT_CAP", "")
+	for _, tc := range []struct{ perStrategy, def int }{{4, 10}, {0, 10}, {-1, 2}, {0, 2}} {
+		if got := ResolveMaxContracts(tc.perStrategy, tc.def); got != 1 {
+			t.Fatalf("Stage A: ResolveMaxContracts(%d, %d) = %d, want 1", tc.perStrategy, tc.def, got)
+		}
 	}
 }
 

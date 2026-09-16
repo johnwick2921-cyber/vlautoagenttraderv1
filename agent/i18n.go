@@ -1,8 +1,10 @@
 package agent
 
+import "nofx/branding"
+
 var i18nMessages = map[string]map[string]string{
 	"help": {
-		"zh": "🤖 *NOFXi — 你的 AI 交易 Agent*\n\n" +
+		"zh": "🤖 *" + branding.PersonaName() + " — 你的 AI 交易 Agent*\n\n" +
 			"*交易:* 做多 BTC 0.01 x10 · 做空 ETH 0.1 · 平多 BTC · 平空 ETH\n" +
 			"       也支持 /buy /sell /long /short + 交易对 数量 杠杆\n" +
 			"*查询:* /positions /balance /pnl /traders\n" +
@@ -11,7 +13,7 @@ var i18nMessages = map[string]map[string]string{
 			"*策略:* /strategy\n" +
 			"*系统:* /status /clear /help\n\n" +
 			"直接跟我说话就行，中英文都可以 💬",
-		"en": "🤖 *NOFXi — Your AI Trading Agent*\n\n" +
+		"en": "🤖 *" + branding.PersonaName() + " — Your AI Trading Agent*\n\n" +
 			"*Trade:* long BTC 0.01 x10 · short ETH 0.1 · close long BTC · close short ETH\n" +
 			"         Also supports /buy /sell /long /short + symbol qty leverage\n" +
 			"*Query:* /positions /balance /pnl /traders\n" +
@@ -22,8 +24,8 @@ var i18nMessages = map[string]map[string]string{
 			"Just talk to me in any language 💬",
 	},
 	"status": {
-		"zh": "📊 *NOFXi 状态*\n\n• Traders: %d/%d 运行中\n• 监控: %d 个交易对\n• AI: %s\n• 时间: %s",
-		"en": "📊 *NOFXi Status*\n\n• Traders: %d/%d running\n• Watching: %d symbols\n• AI: %s\n• Time: %s",
+		"zh": "📊 *" + branding.PersonaName() + " 状态*\n\n• Traders: %d/%d 运行中\n• 监控: %d 个交易对\n• AI: %s\n• 时间: %s",
+		"en": "📊 *" + branding.PersonaName() + " Status*\n\n• Traders: %d/%d running\n• Watching: %d symbols\n• AI: %s\n• Time: %s",
 	},
 	"no_traders": {
 		"zh": "📭 暂无 Trader。请在 Web UI 中创建和配置。",
@@ -70,8 +72,8 @@ var i18nMessages = map[string]map[string]string{
 		"en": "⚠️ Sentinel not enabled.",
 	},
 	"system_prompt": {
-		"zh": "你是 NOFXi，一个专业的 AI 交易 Agent。把用户当交易小白，用简单清楚的大白话回复，先说结论，再说下一步。使用少量交易相关 emoji。",
-		"en": "You are NOFXi, a professional AI trading agent. Treat the user like a trading beginner, use plain language, lead with the conclusion, then the next step. Use a small amount of trading emojis.",
+		"zh": "你是 " + branding.PersonaName() + "，一个专业的 AI 交易 Agent。把用户当交易小白，用简单清楚的大白话回复，先说结论，再说下一步。使用少量交易相关 emoji。",
+		"en": "You are " + branding.PersonaName() + ", a professional AI trading agent. Treat the user like a trading beginner, use plain language, lead with the conclusion, then the next step. Use a small amount of trading emojis.",
 	},
 }
 

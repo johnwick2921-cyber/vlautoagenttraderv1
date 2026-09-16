@@ -1,0 +1,32 @@
+# F1c (2026-08-29) — weekly, security-only dependency updates.
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "security"
+    allow:
+      - dependency-type: "direct"
+        update-types: ["patch", "minor"]
+      # Transitive bumps ride the direct bumps above; direct major-version
+      # upgrades are owner-ruled (see AUDIT-CHECKLIST class 22) and never
+      # auto-opened.
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "security"
+    allow:
+      - dependency-type: "direct"
+        update-types: ["patch", "minor"]

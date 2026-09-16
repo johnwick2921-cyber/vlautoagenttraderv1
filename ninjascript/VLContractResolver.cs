@@ -77,7 +77,65 @@ namespace NinjaTrader.NinjaScript.AddOns
         /// </summary>
         public static string ResolveFrontMonthContract(string symbol)
         {
+            // OWNER RULING 2026-09-11 — THE PLATFORM NAMES THE FRONT MONTH, NEVER A
+            // COMPUTED EXPIRY. The date rule below flipped this AddOn to MNQ 12-26 at
+            // 00:00 UTC on 2026-09-11 (expiry-8d) while NT8 itself was still on
+            // MNQ 09-26: bars subscribed December (its history served at September's
+            // prices under the December name), orders filled December (NT8 log:
+            // position 605 'Instrument=MNQ 12-26' Fill price=29361.25), the owner's
+            // chart showed September ~290 points lower, and every level the planner
+            // seated was on a contract the platform had not rolled to. NT8's rolling
+            // name "<root> ##-##" resolves, inside Instrument.GetInstrument, to the
+            // contract NT8's own rollover table says is current — the same one the
+            // chart and the Control Center use. The date rule is kept ONLY as the
+            // fallback VLInstrumentLookup uses when a build rejects the rolling
+            // name, and that fallback is logged by name every time it runs.
+            return RollingContractName(symbol);
+        }
+
+        /// <summary>
+        /// RollingContractName maps a Go-side symbol to NT8's rolling front-month
+        /// instrument name ("MNQ ##-##"). Same passthrough rules as the date
+        /// resolver: already-qualified and non-CME symbols return unchanged.
+        /// </summary>
+        public static string RollingContractName(string symbol)
+        {
+            if (string.IsNullOrEmpty(symbol) || symbol.IndexOf(' ') >= 0)
+            {
+                return symbol;
+            }
+            string root = symbol;
+            int continuousIdx = symbol.IndexOf(".c.", StringComparison.OrdinalIgnoreCase);
+            if (continuousIdx > 0)
+            {
+                root = symbol.Substring(0, continuousIdx);
+            }
+            if (!IsQuarterlyRoot(root))
+            {
+                return symbol;
+            }
+            return root.ToUpperInvariant() + " ##-##";
+        }
+
+        /// <summary>
+        /// DateRuleContract is the former resolver — expiry-8d from DateTime.UtcNow.
+        /// FALLBACK ONLY (see ResolveFrontMonthContract).
+        /// </summary>
+        public static string DateRuleContract(string symbol)
+        {
             return ResolveFrontMonthContractAt(symbol, DateTime.UtcNow);
+        }
+
+        internal static bool IsQuarterlyRoot(string root)
+        {
+            for (int i = 0; i < CMEFuturesRoots.Length; i++)
+            {
+                if (string.Equals(root, CMEFuturesRoots[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>

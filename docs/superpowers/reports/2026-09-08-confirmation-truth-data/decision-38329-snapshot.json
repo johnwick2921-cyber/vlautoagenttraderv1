@@ -1,0 +1,30 @@
+{
+  "id": 38329,
+  "timestamp": "2026-09-08 13:17:50.474702529+00:00",
+  "session": "LONDON",
+  "plan_version": 5,
+  "clock": "08:16 CT (13:16 UTC) · Snapshot: 08:16:59 CT — ALL times in this prompt are CT (America/Chicago), including every session/window bound. Never apply CT window numbers to a UTC clock.",
+  "system_lines": [
+    "  S3 [C] sweep_reclaim short: A sweep above EQH·1h 29661.25 into OB(bear)·1h 29670.00 followed by a 5m close back below 29661.25 opens a short (above the dealing-range midpoint, so allowed). → 29619.86,29572.00,29548.59 · invalid A 5m close above 29670.00 kills the short setup.",
+    "SVP (today's session, since 17:00 CT open): POC 29590.62 VAH 29678.75 VAL 29530.00",
+    "bias_ctx: price 29659.00 · 52.1 vs VWAP 29606.90 · -77.8 vs PDC 29736.75 · above value area (29535.75–29638.32) · nearest magnet VWAP+1σ (+20.0) · nearest liquidity none",
+    "  S1 confirm: 1x5m close above 29548.59 — MET (stale — written 29548.59 context, price now 29659.00; treat as expired) (last 1x5m close 29656.75 (best run 20/1 closes above 29548.59 since plan birth))",
+    "  S3 confirm: leg 1/2 touch — MET · leg 2/2 1x5m close — MET → overall MET (last 1x5m close 29656.75 (best run 48/1 closes below 29661.25 since plan birth))",
+    "confirm S1 NOT MET — touch active at EQL 29549.75: forming shape forming"
+  ],
+  "five_minute_table": "=== 5M Timeframe (oldest → latest) ===\n\nTime(CT)       Open      High      Low       Close     Volume\n09-08 06:40    29558.5000 29562.2500 29546.2500 29546.7500 2201.00     \n09-08 06:45    29547.0000 29553.5000 29539.0000 29546.5000 2982.00     \n09-08 06:50    29546.0000 29572.2500 29545.7500 29570.7500 3388.00     \n09-08 06:55    29570.5000 29601.7500 29570.5000 29601.2500 5358.00     \n09-08 07:00    29600.7500 29601.0000 29573.5000 29581.2500 4222.00     \n09-08 07:05    29580.7500 29589.5000 29570.7500 29587.2500 3145.00     \n09-08 07:10    29587.2500 29587.5000 29551.2500 29555.7500 4687.00     \n09-08 07:15    29555.0000 29580.5000 29548.5000 29578.2500 4195.00     \n09-08 07:20    29578.7500 29586.5000 29567.5000 29578.7500 4530.00     \n09-08 07:25    29579.7500 29596.0000 29579.7500 29595.5000 3632.00     \n09-08 07:30    29595.2500 29626.5000 29590.7500 29620.2500 7374.00     \n09-08 07:35    29620.0000 29627.2500 29608.0000 29616.5000 3798.00     \n09-08 07:40    29616.0000 29621.0000 29604.7500 29615.5000 3523.00     \n09-08 07:45    29615.2500 29629.5000 29603.7500 29625.7500 4324.00     \n09-08 07:50    29625.7500 29638.0000 29621.5000 29637.7500 4830.00     \n09-08 07:55    29637.5000 29654.5000 29629.7500 29653.7500 5925.00     \n09-08 08:00    29653.5000 29655.0000 29634.2500 29648.0000 6982.00     \n09-08 08:05    29647.7500 29656.2500 29640.7500 29644.7500 5490.00     \n09-08 08:10    29645.7500 29660.5000 29643.2500 29658.7500 4513.00     \n09-08 08:15    29659.2500 29664.0000 29653.2500 29656.7500 2503.00       <- current\n\nEMA50: [29572.7463, 29571.7171, 29571.6791, 29572.8388, 29573.1686, 29573.7208, 29573.0161, 29573.2214, 29573.4382, 29574.3033, 29576.1052, 29577.6893, 29579.1721, 29580.9986, 29583.2242, 29585.9899, 29588.4217, 29590.6306, 29593.3020, 29595.7901]\nEMA200: [29613.9175, 29613.2466, 29612.8238, 29612.7086, 29612.3956, 29612.1454, 29611.5842, 29611.2526, 29610.9291, 29610.7756, 29610.8699, 29610.9259, 29610.9714, 29611.1185, 29611.3835, 29611.8050, 29612.1652, 29612.4894, 29612.9497, 29613.3855]\nRSI14: [42.2959, 42.2168, 51.6583, 60.4183, 53.5639, 55.2058, 46.0085, 52.1417, 52.2715, 56.5239, 61.9224, 60.6927, 60.3485, 62.6843, 65.2641, 68.4010, 66.0911, 64.7599, 67.7713, 66.8919]\nATR14: 21.1599\n\ncurrent 5m bar: FORMING (closes 08:20 CT) — prior bars closed\n\n",
+  "decisions": [
+    {
+      "action": "wait",
+      "symbol": "MNQ",
+      "quantity": 0,
+      "leverage": 0,
+      "price": 0,
+      "reasoning": "EQH·1h was swept to 29664, but the 5m reversal close is only 4.5 pts back below 29661.25 and the 5m structure remains trending up with last BOS-up. S3 is formally MET, but opposing S1 confirm is stale and the live plan flags structural ambiguity — default WAIT unless a fresh trigger. No displacement or 5m close below 29645 yet, and shorting against the immediate uptrend near value-area top lacks clean rejection evidence. Waiting for either a decisive 5m close below 29645 (favor S3) or reclaim above 29670 (invalidate S3) before committing.",
+      "order_id": 0,
+      "timestamp": "2026-09-08T13:17:49.474602809Z",
+      "success": true,
+      "error": ""
+    }
+  ]
+}

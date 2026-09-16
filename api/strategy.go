@@ -370,6 +370,13 @@ func (s *Server) handleUpdateStrategy(c *gin.Context) {
 		return
 	}
 
+	// REPAIR-PARSE E5 (2026-09-02) — NAME WHAT MOVED. The 2026-09-01 08:13 CT
+	// save changed min_risk_reward_ratio 3 → 2 and reloaded the trader mid-NY
+	// with nothing on any surface saying so; the audit had to infer it. Every
+	// save now logs one line per RESOLVED knob that changed and persists the
+	// diff. Purely observational — the reload itself is unchanged.
+	s.logConfigDiff("studio_save", strategyID, baseConfig, mergedConfig)
+
 	// Token overflow check — block save if all models exceed context limits
 	if mergedConfig.StrategyType == "" || mergedConfig.StrategyType == "ai_trading" {
 		estimate := mergedConfig.EstimateTokens()
@@ -721,7 +728,7 @@ func (s *Server) handleStrategyTestRun(c *gin.Context) {
 
 	// Build real context (for generating User Prompt)
 	testContext := &kernel.Context{
-		CurrentTime:    time.Now().UTC().Format("2006-01-02 15:04:05 UTC"),
+		CurrentTime:    kernel.FormatCT(time.Now()),
 		RuntimeMinutes: 0,
 		CallCount:      1,
 		Account: kernel.AccountInfo{
@@ -840,4 +847,27 @@ func (s *Server) runRealAITest(userID, modelID, systemPrompt, userPrompt string)
 
 func (s *Server) resolveStrategyDataWalletKey(userID, selectedModelID string) (string, error) {
 	return s.store.AIModel().ResolveClaw402WalletKey(userID, selectedModelID)
+}
+
+// logConfigDiff renders and persists the per-save resolved-knob diff. Failures
+// are WARNed, never fatal: an observability write must not break a save (A10).
+func (s *Server) logConfigDiff(source, strategyID string, before, after store.StrategyConfig) {
+	src := store.NormalizeSource(source)
+	changes := store.DiffStrategyConfig(before, after)
+	logger.Infof("%s", store.ConfigDiffSummaryLine(src, strategyID, len(changes)))
+	if len(changes) == 0 {
+		return
+	}
+	now := time.Now().UTC()
+	for i := range changes {
+		changes[i].Strategy = strategyID
+		changes[i].Source = src
+		changes[i].At = now
+		logger.Infof("%s", store.ConfigDiffLine(src, changes[i]))
+	}
+	if s.store != nil && s.store.ConfigChanges() != nil {
+		if err := s.store.ConfigChanges().Save(changes); err != nil {
+			logger.Warnf("⚙ config diff: persist failed (%d change(s) logged but not stored): %v", len(changes), err)
+		}
+	}
 }

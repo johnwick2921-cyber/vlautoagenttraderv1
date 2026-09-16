@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -20,6 +21,23 @@ import (
 
 	"nofx/mcp"
 )
+
+// x402WarnLast rate-limits the per-cycle 402 retry noise (F5, LONDON-FORENSICS
+// 2026-08-28): the deprecated claw402-data path 402s on EVERY call and logs 5
+// retry lines per cycle (~122 per session-day). One line per hour per key.
+var x402WarnLast sync.Map // key -> unix seconds of the last WARN
+
+// x402WarnThrottled logs at most once per hour per key.
+func x402WarnThrottled(key string, log mcp.Logger, format string, args ...interface{}) {
+	now := time.Now().Unix()
+	if v, ok := x402WarnLast.Load(key); ok {
+		if last, _ := v.(int64); now-last < 3600 {
+			return
+		}
+	}
+	x402WarnLast.Store(key, now)
+	log.Warnf(format, args...)
+}
 
 const (
 	// X402MaxPaymentRetries is the number of retries for 5xx/expired-402 errors
@@ -235,14 +253,14 @@ func DoX402Request(
 						newSig, signErr := signFn(newHeader)
 						if signErr == nil {
 							paymentSig = newSig
-							logger.Warnf("⚠️  [%s] Payment expired (402), re-signed and retrying in %v (%d/%d)...",
+							x402WarnThrottled(providerTag+"|402", logger, "⚠️  [%s] Payment expired (402), re-signed and retrying in %v (%d/%d)...",
 								providerTag, wait, attempt+1, X402MaxPaymentRetries)
 						} else {
-							logger.Warnf("⚠️  [%s] Payment expired (402), re-sign failed: %v, retrying in %v (%d/%d)...",
+							x402WarnThrottled(providerTag+"|402-sign", logger, "⚠️  [%s] Payment expired (402), re-sign failed: %v, retrying in %v (%d/%d)...",
 								providerTag, signErr, wait, attempt+1, X402MaxPaymentRetries)
 						}
 					} else {
-						logger.Warnf("⚠️  [%s] Got 402 but no new Payment-Required header, retrying in %v (%d/%d)...",
+						x402WarnThrottled(providerTag+"|402-nohdr", logger, "⚠️  [%s] Got 402 but no new Payment-Required header, retrying in %v (%d/%d)...",
 							providerTag, wait, attempt+1, X402MaxPaymentRetries)
 					}
 				} else {
@@ -391,14 +409,17 @@ func DoX402RequestStream(
 					newSig, signErr := signFn(newHeader)
 					if signErr == nil {
 						paymentSig = newSig
-						logger.Warnf("⚠️  [%s] Payment expired (402), re-signed and retrying in %v (%d/%d)...",
+						// F5 (LONDON-FORENSICS 2026-08-28) — the deprecated
+						// claw402-data path 402s every cycle (122 lines/session-day);
+						// throttle the retry noise to one line per hour per provider.
+						x402WarnThrottled(providerTag+"|402", logger, "⚠️  [%s] Payment expired (402), re-signed and retrying in %v (%d/%d)...",
 							providerTag, wait, attempt+1, X402MaxPaymentRetries)
 					} else {
-						logger.Warnf("⚠️  [%s] Payment expired (402), re-sign failed: %v, retrying in %v (%d/%d)...",
+						x402WarnThrottled(providerTag+"|402-sign", logger, "⚠️  [%s] Payment expired (402), re-sign failed: %v, retrying in %v (%d/%d)...",
 							providerTag, signErr, wait, attempt+1, X402MaxPaymentRetries)
 					}
 				} else {
-					logger.Warnf("⚠️  [%s] Got 402 but no new Payment-Required header, retrying in %v (%d/%d)...",
+					x402WarnThrottled(providerTag+"|402-nohdr", logger, "⚠️  [%s] Got 402 but no new Payment-Required header, retrying in %v (%d/%d)...",
 						providerTag, wait, attempt+1, X402MaxPaymentRetries)
 				}
 			} else {

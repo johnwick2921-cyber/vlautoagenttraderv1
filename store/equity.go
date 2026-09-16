@@ -14,8 +14,8 @@ type EquityStore struct {
 
 // EquitySnapshot equity snapshot
 type EquitySnapshot struct {
-	ID            int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	TraderID      string    `gorm:"column:trader_id;not null;index:idx_equity_trader_time" json:"trader_id"`
+	ID       int64  `gorm:"primaryKey;autoIncrement" json:"id"`
+	TraderID string `gorm:"column:trader_id;not null;index:idx_equity_trader_time" json:"trader_id"`
 	// Account is the NT sub-account this snapshot belongs to (ITEM 2 / Plan 4
 	// per-account). Empty for crypto traders and for pre-migration rows — an
 	// empty value is excluded by the account-scoped query (quarantine), so old
@@ -88,7 +88,7 @@ func (s *EquityStore) GetLatest(traderID string, limit int) ([]*EquitySnapshot, 
 // GetLatestScoped is GetLatest but optionally scoped to a single account
 // (ITEM 2 per-account). When account != "" it filters by (trader_id, account)
 // so a per-account curve excludes other accounts AND pre-migration rows
-// (account=''). When account == "" it behaves exactly like GetLatest
+// (account=”). When account == "" it behaves exactly like GetLatest
 // (trader-global) — the path crypto traders and legacy callers take.
 func (s *EquityStore) GetLatestScoped(traderID, account string, limit int) ([]*EquitySnapshot, error) {
 	if account == "" {

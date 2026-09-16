@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"nofx/branding"
 	"sort"
 	"strings"
 	"time"
@@ -792,11 +793,13 @@ func formatReadFastPathResponse(lang, kind, raw string) string {
 			return "There is no closed trade history yet."
 		}
 		summary, _ := payload["summary"].(map[string]any)
-		head := fmt.Sprintf("Recent trades: %.0f total, win rate %s, total PnL %.4f",
-			toFloat(summary["total_trades"]), asString(summary["win_rate"]), toFloat(summary["total_pnl"]))
+		// P&L-TRUTH WAVE: the figure never travels without its resolved n and
+		// the unresolved exclusion count.
+		head := fmt.Sprintf("Recent trades: %+.2f over %.0f resolved trades (%.0f unresolved excluded), win rate %s",
+			toFloat(summary["total_pnl"]), toFloat(summary["resolved_trades"]), toFloat(summary["unresolved_excluded"]), asString(summary["win_rate"]))
 		if lang == "zh" {
-			head = fmt.Sprintf("最近交易：共 %.0f 笔，胜率 %s，总 PnL %.4f",
-				toFloat(summary["total_trades"]), asString(summary["win_rate"]), toFloat(summary["total_pnl"]))
+			head = fmt.Sprintf("最近交易：%+.2f，基于 %.0f 笔已结算交易（%.0f 笔未结算已排除），胜率 %s",
+				toFloat(summary["total_pnl"]), toFloat(summary["resolved_trades"]), toFloat(summary["unresolved_excluded"]), asString(summary["win_rate"]))
 		}
 		lines := []string{head}
 		for idx, item := range items {
@@ -3416,7 +3419,7 @@ Rules:
 			mcp.NewUserMessage(userPrompt),
 		},
 		Ctx:       stageCtx,
-		MaxTokens: intPtr(500),
+		MaxTokens: intPtr(aiEnvInt("AI_REPLANNER_MAX_TOKENS", 500)),
 	})
 	a.logPlannerTiming(state.SessionID, userID, "replan_after_step_llm", startedAt, err)
 	if err != nil {
@@ -3773,7 +3776,7 @@ func buildCompactObservationSummary(state ExecutionState) string {
 
 func finalPlanResponseSystemPrompt(lang string) string {
 	if lang == "zh" {
-		return `你是 NOFXi，用户的 AI 交易伙伴。像朋友聊天一样回复。
+		return `你是 ` + branding.PersonaName() + `，用户的 AI 交易伙伴。像朋友聊天一样回复。
 
 严格规则：
 - 只回答 Goal 问的那一件事。用户问余额就只说余额，问持仓就只说持仓，问钱包就只说钱包。
@@ -3783,7 +3786,7 @@ func finalPlanResponseSystemPrompt(lang string) string {
 - 不要列"下一步建议"或"需要我帮你做什么"，除非用户主动问。
 - 回复尽量短，能一句话说清的不要写一段话。`
 	}
-	return `You are NOFXi, the user's AI trading partner. Reply like a friend chatting.
+	return `You are ` + branding.PersonaName() + `, the user's AI trading partner. Reply like a friend chatting.
 
 Strict rules:
 - Answer ONLY the one thing asked in Goal. If user asks balance, only say balance. If user asks positions, only say positions.

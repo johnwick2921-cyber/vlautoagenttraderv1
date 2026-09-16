@@ -27,6 +27,7 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 	// A2 (G1) — record the owning trader id so outbound order frames can stamp it.
 	t.mu.Lock()
 	t.traderID = traderID
+	t.st = st // Entry rejection receipts need the ledger before any placement.
 	t.mu.Unlock()
 	pb := store.NewPositionBuilder(st.Position())
 	t.closeSyncOnce.Do(func() {
@@ -162,8 +163,11 @@ func (t *TCPTrader) recordClose(
 		}
 	}
 
-	if err := pb.ProcessTrade(owner.TraderID, exchangeID, exchangeType, symbol, side, action,
-		attributedQty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID); err != nil {
+	// D3 — the broker's own cause travels WITH the close instead of being
+	// logged and thrown away. p.ExitReason is the same value line 204 below
+	// uses to arm the re-entry cooldown.
+	if err := pb.ProcessTradeWithExitReason(owner.TraderID, exchangeID, exchangeType, symbol, side, action,
+		attributedQty, p.ExitPrice, 0, realizedPnL, exitMs, p.SignalID, p.ExitReason); err != nil {
 		logger.Warnf("ninjatrader/tcp: record close failed (%s %s): %v", symbol, side, err)
 	} else {
 		// 4.2 — exit-fill persistence (NT8 SIM lineage): entries record fills in
@@ -185,6 +189,11 @@ func (t *TCPTrader) recordClose(
 		if OnPositionClosed != nil {
 			OnPositionClosed(owner.TraderID, owner.ID)
 		}
+		// T7 (2026-08-27) — the close path stamps pnl_corrected on the
+		// row immediately (same recompute the readers COALESCE to), so the
+		// column is non-NULL on every NEW close. The Δ≥$0.50 class-killer
+		// WARN lives inside the stamp.
+		st.StampPnlCorrectedOnClose(owner.ID, realizedPnL, realizedPnL)
 		// WARN (honest-logs 2026-08-19): a position close with realized P&L is
 		// owner-visible truth — must reach the log_events sink + dashboard even
 		// under journald frame-flood suppression.

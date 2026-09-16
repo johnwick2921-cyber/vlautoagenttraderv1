@@ -1,0 +1,165 @@
+{
+  "reasoning": "bias-tree: branch 3 — inside day, price 29463 below PDC 29473.25 → short LOW; premium at 59% of range disallows longs except below 29446. The 02:30 5m candle broke the prior 15m supply [29527–29556] and dropped ~80pts to 29463; fast tape + 1h down = one-sided delivery. Plan: fade bounces at 29477/29500 VWAP, take continuation below 29447.50, and allow only a low-premium sweep-reclaim long at ONL 29435.75 as the counter. No fvg_entry: FRESH FVG list is empty.",
+  "bias": {
+    "direction": "short",
+    "conviction": "low",
+    "flip_condition": "2x5m close above 29477.00 flips bias long"
+  },
+  "levels": [
+    {
+      "price": 29477,
+      "label": "SWG-L·15m",
+      "grade": "A",
+      "instruction": "short_reject",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29500.21,
+      "label": "VWAP",
+      "grade": "A",
+      "instruction": "short_reject",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29517,
+      "label": "RTH-H",
+      "grade": "A",
+      "instruction": "target_only",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29538.75,
+      "label": "PDH",
+      "grade": "A",
+      "instruction": "target_only",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29571,
+      "label": "ONH",
+      "grade": "A",
+      "instruction": "liquidity_break",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29447.5,
+      "label": "SWG-L·5m",
+      "grade": "A",
+      "instruction": "breakdown_trigger",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29435.75,
+      "label": "ONL",
+      "grade": "A",
+      "instruction": "liquidity_break",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29432.25,
+      "label": "OB(bull)·1h",
+      "grade": "C",
+      "instruction": "confluence_target",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29422.12,
+      "label": "OB(bull)·1h (HTF)",
+      "grade": "A",
+      "instruction": "target_only"
+    },
+    {
+      "price": 29418.62,
+      "label": "POC",
+      "grade": "A",
+      "instruction": "target_only"
+    },
+    {
+      "price": 29354,
+      "label": "PDL",
+      "grade": "A",
+      "instruction": "react_zone",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Rally retest of 29477.00 fails — sell the touch",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29447.5,
+        29435.75,
+        29422.12
+      ],
+      "invalid": "5m close above 29500.21 cancels the fade",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29477,
+        "side": "below"
+      },
+      "quality": "A",
+      "arm": {
+        "enabled": true,
+        "entry": 29477,
+        "stop": 29500.21,
+        "target": 29418.62
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "Rally retest of 29447.50 fails — sell the touch",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29435.75,
+        29422.12,
+        29418.62
+      ],
+      "invalid": "5m close back above 29477.00 invalidates the reject",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29447.5,
+        "side": "below"
+      },
+      "quality": "A"
+    },
+    {
+      "id": "S3",
+      "trigger": "Wick below 29435.75 then 1m reclaim above it",
+      "condition": "sweep_reclaim",
+      "direction": "long",
+      "target_chain": [
+        29477,
+        29500.21
+      ],
+      "invalid": "5m close below 29432.25 kills the long",
+      "confirm": {
+        "rule": "1m_mss",
+        "ref_price": 29435.75,
+        "side": "above"
+      },
+      "quality": "B"
+    }
+  ],
+  "no_trade": [
+    "first 5m (CT)",
+    "12:00-13:30 CT lunch",
+    "09:00 CT ISM Manufacturing PMI hard blackout",
+    "🔴 ISM Manufacturing PMI 09:00 CT ±15m +1m (clock drift) — HARD no-trade (red news)"
+  ],
+  "death_condition": "A 5m close above 29500.21 (VWAP reclaim) ends the short plan.",
+  "day_type": "balance",
+  "death": {
+    "price": 29500.21,
+    "side": "above",
+    "rule": "5m_close"
+  },
+  "flip": {
+    "price": 29477,
+    "side": "above",
+    "rule": "2x5m",
+    "flip_to": "long"
+  }
+}

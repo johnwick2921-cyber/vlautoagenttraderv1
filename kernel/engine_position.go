@@ -7,6 +7,15 @@ import (
 	"nofx/telemetry"
 )
 
+// GateRefusalError is a NON-FIXABLE risk-gate refusal (C6 executor plan gate).
+// The bounded parse-retry loop must NOT feed it back to the model as a parse
+// error — the model cannot fix a missing/dead plan, and yesterday the three
+// blind NY proposals each burned a retry loop instead of surfacing as a clean
+// logged risk_check_error (F2, 2026-08-27-london-drought.md).
+type GateRefusalError struct{ Reason string }
+
+func (e *GateRefusalError) Error() string { return e.Reason }
+
 // futuresMaxNotionalLeverage is the notional sanity ceiling for CME futures
 // in the risk gate: max position notional = equity × this. Futures are
 // leveraged instruments (a $50k account holds ~$60k MNQ notional on ~$2.2k
@@ -189,6 +198,111 @@ func validateDecision(d *Decision, accountEquity float64, btcEthLeverage, altcoi
 		// back-compat for strategies that never set it). Applies to crypto + futures.
 		if minConfidence > 0 && d.Confidence < minConfidence {
 			return fmt.Errorf("confidence too low (%d), must be ≥%d to open position", d.Confidence, minConfidence)
+		}
+
+		// A3 (2026-08-26) — MIN-SL VALIDATION. Research-grounded: 15/27 week
+		// losers stopped-too-tight (MFE ≥ 0.5×SL before the stop-out). Two legs:
+		//  (1) |entry−SL| ≥ MIN_SL_ATR_MULT × ATR(14, 5m Wilder) — env, default
+		//      1.0, 0 = off. The ATR rides ctx.Structure["5m"].Atr (same series
+		//      the swing engine uses; no hardcoded width).
+		//  (2) Level clearance: for a cited scenario, the SL must sit BEYOND the
+		//      anchor level/zone far edge by ≥ MinSLTickClearance ticks — stops
+		//      parked at the level itself get run (week evidence: 5/5 biggest
+		//      losers stopped 5–44 pts from any seated level).
+		// Refusal feeds the existing re-validate retry ("sl_too_tight: … widen or
+		// skip"). Fail-open: no ATR / no anchor → WARN + pass.
+		if ctx != nil && (d.Action == "open_long" || d.Action == "open_short") {
+			if mult := MinSLATRMult(); mult > 0 && entryRef > 0 && d.StopLoss > 0 {
+				atr := 0.0
+				if st, ok := ctx.Structure["5m"]; ok {
+					atr = st.Atr
+				}
+				if atr > 0 {
+					dist := 0.0
+					if d.Action == "open_long" {
+						dist = entryRef - d.StopLoss
+					} else {
+						dist = d.StopLoss - entryRef
+					}
+					if blocked, msg := MinSLVerdict(d.Action, dist, atr, mult); blocked {
+						telemetry.IncGateBlock(ctx.TraderID, "min_sl_gate")
+						logger.Warnf("🛑 MIN-SL REJECT %s %s: %s", d.Symbol, d.Action, msg)
+						return fmt.Errorf("%s", msg)
+					}
+				} else {
+					logger.Warnf("🛑 MIN-SL SKIPPED %s %s — no 5m ATR in structure snapshot (fail-open)", d.Symbol, d.Action)
+				}
+				// Leg 2 — level clearance for a cited scenario anchor.
+				if anchor, ok := MinSLAnchorFor(ctx, d); ok {
+					tick := market.FuturesTickSize(d.Symbol)
+					if tick <= 0 {
+						tick = 0.25
+					}
+					clear := float64(MinSLTickClearance) * tick
+					violated := false
+					if d.Action == "open_long" {
+						violated = d.StopLoss > anchor-clear
+					} else {
+						violated = d.StopLoss < anchor+clear
+					}
+					if violated {
+						telemetry.IncGateBlock(ctx.TraderID, "min_sl_gate")
+						return fmt.Errorf("sl_too_tight: stop %.2f does not clear the cited level %.2f by ≥%d tick(s) — widen or skip", d.StopLoss, anchor, MinSLTickClearance)
+					}
+				}
+			}
+		}
+
+		// G1 (regime wave 2026-08-21) — HTF VETO. Position in the gate chain:
+		// AFTER the min-confidence gate, BEFORE the decision proceeds to sizing
+		// and execution. An entry opposing the CONFIRMED HTF trend (G2) is
+		// refused; RANGING/unconfirmed and detector-unavailable FAIL OPEN
+		// (WARN + pass). ctx == nil (unit tests) → gate dormant.
+		if ctx != nil && ctx.HTFVetoEnabled {
+			if blocked, msg := HTFVetoVerdict(ctx.Structure, d.Action, ctx.HTFVetoTF); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "htf_veto")
+				logger.Warnf("🛡️ HTF VETO %s %s: %s", d.Symbol, d.Action, msg)
+				return fmt.Errorf("%s", msg)
+			}
+		}
+
+		// G4 (regime wave 2026-08-21) — TRANSITION STAND-DOWN: while an
+		// unconfirmed counter-trend CHoCH/MSS is outstanding on the plan's bias
+		// TF, NEW entries in the PLAN'S direction are paused (the card shows
+		// "⏸ TRANSITION"). Counter-direction entries are never paused by this —
+		// the flip owns that job. ctx == nil → dormant.
+		if ctx != nil && ctx.TransitionActive {
+			if blocked, msg := TransitionStanddownVerdict(d.Action, ctx.TransitionActive, ctx.TransitionDir, ctx.TransitionDetail); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "transition_standdown")
+				logger.Warnf("⏸ TRANSITION STAND-DOWN %s %s: %s", d.Symbol, d.Action, msg)
+				return fmt.Errorf("%s", msg)
+			}
+		}
+
+		// C6 (2026-08-25) — EXECUTOR DEAD-PLAN GATE: when the active day plan
+		// is machine-dead (or planless with day_plan on), NEW entries are
+		// refused. Position management (closes/trails) is NOT blocked.
+		if ctx != nil && ctx.ExecutorPlanDead != "" {
+			if blocked, msg := ExecutorPlanDeadVerdict(d.Action, ctx.ExecutorPlanDead); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "executor_plan_dead")
+				logger.Warnf("🚧 EXECUTOR PLAN GATE %s %s: %s", d.Symbol, d.Action, msg)
+				// HONEST C6 (2026-08-27): a typed gate refusal — returned to the
+				// caller as a clean, logged risk_check_error, NEVER a parse-error
+				// retry loop (the model cannot fix a missing plan).
+				return &GateRefusalError{Reason: msg}
+			}
+		}
+
+		// R4 (2026-08-25) — min_scenario_quality gate: with a floor of A or B,
+		// an entry citing a scenario graded below the floor is refused. Default
+		// C = no restriction (today's behavior byte-identical). ctx == nil →
+		// dormant. Position management is NOT blocked.
+		if ctx != nil && ctx.MinScenarioQuality != "" && ctx.MinScenarioQuality != "C" {
+			if blocked, msg := MinScenarioQualityVerdict(d.Action, d.CitedScenario, ctx.MinScenarioQuality, ctx.PlanScenarioQuality); blocked {
+				telemetry.IncGateBlock(ctx.TraderID, "scenario_below_min_quality")
+				logger.Warnf("🚧 SCENARIO QUALITY GATE %s %s: %s", d.Symbol, d.Action, msg)
+				return fmt.Errorf("%s", msg)
+			}
 		}
 	}
 

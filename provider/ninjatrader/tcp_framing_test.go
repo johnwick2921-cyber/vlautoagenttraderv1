@@ -47,7 +47,7 @@ func TestRoundTrip_Fill(t *testing.T) {
 		FillPrice:     21500.50,
 		FillTime:      "2026-05-26T12:00:01Z",
 		Side:          "long",
-		Quantity:     1,
+		Quantity:      1,
 		SlippageTicks: 1.0,
 		Status:        "filled",
 	}
@@ -298,5 +298,67 @@ func TestAccountSelect_Various(t *testing.T) {
 				t.Errorf("account: want %q got %q", want.Account, got.Account)
 			}
 		})
+	}
+}
+
+// TestRoundTrip_BarsHistoryFrames — HISTORY IMPORT (wave 101): the three new
+// frames survive the envelope byte-for-byte (type + payload fields).
+func TestRoundTrip_BarsHistoryFrames(t *testing.T) {
+	req := BarsHistoryRequestPayload{
+		RequestID: "imp-abc123", Symbol: "MNQ", Contract: "MNQ 09-23",
+		Timeframe: "1m", FromMs: 1700000000000, ToMs: 1710000000000,
+	}
+	var buf bytes.Buffer
+	if err := WriteFrame(&buf, FrameBarsHistoryRequest, req); err != nil {
+		t.Fatalf("WriteFrame request: %v", err)
+	}
+	env, err := ReadFrame(&buf)
+	if err != nil || env.Type != FrameBarsHistoryRequest {
+		t.Fatalf("request env: type=%q err=%v", env.Type, err)
+	}
+	var gotReq BarsHistoryRequestPayload
+	if err := jsonUnmarshalForTest(env.Payload, &gotReq); err != nil {
+		t.Fatalf("unmarshal request: %v", err)
+	}
+	if gotReq != req {
+		t.Errorf("request mismatch:\n got=%+v\nwant=%+v", gotReq, req)
+	}
+
+	data := BarsHistoryDataPayload{
+		RequestID: "imp-abc123", Symbol: "MNQ", Contract: "MNQ 09-23",
+		Timeframe: "1m", Seq: 2, Last: true,
+		Bars: []Bar{{T: 1700000000000, O: 1.0, H: 2.0, L: 0.5, C: 1.5, V: 3.0}},
+	}
+	if err := WriteFrame(&buf, FrameBarsHistoryData, data); err != nil {
+		t.Fatalf("WriteFrame data: %v", err)
+	}
+	env, err = ReadFrame(&buf)
+	if err != nil || env.Type != FrameBarsHistoryData {
+		t.Fatalf("data env: type=%q err=%v", env.Type, err)
+	}
+	var gotData BarsHistoryDataPayload
+	if err := jsonUnmarshalForTest(env.Payload, &gotData); err != nil {
+		t.Fatalf("unmarshal data: %v", err)
+	}
+	if gotData.RequestID != data.RequestID || gotData.Contract != data.Contract ||
+		gotData.Seq != data.Seq || !gotData.Last || len(gotData.Bars) != 1 ||
+		gotData.Bars[0] != data.Bars[0] {
+		t.Errorf("data mismatch:\n got=%+v\nwant=%+v", gotData, data)
+	}
+
+	errP := BarsHistoryErrorPayload{RequestID: "imp-abc123", Contract: "MNQ 09-23", Reason: "unavailable: not found"}
+	if err := WriteFrame(&buf, FrameBarsHistoryError, errP); err != nil {
+		t.Fatalf("WriteFrame error: %v", err)
+	}
+	env, err = ReadFrame(&buf)
+	if err != nil || env.Type != FrameBarsHistoryError {
+		t.Fatalf("error env: type=%q err=%v", env.Type, err)
+	}
+	var gotErr BarsHistoryErrorPayload
+	if err := jsonUnmarshalForTest(env.Payload, &gotErr); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if gotErr != errP {
+		t.Errorf("error mismatch:\n got=%+v\nwant=%+v", gotErr, errP)
 	}
 }

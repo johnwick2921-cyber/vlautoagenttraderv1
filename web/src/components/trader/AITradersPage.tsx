@@ -11,6 +11,7 @@ import type {
 import { useLanguage } from '../../contexts/LanguageContext'
 import { t } from '../../i18n/translations'
 import { useAuth } from '../../contexts/AuthContext'
+import { loadStoredTraderId } from '../../router/selectedTrader'
 import { TraderConfigModal } from './TraderConfigModal'
 import { DeepVoidBackground } from '../common/DeepVoidBackground'
 import { ExchangeConfigModal } from './ExchangeConfigModal'
@@ -30,6 +31,9 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
   const { language } = useLanguage()
   const { user, token } = useAuth()
   const navigate = useNavigate()
+  // The persisted selection — marks the active trader in the list (survives the
+  // trip to the dashboard and back; the dashboard writes it on every View).
+  const activeTraderId = loadStoredTraderId()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showModelModal, setShowModelModal] = useState(false)
@@ -258,6 +262,12 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
         scan_interval_minutes: data.scan_interval_minutes,
         is_cross_margin: data.is_cross_margin,
         show_in_competition: data.show_in_competition,
+        // 6.2 (final-bundle): cadence_mode used to be DROPPED here — the P10
+        // toggle persisted on CREATE only, an owner could never switch an
+        // existing trader's cadence from the UI (PR #53/#54 register row 3).
+        cadence_mode: data.cadence_mode,
+        // Phase 3: in-position mode must survive EDIT, not just create.
+        position_mode: (data as { position_mode?: string }).position_mode,
       }
 
       await api.updateTrader(editingTrader.trader_id, request)
@@ -699,6 +709,7 @@ export function AITradersPage({ onTraderSelect }: AITradersPageProps) {
           visibleTraderAddresses={visibleTraderAddresses}
           copiedId={copiedId}
           language={language}
+          activeTraderId={activeTraderId}
           onTraderSelect={onTraderSelect}
           onNavigate={(path) => navigate(path)}
           onEditTrader={handleEditTrader}

@@ -24,7 +24,9 @@ interface ModelConfigModalProps {
     apiKey: string,
     baseUrl?: string,
     modelName?: string,
-    name?: string
+    name?: string,
+    thinkingMode?: string,
+    reasoningEffort?: string
   ) => void
   onDelete: (modelId: string) => void
   onClose: () => void
@@ -46,6 +48,9 @@ export function ModelConfigModal({
   const [baseUrl, setBaseUrl] = useState('')
   const [modelName, setModelName] = useState('')
   const [name, setName] = useState('')
+  // DeepSeek thinking knobs (4.5 API auto max). '' = inherit env defaults.
+  const [thinkingMode, setThinkingMode] = useState('')
+  const [reasoningEffort, setReasoningEffort] = useState('')
 
   // Always prefer allModels (supportedModels) for provider/id lookup;
   // fall back to configuredModels for edit mode details (apiKey etc.)
@@ -59,6 +64,8 @@ export function ModelConfigModal({
       setBaseUrl(selectedModel.customApiUrl || '')
       setModelName(selectedModel.customModelName || '')
       setName(selectedModel.name || '')
+      setThinkingMode(selectedModel.thinkingMode || '')
+      setReasoningEffort(selectedModel.reasoningEffort || '')
     }
   }, [editingModelId, selectedModel])
 
@@ -87,7 +94,9 @@ export function ModelConfigModal({
       apiKey.trim(),
       baseUrl.trim() || undefined,
       modelName.trim() || undefined,
-      name.trim() || undefined
+      name.trim() || undefined,
+      thinkingMode || undefined,
+      reasoningEffort || undefined
     )
   }
 
@@ -211,11 +220,15 @@ export function ModelConfigModal({
                 baseUrl={baseUrl}
                 modelName={modelName}
                 name={name}
+                thinkingMode={thinkingMode}
+                reasoningEffort={reasoningEffort}
                 editingModelId={editingModelId}
                 onApiKeyChange={setApiKey}
                 onBaseUrlChange={setBaseUrl}
                 onModelNameChange={setModelName}
                 onNameChange={setName}
+                onThinkingModeChange={setThinkingMode}
+                onReasoningEffortChange={setReasoningEffort}
                 onBack={handleBack}
                 onSubmit={handleSubmit}
                 language={language}
@@ -1159,11 +1172,15 @@ function StandardProviderConfigForm({
   baseUrl,
   modelName,
   name,
+  thinkingMode,
+  reasoningEffort,
   editingModelId,
   onApiKeyChange,
   onBaseUrlChange,
   onModelNameChange,
   onNameChange,
+  onThinkingModeChange,
+  onReasoningEffortChange,
   onBack,
   onSubmit,
   language,
@@ -1173,11 +1190,15 @@ function StandardProviderConfigForm({
   baseUrl: string
   modelName: string
   name: string
+  thinkingMode: string
+  reasoningEffort: string
   editingModelId: string | null
   onApiKeyChange: (value: string) => void
   onBaseUrlChange: (value: string) => void
   onModelNameChange: (value: string) => void
   onNameChange: (value: string) => void
+  onThinkingModeChange: (value: string) => void
+  onReasoningEffortChange: (value: string) => void
   onBack: () => void
   onSubmit: (e: React.FormEvent) => void
   language: Language
@@ -1412,6 +1433,57 @@ function StandardProviderConfigForm({
           />
           <div className="text-xs" style={{ color: '#848E9C' }}>
             {t('leaveBlankForDefaultModel', language)}
+          </div>
+        </div>
+      )}
+
+      {/* DeepSeek thinking knobs (4.5 API auto max) — blank = inherit env defaults */}
+      {selectedModel.provider === 'deepseek' && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label
+              className="text-sm font-semibold"
+              style={{ color: '#EAECEF' }}
+            >
+              Thinking mode
+            </label>
+            <select
+              value={thinkingMode}
+              onChange={(e) => onThinkingModeChange(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl"
+              style={{
+                background: '#0B0E11',
+                border: '1px solid #2B3139',
+                color: '#EAECEF',
+              }}
+            >
+              <option value="">Inherit env</option>
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label
+              className="text-sm font-semibold"
+              style={{ color: '#EAECEF' }}
+            >
+              Reasoning effort
+            </label>
+            <select
+              value={reasoningEffort}
+              onChange={(e) => onReasoningEffortChange(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl"
+              style={{
+                background: '#0B0E11',
+                border: '1px solid #2B3139',
+                color: '#EAECEF',
+              }}
+            >
+              <option value="">Inherit env</option>
+              <option value="low">Low</option>
+              <option value="high">High</option>
+              <option value="max">Max</option>
+            </select>
           </div>
         </div>
       )}

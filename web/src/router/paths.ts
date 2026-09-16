@@ -3,6 +3,7 @@ export type Page =
   | 'traders'
   | 'trader'
   | 'strategy'
+  | 'guide'
   | 'faq'
   | 'login'
   | 'register'
@@ -20,6 +21,7 @@ export const ROUTES = {
   traders: '/traders',
   dashboard: '/dashboard',
   strategy: '/strategy',
+  guide: '/guide',
 } as const
 
 export const PAGE_PATHS: Record<Page, string> = {
@@ -27,6 +29,7 @@ export const PAGE_PATHS: Record<Page, string> = {
   traders: ROUTES.traders,
   trader: ROUTES.dashboard,
   strategy: ROUTES.strategy,
+  guide: ROUTES.guide,
   faq: ROUTES.faq,
   login: ROUTES.login,
   register: ROUTES.register,
@@ -51,6 +54,8 @@ export function getCurrentPageForPath(pathname: string): Page | undefined {
       return 'trader'
     case ROUTES.strategy:
       return 'strategy'
+    case ROUTES.guide:
+      return 'guide'
     case ROUTES.faq:
       return 'faq'
     case ROUTES.login:

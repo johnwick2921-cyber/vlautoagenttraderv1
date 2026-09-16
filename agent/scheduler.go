@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"nofx/branding"
 	"nofx/safe"
 	"strings"
 	"sync"
@@ -72,7 +73,7 @@ func (s *Scheduler) dailyReport() {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("📊 *NOFXi 每日报告 — %s*\n\n", time.Now().Format("2006-01-02")))
+	sb.WriteString(fmt.Sprintf("📊 *"+branding.PersonaName()+" 每日报告 — %s*\n\n", time.Now().Format("2006-01-02")))
 
 	totalPnL := 0.0
 	for _, t := range traders {

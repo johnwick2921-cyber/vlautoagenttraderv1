@@ -55,8 +55,21 @@ func (h *CryptoHandler) HandleGetPublicKey(c *gin.Context) {
 
 // ==================== Encrypted Data Decryption Endpoint ====================
 
-// HandleDecryptSensitiveData Decrypt encrypted data sent from client
+// HandleDecryptSensitiveData Decrypt encrypted data sent from client.
+//
+// SECURITY (P0 S4): this was PUBLIC and ungated — a decryption oracle for the
+// server's long-term RSA key. Anyone who could reach the port could post a
+// payload and get plaintext back, using the same key that protects exchange API
+// keys and wallet private keys in transit. It is now (a) registered on the
+// JWT-protected group and (b) refused unless TRANSPORT_ENCRYPTION is actually
+// on, mirroring HandleGetPublicKey above. The frontend never calls it — the
+// client method exists with zero callers — so this closes an unused hole.
 func (h *CryptoHandler) HandleDecryptSensitiveData(c *gin.Context) {
+	if cfg := config.Get(); cfg == nil || !cfg.TransportEncryption {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Transport encryption is disabled"})
+		return
+	}
+
 	var payload crypto.EncryptedPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})

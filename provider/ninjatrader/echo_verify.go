@@ -28,6 +28,13 @@ type pendingOp struct {
 //   - echoSeq > 0 AND a registered op whose trader_id AND account both match → accept.
 //   - echoSeq > 0 AND a registered op with a DIFFERENT trader_id or account →
 //     MISMATCH (a fill/close came back for the wrong originator — freeze).
+//   - W3 (SUNDAY-SHIELD): a REJECTED fill (frameStatus == "rejected") whose
+//     echoed account is EMPTY is tolerated on the account leg only. The C#
+//     guard-reject path sends account "" (SendFillFrame's acctName default);
+//     the frame is terminal (no position, no money) and the trader_id + seq
+//     echo still proves identity. Freezing a live trader on a benign NT8
+//     guard rejection is worse than the gap the check exists to catch.
+//     trader_id must still match — a cross-wired reject still freezes.
 //   - echoSeq > 0 but NO registered op (!found): TOLERATED with a warning (accept,
 //     no mismatch). A retired op (a duplicate/late frame after its close retired the
 //     entry) or a reconnect leaves legitimate echoes "unknown"; a false freeze halts
@@ -36,7 +43,7 @@ type pendingOp struct {
 //     cross-wired fill. `reason` is non-empty here so the caller logs the warning.
 //
 // A mismatch means: do NOT process the frame + 🚨 + freeze the owning trader (A4).
-func checkEcho(pending pendingOp, found bool, echoSeq uint64, echoTraderID, echoAccount string) (accept, mismatch bool, owner, reason string) {
+func checkEcho(pending pendingOp, found bool, echoSeq uint64, echoTraderID, echoAccount, frameStatus string) (accept, mismatch bool, owner, reason string) {
 	if echoSeq == 0 {
 		return true, false, "", "" // legacy / deploy window — nothing to verify
 	}
@@ -47,6 +54,9 @@ func checkEcho(pending pendingOp, found bool, echoSeq uint64, echoTraderID, echo
 		return false, true, pending.traderID, "trader_id echo " + q(echoTraderID) + " ≠ pending " + q(pending.traderID)
 	}
 	if pending.account != echoAccount {
+		if frameStatus == "rejected" && echoAccount == "" {
+			return true, false, pending.traderID, "rejected fill with empty account echo — tolerated (terminal frame, identity proven by seq+signal_id)"
+		}
 		return false, true, pending.traderID, "account echo " + q(echoAccount) + " ≠ pending " + q(pending.account)
 	}
 	return true, false, pending.traderID, ""
@@ -177,9 +187,11 @@ func (s *TCPServer) retirePending(seq uint64, signalID string) {
 // verifyInbound is the read-loop hook: resolve the pending op, run checkEcho, and on
 // a MISMATCH freeze the owning trader (A4) + 🚨 and return process=false. Pre-v3
 // (seq==0) is tolerated. On accept it returns true (caller processes + retires).
-func (s *TCPServer) verifyInbound(kind string, echoSeq uint64, echoTraderID, echoAccount, signalID string) bool {
+// frameStatus is the inbound frame's state ("rejected" enables the W3 account-leg
+// tolerance); pass "" for frames without one (ack / closes).
+func (s *TCPServer) verifyInbound(kind string, echoSeq uint64, echoTraderID, echoAccount, signalID, frameStatus string) bool {
 	pending, found := s.lookupPending(echoSeq, signalID)
-	accept, mismatch, owner, reason := checkEcho(pending, found, echoSeq, echoTraderID, echoAccount)
+	accept, mismatch, owner, reason := checkEcho(pending, found, echoSeq, echoTraderID, echoAccount, frameStatus)
 	if mismatch {
 		if discipline.FreezeTrader(owner, "echo mismatch on "+kind+": "+reason, time.Now().UnixMilli()) {
 			s.logger.Error("🚨 A2 echo-verify MISMATCH — FREEZING trader; frame NOT processed",

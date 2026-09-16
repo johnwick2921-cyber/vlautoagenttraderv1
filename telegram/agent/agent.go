@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"nofx/auth"
+	"nofx/branding"
 	"nofx/logger"
 	"nofx/mcp"
 	"nofx/telegram/session"
@@ -19,7 +20,7 @@ var apiRequestTool = mcp.Tool{
 	Type: "function",
 	Function: mcp.FunctionDef{
 		Name:        "api_request",
-		Description: "Call the NOFX trading system REST API",
+		Description: "Call the " + branding.ProductName() + " trading system REST API",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{

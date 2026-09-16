@@ -1,6 +1,7 @@
-// C2 — clock-drift entry guard: a local clock skewed >60s from the freshest feed
-// timestamp (either direction) refuses NEW entries; a correct clock passes; exits
-// are never blocked.
+// C2 — clock-drift guard: since 2026-08-18 signals are feed-stamped
+// (trader/ninjatrader feedNowUTC), so a skewed LOCAL clock can no longer age a
+// signal into NT8's 60s stale rejection. The guard now only LOGS skew; entries
+// are never converted to wait, exits were never touched.
 package kernel
 
 import (
@@ -51,18 +52,20 @@ func TestApplyClockDriftBlock_InjectedSkew(t *testing.T) {
 		t.Fatalf("exactly 60s skew is the boundary (not blocked), got %q", edge.Decisions[0].Action)
 	}
 
-	// Injected clock-AHEAD skew (+5 min): now is 300s ahead of real time → block.
+	// Injected clock-AHEAD skew (+5 min): entry must now PROCEED — the signal
+	// is stamped with the feed clock, so local skew cannot mis-time it. The
+	// guard only logs the skew.
 	ahead := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "open_long"}}}
 	applyClockDriftBlock(ahead, ctxWith(freshBar), now+300_000)
-	if ahead.Decisions[0].Action != "wait" {
-		t.Fatalf("clock ahead by 5min must block the entry (→wait), got %q", ahead.Decisions[0].Action)
+	if ahead.Decisions[0].Action != "open_long" {
+		t.Fatalf("feed-stamped entries must survive local clock-ahead skew, got %q", ahead.Decisions[0].Action)
 	}
 
-	// Injected clock-BEHIND skew (−5 min): feed bar labeled 300s in the future → block.
+	// Injected clock-BEHIND skew (−5 min): same — observed, not blocked.
 	behind := &FullDecision{Decisions: []Decision{{Symbol: "MNQ", Action: "open_short"}}}
 	applyClockDriftBlock(behind, ctxWith(freshBar+300_000), now)
-	if behind.Decisions[0].Action != "wait" {
-		t.Fatalf("clock behind by 5min must block the entry (→wait), got %q", behind.Decisions[0].Action)
+	if behind.Decisions[0].Action != "open_short" {
+		t.Fatalf("feed-stamped entries must survive local clock-behind skew, got %q", behind.Decisions[0].Action)
 	}
 
 	// A CLOSE under a skewed clock is NEVER blocked.
