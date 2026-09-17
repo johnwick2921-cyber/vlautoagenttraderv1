@@ -1,15 +1,16 @@
 package ninjatrader
 
 import (
+	"errors"
 	"nofx/market"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"nofx/kernel"
 	"nofx/logger"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
+	"nofx/telemetry"
 )
 
 // WireBarPersistence (2026-08-26) — installs the closed-bar writer on the TCP
@@ -174,11 +175,45 @@ func WireBarPersistence(st *store.Store) {
 					// on a different scale, the ring has dropped its historical
 					// seed; refill it from the store, whose live rows the upsert
 					// rule now protects, and say so ONCE where the owner sees it.
+					// 101 D1'(2): a scale check that could not be made because its
+					// only reference was not adjacent is SAID, once per reference,
+					// with both ages (A9) — never silently skipped. The seed stays;
+					// the check stays armed; the replay's rows stay held from the
+					// store until an adjacent pair can judge them.
+					ntwire.OnScaleCheckSkip(func(sk ntwire.ScaleCheckSkip) {
+						logger.Warnf("🕳 scale check SKIPPED for %s %s at %s: the only reference bar is %s old (replay tail %s, live bar %s) — not adjacent, so a time gap is not judged as a scale gap; seed kept, check stays armed, replay rows held from the store (101 D1' 2026-09-16)",
+							sk.Symbol, sk.Timeframe, kernel.ClockCTSeconds(sk.At), sk.ReferenceAge.Truncate(time.Minute),
+							kernel.ClockCTSeconds(time.UnixMilli(sk.ReferenceT)), kernel.ClockCTSeconds(time.UnixMilli(sk.LiveT)))
+					})
 					ntwire.OnScaleMismatch(func(m ntwire.ScaleMismatch) {
+						// 101 D1'(3), narrow form: COUNT the break (A11 reads it
+						// onto the summary line) and SAY what the ring is now —
+						// the store rehydrate below is 1m-only by the owner's
+						// 2026-09-09 condition, so every other timeframe is
+						// live-only until NT8's next full replay. That sentence
+						// is the difference between a thin chart that is
+						// explained and one that is a surprise.
+						telemetry.IncScaleBreakDrop(m.HistoricalDropped)
+						// (3a) [O "I want full data", 2026-09-16] — ask NT8 for the
+						// window again. The AddOn rebuilds its BarsRequest on a repeat
+						// subscribe; the reply is bars_historical with ≈bars_back per
+						// tf, judged by the ring like any replay. Rate-limited per
+						// symbol and refused while the feed is down; a refusal is
+						// WARNed with its reason, never silent (A9).
+						rerr := server.RequestHistoryReplayAt(m.Symbol, time.Now())
+						if rerr != nil {
+							if errors.Is(rerr, ntwire.ErrHistoryReplaySpent) {
+								logger.Errorf("🚨 P0 — second scale break this boot — replay on another contract, restart the AddOn (%s %s: NT8 NOT re-asked; the ring keeps its live bars + the store refill below, entered replay-grade): %v", m.Symbol, m.Timeframe, rerr)
+							} else {
+								logger.Warnf("🧯 history replay NOT re-requested for %s after the %s scale break: %v", m.Symbol, m.Timeframe, rerr)
+							}
+						}
 						rehydrateRingFromStoreWith(bh, server, time.Now(), true)
 						srcCensus, _ := bh.SourceCensus(m.Symbol)
-						logger.Errorf("🚨 P0 — REPLAY AND LIVE ARE ON DIFFERENT PRICE SCALES for %s %s at %s: last replay close %.2f, first live close %.2f, delta %.2f pts (> %.2f%% of price). %d historical bars DROPPED from the ring and refilled from the store's live rows; the straddling bar is labelled mixed and no reader takes it. This is NT8's merge/back-adjust policy on the subscription — filed for the AddOn wave. bars by source now %v. (bar-source wave 2026-09-10)",
-							m.Symbol, m.Timeframe, kernel.ClockCTSeconds(m.At), m.LastHistoricalC, m.FirstLiveC, m.DeltaPts, ntwire.ScaleMismatchPct*100, m.HistoricalDropped, srcCensus)
+						refill := scaleBreakRefillTxt(m.Timeframe, rerr)
+						events, bars := telemetry.ScaleBreakCounts()
+						logger.Errorf("🚨 P0 — REPLAY AND LIVE ARE ON DIFFERENT PRICE SCALES for %s %s at %s: last replay close %.2f, first live close %.2f, delta %.2f pts (> %.2f%% of price). %d historical bars DROPPED from the ring; %s; the straddling bar is labelled mixed and no reader takes it. scale-break drops since boot: %d event(s), %d bar(s). bars by source now %v. (bar-source wave 2026-09-10; adjacency guard 101 2026-09-16)",
+							m.Symbol, m.Timeframe, kernel.ClockCTSeconds(m.At), m.LastHistoricalC, m.FirstLiveC, m.DeltaPts, ntwire.ScaleMismatchPct*100, m.HistoricalDropped, refill, events, bars, srcCensus)
 					})
 					ntwire.OnContractRoll(func(symbol, from, to string, at time.Time) {
 						go func() {
@@ -197,11 +232,7 @@ func WireBarPersistence(st *store.Store) {
 					// replay landed, so it reported own1m for every TF on a
 					// cold cache. Now that the pantry is in, say what the
 					// resolver can ACTUALLY reach.
-					if h := afterBackfillHook.Load(); h != nil {
-						if fn, ok := h.(func()); ok && fn != nil {
-							fn()
-						}
-					}
+					fireAfterBackfillHook()
 					logger.Infof("%s", barHorizonBootLine(server.BarCache(), time.Now()))
 					go pruneLoop(bh)
 					return
@@ -310,13 +341,60 @@ func pruneLoop(bh *store.BarHistoryStore) {
 	}
 }
 
-// afterBackfillHook lets the trader layer print its post-backfill bar-source
-// line without this package importing it. nil = nothing printed.
-var afterBackfillHook atomic.Value
+// afterBackfillHook lets the trader layer print its post-backfill lines (the
+// R1 "📊 bars after backfill", the 📈 regime input window, the 🧮 planner
+// tape) without this package importing it.
+//
+// ORDER MUST NOT MATTER (2026-09-16 15:32 CT, boot of c6579347): the trader
+// installs this hook at load; the backfill goroutine checked it at 15:32:03,
+// found nil, and the trader installed it at 15:32:05 — three boot lines gone,
+// silently. The earlier atomic.Value was a mailbox with no memory of the
+// event. Now: whichever side arrives second fires the hook, exactly once, under
+// one mutex — no window between "checked nil" and "installed".
+var (
+	afterBackfillMu     sync.Mutex
+	afterBackfillFn     func()
+	afterBackfillLanded bool
+	afterBackfillFired  bool
+)
 
-// SetAfterBackfillHook installs the callback fired once the first backfill
-// completes. Safe to call more than once; the last registration wins.
-func SetAfterBackfillHook(fn func()) { afterBackfillHook.Store(fn) }
+// SetAfterBackfillHook installs the callback. If the backfill has ALREADY
+// landed and nothing has fired yet, it fires now. Later registrations replace
+// the callback but never re-fire it.
+func SetAfterBackfillHook(fn func()) {
+	afterBackfillMu.Lock()
+	afterBackfillFn = fn
+	run := fn != nil && afterBackfillLanded && !afterBackfillFired
+	if run {
+		afterBackfillFired = true
+	}
+	afterBackfillMu.Unlock()
+	if run {
+		fn()
+	}
+}
+
+// fireAfterBackfillHook marks the event landed and fires the hook if one is
+// installed and it has not fired yet.
+func fireAfterBackfillHook() {
+	afterBackfillMu.Lock()
+	afterBackfillLanded = true
+	fn := afterBackfillFn
+	run := fn != nil && !afterBackfillFired
+	if run {
+		afterBackfillFired = true
+	}
+	afterBackfillMu.Unlock()
+	if run {
+		fn()
+	}
+}
+
+func resetAfterBackfillHookForTest() {
+	afterBackfillMu.Lock()
+	afterBackfillFn, afterBackfillLanded, afterBackfillFired = nil, false, false
+	afterBackfillMu.Unlock()
+}
 
 // ── D3 — THE RING REHYDRATES FROM THE STORE ON BOOT ─────────────────────────
 // (owner-authorised expansion, wave BARS HORIZON 2026-09-09)
@@ -338,7 +416,14 @@ func SetAfterBackfillHook(fn func()) { afterBackfillHook.Store(fn) }
 //   - it is bounded by the ring's own maxBars;
 //   - it is a NO-OP on a cold key, so a dead feed can never be made to look alive.
 //
-// 1m ONLY — OWNER CONDITION (a), RULING 2026-09-09 18:18 CT.
+// EVERY SUBSCRIBED TIMEFRAME — OWNER RULING 2026-09-16, direct: "i want fuull
+// data". It supersedes condition (a) below; conditions (b), (c) and (d) stand
+// and are what keep the regime input where it was. The four guards are on
+// pairsToRehydrate. What follows is the 09-09 ruling and its measurement,
+// kept because they are the reason guard (ii) stamps every store row as
+// replay-grade rather than trusting an aggregate as a live bar.
+//
+// 1m ONLY — OWNER CONDITION (a), RULING 2026-09-09 18:18 CT — SUPERSEDED.
 //
 //	"RULING on D3: the regime input MAY change. Rehydrating the ring from the
 //	 store changes what RVBaseline is fed — and what it is fed today is 41
@@ -429,10 +514,21 @@ func rehydrateRingFromStoreWith(bh *store.BarHistoryStore, server *ntwire.TCPSer
 		if len(rows) == 0 {
 			continue
 		}
-		bars := make([]ntwire.Bar, 0, len(rows))
+		// the source breakdown the boot line names [O], then guards (i)+(iii)
+		storeLive, storeHist := 0, 0
 		for _, r := range rows {
-			bars = append(bars, ntwire.Bar{T: r.OpenTimeMs, O: r.O, H: r.H, L: r.L, C: r.C, V: r.V, Source: r.Source})
+			switch r.Source {
+			case store.BarSourceHistorical:
+				storeHist++
+			case store.BarSourceHistoricalImport:
+				// counted by the door below
+			default:
+				storeLive++
+			}
 		}
+		rows, importExcluded := rehydrateRowsFor(rows, reseeded)
+		// guard (ii)
+		bars := rehydrateBarsFromRows(rows)
 		added := cache.RehydrateOlder(symbol, tf, bars)
 		if added == 0 {
 			continue
@@ -441,10 +537,15 @@ func rehydrateRingFromStoreWith(bh *store.BarHistoryStore, server *ntwire.TCPSer
 		deepened++
 		after := cache.Get(symbol, tf)
 		h := kernel.HorizonOf(barsToKlines(after, tf), tf, cache.MaxBars(), now)
-		logger.Infof("🧯 ring rehydrated %s %s: %d → %d bars (+%d older from the store, cap %d) · contract=%s (%s) · %s",
-			symbol, tf, before, len(after), added, cache.MaxBars(), contract, src, h.Line())
+		// nt8=<what the ring held from NT8 before> store_live/store_hist=<what
+		// the store offered by stamp> import=<rows the DOOR refused — guard
+		// (iii), counted in rehydrateRowsFor; LastNBarsOn filters only
+		// mixed+off-scale and hands imports to its callers> total=<t>/cap —
+		// every number READ, the [O] naming the ruling.
+		logger.Infof("🧯 ring rehydrated %s %s [O 2026-09-16]: nt8=%d store_live=%d store_hist=%d (post-drop excluded=%v) import=%d (refused at the door — guard iii) total=%d/%d (+%d older, all entered as historical — guard ii) · contract=%s (%s) · %s",
+			symbol, tf, before, storeLive, storeHist, reseeded, importExcluded, len(after), cache.MaxBars(), added, contract, src, h.Line())
 	}
-	logger.Infof("🧯 ring rehydrate done: %d of %d symbol×tf pairs deepened, +%d bars total, %d read failure(s), %d pair(s) SKIPPED as tf!=%s (stored non-1m rows are NT8 aggregates — never fed to a live regime input) · store retention %s=%dd (the ring is the cache; the store is the horizon)",
+	logger.Infof("🧯 ring rehydrate done [O \"i want fuull data\" 2026-09-16]: %d of %d symbol×tf pairs deepened, +%d bars total, %d read failure(s), %d pair(s) not selected · every rehydrated row enters as historical (replay-grade to this process); the regime baseline is served from the %s tail (condition (b)) · store retention %s=%dd (the ring is the cache; the store is the horizon)",
 		deepened, len(pairs), totalAdded, failed, skipped, rehydrateTimeframe, rehydrateTimeframe, store.RetentionDaysFor(rehydrateTimeframe))
 	// ROLL WAVE (D6) — the contract boot line, every field read. One per
 	// primary symbol the ring holds.
@@ -455,29 +556,97 @@ func rehydrateRingFromStoreWith(bh *store.BarHistoryStore, server *ntwire.TCPSer
 		}
 		seen[pair[0]] = true
 		logger.Infof("%s", contractBootLineFor(bh, server, pair[0], rehydrateKept, rehydrateFiltered, reseeded))
+		// 101 E1 — what NT8 delivered at subscribe, per tf, READ from the
+		// server's own frame records. One line that answers "did the history
+		// arrive" without leaving Go (the 09-16 diagnosis needed the NT8 log).
+		logger.Infof("%s", server.HistoryAtSubscribeLineFor(pair[0]))
 		if sc, err := bh.SourceCensus(pair[0]); err == nil {
 			logger.Infof("%s", SourceBootLine(pair[0], sc, cache.ScaleMismatches(), ntwire.ScaleMismatchPct, barReplayHold.line(pair[0])))
 		}
 	}
 }
 
-// rehydrateTimeframe is the ONLY timeframe the boot rehydrate touches. See the
-// header above for why it is not every pair the cache holds.
+// rehydrateTimeframe was the 1m-only selection of owner condition (a),
+// 2026-09-09. It remains the name of the FEED-OWN timeframe (the tape every
+// other series is aggregated from, the one the regime baseline is served
+// from under condition (b)); it is no longer the selection.
 const rehydrateTimeframe = "1m"
 
-// pairsToRehydrate is THE selection (owner condition (a), 2026-09-09),
-// extracted so a pin drives IT rather than a copy of it (class 86): only the
-// 1m pairs are rehydrated, and the order the cache handed us is preserved so
-// the log line's counts are reproducible.
+// pairsToRehydrate is THE selection, extracted so a pin drives IT rather than a
+// copy of it (class 86).
 //
-// A pin that only checked the constant still exists would pass a mutation that
-// disabled the filter, so the filter is a function with its own fixture.
+// OWNER RULING 2026-09-16, direct, verbatim: "i want fuull data". It
+// SUPERSEDES condition (a) of 2026-09-09 ("the boot rehydrate touches 1m
+// ONLY"): every subscribed timeframe is rehydrated from the store's
+// current-contract rows — at boot after NT8's replay lands, and after a
+// confirmed scale-break drop — under four guards enforced below and pinned:
+//
+//	(i)   post-drop, `historical` rows are the rejected seed's kin: excluded
+//	(ii)  RING-SIDE: every store row enters the ring as historical — a store
+//	      row is replay-grade to this process whatever its stamp says
+//	      (nofx-93's census: migration-stamped 09-26 `live`, catch-up-stamped
+//	      12-26 `live`; age distinguishes neither)
+//	(iii) historical_import rows never reach a planner ring (LastNBarsOn's own
+//	      filter — measured, E4)
+//	(iv)  deficit-only, NT8's replay wins, cap 2500 (RehydrateOlder's contract)
+//
+// The regime input is protected by condition (b), not by this selection:
+// TestRegimeLabelUnchanged pins that the baseline did not move.
 func pairsToRehydrate(pairs [][2]string) [][2]string {
 	out := make([][2]string, 0, len(pairs))
-	for _, p := range pairs {
-		if p[1] == rehydrateTimeframe {
-			out = append(out, p)
-		}
-	}
+	out = append(out, pairs...)
 	return out
+}
+
+// rehydrateRowsFor applies guard (i): after a confirmed drop (reseeded=true)
+// rows stamped `historical` are excluded — they are the rejected seed's kin;
+// on the boot path they were verified in a prior boot and are kept.
+func rehydrateRowsFor(rows []store.BarHistoryDB, reseeded bool) (kept []store.BarHistoryDB, importExcluded int) {
+	out := make([]store.BarHistoryDB, 0, len(rows))
+	for _, r := range rows {
+		// guard (iii): an import never enters the ring, on either path. The
+		// reader (LastNBarsOn) filters mixed+off-scale ONLY and hands imports
+		// to every caller; this door is the only line that keeps them out of
+		// the ring, and the boot line prints THIS count (nofx-93 objection 1).
+		if r.Source == store.BarSourceHistoricalImport {
+			importExcluded++
+			continue
+		}
+		// guard (i): after a confirmed drop, store-backed replay rows are
+		// what the drop just judged — only live rows refill
+		if reseeded && r.Source == store.BarSourceHistorical {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out, importExcluded
+}
+
+// rehydrateBarsFromRows applies guard (ii): EVERY row enters the ring stamped
+// historical. The scale check, the merge and the persister then treat it as
+// the replay it is to this process — never as a sacred live bar.
+func rehydrateBarsFromRows(rows []store.BarHistoryDB) []ntwire.Bar {
+	bars := make([]ntwire.Bar, 0, len(rows))
+	for _, r := range rows {
+		bars = append(bars, ntwire.Bar{T: r.OpenTimeMs, O: r.O, H: r.H, L: r.L, C: r.C, V: r.V, Source: ntwire.BarSourceHistorical})
+	}
+	return bars
+}
+
+// scaleBreakRefillTxt is the P0 line's account of what the ring holds for the
+// broken timeframe after the drop, and whether NT8 was asked again. Under [O]
+// "i want fuull data" (2026-09-16) EVERY timeframe refills from the store's
+// live rows (3b, entered replay-grade — guard ii); the 1m-only "LIVE-ONLY
+// UNTIL NT8's NEXT FULL REPLAY" literal of the 09-09 condition is retired
+// here with it. The re-ask (3a) is once per boot; a refusal names its reason.
+func scaleBreakRefillTxt(tf string, reask error) string {
+	refill := tf + " ring = live bars + the store's live rows (entered replay-grade)"
+	switch {
+	case reask == nil:
+		return refill + "; NT8 re-asked for its full replay (1/1 this boot)"
+	case errors.Is(reask, ntwire.ErrHistoryReplaySpent):
+		return refill + "; NT8 NOT re-asked — second break this boot, restart the AddOn"
+	default:
+		return refill + "; NT8 NOT re-asked (" + reask.Error() + ")"
+	}
 }

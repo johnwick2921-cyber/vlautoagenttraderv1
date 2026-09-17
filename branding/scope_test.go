@@ -55,6 +55,13 @@ func TestExistingGoImportTargetsPreserved(t *testing.T) {
 		return cmd.Output()
 	}
 	const base = "954f11b15f2e7615678f7d2b708c47895faebf1e"
+	// The base is a nofx commit. A mirror clone (the VL partner repo) does not
+	// carry nofx history, so the pin cannot be evaluated there: skip with the
+	// reason stated instead of failing on `git diff` exit 128. In nofx itself
+	// the commit exists and the check runs unchanged.
+	if _, err := git("cat-file", "-e", base+"^{commit}"); err != nil {
+		t.Skipf("base commit %s is not in this repository (mirror clone) — import-target pin not evaluable here", base[:8])
+	}
 	paths, err := git("diff", "--name-only", base, "--", "*.go")
 	if err != nil {
 		t.Fatal(err)

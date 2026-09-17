@@ -61,6 +61,74 @@ Visible brand (Dispatch 102): `branding/product.txt` = VL Intelligent; `branding
 
 **Boot lines:** `"tcp_server: listening"` `tcp_server.go:981` · `"wire_liveness"` `:1024` · `"tcp_server: hello handshake OK"` `:1713` · `"tcp_server: sent bars_subscribe"` `:1478` · `"tcp_server: feed status"` `:2028` · `"⚠️ %s %s: CME futures symbol but no NT8 bar provider wired; skipping"` `market/data.go:247`.
 
+**101 — history at subscribe, the scale check, and the chart across the roll (2026-09-16).**
+NT8 honours `bars_back` at subscribe: the AddOn's own `emitted bars_historical
+<key> bars=<n>` lines showed 2,000 per tf ≤ 30m, 1,536 for 1h, 69 for 1d at the
+09-15 22:15 boot — 13,054 MNQ bars. `📼 bar source: … historical=<n>` is a STORE
+census (rows by source; the replay-hold keeps replay rows out of the store by
+design), not a delivery count. The Go-side delivery count is now the `🧯 nt8
+history at subscribe:` line — per tf `received/asked`, `n/a` for no frame, and
+a ZERO frame called out by name (a BarsRequest that ran while the feed was down;
+five such reconnects on 09-16).
+
+**Non-1m rings are live + NT8-replay only.** The store rehydrate is 1m-only
+(`rehydrateTimeframe`, class 86, owner condition 2026-09-09). After a confirmed
+scale break the 🚨 line now says what the ring IS for that tf — "LIVE-ONLY UNTIL
+NT8's NEXT FULL REPLAY" for anything but 1m — and `telemetry.ScaleBreakCounts`
+records events and bars dropped since boot.
+
+**The scale check (bar_source.go `detectScaleMismatch`) judges ADJACENT bars
+only.** Its reference must lie within `scaleCheckAdjacencyIntervals` (2) of the
+live bar; older is a time gap, not a scale gap — SKIPPED, WARNed with both ages
+(`🕳 scale check SKIPPED …`), the seed kept and the check left armed. An EMPTY
+replay no longer re-arms the check (`SeedHistorical` returns before the re-arm
+on an empty frame onto a populated ring). Class 127 carries the 09-16 event.
+
+**The horizon WARN keys on the condition, not the observer:** (symbol, tf, why),
+one line per five minutes, callers aggregated on the line that closes the window.
+
+**The chart shows every stored contract [O].** `/api/klines` serves the current
+contract's ring + store, then prior contracts fill STRICTLY BEFORE the current
+contract's first LIVE row (`store.FirstLiveOn` / `PriorContractBarsBefore`,
+display-only); every kline carries `contract`; the roll is a visible basis step,
+never adjusted. `NOFX_CHART_ACROSS_ROLL=off` disables; the resolved value is on
+the `📈 chart:` boot line. **The bot decides on the current contract only** —
+`LastNBarsOn`/`BarsBetweenOn` are byte-identical and no kernel/levels/arm path
+calls the display readers (E4 grep: 0). `PriorContractBarsBefore` takes the
+current contract and EXCLUDES it — the current contract's rows before its first
+live row are imports in holes of the prior series, and a hole stays a hole.
+
+**Full data [O "i want fuull data" 2026-09-16].** Every symbol×tf pair rehydrates
+its ring from the store at boot and after a confirmed drop, through ONE door
+(`rehydrateRowsFor`): (i) post-drop only live rows refill; (ii) every row enters
+stamped `historical`; (iii) `historical_import` is refused at the door and the
+`🧯 ring rehydrated … import=<n>` line prints the refused count — `LastNBarsOn`
+itself filters only mixed+off-scale and hands imports to the CHART; every
+PLANNER door reads the NT8-only readers instead (`store.LastNBarsFromNT8On` /
+`BarsBetweenFromNT8On`, CTO ruling 2026-09-16): `storeBarReader` +
+`BarsWithStoreDepth` (the 12,000-bar 1m tape), `auto_trader_weekly.go` (weeks +
+`Own1m`), `auto_trader_dayplan.go` (POC-touch historical leg). The `🧮 planner
+tape` boot line prints import rows on the contract, the tape length and the
+regime baseline BOTH ways (class 82); `TestNoPlannerDoorReadsTheSharedBarReader`
+pins the doors by function body, `TestPlannerStoreReaderServesNoImportRows` by
+a real store. The `🧮`/`📈`/R1 lines ride `afterBackfillHook`, which since
+2026-09-16 REMEMBERS the event (landed + once under a mutex): install after the
+backfill fires immediately (class 130 — the 15:32 boot lost all three lines to a
+two-second race). The `🖥 ui:` line judges the served bundle by its embedded
+`GUIDE_BUILT_REV` against the binary's `vcs.revision` (`api.UIServingBootLine`);
+the mtime is a secondary note. Still reading the shared readers (imports included), NOT planner
+doors, named for the CTO: `level_stats_wire.go:121`, `trade_excursion_hook.go:168`,
+`trade_excursion_backfill.go:120`, `follow_plan_wiring.go:217`,
+`one_setup_boot.go:174`, the display seam, the rehydrate read (whose door counts
+its own refusals). (iv) the
+contract is the current one. A CONFIRMED scale break re-requests NT8's full replay
+**once per symbol per boot** (`RequestHistoryReplayAt`, `historyReplayMaxPerBoot`);
+a second break in the same boot prints `second scale break this boot — replay on
+another contract, restart the AddOn`; NT8 is not re-asked, the store refill still
+runs (live rows, replay-grade) — a time floor
+would loop, because historical-over-historical the incoming replay wins in
+`mergeSeedKeepingLive`.
+
 ## 2 · LEVELS — detection, scoring, seating, roles
 
 **What it does:** detects ~30 level kinds across ELEVEN timeframes, scores them (evidence type × HTF zone tier × size × freshness × anchors), seats a per-trader TOTAL of `max_levels` into the plan (NOT per side — `levels_score.go:603-605` truncates the whole slice; `seatBothSides` rebalances WITHIN that total), and assigns roles.

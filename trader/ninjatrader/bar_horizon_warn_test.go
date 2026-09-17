@@ -1,6 +1,7 @@
 package ninjatrader
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	ntwire "nofx/provider/ninjatrader"
+	"nofx/store"
 	"nofx/telemetry"
 )
 
@@ -36,27 +38,33 @@ func TestShortReadWarnIsDedupedAndCounted(t *testing.T) {
 	base := telemetry.BarHorizonCounts()["short"]
 	// The live arm-133 instant, to the second, so the "since" below is a
 	// RESOLVED clock rather than a literal.
+	// 101 D3(b) (2026-09-16): the window is FIVE minutes, pinned as a policy
+	// value here rather than derived from the constant (class 93). 280 reads
+	// one second apart = 4m39s, inside one window.
+	if barHorizonWarnWindow != 5*time.Minute {
+		t.Fatalf("barHorizonWarnWindow = %s, want 5m (101 D3(b))", barHorizonWarnWindow)
+	}
 	start := bhCT(2026, time.September, 9, 13, 18).Add(13 * time.Second)
-	for i := 0; i < 700; i++ {
+	for i := 0; i < 280; i++ {
 		read(start.Add(time.Duration(i) * time.Second))
 	}
 	if n := bhCountLines(get(), "bar horizon"); n != 1 {
-		t.Fatalf("%d emitted lines inside the 15-minute window, want 1", n)
+		t.Fatalf("%d emitted lines inside the five-minute window, want 1", n)
 	}
-	if got := telemetry.BarHorizonCounts()["short"] - base; got != 700 {
-		t.Fatalf("BarHorizonCounts()[\"short\"] rose by %d, want 700 — every DETECTION is counted, not only the emitted one", got)
+	if got := telemetry.BarHorizonCounts()["short"] - base; got != 280 {
+		t.Fatalf("BarHorizonCounts()[\"short\"] rose by %d, want 280 — every DETECTION is counted, not only the emitted one", got)
 	}
 
 	// Past the re-arm window the key speaks again, and it says how many it ate.
-	read(start.Add(16 * time.Minute))
+	read(start.Add(6 * time.Minute))
 	lines := get()
 	if n := bhCountLines(lines, "bar horizon"); n != 2 {
 		t.Fatalf("after the window re-armed: %d emitted lines, want 2: %v", n, lines)
 	}
-	if bhCountLines(lines, "suppressed=699 since ") != 1 {
+	if bhCountLines(lines, "suppressed=279 since ") != 1 {
 		t.Fatalf("the re-armed line must name what it suppressed and since when: %v", lines)
 	}
-	if bhCountLines(lines, "suppressed=699 since 13:18:13 CT") != 1 {
+	if bhCountLines(lines, "suppressed=279 since 13:18:13 CT") != 1 {
 		t.Fatalf("the 'since' must be a RESOLVED clock, not a literal or a duration: %v", lines)
 	}
 
@@ -64,8 +72,8 @@ func TestShortReadWarnIsDedupedAndCounted(t *testing.T) {
 	// day. The rollover must CLEAR the state, so the next line carries no
 	// "suppressed=" at all — without the rollover the window path would emit
 	// the same line WITH suppressed=5, which is what this discriminates.
-	for i := 1; i <= 5; i++ {
-		read(start.Add(16*time.Minute + time.Duration(i)*time.Second))
+	for i := 1; i <= 5; i++ { // inside the window the 6-minute read opened
+		read(start.Add(6*time.Minute + time.Duration(i)*time.Second))
 	}
 	read(start.Add(24 * time.Hour))
 	lines = get()
@@ -224,36 +232,128 @@ func TestRingRehydrateIsWiredAtBoot(t *testing.T) {
 // PIN D3-L — OWNER CONDITION (a), 2026-09-09. THE BOOT REHYDRATE TOUCHES 1m
 // AND NOTHING ELSE.
 //
-// THE DEFECT THIS CATCHES: the first cut rehydrated EVERY (symbol, timeframe)
-// pair the cache held, which deepened the 5m ring from the store and silently
-// moved a LIVE regime input using NT8 aggregates this repo has already judged
-// inconsistent with their own 1m constituents. The owner's ruling allowed the
-// regime input to change and required the depth to come from the 1m tape.
-func TestRehydrateSelectsOnly1mPairs(t *testing.T) {
+// THE DEFECT THIS CAUGHT (class 86, 2026-09-09): the first cut rehydrated EVERY
+// (symbol, timeframe) pair and silently moved a LIVE regime input using NT8
+// aggregates this repo had judged inconsistent with their own 1m constituents.
+// The owner's 09-09 ruling required the depth to come from the 1m tape.
+//
+// RE-POINTED 2026-09-16 under the owner's direct ruling for dispatch 101 —
+// "i want fuull data" — which supersedes condition (a): EVERY subscribed
+// timeframe is rehydrated from the store's current-contract rows, with four
+// guards, and the regime input is protected by condition (b) instead (the
+// baseline is served from the 1m tail; the 5m ring is only its fallback —
+// TestRegimeLabelUnchanged pins that it did not move). The pin keeps its name,
+// its A29 check and its owner; what it asserts is the new selection.
+// (was TestRehydrateSelectsOnly1mPairs — the class-86 pin; renamed to what it
+// asserts after the [O] "i want fuull data" ruling of 2026-09-16, never deleted)
+func TestRehydrateSelectsEveryPair(t *testing.T) {
 	in := [][2]string{
 		{"MNQ", "1m"}, {"MNQ", "5m"}, {"MNQ", "15m"}, {"MNQ", "1h"},
 		{"MNQ", "4h"}, {"MNQ", "1d"}, {"MNQ", "1w"}, {"ES", "1m"}, {"ES", "5m"},
 	}
 	got := pairsToRehydrate(in)
-	if len(got) != 2 {
-		t.Fatalf("selected %d pairs from %d, want exactly the 2 that are 1m: %v", len(got), len(in), got)
+	if len(got) != len(in) {
+		t.Fatalf("selected %d pairs from %d, want EVERY subscribed timeframe [O 2026-09-16]: %v", len(got), len(in), got)
 	}
-	for _, p := range got {
-		if p[1] != rehydrateTimeframe {
-			t.Fatalf("a non-%s pair was selected for rehydration: %v — stored non-1m rows are NT8 aggregates and must never reach a live regime input", rehydrateTimeframe, p)
+	for i := range in {
+		if got[i] != in[i] {
+			t.Fatalf("the cache's order was not preserved at %d: %v", i, got)
 		}
-	}
-	if got[0] != ([2]string{"MNQ", "1m"}) || got[1] != ([2]string{"ES", "1m"}) {
-		t.Fatalf("the cache's order was not preserved: %v", got)
-	}
-	// An all-non-1m cache selects nothing, and says nothing was selected —
-	// never a silent full pass (A24).
-	if n := len(pairsToRehydrate([][2]string{{"MNQ", "5m"}, {"MNQ", "1d"}})); n != 0 {
-		t.Fatalf("a cache with no 1m pair selected %d pair(s)", n)
 	}
 	// A29 — the production loop consults it.
 	if n, where := prodCallSites(t, "pairsToRehydrate("); n == 0 {
 		t.Fatalf("pairsToRehydrate has 0 production call sites (A29) — the filter can be bypassed with the suite green (%v)", where)
+	}
+}
+
+// GUARD (ii) — RING-SIDE, from nofx-93's census: a store row is REPLAY-GRADE to
+// this process whatever its stamp says. The store carries 09-26 rows stamped
+// `live` by the migration and 12-26 rows stamped `live` by a closed-bar
+// catch-up delivered as bar_update after a subscribe (1d rows from 09-02 at
+// rowid 438391). Age alone distinguishes neither. So EVERY rehydrated row
+// enters the ring as historical, never as sacred live — and the scale check,
+// the merge and the persister all treat it as the replay it is.
+func TestRehydratedRowsEnterTheRingAsHistorical(t *testing.T) {
+	rows := []store.BarHistoryDB{
+		{OpenTimeMs: 1_000_000, O: 1, H: 2, L: 0.5, C: 1.5, V: 1, Source: store.BarSourceLive},
+		{OpenTimeMs: 1_060_000, O: 1, H: 2, L: 0.5, C: 1.5, V: 1, Source: store.BarSourceHistorical},
+	}
+	bars := rehydrateBarsFromRows(rows)
+	for i, b := range bars {
+		if b.Source != ntwire.BarSourceHistorical {
+			t.Fatalf("row %d entered the ring as %q; a store row is replay-grade to this process (guard ii)", i, b.Source)
+		}
+	}
+}
+
+// GUARD (i) — after a confirmed scale-break drop, rows stamped `historical`
+// are the rejected seed's kin and are excluded from that key's refill; on the
+// boot path they were verified in a prior boot and are kept.
+func TestPostDropRefillExcludesHistoricalRows(t *testing.T) {
+	rows := []store.BarHistoryDB{
+		{OpenTimeMs: 1_000_000, Source: store.BarSourceLive},
+		{OpenTimeMs: 1_060_000, Source: store.BarSourceHistorical},
+		{OpenTimeMs: 1_120_000, Source: store.BarSourceLive},
+	}
+	if got, imp := rehydrateRowsFor(rows, true); len(got) != 2 || imp != 0 {
+		t.Fatalf("post-drop: want the 2 live rows only (0 imports), got %d (%d)", len(got), imp)
+	}
+	if got, imp := rehydrateRowsFor(rows, false); len(got) != 3 || imp != 0 {
+		t.Fatalf("boot path: want all 3 rows (0 imports), got %d (%d)", len(got), imp)
+	}
+}
+
+// GUARD (iii) IS REAL CODE, AT THE DOOR, ON BOTH PATHS — nofx-93 objection 1
+// (2026-09-16). The reader LastNBarsOn hands imports to its callers (its filter
+// is mixed+off-scale only — pinned in store TestCurrentContractReaderReturns
+// ImportsUnfiltered); the first cut of this wave printed
+// "import=excluded-by-reader" on a boot line without a line of code behind it
+// (class 82). End to end on a real store: 500 live + 5 import rows on 12-26 at
+// NON-colliding open times (the bars PK has no contract; an import on an
+// occupied slot is skipped) → the reader returns 505 → the door admits 500 and
+// COUNTS the 5, so the boot line prints a number it read.
+func TestRehydrateDoorExcludesImportsOnBothPaths(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "door.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	bh := st.BarHistory()
+	if err := bh.Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	const fiveMin = int64(5 * 60 * 1000)
+	base := int64(1_789_000_000_000)
+	var imports, live []store.BarHistoryDB
+	for i := 0; i < 5; i++ { // older than every live row: no slot collides
+		imports = append(imports, store.BarHistoryDB{Symbol: "MNQ", TF: "5m", OpenTimeMs: base + int64(i)*fiveMin, O: 29290, H: 29300, L: 29280, C: 29295, V: 1, Contract: "MNQ 12-26", Source: store.BarSourceHistoricalImport})
+	}
+	for i := 0; i < 500; i++ {
+		live = append(live, store.BarHistoryDB{Symbol: "MNQ", TF: "5m", OpenTimeMs: base + int64(100+i)*fiveMin, O: 29290, H: 29300, L: 29280, C: 29295, V: 1, Contract: "MNQ 12-26", Source: store.BarSourceLive})
+	}
+	if err := bh.InsertBars(live); err != nil {
+		t.Fatal(err)
+	}
+	if ins, skip, err := bh.ImportBars(imports); err != nil || ins != 5 || skip != 0 {
+		t.Fatalf("fixture imports inserted=%d skipped=%d err=%v, want 5/0", ins, skip, err)
+	}
+	rows, err := bh.LastNBarsOn("MNQ", "5m", "MNQ 12-26", 5000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 505 {
+		t.Fatalf("premise: the reader must hand the door 505 rows (imports included), got %d", len(rows))
+	}
+	for _, reseeded := range []bool{false, true} {
+		kept, excluded := rehydrateRowsFor(rows, reseeded)
+		if len(kept) != 500 || excluded != 5 {
+			t.Fatalf("reseeded=%v: door kept %d (want 500), counted import=%d (want 5)", reseeded, len(kept), excluded)
+		}
+		for _, r := range kept {
+			if r.Source == store.BarSourceHistoricalImport {
+				t.Fatalf("reseeded=%v: an import row (%d) got through the door", reseeded, r.OpenTimeMs)
+			}
+		}
 	}
 }
 
@@ -277,5 +377,29 @@ func TestBarHorizonWarnLineCarriesTheCounters(t *testing.T) {
 	after := barHorizonCountsTxt()
 	if !strings.Contains(after, fmt.Sprintf("short=%d", before+1)) {
 		t.Fatalf("the rendered totals do not READ telemetry (A11): before=%d line=%q", before, after)
+	}
+}
+
+// THE P0 LINE SAYS WHAT THE RING HOLDS UNDER [O] "i want fuull data": every tf
+// refills from the store after a drop (3b), so "LIVE-ONLY … 1m-only, owner
+// condition 2026-09-09" is a superseded literal on a non-1m break (class 82);
+// and it says whether NT8 was re-asked (3a) — once per boot, then not.
+func TestScaleBreakP0TextMatchesTheRefillAndTheReask(t *testing.T) {
+	for _, tf := range []string{"1m", "5m", "1h"} {
+		got := scaleBreakRefillTxt(tf, nil)
+		if strings.Contains(got, "1m-only") || strings.Contains(got, "LIVE-ONLY") {
+			t.Fatalf("%s: superseded 1m-only literal on the P0 line: %q", tf, got)
+		}
+		if !strings.Contains(got, "store") || !strings.Contains(got, "NT8 re-asked") {
+			t.Fatalf("%s: want the store refill + the re-ask named, got %q", tf, got)
+		}
+	}
+	spent := scaleBreakRefillTxt("5m", ntwire.ErrHistoryReplaySpent)
+	if !strings.Contains(spent, "NT8 NOT re-asked") || !strings.Contains(spent, "restart the AddOn") {
+		t.Fatalf("spent budget must be named with the fix, got %q", spent)
+	}
+	down := scaleBreakRefillTxt("5m", errors.New("tcp_server: feed down"))
+	if !strings.Contains(down, "NT8 NOT re-asked") || !strings.Contains(down, "feed down") {
+		t.Fatalf("a refused re-ask must carry its reason, got %q", down)
 	}
 }

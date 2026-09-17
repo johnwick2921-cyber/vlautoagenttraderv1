@@ -76,6 +76,28 @@ var alsoRequireWired = []string{
 	"BackfillFadePermission",
 	"FadePermissionBootLine",
 	"CountFadeLabels",
+	// 101 (2026-09-16). The scale-check repairs, the history re-request after a
+	// confirmed break [O "I want full data"], the horizon aggregate, the E1
+	// line and the D2 display readers — each pinned by the name that would go
+	// dead if its call site went. Wrappers listed where a wrapper is the site.
+	"RequestHistoryReplayAt",
+	"OnScaleCheckSkip",
+	"IncScaleBreakDrop",
+	"HistoryAtSubscribeLineFor",
+	"PriorContractBarsBefore",
+	"FirstLiveOn",
+	"klinesAcrossRoll",
+	"ChartAcrossRollResolved",
+	// 101 follow-up — PLANNER TAPE NT8-ONLY (CTO ruling 2026-09-16): the two
+	// readers every planner door must use, the census, the boot line.
+	"LastNBarsFromNT8On",
+	"BarsBetweenFromNT8On",
+	"ImportRowsOn",
+	"PlannerTapeBootLine",
+	"logPlannerTapeAccounting",
+	// after-backfill hook race + 🖥 by rev (2026-09-16 15:32 boot).
+	"fireAfterBackfillHook",
+	"UIServingBootLine",
 	// WAVE A — the writers this wave added. Each must keep at least one
 	// production call site; removing one turns this test red.
 	"recordAcceptedRisk",

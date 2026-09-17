@@ -81,7 +81,7 @@ func (at *AutoTrader) weeklyBars1m(now time.Time) []market.Kline {
 		at.logErrorf("📅 WEEKLY READ: no contract named yet — stored bars not read across an unknown roll")
 		return nil
 	}
-	rows, err := at.store.BarHistory().BarsBetweenOn(at.futuresSymbol(), "1m", contract, 0, now.UnixMilli())
+	rows, err := at.store.BarHistory().BarsBetweenFromNT8On(at.futuresSymbol(), "1m", contract, 0, now.UnixMilli()) // NT8-only planner door (2026-09-16)
 	if err != nil {
 		at.logErrorf("📅 WEEKLY READ: stored 1m bars load failed: %v", err)
 		return nil
@@ -113,7 +113,7 @@ func (at *AutoTrader) barResolver() *market.BarResolver {
 			if contract == "" {
 				return nil
 			}
-			rows, err := at.store.BarHistory().BarsBetweenOn(symbol, "1m", contract, fromMs, toMs)
+			rows, err := at.store.BarHistory().BarsBetweenFromNT8On(symbol, "1m", contract, fromMs, toMs) // NT8-only planner door (2026-09-16)
 			if err != nil {
 				return nil
 			}

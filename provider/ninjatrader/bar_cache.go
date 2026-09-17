@@ -37,7 +37,10 @@ type BarCache struct {
 	// BAR-SOURCE WAVE: per key, whether a live bar has been seen this process
 	// (the scale-mismatch check runs once, on the first), and every mismatch
 	// detected, for the boot line.
-	liveSeen   map[string]bool
+	liveSeen map[string]bool
+	// scaleSkips records, per key, a scale check that could not be made because
+	// the only reference was not adjacent to the live bar (101 D1' rule 2).
+	scaleSkips map[string]ScaleCheckSkip
 	mismatches map[string]ScaleMismatch
 	// seedOffScale is set when the CURRENT seed for a key was found on another
 	// scale, and cleared by the next SeedHistorical. mismatches keeps every
@@ -238,17 +241,32 @@ func (c *BarCache) SeedHistorical(symbol, timeframe string, bars []Bar) {
 	defer c.mu.Unlock()
 	c.dropped += int64(bad)
 	key := barKey(symbol, timeframe)
-	// Every replay re-arms the scale check: the FIRST live bar after THIS seed
-	// is compared against it. Per-process arming would let a mid-session
-	// reconnect re-seed on a different scale and never be caught — a mutation
-	// survived on exactly that gap.
+	existing := c.bars[key]
+	// A ZERO-BAR REPLAY MUST NOT RE-ARM THE SCALE CHECK (101 D1', 2026-09-16).
+	// On 09-16 the feed flapped five times; each reconnect's BarsRequest ran
+	// while the feed was down and delivered nothing. The re-arm below used to
+	// run BEFORE this return, so an empty frame re-armed the check without
+	// giving it a new reference — and the next live bar was judged against the
+	// boot replay's last bar from eleven hours earlier. 146.75 pts of
+	// overnight move read as a scale break; 1,999 5m and 1,832 1m historical
+	// bars were dropped; the 5m horizon went from 285h to 11h for the life of
+	// the process. Nothing to judge means nothing to arm.
+	if len(bars) == 0 && len(existing) > 0 {
+		return
+	}
+	// Every NON-EMPTY replay re-arms the scale check: the FIRST live bar after
+	// THIS seed is compared against it. Per-process arming would let a
+	// mid-session reconnect re-seed on a different scale and never be caught —
+	// a mutation survived on exactly that gap.
 	if c.liveSeen != nil {
 		delete(c.liveSeen, key)
 	}
 	if c.seedOffScale != nil {
 		delete(c.seedOffScale, key)
 	}
-	existing := c.bars[key]
+	if c.scaleSkips != nil {
+		delete(c.scaleSkips, key)
+	}
 	if len(existing) == 0 {
 		// First seed for this key — copy the tail (detaches from caller's array).
 		if len(bars) > c.maxBars {

@@ -34,7 +34,12 @@ import (
 // (planner_read_facts ids 64->67), the monitor tick is 60s, and 57 consumer
 // sites hit this bridge per cycle — an undeduped warn writes thousands of lines
 // into a log file that was already 511 MB for that date.
-const barHorizonWarnWindow = 15 * time.Minute
+// barHorizonWarnWindow is the dedupe window per (symbol, tf, why). FIVE
+// minutes (101 D3(b), 2026-09-16): the running rev had produced 8,258 🕳 SHORT
+// lines since boot because the key also carried the caller, the requested
+// count and the served count — served grows by one every bar, so the key was
+// unique per call and the window suppressed almost nothing.
+const barHorizonWarnWindow = 5 * time.Minute
 
 // barHorizonBootGrace suppresses the EMPTY arm for this long after the bridge is
 // wired, because between the Go boot and the AddOn's replay EVERY site is served
@@ -48,6 +53,9 @@ type barHorizonWarnState struct {
 	firstAt    time.Time
 	lastAt     time.Time
 	suppressed int
+	// callers aggregates who noticed the condition inside the window, so the
+	// one line that speaks can name all of them (D3(b)).
+	callers map[string]int
 }
 
 var (
@@ -99,7 +107,7 @@ func barHorizonInBootGrace(now time.Time) bool {
 // barHorizonClaim is the dedupe. The key is deliberately NOT the rendered line:
 // that carries an age which changes on every call and would suppress nothing.
 // Returns whether to emit, how many were eaten since, and when the run started.
-func barHorizonClaim(key string, now time.Time) (bool, int, time.Time) {
+func barHorizonClaim(key, caller string, now time.Time) (bool, int, time.Time, map[string]int) {
 	day := kernel.CMESessionDayStart(now).UnixMilli()
 	barHorizonMu.Lock()
 	stale := day != barHorizonDayMs
@@ -113,20 +121,49 @@ func barHorizonClaim(key string, now time.Time) (bool, int, time.Time) {
 	barHorizonMu.Lock()
 	st, ok := barHorizonSeen[key]
 	if !ok {
-		barHorizonSeen[key] = &barHorizonWarnState{firstAt: now, lastAt: now}
+		barHorizonSeen[key] = &barHorizonWarnState{firstAt: now, lastAt: now, callers: map[string]int{caller: 1}}
 		barHorizonMu.Unlock()
-		return true, 0, now
+		return true, 0, now, map[string]int{caller: 1}
 	}
 	if now.Sub(st.firstAt) >= barHorizonWarnWindow {
 		eaten, since := st.suppressed, st.firstAt
+		// the re-armed line names who was talking during the window it closes
+		who := st.callers
+		who[caller]++
 		st.firstAt, st.lastAt, st.suppressed = now, now, 0
+		st.callers = map[string]int{caller: 1}
 		barHorizonMu.Unlock()
-		return true, eaten, since
+		return true, eaten, since, who
 	}
 	st.suppressed++
 	st.lastAt = now
+	if st.callers == nil {
+		st.callers = map[string]int{}
+	}
+	st.callers[caller]++
 	barHorizonMu.Unlock()
-	return false, 0, time.Time{}
+	return false, 0, time.Time{}, nil
+}
+
+// barHorizonCallersTxt renders the aggregated callers deterministically.
+func barHorizonCallersTxt(who map[string]int) string {
+	if len(who) == 0 {
+		return "callers=[]"
+	}
+	names := make([]string, 0, len(who))
+	for n := range who {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	parts := make([]string, 0, len(names))
+	for _, n := range names {
+		if who[n] > 1 {
+			parts = append(parts, fmt.Sprintf("%s×%d", n, who[n]))
+		} else {
+			parts = append(parts, n)
+		}
+	}
+	return "callers=[" + strings.Join(parts, " ") + "]"
 }
 
 // barHorizonWarn counts every detection, then decides whether to speak.
@@ -149,9 +186,12 @@ func barHorizonWarn(now time.Time, h kernel.BarHorizon, symbol, tf, caller strin
 		telemetry.IncBarHorizon("graced")
 		return
 	}
-	key := strings.Join([]string{symbol, tf, caller, why,
-		strconv.Itoa(h.Requested), strconv.Itoa(h.Served), strconv.Itoa(h.GapCount)}, "|")
-	emit, eaten, since := barHorizonClaim(key, now)
+	// THE KEY IS THE CONDITION, NOT THE OBSERVER. (symbol, tf, why) — never
+	// the caller, never the counts. A ring that is short is one fact; the
+	// callers that noticed are a list on the line, and the counts on the
+	// line are the LATEST read, which is what the reader wants.
+	key := strings.Join([]string{symbol, tf, why}, "|")
+	emit, eaten, since, who := barHorizonClaim(key, caller, now)
 	if !emit {
 		telemetry.IncBarHorizon("suppressed")
 		return
@@ -171,8 +211,8 @@ func barHorizonWarn(now time.Time, h kernel.BarHorizon, symbol, tf, caller strin
 	// footprint, so the totals ship on the one line that already survives the
 	// dedupe. They are READ from telemetry, never recomputed here (A11), and
 	// they are process-lifetime totals, not a rate — no denominator is implied.
-	logger.Warnf("🕳 bar horizon %s: %s %s · ring=%d caller=%s%s · totals(since boot) %s",
-		why, symbol, h.Line(), ringCap, caller, extra, barHorizonCountsTxt())
+	logger.Warnf("🕳 bar horizon %s: %s %s · ring=%d %s%s · totals(since boot) %s",
+		why, symbol, h.Line(), ringCap, barHorizonCallersTxt(who), extra, barHorizonCountsTxt())
 }
 
 // barHorizonCountsTxt renders telemetry.BarHorizonCounts in a stable arm order

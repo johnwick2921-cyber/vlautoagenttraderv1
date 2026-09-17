@@ -90,13 +90,13 @@ func TestBridgeWarnsWhenServedIsShortOfRequested(t *testing.T) {
 	if n := bhCountLines(lines, "bar horizon"); n != 1 {
 		t.Fatalf("want 1 bar-horizon warn, got %d captured lines (asked=12000 served=2500): %v", n, lines)
 	}
-	for _, want := range []string{"asked=12000", "served=2500", "ring=2500", "SHORT", "MNQ", "caller="} {
+	for _, want := range []string{"asked=12000", "served=2500", "ring=2500", "SHORT", "MNQ", "callers=["} {
 		if bhCountLines(lines, want) != 1 {
 			t.Fatalf("warn line missing %q: %v", want, lines)
 		}
 	}
 	// The caller must be THIS test's file, not the bridge's own closure.
-	if bhCountLines(lines, "caller=ninjatrader/bar_horizon_bridge_test.go:") != 1 {
+	if bhCountLines(lines, "callers=[ninjatrader/bar_horizon_bridge_test.go:") != 1 {
 		t.Fatalf("warn line does not name this test as the caller: %v", lines)
 	}
 }

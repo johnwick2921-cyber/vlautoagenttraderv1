@@ -60,8 +60,10 @@ const (
 // listener, exactly one connected client at a time, the pending-signal queue
 // flushed on (re)connect, and the inbound fill channel that TCPTrader reads.
 type TCPServer struct {
-	addr     string
-	listener net.Listener
+	histAtSub  historyAtSubscribe // 101 E1
+	histReplay historyReplayState // 101 D1'(3a)
+	addr       string
+	listener   net.Listener
 
 	// U1 wire-liveness (stale-bar dispatch 2026-08-19): every inbound frame
 	// bumps these; a 60s reporter line answers "feed or math" in one glance.
@@ -1695,6 +1697,7 @@ func (s *TCPServer) enqueueBarUpdate(symbol, timeframe string, bars []Bar) {
 // longer than 2s, log + drop (better to lose this batch than deadlock
 // the read loop forever).
 func (s *TCPServer) enqueueBarHistorical(symbol, timeframe string, bars []Bar) {
+	s.histAtSub.note(symbol, timeframe, len(bars)) // 101 E1: what arrived, per tf
 	msg := barIngestMsg{historical: true, symbol: symbol, timeframe: timeframe, bars: bars}
 	select {
 	case s.barIngestCh <- msg:

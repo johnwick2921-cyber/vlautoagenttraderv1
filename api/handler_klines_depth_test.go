@@ -61,9 +61,14 @@ func TestKlinesAggregatedDepthFallsBackWhenNoOlder(t *testing.T) {
 	}
 }
 
-// F1 (2026-09-14) — the dashboard klines path (ninjatrader) deepens from the
-// store on the CURRENT contract only. The retired contract's rows exist but must
-// never be served, and a ring (live) bar is never replaced by a stored one.
+// F1 (2026-09-14), RE-POINTED by dispatch 101 D2 (2026-09-16, owner ruling:
+// "the chart MUST show stored history across contract rolls"). The dashboard
+// klines path deepens from the store on the CURRENT contract first; when the
+// ask is still short, PRIOR contracts fill strictly before the current
+// contract's first live row — LABELLED, prices untouched. What this test still
+// pins from 09-14: a ring (live) bar is never replaced by a stored one, the
+// current contract's rows come first, and a historical_import snapshot is never
+// rendered where a live row exists.
 func TestKlinesNinjaTraderStoreDepthContractFiltered(t *testing.T) {
 	orig := market.FuturesBarsProvider
 	defer func() { market.FuturesBarsProvider = orig }()
@@ -110,22 +115,35 @@ func TestKlinesNinjaTraderStoreDepthContractFiltered(t *testing.T) {
 
 	s := &Server{store: st}
 	out := s.getKlinesFromNinjaTrader("MNQ", "1m", 6)
-	if len(out) != 5 {
-		t.Fatalf("served %d bars, want 5 (3 stored current-contract + 2 ring); the retired contract must be filtered", len(out))
+	// 6 asked: 2 ring + 3 stored current-contract = 5, and ONE prior-contract
+	// bar (older(4), 09-26) fills behind the current contract's first live row
+	// — labelled, its sentinel close untouched. Under the 09-14 rule this was 5.
+	if len(out) != 6 {
+		t.Fatalf("served %d bars, want 6 (2 ring + 3 current-contract + 1 prior-contract behind them)", len(out))
 	}
-	if out[0].OpenTime != older(3) {
-		t.Fatalf("oldest served %d, want the store's oldest CURRENT-contract bar %d", out[0].OpenTime, older(3))
+	if out[0].OpenTime != older(4) || out[0].Contract != "MNQ 09-26" || out[0].Close != -1 {
+		t.Fatalf("oldest served must be the prior contract's newest bar, labelled, price untouched: %+v", out[0])
+	}
+	if out[1].OpenTime != older(3) || out[1].Contract != "MNQ 12-26" {
+		t.Fatalf("the current contract's oldest stored bar must follow, labelled: %+v", out[1])
 	}
 	if got := out[len(out)-1].OpenTime; got != ringStart.Add(time.Minute).UnixMilli() {
 		t.Fatalf("newest served %d — the ring's live tail must survive untouched", got)
 	}
 	for _, k := range out {
-		if k.Close < 0 {
-			t.Fatalf("a retired-contract (09-26) bar was served: %+v", k)
+		if k.Contract == "" {
+			t.Fatalf("an unlabelled kline: %+v", k)
 		}
 		if k.Close == 50 {
 			t.Fatalf("a historical_import snapshot rendered on the display chart: %+v", k)
 		}
+	}
+	// flag OFF restores the 09-14 behaviour exactly: 5, current contract only
+	prev := chartAcrossRoll
+	chartAcrossRoll = false
+	t.Cleanup(func() { chartAcrossRoll = prev })
+	if off := s.getKlinesFromNinjaTrader("MNQ", "1m", 6); len(off) != 5 || off[0].OpenTime != older(3) {
+		t.Fatalf("with NOFX_CHART_ACROSS_ROLL=off the 09-14 behaviour must hold: got %d bars, oldest %d", len(off), off[0].OpenTime)
 	}
 }
 
