@@ -156,8 +156,8 @@ func TestUIBootLineReadsTheBundleTimestamp(t *testing.T) {
 	if err := os.Chtimes(filepath.Join(dist, "index.html"), stamp, stamp); err != nil {
 		t.Fatalf("chtimes: %v", err)
 	}
-	// binaryAt older than the bundle → fresh
-	got := UIServingBootLineAt(dist, stamp.Add(-time.Hour))
+	// binary rev unknown → not judged; the timestamp is still READ
+	got := UIServingBootLine(dist, stamp.Add(-time.Hour), "")
 	if !strings.Contains(got, "served-by=go-static") {
 		t.Errorf("boot line must name the server: %q", got)
 	}
@@ -165,29 +165,30 @@ func TestUIBootLineReadsTheBundleTimestamp(t *testing.T) {
 		t.Errorf("boot line must READ the bundle timestamp: %q", got)
 	}
 	if strings.Contains(got, "STALE") {
-		t.Errorf("a bundle newer than the binary is not stale: %q", got)
+		t.Errorf("an unjudgeable bundle is not called stale: %q", got)
 	}
 }
 
-// THE DEFECT THAT STARTED THIS: a bundle older than the binary is exactly the
-// 08-31 dist under a 09-03 binary. It must be impossible to miss.
-func TestUIBootLineShoutsWhenTheBundleIsOlderThanTheBinary(t *testing.T) {
-	dist := distFixture(t, "x")
+// THE DEFECT THAT STARTED THIS: the 08-31 dist under a 09-03 binary. Judged
+// by rev now — a bundle carrying another rev MUST say STALE, and the older
+// mtime rides along as the secondary note so the age is still visible.
+func TestUIBootLineShoutsWhenTheBundleIsForAnotherRev(t *testing.T) {
+	dist := revDistFixture(t, revA)
 	built := time.Date(2026, 8, 31, 15, 34, 0, 0, time.UTC)
 	if err := os.Chtimes(filepath.Join(dist, "index.html"), built, built); err != nil {
 		t.Fatalf("chtimes: %v", err)
 	}
-	got := UIServingBootLineAt(dist, time.Date(2026, 9, 3, 20, 26, 0, 0, time.UTC))
+	got := UIServingBootLine(dist, time.Date(2026, 9, 3, 20, 26, 0, 0, time.UTC), revB)
 	if !strings.Contains(got, "STALE") {
-		t.Fatalf("a bundle older than the binary MUST say STALE: %q", got)
+		t.Fatalf("a bundle built for another rev MUST say STALE: %q", got)
 	}
-	if !strings.Contains(got, "build=2026-08-31T15:34:00Z") {
-		t.Errorf("the stale line must still name the timestamp: %q", got)
+	if !strings.Contains(got, "build=2026-08-31T15:34:00Z") || !strings.Contains(got, "mtime predates the binary") {
+		t.Errorf("the stale line must still name the timestamp and the age: %q", got)
 	}
 }
 
 func TestUIBootLineSaysNoneWhenThereIsNoBundle(t *testing.T) {
-	got := UIServingBootLineAt(filepath.Join(t.TempDir(), "absent"), time.Now())
+	got := UIServingBootLine(filepath.Join(t.TempDir(), "absent"), time.Now(), revB)
 	if !strings.Contains(got, "served-by=none") {
 		t.Errorf("no bundle → served-by=none, got %q", got)
 	}
@@ -197,5 +198,70 @@ func TestUIBootLineSaysNoneWhenThereIsNoBundle(t *testing.T) {
 	}
 	if strings.Contains(got, "0001-01-01") {
 		t.Errorf("a zero time leaked into the boot line: %q", got)
+	}
+}
+
+// ── THE 🖥 LINE COMPARES REVS, NOT TIMESTAMPS (2026-09-16, boot of c6579347) ──
+//
+// The timestamp rule was RIGHT that boot by luck: the served bundle was the
+// bcd70c0d dist (GUIDE_BUILT_REV=9e200002) under a c6579347 binary, and it
+// also happened to be older. Had the correct f53f4e94 dist been installed —
+// built 17 minutes BEFORE the binary — the same rule would have called the
+// right bundle STALE. The bundle carries GUIDE_BUILT_REV (web/src/guide/
+// types.ts) as a 40-hex literal; the truth is whether that rev is the binary's.
+func revDistFixture(t *testing.T, bundleRev string) string {
+	t.Helper()
+	dir := t.TempDir()
+	index := `<!doctype html><html><head><script type="module" crossorigin src="/assets/index-AbC123.js"></script></head><body></body></html>`
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte(index), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(dir, "assets"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	js := `var x=1;const G="` + bundleRev + `";export{G};`
+	if err := os.WriteFile(filepath.Join(dir, "assets", "index-AbC123.js"), []byte(js), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
+
+const (
+	revA = "9e200002d6a2864ef9d3af041431763213641e1b"
+	revB = "c6579347580a1720c343f6bba90717eacf3f810c"
+)
+
+func TestUIBootLineIsStaleByRevEvenWhenTheBundleIsNewer(t *testing.T) {
+	dist := revDistFixture(t, revA)
+	newer := time.Date(2026, 9, 16, 20, 0, 0, 0, time.UTC)
+	if err := os.Chtimes(filepath.Join(dist, "index.html"), newer, newer); err != nil {
+		t.Fatal(err)
+	}
+	got := UIServingBootLine(dist, newer.Add(-time.Hour), revB)
+	if !strings.Contains(got, "STALE") || !strings.Contains(got, "bundle-rev=9e200002") || !strings.Contains(got, "binary c6579347") {
+		t.Fatalf("a bundle built for another rev is STALE whatever its mtime: %q", got)
+	}
+}
+
+func TestUIBootLineIsFreshByRevEvenWhenTheBundleIsOlder(t *testing.T) {
+	dist := revDistFixture(t, revB)
+	older := time.Date(2026, 9, 16, 19, 40, 15, 0, time.UTC) // the f53f4e94 dist, 17 min before the binary
+	if err := os.Chtimes(filepath.Join(dist, "index.html"), older, older); err != nil {
+		t.Fatal(err)
+	}
+	got := UIServingBootLine(dist, older.Add(17*time.Minute), revB)
+	if strings.Contains(got, "STALE") || !strings.Contains(got, "bundle-rev=c6579347") || !strings.Contains(got, "matches the binary") {
+		t.Fatalf("a bundle carrying the binary's rev is not stale, whatever its mtime: %q", got)
+	}
+	if !strings.Contains(got, "build=2026-09-16T19:40:15Z") {
+		t.Fatalf("the timestamp stays on the line as a secondary field: %q", got)
+	}
+}
+
+func TestUIBootLineSaysUnknownRevWhenTheBundleCarriesNone(t *testing.T) {
+	dist := distFixture(t, `<script src="/assets/app.js"></script>`)
+	got := UIServingBootLine(dist, time.Now(), revB)
+	if !strings.Contains(got, "bundle-rev=UNKNOWN") {
+		t.Fatalf("no 40-hex rev in the served bundle → UNKNOWN, never a guess: %q", got)
 	}
 }

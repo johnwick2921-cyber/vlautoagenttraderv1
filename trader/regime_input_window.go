@@ -18,8 +18,12 @@ import (
 //	 the fix. A31 forbids changing the RULE, not correcting the INPUT the rule
 //	 was promised."
 //
-// FOUR CONDITIONS CAME WITH IT. (a) the boot rehydrate touches 1m ONLY — see
-// trader/ninjatrader/bar_persist_wire.go; (b) THE 5m ASK IS SERVED FROM THE
+// FOUR CONDITIONS CAME WITH IT. (a) the boot rehydrate touches 1m ONLY —
+// SUPERSEDED 2026-09-16 by the owner's direct ruling "i want fuull data"
+// (dispatch 101): every subscribed timeframe is rehydrated, every rehydrated
+// row entering the ring as replay-grade, see
+// trader/ninjatrader/bar_persist_wire.go pairsToRehydrate. Conditions (b)–(d)
+// STAND and are what keep this input where it was; (b) THE 5m ASK IS SERVED FROM THE
 // REHYDRATED 1m TAIL and renamed to what it actually receives — this file;
 // (c) the boot line reports the served window IN DAYS, before and after —
 // RegimeInputWindowBootLine below; (d) an E7-style golden proves the rule did

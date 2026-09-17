@@ -102,6 +102,9 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 			at.logInfof("%s", RegimeInputWindowBootLine(
 				at.barsWithStoreDepth(sym, "1m", plannerCandleTapeBars, hookNow),
 				ring5m, rvBaselineMaxDays, hookNow))
+			// NT8-only planner tape (CTO ruling 2026-09-16): the class-82
+			// accounting of what the import exclusion moved, both ways.
+			at.logPlannerTapeAccounting(sym, ring5m, hookNow)
 		})
 	})
 	installActivePlanProvider(at, st)
@@ -224,7 +227,7 @@ func installNakedPOCProvider(st *store.Store) {
 			// to within seconds of a boot. Empty → the historical leg is
 			// skipped, never read unfiltered.
 			contract, _ := st.BarHistory().LatestContract(symbol)
-			if old, err := st.BarHistory().BarsBetweenOn(symbol, "1m", contract, 0, earliest); contract != "" && err == nil && len(old) > 0 {
+			if old, err := st.BarHistory().BarsBetweenFromNT8On(symbol, "1m", contract, 0, earliest); contract != "" && err == nil && len(old) > 0 { // NT8-only planner door (2026-09-16): an imported bar must not retire a POC
 				combined := make([]market.Kline, 0, len(old)+len(bars))
 				for _, b := range old {
 					combined = append(combined, market.Kline{OpenTime: b.OpenTimeMs, CloseTime: b.OpenTimeMs + 59_999, Open: b.O, High: b.H, Low: b.L, Close: b.C, Volume: b.V})

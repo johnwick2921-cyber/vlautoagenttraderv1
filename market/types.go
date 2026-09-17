@@ -60,9 +60,9 @@ type TimeframeSeriesData struct {
 	// Populated only when periods are supplied to GetWithTimeframes; empty → the
 	// prompt falls back to EMA20Values/EMA50Values (byte-identical legacy output).
 	EMAByPeriod map[int][]float64 `json:"ema_by_period,omitempty"`
-	MACDValues  []float64  `json:"macd_values"`  // MACD series
-	RSI7Values  []float64  `json:"rsi7_values"`  // RSI7 series (legacy fixed period; back-compat)
-	RSI14Values []float64  `json:"rsi14_values"` // RSI14 series (legacy fixed period; back-compat)
+	MACDValues  []float64         `json:"macd_values"`  // MACD series
+	RSI7Values  []float64         `json:"rsi7_values"`  // RSI7 series (legacy fixed period; back-compat)
+	RSI14Values []float64         `json:"rsi14_values"` // RSI14 series (legacy fixed period; back-compat)
 	// RSIByPeriod holds one RSI series per CONFIGURED period; empty → prompt falls
 	// back to RSI7Values/RSI14Values (byte-identical legacy output).
 	RSIByPeriod map[int][]float64 `json:"rsi_by_period,omitempty"`
@@ -143,6 +143,14 @@ type Kline struct {
 	Trades              int     `json:"trades"`
 	TakerBuyBaseVolume  float64 `json:"takerBuyBaseVolume"`
 	TakerBuyQuoteVolume float64 `json:"takerBuyQuoteVolume"`
+	// Contract (101 D2, 2026-09-16) names the futures contract this bar
+	// belongs to when the chart is served across a roll — "MNQ 09-26" then
+	// "MNQ 12-26" with a real basis step between them. ADDITIVE and
+	// omitempty: every existing crypto/NT8 JSON stays byte-identical; every
+	// named-field literal in the repo compiles unchanged (this is a
+	// high-cascade type — that is the whole reason it is a trailing optional
+	// field and nothing else).
+	Contract string `json:"contract,omitempty"`
 }
 
 type KlineResponse []interface{}
@@ -271,11 +279,11 @@ const (
 type GridDirection string
 
 const (
-	GridDirectionNeutral   GridDirection = "neutral"     // 50% buy + 50% sell
-	GridDirectionLong      GridDirection = "long"        // 100% buy
-	GridDirectionShort     GridDirection = "short"       // 100% sell
-	GridDirectionLongBias  GridDirection = "long_bias"   // 70% buy + 30% sell (default)
-	GridDirectionShortBias GridDirection = "short_bias"  // 30% buy + 70% sell (default)
+	GridDirectionNeutral   GridDirection = "neutral"    // 50% buy + 50% sell
+	GridDirectionLong      GridDirection = "long"       // 100% buy
+	GridDirectionShort     GridDirection = "short"      // 100% sell
+	GridDirectionLongBias  GridDirection = "long_bias"  // 70% buy + 30% sell (default)
+	GridDirectionShortBias GridDirection = "short_bias" // 30% buy + 70% sell (default)
 )
 
 // GetBuySellRatio returns the buy and sell ratio for this direction

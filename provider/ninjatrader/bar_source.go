@@ -3,6 +3,7 @@ package ninjatrader
 import (
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,6 +31,12 @@ const (
 // Both are [I], stated on the boot line. NOFX_BAR_SCALE_MISMATCH_PCT and
 // NOFX_BAR_SCALE_MISMATCH_MULT override.
 var (
+	// scaleCheckAdjacencyIntervals is how many bar intervals the replay's last
+	// bar may precede the live bar by and still be its reference (101 D1',
+	// CTO amendment 11:50 CT: "within 1–2 bar durations"). Beyond it the
+	// check cannot be made and says so.
+	scaleCheckAdjacencyIntervals int64 = 2
+
 	ScaleMismatchPct       = 0.005
 	ScaleMismatchRangeMult = 20.0
 )
@@ -169,6 +176,35 @@ func (c *BarCache) detectScaleMismatch(key string, b Bar, now time.Time) (Bar, b
 	if last == nil || last.C == 0 {
 		return b, false
 	}
+	// ADJACENT BARS ONLY (101 D1' rule 2). A scale check compares the replay's
+	// last bar with the live bar that FOLLOWS it — within one interval. A
+	// reference older than that is not a scale question, it is a time gap:
+	// the 09-16 09:22 false positive judged the 22:10 bar from the previous
+	// evening. Older than one interval means SKIP, recorded with the ages, and
+	// the check stays ARMED so a later adjacent pair can still be judged. It
+	// never drops on a stale reference.
+	if ivl := timeframeMs(splitTF(key)); ivl > 0 && b.T-last.T > scaleCheckAdjacencyIntervals*ivl {
+		delete(c.liveSeen, key) // stay armed
+		sym, tf, _ := splitBarKey(key)
+		if c.scaleSkips == nil {
+			c.scaleSkips = make(map[string]ScaleCheckSkip)
+		}
+		if prev, ok := c.scaleSkips[key]; !ok || prev.ReferenceT != last.T {
+			sk := ScaleCheckSkip{
+				Symbol: sym, Timeframe: tf, At: now,
+				ReferenceT: last.T, LiveT: b.T,
+				ReferenceAge: time.Duration(b.T-last.T) * time.Millisecond,
+			}
+			c.scaleSkips[key] = sk
+			skipListenersMu.RLock()
+			ls := append([]ScaleCheckSkipListener(nil), skipListeners...)
+			skipListenersMu.RUnlock()
+			for _, fn := range ls {
+				go fn(sk)
+			}
+		}
+		return b, false
+	}
 	delta := math.Abs(b.C - last.C)
 	if delta <= ScaleMismatchPct*math.Abs(last.C) {
 		return b, false
@@ -237,4 +273,56 @@ func (c *BarCache) ScaleMismatches() []ScaleMismatch {
 		out = append(out, m)
 	}
 	return out
+}
+
+// ScaleCheckSkip records a scale check that could not be made because the only
+// reference bar was not ADJACENT to the live bar — older than one interval.
+// A skip is not a verdict: the seed stays in the ring, the check stays armed,
+// and the replay-hold keeps the replay's rows OUT of the store until an
+// adjacent pair can judge them. The ages are recorded so the WARN can name
+// them (A9).
+type ScaleCheckSkip struct {
+	Symbol, Timeframe string
+	At                time.Time
+	ReferenceT, LiveT int64
+	ReferenceAge      time.Duration
+}
+
+// ScaleCheckSkipListener receives a skip the moment it is recorded — the
+// persist wire WARNs it (A9). Same shape as OnScaleMismatch.
+type ScaleCheckSkipListener func(s ScaleCheckSkip)
+
+var (
+	skipListenersMu sync.RWMutex
+	skipListeners   []ScaleCheckSkipListener
+)
+
+// OnScaleCheckSkip registers a listener for skipped scale checks.
+func OnScaleCheckSkip(fn ScaleCheckSkipListener) {
+	skipListenersMu.Lock()
+	defer skipListenersMu.Unlock()
+	skipListeners = append(skipListeners, fn)
+}
+
+// ScaleCheckSkips returns every key's most recent skip, sorted by key.
+func (c *BarCache) ScaleCheckSkips() []ScaleCheckSkip {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	out := make([]ScaleCheckSkip, 0, len(c.scaleSkips))
+	for _, s := range c.scaleSkips {
+		out = append(out, s)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Symbol != out[j].Symbol {
+			return out[i].Symbol < out[j].Symbol
+		}
+		return out[i].Timeframe < out[j].Timeframe
+	})
+	return out
+}
+
+// splitTF returns the timeframe half of a bar key.
+func splitTF(key string) string {
+	_, tf, _ := splitBarKey(key)
+	return tf
 }

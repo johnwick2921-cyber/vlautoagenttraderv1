@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -94,33 +95,88 @@ func MountUI(r *gin.Engine, dist string) {
 	})
 }
 
-// UIServingBootLineAt is the UI's boot line: what serves it and how old the
-// bundle is. Every field is READ — there is no literal in it.
-//
-// The binary's build time is PASSED IN rather than read here. kernel already
-// owns the one reader of debug.ReadBuildInfo (buildStamp, surfaced as
-// BootIntegrity.BuildTime) and main.go holds that value at boot; a second
-// reader in this package would be a second source of the same truth, free to
-// disagree with the boot-integrity line printed three lines above it.
-// binaryAt is the build time of the running binary; the bundle is STALE when it
-// predates it — exactly the state found at the 1D cutover (a 2026-08-31 dist
-// under a 2026-09-03 binary), and the state this line exists to make impossible
-// to miss. A zero binaryAt disables the comparison rather than calling
-// everything stale.
-func UIServingBootLineAt(dist string, binaryAt time.Time) string {
+// UIServingBootLine is the UI's boot line, judged by REV (2026-09-16): the
+// served entry bundle carries GUIDE_BUILT_REV (web/src/guide/types.ts) as a
+// 40-hex literal, and the bundle is STALE when that rev is not the binary's.
+// The former timestamp rule (removed) was right at the c6579347 boot by
+// luck — the wrong bundle also happened to be older — and would have called
+// the RIGHT bundle stale had it been installed (built 17 minutes before the
+// binary). The build time stays on the line as a secondary field. A bundle
+// carrying no 40-hex literal prints bundle-rev=UNKNOWN and is not judged;
+// an empty binaryRev disables the comparison rather than calling everything
+// stale (A24: unknown is not stale, and not fresh).
+func UIServingBootLine(dist string, binaryAt time.Time, binaryRev string) string {
 	st, err := os.Stat(filepath.Join(dist, "index.html"))
 	if err != nil {
-		// A field the process cannot know prints n/a — never a zero time, which
-		// would render as 0001-01-01 and read as a real (very old) build.
 		return "ui: served-by=none build=n/a — no bundle at " + dist +
 			" (run `cd web && npm ci && npm run build`); the API is unaffected"
 	}
 	built := st.ModTime().UTC()
+	entry, revs := servedBundleRevs(dist)
 	line := "ui: served-by=go-static build=" + built.Format(time.RFC3339)
+	if entry != "" {
+		line += " bundle=" + entry
+	}
+	short := func(r string) string {
+		if len(r) > 8 {
+			return r[:8]
+		}
+		return r
+	}
+	switch {
+	case len(revs) == 0:
+		line += " bundle-rev=UNKNOWN (no 40-hex literal in the served entry bundle — not judged)"
+	case binaryRev == "":
+		line += " bundle-rev=" + short(revs[0]) + " (binary rev unknown — not judged)"
+	default:
+		match := false
+		for _, r := range revs {
+			if strings.EqualFold(r, binaryRev) {
+				match = true
+				break
+			}
+		}
+		if match {
+			line += " bundle-rev=" + short(binaryRev) + " matches the binary"
+		} else {
+			line += " bundle-rev=" + short(revs[0]) + " STALE — built for another rev than binary " + short(binaryRev) +
+				"; the UI is not showing this build (install the dist built at " + short(binaryRev) + ")"
+		}
+	}
 	if !binaryAt.IsZero() && built.Before(binaryAt.UTC()) {
-		line += " STALE — the bundle predates this binary by " +
-			binaryAt.UTC().Sub(built).Round(time.Minute).String() +
-			"; the UI is not showing this build"
+		line += " · bundle mtime predates the binary by " + binaryAt.UTC().Sub(built).Round(time.Minute).String()
 	}
 	return line
+}
+
+var (
+	entryBundleRe = regexp.MustCompile(`assets/(index-[A-Za-z0-9_-]+\.js)`)
+	hex40Re       = regexp.MustCompile(`[0-9a-f]{40}`)
+)
+
+// servedBundleRevs finds the entry bundle index.html references and every
+// distinct 40-hex literal in it, in order of appearance.
+func servedBundleRevs(dist string) (entry string, revs []string) {
+	index, err := os.ReadFile(filepath.Join(dist, "index.html"))
+	if err != nil {
+		return "", nil
+	}
+	m := entryBundleRe.FindSubmatch(index)
+	if m == nil {
+		return "", nil
+	}
+	entry = string(m[1])
+	js, err := os.ReadFile(filepath.Join(dist, "assets", entry))
+	if err != nil {
+		return entry, nil
+	}
+	seen := map[string]bool{}
+	for _, h := range hex40Re.FindAll(js, -1) {
+		r := string(h)
+		if !seen[r] {
+			seen[r] = true
+			revs = append(revs, r)
+		}
+	}
+	return entry, revs
 }

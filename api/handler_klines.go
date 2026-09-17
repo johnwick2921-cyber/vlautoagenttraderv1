@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"nofx/store"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -387,10 +389,22 @@ func (s *Server) getKlinesFromNinjaTrader(symbol, interval string, limit int) []
 	// shadow the trader's currentContract uses when no ACK has arrived. An
 	// unnamed contract or a failed store read degrades to the ring alone: the
 	// chart may be shallow, it is never mixed-scale (A10/A24, roll wave).
+	current := ""
 	if s.store != nil && len(klines) < limit {
 		if contract, ok := s.store.BarHistory().LatestContract(symbol); ok {
+			current = contract
 			klines = trader.BarsWithStoreDepthDisplay(klines, s.store, contract, symbol, interval, limit, time.Now())
 		}
+	}
+	// 101 D2 (owner ruling 2026-09-16) — THE CHART ACROSS THE ROLL. When the
+	// current contract's ring+store still fall short of the ask, prior
+	// contracts fill the time STRICTLY BEFORE the current contract's first
+	// live row: one continuous series, one visible basis step at the real
+	// roll, every kline labelled with its contract, nothing back-adjusted
+	// (research law). DISPLAY ONLY — the kernel/levels/arm readers are
+	// contract-scoped and untouched (E4).
+	if chartAcrossRoll && s.store != nil && current != "" && len(klines) < limit {
+		klines = klinesAcrossRoll(klines, s.store.BarHistory(), current, symbol, interval, limit)
 	}
 	// F1.1 (2026-09-14) — COARSE-TF AGGREGATION. On a young contract NT8's
 	// replay is deep on 1m/5m/15m/1h but nearly empty on 2h/4h/1d (measured
@@ -534,4 +548,60 @@ func (s *Server) handleSymbols(c *gin.Context) {
 		"symbols":  symbols,
 		"count":    len(symbols),
 	})
+}
+
+// chartAcrossRoll is the D2 flag, default ON per the owner's ruling. Set
+// NOFX_CHART_ACROSS_ROLL=off to serve the current contract only.
+var chartAcrossRoll = strings.ToLower(strings.TrimSpace(os.Getenv("NOFX_CHART_ACROSS_ROLL"))) != "off"
+
+// ChartAcrossRollResolved is READ onto the boot line (A11).
+func ChartAcrossRollResolved() string {
+	if chartAcrossRoll {
+		return "on[O]"
+	}
+	return "off[env]"
+}
+
+// klinesAcrossRoll prepends prior-contract rows older than the current
+// contract's first live row, labels every kline, and caps at limit. PURE over
+// its inputs so a pin drives it.
+func klinesAcrossRoll(base []market.Kline, bh *store.BarHistoryStore, current, symbol, tf string, limit int) []market.Kline {
+	if bh == nil || limit <= 0 {
+		return base
+	}
+	for i := range base {
+		if base[i].Contract == "" {
+			base[i].Contract = current
+		}
+	}
+	boundary, ok, err := bh.FirstLiveOn(symbol, tf, current)
+	if err != nil || !ok {
+		return base
+	}
+	// nothing older than the series' own oldest bar may overlap it
+	if len(base) > 0 && base[0].OpenTime < boundary {
+		boundary = base[0].OpenTime
+	}
+	need := limit - len(base)
+	if need <= 0 {
+		return base
+	}
+	rows, err := bh.PriorContractBarsBefore(symbol, tf, current, boundary, need)
+	if err != nil || len(rows) == 0 {
+		return base
+	}
+	prior := make([]market.Kline, 0, len(rows))
+	durMs := int64(market.TFMinutes(tf)) * 60_000
+	for _, r := range rows {
+		k := market.Kline{OpenTime: r.OpenTimeMs, Open: r.O, High: r.H, Low: r.L, Close: r.C, Volume: r.V, Contract: r.Contract}
+		if durMs > 0 {
+			k.CloseTime = r.OpenTimeMs + durMs - 1
+		}
+		prior = append(prior, k)
+	}
+	out := append(prior, base...)
+	if len(out) > limit {
+		out = out[len(out)-limit:]
+	}
+	return out
 }

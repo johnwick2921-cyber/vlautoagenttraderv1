@@ -78,7 +78,9 @@ func BarsWithStoreDepth(ring []market.Kline, st *store.Store, contract, symbol, 
 		return ring
 	}
 	reader := func(n int) ([]market.Kline, error) {
-		rows, err := st.BarHistory().LastNBarsOn(symbol, tf, contract, n)
+		// NT8-only, like storeBarReader — this seam documents itself as the
+		// planner's splice and must read what the planner reads.
+		rows, err := st.BarHistory().LastNBarsFromNT8On(symbol, tf, contract, n)
 		if err != nil {
 			return nil, err
 		}
@@ -216,7 +218,11 @@ func (at *AutoTrader) storeBarReader(symbol, tf string) func(int) ([]market.Klin
 			// read is skipped and the ring stands alone (A24).
 			return nil, errContractUnknown
 		}
-		rows, err := at.store.BarHistory().LastNBarsOn(symbol, tf, contract, n)
+		// NT8-ONLY (CTO ruling under the owner's delegation, 2026-09-16):
+		// historical_import never reaches a planner door. The chart's seam
+		// (BarsWithStoreDepthDisplay) keeps imports, labelled; this one does
+		// not. 426 imported 12-26 1m bars were inside this tape on 09-16.
+		rows, err := at.store.BarHistory().LastNBarsFromNT8On(symbol, tf, contract, n)
 		if err != nil {
 			return nil, err
 		}

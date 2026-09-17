@@ -315,3 +315,55 @@ func d2ProdCallSites(t *testing.T, needle string) (int, []string) {
 	})
 	return n, where
 }
+
+// THE PLANNER DOOR IS NT8-ONLY (CTO ruling under the owner's delegation,
+// 2026-09-16). storeBarReader is the ONE reader behind barsWithStoreDepth —
+// the planner's 12,000-bar 1m tape and the weekly reader's. Measured that day
+// on data/data.db: MNQ 12-26 1m held 2,873 live + 25 replay + 426
+// historical_import rows, all inside the newest 12,000 the shared reader hands
+// out, so 426 imported bars were in the planner's tape. Real store, imports
+// NEWER than the live rows (they would be the first rows served), the ring
+// empty of them: the reader must serve zero.
+func TestPlannerStoreReaderServesNoImportRows(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "tape.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	bh := st.BarHistory()
+	if err := bh.Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	const oneMin = int64(60_000)
+	base := int64(1_789_000_000_000)
+	var live, imports []store.BarHistoryDB
+	for i := 0; i < 500; i++ {
+		live = append(live, store.BarHistoryDB{Symbol: "MNQ", TF: "1m", OpenTimeMs: base + int64(i)*oneMin, O: 29290, H: 29300, L: 29280, C: 29295, V: 1, Contract: "MNQ 12-26", Source: store.BarSourceLive})
+	}
+	for i := 0; i < 5; i++ {
+		imports = append(imports, store.BarHistoryDB{Symbol: "MNQ", TF: "1m", OpenTimeMs: base + int64(600+i)*oneMin, O: 29290, H: 29300, L: 29280, C: 29295, V: 1, Contract: "MNQ 12-26", Source: store.BarSourceHistoricalImport})
+	}
+	if err := bh.InsertBars(live); err != nil {
+		t.Fatal(err)
+	}
+	if ins, skip, err := bh.ImportBars(imports); err != nil || ins != 5 || skip != 0 {
+		t.Fatalf("fixture imports inserted=%d skipped=%d err=%v, want 5/0 (class 128)", ins, skip, err)
+	}
+	at := &AutoTrader{store: st}
+	read := at.storeBarReader("MNQ", "1m")
+	got, err := read(12000)
+	if err != nil {
+		t.Fatalf("storeBarReader: %v", err)
+	}
+	if len(got) != 500 {
+		t.Fatalf("planner reader served %d rows, want 500 (the 5 imports excluded)", len(got))
+	}
+	for _, k := range got {
+		if k.OpenTime >= base+600*oneMin {
+			t.Fatalf("an import row (%d) reached the planner tape", k.OpenTime)
+		}
+	}
+	// the exported seam that documents itself as "the same splice the planner uses"
+	out := BarsWithStoreDepth(nil, st, "MNQ 12-26", "MNQ", "1m", 12000, time.UnixMilli(base+700*oneMin))
+	_ = out // an EMPTY ring is never backfilled — the seam's own pin; the reader behind it is what this test names
+}
