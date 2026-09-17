@@ -41,7 +41,7 @@ keys are named.
 - [ ] Clock-guard timer installed and paths fixed — `systemctl --user list-timers | grep clock-guard` every 15 min; start it once → journal line `clock-guard status=OK|CRITICAL` (nofx-clock-guard.service:9)
 
 ## NT8 AddOn
-- [ ] Repo `.cs` copied to Documents AddOns folder — `ls "/mnt/c/Users/<B>/Documents/NinjaTrader 8/bin/Custom/AddOns/"` → VLTraderTCPClient.cs + VLBarsSubscriptionManager.cs + VLContractResolver.cs (HARD RULE)
+- [ ] Repo `.cs` copied to Documents AddOns folder — `ls "/mnt/c/Users/<B>/Documents/NinjaTrader 8/bin/Custom/AddOns/"` → all FIVE: VLTraderTCPClient.cs + VLBarsSubscriptionManager.cs + VLContractResolver.cs + VLHistoryPull.cs + VLInstrumentLookup.cs (HARD RULE — the 2026-09-16 partner install needed all five; three was a stale list)
 - [ ] F5 compile clean inside NT8 — NT8 compile output shows no errors
 - [ ] FULL NT8 restart after compile — NT8 exited and relaunched (AddOns do not hot-reload)
 

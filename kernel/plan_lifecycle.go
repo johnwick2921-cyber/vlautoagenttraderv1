@@ -388,6 +388,17 @@ func orZero(c *PlanCondition) PlanCondition {
 // all-levels-consumed fallback is guarded the same way. Semantics on fresh
 // bars are byte-identical to PlanDeathOrFlipSince.
 func PlanDeathOrFlipSinceFresh(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now int64) (killer string, fired bool, skipped []string) {
+	return PlanDeathOrFlipSinceFreshHold(doc, bars, rule, sinceMs, now, FlipHoldAnchor{SinceMs: sinceMs, Source: FlipHoldAnchorVersion})
+}
+
+// PlanDeathOrFlipSinceFreshHold is PlanDeathOrFlipSinceFresh with the flip
+// hysteresis clock SEPARATED from the condition window (W-FLIP-HOLD-ANCHOR,
+// 2026-09-17): sinceMs still windows the bars a version's own death/flip line
+// is judged on (touch gate + confirm closes, unchanged), while hold.SinceMs is
+// the instant the FLIP_MIN_HOLD_MIN hold counts from — the plan's state
+// anchor (see ResolveFlipHoldAnchor), not the re-read version's birth. Death
+// never had a hold and keeps none.
+func PlanDeathOrFlipSinceFreshHold(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now int64, hold FlipHoldAnchor) (killer string, fired bool, skipped []string) {
 	conds := []struct {
 		name string
 		c    PlanCondition
@@ -408,9 +419,13 @@ func PlanDeathOrFlipSinceFresh(doc PlanDoc, bars []market.Kline, rule string, si
 			// plan cannot flip back within FLIP_MIN_HOLD_MIN of its birth.
 			// Death is evaluated FIRST above, so a breached death line always
 			// wins during the hold — the hold only suppresses the flip leg.
+			// W-FLIP-HOLD-ANCHOR (2026-09-17): the hold counts from the
+			// plan's STATE anchor (hold.SinceMs), never from the re-read
+			// version's birth — a wake re-read that keeps the bias no longer
+			// restarts the 30 minutes.
 			if cc.name == "flip" {
-				if age := now - sinceMs; sinceMs > 0 && age < FlipMinHoldMin()*60_000 {
-					skipped = append(skipped, "flip=hold (plan age "+ageString(age)+" < "+strconv.FormatInt(FlipMinHoldMin(), 10)+"min)")
+				if age := now - hold.SinceMs; hold.SinceMs > 0 && age < FlipMinHoldMin()*60_000 {
+					skipped = append(skipped, "flip=hold (hold age "+ageString(age)+" since "+hold.Source+" < "+strconv.FormatInt(FlipMinHoldMin(), 10)+"min)")
 					continue
 				}
 			}

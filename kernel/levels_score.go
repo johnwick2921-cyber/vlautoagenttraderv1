@@ -424,13 +424,35 @@ func zoneFreshMult(f string) float64 {
 // from the level-state table (nil → everything fresh). maxLevels ≤ 0 → default 8.
 // proximityK is the resolved day-trade lock half-width in daily-ATR multiples
 // (the owner's proximity_filter_atr; ≤0 → the spec constant 1.5) — the band
-// OUTSIDE which no level is generated or seated.
+// OUTSIDE which no level is generated or seated. The freshness callback is
+// built by levelFreshnessFn WITH the read's now already captured (class 60).
 func ScoreLevels(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int, proximityK float64) []ScoredLevel {
-	return scoreLevelsPool(levels, price, dATR, freshness, maxLevels, proximityK)
+	return scoreLevelsPool(levels, price, dATR, freshness, maxLevels, proximityK, nil, HTFScoreMultiplier)
+}
+
+// LegacyHtfSeats (S3, 2026-09-16) is the seatHTF count the pre-S3 code
+// hardcoded. The legacy path (seats nil) seats exactly this many; the value is
+// kept as a named constant for the boot line and tests.
+const LegacyHtfSeats = 2
+
+// ResolveHtfScoreMultiplier (S3, 2026-09-16) resolves the knob: nil → the
+// const default 1.2 (today's behaviour); saved values clamp to 1.0–1.5.
+func ResolveHtfScoreMultiplier(p *float64) float64 {
+	if p == nil {
+		return HTFScoreMultiplier
+	}
+	v := *p
+	if v < 1.0 {
+		return 1.0
+	}
+	if v > 1.5 {
+		return 1.5
+	}
+	return v
 }
 
 // scoreLevelsPool is the full scorer (lock → grade → collapse → seat → top-N).
-func scoreLevelsPool(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int, proximityK float64) []ScoredLevel {
+func scoreLevelsPool(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int, proximityK float64, htfSeats *int, htfMult float64) []ScoredLevel {
 	if price <= 0 || dATR <= 0 {
 		return nil
 	}
@@ -463,11 +485,11 @@ func scoreLevelsPool(levels []DetectedLevel, price, dATR float64, freshness func
 		if freshness != nil {
 			fRaw = freshness(l)
 		}
-		fm := freshMult(fRaw)
+		fm := freshMult(normalizeByTFGrade(fRaw))
 		if isZoneKind(l.Kind) {
 			// Pack B (2026-08-26) — the zone freshness ladder is steeper than
 			// the anchor ladder (1.0/0.6/0.3/0.15 vs 1.0/0.8/0.6/0.5).
-			fm = zoneFreshMult(fRaw)
+			fm = zoneFreshMult(normalizeByTFGrade(fRaw))
 		}
 		l.Research.Freshness = fRaw
 		l.Research.FreshMultiplier = scoreValue(fm)
@@ -512,7 +534,7 @@ func scoreLevelsPool(levels []DetectedLevel, price, dATR float64, freshness func
 		}
 		htf := 1.0
 		if l.HTF {
-			htf = HTFScoreMultiplier
+			htf = htfMult
 		}
 		var score float64
 		if isZoneKind(l.Kind) {
@@ -616,7 +638,7 @@ func scoreLevelsPool(levels []DetectedLevel, price, dATR float64, freshness func
 	// top-N table, so HTF swing/zone levels must WIN seats to reach the plan.
 	// The P0.1 side-balance pass may still swap a promoted seat if a side ends
 	// under-supplied (the hard rule wins).
-	scored = researchSeat("HTF seating", scored, maxLevels, seatHTF)
+	scored = researchSeat("HTF seating", scored, maxLevels, func(s []ScoredLevel, n int) []ScoredLevel { return seatHTF(s, n, htfSeats) })
 	scored = researchSeat("volume-family seating", scored, maxLevels, SeatVolumeFamily) // Pack B (2026-08-26) — E1 volume-family seat
 	scored = researchSeat("both-side seating", scored, maxLevels, seatBothSides)
 
@@ -655,6 +677,13 @@ func ScoreLevelsMinGrade(levels []DetectedLevel, price, dATR float64, freshness 
 // machine grade stamped, so the stamp map now records EVERY graded candidate,
 // not just the seated top-N.
 func ScoreLevelsMinGradeFull(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int, proximityK float64, minGrade string) ([]ScoredLevel, []ScoredLevel) {
+	return ScoreLevelsMinGradeFullSeats(levels, price, dATR, freshness, maxLevels, proximityK, minGrade, nil, HTFScoreMultiplier)
+}
+
+// ScoreLevelsMinGradeFullSeats is ScoreLevelsMinGradeFull with the resolved
+// day_plan.htf_seats + htf_score_multiplier knobs (S3) — the production path;
+// the legacy wrapper above keeps every historical caller byte-identical.
+func ScoreLevelsMinGradeFullSeats(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int, proximityK float64, minGrade string, htfSeats *int, htfMult float64) ([]ScoredLevel, []ScoredLevel) {
 	eff := maxLevels
 	if eff <= 0 {
 		eff = DefaultMaxLevels
@@ -663,7 +692,7 @@ func ScoreLevelsMinGradeFull(levels []DetectedLevel, price, dATR float64, freshn
 		return nil, nil
 	}
 	levels = researchLevels(levels)
-	pool := scoreLevelsPool(levels, price, dATR, freshness, eff*2, proximityK)
+	pool := scoreLevelsPool(levels, price, dATR, freshness, eff*2, proximityK, htfSeats, htfMult)
 	filtered := FilterLevelsByMinGrade(pool, minGrade)
 	if minGrade == "" || len(filtered) <= eff {
 		if len(filtered) > eff {
@@ -688,7 +717,7 @@ func ScoreLevelsMinGradeFull(levels []DetectedLevel, price, dATR float64, freshn
 		}
 		return filtered[i].Price < filtered[j].Price
 	})
-	filtered = researchSeat("post-grade HTF seating", filtered, eff, seatHTF)
+	filtered = researchSeat("post-grade HTF seating", filtered, eff, func(s []ScoredLevel, n int) []ScoredLevel { return seatHTF(s, n, htfSeats) })
 	filtered = researchSeat("post-grade volume seating", filtered, eff, SeatVolumeFamily) // Pack B — same guarantee after the min_grade cut
 	filtered = researchSeat("post-grade both-side seating", filtered, eff, seatBothSides)
 	if len(filtered) > eff {
@@ -1004,11 +1033,90 @@ func Seat1HZone(scored []ScoredLevel, maxLevels int) []ScoredLevel {
 	return out
 }
 
-// seatHTF (G2/G3/G6, 2026-08-24) — promote up to 2 HTF swing/zone levels into
-// the head seats (the top-N table is all the model sees). Demotes the weakest
-// non-today-priority, non-HTF entries to make room. Runs on the FULL sorted
-// list before seatBothSides; takes no action when nothing was cut.
-func seatHTF(scored []ScoredLevel, maxLevels int) []ScoredLevel {
+// seatHTF (G2/G3/G6, 2026-08-24; seats knob S3, 2026-09-16) — promote up to N
+// HTF swing/zone levels into the head seats (the top-N table is all the model
+// sees). Demotes the weakest non-today-priority, non-HTF entries to make room.
+//
+// seats == nil → the LEGACY path, byte-identical to the pre-S3 code (2 seats,
+// whole-list restore sort). That restore sort nullifies the promotion by
+// construction (class NN) — kept verbatim so a knob-unset strategy reproduces
+// today's table exactly.
+// seats != nil → the EFFECTIVE path (CTO ruling 2026-09-17 02:35Z): promote
+// *seats, then sort head and tail SEPARATELY with the same comparator — the
+// promoted slots keep their seats and the demoted entries stay in the tail.
+// *seats ≤ 0 = no HTF seating (a legal knob value).
+func seatHTF(scored []ScoredLevel, maxLevels int, seats *int) []ScoredLevel {
+	if maxLevels <= 0 {
+		maxLevels = DefaultMaxLevels
+	}
+	if len(scored) <= maxLevels {
+		return scored
+	}
+	if seats == nil {
+		return seatHTFLegacy(scored, maxLevels)
+	}
+	if *seats <= 0 {
+		return scored
+	}
+	head := append([]ScoredLevel(nil), scored[:maxLevels]...)
+	tail := append([]ScoredLevel(nil), scored[maxLevels:]...)
+	seated := 0
+	for _, l := range head {
+		if isHTFSeatEligible(l) {
+			seated++
+		}
+	}
+	need := *seats - seated
+	if need <= 0 {
+		return scored
+	}
+	var cands []ScoredLevel
+	for _, l := range tail {
+		if isHTFSeatEligible(l) {
+			cands = append(cands, l)
+		}
+	}
+	for need > 0 {
+		if len(cands) == 0 {
+			break
+		}
+		dropIdx := -1
+		for i := len(head) - 1; i >= 0; i-- {
+			if isTodayPriority(head[i].Kind) || isHTFSeatEligible(head[i]) {
+				continue
+			}
+			dropIdx = i
+			break
+		}
+		if dropIdx < 0 {
+			break
+		}
+		cand := cands[0]
+		cands = cands[1:]
+		// Remove the candidate from the tail (it now sits in the head) and
+		// move the demoted head entry into the tail.
+		for i, l := range tail {
+			if l.Price == cand.Price && l.Kind == cand.Kind && l.Label == cand.Label && l.HTF == cand.HTF {
+				tail = append(tail[:i], tail[i+1:]...)
+				break
+			}
+		}
+		tail = append(tail, head[dropIdx])
+		head = append(head[:dropIdx], head[dropIdx+1:]...)
+		head = append(head, cand)
+		need--
+	}
+	// EFFECTIVE: sort each block separately, never across the seat boundary —
+	// the promoted slots survive (the class-NN fix).
+	sortSeatBlock(head)
+	sortSeatBlock(tail)
+	return append(head, tail...)
+}
+
+// seatHTFLegacy is the pre-S3 seatHTF, byte-identical (2 seats, whole-list
+// restore sort). Knob unset keeps today's behaviour — including the class-NN
+// nullification — until the S4 measurement gates the effective path.
+func seatHTFLegacy(scored []ScoredLevel, maxLevels int) []ScoredLevel {
 	if maxLevels <= 0 {
 		maxLevels = DefaultMaxLevels
 	}
@@ -1051,8 +1159,6 @@ func seatHTF(scored []ScoredLevel, maxLevels int) []ScoredLevel {
 		}
 		cand := cands[0]
 		cands = cands[1:]
-		// Remove the candidate from the tail (it now sits in the head) and
-		// move the demoted head entry into the tail.
 		for i, l := range tail {
 			if l.Price == cand.Price && l.Kind == cand.Kind && l.Label == cand.Label && l.HTF == cand.HTF {
 				tail = append(tail[:i], tail[i+1:]...)
@@ -1066,21 +1172,27 @@ func seatHTF(scored []ScoredLevel, maxLevels int) []ScoredLevel {
 	}
 	out := append(head, tail...)
 	// Restore strict seating order (same sort as the pre-pass).
-	sort.SliceStable(out, func(i, j int) bool {
-		pi, pj := isTodayPriority(out[i].Kind), isTodayPriority(out[j].Kind)
+	sortSeatBlock(out)
+	return out
+}
+
+// sortSeatBlock is the seating comparator (today-priority first, then score
+// desc, nearer |distance|, lower price), applied to ONE block.
+func sortSeatBlock(s []ScoredLevel) {
+	sort.SliceStable(s, func(i, j int) bool {
+		pi, pj := isTodayPriority(s[i].Kind), isTodayPriority(s[j].Kind)
 		if pi != pj {
 			return pi
 		}
-		if out[i].Score != out[j].Score {
-			return out[i].Score > out[j].Score
+		if s[i].Score != s[j].Score {
+			return s[i].Score > s[j].Score
 		}
-		di, dj := math.Abs(out[i].Distance), math.Abs(out[j].Distance)
+		di, dj := math.Abs(s[i].Distance), math.Abs(s[j].Distance)
 		if di != dj {
 			return di < dj
 		}
-		return out[i].Price < out[j].Price
+		return s[i].Price < s[j].Price
 	})
-	return out
 }
 
 func seatBothSides(scored []ScoredLevel, maxLevels int) []ScoredLevel {

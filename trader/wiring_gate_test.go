@@ -98,6 +98,14 @@ var alsoRequireWired = []string{
 	// after-backfill hook race + 🖥 by rev (2026-09-16 15:32 boot).
 	"fireAfterBackfillHook",
 	"UIServingBootLine",
+	// S1 structure layer (2026-09-16): the read call, the knob, the surfaces.
+	"structureMapForRead",
+	"structureMapEnabled",
+	"ComputeStructureMap",
+	"RenderStructureSection",
+	"StructureLogLine",
+	"StructureBootLine",
+	"ResolveStructureMap",
 	// WAVE A — the writers this wave added. Each must keep at least one
 	// production call site; removing one turns this test red.
 	"recordAcceptedRisk",

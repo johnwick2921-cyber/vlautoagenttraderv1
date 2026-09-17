@@ -167,37 +167,22 @@ func simpleATR14(highs, lows, closes []float64) float64 {
 	return atr
 }
 
-// ComputeStructureState runs the swing engine + event detectors on one TF's
-// kline series. tfMinutes names the interval; nowMs is the evaluation instant;
-// only bars CLOSED at nowMs participate (repo bar convention: a bar closes at
-// Time + interval). atr ≤ 0 → computed from the series itself.
-func ComputeStructureState(klines []market.KlineBar, tfMinutes int, atr float64, nowMs int64) StructureState {
-	iv := int64(tfMinutes) * 60_000
-	closed := make([]market.KlineBar, 0, len(klines))
-	for _, b := range klines {
-		if b.Time+iv <= nowMs {
-			closed = append(closed, b)
-		}
-	}
-	out := StructureState{Trend: "RANGING"}
+// fractalSwings is the swing pass of ComputeStructureState, extracted (S1
+// structure layer, 2026-09-16) so the D/4h/1h structure map runs the SAME
+// detector: fractal extremes (window k), alternating high/low, min-move
+// filtered against the prior opposite swing, then labelled HH/HL/LH/LL
+// against the previous same-type swing. Pure; oldest first.
+func fractalSwings(closed []market.KlineBar, iv int64, atr float64) []swing {
 	n := len(closed)
 	if n == 0 {
-		return out
+		return nil
 	}
 	highs := make([]float64, n)
 	lows := make([]float64, n)
-	closes := make([]float64, n)
 	for i, b := range closed {
 		highs[i] = b.High
 		lows[i] = b.Low
-		closes[i] = b.Close
 	}
-	if atr <= 0 {
-		atr = simpleATR14(highs, lows, closes)
-	}
-	out.Atr = atr // A3 (2026-08-26) — per-TF ATR(14) Wilder for the min-SL gate
-
-	// 1. fractal swings (window k), alternating high/low, min-move filtered.
 	k := structureSwingK()
 	swings := make([]swing, 0, 16)
 	for i := k; i < n-k; i++ {
@@ -241,10 +226,6 @@ func ComputeStructureState(klines []market.KlineBar, tfMinutes int, atr float64,
 		}
 		swings = append(swings, swing{price: price, timeMs: t, high: hi})
 	}
-	if len(swings) == 0 {
-		return out
-	}
-
 	// 2. label HH/HL/LH/LL against the previous same-type swing.
 	for i := range swings {
 		prev := -1
@@ -268,6 +249,44 @@ func ComputeStructureState(klines []market.KlineBar, tfMinutes int, atr float64,
 		default:
 			swings[i].kind = "LL"
 		}
+	}
+
+	return swings
+}
+
+// ComputeStructureState runs the swing engine + event detectors on one TF's
+// kline series. tfMinutes names the interval; nowMs is the evaluation instant;
+// only bars CLOSED at nowMs participate (repo bar convention: a bar closes at
+// Time + interval). atr ≤ 0 → computed from the series itself.
+func ComputeStructureState(klines []market.KlineBar, tfMinutes int, atr float64, nowMs int64) StructureState {
+	iv := int64(tfMinutes) * 60_000
+	closed := make([]market.KlineBar, 0, len(klines))
+	for _, b := range klines {
+		if b.Time+iv <= nowMs {
+			closed = append(closed, b)
+		}
+	}
+	out := StructureState{Trend: "RANGING"}
+	n := len(closed)
+	if n == 0 {
+		return out
+	}
+	highs := make([]float64, n)
+	lows := make([]float64, n)
+	closes := make([]float64, n)
+	for i, b := range closed {
+		highs[i] = b.High
+		lows[i] = b.Low
+		closes[i] = b.Close
+	}
+	if atr <= 0 {
+		atr = simpleATR14(highs, lows, closes)
+	}
+	out.Atr = atr // A3 (2026-08-26) — per-TF ATR(14) Wilder for the min-SL gate
+
+	swings := fractalSwings(closed, iv, atr)
+	if len(swings) == 0 {
+		return out
 	}
 
 	// 3. trend: 3-swing confirmation (the dispatch's standard) — the last two

@@ -84,6 +84,11 @@ func lawExcerptsFor(errors string) string {
 	if strings.Contains(errors, "not allowed for") || strings.Contains(errors, "fade_requires_touch") {
 		add(RepairEntryConfirmLaw)
 	}
+	// W-FLIP-DIRECTION (2026-09-17): a flip side that points the wrong way for
+	// the bias it flips from (plan_doc.go FlipDirectionContradiction).
+	if strings.Contains(errors, "contradicts bias") {
+		add(RepairFlipDirectionLaw)
+	}
 	if len(out) == 0 {
 		add("Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.")
 	}

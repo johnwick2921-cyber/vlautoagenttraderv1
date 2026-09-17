@@ -18,6 +18,7 @@ import { WeeklyChip } from './WeeklyChip'
 import { BiasBlock } from './BiasBlock'
 import { ZoneTable } from './ZoneTable'
 import { LevelZoneMap } from './LevelZoneMap'
+import { StructurePanel, structureZonesToOverlay } from './StructurePanel'
 import { ScenarioList } from './ScenarioList'
 import type { FadeLabelView } from './FadePermissionChip'
 import type { OneSetupView } from './OneSetupChip'
@@ -761,6 +762,7 @@ export function SessionPlanCard({
             exchange={exchange}
             facts={facts}
             language={language}
+            structureZones={structureZonesToOverlay(doc?.structure)}
           />
           {facts.length === 0 && (
             <span
@@ -777,6 +779,7 @@ export function SessionPlanCard({
         </div>
       )}
 
+      <StructurePanel structure={doc?.structure} />
       <LevelZoneMap map={doc.zone_map} />
       {/* levels — tap a row to edit (P5), ＋ to add an owner level */}
       <ZoneTable

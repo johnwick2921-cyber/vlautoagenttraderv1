@@ -64,13 +64,21 @@ type PlanConfirm struct {
 type PlanScenario struct {
 	LevelID *string `json:"level_id"` // NULL on legacy; WARN-only on new authoring.
 	// Absent on legacy records: never inferred or required during stored reads.
-	Economics   *ScenarioEconomics `json:"economics,omitempty"`
-	ID          string             `json:"id"`           // S1, S2, S3
-	Trigger     string             `json:"trigger"`      // the setup description
-	Condition   string             `json:"condition"`    // reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue
-	Direction   string             `json:"direction"`    // long | short
-	TargetChain []float64          `json:"target_chain"` // ordered targets
-	Invalid     string             `json:"invalid"`      // invalidation
+	Economics *ScenarioEconomics `json:"economics,omitempty"`
+	ID        string             `json:"id"`        // S1, S2, S3
+	Trigger   string             `json:"trigger"`   // the setup description
+	Condition string             `json:"condition"` // reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue
+	Direction string             `json:"direction"` // long | short
+	// S3 (2026-09-16): relations are VALIDATOR-COMPUTED — never model-authored.
+	// relation_d / relation_4h are stamped from the structure table's D and 4h
+	// trend vs this scenario's direction (with-trend | counter-trend | range).
+	// A model-supplied value in either field is moved to relation_claimed at
+	// stamp time and overwritten — the model's own claim is kept, never trusted.
+	RelationD       string    `json:"relation_d,omitempty"`
+	Relation4h      string    `json:"relation_4h,omitempty"`
+	RelationClaimed string    `json:"relation_claimed,omitempty"`
+	TargetChain     []float64 `json:"target_chain"` // ordered targets
+	Invalid         string    `json:"invalid"`      // invalidation
 	// Confirm (C1) — REQUIRED after the grace window; see PlanConfirm.
 	Confirm *PlanConfirm `json:"confirm,omitempty"`
 	Quality string       `json:"quality"` // A+ | A | B
@@ -299,6 +307,12 @@ type PlanDoc struct {
 	// label stamped at write: "bias: AI <x> · tree <y> · regime <z>". A LABEL,
 	// not a direction — no MUST attaches to either leg.
 	BiasLabel string `json:"bias_label,omitempty"`
+
+	// S1 (2026-09-16) — the STRUCTURE table the read saw (D/4h/1h, bias only,
+	// never an entry). ABSENT when the knob is off or nothing was computed —
+	// never an empty object (canon: no fabricated values). Machine-stamped at
+	// write, never model-authored. Field names are the S3/S5 contract.
+	Structure *StructureMap `json:"structure,omitempty"`
 
 	// NoTradeWindows (owner ruling 2026-09-02) — the MACHINE's structured
 	// no-trade constraints for this plan's session, written at plan time from
@@ -760,6 +774,13 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 			return fmt.Errorf("flip{price %.2f} does not match any number in bias.flip_condition prose %q", d.FlipStructured.Price, d.Bias.FlipCondition)
 		}
 	}
+	// W-FLIP-DIRECTION (2026-09-17): the number was checked, the DIRECTION was
+	// not. LONDON v3 shipped bias short + flip{below → long}: a short bias can
+	// only flip long on a close ABOVE the line, so the overnight rally could
+	// never flip it. Death is NOT judged here (separate question).
+	if err := FlipDirectionContradiction(d.Bias.Direction, d.FlipStructured); err != nil {
+		return err
+	}
 	// Wave 2 armed orders (2026-08-27) — the arm authorization must be coherent:
 	// only armable conditions, exact prices, sane long/short ordering.
 	if err := validateArmSpecs(d); err != nil {
@@ -773,16 +794,73 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 	return nil
 }
 
+// FlipDirectionContradiction (W-FLIP-DIRECTION, 2026-09-17) is the one place
+// the flip's SIDE is judged against the bias it flips from: a short bias flips
+// to long only on a close ABOVE the line; a long bias flips to short only on a
+// close BELOW it. An empty flip_to is read as the opposite of the bias. Returns
+// nil when there is no structured flip, the bias is not long/short, or the
+// flip_to is not the opposite of the bias (that is not this rule's question).
+// Shared by the write-site validator (reject) and the read-path sanity pass
+// (WARN for plans already in the store), so both speak one sentence.
+func FlipDirectionContradiction(biasDir string, flip *PlanCondition) error {
+	if flip == nil {
+		return nil
+	}
+	bias := NormalizeBiasDirection(biasDir)
+	var opposite, wantSide string
+	switch bias {
+	case "short":
+		opposite, wantSide = "long", "above"
+	case "long":
+		opposite, wantSide = "short", "below"
+	default:
+		return nil
+	}
+	flipTo := strings.ToLower(strings.TrimSpace(flip.FlipTo))
+	if flipTo == "" {
+		flipTo = opposite
+	}
+	if flipTo != opposite {
+		return nil
+	}
+	if flip.Side == wantSide {
+		return nil
+	}
+	return fmt.Errorf("flip{%s %.2f → %s} contradicts bias %s: a %s bias flips to %s only on a close %s the line", flip.Side, flip.Price, flipTo, bias, bias, flipTo, wantSide)
+}
+
 // FlipToDirection parses the flip direction out of a killer line
 // ("flip-condition: ... → bias long") — "long"/"short", "" otherwise. Used by
 // the write site to enforce that a flip-triggered re-plan honors the flip.
+//
+// W-FLIP-REREAD BLOCKER 1 (2026-09-17): ONLY the arrow form is read — the
+// word after the LAST "→ bias " (or ASCII "-> bias "). The first version
+// looked for the substring "bias long" anywhere in the string, before
+// "bias short", and the structure_flip prior line ("PRIOR PLAN v3 bias long —
+// its flip condition fired → bias is now expected short … flip-condition: …
+// → bias short") echoes the OLD bias first: for long→short it answered
+// "long", so the write site demanded the stale bias, rejected every correct
+// short plan three times and would have accepted a wrong long one. The
+// killer is always the LAST thing in that line, so the last arrow is the
+// flip's destination. A "→ bias the other side" killer (empty flip_to) and a
+// string with no arrow at all answer "" — nothing is mandated.
 func FlipToDirection(killer string) string {
 	k := strings.ToLower(killer)
-	if i := strings.Index(k, "bias long"); i >= 0 {
-		return "long"
+	const arrowU, arrowA = "→ bias ", "-> bias "
+	i, n := strings.LastIndex(k, arrowU), len(arrowU)
+	if j := strings.LastIndex(k, arrowA); j > i {
+		i, n = j, len(arrowA)
 	}
-	if i := strings.Index(k, "bias short"); i >= 0 {
-		return "short"
+	if i < 0 {
+		return ""
+	}
+	rest := strings.TrimSpace(k[i+n:])
+	if sp := strings.IndexAny(rest, " \t\n\r.,;:)]"); sp >= 0 {
+		rest = rest[:sp]
+	}
+	switch rest {
+	case "long", "short":
+		return rest
 	}
 	return ""
 }
@@ -859,6 +937,7 @@ type PlanFacts struct {
 	PDL         float64        // prior day low (0 = unknown → gap rules skipped)
 	PDC         float64        // prior day close (CLASS 50b — the bias-label tree leg)
 	Regime      RegimeBlock    // CLASS 50b — the bias-label regime leg (read-time copy)
+	Structure   *StructureMap  `json:"-"` // S1 — stamped onto the doc at write when non-nil
 }
 
 // ValidatePlanDocWithFacts = schema rules + facts rules:
@@ -896,6 +975,10 @@ func ValidatePlanDocWithFactsMachine(d *PlanDoc, facts PlanFacts, machine map[fl
 	if err := ValidatePlanDocWithCaps(d, maxLevels, maxScenarios); err != nil {
 		return err
 	}
+	// S3 (2026-09-16) — the relation fields are VALIDATOR-COMPUTED: stamp
+	// relation_d / relation_4h from the structure table before any other check.
+	// The model's own claim is preserved in relation_claimed, never trusted.
+	StampScenarioRelations(d)
 	if facts.Price <= 0 {
 		return nil // no facts → schema-only (legacy callers/tests)
 	}

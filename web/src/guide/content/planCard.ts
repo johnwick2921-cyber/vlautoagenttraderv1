@@ -7,6 +7,11 @@ export const planCard: GuideSection = {
   tagline: 'The centerpiece — every element, decoded.',
   asBuiltRev: GUIDE_BUILT_REV,
   blocks: [
+    { kind: 'h', text: 'STRUCTURE panel — bias only, not entries' },
+    {
+      kind: 'p',
+      text: "Above the level table sits the STRUCTURE panel. It exists only when the plan doc carries a structure block (day_plan.structure_map ON) — when the block is absent the panel renders nothing, never placeholder rows. One row per timeframe (D, 4h, 1h): a trend arrow (up/down/range), the last swing high and low, the impulse range with premium/discount as a percentage of the way from the impulse low, and the scorer-ranked HTF zones, each carrying its timeframe badge and freshness label. The chart draws the same zones as bands at their raw contract prices with kind·tf labels — never back-adjusted across the roll. STRUCTURE is bias context only: nothing in this panel authorizes or refuses an entry.",
+    },
     { kind: 'h', text: 'Scenario level identity' },
     {
       kind: 'p',
@@ -120,7 +125,7 @@ export const planCard: GuideSection = {
         },
         {
           title: '7 · Death line + flip line',
-          body: 'Plan dies if … (structured death{} object, machine-evaluated every cycle) and Flips … (flip_to direction). A prose-only death gets a "PROSE-ONLY" warn at write.',
+          body: 'Plan dies if … (structured death{} object, machine-evaluated every cycle) and Flips … (flip_to direction). A prose-only death gets a "PROSE-ONLY" warn at write. Since 2026-09-17 (W-FLIP-DIRECTION, class 140) the flip SIDE is judged against the bias, not only its price: a short bias flips long only on a close ABOVE the line, a long bias flips short only on a close BELOW — a plan whose flip points the other way is REJECTED at write and repaired, and one already in the store is named once in the journal as flip_direction_inverted the next time it is evaluated, active or dormant (LONDON v3 that day shipped short + flip{below → long} and could never flip on the rally).',
           cite: 'web/src/components/plan/BiasBlock.tsx · kernel/plan_doc.go PlanCondition',
         },
         {
@@ -140,8 +145,8 @@ export const planCard: GuideSection = {
         },
         {
           title: '11 · 😴 dormant + auto-rearm',
-          body: 'Dormant = the plan (or its arm) was parked by a flip/death or no-active-plan — NOT dead. It auto-rearms when price closes back through the mirror buffer (0.5×ATR14, 2 decision-TF closes) and arms re-place on the next cycle.',
-          cite: 'kernel/plan_lifecycle.go (dormant + rearm) · trader/armed_executor.go',
+          body: 'Dormant = the plan (or its arm) was parked by a flip/death or no-active-plan — NOT dead. It auto-rearms when price closes back through the mirror buffer (0.5×ATR14, 2 decision-TF closes) and arms re-place on the next cycle. The 30-min flip hold counts from the plan\'s state (session birth, last flip/re-arm, or a bias change) — never from each re-read version.',
+          cite: 'kernel/plan_lifecycle.go (dormant + rearm) · kernel/flip_hold_anchor.go · trader/armed_executor.go',
         },
       ],
     },

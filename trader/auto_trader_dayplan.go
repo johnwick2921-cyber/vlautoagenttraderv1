@@ -52,14 +52,19 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		// 1h wave + R4 (2026-08-25) — one boot observability line for the new
 		// day-plan knobs so a config question is answered from the log.
 		at.logInfof("🗺️ day-plan knobs: seat_1h_zone=%v min_scenario_quality=%s ob_lookback_bars=%d",
-			dp.Seat1HZoneEnabled(), dp.MinScenarioQualityFor(""), kernel.OBLookbackBars())
-		// A3 (2026-08-26) — min-SL guard observability (0 = off).
+			dp.Seat1HZoneEnabled(), dp.MinScenarioQualityFor(""), kernel.OBLookbackBars()) // S2 (2026-09-16) — freshness mode + HTF weight, READ not typed:
+		// the mode comes from the resolved knob, the multiplier from the
+		// const the scorer actually applies.
+		at.logInfof("🧮 freshness: fresh=%s htf×=%g",
+			freshnessBootLabel(dp), kernel.HTFScoreMultiplier) // A3 (2026-08-26) — min-SL guard observability (0 = off).
 		at.logInfof("🛑 min-sl guard: atr_mult=%.1f level_clearance=%dtick(s)",
 			kernel.MinSLATRMult(), kernel.MinSLTickClearance)
 		// PLAN-LIFECYCLE WAVE (2026-08-27) — hysteresis + dormant/re-arm +
 		// latency routing observability, so the mode is answerable from the log.
-		at.logInfof("🧬 plan lifecycle: hysteresis=buffer%.1f×ATR14 confirm=%dclose(s) · flip/death→dormant+auto-rearm (version unchanged, budget untouched) · exec_reasoning=%s plan_reasoning=%s",
-			kernel.FlipATRBuffer(), kernel.FlipConfirmCloses(), execReasoningLabel(), planReasoningLabel())
+		// W-FLIP-HOLD-ANCHOR (2026-09-17): the hold length and its anchor kinds
+		// are READ from the knob and the resolver's own table, never typed.
+		at.logInfof("🧬 plan lifecycle: hysteresis=buffer%.1f×ATR14 confirm=%dclose(s) · flip/death→dormant+auto-rearm (version unchanged, budget untouched) · flip_hold=%dmin anchored to %s · exec_reasoning=%s plan_reasoning=%s",
+			kernel.FlipATRBuffer(), kernel.FlipConfirmCloses(), kernel.FlipMinHoldMin(), kernel.FlipHoldAnchorLabel(), execReasoningLabel(), planReasoningLabel())
 		// Wave 2 armed orders (Phase 2, 2026-08-27) — placement engine mode.
 		at.logInfof("⚔️ armed_orders=on place_band=%dt stale_working=%dm test_seam=%s arm_rr=%.1f (gate-at-arm only; market-entry floor %.1f unchanged) (resting limits fill at the authorized price; stale_reeval NOT applied)",
 			armedPlaceTicks(), armedWorkingStaleMin(), armedSeamStateLabel(), at.armMinRRFor(nil), at.config.StrategyConfig.RiskControl.MinRiskRewardRatio) // F1a (LONDON-FORENSICS 2026-08-28) — planner completion budget boot line
@@ -72,6 +77,9 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		// (the cutover verification quotes it): plan_max_tokens resolved from
 		// AI_PLAN_MAX_TOKENS, default 65536 = 2× the observed truncation ceiling.
 		at.logInfof("📐 planner cap: plan_max_tokens=%d (AI_PLAN_MAX_TOKENS; default 65536) · truncation → 🚨 WARN, never silent", aiPlanMaxTokens())
+		// S1 (2026-09-16) — the STRUCTURE table knob, READ from the bound strategy.
+		sEn, sKnown := at.structureMapEnabled()
+		at.logInfof("%s", kernel.StructureBootLine(sEn, sKnown))
 		at.logPlannerClientBootLine() // class 37 (C7): effective planner client config, resolved
 		// ROOT-FIX part B — the shadow A/B instrument's resolved state.
 		done, _ := store.ShadowABCount(at.store)
@@ -179,15 +187,90 @@ func sessionHiLoFromBins(bins []kernel.SVPBin) (hi, lo float64) {
 // disappearing; PLAN STATUS annotates them; P1d aging heals scars across
 // session-days. Unknown level → "" (fresh).
 func installLevelStateProvider(at *AutoTrader, st *store.Store) {
-	_ = at
-	kernel.LevelStateProvider = func(traderID, symbol string, l kernel.DetectedLevel) string {
+	// S2 F3 (CTO review) — the own-TF bar series is assembled ONCE per install
+	// (not once per HTF level; today that was 339 store queries inside the
+	// freshness callback) and passed into the closure as a per-TF cache.
+	// Built lazily on the first READ so the builder's upper bound is the READ's
+	// now (A28), never time.Now() of its own. The grader's re-entry semantics
+	// only read OpenTime/High/Low/Close.
+	var barsByTF map[string][]market.Kline
+	var barsOnce sync.Once
+	build := func(now time.Time) {
+		if at == nil || st == nil || st.BarHistory() == nil {
+			return
+		}
+		barsByTF = levelTFBarsCache(st, at.futuresSymbol(), now)
+	}
+	kernel.LevelStateProvider = func(traderID, symbol string, l kernel.DetectedLevel, now time.Time) string {
+		// S2 (2026-09-16) — timeframe-aware freshness. ONLY the HTF branch is
+		// routed through the new grader, and only when the knob is ON; every
+		// non-HTF level and every OFF config keeps the W7 persisted 1m-touch
+		// ladder below byte-identically. `now` is the READ's now, threaded from
+		// the scoring call site (class 60 / F4), never time.Now() here.
+		if at != nil && at.config.StrategyConfig != nil && at.config.StrategyConfig.DayPlan != nil &&
+			at.config.StrategyConfig.DayPlan.LevelsFreshByTFEnabled() &&
+			l.HTF && kernel.IsHTFFreshTF(l.TF) {
+			barsOnce.Do(func() { build(now) })
+			grade, _, _ := kernel.LevelFreshnessByTF(l, now, barsByTF[l.TF])
+			return grade
+		}
 		key := store.MakeLevelKey(traderID, symbol, kernel.LevelTypeFromLabel(l.Label), "", kernel.LevelBinIndex(l.Price))
 		cur, err := st.LevelState().Get(key)
 		if err != nil || cur == nil {
 			return "" // no persisted state → fresh (pre-W11b behavior)
 		}
-		return store.AgedFreshness(cur, time.Now())
+		return store.AgedFreshness(cur, now)
 	}
+}
+
+// freshnessBootLabel resolves the S2 freshness-mode boot label from the knob:
+// "1m" (today's ladder) or "by-tf". READ from the resolved config, never typed.
+func freshnessBootLabel(dp *store.DayPlanConfig) string {
+	if dp.LevelsFreshByTFEnabled() {
+		return "by-tf"
+	}
+	return "1m"
+}
+
+// levelTFBarsCache assembles, ONCE per install, the per-TF bar series the S2
+// grader reads: the live ring first, then the persisted NT8 history leg for the
+// newest usable contract (same combination the nPOC provider uses). F2 (CTO
+// review): the ring and the store overlap on recent bars — deduped by OpenTime;
+// CloseTime is left 0 because the grader never reads it (it reads
+// OpenTime/High/Low/Close only). `now` is the READ's now (A28): the store query
+// upper bound is now.UnixMilli(), never time.Now().
+func levelTFBarsCache(st *store.Store, symbol string, now time.Time) map[string][]market.Kline {
+	out := map[string][]market.Kline{}
+	tfs := []string{"1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w"}
+	for _, tf := range tfs {
+		var bars []market.Kline
+		if market.FuturesBarsProvider != nil {
+			bars = market.FuturesBarsProvider(symbol, tf, 500)
+		}
+		contract, _ := st.BarHistory().LatestContract(symbol)
+		if contract != "" {
+			if old, err := st.BarHistory().BarsBetweenFromNT8On(symbol, tf, contract, 0, now.UnixMilli()); err == nil {
+				for _, b := range old {
+					bars = append(bars, market.Kline{
+						OpenTime: b.OpenTimeMs,
+						Open:     b.O, High: b.H, Low: b.L, Close: b.C, Volume: b.V,
+					})
+				}
+			}
+		}
+		// F2 — ring + store overlap: one bar = one OpenTime.
+		seen := map[int64]bool{}
+		deduped := bars[:0:0]
+		for _, b := range bars {
+			if seen[b.OpenTime] {
+				continue
+			}
+			seen[b.OpenTime] = true
+			deduped = append(deduped, b)
+		}
+		out[tf] = deduped
+	}
+	return out
 }
 
 // installNakedPOCProvider wires kernel.NakedPOCProvider to read this store's

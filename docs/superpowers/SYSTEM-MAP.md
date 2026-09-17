@@ -419,6 +419,7 @@ Cadence governance (class 47): `WakeCutoffMinDefault=25` (:52), `WakeCooldownMin
 - **Agent-side field catalog:** `agent/entity_field_catalog.go:3-113` (trader/model/exchange fields, editability, keywords).
 - **Safe defaults + hard limits** (`store/strategy.go`): `SafeDefaultMinRiskReward=3.0` :76 `[R/O]` · `SafeDefaultMinConfidence=60` :83 `[O]` · `MinRiskReward=1.0` :54 · `MinConfidence=50` :60 · MaxRR 10.0 · `ClampLimits` applies them :196-224.
 - Trader table defaults: `ScanIntervalMinutes default:3` :28 · `IsCrossMargin default:true` :48 · `CadenceMode ''→interval` :30-34 · `PositionMode ''→ai_watch` :37-46 · 8 deprecated leverage fields DEAD at runtime :59-67.
+- **Research-snapshot recorder knobs (dispatch 103, 2026-09-16):** `RESEARCH_SNAPSHOT` (opt-out: explicit 0/false = OFF; unset = ON (default)) · `RESEARCH_LOG_EVERY_S` (default 60 — rollup cadence; rows-per-object + drops + queue depth) · `RESEARCH_RETAIN_DAYS` (unset = never prune; set = batched boot + daily prune, no auto-VACUUM) · drop notices WARN-coalesced 1/min — researchsnapshot/runtime.go, researchsnapshot/volume.go.
 - **Resolved endpoint:** `GET /api/config/resolved` — api/server.go:152 → api/config_resolved.go (same resolvers the engine calls).
 - **Boot line:** `"⚙ knob registry …"` main.go:429.
 

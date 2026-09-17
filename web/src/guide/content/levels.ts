@@ -152,6 +152,11 @@ export const levels: GuideSection = {
     { kind: 'h', text: 'Seats & band' },
     {
       kind: 'p',
+      text: 'Freshness by own timeframe (levels_fresh_by_tf, default OFF). A 4h zone is tested when a 4h bar trades into it — not when 1m noise does. ON = HTF levels grade fresh / tested-1 / tested-2 / stale on their own timeframe; OFF = the 1m-touch ladder, byte-identical to the shipped behavior. The scoring tables never change in either mode; only the freshness string HTF levels carry differs.',
+    },
+    { kind: 'h', text: 'Seats & band' },
+    {
+      kind: 'p',
       text: 'Why 8 (max_levels): a tight table the AI can actually copy without hallucinating. The ±band (proximity_filter_atr × daily-range, retuned 0.3 → ≈±100pt): day-trade relevance — far levels still exist in the detector universe (they now feed the bias-tree anchors even unseated). Per-side counts are DELETED (owner ruling 2026-08-31): the old min_side_levels knob is gone and the ⚖ thin-side note is gone — the only side guard left is the 0-levels-on-a-side fail (the 2026-08-18 one-sided-map pathology).',
     },
     { kind: 'h', text: 'WHERE THE BARS COME FROM (class 45)' },

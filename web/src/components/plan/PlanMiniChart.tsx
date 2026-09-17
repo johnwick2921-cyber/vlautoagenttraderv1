@@ -33,6 +33,8 @@ interface Props {
   language: Language
   interval?: string
   height?: number
+  /** S5 — HTF structure zones (kind·tf labels + [lo,hi] bands), raw prices only. */
+  structureZones?: OverlayLevel[]
 }
 
 // PlanLevelFact[] → OverlayLevel[] (the chart's slice of the shared array).
@@ -60,6 +62,7 @@ export function PlanMiniChart({
   language,
   interval = '5m',
   height = 200,
+  structureZones = [],
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -199,7 +202,7 @@ export function PlanMiniChart({
   // push levels to the overlay whenever they change
   useEffect(() => {
     if (overlayRef.current)
-      overlayRef.current.setData({ levels: factsToOverlay(facts) })
+      overlayRef.current.setData({ levels: [...factsToOverlay(facts), ...structureZones] })
   }, [facts])
 
   if (failed) {

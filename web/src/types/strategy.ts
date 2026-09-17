@@ -88,6 +88,20 @@ export interface DayPlanConfig {
   proximity_filter_atr?: number
   max_levels?: number
   scenario_cap?: number
+  /** S3 (2026-09-16) — HTF seat count 0-6 (absent = legacy, non-effective).
+   *  Pointer semantics mirror Go: absent ≠ 0. */
+  htf_seats?: number
+  /** S3 (2026-09-16) — HTF score weight 1.0-1.5 (absent = 1.2 default). */
+  htf_score_multiplier?: number
+  /** S1 (2026-09-16) — the STRUCTURE table (D/4h/1h, bias only). Pointer-bool
+   *  semantics mirror Go: absent/false = off. */
+  structure_map?: boolean
+  /** S2 (2026-09-16) — HTF levels graded on their own timeframe bars.
+   *  Default false. */
+  levels_fresh_by_tf?: boolean
+  /** W-FLIP-REREAD (2026-09-17) — a fired flip goes dormant AND requests one
+   *  free re-read in the flipped direction. Default false (legacy dormant). */
+  flip_reread?: boolean
   acceptance_rule?: string // 2x5m | 15m-close
   replan_cap?: number
   sessions_enabled?: string[]

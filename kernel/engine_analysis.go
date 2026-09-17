@@ -372,11 +372,13 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 	planOn := false
 	maxLevels := DefaultMaxLevels
 	proximityK := ActivationWindowK
+	htfMult := HTFScoreMultiplier
 	if cfg := engine.GetConfig(); cfg != nil && cfg.DayPlan != nil {
 		planOn = cfg.DayPlan.PlanEnabled
 		if cfg.DayPlan.MaxLevels > 0 {
 			maxLevels = cfg.DayPlan.MaxLevels
 		}
+		htfMult = ResolveHtfScoreMultiplier(cfg.DayPlan.HtfScoreMultiplier)
 		// H1/H2 — the day-trade lock is THIS ENGINE's config (the deciding
 		// trader's strategy), never a process-global provider that could close
 		// over a different trader (P0-A).
@@ -409,7 +411,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				extra = append(extra, htf...)
 				// A9 — every level emitted names its timeframe, and every
 				// timeframe that emitted nothing says why.
-				logger.Infof("%s", TFReadLine(rep))
+				logger.Infof("%s", TFReadLine(rep, htfMult))
 			}
 			// H7 — the registry is the admin registry the DECIDING trader
 			// resolves (per-trader provider; never another trader's).
@@ -427,7 +429,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			// ADDENDUM (2) — bias-context facts line, computed from the same
 			// scored pool + bars (never a second data source).
 			if klBlock != "" {
-				if sc, _, _ := AssembleScoredLevelsMinGrade(ctx.TraderID, snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK, minGrade, extra...); len(sc) > 0 {
+				if sc, _, _ := AssembleScoredLevelsMinGrade(ctx.TraderID, snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, nil, htfMult, snapshotNow, proximityK, minGrade, extra...); len(sc) > 0 {
 					bc := ComputeBiasContext(snapshotBars, sc, snapshotNow)
 					// FIX 8 (F6, 2026-08-27) — the executor's bias_ctx PDC read
 					// "n/a" post-roll because the day anchors sat outside the

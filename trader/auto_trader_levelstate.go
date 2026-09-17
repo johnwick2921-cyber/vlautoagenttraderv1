@@ -56,7 +56,7 @@ func (at *AutoTrader) recordLevelStateAt(now time.Time) {
 	// proximity_filter_atr, threaded into the detector/scorer (never a hardcoded
 	// 1.5 that the config cannot move). max_levels resolves from config (D2 —
 	// the planner and the state writers must seat the SAME count).
-	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
+	maxLevels, _, _, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
 	_, price, dATR := kernel.AssembleScoredLevels(at.id, bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
 	if price <= 0 {
 		return
@@ -83,7 +83,7 @@ func (at *AutoTrader) recordLevelStateAt(now time.Time) {
 	active := kernel.ActivePlanLevels(plan.Doc.Levels, price, dATR, kernel.ActivationWindowK)
 	// R2 4.7 (2026-08-25) — level-state writers obey min_grade: sub-floor
 	// levels get no persisted state (the table they came from can't have them).
-	if _, minGrade, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now)); minGrade != "" {
+	if _, _, _, minGrade, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now)); minGrade != "" {
 		active = kernel.FilterPlanLevelsByMinGrade(active, minGrade)
 	}
 	for _, l := range active {
@@ -202,7 +202,7 @@ func (at *AutoTrader) recordScenarioStateAt(now time.Time) {
 	if len(bars) == 0 {
 		return
 	}
-	maxLevels, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
+	maxLevels, _, _, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
 	_, price, dATR := kernel.AssembleScoredLevels(at.id, bars, at.sessionRegistry(now), symbol, maxLevels, now, at.proximityFilterATR())
 	if price <= 0 {
 		return

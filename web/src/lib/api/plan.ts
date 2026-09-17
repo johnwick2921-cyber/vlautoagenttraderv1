@@ -116,6 +116,37 @@ export interface PlanDoc {
   no_trade: string[]
   death_condition: string
   day_type?: string
+  /** S1/S5 — structure table (bias only, never entries). ABSENT when not computed. */
+  structure?: StructureMapView | null
+}
+
+// ── S1/S5 structure map (mirrors kernel/structure_map.go; field names verbatim)
+export interface StructureSwingView {
+  price: number
+  time_ms: number
+}
+export interface StructureZoneView {
+  kind: string
+  lo: number
+  hi: number
+  tf: string // "D" | "4h" | "1h"
+  fresh: string
+  score: number
+}
+export interface StructureTFView {
+  trend: string // "up" | "down" | "range"
+  last_swing_high?: StructureSwingView | null
+  last_swing_low?: StructureSwingView | null
+  impulse_lo?: number
+  impulse_hi?: number
+  premium_discount: number // 0..1
+  zones?: StructureZoneView[]
+  bars: number
+}
+export interface StructureMapView {
+  as_of_ms: number
+  contract?: string
+  tfs: Record<string, StructureTFView>
 }
 
 export interface LevelZoneMap {

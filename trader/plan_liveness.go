@@ -70,7 +70,7 @@ func PlanLivenessBootLine(st *store.Store) string {
 	if err != nil {
 		return "plan liveness: tradeable=n/a · exhausted-warnings=UNKNOWN · born-dead refusals=UNKNOWN · deaths recorded=UNKNOWN (event store unavailable)"
 	}
-	return fmt.Sprintf("plan liveness: tradeable=n/a · exhausted-warnings=%d · born-dead refusals=%d · deaths recorded=%d · authored UNKNOWN=%d · exhaustion=%s", counts.ExhaustionWarnings, counts.BornDeadRefusals, counts.DeathsRecorded, counts.AuthoredUnknown, planExhaustionPolicy())
+	return fmt.Sprintf("plan liveness: tradeable=n/a · exhausted-warnings=%d · born-dead refusals=%d · deaths recorded=%d · authored UNKNOWN=%d · exhaustion=%s · flip→reread=n/a(strategy loads at trader start; W-FLIP-REREAD)", counts.ExhaustionWarnings, counts.BornDeadRefusals, counts.DeathsRecorded, counts.AuthoredUnknown, planExhaustionPolicy())
 }
 
 func planExhaustionPolicy() string { return "warn-only" }

@@ -17,6 +17,11 @@ export const status: GuideSection = {
       kind: 'p',
       text: 'Overview shows Market Chart beside Account Equity on wide screens and stacks them on narrow screens. The futures Planner, including Desk, follows both charts. Switching to Decisions hides Overview without unmounting Planner: its polling and local state continue. Entry, Mark and Value remain available in the horizontally scrollable position table on phones. The mobile market selector uses the same market choices as the desktop pills. While the first Desk read is pending, DESK shows Loading; this is not a claim that any fact is current. The Desk toggle announces whether the rows are expanded or collapsed.',
     },
+    { kind: 'h', text: 'Research snapshot recorder' },
+    {
+      kind: 'p',
+      text: 'The research archive (data/data.db.research.db) keeps every fact the pipeline records; nothing here changes what the bot trades. The recorder is ON unless RESEARCH_SNAPSHOT is explicitly 0 or false in .env. When on, it writes one rollup line per minute (RESEARCH_LOG_EVERY_S, default 60) with rows-per-object, drops and queue depth — there is no per-fact narration any more. Drop notices are WARN-level, coalesced to one line per minute with the delta. RESEARCH_RETAIN_DAYS (unset = never prune; set = prune) removes rows older than that many days in bounded batches after boot and daily, and the archive is never VACUUMed automatically — on a ~77 GB file that step is a manual, owner-approved one.',
+    },
     { kind: 'h', text: 'Where this page comes from' },
     {
       kind: 'p',
@@ -83,12 +88,13 @@ export const status: GuideSection = {
       lines: [
         '🔐 BOOT INTEGRITY OK — rev <sha> [+dirty] · built <ts>',
         '🧾 P&L surfaces: <N> aggregators strict-corrected, 0 raw (corrected-column guard) — every P&L figure the model and the dashboard read is pnl_corrected; unresolved rows are counted and excluded, never coerced',
-        '🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=off · trail=off · size=1 · re-arm-after-sweep=on (0B) — the whole exit posture in one line',
+        '🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=n/a(strategy) · trail=n/a(strategy) · seam=SUSPENDED(env) · size=1 · re-arm-after-sweep=on (0B) — the whole exit posture, every field READ from the source the mechanics honour: BE/trail print n/a until each trader loads its strategy, then on/off from the strategy toggles; seam comes from env EXIT_MECHS_SUSPENDED (class NN)',
         '⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce, fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — ENFORCING since 2026-09-03: a level_event wake with under 25 min to the flat is SKIPPED (its read would land after the last-entry gate closes), and so is one within 30 min of the last wake-authored version — UNLESS price has drifted ≥ FAST_MARKET_ATR (1.5×) from the plan being traded, which bypasses the cooldown and logs "cooldown bypassed: fast market <drift>×ATR". The 25-min cutoff is never exempted: a re-plan with 20 minutes left is a re-plan with 20 minutes left, fast or not. Scheduled reads, death re-plans and owner resets are untouched. cross-session defers WAKES (never scheduled reads) while a planner stream is open; stale-arm expiry retires never-placed arms from superseded plan versions',
         '    · expected <sha> · goldens PASS      ← code matches deploy record',
         '🧯 nt8 history at subscribe: MNQ 1m=2000/2000 5m=2000/2000 … 1h=n/a/2000 — received/asked per timeframe; n/a is "not answered yet", never zero  ← dispatch 101',
         '🧯 ring rehydrated MNQ 1m [O 2026-09-16]: nt8=<n> store_live=<n> store_hist=<n> (post-drop excluded=<bool>) import=<n> (refused at the door — guard iii) total=<t>/<cap> — every number read; then "🧯 ring rehydrate done [O …]: <k> of <n> pairs deepened"  ← dispatch 101',
         '🧮 planner tape [NT8-only, CTO ruling 2026-09-16] @<t>: MNQ 1m contract=<c> · import rows on contract=<n> (excluded from every planner door) · tape NT8-only=<a> rows vs with imports=<b> rows (Δ<a-b>) · regime baseline NT8-only=<x> vs with imports=<y> (Δ<x-y>) · chart keeps imports, labelled  ← 101 follow-up',
+        '🗺 structure: off|on(D/4h/1h)|n/a — the S1 structure-table knob, READ from the bound strategy; per read: 🗺 structure @<session>: D=<up|down|range> 4h=… 1h=… zones=<n> pd4h=<0.xx>  ← S1 (2026-09-16)',
         "📈 chart: across-roll=on[O] · prior contracts fill strictly before the current contract's first live row · step never adjusted · limit max=20000 · decision readers=current-contract-only  ← dispatch 101",
         '📜 planner playbook: playbook=v2 bias_tree=on …',
         '🛡 plan facts guards: 0-side + empty map fail-closed …',
