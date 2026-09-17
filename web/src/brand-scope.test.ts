@@ -65,7 +65,7 @@ it('rejects a removed protected guard, instead of only checking the issuer word'
   )
 })
 
-it('preserves every existing TypeScript import target in changed files', async () => {
+it('preserves every existing TypeScript import target in changed files', async (ctx) => {
   const { execFileSync } = await import('node:child_process')
   const ts = await import('typescript')
   const base = '954f11b15f2e7615678f7d2b708c47895faebf1e'
@@ -75,6 +75,21 @@ it('preserves every existing TypeScript import target in changed files', async (
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     })
+  // The base is a nofx commit. A mirror clone (the VL partner repo) does not
+  // carry nofx history, so the pin cannot be evaluated there: skip with the
+  // reason stated instead of failing on `git diff` (bad object). In nofx itself
+  // the commit exists and the check runs unchanged. TypeScript twin of the Go
+  // skip in branding/scope_test.go (TestExistingGoImportTargetsPreserved).
+  let baseIsPresent = true
+  try {
+    git(['cat-file', '-e', `${base}^{commit}`])
+  } catch {
+    baseIsPresent = false
+  }
+  if (!baseIsPresent)
+    ctx.skip(
+      `base commit ${base.slice(0, 8)} is not in this repository (mirror clone) — import-target pin not evaluable here`
+    )
   const targets = (source: string) => {
     const file = ts.createSourceFile(
       'source.tsx',
