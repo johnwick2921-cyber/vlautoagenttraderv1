@@ -426,6 +426,31 @@ export const planStrings = {
   filters: { en: 'Filters', zh: '筛选', id: 'Filter' },
   proximity: { en: 'Proximity', zh: '邻近度', id: 'Kedekatan' },
   maxLevels: { en: 'Max levels', zh: '最大价位数', id: 'Maks level' },
+  htfSeats: {
+    en: 'HTF seats (structure-first, S3)',
+    zh: 'HTF 席位 (结构优先, S3)',
+    id: 'Kursi HTF',
+  },
+  htfScoreMultiplier: {
+    en: 'HTF score multiplier (S3)',
+    zh: 'HTF 分数乘数 (S3)',
+    id: 'Pengali skor HTF',
+  },
+  structureMap: {
+    en: 'Structure map — D/4h/1h trend table + zones on the card; context only, never entries',
+    zh: '结构地图 — D/4h/1h 趋势表 + 区域；仅上下文，永不作为入场',
+    id: 'Peta struktur — tabel tren D/4h/1h + zona; konteks saja, bukan entri',
+  },
+  freshByTf: {
+    en: 'Freshness by timeframe — HTF levels graded on their own bars (re-entries), research says no edge either way',
+    zh: '按周期新鲜度 — HTF 价位按自身周期 K 线评分（重入）；研究显示两种方式均无优势',
+    id: 'Kesegaran per TF — level HTF dinilai pada barnya sendiri (re-entries); riset: tanpa edge',
+  },
+  flipReread: {
+    en: 'Flip re-read — when the flip condition fires, the plan still goes dormant, then ONE free re-read authors the flipped direction',
+    zh: '翻转重读 — 触发翻转条件时计划仍转入休眠，然后一次免费重读按翻转方向重新制定',
+    id: 'Flip re-read — saat kondisi flip terpicu, plan tetap dormant, lalu SATU re-read gratis menyusun arah yang baru',
+  },
   maxScenarios: { en: 'Max scenarios', zh: '最大情景数', id: 'Maks skenario' },
   maxReplans: {
     en: 'Max re-plans',

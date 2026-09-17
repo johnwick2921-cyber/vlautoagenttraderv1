@@ -23,6 +23,19 @@
 //     (additive; no identifier renamed).
 //   ninjascript/VLTraderTCPClient.cs   — historyPulls wiring + the
 //     bars_history_request dispatch (additive; no identifier renamed).
+// Bar-feed baseline advanced 2026-09-16 for dispatch 101 (PRs #131/#132,
+// fix/nt8-history-and-chart-depth), re-pinned in W-brandscope after PR #140's
+// CI found the red — the wave that changed the file never re-pinned it:
+//   provider/ninjatrader/tcp_server.go  @ 0252afe4 (dev 1e3ad705, sha256
+//     0a757488…): 65f93f6b added the histAtSub field + one
+//     s.histAtSub.note(...) call in enqueueBarHistorical (E1, the 🧯 history-at-
+//     subscribe count); 0252afe4 added the histReplay field (D1'(3a), the
+//     once-per-boot re-request; RequestHistoryReplayAt lives in
+//     history_rerequest.go). Additive; the struct block re-aligned by gofmt
+//     (addr / listener lines moved, not removed). The guards this pin protects
+//     are intact on dev: SubscribeBarsHistoryFor (:421), the
+//     bars_history_request write (:470), the bars_history_data / _error
+//     fan-out (:1985 / :2008). Verified by diff 0aea0c2e..1e3ad705 on the file.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -52,7 +65,7 @@ it('rejects a removed protected guard, instead of only checking the issuer word'
   )
 })
 
-it('preserves every existing TypeScript import target in changed files', async () => {
+it('preserves every existing TypeScript import target in changed files', async (ctx) => {
   const { execFileSync } = await import('node:child_process')
   const ts = await import('typescript')
   const base = '954f11b15f2e7615678f7d2b708c47895faebf1e'
@@ -62,6 +75,21 @@ it('preserves every existing TypeScript import target in changed files', async (
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     })
+  // The base is a nofx commit. A mirror clone (the VL partner repo) does not
+  // carry nofx history, so the pin cannot be evaluated there: skip with the
+  // reason stated instead of failing on `git diff` (bad object). In nofx itself
+  // the commit exists and the check runs unchanged. TypeScript twin of the Go
+  // skip in branding/scope_test.go (TestExistingGoImportTargetsPreserved).
+  let baseIsPresent = true
+  try {
+    git(['cat-file', '-e', `${base}^{commit}`])
+  } catch {
+    baseIsPresent = false
+  }
+  if (!baseIsPresent)
+    ctx.skip(
+      `base commit ${base.slice(0, 8)} is not in this repository (mirror clone) — import-target pin not evaluable here`
+    )
   const targets = (source: string) => {
     const file = ts.createSourceFile(
       'source.tsx',

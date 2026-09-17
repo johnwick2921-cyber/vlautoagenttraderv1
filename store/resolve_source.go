@@ -78,3 +78,13 @@ func ResolveOneSetup(cfg *StrategyConfig) (enabled bool, minGrade, enabledSource
 	}
 	return
 }
+
+// ResolveStructureMap resolves day_plan.structure_map (S1, 2026-09-16): the
+// STRUCTURE table is OFF unless the strategy saved true. Every S1 knob
+// defaults OFF — nothing changes the live plan until S4 measures it.
+func ResolveStructureMap(cfg *StrategyConfig) (enabled bool, source string) {
+	if cfg == nil || cfg.DayPlan == nil || cfg.DayPlan.StructureMap == nil {
+		return false, SourceShippedDefault
+	}
+	return *cfg.DayPlan.StructureMap, SourceSaved
+}

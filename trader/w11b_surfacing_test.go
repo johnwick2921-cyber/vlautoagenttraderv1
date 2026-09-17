@@ -3,6 +3,7 @@ package trader
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
 	"nofx/kernel"
 	"nofx/market"
@@ -36,11 +37,11 @@ func TestW11bLevelStateProviderReadsStore(t *testing.T) {
 
 	installLevelStateProvider(nil, st)
 
-	if got := kernel.LevelStateProvider("t1", "MNQ", kernel.DetectedLevel{Price: px, Label: label}); got != "done" {
+	if got := kernel.LevelStateProvider("t1", "MNQ", kernel.DetectedLevel{Price: px, Label: label}, time.Now()); got != "done" {
 		t.Fatalf("consumed level must read done, got %q", got)
 	}
 	// an unknown level → fresh ("").
-	if got := kernel.LevelStateProvider("t1", "MNQ", kernel.DetectedLevel{Price: 12345, Label: "RN"}); got != "" {
+	if got := kernel.LevelStateProvider("t1", "MNQ", kernel.DetectedLevel{Price: 12345, Label: "RN"}, time.Now()); got != "" {
 		t.Fatalf("unknown level must read fresh (\"\"), got %q", got)
 	}
 }

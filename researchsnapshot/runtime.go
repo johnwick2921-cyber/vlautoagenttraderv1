@@ -3,12 +3,15 @@ package researchsnapshot
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime/debug"
+	"strings"
 	"sync/atomic"
 	"time"
 )
 
 var active atomic.Pointer[Recorder]
+var startCalled atomic.Bool
 
 // Install is called before any producer starts. A failed archive leaves
 // telemetry disabled; it cannot fail application startup.
@@ -32,7 +35,8 @@ func Record(name string, build func() []Fact) (accepted bool) {
 	return r.Offer(name, build)
 }
 
-func Start(path string, log func(string)) (closeRecorder func()) {
+func Start(path string, log func(string), warn func(string)) (closeRecorder func()) {
+	startCalled.Store(true)
 	closeRecorder = func() {}
 	emit := func(message string) {
 		defer func() { _ = recover() }()
@@ -40,13 +44,31 @@ func Start(path string, log func(string)) (closeRecorder func()) {
 			log(message)
 		}
 	}
+	warnEmit := func(message string) {
+		defer func() { _ = recover() }()
+		if warn != nil {
+			warn(message)
+		} else if log != nil {
+			log(message)
+		}
+	}
 	defer func() {
 		if recover() != nil {
-			if log != nil {
-				emit("WARN research snapshot initialization panic; capture unavailable")
-			}
+			warnEmit("WARN research snapshot initialization panic; capture unavailable")
 		}
 	}()
+	// RESEARCH_SNAPSHOT gate (review B1): OPT-OUT — the recorder keeps today's
+	// behaviour (ON) unless the env is explicitly 0/false.
+	if v := os.Getenv("RESEARCH_SNAPSHOT"); v == "0" || strings.EqualFold(v, "false") {
+		setStatusNote("OFF (RESEARCH_SNAPSHOT=0)")
+		emit("research snapshot: OFF (RESEARCH_SNAPSHOT=0)")
+		return
+	}
+	if os.Getenv("RESEARCH_SNAPSHOT") == "" {
+		emit("research snapshot: ON (default)")
+	} else {
+		emit("research snapshot: ON")
+	}
 	rev := ""
 	if info, ok := debug.ReadBuildInfo(); ok {
 		for _, s := range info.Settings {
@@ -57,12 +79,31 @@ func Start(path string, log func(string)) (closeRecorder func()) {
 	}
 	a, err := Open(path, rev)
 	if err != nil {
-		emit("WARN research snapshot archive unavailable; capture disabled")
+		setStatusNote("OFF (archive unavailable)")
+		warnEmit("WARN research snapshot archive unavailable; capture disabled")
 		return
 	}
-	r := NewRecorder(a, 128, log)
+	// Retention (review B2): RESEARCH_RETAIN_DAYS UNSET means NO prune, ever.
+	// When set, the prune runs OFF the boot path in a goroutine — batched
+	// DELETEs with sleeps, one INFO line per batch — never synchronously inside
+	// Start() on a ~77 GB file. VACUUM is never run automatically.
+	retentionStop := make(chan struct{})
+	retentionDays := retainDays()
+	if retentionDays > 0 {
+		go func() {
+			for {
+				pruneOldFacts(a, retentionDays, emit)
+				select {
+				case <-time.After(24 * time.Hour):
+				case <-retentionStop:
+					return
+				}
+			}
+		}()
+	}
+	r := NewRecorderWithInfo(a, 128, warnEmit, emit)
 	Install(r)
-	return func() { Install(nil); r.Close(); _ = a.Close() }
+	return func() { close(retentionStop); Install(nil); r.Close(); _ = a.Close() }
 }
 
 func BootLineAt(a *Archive, r *Recorder, now time.Time) string {
@@ -128,9 +169,12 @@ func CurrentBootLine() string {
 	return CurrentBootLineAt(time.Now())
 }
 func CurrentBootLineAt(now time.Time) string {
+	if !startCalled.Load() {
+		return "research snapshot: n/a"
+	}
 	r := Active()
 	if r == nil {
-		return BootLineAt(nil, nil, now)
+		return "research snapshot: " + currentStatusNote()
 	}
 	a, _ := r.sink.(*Archive)
 	return BootLineAt(a, r, now)

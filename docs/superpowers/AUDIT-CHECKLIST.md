@@ -4823,3 +4823,482 @@ hook was born 2026-09-09 and had won every boot until a restart 58 minutes after
   minutes before the binary (`TestUIBootLineIsFreshByRevEvenWhenTheBundleIsOlder`).
 
 **Fix pattern.** landed + fired flags under one mutex; both orders pinned; identity over time.
+
+## CLASS 131 — ONE TABLE FOR TWO JOBS: THE STRUCTURE SEAT RACE (born 2026-09-16, feat/structure-map, S1 under the CTO's delegation)
+
+**Shape.** One 12-seat ranked table carries both jobs — where price may ENTER (15m/5m/1m + today's
+references) and which way the higher timeframes LEAN (D/4h/1h). Every rule that makes the entry table
+good for entries makes it blind to structure: `isTodayPriority` sorts today's references first,
+`freshMult` decays a 4h zone after one 1m touch (1.12 → 0.67), `collapseLevelClusters` renames a 4h level
+under the reference it sits beside, `seatHTF` caps HTF at 2, `zoneTierFor` folds 5m into the 1m tier.
+Measured 2026-09-16 16:31 CT: 244 HTF levels detected (≈70 4h, ≈12 daily); 11 seated — 8 references,
+3 HTF, zero daily. The plan read the day with no daily structure at all and nothing said so.
+
+**How it hid.** The table was always full and always graded; a full table looks like coverage. No line
+counted what was DETECTED against what was SEATED per timeframe.
+
+**Probes.**
+- Two jobs → two tables. A direction read (trend / last impulse / premium-discount / top zones per HTF)
+  lives in its own structure (`kernel.StructureMap`), labels INTACT, never collapsed into references,
+  never an entry; the entry table keeps its 12 seats and its rules.
+- Every S-wave knob defaults OFF and the prompt is byte-identical with it off (the existing goldens are
+  the proof); the live plan changes only after the measurement wave (S4).
+- A field the read could not compute is ABSENT (`structure` omitted), never `{}` / `[]` (canon).
+- The read logs what it saw per TF (`🗺 structure @<session>: D=… 4h=… 1h=… zones=<n> pd4h=…`) and the boot
+  line names the knob from the bound strategy (`🗺 structure: off|on(D/4h/1h)|n/a`).
+- Fixtures from the real store (read-only export, dated) at the CALL SITE, not rebuilt inputs; a 10-bar
+  daily series reads `range` honestly rather than pretending a trend.
+
+**Fix pattern.** S1 (this) the structure table · S2 fresh-by-TF (DS-101) · S3 validator contract
+(DS-102) · S5 (DS-103) · S4 measurement (DS-R) before any knob turns on.
+## CLASS 132 — a recorder that narrates every write at INFO (born 2026-09-16, dispatch 103, DS-103)
+
+**Symptom:** the research-snapshot recorder emitted one INFO line per archived
+fact — 324,807 "research snapshot written:" lines in a measured one-hour slice
+(88.8% of all log lines; ~13.2M/day), ~16 GiB/day of archive with no retention,
+and drop notices that only reached the INFO sink.
+
+**Root cause:** a diagnostics archive narrating its own success at volume, wired
+to the INFO logger, with no env gate and no retention.
+
+**Law:** a recorder is not a narrator. A background archive may emit at most ONE
+rollup line per period (rows per object, drops, queue depth) at INFO; drop
+notices go to the WARN sink, coalesced to one line per minute with the delta;
+the boot line's counters are read live, never hardcoded; an env gate
+(RESEARCH_SNAPSHOT) leaves it OFF by default; retention (RESEARCH_RETAIN_DAYS,
+default 7) prunes at boot and daily with NO automatic VACUUM on a ~77 GB file.
+Fixed 2026-09-16: researchsnapshot/* + main.go:77 wiring; pins in
+researchsnapshot/volume_test.go; measured before/after in
+docs/superpowers/reports/2026-09-16-research-recorder-volume.md.
+
+## CLASS 134 — A PROTECTED-FILE HASH PIN THAT OUTLIVED THE WAVE THAT CHANGED THE FILE (born at the #131/#132 merge 2026-09-16, found 2026-09-16 via PR #140 CI, fixed in W-brandscope)
+
+**Shape.** `web/src/brand-scope.test.ts` pins sha256 hashes of load-bearing files (dispatch 102's
+protected set) and throws "protected file changed" on any byte. A wave that legitimately changes one of
+those files (here dispatch 101: `provider/ninjatrader/tcp_server.go`, two additive fields + one call) is
+built and merged from a Go-only review — `go test ./...` green, the wave's own vitest never run — and the
+frontend suite on dev goes red for every LATER PR's CI. The wave that changed the file is the only one
+that knows why it changed; by the time CI complains, that lane has moved on.
+
+**How it hid.** The Go suite and the web suite are two commands; a Go wave runs one. The pin's failure
+names the FILE, not the WAVE, so the next lane sees a foreign red and either re-pins blind or waits.
+
+**Probes.**
+- Any diff touching a path in `web/src/test/brand-scope-baseline.json` runs `cd web && npx vitest run
+  src/brand-scope.test.ts` in the SAME wave and re-pins in the SAME PR, with the commit, the reason and
+  the guard lines quoted in the test's comment block (never a bare hash bump).
+- A re-pin names what the pin protects and shows it intact by line number (`SubscribeBarsHistoryFor`,
+  the `bars_history_request` write, the `_data`/`_error` fan-out).
+- "Additive; no identifier renamed" is checked with the diff's REMOVED lines, not assumed — gofmt
+  re-alignment removes and re-adds lines that must be shown to still exist.
+- The mutation check (`rejects a removed protected guard`) stays enforced; a re-pin never weakens it.
+
+**Fix pattern.** Re-pin with provenance in the same PR as the change; where a Go wave touches a pinned
+file, the web pin is part of that wave's suite (class 110: a green suite is a claim about an environment,
+and this environment has two suites).
+## CLASS 133 — S2 by-TF freshness
+
+**Shape.** A freshness grade computed from one timeframe's bars while the scoring
+ladder it feeds was calibrated against another (1m touches). A 4h zone was
+downgraded C by one 1m bar trading into it, so the 12-seat table stopped seating
+HTF structure. **Rule:** when a grade changes MEANING as its source timeframe
+changes, keep the display vocabulary and the scoring ladder separate — the new
+grader may only feed the ladder through an explicit normalization map, and every
+legacy string must pass through it as identity (proved by
+`TestNormalizeByTFGrade_IdentityOnLegacy` + `TestScoreLevels_ByTFVocabScoresLikeCanonical`).
+Second rule (F1): a test is a RE-ENTRY — the level's own formation bars are its
+birth and never count; counting starts after the first own-TF bar that CLOSES
+fully outside the band.
+
+**Fix pattern (S2).** `kernel/levels_fresh_by_tf.go` grades HTF levels on their
+own-TF bars (fresh/tested-1/tested-2/stale, re-entry semantics); `normalizeByTFGrade`
+maps the new vocabulary onto the unchanged `freshMult`/`zoneFreshMult` tables; knob default
+OFF so goldens stay byte-identical.
+## CLASS 135 — A SEAT GUARANTEE UNDONE BY ITS OWN RESTORE SORT (born 2026-08-24, found 2026-09-16 by DS-102, fix/structure-seats-and-relation)
+
+**Shape.** A seating pass promotes a tail candidate into the top-N head, then
+"restores strict seating order" by re-sorting the WHOLE list with the same
+comparator used to build the head. The head IS the top-N of that comparator, so
+a promoted candidate — which loses the comparator to every head member — is
+restored to the tail by construction. `seatHTF` (kernel/levels_score.go) shipped
+its "2 guaranteed HTF seats" as a no-op since G2/G3 (2026-08-24): the pre-seat
+sort (:594-606) and the restore sort (~:1082-1096) share the comparator, and the
+caller slices [:maxLevels] afterwards.
+
+**How it hid.** The shipped pin test (`TestSeatHTFPromotesSwingLevels`) was
+vacuous: its HTF candidates OUTSCORED the head fillers, so the final sort alone
+seated them — the promotion path was never exercised, and the test passed for
+the wrong reason.
+
+**Probes.**
+- Any `seat*` pass: build a fixture where the promoted candidates score BELOW
+  the head fillers (the case that matters) and assert the seats appear only
+  under the knob that activates the pass.
+- A pass that returns ONLY its own maxLevels list (membership swap) survives its
+  reorder-sort (`seatBothSides` — probed healthy); a pass that re-sorts head and
+  tail TOGETHER nullifies itself (`seatHTF`).
+- Knob-gate the fix so the legacy path stays byte-identical: nil → the old
+  whole-list re-sort verbatim; saved → effective promotion, head and tail sorted
+  SEPARATELY.
+
+**Fix pattern.** Effective path: `sort(head)` + `sort(tail)` + `head ++ tail` —
+promoted slots keep their seats, order inside each block stays strict. Legacy
+path preserved as its own function until measurement gates the new behaviour.
+## CLASS 136 — A BOOT LINE THAT PRINTS A VALUE THE PROCESS NEVER READ (born 2026-09-16, fix/exit-posture-bootline-honest, D102-1)
+
+**Shape.** A boot line states a knob's posture from the ENV / literal config
+alone while the mechanics gate on a different source. The 🛑 exit line printed
+`BE=on · trail=on` whenever `EXIT_MECHS_SUSPENDED=0`, reading ONLY the env seam
+(`trader/exit_mechs_suspend.go` `ExitPolicyBootLine`), even though the runtime
+truth is the AND of that seam with the per-strategy toggles
+(`breakevenTrigger` `trader/auto_trader.go:205`,
+`trailingConfig` `trader/auto_trader_trailing.go:43`). At the 22:14 restart on
+09-15 both strategy toggles were OFF and the line said on.
+
+**How it hid.** The line was honest about the seam and silent about the toggle —
+a reader checking the boot block could not tell which source each field came
+from, because the line named no source at all.
+
+**Probes.**
+- A boot/status line must state the SOURCE of every field it prints
+  (`BE=off(strategy) · seam=SUSPENDED(env)`), never a bare value.
+- When a source cannot be read at boot time (strategy not yet loaded), the field
+  prints `n/a` — never a literal, never the file default.
+- Pin the call sites, not the inputs: env on + strategy off must render off;
+  no strategy loaded must render n/a (`TestExitPolicyBootLineStrategyOffSeamActive`,
+  `TestExitPolicyBootLineNoStrategyReadsNA` in
+  `trader/exit_mechs_suspend_bootline_test.go`).
+
+**Fix pattern.** Render every posture field from the exact value the mechanics
+gate on, with its source in parens; print the n/a branch where the boot cannot
+know; log the resolved line again where the source becomes available (trader
+load).
+
+## CLASS 137 — A SWALLOWED CONFIG ERROR THAT SURFACES AS A DIFFERENT FAILURE (born 2026-09-16 on the partner install, fix/env-load-error-logged, W-ENV-PARSE-ERROR)
+
+**Shape.** A config loader's error is discarded (`_ = godotenv.Load()`,
+`main.go:40`), the loader is all-or-nothing, and the first thing to notice is a
+consumer three layers down that names ITS symptom, not the cause. On the new
+machine an RSA_PRIVATE_KEY pasted unquoted across several lines made `.env`
+unparseable; `loadFile` sets nothing on a parse error, so every variable stayed
+unset; the boot died as "secrets missing" in a 5-second systemd crash loop and
+the journal never mentioned `.env` at all — the operator was told to go find a
+secret that was sitting in the file the whole time.
+
+**How it hid.** Fail-open was the DESIGN (absence of `.env` is normal on some
+hosts), and the discard was written to cover that case; it covered the parse
+case identically, because the code never distinguished "no file" from "a file
+we could not read". The crash loop then re-ran the same silent path every five
+seconds, so the volume of evidence grew while the information content stayed
+zero.
+
+**The second trap, found while fixing the first.** godotenv v1.5.1's parse
+error is `unexpected character %q in variable name near %q`, and the second
+`%q` is the ENTIRE REMAINDER OF THE FILE from the bad statement onward. On the
+partner-install shape that is the private key body and every secret after it.
+Logging `err` verbatim — the obvious one-line fix — would have shipped them to
+journald, `data/nofx_*.log` and the DB sink (`logger/db_sink.go` ships WARN+).
+It also does not name a line number, despite reading as if it would.
+
+**Probes.**
+- `grep -rn '_ = .*Load()' --include=*.go` — every discarded loader error is
+  this class waiting for a malformed file. (Remaining after this wave:
+  `cmd/planner_ab/main.go:108`, `cmd/nq_smoke/main.go:53`,
+  `cmd/nq_smoke/smoke_resolver.go:17` — dev tools, run by hand, out of scope.)
+- Absence and malformation must log DIFFERENTLY, at different levels: INFO for
+  the normal case, WARN for the one an operator must act on.
+- Before logging any third-party error at WARN or above, READ the library's
+  `Errorf` format strings: does `%q`/`%s` carry input data? Redact by shape
+  (`redactDotEnvErr`), and pin the redaction with a test whose fixture holds a
+  fake secret and asserts it is absent from the log.
+- Test at the production call site with a real temp file, not a mocked loader:
+  malformed → WARN with the line named and no file contents;
+  valid → silent and the variable set; absent → INFO
+  (`TestLoadDotEnv_MalformedFileWarnsWithLineAndWithoutContents`,
+  `TestLoadDotEnv_ValidFileIsSilentAndLoads`, `TestLoadDotEnv_AbsentFileLogsInfo`
+  in `main_dotenv_test.go`).
+
+**Fix pattern.** Capture the error; branch on `errors.Is(err, os.ErrNotExist)`;
+keep the fail-open semantics byte-identical (nothing set on error, no exit);
+log ONE line per outcome with the diagnosis and the line number, and with the
+library's echo of the input stripped. When the library will not name the line,
+recover it by parsing growing prefixes and taking the line after the LAST
+prefix that parses (a quoted value may span lines, so the FIRST failing prefix
+is wrong — `TestDotEnvErrorLine_MultiLineQuoteBeforeBadLine`).
+
+## CLASS 138 — A TEST THAT SHARES THE WALL CLOCK WITH A REAL GATE (born 2026-09-09 with the session-risk band, found 2026-09-17 02:04 CT by the Chief, fix/split-arm-test-clock, W-CLOCK-TEST)
+
+**Shape.** A test drives a REAL gated path (here the arm path,
+`maybeManageArmedOrdersAt`) and hands it `time.Now()`. The gate refuses by the
+clock — the first 5 minutes of every session, the lunch window — so the test
+fails DETERMINISTICALLY in a window nobody is watching for, then passes again
+with nobody touching anything. `TestSplitArmWritesTwoLedgerRows` was red
+02:00:00–02:05:07 CT every day:
+
+	🛑 arm REFUSED (session risk): no_trade_band: LONDON first-5m no-trade window
+	split_entry_test.go: split arm must write 2 ledger rows (legs), got 0 ([])
+
+and green at 02:05:08. Same commit, same machine, same install.
+
+**How it hid.** Three ways, stacked. (1) It had been fixed once: on 2026-09-10
+the lunch band (12:00–13:30) turned eight trader/ tests red between two green
+runs and `armTestClock` was written to search for an armable moment — but this
+test could not use it, because its plan provider resolved the session from
+`time.Now()` with NO seam and an injected clock desynchronised the fixture from
+the path ("got 0 legs" with no refusal line, because there was no plan). So it
+got a `t.Skip` for the ONE band that had bitten, and a comment saying the real
+fix was owed. (2) The seam then LANDED — cleanup batch 2 B3, 2026-09-11,
+`installActivePlanProviderAt(at, st, clock)` — and nothing tied the owed note
+to the wave that discharged it; the comment kept saying "no seam" for six days
+after there was one. (3) A skip-list of bands is always one band short: the
+lunch skip made the test green 12:00–13:30 and left first-5m of ASIA, LONDON
+and NY (three windows of five minutes) to fail by the clock. Five minutes a
+day is rare enough that every observer blamed their own branch first.
+
+**Why it matters.** A suite that is red for five minutes a day, by the clock,
+is a false signal to every lane that runs it then — and the merged-HEAD suite
+of a cutover is run at whatever hour the cutover happens. Dispatch 102's
+cutover ran into exactly this window on 2026-09-11 and lost a re-run to it.
+
+**The fix shape.** ONE injected clock, threaded through EVERY clock read the
+path makes: the fixture's plan (trade date), the tape (bars relative to it),
+the provider (through its seam) and the entry call — so the fixture and the
+path are provably reading one clock, never two that happen to agree. The base
+is FIXED (a known weekday, mid-morning NY), searched by `armTestClockFrom` so a
+registry change moves the moment instead of silently invalidating it, and an
+env override (`SPLIT_ARM_TEST_CLOCK_CT`) lands the clock INSIDE a band on
+purpose — the RED is now reproducible at any hour instead of five minutes a
+day.
+
+**Probes.**
+- `grep -n 'time.Now()' trader/*_test.go` and, for each hit, ask whether the
+  value reaches a gate that refuses by the clock (`sessionRiskGateAt`,
+  `sessionEntryBlockedAt`, `InFirstNoTradeMinutes`, `InLunchNoTrade`,
+  `InT1Blackout`). A read that only stamps a record or a log is not this class;
+  a read that a verdict consumes is.
+- A test that needs a `t.Skip` for a band is this class with a shorter fuse:
+  the skip names one window and the gate has several. Count the windows the
+  gate knows; count the skips; they differ.
+- A seam that exists but that the tests do not use is half a seam
+  (`arm_test_clock_test.go`). When a seam LANDS, grep the test tree for the
+  comment that said it was owed — `grep -rn 'NO seam\|no seam\|OWED' *_test.go`
+  — and discharge it in the same wave, or the note outlives the debt.
+- Reproduce the RED on demand before calling it fixed: a failure that only the
+  clock can produce is a failure whose fix cannot be proven by running the suite
+  once at a convenient hour. Give the test a way to be placed inside the band.
+- Census at this wave (trader/ tests reading `time.Now()` on a path that reaches
+  the band gate, all of which currently SKIP or search rather than fail):
+  `one_setup_golden_fixture_test.go:103` (identical shape — full
+  `sessionEntryBlockedAt` skip, provider still on `time.Now`, same seam fix
+  applies, skips ~100 min/day), `split_entry_test.go`
+  `TestSplitArmSessionEndCancelsBothLegs` (plan/provider at `time.Now`, entry
+  at `armTestClock` — two clocks; passes inside a band only because the band
+  refusal itself cancels resting arms), `armed_executor_test.go` L42/L111/L142,
+  `shadow_demotion_test.go` L40/L62/L78/L282, `slist_eod_race_test.go` L236
+  (same two-clock shape: fixture at `time.Now`, entry at `armTestClock`). Not
+  this class, checked: `class33_boot_sweep_test.go` L25/L156 stamp
+  CreatedAt/UpdatedAt only and the sweep is not band-gated. None of the listed
+  tests fails by the clock today; each is one registry change from doing so.
+
+## CLASS 139 — A HOLD THAT RESTARTS ON EVERY RE-READ: hysteresis anchored to the version, not the plan (born 2026-08-21 with the regime wave's G3 hold, reported by the owner 2026-09-17 "it went up all night and never flipped", fix/flip-hold-anchor, W-FLIP-HOLD-ANCHOR)
+
+**Shape.** A hysteresis window ("no flip within N minutes of birth") measures
+age from the created_at of the ROW it happens to be evaluating. The row is a
+VERSION in an append-only chain, and something unrelated to state — a wake
+re-read — appends a new version every 30–40 minutes. Every re-read is a new
+birth, so the hold restarts, and a 30-minute hold becomes "held for most of
+the session" whenever wakes fire faster than the hold expires. Nothing is
+wrong on any single evaluation: each one truthfully reports the age of the row
+it was handed.
+
+**The live story (2026-09-16 ASIA, plan `2026-09-16:ASIA:…`).** v1 authored
+16:35:56 (`ASIA_scheduled_read`), then twelve `level_event` re-reads: v10
+23:36:02, v11 00:13:28, v12 00:39:28, v13 01:21:25 — every one bias SHORT with
+a flip "above X → long" and X stepping DOWN (29500.25 → 29479.50 → 29450.50 →
+29418.80) as the tape climbed. The 01:25 and 01:30 5m closes (29443.75,
+29448.25) were both above v13's 29418.80. The journal at 01:35:00:
+
+	flip_eval_skipped plan=… v13 flip=hold (plan age 815s < 30min)
+
+and again 01:36:28 (903s) and 01:38:28 (1023s). 815s is exactly 01:21:25 →
+01:35:00: the age of v13, a re-read that changed no state. The chain itself
+was nine hours old and had held one bias since 21:00:40 (v5 neutral → v6
+short). The plan went dormant at 01:50:15 on the DEATH line (29450.50), never
+having flipped; the owner woke to "it went up all night and never flipped".
+
+**Why it hid.** Three ways. (1) Every skip line was individually true — "plan
+age 815s" IS v13's age — so nothing in the log contradicted itself. (2) The
+G3 test (`TestG3FlipHold`) proved the hold with ONE version: fresh → held,
+old → fires. A chain of versions was never in the fixture, so the restart
+had no assertion to fail. (3) The two clocks were one variable: `sinceMs`
+windowed the CONDITION's bars (correctly the version's birth — a new flip
+line must be judged only on bars after it was written, P1c) AND clocked the
+hold. The right value for the first was the wrong value for the second, and
+sharing the name hid that they were different questions.
+
+**The fix shape.** Separate the clocks. The condition window stays the
+version's birth (touch gate + confirm closes untouched). The hold reads a
+STATE anchor — `kernel.ResolveFlipHoldAnchor`: the latest of the chain's
+first version, a deliberate re-plan version (death_replan / owner_reread /
+owner_reset), a version whose bias.direction changed, the last flip→dormant
+marker, the last re-arm marker. A same-bias wake re-read (level_event,
+structure_mss, a scheduled read) moves nothing. The skip line now names the
+anchor (`flip=hold (hold age 600s since session-plan-birth < 30min)`), the
+🧬 boot line prints `flip_hold=<N>min anchored to latest of {…}` READ from
+the knob and the resolver's own kinds table, and a chain the store cannot
+read falls back to the version's birth TAGGED `version(fallback)` so the
+pre-fix semantics are visible when they are in force. Death never had a hold
+and keeps none; it shares only the condition window. Proof at the production
+call site (`describeActivePlanDeath`): a same-bias re-read 11 min into a
+45-min-old chain is EVALUATED; v1 at 12 min is held; a flip 20 min ago then a
+re-read is held (and fires at 40); and the ASIA 09-16 chain replayed with the
+live 1m tape reproduces the 815s hold on the old clock and flips at 01:35 on
+the new one (`trader/flip_hold_anchor_test.go`).
+
+**Probes.**
+- `grep -n 'CreatedAt.UnixMilli\|created_at' kernel/*.go trader/*.go` and,
+  for each hit that feeds a TIME WINDOW or a HOLD, ask: is this row the
+  thing whose age matters, or merely the latest row about it? An append-only
+  chain (plans, overlays, armed_orders ledger, lifecycle log) makes every
+  "latest row" younger than the state it describes.
+- One variable feeding two predicates with different correct values
+  (`sinceMs` → condition window AND hold clock). Give the second its own
+  name at the signature, even when today's caller passes the same number.
+- A hysteresis / cooldown / debounce test with a single-row fixture. Add the
+  chain: two rows, the second younger than the window, the first older — the
+  verdict must come from the state, not the row.
+- Journal counter-read: the hold says `hold age Ns since <kind>` (pre-fix journals read `plan age Ns`). If N never exceeds the
+  wake cadence across a session, the hold is being restarted by the wakes.
+- The partner mirror (`vlautoagenttraderv1`) carries the same evaluator; the
+  fix propagates via `format-patch → am` (owner-run push).
+
+## CLASS 140 — A VALIDATOR THAT CHECKS THE NUMBER AND NEVER THE DIRECTION (born 2026-08-27 with the structured flip{} object, found 2026-09-17 by the owner "same flip point it not flip", fix/flip-direction-validator, W-FLIP-DIRECTION)
+
+**Shape.** A structured condition carries three facts — a price, a side, a
+destination — and the write-site validator cross-checks exactly one of them
+(the price must appear in the prose). The side and the destination are
+enum-valid on their own ("below" is a legal side, "long" is a legal flip_to),
+so a plan whose flip points the WRONG WAY for its bias passes every schema
+check and ships. Nothing then fires it, because the move it names is the move
+that CONFIRMS the bias rather than reverses it.
+
+**The live story (2026-09-17 LONDON v3, and 20 of 341 plans in the store).**
+bias.direction="short", flip={29474.90, side "below", rule "2x5m", flip_to
+"long"}, death={29604.25 above}. A short bias reverses to long on a close
+ABOVE a line; "below → long" can only fire on a continuation of the short,
+i.e. never on the rally the owner watched all night. The number 29474.90 was
+in the prose, so the only cross-check passed. The read path's
+warnFlipDeathSanity judged the flip's ORPHAN status and its collision with
+death, never its direction. 20/341 historical plans carry the same inverted
+shape (query in the wave's report); every one of them "never flipped".
+
+**Why it hid.** (1) The enum validators are per-field: each of side/flip_to/
+bias is legal alone; the defect is a RELATION between three fields and no
+check was relational. (2) The prose cross-check reads as "the flip is
+verified" to anyone skimming the validator, so the direction question was
+assumed answered. (3) The failure is silent by construction — an inverted
+flip is a flip that never fires, indistinguishable in the journal from a
+flip whose level was simply never reached.
+
+**The fix shape.** ONE relational function, `kernel.FlipDirectionContradiction
+(biasDir, flip)`, called from the write site (REJECT, `ValidatePlanDocWithCaps`)
+and the read path (WARN, `noteFlipDirectionInverted`, called first by BOTH
+stored-plan evaluators — `describeActivePlanDeath` for active plans and
+`describeDormantCleared` for dormant ones — once per plan version, the
+notePlanProviderNil idiom; the 09-17 review found the first draft of this WARN
+sat in `warnFlipDeathSanity`, which only ever runs AFTER the write-site reject,
+so it was dead code with a green direct-call test) so both speak one sentence:
+`flip{below 29474.90 → long} contradicts bias short: a short bias flips to long
+only on a close above the line`. Empty flip_to is read as the opposite of the
+bias. Neutral bias and a flip_to that is not the opposite of the bias are not
+this rule's question (no-op). Class-38 discipline: the law is a prompt-contract
+row (`MustAppear` guarded by `ValidatePromptContracts`), a rendered prompt
+sentence, and a repair excerpt `RepairFlipDirectionLaw` routed on the error's
+own words ("contradicts bias") — the model is told the rule it is judged by.
+Death is untouched (separate question). Tests at the production call site for
+all six bias×side×flip_to cases, empty flip_to inference, repair routing, and
+the trader WARN via captured log output at both evaluators (named once across two evaluations).
+
+**Probes.**
+- For every structured object with ≥2 enum fields (`PlanCondition`,
+  `ArmSpec`, `Confirm`, scenario direction vs target chain), list the
+  RELATIONS the fields must satisfy and grep the validator for a check that
+  names both fields in one predicate. A validator made only of per-field
+  enums has this class waiting.
+- `sqlite3 -readonly data/data.db "select count(*) from … where bias='short' and flip_side='below'"` (and the mirror) — a non-zero count on a shipped
+  rule is the class in the store, not a hypothetical.
+- A "never fired" condition in the journal must be distinguishable from a
+  "could never fire" one: the read-path WARN is the probe; if the journal has
+  no `flip_direction_inverted` line for an old inverted plan, the read path
+  does not judge direction. Check EVERY evaluator of the stored object (active
+  AND dormant), and check the WARN's call site runs BEFORE any reject that
+  would make it unreachable — a green test that calls the function directly
+  proves nothing about the production call site.
+
+## CLASS 141 — A FLIP THAT ONLY SLEEPS: THE FLIPPED BIAS WAS NEVER READ (born 2026-09-17, found by the owner, fix/flip-reread)
+
+**Shape.** A structured flip fires, the plan goes DORMANT as designed (wick-noise
+protection), and the re-arm predicate only ever restores the SAME plan when price
+closes back on the old side. `doc.FlipStructured.FlipTo` is evaluated exactly once
+— to build the killer string "flip-condition: … → bias <FlipTo>" — and nothing ever
+authors a plan with the flipped bias. The owner watched a 120-pt overnight rally
+with a live "flips to long" line and no long plan.
+
+**How it hid.** The dormant write is correct and loud ("auto re-arms when price
+closes back"), so every check of the lifecycle machinery passed while the promise
+the flip line makes — a bias that FLIPS — had no producing code path.
+
+**Probes.**
+- For every killer string that names a direction ("→ bias long/short"), ask: what
+  CODE produces a plan with that direction? A log line is not a code path.
+- A hysteresis pair (dormant on breach, re-arm on close-back) restores the OLD
+  plan; a flip is a NEW thesis and needs its own read.
+- Pin the knob-gate: OFF = byte-identical dormant (no read, no key, the dormant
+  line unchanged). ON = one SUCCESSFUL free re-read per fired flip, where
+  success is decided by the STORE (a version newer than the dormant row with
+  lifecycle "active"), never by the read call's bool — that bool means "this
+  call claimed the read" and a wake-class read that exhausts its 3 attempts
+  returns (0,"kept_active",nil) with NO row and still reports true. The
+  once-key (`flip_reread_done:<plan>:<version>` in system_config) is written
+  only AFTER that decision; while the read runs an in-memory in-flight guard
+  stops a second launch. A read that is refused (preflight, wake cadence, an
+  open stream) or that lands no new active version leaves the key clear
+  ("0"/""), and the dormant branch of maybeRunSessionReadsAt calls
+  maybeRereadAfterFlip again every cycle the row sleeps — subject to the same
+  preflight and cadence — until a read succeeds or the row re-arms.
+  Worst case, stated: ~1 launch per wake_min_interval_min (default 10 min,
+  up to 3 model calls per launch), no hard cap on launches while the row
+  stays dormant, class-35 free — the same cost shape as a level-event wake,
+  bounded only by the session read window.
+- The write site ENFORCES the flipped bias: `requiredBias :=
+  kernel.FlipToDirection(priorKiller)` and "bias %s is MANDATORY". The model
+  authors the flipped bias or the read writes nothing and the dormant plan
+  stands. A same-bias plan therefore cannot come through the production write
+  site; the goroutine names one if a non-production writer lands it, never
+  loops.
+- The prior line echoes the OLD bias before its arrow ("PRIOR PLAN v3 bias
+  long — … → bias is now expected short … flip-condition: … → bias short").
+  Any parser of it must read the LAST "→ bias <word>" only; a substring scan
+  for "bias long" mandates the STALE bias and rejects every correct plan
+  (the review's BLOCKER 1).
+- The supersede of the dormant version must be a compare-and-set FROM
+  "dormant" (`UpdatePlanLifecycleIf`): the planner call can run 20 minutes and
+  the re-arm path may restore the row meanwhile. A refused CAS leaves both the
+  re-armed vN and the new vN+1 as written; the newest version governs at read
+  time (GetLatestPlanForTraderSession is ORDER BY version DESC). The goroutine
+  also re-reads the row right before the planner call and skips a row that is
+  no longer dormant.
+- A test that substitutes the read seam proves only the request. Every one of
+  the three blockers above sat behind a green recorder test; the real path
+  (claimed read → planner core → write site → store) must be exercised with
+  only the AI client scripted.
+
+**Fix pattern.** W-FLIP-REREAD: after the dormant write (and again from the
+dormant branch on every later cycle while the key is clear), request a
+structure_flip read (class-35 free, same preflight + wake cadence as a level
+wake) whose prompt carries "PRIOR PLAN v<N> bias <old> — … the prior plan is
+dormant. <killer>"; the write site mandates the flipped bias; when the store
+shows a newer active version the once-key is set and the old version is
+superseded by CAS from dormant (`superseded:flip`, reason
+`superseded:flip:v<N+1>`); otherwise the key is cleared and the dormant plan
+stands until the next cycle's retry.

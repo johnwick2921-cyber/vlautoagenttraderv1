@@ -30,17 +30,19 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	ntwire "nofx/provider/ninjatrader"
 	ntTrader "nofx/trader/ninjatrader"
 )
 
 func main() {
-	// Load .env environment variables
-	_ = godotenv.Load()
-
-	// Initialize logger
+	// Initialize logger first so the .env outcome has somewhere to land
+	// (logger.Init reads no environment variable, so config sees the same order)
 	logger.Init(nil)
+
+	// Load .env environment variables — fails open: on any error nothing is
+	// set and every variable falls back to the process environment; the
+	// outcome is logged once (WARN malformed / INFO absent / silent on success)
+	loadDotEnv(".env")
 
 	logger.Info("╔════════════════════════════════════════════════════════════╗")
 	logger.Info("║           🚀 " + branding.ProductName() + " - AI-Powered Trading System              ║")
@@ -74,7 +76,7 @@ func main() {
 		}
 	}
 
-	closeResearch := researchsnapshot.Start(cfg.DBPath+".research.db", func(line string) { logger.Infof("%s", line) })
+	closeResearch := researchsnapshot.Start(cfg.DBPath+".research.db", func(line string) { logger.Infof("%s", line) }, func(line string) { logger.Warnf("%s", line) })
 	defer closeResearch()
 	logger.Infof("📋 Initializing database (%s)...", cfg.DBType)
 	dbType := store.DBTypeSQLite

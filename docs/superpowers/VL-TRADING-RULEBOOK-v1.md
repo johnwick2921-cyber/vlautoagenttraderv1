@@ -351,6 +351,20 @@ These names are carried forward from Master Plan v5 to identify unfinished speci
 
 [I] Approximately 20 sessions is a recording checkpoint, not a universal statistical sample size. Name whether a session is Asia/London/NY or a CME day; account for shared-day dependence and repeated plan versions. Predeclare effect size, uncertainty, test universe and untouched evaluation data. Test the combined selected policy once on a fresh holdout rather than combining independently selected winners and calling the combination validated.
 
+## C5. Research-snapshot recorder volume — built 2026-09-16 (dispatch 103)
+
+The research archive keeps every fact; only the narration changed. Before the
+wave the recorder printed one INFO line per archived fact (measured 324,807
+lines/hour = 88.8% of the log, ~16 GiB/day archive, no retention, drops narrated
+at INFO). After: at most one rollup line per RESEARCH_LOG_EVERY_S (default 60s)
+carrying rows-per-object, live drops, and queue depth; drop notices are
+WARN-level, coalesced to one line per minute with the delta; RESEARCH_SNAPSHOT is
+opt-out: explicitly 0/false leaves the recorder OFF ("research snapshot: OFF
+(RESEARCH_SNAPSHOT=0)"); unset keeps it ON (today's behaviour).
+RESEARCH_RETAIN_DAYS unset = never prune; when set, batched off-boot-path
+prunes with no automatic VACUUM (a ~77 GB VACUUM on the trading DB's disk is the
+owner's call). Rows/s unchanged — the archive path is untouched.
+
 ## D. HISTORICAL RECORD — each population stands on its own [T]
 
 **These are the archived audits' own reported populations, not fresh account performance or proof about the policy at the current source pin.** Their membership, exclusions and assumptions must travel with the numbers. [A01] [A02] [A03] [A04]

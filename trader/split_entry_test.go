@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -92,33 +93,38 @@ func TestSplitArmWritesTwoLedgerRows(t *testing.T) {
 	oneSetupOff(&cfg)
 	cfg.RiskControl.MinRiskRewardRatio = 2 // R1 (2026-09-03): the arm floor is the Studio value; this fixture arms at R:R 2.0
 	at, st := resetTrader(t, cfg)
-	now := time.Now()
+	// A FIXED CLOCK, NOT THE WALL CLOCK (W-CLOCK-TEST, 2026-09-17).
+	//
+	// This test drives the REAL arm path, and that path enforces the no-trade
+	// band: the first 5 minutes of every session and the lunch window. Read on
+	// time.Now(), it FAILED deterministically 02:00–02:05 CT every day —
+	//
+	//	🛑 arm REFUSED (session risk): no_trade_band: LONDON first-5m no-trade window … got 0 rows
+	//
+	// — and passed again at 02:05:08 with nobody touching anything. The 09-10
+	// version of this test knew about the lunch band and skipped it, but a skip
+	// per band is a list that is always one band short; a suite red by the
+	// clock is a false signal to every lane that runs it then.
+	//
+	// The 09-10 note here said the plan provider "resolves the active session
+	// and the chain trade date from time.Now() with NO seam", which was true
+	// that day and is not any more: cleanup batch 2 B3 (2026-09-11) made the
+	// provider's clock an argument (installActivePlanProviderAt). So the fixture
+	// and the arm path can now share ONE injected clock — the plan is written
+	// for the trade date the provider will resolve at that clock, the tape is
+	// built relative to it, and maybeManageArmedOrdersAt receives the same
+	// value — and the search below (armTestClockFrom) asks the registry for a
+	// moment inside a session and outside every band rather than hard-coding
+	// one that a later registry change would silently invalidate.
+	//
+	// The base is FIXED (a known weekday, mid-morning NY) rather than time.Now()
+	// because the tape's meaning depends on `now` modulo 5 minutes (see
+	// armTestClockFrom); a fixed base is the same answer every run.
+	now := splitArmFixedClock(t, at)
 	sess, ok := at.sessionRegistry(now).ActiveSession(now)
 	if !ok {
-		t.Skip("no active session right now")
+		t.Fatalf("splitArmFixedClock returned %s, which is outside every session — the search must not do that", now)
 	}
-	// RESTORED TO THE WALL CLOCK 2026-09-10, plus one skip.
-	//
-	// This test drives the REAL arm path, and that path's plan provider
-	// (installActivePlanProvider, auto_trader_planner.go:2671-2673) resolves the
-	// active session and the chain trade date from time.Now() with NO seam. So
-	// the fixture's clock and the arm path's clock must be the SAME clock: any
-	// injected time desynchronises them and the plan lookup returns nil, which
-	// surfaces as "got 0 legs" with not one refusal line — silence, because
-	// nothing refused, there was simply no plan.
-	//
-	// I replaced this skip with a SEARCHED clock earlier today to fix a real
-	// failure inside the lunch band. That fixed the band and broke every hour
-	// outside it. The band needs a skip, not a different clock:
-	if kernel.InLunchNoTrade(now) {
-		ls, le := kernel.LunchWindowCT()
-		t.Skipf("inside the lunch no-trade window (%s–%s CT) — the arm path refuses by design, which is not the behaviour this test measures", ls, le)
-	}
-	//
-	// OWED, and the real fix: a clock seam through the plan provider, so a test
-	// can drive the arm path at a moment of its choosing. That belongs to whoever
-	// owns the planner. Until then this test runs when the wall clock permits and
-	// says plainly when it cannot.
 	cfg.DayPlan.SessionsEnabled = []string{sess.Name}
 	trueV := true
 	cfg.DayPlan.Sessions = []store.DayPlanSessionOverride{{Session: sess.Name, Enable: &trueV}}
@@ -145,7 +151,7 @@ func TestSplitArmWritesTwoLedgerRows(t *testing.T) {
 	if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: pid, TradeDate: td, Session: sess.Name, StrategyID: at.id, Lifecycle: "active", Doc: splitSweepDoc(), CreatedAt: now.Add(-30 * time.Minute)}); err != nil {
 		t.Fatal(err)
 	}
-	installActivePlanProvider(at, st)
+	installActivePlanProviderAt(at, st, func() time.Time { return now })
 
 	// A bar tape where the leg-2 confirm (1x5m_close below 29494.75) is ALREADY
 	// MET so both legs arm. The tape ends in the PAST (all buckets closed).
@@ -168,10 +174,9 @@ func TestSplitArmWritesTwoLedgerRows(t *testing.T) {
 	}
 	t.Cleanup(func() { market.FuturesBarsProvider = prevProvider })
 
-	// THE SAME CLOCK, PASSED EXPLICITLY. `now` is time.Now() — this test must use
-	// the wall clock because the plan provider does — but it goes through the seam
-	// rather than around it, so the fixture and the arm path are provably reading
-	// one clock instead of two that happen to agree.
+	// THE SAME CLOCK, PASSED EXPLICITLY. The provider above and this call read the
+	// one injected `now`, so the fixture and the arm path are provably reading one
+	// clock instead of two that happen to agree.
 	at.maybeManageArmedOrdersAt(nil, now)
 
 	rows, err := st.ArmedOrders().ListNonTerminal(at.id)
@@ -355,4 +360,26 @@ func TestSplitArmSessionEndCancelsBothLegs(t *testing.T) {
 	if err != nil || len(rows) != 0 {
 		t.Fatalf("dormant must cancel BOTH split legs (rows=%d err=%v)", len(rows), err)
 	}
+}
+
+// splitArmFixedClock is the clock TestSplitArmWritesTwoLedgerRows runs at: a
+// searched armable moment around a FIXED base (Tuesday 2026-08-18 10:30 CT —
+// inside NY, after its first-5m band, before lunch), never the wall clock.
+// SPLIT_ARM_TEST_CLOCK_CT (RFC 3339) overrides the base so the band can be
+// faked on demand — set it to 02:02 CT of a weekday to watch the arm path
+// refuse with the LONDON first-5m line; that is the RED this wave was built
+// against, reproducible at any hour instead of five minutes a day.
+func splitArmFixedClock(t *testing.T, at *AutoTrader) time.Time {
+	t.Helper()
+	base := time.Date(2026, 8, 18, 10, 30, 0, 0, chicagoLoc())
+	if v := os.Getenv("SPLIT_ARM_TEST_CLOCK_CT"); v != "" {
+		parsed, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			t.Fatalf("SPLIT_ARM_TEST_CLOCK_CT=%q is not RFC 3339: %v", v, err)
+		}
+		// The override is EXACT, not searched: its whole purpose is to land
+		// inside a band on purpose.
+		return parsed.In(chicagoLoc())
+	}
+	return armTestClockFrom(t, at, base)
 }

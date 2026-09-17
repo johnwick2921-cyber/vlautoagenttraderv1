@@ -16,7 +16,7 @@ import (
 func TestClass34RejectBlockNamesOnlyLiveConditions(t *testing.T) {
 	err := fmt.Errorf("S3 breakdown_continue: a close came back across 29517.00 — the breakdown is void; %s", kernel.BreakdownReclaimedHint)
 	live := kernel.ResolvedLiveConditions(nil, nil, "")
-	block := plannerRejectBlock(err, live)
+	block := plannerRejectBlock(err, live, "")
 
 	// 1. the verbatim reject reason survives (retry-append contract).
 	if !strings.Contains(block, "breakdown is void") {

@@ -18,7 +18,8 @@ func TestResearchStartupRelativePathReportsWorkingSchema(t *testing.T) {
 	for _, path := range []string{"data/data.db.research.db", "data/space ?#%/archive.db"} {
 		t.Run(path, func(t *testing.T) {
 			Install(nil)
-			closeRecorder := Start(path, nil)
+			t.Setenv("RESEARCH_SNAPSHOT", "1")
+			closeRecorder := Start(path, nil, nil)
 			defer closeRecorder()
 			now := time.Date(2026, 9, 8, 23, 30, 0, 0, time.UTC)
 			line := CurrentBootLineAt(now)
@@ -105,14 +106,21 @@ func TestResearchFailedStartupStillWarnsAndReportsUnknown(t *testing.T) {
 		t.Fatal(err)
 	}
 	var warnings []string
-	closeRecorder := Start(filepath.Join("blocked", "archive.db"), func(line string) { warnings = append(warnings, line) })
+	t.Setenv("RESEARCH_SNAPSHOT", "1")
+	closeRecorder := Start(filepath.Join("blocked", "archive.db"), func(line string) { warnings = append(warnings, line) }, nil)
 	defer closeRecorder()
 	now := time.Date(2026, 9, 8, 23, 30, 0, 0, time.UTC)
 	line := CurrentBootLineAt(now)
-	if Active() != nil || !strings.Contains(line, "schema=UNKNOWN") {
-		t.Fatalf("failed startup must not fabricate working schema: %s", line)
+	if Active() != nil || !strings.Contains(line, "research snapshot: OFF (archive unavailable)") {
+		t.Fatalf("failed startup must report OFF honestly: %s", line)
 	}
-	if len(warnings) != 1 || !strings.Contains(warnings[0], "WARN research snapshot archive unavailable") {
-		t.Fatalf("failed startup must warn: %v", warnings)
+	warnCount := 0
+	for _, w := range warnings {
+		if strings.Contains(w, "WARN research snapshot archive unavailable") {
+			warnCount++
+		}
+	}
+	if warnCount != 1 {
+		t.Fatalf("failed startup must warn exactly once: %v", warnings)
 	}
 }

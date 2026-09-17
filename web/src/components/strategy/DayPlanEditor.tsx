@@ -33,6 +33,8 @@ const DEFAULT_DAY_PLAN: DayPlanConfig = {
   proximity_filter_atr: 1.5,
   max_levels: 8,
   scenario_cap: 3,
+  htf_seats: 2,
+  htf_score_multiplier: 1.2,
   acceptance_rule: '5m_close',
   replan_cap: 2,
   sessions_enabled: ['NY'],
@@ -517,6 +519,49 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               max={5}
               onChange={(v) => update('scenario_cap', v)}
               disabled={bodyDisabled}
+            />
+          </FieldRow>
+          <FieldRow label={tp('htfSeats', language)}>
+            <NumberField
+              value={cfg.htf_seats ?? 2}
+              min={0}
+              max={6}
+              onChange={(v) => update('htf_seats', v)}
+              disabled={bodyDisabled}
+            />
+          </FieldRow>
+          <FieldRow label={tp('htfScoreMultiplier', language)}>
+            <NumberField
+              value={cfg.htf_score_multiplier ?? 1.2}
+              min={1.0}
+              max={1.5}
+              step={0.1}
+              onChange={(v) => update('htf_score_multiplier', v)}
+              disabled={bodyDisabled}
+            />
+          </FieldRow>
+          <FieldRow label={tp('structureMap', language)}>
+            <Toggle
+              on={cfg.structure_map === true}
+              onChange={(v) => update('structure_map', v)}
+              disabled={bodyDisabled}
+              testId="structure-map-toggle"
+            />
+          </FieldRow>
+          <FieldRow label={tp('freshByTf', language)}>
+            <Toggle
+              on={cfg.levels_fresh_by_tf === true}
+              onChange={(v) => update('levels_fresh_by_tf', v)}
+              disabled={bodyDisabled}
+              testId="fresh-by-tf-toggle"
+            />
+          </FieldRow>
+          <FieldRow label={tp('flipReread', language)}>
+            <Toggle
+              on={cfg.flip_reread === true}
+              onChange={(v) => update('flip_reread', v)}
+              disabled={bodyDisabled}
+              testId="flip-reread-toggle"
             />
           </FieldRow>
           <FieldRow label={tp('maxReplans', language)}>

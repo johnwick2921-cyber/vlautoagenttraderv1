@@ -23,8 +23,8 @@ describe('knob spec completeness', () => {
     s.blocks.flatMap((b) => (b.kind === 'knobs' ? b.knobs : []))
   )
 
-  it('has exactly 47 knob cards (Section 7 census = live-page control count; W7 +6 weekly knobs, min-side card removed 2026-08-31, +2 planner-speed 2026-08-31, +1 planner stream total deadline class 37 2026-09-01, +1 planner stream retry tries+backoff class 41 2026-09-02, +1 fast-mode shadow A/B root-fix 2026-09-02, +1 stop floor + structure anchor 0B 2026-09-02), +1 wake cadence class 47 2026-09-02, −2 weekly knobs retired class 50 (WEEKLY_INVALIDATION_TF_DEFAULT, WEEKLY_COUNTER_MODE — refs-only weekly has no invalidation and no counter), +2 one-setup knobs (switch + min grade) dispatch 102 2026-09-11', () => {
-    expect(allKnobs).toHaveLength(47)
+  it('has exactly 52 knob cards (Section 7 census = live-page control count; W7 +6 weekly knobs, min-side card removed 2026-08-31, +2 planner-speed 2026-08-31, +1 planner stream total deadline class 37 2026-09-01, +1 planner stream retry tries+backoff class 41 2026-09-02, +1 fast-mode shadow A/B root-fix 2026-09-02, +1 stop floor + structure anchor 0B 2026-09-02), +1 wake cadence class 47 2026-09-02, −2 weekly knobs retired class 50 (WEEKLY_INVALIDATION_TF_DEFAULT, WEEKLY_COUNTER_MODE — refs-only weekly has no invalidation and no counter), +2 one-setup knobs (switch + min grade) dispatch 102 2026-09-11, +1 structure table (S1, day_plan.structure_map, default OFF) 2026-09-16, +1 by-TF freshness knob (S2, day_plan.levels_fresh_by_tf, default OFF) 2026-09-16, +2 HTF seating knobs (S3: day_plan.htf_seats, day_plan.htf_score_multiplier, both default unchanged) 2026-09-16, +1 flip re-read knob (W-FLIP-REREAD: day_plan.flip_reread, default OFF) 2026-09-17', () => {
+    expect(allKnobs).toHaveLength(52)
   })
 
   it('every knob card fills all ten mandatory fields', () => {

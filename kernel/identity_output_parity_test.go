@@ -21,7 +21,7 @@ func TestIdentityLegacyOutputParity(t *testing.T) {
 		p := 20000 + 60*math.Sin(float64(i)/13) + 20*math.Cos(float64(i)/71)
 		bars[i] = market.Kline{OpenTime: s.UnixMilli(), CloseTime: s.Add(time.Minute).UnixMilli() - 1, Open: p - 1, High: p + 3, Low: p - 3, Close: p + 1, Volume: float64(100 + i%31)}
 	}
-	seated, pool, price, datr, raw := AssembleResearchLevels("identity-parity", bars, DefaultSessionRegistry(), "MNQ", 12, now, 2, "")
+	seated, pool, price, datr, raw := AssembleResearchLevels("identity-parity", bars, DefaultSessionRegistry(), "MNQ", 12, nil, HTFScoreMultiplier, now, 2, "")
 	rendered := RenderMapBlock(BuildMapCandidates(seated, price, 20, MapCandidateOpts{}), price)
 	data, err := json.MarshalIndent(struct {
 		Raw          []DetectedLevel

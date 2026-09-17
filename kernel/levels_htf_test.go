@@ -160,53 +160,6 @@ func TestZoneReversalBonus(t *testing.T) {
 	}
 }
 
-// TestSeatHTFPromotesSwingLevels covers G6: up to 2 HTF swing/zone levels win
-// seats over weaker non-priority entries so the model's top-N table sees them.
-func TestSeatHTFPromotesSwingLevels(t *testing.T) {
-	scored := make([]ScoredLevel, 0, 10)
-	for i := 0; i < 8; i++ { // weak round numbers fill the head
-		scored = append(scored, ScoredLevel{
-			DetectedLevel: DetectedLevel{Kind: KindRound, Price: 990 + float64(i), Label: "RN"},
-			Score:         0.4, Grade: "C", Fresh: "fresh", Distance: 990 + float64(i) - 1000,
-		})
-	}
-	for i := 0; i < 2; i++ { // HTF swings lost the cut
-		scored = append(scored, ScoredLevel{
-			DetectedLevel: DetectedLevel{Kind: KindEQH, Price: 1100 + float64(i), Label: "EQH·1h", HTF: true},
-			Score:         0.84, Grade: "B", Fresh: "fresh", Distance: 100 + float64(i),
-		})
-	}
-	out := seatHTF(scored, 8)
-	head, tail := out[:8], out[8:]
-	htfInHead := 0
-	for _, l := range head {
-		if isHTFSwingZone(l) {
-			htfInHead++
-		}
-	}
-	if htfInHead != 2 {
-		t.Fatalf("seatHTF promoted %d HTF levels (want 2); head: %+v", htfInHead, head)
-	}
-	if len(tail) != 2 || isHTFSwingZone(tail[0]) || isHTFSwingZone(tail[1]) {
-		t.Fatalf("demoted entries must be the weak non-HTF ones: %+v", tail)
-	}
-	// today-priority entries must never be demoted
-	pri := []ScoredLevel{
-		{DetectedLevel: DetectedLevel{Kind: KindPDH, Price: 1200, Label: "PDH", HTF: true}, Score: 1.4, Grade: "A", Fresh: "fresh", Distance: 200},
-	}
-	all := append(pri, scored...)
-	out2 := seatHTF(all, 8)
-	priSeated := false
-	for _, l := range out2[:8] {
-		if l.Kind == KindPDH {
-			priSeated = true
-		}
-	}
-	if !priSeated {
-		t.Fatal("seatHTF demoted a today-priority level")
-	}
-}
-
 // TestSeat1HZonePromotesInBandSD covers the 1h wave (2026-08-25): when the
 // head holds no 1h S/D zone but the tail has one, the strongest tail candidate
 // wins a seat by demoting the weakest non-priority, non-HTF head entry.

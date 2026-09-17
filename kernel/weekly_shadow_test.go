@@ -54,7 +54,7 @@ func TestWeeklyShadowZeroRealEffect(t *testing.T) {
 	bars := weeklyFixtureBars(t)
 	reg := DefaultSessionRegistry()
 	now := time.Date(2026, 8, 27, 13, 0, 0, 0, CTLocation())
-	first, _, _ := AssembleScoredLevelsMinGrade("", bars, reg, "MNQ", 8, now, 1.5, "")
+	first, _, _ := AssembleScoredLevelsMinGrade("", bars, reg, "MNQ", 8, nil, HTFScoreMultiplier, now, 1.5, "")
 	// Run the ENTIRE shadow pass on copies of the seated list.
 	shadowLevels := make([]WeeklyShadowLevel, len(first))
 	for i, l := range first {
@@ -62,7 +62,7 @@ func TestWeeklyShadowZeroRealEffect(t *testing.T) {
 	}
 	_, _ = WeeklyShadowReorder(shadowLevels, []float64{9999.0}, 0.25, 40.0, 1.5)
 	_, _ = WeeklyShadowReorder(shadowLevels, nil, 0.25, 40.0, 1.5)
-	second, _, _ := AssembleScoredLevelsMinGrade("", bars, reg, "MNQ", 8, now, 1.5, "")
+	second, _, _ := AssembleScoredLevelsMinGrade("", bars, reg, "MNQ", 8, nil, HTFScoreMultiplier, now, 1.5, "")
 	if !reflect.DeepEqual(first, second) {
 		t.Fatalf("proving line: THE LAW — real seating byte-identical with shadow code present: %v vs %v", first, second)
 	}

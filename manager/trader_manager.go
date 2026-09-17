@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"nofx/config"
+	"nofx/kernel"
 	"nofx/logger"
 	"nofx/store"
 	"nofx/trader"
@@ -590,6 +591,16 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 			return fmt.Errorf("failed to parse strategy config for trader %s: %w", traderCfg.Name, err)
 		}
 		logger.Infof("✓ Trader %s loaded strategy config: %s", traderCfg.Name, strategy.Name)
+		// S3 (2026-09-16) — the resolved HTF knobs, with their sources.
+		logger.Infof("%s", trader.HtfKnobsBootLine(strategyConfig.DayPlan))
+		// W-FLIP-REREAD (2026-09-17) — the resolved flip knob, with its source.
+		logger.Infof("%s", trader.FlipRereadBootLine(strategyConfig.DayPlan))
+		// D102-1 (2026-09-16): the exit posture, READ from the strategy
+		// toggles the mechanics honour — the main boot line prints n/a
+		// for these fields; this line prints the real values, prefixed with the
+		// TRADER NAME (never an account) so it cannot be mistaken for the
+		// main-boot 🛑 line when two traders run.
+		logger.Infof("🛑 [%s] %s", traderCfg.Name, trader.ExitPolicyBootLineForStrategy(kernel.MinSLATRMult(), strategyConfig.RiskControl))
 	} else {
 		return fmt.Errorf("trader %s has no strategy configured", traderCfg.Name)
 	}

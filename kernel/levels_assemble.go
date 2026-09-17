@@ -29,7 +29,7 @@ func BuildKeyLevelsBlock(traderID string, bars []market.Kline, reg SessionRegist
 // planner table (one-sided tables and sub-min rows reached the executor before
 // this).
 func BuildKeyLevelsBlockOpts(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, seat1HZone bool, minGrade string, extraLevels ...DetectedLevel) string {
-	scored, price, _ := AssembleScoredLevelsMinGrade(traderID, bars, reg, symbol, maxLevels, now, proximityK, minGrade, extraLevels...)
+	scored, price, _ := AssembleScoredLevelsMinGrade(traderID, bars, reg, symbol, maxLevels, nil, HTFScoreMultiplier, now, proximityK, minGrade, extraLevels...)
 	if price <= 0 {
 		return ""
 	}
@@ -142,7 +142,7 @@ func AssembleScoredLevels(traderID string, bars []market.Kline, reg SessionRegis
 	// W11b — persisted level-state (freshness A→B→C, consumed) now surfaces: the
 	// trader installs LevelStateProvider over store.LevelStateStore. Nil provider →
 	// all-fresh (byte-identical to the pre-W11b output the goldens capture).
-	scored = ScoreLevels(all, price, dATR, levelFreshnessFn(traderID, symbol), maxLevels, proximityK)
+	scored = ScoreLevels(all, price, dATR, levelFreshnessFn(traderID, symbol, now), maxLevels, proximityK)
 	return scored, price, dATR
 }
 
@@ -152,7 +152,7 @@ func AssembleScoredLevels(traderID string, bars []market.Kline, reg SessionRegis
 // candidate — seatBothSides re-balances AFTER the filter, so the minGrade cut
 // can never leave the executor/planner table one-sided when candidates exist.
 // Empty minGrade → byte-identical to AssembleScoredLevels.
-func AssembleScoredLevelsMinGrade(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, minGrade string, extraLevels ...DetectedLevel) (scored []ScoredLevel, price, dATR float64) {
+func AssembleScoredLevelsMinGrade(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, htfSeats *int, htfMult float64, now time.Time, proximityK float64, minGrade string, extraLevels ...DetectedLevel) (scored []ScoredLevel, price, dATR float64) {
 	cb := closedBars(bars, now)
 	if len(cb) == 0 {
 		return nil, 0, 0
@@ -192,7 +192,7 @@ func AssembleScoredLevelsMinGrade(traderID string, bars []market.Kline, reg Sess
 	CaptureIdentityContext(all, symbol, AISVPBarInterval)
 	all = dedupeSameKind(all)
 
-	scored, _ = ScoreLevelsMinGradeFull(all, price, dATR, levelFreshnessFn(traderID, symbol), maxLevels, proximityK, minGrade)
+	scored, _ = ScoreLevelsMinGradeFullSeats(all, price, dATR, levelFreshnessFn(traderID, symbol, now), maxLevels, proximityK, minGrade, htfSeats, htfMult)
 	return scored, price, dATR
 }
 
@@ -202,14 +202,14 @@ func AssembleScoredLevelsMinGrade(traderID string, bars []market.Kline, reg Sess
 // machine-grade stamp map, so a level the model copies from the prompt that
 // LOST the seat race (a far nPOC, a carried swing) still gets stamped — the
 // stamp-gap regression fix (256/795 rows unstamped).
-func AssembleScoredLevelsFullMinGrade(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, minGrade string, extraLevels ...DetectedLevel) (seated, pool []ScoredLevel, price, dATR float64) {
-	seated, pool, price, dATR, _ = AssembleResearchLevels(traderID, bars, reg, symbol, maxLevels, now, proximityK, minGrade, extraLevels...)
+func AssembleScoredLevelsFullMinGrade(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, htfSeats *int, htfMult float64, now time.Time, proximityK float64, minGrade string, extraLevels ...DetectedLevel) (seated, pool []ScoredLevel, price, dATR float64) {
+	seated, pool, price, dATR, _ = AssembleResearchLevels(traderID, bars, reg, symbol, maxLevels, htfSeats, htfMult, now, proximityK, minGrade, extraLevels...)
 	return
 }
 
 // AssembleResearchLevels returns the pre-deduplication universe as evidence;
 // the trading outputs use the same detection, scoring and seating path.
-func AssembleResearchLevels(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, now time.Time, proximityK float64, minGrade string, extraLevels ...DetectedLevel) (seated, pool []ScoredLevel, price, dATR float64, raw []DetectedLevel) {
+func AssembleResearchLevels(traderID string, bars []market.Kline, reg SessionRegistry, symbol string, maxLevels int, htfSeats *int, htfMult float64, now time.Time, proximityK float64, minGrade string, extraLevels ...DetectedLevel) (seated, pool []ScoredLevel, price, dATR float64, raw []DetectedLevel) {
 	cb := closedBars(bars, now)
 	if len(cb) == 0 {
 		return nil, nil, 0, 0, nil
@@ -249,7 +249,7 @@ func AssembleResearchLevels(traderID string, bars []market.Kline, reg SessionReg
 	raw = researchLevels(all)
 	all = dedupeSameKind(raw)
 
-	seated, pool = ScoreLevelsMinGradeFull(all, price, dATR, levelFreshnessFn(traderID, symbol), maxLevels, proximityK, minGrade)
+	seated, pool = ScoreLevelsMinGradeFullSeats(all, price, dATR, levelFreshnessFn(traderID, symbol, now), maxLevels, proximityK, minGrade, htfSeats, htfMult)
 	return seated, pool, price, dATR, raw
 }
 
@@ -339,6 +339,13 @@ func DetectHTFLevelsReport(fetch func(tf string, count int) []market.Kline, time
 func DetectHTFLevels(fetch func(tf string, count int) []market.Kline, timeframes []string, symbol string, now time.Time) []DetectedLevel {
 	levels, _ := detectHTFLevels(fetch, timeframes, symbol, now)
 	return levels
+}
+
+// DetectHTFLevelsExport is detectHTFLevels exported for read-only replay
+// harnesses (S2/S4 measurement gate, 2026-09-16): the same detector the live
+// path calls, over caller-supplied bars. No production path uses this entry.
+func DetectHTFLevelsExport(fetch func(tf string, count int) []market.Kline, timeframes []string, symbol string, now time.Time) ([]DetectedLevel, *HTFDetectionReport) {
+	return detectHTFLevels(fetch, timeframes, symbol, now)
 }
 
 func detectHTFLevels(fetch func(tf string, count int) []market.Kline, timeframes []string, symbol string, now time.Time) ([]DetectedLevel, *HTFDetectionReport) {
@@ -440,7 +447,7 @@ func TFBootLine(defaultSet []string, detectors int) string {
 		"🗺 tf: detection-set=[%s] · detectors=%d (%s) · detectors×tfs=%d · "+
 			"planner tfs=per-trader (planner_timeframes; D→1d) · "+
 			"levels=n/a (by tf: n/a) · cross-tf merged=n/a · "+
-			"htf-weight=%.1f[I] · daily/weekly tier=4h[I]",
+			"htf-weight=%.1f(const, no strategy loaded) · daily/weekly tier=4h[I]",
 		strings.Join(defaultSet, ","), detectors, strings.Join(HTFDetectorNames(), ","),
 		detectors*len(defaultSet), HTFScoreMultiplier)
 }
@@ -449,7 +456,7 @@ func TFBootLine(defaultSet []string, detectors int) string {
 // detection pass actually produced. Skipped timeframes are printed with their
 // REASON, so "1w found nothing" and "1w was never read" stay distinguishable on
 // the one line an operator looks at.
-func TFReadLine(rep *HTFDetectionReport) string {
+func TFReadLine(rep *HTFDetectionReport, htfMult float64) string {
 	if rep == nil {
 		return "🗺 tf: no detection report"
 	}
@@ -477,8 +484,8 @@ func TFReadLine(rep *HTFDetectionReport) string {
 	if len(byTF) > 0 {
 		list = strings.Join(byTF, " ")
 	}
-	return fmt.Sprintf("🗺 tf read: levels=%d (by tf: %s) · skipped=%s · htf-weight=%.1f[I]",
-		total, list, skip, HTFScoreMultiplier)
+	return fmt.Sprintf("🗺 tf read: levels=%d (by tf: %s) · skipped=%s · htf-weight=%.1f",
+		total, list, skip, htfMult)
 }
 
 // htfDetectors is the per-timeframe detector set, as a table rather than four

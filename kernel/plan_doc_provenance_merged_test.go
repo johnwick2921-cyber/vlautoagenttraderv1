@@ -19,7 +19,7 @@ import (
 func TestProvenanceAcceptsMergedLabelWithMatchingPrimary(t *testing.T) {
 	machine := map[float64]string{29275.25: "RTH-H", 29038.00: "PDL", 29297.75: "Supply·1h"}
 	doc := &PlanDoc{Levels: []PlanLevel{
-		{Price: 29275.25, Label: "RTH-H · EQL·4h · EQH·15m"},          // the live rejection, NY 09-11 attempt 1
+		{Price: 29275.25, Label: "RTH-H · EQL·4h · EQH·15m"},           // the live rejection, NY 09-11 attempt 1
 		{Price: 29038.00, Label: "PDL · SWG-L·15m · EQL·1h · EQL·15m"}, // the live rejection, second level
 	}}
 	if mis := MislabeledStructuralLevels(doc, machine); len(mis) != 0 {
@@ -31,7 +31,7 @@ func TestProvenanceStillRejectsWrongPrimary(t *testing.T) {
 	machine := map[float64]string{29275.25: "RTH-H", 29297.75: "Supply·1h"}
 	doc := &PlanDoc{Levels: []PlanLevel{
 		{Price: 29275.25, Label: "EQH·15m · RTH-H"}, // the structural anchor demoted behind another — wrong primary
-		{Price: 29297.75, Label: "PDH"},              // LONDON v1's phantom: a structural label over a zone row
+		{Price: 29297.75, Label: "PDH"},             // LONDON v1's phantom: a structural label over a zone row
 	}}
 	mis := MislabeledStructuralLevels(doc, machine)
 	if len(mis) != 2 {

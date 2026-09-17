@@ -200,6 +200,43 @@ func TestFlipToDirection(t *testing.T) {
 	}
 }
 
+// W-FLIP-REREAD BLOCKER 1 (2026-09-17): the structure_flip prior line echoes
+// the OLD bias before the arrow ("PRIOR PLAN v3 bias long — … → bias is now
+// expected short … flip-condition: … → bias short"). The substring parser
+// found "bias long" first and made the write site demand the STALE bias, so
+// a correct short plan was rejected 3× and a wrong long one accepted. Only
+// the word after the LAST arrow is the flip's destination.
+func TestFlipToDirectionReadsOnlyTheLastArrow(t *testing.T) {
+	longToShort := "PRIOR PLAN v3 bias long — its flip condition fired → bias is now expected short unless the tape says otherwise; the prior plan is dormant. flip-condition: 2x5m close below 29418.80 (2× 5m closes) → bias short"
+	if got := FlipToDirection(longToShort); got != "short" {
+		t.Fatalf("long→short prior line → %q, want short (the old-bias echo must not win)", got)
+	}
+	shortToLong := "PRIOR PLAN v13 bias short — its flip condition fired → bias is now expected long unless the tape says otherwise; the prior plan is dormant. flip-condition: 2x5m close above 29418.80 (2× 5m closes) → bias long"
+	if got := FlipToDirection(shortToLong); got != "long" {
+		t.Fatalf("short→long prior line → %q, want long", got)
+	}
+	// Old bias named, no arrow anywhere: nothing is mandated.
+	if got := FlipToDirection("PRIOR PLAN v2 bias long died: all levels consumed"); got != "" {
+		t.Fatalf("no arrow → %q, want empty", got)
+	}
+	if got := FlipToDirection("bias short bias long"); got != "" {
+		t.Fatalf("bare bias words without an arrow → %q, want empty", got)
+	}
+	// ASCII arrow is accepted too.
+	if got := FlipToDirection("flip-condition: 15m close below 29200.00 -> bias short"); got != "short" {
+		t.Fatalf("ascii arrow → %q, want short", got)
+	}
+	// Empty flip_to renders "→ bias the other side" (plan_lifecycle.go): no
+	// direction is parsable, so no direction is mandated.
+	if got := FlipToDirection("flip-condition: 2x5m close above 100.00 → bias the other side"); got != "" {
+		t.Fatalf("'the other side' → %q, want empty", got)
+	}
+	// Trailing punctuation after the word does not break the parse.
+	if got := FlipToDirection("flip-condition: 2x5m close above 100.00 → bias long."); got != "long" {
+		t.Fatalf("trailing period → %q, want long", got)
+	}
+}
+
 // P0.4-H (2026-08-25): a plan level at a machine-table price must carry the
 // table's structural label — the LONDON v1 "PDH 29297.75" phantom.
 func TestMislabeledStructuralLevels(t *testing.T) {

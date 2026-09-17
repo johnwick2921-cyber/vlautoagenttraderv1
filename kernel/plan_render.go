@@ -210,7 +210,7 @@ func RenderPlanStatusMinGrade(traderID, symbol string, doc PlanDoc, bars []marke
 	if hidden := len(doc.Levels) - len(active); hidden > 0 {
 		fmt.Fprintf(&b, "(%d level(s) outside the %.1f×dATR activation window — re-arm when price returns)\n", hidden, ActivationWindowK)
 	}
-	fresh := levelFreshnessFn(traderID, symbol) // W11b — persisted cross-session state (nil → none)
+	fresh := levelFreshnessFn(traderID, symbol, time.UnixMilli(now)) // W11b — persisted cross-session state (nil → none)
 	for _, l := range active {
 		dir := DirAbove
 		if l.Price < price {

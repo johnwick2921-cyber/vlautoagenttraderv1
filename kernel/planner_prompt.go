@@ -38,6 +38,9 @@ type PlannerInput struct {
 	Regime           RegimeBlock
 	Levels           []ScoredLevel // Go-ranked, graded (P1.5) — the decision-critical block
 	StructureSummary []string      // one line per timeframe
+	// Structure (S1, 2026-09-16) — the STRUCTURE table; nil = knob off =
+	// nothing rendered (byte-identical prompt).
+	Structure *StructureMap
 	// G2.2 (2026-08-24) — nearest in-band HTF zones (S/D/FVG/OB), graded, for a
 	// dedicated prompt section. They exist in the data but lose the top-8 seat
 	// race to structural levels (cluster collapse + seat priority), so the model
@@ -488,6 +491,10 @@ func BuildPlannerPrompt(in PlannerInput) string {
 		b.WriteString(in.IndicatorsBlock + "\n\n")
 	}
 
+	// S1 (2026-09-16) — the STRUCTURE table, knob-gated (nil → nothing):
+	// direction only, before the entry table it must never be confused with.
+	b.WriteString(RenderStructureSection(in.Structure))
+
 	// Ranked level table — the decision-critical block, high-salience.
 	// CLASS 45 E2/E3 — feed forward what the validator/composer already know:
 	// which breakdown levels are VOID, and the stop floor the executor enforces.
@@ -755,8 +762,9 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
 		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d, MUST include ≥3 below AND ≥3 above the current price`, maxL) + "\n" +
 		fmt.Sprintf(`  "scenarios": [{"id": "S1", "level_id": "<candidate id from map, or null when map id is NULL>", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B|C", "chain_after": "<S# of the sweep_reclaim this fvg_entry follows, or omit>", "confirm": {"rule": "touch|1x5m_close|2x5m_close|1m_mss|time_hold", "ref_price": <n>, "side": "above|below"}, "confirm2": {"rule": "<leg 2 rule>", "ref_price": <n>, "side": "above|below"} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), "fvg": {"fvg_lo": <n>, "fvg_hi": <n>, "entry_mode": "edge|ce", "displacement_atr": <n>, "origin_level": "<label>", "direction": "long|short"}, "breakdown": {"level": <n>, "level_label": "<label>", "entry_mode": "pullback|immediate"} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \"none — no break\" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), "arm": {"enabled": true, "entry": <n>, "stop": <n>, "target": <n>, "wait_confirm": true, "legs": [{"entry": <n>, "stop": <n>, "target": <n>, "size": 1, "wait_confirm": false, "rule": "<rule>"}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..%d — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition=="fvg_entry" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on %s (sweep_reclaim arms only via wait_confirm; %s NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules`, maxS, ArmableConditionsPipe(), NonArmableConditionsPipe()) + "\n" +
-		NoTradeSchemaExample() + "\n" +
-		`  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
+		NoTradeSchemaExample() + "\n" + // S3 (2026-09-16) — the relation contract: always rendered (the
+		// class-38 guard asserts the fragment), conditionally relevant.
+		"RELATION FIELDS (S3): relation_d and relation_4h are VALIDATOR-STAMPED from the structure table (with-trend | counter-trend | range) — the validator stamps relation_d / relation_4h itself, the model never writes them. Your own claim may go in relation_claimed and is kept but never trusted. A counter-trend scenario is FLAGGED, never blocked. " + `  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
 		`  "death": {"price": <level>, "side": "below|above", "rule": "2x5m|5m_close"},` + "\n" +
 		`  "flip": {"price": <level>, "side": "below|above", "rule": "2x5m|5m_close", "flip_to": "long|short"},  // NOTE: death/flip rules use their OWN vocabulary (2x5m | 5m_close) — NEVER the confirm enum; do not move a token between the two` + "\n" +
 		`  "day_type": "trend|balance|<optional>"` + "\n" +
@@ -775,6 +783,8 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 		"A1: your reasoning MUST open by naming the bias-tree branch you took (e.g. \"bias-tree: inside-day long LOW\"), then argue from it. " +
 		"A2: an fvg_entry SHOULD chain after a sweep_reclaim (chain_after: S#) — bare gaps at non-A/B origins get a WARN at write, not a reject. " + "A2b (machine grounding, 2026-08-27): author an fvg_entry scenario ONLY from the ## FRESH FVGs list above — copy its direction and lo–hi EXACTLY. If the list is empty, do NOT author any fvg_entry (invented/stale gaps are REJECTED at write). " + "A2c (FVG demand, 2026-08-28): when ## FRESH FVGs is NON-empty and at least one candidate's direction agrees with your bias, you SHOULD author an fvg_entry from that candidate; if you decide not to, state the reason in ONE line in your reasoning (e.g. 'no fvg_entry: nearest fresh gap is 30pt away — outside my reach'). " + "death.flip objects are MACHINE-EVALUATED — choose levels from your level list and a rule; they must match the prose lines. " +
 		"The flip and death MUST be DIFFERENT events: never the same level AND same rule for both (a flip at the same tick death fires is void). A short-biased plan's flip sits BELOW its death line or uses a stricter rule, so the flip can actually fire. " +
+		// W-FLIP-DIRECTION (2026-09-17): the SIDE is judged now, not only the number.
+		"flip side must oppose the bias: short bias flips long on a close ABOVE; long bias flips short on a close BELOW (a short bias with flip.side below is REJECTED — it could never flip on a rally). " +
 		"Every scenario's confirm{} is MACHINE-EVALUATED the same way: rule + ref_price + side, and ref_price MUST equal a number written in that scenario's trigger/invalid prose. " +
 		// ENTRY-MECHANICS E1/E2 (2026-08-30) — the per-condition entry law.
 		// 15m confirms are DEAD (schema reject confirm_rule_15m_removed).

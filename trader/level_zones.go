@@ -15,6 +15,6 @@ func (at *AutoTrader) logLevelZonesBootAt(now time.Time) {
 			strategy = row.StrategyID
 		}
 	}
-	cap, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
+	cap, _, _, _, _ := resolveSessionPlanCfg(at.dayPlanCfg(), at.activeSessionName(now))
 	at.logInfof("%s · trader=%s bound-strategy=%s · session cap re-resolved each read; no backfill", kernel.ZoneBootLine(kernel.ResolveZoneOptions(cap)), at.id, strategy)
 }

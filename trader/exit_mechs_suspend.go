@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"nofx/kernel"
+	"nofx/store"
 	"os"
 	"strings"
 	"sync"
@@ -74,13 +75,32 @@ func (at *AutoTrader) exitMechSuspendedRefuse(mech, detail string) bool {
 func ResetExitMechSuspendNoticeForTest() { suspendedOnce = sync.Map{} }
 
 // ExitPolicyBootLine (D8) states the whole exit posture in one boot line.
-func ExitPolicyBootLine(minSLMult, anchorMaxATR float64, contractCap int, reArmAfterSweep bool) string {
-	be, trail := "off", "off"
+//
+// D102-1 (2026-09-16): the line now reads the SAME sources the exit mechanics
+// honour, and names each source. BE/trail come from the per-strategy toggles
+// (breakeven_enabled / trailing_enabled — the values the mechanics actually
+// gate on); the seam comes from env EXIT_MECHS_SUSPENDED. Before this wave the
+// line read only the env seam: with the seam open it printed "BE=on · trail=on"
+// unconditionally, even when both strategy toggles were OFF (the class-NN
+// literal — boot lines are READ, never literal).
+func ExitPolicyBootLine(minSLMult, anchorMaxATR float64, contractCap int, reArmAfterSweep bool, be, trail *bool) string {
+	beStr := triState(be)
+	trailStr := triState(trail)
+	seamStr := "SUSPENDED"
 	if !exitMechsSuspended() {
-		be, trail = "on", "on"
+		seamStr = "ACTIVE"
 	}
-	return fmt.Sprintf("exits: stop=max(anchor+clr, %.1f×ATR5m) · anchor_max=%.1f×ATR5m · BE=%s · trail=%s · size=%d · re-arm-after-sweep=%s (0B)",
-		minSLMult, anchorMaxATR, be, trail, contractCap, onOff(reArmAfterSweep))
+	return fmt.Sprintf("exits: stop=max(anchor+clr, %.1f×ATR5m) · anchor_max=%.1f×ATR5m · BE=%s(strategy) · trail=%s(strategy) · seam=%s(env) · size=%d · re-arm-after-sweep=%s (0B)",
+		minSLMult, anchorMaxATR, beStr, trailStr, seamStr, contractCap, onOff(reArmAfterSweep))
+}
+
+// triState renders a strategy toggle as on/off, or n/a when the strategy is not
+// loaded yet (a boot value the process has NOT read — never a literal).
+func triState(v *bool) string {
+	if v == nil {
+		return "n/a"
+	}
+	return onOff(*v)
 }
 
 func onOff(b bool) string {
@@ -91,9 +111,18 @@ func onOff(b bool) string {
 }
 
 // ExitPolicyBootLineLive resolves every value from its resolver (A11) — never a
-// file default — and renders the boot line.
+// file default — and renders the boot line. Called from main.go BEFORE traders
+// load their strategies, so the strategy-source fields print n/a honestly.
 func ExitPolicyBootLineLive(minSLMult float64) string {
-	return ExitPolicyBootLine(minSLMult, armStopAnchorMaxATR(), stageAContractCapForBoot(), true)
+	return ExitPolicyBootLine(minSLMult, armStopAnchorMaxATR(), stageAContractCapForBoot(), true, nil, nil)
+}
+
+// ExitPolicyBootLineForStrategy renders the same line where the strategy IS
+// loaded, reading the exact RiskControlConfig the mechanics gate on.
+func ExitPolicyBootLineForStrategy(minSLMult float64, rc store.RiskControlConfig) string {
+	be := hlBool(rc.BreakevenEnabled, false)
+	trail := hlBool(rc.TrailingEnabled, false)
+	return ExitPolicyBootLine(minSLMult, armStopAnchorMaxATR(), stageAContractCapForBoot(), true, &be, &trail)
 }
 
 // stageAContractCapForBoot is the resolved Stage-A ceiling for the boot line.

@@ -33,6 +33,48 @@ describe('DayPlanEditor', () => {
     )
   })
 
+  it('W-KNOB-UI: renders the structure-map and by-TF freshness toggles', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    const sm = screen.getByTestId('structure-map-toggle')
+    const ft = screen.getByTestId('fresh-by-tf-toggle')
+    const fr = screen.getByTestId('flip-reread-toggle')
+    expect(sm.getAttribute('aria-checked')).toBe('false')
+    expect(ft.getAttribute('aria-checked')).toBe('false')
+    expect(fr.getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('W-KNOB-UI: toggling calls update with the right key', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    fireEvent.click(screen.getByTestId('structure-map-toggle'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ structure_map: true })
+    )
+    onChange.mockClear()
+    fireEvent.click(screen.getByTestId('fresh-by-tf-toggle'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ levels_fresh_by_tf: true })
+    )
+    onChange.mockClear()
+    fireEvent.click(screen.getByTestId('flip-reread-toggle'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ flip_reread: true })
+    )
+  })
+
   it('a per-session tri-state knob sets then inherits (clears) the field', () => {
     const onChange = vi.fn()
     const cfg: DayPlanConfig = { plan_enabled: true }

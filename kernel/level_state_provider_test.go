@@ -3,6 +3,7 @@ package kernel
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"nofx/market"
 )
@@ -19,13 +20,13 @@ func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 
 	// baseline: no provider → both fresh, both seated.
 	LevelStateProvider = nil
-	base := ScoreLevels(levels, 30000, 100, levelFreshnessFn("t1", "MNQ"), 8, 1.5)
+	base := ScoreLevels(levels, 30000, 100, levelFreshnessFn("t1", "MNQ", time.Now()), 8, 1.5)
 	if len(base) != 2 {
 		t.Fatalf("no provider → both levels fresh+seated, got %d", len(base))
 	}
 
 	// provider: PDH burned (done), PDL decayed (B).
-	LevelStateProvider = func(traderID, symbol string, l DetectedLevel) string {
+	LevelStateProvider = func(traderID, symbol string, l DetectedLevel, _ time.Time) string {
 		switch l.Label {
 		case "PDH":
 			return "done"
@@ -34,7 +35,7 @@ func TestW11bScoreLevelsSurfacesPersistedState(t *testing.T) {
 		}
 		return ""
 	}
-	got := ScoreLevels(levels, 30000, 100, levelFreshnessFn("t1", "MNQ"), 8, 1.5)
+	got := ScoreLevels(levels, 30000, 100, levelFreshnessFn("t1", "MNQ", time.Now()), 8, 1.5)
 	if len(got) != 2 {
 		t.Fatalf("P1c: a consumed level role-flips and STAYS → 2 levels, got %d", len(got))
 	}
@@ -70,7 +71,7 @@ func TestW11bPlanStatusAnnotation(t *testing.T) {
 	}
 
 	// provider → burned/decayed annotations on the matching level lines.
-	LevelStateProvider = func(traderID, symbol string, l DetectedLevel) string {
+	LevelStateProvider = func(traderID, symbol string, l DetectedLevel, _ time.Time) string {
 		if l.Label == "PDH" {
 			return "done"
 		}
