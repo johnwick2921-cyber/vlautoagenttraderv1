@@ -1,15 +1,19 @@
 package kernel
 
-import "testing"
+import (
+	"testing"
+
+	"nofx/store"
+)
 
 // W3 — T1 red-news HARD blackout windows.
 func TestT1BlackoutWindows(t *testing.T) {
 	evs := []PlannerCalendarEvent{
-		{TimeCT: "13:00", Title: "FOMC Rate Decision", Impact: "T1"},
-		{TimeCT: "09:30", Title: "Fed Chair Speaks", Impact: "T2"}, // T2 → not a hard block
-		{TimeCT: "bad", Title: "malformed", Impact: "T1"},          // skipped
+		{TimeCT: "13:00", Currency: "USD", Title: "FOMC Rate Decision", Impact: "T1"},
+		{TimeCT: "09:30", Title: "Fed Chair Speaks", Impact: "T2"},         // T2 → not a hard block
+		{TimeCT: "bad", Currency: "USD", Title: "malformed", Impact: "T1"}, // skipped
 	}
-	w := T1BlackoutWindows(evs)
+	w := T1BlackoutWindows(evs, store.DefaultT1Currencies())
 	if len(w) != 1 {
 		t.Fatalf("only the timed T1 event should make a window, got %d", len(w))
 	}
@@ -29,14 +33,14 @@ func TestT1BlackoutWindows(t *testing.T) {
 		t.Fatal("12:40 must be OUTSIDE the blackout")
 	}
 
-	lines := T1NoTradeLines(evs)
+	lines := T1NoTradeLines(evs, store.DefaultT1Currencies())
 	if len(lines) != 1 || !contains(lines[0], "FOMC") || !contains(lines[0], "HARD no-trade") {
 		t.Fatalf("no-trade line wrong: %v", lines)
 	}
 }
 
 func TestT1BlackoutEmpty(t *testing.T) {
-	if w := T1BlackoutWindows(nil); len(w) != 0 {
+	if w := T1BlackoutWindows(nil, store.DefaultT1Currencies()); len(w) != 0 {
 		t.Fatal("no events → no windows")
 	}
 	if _, blocked := InT1Blackout(600, nil); blocked {

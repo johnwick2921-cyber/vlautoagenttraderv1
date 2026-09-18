@@ -38,23 +38,6 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No.',
   },
   {
-    label: 'Structure table (S1)',
-    where:
-      'Strategy → Day Plan → structure_map (editor toggle: Structure map; default OFF)',
-    what: "A SECOND table the planner reads, above the entry table: D / 4h / 1h direction from the last three labelled swings (HH/HL → up, LH/LL → down, mixed → range), the last swing high/low, the last impulse and where price sits in it (pd 0..1), plus each timeframe's top 4–6 zones with their labels INTACT. Bias only — never an entry; entries still come only from the ranked 12-seat table. Stamped on the plan doc as `structure` when computed; absent otherwise.",
-    trader:
-      "OFF by default (unset reads OFF — every S1 knob does; nothing changes the live plan until the S4 measurement). ON adds a '## STRUCTURE — bias only, not entries' section before the level table; OFF leaves the prompt byte-identical (the existing goldens prove it). The validator is untouched (that is S3).",
-    consumer:
-      'store/resolve_source.go ResolveStructureMap · trader/structure_map_wire.go structureMapForRead · kernel/structure_map.go ComputeStructureMap / RenderStructureSection',
-    range: 'true / false',
-    systemDefault: 'OFF (nil)',
-    recommended:
-      "OFF until DS-R's S4 measures what the structure section changes in the plans; then the owner's call.",
-    whenToTouch:
-      "Only for the measured comparison. Boot line '🗺 structure: off|on(D/4h/1h)|n/a' names the knob; each read logs '🗺 structure @<session>: D=… 4h=… 1h=… zones=<n> pd4h=<0.xx>'.",
-    perSession: 'No.',
-  },
-  {
     label: 'One setup — minimum grade',
     where: 'Strategy → Day Plan → one_setup_min_grade',
     what: 'The lowest merged-candidate grade the best level near price may carry (A+ | A | B | C). The best level is chosen grade-first, distance-second among candidates inside the reachability band; a scenario on a lower-graded level than the best is declined level_not_best.',
@@ -120,43 +103,13 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No.',
   },
   {
-    label: 'HTF score multiplier (S3)',
-    where: 'Strategy → Day Plan → HTF score multiplier 1.0–1.5',
-    what: 'The weight applied to a higher-timeframe level\u2019s score. Q-C measured that 1.2 promotes a group that holds LESS.',
-    trader:
-      'UNSET = 1.2 (today\u2019s const, byte-identical scores). SAVED 1.0 = no HTF premium. The boot line reads the resolved value with its source.',
-    consumer:
-      'kernel/levels_score.go scoreLevelsPool (htfMult) · ResolveHtfScoreMultiplier',
-    range: '1.0 – 1.5 · unset = 1.2',
-    systemDefault: '1.2 (unset)',
-    recommended:
-      '⭐ hold at 1.2 until the S4 final; the owner may set 1.0 after.',
-    whenToTouch: 'After S4 final, if the HTF premium is measured as a cost.',
-    perSession: 'No.',
-  },
-  {
-    label: 'Max scenarios',
-    where: 'Strategy → Day Plan → Max scenarios 1–5',
-    what: 'Cap on S# rows the planner may write.',
-    trader:
-      '3 = focused plays; 5 = kitchen sink, but every S# still needs a condition + invalid line.',
-    consumer:
-      'trader/auto_trader_planconfig.go:162 (scenarioCap) · kernel/planner_prompt.go:66 (resolved caps)',
-    range: '1 – 5',
-    systemDefault: '5 (owner, live)',
-    recommended:
-      '⭐ 5 — the live scenario cap; 3 stays a fine default elsewhere.',
-    whenToTouch: 'Raise if a fast market needs more play variants.',
-    perSession: 'Yes.',
-  },
-  {
     label: 'Max re-plans',
     where: 'Strategy → Day Plan → Max re-plans 0–4',
     what: "Re-read budget per session — a RECORDED counter (class 35): only death re-plans and owner re-reads (↻) spend it. Level-event / MSS wake reads (fast-market included), dormant flips + re-arms, the session's scheduled read, owner reset and fail-closed markers are FREE and never count. Budget exhausted = NO-TRADE terminal marker (⛔).",
     trader:
       'The v6-after-cap-4 confusion: the last chip IS the no-trade marker, not a real plan. And a chain can legitimately be v6 with the FULL budget left (2026-09-01 LONDON: six rows, zero spends) — the card\'s "re-reads left" is the recorded number, not version−1.',
     consumer:
-      'store/strategy.go (ReplanCap · GetReplanBudget/SpendReplan) · trader/auto_trader_planner.go (deathReplanAllowed → runDeathReplan) · trader/auto_trader_reread.go (owner re-read gate)',
+      "store/strategy.go (ReplanCap · GetReplanBudget/SpendReplan) · trader/auto_trader_planner.go (deathReplanAllowed → runDeathReplan) · trader/auto_trader_reread.go (owner re-read gate). The re-ALIGN budget (owner level edits → ⟳ Re-align plan) is folded beside this since W-KNOB-PRUNE: constant 5 per plan unless the strategy stores realign_cap (the owner's stores 10), no control.",
     range: '0 – 4 per session',
     systemDefault: '2 (owner)',
     recommended: '⭐ 2 — one re-read after an early death, then sit out.',
@@ -164,19 +117,6 @@ const dayPlan: KnobSpec[] = [
       "Raise for violent trend days where one death shouldn't end the session.",
     perSession:
       'Yes — session override wins; inherit (blank) = the strategy-level value (ReplanCapFor).',
-  },
-  {
-    label: 'Acceptance window',
-    where: 'Strategy → Day Plan → Acceptance rule',
-    what: 'The confirm clock for acceptance-type plays.',
-    trader: '5m_close = tight confirm; 15m = patient.',
-    consumer: 'trader/auto_trader_planconfig.go:168 (acceptanceFor)',
-    range: '5m_close | 15m',
-    systemDefault: '5m_close',
-    recommended: '⭐ 5m_close — current config.',
-    whenToTouch: 'If acceptance plays keep getting cut by the confirm clock.',
-    perSession:
-      'Yes — session override wins; inherit (blank) = the strategy-level value.',
   },
   {
     label: 'Require approval',
@@ -190,31 +130,6 @@ const dayPlan: KnobSpec[] = [
     recommended: '⭐ OFF — SIM phase; ON is the rehearsal for live.',
     whenToTouch:
       'Turn ON to practice the live approval muscle before going live.',
-    perSession: 'Yes.',
-  },
-  {
-    label: 'Evening digest',
-    where: 'Strategy → Day Plan → toggle',
-    what: "A session-close summary of the day's plan, fills and gate-blocks.",
-    trader: 'The daily post-mortem in chat form.',
-    consumer: 'trader/auto_trader_planconfig.go:13 (evening_digest)',
-    range: 'ON | OFF',
-    systemDefault: 'OFF',
-    recommended: '⭐ ON if you want the 14:45 wrap-up in the chat.',
-    whenToTouch: 'Whenever you want more or less noise.',
-    perSession: 'No — strategy-level.',
-  },
-  {
-    label: 'Re-align cap',
-    where: 'Strategy → Day Plan → Re-align cap 0–10',
-    what: 'Budget of planner re-alignments per session after owner level edits.',
-    trader: 'Each Apply merge costs one; decline costs nothing.',
-    consumer:
-      'api/handler_plan.go:1906 (realign endpoint) · store/strategy.go (RealignCap)',
-    range: '0 – 10',
-    systemDefault: '5 (owner)',
-    recommended: '⭐ 5 — enough for a hands-on day.',
-    whenToTouch: 'If you edit levels often, keep it ≥3.',
     perSession: 'Yes.',
   },
   {
@@ -314,34 +229,6 @@ const dayPlan: KnobSpec[] = [
       'Yes — session override wins; inherit (blank) = the strategy-level row above.',
   },
   {
-    label: '1h anchor seat',
-    where: 'Strategy → Day Plan → toggle',
-    what: 'Seat 1h/4h anchor levels in the card (the HTF context rows).',
-    trader: 'ON = the plan sees the bigger map; the 1h/4h floors (B) apply.',
-    consumer: 'trader/auto_trader_dayplan.go:53 (seat_1h_zone)',
-    range: 'ON | OFF',
-    systemDefault: 'ON (owner)',
-    recommended: '⭐ ON — the HTF floors only exist when seated.',
-    whenToTouch: 'Turn OFF only for pure 5m/15m scalping studies.',
-    perSession: 'Yes.',
-  },
-  {
-    label: 'HTF freshness by own timeframe',
-    where: 'Strategy → Day Plan → toggle (levels_fresh_by_tf)',
-    what: 'OFF = an HTF level decays on the 1m-touch ladder (one 1m bar into the zone marks it tested). ON = an HTF level (1h…1w) grades its freshness on ITS OWN timeframe bars only — a 4h zone is tested by a 4h bar trading into it, not by 1m noise. Grades: fresh / tested-1 / tested-2 / stale by test count.',
-    trader:
-      'OFF = today\u2019s scoring byte-identical. ON = HTF levels keep their seats longer; the scoring ladders (freshMult/zoneFreshMult) are unchanged.',
-    consumer:
-      'trader/auto_trader_dayplan.go (installLevelStateProvider → kernel.LevelFreshnessByTF)',
-    range: 'ON | OFF',
-    systemDefault: 'OFF',
-    recommended:
-      '⏳ OFF until the S4 measurement gate (round 23 structure gate) reports whether by-TF grading helps.',
-    whenToTouch:
-      'Only after S4 ships its report; the owner flips it in Studio.',
-    perSession: 'No.',
-  },
-  {
     label:
       'Flip re-read (W-FLIP-REREAD, immediate since W-FLIP-REREAD-IMMEDIATE)',
     where: 'Strategy → Day Plan → flip_reread toggle',
@@ -359,31 +246,38 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No.',
   },
   {
-    label: 'Wake triggers (5 toggles)',
-    where: 'Strategy → Day Plan → Wake triggers',
-    what: 'The five event classes that wake the planner mid-session: fresh S/D zones, HTF events, 15m events, invalidation, level-touch waves (the W6 wake wave).',
+    label: 'Red-news hard-block currencies (W-T1-CURRENCIES)',
+    where: 'Strategy → Day Plan → t1_currencies text field (comma-separated)',
+    what: "Which currencies' T1 (red) calendar events open the HARD ±15m no-trade window. Default USD: only USD red events hard-block; a red event in any other currency (a BOJ rate decision, a BoE vote) is shown as an advisory line — on the plan card, in the plan's no_trade list and in the planner prompt — and blocks nothing. Set ALL to restore the old behaviour where every red event in the session's currency filter hard-blocked. Case-insensitive; blanks are ignored; a red event with NO currency still hard-blocks (fail closed) and is named once a day in the log.",
     trader:
-      'More ON = the plan reacts to structure as it forms; wakes are advisory refreshes that can never dark a session.',
+      'Born 2026-09-17 evening: the BOJ rate decision (JPY, 21:54 CT) put the MNQ bot into a hard blackout. You trade a US index; a JPY or GBP print is worth knowing about, not worth sitting out. The arm gate, the plan write (band + lines) and the fade facts all read ONE resolved set (store.DayPlanConfig.T1CurrenciesFor) so the card can never show a blackout the gate does not enforce. Boot line: "🔴 t1_blackout=USD(default)" / "USD,EUR(saved)" / "ALL(saved)".',
     consumer:
-      'trader/auto_trader_wake_levels.go:17 (wake wave) · maybeRunSessionReadsAt',
-    range: '5 × ON | OFF',
-    systemDefault: 'ON (the event-diff wave, 2026-08-25)',
-    recommended: '⭐ leave ON — deaths still re-plan; wakes only refine.',
+      'kernel/calendar_blackout.go SplitT1 · trader/auto_trader_calendar.go t1WindowsFor (arm gate) · trader/auto_trader_planner.go plannerT1Lines (plan write) · trader/fade_facts.go fadeFactsAt · kernel/planner_prompt.go Calendar section',
+    range:
+      'comma-separated ISO currency codes (USD, EUR, GBP, JPY, CNY) or ALL',
+    systemDefault: 'USD (absent/empty = USD)',
+    recommended:
+      '⭐ USD for an MNQ/ES/NQ trader — the CME index products react to US prints; leave the rest advisory.',
     whenToTouch:
-      'Disable a class only if it fires too often for a quiet session.',
-    perSession: 'Yes.',
+      'Add a currency only if you have watched its red prints move MNQ enough to want the machine to refuse entries around them; ALL only to reproduce the pre-2026-09-18 behaviour.',
+    perSession:
+      'No — one list for every session (the session currency filter still decides which events are shown at all).',
   },
   {
-    label: 'Min wake interval',
-    where: 'Strategy → Day Plan → Min wake interval',
-    what: 'The false-alarm/detection-delay knob between wake reads (minutes).',
-    trader: 'Lower = jumpier plan, higher = misses fast structure.',
-    consumer: 'trader/auto_trader_wake_levels.go:23 (wake_min_interval_min)',
-    range: '5 – 120 minutes',
-    systemDefault: '30',
-    recommended: '⭐ 30 — current config.',
-    whenToTouch: 'Lower for news-heavy days, raise for grind days.',
-    perSession: 'Yes.',
+    label: 'Wake on level events (1 switch)',
+    where:
+      'Strategy → Day Plan → Planner wake-ups → Wake on level events (wake_on_level_events)',
+    what: "The level-event wake that re-reads the planner mid-session (the W6 wake wave), now ONE switch (W-KNOB-PRUNE, 2026-09-18). ON = HTF 1h/4h S/D zones the plan never saw and invalidation of a level it DID seat wake the planner — the two classes Rounds 23/24 kept; the 15m reversal-zone/FVG and iFVG classes ride along at their shipped-ON default. HTF order blocks stay OFF unless a legacy stored wake_on_htf_ob=true exists (the owner's MNQ strategy — honoured and logged at load). Wakes are paced by the folded 30-minute interval and the class-47 cadence cutoffs.",
+    trader:
+      'ON = the plan reacts to structure as it forms; wakes are advisory refreshes that can never dark a session. OFF = only deaths, MSS and flips re-read. A strategy that stored the old five toggles is mapped by the engine: any of them ON → this switch ON; all five false → OFF.',
+    consumer:
+      'trader/auto_trader_wake_levels.go:103 (collectLevelWakeCandidates ← store.DayPlanConfig.WakeOnLevelEventsEnabled) · maybeRunSessionReadsAt',
+    range: 'ON | OFF',
+    systemDefault: 'ON (unset)',
+    recommended: '⭐ leave ON — deaths still re-plan; wakes only refine.',
+    whenToTouch:
+      'Turn OFF only for a deliberately quiet, read-once session study.',
+    perSession: 'No.',
   },
 ]
 
@@ -690,9 +584,9 @@ const sessions: KnobSpec[] = [
   {
     label: 'Session overrides (ASIA / LONDON / NY)',
     where: 'Strategy → Day Plan → Sessions accordion',
-    what: 'Per-session override rows: min grade, min scenario quality, max trades, plan mode, max re-plans, acceptance window. Min grade, quality, max trades and plan mode are tri-state: inherit (blank) = the strategy-level row; an explicit value wins. Stored values that EQUAL the strategy level are auto-migrated to inherit. (min side levels REMOVED — owner ruling 2026-08-31: the per-side count concept is deleted.)',
+    what: 'Per-session override rows: min grade, min scenario quality, max trades, plan mode, max re-plans (the acceptance-window override row was removed by W-KNOB-PRUNE 2026-09-18 — one rule exists; a stored override is read by nothing). Min grade, quality, max trades and plan mode are tri-state: inherit (blank) = the strategy-level row; an explicit value wins. Stored values that EQUAL the strategy level are auto-migrated to inherit. (min side levels REMOVED — owner ruling 2026-08-31: the per-side count concept is deleted.)',
     trader:
-      'The current rows: min_grade B · min_scenario_quality C · max_trades 7/10/10 (ASIA/LONDON/NY) · plan_mode strict ×3 · max re-plans 4 · acceptance 5m_close.',
+      'The current rows: min_grade B · min_scenario_quality C · max_trades 7/10/10 (ASIA/LONDON/NY) · plan_mode strict ×3 · max re-plans 4 (a stored acceptance 5m_close ×3 is inert).',
     consumer:
       'store/strategy.go:921-975 (per-session resolvers) · trader/auto_trader_planconfig.go:158-168',
     range:
@@ -737,9 +631,14 @@ export const settings: GuideSection = {
         [
           'candidate-unverified',
           'no known reader — pending verification',
-          'A field-level grep found no reader. That is not proof: a method-based reader would not appear in it. Since 2026-09-11 the method-level check is CODE (store/knob_method_readers_test.go): every candidate row is re-checked for accessor-method readers on every test run, and a row with one fails the build. The first run found seven — the six wake_on_* / wake_min_interval_min knobs and acceptance_rule — all live all along; they now show live with their call sites. The rows still listed here genuinely have no reader either way.',
+          'A field-level grep found no reader. That is not proof: a method-based reader would not appear in it. Since 2026-09-11 the method-level check is CODE (store/knob_method_readers_test.go): every candidate row is re-checked for accessor-method readers on every test run, and a row with one fails the build. The first run found seven — the six wake_on_* / wake_min_interval_min knobs and acceptance_rule — all live all along; they showed live with their call sites until W-KNOB-PRUNE (2026-09-18) collapsed the five wake toggles into wake_on_level_events and folded the interval and acceptance rule. The rows still listed here genuinely have no reader either way.',
         ],
         ['advisory', '—', 'Feeds prompt text only, never a gate.'],
+        [
+          'folded',
+          'folded — no control; stored value honoured (reason)',
+          'W-KNOB-PRUNE (owner ruling 2026-09-18): the Studio control is gone and the engine keeps the shipped default as a constant; the stored field stays readable, a saved non-default is honoured and logged once at trader load ("⚙ folded knob <name>=<value> honoured from stored config").',
+        ],
         [
           'suspended',
           '—',
@@ -772,6 +671,84 @@ export const settings: GuideSection = {
     },
     { kind: 'h', text: 'Day Plan knobs' },
     { kind: 'knobs', knobs: dayPlan },
+    { kind: 'h', text: 'Folded and removed knobs (W-KNOB-PRUNE, 2026-09-18)' },
+    {
+      kind: 'p',
+      text: 'Owner ruling 2026-09-18 on the Round 23/24 research verdicts: seven knobs removed, five folded, two dead fields deleted. A FOLDED knob has no Studio control; the engine uses the constant below unless the strategy already stores another value, which is honoured at read and logged once at trader load ("⚙ folded knob <name>=<value> honoured from stored config") — so no removal silently changed a value the owner had set. Every removal is pinned by a before/after golden at the shipped default (kernel/knob_prune_pin_test.go, trader/knob_prune_pin_test.go); the one deliberate behaviour change is the HTF weight.',
+    },
+    {
+      kind: 'table',
+      title: 'Fate of each knob',
+      head: ['Knob', 'Fate', 'Now', 'Why (evidence)'],
+      rows: [
+        [
+          'htf_score_multiplier',
+          'REMOVED',
+          'constant 1.0 (was 1.2)',
+          'Round 23 Q-C: 1.2 promoted a group that holds LESS. Changes seating — 33 of 64 stage-A fixtures change membership; the identity fixture keeps every seat and its order.',
+        ],
+        [
+          'seat_1h_zone',
+          'REMOVED',
+          '1h S/D seat guarantee unconditional (was ON, never stored)',
+          'Round 24: no zone kind/TF beats random; the switch was never off.',
+        ],
+        [
+          'levels_fresh_by_tf',
+          'FOLDED',
+          "OFF unless stored (owner's MNQ strategy stores ON)",
+          'S4c: freshness separates nothing; the stored ON is honoured until the owner clears it, then the grader is deleted.',
+        ],
+        [
+          'structure_map',
+          'FOLDED',
+          "OFF unless stored (owner's MNQ strategy stores ON)",
+          'Advisory text only; keep OFF until Round 25.',
+        ],
+        [
+          'wake_on_15m_zone · wake_on_htf_ob · wake_on_ifvg · wake_on_htf_zone · wake_on_seated_invalidation',
+          'COLLAPSED',
+          "one switch wake_on_level_events (ON); OBs only via a legacy stored wake_on_htf_ob=true (owner's MNQ strategy)",
+          'Rounds 23/24 kept HTF zones + seated invalidation; the rest ride along at their shipped default; any legacy ON → ON.',
+        ],
+        [
+          'wake_min_interval_min',
+          'FOLDED',
+          '30 unless stored',
+          'The value stays; the control goes.',
+        ],
+        [
+          'acceptance_rule',
+          'FOLDED',
+          'one rule, 1×5m close, always',
+          'The dropdown had one option since the 2026-08-30 entry-mechanics addendum.',
+        ],
+        [
+          'realign_cap',
+          'FOLDED',
+          '5 per plan unless stored (owner stores 10)',
+          'Overlaps the re-plan section; the ⟳ Re-align budget keeps working.',
+        ],
+        [
+          'evening_digest',
+          'FOLDED',
+          'OFF unless stored true (every live strategy stores true)',
+          'Owner verdict: constant off unless stored on.',
+        ],
+        [
+          'scenario_cap',
+          'FOLDED',
+          '3 unless stored (owner stores 5)',
+          'Owner verdict.',
+        ],
+        [
+          'last_entry_ct · eod_flat_ct',
+          'DELETED',
+          'field gone; old stored values ignored',
+          'Unreachable in the clock since the P2 session-scope redesign (2026-08-18); the per-session offsets are the live clock.',
+        ],
+      ],
+    },
     { kind: 'h', text: 'Risk Control knobs' },
     { kind: 'knobs', knobs: risk },
     { kind: 'h', text: 'Session map' },

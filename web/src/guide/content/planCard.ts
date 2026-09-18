@@ -10,7 +10,7 @@ export const planCard: GuideSection = {
     { kind: 'h', text: 'STRUCTURE panel — bias only, not entries' },
     {
       kind: 'p',
-      text: "Above the level table sits the STRUCTURE panel. It exists only when the plan doc carries a structure block (day_plan.structure_map ON) — when the block is absent the panel renders nothing, never placeholder rows. One row per timeframe (D, 4h, 1h): a trend arrow (up/down/range), the last swing high and low, the impulse range with premium/discount as a percentage of the way from the impulse low, and the scorer-ranked HTF zones, each carrying its timeframe badge and freshness label. The chart draws the same zones as bands at their raw contract prices with kind·tf labels — never back-adjusted across the roll — but only on request: by default the mini chart draws the seated levels alone (one labelled line each) and no zone bands; the 'Show zones (N)' checkbox under the mini chart draws the six HTF zones nearest to the last close, identical bands merged (a per-browser view preference, not a strategy knob). STRUCTURE is bias context only: nothing in this panel authorizes or refuses an entry.",
+      text: "Above the level table sits the STRUCTURE panel. It exists only when the plan doc carries a structure block (day_plan.structure_map stored ON — no Studio control since W-KNOB-PRUNE 2026-09-18; the owner's stored ON is honoured) — when the block is absent the panel renders nothing, never placeholder rows. One row per timeframe (D, 4h, 1h): a trend arrow (up/down/range), the last swing high and low, the impulse range with premium/discount as a percentage of the way from the impulse low, and the scorer-ranked HTF zones, each carrying its timeframe badge and freshness label. The chart draws the same zones as bands at their raw contract prices with kind·tf labels — never back-adjusted across the roll — but only on request: by default the mini chart draws the seated levels alone (one labelled line each) and no zone bands; the 'Show zones (N)' checkbox under the mini chart draws the six HTF zones nearest to the last close, identical bands merged (a per-browser view preference, not a strategy knob). STRUCTURE is bias context only: nothing in this panel authorizes or refuses an entry.",
     },
     { kind: 'h', text: 'Scenario level identity' },
     {
@@ -196,7 +196,8 @@ export const planCard: GuideSection = {
           api: 'POST /api/plan/realign (api/handler_plan.go:1906)',
           sideEffects:
             'Planner reviews your edit and proposes a merged plan change ("would become v{n}") — you Apply merge or Keep as-is.',
-          budget: 'Consumes the re-align budget (realign_cap, default 5)',
+          budget:
+            "Consumes the re-align budget (5 per plan, or the strategy's stored realign_cap — folded, no control)",
           undo: 'Keep as-is declines; applied merges are versions (tappable).',
           useWhen:
             'After an owner level edit you want the planner to re-anchor around.',

@@ -192,7 +192,15 @@ func dbRows5(st *store.Store, sym, tf string) []ntwire.Bar {
 	if st == nil || st.BarHistory() == nil {
 		return nil
 	}
-	rows, err := st.BarHistory().BarsBetween(sym, tf, 0, time.Now().UnixMilli())
+	// W-BARS-CONTRACT-KEY — ONE contract: on the contract key a roll minute
+	// holds two rows, and this series is keyed by T (intersectByT). The
+	// store's newest usable contract is the same shadow the chart uses; no
+	// contract → no series rather than a mixed one (A24).
+	contract, ok := st.BarHistory().LatestContract(sym)
+	if !ok {
+		return nil
+	}
+	rows, err := st.BarHistory().BarsBetweenOn(sym, tf, contract, 0, time.Now().UnixMilli())
 	if err != nil {
 		return nil
 	}

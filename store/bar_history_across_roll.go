@@ -63,12 +63,12 @@ func priorSourceRank(src string) int {
 // Why current is excluded: beforeMs is the current contract's first LIVE row,
 // and anything the current contract holds before that is an import (the
 // 09-07..09-14 12-26 file) at a time when the FRONT month was the prior
-// contract. The bars PK has no contract, so such an import can only sit in a
-// slot the prior series does not hold — a hole — and admitting it would draw
-// one bar of the next contract's price space in the middle of the prior
-// series (the fixture's first cut placed them on occupied slots, the PK
-// skipped them, and this reader was never asked the question; nofx-93,
-// 2026-09-16). A hole in the prior series stays a hole.
+// contract. Admitting it would draw one bar of the next contract's price
+// space in the middle of the prior series (nofx-93, 2026-09-16). A hole in
+// the prior series stays a hole. W-BARS-CONTRACT-KEY (2026-09-18): the key now
+// includes the contract, so such rows land at EVERY minute (no longer only in
+// holes); the exclusion of `current` here and the time split in
+// klinesAcrossRoll are what keep them off the prior series.
 func (s *BarHistoryStore) PriorContractBarsBefore(symbol, tf, current string, beforeMs int64, n int) ([]BarHistoryDB, error) {
 	if s == nil || s.db == nil || n <= 0 || beforeMs <= 0 {
 		return nil, nil

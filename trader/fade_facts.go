@@ -137,7 +137,7 @@ func (at *AutoTrader) fadeFactsAt(now time.Time, symbol string, price float64, s
 			var evs []calendar.Event
 			if json.Unmarshal([]byte(slice.EventsJSON), &evs) == nil {
 				f.CalendarHasSlice = true
-				windows := kernel.T1BlackoutWindows(sessionPlannerEvents(evs, sess.Name))
+				windows := kernel.T1BlackoutWindows(sessionPlannerEvents(evs, sess.Name), at.t1Currencies())
 				nowMin := nowCT.Hour()*60 + nowCT.Minute()
 				_, f.InT1Blackout = kernel.InT1Blackout(nowMin, windows)
 			}

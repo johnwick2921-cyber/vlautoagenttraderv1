@@ -80,15 +80,27 @@ func TestCollectWakeCandidatesKnobOff15m(t *testing.T) {
 	now := time.Date(2026, 8, 25, 10, 0, 0, 0, kernel.CTLocation())
 	row := &store.PlanDB{PlanID: "p1", Version: 1, CreatedAt: now.Add(-24 * time.Hour)}
 	off := false
-	cfg := &store.DayPlanConfig{WakeOn15mZone: &off}
 	fetch := func(tf string, count int) []market.Kline {
 		if tf == "15m" {
 			return zonePattern15m(now.UnixMilli())
 		}
 		return nil
 	}
+	// W-KNOB-PRUNE: the single switch off suppresses every class.
+	cfg := &store.DayPlanConfig{WakeOnLevelEvents: &off}
 	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now); len(cands) != 0 {
-		t.Fatalf("wake_on_15m_zone=false must suppress 15m candidates, got %+v", cands)
+		t.Fatalf("wake_on_level_events=false must suppress 15m candidates, got %+v", cands)
+	}
+	// Legacy mapping: a lone stored wake_on_15m_zone=false no longer suppresses
+	// (any legacy switch ON — nil reads ON — maps the single switch ON).
+	legacy := &store.DayPlanConfig{WakeOn15mZone: &off}
+	if cands := collectLevelWakeCandidates(legacy, fetch, "MNQ", row, now); len(cands) != 1 {
+		t.Fatalf("legacy lone wake_on_15m_zone=false maps to ON, want 1 candidate, got %+v", cands)
+	}
+	// Legacy mapping: all five false maps OFF.
+	allOff := &store.DayPlanConfig{WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off}
+	if cands := collectLevelWakeCandidates(allOff, fetch, "MNQ", row, now); len(cands) != 0 {
+		t.Fatalf("all five legacy switches false must map to OFF, got %+v", cands)
 	}
 }
 
@@ -207,12 +219,12 @@ func TestCollectWakeCandidatesSeatedInvalidation(t *testing.T) {
 		t.Fatalf("expected a seated-invalidation candidate, got %+v", cands)
 	}
 
-	// EQH must never invalidate (not a zone kind) — and with the knob off,
-	// nothing fires at all.
+	// EQH must never invalidate (not a zone kind) — and with the single switch
+	// off, nothing fires at all (W-KNOB-PRUNE).
 	off := false
-	cfg := &store.DayPlanConfig{WakeOnSeatedInvalidation: &off}
+	cfg := &store.DayPlanConfig{WakeOnLevelEvents: &off}
 	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now); len(cands) != 0 {
-		t.Fatalf("wake_on_seated_invalidation=false must suppress candidates, got %+v", cands)
+		t.Fatalf("wake_on_level_events=false must suppress candidates, got %+v", cands)
 	}
 }
 

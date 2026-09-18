@@ -937,28 +937,44 @@ type DayPlanConfig struct {
 	// never an entry) computed at each planner read, stamped on the doc and
 	// rendered as a prompt section. nil/false = OFF (the shipped default; a
 	// saved false and an unset knob read the same — OFF is the zero, honestly).
+	// W-KNOB-PRUNE (2026-09-18): FOLDED — the Studio control is gone (advisory
+	// text only, R25 pending); the stored value is still honoured at read and
+	// logged once at trader load (FoldedKnobLines).
 	StructureMap *bool `json:"structure_map,omitempty"`
 	// ProximityFilterATR: day-trade lock, 0.5–3.0 (default 1.5).
 	ProximityFilterATR float64 `json:"proximity_filter_atr,omitempty"`
 	// MaxLevels: level table cap, 3–12 (default 8).
 	MaxLevels int `json:"max_levels,omitempty"`
-	// ScenarioCap: scenarios cap, 1–5 (default 3).
+	// ScenarioCap: scenarios cap, 1–5. W-KNOB-PRUNE (2026-09-18): FOLDED —
+	// the constant DefaultScenarioCap (3) unless a stored value says otherwise;
+	// no Studio control. Stored values are honoured (the owner's MNQ strategy
+	// stores 5) and logged once at trader load.
 	ScenarioCap int `json:"scenario_cap,omitempty"`
 	// HtfSeats (S3, 2026-09-16): how many HTF swing/zone levels seatHTF may
 	// promote into the ENTRY table, 0–6. A POINTER because 0 is a legal value
 	// (no HTF seating at all); nil = the shipped default 2 (today's behaviour).
 	HtfSeats *int `json:"htf_seats,omitempty"`
-	// HtfScoreMultiplier (S3, 2026-09-16): the higher-timeframe weight applied
-	// to HTF levels, 1.0–1.5. nil = the const default 1.2 (today's behaviour);
-	// Q-C says 1.2 promotes a group that holds LESS — the owner may set 1.0
-	// after the S4 measurement is final.
-	HtfScoreMultiplier *float64 `json:"htf_score_multiplier,omitempty"`
+	// htf_score_multiplier REMOVED by W-KNOB-PRUNE (owner ruling 2026-09-18):
+	// the HTF weight is the constant kernel.HTFScoreMultiplier (1.0 — Q-C: 1.2
+	// promoted a group that holds LESS). Old stored JSON still loads
+	// (encoding/json ignores unknown fields); no strategy stored it.
 	// FlipReread (W-FLIP-REREAD, 2026-09-17): when a flip condition fires, the
 	// plan still goes DORMANT exactly as before, and ON adds ONE free planner
 	// re-read in the flipped direction (trigger structure_flip). OFF = today's
 	// behaviour byte-identical.
 	FlipReread bool `json:"flip_reread,omitempty"`
-	// AcceptanceRule: 2x5m (default) | 15m-close.
+	// T1Currencies (W-T1-CURRENCIES, 2026-09-18): the currencies whose T1
+	// (red) calendar events HARD-block entries (±T1BlackoutMinutes). Empty/nil
+	// = the shipped default ["USD"]. An explicit ["ALL"] (or ["*"]) restores
+	// the pre-wave behaviour: every T1 event hard-blocks. T1 events in any
+	// other currency stay VISIBLE as an advisory line (plan no_trade + card +
+	// prompt) and never gate. Born the night the BOJ rate decision (JPY)
+	// blacked out the MNQ bot.
+	T1Currencies []string `json:"t1_currencies,omitempty"`
+	// AcceptanceRule — W-KNOB-PRUNE (2026-09-18): FOLDED. There is exactly one
+	// rule (DefaultAcceptanceRule, 1×5m close); AcceptanceRuleFor returns it
+	// regardless of what is stored (the old resolver already mapped every other
+	// vocabulary onto it). Field kept so old JSON round-trips; no Studio control.
 	AcceptanceRule string `json:"acceptance_rule,omitempty"`
 	// ReplanCap: re-reads per session, 0–4 (default 2).
 	ReplanCap int `json:"replan_cap,omitempty"`
@@ -967,38 +983,57 @@ type DayPlanConfig struct {
 	SessionsEnabled []string `json:"sessions_enabled,omitempty"`
 	// ApprovalRequired: OFF (default) = fully automatic.
 	ApprovalRequired bool `json:"approval_required"`
-	// EveningDigest: 17:30 evening digest (default true).
-	EveningDigest bool `json:"evening_digest"`
-	// RealignCap (W13): max AUTO plan re-alignments per plan/session (default 5,
-	// 0 → default). Beyond it the card falls back to a manual "Re-align plan"
-	// button, so the owner keeps the capability without unbounded spend.
+	// EveningDigest — W-KNOB-PRUNE (2026-09-18): FOLDED. Constant OFF unless a
+	// stored true says otherwise (every live strategy stores true — honoured and
+	// logged once). No Studio control; DefaultDayPlanConfig no longer seeds it.
+	EveningDigest bool `json:"evening_digest,omitempty"`
+	// RealignCap (W13): max AUTO plan re-alignments per plan/session.
+	// W-KNOB-PRUNE (2026-09-18): FOLDED into the re-plan section — the constant
+	// DefaultRealignCap (5) unless a stored value says otherwise (the owner's
+	// MNQ strategy stores 10 — honoured, logged once). No Studio control.
 	RealignCap int `json:"realign_cap,omitempty"`
-	// LastEntryCT (P2.3) blocks NEW entries after this America/Chicago time
-	// (default 13:00 CT = 14:00 ET). Empty → the default.
-	LastEntryCT string `json:"last_entry_ct,omitempty"`
-	// EODFlatCT (P2.3) force-flattens open positions at this America/Chicago time
-	// (default 14:45 CT = 15:45 ET); a registered half-day early-close pulls it in.
-	EODFlatCT string `json:"eod_flat_ct,omitempty"`
+	// last_entry_ct / eod_flat_ct DELETED by W-KNOB-PRUNE (2026-09-18): both
+	// were unreachable since the P2 session-scope redesign (2026-08-18) — the
+	// live clock resolves per session via last_entry_offset_min /
+	// eod_flat_offset_min below. Old stored JSON still loads (unknown fields
+	// are ignored); nothing read them (grep in the wave report).
 	// Sessions holds minimal per-session overrides; absent/nil fields inherit
 	// from the strategy-level values above (⚪ inherit / 🔸 override).
 	Sessions []DayPlanSessionOverride `json:"sessions,omitempty"`
-	// ── W6 wake wave (2026-08-25) — event-diff planner wake-ups. All knobs, no
-	// hardcode. Pointer bools are ON by default (an explicit false disables);
-	// WakeOnHTFOB is a plain bool (OFF by default). WakeMinIntervalMin ≤ 0 → 10.
-	WakeOn15mZone            *bool `json:"wake_on_15m_zone,omitempty"`            // 15m reversal S/D zones + 15m FVG formations
-	WakeOnHTFZone            *bool `json:"wake_on_htf_zone,omitempty"`            // 1h/4h S/D zones (any pattern)
-	WakeOnHTFOB              bool  `json:"wake_on_htf_ob,omitempty"`              // 1h/4h order blocks (OFF default)
-	WakeOnSeatedInvalidation *bool `json:"wake_on_seated_invalidation,omitempty"` // seated zone-kind level closed beyond noise band
-	WakeOnIFVG               *bool `json:"wake_on_ifvg,omitempty"`                // filled→inverted FVGs, any tier
-	WakeMinIntervalMin       int   `json:"wake_min_interval_min,omitempty"`       // minutes between ANY planner wakes (default 10)
-	// Seat1HZone (1h wave, 2026-08-25) — reserve one of the two HTF seats for
-	// an in-band 1h S/D zone when one exists (pointer-bool, DEFAULT ON).
-	Seat1HZone *bool `json:"seat_1h_zone,omitempty"`
-	// LevelsFreshByTF (S2, 2026-09-16, structure-first planner) — HTF levels
-	// grade their freshness on their OWN timeframe bars instead of the 1m-touch
-	// ladder. Default false = today's grading byte-identical. Only the freshness
-	// STRING for HTF levels is routed through the new grader; freshMult /
-	// zoneFreshMult tables are unchanged.
+	// ── W6 wake wave (2026-08-25) — event-diff planner wake-ups.
+	// W-KNOB-PRUNE (2026-09-18): the five per-class switches collapsed into ONE
+	// switch, WakeOnLevelEvents (pointer-bool, nil = ON), plus the interval. ON
+	// means the level-event wake runs — HTF S/D zones and seated-level
+	// invalidation are what it is for (R23/R24); the 15m zone/FVG and iFVG
+	// classes ride along at their shipped-ON default, and the HTF order-block
+	// class stays OFF unless a legacy stored wake_on_htf_ob=true says otherwise
+	// (the owner's MNQ strategy — honoured, logged once).
+	WakeOnLevelEvents *bool `json:"wake_on_level_events,omitempty"`
+	// LEGACY (read for the mapping only, never written by the Studio again):
+	// if the new switch is absent, ON when ANY of the five legacy switches was
+	// ON (nil pointers read ON, the plain bool reads its value) — so a strategy
+	// that never touched them stays ON, and only an all-five-false config maps
+	// to OFF. wake_on_htf_ob additionally keeps its own effect (OB class).
+	WakeOn15mZone            *bool `json:"wake_on_15m_zone,omitempty"`
+	WakeOnHTFZone            *bool `json:"wake_on_htf_zone,omitempty"`
+	WakeOnHTFOB              bool  `json:"wake_on_htf_ob,omitempty"`
+	WakeOnSeatedInvalidation *bool `json:"wake_on_seated_invalidation,omitempty"`
+	WakeOnIFVG               *bool `json:"wake_on_ifvg,omitempty"`
+	// WakeMinIntervalMin — FOLDED (W-KNOB-PRUNE): the constant
+	// DefaultWakeMinIntervalMin (30) unless a stored value says otherwise; no
+	// Studio control. ≤ 0 → the constant.
+	WakeMinIntervalMin int `json:"wake_min_interval_min,omitempty"`
+	// seat_1h_zone REMOVED by W-KNOB-PRUNE (owner ruling 2026-09-18, R24: no
+	// zone kind/TF beats random). The 1h S/D seat guarantee itself is unchanged
+	// and now unconditional (it was ON by default and no strategy stored it);
+	// only the switch is gone. Old JSON carrying the field still loads.
+	// LevelsFreshByTF (S2, 2026-09-16) — HTF levels grade their freshness on
+	// their OWN timeframe bars instead of the 1m-touch ladder. Default false =
+	// today's grading byte-identical. W-KNOB-PRUNE (2026-09-18): FOLDED — the
+	// verdict removes the knob (S4c: freshness separates nothing) but the
+	// owner's MNQ strategy stores true, so the code path stays, the stored
+	// value is honoured and logged once; the Studio control is gone. When the
+	// owner clears it, a follow-up deletes kernel/levels_fresh_by_tf.go.
 	LevelsFreshByTF bool `json:"levels_fresh_by_tf,omitempty"`
 	// MinScenarioQuality (R4, 2026-08-25) — the per-strategy scenario quality
 	// floor (A | B | C). Default C = no restriction (today's behavior,
@@ -1022,8 +1057,8 @@ type DayPlanSessionOverride struct {
 	Enable         *bool   `json:"enable,omitempty"`
 	ReplanCap      *int    `json:"replan_cap,omitempty"`
 	PlanMode       *string `json:"plan_mode,omitempty"`
-	AcceptanceRule *string `json:"acceptance_rule,omitempty"`
-	MinGrade       *string `json:"min_grade,omitempty"` // A | B | C
+	AcceptanceRule *string `json:"acceptance_rule,omitempty"` // FOLDED (W-KNOB-PRUNE): read by nothing, one rule exists
+	MinGrade       *string `json:"min_grade,omitempty"`       // A | B | C
 	MaxTrades      *int    `json:"max_trades,omitempty"`
 	// MinScenarioQuality (R4, 2026-08-25) — per-session scenario quality floor
 	// (A | B | C); nil inherits the strategy-level value.
@@ -1098,25 +1133,16 @@ const DefaultAcceptanceRule = "5m_close"
 // override → strategy-level → the shipped default. Before this existed, the
 // per-session override was persisted and rendered but read by NOTHING — every
 // consumer went straight to the strategy-level field.
+//
+// W-KNOB-PRUNE (2026-09-18): FOLDED. The ENTRY-MECHANICS addendum (2026-08-30)
+// had already mapped every stored vocabulary ("2x5m", "15m-close", …) onto the
+// one-close rule at read, so the dropdown offered one option. There is ONE
+// rule; this returns it for every config and every session. The stored fields
+// stay readable (old JSON round-trips) and the boot repair still rewrites
+// "2x5m" rows. A stored value that is not the rule is logged once
+// (FoldedKnobLines) — it never takes effect, and never did since 08-30.
 func (c *DayPlanConfig) AcceptanceRuleFor(session string) string {
-	rule := DefaultAcceptanceRule
-	if c != nil && strings.TrimSpace(c.AcceptanceRule) != "" {
-		rule = c.AcceptanceRule
-	}
-	if ov := c.SessionOverride(session); ov != nil && ov.AcceptanceRule != nil && strings.TrimSpace(*ov.AcceptanceRule) != "" {
-		rule = *ov.AcceptanceRule
-	}
-	rule = strings.TrimSpace(rule)
-	// ENTRY-MECHANICS ADDENDUM (2026-08-30) — self-healing resolver: a stored
-	// "2x5m"/"15m-close" string would steer the executor prompt + death/
-	// consumption evaluation toward the OLD vocabulary and contradict the new
-	// validator (reject loops). Map it to the one-close rule at read; the boot
-	// repair (RepairAcceptanceRuleMigration) rewrites the stored rows.
-	switch strings.ToLower(rule) {
-	case "2x5m", "2x_5m", "2x5m_close", "15m-close", "15m", "15m_close", "15mclose":
-		return "5m_close"
-	}
-	return rule
+	return DefaultAcceptanceRule
 }
 
 // RepairAcceptanceRuleMigration (ENTRY-MECHANICS ADDENDUM, 2026-08-30) —
@@ -1447,26 +1473,15 @@ func DefaultDayPlanConfig() *DayPlanConfig {
 		PlannerTimeframes:  []string{"D", "4h", "1h", "15m"},
 		ProximityFilterATR: 1.5,
 		MaxLevels:          8,
-		ScenarioCap:        3,
 		HtfSeats:           intPtr(2),
-		AcceptanceRule:     "2x5m",
 		ReplanCap:          2,
 		SessionsEnabled:    []string{"NY"},
 		ApprovalRequired:   false,
-		EveningDigest:      true,
-		RealignCap:         5,
-		LastEntryCT:        "13:00", // 14:00 ET
-		EODFlatCT:          "14:45", // 15:45 ET
-		// W6 (2026-08-25) — wake wave defaults: ON except HTF OBs; 10-min
-		// minimum spacing between planner wake-ups.
-		WakeOn15mZone:            wakeBoolPtr(true),
-		WakeOnHTFZone:            wakeBoolPtr(true),
-		WakeOnHTFOB:              false,
-		WakeOnSeatedInvalidation: wakeBoolPtr(true),
-		WakeOnIFVG:               wakeBoolPtr(true),
-		WakeMinIntervalMin:       30,
-		// 1h wave (2026-08-25) — seat guarantee DEFAULT ON.
-		Seat1HZone: wakeBoolPtr(true),
+		// W-KNOB-PRUNE (2026-09-18): the folded knobs (scenario_cap,
+		// acceptance_rule, evening_digest, realign_cap, wake_*,
+		// wake_min_interval_min) are NOT seeded — their constants apply unless a
+		// stored value exists; the deleted ones (last_entry_ct, eod_flat_ct,
+		// seat_1h_zone, htf_score_multiplier) no longer exist.
 		// R4 (2026-08-25) — scenario quality floor DEFAULT C (no restriction).
 		MinScenarioQuality: "C",
 	}
@@ -1482,43 +1497,43 @@ func intPtr(v int) *int { return &v }
 // churning the plan book.
 const DefaultWakeMinIntervalMin = 30
 
-// WakeOn15mZoneEnabled / WakeOnHTFZoneEnabled / WakeOnHTFOBEnabled /
-// WakeOnSeatedInvalidationEnabled / WakeOnIFVGEnabled / WakeMinIntervalMinutes
-// are the ONE resolution seam for the W6 wake knobs: nil config or unset
-// pointer → the shipped default (ON, except HTF OBs). Every consumer must go
-// through these so a knob can never silently flip between callers.
-func (c *DayPlanConfig) WakeOn15mZoneEnabled() bool {
-	if c == nil || c.WakeOn15mZone == nil {
+// legacyWakeOn reads one legacy pointer switch: nil = ON (its shipped default).
+func legacyWakeOn(p *bool) bool { return p == nil || *p }
+
+// hasLegacyWakeFields reports whether any of the five legacy wake switches is
+// present in the stored config (a pointer set, or the plain bool true).
+func (c *DayPlanConfig) hasLegacyWakeFields() bool {
+	return c != nil && (c.WakeOn15mZone != nil || c.WakeOnHTFZone != nil || c.WakeOnHTFOB ||
+		c.WakeOnSeatedInvalidation != nil || c.WakeOnIFVG != nil)
+}
+
+// WakeOnLevelEventsEnabled is the ONE resolution seam for the level-event wake
+// (W-KNOB-PRUNE, 2026-09-18). nil config or unset switch → ON (the shipped
+// default of every legacy class that mattered). When the new switch is absent
+// the five legacy switches decide: ON if ANY of them was ON — a nil legacy
+// pointer reads ON — so the only stored shape that maps to OFF is all five
+// explicitly false. Every consumer must go through this.
+func (c *DayPlanConfig) WakeOnLevelEventsEnabled() bool {
+	if c == nil {
 		return true
 	}
-	return *c.WakeOn15mZone
-}
-
-func (c *DayPlanConfig) WakeOnHTFZoneEnabled() bool {
-	if c == nil || c.WakeOnHTFZone == nil {
-		return true
+	if c.WakeOnLevelEvents != nil {
+		return *c.WakeOnLevelEvents
 	}
-	return *c.WakeOnHTFZone
+	return legacyWakeOn(c.WakeOn15mZone) || legacyWakeOn(c.WakeOnHTFZone) || c.WakeOnHTFOB ||
+		legacyWakeOn(c.WakeOnSeatedInvalidation) || legacyWakeOn(c.WakeOnIFVG)
 }
 
-func (c *DayPlanConfig) WakeOnHTFOBEnabled() bool {
-	return c != nil && c.WakeOnHTFOB
+// WakeOnHTFOrderBlocks reports whether the HTF order-block wake class runs. It
+// was OFF by default and the knob is removed; the class runs only when a
+// legacy stored wake_on_htf_ob=true exists AND the level-event wake is ON —
+// the shipped default (OFF) is byte-identical, the owner's stored true is
+// honoured.
+func (c *DayPlanConfig) WakeOnHTFOrderBlocks() bool {
+	return c != nil && c.WakeOnHTFOB && c.WakeOnLevelEventsEnabled()
 }
 
-func (c *DayPlanConfig) WakeOnSeatedInvalidationEnabled() bool {
-	if c == nil || c.WakeOnSeatedInvalidation == nil {
-		return true
-	}
-	return *c.WakeOnSeatedInvalidation
-}
-
-func (c *DayPlanConfig) WakeOnIFVGEnabled() bool {
-	if c == nil || c.WakeOnIFVG == nil {
-		return true
-	}
-	return *c.WakeOnIFVG
-}
-
+// WakeMinIntervalMinutes — FOLDED: the constant unless a stored value exists.
 func (c *DayPlanConfig) WakeMinIntervalMinutes() int {
 	if c == nil || c.WakeMinIntervalMin <= 0 {
 		return DefaultWakeMinIntervalMin
@@ -1526,19 +1541,134 @@ func (c *DayPlanConfig) WakeMinIntervalMinutes() int {
 	return c.WakeMinIntervalMin
 }
 
-// Seat1HZoneEnabled is the ONE resolution seam for the 1h-wave seat knob:
-// nil config or unset pointer → ON (the shipped default).
-func (c *DayPlanConfig) Seat1HZoneEnabled() bool {
-	if c == nil || c.Seat1HZone == nil {
-		return true
+// DefaultScenarioCap / DefaultRealignCap are the folded constants
+// (W-KNOB-PRUNE). ScenarioCapResolved / RealignCapResolved / EveningDigestOn
+// are their ONE resolution seams: the constant unless a stored value exists.
+const (
+	DefaultScenarioCap = 3
+	DefaultRealignCap  = 5
+)
+
+func (c *DayPlanConfig) ScenarioCapResolved() int {
+	if c != nil && c.ScenarioCap >= 1 && c.ScenarioCap <= 5 {
+		return c.ScenarioCap
 	}
-	return *c.Seat1HZone
+	return DefaultScenarioCap
+}
+
+func (c *DayPlanConfig) RealignCapResolved() int {
+	if c != nil && c.RealignCap > 0 {
+		return c.RealignCap
+	}
+	return DefaultRealignCap
+}
+
+// EveningDigestOn — constant OFF unless a stored true (owner verdict
+// 2026-09-17: "evening_digest → constant off unless stored on"). Every live
+// strategy stores true, so the live digest keeps writing.
+func (c *DayPlanConfig) EveningDigestOn() bool {
+	return c != nil && c.EveningDigest
+}
+
+// FoldedKnobLines (W-KNOB-PRUNE, 2026-09-18) — one line per folded knob whose
+// STORED value differs from the constant it folded into, in the form
+// `⚙ folded knob <name>=<value> honoured from stored config`. Logged once at
+// trader load so a removed control can never silently keep a value the owner
+// had set. An unset field or a stored default produces nothing.
+func (c *DayPlanConfig) FoldedKnobLines() []string {
+	if c == nil {
+		return nil
+	}
+	var out []string
+	add := func(name string, v interface{}) {
+		out = append(out, fmt.Sprintf("⚙ folded knob %s=%v honoured from stored config", name, v))
+	}
+	if c.StructureMap != nil && *c.StructureMap {
+		add("structure_map", true)
+	}
+	if c.ScenarioCap >= 1 && c.ScenarioCap <= 5 && c.ScenarioCap != DefaultScenarioCap {
+		add("scenario_cap", c.ScenarioCap)
+	}
+	if c.RealignCap > 0 && c.RealignCap != DefaultRealignCap {
+		add("realign_cap", c.RealignCap)
+	}
+	if c.EveningDigest {
+		add("evening_digest", true)
+	}
+	if c.WakeMinIntervalMin > 0 && c.WakeMinIntervalMin != DefaultWakeMinIntervalMin {
+		add("wake_min_interval_min", c.WakeMinIntervalMin)
+	}
+	if c.LevelsFreshByTF {
+		add("levels_fresh_by_tf", true)
+	}
+	if r := strings.TrimSpace(c.AcceptanceRule); r != "" && r != DefaultAcceptanceRule {
+		out = append(out, fmt.Sprintf("⚙ folded knob acceptance_rule=%s stored — NOT honoured, the one rule is %s (has been since 2026-08-30)", r, DefaultAcceptanceRule))
+	}
+	if c.WakeOnLevelEvents == nil && c.hasLegacyWakeFields() {
+		add("wake_on_15m_zone/htf_zone/htf_ob/seated_invalidation/ifvg → wake_on_level_events", c.WakeOnLevelEventsEnabled())
+		if c.WakeOnHTFOB {
+			add("wake_on_htf_ob (order-block class)", true)
+		}
+	}
+	return out
 }
 
 // FlipRereadEnabled is the ONE resolution seam for the W-FLIP-REREAD knob
 // (absent/false = OFF = today's dormant behaviour).
 func (c *DayPlanConfig) FlipRereadEnabled() bool {
 	return c != nil && c.FlipReread
+}
+
+// T1CurrencyAll is the sentinel meaning "every currency hard-blocks" — the
+// pre-W-T1-CURRENCIES behaviour. "*" is accepted on input and canonicalised
+// to this.
+const T1CurrencyAll = "ALL"
+
+// DefaultT1Currencies is the shipped default: only USD red events hard-block.
+func DefaultT1Currencies() []string { return []string{"USD"} }
+
+// T1CurrenciesFor is the ONE resolution seam for the W-T1-CURRENCIES knob
+// (the value's canonicaliser — trim, upper-case, dedupe, drop blanks — so every
+// consumer sees one spelling). nil config or an empty/blank list → the shipped
+// default ["USD"]. Any entry "ALL" or "*" → ["ALL"] (every currency hard-blocks,
+// today's behaviour). Never returns nil or an empty list.
+func (c *DayPlanConfig) T1CurrenciesFor() []string {
+	if c == nil {
+		return DefaultT1Currencies()
+	}
+	out := make([]string, 0, len(c.T1Currencies))
+	seen := map[string]bool{}
+	for _, raw := range c.T1Currencies {
+		ccy := strings.ToUpper(strings.TrimSpace(raw))
+		if ccy == "" || seen[ccy] {
+			continue
+		}
+		if ccy == "*" || ccy == T1CurrencyAll {
+			return []string{T1CurrencyAll}
+		}
+		seen[ccy] = true
+		out = append(out, ccy)
+	}
+	if len(out) == 0 {
+		return DefaultT1Currencies()
+	}
+	return out
+}
+
+// T1CurrenciesSaved reports whether the strategy carries an explicit,
+// non-blank t1_currencies list (for the boot line's "(saved)" vs "(default)"
+// — READ, never inferred from the resolved value, since a saved ["USD"] must
+// still print "(saved)").
+func (c *DayPlanConfig) T1CurrenciesSaved() bool {
+	if c == nil {
+		return false
+	}
+	for _, raw := range c.T1Currencies {
+		if strings.TrimSpace(raw) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // LevelsFreshByTFEnabled is the ONE resolution seam for the S2 by-TF freshness

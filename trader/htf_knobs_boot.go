@@ -17,9 +17,8 @@ func HtfKnobsBootLine(dp *store.DayPlanConfig) string {
 	if seats != nil {
 		seatsPart = fmt.Sprintf("htf_seats=%d(saved, effective)", *seats)
 	}
-	multPart := fmt.Sprintf("htf_mult=%.1f(default)", kernel.HTFScoreMultiplier)
-	if dp != nil && dp.HtfScoreMultiplier != nil {
-		multPart = fmt.Sprintf("htf_mult=%.1f(saved)", mult)
-	}
+	// W-KNOB-PRUNE (2026-09-18): the multiplier is a constant (1.0, owner
+	// ruling); READ from the resolver so the line can never drift from it.
+	multPart := fmt.Sprintf("htf_mult=%.1f(const)", mult)
 	return fmt.Sprintf("🧮 %s · %s (S3)", seatsPart, multPart)
 }

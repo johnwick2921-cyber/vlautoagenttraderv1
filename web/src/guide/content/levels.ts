@@ -152,7 +152,7 @@ export const levels: GuideSection = {
     { kind: 'h', text: 'Seats & band' },
     {
       kind: 'p',
-      text: 'Freshness by own timeframe (levels_fresh_by_tf, default OFF). A 4h zone is tested when a 4h bar trades into it — not when 1m noise does. ON = HTF levels grade fresh / tested-1 / tested-2 / stale on their own timeframe; OFF = the 1m-touch ladder, byte-identical to the shipped behavior. The scoring tables never change in either mode; only the freshness string HTF levels carry differs.',
+      text: "Freshness by own timeframe (levels_fresh_by_tf) — FOLDED by W-KNOB-PRUNE (2026-09-18, S4c: freshness separates nothing): no Studio control; OFF (the 1m-touch ladder) unless the strategy already stores ON, which the engine honours and logs at load (the owner's MNQ strategy does). ON = HTF levels grade fresh / tested-1 / tested-2 / stale on their own timeframe bars. The scoring tables never change in either mode; only the freshness string HTF levels carry differs.",
     },
     { kind: 'h', text: 'Seats & band' },
     {

@@ -2,6 +2,7 @@ package ninjatrader
 
 import (
 	"errors"
+	"fmt"
 	"nofx/market"
 	"sync"
 	"time"
@@ -83,9 +84,20 @@ func WireBarPersistence(st *store.Store) {
 	}
 	wireBarPersistenceOnce.Do(func() {
 		bh := st.BarHistory()
-		if err := bh.Migrate(); err != nil {
+		// W-BARS-CONTRACT-KEY — the key migration's report is printed HERE,
+		// where the owner reads boot lines; every figure on it is read back
+		// from the table. A failed key migration is fail-open (the report's
+		// Err) and the store keeps writing on the legacy key; only a failure
+		// of the table setup itself disables persistence, as before.
+		rep, err := bh.MigrateWithReport(time.Now())
+		if err != nil {
 			logger.Warnf("bars: migrate failed: %v (persistence disabled)", err)
 			return
+		}
+		if rep.Err != nil {
+			logger.Errorf("%s", rep.BootLine())
+		} else {
+			logger.Infof("%s", rep.BootLine())
 		}
 		ntwire.SetBarPersister(func(historical bool, symbol, tf string, bars []ntwire.Bar) {
 			srv, _ := getOrStartTCPServer()
@@ -312,11 +324,19 @@ func pruneLoop(bh *store.BarHistoryStore) {
 			logger.Warnf("bars: integrity check failed: %v", err)
 			return
 		}
+		// W-BARS-CONTRACT-KEY — a minute held by two contracts is a roll
+		// overlap, counted separately and READ; it is expected after a roll
+		// and impossible on the legacy key.
+		overlaps, oerr := bh.RollOverlaps()
+		overlapTxt := "n/a"
+		if oerr == nil {
+			overlapTxt = fmt.Sprintf("%d", overlaps)
+		}
 		if dups > 0 {
-			logger.Warnf("🚨 bars integrity DRIFT: dups=%d tfs=%v total=%d (expected dups=0) — replay/calibration readers must not trust stored aggregates", dups, tfs, total)
+			logger.Warnf("🚨 bars integrity DRIFT: dups=%d tfs=%v total=%d roll_overlaps=%s (expected dups=0) — replay/calibration readers must not trust stored aggregates", dups, tfs, total, overlapTxt)
 			return
 		}
-		logger.Infof("✅ bars integrity OK: dups=0 tfs=%v total=%d", tfs, total)
+		logger.Infof("✅ bars integrity OK: dups=0 tfs=%v total=%d roll_overlaps=%s (minutes held by two contracts; expected after a roll)", tfs, total, overlapTxt)
 	}
 	pruneOnce := func() {
 		// BAR-SOURCE WAVE 2026-09-02 — retention is PER TF. The old single

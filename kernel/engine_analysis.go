@@ -378,7 +378,6 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		if cfg.DayPlan.MaxLevels > 0 {
 			maxLevels = cfg.DayPlan.MaxLevels
 		}
-		htfMult = ResolveHtfScoreMultiplier(cfg.DayPlan.HtfScoreMultiplier)
 		// H1/H2 — the day-trade lock is THIS ENGINE's config (the deciding
 		// trader's strategy), never a process-global provider that could close
 		// over a different trader (P0-A).
@@ -416,11 +415,11 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			// H7 — the registry is the admin registry the DECIDING trader
 			// resolves (per-trader provider; never another trader's).
 			// R2 4.6/4.7 + 1h wave (2026-08-25) — the executor block now
-			// obeys the SAME seat_1h_zone + min_grade rules as the planner.
+			// obeys the SAME 1h-seat guarantee + min_grade rules as the planner
+			// (the seat_1h_zone switch is gone since W-KNOB-PRUNE: always ON).
 			seat1h := true
 			minGrade := ""
 			if cfg := engine.GetConfig(); cfg != nil && cfg.DayPlan != nil {
-				seat1h = cfg.DayPlan.Seat1HZoneEnabled()
 				if p := ActivePlanFor(ctx.TraderID, activeSymbol); p != nil {
 					minGrade = cfg.DayPlan.MinGradeFor(p.Session)
 				}

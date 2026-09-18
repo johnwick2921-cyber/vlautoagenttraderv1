@@ -53,49 +53,49 @@ func TestDayPlanConfigGolden(t *testing.T) {
 	}
 }
 
-// TestDayPlanWakeKnobDefaults locks the W6 knob resolution seam: nil config or
-// unset pointer → ON (except HTF OBs, OFF); explicit false disables; interval
-// 0 → 10.
+// TestDayPlanWakeKnobDefaults locks the W-KNOB-PRUNE (2026-09-18) resolution
+// seam: ONE switch, wake_on_level_events, nil config / unset → ON; the five
+// legacy per-class switches decide only when the new one is absent (ANY ON →
+// ON; nil legacy pointers read ON), so the only stored shape that maps to OFF
+// is all five explicitly false. HTF order blocks stay OFF unless the legacy
+// wake_on_htf_ob=true is stored. Interval: constant 30 unless stored.
 func TestDayPlanWakeKnobDefaults(t *testing.T) {
 	var nilCfg *DayPlanConfig
-	if !nilCfg.WakeOn15mZoneEnabled() || !nilCfg.WakeOnHTFZoneEnabled() ||
-		!nilCfg.WakeOnSeatedInvalidationEnabled() || !nilCfg.WakeOnIFVGEnabled() {
-		t.Fatalf("nil config must resolve every ON-default knob to ON")
+	if !nilCfg.WakeOnLevelEventsEnabled() || nilCfg.WakeOnHTFOrderBlocks() {
+		t.Fatalf("nil config must resolve level-event wakes ON and HTF OBs OFF")
 	}
-	if nilCfg.WakeOnHTFOBEnabled() {
-		t.Fatalf("nil config must resolve HTF-OB knob to OFF")
-	}
-	if nilCfg.WakeMinIntervalMinutes() != 30 {
+	if nilCfg.WakeMinIntervalMinutes() != DefaultWakeMinIntervalMin || DefaultWakeMinIntervalMin != 30 {
 		t.Fatalf("nil config interval = %d want 30", nilCfg.WakeMinIntervalMinutes())
 	}
-
 	empty := &DayPlanConfig{}
-	if !empty.WakeOn15mZoneEnabled() || !empty.WakeOnHTFZoneEnabled() {
-		t.Fatalf("unset pointers must resolve to ON (defaults)")
+	if !empty.WakeOnLevelEventsEnabled() || empty.WakeOnHTFOrderBlocks() {
+		t.Fatalf("unset switch must resolve to ON (defaults), OBs OFF")
 	}
 
-	off := false
-	c := &DayPlanConfig{
-		WakeOn15mZone:            &off,
-		WakeOnHTFZone:            &off,
-		WakeOnHTFOB:              false,
-		WakeOnSeatedInvalidation: &off,
-		WakeOnIFVG:               &off,
-		WakeMinIntervalMin:       25,
+	off, on := false, true
+	// The new switch wins over any legacy value.
+	if c := (&DayPlanConfig{WakeOnLevelEvents: &off, WakeOn15mZone: &on, WakeOnHTFOB: true}); c.WakeOnLevelEventsEnabled() || c.WakeOnHTFOrderBlocks() {
+		t.Fatalf("explicit wake_on_level_events=false must disable everything, OBs included")
 	}
-	if c.WakeOn15mZoneEnabled() || c.WakeOnHTFZoneEnabled() ||
-		c.WakeOnSeatedInvalidationEnabled() || c.WakeOnIFVGEnabled() ||
-		c.WakeOnHTFOBEnabled() {
-		t.Fatalf("explicit false must disable")
+	// Legacy mapping: one explicit false among nils is still ON (nil = ON).
+	if c := (&DayPlanConfig{WakeOn15mZone: &off}); !c.WakeOnLevelEventsEnabled() {
+		t.Fatalf("one legacy false among nil legacy pointers must map to ON")
 	}
-	if c.WakeMinIntervalMinutes() != 25 {
-		t.Fatalf("interval = %d want 25", c.WakeMinIntervalMinutes())
+	// Legacy mapping: all five explicitly false → OFF.
+	allOff := &DayPlanConfig{WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off, WakeMinIntervalMin: 25}
+	if allOff.WakeOnLevelEventsEnabled() || allOff.WakeOnHTFOrderBlocks() {
+		t.Fatalf("all five legacy switches false must map to OFF")
 	}
-
-	if d := DefaultDayPlanConfig(); !d.WakeOn15mZoneEnabled() || !d.WakeOnHTFZoneEnabled() ||
-		!d.WakeOnSeatedInvalidationEnabled() || !d.WakeOnIFVGEnabled() ||
-		d.WakeOnHTFOBEnabled() || d.WakeMinIntervalMinutes() != 30 {
-		t.Fatalf("DefaultDayPlanConfig must seed ON/OFF/30 defaults")
+	if allOff.WakeMinIntervalMinutes() != 25 {
+		t.Fatalf("interval = %d want 25 (stored honoured)", allOff.WakeMinIntervalMinutes())
+	}
+	// The owner's stored shape: only wake_on_htf_ob=true → ON, OB class ON.
+	owner := &DayPlanConfig{WakeOnHTFOB: true}
+	if !owner.WakeOnLevelEventsEnabled() || !owner.WakeOnHTFOrderBlocks() {
+		t.Fatalf("legacy wake_on_htf_ob=true must keep the OB class")
+	}
+	if d := DefaultDayPlanConfig(); !d.WakeOnLevelEventsEnabled() || d.WakeOnHTFOrderBlocks() || d.WakeMinIntervalMinutes() != 30 || d.WakeOnLevelEvents != nil {
+		t.Fatalf("DefaultDayPlanConfig must not seed the folded knobs and must resolve ON/OFF/30")
 	}
 }
 

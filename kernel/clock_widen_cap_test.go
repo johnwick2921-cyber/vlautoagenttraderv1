@@ -3,6 +3,8 @@ package kernel
 import (
 	"strings"
 	"testing"
+
+	"nofx/store"
 )
 
 // CLASS 145 (W-DRIFT-WIDEN-CAP, 2026-09-17) — a halt's age read as clock drift
@@ -35,7 +37,10 @@ func TestWidenCTWindowsCapsHaltAgeAtTwoMinutes(t *testing.T) {
 
 func TestT1NoTradeLinesDriftHaltAgeUnlabelled(t *testing.T) {
 	evs := []PlannerCalendarEvent{{TimeCT: "21:30", Impact: "T1", Title: "BOJ Policy Rate", Currency: "JPY"}}
-	lines := T1NoTradeLinesDrift(evs, haltDriftMs)
+	// The class was born under the pre-W-T1-CURRENCIES regime where every T1
+	// hard-blocked: pin it with the explicit ALL set (a JPY event under the
+	// shipped USD default is advisory and opens no window — see t1_currencies_test).
+	lines := T1NoTradeLinesDrift(evs, []string{store.T1CurrencyAll}, haltDriftMs)
 	if len(lines) != 1 {
 		t.Fatalf("want one line, got %v", lines)
 	}

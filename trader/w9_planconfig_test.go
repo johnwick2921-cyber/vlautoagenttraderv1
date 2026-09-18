@@ -41,8 +41,11 @@ func TestW9Resolvers(t *testing.T) {
 	if !at.sessionEnabledForStrategy("NY") || at.sessionEnabledForStrategy("ASIA") {
 		t.Fatal("default sessions_enabled must be [NY]")
 	}
-	if !at.eveningDigestEnabled() {
-		t.Fatal("default evening digest must be on")
+	// W-KNOB-PRUNE (2026-09-18): evening_digest FOLDED — constant OFF unless a
+	// stored true (owner verdict); the nil block reads OFF, and maybeWriteDigests
+	// never reaches it without a day plan anyway.
+	if at.eveningDigestEnabled() {
+		t.Fatal("folded evening digest must be OFF unless stored on")
 	}
 	if at.approvalRequired() {
 		t.Fatal("default approval_required must be off")

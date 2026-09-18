@@ -56,6 +56,10 @@ and core tables read back cleanly (`decision_records` 28042, `trader_positions` 
 
 ## Roll back the BINARY (and why you must re-arm `deploy/RELEASE`)
 
+**If the boot log's `🗄 bars` key line says `migrated`, run `deploy/bars-key-rollback.sh`
+BEFORE starting an older binary** (W-BARS-CONTRACT-KEY, 2026-09-18 — an older binary
+cannot write the migrated `bars` table; the section below has the detail).
+
 The DB restore above is only half a rollback. If you also go back to an earlier
 binary, **`deploy/RELEASE` must be re-armed to the revision you are actually
 running** — otherwise the boot assertion sees a mismatch and **REFUSES TRADING**
@@ -90,6 +94,93 @@ To disable the assertion deliberately (e.g. while bisecting), leave the value in
 
 Rolling the binary back across a schema migration also needs the matching DB
 snapshot from above; restore the DB **first**, then the binary, then re-arm.
+
+## Roll back the bars CONTRACT-KEY migration (W-BARS-CONTRACT-KEY, 2026-09-18)
+
+The first boot of a binary at/after this wave moves `bars` from
+`PRIMARY KEY (symbol, tf, open_time_ms)` to `(symbol, tf, contract, open_time_ms)`.
+It is a guarded write, done by code at boot (`store/bar_contract_key.go`):
+
+1. a whole-database backup **before anything else** — `VACUUM INTO`
+   `~/nofx-backups/pre-bars-key-<YYYYMMDD-HHMMSS>.db`, verified by `bars` row count;
+   if it cannot be written the migration is **refused** and the bot runs on the old key
+   (boot line `🗄 bars: migration FAILED — …; old table intact`);
+2. `bars_v2` created on the new key, `INSERT … SELECT` of every row, then
+   `bars` → `bars_pre_contract_key_<YYYY-MM-DD>` and `bars_v2` → `bars`, in **one
+   transaction** (any error rolls back; the old table is never touched);
+3. boot line `🗄 bars: key migrated to (symbol,tf,contract,open_time_ms) — rows=<n>
+   backup=<path> old_table=<name>` (values read back). Later boots print
+   `🗄 bars: key=(symbol,tf,contract,open_time_ms) (migrated <date>) rows=<n>` and do nothing.
+
+Measured on a copy of the live DB (1,906,992 rows, 1.39 GB) 2026-09-18 01:00 CT:
+migration 7.7 s including the backup; second boot 0.33 s.
+
+**A PRE-MIGRATION BINARY MUST NOT BOOT ON THE MIGRATED TABLE** (tested,
+`store/bar_contract_key_test.go TestBarsKeyOldBinaryStatementsOnTheMigratedTable`):
+its bar upsert names `ON CONFLICT(symbol, tf, open_time_ms)`, which is no longer a
+unique constraint, and SQLite refuses every write (`ON CONFLICT clause does not
+match any PRIMARY KEY or UNIQUE constraint`) — reads work, **persistence dies
+silently except for a `bars: persist … failed` WARN per batch**. Its Migrate does
+NOT run its destructive 2026-08-27 dedupe block (the name-only unique-index check
+is satisfied by the renamed table's index, which the migration keeps on purpose).
+
+### Option A — rename back (keeps the DB, loses bars written after the migration)
+
+Scripted: `deploy/bars-key-rollback.sh [--force] [--db PATH]` (rc 0 done · rc 4 nothing
+to do · rc 2 bot running · rc 3 unsafe state) — discovers the old table, refuses while
+`nofx-bin` runs unless `--force`, takes a `VACUUM INTO` backup, runs
+`deploy/bars-key-rollback.sql` (the rename pair in one transaction, new-shape indexes
+dropped from the parked copy so a later re-migration can recreate them), prints the counts.
+The CTO's unattended cutover calls it on a binary rollback. By hand:
+
+```bash
+# 0. Stop the bot (nothing may write during the swap).
+kill -9 "$(pgrep -f nofx-bin)"     # systemd relaunches it — do this only with the old binary installed AND step 2 done
+# 1. Which tables exist?
+sqlite3 ~/nofx/data/data.db "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'bars%';"
+# 2. Swap: the migrated table aside, the pre-migration table back under its name.
+#    The old table still carries idx_bars_sym_tf_time_unique / idx_bars_contract / idx_bars_source,
+#    so the old binary's Migrate finds its unique index and is a no-op.
+OLD=$(sqlite3 ~/nofx/data/data.db "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'bars_pre_contract_key_%' ORDER BY name DESC LIMIT 1")
+sqlite3 ~/nofx/data/data.db "BEGIN; ALTER TABLE bars RENAME TO bars_contract_key_v2; ALTER TABLE \"$OLD\" RENAME TO bars; COMMIT;"
+# 3. (optional) carry bars written AFTER the migration back onto the old key.
+#    On the old key a minute held by two contracts collapses to ONE row (first wins) — this is the
+#    exact loss the wave removed; accept it or skip this step.
+sqlite3 ~/nofx/data/data.db "INSERT OR IGNORE INTO bars(symbol,tf,open_time_ms,o,h,l,c,v,convention,contract,source)
+  SELECT symbol,tf,open_time_ms,o,h,l,c,v,convention,contract,source FROM bars_contract_key_v2;"
+# 4. Verify, then boot the old binary (re-arm deploy/RELEASE — see the binary rollback above).
+sqlite3 ~/nofx/data/data.db "SELECT name FROM pragma_table_info('bars') WHERE pk>0 ORDER BY pk;"   # → symbol tf open_time_ms
+sqlite3 ~/nofx/data/data.db "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND tbl_name='bars' AND name='idx_bars_sym_tf_time_unique';"  # → 1
+```
+
+To re-migrate later, the new binary refuses while a `bars_pre_contract_key_<today>`
+table exists (it never overwrites a backup table): rename or drop
+`bars_contract_key_v2` and the stale `bars_pre_contract_key_*` first, deliberately.
+
+### Option B — restore the whole-database backup (loses EVERYTHING written after it)
+
+```bash
+BK=$(ls -1 ~/nofx-backups/pre-bars-key-*.db | sort -r | head -1)
+python3 -c "import sqlite3,sys;print(sqlite3.connect(sys.argv[1]).execute('PRAGMA quick_check').fetchone()[0])" "$BK"   # → ok
+kill -9 "$(pgrep -f nofx-bin)"
+mv ~/nofx/data/data.db ~/nofx/data/data.db.pre-restore
+cp "$BK" ~/nofx/data/data.db
+# then the binary rollback + RELEASE re-arm above
+```
+
+Prefer A: it is bars-only. B rewinds decision_records, plans, positions — every table.
+
+### Probes (also CLASS entry in docs/superpowers/AUDIT-CHECKLIST.md)
+
+```sql
+-- which key is live
+SELECT name FROM pragma_table_info('bars') WHERE pk>0 ORDER BY pk;
+-- roll overlaps: minutes held by two contracts (expected >0 after a roll on the new key; always 0 on the old key)
+SELECT symbol,tf,open_time_ms,COUNT(DISTINCT contract) FROM bars GROUP BY 1,2,3 HAVING COUNT(*)>1;
+-- the old-key loss, measured on the backup table: rows of the newer contract that the old key had NO slot for
+SELECT COUNT(*) FROM bars b WHERE b.contract='MNQ 12-26' AND b.symbol='MNQ' AND b.tf='1m'
+  AND EXISTS (SELECT 1 FROM bars a WHERE a.symbol=b.symbol AND a.tf=b.tf AND a.open_time_ms=b.open_time_ms AND a.contract='MNQ 09-26');
+```
 
 ## Notes
 

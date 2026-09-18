@@ -1393,10 +1393,13 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 // drift)" into the plan; the cap holds the widening to ClockWidenCapMinutes
 // and the journal names staleness instead of the clock.
 func (at *AutoTrader) plannerT1Lines(cal []kernel.PlannerCalendarEvent, holdHave bool, holdWiden, holdDrift int64, tradeDate, session string) []string {
+	// W-T1-CURRENCIES: the same resolved set the arm gate (t1WindowsFor)
+	// reads — hard lines for the set, advisory lines for every other T1 event.
+	ccy := at.t1Currencies()
 	if !holdHave || holdWiden <= 0 {
-		return kernel.T1NoTradeLines(cal)
+		return kernel.T1NoTradeLines(cal, ccy)
 	}
-	lines := kernel.T1NoTradeLinesDrift(cal, holdDrift)
+	lines := kernel.T1NoTradeLinesDrift(cal, ccy, holdDrift)
 	at.logWarnf("🕰 clock-hold: T1 news windows widened by %dm (|drift| %dms, cap %dm) for %s %s (F6)",
 		kernel.ClockWidenMinutes(holdDrift), holdWiden, kernel.ClockWidenCapMinutes, tradeDate, session)
 	if note := kernel.ClockDriftStaleNote(holdDrift); note != "" {
@@ -2450,7 +2453,8 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 // prior behavior byte-for-byte (max_levels 8, no min_grade filter, D/4h/1h/15m).
 // S3 (2026-09-16): htf_seats nil → the LEGACY seatHTF path (byte-identical to
 // the pre-S3 table); a saved value clamps to 0-6 and activates the EFFECTIVE
-// promotion. htf_score_multiplier nil → 1.2 (the const); saved clamps 1.0-1.5.
+// promotion. htfMult is the constant kernel.HTFScoreMultiplier (W-KNOB-PRUNE
+// 2026-09-18: the knob is gone, 1.0 by owner ruling).
 // Pure — unit-tested without an AutoTrader.
 func resolveSessionPlanCfg(dp *store.DayPlanConfig, session string) (maxLevels int, htfSeats *int, htfMult float64, minGrade string, timeframes []string) {
 	maxLevels = kernel.DefaultMaxLevels
@@ -2472,7 +2476,6 @@ func resolveSessionPlanCfg(dp *store.DayPlanConfig, session string) (maxLevels i
 		}
 		htfSeats = &v
 	}
-	htfMult = kernel.ResolveHtfScoreMultiplier(dp.HtfScoreMultiplier)
 	if len(dp.PlannerTimeframes) > 0 {
 		timeframes = dp.PlannerTimeframes
 	}
@@ -2621,10 +2624,9 @@ func (at *AutoTrader) assemblePlannerInputWithCtx(session, tradeDate, priorKille
 	}
 	scored, pool, price, dATR, researchRaw := kernel.AssembleResearchLevels(at.id, bars, reg, symbol, maxLevels, htfSeats, htfMult, now, at.proximityFilterATR(), minGrade, extra...)
 	// 1h wave (2026-08-25) — the ranked table's HTF seats guarantee an in-band
-	// 1h S/D zone when one exists. Gated by the seat_1h_zone knob (default ON).
-	if dp != nil && dp.Seat1HZoneEnabled() {
-		scored = kernel.Seat1HZone(scored, maxLevels)
-	}
+	// 1h S/D zone when one exists. W-KNOB-PRUNE (2026-09-18): unconditional —
+	// the seat_1h_zone switch (default ON, never stored) is gone.
+	scored = kernel.Seat1HZone(scored, maxLevels)
 
 	// G2.2 (2026-08-24) — the nearest in-band HTF ZONES become their own prompt
 	// section: the top-8 seat race hides them, but the model must know where the
@@ -2644,10 +2646,8 @@ func (at *AutoTrader) assemblePlannerInputWithCtx(session, tradeDate, priorKille
 			zs := kernel.ScoreLevels(zones, price, dATR, nil, 4, at.proximityFilterATR())
 			// 1h wave (2026-08-25) — the cap-4 MUST keep a 1h S/D zone when one
 			// is in band, so the prompt's conditional 1h mandate has data to
-			// point at. Gated by the seat_1h_zone knob (default ON).
-			if at.dayPlanCfg().Seat1HZoneEnabled() {
-				zs = kernel.Seat1HZone(zs, 4)
-			}
+			// point at. Unconditional since W-KNOB-PRUNE (switch removed).
+			zs = kernel.Seat1HZone(zs, 4)
 			htfZoneScored = zs
 			// S1-wave A3 (2026-08-29) — the FULL in-band graded HTF-zone
 			// universe (no cap) rides along for the write-site stamp: the
@@ -2934,6 +2934,7 @@ func (at *AutoTrader) assemblePlannerInputWithCtx(session, tradeDate, priorKille
 		// list — the ONLY gaps the planner may author fvg_entry from.
 		FreshFVGs:       kernel.FreshFvgCandidates(bars, symbol, now),
 		Calendar:        calEvents,
+		T1Currencies:    at.t1Currencies(),
 		DigestChain:     digestChain,
 		Warming:         warming,
 		IndicatorsBlock: indicatorsBlock,

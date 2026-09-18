@@ -71,7 +71,7 @@ export interface DayPlanSessionOverride {
   enable?: boolean
   replan_cap?: number
   plan_mode?: string
-  acceptance_rule?: string
+  acceptance_rule?: string // FOLDED (W-KNOB-PRUNE 2026-09-18): read by nothing, one rule exists
   min_grade?: string // A | B | C
   min_scenario_quality?: string // A | B | C (R4, 2026-08-25)
   max_trades?: number
@@ -87,42 +87,48 @@ export interface DayPlanConfig {
   planner_timeframes?: string[]
   proximity_filter_atr?: number
   max_levels?: number
+  /** FOLDED (W-KNOB-PRUNE 2026-09-18): constant 3 unless stored; no control. */
   scenario_cap?: number
   /** S3 (2026-09-16) — HTF seat count 0-6 (absent = legacy, non-effective).
    *  Pointer semantics mirror Go: absent ≠ 0. */
   htf_seats?: number
-  /** S3 (2026-09-16) — HTF score weight 1.0-1.5 (absent = 1.2 default). */
-  htf_score_multiplier?: number
-  /** S1 (2026-09-16) — the STRUCTURE table (D/4h/1h, bias only). Pointer-bool
-   *  semantics mirror Go: absent/false = off. */
+  // htf_score_multiplier REMOVED (W-KNOB-PRUNE 2026-09-18): the weight is the
+  // constant 1.0 in the engine; a stored value is ignored.
+  /** S1 (2026-09-16) — the STRUCTURE table (D/4h/1h, bias only). FOLDED
+   *  (W-KNOB-PRUNE): no control; a stored true is honoured by the engine. */
   structure_map?: boolean
-  /** S2 (2026-09-16) — HTF levels graded on their own timeframe bars.
-   *  Default false. */
+  /** S2 (2026-09-16) — HTF levels graded on their own timeframe bars. FOLDED
+   *  (W-KNOB-PRUNE): no control; a stored true is honoured by the engine. */
   levels_fresh_by_tf?: boolean
   /** W-FLIP-REREAD (2026-09-17) — a fired flip goes dormant AND requests one
    *  free re-read in the flipped direction. Default false (legacy dormant). */
   flip_reread?: boolean
-  acceptance_rule?: string // 2x5m | 15m-close
+  /** W-T1-CURRENCIES (2026-09-18) — currencies whose T1 (red) events HARD-block
+   *  entries. Absent/empty = ["USD"] (shipped default); ["ALL"] = every
+   *  currency (pre-wave behaviour). Other T1 events render as advisory only. */
+  t1_currencies?: string[]
+  /** FOLDED (W-KNOB-PRUNE 2026-09-18): one rule exists (1×5m close); a
+   *  stored value is read by nothing. */
+  acceptance_rule?: string
   replan_cap?: number
   sessions_enabled?: string[]
   approval_required?: boolean
+  /** FOLDED (W-KNOB-PRUNE 2026-09-18): constant OFF unless stored true. */
   evening_digest?: boolean
-  last_entry_ct?: string
-  eod_flat_ct?: string
-  /** W13 auto re-align ceiling per plan (default 5). Go reads it; the FE type
-   *  was missing it entirely, so the value could never be edited from the app. */
+  // last_entry_ct / eod_flat_ct DELETED (W-KNOB-PRUNE 2026-09-18): unreachable
+  // since the P2 session-scope clock; old stored values are ignored by Go.
+  /** W13 auto re-align ceiling per plan. FOLDED (W-KNOB-PRUNE 2026-09-18):
+   *  constant 5 unless stored; no control. */
   realign_cap?: number
-  /** W6 (2026-08-25) — planner wake-up knobs (level events). Pointer-bool
-   *  semantics mirror Go: absent = ON for these five except HTF OBs (OFF). */
-  wake_on_15m_zone?: boolean
-  wake_on_htf_zone?: boolean
-  wake_on_htf_ob?: boolean
-  wake_on_seated_invalidation?: boolean
-  wake_on_ifvg?: boolean
+  /** W-KNOB-PRUNE (2026-09-18) — the ONE level-event wake switch (replaces the
+   *  five wake_on_* toggles). Pointer-bool mirrors Go: absent = ON. A legacy
+   *  stored wake_on_* set is mapped by Go (any ON → ON) and passes through
+   *  untouched on save. */
+  wake_on_level_events?: boolean
+  /** FOLDED (W-KNOB-PRUNE 2026-09-18): constant 30 unless stored; no control. */
   wake_min_interval_min?: number
-  /** 1h wave (2026-08-25) — reserve one of the two HTF seats for an in-band
-   *  1h S/D zone when one exists. Absent = ON (mirrors Go pointer-bool). */
-  seat_1h_zone?: boolean
+  // seat_1h_zone REMOVED (W-KNOB-PRUNE 2026-09-18): the 1h seat guarantee is
+  // unconditional in the engine.
   /** R4 (2026-08-25) — scenario quality floor: A | B | C. Default C = no
    *  restriction. */
   min_scenario_quality?: string

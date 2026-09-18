@@ -3,51 +3,58 @@ package store
 import (
 	"encoding/json"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 )
 
-// TestDayPlanClockFieldsPersistThroughRow is the P2.3/P2.5 config-truth proof:
-// save → row → reload → read. The clock fields (last_entry / eod_flat) and
-// plan_enabled survive a real DB round-trip via the strategy config column.
-func TestDayPlanClockFieldsPersistThroughRow(t *testing.T) {
+// W-KNOB-PRUNE (2026-09-18): last_entry_ct / eod_flat_ct were DELETED from
+// DayPlanConfig (unreachable since the P2 session-scope redesign). Every live
+// strategy row still carries them ("last_entry_ct":"13:00","eod_flat_ct":"14:45"
+// on all nine day_plan rows, sqlite3 -readonly 2026-09-18). This is the proof
+// that such a row still loads through a real DB round-trip, that the two tags
+// are no longer schema fields, and that the per-session offsets — the live
+// clock — are what survive.
+func TestDayPlanLegacyClockFieldsIgnoredOnLoad(t *testing.T) {
 	st, err := New(filepath.Join(t.TempDir(), "t.db"))
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
 
-	cfg := GetDefaultStrategyConfig("en")
-	cfg.DayPlan = DefaultDayPlanConfig()
-	cfg.DayPlan.PlanEnabled = true
-	cfg.DayPlan.LastEntryCT = "13:15"
-	cfg.DayPlan.EODFlatCT = "14:30"
-
-	raw, err := json.Marshal(cfg)
-	if err != nil {
-		t.Fatalf("marshal config: %v", err)
-	}
-	if err := st.Strategy().Create(&Strategy{
-		ID: "s1", UserID: "u1", Name: "day-plan", Config: string(raw),
-	}); err != nil {
+	raw := `{"day_plan":{"plan_enabled":true,"last_entry_ct":"13:15","eod_flat_ct":"14:30","sessions":[{"session":"NY","last_entry_offset_min":20,"eod_flat_offset_min":5}]}}`
+	if err := st.Strategy().Create(&Strategy{ID: "s1", UserID: "u1", Name: "legacy-clock", Config: raw}); err != nil {
 		t.Fatalf("create strategy: %v", err)
 	}
-
-	// Reload from the row and read back.
 	got, err := st.Strategy().Get("u1", "s1")
 	if err != nil || got == nil {
 		t.Fatalf("get strategy: %v", err)
 	}
 	var back StrategyConfig
 	if err := json.Unmarshal([]byte(got.Config), &back); err != nil {
-		t.Fatalf("unmarshal reloaded config: %v", err)
+		t.Fatalf("unmarshal reloaded config (legacy clock fields must be ignored, not fatal): %v", err)
 	}
-	if back.DayPlan == nil {
-		t.Fatalf("day_plan lost on reload")
+	if back.DayPlan == nil || !back.DayPlan.PlanEnabled {
+		t.Fatalf("day_plan lost on reload: %+v", back.DayPlan)
 	}
-	if !back.DayPlan.PlanEnabled {
-		t.Fatalf("plan_enabled=true did not persist")
+	if back.DayPlan.LastEntryOffsetFor("NY") != 20 || back.DayPlan.EODFlatOffsetFor("NY") != 5 {
+		t.Fatalf("the live per-session clock must survive: last=%d flat=%d", back.DayPlan.LastEntryOffsetFor("NY"), back.DayPlan.EODFlatOffsetFor("NY"))
 	}
-	if back.DayPlan.LastEntryCT != "13:15" || back.DayPlan.EODFlatCT != "14:30" {
-		t.Fatalf("clock fields not persisted: last=%q eod=%q", back.DayPlan.LastEntryCT, back.DayPlan.EODFlatCT)
+	// The tags are gone from the schema — reflection, not a grep.
+	for _, leaf := range []string{"last_entry_ct", "eod_flat_ct"} {
+		if owners := knobFieldOwners(leaf); len(owners) != 0 {
+			t.Fatalf("%s still carried by %v — W-KNOB-PRUNE deleted it", leaf, owners)
+		}
+		for _, p := range EnumerateSchemaKnobs() {
+			if strings.HasSuffix(p, "."+leaf) {
+				t.Fatalf("%s still enumerated as %s", leaf, p)
+			}
+		}
 	}
+	// Re-marshal never re-emits them.
+	out, _ := json.Marshal(back.DayPlan)
+	if strings.Contains(string(out), "last_entry_ct") || strings.Contains(string(out), "eod_flat_ct") {
+		t.Fatalf("deleted fields re-emitted: %s", out)
+	}
+	_ = reflect.TypeOf(DayPlanConfig{})
 }

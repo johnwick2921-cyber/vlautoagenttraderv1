@@ -593,8 +593,16 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		logger.Infof("✓ Trader %s loaded strategy config: %s", traderCfg.Name, strategy.Name)
 		// S3 (2026-09-16) — the resolved HTF knobs, with their sources.
 		logger.Infof("%s", trader.HtfKnobsBootLine(strategyConfig.DayPlan))
+		// W-KNOB-PRUNE (2026-09-18) — every folded knob whose STORED value
+		// differs from its constant, once, so a removed control never keeps
+		// a value silently.
+		for _, line := range strategyConfig.DayPlan.FoldedKnobLines() {
+			logger.Infof("%s", line)
+		}
 		// W-FLIP-REREAD (2026-09-17) — the resolved flip knob, with its source.
 		logger.Infof("%s", trader.FlipRereadBootLine(strategyConfig.DayPlan))
+		// W-T1-CURRENCIES (2026-09-18) — the resolved red-news hard-block set.
+		logger.Infof("%s", trader.T1CurrenciesBootLine(strategyConfig.DayPlan))
 		// D102-1 (2026-09-16): the exit posture, READ from the strategy
 		// toggles the mechanics honour — the main boot line prints n/a
 		// for these fields; this line prints the real values, prefixed with the

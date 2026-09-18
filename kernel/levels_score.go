@@ -159,12 +159,15 @@ var zoneEvidenceByKind = map[LevelKind]map[string]float64{
 var zoneTFMult = map[string]float64{"1m": 1.0, "15m": 1.1, "1h": 1.2, "4h": 1.3}
 
 // HTFScoreMultiplier is the higher-timeframe weight applied to a level whose
-// DetectedLevel.HTF is set. NAMED, not changed: the boot line and the Guide must
-// print the number the scorer actually uses rather than one typed beside it
-// (A11). Round 12 (12c) finds this multiplier UNTESTED — it has no established
-// foundation and is carried as [I] until E4 measures it. W-TF does not touch its
-// value.
-const HTFScoreMultiplier = 1.2
+// DetectedLevel.HTF is set. NAMED: the boot line and the Guide must print the
+// number the scorer actually uses rather than one typed beside it (A11).
+// W-KNOB-PRUNE (owner ruling 2026-09-18): 1.2 → 1.0 and the
+// day_plan.htf_score_multiplier knob is gone — Round 23 Q-C measured that the
+// 1.2 premium promoted a group that holds LESS. The seat diff on the identity
+// fixture is in docs/superpowers/reports/2026-09-18-knob-prune.md; the
+// goldens (identity_legacy_output.json, knob_prune/seating.json) are pinned
+// at 1.0.
+const HTFScoreMultiplier = 1.0
 
 // zoneReversalBonus rewards RBD/DBR (reversal) over RBR/DBD (continuation).
 const zoneReversalBonus = 1.1
@@ -434,22 +437,6 @@ func ScoreLevels(levels []DetectedLevel, price, dATR float64, freshness func(Det
 // hardcoded. The legacy path (seats nil) seats exactly this many; the value is
 // kept as a named constant for the boot line and tests.
 const LegacyHtfSeats = 2
-
-// ResolveHtfScoreMultiplier (S3, 2026-09-16) resolves the knob: nil → the
-// const default 1.2 (today's behaviour); saved values clamp to 1.0–1.5.
-func ResolveHtfScoreMultiplier(p *float64) float64 {
-	if p == nil {
-		return HTFScoreMultiplier
-	}
-	v := *p
-	if v < 1.0 {
-		return 1.0
-	}
-	if v > 1.5 {
-		return 1.5
-	}
-	return v
-}
 
 // scoreLevelsPool is the full scorer (lock → grade → collapse → seat → top-N).
 func scoreLevelsPool(levels []DetectedLevel, price, dATR float64, freshness func(DetectedLevel) string, maxLevels int, proximityK float64, htfSeats *int, htfMult float64) []ScoredLevel {

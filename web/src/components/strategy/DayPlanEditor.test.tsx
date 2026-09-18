@@ -19,7 +19,13 @@ describe('DayPlanEditor', () => {
     const next = onChange.mock.calls[0][0] as DayPlanConfig
     expect(next.plan_enabled).toBe(true)
     expect(next.max_levels).toBe(8) // spec default carried through
-    expect(next.acceptance_rule).toBe('5m_close')
+    // W-KNOB-PRUNE: folded knobs are not seeded — the engine's constants apply.
+    expect(next.acceptance_rule).toBeUndefined()
+    expect(next.scenario_cap).toBeUndefined()
+    expect(next.realign_cap).toBeUndefined()
+    expect(next.evening_digest).toBeUndefined()
+    expect(next.wake_min_interval_min).toBeUndefined()
+    expect(next.wake_on_level_events).toBeUndefined()
   })
 
   it('changing max levels writes through onChange', () => {
@@ -33,7 +39,7 @@ describe('DayPlanEditor', () => {
     )
   })
 
-  it('W-KNOB-UI: renders the structure-map and by-TF freshness toggles', () => {
+  it('W-KNOB-PRUNE: the folded/removed controls are gone, flip re-read and the one wake switch remain', () => {
     const onChange = vi.fn()
     render(
       <DayPlanEditor
@@ -42,15 +48,60 @@ describe('DayPlanEditor', () => {
         language="en"
       />
     )
-    const sm = screen.getByTestId('structure-map-toggle')
-    const ft = screen.getByTestId('fresh-by-tf-toggle')
+    expect(screen.queryByTestId('structure-map-toggle')).toBeNull()
+    expect(screen.queryByTestId('fresh-by-tf-toggle')).toBeNull()
+    expect(screen.queryByText(/HTF score multiplier/)).toBeNull()
+    expect(screen.queryByText(/^Max scenarios$/)).toBeNull()
+    expect(screen.queryByText(/^Acceptance$/)).toBeNull()
+    expect(screen.queryByText(/^Digest$/)).toBeNull()
+    expect(screen.queryByText(/Max re-alignments/)).toBeNull()
+    expect(screen.queryByText(/Wake on 15m zones/)).toBeNull()
+    expect(screen.queryByText(/Min wake interval/)).toBeNull()
+    expect(screen.queryByText(/Guarantee a 1h S\/D seat/)).toBeNull()
     const fr = screen.getByTestId('flip-reread-toggle')
-    expect(sm.getAttribute('aria-checked')).toBe('false')
-    expect(ft.getAttribute('aria-checked')).toBe('false')
     expect(fr.getAttribute('aria-checked')).toBe('false')
+    // absent = ON (mirrors the Go pointer-bool)
+    const wk = screen.getByTestId('wake-on-level-events-toggle')
+    expect(wk.getAttribute('aria-checked')).toBe('true')
   })
 
-  it('W-KNOB-UI: toggling calls update with the right key', () => {
+  it('W-KNOB-PRUNE: a stored folded value passes through a save untouched', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={
+          {
+            plan_enabled: true,
+            structure_map: true,
+            scenario_cap: 5,
+            realign_cap: 10,
+            levels_fresh_by_tf: true,
+            wake_on_htf_ob: true,
+          } as DayPlanConfig
+        }
+        onChange={onChange}
+        language="en"
+      />
+    )
+    fireEvent.click(screen.getByTestId('flip-reread-toggle'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        flip_reread: true,
+        structure_map: true,
+        scenario_cap: 5,
+        realign_cap: 10,
+        levels_fresh_by_tf: true,
+        wake_on_htf_ob: true,
+      })
+    )
+    onChange.mockClear()
+    fireEvent.click(screen.getByTestId('wake-on-level-events-toggle'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ wake_on_level_events: false })
+    )
+  })
+
+  it('W-T1-CURRENCIES: the currency field parses a comma list, upper-cases, and clears to absent (default USD)', () => {
     const onChange = vi.fn()
     render(
       <DayPlanEditor
@@ -59,20 +110,72 @@ describe('DayPlanEditor', () => {
         language="en"
       />
     )
-    fireEvent.click(screen.getByTestId('structure-map-toggle'))
+    const input = screen.getByTestId('t1-currencies-input') as HTMLInputElement
+    expect(input.placeholder).toBe('USD')
+    expect(input.value).toBe('')
+    fireEvent.change(input, { target: { value: 'usd, eur ,' } })
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ structure_map: true })
+      expect.objectContaining({ t1_currencies: ['USD', 'EUR'] })
     )
     onChange.mockClear()
-    fireEvent.click(screen.getByTestId('fresh-by-tf-toggle'))
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ levels_fresh_by_tf: true })
+    fireEvent.change(input, { target: { value: '' } })
+    const cleared = onChange.mock.calls[0][0] as DayPlanConfig
+    expect(cleared.t1_currencies).toBeUndefined()
+  })
+
+  it('W-T1-CURRENCIES: switching strategies resyncs the field, and an edit saves only to the new one (review of #171)', () => {
+    const onChangeA = vi.fn()
+    const onChangeB = vi.fn()
+    const { rerender } = render(
+      <DayPlanEditor
+        config={{ plan_enabled: true, t1_currencies: ['USD', 'EUR'] }}
+        onChange={onChangeA}
+        language="en"
+      />
     )
-    onChange.mockClear()
-    fireEvent.click(screen.getByTestId('flip-reread-toggle'))
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ flip_reread: true })
+    const field = () =>
+      screen.getByTestId('t1-currencies-input') as HTMLInputElement
+    expect(field().value).toBe('USD,EUR')
+    // a trailing comma mid-typing is NOT eaten by the resync
+    fireEvent.change(field(), { target: { value: 'USD,EUR,' } })
+    rerender(
+      <DayPlanEditor
+        config={{ plan_enabled: true, t1_currencies: ['USD', 'EUR'] }}
+        onChange={onChangeA}
+        language="en"
+      />
     )
+    expect(field().value).toBe('USD,EUR,')
+    // strategy B has no list → the field shows the default placeholder, not A's text
+    rerender(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={onChangeB}
+        language="en"
+      />
+    )
+    expect(field().value).toBe('')
+    expect(field().placeholder).toBe('USD')
+    fireEvent.change(field(), { target: { value: 'jpy' } })
+    expect(onChangeB).toHaveBeenCalledWith(
+      expect.objectContaining({ t1_currencies: ['JPY'] })
+    )
+    const savedB = onChangeB.mock.calls[0][0] as DayPlanConfig
+    expect(savedB.t1_currencies).not.toContain('EUR')
+    expect(onChangeA).toHaveBeenCalledTimes(1) // only the pre-switch keystroke
+  })
+
+  it('W-T1-CURRENCIES: a saved list renders in the field', () => {
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true, t1_currencies: ['ALL'] }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    expect(
+      (screen.getByTestId('t1-currencies-input') as HTMLInputElement).value
+    ).toBe('ALL')
   })
 
   it('a per-session tri-state knob sets then inherits (clears) the field', () => {

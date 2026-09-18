@@ -3,6 +3,8 @@ package kernel
 import (
 	"fmt"
 	"strings"
+
+	"nofx/store"
 )
 
 // W3 — red-news (T1) HARD no-trade blackout windows. A T1 (red / High-impact)
@@ -20,11 +22,62 @@ type CTWindow struct {
 	Label string
 }
 
-// T1BlackoutWindows returns the blackout windows for the T1 events in a session's
-// calendar slice (±T1BlackoutMinutes around each). T2 and non-timed events are
-// ignored (T2 is caution-only, not a hard block).
-func T1BlackoutWindows(events []PlannerCalendarEvent) []CTWindow {
-	var out []CTWindow
+// T1Split is the ONE classification of a session's T1 (red) events under a
+// currency set (W-T1-CURRENCIES, 2026-09-18). Hard windows gate; advisory
+// lines are shown (plan no_trade, card, prompt) and gate NOTHING; Uncurrencied
+// names the T1 events that carried no currency and were therefore treated as
+// HARD (fail closed) — the caller logs them once per day.
+type T1Split struct {
+	Hard         []CTWindow
+	Advisory     []string
+	Uncurrencied []string
+}
+
+// t1CurrencyHard decides whether one event currency hard-blocks under the set.
+// Case-insensitive. "ALL"/"*" anywhere in the set → everything hard-blocks
+// (the pre-wave behaviour). An empty/blank event currency → HARD + unknown
+// (fail closed: a red event we cannot place must not be waved through).
+func t1CurrencyHard(ccy string, set []string) (hard bool, unknown bool) {
+	ccy = strings.TrimSpace(ccy)
+	if ccy == "" {
+		return true, true
+	}
+	for _, s := range set {
+		s = strings.TrimSpace(s)
+		if s == "*" || strings.EqualFold(s, store.T1CurrencyAll) || strings.EqualFold(s, ccy) {
+			return true, false
+		}
+	}
+	return false, false
+}
+
+// T1CurrencySetLabel renders the resolved set for log/advisory text: "USD",
+// "USD,EUR" or "ALL". Never empty: a nil/empty set is the shipped default.
+func T1CurrencySetLabel(set []string) string {
+	if len(set) == 0 {
+		set = store.DefaultT1Currencies()
+	}
+	for _, s := range set {
+		s = strings.TrimSpace(s)
+		if s == "*" || strings.EqualFold(s, store.T1CurrencyAll) {
+			return store.T1CurrencyAll
+		}
+	}
+	return strings.Join(set, ",")
+}
+
+// SplitT1 classifies the T1 events of a session's calendar slice under the
+// currency set: events whose currency is in the set (or any event when the set
+// is ALL, or any event WITHOUT a currency) open a HARD ±T1BlackoutMinutes
+// window; every other T1 event becomes one advisory line. T2 and non-timed
+// events are ignored (T2 is caution-only, not a hard block). A nil/empty set
+// resolves to the shipped default so no caller can accidentally gate nothing.
+func SplitT1(events []PlannerCalendarEvent, currencies []string) T1Split {
+	if len(currencies) == 0 {
+		currencies = store.DefaultT1Currencies()
+	}
+	var out T1Split
+	setLabel := T1CurrencySetLabel(currencies)
 	for _, e := range events {
 		if strings.ToUpper(strings.TrimSpace(e.Impact)) != "T1" {
 			continue
@@ -33,13 +86,36 @@ func T1BlackoutWindows(events []PlannerCalendarEvent) []CTWindow {
 		if !ok {
 			continue
 		}
-		out = append(out, CTWindow{
+		hard, unknown := t1CurrencyHard(e.Currency, currencies)
+		if unknown {
+			out.Uncurrencied = append(out.Uncurrencied, strings.TrimSpace(e.Title))
+		}
+		if !hard {
+			out.Advisory = append(out.Advisory, fmt.Sprintf("🟠 %s %s CT (%s) — red news, advisory only (t1_currencies=%s)",
+				strings.TrimSpace(e.Title), e.TimeCT, strings.ToUpper(strings.TrimSpace(e.Currency)), setLabel))
+			continue
+		}
+		out.Hard = append(out.Hard, CTWindow{
 			Start: ((m-T1BlackoutMinutes)%1440 + 1440) % 1440,
 			End:   ((m+T1BlackoutMinutes)%1440 + 1440) % 1440,
 			Label: fmt.Sprintf("%s %s CT ±%dm", strings.TrimSpace(e.Title), e.TimeCT, T1BlackoutMinutes),
 		})
 	}
 	return out
+}
+
+// T1BlackoutWindows returns the HARD blackout windows for the T1 events in a
+// session's calendar slice under the currency set (±T1BlackoutMinutes around
+// each). The ONE gate-window source: the arm gate, the plan write, the fade
+// facts and the card all read it (class 52). Advisory events never appear here.
+func T1BlackoutWindows(events []PlannerCalendarEvent, currencies []string) []CTWindow {
+	return SplitT1(events, currencies).Hard
+}
+
+// T1AdvisoryLines returns the advisory lines for the T1 events NOT in the
+// currency set. They render; they never gate.
+func T1AdvisoryLines(events []PlannerCalendarEvent, currencies []string) []string {
+	return SplitT1(events, currencies).Advisory
 }
 
 // InT1Blackout reports whether nowMin (CT minute-of-day) falls inside any window,
@@ -59,25 +135,29 @@ func InT1Blackout(nowMin int, windows []CTWindow) (string, bool) {
 	return "", false
 }
 
-// T1NoTradeLines renders the HARD no-trade blackout descriptions written into a
-// plan's no_trade list (§80 — auto-written, not left to the model).
-func T1NoTradeLines(events []PlannerCalendarEvent) []string {
+// T1NoTradeLines renders the no-trade lines written into a plan's no_trade
+// list (§80 — auto-written, not left to the model): the HARD blackout lines
+// for the events in the currency set, then the advisory lines for the rest.
+func T1NoTradeLines(events []PlannerCalendarEvent, currencies []string) []string {
+	sp := SplitT1(events, currencies)
 	var out []string
-	for _, w := range T1BlackoutWindows(events) {
+	for _, w := range sp.Hard {
 		out = append(out, "🔴 "+w.Label+" — HARD no-trade (red news)")
 	}
-	return out
+	return append(out, sp.Advisory...)
 }
 
-// T1NoTradeLinesDrift is T1NoTradeLines with each window widened by the measured
-// clock drift (F6, 2026-08-30): a skewed clock shifts when an event actually
-// fires relative to the local clock, so the blackout must cover the uncertainty.
-func T1NoTradeLinesDrift(events []PlannerCalendarEvent, driftMs int64) []string {
+// T1NoTradeLinesDrift is T1NoTradeLines with each HARD window widened by the
+// measured clock drift (F6, 2026-08-30): a skewed clock shifts when an event
+// actually fires relative to the local clock, so the blackout must cover the
+// uncertainty. Advisory lines carry no window and are not widened.
+func T1NoTradeLinesDrift(events []PlannerCalendarEvent, currencies []string, driftMs int64) []string {
+	sp := SplitT1(events, currencies)
 	var out []string
-	for _, w := range WidenCTWindows(T1BlackoutWindows(events), driftMs) {
+	for _, w := range WidenCTWindows(sp.Hard, driftMs) {
 		out = append(out, "🔴 "+w.Label+" — HARD no-trade (red news)")
 	}
-	return out
+	return append(out, sp.Advisory...)
 }
 
 // WidenCTWindows shifts every window's Start earlier and End later by

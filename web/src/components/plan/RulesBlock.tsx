@@ -58,12 +58,22 @@ export function RulesBlock({
   const hasBand = Array.isArray(band) && band.length > 0
   const live = hasBand ? band!.filter((w) => w.status === 'live') : []
   const spent = hasBand ? band!.filter((w) => w.status !== 'live') : []
-  const prose = noTrade && noTrade.length > 0 ? noTrade : []
+  // W-T1-CURRENCIES (2026-09-18): a machine-written advisory ("🟠 …") is not
+  // model prose and is not a window — it is shown, always, and gates nothing.
+  const allProse = noTrade && noTrade.length > 0 ? noTrade : []
+  const advisory = allProse.filter((l) => l.startsWith('🟠'))
+  const prose = allProse.filter((l) => !l.startsWith('🟠'))
 
   // Pre-band docs carry no machine windows: keep rendering the prose as rules
   // rather than claiming a plan has no constraints.
   const proseIsRules = !hasBand
-  if (!hasBand && prose.length === 0 && !deathCondition) return null
+  if (
+    !hasBand &&
+    prose.length === 0 &&
+    advisory.length === 0 &&
+    !deathCondition
+  )
+    return null
 
   const rowStyle = { fontFamily: 'var(--vl-font-ui)' } as const
 
@@ -92,6 +102,25 @@ export function RulesBlock({
               : live.length > 0
                 ? live.map(windowText).join(' · ')
                 : tp('noTradeNoneLive', language)}
+          </span>
+        </div>
+      )}
+
+      {advisory.length > 0 && (
+        <div
+          className="text-[11px]"
+          style={rowStyle}
+          data-testid="no-trade-advisory"
+        >
+          <span
+            className="uppercase tracking-wide"
+            style={{ color: 'var(--vl-muted)' }}
+          >
+            {tp('noTradeAdvisory', language)}
+          </span>
+          <span style={{ color: 'var(--vl-muted)' }}>
+            {' '}
+            · {advisory.join(' · ')}
           </span>
         </div>
       )}

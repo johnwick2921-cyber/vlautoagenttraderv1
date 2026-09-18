@@ -51,8 +51,8 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		installLevelStateProvider(at, st) // W11b — surface persisted freshness/consumed
 		// 1h wave + R4 (2026-08-25) — one boot observability line for the new
 		// day-plan knobs so a config question is answered from the log.
-		at.logInfof("🗺️ day-plan knobs: seat_1h_zone=%v min_scenario_quality=%s ob_lookback_bars=%d",
-			dp.Seat1HZoneEnabled(), dp.MinScenarioQualityFor(""), kernel.OBLookbackBars()) // S2 (2026-09-16) — freshness mode + HTF weight, READ not typed:
+		at.logInfof("🗺️ day-plan knobs: seat_1h_zone=always min_scenario_quality=%s ob_lookback_bars=%d",
+			dp.MinScenarioQualityFor(""), kernel.OBLookbackBars()) // S2 (2026-09-16) — freshness mode + HTF weight, READ not typed:
 		// the mode comes from the resolved knob, the multiplier from the
 		// const the scorer actually applies.
 		at.logInfof("🧮 freshness: fresh=%s htf×=%g",

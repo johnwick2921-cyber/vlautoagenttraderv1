@@ -44,6 +44,13 @@ const (
 	KnobIneffective KnobStatus = "ineffective"
 	KnobCandidate   KnobStatus = "candidate-unverified"
 	KnobInfra       KnobStatus = "infra" // ports, paths, keys — not a trading knob
+
+	// KnobFolded (W-KNOB-PRUNE, owner ruling 2026-09-18) — the Studio control is
+	// gone and the code path keeps the shipped default as a CONSTANT; the stored
+	// JSON field stays readable, a saved non-default is honoured at read and
+	// logged once at trader load ("⚙ folded knob <name>=<value> honoured from
+	// stored config"). Not dead, not live-with-a-control: a third thing.
+	KnobFolded KnobStatus = "folded"
 )
 
 // KnobEntry is one schema field's classification.
@@ -121,9 +128,9 @@ func LookupKnob(path string) (KnobEntry, bool) {
 
 // KnobSummary is what the boot line reports — counted, never typed.
 type KnobSummary struct {
-	Total, Live, Suspended, Advisory, DisplayOnly, Ineffective, Candidate, Infra int
-	EnvShadows                                                                   int
-	EnvShadowPaths                                                               []string
+	Total, Live, Suspended, Advisory, DisplayOnly, Ineffective, Candidate, Infra, Folded int
+	EnvShadows                                                                           int
+	EnvShadowPaths                                                                       []string
 }
 
 // KnobStatusSummary counts the registry by status.
@@ -158,6 +165,8 @@ func KnobStatusSummary() KnobSummary {
 			s.Candidate++
 		case KnobInfra:
 			s.Infra++
+		case KnobFolded:
+			s.Folded++
 		}
 	}
 	return s
@@ -177,15 +186,18 @@ func KnobRegistryBootLine() string {
 	if unclassified > 0 {
 		warn = fmt.Sprintf(" · ⚠ %d UNCLASSIFIED", unclassified)
 	}
-	return fmt.Sprintf("settings: schema=%d classified=%d live=%d ineffective=%d candidate-unverified=%d suspended=%d advisory=%d display-only=%d infra=%d · env-shadows=%d%s",
-		fields, s.Total, s.Live, s.Ineffective, s.Candidate, s.Suspended, s.Advisory, s.DisplayOnly, s.Infra, s.EnvShadows, warn)
+	return fmt.Sprintf("settings: schema=%d classified=%d live=%d ineffective=%d candidate-unverified=%d suspended=%d advisory=%d display-only=%d infra=%d folded=%d · env-shadows=%d%s",
+		fields, s.Total, s.Live, s.Ineffective, s.Candidate, s.Suspended, s.Advisory, s.DisplayOnly, s.Infra, s.Folded, s.EnvShadows, warn)
 }
 
 // AuditDeadKnobs2026_09_03 is the audit's fifteen, by schema path, so the
 // registry can be checked against the finding that produced it.
+//
+// W-KNOB-PRUNE (2026-09-18): day_plan.last_entry_ct and day_plan.eod_flat_ct
+// were DELETED from the struct (unreachable since the P2 session-scope
+// redesign; nothing read them) — they are no longer schema fields, so they
+// leave this list rather than being classified.
 var AuditDeadKnobs2026_09_03 = []string{
-	"day_plan.last_entry_ct",
-	"day_plan.eod_flat_ct",
 	"risk_control.max_contracts_enabled",
 	"risk_control.notional_cap_enabled",
 	"risk_control.max_margin_usage",
@@ -209,6 +221,8 @@ func (e KnobEntry) UILabel() string {
 		return "display only"
 	case KnobInfra:
 		return "infrastructure — not a trading knob"
+	case KnobFolded:
+		return "folded — no control; stored value honoured (" + e.Note + ")"
 	default:
 		return "live"
 	}

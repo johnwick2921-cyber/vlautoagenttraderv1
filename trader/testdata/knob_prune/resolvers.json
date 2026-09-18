@@ -1,0 +1,57 @@
+{
+  "alloff": {
+    "Acceptance": "5m_close",
+    "RealignCap": 5,
+    "ScenarioCap": 3,
+    "Digest": false,
+    "WakeInterval": 30,
+    "StructureMap": false,
+    "Freshness": "1m",
+    "HTFMult": 1,
+    "MaxLevels": 8
+  },
+  "empty": {
+    "Acceptance": "5m_close",
+    "RealignCap": 5,
+    "ScenarioCap": 3,
+    "Digest": false,
+    "WakeInterval": 30,
+    "StructureMap": false,
+    "Freshness": "1m",
+    "HTFMult": 1,
+    "MaxLevels": 8
+  },
+  "nil": {
+    "Acceptance": "5m_close",
+    "RealignCap": 5,
+    "ScenarioCap": 3,
+    "Digest": false,
+    "WakeInterval": 30,
+    "StructureMap": false,
+    "Freshness": "1m",
+    "HTFMult": 1,
+    "MaxLevels": 8
+  },
+  "owner": {
+    "Acceptance": "5m_close",
+    "RealignCap": 10,
+    "ScenarioCap": 5,
+    "Digest": true,
+    "WakeInterval": 30,
+    "StructureMap": true,
+    "Freshness": "by-tf",
+    "HTFMult": 1,
+    "MaxLevels": 12
+  },
+  "seed": {
+    "Acceptance": "5m_close",
+    "RealignCap": 5,
+    "ScenarioCap": 3,
+    "Digest": true,
+    "WakeInterval": 30,
+    "StructureMap": false,
+    "Freshness": "1m",
+    "HTFMult": 1,
+    "MaxLevels": 8
+  }
+}
