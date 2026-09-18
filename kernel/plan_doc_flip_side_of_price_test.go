@@ -168,7 +168,7 @@ func TestFlipSideOfPriceLawReachesTheModel(t *testing.T) {
 		hasHTF, has1H bool
 	}{{true, true}, {true, false}, {false, true}, {false, false}} {
 		for _, caps := range [][2]int{{0, 0}, {8, 3}, {8, 5}} {
-			p := plannerOutputContract(caps[0], caps[1], v.hasHTF, v.has1H)
+			p := plannerOutputContract(caps[0], caps[1], v.hasHTF, v.has1H, false)
 			if err := ValidatePromptContracts(p); err != nil {
 				t.Fatalf("rendered prompt (levels=%d scenarios=%d htf=%v 1h=%v) must state every restriction: %v", caps[0], caps[1], v.hasHTF, v.has1H, err)
 			}

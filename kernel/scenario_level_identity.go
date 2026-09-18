@@ -1,7 +1,11 @@
 package kernel
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"nofx/levelidentity"
@@ -12,6 +16,74 @@ func identityString(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+// identityValue is the nil-safe inverse of identityString.
+func identityValue(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+// referenceAnchorKinds (W-GEOMETRY-REFUSAL, 2026-09-18) are the session/anchor
+// reference kinds whose SOURCE WINDOW can still be developing at authoring
+// time, so their formation close is unknown and the strict identity id is NULL
+// (levelidentity.ID requires formed_close_ms). Census [A] on dev b70fc6ca:
+// ONH/ONL/AS-H/AS-L/LDN-H/LDN-L/RTH-H/RTH-L (levels_multiday.go fills
+// FormedCloseMs only when completedSessionSourceClose evidences completion) +
+// OR-H/OR-L + the VWAP family (eVWAP/pdVWAP) whose capture window can be open.
+var referenceAnchorKinds = map[string]bool{
+	"ONH": true, "ONL": true, "AS-H": true, "AS-L": true,
+	"LDN-H": true, "LDN-L": true, "RTH-H": true, "RTH-L": true,
+	"OR-H": true, "OR-L": true, "eVWAP": true, "pdVWAP": true, "VWAP": true,
+}
+
+// ReferenceAnchorKind reports whether a kind may legitimately reach the map
+// without a formation close.
+func ReferenceAnchorKind(kind string) bool { return referenceAnchorKinds[kind] }
+
+// ReferenceLevelID derives a STABLE sha id for a reference-anchor level whose
+// strict identity inputs are incomplete (formed_close_ms unknown while the
+// source window is still developing). The id is a deterministic hash of
+// (symbol|kind|lo|hi|origin_date|tf) — the SAME inputs always yield the SAME
+// id, so the planner can author it and the executor resolves it against the
+// frozen map. The "ref|" prefix keeps it disjoint from strict ids.
+func ReferenceLevelID(symbol, kind string, lo, hi float64, originDate, tf string) *string {
+	if strings.TrimSpace(kind) == "" || strings.TrimSpace(originDate) == "" || lo <= 0 || hi <= 0 || math.IsNaN(lo) || math.IsInf(lo, 0) || math.IsNaN(hi) || math.IsInf(hi, 0) {
+		return nil
+	}
+	raw := fmt.Sprintf("ref|%s|%s|%g|%g|%s|%s", symbol, kind, lo, hi, originDate, tf)
+	h := sha256.Sum256([]byte(raw))
+	// The "ref|" prefix rides on the ID STRING so LevelByReferenceID can tell
+	// these ids from strict ids at a glance.
+	id := "ref|" + hex.EncodeToString(h[:])
+	return &id
+}
+
+// EnsureReferenceLevelIDs fills NULL candidate ids for reference-anchor kinds
+// with the stable reference id (W-GEOMETRY-REFUSAL). Non-anchor kinds with a
+// NULL id stay NULL — their identity is genuinely unknown. Call sites gate this
+// on day_plan.geometry_reference_levels (OFF = today's map byte-identical).
+func EnsureReferenceLevelIDs(cs []MapCandidate) {
+	for i := range cs {
+		c := &cs[i]
+		if c.ID != nil || c.Identity.Kind == nil {
+			continue
+		}
+		if !ReferenceAnchorKind(*c.Identity.Kind) {
+			continue
+		}
+		if c.Identity.Lo == nil || c.Identity.Hi == nil || *c.Identity.Lo <= 0 || *c.Identity.Hi <= 0 {
+			continue
+		}
+		id := ReferenceLevelID(identityValue(c.Identity.Symbol), *c.Identity.Kind, *c.Identity.Lo, *c.Identity.Hi, identityValue(c.Identity.OriginDate), identityValue(c.Identity.TF))
+		if id == nil {
+			continue
+		}
+		c.ID = id
+		c.Identity.ID = id
+	}
 }
 func identityInt64(n int64) *int64 {
 	if n <= 0 {
@@ -127,6 +199,34 @@ func LevelByID(id *string, levels []PlanLevel) (PlanLevel, bool) {
 	return found, ok
 }
 
+// LevelByReferenceID resolves a STABLE reference id (the "ref|" ids
+// W-GEOMETRY-REFUSAL assigns to reference-anchor levels whose formation close
+// is unknown). Strict inputs cannot recompute these ids by construction (the
+// strict id REQUIRES formed_close_ms), so the check is id equality plus
+// kind/price/label consistency — duplicates with conflicting prices fail
+// unresolved, the same discipline as LevelByID.
+func LevelByReferenceID(id *string, levels []PlanLevel) (PlanLevel, bool) {
+	if id == nil || *id == "" || !strings.HasPrefix(*id, "ref|") {
+		return PlanLevel{}, false
+	}
+	var found PlanLevel
+	ok := false
+	for _, l := range levels {
+		if l.ID == nil || *l.ID != *id {
+			continue
+		}
+		if l.Kind == nil || !ReferenceAnchorKind(*l.Kind) {
+			return PlanLevel{}, false
+		}
+		if ok && (found.Price != l.Price || found.Label != l.Label) {
+			return PlanLevel{}, false
+		}
+		found = l
+		ok = true
+	}
+	return found, ok
+}
+
 type ScenarioIdentity struct {
 	LevelID         *string    `json:"level_id"`
 	Level           *PlanLevel `json:"level"`
@@ -146,6 +246,13 @@ func ResolveScenarioIdentity(sc PlanScenario, levels []PlanLevel, anchor float64
 	}
 	r.Basis = "unresolved:unknown_level_id"
 	if l, ok := LevelByID(sc.LevelID, levels); ok {
+		r.Level = &l
+		r.Basis = "candidate_id"
+		r.Disagreed = hasAnchor && math.Abs(l.Price-anchor) > clusterToleranceFor(l.Price)
+	} else if l, ok := LevelByReferenceID(sc.LevelID, levels); ok {
+		// W-GEOMETRY-REFUSAL (b1): a stable reference id (anchor kind without a
+		// formation close) resolves as a candidate — same discipline, no strict
+		// recompute possible by construction.
 		r.Level = &l
 		r.Basis = "candidate_id"
 		r.Disagreed = hasAnchor && math.Abs(l.Price-anchor) > clusterToleranceFor(l.Price)
@@ -247,6 +354,11 @@ func EpisodeLevelID(l DetectedLevel, doc *PlanDoc) *string {
 	for _, sc := range doc.Scenarios {
 		named, ok := LevelByID(sc.LevelID, doc.IdentityLevels)
 		if !ok {
+			// W-GEOMETRY-REFUSAL (F3): a ref| id resolves through the reference
+			// lookup, so episodes link to reference-anchor scenarios too.
+			named, ok = LevelByReferenceID(sc.LevelID, doc.IdentityLevels)
+		}
+		if !ok {
 			continue
 		}
 		match := *named.ID == *own.ID
@@ -272,7 +384,9 @@ func EpisodeScenarioByID(id *string, doc *PlanDoc) *string {
 		return nil
 	}
 	if _, ok := LevelByID(id, doc.IdentityLevels); !ok {
-		return nil
+		if _, ok := LevelByReferenceID(id, doc.IdentityLevels); !ok {
+			return nil // W-GEOMETRY-REFUSAL (F3): ref| ids are real identities
+		}
 	}
 	var found *string
 	for _, sc := range doc.Scenarios {

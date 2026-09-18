@@ -45,6 +45,12 @@ func class39LegsPlanJSON(target string) string {
 // the recorded counter reads 1 afterwards.
 func TestClass39WriteSiteNormalizesAndRecords(t *testing.T) {
 	at := plannerTestTrader(t)
+	// W-WRITE-TIME-FEASIBILITY: this fixture universe has no frozen zone map,
+	// so the reject arm would fail the geometry gate. The knob is pinned OFF
+	// here (spec d byte-identical pin) — this test measures class-39
+	// normalization, not write-time feasibility.
+	feasOff := false
+	at.config.StrategyConfig.DayPlan.WriteTimeFeasibility = &feasOff
 	if n := store.ArmsNormalizedCount(at.store); n != 0 {
 		t.Fatalf("fresh counter = %d", n)
 	}

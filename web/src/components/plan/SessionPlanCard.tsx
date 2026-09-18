@@ -106,6 +106,22 @@ function Badge({ children, color }: { children: ReactNode; color: string }) {
   )
 }
 
+/**
+ * W-ARM-STATE-UI — the dormant marker speaks as 'death — …' / 'flip — …';
+ * '' when the wire carries no marker (never a fabricated reason). The marker
+ * shape is 'dormant:<kind>:<kind>-condition: <text>' (plan_lifecycle_log).
+ */
+export function dormantReasonLabel(reason?: string): string {
+  if (!reason) return ''
+  const stripped = reason.replace(/^dormant:/, '')
+  const m = stripped.match(/^([^:]+):(.*)$/)
+  if (!m) return stripped
+  const kind = m[1]
+  let rest = m[2].trim()
+  rest = rest.replace(new RegExp(`^${kind}-condition:\\s*`), '')
+  return `${kind} — ${rest}`
+}
+
 export function SessionPlanCard({
   plan,
   traderId,
@@ -389,7 +405,9 @@ export function SessionPlanCard({
         </div>
       )}
       {/* DORMANT (plan-lifecycle wave, 2026-08-27) — flip/death line breached;
-          entries blocked until price closes back (auto re-arm, same version). */}
+          entries blocked until price closes back (auto re-arm, same version).
+          W-ARM-STATE-UI: the reason is the LIFECYCLE marker (death vs flip),
+          never trigger_reason — that column is WHY THE VERSION WAS WRITTEN. */}
       {plan.lifecycle === 'dormant' && (
         <div
           data-testid="dormant-banner"
@@ -403,11 +421,9 @@ export function SessionPlanCard({
         >
           <span aria-hidden>⏸</span>
           <span>
-            dormant:{' '}
-            {(plan.trigger_reason ?? '').replace(/^dormant:/, '') ||
-              'flip/death line breached'}{' '}
-            — entries blocked until price closes back (auto re-arm, same
-            version)
+            {dormantReasonLabel(plan.lifecycle_reason) !== ''
+              ? `dormant: ${dormantReasonLabel(plan.lifecycle_reason)} — entries blocked until price closes back (auto re-arm, same version)`
+              : 'dormant — entries blocked until price closes back (auto re-arm, same version)'}
           </span>
         </div>
       )}
@@ -878,6 +894,7 @@ export function SessionPlanCard({
               }
             ).armed
           }
+          geometry={plan.structural_geometry}
           fvgStates={
             (
               plan as {

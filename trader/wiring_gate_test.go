@@ -132,7 +132,7 @@ var alsoRequireWired = []string{
 	"oneSetupStampEpisodes",
 	"oneSetupSaveRecord",
 	"oneSetupObstacleTarget",
-	"ResolveEntryGeometryZone", "FirstGeometryTarget", "ComposeLevelFadeGeometry", "composeGeometry", "ResolveStructuralStop", "SaveStructuralGeometry", "StructuralGeometryFor", "StructuralGeometryCounts", "saveArmGeometry", "retireGeometryRefusal", "StructuralGeometryBootLine", "planStructuralGeometry",
+	"FirstGeometryTarget", "ComposeLevelFadeGeometryWith", "composeGeometry", "ResolveStructuralStop", "SaveStructuralGeometry", "StructuralGeometryFor", "StructuralGeometryCounts", "saveArmGeometry", "retireGeometryRefusal", "StructuralGeometryBootLine", "planStructuralGeometry",
 	"StampOneSetup",
 	"OneSetupCountsFor",
 	"ComputeFollowPlan",

@@ -78,7 +78,7 @@ func composeArmStop(side string, entry, authored, atr5m, tick float64, levels []
 	// entry plays and historical benchmark fixtures retain the legacy branch.
 	if len(structural) == 1 {
 		in := structural[0]
-		r := ComposeLevelFadeGeometry(in.Doc, in.Scenario, in.Leg, in.Policy, atr5m, tick, in.PointValue)
+		r := ComposeLevelFadeGeometryWith(in.Doc, in.Scenario, in.Leg, in.Policy, atr5m, tick, in.PointValue, in.GeometryRefIDs)
 		c := StopComposition{Authored: authored, Bound: r.StopSource, Geometry: &r, Unanchored: r.StopSource == "atr_fallback"}
 		if r.Stop != nil {
 			c.Stop = *r.Stop

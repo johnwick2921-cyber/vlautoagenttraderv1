@@ -489,7 +489,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 				policy.MinRR = at.armMinRRFor(cfg)
 				comp := composeArmStop(sc.Direction, leg.Entry, leg.Stop, atr5m,
 					market.FuturesTickSize(at.futuresSymbol()), doc.Levels, kernel.MinSLATRMult(),
-					kernel.MinSLTickClearance, armStopAnchorMaxATR(), armStructuralContext{Doc: &doc, Scenario: sc, Leg: leg, Policy: policy, PointValue: market.FuturesPointValue(at.futuresSymbol())})
+					kernel.MinSLTickClearance, armStopAnchorMaxATR(), armStructuralContext{Doc: &doc, Scenario: sc, Leg: leg, Policy: policy, PointValue: market.FuturesPointValue(at.futuresSymbol()), GeometryRefIDs: cfg.DayPlan.GeometryRefIDsEnabled()})
 				geometry = comp.Geometry
 				leg.Entry = geometry.Entry
 				geometry.TraderID, geometry.PlanID, geometry.Version = at.id, plan.PlanID, plan.Version
@@ -510,6 +510,13 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 					}
 					if armRefusalChanged(&at.armRefusalLast, store.StructuralGeometryKey(*geometry), geometry.Reason) && at.store != nil {
 						_, _ = store.IncArmRefusal(at.store, at.id, kernel.PlanTradeDateFor(plan), plan.Session, "geometry_"+geometry.Reason)
+						// W-GEOMETRY-REFUSAL (a), 2026-09-18 — a silent refusal made
+						// every reject play at a reference level unarmable (95 refusals
+						// since 09-13, 0 WARN lines). ONE WARN per (geometry key, reason)
+						// change, de-duped exactly like the other arm refusals; the INFO
+						// composition line and the counter are unchanged.
+						at.logWarnf("⚔️ arm REFUSED %s %s leg %d: geometry_%s (%s) entry=%.2f level_id=%s",
+							plan.Session, sc.ID, li+1, geometry.Reason, geometry.Detail, leg.Entry, identityIDText(sc.LevelID))
 					}
 					continue
 				}

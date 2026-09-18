@@ -59,6 +59,9 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 			freshnessBootLabel(dp), kernel.HTFScoreMultiplier) // A3 (2026-08-26) — min-SL guard observability (0 = off).
 		at.logInfof("🛑 min-sl guard: atr_mult=%.1f level_clearance=%dtick(s)",
 			kernel.MinSLATRMult(), kernel.MinSLTickClearance)
+		// W-WRITE-TIME-FEASIBILITY (2026-09-18) — READ from the resolved knob,
+		// never typed.
+		at.logInfof("🎛 entry law: write_feas=%s", writeFeasLabel(dp))
 		// PLAN-LIFECYCLE WAVE (2026-08-27) — hysteresis + dormant/re-arm +
 		// latency routing observability, so the mode is answerable from the log.
 		// W-FLIP-HOLD-ANCHOR (2026-09-17): the hold length and its anchor kinds

@@ -12,7 +12,7 @@ import (
 
 func armedPromptBlock(t *testing.T) string {
 	t.Helper()
-	return plannerOutputContract(8, 3, true, true)
+	return plannerOutputContract(8, 3, true, true, false)
 }
 
 // The vocabulary must come from the SAME derived line the validator warns with.

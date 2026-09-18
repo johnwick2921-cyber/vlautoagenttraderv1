@@ -432,7 +432,24 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		liveness.Reason = "plan is not active; recorded scenario history shown separately"
 	}
 
-	c.JSON(200, gin.H{
+	// W-ARM-STATE-UI — the dormant chip must say WHY the plan went dormant
+	// (death vs flip), not why the version was WRITTEN (trigger_reason). The
+	// marker lives in plan_lifecycle_log; the newest event whose Event matches
+	// the row's CURRENT lifecycle is the truth. Absent -> the key is omitted
+	// entirely, never "".
+	lifecycleReason := ""
+	if row.Lifecycle != "" {
+		if events, lErr := s.store.Plan().LifecycleLog(row.PlanID, row.Version); lErr == nil {
+			for i := len(events) - 1; i >= 0; i-- {
+				if events[i].Event == row.Lifecycle {
+					lifecycleReason = events[i].Reason
+					break
+				}
+			}
+		}
+	}
+
+	resp := gin.H{
 		"scenario_identity": kernel.ScenarioIdentities(&doc),
 		"scenario_liveness": liveness,
 		"scenario_deaths":   scenarioDeaths,
@@ -518,7 +535,11 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		// ITEM 4 — owner edits that could NOT be re-anchored onto this version.
 		// Never dropped silently: the card asks for review.
 		"uncarried_edits": s.uncarriedEdits(row.PlanID, row.Version),
-	})
+	}
+	if lifecycleReason != "" {
+		resp["lifecycle_reason"] = lifecycleReason
+	}
+	c.JSON(200, resp)
 }
 
 // planLevelFacts computes per-level live facts from the latest 1m bars. Also

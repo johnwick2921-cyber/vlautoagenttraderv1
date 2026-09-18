@@ -619,7 +619,7 @@ func main() {
 	// DESIGN: a resolved "entry-oco=own" here would be a Go constant claiming
 	// the AddOn's behaviour (A11/A24).
 	logger.Infof("🧷 %s", trader.BracketsBootLine(nil, false, "", 0))
-	logger.Infof("🎛 %s", kernel.EntryLawBootLedger()) // P1.4 (ledger-close 2026-08-19) — clock-guard block: live host-RTC drift,
+	logger.Infof("🎛 %s", kernel.EntryLawBootLedger(nil)) // P1.4 (ledger-close 2026-08-19) — clock-guard block: live host-RTC drift,
 	// guard-timer freshness, last resync/check state. Log-only, best-effort.
 	kernel.LogClockGuardBoot()
 	// P4 (ledger-close 2026-08-19) — half-days boot line: loaded count + the

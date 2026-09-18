@@ -5921,3 +5921,115 @@ scheduler working as designed; only "no trade since yesterday" made it a bug.
 
 **Fix.** This docs wave (`.env.example` line, PARTNER-BUILD section, this
 class); the guide clause for the seam is OWED at the next boot (guide law).
+
+## CLASS 153 — A SILENT STRUCTURAL-GEOMETRY REFUSAL MADE EVERY reject PLAY AT A REFERENCE LEVEL UNARMABLE (born 2026-09-12 with 540c9e8d, found 2026-09-18 05:42 CT LONDON v1 S1, fix/geometry-refusal, W-GEOMETRY-REFUSAL)
+
+**Shape.** The geometry gate refuses with an INFO-only composition line plus a
+system_config counter — no WARN, no ⚔️ arm REFUSED. The evaluator meanwhile prints
+`🎯 scenario S1 → ≈triggered`, so the journal reads "condition met, executor idle".
+Two machine roots made every reject play at a session reference level unarmable:
+(1) the identity map emits id=NULL for reference levels whose source window is
+still developing (levelidentity.ID requires formed_close_ms; ONH/ONL mid-window
+have none), the prompt instructs null, and the resolver's legacy:no_level_id path
+accepts it WARN-only; (2) the frozen-zone match skips a source whose tf differs
+from the identity tf, and VWAP-family/ONH sources carry tf "" against identity
+tf "1m".
+
+**How it hid.** Refusal and evaluation lived in two different voices: a counter
+that no journal reader sees, and an evaluator that says the condition fired. 95
+refusals since 09-13, 0 WARN lines, 0 trades.
+
+**Probes.**
+- `SELECT count(*) FROM system_config WHERE key LIKE 'structural_geometry:%' AND
+  value LIKE '%"reason":"no_provenance"%'` vs the total; and in the journal
+  `grep -c '"reason":"no_provenance"'` vs `grep -c '⚔️ arm REFUSED.*geometry'` —
+  must NOT be N vs 0. Every refusal class needs a WARN voice de-duped by key.
+- For every identity id a map emits NULL, ask what the PLANNER is instructed to
+  write and whether the executor can resolve it — a WARN-only accept at the write
+  site is a refusal at the arm site.
+- A machine-written hint ("author null when the map id is NULL") is a contract
+  that downstream enforcers must be able to honour.
+
+**Fix shape.** W-GEOMETRY-REFUSAL (executor side): (a) one de-duped
+`⚔️ arm REFUSED … geometry_<reason> (<detail>) entry=… level_id=…` WARN per
+(geometry key, reason) change; (b) behind day_plan.geometry_reference_levels
+(default ON, owner ruling "both fix now" 2026-09-18): (b1) stable `ref|` sha ids
+for reference-anchor kinds without a formation close (resolved by
+LevelByReferenceID; strict LevelByID untouched; stored NULL ids keep the legacy
+path), (b2) an empty zone-source tf is a wildcard in the frozen-zone match, and
+a matched NULL-WIDTH reference LINE is admitted as a zero-width band at the
+anchor so the structural stop composes (line − buffer) — without the admission
+half, the wildcard merely re-labelled the refusal (55 source_not_frozen became
+58 unusable and nothing became armable). DS-101 owns the write-time feasibility
+hint; the executor seam for both lanes is
+trader.ArmGeometryVerdict(doc, sc, geometryRefLevels).
+
+## CLASS 154 — A WRITE-TIME FEASIBILITY WARN THAT SAYS "THE GATE WILL REFUSE IT" AND WRITES THE PLAN ANYWAY (born with the arm-feasibility WARN 2026-08-28, found by the owner 2026-09-18 08:3x CT "fix all", W-WRITE-TIME-FEASIBILITY, fix/write-time-feasibility)
+
+**Shape.** `kernel.ArmFeasibilityWarnings` (F4, 2026-08-28) computed, at plan
+write time, exactly which arms the gate-at-arm chain would refuse every cycle
+(R:R below ARM_MIN_RR, stop closer than 1.5×ATR5m) — and then logged one WARN
+per arm and wrote the plan anyway. The owner's persistent journal shows 5 such
+WARNs since 2026-09-17 22:38 CT, every one followed by a PLAN written in-session
+(LONDON v2 07:32:52, NY v1 08:06:20) — WARN-then-write 5/5. The model never saw
+the WARN (it is not in the prompt), so it re-authored the same shape; the
+executor then refused the arm at arm time, printing the refusal to a log the
+model also never reads. The system knew the plan was dead on arrival and wrote
+it anyway.
+
+**Why it hid.** A WARN is invisible to every consumer except a human reading the
+journal; the write path is the only place that both has the verdict AND can make
+the author do something about it. "Warn-first" was the right rule for the
+bias-coherent warning (owner ruling 2026-09-04) but was inherited, unreviewed,
+by the arm-feasibility WARN, where the warning's own text ("the gate will
+refuse it") made the write a knowing contradiction.
+
+**Probes.**
+- `journalctl -u nofx --since <window> | grep -E "arm feasibility"` — every
+  WARN whose session then wrote a plan is an instance of this class.
+- Any write-site warning whose text names a downstream refusal, but which does
+  not feed the repair prompt or a disabled-arm stamp, is this class.
+
+**Fix.** The write site now runs the executor's own gate-at-arm predicates
+(`armGateVerdictFor` on the COMPOSED leg via `composeArmStop`, the executor's
+own geometry composition — canon 53, no re-implementation) per enabled arm,
+plus the executor's OWN stop-side placement guard (`decideStopEntry`, CTO
+amendment 2026-09-18: 29 of 30 stop_entry arms since 09-04 were wrong-side at
+write — source: DS-104 replay, bridge msg 1789737991919-898085): attempts
+1..N-1 send the scenarios back as a restriction-with-hint repair error naming
+the refusal, the numbers and the fix vocabulary; the last attempt writes the
+unarmable arms with `arm.enabled=false` + `arm_disabled_reason` (the reason
+CLASS: min_sl / rr / geometry_<code> / stop_side_wrong) + one WARN + the
+`arm_disabled_at_write:<trader>:<date>:<session>:<class>` counter. The
+classes reuse the executor's own armRefusalClass, which can also yield
+`other` / `not_armable` / `veto` — the short list above is not exhaustive. The check
+runs LAST among the validators so it never pre-empts a hard reject — the
+cost of that ordering is one extra model round-trip when an earlier validator
+has already burned attempts 1..N-1 (a two-defect model writes on attempt 2
+OFF and attempt 3 ON; a three-defect chain now fail-closes where it wrote
+before). TestWriteTimeFeasibilityNeverPreemptsHardRejects asserts that flow
+shape (hard reject attempt 1, the hint rides the attempt-3 prompt, the arm
+is disabled at attempt 3) — it does not measure the fail-closed rate, which
+needs the live journals and is NOT claimed here. Knob
+`day_plan.write_time_feasibility`, nil/unset = ON; explicit false = the old
+WARN-only behaviour byte-identical (pinned by a parity test at the rendering
+seam). The session-risk band is deliberately NOT judged at write (time-based).
+
+## CLASS 155 — THE CARD SHOWED THE EVALUATOR'S VERDICT AND NEVER THE EXECUTOR'S (born 2026-08-27 with the scenario evaluator line, found 2026-09-18 by the owner — "why no trade" — feat/arm-state-ui, W-ARM-STATE-UI)
+
+**Shape.** The plan card's per-scenario verdict (🎯 scenario S1 → ≈armed / ≈triggered)
+is the EVALUATOR's: it is computed from price alone and can read "≈triggered" every
+cycle while the EXECUTOR refuses the arm every cycle. The executor's verdict — whether
+the arm was refused, and why — lived only in system_config counters and a single WARN
+line (2026-09-18 LONDON v1 S1: ≈triggered 05:42:24, refused
+`geometry_no_provenance/scenario_level_id_missing`, invalidated 05:46:24; 93 of 95
+geometry records since 09-13 are refusals). The owner read "armed"/"triggered" all day
+and believed the bot was about to trade; it was not.
+
+**Rule (probe).** A scenario rendered ≈armed/≈triggered for >2 cycles with an executor
+refusal record and no executor text on the card = this class. The card must show, per
+scenario, what the EXECUTOR decided for the displayed plan version — `not attempted` /
+`refused: <reason> (<detail>)` / `armed #<id>` / `filled #<id>` / `cancelled:
+<state_reason>` — sourced ONLY from armed_orders rows and the executor geometry records;
+when no record exists render nothing (no dash, no "ok"). An uncomputed executor state is
+absent, never fabricated.

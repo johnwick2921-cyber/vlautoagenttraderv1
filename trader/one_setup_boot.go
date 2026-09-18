@@ -178,7 +178,7 @@ func (at *AutoTrader) BackfillOneSetupVerdicts(sinceMs int64, now time.Time) sto
 		}
 		price := bars[len(bars)-1].C
 		cands := mergedFromPool(pool, price)
-		ref := oneSetupLevelRef(*sc, doc)
+		ref := oneSetupLevelRef(*sc, doc, at.dayPlanCfg().GeometryRefIDsEnabled())
 		if ref.Price <= 0 {
 			ref = kernel.OneSetupLevelRef{Price: r.LevelPrice, Basis: kernel.LevelBasisPriceProximity}
 		}

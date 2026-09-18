@@ -114,6 +114,9 @@ type PlanScenario struct {
 	// and it never was, which is part of why long plans could not arm: they
 	// lean on retest plays. One source, quoted nowhere else (owner ruling
 	// 2026-09-04 (b)).
+	// Arm (Wave 2 armed orders, 2026-08-27) — the AI's AUTHORIZATION to arm
+	// this scenario as a resting order with exact deterministic prices. The
+	// LLM chooses WHAT to arm; Go manages WHEN it fills (advisory law holds).
 	Arm *PlanArmSpec `json:"arm,omitempty"`
 }
 
@@ -135,6 +138,12 @@ type PlanArmSpec struct {
 	// Leg 1 = the momentum leg (wait_confirm true, chains on 1m_mss or
 	// 1x5m_close). Either leg's stop-out cancels the sibling's unfilled order.
 	Legs []PlanArmLeg `json:"legs,omitempty"`
+	// DisabledReason (W-WRITE-TIME-FEASIBILITY, 2026-09-18) — set by the write
+	// site when the scenario's arm would have been refused by the gate-at-arm
+	// chain and the repair budget is spent: the arm is written disabled with
+	// the reason instead of a silent WARN. NULL on legacy rows and on every
+	// path where the arm was never judged.
+	DisabledReason string `json:"arm_disabled_reason,omitempty"`
 }
 
 // PlanArmLeg is one child order of a split arm.

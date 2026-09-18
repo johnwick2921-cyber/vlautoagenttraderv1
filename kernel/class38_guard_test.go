@@ -88,9 +88,13 @@ func TestClass38LiveHintRegistryIsClean(t *testing.T) {
 // TestClass38PromptContractsAllStated is E3: every enumerated validator
 // restriction is stated in the rendered prompt.
 func TestClass38PromptContractsAllStated(t *testing.T) {
-	prompt := plannerOutputContract(8, 5, true, true)
+	prompt := plannerOutputContract(8, 5, true, true, false)
+	onPrompt := plannerOutputContract(8, 5, true, true, true) // knob ON (write-time feasibility clause rendered)
 	if err := ValidatePromptContracts(prompt); err != nil {
 		t.Fatalf("a validator restriction is NOT stated in the prompt (class 38): %v", err)
+	}
+	if err := ValidatePromptContracts(onPrompt); err != nil {
+		t.Fatalf("a validator restriction is NOT stated in the ON rendering (class 38): %v", err)
 	}
 	if len(PromptContracts()) < 10 {
 		t.Errorf("the contract registry has only %d rows — the C5 enumeration found more condition-keyed restrictions than that", len(PromptContracts()))
@@ -104,6 +108,15 @@ func TestClass38PromptContractsAllStated(t *testing.T) {
 		if len(c.MustAppear) == 0 {
 			t.Errorf("contract %q states nothing — an empty contract always passes", c.Rule)
 		}
+		// A gate-gated row must actually be RENDERED somewhere (the ON
+		// rendering) — otherwise the gate would make it silently dead.
+		if c.Gate != "" {
+			for _, frag := range c.MustAppear {
+				if !strings.Contains(onPrompt, frag) {
+					t.Errorf("gated contract %q: fragment %q absent from the ON rendering — the row is dead", c.Rule, frag)
+				}
+			}
+		}
 	}
 }
 
@@ -111,13 +124,19 @@ func TestClass38PromptContractsAllStated(t *testing.T) {
 // restriction's sentence from the prompt and the guard must fail. Without this
 // the contract test could pass vacuously.
 func TestClass38ContractTestFailsWhenPromptDropsARule(t *testing.T) {
-	prompt := plannerOutputContract(8, 5, true, true)
+	prompt := plannerOutputContract(8, 5, true, true, false)
+	onPrompt := plannerOutputContract(8, 5, true, true, true) // knob ON
 	for _, c := range PromptContracts() {
-		mutilated := prompt
+		// Gated rows apply only to the rendering that carries their sentence.
+		applicable := prompt
+		if c.Gate != "" {
+			applicable = onPrompt
+		}
+		mutilated := applicable
 		for _, frag := range c.MustAppear {
 			mutilated = strings.ReplaceAll(mutilated, frag, "")
 		}
-		if mutilated == prompt {
+		if mutilated == applicable {
 			t.Errorf("contract %q: none of its fragments were present to remove — the fragments do not match the live prompt", c.Rule)
 			continue
 		}

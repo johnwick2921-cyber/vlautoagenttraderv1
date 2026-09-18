@@ -101,6 +101,8 @@ func levelIdentityBootLine(doc *kernel.PlanDoc, c *store.LevelIdentityCounts, b 
 		for _, l := range doc.IdentityLevels {
 			if _, ok := kernel.LevelByID(l.ID, doc.IdentityLevels); ok {
 				ids++
+			} else if _, ok := kernel.LevelByReferenceID(l.ID, doc.IdentityLevels); ok {
+				ids++ // W-GEOMETRY-REFUSAL (F3): ref| ids count as resolved
 			}
 			if l.FormedCloseMs == nil {
 				missing++

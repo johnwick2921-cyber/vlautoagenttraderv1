@@ -90,9 +90,19 @@ func twoX5mReserved(condition string) bool {
 
 // EntryLawBootLedger (ENTRY-MECHANICS E9, 2026-08-30) — one boot line per
 // entry knob so the boot block self-documents the wave's enforcement.
-func EntryLawBootLedger() string {
-	return fmt.Sprintf("entry law: bd_min_closes=%d bd_min_disp_atr=%.2f mss_min_disp_atr=%.2f accept_hold_min=%d stop_entry_offset_ticks=%d retest_wait_bars=%d stop_entry_seam=%s",
-		bdConfirmCloses(), bdMinDispATR(), MSSMinDispATR(), AcceptHoldMin(), StopEntryOffsetTicks(), RetestWaitBars(), seamWord(StopEntrySeamOn()))
+// geomRefIDs is the RESOLVED day_plan.geometry_reference_levels knob
+// (W-GEOMETRY-REFUSAL, 2026-09-18); nil = the process cannot know it yet
+// (per-strategy) and the line says so instead of inventing a value.
+func EntryLawBootLedger(geomRefIDs *bool) string {
+	geom := "n/a (per-strategy; day_plan.geometry_reference_levels default ON)"
+	if geomRefIDs != nil {
+		geom = "off"
+		if *geomRefIDs {
+			geom = "on"
+		}
+	}
+	return fmt.Sprintf("entry law: bd_min_closes=%d bd_min_disp_atr=%.2f mss_min_disp_atr=%.2f accept_hold_min=%d stop_entry_offset_ticks=%d retest_wait_bars=%d stop_entry_seam=%s geom_ref_ids=%s",
+		bdConfirmCloses(), bdMinDispATR(), MSSMinDispATR(), AcceptHoldMin(), StopEntryOffsetTicks(), RetestWaitBars(), seamWord(StopEntrySeamOn()), geom)
 }
 
 func seamWord(on bool) string {

@@ -124,7 +124,7 @@ func TestFlipDirectionLawReachesTheModel(t *testing.T) {
 	if !found {
 		t.Fatalf("the prompt-contract registry must carry the flip-direction restriction")
 	}
-	if err := ValidatePromptContracts(plannerOutputContract(0, 0, true, true)); err != nil {
+	if err := ValidatePromptContracts(plannerOutputContract(0, 0, true, true, false)); err != nil {
 		t.Fatalf("rendered prompt must state every restriction: %v", err)
 	}
 	err := "flip{below 29474.90 → long} contradicts bias short: a short bias flips to long only on a close above the line"

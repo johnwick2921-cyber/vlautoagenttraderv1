@@ -53,6 +53,11 @@ func sideOfPricePlanJSON(flipPrice string) string {
 // (flip{15480 below}) lands with price_at_write stamped.
 func TestWriteSiteRejectsFlipLineOnWrongSideOfPrice(t *testing.T) {
 	at := plannerTestTrader(t)
+	// W-WRITE-TIME-FEASIBILITY: the reject arm has no frozen zone map, so it
+	// would fail the geometry gate; this test measures the flip-line rule.
+	// Knob pinned OFF = byte-identical legacy (spec d).
+	feasOff := false
+	at.config.StrategyConfig.DayPlan.WriteTimeFeasibility = &feasOff
 	facts := kernel.PlanFacts{Price: 15550, DATR: 300}
 	machine := map[float64]string{15480: "PWL", 15700: "RN 15700"}
 	prompts := []string{}
@@ -99,6 +104,10 @@ func TestWriteSiteRejectsFlipLineOnWrongSideOfPrice(t *testing.T) {
 // landed doc carries no price_at_write.
 func TestWriteSiteUnknownPriceWarnsNeverRejects(t *testing.T) {
 	at := plannerTestTrader(t)
+	// W-WRITE-TIME-FEASIBILITY: same fixture universe as the reject test above
+	// — knob OFF keeps the unknown-price flow byte-identical (spec d).
+	feasOff := false
+	at.config.StrategyConfig.DayPlan.WriteTimeFeasibility = &feasOff
 	buf := captureTraderLog(t)
 	calls := 0
 	ver, lc, err := at.runPlannerReadCoreWithFactsGradesClock(sideOfPriceClock, "NY", "2026-09-02", "owner_reset",

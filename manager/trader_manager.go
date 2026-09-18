@@ -600,8 +600,9 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 			logger.Infof("%s", line)
 		}
 		// W-FLIP-REREAD (2026-09-17) — the resolved flip knob, with its source.
-		logger.Infof("%s", trader.FlipRereadBootLine(strategyConfig.DayPlan))
-		// W-T1-CURRENCIES (2026-09-18) — the resolved red-news hard-block set.
+		logger.Infof("%s", trader.FlipRereadBootLine(strategyConfig.DayPlan)) // W-GEOMETRY-REFUSAL (2026-09-18) — the resolved geometry-reference
+		// knob (default ON per owner ruling; the process boot line prints n/a).
+		logger.Infof("%s", trader.GeometryRefBootLine(strategyConfig.DayPlan)) // W-T1-CURRENCIES (2026-09-18) — the resolved red-news hard-block set.
 		logger.Infof("%s", trader.T1CurrenciesBootLine(strategyConfig.DayPlan))
 		// D102-1 (2026-09-16): the exit posture, READ from the strategy
 		// toggles the mechanics honour — the main boot line prints n/a

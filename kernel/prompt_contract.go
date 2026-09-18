@@ -31,6 +31,10 @@ type PromptContract struct {
 	// MustAppear are fragments the rendered prompt must contain. ALL must be
 	// present — a restriction stated only half-way is how row 80 happened.
 	MustAppear []string
+	// Gate is a phrase the rendered prompt must contain for this row to be
+	// enforced (used for knob-gated contract sentences such as the
+	// write-time feasibility clause). Empty = always enforced.
+	Gate string
 }
 
 // PromptContracts is the C5 enumeration: every condition-keyed restriction in
@@ -169,6 +173,18 @@ func PromptContracts() []PromptContract {
 			Site:       "kernel/structure_relation.go StampScenarioRelations → ValidatePlanDocWithFactsMachine",
 			MustAppear: []string{"the validator stamps relation_d / relation_4h itself, the model never writes them"},
 		},
+		{
+			// W-WRITE-TIME-FEASIBILITY (2026-09-18) — the write site runs the
+			// executor's gate-at-arm predicates; a scenario that would be refused
+			// at arm is repair-hinted, and after the last repair attempt it is
+			// written with arm.enabled=false + arm_disabled_reason. The prompt
+			// fragment renders only when the knob is ON (default ON per owner
+			// ruling "fix all").
+			Rule:       "an arm the gate-at-arm chain would refuse is repaired first, then written arm.enabled=false with arm_disabled_reason",
+			Site:       "trader/auto_trader_planner.go write-time feasibility check → armGateVerdictFor / composeArmStop geometry / decideStopEntry",
+			MustAppear: []string{"written with arm.enabled=false", "arm_disabled_reason", "stop-entry trigger already through price"},
+			Gate:       "WRITE-TIME FEASIBILITY",
+		},
 	}
 }
 
@@ -176,6 +192,9 @@ func PromptContracts() []PromptContract {
 // rendered prompt. Returns the first restriction that is not.
 func ValidatePromptContracts(prompt string) error {
 	for _, c := range PromptContracts() {
+		if c.Gate != "" && !strings.Contains(prompt, c.Gate) {
+			continue // knob-gated row; the sentence was not rendered
+		}
 		for _, frag := range c.MustAppear {
 			if !strings.Contains(prompt, frag) {
 				return fmt.Errorf("restriction %q (enforced at %s) is NOT stated in the prompt — missing fragment %q", c.Rule, c.Site, frag)
@@ -192,7 +211,7 @@ func PromptContractBootLine() string {
 	n := len(PromptContracts())
 	// 0/0 → resolvePlanCaps supplies the RESOLVED caps (A11). The contract
 	// sentences are static text, so the cap values never change the verdict.
-	if err := ValidatePromptContracts(plannerOutputContract(0, 0, true, true)); err != nil {
+	if err := ValidatePromptContracts(plannerOutputContract(0, 0, true, true, true)); err != nil {
 		return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v (class 38 guard)", err)
 	}
 	return fmt.Sprintf("📜 prompt/validator contract: %d restrictions, all stated in prompt (class 38 guard)", n)
