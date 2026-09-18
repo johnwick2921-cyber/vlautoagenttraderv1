@@ -58,3 +58,38 @@ Web side, same wave: `EquityChart` no longer throws on a missing
 `total_equity` (renders the empty state / `0.00`), and a root
 `<ErrorBoundary>` under `App` shows a one-line error with a Reload button
 instead of a white screen.
+
+## Stop-entry switch (STOP_ENTRY_SEAM)
+
+**Owner ruling 2026-09-18 07:52 CT: on.** Not a guide knob yet — the guide clause is owed at the next boot.
+
+`STOP_ENTRY_SEAM` (read in `kernel/entry_law.go:StopEntrySeamOn`; only the literal
+`on`, case-insensitive, enables it) decides whether a `kind=stop_entry` arm — the
+reclaim / continuation scenarios, E7 — is actually sent to NinjaTrader. Off, the
+arm is still written and logged (`armed_orders`), but no stop order is ever placed,
+so those scenarios never trade. Two rulings, both the owner's:
+
+| date | ruling | why |
+|------|--------|-----|
+| 2026-09-05 | **off** | `nt.CancelOrder` reported success on a SEND; the broker was once seen holding nine working stop orders for one arm slot. Off "until the cancel-confirmation wave lands". |
+| 2026-09-06 | precondition shipped | cancel-confirmation wave live; boot line `🧾 cancels: confirm=broker-snapshot`. The switch was NOT brought back (CLASS 152). |
+| 2026-09-18 07:52 CT | **on** | owner: "turn it on", after "no trade since NY yesterday". |
+
+The switch lives in each machine's own `.env` (untracked) — `.env.example` carries
+`STOP_ENTRY_SEAM=on` as the template line, but a mirror machine that never copies
+it stays off silently. Set it on the partner machine, restart the bot, and read the
+boot line; the switch has taken ONLY when it prints exactly:
+
+```
+🎯 stop-entry: seam=on · slots=stop_price · guard=stop-side · unknown=no-op · addon build_id=2026-09-07-h1 expected=2026-09-07-h1 match=yes
+```
+
+`seam=OFF — NO stop entry is placed (owner ruling 2026-09-05: …)` means the line did
+not take (value not exactly `on`, wrong `.env`, or the process was not restarted).
+The `kernel` ledger line `entry law: … stop_entry_seam=ON` says the same thing from
+the other side of the seam.
+
+Consequence of leaving it off, measured on the owner's DB 2026-09-18 (`armed_orders`
+since 2026-09-04): **30 `stop_entry` arms, 0 filled**, versus 61 `limit` arms with
+16 fills — every reclaim / continuation scenario was armed, logged and never sent
+for twelve days on every machine.
