@@ -21,7 +21,7 @@ func TestPromptStopFloorReadsTheGateResolver(t *testing.T) {
 		t.Fatalf("test premise wrong: resolver = %v", got)
 	}
 
-	p := plannerOutputContract(8, 3, true, true)
+	p := plannerOutputContract(8, 3, true, true, false)
 	want := fmt.Sprintf("%.1f×", MinSLATRMult())
 	if !strings.Contains(p, want) {
 		t.Fatalf("prompt must quote the RESOLVED stop floor %q — a typed multiple promises what the gate will not keep", want)
@@ -34,7 +34,7 @@ func TestPromptStopFloorReadsTheGateResolver(t *testing.T) {
 // And at the default the sentence must still read correctly.
 func TestPromptStopFloorAtDefault(t *testing.T) {
 	t.Setenv("MIN_SL_ATR_MULT", "")
-	p := plannerOutputContract(8, 3, true, true)
+	p := plannerOutputContract(8, 3, true, true, false)
 	if !strings.Contains(p, fmt.Sprintf("%.1f×", MinSLATRMult())) {
 		t.Errorf("default floor %v not quoted in the prompt", MinSLATRMult())
 	}

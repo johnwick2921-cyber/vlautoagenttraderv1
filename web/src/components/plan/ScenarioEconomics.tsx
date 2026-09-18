@@ -64,6 +64,11 @@ export function ScenarioEconomics({ scenario: s }: { scenario: PlanScenario }) {
         </div>
       )}
       {e && !s.arm && <div>Hypothetical geometry · no arm authorization</div>}
+      {s.arm?.arm_disabled_reason && (
+        <div style={{ color: 'var(--vl-gold)' }}>
+          ⚔️ disabled at write: {s.arm.arm_disabled_reason}
+        </div>
+      )}
       <div>
         Authored geometry before costs and stop composition; broker-accepted
         prices are separate.

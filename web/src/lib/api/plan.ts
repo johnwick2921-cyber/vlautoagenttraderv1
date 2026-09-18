@@ -61,7 +61,16 @@ export interface ScenarioEconomics {
 export interface PlanScenario {
   level_id?: string | null
   economics?: ScenarioEconomics
-  arm?: { enabled?: boolean; entry: number; stop: number; target: number }
+  arm?: {
+    enabled?: boolean
+    entry: number
+    stop: number
+    target: number
+    /** W-WRITE-TIME-FEASIBILITY (DS-101, 2026-09-18) — the write site
+     * disabled this arm with the reason instead of a silent WARN; ABSENT on
+     * legacy rows and when the arm was never judged. */
+    arm_disabled_reason?: string
+  }
   id: string // S1, S2, S3
   trigger: string
   condition: string // reclaim | hold | sweep_reclaim | reject | acceptance | breakout_retest
@@ -282,6 +291,10 @@ export interface ScenarioDeath {
 
 export interface PlanToday {
   structural_geometry?: StructuralGeometryView[] | null
+  /** W-ARM-STATE-UI — WHY the plan is dormant (from plan_lifecycle_log):
+   * 'dormant:death:…' / 'dormant:flip:…'. ABSENT when there is no marker for
+   * the current lifecycle; trigger_reason stays the AUTHORING reason. */
+  lifecycle_reason?: string
   found: boolean
   trade_date: string
   session: string
@@ -412,6 +425,9 @@ export interface StructuralGeometryView {
   loss_usd?: number
   net_gain_points?: number
   target_names?: string[]
+  // W-ARM-STATE-UI — the raw record carries time_ms on the wire; declared here
+  // so the executor column can stamp its tooltip with the record's own time.
+  time_ms?: number
 }
 
 // W7 (weekly-bias wave) — /api/plan/today weekly payload.

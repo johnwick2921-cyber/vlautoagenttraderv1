@@ -42,7 +42,7 @@ func (at *AutoTrader) oneSetupConfig(cfg *store.StrategyConfig) kernel.OneSetupC
 // candidate_id); else the scenario's own anchor price (confirm ref / arm entry
 // → price_proximity); a level_id that does not resolve is unresolved and NEVER
 // resolves by nearest.
-func oneSetupLevelRef(sc kernel.PlanScenario, doc *kernel.PlanDoc) kernel.OneSetupLevelRef {
+func oneSetupLevelRef(sc kernel.PlanScenario, doc *kernel.PlanDoc, geometryRefIDs bool) kernel.OneSetupLevelRef {
 	if sc.LevelID != nil && *sc.LevelID != "" {
 		levels := make([]kernel.PlanLevel, 0, len(doc.Levels)+len(doc.IdentityLevels))
 		levels = append(levels, doc.Levels...)
@@ -50,6 +50,17 @@ func oneSetupLevelRef(sc kernel.PlanScenario, doc *kernel.PlanDoc) kernel.OneSet
 		if l, ok := kernel.LevelByID(sc.LevelID, levels); ok && l.Price > 0 {
 			id := *sc.LevelID
 			return kernel.OneSetupLevelRef{Price: l.Price, ID: &id, Basis: kernel.LevelBasisCandidateID}
+		}
+		// W-GEOMETRY-REFUSAL (F3): a stable ref| id (reference-anchor level
+		// without a formation close) resolves through the reference lookup when
+		// the knob is ON — exactly as the executor does. Otherwise the one-setup
+		// consult declines every ref-id scenario as level_unresolved and a new
+		// ONH reject play can never arm.
+		if geometryRefIDs {
+			if l, ok := kernel.LevelByReferenceID(sc.LevelID, levels); ok && l.Price > 0 {
+				id := *sc.LevelID
+				return kernel.OneSetupLevelRef{Price: l.Price, ID: &id, Basis: kernel.LevelBasisCandidateID}
+			}
 		}
 		return kernel.OneSetupLevelRef{Basis: "unresolved:unknown_level_id"}
 	}
@@ -141,7 +152,7 @@ func (at *AutoTrader) oneSetupVerdictsAt(plan *kernel.ActivePlan, doc *kernel.Pl
 		if sc.Arm == nil || !sc.Arm.Enabled {
 			continue
 		}
-		ref := oneSetupLevelRef(sc, doc)
+		ref := oneSetupLevelRef(sc, doc, cfg.DayPlan.GeometryRefIDsEnabled())
 		facts := kernel.OneSetupLevelFacts{Price: price, BandPts: band, Candidates: cands, Scenario: ref}
 		var perm kernel.FadeVerdict
 		if testPerm != nil {

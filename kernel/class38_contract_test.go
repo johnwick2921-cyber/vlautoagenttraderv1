@@ -72,7 +72,7 @@ func TestClass38PinRows78to80(t *testing.T) {
 	}
 
 	// ---- row 80: the schema must qualify legs, and the prose must forbid it ----
-	prompt := plannerOutputContract(8, 5, true, true)
+	prompt := plannerOutputContract(8, 5, true, true, false)
 
 	idx := strings.Index(prompt, `"legs"`)
 	if idx < 0 {
@@ -111,7 +111,7 @@ func TestClass38PinRows78to80(t *testing.T) {
 // the prompt must say so beside the death/flip lines rather than leave the
 // reader to infer it.
 func TestClass38DeathFlipVocabularyIsDeclared(t *testing.T) {
-	prompt := plannerOutputContract(8, 5, true, true)
+	prompt := plannerOutputContract(8, 5, true, true, false)
 	if !strings.Contains(prompt, `"rule": "2x5m|5m_close"`) {
 		t.Fatal("death/flip schema line not found — locate before editing")
 	}
@@ -235,7 +235,7 @@ func TestNoTradeExampleDoesNotDemonstrateMachineWindows(t *testing.T) {
 // RIDER — the prompt declares that EVERY time in it is CT, then printed ET
 // times. A model reading "10:30 ET" as CT is an hour out. One clock.
 func TestPromptStatesNoUntypedEasternTimes(t *testing.T) {
-	prompt := plannerOutputContract(8, 5, true, true)
+	prompt := plannerOutputContract(8, 5, true, true, false)
 	// the whole prompt, not just the output contract — the ET times lived in
 	// the no-trade gate and killzone blocks
 	full := BuildPlannerPrompt(PlannerInput{
@@ -322,7 +322,7 @@ func TestNoTradeGateBlockDoesNotOrderDeclaration(t *testing.T) {
 // measured displacement. The schema line must qualify the field, and the facts
 // block must carry both the floor and the per-level measurement.
 func TestBreakdownSchemaRequiresMeasuredDisplacement(t *testing.T) {
-	contract := plannerOutputContract(8, 5, true, true)
+	contract := plannerOutputContract(8, 5, true, true, false)
 	idx := strings.Index(contract, `"breakdown"`)
 	if idx < 0 {
 		t.Fatal(`the rendered contract has no "breakdown" field`)

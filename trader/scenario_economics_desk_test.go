@@ -49,6 +49,11 @@ func TestScenarioEconomicsOnProductionDesk(t *testing.T) {
 
 func TestScenarioEconomicsWriteRefusesThenPersistsContract(t *testing.T) {
 	at := plannerTestTrader(t)
+	// W-WRITE-TIME-FEASIBILITY: the reject arm has no frozen zone map (geometry
+	// gate would refuse it). Knob OFF pins the economics contract flow
+	// byte-identical to pre-wave (spec d).
+	feasOff := false
+	at.config.StrategyConfig.DayPlan.WriteTimeFeasibility = &feasOff
 	now := time.Date(2026, 9, 8, 19, 0, 0, 0, time.UTC)
 	good := class39LegsPlanJSON("15550")
 	bad := strings.Replace(good, `"target_chain": [15550, 15620]`, `"target_chain": [15620]`, 1)

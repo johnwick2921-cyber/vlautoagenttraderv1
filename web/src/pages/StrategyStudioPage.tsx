@@ -52,6 +52,7 @@ import {
   defaultGridConfig,
 } from '../components/strategy/GridConfigEditor'
 import { TokenEstimateBar } from '../components/strategy/TokenEstimateBar'
+import { StrategyTradingBadge } from '../components/strategy/StrategyTradingBadge'
 import { DeepVoidBackground } from '../components/common/DeepVoidBackground'
 import { t } from '../i18n/translations'
 
@@ -112,6 +113,13 @@ export function StrategyStudioPage() {
   const { language } = useLanguage()
 
   const [strategies, setStrategies] = useState<Strategy[]>([])
+  // W-ARM-STATE-UI — strategy_id -> bound trader names from /api/my-traders.
+  // The binding is what "trading" means; is_active is display + delete-lock
+  // only. UNDEFINED = not loaded / fetch failed (the badge renders NO trading
+  // claim); {} = loaded and genuinely unbound. F3: the two must never collide.
+  const [boundTraders, setBoundTraders] = useState<
+    Record<string, string[]> | undefined
+  >(undefined)
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(
     null
   )
@@ -249,6 +257,35 @@ export function StrategyStudioPage() {
     fetchStrategies()
     fetchAiModels()
   }, [fetchStrategies, fetchAiModels])
+
+  // W-ARM-STATE-UI — the real trading binding: /api/my-traders rows carry
+  // strategy_id + trader_name. On ANY failure the map stays undefined — the
+  // badge then renders no trading claim rather than a false "no trader bound".
+  useEffect(() => {
+    if (!token) return
+    const loadBindings = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/my-traders`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const rows = (await res.json()) as Array<{
+          strategy_id?: string
+          trader_name?: string
+        }>
+        const map: Record<string, string[]> = {}
+        for (const r of rows) {
+          if (!r.strategy_id || !r.trader_name) continue
+          ;(map[r.strategy_id] ??= []).push(r.trader_name)
+        }
+        setBoundTraders(map)
+      } catch {
+        // binding read unavailable — the map stays undefined, nothing is
+        // fabricated and no trading claim is rendered (F3).
+      }
+    }
+    void loadBindings()
+  }, [token])
 
   useEffect(() => {
     selectedStrategyIDRef.current = selectedStrategy?.id || ''
@@ -773,7 +810,8 @@ export function StrategyStudioPage() {
     }
   }
 
-  const tr = (key: string) => t(`strategyStudio.${key}`, language)
+  const tr = (key: string, params?: Record<string, string>) =>
+    t(`strategyStudio.${key}`, language, params)
 
   if (isLoading) {
     return (
@@ -1083,7 +1121,13 @@ export function StrategyStudioPage() {
                           className="p-1 rounded hover:bg-nofx-danger/20 text-nofx-danger disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                           title={
                             strategy.is_active
-                              ? tr('cannotDeleteActiveStrategy')
+                              ? (boundTraders?.[strategy.id] ?? []).length > 0
+                                ? tr('deleteBlockedByBinding', {
+                                    names: (
+                                      boundTraders?.[strategy.id] ?? []
+                                    ).join(', '),
+                                  })
+                                : tr('cannotDeleteActiveStrategy')
                               : tr('deleteTooltip')
                           }
                         >
@@ -1093,11 +1137,15 @@ export function StrategyStudioPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 mt-1 flex-wrap">
-                    {strategy.is_active && (
-                      <span className="px-1.5 py-0.5 text-[10px] rounded bg-nofx-success/15 text-nofx-success">
-                        {tr('active')}
-                      </span>
-                    )}
+                    <StrategyTradingBadge
+                      isActive={strategy.is_active}
+                      traderNames={
+                        boundTraders === undefined
+                          ? undefined
+                          : (boundTraders[strategy.id] ?? [])
+                      }
+                      tr={tr}
+                    />
                     {strategy.is_default && (
                       <span className="px-1.5 py-0.5 text-[10px] rounded bg-nofx-gold/15 text-nofx-gold">
                         {tr('default')}

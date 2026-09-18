@@ -9,8 +9,10 @@ import type {
   PlanArmView,
   PlanScenario,
   ScenarioStatusValue,
+  StructuralGeometryView,
 } from '../../lib/api/plan'
 import { OrderTerms } from './OrderTerms'
+import { ExecutorVerdict } from './ExecutorVerdict'
 import { ScenarioEconomics } from './ScenarioEconomics'
 import { FadePermissionChip, type FadeLabelView } from './FadePermissionChip'
 import { OneSetupChip, type OneSetupView } from './OneSetupChip'
@@ -329,6 +331,7 @@ export function ScenarioList({
   armedStates,
   fadeLabels,
   oneSetup,
+  geometry,
   language,
 }: {
   scenarios: PlanScenario[]
@@ -337,6 +340,8 @@ export function ScenarioList({
   identities?: Record<string, ScenarioLevelIdentity>
   /** Wave 2 armed orders — per-scenario arm state (⏳/📌/⚡/✕+reason). */
   armedStates?: Record<string, PlanArmView>
+  /** W-ARM-STATE-UI — executor geometry records (refusals/admissions). */
+  geometry?: StructuralGeometryView[] | null
   /** W2 FADE PERMISSION — per-scenario label; absent renders "not evaluated". */
   fadeLabels?: Record<string, FadeLabelView>
   /** ONE SETUP — the seam's recorded verdict per scenario; absent renders "not evaluated". */
@@ -438,6 +443,15 @@ export function ScenarioList({
                   )}
                   {/* Wave 2 armed orders — the arm state chip (⏳/📌/⚡/✕). */}
                   <ArmedChip arm={armedStates?.[s.id]} />
+                  {/* W-ARM-STATE-UI — what the EXECUTOR decided (refused / not
+                      attempted / armed / filled / cancelled), beside the
+                      evaluator's verdict. No record → renders nothing. */}
+                  <ExecutorVerdict
+                    scenario={s.id}
+                    arm={armedStates?.[s.id]}
+                    geometry={geometry}
+                    disabledAtWrite={s.arm?.arm_disabled_reason}
+                  />
                   {/* W2 fade permission — a label, never a gate. */}
                   <FadePermissionChip id={s.id} v={fadeLabels?.[s.id]} />
                   {/* ONE SETUP — what the arm seam decided, never a re-evaluation. */}
