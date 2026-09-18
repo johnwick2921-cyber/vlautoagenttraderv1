@@ -36,6 +36,13 @@
 //     are intact on dev: SubscribeBarsHistoryFor (:421), the
 //     bars_history_request write (:470), the bars_history_data / _error
 //     fan-out (:1985 / :2008). Verified by diff 0aea0c2e..1e3ad705 on the file.
+// go.mod baseline advanced 2026-09-17 for W-CGOFREE-SQLITE-UPSTREAM
+// (fix/cgofree-sqlite-upstream): two require lines ADDED —
+//   github.com/glebarez/go-sqlite v1.22.0 and github.com/glebarez/sqlite v1.11.0,
+// the pure-Go backend behind `go build -tags cgofree` for machines without a C
+// compiler (the partner mirror). Nothing removed or bumped: modernc.org/sqlite
+// stays v1.40.0, libc stays v1.66.10, gorm.io/driver/sqlite stays v1.6.0. The
+// Go security guard the pin protects (patched toolchain/deps) is intact.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

@@ -27,6 +27,7 @@ import { ArmedUnderBlock, type OpenPositionProvenance } from './ArmedUnderBlock'
 import { PlanFooter } from './PlanFooter'
 import { PlanMiniChart } from './PlanMiniChart'
 import { EditSheet } from './EditSheet'
+import { PendingOwnerLevels } from './PendingOwnerLevels'
 import { BulkAddSheet } from './BulkAddSheet'
 import { AskPlannerPanel } from './AskPlannerPanel'
 import { RealignPanel, RealignButton, type RealignState } from './RealignPanel'
@@ -129,6 +130,8 @@ export function SessionPlanCard({
   // W13 — plan re-alignment after an owner edit.
   const [realign, setRealign] = useState<RealignState>({ phase: 'idle' })
   const [flash, setFlash] = useState(0) // bump → changed rows flash gold once
+  // W-OWNER-LEVELS-UI — bump after an owner-level add → the pending block refetches.
+  const [ownerLevelsTick, setOwnerLevelsTick] = useState(0)
 
   const runRealign = async (change: RealignChange, manual = false) => {
     if (!traderId) return
@@ -796,6 +799,20 @@ export function SessionPlanCard({
         flashKey={flash}
       />
 
+      {/* W-OWNER-LEVELS-UI — sticky owner levels waiting for the next planner
+          read (or already seated), right under the level table so an add is
+          SEEN at once and can be deleted. Not plan-scoped: shown whenever the
+          card has a trader, judged against this card's session. */}
+      {!!traderId && (
+        <PendingOwnerLevels
+          traderId={traderId}
+          symbol={symbol}
+          session={plan.session}
+          language={language}
+          refreshTick={ownerLevelsTick}
+        />
+      )}
+
       {/* W13 — re-align status / proposal, in place under the levels */}
       {doorEnabled && (
         <>
@@ -948,6 +965,7 @@ export function SessionPlanCard({
             onClose={() => setEdit({ open: false })}
             onSaved={(change) => {
               onChanged?.()
+              if (change?.kind === 'add-level') setOwnerLevelsTick((n) => n + 1)
               if (change) void runRealign(change)
             }}
           />
@@ -959,6 +977,7 @@ export function SessionPlanCard({
             onClose={() => setBulkOpen(false)}
             onSaved={(change) => {
               onChanged?.()
+              setOwnerLevelsTick((n) => n + 1)
               if (change) void runRealign(change)
             }}
           />

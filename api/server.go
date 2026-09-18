@@ -567,6 +567,10 @@ Applies the patch strictly onto the current plan_final (test-op concurrency → 
 			s.routeWithSchema(protected, "POST", "/plan/owner-level/delete", "Delete a sticky owner level by id",
 				`Body: {"trader_id":"<id>","id":<int>}. Returns: {deleted:true, id}.`,
 				s.handlePlanOwnerLevelDelete)
+			// W-OWNER-LEVELS-API (2026-09-17) — the read side: what is pending.
+			s.routeWithSchema(protected, "GET", "/plan/owner-levels", "List the sticky owner levels (pending until the next planner read)",
+				`Query: ?trader_id=<id>[&symbol=MNQ][&session=NY]. Returns: {levels:[{id,symbol,price,label,note,scenario_tag,created_at,consumed,status:"pending"|"applied"}], count, symbol, as_of_ms, judged_against:{plan_id,version,session,trade_date}|null}. levels is [] when empty. status is judged against the card's plan for the (requested or active) session: applied = that plan_final carries a level at this price; pending otherwise. No applied_version — the store does not record which read consumed a row. Delete with POST /plan/owner-level/delete {trader_id,id}.`,
+				s.handlePlanOwnerLevels)
 			// P5.4 — Ask-Planner (plan-scoped Q&A, anti-sycophancy contract, verdict log).
 			s.routeWithSchema(protected, "POST", "/plan/ask", "Ask the planner about today's plan (anti-sycophancy)",
 				`Body: {"trader_id":"<id>","symbol":"MNQ","question":"<any language>"}.

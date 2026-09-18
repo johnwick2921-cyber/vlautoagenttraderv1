@@ -4,7 +4,7 @@
 // guarded so a headless/canvas-less environment (jsdom tests) degrades to a
 // placeholder instead of throwing.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   createChart,
   CandlestickSeries,
@@ -25,6 +25,12 @@ import {
   LevelOverlayPrimitive,
   type OverlayLevel,
 } from './LevelOverlayPrimitive'
+import {
+  selectChartOverlay,
+  readShowZones,
+  writeShowZones,
+  DEFAULT_NEAREST_ZONES,
+} from './chartOverlaySelect'
 
 interface Props {
   symbol: string
@@ -33,8 +39,15 @@ interface Props {
   language: Language
   interval?: string
   height?: number
-  /** S5 — HTF structure zones (kind·tf labels + [lo,hi] bands), raw prices only. */
+  /**
+   * S5 — HTF structure zones (kind·tf labels + [lo,hi] bands), raw prices only.
+   * W-CHART-ZONE-WALL: the chart draws the seated levels ALWAYS and NO zones
+   * by default; "Show zones (N)" under the chart draws the `nearestZones`
+   * zones nearest to the last close (duplicates merged).
+   */
   structureZones?: OverlayLevel[]
+  /** how many HTF zones draw when "show all" is off (default 6) */
+  nearestZones?: number
 }
 
 // PlanLevelFact[] → OverlayLevel[] (the chart's slice of the shared array).
@@ -63,12 +76,17 @@ export function PlanMiniChart({
   interval = '5m',
   height = 200,
   structureZones = [],
+  nearestZones = DEFAULT_NEAREST_ZONES,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const overlayRef = useRef<LevelOverlayPrimitive | null>(null)
   const [failed, setFailed] = useState(false)
+  // W-CHART-ZONE-WALL — a per-viewer VIEW preference (localStorage), not a knob.
+  const [showZones, setShowZones] = useState<boolean>(() => readShowZones())
+  // the last loaded close: the price the "nearest zones" rule measures from
+  const [lastClose, setLastClose] = useState<number | undefined>(undefined)
 
   // init chart once
   useEffect(() => {
@@ -181,6 +199,7 @@ export function PlanMiniChart({
           .sort((a, b) => (a.time as number) - (b.time as number))
           .filter((c, i, arr) => i === 0 || c.time !== arr[i - 1].time)
         seriesRef.current.setData(candles)
+        if (candles.length) setLastClose(candles[candles.length - 1].close)
         logBarDebug(
           'PlanMiniChart',
           candles.length
@@ -199,39 +218,95 @@ export function PlanMiniChart({
     }
   }, [symbol, exchange, interval, failed])
 
-  // push levels to the overlay whenever they change
+  // What the chart draws: every seated level + the nearest N distinct zones
+  // (or all of them). The zones prop is a fresh array every parent render, so
+  // its CONTENT keys the memo — the old effect keyed on [facts] alone and a
+  // structure block that changed under a stable facts array never re-drew.
+  const zonesKey = JSON.stringify(structureZones)
+  const selection = useMemo(
+    () =>
+      selectChartOverlay(factsToOverlay(facts), structureZones, lastClose, {
+        showZones,
+        nearest: nearestZones,
+      }),
+
+    [facts, zonesKey, lastClose, showZones, nearestZones]
+  )
+
+  // push levels to the overlay whenever the selection changes
   useEffect(() => {
     if (overlayRef.current)
-      overlayRef.current.setData({ levels: [...factsToOverlay(facts), ...structureZones] })
-  }, [facts])
+      overlayRef.current.setData({ levels: selection.levels })
+  }, [selection])
+
+  const toggleShowZones = (on: boolean) => {
+    setShowZones(on)
+    writeShowZones(on)
+  }
+
+  // The zone control renders whenever the block carries zones — also on the
+  // placeholder, so the count is visible (and testable) without a canvas.
+  const zoneControl = selection.zonesTotal > 0 && (
+    <label
+      className="flex items-center gap-1 text-[10px]"
+      style={{ color: 'var(--vl-faint)', fontFamily: 'var(--vl-font-ui)' }}
+      data-testid="chart-zone-control"
+    >
+      <input
+        type="checkbox"
+        checked={showZones}
+        onChange={(e) => toggleShowZones(e.target.checked)}
+        data-testid="chart-show-zones"
+      />
+      <span>
+        {tp('chartShowZones', language, {
+          total: String(selection.zonesTotal),
+        })}
+      </span>
+      {showZones && (
+        <span data-testid="chart-zone-count">
+          {tp('chartZonesShown', language, {
+            shown: String(selection.zonesShown),
+            total: String(selection.zonesTotal),
+          })}
+        </span>
+      )}
+    </label>
+  )
 
   if (failed) {
     return (
-      <div
-        className="flex items-center justify-center text-[11px]"
-        style={{
-          height,
-          background: 'var(--vl-card-2)',
-          borderRadius: 'var(--vl-radius-inner)',
-          color: 'var(--vl-faint)',
-          fontFamily: 'var(--vl-font-ui)',
-        }}
-      >
-        {tp('loading', language)}
+      <div className="flex flex-col gap-1">
+        <div
+          className="flex items-center justify-center text-[11px]"
+          style={{
+            height,
+            background: 'var(--vl-card-2)',
+            borderRadius: 'var(--vl-radius-inner)',
+            color: 'var(--vl-faint)',
+            fontFamily: 'var(--vl-font-ui)',
+          }}
+        >
+          {tp('loading', language)}
+        </div>
+        {zoneControl}
       </div>
     )
   }
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: '100%',
-        height,
-        borderRadius: 'var(--vl-radius-inner)',
-        overflow: 'hidden',
-      }}
-      aria-hidden
-    />
+    <div className="flex flex-col gap-1">
+      <div
+        ref={containerRef}
+        style={{
+          width: '100%',
+          height,
+          borderRadius: 'var(--vl-radius-inner)',
+          overflow: 'hidden',
+        }}
+        aria-hidden
+      />
+      {zoneControl}
+    </div>
   )
 }

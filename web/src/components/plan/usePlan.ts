@@ -8,6 +8,7 @@ import type {
   PlanToday,
   PlanAlertsResponse,
   PlanVersionsResponse,
+  OwnerLevelsResponse,
 } from '../../lib/api/plan'
 
 const PLAN_REFRESH_MS = 15_000
@@ -70,4 +71,33 @@ export function usePlanAlerts(traderId?: string) {
     { refreshInterval: ALERTS_REFRESH_MS, revalidateOnFocus: false }
   )
   return { alerts: data?.alerts ?? [], unacked: data?.unacked ?? 0, mutate }
+}
+
+// W-OWNER-LEVELS-UI — the sticky owner levels for this trader + symbol, judged
+// against the card's session. Polls on the card's own plan cadence (no faster
+// timer): a row only changes status at a planner read, which the plan poll
+// already tracks. `mutate` is the refetch the add / delete paths call.
+export function useOwnerLevels(
+  traderId?: string,
+  symbol?: string,
+  session?: string
+) {
+  const key = traderId
+    ? `owner-levels-${traderId}-${symbol || 'MNQ'}${session ? `-${session}` : ''}`
+    : null
+  const { data, mutate, isLoading } = useSWR<OwnerLevelsResponse>(
+    key,
+    () => api.getOwnerLevels(traderId as string, symbol || 'MNQ', session),
+    {
+      refreshInterval: PLAN_REFRESH_MS,
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    }
+  )
+  return {
+    levels: data?.levels ?? [],
+    judgedAgainst: data?.judged_against ?? null,
+    isLoading,
+    mutate,
+  }
 }

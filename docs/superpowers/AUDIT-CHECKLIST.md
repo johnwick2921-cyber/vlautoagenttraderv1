@@ -5302,3 +5302,131 @@ shows a newer active version the once-key is set and the old version is
 superseded by CAS from dormant (`superseded:flip`, reason
 `superseded:flip:v<N+1>`); otherwise the key is cleared and the dormant plan
 stands until the next cycle's retry.
+
+## CLASS 142 — A TEST HARNESS THAT POLLS AN UNSYNCHRONIZED BUFFER A BACKGROUND GOROUTINE WRITES (born 2026-09-17 with the CLASS 141 real-path tests, found by CI `go test -race` on the first dev push after the merge, fix/test-log-capture-race)
+
+**Shape.** A test captures the journal by pointing the logger at a plain
+`bytes.Buffer` and then POLLS `buf.String()` until a line appears. The code
+under test logs from a goroutine it spawned (the structure_flip read, a wake).
+`bytes.Buffer` is not goroutine-safe; logrus serializes its own writes but
+nothing serializes the test's reads against them. Under the race detector the
+test FAILS; without it the test passes and the suite is green, so the defect
+ships to the one job that runs `-race` (CI "Go Unit Tests & Coverage") and
+turns every subsequent push red: 0d54518c, d83bbfe0, 3445ee7f, 9a397b26,
+13ef576c all failed on the same four tests while the local suites were 34/34.
+
+**Why it hid.** (1) The local gate was `go test ./...` without `-race`; the
+race only exists when two goroutines touch the buffer, which only the
+real-path tests do. (2) The race report names `bytes/buffer.go` and
+`logrus/entry.go`, not the test, so it reads like a library problem. (3) The
+PR merge for the next wave was refused ("not mergeable", checks UNSTABLE)
+before anyone looked at WHY CI was red.
+
+**The fix shape.** ONE capture helper, `captureTraderLog`, returns a
+mutex-guarded `syncLogBuf` (Write/String/Reset under the lock). Every test
+that polls the journal uses it, so a background logger and a polling test
+cannot race by construction. No production code changed.
+
+**Probes.**
+- Every `SetOutput(&buf)` / `bytes.Buffer` handed to a logger in a test:
+  grep `SetOutput(&` and `var buf bytes.Buffer` in `*_test.go`; if the code
+  under test can log from a goroutine, the buffer must be synchronized.
+- Run `go test -race` on any package whose tests exercise a goroutine-spawning
+  path BEFORE merge — CI runs it, and CI is the last gate, not the first.
+- A red CI on the FIRST push after a merge is the merge's problem until proven
+  otherwise: read the run's failing job before the next PR is opened.
+
+## CLASS 144 — A DORMANT ROW JUDGED BY THE WRONG PREDICATE: DEATH-DORMANT RE-ARMS ON ITS FLIP LINE (born 2026-09-03 with D3's lifecycle-log move, found 2026-09-17 by the fix lane, fix/dormant-death-rearm, W-DORMANT-DEATH-REARM)
+
+**Shape.** The dormant write sends its kind ("dormant:death:…" / "dormant:flip:…")
+to the lifecycle log only — D3 made `plans.trigger_reason` the AUTHORING trigger.
+The re-arm predicate kept keying off `trigger_reason`, so the prefix check is
+always false: every D3+ dormant row falls to the FLIP condition. A death-dormant
+plan re-arms when its flip line clears while the death line stays breached, or
+(no flip line) re-arms immediately on "no machine condition" with the death line
+still hit.
+
+**How it hid.** The dormant write and the flip-rearm path were both individually
+correct and individually tested; the death path had no re-arm test, and the
+wrong-predicate outcome (a re-arm) looks like a SUCCESS unless the test asserts
+WHICH line the reason names.
+
+**Probes.**
+- A transition writes a marker to a NEW home; grep every reader of the OLD home
+  for the marker prefix — not just the writer.
+- For every predicate that says "the SAME structured condition that parked it",
+  pin the KIND: both dormant kinds must re-arm on their own line and only their
+  own line, with the reason naming the line price.
+- A re-arm test that only checks lifecycle=="active" cannot see a wrong
+  predicate — assert the `rearmed:` reason names the right line.
+
+**Fix pattern.** W-DORMANT-DEATH-REARM: `dormantDeathKillerOf` mirrors CLASS
+141's `dormantFlipKillerOf` (most recent dormant event in the lifecycle log);
+`describeDormantCleared` picks the condition by kind from the LOG, with a
+pre-D3 `trigger_reason` fallback for legacy rows. Tests at the production call
+site (`maybeRunSessionReadsAt`, real store row parked via `UpdatePlanLifecycle`).
+## CLASS 143 — A STRAY ROW OF THE NEW CONTRACT BEFORE THE ROLL PULLS THE CHART BOUNDARY BACK AND ERASES THE OLD CONTRACT'S LAST WEEK (born 2026-09-14 at the Sept→Dec roll, reported by the owner 2026-09-17 16:40 CT "candles missing for several days", fix/chart-roll-hole, W-CHART-ROLL-HOLE)
+
+**Shape.** The chart across a roll is a time split: prior-contract rows before
+the current contract's first LIVE bar, current-contract rows after. The
+`bars` PK is `(symbol, tf, open_time_ms)` — the `contract` column is OUTSIDE
+the key — and inserts are INSERT-OR-IGNORE. NT8 served ~2,000 bars of
+"MNQ 12-26" history per TF at subscribe; wherever a "MNQ 09-26" row already
+held that open time the Dec row was dropped, and wherever it did not
+(holidays, Sunday evenings, the NT8-off windows) a stray Dec row LANDED
+(live 5m: 4 `historical_import` + 13 `historical` rows older than Dec's first
+live bar; 1m: 451). `klinesAcrossRoll` then took the boundary from
+`FirstLiveOn` (correct: 09-14 10:00 CT) and MOVED IT BACK to the base series'
+oldest bar — "nothing older than the series' own oldest bar may overlap it" —
+i.e. to the oldest surviving stray (09-10 22:10). `PriorContractBarsBefore`
+only takes rows strictly before the boundary, so every Sept row from 09-10
+22:10 to 09-14 09:55 was excluded and the only candles in that span were the
+13 strays, 292 points up: a three-trading-day hole with a stray candle or two
+in it.
+
+**How it hid.** (1) The isolation filter DID drop the four one-per-day import
+strays, so the boundary was not pulled back to 09-07 as the row census
+suggests — it was pulled to the first DENSE stray (five contiguous replay
+rows on the evening of 09-10), which no filter names. (2) Every existing pin
+built its prior series ENDING exactly where the current series began, so
+"base[0] < boundary" never fired in a test. (3) The kernel, levels and arm
+readers are contract-scoped and never see a prior contract, so nothing
+downstream disagreed with the chart. (4) The lonely candles looked like a
+data gap, not a boundary rule.
+
+**Probes.**
+- Per TF: `SELECT count(*) FROM bars WHERE contract = <current> AND
+  open_time_ms < (SELECT min(open_time_ms) FROM bars WHERE contract =
+  <current> AND source = 'live' AND tf = <tf>)` — any non-zero count is a
+  stray population the chart reader must DROP, never draw and never move the
+  boundary for (live 2026-09-17 17:10 CT: 1m 451 · 3m 12 · 5m 17 · 15m 10 ·
+  1h 4 · 3d 14).
+- A boundary rule must be MONOTONE: derived from one source (`FirstLiveOn`)
+  and never adjusted by the data it is about to split. "Never move the
+  boundary earlier" is the invariant; a clamp to `base[0]` is a rule that
+  lets the defect choose the boundary.
+- Pin the pure function with strays IN the base (a base whose oldest row is
+  older than the boundary) and the production route (`GET /api/klines`
+  through the router + JWT) with the live per-day shape; assert per-day
+  counts continuous across the roll, zero current-contract klines before the
+  boundary, zero prior-contract klines after it.
+- The prior-contract reader mirrors `LastNBarsOn`'s source filter
+  (`mixed`, `replay:off-scale` excluded) — a roll-straddling row is accepted
+  by no reader, the chart included.
+- A hole in the prior series stays a hole (the store reader's own ruling):
+  dropping a stray leaves its slot empty; drawing the next contract's price
+  space there is never the answer.
+
+**Fix.** `api/handler_klines.go klinesAcrossRoll`: `dropCurrentRowsBefore(base,
+boundary)` replaces the clamp; `store/bar_history_across_roll.go
+PriorContractBarsBefore`: source filter. Pins: `api/klines_across_roll_test.go
+TestKlinesAcrossRollDropsCurrentStraysOlderThanTheRoll`,
+`api/handler_klines_roll_hole_test.go TestKlinesAcrossRollNoHoleNoStrays`,
+`store/bar_history_across_roll_test.go
+TestPriorContractReaderExcludesMixedAndOffScaleSources`.
+
+**OWNER-GATED, NOT DONE HERE.** The root is the schema: a PK without the
+contract lets two contracts fight for one slot and the loser is silently
+dropped. Adding `contract` to the key (or a partial unique index per
+contract) is a migration over the live `bars` table and every reader that
+assumes one row per open time — the owner's call, not a display wave's.

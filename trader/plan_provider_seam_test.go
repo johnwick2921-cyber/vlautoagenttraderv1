@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -22,13 +23,42 @@ import (
 // refused arm logs why; a missing plan sent a lane to inspect the split
 // logic, the one thing that was not wrong.
 
-func captureTraderLog(t *testing.T) *bytes.Buffer {
+// syncLogBuf is the capture target for captureTraderLog. A bare bytes.Buffer
+// is NOT goroutine-safe: logrus writes to it under its own mutex from
+// whatever goroutine logs (the structure_flip read, the level-event wake),
+// while the test polls String() from the test goroutine — the race detector
+// flagged exactly that on the CLASS 141 real-path tests (CLASS 142). Every
+// method takes the lock, so a test may poll while a background read logs.
+type syncLogBuf struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *syncLogBuf) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *syncLogBuf) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
+func (b *syncLogBuf) Reset() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.buf.Reset()
+}
+
+func captureTraderLog(t *testing.T) *syncLogBuf {
 	t.Helper()
-	var buf bytes.Buffer
+	buf := &syncLogBuf{}
 	old := logger.Log.Out
-	logger.Log.SetOutput(&buf)
+	logger.Log.SetOutput(buf)
 	t.Cleanup(func() { logger.Log.SetOutput(old) })
-	return &buf
+	return buf
 }
 
 func planProviderFixture(t *testing.T) (*AutoTrader, *store.Store) {

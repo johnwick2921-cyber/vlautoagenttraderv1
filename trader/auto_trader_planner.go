@@ -882,9 +882,38 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 	}()
 }
 
+// dormantDeathKillerOf is the death counterpart of dormantFlipKillerOf:
+// the killer of the row's most recent dormant transition when that transition
+// was a DEATH ("dormant:death:<killer>" in the lifecycle log). A row whose
+// last dormant event was a flip answers false. (W-DORMANT-DEATH-REARM,
+// 2026-09-17 — the re-arm predicate keyed off trigger_reason, which D3 made
+// the AUTHORING trigger; the log is the only place the marker lives.)
+func (at *AutoTrader) dormantDeathKillerOf(row *store.PlanDB) (string, bool) {
+	if at.store == nil || row == nil {
+		return "", false
+	}
+	events, err := at.store.Plan().LifecycleLog(row.PlanID, row.Version)
+	if err != nil {
+		return "", false
+	}
+	for i := len(events) - 1; i >= 0; i-- {
+		if events[i].Event != "dormant" {
+			continue
+		}
+		if strings.HasPrefix(events[i].Reason, "dormant:death:") {
+			return strings.TrimPrefix(events[i].Reason, "dormant:death:"), true
+		}
+		return "", false
+	}
+	return "", false
+}
+
 // describeDormantCleared evaluates the SAME structured condition that put the
-// plan dormant (marker prefix in trigger_reason) and reports whether price has
-// closed back on the valid side (the re-arm half of the hysteresis pair).
+// plan dormant and reports whether price has closed back on the valid side
+// (the re-arm half of the hysteresis pair). The dormant KIND — flip or death —
+// comes from the lifecycle log (dormant:flip:… / dormant:death:…), because D3
+// made plans.trigger_reason the AUTHORING trigger. Pre-D3 rows carry the
+// marker in trigger_reason and are handled by the legacy fallback.
 // The flap guard refuses re-arm until DORMANT_MIN_HOLD_MIN has elapsed.
 func (at *AutoTrader) describeDormantCleared(row *store.PlanDB) (bool, string) {
 	if market.FuturesBarsProvider == nil || row == nil {
@@ -896,7 +925,16 @@ func (at *AutoTrader) describeDormantCleared(row *store.PlanDB) (bool, string) {
 	}
 	noteFlipDirectionInverted(at, row, &doc, "dormant")
 	c := kernel.PlanCondition{}
-	if strings.HasPrefix(row.TriggerReason, "dormant:death:") {
+	if _, ok := at.dormantDeathKillerOf(row); ok {
+		if doc.DeathStructured != nil {
+			c = *doc.DeathStructured
+		}
+	} else if _, ok := at.dormantFlipKillerOf(row); ok {
+		if doc.FlipStructured != nil {
+			c = *doc.FlipStructured
+		}
+	} else if strings.HasPrefix(row.TriggerReason, "dormant:death:") {
+		// Pre-D3 legacy rows: the marker lived in trigger_reason.
 		if doc.DeathStructured != nil {
 			c = *doc.DeathStructured
 		}

@@ -71,7 +71,8 @@ export function BulkAddSheet({
     }
     setBusy(false)
     if (ok > 0) {
-      toast.success(tp('overlayApplied', language), {
+      // W-OWNER-LEVELS-UI — sticky rows seat at the next read, not now.
+      toast.success(tp('ownerLevelSaved', language), {
         description: `${ok}/${rows.length}`,
       })
       // W13 — ONE re-examination for the whole batch, never per row.

@@ -163,7 +163,9 @@ export function EditSheet({
         })
         return
       }
-      toast.success(tp('overlayApplied', language))
+      // W-OWNER-LEVELS-UI — a sticky row is NOT a plan change: it seats at the
+      // next planner read. Never the overlay "Plan updated" key here.
+      toast.success(tp('ownerLevelSaved', language))
     }
     // W13 — hand the planner exactly what changed (its NOTE included).
     onSaved({

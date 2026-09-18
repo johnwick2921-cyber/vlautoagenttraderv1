@@ -79,8 +79,12 @@ func (s *BarHistoryStore) PriorContractBarsBefore(symbol, tf, current string, be
 		fetch = 60_000
 	}
 	var rows []BarHistoryDB
-	if err := s.db.Where("symbol = ? AND tf = ? AND open_time_ms < ? AND contract IS NOT NULL AND contract <> ? AND contract <> ?",
-		symbol, tf, beforeMs, ContractMixed, current).
+	// Source filter mirrors LastNBarsOn: a roll-straddling ("mixed") or
+	// off-scale row is accepted by no reader, the chart included (the live
+	// store holds two "MNQ 09-26"/mixed 5m rows at 09-10 21:15 and 22:35 CT
+	// that would otherwise draw as prior-contract candles).
+	if err := s.db.Where("symbol = ? AND tf = ? AND open_time_ms < ? AND contract IS NOT NULL AND contract <> ? AND contract <> ? AND COALESCE(source, '') NOT IN (?, ?)",
+		symbol, tf, beforeMs, ContractMixed, current, BarSourceMixed, BarSourceOffScale).
 		Order("open_time_ms DESC").Limit(fetch).Find(&rows).Error; err != nil {
 		return nil, err
 	}

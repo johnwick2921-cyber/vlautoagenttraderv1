@@ -180,6 +180,39 @@ export interface LevelZoneMap {
 }
 
 // ── live per-level facts from the P0.4 evaluator (one array, three renderers) ──
+// W-OWNER-LEVELS-UI — GET /api/plan/owner-levels (api/handler_plan.go
+// handlePlanOwnerLevels). A sticky owner level is user+symbol scoped (no plan /
+// session column): it is "pending" until a planner read seats it, "applied"
+// once the card's plan for the judged session carries a level at that tick.
+// There is deliberately NO applied_version — the store never records which
+// read consumed a row, and the UI must not claim one.
+export interface OwnerLevelRow {
+  id: number
+  symbol: string
+  price: number
+  label: string
+  note: string
+  scenario_tag: string
+  created_at: number // unix seconds
+  consumed: boolean
+  status: 'pending' | 'applied'
+}
+
+export interface OwnerLevelsJudgedAgainst {
+  plan_id: string
+  version: number
+  session: string
+  trade_date: string
+}
+
+export interface OwnerLevelsResponse {
+  levels: OwnerLevelRow[] // [] when empty, never null
+  count: number
+  symbol: string
+  as_of_ms: number
+  judged_against: OwnerLevelsJudgedAgainst | null
+}
+
 export interface PlanLevelFact {
   price: number
   label: string
@@ -248,7 +281,7 @@ export interface ScenarioDeath {
 }
 
 export interface PlanToday {
- structural_geometry?: StructuralGeometryView[] | null
+  structural_geometry?: StructuralGeometryView[] | null
   found: boolean
   trade_date: string
   session: string
@@ -364,21 +397,21 @@ export interface PlanToday {
 }
 
 export interface StructuralGeometryView {
- scenario: string
- leg: number
- entry: number
- stop?: number
- target?: number
- zone_lo?: number
- zone_hi?: number
- buffer?: number
- stop_source: string
- reason: string
- detail: string
- quantity: number
- loss_usd?: number
- net_gain_points?: number
- target_names?: string[]
+  scenario: string
+  leg: number
+  entry: number
+  stop?: number
+  target?: number
+  zone_lo?: number
+  zone_hi?: number
+  buffer?: number
+  stop_source: string
+  reason: string
+  detail: string
+  quantity: number
+  loss_usd?: number
+  net_gain_points?: number
+  target_names?: string[]
 }
 
 // W7 (weekly-bias wave) — /api/plan/today weekly payload.
@@ -739,6 +772,26 @@ export const planApi = {
     )
     if (res.success) return { ok: true, id: res.data?.id }
     return { ok: false, error: res.message }
+  },
+
+  // W-OWNER-LEVELS-UI (2026-09-17) — the sticky owner rows the POST above
+  // wrote, listed with a read-time status. Silent GET: an error resolves to an
+  // empty list so the card's block renders its empty line, never a toast.
+  async getOwnerLevels(
+    traderId: string,
+    symbol = 'MNQ',
+    session?: string
+  ): Promise<OwnerLevelsResponse> {
+    const qs =
+      `trader_id=${enc(traderId)}&symbol=${enc(symbol)}` +
+      (session ? `&session=${enc(session)}` : '')
+    const res = await httpClient.request<OwnerLevelsResponse>(
+      `${API_BASE}/plan/owner-levels?${qs}`,
+      { silent: true }
+    )
+    return res.success && res.data && Array.isArray(res.data.levels)
+      ? res.data
+      : { levels: [], count: 0, symbol, as_of_ms: 0, judged_against: null }
   },
 
   async deleteOwnerLevel(traderId: string, id: number): Promise<boolean> {

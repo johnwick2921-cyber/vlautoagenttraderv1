@@ -10,7 +10,7 @@ export const planCard: GuideSection = {
     { kind: 'h', text: 'STRUCTURE panel — bias only, not entries' },
     {
       kind: 'p',
-      text: "Above the level table sits the STRUCTURE panel. It exists only when the plan doc carries a structure block (day_plan.structure_map ON) — when the block is absent the panel renders nothing, never placeholder rows. One row per timeframe (D, 4h, 1h): a trend arrow (up/down/range), the last swing high and low, the impulse range with premium/discount as a percentage of the way from the impulse low, and the scorer-ranked HTF zones, each carrying its timeframe badge and freshness label. The chart draws the same zones as bands at their raw contract prices with kind·tf labels — never back-adjusted across the roll. STRUCTURE is bias context only: nothing in this panel authorizes or refuses an entry.",
+      text: "Above the level table sits the STRUCTURE panel. It exists only when the plan doc carries a structure block (day_plan.structure_map ON) — when the block is absent the panel renders nothing, never placeholder rows. One row per timeframe (D, 4h, 1h): a trend arrow (up/down/range), the last swing high and low, the impulse range with premium/discount as a percentage of the way from the impulse low, and the scorer-ranked HTF zones, each carrying its timeframe badge and freshness label. The chart draws the same zones as bands at their raw contract prices with kind·tf labels — never back-adjusted across the roll — but only on request: by default the mini chart draws the seated levels alone (one labelled line each) and no zone bands; the 'Show zones (N)' checkbox under the mini chart draws the six HTF zones nearest to the last close, identical bands merged (a per-browser view preference, not a strategy knob). STRUCTURE is bias context only: nothing in this panel authorizes or refuses an entry.",
     },
     { kind: 'h', text: 'Scenario level identity' },
     {
@@ -110,7 +110,7 @@ export const planCard: GuideSection = {
         },
         {
           title: '4 · Level-row anatomy',
-          body: 'price · provenance label (PDH, ONH, nPOC·Tue, RN, EQH…) · planner grade A/B/C · m: machine grade (detector-side: type × freshness × confluence × HTF) · ROLE badge (what the level is FOR) · distance (gold when within 12pt) · touch chip ○ approaching ◐ touching ✕ rejected ▲ accepted · fresh dot (fresh / tested / consumed — consumed rows dim).',
+          body: 'price · provenance label (PDH, ONH, nPOC·Tue, RN, EQH…) · planner grade A/B/C · m: machine grade (detector-side: type × freshness × confluence × HTF) · ROLE badge (what the level is FOR) · distance (gold when within 12pt) · touch chip ○ approaching ◐ touching ✕ rejected ▲ accepted · fresh dot (fresh / tested / consumed — consumed rows dim). An owner-added level (＋ Add / bulk add) is STICKY: it applies at the next planner read, not on save, and until then it is listed — and can be deleted — in the "Pending owner levels" block right under the table (chip pending → applied once the session plan seats it).',
           cite: 'web/src/components/plan/ZoneTable.tsx:28-150 · SessionPlanCard.tsx:682',
         },
         {
@@ -145,7 +145,7 @@ export const planCard: GuideSection = {
         },
         {
           title: '11 · 😴 dormant + auto-rearm',
-          body: 'Dormant = the plan (or its arm) was parked by a flip/death or no-active-plan — NOT dead. It auto-rearms when price closes back through the mirror buffer (0.5×ATR14, 2 decision-TF closes) and arms re-place on the next cycle. The 30-min flip hold counts from the plan\'s state (session birth, last flip/re-arm, or a bias change) — never from each re-read version.',
+          body: "Dormant = the plan (or its arm) was parked by a flip/death or no-active-plan — NOT dead. It auto-rearms when price closes back through the mirror buffer (0.5×ATR14, 2 decision-TF closes) and arms re-place on the next cycle. The 30-min flip hold counts from the plan's state (session birth, last flip/re-arm, or a bias change) — never from each re-read version.",
           cite: 'kernel/plan_lifecycle.go (dormant + rearm) · kernel/flip_hold_anchor.go · trader/armed_executor.go',
         },
       ],
