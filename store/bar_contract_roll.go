@@ -128,9 +128,7 @@ func (s *BarHistoryStore) migrateContractColumn() error {
 	if err := s.db.Exec("UPDATE bars SET contract = '' WHERE contract IS NULL").Error; err != nil {
 		return err
 	}
-	if err := s.db.Exec("CREATE INDEX IF NOT EXISTS idx_bars_contract ON bars(symbol, tf, contract, open_time_ms)").Error; err != nil {
-		return err
-	}
+	// (index creation moved to bar_contract_key.go — the set depends on the key)
 	var tfs []string
 	if err := s.db.Raw("SELECT DISTINCT tf FROM bars").Scan(&tfs).Error; err != nil {
 		return err
@@ -192,13 +190,17 @@ func (s *BarHistoryStore) LatestContract(symbol string) (string, bool) {
 	if s == nil || s.db == nil {
 		return "", false
 	}
-	var c string
-	err := s.db.Raw(`SELECT contract FROM bars WHERE symbol = ? AND tf = '1m' AND contract <> '' AND contract <> ?
-		ORDER BY open_time_ms DESC LIMIT 1`, symbol, ContractMixed).Scan(&c).Error
-	if err != nil || strings.TrimSpace(c) == "" {
+	// W-BARS-CONTRACT-KEY: every row at the NEWEST usable minute, then the
+	// tie-break (live beats replay; later expiry) — on the contract key two
+	// contracts can hold that minute.
+	var rows []contractRow
+	err := s.db.Raw(`SELECT contract, source FROM bars WHERE symbol = ? AND tf = '1m' AND contract <> '' AND contract <> ?
+		AND open_time_ms = (SELECT MAX(open_time_ms) FROM bars WHERE symbol = ? AND tf = '1m' AND contract <> '' AND contract <> ?)`,
+		symbol, ContractMixed, symbol, ContractMixed).Scan(&rows).Error
+	if err != nil {
 		return "", false
 	}
-	return c, true
+	return preferContract(rows)
 }
 
 // ContractAt returns the contract label of the newest USABLE 1m bar at or
@@ -214,13 +216,14 @@ func (s *BarHistoryStore) ContractAt(symbol string, ms int64) (string, bool) {
 	if s == nil || s.db == nil {
 		return "", false
 	}
-	var c string
-	err := s.db.Raw(`SELECT contract FROM bars WHERE symbol = ? AND tf = '1m' AND open_time_ms <= ?
-		AND contract <> '' AND contract <> ? ORDER BY open_time_ms DESC LIMIT 1`, symbol, ms, ContractMixed).Scan(&c).Error
-	if err != nil || strings.TrimSpace(c) == "" {
+	var rows []contractRow
+	err := s.db.Raw(`SELECT contract, source FROM bars WHERE symbol = ? AND tf = '1m' AND contract <> '' AND contract <> ?
+		AND open_time_ms = (SELECT MAX(open_time_ms) FROM bars WHERE symbol = ? AND tf = '1m' AND open_time_ms <= ? AND contract <> '' AND contract <> ?)`,
+		symbol, ContractMixed, symbol, ms, ContractMixed).Scan(&rows).Error
+	if err != nil {
 		return "", false
 	}
-	return c, true
+	return preferContract(rows)
 }
 
 // WindowContract resolves ONE contract for [fromMs, toMs]. It is the contract

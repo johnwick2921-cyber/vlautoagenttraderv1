@@ -442,27 +442,17 @@ export const planStrings = {
     zh: 'HTF 席位 (结构优先, S3)',
     id: 'Kursi HTF',
   },
-  htfScoreMultiplier: {
-    en: 'HTF score multiplier (S3)',
-    zh: 'HTF 分数乘数 (S3)',
-    id: 'Pengali skor HTF',
-  },
-  structureMap: {
-    en: 'Structure map — D/4h/1h trend table + zones on the card; context only, never entries',
-    zh: '结构地图 — D/4h/1h 趋势表 + 区域；仅上下文，永不作为入场',
-    id: 'Peta struktur — tabel tren D/4h/1h + zona; konteks saja, bukan entri',
-  },
-  freshByTf: {
-    en: 'Freshness by timeframe — HTF levels graded on their own bars (re-entries), research says no edge either way',
-    zh: '按周期新鲜度 — HTF 价位按自身周期 K 线评分（重入）；研究显示两种方式均无优势',
-    id: 'Kesegaran per TF — level HTF dinilai pada barnya sendiri (re-entries); riset: tanpa edge',
-  },
   flipReread: {
     en: 'Flip re-read — when the flip condition fires, the plan still goes dormant, then ONE free re-read authors the flipped direction',
     zh: '翻转重读 — 触发翻转条件时计划仍转入休眠，然后一次免费重读按翻转方向重新制定',
     id: 'Flip re-read — saat kondisi flip terpicu, plan tetap dormant, lalu SATU re-read gratis menyusun arah yang baru',
   },
-  maxScenarios: { en: 'Max scenarios', zh: '最大情景数', id: 'Maks skenario' },
+  t1Currencies: {
+    en: 'Red-news hard-block currencies — comma-separated (default USD: only USD red events block; others show as advisory; ALL = every currency)',
+    zh: '红色新闻硬封锁货币 — 逗号分隔（默认 USD：仅美元红色事件封锁；其他仅提示；ALL = 全部货币）',
+    id: 'Mata uang blokir keras berita merah — pisahkan koma (default USD: hanya event merah USD memblokir; lainnya hanya penasihat; ALL = semua)',
+  },
+  noTradeAdvisory: { en: 'Advisory', zh: '提示', id: 'Penasihat' },
   maxReplans: {
     en: 'Max re-plans',
     zh: '最大重规划数',
@@ -470,58 +460,24 @@ export const planStrings = {
   },
   minGrade: { en: 'Min grade', zh: '最低评级', id: 'Nilai min' },
   maxTrades: { en: 'Max trades', zh: '最大交易数', id: 'Maks trade' },
-  acceptance: { en: 'Acceptance', zh: '接受确认', id: 'Penerimaan' },
   approval: {
     en: 'Approval required',
     zh: '需要批准',
     id: 'Perlu persetujuan',
   },
   digest: { en: 'Digest', zh: '摘要', id: 'Ringkasan' },
-  realignCap: {
-    en: 'Max re-alignments',
-    zh: '最大重新校准次数',
-    id: 'Maks penyelarasan ulang',
-  },
   // W6 (2026-08-25) — planner wake-up knobs (level events).
   wakeHeader: {
     en: 'Planner wake-ups',
     zh: '规划师唤醒',
     id: 'Bangun perencana',
   },
-  wakeOn15mZone: {
-    en: 'Wake on 15m zones',
-    zh: '15m 供需区唤醒',
-    id: 'Bangun di zona 15m',
-  },
-  wakeOnHTFZone: {
-    en: 'Wake on HTF zones (1h/4h)',
-    zh: 'HTF 供需区唤醒 (1h/4h)',
-    id: 'Bangun di zona HTF (1j/4j)',
-  },
-  wakeOnHTFOB: {
-    en: 'Wake on HTF order blocks',
-    zh: 'HTF 订单块唤醒',
-    id: 'Bangun di order block HTF',
-  },
-  wakeOnSeatedInvalidation: {
-    en: 'Wake on seated-level invalidation',
-    zh: '坐稳位失效唤醒',
-    id: 'Bangun saat invalidasi level',
-  },
-  wakeOnIFVG: {
-    en: 'Wake on iFVG inversion',
-    zh: 'iFVG 反转唤醒',
-    id: 'Bangun saat iFVG',
-  },
-  wakeMinInterval: {
-    en: 'Min wake interval (min)',
-    zh: '唤醒最小间隔（分钟）',
-    id: 'Interval bangun min (mnt)',
-  },
-  seat1HZone: {
-    en: 'Guarantee a 1h S/D seat',
-    zh: '保证 1h 供需区座位',
-    id: 'Jamin kursi zona 1j',
+  // W-KNOB-PRUNE (2026-09-18) — the five per-class wake toggles collapsed
+  // into one switch.
+  wakeOnLevelEvents: {
+    en: 'Wake on level events (HTF zones, seated-level invalidation; 15m zones + iFVG ride along)',
+    zh: '价位事件唤醒（HTF 供需区、坐稳位失效；15m 区与 iFVG 随行）',
+    id: 'Bangun pada event level (zona HTF, invalidasi level; zona 15m + iFVG ikut)',
   },
   minScenarioQuality: {
     en: 'Min scenario quality',

@@ -17,12 +17,17 @@ func mkImport(sym, contract, tf string, tMs int64, c float64) BarHistoryDB {
 // keeps the existing values and counts the skip. There is NO upsert in
 // ImportBars: ON CONFLICT DO NOTHING is the whole write path (the 09-10 damage
 // was an import-shaped write overwriting live tape).
+//
+// W-BARS-CONTRACT-KEY (2026-09-18): the key is (symbol, tf, contract,
+// open_time_ms), so "collides" means the SAME contract at that minute. An
+// import of ANOTHER contract at that minute is that contract's own history and
+// lands beside the existing row — which is still never touched.
 func TestImportBarsNeverOverwritesExistingRow(t *testing.T) {
 	st := newBarStore(t)
 	if err := st.InsertBars([]BarHistoryDB{mkBar("MNQ", "1m", 1000, 100.0)}); err != nil {
 		t.Fatalf("seed live: %v", err)
 	}
-	ins, skp, err := st.ImportBars([]BarHistoryDB{mkImport("MNQ", "MNQ 09-23", "1m", 1000, 999.0)})
+	ins, skp, err := st.ImportBars([]BarHistoryDB{mkImport("MNQ", "MNQ 09-26", "1m", 1000, 999.0)})
 	if err != nil {
 		t.Fatalf("import: %v", err)
 	}
@@ -35,6 +40,15 @@ func TestImportBarsNeverOverwritesExistingRow(t *testing.T) {
 	}
 	if rows[0].C != 100.0 || rows[0].Source != BarSourceLive || rows[0].Contract != "MNQ 09-26" {
 		t.Fatalf("existing row changed by the import: %+v", rows[0])
+	}
+	// another contract's bar at the same minute LANDS, beside — not over
+	ins, skp, err = st.ImportBars([]BarHistoryDB{mkImport("MNQ", "MNQ 09-23", "1m", 1000, 999.0)})
+	if err != nil || ins != 1 || skp != 0 {
+		t.Fatalf("other-contract import: imported=%d skipped=%d err=%v want 1/0", ins, skp, err)
+	}
+	live, err := st.BarsBetweenOn("MNQ", "1m", "MNQ 09-26", 0, 2000)
+	if err != nil || len(live) != 1 || live[0].C != 100.0 || live[0].Source != BarSourceLive {
+		t.Fatalf("existing row changed by the other-contract import: %+v err=%v", live, err)
 	}
 }
 

@@ -1,5 +1,7 @@
-// Command dayplan-arm arms day_plan (plan_enabled + clock fields) on the AI
-// strategies — the P2.5 ARM. It is idempotent and DRY-RUN by default: run it once
+// Command dayplan-arm arms day_plan (plan_enabled) on the AI strategies (the
+// legacy clock fields last_entry_ct / eod_flat_ct were deleted by W-KNOB-PRUNE
+// 2026-09-18; the clock is per-session via last_entry_offset_min /
+// eod_flat_offset_min) — — the P2.5 ARM. It is idempotent and DRY-RUN by default: run it once
 // to preview, then with --confirm to write.
 //
 // Run it while the bot is STOPPED, in the flat window at ★ RESTART 1, AFTER
@@ -20,8 +22,6 @@ import (
 func main() {
 	dbPath := flag.String("db", "data/data.db", "path to the sqlite database")
 	confirm := flag.Bool("confirm", false, "actually write (default: dry-run preview)")
-	lastEntry := flag.String("last-entry", "13:00", "last-entry CT time (14:00 ET)")
-	eodFlat := flag.String("eod-flat", "14:45", "eod-flat CT time (15:45 ET)")
 	flag.Parse()
 
 	st, err := store.New(*dbPath)
@@ -52,19 +52,12 @@ func main() {
 			cfg.DayPlan = store.DefaultDayPlanConfig()
 		}
 		cfg.DayPlan.PlanEnabled = true
-		if *lastEntry != "" {
-			cfg.DayPlan.LastEntryCT = *lastEntry
-		}
-		if *eodFlat != "" {
-			cfg.DayPlan.EODFlatCT = *eodFlat
-		}
 		raw, err := json.Marshal(cfg)
 		if err != nil {
 			fmt.Printf("SKIP %s (%s): marshal: %v\n", s.ID, s.Name, err)
 			continue
 		}
-		fmt.Printf("ARM %s (%s): plan_enabled=true last_entry=%s eod_flat=%s\n",
-			s.ID, s.Name, cfg.DayPlan.LastEntryCT, cfg.DayPlan.EODFlatCT)
+		fmt.Printf("ARM %s (%s): plan_enabled=true\n", s.ID, s.Name)
 		if *confirm {
 			s.Config = string(raw)
 			if err := st.Strategy().Update(s); err != nil {

@@ -1,0 +1,202 @@
+{
+  "alloff": {
+    "Candidates": [],
+    "Interval": 30
+  },
+  "empty": {
+    "Candidates": [
+      {
+        "Key": "p1:1:invalidation:Demand 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Demand 1h invalidated: close 100.00 below 104.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:invalidation:Supply 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Supply 1h invalidated: close 100.00 above 99.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:zone:Demand:1h:1787623200000",
+        "Kind": "zone",
+        "Tier": "1h",
+        "Desc": "1h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787623200000
+      },
+      {
+        "Key": "p1:1:zone:Demand:4h:1787482800000",
+        "Kind": "zone",
+        "Tier": "4h",
+        "Desc": "4h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787482800000
+      },
+      {
+        "Key": "p1:1:zone:Demand:15m:1787658300000",
+        "Kind": "zone",
+        "Tier": "15m",
+        "Desc": "15m reversal S/D zone Demand [99.00–101.00]",
+        "Prio": 2,
+        "BirthMs": 1787658300000
+      }
+    ],
+    "Interval": 30
+  },
+  "nil": {
+    "Candidates": [
+      {
+        "Key": "p1:1:invalidation:Demand 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Demand 1h invalidated: close 100.00 below 104.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:invalidation:Supply 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Supply 1h invalidated: close 100.00 above 99.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:zone:Demand:1h:1787623200000",
+        "Kind": "zone",
+        "Tier": "1h",
+        "Desc": "1h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787623200000
+      },
+      {
+        "Key": "p1:1:zone:Demand:4h:1787482800000",
+        "Kind": "zone",
+        "Tier": "4h",
+        "Desc": "4h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787482800000
+      },
+      {
+        "Key": "p1:1:zone:Demand:15m:1787658300000",
+        "Kind": "zone",
+        "Tier": "15m",
+        "Desc": "15m reversal S/D zone Demand [99.00–101.00]",
+        "Prio": 2,
+        "BirthMs": 1787658300000
+      }
+    ],
+    "Interval": 30
+  },
+  "owner": {
+    "Candidates": [
+      {
+        "Key": "p1:1:invalidation:Demand 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Demand 1h invalidated: close 100.00 below 104.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:invalidation:Supply 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Supply 1h invalidated: close 100.00 above 99.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:zone:Demand:1h:1787623200000",
+        "Kind": "zone",
+        "Tier": "1h",
+        "Desc": "1h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787623200000
+      },
+      {
+        "Key": "p1:1:zone:Demand:4h:1787482800000",
+        "Kind": "zone",
+        "Tier": "4h",
+        "Desc": "4h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787482800000
+      },
+      {
+        "Key": "p1:1:zone:Demand:15m:1787658300000",
+        "Kind": "zone",
+        "Tier": "15m",
+        "Desc": "15m reversal S/D zone Demand [99.00–101.00]",
+        "Prio": 2,
+        "BirthMs": 1787658300000
+      },
+      {
+        "Key": "p1:1:ob:OB(bull):1h:1787623200000",
+        "Kind": "ob",
+        "Tier": "1h",
+        "Desc": "1h order block OB(bull) [99.50–102.00]",
+        "Prio": 5,
+        "BirthMs": 1787623200000
+      },
+      {
+        "Key": "p1:1:ob:OB(bull):4h:1787482800000",
+        "Kind": "ob",
+        "Tier": "4h",
+        "Desc": "4h order block OB(bull) [99.50–102.00]",
+        "Prio": 5,
+        "BirthMs": 1787482800000
+      }
+    ],
+    "Interval": 30
+  },
+  "seed": {
+    "Candidates": [
+      {
+        "Key": "p1:1:invalidation:Demand 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Demand 1h invalidated: close 100.00 below 104.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:invalidation:Supply 1h:15m:1787669999999",
+        "Kind": "invalidation",
+        "Tier": "15m",
+        "Desc": "seated Supply 1h invalidated: close 100.00 above 99.00 (noise 0.50)",
+        "Prio": 0,
+        "BirthMs": 1787669999999
+      },
+      {
+        "Key": "p1:1:zone:Demand:1h:1787623200000",
+        "Kind": "zone",
+        "Tier": "1h",
+        "Desc": "1h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787623200000
+      },
+      {
+        "Key": "p1:1:zone:Demand:4h:1787482800000",
+        "Kind": "zone",
+        "Tier": "4h",
+        "Desc": "4h S/D zone Demand [99.00–101.00]",
+        "Prio": 1,
+        "BirthMs": 1787482800000
+      },
+      {
+        "Key": "p1:1:zone:Demand:15m:1787658300000",
+        "Kind": "zone",
+        "Tier": "15m",
+        "Desc": "15m reversal S/D zone Demand [99.00–101.00]",
+        "Prio": 2,
+        "BirthMs": 1787658300000
+      }
+    ],
+    "Interval": 30
+  }
+}

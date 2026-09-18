@@ -1,6 +1,7 @@
 package kernel
 
 import (
+	"nofx/store"
 	"strings"
 	"testing"
 )
@@ -68,9 +69,9 @@ func TestWidenCTWindows(t *testing.T) {
 }
 
 func TestT1NoTradeLinesDriftCarriesWidening(t *testing.T) {
-	evs := []PlannerCalendarEvent{{TimeCT: "13:00", Impact: "T1", Title: "FOMC"}}
-	plain := T1NoTradeLines(evs)
-	wide := T1NoTradeLinesDrift(evs, 61_000)
+	evs := []PlannerCalendarEvent{{TimeCT: "13:00", Impact: "T1", Title: "FOMC", Currency: "USD"}}
+	plain := T1NoTradeLines(evs, store.DefaultT1Currencies())
+	wide := T1NoTradeLinesDrift(evs, store.DefaultT1Currencies(), 61_000)
 	if len(plain) != 1 || len(wide) != 1 {
 		t.Fatalf("want 1 line each, got %d/%d", len(plain), len(wide))
 	}

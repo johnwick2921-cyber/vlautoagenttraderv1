@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"nofx/market"
+	"nofx/store"
 )
 
 // P3.3 — the planner input package (assembled into ONE prompt for the reasoner).
@@ -23,6 +24,12 @@ type PlannerCalendarEvent struct {
 
 // PlannerInput is everything the reasoner reads to write a plan.
 type PlannerInput struct {
+	// T1Currencies (W-T1-CURRENCIES, 2026-09-18) — the RESOLVED currency set
+	// whose T1 events the machine hard-blocks (store.DayPlanConfig.
+	// T1CurrenciesFor). Empty → the shipped default; the Calendar section tags
+	// every other T1 event as advisory so the model is never told a blackout
+	// the gate will not enforce.
+	T1Currencies       []string
 	Zones              *LevelZoneMap // Uncut presentation snapshot; never used as trading inputs.
 	ResearchSnapshotID string        `json:"-"` // record link, never prompt content
 	TradeDate          string
@@ -621,6 +628,10 @@ func BuildPlannerPrompt(in PlannerInput) string {
 	if len(in.Calendar) == 0 {
 		b.WriteString("  (no filtered events)\n")
 	} else {
+		t1Set := in.T1Currencies
+		if len(t1Set) == 0 {
+			t1Set = store.DefaultT1Currencies()
+		}
 		for _, e := range in.Calendar {
 			tag := "caution — NOT a no-trade blackout; keep trading with normal discretion"
 			if e.Impact == "T1" {
@@ -628,6 +639,12 @@ func BuildPlannerPrompt(in PlannerInput) string {
 				// machine enforces T1 blackouts regardless and the author must
 				// not list them. This tag used to order the opposite.
 				tag = "HARD no-trade blackout — the machine writes and enforces it; stand aside around it"
+				// W-T1-CURRENCIES: a red event outside the hard set is
+				// ADVISORY — the gate will not refuse entries around it, so
+				// the prompt must not claim it will.
+				if hard, _ := t1CurrencyHard(e.Currency, t1Set); !hard {
+					tag = fmt.Sprintf("red news, ADVISORY only — NOT a machine blackout (t1_currencies=%s); trade with discretion", T1CurrencySetLabel(t1Set))
+				}
 			}
 			fmt.Fprintf(&b, "  %s %s %s — %s (%s)\n", e.TimeCT, e.Currency, e.Impact, e.Title, tag)
 		}

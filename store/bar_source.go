@@ -127,10 +127,8 @@ func (s *BarHistoryStore) migrateSourceColumn() error {
 			return err
 		}
 	}
-	if err := s.db.Exec("UPDATE bars SET source = ? WHERE source = ''", BarSourceLive).Error; err != nil {
-		return err
-	}
-	return s.db.Exec("CREATE INDEX IF NOT EXISTS idx_bars_source ON bars(symbol, tf, source, open_time_ms)").Error
+	// (index creation moved to bar_contract_key.go — the set depends on the key)
+	return s.db.Exec("UPDATE bars SET source = ? WHERE source = ''", BarSourceLive).Error
 }
 
 // SourceCensus reports, per symbol, how many rows carry each source label —

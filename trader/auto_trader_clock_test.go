@@ -60,20 +60,9 @@ func TestEffectiveEODFlat(t *testing.T) {
 	}
 }
 
-func TestClockConfigDefaultsAndGetters(t *testing.T) {
-	// No day_plan → getters return the spec defaults.
-	base := mkTrader("ninjatrader", nil, "5m")
-	if base.lastEntryCT() != "13:00" || base.eodFlatCT() != "14:45" {
-		t.Fatalf("defaults = %s/%s want 13:00/14:45", base.lastEntryCT(), base.eodFlatCT())
-	}
-	yes := true
-	at := mkTrader("ninjatrader", &yes, "5m")
-	at.config.StrategyConfig.DayPlan.LastEntryCT = "13:30"
-	at.config.StrategyConfig.DayPlan.EODFlatCT = "14:30"
-	if at.lastEntryCT() != "13:30" || at.eodFlatCT() != "14:30" {
-		t.Fatalf("configured = %s/%s", at.lastEntryCT(), at.eodFlatCT())
-	}
-}
+// TestClockConfigDefaultsAndGetters DELETED by W-KNOB-PRUNE (2026-09-18): the
+// lastEntryCT / eodFlatCT getters and their config fields are gone (unreachable
+// since the P2 session-scope redesign). See store.TestDayPlanLegacyClockFieldsIgnoredOnLoad.
 
 func TestBarCloseGate(t *testing.T) {
 	// Not active → always run; watermark unchanged.

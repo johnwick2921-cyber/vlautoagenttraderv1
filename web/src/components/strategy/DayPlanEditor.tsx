@@ -32,26 +32,15 @@ const DEFAULT_DAY_PLAN: DayPlanConfig = {
   planner_timeframes: ['D', '4h', '1h', '15m'],
   proximity_filter_atr: 1.5,
   max_levels: 8,
-  scenario_cap: 3,
   htf_seats: 2,
-  htf_score_multiplier: 1.2,
-  acceptance_rule: '5m_close',
   replan_cap: 2,
   sessions_enabled: ['NY'],
   approval_required: false,
-  evening_digest: true,
-  last_entry_ct: '13:00',
-  eod_flat_ct: '14:45',
-  realign_cap: 5,
-  // W6 (2026-08-25) — wake knobs: ON except HTF OBs; 10-min spacing.
-  wake_on_15m_zone: true,
-  wake_on_htf_zone: true,
-  wake_on_htf_ob: false,
-  wake_on_seated_invalidation: true,
-  wake_on_ifvg: true,
-  wake_min_interval_min: 30,
-  // 1h wave (2026-08-25) — 1h S/D seat guarantee DEFAULT ON.
-  seat_1h_zone: true,
+  // W-KNOB-PRUNE (2026-09-18): the folded knobs (scenario_cap 3,
+  // acceptance_rule 1×5m, evening_digest off, realign_cap 5,
+  // wake_min_interval_min 30, wake_on_level_events ON) are NOT seeded — the
+  // engine's constants apply unless a stored value exists; the removed ones
+  // (last_entry_ct, eod_flat_ct, seat_1h_zone, htf_score_multiplier) are gone.
   // R4 (2026-08-25) — scenario quality floor DEFAULT C (no restriction).
   min_scenario_quality: 'C',
   // ONE SETUP (dispatch 102, 2026-09-10) — arm only the single best live
@@ -61,8 +50,8 @@ const DEFAULT_DAY_PLAN: DayPlanConfig = {
 }
 
 // C3 — the legacy day-scoped clock controls (last_entry_ct / eod_flat_ct) were
-// HIDDEN on 2026-08-26: both are unreachable since the P2 session-scope rework
-// (trader/auto_trader_clock.go: "nothing evaluates it"). Stored values survive.
+// HIDDEN on 2026-08-26 and the fields DELETED by W-KNOB-PRUNE (2026-09-18):
+// both were unreachable since the P2 session-scope rework.
 
 const ALL_SESSIONS: SessionName[] = ['NY', 'ASIA', 'LONDON']
 
@@ -237,6 +226,15 @@ const MODE_OPTS = (language: Language) => [
 // override EQUAL to the strategy-level value was never a deliberate override —
 // migrate it to inherit (drop the field). Pure + idempotent; the component
 // re-emits the cleaned config on mount so the next save persists the migration.
+// W-T1-CURRENCIES — "usd, eur ," → ["USD","EUR"]; the one parser the field
+// and its resync share.
+function parseT1Currencies(text: string): string[] {
+  return text
+    .split(',')
+    .map((c) => c.trim().toUpperCase())
+    .filter((c) => c.length > 0)
+}
+
 function migrateEqualOverrides(config?: DayPlanConfig): DayPlanConfig {
   const base = config ?? DEFAULT_DAY_PLAN
   const list = base.sessions
@@ -274,6 +272,19 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
       onChange(migrateEqualOverrides(config))
     }
   }, [])
+
+  // W-T1-CURRENCIES — the comma-separated text the owner is typing; the
+  // parsed, upper-cased list is what persists (empty → field absent = USD).
+  const [t1Text, setT1Text] = useState((cfg.t1_currencies ?? []).join(','))
+  // Review of #171: the editor is not keyed by strategy id, so a strategy
+  // switch must resync the text or the previous strategy's currency filter
+  // (a no-trade gate) is shown — and could be saved — onto the next one. Only
+  // an EXTERNAL change resets it: while the owner types, the parsed list and
+  // the saved list agree and a trailing comma survives.
+  useEffect(() => {
+    const saved = (cfg.t1_currencies ?? []).join(',')
+    if (saved !== parseT1Currencies(t1Text).join(',')) setT1Text(saved)
+  }, [config])
 
   const update = <K extends keyof DayPlanConfig>(
     key: K,
@@ -512,15 +523,6 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               disabled={bodyDisabled}
             />
           </FieldRow>
-          <FieldRow label={tp('maxScenarios', language)}>
-            <NumberField
-              value={cfg.scenario_cap ?? 3}
-              min={1}
-              max={5}
-              onChange={(v) => update('scenario_cap', v)}
-              disabled={bodyDisabled}
-            />
-          </FieldRow>
           <FieldRow label={tp('htfSeats', language)}>
             <NumberField
               value={cfg.htf_seats ?? 2}
@@ -530,38 +532,41 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               disabled={bodyDisabled}
             />
           </FieldRow>
-          <FieldRow label={tp('htfScoreMultiplier', language)}>
-            <NumberField
-              value={cfg.htf_score_multiplier ?? 1.2}
-              min={1.0}
-              max={1.5}
-              step={0.1}
-              onChange={(v) => update('htf_score_multiplier', v)}
-              disabled={bodyDisabled}
-            />
-          </FieldRow>
-          <FieldRow label={tp('structureMap', language)}>
-            <Toggle
-              on={cfg.structure_map === true}
-              onChange={(v) => update('structure_map', v)}
-              disabled={bodyDisabled}
-              testId="structure-map-toggle"
-            />
-          </FieldRow>
-          <FieldRow label={tp('freshByTf', language)}>
-            <Toggle
-              on={cfg.levels_fresh_by_tf === true}
-              onChange={(v) => update('levels_fresh_by_tf', v)}
-              disabled={bodyDisabled}
-              testId="fresh-by-tf-toggle"
-            />
-          </FieldRow>
+          {/* W-KNOB-PRUNE (2026-09-18) — removed controls: Max scenarios
+              (folded, 3 unless stored), HTF score multiplier (constant 1.0),
+              Structure map (folded, advisory, stored value honoured), Freshness
+              by TF (folded, stored value honoured), Acceptance rule (one rule),
+              Digest (folded), Re-align cap (folded into re-plans), the five
+              wake toggles (one switch below), Min wake interval (30 unless
+              stored), 1h seat guarantee (unconditional). Stored values pass
+              through untouched on save. */}
           <FieldRow label={tp('flipReread', language)}>
             <Toggle
               on={cfg.flip_reread === true}
               onChange={(v) => update('flip_reread', v)}
               disabled={bodyDisabled}
               testId="flip-reread-toggle"
+            />
+          </FieldRow>
+          <FieldRow label={tp('t1Currencies', language)}>
+            <input
+              type="text"
+              data-testid="t1-currencies-input"
+              value={t1Text}
+              placeholder="USD"
+              disabled={bodyDisabled}
+              onChange={(e) => {
+                setT1Text(e.target.value)
+                const list = parseT1Currencies(e.target.value)
+                update('t1_currencies', list.length > 0 ? list : undefined)
+              }}
+              className="vl-num text-[11px] w-40 px-1.5 py-0.5 text-right"
+              style={{
+                background: 'var(--vl-card-2)',
+                border: '1px solid var(--vl-hair)',
+                borderRadius: 'var(--vl-radius-chip)',
+                color: 'var(--vl-ivory)',
+              }}
             />
           </FieldRow>
           <FieldRow label={tp('maxReplans', language)}>
@@ -573,14 +578,6 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               disabled={bodyDisabled}
             />
           </FieldRow>
-          <FieldRow label={tp('acceptance', language)}>
-            <Segmented
-              options={[{ key: '5m_close', label: '1×5m' }]}
-              value={cfg.acceptance_rule ?? '5m_close'}
-              onChange={(v) => update('acceptance_rule', v)}
-              disabled={bodyDisabled}
-            />
-          </FieldRow>
           <FieldRow label={tp('approval', language)}>
             <Toggle
               on={cfg.approval_required === true}
@@ -588,31 +585,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               disabled={bodyDisabled}
             />
           </FieldRow>
-          <FieldRow label={tp('digest', language)}>
-            <Toggle
-              on={cfg.evening_digest !== false}
-              onChange={(v) => update('evening_digest', v)}
-              disabled={bodyDisabled}
-            />
-          </FieldRow>
 
-          {/* C3 — last_entry_ct / eod_flat_ct are LEGACY day-scoped clock
-              fields, UNREACHABLE since the P2 session-scope rework
-              (trader/auto_trader_clock.go:257-317: "nothing evaluates it").
-              The live gates read the session registry instead. Hidden, not
-              removed, so old stored values survive untouched. */}
-          <FieldRow label={tp('realignCap', language)}>
-            <NumberField
-              value={cfg.realign_cap ?? 5}
-              min={0}
-              max={10}
-              onChange={(v) => update('realign_cap', v)}
-              disabled={bodyDisabled}
-            />
-          </FieldRow>
-
-          {/* W6 (2026-08-25) — planner wake-up knobs: level-event wakes.
-              Absent = ON (mirrors Go pointer-bool defaults); HTF OBs OFF. */}
+          {/* W6 (2026-08-25) — planner wake-up: level-event wakes. W-KNOB-PRUNE
+              (2026-09-18): ONE switch (absent = ON, mirrors Go pointer-bool)
+              replaces the five per-class toggles. */}
           <div
             className="mt-1 pt-2"
             style={{ borderTop: '1px solid var(--vl-hair)' }}
@@ -623,55 +599,12 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
             >
               {tp('wakeHeader', language)}
             </span>
-            <FieldRow label={tp('wakeOn15mZone', language)}>
+            <FieldRow label={tp('wakeOnLevelEvents', language)}>
               <Toggle
-                on={cfg.wake_on_15m_zone !== false}
-                onChange={(v) => update('wake_on_15m_zone', v)}
+                on={cfg.wake_on_level_events !== false}
+                onChange={(v) => update('wake_on_level_events', v)}
                 disabled={bodyDisabled}
-              />
-            </FieldRow>
-            <FieldRow label={tp('wakeOnHTFZone', language)}>
-              <Toggle
-                on={cfg.wake_on_htf_zone !== false}
-                onChange={(v) => update('wake_on_htf_zone', v)}
-                disabled={bodyDisabled}
-              />
-            </FieldRow>
-            <FieldRow label={tp('wakeOnHTFOB', language)}>
-              <Toggle
-                on={cfg.wake_on_htf_ob === true}
-                onChange={(v) => update('wake_on_htf_ob', v)}
-                disabled={bodyDisabled}
-              />
-            </FieldRow>
-            <FieldRow label={tp('wakeOnSeatedInvalidation', language)}>
-              <Toggle
-                on={cfg.wake_on_seated_invalidation !== false}
-                onChange={(v) => update('wake_on_seated_invalidation', v)}
-                disabled={bodyDisabled}
-              />
-            </FieldRow>
-            <FieldRow label={tp('wakeOnIFVG', language)}>
-              <Toggle
-                on={cfg.wake_on_ifvg !== false}
-                onChange={(v) => update('wake_on_ifvg', v)}
-                disabled={bodyDisabled}
-              />
-            </FieldRow>
-            <FieldRow label={tp('wakeMinInterval', language)}>
-              <NumberField
-                value={cfg.wake_min_interval_min ?? 30}
-                min={5}
-                max={120}
-                onChange={(v) => update('wake_min_interval_min', v)}
-                disabled={bodyDisabled}
-              />
-            </FieldRow>
-            <FieldRow label={tp('seat1HZone', language)}>
-              <Toggle
-                on={cfg.seat_1h_zone !== false}
-                onChange={(v) => update('seat_1h_zone', v)}
-                disabled={bodyDisabled}
+                testId="wake-on-level-events-toggle"
               />
             </FieldRow>
             <FieldRow label={tp('minScenarioQuality', language)}>
@@ -946,26 +879,8 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                         disabled={bodyDisabled}
                       />
                     </OverrideRow>
-                    <OverrideRow
-                      label={tp('acceptance', language)}
-                      overridden={ov?.acceptance_rule !== undefined}
-                      onToggle={(on) =>
-                        on
-                          ? setSessionField(s, 'acceptance_rule', '5m_close')
-                          : clearSessionField(s, 'acceptance_rule')
-                      }
-                      disabled={bodyDisabled}
-                      language={language}
-                    >
-                      <Segmented
-                        options={[{ key: '5m_close', label: '1×5m' }]}
-                        value={ov?.acceptance_rule}
-                        onChange={(v) =>
-                          setSessionField(s, 'acceptance_rule', v)
-                        }
-                        disabled={bodyDisabled}
-                      />
-                    </OverrideRow>
+                    {/* acceptance_rule override row removed (W-KNOB-PRUNE):
+                        one rule exists; a stored override is read by nothing. */}
                   </div>
                 )}
               </div>

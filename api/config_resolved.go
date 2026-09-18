@@ -50,6 +50,7 @@ type resolvedSummary struct {
 	Advisory            int      `json:"advisory"`
 	DisplayOnly         int      `json:"display_only"`
 	Infra               int      `json:"infra"`
+	Folded              int      `json:"folded"`
 	EnvShadows          int      `json:"env_shadows"`
 	EnvShadowPaths      []string `json:"env_shadow_paths"`
 }
@@ -172,6 +173,7 @@ func configResolvedPayload(cfg *store.StrategyConfig, session string) gin.H {
 			Advisory:            sum.Advisory,
 			DisplayOnly:         sum.DisplayOnly,
 			Infra:               sum.Infra,
+			Folded:              sum.Folded,
 			EnvShadows:          sum.EnvShadows,
 			EnvShadowPaths:      paths,
 		},

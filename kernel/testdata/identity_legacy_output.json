@@ -11136,7 +11136,7 @@
       "htf": true,
       "grade": "A",
       "fresh": "fresh",
-      "score": 1.92,
+      "score": 1.6,
       "confluence": 5,
       "distance": -5.275211949458026,
       "role": "pivot"
@@ -11258,7 +11258,7 @@
       "htf": true,
       "grade": "A",
       "fresh": "fresh",
-      "score": 1.92,
+      "score": 1.6,
       "confluence": 59,
       "distance": 40.897609406387346,
       "role": "react_zone"
@@ -11386,18 +11386,18 @@
       "role": "react_zone"
     },
     {
-      "kind": "PDL",
-      "price": 19917.12108744649,
-      "lo": 19917.12108744649,
-      "hi": 19917.12108744649,
-      "label": "PDL",
+      "kind": "RTH-L",
+      "price": 19918.72688425943,
+      "lo": 19918.72688425943,
+      "hi": 19918.72688425943,
+      "label": "RTH-L",
       "origin_date": "2030-09-11",
-      "htf": true,
+      "htf": false,
       "grade": "A",
       "fresh": "fresh",
-      "score": 1.92,
+      "score": 1.6,
       "confluence": 41,
-      "distance": -124.70920213490172,
+      "distance": -123.10340532195914,
       "role": "react_zone"
     },
     {
@@ -11502,7 +11502,7 @@
       "htf": true,
       "grade": "A",
       "fresh": "fresh",
-      "score": 1.92,
+      "score": 1.6,
       "confluence": 5,
       "distance": -5.275211949458026,
       "role": "pivot"
@@ -11624,7 +11624,7 @@
       "htf": true,
       "grade": "A",
       "fresh": "fresh",
-      "score": 1.92,
+      "score": 1.6,
       "confluence": 59,
       "distance": 40.897609406387346,
       "role": "react_zone"

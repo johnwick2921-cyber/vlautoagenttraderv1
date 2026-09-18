@@ -199,11 +199,24 @@ func TestCandidateKnobsHaveNoMethodReaders(t *testing.T) {
 	}
 }
 
-// THE SIX ARE LIVE, AND THE REGISTRY NAMES THEIR METHOD READERS. The detector
-// must find at least one production call site for each, and the registry's
-// Consumers must include it — so the entry is a reader, not a claim (A24).
+// THE WAKE KNOBS ARE READ THROUGH THEIR ACCESSORS, AND THE REGISTRY SAYS SO.
+// W-KNOB-PRUNE (2026-09-18): the five legacy per-class switches are FOLDED
+// (read only for the mapping in WakeOnLevelEventsEnabled / WakeOnHTFOrderBlocks),
+// wake_min_interval_min is FOLDED (constant unless stored) and the single
+// wake_on_level_events switch is LIVE. The detector must still find a
+// production call site for each, and the registry's Consumers must name one —
+// so the entry is a reader, not a claim (A24).
 func TestWakeKnobsAreLiveThroughTheirAccessors(t *testing.T) {
-	for _, leaf := range []string{"wake_min_interval_min", "wake_on_15m_zone", "wake_on_htf_ob", "wake_on_htf_zone", "wake_on_ifvg", "wake_on_seated_invalidation"} {
+	want := map[string]KnobStatus{
+		"wake_on_level_events":        KnobLive,
+		"wake_min_interval_min":       KnobFolded,
+		"wake_on_15m_zone":            KnobFolded,
+		"wake_on_htf_ob":              KnobFolded,
+		"wake_on_htf_zone":            KnobFolded,
+		"wake_on_ifvg":                KnobFolded,
+		"wake_on_seated_invalidation": KnobFolded,
+	}
+	for _, leaf := range []string{"wake_on_level_events", "wake_min_interval_min", "wake_on_15m_zone", "wake_on_htf_ob", "wake_on_htf_zone", "wake_on_ifvg", "wake_on_seated_invalidation"} {
 		e, ok := LookupKnob(leaf)
 		if !ok {
 			t.Fatalf("%s not in the registry", leaf)
@@ -212,8 +225,8 @@ func TestWakeKnobsAreLiveThroughTheirAccessors(t *testing.T) {
 		if len(sites) == 0 {
 			t.Fatalf("%s: the detector found no method reader — the wiring this pin exists for is gone", leaf)
 		}
-		if e.Status != KnobLive {
-			t.Errorf("%s: status %q, want live — read via %v at %v", leaf, e.Status, acc, sites)
+		if e.Status != want[leaf] {
+			t.Errorf("%s: status %q, want %q — read via %v at %v", leaf, e.Status, want[leaf], acc, sites)
 		}
 		named := false
 		for _, c := range e.Consumers {

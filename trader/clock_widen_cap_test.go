@@ -22,7 +22,10 @@ const driftCapDate = "2026-09-17" // Thursday, CDT (UTC-5): 21:30 CT = 02:30Z ne
 
 func driftCapTrader(t *testing.T, driftMs int64) (*AutoTrader, *store.Store) {
 	t.Helper()
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, SessionsEnabled: []string{"ASIA", "NY"}}}
+	// T1Currencies ALL: the class was born under the pre-W-T1-CURRENCIES regime
+	// where every T1 hard-blocked; under the shipped USD default this JPY
+	// event is advisory and opens no window (trader/t1_currencies_test.go).
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, SessionsEnabled: []string{"ASIA", "NY"}, T1Currencies: []string{store.T1CurrencyAll}}}
 	at, st := resetTrader(t, cfg)
 	orig := clockHoldDriftFn
 	clockHoldDriftFn = func(string) (int64, bool) { return driftMs, true }

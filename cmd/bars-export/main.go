@@ -66,7 +66,10 @@ func main() {
 			continue
 		}
 		w := csv.NewWriter(f)
-		_ = w.Write([]string{"open_time_ms", "open_time_utc", "open", "high", "low", "close", "volume", "tf", "convention"})
+		// W-BARS-CONTRACT-KEY: the export is unfiltered (every contract, the
+		// seam visible), so each row names its contract and source — a roll
+		// minute appears once per contract.
+		_ = w.Write([]string{"open_time_ms", "open_time_utc", "open", "high", "low", "close", "volume", "tf", "convention", "contract", "source"})
 		conv := ""
 		for _, r := range rows {
 			if conv == "" {
@@ -77,7 +80,7 @@ func main() {
 				time.UnixMilli(r.OpenTimeMs).UTC().Format("2006-01-02T15:04:05Z"),
 				strconv.FormatFloat(r.O, 'f', -1, 64), strconv.FormatFloat(r.H, 'f', -1, 64),
 				strconv.FormatFloat(r.L, 'f', -1, 64), strconv.FormatFloat(r.C, 'f', -1, 64),
-				strconv.FormatFloat(r.V, 'f', -1, 64), r.TF, r.Convention,
+				strconv.FormatFloat(r.V, 'f', -1, 64), r.TF, r.Convention, r.Contract, r.Source,
 			})
 		}
 		w.Flush()

@@ -141,12 +141,10 @@ func (at *AutoTrader) proximityFilterATR() float64 {
 	return kernel.ActivationWindowK // 1.5
 }
 
-// scenarioCap is the max scenarios kept from a planner read (1–5; default 3).
+// scenarioCap is the max scenarios kept from a planner read (1–5). FOLDED
+// (W-KNOB-PRUNE): the constant 3 unless a stored value exists — one seam.
 func (at *AutoTrader) scenarioCap() int {
-	if dp := at.dayPlanCfg(); dp != nil && dp.ScenarioCap >= 1 && dp.ScenarioCap <= 5 {
-		return dp.ScenarioCap
-	}
-	return 3
+	return at.dayPlanCfg().ScenarioCapResolved()
 }
 
 // approvalRequired reports whether entries must be owner-approved before firing.
@@ -155,14 +153,12 @@ func (at *AutoTrader) approvalRequired() bool {
 	return dp != nil && dp.ApprovalRequired
 }
 
-// eveningDigestEnabled gates the end-of-day roll-up digest (default true; the FE
-// seeds it via DefaultDayPlanConfig, so absent → the writer keeps writing).
+// eveningDigestEnabled gates the end-of-day roll-up digest. FOLDED
+// (W-KNOB-PRUNE): constant OFF unless a stored true (every live strategy
+// stores true). The caller (maybeWriteDigests) is already gated on the day
+// plan being enabled, so a nil block never reaches this.
 func (at *AutoTrader) eveningDigestEnabled() bool {
-	dp := at.dayPlanCfg()
-	if dp == nil {
-		return true
-	}
-	return dp.EveningDigest
+	return at.dayPlanCfg().EveningDigestOn()
 }
 
 // ApprovalKey is the system_config key granting entries for one trader + CME
@@ -225,16 +221,11 @@ func (at *AutoTrader) planModeBlocked(d *kernel.Decision) (string, bool) {
 	return "", false
 }
 
-// DefaultRealignCap is the shipped ceiling on AUTO plan re-alignments per plan.
-const DefaultRealignCap = 5
-
 // RealignCap returns this strategy's auto re-align ceiling (W13). Exported because
-// the API layer enforces the cap at the /api/plan/realign entry point.
+// the API layer enforces the cap at the /api/plan/realign entry point. FOLDED
+// (W-KNOB-PRUNE): store.DefaultRealignCap (5) unless a stored value exists.
 func (at *AutoTrader) RealignCap() int {
-	if dp := at.dayPlanCfg(); dp != nil && dp.RealignCap > 0 {
-		return dp.RealignCap
-	}
-	return DefaultRealignCap
+	return at.dayPlanCfg().RealignCapResolved()
 }
 
 // DayPlanOn reports whether the day-plan feature is enabled for this trader —

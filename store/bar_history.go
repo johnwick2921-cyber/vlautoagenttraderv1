@@ -46,7 +46,13 @@ type BarHistoryDB struct {
 	//
 	// Empty on rows written before the column existed and never backfilled;
 	// InsertBars refuses to write a new row without one.
-	Contract string `gorm:"column:contract"`
+	//
+	// W-BARS-CONTRACT-KEY (2026-09-18): PART OF THE PRIMARY KEY. Two contracts
+	// may hold the same minute (the new contract's served history beside the
+	// old contract's live tape at a roll); a reader that wants one price scale
+	// names the contract. The sqlite key order is (symbol, tf, contract,
+	// open_time_ms) — see bar_contract_key.go, which owns the DDL.
+	Contract string `gorm:"column:contract;primaryKey"`
 	// Source (BAR-SOURCE WAVE 2026-09-10) names WHICH FEED this bar came from:
 	// BarSourceLive (a bar_update as the minute traded) or BarSourceHistorical
 	// (a bars_historical replay after a subscribe/reconnect). On 2026-09-10 NT8's
@@ -199,62 +205,102 @@ func NewBarHistoryStore(db *gorm.DB) *BarHistoryStore { return &BarHistoryStore{
 //
 // Idempotent: the heavy steps run only while the unique index is absent; every
 // later boot is a no-op.
+//
+// W-BARS-CONTRACT-KEY (2026-09-18) — the legacy passes above run ONLY on a
+// table still keyed (symbol, tf, open_time_ms); then the key migration
+// (bar_contract_key.go) moves the table onto (symbol, tf, contract,
+// open_time_ms) behind a whole-database backup, fail-open. The 2026-08-27
+// dedupe block is gated on the LEGACY key on purpose: on the contract key a
+// roll overlap is two legitimate rows per minute, and "keep max(rowid) per
+// (symbol, tf, open_time_ms)" would delete the new contract's history.
+// KeyReport carries what this boot did; the caller prints its BootLine.
 func (s *BarHistoryStore) Migrate() error {
+	_, err := s.MigrateWithReport(time.Now())
+	return err
+}
+
+// MigrateWithReport is Migrate with the key migration's report returned for
+// the boot line (READ values). `now` names the backup file and the renamed
+// table.
+func (s *BarHistoryStore) MigrateWithReport(now time.Time) (BarsKeyReport, error) {
 	if s == nil || s.db == nil {
-		return fmt.Errorf("store required")
+		return BarsKeyReport{}, fmt.Errorf("store required")
 	}
-	if err := s.db.AutoMigrate(&BarHistoryDB{}); err != nil {
-		return err
-	}
-	if s.db.Dialector.Name() == "sqlite" {
-		var hasUnique int64
-		if err := s.db.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_bars_sym_tf_time_unique'").Scan(&hasUnique).Error; err != nil {
-			return err
+	if s.db.Dialector.Name() != "sqlite" {
+		barsKeyed.Store(true)
+		if err := s.db.AutoMigrate(&BarHistoryDB{}); err != nil {
+			return BarsKeyReport{}, err
 		}
-		if hasUnique == 0 {
+		return BarsKeyReport{AlreadyKeyed: true}, s.db.Exec("CREATE INDEX IF NOT EXISTS idx_bars_sym_tf_time ON bars(symbol, tf, open_time_ms DESC)").Error
+	}
+	// A fresh database gets the contract key from the exact DDL — never from
+	// AutoMigrate, whose key order follows struct field order.
+	if err := s.db.Exec(fmt.Sprintf(barsCreateDDL, "bars")).Error; err != nil {
+		return BarsKeyReport{}, err
+	}
+	keyed, legacy, err := s.barsKeyState()
+	if err != nil {
+		return BarsKeyReport{}, err
+	}
+	if !keyed && legacy {
+		hasUnique, err := s.barsIndexOnTable(idxBarsLegacyUnique, "bars")
+		if err != nil {
+			return BarsKeyReport{}, err
+		}
+		if !hasUnique {
 			// (1) pre-dedupe safety copy (besides the systemd-timer backups).
-			today := time.Now().Format("2006-01-02")
+			today := now.Format("2006-01-02")
 			backup := "bars_pre_dedupe_" + today
 			if err := s.db.Exec(`CREATE TABLE IF NOT EXISTS "` + backup + `" AS SELECT * FROM bars`).Error; err != nil {
-				return err
+				return BarsKeyReport{}, err
 			}
 			// (2) keep max(rowid) per natural key.
 			if err := s.db.Exec("DELETE FROM bars WHERE rowid NOT IN (SELECT MAX(rowid) FROM bars GROUP BY symbol, tf, open_time_ms)").Error; err != nil {
-				return err
+				return BarsKeyReport{}, err
 			}
 			// (4) 1m-only storage — aggregates derive on read.
 			if err := s.db.Exec("DELETE FROM bars WHERE tf <> '1m'").Error; err != nil {
-				return err
+				return BarsKeyReport{}, err
 			}
 		}
-		// (3) the REAL unique constraint (idempotent; replaces the old plain index).
 		// convention column (idempotent ADD; pre-existing rows keep "").
 		var hasConv int64
 		if err := s.db.Raw("SELECT COUNT(*) FROM pragma_table_info('bars') WHERE name='convention'").Scan(&hasConv).Error; err != nil {
-			return err
+			return BarsKeyReport{}, err
 		}
 		if hasConv == 0 {
 			if err := s.db.Exec("ALTER TABLE bars ADD COLUMN convention TEXT NOT NULL DEFAULT ''").Error; err != nil {
-				return err
+				return BarsKeyReport{}, err
 			}
 		}
-		// ROLL WAVE: the contract column and its one-time backfill.
-		if err := s.migrateContractColumn(); err != nil {
-			return err
-		}
-		// BAR-SOURCE WAVE: which feed wrote each row.
-		if err := s.migrateSourceColumn(); err != nil {
-			return err
-		}
-		if err := s.db.Exec("DROP INDEX IF EXISTS idx_bars_sym_tf_time").Error; err != nil {
-			return err
-		}
-		if err := s.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bars_sym_tf_time_unique ON bars(symbol, tf, open_time_ms)").Error; err != nil {
-			return err
-		}
-		return nil
 	}
-	return s.db.Exec("CREATE INDEX IF NOT EXISTS idx_bars_sym_tf_time ON bars(symbol, tf, open_time_ms DESC)").Error
+	// ROLL WAVE: the contract column and its one-time backfill. BAR-SOURCE
+	// WAVE: which feed wrote each row. Both idempotent (WHERE-scoped to rows
+	// still unlabelled), so they are safe on either key.
+	if err := s.migrateContractColumn(); err != nil {
+		return BarsKeyReport{}, err
+	}
+	if err := s.migrateSourceColumn(); err != nil {
+		return BarsKeyReport{}, err
+	}
+	// W-BARS-CONTRACT-KEY — the key migration, fail-open.
+	rep := s.migrateContractKey(now)
+	nowKeyed := rep.Migrated || rep.AlreadyKeyed
+	barsKeyed.Store(nowKeyed)
+	if nowKeyed {
+		if err := s.ensureKeyedIndexes(s.db); err != nil {
+			return rep, err
+		}
+	} else if err := s.ensureLegacyIndexes(); err != nil {
+		return rep, err
+	}
+	// AutoMigrate LAST and only for columns a later wave may add: every column
+	// exists, primary-key fields skip its nullable/default checks, so it alters
+	// nothing on either key (pinned by TestBarsKeyMigrateIsIdempotent).
+	if err := s.db.AutoMigrate(&BarHistoryDB{}); err != nil {
+		return rep, err
+	}
+	return rep, nil
 }
 
 // InsertBars upserts closed 1m bars on the natural key — a revision of an
@@ -262,6 +308,12 @@ func (s *BarHistoryStore) Migrate() error {
 // the unique index makes duplication impossible (F5: the old INSERT OR IGNORE
 // wrote 17,695 duplicate revisions because the table had no real constraint).
 // Only tf="1m" rows are stored: 5m/15m aggregates are DERIVED ON READ from 1m.
+//
+// W-BARS-CONTRACT-KEY: the natural key is (symbol, tf, contract, open_time_ms)
+// — the same minute on two contracts is two rows, and the upsert rule below
+// applies WITHIN a contract. The conflict target is read from the key the
+// table actually has (barsConflictTarget), so a migration that failed open
+// leaves a working writer on the legacy key.
 func (s *BarHistoryStore) InsertBars(rows []BarHistoryDB) error {
 	if s == nil || s.db == nil || len(rows) == 0 {
 		return nil
@@ -314,7 +366,7 @@ func (s *BarHistoryStore) InsertBars(rows []BarHistoryDB) error {
 		// evidence of the seam.
 		q := "INSERT INTO bars(symbol, tf, open_time_ms, o, h, l, c, v, convention, contract, source) VALUES " +
 			strings.Join(placeholders, ",") +
-			" ON CONFLICT(symbol, tf, open_time_ms) DO UPDATE SET o=excluded.o, h=excluded.h, l=excluded.l, c=excluded.c, v=excluded.v, convention=excluded.convention, contract=excluded.contract, source=excluded.source" +
+			" ON CONFLICT(" + barsConflictTarget() + ") DO UPDATE SET o=excluded.o, h=excluded.h, l=excluded.l, c=excluded.c, v=excluded.v, convention=excluded.convention, contract=excluded.contract, source=excluded.source" +
 			" WHERE NOT (bars.source IN ('live','mixed') AND excluded.source = 'historical')"
 		if err := s.db.Exec(q, args...).Error; err != nil {
 			return err
@@ -329,6 +381,9 @@ func (s *BarHistoryStore) InsertBars(rows []BarHistoryDB) error {
 //   - NO UPSERT, ever: a key collision keeps the existing row's values and is
 //     COUNTED as a skip. This is deliberately NOT the InsertBars upsert — the
 //     09-10 damage was exactly an import-shaped write overwriting live tape.
+//     W-BARS-CONTRACT-KEY: the key includes the contract, so an import of
+//     contract B at a minute contract A holds LANDS (it is B's history, not a
+//     collision) — a skip now means the SAME contract already holds that bar.
 //   - Every row must carry a non-empty contract and source=historical_import;
 //     anything else is refused with the row named (A24: an unstamped bar is
 //     never written).
@@ -368,7 +423,7 @@ func (s *BarHistoryStore) ImportBars(rows []BarHistoryDB) (inserted int64, skipp
 		}
 		q := "INSERT INTO bars(symbol, tf, open_time_ms, o, h, l, c, v, convention, contract, source) VALUES " +
 			strings.Join(placeholders, ",") +
-			" ON CONFLICT(symbol, tf, open_time_ms) DO NOTHING"
+			" ON CONFLICT(" + barsConflictTarget() + ") DO NOTHING"
 		res := s.db.Exec(q, args...)
 		if res.Error != nil {
 			return inserted, skipped, res.Error
@@ -418,11 +473,15 @@ func (s *BarHistoryStore) ClearSince(symbol, tf string, sinceMs int64) (int64, e
 // BarsIntegrity returns the nightly integrity triple: duplicate natural-key
 // groups (must be 0), the distinct tfs present, and total rows. The tf set is
 // REPORTED, not asserted, since 2026-09-02: every cached TF is persisted.
+//
+// W-BARS-CONTRACT-KEY: the natural key is (symbol, tf, contract, open_time_ms)
+// on the contract key. Two contracts on one minute is a ROLL OVERLAP, not a
+// duplicate — RollOverlaps counts those separately for the same line.
 func (s *BarHistoryStore) BarsIntegrity() (dups int64, tfs []string, total int64, err error) {
 	if s == nil || s.db == nil {
 		return 0, nil, 0, fmt.Errorf("store required")
 	}
-	if err = s.db.Raw("SELECT COUNT(*) FROM (SELECT symbol, tf, open_time_ms FROM bars GROUP BY symbol, tf, open_time_ms HAVING COUNT(*) > 1)").Scan(&dups).Error; err != nil {
+	if err = s.db.Raw("SELECT COUNT(*) FROM (SELECT symbol, tf, contract, open_time_ms FROM bars GROUP BY symbol, tf, contract, open_time_ms HAVING COUNT(*) > 1)").Scan(&dups).Error; err != nil {
 		return 0, nil, 0, err
 	}
 	if err = s.db.Raw("SELECT DISTINCT tf FROM bars ORDER BY tf").Scan(&tfs).Error; err != nil {

@@ -5703,3 +5703,187 @@ climbed) that CLASS 139 fixed only for the HOLD.
   `kernel/flip_breach_test.go` (resolver runs/breaks, breach-state parity
   with the evaluator, two-window evaluator byte-identical when the windows
   agree).
+
+## CLASS 149 — A BAR STORE KEYED WITHOUT THE CONTRACT DROPS THE NEW CONTRACT'S OVERLAP AT EVERY ROLL (born 2026-08-26 with the bars table, made visible 2026-09-14 at the Sept→Dec roll as CLASS 143's hole, owner-authorized schema change 2026-09-18 00:3x CT "full fix 4", fix/bars-contract-key, W-BARS-CONTRACT-KEY; number assigned at merge)
+
+**Shape.** `bars` was keyed `(symbol, tf, open_time_ms)` with `contract`
+outside the key, and both writers resolved a collision on that key alone
+(InsertBars upsert; ImportBars DO NOTHING). At every quarterly roll NT8 serves
+the NEW contract's history (~2,000 bars per TF at subscribe) for minutes the
+OLD contract already holds: wherever the old contract had a row the new
+contract's bar was silently dropped, wherever it did not (holidays, Sunday
+evenings, NT8-off windows) it landed as a stray. Measured on the 2026-09-18
+copy of the live DB (read-only `.backup`, 1,906,992 rows): the LANDED
+complement — MNQ 12-26 rows older than 12-26's first live bar — is 1m 451 ·
+3m 12 · 5m 17 · 15m 10 · 1h 4 · 3d 14; the DROPPED overlap cannot be counted
+from the table at all, because the old key never stored it (the brief's
+12–26 rows per roll is [B]). The root is the key: a table that cannot hold
+two contracts on one minute cannot hold a roll.
+
+**How it hid.** (1) The drop was `ON CONFLICT … DO UPDATE … WHERE NOT
+(live overwrites)` / `DO NOTHING` — a silent, counted-nowhere path, exactly
+the shape of "silent refusal paths". (2) `BarsIntegrity` asserted dups=0 on
+the three-column key, so the table always looked clean. (3) Every decision
+reader is contract-scoped and never asked for the minutes it could not have.
+(4) CLASS 143 fixed the display symptom and named this as owner-gated.
+
+**Probes.**
+- Which key is live: `SELECT name FROM pragma_table_info('bars') WHERE pk>0
+  ORDER BY pk;` → `symbol tf contract open_time_ms` after the wave.
+- Roll overlaps (minutes held by two contracts): `SELECT symbol,tf,open_time_ms,
+  COUNT(DISTINCT contract) FROM bars GROUP BY 1,2,3 HAVING COUNT(*)>1;` —
+  EXPECTED non-empty after a roll on the new key; always empty on the old key
+  (by construction, not by health). The nightly `✅ bars integrity` line prints
+  `roll_overlaps=<n>`, read.
+- Boot line, first boot: `🗄 bars: key migrated to (symbol,tf,contract,open_time_ms)
+  — rows=<n> backup=<path> old_table=<name>`; later boots `🗄 bars:
+  key=(symbol,tf,contract,open_time_ms) (migrated <date>) rows=<n>`; refusal
+  `🗄 bars: migration FAILED — <err>; old table intact` (ERROR level, and the
+  bot keeps writing on the legacy key).
+- A time-only reader on the new key sees TWO rows per overlap minute. Every
+  reader must either name a contract or dedupe per open time with a stated
+  rank. The wave's audit table (PR body) lists each one; a NEW time-only
+  reader is a new instance of this class.
+- Any `ON CONFLICT(<columns>)` in this repo must name a key the table
+  ACTUALLY has: the writers read it (`barsConflictTarget`) so a migration that
+  failed open still writes. A hard-coded conflict target on a migrated table
+  is refused by SQLite ("does not match any PRIMARY KEY or UNIQUE constraint")
+  and persistence dies with one WARN per batch — which is what a
+  PRE-MIGRATION BINARY does on the migrated table (tested:
+  `TestBarsKeyOldBinaryStatementsOnTheMigratedTable`). Rollback is
+  `deploy/RESTORE.md` "Roll back the bars CONTRACT-KEY migration".
+- The renamed old table KEEPS its indexes on purpose: the old binary's Migrate
+  checks `idx_bars_sym_tf_time_unique` by NAME only, and with no such index it
+  runs the 2026-08-27 dedupe block that DELETEs every tf<>'1m' row. Dropping a
+  backup table's indexes to tidy up would arm that.
+
+**Fix.** `store/bar_contract_key.go` (detect · VACUUM INTO backup verified by
+row count, refused → migration refused · bars_v2 copy + rename in one
+transaction · idempotent · fail-open with the report's Err); `store/bar_history.go`
+(Contract in the PK, legacy dedupe gated on the legacy key, conflict targets
+from the live key, dups on the full key); `store/bar_contract_roll.go`
+(LatestContract/ContractAt: on a shared minute the row that TRADED wins, then
+the later expiry parsed from the broker's label); `api/handler_bar_truth.go`
+(one contract); `cmd/bars-export` (contract+source columns);
+`trader/ninjatrader/bar_persist_wire.go` (🗄 boot line, roll_overlaps).
+Pins: `store/bar_contract_key_test.go` (legacy-shape migration, idempotent
+second boot, backup-refused fail-open, fresh DB, two contracts one minute,
+tie-break, old-binary statements, opt-in live-copy run via
+`BARS_KEY_LIVE_COPY`), `trader/ninjatrader/bar_persist_contract_key_test.go`
+(the persister's call site), `store/history_import_test.go` E1 (same-contract
+collision skips; another contract lands beside).
+
+## CLASS 150 — A T1 BLACKOUT THAT NEVER ASKED WHICH CURRENCY THE EVENT WAS IN (born 2026-08-19 with W3's red-news blackout, reported by the owner 2026-09-17 evening and ordered 2026-09-18 00:3x CT "fix 3", feat/t1-currencies, W-T1-CURRENCIES)
+
+**Shape.** W3 turned every T1 (red / High-impact) event of a session's
+calendar slice into a HARD ±15m no-trade window (`kernel.T1BlackoutWindows`)
+and the session currency filter (`calendar.SessionCurrencies`: ASIA = USD+JPY+
+CNY, LONDON = USD+EUR+GBP) decided which events were IN the slice at all. So
+the only currency question anyone ever asked was "is this event relevant to
+the session" — never "does a red print in THIS currency stop an MNQ trader".
+The stored 2026-09-17 slice (`calendar_slices`, source forexfactory, created
+1789707301008) carried `BOJ Policy Rate` and `Monetary Policy Statement` at
+`2026-09-18T02:54:00Z` JPY T1 (= 21:54 CT, ASIA) and three GBP T1 rows at
+`11:00Z` (Official Bank Rate, MPC votes, Monetary Policy Summary — LONDON);
+the 2026-09-18 slice carries `BOJ Press Conference` at `05:30Z` JPY T1. The
+MNQ bot sat in a HARD window for a Japanese rate decision, and the same code
+would have blacked out the London morning for the Bank of England.
+
+**Why it hid.** (1) The card, the plan's no_trade lines and the gate all
+agreed — they were three renderings of one unfiltered function, so no parity
+test could disagree. (2) `PlannerCalendarEvent.Currency` existed and was
+printed in the prompt's Calendar section, which made the currency look
+"handled". (3) The CLASS 145 investigation the night before looked straight at
+the BOJ window (`BOJ 21:30 ±15m +39m (clock drift)`) and fixed the WIDENING;
+nobody asked why a JPY event owned an MNQ window in the first place — the
+first bug on a line hides the second.
+
+**The rule.** A gate keyed on an event attribute must READ that attribute
+through a knob with a stated default, and the events it declines to gate on
+must stay VISIBLE. `day_plan.t1_currencies` (`store.DayPlanConfig.
+T1CurrenciesFor`: absent/empty → `[USD]`; `ALL`/`*` → every currency, the
+pre-wave behaviour byte-identical; canonicalised upper-case/trim/dedupe at the
+resolver). ONE split, `kernel.SplitT1(events, set)`: in-set → HARD window;
+out-of-set → `🟠 <title> <HH:MM> CT (<CCY>) — red news, advisory only
+(t1_currencies=<set>)` in the plan's no_trade lines, on the card (RulesBlock
+advisory row, never behind the notes toggle) and in the prompt's Calendar tag
+("ADVISORY only — NOT a machine blackout"), and NEVER in a gate window; an
+event with NO currency → HARD (fail closed) and one `⚠️ T1 event without
+currency treated as hard: <title>` per trade date. Every consumer reads
+`at.t1Currencies()`: the arm gate (`t1WindowsFor`), the plan write
+(`plannerT1Lines` + the machine no-trade band), the fade facts
+(`fadeFactsAt`) and the planner input (`PlannerInput.T1Currencies`). Boot line
+READ from the resolver: `🔴 t1_blackout=USD(default)` / `USD,EUR(saved)` /
+`ALL(saved) (W-T1-CURRENCIES)`.
+
+**Probes.**
+- Any gate that iterates calendar events: grep `Impact.*T1|T1BlackoutWindows|
+  SplitT1`; a new caller must pass the resolved set (the signature no longer
+  admits an unfiltered call — `T1BlackoutWindows(events, currencies)`).
+- `calendar.EventsForSession` drops events whose currency is not in the
+  session filter BEFORE the split, so an uncurrencied event cannot reach
+  `SplitT1` from a stored slice today; the fail-closed branch is defensive and
+  pinned at the kernel (`kernel/t1_currencies_test.go
+  TestT1EventWithoutCurrencyIsHardAndNamed`). If the session filter ever
+  admits unlabelled rows, the WARN line in `t1WindowsFor` is the tell.
+- Card vs gate parity is proved at PRODUCTION call sites, not helper
+  self-consistency (class 53): `trader/t1_currencies_test.go` runs the REAL
+  write core (`runPlannerReadCoreWithFactsGrades` with `plannerT1Lines` as the
+  extra lines) and reads the stored doc's `no_trade` + `no_trade_windows`
+  against `currentT1Windows → sessionGateDecision(…, at.sessionRunnable)` and
+  `fadeFactsAt(...).InT1Blackout`, under the default (BOJ advisory, USD hard)
+  and under `ALL` (both hard).
+- The pre-wave function is copied VERBATIM into `kernel/t1_currencies_test.go
+  legacyT1BlackoutWindows` and `ALL` is pinned `reflect.DeepEqual` to it on a
+  three-currency fixture, so "restores the old behaviour" is a comparison
+  against what shipped, not against the new code's own idea of itself.
+- Journal grep for the class: `red-news blackout: .*(JPY|GBP|EUR|CNY)` on an
+  MNQ trader under the USD default — should never appear; the advisory line
+  is `🟠 … advisory only (t1_currencies=USD)` on the card and in the plan row.
+- CLASS 145's fixtures (`trader/clock_widen_cap_test.go`,
+  `kernel/clock_widen_cap_test.go`) keep their JPY BOJ event by passing
+  `T1Currencies: [ALL]` explicitly — the class was born under the every-
+  currency regime and the cap is asserted there, not the currency split.
+
+## CLASS 151 — A KNOB WITH NO CONTROL CAN STILL CARRY A VALUE THE OWNER SET, AND A REMOVAL THAT IGNORES IT CHANGES LIVE BEHAVIOUR SILENTLY (born with the Day Plan knob census 2026-08-19, ruled by the owner 2026-09-18 00:3x CT "full fix 6" on the Round 23/24 verdicts, feat/knob-prune, W-KNOB-PRUNE — not a bug class, a prune protocol)
+
+**Shape.** Fourteen Day Plan knobs were ruled dead or unneeded (7 remove, 5
+fold, 2 dead fields). Five of them were stored NON-default on the owner's live
+MNQ strategy (`structure_map:true`, `scenario_cap:5`, `realign_cap:10`,
+`wake_on_htf_ob:true`, `levels_fresh_by_tf:true`) and one on every strategy
+(`evening_digest:true`). A removal that deletes the field, the accessor and
+the control also deletes the stored value's EFFECT — the prompt, the wake
+set and the caps of the live trader change on the next boot, with no log,
+no diff in the Studio, and a green suite (the suite tests the new default).
+
+**Rule (L3 + L8 of the dispatch, now canon).** Before removing a knob: read
+the live stored values (`sqlite3 -readonly data.db "select name,
+json_extract(config,'$.day_plan') from strategies"`). A knob that is stored
+non-default anywhere is FOLDED, not deleted: the code path keeps the shipped
+default as a constant, the control goes, the JSON field stays readable, the
+stored value is honoured at read and logged once at trader load —
+`⚙ folded knob <name>=<value> honoured from stored config`
+(`store.DayPlanConfig.FoldedKnobLines`, registry status `folded`). Every
+removed or folded knob is pinned by a golden WRITTEN AT THE BASE COMMIT and
+re-run after the change (`kernel/knob_prune_pin_test.go`,
+`trader/knob_prune_pin_test.go`, `KNOB_PRUNE_WRITE_GOLDEN=1`), per stored
+shape (nil / `{}` / the Studio seed / the owner's row verbatim / the only
+all-off shape). A pin that is generated after the change proves only
+self-consistency (class 53).
+
+**Probes.**
+- `grep -rn 'json:"<leaf>' store/` → if the field is gone, `sqlite3
+  -readonly … json_extract` for the leaf must return only NULL / the default.
+- Registry: a leaf still in the struct must be classified (`TestKnobRegistryIsComplete`);
+  `folded` rows must name the reader the method-level detector finds
+  (`TestWakeKnobsAreLiveThroughTheirAccessors`).
+- Boot: the owner's trader must print one `⚙ folded knob` line per stored
+  non-default; zero lines on a default-only strategy.
+- A DELIBERATE behaviour change inside a prune (here `htf_score_multiplier`
+  1.2 → 1.0) is measured before the golden is overwritten: identity tape 0
+  seat / 0 order changes; stage-A 64 fixtures 33 change seat membership, 112
+  seated grades move — in the report, not discovered at the boot.
+- A coupling the collapse introduces (here `WakeOnHTFOrderBlocks` ANDed
+  with the single switch) gets its own pin
+  (`TestKnobPrunePin_WakeCandidates_SingleSwitchOwnsOB`) and a registry note,
+  even when inert for every stored strategy.

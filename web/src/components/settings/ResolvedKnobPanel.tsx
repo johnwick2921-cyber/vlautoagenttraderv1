@@ -7,6 +7,7 @@
 // Two labels, two different findings, neither of which says "dead":
 //   ineffective            read; does not take effect (reason)
 //   candidate-unverified   no known reader — pending verification
+//   folded                 folded — no control; stored value honoured (reason)
 
 import { useEffect, useState } from 'react'
 
@@ -38,6 +39,7 @@ interface Summary {
   advisory: number
   display_only: number
   infra: number
+  folded: number
   env_shadows: number
   env_shadow_paths: string[]
 }
@@ -54,6 +56,7 @@ const STATUS_TONE: Record<string, string> = {
   ineffective: 'text-amber-400',
   'candidate-unverified': 'text-slate-400',
   advisory: 'text-sky-400',
+  folded: 'text-violet-400',
   suspended: 'text-slate-500',
   infra: 'text-slate-500',
   'display-only': 'text-slate-500',
@@ -112,7 +115,8 @@ export function ResolvedKnobPanel({
     <div data-testid="resolved-panel" className="space-y-4">
       <div className="text-xs text-slate-400">
         schema {s.schema} · classified {s.classified} · live {s.live} ·
-        ineffective {s.ineffective} · candidate {s.candidate_unverified}
+        ineffective {s.ineffective} · candidate {s.candidate_unverified} ·
+        folded {s.folded ?? 0}
         {s.env_shadows > 0 ? ` · env-shadows ${s.env_shadows}` : ''}
       </div>
 

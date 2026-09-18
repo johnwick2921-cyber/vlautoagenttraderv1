@@ -291,7 +291,7 @@ func TestAcceptanceRehearsal(t *testing.T) {
 	// ═══ ② THE ONE PAID CALL through the production read core ═══
 	modelClient, modelID := at.resolvePlannerClient()
 	hash := shortHash(prompt)
-	t1Lines := kernel.T1NoTradeLines(input.Calendar)
+	t1Lines := kernel.T1NoTradeLines(input.Calendar, at.t1Currencies())
 	var rawResponses []string
 	version, lifecycle, err := at.runPlannerReadCore(
 		rehearsalSession, rehearsalTradeDate, modelID, hash,

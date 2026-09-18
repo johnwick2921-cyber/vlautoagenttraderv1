@@ -6,6 +6,7 @@ import (
 
 	"nofx/calendar"
 	"nofx/kernel"
+	"nofx/store"
 )
 
 // W3 — red-news end-to-end (no network): a fixture FF feed with a High (T1) USD
@@ -38,7 +39,7 @@ func TestW3RedNewsEndToEnd(t *testing.T) {
 		t.Fatalf("session events wrong: t1=%d t2=%d t1Time=%q (%+v)", t1, t2, t1Time, pe)
 	}
 
-	windows := kernel.T1BlackoutWindows(pe)
+	windows := kernel.T1BlackoutWindows(pe, store.DefaultT1Currencies())
 	if len(windows) != 1 {
 		t.Fatalf("only the T1 event makes a HARD window (T2 must not), got %d", len(windows))
 	}
@@ -54,7 +55,7 @@ func TestW3RedNewsEndToEnd(t *testing.T) {
 	}
 
 	// the plan carries the HARD no-trade blackout line (§80).
-	lines := kernel.T1NoTradeLines(pe)
+	lines := kernel.T1NoTradeLines(pe, store.DefaultT1Currencies())
 	if len(lines) != 1 || !strings.Contains(lines[0], "FOMC") || !strings.Contains(lines[0], "HARD no-trade") {
 		t.Fatalf("plan no-trade line missing/wrong: %v", lines)
 	}

@@ -95,8 +95,15 @@ func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, 
 	var out []levelWakeCandidate
 	add := func(c levelWakeCandidate) { out = append(out, c) }
 
-	// 15m tier (wake_on_15m_zone): reversal S/D zones + FVG formations.
-	if cfg.WakeOn15mZoneEnabled() {
+	// W-KNOB-PRUNE (2026-09-18): ONE switch, wake_on_level_events (nil = ON),
+	// gates every class below except HTF order blocks, which stay OFF unless a
+	// legacy stored wake_on_htf_ob=true exists (WakeOnHTFOrderBlocks). At the
+	// shipped default the candidate set is byte-identical to the five-switch
+	// era (trader/testdata/knob_prune/wake_candidates.json, pinned pre-prune).
+	levelEvents := cfg.WakeOnLevelEventsEnabled()
+
+	// 15m tier: reversal S/D zones + FVG formations.
+	if levelEvents {
 		b15 := barsByTF["15m"]
 		for _, z := range kernel.SupplyDemandZones(b15, atrByTF["15m"], now) {
 			if z.ZonePattern != "reversal" || z.FormedAtMs <= birthMs {
@@ -120,8 +127,8 @@ func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, 
 		}
 	}
 
-	// HTF tier (wake_on_htf_zone): 1h/4h S/D zones (any pattern).
-	if cfg.WakeOnHTFZoneEnabled() {
+	// HTF tier: 1h/4h S/D zones (any pattern).
+	if levelEvents {
 		for _, tf := range []string{"1h", "4h"} {
 			for _, z := range kernel.SupplyDemandZones(barsByTF[tf], atrByTF[tf], now) {
 				if z.FormedAtMs <= birthMs {
@@ -136,8 +143,8 @@ func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, 
 		}
 	}
 
-	// HTF order blocks (wake_on_htf_ob, OFF by default).
-	if cfg.WakeOnHTFOBEnabled() {
+	// HTF order blocks — OFF by default; only a legacy stored wake_on_htf_ob=true.
+	if cfg.WakeOnHTFOrderBlocks() {
 		for _, tf := range []string{"1h", "4h"} {
 			for _, ob := range kernel.OrderBlocks(barsByTF[tf], atrByTF[tf], now) {
 				if ob.FormedAtMs <= birthMs {
@@ -152,8 +159,8 @@ func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, 
 		}
 	}
 
-	// iFVG (wake_on_ifvg): filled→inverted gaps on any wake tier.
-	if cfg.WakeOnIFVGEnabled() {
+	// iFVG: filled→inverted gaps on any wake tier.
+	if levelEvents {
 		for _, tf := range wakeTFs {
 			for _, f := range kernel.FairValueGaps(barsByTF[tf], wakeATR(barsByTF[tf]), now) {
 				if f.Kind != kernel.KindIFVG || f.FormedAtMs <= birthMs {
@@ -168,12 +175,12 @@ func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, 
 		}
 	}
 
-	// Seated-level invalidation (wake_on_seated_invalidation): a zone-kind level
+	// Seated-level invalidation: a zone-kind level
 	// the plan SEATED is closed beyond by more than a noise band (max(2 ticks,
 	// 0.15×ATR15)) — support (Demand/OB(bull)/iFVG(bull)) below, resistance
 	// (Supply/OB(bear)/iFVG(bear)) above. Fresh only (violating close within
 	// 2× the wake interval) so a stale invalidation never fires on restart.
-	if cfg.WakeOnSeatedInvalidationEnabled() {
+	if levelEvents {
 		var doc kernel.PlanDoc
 		if json.Unmarshal([]byte(row.Doc), &doc) == nil {
 			close, ok := lastClosedBar(barsByTF["15m"], nowMs)

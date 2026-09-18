@@ -129,7 +129,9 @@ func BarsWithStoreDepthDisplay(ring []market.Kline, st *store.Store, contract, s
 	// 09-08·09·10 21:00Z arrive IN the ring, not in the splice). The bars key
 	// is (symbol, tf, open_time_ms), so a matched timestamp is either the
 	// import row or nothing — but only an ISOLATED one is dropped, by the same
-	// neighbor test as the store side.
+	// neighbor test as the store side. (W-BARS-CONTRACT-KEY: the key is now
+	// (symbol, tf, contract, open_time_ms); this read is per contract, so the
+	// statement still holds within the contract.)
 	drop, err := st.BarHistory().ImportSnapshotTimes(symbol, tf, contract)
 	if err != nil || len(drop) == 0 {
 		return out

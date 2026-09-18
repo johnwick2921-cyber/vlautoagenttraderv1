@@ -322,17 +322,10 @@ func effectiveEODFlatCT(reg kernel.SessionRegistry, sessionDayKey, configFlat st
 	return configFlat
 }
 
-// lastEntryCT — the LEGACY day-scoped cutoff. UNREACHABLE since the P2
-// session-scope redesign (2026-08-18): entryBlockedByLastEntry resolves the
-// cutoff per session via sessionCutoffCT below. Kept only so an old
-// dp.LastEntryCT config value is visible to a reader; nothing evaluates it.
-// See sessionCutoffCT + entryBlockedByLastEntry for the live path.
-func (at *AutoTrader) lastEntryCT() string {
-	if dp := at.config.StrategyConfig.DayPlan; dp != nil && strings.TrimSpace(dp.LastEntryCT) != "" {
-		return dp.LastEntryCT
-	}
-	return "13:00" // 14:00 ET (NY-only era)
-}
+// lastEntryCT / eodFlatCT (the LEGACY day-scoped clock readers) DELETED by
+// W-KNOB-PRUNE (2026-09-18) together with dp.LastEntryCT / dp.EODFlatCT: both
+// were unreachable since the P2 session-scope redesign (2026-08-18). The live
+// path is sessionCutoffCT + entryBlockedByLastEntry / enforceEODFlatAt below.
 
 // sessionCutoffCT resolves "session end − offsetMin" as CT wall-clock minutes
 // and as an "HH:MM" string, wrap-aware for midnight-spanning sessions (ASIA
@@ -360,16 +353,6 @@ func pastSessionCutoff(now time.Time, sess *kernel.SessionDef, cutoffMin int) bo
 	nowOff := ((ctMinutesNow(now)-startMin)%1440 + 1440) % 1440
 	cutOff := ((cutoffMin-startMin)%1440 + 1440) % 1440
 	return nowOff < sessLen && nowOff >= cutOff
-}
-
-// eodFlatCT — LEGACY day-scoped flat time. UNREACHABLE since the session-scope
-// redesign (2026-08-18); enforceEODFlatAt resolves per session. Kept for
-// visibility of an old dp.EODFlatCT config value only.
-func (at *AutoTrader) eodFlatCT() string {
-	if dp := at.config.StrategyConfig.DayPlan; dp != nil && strings.TrimSpace(dp.EODFlatCT) != "" {
-		return dp.EODFlatCT
-	}
-	return "14:45" // 15:45 ET
 }
 
 // entryBlockedByLastEntry (P2.3, session-scoped 2026-08-18) reports (reason,

@@ -4,11 +4,13 @@ import (
 	"testing"
 )
 
-// T2 golden — the EQL·15m (HTF) grade-A "mystery" reproduced from first
+// T2 golden — the EQL·15m (HTF) grade "mystery" reproduced from first
 // principles: typeEvidence(EQL)=0.70 × freshMult(1.0) × confluence (≥1 family
-// in band → ×1.2) × HTF (×1.2) = 1.008 → gradeFromScore → A. Without
-// confluence: 0.70×1.2 = 0.84 → B. Every seated grade must be recomputable
-// from the published tables — this test pins both branches.
+// in band → ×1.2) × HTF (×HTFScoreMultiplier). At the 1.2 era that was 1.008
+// → A; W-KNOB-PRUNE (2026-09-18) hard-wired the HTF weight to 1.0, so the
+// confluent branch is now 0.84 → B and the plain branch 0.70 → B too. The
+// expectation is DERIVED from the constant (gradeFromScore), so the test
+// pins "recomputable from the published tables", not a typed grade.
 func TestT2EQL15mHTFGradeAReproducible(t *testing.T) {
 	mk := func(confluent bool) []ScoredLevel {
 		levels := []DetectedLevel{
@@ -21,11 +23,17 @@ func TestT2EQL15mHTFGradeAReproducible(t *testing.T) {
 		fresh := func(DetectedLevel) string { return "" }
 		return ScoreLevels(levels, 15550, 200, fresh, 8, 1.5)
 	}
-	if got := mk(true)[0].Grade; got != "A" {
-		t.Fatalf("EQL·15m (HTF) with confluence grade = %s, want A (0.70×1.2×1.2=1.008)", got)
+	wantConf := gradeFromScore(0.70 * 1.2 * HTFScoreMultiplier)
+	wantPlain := gradeFromScore(0.70 * HTFScoreMultiplier)
+	if got := mk(true)[0].Grade; got != wantConf {
+		t.Fatalf("EQL·15m (HTF) with confluence grade = %s, want %s (0.70×1.2×%g)", got, wantConf, HTFScoreMultiplier)
 	}
-	if got := mk(false)[0].Grade; got != "B" {
-		t.Fatalf("EQL·15m (HTF) without confluence grade = %s, want B (0.70×1.2=0.84)", got)
+	if got := mk(false)[0].Grade; got != wantPlain {
+		t.Fatalf("EQL·15m (HTF) without confluence grade = %s, want %s (0.70×%g)", got, wantPlain, HTFScoreMultiplier)
+	}
+	// W-KNOB-PRUNE pin: the weight IS 1.0 (owner ruling), so both branches are B.
+	if HTFScoreMultiplier != 1.0 || wantConf != "B" || wantPlain != "B" {
+		t.Fatalf("HTF weight %g → %s/%s; W-KNOB-PRUNE pinned 1.0 → B/B", HTFScoreMultiplier, wantConf, wantPlain)
 	}
 }
 

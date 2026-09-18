@@ -182,7 +182,20 @@ func (at *AutoTrader) t1WindowsFor(tradeDate string, sess *kernel.SessionDef) []
 					tradeDate, sess.Name))
 		}
 	}
-	windows := kernel.T1BlackoutWindows(sessionPlannerEvents(evs, sess.Name))
+	// W-T1-CURRENCIES (2026-09-18): the ONE split — only events in the
+	// strategy's t1_currencies set (default USD) open HARD windows; the rest
+	// are advisory lines the plan-write path renders (plannerT1Lines) and
+	// this gate never sees. An event WITHOUT a currency fails closed to hard
+	// and is named once per trade date.
+	split := kernel.SplitT1(sessionPlannerEvents(evs, sess.Name), at.t1Currencies())
+	windows := split.Hard
+	if len(split.Uncurrencied) > 0 && at.lastT1NoCurrencyWarn != tradeDate {
+		at.lastT1NoCurrencyWarn = tradeDate
+		for _, title := range split.Uncurrencied {
+			at.logWarnf("⚠️ T1 event without currency treated as hard: %s (%s %s, t1_currencies=%s)",
+				title, tradeDate, sess.Name, kernel.T1CurrencySetLabel(at.t1Currencies()))
+		}
+	}
 	if fromStatic {
 		at.logWarnf("📅 calendar FAIL-CLOSED: no slice for %s — using the static T1 fallback (%d window(s)) instead of zero protection",
 			tradeDate, len(windows))
@@ -224,4 +237,14 @@ func sessionPlannerEvents(evs []calendar.Event, session string) []kernel.Planner
 		})
 	}
 	return out
+}
+
+// t1Currencies is the trader's read of the W-T1-CURRENCIES knob through the
+// ONE resolver (store.DayPlanConfig.T1CurrenciesFor): nil config → ["USD"].
+// Every T1 consumer on this trader — the arm gate (t1WindowsFor), the plan
+// write (plannerT1Lines + the machine no-trade band), the planner prompt input
+// and the fade facts — reads this, so they cannot disagree on which red events
+// gate.
+func (at *AutoTrader) t1Currencies() []string {
+	return at.dayPlanCfg().T1CurrenciesFor()
 }
