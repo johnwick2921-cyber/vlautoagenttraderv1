@@ -327,6 +327,7 @@ Data: `GET /api/plan/today` → `api/handler_plan.go:179` (plan_final = doc + ov
 | `Approve` | `POST /api/plan/approve` (`:1799`) | grants entries for this CME session-day (when approval_required ON) | none | no modal (by design) |
 | Edit sheet `Save` | `POST /api/plan/overlay` (`:747`) | RFC-6902 patch with B2 price armor (422 `⛔ price armor: …`); then auto-realign | none | no modal |
 | `＋ Add level` / `Bulk add` | `POST /api/plan/owner-level` (`:1634`) / overlay bulk | owner level (sticky 👤, carries across re-plans) | none | no modal |
+| *(pending owner levels — read side)* | `GET /api/plan/owner-levels?trader_id=&symbol=[&session=]` (`handlePlanOwnerLevels`) | lists the sticky rows the Add-level POST wrote: `{levels:[{id,price,label,note,scenario_tag,created_at,consumed,status:pending\|applied}], count, judged_against\|null}`; `pending` = no plan carries it yet (it seats at the NEXT planner read), `applied` = the card's plan for that session carries a level at that price; delete with `POST /api/plan/owner-level/delete {trader_id,id}` | none | — (no applied_version: nothing marks a row consumed today — MarkConsumed has no production caller) |
 
 **"saved ✓" rule:** no persistent inline checkmark exists — save success is a toast
 `Plan updated` (`EditSheet.tsx:148`); the only inline ✓ is the realign no-change

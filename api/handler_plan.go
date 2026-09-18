@@ -1884,6 +1884,114 @@ func (s *Server) handlePlanOwnerLevelDelete(c *gin.Context) {
 	c.JSON(200, gin.H{"deleted": true, "id": body.ID})
 }
 
+// handlePlanOwnerLevels GET /api/plan/owner-levels?trader_id=<id>[&symbol=MNQ][&session=NY]
+// — W-OWNER-LEVELS-API (2026-09-17). The sticky owner rows the POST above
+// writes, listed. WHY: the edit sheet's "＋ Add level" POSTs a STICKY row that
+// the planner only seats at its NEXT read (auto_trader_planner.go, the P3.6-C
+// prepend), so the card showed nothing, the toast said "Plan updated", and
+// there was no way to see or delete what was pending. This is the read side
+// the card needs to render "pending — applies at next read" and offer Delete
+// (the existing POST /plan/owner-level/delete takes the `id` returned here).
+//
+// Identifiers mirror the POST: trader_id (query or nothing else — a GET has no
+// body) + symbol (default MNQ). Owner levels are NOT plan/session-scoped in
+// the store (no plan_id / session / trade_date column — they persist across
+// sessions until consumed or deleted), so no plan identifier is taken.
+//
+// status is judged at read time against the plan the card renders for the
+// requested (or active) session: "applied" = that plan_final carries a level
+// at this price (the SAME roundKey match planLevelFacts uses to stamp
+// origin=OWNER on the card); "pending" otherwise, including when no plan row
+// resolves. The store records only a `consumed` bool and NOTHING sets it in
+// production (OwnerLevelStore.MarkConsumed has zero production callers), so
+// there is no "which read consumed this row" to report: applied_version is
+// deliberately ABSENT, never invented. `judged_against` names the plan the
+// status was computed from, or null when there was none — a status with no
+// referent is not "applied".
+//
+// Only ACTIVE rows (consumed=false, the ListActiveForUser set the planner and
+// the card read) are listed: a consumed row is invisible to every reader and
+// cannot apply again. An empty result is `[]`, never null.
+func (s *Server) handlePlanOwnerLevels(c *gin.Context) {
+	traderID := strings.TrimSpace(c.Query("trader_id"))
+	if traderID == "" {
+		SafeBadRequest(c, "trader_id is required")
+		return
+	}
+	if _, err := s.traderManager.GetTrader(traderID); err != nil {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	// C1 — defense in depth (the group middleware probes ?trader_id too).
+	if !s.traderOwnedBy(c.GetString("user_id"), traderID) {
+		SafeNotFound(c, "Trader")
+		return
+	}
+	symbol := strings.TrimSpace(c.Query("symbol"))
+	if symbol == "" {
+		symbol = "MNQ"
+	}
+	rows, err := s.store.OwnerLevel().ListActiveForUser(c.GetString("user_id"), symbol)
+	if err != nil {
+		SafeInternalError(c, "list owner levels", err)
+		return
+	}
+
+	// The plan the status is judged against — resolved exactly as the card
+	// resolves its own (active session unless ?session= names one; chain
+	// trade date; latest row; overlays folded in).
+	now := time.Now()
+	reg := s.planRegistry()
+	sess, ok := reg.ActiveSession(now)
+	sessName := ""
+	if ok {
+		sessName = sess.Name
+	}
+	sessName, sess, _ = resolveRequestedSession(reg, c.Query("session"), sessName, sess)
+	inPlan := map[int64]bool{}
+	var judged gin.H // nil → JSON null
+	if sessName != "" {
+		tradeDate := now.In(planChicago()).Format("2006-01-02")
+		if d, okD := kernel.PlanChainTradeDate(sess, now); okD {
+			tradeDate = d
+		}
+		if row, rErr := s.store.Plan().GetLatestPlanForTraderSession(tradeDate, sessName, traderID); rErr == nil && row != nil {
+			if doc, okDoc := s.resolvePlanFinal(row); okDoc {
+				for _, l := range doc.Levels {
+					inPlan[roundKey(l.Price)] = true
+				}
+				judged = gin.H{"plan_id": row.PlanID, "version": row.Version, "session": sessName, "trade_date": tradeDate}
+			}
+		}
+	}
+
+	levels := make([]gin.H, 0, len(rows))
+	for _, r := range rows {
+		status := "pending"
+		if inPlan[roundKey(r.Price)] {
+			status = "applied"
+		}
+		levels = append(levels, gin.H{
+			"id":           r.ID,
+			"symbol":       r.Symbol,
+			"price":        r.Price,
+			"label":        r.Label,
+			"note":         r.Note,
+			"scenario_tag": r.ScenarioTag,
+			"created_at":   r.CreatedAt,
+			"consumed":     r.Consumed,
+			"status":       status,
+		})
+	}
+	c.JSON(200, gin.H{
+		"levels":         levels,
+		"count":          len(levels),
+		"symbol":         symbol,
+		"as_of_ms":       now.UnixMilli(),
+		"judged_against": judged,
+	})
+}
+
 // handlePlanSessionRegistry GET /api/plan/session-registry?trader_id=xxx — returns
 // the EFFECTIVE admin session registry (stored or the shipped default) + whether the
 // default is in force. W8 — the read side of the admin-registry wire the gates honor.

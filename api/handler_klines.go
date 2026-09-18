@@ -562,6 +562,19 @@ func ChartAcrossRollResolved() string {
 	return "off[env]"
 }
 
+// dropCurrentRowsBefore returns base without the rows whose open time is
+// older than boundary (the current contract's first LIVE bar). Order is kept.
+func dropCurrentRowsBefore(base []market.Kline, boundary int64) []market.Kline {
+	out := make([]market.Kline, 0, len(base))
+	for _, k := range base {
+		if k.OpenTime < boundary {
+			continue
+		}
+		out = append(out, k)
+	}
+	return out
+}
+
 // klinesAcrossRoll prepends prior-contract rows older than the current
 // contract's first live row, labels every kline, and caps at limit. PURE over
 // its inputs so a pin drives it.
@@ -578,9 +591,22 @@ func klinesAcrossRoll(base []market.Kline, bh *store.BarHistoryStore, current, s
 	if err != nil || !ok {
 		return base
 	}
-	// nothing older than the series' own oldest bar may overlap it
-	if len(base) > 0 && base[0].OpenTime < boundary {
-		boundary = base[0].OpenTime
+	// W-CHART-ROLL-HOLE (2026-09-17) — THE ROLL IS A TIME SPLIT AND THE
+	// BOUNDARY NEVER MOVES. t < boundary → prior-contract rows; t ≥ boundary →
+	// current-contract rows. A current-contract row OLDER than its first live
+	// bar is a stray history survivor: NT8 served ~2000 bars of "MNQ 12-26" at
+	// subscribe, the bars PK (symbol, tf, open_time_ms) has no contract, and
+	// where 09-26 held no row (holidays, Sunday evenings, NT8-off windows) the
+	// 12-26 row landed. This used to pull the boundary back to the OLDEST such
+	// stray ("nothing older than the series' own oldest bar may overlap it"),
+	// and PriorContractBarsBefore then excluded every 09-26 row after it — the
+	// live store lost 09-10 22:10 → 09-14 10:00 CT (three trading days) and
+	// drew 13 December candles, 292 points up, in the gap. Dropping the strays
+	// leaves their slots as holes in the prior series; a hole stays a hole
+	// (the store reader's own ruling) — a candle of the next contract's price
+	// space in the middle of the prior series is never the answer.
+	if dropped := dropCurrentRowsBefore(base, boundary); len(dropped) != len(base) {
+		base = dropped
 	}
 	need := limit - len(base)
 	if need <= 0 {

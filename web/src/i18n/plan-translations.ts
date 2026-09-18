@@ -287,6 +287,17 @@ export const planStrings = {
     zh: '仅K线 — 此计划无价位可叠加',
     id: 'Hanya bar — rencana ini tanpa level untuk ditumpuk',
   },
+  // W-CHART-ZONE-WALL (2026-09-17) — the mini chart's zone control
+  chartShowZones: {
+    en: 'Show zones ({total})',
+    zh: '显示区域（{total}）',
+    id: 'Tampilkan zona ({total})',
+  },
+  chartZonesShown: {
+    en: '({shown} of {total} HTF zones drawn)',
+    zh: '（绘制 {shown}/{total} 个高周期区域）',
+    id: '({shown} dari {total} zona HTF digambar)',
+  },
 
   // ── scenarios ──
   scenarios: { en: 'Scenarios', zh: '情景', id: 'Skenario' },
@@ -618,6 +629,31 @@ export const planStrings = {
     id: 'Rencana diperbarui',
   },
   saveFailed: { en: 'Save rejected', zh: '保存被拒', id: 'Simpan ditolak' },
+  // W-OWNER-LEVELS-UI — an owner level is STICKY: it is stored now and seated
+  // at the NEXT planner read, so its toast must never say "Plan updated".
+  ownerLevelSaved: {
+    en: 'Level saved — it applies at the next planner read',
+    zh: '价位已保存 — 将在下次规划师解读时生效',
+    id: 'Level disimpan — berlaku pada pembacaan perencana berikutnya',
+  },
+  pendingOwnerLevelsTitle: {
+    en: 'Pending owner levels',
+    zh: '待生效的自定义价位',
+    id: 'Level pemilik tertunda',
+  },
+  pendingOwnerLevelsEmpty: {
+    en: 'No pending owner levels',
+    zh: '没有待生效的自定义价位',
+    id: 'Tidak ada level pemilik tertunda',
+  },
+  ownerLevelPending: { en: 'pending', zh: '待生效', id: 'tertunda' },
+  ownerLevelApplied: { en: 'applied', zh: '已生效', id: 'diterapkan' },
+  ownerLevelDelete: { en: 'Delete', zh: '删除', id: 'Hapus' },
+  ownerLevelDeleteFailed: {
+    en: 'Delete rejected',
+    zh: '删除被拒',
+    id: 'Hapus ditolak',
+  },
 
   // ── level type labels (values stay English tokens) ──
   typeDzone: { en: 'D-zone', zh: '需求区', id: 'Zona-D' },

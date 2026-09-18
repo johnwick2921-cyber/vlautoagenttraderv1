@@ -140,3 +140,45 @@ func TestRollBoundaryIsTheFirstLiveRowNotTheFirstImport(t *testing.T) {
 		t.Fatalf("boundary = %d, want the first LIVE 12-26 row %d, not the first import", got, boundary)
 	}
 }
+
+// W-CHART-ROLL-HOLE (2026-09-17): a prior-contract row whose SOURCE is mixed
+// (roll-straddling) or off-scale is accepted by no reader — LastNBarsOn already
+// excludes both, and the chart reader now mirrors it. The live store holds two
+// "MNQ 09-26"/mixed 5m rows (09-10 21:15 and 22:35 CT) that drew as candles.
+func TestPriorContractReaderExcludesMixedAndOffScaleSources(t *testing.T) {
+	bh := newBarStore(t)
+	boundary := rollSeed(t, bh)
+	base := int64(1_789_000_000_000)
+	// Two 09-26 slots the seed left empty (import holes 2000/2200 are taken
+	// by imports; use slots the seed never wrote: past the 3000 window is the
+	// current contract, so overwrite nothing — pick 2999 and 2998, which are
+	// live 09-26 rows, by re-stamping their source directly).
+	for _, spec := range []struct {
+		i   int
+		src string
+	}{{2999, BarSourceMixed}, {2998, BarSourceOffScale}} {
+		ts := base + int64(spec.i)*fiveMin
+		if err := bh.db.Exec(`UPDATE bars SET source = ? WHERE symbol = 'MNQ' AND tf = '5m' AND open_time_ms = ?`, spec.src, ts).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	rows, err := bh.PriorContractBarsBefore("MNQ", "5m", "MNQ 12-26", boundary, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 10 {
+		t.Fatalf("want 10 rows, got %d", len(rows))
+	}
+	for _, r := range rows {
+		if r.Source == BarSourceMixed || r.Source == BarSourceOffScale {
+			t.Fatalf("a %s row at %d came back from the chart's prior-contract reader", r.Source, r.OpenTimeMs)
+		}
+		if r.OpenTimeMs == base+2999*fiveMin || r.OpenTimeMs == base+2998*fiveMin {
+			t.Fatalf("the re-stamped slot %d came back", r.OpenTimeMs)
+		}
+	}
+	// the newest returned row is the slot before the two excluded ones
+	if rows[len(rows)-1].OpenTimeMs != base+2997*fiveMin {
+		t.Fatalf("newest prior row at %d, want slot 2997 (%d)", rows[len(rows)-1].OpenTimeMs, base+2997*fiveMin)
+	}
+}

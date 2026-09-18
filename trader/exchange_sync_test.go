@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"nofx/store/sqlitedriver"
 )
 
 // TestScenario represents a trading scenario to test
@@ -117,7 +117,7 @@ func runStandardTests(t *testing.T, exchangeName string) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.Name, func(t *testing.T) {
 			// Setup database
-			db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+			db, err := gorm.Open(sqlitedriver.GormDialector(":memory:"), &gorm.Config{
 				Logger: logger.Default.LogMode(logger.Silent),
 			})
 			if err != nil {
@@ -201,7 +201,7 @@ func TestAllExchangesStandardScenarios(t *testing.T) {
 
 // TestPositionAccumulationBug tests that positions don't accumulate incorrectly
 func TestPositionAccumulationBug(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+	db, err := gorm.Open(sqlitedriver.GormDialector(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
@@ -286,7 +286,7 @@ func TestPositionAccumulationBug(t *testing.T) {
 
 // TestQuantityPrecision tests handling of quantity precision issues
 func TestQuantityPrecision(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+	db, err := gorm.Open(sqlitedriver.GormDialector(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {

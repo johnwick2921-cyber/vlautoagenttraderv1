@@ -14,7 +14,7 @@ import (
 	"sort"
 	"time"
 
-	_ "modernc.org/sqlite"
+	"nofx/store/sqlitedriver"
 )
 
 type Archive struct {
@@ -33,7 +33,7 @@ func Open(path, revision string) (*Archive, error) {
 		return nil, err
 	}
 	u := url.URL{Scheme: "file", Path: path}
-	db, err := sql.Open("sqlite", u.String()+"?_pragma=busy_timeout(250)")
+	db, err := sqlitedriver.Open(u.String() + "?_pragma=busy_timeout(250)")
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func OpenReadOnly(path string) (*Archive, error) {
 		return nil, err
 	}
 	u := url.URL{Scheme: "file", Path: path}
-	db, err := sql.Open("sqlite", u.String()+"?mode=ro")
+	db, err := sqlitedriver.Open(u.String() + "?mode=ro")
 	if err != nil {
 		return nil, err
 	}

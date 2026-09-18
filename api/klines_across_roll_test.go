@@ -76,3 +76,83 @@ func TestKlinesAcrossRollLabelsEveryBarAndKeepsTheStep(t *testing.T) {
 		t.Fatal("flag did not flip")
 	}
 }
+
+// ── W-CHART-ROLL-HOLE (2026-09-17) — the LIVE store's shape, on the pure
+// function. Sept live rows run to 09:55 on roll day; Dec has strays OLDER than
+// its first live bar (10:00): five historical rows on the evening of 09-10,
+// one on 09-11 and seven on the morning of 09-14 — the base carries them
+// because LastNBarsOn(current) returns every Dec row. Before this wave the
+// oldest stray pulled the boundary back to it and the prior-contract reader
+// then excluded every Sept row after that point: three trading days of Sept
+// candles vanished and the strays drew alone, 292 points up, in the gap.
+func TestKlinesAcrossRollDropsCurrentStraysOlderThanTheRoll(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "k.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	bh := st.BarHistory()
+	if err := bh.Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	const fiveMin = int64(5 * 60_000)
+	base := int64(1_789_000_000_000)
+	roll := base + 1000*fiveMin // Dec's first LIVE bar
+	var rows []store.BarHistoryDB
+	stray := map[int64]bool{}
+	for _, off := range []int64{-700, -699, -698, -697, -696, -400, -14, -13, -12, -11, -10, -9, -8} {
+		stray[roll+off*fiveMin] = true
+	}
+	for i := 0; i < 1000; i++ { // Sept live, holes where a stray sits
+		t0 := base + int64(i)*fiveMin
+		if stray[t0] {
+			rows = append(rows, store.BarHistoryDB{Symbol: "MNQ", TF: "5m", OpenTimeMs: t0, O: 29292, H: 29302, L: 29282, C: 29297, V: 1, Contract: "MNQ 12-26", Source: store.BarSourceHistorical})
+			continue
+		}
+		rows = append(rows, store.BarHistoryDB{Symbol: "MNQ", TF: "5m", OpenTimeMs: t0, O: 29000, H: 29010, L: 28990, C: 29005, V: 1, Contract: "MNQ 09-26", Source: store.BarSourceLive})
+	}
+	for i := 0; i < 300; i++ { // Dec live from the roll
+		rows = append(rows, store.BarHistoryDB{Symbol: "MNQ", TF: "5m", OpenTimeMs: roll + int64(i)*fiveMin, O: 29292, H: 29302, L: 29282, C: 29297, V: 1, Contract: "MNQ 12-26", Source: store.BarSourceLive})
+	}
+	if err := bh.InsertBars(rows); err != nil {
+		t.Fatal(err)
+	}
+	// base = what BarsWithStoreDepthDisplay hands over: EVERY Dec row, strays
+	// included, ascending, labelled by the store.
+	cur, err := bh.LastNBarsOn("MNQ", "5m", "MNQ 12-26", 1500)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cur) != 313 {
+		t.Fatalf("fixture: want 313 Dec rows (300 live + 13 strays), got %d", len(cur))
+	}
+	in := make([]market.Kline, 0, len(cur))
+	for _, r := range cur {
+		in = append(in, market.Kline{OpenTime: r.OpenTimeMs, Open: r.O, High: r.H, Low: r.L, Close: r.C, Volume: r.V, Contract: r.Contract})
+	}
+
+	got := klinesAcrossRoll(in, bh, "MNQ 12-26", "MNQ", "5m", 1500)
+	// 987 Sept (1000 slots − 13 stray slots, which stay HOLES) + 300 Dec.
+	if len(got) != 1287 {
+		t.Fatalf("want 1287 klines (987 Sept + 300 Dec, 13 stray slots left as holes), got %d", len(got))
+	}
+	for i, k := range got {
+		if k.OpenTime < roll && k.Contract != "MNQ 09-26" {
+			t.Fatalf("kline %d at roll%+d is %q — a current-contract row before the roll boundary", i, (k.OpenTime-roll)/fiveMin, k.Contract)
+		}
+		if k.OpenTime >= roll && k.Contract != "MNQ 12-26" {
+			t.Fatalf("kline %d at roll%+d is %q — a prior-contract row after the roll boundary", i, (k.OpenTime-roll)/fiveMin, k.Contract)
+		}
+		if i > 0 && k.OpenTime <= got[i-1].OpenTime {
+			t.Fatalf("not time-ordered at %d", i)
+		}
+	}
+	// The last Sept candle is the slot right before the roll (09:55 on roll
+	// day), not three days earlier: the boundary did NOT move.
+	if got[986].OpenTime != roll-fiveMin || got[986].Contract != "MNQ 09-26" {
+		t.Fatalf("last prior-contract kline at roll%+d (%q); want roll-1 (MNQ 09-26)", (got[986].OpenTime-roll)/fiveMin, got[986].Contract)
+	}
+	if got[987].OpenTime != roll || got[987].Contract != "MNQ 12-26" {
+		t.Fatalf("first current-contract kline at roll%+d (%q); want the roll itself", (got[987].OpenTime-roll)/fiveMin, got[987].Contract)
+	}
+}

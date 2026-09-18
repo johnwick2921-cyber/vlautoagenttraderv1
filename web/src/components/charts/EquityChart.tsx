@@ -128,7 +128,15 @@ export function EquityChart({
   }
 
   // 过滤掉无效数据：total_equity为0或小于1的数据点（API失败导致）
-  const validHistory = history?.filter((point) => point.total_equity > 1) || []
+  // W-CGOFREE-SQLITE-UPSTREAM (2026-09-17): a non-array body or a point whose
+  // total_equity is missing/null must fall through to the empty state — the
+  // partner dashboard white-screened on `undefined.toFixed` here.
+  const validHistory = Array.isArray(history)
+    ? history.filter(
+        (point) =>
+          typeof point?.total_equity === 'number' && point.total_equity > 1
+      )
+    : []
 
   if (!validHistory || validHistory.length === 0) {
     return (
@@ -272,7 +280,9 @@ export function EquityChart({
               className="text-2xl sm:text-3xl font-bold mono"
               style={{ color: '#EAECEF' }}
             >
-              {account?.total_equity.toFixed(2) || '0.00'}
+              {typeof account?.total_equity === 'number'
+                ? account.total_equity.toFixed(2)
+                : '0.00'}
               <span
                 className="text-base sm:text-lg ml-1"
                 style={{ color: '#848E9C' }}

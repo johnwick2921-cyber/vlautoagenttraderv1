@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"nofx/store/sqlitedriver"
 
 	"github.com/joho/godotenv"
 
@@ -38,7 +38,7 @@ func main() {
 	}
 	crypto.SetGlobalCryptoService(cs)
 
-	gdb, err := gorm.Open(sqlite.Open("file:data/data.db?mode=ro"), &gorm.Config{})
+	gdb, err := gorm.Open(sqlitedriver.GormDialector("file:data/data.db?mode=ro"), &gorm.Config{})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "open:", err)
 		os.Exit(1)

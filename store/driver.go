@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	_ "github.com/lib/pq"  // PostgreSQL driver
-	_ "modernc.org/sqlite" // SQLite driver
+	_ "github.com/lib/pq"     // PostgreSQL driver
+	"nofx/store/sqlitedriver" // the ONE sqlite registration site
 )
 
 // DBType represents database type
@@ -170,7 +170,7 @@ func (d *DBDriver) UpsertSyntax() string {
 
 // openSQLite opens SQLite database
 func openSQLite(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
+	db, err := sqlitedriver.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
 	}

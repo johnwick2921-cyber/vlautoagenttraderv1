@@ -3,6 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { toast } from 'sonner'
 import type { PlanLevelFact, PlanQAMessage } from '../../lib/api/plan'
 
 const postOverlay = vi.fn().mockResolvedValue({ ok: true })
@@ -66,6 +67,7 @@ describe('EditSheet', () => {
   beforeEach(() => {
     postOverlay.mockClear()
     addOwnerLevel.mockClear()
+    vi.mocked(toast.success).mockClear()
   })
 
   it('renders nothing when closed', () => {
@@ -119,6 +121,14 @@ describe('EditSheet', () => {
     await waitFor(() => expect(addOwnerLevel).toHaveBeenCalled())
     const [, level] = addOwnerLevel.mock.calls[0]
     expect(level.price).toBe(30150)
+    // W-OWNER-LEVELS-UI — a sticky row seats at the NEXT read: the toast must
+    // say so, never the overlay's "Plan updated".
+    await waitFor(() => expect(toast.success).toHaveBeenCalled())
+    const msgs = (
+      toast.success as unknown as { mock: { calls: unknown[][] } }
+    ).mock.calls.map((c) => c[0])
+    expect(msgs).toContain('Level saved — it applies at the next planner read')
+    expect(msgs).not.toContain('Plan updated')
   })
 })
 
