@@ -251,6 +251,12 @@ func (at *AutoTrader) maybeWakePlannerOnLevelEventsAt(now time.Time, session, tr
 	if market.FuturesBarsProvider == nil || at.store == nil || row == nil {
 		return
 	}
+	// W-FLIP-OWNS-THE-BREACH R1/R3 (2026-09-17): while the active plan's flip
+	// line is breached, or the flip evaluation was skipped for stale bars,
+	// an ordinary wake must not author — the flip evaluator owns the plan.
+	if at.wakeDeferredByFlip(now, session, row) {
+		return
+	}
 	var cfg *store.DayPlanConfig
 	if at.config.StrategyConfig != nil {
 		cfg = at.config.StrategyConfig.DayPlan

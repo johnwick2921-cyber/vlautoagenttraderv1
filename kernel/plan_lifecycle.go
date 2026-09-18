@@ -234,18 +234,47 @@ func conditionRule(c PlanCondition) string {
 //
 // A single close beyond the raw line inside the buffer no longer invalidates.
 func PlanConditionFiredSince(c PlanCondition, bars []market.Kline, sinceMs, nowMs int64) (bool, string) {
-	if c.Price <= 0 {
+	f := conditionCloses(c, bars, sinceMs, nowMs)
+	if !f.ok || !f.touched {
 		return false, ""
+	}
+	sideWord := "below"
+	if c.Side == "above" {
+		sideWord = "above"
+	}
+	if f.closes >= f.need {
+		return true, fmt.Sprintf("%s close %s %.2f (buffer %.1f×ATR14, %d× %dm closes)", c.Rule, sideWord, f.line, FlipATRBuffer(), f.closes, AcceptanceIntervalMinutes(f.rule))
+	}
+	return false, ""
+}
+
+// conditionFacts is the one measurement PlanConditionFiredSince and
+// FlipBreachState (W-FLIP-OWNS-THE-BREACH) both read: the windowed bars, the
+// touch gate, the buffered line and the consecutive-close count. One function
+// so the "is the line breached" question a wake asks and the "did the flip
+// fire" question the evaluator asks can never disagree on the buffer, the
+// window or the count.
+type conditionFacts struct {
+	ok      bool // c.Price > 0 and at least one bar in the window
+	rule    string
+	touched bool    // P1c touch gate on the RAW line, in-window
+	line    float64 // buffered line the closes are judged against
+	closes  int     // consecutive rule-TF closes beyond the buffered line
+	need    int     // closes required to fire
+}
+
+func conditionCloses(c PlanCondition, bars []market.Kline, sinceMs, nowMs int64) conditionFacts {
+	if c.Price <= 0 {
+		return conditionFacts{}
 	}
 	rule := conditionRule(c)
 	w := BarsSince(bars, sinceMs)
 	if len(w) == 0 {
-		return false, ""
+		return conditionFacts{rule: rule}
 	}
+	f := conditionFacts{ok: true, rule: rule}
 	judge := AcceptanceBars(w, rule)
-	if !levelTouched(judge, c.Price, nowMs) {
-		return false, ""
-	}
+	f.touched = levelTouched(judge, c.Price, nowMs)
 	dir := DirBelow
 	if c.Side == "above" {
 		dir = DirAbove
@@ -256,24 +285,17 @@ func PlanConditionFiredSince(c PlanCondition, bars []market.Kline, sinceMs, nowM
 	if buf < 0 {
 		buf = 0
 	}
-	line := c.Price - buf
+	f.line = c.Price - buf
 	if c.Side == "above" {
-		line = c.Price + buf
+		f.line = c.Price + buf
 	}
 	// (c) consecutive closes beyond the buffered line, floored at the confirm count.
-	n := RuleClosesBeyond(w, line, dir, rule, nowMs)
-	need := RuleAcceptanceNeed(rule)
-	if need < FlipConfirmCloses() {
-		need = FlipConfirmCloses()
+	f.closes = RuleClosesBeyond(w, f.line, dir, rule, nowMs)
+	f.need = RuleAcceptanceNeed(rule)
+	if f.need < FlipConfirmCloses() {
+		f.need = FlipConfirmCloses()
 	}
-	sideWord := "below"
-	if c.Side == "above" {
-		sideWord = "above"
-	}
-	if n >= need {
-		return true, fmt.Sprintf("%s close %s %.2f (buffer %.1f×ATR14, %d× %dm closes)", c.Rule, sideWord, line, FlipATRBuffer(), n, AcceptanceIntervalMinutes(rule))
-	}
-	return false, ""
+	return f
 }
 
 // PlanConditionClearedSince is the REARM half of the hysteresis pair: the
@@ -399,12 +421,26 @@ func PlanDeathOrFlipSinceFresh(doc PlanDoc, bars []market.Kline, rule string, si
 // anchor (see ResolveFlipHoldAnchor), not the re-read version's birth. Death
 // never had a hold and keeps none.
 func PlanDeathOrFlipSinceFreshHold(doc PlanDoc, bars []market.Kline, rule string, sinceMs, now int64, hold FlipHoldAnchor) (killer string, fired bool, skipped []string) {
+	return PlanDeathOrFlipSinceFreshHoldWindows(doc, bars, rule, sinceMs, sinceMs, now, hold)
+}
+
+// PlanDeathOrFlipSinceFreshHoldWindows is PlanDeathOrFlipSinceFreshHold with
+// the FLIP condition window given its own anchor (W-FLIP-OWNS-THE-BREACH,
+// 2026-09-17): deathSinceMs windows the death line and the legacy
+// consumption fallback (the version's birth, unchanged); flipSinceMs windows
+// the flip line — the CHAIN anchor from ResolveFlipConditionAnchor when a
+// same-bias wake re-read kept the line, the version's birth when the line
+// moved. Passing the same value for both is byte-identical to the
+// single-window function.
+func PlanDeathOrFlipSinceFreshHoldWindows(doc PlanDoc, bars []market.Kline, rule string, deathSinceMs, flipSinceMs, now int64, hold FlipHoldAnchor) (killer string, fired bool, skipped []string) {
+	sinceMs := deathSinceMs
 	conds := []struct {
-		name string
-		c    PlanCondition
+		name  string
+		c     PlanCondition
+		since int64
 	}{
-		{"death", orZero(doc.DeathStructured)},
-		{"flip", orZero(doc.FlipStructured)},
+		{"death", orZero(doc.DeathStructured), deathSinceMs},
+		{"flip", orZero(doc.FlipStructured), flipSinceMs},
 	}
 	for _, cc := range conds {
 		if cc.c.Price <= 0 {
@@ -414,7 +450,7 @@ func PlanDeathOrFlipSinceFreshHold(doc PlanDoc, bars []market.Kline, rule string
 			skipped = append(skipped, cc.name+"="+why+" (age "+ageString(age)+")")
 			continue
 		}
-		if fired, reason := PlanConditionFiredSince(cc.c, bars, sinceMs, now); fired {
+		if fired, reason := PlanConditionFiredSince(cc.c, bars, cc.since, now); fired {
 			// G3 (regime wave 2026-08-21) — FLIP HYSTERESIS: a freshly-written
 			// plan cannot flip back within FLIP_MIN_HOLD_MIN of its birth.
 			// Death is evaluated FIRST above, so a breached death line always

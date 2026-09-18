@@ -151,6 +151,17 @@ func PromptContracts() []PromptContract {
 			MustAppear: []string{"flip side must oppose the bias: short bias flips long on a close ABOVE; long bias flips short on a close BELOW"},
 		},
 		{
+			// W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17) — ASIA v2 shipped bias
+			// short + flip{29747.50 above → long} with price at 29764: the line
+			// sat BELOW price with side "above". The touch gate fires a line
+			// only from the near side after birth, so the plan could never flip.
+			// The write site rejects it (when the authoring price is known) and
+			// the prompt states the law; the death line obeys the same law.
+			Rule:       "flip/death lines sit on the far side of price at authoring (side above → line ABOVE price; side below → line BELOW price)",
+			Site:       "plan_doc.go FlipLineBeyondPrice / DeathLineBeyondPrice (ValidatePlanDocWithFactsMachine)",
+			MustAppear: []string{"a flip line must sit on the far side of price", "the death line obeys the same law"},
+		},
+		{
 			// S3 (2026-09-16) — the structure relation contract: the validator
 			// stamps relation_d / relation_4h; the model never writes them and
 			// a counter-trend scenario is flagged, never blocked.

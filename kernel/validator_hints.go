@@ -55,6 +55,15 @@ const RepairConfirmVocabLaw = "CONFIRM-RULE VOCABULARY: the `confirm.rule` and `
 // judged by, in the words the validator uses.
 const RepairFlipDirectionLaw = "FLIP DIRECTION: flip side must oppose the bias: short bias flips long on a close ABOVE; long bias flips short on a close BELOW. `flip.side` is the side of the line price must CLOSE on for the bias to reverse — a short bias with `flip.side: below` can never flip on a rally. Fix the side (or the flip_to), never the death object."
 
+// RepairFlipSideOfPriceLaw (W-FLIP-LINE-SIDE-OF-PRICE, 2026-09-17) is the
+// excerpt for a flip or death line that already sits beyond price on its own
+// side. ASIA v2 (2026-09-17 22:52 CT) shipped bias short + flip{29747.50 above
+// → long} with price 29764: the direction matched the bias and nothing asked
+// where price was. The touch gate fires a line only from the near side after
+// birth, so that flip could never fire. The model is told the law in the
+// validator's words.
+const RepairFlipSideOfPriceLaw = "LINE SIDE OF PRICE: a flip line must sit on the far side of price at authoring — `flip.side: above` needs the line ABOVE the current price, `flip.side: below` needs it BELOW. The machine fires a line only after price touches it from the near side and then closes beyond it, so a line already beyond price on its own side can never be touched from the near side and never fires; the death line obeys the same law (a death line already crossed is a plan born dead). Move the line to the far side of the current price (keep the side the bias requires); never flip the bias to satisfy it."
+
 // HintRuleField names WHICH enum a hint's rule tokens are drawn from. The same
 // spelling can be legal in one field and illegal in another: "2x5m" is a legal
 // death/flip rule (conditionRules) and an ILLEGAL confirm rule (confirmRules).
@@ -177,6 +186,8 @@ func ValidatorHints() []ValidatorHint {
 		// W-FLIP-DIRECTION (2026-09-17) — names no rule token; guarded so a
 		// later edit that adds one is checked against the death/flip enum.
 		{Site: "planner_repair.go flip direction law", Text: RepairFlipDirectionLaw, RuleField: HintFieldConditionRule},
+		// W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17) — same guard, same reason.
+		{Site: "planner_repair.go flip side-of-price law", Text: RepairFlipSideOfPriceLaw, RuleField: HintFieldConditionRule},
 	}
 	// CLASS 38 — the entry law Style strings are quoted VERBATIM into the
 	// rejection the model reads ("… not allowed for %s — entry law: %s"), so

@@ -224,7 +224,10 @@ export const status: GuideSection = {
         ['Boot integrity', 'Running binary == deploy record (goldens PASS).'],
         ['Dead-man watchdog', 'Kernel heartbeats ok.'],
         ['Trader frozen', 'The trader loop is stuck — investigate.'],
-        ['Clock drift', 'Host clock vs NT8 clock mismatch.'],
+        [
+          'Clock drift',
+          'Host clock vs NT8 clock mismatch. Red-news windows widen by at most 2 minutes a side for it (CLASS 145); a reading over 5 minutes is feed age (halt or gap), not the clock.',
+        ],
         [
           '402 banner',
           'An upstream model API returned HTTP 402 (billing) — the model is down for payment, not code.',

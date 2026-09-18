@@ -81,8 +81,9 @@ func T1NoTradeLinesDrift(events []PlannerCalendarEvent, driftMs int64) []string 
 }
 
 // WidenCTWindows shifts every window's Start earlier and End later by
-// ceil(|driftMs|/60s) minutes (min 1) so blackout protection survives a skewed
-// clock. A zero drift returns the windows unchanged.
+// ClockWidenMinutes(driftMs) — ceil(|driftMs|/60s) minutes (min 1), HARD-CAPPED
+// at ClockWidenCapMinutes — so blackout protection survives a skewed clock. A
+// zero drift returns the windows unchanged.
 //
 // The widening itself is unchanged for ANY nonzero measurement: even a 108 ms
 // offset can carry an event across a minute boundary, so the one-minute guard
@@ -91,8 +92,20 @@ func T1NoTradeLinesDrift(events []PlannerCalendarEvent, driftMs int64) []string 
 // clock produced a card that told the reader the machine's time was drifting.
 // Only a skew large enough to move an event by a whole minute on its own is
 // stated; below that the extra minute is boundary rounding and goes unlabelled.
+//
+// W-DRIFT-WIDEN-CAP (2026-09-17, CLASS 145): the widening is CAPPED. The
+// measurement is local clock minus the freshest 1m bar's close, and a POSITIVE
+// value beyond the clock-plausible range is the AGE OF THE FEED, not clock
+// skew — exactly what a CME halt (16:00–17:00 CT) or a feed gap looks like.
+// The 2026-09-17 ASIA read authored at 16:38 CT inside the halt measured
+// 2,326 s against the 15:59 bar and widened the BOJ ±15m band by 39 minutes a
+// side (1h48m blocked). No clock on this host has ever skewed past the 60 s
+// tolerance without being deferred (negative) or logged CRITICAL, so the
+// widening a clock can honestly demand is ceil(tolerance/60s) = 1 min plus one
+// boundary minute = 2. Anything beyond that is staleness and the caller says
+// so via ClockDriftStaleNote instead of widening.
 func WidenCTWindows(windows []CTWindow, driftMs int64) []CTWindow {
-	m := driftWidenMinutes(driftMs)
+	m := ClockWidenMinutes(driftMs)
 	if m <= 0 {
 		return windows
 	}
@@ -111,18 +124,56 @@ func WidenCTWindows(windows []CTWindow, driftMs int64) []CTWindow {
 	return out
 }
 
-// driftIsSkew reports whether a measured clock offset is large enough to move
-// an event by a whole minute by itself — the only case where a card may tell
-// the reader the widening is caused by clock drift.
-func driftIsSkew(driftMs int64) bool {
-	if driftMs < 0 {
-		driftMs = -driftMs
+// ClockWidenCapMinutes is the HARD cap on news-window widening from a clock
+// measurement: ceil(clockDriftToleranceMs/60s) = 1 minute of tolerable skew
+// plus at most one boundary-rounding minute. A measurement that asks for more
+// is not a clock (CLASS 145).
+const ClockWidenCapMinutes = 2
+
+// clockPlausibleSkewMs bounds what a measured offset may be CALLED. Above it
+// a positive offset is feed age (halt, gap) and a negative one is a clock so
+// broken that authoring is already deferred; neither is "(clock drift)" on a
+// card.
+const clockPlausibleSkewMs = 5 * 60_000
+
+// ClockWidenMinutes is the capped widening in whole minutes: ceil(|driftMs|/60s)
+// (min 1 for any nonzero measurement), never more than ClockWidenCapMinutes.
+func ClockWidenMinutes(driftMs int64) int {
+	m := driftWidenMinutes(driftMs)
+	if m > ClockWidenCapMinutes {
+		m = ClockWidenCapMinutes
 	}
-	return driftMs >= 60_000
+	return m
+}
+
+// ClockDriftStaleNote names the real cause when a measurement is outside the
+// clock-plausible range, for the caller's WARN line. "" when the measurement
+// may honestly be called clock skew (|drift| ≤ 5 min).
+func ClockDriftStaleNote(driftMs int64) string {
+	abs := absI64(driftMs)
+	if abs <= clockPlausibleSkewMs {
+		return ""
+	}
+	mins := abs / 60_000
+	if driftMs > 0 {
+		return fmt.Sprintf("feed stale %dm — halt or gap, not clock skew; news windows NOT widened beyond the %dm cap", mins, ClockWidenCapMinutes)
+	}
+	return fmt.Sprintf("feed labels bars %dm in the FUTURE — a broken local clock beyond the plausible skew range (authoring is deferred separately); news windows widened only by the %dm cap", mins, ClockWidenCapMinutes)
+}
+
+// driftIsSkew reports whether a measured clock offset is large enough to move
+// an event by a whole minute by itself AND small enough to plausibly be a clock
+// — the only case where a card may tell the reader the widening is caused by
+// clock drift. Beyond clockPlausibleSkewMs the measurement is feed age, and
+// the card says nothing about the clock (ClockDriftStaleNote carries the
+// cause to the journal instead).
+func driftIsSkew(driftMs int64) bool {
+	abs := absI64(driftMs)
+	return abs >= 60_000 && abs <= clockPlausibleSkewMs
 }
 
 // driftWidenMinutes rounds |driftMs| up to whole minutes (min 1 for any
-// positive drift).
+// positive drift). Uncapped; ClockWidenMinutes applies the cap.
 func driftWidenMinutes(driftMs int64) int {
 	if driftMs < 0 {
 		driftMs = -driftMs

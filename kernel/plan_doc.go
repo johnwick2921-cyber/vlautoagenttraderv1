@@ -295,6 +295,13 @@ type PlanDoc struct {
 	// remains for legacy stored plans.
 	DeathStructured *PlanCondition `json:"death,omitempty"`
 	FlipStructured  *PlanCondition `json:"flip,omitempty"`
+	// PriceAtWrite (W-FLIP-LINE-SIDE-OF-PRICE, 2026-09-17) — the authoring
+	// price the write-site validator judged the death/flip lines against
+	// (facts.Price: the last CLOSED 1m close the read was authored on). Stamped
+	// at write when known, 0/absent otherwise. The read path uses it to name a
+	// stored line that sits on the wrong side of price WITHOUT inventing a
+	// price; older rows fall back to the tape's close at their created_at.
+	PriceAtWrite float64 `json:"price_at_write,omitempty"`
 
 	// CLASS 39 (owner ruling 2026-09-01) — every normalize-don't-reject event
 	// applied to this doc at validation: legs dropped from a non-sweep arm.
@@ -829,6 +836,74 @@ func FlipDirectionContradiction(biasDir string, flip *PlanCondition) error {
 	return fmt.Errorf("flip{%s %.2f → %s} contradicts bias %s: a %s bias flips to %s only on a close %s the line", flip.Side, flip.Price, flipTo, bias, bias, flipTo, wantSide)
 }
 
+// FlipLineBeyondPrice (W-FLIP-LINE-SIDE-OF-PRICE, 2026-09-17) is the sibling of
+// FlipDirectionContradiction: the flip's side is judged against the AUTHORING
+// PRICE. A flip with side "above" must have its line ABOVE price; side "below"
+// must have it BELOW. The P1c touch gate (PlanConditionFiredSince) only fires
+// a line price touches after the plan is born and then closes beyond on the
+// stated side — a line already beyond price on its own side can never be
+// touched from the near side, so it never fires and the plan cannot flip by
+// construction (ASIA v2 2026-09-17 22:52 CT: flip{29747.50 above → long} with
+// price 29764). Returns nil when there is no structured flip, the flip has no
+// price, the side is not above/below, or PRICE IS UNKNOWN (<= 0) — the rule
+// never invents a price. Shared by the write site (reject) and the read path
+// (once-per-version WARN) so both speak one sentence.
+func FlipLineBeyondPrice(flip *PlanCondition, price float64) error {
+	if flip == nil {
+		return nil
+	}
+	head := fmt.Sprintf("flip{%s %.2f", flip.Side, flip.Price)
+	if to := strings.ToLower(strings.TrimSpace(flip.FlipTo)); to != "" {
+		head += " → " + to
+	}
+	head += "}"
+	return lineBeyondPrice(head, flip, price, "a flip line must sit on the far side of price (it can never be touched from the near side)")
+}
+
+// DeathLineBeyondPrice is FlipLineBeyondPrice for the death object: a death
+// line already crossed at authoring is a plan born dead (the scenario
+// born-dead check, validateAuthoredScenariosAt, evaluates ONLY the
+// scenario.invalid prose grammar on 1m closes and never reads death{}).
+func DeathLineBeyondPrice(death *PlanCondition, price float64) error {
+	if death == nil {
+		return nil
+	}
+	head := fmt.Sprintf("death{%s %.2f}", death.Side, death.Price)
+	return lineBeyondPrice(head, death, price, "a death line must sit on the far side of price (the plan would be born dead)")
+}
+
+// lineBeyondPrice is the one predicate both line rules share. Its rejection
+// words ("far side of price") are what planner_repair.go routes on.
+func lineBeyondPrice(head string, c *PlanCondition, price float64, law string) error {
+	if c.Price <= 0 || price <= 0 {
+		return nil
+	}
+	var where string
+	switch c.Side {
+	case "above":
+		switch {
+		case c.Price < price:
+			where = "below"
+		case c.Price == price:
+			where = "at"
+		default:
+			return nil
+		}
+	case "below":
+		switch {
+		case c.Price > price:
+			where = "above"
+		case c.Price == price:
+			where = "at"
+		default:
+			return nil
+		}
+	default:
+		return nil
+	}
+	return fmt.Errorf("%s is already %s price %.2f at authoring: %s", head, where, price, law)
+}
+
 // FlipToDirection parses the flip direction out of a killer line
 // ("flip-condition: ... → bias long") — "long"/"short", "" otherwise. Used by
 // the write site to enforce that a flip-triggered re-plan honors the flip.
@@ -981,6 +1056,22 @@ func ValidatePlanDocWithFactsMachine(d *PlanDoc, facts PlanFacts, machine map[fl
 	StampScenarioRelations(d)
 	if facts.Price <= 0 {
 		return nil // no facts → schema-only (legacy callers/tests)
+	}
+	// W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17): the flip's side was judged
+	// against the BIAS (CLASS 140); nothing judged it against PRICE. ASIA v2
+	// (22:52 CT) shipped bias short + flip{29747.50 above → long} with price at
+	// 29764 — the line was BELOW price with side "above". The P1c touch gate
+	// only fires a line price touches from the near side after birth, so a line
+	// already beyond price on its own side can never fire: the plan cannot flip
+	// by construction. The death line obeys the same law (a death line already
+	// crossed is a plan born dead — the scenario born-dead check reads only
+	// scenario.invalid prose and never the death object). Skipped above when
+	// the authoring price is unknown: never invent a price.
+	if err := FlipLineBeyondPrice(d.FlipStructured, facts.Price); err != nil {
+		return err
+	}
+	if err := DeathLineBeyondPrice(d.DeathStructured, facts.Price); err != nil {
+		return err
 	}
 	// P0.4 — duplicate-level rejection (the planner copied an EQ family 4×).
 	for i := 0; i < len(d.Levels); i++ {

@@ -55,9 +55,11 @@ func TestWidenCTWindows(t *testing.T) {
 	}
 
 	// Midnight wrap: start must wrap forward, end must not wrap spuriously.
-	wrap := []CTWindow{{Start: 2, End: 5, Label: "00:02 CT event"}}
-	if w := WidenCTWindows(wrap, 3*60_000); w[0].Start != 1439 || w[0].End != 8 {
-		t.Fatalf("wrap case: got start=%d end=%d, want 1439/8", w[0].Start, w[0].End)
+	// (CLASS 145: the widening is capped at ClockWidenCapMinutes = 2, so the
+	// wrap is exercised with a 1-minute-from-midnight base and a 2m skew.)
+	wrap := []CTWindow{{Start: 1, End: 5, Label: "00:01 CT event"}}
+	if w := WidenCTWindows(wrap, 2*60_000); w[0].Start != 1439 || w[0].End != 7 {
+		t.Fatalf("wrap case: got start=%d end=%d, want 1439/7", w[0].Start, w[0].End)
 	}
 	// Original slice must be untouched (pure).
 	if base[0].Start != 780 || base[0].End != 810 {

@@ -190,12 +190,21 @@ func (at *AutoTrader) t1WindowsFor(tradeDate string, sess *kernel.SessionDef) []
 	// F6 — widen the hard no-trade windows by the measured clock drift so the
 	// red-news blackout survives a skewed clock (same decision the authoring
 	// gate uses; the warn line fires once per session-day, not per cycle).
+	// CLASS 145 (2026-09-17): the widening goes through the CAPPED
+	// kernel.WidenCTWindows — the SAME function the plan-write path uses — so
+	// a halt's or gap's feed age (a large POSITIVE "drift") can never open the
+	// band by more than ClockWidenCapMinutes; the signed measurement is passed
+	// so the label rule sees the sign.
 	if drift, ok := clockHoldDriftFn(at.futuresSymbol()); ok {
 		if _, widen := kernel.ClockHoldDecision(drift, true, kernel.ClockWarnMs(), kernel.C2ToleranceMs()); widen > 0 {
-			windows = kernel.WidenCTWindows(windows, widen)
+			windows = kernel.WidenCTWindows(windows, drift)
 			if at.lastClockWidenLog != tradeDate {
 				at.lastClockWidenLog = tradeDate
-				at.logWarnf("🕰 clock-hold: T1 no-trade windows widened by |drift| %dms for %s %s (F6)", widen, tradeDate, sess.Name)
+				at.logWarnf("🕰 clock-hold: T1 no-trade windows widened by %dm (|drift| %dms, cap %dm) for %s %s (F6)",
+					kernel.ClockWidenMinutes(drift), widen, kernel.ClockWidenCapMinutes, tradeDate, sess.Name)
+				if note := kernel.ClockDriftStaleNote(drift); note != "" {
+					at.logWarnf("🕰 clock-hold: %s — %s %s (CLASS 145)", note, tradeDate, sess.Name)
+				}
 			}
 		}
 	}

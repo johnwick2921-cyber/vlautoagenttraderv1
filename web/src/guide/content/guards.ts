@@ -7,11 +7,26 @@ export const guards: GuideSection = {
   tagline: 'What can hard-block a trade vs what only informs.',
   asBuiltRev: GUIDE_BUILT_REV,
   blocks: [
-    { kind: 'h', text: 'Structural stop and first-zone target — research candidate' },
-    { kind: 'p', text: '[I]/[T] a codeable research candidate, not a validated replacement. No external evidence fixes its buffer or proves that it will turn the losing book positive.' },
-    { kind: 'p', text: 'If a structural decision cannot be recorded, or an older refused authorization cannot be retired safely, new placement pauses for that cycle.' },
-    { kind: 'p', text: 'For the reject fade, the stop is beyond the whole entry zone by the resolved buffer; the target is the near edge of the first distinct eligible zone. Freeze both, then check costs, the existing R:R floor; the existing daily-loss and other entry guards then apply. Refuse unsuitable geometry without resizing, moving the target, or changing the stop to pass. Missing frozen provenance records ATR fallback and refuses admission. Legacy point references are not reconstructed into zones.' },
-    { kind: 'p', text: 'The provisional MNQ buffer is 4.50 points [I]: outward-rounded p95 of 6,181 in-sample held first touches. The sweep compares 0.25, 1.25 and 4.50 points. These conditional minute-bar measurements do not establish a 95% win rate or a profitable strategy. The plan card shows the recorded composed prices and exact refusal reason.' },
+    {
+      kind: 'h',
+      text: 'Structural stop and first-zone target — research candidate',
+    },
+    {
+      kind: 'p',
+      text: '[I]/[T] a codeable research candidate, not a validated replacement. No external evidence fixes its buffer or proves that it will turn the losing book positive.',
+    },
+    {
+      kind: 'p',
+      text: 'If a structural decision cannot be recorded, or an older refused authorization cannot be retired safely, new placement pauses for that cycle.',
+    },
+    {
+      kind: 'p',
+      text: 'For the reject fade, the stop is beyond the whole entry zone by the resolved buffer; the target is the near edge of the first distinct eligible zone. Freeze both, then check costs, the existing R:R floor; the existing daily-loss and other entry guards then apply. Refuse unsuitable geometry without resizing, moving the target, or changing the stop to pass. Missing frozen provenance records ATR fallback and refuses admission. Legacy point references are not reconstructed into zones.',
+    },
+    {
+      kind: 'p',
+      text: 'The provisional MNQ buffer is 4.50 points [I]: outward-rounded p95 of 6,181 in-sample held first touches. The sweep compares 0.25, 1.25 and 4.50 points. These conditional minute-bar measurements do not establish a 95% win rate or a profitable strategy. The plan card shows the recorded composed prices and exact refusal reason.',
+    },
     { kind: 'h', text: 'One open position per instrument' },
     {
       kind: 'p',
@@ -113,7 +128,7 @@ export const guards: GuideSection = {
         [
           'T1 red news blackout',
           'HARD',
-          'No entries in the ±15m window around T1 events (calendar).',
+          'No entries in the ±15m window around T1 events (calendar). When the host clock measurably disagrees with the NT8 feed the band is widened, but only by a CAPPED amount: 2 minutes a side at most (the 60 s tolerance plus one boundary minute), and the card says "(clock drift)" only when the measured skew is between 60 s and 5 min. A larger positive reading is the AGE of the last bar — a CME halt or a feed gap — not the clock; since 2026-09-17 (CLASS 145) it widens nothing beyond the cap and the journal says "feed stale Nm — halt or gap". Before that, the ASIA read authored inside the 16:00–17:00 halt widened the BOJ ±15m band by 39 minutes a side: an hour and three-quarters of the session blocked by a clock that was never wrong.',
         ],
         [
           'Lunch / session windows / EOD flat',

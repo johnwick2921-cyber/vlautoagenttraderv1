@@ -533,6 +533,7 @@ func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDea
 		return kernel.PlanDeathDetail{}, false
 	}
 	noteFlipDirectionInverted(at, row, &doc, "active")
+	noteLinesBeyondPrice(at, row, &doc, "active")
 	bars := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
 	if len(bars) == 0 {
 		return kernel.PlanDeathDetail{}, false
@@ -554,8 +555,18 @@ func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDea
 	// plan's STATE anchor (chain birth / re-plan / bias change / flip / re-arm,
 	// latest wins), NOT from this re-read version's created_at — sinceMs above
 	// still windows the condition's own bars, unchanged.
-	hold := at.flipHoldAnchor(row)
-	killer, fired, skipped := kernel.PlanDeathOrFlipSinceFreshHold(doc, bars, at.acceptanceRuleFor(row.Session), sinceMs, now.UnixMilli(), hold)
+	// W-FLIP-OWNS-THE-BREACH (2026-09-17): the FLIP condition window is the
+	// chain anchor when same-bias wake re-reads kept the line (R2) — the
+	// death window and the legacy consumption stay on this version's birth.
+	versions, transitions, fallback, okChain := at.planChainFacts(row)
+	hold := kernel.FlipHoldAnchor{SinceMs: fallback, Source: kernel.FlipHoldAnchorVersion}
+	cw := kernel.FlipConditionAnchor{SinceMs: fallback, Source: kernel.FlipWindowFallback, AnchorVersion: row.Version}
+	if okChain {
+		hold = kernel.ResolveFlipHoldAnchor(versions, transitions, row.Version, fallback)
+		cw = kernel.ResolveFlipConditionAnchor(versions, row.Version, kernel.FlipLineClusterTolerance(), fallback)
+	}
+	at.noteFlipWindow(row, &doc, cw)
+	killer, fired, skipped := kernel.PlanDeathOrFlipSinceFreshHoldWindows(doc, bars, at.acceptanceRuleFor(row.Session), sinceMs, cw.SinceMs, now.UnixMilli(), hold)
 	for _, s := range skipped {
 		at.logWarnf("flip_eval_skipped plan=%s v%d %s", row.PlanID, row.Version, s)
 	}
@@ -575,34 +586,9 @@ func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDea
 // A chain the store cannot read falls back to the row's own created_at,
 // tagged so the skip line reads "since version(fallback)".
 func (at *AutoTrader) flipHoldAnchor(row *store.PlanDB) kernel.FlipHoldAnchor {
-	fallback := int64(0)
-	if row != nil && !row.CreatedAt.IsZero() {
-		fallback = row.CreatedAt.UnixMilli()
-	}
-	if at.store == nil || row == nil || row.PlanID == "" {
+	versions, transitions, fallback, ok := at.planChainFacts(row)
+	if !ok {
 		return kernel.FlipHoldAnchor{SinceMs: fallback, Source: kernel.FlipHoldAnchorVersion}
-	}
-	facts, err := at.store.Plan().ListVersionFacts(row.PlanID)
-	if err != nil || len(facts) == 0 {
-		return kernel.FlipHoldAnchor{SinceMs: fallback, Source: kernel.FlipHoldAnchorVersion}
-	}
-	versions := make([]kernel.PlanVersionFact, 0, len(facts))
-	for _, f := range facts {
-		ms := int64(0)
-		if !f.CreatedAt.IsZero() {
-			ms = f.CreatedAt.UnixMilli()
-		}
-		versions = append(versions, kernel.PlanVersionFact{Version: f.Version, TriggerReason: f.TriggerReason, BiasDirection: f.BiasDirection, CreatedAtMs: ms})
-	}
-	var transitions []kernel.PlanTransitionFact
-	if events, lErr := at.store.Plan().LifecycleLogForPlan(row.PlanID); lErr == nil {
-		for _, e := range events {
-			ms := int64(0)
-			if !e.At.IsZero() {
-				ms = e.At.UnixMilli()
-			}
-			transitions = append(transitions, kernel.PlanTransitionFact{Version: e.Version, Event: e.Event, Reason: e.Reason, AtMs: ms})
-		}
 	}
 	return kernel.ResolveFlipHoldAnchor(versions, transitions, row.Version, fallback)
 }
@@ -674,6 +660,16 @@ func flipRereadDoneKey(row *store.PlanDB) string {
 // trader|plan|version; entries live only as long as the goroutine.
 var flipRereadInFlight sync.Map
 
+// at.flipRereadLaunchAt (W-FLIP-REREAD-IMMEDIATE) records, per plan|version,
+// WHEN a structure_flip read last LAUNCHED (reached the planner) and wrote
+// nothing. The flip read is exempt from the wake throttles, and the
+// dormant branch calls back every scan cycle, so without this a read that
+// launched and failed (3 model calls) would relaunch every cycle for as long
+// as the model kept failing. Only a LAUNCH starts this clock; a refusal
+// (preflight, cutoff, open stream) never does, so those retry next cycle. It
+// is measured from the flip read's OWN launch — an ordinary wake never sets
+// it, so an earlier ordinary wake still cannot delay a flip read.
+
 func flipRereadInFlightKey(at *AutoTrader, row *store.PlanDB) string {
 	return fmt.Sprintf("%s|%s|%d", at.id, row.PlanID, row.Version)
 }
@@ -720,9 +716,22 @@ var flipRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *
 
 // maybeRereadAfterFlip (W-FLIP-REREAD, 2026-09-17) — with day_plan.flip_reread
 // ON, a fired flip requests ONE free planner re-read in the flipped direction
-// (trigger structure_flip), under the same preflight and wake cadence as a
-// level-event wake. OFF = not called (the caller gates on the knob, and this
-// function double-checks it): today's dormant behaviour, byte-identical.
+// (trigger structure_flip). OFF = not called (the caller gates on the knob, and
+// this function double-checks it): today's dormant behaviour, byte-identical.
+//
+// W-FLIP-REREAD-IMMEDIATE (2026-09-17, owner: "why does the plan go dormant
+// when the bias flips"): a structure_flip read is a REACTION to a
+// machine-confirmed event (two 5m closes beyond the flip line with the ATR
+// buffer), not a speculative wake, so it is EXEMPT from the two LOAD rules a
+// level wake obeys — the class-47 30m cooldown (measured from the last
+// wake-authored version) and the shared wake_min_interval_min throttle on
+// at.lastPlannerWakeAt. Before this, a flip that fired inside either window sat
+// dormant for up to 30 minutes with no plan in the new direction. What STAYS:
+// the once-key, the in-flight guard, preflight (fresh bars), the class-47
+// CUTOFF (a SAFETY rule: no read within 25 min of the session flat — a plan
+// authored there can never be entered), and the one-planner-stream-at-a-time
+// defer. After the launch at.lastPlannerWakeAt is still set, so ORDINARY wakes
+// back off from the flip read; an earlier ordinary wake never delays it.
 //
 // Semantics after the 2026-09-17 review (BLOCKERs 2 + 3):
 //   - "ONE read" means one SUCCESSFUL read per fired flip. Success is decided
@@ -771,49 +780,47 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 		at.logWarnf("🗓️ structure_flip read %s %s v%d — REFUSED by preflight (no fresh bars); the dormant plan stands.", tradeDate, session, row.Version)
 		return
 	}
-	// Rate-limit by the existing wake cadence: cutoff, 30m cooldown since the
-	// last wake-authored version, fast-market exempt — the same decision struct
-	// the level-event wake uses.
+	// Class-47 CUTOFF only (SAFETY rule — kept). CooldownMin is 0 on purpose:
+	// a flip read is a reaction, not a wake, and SkipForCooldown must never
+	// fire for it (W-FLIP-REREAD-IMMEDIATE).
 	dec := WakeCadenceDecision{
 		Session: session, Desc: "structure_flip: " + killer,
-		CutoffMin: wakeCutoffMinutes(), CooldownMin: wakeCooldownMinutes(),
-		FastMarketThreshold: fastMarketATR(),
-	}
-	if _, driftATR := at.fastMarketDrift(at.wakeTimePrice()); driftATR > 0 {
-		dec.FastMarketATR = driftATR
+		CutoffMin: wakeCutoffMinutes(), CooldownMin: 0,
 	}
 	if sess, okS := at.sessionRegistry(now).ActiveSession(now); okS {
 		dec.MinutesToFlat, dec.HaveFlat = minutesToSessionFlat(now, sess)
 	}
-	if dec.CooldownMin > 0 {
-		if last, lerr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); lerr == nil && last != nil &&
-			WakeCadenceGoverns(last.TriggerReason) && !last.CreatedAt.IsZero() {
-			dec.SinceLastWakeVersionMin = int(now.Sub(last.CreatedAt).Minutes())
-			dec.HaveLastWakeVersion = true
-		}
-	}
 	if dec.SkipForCutoff() {
 		at.logWarnf("%s", wakeCutoffLine(session, dec.Desc, dec.MinutesToFlat, dec.CutoffMin, 0))
-		return
-	}
-	if dec.SkipForCooldown() {
-		at.logWarnf("%s", wakeCooldownLine(session, dec.Desc, dec.SinceLastWakeVersionMin, dec.CooldownMin, 0))
 		return
 	}
 	if held, open := anyPlannerStreamOpen(); open {
 		at.logWarnf("%s", wakeStreamDeferLine(session, dec.Desc, held))
 		return
 	}
-	// Shared min-interval throttle: ANY planner wake resets the clock.
-	if !at.lastPlannerWakeAt.IsZero() && now.Sub(at.lastPlannerWakeAt) < time.Duration(cfg.WakeMinIntervalMinutes())*time.Minute {
-		at.logWarnf("🗓️ structure_flip read %s %s — SKIPPED: %.0fm elapsed < wake_min_interval_min (%dm).",
-			session, tradeDate, now.Sub(at.lastPlannerWakeAt).Minutes(), cfg.WakeMinIntervalMinutes())
-		return
+	// The two LOAD rules a level wake obeys are computed only to SAY that the
+	// exemption applied (never to refuse): the class-47 cooldown since the last
+	// wake-authored version, and the shared wake_min_interval_min throttle.
+	if exempt := flipRereadExemptionNote(now, at.lastPlannerWakeAt, cfg.WakeMinIntervalMinutes(), at.lastWakeAuthoredVersionAge(now, tradeDate, session), wakeCooldownMinutes()); exempt != "" {
+		at.logWarnf("🗓️ structure_flip read %s %s v%d — immediate (flip reads are exempt from cooldown/min-interval; cutoff + stream guard still apply): %s",
+			tradeDate, session, row.Version, exempt)
+	}
+	// Self-backoff only: a previous flip LAUNCH for this row that wrote nothing
+	// holds the retry for wake_min_interval_min, measured from that launch.
+	if v, ok := at.flipRereadLaunchAt.Load(inflightKey); ok {
+		if last, isT := v.(time.Time); isT && now.Sub(last) < time.Duration(cfg.WakeMinIntervalMinutes())*time.Minute {
+			at.logWarnf("🗓️ structure_flip read %s %s v%d — retry held: %.0fm since this row's last flip launch that wrote nothing < wake_min_interval_min (%dm); refusals never start this clock.",
+				tradeDate, session, row.Version, now.Sub(last).Minutes(), cfg.WakeMinIntervalMinutes())
+			return
+		}
 	}
 	if _, busy := flipRereadInFlight.LoadOrStore(inflightKey, now); busy {
 		at.logInfof("🗓️ structure_flip read %s %s v%d already in flight — not launching a second.", tradeDate, session, row.Version)
 		return
 	}
+	at.flipRereadLaunchAt.Store(inflightKey, now)
+	// Ordinary wakes back off from THIS read; the flip read never backed off
+	// from them.
 	at.lastPlannerWakeAt = now
 	// BLOCKER 2 — the once-key is NOT set here. It lands only after the
 	// goroutine below has seen a newer active version in the store.
@@ -861,6 +868,7 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 			return
 		}
 		_ = at.store.SetSystemConfig(flipRereadDoneKey(row), strconv.FormatInt(now.UnixMilli(), 10))
+		at.flipRereadLaunchAt.Delete(inflightKey) // done for this row; nothing to back off from
 		if fdoc, derr := kernel.ParsePlanDoc(fresh.Doc); derr == nil && strings.EqualFold(fdoc.Bias.Direction, oldBias) {
 			// Unreachable through the production write site (it rejects a
 			// plan whose bias is not the flipped one); a non-production writer
@@ -880,6 +888,38 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 		}
 		at.carryOwnerEditsInto(fresh.PlanID, row.Version, fresh.Version)
 	}()
+}
+
+// lastWakeAuthoredVersionAge returns whole minutes since the session's latest
+// version when that version was WAKE-authored (WakeCadenceGoverns), else -1 —
+// the same measurement the class-47 cooldown uses, taken here only to
+// describe the exemption (W-FLIP-REREAD-IMMEDIATE), never to refuse.
+func (at *AutoTrader) lastWakeAuthoredVersionAge(now time.Time, tradeDate, session string) int {
+	if at.store == nil {
+		return -1
+	}
+	last, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id)
+	if err != nil || last == nil || !WakeCadenceGoverns(last.TriggerReason) || last.CreatedAt.IsZero() {
+		return -1
+	}
+	return int(now.Sub(last.CreatedAt).Minutes())
+}
+
+// flipRereadExemptionNote is the pure "which throttle WOULD have skipped this
+// flip read" renderer: empty when neither the wake_min_interval_min throttle
+// (sinceWake < minInterval) nor the class-47 cooldown (wakeAuthoredAgeMin in
+// [0, cooldown)) would have applied, so the immediate line prints only when
+// the exemption actually did something. A zero lastWake / negative age means
+// "no prior wake" and never manufactures a note (A24).
+func flipRereadExemptionNote(now, lastWake time.Time, minIntervalMin, wakeAuthoredAgeMin, cooldownMin int) string {
+	var parts []string
+	if !lastWake.IsZero() && minIntervalMin > 0 && now.Sub(lastWake) < time.Duration(minIntervalMin)*time.Minute {
+		parts = append(parts, fmt.Sprintf("%.0fm since the last planner wake < wake_min_interval_min (%dm)", now.Sub(lastWake).Minutes(), minIntervalMin))
+	}
+	if cooldownMin > 0 && wakeAuthoredAgeMin >= 0 && wakeAuthoredAgeMin < cooldownMin {
+		parts = append(parts, fmt.Sprintf("%d min since the last wake-authored version < cooldown (%dm)", wakeAuthoredAgeMin, cooldownMin))
+	}
+	return strings.Join(parts, "; ")
 }
 
 // dormantDeathKillerOf is the death counterpart of dormantFlipKillerOf:
@@ -924,6 +964,7 @@ func (at *AutoTrader) describeDormantCleared(row *store.PlanDB) (bool, string) {
 		return false, ""
 	}
 	noteFlipDirectionInverted(at, row, &doc, "dormant")
+	noteLinesBeyondPrice(at, row, &doc, "dormant")
 	c := kernel.PlanCondition{}
 	if _, ok := at.dormantDeathKillerOf(row); ok {
 		if doc.DeathStructured != nil {
@@ -1239,14 +1280,9 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 	prompt := kernel.BuildPlannerPrompt(input)
 	at.logInfof("📝 prompt render (T2): %dms ~%d tokens", time.Since(p2Start).Milliseconds(), estimatePromptTokens(prompt))
 	hash := shortHash(prompt)
-	// W3 — HARD red-news blackout lines auto-written into the plan (§80).
-	t1Lines := kernel.T1NoTradeLines(input.Calendar)
-	// F6 — when the clock is measurably skewed (warn or critical band), widen
-	// the T1 windows by the drift so the red-news blackout survives it.
-	if holdHave && holdWiden > 0 {
-		t1Lines = kernel.T1NoTradeLinesDrift(input.Calendar, holdDrift)
-		at.logWarnf("🕰 clock-hold: T1 news windows widened by |drift| %dms for %s %s (F6)", holdWiden, tradeDate, session)
-	}
+	// W3 — HARD red-news blackout lines auto-written into the plan (§80),
+	// widened by the CAPPED clock measurement (F6 / CLASS 145).
+	t1Lines := at.plannerT1Lines(input.Calendar, holdHave, holdWiden, holdDrift, tradeDate, session)
 	// P0.1/P0.2 (2026-08-19) — write-time facts: both-side levels (0-on-a-side
 	// hard fail since the owner ruling 2026-08-31 removed the count concept),
 	// continuation scenario on gaps. PDH/PDL come from the detector universe
@@ -1347,6 +1383,26 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 		return raw, err
 	}, t1Lines...)
 	return true
+}
+
+// plannerT1Lines is the plan-write T1 step: the HARD red-news lines, widened
+// by the clock measurement through the SAME capped kernel.WidenCTWindows the
+// arm path uses (auto_trader_calendar.go t1WindowsFor). CLASS 145
+// (2026-09-17): the 16:38 CT ASIA read inside the CME halt measured a 2,326 s
+// "drift" — the 15:59 bar's age — and the uncapped path wrote "+31m (clock
+// drift)" into the plan; the cap holds the widening to ClockWidenCapMinutes
+// and the journal names staleness instead of the clock.
+func (at *AutoTrader) plannerT1Lines(cal []kernel.PlannerCalendarEvent, holdHave bool, holdWiden, holdDrift int64, tradeDate, session string) []string {
+	if !holdHave || holdWiden <= 0 {
+		return kernel.T1NoTradeLines(cal)
+	}
+	lines := kernel.T1NoTradeLinesDrift(cal, holdDrift)
+	at.logWarnf("🕰 clock-hold: T1 news windows widened by %dm (|drift| %dms, cap %dm) for %s %s (F6)",
+		kernel.ClockWidenMinutes(holdDrift), holdWiden, kernel.ClockWidenCapMinutes, tradeDate, session)
+	if note := kernel.ClockDriftStaleNote(holdDrift); note != "" {
+		at.logWarnf("🕰 clock-hold: %s — %s %s (CLASS 145)", note, tradeDate, session)
+	}
+	return lines
 }
 
 // clockHoldDriftFn is the F6 measurement seam: tests inject fake drift; the
@@ -2331,6 +2387,14 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	identityWarnings := at.stampPlanIdentity(doc, facts.IdentityMap)
 	doc.Zones = facts.Zones         // frozen presentation; never model-authored or used by validators
 	doc.Structure = facts.Structure // S1 — the STRUCTURE table the read saw; nil stays absent
+	// W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17) — the authoring price the
+	// death/flip lines were judged against, so the read path can name a line
+	// on the wrong side of price without inventing one. Unknown price (legacy
+	// facts-less callers): the side-of-price rule was SKIPPED, say so once.
+	doc.PriceAtWrite = facts.Price
+	if facts.Price <= 0 && (doc.FlipStructured != nil || doc.DeathStructured != nil) {
+		at.logWarnf("⚠️ flip/death line side-of-price UNJUDGED: authoring price unknown (facts absent) — the write site never invents a price; the line may sit on the wrong side of price")
+	}
 	docJSON, _ := json.Marshal(doc)
 	version, err := at.store.Plan().AppendPlan(&store.PlanDB{
 		CreatedAt:       authoredAt,
@@ -3106,6 +3170,83 @@ func noteFlipDirectionInverted(at *AutoTrader, row *store.PlanDB, doc *kernel.Pl
 		return
 	}
 	at.logWarnf("flip_direction_inverted plan=%s v%d (%s) %v — this flip can never fire on the move it is meant to catch (written before W-FLIP-DIRECTION); printed once per plan version", row.PlanID, row.Version, site, err)
+}
+
+var (
+	linesBeyondPriceMu    sync.Mutex
+	linesBeyondPriceNoted = map[string]bool{}
+)
+
+// authoringPriceWindowMs bounds the tape fallback in authoringPriceFor: a
+// close older than this before the row's created_at is not the close the
+// write site judged against, so the price stays UNKNOWN rather than invented.
+const authoringPriceWindowMs = 10 * 60_000
+
+// authoringPriceFor returns the price the plan's death/flip lines were judged
+// against at write: the stamped doc.price_at_write when present, else the
+// last CLOSED bar of the tape at or before the row's created_at (the same
+// value AssembleResearchLevels handed the write site as facts.Price), and 0
+// when neither is known. Never invents a price.
+func authoringPriceFor(doc *kernel.PlanDoc, createdAt time.Time, bars []market.Kline) float64 {
+	if doc != nil && doc.PriceAtWrite > 0 {
+		return doc.PriceAtWrite
+	}
+	if createdAt.IsZero() {
+		return 0
+	}
+	atMs := createdAt.UnixMilli()
+	var best market.Kline
+	for _, b := range bars {
+		if b.CloseTime >= atMs || b.Close <= 0 {
+			continue
+		}
+		if b.CloseTime > best.CloseTime {
+			best = b
+		}
+	}
+	if best.CloseTime == 0 || atMs-best.CloseTime > authoringPriceWindowMs {
+		return 0
+	}
+	return best.Close
+}
+
+// noteLinesBeyondPrice (W-FLIP-LINE-SIDE-OF-PRICE, 2026-09-17) is the sibling
+// of noteFlipDirectionInverted: it names a stored plan whose flip or death
+// line already sat beyond price on its own side when it was written — a line
+// the touch gate can never fire. The write site now REJECTS that shape when
+// the authoring price is known; plans written before it (and the ASIA v2 row
+// that motivated it) are seen only by the two read-path evaluators, which
+// both call this first. WARN only, once per plan version per line; the
+// evaluation itself is unchanged. A row whose authoring price cannot be
+// established is left unjudged (and unmarked, so a later tape can judge it).
+func noteLinesBeyondPrice(at *AutoTrader, row *store.PlanDB, doc *kernel.PlanDoc, site string) {
+	if row == nil || doc == nil || (doc.FlipStructured == nil && doc.DeathStructured == nil) {
+		return
+	}
+	key := fmt.Sprintf("%s|%s|v%d", at.id, row.PlanID, row.Version)
+	linesBeyondPriceMu.Lock()
+	seen := linesBeyondPriceNoted[key]
+	linesBeyondPriceMu.Unlock()
+	if seen {
+		return
+	}
+	var bars []market.Kline
+	if doc.PriceAtWrite <= 0 && market.FuturesBarsProvider != nil {
+		bars = market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	}
+	price := authoringPriceFor(doc, row.CreatedAt, bars)
+	if price <= 0 {
+		return // unknown authoring price: never invent one, never mark judged
+	}
+	linesBeyondPriceMu.Lock()
+	linesBeyondPriceNoted[key] = true
+	linesBeyondPriceMu.Unlock()
+	if err := kernel.FlipLineBeyondPrice(doc.FlipStructured, price); err != nil {
+		at.logWarnf("flip_line_beyond_price plan=%s v%d (%s) %v — this flip can never be touched from the near side, so it never fires (written before W-FLIP-LINE-SIDE-OF-PRICE or with the price unknown); printed once per plan version", row.PlanID, row.Version, site, err)
+	}
+	if err := kernel.DeathLineBeyondPrice(doc.DeathStructured, price); err != nil {
+		at.logWarnf("death_line_beyond_price plan=%s v%d (%s) %v — this plan was born dead by its own death line; printed once per plan version", row.PlanID, row.Version, site, err)
+	}
 }
 
 // notePlanProviderNil logs the reason the provider returns nil, once per

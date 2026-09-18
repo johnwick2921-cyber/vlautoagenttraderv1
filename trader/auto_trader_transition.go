@@ -157,6 +157,13 @@ func (at *AutoTrader) maybeWakePlannerOnMSSAt(now time.Time, session, tradeDate 
 	if market.FuturesBarsProvider == nil {
 		return
 	}
+	// W-FLIP-OWNS-THE-BREACH R1/R3 (2026-09-17): same gate as the level-event
+	// wake — a breached (or stale-skipped) flip line defers the MSS wake. On
+	// 2026-09-17 22:42:33 CT this path authored ASIA v2 on the tape the flip
+	// evaluator had refused the same second (flip=stale_bars, age 453s).
+	if at.wakeDeferredByFlip(now, session, row) {
+		return
+	}
 	bars1m := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
 	snap := kernel.StructureSnapshot(bars1m, now.UnixMilli())
 	st15, ok := snap["15m"]

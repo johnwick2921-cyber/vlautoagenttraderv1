@@ -166,6 +166,16 @@
   }
 }
 
+/* W-ASKPLANNER-SCROLL — the narrow (phone) Ask-Planner sheet is bounded by the
+   viewport so its thread is the one scroller. 85vh first for browsers without
+   dvh; dvh wins where supported (mobile URL bar no longer eats the input row).
+   The safe-area pad keeps the input above a home indicator. */
+.vl-ask-sheet-narrow {
+  max-height: 85vh;
+  max-height: 85dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* W13 — a row flashes gold ONCE when an applied re-align changed it, and the
    inline "reviewing" glyph spins. Both honor prefers-reduced-motion. */
 @keyframes vl-flash-gold {

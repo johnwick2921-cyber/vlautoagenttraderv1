@@ -391,8 +391,14 @@ type AutoTrader struct {
 	// (plan:version:kind:label:tier:birth) and the SHARED planner-wake clock
 	// (deaths don't reset it; MSS + level wakes do, so the two wake classes
 	// can never double-fire inside one wake_min_interval_min window).
-	lastLevelWakeKey      string
-	lastPlannerWakeAt     time.Time
+	lastLevelWakeKey  string
+	lastPlannerWakeAt time.Time
+	// flipRereadLaunchAt (W-FLIP-REREAD-IMMEDIATE) — per plan|version, when a
+	// structure_flip read last LAUNCHED and wrote nothing; the flip read's
+	// self-backoff clock (see maybeRereadAfterFlip). Per trader on purpose:
+	// a process-global map keyed by plan id let one trader's (or one test's)
+	// failed launch hold another's retry.
+	flipRereadLaunchAt    sync.Map
 	lastAIBalanceDay      string // P5 daily balance poll throttle (AI_BALANCE_WARN)
 	isRunning             bool
 	isRunningMutex        sync.RWMutex          // Mutex to protect isRunning flag

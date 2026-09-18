@@ -342,11 +342,12 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No.',
   },
   {
-    label: 'Flip re-read (W-FLIP-REREAD)',
+    label:
+      'Flip re-read (W-FLIP-REREAD, immediate since W-FLIP-REREAD-IMMEDIATE)',
     where: 'Strategy → Day Plan → flip_reread toggle',
-    what: "When the plan's flip condition fires, the plan ALWAYS goes dormant first (wick-noise protection — unchanged). ON adds ONE free planner re-read in the flipped direction (trigger structure_flip, class-35 free like a level wake, same preflight and wake cadence). OFF = today's behaviour: the plan sleeps and the flipped bias is never authored.",
+    what: "When the plan's flip condition fires, the plan ALWAYS goes dormant first (wick-noise protection — unchanged). ON adds ONE free planner re-read in the flipped direction (trigger structure_flip, class-35 free) that fires IMMEDIATELY — a flip read is a reaction to a machine-confirmed event (two 5m closes beyond the flip line with the ATR buffer), so it is exempt from the class-47 30m cooldown and the wake_min_interval_min throttle that pace ordinary level wakes. What still gates it: preflight (fresh bars), the class-47 cutoff (no read within 25 min of the session flat), one planner stream at a time (deferred, retried next cycle), one successful read per fired flip. OFF = today's behaviour: the plan sleeps and the flipped bias is never authored.",
     trader:
-      'ON = the flipped bias can actually materialize. The write site REQUIRES the flipped bias: the model authors it or the read writes nothing and the dormant plan stands (a same-bias plan is rejected, never written). One SUCCESSFUL re-read per fired flip; a refused or failed read is retried on later cycles while the plan sleeps (throttled to about one launch per wake_min_interval_min, default 10 min, up to 3 model calls per launch; no hard cap while the row stays dormant — the same cost shape as a level-event wake). If price closes back first, the old plan re-arms as before and the re-read is skipped.',
+      'ON = the flipped bias can actually materialize, and on the same cycle the flip fires — an earlier level wake never delays it (the log says "🗓️ structure_flip read … — immediate" when a throttle would otherwise have held it). The write site REQUIRES the flipped bias: the model authors it or the read writes nothing and the dormant plan stands (a same-bias plan is rejected, never written). One SUCCESSFUL re-read per fired flip. A read REFUSED before launch (stale bars, cutoff, another planner stream open) is retried on the very next cycle; a read that LAUNCHED and wrote nothing (up to 3 model calls) backs off from its OWN launch for wake_min_interval_min (default 30 min) before retrying — no hard cap while the row stays dormant, bounded by the session read window. If price closes back first, the old plan re-arms as before and the re-read is skipped.',
     consumer:
       'trader/auto_trader_planner.go maybeRereadAfterFlip · store.DayPlanConfig.FlipRereadEnabled',
     range: 'ON | OFF',

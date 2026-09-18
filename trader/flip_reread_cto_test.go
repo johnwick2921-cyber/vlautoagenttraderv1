@@ -408,3 +408,241 @@ func TestFlipRereadInFlightGuardBlocksSecondLaunch(t *testing.T) {
 		t.Fatalf("exactly one AI call end to end, got %d", client.calls())
 	}
 }
+
+// ── W-FLIP-REREAD-IMMEDIATE (2026-09-17) ────────────────────────────────────
+// A structure_flip read is a REACTION to a machine-confirmed event, not a
+// speculative wake: exempt from the class-47 cooldown and the shared
+// wake_min_interval_min throttle; cutoff, preflight, once-key, in-flight
+// guard and the one-stream defer all stay. Same real-path harness: the AI
+// client is the only scripted seam.
+
+// seedWakeVersion appends a WAKE-authored (level_event) version of the same
+// long doc — the shape the owner watched live: a level wake wrote a version,
+// then the flip fired minutes later.
+func seedWakeVersion(t *testing.T, at *AutoTrader, td, session string, birth time.Time, doc kernel.PlanDoc) *store.PlanDB {
+	t.Helper()
+	blob, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid := store.MakePlanIDForTrader(at.id, td, session)
+	if _, err := at.store.Plan().AppendPlan(&store.PlanDB{PlanID: pid, TradeDate: td, Session: session, StrategyID: at.id, Lifecycle: "active", TriggerReason: "level_event", Doc: string(blob), CreatedAt: birth}); err != nil {
+		t.Fatal(err)
+	}
+	row, err := at.store.Plan().GetLatestPlanForTraderSession(td, session, at.id)
+	if err != nil || row == nil {
+		t.Fatalf("read back wake seed: %+v err=%v", row, err)
+	}
+	return row
+}
+
+// A flip 20 minutes after a level-event wake authored a version (and 20
+// minutes after the shared wake clock was last set) must launch the
+// structure_flip read on the SAME cycle. Before: SkipForCooldown (20 < 30) and
+// the wake_min_interval throttle (20 < 30) both refused it, and the bot sat
+// dormant with no plan in the new direction for up to 30 minutes. (20, not 3:
+// the flip condition's bars are windowed from the version's own created_at —
+// describeActivePlanDeath sinceMs — so two 5m closes must fit after the wake
+// version's birth; the fixture's drift bars run now-16m → now-6m.)
+func TestFlipRereadImmediateAfterRecentWake(t *testing.T) {
+	at, st, client := realPathTrader(t, true, func(int, string) (string, error) { return validShortPlanJSON, nil })
+	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
+	flipRereadTestNow(t, now)
+	td := "2026-08-18"
+	seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), flipFixtureDoc())
+	row := seedWakeVersion(t, at, td, "NY", now.Add(-20*time.Minute), flipFixtureDoc())
+	if row.Version != 2 {
+		t.Fatalf("fixture: expected the wake version to be v2, got v%d", row.Version)
+	}
+	at.lastPlannerWakeAt = now.Add(-20 * time.Minute) // the level wake set the shared clock
+	seedFlipBars(15500, 15470, 6*time.Minute, now)
+	logBuf := captureTraderLog(t)
+
+	at.maybeRunSessionReadsAt(now)
+
+	if got := versionLifecycle(t, st, td, "NY", at.id, 2); got != "dormant" && got != "superseded:flip" {
+		t.Fatalf("flip must park v2 dormant first, got %q", got)
+	}
+	wantImmediate := "🗓️ structure_flip read 2026-08-18 NY v2 — immediate (flip reads are exempt from cooldown/min-interval; cutoff + stream guard still apply): 20m since the last planner wake < wake_min_interval_min (30m); 20 min since the last wake-authored version < cooldown (30m)"
+	if !strings.Contains(logBuf.String(), wantImmediate) {
+		t.Fatalf("missing the immediate line %q; log:\n%s", wantImmediate, logBuf.String())
+	}
+	for _, forbidden := range []string{"⏱ wake SKIPPED: cooldown", "< wake_min_interval_min (30m)."} {
+		if strings.Contains(logBuf.String(), forbidden) {
+			t.Fatalf("a flip read must not be refused by %q; log:\n%s", forbidden, logBuf.String())
+		}
+	}
+	if !waitFor(t, 10*time.Second, func() bool {
+		return versionLifecycle(t, st, td, "NY", at.id, 2) == "superseded:flip"
+	}) {
+		t.Fatalf("the flip read must launch on the SAME cycle and supersede v2; log:\n%s", logBuf.String())
+	}
+	if client.calls() != 1 {
+		t.Fatalf("exactly one AI call, got %d", client.calls())
+	}
+	v3, _ := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
+	if v3 == nil || v3.Version != 3 || v3.TriggerReason != "structure_flip" || v3.Lifecycle != "active" {
+		t.Fatalf("expected active v3 structure_flip, got %+v", v3)
+	}
+	if !at.lastPlannerWakeAt.Equal(now) {
+		t.Fatalf("the flip launch must still set the shared wake clock (ordinary wakes back off from it), got %v want %v", at.lastPlannerWakeAt, now)
+	}
+}
+
+// A flip 20 minutes before the session flat is still refused by the class-47
+// CUTOFF (a SAFETY rule): a plan authored there can never be entered. NY flat
+// is 14:45 CT = 19:45 UTC on 2026-08-18 (CDT).
+func TestFlipRereadStillSkippedByCutoff(t *testing.T) {
+	at, st, client := realPathTrader(t, true, func(int, string) (string, error) { return validShortPlanJSON, nil })
+	now := time.Date(2026, 8, 18, 19, 25, 0, 0, time.UTC)
+	flipRereadTestNow(t, now)
+	td := "2026-08-18"
+	seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), flipFixtureDoc())
+	seedFlipBars(15500, 15470, 6*time.Minute, now)
+	logBuf := captureTraderLog(t)
+
+	at.maybeRunSessionReadsAt(now)
+
+	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
+		t.Fatalf("flip must park dormant, got %q; log:\n%s", got, logBuf.String())
+	}
+	if !strings.Contains(logBuf.String(), "⏱ wake SKIPPED: 20 min to flat (cutoff 25m) — structure_flip: ") {
+		t.Fatalf("expected the class-47 cutoff line; log:\n%s", logBuf.String())
+	}
+	time.Sleep(200 * time.Millisecond)
+	if client.calls() != 0 {
+		t.Fatalf("cutoff must refuse the read, got %d calls", client.calls())
+	}
+	if strings.Contains(logBuf.String(), "waking the planner (W-FLIP-REREAD)") {
+		t.Fatalf("no launch inside the cutoff; log:\n%s", logBuf.String())
+	}
+}
+
+// A flip while ANOTHER planner stream is open is deferred (one planner read
+// at a time) and retried on the very next cycle — one minute later, far
+// inside wake_min_interval_min, because the retry is not throttled either.
+func TestFlipRereadDeferredOnOpenStreamThenImmediateRetry(t *testing.T) {
+	at, st, client := realPathTrader(t, true, func(int, string) (string, error) { return validShortPlanJSON, nil })
+	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
+	flipRereadTestNow(t, now)
+	td := "2026-08-18"
+	seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), flipFixtureDoc())
+	seedFlipBars(15500, 15470, 6*time.Minute, now)
+	logBuf := captureTraderLog(t)
+
+	otherKey := "other-trader|2026-08-18|LONDON"
+	if !claimPlannerRead(otherKey) {
+		t.Fatal("fixture: could not claim the foreign stream")
+	}
+	released := false
+	t.Cleanup(func() {
+		if !released {
+			releasePlannerRead(otherKey)
+		}
+	})
+
+	at.maybeRunSessionReadsAt(now)
+
+	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
+		t.Fatalf("flip must park dormant, got %q", got)
+	}
+	if !strings.Contains(logBuf.String(), "⏱ wake DEFERRED: a planner stream is already open ("+otherKey+") — structure_flip: ") {
+		t.Fatalf("expected the stream-defer line; log:\n%s", logBuf.String())
+	}
+	time.Sleep(200 * time.Millisecond)
+	if client.calls() != 0 {
+		t.Fatalf("deferred read must not call the planner, got %d", client.calls())
+	}
+	releasePlannerRead(otherKey)
+	released = true
+
+	next := now.Add(time.Minute)
+	flipRereadTestNow(t, next)
+	seedFlipBars(15500, 15470, 6*time.Minute, next)
+	at.maybeRunSessionReadsAt(next)
+	if !waitFor(t, 10*time.Second, func() bool {
+		return versionLifecycle(t, st, td, "NY", at.id, 1) == "superseded:flip"
+	}) {
+		t.Fatalf("the deferred flip read must launch on the next cycle; log:\n%s", logBuf.String())
+	}
+	if client.calls() != 1 {
+		t.Fatalf("exactly one AI call after the retry, got %d", client.calls())
+	}
+}
+
+// flipRereadExemptionNote is pure: it prints only when a throttle WOULD have
+// refused, and never manufactures a note from a zero clock / no prior wake.
+func TestFlipRereadExemptionNotePure(t *testing.T) {
+	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
+	cases := []struct {
+		name        string
+		lastWake    time.Time
+		minInterval int
+		wakeAgeMin  int
+		cooldown    int
+		want        string
+	}{
+		{"no prior wake, no wake version", time.Time{}, 30, -1, 30, ""},
+		{"both windows elapsed", now.Add(-31 * time.Minute), 30, 31, 30, ""},
+		{"min-interval only", now.Add(-3 * time.Minute), 30, -1, 30, "3m since the last planner wake < wake_min_interval_min (30m)"},
+		{"cooldown only", time.Time{}, 30, 3, 30, "3 min since the last wake-authored version < cooldown (30m)"},
+		{"both", now.Add(-3 * time.Minute), 30, 3, 30, "3m since the last planner wake < wake_min_interval_min (30m); 3 min since the last wake-authored version < cooldown (30m)"},
+		{"knobs off", now.Add(-3 * time.Minute), 0, 3, 0, ""},
+	}
+	for _, c := range cases {
+		if got := flipRereadExemptionNote(now, c.lastWake, c.minInterval, c.wakeAgeMin, c.cooldown); got != c.want {
+			t.Errorf("%s: got %q want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// SELF-BACKOFF (W-FLIP-REREAD-IMMEDIATE): a flip read that LAUNCHED and wrote
+// nothing must not relaunch every scan cycle (3 model calls per cycle for as
+// long as the model fails). The retry is held for wake_min_interval_min from
+// the flip read's OWN launch — an ordinary wake never starts that clock — and
+// a refusal (preflight/cutoff/open stream) never does either (the defer test
+// above retries one minute later).
+func TestFlipRereadFailedLaunchBacksOffFromItsOwnLaunchOnly(t *testing.T) {
+	at, st, client := realPathTrader(t, true, func(int, string) (string, error) { return "not json", nil })
+	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
+	flipRereadTestNow(t, now)
+	td := "2026-08-18"
+	row := seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), flipFixtureDoc())
+	seedFlipBars(15500, 15470, 6*time.Minute, now)
+	logBuf := captureTraderLog(t)
+
+	at.maybeRunSessionReadsAt(now)
+	if !waitFor(t, 10*time.Second, func() bool { return client.calls() == 3 }) {
+		t.Fatalf("first launch must exhaust 3 attempts, got %d; log:\n%s", client.calls(), logBuf.String())
+	}
+	if !waitFor(t, 5*time.Second, func() bool {
+		_, running := flipRereadInFlight.Load(flipRereadInFlightKey(at, row))
+		return !running
+	}) {
+		t.Fatal("in-flight guard never cleared")
+	}
+	// +5m: still dormant, key clear, throttles exempt — but the row's OWN
+	// failed launch is 5 min old → held.
+	plus5 := now.Add(5 * time.Minute)
+	flipRereadTestNow(t, plus5)
+	seedFlipBars(15500, 15470, 6*time.Minute, plus5)
+	at.maybeRunSessionReadsAt(plus5)
+	time.Sleep(200 * time.Millisecond)
+	if client.calls() != 3 {
+		t.Fatalf("a failed launch must not relaunch 5 min later, got %d calls", client.calls())
+	}
+	if !strings.Contains(logBuf.String(), "🗓️ structure_flip read 2026-08-18 NY v1 — retry held: 5m since this row's last flip launch that wrote nothing < wake_min_interval_min (30m); refusals never start this clock.") {
+		t.Fatalf("expected the retry-held line; log:\n%s", logBuf.String())
+	}
+	// +31m from the launch: the hold has elapsed → relaunch.
+	plus31 := now.Add(31 * time.Minute)
+	flipRereadTestNow(t, plus31)
+	seedFlipBars(15500, 15470, 6*time.Minute, plus31)
+	at.maybeRunSessionReadsAt(plus31)
+	if !waitFor(t, 10*time.Second, func() bool { return client.calls() == 6 }) {
+		t.Fatalf("the retry must relaunch once the hold elapsed, got %d calls; log:\n%s", client.calls(), logBuf.String())
+	}
+	if v := sysCfgVal(t, st, flipRereadDoneKey(row)); v != "" && v != "0" {
+		t.Fatalf("once-key must still be clear, got %q", v)
+	}
+}

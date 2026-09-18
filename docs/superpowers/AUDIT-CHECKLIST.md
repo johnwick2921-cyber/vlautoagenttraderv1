@@ -5430,3 +5430,276 @@ contract lets two contracts fight for one slot and the loser is silently
 dropped. Adding `contract` to the key (or a partial unique index per
 contract) is a migration over the live `bars` table and every reader that
 assumes one row per open time — the owner's call, not a display wave's.
+
+## CLASS 146 — A REACTION READ THROTTLED LIKE A SPECULATIVE WAKE (born 2026-09-17 with CLASS 141's flip re-read, reported by the owner 2026-09-17 22:5x CT "why does the plan go dormant when the bias flips", fix/flip-reread-immediate, W-FLIP-REREAD-IMMEDIATE)
+
+**Shape.** The structure_flip read (CLASS 141) reused the level-wake gate
+verbatim: class-47 cooldown (30m since the last wake-authored version) and the
+shared `wake_min_interval_min` throttle on `at.lastPlannerWakeAt`. Both are LOAD
+rules born from a 7-day measurement of wake FLOODS — a wake CONDITION that is
+continuously true and needs pacing. A flip read is not that: it reacts to a
+machine-confirmed event (two 5m closes beyond the flip line with the ATR
+buffer) that fires once. Live shape: a level wake authors a version, the flip
+fires minutes later, and the bot sits dormant with no plan in the new direction
+for up to 30 minutes — the dormant line is loud and correct, and the skip line
+reads like an ordinary wake being paced.
+
+**How it hid.** "Same preflight and wake cadence as a level wake" was written
+as a feature (reuse the proven gate) and reviewed as one. Nothing asked which of
+the gate's rules are SAFETY (cutoff: a plan authored inside 25 min of the flat
+can never be entered) and which are THROTTLE (cooldown, min-interval), so the
+throttles rode along.
+
+**Probes.**
+- For every read trigger that reuses a wake gate, classify each rule in the
+  gate as SAFETY or LOAD, and ask whether the trigger is a SPECULATIVE wake (a
+  continuously-true condition that needs pacing) or a REACTION to a confirmed
+  event (fires once, must not wait behind an unrelated earlier wake).
+- A reaction read may set the shared wake clock (ordinary wakes back off from
+  it) but must never READ it; grep the trigger's gate for
+  `lastPlannerWakeAt` and `SkipForCooldown`.
+- Removing a throttle from a retrying path needs its own bound: the dormant
+  branch calls back every scan cycle, so a LAUNCH that wrote nothing (3 model
+  calls) would relaunch every cycle. Bound it on the read's OWN last launch,
+  per trader (a process-global map keyed by plan id let one trader's — and
+  one test's — failed launch hold another's retry), and never on a refusal.
+- A fixture for "the flip fires N minutes after a wake version" must respect
+  `describeActivePlanDeath`'s `sinceMs = row.CreatedAt`: the condition's bars
+  are windowed from the VERSION's birth (CLASS 139 anchors only the hold), so
+  two 5m closes must fit after it — N is at least ~10–15, not 3.
+
+**Fix pattern.** W-FLIP-REREAD-IMMEDIATE: `maybeRereadAfterFlip` keeps the
+once-key, in-flight guard, preflight, class-47 CUTOFF and the one-stream defer;
+drops SkipForCooldown (CooldownMin: 0) and the min-interval read; logs
+"🗓️ structure_flip read … — immediate (flip reads are exempt from
+cooldown/min-interval; cutoff + stream guard still apply): <which would have
+held>" only when a throttle would have applied; still sets
+`at.lastPlannerWakeAt` at launch; and holds a relaunch after a launch that
+wrote nothing for `wake_min_interval_min` from that launch
+(`at.flipRereadLaunchAt`). Tests at the production call site
+(`maybeRunSessionReadsAt`, real read path, AI client scripted) in
+`trader/flip_reread_cto_test.go`.
+## CLASS 145 — A HALT'S AGE READ AS CLOCK DRIFT WIDENED A NEWS BLACKOUT BY HALF AN HOUR (born 2026-08-30 with F6's uncapped widening, reported by the owner 2026-09-17 21:4x CT "BOJ 21:30 ±15m +39m (clock drift) 20:36–22:24", fix/drift-widen-cap, W-DRIFT-WIDEN-CAP)
+
+**Shape.** F6 measures "clock drift" as local clock minus the freshest 1m
+bar's close (`kernel/clock_drift.go FeedClockDriftMs`: `now − (OpenTime +
+60s)`). Under a live feed that is skew; under a HALTED feed it is the AGE of
+the last bar. Class 36 lets a scheduled read author inside the CME 16:00–17:00
+halt, and on 2026-09-17 the ASIA read did: measured 1,810,527 ms at 16:30:11
+CT (journal 44334, the plan-write path → "+31m (clock drift)" stored in the
+plan's no_trade lines) and 2,326,426 ms at 16:38:46 CT (journal 45208, the
+arm path `t1WindowsFor` → "+39m" rendered on the card). `ClockHoldDecision`'s
+own comment said POSITIVE drift "is also exactly what a CLOSED market's old
+bars look like", and then returned `widenMs = |drift|` for it anyway;
+`WidenCTWindows` widened by `ceil(|drift|/60s)` with no cap and labelled it
+"(clock drift)" for anything ≥ 60 s. A ±15 min band became 20:36–22:24 CT,
+1h48m of a session blocked by a clock that was never wrong.
+
+**Why it hid.** (1) The label told the reader the CLOCK was the cause, so the
+card was self-consistent and the halt never came up. (2) The measurement was
+honest — the bar WAS 38 minutes old — so no clock-health line disagreed;
+clock-health at the 17:00 roll read −51 s with the feed back. (3) No journal
+line ever said "clock-hold" with the word "stale"; the F6 warn line printed
+the raw milliseconds and a grep for a 39-minute clock skew finds nothing
+because none existed. (4) Every F6 pin injected 41 s / 61 s / 90 s; the only
+pin with a large positive value (600 s, "positive drift never defers")
+asserted the DEFER verdict and never looked at the windows.
+
+**The rule.** A clock can honestly demand `ceil(tolerance/60s)` = 1 minute of
+widening plus one boundary-rounding minute: `ClockWidenCapMinutes = 2`, applied
+INSIDE `kernel.WidenCTWindows` so every caller is capped. A measurement is
+CALLED clock drift only when `60 s ≤ |drift| ≤ 5 min`; beyond that the card
+says nothing about the clock and `kernel.ClockDriftStaleNote` gives the
+journal the real cause ("feed stale 38m — halt or gap, not clock skew; news
+windows NOT widened beyond the 2m cap"). Both call sites — `plannerT1Lines`
+(plan write) and `t1WindowsFor` (arm) — go through the one function; the arm
+path now passes the SIGNED measurement.
+
+**Probes.**
+- Any consumer of `FeedClockDriftMs` / `LastClockDrift` that scales a
+  behaviour by the magnitude: grep `WidenCTWindows|ClockHoldDecision|
+  LastClockDrift`; a positive value is feed age until a live bar proves
+  otherwise, so no magnitude-scaled action may be uncapped.
+- The plan's stored `no_trade` lines vs the arm gate's windows: the plan
+  freezes "+Nm (clock drift)" text at write time; the arm gate re-reads the
+  live calendar slice (`t1WindowsFor` → `Calendar().GetSlice`) and re-measures
+  drift per evaluation, so a card and a gate can disagree — the card is the
+  write-time claim, the gate is live. Pinned:
+  `trader/clock_widen_cap_test.go TestArmPathFollowsLiveCalendarCorrection`.
+- Journal grep for the class: `clock-hold: T1 .* widened by |drift| [0-9]{7,}ms`
+  (≥ 1,000 s) on any read whose timestamp is inside 16:00–17:00 CT or a
+  weekend. Post-fix the line reads `widened by Nm (|drift| Xms, cap 2m)` and
+  is followed by the stale note.
+- A pin that injects a large positive measurement MUST assert the WINDOWS and
+  the LABEL, not only the defer verdict. Pinned: `kernel/clock_widen_cap_test.go`
+  (2,326,426 ms → +2m, unlabelled, note names 38m), `trader/clock_widen_cap_test.go`
+  (arm path via `currentT1Windows`, plan-write step via `plannerT1Lines`; 42 s
+  → +1m unlabelled, 90 s → "+2m (clock drift)" unchanged).
+
+## CLASS 148 — A FLIP LINE AUTHORED ON THE WRONG SIDE OF PRICE CAN NEVER BE TOUCHED, SO IT NEVER FIRES (born 2026-08-27 with the P1c touch gate on the structured flip{} object, reported by the owner 2026-09-17 ~23:00 CT "at the flip point it re-reads and the bias is still the same", fix/flip-line-side-of-price, W-FLIP-LINE-SIDE-OF-PRICE)
+
+**Shape.** A structured line carries a price and a side, and the machine fires
+it only after price TOUCHES the line from the near side after the plan is born
+and then closes beyond it on the stated side (`PlanConditionFiredSince`, the
+P1c touch gate: `if !levelTouched(judge, c.Price, nowMs) { return false, "" }`).
+CLASS 140 taught the validator to judge the side against the BIAS; nothing
+judged it against PRICE. A short bias with flip{side above} is the right
+direction — but if the line already sits BELOW price when it is written, price
+is on the far side of it from birth: it can never be touched from the near
+side, so the flip can never fire and the plan cannot flip by construction. The
+plan re-reads at the "flip point", the model (correctly, on its own terms)
+keeps the bias, and the owner watches the same bias survive its own flip.
+
+**The live story (2026-09-17 ASIA v2, plans table read-only) [A].**
+Plan `2026-09-17:ASIA:8d5c8af5_…_deepseek_1781246265` v2, created 22:52:04 CT on
+the structure_mss wake: bias.direction="short", flip={29747.50, side "above",
+rule "5m_close", flip_to "long"}, death={29755.50, side "above", rule "2x5m"};
+the authoring price (facts.Price, the last closed 1m close
+`AssembleResearchLevels` handed the write site, levels_assemble.go:217) was
+29764. BOTH lines sat below price with side "above". The direction check
+passed (short → long on a close above IS the right side), the prose cross-check
+passed (29747.50 was in the prose), and the plan shipped un-flippable. v1
+(16:38, flip 29772.62) and v3 (23:18, flip 29769) had the line above price;
+only v2 was born impossible. The death line was also born crossed — a plan
+born dead — and the existing born-dead refusal (`validateAuthoredScenariosAt`)
+never saw it, because it evaluates ONLY the scenario `invalid` prose grammar
+on 1m closes and never reads the death object.
+
+**Why it hid.** (1) Two validators each answered a real question — side vs
+bias, number vs prose — and a reader assumes "the flip is validated". The
+third relation (side vs PRICE) was in nobody's list. (2) The touch gate is
+correct and necessary (wick-through immunity), and its precondition — the
+line starts on the far side — was an unstated assumption of the author, not a
+rule. (3) The failure is silent in the same way as CLASS 140: an impossible
+flip is indistinguishable in the journal from a flip whose level was never
+reached.
+
+**The fix shape.** ONE predicate, `kernel.lineBeyondPrice`, worn by two names:
+`FlipLineBeyondPrice(flip, price)` and `DeathLineBeyondPrice(death, price)`,
+siblings of `FlipDirectionContradiction`. Called from the write-site validator
+(`ValidatePlanDocWithFactsMachine`, AFTER its `facts.Price <= 0 → schema-only`
+skip, so an unknown authoring price NEVER rejects — the rule does not invent a
+price; the write site WARNs `flip/death line side-of-price UNJUDGED` instead)
+with the sentence `flip{above 29747.50 → long} is already below price 29764.00
+at authoring: a flip line must sit on the far side of price (it can never be
+touched from the near side)` (death: `… (the plan would be born dead)`; a line
+AT price reads "already at price"). Class-38 discipline: prompt-contract row
+(`MustAppear` guarded by `ValidatePromptContracts` for every
+`plannerOutputContract` variant), a rendered sentence, and a repair excerpt
+`RepairFlipSideOfPriceLaw` routed on the rejection's own words ("far side of
+price") and registered in `ValidatorHints`. The doc now carries
+`price_at_write` (the facts.Price the lines were judged against) so the read
+path can judge stored plans without inventing a price; a row without the stamp
+is judged from the tape's last close at or before its `created_at` (≤10 min),
+else left UNJUDGED and unmarked. Read path: `noteLinesBeyondPrice`, called first
+by BOTH stored-plan evaluators (`describeActivePlanDeath`,
+`describeDormantCleared`), once per plan version per line —
+`flip_line_beyond_price plan=… v… (site) …` / `death_line_beyond_price …` —
+the CLASS 140 once-per-version idiom; the evaluation itself is unchanged.
+Tests at the production call sites: the ASIA v2 shape rejected with the exact
+sentence and the v3 repair accepted; the below-side mirror; unknown price →
+WARN, no reject, no stamp (real attempt loop with a fake model); repair
+excerpt routed from both texts and NOT from the direction text; contract
+validated for 12 prompt variants; stored impossible lines named once across
+two evaluations at both evaluators; the unstamped-row tape fallback.
+
+**Probes.**
+- For every structured line with a side (`death{}`, `flip{}`, `confirm{}`,
+  arm legs), ask where PRICE was when it was authored and whether the
+  evaluator's precondition (touch from the near side, close beyond) is
+  satisfiable from that start. A rule that judges the side against another
+  FIELD (CLASS 140) has not judged it against the WORLD.
+- `sqlite3 -readonly data/data.db "select plan_id, version, json_extract(doc,'$.price_at_write'), json_extract(doc,'$.flip') from plans where json_extract(doc,'$.flip.side')='above' and json_extract(doc,'$.flip.price') < json_extract(doc,'$.price_at_write')"` (and the mirror) — a non-zero count on a shipped rule is the class in the store. Rows written before the stamp have no `price_at_write`; judge them from the tape at `created_at`, never from today's price.
+- A "never fired" flip in the journal must be distinguishable from a "could
+  never fire" one: `flip_line_beyond_price` is the probe. If the journal has no
+  such line for an old impossible plan whose tape is still in the ring, the
+  read path does not judge side-of-price.
+- A born-dead refusal that names only scenarios has not looked at the death
+  object. Grep the refusal's inputs, not its name.
+## CLASS 147 — A WAKE RE-READ DURING A FLIP BREACH RESTARTS THE FLIP WINDOW: THE FLIP NEVER FIRES (born 2026-08-25 with the W6 wakes, reported by the owner 2026-09-17 23:2x CT "why at the flip point it re-reads and the bias is still the same", fix/flip-owns-the-breach, W-FLIP-OWNS-THE-BREACH; number assigned at merge)
+
+**Shape.** CLASS 139 anchored the flip HOLD to the chain, and left the
+flip CONDITION WINDOW on the version's birth on purpose (a new line must be
+judged only on bars after it was written). But a wake re-read that keeps the
+bias AND the line is a new version too, so its window restarts and the
+confirm-close count returns to zero — and nothing stopped such a wake from
+authoring while the line was mid-breach, or on a tape the flip evaluator had
+just refused as stale. Two clocks were separated in CLASS 139; the third
+(the condition window) and the wake behaviour were not.
+
+**The live story (2026-09-17 ASIA, plan `2026-09-17:ASIA:…`, verified
+against the store's 1m/5m bars).** v1 16:38:46 `ASIA_scheduled_read`, bias
+short, flip `above 29772.62 → long` (5m_close), death `above 29797.88`. The
+line was NEVER breached before v2: the highest 5m close before 22:52 was
+29762.25 (22:45), the highest high 29764.5 (22:50). At 22:16:17 the 15m
+MSS-up (29737.00 @22:15) woke the planner; the machine rebooted 22:38:27 and
+the read was lost. At 22:42:33, on the post-boot cache, the journal reads
+
+	flip_eval_skipped plan=… v1 flip=stale_bars (age 453s)
+	🗓️ structure MSS on ASIA 2026-09-17 (MSS-up 29737.00 @22:15 CT …) — waking the planner
+
+in the SAME second: the flip evaluator refused the tape and the MSS wake
+authored on it (R3). v2 landed 22:52:04, bias short, flip MOVED to
+`above 29747.50` (Δ25.12 pt) — BELOW the price at authoring (22:50 close
+29764.0) — and no post-birth bar ever touched 29747.50 (22:55 low 29749.0,
+23:00 low 29754.75), so the P1c touch gate could never pass on v2's flip.
+At 23:10:46 v2 went `DORMANT — death-condition: 2x5m close above 29755.50`,
+never having flipped. So on 09-17 the hypothesis "price crossed the line,
+the wake restarted the count" is FALSE for v1; what the day shows is R3 (a
+wake authored on the stale tape) plus the moved-line case, and the owner's
+"re-read, bias same" is the same-bias v2. The count-restart (R2) is the
+09-16 shape (v10–v13 stepping the line DOWN 29500.25 → 29418.80 as the tape
+climbed) that CLASS 139 fixed only for the HOLD.
+
+**The rules (kernel/flip_breach.go, no knobs).**
+- R1 *the flip owns the breach*: while the ACTIVE plan's flip line is
+  breached — touched in-window and ≥1 rule-TF close beyond the buffered
+  line, the SAME measurement `PlanConditionFiredSince` fires on
+  (`conditionCloses`) — and has not fired, ordinary wakes (level_event,
+  structure_mss) are DEFERRED: `🗓️ wake deferred: flip line breached (<side>
+  <price>, closes N/2) — the flip evaluator owns this plan until it fires or
+  price closes back`, once per version; `🗓️ wakes resume …` once when price
+  closes back inside. Scheduled reads, death re-plans, owner reads: untouched.
+- R2 *a same-bias wake keeps the flip window*: `ResolveFlipConditionAnchor`
+  walks the chain back from the version while bias, flip side and a flip
+  price within `FlipLineClusterTolerance` (the level map's 12-tick / 3.00 pt
+  width) hold; the window opens at the EARLIEST run member's birth
+  (`🗓️ flip window: … keeps the chain's flip line … closes counted from vK's
+  birth`). A line moved further is a new line: window from the version's
+  birth, `🗓️ flip line MOVED on … Δ… > 3.00 pt tolerance`. A re-plan version
+  starts a run; a bias change or a version with no line breaks it. The hold
+  anchor (CLASS 139) is unchanged; death keeps the version window.
+- R3 *stale bars block wakes too*: when the flip evaluation is skipped (G7,
+  `flip=stale_bars`), ordinary wakes are deferred for the same reason
+  (`🗓️ wake deferred: flip evaluation skipped (stale_bars, age Ns) …`). This
+  closes the gap between the flip evaluator's 5m+90s staleness cap and the
+  planner preflight's `feedDownAfter()`, which is where the 22:42:33 wake got
+  through.
+- A breach the evaluator cannot fire on (a line born beyond price and never
+  touched — v2 above) is NOT a breach: deferring wakes on it would park the
+  plan forever behind a flip that cannot fire.
+
+**Probes.**
+- For every predicate windowed by a row's birth, ask what ELSE appends a row:
+  a wake re-read that changes no state restarts every window keyed on
+  `row.CreatedAt` (CLASS 139 asked this of the hold; ask it of the window).
+- A gate that refuses to JUDGE on a tape (G7 stale) must also refuse to
+  AUTHOR on it: grep the wake paths for a freshness check that is weaker
+  than the evaluator's (`FlipEvalMaxStaleMs` vs `feedDownAfter`).
+- Two measurements of one line (breach vs fire) must be ONE function; a
+  wake that measures the buffer or the touch gate differently from the
+  evaluator will defer on breaches that cannot fire, or author through ones
+  that can.
+- Journal counter-read: a `🗓️ level wake … waking the planner` or
+  `structure MSS … waking the planner` inside the minute of a
+  `flip_eval_skipped … stale_bars` line, or while `closes N/2` is climbing,
+  is this class.
+- Pinned at the production call sites: `trader/flip_breach_test.go` (1/2 →
+  deferred, 2/2 → dormant:flip + structure_flip read; closes back → resume;
+  same-bias wake within tolerance fires from the chain window while the
+  version window reproduces the miss; moved line → birth, logged; stale →
+  both wakes deferred; death-dormant and a no-row scheduled read untouched;
+  the ASIA 09-17 replay on the live tape `flip_breach_fixture_test.go`) and
+  `kernel/flip_breach_test.go` (resolver runs/breaks, breach-state parity
+  with the evaluator, two-window evaluator byte-identical when the windows
+  agree).
