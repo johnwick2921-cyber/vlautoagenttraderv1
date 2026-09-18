@@ -785,6 +785,8 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 		"The flip and death MUST be DIFFERENT events: never the same level AND same rule for both (a flip at the same tick death fires is void). A short-biased plan's flip sits BELOW its death line or uses a stricter rule, so the flip can actually fire. " +
 		// W-FLIP-DIRECTION (2026-09-17): the SIDE is judged now, not only the number.
 		"flip side must oppose the bias: short bias flips long on a close ABOVE; long bias flips short on a close BELOW (a short bias with flip.side below is REJECTED — it could never flip on a rally). " +
+		// W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17): the side is judged against PRICE too.
+		"a flip line must sit on the far side of price at authoring: side above → the line is ABOVE the current price, side below → BELOW it (a line already beyond price on its own side can never be touched from the near side, so it never fires — REJECTED at write); the death line obeys the same law (a death line already crossed is a plan born dead). " +
 		"Every scenario's confirm{} is MACHINE-EVALUATED the same way: rule + ref_price + side, and ref_price MUST equal a number written in that scenario's trigger/invalid prose. " +
 		// ENTRY-MECHANICS E1/E2 (2026-08-30) — the per-condition entry law.
 		// 15m confirms are DEAD (schema reject confirm_rule_15m_removed).

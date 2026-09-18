@@ -603,6 +603,12 @@ type PlanVersionFact struct {
 	Lifecycle     string    `gorm:"column:lifecycle"`
 	BiasDirection string    `gorm:"column:bias_direction"`
 	CreatedAt     time.Time `gorm:"column:created_at"`
+	// W-FLIP-OWNS-THE-BREACH (2026-09-17): the version's structured flip line
+	// (doc $.flip.price / $.flip.side; 0 / "" when the doc carries none), so
+	// the condition-window resolver can tell a same-line re-read from a
+	// moved line without loading every version's doc.
+	FlipPrice float64 `gorm:"column:flip_price"`
+	FlipSide  string  `gorm:"column:flip_side"`
 }
 
 // ListVersionFacts returns the chain's versions, ascending, as PlanVersionFact.
@@ -612,7 +618,7 @@ func (s *PlanStore) ListVersionFacts(planID string) ([]PlanVersionFact, error) {
 	}
 	var out []PlanVersionFact
 	err := s.db.Model(&PlanDB{}).
-		Select("version, trigger_reason, lifecycle, created_at, COALESCE(json_extract(doc, '$.bias.direction'), '') AS bias_direction").
+		Select("version, trigger_reason, lifecycle, created_at, COALESCE(json_extract(doc, '$.bias.direction'), '') AS bias_direction, COALESCE(json_extract(doc, '$.flip.price'), 0) AS flip_price, COALESCE(json_extract(doc, '$.flip.side'), '') AS flip_side").
 		Where("plan_id = ?", planID).
 		Order("version ASC").
 		Scan(&out).Error

@@ -67,6 +67,10 @@ type PlanVersionFact struct {
 	TriggerReason string
 	BiasDirection string // doc bias.direction; "" when the version carries no bias (fail-closed / no-trade rows)
 	CreatedAtMs   int64
+	// W-FLIP-OWNS-THE-BREACH (2026-09-17): the version's structured flip line
+	// (0 / "" when none) — read by ResolveFlipConditionAnchor, ignored here.
+	FlipPrice float64
+	FlipSide  string
 }
 
 // PlanTransitionFact is one plan_lifecycle_log row.

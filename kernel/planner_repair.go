@@ -89,6 +89,12 @@ func lawExcerptsFor(errors string) string {
 	if strings.Contains(errors, "contradicts bias") {
 		add(RepairFlipDirectionLaw)
 	}
+	// W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17): a flip or death line already
+	// beyond price on its own side (plan_doc.go FlipLineBeyondPrice /
+	// DeathLineBeyondPrice — both rejections end in "far side of price").
+	if strings.Contains(errors, "far side of price") {
+		add(RepairFlipSideOfPriceLaw)
+	}
 	if len(out) == 0 {
 		add("Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.")
 	}

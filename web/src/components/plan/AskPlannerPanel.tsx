@@ -31,6 +31,11 @@ interface Props {
   contextLabel?: string
 }
 
+/** "At the bottom" tolerance — a sub-line drift must not un-stick the thread. */
+const STICK_SLOP_PX = 40
+/** One ArrowUp/ArrowDown press outside the list moves the thread this much. */
+const ARROW_STEP_PX = 40
+
 function useIsWide(threshold = 1200) {
   const [wide, setWide] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= threshold : false
@@ -318,20 +323,91 @@ export function AskPlannerPanel({
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
+  const shellRef = useRef<HTMLDivElement>(null)
+  // W-ASKPLANNER-SCROLL (2026-09-17) — "stick to the newest message" is a READ
+  // state, not a rule: true while the owner is at (or within STICK_SLOP_PX of)
+  // the bottom, false once they scroll up to read. A reply that lands while
+  // they are reading must not yank them back down; sending a question re-arms
+  // it (you asked, you want to see the answer).
+  const stickToBottom = useRef(true)
+
+  const scrollToBottom = () => {
+    const el = bodyRef.current
+    if (!el) return
+    if (typeof el.scrollTo === 'function') el.scrollTo(0, el.scrollHeight)
+    else el.scrollTop = el.scrollHeight
+  }
+  const onThreadScroll = () => {
+    const el = bodyRef.current
+    if (!el) return
+    stickToBottom.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight <= STICK_SLOP_PX
+  }
+  // Scroll the thread by a wheel / keyboard delta that landed OUTSIDE the list
+  // (header, quick chips, input row). Before this wave a wheel over the input
+  // row, or PageDown/ArrowDown with the input focused, scrolled the DASHBOARD
+  // behind the sheet while the chat stayed put — the "can't scroll" the owner
+  // hit [A, measured in Chromium: pageY 300 / 787, list scrollTop 0].
+  const nudgeThread = (dy: number) => {
+    const el = bodyRef.current
+    if (!el) return
+    const max = Math.max(0, el.scrollHeight - el.clientHeight)
+    el.scrollTop = Math.max(0, Math.min(el.scrollTop + dy, max))
+    onThreadScroll()
+  }
+  const onShellKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const list = bodyRef.current
+    if (!list || list.contains(e.target as Node)) return // focused list scrolls itself
+    const page = list.clientHeight * 0.9
+    const dy =
+      e.key === 'ArrowDown'
+        ? ARROW_STEP_PX
+        : e.key === 'ArrowUp'
+          ? -ARROW_STEP_PX
+          : e.key === 'PageDown'
+            ? page
+            : e.key === 'PageUp'
+              ? -page
+              : 0
+    if (!dy) return
+    e.preventDefault()
+    nudgeThread(dy)
+  }
 
   const refresh = async () => {
     const res = await api.getPlanThread(traderId, planId)
     setThread(res.thread)
-    setTimeout(() => {
-      const el = bodyRef.current
-      if (el && typeof el.scrollTo === 'function')
-        el.scrollTo(0, el.scrollHeight)
-    }, 30)
   }
 
   useEffect(() => {
-    if (open) void refresh()
+    if (!open) return
+    stickToBottom.current = true // a fresh open always lands on the newest
+    void refresh()
   }, [open, planId])
+
+  // Auto-scroll when a message / reply / the thinking row is appended — but
+  // ONLY while stuck to the bottom. Reading position is kept otherwise.
+  useEffect(() => {
+    if (!open) return
+    if (stickToBottom.current) scrollToBottom()
+  }, [open, thread.length, busy])
+
+  // Wheel outside the list must drive the list, not the page beneath. React's
+  // onWheel is passive (cannot preventDefault), hence a native listener.
+  useEffect(() => {
+    if (!open) return
+    const shell = shellRef.current
+    if (!shell) return
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) return // pinch-zoom / ctrl+wheel stays with the browser
+      const list = bodyRef.current
+      if (!list || list.contains(e.target as Node)) return // native + overscroll-contain
+      e.preventDefault()
+      nudgeThread(e.deltaY)
+    }
+    shell.addEventListener('wheel', onWheel, { passive: false })
+    return () => shell.removeEventListener('wheel', onWheel)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -353,6 +429,7 @@ export function AskPlannerPanel({
   const send = async (q: string) => {
     const question = q.trim()
     if (!question || busy) return
+    stickToBottom.current = true // you asked — follow the answer down
     setBusy(true)
     setInput('')
     try {
@@ -373,15 +450,27 @@ export function AskPlannerPanel({
     }
   }
 
+  // Height is bounded by the viewport in BOTH modes (wide: top+bottom pinned;
+  // narrow: .vl-ask-sheet-narrow caps at 85vh with a dvh override + safe-area
+  // padding) and the shell clips, so the thread below is the ONE scroller and
+  // the input row can never fall off-screen.
   const shellStyle: React.CSSProperties = wide
-    ? { position: 'fixed', top: 0, right: 0, bottom: 0, width: 400, zIndex: 60 }
+    ? {
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: 400,
+        zIndex: 60,
+        overflow: 'hidden',
+      }
     : {
         position: 'fixed',
         left: 0,
         right: 0,
         bottom: 0,
         zIndex: 60,
-        maxHeight: '85vh',
+        overflow: 'hidden',
       }
 
   const panel = (
@@ -391,10 +480,12 @@ export function AskPlannerPanel({
       onClick={onClose}
     >
       <div
+        ref={shellRef}
         role="dialog"
         aria-modal="true"
         aria-label={tp('askPlannerTitle', language)}
-        className="vl-sheet-in flex flex-col"
+        className={`vl-sheet-in flex flex-col${wide ? '' : ' vl-ask-sheet-narrow'}`}
+        onKeyDown={onShellKeyDown}
         style={{
           ...shellStyle,
           background: 'linear-gradient(180deg,var(--vl-card-2),var(--vl-card))',
@@ -458,8 +549,19 @@ export function AskPlannerPanel({
 
         <div
           ref={bodyRef}
-          className="flex-1 flex flex-col gap-2.5 px-3 py-3"
-          style={{ overflowY: 'auto', minHeight: 200 }}
+          data-testid="ask-thread"
+          role="log"
+          aria-label={`${tp('askPlannerTitle', language)} — thread`}
+          tabIndex={0}
+          onScroll={onThreadScroll}
+          className="flex flex-col gap-2.5 px-3 py-3"
+          style={{
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            outline: 'none',
+          }}
         >
           <PlanErrorBoundary>
             {thread.length === 0 && (

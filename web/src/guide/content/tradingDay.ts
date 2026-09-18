@@ -93,6 +93,11 @@ export const tradingDay: GuideSection = {
           body: 'A bias-timeframe MSS (market-structure shift) event.',
           cite: 'trader/auto_trader_transition.go:194 (trigger_reason="structure_mss")',
         },
+        {
+          title: 'Deferred while a flip line is breached',
+          body: "Level-event and MSS wakes are deferred while the active plan's flip line is breached (or the flip evaluation is skipped for stale bars) — the flip evaluator owns the plan until it fires or price closes back; scheduled reads and death re-plans are unaffected.",
+          cite: 'trader/auto_trader_flip_breach.go wakeDeferredByFlip · kernel/flip_breach.go (W-FLIP-OWNS-THE-BREACH)',
+        },
       ],
     },
     { kind: 'h', text: 'Your current sessions' },
