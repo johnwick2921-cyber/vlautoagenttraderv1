@@ -214,5 +214,10 @@ export const planCard: GuideSection = {
         },
       ],
     },
+    { kind: 'h', text: 'The roll-day chart' },
+    {
+      kind: 'p',
+      text: "The chart across a roll derives the prior contract's segment from ITS stored 1m rows (the planner's own bucket helper) and shifts the whole prior segment by the basis measured at THAT timeframe's own seam, so the roll day shows neither a seam hole nor the ~290-point basis cliff. Where the prior contract's 1m rows have interior gaps the current contract's 1m rows cover, the gaps are filled with the current rows converted into the prior contract's price space; gaps neither contract has stay gaps (never fabricated). Derived prior bars draw muted with a one-line legend read from the response envelope — 'pre-roll (Sep) · basis-adjusted +290.00', or unadjusted with the reason when the basis pair cannot be measured; hovering a derived bar shows its raw and adjusted close. The current contract is never touched and volume is never shifted. CHART_ROLL_STITCH=legacy serves the pre-wave stored-aggregate stitch byte-identically.",
+    },
   ],
 }

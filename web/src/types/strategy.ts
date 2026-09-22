@@ -103,6 +103,12 @@ export interface DayPlanConfig {
   /** W-FLIP-REREAD (2026-09-17) — a fired flip goes dormant AND requests one
    *  free re-read in the flipped direction. Default false (legacy dormant). */
   flip_reread?: boolean
+  /** W-DEATH-REREAD (2026-09-18, owner ruling 12:3x CT "fix all") — a fired
+   *  death-condition kill goes dormant AND requests ONE BUDGETED re-read
+   *  (spends one class-35 replan unit) that authors a fresh bias-free plan.
+   *  Absent/true = ON (the owner's default); explicit false = today's
+   *  behaviour byte-identical (dormant only). */
+  death_reread?: boolean
   /** W-T1-CURRENCIES (2026-09-18) — currencies whose T1 (red) events HARD-block
    *  entries. Absent/empty = ["USD"] (shipped default); ["ALL"] = every
    *  currency (pre-wave behaviour). Other T1 events render as advisory only. */
@@ -138,7 +144,26 @@ export interface DayPlanConfig {
   /** Lowest merged-candidate grade the best level may carry: A | B | C.
    *  Absent = B (mirrors Go). */
   one_setup_min_grade?: string
+  /** W-PICTURE-HTF (2026-09-20) — the owner's two-picture method: a
+   *  deterministic 4H-pivot → H1-close-break → 5m-swing setup evaluated from
+   *  NATIVE bar events (the AI is commentary only). Absent/disabled = off.
+   *  Zero/blank knobs inherit the Go resolved defaults (tick 0.25, pivot
+   *  window 120, swing lookback 24, entry window 10s, freshness 2s); min_rr
+   *  blank inherits the strategy's risk-control minimum. */
+  picture_htf?: PictureHtfConfig
   sessions?: DayPlanSessionOverride[]
+}
+
+/** W-PICTURE-HTF (2026-09-20) — deterministic two-picture knobs. */
+export interface PictureHtfConfig {
+  enabled?: boolean
+  tick_size?: number
+  pivot_window?: number
+  swing_lookback?: number
+  entry_window_sec?: number
+  freshness_sec?: number
+  /** blank = inherit the risk-control minimum R:R */
+  min_rr?: number
 }
 
 export interface AIStrategyConfig {

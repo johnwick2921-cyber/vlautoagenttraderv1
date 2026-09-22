@@ -101,6 +101,16 @@ type TCPServer struct {
 	rejectCh   chan PositionCloseRejectedPayload
 	instrCh    chan InstrumentInfoPayload
 
+	// Coordinated order_update fan-out (picture-htf round, 2026-09-20):
+	// subscribeFor REPLACES the (symbol, account) channel, so two in-process
+	// consumers (armed executor + picture broker consumer) subscribing directly
+	// would close each other's channel and one would silently stop receiving.
+	// ListenOrderUpdates owns THE one direct subscription per key and copies
+	// every received frame to each listener.
+	ouFanMu   sync.Mutex
+	ouFanNext int
+	ouFanouts map[string]*orderUpdateFanout
+
 	// Latest NT8 price-feed status (from the feed_status frame). Empty until the
 	// first frame; consumers DEFAULT-ALLOW on empty (never false-halt at startup).
 	feedMu     sync.RWMutex
@@ -394,6 +404,107 @@ func (s *TCPServer) SubscribeFillsFor(symbol, account string) <-chan FillPayload
 // — PHASE 2 armed orders.
 func (s *TCPServer) SubscribeOrderUpdatesFor(symbol, account string) <-chan OrderUpdatePayload {
 	return subscribeFor(s, &s.orderUpdSubs, symbol, account)
+}
+
+// ── Coordinated order_update fan-out ─────────────────────────────────────────
+//
+// subscribeFor installs-or-REPLACES the one channel per (symbol, account).
+// The armed executor and the picture broker consumer both want order_update
+// frames for the SAME trader; each subscribing directly means the second
+// subscribe closes the first consumer's channel and it silently stops
+// receiving (the 2026-08-27 class, now reproducible between two consumers).
+//
+// The fan-out owns THE single direct subscription per key and copies every
+// received frame to each registered listener. A listener's channel closes
+// only when the underlying subscription dies (server teardown, or a direct
+// SubscribeOrderUpdatesFor from code that has not migrated); consumers keep
+// their existing self-heal contract and simply re-listen.
+
+// orderUpdateFanout is one key's shared subscription + its listeners.
+type orderUpdateFanout struct {
+	src       <-chan OrderUpdatePayload
+	listeners map[int]chan OrderUpdatePayload
+}
+
+// ListenOrderUpdates registers a fan-out listener for (symbol, account) and
+// returns its channel plus an unregister func. The FIRST listener creates the
+// single direct subscription; later listeners share it — no listener ever
+// evicts another. remove() unregisters and closes THIS listener only.
+func (s *TCPServer) ListenOrderUpdates(symbol, account string) (<-chan OrderUpdatePayload, func()) {
+	key := subKey(symbol, account)
+	s.ouFanMu.Lock()
+	defer s.ouFanMu.Unlock()
+	if s.ouFanouts == nil {
+		s.ouFanouts = map[string]*orderUpdateFanout{}
+	}
+	f := s.ouFanouts[key]
+	if f == nil {
+		f = &orderUpdateFanout{
+			src:       s.SubscribeOrderUpdatesFor(symbol, account),
+			listeners: map[int]chan OrderUpdatePayload{},
+		}
+		s.ouFanouts[key] = f
+		go s.runOrderUpdateFanout(key, f)
+	}
+	id := s.ouFanNext
+	s.ouFanNext++
+	ch := make(chan OrderUpdatePayload, fillChannelBuffer)
+	f.listeners[id] = ch
+	return ch, func() {
+		s.ouFanMu.Lock()
+		defer s.ouFanMu.Unlock()
+		if cur, ok := s.ouFanouts[key]; ok && cur == f {
+			if lch, exists := cur.listeners[id]; exists {
+				delete(cur.listeners, id)
+				close(lch)
+			}
+		}
+	}
+}
+
+// runOrderUpdateFanout copies every frame the direct subscription receives to
+// every current listener. When the direct subscription dies, every listener's
+// channel is closed (the consumers' self-heal signal) and the key is forgotten
+// so the next listener re-establishes the subscription.
+func (s *TCPServer) runOrderUpdateFanout(key string, f *orderUpdateFanout) {
+	for {
+		u, open := <-f.src
+		if !open {
+			break
+		}
+		s.ouFanMu.Lock()
+		for id, lch := range f.listeners {
+			select {
+			case lch <- u:
+			default:
+				s.logger.Warn("tcp_server: order_update listener full — dropped", "listener", id, "signal", u.SignalID)
+			}
+		}
+		s.ouFanMu.Unlock()
+	}
+	s.ouFanMu.Lock()
+	if s.ouFanouts[key] == f {
+		delete(s.ouFanouts, key)
+	}
+	for id, lch := range f.listeners {
+		delete(f.listeners, id)
+		close(lch)
+	}
+	s.ouFanMu.Unlock()
+}
+
+// FeedOrderUpdateForTest routes one order_update payload into the router (the
+// same channel the wire reader feeds in production) so cross-package tests
+// can drive the REAL subscription → router → fan-out → consumer path.
+func (s *TCPServer) FeedOrderUpdateForTest(p OrderUpdatePayload) {
+	s.orderUpdCh <- p
+}
+
+// FeedFillForTest routes one fill payload into the fill router — the same
+// channel the wire reader feeds — so cross-package tests can exercise the
+// real fill subscription and the trader's received-fill retention.
+func (s *TCPServer) FeedFillForTest(p FillPayload) {
+	s.fillCh <- p
 }
 
 // SubscribeClosesFor returns the position_close stream for (symbol, account).
@@ -1602,6 +1713,9 @@ func (s *TCPServer) drainBarIngest(ctx context.Context) {
 				s.barCache.SeedHistorical(msg.symbol, msg.timeframe, msg.bars)
 			} else {
 				s.barCache.Upsert(msg.symbol, msg.timeframe, msg.bars)
+				// LIVE-only fan-out to deterministic evaluators (two-picture
+				// mode). Historical replays must NOT mint opportunities.
+				fanOutLiveBars(msg.symbol, msg.timeframe, msg.bars)
 			}
 			// Bar persistence (2026-08-26) — fan-out AFTER the cache write, in
 			// its own goroutine: a slow/failing DB must never stall the drain

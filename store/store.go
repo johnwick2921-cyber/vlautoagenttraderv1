@@ -225,6 +225,9 @@ func (s *Store) initTables() error {
 	if err := s.ArmedOrders().Migrate(); err != nil {
 		return fmt.Errorf("failed to initialize armed_orders table: %w", err)
 	}
+	if err := s.MigratePictureHtf(); err != nil {
+		return fmt.Errorf("failed to initialize picture_htf_opportunities table: %w", err)
+	}
 	if err := s.AbConfirm().Migrate(); err != nil {
 		return fmt.Errorf("failed to initialize ab_confirm_log table: %w", err)
 	}

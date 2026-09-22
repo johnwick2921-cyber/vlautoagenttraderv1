@@ -97,7 +97,16 @@ func (s *Server) handleKlines(c *gin.Context) {
 		// decisions. No CoinAnk, no second source. Returns empty (HTTP 200, [])
 		// when the provider is unbound or the cache is cold (e.g. NT8 closed)
 		// instead of falling through to crypto.
-		klines = s.getKlinesFromNinjaTrader(symbol, interval, limit)
+		// W-ROLL-DAY-CHART: when a prior-contract segment was stitched, the
+		// response is an envelope {klines, roll} so the chart can render the
+		// derived + basis-adjusted segment and its legend; otherwise the bare
+		// array (byte-identical to the pre-wave wire).
+		var roll *rollStitchInfo
+		klines, roll = s.getKlinesFromNinjaTrader(symbol, interval, limit)
+		if roll != nil {
+			c.JSON(http.StatusOK, gin.H{"klines": klines, "roll": roll})
+			return
+		}
 	default:
 		// Crypto exchanges via CoinAnk
 		symbol = market.Normalize(symbol)
@@ -366,15 +375,15 @@ func (s *Server) getKlinesFromHyperliquid(symbol, interval string, limit int) ([
 // or falling back to crypto. The BarCache is only auto-subscribed for the
 // timeframes in provider/ninjatrader defaultAutoBarsTimeframes (5m/15m/1h), so
 // other intervals legitimately return empty until a strategy subscribes them.
-func (s *Server) getKlinesFromNinjaTrader(symbol, interval string, limit int) []market.Kline {
+func (s *Server) getKlinesFromNinjaTrader(symbol, interval string, limit int) ([]market.Kline, *rollStitchInfo) {
 	if !market.IsCMEFuturesSymbol(symbol) {
 		logger.Warnf("⚠️ klines: non-futures symbol %q requested on ninjatrader exchange", symbol)
-		return []market.Kline{}
+		return []market.Kline{}, nil
 	}
 	provider := market.FuturesBarsProvider
 	if provider == nil {
 		logger.Warnf("⚠️ klines: FuturesBarsProvider unbound (no NT8 trader loaded); returning empty for %s", symbol)
-		return []market.Kline{}
+		return []market.Kline{}, nil
 	}
 	klines := provider(symbol, interval, limit)
 	if klines == nil {
@@ -404,7 +413,15 @@ func (s *Server) getKlinesFromNinjaTrader(symbol, interval string, limit int) []
 	// (research law). DISPLAY ONLY — the kernel/levels/arm readers are
 	// contract-scoped and untouched (E4).
 	if chartAcrossRoll && s.store != nil && current != "" && len(klines) < limit {
-		klines = klinesAcrossRoll(klines, s.store.BarHistory(), current, symbol, interval, limit)
+		if chartRollStitchDerive {
+			var roll *rollStitchInfo
+			klines, roll = klinesAcrossRollDerived(klines, s.store.BarHistory(), current, symbol, interval, limit)
+			if roll != nil {
+				return klines, roll
+			}
+		} else {
+			klines = klinesAcrossRoll(klines, s.store.BarHistory(), current, symbol, interval, limit)
+		}
 	}
 	// F1.1 (2026-09-14) — COARSE-TF AGGREGATION. On a young contract NT8's
 	// replay is deep on 1m/5m/15m/1h but nearly empty on 2h/4h/1d (measured
@@ -418,7 +435,7 @@ func (s *Server) getKlinesFromNinjaTrader(symbol, interval string, limit int) []
 	if len(klines) < limit {
 		klines = klinesWithAggregatedDepth(klines, provider, symbol, interval, limit, time.Now())
 	}
-	return klines
+	return klines, nil
 }
 
 // klinesFinerRungFetch is how many bars the finer aggregation rung may fetch

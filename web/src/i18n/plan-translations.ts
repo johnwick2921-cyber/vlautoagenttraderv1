@@ -447,12 +447,55 @@ export const planStrings = {
     zh: '翻转重读 — 触发翻转条件时计划仍转入休眠，然后一次免费重读按翻转方向重新制定',
     id: 'Flip re-read — saat kondisi flip terpicu, plan tetap dormant, lalu SATU re-read gratis menyusun arah yang baru',
   },
+  deathReread: {
+    en: 'Death re-read — when the death condition fires, the plan still goes dormant, then ONE budgeted re-read authors a fresh bias-free plan (spends one re-plan unit; default ON)',
+    zh: '死亡重读 — 触发死亡条件时计划仍转入休眠，然后一次计费重读重新制定无偏计划（消耗一次重计划额度；默认开启）',
+    id: 'Death re-read — saat kondisi death terpicu, plan tetap dormant, lalu SATU re-read ber-anggaran menyusun rencana baru (default ON)',
+  },
   t1Currencies: {
     en: 'Red-news hard-block currencies — comma-separated (default USD: only USD red events block; others show as advisory; ALL = every currency)',
     zh: '红色新闻硬封锁货币 — 逗号分隔（默认 USD：仅美元红色事件封锁；其他仅提示；ALL = 全部货币）',
     id: 'Mata uang blokir keras berita merah — pisahkan koma (default USD: hanya event merah USD memblokir; lainnya hanya penasihat; ALL = semua)',
   },
   noTradeAdvisory: { en: 'Advisory', zh: '提示', id: 'Penasihat' },
+
+  // ── Two-picture mode (W-PICTURE-HTF, 2026-09-20) ──
+  pictureHtf: {
+    en: 'Picture HTF (two-picture, SIM) — deterministic: 4H body pivot → H1 close break → 5m swing + opposing zone. AI is commentary only.',
+    zh: '双图模式 (SIM) — 确定性：4H 实体枢轴 → H1 收盘突破 → 5m 摆动 + 对向区域。AI 仅作点评。',
+    id: 'Picture HTF (SIM) — deterministik: pivot body 4H → tembus close H1 → swing 5m + zona lawan. AI hanya komentar.',
+  },
+  pictureTickSize: { en: 'Tick size', zh: '最小变动', id: 'Ukuran tick' },
+  picturePivotWindow: {
+    en: 'Pivot window (bars)',
+    zh: '枢轴窗口（根）',
+    id: 'Jendela pivot (bar)',
+  },
+  pictureSwingLookback: {
+    en: 'Swing lookback (5m bars)',
+    zh: '摆动回看（5m 根）',
+    id: 'Lookback swing (bar 5m)',
+  },
+  pictureEntryWindowSec: {
+    en: 'Entry window (s)',
+    zh: '入场窗口（秒）',
+    id: 'Jendela masuk (detik)',
+  },
+  pictureFreshnessSec: {
+    en: 'Freshness limit (s)',
+    zh: '数据新鲜上限（秒）',
+    id: 'Batas kesegaran (detik)',
+  },
+  pictureMinRR: {
+    en: 'Minimum R:R (blank = inherit risk control)',
+    zh: '最低盈亏比（留空继承风控）',
+    id: 'R:R minimum (kosong = warisi kontrol risiko)',
+  },
+  pictureOpportunities: {
+    en: 'Picture HTF opportunities',
+    zh: '双图机会记录',
+    id: 'Peluang Picture HTF',
+  },
   maxReplans: {
     en: 'Max re-plans',
     zh: '最大重规划数',

@@ -396,6 +396,7 @@ namespace NinjaTrader.NinjaScript.AddOns
                     Contract  = VLInstrumentLookup.ContractName(instrument),
                     Request   = request,
                     LastEmittedTimeUtcMs = 0,
+                    LastFinalizedTimeUtcMs = 0,
                     HistoricalSent = false,
                     SubscribedAtUtcMs = NowUtcMs(), // fast-guard: start the no-live-.Update clock now
                     LiveUpdateSeen = false
@@ -470,13 +471,15 @@ namespace NinjaTrader.NinjaScript.AddOns
                 barsList.Add(BuildBarObject(t,
                     bars.GetOpen(i), bars.GetHigh(i),
                     bars.GetLow(i),  bars.GetClose(i),
-                    bars.GetVolume(i)));
+                    bars.GetVolume(i), true, NowUtcMs())); // historical bars are closed by definition
             }
 
             entry.HistoricalSent = true;
             entry.LastUpdateUtcMs = NowUtcMs(); // watchdog: reset stall clock
             if (lastT > entry.LastEmittedTimeUtcMs)
                 entry.LastEmittedTimeUtcMs = lastT;
+            if (lastT > entry.LastFinalizedTimeUtcMs)
+                entry.LastFinalizedTimeUtcMs = lastT;
 
             var payload = new Dictionary<string, object>
             {
@@ -519,12 +522,32 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // that's the "this bar is still forming" case. Only dedup
                 // against bars STRICTLY OLDER than the latest historical t,
                 // which means we never roll back into the historical batch.
-                if (t < entry.LastEmittedTimeUtcMs) continue;
+                // A bar already finalized must never re-emit as forming (the
+                // Go cache would overwrite final=true back to false).
+                if (t < entry.LastEmittedTimeUtcMs || t <= entry.LastFinalizedTimeUtcMs) continue;
                 emitted.Add(BuildBarObject(t,
                     bars.GetOpen(i), bars.GetHigh(i),
                     bars.GetLow(i),  bars.GetClose(i),
-                    bars.GetVolume(i)));
+                    bars.GetVolume(i), false, NowUtcMs())); // forming
                 if (t > maxEmittedT) maxEmittedT = t;
+            }
+            // PICTURE-HTF evidence: when a NEW bar started forming, the bar
+            // just before it CLOSED. NT8 never re-emits the just-closed bar
+            // on its own, so the boundary finalization is ours: re-emit the
+            // previous bar once with final=true. The Go side consumes only
+            // final-marked bars for the two-picture mode.
+            if (bars.Count >= 2)
+            {
+                int prevIdx = bars.Count - 2;
+                long tPrev = ToUtcEpochMs(bars.GetTime(prevIdx), bars.TradingHours);
+                if (tPrev >= entry.LastEmittedTimeUtcMs && tPrev > entry.LastFinalizedTimeUtcMs)
+                {
+                    emitted.Add(BuildBarObject(tPrev,
+                        bars.GetOpen(prevIdx), bars.GetHigh(prevIdx),
+                        bars.GetLow(prevIdx),  bars.GetClose(prevIdx),
+                        bars.GetVolume(prevIdx), true, NowUtcMs())); // closed
+                    entry.LastFinalizedTimeUtcMs = tPrev;
+                }
             }
             if (emitted.Count == 0) return;
 
@@ -840,7 +863,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         }
 
         private static Dictionary<string, object> BuildBarObject(
-            long tUtcMs, double o, double h, double l, double c, double v)
+            long tUtcMs, double o, double h, double l, double c, double v,
+            bool final, long emittedAtUtcMs)
         {
             return new Dictionary<string, object>
             {
@@ -849,7 +873,9 @@ namespace NinjaTrader.NinjaScript.AddOns
                 ["h"] = h,
                 ["l"] = l,
                 ["c"] = c,
-                ["v"] = v
+                ["v"] = v,
+                ["final"]      = final,
+                ["emitted_at"] = emittedAtUtcMs
             };
         }
 
@@ -905,6 +931,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             public string       Contract;  // the contract NT8 resolved for this request ("MNQ 09-26")
             public BarsRequest  Request;
             public long         LastEmittedTimeUtcMs;
+            public long         LastFinalizedTimeUtcMs; // the newest bar emitted with final=true
             public bool         HistoricalSent;
             public long         LastUpdateUtcMs;   // wall-clock UTC ms of last emit (stall watchdog)
             public long         SubscribedAtUtcMs; // wall-clock UTC ms when this request was (re)subscribed — fast-guard baseline

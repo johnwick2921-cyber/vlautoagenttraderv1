@@ -52,7 +52,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         // E7 capability handshake (2026-08-30): reported on every heartbeat so
         // the Go side refuses frame types this build hasn't proven. Bump on any
         // additive wire change; Go gates on FarSideBuildE7 in tcp_framing.go.
-        private const string  VL_BUILD_ID             = "2026-09-07-h1";
+        private const string  VL_BUILD_ID             = "2026-09-20-p1";
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -1708,6 +1708,16 @@ namespace NinjaTrader.NinjaScript.AddOns
                     ["account"]    = e.Order.Account != null ? e.Order.Account.Name
                                          : (account != null ? account.Name : "")
                 };
+                // PICTURE-HTF evidence: a rejected order names WHY on the wire
+                // (the Go side already receives an additive reason field).
+                if (e.OrderState == OrderState.Rejected)
+                {
+                    string reason = "";
+                    try { reason = e.Comment ?? ""; } catch { }
+                    if (string.IsNullOrEmpty(reason)) { try { reason = e.Error.ToString(); } catch { } }
+                    if (string.IsNullOrEmpty(reason)) reason = "rejected";
+                    payload["reason"] = reason;
+                }
                 StampIdentity(payload, signalId);
                 WriteEnvelope("order_update", payload);
                 // F12 — a state change makes the book stale the instant it

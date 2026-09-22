@@ -224,8 +224,14 @@ export function AdvancedChart({
         throw new Error('Failed to fetch kline data')
       }
 
+      // W-ROLL-DAY-CHART — the ninjatrader response may be the {klines, roll}
+      // envelope; unwrap it (crypto stays a bare array).
+      const rows: any[] = Array.isArray(result.data)
+        ? result.data
+        : ((result.data as any)?.klines ?? [])
+
       // Convert data format
-      const rawData = result.data.map((candle: any) => ({
+      const rawData = rows.map((candle: any) => ({
         time: Math.floor(candle.openTime / 1000) as UTCTimestamp,
         open: candle.open,
         high: candle.high,
@@ -818,7 +824,7 @@ export function AdvancedChart({
                   ? 'rgba(14, 203, 129, 0.5)'
                   : 'rgba(246, 70, 93, 0.5)',
             }))
-            volumeSeriesRef.current.setData(volumeData)
+            volumeSeriesRef.current.setData(volumeData as any)
           } else {
             // Clear data when volume is disabled
             volumeSeriesRef.current.setData([])

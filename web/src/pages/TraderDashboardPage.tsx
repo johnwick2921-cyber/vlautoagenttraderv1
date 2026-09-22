@@ -25,6 +25,7 @@ import { DeepVoidBackground } from '../components/common/DeepVoidBackground'
 import { NofxSelect } from '../components/ui/select'
 import { GridRiskPanel } from '../components/strategy/GridRiskPanel'
 import { PlanCard } from '../components/plan/PlanCard'
+import { PictureHtfPanel } from '../components/trader/PictureHtfPanel'
 import type {
   SystemStatus,
   AccountInfo,
@@ -860,6 +861,13 @@ export function TraderDashboardPage({
                 )}
               />
             </section>
+          )}
+
+          {/* Two-picture opportunity ledger — futures only, read-only. */}
+          {isFutures && selectedTrader.trader_id && (
+            <div className="min-w-0 lg:col-span-2">
+              <PictureHtfPanel traderId={selectedTrader.trader_id} />
+            </div>
           )}
 
           {/* Current Positions */}

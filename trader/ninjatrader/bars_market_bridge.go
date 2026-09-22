@@ -81,6 +81,8 @@ func barsToKlines(bars []ntwire.Bar, timeframe string) []market.Kline {
 			Close:     b.C,
 			Volume:    b.V,
 			CloseTime: b.T + durMs - 1,
+			Final:     b.Final,
+			EmittedAt: b.EmittedAt,
 		}
 	}
 	return out

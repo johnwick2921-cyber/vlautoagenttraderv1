@@ -47,6 +47,9 @@ const DEFAULT_DAY_PLAN: DayPlanConfig = {
   // setup. Pointer-bool mirrors Go: absent = ON; grade floor B.
   one_setup_enabled: true,
   one_setup_min_grade: 'B',
+  // W-PICTURE-HTF (2026-09-20) — the deterministic two-picture mode.
+  // Disabled by default; knobs inherit the Go resolved defaults when blank.
+  picture_htf: { enabled: false },
 }
 
 // C3 — the legacy day-scoped clock controls (last_entry_ct / eod_flat_ct) were
@@ -193,6 +196,50 @@ function NumberField({
         opacity: disabled ? 0.5 : 1,
       }}
     />
+  )
+}
+
+// NumField — an UNCLAMPED, blank-able numeric knob (blank = inherit the Go
+// resolved default). Used by the two-picture knob row.
+function NumField({
+  label,
+  value,
+  placeholder,
+  onChange,
+  disabled,
+}: {
+  label: string
+  value?: number
+  placeholder: string
+  onChange: (v: number | undefined) => void
+  disabled?: boolean
+}) {
+  return (
+    <label
+      className="flex items-center justify-between gap-3 py-1.5 text-[11px]"
+      style={{ color: 'var(--vl-muted)' }}
+    >
+      <span style={{ fontFamily: 'var(--vl-font-ui)' }}>{label}</span>
+      <input
+        type="number"
+        step="any"
+        value={value ?? ''}
+        placeholder={placeholder}
+        disabled={disabled}
+        onChange={(e) => {
+          const raw = e.target.value
+          onChange(raw === '' ? undefined : Number(raw))
+        }}
+        className="vl-num text-[12px] w-16 px-1.5 py-0.5 text-right"
+        style={{
+          background: 'var(--vl-card-2)',
+          border: '1px solid var(--vl-hair)',
+          borderRadius: 'var(--vl-radius-chip)',
+          color: 'var(--vl-ivory)',
+          opacity: disabled ? 0.5 : 1,
+        }}
+      />
+    </label>
   )
 }
 
@@ -548,6 +595,16 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               testId="flip-reread-toggle"
             />
           </FieldRow>
+          {/* W-DEATH-REREAD (2026-09-18) — default ON: the toggle reads ON
+              unless the strategy saved an explicit false. */}
+          <FieldRow label={tp('deathReread', language)}>
+            <Toggle
+              on={cfg.death_reread !== false}
+              onChange={(v) => update('death_reread', v)}
+              disabled={bodyDisabled}
+              testId="death-reread-toggle"
+            />
+          </FieldRow>
           <FieldRow label={tp('t1Currencies', language)}>
             <input
               type="text"
@@ -642,6 +699,106 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                 disabled={bodyDisabled}
               />
             </FieldRow>
+            {/* W-PICTURE-HTF (2026-09-20) — the two-picture mode. The toggle
+                materializes the knob row; blanks inherit the Go resolved
+                defaults (min_rr inherits the risk-control floor). */}
+            <div
+              className="mt-1 pt-2"
+              style={{ borderTop: '1px solid var(--vl-hair)' }}
+            >
+              <span
+                className="text-[10px] uppercase tracking-widest"
+                style={{ color: 'var(--vl-faint)' }}
+              >
+                {tp('pictureHtf', language)}
+              </span>
+              <FieldRow label={tp('enableDayPlan', language)}>
+                <Toggle
+                  testId="picture-htf-toggle"
+                  on={cfg.picture_htf?.enabled === true}
+                  onChange={(v) =>
+                    update('picture_htf', {
+                      ...cfg.picture_htf,
+                      enabled: v,
+                    })
+                  }
+                  disabled={bodyDisabled}
+                />
+              </FieldRow>
+              {cfg.picture_htf?.enabled === true && (
+                <div className="flex flex-col gap-2 ml-1">
+                  <NumField
+                    label={tp('pictureTickSize', language)}
+                    value={cfg.picture_htf?.tick_size}
+                    placeholder="0.25"
+                    onChange={(v) =>
+                      update('picture_htf', {
+                        ...cfg.picture_htf,
+                        tick_size: v,
+                      })
+                    }
+                    disabled={bodyDisabled}
+                  />
+                  <NumField
+                    label={tp('picturePivotWindow', language)}
+                    value={cfg.picture_htf?.pivot_window}
+                    placeholder="120"
+                    onChange={(v) =>
+                      update('picture_htf', {
+                        ...cfg.picture_htf,
+                        pivot_window: v,
+                      })
+                    }
+                    disabled={bodyDisabled}
+                  />
+                  <NumField
+                    label={tp('pictureSwingLookback', language)}
+                    value={cfg.picture_htf?.swing_lookback}
+                    placeholder="24"
+                    onChange={(v) =>
+                      update('picture_htf', {
+                        ...cfg.picture_htf,
+                        swing_lookback: v,
+                      })
+                    }
+                    disabled={bodyDisabled}
+                  />
+                  <NumField
+                    label={tp('pictureEntryWindowSec', language)}
+                    value={cfg.picture_htf?.entry_window_sec}
+                    placeholder="10"
+                    onChange={(v) =>
+                      update('picture_htf', {
+                        ...cfg.picture_htf,
+                        entry_window_sec: v,
+                      })
+                    }
+                    disabled={bodyDisabled}
+                  />
+                  <NumField
+                    label={tp('pictureFreshnessSec', language)}
+                    value={cfg.picture_htf?.freshness_sec}
+                    placeholder="2"
+                    onChange={(v) =>
+                      update('picture_htf', {
+                        ...cfg.picture_htf,
+                        freshness_sec: v,
+                      })
+                    }
+                    disabled={bodyDisabled}
+                  />
+                  <NumField
+                    label={tp('pictureMinRR', language)}
+                    value={cfg.picture_htf?.min_rr}
+                    placeholder="inherit"
+                    onChange={(v) =>
+                      update('picture_htf', { ...cfg.picture_htf, min_rr: v })
+                    }
+                    disabled={bodyDisabled}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
