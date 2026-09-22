@@ -252,6 +252,16 @@ range, in ascending order.
 by `(symbol, timeframe, t)` and treats a later frame for the same `t` as an
 update-in-progress.
 
+**`final` + `emitted_at` (W-PICTURE-HTF, 2026-09-20, ADDITIVE):** the AddOn
+marks forming bars `final:false`. NT8 never re-emits the just-closed bar, so
+at the boundary the AddOn re-emits the previous bar ONCE with `final:true` —
+its proof the bar CLOSED. `emitted_at` is the AddOn's emission clock (ms,
+UTC) for every bar. A bar once `final:true` is never re-emitted as forming.
+The Go side's deterministic two-picture evaluator consumes only final-marked
+bars, and the mode stays UNAVAILABLE below build `2026-09-20-p1` (proven by
+receipt of `build_id` on the heartbeat, same rule as every capability floor).
+Old Go ignores the new fields; old AddOns never send them (zero = unproven).
+
 ### 8. `bars_unsubscribe` (Go server → C# AddOn) — Plan 4.4 Stage 1
 
 Tear down one or more `(symbol, timeframe)` subscriptions cleanly.

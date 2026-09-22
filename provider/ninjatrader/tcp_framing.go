@@ -255,6 +255,14 @@ const MinAddonBuildStopSlot = "2026-09-05-g2"
 // older same-date build satisfy this.
 const MinAddonBuildProtectiveStop = "2026-09-07-h1"
 
+// MinAddonBuildPictureHtf is the minimum AddOn build that proves the
+// two-picture evidence surface: bar frames carry final + emitted_at and
+// order_update frames carry the rejection reason. The picture mode stays
+// UNAVAILABLE below this floor — its timing law rests on the final marker,
+// and capability is proven by RECEIPT, never assumed (same rule as every
+// other floor).
+const MinAddonBuildPictureHtf = "2026-09-20-p1"
+
 // ErrAddonBuildTooOld is the sentinel behind a stop entry refused because the
 // AddOn NT8 has loaded predates the stop-slot fix. Callers errors.Is on it so a
 // build refusal is counted apart from a transport or account failure.
@@ -559,6 +567,14 @@ type Bar struct {
 	L float64 `json:"l"`
 	C float64 `json:"c"`
 	V float64 `json:"v"` // volume can be tick-volume (fractional)
+	// Final (W-PICTURE-HTF, 2026-09-20) is the AddOn's proof this bar CLOSED:
+	// the boundary frame re-emits the just-closed bar with final=true, forming
+	// bars carry final=false. ADDITIVE + omitempty — old AddOns never send it,
+	// so a zero value means "unproven", never "closed".
+	Final bool `json:"final,omitempty"`
+	// EmittedAt is the AddOn's emission clock for this frame (ms, UTC) — the
+	// evidence timestamp for H1-completion / freshness verdicts.
+	EmittedAt int64 `json:"emitted_at,omitempty"`
 	// Source is GO-SIDE ONLY (never on the wire; the AddOn does not send it):
 	// which feed delivered this bar — "live" (bar_update), "historical"
 	// (bars_historical replay) or "mixed" (a boot minute whose open came from a

@@ -66,6 +66,124 @@ interface Candle {
   high: number
   low: number
   close: number
+  /** W-ROLL-DAY-CHART — derived from the prior contract's 1m rows. */
+  derived?: boolean
+  /** raw (pre-basis) close for the tooltip; present only on adjusted bars. */
+  rawClose?: number
+}
+
+/** W-ROLL-DAY-CHART — the /klines roll envelope (ninjatrader only). */
+export interface RollInfo {
+  derived: boolean
+  adjusted: boolean
+  basis?: number
+  reason?: string
+}
+
+interface KlinesRow {
+  openTime: number
+  open: number
+  high: number
+  low: number
+  close: number
+  contract?: string
+  derived?: boolean
+  adjusted?: boolean
+}
+
+/**
+ * Pure unwrap of the /klines response: today's bare array (crypto + legacy
+ * knob + no-prior-segment) or the W-ROLL-DAY-CHART {klines, roll} envelope.
+ */
+export function unwrapKlinesResponse(data: unknown): {
+  rows: KlinesRow[]
+  roll?: RollInfo
+} {
+  if (Array.isArray(data)) return { rows: data as KlinesRow[] }
+  const obj = data as { klines?: unknown; roll?: RollInfo } | null
+  if (obj && Array.isArray(obj.klines)) {
+    return { rows: obj.klines as KlinesRow[], roll: obj.roll }
+  }
+  return { rows: [] }
+}
+
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
+
+function contractMonthName(contract?: string): string {
+  if (!contract) return ''
+  const mm = contract.split(/\s+/)[1]?.split('-')[0]
+  const n = Number(mm)
+  return Number.isFinite(n) && n >= 1 && n <= 12 ? MONTH_NAMES[n - 1] : ''
+}
+
+/**
+ * The one-line legend, from the envelope ONLY (no literals):
+ * "pre-roll (Sep) · basis-adjusted +290.00" / "pre-roll (Sep) · unadjusted".
+ */
+export function rollLegend(
+  roll: RollInfo | undefined,
+  priorContract?: string
+): string {
+  if (!roll?.derived) return ''
+  const month = contractMonthName(priorContract) || 'prior'
+  if (roll.adjusted && typeof roll.basis === 'number') {
+    return `pre-roll (${month}) · basis-adjusted +${roll.basis.toFixed(2)}`
+  }
+  return `pre-roll (${month}) · unadjusted${roll.reason ? ` (${roll.reason})` : ''}`
+}
+
+/** the muted colour derived bars draw in */
+const DERIVED_MUTED = '#6B7078'
+
+/**
+ * Row → candle + per-bar styling. Derived bars draw muted; adjusted bars carry
+ * the raw close (close − basis from the envelope) for the tooltip.
+ */
+export function candleFromRow(
+  c: KlinesRow,
+  roll: RollInfo | undefined
+): Candle {
+  const derived = c.derived === true
+  const adjusted =
+    derived && roll?.adjusted === true && typeof roll.basis === 'number'
+  const candle: Candle = {
+    time: Math.floor(c.openTime / 1000) as UTCTimestamp,
+    open: c.open,
+    high: c.high,
+    low: c.low,
+    close: c.close,
+  }
+  if (derived) {
+    candle.derived = true
+    if (adjusted) {
+      candle.rawClose = c.close - (roll!.basis as number)
+    }
+  }
+  return candle
+}
+
+/** per-bar colours for the candlestick series (muted when derived) */
+export function candleBarStyle(candle: Candle) {
+  return candle.derived
+    ? {
+        color: DERIVED_MUTED,
+        borderColor: DERIVED_MUTED,
+        wickColor: DERIVED_MUTED,
+      }
+    : {}
 }
 
 export function PlanMiniChart({
@@ -82,11 +200,19 @@ export function PlanMiniChart({
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const overlayRef = useRef<LevelOverlayPrimitive | null>(null)
+  // W-ROLL-DAY-CHART — candles kept for the crosshair tooltip lookup.
+  const candlesRef = useRef<Candle[]>([])
   const [failed, setFailed] = useState(false)
   // W-CHART-ZONE-WALL — a per-viewer VIEW preference (localStorage), not a knob.
   const [showZones, setShowZones] = useState<boolean>(() => readShowZones())
   // the last loaded close: the price the "nearest zones" rule measures from
   const [lastClose, setLastClose] = useState<number | undefined>(undefined)
+  // W-ROLL-DAY-CHART — the roll envelope (prior segment info) + tooltip ref.
+  const [roll, setRoll] = useState<RollInfo | undefined>(undefined)
+  const [priorContract, setPriorContract] = useState<string | undefined>(
+    undefined
+  )
+  const tooltipRef = useRef<HTMLDivElement>(null)
 
   // init chart once
   useEffect(() => {
@@ -151,6 +277,36 @@ export function PlanMiniChart({
       })
       ro.observe(containerRef.current)
 
+      // W-ROLL-DAY-CHART — crosshair tooltip: raw vs adjusted close on derived
+      // bars (the only bars whose displayed price was shifted).
+      chart.subscribeCrosshairMove((param) => {
+        const tip = tooltipRef.current
+        if (!tip) return
+        if (
+          param.point === undefined ||
+          !param.time ||
+          param.point.x < 0 ||
+          param.point.y < 0
+        ) {
+          tip.style.display = 'none'
+          return
+        }
+        const candle = candlesRef.current.find(
+          (cd) => (cd.time as number) === (param.time as number)
+        )
+        if (!candle || !candle.derived) {
+          tip.style.display = 'none'
+          return
+        }
+        tip.style.display = 'block'
+        tip.style.left = `${param.point.x + 8}px`
+        tip.style.top = `${param.point.y + 8}px`
+        tip.innerHTML =
+          candle.rawClose !== undefined
+            ? `raw ${candle.rawClose.toFixed(2)} · adj ${candle.close.toFixed(2)}`
+            : `close ${candle.close.toFixed(2)}`
+      })
+
       return () => {
         disposed = true
         ro.disconnect()
@@ -172,33 +328,25 @@ export function PlanMiniChart({
     const load = async () => {
       try {
         const url = `/api/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=5000&exchange=${encodeURIComponent(exchange)}`
-        const res = await httpClient.request<
-          Array<{
-            openTime: number
-            open: number
-            high: number
-            low: number
-            close: number
-          }>
-        >(url, { silent: true })
-        if (
-          stop ||
-          !res.success ||
-          !Array.isArray(res.data) ||
-          !seriesRef.current
-        )
-          return
-        const candles: Candle[] = res.data
-          .map((c) => ({
-            time: Math.floor(c.openTime / 1000) as UTCTimestamp,
-            open: c.open,
-            high: c.high,
-            low: c.low,
-            close: c.close,
-          }))
+        const res = await httpClient.request<unknown>(url, { silent: true })
+        if (stop || !res.success || !seriesRef.current) return
+        const { rows, roll: envRoll } = unwrapKlinesResponse(res.data)
+        if (rows.length === 0) return
+        const candles: Candle[] = rows
+          .map((c) => candleFromRow(c, envRoll))
           .sort((a, b) => (a.time as number) - (b.time as number))
           .filter((c, i, arr) => i === 0 || c.time !== arr[i - 1].time)
+        // per-bar muted styling for derived candles
+        candles.forEach((c) => {
+          const style = candleBarStyle(c)
+          if (Object.keys(style).length > 0) Object.assign(c, style)
+        })
+        candlesRef.current = candles
         seriesRef.current.setData(candles)
+        if (envRoll?.derived) {
+          setRoll(envRoll)
+          setPriorContract(rows.find((r) => r.derived)?.contract)
+        }
         if (candles.length) setLastClose(candles[candles.length - 1].close)
         logBarDebug(
           'PlanMiniChart',
@@ -298,6 +446,7 @@ export function PlanMiniChart({
     <div className="flex flex-col gap-1">
       <div
         ref={containerRef}
+        className="relative"
         style={{
           width: '100%',
           height,
@@ -305,7 +454,30 @@ export function PlanMiniChart({
           overflow: 'hidden',
         }}
         aria-hidden
-      />
+      >
+        <div
+          ref={tooltipRef}
+          data-testid="chart-roll-tooltip"
+          className="absolute z-10 text-[10px] px-1.5 py-0.5 rounded"
+          style={{
+            display: 'none',
+            background: 'var(--vl-card-2)',
+            border: '1px solid var(--vl-hair)',
+            color: 'var(--vl-ivory)',
+            fontFamily: 'var(--vl-font-ui)',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+      {roll?.derived && (
+        <div
+          data-testid="chart-roll-legend"
+          className="text-[10px] px-1"
+          style={{ color: DERIVED_MUTED, fontFamily: 'var(--vl-font-ui)' }}
+        >
+          {rollLegend(roll, priorContract)}
+        </div>
+      )}
       {zoneControl}
     </div>
   )

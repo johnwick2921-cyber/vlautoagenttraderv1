@@ -2276,12 +2276,19 @@ type armedSyncSeam struct {
 // nt.OrderUpdates() as the eager argument — the argument evaluates FIRST and
 // SubscribeOrderUpdatesFor closes+replaces the consumer's channel on every
 // cycle (the 2026-08-27 consumer-death bug).
+//
+// Since the picture-htf round (2026-09-20) the subscription is a coordinated
+// fan-out LISTENER (nt.OrderUpdatesListen): the armed executor and the
+// picture broker consumer share one direct subscription, and neither can
+// evict the other's channel. The channel closes only when the underlying
+// subscription dies, and the existing self-heal (armedSubs.Delete on close)
+// re-listens on the next cycle.
 func (at *AutoTrader) armedUpdateStream(nt *ntTrader.TCPTrader) <-chan ntwire.OrderUpdatePayload {
 	if v, ok := armedSubs.Load(at.id); ok {
 		ch, _ := v.(<-chan ntwire.OrderUpdatePayload)
 		return ch
 	}
-	ch := nt.OrderUpdates()
+	ch, _ := nt.OrderUpdatesListen()
 	v, _ := armedSubs.LoadOrStore(at.id, ch)
 	stored, _ := v.(<-chan ntwire.OrderUpdatePayload)
 	return stored

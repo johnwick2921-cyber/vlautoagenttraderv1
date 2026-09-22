@@ -6033,3 +6033,63 @@ scenario, what the EXECUTOR decided for the displayed plan version — `not atte
 <state_reason>` — sourced ONLY from armed_orders rows and the executor geometry records;
 when no record exists render nothing (no dash, no "ok"). An uncomputed executor state is
 absent, never fabricated.
+
+## CLASS 157 — A DEATH LINE THAT PARKS THE PLAN UNTIL PRICE RETURNS SITS OUT THE SESSION WHEN IT DOESN'T (born 2026-08-25 with the plan-lifecycle wave, found 2026-09-18 09:10 CT NY v2, fix/death-reread, W-DEATH-REREAD)
+
+**Shape.** A structured death-condition kill writes `dormant:death:` and the
+planner stops there; only a `flip-condition:` kill ever re-reads
+(`maybeRereadAfterFlip`). When the market runs 100 pt away from a dead plan,
+"wait for it to close back" means no plan for the whole session. 2026-09-18 NY:
+v1 flipped short at 08:46:20, v2 (long, kill line 29767) died at 09:10:18, and
+price sat at 29746 three hours later — the bot authored nothing for the rest of
+the NY session. The owner: "why the fk my bot stop right here".
+
+**Probe.** `dormant:death:` rows in plan_lifecycle_log with no later
+`rearmed`/`superseded` for that plan_id+version during the session; count on the
+DB copy since 09-01 with ids. First probe [A] on pre-bars-key-20260918-022516.db
+(read-only): 15 `dormant:death:` events since 2026-09-01, 6 re-armed, **9 never
+re-armed** (ids 16, 27, 28, 33, 39, 44, 51, 53, 56) — 60% of death lines sat the
+session out.
+
+**How it hid.** Dormancy is a protection, not a decision: the log line says
+"auto re-arms when price closes back" and the re-arm predicate exists, so the
+dead plan looks handled — nothing ever states "and if price does NOT return,
+this session has no plan". The flip half of the hysteresis re-reads (the bias
+was wrong); the death half only parks.
+
+**Fix (W-DEATH-REREAD, owner ruling 2026-09-18 12:3x CT "fix all").**
+`day_plan.death_reread` *bool, nil = ON: a fired death-condition kill still goes
+dormant exactly as today AND launches ONE budgeted planner re-read (trigger
+`death_replan` — it SPENDS one class-35 replan unit, unlike the free flip read;
+at budget exhausted → dormant only with one WARN naming the budget). The read is
+bias free and carries the death evidence (dead version, kill line with the price
+at death, break direction); the fresh version supersedes the dormant one
+(`superseded:death`). Guards: the once-key, in-flight guard, preflight, class-47
+cutoff and self-backoff are the flip read's own body; a death-born plan carries
+the 30-min flip hold anchor (class-35 trigger is a replan anchor) and cannot
+itself die inside a 10-minute birth wick (its first death check runs only after
+2 full 5m closes post-birth). Explicit false = today's behaviour byte-identical.
+Counter: `death_reread:<trader>:<date>:<session>`.
+
+## CLASS 156 — A ROLL STITCH THAT TRUSTS THE OLD CONTRACT'S STORED AGGREGATES AND SHIFTS NOTHING SHOWS A HOLE AND A 290-POINT CLIFF ON EVERY TIMEFRAME OF THE ROLL DAY (born 2026-09-14 at the Sep→Dec roll with the per-timeframe AddOn switch, found 2026-09-18 16:5x CT by the owner "chart on 14 no good on all tf", fix/roll-day-chart, W-ROLL-DAY-CHART)
+
+**Shape.** Each timeframe rolled at a different hour, so the old contract's stored bars stop early on every tf (1m 10:33 · 3m 10:36 · 5m 09:55 · 15m 08:15 · 30m 06:00 · 1h 01:00) while the new contract's first live bars start at their own hour — the stitch showed a hole at the seam on every tf. And the stitch shifted nothing, so every tf showed the ~290-point Sep/Dec basis as a price cliff. The 1m rows of the old contract were otherwise complete.
+
+**Rule (probe).** Per contract per tf, compare the last stored bar time on the roll day against the 1m last bar: any tf whose last bar is earlier than the 1m last bar is this class. The display fix derives the prior segment from that contract's 1m rows with the planner's own bucket helper, shifts it by the basis measured at THAT timeframe's own seam (the new contract's first bar of that tf vs the last prior 1m close before it — the pair sits <1 minute apart), marks derived/adjusted on each bar and the envelope, never touches the current contract or volume, and keeps CHART_ROLL_STITCH=legacy byte-identical. Follow-up (2026-09-19, owner: the first boot still showed the cliff): the shipped basis was measured at the TRUE 1m switch, hours after the 15m/30m/1h seam — the Sep/Dec basis decays from ~290 in the morning to ~15 at that switch, so one 15.25 shift left a ~274-280-point cliff; measuring at each tf's own seam makes the seam continuous by construction. Second follow-up (2026-09-19, owner: "5m day 11" hole on every tf): the prior contract's 1m rows have interior gaps where NT8 was off (Sept 11 ~00:29-07:45 CT) while the current contract's imported 1m rows cover them — the derive now fills such gaps with the current rows converted into the prior contract's price space (basis at the nearest minute both contracts share); gaps neither contract has stay gaps, never fabricated.
+
+## Pending class assignment at merge — Inverted async cancellation guard blanks a live chart
+
+**Wave:** `fix/planner-chart-response-20260922`. **Found:** 2026-09-22.
+The roll-chart change `0e7573485` inverted the PlanMiniChart response guard
+from `stop` to `!stop`. Mounted charts start with `stop=false`, so every
+successful response returned before `series.setData`. A disposed request could
+also overwrite a replacement interval while its chart reference remained live.
+The built frontend contained the same inversion. Existing chart tests exercised
+the canvas-less placeholder and did not test the async candle delivery path.
+
+**Probe:** mount the production component with a working chart adapter and a
+nonempty successful response; assert candle delivery and polling. Resolve an
+older interval request after the replacement request and assert it cannot
+overwrite the series. Resolve after unmount and assert no write or further poll.
+**Law:** test both live response delivery and cancellation at the production
+component boundary; placeholder rendering alone does not verify chart loading.

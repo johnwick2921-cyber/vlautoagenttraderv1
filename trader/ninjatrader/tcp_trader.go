@@ -274,6 +274,42 @@ func (t *TCPTrader) activeAccountName() string {
 	return ""
 }
 
+// FarSideProves reports whether the AddOn on the wire has proven a capability
+// floor (FarSideProven over the build id reported on the heartbeat). Capability
+// is proven by RECEIPT, never assumed — no build id means no.
+func (t *TCPTrader) FarSideProves(minBuild string) bool {
+	if t == nil || t.server == nil {
+		return false
+	}
+	return ntwire.FarSideProven(t.server.FarSideBuildID(), minBuild)
+}
+
+// OrderSnapshotLookup returns the broker's own book entry for a signal id from
+// the latest RECEIVED order snapshot (entry legs carry the plain signal id;
+// protective legs carry -sl/-tp suffixes). WIRE SEMANTICS (picture-htf round,
+// 2026-09-20): the AddOn EXCLUDES terminal orders from the snapshot
+// (VLTraderTCPClient.cs SendOrderSnapshot skips Filled/Cancelled/Rejected/
+// Expired), so this lookup can prove an order is WORKING but can never prove
+// a terminal outcome, and NT8Order carries no fill price (limit_price is the
+// order's limit). Terminal recovery must use received execution/order
+// history — never this book.
+func (t *TCPTrader) OrderSnapshotLookup(signalID string) (ntwire.NT8Order, bool) {
+	var zero ntwire.NT8Order
+	if t == nil || t.server == nil || signalID == "" {
+		return zero, false
+	}
+	snap, ok := t.server.OrderSnapshots().Latest(t.boundAccount)
+	if !ok {
+		return zero, false
+	}
+	for _, o := range snap.Orders {
+		if o.Name == signalID {
+			return o, true
+		}
+	}
+	return zero, false
+}
+
 // feedNowUTC is the latest market bar close, falling back to wall time when
 // absent. It is a market fact, never the creation timestamp of an entry command.
 func (t *TCPTrader) feedNowUTC(symbol string) time.Time {
@@ -428,6 +464,72 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 		"quantity":  quantity,
 		"signal_id": signalID,
 	}, nil
+}
+
+// MarketEntryWithProtection (W-PICTURE-HTF, 2026-09-20) places a MARKET entry
+// with an explicit protective bracket — the two-picture mode's wire call. It
+// carries the same safety rails as placeEntry (bound account + SIM + B3
+// guard + identity assertion) but takes the bracket prices and the beforeSend
+// persistence callback as arguments instead of reading the AI-set stop maps.
+// The entry price on the wire is the SL/TP midpoint reference (market orders
+// fill at NT8's price); the AddOn defers SL/TP to SubmitBracketOnEntryFill,
+// identical to every other entry path. On the CONCRETE type only — the
+// 19-method trader/types.Trader interface is untouched.
+func (t *TCPTrader) MarketEntryWithProtection(side string, quantity float64, sl, tp float64, beforeSend ...func(string) error) (string, error) {
+	tradeAcct := t.boundAccount
+	if tradeAcct == "" {
+		return "", fmt.Errorf("ninjatrader/tcp: refusing picture %s entry on %s — trader has no bound account", side, t.symbol)
+	}
+	if !t.isAccountTradeable(tradeAcct) {
+		return "", fmt.Errorf("ninjatrader/tcp: refusing picture %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
+	}
+	if t.guard != nil {
+		key := fmt.Sprintf("picture|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), t.symbol, quantity)
+		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
+			return "", fmt.Errorf("ninjatrader/tcp: picture entry not admitted — B3 dupe/rate guard")
+		}
+	}
+	if sl <= 0 || tp <= 0 {
+		return "", fmt.Errorf("ninjatrader/tcp: refusing picture %s entry — protective bracket incomplete (sl=%.2f tp=%.2f)", side, sl, tp)
+	}
+	tick := InstrumentTickSize(t.symbol)
+	entry := RoundToTick((sl+tp)/2.0, tick)
+	sl = RoundToTick(sl, tick)
+	tp = RoundToTick(tp, tick)
+	tid := t.traderID
+	signalID := uuid.NewString()
+	payload := ntwire.SignalPayload{
+		Symbol:     t.symbol,
+		Account:    t.boundAccount,
+		TraderID:   tid,
+		Side:       side,
+		Quantity:   int(quantity),
+		Entry:      entry,
+		StopLoss:   sl,
+		TakeProfit: tp,
+		SignalID:   signalID,
+		Timestamp:  time.Now().UTC().Truncate(time.Millisecond).Format(time.RFC3339Nano),
+	}
+	if err := assertBoundAccount("picture-entry", t.symbol, payload.Account, t.boundAccount); err != nil {
+		logger.Errorf("🚨 %v — REFUSING to submit picture entry", err)
+		return "", err
+	}
+	for _, register := range beforeSend {
+		if err := register(signalID); err != nil {
+			return "", fmt.Errorf("ninjatrader/tcp: register picture placement: %w", err)
+		}
+	}
+	t.pendingMu.Lock()
+	t.pending[signalID] = upperSideStr(side)
+	t.pendingAt[signalID] = time.Now().UTC().UnixMilli()
+	t.pendingMu.Unlock()
+	t.mu.Lock()
+	t.lastEntrySignalID = signalID
+	t.mu.Unlock()
+	if err := t.server.SendSignal(payload); err != nil {
+		return "", fmt.Errorf("ninjatrader/tcp: send picture signal: %w", err)
+	}
+	return signalID, nil
 }
 
 // PlaceLimitEntry (PHASE 2 armed orders) places a RESTING limit entry with its
@@ -604,6 +706,43 @@ func (t *TCPTrader) ModifyBracket(signalID string, newSL, newTP float64) error {
 // OrderUpdates returns THIS trader's order_update stream (per symbol+account).
 func (t *TCPTrader) OrderUpdates() <-chan ntwire.OrderUpdatePayload {
 	return t.server.SubscribeOrderUpdatesFor(t.symbol, t.boundAccount)
+}
+
+// OrderUpdatesListen returns a coordinated fan-out listener for this trader's
+// order_update stream plus its unregister func. Unlike OrderUpdates (single
+// subscriber, last-subscribe-wins — a second direct subscribe CLOSES the first
+// consumer's channel), listeners coexist: the armed executor and the picture
+// broker consumer both receive every frame, and neither can evict the other.
+// The channel closes only when the underlying subscription dies; consumers
+// keep their self-heal contract and re-listen.
+func (t *TCPTrader) OrderUpdatesListen() (<-chan ntwire.OrderUpdatePayload, func()) {
+	return t.server.ListenOrderUpdates(t.symbol, t.boundAccount)
+}
+
+// RecentFillFor returns the LATEST received fill for a signal id from the
+// netting-fill ring — real execution evidence (fill frames carry the actual
+// average fill price, never a limit price). ok=false means no fill for that
+// signal was received since this process booted.
+func (t *TCPTrader) RecentFillFor(signalID string) (price, quantity float64, ok bool) {
+	if strings.TrimSpace(signalID) == "" {
+		return 0, 0, false
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	var best *recentFill
+	for i := range t.recentFills {
+		f := &t.recentFills[i]
+		if f.SignalID != signalID || f.Price <= 0 {
+			continue
+		}
+		if best == nil || f.TimeMs >= best.TimeMs {
+			best = f
+		}
+	}
+	if best == nil {
+		return 0, 0, false
+	}
+	return best.Price, best.Quantity, true
 }
 
 // rememberEntryOrderID caches the entry order/signal identity for a

@@ -469,6 +469,15 @@ Returns: {"trader_id":"<string>","daily_pnl_usd":<float>,"daily_loss_limit_usd":
 Returns: {"session_day_utc":"<RFC3339>","summary":"<one-line>","by_trader":{"<trader_id>":{"<gate>":<count>}}}
 The empty-string trader key holds process-wide gates (e.g. the B3 order guard). Resets at the 17:00 CT CME session rollover.`,
 				s.handleGateBlocks)
+			s.routeWithSchema(protected, "GET", "/picture-htf/opportunities", "The two-picture opportunity ledger (read-only)",
+				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>
+Returns the trader's two-picture opportunities, newest first: intended
+geometry (entry/stop/target, R:R estimate vs configured) and the broker's
+answer (signal, submitted_at, order id/status, fill price/qty, actual R:R,
+rejection reason), side by side. A missing broker answer stays empty — never
+a fabricated success.
+Returns: {"rows":[{...}],"count":<int>}`,
+				s.handlePictureHtfOpportunities)
 			// INSTRUMENT HONESTY (owner ruling 2026-09-03) — read-only.
 			s.routeWithSchema(protected, "GET", "/risk/stream-cuts", "Stream cuts and watchdog fires, grouped by how long the connection had been idle",
 				`No params. Every early stream end — a peer FIN ("cut") or our own watchdog ("watchdog") — with the idleness of the connection it rode and what the identical resend then did.

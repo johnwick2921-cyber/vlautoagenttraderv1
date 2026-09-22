@@ -159,7 +159,10 @@ export function ChartWithOrders({
         throw new Error('Failed to fetch kline data from our service')
       }
 
-      const data = result.data
+      // W-ROLL-DAY-CHART — ninjatrader may serve the {klines, roll} envelope.
+      const data = Array.isArray(result.data)
+        ? result.data
+        : ((result.data as any)?.klines ?? [])
 
       // Convert backend data format to lightweight-charts format
       // Backend returns market.Kline format: {OpenTime, Open, High, Low, Close, Volume, ...}

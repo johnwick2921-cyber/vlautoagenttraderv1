@@ -21,7 +21,13 @@ export function ChartWithOrdersSimple({
 
   useEffect(() => {
     const loadData = async () => {
-      console.log('[ChartSimple] Loading data for', symbol, interval, 'trader:', traderID)
+      console.log(
+        '[ChartSimple] Loading data for',
+        symbol,
+        interval,
+        'trader:',
+        traderID
+      )
       setLoading(true)
       setError(null)
 
@@ -37,20 +43,34 @@ export function ChartWithOrdersSimple({
           throw new Error('Failed to fetch klines from our service')
         }
 
-        console.log('[ChartSimple] Received klines:', klineResult.data.length)
-        setKlineCount(klineResult.data.length)
+        // W-ROLL-DAY-CHART — ninjatrader may serve the {klines, roll} envelope.
+        const klineData = Array.isArray(klineResult.data)
+          ? klineResult.data
+          : ((klineResult.data as any)?.klines ?? [])
+
+        console.log('[ChartSimple] Received klines:', klineData.length)
+        setKlineCount(klineData.length)
 
         // 测试获取订单数据
         if (traderID) {
           const tradesUrl = `/api/trades?trader_id=${traderID}&symbol=${symbol}&limit=100`
           console.log('[ChartSimple] Fetching trades from:', tradesUrl)
-          const tradesResult = await httpClient.request(tradesUrl, { silent: true })
+          const tradesResult = await httpClient.request(tradesUrl, {
+            silent: true,
+          })
 
           if (tradesResult.success && tradesResult.data) {
-            console.log('[ChartSimple] Received trades:', tradesResult.data.length)
+            console.log(
+              '[ChartSimple] Received trades:',
+              tradesResult.data.length
+            )
             setOrderCount(tradesResult.data.length)
           } else {
-            console.warn('[ChartSimple] Failed to fetch trades:', tradesResult.message || 'Unknown error', tradesResult)
+            console.warn(
+              '[ChartSimple] Failed to fetch trades:',
+              tradesResult.message || 'Unknown error',
+              tradesResult
+            )
           }
         }
 
@@ -66,9 +86,20 @@ export function ChartWithOrdersSimple({
   }, [symbol, interval, traderID])
 
   return (
-    <div className="relative" style={{ background: '#0B0E11', borderRadius: '8px', overflow: 'hidden', minHeight: height }}>
+    <div
+      className="relative"
+      style={{
+        background: '#0B0E11',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        minHeight: height,
+      }}
+    >
       {/* 标题栏 */}
-      <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid #2B3139' }}>
+      <div
+        className="flex items-center justify-between p-4"
+        style={{ borderBottom: '1px solid #2B3139' }}
+      >
         <div className="flex items-center gap-3">
           <span className="text-xl">📈</span>
           <h3 className="text-lg font-bold" style={{ color: '#EAECEF' }}>
@@ -91,24 +122,42 @@ export function ChartWithOrdersSimple({
           </div>
         ) : (
           <>
-            <div className="p-4 rounded" style={{ background: '#1E2329', border: '1px solid #2B3139' }}>
-              <div className="text-sm mb-2" style={{ color: '#848E9C' }}>币安K线数据</div>
+            <div
+              className="p-4 rounded"
+              style={{ background: '#1E2329', border: '1px solid #2B3139' }}
+            >
+              <div className="text-sm mb-2" style={{ color: '#848E9C' }}>
+                币安K线数据
+              </div>
               <div className="text-2xl font-bold" style={{ color: '#0ECB81' }}>
                 {klineCount} 根K线
               </div>
             </div>
 
             {traderID && (
-              <div className="p-4 rounded" style={{ background: '#1E2329', border: '1px solid #2B3139' }}>
-                <div className="text-sm mb-2" style={{ color: '#848E9C' }}>历史订单数据</div>
-                <div className="text-2xl font-bold" style={{ color: '#F0B90B' }}>
+              <div
+                className="p-4 rounded"
+                style={{ background: '#1E2329', border: '1px solid #2B3139' }}
+              >
+                <div className="text-sm mb-2" style={{ color: '#848E9C' }}>
+                  历史订单数据
+                </div>
+                <div
+                  className="text-2xl font-bold"
+                  style={{ color: '#F0B90B' }}
+                >
                   {orderCount} 笔订单
                 </div>
               </div>
             )}
 
-            <div className="p-4 rounded" style={{ background: '#1E2329', border: '1px solid #2B3139' }}>
-              <div className="text-sm mb-2" style={{ color: '#848E9C' }}>状态</div>
+            <div
+              className="p-4 rounded"
+              style={{ background: '#1E2329', border: '1px solid #2B3139' }}
+            >
+              <div className="text-sm mb-2" style={{ color: '#848E9C' }}>
+                状态
+              </div>
               <div className="text-lg" style={{ color: '#EAECEF' }}>
                 ✅ 数据获取正常，图表组件开发中
               </div>

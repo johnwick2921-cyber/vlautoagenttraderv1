@@ -1,0 +1,319 @@
+package trader
+
+import (
+	"fmt"
+	"sync"
+	"time"
+
+	"nofx/kernel"
+	"nofx/logger"
+	"nofx/market"
+	ntwire "nofx/provider/ninjatrader"
+	"nofx/store"
+	ntTrader "nofx/trader/ninjatrader"
+)
+
+// PICTURE-HTF EVALUATOR (2026-09-20) — the deterministic half of the owner's
+// two-picture mode. It runs from native bar events, NOT from AI cycles: the
+// H1 completion, the following 5m interval and the freshness verdicts are
+// evaluated directly from received bars, and the AI provides commentary +
+// momentum context only.
+//
+// Ownership: every opportunity is claimed through the store (unique key +
+// atomic confirmed→place_pending transition), so repeated frames, restarts and
+// the OTHER executor cannot double-submit. Only RECEIVED broker frames may
+// move a row to working/filled/rejected.
+
+// PictureHtfEvaluator is the per-trader evaluation state. Zero value is
+// unusable; NewPictureHtfEvaluator builds it from the resolved strategy knob.
+type PictureHtfEvaluator struct {
+	mu      sync.Mutex
+	at      *AutoTrader
+	cfg     store.PictureHtfConfig
+	enabled bool
+
+	// Evaluation state.
+	lastH1CloseEval int64 // the newest completed H1 close already scanned
+	levels          []kernel.PictureHtfLevel
+	levelsEval4H    int64 // the 4H close time the levels snapshot was built from
+	freshest5mAt    time.Time
+
+	// H1 close series for the advisory momentum stall (last three closes).
+	h1Closes []float64
+
+	// capWarned dedupes the once-per-state "mode unavailable" log.
+	capWarned bool
+}
+
+// NewPictureHtfEvaluator builds the evaluator from the resolved strategy knob.
+func NewPictureHtfEvaluator(at *AutoTrader, cfg store.PictureHtfConfig) *PictureHtfEvaluator {
+	return &PictureHtfEvaluator{at: at, cfg: cfg, enabled: cfg.Enabled}
+}
+
+// Enabled reports the resolved mode switch.
+func (e *PictureHtfEvaluator) Enabled() bool { return e != nil && e.enabled }
+
+// pictureHtfSubmitSeam is the submission seam: the production wiring calls the
+// concrete NT8 market-entry method (with the before-send persistence callback);
+// tests replace it to prove the admission sequence. The seam receives the
+// already-claimed opportunity row and the computed geometry.
+var pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+	return fmt.Errorf("picture_htf submit seam unbound (the NT8 market-entry method is wired in the next wave commit)")
+}
+
+// pictureHtfCapabilityProven gates the mode on the AddOn's evidence surface
+// (final + emitted_at bar markers, rejection reasons) — proven by RECEIPT of
+// the far-side build id, never assumed. Tests override it.
+var pictureHtfCapabilityProven = func(at *AutoTrader) bool {
+	if at == nil {
+		return false
+	}
+	tcp, ok := at.trader.(*ntTrader.TCPTrader)
+	if !ok {
+		return false
+	}
+	return tcp.FarSideProves(ntwire.MinAddonBuildPictureHtf)
+}
+
+// bars reads completed bars of a timeframe from the live provider (nil-guarded).
+func (e *PictureHtfEvaluator) bars(symbol, tf string, n int, nowMs int64) []market.Kline {
+	if market.FuturesBarsProvider == nil {
+		return nil
+	}
+	raw := market.FuturesBarsProvider(symbol, tf, n)
+	var out []market.Kline
+	for _, b := range raw {
+		// Only bars the AddOn PROVED closed count. The mode is gated on the
+		// capability that guarantees final markers, so an unmarked bar is a
+		// forming one — wall-clock inference is not the law here.
+		if b.CloseTime < nowMs && b.Final {
+			out = append(out, b)
+		}
+	}
+	return out
+}
+
+// rebuildLevels recomputes the 4H body-pivot snapshot from completed bars.
+func (e *PictureHtfEvaluator) rebuildLevels(symbol string, nowMs int64) {
+	bars := e.bars(symbol, "4h", e.cfg.PivotWindow+4, nowMs)
+	if len(bars) == 0 {
+		return
+	}
+	newest := bars[len(bars)-1].CloseTime
+	if newest == e.levelsEval4H {
+		return
+	}
+	e.levels = kernel.BodyPivots4H(bars, e.cfg.PivotWindow)
+	e.levelsEval4H = newest
+}
+
+// OnBars is the event entry point: the trader's bar consumers call it for
+// native LIVE bar updates. receivedAt is the Go-side receipt time; historical
+// or backfill frames must NOT call it. Non-blocking for the caller.
+func (e *PictureHtfEvaluator) OnBars(symbol, tf string, bars []market.Kline, receivedAt time.Time) {
+	if e == nil || !e.enabled || e.at == nil || len(bars) == 0 {
+		return
+	}
+	if tf != "4h" && tf != "1h" && tf != "5m" {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if tf == "5m" {
+		e.freshest5mAt = receivedAt
+	}
+	e.evaluateLocked(symbol, receivedAt)
+}
+
+// Evaluate is the tick-based fallback (session opens, reconnect): same work as
+// OnBars but driven by the wall clock. Returns the verdict for the AI context
+// and dashboard.
+func (e *PictureHtfEvaluator) Evaluate(symbol string, now time.Time) EvaluateResult {
+	if e == nil || !e.enabled {
+		return EvaluateResult{Stage: "watching"}
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.evaluateLocked(symbol, now)
+}
+
+// EvaluateResult is the per-evaluation verdict for the dashboard/AI context.
+type EvaluateResult struct {
+	Stage    string // watching | confirmed | refused | expired | submitted
+	Reason   string
+	OppKey   string
+	Momentum *kernel.MomentumStall
+}
+
+func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) EvaluateResult {
+	nowMs := now.UnixMilli()
+	if !pictureHtfCapabilityProven(e.at) {
+		if !e.capWarned {
+			e.capWarned = true
+			logger.Warnf("picture-htf: mode unavailable — AddOn evidence missing (need build ≥ %s; F5-compile + full NT8 restart with the new AddOn)", ntwire.MinAddonBuildPictureHtf)
+		}
+		return EvaluateResult{Stage: "watching", Reason: "mode unavailable — AddOn evidence missing"}
+	}
+	e.capWarned = false
+	e.rebuildLevels(symbol, nowMs)
+
+	// --- H1 completion scan + advisory momentum ---
+	h1 := e.bars(symbol, "1h", 4, nowMs)
+	for _, b := range h1 {
+		if b.CloseTime <= e.lastH1CloseEval {
+			continue
+		}
+		e.lastH1CloseEval = b.CloseTime
+		e.h1Closes = append(e.h1Closes, b.Close)
+		if len(e.h1Closes) > 3 {
+			e.h1Closes = e.h1Closes[len(e.h1Closes)-3:]
+		}
+	}
+	var stall *kernel.MomentumStall
+	if len(e.h1Closes) == 3 {
+		if s := kernel.H1MomentumStall(e.h1Closes); s.Fired {
+			stall = &s
+		}
+	}
+
+	// --- H1 breakout over the last two completed H1 candles ---
+	if len(h1) < 2 || e.lastH1CloseEval == 0 {
+		return EvaluateResult{Stage: "watching", Momentum: stall}
+	}
+	prev, cur := h1[len(h1)-2], h1[len(h1)-1]
+	// SIMULTANEOUS H1/4H COMPLETION (spec): the breakout reference is the
+	// level set as it stood BEFORE the confirming H1 opened — retirements
+	// from a 4h candle closing AT the same boundary as the H1 (which contains
+	// the H1's own move) must NOT retro-kill the breakout. So the break check
+	// uses a snapshot rebuilt from 4H bars completed before cur.OpenTime.
+	// Target selection, below, uses the as-of-now snapshot — retirements ARE
+	// applied before target selection, per the same clause. Both snapshots
+	// are time-derived from the cache, so frame arrival order cannot change
+	// either verdict.
+	breakLevels := kernel.ActiveLevels(
+		kernel.BodyPivots4H(e.bars(symbol, "4h", e.cfg.PivotWindow+4, cur.OpenTime), e.cfg.PivotWindow),
+		cur.OpenTime)
+	breakVerdict := kernel.H1CloseBreak(breakLevels, prev, cur, e.cfg.TickSize)
+	if !breakVerdict.Fired {
+		return EvaluateResult{Stage: "watching", Momentum: stall}
+	}
+
+	// --- Eligibility: the following 5m interval + freshness ---
+	fiveM := e.bars(symbol, "5m", e.cfg.SwingLookback+4, nowMs)
+	if len(fiveM) == 0 {
+		return EvaluateResult{Stage: "watching", Momentum: stall}
+	}
+	newest5m := fiveM[len(fiveM)-1]
+	intervalStart := newest5m.OpenTime + 5*60_000 // the boundary of the NEXT 5m interval
+	elapsed := nowMs - intervalStart
+	windowMs := int64(e.cfg.EntryWindowSec) * 1000
+	if elapsed < 0 {
+		// The next interval has not begun — wait for its boundary frame.
+		return EvaluateResult{Stage: "watching", Momentum: stall}
+	}
+	level := breakLevels[breakVerdict.LevelIdx]
+	// The system's strategy identity IS the trader id (plans.strategy_id =
+	// trader id) — the opportunity key uses the same binding.
+	strategyID := e.at.id
+	contract, _ := e.at.currentContract(symbol)
+	oppKey := store.PictureHtfOppKey(strategyID, e.at.currentAccountName(), contract, breakVerdict.Direction, level.Role, level.SourceOpen, cur.CloseTime)
+	if elapsed > windowMs {
+		return e.refuse(oppKey, "expired", fmt.Sprintf("entry window passed (%dms > %dms)", elapsed, windowMs), stall)
+	}
+	// ARRIVAL-ORDER INDEPENDENCE: the first 5m frame of the interval has not
+	// been received yet. The entry cannot be sent without a fresh receipt, so
+	// the mode WAITS — it must NOT write a refusal row that a qualifying
+	// in-window frame arriving milliseconds later would have to live with.
+	// (A 4h/1h frame landing just before the 5m boundary frame must not kill
+	// the setup.)
+	if e.freshest5mAt.IsZero() {
+		return EvaluateResult{Stage: "watching", Reason: "awaiting the first 5m frame of the interval", Momentum: stall}
+	}
+	if now.Sub(e.freshest5mAt).Milliseconds() > int64(e.cfg.FreshnessSec)*1000 {
+		return e.refuse(oppKey, "expired", "data age exceeds the freshness limit — a late frame cannot enter", stall)
+	}
+
+	// --- Geometry: structural stop + opposing-zone target ---
+	stopPx, ok := kernel.StructuralSwing5M(fiveM, breakVerdict.Direction, e.cfg.SwingLookback, cur.CloseTime)
+	if !ok {
+		return e.refuse(oppKey, "refused", "no confirmed 5m swing stop before the H1 close — no trade", stall)
+	}
+	stopPx -= e.cfg.TickSize
+	if breakVerdict.Direction == "short" {
+		stopPx = stopPx + 2*e.cfg.TickSize
+	}
+	entryRef := newest5m.Close
+	targetPx, ok := kernel.NearestOpposingZone(kernel.ActiveLevels(e.levels, nowMs), entryRef, breakVerdict.Direction, nowMs)
+	if !ok {
+		return e.refuse(oppKey, "refused", "no eligible opposing 4H zone — no trade", stall)
+	}
+	risk := absF(entryRef - stopPx)
+	reward := absF(targetPx - entryRef)
+	rr := 0.0
+	if risk > 0 {
+		rr = reward / risk
+	}
+	minRR := e.cfg.MinRR
+	if minRR <= 0 {
+		if sc := e.at.GetStrategyConfig(); sc != nil {
+			minRR = sc.RiskControl.MinRiskRewardRatio
+			if minRR <= 0 {
+				minRR = store.SafeDefaultMinRiskReward
+			}
+		}
+	}
+	if rr < minRR {
+		return e.refuse(oppKey, "refused", fmt.Sprintf("nearest opposing zone offers %.2fR; the configured minimum is %.2fR — the nearer zone is never skipped", rr, minRR), stall)
+	}
+
+	// --- Admission: claim the row, then atomically own the submission ---
+	row := &store.PictureHtfOpportunityDB{
+		OppKey: oppKey, TraderID: e.at.id, StrategyID: strategyID,
+		Account: e.at.currentAccountName(), Contract: contract, Symbol: symbol,
+		Direction: breakVerdict.Direction, RuleVer: 1, Stage: "confirmed",
+		LevelRole: level.Role, LevelBodyTop: level.BodyTop, LevelBodyBot: level.BodyBottom,
+		LevelWickHi: level.WickHigh, LevelWickLo: level.WickLow,
+		LevelBarOpen: level.SourceOpen, LevelKnowable: level.KnowableAt,
+		H1PrevClose: breakVerdict.PrevClose, H1NewClose: breakVerdict.NewClose, H1Boundary: breakVerdict.Boundary,
+		H1OpenTime: cur.OpenTime, H1CloseTime: cur.CloseTime, H1Completion: nowMs,
+		WindowOpen: intervalStart, WindowClose: intervalStart + windowMs, FreshVerdict: "fresh",
+		EntryRef: entryRef, StopPx: stopPx, StopSource: "5m swing", TargetPx: targetPx, TargetZone: level.Role,
+		RREstimate: rr, RRConfigured: minRR,
+	}
+	if stall != nil {
+		row.MomentumStall = stall.Fired
+		row.MomentumDir = stall.Direction
+	}
+	_, fresh, err := e.at.store.PictureHtfClaim(row)
+	if err != nil {
+		return EvaluateResult{Stage: "watching", Reason: "store claim failed: " + err.Error(), OppKey: oppKey, Momentum: stall}
+	}
+	if !fresh {
+		// Duplicate frame/restart — the opportunity already exists (a refused
+		// row counts as an existing opportunity; the claim is durable).
+		return EvaluateResult{Stage: "watching", Reason: "opportunity already claimed", OppKey: oppKey, Momentum: stall}
+	}
+	signalID := fmt.Sprintf("picture-htf-%d", nowMs)
+	won, err := e.at.store.PictureHtfClaimSubmission(oppKey, signalID)
+	if err != nil || !won {
+		return EvaluateResult{Stage: "watching", Reason: "submission ownership lost", OppKey: oppKey, Momentum: stall}
+	}
+	// The atomic owner sends. The seam is the production market-entry method
+	// (wired with the next wave commit); until then it returns unbound and the
+	// row stays place_pending for the reconciliation sweep — never a blind
+	// resend.
+	if err := pictureHtfSubmitSeam(e, row, stopPx, targetPx, 0); err != nil {
+		// The send failed AFTER the claim — the row stays place_pending and
+		// blocks re-entry until reconciled against NT8 orders (addendum #4).
+		return EvaluateResult{Stage: "submitted", Reason: "send ambiguous: " + err.Error(), OppKey: oppKey, Momentum: stall}
+	}
+	return EvaluateResult{Stage: "submitted", OppKey: oppKey, Momentum: stall}
+}
+
+func (e *PictureHtfEvaluator) refuse(oppKey, stage, reason string, stall *kernel.MomentumStall) EvaluateResult {
+	if e.at != nil && e.at.store != nil && oppKey != "" {
+		_, _, _ = e.at.store.PictureHtfClaim(&store.PictureHtfOpportunityDB{OppKey: oppKey, TraderID: e.at.id, Stage: stage, StageReason: reason})
+		_ = e.at.store.PictureHtfTransition(oppKey, stage, reason)
+	}
+	return EvaluateResult{Stage: stage, Reason: reason, OppKey: oppKey, Momentum: stall}
+}

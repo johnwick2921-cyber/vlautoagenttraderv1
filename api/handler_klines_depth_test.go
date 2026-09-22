@@ -70,6 +70,14 @@ func TestKlinesAggregatedDepthFallsBackWhenNoOlder(t *testing.T) {
 // current contract's rows come first, and a historical_import snapshot is never
 // rendered where a live row exists.
 func TestKlinesNinjaTraderStoreDepthContractFiltered(t *testing.T) {
+	// W-ROLL-DAY-CHART — this test pins the PRE-WAVE wire ("prices untouched").
+	// The derive+adjust default shifts the prior segment by the measured basis,
+	// which is exactly the fix this wave ships; the byte-identical legacy path
+	// is what this fixture must keep exercising.
+	oldKnob := chartRollStitchDerive
+	chartRollStitchDerive = false
+	defer func() { chartRollStitchDerive = oldKnob }()
+
 	orig := market.FuturesBarsProvider
 	defer func() { market.FuturesBarsProvider = orig }()
 
@@ -114,7 +122,7 @@ func TestKlinesNinjaTraderStoreDepthContractFiltered(t *testing.T) {
 	}
 
 	s := &Server{store: st}
-	out := s.getKlinesFromNinjaTrader("MNQ", "1m", 6)
+	out, _ := s.getKlinesFromNinjaTrader("MNQ", "1m", 6)
 	// 6 asked: 2 ring + 3 stored current-contract = 5, and ONE prior-contract
 	// bar (older(4), 09-26) fills behind the current contract's first live row
 	// — labelled, its sentinel close untouched. Under the 09-14 rule this was 5.
@@ -142,7 +150,7 @@ func TestKlinesNinjaTraderStoreDepthContractFiltered(t *testing.T) {
 	prev := chartAcrossRoll
 	chartAcrossRoll = false
 	t.Cleanup(func() { chartAcrossRoll = prev })
-	if off := s.getKlinesFromNinjaTrader("MNQ", "1m", 6); len(off) != 5 || off[0].OpenTime != older(3) {
+	if off, _ := s.getKlinesFromNinjaTrader("MNQ", "1m", 6); len(off) != 5 || off[0].OpenTime != older(3) {
 		t.Fatalf("with NOFX_CHART_ACROSS_ROLL=off the 09-14 behaviour must hold: got %d bars, oldest %d", len(off), off[0].OpenTime)
 	}
 }
@@ -217,7 +225,7 @@ func TestKlinesNinjaTraderDisplayDropsRingImportSnapshots(t *testing.T) {
 	}
 
 	s := &Server{store: st}
-	out := s.getKlinesFromNinjaTrader("MNQ", "1m", 5)
+	out, _ := s.getKlinesFromNinjaTrader("MNQ", "1m", 5)
 	if len(out) != 1 {
 		t.Fatalf("served %d bars, want 1 — the ring's import snapshot must be dropped from the display chart: %+v", len(out), out)
 	}
@@ -266,7 +274,7 @@ func TestKlinesNinjaTraderDisplayKeepsDenseImportHistory(t *testing.T) {
 	}
 
 	s := &Server{store: st}
-	out := s.getKlinesFromNinjaTrader("MNQ", "1m", 5)
+	out, _ := s.getKlinesFromNinjaTrader("MNQ", "1m", 5)
 	if len(out) != 4 {
 		t.Fatalf("served %d bars, want 4 (3 dense import + 1 ring): %+v", len(out), out)
 	}
@@ -318,7 +326,7 @@ func TestKlinesNinjaTraderDisplayFillsRingHoles(t *testing.T) {
 	}
 
 	s := &Server{store: st}
-	out := s.getKlinesFromNinjaTrader("MNQ", "1m", 10)
+	out, _ := s.getKlinesFromNinjaTrader("MNQ", "1m", 10)
 	if len(out) != 6 {
 		t.Fatalf("served %d bars, want 6 (2 ring + 4 store fill): %+v", len(out), out)
 	}
@@ -340,7 +348,7 @@ func TestKlinesNinjaTraderNoStoreServesRing(t *testing.T) {
 		return []market.Kline{{OpenTime: 1, Close: 5}}
 	}
 	s := &Server{}
-	out := s.getKlinesFromNinjaTrader("MNQ", "1m", 100)
+	out, _ := s.getKlinesFromNinjaTrader("MNQ", "1m", 100)
 	if len(out) != 1 || out[0].Close != 5 {
 		t.Fatalf("without a store the ring must pass through unchanged: %+v", out)
 	}

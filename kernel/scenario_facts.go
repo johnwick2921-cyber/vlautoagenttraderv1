@@ -162,6 +162,15 @@ func AcceptanceBars(bars []market.Kline, rule string) []market.Kline {
 	return aggregateToMinutes(bars, acceptanceTFMinutes(rule))
 }
 
+// AggregateToMinutes (W-ROLL-DAY-CHART, 2026-09-19) is the exported form of
+// aggregateToMinutes for DISPLAY readers: the chart's roll-day prior segment
+// must bucket exactly the way the planner's acceptance bars bucket (canon 53 —
+// one canonical aggregation per identifier). Fixed wall-clock buckets,
+// non-empty only, CloseTime = bucket end − 1ms, never invents a bucket.
+func AggregateToMinutes(bars []market.Kline, tfMinutes int) []market.Kline {
+	return aggregateToMinutes(bars, tfMinutes)
+}
+
 // aggregateToMinutes groups bars into fixed wall-clock buckets of tfMinutes and
 // returns one OHLC bar per NON-EMPTY bucket.
 //

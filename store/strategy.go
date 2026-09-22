@@ -908,6 +908,46 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 // list). Additive + defaults-off: a nil *DayPlanConfig (absent day_plan) leaves
 // an existing strategy byte-identical, and PlanEnabled=false is the master
 // switch even when the block is present. Lives at ROOT of StrategyConfig.
+// PictureHtfConfig (W-PICTURE-HTF, 2026-09-19) — the named SIM entry mode's
+// knobs. The explicit defaults are ENGINEERING DEFAULTS chosen to translate the
+// owner's two pictures into repeatable rules; they are not research-proven
+// optimums (the Guide says the same). Zero values mean "use the default".
+type PictureHtfConfig struct {
+	Enabled        bool    `json:"enabled"`
+	TickSize       float64 `json:"tick_size,omitempty"`        // default 0.25 (MNQ)
+	PivotWindow    int     `json:"pivot_window,omitempty"`     // default 120 completed 4H candles
+	SwingLookback  int     `json:"swing_lookback,omitempty"`   // default 24 completed 5m candles
+	EntryWindowSec int     `json:"entry_window_sec,omitempty"` // default 10s from the new 5m interval start
+	FreshnessSec   int     `json:"freshness_sec,omitempty"`    // default 2s max data age at evaluation
+	MinRR          float64 `json:"min_rr,omitempty"`           // 0 = the strategy's configured min R:R
+}
+
+// PictureHtfResolved returns the mode's effective knobs (defaults applied).
+func PictureHtfResolved(c *PictureHtfConfig) PictureHtfConfig {
+	out := PictureHtfConfig{Enabled: c != nil && c.Enabled}
+	if c == nil {
+		c = &PictureHtfConfig{}
+	}
+	out.TickSize, out.PivotWindow, out.SwingLookback, out.EntryWindowSec, out.FreshnessSec, out.MinRR =
+		c.TickSize, c.PivotWindow, c.SwingLookback, c.EntryWindowSec, c.FreshnessSec, c.MinRR
+	if out.TickSize <= 0 {
+		out.TickSize = 0.25
+	}
+	if out.PivotWindow <= 0 {
+		out.PivotWindow = 120
+	}
+	if out.SwingLookback <= 0 {
+		out.SwingLookback = 24
+	}
+	if out.EntryWindowSec <= 0 {
+		out.EntryWindowSec = 10
+	}
+	if out.FreshnessSec <= 0 {
+		out.FreshnessSec = 2
+	}
+	return out
+}
+
 type DayPlanConfig struct {
 	StructuralStop *StructuralStopConfig `json:"structural_stop,omitempty"`
 	// PlanEnabled is the master switch (default false = off).
@@ -928,6 +968,12 @@ type DayPlanConfig struct {
 	// explicit false restores today's wide book byte-identically (E2). A plain
 	// bool would read an unset strategy as OFF — the plausible zero A24 forbids.
 	OneSetupEnabled *bool `json:"one_setup_enabled,omitempty"`
+	// PictureHtf (W-PICTURE-HTF, 2026-09-19) — the owner's two-picture method
+	// as a named SIM entry mode. nil = OFF. When ON, this strategy's entry
+	// selection is the DETERMINISTIC picture path (4H body levels → H1 close
+	// break → next-5m entry through the shared execution gate) and the AI
+	// provides commentary + momentum context instead of authoring fade entries.
+	PictureHtf *PictureHtfConfig `json:"picture_htf,omitempty"`
 	// OneSetupMinGrade — the lowest merged-candidate grade the best level may
 	// carry ("A+" | "A" | "B" | "C"); empty = B [O].
 	OneSetupMinGrade string `json:"one_setup_min_grade,omitempty"`
@@ -963,6 +1009,14 @@ type DayPlanConfig struct {
 	// re-read in the flipped direction (trigger structure_flip). OFF = today's
 	// behaviour byte-identical.
 	FlipReread bool `json:"flip_reread,omitempty"`
+	// DeathReread (W-DEATH-REREAD, 2026-09-18, owner ruling 12:3x CT "fix all"):
+	// when a DEATH condition fires, the plan still goes DORMANT exactly as
+	// before, and ON adds ONE BUDGETED planner re-read (trigger death_replan —
+	// it SPENDS one unit of the class-35 replan budget, unlike the flip read)
+	// that authors a FRESH plan, bias free, with the death evidence in the read
+	// prompt. A POINTER because the default is ON: nil = ON, explicit false =
+	// today's behaviour byte-identical (dormant only).
+	DeathReread *bool `json:"death_reread,omitempty"`
 	// T1Currencies (W-T1-CURRENCIES, 2026-09-18): the currencies whose T1
 	// (red) calendar events HARD-block entries (±T1BlackoutMinutes). Empty/nil
 	// = the shipped default ["USD"]. An explicit ["ALL"] (or ["*"]) restores
@@ -1717,6 +1771,16 @@ func (c *DayPlanConfig) WriteTimeFeasibilityEnabled() bool {
 // resolve through this seam so they can never disagree.
 func (c *DayPlanConfig) GeometryRefIDsEnabled() bool {
 	return c == nil || c.GeometryReferenceLevels == nil || *c.GeometryReferenceLevels
+}
+
+// DeathRereadEnabled is the ONE resolution seam for the day_plan.death_reread
+// knob (W-DEATH-REREAD, 2026-09-18): nil config or nil pointer → ON (the
+// owner's default per the 12:3x CT "fix all" ruling); explicit false → OFF
+// (today's behaviour byte-identical — a death only parks the plan). The death
+// branch, the dormant retry loop, the wick guard and the boot line all resolve
+// through this seam so they can never disagree.
+func (c *DayPlanConfig) DeathRereadEnabled() bool {
+	return c == nil || c.DeathReread == nil || *c.DeathReread
 }
 
 // MinScenarioQualityFor (R4, 2026-08-25) resolves the scenario quality floor:

@@ -43,6 +43,15 @@
 // compiler (the partner mirror). Nothing removed or bumped: modernc.org/sqlite
 // stays v1.40.0, libc stays v1.66.10, gorm.io/driver/sqlite stays v1.6.0. The
 // Go security guard the pin protects (patched toolchain/deps) is intact.
+// tcp_server.go baseline advanced 2026-09-21 for W-PICTURE-HTF (owner GO,
+// merged 23050993): the baseline hash was last pinned at 42c35e2d (the picture
+// branch's own 5/6 commit); the merged-HEAD delta vs that pin is EXACTLY the
+// 111 inserted lines of the CTO-reviewed coordinated order-update fan-out —
+// TCPServer fields (ouFanMu/ouFanNext/ouFanouts) + ListenOrderUpdates +
+// runOrderUpdateFanout + the two test feed hooks. ADDITIVE only: zero
+// removals, no identifier renamed, no guard removed; the bar-feed guards this
+// pin protects (SubscribeBarsHistoryFor, bars_history_request write,
+// bars_history_data/_error fan-out) are byte-untouched by that delta.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

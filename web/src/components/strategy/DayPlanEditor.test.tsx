@@ -95,6 +95,12 @@ describe('DayPlanEditor', () => {
       })
     )
     onChange.mockClear()
+    // W-DEATH-REREAD (2026-09-18): default ON — the first click turns it OFF.
+    fireEvent.click(screen.getByTestId('death-reread-toggle'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ death_reread: false })
+    )
+    onChange.mockClear()
     fireEvent.click(screen.getByTestId('wake-on-level-events-toggle'))
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ wake_on_level_events: false })

@@ -82,6 +82,23 @@ func EntryLawFor(condition string) (conditionEntryLaw, bool) {
 	return law, ok
 }
 
+// PictureHtfConfirmRule (W-PICTURE-HTF, 2026-09-19) is the mode's ONE legal
+// confirmation rule: a completed H1 close at least one tick beyond a known 4H
+// body boundary (the entire candle body need not cross). The deterministic
+// evaluator applies it directly; this surface exists so the validator and the
+// boot ledger name it — an unknown rule in a picture_htf context rejects
+// EXPLICITLY, never by falling back to another confirmation rule.
+const PictureHtfConfirmRule = "h1_close_break"
+
+// ValidatePictureHtfRule rejects any confirm rule that is not the mode's own.
+// The error names the offending rule; callers must not substitute a fallback.
+func ValidatePictureHtfRule(rule string) error {
+	if strings.EqualFold(strings.TrimSpace(rule), PictureHtfConfirmRule) {
+		return nil
+	}
+	return fmt.Errorf("picture_htf requires the %s confirmation rule (got %q) — unknown rules reject explicitly, never fall back", PictureHtfConfirmRule, rule)
+}
+
 // 2x5m is RESERVED for the waterfall class — every other condition that
 // authors it gets the named rejection "2x5m_reserved".
 func twoX5mReserved(condition string) bool {
