@@ -107,7 +107,7 @@ func (f w2Fixture) facts() kernel.PlanFacts {
 	return kernel.PlanFacts{Price: f.PriceAtWrite, DATR: 300, IdentityMap: f.candidates()}
 }
 
-func w2Trader(t *testing.T) *AutoTrader {
+func w2TruthTrader(t *testing.T) *AutoTrader {
 	t.Helper()
 	at := plannerTestTrader(t)
 	at.config.StrategyConfig.DayPlan.MaxLevels = 12
@@ -162,7 +162,7 @@ func w2Counter(t *testing.T, at *AutoTrader, what string) int {
 // naming both ids and both prices; attempt 2 with the SWG-H·5m id publishes.
 func TestW2A3Row452S2RefusedThenRepublishedWithTheRightID(t *testing.T) {
 	f := loadW2Fixture(t, 452)
-	at := w2Trader(t)
+	at := w2TruthTrader(t)
 	pdhID, swgID := f.idAt(t, 30917.5), f.idAt(t, 31009.75)
 	bad := f.scenario(t, "S2")
 	if bad["level_id"] != pdhID {
@@ -205,7 +205,7 @@ func TestW2A3Row452S2RefusedThenRepublishedWithTheRightID(t *testing.T) {
 // A3 always-bad → the existing fail-closed NO-TRADE path after 3 attempts.
 func TestW2A3AlwaysDisagreeingFailsClosed(t *testing.T) {
 	f := loadW2Fixture(t, 452)
-	at := w2Trader(t)
+	at := w2TruthTrader(t)
 	prompts, lc := w2Write(t, at, "ASIA", "2026-09-22", f.facts(), f.planJSON(t, f.scenario(t, "S2")))
 	if lc != "no_trade" || len(prompts) != 3 {
 		t.Fatalf("an always-disagreeing plan must fail closed after 3 attempts: lc=%q calls=%d", lc, len(prompts))
@@ -233,7 +233,7 @@ func TestW2A3UnresolvedIDsRefusedThenRepublished(t *testing.T) {
 		{"ref| id with an altered digest", "ref|" + string(mangled)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			at := w2Trader(t)
+			at := w2TruthTrader(t)
 			bad := f.scenario(t, "S2")
 			bad["level_id"] = tc.id
 			good := f.scenario(t, "S2")
@@ -264,7 +264,7 @@ func TestW2A3UnresolvedIDsRefusedThenRepublished(t *testing.T) {
 // both and publishes.
 func TestW2A4Row455S2AndS4RefusedByNameThenRepublished(t *testing.T) {
 	f := loadW2Fixture(t, 455)
-	at := w2Trader(t)
+	at := w2TruthTrader(t)
 	s2, s4 := f.scenario(t, "S2"), f.scenario(t, "S4")
 	prompts, lc := w2Write(t, at, "LONDON", "2026-09-23", f.facts(), f.planJSON(t, s2, s4), f.planJSON(t, w2Row455S2Fixed(t, f), w2Row455S4Fixed(t, f)))
 	if lc != "active" || len(prompts) != 2 {
@@ -344,7 +344,7 @@ func TestW2A3MultiAnchorSweepReclaim(t *testing.T) {
 		return s
 	}
 	t.Run("legit two anchors publish", func(t *testing.T) {
-		at := w2Trader(t)
+		at := w2TruthTrader(t)
 		prompts, lc := w2Write(t, at, "LONDON", "2026-09-23", f.facts(), f.planJSON(t, legit()))
 		if lc != "active" || len(prompts) != 1 {
 			t.Fatalf("legit two-anchor sweep_reclaim must publish on attempt 1: lc=%q calls=%d", lc, len(prompts))
@@ -358,14 +358,14 @@ func TestW2A3MultiAnchorSweepReclaim(t *testing.T) {
 	// legitimate only because the two-anchor fields vouch for it; without
 	// them it is an identity≠price refusal.
 	t.Run("level_id at a validated leg", func(t *testing.T) {
-		at := w2Trader(t)
+		at := w2TruthTrader(t)
 		s := legit()
 		s["level_id"] = vwap2
 		prompts, lc := w2Write(t, at, "LONDON", "2026-09-23", f.facts(), f.planJSON(t, s))
 		if lc != "active" || len(prompts) != 1 {
 			t.Fatalf("level_id at a declared, validated leg must publish: lc=%q calls=%d", lc, len(prompts))
 		}
-		at2 := w2Trader(t)
+		at2 := w2TruthTrader(t)
 		bare := legit()
 		bare["level_id"] = vwap2
 		delete(bare, "sweep_level_id")
@@ -384,7 +384,7 @@ func TestW2A3MultiAnchorSweepReclaim(t *testing.T) {
 		{"unresolved sweep id", kernel.WriteTruthIdentityUnresolved, "sweep_level_id", func(s map[string]any) { s["sweep_level_id"] = "ref|" + strings.Repeat("0", 64) }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			at := w2Trader(t)
+			at := w2TruthTrader(t)
 			bad := legit()
 			tc.mutate(bad)
 			prompts, lc := w2Write(t, at, "LONDON", "2026-09-23", f.facts(), f.planJSON(t, bad), f.planJSON(t, legit()))
@@ -575,7 +575,7 @@ func w2f(v float64) *float64 { return &v }
 // same refusal; the corrected document is legal.
 func TestW2ShadowVerdictParity(t *testing.T) {
 	f := loadW2Fixture(t, 452)
-	at := w2Trader(t)
+	at := w2TruthTrader(t)
 	good := f.scenario(t, "S2")
 	good["level_id"] = f.idAt(t, 31009.75)
 	legal, reasons := at.shadowVerdictFor(f.planJSON(t, f.scenario(t, "S2")), 12, 3, f.facts(), nil, nil, "")
