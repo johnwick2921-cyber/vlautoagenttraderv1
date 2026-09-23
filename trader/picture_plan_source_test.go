@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net"
 	"path/filepath"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"nofx/kernel"
+	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
 	ntTrader "nofx/trader/ninjatrader"
@@ -756,5 +758,57 @@ func TestCarryOwnerEditsSkipsMachineOverlays(t *testing.T) {
 		if a.Kind == "overlays-need-review" || a.Kind == "overlays-orphaned" {
 			t.Fatalf("false P1 alert for a machine overlay: %+v", a)
 		}
+	}
+}
+
+// onGridPicture5M is pictureBars5M on the MNQ tick grid (production bars are;
+// the zone is judged after inward rounding to the tick, so an off-grid close
+// is an empty zone): the same climb to ~101.5 and the same strict 98.50 swing.
+func onGridPicture5M() []market.Kline {
+	base := t4h0 + 39*3600*1000 + 40*60*1000 // 16:40Z
+	out := make([]market.Kline, 0, 28)
+	for i := 0; i < 28; i++ {
+		c := math.Round((99.3+float64(i)*0.08)*4) / 4
+		lo := c - 0.5
+		if i == 22 {
+			lo = 98.5
+		}
+		out = append(out, mkBar(base+int64(i)*5*60*1000, 5*60*1000, c, c+0.5, lo, c))
+	}
+	return out
+}
+
+// THE PRODUCTION CALL SITE END TO END: the evaluator's own Evaluate claims
+// the opportunity and calls the production seam; the opportunity becomes a
+// recorded Day Plan scenario from the evaluator's OWN row and admission
+// record, the row settles planned, and the evaluator's result stays
+// "submitted" (F17: it now means "handed off").
+func TestPictureEvaluateHandsOffThroughTheProductionSeam(t *testing.T) {
+	prod := pictureHtfSubmitSeam
+	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	pictureHtfSubmitSeam = prod // the harness recorder out; the production binding in (its cleanup restores prod)
+	env.seed(pictureBars4H(), pictureBarsH1(), onGridPicture5M())
+	env.at.markPictureRunEpoch(env.now)
+	t.Cleanup(env.at.clearPictureRunEpoch)
+	env.eval.freshest5mAt = env.now
+	res := env.eval.Evaluate("MNQ", env.now)
+	if res.Stage != "submitted" || res.OppKey == "" {
+		t.Fatalf("the hand-off must succeed through the production seam: %+v", res)
+	}
+	row := pictureRow(t, env.st, res.OppKey)
+	if row.Stage != store.PictureStagePlanned || !strings.HasPrefix(row.StageReason, "Day Plan scenario P1 · ") || row.SubmittedAt != 0 {
+		t.Fatalf("the evaluator's row settles planned, never sent: %+v", row)
+	}
+	now := env.now
+	sess, _ := env.at.sessionRegistry(now).ActiveSession(now)
+	plan, _ := env.st.Plan().GetLatestPlanForTraderSession(sessionChainDate(sess, now), sess.Name, env.at.id)
+	if plan == nil || !store.IsMachinePlan(plan) {
+		t.Fatalf("no plan existed → a machine plan: %+v", plan)
+	}
+	doc, _ := resolveActivePlanDoc(env.st, plan)
+	sc, ok := kernel.MachineScenarioByRef(doc, res.OppKey)
+	if !ok || sc.Arm.Stop != row.StopPx || sc.Arm.Target != row.TargetPx || sc.Arm.Entry != row.EntryRef ||
+		sc.Machine.EligibleUntilMs != row.WindowClose || sc.Direction != row.Direction {
+		t.Fatalf("the scenario must carry the evaluator's own geometry and window: sc=%+v arm=%+v row=%+v", sc, sc.Arm, row)
 	}
 }
