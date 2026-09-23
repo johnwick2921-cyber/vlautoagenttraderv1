@@ -228,3 +228,42 @@ func TestUnwiredEntryPermitAllows(t *testing.T) {
 		t.Fatal("unwired: the entry never reached the wire")
 	}
 }
+
+// M2.1 (review 3 F11): the permit refusal sits BEFORE the B3 dedupe in EVERY
+// entry function, not only placeEntry: once the hold lifts, the very same
+// entry is admitted (a refusal that consumed the dedupe slot would drop the
+// legitimate retry). Mutation: PlaceLimitEntry's permit moved after B3.
+func TestEntryPermitRefusalNeverConsumesTheDedupeSlotInAnyEntryFunction(t *testing.T) {
+	calls := map[string]func(tr *TCPTrader) error{
+		"placeEntry(OpenLong)": func(tr *TCPTrader) error { _, err := tr.OpenLong("MNQ", 1, 1); return err },
+		"MarketEntryWithProtection": func(tr *TCPTrader) error {
+			_, err := tr.MarketEntryWithProtection("long", 1, 29000, 29200)
+			return err
+		},
+		"PlaceLimitEntry": func(tr *TCPTrader) error {
+			_, err := tr.PlaceLimitEntry("MNQ", "long", 1, 29100, 29000, 29200)
+			return err
+		},
+		"PlaceStopEntry": func(tr *TCPTrader) error {
+			_, err := tr.PlaceStopEntry("MNQ", "long", 1, 29150, 29000, 29300)
+			return err
+		},
+	}
+	for name, call := range calls {
+		t.Run(name, func(t *testing.T) {
+			s, frames := allFramesServer(t)
+			tr := armedTrader(t, s)
+			tr.SetEntryPermit(refusePermit)
+			if err := call(tr); !errors.Is(err, ErrMaintenanceHold) {
+				t.Fatalf("held: want ErrMaintenanceHold, got %v", err)
+			}
+			tr.SetEntryPermit(func() (func(), bool) { return func() {}, true })
+			if err := call(tr); err != nil {
+				t.Fatalf("after the hold lifts the same entry must be admitted, got %v", err)
+			}
+			if !waitFrame(frames, ntwire.FrameSignal, 2*time.Second) {
+				t.Fatal("the admitted entry never reached the wire")
+			}
+		})
+	}
+}
