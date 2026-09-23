@@ -840,6 +840,8 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		// queue's hold check (gap U2). Wired at construction, before Run.
 		nt.SetEntryPermit(MaintenanceEntryPermit)
 		nt.SetEntryHoldCheck(maintenanceQueueHeld)
+		// Site 7 — the AddOn learns the hold over the wire (silent when unheld).
+		nt.SetMaintenanceSource(maintenanceWireState)
 	}
 	return at, nil
 }

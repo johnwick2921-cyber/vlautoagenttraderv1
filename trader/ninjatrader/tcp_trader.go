@@ -164,6 +164,14 @@ func (t *TCPTrader) SetEntryHoldCheck(fn func() bool) {
 	}
 }
 
+// SetMaintenanceSource forwards the installation hold to this trader's TCP
+// server, which pushes it to the AddOn as the maintenance frame (M2 site 7).
+func (t *TCPTrader) SetMaintenanceSource(fn func() (bool, string)) {
+	if t.server != nil {
+		t.server.SetMaintenanceSource(fn)
+	}
+}
+
 // SetEntryPermit installs the maintenance permit. Only entry sends take it:
 // PlaceProtectiveStop, CancelOrder, ModifyBracket, MoveStopToBreakeven and the
 // close paths never do (CTO correction C1).

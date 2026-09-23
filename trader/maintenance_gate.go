@@ -72,6 +72,20 @@ func MaintenanceEntryPermit() (release func(), ok bool) {
 	return maintenanceBarrier.Permit()
 }
 
+// maintenanceWireState is the hold as the wire carries it to the AddOn
+// (site 7): (held, job id). A corrupt file is held with no job (fail-closed —
+// the AddOn refuses entries; the gate then needs an ack for job "").
+func maintenanceWireState() (bool, string) {
+	st, configured := maintenanceState()
+	if !configured || !st.Held {
+		return false, ""
+	}
+	if st.Corrupt {
+		return true, ""
+	}
+	return true, st.Hold.JobID
+}
+
 // MaintenanceInFlight is the number of entry sends holding a permit now.
 func MaintenanceInFlight() int64 { return maintenanceBarrier.InFlight() }
 

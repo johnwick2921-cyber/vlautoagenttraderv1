@@ -39,7 +39,7 @@ func TestNewAutoTraderWiresTheMaintenancePermitAndQueueCheck(t *testing.T) {
 			return true
 		}
 		switch sel.Sel.Name {
-		case "SetEntryPermit", "SetEntryHoldCheck":
+		case "SetEntryPermit", "SetEntryHoldCheck", "SetMaintenanceSource":
 			switch a := call.Args[0].(type) {
 			case *ast.Ident:
 				found[sel.Sel.Name] = a.Name
@@ -54,6 +54,29 @@ func TestNewAutoTraderWiresTheMaintenancePermitAndQueueCheck(t *testing.T) {
 	}
 	if found["SetEntryHoldCheck"] != "maintenanceQueueHeld" {
 		t.Fatalf("NewAutoTrader must call nt.SetEntryHoldCheck(maintenanceQueueHeld); found %q", found["SetEntryHoldCheck"])
+	}
+	// Site 7: the wire learns the hold from the same process-wide gate.
+	if found["SetMaintenanceSource"] != "maintenanceWireState" {
+		t.Fatalf("NewAutoTrader must call nt.SetMaintenanceSource(maintenanceWireState); found %q", found["SetMaintenanceSource"])
+	}
+}
+
+// maintenanceWireState is what the AddOn is told: absent → not held; held →
+// the job id; a corrupt file → held with no job (fail-closed).
+func TestMaintenanceWireStateFollowsTheHoldFile(t *testing.T) {
+	dir := withMaintenanceDir(t)
+	if held, job := maintenanceWireState(); held || job != "" {
+		t.Fatalf("absent → (false, \"\"), got (%v, %q)", held, job)
+	}
+	setHold(t, dir, "job-wire")
+	if held, job := maintenanceWireState(); !held || job != "job-wire" {
+		t.Fatalf("held → (true, job-wire), got (%v, %q)", held, job)
+	}
+	if err := writeRaw(dir, "{not json"); err != nil {
+		t.Fatal(err)
+	}
+	if held, job := maintenanceWireState(); !held || job != "" {
+		t.Fatalf("corrupt → (true, \"\"), got (%v, %q)", held, job)
 	}
 }
 
