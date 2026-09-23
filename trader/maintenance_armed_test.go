@@ -209,3 +209,40 @@ func TestArmedLimitBrokerPermitRefusalLeavesTheArmArmed(t *testing.T) {
 		t.Fatal("the broker-permit refusal was not counted as maintenance_hold")
 	}
 }
+
+// M2.1 (review 3 F3, CTO: first after F4) — the permit-then-hold race. The
+// pass read "not held" and the permit was granted, but the hold landed before
+// the queue flush: the entry is DROPPED (ErrEntryHeld) and the drop sink
+// retires the place_pending row as never sent. The log must say exactly that —
+// not "the arm stays armed and places after the update", which was a lie.
+func TestArmedEntryDroppedAfterItsPermitSaysTheArmWasRetired(t *testing.T) {
+	withMaintenanceDir(t) // configured, no hold FILE: the pass reads "not held"
+	at, st, _, now := liveArmFixture(t)
+	nt := at.armedTrader()
+	nt.SetEntryPermit(func() (func(), bool) { return func() {}, true }) // permit granted
+	nt.SetEntryHoldCheck(func() bool { return true })                   // ...then the hold is seen at the flush
+	nt.SetDroppedEntrySink(at.id, at.onMaintenanceDroppedEntry)
+	logs := captureTraderLog(t)
+
+	at.maybeManageArmedOrdersAt(nil, now)
+
+	rows, err := st.ArmedOrders().ListNonTerminal(at.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range rows {
+		if r.State == store.StatePlacePending {
+			t.Fatalf("the dropped entry's row must be settled, not left place_pending: %+v", r)
+		}
+	}
+	out := logs.String()
+	if !strings.Contains(out, "never sent") {
+		t.Fatalf("fixture: the queue drop must have settled the row as never sent; log:\n%s", out)
+	}
+	if strings.Contains(out, "stays armed") {
+		t.Fatalf("the arm was retired by the drop — the log must not claim it stays armed; log:\n%s", out)
+	}
+	if !strings.Contains(out, "retired") {
+		t.Fatalf("the refusal line must say the arm was retired (never sent); log:\n%s", out)
+	}
+}

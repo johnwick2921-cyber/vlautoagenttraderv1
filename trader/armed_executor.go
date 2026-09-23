@@ -1265,7 +1265,7 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				// verdict, action — is ONE pure value so a test can drive it with
 				// the casing the STORE actually hands back (class 77).
 				if held {
-					at.refuseMaintenanceHold(r, holdReason, "stop-entry", now)
+					at.refuseMaintenanceHold(r, holdReason, "stop-entry", now, nil)
 					continue
 				}
 				if !contract.Allowed() || placedThisPass {
@@ -1303,7 +1303,7 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				// route to the wire, and the nine-order incident came through a
 				// slot that could be placed into repeatedly.
 				if held {
-					at.refuseMaintenanceHold(r, holdReason, "limit", now)
+					at.refuseMaintenanceHold(r, holdReason, "limit", now, nil)
 					continue
 				}
 				if !contract.Allowed() || placedThisPass {
@@ -1318,7 +1318,7 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				recordResearchPlacement(r, sid, "limit", r.EntryPx, r.StopPx, r.TargetPx, perr)
 				if perr != nil {
 					if ntTrader.IsMaintenanceHold(perr) {
-						at.refuseMaintenanceHold(r, perr.Error(), "limit", now)
+						at.refuseMaintenanceHold(r, perr.Error(), "limit", now, perr)
 						continue
 					}
 					at.logWarnf("📌 armed place failed %s: %v", r.Scenario, perr)
@@ -1590,7 +1590,7 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// after the pass read it. Reported to the caller so it neither latches
 	// "placed" nor cancels the plan's other arms for an order never sent.
 	if reason, held := MaintenanceHeld(); held {
-		at.refuseMaintenanceHold(r, reason, "stop-entry", now)
+		at.refuseMaintenanceHold(r, reason, "stop-entry", now, nil)
 		return true
 	}
 	switch d.Action {
@@ -1643,7 +1643,7 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 		// The broker permit refused (hold landed between the check above and
 		// the send). Same refusal, same report.
 		if ntTrader.IsMaintenanceHold(perr) {
-			at.refuseMaintenanceHold(r, perr.Error(), "stop-entry", now)
+			at.refuseMaintenanceHold(r, perr.Error(), "stop-entry", now, perr)
 			return true
 		}
 		at.logWarnf("📌 stop-entry place failed %s [guard=stop-side passed verdict=%s] %s stop-market trigger=%.2f: %v",
@@ -1656,18 +1656,26 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 }
 
 // refuseMaintenanceHold records one armed entry refused by the installation
-// maintenance hold (W-ONE-BUTTON M2 site 2). A REFUSAL, never a cancellation:
-// the row stays "armed" and places on the first pass after the hold clears.
-// Deduped per arm-spec AND per hold (the reason carries the job id), so a
-// held arm counts once per hold, not once per cycle; the counter class is
-// "maintenance_hold", the same gate name the AI entry path uses.
-func (at *AutoTrader) refuseMaintenanceHold(r store.ArmedOrderDB, reason, what string, now time.Time) {
+// maintenance hold (W-ONE-BUTTON M2 site 2). Refused BEFORE the send (the pass
+// snapshot, placeOneStopEntry's entry check, or the broker permit: perr nil or
+// ErrMaintenanceHold) it is a refusal, never a cancellation — the row stays
+// "armed" and places on the first pass after the hold clears. Refused by the
+// QUEUE (perr wraps ErrEntryHeld: the permit was granted, the hold landed
+// before the flush) the drop sink has already retired the place_pending row
+// as never sent, and the line says so (M2.1, review 3 F3: it used to claim the
+// arm stays armed). Deduped per arm-spec AND per hold (the reason carries the
+// job id); the counter class is "maintenance_hold", as on the AI path.
+func (at *AutoTrader) refuseMaintenanceHold(r store.ArmedOrderDB, reason, what string, now time.Time, perr error) {
 	key := r.PlanID + ":" + strconv.Itoa(r.Version) + ":" + r.Scenario + ":leg" +
 		strconv.Itoa(r.LegIndex+1) + ":maintenance"
+	outcome := "The arm stays armed and places after the update completes."
+	if errors.Is(perr, ntwire.ErrEntryHeld) {
+		outcome = "It had been queued and the hold dropped it before it reached NT8: the arm was retired as never sent and will not place after the update."
+	}
 	if armRefusalChanged(&at.armRefusalLast, key, "maintenance_hold "+reason) {
 		shown := at.countStopEntryRefusal(r, "maintenance_hold", now)
-		at.logWarnf("🔒 armed %s %s entry REFUSED [guard=maintenance_hold] — %s. The arm stays armed and places after the update completes.%s",
-			r.Scenario, what, reason, shown)
+		at.logWarnf("🔒 armed %s %s entry REFUSED [guard=maintenance_hold] — %s. %s%s",
+			r.Scenario, what, reason, outcome, shown)
 	}
 }
 
