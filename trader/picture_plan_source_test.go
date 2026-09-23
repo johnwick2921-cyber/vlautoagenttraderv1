@@ -417,22 +417,25 @@ func TestPictureHandOffRefusesWithoutARunOrARunnableSession(t *testing.T) {
 
 func TestPictureHandOffRefusesAZoneTooWideOrAnRRBelowTheFloor(t *testing.T) {
 	now := handOffNow()
-	for name, mut := range map[string]func(*PictureEvidence){
-		"zone wider than zone_max_pts": func(ev *PictureEvidence) { ev.LatestClose = ev.EntryRef - 12 },
-		"R:R at the far edge below the floor": func(ev *PictureEvidence) {
+	for name, c := range map[string]struct {
+		mut  func(*PictureEvidence)
+		want string
+	}{
+		"zone wider than zone_max_pts": {func(ev *PictureEvidence) { ev.LatestClose = ev.EntryRef - 12 }, "market_in_zone:" + kernel.ZoneTooWide},
+		"R:R at the far edge below the floor": {func(ev *PictureEvidence) {
 			ev.RRFloor = 3.5 // 60/20 = 3.0 at the far edge 21530
-		},
-		"bracket inside the zone": func(ev *PictureEvidence) { ev.Stop = 21529 },
+		}, "below the Picture floor"},
+		"bracket inside the zone": {func(ev *PictureEvidence) { ev.Stop = 21529 }, "market_in_zone:" + kernel.ZoneBracket},
 	} {
 		t.Run(name, func(t *testing.T) {
 			at, st := handOffTrader(t)
 			at.markPictureRunEpoch(now)
 			seedAIPlan(t, st, "active")
 			ev := handOffEvidence(now, 1)
-			mut(&ev)
+			c.mut(&ev)
 			claimHandOff(t, st, ev)
-			if err := at.pictureHandOffAt(ev, now); err == nil {
-				t.Fatal("must refuse")
+			if err := at.pictureHandOffAt(ev, now); err == nil || !strings.Contains(err.Error(), c.want) {
+				t.Fatalf("must refuse naming %q, got %v", c.want, err)
 			}
 			if ovs := listOverlays(t, st, store.MakePlanIDForTrader(at.id, handOffDate, "NY"), 1); len(ovs) != 0 {
 				t.Fatal("a refused scenario is never recorded")

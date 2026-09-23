@@ -1152,6 +1152,13 @@ func machineScenarioEditRefusal(row *store.PlanDB, overlays []*store.PlanOverlay
 			next = r.Version + 1
 		}
 	}
+	// The FULL-fold comparison (machine overlays appended after both sides)
+	// is the CTO spec's literal form. With today's ValidateMachineScenario —
+	// a machine overlay's validity reads only ids, refs and the doc's levels —
+	// every violation it can see is refused first by the user-fold check above
+	// (mutation A29 in the W5 builder-A report survives for exactly that
+	// reason [B]). It stays as the guard for the day a machine overlay's fold
+	// comes to depend on something a user patch can change.
 	before, err := kernel.ResolvePlanFinal([]byte(row.Doc), refs)
 	if err != nil {
 		return "overlay refused: the stored plan does not parse, so a machine (Picture) scenario cannot be proven untouched"
