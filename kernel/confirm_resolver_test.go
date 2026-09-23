@@ -66,6 +66,10 @@ func TestConfirmResolverStoredOneCloseIgnoresEnv(t *testing.T) {
 	if got := d.Label(); got != "2x5m_close [BD_MIN_CLOSES=2 · authoring default (no confirm{} stored)]" {
 		t.Fatalf("label: %s", got)
 	}
+	dv := EvaluateScenarioConfirm(bdScenario(""), noTouchBars(base, 10), base, base+10*60_000)
+	if dv.Rule != "2x5m_close" || dv.RuleSource != ConfirmSourceAuthoringDefault || dv.Legs[0].RuleSource != ConfirmSourceAuthoringDefault || !dv.Legs[0].Met {
+		t.Fatalf("the recorded verdict names the authoring default on the overall AND leg 1: %+v", dv)
+	}
 }
 
 // 2-close: a STORED 2x5m_close needs TWO completed closes beyond the level —
