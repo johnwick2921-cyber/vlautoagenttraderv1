@@ -109,6 +109,33 @@ type ArmedOrderDB struct {
 	// written before this wave.
 	CancelSettledSnapshotID int64 `gorm:"default:0"`
 
+	// W3 market_in_zone (2026-09-23). Every field is ABSENT (NULL / '') on a
+	// legacy or planned_order row — 0 is a real value for slippage and a real
+	// price nowhere, so absence is never written as 0.
+	//   Policy          — the leg's entry policy ('' = legacy).
+	//   ZoneLo/ZoneHi   — the planner's entry_zone rounded INWARD to the tick.
+	//   ZoneProvenance  — resolveEntryGeometryZone's label (never a refusal).
+	//   PlannedEntryPx  — the authored entry (EntryPx is the far bound).
+	//   EvalPrice/EvalBarMs — the price and bar the placement verdict read.
+	//   PlacedAtMs      — when the limit was sent (the rest-cap clock;
+	//                     updated_at is rewritten by every pass).
+	//   FilledAtMs, FillSlippageTicks — the fill receipt (slippage vs the
+	//                     wire limit, the AddOn's formula, side-adjusted + =
+	//                     worse); LastVerdict/LastVerdictMs — the executor's
+	//                     latest verdict for the card ("Waiting"/"Blocked").
+	Policy            string `gorm:"default:''"`
+	ZoneLo            *float64
+	ZoneHi            *float64
+	ZoneProvenance    string `gorm:"default:''"`
+	PlannedEntryPx    *float64
+	EvalPrice         *float64
+	EvalBarMs         *int64
+	PlacedAtMs        *int64
+	FilledAtMs        *int64
+	FillSlippageTicks *float64
+	LastVerdict       string `gorm:"default:''"`
+	LastVerdictMs     *int64
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -201,6 +228,20 @@ func (s *ArmedOrderStore) Migrate() error {
 			// were accumulated by a process that is gone.
 			{"cancel_attempts_boot", "TEXT NOT NULL DEFAULT ''"},
 			{"cancel_settled_snapshot_id", "INTEGER NOT NULL DEFAULT 0"},
+			// W3 market_in_zone (2026-09-23): NULLable where 0 would be a
+			// fabricated value (absent ≠ 0); '' where the text is a label.
+			{"policy", "TEXT NOT NULL DEFAULT ''"},
+			{"zone_lo", "REAL"},
+			{"zone_hi", "REAL"},
+			{"zone_provenance", "TEXT NOT NULL DEFAULT ''"},
+			{"planned_entry_px", "REAL"},
+			{"eval_price", "REAL"},
+			{"eval_bar_ms", "INTEGER"},
+			{"placed_at_ms", "INTEGER"},
+			{"filled_at_ms", "INTEGER"},
+			{"fill_slippage_ticks", "REAL"},
+			{"last_verdict", "TEXT NOT NULL DEFAULT ''"},
+			{"last_verdict_ms", "INTEGER"},
 		} {
 			var n int64
 			if err := s.db.Raw("SELECT COUNT(*) FROM pragma_table_info('armed_orders') WHERE name = ?", col.name).Scan(&n).Error; err != nil {
