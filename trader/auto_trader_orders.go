@@ -3,7 +3,6 @@ package trader
 import (
 	"fmt"
 	"math"
-	"nofx/discipline"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/market"
@@ -147,218 +146,38 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		at.applyWeeklyDecisionShadow(decision)
 	}
 
-	// Feed-down gate (NinjaTrader, TRACK A): the SIM cannot fill without market
-	// data, so an entry/flatten issued while the feed is down is rejected ("no
-	// market data") — the upstream condition behind the phantom-close mess. Refuse
-	// opens AND closes until the feed is Connected; the position simply waits (the
-	// close path retries on the next cycle / reconnect). Default-ALLOW until a
-	// feed_status frame arrives, so a healthy bot is never false-halted.
+	// Feed-down gate (NinjaTrader, TRACK A), CLOSE half: the SIM cannot fill
+	// without market data, so a flatten issued while the feed is down is
+	// rejected ("no market data") — the upstream condition behind the
+	// phantom-close mess. The position simply waits (the close path retries on
+	// the next cycle / reconnect). Default-ALLOW until a feed_status frame
+	// arrives. The ENTRY half runs FIRST inside admitEntry, below.
 	switch decision.Action {
-	case "open_long", "open_short", "close_long", "close_short":
+	case "close_long", "close_short":
 		if down, status := at.ninjaFeedDown(); down {
 			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", decision.Action, decision.Symbol, status)
 			telemetry.IncGateBlock(at.id, "feed_down")
-			// W16/R3 — stamp the refusal like every sibling gate. This was the ONE
-			// gate that returned nil without touching actionRecord, so after
-			// f7fa2d3c (which classifies on Error != "") a feed-down skip still fell
-			// into the success branch and was recorded as an executed trade.
+			// W16/R3 — stamp the refusal like every sibling gate.
 			actionRecord.Success = false
 			actionRecord.Error = fmt.Sprintf("feed_down: NT8 price feed not Connected (status=%q)", status)
 			return nil
 		}
 	}
 
-	// B5 — dead-man watchdog: after an NT8 TCP disconnect, NEW entries stay blocked
-	// until a clean positions/orders reconciliation, so we never open on top of a
-	// state we haven't re-verified across a link gap. Closes / open-position
-	// management are NEVER blocked. State is advanced once per cycle in runCycle
-	// (driveDeadManWatchdog); here we only enforce the block.
+	// W-EXEC-TRUTH W0 (a) — THE ONE ADMISSION GATE. The chain that ran inline
+	// here (feed → dead-man → freeze → boot integrity → owner pause →
+	// maintenance → contract roll → breaker → last entry → session → plan mode
+	// → approval → EntryGate) now lives in entry_admission.go, in the SAME
+	// pinned order with the SAME strings, and the armed path and Picture ask it
+	// too. Closes are never admitted — only NEW entries.
 	switch decision.Action {
 	case "open_long", "open_short":
-		if at.deadMan.entriesBlocked() {
-			at.logWarnf("⛔ dead-man watchdog: %s %s REFUSED — NT8 link not yet reconciled after a disconnect; entries resume after a clean reconciliation.", decision.Symbol, decision.Action)
-			telemetry.IncGateBlock(at.id, "dead_man")
+		if refusal, refused := at.admitEntry(admitIntent{
+			Path: admitDecision, Symbol: decision.Symbol, Action: decision.Action,
+			Now: time.Now(), Decision: decision, Record: actionRecord,
+		}); refused {
 			actionRecord.Success = false
-			actionRecord.Error = "dead_man_watchdog: awaiting reconciliation after link gap"
-			return nil
-		}
-	}
-
-	// A4 (G4) — FREEZE gate: a trader frozen by an identity/account echo mismatch
-	// (A2) or a reconcile belief≠broker divergence is blocked from NEW entries until
-	// the owner clears it (POST /api/risk/clear-freeze). Open-position management
-	// (closes/stop-moves/reconcile) is NEVER blocked — a frozen trader can still be
-	// brought flat.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, frozen := discipline.IsFrozen(at.id); frozen {
-			at.logErrorf("🚨 A4 FROZEN: %s %s REFUSED — trader is frozen (%s). Investigate, then clear via /api/risk/clear-freeze to resume.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "frozen")
-			actionRecord.Success = false
-			actionRecord.Error = "frozen: " + reason
-			return nil
-		}
-	}
-
-	// P1 — BOOT INTEGRITY: a binary that is not the intended release, or whose
-	// prompt goldens drifted, must not open positions. This outranks every other
-	// gate (it means we cannot trust WHAT this process is). Closes stay allowed so
-	// an existing position can still be managed out.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, refused := kernel.TradingRefused(); refused {
-			at.logErrorf("🔐 BOOT INTEGRITY REFUSAL: %s %s BLOCKED — %s. Fix the deploy and restart; closes still work.",
-				decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "boot_integrity")
-			at.emitAlert("P0", "boot-integrity", "boot-integrity:"+kernel.CMESessionDayKey(time.Now()),
-				"🔐 Trading refused — boot integrity", reason)
-			actionRecord.Success = false
-			actionRecord.Error = "boot_integrity_refused: " + reason
-			return nil
-		}
-	}
-
-	// P2 (ledger-close 2026-08-19) — stop_until OWNER PAUSE: the FIRST owner/
-	// policy gate (system-integrity gates above rank it; every policy gate below
-	// defers to it, so a paused refusal always NAMES the pause — gate-order
-	// contract 2.4/E5). Blocks NEW entries only; closes, EOD-flat, the 60s
-	// monitor guards, and NT8 brackets continue. Master-INDEPENDENT.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, paused := at.entryPaused(); paused {
-			at.logWarnf("⏸ stop_until: %s %s REFUSED — %s. Position management continues; entries resume on expiry or POST /api/traders/:id/resume.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "stop_until")
-			actionRecord.Success = false
-			actionRecord.Error = "stop_until: " + reason
-			return nil
-		}
-	}
-
-	// W-ONE-BUTTON M2 site 1 — INSTALLATION MAINTENANCE HOLD: while the updater
-	// holds (<data>/updater/hold.json; an unreadable file holds too), NEW
-	// entries are refused here, before any wire side effect (the orphan-flatten
-	// in reconcileBeforeOpenNT included). Position management continues. The
-	// broker-layer permit (site 4) is the second, send-side check.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, held := MaintenanceHeld(); held {
-			at.logWarnf("🔒 maintenance hold: %s %s REFUSED — %s. Position management continues; entries resume when the update completes.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "maintenance_hold")
-			actionRecord.Success = false
-			actionRecord.Error = "maintenance_hold: " + reason
-			return nil
-		}
-	}
-
-	// P3 (ledger-close 2026-08-19) — CONTRACT-ROLL gate for the continuous
-	// symbol: within ROLL_BLOCK_DAYS_BEFORE_EXPIRY of the ACK-resolved front
-	// contract's third-Friday expiry, NEW entries are refused (the dated-code
-	// T19 gate never fires on bare "MNQ"). Runs AFTER stop_until (a paused
-	// refusal must name the pause — E5) and fail-opens when unresolved. Closes
-	// and position management are NEVER blocked; existing positions may exit.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.entryBlockedByRoll(time.Now()); blocked {
-			at.logWarnf("📅 contract-roll: %s %s REFUSED — %s. Position management continues; the resolver rolls to the next quarterly.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "contract_roll_resolved")
-			actionRecord.Success = false
-			actionRecord.Error = "contract_roll: " + reason
-			return nil
-		}
-	}
-
-	// D1 — consecutive-loss halt: after N consecutive losing closed trades this CME
-	// session-day, block NEW entries until the next session. Closes (open-position
-	// management) are NEVER blocked. 0 = OFF.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, halted := at.consecutiveLossHalted(); halted {
-			at.logWarnf("🛑 consecutive-loss halt: %s entry REFUSED — %s. No new entries until the next CME session.", decision.Symbol, reason)
-			telemetry.IncGateBlock(at.id, "consecutive_loss")
-			// W6 — P0 halt alert, deduped to once per CME session-day.
-			at.emitAlert("P0", "halt", "halt:"+kernel.CMESessionDayKey(time.Now()),
-				"🛑 Consecutive-loss halt", reason)
-			actionRecord.Success = false
-			actionRecord.Error = "consecutive_loss_halt: " + reason
-			return nil
-		}
-	}
-
-	// P2.3 — LAST-ENTRY cutoff: block NEW entries after the day-trader last-entry
-	// time (default 13:00 CT = 14:00 ET). Gated on day_plan → dormant by default.
-	// Closes (open-position management) are NEVER blocked.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.entryBlockedByLastEntry(); blocked {
-			at.logWarnf("🕒 last-entry cutoff: %s %s REFUSED — %s. Entries reopen next session.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "last_entry")
-			actionRecord.Success = false
-			actionRecord.Error = "last_entry_cutoff: " + reason
-			return nil
-		}
-	}
-
-	// P3.1 — SESSION GATE: entries only inside an ENABLED session window (NY-only
-	// default → closes the overnight/interim window) and outside the no-trade
-	// sub-windows (first-5m, lunch). Gated on day_plan → dormant by default.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.sessionEntryBlocked(); blocked {
-			at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "session_gate")
-			actionRecord.Success = false
-			actionRecord.Error = "session_gate: " + reason
-			return nil
-		}
-	}
-
-	// W9 — PLAN-MODE gate: advisory (default) never gates; direction blocks entries
-	// against the plan bias; strict blocks entries with no matched scenario cited.
-	// Gated on day_plan → dormant by default.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.planModeBlocked(decision); blocked {
-			at.logWarnf("📐 plan-mode: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "plan_mode")
-			actionRecord.Success = false
-			actionRecord.Error = "plan_mode: " + reason
-			return nil
-		}
-	}
-
-	// W9 — APPROVAL gate: when approval_required is ON, entries are HELD until the
-	// owner approves this CME session-day (POST /api/plan/approve). Default OFF =
-	// fully automatic. Closes are never held.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if at.approvalRequired() && !at.approvalGranted(time.Now()) {
-			at.logWarnf("✋ approval required: %s %s HELD — awaiting owner approval for this session.", decision.Symbol, decision.Action)
-			telemetry.IncGateBlock(at.id, "approval_required")
-			at.emitAlert("P0", "approval", "approval:"+kernel.CMESessionDayKey(time.Now()),
-				"✋ Entry held — approval required", decision.Symbol+" "+decision.Action)
-			actionRecord.Success = false
-			actionRecord.Error = "approval_required"
-			return nil
-		}
-	}
-
-	// CLASS 48 — the ONE canonical entry gate, shared with the arm seam. Runs
-	// AFTER the legacy decision gates and BEFORE any order leaves: scenario
-	// direction, shadow map (0C), R:R at the LIVE execution price (fixes the
-	// snapshot-reference sub-floor fills of 587/589), min-SL ×ATR5m, and
-	// one-live-arm. Refusals are logged AND recorded per path: the refusal is
-	// stamped into actionRecord (→ decision_records.execution_log +
-	// risk_check_error) with a gate-block counter.
-	switch decision.Action {
-	case "open_long", "open_short":
-		live := 0.0
-		if md, merr := market.GetWithExchange(decision.Symbol, at.exchange); merr == nil && md != nil {
-			live = md.CurrentPrice
-		}
-		reason, refused := at.entryGateForDecision(decision, live)
-		recordResearchGate("decision", "", 0, decision.CitedScenario, reason, refused)
-		if refused {
-			entryGateDecisionTelemetry(at, actionRecord, reason)
+			actionRecord.Error = refusal
 			return nil
 		}
 	}

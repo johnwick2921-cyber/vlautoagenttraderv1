@@ -151,7 +151,7 @@ func (at *AutoTrader) admitChain(in admitIntent, sym, act string, now time.Time)
 	// executeDecisionWithRecord — a close is not an admission.)
 	if down, status := at.ninjaFeedDown(); down {
 		return at.admitRefuse(in, "feed_down", fmt.Sprintf("feed_down: NT8 price feed not Connected (status=%q)", status), func() {
-			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", sym, act, status)
+			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", act, sym, status)
 		})
 	}
 

@@ -57,9 +57,12 @@ func TestPauseBlocksOnlyNewEntries(t *testing.T) {
 	}
 }
 
+// readOrdersSource reads the file that holds the entry gate chain: since
+// W-EXEC-TRUTH W0 (CTO Q1) that is entry_admission.go, which the decision path,
+// the armed placement and Picture all call — the ordering pins moved with it.
 func readOrdersSource(t *testing.T) string {
 	t.Helper()
-	b, err := os.ReadFile("auto_trader_orders.go")
+	b, err := os.ReadFile("entry_admission.go")
 	if err != nil {
 		t.Fatal(err)
 	}
