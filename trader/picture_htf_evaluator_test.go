@@ -24,6 +24,15 @@ type pictureHtfTestEnv struct {
 
 func newPictureHtfEnv(t *testing.T, cfg store.PictureHtfConfig) *pictureHtfTestEnv {
 	t.Helper()
+	// W4/D21: the evaluator now refuses until it holds PivotWindow+4 COMPLETED
+	// 4H candles. Production defaults PivotWindow to 120, i.e. 124 candles —
+	// these ladders are a dozen candles long on purpose, because they are about
+	// pivot GEOMETRY, not depth. A caller that cares about depth sets the knob
+	// explicitly (see picture_htf_depth_test.go, which drives both sides of the
+	// boundary); everyone else gets a window their ladder can satisfy.
+	if cfg.PivotWindow <= 0 {
+		cfg.PivotWindow = 16
+	}
 	// W-EXEC-TRUTH W0: Picture is admitted only while its trader RUNS and the
 	// Day Plan master is ON (admitEntry — it used to run regardless, D26), so
 	// the harness is a running trader with the master on.
@@ -33,7 +42,7 @@ func newPictureHtfEnv(t *testing.T, cfg store.PictureHtfConfig) *pictureHtfTestE
 	at.isRunningMutex.Lock()
 	at.isRunning = true
 	at.isRunningMutex.Unlock()
-	eval := NewPictureHtfEvaluator(at, store.PictureHtfResolved(&cfg))
+	eval := NewPictureHtfEvaluator(at, pictureTestResolved(&cfg))
 	env := &pictureHtfTestEnv{t: t, at: at, st: st, eval: eval}
 	orig := pictureHtfSubmitSeam
 	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
@@ -71,6 +80,39 @@ func tailOf(bars []market.Kline, n int) []market.Kline {
 	return bars[len(bars)-n:]
 }
 
+// pictureLead4H is how many filler candles precede every 4H ladder so the
+// fixtures satisfy W4/D21's depth rule (>= PivotWindow+4 COMPLETED candles)
+// while still leaving the discovery window wide enough to reach the ladder's
+// own pivots — BodyPivots4H cuts to the last PivotWindow candles before it
+// looks for anything.
+const pictureLead4H = 20
+
+// lead4H builds pictureLead4H candles that RISE strictly and stop just below
+// endBody. Strictly rising bodies can never be a pivot: every candidate has a
+// higher body after it (so the resistance test fails) and a lower body before
+// it (so the support test fails). Stopping just below the ladder's first real
+// body keeps the junction unremarkable too — a gap there would make the last
+// filler candle a pivot in its own right and add a level no test asked for.
+func lead4H(endBody float64) [][4]float64 {
+	out := make([][4]float64, 0, pictureLead4H)
+	for i := 0; i < pictureLead4H; i++ {
+		b := endBody - float64(pictureLead4H-1-i)*0.5
+		out = append(out, [4]float64{b, b + 0.4, b - 0.4, b + 0.3})
+	}
+	return out
+}
+
+// mk4HLadder stamps a values table onto the 4H grid with the lead-in candles
+// sitting BEFORE t4h0, so every meaningful candle keeps the timestamp the H1
+// and 5m ladders are aligned to.
+func mk4HLadder(vals [][4]float64) []market.Kline {
+	out := make([]market.Kline, 0, len(vals))
+	for i, v := range vals {
+		out = append(out, mkBar(t4h0+int64(i-pictureLead4H)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
+	}
+	return out
+}
+
 // pictureBars4H builds the full ladder: an OLD 110 resistance (i=3), a
 // pullback, and the RECENT 101 resistance (i=9) that the H1 pair later
 // breaks. No later 4H close exceeds 101, so the 101 level is still ACTIVE
@@ -85,35 +127,22 @@ func tailOf(bars []market.Kline, n int) []market.Kline {
 // the fixture encoded the defect. The two added candles are deliberately
 // unremarkable (bodies far below 110) so they add no level of their own.
 func pictureBars4H() []market.Kline {
-	vals := [][4]float64{
-		{100, 101, 99, 100.5}, {101, 102, 100, 101.5},
+	vals := append(lead4H(107), [][4]float64{
 		{108, 110, 106, 109}, {109, 111, 107, 110}, {107, 108, 105, 106}, {105, 106, 103, 104},
 		{103, 104, 101, 102}, {100, 101, 99, 100.5}, {98.5, 100, 97.5, 99}, {99, 105, 96, 101},
 		{96, 97, 94, 95}, {94, 95, 92, 93}, {93, 94, 91, 92},
-	}
-	out := make([]market.Kline, 0, len(vals))
-	for i, v := range vals {
-		// The two added leading candles sit BEFORE t4h0 (i-2), so every
-		// original candle keeps the timestamp the H1 and 5m ladders are
-		// aligned to. Shifting the ladder forward instead would silently
-		// break that grid.
-		out = append(out, mkBar(t4h0+int64(i-2)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
-	}
-	return out
+	}...)
+	return mk4HLadder(vals)
 }
 
 // pictureBars4HNoTarget: the same recent 101 resistance but NO old high — the
 // opposing-zone refusal fixture.
 func pictureBars4HNoTarget() []market.Kline {
-	vals := [][4]float64{
+	vals := append(lead4H(97), [][4]float64{
 		{98, 99, 97, 98}, {99, 100, 98, 99.5}, {99, 105, 96, 101},
 		{96, 97, 94, 95}, {94, 95, 92, 93}, {93, 94, 91, 92},
-	}
-	out := make([]market.Kline, 0, len(vals))
-	for i, v := range vals {
-		out = append(out, mkBar(t4h0+int64(i)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
-	}
-	return out
+	}...)
+	return mk4HLadder(vals)
 }
 
 func pictureBarsH1() []market.Kline {
@@ -300,7 +329,7 @@ func TestPictureHtfEvaluatorCapabilityGateBlocks(t *testing.T) {
 	// The DEFAULT capability seam reads the concrete trader — resetTrader has
 	// none, so capability is NOT proven and the mode must stay unavailable.
 	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PictureHtf: &store.PictureHtfConfig{Enabled: true}}})
-	ev := NewPictureHtfEvaluator(at, store.PictureHtfResolved(&store.PictureHtfConfig{Enabled: true}))
+	ev := NewPictureHtfEvaluator(at, pictureTestResolved(&store.PictureHtfConfig{Enabled: true}))
 	res := ev.Evaluate("MNQ", time.Now())
 	if res.Stage != "watching" || !strings.Contains(res.Reason, "mode unavailable") {
 		t.Fatalf("an unproven AddOn must gate the mode off, got %+v", res)
@@ -385,17 +414,12 @@ func TestPictureHtfH1CloseToNext5mSequenceNativeAlignment(t *testing.T) {
 // move it to i=3 where all four exist; they are anchored BEFORE t4h0 so the
 // H1 and 5m grids are untouched.
 func pictureBars4HShort() []market.Kline {
-	vals := [][4]float64{
-		{93, 93.5, 92.5, 93.2}, {93.5, 94, 92.8, 93.8},
+	vals := append(lead4H(92), [][4]float64{
 		{92, 92.5, 90.5, 91}, {91.5, 91.8, 90.2, 90}, {95, 96, 94, 95.5},
 		{95.5, 96.8, 95, 96.5}, {96, 96.5, 94, 94.5}, {95.25, 96.2, 95, 95.5},
 		{95.5, 96.3, 95.2, 95.9}, {95.75, 96.4, 95.4, 96},
-	}
-	out := make([]market.Kline, 0, len(vals))
-	for i, v := range vals {
-		out = append(out, mkBar(t4h0+int64(i-2)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
-	}
-	return out
+	}...)
+	return mk4HLadder(vals)
 }
 
 func pictureBarsH1Short() []market.Kline {
@@ -515,7 +539,7 @@ func TestPictureHtfRestartAfterClaimSingleSubmission(t *testing.T) {
 		t.Fatalf("first evaluation must submit once, got %d", len(env.submits))
 	}
 	// Restart: a brand-new evaluator with fresh in-memory state.
-	env2 := &pictureHtfTestEnv{t: t, at: env.at, st: env.st, eval: NewPictureHtfEvaluator(env.at, store.PictureHtfResolved(&store.PictureHtfConfig{Enabled: true, MinRR: 2.5}))}
+	env2 := &pictureHtfTestEnv{t: t, at: env.at, st: env.st, eval: NewPictureHtfEvaluator(env.at, pictureTestResolved(&store.PictureHtfConfig{Enabled: true, MinRR: 2.5}))}
 	orig := pictureHtfSubmitSeam
 	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env2.submits = append(env2.submits, row.OppKey)

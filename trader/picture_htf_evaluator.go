@@ -120,22 +120,62 @@ func (e *PictureHtfEvaluator) bars(symbol, tf string, n int, nowMs int64) []mark
 	return out
 }
 
+// pictureHtfDepthMargin is how many 4H candles BEYOND the requirement the
+// evaluator fetches. It must be at least 2 and is deliberately larger: the
+// provider returns the TAIL of the history it holds, so that tail always
+// contains the candle still forming, and the break snapshot additionally cuts
+// off at the breaking candle's open, removing one more. Asking for exactly the
+// requirement and then filtering to completed candles can therefore never
+// satisfy the requirement — not rarely, but by construction.
+const pictureHtfDepthMargin = 4
+
+// PictureDepthEvidence is what one evaluation KNOWS about its own 4H history.
+// Every field is READ from the bars in hand; none is assumed. It is part of
+// the evidence contract the Day Plan scenario source consumes.
+type PictureDepthEvidence struct {
+	Fetched   int // candles asked of the provider
+	Completed int // of those, closed before the cutoff and PROVED final
+	Required  int // PivotWindow + 4
+}
+
+// OK reports whether the two pictures may be drawn at all.
+func (d PictureDepthEvidence) OK() bool { return d.Required > 0 && d.Completed >= d.Required }
+
+// Reason is the refusal text, carrying the true counts rather than a verdict.
+func (d PictureDepthEvidence) Reason() string {
+	return fmt.Sprintf("insufficient depth %d/%d completed 4H candles", d.Completed, d.Required)
+}
+
+// depth4H fetches the 4H history with margin and reports what actually came
+// back, so callers refuse on evidence instead of on a guess.
+func (e *PictureHtfEvaluator) depth4H(symbol string, cutoffMs int64) (PictureDepthEvidence, []market.Kline) {
+	required := e.cfg.PivotWindow + 4
+	ask := required + pictureHtfDepthMargin
+	bars := e.bars(symbol, "4h", ask, cutoffMs)
+	return PictureDepthEvidence{Fetched: ask, Completed: len(bars), Required: required}, bars
+}
+
 // rebuildLevels recomputes the 4H body-pivot snapshot from completed bars.
-func (e *PictureHtfEvaluator) rebuildLevels(symbol string, nowMs int64) {
+func (e *PictureHtfEvaluator) rebuildLevels(symbol string, nowMs int64) PictureDepthEvidence {
 	if e.levelsSymbol != symbol {
 		// the snapshot is per symbol — never another instrument's levels
 		e.levels, e.levelsEval4H, e.levelsSymbol = nil, 0, symbol
 	}
-	bars := e.bars(symbol, "4h", e.cfg.PivotWindow+4, nowMs)
-	if len(bars) == 0 {
-		return
+	dep, bars := e.depth4H(symbol, nowMs)
+	if !dep.OK() {
+		// Too little history to draw the higher picture. Drop any snapshot
+		// built from a deeper past so a later short read cannot keep trading
+		// on levels this evaluation cannot justify.
+		e.levels, e.levelsEval4H = nil, 0
+		return dep
 	}
 	newest := bars[len(bars)-1].CloseTime
 	if newest == e.levelsEval4H {
-		return
+		return dep
 	}
 	e.levels = kernel.BodyPivots4H(bars, e.cfg.PivotWindow)
 	e.levelsEval4H = newest
+	return dep
 }
 
 // OnBars is the event entry point: the trader's bar consumers call it for
@@ -192,7 +232,11 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 		return EvaluateResult{Stage: "watching", Reason: "mode unavailable — AddOn evidence missing"}
 	}
 	e.capWarned = false
-	e.rebuildLevels(symbol, nowMs)
+	if dep := e.rebuildLevels(symbol, nowMs); !dep.OK() {
+		// D21: no level and no trade until the history is provably deep
+		// enough. The reason carries the counts that were READ.
+		return EvaluateResult{Stage: "watching", Reason: dep.Reason()}
+	}
 
 	// --- H1 completion scan + advisory momentum ---
 	h1 := e.bars(symbol, "1h", 4, nowMs)
@@ -227,8 +271,14 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 	// applied before target selection, per the same clause. Both snapshots
 	// are time-derived from the cache, so frame arrival order cannot change
 	// either verdict.
+	// The break snapshot reads the same depth rule: its cutoff removes at
+	// least one more candle, which is exactly what the margin is for.
+	breakDep, breakBars := e.depth4H(symbol, cur.OpenTime)
+	if !breakDep.OK() {
+		return EvaluateResult{Stage: "watching", Reason: breakDep.Reason(), Momentum: stall}
+	}
 	breakLevels := kernel.ActiveLevels(
-		kernel.BodyPivots4H(e.bars(symbol, "4h", e.cfg.PivotWindow+4, cur.OpenTime), e.cfg.PivotWindow),
+		kernel.BodyPivots4H(breakBars, e.cfg.PivotWindow),
 		cur.OpenTime)
 	breakVerdict := kernel.H1CloseBreak(breakLevels, prev, cur, e.cfg.TickSize)
 	if !breakVerdict.Fired {

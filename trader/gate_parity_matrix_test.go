@@ -382,7 +382,7 @@ func parityPictureRig(t *testing.T, id, path, template string, shift time.Durati
 	at.isRunningMutex.Lock()
 	at.isRunning = true
 	at.isRunningMutex.Unlock()
-	env := &pictureHtfTestEnv{t: t, at: at, st: st, eval: NewPictureHtfEvaluator(at, store.PictureHtfResolved(&cfg))}
+	env := &pictureHtfTestEnv{t: t, at: at, st: st, eval: NewPictureHtfEvaluator(at, pictureTestResolved(&cfg))}
 	origSeam, origCap, origBars := pictureHtfSubmitSeam, pictureHtfCapabilityProven, market.FuturesBarsProvider
 	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env.submits = append(env.submits, row.OppKey)

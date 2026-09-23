@@ -375,7 +375,7 @@ func (w *dupWire) link(at *AutoTrader) *dupLink {
 	born := time.Now()
 	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, born)
 
-	return &dupLink{s: s, nt: nt, at: at, eval: NewPictureHtfEvaluator(at, store.PictureHtfResolved(&w.pcfg)), frames: frames, born: born}
+	return &dupLink{s: s, nt: nt, at: at, eval: NewPictureHtfEvaluator(at, pictureTestResolved(&w.pcfg)), frames: frames, born: born}
 }
 
 // restart is a new process over the same store: a fresh AutoTrader (same id,
