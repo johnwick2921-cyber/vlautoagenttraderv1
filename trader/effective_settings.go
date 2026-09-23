@@ -116,6 +116,9 @@ type effCtx struct {
 	root    json.RawMessage
 	st      effStoredRaw // the current row's stored value (set per row)
 	path    string
+	// zeros — the strategy's save-time confirmation record (system_config
+	// settings_truth_zero:<id>): whether a Studio save confirmed an explicit 0.
+	zeros store.ExplicitZeroRecord
 }
 
 type effStoredRaw struct {
@@ -144,12 +147,16 @@ func (x *effCtx) rc() store.RiskControlConfig {
 
 // EffectiveSettings resolves every settings row for one stored strategy config.
 // raw is the strategies.config column verbatim; venue is the exchange type the
-// strategy trades on ("" = unknown); session is a canonical session name or "".
-func EffectiveSettings(raw, venue, session string) ([]EffectiveKnob, error) {
+// strategy trades on ("" = unknown); session is a canonical session name or "";
+// zeros is the strategy's confirmation record (StrategyStore.ExplicitZeroRecordOf)
+// — an explicit 0 on the breaker or the strategy replan cap says in its origin
+// whether a Studio save confirmed it, and when.
+func EffectiveSettings(raw, venue, session string, zeros store.ExplicitZeroRecord) ([]EffectiveKnob, error) {
 	x, err := newEffCtx(raw, venue, session)
 	if err != nil {
 		return nil, err
 	}
+	x.zeros = zeros
 	paths := effectivePaths()
 	out := make([]EffectiveKnob, 0, len(paths))
 	for _, p := range paths {
@@ -544,6 +551,25 @@ func effReplanCap(dp *store.DayPlanConfig, session string) (int, string) {
 	return store.ResolveReplanCap(dp, session)
 }
 
+// explicitZeroOrigin appends, to the origin of a value decided by an EXPLICIT
+// 0 at the strategy level, whether a Studio save confirmed that 0 and when
+// (store.ExplicitZeroVerdict — the same words the 🩺 boot report prints; CTO
+// ruling msg 1790176346377 R2). decidedByStrategy says the winning source is
+// the strategy-level stored value (a session override's 0 always meant 0).
+// The prefix stays the resolver's source, so OriginLetter and savedValueLost
+// read it unchanged.
+func explicitZeroOrigin(x *effCtx, knob, src string, decidedByStrategy bool) string {
+	if !decidedByStrategy {
+		return src
+	}
+	for _, k := range store.ExplicitZeroKnobs(x.cfg) {
+		if k == knob {
+			return src + " — " + store.ExplicitZeroVerdict(knob, x.zeros)
+		}
+	}
+	return src
+}
+
 // ── RESOLVER TABLE ───────────────────────────────────────────────────────────
 
 const (
@@ -630,7 +656,8 @@ func buildEffectiveResolvers() map[string]effResolver {
 	})
 	add(rcPath+"consecutive_loss_halt", "store.ResolveBreakerHalt (trader.breakerHaltN delegates)", func(x *effCtx) effResult {
 		n, src := effBreakerHalt(x.cfg)
-		return effResult{value: n, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
+		origin := explicitZeroOrigin(x, store.KnobBreaker, src, src == store.SourceSaved)
+		return effResult{value: n, origin: origin, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})
 	add(rcPath+"max_contracts_per_order", "trader.(*AutoTrader).resolveMaxContracts → kernel.ResolveMaxContracts", func(x *effCtx) effResult {
 		n, src := kernel.ResolveMaxContractsWithSource(x.rc().MaxContractsPerOrder, int(maxFuturesContracts))
@@ -729,7 +756,8 @@ func buildEffectiveResolvers() map[string]effResolver {
 	})
 	add(dpPath+"replan_cap", "store.ResolveReplanCap (DayPlanConfig.ReplanCapFor delegates)", func(x *effCtx) effResult {
 		v, src := effReplanCap(x.dp(), x.session)
-		return effResult{value: v, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
+		origin := explicitZeroOrigin(x, store.KnobReplanStrategy, src, src == store.SourceStrategyValue)
+		return effResult{value: v, origin: origin, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})
 	add(dpPath+"one_setup_enabled", "store.ResolveOneSetup", func(x *effCtx) effResult {
 		v, _, src, _ := store.ResolveOneSetup(x.cfg)
@@ -909,7 +937,8 @@ func buildEffectiveResolvers() map[string]effResolver {
 	})
 	perSession("replan_cap", "store.ResolveReplanCap (DayPlanConfig.ReplanCapFor delegates)", func(x *effCtx) effResult {
 		v, src := effReplanCap(x.dp(), x.session)
-		return effResult{value: v, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
+		origin := explicitZeroOrigin(x, store.KnobReplanStrategy, src, src == store.SourceStrategyValue)
+		return effResult{value: v, origin: origin, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})
 	perSession("enable", "trader.(*AutoTrader).sessionEnabledForStrategy (the admin session registry also gates: sessionRunnable)", func(x *effCtx) effResult {
 		v := x.at.sessionEnabledForStrategy(x.session)

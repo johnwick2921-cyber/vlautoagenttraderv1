@@ -22,13 +22,22 @@ package store
 // the new meaning — so a stored 0 alone cannot say whether it predates W1.
 // The Studio's two writers (POST/PUT /api/strategies — the surface where the
 // owner SEES the knob's state) therefore record which knobs each save holds as
-// an explicit 0 (RecordExplicitZeros, one system_config key per strategy,
-// written at SAVE time by the owner's action, never at boot). A 0 the record
-// covers is the owner's and loads; a 0 it does not cover is refused. Raw copies
-// (the acceptance-rule migration, an agent update without a config) and the
-// agent's config writes never confirm — the agent does not show the owner the
-// breaker — so an agent-written 0 loads only after a Studio save. Duplicate
-// carries the source's record to the copy, since it copies the same bytes.
+// an explicit 0 (one system_config key per strategy, written at SAVE time by
+// the owner's action, never at boot). A 0 the record covers is the owner's and
+// loads; a 0 it does not cover is refused. Raw copies (the acceptance-rule
+// migration, an agent update without a config) and the agent's config writes
+// never confirm — the agent does not show the owner the breaker — so an
+// agent-written 0 loads only after a Studio save. Duplicate carries the
+// source's record to the copy, since it copies the same bytes.
+//
+// ONE TRANSACTION (CTO ruling msg 1790176346377, R1). The row and its record
+// are written together (CreateWithExplicitZeros / UpdateWithExplicitZeros /
+// Duplicate, each one gorm Transaction) — a save that persists the row without
+// its record does not exist; if the record cannot be written the row is rolled
+// back and the handler answers an error. The record carries the save's time
+// (saved_at), so the boot report and the effective endpoint can say WHICH save
+// confirmed the 0 (R2). A record that does not parse reads as UNCONFIRMED —
+// fail-closed.
 
 import (
 	"encoding/json"
@@ -37,6 +46,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 // The knob keys the report and the confirmation record use.
@@ -85,8 +98,9 @@ type SettingsTruthInput struct {
 	ID     string
 	Config string // the RAW stored JSON — presence is read from it
 	Bound  int    // traders bound to this strategy
-	// Confirmed — knob keys a W1 save recorded as an explicit 0.
-	Confirmed map[string]bool
+	// Record — the save-time confirmation marker (which knobs a Studio save
+	// held as an explicit 0, and when).
+	Record ExplicitZeroRecord
 }
 
 // SettingsTruthKnob is one knob of one row: what is stored, what the previous
@@ -96,6 +110,9 @@ type SettingsTruthKnob struct {
 	Path    string // the EXACT stored JSON field, e.g. ai_config.risk_control.consecutive_loss_halt
 	Note    string // a location fact worth printing (a legacy flat key, an ignored duplicate)
 	Stored  string // absent | null | <n> | unreadable
+	// Zero — for an explicit 0 only: whether a Studio save confirmed it, and
+	// when (ExplicitZeroVerdict). "" when the knob is not an explicit 0.
+	Zero    string
 	Before  string
 	After   string
 	Changed bool
@@ -163,12 +180,23 @@ func settingsTruthRow(in SettingsTruthInput, getenv func(string) string) Setting
 		return row
 	}
 
+	zeros := map[string]bool{}
+	for _, k := range ExplicitZeroKnobs(&cfg) {
+		zeros[k] = true
+	}
+	zeroVerdict := func(knob string) string {
+		if !zeros[knob] {
+			return ""
+		}
+		return ExplicitZeroVerdict(knob, in.Record)
+	}
+
 	// Breaker.
 	shape, path, note := breakerRawShape(raw)
 	before := legacyBreakerHaltN(cfg.RiskControl.ConsecutiveLossHalt, getenv)
 	after, src := ResolveBreakerHaltEnv(&cfg, getenv)
 	row.Breaker = SettingsTruthKnob{
-		Knob: KnobBreaker, Path: path, Note: note, Stored: shape,
+		Knob: KnobBreaker, Path: path, Note: note, Stored: shape, Zero: zeroVerdict(KnobBreaker),
 		Before: breakerWord(before), After: breakerWord(after) + OriginLetter(src),
 		Changed: before != after,
 	}
@@ -178,7 +206,8 @@ func settingsTruthRow(in SettingsTruthInput, getenv func(string) string) Setting
 	if dp, ok := raw["day_plan"].(map[string]any); ok {
 		dpRaw = dp
 	}
-	rp := SettingsTruthKnob{Knob: KnobReplanStrategy, Path: "day_plan.replan_cap", Stored: storedIntShape(dpRaw, "replan_cap")}
+	rp := SettingsTruthKnob{Knob: KnobReplanStrategy, Path: "day_plan.replan_cap", Stored: storedIntShape(dpRaw, "replan_cap"),
+		Zero: zeroVerdict(KnobReplanStrategy)}
 	var b, a []string
 	for _, s := range settingsTruthSessions {
 		old := legacyReplanCapFor(cfg.DayPlan, s)
@@ -194,7 +223,7 @@ func settingsTruthRow(in SettingsTruthInput, getenv func(string) string) Setting
 
 	row.Changed = row.Breaker.Changed || row.Replan.Changed
 	for _, k := range []SettingsTruthKnob{row.Breaker, row.Replan} {
-		if k.Changed && !in.Confirmed[k.Knob] {
+		if k.Changed && !in.Record.Fields[k.Knob] {
 			row.Unconfirmed = append(row.Unconfirmed, k.Knob)
 		}
 	}
@@ -292,6 +321,13 @@ func (row SettingsTruthRow) Line() string {
 	if row.Breaker.Note != "" {
 		breakerStored += " [" + row.Breaker.Path + ", " + row.Breaker.Note + "]"
 	}
+	if row.Breaker.Zero != "" {
+		breakerStored += " (" + row.Breaker.Zero + ")"
+	}
+	replanStored := row.Replan.Stored
+	if row.Replan.Zero != "" {
+		replanStored += " (" + row.Replan.Zero + ")"
+	}
 	verdict := "UNCHANGED"
 	switch {
 	case row.Refuse != "":
@@ -303,7 +339,7 @@ func (row SettingsTruthRow) Line() string {
 		"🩺 settings truth [%s] bound=%d · consecutive_loss_halt stored=%s before=%s after=%s · replan_cap stored=%s before=%s after=%s (strategy/NY/ASIA/LONDON) · %s",
 		id, row.Bound,
 		breakerStored, row.Breaker.Before, row.Breaker.After,
-		row.Replan.Stored, row.Replan.Before, row.Replan.After,
+		replanStored, row.Replan.Before, row.Replan.After,
 		verdict)
 }
 
@@ -328,52 +364,204 @@ func ExplicitZeroKnobs(cfg *StrategyConfig) []string {
 	return out
 }
 
-// RecordExplicitZeros is called by every W1 writer right after it persists a
-// strategy: it records exactly the knobs this save holds as an explicit 0, so
-// the conversion check can tell the owner's 0 from one that predates W1. The
-// record is REPLACED on every save (a knob turned back to inherit drops out).
-func (s *StrategyStore) RecordExplicitZeros(strategyID string, cfg *StrategyConfig) error {
-	if s == nil || s.db == nil || strategyID == "" {
-		return nil
-	}
-	return s.db.Exec(`INSERT INTO system_config (key, value) VALUES (?, ?)
-		ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-		explicitZeroKey(strategyID), strings.Join(ExplicitZeroKnobs(cfg), ",")).Error
+// ExplicitZeroRecord is one strategy's confirmation record as READ: the knobs
+// a Studio save held as an explicit 0, and when that save happened.
+type ExplicitZeroRecord struct {
+	Fields map[string]bool
+	// SavedAt is the confirming save's instant (UTC). Zero when the record
+	// predates saved_at (the first W1 shape: a bare comma list).
+	SavedAt time.Time
 }
 
-// ExplicitZerosConfirmed reads one strategy's record (empty when none).
-func (s *StrategyStore) ExplicitZerosConfirmed(strategyID string) map[string]bool {
-	out := map[string]bool{}
-	if s == nil || s.db == nil || strategyID == "" {
-		return out
-	}
-	var vals []string
-	if err := s.db.Raw(`SELECT value FROM system_config WHERE key = ?`, explicitZeroKey(strategyID)).
-		Scan(&vals).Error; err != nil || len(vals) == 0 {
-		return out
-	}
-	for _, k := range strings.Split(vals[0], ",") {
-		if k = strings.TrimSpace(k); k != "" {
-			out[k] = true
+// explicitZeroMarker is the stored shape of a record (system_config value).
+type explicitZeroMarker struct {
+	Fields  []string `json:"fields"`
+	SavedAt string   `json:"saved_at"`
+}
+
+// knownExplicitZeroKnob — a record naming anything else is not one this binary
+// wrote, so it confirms nothing (fail-closed).
+func knownExplicitZeroKnob(k string) bool { return k == KnobBreaker || k == KnobReplanStrategy }
+
+// parseExplicitZeroMarker reads a stored record. ok=false means the value is
+// not a record this binary can vouch for — the caller reads it as UNCONFIRMED.
+// Two shapes are accepted: the JSON {"fields":[…],"saved_at":"<RFC3339>"}
+// (saved_at REQUIRED), and the first W1 shape, a bare comma list of knob keys
+// (no time: SavedAt stays zero and prints n/a).
+func parseExplicitZeroMarker(v string) (ExplicitZeroRecord, bool) {
+	rec := ExplicitZeroRecord{Fields: map[string]bool{}}
+	v = strings.TrimSpace(v)
+	if strings.HasPrefix(v, "{") {
+		var m explicitZeroMarker
+		if err := json.Unmarshal([]byte(v), &m); err != nil {
+			return ExplicitZeroRecord{Fields: map[string]bool{}}, false
 		}
+		at, err := time.Parse(time.RFC3339Nano, m.SavedAt)
+		if err != nil {
+			return ExplicitZeroRecord{Fields: map[string]bool{}}, false
+		}
+		for _, k := range m.Fields {
+			if !knownExplicitZeroKnob(k) {
+				return ExplicitZeroRecord{Fields: map[string]bool{}}, false
+			}
+			rec.Fields[k] = true
+		}
+		rec.SavedAt = at.UTC()
+		return rec, true
 	}
-	return out
+	for _, k := range strings.Split(v, ",") {
+		if k = strings.TrimSpace(k); k == "" {
+			continue
+		}
+		if !knownExplicitZeroKnob(k) {
+			return ExplicitZeroRecord{Fields: map[string]bool{}}, false
+		}
+		rec.Fields[k] = true
+	}
+	return rec, true
 }
 
-// copyExplicitZeros carries a source strategy's record to a duplicate.
-func (s *StrategyStore) copyExplicitZeros(fromID, toID string) error {
-	conf := s.ExplicitZerosConfirmed(fromID)
-	if len(conf) == 0 {
-		return nil
+// encodeExplicitZeroMarker renders the stored shape. fields must be sorted.
+func encodeExplicitZeroMarker(fields []string, savedAt time.Time) (string, error) {
+	b, err := json.Marshal(explicitZeroMarker{Fields: fields, SavedAt: savedAt.UTC().Format(time.RFC3339)})
+	return string(b), err
+}
+
+// writeExplicitZeroMarker writes exactly the record cfg's save implies, on the
+// caller's transaction: an upsert when the save holds an explicit 0, a delete
+// when it holds none (a knob turned back to inherit drops out). Never called
+// outside a transaction that also writes the strategy row.
+func writeExplicitZeroMarker(tx *gorm.DB, strategyID string, cfg *StrategyConfig, savedAt time.Time) error {
+	fields := ExplicitZeroKnobs(cfg)
+	if len(fields) == 0 {
+		return tx.Exec(`DELETE FROM system_config WHERE key = ?`, explicitZeroKey(strategyID)).Error
 	}
-	keys := make([]string, 0, len(conf))
-	for k := range conf {
-		keys = append(keys, k)
+	val, err := encodeExplicitZeroMarker(fields, savedAt)
+	if err != nil {
+		return err
 	}
-	sort.Strings(keys)
-	return s.db.Exec(`INSERT INTO system_config (key, value) VALUES (?, ?)
+	return tx.Exec(`INSERT INTO system_config (key, value) VALUES (?, ?)
 		ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-		explicitZeroKey(toID), strings.Join(keys, ",")).Error
+		explicitZeroKey(strategyID), val).Error
+}
+
+// readExplicitZeroMarker reads one strategy's raw record on db (a transaction
+// or the store); found=false when there is none.
+func readExplicitZeroMarker(db *gorm.DB, strategyID string) (val string, found bool, err error) {
+	var vals []string
+	if err := db.Raw(`SELECT value FROM system_config WHERE key = ?`, explicitZeroKey(strategyID)).
+		Scan(&vals).Error; err != nil {
+		return "", false, err
+	}
+	if len(vals) == 0 {
+		return "", false, nil
+	}
+	return vals[0], true, nil
+}
+
+// copyExplicitZeroMarker carries a source strategy's record to a duplicate
+// VERBATIM, saved_at included — the copy's 0 was confirmed by the source's
+// save — on the caller's transaction. No source record → the copy has none.
+func copyExplicitZeroMarker(tx *gorm.DB, fromID, toID string) error {
+	val, found, err := readExplicitZeroMarker(tx, fromID)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return tx.Exec(`DELETE FROM system_config WHERE key = ?`, explicitZeroKey(toID)).Error
+	}
+	return tx.Exec(`INSERT INTO system_config (key, value) VALUES (?, ?)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+		explicitZeroKey(toID), val).Error
+}
+
+// ExplicitZeroRecordOf reads one strategy's record. None, a read error, or a
+// value that does not parse all read as an EMPTY record — nothing confirmed.
+func (s *StrategyStore) ExplicitZeroRecordOf(strategyID string) ExplicitZeroRecord {
+	if s == nil || s.db == nil {
+		return ExplicitZeroRecord{Fields: map[string]bool{}}
+	}
+	val, found, err := readExplicitZeroMarker(s.db, strategyID)
+	if err != nil || !found {
+		return ExplicitZeroRecord{Fields: map[string]bool{}}
+	}
+	rec, _ := parseExplicitZeroMarker(val)
+	return rec
+}
+
+// ExplicitZerosConfirmed is the record's knob set (empty when none).
+func (s *StrategyStore) ExplicitZerosConfirmed(strategyID string) map[string]bool {
+	return s.ExplicitZeroRecordOf(strategyID).Fields
+}
+
+// CreateWithExplicitZeros is the Studio's create (POST /api/strategies): the
+// strategy row AND its confirmation record in ONE transaction.
+func (s *StrategyStore) CreateWithExplicitZeros(strategy *Strategy, cfg *StrategyConfig) error {
+	savedAt := time.Now().UTC()
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(strategy).Error; err != nil {
+			return err
+		}
+		return writeExplicitZeroMarker(tx, strategy.ID, cfg, savedAt)
+	})
+}
+
+// UpdateWithExplicitZeros is the Studio's update (PUT /api/strategies/:id):
+// the strategy row AND its confirmation record in ONE transaction. The row's
+// updated_at and the record's saved_at are the same instant. An update that
+// matches no row writes no record.
+func (s *StrategyStore) UpdateWithExplicitZeros(strategy *Strategy, cfg *StrategyConfig) error {
+	savedAt := time.Now().UTC()
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		res := updateStrategyRow(tx, strategy, savedAt)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return fmt.Errorf("strategy %s: no row updated", strategy.ID)
+		}
+		return writeExplicitZeroMarker(tx, strategy.ID, cfg, savedAt)
+	})
+}
+
+// ExplicitZeroVerdict is what an explicit 0 at knob means to the owner, in the
+// words the boot report and the effective endpoint both print (R2):
+//
+//	OFF — confirmed by Studio save <time CT>   (the replan cap: 0 — …)
+//	explicit 0 UNCONFIRMED — re-save in Studio
+func ExplicitZeroVerdict(knob string, rec ExplicitZeroRecord) string {
+	if !rec.Fields[knob] {
+		return "explicit 0 UNCONFIRMED — re-save in Studio"
+	}
+	word := "OFF"
+	if knob == KnobReplanStrategy {
+		word = "0"
+	}
+	return word + " — confirmed by Studio save " + savedAtCT(rec.SavedAt)
+}
+
+var (
+	settingsTruthLocOnce sync.Once
+	settingsTruthLoc     *time.Location
+)
+
+// savedAtCT renders a save instant the way kernel.FormatCT renders operator
+// times ("2006-01-02 15:04 CT", America/Chicago; store cannot import kernel).
+// A record with no time prints n/a; a host without the zone database prints
+// UTC and SAYS UTC — never a UTC clock labelled CT.
+func savedAtCT(t time.Time) string {
+	if t.IsZero() {
+		return "n/a — the record predates saved_at"
+	}
+	settingsTruthLocOnce.Do(func() {
+		if loc, err := time.LoadLocation("America/Chicago"); err == nil {
+			settingsTruthLoc = loc
+		}
+	})
+	if settingsTruthLoc == nil {
+		return t.UTC().Format("2006-01-02 15:04 UTC")
+	}
+	return t.In(settingsTruthLoc).Format("2006-01-02 15:04 CT")
 }
 
 // ── THE BOOT AND LOAD SEATS ─────────────────────────────────────────────────
@@ -404,7 +592,7 @@ func (s *StrategyStore) SettingsTruthBootReport(getenv func(string) string) (Set
 	for _, st := range all {
 		in = append(in, SettingsTruthInput{
 			ID: st.ID, Config: st.Config, Bound: boundBy[st.ID],
-			Confirmed: s.ExplicitZerosConfirmed(st.ID),
+			Record: s.ExplicitZeroRecordOf(st.ID),
 		})
 	}
 	return SettingsTruthReport(in, getenv), nil
@@ -417,7 +605,7 @@ func (s *StrategyStore) SettingsTruthRefusal(st *Strategy, getenv func(string) s
 		return ""
 	}
 	row := settingsTruthRow(SettingsTruthInput{
-		ID: st.ID, Config: st.Config, Confirmed: s.ExplicitZerosConfirmed(st.ID),
+		ID: st.ID, Config: st.Config, Record: s.ExplicitZeroRecordOf(st.ID),
 	}, getenv)
 	return row.Refuse
 }

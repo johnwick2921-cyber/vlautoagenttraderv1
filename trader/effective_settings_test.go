@@ -15,7 +15,7 @@ import (
 
 func effRowsFor(t *testing.T, raw, venue, session string) map[string]EffectiveKnob {
 	t.Helper()
-	rows, err := EffectiveSettings(raw, venue, session)
+	rows, err := EffectiveSettings(raw, venue, session, store.ExplicitZeroRecord{})
 	if err != nil {
 		t.Fatalf("EffectiveSettings: %v", err)
 	}

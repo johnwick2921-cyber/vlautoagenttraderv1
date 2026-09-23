@@ -2266,7 +2266,13 @@ func (s *StrategyStore) Create(strategy *Strategy) error {
 
 // Update update a strategy
 func (s *StrategyStore) Update(strategy *Strategy) error {
-	return s.db.Model(&Strategy{}).
+	return updateStrategyRow(s.db, strategy, time.Now().UTC()).Error
+}
+
+// updateStrategyRow is Update's one statement, on db (the store or a
+// transaction) — UpdateWithExplicitZeros runs it inside its transaction.
+func updateStrategyRow(db *gorm.DB, strategy *Strategy, updatedAt time.Time) *gorm.DB {
+	return db.Model(&Strategy{}).
 		Where("id = ? AND user_id = ?", strategy.ID, strategy.UserID).
 		Updates(map[string]interface{}{
 			"name":           strategy.Name,
@@ -2274,8 +2280,8 @@ func (s *StrategyStore) Update(strategy *Strategy) error {
 			"config":         strategy.Config,
 			"is_public":      strategy.IsPublic,
 			"config_visible": strategy.ConfigVisible,
-			"updated_at":     time.Now().UTC(),
-		}).Error
+			"updated_at":     updatedAt,
+		})
 }
 
 // Delete delete a strategy
@@ -2328,8 +2334,13 @@ func (s *StrategyStore) ListPublic() ([]*Strategy, error) {
 
 // Get get a single strategy
 func (s *StrategyStore) Get(userID, id string) (*Strategy, error) {
+	return getStrategy(s.db, userID, id)
+}
+
+// getStrategy is Get on db (the store or a transaction).
+func getStrategy(db *gorm.DB, userID, id string) (*Strategy, error) {
 	var st Strategy
-	err := s.db.Where("id = ? AND (user_id = ? OR is_default = ?)", id, userID, true).
+	err := db.Where("id = ? AND (user_id = ? OR is_default = ?)", id, userID, true).
 		First(&st).Error
 	if err != nil {
 		return nil, err
@@ -2378,31 +2389,36 @@ func (s *StrategyStore) SetActive(userID, strategyID string) error {
 }
 
 // Duplicate duplicate a strategy (used to create custom strategy based on default strategy)
+//
+// W1 (settings truth): the copy holds the same bytes, so it carries the
+// source's record of which explicit zeros a W1 save confirmed — a copy of a
+// confirmed OFF breaker is still the owner's OFF. The source read, the new row
+// and the copied record are ONE transaction (CTO ruling msg 1790176346377): a
+// copy never lands without its record, nor pairs one source's bytes with
+// another moment's record.
 func (s *StrategyStore) Duplicate(userID, sourceID, newID, newName string) error {
-	// get source strategy
-	source, err := s.Get(userID, sourceID)
-	if err != nil {
-		return fmt.Errorf("failed to get source strategy: %w", err)
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// get source strategy
+		source, err := getStrategy(tx, userID, sourceID)
+		if err != nil {
+			return fmt.Errorf("failed to get source strategy: %w", err)
+		}
 
-	// create new strategy
-	newStrategy := &Strategy{
-		ID:          newID,
-		UserID:      userID,
-		Name:        newName,
-		Description: "Created based on [" + source.Name + "]",
-		IsActive:    false,
-		IsDefault:   false,
-		Config:      source.Config,
-	}
-
-	if err := s.Create(newStrategy); err != nil {
-		return err
-	}
-	// W1 (settings truth): the copy holds the same bytes, so it carries the
-	// source's record of which explicit zeros a W1 save confirmed — a copy of a
-	// confirmed OFF breaker is still the owner's OFF.
-	return s.copyExplicitZeros(sourceID, newID)
+		// create new strategy
+		newStrategy := &Strategy{
+			ID:          newID,
+			UserID:      userID,
+			Name:        newName,
+			Description: "Created based on [" + source.Name + "]",
+			IsActive:    false,
+			IsDefault:   false,
+			Config:      source.Config,
+		}
+		if err := tx.Create(newStrategy).Error; err != nil {
+			return err
+		}
+		return copyExplicitZeroMarker(tx, sourceID, newID)
+	})
 }
 
 // ParseConfig parse strategy configuration JSON

@@ -241,14 +241,12 @@ func (s *Server) handleCreateStrategy(c *gin.Context) {
 		Config:        string(configJSON),
 	}
 
-	if err := s.store.Strategy().Create(strategy); err != nil {
+	// W1 (settings truth) — the row AND the record of which knobs this save
+	// holds as an explicit 0 (so the load-time conversion check knows the 0 is
+	// the owner's) are ONE transaction: no row is created without its record.
+	if err := s.store.Strategy().CreateWithExplicitZeros(strategy, req.Config); err != nil {
 		SafeInternalError(c, "Failed to create strategy", err)
 		return
-	}
-	// W1 (settings truth) — record which knobs this save holds as an explicit
-	// 0, so the load-time conversion check knows the 0 is the owner's.
-	if err := s.store.Strategy().RecordExplicitZeros(strategy.ID, req.Config); err != nil {
-		logger.Warnf("🩺 settings truth: strategy %s saved but its explicit-zero record failed (%v) — a trader bound to it will be refused at load until the next save", strategy.ID, err)
 	}
 
 	// Validate configuration and collect warnings
@@ -370,15 +368,14 @@ func (s *Server) handleUpdateStrategy(c *gin.Context) {
 		ConfigVisible: req.ConfigVisible,
 	}
 
-	if err := s.store.Strategy().Update(strategy); err != nil {
+	// W1 (settings truth) — the row AND the record of which knobs this save
+	// holds as an explicit 0 are ONE transaction, committed BEFORE the reload
+	// below, so the reloaded trader's conversion check reads the owner's 0 as
+	// the owner's. If the record cannot be written the row is rolled back and
+	// the save answers an error — the stored config is unchanged.
+	if err := s.store.Strategy().UpdateWithExplicitZeros(strategy, &mergedConfig); err != nil {
 		SafeInternalError(c, "Failed to update strategy", err)
 		return
-	}
-	// W1 (settings truth) — record which knobs this save holds as an explicit
-	// 0 BEFORE the reload below, so the reloaded trader's conversion check
-	// reads the owner's 0 as the owner's.
-	if err := s.store.Strategy().RecordExplicitZeros(strategyID, &mergedConfig); err != nil {
-		logger.Warnf("🩺 settings truth: strategy %s saved but its explicit-zero record failed (%v) — a trader bound to it will be refused at load until the next save", strategyID, err)
 	}
 
 	// REPAIR-PARSE E5 (2026-09-02) — NAME WHAT MOVED. The 2026-09-01 08:13 CT

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // ── W1 SETTINGS TRUTH — the resolvers, the conversion report, the record ─────
@@ -109,10 +110,24 @@ func TestOriginLetterIsOneMapping(t *testing.T) {
 // ── THE REPORT ──────────────────────────────────────────────────────────────
 
 type truthFixtureRow struct {
-	ID        string          `json:"id"`
-	Bound     int             `json:"bound"`
-	Confirmed []string        `json:"confirmed"`
-	Config    json.RawMessage `json:"config"`
+	ID     string          `json:"id"`
+	Bound  int             `json:"bound"`
+	Record json.RawMessage `json:"record"` // the RAW stored marker; absent = none
+	Config json.RawMessage `json:"config"`
+}
+
+// rawRecord is the system_config value the fixture row stores: a JSON string
+// verbatim, a JSON object as its compact text; found=false when none.
+func (r truthFixtureRow) rawRecord(t *testing.T) (string, bool) {
+	t.Helper()
+	if len(r.Record) == 0 {
+		return "", false
+	}
+	var str string
+	if err := json.Unmarshal(r.Record, &str); err == nil {
+		return str, true
+	}
+	return string(r.Record), true
 }
 
 func loadTruthFixture(t *testing.T) []truthFixtureRow {
@@ -130,14 +145,17 @@ func loadTruthFixture(t *testing.T) []truthFixtureRow {
 	return f.Rows
 }
 
-func truthInputs(rows []truthFixtureRow) []SettingsTruthInput {
+// truthInputs builds the pure report's input; each record goes through the
+// production parser, exactly as ExplicitZeroRecordOf reads the stored value.
+func truthInputs(t *testing.T, rows []truthFixtureRow) []SettingsTruthInput {
+	t.Helper()
 	in := make([]SettingsTruthInput, 0, len(rows))
 	for _, r := range rows {
-		conf := map[string]bool{}
-		for _, k := range r.Confirmed {
-			conf[k] = true
+		rec := ExplicitZeroRecord{Fields: map[string]bool{}}
+		if raw, ok := r.rawRecord(t); ok {
+			rec, _ = parseExplicitZeroMarker(raw)
 		}
-		in = append(in, SettingsTruthInput{ID: r.ID, Config: string(r.Config), Bound: r.Bound, Confirmed: conf})
+		in = append(in, SettingsTruthInput{ID: r.ID, Config: string(r.Config), Bound: r.Bound, Record: rec})
 	}
 	return in
 }
@@ -163,7 +181,7 @@ func checkTruthGolden(t *testing.T, got string) {
 // The migration report IS a fixture: the nine research-copy shapes plus the
 // synthetic zeros, env unset. Pinned byte-for-byte.
 func TestSettingsTruthReportGolden(t *testing.T) {
-	res := SettingsTruthReport(truthInputs(loadTruthFixture(t)), envMap(nil))
+	res := SettingsTruthReport(truthInputs(t, loadTruthFixture(t)), envMap(nil))
 	checkTruthGolden(t, strings.Join(res.Lines(), "\n")+"\n")
 }
 
@@ -171,7 +189,7 @@ func TestSettingsTruthReportGolden(t *testing.T) {
 // every environment the bot could boot with. Sample ids: the nine below.
 func TestSettingsTruthResearchRowsChangeNothing(t *testing.T) {
 	var research []SettingsTruthInput
-	for _, in := range truthInputs(loadTruthFixture(t)) {
+	for _, in := range truthInputs(t, loadTruthFixture(t)) {
 		if !strings.HasPrefix(in.ID, "syn-") {
 			research = append(research, in)
 		}
@@ -199,13 +217,16 @@ func TestSettingsTruthRefusesOnlyUnconfirmedChanges(t *testing.T) {
 		}
 		return m
 	}
-	rows := byID(SettingsTruthReport(truthInputs(loadTruthFixture(t)), envMap(nil)))
+	rows := byID(SettingsTruthReport(truthInputs(t, loadTruthFixture(t)), envMap(nil)))
 	for id, wantRefuse := range map[string]bool{
 		"syn-breaker-0-flat":                   true,
 		"syn-breaker-0-nested":                 true,
 		"syn-breaker-0-nested-confirmed":       false,
+		"syn-breaker-0-legacy-record":          false, // the first W1 record shape still confirms
+		"syn-breaker-0-bad-record":             true,  // a record that does not parse confirms NOTHING
 		"syn-breaker-null":                     false,
 		"syn-replan-0-strategy":                true,
+		"syn-replan-0-strategy-confirmed":      false,
 		"syn-replan-0-session-only":            false, // a session 0 always meant 0
 		"a5b7662e-7bf7-49bb-9f09-7efa48f95ac8": false,
 	} {
@@ -232,7 +253,33 @@ func TestSettingsTruthRefusesOnlyUnconfirmedChanges(t *testing.T) {
 			}
 		}
 	}
-	withEnvOff := byID(SettingsTruthReport(truthInputs(loadTruthFixture(t)), envMap(map[string]string{"BREAKER_HALT_N": "0"})))
+	// CTO ruling msg 1790176346377 R2: every explicit 0 says which applies —
+	// confirmed by a Studio save (and WHEN, in CT), or UNCONFIRMED.
+	for id, want := range map[string]string{
+		"syn-breaker-0-nested-confirmed":  "OFF — confirmed by Studio save 2026-09-23 10:04 CT", // 15:04Z = CDT
+		"syn-replan-0-strategy-confirmed": "0 — confirmed by Studio save 2026-01-15 14:30 CT",   // 20:30Z = CST
+		"syn-breaker-0-legacy-record":     "OFF — confirmed by Studio save n/a — the record predates saved_at",
+		"syn-breaker-0-nested":            "explicit 0 UNCONFIRMED — re-save in Studio",
+		"syn-breaker-0-flat":              "explicit 0 UNCONFIRMED — re-save in Studio",
+		"syn-breaker-0-bad-record":        "explicit 0 UNCONFIRMED — re-save in Studio",
+		"syn-replan-0-strategy":           "explicit 0 UNCONFIRMED — re-save in Studio",
+	} {
+		r := rows[id]
+		got := r.Breaker.Zero + r.Replan.Zero // exactly one knob holds the 0 in each row
+		if got != want {
+			t.Errorf("%s: explicit-0 verdict %q, want %q", id, got, want)
+		}
+		if !strings.Contains(r.Line(), "("+want+")") {
+			t.Errorf("%s: the 🩺 line does not print %q:\n  %s", id, want, r.Line())
+		}
+	}
+	for _, id := range []string{"syn-breaker-null", "syn-replan-0-session-only", "70695b25-01a3-4c38-9917-261260b49550"} {
+		if r := rows[id]; r.Breaker.Zero != "" || r.Replan.Zero != "" {
+			t.Errorf("%s holds no strategy-level explicit 0 — no verdict, got %q / %q", id, r.Breaker.Zero, r.Replan.Zero)
+		}
+	}
+
+	withEnvOff := byID(SettingsTruthReport(truthInputs(t, loadTruthFixture(t)), envMap(map[string]string{"BREAKER_HALT_N": "0"})))
 	if r := withEnvOff["syn-breaker-0-nested"]; r.Breaker.Changed || r.Refuse != "" {
 		t.Errorf("BREAKER_HALT_N=0: a stored 0 was off before and is off now — nothing changed, nothing refused; got %+v", r)
 	}
@@ -264,14 +311,10 @@ func seedTruthStore(t *testing.T) *Store {
 				t.Fatal(err)
 			}
 		}
-		if len(r.Confirmed) > 0 {
-			// The confirmation is written by the record the Studio's save
-			// calls — here from the row's own parsed config.
-			var cfg StrategyConfig
-			if err := json.Unmarshal(r.Config, &cfg); err != nil {
-				t.Fatal(err)
-			}
-			if err := st.Strategy().RecordExplicitZeros(r.ID, &cfg); err != nil {
+		if raw, ok := r.rawRecord(t); ok {
+			// The record's RAW bytes, as a Studio save (or an older binary, or
+			// a damaged restore) left them — the boot seat must parse them.
+			if err := g.Exec(`INSERT INTO system_config (key, value) VALUES (?, ?)`, explicitZeroKey(r.ID), raw).Error; err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -290,33 +333,169 @@ func TestSettingsTruthBootReportReadsTheStore(t *testing.T) {
 }
 
 // A Studio save REPLACES the record: turning the breaker back to inherit
-// drops it, so a later raw 0 is not covered by a stale confirmation.
-func TestRecordExplicitZerosIsReplacedPerSave(t *testing.T) {
+// drops it, so a later raw 0 is not covered by a stale confirmation. Driven
+// through the production writer (UpdateWithExplicitZeros).
+func TestUpdateWithExplicitZerosReplacesTheRecordPerSave(t *testing.T) {
 	st := seedTruthStore(t)
 	s := st.Strategy()
 	id := "syn-breaker-0-nested-confirmed"
 	if !s.ExplicitZerosConfirmed(id)[KnobBreaker] {
 		t.Fatal("seeded confirmation missing")
 	}
-	var inherit StrategyConfig // breaker nil = inherit
-	if err := s.RecordExplicitZeros(id, &inherit); err != nil {
-		t.Fatal(err)
+	save := func(cfg StrategyConfig) {
+		t.Helper()
+		b, err := json.Marshal(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.UpdateWithExplicitZeros(&Strategy{ID: id, UserID: "u1", Name: "s", Config: string(b)}, &cfg); err != nil {
+			t.Fatal(err)
+		}
 	}
+	save(StrategyConfig{}) // breaker nil = inherit
 	if s.ExplicitZerosConfirmed(id)[KnobBreaker] {
 		t.Fatal("a save that holds no explicit 0 must drop the confirmation")
 	}
+	if _, found, _ := readExplicitZeroMarker(st.GormDB(), id); found {
+		t.Fatal("a save with no explicit 0 DELETES the record row, it does not leave an empty one")
+	}
 	both := StrategyConfig{DayPlan: &DayPlanConfig{ReplanCap: IntPtr(0)}}
 	both.RiskControl.ConsecutiveLossHalt = IntPtr(0)
-	if err := s.RecordExplicitZeros(id, &both); err != nil {
+	before := time.Now().UTC().Add(-time.Second)
+	save(both)
+	rec := s.ExplicitZeroRecordOf(id)
+	if !rec.Fields[KnobBreaker] || !rec.Fields[KnobReplanStrategy] {
+		t.Fatalf("both explicit zeros must be recorded, got %v", rec.Fields)
+	}
+	// saved_at is the save's instant, and it is the row's updated_at.
+	if rec.SavedAt.Before(before) || rec.SavedAt.After(time.Now().UTC().Add(time.Second)) {
+		t.Fatalf("saved_at %v is not this save's time", rec.SavedAt)
+	}
+	row, err := s.Get("u1", id)
+	if err != nil {
 		t.Fatal(err)
 	}
-	got := s.ExplicitZerosConfirmed(id)
-	if !got[KnobBreaker] || !got[KnobReplanStrategy] {
-		t.Fatalf("both explicit zeros must be recorded, got %v", got)
+	if !row.UpdatedAt.Truncate(time.Second).Equal(rec.SavedAt) {
+		t.Fatalf("row updated_at %v and record saved_at %v must be one instant", row.UpdatedAt, rec.SavedAt)
 	}
 }
 
-// Duplicate copies the bytes, so it carries the source's confirmation.
+// The record parser: the JSON shape needs saved_at; the first W1 shape (a bare
+// comma list) still confirms, with no time; anything else confirms NOTHING.
+func TestParseExplicitZeroMarker(t *testing.T) {
+	cases := []struct {
+		name   string
+		raw    string
+		ok     bool
+		fields []string
+		at     string // RFC3339, "" = zero
+	}{
+		{"json", `{"fields":["risk_control.consecutive_loss_halt","day_plan.replan_cap"],"saved_at":"2026-09-23T15:04:05Z"}`, true,
+			[]string{KnobBreaker, KnobReplanStrategy}, "2026-09-23T15:04:05Z"},
+		{"json, no fields", `{"fields":[],"saved_at":"2026-09-23T15:04:05Z"}`, true, nil, "2026-09-23T15:04:05Z"},
+		{"legacy list", "day_plan.replan_cap,risk_control.consecutive_loss_halt", true, []string{KnobBreaker, KnobReplanStrategy}, ""},
+		{"legacy empty (the old no-zero save)", "", true, nil, ""},
+		{"json without saved_at", `{"fields":["risk_control.consecutive_loss_halt"]}`, false, nil, ""},
+		{"json with a bad saved_at", `{"fields":["risk_control.consecutive_loss_halt"],"saved_at":"yesterday"}`, false, nil, ""},
+		{"truncated json", `{"fields":["risk_control.consecutive_loss_halt"]`, false, nil, ""},
+		{"json naming an unknown knob", `{"fields":["risk_control.max_positions"],"saved_at":"2026-09-23T15:04:05Z"}`, false, nil, ""},
+		{"legacy naming an unknown knob", "risk_control.consecutive_loss_halt,bogus", false, nil, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rec, ok := parseExplicitZeroMarker(c.raw)
+			if ok != c.ok {
+				t.Fatalf("ok=%v want %v", ok, c.ok)
+			}
+			if len(rec.Fields) != len(c.fields) {
+				t.Fatalf("fields %v want %v", rec.Fields, c.fields)
+			}
+			for _, f := range c.fields {
+				if !rec.Fields[f] {
+					t.Fatalf("fields %v lack %s", rec.Fields, f)
+				}
+			}
+			if c.at == "" && !rec.SavedAt.IsZero() || c.at != "" && rec.SavedAt.Format(time.RFC3339) != c.at {
+				t.Fatalf("saved_at %v want %q", rec.SavedAt, c.at)
+			}
+		})
+	}
+}
+
+// ── R1: THE ROW AND ITS RECORD ARE ONE TRANSACTION ───────────────────────────
+
+// failRecordWrites makes every write of a settings_truth_zero:* row fail
+// inside SQLite itself (a trigger, no seam in production code), so the
+// production save methods run exactly as they do live.
+func failRecordWrites(t *testing.T, st *Store) {
+	t.Helper()
+	for _, stmt := range []string{
+		`CREATE TRIGGER t_fail_zero_ins BEFORE INSERT ON system_config WHEN NEW.key LIKE 'settings_truth_zero:%' BEGIN SELECT RAISE(ABORT, 'test: record write refused'); END`,
+		`CREATE TRIGGER t_fail_zero_upd BEFORE UPDATE ON system_config WHEN NEW.key LIKE 'settings_truth_zero:%' BEGIN SELECT RAISE(ABORT, 'test: record write refused'); END`,
+		`CREATE TRIGGER t_fail_zero_del BEFORE DELETE ON system_config WHEN OLD.key LIKE 'settings_truth_zero:%' BEGIN SELECT RAISE(ABORT, 'test: record write refused'); END`,
+	} {
+		if err := st.GormDB().Exec(stmt).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestSaveRollsBackTheRowWhenTheRecordFails(t *testing.T) {
+	st := seedTruthStore(t)
+	s := st.Strategy()
+	failRecordWrites(t, st)
+
+	off := StrategyConfig{}
+	off.RiskControl.ConsecutiveLossHalt = IntPtr(0)
+	offJSON, _ := json.Marshal(off)
+
+	// UPDATE: the row must be byte-identical afterwards.
+	id := "syn-breaker-null"
+	before, err := s.Get("u1", id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = s.UpdateWithExplicitZeros(&Strategy{ID: id, UserID: "u1", Name: "renamed", Config: string(offJSON)}, &off)
+	if err == nil || !strings.Contains(err.Error(), "record write refused") {
+		t.Fatalf("update must fail with the record's error, got %v", err)
+	}
+	after, _ := s.Get("u1", id)
+	if after.Config != before.Config || after.Name != before.Name || !after.UpdatedAt.Equal(before.UpdatedAt) {
+		t.Fatalf("the row was saved without its record:\n before %s %q\n after  %s %q", before.Config, before.Name, after.Config, after.Name)
+	}
+
+	// UPDATE to inherit (the record's DELETE fails) — the confirmed row keeps
+	// both its bytes and its record.
+	conf := "syn-breaker-0-nested-confirmed"
+	cb, _ := s.Get("u1", conf)
+	var inherit StrategyConfig
+	if err := s.UpdateWithExplicitZeros(&Strategy{ID: conf, UserID: "u1", Name: "s", Config: "{}"}, &inherit); err == nil {
+		t.Fatal("update must fail when the record delete fails")
+	}
+	if ca, _ := s.Get("u1", conf); ca.Config != cb.Config {
+		t.Fatalf("row changed without its record: %s → %s", cb.Config, ca.Config)
+	}
+
+	// CREATE: no row at all.
+	err = s.CreateWithExplicitZeros(&Strategy{ID: "new-off", UserID: "u1", Name: "n", Config: string(offJSON)}, &off)
+	if err == nil {
+		t.Fatal("create must fail when the record fails")
+	}
+	if _, gerr := s.Get("u1", "new-off"); gerr == nil {
+		t.Fatal("the created row survived its failed record")
+	}
+
+	// DUPLICATE of a confirmed source: no copy at all.
+	if err := s.Duplicate("u1", conf, "dup-x", "copy"); err == nil {
+		t.Fatal("duplicate must fail when the copied record fails")
+	}
+	if _, gerr := s.Get("u1", "dup-x"); gerr == nil {
+		t.Fatal("the duplicate survived its failed record")
+	}
+}
+
+// Duplicate copies the bytes, so it carries the source's confirmation —
+// verbatim, saved_at included (the source's save confirmed the copy's 0).
 func TestDuplicateCarriesTheExplicitZeroRecord(t *testing.T) {
 	st := seedTruthStore(t)
 	if err := st.Strategy().Duplicate("u1", "syn-breaker-0-nested-confirmed", "dup-1", "copy"); err != nil {
@@ -328,6 +507,11 @@ func TestDuplicateCarriesTheExplicitZeroRecord(t *testing.T) {
 	}
 	if r := st.Strategy().SettingsTruthRefusal(dup, envMap(nil)); r != "" {
 		t.Fatalf("a copy of a confirmed OFF breaker must load, got refusal %q", r)
+	}
+	src, _, _ := readExplicitZeroMarker(st.GormDB(), "syn-breaker-0-nested-confirmed")
+	cp, found, _ := readExplicitZeroMarker(st.GormDB(), "dup-1")
+	if !found || cp != src {
+		t.Fatalf("the copy's record %q (found=%v) is not the source's %q", cp, found, src)
 	}
 	if err := st.Strategy().Duplicate("u1", "syn-breaker-0-nested", "dup-2", "copy"); err != nil {
 		t.Fatal(err)

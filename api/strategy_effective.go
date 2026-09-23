@@ -85,7 +85,7 @@ func (s *Server) handleStrategyEffective(c *gin.Context) {
 	}
 	venue := s.effectiveVenue(c, userID, st.ID)
 
-	rows, err := trader.EffectiveSettings(st.Config, venue, session)
+	rows, err := trader.EffectiveSettings(st.Config, venue, session, s.store.Strategy().ExplicitZeroRecordOf(st.ID))
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "stored strategy config does not parse"})
 		return
