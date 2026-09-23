@@ -20,7 +20,12 @@ import (
 // Nothing in the trading API can write or clear it.
 //
 //	absent                       → NOT held (today's behaviour, byte-identical)
-//	present, well-formed         → what it says ("held": true|false)
+//	present, well-formed         → what it says ("held": true|false). A
+//	                               releasing writer DELETES the file (Clear*)
+//	                               rather than writing held:false; held:false
+//	                               is valid but discouraged, so stale released
+//	                               files never accumulate
+
 //	present, unreadable/corrupt  → HELD (fail closed): a hold we cannot read
 //	                               is a hold we must honour
 //
@@ -60,6 +65,10 @@ type holdCacheEntry struct {
 	state    MaintenanceHoldState
 }
 
+// holdClearAfterReadHook is a TEST SEAM: it runs inside ClearMaintenanceHold
+// between the ownership read and the remove (nil in production).
+var holdClearAfterReadHook func()
+
 var (
 	holdCacheMu sync.Mutex
 	holdCache   = map[string]holdCacheEntry{}
@@ -69,6 +78,31 @@ func resetMaintenanceHoldCacheForTest() {
 	holdCacheMu.Lock()
 	holdCache = map[string]holdCacheEntry{}
 	holdCacheMu.Unlock()
+}
+
+// lockMaintenanceHold takes an exclusive advisory flock on
+// <dataDir>/updater/.hold.lock and returns its unlock. Every WRITER (write,
+// clear, force-clear) holds it across its whole read-decide-act sequence, so
+// a clear that has verified job X can never remove the hold job Y wrote in
+// between (MUST-1, CTO review of cb513079). Readers take no lock: rename
+// makes every write atomic to them.
+func lockMaintenanceHold(dataDir string) (func(), error) {
+	dir := filepath.Dir(MaintenanceHoldPath(dataDir))
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil, err
+	}
+	f, err := os.OpenFile(filepath.Join(dir, ".hold.lock"), os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, err
+	}
+	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+		f.Close()
+		return nil, fmt.Errorf("maintenance hold: lock: %w", err)
+	}
+	return func() {
+		_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+		f.Close()
+	}, nil
 }
 
 // ReadMaintenanceHold reads the hold for the installation whose data dir is
@@ -146,10 +180,12 @@ func WriteMaintenanceHold(dataDir string, h MaintenanceHold) error {
 			return fmt.Errorf("maintenance hold: since must be RFC3339: %w", err)
 		}
 	}
-	dir := filepath.Dir(MaintenanceHoldPath(dataDir))
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	unlock, err := lockMaintenanceHold(dataDir)
+	if err != nil {
 		return err
 	}
+	defer unlock()
+	dir := filepath.Dir(MaintenanceHoldPath(dataDir))
 	b, err := json.MarshalIndent(h, "", "  ")
 	if err != nil {
 		return err
@@ -192,6 +228,11 @@ func ClearMaintenanceHold(dataDir, jobID string) error {
 	if strings.TrimSpace(jobID) == "" {
 		return errors.New("maintenance hold: clear requires the holding job_id")
 	}
+	unlock, err := lockMaintenanceHold(dataDir)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	st := ReadMaintenanceHold(dataDir)
 	if !st.Present {
 		return nil // already clear — idempotent
@@ -202,12 +243,22 @@ func ClearMaintenanceHold(dataDir, jobID string) error {
 	if st.Hold.JobID != jobID {
 		return fmt.Errorf("maintenance hold: held by job %q, not %q", st.Hold.JobID, jobID)
 	}
+	if holdClearAfterReadHook != nil {
+		holdClearAfterReadHook()
+	}
 	return removeMaintenanceHold(dataDir)
 }
 
 // ForceClearMaintenanceHold removes the file regardless of its content. Only
 // the local operator CLI calls it (cmd/maintenance-hold clear --force).
-func ForceClearMaintenanceHold(dataDir string) error { return removeMaintenanceHold(dataDir) }
+func ForceClearMaintenanceHold(dataDir string) error {
+	unlock, err := lockMaintenanceHold(dataDir)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return removeMaintenanceHold(dataDir)
+}
 
 func removeMaintenanceHold(dataDir string) error {
 	p := MaintenanceHoldPath(dataDir)

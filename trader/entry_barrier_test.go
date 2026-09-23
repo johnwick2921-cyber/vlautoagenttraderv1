@@ -8,6 +8,16 @@ import (
 	"time"
 )
 
+// boundedCtx: every wait in these tests is bounded (CTO SHOULD after the
+// mutation run — a broken barrier must fail in milliseconds, not hang the
+// package until the 10-minute test timeout).
+func boundedCtx(t *testing.T) context.Context {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	t.Cleanup(cancel)
+	return ctx
+}
+
 // W-ONE-BUTTON M2 — the in-process entry barrier. Every entry SEND holds a
 // permit for the duration of the send. Hold() refuses new permits at once and
 // waits until every permit taken before it is released ("drained"). Checking
@@ -30,7 +40,7 @@ func TestEntryBarrierGrantsPermitsWhileReleased(t *testing.T) {
 
 func TestEntryBarrierRefusesPermitsWhileHeld(t *testing.T) {
 	var b EntryBarrier
-	if err := b.Hold(context.Background()); err != nil {
+	if err := b.Hold(boundedCtx(t)); err != nil {
 		t.Fatal(err)
 	}
 	if rel, ok := b.Permit(); ok || rel != nil {
@@ -43,7 +53,9 @@ func TestEntryBarrierRefusesPermitsWhileHeld(t *testing.T) {
 }
 
 // THE RACE: a send already holding a permit completes; Hold() returns only
-// after it; the next send is refused. Run with -race.
+// after it; the next send is refused. Run with -race. The Hold goroutine never
+// touches t: it reports on a channel, and Cleanup releases the permit and
+// waits (bounded) so the goroutine can never outlive the test.
 func TestEntryBarrierHoldWaitsForInFlightSendAndRefusesTheNext(t *testing.T) {
 	var b EntryBarrier
 	rel, ok := b.Permit()
@@ -51,33 +63,49 @@ func TestEntryBarrierHoldWaitsForInFlightSendAndRefusesTheNext(t *testing.T) {
 		t.Fatal("permit")
 	}
 	var sendDone atomic.Bool
-	holdReturned := make(chan struct{})
+	type holdResult struct {
+		err          error
+		beforeSendOK bool // true if Hold returned before the send finished (a violation)
+	}
+	res := make(chan holdResult, 1)
+	holdCtx := boundedCtx(t)
 	go func() {
-		if err := b.Hold(context.Background()); err != nil {
-			t.Error(err)
-		}
-		if !sendDone.Load() {
-			t.Error("Hold returned while a permitted send was still in flight")
-		}
-		close(holdReturned)
+		err := b.Hold(holdCtx)
+		res <- holdResult{err: err, beforeSendOK: !sendDone.Load()}
 	}()
+	t.Cleanup(func() {
+		rel() // idempotent
+		select {
+		case <-res:
+		case <-time.After(3 * time.Second):
+		}
+	})
 	// while Hold is waiting, new permits are already refused
 	deadline := time.Now().Add(2 * time.Second)
 	for !b.Held() && time.Now().Before(deadline) {
 		time.Sleep(time.Millisecond)
 	}
-	if _, ok := b.Permit(); ok {
+	if r2, ok := b.Permit(); ok {
+		r2()
 		t.Fatal("once Hold has begun, a new permit must be refused even before drain completes")
 	}
 	select {
-	case <-holdReturned:
+	case r := <-res:
+		res <- r
 		t.Fatal("Hold returned before the in-flight send released its permit")
 	case <-time.After(50 * time.Millisecond):
 	}
 	sendDone.Store(true)
 	rel()
 	select {
-	case <-holdReturned:
+	case r := <-res:
+		res <- r
+		if r.err != nil {
+			t.Fatalf("Hold: %v", r.err)
+		}
+		if r.beforeSendOK {
+			t.Fatal("Hold returned while a permitted send was still in flight")
+		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("Hold did not return after the in-flight send finished")
 	}
@@ -116,8 +144,10 @@ func TestEntryBarrierConcurrentSendersNeverSlipPastAHold(t *testing.T) {
 		}()
 	}
 	time.Sleep(5 * time.Millisecond)
-	if err := b.Hold(context.Background()); err != nil {
-		t.Fatal(err)
+	if err := b.Hold(boundedCtx(t)); err != nil {
+		close(stop)
+		wg.Wait()
+		t.Fatalf("Hold did not drain within the bound (a broken barrier keeps granting permits): %v", err)
 	}
 	afterHold.Store(true)
 	if b.InFlight() != 0 {
