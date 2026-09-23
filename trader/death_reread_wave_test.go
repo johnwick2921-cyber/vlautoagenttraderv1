@@ -185,6 +185,7 @@ func TestDeathRereadRealPathLandsFreshPlanAndSupersedes(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("death must park dormant first, got %q", got)
@@ -257,6 +258,7 @@ func TestDeathRereadOffByteIdentical(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t)              // CTO M4: join the async re-read before the seam resets
 	time.Sleep(300 * time.Millisecond) // let any (wrong) async launch start
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
@@ -294,6 +296,7 @@ func TestDeathRereadBudgetExhaustedStaysDormant(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	time.Sleep(300 * time.Millisecond)
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
@@ -410,6 +413,7 @@ func TestDeathRereadRealPathRearmedMeanwhileSupersedeRefused(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if !waitFor(t, 10*time.Second, func() bool {
 		return strings.Contains(logBuf.String(), "RE-ARMED meanwhile") &&
 			strings.Contains(logBuf.String(), "supersede REFUSED")
@@ -449,6 +453,7 @@ func TestDeathRereadPreReadRecheckSkipsRearmedRow(t *testing.T) {
 	t.Cleanup(func() { deathRereadRun = orig })
 
 	at.maybeRereadAfterDeath(now, "NY", td, row, "death-condition: 5m_close close below 15480.00", 15470)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	time.Sleep(300 * time.Millisecond)
 	if called.Load() != 0 {
 		t.Fatalf("the pre-read re-check must skip a non-dormant row (0 launches), got %d", called.Load())
@@ -485,6 +490,7 @@ func TestDeathRereadRealPathFlapGuardHoldsLaunch(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("death must park dormant first, got %q", got)
 	}

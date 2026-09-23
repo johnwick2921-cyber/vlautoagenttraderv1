@@ -163,6 +163,7 @@ func TestFlipRereadKnobOffStaysDormantNoRead(t *testing.T) {
 	seedFlipBars(100, 96, 6*time.Minute, now)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	row, err := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
 	if err != nil || row == nil {
@@ -205,6 +206,7 @@ func TestFlipRereadOnRequestsStructureFlipOnce(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	// Sync half first: the dormant marker is written before the read launches.
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
@@ -262,6 +264,7 @@ func TestFlipRereadSameBiasStillSupersedesNoLoop(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if !waitFor(t, 5*time.Second, func() bool {
 		return versionLifecycle(t, st, td, "NY", at.id, 1) == "superseded:flip"
 	}) {
@@ -294,6 +297,7 @@ func TestFlipRereadPreflightRefusalKeepsDormantPlan(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRereadAfterFlip(now, "NY", td, row, "flip-condition: 2x5m close below 100.00 → bias short")
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if rec.count() != 0 {
 		t.Fatalf("a preflight refusal must not launch the read, got %d calls", rec.count())
@@ -321,6 +325,7 @@ func TestFlipRereadDeathConditionUnchanged(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("structured death must park dormant, got %q", got)
@@ -371,6 +376,7 @@ func TestFlipRereadAsiaV13ReplayFixture(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "ASIA", at.id, 1); got != "dormant" {
 		t.Fatalf("ASIA v13 flip must park dormant, got %q", got)

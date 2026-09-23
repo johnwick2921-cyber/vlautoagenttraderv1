@@ -260,6 +260,7 @@ func TestFlipRereadRealPathRearmedMeanwhileSupersedeRefused(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if !waitFor(t, 10*time.Second, func() bool {
 		return strings.Contains(logBuf.String(), "supersede REFUSED")
@@ -307,6 +308,7 @@ func TestFlipRereadPreReadRecheckSkipsRearmedRow(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRereadAfterFlip(now, "NY", td, row, "flip-condition: 2x5m close below 15480.00 → bias short")
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if !waitFor(t, 10*time.Second, func() bool {
 		return strings.Contains(logBuf.String(), `SKIPPED before the read: the row is "active", no longer dormant`)
@@ -337,6 +339,7 @@ func TestFlipRereadOffPathRealSeamByteIdentical(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	wantLine := "😴 plan 2026-08-18 NY v1 DORMANT — flip-condition: 2x5m close below 15480.00 (buffer 0.0×ATR14, 3× 5m closes) → bias short (entries blocked; auto re-arms when price closes back; replan budget untouched)"
 	if !strings.Contains(logBuf.String(), wantLine) {
@@ -459,6 +462,7 @@ func TestFlipRereadImmediateAfterRecentWake(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 2); got != "dormant" && got != "superseded:flip" {
 		t.Fatalf("flip must park v2 dormant first, got %q", got)
@@ -502,6 +506,7 @@ func TestFlipRereadStillSkippedByCutoff(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("flip must park dormant, got %q; log:\n%s", got, logBuf.String())
@@ -542,6 +547,7 @@ func TestFlipRereadDeferredOnOpenStreamThenImmediateRetry(t *testing.T) {
 	})
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("flip must park dormant, got %q", got)

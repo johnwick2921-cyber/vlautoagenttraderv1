@@ -109,6 +109,7 @@ func TestFlipDeathMarksDormantAndSkipsBudget(t *testing.T) {
 	defer func() { market.FuturesBarsProvider = nil; traderTestBarsInstalled = false }()
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	row, err := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
 	if err != nil || row == nil {

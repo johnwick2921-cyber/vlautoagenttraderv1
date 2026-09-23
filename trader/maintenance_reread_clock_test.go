@@ -31,6 +31,7 @@ func TestFlipRereadRefusedByTheHoldNeverStartsTheClock(t *testing.T) {
 	before := gateBlocks(at.id, "maintenance_hold")
 
 	at.maybeRereadAfterFlip(now, "NY", td, row, "flip-condition: 2x5m close below 15480.00 → bias short")
+	defer drainReReads(t)              // CTO M4: join the async re-read before the seam resets
 	time.Sleep(200 * time.Millisecond) // a launched read would be running by now
 
 	if n := launchClockEntries(at); n != 0 {
@@ -59,6 +60,7 @@ func TestDeathRereadRefusedByTheHoldNeverStartsTheClock(t *testing.T) {
 	wakeBefore := at.lastPlannerWakeAt
 
 	at.maybeRereadAfterDeath(now, "NY", td, row, "death-condition: close below 15400", 15395)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	time.Sleep(200 * time.Millisecond)
 
 	if n := launchClockEntries(at); n != 0 {

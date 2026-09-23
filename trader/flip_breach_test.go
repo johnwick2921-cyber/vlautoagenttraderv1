@@ -90,6 +90,7 @@ func TestFlipBreachDefersLevelWakeThenFlipFires(t *testing.T) {
 	barsAt(flipHoldTape(now, 40, 10))
 	buf.Reset()
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	got, _ := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
 	if got.Lifecycle != "dormant" || !strings.HasPrefix(lastLifecycleReason(t, st, got), "dormant:flip:") && !strings.Contains(dormantFlipKiller(t, st, got), "flip-condition") {
 		t.Fatalf("second close must fire the flip → dormant:flip, got %s %q\n%s", got.Lifecycle, lastLifecycleReason(t, st, got), buf.String())
@@ -227,6 +228,7 @@ func TestFlipBreachScheduledReadsAndDeathUntouched(t *testing.T) {
 	barsAt(flipHoldTape(now, 40, 10))
 	buf := captureTraderLog(t)
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	got, _ := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
 	if got.Lifecycle != "dormant" || !strings.HasPrefix(lastLifecycleReason(t, st, got), "dormant:death:") {
 		t.Fatalf("death must win → dormant:death, got %s %q\n%s", got.Lifecycle, lastLifecycleReason(t, st, got), buf.String())

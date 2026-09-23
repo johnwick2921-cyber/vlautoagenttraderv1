@@ -251,9 +251,11 @@ func TestClass36ScheduledReadFiresOnceInHalt(t *testing.T) {
 	t.Cleanup(func() { testNow = nil })
 
 	at.evaluateWallClockSessionReads()
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if row := waitPlan(t, st, "2026-09-01", "ASIA", "t1"); row == nil {
 		t.Fatal("first evaluation must land the plan")
 	}
+	drainReReads(t) // the loop below moves `cur`, which the read's clock seam reads
 	for _, mm := range []int{32, 40, 50} {
 		cur = ctTime(t, 2026, 9, 1, 16, mm)
 		if fired := at.maybeRunSessionReadsAt(cur); len(fired) != 0 {
@@ -297,6 +299,7 @@ func TestClass36LondonAndNYUnchangedWithLiveBars(t *testing.T) {
 		if row := waitPlan(t, st, "2026-09-01", tc.session, "t1"); row == nil || row.TriggerReason != tc.session+"_scheduled_read" {
 			t.Fatalf("%s: read must land as before, got %+v", tc.session, row)
 		}
+		drainReReads(t) // CTO M4: join the async read before the seams below reset
 		market.FuturesBarsProvider = prev
 		testNow = nil
 		_ = st.Close()
@@ -386,6 +389,7 @@ func TestClass36PinSundayWeekly(t *testing.T) {
 	}
 	// Next tick: the weekly doc exists → ASIA fires and authors from stored bars (weekend bypass).
 	at.evaluateWallClockSessionReads()
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if row := waitPlan(t, st, asiaDate, "ASIA", "t1"); row == nil || row.Lifecycle != "active" {
 		t.Fatalf("ASIA read must follow the weekly doc; log: %v", get())
 	}
