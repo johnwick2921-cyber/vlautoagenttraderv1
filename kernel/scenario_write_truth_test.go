@@ -53,8 +53,14 @@ func TestW2A3FvgNamingItsOwnGapIsAdmitted(t *testing.T) {
 func TestW2NilMapIsUnknownEmptyMapIsKnown(t *testing.T) {
 	id := "abc"
 	d := &PlanDoc{Scenarios: []PlanScenario{{ID: "S1", LevelID: &id, Trigger: "fade 100"}}}
-	if v := CheckScenarioWriteTruth(d, nil, nil, 0.25); v.IdentityChecked || v.ChainChecked || v.Err() != nil {
-		t.Fatalf("nil map must be UNKNOWN: %+v", v)
+	// CTO note (msg 1790182338037, correction): a nil map with a NAMED id is
+	// refused — nothing could resolve it. With no ids, nil stays UNKNOWN.
+	if v := CheckScenarioWriteTruth(d, nil, nil, 0.25); v.Err() == nil || !strings.Contains(v.Err().Error(), "S1 identity unresolved") || v.ChainChecked {
+		t.Fatalf("nil map + a named id must be refused identity_unresolved (chain unjudged): %+v", v)
+	}
+	bare := &PlanDoc{Scenarios: []PlanScenario{{ID: "S1", Trigger: "fade 100"}}}
+	if v := CheckScenarioWriteTruth(bare, nil, nil, 0.25); v.IdentityChecked || v.ChainChecked || v.Err() != nil {
+		t.Fatalf("nil map + no ids must be UNKNOWN: %+v", v)
 	}
 	v := CheckScenarioWriteTruth(d, []MapCandidate{}, nil, 0.25)
 	if !v.IdentityChecked || v.Err() == nil || !strings.Contains(v.Err().Error(), "S1 identity unresolved") {

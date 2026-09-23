@@ -77,7 +77,16 @@ func (v WriteTruthVerdict) Err() error {
 // PLACE and each normalization is returned for recording.
 func CheckScenarioWriteTruth(d *PlanDoc, seated, capacityCut []MapCandidate, tick float64) WriteTruthVerdict {
 	var v WriteTruthVerdict
-	if d == nil || seated == nil {
+	if d == nil {
+		return v
+	}
+	if seated == nil {
+		// CTO note (msg 1790182338037): a nil frozen map means there is
+		// nothing an id could name, so a NAMED id is refused as unresolved —
+		// never skipped as UNKNOWN. With no ids the check has nothing to judge
+		// (and the obstacle chain needs a map): UNKNOWN, not refused.
+		v.Issues = nilMapNamedIDIssues(d)
+		v.IdentityChecked = len(v.Issues) > 0
 		return v
 	}
 	v.IdentityChecked = true
@@ -521,4 +530,22 @@ func ScenarioWriteTruthSentences() string {
 	return "IDENTITY = PRICE (refused at write): a scenario's level_id must be the map id of the level at the price the scenario trades — the level its trigger, confirm ref_price and arm entry use; an id naming a level at another price, or an id not in the map (invented or altered), is REFUSED and the plan is re-authored. " +
 		"A two-anchor setup (a sweep of one level, a reclaim of another) adds sweep_level_id and reclaim_level_id: two DIFFERENT map ids, each the level at its own leg's ref_price (confirm for the sweep leg, confirm2 for the reclaim leg). " +
 		"OBSTACLE CHAIN (refused at write): target_chain is sorted outward from entry in the trade direction (long ascending, short descending); first_obstacle is the NEAREST seated map level strictly between entry and the arm target (when none lies between them, first_obstacle is the arm target itself); every other seated map level on that path is listed in economics.path_levels:[{price:<n>,level:<label>,level_id:<map id>,role:pass_through|reduce|exit}] — a seated level missing from the path is REFUSED by name. Prices are read on the MNQ tick grid (an off-tick price is normalized to the grid and recorded). "
+}
+
+// nilMapNamedIDIssues refuses every non-null level_id / sweep_level_id /
+// reclaim_level_id when the frozen map is nil.
+func nilMapNamedIDIssues(d *PlanDoc) []WriteTruthIssue {
+	var out []WriteTruthIssue
+	for _, sc := range d.Scenarios {
+		for _, f := range []struct {
+			field string
+			id    *string
+		}{{"level_id", sc.LevelID}, {"sweep_level_id", sc.SweepLevelID}, {"reclaim_level_id", sc.ReclaimLevelID}} {
+			if f.id == nil || strings.TrimSpace(*f.id) == "" {
+				continue
+			}
+			out = append(out, WriteTruthIssue{sc.ID, WriteTruthIdentityUnresolved, fmt.Sprintf("%s identity unresolved: %s %q names a level but the frozen map is nil — the map is nil, so no id can resolve; write null", sc.ID, f.field, *f.id)})
+		}
+	}
+	return out
 }
