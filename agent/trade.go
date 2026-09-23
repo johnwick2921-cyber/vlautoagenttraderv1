@@ -25,6 +25,12 @@ const (
 type tradeSelectedTrader interface {
 	GetStrategyConfig() *store.StrategyConfig
 	GetAccountInfo() (map[string]interface{}, error)
+	// AdmitManualEntry runs the trader's ONE admission chain for a new entry,
+	// exactly as it runs for an AI decision (W-EXEC-TRUTH W0, CTO Q17): a chat
+	// trade is a real trade the owner can trigger by mistake, and STRICT must
+	// refuse it like a decision. In the interface, so no selected trader can
+	// skip it.
+	AdmitManualEntry(symbol, action string) (string, bool)
 }
 
 type tradeUnderlyingTrader interface {
@@ -181,8 +187,22 @@ func (a *Agent) executeTrade(ctx context.Context, trade *TradeAction) error {
 	if err != nil {
 		return err
 	}
+	return executeTradeWith(trade, wantStock, selectedTrader, underlyingTrader)
+}
+
+// executeTradeWith is executeTrade after the trader is resolved: validate,
+// ADMIT (for a new entry), then act.
+func executeTradeWith(trade *TradeAction, wantStock bool, selectedTrader tradeSelectedTrader, underlyingTrader tradeUnderlyingTrader) error {
 	if err := validateTradeAction(trade, wantStock, selectedTrader, underlyingTrader); err != nil {
 		return err
+	}
+	if trade.Action == "open_long" || trade.Action == "open_short" {
+		if selectedTrader == nil {
+			return fmt.Errorf("entry refused: no selected trader to admit it (fail-closed)")
+		}
+		if refusal, refused := selectedTrader.AdmitManualEntry(trade.Symbol, trade.Action); refused {
+			return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", refusal)
+		}
 	}
 
 	switch trade.Action {

@@ -381,3 +381,22 @@ func (at *AutoTrader) runningNow() bool {
 	defer at.isRunningMutex.RUnlock()
 	return at.isRunning
 }
+
+// AdmitManualEntry runs the one admission chain for an entry the owner asked
+// for in agent chat (W-EXEC-TRUTH W0, CTO Q17). It is the decision chain with
+// a decision that cites nothing, so STRICT refuses it exactly as it refuses an
+// uncited AI decision. Returns the refusal text and true, or ("", false).
+func (at *AutoTrader) AdmitManualEntry(symbol, action string) (string, bool) {
+	return at.AdmitManualEntryAt(symbol, action, time.Now())
+}
+
+// AdmitManualEntryAt is AdmitManualEntry on an injected clock.
+func (at *AutoTrader) AdmitManualEntryAt(symbol, action string, now time.Time) (string, bool) {
+	if action != "open_long" && action != "open_short" {
+		return "", false
+	}
+	return at.admitEntry(admitIntent{
+		Path: admitAgent, Symbol: symbol, Action: action, Now: now,
+		Decision: &kernel.Decision{Action: action, Symbol: symbol},
+	})
+}
