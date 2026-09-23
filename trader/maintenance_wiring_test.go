@@ -39,10 +39,14 @@ func TestNewAutoTraderWiresTheMaintenancePermitAndQueueCheck(t *testing.T) {
 			return true
 		}
 		switch sel.Sel.Name {
-		case "SetEntryPermit", "SetEntryHoldCheck", "SetMaintenanceSource":
+		case "SetEntryPermit", "SetEntryHoldCheck", "SetMaintenanceSource", "SetDroppedEntrySink":
 			switch a := call.Args[0].(type) {
 			case *ast.Ident:
 				found[sel.Sel.Name] = a.Name
+			case *ast.SelectorExpr:
+				if x, ok := a.X.(*ast.Ident); ok {
+					found[sel.Sel.Name] = x.Name + "." + a.Sel.Name
+				}
 			case *ast.FuncLit:
 				found[sel.Sel.Name] = "funclit"
 			}
@@ -58,6 +62,10 @@ func TestNewAutoTraderWiresTheMaintenancePermitAndQueueCheck(t *testing.T) {
 	// Site 7: the wire learns the hold from the same process-wide gate.
 	if found["SetMaintenanceSource"] != "maintenanceWireState" {
 		t.Fatalf("NewAutoTrader must call nt.SetMaintenanceSource(maintenanceWireState); found %q", found["SetMaintenanceSource"])
+	}
+	// M-2: this trader settles its own entries the hold dropped from the queue.
+	if found["SetDroppedEntrySink"] != "at.onMaintenanceDroppedEntry" {
+		t.Fatalf("NewAutoTrader must call nt.SetDroppedEntrySink(at.onMaintenanceDroppedEntry); found %q", found["SetDroppedEntrySink"])
 	}
 }
 

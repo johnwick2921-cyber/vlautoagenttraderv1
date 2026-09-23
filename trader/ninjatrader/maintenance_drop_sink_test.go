@@ -1,0 +1,43 @@
+package ninjatrader
+
+import (
+	"testing"
+
+	ntwire "nofx/provider/ninjatrader"
+)
+
+// W-ONE-BUTTON M2, M-2 — the TCPTrader's half of a queue drop: only ITS OWN
+// entries reach its handler; a never-attempted drop is forgotten (no fill can
+// come, and a stale lastEntrySignalID must not claim a later fill); an
+// ATTEMPTED drop may have reached NT8, so it stays tracked.
+func TestDroppedEntrySinkRoutesOwnEntriesAndForgetsOnlyNeverAttempted(t *testing.T) {
+	s := ntwire.NewTCPServer(nil)
+	tr := NewTCPTrader(s, "MNQ", "Sim101")
+	var heard []ntwire.DroppedEntry
+	tr.SetDroppedEntrySink(func(d ntwire.DroppedEntry) { heard = append(heard, d) })
+	tr.pendingMu.Lock()
+	tr.pending["sig-never"], tr.pending["sig-tried"] = "LONG", "LONG"
+	tr.pendingMu.Unlock()
+	tr.mu.Lock()
+	tr.lastEntrySignalID = "sig-never"
+	tr.mu.Unlock()
+
+	s.FeedDroppedEntryForTest(ntwire.DroppedEntry{SignalID: "sig-someone-else"})
+	if len(heard) != 0 {
+		t.Fatalf("another trader's drop must not reach this handler: %+v", heard)
+	}
+	s.FeedDroppedEntryForTest(ntwire.DroppedEntry{SignalID: "sig-tried", Attempted: true})
+	if !tr.HasPendingEntry("sig-tried") || len(heard) != 1 {
+		t.Fatalf("an attempted drop stays tracked and is heard: pending=%v heard=%+v", tr.HasPendingEntry("sig-tried"), heard)
+	}
+	s.FeedDroppedEntryForTest(ntwire.DroppedEntry{SignalID: "sig-never"})
+	if tr.HasPendingEntry("sig-never") || len(heard) != 2 {
+		t.Fatalf("a never-attempted drop is forgotten and heard: pending=%v heard=%+v", tr.HasPendingEntry("sig-never"), heard)
+	}
+	tr.mu.Lock()
+	last := tr.lastEntrySignalID
+	tr.mu.Unlock()
+	if last != "" {
+		t.Fatalf("a forgotten entry must not stay the last entry (a later fill would be claimed by it): %q", last)
+	}
+}

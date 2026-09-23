@@ -292,3 +292,7 @@ func (s *TCPServer) reportDrops(queued []timedSignal) map[string]bool {
 	s.dispatchDrops(ds)
 	return ids
 }
+
+// FeedDroppedEntryForTest dispatches d to the registered drop sinks exactly as
+// a held queue drop does (the *ForTest seam family, like FeedOrderUpdateForTest).
+func (s *TCPServer) FeedDroppedEntryForTest(d DroppedEntry) { s.dispatchDrops([]DroppedEntry{d}) }

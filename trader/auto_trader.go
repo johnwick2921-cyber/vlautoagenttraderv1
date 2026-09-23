@@ -842,6 +842,9 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		nt.SetEntryHoldCheck(maintenanceQueueHeld)
 		// Site 7 — the AddOn learns the hold over the wire (silent when unheld).
 		nt.SetMaintenanceSource(maintenanceWireState)
+		// M-2 — an entry the hold drops from the queue settles what this trader
+		// recorded for it (never sent), or says why it cannot.
+		nt.SetDroppedEntrySink(at.onMaintenanceDroppedEntry)
 	}
 	return at, nil
 }

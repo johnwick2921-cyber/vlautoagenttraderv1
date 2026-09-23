@@ -410,6 +410,21 @@ func (s *ArmedOrderStore) ListNonTerminalAllTraders() ([]ArmedOrderDB, error) {
 	return out, err
 }
 
+// SettleNeverSent retires the place_pending row for signalID as cancelled when
+// the entry provably never reached NT8 (W-ONE-BUTTON M2, M-2: the maintenance
+// hold dropped it from the reconnect queue before any byte was written). Only
+// place_pending moves — a row a frame already confirmed, rejected or filled is
+// never touched. Returns the rows moved.
+func (s *ArmedOrderStore) SettleNeverSent(signalID, reason string) (int64, error) {
+	sig := strings.TrimSpace(signalID)
+	if sig == "" {
+		return 0, nil
+	}
+	r := s.db.Model(&ArmedOrderDB{}).Where("signal_id = ? AND state = ?", sig, StatePlacePending).
+		Updates(map[string]any{"state": StateCancelled, "state_reason": reason})
+	return r.RowsAffected, r.Error
+}
+
 // SetState transitions one row's state with a reason (the ledger rule: a
 // terminal state change is never silent).
 func (s *ArmedOrderStore) SetState(id int64, state, reason string) error {
