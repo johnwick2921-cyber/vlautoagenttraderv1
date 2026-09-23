@@ -365,3 +365,41 @@ func TestInstallationGateSurvivesAPanicOutsideALeg(t *testing.T) {
 		t.Fatalf("the panic must be reported as a failed leg: %+v", g.Legs)
 	}
 }
+
+// M2.1 (review 3 F4, CTO: FIRST) — the FALSE-PASS direction, at the production
+// path: no stubbed wire view. A real server + TCPTrader; a client connects,
+// acks the hold with a clean census, and addon_ack passes; the client
+// DISCONNECTS and addon_ack must FAIL at once — never READY on the last ack of
+// a connection that is gone (mutations: the view forcing Connected, or
+// ConnectionRecord always reporting connected).
+func TestInstallationGateAddOnAckFailsTheMomentTheAddOnDisconnects(t *testing.T) {
+	w := newDropWire(t) // real server, real TCPTrader, wireNT8Maintenance
+	setHold(t, w.dir, "job-f4")
+	loaded := map[string]*AutoTrader{w.at.id: w.at}
+
+	c := dialRaw(t, w.addr)
+	if err := ntwire.WriteFrame(c, ntwire.FrameHello, ntwire.HelloPayload{ProtocolVersion: ntwire.ProtocolVersion, Source: "vltrader-addon"}); err != nil {
+		t.Fatal(err)
+	}
+	ack := ntwire.MaintenanceAckPayload{Held: true, JobID: "job-f4", BuildID: "2026-09-22-m2",
+		Connections: []ntwire.CensusConnection{{Sim: true, Connected: true, Settled: true}},
+		Accounts:    []ntwire.CensusAccount{{Sim: true}}}
+	if err := ntwire.WriteFrame(c, ntwire.FrameMaintenanceAck, ack); err != nil {
+		t.Fatal(err)
+	}
+	var pass InstallationGateLeg
+	waitDrop(t, "addon_ack to pass on the live connection", 3*time.Second, func() bool {
+		pass, _ = legOf(InstallationGateStatus(loaded, w.st), "addon_ack")
+		return pass.Pass
+	})
+
+	_ = c.Close()
+	waitDrop(t, "the server to see the disconnect", 3*time.Second, func() bool {
+		_, connected, _, _ := w.nt.MaintenanceView()
+		return !connected
+	})
+	l, _ := legOf(InstallationGateStatus(loaded, w.st), "addon_ack")
+	if l.Pass || !strings.Contains(l.Detail, "not connected") {
+		t.Fatalf("after the AddOn disconnects, addon_ack must FAIL (it passed on the last ack of a gone connection): %+v", l)
+	}
+}
