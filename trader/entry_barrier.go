@@ -117,3 +117,12 @@ func (b *EntryBarrier) InFlight() int64 {
 	defer b.mu.Unlock()
 	return b.inFlight
 }
+
+// Engage refuses new permits at once WITHOUT waiting for in-flight sends.
+// Gates call it (they must never block on a drain); Drained() reports when
+// the in-flight count reaches zero; Hold(ctx) is Engage plus the wait.
+func (b *EntryBarrier) Engage() {
+	b.mu.Lock()
+	b.held = true
+	b.mu.Unlock()
+}

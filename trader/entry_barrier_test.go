@@ -179,3 +179,27 @@ func TestEntryBarrierHoldTimesOutButStaysHeld(t *testing.T) {
 		t.Fatal("still held after the timeout")
 	}
 }
+
+// Engage refuses new permits at once WITHOUT waiting (the gate path must
+// never block on a drain); Drained reports when in-flight reaches zero.
+func TestEntryBarrierEngageIsNonBlocking(t *testing.T) {
+	var b EntryBarrier
+	rel, _ := b.Permit()
+	done := make(chan struct{})
+	go func() { b.Engage(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("Engage blocked on an in-flight send")
+	}
+	if !b.Held() || b.Drained() {
+		t.Fatalf("engaged with one in flight: held=%v drained=%v", b.Held(), b.Drained())
+	}
+	if _, ok := b.Permit(); ok {
+		t.Fatal("engaged barrier must refuse")
+	}
+	rel()
+	if !b.Drained() {
+		t.Fatal("after the in-flight send releases, the engaged barrier is drained")
+	}
+}
