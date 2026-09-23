@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"nofx/kernel"
+	"nofx/market"
 	"nofx/store"
 )
 
@@ -66,5 +67,41 @@ func TestArmRefusedAtAuthoringIsNotPlacedThatPass(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("once admitted again the surviving arm must place")
+	}
+}
+
+// CTO M2 — a nil admitted set is NO authoring pass, and admits nothing: a
+// direct caller of the placement (W3's event-driven pass) cannot bypass G1 by
+// omitting the set. The same arm then places once a real pass admits it.
+func TestArmPlacementWithNoAuthoringPassPlacesNothing(t *testing.T) {
+	dir := withMaintenanceDir(t)
+	at, _, sigs, now := liveArmFixture(t)
+
+	// Author the arm under a hold so it sits 'armed', never placed.
+	setHold(t, dir, "job-g1-nil")
+	at.maybeManageArmedOrdersAt(nil, now)
+	if err := store.ClearMaintenanceHold(dir, "job-g1-nil"); err != nil {
+		t.Fatal(err)
+	}
+	before := gateBlocks(at.id, "arm_not_admitted")
+
+	// A direct placement call with NO admitted set.
+	bars := []market.Kline{{Close: 100}}
+	at.runArmedPlacementAt(bars, now.Add(-time.Hour).UnixMilli(), now.Add(time.Second), nil)
+	select {
+	case s := <-sigs:
+		t.Fatalf("G1 fail-open: a placement with no authoring pass reached the wire (signal %s)", s.sid)
+	case <-time.After(300 * time.Millisecond):
+	}
+	if got := gateBlocks(at.id, "arm_not_admitted"); got != before+1 {
+		t.Fatalf("the nil-set refusal must be counted once: %d → %d", before, got)
+	}
+
+	// The production pass admits it and it places.
+	at.maybeManageArmedOrdersAt(nil, now.Add(2*time.Second))
+	select {
+	case <-sigs:
+	case <-time.After(2 * time.Second):
+		t.Fatal("once a real authoring pass admits the arm it must place")
 	}
 }

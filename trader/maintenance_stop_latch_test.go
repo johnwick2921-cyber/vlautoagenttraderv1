@@ -67,7 +67,8 @@ func TestStopEntryHoldRefusalNeverCancelsTheSiblingArm(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now, nil)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now,
+		armAdmission{armAdmitKey("latch", "S1", 0): true, armAdmitKey("latch", "S2", 0): true}) // the authoring pass admitted both (G1)
 
 	for _, r := range []store.ArmedOrderDB{stop, sibling} {
 		var got store.ArmedOrderDB

@@ -40,7 +40,6 @@ testcall:class39_writesite_test.go:runPlannerReadCoreWithFactsGrades:2
 testcall:class41_transport_retry_test.go:runPlannerReadCoreWithFactsGrades:2
 testcall:clock_seam_test.go:latestClosedPrimaryBarMs:1
 testcall:no_trade_band_writesite_test.go:runPlannerReadCoreWithFactsGrades:1
-testcall:placement_truth_test.go:runArmedPlacement:1
 testcall:recorder_test.go:Offer:4
 testcall:recorder_test.go:Save:2
 testcall:runtime_test.go:Save:1
@@ -49,6 +48,3 @@ testcall:w7_levelstate_test.go:recordLevelState:1
 
 # ── registered wall-clock entries with no production caller ───────────────────
 deadwrapper:trader/auto_trader_weekly.go:AutoTrader.weeklyScenarioGrade
-# runArmedPlacement: the WRAPPER only — maybeManageArmedOrdersAt calls runArmedPlacementAt
-# directly (:795); the wrapper's sole caller is placement_truth_test.go. Arm path intact.
-deadwrapper:trader/armed_executor.go:AutoTrader.runArmedPlacement

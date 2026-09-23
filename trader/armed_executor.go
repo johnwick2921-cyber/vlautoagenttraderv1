@@ -1161,14 +1161,12 @@ func (at *AutoTrader) armedLines() string {
 	return b.String()
 }
 
-// runArmedPlacement drives the armed→place_pending transition, the churn guard, and
-// the order_update event machine. No-op unless a TCPTrader is bound.
+// runArmedPlacementAt drives the armed→place_pending transition, the churn
+// guard, and the order_update event machine. No-op unless a TCPTrader is bound.
 // sinceMs = the plan's birth (the E7 stop-entry fallback window is measured
-// from it).
-// runArmedPlacement is the wall-clock ENTRY POINT (A28 / class 60): it owns the
-// clock and delegates. Everything beneath takes the clock as an argument.
+// from it). It takes the clock as an argument (A28 / class 60).
 //
-// ADDED 2026-09-10. maybeManageArmedOrdersAt already received `now` and then
+// ADDED 2026-09-10 (as the wall-clock wrapper runArmedPlacement + this *At). maybeManageArmedOrdersAt already received `now` and then
 // dropped it here — this function read time.Now() itself. In production the two
 // are microseconds apart and nothing was wrong; the SEAM was broken, which meant
 // no test could control the arm path's clock. TestSplitArmWritesTwoLedgerRows
@@ -1181,14 +1179,12 @@ func (at *AutoTrader) armedLines() string {
 // maybeManageArmedOrders was registered and its callee was not, which is why the
 // lint stayed green across the whole failure: a seam is only as deep as the
 // chain that honours it.
-func (at *AutoTrader) runArmedPlacement(bars []market.Kline, sinceMs int64) {
-	at.runArmedPlacementAt(bars, sinceMs, time.Now(), nil)
-}
-
-// runArmedPlacementAt places the armed rows. admitted is the authoring pass's
-// verdict for THIS pass (W-EXEC-TRUTH W0 G1): only a leg in it is placed. nil
-// means no authoring pass stands in front of this call (a direct caller); the
-// production caller, maybeManageArmedOrdersAt, always passes its set (pinned).
+//
+// admitted is the authoring pass's
+// verdict for THIS pass (W-EXEC-TRUTH W0 G1): only a leg in it is placed, and
+// nil admits NOTHING (fail-closed, CTO M2). The production caller,
+// maybeManageArmedOrdersAt, passes its set; the wall-clock wrapper
+// runArmedPlacement was removed (no production caller — A29).
 func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, now time.Time, admitted armAdmission) {
 	nt := at.armedTrader()
 	if nt == nil {

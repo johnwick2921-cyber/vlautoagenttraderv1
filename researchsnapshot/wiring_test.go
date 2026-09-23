@@ -21,7 +21,9 @@ func TestStageAProductionWriterCensus(t *testing.T) {
 		{"trader/auto_trader_planner.go", "runPlannerReadCoreObserved", "Published"},
 		{"trader/auto_trader_levelstate.go", "recordScenarioStateAt", "recordResearchPermissions"},
 		{"trader/auto_trader_clock.go", "recordClosedTradeAnalyticsAt", "recordResearchOutcomeAt"},
-		{"trader/auto_trader_orders.go", "executeDecisionWithRecord", "recordResearchGate"},
+		// W-EXEC-TRUTH W0: the decision path's gate chain (and this writer)
+		// moved into admitEntry's chain — the census follows the writer.
+		{"trader/entry_admission.go", "admitChain", "recordResearchGate"},
 		{"trader/armed_executor.go", "maybeManageArmedOrdersAt", "recordResearchGate"},
 		{"trader/detector_record.go", "recordDetectorOutputs", "recordResearchEpisodes"},
 		{"provider/ninjatrader/tcp_server.go", "readLoop", "observe"},

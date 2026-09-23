@@ -35,9 +35,16 @@ func (a armAdmission) admit(planID, scenario string, leg int) {
 // the one admission chain. false = do not place (the row stays armed).
 func (at *AutoTrader) armAdmitted(r store.ArmedOrderDB, side string, price float64, now time.Time, admitted armAdmission) bool {
 	key := r.PlanID + ":" + r.Scenario + ":leg" + strconv.Itoa(r.LegIndex+1)
-	if admitted != nil && !admitted[armAdmitKey(r.PlanID, r.Scenario, r.LegIndex)] {
-		if at.admitLast.changed("arm-g1|"+key, "not admitted this pass") {
-			at.logWarnf("⏸ armed %s leg %d NOT placed — no authoring gate admitted it this pass (G1); it stays armed until a pass admits it", r.Scenario, r.LegIndex+1)
+	// FAIL-CLOSED (CTO M2): no admitted set means no authoring pass stands in
+	// front of this placement — nothing is admitted. A nil default would let a
+	// direct caller (W3's event-driven pass) bypass G1 silently.
+	if admitted == nil || !admitted[armAdmitKey(r.PlanID, r.Scenario, r.LegIndex)] {
+		why := "not admitted this pass"
+		if admitted == nil {
+			why = "no authoring pass"
+		}
+		if at.admitLast.changed("arm-g1|"+key, why) {
+			at.logWarnf("⏸ armed %s leg %d NOT placed — %s (G1); it stays armed until a pass admits it", r.Scenario, r.LegIndex+1, why)
 			// counted once per change, like every arm refusal
 			telemetry.IncGateBlock(at.id, "arm_not_admitted")
 		}

@@ -99,7 +99,8 @@ func TestUnsentStopEntryNeverCancelsTheSiblingArm(t *testing.T) {
 				}
 			}
 
-			at.runArmedPlacementAt([]market.Kline{{Close: tc.price}}, now.Add(-time.Hour).UnixMilli(), now, nil)
+			at.runArmedPlacementAt([]market.Kline{{Close: tc.price}}, now.Add(-time.Hour).UnixMilli(), now,
+				armAdmission{armAdmitKey("latch", "S1", 0): true, armAdmitKey("latch", "S2", 0): true}) // the authoring pass admitted both (G1)
 
 			gotSignal := false
 			deadline := time.After(300 * time.Millisecond)
