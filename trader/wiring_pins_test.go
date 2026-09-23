@@ -78,7 +78,9 @@ func TestPlanWritePathCallsBiasArmWarning(t *testing.T) {
 		t.Fatalf("read auto_trader_planner.go: %v", err)
 	}
 	s := string(src)
-	if !strings.Contains(s, "kernel.BiasArmWarning(d,") {
+	// W-EXEC-TRUTH W3: the policy-aware form (BiasArmWarningFor, which IS
+	// BiasArmWarning off the market_in_zone policy) is the production caller.
+	if !strings.Contains(s, "kernel.BiasArmWarning(d,") && !strings.Contains(s, "kernel.BiasArmWarningFor(d,") {
 		t.Fatal("the plan-write path must call kernel.BiasArmWarning — without a caller it is " +
 			"dead code and a plan whose bias direction carries no armed scenario ships silently")
 	}
