@@ -721,7 +721,7 @@ export const settings: GuideSection = {
     { kind: 'h', text: 'What the ⚙ settings boot line counts' },
     {
       kind: 'p',
-      text: 'schema= is the number of setting paths the bot actually SAVES — every key the strategy save writes, found by saving a fully filled-in config and reading the keys back, not by reading the Go struct tags. Since W1 (2026-09-23) that includes the ai_config.* blocks (risk_control, indicators, coin_source, prompt_sections, custom_prompt): they are stored under ai_config, and the old count skipped them entirely, so a new risk or indicator field could land with no classification and no ⚠ UNCLASSIFIED warning. This build counts 167 paths (the old count read 75). The boot line and the Settings page panel read the same enumeration, so they cannot disagree.',
+      text: 'schema= is the number of setting paths the bot actually SAVES — every key the strategy save writes, found by saving a fully filled-in config and reading the keys back, not by reading the Go struct tags. Since W1 (2026-09-23) that includes the ai_config.* blocks (risk_control, indicators, coin_source, prompt_sections, custom_prompt): they are stored under ai_config, and the old count skipped them entirely, so a new risk or indicator field could land with no classification and no ⚠ UNCLASSIFIED warning. The W1 build counted 167 paths where the old count read 75; the number on your boot line is the one that is true for the running binary. The boot line and the Settings page panel read the same enumeration, so they cannot disagree.',
     },
     {
       kind: 'p',
