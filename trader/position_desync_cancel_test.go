@@ -33,6 +33,7 @@ func class27DesyncHarness(t *testing.T) (*AutoTrader, *ntwire.TCPServer, chan nt
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 
 	frames := make(chan ntwire.CancelOrderPayload, 4)

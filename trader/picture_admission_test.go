@@ -194,6 +194,7 @@ func TestPictureClaimDoesNotLatchItsOwnSend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 	frames := make(chan ntwire.FrameType, 64)
 	go func() {

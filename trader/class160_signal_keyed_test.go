@@ -52,6 +52,7 @@ func newAIEntryWire(t *testing.T) *aiEntryWire {
 	if err != nil {
 		t.Fatal(err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 	go func() { // drain everything the server writes
 		for {

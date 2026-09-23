@@ -127,6 +127,7 @@ func newParityWire(t *testing.T, heartbeat bool) *parityWire {
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 	frames := make(chan parityFrame, 64)
 	done := make(chan struct{})

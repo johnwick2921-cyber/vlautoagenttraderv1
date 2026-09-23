@@ -176,6 +176,7 @@ func withdrawFixture(t *testing.T, id string, tune func(*store.StrategyConfig)) 
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 	w := &wdWire{srv: s, conn: conn, notify: make(chan struct{}, 1)}
 	go w.read()

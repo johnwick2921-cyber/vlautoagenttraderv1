@@ -93,6 +93,7 @@ func shadowWireHarnessAt(t *testing.T, cfg store.StrategyConfig, now time.Time) 
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 
 	sigs := make(chan ntwire.SignalPayload, 8)

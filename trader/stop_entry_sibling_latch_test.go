@@ -60,6 +60,7 @@ func TestUnsentStopEntryNeverCancelsTheSiblingArm(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 			defer conn.Close()
 			sent := make(chan ntwire.FrameType, 16)
 			go func() {
