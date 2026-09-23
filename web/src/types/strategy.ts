@@ -116,7 +116,9 @@ export interface DayPlanConfig {
   /** FOLDED (W-KNOB-PRUNE 2026-09-18): one rule exists (1×5m close); a
    *  stored value is read by nothing. */
   acceptance_rule?: string
-  replan_cap?: number
+  /** W1 PRESENCE-AWARE — re-plans per session 0-4: absent/null = the shipped
+   *  default 2; an explicit 0 = no re-plan. Send null to clear a stored value. */
+  replan_cap?: number | null
   sessions_enabled?: string[]
   approval_required?: boolean
   /** FOLDED (W-KNOB-PRUNE 2026-09-18): constant OFF unless stored true. */
@@ -331,7 +333,11 @@ export interface RiskControlConfig {
   daily_profit_enabled?: boolean // default OFF
   max_daily_trades?: number // max entries per CME session-day
   max_daily_trades_enabled?: boolean // default OFF
-  consecutive_loss_halt?: number // D1: halt new entries after N consecutive losing trades this session (0=off; not master-gated)
+  /** D1 — halt new entries after N consecutive losing trades this CME
+   *  session-day (not master-gated). W1 PRESENCE-AWARE: absent/null = inherit
+   *  (env BREAKER_HALT_N, else 8 — ON); an explicit 0 = OFF; N = N. Send null
+   *  (never undefined) to clear a stored value — the PUT merge keeps absent keys. */
+  consecutive_loss_halt?: number | null
   reentry_cooldown_minutes?: number // B7: after a stop-loss, block same-dir re-entry for N min or until price moves ≥1×ATR15 from the stop (0=off; futures-only)
   max_contracts_per_order?: number // futures contracts-per-order clamp
   max_contracts_enabled?: boolean // default ON

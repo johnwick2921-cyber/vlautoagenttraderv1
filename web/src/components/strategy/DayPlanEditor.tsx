@@ -163,14 +163,20 @@ function NumberField({
   max,
   step = 1,
   onChange,
+  onClear,
+  placeholder,
   disabled,
   testId,
 }: {
-  value?: number
+  value?: number | null
   min: number
   max: number
   step?: number
   onChange: (v: number) => void
+  /** W1 — a presence-aware knob: clearing the box calls this (write null =
+   *  inherit). Without it a cleared box is ignored, as before. */
+  onClear?: () => void
+  placeholder?: string
   disabled?: boolean
   testId?: string
 }) {
@@ -182,8 +188,13 @@ function NumberField({
       max={max}
       step={step}
       disabled={disabled}
+      placeholder={placeholder}
       data-testid={testId}
       onChange={(e) => {
+        if (e.target.value.trim() === '' && onClear) {
+          onClear()
+          return
+        }
         const n = parseFloat(e.target.value)
         if (!Number.isNaN(n)) onChange(Math.min(max, Math.max(min, n)))
       }}
@@ -626,13 +637,19 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               }}
             />
           </FieldRow>
+          {/* W1 (settings truth) — presence-aware: absent/null = the shipped
+              default 2 (shown as an EMPTY box with an inherit placeholder, not
+              a fake 2); 0 = no re-plan and is stored; clearing writes null. */}
           <FieldRow label={tp('maxReplans', language)}>
             <NumberField
-              value={cfg.replan_cap ?? 2}
+              value={cfg.replan_cap}
               min={0}
               max={4}
               onChange={(v) => update('replan_cap', v)}
+              onClear={() => update('replan_cap', null)}
+              placeholder={`${tp('inherit', language)} (2)`}
               disabled={bodyDisabled}
+              testId="replan-cap-strategy"
             />
           </FieldRow>
           <FieldRow label={tp('approval', language)}>
@@ -1022,7 +1039,14 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                       overridden={ov?.replan_cap !== undefined}
                       onToggle={(on) =>
                         on
-                          ? setSessionField(s, 'replan_cap', 2)
+                          ? // W1 — seed the EFFECTIVE strategy value (the
+                            // override starts equal to what it inherits),
+                            // not a literal 2.
+                            setSessionField(
+                              s,
+                              'replan_cap',
+                              cfg.replan_cap ?? 2
+                            )
                           : clearSessionField(s, 'replan_cap')
                       }
                       disabled={bodyDisabled}

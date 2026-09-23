@@ -80,10 +80,12 @@ function Toggle({
   on,
   onChange,
   disabled,
+  testId,
 }: {
   on: boolean
   onChange: (v: boolean) => void
   disabled?: boolean
+  testId?: string
 }) {
   return (
     <button
@@ -91,6 +93,7 @@ function Toggle({
       role="switch"
       aria-checked={on}
       disabled={disabled}
+      data-testid={testId}
       onClick={() => !disabled && onChange(!on)}
       className="relative inline-block w-9 h-5 rounded-full transition-colors shrink-0"
       style={{
@@ -113,12 +116,14 @@ function GuardrailRow({
   onToggle,
   disabled,
   children,
+  testId,
 }: {
   label: string
   enabled: boolean
   onToggle: (v: boolean) => void
   disabled?: boolean
   children: ReactNode
+  testId?: string
 }) {
   return (
     <div
@@ -133,7 +138,12 @@ function GuardrailRow({
         <label className="text-sm" style={{ color: '#EAECEF' }}>
           {label}
         </label>
-        <Toggle on={enabled} onChange={onToggle} disabled={disabled} />
+        <Toggle
+          on={enabled}
+          onChange={onToggle}
+          disabled={disabled}
+          testId={testId}
+        />
       </div>
       {children}
     </div>
@@ -197,7 +207,6 @@ export function RiskControlEditor({
 
   return (
     <div className="space-y-6">
-
       {/* Hold discipline (hold-lock) — applies to futures + crypto; default OFF */}
       <div
         className="p-4 rounded-lg"
@@ -856,22 +865,36 @@ export function RiskControlEditor({
             />
           </GuardrailRow>
 
+          {/* W1 (settings truth, 2026-09-23) — PRESENCE-AWARE. absent/null =
+              INHERIT (env BREAKER_HALT_N, else 8 — the breaker is ON), an
+              explicit 0 = OFF, N = N. The old row showed an absent breaker as
+              OFF while the runtime enforced 8, its OFF wrote a 0 no save could
+              store, and ON wrote a literal 2. OFF now writes 0; ON writes null
+              (inherit — a PUT keeps absent keys, so only null clears a 0);
+              clearing the box writes null, never 0. */}
           <GuardrailRow
             label={ts(riskControl.consecutiveLossHalt, language)}
-            enabled={(config.consecutive_loss_halt ?? 0) > 0}
-            onToggle={(v) => updateField('consecutive_loss_halt', v ? 2 : 0)}
+            enabled={config.consecutive_loss_halt !== 0}
+            onToggle={(v) => updateField('consecutive_loss_halt', v ? null : 0)}
             disabled={disabled}
+            testId="breaker-toggle"
           >
             <input
               type="number"
-              value={config.consecutive_loss_halt || ''}
-              placeholder="e.g. 2"
-              onChange={(e) =>
-                updateField(
-                  'consecutive_loss_halt',
-                  parseInt(e.target.value) || 0
-                )
-              }
+              data-testid="breaker-halt-input"
+              value={config.consecutive_loss_halt ?? ''}
+              placeholder={language === 'zh' ? '继承' : 'inherit'}
+              onChange={(e) => {
+                const raw = e.target.value.trim()
+                if (raw === '') {
+                  updateField('consecutive_loss_halt', null)
+                  return
+                }
+                const n = parseInt(raw, 10)
+                if (!Number.isNaN(n)) {
+                  updateField('consecutive_loss_halt', Math.max(0, n))
+                }
+              }}
               disabled={disabled}
               min={0}
               className="w-full px-3 py-2 rounded font-mono"

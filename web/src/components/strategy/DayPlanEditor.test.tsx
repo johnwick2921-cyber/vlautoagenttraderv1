@@ -501,3 +501,69 @@ describe('DayPlanEditor · the day-trader clock + re-align cap', () => {
     expect(withA.one_setup_min_grade).toBe('A')
   })
 })
+
+// ── W1 (settings truth, 2026-09-23) — the strategy-level replan cap is
+// PRESENCE-AWARE: absent/null = the shipped default 2 (an empty box, not a
+// fake 2), an explicit 0 = no re-plan and is WRITTEN, clearing writes null.
+describe('DayPlanEditor W1 replan cap', () => {
+  it('absent shows an empty box with an inherit placeholder, not a fake 2', () => {
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true }}
+        onChange={vi.fn()}
+        language="en"
+      />
+    )
+    const input = screen.getByTestId('replan-cap-strategy') as HTMLInputElement
+    expect(input.value).toBe('')
+    expect(input.placeholder).toBe('inherit (2)')
+  })
+
+  it('typing 0 writes an explicit 0', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true, replan_cap: 4 }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    fireEvent.change(screen.getByTestId('replan-cap-strategy'), {
+      target: { value: '0' },
+    })
+    const next = onChange.mock.calls[0][0] as DayPlanConfig
+    expect(next.replan_cap).toBe(0)
+    expect(JSON.stringify(next)).toContain('"replan_cap":0')
+  })
+
+  it('a session override seeds the EFFECTIVE strategy value, not a literal 2', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true, replan_cap: 4 }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Max re-plans' }))
+    const next = onChange.mock.calls[0][0] as DayPlanConfig
+    expect(next.sessions?.find((x) => x.session === 'NY')?.replan_cap).toBe(4)
+  })
+
+  it('clearing the box writes null (inherit), which the PUT carries', () => {
+    const onChange = vi.fn()
+    render(
+      <DayPlanEditor
+        config={{ plan_enabled: true, replan_cap: 0 }}
+        onChange={onChange}
+        language="en"
+      />
+    )
+    const input = screen.getByTestId('replan-cap-strategy') as HTMLInputElement
+    expect(input.value).toBe('0')
+    fireEvent.change(input, { target: { value: '' } })
+    const next = onChange.mock.calls[0][0] as DayPlanConfig
+    expect(next.replan_cap).toBeNull()
+    expect(JSON.stringify(next)).toContain('"replan_cap":null')
+  })
+})
