@@ -3,6 +3,7 @@ package ninjatrader
 import (
 	"errors"
 	"net"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -116,5 +117,49 @@ func TestUnsetEntryHoldCheckIsNotHeld(t *testing.T) {
 	case <-got:
 	case <-time.After(2 * time.Second):
 		t.Fatal("unset hold check must not hold")
+	}
+}
+
+// M2.1 (review 3 F9): the hold landing MID-FLUSH. The flush checks the hold at
+// the top, before each item's writer wait, and again with the writer held;
+// here the check starts answering "held" from its 4th call — after item 1 was
+// written — so item 1 reaches the wire and the TAIL is dropped and reported
+// (never attempted), never written.
+func TestAHoldLandingMidFlushDropsTheTail(t *testing.T) {
+	s, got := pipeServer(t)
+	var calls atomic.Int32
+	s.SetEntryHoldCheck(func() bool { return calls.Add(1) >= 4 }) // top, item-1 pre, item-1 post → false; then held
+	rec := &dropRecorder{}
+	s.AddDroppedEntrySink("test", rec.sink)
+	s.pendingMu.Lock()
+	for _, id := range []string{"mid-1", "mid-2", "mid-3"} {
+		s.pending = append(s.pending, timedSignal{payload: qsig(id), timestamp: time.Now()})
+	}
+	s.pendingMu.Unlock()
+	if err := s.flushPending(); err != nil {
+		t.Fatalf("a mid-flush hold drops, it does not error: %v", err)
+	}
+	written := 0
+	deadline := time.After(300 * time.Millisecond)
+loop:
+	for {
+		select {
+		case f := <-got:
+			if f == FrameSignal {
+				written++
+			}
+		case <-deadline:
+			break loop
+		}
+	}
+	if written != 1 {
+		t.Fatalf("exactly item 1 was written before the hold; got %d signal frame(s)", written)
+	}
+	ds := rec.all()
+	if len(ds) != 2 || ds[0].SignalID != "mid-2" || ds[1].SignalID != "mid-3" || ds[0].Attempted || ds[1].Attempted {
+		t.Fatalf("the tail (mid-2, mid-3) must be dropped and reported, never attempted: %+v", ds)
+	}
+	if n := s.PendingSignalCount(); n != 0 {
+		t.Fatalf("nothing may be re-queued: %d", n)
 	}
 }
