@@ -1365,8 +1365,11 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 	at.confirmPendingPlacements(ledger, now)
 	at.confirmPendingCancels(ledger, func(sid string) error {
 		// A re-request is still a cancel. If the entry filled while the first
-		// cancel was in flight, re-sending would reach the protections.
-		at.cancelSignalIfSafe(nt.CancelOrder, sid, "cancel re-request", now)
+		// cancel was in flight, re-sending would reach the protections — and a
+		// refused re-request is not recorded as one (W-EXEC-TRUTH W0 (f)).
+		if !at.cancelSignalIfSafe(nt.CancelOrder, sid, "cancel re-request", now) {
+			return errCancelRefused
+		}
 		return nil
 	}, now)
 	// D4 — the once-per-boot three-state reconciliation, run at the first cycle

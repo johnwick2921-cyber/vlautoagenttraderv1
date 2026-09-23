@@ -37,8 +37,15 @@ import (
 // entry (its send is a market order — it fills or is refused, it does not
 // wait at a price), and the AI path's entries are market orders too.
 
-// WithdrawReasonPrefix marks a withdraw in the ledger's state_reason.
-const WithdrawReasonPrefix = "withdraw: "
+// WithdrawReasonPrefix marks a withdraw in the ledger's state_reason. The
+// store owns it: every later lifecycle write APPENDS to a withdrawn row's
+// reason after store.WithdrawReasonSep instead of replacing it, so the view
+// below still finds the row after a re-request, an order_update or a
+// snapshot confirm (store.reasonKeepingWithdraw).
+const WithdrawReasonPrefix = store.WithdrawReasonPrefix
+
+// withdrawHead is the reason head a withdraw writes for why.
+func withdrawHead(why string) string { return WithdrawReasonPrefix + why }
 
 // withdrawDueReason says why resting entries must be withdrawn now ("" = no).
 func (at *AutoTrader) withdrawDueReason(now time.Time) string {
@@ -70,7 +77,11 @@ func (at *AutoTrader) withdrawEntriesIfDue(now time.Time) {
 	var resend func(string) error
 	if nt := at.armedTrader(); nt != nil {
 		resend = func(sid string) error {
-			at.cancelSignalIfSafe(nt.CancelOrder, sid, "withdraw re-request", now)
+			// A refused re-request is NOT a re-request (canon 35):
+			// confirmPendingCancels neither records nor counts it.
+			if !at.cancelSignalIfSafe(nt.CancelOrder, sid, "withdraw re-request", now) {
+				return errCancelRefused
+			}
 			return nil
 		}
 	}
@@ -86,28 +97,35 @@ func (at *AutoTrader) withdrawRestingEntries(ledger *store.ArmedOrderStore, why 
 		return 0
 	}
 	nt := at.armedTrader()
+	if nt == nil {
+		// No NinjaTrader wire: no cancel can be sent, so no row may claim
+		// one was (cancel_pending with nothing in flight is a fabricated state).
+		if at.admitLast.changed("withdraw|no-wire", why) {
+			at.logWarnf("🧹 withdraw (%s): no NinjaTrader trader bound — nothing withdrawn, nothing marked cancel_pending", why)
+		}
+		return 0
+	}
+	at.admitLast.clear("withdraw|no-wire")
 	n := 0
 	for _, r := range rows {
 		if r.TraderID != at.id || strings.TrimSpace(r.SignalID) == "" ||
 			store.IsTerminalArmState(r.State) || r.State == store.StateCancelPending {
 			continue
 		}
-		if nt != nil {
-			// The filled-arm guard: a row the ledger still calls working may
-			// have filled — cancelling it by signal would reach its bracket.
-			if v := at.cancelSafetyFor(r, now); !v.Allow {
-				if at.admitLast.changed("withdraw|"+r.SignalID, v.Why) {
-					at.logWarnf("🛟 withdraw cancel REFUSED %s signal=%s — %s", r.Scenario, shortID(r.SignalID), v.Why)
-				}
-				continue
+		// The filled-arm guard: a row the ledger still calls working may have
+		// filled — cancelling it by signal would reach its bracket.
+		if v := at.cancelSafetyFor(r, now); !v.Allow {
+			if at.admitLast.changed("withdraw|"+r.SignalID, v.Why) {
+				at.logWarnf("🛟 withdraw cancel REFUSED %s signal=%s — %s", r.Scenario, shortID(r.SignalID), v.Why)
 			}
-			if cerr := nt.CancelOrder(r.SignalID); cerr != nil {
-				at.logWarnf("✕ withdraw cancel SEND failed %s signal=%s: %v", r.Scenario, shortID(r.SignalID), cerr)
-			}
+			continue
+		}
+		if cerr := nt.CancelOrder(r.SignalID); cerr != nil {
+			at.logWarnf("✕ withdraw cancel SEND failed %s signal=%s: %v", r.Scenario, shortID(r.SignalID), cerr)
 		}
 		// Recorded whether or not the send returned nil: the row is at the
 		// broker until evidence says otherwise (class 81).
-		if err := ledger.RequestCancel(r.ID, WithdrawReasonPrefix+why, now.UnixMilli()); err != nil {
+		if err := ledger.RequestCancel(r.ID, withdrawHead(why), now.UnixMilli()); err != nil {
 			at.logWarnf("✕ withdraw: ledger write failed for %s: %v", r.Scenario, err)
 			continue
 		}
@@ -117,11 +135,31 @@ func (at *AutoTrader) withdrawRestingEntries(ledger *store.ArmedOrderStore, why 
 }
 
 // WithdrawView is the withdraw half of GET /api/maintenance: the rows the
-// current job's withdraw asked for, pending until the broker confirms.
+// current job's withdraw asked NinjaTrader to cancel. A pending cancel is
+// never shown as done, and a fill is never shown as a withdraw.
+//
+//	pending    cancel_pending — asked, no evidence yet
+//	confirmed  cancelled — an order_update or a fresh persisted snapshot
+//	           proved the order gone
+//	filled     the entry FILLED before the cancel landed: a position exists
+//	ended      any other terminal state (rejected, expired, …), with the state
+//
+// When the ledger could not be read the lists are ABSENT (null) and Unread
+// says why — never an empty list for rows nobody read (L7).
 type WithdrawView struct {
-	Requested bool    `json:"requested"`
-	Pending   []int64 `json:"pending"`
-	Confirmed []int64 `json:"confirmed"`
+	Requested bool            `json:"requested"`
+	Pending   []int64         `json:"pending"`
+	Confirmed []int64         `json:"confirmed"`
+	Filled    []int64         `json:"filled"`
+	Ended     []WithdrawEnded `json:"ended"`
+	Unread    string          `json:"unread,omitempty"`
+}
+
+// WithdrawEnded is a withdrawn row that ended in a state other than
+// cancelled or filled.
+type WithdrawEnded struct {
+	ID    int64  `json:"id"`
+	State string `json:"state"`
 }
 
 // maintenanceWithdrawView reads the withdraw for the current hold's job; nil
@@ -131,20 +169,31 @@ func maintenanceWithdrawView(st *store.Store) *WithdrawView {
 	if !ok || !ms.Held || ms.Corrupt || !ms.Hold.WithdrawEntries {
 		return nil
 	}
-	v := &WithdrawView{Requested: true, Pending: []int64{}, Confirmed: []int64{}}
+	v := &WithdrawView{Requested: true}
 	if st == nil {
+		v.Unread = "no trader loaded — the ledger was not read"
 		return v
 	}
-	rows, err := st.ArmedOrders().ListByReasonPrefix(WithdrawReasonPrefix + "maintenance job " + ms.Hold.JobID)
+	rows, err := st.ArmedOrders().ListWithdrawn(withdrawHead("maintenance job " + ms.Hold.JobID))
 	if err != nil {
+		v.Unread = "ledger read failed: " + err.Error()
 		return v
 	}
+	v.Pending, v.Confirmed, v.Filled, v.Ended = []int64{}, []int64{}, []int64{}, []WithdrawEnded{}
 	for _, r := range rows {
-		switch {
-		case r.State == store.StateCancelPending:
+		switch state := strings.ToLower(strings.TrimSpace(r.State)); {
+		case state == store.StateCancelPending:
 			v.Pending = append(v.Pending, r.ID)
-		case store.IsTerminalArmState(r.State):
+		case store.IsCancelledArmState(state):
 			v.Confirmed = append(v.Confirmed, r.ID)
+		case state == store.StateFilled:
+			v.Filled = append(v.Filled, r.ID)
+		case store.IsTerminalArmState(state):
+			v.Ended = append(v.Ended, WithdrawEnded{ID: r.ID, State: r.State})
+		default:
+			// Not terminal and not cancel_pending: the cancel was asked and the
+			// row moved on without evidence either way — it is still pending.
+			v.Pending = append(v.Pending, r.ID)
 		}
 	}
 	return v

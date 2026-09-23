@@ -102,3 +102,12 @@ func TestPictureSendStarted(t *testing.T) {
 		}
 	}
 }
+
+// W-EXEC-TRUTH W0 (f) — the ONE cancelled-state predicate.
+func TestIsCancelledArmState(t *testing.T) {
+	for state, want := range map[string]bool{"cancelled": true, " Canceled ": true, "filled": false, "rejected": false, "expired": false, "cancel_pending": false, "": false} {
+		if got := IsCancelledArmState(state); got != want {
+			t.Errorf("%q → %v, want %v", state, got, want)
+		}
+	}
+}

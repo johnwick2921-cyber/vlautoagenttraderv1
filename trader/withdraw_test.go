@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -667,7 +668,7 @@ func TestMaintenanceWithdrawViewReportsRequestedPendingThenConfirmed(t *testing.
 		}
 		return string(b)
 	}
-	if got := body(); !strings.Contains(got, `"withdraw":{"requested":true,"pending":[],"confirmed":[]}`) {
+	if got := body(); !strings.Contains(got, `"withdraw":{"requested":true,"pending":[],"confirmed":[],"filled":[],"ended":[]}`) {
 		t.Fatalf("requested, nothing asked yet: pending/confirmed must be READ empty lists; body %s", got)
 	}
 
@@ -675,7 +676,7 @@ func TestMaintenanceWithdrawViewReportsRequestedPendingThenConfirmed(t *testing.
 	f.setLiveBook(t1, wdEntryOrder(sid))
 	f.at.monitorTick(t1)
 	f.w.waitFor(t, "the withdraw's cancel_order", isCancelFor(sid))
-	want := fmt.Sprintf(`"withdraw":{"requested":true,"pending":[%d],"confirmed":[]}`, row.ID)
+	want := fmt.Sprintf(`"withdraw":{"requested":true,"pending":[%d],"confirmed":[],"filled":[],"ended":[]}`, row.ID)
 	if got := body(); !strings.Contains(got, want) {
 		t.Fatalf("after the withdraw the row must be pending: want %s in %s", want, got)
 	}
@@ -690,7 +691,7 @@ func TestMaintenanceWithdrawViewReportsRequestedPendingThenConfirmed(t *testing.
 
 	f.persist(t, t1.Add(20*time.Second))
 	f.at.monitorTick(t1.Add(20 * time.Second))
-	want = fmt.Sprintf(`"withdraw":{"requested":true,"pending":[],"confirmed":[%d]}`, row.ID)
+	want = fmt.Sprintf(`"withdraw":{"requested":true,"pending":[],"confirmed":[%d],"filled":[],"ended":[]}`, row.ID)
 	if got := body(); !strings.Contains(got, want) {
 		t.Fatalf("after a fresh book without it the row must be confirmed: want %s in %s", want, got)
 	}
@@ -703,12 +704,12 @@ func TestMaintenanceWithdrawViewReportsRequestedPendingThenConfirmed(t *testing.
 		t.Fatalf("hold cleared → withdraw must be null, got %+v", *v)
 	}
 	f.hold(t, "job-view-2", true)
-	if got := body(); !strings.Contains(got, `"withdraw":{"requested":true,"pending":[],"confirmed":[]}`) {
+	if got := body(); !strings.Contains(got, `"withdraw":{"requested":true,"pending":[],"confirmed":[],"filled":[],"ended":[]}`) {
 		t.Fatalf("a new job's view must not list the previous job's rows: %s", got)
 	}
 }
 
-// 7 (defect probe) — a withdraw row confirmed by a RECEIVED order_update
+// 7 (a defect the builder found; fixed in W0b) — a withdraw row confirmed by a RECEIVED order_update
 // 'Cancelled' must still be listed as confirmed for its job.
 func TestMaintenanceWithdrawViewKeepsARowConfirmedByOrderUpdate(t *testing.T) {
 	f := withdrawFixture(t, "wd-view-ou", nil)
@@ -735,15 +736,14 @@ func TestMaintenanceWithdrawViewKeepsARowConfirmedByOrderUpdate(t *testing.T) {
 		listed = listed || id == row.ID
 	}
 	if !listed {
-		t.Skipf("PRODUCTION DEFECT: row %d was withdrawn for job-view-ou and confirmed by a received order_update "+
-			"'Cancelled', but GET /api/maintenance lists it neither pending nor confirmed (view %+v): "+
-			"onArmedOrderUpdate (trader/armed_executor.go:2091) overwrites state_reason with %q, and "+
-			"maintenanceWithdrawView (trader/withdraw.go:134) finds the job's rows by the state_reason PREFIX",
+		t.Fatalf("row %d was withdrawn for job-view-ou and confirmed by a received order_update "+
+			"'Cancelled', but GET /api/maintenance lists it neither pending nor confirmed (view %+v, reason %q): "+
+			"the withdraw head must survive the order_update's reason write (store.reasonKeepingWithdraw)",
 			row.ID, *v, got.StateReason)
 	}
 }
 
-// 7 (defect probe) — a withdraw row that went unconfirmed past its window and
+// 7 (a defect the builder found; fixed in W0b) — a withdraw row that went unconfirmed past its window and
 // was re-requested is still this job's pending withdraw.
 func TestMaintenanceWithdrawViewKeepsARowThroughAReRequest(t *testing.T) {
 	t.Setenv("CANCEL_CONFIRM_TIMEOUT_S", "1")
@@ -773,15 +773,14 @@ func TestMaintenanceWithdrawViewKeepsARowThroughAReRequest(t *testing.T) {
 		pending = pending || id == row.ID
 	}
 	if !pending {
-		t.Skipf("PRODUCTION DEFECT: row %d is still cancel_pending for job-view-rr after one re-request, but GET "+
-			"/api/maintenance no longer lists it (view %+v): confirmPendingCancels' re-request "+
-			"(trader/cancel_confirm.go:422) overwrites state_reason with %q, and maintenanceWithdrawView "+
-			"(trader/withdraw.go:134) finds the job's rows by the state_reason PREFIX",
+		t.Fatalf("row %d is still cancel_pending for job-view-rr after one re-request, but GET "+
+			"/api/maintenance no longer lists it (view %+v, reason %q): the withdraw head must survive the "+
+			"re-request's reason write (store.reasonKeepingWithdraw)",
 			row.ID, *v, got.StateReason)
 	}
 }
 
-// 7 (defect probe) — L7 "absent ≠ []": a view that READ nothing must not
+// 7 (a defect the builder found; fixed in W0b) — L7 "absent ≠ []": a view that READ nothing must not
 // report "nothing pending".
 func TestMaintenanceWithdrawViewDoesNotFabricateEmptyListsItNeverRead(t *testing.T) {
 	dir := withMaintenanceDir(t)
@@ -794,11 +793,14 @@ func TestMaintenanceWithdrawViewDoesNotFabricateEmptyListsItNeverRead(t *testing
 	if v == nil || !v.Requested {
 		t.Fatalf("the hold asks for a withdraw: %+v", v)
 	}
-	if v.Pending != nil || v.Confirmed != nil {
+	if v.Pending != nil || v.Confirmed != nil || v.Filled != nil || v.Ended != nil || v.Unread == "" {
 		b, _ := json.Marshal(v)
-		t.Skipf("PRODUCTION DEFECT: with no store to read (no trader loaded), the withdraw view reports %s — "+
-			"READ-looking empty lists for a ledger it never read (trader/withdraw.go:130-133; the same on a "+
-			"ListByReasonPrefix error at :135-137). L7: absent ≠ []", string(b))
+		t.Fatalf("with no store to read (no trader loaded) the withdraw view must report its lists ABSENT and say why — "+
+			"never READ-looking empty lists for a ledger it never read (L7: absent ≠ []); got %s", string(b))
+	}
+	b, _ := json.Marshal(v)
+	if !strings.Contains(string(b), `"pending":null`) || !strings.Contains(string(b), `"unread":"no trader loaded`) {
+		t.Fatalf("the API form must carry null lists and the reason: %s", string(b))
 	}
 }
 
@@ -914,5 +916,120 @@ func TestWithdrawBeatSkipsSettlementHeldByTheArmedPass(t *testing.T) {
 	}
 	if got := f.rowByID(t, row.ID); got.CancelAttempts != 2 {
 		t.Fatalf("attempts=%d, want 2", got.CancelAttempts)
+	}
+}
+
+// ── fixes found by this suite (W-EXEC-TRUTH W0b) ────────────────────────────
+
+// canon 35 — a re-request the filled-arm guard REFUSES sends nothing, and is
+// neither recorded nor counted as a re-request: attempts and reason stay as
+// the withdraw left them. Both settlement callers — the withdraw beat and the
+// armed pass — hand the refusal back the same way.
+func TestWithdrawReRequestRefusedByTheGuardIsNotRecorded(t *testing.T) {
+	t.Setenv("CANCEL_CONFIRM_TIMEOUT_S", "1")
+	f := withdrawFixture(t, "wd-refused-rr", nil)
+	row, sid := f.placeResting(t)
+	f.hold(t, "job-refused-rr", true)
+	t1 := f.now.Add(time.Minute)
+	f.setLiveBook(t1, wdEntryOrder(sid))
+	f.at.monitorTick(t1)
+	f.w.waitFor(t, "the withdraw's cancel_order", isCancelFor(sid))
+	before := f.rowByID(t, row.ID)
+	if before.State != store.StateCancelPending || before.CancelAttempts != 1 {
+		t.Fatalf("fixture: withdrawn row must be cancel_pending with 1 attempt: %+v", before)
+	}
+	// The entry is gone and its protection rests: it filled while the cancel
+	// was in flight. The guard must refuse any re-request.
+	filledBook := func(at time.Time) {
+		f.setLiveBook(at,
+			ntwire.NT8Order{OrderID: "ord-sl", Symbol: "MNQ", Name: sid + "-sl", Action: "sell", Type: "stop", StopPrice: 95, Quantity: 1, State: "Accepted"},
+			ntwire.NT8Order{OrderID: "ord-tp", Symbol: "MNQ", Name: sid + "-tp", Action: "sell", Type: "limit", LimitPrice: 110, Quantity: 1, State: "Working"})
+	}
+	check := func(who string) {
+		t.Helper()
+		f.w.flush(t)
+		if n := f.w.count(ntwire.FrameCancelOrder, sid); n != 1 {
+			t.Fatalf("%s: a refused re-request reached the wire: cancel frames=%d, want 1", who, n)
+		}
+		got := f.rowByID(t, row.ID)
+		if got.State != store.StateCancelPending || got.CancelAttempts != before.CancelAttempts || got.StateReason != before.StateReason {
+			t.Fatalf("%s: a refused re-request was recorded: before %d/%q, after %s %d/%q",
+				who, before.CancelAttempts, before.StateReason, got.State, got.CancelAttempts, got.StateReason)
+		}
+	}
+	t2 := t1.Add(5 * time.Second) // past the 1s window
+	filledBook(t2)
+	f.at.monitorTick(t2)
+	check("withdraw beat")
+
+	if err := store.ClearMaintenanceHold(f.dir, "job-refused-rr"); err != nil {
+		t.Fatal(err)
+	}
+	t3 := t2.Add(5 * time.Second)
+	filledBook(t3)
+	f.at.maybeManageArmedOrdersAt(nil, t3)
+	check("armed pass")
+}
+
+// A withdrawn entry that FILLED before its cancel landed is a position, not a
+// withdraw: the view lists it under filled, never confirmed.
+func TestMaintenanceWithdrawViewListsAFillAsFilledNeverConfirmed(t *testing.T) {
+	f := withdrawFixture(t, "wd-view-fill", nil)
+	row, sid := f.placeResting(t)
+	f.hold(t, "job-view-fill", true)
+	t1 := f.now.Add(time.Minute)
+	f.setLiveBook(t1, wdEntryOrder(sid))
+	f.at.monitorTick(t1)
+	f.w.waitFor(t, "the withdraw's cancel_order", isCancelFor(sid))
+	f.sendOrderUpdate(t, sid, sid, "Filled")
+	f.waitRowState(t, sid, store.StateFilled, func() { f.at.maybeManageArmedOrdersAt(nil, t1.Add(time.Second)) })
+	v := maintenanceWithdrawView(f.st)
+	if v == nil || len(v.Confirmed) != 0 || len(v.Filled) != 1 || v.Filled[0] != row.ID {
+		t.Fatalf("a withdrawn entry that filled must read filled, never confirmed: %+v", v)
+	}
+}
+
+// With no NinjaTrader wire no cancel can be sent, so no row may be marked
+// cancel_pending (a pending cancel with nothing in flight is fabricated).
+// withdrawEntriesIfDue is the monitorTick hook, called directly here because
+// monitorTick's other beats read the broker.
+func TestWithdrawWithNoWireMarksNothing(t *testing.T) {
+	f := withdrawFixture(t, "wd-no-wire", nil)
+	row, _ := f.placeResting(t)
+	before := f.rowByID(t, row.ID)
+	f.hold(t, "job-no-wire", true)
+	f.at.trader = nil
+	f.at.withdrawEntriesIfDue(f.now.Add(time.Minute))
+	if got := f.rowByID(t, row.ID); got.State != before.State || got.CancelAttempts != 0 || got.StateReason != before.StateReason {
+		t.Fatalf("no wire: the row must be untouched, was %s/%q now %s/%d/%q", before.State, before.StateReason, got.State, got.CancelAttempts, got.StateReason)
+	}
+}
+
+// A hold file that cannot be read counts as HELD (entries refused) but it
+// cannot say withdraw_entries — only the explicit flag withdraws.
+func TestWithdrawNeverOnACorruptHold(t *testing.T) {
+	f := withdrawFixture(t, "wd-corrupt", nil)
+	row, sid := f.placeResting(t)
+	if err := os.MkdirAll(filepath.Dir(store.MaintenanceHoldPath(f.dir)), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(store.MaintenanceHoldPath(f.dir), []byte(`{"held":true,"withdraw_entries":true,`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if st, ok := maintenanceState(); !ok || !st.Corrupt {
+		t.Fatalf("fixture: the hold must read corrupt: %+v %v", st, ok)
+	}
+	t1 := f.now.Add(time.Minute)
+	f.setLiveBook(t1, wdEntryOrder(sid))
+	f.at.monitorTick(t1)
+	f.w.flush(t)
+	if n := f.w.count(ntwire.FrameCancelOrder, sid); n != 0 {
+		t.Fatalf("a corrupt hold withdrew an entry: cancel frames=%d", n)
+	}
+	if got := f.rowByID(t, row.ID); got.State == store.StateCancelPending {
+		t.Fatalf("a corrupt hold marked the row cancel_pending: %+v", got)
+	}
+	if v := maintenanceWithdrawView(f.st); v != nil {
+		t.Fatalf("a corrupt hold asks for no withdraw view: %+v", *v)
 	}
 }
