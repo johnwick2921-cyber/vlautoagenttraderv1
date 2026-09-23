@@ -6094,7 +6094,7 @@ overwrite the series. Resolve after unmount and assert no write or further poll.
 **Law:** test both live response delivery and cancellation at the production
 component boundary; placeholder rendering alone does not verify chart loading.
 
-## CLASS NN (assigned at merge) — single-consumer pause mistaken for a global hold
+## CLASS 158 — single-consumer pause mistaken for a global hold
 
 **Wave:** `feat/one-button-m2-maintenance-hold` (W-ONE-BUTTON M2). **Found:** 2026-09-22, building the one-button partner update.
 **Shape.** Before an update replaces the binary and the AddOn, every producer of new entries must stop. The only brake the bot had was `stop_until`/Resume, which pauses ONE consumer: one trader's AI decision path. Everything else kept sending:
@@ -6115,7 +6115,7 @@ Any per-trader Resume could also lift the pause. A pause scoped to one consumer 
 
 **Law:** a hold is installation-wide, file-backed, written only by the operator or the updater, and read at every send point. A pause is not a hold.
 
-## CLASS NN (assigned at merge) — a queued send recorded as a fill (pre-existing; found in M2, fix deferred)
+## CLASS 159 — a queued send recorded as a fill (pre-existing; found in M2, fix deferred)
 
 **Found:** 2026-09-22 in W-ONE-BUTTON M2 (CTO condition 3 on M-2), [A] at the production caller (`TestDroppedAIEntryIsForgottenAndTheGateStaysClosed`).
 **Shape.** An AI entry sent while NT8 is disconnected is QUEUED: `SendSignal` returns nil and `TCPTrader.placeEntry` returns `"submitted"`. Its result carries `"signal_id"` but no `"orderId"`, so `recordAndConfirmOrder` formats the missing key as the string `"<nil>"`, which is not skipped. It then:
@@ -6129,7 +6129,7 @@ That happens for an entry that never left this process. If the queued entry is t
 
 **Status:** M2 does not fabricate a close for it. A hold drop forgets the entry, logs ERROR naming the signal and `db_open_positions`, raises P1, and the installation gate stays closed on cutover leg 1 until an operator reconciles. **The fix needs its own owner-ruled wave:** record the signal id as the order id, and do not record a position before a received fill.
 
-## CLASS NN (assigned at merge) — A HAND-SET BUILD LABEL TREATED AS PROOF OF WHAT IS RUNNING (born 2026-09-22, feat/one-button-updates, W-ONE-BUTTON M1)
+## CLASS 160 — A HAND-SET BUILD LABEL TREATED AS PROOF OF WHAT IS RUNNING (born 2026-09-22, feat/one-button-updates, W-ONE-BUTTON M1)
 
 **Shape.** The AddOn's `VL_BUILD_ID` is a constant a human bumps "on any additive wire change"
 (`ninjascript/VLTraderTCPClient.cs:55`), mirrored by a Go constant (`provider/ninjatrader/order_snapshot.go:214`)
@@ -6157,7 +6157,7 @@ different sources carry it.
 per-connection record + a verifier that refuses cached or wrong-epoch evidence (M2/M4 of W-ONE-BUTTON, subject
 to owner ruling on "no new protocol work").
 
-## CLASS NN (assigned at merge) — an optional field a newer producer legitimately leaves nil, dereferenced by an older reader
+## CLASS 161 — an optional field a newer producer legitimately leaves nil, dereferenced by an older reader
 
 **Found:** 2026-09-23, live after the M2 boot: `🔭 desk strip: line 10 (planner) panicked and was contained: nil pointer`, on every scan. Present before the boot too.
 **Shape.**
