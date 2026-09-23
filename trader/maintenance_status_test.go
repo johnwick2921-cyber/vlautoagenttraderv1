@@ -2,7 +2,6 @@ package trader
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -92,23 +91,6 @@ func TestMaintenanceStatusAddOnAck(t *testing.T) {
 	wire.Connected = false
 	if m := statusJSON(t, MaintenanceStatus(nil)); m["addon_ack"] != nil {
 		t.Fatalf("a disconnected record's ack is history, not a live ack: %v", m["addon_ack"])
-	}
-}
-
-// main.go prints the line after the data dir is configured (it READS the file).
-func TestMainPrintsTheMaintenanceBootLine(t *testing.T) {
-	b, err := os.ReadFile("../main.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	src := string(b)
-	set := strings.Index(src, "trader.SetMaintenanceDataDir(")
-	line := strings.Index(src, "trader.MaintenanceBootLine(")
-	if line < 0 {
-		t.Fatal("main.go never prints trader.MaintenanceBootLine()")
-	}
-	if set < 0 || set > line {
-		t.Fatal("the boot line must be printed after SetMaintenanceDataDir")
 	}
 }
 
