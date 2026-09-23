@@ -1944,10 +1944,8 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	var sessCond map[string]string
 	if cfg := at.dayPlanCfg(); cfg != nil {
 		baseCond = cfg.ConditionStatus
-		for _, o := range cfg.Sessions {
-			if o.Session == session && o.ConditionStatus != nil {
-				sessCond = *o.ConditionStatus
-			}
+		if o := cfg.SessionOverride(session); o != nil && o.ConditionStatus != nil {
+			sessCond = *o.ConditionStatus
 		}
 	}
 	liveConditions := kernel.ResolvedLiveConditions(baseCond, sessCond, kernel.ShadowConditionsEnv())
@@ -2579,10 +2577,8 @@ func resolveSessionPlanCfg(dp *store.DayPlanConfig, session string) (maxLevels i
 	if len(dp.PlannerTimeframes) > 0 {
 		timeframes = dp.PlannerTimeframes
 	}
-	for _, so := range dp.Sessions {
-		if so.Session == session && so.MinGrade != nil {
-			minGrade = *so.MinGrade
-		}
+	if so := dp.SessionOverride(session); so != nil && so.MinGrade != nil {
+		minGrade = *so.MinGrade
 	}
 	return maxLevels, htfSeats, htfMult, minGrade, timeframes
 }
