@@ -136,6 +136,24 @@ type ArmedOrderDB struct {
 	LastVerdict       string `gorm:"default:''"`
 	LastVerdictMs     *int64
 
+	// W-EXEC-TRUTH W5 (2026-09-23) — a MACHINE-SOURCED row (a Picture
+	// scenario of the Day Plan). '' / NULL on every planner row.
+	//   Source          — ArmSourcePicture.
+	//   SourceRef       — the opportunity key: ONE opportunity, ONE order,
+	//                     across plan versions (UpsertArm's source pin — a
+	//                     Picture scenario is re-appended to the version that
+	//                     supersedes a machine plan, so the version cannot be
+	//                     its identity).
+	//   SourceRule      — the rule that produced it (h1_close_break).
+	//   EligibleUntilMs — the eligibility deadline (never placed after it).
+	//   SourceRunEpoch  — the trader run that recorded it (a reload cannot
+	//                     place a scenario recorded by a previous run).
+	Source          string `gorm:"default:''"`
+	SourceRef       string `gorm:"default:''"`
+	SourceRule      string `gorm:"default:''"`
+	EligibleUntilMs *int64
+	SourceRunEpoch  *int64
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -160,6 +178,10 @@ const (
 // because store cannot import kernel (kernel imports store). A trader test pins
 // the two equal, so this is a mirror with a check, not a second truth.
 const ArmPolicyMarketInZone = "market_in_zone"
+
+// ArmSourcePicture is kernel.ScenarioSourcePicture (W5), mirrored for the same
+// reason; a kernel test pins the two equal.
+const ArmSourcePicture = "picture"
 
 // TableName is the armed_orders table (spec name).
 func (ArmedOrderDB) TableName() string { return "armed_orders" }
@@ -247,6 +269,13 @@ func (s *ArmedOrderStore) Migrate() error {
 			{"fill_slippage_ticks", "REAL"},
 			{"last_verdict", "TEXT NOT NULL DEFAULT ''"},
 			{"last_verdict_ms", "INTEGER"},
+			// W5 machine source (2026-09-23): '' on every planner row; the
+			// deadline and run epoch are NULL where none exists (absent ≠ 0).
+			{"source", "TEXT NOT NULL DEFAULT ''"},
+			{"source_ref", "TEXT NOT NULL DEFAULT ''"},
+			{"source_rule", "TEXT NOT NULL DEFAULT ''"},
+			{"eligible_until_ms", "INTEGER"},
+			{"source_run_epoch", "INTEGER"},
 		} {
 			var n int64
 			if err := s.db.Raw("SELECT COUNT(*) FROM pragma_table_info('armed_orders') WHERE name = ?", col.name).Scan(&n).Error; err != nil {
@@ -289,6 +318,28 @@ func (s *ArmedOrderStore) UpsertArm(row *ArmedOrderDB) error {
 	// read makes existing rows work; canonicalizing HERE, where the value
 	// enters, is what stops the two tables disagreeing at all.
 	row.Side = strings.ToUpper(strings.TrimSpace(row.Side))
+	// W5 — ONE OPPORTUNITY, ONE LIFE, ACROSS PLAN VERSIONS. A machine-sourced
+	// row is identified by its opportunity (source_ref), not by the plan
+	// version: the Picture scenario is re-appended to the version that
+	// supersedes a machine plan (CTO 1790191033566), so the version-scoped
+	// pins below would let a placed, filled or expired opportunity arm again.
+	// Once ANY row for the opportunity is terminal, no row for it is ever
+	// armed again; a live row for it under another identity keeps the slot.
+	if ref := strings.TrimSpace(row.SourceRef); ref != "" {
+		var prior ArmedOrderDB
+		perr := s.db.Where("trader_id = ? AND source_ref = ?", row.TraderID, ref).
+			Order("CASE WHEN " + NonTerminalArmStateSQL() + " THEN 0 ELSE 1 END, id DESC").First(&prior).Error
+		if perr == nil {
+			if IsTerminalArmState(prior.State) {
+				return nil
+			}
+			if prior.PlanID != row.PlanID || prior.Scenario != row.Scenario || prior.LegIndex != row.LegIndex {
+				return nil
+			}
+		} else if perr != gorm.ErrRecordNotFound {
+			return perr
+		}
+	}
 	// PRE-REOPEN F3 (2026-08-28) — dead re-arm fix: a TERMINAL row for the same
 	// (plan, scenario) is re-authorized as a fresh armed row (new identity, no
 	// stale fill); a non-terminal row keeps its identity and only its prices
@@ -391,6 +442,10 @@ func (s *ArmedOrderStore) UpsertArm(row *ArmedOrderDB) error {
 				// A legacy row writes '' / NULL over '' / NULL.
 				"policy": row.Policy, "zone_lo": row.ZoneLo, "zone_hi": row.ZoneHi,
 				"zone_provenance": row.ZoneProvenance, "planned_entry_px": row.PlannedEntryPx,
+				// W5 — the machine source follows the authorization too (a
+				// planner row writes '' / NULL over '' / NULL).
+				"source": row.Source, "source_ref": row.SourceRef, "source_rule": row.SourceRule,
+				"eligible_until_ms": row.EligibleUntilMs, "source_run_epoch": row.SourceRunEpoch,
 			}).Error
 		}
 		// MANUAL-CANCEL-WINS (2026-08-30 E7 incident): a TERMINAL row is
@@ -439,6 +494,9 @@ func (s *ArmedOrderStore) UpsertArm(row *ArmedOrderDB) error {
 			"eval_price": nil, "eval_bar_ms": nil, "placed_at_ms": nil,
 			"filled_at_ms": nil, "fill_slippage_ticks": nil,
 			"last_verdict": "", "last_verdict_ms": nil,
+			// W5 — the new authorization's machine source ('' on planner rows).
+			"source": row.Source, "source_ref": row.SourceRef, "source_rule": row.SourceRule,
+			"eligible_until_ms": row.EligibleUntilMs, "source_run_epoch": row.SourceRunEpoch,
 		}).Error
 	}
 	if err != gorm.ErrRecordNotFound {

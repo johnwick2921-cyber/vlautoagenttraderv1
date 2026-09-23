@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"nofx/store"
 )
 
 // W-EXEC-TRUTH W5 — MACHINE-AUTHORED SCENARIOS (the Picture HTF source).
@@ -114,6 +116,18 @@ type OverlayRef struct {
 	Version int // plan_overlays.overlay_version
 	Origin  string
 	Patch   string
+}
+
+// OverlayRefsFrom adapts stored plan_overlays rows (ListOverlays order) for
+// ResolvePlanFinal.
+func OverlayRefsFrom(rows []*store.PlanOverlayDB) []OverlayRef {
+	out := make([]OverlayRef, 0, len(rows))
+	for _, r := range rows {
+		if r != nil {
+			out = append(out, OverlayRef{Version: r.OverlayVersion, Origin: r.Origin, Patch: r.Patch})
+		}
+	}
+	return out
 }
 
 // MachineApplied names one machine scenario the fold appended.

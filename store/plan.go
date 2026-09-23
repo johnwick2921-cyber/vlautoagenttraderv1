@@ -3,6 +3,7 @@ package store
 import (
 	"fmt"
 	"nofx/logger"
+	"strings"
 	"sync"
 	"time"
 
@@ -397,6 +398,109 @@ func (s *PlanStore) AppendOverlay(o *PlanOverlayDB) (int, error) {
 		return nil
 	})
 	return assigned, err
+}
+
+// MachinePlanTriggerPrefix marks a MACHINE plan (W5): plans.trigger_reason of
+// a plan the machine wrote because no plan existed (kernel.MachinePlanTriggerPicture
+// is "machine:picture_htf"; a kernel test pins the prefix).
+const MachinePlanTriggerPrefix = "machine:"
+
+// IsMachinePlan reports whether a plan row was written by the machine (the W5
+// no-plan door). The session scheduler treats a chain whose newest row is a
+// machine plan as "no plan": the AI session read still fires and supersedes it.
+func IsMachinePlan(p *PlanDB) bool {
+	return p != nil && strings.HasPrefix(strings.TrimSpace(p.TriggerReason), MachinePlanTriggerPrefix)
+}
+
+// AppendPlanIfAbsent (W5 — the no-plan door) writes p as v1 of a new chain ONLY
+// when the trader has NO plan row for (trade_date, session). The check and the
+// insert run inside the single writer, so it can never land on top of a plan
+// the planner is appending at the same moment: whichever write the writer
+// takes first wins, and a machine plan is only ever v1. Returns whether it
+// wrote (false, nil = a row already exists — the caller refuses or overlays).
+func (s *PlanStore) AppendPlanIfAbsent(p *PlanDB) (bool, error) {
+	if p == nil || p.PlanID == "" || p.TradeDate == "" || p.Session == "" {
+		return false, fmt.Errorf("plan_id, trade_date and session required")
+	}
+	wrote := false
+	err := s.enqueue(func(db *gorm.DB) error {
+		var n int64
+		if err := db.Model(&PlanDB{}).
+			Where("trade_date = ? AND session = ? AND strategy_id = ?", p.TradeDate, p.Session, p.StrategyID).
+			Count(&n).Error; err != nil {
+			return err
+		}
+		if n > 0 {
+			return nil
+		}
+		var m int64
+		if err := db.Model(&PlanDB{}).Where("plan_id = ?", p.PlanID).Count(&m).Error; err != nil {
+			return err
+		}
+		if m > 0 {
+			return nil
+		}
+		p.Version = 1
+		if p.Doc == "" {
+			p.Doc = "{}"
+		}
+		if p.Lifecycle == "" {
+			p.Lifecycle = "active"
+		}
+		if err := db.Create(p).Error; err != nil {
+			return err
+		}
+		wrote = true
+		return nil
+	})
+	return wrote, err
+}
+
+// AppendOverlayChecked is AppendOverlay whose admission check runs INSIDE the
+// single writer against the overlay rows already stored for (plan_id,
+// plan_version) — so two hand-offs of one opportunity cannot both append. The
+// check returns skip=true to append nothing (e.g. the opportunity is already
+// recorded), or an error to refuse. Returns the overlay_version written (0 when
+// skipped) and whether it appended.
+func (s *PlanStore) AppendOverlayChecked(o *PlanOverlayDB, check func(existing []*PlanOverlayDB) (skip bool, err error)) (int, bool, error) {
+	if o == nil || o.PlanID == "" || o.PlanVersion <= 0 {
+		return 0, false, fmt.Errorf("plan_id and plan_version required")
+	}
+	var assigned int
+	appended := false
+	err := s.enqueue(func(db *gorm.DB) error {
+		var existing []*PlanOverlayDB
+		if err := db.Where("plan_id = ? AND plan_version = ?", o.PlanID, o.PlanVersion).
+			Order("overlay_version ASC").Find(&existing).Error; err != nil {
+			return err
+		}
+		if check != nil {
+			skip, err := check(existing)
+			if err != nil {
+				return err
+			}
+			if skip {
+				return nil
+			}
+		}
+		next := 1
+		for _, e := range existing {
+			if e.OverlayVersion >= next {
+				next = e.OverlayVersion + 1
+			}
+		}
+		o.OverlayVersion = next
+		if o.Patch == "" {
+			o.Patch = "[]"
+		}
+		if err := db.Create(o).Error; err != nil {
+			return err
+		}
+		assigned = next
+		appended = true
+		return nil
+	})
+	return assigned, appended, err
 }
 
 // GetPlan returns a specific plan version, or (nil, nil) if absent.

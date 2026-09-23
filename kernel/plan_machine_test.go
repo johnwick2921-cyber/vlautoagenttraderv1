@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"nofx/store"
 )
 
 // W5 foundation — machine scenarios and the ONE fold (ResolvePlanFinal).
@@ -267,5 +269,29 @@ func TestMachineHelpers(t *testing.T) {
 	}
 	if !MachineEligibleAt(selfCheckPlanDoc().Scenarios[0], 0) {
 		t.Error("a planner scenario is never window-bound")
+	}
+}
+
+// store cannot import kernel, so it mirrors three names; they must agree.
+func TestMachineNamesMirroredInStore(t *testing.T) {
+	if ScenarioSourcePicture != store.ArmSourcePicture {
+		t.Fatalf("kernel %q vs store %q", ScenarioSourcePicture, store.ArmSourcePicture)
+	}
+	if !strings.HasPrefix(MachinePlanTriggerPicture, store.MachinePlanTriggerPrefix) ||
+		!store.IsMachinePlan(&store.PlanDB{TriggerReason: MachinePlanTriggerPicture}) {
+		t.Fatalf("the machine plan trigger %q must carry the store prefix %q", MachinePlanTriggerPicture, store.MachinePlanTriggerPrefix)
+	}
+	if !IsMachineOverlayOrigin(MachineOverlayOriginPicture) || IsMachineOverlayOrigin("owner") || IsMachineOverlayOrigin("planner-revised") {
+		t.Fatal("machine overlay origin classification drifted")
+	}
+}
+
+func TestOverlayRefsFrom(t *testing.T) {
+	got := OverlayRefsFrom([]*store.PlanOverlayDB{
+		{OverlayVersion: 1, Origin: "owner", Patch: `[]`}, nil,
+		{OverlayVersion: 2, Origin: MachineOverlayOriginPicture, Patch: `[{}]`},
+	})
+	if len(got) != 2 || got[0] != (OverlayRef{Version: 1, Origin: "owner", Patch: `[]`}) || got[1].Version != 2 || got[1].Origin != MachineOverlayOriginPicture {
+		t.Fatalf("refs = %+v", got)
 	}
 }
