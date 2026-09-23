@@ -6156,3 +6156,13 @@ different sources carry it.
 **Fix pattern.** Additive hello fields (process identity, MVID, source hash, activation nonce) + a Go
 per-connection record + a verifier that refuses cached or wrong-epoch evidence (M2/M4 of W-ONE-BUTTON, subject
 to owner ruling on "no new protocol work").
+
+## CLASS NN (assigned at merge) — an optional field a newer producer legitimately leaves nil, dereferenced by an older reader
+
+**Found:** 2026-09-23, live after the M2 boot: `🔭 desk strip: line 10 (planner) panicked and was contained: nil pointer`, on every scan. Present before the boot too.
+**Shape.**
+- W-GEOMETRY-REFUSAL (b1) added reference-anchor level ids (`ref|…`, ONH/ONL/VWAP…). Those levels have **no formation close by construction**: `FormedCloseMs == nil`.
+- The desk strip's planner line was written before that. It rendered every resolved level with `*r.Level.FormedCloseMs`.
+- The containment (`deskSafe`) kept the loop alive but turned the line into UNKNOWN, for as long as any plan named a reference level.
+
+**Probe:** for every pointer field a producer documents as optional, grep its readers for a bare `*x.Field`. Drive the reader at its production entry with the nil case; the fixture must use the producer's real nil-case shape. Fixed in M2.1: the line prints `formed_close_ms=n/a` (L7).
