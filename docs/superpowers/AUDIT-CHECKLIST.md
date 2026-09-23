@@ -6093,3 +6093,38 @@ older interval request after the replacement request and assert it cannot
 overwrite the series. Resolve after unmount and assert no write or further poll.
 **Law:** test both live response delivery and cancellation at the production
 component boundary; placeholder rendering alone does not verify chart loading.
+
+## CLASS NN (assigned at merge) — single-consumer pause mistaken for a global hold
+
+**Wave:** `feat/one-button-m2-maintenance-hold` (W-ONE-BUTTON M2). **Found:** 2026-09-22, building the one-button partner update.
+**Shape.** Before an update replaces the binary and the AddOn, every producer of new entries must stop. The only brake the bot had was `stop_until`/Resume, which pauses ONE consumer: one trader's AI decision path. Everything else kept sending:
+- the armed executor;
+- the Picture HTF evaluator, whose registry never unregisters, so a stopped or deleted trader still reaches `pictureHtfSend`;
+- the planner (a 5–20 min AI call a restart would kill);
+- the reconnect queue, which wrote a queued entry on the next connect with no permit held;
+- the AddOn itself.
+
+Any per-trader Resume could also lift the pause. A pause scoped to one consumer reads like a hold and is not one.
+
+**Probe.**
+- (1) Enumerate every producer of a wire entry: every `SendSignal` caller, every `CreateOrder` entry in the AddOn, and every registry that feeds one. Check that each consults the ONE installation hold at its send point.
+- (2) Check that the queue and reconnect paths honour the hold **connected or not**. The first cut returned early on "no connection" before checking the hold, which parked held entries for as long as NT8 was down.
+- (3) Check that no API route, Resume or clear-freeze can write or clear the hold. An AST scan pins the allowlist.
+- (4) Check that the gate reading "drained" covers every trader id, loaded or not; every account the AddOn can see; and every planner-class claim. An unevaluable leg fails. A vacuous "not applicable" pass is a failure.
+- (5) Check that a refused send never latches "placed" and never cancels siblings.
+
+**Law:** a hold is installation-wide, file-backed, written only by the operator or the updater, and read at every send point. A pause is not a hold.
+
+## CLASS NN (assigned at merge) — a queued send recorded as a fill (pre-existing; found in M2, fix deferred)
+
+**Found:** 2026-09-22 in W-ONE-BUTTON M2 (CTO condition 3 on M-2), [A] at the production caller (`TestDroppedAIEntryIsForgottenAndTheGateStaysClosed`).
+**Shape.** An AI entry sent while NT8 is disconnected is QUEUED: `SendSignal` returns nil and `TCPTrader.placeEntry` returns `"submitted"`. Its result carries `"signal_id"` but no `"orderId"`, so `recordAndConfirmOrder` formats the missing key as the string `"<nil>"`, which is not skipped. It then:
+- writes an order row;
+- polls `GetOrderStatus` (still "pending") for ~3 s;
+- falls through to `recordPositionChange`, which writes an **OPEN** `trader_positions` row at the mark price with `entry_order_id "<nil>"` and emits a P0 "Filled …" alert.
+
+That happens for an entry that never left this process. If the queued entry is then refused (stale queue age, or the maintenance hold's drop), the DB carries a position NT8 never had, and nothing links that row to the signal.
+
+**Probe:** send an AI entry with no client connected and run the production caller: an OPEN row with `entry_order_id "<nil>"` appears.
+
+**Status:** M2 does not fabricate a close for it. A hold drop forgets the entry, logs ERROR naming the signal and `db_open_positions`, raises P1, and the installation gate stays closed on cutover leg 1 until an operator reconciles. **The fix needs its own owner-ruled wave:** record the signal id as the order id, and do not record a position before a received fill.
