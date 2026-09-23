@@ -5113,6 +5113,30 @@ day.
   this class, checked: `class33_boot_sweep_test.go` L25/L156 stamp
   CreatedAt/UpdatedAt only and the sweep is not band-gated. None of the listed
   tests fails by the clock today; each is one registry change from doing so.
+- **DISCHARGED IN PART, and the sentence above was already false when written —
+  2026-09-23, W-EXEC-TRUTH W4 (`fix/w4-picture-evidence`), CTO ruling
+  `1790198929468`.** Two tests that the census did not list DID fail by the
+  clock, on the same afternoon, for two lanes at once:
+  `TestFourPlacementPathsWaitForEntryReceipt` (subtests `limit`, `stop_entry`:
+  "production path did not send") and
+  `TestUnsentStopEntryNeverCancelsTheSiblingArm/sent_commits` ("signal on the
+  wire = false, want true"). Both hand `time.Now()` to a production send path;
+  the admission chain asks `kernel.CMEClosedReason(now)` on the clock it is
+  GIVEN (`entry_admission.go:304`), so the 16:00–17:00 CT daily break refuses
+  them with "🌙 cme closed: … REFUSED — daily break". They were green at 15:50
+  CT and red at 16:13 CT at the SAME commit, and red on an unrelated branch
+  (`fix/w5-picture-source @c1d96494`) in the same hour — confirmed by the CTO
+  at clean dev `eb7294c9` at 16:27 CT.
+  **Fixed (test-only):** `trader/rth_clock_test.go` `rthInstant()` — a fixed RTH
+  instant (Wed 2026-09-23 10:30 CT) passed through the existing `…At` seams at
+  the three production-facing sites. Verified by running both tests AT 16:30 CT,
+  inside the band that had just failed them: green. No production change, no
+  retry, no skip.
+  **The lesson the census missed:** it searched for tests that SKIP or SEARCH on
+  the band, and these two do neither — they simply do not send, and read as an
+  ordinary assertion failure. A census of a failure mode must be built from the
+  mode (which clock reaches a gate), not from the symptom it happened to show
+  the day it was written.
 
 ## CLASS 139 — A HOLD THAT RESTARTS ON EVERY RE-READ: hysteresis anchored to the version, not the plan (born 2026-08-21 with the regime wave's G3 hold, reported by the owner 2026-09-17 "it went up all night and never flipped", fix/flip-hold-anchor, W-FLIP-HOLD-ANCHOR)
 

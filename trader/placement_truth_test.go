@@ -60,7 +60,8 @@ func TestFourPlacementPathsWaitForEntryReceipt(t *testing.T) {
 			broker.StartCloseSync(at.id, "fixture", "ninjatrader", st)
 			at.trader = broker
 			at.config.NinjaTraderSymbol = "MNQ"
-			s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, time.Now())
+			// class 110: pinned to RTH — the admission chain reads THIS clock.
+			s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, rthInstant())
 			ledger := st.ArmedOrders()
 			var row store.ArmedOrderDB
 			switch path {
@@ -78,7 +79,7 @@ func TestFourPlacementPathsWaitForEntryReceipt(t *testing.T) {
 					price = 29599
 				}
 				// the authoring pass this direct call stands in for admitted S1 (G1)
-				at.runArmedPlacementAt([]market.Kline{{Close: price}}, time.Now().Add(-time.Hour).UnixMilli(), time.Now(),
+				at.runArmedPlacementAt([]market.Kline{{Close: price}}, rthInstant().Add(-time.Hour).UnixMilli(), rthInstant(),
 					armAdmission{armAdmitKey("placement", "S1", 0): true})
 			}
 			if err != nil {

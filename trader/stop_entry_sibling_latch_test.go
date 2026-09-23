@@ -87,7 +87,8 @@ func TestUnsentStopEntryNeverCancelsTheSiblingArm(t *testing.T) {
 			broker.StartCloseSync(at.id, "fixture", "ninjatrader", st)
 			at.trader = broker
 			at.config.NinjaTraderSymbol = "MNQ"
-			now := time.Now()
+			// class 110: pinned to RTH — the admission chain reads THIS clock.
+			now := rthInstant()
 			s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
 			ledger := st.ArmedOrders()
 			stop := store.ArmedOrderDB{TraderID: at.id, PlanID: "latch", Scenario: "S1", Version: 1, State: "armed",
