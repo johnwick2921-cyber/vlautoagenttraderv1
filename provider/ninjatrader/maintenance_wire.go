@@ -86,14 +86,16 @@ func (s *TCPServer) ConnectionRecord() (ConnectionRecord, bool) {
 		rec.Hello = &h
 	}
 	if rec.Ack != nil {
+		// A deep copy that keeps nil nil AND [] [] (absent ≠ [] both ways —
+		// append([]T(nil), empty...) would turn an enumerated [] into "absent").
 		a := *rec.Ack
-		a.Connections = append([]CensusConnection(nil), rec.Ack.Connections...)
-		a.Accounts = append([]CensusAccount(nil), rec.Ack.Accounts...)
-		if rec.Ack.Connections == nil {
-			a.Connections = nil
+		if rec.Ack.Connections != nil {
+			a.Connections = make([]CensusConnection, len(rec.Ack.Connections))
+			copy(a.Connections, rec.Ack.Connections)
 		}
-		if rec.Ack.Accounts == nil {
-			a.Accounts = nil
+		if rec.Ack.Accounts != nil {
+			a.Accounts = make([]CensusAccount, len(rec.Ack.Accounts))
+			copy(a.Accounts, rec.Ack.Accounts)
 		}
 		rec.Ack = &a
 	}

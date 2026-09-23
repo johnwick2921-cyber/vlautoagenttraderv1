@@ -298,3 +298,36 @@ func TestMaintenanceFrameIsSentAtAcceptNotOnlyByThePoll(t *testing.T) {
 		t.Fatalf("want held job-accept, got %+v", p)
 	}
 }
+
+// M2.1 (review item a) — an ENUMERATED empty census list is [] on the record,
+// never nil: absent ≠ [] in BOTH directions. ConnectionRecord's copy used
+// append([]T(nil), empty...), which is nil — so the gate read a census the
+// AddOn DID take as "not enumerated".
+func TestConnectionRecordKeepsAnEnumeratedEmptyCensusEmpty(t *testing.T) {
+	s := startedServer(t, nil)
+	w := dialWire(t, s, HelloPayload{})
+	body := []byte(`{"held":true,"job_id":"j","queued_commands":0,"connections":[],"accounts":[]}`)
+	var ack MaintenanceAckPayload
+	if err := json.Unmarshal(body, &ack); err != nil {
+		t.Fatal(err)
+	}
+	if ack.Connections == nil || ack.Accounts == nil {
+		t.Fatal("fixture: [] must decode non-nil")
+	}
+	if err := WriteFrame(w.conn, FrameMaintenanceAck, ack); err != nil {
+		t.Fatal(err)
+	}
+	var rec ConnectionRecord
+	for i := 0; i < 200; i++ {
+		if rec, _ = s.ConnectionRecord(); rec.Ack != nil {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if rec.Ack == nil {
+		t.Fatal("ack not recorded")
+	}
+	if rec.Ack.Connections == nil || rec.Ack.Accounts == nil {
+		t.Fatalf("an enumerated empty census must stay [] (not nil = not enumerated): connections=%v accounts=%v", rec.Ack.Connections == nil, rec.Ack.Accounts == nil)
+	}
+}
