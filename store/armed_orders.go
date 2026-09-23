@@ -441,8 +441,12 @@ func (s *ArmedOrderStore) SetState(id int64, state, reason string) error {
 // job's rows by that head) lost the row the moment its cancel progressed.
 // The store now owns the rule: a row whose reason starts with the withdraw
 // prefix keeps it, and each later reason is appended after the separator —
-// an audit trail bounded by the cancel-attempt cap. Plain SQL (CASE, LIKE,
-// ||) so it holds on both store dialects.
+// an audit trail with a named bound: at most CANCEL_REREQUEST_MAX re-request
+// appends per process boot (default 5; RequestCancel restarts the count on a
+// new boot, B2, so N boots allow N×5) plus one terminal write (the
+// order_update, the snapshot confirm or a placement receipt) — each append a
+// few dozen bytes. Plain SQL (CASE, LIKE, ||) so it holds on both store
+// dialects.
 const (
 	WithdrawReasonPrefix = "withdraw: "
 	WithdrawReasonSep    = " ‖ "
