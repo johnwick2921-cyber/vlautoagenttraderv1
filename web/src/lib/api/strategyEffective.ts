@@ -79,3 +79,32 @@ export function effectiveByPath(
   for (const k of resp?.settings ?? []) out[k.path] = k
   return out
 }
+
+/** What the Studio editors read. `byPath` holds the strategy-level rows (the
+ *  fetch WITHOUT ?session=, so a strategy row is never answered with one
+ *  session's override); `bySession[S]` holds the rows fetched with ?session=S,
+ *  which is where the per-session `day_plan.sessions.<leaf>` rows are answered.
+ *  A session missing from `bySession` was not fetched or failed — its rows
+ *  render no chip, never a borrowed value. */
+export interface StudioEffective {
+  byPath: EffectiveByPath
+  bySession: Partial<Record<string, EffectiveByPath>>
+}
+
+/** Builds the editors' lookup from the four responses. A response answers a
+ *  session only when the server says it resolved THAT session (its `session`
+ *  field); the strategy-level map only takes a session-less reply. A reply for
+ *  the wrong scope fills nothing — no chip beats a chip from another scope. */
+export function studioEffective(
+  base: StrategyEffectiveResponse | null | undefined,
+  sessions: Record<string, StrategyEffectiveResponse | null | undefined>
+): StudioEffective {
+  const bySession: Partial<Record<string, EffectiveByPath>> = {}
+  for (const [name, resp] of Object.entries(sessions)) {
+    if (resp && resp.session === name) bySession[name] = effectiveByPath(resp)
+  }
+  return {
+    byPath: base && base.session == null ? effectiveByPath(base) : {},
+    bySession,
+  }
+}

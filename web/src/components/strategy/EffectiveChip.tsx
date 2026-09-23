@@ -10,6 +10,11 @@ import type { EffectiveKnob } from '../../lib/api/strategyEffective'
 
 const REDACTED = 'redacted'
 
+/** The server resolves the SAVED strategy row, never the form. Every chip says
+ *  so in its title; EffectiveSavedNote says it once per editor. */
+export const SAVED_CONFIG_TITLE =
+  'saved strategy config — unsaved edits apply after Save'
+
 function isNA(v: unknown): v is string {
   return typeof v === 'string' && v.startsWith('n/a')
 }
@@ -69,9 +74,62 @@ export function EffectiveChip({ knob }: { knob?: EffectiveKnob | null }) {
       data-testid="effective-chip"
       data-path={knob.path}
       className={`text-[10px] font-mono ${tone(knob)}`}
-      title={`${storedTitle(knob)} · resolver: ${knob.resolver}`}
+      title={`${SAVED_CONFIG_TITLE} · ${storedTitle(knob)} · resolver: ${knob.resolver}`}
     >
       {text}
     </span>
+  )
+}
+
+/** The chip on its own line under a settings row, with an optional short
+ *  label when one card carries several rows (e.g. a guardrail's switch and its
+ *  value). No row → renders NOTHING, not an empty line (L7: absent is not a
+ *  value). */
+export function EffectiveLine({
+  knob,
+  label,
+  className = 'mt-1',
+}: {
+  knob?: EffectiveKnob | null
+  label?: string
+  className?: string
+}) {
+  if (!knob) return null
+  return (
+    <div
+      data-testid="effective-line"
+      className={`flex flex-wrap items-baseline gap-1 ${className}`}
+    >
+      {label && <span className="text-[10px] text-slate-500">{label}:</span>}
+      <EffectiveChip knob={knob} />
+    </div>
+  )
+}
+
+/** The bare effective value the server resolved, for a summary that prints a
+ *  number inside its own sentence (e.g. the futures risk panel). null when the
+ *  row is absent, not known ("n/a …") or redacted — the caller prints n/a,
+ *  never a literal fallback. */
+export function effectiveValueText(knob?: EffectiveKnob | null): string | null {
+  if (!knob || isNA(knob.effective) || knob.effective === REDACTED) return null
+  return formatEffective(knob.effective)
+}
+
+const SAVED_NOTE: Record<string, string> = {
+  en: 'eff = the value the running bot uses, read from the SAVED strategy (value · origin · scope). Unsaved edits show here after Save.',
+  zh: 'eff = 运行中的机器人实际使用的值，读自【已保存】的策略（值 · 来源 · 作用域）。未保存的修改在保存后显示。',
+  id: 'eff = nilai yang dipakai bot yang berjalan, dibaca dari strategi TERSIMPAN (nilai · asal · cakupan). Perubahan yang belum disimpan tampil setelah Simpan.',
+}
+
+/** One line per editor: the chips read the saved strategy, not the form. */
+export function EffectiveSavedNote({ language }: { language: string }) {
+  return (
+    <p
+      data-testid="effective-saved-note"
+      className="text-[10px] font-mono text-slate-500"
+      title={SAVED_CONFIG_TITLE}
+    >
+      {SAVED_NOTE[language] ?? SAVED_NOTE.en}
+    </p>
   )
 }

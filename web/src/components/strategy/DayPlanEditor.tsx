@@ -16,13 +16,25 @@ import {
   londonDSTWarning,
   type SessionName,
 } from '../plan/sessionConfig'
+import type {
+  EffectiveKnob,
+  StudioEffective,
+} from '../../lib/api/strategyEffective'
+import { EffectiveLine, EffectiveSavedNote } from './EffectiveChip'
 
 interface Props {
   config?: DayPlanConfig
   onChange: (config: DayPlanConfig) => void
   disabled?: boolean
   language: Language
+  // W1 (g) — the server's effective rows for the SAVED strategy: strategy-level
+  // rows from the session-less read, `day_plan.sessions.<leaf>` rows from the
+  // read that named that session. Optional: absent → no chips.
+  effective?: StudioEffective
 }
+
+const DP_PATH = 'day_plan.'
+const DP_SESSION_PATH = 'day_plan.sessions.'
 
 // Mirror of Go DefaultDayPlanConfig() — enabling the master switch materializes
 // this whole block so a first-time save writes the spec defaults.
@@ -218,14 +230,17 @@ function NumField({
   placeholder,
   onChange,
   disabled,
+  knob,
 }: {
   label: string
   value?: number
   placeholder: string
   onChange: (v: number | undefined) => void
   disabled?: boolean
+  /** W1 (g) — the server's effective row; absent → the field renders as before */
+  knob?: EffectiveKnob | null
 }) {
-  return (
+  const field = (
     <label
       className="flex items-center justify-between gap-3 py-1.5 text-[11px]"
       style={{ color: 'var(--vl-muted)' }}
@@ -252,16 +267,27 @@ function NumField({
       />
     </label>
   )
+  if (!knob) return field
+  return (
+    <div>
+      {field}
+      <EffectiveLine knob={knob} className="-mt-1 justify-end" />
+    </div>
+  )
 }
 
 function FieldRow({
   label,
   children,
+  knob,
 }: {
   label: string
   children: React.ReactNode
+  /** W1 (g) — the server's effective row, rendered UNDER the row. Absent → the
+   *  row renders exactly as before (nothing extra). */
+  knob?: EffectiveKnob | null
 }) {
-  return (
+  const row = (
     <div className="flex items-center justify-between gap-3 py-1.5">
       <span
         className="text-[11px]"
@@ -270,6 +296,13 @@ function FieldRow({
         {label}
       </span>
       <div className="flex items-center gap-2">{children}</div>
+    </div>
+  )
+  if (!knob) return row
+  return (
+    <div>
+      {row}
+      <EffectiveLine knob={knob} className="-mt-1 pb-1 justify-end" />
     </div>
   )
 }
@@ -318,8 +351,19 @@ function migrateEqualOverrides(config?: DayPlanConfig): DayPlanConfig {
   return changed ? { ...base, sessions } : base
 }
 
-export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
+export function DayPlanEditor({
+  config,
+  onChange,
+  disabled,
+  language,
+  effective,
+}: Props) {
   const cfg = migrateEqualOverrides(config ?? DEFAULT_DAY_PLAN)
+  // W1 (g) — strategy-level rows come from the session-less read; per-session
+  // rows from the read for THAT session. No row → no chip.
+  const dpEff = (leaf: string) => effective?.byPath[DP_PATH + leaf]
+  const sessEff = (s: SessionName, leaf: string) =>
+    effective?.bySession[s]?.[DP_SESSION_PATH + leaf]
   const enabled = cfg.plan_enabled === true
   const [openSession, setOpenSession] = useState<SessionName | null>('NY')
 
@@ -412,6 +456,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
       className="flex flex-col gap-2"
       style={{ fontFamily: 'var(--vl-font-ui)' }}
     >
+      {effective && <EffectiveSavedNote language={language} />}
       {/* master switch */}
       <label className="text-sm p-2">
         {language === 'zh'
@@ -435,7 +480,14 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
           }
         />
       </label>
-      <FieldRow label={tp('enableDayPlan', language)}>
+      <EffectiveLine
+        knob={dpEff('structural_stop.buffer_points')}
+        className="-mt-2 px-2"
+      />
+      <FieldRow
+        label={tp('enableDayPlan', language)}
+        knob={dpEff('plan_enabled')}
+      >
         <Toggle
           on={enabled}
           onChange={(v) => update('plan_enabled', v)}
@@ -466,7 +518,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
         </FieldRow>
 
         {/* plan mode segmented */}
-        <FieldRow label={tp('planMode', language)}>
+        <FieldRow label={tp('planMode', language)} knob={dpEff('plan_mode')}>
           <Segmented
             options={MODE_OPTS(language)}
             value={cfg.plan_mode ?? 'advisory'}
@@ -528,6 +580,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               )
             })}
           </div>
+          <EffectiveLine knob={dpEff('planner_timeframes')} />
         </div>
 
         {/* one-line regime (read-only, AUTO — auto-computed, not a setting) */}
@@ -552,7 +605,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
           >
             {tp('filters', language)}
           </span>
-          <FieldRow label={tp('proximity', language)}>
+          <FieldRow
+            label={tp('proximity', language)}
+            knob={dpEff('proximity_filter_atr')}
+          >
             <input
               type="range"
               min={0.1}
@@ -572,7 +628,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               {(cfg.proximity_filter_atr ?? 1.5).toFixed(1)}×
             </span>
           </FieldRow>
-          <FieldRow label={tp('maxLevels', language)}>
+          <FieldRow
+            label={tp('maxLevels', language)}
+            knob={dpEff('max_levels')}
+          >
             <NumberField
               value={cfg.max_levels ?? 8}
               min={3}
@@ -581,7 +640,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               disabled={bodyDisabled}
             />
           </FieldRow>
-          <FieldRow label={tp('htfSeats', language)}>
+          <FieldRow label={tp('htfSeats', language)} knob={dpEff('htf_seats')}>
             <NumberField
               value={cfg.htf_seats ?? 2}
               min={0}
@@ -598,7 +657,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               wake toggles (one switch below), Min wake interval (30 unless
               stored), 1h seat guarantee (unconditional). Stored values pass
               through untouched on save. */}
-          <FieldRow label={tp('flipReread', language)}>
+          <FieldRow
+            label={tp('flipReread', language)}
+            knob={dpEff('flip_reread')}
+          >
             <Toggle
               on={cfg.flip_reread === true}
               onChange={(v) => update('flip_reread', v)}
@@ -608,7 +670,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
           </FieldRow>
           {/* W-DEATH-REREAD (2026-09-18) — default ON: the toggle reads ON
               unless the strategy saved an explicit false. */}
-          <FieldRow label={tp('deathReread', language)}>
+          <FieldRow
+            label={tp('deathReread', language)}
+            knob={dpEff('death_reread')}
+          >
             <Toggle
               on={cfg.death_reread !== false}
               onChange={(v) => update('death_reread', v)}
@@ -616,7 +681,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               testId="death-reread-toggle"
             />
           </FieldRow>
-          <FieldRow label={tp('t1Currencies', language)}>
+          <FieldRow
+            label={tp('t1Currencies', language)}
+            knob={dpEff('t1_currencies')}
+          >
             <input
               type="text"
               data-testid="t1-currencies-input"
@@ -640,7 +708,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
           {/* W1 (settings truth) — presence-aware: absent/null = the shipped
               default 2 (shown as an EMPTY box with an inherit placeholder, not
               a fake 2); 0 = no re-plan and is stored; clearing writes null. */}
-          <FieldRow label={tp('maxReplans', language)}>
+          <FieldRow
+            label={tp('maxReplans', language)}
+            knob={dpEff('replan_cap')}
+          >
             <NumberField
               value={cfg.replan_cap}
               min={0}
@@ -652,7 +723,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               testId="replan-cap-strategy"
             />
           </FieldRow>
-          <FieldRow label={tp('approval', language)}>
+          <FieldRow
+            label={tp('approval', language)}
+            knob={dpEff('approval_required')}
+          >
             <Toggle
               on={cfg.approval_required === true}
               onChange={(v) => update('approval_required', v)}
@@ -673,7 +747,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
             >
               {tp('wakeHeader', language)}
             </span>
-            <FieldRow label={tp('wakeOnLevelEvents', language)}>
+            <FieldRow
+              label={tp('wakeOnLevelEvents', language)}
+              knob={dpEff('wake_on_level_events')}
+            >
               <Toggle
                 on={cfg.wake_on_level_events !== false}
                 onChange={(v) => update('wake_on_level_events', v)}
@@ -681,7 +758,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                 testId="wake-on-level-events-toggle"
               />
             </FieldRow>
-            <FieldRow label={tp('minScenarioQuality', language)}>
+            <FieldRow
+              label={tp('minScenarioQuality', language)}
+              knob={dpEff('min_scenario_quality')}
+            >
               <Segmented
                 options={[
                   { key: 'A', label: 'A' },
@@ -695,7 +775,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
             </FieldRow>
             {/* ONE SETUP (dispatch 102) — arm only the single best reject (fade)
                 setup. Pointer-bool mirrors Go: absent = ON; grade floor B. */}
-            <FieldRow label={tp('oneSetup', language)}>
+            <FieldRow
+              label={tp('oneSetup', language)}
+              knob={dpEff('one_setup_enabled')}
+            >
               <Toggle
                 testId="one-setup-toggle"
                 on={cfg.one_setup_enabled !== false}
@@ -703,7 +786,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                 disabled={bodyDisabled}
               />
             </FieldRow>
-            <FieldRow label={tp('oneSetupMinGrade', language)}>
+            <FieldRow
+              label={tp('oneSetupMinGrade', language)}
+              knob={dpEff('one_setup_min_grade')}
+            >
               <Segmented
                 testId="one-setup-min-grade"
                 options={[
@@ -729,7 +815,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               >
                 {tp('pictureHtf', language)}
               </span>
-              <FieldRow label={tp('pictureHtfEnable', language)}>
+              <FieldRow
+                label={tp('pictureHtfEnable', language)}
+                knob={dpEff('picture_htf.enabled')}
+              >
                 <Toggle
                   testId="picture-htf-toggle"
                   on={cfg.picture_htf?.enabled === true}
@@ -746,6 +835,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                 <div className="flex flex-col gap-2 ml-1">
                   <NumField
                     label={tp('pictureTickSize', language)}
+                    knob={dpEff('picture_htf.tick_size')}
                     value={cfg.picture_htf?.tick_size}
                     placeholder="0.25"
                     onChange={(v) =>
@@ -758,6 +848,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                   />
                   <NumField
                     label={tp('picturePivotWindow', language)}
+                    knob={dpEff('picture_htf.pivot_window')}
                     value={cfg.picture_htf?.pivot_window}
                     placeholder="120"
                     onChange={(v) =>
@@ -770,6 +861,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                   />
                   <NumField
                     label={tp('pictureSwingLookback', language)}
+                    knob={dpEff('picture_htf.swing_lookback')}
                     value={cfg.picture_htf?.swing_lookback}
                     placeholder="24"
                     onChange={(v) =>
@@ -782,6 +874,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                   />
                   <NumField
                     label={tp('pictureEntryWindowSec', language)}
+                    knob={dpEff('picture_htf.entry_window_sec')}
                     value={cfg.picture_htf?.entry_window_sec}
                     placeholder="10"
                     onChange={(v) =>
@@ -794,6 +887,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                   />
                   <NumField
                     label={tp('pictureFreshnessSec', language)}
+                    knob={dpEff('picture_htf.freshness_sec')}
                     value={cfg.picture_htf?.freshness_sec}
                     placeholder="2"
                     onChange={(v) =>
@@ -806,6 +900,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                   />
                   <NumField
                     label={tp('pictureMinRR', language)}
+                    knob={dpEff('picture_htf.min_rr')}
                     value={cfg.picture_htf?.min_rr}
                     placeholder="inherit"
                     onChange={(v) =>
@@ -895,6 +990,10 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                     </span>
                   </button>
                 </div>
+                <EffectiveLine
+                  knob={sessEff(s, 'enable')}
+                  className="-mt-1 px-2.5 pb-1"
+                />
                 {isOpen && (
                   <div className="px-2.5 pb-2 flex flex-col gap-1">
                     {/* ACTIVE windows (killzones, spec wording) */}
@@ -936,6 +1035,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                       label={tp('minGrade', language)}
                       overridden={ov?.min_grade !== undefined}
                       language={language}
+                      knob={sessEff(s, 'min_grade')}
                     >
                       <Segmented
                         testId={`session-min-grade-${s}`}
@@ -958,6 +1058,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                       label={tp('minScenarioQuality', language)}
                       overridden={ov?.min_scenario_quality !== undefined}
                       language={language}
+                      knob={sessEff(s, 'min_scenario_quality')}
                     >
                       <Segmented
                         testId={`session-quality-${s}`}
@@ -980,6 +1081,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                       label={tp('maxTrades', language)}
                       overridden={ov?.max_trades !== undefined}
                       language={language}
+                      knob={sessEff(s, 'max_trades')}
                     >
                       <div className="flex items-center gap-1">
                         <Segmented
@@ -1018,6 +1120,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                       label={tp('planMode', language)}
                       overridden={ov?.plan_mode !== undefined}
                       language={language}
+                      knob={sessEff(s, 'plan_mode')}
                     >
                       <Segmented
                         testId={`session-plan-mode-${s}`}
@@ -1051,6 +1154,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                       }
                       disabled={bodyDisabled}
                       language={language}
+                      knob={sessEff(s, 'replan_cap')}
                     >
                       <NumberField
                         value={ov?.replan_cap}
@@ -1080,13 +1184,16 @@ function TriStateRow({
   overridden,
   language,
   children,
+  knob,
 }: {
   label: string
   overridden: boolean
   language: Language
   children: React.ReactNode
+  /** W1 (g) — the per-session effective row; absent → nothing extra */
+  knob?: EffectiveKnob | null
 }) {
-  return (
+  const row = (
     <div className="flex items-center justify-between gap-2 py-1">
       <span
         className="inline-flex items-center gap-1.5 text-[11px]"
@@ -1099,6 +1206,13 @@ function TriStateRow({
       <div className="flex items-center gap-1">{children}</div>
     </div>
   )
+  if (!knob) return row
+  return (
+    <div>
+      {row}
+      <EffectiveLine knob={knob} className="-mt-0.5 pb-1 justify-end" />
+    </div>
+  )
 }
 
 // ⚪ inherit / 🔸 override chip + (when overridden) the inline control.
@@ -1109,6 +1223,7 @@ function OverrideRow({
   disabled,
   language,
   children,
+  knob,
 }: {
   label: string
   overridden: boolean
@@ -1116,8 +1231,11 @@ function OverrideRow({
   disabled?: boolean
   language: Language
   children: React.ReactNode
+  /** W1 (g) — the per-session effective row, shown whether or not the row is
+   *  overridden (an inheriting row still has an effective value). */
+  knob?: EffectiveKnob | null
 }) {
-  return (
+  const row = (
     <div className="flex items-center justify-between gap-2 py-1">
       <button
         onClick={() => !disabled && onToggle(!overridden)}
@@ -1130,6 +1248,13 @@ function OverrideRow({
         <span>{label}</span>
       </button>
       {overridden && <div className="flex items-center gap-1">{children}</div>}
+    </div>
+  )
+  if (!knob) return row
+  return (
+    <div>
+      {row}
+      <EffectiveLine knob={knob} className="-mt-0.5 pb-1 justify-end" />
     </div>
   )
 }
