@@ -3,14 +3,17 @@ package trader
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"nofx/hook"
 	"nofx/kernel"
 	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
@@ -71,9 +74,22 @@ import (
 // (session window, last-entry, contract roll, EntryGate at the live price) are
 // not the D10 surface; driving it would make these tests depend on the wall
 // clock. The send half (reconcileBeforeOpenNT → positions → OpenLong/Short) is
-// exactly the part D10 names. (Its market read, GetWithExchange, also makes
-// the futures branch's two outbound OI/funding HTTP calls — non-fatal, and
-// not stubbed here.)
+// exactly the part D10 names.
+//
+// NO NETWORK. The send half's market read, market.GetWithExchange, also makes
+// two outbound HTTPS calls on the futures branch — getOpenInterestData
+// (market/data.go:130) and getFundingRate (:137), each to fapi.binance.com
+// with a 30 s client timeout (market/api_client.go:24). Production treats a
+// failure there as non-fatal, but a route that HANGS spends up to 60 s of the
+// fixture's 60 s budgets (the latch's book-age bound, snapshotMaxAge = 2 x
+// the 30 s snapshot period, and the server's TCPHeartbeatAckTimeout, which the
+// never-acking fake AddOn hits), and those tests then fail on the budget, not
+// on D10. So
+// newDupWire stubs every client market.NewAPIClient builds, through its own
+// seam (hook.SET_HTTP_CLIENT, market/api_client.go:27), with a RoundTripper
+// that fails at once — the production "OI/funding unavailable" branch, taken
+// in microseconds — and restores the previous hook in t.Cleanup. Removing
+// those calls for futures is a production change for its own wave.
 //
 // THE RACES. Picture runs on the live-bar goroutine, concurrently with the
 // cycle (armed pass, AI decision); the agent-chat and debug doors are other
@@ -175,6 +191,7 @@ type dupLink struct {
 	at     *AutoTrader
 	eval   *PictureHtfEvaluator
 	frames *dupFrames
+	born   time.Time // wall instant the link came up (its book seed); diagnostics
 }
 
 type dupWire struct {
@@ -185,6 +202,7 @@ type dupWire struct {
 	armNow time.Time
 	picNow time.Time
 	links  []*dupLink
+	net    *dupOffline
 }
 
 const dupTraderID = "dup-seq-trader"
@@ -194,8 +212,63 @@ var (
 	dupArmNow = time.Date(2026, time.September, 15, 15, 0, 0, 0, time.UTC) // Tue 10:00 CT, after picNow
 )
 
+// errDupOffline is what every outbound HTTP request made under the fixture
+// gets back, at once.
+var errDupOffline = errors.New("dup fixture: outbound HTTP is stubbed offline")
+
+// dupOffline is the RoundTripper behind every client market.NewAPIClient
+// builds while a dup fixture is up. It never dials: it records the host and
+// fails immediately.
+type dupOffline struct {
+	mu    sync.Mutex
+	hosts []string
+}
+
+func (o *dupOffline) RoundTrip(r *http.Request) (*http.Response, error) {
+	o.mu.Lock()
+	o.hosts = append(o.hosts, r.URL.Host)
+	o.mu.Unlock()
+	return nil, errDupOffline
+}
+
+func (o *dupOffline) seen() []string {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return append([]string(nil), o.hosts...)
+}
+
+// stubOutboundHTTP installs dupOffline through market's own client seam
+// (hook.SET_HTTP_CLIENT, consulted by market.NewAPIClient on every call) for
+// the test's lifetime, and restores whatever was registered before — nested
+// fixtures (S5's rounds) unwind in t.Cleanup's LIFO order. It is registered
+// FIRST in newDupWire so it is restored LAST, after every server and producer
+// of the fixture has stopped.
+func stubOutboundHTTP(t *testing.T) *dupOffline {
+	t.Helper()
+	o := &dupOffline{}
+	prev, had := hook.Hooks[hook.SET_HTTP_CLIENT]
+	prevEnabled := hook.EnableHooks
+	hook.EnableHooks = true
+	hook.RegisterHook(hook.SET_HTTP_CLIENT, func(args ...any) any {
+		return &hook.SetHttpClientResult{Client: &http.Client{Transport: o, Timeout: time.Second}}
+	})
+	t.Cleanup(func() {
+		if had {
+			hook.Hooks[hook.SET_HTTP_CLIENT] = prev
+		} else {
+			delete(hook.Hooks, hook.SET_HTTP_CLIENT)
+		}
+		hook.EnableHooks = prevEnabled
+		if hosts := o.seen(); len(hosts) > 0 {
+			t.Logf("dup fixture: %d outbound HTTP request(s) answered offline by the stub: %v", len(hosts), hosts)
+		}
+	})
+	return o
+}
+
 func newDupWire(t *testing.T) *dupWire {
 	t.Helper()
+	offline := stubOutboundHTTP(t) // first: restored last
 	withMaintenanceDir(t)
 	pcfg := store.PictureHtfConfig{Enabled: true, MinRR: 2.5}
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, PictureHtf: &pcfg}}
@@ -203,7 +276,7 @@ func newDupWire(t *testing.T) *dupWire {
 	structuralTestPolicy(&cfg, .5)
 	cfg.RiskControl.MinRiskRewardRatio = 2
 	at, st := resetTrader(t, cfg)
-	w := &dupWire{t: t, st: st, cfg: at.config.StrategyConfig, pcfg: pcfg, armNow: dupArmNow, picNow: dupPicNow}
+	w := &dupWire{t: t, st: st, cfg: at.config.StrategyConfig, pcfg: pcfg, armNow: dupArmNow, picNow: dupPicNow, net: offline}
 
 	// ONE bar provider for every producer: the Picture tape on 4h/1h/5m (the AI
 	// open's market read uses 5m/1h too) and the arm's 1m tape near 100 at armNow.
@@ -295,10 +368,15 @@ func (w *dupWire) link(at *AutoTrader) *dupLink {
 	if !nt.EntryLatchWired() {
 		t.Fatal("fixture: the entry latch must be wired as production wires it")
 	}
-	// The AddOn's periodic order snapshot: a flat, empty book on Sim101.
-	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, time.Now())
+	// The AddOn's periodic order snapshot: a flat, empty book on Sim101. Seeded
+	// once: every sequence must finish inside the latch's book-age bound
+	// (snapshotMaxAge) and the server's heartbeat-ack timeout (the fake AddOn
+	// never acks) — both 60 s at the defaults, which is why outbound HTTP is
+	// stubbed.
+	born := time.Now()
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, born)
 
-	return &dupLink{s: s, nt: nt, at: at, eval: NewPictureHtfEvaluator(at, store.PictureHtfResolved(&w.pcfg)), frames: frames}
+	return &dupLink{s: s, nt: nt, at: at, eval: NewPictureHtfEvaluator(at, store.PictureHtfResolved(&w.pcfg)), frames: frames, born: born}
 }
 
 // restart is a new process over the same store: a fresh AutoTrader (same id,
@@ -342,9 +420,9 @@ func (w *dupWire) expectFrames(step string, want int) {
 	diag := func() string {
 		var links []string
 		for i, l := range w.links {
-			links = append(links, fmt.Sprintf("link%d connected=%v queued=%d reader_err=%v", i, l.s.IsConnected(), l.s.PendingSignalCount(), l.frames.readErr()))
+			links = append(links, fmt.Sprintf("link%d age=%s connected=%v queued=%d reader_err=%v", i, time.Since(l.born).Round(time.Millisecond), l.s.IsConnected(), l.s.PendingSignalCount(), l.frames.readErr()))
 		}
-		return strings.Join(links, "; ")
+		return strings.Join(links, "; ") + fmt.Sprintf("; outbound HTTP stubbed: %v", w.net.seen())
 	}
 	for i, l := range w.links {
 		tag := fmt.Sprintf("dup-marker-%d", dupMarkerSeq.Add(1))
