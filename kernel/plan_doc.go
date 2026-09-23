@@ -153,6 +153,11 @@ type PlanArmSpec struct {
 	// the reason instead of a silent WARN. NULL on legacy rows and on every
 	// path where the arm was never judged.
 	DisabledReason string `json:"arm_disabled_reason,omitempty"`
+	// Policy (W3) — the entry policy: "market_in_zone" | "planned_order".
+	// Absent = LEGACY (today's arm kinds, byte-identical). A newly authored
+	// plan is stamped with day_plan.entry_policy_default at parse; a stored
+	// doc is never stamped. A leg's own Policy overrides this one.
+	Policy string `json:"policy,omitempty"`
 }
 
 // PlanArmLeg is one child order of a split arm.
@@ -164,6 +169,7 @@ type PlanArmLeg struct {
 	WaitConfirm bool    `json:"wait_confirm,omitempty"` // leg chains on its confirm rule before placement
 	Rule        string  `json:"rule,omitempty"`         // the confirm rule the leg chains on (1m_mss | 1x5m_close)
 	Kind        string  `json:"kind,omitempty"`         // limit (default) | stop_entry (E7)
+	Policy      string  `json:"policy,omitempty"`       // W3: overrides PlanArmSpec.Policy for this leg
 }
 
 // ArmSpecValid checks the arming contract of one scenario. ok=false with a
