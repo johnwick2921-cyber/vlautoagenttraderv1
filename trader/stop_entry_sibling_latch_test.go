@@ -99,7 +99,7 @@ func TestUnsentStopEntryNeverCancelsTheSiblingArm(t *testing.T) {
 				}
 			}
 
-			at.runArmedPlacementAt([]market.Kline{{Close: tc.price}}, now.Add(-time.Hour).UnixMilli(), now)
+			at.runArmedPlacementAt([]market.Kline{{Close: tc.price}}, now.Add(-time.Hour).UnixMilli(), now, nil)
 
 			gotSignal := false
 			deadline := time.After(300 * time.Millisecond)

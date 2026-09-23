@@ -67,7 +67,7 @@ func TestStopEntryHoldRefusalNeverCancelsTheSiblingArm(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now)
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now, nil)
 
 	for _, r := range []store.ArmedOrderDB{stop, sibling} {
 		var got store.ArmedOrderDB

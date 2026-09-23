@@ -372,6 +372,12 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 	// whose scenario is currently declined is retired here, before D4's slot
 	// check and before the placement pass — never placed. OFF → no-op.
 	at.oneSetupRetireDeclined(osCycle, plan, ledger, now)
+	// W-EXEC-TRUTH W0 (G1) — the legs THIS pass's authoring gates admitted.
+	// The placement below places only these: a leg a gate refused this pass
+	// (daily force-flat, invalidation, strict, R:R, min-SL, HTF veto, quality,
+	// an unmet wait_confirm, a kind refusal, split capacity…) stays armed and
+	// is NOT placed — it was, by any later pass, before this wave.
+	admitted := armAdmission{}
 	for _, sc := range kernel.OneSetupOrder(doc.Scenarios, osCycle.allowed()) {
 		if sc.Arm == nil || !sc.Arm.Enabled {
 			continue
@@ -777,6 +783,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 				continue
 			}
 
+			admitted.admit(plan.PlanID, sc.ID, li) // G1: every authoring gate passed THIS pass
 			if geometry != nil {
 				geometry.Quantity = 1
 				geometry.Reason = "admitted"
@@ -888,7 +895,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 
 	// PHASE 2 — placement engine (armed → working within the tick band), wire
 	// cancel/modify, and the order_update event machine.
-	at.runArmedPlacementAt(bars, plan.BirthMs, now)
+	at.runArmedPlacementAt(bars, plan.BirthMs, now, admitted)
 }
 
 // biasDirectionFor normalizes the plan bias direction ("" → empty).
@@ -1175,10 +1182,14 @@ func (at *AutoTrader) armedLines() string {
 // lint stayed green across the whole failure: a seam is only as deep as the
 // chain that honours it.
 func (at *AutoTrader) runArmedPlacement(bars []market.Kline, sinceMs int64) {
-	at.runArmedPlacementAt(bars, sinceMs, time.Now())
+	at.runArmedPlacementAt(bars, sinceMs, time.Now(), nil)
 }
 
-func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, now time.Time) {
+// runArmedPlacementAt places the armed rows. admitted is the authoring pass's
+// verdict for THIS pass (W-EXEC-TRUTH W0 G1): only a leg in it is placed. nil
+// means no authoring pass stands in front of this call (a direct caller); the
+// production caller, maybeManageArmedOrdersAt, always passes its set (pinned).
+func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, now time.Time, admitted armAdmission) {
 	nt := at.armedTrader()
 	if nt == nil {
 		return
@@ -1268,6 +1279,9 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 					at.refuseMaintenanceHold(r, holdReason, "stop-entry", now, nil)
 					continue
 				}
+				if !at.armAdmitted(r, side, price, now, admitted) {
+					continue // a refusal, never a cancellation — the row stays armed
+				}
 				if !contract.Allowed() || placedThisPass {
 					at.refuseContract(r, contract, placedThisPass, "stop", now)
 					continue
@@ -1308,6 +1322,9 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				if held {
 					at.refuseMaintenanceHold(r, holdReason, "limit", now, nil)
 					continue
+				}
+				if !at.armAdmitted(r, side, price, now, admitted) {
+					continue // a refusal, never a cancellation — the row stays armed
 				}
 				if !contract.Allowed() || placedThisPass {
 					at.refuseContract(r, contract, placedThisPass, "limit", now)
