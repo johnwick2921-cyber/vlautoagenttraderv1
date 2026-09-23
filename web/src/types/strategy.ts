@@ -153,6 +153,23 @@ export interface DayPlanConfig {
    *  window 120, swing lookback 24, entry window 10s, freshness 2s); min_rr
    *  blank inherits the strategy's risk-control minimum. */
   picture_htf?: PictureHtfConfig
+  /** W-EXEC-TRUTH W3 (2026-09-23) — the entry policy stamped on every arm of a
+   *  NEWLY authored plan: market_in_zone (absent = the shipped default) — a
+   *  limit at the far edge of the planner's entry_zone; planned_order — the
+   *  resting order at the exact entry (reject / fvg_entry / sweep_reclaim leg
+   *  1 only); legacy — stamp nothing (the explicit off). A string, not a
+   *  union: Go resolves an unrecognised stored value to the default and names
+   *  it (ResolveEntryPolicyDefault), so the wire can carry one. */
+  entry_policy_default?: string
+  /** W3 — widest entry_zone (points) a market_in_zone arm may carry. Absent =
+   *  10. Pointer semantics mirror Go: absent ≠ 0. */
+  zone_max_pts?: number
+  /** W3 — minutes a market_in_zone limit may rest before it is cancelled
+   *  ("zone rest expired"). Absent = 30. */
+  zone_rest_max_min?: number
+  /** W3 — floor (minutes) on the resolved hold of an ARMED market_in_zone
+   *  time_hold scenario, refused at write below it. Absent = 3. */
+  min_hold_min?: number
   sessions?: DayPlanSessionOverride[]
 }
 

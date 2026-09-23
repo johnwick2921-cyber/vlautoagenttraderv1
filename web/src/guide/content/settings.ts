@@ -8,11 +8,11 @@ const dayPlan: KnobSpec[] = [
   {
     label: 'Plan mode',
     where: 'Strategy → Day Plan → top',
-    what: 'How the plan constrains entries: ADVISORY informs · DIRECTION blocks against-bias entries · STRICT blocks anything not citing an armed scenario (and ALL entries with no plan).',
+    what: "How the plan constrains entries: ADVISORY informs · DIRECTION blocks against-bias entries · STRICT executes entries ONLY through armed plan scenarios (W3: the market_in_zone policy — a limit inside the planner's entry zone); an AI decision is refused as a market entry, and one that CITES a market_in_zone scenario is a nudge that runs that scenario's armed pass (placement only). No plan = no entries in direction/strict.",
     trader:
-      'Strict means no-plan = flat day — the plan is the law, not advice.',
+      'Strict means no-plan = flat day — the plan is the law, not advice. Since W3 the executor prompt\'s PLAN BLOCK header says exactly that under strict ("… off-plan is refused") instead of the advisory "a valid off-plan setup may still be traded".',
     consumer:
-      'store/resolve_source.go ResolvePlanMode — the one resolver (session override → strategy → advisory) · entry points store/strategy.go PlanModeFor and trader/auto_trader_planconfig.go planModeFor · direction block trader/auto_trader_planconfig.go planModeBlocked',
+      "store/resolve_source.go ResolvePlanMode — the one resolver (session override → strategy → advisory) · entry points store/strategy.go PlanModeFor and trader/auto_trader_planconfig.go planModeFor · direction block trader/auto_trader_planconfig.go planModeBlocked · executor header kernel/plan_render.go RenderPlanBlockForMode via setExecutorPlanContext (the plan's own session)",
     range: 'advisory | direction | strict',
     systemDefault: 'advisory',
     recommended:
@@ -35,7 +35,7 @@ const dayPlan: KnobSpec[] = [
     recommended:
       "⭐ ON — the owner's ruling of 2026-09-10; the less-contradicted side of round 17, not a proven one.",
     whenToTouch:
-      'Only to restore the wide book for a comparison; the boot line names the switch and its source.',
+      'Only to restore the wide book for a comparison; the boot line names the switch and its source. W3 PRECONDITION: with entry_policy_default=market_in_zone, ON declines every non-reject play (play_not_reject) — only reject arms can place; set it OFF to trade acceptance/hold/reclaim/waterfall arms under strict. The 🎛 entry law boot line WARNs while both are on.',
     perSession: 'No.',
   },
   {
@@ -243,6 +243,68 @@ const dayPlan: KnobSpec[] = [
       "⭐ ON. The verdicts reuse the executor's own functions, so the write site and the arm site cannot disagree.",
     whenToTouch:
       'OFF only to restore the old WARN-and-write behaviour while triaging; the boot line 🎛 entry law shows the resolved write_feas=on/off.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Entry policy default (W-EXEC-TRUTH W3)',
+    where: 'Strategy → Day Plan → entry_policy_default (API/config field)',
+    what: "The entry policy STAMPED at parse on every arm of a NEWLY authored plan (a stored plan is never re-stamped; an absent policy executes as legacy, byte-identical). market_in_zone: a LIMIT at the far edge of the planner's economics.entry_zone (buy → zone high, sell → zone low) — every condition is armable, a non-touch confirm chains (wait_confirm), the zone is judged at write. planned_order: the resting order at the exact entry, stamped only on reject / fvg_entry / sweep_reclaim leg 1 (elsewhere the arm stays legacy — an illegal policy is never stamped). legacy: stamp nothing — the planner prompt and the validator are the pre-W3 text byte-for-byte.",
+    trader:
+      'market_in_zone = "enter around the price": the plan names a small zone and the machine fills anywhere in it, never beyond it; acceptance, hold, reclaim and immediate waterfalls finally have a route under strict. The planner prompt carries ONE "ENTRY POLICY" sentence that follows this knob.',
+    consumer:
+      'store/resolve_source.go ResolveEntryPolicyDefault · trader/entry_policy_authoring.go plannerAuthoringOpts → kernel.ParsePlanDocForAuthoring (StampEntryPolicyDefault before ValidatePlanDocWithCaps) · kernel/planner_prompt.go PlannerInput.EntryPolicyDefault · trader/rootfix_shadow_ab.go (shadow parity)',
+    range:
+      'market_in_zone | planned_order | legacy (anything else → market_in_zone, named in the source)',
+    systemDefault: 'market_in_zone (R4)',
+    recommended:
+      '⭐ market_in_zone — the W3 ruling (R4); legacy only to reproduce pre-W3 plans for a comparison.',
+    whenToTouch:
+      'legacy to switch the whole policy off for new plans; the 🎛 entry law boot line prints the resolved value and its origin letter.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Zone max width (W3)',
+    where: 'Strategy → Day Plan → zone_max_pts (API/config field)',
+    what: 'The widest economics.entry_zone (points) a market_in_zone arm may carry, judged at write (not gated by write_time_feasibility). Wider → hinted ("S# entry zone: zone_too_wide — …"), then written with the arm disabled (arm_disabled_reason zone_too_wide) on the last attempt. The prompt states the resolved value.',
+    trader:
+      'Caps how far "around the price" may reach: with a 10-pt zone the worst fill is at most 10 pts from the best one, and the gates judge the worst (R:R at the far edge, stop distance at the near edge).',
+    consumer:
+      'store/resolve_source.go ResolveZoneMaxPts · trader/write_time_feasibility.go writeTimeZoneVerdicts → kernel.ArmZoneVerdict · kernel PlannerInput.ZoneMaxPts (prompt)',
+    range: '> 0 points (≤ 0 or unset → 10)',
+    systemDefault: '10',
+    recommended:
+      '⭐ 10 — the R2 ruling; a wider zone buys fills with worse worst-case R:R.',
+    whenToTouch:
+      'Only after the receipts show zones refused for width that would have traded well.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Zone rest cap (W3)',
+    where: 'Strategy → Day Plan → zone_rest_max_min (API/config field)',
+    what: 'A market_in_zone limit that has rested longer than this many minutes (measured from its placement) is cancelled "zone rest expired" by the executor — a zone the market walked away from is not left working forever.',
+    trader:
+      'The limit sits at the far edge of the zone; if price never comes back within the cap the order goes away rather than filling hours later in a different market.',
+    consumer:
+      'store/resolve_source.go ResolveZoneRestMaxMin · trader/armed_executor.go (the market_in_zone rest cap) · 🎛 entry law boot line',
+    range: '> 0 minutes (≤ 0 or unset → 30)',
+    systemDefault: '30',
+    recommended:
+      '⭐ 30 — the W3 default; there is no fill evidence yet to argue another number.',
+    whenToTouch: 'After the receipts (rest duration per fill) exist.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Armable hold floor (W3)',
+    where: 'Strategy → Day Plan → min_hold_min (API/config field)',
+    what: 'The floor (minutes) on the RESOLVED hold of an ARMED market_in_zone time_hold scenario (acceptance / hold): the stored confirm.hold_min, else the ACCEPT_HOLD_MIN authoring default. Below it the plan is refused at write with its own law ("armable hold floor: …") — an unarmed scenario or a legacy arm is never judged. New plans only.',
+    trader:
+      'Once acceptance and hold can arm, a 1–2 minute hold would place a limit on noise; the floor keeps the armed hold honest.',
+    consumer:
+      'store/resolve_source.go ResolveMinHoldMin · kernel/entry_policy.go ValidateArmableHoldFloor via kernel.ParsePlanDocForAuthoring · kernel PlannerInput.MinHoldMin (prompt)',
+    range: '> 0 minutes (≤ 0 or unset → 3)',
+    systemDefault: '3',
+    recommended: '⭐ 3 — the CTO ruling of 2026-09-23.',
+    whenToTouch: 'Only with evidence that shorter armed holds fill well.',
     perSession: 'No — strategy-level.',
   },
   {

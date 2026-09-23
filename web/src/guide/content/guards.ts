@@ -110,7 +110,7 @@ export const guards: GuideSection = {
         [
           'plan_mode direction/strict',
           'HARD',
-          'Refuses entries against plan bias (direction) or without a cited scenario (strict); no plan + direction/strict = no trades.',
+          'Refuses entries against plan bias (direction); under strict every decision-path entry is refused — entries execute ONLY through armed plan scenarios, and a decision that cites a market_in_zone scenario runs that scenario\'s armed pass (a nudge: placement only, the record still reads refused + " · 🚦 <verdict>"). No plan + direction/strict = no trades.',
         ],
         [
           'min_confidence',
@@ -193,7 +193,7 @@ export const guards: GuideSection = {
         },
         {
           title: 'no matched scenario cited (strict mode)',
-          body: "plan_mode=strict and the action didn't cite an armed S#. The plan is the law.",
+          body: "plan_mode=strict and the action didn't cite an armed S#. The plan is the law. Even a CITED decision is never a market entry under strict (entry_gate: refused: strict — … ARM path only): if the cited scenario is an enabled market_in_zone arm, the decision nudges one armed pass for it and the record carries the executor's verdict.",
           cite: 'trader/auto_trader_planconfig.go:206-249',
         },
         {
@@ -242,14 +242,14 @@ export const guards: GuideSection = {
         ],
         [
           'strict',
-          'Entries not citing an armed scenario; ANY entry with no active plan',
-          'Only on-plan, scenario-cited entries.',
+          'EVERY decision-path market entry; ANY entry with no active plan',
+          "Only armed plan scenarios (market_in_zone: a limit inside the planner's entry zone); a decision citing one is a nudge for its armed pass.",
         ],
       ],
     },
     {
       kind: 'p',
-      text: 'Strict\'s warning, plain: "no plan = no trades" — a fail-closed day in strict mode is a flat day, by design. Strict is the optional NY experiment. Per-session overrides exist (Strategy → Day Plan → Sessions).',
+      text: 'Strict\'s warning, plain: "no plan = no trades" — a fail-closed day in strict mode is a flat day, by design. Per-session overrides exist (Strategy → Day Plan → Sessions). Since W3 the executor prompt says the same thing the gate does: its PLAN BLOCK header renders the RESOLVED mode\'s rule for the plan\'s session — strict "entries execute ONLY through armed plan scenarios (market_in_zone policy); an AI decision is a nudge — cite the scenario; off-plan is refused", direction the bias rule, advisory the old "a valid off-plan setup may still be traded". Before W3 every mode read the advisory line (decision 45139 read it under strict while log 92685 refused the entry).',
     },
     { kind: 'h', text: 'Guardrails + SIM lock' },
     {
