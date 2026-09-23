@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -376,7 +377,9 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 		// row settles refused — provably unsent — instead of an ambiguous
 		// place_pending that blocks every later Picture entry and the
 		// installation gate.
-		if cur, ok, gerr := e.at.store.PictureHtfGet(oppKey); gerr == nil && ok && cur.SubmittedAt == 0 {
+		// An explicit "a write had started" (the hold's ambiguous drop) is
+		// evidence the other way and always stays pending.
+		if cur, ok, gerr := e.at.store.PictureHtfGet(oppKey); gerr == nil && ok && cur.SubmittedAt == 0 && !errors.Is(err, ntwire.ErrEntryDropAmbiguous) {
 			return e.refuse(oppKey, "refused", "never sent — "+err.Error(), stall)
 		}
 		// The send failed AFTER the stamp — the row stays place_pending and

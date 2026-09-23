@@ -47,17 +47,6 @@ func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, 
 		return fmt.Errorf("picture_htf: send refused — %s: %w", reason, ntTrader.ErrMaintenanceHold)
 	}
 
-	// --- Re-check 0b (W-EXEC-TRUTH W0 (a)): THE ONE ADMISSION GATE again,
-	// immediately before the wire, on the evidence the evaluator admitted it
-	// on. The row carries no submission stamp yet, so a refusal here is
-	// provably unsent and the evaluator settles it refused. ---
-	if refusal, refused := at.admitEntry(admitIntent{
-		Path: admitPicture, Symbol: row.Symbol, Action: "open_" + row.Direction, Now: now,
-		Key: row.OppKey, Price: row.EntryRef, Picture: e.pendingAdmission,
-	}); refused {
-		return fmt.Errorf("picture_htf: send refused — %s", refusal)
-	}
-
 	// --- Re-check 1: feed freshness at SEND time, not claim time (on the
 	// evaluation's clock — W-EXEC-TRUTH W0, class 60). ---
 	if now.Sub(e.freshest5mAt).Milliseconds() > int64(e.cfg.FreshnessSec)*1000 {
@@ -98,6 +87,16 @@ func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, 
 
 	// --- Re-check 4: sizing (1 contract, clamped by the strategy knob). ---
 	qty = pictureHtfContractSize(at)
+	// --- Re-check 5 (W-EXEC-TRUTH W0 (a)): THE ONE ADMISSION GATE again,
+	// immediately before the wire (after the send's own evidence checks above), on the evidence the evaluator admitted it
+	// on. The row carries no submission stamp yet, so a refusal here is
+	// provably unsent and the evaluator settles it refused. ---
+	if refusal, refused := at.admitEntry(admitIntent{
+		Path: admitPicture, Symbol: row.Symbol, Action: "open_" + row.Direction, Now: now,
+		Key: row.OppKey, Price: row.EntryRef, Picture: e.pendingAdmission,
+	}); refused {
+		return fmt.Errorf("picture_htf: send refused — %s", refusal)
+	}
 
 	// --- The send. beforeSend stamps the broker signal under the claim's
 	// ownership marker — a stamp is refused for a row this caller doesn't own.

@@ -24,9 +24,15 @@ type pictureHtfTestEnv struct {
 
 func newPictureHtfEnv(t *testing.T, cfg store.PictureHtfConfig) *pictureHtfTestEnv {
 	t.Helper()
-	sc := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PictureHtf: &cfg}}
+	// W-EXEC-TRUTH W0: Picture is admitted only while its trader RUNS and the
+	// Day Plan master is ON (admitEntry — it used to run regardless, D26), so
+	// the harness is a running trader with the master on.
+	sc := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PictureHtf: &cfg, PlanEnabled: true}}
 	sc.RiskControl.MinRiskRewardRatio = 2.5
 	at, st := resetTrader(t, sc)
+	at.isRunningMutex.Lock()
+	at.isRunning = true
+	at.isRunningMutex.Unlock()
 	eval := NewPictureHtfEvaluator(at, store.PictureHtfResolved(&cfg))
 	env := &pictureHtfTestEnv{t: t, at: at, st: st, eval: eval}
 	orig := pictureHtfSubmitSeam
@@ -405,6 +411,9 @@ func pictureBars5MShort(withSwing bool) []market.Kline {
 // below (90) as the target. The broken level can never become its own target.
 func TestPictureHtfEvaluatorMirroredShortEndToEnd(t *testing.T) {
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.0})
+	// W-EXEC-TRUTH W0 (Q7): the floor is max(knob, strategy floor) — this
+	// geometry test sets both to 2.0 (the harness default floor is 2.5).
+	env.at.config.StrategyConfig.RiskControl.MinRiskRewardRatio = 2.0
 	bars4h := pictureBars4HShort()
 	barsH1 := pictureBarsH1Short()
 	bars5m := pictureBars5MShort(true)
@@ -513,6 +522,13 @@ func TestPictureHtfAmbiguousSendStaysPending(t *testing.T) {
 	orig := pictureHtfSubmitSeam
 	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env.submits = append(env.submits, row.OppKey)
+		// The send STARTED (the stamp is written in beforeSend) and then
+		// failed — its fate is unknown, which is what makes it ambiguous
+		// (W-EXEC-TRUTH W0: a failure BEFORE the stamp is provably unsent and
+		// settles refused instead).
+		if err := e.at.store.PictureHtfStampSignal(row.OppKey, row.SignalID, "broker-ambiguous"); err != nil {
+			return err
+		}
 		return fmt.Errorf("send ambiguous — wire refused after the claim")
 	}
 	defer func() { pictureHtfSubmitSeam = orig }()
