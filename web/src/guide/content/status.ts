@@ -81,12 +81,26 @@ export const status: GuideSection = {
       kind: 'p',
       text: 'The three marked \u201cdeliberately not\u201d are listed with their reasons in the same file. An unexplained absence from a list is how the list stops being trusted, so the exclusions are written down beside the inclusions rather than left to be rediscovered.',
     },
+    { kind: 'h', text: 'The update hold (maintenance)' },
+    {
+      kind: 'p',
+      text: "When an update is about to replace the bot or the NinjaTrader AddOn, it first puts the whole installation on HOLD. The hold is one file (data/updater/hold.json). While it is present, no NEW entry is sent from anywhere: the AI's opens, armed orders, Picture HTF entries and new planner reads are all refused, and the NinjaTrader AddOn refuses new entries too. Everything that protects or closes a position keeps working: stops, targets, breakeven and trailing moves, cancels and closes. An arm that could not be placed stays armed and places once the hold clears. A Picture HTF opportunity seen during the hold is refused for good, because its entry window is only seconds long. A file that exists but cannot be read counts as held.",
+    },
+    {
+      kind: 'p',
+      text: "Resume does not lift the hold. It clears a trader's own pause and nothing else, and the log says new entries stay refused. Nothing in the web app or the API can write or clear the hold. Only the local operator tool (maintenance-hold set | status | clear) can, and from the one-button update, the updater itself. A plan reset or re-read is refused with 'an update is in progress — plan reads resume when it completes'.",
+    },
+    {
+      kind: 'p',
+      text: "Where to read it: the 🔒 maintenance boot line; GET /api/maintenance (held, job, since, sends still in flight, whether the bot has drained, and the AddOn's acknowledgement); and GET /api/installation-gate, the one verdict an update needs before it may continue. That gate checks every trader and every NinjaTrader account at once. It fails while any planner read is running, while any entry send or queued entry is in flight, while any trader is not a NinjaTrader TCP trader, while the AddOn has not acknowledged this hold, while any non-SIM connection is connected, and while any account holds a position or a working order of any kind. Any leg it cannot check counts as a failure. The gate-block table counts refusals as 'maintenance_hold'. An entry that was waiting in the reconnect queue when the hold landed is dropped, never sent later, and counted as 'maintenance_drop'. If a write of it had already started, it is counted as 'maintenance_drop_attempted' and stays pending until it is reconciled with NinjaTrader.",
+    },
     { kind: 'h', text: 'The boot ledger, line by line' },
     {
       kind: 'code',
       title: 'the lines printed at startup, in order',
       lines: [
         '🔐 BOOT INTEGRITY OK — rev <sha> [+dirty] · built <ts>',
+        '🔒 maintenance: hold=<clear|held|unreadable|unconfigured> job=<id|n/a> since=<time|n/a> addon_ack=<held|released job=<id> build=<id>|n/a> — the installation update hold, every field READ. addon_ack is n/a at startup because the NinjaTrader AddOn has not connected yet; an AddOn older than 2026-09-22-m2 never acks, so it stays n/a  ← W-ONE-BUTTON M2',
         '🧾 P&L surfaces: <N> aggregators strict-corrected, 0 raw (corrected-column guard) — every P&L figure the model and the dashboard read is pnl_corrected; unresolved rows are counted and excluded, never coerced',
         '🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=n/a(strategy) · trail=n/a(strategy) · seam=SUSPENDED(env) · size=1 · re-arm-after-sweep=on (0B) — the whole exit posture, every field READ from the source the mechanics honour: BE/trail print n/a until each trader loads its strategy, then on/off from the strategy toggles; seam comes from env EXIT_MECHS_SUSPENDED (class NN)',
         '⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce, fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — ENFORCING since 2026-09-03: a level_event wake with under 25 min to the flat is SKIPPED (its read would land after the last-entry gate closes), and so is one within 30 min of the last wake-authored version — UNLESS price has drifted ≥ FAST_MARKET_ATR (1.5×) from the plan being traded, which bypasses the cooldown and logs "cooldown bypassed: fast market <drift>×ATR". The 25-min cutoff is never exempted: a re-plan with 20 minutes left is a re-plan with 20 minutes left, fast or not. Scheduled reads, death re-plans and owner resets are untouched. cross-session defers WAKES (never scheduled reads) while a planner stream is open; stale-arm expiry retires never-placed arms from superseded plan versions',

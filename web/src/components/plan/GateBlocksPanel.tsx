@@ -32,6 +32,15 @@ const GATE_LABELS: Record<string, { en: string; icon: string }> = {
   b3_rate_breaker: { en: 'Order rate breaker', icon: '🚨' },
   level_burned_retouch: { en: 'Burned level re-touched', icon: '🔥' },
   night_transition: { en: 'Night/day transition', icon: '🌙' },
+  maintenance_hold: { en: 'Update hold (maintenance)', icon: '🔒' },
+  maintenance_drop: {
+    en: 'Queued entry dropped by the update hold',
+    icon: '🔒',
+  },
+  maintenance_drop_attempted: {
+    en: 'Dropped entry may have reached NT8',
+    icon: '⚠️',
+  },
 }
 
 export function GateBlocksPanel({
