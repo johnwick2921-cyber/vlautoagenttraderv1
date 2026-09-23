@@ -26,7 +26,7 @@ type gateFixture struct {
 
 func goodCensusAck(job string) *ntwire.MaintenanceAckPayload {
 	return &ntwire.MaintenanceAckPayload{Held: true, JobID: job, BuildID: "2026-09-22-m2",
-		Connections: []ntwire.CensusConnection{{Sim: true, Connected: true}, {Sim: false, Connected: false}},
+		Connections: []ntwire.CensusConnection{{Sim: true, Connected: true, Settled: true}, {Sim: false, Connected: false, Settled: true}},
 		Accounts:    []ntwire.CensusAccount{{Sim: true, Positions: 0, Working: 0}}}
 }
 
@@ -155,6 +155,9 @@ func TestInstallationGateCensusCases(t *testing.T) {
 			a.Accounts = append(a.Accounts, ntwire.CensusAccount{Sim: false, Positions: 1})
 		}, "position"},
 		"working order anywhere": {func(a *ntwire.MaintenanceAckPayload) { a.Accounts[0].Working = 2 }, "working"},
+		// M2.1 (review d): a connection neither Connected nor Disconnected
+		// (Connecting, ConnectionLost …) — its accounts' zeros cannot be trusted.
+		"connection in a transitional state": {func(a *ntwire.MaintenanceAckPayload) { a.Connections[1].Settled = false }, "transitional"},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

@@ -162,6 +162,10 @@ type MaintenancePayload struct {
 type CensusConnection struct {
 	Sim       bool `json:"sim"`       // every account on it is a SIM account (false when it has none: fail-closed)
 	Connected bool `json:"connected"` // ConnectionStatus.Connected
+	// Settled (M2.1): Status is Connected or Disconnected. Any other state
+	// (Connecting, ConnectionLost, …) means the census cannot vouch for the
+	// accounts on it; absent (an older build) reads false — fail-closed.
+	Settled bool `json:"settled"`
 }
 
 // CensusAccount is one NT8 account, by flags and counts only.

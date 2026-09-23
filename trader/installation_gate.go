@@ -292,10 +292,13 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 		case a.Accounts == nil:
 			return false, "accounts were not enumerated (absent is not empty)"
 		}
-		nonSim, positions, working := 0, 0, 0
+		nonSim, unsettled, positions, working := 0, 0, 0, 0
 		for _, c := range a.Connections {
 			if c.Connected && !c.Sim {
 				nonSim++
+			}
+			if !c.Settled {
+				unsettled++ // M2.1: Connecting / ConnectionLost — its accounts cannot be vouched for
 			}
 		}
 		for _, ac := range a.Accounts {
@@ -307,6 +310,9 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 		var why []string
 		if nonSim > 0 {
 			why = append(why, fmt.Sprintf("%d connected non-SIM connection(s)", nonSim))
+		}
+		if unsettled > 0 {
+			why = append(why, fmt.Sprintf("%d connection(s) in a transitional state (neither Connected nor Disconnected)", unsettled))
 		}
 		if positions > 0 {
 			why = append(why, fmt.Sprintf("%d open position(s)", positions))
