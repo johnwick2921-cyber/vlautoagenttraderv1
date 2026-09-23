@@ -808,7 +808,7 @@ func parityDrive(r *parityRig, row parityRow, expectPass bool) parityOutcome {
 			row.trip(r)
 		}
 		before := len(r.env.submits)
-		r.env.eval.freshest5mAt = r.env.now
+		r.env.eval.markFresh5mReceivedAt(r.env.now)
 		res := r.env.eval.Evaluate("MNQ", r.env.now)
 		return parityOutcome{passed: len(r.env.submits) > before, clean: res.Stage == "submitted", text: res.Reason, detail: "stage=" + res.Stage + " reason=" + res.Reason}
 
@@ -821,7 +821,7 @@ func parityDrive(r *parityRig, row parityRow, expectPass bool) parityOutcome {
 			}
 			return pictureHtfSend(e, prow, stopPx, targetPx, qty, now)
 		}
-		r.env.eval.freshest5mAt = r.env.now
+		r.env.eval.markFresh5mReceivedAt(r.env.now)
 		res := r.env.eval.Evaluate("MNQ", r.env.now)
 		return parityOutcome{passed: sent(), clean: res.Stage == "submitted", text: res.Reason, detail: "stage=" + res.Stage + " reason=" + res.Reason}
 	}

@@ -27,7 +27,7 @@ func TestPictureHtfRefusedBeforeTheClaimWhileHeld(t *testing.T) {
 	setHold(t, dir, "job-picture")
 	before := gateBlocks(env.at.id, "maintenance_hold")
 
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 0 {
 		t.Fatalf("held: the submit seam must never run, got %d call(s)", len(env.submits))
@@ -70,7 +70,7 @@ func TestPictureHtfHoldRefusalAfterTheClaimSettlesRefusedNotPending(t *testing.T
 	}
 	defer func() { pictureHtfSubmitSeam = orig }()
 	env.seedPictureTape()
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 1 {
 		t.Fatalf("fixture: the seam must run once, got %d", len(env.submits))
@@ -91,7 +91,7 @@ func TestPictureHtfSendRefusesWhileHeld(t *testing.T) {
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	setHold(t, dir, "job-send")
 	row := &store.PictureHtfOpportunityDB{OppKey: "k", Symbol: "MNQ", Direction: "long", WindowClose: time.Now().Add(time.Hour).UnixMilli()}
-	env.eval.freshest5mAt = time.Now()
+	env.eval.markFresh5mReceivedAt(time.Now())
 	err := pictureHtfSend(env.eval, row, 95, 110, 1, time.Now())
 	if !errors.Is(err, ntTrader.ErrMaintenanceHold) {
 		t.Fatalf("held: pictureHtfSend must refuse with ErrMaintenanceHold, got %v", err)
@@ -109,7 +109,7 @@ func TestPictureHtfAmbiguousDropStaysPending(t *testing.T) {
 	}
 	defer func() { pictureHtfSubmitSeam = orig }()
 	env.seedPictureTape()
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	_ = env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 1 {
 		t.Fatalf("fixture: one submit, got %d", len(env.submits))
@@ -127,7 +127,7 @@ func TestPictureHtfSubmitsWhenConfiguredAndNoHoldFile(t *testing.T) {
 	withMaintenanceDir(t) // configured, no hold file
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	env.seedPictureTape()
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	_ = env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 1 {
 		t.Fatalf("configured + no hold file must submit as before, got %d submit(s)", len(env.submits))

@@ -79,7 +79,7 @@ func TestPictureRefuseNeverOverwritesASentRow(t *testing.T) {
 func TestPictureRRFloorIsTheStricterOfKnobAndStrategy(t *testing.T) {
 	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 1.0})
 	env.at.config.StrategyConfig.RiskControl.MinRiskRewardRatio = 50 // no seeded geometry reaches 50R
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 0 || res.Stage != "refused" {
 		t.Fatalf("a 1.0 knob must not loosen a 50R strategy floor: submits=%d res=%+v", len(env.submits), res)
@@ -90,7 +90,7 @@ func TestPictureRRFloorIsTheStricterOfKnobAndStrategy(t *testing.T) {
 func TestPictureRRFloorFailsClosedWithoutAConfig(t *testing.T) {
 	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true})
 	env.at.config.StrategyConfig = nil
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 0 {
 		t.Fatalf("no strategy config must refuse (no floor), got %d submission(s)", len(env.submits))
@@ -104,7 +104,7 @@ func TestPictureRRFloorFailsClosedWithoutAConfig(t *testing.T) {
 func TestPictureAdmittedUnderStrictAsADayPlanScenario(t *testing.T) {
 	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	env.at.config.StrategyConfig.DayPlan.PlanMode = "strict"
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 1 {
 		t.Fatalf("strict must admit Picture to the hand-off (it is a Day Plan scenario since W5), got %d submission(s): %+v", len(env.submits), res)
@@ -123,7 +123,7 @@ func TestPictureAdmittedUnderStrictAsADayPlanScenario(t *testing.T) {
 func TestPicturePreClaimRefusalIsNotDurable(t *testing.T) {
 	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	env.at.pauseUntilMs.Store(env.now.Add(time.Hour).UnixMilli())
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 0 || !strings.Contains(res.Reason, "stop_until") {
 		t.Fatalf("an owner pause must refuse Picture before the claim: submits=%d res=%+v", len(env.submits), res)
@@ -145,7 +145,7 @@ func TestPictureRefusedWhenStoppedOrDayPlanOff(t *testing.T) {
 	env.at.isRunningMutex.Lock()
 	env.at.isRunning = false
 	env.at.isRunningMutex.Unlock()
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 0 {
 		t.Fatal("a stopped trader must not send a Picture entry")
@@ -169,7 +169,7 @@ func TestPictureUnsentSendSettlesRefused(t *testing.T) {
 		env.submits = append(env.submits, row.OppKey)
 		return ntTrader.ErrEntryLatched // refused before the stamp
 	}
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if len(env.submits) != 1 {
 		t.Fatalf("fixture: the send must have been attempted once, got %d", len(env.submits))
@@ -222,7 +222,7 @@ func TestPictureClaimDoesNotLatchItsOwnSend(t *testing.T) {
 	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, time.Now())
 	pictureHtfSubmitSeam = pictureHtfSend
 
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now) // the PRODUCTION call site → claim → the real send
 	if res.Stage != "submitted" || strings.Contains(res.Reason, "ambiguous") {
 		t.Fatalf("the Picture send must reach the wire (claim id stamped, own claim not latched): %+v", res)

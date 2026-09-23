@@ -451,7 +451,7 @@ func (w *dupWire) armPass(l *dupLink) { l.at.maybeManageArmedOrdersAt(nil, w.arm
 // picture drives Picture once at its tape's instant, with its 5m frame fresh.
 func (w *dupWire) picture(l *dupLink) EvaluateResult {
 	l.eval.mu.Lock()
-	l.eval.freshest5mAt = w.picNow // the 5m frame of the interval was received at picNow
+	l.eval.markFresh5mReceivedAt(w.picNow) // the 5m frame of the interval was received at picNow
 	l.eval.mu.Unlock()
 	return l.eval.Evaluate("MNQ", w.picNow)
 }

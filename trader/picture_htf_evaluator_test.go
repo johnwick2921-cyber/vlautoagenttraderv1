@@ -360,7 +360,7 @@ func TestPictureHtfEvaluatorIgnoresUnfinalizedBars(t *testing.T) {
 	if res.Stage == "confirmed" || res.Stage == "submitted" {
 		t.Fatalf("a forming candle must never license an entry, got %+v", res)
 	}
-	if !strings.Contains(res.Reason, "awaiting the first 5m frame") {
+	if !strings.Contains(res.Reason, "awaiting the completed 5m close") {
 		t.Fatalf("a forming candle must not refresh freshness — the evaluator must still be awaiting completed data, got %+v", res)
 	}
 	if res.OppKey != "" {
@@ -592,7 +592,7 @@ func TestPictureHtfAmbiguousSendStaysPending(t *testing.T) {
 	env.seedPictureTape()
 	// Drive the FIRST evaluation through Evaluate (freshest receipt seeded the
 	// same way OnBars would) so its verdict is observable.
-	env.eval.freshest5mAt = env.now
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
 	if res.Stage != "submitted" || !strings.Contains(res.Reason, "ambiguous") {
 		t.Fatalf("an ambiguous send must be reported as such, got %+v", res)

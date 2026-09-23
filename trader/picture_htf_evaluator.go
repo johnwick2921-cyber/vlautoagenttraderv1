@@ -159,10 +159,20 @@ func newestFinalBar(bars []market.Kline) (market.Kline, bool) {
 }
 
 // staleBy reports how stale the freshest completed 5m data is, and on which
-// clock that was measured — the worst of the source stamp, the candle's own
-// close, and our receipt of it. The clock is NAMED in the refusal because a
-// fallback that cannot be told from the real measurement is worse than no
-// fallback: emitted_at is the AddOn's clock and may simply be absent.
+// clock that was measured — the worse of the AddOn's own emitted_at (SOURCE)
+// and our receipt of it. The clock is NAMED in the refusal because a fallback
+// that cannot be told from the real measurement is worse than no fallback:
+// emitted_at is the AddOn's clock and may simply be absent.
+//
+// The candle's own close time is deliberately NOT one of these. NT8 emits a
+// closed bar on the FIRST TICK OF THE NEXT BAR, which in slow tape is seconds
+// after the boundary, so candle age (now - close) is ALWAYS >= source age
+// (emitted >= close). Including it silently replaces the rule with "elapsed
+// since the boundary <= freshness_sec" — 2s by default, against a 10s entry
+// window — and refuses the ordinary late-emission case outright: a bar closing
+// 14:00:00 and emitted 14:00:03 has a source age of 0.1s and a candle age of
+// 3s. freshest5mClose stays as READ evidence (it is what tells us the boundary
+// candle is in hand at all) and binds nothing.
 func (e *PictureHtfEvaluator) staleBy(nowMs int64, now time.Time) (int64, string) {
 	worst, clock := int64(-1), "n/a"
 	consider := func(age int64, name string) {
@@ -172,9 +182,6 @@ func (e *PictureHtfEvaluator) staleBy(nowMs int64, now time.Time) (int64, string
 	}
 	if e.freshest5mEmitted > 0 {
 		consider(nowMs-e.freshest5mEmitted, "source")
-	}
-	if e.freshest5mClose > 0 {
-		consider(nowMs-e.freshest5mClose, "completed-candle")
 	}
 	if !e.freshest5mAt.IsZero() {
 		consider(now.Sub(e.freshest5mAt).Milliseconds(), "receipt")
@@ -477,6 +484,28 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 	strategyID := e.at.id
 	contract, _ := e.at.currentContract(symbol)
 	oppKey := store.PictureHtfOppKey(strategyID, e.at.currentAccountName(), contract, breakVerdict.Direction, level.Role, level.SourceOpen, cur.CloseTime)
+	// D23/R2 — THE BOUNDARY CANDLE MUST BE IN HAND BEFORE ANY REFUSAL.
+	// The H1 closed frame and the 5m closed frame both arrive AFTER the
+	// boundary, and the H1 one typically lands first (~1.0s vs ~1.2s). In that
+	// gap the freshness stamps still describe the PREVIOUS 5m candle, so every
+	// clock reads ~5 minutes stale and a refusal written then is a durable
+	// `expired` that the qualifying 5m frame, 200ms later, would inherit.
+	// Before D23 this was masked: forming ticks refreshed the receipt stamp,
+	// so the gap looked fresh — and the entry that followed was computed on
+	// the previous candle's geometry. Making only completed data count
+	// unmasked it, so the wait is explicit.
+	boundaryClose := intervalStart - 1
+	if e.freshest5mClose < boundaryClose {
+		return EvaluateResult{Stage: "watching", Momentum: stall,
+			Reason: fmt.Sprintf("awaiting the completed 5m close at %d", boundaryClose)}
+	}
+	// It is in hand — but did WE have it while the window was still open? A
+	// candle delivered after the window shut was never actionable, so it is
+	// not an opportunity we refused; no durable row is written for it.
+	if !e.freshest5mAt.IsZero() && e.freshest5mAt.UnixMilli() > intervalStart+windowMs {
+		return EvaluateResult{Stage: "watching", Momentum: stall,
+			Reason: "the completed 5m close arrived after the entry window — never actionable"}
+	}
 	if elapsed > windowMs {
 		return e.refuse(oppKey, "expired", fmt.Sprintf("entry window passed (%dms > %dms)", elapsed, windowMs), stall)
 	}
