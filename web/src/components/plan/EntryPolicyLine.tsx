@@ -24,7 +24,7 @@ const price = (v: number | null | undefined): string =>
 const ticks = (v: number): string =>
   `${v.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${Math.abs(v) === 1 ? 'tick' : 'ticks'}`
 
-const ct = (ms: number | undefined): string =>
+const ct = (ms: number | null | undefined): string =>
   isNum(ms) && ms > 0
     ? new Date(ms).toLocaleTimeString('en-US', {
         timeZone: 'America/Chicago',
@@ -87,10 +87,27 @@ export function entryPolicyStatus(leg: PlanOrderLeg): string {
   return `Order ${leg.state || 'UNKNOWN'}${leg.reason ? `: ${leg.reason}` : ''}`
 }
 
+// W5 — the plan card's other ledger readers (the 📷 PICTURE badge) format
+// with these, so a missing number reads "n/a" the same way everywhere.
+export { price as fmtLedgerPrice, ct as fmtCtClock }
+
+/** W-EXEC-TRUTH W5 — a MACHINE-sourced leg (a Picture scenario's ledger row)
+ * names its source and rule, and while it is armed, when its eligibility window
+ * closes: " · source picture (h1_close_break) · window closes 09:35:10 CT".
+ * A planner leg (no source) gets nothing — its line is unchanged. */
+export function entryPolicySourceSuffix(leg: PlanOrderLeg): string {
+  const source = leg.source?.trim()
+  if (!source) return ''
+  const rule = leg.rule?.trim() || 'n/a'
+  const window =
+    leg.state === 'armed' ? ` · window closes ${ct(leg.eligible_until_ms)}` : ''
+  return ` · source ${source} (${rule})${window}`
+}
+
 /** The whole line, or null for a leg that is not market_in_zone (legacy). */
 export function entryPolicyLine(leg: PlanOrderLeg): string | null {
   if (leg.policy !== ENTRY_POLICY_MARKET_IN_ZONE) return null
-  return `Entry: around ${price(leg.planned_entry)} (zone ${price(leg.zone_lo)}–${price(leg.zone_hi)}) · ${entryPolicyStatus(leg)}`
+  return `Entry: around ${price(leg.planned_entry)} (zone ${price(leg.zone_lo)}–${price(leg.zone_hi)}) · ${entryPolicyStatus(leg)}${entryPolicySourceSuffix(leg)}`
 }
 
 // The receipt behind the line, for the hover title.
@@ -104,6 +121,13 @@ function entryPolicyDetail(leg: PlanOrderLeg): string {
     parts.push(
       `filled ${ct(leg.filled_at_ms)}`,
       'ticks = fill vs the limit sent (+ worse, − better)'
+    )
+  // W5 — a machine-sourced row's receipt: how it is placed and which
+  // opportunity it is (read from the ledger; absent reads "n/a").
+  if (leg.source?.trim())
+    parts.push(
+      `method ${leg.method?.trim() || 'n/a'}`,
+      `opportunity ${leg.source_ref?.trim() || 'n/a'}`
     )
   return parts.join(' · ')
 }

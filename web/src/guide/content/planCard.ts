@@ -223,5 +223,34 @@ export const planCard: GuideSection = {
       kind: 'p',
       text: "The chart across a roll derives the prior contract's segment from ITS stored 1m rows (the planner's own bucket helper) and shifts the whole prior segment by the basis measured at THAT timeframe's own seam, so the roll day shows neither a seam hole nor the ~290-point basis cliff. Where the prior contract's 1m rows have interior gaps the current contract's 1m rows cover, the gaps are filled with the current rows converted into the prior contract's price space; gaps neither contract has stay gaps (never fabricated). Derived prior bars draw muted with a one-line legend read from the response envelope — 'pre-roll (Sep) · basis-adjusted +290.00', or unadjusted with the reason when the basis pair cannot be measured; hovering a derived bar shows its raw and adjusted close. The current contract is never touched and volume is never shifted. CHART_ROLL_STITCH=legacy serves the pre-wave stored-aggregate stitch byte-identically.",
     },
+    { kind: 'h', text: 'Picture HTF scenarios on the card (W5)' },
+    {
+      kind: 'p',
+      text: "A Picture HTF setup is recorded as a Day Plan scenario before any order exists, in its own id namespace (P1, P2 …) so it never collides with the planner's S ids. Its row carries a 📷 PICTURE badge. Hover the badge: the rule and its version (h1_close_break), the H1 close against the 4H body it broke, the eligibility window ('window until HH:MM:SS CT' — it is never placed after that), the stop and where the stop came from, and the R:R floor it was admitted on. All of it is read from the scenario's machine record and the evidence frozen when the setup was handed to the plan; the card recomputes nothing, and no owner edit or AI commentary can change it. A missing number reads n/a, never 0; evidence the card cannot read says 'evidence unavailable', and a scenario recorded without evidence says 'evidence not recorded'.",
+    },
+    {
+      kind: 'p',
+      text: "Its entry line is the market_in_zone line with the source added: 'Entry: around <entry> (zone <lo>–<hi>) · <status> · source picture (h1_close_break)', and while the order is still armed '· window closes HH:MM:SS CT'. Hover the line for the method (for example market_in_zone limit — read from the order record, never guessed) and the opportunity key. The plan API serves these as source, source_ref, rule, method and eligible_until_ms on the scenario's order leg; a planner scenario's leg carries none of them, so its line and its API output are unchanged.",
+    },
+    {
+      kind: 'p',
+      text: "The 📷 chip in the header: a NEUTRAL grey '📷 PICTURE → <route>' says how Picture reaches the market (for example 'Day Plan scenario (market_in_zone limit)'); it is not a refusal. A RED '📷 PICTURE <reason>' appears only when something actually refuses Picture. Neither appears while Picture is off for the trader. Both texts are read from the trader, never composed by the card.",
+    },
+    {
+      kind: 'p',
+      text: "MACHINE-AUTHORED plan banner: when a Picture setup arrives and the session has no plan yet, the machine writes plan v1 holding only that scenario, and the card says 'MACHINE-AUTHORED plan — Picture HTF; the first AI plan supersedes it'. The AI's session read still runs and writes the next version.",
+    },
+    {
+      kind: 'p',
+      text: "composed of: under the header a small line reads what made the plan on screen, from the fold's own record — 'composed of: base + overlays o1,o3 · machine P1 (o4)': the base version, your applied overlays by overlay version, and each Picture scenario with the overlay that carried it (hover for its opportunity key). Picture scenarios are folded after your overlays and never count against the scenario cap. When the server sends no such record the line is not shown; a missing overlay number reads n/a.",
+    },
+    {
+      kind: 'p',
+      text: "Dashboard → Picture HTF opportunities: an opportunity the Day Plan took over shows, under its stage, '→ Day Plan P1 · <plan id> v<n> · arm #<row> <state>' — the armed order that carries it, read from the armed-order ledger. No line means no armed order carries that opportunity yet. If the server could not read the armed orders at all, the panel says 'Day Plan links unread: <reason>' rather than showing every row without a link.",
+    },
+    {
+      kind: 'p',
+      text: "Strategy → Day Plan → Picture HTF: under the 'Include Picture HTF setups' switch the hint reads 'Source selector: Picture HTF setups become Day Plan scenarios (limit at the far edge of a small zone, 1 contract, under the Day Plan master)'. The switch's default is unchanged (off).",
+    },
   ],
 }

@@ -16,6 +16,7 @@ import type {
 import { LifecycleChip, VersionChips } from './chips'
 import { WeeklyChip } from './WeeklyChip'
 import { PictureGateChip } from './PictureGateChip'
+import { MachinePlanBanner, ComposedOfLine } from './MachinePlanBanner'
 import { BiasBlock } from './BiasBlock'
 import { ZoneTable } from './ZoneTable'
 import { LevelZoneMap } from './LevelZoneMap'
@@ -301,7 +302,7 @@ export function SessionPlanCard({
           title={tp('noPlanYet', language)}
           hint={tp('noPlanYetHint', language)}
         />
-        <PictureGateChip picture={plan?.picture} />
+        <PictureGateChip picture={plan?.picture} language={language} />
         {noPlanAsk}
       </>
     )
@@ -465,7 +466,7 @@ export function SessionPlanCard({
               saying so is what sent a later wave hunting a bug that was already
               fixed. The rendered label is the contract; a comment is not. */}
           <WeeklyChip weekly={plan.weekly} />
-          <PictureGateChip picture={plan.picture} />
+          <PictureGateChip picture={plan.picture} language={language} />
           {plan.degraded && (
             <span
               data-testid="degraded-badge"
@@ -518,6 +519,12 @@ export function SessionPlanCard({
           </button>
         </div>
       </div>
+
+      {/* W-EXEC-TRUTH W5 — a MACHINE plan (Picture HTF, the no-plan door)
+          says so, and the card reads what composed plan_final. Both READ
+          from the server; absent renders nothing. */}
+      <MachinePlanBanner machinePlan={plan.machine_plan} language={language} />
+      <ComposedOfLine composedOf={plan.composed_of} language={language} />
 
       {/* badges + banners */}
       <div className="flex flex-wrap items-center gap-2">

@@ -831,6 +831,19 @@ export function DayPlanEditor({
                   disabled={bodyDisabled}
                 />
               </FieldRow>
+              {/* W-EXEC-TRUTH W5 — the switch is a SOURCE selector: a Picture
+                  setup is recorded as a Day Plan scenario and trades only
+                  through the plan's armed executor. */}
+              <p
+                data-testid="picture-htf-source-hint"
+                className="text-[10px] mb-1"
+                style={{
+                  color: 'var(--vl-faint)',
+                  fontFamily: 'var(--vl-font-ui)',
+                }}
+              >
+                {tp('pictureHtfSourceHint', language)}
+              </p>
               {cfg.picture_htf?.enabled === true && (
                 <div className="flex flex-col gap-2 ml-1">
                   <NumField

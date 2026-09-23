@@ -17,6 +17,7 @@ import { ExecutorVerdict } from './ExecutorVerdict'
 import { ScenarioEconomics } from './ScenarioEconomics'
 import { FadePermissionChip, type FadeLabelView } from './FadePermissionChip'
 import { OneSetupChip, type OneSetupView } from './OneSetupChip'
+import { PictureSourceBadge } from './PictureSourceBadge'
 import { StatusDot, type ScenarioStatus } from './chips'
 
 export function QualityChip({ quality }: { quality: string }) {
@@ -197,6 +198,8 @@ function ScenarioRow({
         >
           {scenario.id}
         </span>
+        {/* W5 — a machine-authored (Picture HTF) scenario says so. */}
+        <PictureSourceBadge scenario={scenario} language={language} />
         <span title="quality is INFORMATIONAL (D3 ruling) — the planner's own read; no gate, sizing, or filter consumes it">
           <QualityChip quality={scenario.quality} />
         </span>
@@ -434,6 +437,7 @@ export function ScenarioList({
                 >
                   <span>?</span>
                   <span className="font-bold">{s.id}</span>
+                  <PictureSourceBadge scenario={s} language={language} />
                   <span className="truncate">{s.trigger}</span>
                   {/* W3 — order evidence stays visible when activation is
                       unevaluable (same rule as OrderTerms). */}

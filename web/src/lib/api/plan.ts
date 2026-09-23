@@ -91,6 +91,52 @@ export interface PlanScenario {
   quality: string // A+ | A | B
   /** G5 (regime wave) — trigger level was consumed at write time. */
   consumed?: boolean
+  /** W-EXEC-TRUTH W5 — a MACHINE-authored scenario (kernel.PlanScenario.Source);
+   * 'picture' is the only machine source. ABSENT on every planner scenario. */
+  source?: string
+  /** W5 — the machine scenario's own record (kernel.PlanMachineSource). */
+  machine?: PlanMachineSource
+}
+
+/** W-EXEC-TRUTH W5 — mirrors kernel.PlanMachineSource: the rule that produced a
+ * machine scenario, the opportunity it stands for (ref), its eligibility window
+ * and the evidence frozen at hand-off. `evidence` is opaque to the plan grammar
+ * (the trader's PictureEvidence adapter owns its shape) — read it through
+ * readPictureEvidence, never as a typed object. */
+export interface PlanMachineSource {
+  rule: string
+  rule_ver: number
+  ref: string
+  eligible_from_ms: number
+  eligible_until_ms: number
+  run_epoch?: number
+  evidence?: unknown
+}
+
+/** W5 — trader/picture_evidence.go PictureEvidence, as the card reads it. Every
+ * field is optional: a missing number renders "n/a", never 0. */
+export interface PictureEvidenceView {
+  opp_key?: string
+  direction?: string
+  rule?: string
+  rule_ver?: number
+  level_role?: string
+  body_top?: number
+  body_bot?: number
+  h1_prev_close?: number
+  h1_new_close?: number
+  h1_boundary?: number
+  h1_close_ms?: number
+  entry_ref?: number
+  latest_close?: number
+  stop?: number
+  target?: number
+  stop_source?: string
+  target_zone?: string
+  rr_estimate?: number
+  rr_floor?: number
+  window_open_ms?: number
+  window_close_ms?: number
 }
 
 export interface OrderPrices {
@@ -137,6 +183,16 @@ export interface PlanOrderLeg {
   filled_at_ms?: number
   /** the executor's latest verdict for this leg (ledger last_verdict) */
   verdict?: string
+  /** W-EXEC-TRUTH W5 — a MACHINE-sourced row (a Picture scenario). Every field
+   * is ABSENT on a planner row (api/handler_plan_order_truth.go
+   * withMachineSource). source: 'picture'; source_ref: the opportunity key;
+   * rule: the rule that produced it (h1_close_break); method: '<policy> <kind>'
+   * e.g. 'market_in_zone limit'; eligible_until_ms: the eligibility deadline. */
+  source?: string
+  source_ref?: string
+  rule?: string
+  method?: string
+  eligible_until_ms?: number
 }
 
 export interface PlanArmView {
@@ -454,14 +510,35 @@ export interface PlanToday {
   /** W-EXEC-TRUTH W0 (CTO Q6) — Picture HTF's plan-mode verdict, READ by the
    * server from the trader (null when the trader is not loaded). */
   picture?: PicturePlanGate | null
+  /** W-EXEC-TRUTH W5 — what composed plan_final (kernel.ResolvePlanFinal's
+   * record): the user overlay versions applied, and each machine scenario with
+   * the overlay that carried it. ABSENT on a server that does not record it —
+   * the card then renders no composed-of line. */
+  composed_of?: PlanComposedOf
+  /** W5 — true when the served row is a MACHINE plan (the no-plan door: a
+   * Picture scenario recorded before any AI plan existed). */
+  machine_plan?: boolean
+}
+
+/** W5 — /api/plan/today composed_of. */
+export interface PlanComposedOf {
+  user_overlays?: number[]
+  machine?: Array<{
+    overlay_version: number
+    scenario_id: string
+    ref: string
+  }>
 }
 
 /** W-EXEC-TRUTH W0 (CTO Q6) — /api/plan/today picture payload. */
 export interface PicturePlanGate {
   /** Picture HTF is on for this trader (resolved knob, NT8 path). */
   enabled: boolean
-  /** The strict refusal text, verbatim; "" when plan mode admits Picture. */
-  refusal: string
+  /** W5 — how Picture reaches the market, READ from the trader, e.g.
+   * "Day Plan scenario (market_in_zone limit)". Absent on a pre-W5 server. */
+  route?: string
+  /** A real refusal only, verbatim; "" or absent when nothing refuses Picture. */
+  refusal?: string
 }
 
 export interface StructuralGeometryView {
