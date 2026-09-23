@@ -883,7 +883,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 				State: "armed", EntryClass: "armed_fill", CreatedAt: now, UpdatedAt: now,
 				LegIndex: li, LegCount: legCount, Kind: legKind, Condition: sc.Condition,
 			}
-			zl.stamp(row) // W3 — policy, zone (inward-rounded), provenance, planned entry
+			zl.stamp(row)               // W3 — policy, zone (inward-rounded), provenance, planned entry
 			stampPictureSource(row, sc) // W5 — source, opportunity, rule, deadline, run epoch
 			existing, err := ledger.ListNonTerminal(at.id)
 			if err == nil {

@@ -195,7 +195,7 @@ func pictureScenarioGeometry(zl zoneLeg, side string, leg kernel.PlanArmLeg, ev 
 }
 
 // stampPictureSource writes the machine source onto an authored row (a
-// planner scenario writes nothing — every W5 column stays ''/NULL).
+// planner scenario writes nothing — every W5 column stays empty / NULL).
 func stampPictureSource(row *store.ArmedOrderDB, sc kernel.PlanScenario) {
 	if row == nil || sc.Machine == nil || sc.Source == "" {
 		return
