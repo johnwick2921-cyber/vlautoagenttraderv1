@@ -217,8 +217,20 @@ func TestSettingsTruthRefusesOnlyUnconfirmedChanges(t *testing.T) {
 			t.Errorf("%s: refuse=%q, want refuse=%v", id, r.Refuse, wantRefuse)
 		}
 	}
-	if r := rows["syn-breaker-0-nested"]; !strings.Contains(r.Refuse, "meant 'inherit' then (breaker 8)") || r.Breaker.After != "off[O]" {
-		t.Errorf("the refusal must name what 0 meant then and now: %q / after=%s", r.Refuse, r.Breaker.After)
+	// CTO ruling (msg 1790173735176): the refusal names the STRATEGY ID, the
+	// EXACT FIELD, the stored value, and the before/after meaning.
+	for id, wants := range map[string][]string{
+		"syn-breaker-0-nested": {"strategy syn-breaker-0-nested", "field ai_config.risk_control.consecutive_loss_halt stores 0",
+			"before W1 that meant 'inherit' (breaker 8)", "after W1 it means OFF (breaker off[O])"},
+		"syn-breaker-0-flat": {"strategy syn-breaker-0-flat", "field risk_control.consecutive_loss_halt stores 0"},
+		"syn-replan-0-strategy": {"strategy syn-replan-0-strategy", "field day_plan.replan_cap stores 0",
+			"before W1 that meant 'the shipped default 2' (strategy/NY/ASIA/LONDON 2/3/2/2)", "after W1 it means 0 re-plans (0[O]/3[O]/0[O]/0[O])"},
+	} {
+		for _, w := range wants {
+			if !strings.Contains(rows[id].Refuse, w) {
+				t.Errorf("%s refusal lacks %q:\n  %s", id, w, rows[id].Refuse)
+			}
+		}
 	}
 	withEnvOff := byID(SettingsTruthReport(truthInputs(loadTruthFixture(t)), envMap(map[string]string{"BREAKER_HALT_N": "0"})))
 	if r := withEnvOff["syn-breaker-0-nested"]; r.Breaker.Changed || r.Refuse != "" {

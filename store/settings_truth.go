@@ -92,9 +92,10 @@ type SettingsTruthInput struct {
 // SettingsTruthKnob is one knob of one row: what is stored, what the previous
 // binary enforced, what this one enforces.
 type SettingsTruthKnob struct {
-	Knob    string
+	Knob    string // the confirmation key (location-agnostic)
+	Path    string // the EXACT stored JSON field, e.g. ai_config.risk_control.consecutive_loss_halt
+	Note    string // a location fact worth printing (a legacy flat key, an ignored duplicate)
 	Stored  string // absent | null | <n> | unreadable
-	Where   string // where the stored value lives in the JSON
 	Before  string
 	After   string
 	Changed bool
@@ -163,11 +164,11 @@ func settingsTruthRow(in SettingsTruthInput, getenv func(string) string) Setting
 	}
 
 	// Breaker.
-	shape, where := breakerRawShape(raw)
+	shape, path, note := breakerRawShape(raw)
 	before := legacyBreakerHaltN(cfg.RiskControl.ConsecutiveLossHalt, getenv)
 	after, src := ResolveBreakerHaltEnv(&cfg, getenv)
 	row.Breaker = SettingsTruthKnob{
-		Knob: KnobBreaker, Stored: shape, Where: where,
+		Knob: KnobBreaker, Path: path, Note: note, Stored: shape,
 		Before: breakerWord(before), After: breakerWord(after) + OriginLetter(src),
 		Changed: before != after,
 	}
@@ -177,7 +178,7 @@ func settingsTruthRow(in SettingsTruthInput, getenv func(string) string) Setting
 	if dp, ok := raw["day_plan"].(map[string]any); ok {
 		dpRaw = dp
 	}
-	rp := SettingsTruthKnob{Knob: KnobReplanStrategy, Stored: storedIntShape(dpRaw, "replan_cap"), Where: "day_plan"}
+	rp := SettingsTruthKnob{Knob: KnobReplanStrategy, Path: "day_plan.replan_cap", Stored: storedIntShape(dpRaw, "replan_cap")}
 	var b, a []string
 	for _, s := range settingsTruthSessions {
 		old := legacyReplanCapFor(cfg.DayPlan, s)
@@ -203,22 +204,24 @@ func settingsTruthRow(in SettingsTruthInput, getenv func(string) string) Setting
 	return row
 }
 
-// settingsTruthRefusal names what the stored 0 meant then and means now.
+// settingsTruthRefusal names — per the CTO ruling (msg 1790173735176) — the
+// STRATEGY ID, the EXACT stored field, the stored value, and what that value
+// meant before W1 and means after it.
 func settingsTruthRefusal(id string, row SettingsTruthRow) string {
 	var parts []string
 	for _, k := range row.Unconfirmed {
 		switch k {
 		case KnobBreaker:
 			parts = append(parts, fmt.Sprintf(
-				"consecutive_loss_halt=0 from before W1 — it meant 'inherit' then (breaker %s) and 'OFF' now; re-save the strategy in the Studio (its breaker shows OFF there) to confirm OFF, or turn the breaker ON to inherit",
-				row.Breaker.Before))
+				"field %s stores %s: before W1 that meant 'inherit' (breaker %s), after W1 it means OFF (breaker %s) — re-save the strategy in the Studio (its breaker shows OFF there) to confirm OFF, or turn the breaker ON to inherit",
+				row.Breaker.Path, row.Breaker.Stored, row.Breaker.Before, row.Breaker.After))
 		case KnobReplanStrategy:
 			parts = append(parts, fmt.Sprintf(
-				"day_plan.replan_cap=0 from before W1 — it meant 'default 2' then (%s) and '0 re-plans' now; re-save the strategy in the Studio to confirm 0, or clear the cap to inherit 2",
-				row.Replan.Before))
+				"field %s stores %s: before W1 that meant 'the shipped default 2' (strategy/NY/ASIA/LONDON %s), after W1 it means 0 re-plans (%s) — re-save the strategy in the Studio to confirm 0, or clear the cap to inherit 2",
+				row.Replan.Path, row.Replan.Stored, row.Replan.Before, row.Replan.After))
 		}
 	}
-	return fmt.Sprintf("refused: strategy %s stores %s", id, strings.Join(parts, "; and "))
+	return fmt.Sprintf("refused: strategy %s — %s", id, strings.Join(parts, "; and "))
 }
 
 // breakerWord renders a breaker N: off for 0.
@@ -231,21 +234,21 @@ func breakerWord(n int) string {
 
 // breakerRawShape reads the stored breaker the way UnmarshalJSON does: nested
 // under ai_config when ai_config is present and non-null, else the legacy flat
-// risk_control key.
-func breakerRawShape(raw map[string]any) (shape, where string) {
+// risk_control key. It returns the EXACT field path the value was read from.
+func breakerRawShape(raw map[string]any) (shape, path, note string) {
 	if ac, present := raw["ai_config"]; present && ac != nil {
 		acm, _ := ac.(map[string]any)
 		rc, _ := acm["risk_control"].(map[string]any)
-		shape, where = storedIntShape(rc, "consecutive_loss_halt"), "ai_config.risk_control"
+		shape, path = storedIntShape(rc, "consecutive_loss_halt"), "ai_config.risk_control.consecutive_loss_halt"
 		if flat, ok := raw["risk_control"].(map[string]any); ok {
 			if _, has := flat["consecutive_loss_halt"]; has {
-				where += " (a flat risk_control key is also stored — ignored, ai_config wins)"
+				note = "a flat risk_control.consecutive_loss_halt is also stored — ignored, ai_config wins"
 			}
 		}
-		return shape, where
+		return shape, path, note
 	}
 	rc, _ := raw["risk_control"].(map[string]any)
-	return storedIntShape(rc, "consecutive_loss_halt"), "risk_control (legacy flat)"
+	return storedIntShape(rc, "consecutive_loss_halt"), "risk_control.consecutive_loss_halt", "legacy flat key"
 }
 
 // storedIntShape says what a JSON object holds at key: absent, null, an
@@ -286,8 +289,8 @@ func (row SettingsTruthRow) Line() string {
 		return fmt.Sprintf("🩺 settings truth [%s] bound=%d · n/a (%s)", id, row.Bound, row.Error)
 	}
 	breakerStored := row.Breaker.Stored
-	if row.Breaker.Where != "ai_config.risk_control" {
-		breakerStored += " [" + row.Breaker.Where + "]"
+	if row.Breaker.Note != "" {
+		breakerStored += " [" + row.Breaker.Path + ", " + row.Breaker.Note + "]"
 	}
 	verdict := "UNCHANGED"
 	switch {
