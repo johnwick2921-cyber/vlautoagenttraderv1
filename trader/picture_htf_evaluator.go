@@ -10,6 +10,7 @@ import (
 	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
+	"nofx/telemetry"
 	ntTrader "nofx/trader/ninjatrader"
 )
 
@@ -43,6 +44,10 @@ type PictureHtfEvaluator struct {
 
 	// capWarned dedupes the once-per-state "mode unavailable" log.
 	capWarned bool
+
+	// holdRefusedKey dedupes the maintenance-hold refusal (count + WARN) to
+	// once per opportunity rather than once per frame.
+	holdRefusedKey string
 }
 
 // NewPictureHtfEvaluator builds the evaluator from the resolved strategy knob.
@@ -284,6 +289,14 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 		row.MomentumStall = stall.Fired
 		row.MomentumDir = stall.Direction
 	}
+	// W-ONE-BUTTON M2 site 3 — THE MAINTENANCE HOLD refuses BEFORE the
+	// claim. A claim followed by a refused send would leave the row
+	// place_pending ("ambiguous"), blocking re-entry AND the installation gate
+	// until reconciled. The refusal is durable (fail-closed): an opportunity
+	// seen during maintenance never trades, even after the hold clears.
+	if reason, held := MaintenanceHeld(); held {
+		return e.refuseHeld(oppKey, reason, stall)
+	}
 	_, fresh, err := e.at.store.PictureHtfClaim(row)
 	if err != nil {
 		return EvaluateResult{Stage: "watching", Reason: "store claim failed: " + err.Error(), OppKey: oppKey, Momentum: stall}
@@ -303,11 +316,29 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 	// row stays place_pending for the reconciliation sweep — never a blind
 	// resend.
 	if err := pictureHtfSubmitSeam(e, row, stopPx, targetPx, 0); err != nil {
+		// A maintenance-hold refusal PROVES nothing reached the wire: the
+		// permit is taken before the ledger stamp and the send, and a queued
+		// entry dropped under the hold is never written. So the row settles
+		// refused instead of sitting ambiguous place_pending.
+		if ntTrader.IsMaintenanceHold(err) {
+			return e.refuseHeld(oppKey, err.Error(), stall)
+		}
 		// The send failed AFTER the claim — the row stays place_pending and
 		// blocks re-entry until reconciled against NT8 orders (addendum #4).
 		return EvaluateResult{Stage: "submitted", Reason: "send ambiguous: " + err.Error(), OppKey: oppKey, Momentum: stall}
 	}
 	return EvaluateResult{Stage: "submitted", OppKey: oppKey, Momentum: stall}
+}
+
+// refuseHeld is the maintenance-hold refusal: a durable "refused" row, counted
+// as the maintenance_hold gate block and WARNed once per opportunity.
+func (e *PictureHtfEvaluator) refuseHeld(oppKey, reason string, stall *kernel.MomentumStall) EvaluateResult {
+	if e.holdRefusedKey != oppKey {
+		e.holdRefusedKey = oppKey
+		telemetry.IncGateBlock(e.at.id, "maintenance_hold")
+		logger.Warnf("🔒 picture-htf: opportunity %s REFUSED — maintenance hold: %s. It will not be traded after the update.", oppKey, reason)
+	}
+	return e.refuse(oppKey, "refused", "maintenance hold — "+reason, stall)
 }
 
 func (e *PictureHtfEvaluator) refuse(oppKey, stage, reason string, stall *kernel.MomentumStall) EvaluateResult {

@@ -39,6 +39,14 @@ func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, 
 	}
 	at := e.at
 
+	// --- Re-check 0 (W-ONE-BUTTON M2 site 3): the installation maintenance
+	// hold, FIRST — nothing below may reach the wire while an update holds.
+	// Wraps ErrMaintenanceHold so the evaluator settles the row refused
+	// (provably unsent) rather than ambiguous place_pending. ---
+	if reason, held := MaintenanceHeld(); held {
+		return fmt.Errorf("picture_htf: send refused — %s: %w", reason, ntTrader.ErrMaintenanceHold)
+	}
+
 	// --- Re-check 1: feed freshness at SEND time, not claim time. ---
 	now := time.Now()
 	if now.Sub(e.freshest5mAt).Milliseconds() > int64(e.cfg.FreshnessSec)*1000 {
