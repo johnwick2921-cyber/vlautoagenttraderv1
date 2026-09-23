@@ -1,6 +1,7 @@
 package config
 
 import (
+	"nofx/internal/installpath"
 	"nofx/logger"
 	"nofx/mcp"
 	"nofx/telemetry"
@@ -197,9 +198,9 @@ func Init() {
 	if v := os.Getenv("SANDBOX_MODE"); v == "1" || strings.EqualFold(v, "true") {
 		cfg.SandboxMode = true
 	}
-	if v := os.Getenv("DB_PATH"); v != "" {
-		cfg.DBPath = v
-	}
+	// W-ONE-BUTTON M2 (MUST-2): the ONE DB-path resolver, shared with the
+	// maintenance-hold CLI — same default ("data/data.db"), same DB_PATH rule.
+	cfg.DBPath = installpath.DBPath(os.Getenv)
 	if v := os.Getenv("DB_HOST"); v != "" {
 		cfg.DBHost = v
 	}

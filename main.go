@@ -67,6 +67,11 @@ func main() {
 	if len(os.Args) > 1 {
 		cfg.DBPath = os.Args[1]
 	}
+	// W-ONE-BUTTON M2 (MUST-2): resolve the installation data dir ONCE, with
+	// the resolver the maintenance-hold CLI uses, BEFORE traders load (they
+	// auto-start inside LoadTradersFromStore) so every entry gate reads the
+	// hold file the CLI and the updater write.
+	trader.SetMaintenanceDataDir(resolveMaintenanceDataDir(cfg.DBPath))
 	// Ensure data directory exists (for SQLite)
 	if cfg.DBType == "sqlite" {
 		if dir := filepath.Dir(cfg.DBPath); dir != "." {
