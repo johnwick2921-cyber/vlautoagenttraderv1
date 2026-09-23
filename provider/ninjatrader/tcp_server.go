@@ -1266,7 +1266,7 @@ func (s *TCPServer) SendSignal(payload SignalPayload) error {
 	s.pendingMu.Lock()
 	s.pending = append(s.pending, timedSignal{payload: payload, timestamp: time.Now()})
 	s.pendingMu.Unlock()
-	heldDropped, err := s.flushPendingReport()
+	heldDropped, err := s.flushPendingReportFor(payload.SignalID)
 	if err == nil {
 		err = ownDropError(payload.SignalID, heldDropped)
 	}
@@ -2448,11 +2448,16 @@ func (s *TCPServer) flushPending() error {
 // flushPendingReport is flushPending plus what it DROPPED because of the
 // maintenance hold, as signal id → attempted (so SendSignal can tell its own
 // entry "never sent" from "may have reached NT8" — ownDropError).
-func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
+func (s *TCPServer) flushPendingReport() (map[string]bool, error) { return s.flushPendingReportFor("") }
+
+// flushPendingReportFor is flushPendingReport inside the SendSignal call of
+// signal own: that entry's drop is reported Own (its caller learns of it from
+// the returned error, not from the sink — M2.1, review 2 N2).
+func (s *TCPServer) flushPendingReportFor(own string) (map[string]bool, error) {
 	// Held: the whole queue is dropped and reported, CONNECTED OR NOT (the
 	// queue holds entries only; nothing in it may reach the wire while held).
 	if s.entryHeld() {
-		return s.dropQueuedWhileHeld(), nil
+		return s.dropQueuedWhileHeldFor(own), nil
 	}
 	var heldDropped map[string]bool
 	s.connMu.Lock()
@@ -2472,7 +2477,7 @@ func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
 		if s.entryHeld() {
 			// W-ONE-BUTTON M2 (gap U2): the hold landed mid-flush — the rest of
 			// this batch is dropped and reported, never re-queued.
-			heldDropped = s.reportDrops(toSend[i:])
+			heldDropped = s.reportDrops(toSend[i:], own)
 			return heldDropped, nil
 		}
 		s.writeMu.Lock()
@@ -2481,7 +2486,7 @@ func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
 		// hold that landed meanwhile be written past.
 		if s.entryHeld() {
 			s.writeMu.Unlock()
-			heldDropped = s.reportDrops(toSend[i:])
+			heldDropped = s.reportDrops(toSend[i:], own)
 			return heldDropped, nil
 		}
 		// Check after waiting for the writer, using the command's original

@@ -116,3 +116,28 @@ func TestSendSignalHeldWhileDisconnectedReturnsErrEntryHeld(t *testing.T) {
 		t.Fatalf("the entry must be dropped and reported, not queued: pending=%d drops=%+v", s.PendingSignalCount(), rec.all())
 	}
 }
+
+// M2.1 (review 2 N2): a drop inside the SendSignal call of that SAME signal is
+// reported Own — its caller learns of it from the returned error and records
+// nothing; an entry queued earlier (its caller already got nil and recorded
+// it) and dropped later is not Own.
+func TestDropReportsWhetherItHappenedInsideTheEntrysOwnSend(t *testing.T) {
+	s := NewTCPServer(nil)
+	rec := &dropRecorder{}
+	s.AddDroppedEntrySink("test", rec.sink)
+	s.pendingMu.Lock()
+	s.pending = append(s.pending, timedSignal{payload: qsig("sig-earlier"), timestamp: time.Now()})
+	s.pendingMu.Unlock()
+	s.SetEntryHoldCheck(func() bool { return true })
+	_ = s.SendSignal(qsig("sig-own"))
+	own := map[string]bool{}
+	for _, d := range rec.all() {
+		own[d.SignalID] = d.Own
+	}
+	if o, ok := own["sig-own"]; !ok || !o {
+		t.Fatalf("the entry dropped inside its own send must be reported Own: %+v", rec.all())
+	}
+	if o, ok := own["sig-earlier"]; !ok || o {
+		t.Fatalf("an entry queued earlier must NOT be reported Own: %+v", rec.all())
+	}
+}

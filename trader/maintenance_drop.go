@@ -59,6 +59,13 @@ func (at *AutoTrader) onMaintenanceDroppedEntry(d ntwire.DroppedEntry) {
 			}
 		}
 	}
+	if settled == 0 && d.Own {
+		// M2.1 (review 2 N2): dropped INSIDE its own send — the caller got the
+		// error back and recorded nothing, so there is no phantom row to warn about.
+		at.logInfof("🔒 maintenance hold dropped entry %s %s %s inside its own send — it NEVER reached NT8; the caller was told (%s) and recorded nothing.",
+			d.Symbol, d.Side, d.SignalID, reason)
+		return
+	}
 	if settled > 0 {
 		at.logWarnf("🔒 maintenance hold dropped queued entry %s %s %s — it NEVER reached NT8; %d ledger row(s) settled: %s",
 			d.Symbol, d.Side, d.SignalID, settled, reason)

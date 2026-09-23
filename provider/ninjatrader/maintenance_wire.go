@@ -232,6 +232,11 @@ type DroppedEntry struct {
 	// before the drop (timedSignal.attempted). false = zero bytes were ever
 	// written — the only case a caller may settle as "never sent".
 	Attempted bool
+	// Own (M2.1, review 2 N2): dropped INSIDE the SendSignal call of this same
+	// signal — its caller learns of it from the returned error (ErrEntryHeld /
+	// ErrEntryDropAmbiguous) and records nothing on success paths. false = it
+	// was queued earlier and its caller already recorded it as sent.
+	Own bool
 }
 
 // AddDroppedEntrySink registers fn (under owner; a re-registration replaces
@@ -271,15 +276,19 @@ func (s *TCPServer) dispatchDrops(ds []DroppedEntry) {
 // dropQueuedWhileHeld empties the reconnect queue while the installation is
 // held — connected or not — logs and reports every entry, and returns their
 // ids. Nothing is ever re-queued.
-func (s *TCPServer) dropQueuedWhileHeld() map[string]bool {
+func (s *TCPServer) dropQueuedWhileHeld() map[string]bool { return s.dropQueuedWhileHeldFor("") }
+
+// dropQueuedWhileHeldFor is dropQueuedWhileHeld inside the SendSignal call of
+// signal own (that entry's drop is reported Own).
+func (s *TCPServer) dropQueuedWhileHeldFor(own string) map[string]bool {
 	s.pendingMu.Lock()
 	queued := append([]timedSignal(nil), s.pending...)
 	s.pending = s.pending[:0]
 	s.pendingMu.Unlock()
-	return s.reportDrops(queued)
+	return s.reportDrops(queued, own)
 }
 
-func (s *TCPServer) reportDrops(queued []timedSignal) map[string]bool {
+func (s *TCPServer) reportDrops(queued []timedSignal, own string) map[string]bool {
 	if len(queued) == 0 {
 		return nil
 	}
@@ -290,7 +299,7 @@ func (s *TCPServer) reportDrops(queued []timedSignal) map[string]bool {
 		// signal id → attempted; a duplicate id is attempted if ANY copy was.
 		ids[sig.SignalID] = ids[sig.SignalID] || q.attempted
 		ds = append(ds, DroppedEntry{SignalID: sig.SignalID, TraderID: sig.TraderID, Account: sig.Account,
-			Symbol: sig.Symbol, Side: sig.Side, Attempted: q.attempted})
+			Symbol: sig.Symbol, Side: sig.Side, Attempted: q.attempted, Own: own != "" && sig.SignalID == own})
 		s.logger.Warn("tcp_server: 🔒 maintenance hold — queued entry DROPPED, not sent",
 			"signal_id", sig.SignalID, "symbol", sig.Symbol, "side", sig.Side, "attempted", q.attempted)
 	}
