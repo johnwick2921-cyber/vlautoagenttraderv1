@@ -1,0 +1,651 @@
+package trader
+
+import (
+	"context"
+	"encoding/json"
+	"math"
+	"net"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"nofx/kernel"
+	"nofx/market"
+	ntwire "nofx/provider/ninjatrader"
+	"nofx/store"
+	ntTrader "nofx/trader/ninjatrader"
+)
+
+// ── W-EXEC-TRUTH W3 — market_in_zone at the production call sites ──────────
+//
+// The rig is liveArmFixture's construction (a REAL TCP server + AddOn conn, a
+// real store, the plan provider on a fixed clock, a whole-day TEST session)
+// with the AddOn conn kept so the test can read every frame IN ORDER and
+// barrier on a sentinel (a bars_history_request is ordered on the one conn
+// after anything the producer already wrote — the parity wire's barrier).
+// The tape is swappable under a lock so the event goroutine may read it.
+
+const zoneSentinel = "W3-ZONE-SENTINEL"
+
+type zoneFrame struct {
+	sig      *ntwire.SignalPayload
+	cancel   *ntwire.CancelOrderPayload
+	sentinel string
+}
+
+type zoneRig struct {
+	t    *testing.T
+	at   *AutoTrader
+	st   *store.Store
+	srv  *ntwire.TCPServer
+	conn net.Conn
+	ev   chan zoneFrame
+	seq  int
+	now  time.Time
+	pid  string
+
+	mu   sync.Mutex
+	bars []market.Kline
+}
+
+// zoneTape is an 80-bar 1m tape ending at now-1m whose LAST close is exactly
+// last (lows/highs ±0.5). shift moves it (negative = older).
+func zoneTape(last float64, now time.Time, shift time.Duration) []market.Kline {
+	base := now.Add(-80 * time.Minute).Truncate(time.Minute).Add(shift).UnixMilli()
+	out := make([]market.Kline, 0, 80)
+	for i := 0; i < 80; i++ {
+		cl := last - float64(79-i)*0.05
+		o := base + int64(i)*60_000
+		out = append(out, market.Kline{OpenTime: o, CloseTime: o + 59_999, Open: cl, High: cl + 0.5, Low: cl - 0.5, Close: cl})
+	}
+	return out
+}
+
+func (r *zoneRig) setTape(bars []market.Kline) {
+	r.mu.Lock()
+	r.bars = bars
+	r.mu.Unlock()
+}
+
+// zoneScenario is liveArmFixture's reject long at 100 with a market_in_zone
+// policy and the planner's own entry zone.
+func zoneScenario(id string, policy string, zone []float64, waitConfirm bool) kernel.PlanScenario {
+	sc := kernel.PlanScenario{ID: id, Trigger: "t", Condition: "reject", Direction: "long",
+		TargetChain: []float64{110}, Invalid: "i", Quality: "B",
+		Confirm: &kernel.PlanConfirm{Rule: "touch", RefPrice: 100, Side: "above"},
+		Arm:     &kernel.PlanArmSpec{Enabled: true, Entry: 100, Stop: 95, Target: 110, Policy: policy, WaitConfirm: waitConfirm}}
+	if zone != nil {
+		sc.Economics = &kernel.ScenarioEconomics{Version: 1, EntryZone: zone}
+	}
+	return sc
+}
+
+func zoneDoc(scs ...kernel.PlanScenario) kernel.PlanDoc {
+	d := kernel.PlanDoc{Bias: kernel.PlanBias{Direction: "long", Conviction: "low", FlipCondition: "n/a"},
+		Levels:    []kernel.PlanLevel{{Price: 100, Label: "PDH", Grade: "A", Instruction: "fade"}},
+		Scenarios: scs, NoTrade: []string{}, DeathCondition: "n/a"}
+	// The PDH zone's lower edge makes the structural stop 98.00, so R:R at the
+	// FAR bound 100.50 is (110-100.5)/(100.5-98) = 3.8 ≥ 2.
+	structuralTestMap(&d, structuralTestZone{100, 98.5, 100, "PDH"}, structuralTestZone{110, 110, 111, "target"})
+	return d
+}
+
+func newZoneRig(t *testing.T, id string, doc kernel.PlanDoc) *zoneRig {
+	t.Helper()
+	now := time.Date(2026, time.September, 11, 15, 0, 0, 0, time.UTC) // Thu 10:00 CT
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}
+	oneSetupOff(&cfg)
+	structuralTestPolicy(&cfg, .5)
+	cfg.RiskControl.MinRiskRewardRatio = 2
+
+	s := ntwire.NewTCPServer(nil)
+	s.SetAddrForTest("127.0.0.1:0")
+	s.SetAccountsList([]ntwire.AccountInfo{{Name: "Sim101", IsSim: true}}, "Sim101")
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := s.Start(ctx); err != nil {
+		t.Fatalf("server start: %v", err)
+	}
+	t.Cleanup(func() { _ = s.Stop(); cancel() })
+	conn, err := net.Dial("tcp", s.ListenAddrForTest().String())
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	waitAddonRegistered(t, s)
+	t.Cleanup(func() { _ = conn.Close() })
+	ev := make(chan zoneFrame, 64)
+	done := make(chan struct{})
+	t.Cleanup(func() { close(done) })
+	go func() {
+		for {
+			env, err := ntwire.ReadFrame(conn)
+			if err != nil {
+				return
+			}
+			var f zoneFrame
+			switch env.Type {
+			case ntwire.FrameSignal:
+				var p ntwire.SignalPayload
+				if json.Unmarshal(env.Payload, &p) != nil {
+					continue
+				}
+				f.sig = &p
+			case ntwire.FrameCancelOrder:
+				var p ntwire.CancelOrderPayload
+				if json.Unmarshal(env.Payload, &p) != nil {
+					continue
+				}
+				f.cancel = &p
+			case ntwire.FrameBarsHistoryRequest:
+				var p ntwire.BarsHistoryRequestPayload
+				if json.Unmarshal(env.Payload, &p) != nil || p.Symbol != zoneSentinel {
+					continue
+				}
+				f.sentinel = p.RequestID
+			default:
+				continue
+			}
+			select {
+			case ev <- f:
+			case <-done:
+				return
+			}
+		}
+	}()
+	st, err := store.New(filepath.Join(t.TempDir(), "zone.db"))
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
+	at := &AutoTrader{id: id, exchange: "ninjatrader", store: st, trader: ntTrader.NewTCPTrader(s, "MNQ", "Sim101")}
+	at.config.StrategyConfig = &cfg
+	at.mcpClient = &fakeDecisionClient{}
+	t.Cleanup(func() { kernel.SetTraderPlanProviders(id, kernel.TraderPlanProviders{}) })
+	r := &zoneRig{t: t, at: at, st: st, srv: s, conn: conn, ev: ev, now: now}
+	blob, _ := json.Marshal(doc)
+	r.pid = shadowPlanAtTime(t, at, st, string(blob), now)
+	r.setTape(zoneTape(101.95, now, 0))
+	prev := market.FuturesBarsProvider
+	market.FuturesBarsProvider = func(string, string, int) []market.Kline {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		return append([]market.Kline(nil), r.bars...)
+	}
+	t.Cleanup(func() { market.FuturesBarsProvider = prev })
+	return r
+}
+
+// drain returns every frame the producer wrote before now (sentinel barrier).
+func (r *zoneRig) drain() (sigs []ntwire.SignalPayload, cancels []ntwire.CancelOrderPayload) {
+	r.t.Helper()
+	r.seq++
+	id := zoneSentinel + "-" + strconv.Itoa(r.seq)
+	if err := r.srv.SendBarsHistoryRequest(ntwire.BarsHistoryRequestPayload{RequestID: id, Symbol: zoneSentinel}); err != nil {
+		r.t.Fatalf("sentinel: %v", err)
+	}
+	deadline := time.After(3 * time.Second)
+	for {
+		select {
+		case f := <-r.ev:
+			switch {
+			case f.sig != nil:
+				sigs = append(sigs, *f.sig)
+			case f.cancel != nil:
+				cancels = append(cancels, *f.cancel)
+			case f.sentinel == id:
+				return sigs, cancels
+			}
+		case <-deadline:
+			r.t.Fatal("sentinel never came back")
+			return nil, nil
+		}
+	}
+}
+
+// flatBook is the AddOn's periodic snapshot of an empty book at `at` (the
+// one-contract guard refuses on a stale book by design).
+func (r *zoneRig) flatBook(at time.Time) {
+	r.srv.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, at)
+}
+
+func (r *zoneRig) rows() []store.ArmedOrderDB {
+	r.t.Helper()
+	rows, err := r.st.ArmedOrders().ListForPlan(r.pid)
+	if err != nil {
+		r.t.Fatal(err)
+	}
+	return rows
+}
+
+func (r *zoneRig) row(scenario string) store.ArmedOrderDB {
+	r.t.Helper()
+	var out store.ArmedOrderDB
+	found := false
+	for _, x := range r.rows() {
+		if x.Scenario == scenario && (!found || x.ID > out.ID) {
+			out, found = x, true
+		}
+	}
+	if !found {
+		r.t.Fatalf("no ledger row for %s: %+v", scenario, r.rows())
+	}
+	return out
+}
+
+func (r *zoneRig) armRefusals(class string) int {
+	plan := kernel.ActivePlanFor(r.at.id, r.at.futuresSymbol())
+	if plan == nil {
+		r.t.Fatal("fixture: no active plan")
+	}
+	return store.ArmRefusalCount(r.st, r.at.id, kernel.PlanTradeDateFor(plan), plan.Session, class)
+}
+
+var zone = []float64{99.5, 100.5}
+
+// ── the pure verdict ────────────────────────────────────────────────────────
+
+func TestZonePlacementVerdictTable(t *testing.T) {
+	now := time.Date(2026, 9, 11, 15, 0, 0, 0, time.UTC)
+	fresh := now.Add(-time.Minute).UnixMilli()
+	for _, c := range []struct {
+		name   string
+		price  float64
+		lo, hi float64
+		side   string
+		barMs  int64
+		want   zoneVerdict
+	}{
+		{"long at lo (inclusive)", 31000, 31000, 31010, "long", fresh, zoneInside},
+		{"long at hi (inclusive)", 31010, 31000, 31010, "long", fresh, zoneInside},
+		{"long mid", 31005, 31000, 31010, "LONG", fresh, zoneInside},
+		{"long one tick above hi", 31010.25, 31000, 31010, "long", fresh, zoneBeyond},
+		{"long one tick below lo", 30999.75, 31000, 31010, "long", fresh, zoneShortOfZone},
+		{"short at lo (inclusive)", 31000, 31000, 31010, "short", fresh, zoneInside},
+		{"short at hi (inclusive)", 31010, 31000, 31010, "SHORT", fresh, zoneInside},
+		{"short one tick below lo", 30999.75, 31000, 31010, "short", fresh, zoneBeyond},
+		{"short one tick above hi", 31010.25, 31000, 31010, "short", fresh, zoneShortOfZone},
+		{"zero price", 0, 31000, 31010, "long", fresh, zoneUnknown},
+		{"negative price", -1, 31000, 31010, "long", fresh, zoneUnknown},
+		{"NaN price", math.NaN(), 31000, 31010, "long", fresh, zoneUnknown},
+		{"no zone", 31005, 0, 0, "long", fresh, zoneUnknown},
+		{"inverted zone", 31005, 31010, 31000, "long", fresh, zoneUnknown},
+		{"bad side", 31005, 31000, 31010, "flat", fresh, zoneUnknown},
+		{"no bar", 31005, 31000, 31010, "long", 0, zoneUnknown},
+		{"bar opened exactly 3m ago (not stale)", 31005, 31000, 31010, "long", now.Add(-3 * time.Minute).UnixMilli(), zoneInside},
+		{"bar opened 3m+1ms ago (stale)", 31005, 31000, 31010, "long", now.Add(-3*time.Minute - time.Millisecond).UnixMilli(), zoneUnknown},
+	} {
+		if got := zonePlacementVerdict(c.price, c.lo, c.hi, c.side, c.barMs, now); got != c.want {
+			t.Errorf("%s: got %s want %s", c.name, got, c.want)
+		}
+	}
+	if zoneVerdict(0) != zoneUnknown || zoneVerdict(0).String() != "unknown" {
+		t.Fatal("UNKNOWN must be the iota zero — an unset verdict can never place")
+	}
+}
+
+func TestArmPolicyConstMirrorsKernel(t *testing.T) {
+	if store.ArmPolicyMarketInZone != kernel.EntryPolicyMarketInZone {
+		t.Fatalf("store mirror %q != kernel %q", store.ArmPolicyMarketInZone, kernel.EntryPolicyMarketInZone)
+	}
+}
+
+// ── the call site ───────────────────────────────────────────────────────────
+
+// inside and beyond: exactly ONE limit frame at the FAR bound, and the row is
+// place_pending with the evidence the verdict read.
+func TestZoneRowPlacesOneLimitAtTheFarBound(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		last float64
+		want string
+	}{{"inside", 100.0, "inside"}, {"beyond", 101.95, "beyond"}} {
+		t.Run(c.name, func(t *testing.T) {
+			r := newZoneRig(t, "w3-zone-"+c.name, zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+			r.setTape(zoneTape(c.last, r.now, 0))
+			r.at.maybeManageArmedOrdersAt(nil, r.now)
+			sigs, _ := r.drain()
+			if len(sigs) != 1 {
+				t.Fatalf("want exactly 1 signal frame, got %d: %+v", len(sigs), sigs)
+			}
+			s := sigs[0]
+			if s.OrderType != "limit" || s.LimitPrice != 100.5 || s.Entry != 100.5 || !strings.EqualFold(s.Side, "long") {
+				t.Fatalf("the limit must sit at the FAR bound 100.50: %+v", s)
+			}
+			row := r.row("S1")
+			if row.State != store.StatePlacePending || row.SignalID != s.SignalID || row.Policy != kernel.EntryPolicyMarketInZone {
+				t.Fatalf("row must be place_pending under the sent signal with the policy: %+v", row)
+			}
+			if row.EntryPx != 100.5 || row.ZoneLo == nil || *row.ZoneLo != 99.5 || *row.ZoneHi != 100.5 || row.PlannedEntryPx == nil || *row.PlannedEntryPx != 100 {
+				t.Fatalf("composer stamp wrong (entry=far, zone inward, planned=authored): %+v", row)
+			}
+			if row.EvalPrice == nil || *row.EvalPrice != c.last || row.EvalBarMs == nil || row.PlacedAtMs == nil || *row.PlacedAtMs != r.now.UnixMilli() {
+				t.Fatalf("placement evidence missing: eval=%v bar=%v placed=%v", row.EvalPrice, row.EvalBarMs, row.PlacedAtMs)
+			}
+			if row.LastVerdict != c.want {
+				t.Fatalf("last_verdict = %q, want %q", row.LastVerdict, c.want)
+			}
+			if !strings.HasPrefix(row.ZoneProvenance, "frozen_zone:") {
+				t.Fatalf("provenance label: %q", row.ZoneProvenance)
+			}
+		})
+	}
+}
+
+// short_of_zone: no frame, the row stays armed, ONE warn and ONE count over
+// three passes.
+func TestZoneRowShortOfZoneWaitsAndCountsOnce(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-short", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(99.0, r.now, 0))
+	before := gateBlocks(r.at.id, "market_in_zone_short_of_zone")
+	for i := 0; i < 3; i++ {
+		r.at.maybeManageArmedOrdersAt(nil, r.now.Add(time.Duration(i)*time.Second))
+	}
+	if sigs, cancels := r.drain(); len(sigs) != 0 || len(cancels) != 0 {
+		t.Fatalf("short_of_zone must send nothing: sigs=%d cancels=%d", len(sigs), len(cancels))
+	}
+	row := r.row("S1")
+	if row.State != store.StateArmed || row.SignalID != "" || row.LastVerdict != "short_of_zone" {
+		t.Fatalf("the row must stay armed with verdict short_of_zone: %+v", row)
+	}
+	if n := r.armRefusals("market_in_zone:short_of_zone"); n != 1 {
+		t.Fatalf("three passes must count ONE short_of_zone, got %d", n)
+	}
+	if gateBlocks(r.at.id, "market_in_zone_short_of_zone") != before+1 {
+		t.Fatal("the gate-block counter must move once")
+	}
+	// Price comes back into the zone: the same row places.
+	r.setTape(zoneTape(100.25, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, r.now.Add(5*time.Second))
+	if sigs, _ := r.drain(); len(sigs) != 1 || sigs[0].LimitPrice != 100.5 {
+		t.Fatalf("back inside the zone the armed row must place once at 100.50: %+v", sigs)
+	}
+}
+
+// unknown (a stale tape): nothing placed, nothing cancelled, the row stays armed.
+func TestZoneRowUnknownOnAStaleTapeDoesNothing(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-stale", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(100.0, r.now, -5*time.Minute))
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	if sigs, cancels := r.drain(); len(sigs) != 0 || len(cancels) != 0 {
+		t.Fatalf("unknown must send nothing: sigs=%d cancels=%d", len(sigs), len(cancels))
+	}
+	if row := r.row("S1"); row.State != store.StateArmed || row.LastVerdict != "unknown" {
+		t.Fatalf("unknown leaves the row armed: %+v", row)
+	}
+}
+
+// The hold refuses (the row survives) and the row places after release.
+func TestZoneRowHoldRefusesThenPlacesAfterRelease(t *testing.T) {
+	dir := withMaintenanceDir(t)
+	r := newZoneRig(t, "w3-zone-hold", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(100.0, r.now, 0))
+	setHold(t, dir, "job-zone")
+	before := gateBlocks(r.at.id, "maintenance_hold")
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	if sigs, _ := r.drain(); len(sigs) != 0 {
+		t.Fatalf("held: nothing may reach the wire, got %d", len(sigs))
+	}
+	if row := r.row("S1"); row.State != store.StateArmed || !strings.HasPrefix(row.LastVerdict, "refused: maintenance_hold") {
+		t.Fatalf("the hold must not advance the row: %+v", row)
+	}
+	if gateBlocks(r.at.id, "maintenance_hold") <= before {
+		t.Fatal("the refusal must count maintenance_hold")
+	}
+	if err := store.ClearMaintenanceHold(dir, "job-zone"); err != nil {
+		t.Fatal(err)
+	}
+	r.at.maybeManageArmedOrdersAt(nil, r.now.Add(time.Second))
+	if sigs, _ := r.drain(); len(sigs) != 1 {
+		t.Fatalf("after release the surviving arm must place once, got %d", len(sigs))
+	}
+}
+
+// Two policy scenarios both inside: ONE entry per plan, one frame.
+func TestZoneTwoScenariosInsidePlaceOnce(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-two", zoneDoc(
+		zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false),
+		zoneScenario("S2", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(100.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	if sigs, _ := r.drain(); len(sigs) != 1 {
+		t.Fatalf("two inside scenarios must reach the wire ONCE, got %d", len(sigs))
+	}
+}
+
+// A market_in_zone arm with no zone (an overlay that skipped the write check)
+// is refused at authoring (D9): no row, no frame, counted once.
+func TestZoneLegWithoutAZoneIsRefusedAtAuthoring(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-missing", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, nil, false)))
+	r.setTape(zoneTape(100.0, r.now, 0))
+	for i := 0; i < 3; i++ {
+		r.at.maybeManageArmedOrdersAt(nil, r.now.Add(time.Duration(i)*time.Second))
+	}
+	if sigs, _ := r.drain(); len(sigs) != 0 {
+		t.Fatalf("a zoneless market_in_zone leg must never place, got %d", len(sigs))
+	}
+	if rows := r.rows(); len(rows) != 0 {
+		t.Fatalf("a refused leg must not author a row: %+v", rows)
+	}
+	if n := r.armRefusals("market_in_zone:" + kernel.ZoneMissing); n != 1 {
+		t.Fatalf("three passes must count ONE zone_missing, got %d", n)
+	}
+}
+
+// Legacy (no policy): the row carries no W3 field and the legacy limit path
+// runs (limit AT the authored entry 100.00, not a zone bound).
+func TestLegacyArmIsUntouchedByTheZonePath(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-legacy", zoneDoc(zoneScenario("S1", "", zone, false)))
+	r.setTape(zoneTape(101.95, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 || sigs[0].LimitPrice != 100 {
+		t.Fatalf("legacy arm must place its authored limit 100.00: %+v", sigs)
+	}
+	row := r.row("S1")
+	if row.Policy != "" || row.ZoneLo != nil || row.PlannedEntryPx != nil || row.EvalPrice != nil || row.PlacedAtMs != nil || row.LastVerdict != "" {
+		t.Fatalf("a legacy row must carry no W3 field: %+v", row)
+	}
+}
+
+// The rest cap: a policy limit resting 31 min is cancelled "zone rest
+// expired"; 29 min is left alone; a legacy working row of the same age is
+// never touched.
+func TestZoneRestCap(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-rest", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(101.95, r.now, 0)) // beyond: rests at 100.50
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 {
+		t.Fatalf("fixture: want 1 placement, got %d", len(sigs))
+	}
+	sid := sigs[0].SignalID
+	// A legacy working row of the same age, on another plan.
+	legacy := &store.ArmedOrderDB{TraderID: r.at.id, PlanID: "2026-09-11:TEST:other", Version: 1, Session: "TEST", Scenario: "S9",
+		Side: "long", EntryPx: 90, StopPx: 85, TargetPx: 100, State: store.StateArmed, CreatedAt: r.now, UpdatedAt: r.now}
+	if err := r.st.ArmedOrders().UpsertArm(legacy); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.st.ArmedOrders().BeginPlacement(legacy.ID, "legacy-sig"); err != nil {
+		t.Fatal(err)
+	}
+	book := func(at time.Time) {
+		r.srv.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{
+			{OrderID: "o1", Name: sid, Symbol: "MNQ", Action: "buy", Type: "limit", LimitPrice: 100.5, Quantity: 1, State: "Working"},
+			{OrderID: "o2", Name: "legacy-sig", Symbol: "MNQ", Action: "buy", Type: "limit", LimitPrice: 90, Quantity: 1, State: "Working"},
+		}}, at)
+	}
+	at29 := r.now.Add(29 * time.Minute)
+	book(at29)
+	r.setTape(zoneTape(101.95, at29, 0))
+	r.at.maybeManageArmedOrdersAt(nil, at29)
+	if _, cancels := r.drain(); len(cancels) != 0 {
+		t.Fatalf("29 min must not cancel: %+v", cancels)
+	}
+	at31 := r.now.Add(31 * time.Minute)
+	book(at31)
+	r.setTape(zoneTape(101.95, at31, 0))
+	r.at.maybeManageArmedOrdersAt(nil, at31)
+	_, cancels := r.drain()
+	if len(cancels) != 1 || cancels[0].SignalID != sid {
+		t.Fatalf("31 min must cancel exactly the policy limit %s: %+v", sid, cancels)
+	}
+	row := r.row("S1")
+	if row.State != store.StateCancelPending || !strings.Contains(row.StateReason, "zone rest expired") {
+		t.Fatalf("the rest-capped row must be cancel_pending 'zone rest expired': %+v", row)
+	}
+	var lg store.ArmedOrderDB
+	if err := r.st.GormDB().First(&lg, legacy.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if lg.State == store.StateCancelPending || lg.CancelRequestedAtMs != 0 || strings.Contains(lg.StateReason, "zone rest") {
+		t.Fatalf("a legacy row of the same age must be untouched: %+v", lg)
+	}
+}
+
+// D15 at the call site: fill → position closed → the next pass authors no
+// new row and sends nothing within the version; a new version re-arms.
+func TestZoneReArmPinnedWithinVersionAtTheCallSite(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-pin", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(100.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 {
+		t.Fatalf("fixture: want 1 placement, got %d", len(sigs))
+	}
+	ledger := r.st.ArmedOrders()
+	r.at.onArmedOrderUpdate(ntwire.OrderUpdatePayload{SignalID: sigs[0].SignalID, State: "filled", FillPrice: 100.25, Account: "Sim101"}, ledger)
+	if row := r.row("S1"); row.State != store.StateFilled {
+		t.Fatalf("fixture: fill not applied: %+v", row)
+	}
+	opens, err := r.st.Position().GetOpenPositions(r.at.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range opens {
+		if _, err := r.st.Position().ClosePosition(p.ID, 98, "sl", -2.25, 0, "stop"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i := 1; i <= 2; i++ {
+		at := r.now.Add(time.Duration(i) * time.Minute)
+		r.setTape(zoneTape(100.0, at, 0)) // a fresh tape INSIDE the zone and a fresh flat
+		r.flatBook(at)                    // book: only the pin can stop a re-place
+		r.at.maybeManageArmedOrdersAt(nil, at)
+	}
+	if sigs, _ := r.drain(); len(sigs) != 0 {
+		t.Fatalf("a filled market_in_zone arm must not re-place within its version, got %d frame(s)", len(sigs))
+	}
+	if rows := r.rows(); len(rows) != 1 {
+		t.Fatalf("no new placement row may be minted within the version: %+v", rows)
+	}
+	// A new plan version re-arms.
+	blob, _ := json.Marshal(zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	shadowPlanAtTime(t, r.at, r.st, string(blob), r.now)
+	// The broker adapter's B3 dupe guard drops an identical entry within a
+	// WALL-CLOCK 55 s; the fixture clock says 3 minutes passed, so the adapter
+	// is re-made to stand for that elapsed time (same server, same account).
+	r.at.trader = ntTrader.NewTCPTrader(r.srv, "MNQ", "Sim101")
+	r.setTape(zoneTape(100.0, r.now.Add(3*time.Minute), 0))
+	r.flatBook(r.now.Add(3 * time.Minute))
+	r.at.maybeManageArmedOrdersAt(nil, r.now.Add(3*time.Minute))
+	if sigs, _ := r.drain(); len(sigs) != 1 {
+		t.Fatalf("a NEW version must re-arm and place once, got %d", len(sigs))
+	}
+}
+
+// ── receipts at onArmedOrderUpdate ──────────────────────────────────────────
+
+func TestZoneFillReceiptAtTheOrderUpdateCallSite(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-receipt", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	ledger := r.st.ArmedOrders()
+	mk := func(scenario, side, sig string, policy string, entry, lo, hi float64) int64 {
+		row := &store.ArmedOrderDB{TraderID: r.at.id, PlanID: "2026-09-11:TEST:rcpt", Version: 1, Session: "TEST", Scenario: scenario,
+			Side: side, EntryPx: entry, StopPx: entry - 20, TargetPx: entry + 50, State: store.StateArmed, CreatedAt: r.now, UpdatedAt: r.now, Policy: policy}
+		if strings.EqualFold(side, "short") {
+			row.StopPx, row.TargetPx = entry+20, entry-50
+		}
+		if policy != "" {
+			row.ZoneLo, row.ZoneHi = &lo, &hi
+		}
+		if err := ledger.UpsertArm(row); err != nil {
+			t.Fatal(err)
+		}
+		if err := ledger.BeginPlacement(row.ID, sig); err != nil {
+			t.Fatal(err)
+		}
+		return row.ID
+	}
+	get := func(id int64) store.ArmedOrderDB {
+		var x store.ArmedOrderDB
+		if err := r.st.GormDB().First(&x, id).Error; err != nil {
+			t.Fatal(err)
+		}
+		return x
+	}
+	fill := func(sig string, px float64) {
+		r.at.onArmedOrderUpdate(ntwire.OrderUpdatePayload{SignalID: sig, State: "filled", FillPrice: px, Account: "Sim101"}, ledger)
+	}
+	// long, buy bound 31010: a 31006 fill is 16 ticks BETTER → −16 (+ = worse).
+	idL := mk("R1", "long", "sig-long", kernel.EntryPolicyMarketInZone, 31010, 31000, 31010)
+	fill("sig-long", 31006)
+	if x := get(idL); x.FillSlippageTicks == nil || *x.FillSlippageTicks != -16 || x.FilledAtMs == nil {
+		t.Fatalf("long receipt: want −16 ticks, got %+v / filled_at %v", x.FillSlippageTicks, x.FilledAtMs)
+	}
+	// short, sell bound 31000: a 31004 fill is 16 ticks better → −16.
+	idS := mk("R2", "short", "sig-short", kernel.EntryPolicyMarketInZone, 31000, 31000, 31010)
+	fill("sig-short", 31004)
+	if x := get(idS); x.FillSlippageTicks == nil || *x.FillSlippageTicks != -16 {
+		t.Fatalf("short receipt: want −16 ticks, got %+v", x.FillSlippageTicks)
+	}
+	// legacy: NULL.
+	idG := mk("R3", "long", "sig-legacy", "", 31010, 0, 0)
+	fill("sig-legacy", 31006)
+	if x := get(idG); x.FillSlippageTicks != nil || x.FilledAtMs != nil {
+		t.Fatalf("a legacy row's receipt must stay NULL: %+v / %v", x.FillSlippageTicks, x.FilledAtMs)
+	}
+	// A fill BEYOND the far bound is a contradiction: counted, never hidden.
+	beyond0, _ := store.SystemCounter(r.st, "market_in_zone:fill_beyond_far")
+	idB := mk("R4", "long", "sig-beyond", kernel.EntryPolicyMarketInZone, 31010, 31000, 31010)
+	fill("sig-beyond", 31011)
+	if n, _ := store.SystemCounter(r.st, "market_in_zone:fill_beyond_far"); n != beyond0+1 {
+		t.Fatalf("a fill beyond the far bound must be counted as a contradiction (%d → %d)", beyond0, n)
+	}
+	if x := get(idB); x.FillSlippageTicks == nil || *x.FillSlippageTicks != 4 {
+		t.Fatalf("beyond-far slippage must be +4 (worse): %+v", x.FillSlippageTicks)
+	}
+	// A near-side fill (improved, outside the zone) is flagged.
+	near0, _ := store.SystemCounter(r.st, "market_in_zone:fill_near_side")
+	mk("R5", "long", "sig-near", kernel.EntryPolicyMarketInZone, 31010, 31000, 31010)
+	fill("sig-near", 30999)
+	if n, _ := store.SystemCounter(r.st, "market_in_zone:fill_near_side"); n != near0+1 {
+		t.Fatalf("a near-side fill must be flagged (%d → %d)", near0, n)
+	}
+}
+
+// The receipt math, pure: a recorded fill can never be labelled in-zone when
+// it lies outside the zone.
+func TestZoneFillReceiptNeverLabelsAnOutsideFillInZone(t *testing.T) {
+	for _, c := range []struct {
+		side             string
+		fill             float64
+		beyond, pastNear bool
+	}{
+		{"long", 31000, false, false}, {"long", 31010, false, false}, {"long", 31010.25, true, false}, {"long", 30999.75, false, true},
+		{"short", 31000, false, false}, {"short", 31010, false, false}, {"short", 30999.75, true, false}, {"short", 31010.25, false, true},
+	} {
+		limit := 31010.0
+		if c.side == "short" {
+			limit = 31000
+		}
+		_, b, n := zoneFillReceipt(c.side, c.fill, limit, 31000, 31010, 0.25)
+		if b != c.beyond || n != c.pastNear {
+			t.Errorf("%s fill %.2f: beyond=%v near=%v, want %v/%v", c.side, c.fill, b, n, c.beyond, c.pastNear)
+		}
+	}
+	if s, _, _ := zoneFillReceipt("long", 31006, 31010, 31000, 31010, 0); s != nil {
+		t.Fatal("no tick → slippage is absent (nil), never 0")
+	}
+}
