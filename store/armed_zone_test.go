@@ -33,7 +33,7 @@ func zoneRows(t *testing.T, st *ArmedOrderStore) []ArmedOrderDB {
 }
 
 // The migrate adds every W3 column to an EXISTING table, and a legacy row
-// reads them absent (NULL / ''), never 0.
+// reads them absent (NULL / ”), never 0.
 func TestArmedZoneMigrateAddsColumnsAndLegacyRowsReadAbsent(t *testing.T) {
 	db := newArmedTestDB(t)
 	st := NewArmedOrderStore(db)
