@@ -130,9 +130,9 @@ func (at *AutoTrader) traderScope(traderID string) (account, symbol string, ok b
 }
 
 // entryLatchLedgers lists the PLACED non-terminal ledger rows on this trader's
-// account and symbol: an armed row carrying a signal in place_pending /
-// working / cancel_pending, a Picture row working or stamped (a send was
-// started). An unplaced arm and an unstamped Picture claim are not placed. A
+// account and symbol: a non-terminal armed row carrying a broker signal
+// (place_pending / working / cancel_pending), a Picture row working or stamped
+// (a send was started). An unplaced arm and an unstamped Picture claim are not placed. A
 // read error is returned — the latch refuses on it.
 func (at *AutoTrader) entryLatchLedgers() ([]string, error) {
 	if at.store == nil {
@@ -146,12 +146,11 @@ func (at *AutoTrader) entryLatchLedgers() ([]string, error) {
 		return nil, fmt.Errorf("armed ledger: %w", err)
 	}
 	for _, r := range rows {
-		if strings.TrimSpace(r.SignalID) == "" {
-			continue
-		}
-		switch strings.ToLower(strings.TrimSpace(r.State)) {
-		case store.StatePlacePending, store.StateWorking, store.StateCancelPending:
-		default:
+		// PLACED = a non-terminal row that carries a broker signal: the stamp
+		// (BeginPlacement) is what gives an arm its signal, so an unplaced
+		// 'armed' row has none. The terminal set is the ONE canonical
+		// predicate — never a copied list of states (arm_state guard).
+		if strings.TrimSpace(r.SignalID) == "" || store.IsTerminalArmState(r.State) {
 			continue
 		}
 		if a, s, ok := at.traderScope(r.TraderID); ok && (!strings.EqualFold(a, acct) || instrumentRoot(s) != root) {
