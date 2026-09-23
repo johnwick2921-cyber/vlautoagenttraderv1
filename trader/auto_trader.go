@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"nofx/kernel"
 	"nofx/logger"
+	"nofx/market"
 	"nofx/mcp"
 	_ "nofx/mcp/payment"
 	_ "nofx/mcp/provider"
@@ -197,6 +198,20 @@ func (at *AutoTrader) maybeMoveStopToBreakeven(symbol, side string, entryPrice, 
 		symbol, side, pts, entryPrice)
 }
 
+// defaultBreakevenTriggerPoints is the shipped auto-breakeven trigger (points in
+// profit) when the strategy leaves breakeven_trigger_points unset or ≤ 0.
+const defaultBreakevenTriggerPoints = 50.0
+
+// breakevenTriggerPoints is the ONE resolution of the breakeven trigger (W1 (g):
+// breakevenTrigger and the Settings page both read it).
+func breakevenTriggerPoints(rc store.RiskControlConfig) float64 {
+	trigger := rc.BreakevenTriggerPoints
+	if trigger <= 0 {
+		trigger = defaultBreakevenTriggerPoints
+	}
+	return trigger
+}
+
 // breakevenTrigger is the pure decision for auto-breakeven: given the strategy's
 // breakeven config and a position's side/entry/mark, it returns whether the stop
 // should move to breakeven now and the current points in profit. Default trigger
@@ -205,10 +220,7 @@ func breakevenTrigger(rc store.RiskControlConfig, side string, entry, mark float
 	if !hlBool(rc.BreakevenEnabled, false) {
 		return false, 0
 	}
-	trigger := rc.BreakevenTriggerPoints
-	if trigger <= 0 {
-		trigger = 50
-	}
+	trigger := breakevenTriggerPoints(rc)
 	// Normalise side casing once. The sole production caller (checkPositionDrawdown)
 	// feeds pos["side"] from NT8's GetPositions/positionMap, which emits UPPERCASE
 	// "LONG"/"SHORT" (upperSideStr). A case-sensitive == "long" never matched, so the
@@ -379,8 +391,27 @@ type AutoTrader struct {
 	pauseUntilMs           atomic.Int64 // P2 stop_until producer state (unix ms; 0 = not paused) — see auto_trader_pause.go
 	pauseStoreMu           sync.Mutex   // E7-v2: orders memory-vs-store pause writes (expiry CAS vs concurrent re-pause)
 	lastRollWarnContract   string       // P3 roll gate: dedupes the unresolved-contract WARN per contract-string change
-	lastHalfDaySeedDay     string       // P4 half-days producer: once-per-CME-session-day throttle
-	lastCycleBarSig        string       // P10.4 no-new-data dedup: newest primary-TF bar signature at last cycle
+	// onceMu guards the dedupe-once fields read and written through firstFor
+	// (lastRollWarnContract, lastCalFailClosedAlert, lastT1NoCurrencyWarn,
+	// lastClockWidenLog): W-EXEC-TRUTH W0 (Q15) — the admission gate reaches
+	// them from Picture's live-bar goroutine as well as from runCycle.
+	onceMu sync.Mutex
+	// admitLast dedupes arm/picture admission refusals per (path, key) —
+	// W-EXEC-TRUTH W0 (a): a 2-minute pass or a live-bar frame is not a new
+	// event. Locked (Picture runs on the live-bar goroutine).
+	admitLast admitDedupe
+	// cancelConfirmMu serializes confirmPendingCancels between the armed pass and
+	// the withdraw beat (W-EXEC-TRUTH W0 (f)).
+	cancelConfirmMu    sync.Mutex
+	lastHalfDaySeedDay string // P4 half-days producer: once-per-CME-session-day throttle
+	lastCycleBarSig    string // P10.4 no-new-data dedup: newest primary-TF bar signature at last cycle
+	// entrySendMu is the ONE entry-send section (W1b FOLD-10): it spans an
+	// entry's bracket set → its open (and, separately, the post-open set), on
+	// the AI decision's cycle goroutine and the chat door's HTTP goroutine
+	// alike — the broker's (symbol, side) SL/TP maps are set-then-read, and a
+	// foreign set between them sent one entry on another's bracket. Taken only
+	// in openEntryWithRecord, via lockEntrySend.
+	entrySendMu sync.Mutex
 
 	// Two-picture mode (W-PICTURE-HTF): the deterministic evaluator, lazily
 	// built from the strategy knobs and rebuilt when they change.
@@ -404,10 +435,19 @@ type AutoTrader struct {
 	// self-backoff clock (see maybeRereadAfterFlip). Per trader on purpose:
 	// a process-global map keyed by plan id let one trader's (or one test's)
 	// failed launch hold another's retry.
-	flipRereadLaunchAt    sync.Map
-	lastAIBalanceDay      string // P5 daily balance poll throttle (AI_BALANCE_WARN)
-	isRunning             bool
-	isRunningMutex        sync.RWMutex          // Mutex to protect isRunning flag
+	flipRereadLaunchAt  sync.Map
+	lastAIBalanceDay    string // P5 daily balance poll throttle (AI_BALANCE_WARN)
+	isRunning           bool
+	isRunningMutex      sync.RWMutex // Mutex to protect isRunning flag
+	limitFlattenMu      sync.Mutex   // W117-F F6: serializes delayed exits with Stop
+	limitFlattenStopped bool
+	limitFlattens       map[int64]*pendingLimitFlatten
+	// pictureGen (W4/D25) opens on every registerPictureHtf and closes on
+	// unregisterPictureHtf. An evaluation records the generation it began
+	// under and re-checks it immediately before the wire, so a frame in
+	// flight across a Stop or a restart cannot send for a trader that is
+	// gone. Atomic: read from the live-bar goroutine, written on Run/Stop.
+	pictureGen            atomic.Int64
 	startTime             time.Time             // System start time
 	callCount             int                   // AI call count
 	positionFirstSeenTime map[string]int64      // Position first seen time (symbol_side -> timestamp in milliseconds)
@@ -464,6 +504,29 @@ type AutoTrader struct {
 	// placement beat because the ledger row already existed. Log once per
 	// (plan:version:scenario) spec, again only when the prices change.
 	armAuthoredLast map[string]string
+	// windowSweepSentMs (W1b FOLD-12) — row id → pass-clock ms of the window
+	// sweep's last cancel request for that row; the sweep's pace
+	// (window_sweep_pace.go). Pass state: armedPassMu, like the maps above.
+	windowSweepSentMs map[int64]int64
+
+	// W-EXEC-TRUTH W3 D14 — ONE armed pass at a time per trader. The scan
+	// (runCycle → maybeManageArmedOrdersAt), the live-bar event pass and the
+	// strict nudge all take it; the maps above are pass state and are safe
+	// only because every writer holds this lock. Never re-entered.
+	armedPassMu sync.Mutex
+	// zoneArmActive — the ACTIVE plan doc has an enabled market_in_zone arm
+	// (cached by every pass); the live-bar sink kicks the event pass only
+	// while it is true. zoneWatch holds []zoneWatch — the armed policy rows'
+	// zones and last verdicts — so the sink can see a verdict CHANGE.
+	zoneArmActive atomic.Bool
+	zoneWatch     atomic.Value
+	// armedEvent is the per-trader event-pass loop (started in Run, stopped
+	// in Stop); nil while the trader is not running.
+	armedEvent atomic.Pointer[armedEventLoop]
+	// armedEventNowForTest is a TEST SEAM ONLY (nil in production): the event
+	// loop's clock, so a fixture-time plan can be driven through the REAL
+	// goroutine. TestArmedEventClockSeamIsNilInProduction pins it.
+	armedEventNowForTest func() time.Time
 
 	// Plan 4 Stage 4 — NinjaTrader TCP balance tracking (defer-until-balance guard)
 	// For NinjaTrader TCP traders, we track if account_balance frame has arrived yet.
@@ -632,6 +695,17 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		config.Exchange = "binance"
 	}
 
+	// CTO F2 (critic G1), fail-closed at the SOURCE: the NinjaTrader venue
+	// trades CME futures only. A trader configured on it with a non-CME symbol
+	// (its NT8 symbol or a strategy static coin) is REFUSED here — named, never
+	// started — instead of reading that symbol from a crypto source every
+	// cycle (CoinAnk exchange=Binance + Binance OI/funding).
+	if strings.EqualFold(strings.TrimSpace(config.Exchange), "ninjatrader") {
+		if bad := nonCMESymbolsForNT8(config); len(bad) > 0 {
+			return nil, fmt.Errorf("refused: trader %q is on the NinjaTrader venue but trades %s — not CME futures symbols; this trader does not load", config.Name, strings.Join(bad, ","))
+		}
+	}
+
 	// Create corresponding trader based on configuration
 	var trader Trader
 	var err error
@@ -796,6 +870,8 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		claw402Key = config.CustomAPIKey
 	}
 	strategyEngine := kernel.NewStrategyEngine(config.StrategyConfig, claw402Key)
+	// CTO F2: the cycle's market reads route through the trader's venue.
+	strategyEngine.SetVenue(config.Exchange)
 	logger.Infof("✓ [%s] Using strategy engine (strategy configuration loaded)", config.Name)
 
 	at := &AutoTrader{
@@ -830,31 +906,36 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 	// was a stub returning empty, so the leg passed VACUOUSLY at every cutover
 	// 35 → 41. Wired HERE (not lazily) so the dead-man watchdog's own
 	// GetOpenOrders probe has a source from the first cycle.
+	// WAVE 1a-plan N5 — the CSV transport takes the same maintenance
+	// permit (only entry sends); wired at construction like the TCP path.
+	if csv, ok := at.trader.(*ntTrader.Trader); ok {
+		wireNT8MaintenanceCSV(csv)
+	}
 	if nt, ok := at.trader.(*ntTrader.TCPTrader); ok {
 		nt.SetOpenOrdersSource(at.ledgerOpenOrders)
 		// THE LEDGER'S EAR FOR A REFUSAL (2026-09-07). Every entry-reject path
 		// in the NT8 trader calls this with the BROKER'S reason, verbatim.
 		nt.SetRejectSink(at.recordBrokerRejection)
-		// W-ONE-BUTTON M2 site 4 — the installation-wide maintenance permit,
-		// taken by the four ENTRY sends only (never protection/exits), and the
-		// queue's hold check (gap U2). Wired at construction, before Run.
-		nt.SetEntryPermit(MaintenanceEntryPermit)
-		nt.SetEntryHoldCheck(maintenanceQueueHeld)
-		// Site 7 — the AddOn learns the hold over the wire (silent when unheld).
-		nt.SetMaintenanceSource(maintenanceWireState)
-		// M-2 — an entry the hold drops from the queue settles what this trader
-		// recorded for it (never sent), or says why it cannot.
-		nt.SetDroppedEntrySink(at.id, at.onMaintenanceDroppedEntry)
+		// W-ONE-BUTTON M2 — the installation maintenance hold (sites 4, 4b, 7
+		// and the M-2 drop sink), wired at construction, before Run.
+		wireNT8Maintenance(at, nt)
+		// W-EXEC-TRUTH W0 (b) — the one entry latch's evidence (book + both
+		// ledgers), wired at construction, before Run.
+		wireNT8EntryLatch(at, nt)
 	}
 	return at, nil
 }
 
 // Run runs the automatic trading main loop
 func (at *AutoTrader) Run() error {
+	at.limitFlattenMu.Lock()
+	at.limitFlattenStopped = false
+	at.limitFlattenMu.Unlock()
 	at.isRunningMutex.Lock()
 	at.isRunning = true
 	at.isRunningMutex.Unlock()
-	at.registerPictureHtf() // live-bar routing for the two-picture mode
+	at.startPictureRun()                        // W3 D14 event loop + run epoch, THEN Picture's live-bar routing (W5 R2)
+	at.logInfof("🚦 %s", entryLatchBootLine(at)) // W-EXEC-TRUTH W0 (b) — READ, never asserted
 	if at.exchange == "ninjatrader" {
 		if _, ok := kernel.TFDurationMs(at.primaryTimeframe()); !ok {
 			return fmt.Errorf("primary_timeframe %q is not in the timeframe table (kernel/timeframes.go) — refusing to run on a corrupt bar clock", at.primaryTimeframe())
@@ -1041,6 +1122,7 @@ func (at *AutoTrader) Run() error {
 
 // Stop stops the automatic trading
 func (at *AutoTrader) Stop() {
+	at.stopLimitFlattens()
 	at.isRunningMutex.Lock()
 	if !at.isRunning {
 		at.isRunningMutex.Unlock()
@@ -1050,6 +1132,8 @@ func (at *AutoTrader) Stop() {
 	at.isRunningMutex.Unlock()
 
 	unregisterPostExitDispatch(at) // Phase 4: stop routing close events here
+	at.unregisterPictureHtf()      // W4 D25 — no Picture frame after Stop
+	at.stopArmedEventLoop()        // W3 D14 — no event pass after Stop
 	close(at.stopMonitorCh)        // Notify monitoring goroutine to stop
 	at.monitorWg.Wait()            // Wait for monitoring goroutine to finish
 	logger.Info("⏹ Automatic trading system stopped")
@@ -1278,4 +1362,47 @@ func (at *AutoTrader) recordBrokerRejection(signalID, brokerReason string) {
 	}
 	at.logWarnf("🚨 received armed entry rejection %s leg %d signal=%s reason=%q", row.Scenario, row.LegIndex+1, signalID, reason)
 	telemetry.IncGateBlock(at.id, "place_rejected_by_broker")
+}
+
+// firstFor reports whether key is new for the dedupe-once field *f and records
+// it, atomically under onceMu (W-EXEC-TRUTH W0 Q15). The caller logs OUTSIDE
+// the lock.
+func (at *AutoTrader) firstFor(f *string, key string) bool {
+	at.onceMu.Lock()
+	defer at.onceMu.Unlock()
+	if *f == key {
+		return false
+	}
+	*f = key
+	return true
+}
+
+// nonCMESymbolsForNT8 lists the symbols an NT8-venue trader is configured to
+// trade that are not CME futures symbols: its NT8 symbol (when set) and its
+// strategy's static coins (the engine's candidates). Empty = the pair is valid.
+func nonCMESymbolsForNT8(config AutoTraderConfig) []string {
+	var syms []string
+	if s := strings.TrimSpace(config.NinjaTraderSymbol); s != "" {
+		syms = append(syms, s)
+	}
+	if config.StrategyConfig != nil {
+		syms = append(syms, config.StrategyConfig.CoinSource.StaticCoins...)
+	}
+	var bad []string
+	for _, s := range syms {
+		if strings.TrimSpace(s) != "" && !market.IsCMEFuturesSymbol(market.Normalize(s)) {
+			bad = append(bad, s)
+		}
+	}
+	return bad
+}
+
+// lockEntrySend takes the AutoTrader's ONE entry-send section (W1b FOLD-10)
+// and returns its release, which is idempotent: a caller defers it (every
+// early return and a panic release the section) AND calls it where the
+// section ends, so the section never outlives the send it guards.
+func (at *AutoTrader) lockEntrySend() (release func()) {
+	at.entrySendMu.Lock()
+	var once sync.Once
+	return func() { once.Do(at.entrySendMu.Unlock) }
 }
