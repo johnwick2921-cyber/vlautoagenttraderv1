@@ -64,6 +64,13 @@ func TestMaintenanceHandlersServeTheTraderViews(t *testing.T) {
 	if err := store.WriteMaintenanceHold(dir, store.MaintenanceHold{Held: true, JobID: "job-api", Since: time.Now().UTC().Format(time.RFC3339), Owner: "cli"}); err != nil {
 		t.Fatal(err)
 	}
+	// Runs BEFORE the data-dir restore (LIFO): clear the hold and let a reader
+	// release the process-wide barrier, so no later test in this package
+	// inherits an engaged barrier (review 3 F17).
+	t.Cleanup(func() {
+		_ = store.ForceClearMaintenanceHold(dir)
+		trader.MaintenanceHeld()
+	})
 	s := &Server{store: st} // no trader manager: no loaded traders
 
 	m := getJSON(t, s.handleMaintenanceStatus)

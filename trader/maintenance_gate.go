@@ -20,7 +20,7 @@ import (
 // behaviour: never held. main.go always configures it before traders load.
 var maintenanceBarrier EntryBarrier
 
-func resetMaintenanceBarrierForTest() { maintenanceBarrier = EntryBarrier{} }
+func resetMaintenanceBarrierForTest() { maintenanceBarrier.resetForTest() }
 
 // maintenanceStateAfterReadHook is a TEST SEAM (nil in production): it runs
 // between a reader's file read and its engage/release decision.

@@ -129,6 +129,18 @@ func (b *EntryBarrier) Engage() {
 	b.mu.Unlock()
 }
 
+// resetForTest returns the barrier to its zero state UNDER its lock (a struct
+// overwrite would race any goroutine still touching it — review 3 F17).
+func (b *EntryBarrier) resetForTest() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.zero != nil {
+		close(b.zero)
+		b.zero = nil
+	}
+	b.held, b.inFlight, b.gen = false, 0, 0
+}
+
 // Gen is the engagement generation: it moves on every Engage.
 func (b *EntryBarrier) Gen() uint64 {
 	b.mu.Lock()

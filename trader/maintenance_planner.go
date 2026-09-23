@@ -22,6 +22,10 @@ const maintenanceHoldPlanReason = "an update is in progress — plan reads resum
 // hold: key → the hold reason it was logged under.
 var plannerHoldNoted sync.Map
 
+func resetPlannerHoldNotedForTest() {
+	plannerHoldNoted.Range(func(k, _ any) bool { plannerHoldNoted.Delete(k); return true })
+}
+
 // refusePlannerClaimWhileHeld reports whether the maintenance hold refuses the
 // read identified by key; what names it for the log ("planner read",
 // "weekly read").

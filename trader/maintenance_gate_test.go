@@ -18,9 +18,11 @@ func withMaintenanceDir(t *testing.T) string {
 	prev := MaintenanceDataDir()
 	SetMaintenanceDataDir(dir)
 	resetMaintenanceBarrierForTest()
+	resetPlannerHoldNotedForTest()
 	t.Cleanup(func() {
 		SetMaintenanceDataDir(prev)
 		resetMaintenanceBarrierForTest()
+		resetPlannerHoldNotedForTest() // review 3 F17: never carried between tests
 	})
 	return dir
 }
