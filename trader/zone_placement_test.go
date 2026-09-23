@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"nofx/discipline"
 	"nofx/kernel"
 	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
@@ -676,5 +677,23 @@ func TestZoneStopComposedFromTheNearBound(t *testing.T) {
 	// whole point tighter.
 	if got := sigs[0].StopLoss; got > 99.5-floor+0.125+1e-9 {
 		t.Fatalf("stop %.2f must be at least %.2f (min-SL) below the NEAR bound 99.50 (±½ tick) — composed from the far bound it would be %.2f", got, floor, 100.5-floor)
+	}
+}
+
+// A refusal at the send point's admission chain (armAdmitted → admitEntry) is
+// recorded in the row's verdict with its class — the card's "Blocked: …".
+func TestZoneRowAdmissionRefusalIsRecorded(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-admit", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(100.0, r.now, 0))
+	r.at.config.StrategyConfig.RiskControl.ReentryCooldownMinutes = 20
+	discipline.NoteStopLossExit(r.at.id, "MNQ", "long", 99, r.now.Add(-time.Minute).UnixMilli())
+	t.Cleanup(discipline.ResetReentryForTest)
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	if s, _ := r.drain(); len(s) != 0 {
+		t.Fatalf("a send-point admission refusal must place nothing: %+v", s)
+	}
+	row := r.row("S1")
+	if row.State != store.StateArmed || !strings.HasPrefix(row.LastVerdict, "refused: reentry_cooldown: ") {
+		t.Fatalf("the row stays armed and its verdict names the admission class: %+v", row.LastVerdict)
 	}
 }
