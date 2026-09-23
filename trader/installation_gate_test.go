@@ -303,3 +303,44 @@ func TestInstallationGateNeverPanics(t *testing.T) {
 		t.Fatal("the other legs must still be computed")
 	}
 }
+
+// A hold file the process cannot read HOLDS (entries stay refused) but the
+// update must NOT proceed on it: no job can be bound to it (the AddOn acks job
+// "" and a job-scoped clear refuses it). Found by the M2 adversarial review:
+// the gate returned ready=true job_id=n/a with every leg passing.
+func TestInstallationGateFailsOnAnUnreadableHold(t *testing.T) {
+	f := newGateFixture(t)
+	if err := writeRaw(f.dir, "{broken"); err != nil {
+		t.Fatal(err)
+	}
+	f.wire.Rec.Ack.JobID = "" // what the AddOn acks for a corrupt hold
+	g := f.run()
+	mustFail(t, g, "hold", "unreadable")
+	mustFail(t, g, "addon_ack", "")
+}
+
+// The AddOn reports its command-queue depth; anything above zero is work in
+// flight at the AddOn (PROTOCOL.md: an async dispatcher must report it).
+func TestInstallationGateFailsOnAddOnQueuedCommands(t *testing.T) {
+	f := newGateFixture(t)
+	f.wire.Rec.Ack.QueuedCommands = 2
+	mustFail(t, f.run(), "addon_ack", "queued_commands=2")
+}
+
+// A panic outside any single leg (the wire read, the registry scan) still
+// yields a failed verdict, never a crash.
+func TestInstallationGateSurvivesAPanicOutsideALeg(t *testing.T) {
+	f := newGateFixture(t)
+	installationWireView = func([]*AutoTrader) (installationWire, bool) { panic("wire boom") }
+	g := f.run()
+	if g.Ready {
+		t.Fatalf("a panicking gate must not be ready: %+v", g)
+	}
+	found := false
+	for _, l := range g.Legs {
+		found = found || (!l.Pass && strings.Contains(l.Detail, "panicked"))
+	}
+	if !found {
+		t.Fatalf("the panic must be reported as a failed leg: %+v", g.Legs)
+	}
+}

@@ -92,8 +92,17 @@ var installationTraderCutover = func(at *AutoTrader) []CutoverLeg { return at.Cu
 
 // InstallationGateStatus computes the verdict. loaded is the TraderManager's
 // set; st is the store (ledger reads). Read-only; never panics.
-func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) InstallationGate {
-	g := InstallationGate{JobID: "n/a"}
+func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g InstallationGate) {
+	g = InstallationGate{JobID: "n/a"}
+	// A panic OUTSIDE any single leg (the wire read, the registry scan) still
+	// yields a failed verdict — never a crash, never a pass.
+	defer func() {
+		if r := recover(); r != nil {
+			g.Ready = false
+			g.Legs = append(g.Legs, InstallationGateLeg{Name: "gate", Pass: false, Source: "InstallationGateStatus",
+				Detail: fmt.Sprintf("gate panicked outside a leg: %v — fail-closed", r)})
+		}
+	}()
 	leg := func(name, source string, fn func() (bool, string)) {
 		l := InstallationGateLeg{Name: name, Source: source}
 		func() {
@@ -147,7 +156,10 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) Inst
 		case !st0.Held:
 			return false, "no hold present (an update must write the hold before it drains)"
 		case st0.Corrupt:
-			return true, maintenanceReason(st0)
+			// It HOLDS (every entry stays refused) but no job can be bound to
+			// it: the AddOn acks job "" and a job-scoped clear refuses it. An
+			// update may not proceed on a hold it cannot identify.
+			return false, maintenanceReason(st0) + "; no job can be bound to it — repair it or force-clear it with the operator CLI before an update proceeds"
 		}
 		holdJob = st0.Hold.JobID
 		g.JobID = holdJob
@@ -234,12 +246,14 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) Inst
 			return false, "addon_ack=n/a — no maintenance_ack on this connection (an AddOn older than 2026-09-22-m2 never acks) (" + id + ")"
 		case !r.Ack.Held:
 			return false, "the AddOn's ack says not held (" + id + ")"
-		case holdJob == "" && !st0.Corrupt:
+		case holdJob == "":
 			return false, "no hold job to match the ack against"
 		case r.Ack.JobID != holdJob:
 			return false, fmt.Sprintf("ack names job %q, the hold is %q (%s)", r.Ack.JobID, holdJob, id)
 		case wire.AckAge > ntwire.MaintenanceAckMaxAge():
 			return false, fmt.Sprintf("ack is %s old (max %s) (%s)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge(), id)
+		case r.Ack.QueuedCommands != 0:
+			return false, fmt.Sprintf("the AddOn reports queued_commands=%d — work still in flight at the AddOn (%s)", r.Ack.QueuedCommands, id)
 		}
 		return true, fmt.Sprintf("held job=%s build=%s age=%s queued_commands=%d (%s)", r.Ack.JobID, r.Ack.BuildID, wire.AckAge.Round(time.Millisecond), r.Ack.QueuedCommands, id)
 	})
