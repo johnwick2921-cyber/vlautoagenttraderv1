@@ -486,7 +486,6 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 			if cfg := engine.GetConfig(); cfg != nil && cfg.DayPlan != nil {
 				rule = cfg.DayPlan.AcceptanceRuleFor(plan.Session)
 			}
-			block := RenderPlanBlock(plan.Doc, plan.Session)
 			status := ""
 			if len(snapshotBars) > 0 {
 				_, price, dATR := AssembleScoredLevels(ctx.TraderID, snapshotBars, ResolvedSessionRegistryFor(ctx.TraderID), activeSymbol, maxLevels, snapshotNow, proximityK)
@@ -532,7 +531,9 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 					status += "\n" + cl
 				}
 			}
-			engine.SetPlanContext(block, status)
+			// W-EXEC-TRUTH W3 §3: the PLAN BLOCK header states the RESOLVED plan
+			// mode's rule (strict / direction / advisory) for the plan's session.
+			engine.setExecutorPlanContext(plan.Doc, plan.Session, status)
 		}
 	}
 	// A5 (G5) — PROMPT-OWNERSHIP assertion: every account-scoped context field must

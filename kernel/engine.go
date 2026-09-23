@@ -295,6 +295,10 @@ type StrategyEngine struct {
 	// active plan) → the prompt is unchanged.
 	planBlockLine  string
 	planStatusLine string
+	// planMode (W-EXEC-TRUTH W3 §3) — the RESOLVED plan mode the active PLAN
+	// BLOCK was rendered under (setExecutorPlanContext). "" = advisory: the
+	// field-description line stays byte-identical.
+	planMode string
 
 	// clockContextLine is the per-cycle labelled clock (P0 timezone fix):
 	// "## Clock\n07:06 CT (12:06 UTC) — ALL times in this prompt are CT…".
@@ -330,6 +334,29 @@ func (e *StrategyEngine) SetWeeklyContext(line string) { e.weeklyContextLine = l
 func (e *StrategyEngine) SetPlanContext(planBlock, planStatus string) {
 	e.planBlockLine = planBlock
 	e.planStatusLine = planStatus
+	e.planMode = "" // advisory unless setExecutorPlanContext names the mode
+}
+
+// executorPlanModeFor is the plan mode the executor prompt renders for a plan:
+// the RESOLVED mode (store.ResolvePlanMode — per-session override → strategy
+// → advisory) for the PLAN'S OWN session. The entry gate resolves the ACTIVE
+// session's mode; for an active plan the two are the same session.
+func executorPlanModeFor(dp *store.DayPlanConfig, session string) string {
+	return dp.PlanModeFor(session)
+}
+
+// setExecutorPlanContext is the ONE production selection of the executor PLAN
+// BLOCK (W3 §3): RenderPlanBlockForMode under the resolved mode, and the mode
+// remembered for the cited_scenario field line. kernel/engine_analysis.go
+// calls it; the boot self-check's strict fixture calls it too (canon 53).
+func (e *StrategyEngine) setExecutorPlanContext(doc PlanDoc, session, planStatus string) {
+	var dp *store.DayPlanConfig
+	if e.config != nil {
+		dp = e.config.DayPlan
+	}
+	mode := executorPlanModeFor(dp, session)
+	e.SetPlanContext(RenderPlanBlockForMode(doc, session, mode), planStatus)
+	e.planMode = mode
 }
 
 // SetClockContext sets the labelled per-cycle clock line (P0 timezone fix)
