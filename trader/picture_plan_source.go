@@ -39,6 +39,9 @@ func init() {
 	// binds the retired market-entry send first, and this binding (a later
 	// file) wins. Builder C deletes that file; this binding stays.
 	pictureHtfSubmitSeam = pictureHtfHandOffSeam
+	// D17 — the executor's pass head runs the interrupted-hand-off sweep once
+	// per pass through this hook (declared beside the executor, bound here).
+	pictureHandOffSweepHook = func(at *AutoTrader, now time.Time) { at.sweepInterruptedPictureHandOffsAt(now) }
 }
 
 // pictureHtfHandOffSeam is the production submission seam: the evaluator's row

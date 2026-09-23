@@ -4,10 +4,11 @@ import { PictureGateChip } from './PictureGateChip'
 import { SessionPlanCard } from './SessionPlanCard'
 import type { PlanToday } from '../../lib/api/plan'
 
-// W-EXEC-TRUTH W0 (CTO Q6) — the card shows the server's strict refusal
-// verbatim, and nothing when Picture is off or admitted.
-const REFUSAL =
-  'refused under strict until W5 (source not yet a Day Plan scenario)'
+// W-EXEC-TRUTH W0 (CTO Q6) — the card shows the server's refusal verbatim,
+// and nothing when Picture is off or admitted. W5: Picture is a Day Plan
+// scenario source, so plan mode no longer refuses it; the refusals left are
+// the D21 ones (trader stopped / Day Plan master off).
+const REFUSAL = 'picture: the Day Plan master is off'
 
 describe('PictureGateChip', () => {
   it('renders the server refusal verbatim when Picture is on and refused', () => {
@@ -16,7 +17,7 @@ describe('PictureGateChip', () => {
       REFUSAL
     )
   })
-  it('renders nothing when plan mode admits Picture', () => {
+  it('renders nothing when Picture is admitted', () => {
     const { container } = render(
       <PictureGateChip picture={{ enabled: true, refusal: '' }} />
     )
