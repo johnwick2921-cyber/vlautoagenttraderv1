@@ -210,6 +210,11 @@ func ValidatorHints() []ValidatorHint {
 		// W2 A1 (2026-09-23) — the invalidation grammar law; field-scoped to
 		// scenario.invalid so a later edit naming a confirm token fails here.
 		{Site: "planner_repair.go invalidation grammar law", Text: RepairInvalidationGrammarLaw, RuleField: HintFieldInvalidGrammar},
+		// W-EXEC-TRUTH W2 A3/A4 — the identity law names the two-anchor
+		// condition and speaks of confirm legs; neither law names a rule token,
+		// and a later edit that adds one is checked against the confirm enum.
+		{Site: "planner_repair.go identity=price law", Text: RepairIdentityPriceLaw, Conditions: []string{"sweep_reclaim"}, RuleField: HintFieldConfirmRule},
+		{Site: "planner_repair.go obstacle-chain law", Text: RepairObstacleChainLaw, RuleField: HintFieldConfirmRule},
 	}
 	// CLASS 38 — the entry law Style strings are quoted VERBATIM into the
 	// rejection the model reads ("… not allowed for %s — entry law: %s"), so

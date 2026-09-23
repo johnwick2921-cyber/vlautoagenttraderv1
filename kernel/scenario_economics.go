@@ -45,6 +45,19 @@ type ScenarioEconomics struct {
 	RToArmTarget        *float64                `json:"r_to_arm_target"`
 	TargetPathException string                  `json:"target_path_exception,omitempty"`
 	RoleExceptions      []ScenarioRoleException `json:"role_exceptions,omitempty"`
+	// PathLevels (W-EXEC-TRUTH W2 A4) — every seated level strictly between
+	// entry and the arm target other than the first obstacle, each with the
+	// planned role there. Absent on legacy records; checked only at the write
+	// site (CheckScenarioWriteTruth), never on stored reads.
+	PathLevels []ScenarioPathLevel `json:"path_levels,omitempty"`
+}
+
+// ScenarioPathLevel is one seated level on the entry→target path (A4).
+type ScenarioPathLevel struct {
+	Price   float64 `json:"price"`
+	Level   string  `json:"level"`
+	LevelID *string `json:"level_id,omitempty"`
+	Role    string  `json:"role"` // pass_through | reduce | exit
 }
 
 type ScenarioEconomicsView struct {

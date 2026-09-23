@@ -67,7 +67,11 @@ type PlanConfirm struct {
 }
 
 type PlanScenario struct {
-	LevelID *string `json:"level_id"` // NULL on legacy; WARN-only on new authoring.
+	LevelID *string `json:"level_id"` // NULL on legacy; refused at write when it does not resolve or names another price (W2 A3).
+	// W2 A3 — a two-anchor setup (sweep + reclaim) names each leg's level.
+	// Additive: absent on legacy rows; checked only at the write site.
+	SweepLevelID   *string `json:"sweep_level_id,omitempty"`
+	ReclaimLevelID *string `json:"reclaim_level_id,omitempty"`
 	// Absent on legacy records: never inferred or required during stored reads.
 	Economics *ScenarioEconomics `json:"economics,omitempty"`
 	ID        string             `json:"id"`        // S1, S2, S3
@@ -1032,7 +1036,8 @@ func MislabeledStructuralLevels(d *PlanDoc, machineLabels map[float64]string) []
 
 type PlanFacts struct {
 	Zones       *LevelZoneMap  `json:"-"` // presentation only
-	IdentityMap []MapCandidate `json:"-"` // record-only snapshot, ignored by every trading validator
+	IdentityMap []MapCandidate `json:"-"` // frozen seated map; read by the W2 A3/A4 write-time checks (nil = UNKNOWN → skipped)
+	CapacityCut []MapCandidate `json:"-"` // W2 A4 — pool references the seat race dropped; accepted as a first obstacle, never required
 	Price       float64        // reference price at read time
 	DATR        float64        // daily ATR proxy
 	PDH         float64        // prior day high (0 = unknown → gap rules skipped)

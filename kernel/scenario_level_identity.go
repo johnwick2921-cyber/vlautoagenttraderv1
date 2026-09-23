@@ -272,15 +272,8 @@ func StampAuthoredIdentity(doc *PlanDoc, candidates []MapCandidate) IdentityWarn
 	if doc == nil {
 		return w
 	}
-	doc.IdentityLevels = nil
-	if candidates != nil {
-		doc.IdentityLevels = make([]PlanLevel, 0, len(candidates))
-	}
-	for _, c := range candidates {
-		l := c.Identity
-		l.Names = append([]string(nil), c.Names...)
-		doc.IdentityLevels = append(doc.IdentityLevels, l)
-	}
+	// W2 A3: the ONE projection the write-time identity check also reads.
+	doc.IdentityLevels = IdentityLevelsFromCandidates(candidates)
 	for i := range doc.Levels {
 		old := doc.Levels[i]
 		// Metadata is machine-supplied, never model-supplied.

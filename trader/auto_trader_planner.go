@@ -1339,6 +1339,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 		kernel.EnsureReferenceLevelIDs(identityMap)
 	}
 	facts := kernel.PlanFacts{Zones: input.Zones, IdentityMap: identityMap, Price: input.Price, DATR: input.DATR, Regime: input.Regime, Structure: input.Structure, ReadAt: input.Now}
+	facts.CapacityCut = kernel.CapacityCutCandidates(input.Pool, identityMap, input.Price, input.ATR5m) // W2 A4 — accepted as a first obstacle, never required
 	// 8.4 — machine grades from the Go-ranked candidate table, keyed by rounded
 	// price so the write-site stamp can match the model's levels.
 	machineGrades := map[float64]string{}
@@ -2281,6 +2282,20 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			rejectHistory = addDistinctReject(rejectHistory, verr)
 			if modeLabel == "repair" {
 				at.recordRepairOutcome(raw, verr, repairing)
+			}
+			continue
+		}
+		// W-EXEC-TRUTH W2 A3+A4 (corrections, no knob) — identity ≠ price and
+		// the obstacle chain are WRITE-TIME refusals: re-author within the
+		// existing attempts; attempt 3 failing → the existing fail-closed path.
+		if verr := at.scenarioWriteTruth(d, facts); verr != nil {
+			lastErr = verr
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
+			rejectHistory = addDistinctReject(rejectHistory, lastErr)
+			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
+			if modeLabel == "repair" {
+				at.recordRepairOutcome(raw, verr, prevReason)
 			}
 			continue
 		}

@@ -203,6 +203,29 @@ func PromptContracts() []PromptContract {
 			Site:       "trader/plan_liveness.go validateAuthoredScenariosAt → kernel.EvaluateBornCheck (authoredCloseRule grammar, AuthoredUnknownGrammar)",
 			MustAppear: []string{`"invalid" GRAMMAR (machine-checked at write; anything else is REFUSED, never accepted as UNKNOWN)`, `"5m close above <price>" | "5m close below <price>" | "2x5m close above <price>" | "2x5m close below <price>"`, `Example: "invalid": "`},
 		},
+		// W-EXEC-TRUTH W2 A3 (2026-09-23) — identity ≠ price is a write-time
+		// refusal (correction; unconditional), including an id not in the map.
+		{
+			Rule:       "a level_id names the map level at the traded price; an id at another price or not in the map is refused at write",
+			Site:       "kernel/scenario_write_truth.go scenarioIdentityWriteIssues ← CheckScenarioWriteTruth (trader write loop + shadowVerdictFor)",
+			MustAppear: []string{"IDENTITY = PRICE (refused at write)", "an id not in the map (invented or altered), is REFUSED"},
+		},
+		{
+			Rule:       "a two-anchor setup names two different map ids (sweep_level_id / reclaim_level_id), each at its own leg",
+			Site:       "kernel/scenario_write_truth.go scenarioIdentityWriteIssues (anchor_reuse / anchor_unrelated)",
+			MustAppear: []string{"sweep_level_id and reclaim_level_id: two DIFFERENT map ids"},
+		},
+		// W-EXEC-TRUTH W2 A4 (2026-09-23) — the obstacle-chain contract.
+		{
+			Rule:       "target_chain sorted outward; first_obstacle = nearest seated level on the path; every seated path level listed in path_levels with a role",
+			Site:       "kernel/scenario_write_truth.go obstacleChainWriteIssues ← CheckScenarioWriteTruth",
+			MustAppear: []string{"target_chain is sorted outward from entry in the trade direction", "first_obstacle is the NEAREST seated map level strictly between entry and the arm target", "a seated level missing from the path is REFUSED by name"},
+		},
+		{
+			Rule:       "reduce on a single-contract arm is refused as infeasible",
+			Site:       "kernel/scenario_write_truth.go obstacleChainWriteIssues (reduce_qty1, ArmQuantityFor)",
+			MustAppear: []string{"reduce on a single-contract arm", "is REFUSED at write as infeasible"},
+		},
 	}
 }
 

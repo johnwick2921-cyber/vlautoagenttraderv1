@@ -105,6 +105,14 @@ func lawExcerptsFor(errors string) string {
 	if strings.Contains(errors, AuthoredGrammarRefusalMarker) {
 		add(RepairInvalidationGrammarLaw)
 	}
+	// W-EXEC-TRUTH W2 A3/A4 (scenario_write_truth.go) — identity ≠ price /
+	// unresolved id, and the obstacle-chain contract.
+	if strings.Contains(errors, "identity≠price") || strings.Contains(errors, "identity unresolved") {
+		add(RepairIdentityPriceLaw)
+	}
+	if strings.Contains(errors, "obstacle chain:") {
+		add(RepairObstacleChainLaw)
+	}
 	if len(out) == 0 {
 		add("Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.")
 	}

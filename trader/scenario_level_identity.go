@@ -128,6 +128,7 @@ func (at *AutoTrader) logLevelIdentityBootAt(now time.Time) {
 	var doc *kernel.PlanDoc
 	if at.store == nil {
 		at.logInfof("%s · trader=%s", levelIdentityBootLine(nil, nil, nil), at.id)
+		at.logInfof("%s · trader=%s", writeTruthBootLine(nil, at.id), at.id)
 		return
 	}
 	if p, err := at.store.Plan().GetLatestPlanForTraderSession(plannerTradeDateCT(now), at.activeSessionName(now), at.id); err == nil && p != nil {
@@ -146,4 +147,5 @@ func (at *AutoTrader) logLevelIdentityBootAt(now time.Time) {
 		at.logWarnf("🪪 backfill unavailable: %v", err)
 	}
 	at.logInfof("%s · trader=%s · counters=recorded unique plan-version scenarios; legacy IDs stay NULL", levelIdentityBootLine(doc, counts, backfill), at.id)
+	at.logInfof("%s · trader=%s", writeTruthBootLine(at.store, at.id), at.id)
 }
