@@ -160,3 +160,33 @@ func writeRaw(dir, body string) error {
 	}
 	return os.WriteFile(store.MaintenanceHoldPath(dir), []byte(body), 0o600)
 }
+
+// M2.1 (review 2 N1 / review 3 F16): a reader whose read of the file PREDATES
+// a hold must not release the barrier another reader has since engaged. The
+// interleaving, deterministically: reader P reads "absent"; before P decides,
+// the hold is written and reader Q engages; P then must NOT release.
+func TestAStaleReaderNeverReleasesABarrierEngagedAfterItsRead(t *testing.T) {
+	dir := withMaintenanceDir(t)
+	maintenanceBarrier.Engage() // a previous hold's engagement, not yet released
+	fired := false
+	maintenanceStateAfterReadHook = func() {
+		if fired {
+			return
+		}
+		fired = true
+		setHold(t, dir, "job-n1")                // the hold lands after P's read…
+		if _, held := MaintenanceHeld(); !held { // …and reader Q engages
+			t.Fatal("fixture: reader Q must see the hold")
+		}
+	}
+	t.Cleanup(func() { maintenanceStateAfterReadHook = nil })
+	_ = dir
+	// Reader P: its read happened BEFORE the hold file existed.
+	if err := store.ClearMaintenanceHold(dir, "none"); err != nil {
+		t.Fatal(err)
+	}
+	MaintenanceHeld()
+	if !maintenanceBarrier.Held() {
+		t.Fatal("a stale 'absent' read released a barrier engaged after it — entries could pass during a hold")
+	}
+}

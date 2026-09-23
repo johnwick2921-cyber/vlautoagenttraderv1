@@ -29,6 +29,7 @@ type EntryBarrier struct {
 	held     bool
 	inFlight int64
 	zero     chan struct{} // closed when inFlight reaches 0 while held
+	gen      uint64        // bumped by every Engage (ReleaseIfGen)
 }
 
 // ErrBarrierReleased is returned by a Hold that was waiting when Release ran.
@@ -124,5 +125,28 @@ func (b *EntryBarrier) InFlight() int64 {
 func (b *EntryBarrier) Engage() {
 	b.mu.Lock()
 	b.held = true
+	b.gen++
 	b.mu.Unlock()
+}
+
+// Gen is the engagement generation: it moves on every Engage.
+func (b *EntryBarrier) Gen() uint64 {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.gen
+}
+
+// ReleaseIfGen releases only when no Engage has happened since gen was read
+// (M2.1, review N1/F16): a reader whose "absent" read predates a hold must
+// not release the barrier another reader engaged after that read. It reports
+// whether it released.
+func (b *EntryBarrier) ReleaseIfGen(gen uint64) bool {
+	b.mu.Lock()
+	if b.gen != gen {
+		b.mu.Unlock()
+		return false
+	}
+	b.mu.Unlock()
+	b.Release()
+	return true
 }

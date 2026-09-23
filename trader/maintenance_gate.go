@@ -22,17 +22,27 @@ var maintenanceBarrier EntryBarrier
 
 func resetMaintenanceBarrierForTest() { maintenanceBarrier = EntryBarrier{} }
 
+// maintenanceStateAfterReadHook is a TEST SEAM (nil in production): it runs
+// between a reader's file read and its engage/release decision.
+var maintenanceStateAfterReadHook func()
+
 // maintenanceState reads the file and syncs the barrier to it.
 func maintenanceState() (store.MaintenanceHoldState, bool) {
 	dir := MaintenanceDataDir()
 	if dir == "" {
 		return store.MaintenanceHoldState{}, false
 	}
+	gen := maintenanceBarrier.Gen() // taken BEFORE the read (M2.1, review N1)
 	st := store.ReadMaintenanceHold(dir)
+	if maintenanceStateAfterReadHook != nil {
+		maintenanceStateAfterReadHook()
+	}
 	if st.Held {
 		maintenanceBarrier.Engage()
 	} else if maintenanceBarrier.Held() {
-		maintenanceBarrier.Release()
+		// Release only if nobody engaged since this read began: an "absent"
+		// read that predates a hold is stale, not evidence the hold is gone.
+		maintenanceBarrier.ReleaseIfGen(gen)
 	}
 	return st, true
 }
