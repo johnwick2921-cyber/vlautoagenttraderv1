@@ -30,7 +30,7 @@ func newPictureHtfEnv(t *testing.T, cfg store.PictureHtfConfig) *pictureHtfTestE
 	eval := NewPictureHtfEvaluator(at, store.PictureHtfResolved(&cfg))
 	env := &pictureHtfTestEnv{t: t, at: at, st: st, eval: eval}
 	orig := pictureHtfSubmitSeam
-	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env.submits = append(env.submits, row.OppKey)
 		return nil
 	}
@@ -491,7 +491,7 @@ func TestPictureHtfRestartAfterClaimSingleSubmission(t *testing.T) {
 	// Restart: a brand-new evaluator with fresh in-memory state.
 	env2 := &pictureHtfTestEnv{t: t, at: env.at, st: env.st, eval: NewPictureHtfEvaluator(env.at, store.PictureHtfResolved(&store.PictureHtfConfig{Enabled: true, MinRR: 2.5}))}
 	orig := pictureHtfSubmitSeam
-	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env2.submits = append(env2.submits, row.OppKey)
 		return nil
 	}
@@ -511,7 +511,7 @@ func TestPictureHtfRestartAfterClaimSingleSubmission(t *testing.T) {
 func TestPictureHtfAmbiguousSendStaysPending(t *testing.T) {
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	orig := pictureHtfSubmitSeam
-	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, _ time.Time) error {
 		env.submits = append(env.submits, row.OppKey)
 		return fmt.Errorf("send ambiguous — wire refused after the claim")
 	}

@@ -33,7 +33,7 @@ func pictureHtfContractSize(at *AutoTrader) float64 {
 	return 1
 }
 
-func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, now time.Time) error {
 	if e == nil || e.at == nil || row == nil {
 		return fmt.Errorf("picture_htf: seam called with nil state — never sending")
 	}
@@ -47,8 +47,8 @@ func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, 
 		return fmt.Errorf("picture_htf: send refused — %s: %w", reason, ntTrader.ErrMaintenanceHold)
 	}
 
-	// --- Re-check 1: feed freshness at SEND time, not claim time. ---
-	now := time.Now()
+	// --- Re-check 1: feed freshness at SEND time, not claim time (on the
+	// evaluation's clock — W-EXEC-TRUTH W0, class 60). ---
 	if now.Sub(e.freshest5mAt).Milliseconds() > int64(e.cfg.FreshnessSec)*1000 {
 		return fmt.Errorf("picture_htf: send refused — bar data is %v old (limit %ds)", now.Sub(e.freshest5mAt).Round(time.Millisecond), e.cfg.FreshnessSec)
 	}

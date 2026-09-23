@@ -15,7 +15,7 @@ import (
 // feed, closed window, and an unreconciled pending row that blocks re-entry.
 
 func TestPictureHtfSendRefusesNilState(t *testing.T) {
-	if err := pictureHtfSend(nil, nil, 0, 0, 0); err == nil || !strings.Contains(err.Error(), "nil state") {
+	if err := pictureHtfSend(nil, nil, 0, 0, 0, time.Now()); err == nil || !strings.Contains(err.Error(), "nil state") {
 		t.Fatalf("nil state must refuse, got %v", err)
 	}
 }
@@ -29,7 +29,7 @@ func TestPictureHtfSendRefusesNonNTTrader(t *testing.T) {
 	ev.freshest5mAt = time.Now()
 	row := &store.PictureHtfOpportunityDB{OppKey: "k", SignalID: "claim", Symbol: "MNQ", Direction: "long",
 		WindowClose: time.Now().Add(time.Minute).UnixMilli()}
-	err := pictureHtfSend(ev, row, 98, 110, 1)
+	err := pictureHtfSend(ev, row, 98, 110, 1, time.Now())
 	if err == nil || !strings.Contains(err.Error(), "not the concrete NT8 TCP trader") {
 		t.Fatalf("a non-TCP trader must refuse at the seam, got %v", err)
 	}
@@ -41,7 +41,7 @@ func TestPictureHtfSendRefusesStaleFeed(t *testing.T) {
 	ev.freshest5mAt = time.Now().Add(-10 * time.Second)
 	row := &store.PictureHtfOpportunityDB{OppKey: "k", SignalID: "claim", Symbol: "MNQ", Direction: "long",
 		WindowClose: time.Now().Add(time.Minute).UnixMilli()}
-	err := pictureHtfSend(ev, row, 98, 110, 1)
+	err := pictureHtfSend(ev, row, 98, 110, 1, time.Now())
 	if err == nil || !strings.Contains(err.Error(), "bar data is") {
 		t.Fatalf("a stale feed must refuse at the seam, got %v", err)
 	}
@@ -53,7 +53,7 @@ func TestPictureHtfSendRefusesClosedWindow(t *testing.T) {
 	ev.freshest5mAt = time.Now()
 	row := &store.PictureHtfOpportunityDB{OppKey: "k", SignalID: "claim", Symbol: "MNQ", Direction: "long",
 		WindowClose: time.Now().Add(-time.Second).UnixMilli()}
-	err := pictureHtfSend(ev, row, 98, 110, 1)
+	err := pictureHtfSend(ev, row, 98, 110, 1, time.Now())
 	if err == nil || !strings.Contains(err.Error(), "entry window closed") {
 		t.Fatalf("a closed window must refuse at the seam, got %v", err)
 	}

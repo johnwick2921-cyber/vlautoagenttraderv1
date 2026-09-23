@@ -62,7 +62,10 @@ func (e *PictureHtfEvaluator) Enabled() bool { return e != nil && e.enabled }
 // concrete NT8 market-entry method (with the before-send persistence callback);
 // tests replace it to prove the admission sequence. The seam receives the
 // already-claimed opportunity row and the computed geometry.
-var pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+//
+// now is the EVALUATION's clock (W-EXEC-TRUTH W0, class 60): the send-time
+// re-checks read the same instant the evaluator judged, never the wall.
+var pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64, now time.Time) error {
 	return fmt.Errorf("picture_htf submit seam unbound (the NT8 market-entry method is wired in the next wave commit)")
 }
 
@@ -315,7 +318,7 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 	// (wired with the next wave commit); until then it returns unbound and the
 	// row stays place_pending for the reconciliation sweep — never a blind
 	// resend.
-	if err := pictureHtfSubmitSeam(e, row, stopPx, targetPx, 0); err != nil {
+	if err := pictureHtfSubmitSeam(e, row, stopPx, targetPx, 0, now); err != nil {
 		// A maintenance-hold refusal PROVES nothing reached the wire: the
 		// permit is taken before the ledger stamp and the send, and a queued
 		// entry dropped under the hold is never written. So the row settles
