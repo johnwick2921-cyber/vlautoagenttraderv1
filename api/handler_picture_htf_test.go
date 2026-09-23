@@ -142,3 +142,36 @@ func TestPictureHtfOpportunitiesNoLinkIsAbsent(t *testing.T) {
 		t.Fatalf("legacy response changed: %d %s", rec.Code, rec.Body.String())
 	}
 }
+
+// A link read that FAILS is not "no link": the response says so in
+// plan_links_unread, and the rows are still served (without plan_link).
+func TestPictureHtfOpportunitiesLinkReadFailureIsSaid(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "picture-unread.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	if err := st.GormDB().Create(&store.PictureHtfOpportunityDB{OppKey: picKeyPlanned, TraderID: "t1", Stage: "planned"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := st.GormDB().Exec("DROP TABLE armed_orders").Error; err != nil {
+		t.Fatal(err)
+	}
+	router := gin.New()
+	router.GET("/x", (&Server{store: st}).handlePictureHtfOpportunities)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/x?trader_id=t1", nil))
+	var body struct {
+		Rows            []map[string]json.RawMessage `json:"rows"`
+		PlanLinksUnread string                       `json:"plan_links_unread"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || len(body.Rows) != 1 || !strings.HasPrefix(body.PlanLinksUnread, "arm ledger unavailable") {
+		t.Fatalf("an unread link ledger must be said: %d %s", rec.Code, rec.Body.String())
+	}
+	if _, ok := body.Rows[0]["plan_link"]; ok {
+		t.Fatalf("an unread ledger fabricated a link: %s", rec.Body.String())
+	}
+}
