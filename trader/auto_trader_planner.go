@@ -247,7 +247,12 @@ func (at *AutoTrader) maybeRunSessionReadsAt(now time.Time) []SessionReadFired {
 			telemetry.RecordError(at.id, "plan_read_failed", "GetLatestPlanForTraderSession: "+err.Error(), telemetry.CostDecisionLost)
 			continue
 		}
-		if existing == nil {
+		// W-EXEC-TRUTH W5 (F3/D20) — a chain whose newest row is a MACHINE plan
+		// (the Picture no-plan door) is "no plan" to the scheduler: the AI
+		// session read still fires and lands the next version, which supersedes
+		// it. Nothing below — dormant re-arm, death, flip, MSS or level wakes —
+		// ever runs on a machine row: the `continue` skips all of it.
+		if existing == nil || store.IsMachinePlan(existing) {
 			// F6 (LONDON-FORENSICS 2026-08-28) — the first read's planner call
 			// (300-500s observed) must not stall the executor loop: async, the
 			// same pattern as the W6/MSS wake re-reads. The plan-store dedupe
@@ -423,11 +428,29 @@ func (at *AutoTrader) warnIfReplanOrphansOverlays(row *store.PlanDB) {
 		return
 	}
 	overlays, err := at.store.Plan().ListOverlays(row.PlanID, row.Version)
-	if err != nil || len(overlays) == 0 {
+	if err != nil {
+		return
+	}
+	// W5 (F5) — a machine overlay is not an owner edit: never counted here,
+	// never carried (a live Picture scenario is re-appended instead).
+	overlays = userOverlays(overlays)
+	if len(overlays) == 0 {
 		return
 	}
 	at.logInfof("🗓️ re-plan %s v%d carries %d owner overlay(s) forward by price identity.",
 		row.PlanID, row.Version, len(overlays))
+}
+
+// userOverlays drops machine-origin overlay rows (W5): the owner-edit carry and
+// its count see only what a person or the planner's revision wrote.
+func userOverlays(rows []*store.PlanOverlayDB) []*store.PlanOverlayDB {
+	out := make([]*store.PlanOverlayDB, 0, len(rows))
+	for _, r := range rows {
+		if r != nil && !kernel.IsMachineOverlayOrigin(r.Origin) {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // carryOwnerEditsInto re-establishes the PREVIOUS version's owner edits on the
@@ -447,7 +470,13 @@ func (at *AutoTrader) carryOwnerEditsInto(planID string, oldVersion, newVersion 
 		return
 	}
 	overlays, err := at.store.Plan().ListOverlays(planID, oldVersion)
-	if err != nil || len(overlays) == 0 {
+	if err != nil {
+		return
+	}
+	// W5 (F5) — machine overlays are never owner edits: carrying one would
+	// raise a false P1 "overlays-need-review" on every re-plan.
+	overlays = userOverlays(overlays)
+	if len(overlays) == 0 {
 		return
 	}
 	oldRow, err := at.store.Plan().GetPlan(planID, oldVersion)
@@ -651,6 +680,13 @@ func (at *AutoTrader) executorPlanDeadReason() string {
 	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 	if err != nil || row == nil {
 		return "no active day plan for this session (day_plan on) — planless entries refused"
+	}
+	// W5 (D20) — a MACHINE plan (the Picture no-plan door) is not an AI plan:
+	// the decision path stays exactly where "no plan" left it (refused), and
+	// no death/flip predicate is ever run on the machine row. Its Picture
+	// scenario trades only through the armed executor.
+	if store.IsMachinePlan(row) {
+		return "no AI day plan for this session yet (only a machine Picture plan, which trades through the armed executor alone) — planless AI entries refused"
 	}
 	if row.Lifecycle == "dormant" {
 		reason := strings.TrimPrefix(row.TriggerReason, "dormant:")
@@ -2559,6 +2595,15 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	at.recordPlanIdentity(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, identityWarnings, authoredAt)
 	researchTrace.Published(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, string(docJSON))
 	at.logInfof("🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s, ai_config %s)", tradeDate, session, version, modelID, lifecycle, promptHash, aiConfigHash)
+	// W-EXEC-TRUTH W5 (CTO 1790191033566) — the AI read that supersedes a
+	// version carrying LIVE Picture scenarios re-appends each of them to the
+	// version just written: the same scenario value (same id, same machine
+	// record) as the same overlay, idempotent on the opportunity. Evidence
+	// survives an AI read; an opportunity the ledger already finished is
+	// never re-offered. A NO-TRADE version gets nothing (the Day Plan said no).
+	if lifecycle == "active" {
+		at.reappendLiveMachineScenarios(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, traderNow())
+	}
 	if spends {
 		// CLASS 35 — RECORD the spend now that the row exists (counters record
 		// events; they do not infer them from row counts).
@@ -3490,6 +3535,12 @@ func installActivePlanProviderAt(at *AutoTrader, st *store.Store, clock func() t
 // failure) — the SAME resolution GET /api/plan/today does, so the card and the
 // executor can never diverge. Returns (doc, ok=false) only when the base itself is
 // unparseable.
+//
+// W-EXEC-TRUTH W5 — the fold is kernel.ResolvePlanFinal, the ONE fold every
+// reader uses: user overlays fold and re-validate at the hard caps exactly as
+// before (a failure falls back to the base), and machine (Picture) scenarios
+// are appended AFTER, each validated alone and never counted against the caps.
+// With no machine overlay the result is byte-identical to the old fold.
 func resolveActivePlanDoc(st *store.Store, row *store.PlanDB) (kernel.PlanDoc, bool) {
 	var base kernel.PlanDoc
 	if json.Unmarshal([]byte(row.Doc), &base) != nil {
@@ -3499,29 +3550,20 @@ func resolveActivePlanDoc(st *store.Store, row *store.PlanDB) (kernel.PlanDoc, b
 	if len(overlays) == 0 {
 		return base, true
 	}
-	patches := make([]string, 0, len(overlays))
-	for _, o := range overlays {
-		patches = append(patches, o.Patch)
+	pf, err := kernel.ResolvePlanFinal([]byte(row.Doc), kernel.OverlayRefsFrom(overlays))
+	if err != nil {
+		return base, true // unreachable: the base parsed above
 	}
-	final, _ := kernel.ApplyOverlayPatches([]byte(row.Doc), patches)
-	var merged kernel.PlanDoc
-	// H4/H5 — re-validation integrity check at the HARD ceilings (12/5): a plan
-	// validly written under raised caps must survive overlay resolution.
-	if vErrDoc := func() error {
-		if err := json.Unmarshal(final, &merged); err != nil {
-			return err
-		}
-		return kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios)
-	}(); vErrDoc != nil {
+	if pf.FoldErr != nil {
 		// A8 (F14): the fallback-to-base is no longer silent — the owner's
 		// overlay is NOT in what the executor reads, and they must know.
 		// (free function — package logger, still WARN → log_events sink)
-		logger.Warnf("⚠️ merged plan+overlay FAILED re-validation for %s v%d (%v) — falling back to the BASE plan; the overlay edits are NOT active.", row.PlanID, row.Version, vErrDoc)
+		logger.Warnf("⚠️ merged plan+overlay FAILED re-validation for %s v%d (%v) — falling back to the BASE plan; the overlay edits are NOT active.", row.PlanID, row.Version, pf.FoldErr)
 	}
-	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
-		return merged, true // plan_final
+	for _, ms := range pf.MachineSkipped {
+		logger.Warnf("⚠️ machine overlay SKIPPED at the fold for %s v%d (%v) — that Picture scenario is NOT in the plan the executor reads.", row.PlanID, row.Version, ms)
 	}
-	return base, true // armor: a bad overlay never corrupts the executor's plan
+	return pf.Doc, true // plan_final (the base on a failed user fold — a bad overlay never corrupts the executor's plan)
 }
 
 // recordPlanCitation records the executor's plan citation for an entry decision
@@ -3750,4 +3792,98 @@ func buildReadFactRow(traderID string, in kernel.PlannerInput, scope kernel.Void
 		row.ReadHorizons = string(b)
 	}
 	return row
+}
+
+// reappendLiveMachineScenarios (W5) re-appends every LIVE machine scenario of
+// version newVersion-1 to newVersion as a machine overlay carrying the SAME
+// scenario value. LIVE = inside its eligibility window (kernel.MachineEligibleAt)
+// and no ledger row for its opportunity is terminal (the ledger's source pin:
+// one opportunity, one order, across versions). Idempotent on the opportunity
+// (the check runs inside the plan store's single writer).
+func (at *AutoTrader) reappendLiveMachineScenarios(planID string, newVersion int, now time.Time) {
+	if at.store == nil || planID == "" || newVersion <= 1 {
+		return
+	}
+	plans := at.store.Plan()
+	prev, err := plans.GetPlan(planID, newVersion-1)
+	if err != nil || prev == nil {
+		return
+	}
+	prevOvs, err := plans.ListOverlays(planID, prev.Version)
+	if err != nil {
+		at.logWarnf("🖼 picture re-append %s v%d: the previous version's overlays are unreadable (%v) — no Picture scenario carried", planID, newVersion, err)
+		return
+	}
+	pf, err := kernel.ResolvePlanFinal([]byte(prev.Doc), kernel.OverlayRefsFrom(prevOvs))
+	if err != nil {
+		return // the previous doc does not parse: it carried nothing we can read
+	}
+	var live []kernel.PlanScenario
+	for _, sc := range pf.Doc.Scenarios {
+		if sc.Machine == nil {
+			continue
+		}
+		if !kernel.MachineEligibleAt(sc, now.UnixMilli()) {
+			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — its eligibility window closed at %s", sc.ID, sc.Machine.Ref, planID, newVersion, kernel.ClockCTSeconds(time.UnixMilli(sc.Machine.EligibleUntilMs)))
+			continue
+		}
+		if done, why := at.machineOpportunityFinished(planID, sc.Machine.Ref); done {
+			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — %s", sc.ID, sc.Machine.Ref, planID, newVersion, why)
+			continue
+		}
+		live = append(live, sc)
+	}
+	if len(live) == 0 {
+		return
+	}
+	row, err := plans.GetPlan(planID, newVersion)
+	if err != nil || row == nil {
+		at.logWarnf("🖼 picture re-append: %s v%d is unreadable (%v) — %d live Picture scenario(s) NOT carried", planID, newVersion, err, len(live))
+		return
+	}
+	for _, sc := range live {
+		sc := sc
+		ref := sc.Machine.Ref
+		o := &store.PlanOverlayDB{OverlayID: "picture:" + ref, PlanID: planID, PlanVersion: newVersion, Origin: kernel.MachineOverlayOriginPicture}
+		ver, appended, aerr := plans.AppendOverlayChecked(o, func(existing []*store.PlanOverlayDB) (bool, error) {
+			cur, perr := kernel.ResolvePlanFinal([]byte(row.Doc), kernel.OverlayRefsFrom(existing))
+			if perr != nil {
+				return false, perr
+			}
+			if _, ok := kernel.MachineScenarioByRef(cur.Doc, ref); ok {
+				return true, nil // already carried
+			}
+			if verr := kernel.ValidateMachineScenario(cur.Doc, sc); verr != nil {
+				return false, verr
+			}
+			patch, merr := kernel.MachineOverlayPatch(sc)
+			if merr != nil {
+				return false, merr
+			}
+			o.Patch = patch
+			return false, nil
+		})
+		switch {
+		case aerr != nil:
+			at.logWarnf("🖼 picture scenario %s (ref %s) could NOT be re-appended to %s v%d: %v — it is not in the new plan and will not trade", sc.ID, ref, planID, newVersion, aerr)
+		case appended:
+			at.logInfof("🖼 picture scenario %s re-appended to %s v%d (overlay o%d) — same ref %s, same evidence; window until %s", sc.ID, planID, newVersion, ver, ref, kernel.ClockCTSeconds(time.UnixMilli(sc.Machine.EligibleUntilMs)))
+		}
+	}
+}
+
+// machineOpportunityFinished reports whether the armed ledger already finished
+// an opportunity: any row for its source_ref is terminal (the same rule as
+// UpsertArm's source pin — a finished opportunity never arms again).
+func (at *AutoTrader) machineOpportunityFinished(planID, ref string) (bool, string) {
+	rows, err := at.store.ArmedOrders().ListForPlan(planID)
+	if err != nil {
+		return true, fmt.Sprintf("the armed ledger is unreadable (%v) — fail-closed", err)
+	}
+	for _, r := range rows {
+		if r.TraderID == at.id && r.SourceRef == ref && store.IsTerminalArmState(r.State) {
+			return true, fmt.Sprintf("its ledger row #%d is %s", r.ID, r.State)
+		}
+	}
+	return false, ""
 }
