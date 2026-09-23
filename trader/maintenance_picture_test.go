@@ -119,3 +119,17 @@ func TestPictureHtfAmbiguousDropStaysPending(t *testing.T) {
 		t.Fatalf("an ambiguous drop must leave the row place_pending (it may be at NT8), got %+v", row)
 	}
 }
+
+// M2.1 (review 3 F8): production's state is a CONFIGURED data dir with NO hold
+// file — not the unconfigured "" every older fixture runs with. There, Picture
+// admits and submits exactly as before (mutation: refuse whenever configured).
+func TestPictureHtfSubmitsWhenConfiguredAndNoHoldFile(t *testing.T) {
+	withMaintenanceDir(t) // configured, no hold file
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	env.seedPictureTape()
+	env.eval.freshest5mAt = env.now
+	_ = env.eval.Evaluate("MNQ", env.now)
+	if len(env.submits) != 1 {
+		t.Fatalf("configured + no hold file must submit as before, got %d submit(s)", len(env.submits))
+	}
+}

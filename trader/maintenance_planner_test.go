@@ -95,3 +95,17 @@ func TestWeeklyReadChecksTheHoldBeforeItsClaim(t *testing.T) {
 		t.Fatalf("maybeRunWeeklyRead must call refusePlannerClaimWhileHeld before claimWeeklyRead (held=%d claim=%d)", held, claim)
 	}
 }
+
+// M2.1 (review 3 F8): configured data dir, NO hold file — the planner read is
+// claimed and runs exactly as before.
+func TestPlannerReadRunsWhenConfiguredAndNoHoldFile(t *testing.T) {
+	withMaintenanceDir(t) // configured, no hold file
+	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	before := gateBlocks(at.id, "maintenance_hold")
+	if !at.runPlannerReadWithTriggerClaimedCtx("NY", "2026-08-18", "owner_reread", "", nil, true) {
+		t.Fatal("configured + no hold file: the planner read must run (it did before the hold existed)")
+	}
+	if gateBlocks(at.id, "maintenance_hold") != before {
+		t.Fatal("no hold file: nothing may be counted as a maintenance refusal")
+	}
+}
