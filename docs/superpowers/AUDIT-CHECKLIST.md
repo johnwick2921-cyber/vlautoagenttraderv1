@@ -6128,3 +6128,31 @@ That happens for an entry that never left this process. If the queued entry is t
 **Probe:** send an AI entry with no client connected and run the production caller: an OPEN row with `entry_order_id "<nil>"` appears.
 
 **Status:** M2 does not fabricate a close for it. A hold drop forgets the entry, logs ERROR naming the signal and `db_open_positions`, raises P1, and the installation gate stays closed on cutover leg 1 until an operator reconciles. **The fix needs its own owner-ruled wave:** record the signal id as the order id, and do not record a position before a received fill.
+
+## CLASS NN (assigned at merge) — A HAND-SET BUILD LABEL TREATED AS PROOF OF WHAT IS RUNNING (born 2026-09-22, feat/one-button-updates, W-ONE-BUTTON M1)
+
+**Shape.** The AddOn's `VL_BUILD_ID` is a constant a human bumps "on any additive wire change"
+(`ninjascript/VLTraderTCPClient.cs:55`), mirrored by a Go constant (`provider/ninjatrader/order_snapshot.go:214`)
+and pinned equal by a test that proves only that two literals match. Seven commits changed the AddOn under
+`2026-09-07-h1` without a bump; at least 8 distinct source states reported the same id. The Go side keeps the last
+received id in a process-global slot that no disconnect clears, with no connection or process epoch — so after an
+NT8 restart the "received build" is the PREVIOUS process's until a new frame arrives, and a Go restart gets a
+fresh hello from the SAME AddOn instance. Any verifier that says "the new AddOn is running" from this id is
+reading a label, not the artifact.
+
+**How it hid.** The id matched on every successful deploy (because every successful deploy also bumped it), and
+the capability floors are string compares that pass on any later label. Nobody asked what the id is when two
+different sources carry it.
+
+**Probes.**
+- A build identity used as proof must be DERIVED from the artifact (source hash over every compiled release file
+  + the compiled assembly's MVID), not typed.
+- Verification binds to a per-connection record (accept sequence after the old process was observed gone) and to
+  the sending process's identity (PID + StartTime), never to a cached "last received" value.
+- A test that two constants are equal proves the constants are equal. Say that in the test's name.
+- Canon text about runtime behaviour ("AddOns do NOT hot-reload") is re-checked against the logs before a design
+  rests on it — F5 does reload in-process (09-22 research_facts h1→p1 inside one NT8 process).
+
+**Fix pattern.** Additive hello fields (process identity, MVID, source hash, activation nonce) + a Go
+per-connection record + a verifier that refuses cached or wrong-epoch evidence (M2/M4 of W-ONE-BUTTON, subject
+to owner ruling on "no new protocol work").
