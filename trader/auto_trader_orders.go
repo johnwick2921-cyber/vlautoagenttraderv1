@@ -10,7 +10,6 @@ import (
 	"nofx/store"
 	"nofx/telemetry"
 	ntTrader "nofx/trader/ninjatrader"
-	"strings"
 	"time"
 )
 
@@ -408,17 +407,16 @@ func (at *AutoTrader) ntHeldPosition(symbol string) string {
 		if pos["symbol"] != symbol {
 			continue
 		}
+		// W-EXEC-TRUTH W0 (canon 28): a held position is any NON-ZERO amount —
+		// NT8 signs a SHORT negative, and the old `amt > 0` read every held
+		// short as flat, so an entry netted onto it. The side is read through
+		// the one canonicalizer (NT8 emits UPPERCASE; the earlier casing fix
+		// lowered it only on the long branch).
 		amt, _ := pos["positionAmt"].(float64)
-		if amt > 0 {
-			// Normalize casing: NT8 GetPositions/positionMap emits UPPERCASE
-			// "LONG"/"SHORT"; reconcileBeforeOpenNT compares held == "long", so an
-			// un-normalized "LONG" fell to the else branch and flattened the WRONG
-			// side (CloseShort on a long orphan) — the flatten never confirmed flat
-			// and the open was refused every cycle. Return lowercase to match.
-			if s, _ := pos["side"].(string); s != "" {
-				return strings.ToLower(s)
+		if amt != 0 {
+			if side := brokerPositionSide(pos); side != "" {
+				return side
 			}
-			return "long"
 		}
 	}
 	return ""
@@ -509,7 +507,7 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 
 	// Check if there's already a position in the same symbol and direction
 	for _, pos := range positions {
-		if pos["symbol"] == decision.Symbol && pos["side"] == "long" {
+		if pos["symbol"] == decision.Symbol && brokerPositionSide(pos) == "long" {
 			return fmt.Errorf("❌ %s already has long position, close it first", decision.Symbol)
 		}
 	}
@@ -657,7 +655,7 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 
 	// Check if there's already a position in the same symbol and direction
 	for _, pos := range positions {
-		if pos["symbol"] == decision.Symbol && pos["side"] == "short" {
+		if pos["symbol"] == decision.Symbol && brokerPositionSide(pos) == "short" {
 			return fmt.Errorf("❌ %s already has short position, close it first", decision.Symbol)
 		}
 	}
@@ -809,7 +807,7 @@ func (at *AutoTrader) executeCloseLongWithRecord(decision *kernel.Decision, acti
 		positions, err := at.trader.GetPositions()
 		if err == nil {
 			for _, pos := range positions {
-				if pos["symbol"] == decision.Symbol && pos["side"] == "long" {
+				if pos["symbol"] == decision.Symbol && brokerPositionSide(pos) == "long" {
 					if ep, ok := pos["entryPrice"].(float64); ok {
 						entryPrice = ep
 					}
@@ -873,7 +871,7 @@ func (at *AutoTrader) executeCloseShortWithRecord(decision *kernel.Decision, act
 		positions, err := at.trader.GetPositions()
 		if err == nil {
 			for _, pos := range positions {
-				if pos["symbol"] == decision.Symbol && pos["side"] == "short" {
+				if pos["symbol"] == decision.Symbol && brokerPositionSide(pos) == "short" {
 					if ep, ok := pos["entryPrice"].(float64); ok {
 						entryPrice = ep
 					}

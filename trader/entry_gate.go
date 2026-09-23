@@ -361,8 +361,10 @@ func (at *AutoTrader) entryGateForArm(plan *kernel.ActivePlan, sc kernel.PlanSce
 		if err == nil {
 			sym := market.Normalize(at.futuresSymbol())
 			for _, p := range opens {
-				if strings.EqualFold(p.Symbol, sym) && (p.Side == "long" || p.Side == "short") {
-					openSide = strings.ToLower(p.Side)
+				// canon 28: writers store "LONG"/"SHORT" — read through the
+				// canonicalizer, or leg 7 never sees the position (W-EXEC-TRUTH W0).
+				if side := positionSide(p.Side); strings.EqualFold(p.Symbol, sym) && side != "" {
+					openSide = side
 					openID, openVer, openScenario = p.ID, p.PlanVersion, p.CitedScenarioID
 					break
 				}
@@ -422,8 +424,10 @@ func (at *AutoTrader) entryGateForDecision(d *kernel.Decision, livePrice float64
 		if err == nil {
 			sym := market.Normalize(d.Symbol)
 			for _, p := range opens {
-				if strings.EqualFold(p.Symbol, sym) && (p.Side == "long" || p.Side == "short") {
-					openSide = strings.ToLower(p.Side)
+				// canon 28: writers store "LONG"/"SHORT" — read through the
+				// canonicalizer, or leg 7 never sees the position (W-EXEC-TRUTH W0).
+				if side := positionSide(p.Side); strings.EqualFold(p.Symbol, sym) && side != "" {
+					openSide = side
 					// ONE OPEN POSITION (2026-09-03) — the identity, so the
 					// refusal names what is open.
 					openID, openVer, openScenario = p.ID, p.PlanVersion, p.CitedScenarioID
