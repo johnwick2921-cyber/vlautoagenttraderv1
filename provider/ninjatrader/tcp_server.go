@@ -649,6 +649,12 @@ var (
 type timedSignal struct {
 	payload   SignalPayload
 	timestamp time.Time
+	// attempted is true once a write of this signal's frame was STARTED on ANY
+	// connection. WriteFrame can fail after some bytes left the socket, so an
+	// attempted signal may have reached the AddOn; only a signal with zero bytes
+	// ever written provably never left this process (W-ONE-BUTTON M2, CTO
+	// condition 1 — the maintenance-hold drop settles only those).
+	attempted bool
 }
 
 // ListenAddr returns the NT8 bridge listen address: TCPListenAddr unless
@@ -2442,6 +2448,11 @@ func (s *TCPServer) flushPending() error {
 // flushPendingReport is flushPending plus the signal ids it DROPPED because of
 // the maintenance hold (so SendSignal can report its own entry as not sent).
 func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
+	// Held: the whole queue is dropped and reported, CONNECTED OR NOT (the
+	// queue holds entries only; nothing in it may reach the wire while held).
+	if s.entryHeld() {
+		return s.dropQueuedWhileHeld(), nil
+	}
 	var heldDropped map[string]bool
 	s.connMu.Lock()
 	c := s.conn
@@ -2458,14 +2469,10 @@ func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
 	for i, queued := range toSend {
 		sig := queued.payload
 		if s.entryHeld() {
-			// W-ONE-BUTTON M2 (gap U2): an entry queued before the hold must
-			// not reach the wire during maintenance. Drop it — never re-queue.
-			if heldDropped == nil {
-				heldDropped = map[string]bool{}
-			}
-			heldDropped[sig.SignalID] = true
-			s.logger.Warn("tcp_server: 🔒 maintenance hold — queued entry DROPPED, not sent", "signal_id", sig.SignalID, "symbol", sig.Symbol, "side", sig.Side)
-			continue
+			// W-ONE-BUTTON M2 (gap U2): the hold landed mid-flush — the rest of
+			// this batch is dropped and reported, never re-queued.
+			heldDropped = s.reportDrops(toSend[i:])
+			return heldDropped, nil
 		}
 		s.writeMu.Lock()
 		// Check after waiting for the writer, using the command's original
@@ -2478,6 +2485,8 @@ func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
 		err := WriteFrame(c, FrameSignal, sig)
 		s.writeMu.Unlock()
 		if err != nil {
+			// The write was STARTED: bytes may have reached the AddOn.
+			toSend[i].attempted = true
 			// W2 (SUNDAY-SHIELD) — re-queue this signal AND the remaining
 			// unsent tail. The old code re-queued only the current one and
 			// DROPPED every later queued signal on a mid-flush conn death —

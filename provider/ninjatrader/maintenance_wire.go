@@ -56,6 +56,9 @@ type maintenanceWire struct {
 	seq          uint64
 	conn         net.Conn // the connection rec describes
 	rec          ConnectionRecord
+
+	sinkMu sync.Mutex
+	sinks  map[string]func(DroppedEntry) // owner → drop sink
 }
 
 // SetMaintenanceSource wires the installation hold (trader.maintenanceWireState).
@@ -187,6 +190,11 @@ func (s *TCPServer) maintenanceLoop(ctxDone <-chan struct{}, tick time.Duration)
 		case <-ctxDone:
 			return
 		case now := <-t.C:
+			// A hold that lands while NT8 is down must not leave entries parked
+			// in the queue for as long as it stays down.
+			if s.entryHeld() && s.PendingSignalCount() > 0 {
+				s.dropQueuedWhileHeld()
+			}
 			s.connMu.Lock()
 			c := s.conn
 			s.connMu.Unlock()
@@ -207,3 +215,80 @@ func (r ConnectionRecord) AckAge() (time.Duration, bool) {
 // MaintenanceAckMaxAge is the oldest ack the installation gate accepts: three
 // resend intervals (the AddOn re-acks every resend while held).
 func MaintenanceAckMaxAge() time.Duration { return 3 * maintenanceResend }
+
+// DroppedEntry is one queued entry the maintenance hold removed from the
+// reconnect queue (W-ONE-BUTTON M2, CTO condition 1 on M-2).
+type DroppedEntry struct {
+	SignalID string
+	TraderID string
+	Account  string
+	Symbol   string
+	Side     string
+	// Attempted: a write of this signal's frame was STARTED on some connection
+	// before the drop (timedSignal.attempted). false = zero bytes were ever
+	// written — the only case a caller may settle as "never sent".
+	Attempted bool
+}
+
+// AddDroppedEntrySink registers fn (under owner; a re-registration replaces
+// it) to hear every entry the hold drops. Called outside every server lock.
+func (s *TCPServer) AddDroppedEntrySink(owner string, fn func(DroppedEntry)) {
+	s.maint.sinkMu.Lock()
+	defer s.maint.sinkMu.Unlock()
+	if s.maint.sinks == nil {
+		s.maint.sinks = map[string]func(DroppedEntry){}
+	}
+	if fn == nil {
+		delete(s.maint.sinks, owner)
+		return
+	}
+	s.maint.sinks[owner] = fn
+}
+
+// dispatchDrops hands each drop to every sink. Never called under a lock the
+// sinks could need (they write the ledger and log).
+func (s *TCPServer) dispatchDrops(ds []DroppedEntry) {
+	if len(ds) == 0 {
+		return
+	}
+	s.maint.sinkMu.Lock()
+	fns := make([]func(DroppedEntry), 0, len(s.maint.sinks))
+	for _, fn := range s.maint.sinks {
+		fns = append(fns, fn)
+	}
+	s.maint.sinkMu.Unlock()
+	for _, d := range ds {
+		for _, fn := range fns {
+			fn(d)
+		}
+	}
+}
+
+// dropQueuedWhileHeld empties the reconnect queue while the installation is
+// held — connected or not — logs and reports every entry, and returns their
+// ids. Nothing is ever re-queued.
+func (s *TCPServer) dropQueuedWhileHeld() map[string]bool {
+	s.pendingMu.Lock()
+	queued := append([]timedSignal(nil), s.pending...)
+	s.pending = s.pending[:0]
+	s.pendingMu.Unlock()
+	return s.reportDrops(queued)
+}
+
+func (s *TCPServer) reportDrops(queued []timedSignal) map[string]bool {
+	if len(queued) == 0 {
+		return nil
+	}
+	ids := make(map[string]bool, len(queued))
+	ds := make([]DroppedEntry, 0, len(queued))
+	for _, q := range queued {
+		sig := q.payload
+		ids[sig.SignalID] = true
+		ds = append(ds, DroppedEntry{SignalID: sig.SignalID, TraderID: sig.TraderID, Account: sig.Account,
+			Symbol: sig.Symbol, Side: sig.Side, Attempted: q.attempted})
+		s.logger.Warn("tcp_server: 🔒 maintenance hold — queued entry DROPPED, not sent",
+			"signal_id", sig.SignalID, "symbol", sig.Symbol, "side", sig.Side, "attempted", q.attempted)
+	}
+	s.dispatchDrops(ds)
+	return ids
+}
