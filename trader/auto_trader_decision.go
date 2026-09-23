@@ -9,6 +9,7 @@ import (
 	"nofx/market"
 	"nofx/store"
 	"nofx/telemetry"
+	"strings"
 	"time"
 )
 
@@ -307,6 +308,16 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 	default:
 		orderID = fmt.Sprintf("%v", v)
 	}
+	// W-EXEC-TRUTH W0 (d) — CLASS 160. An NT8 entry returns no "orderId"; it
+	// returns the SIGNAL id it was sent under, and that is the only identity a
+	// fill or a reject can be matched to. Keyed by it, the order row no longer
+	// collapses onto one "<nil>" row, and the confirmation below can ask about
+	// THIS entry instead of whatever entry last wrote the shared slot.
+	ntSignalKeyed := at.exchange == "ninjatrader" && (action == "open_long" || action == "open_short")
+	if ntSignalKeyed {
+		sid, _ := orderResult["signal_id"].(string)
+		orderID = strings.TrimSpace(sid)
+	}
 
 	if orderID == "" || orderID == "0" {
 		logger.Infof("  ⚠️ Order ID is empty, skipping record")
@@ -356,9 +367,57 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 		logger.Infof("  📝 Order recorded: %s [%s] %s", orderID, action, symbol)
 	}
 
+	// W-EXEC-TRUTH W0 (d) — CLASS 160: an NT8 open becomes a position ONLY on a
+	// received fill for ITS OWN signal. A reject for that signal settles the
+	// order row REJECTED; no evidence within the poll leaves the order row
+	// unresolved (NEW) and records NOTHING — never a position at the mark. A
+	// fill that lands later is materialized by the position reconciler from
+	// NT8's own position (the untracked path), not fabricated here.
+	if ntSignalKeyed {
+		ev, ok := at.trader.(ntSignalEvidence)
+		if !ok {
+			logger.Warnf("  ⚠️ %s %s submitted (signal %s) — this broker exposes no per-signal fill evidence; recorded as SUBMITTED, UNCONFIRMED (no position)", action, symbol, orderID)
+			return
+		}
+		filled := false
+		time.Sleep(500 * time.Millisecond)
+		for i := 0; i < 5 && !filled; i++ {
+			if reason, rejected := ev.RecentRejectFor(orderID); rejected {
+				if strings.TrimSpace(reason) == "" {
+					reason = store.PlacementReasonUnavailable
+				}
+				if err := at.store.Order().UpdateOrderStatus(orderRecord.ID, "REJECTED", 0, 0, 0); err != nil {
+					logger.Infof("  ⚠️ Failed to update order status: %v", err)
+				}
+				logger.Warnf("  ⛔ %s %s REJECTED by NT8 (signal %s, reason %q) — no position recorded", action, symbol, orderID, reason)
+				return
+			}
+			if px, qty, got := ev.RecentFillFor(orderID); got {
+				actualPrice = px
+				if qty > 0 {
+					actualQty = qty
+				}
+				filled = true
+				logger.Infof("  ✅ Order filled (signal %s): avgPrice=%.6f, qty=%.6f", orderID, actualPrice, actualQty)
+				if err := at.store.Order().UpdateOrderStatus(orderRecord.ID, "FILLED", actualQty, actualPrice, fee); err != nil {
+					logger.Infof("  ⚠️ Failed to update order status: %v", err)
+				}
+				at.recordOrderFill(orderRecord.ID, orderID, symbol, action, actualPrice, actualQty, fee)
+				break
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+		if !filled {
+			logger.Warnf("  ⚠️ %s %s SUBMITTED, UNCONFIRMED — no fill for signal %s within the confirmation window; the order row stays unresolved and NO position is recorded (a later fill is materialized from NT8's position by the reconciler)", action, symbol, orderID)
+			return
+		}
+	}
+
 	// Wait for order to be filled and get actual fill data
-	time.Sleep(500 * time.Millisecond)
-	for i := 0; i < 5; i++ {
+	if !ntSignalKeyed {
+		time.Sleep(500 * time.Millisecond)
+	}
+	for i := 0; i < 5 && !ntSignalKeyed; i++ {
 		status, err := at.trader.GetOrderStatus(symbol, orderID)
 		if err == nil {
 			statusStr, _ := status["status"].(string)
@@ -634,4 +693,12 @@ func (at *AutoTrader) recordOrderFill(orderRecordID int64, exchangeOrderID, symb
 // GetOpenOrders returns open orders (pending SL/TP) from exchange
 func (at *AutoTrader) GetOpenOrders(symbol string) ([]OpenOrder, error) {
 	return at.trader.GetOpenOrders(symbol)
+}
+
+// ntSignalEvidence is the per-signal entry evidence an NT8 broker exposes
+// (W-EXEC-TRUTH W0 (d), CLASS 160): a received fill or a received reject for
+// the exact signal an entry was sent under.
+type ntSignalEvidence interface {
+	RecentFillFor(signalID string) (price, quantity float64, ok bool)
+	RecentRejectFor(signalID string) (reason string, ok bool)
 }

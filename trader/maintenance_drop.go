@@ -17,11 +17,9 @@ import (
 //	    armed row  place_pending → cancelled
 //	    Picture    place_pending → refused
 //	    both with "never sent — queued entry dropped by the maintenance hold (job <id>)"
-//	    AI path    nothing links its records to the signal (placeEntry returns no
-//	               orderId, so recordAndConfirmOrder wrote entry_order_id "<nil>"):
-//	               forgotten by the TCPTrader, said out loud, alerted; the
-//	               installation gate stays closed on db_open_positions until an
-//	               operator reconciles — never a fabricated close
+//	    AI path    its order row is keyed by the signal (W-EXEC-TRUTH W0 (d),
+//	               CLASS 160) and holds no position without fill evidence:
+//	               the unresolved (NEW) order row → CANCELED, same reason
 //	attempted (a write was started)       → ambiguous: nothing moves, counted,
 //	                                        the gate stays closed
 //
@@ -49,6 +47,14 @@ func (at *AutoTrader) onMaintenanceDroppedEntry(d ntwire.DroppedEntry) {
 		} else {
 			settled += int(n)
 		}
+		// The AI path's order row (keyed by the signal since W0 (d)). Only an
+		// UNRESOLVED row moves: a FILLED or REJECTED row is broker evidence and
+		// is never rewritten by a drop.
+		if o, err := at.store.Order().GetOrderByExchangeID(at.exchangeID, d.SignalID); err == nil && o != nil && o.Status == "NEW" {
+			if uerr := at.store.Order().UpdateOrderStatus(o.ID, "CANCELED", 0, 0, 0); uerr == nil {
+				settled++
+			}
+		}
 		if rows, err := at.store.PictureHtfBySignal(d.SignalID); err == nil {
 			for _, r := range rows {
 				if r.Stage == "place_pending" {
@@ -71,7 +77,7 @@ func (at *AutoTrader) onMaintenanceDroppedEntry(d ntwire.DroppedEntry) {
 			d.Symbol, d.Side, d.SignalID, settled, reason)
 		return
 	}
-	at.logErrorf("🔒 maintenance hold dropped queued entry %s %s %s — it NEVER reached NT8, and no ledger row names it. If the AI path recorded it, trader_positions holds an OPEN row NT8 never had (entry_order_id \"<nil>\"): reconcile it. The installation gate stays closed on db_open_positions until then.",
+	at.logErrorf("🔒 maintenance hold dropped queued entry %s %s %s — it NEVER reached NT8, and no ledger or order row names it. If any record of it exists, it describes an order NT8 never had: reconcile it before the update continues.",
 		d.Symbol, d.Side, d.SignalID)
 	at.emitAlert("P1", "maintenance-drop", "maintenance-drop:"+d.SignalID,
 		fmt.Sprintf("Queued %s %s entry dropped by the update hold (never sent)", d.Side, d.Symbol),

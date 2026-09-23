@@ -63,6 +63,9 @@ type TCPTrader struct {
 	// ring to reconstruct the real exit price instead of fabricating exit=entry.
 	// Guarded by mu. Reconcile goroutine reads via takeNettingExit.
 	recentFills []recentFill
+	// recentRejects is the bounded ring of broker rejections by signal
+	// (W-EXEC-TRUTH W0 (d), CLASS 160). Guarded by mu.
+	recentRejects []recentReject
 
 	// closedAt records the wall-clock (ms) of the most recent FILL-CONFIRMED close
 	// (position_close frame) per "SYMBOL|SIDE" for THIS trader's bound account. The
@@ -348,6 +351,7 @@ func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *T
 				if t.lastEntrySignalID == fill.SignalID {
 					t.lastEntrySignalID = ""
 				}
+				t.recordRecentReject(fill.SignalID, fill.Reason)
 				tid := t.traderID
 				t.mu.Unlock()
 				t.notifyReject(fill.SignalID, fill.Reason)
