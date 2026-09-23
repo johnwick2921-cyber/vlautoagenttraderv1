@@ -149,19 +149,22 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 		// enforced untoggleably in the broker layer).
 		if engine != nil {
 			rc := engine.GetRiskControlConfig()
+			// W1 (g): the config half resolves in ONE place the Settings page
+			// also reads (ResolveStrategyGuardrails) — byte-identical values.
+			gp := ResolveStrategyGuardrails(rc, limits.MaxDailyLossUSD)
 			g := DailyGuardrails{
-				MasterEnabled:    boolOrDefault(rc.GuardrailsEnabled, true),
+				MasterEnabled:    gp.MasterEnabled,
 				DailyRealizedPnL: ctx.DailyRealizedPnL,
 				TradesToday:      ctx.TradesToday,
 
-				DailyLossEnabled:  boolOrDefault(rc.DailyLossEnabled, true), // preserve the live daily-loss gate
-				DailyLossLimitUSD: firstPositive(rc.DailyLossLimitUSD, limits.MaxDailyLossUSD),
+				DailyLossEnabled:  gp.DailyLossEnabled,
+				DailyLossLimitUSD: gp.DailyLossLimitUSD,
 
-				DailyProfitEnabled:   boolOrDefault(rc.DailyProfitEnabled, false),
-				DailyProfitTargetUSD: rc.DailyProfitTargetUSD,
+				DailyProfitEnabled:   gp.DailyProfitEnabled,
+				DailyProfitTargetUSD: gp.DailyProfitTargetUSD,
 
-				MaxDailyTradesEnabled: boolOrDefault(rc.MaxDailyTradesEnabled, false),
-				MaxDailyTrades:        rc.MaxDailyTrades,
+				MaxDailyTradesEnabled: gp.MaxDailyTradesEnabled,
+				MaxDailyTrades:        gp.MaxDailyTrades,
 
 				// 6.3 — soft-audit inputs for the two silent checks.
 				BlackoutConfigured:   rc.BlackoutStartCT != "" && rc.BlackoutEndCT != "",
@@ -196,7 +199,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 					SetDailyForceFlat(ctx.TraderID, gErr.Error())
 				}
 				return holdCycle("daily_guardrail"), nil
-			} else if boolOrDefault(rc.BlackoutEnabled, false) && InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT) {
+			} else if gp.BlackoutEnabled && InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT) {
 				// Chunk 4 — time/news blackout: go passive during a configured daily
 				// [start,end] CT window (master + toggle governed). NT8-side SL/TP
 				// still protect open positions; the bot just makes no new decisions.
@@ -204,7 +207,7 @@ func GetFullDecisionWithStrategy(ctx *Context, mcpClient mcp.AIClient, engine *S
 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_blackout").Inc()
 				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_blackout")
 				return holdCycle("blackout_window"), nil
-			} else if boolOrDefault(rc.ConsistencyEnabled, false) && ConsistencyBreached(ctx.DailyRealizedPnL, ctx.TotalRealizedPnL, rc.ConsistencyMaxDayPct) {
+			} else if gp.ConsistencyEnabled && ConsistencyBreached(ctx.DailyRealizedPnL, ctx.TotalRealizedPnL, rc.ConsistencyMaxDayPct) {
 				// Chunk 5 — consistency rule: today's realized profit is too large a
 				// share of total → go passive so this session-day does not exceed the
 				// configured % of total realized profit.

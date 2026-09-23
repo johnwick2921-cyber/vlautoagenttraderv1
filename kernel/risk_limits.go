@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"nofx/config"
 	"nofx/logger"
+	"nofx/store"
 	"os"
 	"strconv"
 	"strings"
@@ -293,6 +294,41 @@ type DailyGuardrails struct {
 	TotalRealizedPnL     float64
 }
 
+// StrategyGuardrailPosture is the CONFIG half of the daily guardrail gate,
+// resolved once (W1 (g), settings truth): per-strategy value → env fallback for
+// the daily-loss limit, and every toggle → its shipped default when unset. The
+// engine's gate (engine_analysis.go) builds DailyGuardrails from it and the
+// Settings page reports it, so the page can never narrate a default the gate
+// does not apply.
+type StrategyGuardrailPosture struct {
+	MasterEnabled         bool
+	DailyLossEnabled      bool
+	DailyLossLimitUSD     float64
+	DailyProfitEnabled    bool
+	DailyProfitTargetUSD  float64
+	MaxDailyTradesEnabled bool
+	MaxDailyTrades        int
+	BlackoutEnabled       bool
+	ConsistencyEnabled    bool
+}
+
+// ResolveStrategyGuardrails resolves the posture from the strategy's risk
+// control block. envDailyLossUSD is RISK_MAX_DAILY_LOSS_USD as loaded at boot
+// (LoadRiskLimitsFromConfig().MaxDailyLossUSD).
+func ResolveStrategyGuardrails(rc store.RiskControlConfig, envDailyLossUSD float64) StrategyGuardrailPosture {
+	return StrategyGuardrailPosture{
+		MasterEnabled:         boolOrDefault(rc.GuardrailsEnabled, true),
+		DailyLossEnabled:      boolOrDefault(rc.DailyLossEnabled, true), // preserve the live daily-loss gate
+		DailyLossLimitUSD:     firstPositive(rc.DailyLossLimitUSD, envDailyLossUSD),
+		DailyProfitEnabled:    boolOrDefault(rc.DailyProfitEnabled, false),
+		DailyProfitTargetUSD:  rc.DailyProfitTargetUSD,
+		MaxDailyTradesEnabled: boolOrDefault(rc.MaxDailyTradesEnabled, false),
+		MaxDailyTrades:        rc.MaxDailyTrades,
+		BlackoutEnabled:       boolOrDefault(rc.BlackoutEnabled, false),
+		ConsistencyEnabled:    boolOrDefault(rc.ConsistencyEnabled, false),
+	}
+}
+
 // CheckSoft evaluates every CONFIGURED limit (value > 0) regardless of toggles
 // and returns the "would have tripped" reasons. P0-cleanup (2026-08-19): the
 // guardrails master stays OFF by the owner's dated decision, but the owner must
@@ -370,11 +406,28 @@ func firstPositive(vals ...float64) float64 {
 // the researched fallback; 6.6: the old '10-contract' text was a comment lie).
 // NEVER returns 0 — a futures order can never be left unclamped.
 func ResolveMaxContracts(perStrategy, def int) int {
-	n := def
+	n, _ := ResolveMaxContractsWithSource(perStrategy, def)
+	return n
+}
+
+// ResolveMaxContractsWithSource is ResolveMaxContracts with WHERE the value came
+// from (W1 (g), settings truth). The rule lives here once and the value-only
+// entry point delegates, so the Settings page narrates the SAME resolution the
+// order path performs: a saved value (>0), else the venue default, then the
+// Stage-A ceiling — named by its env var when that is what bound, else as the
+// clamp.
+func ResolveMaxContractsWithSource(perStrategy, def int) (int, string) {
+	n, src := def, store.SourceShippedDefault
 	if perStrategy > 0 {
-		n = perStrategy
+		n, src = perStrategy, store.SourceSaved
 	}
-	return ClampStageAContracts(n)
+	if capN, capSrc := StageAContractCapWithSource(); n > capN {
+		if capSrc == StageAContractCapEnvSource {
+			return capN, capSrc
+		}
+		return capN, "clamp (kernel.ClampStageAContracts)"
+	}
+	return n, src
 }
 
 // StageAContractCap (0B, owner ruling 2026-09-02) is the survival-first size
@@ -394,12 +447,22 @@ const StageAContractCapDefault = 1
 
 // StageAContractCap resolves the Stage-A ceiling (env STAGE_A_CONTRACT_CAP).
 func StageAContractCap() int {
+	n, _ := StageAContractCapWithSource()
+	return n
+}
+
+// StageAContractCapEnvSource names the env origin of the Stage-A ceiling.
+const StageAContractCapEnvSource = "env STAGE_A_CONTRACT_CAP"
+
+// StageAContractCapWithSource is StageAContractCap with its origin: the env
+// value when it parses to a positive int, else the code constant.
+func StageAContractCapWithSource() (int, string) {
 	if v := os.Getenv("STAGE_A_CONTRACT_CAP"); v != "" {
 		if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && n > 0 {
-			return n
+			return n, StageAContractCapEnvSource
 		}
 	}
-	return StageAContractCapDefault
+	return StageAContractCapDefault, "code constant (kernel.StageAContractCapDefault)"
 }
 
 // ClampStageAContracts applies the Stage-A ceiling to any resolved size.
@@ -429,10 +492,17 @@ func ResolveConcurrentCap(perStrategyMaxPositions, envFallback int) (limit int, 
 // limits/blackout). Per-strategy value overrides (>0); else the venue default
 // (equity×20). NEVER returns 0 — a futures order always has a notional ceiling.
 func ResolveNotionalLeverage(perStrategy, def float64) float64 {
+	v, _ := ResolveNotionalLeverageWithSource(perStrategy, def)
+	return v
+}
+
+// ResolveNotionalLeverageWithSource is ResolveNotionalLeverage with its origin
+// (W1 (g)): a saved value (>0) or the venue default.
+func ResolveNotionalLeverageWithSource(perStrategy, def float64) (float64, string) {
 	if perStrategy > 0 {
-		return perStrategy
+		return perStrategy, store.SourceSaved
 	}
-	return def
+	return def, store.SourceShippedDefault
 }
 
 // ConsistencyBreached (Chunk 5) reports whether today's realized profit exceeds

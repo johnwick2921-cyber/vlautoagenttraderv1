@@ -4,6 +4,8 @@ import (
 	"os"
 	"sort"
 	"strings"
+
+	"nofx/store"
 )
 
 // SHADOW DEMOTION (0C, owner ruling 2026-08-31) — per-condition live|shadow
@@ -36,15 +38,33 @@ var defaultConditionStatus = map[string]string{
 // the name outranks a shadow entry wherever each appears in the string. Empty
 // values in the maps are ignored. Condition names are case-trimmed.
 func ConditionStatus(condition string, base, session map[string]string, env string) string {
+	st, _ := ConditionStatusWithSource(condition, base, session, env)
+	return st
+}
+
+// Where a condition's status came from (W1 (g), settings truth). The words are
+// the store's source vocabulary plus the env var that decided it.
+const (
+	ConditionSourceEnvLive   = "env LIVE_CONDITIONS"
+	ConditionSourceEnvShadow = "env SHADOW_CONDITIONS"
+)
+
+// ConditionStatusWithSource is ConditionStatus with WHERE the status came from.
+// The precedence lives here once and ConditionStatus delegates, so the Settings
+// page narrates the SAME chain the arm seam enforces: session override →
+// strategy value → env LIVE_CONDITIONS → env SHADOW_CONDITIONS → shipped default.
+// env is the composed string (ShadowConditionsEnv): "name=live" tokens come from
+// LIVE_CONDITIONS, "name=shadow" and bare names from SHADOW_CONDITIONS.
+func ConditionStatusWithSource(condition string, base, session map[string]string, env string) (string, string) {
 	c := strings.ToLower(strings.TrimSpace(condition))
 	if c == "" {
-		return ConditionLive
+		return ConditionLive, store.SourceShippedDefault
 	}
 	if s, ok := session[c]; ok && (s == ConditionShadow || s == ConditionLive) {
-		return s
+		return s, store.SourceSessionOverride
 	}
 	if s, ok := base[c]; ok && (s == ConditionShadow || s == ConditionLive) {
-		return s
+		return s, store.SourceStrategyValue
 	}
 	if env != "" {
 		sawLive, sawShadow := false, false
@@ -64,16 +84,16 @@ func ConditionStatus(condition string, base, session map[string]string, env stri
 			}
 		}
 		if sawLive {
-			return ConditionLive
+			return ConditionLive, ConditionSourceEnvLive
 		}
 		if sawShadow {
-			return ConditionShadow
+			return ConditionShadow, ConditionSourceEnvShadow
 		}
 	}
 	if s, ok := defaultConditionStatus[c]; ok {
-		return s
+		return s, store.SourceShippedDefault
 	}
-	return ConditionLive
+	return ConditionLive, store.SourceShippedDefault
 }
 
 // IsConditionShadowed reports whether the resolved status for a condition is
