@@ -379,6 +379,8 @@ export interface PlanToday {
           detail: string
         }>
         rule: string
+        /** W2 — 'stored' | 'authoring_default'; absent on pre-W2 records. */
+        rule_source?: string
         ref_price: number
         side: string
         met: boolean
