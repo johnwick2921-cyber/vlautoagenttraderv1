@@ -85,7 +85,7 @@ func pictureEvidenceFrom(e *PictureHtfEvaluator, row *store.PictureHtfOpportunit
 	}
 	adm := e.pendingAdmission
 	if adm == nil {
-		return PictureEvidence{}, fmt.Errorf("picture evidence: no admission record for %s", row.OppKey)
+		return PictureEvidence{}, fmt.Errorf("picture evidence: no admission record for %s", store.RedactPictureOppKey(row.OppKey))
 	}
 	dir := strings.ToLower(strings.TrimSpace(row.Direction))
 	switch {

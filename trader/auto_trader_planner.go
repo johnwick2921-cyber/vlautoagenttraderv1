@@ -3843,11 +3843,11 @@ func (at *AutoTrader) reappendLiveMachineScenarios(planID string, newVersion int
 			continue
 		}
 		if !kernel.MachineEligibleAt(sc, now.UnixMilli()) {
-			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — its eligibility window closed at %s", sc.ID, sc.Machine.Ref, planID, newVersion, kernel.ClockCTSeconds(time.UnixMilli(sc.Machine.EligibleUntilMs)))
+			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — its eligibility window closed at %s", sc.ID, store.RedactPictureOppKey(sc.Machine.Ref), planID, newVersion, kernel.ClockCTSeconds(time.UnixMilli(sc.Machine.EligibleUntilMs)))
 			continue
 		}
 		if done, why := at.machineOpportunityFinished(planID, sc.Machine.Ref); done {
-			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — %s", sc.ID, sc.Machine.Ref, planID, newVersion, why)
+			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — %s", sc.ID, store.RedactPictureOppKey(sc.Machine.Ref), planID, newVersion, why)
 			continue
 		}
 		live = append(live, sc)

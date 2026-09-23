@@ -185,11 +185,12 @@ func (at *AutoTrader) entryLatchLedgers() ([]string, error) {
 // W5 D15 — THE LATCH NAMES ITS HOLDER. A refusal "ledger_open" used to list
 // "picture:<opp>(<stage>)" with no row id, so a reader could not find the row
 // that held the account. A Picture ledger row is now named "latched by picture
-// row #<id>" (the picture_htf_opportunities id the 🖼 boot line prints), and an
+// row #<id> (<stage>)" (the picture_htf_opportunities id the 🖼 boot line prints —
+// never the opportunity key, which embeds the account name, L12), and an
 // armed row a Picture scenario placed says so beside its own id. A planner
 // row reads exactly as before.
 func latchPictureHolder(p store.PictureHtfOpportunityDB) string {
-	return fmt.Sprintf("latched by picture row #%d picture:%s(%s)", p.ID, p.OppKey, p.Stage)
+	return fmt.Sprintf("latched by picture row #%d (%s)", p.ID, p.Stage)
 }
 
 func latchArmedHolder(r store.ArmedOrderDB) string {

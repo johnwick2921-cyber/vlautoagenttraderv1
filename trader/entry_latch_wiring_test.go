@@ -159,15 +159,27 @@ func TestEntryLatchLedgersListPlacedRowsOnTheAccount(t *testing.T) {
 			t.Fatalf("listed a row the latch must not count (%s): %v", not, ids)
 		}
 	}
-	if !strings.Contains(joined, "picture:pic-working") || strings.Contains(joined, "picture:pic-claimed") {
+	// W5 (L12, CTO 1790197560916): a Picture row is named by its id and stage,
+	// never by its opportunity key (the key embeds the account name).
+	picName := func(key string) string {
+		r, ok, err := f.st.PictureHtfGet(key)
+		if err != nil || !ok {
+			t.Fatalf("picture row %s: %v %v", key, ok, err)
+		}
+		return "latched by picture row #" + latchItoa(r.ID) + " ("
+	}
+	if !strings.Contains(joined, picName("pic-working")) || strings.Contains(joined, picName("pic-claimed")) {
 		t.Fatalf("a working Picture row is listed, an unstamped claim is not: %v", ids)
+	}
+	if strings.Contains(joined, "pic-working") || strings.Contains(joined, "pic-claimed") {
+		t.Fatalf("the latch text must never carry the opportunity key: %v", ids)
 	}
 	// Once the claim is stamped (a send was started), it counts.
 	if err := f.st.PictureHtfStampSignal("pic-claimed", "claim-1", "broker-sig"); err != nil {
 		t.Fatal(err)
 	}
 	ids, _ = f.at.entryLatchLedgers()
-	if !strings.Contains(strings.Join(ids, " "), "picture:pic-claimed") {
+	if !strings.Contains(strings.Join(ids, " "), picName("pic-claimed")) {
 		t.Fatalf("a stamped Picture claim must be listed: %v", ids)
 	}
 }

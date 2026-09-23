@@ -247,3 +247,16 @@ func TestSupersedeLeavesMachineRowsAlone(t *testing.T) {
 		t.Fatalf("a planner row is still superseded: %v %v", ids, err)
 	}
 }
+
+// L12 (CTO 1790197560916): a Picture opportunity key's second segment is the
+// account name; every W5 log line prints the key through this redactor.
+func TestRedactPictureOppKey(t *testing.T) {
+	key := PictureHtfOppKey("strat-1", "Sim101", "MNQ 12-26", "long", "resistance", 1790150000000, 1790190000000)
+	got := RedactPictureOppKey(key)
+	if got != "strat-1|…|mnq 12-26|long|resistance|1790150000000|1790190000000" {
+		t.Fatalf("redacted = %q", got)
+	}
+	if RedactPictureOppKey("opp-a") != "opp-a" {
+		t.Fatal("a key with no account segment is returned unchanged")
+	}
+}

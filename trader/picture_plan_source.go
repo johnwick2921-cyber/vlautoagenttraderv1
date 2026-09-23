@@ -139,7 +139,7 @@ func (at *AutoTrader) pictureHandOffAt(ev PictureEvidence, now time.Time) error 
 	if moved, serr := at.store.PictureHtfHandOff(ev.OppKey, ev.ClaimID, rec.stageReason()); serr != nil || !moved {
 		// A repeat hand-off of an opportunity already settled is not a loss.
 		if cur, ok, gerr := at.store.PictureHtfGet(ev.OppKey); serr != nil || gerr != nil || !ok || cur.Stage != store.PictureStagePlanned {
-			at.logWarnf("🖼 picture hand-off: %s recorded as %s in %s but the opportunity row did not settle planned (moved=%v err=%v) — left for the interrupted-hand-off sweep", ev.OppKey, rec.ScenarioID, rec.where(), moved, serr)
+			at.logWarnf("🖼 picture hand-off: %s recorded as %s in %s but the opportunity row did not settle planned (moved=%v err=%v) — left for the interrupted-hand-off sweep", store.RedactPictureOppKey(ev.OppKey), rec.ScenarioID, rec.where(), moved, serr)
 		}
 	}
 	// (vi) POKE — never a pass on this (the bar sink's) goroutine.
@@ -149,9 +149,9 @@ func (at *AutoTrader) pictureHandOffAt(ev PictureEvidence, now time.Time) error 
 	}
 	// (vii) one INFO line.
 	if rec.Existing {
-		at.logInfof("🖼 picture → Day Plan scenario %s (%s) ref %s — already recorded; nothing appended (idempotent on the opportunity)", rec.ScenarioID, rec.where(), ev.OppKey)
+		at.logInfof("🖼 picture → Day Plan scenario %s (%s) ref %s — already recorded; nothing appended (idempotent on the opportunity)", rec.ScenarioID, rec.where(), store.RedactPictureOppKey(ev.OppKey))
 	} else {
-		at.logInfof("🖼 picture → Day Plan scenario %s (%s) ref %s window until %s", rec.ScenarioID, rec.where(), ev.OppKey, kernel.ClockCTSeconds(time.UnixMilli(ev.WindowCloseMs)))
+		at.logInfof("🖼 picture → Day Plan scenario %s (%s) ref %s window until %s", rec.ScenarioID, rec.where(), store.RedactPictureOppKey(ev.OppKey), kernel.ClockCTSeconds(time.UnixMilli(ev.WindowCloseMs)))
 	}
 	return nil
 }
@@ -403,7 +403,7 @@ func (at *AutoTrader) sweepInterruptedPictureHandOffsAt(now time.Time) {
 		}
 		if r.WindowClose > 0 && now.UnixMilli() > r.WindowClose {
 			if moved, rerr := at.store.PictureHtfRefuse(r.OppKey, "refused", "hand-off interrupted — never sent"); rerr == nil && moved {
-				at.logWarnf("🖼 picture hand-off sweep: %s was claimed but never recorded as a Day Plan scenario and its window closed at %s — refused (never sent)", r.OppKey, kernel.ClockCTSeconds(time.UnixMilli(r.WindowClose)))
+				at.logWarnf("🖼 picture hand-off sweep: %s was claimed but never recorded as a Day Plan scenario and its window closed at %s — refused (never sent)", store.RedactPictureOppKey(r.OppKey), kernel.ClockCTSeconds(time.UnixMilli(r.WindowClose)))
 			}
 		}
 	}
@@ -411,7 +411,7 @@ func (at *AutoTrader) sweepInterruptedPictureHandOffsAt(now time.Time) {
 
 func (at *AutoTrader) settleSweptHandOff(r store.PictureHtfOpportunityDB, rec pictureRecord) {
 	if moved, err := at.store.PictureHtfHandOff(r.OppKey, r.SignalID, rec.stageReason()+" (settled by the interrupted-hand-off sweep)"); err == nil && moved {
-		at.logInfof("🖼 picture hand-off sweep: %s settled planned — %s", r.OppKey, rec.where())
+		at.logInfof("🖼 picture hand-off sweep: %s settled planned — %s", store.RedactPictureOppKey(r.OppKey), rec.where())
 	}
 }
 

@@ -6469,3 +6469,18 @@ to owner ruling on "no new protocol work").
 **Shape.** A seam that is honoured by every call but one, where the one hands the wall clock over as a function value.
 **Probe:** grep every `…Clock(` / `…Resolver(` constructor reached beneath a registered `…At` variant for a `time.Now` argument; each must be handed the variant's `now`.
 **Owed:** `entryGateForArm` takes the pass clock (`scenarioInvalidationResolverClock(plan, func() time.Time { return now })`) with its three test callers updated. W5 works around it for machine scenarios only: the resolver judges a machine deadline on the tape it read (`tapeClock`), and the pass-clock machine gate judges the deadline first (`pictureScenarioGate`).
+
+## CLASS NN (assigned at merge) — a log line carries the account name inside a composite key (OWED for the pre-W5 lines)
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 (`fix/w5-picture-source`), CTO ruling `1790197560916` [A]. A Picture opportunity key is `"<strategy>|<account>|<contract>|<direction>|<role>|<levelOpen>|<h1Close>"` (`store.PictureHtfOppKey`). Printing the key prints the ACCOUNT NAME, which L12 forbids in logs, and nobody sees it because the key reads like an opaque id.
+**Shape.** An identifier assembled from several fields is logged as one token; one of those fields is a secret-by-policy value.
+**Fixed in W5:** every W5-authored line and error prints the key through ONE redactor, `store.RedactPictureOppKey` (account segment → "…"); the entry latch names a Picture holder by row id and stage only (`latched by picture row #<id> (<stage>)`). Pinned: `TestRedactPictureOppKey`, `TestHandOffLinesNeverCarryTheAccountName` (RED: redactor removed from the 🖼 hand-off line → caught), `TestEntryLatchLedgersListOnlyLiveRows`-family re-pin (the latch text never carries the key). The plan doc, the ledger's `source_ref` and the API/card keep the full key — storage and the owner's own UI, not a log.
+**OWED (pre-W5 lines, not W5):** `trader/picture_htf_evaluator.go:398` (the 🔒 maintenance-hold WARN prints `oppKey`, lane 103's file) and `trader/picture_htf_send.go:110` (deleted by W5 after the W4 merge). Route the first through the same redactor.
+**Probe:** grep every log/format call for a variable that holds a composite key (`OppKey`, `oppKey`, `SourceRef`, `Machine.Ref`); each goes through the redactor or names the row by id.
+
+## CLASS NN (assigned at merge) — a test that hands the wall clock to a session-gated path fails in the CME daily halt (OWED)
+
+**Found:** 2026-09-23 16:04 CT, W-EXEC-TRUTH W5 full gate [A]. `TestFourPlacementPathsWaitForEntryReceipt` (limit, stop_entry) and `TestUnsentStopEntryNeverCancelsTheSiblingArm/sent_commits` fail identically on dev `eb7294c9` and on the W5 head between 16:00 and 17:00 CT: they pass `time.Now()` into `runArmedPlacementAt` / `placeOneStopEntry`, and the admission chain refuses "🌙 cme closed … REFUSED — daily break". The same tests were green in the 13:46 CT W3 gate.
+**Shape.** A test is correct only at some hours of the day; a gate run in the halt reads as a regression in whatever branch it happens to be testing.
+**Probe:** `grep -n "time.Now()" trader/*_test.go` beside a call into the pass / placement / admission; every such call takes a pinned in-session instant (or the rig's clock).
+**Owed:** pin those tests to an in-session instant (and the book snapshot to the same clock), with a test that runs them at a halt instant to prove they no longer depend on the hour.

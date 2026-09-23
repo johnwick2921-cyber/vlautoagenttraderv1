@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -66,5 +67,33 @@ func TestAPlacedPictureScenarioCarriedIntoTheNextVersionNeverPlacesAgain(t *test
 				t.Fatalf("one opportunity, one ledger row across versions: got %d", n)
 			}
 		})
+	}
+}
+
+// L12 at the call site: the hand-off's 🖼 lines name the opportunity with its
+// account segment redacted — the full key stays in the plan doc and ledger.
+func TestHandOffLinesNeverCarryTheAccountName(t *testing.T) {
+	at, st := handOffTrader(t)
+	now := handOffNow()
+	at.markPictureRunEpoch(now)
+	seedAIPlan(t, st, "active")
+	ev := handOffEvidence(now, 1)
+	if !strings.Contains(ev.OppKey, "|sim101|") {
+		t.Fatalf("fixture: the key must carry an account segment: %s", ev.OppKey)
+	}
+	claimHandOff(t, st, ev)
+	logs := captureTraderLog(t)
+	if err := at.pictureHandOffAt(ev, now); err != nil {
+		t.Fatal(err)
+	}
+	out := logs.String()
+	if !strings.Contains(out, "🖼 picture → Day Plan scenario") {
+		t.Fatalf("fixture: the hand-off must log its 🖼 line:\n%s", out)
+	}
+	if strings.Contains(strings.ToLower(out), "sim101") {
+		t.Fatalf("a W5 log line carries the account name:\n%s", out)
+	}
+	if !strings.Contains(out, store.RedactPictureOppKey(ev.OppKey)) {
+		t.Fatalf("the line names the opportunity through the redactor:\n%s", out)
 	}
 }

@@ -133,3 +133,19 @@ func (s *Store) PictureHandOffRecordedFor(traderID, ref string) (PictureHandOffR
 	}
 	return PictureHandOffRecord{}, false, nil
 }
+
+// RedactPictureOppKey is the ONE redactor for a Picture opportunity key in a
+// log line or an error (L12, CTO 1790197560916): the key is
+// "<strategy>|<account>|<contract>|<direction>|<role>|<levelOpen>|<h1Close>"
+// (PictureHtfOppKey), so its second segment is the ACCOUNT name. Every
+// W5-authored line prints the key through this; the plan doc and the ledger
+// keep the full key (storage, not a log). A key with no account segment is
+// returned unchanged.
+func RedactPictureOppKey(key string) string {
+	parts := strings.Split(key, "|")
+	if len(parts) < 2 {
+		return key
+	}
+	parts[1] = "…"
+	return strings.Join(parts, "|")
+}

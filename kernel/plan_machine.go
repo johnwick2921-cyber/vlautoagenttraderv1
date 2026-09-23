@@ -259,7 +259,7 @@ func ValidateMachineScenario(doc PlanDoc, sc PlanScenario) error {
 			return fmt.Errorf("scenario id %s already in the plan", sc.ID)
 		}
 		if s.Machine != nil && s.Machine.Ref == sc.Machine.Ref {
-			return fmt.Errorf("machine ref %s already in the plan as %s", sc.Machine.Ref, s.ID)
+			return fmt.Errorf("machine ref %s already in the plan as %s", store.RedactPictureOppKey(sc.Machine.Ref), s.ID)
 		}
 	}
 	probe := PlanDoc{
