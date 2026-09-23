@@ -282,21 +282,30 @@ func TestW2AllAttemptsRefusedFailClosedRowHasNoBornCheck(t *testing.T) {
 		t.Fatalf("fail-closed row must carry NULL born-check columns: %+v", row)
 	}
 
-	// A candidate that PASSED the born check and is refused after the loop
-	// (confirm{} missing once the grace window is over) fails closed too: the
-	// NO-TRADE row must not inherit the refused candidate's record.
-	g := w2Trader(t, bars)
-	if err := g.store.SetSystemConfig(confirmGraceKey, "999"); err != nil {
-		t.Fatal(err)
+	// A candidate that PASSED the born check on attempt 1 and was then refused
+	// by write-time feasibility, followed by two unparseable attempts, fails
+	// closed: the NO-TRADE row must not inherit attempt 1's record.
+	g := feasPlannerTrader(t, nil) // write-time feasibility ON (owner default)
+	feasStubBars(t)
+	clock := feasClock()
+	// The same composed-R:R-below-minimum candidate TestWriteTimeFeasibilityHintRedToGreen uses.
+	red := strings.ReplaceAll(infeasibleFeasPlanJSON, `"target":15620`, `"target":15560`)
+	red = strings.Replace(red, `"target_chain": [15550, 15620]`, `"target_chain": [15550, 15560]`, 1)
+	red = strings.Replace(red, `"r_to_arm_target":7.0`, `"r_to_arm_target":1.0`, 1)
+	var calls int
+	ver, lc, err = g.runPlannerReadCoreWithFactsGradesClock(clock, "NY", "2026-08-14", "", "model", "hash", "", "", "", "FULLPROMPT",
+		kernel.PlanFacts{Price: 15550, DATR: 300, ReadAt: clock().Add(-time.Minute)}, nil, map[float64]string{15480: "PWL", 15620: "PDH"}, nil, true,
+		func(string) (string, error) {
+			calls++
+			if calls == 1 {
+				return red, nil
+			}
+			return "not json", nil
+		})
+	if err != nil || ver != 1 || lc != "no_trade" || calls != 3 {
+		t.Fatalf("feasibility-refused then unparseable must fail closed: ver=%d lc=%s calls=%d err=%v", ver, lc, calls, err)
 	}
-	noConfirm := w2Candidate(t, w2Conformant[:1], func(m map[string]any) {
-		delete(m["scenarios"].([]any)[0].(map[string]any), "confirm")
-	})
-	ver, lc, err, _ = w2Run(g, "LONDON", "2026-09-23", read, publish, noConfirm)
-	if err != nil || ver != 1 || lc != "no_trade" {
-		t.Fatalf("grace-over missing confirm must fail closed: ver=%d lc=%s err=%v", ver, lc, err)
-	}
-	row, _ = g.store.Plan().GetLatestPlanForSession("2026-09-23", "LONDON")
+	row, _ = g.store.Plan().GetLatestPlanForSession("2026-08-14", "NY")
 	if row == nil || row.ReadClockMs != nil || row.PublishClockMs != nil || row.BornCheck != nil {
 		t.Fatalf("a NO-TRADE row must not carry the refused candidate's born check: %+v", row)
 	}
@@ -310,5 +319,25 @@ func TestW2ShadowVerdictIncludesBornCheck(t *testing.T) {
 	ok, reasons := at.shadowVerdictFor(w2Candidate(t, []string{f.Rows["455"].Scenarios[3].Invalid}, nil), 8, 4, kernel.PlanFacts{ReadAt: read}, nil, nil, "")
 	if ok || len(reasons) == 0 || !strings.Contains(strings.Join(reasons, " "), kernel.AuthoredGrammarRefusalMarker) {
 		t.Fatalf("shadow must see the grammar refusal: ok=%v %v", ok, reasons)
+	}
+}
+
+// The LIVE read path (runPlannerReadWithTriggerClaimedCtx → the facts built
+// from the assembled input) carries the read clock: the row's read_clock_ms is
+// input.Now — set before the model call, never after publication.
+func TestW2LiveReadStampsTheReadClock(t *testing.T) {
+	at, st := class35Trader(t, 4)
+	before := time.Now()
+	if !at.runPlannerReadWithTriggerClaimedCtx("NY", "2026-09-01", "owner_reset", "", nil, true) {
+		t.Fatal("read did not run")
+	}
+	after := time.Now()
+	row := latestRow(t, st, "2026-09-01", "NY")
+	if row.ReadClockMs == nil || row.PublishClockMs == nil || row.BornCheck == nil {
+		t.Fatalf("a live read must record its read clock, publish clock and born check: %+v", row)
+	}
+	r, p := *row.ReadClockMs, *row.PublishClockMs
+	if r < before.UnixMilli() || r > p || p > after.UnixMilli() {
+		t.Fatalf("read clock %d must be the assembly clock: before %d ≤ read ≤ publish %d ≤ after %d", r, before.UnixMilli(), p, after.UnixMilli())
 	}
 }
