@@ -52,6 +52,12 @@ type ConfirmVerdict struct {
 	Met      bool             `json:"met"`
 	Detail   string           `json:"detail"`         // e.g. "last 15m close 29641.00"
 	Legs     []ConfirmVerdict `json:"legs,omitempty"` // F2: the per-leg states of a two-leg confirm
+
+	// RuleSource (W2) — where the count/duration of Rule came from: "stored"
+	// (the scenario's own confirm) or "authoring_default" (BD_MIN_CLOSES /
+	// ACCEPT_HOLD_MIN because nothing valid was stored). Absent on records
+	// written before W2 — unknown, never assumed "stored".
+	RuleSource string `json:"rule_source,omitempty"`
 }
 
 // ConfirmVerdict.Met on a two-leg scenario is the OVERALL verdict (leg1 &&
@@ -139,12 +145,12 @@ func staleConfirmAnnotation(s PlanScenario, v ConfirmVerdict, nowPrice, atr5m fl
 func EvaluateScenarioConfirm(s PlanScenario, bars []market.Kline, sinceMs, nowMs int64) ConfirmVerdict {
 	if IsBreakdownCondition(s.Condition) && s.Breakdown != nil {
 		st := BreakdownContinueState(s, bars, sinceMs, nowMs)
-		side := "above"
-		if breakdownShort(s.Condition) {
-			side = "below"
-		}
-		c := PlanConfirm{Rule: fmt.Sprintf("%dx5m_close", bdConfirmCloses()), RefPrice: s.Breakdown.Level, Side: side}
+		// W2 (a): leg 1 is judged on the rule the resolver read — the STORED
+		// confirm.rule, BD_MIN_CLOSES only as the named authoring default.
+		c := st.Rule.AsConfirm()
+		side := c.Side
 		leg1 := evaluateConfirmAfter(c, bars, sinceMs, nowMs, nil)
+		leg1.RuleSource = st.Rule.Source
 		leg1.Met = st.Leg1Met
 		leg1.Outcome = "NOT MET"
 		if leg1.Met {
@@ -173,7 +179,7 @@ func EvaluateScenarioConfirm(s PlanScenario, bars []market.Kline, sinceMs, nowMs
 		}
 		finishConfirmation(&leg2)
 		v := leg2
-		v.Rule, v.RefPrice, v.Side = c.Rule, c.RefPrice, c.Side
+		v.Rule, v.RefPrice, v.Side, v.RuleSource = c.Rule, c.RefPrice, c.Side, st.Rule.Source
 		v.Met = st.Leg1Met && st.Leg2Met
 		v.Legs = []ConfirmVerdict{leg1, leg2}
 		recordConfirmationVerdict(v)
@@ -214,9 +220,10 @@ func retestLegDetail(s PlanScenario, st BreakdownState) string {
 		return "waiting for the breakdown leg"
 	}
 	if strings.EqualFold(strings.TrimSpace(s.Breakdown.EntryMode), "immediate") {
-		// E3: entry signal is the confirming close (BD_MIN_CLOSES, default 1).
-		if bdConfirmCloses() > 1 {
-			return fmt.Sprintf("immediate mode — entry signal is the %dth confirming close", bdConfirmCloses())
+		// E3: entry signal is the confirming close — W2: the count the
+		// resolver read (stored rule, else the BD_MIN_CLOSES default).
+		if st.Rule.Closes > 1 {
+			return fmt.Sprintf("immediate mode — entry signal is the %dth confirming close", st.Rule.Closes)
 		}
 		return "immediate mode — entry signal is the confirming close"
 	}

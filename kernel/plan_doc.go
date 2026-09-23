@@ -59,6 +59,10 @@ type PlanConfirm struct {
 	Rule     string  `json:"rule"`      // touch | 1x5m_close | 2x5m_close | 1m_mss | time_hold (E1: 15m dead)
 	RefPrice float64 `json:"ref_price"` // the price the closes are counted against
 	Side     string  `json:"side"`      // above | below
+	// HoldMin (W2 A5, 2026-09-23) — time_hold ONLY: the minutes of completed
+	// 1m closes the prose states. Absent = the ACCEPT_HOLD_MIN authoring
+	// default (ResolveConfirm names it); never inferred from prose at read.
+	HoldMin *int `json:"hold_min,omitempty"`
 }
 
 type PlanScenario struct {
@@ -520,6 +524,12 @@ func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring boo
 			return nil, err
 		}
 	}
+	// W2 A5: a time_hold's stated minutes must be STORED (new authoring only).
+	if newAuthoring {
+		if err := ValidateConfirmHoldProse(&doc); err != nil {
+			return nil, err
+		}
+	}
 	return &doc, nil
 }
 
@@ -734,6 +744,9 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 			if !numberNearInText(s.Trigger+" "+s.Invalid, s.Confirm.RefPrice, 2.0) {
 				return fmt.Errorf("scenario[%d].confirm.ref_price %.2f does not match any number in the trigger/invalid prose (object and prose must agree)", i, s.Confirm.RefPrice)
 			}
+			if err := validateConfirmHoldMin(i, "confirm", s.Confirm); err != nil {
+				return err
+			}
 		}
 		if s.Confirm2 != nil {
 			if confirmRuleMentions15m(s.Confirm2.Rule) {
@@ -747,6 +760,9 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 			}
 			if s.Confirm2.RefPrice <= 0 {
 				return fmt.Errorf("scenario[%d].confirm2.ref_price %v invalid", i, s.Confirm2.RefPrice)
+			}
+			if err := validateConfirmHoldMin(i, "confirm2", s.Confirm2); err != nil {
+				return err
 			}
 		}
 	}

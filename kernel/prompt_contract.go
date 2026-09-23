@@ -185,6 +185,15 @@ func PromptContracts() []PromptContract {
 			MustAppear: []string{"written with arm.enabled=false", "arm_disabled_reason", "stop-entry trigger already through price"},
 			Gate:       "WRITE-TIME FEASIBILITY",
 		},
+		{
+			// W-EXEC-TRUTH W2 A5 (2026-09-23) — the stored duration. A time_hold
+			// whose prose states minutes must store them as confirm.hold_min
+			// (row 452 S2 "3 minutes" was counted as the 10-minute default), and
+			// hold_min is legal on time_hold only.
+			Rule:       "time_hold prose minutes must be stored as confirm.hold_min (time_hold only); the machine counts the stored rule exactly",
+			Site:       "kernel/confirm_resolver.go ValidateConfirmHoldProse (parsePlanDocument newAuthoring) + validateConfirmHoldMin (ValidatePlanDocWithCaps)",
+			MustAppear: []string{`"hold_min": <n>`, "hold_min is time_hold ONLY — the minutes of 1m closes your prose states", "2x5m_close waits for TWO completed 5m closes"},
+		},
 	}
 }
 

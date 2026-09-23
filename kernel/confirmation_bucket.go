@@ -40,6 +40,45 @@ func (b BucketClose) String() string {
 		FormatCT(time.UnixMilli(b.OpenMs)), FormatCT(time.UnixMilli(b.CloseMs)), FormatCT(time.UnixMilli(b.CloseMs)), b.Closed)
 }
 
+// confirmationTape (W2 (d), 2026-09-23) is THE canonical confirmation input:
+// the bars whose OPEN lies in [sinceMs, nowMs), in strictly increasing OpenTime,
+// one bar per minute. Every confirmation count (evaluateConfirmAfter and
+// confirmationBuckets) reads it, so no input order can mint a count:
+//   - a bar with the SAME OpenTime as the last kept bar REPLACES it (the later
+//     copy is the fresher print of that minute — the live cache's own upsert
+//     rule, provider/ninjatrader/bar_cache.go Upsert) and is counted;
+//   - a bar OLDER than the last kept bar is DROPPED and counted — a late copy
+//     of an earlier minute can no longer re-open an earlier bucket as a phantom
+//     extra close, or add a second vote for a minute already counted;
+//   - a pre-birth bar anywhere in the slice stays out (BarsSince assumed sorted
+//     input and kept every bar after the first in-window one).
+//
+// The forming-bar guard is unchanged: the window's upper edge is the bar's OPEN,
+// and EvaluateBucketClose alone decides whether its bucket has closed.
+// Plan death / flip (plan_lifecycle.go) keep their own windowing — untouched.
+func confirmationTape(bars []market.Kline, sinceMs, nowMs int64) []market.Kline {
+	out := make([]market.Kline, 0, len(bars))
+	for _, b := range bars {
+		if b.OpenTime < sinceMs || b.OpenTime >= nowMs {
+			continue
+		}
+		if n := len(out); n > 0 {
+			last := out[n-1].OpenTime
+			if b.OpenTime == last {
+				out[n-1] = b
+				confirmationTapeReplaced.Add(1)
+				continue
+			}
+			if b.OpenTime < last {
+				recordConfirmationTapeDrop(b.OpenTime, last)
+				continue
+			}
+		}
+		out = append(out, b)
+	}
+	return out
+}
+
 func closedConfirmationBuckets(bars []market.Kline, sinceMs, nowMs int64, minutes int) ([]market.Kline, *BucketClose) {
 	var closed []market.Kline
 	var last *BucketClose

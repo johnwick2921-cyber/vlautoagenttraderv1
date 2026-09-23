@@ -175,14 +175,14 @@ func (at *AutoTrader) declineHadFreshMetAt(now time.Time) bool {
 	nowPrice := bars[len(bars)-1].Close
 	atr5m := market.ExportCalculateATR(kernel.AcceptanceBars(bars, "2x5m"), 14)
 	for _, s := range plan.Doc.Scenarios {
-		if s.Confirm == nil {
+		if s.Confirm == nil && !(kernel.IsBreakdownCondition(s.Condition) && s.Breakdown != nil) { // W2: the recorder's set
 			continue
 		}
 		v := kernel.EvaluateScenarioConfirm(s, bars, plan.BirthMs, nowMs)
 		if !v.Met {
 			continue
 		}
-		if atr5m > 0 && math.Abs(nowPrice-s.Confirm.RefPrice) > kernel.StaleConfirmATR()*atr5m {
+		if atr5m > 0 && math.Abs(nowPrice-v.RefPrice) > kernel.StaleConfirmATR()*atr5m { // W2: the ref the verdict judged
 			continue // stale-MET is NOT the leak class
 		}
 		return true
@@ -594,7 +594,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 				if !v.Met {
 					continue
 				}
-				at.logInfof("⚔️ arm %s leg %d wait_confirm MET (%s) — arming", sc.ID, li+1, leg.Rule)
+				at.logInfof("⚔️ arm %s leg %d wait_confirm MET (%s) — arming", sc.ID, li+1, kernel.ConfirmGatedRuleLabel(sc)) // W2: the rule(s) gated + source
 			}
 			// gates AT ARM TIME — a resting order is a pre-passed entry; each gate
 			// input that changes materially later triggers a cancel (1.3).

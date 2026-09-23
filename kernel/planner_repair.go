@@ -95,6 +95,11 @@ func lawExcerptsFor(errors string) string {
 	if strings.Contains(errors, "far side of price") {
 		add(RepairFlipSideOfPriceLaw)
 	}
+	// W-EXEC-TRUTH W2 A5 (2026-09-23): a time_hold whose prose minutes are not
+	// stored as confirm.hold_min (confirm_resolver.go ValidateConfirmHoldProse).
+	if strings.Contains(errors, "hold_min") {
+		add(RepairHoldMinLaw)
+	}
 	if len(out) == 0 {
 		add("Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.")
 	}

@@ -188,6 +188,10 @@ func ValidatorHints() []ValidatorHint {
 		{Site: "planner_repair.go flip direction law", Text: RepairFlipDirectionLaw, RuleField: HintFieldConditionRule},
 		// W-FLIP-LINE-SIDE-OF-PRICE (2026-09-17) — same guard, same reason.
 		{Site: "planner_repair.go flip side-of-price law", Text: RepairFlipSideOfPriceLaw, RuleField: HintFieldConditionRule},
+		// W-EXEC-TRUTH W2 A5 (2026-09-23) — the stored-duration refusal and its
+		// repair excerpt name confirm-field tokens only (time_hold).
+		{Site: "confirm_resolver.go hold_min prose", Text: ConfirmHoldMinHint, RuleField: HintFieldConfirmRule},
+		{Site: "planner_repair.go hold_min law", Text: RepairHoldMinLaw, RuleField: HintFieldConfirmRule},
 	}
 	// CLASS 38 — the entry law Style strings are quoted VERBATIM into the
 	// rejection the model reads ("… not allowed for %s — entry law: %s"), so
