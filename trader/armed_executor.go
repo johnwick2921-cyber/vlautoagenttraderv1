@@ -1216,6 +1216,13 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 	// the wire.
 	contract := at.oneContractGuard(now)
 	placedThisPass := false
+	// W-ONE-BUTTON M2 site 2 — THE INSTALLATION MAINTENANCE HOLD. Read once per
+	// pass, and it refuses each arm AT ITS SEND POINT below. Never an early
+	// return: the tail of this function (stale-working reaper, order_update
+	// drain, placement confirmation, cancel settlement) must keep running while
+	// an update is waiting to drain. A refusal, never a cancellation — the row
+	// stays "armed" and places on the first pass after the hold clears.
+	holdReason, held := MaintenanceHeld()
 
 	for _, r := range rows {
 		if r.TraderID != at.id {
@@ -1257,12 +1264,21 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				// The whole adjudication — canonical side, tick-rounded trigger,
 				// verdict, action — is ONE pure value so a test can drive it with
 				// the casing the STORE actually hands back (class 77).
+				if held {
+					at.refuseMaintenanceHold(r, holdReason, "stop-entry", now)
+					continue
+				}
 				if !contract.Allowed() || placedThisPass {
 					at.refuseContract(r, contract, placedThisPass, "stop", now)
 					continue
 				}
 				d := decideStopEntry(side, r.EntryPx, float64(stopEntryOffsetTicks())*tick, tick, price)
-				at.placeOneStopEntry(nt, ledger, r, d, price, now, at.armSlotGuard(rows, r, now))
+				if at.placeOneStopEntry(nt, ledger, r, d, price, now, at.armSlotGuard(rows, r, now)) {
+					// The hold landed after this pass's snapshot. Nothing was
+					// sent, so the account is not committed and the plan's
+					// other arms must NOT be cancelled.
+					continue
+				}
 				// A stop entry that reached the wire commits the account exactly
 				// as a limit does. The pass is closed either way — the ledger
 				// row's own state is not consulted, because "did we send" is the
@@ -1286,6 +1302,10 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				// guard on one placement path is not a guard: this is the other
 				// route to the wire, and the nine-order incident came through a
 				// slot that could be placed into repeatedly.
+				if held {
+					at.refuseMaintenanceHold(r, holdReason, "limit", now)
+					continue
+				}
 				if !contract.Allowed() || placedThisPass {
 					at.refuseContract(r, contract, placedThisPass, "limit", now)
 					continue
@@ -1297,6 +1317,10 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				sid, perr := nt.PlaceLimitEntry(at.futuresSymbol(), side, 1, r.EntryPx, r.StopPx, r.TargetPx, func(sid string) error { return ledger.BeginPlacement(r.ID, sid) })
 				recordResearchPlacement(r, sid, "limit", r.EntryPx, r.StopPx, r.TargetPx, perr)
 				if perr != nil {
+					if ntTrader.IsMaintenanceHold(perr) {
+						at.refuseMaintenanceHold(r, perr.Error(), "limit", now)
+						continue
+					}
 					at.logWarnf("📌 armed place failed %s: %v", r.Scenario, perr)
 					continue
 				}
@@ -1552,7 +1576,7 @@ type armStateWriter interface {
 // placeOneStopEntry executes ONE adjudicated stop-entry arm, and is the only
 // path from an armed stop-entry row to the wire. A9: every line names the order
 // type, the trigger, the side and WHICH guard reached the verdict.
-func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWriter, r store.ArmedOrderDB, d stopEntryDecision, price float64, now time.Time, guard slotVerdict) {
+func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWriter, r store.ArmedOrderDB, d stopEntryDecision, price float64, now time.Time, guard slotVerdict) (heldRefused bool) {
 	// THE PLACEMENT KEYSPACE IS NAMED AND 1-BASED. Every other writer into
 	// at.armRefusalLast keys the same leg as strconv.Itoa(li+1) (:455, :498,
 	// :525, :579); a 0-based key here was byte-identical to the ARM-GATE key for
@@ -1562,12 +1586,19 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// of once per distinct arm-spec. The ":place" suffix makes the two
 	// keyspaces incapable of aliasing at all.
 	armKey := r.PlanID + ":" + strconv.Itoa(r.Version) + ":" + r.Scenario + ":leg" + strconv.Itoa(r.LegIndex+1) + ":place"
+	// W-ONE-BUTTON M2 site 2 — re-checked at entry: the hold may have landed
+	// after the pass read it. Reported to the caller so it neither latches
+	// "placed" nor cancels the plan's other arms for an order never sent.
+	if reason, held := MaintenanceHeld(); held {
+		at.refuseMaintenanceHold(r, reason, "stop-entry", now)
+		return true
+	}
 	switch d.Action {
 	case stopEntryCancel:
 		_ = ledger.SetState(r.ID, "cancelled", d.Why+" — never placed")
 		at.logWarnf("✕ armed %s stop-entry CANCELLED [guard=stop-side verdict=%s action=%s] %s stop-market trigger=%.2f price=%.2f — %s (never placed)",
 			r.Scenario, d.Verdict, d.Action, strings.ToUpper(d.Side), d.Trigger, price, d.Why)
-		return
+		return false
 	case stopEntryPlace:
 		// The ONE named path to the wire; everything else falls to default.
 	default:
@@ -1579,7 +1610,7 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 			at.logWarnf("⚠️ armed %s stop-entry NOT adjudicated [guard=stop-side verdict=%s action=%s] %s stop-market trigger=%.2f — %s%s",
 				r.Scenario, d.Verdict, d.Action, strings.ToUpper(d.Side), d.Trigger, d.Why, shown)
 		}
-		return
+		return false
 	}
 	// D3 — THE PER-SLOT INVARIANT. The broker's fresh book must show ZERO
 	// non-terminal orders for this slot before anything else is sent to it.
@@ -1593,7 +1624,7 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// was malformed — which Wave B has now fixed.
 	if !guard.Allowed() {
 		at.refuseSlot(r, guard, "stop-entry", now)
-		return
+		return false
 	}
 	sid, perr := pl.PlaceStopEntry(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error { return ledger.BeginPlacement(r.ID, sid) })
 	recordResearchPlacement(r, sid, "stop_entry", d.Trigger, r.StopPx, r.TargetPx, perr)
@@ -1607,14 +1638,37 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 				at.logWarnf("📌 armed %s stop-entry REFUSED [guard=far_side_build verdict=%s] %s stop-market trigger=%.2f: %v%s",
 					r.Scenario, d.Verdict, strings.ToUpper(d.Side), d.Trigger, perr, shown)
 			}
-			return
+			return false
+		}
+		// The broker permit refused (hold landed between the check above and
+		// the send). Same refusal, same report.
+		if ntTrader.IsMaintenanceHold(perr) {
+			at.refuseMaintenanceHold(r, perr.Error(), "stop-entry", now)
+			return true
 		}
 		at.logWarnf("📌 stop-entry place failed %s [guard=stop-side passed verdict=%s] %s stop-market trigger=%.2f: %v",
 			r.Scenario, d.Verdict, strings.ToUpper(d.Side), d.Trigger, perr)
-		return
+		return false
 	}
 	at.logInfof("📌 armed %s placement requested stop-entry [guard=stop-side verdict=%s action=%s] %s stop-market trigger=%.2f price=%.2f signal=%s (%s · no retest in %d bars, offset %dt)",
 		r.Scenario, d.Verdict, d.Action, strings.ToUpper(d.Side), d.Trigger, price, sid, d.Why, retestWaitBars(), stopEntryOffsetTicks())
+	return false
+}
+
+// refuseMaintenanceHold records one armed entry refused by the installation
+// maintenance hold (W-ONE-BUTTON M2 site 2). A REFUSAL, never a cancellation:
+// the row stays "armed" and places on the first pass after the hold clears.
+// Deduped per arm-spec AND per hold (the reason carries the job id), so a
+// held arm counts once per hold, not once per cycle; the counter class is
+// "maintenance_hold", the same gate name the AI entry path uses.
+func (at *AutoTrader) refuseMaintenanceHold(r store.ArmedOrderDB, reason, what string, now time.Time) {
+	key := r.PlanID + ":" + strconv.Itoa(r.Version) + ":" + r.Scenario + ":leg" +
+		strconv.Itoa(r.LegIndex+1) + ":maintenance"
+	if armRefusalChanged(&at.armRefusalLast, key, "maintenance_hold "+reason) {
+		shown := at.countStopEntryRefusal(r, "maintenance_hold", now)
+		at.logWarnf("🔒 armed %s %s entry REFUSED [guard=maintenance_hold] — %s. The arm stays armed and places after the update completes.%s",
+			r.Scenario, what, reason, shown)
+	}
 }
 
 // armRowTradeDate is the session-day key for a ledger row's counters. The row
