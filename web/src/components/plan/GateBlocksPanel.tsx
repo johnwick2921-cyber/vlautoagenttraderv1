@@ -60,6 +60,18 @@ const GATE_LABELS: Record<string, { en: string; icon: string }> = {
     en: 'Held position belongs to a ledger order',
     icon: '⛔',
   },
+  market_in_zone_short_of_zone: {
+    en: 'Price short of the entry zone (waiting)',
+    icon: '⏳',
+  },
+  market_in_zone_unknown: {
+    en: 'Entry zone not adjudicated (no fresh price)',
+    icon: '⚠️',
+  },
+  market_in_zone_zone_refused: {
+    en: 'Entry zone invalid — leg never placed',
+    icon: '⚔️',
+  },
 }
 
 export function GateBlocksPanel({

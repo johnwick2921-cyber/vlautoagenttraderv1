@@ -143,6 +143,10 @@ export const plays: GuideSection = {
     },
     {
       kind: 'p',
+      text: 'At placement every armed market_in_zone row gets a verdict from the last 1m close against its zone (boundaries inclusive): inside or beyond → the limit is sent at the far edge through the same gates as every arm (hold, admission, one contract, slot); short_of_zone (a long below the zone, a short above it) → nothing is sent and the row stays armed; unknown (no price, a bad zone, or a last 1m bar older than 3 minutes) → nothing at all. Passes run on the 2-minute scan AND on each final 1m bar while the active plan has a market_in_zone arm (at most once a second), and an AI decision that cites the scenario under strict runs the same full pass for that scenario only — every pass goes through the authoring gates and the admitted set. A working zone limit that rests longer than day_plan.zone_rest_max_min (30) minutes is cancelled ("zone rest expired"), and a scenario whose zone order reached the broker is not re-armed within the same plan version (a boot sweep still re-arms it; a new version always may). Logs: 🧭 zone verdict (each change, counted per class) · ⏳ … market_in_zone WAITING · ⚠️ … market_in_zone NOT adjudicated · 📌 … market_in_zone placement requested · ⏱ zone rest expired · ⚡ zone fill (slippage vs the limit, + worse) · 🚨 zone fill CONTRADICTION (a fill beyond the far edge) · ⚔️ arm REFUSED … market_in_zone:<code> · 🚦 strict: decision cites S… → armed pass.',
+    },
+    {
+      kind: 'p',
       text: 'PRECONDITION — one setup: with one_setup ON (its default when unset) the seam declines every non-reject play (play_not_reject), so under market_in_zone only reject arms can place. Turn one_setup OFF to trade the other conditions under strict; the 🎛 entry law boot line WARNs while both are on.',
     },
     {

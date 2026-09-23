@@ -33,20 +33,6 @@ import (
 // Legacy (policy "") and planned_order rows never reach any of this: their
 // placement branch is byte-identical to the base.
 
-// W3-INTEGRATE: store.ResolveZoneRestMaxMin — until the knob lands this adapter
-// answers the shipped default; the lane re-points it at integration.
-func zoneRestMaxMinFor(dp *store.DayPlanConfig) (int, string) {
-	_ = dp
-	return 30, "shipped default"
-}
-
-// W3-INTEGRATE: store.ResolveZoneMaxPts (day_plan.zone_max_pts) — the same
-// adapter shape for the zone width cap the composer judges at authoring.
-func zoneMaxPtsFor(dp *store.DayPlanConfig) (float64, string) {
-	_ = dp
-	return 10, "shipped default"
-}
-
 // zoneBarStale (D18) — a placement verdict needs a PRESENT price. The executor
 // price is the last 1m bar's close; on a live tape that bar opened within the
 // last minute (forming) or two (the tape shows closed bars only). A last bar
@@ -231,7 +217,7 @@ func (at *AutoTrader) zoneLegFor(plan *kernel.ActivePlan, doc *kernel.PlanDoc, s
 	if cfg != nil {
 		dp = cfg.DayPlan
 	}
-	maxPts, _ := zoneMaxPtsFor(dp)
+	maxPts, _ := store.ResolveZoneMaxPts(dp)
 	v := kernel.ArmZoneVerdict(sc, leg.Entry, leg.Stop, leg.Target, side, tick, maxPts)
 	if v.Code != "" {
 		key := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":leg" + strconv.Itoa(li+1) + ":zone_authoring"
@@ -253,7 +239,7 @@ func (at *AutoTrader) zoneLegFor(plan *kernel.ActivePlan, doc *kernel.PlanDoc, s
 	if cfg != nil && cfg.DayPlan != nil {
 		geometryRefs = cfg.DayPlan.GeometryRefIDsEnabled()
 	}
-	return zoneLeg{on: true, v: v, planned: leg.Entry, provenance: zoneProvenanceLabelW3X(doc, sc, v.Lo, v.Hi, geometryRefs)}, true
+	return zoneLeg{on: true, v: v, planned: leg.Entry, provenance: zoneProvenanceLabel(doc, sc, v.Lo, v.Hi, geometryRefs)}, true
 }
 
 // zoneAwareGateVerdict is armGateVerdictFor at each gate's WORST fill (D7),
@@ -268,37 +254,6 @@ func (at *AutoTrader) zoneAwareGateVerdict(zl zoneLeg, sc kernel.PlanScenario, l
 	near := leg
 	near.Entry = zl.v.Near
 	return at.armGateVerdictFor(sc, near, bias, snap, atr5m, minQuality, cfg, session, structural)
-}
-
-// W3-INTEGRATE: zoneProvenanceLabel — the write-time builder's label (R2):
-// where the planner's zone sits against the frozen geometry. A LABEL, never a
-// refusal. Until integration this adapter carries the same rule so the arm row
-// and the write-time INFO line agree; the lane re-points it.
-func zoneProvenanceLabelW3X(doc *kernel.PlanDoc, sc kernel.PlanScenario, lo, hi float64, geometryRefLevels bool) string {
-	idx, why, synth := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
-	if why != "" || idx < 0 {
-		return "planner_only(" + why + ")"
-	}
-	z := doc.Zones.Zones[idx]
-	kind := ""
-	if synth != nil {
-		z, kind = *synth, "frozen_line"
-	}
-	names := strings.Join(geometryZoneNames(z), "+")
-	if z.Lo == nil || z.Hi == nil {
-		return "frozen_unbounded:" + names
-	}
-	zl, zh := *z.Lo, *z.Hi
-	switch {
-	case kind != "":
-	case lo >= zl-1e-9 && hi <= zh+1e-9:
-		kind = "frozen_subrange"
-	case hi < zl-1e-9 || lo > zh+1e-9:
-		kind = "frozen_disjoint"
-	default:
-		kind = "frozen_overlap"
-	}
-	return fmt.Sprintf("%s:%s[%.2f,%.2f]", kind, names, zl, zh)
 }
 
 func zoneText(sc kernel.PlanScenario) string {
@@ -364,8 +319,36 @@ func (at *AutoTrader) setZoneVerdict(p zonePass, r store.ArmedOrderDB, verdict s
 	if p.ledger == nil || r.LastVerdict == verdict {
 		return
 	}
-	if _, err := p.ledger.SetLastVerdict(r.ID, verdict, p.now.UnixMilli()); err != nil {
+	wrote, err := p.ledger.SetLastVerdict(r.ID, verdict, p.now.UnixMilli())
+	if err != nil {
 		at.logWarnf("📌 zone verdict write failed %s leg %d: %v", r.Scenario, r.LegIndex+1, err)
+		return
+	}
+	if !wrote {
+		return
+	}
+	// CTO 1790187980085: each verdict CHANGE is one counted event per class and
+	// one log line — counted from the store's own answer (it wrote), never from
+	// the comparison above (counters record, never infer).
+	class := zoneVerdictChangeClass(verdict)
+	n, _ := store.IncSystemCounter(at.store, "market_in_zone:verdict:"+class)
+	prev := r.LastVerdict
+	if prev == "" {
+		prev = "none"
+	}
+	at.logInfof("🧭 zone verdict %s leg %d: %s → %s (%s #%d)", r.Scenario, r.LegIndex+1, prev, verdict, class, n)
+}
+
+// zoneVerdictChangeClass is the counter class of a written verdict: the four
+// placement verdicts by name, any "refused: …" as refused, anything else other.
+func zoneVerdictChangeClass(v string) string {
+	switch {
+	case v == "inside", v == "beyond", v == "short_of_zone", v == "unknown":
+		return v
+	case strings.HasPrefix(v, "refused:"):
+		return "refused"
+	default:
+		return "other"
 	}
 }
 
@@ -518,7 +501,7 @@ func (at *AutoTrader) zoneRestCap(nt *ntTrader.TCPTrader, ledger *store.ArmedOrd
 	if nt == nil || ledger == nil {
 		return
 	}
-	maxMin, src := zoneRestMaxMinFor(at.dayPlanCfg())
+	maxMin, src := store.ResolveZoneRestMaxMin(at.dayPlanCfg())
 	if maxMin <= 0 {
 		return
 	}

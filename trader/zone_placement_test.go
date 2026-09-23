@@ -819,3 +819,38 @@ func TestZoneVerdictWrittenOnlyOnChange(t *testing.T) {
 		t.Fatalf("short → short → inside must be exactly 2 last_verdict writes, observed %d", n)
 	}
 }
+
+// CTO 1790187980085: each verdict change is ONE counted event per class and ONE
+// log line; an unchanged verdict is neither counted nor logged.
+func TestZoneVerdictChangeIsOneCountAndOneLogLine(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-verdict-counts", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	logs := captureTraderLog(t)
+	t0, t1, t2 := r.now, r.now.Add(20*time.Second), r.now.Add(40*time.Second)
+	r.setTape(zoneTape(99.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, t0)
+	r.at.maybeManageArmedOrdersAt(nil, t1)
+	r.setTape(zoneTape(100.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, t2)
+	for class, want := range map[string]int{"short_of_zone": 1, "inside": 1, "beyond": 0, "unknown": 0} {
+		if n, _ := store.SystemCounter(r.st, "market_in_zone:verdict:"+class); n != want {
+			t.Errorf("verdict class %s counted %d, want %d", class, n, want)
+		}
+	}
+	if n := strings.Count(logs.String(), "🧭 zone verdict S1 leg 1:"); n != 2 {
+		t.Fatalf("short → short → inside must log exactly 2 verdict lines, got %d:\n%s", n, logs.String())
+	}
+	if !strings.Contains(logs.String(), "none → short_of_zone") || !strings.Contains(logs.String(), "short_of_zone → inside") {
+		t.Fatalf("each line names the change:\n%s", logs.String())
+	}
+}
+
+func TestZoneVerdictChangeClass(t *testing.T) {
+	for v, want := range map[string]string{
+		"inside": "inside", "beyond": "beyond", "short_of_zone": "short_of_zone", "unknown": "unknown",
+		"refused: slot: slot not free at the broker": "refused", "waiting: x": "other",
+	} {
+		if got := zoneVerdictChangeClass(v); got != want {
+			t.Errorf("%q → %q, want %q", v, got, want)
+		}
+	}
+}
