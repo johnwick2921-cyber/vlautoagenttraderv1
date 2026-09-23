@@ -403,3 +403,29 @@ func TestInstallationGateAddOnAckFailsTheMomentTheAddOnDisconnects(t *testing.T)
 		t.Fatalf("after the AddOn disconnects, addon_ack must FAIL (it passed on the last ack of a gone connection): %+v", l)
 	}
 }
+
+// M2.1 (review 3 F5): EVERY per-trader cutover leg the gate takes (1, 2, 4)
+// reaches the verdict through the real seam — not only leg 1.
+func TestInstallationGateCarriesCutoverLegs2And4(t *testing.T) {
+	t.Run("leg 2 api_positions", func(t *testing.T) {
+		f := newGateFixture(t)
+		installationTraderCutover = func(at *AutoTrader) []CutoverLeg { return at.CutoverGateStatus().Legs }
+		s := ntwire.NewTCPServer(nil)
+		s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{{Symbol: "MNQ", Side: "long", Quantity: 1, AvgPrice: 29000}})
+		f.loaded["gate-t1"].trader = ntTrader.NewTCPTrader(s, "MNQ", "Sim101")
+		mustFail(t, f.run(), "trader_cutover:gate-t1", "api_positions")
+	})
+	t.Run("leg 4 working_orders", func(t *testing.T) {
+		f := newGateFixture(t)
+		installationTraderCutover = func(at *AutoTrader) []CutoverLeg { return at.CutoverGateStatus().Legs }
+		r := store.ArmedOrderDB{TraderID: "gate-t1", PlanID: "2026-09-22:NY:gate-t1", Version: 1, Session: "NY", Scenario: "S1",
+			Side: "LONG", EntryPx: 100, StopPx: 95, TargetPx: 110, State: store.StateArmed}
+		if err := f.st.ArmedOrders().UpsertArm(&r); err != nil {
+			t.Fatal(err)
+		}
+		if err := f.st.ArmedOrders().BeginPlacement(r.ID, "sig-leg4"); err != nil {
+			t.Fatal(err)
+		}
+		mustFail(t, f.run(), "trader_cutover:gate-t1", "working_orders")
+	})
+}
