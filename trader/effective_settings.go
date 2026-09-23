@@ -127,6 +127,9 @@ type effResult struct {
 	value  any
 	origin string
 	scope  string
+	// compound: the origin already names, per entry, which layer decided it
+	// (a map-valued row) — no single "saved X not used" verdict applies.
+	compound bool
 }
 
 type effResolver struct {
@@ -143,6 +146,21 @@ func (x *effCtx) rc() store.RiskControlConfig {
 // raw is the strategies.config column verbatim; venue is the exchange type the
 // strategy trades on ("" = unknown); session is a canonical session name or "".
 func EffectiveSettings(raw, venue, session string) ([]EffectiveKnob, error) {
+	x, err := newEffCtx(raw, venue, session)
+	if err != nil {
+		return nil, err
+	}
+	paths := effectivePaths()
+	out := make([]EffectiveKnob, 0, len(paths))
+	for _, p := range paths {
+		out = append(out, buildEffectiveRow(x, p))
+	}
+	return out, nil
+}
+
+// newEffCtx parses the stored row TWICE: once for the typed values the
+// resolvers read (never clamped), once for the engine's clamped steady state.
+func newEffCtx(raw, venue, session string) (*effCtx, error) {
 	parsed, err := (&store.Strategy{Config: raw}).ParseConfig()
 	if err != nil {
 		return nil, err
@@ -152,23 +170,14 @@ func EffectiveSettings(raw, venue, session string) ([]EffectiveKnob, error) {
 		return nil, err
 	}
 	clamped.ClampLimits()
-
-	root := json.RawMessage(raw)
-	x := &effCtx{
+	return &effCtx{
 		cfg:     parsed,
 		clamped: clamped,
 		at:      &AutoTrader{exchange: venue, config: AutoTraderConfig{StrategyConfig: parsed}},
 		session: session,
 		venue:   venue,
-		root:    root,
-	}
-
-	paths := effectivePaths()
-	out := make([]EffectiveKnob, 0, len(paths))
-	for _, p := range paths {
-		out = append(out, buildEffectiveRow(x, p))
-	}
-	return out, nil
+		root:    json.RawMessage(raw),
+	}, nil
 }
 
 // effectivePaths is the enumerated schema UNION every registered resolver path,
@@ -257,7 +266,7 @@ func buildEffectiveRow(x *effCtx, path string) EffectiveKnob {
 
 	// A saved value that lost is said to have lost — the defect class this row
 	// exists to expose is a saved value that silently does not apply.
-	if st.present && savedValueLost(path, res.origin) {
+	if st.present && !res.compound && savedValueLost(path, res.origin) {
 		k.Origin += " — saved " + compactJSON(st.value) + " not used"
 	}
 	return k
@@ -991,5 +1000,5 @@ func conditionStatusRow(x *effCtx) effResult {
 		}
 		parts = append(parts, fmt.Sprintf("%s (%s)", src, strings.Join(cs, ", ")))
 	}
-	return effResult{value: out, origin: strings.Join(parts, " · "), scope: scope}
+	return effResult{value: out, origin: strings.Join(parts, " · "), scope: scope, compound: true}
 }
