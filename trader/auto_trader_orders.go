@@ -230,6 +230,22 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		}
 	}
 
+	// W-ONE-BUTTON M2 site 1 — INSTALLATION MAINTENANCE HOLD: while the updater
+	// holds (<data>/updater/hold.json; an unreadable file holds too), NEW
+	// entries are refused here, before any wire side effect (the orphan-flatten
+	// in reconcileBeforeOpenNT included). Position management continues. The
+	// broker-layer permit (site 4) is the second, send-side check.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if reason, held := MaintenanceHeld(); held {
+			at.logWarnf("🔒 maintenance hold: %s %s REFUSED — %s. Position management continues; entries resume when the update completes.", decision.Symbol, decision.Action, reason)
+			telemetry.IncGateBlock(at.id, "maintenance_hold")
+			actionRecord.Success = false
+			actionRecord.Error = "maintenance_hold: " + reason
+			return nil
+		}
+	}
+
 	// P3 (ledger-close 2026-08-19) — CONTRACT-ROLL gate for the continuous
 	// symbol: within ROLL_BLOCK_DAYS_BEFORE_EXPIRY of the ACK-resolved front
 	// contract's third-Friday expiry, NEW entries are refused (the dated-code
