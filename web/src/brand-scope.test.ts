@@ -52,6 +52,19 @@
 // removals, no identifier renamed, no guard removed; the bar-feed guards this
 // pin protects (SubscribeBarsHistoryFor, bars_history_request write,
 // bars_history_data/_error fan-out) are byte-untouched by that delta.
+// Wire baselines advanced 2026-09-22 for W-ONE-BUTTON M2 site 7 (CTO-dispatched,
+// feat/one-button-m2-maintenance-hold; the TCP schema must change in lockstep):
+//   provider/ninjatrader/tcp_framing.go — +59 −0: HelloPayload's five omitempty
+//     epoch fields + the maintenance / maintenance_ack frames and payloads.
+//   provider/ninjatrader/tcp_server.go  — +94 −6: the maint field, the accept-time
+//     connection record + maintenance push, the hello/ack record calls, and the
+//     queue's hold drop. The six removed lines are flushPending's return shape
+//     (it now wraps flushPendingReport), one comment, and the hello log's extra
+//     args — the stale-age check and the requeue-on-error guard are intact.
+//   ninjascript/VLTraderTCPClient.cs   — +197 −3: VL_BUILD_ID 2026-09-20-p1 →
+//     2026-09-22-m2 (lockstep with ExpectedAddonBuild), SendHello builds its
+//     dictionary before the same WriteEnvelope (hello is still the first frame),
+//     HandleMaintenance + census ack + the entry refusal. No identifier renamed.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
