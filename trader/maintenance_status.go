@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"nofx/store"
 	ntTrader "nofx/trader/ninjatrader"
 )
 
@@ -34,6 +35,10 @@ type MaintenanceStatusView struct {
 	InFlightSends int64               `json:"in_flight_sends"`
 	Drained       bool                `json:"drained"`
 	AddonAck      *MaintenanceAckView `json:"addon_ack"`
+	// Withdraw is the resting-entry withdraw a hold asked for (--withdraw-
+	// entries): which rows are still pending the broker's confirmation and
+	// which are confirmed. null when no hold asks for one (W-EXEC-TRUTH W0 (f)).
+	Withdraw *WithdrawView `json:"withdraw"`
 }
 
 // MaintenanceStatus reads the installation's maintenance state. loaded is the
@@ -51,6 +56,7 @@ func MaintenanceStatus(loaded map[string]*AutoTrader) MaintenanceStatusView {
 			v.Held, v.State, v.JobID, v.Since, v.Reason = true, "held", &job, &since, maintenanceReason(st)
 		}
 	}
+	v.Withdraw = maintenanceWithdrawView(storeOf(loaded))
 	v.InFlightSends = MaintenanceInFlight()
 	v.Drained = MaintenanceDrained()
 	if w, ok := installationWireView(ntTradersOf(loaded)); ok && w.Connected && w.HasAck && w.Rec.Ack != nil {
@@ -109,4 +115,14 @@ func orNA(s string) string {
 		return "n/a"
 	}
 	return s
+}
+
+// storeOf returns the store of any loaded trader (they share one database).
+func storeOf(loaded map[string]*AutoTrader) *store.Store {
+	for _, at := range loaded {
+		if at != nil && at.store != nil {
+			return at.store
+		}
+	}
+	return nil
 }

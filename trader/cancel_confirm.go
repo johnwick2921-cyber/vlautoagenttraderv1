@@ -355,6 +355,13 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 	if at == nil || ledger == nil {
 		return 0, 0, 0
 	}
+	// W-EXEC-TRUTH W0 (f): the armed pass (runCycle) and the withdraw
+	// (monitorTick) both settle cancels — never both at once, or one re-request
+	// is sent and counted twice.
+	if !at.cancelConfirmMu.TryLock() {
+		return 0, 0, 0
+	}
+	defer at.cancelConfirmMu.Unlock()
 	rows, err := ledger.ListCancelPending(at.id)
 	if err != nil {
 		at.logWarnf("🧾 cancel confirm: ledger read failed — settling nothing this cycle: %v", err)

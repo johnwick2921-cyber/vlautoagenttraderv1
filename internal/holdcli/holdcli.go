@@ -60,6 +60,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	job := sub.String("job", "", "job id that holds / releases")
 	reason := sub.String("reason", "", "free-text reason (set)")
 	force := sub.Bool("force", false, "clear regardless of content (operator recovery)")
+	withdraw := sub.Bool("withdraw-entries", false, "set: also withdraw resting ENTRY orders (never protection) while held")
 	if err := sub.Parse(rest[1:]); err != nil {
 		return 2
 	}
@@ -86,12 +87,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintln(stderr, "set requires --job")
 			return 2
 		}
-		h := store.MaintenanceHold{Held: true, JobID: *job, Since: time.Now().UTC().Format(time.RFC3339), Reason: *reason, Owner: "cli"}
+		h := store.MaintenanceHold{Held: true, JobID: *job, Since: time.Now().UTC().Format(time.RFC3339), Reason: *reason, Owner: "cli", WithdrawEntries: *withdraw}
 		if err := store.WriteMaintenanceHold(dataDir, h); err != nil {
 			fmt.Fprintln(stderr, "set:", err)
 			return 1
 		}
-		fmt.Fprintf(stdout, "held job=%s path=%s\n", *job, store.MaintenanceHoldPath(dataDir))
+		fmt.Fprintf(stdout, "held job=%s withdraw_entries=%v path=%s\n", *job, *withdraw, store.MaintenanceHoldPath(dataDir))
 		return 0
 	case "status":
 		st := store.ReadMaintenanceHold(dataDir)

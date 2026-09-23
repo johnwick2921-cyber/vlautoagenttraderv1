@@ -768,3 +768,15 @@ func (s *ArmedOrderStore) FindBySignal(traderID, signalID string) (*ArmedOrderDB
 	}
 	return &row, nil
 }
+
+// ListByReasonPrefix lists every row (any trader, any state) whose state_reason
+// starts with prefix — the withdraw status surface (W-EXEC-TRUTH W0 (f)).
+func (s *ArmedOrderStore) ListByReasonPrefix(prefix string) ([]ArmedOrderDB, error) {
+	var out []ArmedOrderDB
+	if s == nil || s.db == nil {
+		return out, nil
+	}
+	esc := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(prefix)
+	err := s.db.Where("state_reason LIKE ? ESCAPE '\\'", esc+"%").Order("id").Find(&out).Error
+	return out, err
+}

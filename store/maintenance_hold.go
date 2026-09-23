@@ -40,6 +40,11 @@ type MaintenanceHold struct {
 	Since  string `json:"since"` // RFC3339
 	Reason string `json:"reason,omitempty"`
 	Owner  string `json:"owner,omitempty"` // "updater" | "cli"
+	// WithdrawEntries asks the bot to WITHDRAW its resting ENTRY orders while
+	// held (W-EXEC-TRUTH W0 (f)) — entries only; protection, reconciliation
+	// and exits are never touched. Absent/false = refuse new entries only, as
+	// before.
+	WithdrawEntries bool `json:"withdraw_entries,omitempty"`
 }
 
 // MaintenanceHoldState is what a reader learns. Held is the only field a gate
