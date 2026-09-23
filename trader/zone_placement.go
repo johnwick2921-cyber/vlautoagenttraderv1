@@ -249,17 +249,56 @@ func (at *AutoTrader) zoneLegFor(plan *kernel.ActivePlan, doc *kernel.PlanDoc, s
 		scope.note(sc.ID, "refused: market_in_zone:"+v.Code+": "+detail)
 		return zoneLeg{}, false
 	}
-	provenance := "unidentified"
 	geometryRefs := false
 	if cfg != nil && cfg.DayPlan != nil {
 		geometryRefs = cfg.DayPlan.GeometryRefIDsEnabled()
 	}
-	if idx, why := ArmGeometryVerdict(doc, sc, geometryRefs); idx >= 0 && doc != nil && doc.Zones != nil && idx < len(doc.Zones.Zones) {
-		provenance = "frozen_zone:" + strings.Join(geometryZoneNames(doc.Zones.Zones[idx]), "+")
-	} else if why != "" {
-		provenance = "unidentified:" + why
+	return zoneLeg{on: true, v: v, planned: leg.Entry, provenance: zoneProvenanceLabelW3X(doc, sc, v.Lo, v.Hi, geometryRefs)}, true
+}
+
+// zoneAwareGateVerdict is armGateVerdictFor at each gate's WORST fill (D7),
+// exactly as the write-time zone check (writeTimeZoneVerdicts) judges it: a
+// market_in_zone leg is judged at the FAR bound (R:R) and, when that passes,
+// again at the NEAR bound (min-SL). A legacy leg is ONE call, unchanged.
+func (at *AutoTrader) zoneAwareGateVerdict(zl zoneLeg, sc kernel.PlanScenario, leg kernel.PlanArmLeg, bias string, snap map[string]kernel.StructureState, atr5m float64, minQuality string, cfg *store.StrategyConfig, session string, structural bool) string {
+	g := at.armGateVerdictFor(sc, leg, bias, snap, atr5m, minQuality, cfg, session, structural)
+	if g != "" || !zl.on {
+		return g
 	}
-	return zoneLeg{on: true, v: v, planned: leg.Entry, provenance: provenance}, true
+	near := leg
+	near.Entry = zl.v.Near
+	return at.armGateVerdictFor(sc, near, bias, snap, atr5m, minQuality, cfg, session, structural)
+}
+
+// W3-INTEGRATE: zoneProvenanceLabel — the write-time builder's label (R2):
+// where the planner's zone sits against the frozen geometry. A LABEL, never a
+// refusal. Until integration this adapter carries the same rule so the arm row
+// and the write-time INFO line agree; the lane re-points it.
+func zoneProvenanceLabelW3X(doc *kernel.PlanDoc, sc kernel.PlanScenario, lo, hi float64, geometryRefLevels bool) string {
+	idx, why, synth := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
+	if why != "" || idx < 0 {
+		return "planner_only(" + why + ")"
+	}
+	z := doc.Zones.Zones[idx]
+	kind := ""
+	if synth != nil {
+		z, kind = *synth, "frozen_line"
+	}
+	names := strings.Join(geometryZoneNames(z), "+")
+	if z.Lo == nil || z.Hi == nil {
+		return "frozen_unbounded:" + names
+	}
+	zl, zh := *z.Lo, *z.Hi
+	switch {
+	case kind != "":
+	case lo >= zl-1e-9 && hi <= zh+1e-9:
+		kind = "frozen_subrange"
+	case hi < zl-1e-9 || lo > zh+1e-9:
+		kind = "frozen_disjoint"
+	default:
+		kind = "frozen_overlap"
+	}
+	return fmt.Sprintf("%s:%s[%.2f,%.2f]", kind, names, zl, zh)
 }
 
 func zoneText(sc kernel.PlanScenario) string {

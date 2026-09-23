@@ -77,7 +77,7 @@ func zoneScenario(id string, policy string, zone []float64, waitConfirm bool) ke
 	sc := kernel.PlanScenario{ID: id, Trigger: "t", Condition: "reject", Direction: "long",
 		TargetChain: []float64{110}, Invalid: "i", Quality: "B",
 		Confirm: &kernel.PlanConfirm{Rule: "touch", RefPrice: 100, Side: "above"},
-		Arm:     &kernel.PlanArmSpec{Enabled: true, Entry: 100, Stop: 95, Target: 110, Policy: policy, WaitConfirm: waitConfirm}}
+		Arm:     &kernel.PlanArmSpec{Enabled: true, Entry: 100, Stop: 98, Target: 110, Policy: policy, WaitConfirm: waitConfirm}}
 	if zone != nil {
 		sc.Economics = &kernel.ScenarioEconomics{Version: 1, EntryZone: zone}
 	}
@@ -88,8 +88,11 @@ func zoneDoc(scs ...kernel.PlanScenario) kernel.PlanDoc {
 	d := kernel.PlanDoc{Bias: kernel.PlanBias{Direction: "long", Conviction: "low", FlipCondition: "n/a"},
 		Levels:    []kernel.PlanLevel{{Price: 100, Label: "PDH", Grade: "A", Instruction: "fade"}},
 		Scenarios: scs, NoTrade: []string{}, DeathCondition: "n/a"}
-	// The PDH zone's lower edge makes the structural stop 98.00, so R:R at the
-	// FAR bound 100.50 is (110-100.5)/(100.5-98) = 3.8 ≥ 2.
+	// The market_in_zone composition (non-structural, from the NEAR bound
+	// 99.50): stop = min(authored 98, 99.50 − 1.5×ATR5m ≈ 97.70), so R:R at the
+	// FAR bound 100.50 is ≈ 3.4 ≥ 2 and min-SL holds at the near bound. A
+	// legacy reject still takes the structural path (stop 98.00 from the PDH
+	// zone's lower edge − 0.5 buffer).
 	structuralTestMap(&d, structuralTestZone{100, 98.5, 100, "PDH"}, structuralTestZone{110, 110, 111, "target"})
 	return d
 }
@@ -328,7 +331,7 @@ func TestZoneRowPlacesOneLimitAtTheFarBound(t *testing.T) {
 			if row.LastVerdict != c.want {
 				t.Fatalf("last_verdict = %q, want %q", row.LastVerdict, c.want)
 			}
-			if !strings.HasPrefix(row.ZoneProvenance, "frozen_zone:") {
+			if row.ZoneProvenance != "frozen_overlap:PDH[98.50,100.00]" {
 				t.Fatalf("provenance label: %q", row.ZoneProvenance)
 			}
 		})
@@ -695,5 +698,33 @@ func TestZoneRowAdmissionRefusalIsRecorded(t *testing.T) {
 	row := r.row("S1")
 	if row.State != store.StateArmed || !strings.HasPrefix(row.LastVerdict, "refused: reentry_cooldown: ") {
 		t.Fatalf("the row stays armed and its verdict names the admission class: %+v", row.LastVerdict)
+	}
+}
+
+// R2 parity with the write-time zone check: a market_in_zone reject never
+// takes the structural-geometry path, so a scenario with no frozen zone map —
+// which the legacy reject path REFUSES (no provenance) — still places, and the
+// row records the provenance as a label.
+func TestZoneRejectSkipsTheStructuralGeometryRefusal(t *testing.T) {
+	bare := func(policy string) kernel.PlanDoc {
+		return kernel.PlanDoc{Bias: kernel.PlanBias{Direction: "long", Conviction: "low", FlipCondition: "n/a"},
+			Levels:    []kernel.PlanLevel{{Price: 100, Label: "PDH", Grade: "A", Instruction: "fade"}},
+			Scenarios: []kernel.PlanScenario{zoneScenario("S1", policy, zone, false)}, NoTrade: []string{}, DeathCondition: "n/a"}
+	}
+	legacy := newZoneRig(t, "w3-zone-nomap-legacy", bare(""))
+	legacy.setTape(zoneTape(100.0, legacy.now, 0))
+	legacy.at.maybeManageArmedOrdersAt(nil, legacy.now)
+	if s, _ := legacy.drain(); len(s) != 0 {
+		t.Fatalf("fixture: the legacy reject with no frozen map must be refused by the geometry, got %d frame(s)", len(s))
+	}
+	r := newZoneRig(t, "w3-zone-nomap", bare(kernel.EntryPolicyMarketInZone))
+	r.setTape(zoneTape(100.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 || sigs[0].LimitPrice != 100.5 {
+		t.Fatalf("a market_in_zone reject must not be refused by the structural geometry: %+v", sigs)
+	}
+	if row := r.row("S1"); !strings.HasPrefix(row.ZoneProvenance, "planner_only(") {
+		t.Fatalf("provenance is a label: %q", row.ZoneProvenance)
 	}
 }

@@ -515,7 +515,9 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 			}
 			// Structural geometry applies to the level-fade play. Momentum and
 			// explicit exit legs retain their existing construction (outside scope).
-			structuralFade := sc.Condition == kernel.OneSetupPlay && !strings.EqualFold(leg.Kind, "exit")
+			// W3 parity with the write-time zone check: a market_in_zone leg never
+			// takes the reject structural-geometry path (provenance is a label, R2).
+			structuralFade := sc.Condition == kernel.OneSetupPlay && !strings.EqualFold(leg.Kind, "exit") && !zl.on
 			var geometry *store.StructuralGeometryRecord
 			osTargetSubstituted := false
 			if structuralFade {
@@ -627,7 +629,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 			}
 			// gates AT ARM TIME — a resting order is a pre-passed entry; each gate
 			// input that changes materially later triggers a cancel (1.3).
-			if verdict := at.armGateVerdictFor(sc, leg, biasDirectionFor(doc.Bias.Direction), snap, atr5m, minQuality, cfg, plan.Session, structuralFade); verdict != "" {
+			if verdict := at.zoneAwareGateVerdict(zl, sc, leg, biasDirectionFor(doc.Bias.Direction), snap, atr5m, minQuality, cfg, plan.Session, structuralFade); verdict != "" {
 				scope.note(sc.ID, "refused: "+armRefusalClass(verdict)+": "+verdict)
 				if geometry != nil {
 					geometry.Reason = "entry_gate"
