@@ -58,7 +58,10 @@ func TestPlanLivenessBornDeadWritePin(t *testing.T) {
 	market.FuturesBarsProvider = func(string, string, int) []market.Kline { return tape }
 	t.Cleanup(func() { market.FuturesBarsProvider = old })
 	bad := strings.Replace(validTraderPlanJSON, "2x5m<15470", "5m close below 29664.50 (SWG-H·15m) kills the setup", 1)
-	good := strings.Replace(validTraderPlanJSON, "2x5m<15470", "the auction changes character", 1)
+	// W2 A1: the repair must be INSIDE the grammar — "the auction changes
+	// character" (the pre-W2 re-author here) is now a grammar refusal. A
+	// conformant, unbreached line on this tape (closes 29661.50–29668.75).
+	good := strings.Replace(validTraderPlanJSON, "2x5m<15470", "5m close below 29600.00", 1)
 	calls := 0
 	ver, lc, err := at.runPlannerReadCoreWithFactsGradesClock(func() time.Time { return now }, "ASIA", "2026-09-07", "", "model", "hash", "", "", "", "", kernel.PlanFacts{}, nil, nil, nil, true, func(string) (string, error) {
 		calls++
@@ -128,10 +131,18 @@ func TestPlanLivenessBootAndDeskUseRecordedFacts(t *testing.T) {
 	if !strings.Contains(line.Text, "tradeable 0/1") || !strings.Contains(line.Text, "EXHAUSTED") || line.State != "warn" {
 		t.Fatalf("desk did not read liveness: %+v", line)
 	}
-	if got := PlanLivenessBootLine(at.store); !strings.Contains(got, "exhausted-warnings=1") {
+	at.store.RecordPlanLivenessEvent(store.LivenessAuthoredGrammarRefusal, "test-grammar", now, "test")
+	got := PlanLivenessBootLine(at.store)
+	if !strings.Contains(got, "exhausted-warnings=1") {
 		t.Fatalf("boot did not read counter: %s", got)
 	}
-	if got := PlanLivenessBootLine(nil); !strings.Contains(got, "UNKNOWN") {
-		t.Fatalf("unavailable store invented counts: %s", got)
+	// W2 A1 — the policy is READ from the kernel's one source, and the grammar
+	// refusals are their own recorded count; the old count is tape-only now.
+	if !strings.Contains(got, "invalidation: "+kernel.AuthoredInvalidationPolicy()) || kernel.AuthoredInvalidationPolicy() != "enforced (grammar)" ||
+		!strings.Contains(got, "grammar refusals=1") || !strings.Contains(got, "authored UNKNOWN(tape; pre-W2 events mix grammar+tape)=0") {
+		t.Fatalf("boot line must read the invalidation policy and the grammar-refusal count: %s", got)
+	}
+	if got := PlanLivenessBootLine(nil); !strings.Contains(got, "UNKNOWN") || !strings.Contains(got, "invalidation: enforced (grammar)") {
+		t.Fatalf("unavailable store invented counts (or dropped the code-known policy): %s", got)
 	}
 }

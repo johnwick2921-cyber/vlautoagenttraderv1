@@ -510,3 +510,32 @@ func (r BornCheckResult) Err() error {
 // BornDead reports a scenario invalidated or the death line met between read
 // and publish (the existing born-dead refusal class).
 func (r BornCheckResult) BornDead() bool { return len(r.Dead) > 0 || r.Death != nil }
+
+// ReadClockPtr / PublishClockPtr / JSONPtr are the plan-row column values: a
+// nil record (pre-W2 path, fail-closed NO-TRADE row) writes NULL, never 0/"".
+func (c *BornCheck) ReadClockPtr() *int64 {
+	if c == nil || c.ReadClockMs == nil {
+		return nil
+	}
+	v := *c.ReadClockMs
+	return &v
+}
+
+func (c *BornCheck) PublishClockPtr() *int64 {
+	if c == nil || c.PublishClockMs <= 0 {
+		return nil
+	}
+	v := c.PublishClockMs
+	return &v
+}
+
+func (c *BornCheck) JSONPtr() *string {
+	if c == nil {
+		return nil
+	}
+	s := c.JSON()
+	if s == "" {
+		return nil
+	}
+	return &s
+}

@@ -11,33 +11,44 @@ import (
 )
 
 // validateAuthoredScenariosAt runs inside the existing candidate retry loop.
-// UNKNOWN is explicit and accepted; no arm/level/entry-gate policy changes.
-func (at *AutoTrader) validateAuthoredScenariosAt(doc *kernel.PlanDoc, session, tradeDate string, now time.Time) error {
+// W-EXEC-TRUTH W2 (2026-09-23): an invalid sentence outside the grammar is a
+// REFUSAL (A1, one counted event per scenario, every sentence quoted in ONE
+// error); every 5m group closed between the read clock and now is judged, not
+// only the latest (A2); a death{} met or a flip{} fired in that span refuses
+// too (D5). Tape UNKNOWN stays accepted and counted — a missing minute is never
+// the model's fault. No arm/level/entry-gate policy and no runtime lifecycle
+// (buffers, windows, flip hold) changes. read.IsZero() = legacy latest-window.
+func (at *AutoTrader) validateAuthoredScenariosAt(doc *kernel.PlanDoc, session, tradeDate string, read, now time.Time) (*kernel.BornCheck, error) {
 	var bars []market.Kline
 	if market.FuturesBarsProvider != nil {
 		bars = market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount)
 	}
-	var dead []string
-	for _, sc := range doc.Scenarios {
-		verdict := kernel.EvaluateAuthoredInvalidationAt(sc, bars, now)
-		if !verdict.Known {
-			at.logWarnf("plan liveness write: %s %s %s — %s; ACCEPTED for this check", tradeDate, session, sc.ID, verdict.Reason)
-			if _, err := at.store.RecordPlanLivenessEvent(store.LivenessAuthoredUnknown, fmt.Sprintf("%s:%s:%s:%s:%d", at.id, tradeDate, session, sc.ID, now.UnixNano()), now, verdict.Reason); err != nil {
-				at.logWarnf("plan liveness telemetry write failed: %v", err)
-			}
-		} else if verdict.Invalidated {
-			dead = append(dead, sc.ID+": "+verdict.Reason)
+	r := kernel.EvaluateBornCheck(doc, bars, read, now)
+	record := r.Check.JSON()
+	for _, sc := range r.Grammar {
+		reason := fmt.Sprintf("%s invalid %q is outside the invalidation grammar (%s)", sc.ID, sc.Invalid, strings.Join(kernel.AuthoredInvalidationGrammarForms(), " | "))
+		at.logWarnf("plan liveness write: %s %s %s — GRAMMAR REFUSAL: %s; re-author within existing attempts", tradeDate, session, sc.ID, reason)
+		if _, err := at.store.RecordPlanLivenessEventWithCheck(store.LivenessAuthoredGrammarRefusal, fmt.Sprintf("%s:%s:%s:%s:%d", at.id, tradeDate, session, sc.ID, now.UnixNano()), now, reason, record); err != nil {
+			at.logWarnf("plan liveness telemetry write failed: %v", err)
 		}
 	}
-	if len(dead) == 0 {
-		return nil
+	for _, v := range r.TapeUnknown {
+		at.logWarnf("plan liveness write: %s %s %s — %s; ACCEPTED for this check (tape)", tradeDate, session, v.ScenarioID, v.Reason)
+		if _, err := at.store.RecordPlanLivenessEvent(store.LivenessAuthoredUnknown, fmt.Sprintf("%s:%s:%s:%s:%d", at.id, tradeDate, session, v.ScenarioID, now.UnixNano()), now, v.Reason); err != nil {
+			at.logWarnf("plan liveness telemetry write failed: %v", err)
+		}
 	}
-	reason := strings.Join(dead, "; ")
-	at.logWarnf("plan liveness born-dead REFUSAL: %s %s at %s — %s; re-author within existing attempts", tradeDate, session, kernel.FormatCT(now), reason)
-	if _, err := at.store.RecordPlanLivenessEvent(store.LivenessBornDeadRefusal, fmt.Sprintf("%s:%s:%s:%d", at.id, tradeDate, session, now.UnixNano()), now, reason); err != nil {
-		at.logWarnf("plan liveness telemetry write failed: %v", err)
+	err := r.Err()
+	if err == nil {
+		return &r.Check, nil
 	}
-	return fmt.Errorf("born-dead authored scenario: %s", reason)
+	if r.BornDead() || r.Flip != nil {
+		at.logWarnf("plan liveness born-dead REFUSAL: %s %s at %s — %v; re-author within existing attempts", tradeDate, session, kernel.FormatCT(now), err)
+		if _, rerr := at.store.RecordPlanLivenessEventWithCheck(store.LivenessBornDeadRefusal, fmt.Sprintf("%s:%s:%s:%d", at.id, tradeDate, session, now.UnixNano()), now, err.Error(), record); rerr != nil {
+			at.logWarnf("plan liveness telemetry write failed: %v", rerr)
+		}
+	}
+	return &r.Check, err
 }
 
 // observePlanExhaustionAt is WARN-only per the corrected dispatch. It never
@@ -65,12 +76,16 @@ func (at *AutoTrader) observePlanExhaustionAt(plan *kernel.ActivePlan, states ma
 
 // PlanLivenessBootLine reads persisted event counts. Before the first current
 // plan snapshot there is no defensible tradeable number, so startup says n/a.
+// W2 A1: the invalidation policy is READ from kernel.AuthoredInvalidationPolicy
+// (the same source the born_check record stores), and the grammar refusals are
+// their own count; authored UNKNOWN is now tape-only, with pre-W2 events mixing
+// grammar and tape (the line says so rather than splitting history it cannot).
 func PlanLivenessBootLine(st *store.Store) string {
 	counts, err := st.PlanLivenessCounts()
 	if err != nil {
-		return "plan liveness: tradeable=n/a · exhausted-warnings=UNKNOWN · born-dead refusals=UNKNOWN · deaths recorded=UNKNOWN (event store unavailable)"
+		return fmt.Sprintf("plan liveness: tradeable=n/a · exhausted-warnings=UNKNOWN · born-dead refusals=UNKNOWN · deaths recorded=UNKNOWN · invalidation: %s · grammar refusals=UNKNOWN (event store unavailable)", kernel.AuthoredInvalidationPolicy())
 	}
-	return fmt.Sprintf("plan liveness: tradeable=n/a · exhausted-warnings=%d · born-dead refusals=%d · deaths recorded=%d · authored UNKNOWN=%d · exhaustion=%s · flip→reread=n/a(strategy loads at trader start; W-FLIP-REREAD)", counts.ExhaustionWarnings, counts.BornDeadRefusals, counts.DeathsRecorded, counts.AuthoredUnknown, planExhaustionPolicy())
+	return fmt.Sprintf("plan liveness: tradeable=n/a · exhausted-warnings=%d · born-dead refusals=%d · deaths recorded=%d · invalidation: %s · grammar refusals=%d · authored UNKNOWN(tape; pre-W2 events mix grammar+tape)=%d · exhaustion=%s · flip→reread=n/a(strategy loads at trader start; W-FLIP-REREAD)", counts.ExhaustionWarnings, counts.BornDeadRefusals, counts.DeathsRecorded, kernel.AuthoredInvalidationPolicy(), counts.GrammarRefusals, counts.AuthoredUnknown, planExhaustionPolicy())
 }
 
 func planExhaustionPolicy() string { return "warn-only" }

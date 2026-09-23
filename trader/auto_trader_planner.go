@@ -1338,7 +1338,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 	if dp := at.dayPlanCfg(); dp.GeometryRefIDsEnabled() {
 		kernel.EnsureReferenceLevelIDs(identityMap)
 	}
-	facts := kernel.PlanFacts{Zones: input.Zones, IdentityMap: identityMap, Price: input.Price, DATR: input.DATR, Regime: input.Regime, Structure: input.Structure}
+	facts := kernel.PlanFacts{Zones: input.Zones, IdentityMap: identityMap, Price: input.Price, DATR: input.DATR, Regime: input.Regime, Structure: input.Structure, ReadAt: input.Now}
 	// 8.4 — machine grades from the Go-ranked candidate table, keyed by rounded
 	// price so the write-site stamp can match the model's levels.
 	machineGrades := map[float64]string{}
@@ -1936,6 +1936,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	scenarioCap := at.scenarioCap()
 
 	var authoredAt time.Time
+	var bornCheck *kernel.BornCheck // W2 A2 — the accepted attempt's record
 	var doc *kernel.PlanDoc
 	// CLASS 34 (owner ruling 2026-08-31): the reject block now carries the
 	// RESOLVED live condition vocabulary so the model can never be hinted
@@ -2268,13 +2269,22 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			at.logWarnf("🔮 fantasy-target warning: %s", m)
 		}
 		authoredAt = authoringClock()
-		if verr := at.validateAuthoredScenariosAt(d, session, tradeDate, authoredAt); verr != nil {
+		// W-EXEC-TRUTH W2 A1/A2/D5: grammar refusal + every 5m group closed
+		// between the read clock and now, plus the plan's death/flip lines.
+		check, verr := at.validateAuthoredScenariosAt(d, session, tradeDate, facts.ReadAt, authoredAt)
+		if verr != nil {
 			lastErr = verr
+			repairing := prevReason
+			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
 			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, verr, &prevReason, FactsSnapshotJSON(facts))
 			rejectBlock = plannerRejectBlock(verr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, verr)
+			if modeLabel == "repair" {
+				at.recordRepairOutcome(raw, verr, repairing)
+			}
 			continue
 		}
+		bornCheck = check
 		// W-WRITE-TIME-FEASIBILITY (2026-09-18, owner "fix all") — judge
 		// the SAME predicates the gate-at-arm chain runs, at write time.
 		// Runs LAST among the validators (CTO SHOULD-FIX 8): hard rejects
@@ -2448,6 +2458,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			fmt.Sprintf("read failed after retries: %v", lastErr), at.noTradeLevelMap(session))
 		lifecycle = "no_trade"
 		trigger = "planner_fail_closed"
+		bornCheck = nil // W2 A2 — no candidate passed; the NO-TRADE row records none
 		at.logErrorf("🚨 PLANNER FAIL-CLOSED %s %s: %v — writing a NO-TRADE plan (never stale, never uncalibrated).", tradeDate, session, lastErr)
 		telemetry.IncGateBlock(at.id, "planner_fail_closed")
 		// W6 — P0 read-fail / fail-closed alert.
@@ -2512,6 +2523,9 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		DarkRegimeCount: at.lastRegimeHealth.DarkCount, // P2
 		Degraded:        at.lastRegimeHealth.Degraded,
 		Doc:             string(docJSON),
+		ReadClockMs:     bornCheck.ReadClockPtr(), // W2 A2 — NULL when unknown
+		PublishClockMs:  bornCheck.PublishClockPtr(),
+		BornCheck:       bornCheck.JSONPtr(),
 	})
 	if err != nil {
 		at.logErrorf("🗓️ planner: write plan row failed for %s %s: %v", tradeDate, session, err)

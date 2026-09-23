@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // P3.3 — the day-plan document (the schema-strict JSON the planner AI emits).
@@ -1038,6 +1039,11 @@ type PlanFacts struct {
 	PDC         float64        // prior day close (CLASS 50b — the bias-label tree leg)
 	Regime      RegimeBlock    // CLASS 50b — the bias-label regime leg (read-time copy)
 	Structure   *StructureMap  `json:"-"` // S1 — stamped onto the doc at write when non-nil
+	// ReadAt (W-EXEC-TRUTH W2 A2) — the read clock the prompt was assembled at.
+	// The write site re-judges every 5m group closed between it and publication.
+	// Zero (legacy facts-less callers) = latest-window check, read clock n/a.
+	// json:"-": FactsSnapshotJSON marshals PlanFacts and must not change shape.
+	ReadAt time.Time `json:"-"`
 }
 
 // ValidatePlanDocWithFacts = schema rules + facts rules:
