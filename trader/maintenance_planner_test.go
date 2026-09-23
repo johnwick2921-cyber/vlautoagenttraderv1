@@ -18,7 +18,7 @@ import (
 
 func TestPlannerReadRefusedWhileHeld(t *testing.T) {
 	dir := withMaintenanceDir(t)
-	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	setHold(t, dir, "job-planner")
 	before := gateBlocks(at.id, "maintenance_hold")
 
@@ -45,7 +45,7 @@ func TestPlannerReadRefusedWhileHeld(t *testing.T) {
 // misleading "a concurrent re-plan was already writing".
 func TestOwnerResetAndRereadRefusedWhileHeld(t *testing.T) {
 	dir := withMaintenanceDir(t)
-	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	tradeDate := "2026-08-18"
 	if _, err := st.Plan().AppendPlan(&store.PlanDB{
 		PlanID: store.MakePlanID(tradeDate, "NY"), StrategyID: at.id,
@@ -100,7 +100,7 @@ func TestWeeklyReadChecksTheHoldBeforeItsClaim(t *testing.T) {
 // claimed and runs exactly as before.
 func TestPlannerReadRunsWhenConfiguredAndNoHoldFile(t *testing.T) {
 	withMaintenanceDir(t) // configured, no hold file
-	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	before := gateBlocks(at.id, "maintenance_hold")
 	if !at.runPlannerReadWithTriggerClaimedCtx("NY", "2026-08-18", "owner_reread", "", nil, true) {
 		t.Fatal("configured + no hold file: the planner read must run (it did before the hold existed)")

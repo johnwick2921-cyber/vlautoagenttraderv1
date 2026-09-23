@@ -1030,8 +1030,12 @@ type DayPlanConfig struct {
 	// regardless of what is stored (the old resolver already mapped every other
 	// vocabulary onto it). Field kept so old JSON round-trips; no Studio control.
 	AcceptanceRule string `json:"acceptance_rule,omitempty"`
-	// ReplanCap: re-reads per session, 0–4 (default 2).
-	ReplanCap int `json:"replan_cap,omitempty"`
+	// ReplanCap: re-reads per session, 0–4. W1 (settings truth, 2026-09-23):
+	// a POINTER because 0 is a legal value — nil/absent = the shipped default 2,
+	// an explicit 0 = no re-plan at all, N = N. As an int, 0 could never be
+	// stored (omitempty dropped it) and the resolver read a hand-set 0 as 2.
+	// Resolved ONLY by ResolveReplanCap (store/resolve_source.go).
+	ReplanCap *int `json:"replan_cap,omitempty"`
 	// SessionsEnabled: subset of NY | ASIA | LONDON (default [NY]); each other
 	// session earns enablement via replay + NY match-rate evidence.
 	SessionsEnabled []string `json:"sessions_enabled,omitempty"`
@@ -1284,16 +1288,11 @@ func (s *StrategyStore) RepairAcceptanceRuleMigration() (baseMigrated, sessionMi
 }
 
 // ReplanCapFor resolves the re-read cap for a session: per-session override →
-// strategy-level → the shipped default of 2. A 0 override is meaningful (no
-// re-plan after death), hence the >= 0 test rather than > 0.
+// strategy-level → the shipped default of 2. A 0 is meaningful at BOTH levels
+// (no re-plan after death). W1: delegates to ResolveReplanCap — one resolver,
+// canon 28 — so the boot line, the card and the gates read one rule.
 func (c *DayPlanConfig) ReplanCapFor(session string) int {
-	n := 2
-	if c != nil && c.ReplanCap > 0 {
-		n = c.ReplanCap
-	}
-	if ov := c.SessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
-		n = *ov.ReplanCap
-	}
+	n, _ := ResolveReplanCap(c, session)
 	return n
 }
 
@@ -1549,7 +1548,7 @@ func DefaultDayPlanConfig() *DayPlanConfig {
 		ProximityFilterATR: 1.5,
 		MaxLevels:          8,
 		HtfSeats:           intPtr(2),
-		ReplanCap:          2,
+		ReplanCap:          intPtr(2),
 		SessionsEnabled:    []string{"NY"},
 		ApprovalRequired:   false,
 		// W-KNOB-PRUNE (2026-09-18): the folded knobs (scenario_cap,
@@ -1565,6 +1564,10 @@ func DefaultDayPlanConfig() *DayPlanConfig {
 func wakeBoolPtr(v bool) *bool { return &v }
 
 func intPtr(v int) *int { return &v }
+
+// IntPtr returns a pointer to v — for presence-aware *int knobs (W1:
+// consecutive_loss_halt, replan_cap), where nil = inherit and &0 = an explicit 0.
+func IntPtr(v int) *int { return &v }
 
 // DefaultWakeMinIntervalMin is the shipped wake spacing (minutes). W6-D
 // (2026-08-25): raised 10 → 30 — wakes are unlimited (no budget), so the
@@ -2004,10 +2007,17 @@ type RiskControlConfig struct {
 
 	// D1 — CONSECUTIVE-LOSS halt: after this many consecutive LOSING closed trades
 	// in the CME session-day, block NEW entries until the next session (open-pos
-	// management via SL/TP is unaffected). 0 = OFF. Resets on a winning/break-even
-	// close or a new session. New guardrail → default 0 (off). NOT gated by the
-	// guardrails master switch — it is a per-strategy circuit breaker.
-	ConsecutiveLossHalt int `json:"consecutive_loss_halt,omitempty"`
+	// management via SL/TP is unaffected). Resets on a winning/break-even close or
+	// a new session. NOT gated by the guardrails master switch — it is a
+	// per-strategy circuit breaker.
+	//
+	// W1 (settings truth, 2026-09-23) — PRESENCE-AWARE. nil/absent = INHERIT
+	// (env BREAKER_HALT_N, else the shipped default 8 — the breaker is ON);
+	// an explicit 0 = OFF; N = N. The old int said "0 = OFF" here while the
+	// runtime read 0 as "unset → 8" and no writer could store a 0 at all
+	// (omitempty) — the UI's OFF was a switch wired to nothing. Resolved ONLY
+	// by ResolveBreakerHalt (store/resolve_source.go).
+	ConsecutiveLossHalt *int `json:"consecutive_loss_halt,omitempty"`
 
 	// B7 — RE-ENTRY COOLDOWN: after a STOP-LOSS exit, block a SAME-DIRECTION
 	// re-entry on that symbol for this many minutes OR until price moves ≥ 1×ATR15

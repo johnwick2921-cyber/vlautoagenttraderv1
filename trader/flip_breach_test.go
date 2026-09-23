@@ -272,7 +272,7 @@ func TestFlipBreachScheduledReadsAndDeathUntouched(t *testing.T) {
 func TestFlipBreachReplayASIA0917(t *testing.T) {
 	resetFlipOnceKeys()
 	t.Setenv("FLIP_MIN_HOLD_MIN", "")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"ASIA"}}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"ASIA"}}}
 	at, st := resetTrader(t, cfg)
 	ct := kernel.CTLocation()
 	t.Cleanup(func() { testNow = nil })

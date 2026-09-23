@@ -58,7 +58,7 @@ func TestResetRefusesWithNoPlanYet(t *testing.T) {
 }
 
 func TestForceResetWritesFreshChainAndRestoresBudget(t *testing.T) {
-	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	tradeDate := "2026-08-18"
 	// Seed the exhausted chain: v1..v5 active + v6 NO-TRADE (cap 4).
 	for i := 1; i <= 5; i++ {
@@ -123,7 +123,7 @@ func TestForceResetWritesFreshChainAndRestoresBudget(t *testing.T) {
 }
 
 func TestForceResetFailsClosedOnBadRead(t *testing.T) {
-	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	tradeDate := "2026-08-18"
 	if _, err := st.Plan().AppendPlan(&store.PlanDB{
 		PlanID: store.MakePlanID(tradeDate, "NY"), StrategyID: "trader-1",
@@ -180,7 +180,7 @@ func chicagoLoc() *time.Location {
 // feedback. The reset now waits briefly for the claim and, if a concurrent read
 // wins the whole window, says so in Note instead of lying.
 func TestForceResetNotesWhenClaimHeld(t *testing.T) {
-	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	old := resetClaimWaitMax
 	resetClaimWaitMax = 10 * time.Millisecond
 	defer func() { resetClaimWaitMax = old }()

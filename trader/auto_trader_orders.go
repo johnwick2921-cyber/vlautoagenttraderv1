@@ -104,8 +104,10 @@ func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.Dec
 
 // consecutiveLossHalted reports whether new entries are blocked by the D1
 // consecutive-loss halt: N consecutive LOSING closed trades in the current CME
-// session-day (0 = OFF; resets on a win/break-even close or a new session). It is
-// a per-strategy circuit breaker, NOT gated by the guardrails master switch.
+// session-day (resets on a win/break-even close or a new session). N resolves
+// through store.ResolveBreakerHalt (W1): a saved 0 = OFF, an absent knob
+// inherits env BREAKER_HALT_N else 8. It is a per-strategy circuit breaker,
+// NOT gated by the guardrails master switch.
 // Fail-OPEN on a query error — never block a trade because the DB hiccuped.
 //
 // W-EXEC-TRUTH W0: it takes the caller's clock (admitEntry passes it; the
@@ -121,7 +123,7 @@ func (at *AutoTrader) consecutiveLossHaltedAt(now time.Time) (string, bool) {
 	// whether the desk is halted (A24: never a second copy).
 	n := breakerHaltN(at.config.StrategyConfig)
 	if n <= 0 {
-		return "", false // explicitly OFF (BREAKER_HALT_N=0)
+		return "", false // OFF: a saved 0, or BREAKER_HALT_N=0 with no saved value
 	}
 	sinceMs := kernel.CMESessionDayStart(now).UnixMilli()
 	losses, err := at.store.Position().CountConsecutiveLossesSince(at.id, sinceMs)

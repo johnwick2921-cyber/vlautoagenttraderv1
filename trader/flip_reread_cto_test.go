@@ -95,7 +95,7 @@ func realPathTrader(t *testing.T, flipReread bool, respond func(n int, user stri
 	// the flip read's. This suite isolates the structure_flip path.
 	off := false
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-		PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, FlipReread: flipReread,
+		PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, FlipReread: flipReread,
 		WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 	}}
 	at, st := resetTrader(t, cfg)

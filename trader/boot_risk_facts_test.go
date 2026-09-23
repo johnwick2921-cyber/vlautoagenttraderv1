@@ -72,13 +72,13 @@ func TestBootLineReportsTheBOUNDStrategy(t *testing.T) {
 // clamped — he should see what he set.
 func TestUnreachableWarnIsReportedNotClamped(t *testing.T) {
 	cfg := &store.StrategyConfig{}
-	cfg.RiskControl.ConsecutiveLossHalt = 2 // N below the WARN default M=5
+	cfg.RiskControl.ConsecutiveLossHalt = store.IntPtr(2) // N below the WARN default M=5
 	line := SessionRiskBootLine(cfg, 450, false, false, "14:45 CT")
 	if !containsAll(line, "UNREACHABLE", "halt=2") {
 		t.Fatalf("a WARN above the halt is a dead threshold and the line does not say so:\n  %s", line)
 	}
 	// And a sane pair says nothing of the sort.
-	cfg.RiskControl.ConsecutiveLossHalt = 8
+	cfg.RiskControl.ConsecutiveLossHalt = store.IntPtr(8)
 	if line := SessionRiskBootLine(cfg, 450, true, true, "14:45 CT"); containsAll(line, "UNREACHABLE") {
 		t.Fatalf("warn 5 under halt 8 is reachable and must not be flagged:\n  %s", line)
 	}

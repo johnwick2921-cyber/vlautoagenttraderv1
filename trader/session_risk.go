@@ -41,8 +41,9 @@ import (
 
 const (
 	// breakerHaltDefault — N. vet-06's [I] proposal (8 of the last 10 losing).
-	// Never fires on the retained tape; see the note above.
-	breakerHaltDefault = 8
+	// Never fires on the retained tape; see the note above. W1: the number
+	// lives in store (ResolveBreakerHalt owns the rule); this is an alias.
+	breakerHaltDefault = store.BreakerHaltDefault
 	// breakerWarnDefault — M. WARN-first: counts and surfaces, never refuses.
 	breakerWarnDefault = 5
 )
@@ -56,14 +57,26 @@ func envInt(key string, def int) int {
 	return def
 }
 
-// breakerHaltN resolves N: the strategy knob when the owner has set it, else
-// the [I] default. 0 in the knob means "unset", not "off" — the wave turns the
-// breaker ON (dispatch 104 D2). Set BREAKER_HALT_N=0 to disable it entirely.
+// breakerHaltN resolves N through store.ResolveBreakerHalt — the ONE rule
+// (canon 28), shared with the boot line, the migration report and the API.
+// W1 (2026-09-23): a SAVED value wins, INCLUDING 0 = OFF; an ABSENT knob
+// inherits env BREAKER_HALT_N (0 = OFF), else the [I] default 8. Before W1 a
+// saved 0 read as "unset → 8" (dispatch 104 D2) while the UI and the struct
+// comment called it OFF — and no writer could store it anyway.
 func breakerHaltN(cfg *store.StrategyConfig) int {
-	if cfg != nil && cfg.RiskControl.ConsecutiveLossHalt > 0 {
-		return cfg.RiskControl.ConsecutiveLossHalt
+	n, _ := store.ResolveBreakerHalt(cfg)
+	return n
+}
+
+// breakerBootField renders the breaker for a boot line: the value READ from
+// the resolver and its origin letter — 8[I], 3[O], off[O], 5[E], off[E].
+func breakerBootField(cfg *store.StrategyConfig) (string, int) {
+	n, src := store.ResolveBreakerHalt(cfg)
+	v := strconv.Itoa(n)
+	if n <= 0 {
+		v = "off"
 	}
-	return envInt("BREAKER_HALT_N", breakerHaltDefault)
+	return v + store.OriginLetter(src), n
 }
 
 // breakerWarnM resolves M, the WARN-first threshold.
@@ -152,7 +165,8 @@ func SessionRiskBootLine(cfg *store.StrategyConfig, dailyLimit float64, masterOn
 	if !masterOn || !dailyLegOn {
 		daily += " DECORATIVE (guardrails master " + master + ", daily_loss_enabled " + leg + " — both must be on)"
 	}
-	n, m := breakerHaltN(cfg), breakerWarnM()
+	breaker, n := breakerBootField(cfg)
+	m := breakerWarnM()
 	// A THRESHOLD THAT CAN NEVER FIRE IS REPORTED, NEVER CLAMPED. If the owner
 	// set a halt below the WARN, the WARN is dead — the halt refuses first, so
 	// nothing ever reaches M. Silently clamping would hide the setting he chose;
@@ -162,8 +176,21 @@ func SessionRiskBootLine(cfg *store.StrategyConfig, dailyLimit float64, masterOn
 		warn = fmt.Sprintf("warn=%d[I] UNREACHABLE (halt=%d fires first)", m, n)
 	}
 	return fmt.Sprintf(
-		"session risk: daily=%s · breaker=%d[I] %s (not master-gated; never fires on the retained tape, max run 7, ids 585-591) · no-trade-band=arm+decision · post-loss counter=on(%dm) · flat@%s=position+arms+pending",
-		daily, n, warn, postLossWindowMin(), flatHHMM)
+		"session risk: daily=%s · breaker=%s %s (%s) · no-trade-band=arm+decision · post-loss counter=on(%dm) · flat@%s=position+arms+pending",
+		daily, breaker, warn, breakerTapeNote(n), postLossWindowMin(), flatHHMM)
+}
+
+// breakerTapeNote — the retained-tape fact is only true of N ≥ 8: the longest
+// losing run on the tape is 7 (ids 585-591), so a lower N CAN fire, and OFF
+// cannot fire at all. W1: the clause used to ride every line whatever N was.
+func breakerTapeNote(n int) string {
+	switch {
+	case n <= 0:
+		return "not master-gated; OFF — never refuses"
+	case n >= 8:
+		return "not master-gated; never fires on the retained tape, max run 7, ids 585-591"
+	}
+	return "not master-gated"
 }
 
 // ── D3 — THE POST-LOSS RE-ARM COUNTER ───────────────────────────────────────
@@ -226,15 +253,21 @@ func SessionRiskBootLineForBoot(st *store.Store) string {
 	var cfg *store.StrategyConfig
 	limit, masterOn, legOn := 0.0, false, false
 	resolved := false
+	why := "no store"
 	if st != nil {
-		if c, l, m, g, ok := bootRiskFacts(st); ok {
+		if c, l, m, g, w, ok := bootRiskFactsWhy(st); ok {
 			cfg, limit, masterOn, legOn, resolved = c, l, m, g, true
+		} else {
+			why = w
 		}
 	}
 	if !resolved {
+		// W1: the breaker is PER STRATEGY. With no single bound strategy there
+		// is no one value to print — the shipped default dressed as "the
+		// breaker" was a value the process had not read (A11/A24, L7).
 		return fmt.Sprintf(
-			"session risk: daily=n/a (no bound strategy read at boot) · breaker=%d[I] warn=%d[I] (not master-gated) · no-trade-band=arm+decision · post-loss counter=on(%dm) · flat=position+arms+pending",
-			breakerHaltN(nil), breakerWarnM(), postLossWindowMin())
+			"session risk: daily=n/a (%s) · breaker=n/a (%s) warn=%d[I] (not master-gated) · no-trade-band=arm+decision · post-loss counter=on(%dm) · flat=position+arms+pending",
+			why, why, breakerWarnM(), postLossWindowMin())
 	}
 	return SessionRiskBootLine(cfg, limit, masterOn, legOn, "session close")
 }
@@ -258,25 +291,39 @@ func SessionRiskBootLineForBoot(st *store.Store) string {
 // MORE THAN ONE BOUND STRATEGY is reported, not averaged: a single line cannot
 // speak for two desks, and picking one silently is how this defect started.
 func bootRiskFacts(st *store.Store) (cfg *store.StrategyConfig, limit float64, masterOn, dailyLegOn, ok bool) {
+	cfg, limit, masterOn, dailyLegOn, _, ok = bootRiskFactsWhy(st)
+	return
+}
+
+// bootRiskFactsWhy is bootRiskFacts plus the reason it could not resolve —
+// the n/a on the boot line names it (W1: "0 bound strategies", "2 bound
+// strategies — one line cannot speak for two desks").
+func bootRiskFactsWhy(st *store.Store) (cfg *store.StrategyConfig, limit float64, masterOn, dailyLegOn bool, why string, ok bool) {
 	if st == nil || st.GormDB() == nil {
-		return nil, 0, false, false, false
+		return nil, 0, false, false, "no store", false
 	}
 	var ids []string
 	if err := st.GormDB().
 		Raw(`SELECT DISTINCT strategy_id FROM traders WHERE strategy_id IS NOT NULL AND strategy_id <> ''`).
-		Scan(&ids).Error; err != nil || len(ids) != 1 {
-		return nil, 0, false, false, false
+		Scan(&ids).Error; err != nil {
+		return nil, 0, false, false, "bound-strategy query failed", false
+	}
+	switch {
+	case len(ids) == 0:
+		return nil, 0, false, false, "0 bound strategies", false
+	case len(ids) > 1:
+		return nil, 0, false, false, fmt.Sprintf("%d bound strategies — one line cannot speak for them; see each trader's line", len(ids)), false
 	}
 	var rows []*store.Strategy
 	if err := st.GormDB().Where("id = ?", ids[0]).Find(&rows).Error; err != nil || len(rows) != 1 {
-		return nil, 0, false, false, false
+		return nil, 0, false, false, "the bound strategy row is missing", false
 	}
 	c, err := rows[0].ParseConfig()
 	if err != nil || c == nil {
-		return nil, 0, false, false, false
+		return nil, 0, false, false, "the bound strategy config does not parse", false
 	}
 	rc := c.RiskControl
 	return c, rc.DailyLossLimitUSD,
 		rc.GuardrailsEnabled != nil && *rc.GuardrailsEnabled,
-		rc.DailyLossEnabled != nil && *rc.DailyLossEnabled, true
+		rc.DailyLossEnabled != nil && *rc.DailyLossEnabled, "", true
 }

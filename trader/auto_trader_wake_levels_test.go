@@ -232,7 +232,7 @@ func TestCollectWakeCandidatesSeatedInvalidation(t *testing.T) {
 // bug): a wake re-read that fails every retry must NOT fail-close the session —
 // the still-active plan keeps trading and no row is written.
 func TestWakeReadFailureKeepsActivePlan(t *testing.T) {
-	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	at.mcpClient = &errorDecisionClient{} // every planner call fails
 	tradeDate := "2026-08-25"
 	if _, err := st.Plan().AppendPlan(&store.PlanDB{

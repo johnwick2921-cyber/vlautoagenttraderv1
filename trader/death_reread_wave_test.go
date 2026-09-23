@@ -150,7 +150,7 @@ func deathRealPathTrader(t *testing.T, deathReread *bool, respond func(n int, us
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
 	off := false
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-		PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: deathReread,
+		PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: deathReread,
 		WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 	}}
 	at, st := resetTrader(t, cfg)
@@ -288,7 +288,7 @@ func TestDeathRereadBudgetExhaustedStaysDormant(t *testing.T) {
 	td := "2026-08-18"
 	row := seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), deathFixtureDoc())
 	// Exhaust a cap-1 budget deterministically (one recorded spend).
-	at.dayPlanCfg().ReplanCap = 1
+	at.dayPlanCfg().ReplanCap = store.IntPtr(1)
 	if _, err := store.SpendReplan(st, at.id, td, "NY"); err != nil {
 		t.Fatal(err)
 	}
@@ -344,7 +344,7 @@ func TestDeathRereadHeldInsideFlapGuard(t *testing.T) {
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "5")
 	off := false
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-		PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: nil,
+		PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: nil,
 		WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 	}}
 	at, st := resetTrader(t, cfg)
@@ -471,7 +471,7 @@ func TestDeathRereadRealPathFlapGuardHoldsLaunch(t *testing.T) {
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "5")
 	off := false
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-		PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: nil,
+		PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: nil,
 		WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 	}}
 	at, st := resetTrader(t, cfg)
@@ -521,7 +521,7 @@ func TestDeathRereadWickThroughProductionCallSite(t *testing.T) {
 		t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
 		off := false
 		cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-			PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: nil,
+			PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: nil,
 			WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 		}}
 		at, st := resetTrader(t, cfg)

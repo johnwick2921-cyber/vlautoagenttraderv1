@@ -477,7 +477,7 @@ func TestWithdrawPendingCancelSettlesOnAReceivedCancelledOrderUpdate(t *testing.
 // 2 — the consecutive-loss breaker trips (N losing closes this CME
 // session-day): the same withdraw, with no maintenance hold at all.
 func TestWithdrawOnConsecutiveLossBreakerTrip(t *testing.T) {
-	f := withdrawFixture(t, "wd-breaker", func(c *store.StrategyConfig) { c.RiskControl.ConsecutiveLossHalt = 2 })
+	f := withdrawFixture(t, "wd-breaker", func(c *store.StrategyConfig) { c.RiskControl.ConsecutiveLossHalt = store.IntPtr(2) })
 	row, sid := f.placeResting(t)
 	t1 := f.now.Add(time.Minute)
 	if _, halted := f.at.consecutiveLossHaltedAt(t1); halted {

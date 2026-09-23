@@ -19,7 +19,7 @@ func class35Trader(t *testing.T, cap int) (*AutoTrader, *store.Store) {
 	// The canned plan predates the confirm{} contract; its grace window (3
 	// reads) is not what these fixtures test — keep it open for the chain.
 	t.Setenv("CONFIRM_GRACE_SESSIONS", "100")
-	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: cap}})
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(cap)}})
 	at.mcpClient = &planClient{} // schema-valid plan → every read lands an ACTIVE row
 	return at, st
 }

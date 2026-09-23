@@ -488,7 +488,7 @@ func parityTripRoll(r *parityRig) {
 // whichever session-day the gate's own time.Now() lands in (the query is
 // exit_time >= session start, no upper bound).
 func parityTripBreaker(r *parityRig) {
-	r.at.config.StrategyConfig.RiskControl.ConsecutiveLossHalt = 1
+	r.at.config.StrategyConfig.RiskControl.ConsecutiveLossHalt = store.IntPtr(1)
 	exit := r.clock().Add(-10 * time.Minute)
 	if r.path == parityA {
 		exit = time.Now().Add(time.Minute)

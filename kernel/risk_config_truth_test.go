@@ -46,7 +46,7 @@ func fullRiskConfig() store.RiskControlConfig {
 		DailyLossLimitUSD: 450, DailyLossEnabled: tr(true),
 		DailyProfitTargetUSD: 900, DailyProfitEnabled: tr(true),
 		MaxDailyTrades: 3, MaxDailyTradesEnabled: tr(true),
-		ConsecutiveLossHalt: 2, ReentryCooldownMinutes: 20,
+		ConsecutiveLossHalt: store.IntPtr(2), ReentryCooldownMinutes: 20,
 		MaxContractsPerOrder: 2, MaxContractsEnabled: tr(true),
 		HoldDisciplineEnabled: tr(true),
 		BreakevenEnabled:      tr(true), BreakevenTriggerPoints: 50,
@@ -91,7 +91,7 @@ func TestEveryRiskFieldSurvivesBothCodecHalves(t *testing.T) {
 	if got.MinRiskRewardRatio != want.MinRiskRewardRatio ||
 		got.MinConfidence != want.MinConfidence ||
 		got.MaxContractsPerOrder != want.MaxContractsPerOrder ||
-		got.ConsecutiveLossHalt != want.ConsecutiveLossHalt ||
+		!sameIntPtr(got.ConsecutiveLossHalt, want.ConsecutiveLossHalt) ||
 		got.ReentryCooldownMinutes != want.ReentryCooldownMinutes ||
 		got.BreakevenTriggerPoints != want.BreakevenTriggerPoints {
 		t.Errorf("UNMARSHAL half lost a numeric risk field:\n got  %+v\n want %+v", got, want)
@@ -209,4 +209,14 @@ func TestPromptStatesTheEnforcedThresholds(t *testing.T) {
 			}
 		})
 	}
+}
+
+// sameIntPtr compares two presence-aware ints by presence AND value (W1: the
+// breaker is a *int — nil inherits, &0 is OFF — so pointer identity is not
+// the question; whether the value survived is).
+func sameIntPtr(a, b *int) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
 }

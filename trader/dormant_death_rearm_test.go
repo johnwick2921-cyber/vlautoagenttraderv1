@@ -44,7 +44,7 @@ func dormantDeathFixture(t *testing.T, marker string, doc kernel.PlanDoc, legacy
 	t.Helper()
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}}}
 	at, st := resetTrader(t, cfg)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC) // 09:00 CT, inside NY
 	testNow = func() time.Time { return now }

@@ -11,7 +11,11 @@
 
 package store
 
-import "strings"
+import (
+	"os"
+	"strconv"
+	"strings"
+)
 
 // Where a resolved value came from. These strings are rendered to the operator,
 // so they say what happened, not which branch ran.
@@ -21,7 +25,119 @@ const (
 	SourceShippedDefault  = "shipped default"
 	SourceStrategyValue   = "strategy value"
 	SourceSessionOverride = "session override"
+	// SourceEnv prefixes a value read from a process environment variable; the
+	// variable's name follows ("env BREAKER_HALT_N").
+	SourceEnv = "env"
 )
+
+// OriginLetter maps a resolver source onto the boot-line evidence tag (W1):
+// [O] the owner set it (saved / strategy / session), [E] the process env set
+// it, [I] the shipped default. ONE mapping, so two boot lines cannot tag the
+// same source two ways. An unrecognised source reads [?] — never a guess.
+func OriginLetter(source string) string {
+	switch {
+	case strings.HasPrefix(source, SourceSaved),
+		strings.HasPrefix(source, SourceStrategyValue),
+		strings.HasPrefix(source, SourceSessionOverride):
+		return "[O]"
+	case strings.HasPrefix(source, SourceEnv+" "):
+		return "[E]"
+	case strings.HasPrefix(source, SourceShippedDefault),
+		strings.HasPrefix(source, SourceSchemaDefault):
+		return "[I]"
+	}
+	return "[?]"
+}
+
+// BreakerHaltDefault is the consecutive-loss halt's shipped N — vet-06's [I]
+// proposal (8 of the last 10 losing). It never fires on the retained tape (max
+// run 7, ids 585-591); trader/session_risk.go carries the measurement.
+const BreakerHaltDefault = 8
+
+// BreakerHaltEnv is the process-wide override consulted only when the strategy
+// saved no value.
+const BreakerHaltEnv = "BREAKER_HALT_N"
+
+// ReplanCapDefault is the shipped re-plan cap when neither the session nor the
+// strategy saved one.
+const ReplanCapDefault = 2
+
+// ResolveBreakerHalt resolves the consecutive-loss halt N and where it came
+// from (W1, settings truth). Precedence: the SAVED value — INCLUDING 0, which
+// is OFF — → env BREAKER_HALT_N (valid ≥0; 0 = OFF) → the shipped default 8.
+// An invalid env value falls to the default AND SAYS SO in the source, never a
+// silent 8. Absent in the strategy means INHERIT, never OFF: the breaker is a
+// safety default, so a missing key must not read as "off".
+func ResolveBreakerHalt(cfg *StrategyConfig) (int, string) {
+	return ResolveBreakerHaltEnv(cfg, os.Getenv)
+}
+
+// ResolveBreakerHaltEnv is ResolveBreakerHalt with the environment injected —
+// the migration report evaluates a fixed environment, and tests pin one.
+func ResolveBreakerHaltEnv(cfg *StrategyConfig, getenv func(string) string) (int, string) {
+	if cfg != nil && cfg.RiskControl.ConsecutiveLossHalt != nil {
+		if n := *cfg.RiskControl.ConsecutiveLossHalt; n >= 0 {
+			return n, SourceSaved
+		}
+		// A negative saved value is not a threshold. Fall through to what an
+		// absent key would resolve to, and name why.
+		n, src := breakerHaltFromEnv(getenv)
+		return n, src + " (saved value is negative)"
+	}
+	return breakerHaltFromEnv(getenv)
+}
+
+func breakerHaltFromEnv(getenv func(string) string) (int, string) {
+	n, state := BreakerHaltEnvState(getenv)
+	switch state {
+	case EnvValid:
+		return n, SourceEnv + " " + BreakerHaltEnv
+	case EnvInvalid:
+		return BreakerHaltDefault, SourceShippedDefault + " (env " + BreakerHaltEnv + " invalid)"
+	}
+	return BreakerHaltDefault, SourceShippedDefault
+}
+
+// Env states for a numeric process override.
+const (
+	EnvUnset   = "unset"
+	EnvValid   = "valid"
+	EnvInvalid = "invalid"
+)
+
+// BreakerHaltEnvState reads BREAKER_HALT_N once: unset, valid (an integer ≥0)
+// or invalid. The same test envInt applied before W1 (Atoi, ≥0), so the
+// pre-W1 and post-W1 readings of one environment agree.
+func BreakerHaltEnvState(getenv func(string) string) (int, string) {
+	if getenv == nil {
+		getenv = os.Getenv
+	}
+	v := getenv(BreakerHaltEnv)
+	if v == "" {
+		return 0, EnvUnset
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 0 {
+		return 0, EnvInvalid
+	}
+	return n, EnvValid
+}
+
+// ResolveReplanCap resolves the per-session re-plan cap and its source (W1):
+// session override (≥0) → strategy value (≥0) → the shipped default 2. An
+// explicit 0 is honoured at BOTH levels — "no re-plan after death" — where the
+// strategy level used to read 0 as "unset → 2". session "" resolves the
+// strategy level (outside every session window).
+func ResolveReplanCap(c *DayPlanConfig, session string) (int, string) {
+	n, source := ReplanCapDefault, SourceShippedDefault
+	if c != nil && c.ReplanCap != nil && *c.ReplanCap >= 0 {
+		n, source = *c.ReplanCap, SourceStrategyValue
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
+		n, source = *ov.ReplanCap, SourceSessionOverride
+	}
+	return n, source
+}
 
 // ResolveMinRiskReward is the single R:R floor — the arm seam and the decision
 // path both land here. A saved value above zero wins; absent means the schema's

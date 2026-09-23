@@ -27,7 +27,7 @@ func TestClass35PinTodayChain(t *testing.T) {
 	at, st := rereadTrader(t, store.StrategyConfig{
 		DayPlan: &store.DayPlanConfig{
 			PlanEnabled: true,
-			ReplanCap:   2, // strategy level — LONDON overrides to 4, exactly like the live config
+			ReplanCap:   store.IntPtr(2), // strategy level — LONDON overrides to 4, exactly like the live config
 			Sessions:    []store.DayPlanSessionOverride{{Session: "LONDON", Enable: &enable, ReplanCap: &capFour}},
 		},
 	})

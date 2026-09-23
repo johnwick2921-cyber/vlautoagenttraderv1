@@ -54,7 +54,7 @@ func TestW9Resolvers(t *testing.T) {
 	// explicit strategy-level values.
 	dp := &store.DayPlanConfig{
 		PlanEnabled: true, PlanMode: "strict", ProximityFilterATR: 2.0, ScenarioCap: 2,
-		ReplanCap: 4, SessionsEnabled: []string{"NY", "LONDON"}, ApprovalRequired: true, EveningDigest: false,
+		ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY", "LONDON"}, ApprovalRequired: true, EveningDigest: false,
 	}
 	at = mkPlanTrader(dp)
 	if at.planModeFor("NY") != "strict" || at.proximityFilterATR() != 2.0 || at.scenarioCap() != 2 || at.replanCapFor("NY") != 4 {
