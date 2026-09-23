@@ -78,6 +78,32 @@
 //     collection under its own lock (no nesting) and to report 'settled';
 //     source_hash is taken at activation. Every removed line is M2's own census
 //     code; no pre-M2 line, guard or identifier is touched.
+// Wire baselines advanced 2026-09-23 for W-EXEC-TRUTH W4 (PR #192,
+// fix/w4-picture-evidence; found RED by the CTO's own gate at 17:03 CT — the
+// wave's PR line had reported the GUIDE vitest subset, 5 files / 24 tests,
+// which is a claim about a subset and not about the suite: class 110 again,
+// this time on the lane that had just filed it against others). Deltas
+// measured against the PR base eb7294c9:
+//   provider/ninjatrader/tcp_framing.go — +12 −2: the Contract field on
+//     BarsHistoricalPayload and BarUpdatePayload (json contract,omitempty)
+//     plus their doc comments. The AddOn has stamped `contract` on EVERY bar
+//     frame since 2026-09-11 (VLBarsSubscriptionManager.cs:488 / :562) and Go
+//     had no field for it. The two removed lines are the two `Bars []Bar`
+//     lines re-issued with gofmt's new field alignment — nothing else. No
+//     identifier renamed, no frame type changed, no C# change in the wave.
+//   provider/ninjatrader/tcp_server.go  — +20 −5: barIngestMsg.contract; the
+//     D24 liveFrameTooOld gate around the fan-out in drainBarIngest (a frame
+//     that reached us long after it was emitted is CACHED but not treated as
+//     a live entry event); and the contract threaded through enqueueBarUpdate
+//     to its readLoop caller. EVERY removed line is re-issued with the
+//     contract added: the `bars []Bar` field (gofmt realignment), the
+//     fanOutLiveBars call (now in the else branch), enqueueBarUpdate's
+//     signature, its barIngestMsg literal, and its call site. The cache write
+//     (s.barCache.Upsert) is byte-untouched and still runs for every frame,
+//     including a refused one. No identifier renamed, no guard removed.
+//   The bar-feed guards this pin protects are byte-untouched by both deltas:
+//   SubscribeBarsHistoryFor, the bars_history_request write, and the
+//   bars_history_data / _error fan-out.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

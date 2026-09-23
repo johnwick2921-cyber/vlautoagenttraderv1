@@ -12,7 +12,7 @@
   "go.mod": "a9f0a7ba1bfec59210f2000c623199edbab74b91c848dc538e123f1db00a35a3",
   "logger/logger.go": "2e799bce8b1718cbecc4974b9c1c8746bf10525872a2b641338547e1e5965998",
   "ninjascript/VLTraderTCPClient.cs": "2ce9019fc5bbaff18332f2e813bdb2209317c909b6094b3bdecd2e7154e5b7eb",
-  "provider/ninjatrader/tcp_framing.go": "55b0c78657613097692a45ed1b225d2a211d67a77a5c9bace9097af803a8bed6",
-  "provider/ninjatrader/tcp_server.go": "0221986e08d53dfd2b2424cd55b7b1687fb78ccd894be7bbe02691bb28635c72",
+  "provider/ninjatrader/tcp_framing.go": "5c5a015c455e4fca274f52f2f12f8cbbab4e9648d78ce8e4f52937c4e53e8191",
+  "provider/ninjatrader/tcp_server.go": "7edd88c30cc12a57277e47a0c6112275390f85e3d4007cc766852b9a10c472ee",
   "web/src/lib/agentChatStorage.ts": "de7f24ff74a913a4e9d4dad2563712a562239c4f9d206b1099bb1477896f6fb0"
 }
