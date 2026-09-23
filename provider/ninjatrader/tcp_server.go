@@ -2476,6 +2476,14 @@ func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
 			return heldDropped, nil
 		}
 		s.writeMu.Lock()
+		// W-ONE-BUTTON M2.1 (review F1): re-check the hold WITH the writer held.
+		// Waiting for writeMu (the hello reply, a heartbeat) must not let a
+		// hold that landed meanwhile be written past.
+		if s.entryHeld() {
+			s.writeMu.Unlock()
+			heldDropped = s.reportDrops(toSend[i:])
+			return heldDropped, nil
+		}
 		// Check after waiting for the writer, using the command's original
 		// timestamp. Neither enqueue nor retry is allowed to renew its lease.
 		if err := s.checkSignalAge(sig, time.Now()); err != nil {
