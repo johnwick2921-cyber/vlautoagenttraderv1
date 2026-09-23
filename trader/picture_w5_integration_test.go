@@ -97,3 +97,46 @@ func TestHandOffLinesNeverCarryTheAccountName(t *testing.T) {
 		t.Fatalf("the line names the opportunity through the redactor:\n%s", out)
 	}
 }
+
+// W5 R1 (CTO review): the hand-off reads the latest plan version, and the
+// planner appends the next version before the hand-off's overlay lands. The
+// overlay must end on the NEW version (the one the executor reads), never on
+// the superseded one where nothing would ever trade it.
+func TestPictureHandOffNeverLandsOnASupersededVersion(t *testing.T) {
+	at, st := handOffTrader(t)
+	now := handOffNow()
+	at.markPictureRunEpoch(now)
+	v1 := seedAIPlan(t, st, "active")
+	ev := handOffEvidence(now, 1)
+	claimHandOff(t, st, ev)
+	moved := false
+	pictureHandOffBeforeAppendForTest = func() {
+		if moved {
+			return
+		}
+		moved = true
+		if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: v1.PlanID, TradeDate: v1.TradeDate, Session: v1.Session, StrategyID: v1.StrategyID,
+			TriggerReason: "NY_scheduled_read", Lifecycle: "active", ModelID: "m", Doc: validTraderPlanJSON}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Cleanup(func() { pictureHandOffBeforeAppendForTest = nil })
+	if err := at.pictureHandOffAt(ev, now); err != nil {
+		t.Fatalf("the hand-off must re-read and record on the new version: %v", err)
+	}
+	if !moved {
+		t.Fatal("fixture: the planner append never ran between the read and the append")
+	}
+	if ovs := listOverlays(t, st, v1.PlanID, 1); len(ovs) != 0 {
+		t.Fatalf("the overlay landed on the SUPERSEDED v1 (the executor never reads it): %d row(s)", len(ovs))
+	}
+	if ovs := listOverlays(t, st, v1.PlanID, 2); len(ovs) != 1 {
+		t.Fatalf("the overlay must land on v2, the latest: %d row(s)", len(ovs))
+	}
+}
+
+func TestPictureHandOffBeforeAppendHookIsNilInProduction(t *testing.T) {
+	if pictureHandOffBeforeAppendForTest != nil {
+		t.Fatal("the R1 test seam must be nil in production")
+	}
+}

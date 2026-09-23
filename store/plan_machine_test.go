@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -258,5 +259,26 @@ func TestRedactPictureOppKey(t *testing.T) {
 	}
 	if RedactPictureOppKey("opp-a") != "opp-a" {
 		t.Fatal("a key with no account segment is returned unchanged")
+	}
+}
+
+// W5 R1: an overlay aimed at a version that is no longer its chain's latest is
+// refused inside the single writer (ErrOverlayVersionSuperseded).
+func TestAppendOverlayCheckedRefusesASupersededVersion(t *testing.T) {
+	st := machinePlanStore(t)
+	pid := MakePlanIDForTrader("t1", "2026-09-23", "NY")
+	for i := 0; i < 2; i++ {
+		if _, err := st.Plan().AppendPlan(&PlanDB{PlanID: pid, TradeDate: "2026-09-23", Session: "NY", StrategyID: "t1", Doc: `{}`}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, ok, err := st.Plan().AppendOverlayChecked(&PlanOverlayDB{PlanID: pid, PlanVersion: 1, Patch: `[]`, Origin: "machine:picture_htf"},
+		func([]*PlanOverlayDB) (bool, error) { return false, nil })
+	if ok || !errors.Is(err, ErrOverlayVersionSuperseded) {
+		t.Fatalf("v1 is superseded by v2: ok=%v err=%v", ok, err)
+	}
+	if _, ok, err := st.Plan().AppendOverlayChecked(&PlanOverlayDB{PlanID: pid, PlanVersion: 2, Patch: `[]`, Origin: "machine:picture_htf"},
+		func([]*PlanOverlayDB) (bool, error) { return false, nil }); !ok || err != nil {
+		t.Fatalf("the latest version accepts the overlay: ok=%v err=%v", ok, err)
 	}
 }

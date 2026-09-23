@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -284,12 +285,33 @@ func (at *AutoTrader) recordPictureScenario(sess *kernel.SessionDef, tradeDate s
 			return pictureRecord{}, fmt.Errorf("picture hand-off refused: the machine plan was not written and no plan row is readable for %s %s (err %v) — nothing recorded", tradeDate, sess.Name, err)
 		}
 	}
-	// Active exactly as the provider judges it: lifecycle "active".
-	if row.Lifecycle != "active" {
-		return pictureRecord{}, fmt.Errorf("picture hand-off refused: Day Plan says no (%s) — plan %s v%d for %s %s is not active; nothing recorded", row.Lifecycle, row.PlanID, row.Version, sess.Name, tradeDate)
+	// W5 R1: the overlay must land on the chain's LATEST version. The store
+	// refuses a superseded one inside its single writer; re-read and retry.
+	for attempt := 1; ; attempt++ {
+		// Active exactly as the provider judges it: lifecycle "active".
+		if row.Lifecycle != "active" {
+			return pictureRecord{}, fmt.Errorf("picture hand-off refused: Day Plan says no (%s) — plan %s v%d for %s %s is not active; nothing recorded", row.Lifecycle, row.PlanID, row.Version, sess.Name, tradeDate)
+		}
+		rec, err := at.appendPictureOverlay(row, sc)
+		if !errors.Is(err, store.ErrOverlayVersionSuperseded) {
+			return rec, err
+		}
+		if attempt >= pictureOverlayAttempts {
+			return pictureRecord{}, fmt.Errorf("picture hand-off refused: the plan moved under the hand-off %d times (last %s v%d) — nothing recorded", attempt, row.PlanID, row.Version)
+		}
+		if row, err = plans.GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id); err != nil || row == nil {
+			return pictureRecord{}, fmt.Errorf("picture hand-off refused: the plan moved and the latest row for %s %s is unreadable (err %v) — nothing recorded", tradeDate, sess.Name, err)
+		}
 	}
-	return at.appendPictureOverlay(row, sc)
 }
+
+// pictureOverlayAttempts bounds the re-read-and-retry when the plan version
+// moves between the hand-off's read and its append (W5 R1).
+const pictureOverlayAttempts = 3
+
+// pictureHandOffBeforeAppendForTest runs between the hand-off's plan read and
+// its overlay append — the window W5 R1 closes. nil in production (pinned).
+var pictureHandOffBeforeAppendForTest func()
 
 // appendPictureOverlay is the (a) door: one append-only machine overlay on an
 // ACTIVE plan version, idempotent on the opportunity. The admission check runs
@@ -305,6 +327,9 @@ func (at *AutoTrader) appendPictureOverlay(row *store.PlanDB, sc kernel.PlanScen
 		Origin:      kernel.MachineOverlayOriginPicture,
 	}
 	var hit *pictureRecord
+	if pictureHandOffBeforeAppendForTest != nil {
+		pictureHandOffBeforeAppendForTest()
+	}
 	ver, appended, err := at.store.Plan().AppendOverlayChecked(o, func(existing []*store.PlanOverlayDB) (bool, error) {
 		pf, perr := kernel.ResolvePlanFinal([]byte(row.Doc), kernel.OverlayRefsFrom(existing))
 		if perr != nil {
@@ -343,7 +368,7 @@ func (at *AutoTrader) appendPictureOverlay(row *store.PlanDB, sc kernel.PlanScen
 		return false, nil
 	})
 	if err != nil {
-		return pictureRecord{}, fmt.Errorf("picture hand-off refused: machine overlay on %s v%d not recorded: %v — nothing recorded", row.PlanID, row.Version, err)
+		return pictureRecord{}, fmt.Errorf("picture hand-off refused: machine overlay on %s v%d not recorded: %w — nothing recorded", row.PlanID, row.Version, err)
 	}
 	if !appended {
 		if hit == nil {

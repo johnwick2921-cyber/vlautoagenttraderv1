@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"nofx/logger"
 	"strings"
@@ -456,6 +457,13 @@ func (s *PlanStore) AppendPlanIfAbsent(p *PlanDB) (bool, error) {
 	return wrote, err
 }
 
+// ErrOverlayVersionSuperseded — AppendOverlayChecked refuses an overlay aimed
+// at a plan version that is no longer the latest of its chain (W5 R1, CTO
+// review 2026-09-23): a record read at version N while the planner appended
+// N+1 would otherwise land on N, where the executor (which reads the LATEST
+// row) never sees it. The caller re-reads the latest row and retries.
+var ErrOverlayVersionSuperseded = errors.New("plan version superseded under the overlay")
+
 // AppendOverlayChecked is AppendOverlay whose admission check runs INSIDE the
 // single writer against the overlay rows already stored for (plan_id,
 // plan_version) — so two hand-offs of one opportunity cannot both append. The
@@ -469,6 +477,16 @@ func (s *PlanStore) AppendOverlayChecked(o *PlanOverlayDB, check func(existing [
 	var assigned int
 	appended := false
 	err := s.enqueue(func(db *gorm.DB) error {
+		// The version must still be the chain's latest — judged HERE, in the
+		// single writer, so no plan append can interleave between this
+		// check and the insert.
+		var maxV *int
+		if err := db.Model(&PlanDB{}).Where("plan_id = ?", o.PlanID).Select("MAX(version)").Scan(&maxV).Error; err != nil {
+			return err
+		}
+		if maxV != nil && *maxV != o.PlanVersion {
+			return fmt.Errorf("%w: %s v%d is not the latest (v%d)", ErrOverlayVersionSuperseded, o.PlanID, o.PlanVersion, *maxV)
+		}
 		var existing []*PlanOverlayDB
 		if err := db.Where("plan_id = ? AND plan_version = ?", o.PlanID, o.PlanVersion).
 			Order("overlay_version ASC").Find(&existing).Error; err != nil {
