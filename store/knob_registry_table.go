@@ -26,10 +26,10 @@ var knobRegistry = map[string]KnobEntry{
 	"breakeven_trigger_points":         {Path: "breakeven_trigger_points", Status: KnobLive, Consumers: []string{"trader/auto_trader.go:199"}, Note: ""},
 	"btc_eth_max_leverage":             {Path: "btc_eth_max_leverage", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:551"}, Note: ""},
 	"btc_eth_max_position_value_ratio": {Path: "btc_eth_max_position_value_ratio", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:553"}, Note: ""},
-	"condition_status":                 {Path: "condition_status", Status: KnobLive, Consumers: []string{"trader/auto_trader_planner.go:1481"}, Note: ""},
+	"condition_status":                 {Path: "condition_status", Status: KnobLive, Consumers: []string{"trader/armed_executor.go:conditionShadowedFor (:36 @853981d2 — arm-time live|shadow)", "trader/auto_trader_planner.go:1946 (reject-block live vocabulary @853981d2)"}, Note: "W1 (f) 2026-09-23: the old cite auto_trader_planner.go:1481 is clockHoldDeferLine — not a reader."},
 	"config":                           {Path: "config", Status: KnobLive, Consumers: []string{"trader/auto_trader_grid_regime.go:157"}, Note: ""},
 	"config_visible":                   {Path: "config_visible", Status: KnobLive, Consumers: []string{"api/strategy.go:44"}, Note: ""},
-	"consecutive_loss_halt":            {Path: "consecutive_loss_halt", Status: KnobLive, Consumers: []string{"trader/auto_trader_orders.go:116"}, Note: ""},
+	"consecutive_loss_halt":            {Path: "consecutive_loss_halt", Status: KnobLive, Consumers: []string{"trader/session_risk.go:breakerHaltN (:62 @853981d2 — the one resolution both the ARM path and consecutiveLossHaltedAt call)"}, Note: "W1 (f) 2026-09-23: the old cite auto_trader_orders.go:116 was a nil guard inside consecutiveLossHaltedAt, which reads N through breakerHaltN."},
 	"consistency_enabled":              {Path: "consistency_enabled", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:196"}, Note: ""},
 	"consistency_max_day_pct":          {Path: "consistency_max_day_pct", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:169"}, Note: ""},
 	"context_limit":                    {Path: "context_limit", Status: KnobCandidate, Consumers: nil, Note: "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."},
@@ -150,7 +150,7 @@ var knobRegistry = map[string]KnobEntry{
 	"realign_cap":                      {Path: "realign_cap", Status: KnobFolded, Consumers: []string{"trader/auto_trader_planconfig.go:RealignCap → store.DayPlanConfig.RealignCapResolved", "api/handler_plan.go realign endpoint"}, Note: "W-KNOB-PRUNE 2026-09-18: folded into the re-plan section — constant 5 unless stored (the owner stores 10, honoured + logged). Control removed."},
 	"reentry_cooldown_minutes":         {Path: "reentry_cooldown_minutes", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:619"}, Note: ""},
 	"refresh_secs":                     {Path: "refresh_secs", Status: KnobLive, Consumers: []string{"kernel/engine.go:782"}, Note: ""},
-	"replan_cap":                       {Path: "replan_cap", Status: KnobLive, Consumers: []string{"trader/auto_trader_reset.go:112"}, Note: ""},
+	"replan_cap":                       {Path: "replan_cap", Status: KnobLive, Consumers: []string{"store/strategy.go:DayPlanConfig.ReplanCapFor (:1289 @853981d2)", "trader/auto_trader_planconfig.go:replanCapFor (:47 @853981d2)"}, Note: "W1 (f) 2026-09-23: the old cite auto_trader_reset.go:112 was SetResetBaseline — not a reader of the cap."},
 	"role_definition":                  {Path: "role_definition", Status: KnobLive, Consumers: []string{"kernel/engine_prompt_futures.go:99"}, Note: ""},
 	"rsi_periods":                      {Path: "rsi_periods", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:790"}, Note: ""},
 	"scenario_cap":                     {Path: "scenario_cap", Status: KnobFolded, Consumers: []string{"trader/auto_trader_planconfig.go:scenarioCap → store.DayPlanConfig.ScenarioCapResolved", "kernel/planner_prompt.go plannerOutputContract"}, Note: "W-KNOB-PRUNE 2026-09-18: constant 3 unless stored (the owner stores 5, honoured + logged). Control removed."},
@@ -194,4 +194,20 @@ var knobRegistry = map[string]KnobEntry{
 	"wake_on_level_events":             {Path: "wake_on_level_events", Status: KnobLive, Consumers: []string{"trader/auto_trader_wake_levels.go:103"}, Note: "W-KNOB-PRUNE 2026-09-18: the ONE level-event wake switch (nil = ON) — HTF S/D zones + seated-level invalidation, with the 15m zone/FVG + iFVG classes riding at their shipped-ON default; HTF OBs only via the legacy stored wake_on_htf_ob=true."},
 	"wake_on_seated_invalidation":      {Path: "wake_on_seated_invalidation", Status: KnobFolded, Consumers: []string{"trader/auto_trader_wake_levels.go:103"}, Note: "W-KNOB-PRUNE 2026-09-18: LEGACY per-class switch, collapsed into wake_on_level_events. Read only for the mapping (any of the five ON → the single switch ON); the Studio never writes it again."},
 	"write_time_feasibility":           {Path: "write_time_feasibility", Status: KnobLive, Consumers: []string{"trader/auto_trader_planner.go (write-time feasibility check, W-WRITE-TIME-FEASIBILITY)"}, Note: "W-WRITE-TIME-FEASIBILITY 2026-09-18: nil/unset = ON (owner ruling 'fix all' 08:3x CT — a scenario whose arm would be refused at arm is repair-hinted, then written arm.enabled=false); explicit false = today's WARN-only behaviour byte-identical. Geometry resolves through the executor's composeArmStop — the write site follows the executor to ArmGeometryVerdict(doc, sc, cfg.DayPlan.GeometryRefIDsEnabled()) at the W-GEOMETRY-REFUSAL merge (CTO BLOCKER 3)."},
+
+	// W1 (f) 2026-09-23 — EXACT entries for external_data_sources' children. The
+	// schema walk now reaches them (ai_config.indicators.external_data_sources.*),
+	// and the leaf fallback would classify them by the UNRELATED leaves "name"
+	// (kernel/no_trade_band.go), "type" (kernel/htf_veto.go) and the "url" /
+	// "method" / "headers" / "data_path" / "refresh_secs" rows that cite
+	// FetchExternalData — which has NO production caller (grep -rn
+	// 'FetchExternalData()' --include=*.go . → only its declaration). The parent
+	// is ineffective; so is every child.
+	"ai_config.indicators.external_data_sources.name":         {Path: "ai_config.indicators.external_data_sources.name", Status: KnobIneffective, Consumers: nil, Note: "child of external_data_sources — zero engine consumers (FetchExternalData has no production caller)"},
+	"ai_config.indicators.external_data_sources.type":         {Path: "ai_config.indicators.external_data_sources.type", Status: KnobIneffective, Consumers: nil, Note: "child of external_data_sources — zero engine consumers (FetchExternalData has no production caller)"},
+	"ai_config.indicators.external_data_sources.url":          {Path: "ai_config.indicators.external_data_sources.url", Status: KnobIneffective, Consumers: nil, Note: "child of external_data_sources — zero engine consumers (FetchExternalData has no production caller)"},
+	"ai_config.indicators.external_data_sources.method":       {Path: "ai_config.indicators.external_data_sources.method", Status: KnobIneffective, Consumers: nil, Note: "child of external_data_sources — zero engine consumers (FetchExternalData has no production caller)"},
+	"ai_config.indicators.external_data_sources.headers":      {Path: "ai_config.indicators.external_data_sources.headers", Status: KnobIneffective, Consumers: nil, Note: "child of external_data_sources — zero engine consumers (FetchExternalData has no production caller)"},
+	"ai_config.indicators.external_data_sources.data_path":    {Path: "ai_config.indicators.external_data_sources.data_path", Status: KnobIneffective, Consumers: nil, Note: "child of external_data_sources — zero engine consumers (FetchExternalData has no production caller)"},
+	"ai_config.indicators.external_data_sources.refresh_secs": {Path: "ai_config.indicators.external_data_sources.refresh_secs", Status: KnobIneffective, Consumers: nil, Note: "child of external_data_sources — zero engine consumers (FetchExternalData has no production caller)"},
 }

@@ -1,10 +1,13 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 )
 
 // ── KNOB REGISTRY (settings integrity, 2026-09-03) ───────────────────────────
@@ -63,74 +66,272 @@ type KnobEntry struct {
 	Note      string     // REQUIRED when not live: WHY
 }
 
-// EnumerateSchemaKnobs walks StrategyConfig by reflection and returns every
-// json-tagged leaf as a dotted path. Reflection rather than a hand list: a
-// hand-maintained enumeration is exactly how a field goes unclassified.
+// EnumerateSchemaKnobs returns every schema leaf as a dotted path — the key
+// paths the PRODUCTION StrategyConfig.MarshalJSON actually writes, not the Go
+// struct tags. Order is sorted; callers get a copy.
+//
+// W1 (f), 2026-09-23. The previous walk read struct tags and skipped json:"-".
+// StrategyConfig carries five json:"-" compatibility fields (CoinSource,
+// Indicators, CustomPrompt, RiskControl, PromptSections) that MarshalJSON
+// re-emits under ai_config — so the drift counter skipped exactly the fields a
+// custom marshaller re-emits: all of ai_config.risk_control.*, indicators.*,
+// coin_source.*, prompt_sections.* and custom_prompt were invisible to schema=
+// and to UNCLASSIFIED. A tag walk cannot see what a MarshalJSON method writes,
+// and a hand map of "where the '-' fields really go" is a second copy that
+// drifts (canon 53: exercise the production call site). So the enumeration
+// goes THROUGH the marshaller: populate every field by reflection, json.Marshal
+// it once per strategy type (ai_trading emits ai_config, grid_trading emits
+// grid_config — MarshalJSON writes one or the other, never both), decode, and
+// walk the union of the key paths.
 func EnumerateSchemaKnobs() []string {
-	seen := map[string]bool{}
-	var out []string
-	var walk func(t reflect.Type, prefix string, depth int)
-	walk = func(t reflect.Type, prefix string, depth int) {
-		if depth > 6 || t == nil {
-			return
-		}
-		for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
-			t = t.Elem()
-		}
-		if t.Kind() != reflect.Struct {
-			return
-		}
-		for i := 0; i < t.NumField(); i++ {
-			f := t.Field(i)
-			tag := strings.Split(f.Tag.Get("json"), ",")[0]
-			if tag == "" || tag == "-" {
-				continue
-			}
-			path := tag
-			if prefix != "" {
-				path = prefix + "." + tag
-			}
-			ft := f.Type
-			for ft.Kind() == reflect.Ptr || ft.Kind() == reflect.Slice {
-				ft = ft.Elem()
-			}
-			if ft.Kind() == reflect.Struct {
-				walk(ft, path, depth+1)
-				continue
-			}
-			if !seen[path] {
-				seen[path] = true
-				out = append(out, path)
-			}
-		}
-	}
-	walk(reflect.TypeOf(StrategyConfig{}), "", 0)
-	sort.Strings(out)
+	schemaKnobsOnce.Do(func() {
+		schemaKnobs, schemaKnobsErr = enumerateSchemaKnobsViaMarshal()
+	})
+	out := make([]string, len(schemaKnobs))
+	copy(out, schemaKnobs)
 	return out
 }
 
+// SchemaEnumerationErr reports why EnumerateSchemaKnobs came back empty, if it
+// did. A marshal failure must read as "could not count", never as schema=0.
+func SchemaEnumerationErr() error {
+	EnumerateSchemaKnobs()
+	return schemaKnobsErr
+}
+
+var (
+	schemaKnobsOnce sync.Once
+	schemaKnobs     []string
+	schemaKnobsErr  error
+)
+
+// schemaSentinelKey is the one key every populated map carries. A decoded
+// object whose ONLY key is the sentinel is a map — a leaf, exactly as the
+// tag walk treated maps — not a struct to descend into.
+const schemaSentinelKey = "__knob_schema_map_key__"
+
+// schemaPopulateDepth bounds the populate recursion so a self-referential type
+// can never loop; StrategyConfig's deepest leaf sits well inside it.
+const schemaPopulateDepth = 12
+
+// schemaStrategyTypes are the values MarshalJSON branches on (strategy.go).
+var schemaStrategyTypes = []string{"ai_trading", "grid_trading"}
+
+func enumerateSchemaKnobsViaMarshal() ([]string, error) {
+	paths := map[string]bool{}
+	for _, st := range schemaStrategyTypes {
+		keys, err := marshalledSchemaPaths(st)
+		if err != nil {
+			return nil, err
+		}
+		for _, k := range keys {
+			paths[k] = true
+		}
+	}
+	out := make([]string, 0, len(paths))
+	for p := range paths {
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// populatedStrategyConfig returns a StrategyConfig with every exported field
+// set to a non-zero value (so no omitempty drops it) and the given strategy
+// type. The tests use it to exercise the same marshal the enumeration does.
+func populatedStrategyConfig(strategyType string) StrategyConfig {
+	var cfg StrategyConfig
+	populateForSchema(reflect.ValueOf(&cfg).Elem(), 0)
+	cfg.StrategyType = strategyType
+	return cfg
+}
+
+// marshalledSchemaPaths marshals a fully populated config through the
+// production MarshalJSON and returns the dotted key paths it wrote.
+func marshalledSchemaPaths(strategyType string) ([]string, error) {
+	cfg := populatedStrategyConfig(strategyType)
+	b, err := json.Marshal(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("marshal populated %s config: %w", strategyType, err)
+	}
+	return jsonKeyPaths(b)
+}
+
+// jsonKeyPaths decodes marshalled JSON and returns every leaf key path.
+// Objects descend; arrays read element 0 (the path carries no index, as the
+// tag walk's slice strip did); an object holding only the sentinel is a map
+// and ends the path; anything else is a leaf.
+func jsonKeyPaths(b []byte) ([]string, error) {
+	var v any
+	if err := json.Unmarshal(b, &v); err != nil {
+		return nil, fmt.Errorf("decode marshalled config: %w", err)
+	}
+	seen := map[string]bool{}
+	var walk func(v any, prefix string)
+	walk = func(v any, prefix string) {
+		switch t := v.(type) {
+		case map[string]any:
+			if _, isMap := t[schemaSentinelKey]; (isMap && len(t) == 1) || len(t) == 0 {
+				if prefix != "" {
+					seen[prefix] = true
+				}
+				return
+			}
+			for k, child := range t {
+				p := k
+				if prefix != "" {
+					p = prefix + "." + k
+				}
+				walk(child, p)
+			}
+		case []any:
+			if len(t) == 0 {
+				if prefix != "" {
+					seen[prefix] = true
+				}
+				return
+			}
+			walk(t[0], prefix)
+		default:
+			if prefix != "" {
+				seen[prefix] = true
+			}
+		}
+	}
+	walk(v, "")
+	out := make([]string, 0, len(seen))
+	for p := range seen {
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+// populateForSchema sets every settable field under v to a non-zero value:
+// pointers allocated, slices of length 1, maps with the sentinel key, bools
+// true, numbers 1, strings "x". Unexported fields are left alone (time.Time
+// marshals through its own method and is a leaf either way).
+func populateForSchema(v reflect.Value, depth int) {
+	if depth > schemaPopulateDepth || !v.CanSet() {
+		return
+	}
+	switch v.Kind() {
+	case reflect.Ptr:
+		p := reflect.New(v.Type().Elem())
+		populateForSchema(p.Elem(), depth+1)
+		v.Set(p)
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			if v.Type().Field(i).PkgPath != "" {
+				continue // unexported
+			}
+			populateForSchema(v.Field(i), depth+1)
+		}
+	case reflect.Slice:
+		if v.Type().Elem().Kind() == reflect.Uint8 {
+			// []byte marshals as a base64 string (a leaf); json.RawMessage
+			// must hold valid JSON.
+			v.SetBytes([]byte(`"x"`))
+			return
+		}
+		s := reflect.MakeSlice(v.Type(), 1, 1)
+		populateForSchema(s.Index(0), depth+1)
+		v.Set(s)
+	case reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			populateForSchema(v.Index(i), depth+1)
+		}
+	case reflect.Map:
+		m := reflect.MakeMapWithSize(v.Type(), 1)
+		k := reflect.New(v.Type().Key()).Elem()
+		if k.Kind() == reflect.String {
+			k.SetString(schemaSentinelKey)
+		} else {
+			populateForSchema(k, depth+1)
+		}
+		val := reflect.New(v.Type().Elem()).Elem()
+		populateForSchema(val, depth+1)
+		m.SetMapIndex(k, val)
+		v.Set(m)
+	case reflect.Interface:
+		if v.NumMethod() == 0 {
+			v.Set(reflect.ValueOf("x"))
+		}
+	case reflect.Bool:
+		v.SetBool(true)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		v.SetInt(1)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		v.SetUint(1)
+	case reflect.Float32, reflect.Float64:
+		v.SetFloat(1)
+	case reflect.String:
+		v.SetString("x")
+	}
+}
+
+// knobAIConfigPrefix is the envelope MarshalJSON nests the json:"-"
+// compatibility fields under. LookupKnob strips it for an exact match so a
+// dotted display key (risk_control.min_risk_reward_ratio) can be a table key.
+const knobAIConfigPrefix = "ai_config."
+
 // LookupKnob returns the registry entry for a schema path.
+//
+// Order: exact path → exact path with the ai_config. envelope stripped → the
+// json LEAF name. The leaf fallback stays: the table is still keyed mostly by
+// leaf, and removing it would leave ~150 enumerated paths UNCLASSIFIED — a
+// separate wave. Documented rather than hidden: a leaf name can collide across
+// structs, and where it does the leaf's classification wins, which is why a
+// leaf that means something different under one parent gets an EXACT entry
+// (ai_config.indicators.external_data_sources.* — see the table).
 func LookupKnob(path string) (KnobEntry, bool) {
-	if e, ok := knobRegistry[path]; ok {
-		return e, ok
+	e, ok, _ := lookupKnob(path)
+	return e, ok
+}
+
+// knobMatch says HOW a path was classified, so the counts can be told apart.
+type knobMatch int
+
+const (
+	knobNoMatch knobMatch = iota
+	knobExact
+	knobExactStripped
+	knobLeafFallback
+)
+
+func lookupKnob(path string) (KnobEntry, bool, knobMatch) {
+	return lookupKnobIn(knobRegistry, path)
+}
+
+// lookupKnobIn is LookupKnob's body over a given table (the tests pass a
+// local one rather than mutating the shared registry).
+func lookupKnobIn(reg map[string]KnobEntry, path string) (KnobEntry, bool, knobMatch) {
+	if e, ok := reg[path]; ok {
+		return e, true, knobExact
 	}
-	// The table is keyed by json LEAF name; reflection yields DOTTED paths.
-	// Fall back to the leaf so the two agree. Documented rather than hidden:
-	// a leaf name can collide across structs, and where it does the first
-	// classification wins — which is why the 2026-09-03 sweep records the
-	// enumerated-vs-tagged gap in the report instead of claiming completeness.
+	if strings.HasPrefix(path, knobAIConfigPrefix) {
+		if e, ok := reg[strings.TrimPrefix(path, knobAIConfigPrefix)]; ok {
+			return e, true, knobExactStripped
+		}
+	}
 	if i := strings.LastIndex(path, "."); i >= 0 {
-		e, ok := knobRegistry[path[i+1:]]
-		return e, ok
+		if e, ok := reg[path[i+1:]]; ok {
+			return e, true, knobLeafFallback
+		}
 	}
-	return KnobEntry{}, false
+	return KnobEntry{}, false, knobNoMatch
 }
 
 // KnobSummary is what the boot line reports — counted, never typed.
 type KnobSummary struct {
 	Total, Live, Suspended, Advisory, DisplayOnly, Ineffective, Candidate, Infra, Folded int
-	EnvShadows                                                                           int
-	EnvShadowPaths                                                                       []string
+
+	// EnvShadows is nil until something COUNTS the env vars that shadow a
+	// stored knob. Nothing does yet (W1 (f), 2026-09-23: zero writers), so the
+	// boot line prints "env-shadows=n/a (not counted)" and the API omits the
+	// key — a counter with no writer printed 0, a fabricated value (L7).
+	EnvShadows     *int
+	EnvShadowPaths []string
 }
 
 // KnobStatusSummary counts the registry by status.
@@ -173,11 +374,20 @@ func KnobStatusSummary() KnobSummary {
 }
 
 // KnobRegistryBootLine reports the registry — every field READ from it.
+//
+// schema= is the number of key paths the production MarshalJSON writes (see
+// EnumerateSchemaKnobs) — since W1 (f) that includes the ai_config.* paths of
+// the json:"-" compatibility structs. A value the process could not compute
+// prints n/a with the reason, never a number (L7).
 func KnobRegistryBootLine() string {
 	s := KnobStatusSummary()
-	fields := len(EnumerateSchemaKnobs())
+	paths := EnumerateSchemaKnobs()
+	schema := strconv.Itoa(len(paths))
+	if err := SchemaEnumerationErr(); err != nil {
+		schema = "n/a (enumeration failed: " + err.Error() + ")"
+	}
 	unclassified := 0
-	for _, p := range EnumerateSchemaKnobs() {
+	for _, p := range paths {
 		if _, ok := LookupKnob(p); !ok {
 			unclassified++
 		}
@@ -186,8 +396,12 @@ func KnobRegistryBootLine() string {
 	if unclassified > 0 {
 		warn = fmt.Sprintf(" · ⚠ %d UNCLASSIFIED", unclassified)
 	}
-	return fmt.Sprintf("settings: schema=%d classified=%d live=%d ineffective=%d candidate-unverified=%d suspended=%d advisory=%d display-only=%d infra=%d folded=%d · env-shadows=%d%s",
-		fields, s.Total, s.Live, s.Ineffective, s.Candidate, s.Suspended, s.Advisory, s.DisplayOnly, s.Infra, s.Folded, s.EnvShadows, warn)
+	envShadows := "n/a (not counted)"
+	if s.EnvShadows != nil {
+		envShadows = strconv.Itoa(*s.EnvShadows)
+	}
+	return fmt.Sprintf("settings: schema=%s classified=%d live=%d ineffective=%d candidate-unverified=%d suspended=%d advisory=%d display-only=%d infra=%d folded=%d · env-shadows=%s%s",
+		schema, s.Total, s.Live, s.Ineffective, s.Candidate, s.Suspended, s.Advisory, s.DisplayOnly, s.Infra, s.Folded, envShadows, warn)
 }
 
 // AuditDeadKnobs2026_09_03 is the audit's fifteen, by schema path, so the
@@ -197,11 +411,19 @@ func KnobRegistryBootLine() string {
 // were DELETED from the struct (unreachable since the P2 session-scope
 // redesign; nothing read them) — they are no longer schema fields, so they
 // leave this list rather than being classified.
+//
+// W1 (f) (2026-09-23): the paths are the REAL marshalled paths. The list read
+// "risk_control.*" and "indicator_config.external_data_sources" — the first is
+// shorthand for what MarshalJSON writes under ai_config, the second exists
+// nowhere (the struct field is Indicators, tagged "indicators"). Neither was
+// ever in the schema walk, which skipped json:"-"; the leaf fallback in
+// LookupKnob is the only reason the old spellings resolved at all.
+// TestAuditDeadKnobsAreInTheSchemaWalk pins every entry to the enumeration.
 var AuditDeadKnobs2026_09_03 = []string{
-	"risk_control.max_contracts_enabled",
-	"risk_control.notional_cap_enabled",
-	"risk_control.max_margin_usage",
-	"indicator_config.external_data_sources",
+	"ai_config.risk_control.max_contracts_enabled",
+	"ai_config.risk_control.notional_cap_enabled",
+	"ai_config.risk_control.max_margin_usage",
+	"ai_config.indicators.external_data_sources",
 }
 
 // UILabel is what the Studio renders beside a field. The two failure modes get
