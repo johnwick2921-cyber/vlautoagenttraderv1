@@ -75,8 +75,7 @@ func (at *AutoTrader) ledgerExplainsPosition(symbol, side string, now time.Time)
 	// (i) Picture: working, or place_pending with a submission stamp.
 	if rows, err := at.store.PictureHtfRecoverableAll(); err == nil {
 		for _, p := range rows {
-			stamped := p.Stage == store.StateWorking || (p.Stage == store.StatePlacePending && p.SubmittedAt > 0)
-			if !stamped || positionSide(p.Direction) != side || !pictureRowOnAccount(p, acct, root) {
+			if !store.PictureSendStarted(p) || positionSide(p.Direction) != side || !pictureRowOnAccount(p, acct, root) {
 				continue
 			}
 			return fmt.Sprintf("picture %s %s (%s)", p.OppKey, side, p.Stage), true
@@ -108,7 +107,7 @@ func (at *AutoTrader) ledgerExplainsPosition(symbol, side string, now time.Time)
 				if p.SignalID != "" {
 					signals[p.SignalID] = "picture " + p.OppKey
 				}
-				if p.Stage == "filled" && positionSide(p.Direction) == side && pictureRowOnAccount(p, acct, root) &&
+				if p.Stage == store.StateFilled && positionSide(p.Direction) == side && pictureRowOnAccount(p, acct, root) &&
 					now.Sub(p.UpdatedAt) >= 0 && now.Sub(p.UpdatedAt) < window {
 					return fmt.Sprintf("picture %s %s filled %s ago (not yet materialized)", p.OppKey, side, now.Sub(p.UpdatedAt).Round(time.Second)), true
 				}

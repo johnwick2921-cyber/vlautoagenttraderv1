@@ -163,8 +163,7 @@ func (at *AutoTrader) entryLatchLedgers() ([]string, error) {
 		return nil, fmt.Errorf("picture ledger: %w", err)
 	}
 	for _, p := range prows {
-		stage := strings.ToLower(strings.TrimSpace(p.Stage))
-		if stage != store.StateWorking && !(stage == store.StatePlacePending && p.SubmittedAt > 0) {
+		if !store.PictureSendStarted(p) {
 			continue
 		}
 		if strings.TrimSpace(p.Account) != "" && !strings.EqualFold(p.Account, acct) {
