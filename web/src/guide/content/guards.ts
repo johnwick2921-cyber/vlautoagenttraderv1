@@ -64,6 +64,18 @@ export const guards: GuideSection = {
     { kind: 'h', text: 'Which AddOn build is actually running' },
     {
       kind: 'p',
+      text: "An AI entry becomes a position only when NinjaTrader reports a fill for that exact order. Each entry is matched by its own signal id. A fill records the position at the real fill price. A rejection records the order as rejected, with no position and no 'Filled' alert. No answer within about three seconds leaves the order recorded as submitted and unconfirmed, with a warning, and no position: if it fills later, the position is picked up from NinjaTrader's own position list. Before this, an entry that was only queued, or even rejected, was recorded as an open position at the market price, and a fill belonging to an armed or Picture order could be recorded as the AI's.",
+    },
+    {
+      kind: 'p',
+      text: "A short position is seen as a position. NinjaTrader reports a short with a negative quantity, and the check run before an AI entry used to read that as flat, so an AI entry could net against a held short. The one-open-position rule and the same-side checks also compared 'long' against the stored 'LONG' and never fired; they now read sides the same way everywhere.",
+    },
+    {
+      kind: 'p',
+      text: "A stop entry that never reached NinjaTrader no longer cancels the plan's other arms. Only an order that was sent, or whose send failed after it was recorded, counts as 'placed' and closes the plan to its other arms.",
+    },
+    {
+      kind: 'p',
       text: "Editing the AddOn source changes nothing until you recompile it in NinjaTrader (F5) and restart NT8 — NinjaTrader keeps executing the DLL it last compiled. The bot now prints, at every boot, the build id it has RECEIVED on the wire next to the one it expects: '🔌 nt8 addon: build_id=… expected=… match=yes|NO'. It says NO — loudly, every boot — until a frame from the running AddOn proves otherwise. A build id read from our own source would report success for a change that never landed, which is precisely how a distributed change gets believed without being made.",
     },
     {

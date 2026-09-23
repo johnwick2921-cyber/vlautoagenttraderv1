@@ -186,3 +186,36 @@ These are confirmed at the base: D1, D8, D9, D11 (G1, proven by execution), D12,
 10. Guide + checklist.
 
 Every item is built RED first at the production call site (canon 53), and the full `go test -race ./...` passes at head before each report.
+
+## CTO rulings (msg `1790150181685-5364-000001`, 2026-09-23 07:56Z)
+
+All nineteen defaults were accepted. The additions:
+
+| Q | Addition |
+|---|---|
+| Q6 | The strict refusal of Picture is VISIBLE on the 📷 boot line and on the plan card |
+| Q8 | `refuse()` may move only `place_pending` / `confirmed` rows |
+| Q9 | The exclusion is by the caller's own signal id only. The pinned wiring test and a `latch=wired\|UNWIRED` boot line are required |
+| Q11 | The collapsed `trader_orders` rows are separated |
+| Q14 | The breaker trip and the daily force-flat trip call the withdraw primitive. If that is more than wiring plus tests, it goes first in W1, said out loud |
+| Q17 | The agent-chat `OpenLong` goes through `admitEntry` |
+| Defect 4 | Own-symbol only plus a per-symbol cache key, with a test that an ES frame never produces an MNQ claim |
+
+**Split.** Beyond about 3,000 lines, W0 splits into two PRs on the same lineage:
+
+| PR | Scope |
+|---|---|
+| W0a | the stop-entry sent outcome, CLASS 160, side casing, the latch |
+| W0b | `admitEntry` + the matrix, G1, the Picture prerequisites + C, (c), (f) with the trip withdraw |
+
+## W0a as delivered (this PR)
+
+| Item | Commit(s) | What |
+|---|---|---|
+| Defect 6 | `7850b7d4` | A never-sent stop entry no longer cancels its siblings. The outcome is NOT_SENT / HELD / COMMITTED |
+| CLASS 160 (d) | `8edf3d97` | An NT8 AI open becomes a position only on a fill for its own signal. The order row is keyed by signal |
+| Canon 28 (Q10 / Q12) | `b4978ced` | One side canonicalizer at six sites. A held SHORT is seen, and leg 7 and the same-side guards are live |
+| Latch (b) | `06c18bdc`, `27e01d09` | One entry latch in the four entry functions, with production evidence wired, a pinned wiring test and the 🚦 boot line |
+
+- No existing test or golden moved for leg 7; the full trader tree is green.
+- W0b (`admitEntry`, the matrix, G1, the Picture prerequisites + C, (c), (f)) follows on a branch stacked on this one.

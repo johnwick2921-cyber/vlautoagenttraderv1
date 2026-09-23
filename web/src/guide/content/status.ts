@@ -94,12 +94,22 @@ export const status: GuideSection = {
       kind: 'p',
       text: "Where to read it: the 🔒 maintenance boot line; GET /api/maintenance (held, job, since, sends still in flight, whether the bot has drained, and the AddOn's acknowledgement); and GET /api/installation-gate, the one verdict an update needs before it may continue. That gate checks every trader and every NinjaTrader account at once. It fails while any planner read is running, while any entry send or queued entry is in flight, while any trader is not a NinjaTrader TCP trader, while the AddOn has not acknowledged this hold, while any non-SIM connection is connected, while any NinjaTrader connection is between states (connecting, connection lost), and while any account holds a position or a working order of any kind. A trader that ran once and has since been removed is listed but only blocks the gate if it is still running. Any leg it cannot check counts as a failure. The gate-block table counts refusals as 'maintenance_hold'. An entry that was waiting in the reconnect queue when the hold landed is dropped, never sent later, and counted as 'maintenance_drop'. If a write of it had already started, it is counted as 'maintenance_drop_attempted' and stays pending until it is reconciled with NinjaTrader.",
     },
+    { kind: 'h', text: 'One entry at a time (the entry latch)' },
+    {
+      kind: 'p',
+      text: "Four ways can send a new entry to NinjaTrader: the AI decision, an armed order from the plan, a Picture HTF entry, and the side doors (agent chat, the debug test trade, the test-arm check). Each used to check only its own records, so two of them could each send an entry for the same account and instrument before either fill was visible to the other. Every entry now passes one latch inside the NinjaTrader connection, per account and instrument. The latch refuses the entry when the order book is older than two snapshot intervals or missing, when the book shows a working entry order or the account holds a position on that instrument, when an armed or Picture order is placed and not yet finished, when an entry was sent and has not yet filled or been rejected, or when an entry was sent on that account and instrument in the last 60 seconds. Stops, targets, breakeven moves, cancels and closes never pass through it. A refusal is counted as 'one_entry_latch:<reason>' in the gate-block table and logged once per change of reason. An arm that is refused stays armed and places later. An explicitly authored exit leg is also refused while a position is open (no stored plan has ever authored one).",
+    },
+    {
+      kind: 'p',
+      text: "The boot line '🚦 entry latch' READS whether the latch has its evidence: latch=wired means it checks everything above; latch=UNWIRED means nothing installed its evidence and it lets every entry through, which is a defect to report, never a setting.",
+    },
     { kind: 'h', text: 'The boot ledger, line by line' },
     {
       kind: 'code',
       title: 'the lines printed at startup, in order',
       lines: [
         '🔐 BOOT INTEGRITY OK — rev <sha> [+dirty] · built <ts>',
+        '🚦 entry latch: latch=<wired|UNWIRED|n/a> key=<ACCOUNT|SYMBOL> book≤<2×snapshot interval> recent=1m0s — per trader, READ from the NinjaTrader connection: wired means the one entry latch has its book and ledger evidence  ← W-EXEC-TRUTH W0a',
         '🔒 maintenance: hold=<clear|held|unreadable|unconfigured> job=<id|n/a> since=<time|n/a> addon_ack=<held|released job=<id> build=<id>|n/a> — the installation update hold, every field READ. addon_ack is n/a at startup because the NinjaTrader AddOn has not connected yet; an AddOn older than 2026-09-22-m2 never acks, so it stays n/a  ← W-ONE-BUTTON M2',
         '🧾 P&L surfaces: <N> aggregators strict-corrected, 0 raw (corrected-column guard) — every P&L figure the model and the dashboard read is pnl_corrected; unresolved rows are counted and excluded, never coerced',
         '🛑 exits: stop=max(anchor+clr, 1.5×ATR5m) · anchor_max=3.0×ATR5m · BE=n/a(strategy) · trail=n/a(strategy) · seam=SUSPENDED(env) · size=1 · re-arm-after-sweep=on (0B) — the whole exit posture, every field READ from the source the mechanics honour: BE/trail print n/a until each trader loads its strategy, then on/off from the strategy toggles; seam comes from env EXIT_MECHS_SUSPENDED (class NN)',

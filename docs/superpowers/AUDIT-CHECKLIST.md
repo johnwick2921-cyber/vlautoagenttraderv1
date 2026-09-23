@@ -6129,6 +6129,8 @@ That happens for an entry that never left this process. If the queued entry is t
 
 **Status:** M2 does not fabricate a close for it. A hold drop forgets the entry, logs ERROR naming the signal and `db_open_positions`, raises P1, and the installation gate stays closed on cutover leg 1 until an operator reconciles. **The fix needs its own owner-ruled wave:** record the signal id as the order id, and do not record a position before a received fill.
 
+**Fixed in W-EXEC-TRUTH W0a (`fix/exec-admission-gate`, 8edf3d97).** The probe work found it wider than the entry above: a REJECTED entry was recorded OPEN too, the AI poll adopted another path's fill through the shared `lastEntrySignalID`, and every AI order row collapsed onto one `"<nil>"` row. NT8 opens are now keyed by the signal the entry returns, and a position is recorded only on a fill for THAT signal (`RecentFillFor`; a new `RecentRejectFor` ring for rejects). No evidence leaves the order row NEW and records no position; the maintenance drop settles that row CANCELED. Pinned: `TestQueuedAIEntryWithNoFillRecordsNoPosition`, `TestRejectedAIEntryRecordsNoPosition`, `TestFilledAIEntryRecordsThePositionAtItsFill`, `TestAnotherPathsFillIsNeverTheAIsFill`, `TestTwoAIEntriesAreTwoOrderRows`, `TestDroppedAIEntrySettlesItsOrderRowAndNoPositionExists`.
+
 ## CLASS 161 — A HAND-SET BUILD LABEL TREATED AS PROOF OF WHAT IS RUNNING (born 2026-09-22, feat/one-button-updates, W-ONE-BUTTON M1)
 
 **Shape.** The AddOn's `VL_BUILD_ID` is a constant a human bumps "on any additive wire change"
@@ -6166,3 +6168,25 @@ to owner ruling on "no new protocol work").
 - The containment (`deskSafe`) kept the loop alive but turned the line into UNKNOWN, for as long as any plan named a reference level.
 
 **Probe:** for every pointer field a producer documents as optional, grep its readers for a bare `*x.Field`. Drive the reader at its production entry with the nil case; the fixture must use the producer's real nil-case shape. Fixed in M2.1: the line prints `formed_close_ms=n/a` (L7).
+
+## CLASS NN (assigned at merge) — a refusal that returns the same value as a send
+
+**Found:** 2026-09-23 in W-EXEC-TRUTH W0 (the read-only map, proven by an overlay test and by live rows) [A].
+**Shape.** `placeOneStopEntry` returned a bool meaning only "the hold refused this". A guard cancel ("never placed"), an un-adjudicated verdict, a refused slot, an AddOn too old to build the order and a real send all returned the SAME value, and the caller read it as "sent": it latched `placedThisPass` and cancelled every other arm of the plan `one_live_entry: <S> placed`. Live: rows 169 and 176 were cancelled that way 0.3 ms after the "placed" row itself was cancelled "never placed" (2026-09-21 00:30:59, 2026-09-22 05:50:10 UTC).
+**Probe:** for every function whose return value decides whether a SEND happened, list its non-send outcomes and check each is distinguishable from a send at the caller. A two-valued return with more than two outcomes is the smell. Fixed in W0a: an explicit outcome (NOT_SENT / HELD / COMMITTED; a failure after the ledger stamp is COMMITTED, class 81). Pinned: `TestUnsentStopEntryNeverCancelsTheSiblingArm`, `TestPlaceOneStopEntryOutcomeFollowsTheLedgerStamp`.
+
+## CLASS NN (assigned at merge) — a safety leg fed a value compared BEFORE it was canonicalized
+
+**Found:** 2026-09-23 in W-EXEC-TRUTH W0 [A], by probe at the production writers.
+**Shape.** Three safety checks were dead for one reason: the value was compared raw.
+- EntryGate leg 7 (one open position) is fed by builders that filtered `p.Side == "long" || p.Side == "short"` while every writer stores `"LONG"`/`"SHORT"`: leg 7 never saw a position (the builder even lower-cased the value — AFTER the comparison).
+- The `executeOpen*` same-side guards compared NT8's `"LONG"` against `"long"`.
+- `ntHeldPosition` required `positionAmt > 0`, but a short is signed negative on NT8 and on every crypto broker: a held SHORT read as flat, so the AI's pre-open reconcile let an entry net onto it.
+**Probe:** for every comparison against a literal side/state/symbol, find where the compared value ENTERS and check it passes through the one canonicalizer before any comparison (canon 28). A test fixture that writes the value in the reader's casing hides it — drive the check with a row the PRODUCTION writer wrote. Fixed in W0a: `positionSide` / `brokerPositionSide` at every entry point. Pinned: `TestNtHeldPositionSeesBothSidesOnTheWire`, `TestDecisionLegSevenSeesAStoredPosition`, `TestArmLegSevenSeesAStoredPosition`, `TestOrderPathsReadBrokerSidesCanonically`.
+
+## CLASS NN (assigned at merge) — four doors to the broker, no lock between them
+
+**Found:** 2026-09-23 in W-EXEC-TRUTH W0 (dispatch D10, confirmed by probe: three signal frames from three paths back to back on one TCPTrader with a position open) [A].
+**Shape.** The AI decision, the armed path, Picture HTF and the side doors (agent chat, the debug test trade, the test-arm seam) each checked only their OWN evidence before sending, and their B3 dedupe keys never collide across paths. Nothing serialized the four entry functions, so two producers could each send an entry for one account and instrument inside the window before either fill was visible to the other.
+**Probe:** list every function that puts an ENTRY on the wire and every caller of each. If two callers read different evidence and no lock spans the send, sequence them back to back over a real in-process connection and count the frames. Fixed in W0a: one latch inside the four entry functions, per account|wire-symbol, after the maintenance permit and before B3, fed by the same book and ledger definitions the armed path uses; the 🚦 boot line READS whether it is wired. Pinned: `TestEntryLatchRefusesAllFourEntryFunctionsOnEachClause`, `TestEntryLatchQueuedThenRecentThenOpen`, `TestEntryLatchSpansTradersOnOneAccount`, `TestEntryLatchRefusalDoesNotConsumeTheDedupeSlot`, `TestEntryLatchLedgersListPlacedRowsOnTheAccount`, `TestNewAutoTraderCallsWireNT8EntryLatchUnconditionally`.
+
