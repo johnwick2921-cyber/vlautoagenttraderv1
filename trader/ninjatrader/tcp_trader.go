@@ -66,6 +66,9 @@ type TCPTrader struct {
 	// recentRejects is the bounded ring of broker rejections by signal
 	// (W-EXEC-TRUTH W0 (d), CLASS 160). Guarded by mu.
 	recentRejects []recentReject
+	// latchSource is the W0 (b) entry latch's evidence (nil = UNWIRED = allow;
+	// production wiring is wireNT8EntryLatch, pinned). Guarded by mu.
+	latchSource *EntryLatchSource
 
 	// closedAt records the wall-clock (ms) of the most recent FILL-CONFIRMED close
 	// (position_close frame) per "SYMBOL|SIDE" for THIS trader's bound account. The
@@ -511,6 +514,15 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 		return nil, err
 	}
 	defer releasePermit()
+	// W-EXEC-TRUTH W0 (b) — the ONE entry latch: after the permit, BEFORE B3
+	// (a latch refusal never consumes the dedupe slot), held across the
+	// ledger stamp and the send.
+	latchDone, lerr := t.acquireEntryLatch("market entry " + side + " on " + symbol)
+	if lerr != nil {
+		return nil, lerr
+	}
+	latchSent := false
+	defer func() { latchDone(latchSent) }()
 
 	// B3 — dupe guard + rate limiter at the order-submission chokepoint: a
 	// replayed / double-fired entry (same account|side|symbol|qty within a bar) is
@@ -592,7 +604,9 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	t.lastEntrySignalID = signalID
 	t.mu.Unlock()
 
-	if err := t.server.SendSignal(payload); err != nil {
+	serr := t.server.SendSignal(payload)
+	latchSent = sendAttempted(serr)
+	if err := serr; err != nil {
 		return nil, fmt.Errorf("ninjatrader/tcp: send signal: %w", err)
 	}
 	return map[string]interface{}{
@@ -628,6 +642,15 @@ func (t *TCPTrader) MarketEntryWithProtection(side string, quantity float64, sl,
 		return "", err
 	}
 	defer releasePermit()
+	// W-EXEC-TRUTH W0 (b) — the ONE entry latch: after the permit, BEFORE B3
+	// (a latch refusal never consumes the dedupe slot), held across the
+	// ledger stamp and the send.
+	latchDone, lerr := t.acquireEntryLatch("picture entry " + side + " on " + t.symbol)
+	if lerr != nil {
+		return "", lerr
+	}
+	latchSent := false
+	defer func() { latchDone(latchSent) }()
 	if t.guard != nil {
 		key := fmt.Sprintf("picture|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), t.symbol, quantity)
 		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
@@ -671,7 +694,9 @@ func (t *TCPTrader) MarketEntryWithProtection(side string, quantity float64, sl,
 	t.mu.Lock()
 	t.lastEntrySignalID = signalID
 	t.mu.Unlock()
-	if err := t.server.SendSignal(payload); err != nil {
+	serr := t.server.SendSignal(payload)
+	latchSent = sendAttempted(serr)
+	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send picture signal: %w", err)
 	}
 	return signalID, nil
@@ -696,6 +721,15 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 		return "", err
 	}
 	defer releasePermit()
+	// W-EXEC-TRUTH W0 (b) — the ONE entry latch: after the permit, BEFORE B3
+	// (a latch refusal never consumes the dedupe slot), held across the
+	// ledger stamp and the send.
+	latchDone, lerr := t.acquireEntryLatch("armed limit " + side + " on " + symbol)
+	if lerr != nil {
+		return "", lerr
+	}
+	latchSent := false
+	defer func() { latchDone(latchSent) }()
 	if t.guard != nil {
 		key := fmt.Sprintf("armed|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
 		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
@@ -738,7 +772,9 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 	t.mu.Lock()
 	t.lastEntrySignalID = signalID
 	t.mu.Unlock()
-	if err := t.server.SendSignal(payload); err != nil {
+	serr := t.server.SendSignal(payload)
+	latchSent = sendAttempted(serr)
+	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send armed signal: %w", err)
 	}
 	return signalID, nil
@@ -780,6 +816,15 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 		return "", err
 	}
 	defer releasePermit()
+	// W-EXEC-TRUTH W0 (b) — the ONE entry latch: after the permit, BEFORE B3
+	// (a latch refusal never consumes the dedupe slot), held across the
+	// ledger stamp and the send.
+	latchDone, lerr := t.acquireEntryLatch("stop-entry " + side + " on " + symbol)
+	if lerr != nil {
+		return "", lerr
+	}
+	latchSent := false
+	defer func() { latchDone(latchSent) }()
 	if t.guard != nil {
 		key := fmt.Sprintf("stopentry|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
 		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
@@ -822,7 +867,9 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 	t.mu.Lock()
 	t.lastEntrySignalID = signalID
 	t.mu.Unlock()
-	if err := t.server.SendSignal(payload); err != nil {
+	serr := t.server.SendSignal(payload)
+	latchSent = sendAttempted(serr)
+	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send stop-entry signal: %w", err)
 	}
 	return signalID, nil
