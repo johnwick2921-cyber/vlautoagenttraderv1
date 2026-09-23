@@ -204,3 +204,76 @@ func ResolveStructureMap(cfg *StrategyConfig) (enabled bool, source string) {
 	}
 	return *cfg.DayPlan.StructureMap, SourceSaved
 }
+
+// ── W-EXEC-TRUTH W3 (2026-09-23) — the entry-policy knobs ───────────────────
+//
+// The policy tokens are spelled here AND in kernel/entry_policy.go (store
+// cannot import kernel); kernel's TestStoreEntryPolicyTokensMatchKernel pins
+// the two spellings together.
+const (
+	EntryPolicyMarketInZone = "market_in_zone"
+	EntryPolicyPlannedOrder = "planned_order"
+	EntryPolicyLegacy       = "legacy"
+	// EntryPolicyDefaultShipped is R4: market_in_zone is the default for newly
+	// authored plans.
+	EntryPolicyDefaultShipped = EntryPolicyMarketInZone
+	ZoneMaxPtsDefault         = 10.0
+	ZoneRestMaxMinDefault     = 30
+	MinHoldMinDefault         = 3
+)
+
+// EntryPolicyDefaultValues is the legal value set of day_plan.entry_policy_default.
+func EntryPolicyDefaultValues() []string {
+	return []string{EntryPolicyMarketInZone, EntryPolicyPlannedOrder, EntryPolicyLegacy}
+}
+
+// ResolveEntryPolicyDefault resolves day_plan.entry_policy_default: the saved
+// value when it is one of market_in_zone | planned_order | legacy, else the
+// shipped default market_in_zone — and an unrecognised saved value is NAMED
+// in the source instead of being silently read as the default.
+func ResolveEntryPolicyDefault(c *DayPlanConfig) (string, string) {
+	if c == nil || strings.TrimSpace(c.EntryPolicyDefault) == "" {
+		return EntryPolicyDefaultShipped, SourceShippedDefault
+	}
+	v := strings.ToLower(strings.TrimSpace(c.EntryPolicyDefault))
+	for _, ok := range EntryPolicyDefaultValues() {
+		if v == ok {
+			return v, SourceSaved
+		}
+	}
+	return EntryPolicyDefaultShipped, SourceShippedDefault + " (saved value " + strconv.Quote(c.EntryPolicyDefault) + " is not a policy)"
+}
+
+// ResolveZoneMaxPts resolves day_plan.zone_max_pts (points): a saved positive
+// value, else 10. A saved value ≤ 0 is named in the source.
+func ResolveZoneMaxPts(c *DayPlanConfig) (float64, string) {
+	if c == nil || c.ZoneMaxPts == nil {
+		return ZoneMaxPtsDefault, SourceShippedDefault
+	}
+	if *c.ZoneMaxPts > 0 {
+		return *c.ZoneMaxPts, SourceSaved
+	}
+	return ZoneMaxPtsDefault, SourceShippedDefault + " (saved value " + strconv.FormatFloat(*c.ZoneMaxPts, 'g', -1, 64) + " is not positive)"
+}
+
+// ResolveZoneRestMaxMin resolves day_plan.zone_rest_max_min (minutes): a
+// saved positive value, else 30. The executor's rest cap reads THIS resolver.
+func ResolveZoneRestMaxMin(c *DayPlanConfig) (int, string) {
+	return resolvePositiveInt(c, func(c *DayPlanConfig) *int { return c.ZoneRestMaxMin }, ZoneRestMaxMinDefault)
+}
+
+// ResolveMinHoldMin resolves day_plan.min_hold_min (minutes): a saved positive
+// value, else 3 — the floor on an armed market_in_zone time_hold.
+func ResolveMinHoldMin(c *DayPlanConfig) (int, string) {
+	return resolvePositiveInt(c, func(c *DayPlanConfig) *int { return c.MinHoldMin }, MinHoldMinDefault)
+}
+
+func resolvePositiveInt(c *DayPlanConfig, get func(*DayPlanConfig) *int, def int) (int, string) {
+	if c == nil || get(c) == nil {
+		return def, SourceShippedDefault
+	}
+	if v := *get(c); v > 0 {
+		return v, SourceSaved
+	}
+	return def, SourceShippedDefault + " (saved value " + strconv.Itoa(*get(c)) + " is not positive)"
+}

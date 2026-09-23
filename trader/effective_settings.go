@@ -771,6 +771,24 @@ func buildEffectiveResolvers() map[string]effResolver {
 		v, src := store.ResolveStructureMap(x.cfg)
 		return effResult{value: v, origin: src}
 	})
+	// W-EXEC-TRUTH W3 (2026-09-23) — the entry-policy knobs, each through its
+	// ONE resolver (the write site, the prompt and the boot line read the same).
+	add(dpPath+"entry_policy_default", "store.ResolveEntryPolicyDefault", func(x *effCtx) effResult {
+		v, src := store.ResolveEntryPolicyDefault(x.dp())
+		return effResult{value: v, origin: src}
+	})
+	add(dpPath+"zone_max_pts", "store.ResolveZoneMaxPts", func(x *effCtx) effResult {
+		v, src := store.ResolveZoneMaxPts(x.dp())
+		return effResult{value: v, origin: src}
+	})
+	add(dpPath+"zone_rest_max_min", "store.ResolveZoneRestMaxMin", func(x *effCtx) effResult {
+		v, src := store.ResolveZoneRestMaxMin(x.dp())
+		return effResult{value: v, origin: src}
+	})
+	add(dpPath+"min_hold_min", "store.ResolveMinHoldMin", func(x *effCtx) effResult {
+		v, src := store.ResolveMinHoldMin(x.dp())
+		return effResult{value: v, origin: src}
+	})
 	add(dpPath+"proximity_filter_atr", "trader.(*AutoTrader).proximityFilterATR → kernel.ResolveProximityK", func(x *effCtx) effResult {
 		v := x.at.proximityFilterATR()
 		return effResult{value: v, origin: presenceOrigin(x, v, store.SourceShippedDefault)}

@@ -368,7 +368,7 @@ func TestConfirmResolverRow452HoldMinutes(t *testing.T) {
 		t.Fatalf("the new-authoring write must refuse prose-3 with hold_min absent: %v", err)
 	}
 	// History untouched: the stored-read path never runs the prose check.
-	if _, err := parsePlanDocument(string(fx.Doc), 12, 5, false, 0); err != nil {
+	if _, err := parsePlanDocument(string(fx.Doc), 12, 5, false, AuthoringOpts{}); err != nil {
 		t.Fatalf("a stored row is never re-judged for hold_min: %v", err)
 	}
 	withHold := func(n int) string {

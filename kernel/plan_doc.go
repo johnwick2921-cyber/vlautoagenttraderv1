@@ -178,6 +178,12 @@ func ArmSpecValid(sc PlanScenario) error {
 	if sc.Arm == nil || !sc.Arm.Enabled {
 		return nil // not armed — nothing to validate
 	}
+	// W-EXEC-TRUTH W3 (2026-09-23) — an arm carrying an entry policy (on the arm
+	// or on any leg) is judged by the policy branch. An arm with no policy
+	// anywhere is LEGACY and runs the code below byte-for-byte as before (R4).
+	if armHasPolicy(sc.Arm) {
+		return armSpecValidPolicy(sc)
+	}
 	// Autopsy-response wave (2026-08-27): sweep_reclaim becomes armable ONLY
 	// as a CHAINED arm (wait_confirm) — the arm rests until the scenario's own
 	// confirm{} is machine-MET, then the retrace entry goes live.
@@ -209,6 +215,16 @@ func ArmSpecValid(sc PlanScenario) error {
 	} else if !ArmableCondition(sc.Condition) {
 		return fmt.Errorf("arm enabled on non-armable condition %q (fvg_entry | reject | breakdown_continue | breakup_continue; sweep_reclaim via wait_confirm; breakout_retest is a normal AI play and never arms — GAR-F4)", sc.Condition)
 	}
+	if err := armSplitLock(sc); err != nil {
+		return err
+	}
+	return armPricesValid(sc)
+}
+
+// armSplitLock is the E4 split-leg contract, extracted UNCHANGED (W3) so the
+// legacy path and the policy path refuse a malformed split with the IDENTICAL
+// error strings.
+func armSplitLock(sc PlanScenario) error {
 	a := sc.Arm
 	// E4 (2026-08-30) — split-entry legs. sweep_reclaim ONLY for now; exactly
 	// two; leg 0 = the touch leg resting AT the sweep ref (no chain), leg 1 =
@@ -250,6 +266,14 @@ func ArmSpecValid(sc PlanScenario) error {
 			return fmt.Errorf("arm on %s top-level entry/stop/target must equal leg 1's (legacy readers read the top-level)", sc.ID)
 		}
 	}
+	return nil
+}
+
+// armPricesValid is the bracket-shape tail of ArmSpecValid (extracted
+// UNCHANGED, W3): exact positive prices and the long/short ordering of the
+// arm and every leg.
+func armPricesValid(sc PlanScenario) error {
+	a := sc.Arm
 	if a.Entry <= 0 || a.Stop <= 0 || a.Target <= 0 {
 		return fmt.Errorf("arm on %s needs exact entry/stop/target > 0 (got %.2f/%.2f/%.2f)", sc.ID, a.Entry, a.Stop, a.Target)
 	}
@@ -498,7 +522,7 @@ func planGradeRank(g string) int {
 // schema at the SHIPPED caps (8 levels / 3 scenarios). Any failure → error, which
 // the planner treats as a retryable/fail-closed event.
 func ParsePlanDoc(raw string) (*PlanDoc, error) {
-	return parsePlanDocument(raw, 0, 0, false, 0)
+	return parsePlanDocument(raw, 0, 0, false, AuthoringOpts{})
 }
 
 // ParsePlanDocCapped is ParsePlanDoc with the RESOLVED config caps (max_levels,
@@ -506,7 +530,7 @@ func ParsePlanDoc(raw string) (*PlanDoc, error) {
 // pass validation instead of making every read fail-closed against the hardcoded
 // 8/3.
 func ParsePlanDocCapped(raw string, maxLevels, maxScenarios int) (*PlanDoc, error) {
-	return parsePlanDocument(raw, maxLevels, maxScenarios, true, 0)
+	return parsePlanDocument(raw, maxLevels, maxScenarios, true, AuthoringOpts{})
 }
 
 // ParsePlanDocCappedWithMinRR is ParsePlanDocCapped plus the resolved R:R floor
@@ -514,11 +538,33 @@ func ParsePlanDocCapped(raw string, maxLevels, maxScenarios int) (*PlanDoc, erro
 // misstated r_to_arm_target is auto-corrected to the computed value; minRR <= 0
 // keeps the strict contradiction refusal.
 func ParsePlanDocCappedWithMinRR(raw string, maxLevels, maxScenarios int, minRR float64) (*PlanDoc, error) {
-	return parsePlanDocument(raw, maxLevels, maxScenarios, true, minRR)
+	return parsePlanDocument(raw, maxLevels, maxScenarios, true, AuthoringOpts{MinRR: minRR})
+}
+
+// AuthoringOpts (W-EXEC-TRUTH W3, 2026-09-23) are the RESOLVED knobs a NEW
+// authoring parse applies. The zero value is exactly ParsePlanDocCapped: no R:R
+// auto-correct floor, no policy stamp, no hold floor.
+type AuthoringOpts struct {
+	// MinRR — the resolved R:R floor (see ParsePlanDocCappedWithMinRR).
+	MinRR float64
+	// EntryPolicyDefault — day_plan.entry_policy_default resolved. market_in_zone
+	// | planned_order is STAMPED on every arm it is legal for, BEFORE the
+	// validator runs (R4); "" or legacy stamps nothing.
+	EntryPolicyDefault string
+	// MinHoldMin — day_plan.min_hold_min resolved; ≤0 = no floor.
+	MinHoldMin int
+}
+
+// ParsePlanDocForAuthoring is the new-authoring parse with the resolved W3
+// knobs: the default entry policy is stamped (StampEntryPolicyDefault) before
+// ValidatePlanDocWithCaps, and the armable hold floor runs beside the A5 prose
+// check. A stored reader never calls this — a stored doc is never stamped.
+func ParsePlanDocForAuthoring(raw string, maxLevels, maxScenarios int, opts AuthoringOpts) (*PlanDoc, error) {
+	return parsePlanDocument(raw, maxLevels, maxScenarios, true, opts)
 }
 
 // The boolean is a trusted call-site boundary, never a JSON version switch.
-func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring bool, minRR float64) (*PlanDoc, error) {
+func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring bool, opts AuthoringOpts) (*PlanDoc, error) {
 	js := extractJSONObject(raw)
 	if js == "" {
 		return nil, fmt.Errorf("no JSON object found in planner output")
@@ -527,17 +573,28 @@ func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring boo
 	if err := json.Unmarshal([]byte(js), &doc); err != nil {
 		return nil, fmt.Errorf("plan JSON unmarshal: %w", err)
 	}
+	// W3 R4: the default policy is stamped BEFORE the validator, so the
+	// validator judges the arm the executor will run (ArmSpecValid's legacy
+	// branch refuses acceptance/hold/breakout_retest arms that the policy
+	// branch accepts).
+	if newAuthoring {
+		StampEntryPolicyDefault(&doc, opts.EntryPolicyDefault)
+	}
 	if err := ValidatePlanDocWithCaps(&doc, maxLevels, maxScenarios); err != nil {
 		return nil, err
 	}
 	if newAuthoring && scenarioEconomicsRequired {
-		if err := validateNewScenarioEconomics(&doc, minRR); err != nil {
+		if err := validateNewScenarioEconomics(&doc, opts.MinRR); err != nil {
 			return nil, err
 		}
 	}
 	// W2 A5: a time_hold's stated minutes must be STORED (new authoring only).
 	if newAuthoring {
 		if err := ValidateConfirmHoldProse(&doc); err != nil {
+			return nil, err
+		}
+		// W3 D10: the armable hold floor (CTO ruling 1790181002671).
+		if err := ValidateArmableHoldFloor(&doc, opts.MinHoldMin); err != nil {
 			return nil, err
 		}
 	}

@@ -2052,7 +2052,10 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			rejectHistory = addDistinctReject(rejectHistory, lastErr)
 			continue
 		}
-		d, perr := kernel.ParsePlanDocCappedWithMinRR(raw, maxLevels, scenarioCap, at.armMinRRFor(nil))
+		// W-EXEC-TRUTH W3 (R4): the resolved entry-policy default is stamped at
+		// parse (before the validator) and the armable hold floor runs beside
+		// the A5 prose check — ONE resolution shared with the shadow A/B replay.
+		d, perr := kernel.ParsePlanDocForAuthoring(raw, maxLevels, scenarioCap, at.plannerAuthoringOpts())
 		if perr != nil {
 			lastErr = perr
 			at.logWarnf("📐 planner attempt %d/3 parse/schema rejected: %v", attempt, perr)

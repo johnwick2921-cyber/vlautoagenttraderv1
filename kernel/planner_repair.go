@@ -113,6 +113,15 @@ func lawExcerptsFor(errors string) string {
 	if strings.Contains(errors, "obstacle chain:") {
 		add(RepairObstacleChainLaw)
 	}
+	// W-EXEC-TRUTH W3 (2026-09-23): the market_in_zone zone refusal (trader
+	// write-time hook) and the armable hold floor (ValidateArmableHoldFloor) —
+	// each routes on its OWN marker, never on a shared field token.
+	if strings.Contains(errors, EntryZoneRefusalMarker) {
+		add(RepairEntryZoneLaw)
+	}
+	if strings.Contains(errors, ArmableHoldFloorMarker) {
+		add(RepairArmableHoldFloorLaw)
+	}
 	if len(out) == 0 {
 		add("Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.")
 	}

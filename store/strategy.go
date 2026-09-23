@@ -1126,6 +1126,27 @@ type DayPlanConfig struct {
 	// and breakout_retest default SHADOW per owner ruling). The ARM SEAM is the
 	// only enforcement point; authoring/validation/E8 scoring stay untouched.
 	ConditionStatus map[string]string `json:"condition_status,omitempty"`
+	// W-EXEC-TRUTH W3 (2026-09-23) — STRICT: follow the plan, enter around the
+	// price. EntryPolicyDefault is the entry policy STAMPED at parse on every
+	// arm of a NEWLY authored plan (a stored doc is never stamped):
+	// market_in_zone (empty = the shipped default) — a LIMIT at the far edge of
+	// the planner's economics.entry_zone; planned_order — today's resting order
+	// (legal on reject, fvg_entry and sweep_reclaim leg 0 only; anywhere else the
+	// arm stays legacy); legacy — stamp nothing (the explicit off: prompt and
+	// validator byte-identical to before W3). An unrecognised value resolves to
+	// the shipped default and the source says so (ResolveEntryPolicyDefault).
+	EntryPolicyDefault string `json:"entry_policy_default,omitempty"`
+	// ZoneMaxPts — the widest economics.entry_zone (points) a market_in_zone
+	// arm may carry, judged at write. nil/≤0 = 10 (ResolveZoneMaxPts).
+	ZoneMaxPts *float64 `json:"zone_max_pts,omitempty"`
+	// ZoneRestMaxMin — a resting market_in_zone limit older than this many
+	// minutes (from placed_at_ms) is cancelled "zone rest expired" by the
+	// executor. nil/≤0 = 30 (ResolveZoneRestMaxMin).
+	ZoneRestMaxMin *int `json:"zone_rest_max_min,omitempty"`
+	// MinHoldMin — the floor (minutes) on the RESOLVED hold of an armed
+	// market_in_zone time_hold scenario, refused below it at write (new
+	// authoring only). nil/≤0 = 3 (ResolveMinHoldMin).
+	MinHoldMin *int `json:"min_hold_min,omitempty"`
 }
 
 // DayPlanSessionOverride is a minimal per-session override. Every field is a

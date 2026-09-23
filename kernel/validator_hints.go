@@ -215,6 +215,11 @@ func ValidatorHints() []ValidatorHint {
 		// and a later edit that adds one is checked against the confirm enum.
 		{Site: "planner_repair.go identity=price law", Text: RepairIdentityPriceLaw, Conditions: []string{"sweep_reclaim"}, RuleField: HintFieldConfirmRule},
 		{Site: "planner_repair.go obstacle-chain law", Text: RepairObstacleChainLaw, RuleField: HintFieldConfirmRule},
+		// W-EXEC-TRUTH W3 (2026-09-23) — the zone law names confirm-rule tokens
+		// (touch, time_hold, 1m_mss); the hold-floor law names time_hold and
+		// the two conditions it arms (acceptance, hold — both live by default).
+		{Site: "entry_policy.go entry zone law", Text: RepairEntryZoneLaw, RuleField: HintFieldConfirmRule},
+		{Site: "entry_policy.go armable hold floor law", Text: RepairArmableHoldFloorLaw, Conditions: []string{"acceptance", "hold"}, RuleField: HintFieldConfirmRule},
 	}
 	// CLASS 38 — the entry law Style strings are quoted VERBATIM into the
 	// rejection the model reads ("… not allowed for %s — entry law: %s"), so
