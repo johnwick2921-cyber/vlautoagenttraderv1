@@ -127,6 +127,13 @@ type PlanScenario struct {
 	// this scenario as a resting order with exact deterministic prices. The
 	// LLM chooses WHAT to arm; Go manages WHEN it fills (advisory law holds).
 	Arm *PlanArmSpec `json:"arm,omitempty"`
+	// W-EXEC-TRUTH W5 — a MACHINE-authored scenario (the Picture HTF source,
+	// ScenarioSourcePicture). Absent on every planner-authored scenario: the
+	// planner write path refuses both fields, a P<n> id is legal only with
+	// them, and they reach a plan only through a machine overlay or a machine
+	// plan (plan_machine.go). A planner scenario re-marshals byte-identically.
+	Source  string             `json:"source,omitempty"`
+	Machine *PlanMachineSource `json:"machine,omitempty"`
 }
 
 // PlanArmSpec is the machine-manageable arming contract for one scenario.
@@ -578,6 +585,12 @@ func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring boo
 	// branch refuses acceptance/hold/breakout_retest arms that the policy
 	// branch accepts).
 	if newAuthoring {
+		// W5 D18 — only the machine writes a machine scenario. A planner
+		// output carrying source/machine is refused before anything else, so
+		// the model can never author (or forge) Picture evidence.
+		if err := RefuseModelAuthoredMachineFields(&doc); err != nil {
+			return nil, err
+		}
 		StampEntryPolicyDefault(&doc, opts.EntryPolicyDefault)
 	}
 	if err := ValidatePlanDocWithCaps(&doc, maxLevels, maxScenarios); err != nil {
@@ -775,8 +788,14 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 		}
 		// A5 (F11, fail-register wave): the id format is a contract now — the
 		// cite rule, the status map, the chips and adherence all key on it.
-		if !scenarioIDRe.MatchString(strings.TrimSpace(s.ID)) {
-			return fmt.Errorf("scenario[%d].id %q invalid (format: S1..S99)", i, s.ID)
+		if s.Source == "" && s.Machine == nil {
+			if !scenarioIDRe.MatchString(strings.TrimSpace(s.ID)) {
+				return fmt.Errorf("scenario[%d].id %q invalid (format: S1..S99)", i, s.ID)
+			}
+		} else if err := machineScenarioIdentity(s); err != nil {
+			// W5 — a machine scenario: a known source, its machine record, and
+			// a P<n> id (never the planner's S namespace).
+			return fmt.Errorf("scenario[%d]: %w", i, err)
 		}
 		if !scenarioConds[s.Condition] {
 			return fmt.Errorf("scenario[%d].condition %q invalid", i, s.Condition)
