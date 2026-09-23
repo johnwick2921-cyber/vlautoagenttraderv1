@@ -80,6 +80,9 @@ type TCPServer struct {
 	// installation is under maintenance. flushPending drops queued entries
 	// while it holds; nothing re-queues them.
 	entryHoldCheck atomic.Value
+	// maint (W-ONE-BUTTON M2 site 7): the hold source, what each connection was
+	// told, and the per-connection record (hello epoch + maintenance_ack).
+	maint maintenanceWire
 
 	// E7 capability handshake (2026-08-30): the far-side AddOn's build id,
 	// reported on every heartbeat. Empty until the first heartbeat carries it.
@@ -1176,6 +1179,11 @@ func (s *TCPServer) Start(ctx context.Context) error {
 	go s.drainBarIngest(cctx)
 	// U1 3.3 — wire-liveness line every 60s (not wg-tracked: exits with ctx).
 	go s.livenessReporter(cctx)
+	// W-ONE-BUTTON M2 site 7 — push the installation hold (silent when unheld).
+	s.maint.mu.Lock()
+	s.maint.tick, s.maint.resend = maintenanceTick, maintenanceResend
+	s.maint.mu.Unlock()
+	go s.maintenanceLoop(cctx.Done(), maintenanceTick)
 	s.logger.Info("tcp_server: listening", "addr", s.addr)
 	return nil
 }
@@ -1528,6 +1536,7 @@ func (s *TCPServer) acceptLoop(ctx context.Context) {
 		s.conn = c
 		s.lastAckTime = time.Now()
 		s.connMu.Unlock()
+		s.beginConnectionRecord(c, time.Now()) // W-ONE-BUTTON M2 site 7
 
 		s.logger.Info("tcp_server: client connected", "addr", c.RemoteAddr())
 		s.wg.Add(2)
@@ -1536,6 +1545,9 @@ func (s *TCPServer) acceptLoop(ctx context.Context) {
 		// A3 (G2) — declare the bound-account allowlist BEFORE flushing any queued
 		// signals, so the AddOn's allowlist is established before it can execute one.
 		s.sendAccountAllowlist(c)
+		// W-ONE-BUTTON M2 site 7 — a held installation tells the AddOn BEFORE
+		// the flush (which itself drops queued entries while held).
+		s.pushMaintenance(c, time.Now())
 		// Flush any signals queued during the disconnect window.
 		_ = s.flushPending()
 		// Plan 4.4 Stage 2 — auto-subscribe to bars on every accept so
@@ -1938,8 +1950,10 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 					s.farSideBuild.Store(p.BuildID)
 				}
 			}
+			s.recordHello(c, p, time.Now()) // W-ONE-BUTTON M2 (Q3): the epoch, per connection
 			s.logger.Info("tcp_server: hello handshake OK",
-				"protocol_version", p.ProtocolVersion, "source", p.Source, "build_id", p.BuildID)
+				"protocol_version", p.ProtocolVersion, "source", p.Source, "build_id", p.BuildID,
+				"nt8_pid", p.NT8PID, "assembly_mvid", p.AssemblyMVID)
 			s.writeMu.Lock()
 			_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			err := WriteFrame(c, FrameHello, HelloPayload{ProtocolVersion: ProtocolVersion, Source: "nofx-go"})
@@ -1947,6 +1961,20 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			if err != nil {
 				s.logger.Warn("tcp_server: write hello reply", "err", err)
 				return
+			}
+
+		case FrameMaintenanceAck:
+			// W-ONE-BUTTON M2 site 7 — recorded on THIS connection's record only.
+			var p MaintenanceAckPayload
+			if err := json.Unmarshal(env.Payload, &p); err != nil {
+				s.logger.Warn("tcp_server: bad maintenance_ack payload", "err", err)
+				continue
+			}
+			if s.recordMaintenanceAck(c, p, time.Now()) {
+				s.logger.Info("tcp_server: 🔒 maintenance_ack",
+					"held", p.Held, "job_id", p.JobID, "queued_commands", p.QueuedCommands,
+					"connections", len(p.Connections), "accounts", len(p.Accounts),
+					"census_error", p.CensusError, "build_id", p.BuildID)
 			}
 
 		case FrameFill:
