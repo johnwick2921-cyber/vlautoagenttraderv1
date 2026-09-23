@@ -15,6 +15,7 @@ import type {
 } from '../../lib/api/plan'
 import { LifecycleChip, VersionChips } from './chips'
 import { WeeklyChip } from './WeeklyChip'
+import { PictureGateChip } from './PictureGateChip'
 import { BiasBlock } from './BiasBlock'
 import { ZoneTable } from './ZoneTable'
 import { LevelZoneMap } from './LevelZoneMap'
@@ -300,6 +301,7 @@ export function SessionPlanCard({
           title={tp('noPlanYet', language)}
           hint={tp('noPlanYetHint', language)}
         />
+        <PictureGateChip picture={plan?.picture} />
         {noPlanAsk}
       </>
     )
@@ -460,6 +462,7 @@ export function SessionPlanCard({
               saying so is what sent a later wave hunting a bug that was already
               fixed. The rendered label is the contract; a comment is not. */}
           <WeeklyChip weekly={plan.weekly} />
+          <PictureGateChip picture={plan.picture} />
           {plan.degraded && (
             <span
               data-testid="degraded-badge"

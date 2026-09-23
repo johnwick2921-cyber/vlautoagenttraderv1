@@ -407,6 +407,17 @@ export interface PlanToday {
   /** W7 (weekly-bias wave) — the Sunday weekly-bias doc for the current week
    * (null → grey "none" chip). Advisory view only. */
   weekly?: PlanWeekly | null
+  /** W-EXEC-TRUTH W0 (CTO Q6) — Picture HTF's plan-mode verdict, READ by the
+   * server from the trader (null when the trader is not loaded). */
+  picture?: PicturePlanGate | null
+}
+
+/** W-EXEC-TRUTH W0 (CTO Q6) — /api/plan/today picture payload. */
+export interface PicturePlanGate {
+  /** Picture HTF is on for this trader (resolved knob, NT8 path). */
+  enabled: boolean
+  /** The strict refusal text, verbatim; "" when plan mode admits Picture. */
+  refusal: string
 }
 
 export interface StructuralGeometryView {
