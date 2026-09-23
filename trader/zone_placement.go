@@ -355,14 +355,34 @@ func floatOr0(p *float64) float64 {
 	return *p
 }
 
-// setZoneVerdict records the card's verdict (written only on change).
+// setZoneVerdict records the card's verdict — evaluated on every pass,
+// WRITTEN only when it changes: the row read this pass carries the current
+// verdict, so an unchanged one issues no statement at all (a no-op UPDATE
+// still takes SQLite's write lock, and the event pass runs up to 1/s). The
+// store's own `last_verdict <> ?` guard is the second layer.
 func (at *AutoTrader) setZoneVerdict(p zonePass, r store.ArmedOrderDB, verdict string) {
-	if p.ledger == nil {
+	if p.ledger == nil || r.LastVerdict == verdict {
 		return
 	}
 	if _, err := p.ledger.SetLastVerdict(r.ID, verdict, p.now.UnixMilli()); err != nil {
 		at.logWarnf("📌 zone verdict write failed %s leg %d: %v", r.Scenario, r.LegIndex+1, err)
 	}
+}
+
+// noteZoneVerdictOnly evaluates and records the verdict of an armed
+// market_in_zone row the pass does NOT place (a nudge's scope skipped it), so
+// every pass — scan, event and nudge — evaluates every policy row's verdict.
+// No log, no count, no placement: those belong to the pass that may place it.
+func (at *AutoTrader) noteZoneVerdictOnly(ledger *store.ArmedOrderStore, r store.ArmedOrderDB, bars []market.Kline, price float64, now time.Time) {
+	if r.Policy != kernel.EntryPolicyMarketInZone || r.State != store.StateArmed {
+		return
+	}
+	var barOpenMs int64
+	if len(bars) > 0 {
+		barOpenMs = bars[len(bars)-1].OpenTime
+	}
+	v := zonePlacementVerdict(price, floatOr0(r.ZoneLo), floatOr0(r.ZoneHi), strings.ToLower(strings.TrimSpace(r.Side)), barOpenMs, now)
+	at.setZoneVerdict(zonePass{ledger: ledger, now: now}, r, v.String())
 }
 
 // placeZoneRow places one armed market_in_zone row. Order: verdict → hold →

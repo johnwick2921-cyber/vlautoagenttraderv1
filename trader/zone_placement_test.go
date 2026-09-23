@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
 	ntTrader "nofx/trader/ninjatrader"
+
+	"gorm.io/gorm"
 )
 
 // ── W-EXEC-TRUTH W3 — market_in_zone at the production call sites ──────────
@@ -325,8 +328,13 @@ func TestZoneRowPlacesOneLimitAtTheFarBound(t *testing.T) {
 			if row.EntryPx != 100.5 || row.ZoneLo == nil || *row.ZoneLo != 99.5 || *row.ZoneHi != 100.5 || row.PlannedEntryPx == nil || *row.PlannedEntryPx != 100 {
 				t.Fatalf("composer stamp wrong (entry=far, zone inward, planned=authored): %+v", row)
 			}
-			if row.EvalPrice == nil || *row.EvalPrice != c.last || row.EvalBarMs == nil || row.PlacedAtMs == nil || *row.PlacedAtMs != r.now.UnixMilli() {
-				t.Fatalf("placement evidence missing: eval=%v bar=%v placed=%v", row.EvalPrice, row.EvalBarMs, row.PlacedAtMs)
+			tape := zoneTape(c.last, r.now, 0)
+			if row.EvalPrice == nil || *row.EvalPrice != c.last || row.EvalBarMs == nil || *row.EvalBarMs != tape[len(tape)-1].OpenTime ||
+				row.PlacedAtMs == nil || *row.PlacedAtMs != r.now.UnixMilli() {
+				t.Fatalf("placement evidence (the evaluation that placed it): eval=%v bar=%v placed=%v", row.EvalPrice, row.EvalBarMs, row.PlacedAtMs)
+			}
+			if row.FilledAtMs != nil || row.FillSlippageTicks != nil {
+				t.Fatalf("no fill yet — the fill receipt must be absent: %v / %v", row.FilledAtMs, row.FillSlippageTicks)
 			}
 			if row.LastVerdict != c.want {
 				t.Fatalf("last_verdict = %q, want %q", row.LastVerdict, c.want)
@@ -521,8 +529,9 @@ func TestZoneReArmPinnedWithinVersionAtTheCallSite(t *testing.T) {
 	}
 	ledger := r.st.ArmedOrders()
 	r.at.onArmedOrderUpdate(ntwire.OrderUpdatePayload{SignalID: sigs[0].SignalID, State: "filled", FillPrice: 100.25, Account: "Sim101"}, ledger)
-	if row := r.row("S1"); row.State != store.StateFilled {
-		t.Fatalf("fixture: fill not applied: %+v", row)
+	if row := r.row("S1"); row.State != store.StateFilled || row.FilledAtMs == nil || row.FillSlippageTicks == nil || *row.FillSlippageTicks != -1 {
+		// 100.25 filled against the buy limit 100.50: one tick BETTER → −1 (+ = worse).
+		t.Fatalf("the fill frame must stamp filled_at_ms and fill_slippage_ticks −1: %+v", row)
 	}
 	opens, err := r.st.Position().GetOpenPositions(r.at.id)
 	if err != nil {
@@ -726,5 +735,87 @@ func TestZoneRejectSkipsTheStructuralGeometryRefusal(t *testing.T) {
 	}
 	if row := r.row("S1"); !strings.HasPrefix(row.ZoneProvenance, "planner_only(") {
 		t.Fatalf("provenance is a label: %q", row.ZoneProvenance)
+	}
+}
+
+// The ledger row is the record (CTO): at the composer's UpsertArm call site
+// the four authoring fields are stamped on create, rewritten by the armed
+// refresh, and re-stamped by a re-authorize on a new version.
+func TestZoneLedgerStampsAtAuthoringThroughTheComposer(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-stamp", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	r.setTape(zoneTape(99.0, r.now, 0)) // short of the zone: authored, never placed
+	check := func(what string, row store.ArmedOrderDB) {
+		t.Helper()
+		if row.Policy != kernel.EntryPolicyMarketInZone || row.ZoneLo == nil || *row.ZoneLo != 99.5 || row.ZoneHi == nil || *row.ZoneHi != 100.5 ||
+			row.ZoneProvenance != "frozen_overlap:PDH[98.50,100.00]" || row.PlannedEntryPx == nil || *row.PlannedEntryPx != 100 || row.EntryPx != 100.5 {
+			t.Fatalf("%s: the row must carry policy / zone / provenance / planned entry (entry = far bound): %+v", what, row)
+		}
+		if row.EvalPrice != nil || row.EvalBarMs != nil || row.PlacedAtMs != nil || row.FilledAtMs != nil || row.FillSlippageTicks != nil {
+			t.Fatalf("%s: an unplaced row carries no placement or fill receipt: %+v", what, row)
+		}
+	}
+	// create
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	created := r.row("S1")
+	check("create", created)
+	// armed refresh: a row whose stored zone disagrees with the plan is
+	// rewritten by the composer's refresh (same row, same version).
+	lo, hi, planned := 1.0, 2.0, 7.0
+	if err := r.st.GormDB().Model(&store.ArmedOrderDB{}).Where("id = ?", created.ID).Updates(map[string]any{
+		"zone_lo": lo, "zone_hi": hi, "zone_provenance": "stale", "planned_entry_px": planned, "entry_px": 3.0}).Error; err != nil {
+		t.Fatal(err)
+	}
+	r.at.maybeManageArmedOrdersAt(nil, r.now.Add(time.Second))
+	refreshed := r.row("S1")
+	if refreshed.ID != created.ID || refreshed.State != store.StateArmed {
+		t.Fatalf("the refresh must rewrite the SAME armed row: %+v", refreshed)
+	}
+	check("armed refresh", refreshed)
+	// re-authorize: the never-placed row is cancelled, a new plan version
+	// re-authorizes it in place.
+	if err := r.st.ArmedOrders().SetState(created.ID, store.StateCancelled, "owner cancel"); err != nil {
+		t.Fatal(err)
+	}
+	blob, _ := json.Marshal(zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	shadowPlanAtTime(t, r.at, r.st, string(blob), r.now)
+	r.at.maybeManageArmedOrdersAt(nil, r.now.Add(2*time.Second))
+	reauth := r.row("S1")
+	if reauth.ID != created.ID || reauth.State != store.StateArmed || reauth.Version != 2 || reauth.ArmedUnderVersion != 2 {
+		t.Fatalf("a new version must re-authorize the never-placed row in place: %+v", reauth)
+	}
+	check("re-authorize", reauth)
+}
+
+// last_verdict is evaluated on every pass and WRITTEN only when it changes:
+// short_of_zone → short_of_zone → inside is exactly TWO writes, and
+// last_verdict_ms is when the current verdict was first reached.
+func TestZoneVerdictWrittenOnlyOnChange(t *testing.T) {
+	r := newZoneRig(t, "w3-zone-verdict-writes", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	var writes atomic.Int32
+	db := r.st.GormDB()
+	if err := db.Callback().Update().After("gorm:update").Register("w3_count_last_verdict", func(tx *gorm.DB) {
+		// Every UPDATE statement that names last_verdict counts — a no-op
+		// update still takes SQLite's write lock.
+		if tx.Error == nil && strings.Contains(tx.Statement.SQL.String(), "last_verdict") {
+			writes.Add(1)
+		}
+	}); err != nil {
+		t.Fatal(err)
+	}
+	t0, t1, t2 := r.now, r.now.Add(20*time.Second), r.now.Add(40*time.Second)
+	r.setTape(zoneTape(99.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, t0)
+	r.at.maybeManageArmedOrdersAt(nil, t1)
+	if row := r.row("S1"); row.LastVerdict != "short_of_zone" || row.LastVerdictMs == nil || *row.LastVerdictMs != t0.UnixMilli() {
+		t.Fatalf("an unchanged verdict keeps the time it was first reached: %+v / %v", row.LastVerdict, row.LastVerdictMs)
+	}
+	r.setTape(zoneTape(100.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, t2)
+	row := r.row("S1")
+	if row.LastVerdict != "inside" || row.LastVerdictMs == nil || *row.LastVerdictMs != t2.UnixMilli() {
+		t.Fatalf("the changed verdict is written with its time: %+v / %v", row.LastVerdict, row.LastVerdictMs)
+	}
+	if n := writes.Load(); n != 2 {
+		t.Fatalf("short → short → inside must be exactly 2 last_verdict writes, observed %d", n)
 	}
 }

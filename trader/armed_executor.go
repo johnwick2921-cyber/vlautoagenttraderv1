@@ -1270,7 +1270,11 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 	scope := firstPassScope(scopes)
 
 	for _, r := range rows {
-		if r.TraderID != at.id || scope.skips(r.Scenario) {
+		if r.TraderID != at.id {
+			continue
+		}
+		if scope.skips(r.Scenario) {
+			at.noteZoneVerdictOnly(ledger, r, bars, price, now) // W3: the verdict on every pass; placement scoped
 			continue
 		}
 		switch r.State {
