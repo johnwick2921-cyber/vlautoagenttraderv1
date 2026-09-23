@@ -6077,7 +6077,7 @@ Counter: `death_reread:<trader>:<date>:<session>`.
 
 **Rule (probe).** Per contract per tf, compare the last stored bar time on the roll day against the 1m last bar: any tf whose last bar is earlier than the 1m last bar is this class. The display fix derives the prior segment from that contract's 1m rows with the planner's own bucket helper, shifts it by the basis measured at THAT timeframe's own seam (the new contract's first bar of that tf vs the last prior 1m close before it — the pair sits <1 minute apart), marks derived/adjusted on each bar and the envelope, never touches the current contract or volume, and keeps CHART_ROLL_STITCH=legacy byte-identical. Follow-up (2026-09-19, owner: the first boot still showed the cliff): the shipped basis was measured at the TRUE 1m switch, hours after the 15m/30m/1h seam — the Sep/Dec basis decays from ~290 in the morning to ~15 at that switch, so one 15.25 shift left a ~274-280-point cliff; measuring at each tf's own seam makes the seam continuous by construction. Second follow-up (2026-09-19, owner: "5m day 11" hole on every tf): the prior contract's 1m rows have interior gaps where NT8 was off (Sept 11 ~00:29-07:45 CT) while the current contract's imported 1m rows cover them — the derive now fills such gaps with the current rows converted into the prior contract's price space (basis at the nearest minute both contracts share); gaps neither contract has stay gaps, never fabricated.
 
-## Pending class assignment at merge — Inverted async cancellation guard blanks a live chart
+## CLASS 158 — Inverted async cancellation guard blanks a live chart
 
 **Wave:** `fix/planner-chart-response-20260922`. **Found:** 2026-09-22.
 The roll-chart change `0e7573485` inverted the PlanMiniChart response guard
@@ -6094,7 +6094,7 @@ overwrite the series. Resolve after unmount and assert no write or further poll.
 **Law:** test both live response delivery and cancellation at the production
 component boundary; placeholder rendering alone does not verify chart loading.
 
-## CLASS 158 — single-consumer pause mistaken for a global hold
+## CLASS 159 — single-consumer pause mistaken for a global hold
 
 **Wave:** `feat/one-button-m2-maintenance-hold` (W-ONE-BUTTON M2). **Found:** 2026-09-22, building the one-button partner update.
 **Shape.** Before an update replaces the binary and the AddOn, every producer of new entries must stop. The only brake the bot had was `stop_until`/Resume, which pauses ONE consumer: one trader's AI decision path. Everything else kept sending:
@@ -6115,7 +6115,7 @@ Any per-trader Resume could also lift the pause. A pause scoped to one consumer 
 
 **Law:** a hold is installation-wide, file-backed, written only by the operator or the updater, and read at every send point. A pause is not a hold.
 
-## CLASS 159 — a queued send recorded as a fill (pre-existing; found in M2, fix deferred)
+## CLASS 160 — a queued send recorded as a fill (pre-existing; found in M2, fix deferred)
 
 **Found:** 2026-09-22 in W-ONE-BUTTON M2 (CTO condition 3 on M-2), [A] at the production caller (`TestDroppedAIEntryIsForgottenAndTheGateStaysClosed`).
 **Shape.** An AI entry sent while NT8 is disconnected is QUEUED: `SendSignal` returns nil and `TCPTrader.placeEntry` returns `"submitted"`. Its result carries `"signal_id"` but no `"orderId"`, so `recordAndConfirmOrder` formats the missing key as the string `"<nil>"`, which is not skipped. It then:
@@ -6129,7 +6129,7 @@ That happens for an entry that never left this process. If the queued entry is t
 
 **Status:** M2 does not fabricate a close for it. A hold drop forgets the entry, logs ERROR naming the signal and `db_open_positions`, raises P1, and the installation gate stays closed on cutover leg 1 until an operator reconciles. **The fix needs its own owner-ruled wave:** record the signal id as the order id, and do not record a position before a received fill.
 
-## CLASS 160 — A HAND-SET BUILD LABEL TREATED AS PROOF OF WHAT IS RUNNING (born 2026-09-22, feat/one-button-updates, W-ONE-BUTTON M1)
+## CLASS 161 — A HAND-SET BUILD LABEL TREATED AS PROOF OF WHAT IS RUNNING (born 2026-09-22, feat/one-button-updates, W-ONE-BUTTON M1)
 
 **Shape.** The AddOn's `VL_BUILD_ID` is a constant a human bumps "on any additive wire change"
 (`ninjascript/VLTraderTCPClient.cs:55`), mirrored by a Go constant (`provider/ninjatrader/order_snapshot.go:214`)
@@ -6157,7 +6157,7 @@ different sources carry it.
 per-connection record + a verifier that refuses cached or wrong-epoch evidence (M2/M4 of W-ONE-BUTTON, subject
 to owner ruling on "no new protocol work").
 
-## CLASS 161 — an optional field a newer producer legitimately leaves nil, dereferenced by an older reader
+## CLASS 162 — an optional field a newer producer legitimately leaves nil, dereferenced by an older reader
 
 **Found:** 2026-09-23, live after the M2 boot: `🔭 desk strip: line 10 (planner) panicked and was contained: nil pointer`, on every scan. Present before the boot too.
 **Shape.**
