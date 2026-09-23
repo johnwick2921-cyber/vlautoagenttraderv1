@@ -139,6 +139,13 @@ func (at *AutoTrader) consecutiveLossHaltedAt(now time.Time) (string, bool) {
 
 // executeDecisionWithRecord executes AI decision and records detailed information
 func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
+	return at.executeDecisionWithRecordAt(decision, actionRecord, time.Now())
+}
+
+// executeDecisionWithRecordAt is executeDecisionWithRecord on the caller's
+// clock (W3): `now` is the instant the admission chain judges, and the strict
+// nudge's armed pass judges the SAME instant.
+func (at *AutoTrader) executeDecisionWithRecordAt(decision *kernel.Decision, actionRecord *store.DecisionAction, now time.Time) error {
 	// W5.2 (weekly-bias wave) — SHADOW counter-trend annotation for entries.
 	// Log/counters ONLY: this call can never block, resize or re-grade the trade
 	// (the real gates below are untouched — W5.4 THE LAW).
@@ -174,10 +181,18 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 	case "open_long", "open_short":
 		if refusal, refused := at.admitEntry(admitIntent{
 			Path: admitDecision, Symbol: decision.Symbol, Action: decision.Action,
-			Now: time.Now(), Decision: decision, Record: actionRecord,
+			Now: now, Decision: decision, Record: actionRecord,
 		}); refused {
 			actionRecord.Success = false
 			actionRecord.Error = refusal
+			// W3 D13 — THE STRICT NUDGE. A decision refused ONLY for not being
+			// on the arm path, that cites a matched scenario whose doc arm is a
+			// market_in_zone arm, runs ONE armed pass for that scenario and the
+			// record carries the executor's verdict. The decision itself stays
+			// refused (Success false) — never a Path flip.
+			if v, ok := at.strictNudgeAt(decision, refusal, now); ok {
+				actionRecord.Error = refusal + " · 🚦 " + v
+			}
 			return nil
 		}
 	}

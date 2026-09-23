@@ -190,11 +190,21 @@ func (at *AutoTrader) declineHadFreshMetAt(now time.Time) bool {
 	return false
 }
 
+// W3 D14 — maybeManageArmedOrdersAt is THE armed pass for the scan, the
+// live-bar event pass and the strict nudge, and it takes armedPassMu itself:
+// ONE pass at a time per trader. The pass state (armRefusalLast,
+// armStopCompLast, armAuthoredLast, the in-pass placement latch) was "run-loop
+// goroutine only"; a second trigger over it is a data race without this lock.
+// scopes: none = every scenario (the scan / event pass); one = the nudge,
+// narrowed to its scenario and reporting what the pass did to it.
 func (at *AutoTrader) maybeManageArmedOrders(snap map[string]kernel.StructureState) {
 	at.maybeManageArmedOrdersAt(snap, time.Now())
 }
 
-func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureState, now time.Time) {
+func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureState, now time.Time, scopes ...*armedPassScope) {
+	at.armedPassMu.Lock() // W3 D14 — one armed pass at a time (see above)
+	defer at.armedPassMu.Unlock()
+	scope := firstPassScope(scopes)
 	if !at.dayPlanEnabled() || at.store == nil || at.exchange != "ninjatrader" {
 		return
 	}
@@ -232,6 +242,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 	// instantly. Re-arm does NOT auto-re-arm (fresh AI authorization required).
 	// 2.4 — no active session (EOD flat) cancels everything too.
 	plan := kernel.ActivePlanFor(at.id, at.futuresSymbol())
+	at.noteZoneArmActive(plan) // W3 D14 — the event pass wakes only for a plan with a zone arm
 	_, sessOK := at.sessionRegistry(now).ActiveSession(now)
 	reason := ""
 	if plan == nil {
@@ -347,6 +358,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			}
 			at.logWarnf("🛑 arm REFUSED (session risk): %s%s", risk.Reason, shown)
 		}
+		scope.note(scope.scenarioOrEmpty(), "refused: "+risk.Class+": "+risk.Reason)
 		// A resting arm is not grandfathered by a band that opened after it was
 		// placed: an arm whose fill would land inside the band is not an arm we
 		// are willing to own, whether it was placed a second ago or an hour ago.
@@ -379,7 +391,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 	// is NOT placed — it was, by any later pass, before this wave.
 	admitted := armAdmission{}
 	for _, sc := range kernel.OneSetupOrder(doc.Scenarios, osCycle.allowed()) {
-		if sc.Arm == nil || !sc.Arm.Enabled {
+		if sc.Arm == nil || !sc.Arm.Enabled || scope.skips(sc.ID) {
 			continue
 		}
 		// E4 (2026-08-30) — split-entry legs: a two-leg arm writes one ledger
@@ -397,7 +409,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 				continue
 			}
 			legs = []kernel.PlanArmLeg{{Entry: sc.Arm.Entry, Stop: sc.Arm.Stop, Target: sc.Arm.Target,
-				WaitConfirm: sc.Arm.WaitConfirm, Rule: "touch", Kind: kind}}
+				WaitConfirm: sc.Arm.WaitConfirm, Rule: "touch", Kind: kind, Policy: sc.Arm.Policy}}
 		}
 		legCount := 0
 		if len(sc.Arm.Legs) == 2 {
@@ -485,6 +497,17 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			continue
 		}
 		for li, leg := range legs {
+			// W3 — a market_in_zone leg enters at the FAR edge of the zone (the
+			// worst fill every gate below judges) and composes its stop from the
+			// NEAR edge (D7); a bad zone refuses the leg (D9). Legacy: untouched.
+			zl, zok := at.zoneLegFor(plan, &doc, sc, li, leg, cfg, scope)
+			if !zok {
+				continue
+			}
+			stopFrom := leg.Entry
+			if zl.on {
+				stopFrom, leg.Entry = zl.v.Near, zl.v.Far
+			}
 			// Structural geometry applies to the level-fade play. Momentum and
 			// explicit exit legs retain their existing construction (outside scope).
 			structuralFade := sc.Condition == kernel.OneSetupPlay && !strings.EqualFold(leg.Kind, "exit")
@@ -541,7 +564,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 				// beyond the nearest seated level on the risk side + clearance,
 				// floored at MIN_SL_ATR_MULT×ATR5m, widest wins, never tighter than
 				// authored. Logged once per (plan, version, scenario, leg, stop).
-				if comp := composeArmStop(strings.ToLower(strings.TrimSpace(sc.Direction)), leg.Entry, leg.Stop, atr5m,
+				if comp := composeArmStop(strings.ToLower(strings.TrimSpace(sc.Direction)), stopFrom, leg.Stop, atr5m,
 					market.FuturesTickSize(at.futuresSymbol()), doc.Levels, kernel.MinSLATRMult(),
 					kernel.MinSLTickClearance, armStopAnchorMaxATR()); comp.Stop != leg.Stop || comp.Unanchored {
 					skey := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":leg" + strconv.Itoa(li+1) + ":stop"
@@ -592,6 +615,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			if leg.WaitConfirm {
 				v := kernel.EvaluateScenarioConfirm(sc, bars, plan.BirthMs, now.UnixMilli())
 				if !v.Met {
+					scope.note(sc.ID, "waiting: confirm not met ("+kernel.ConfirmGatedRuleLabel(sc)+")")
 					continue
 				}
 				at.logInfof("⚔️ arm %s leg %d wait_confirm MET (%s) — arming", sc.ID, li+1, kernel.ConfirmGatedRuleLabel(sc)) // W2: the rule(s) gated + source
@@ -599,6 +623,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			// gates AT ARM TIME — a resting order is a pre-passed entry; each gate
 			// input that changes materially later triggers a cancel (1.3).
 			if verdict := at.armGateVerdictFor(sc, leg, biasDirectionFor(doc.Bias.Direction), snap, atr5m, minQuality, cfg, plan.Session, structuralFade); verdict != "" {
+				scope.note(sc.ID, "refused: "+armRefusalClass(verdict)+": "+verdict)
 				if geometry != nil {
 					geometry.Reason = "entry_gate"
 					geometry.Detail = verdict
@@ -671,6 +696,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			// already-resting opposite-side order the same cycle. The only escape:
 			// a leg explicitly authored as an exit/flip leg (kind "exit").
 			if verdict := at.oneLiveArmGuard(sc, leg, side); verdict != "" {
+				scope.note(sc.ID, "refused: one_live_arm_guard: "+verdict)
 				if geometry != nil {
 					geometry.Reason = "entry_gate"
 					geometry.Detail = verdict
@@ -718,6 +744,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			greason, refused := at.entryGateForArm(plan, sc, leg, side, biasDirectionFor(doc.Bias.Direction), atr5m, structuralFade)
 			recordResearchGate("arm", plan.PlanID, plan.Version, sc.ID, greason, refused)
 			if refused {
+				scope.note(sc.ID, "refused: entry_gate: "+greason)
 				if geometry != nil {
 					geometry.Reason = "entry_gate"
 					geometry.Detail = greason
@@ -755,6 +782,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			// it is never armed. D4: an allowed scenario waits while another holds
 			// the plan's one arm. Nothing here cancels (one_setup_wiring.go).
 			if at.oneSetupConsult(osCycle, plan, sc, li, ledger, now) {
+				scope.note(sc.ID, "refused: one_setup: the scenario is not the one setup this cycle")
 				if geometry != nil {
 					geometry.Reason = "one_setup"
 					geometry.Detail = "one_setup consult declined without a complete verdict; see warning"
@@ -772,6 +800,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 			// the reason).
 			legKind, kindRefusal := armLegKindFor(sc, leg)
 			if kindRefusal != "" {
+				scope.note(sc.ID, "refused: kind: "+kindRefusal)
 				if geometry != nil {
 					geometry.Reason = "entry_gate"
 					geometry.Detail = kindRefusal
@@ -807,6 +836,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 				State: "armed", EntryClass: "armed_fill", CreatedAt: now, UpdatedAt: now,
 				LegIndex: li, LegCount: legCount, Kind: legKind, Condition: sc.Condition,
 			}
+			zl.stamp(row) // W3 — policy, zone (inward-rounded), provenance, planned entry
 			existing, err := ledger.ListNonTerminal(at.id)
 			if err == nil {
 				for i := range existing {
@@ -895,7 +925,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 
 	// PHASE 2 — placement engine (armed → working within the tick band), wire
 	// cancel/modify, and the order_update event machine.
-	at.runArmedPlacementAt(bars, plan.BirthMs, now, admitted)
+	at.runArmedPlacementAt(bars, plan.BirthMs, now, admitted, scope)
 }
 
 // biasDirectionFor normalizes the plan bias direction ("" → empty).
@@ -1185,7 +1215,7 @@ func (at *AutoTrader) armedLines() string {
 // nil admits NOTHING (fail-closed, CTO M2). The production caller,
 // maybeManageArmedOrdersAt, passes its set; the wall-clock wrapper
 // runArmedPlacement was removed (no production caller — A29).
-func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, now time.Time, admitted armAdmission) {
+func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, now time.Time, admitted armAdmission, scopes ...*armedPassScope) {
 	nt := at.armedTrader()
 	if nt == nil {
 		return
@@ -1230,9 +1260,10 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 	// an update is waiting to drain. A refusal, never a cancellation — the row
 	// stays "armed" and places on the first pass after the hold clears.
 	holdReason, held := MaintenanceHeld()
+	scope := firstPassScope(scopes)
 
 	for _, r := range rows {
-		if r.TraderID != at.id {
+		if r.TraderID != at.id || scope.skips(r.Scenario) {
 			continue
 		}
 		switch r.State {
@@ -1248,6 +1279,17 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 			// own. TestArmPlace/TestArmPlaceStop already fold here; the
 			// production path did not.
 			side := strings.ToLower(strings.TrimSpace(r.Side))
+			// W3 — a market_in_zone row: the zone verdict decides, never the
+			// wrong-side cancel or the band (zone_placement.go). Legacy and
+			// planned_order rows fall through byte-identically.
+			if r.Policy == kernel.EntryPolicyMarketInZone {
+				if at.placeZoneRow(zonePass{nt: nt, ledger: ledger, rows: rows, bars: bars, price: price, now: now, admitted: admitted,
+					held: held, holdReason: holdReason, contract: contract, placedThisPass: placedThisPass, scope: scope}, r, side) {
+					placedThisPass = true
+					at.cancelOtherArmsInPlan(ledger, rows, r, now)
+				}
+				continue
+			}
 			// E7 — stop-entry legs (breakout-retest fallback / breakdown
 			// immediate alternative): never placed until the far-side AddOn
 			// proves the frame (STOP_ENTRY_SEAM) AND the no-retest window has
@@ -1275,7 +1317,7 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 					at.refuseMaintenanceHold(r, holdReason, "stop-entry", now, nil)
 					continue
 				}
-				if !at.armAdmitted(r, side, price, now, admitted) {
+				if ok, _ := at.armAdmitted(r, side, price, now, admitted); !ok {
 					continue // a refusal, never a cancellation — the row stays armed
 				}
 				if !contract.Allowed() || placedThisPass {
@@ -1319,7 +1361,7 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 					at.refuseMaintenanceHold(r, holdReason, "limit", now, nil)
 					continue
 				}
-				if !at.armAdmitted(r, side, price, now, admitted) {
+				if ok, _ := at.armAdmitted(r, side, price, now, admitted); !ok {
 					continue // a refusal, never a cancellation — the row stays armed
 				}
 				if !contract.Allowed() || placedThisPass {
@@ -1348,6 +1390,12 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 				at.cancelOtherArmsInPlan(ledger, rows, r, now)
 			}
 		}
+	}
+	// W3 D16 — the zone rest cap (policy rows only) and the event trigger's
+	// cached zones.
+	at.zoneRestCap(nt, ledger, rows, now, scope)
+	if scope == nil {
+		at.cacheZoneWatch(rows, price, bars, now)
 	}
 	// reconnect/reconcile safety net (separate pass — cancelFn is the wire seam).
 	// The reaper's VERDICT is untouched (class 79 owns it); only its WIRE is
@@ -2082,6 +2130,7 @@ func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *st
 			_ = ledger.SetState(r.ID, "filled", "fill@"+strconv.FormatFloat(u.FillPrice, 'f', 2, 64))
 			_ = ledger.SetFillPrice(r.ID, u.FillPrice)
 			_ = ledger.Touch(r.ID)
+			at.recordZoneFillReceipt(ledger, r, u.FillPrice) // W3 D17 — policy rows only
 			// F3 (2026-08-30 E7 incident) — materialize the OPEN row at FILL
 			// time, before the stamp: the sub-60s round-trip class (fill →
 			// stop-out inside one snapshot interval) meant reconcile never saw

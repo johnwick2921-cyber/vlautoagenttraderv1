@@ -50,6 +50,9 @@ trader/invalidation_resolver.go:scenarioInvalidationResolver:scenarioInvalidatio
 
 trader/armed_executor.go:declineHadFreshMet:declineHadFreshMetAt
 trader/armed_executor.go:maybeManageArmedOrders:maybeManageArmedOrdersAt
+# W3 (W-EXEC-TRUTH, 2026-09-23): the live-bar armed pass and the strict nudge.
+trader/armed_event_pass.go:armedEventPass:armedEventPassAt
+trader/strict_nudge.go:strictNudge:strictNudgeAt
 
 # Stage A telemetry clocks (no trading verdict changes)
 researchsnapshot/archive.go:Save:saveAt

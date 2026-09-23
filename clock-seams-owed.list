@@ -48,3 +48,4 @@ testcall:w7_levelstate_test.go:recordLevelState:1
 
 # ── registered wall-clock entries with no production caller ───────────────────
 deadwrapper:trader/auto_trader_weekly.go:AutoTrader.weeklyScenarioGrade
+deadwrapper:trader/strict_nudge.go:AutoTrader.strictNudge

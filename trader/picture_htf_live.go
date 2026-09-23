@@ -44,6 +44,10 @@ func pictureHtfLiveBars(symbol, tf string, bars []ntwire.Bar, receivedAt time.Ti
 	pictureHtfTraders.Range(func(_, v any) bool {
 		if at, ok := v.(*AutoTrader); ok {
 			at.NotifyLiveBars(symbol, tf, kl, receivedAt)
+			// W3 D14 — the live-bar armed pass (market_in_zone): a non-blocking
+			// kick on a final 1m bar or a zone-verdict change. It reads the
+			// WIRE bars because the kline copy above drops Final.
+			at.noteLiveBarsForArmedPass(symbol, tf, bars)
 		}
 		return true
 	})

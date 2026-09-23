@@ -143,6 +143,12 @@ func openPositionLabel(in EntryIntent) string {
 	return fmt.Sprintf("a %s position is open (%s %s)", side, ver, sc)
 }
 
+// StrictNonArmRefusalPrefix is leg 0's strict refusal of a non-arm entry, up
+// to the path name (the text is unchanged). W3's strict nudge keys on it: only
+// THIS refusal — a matched decision refused for not being on the arm path —
+// may trigger an armed pass; every other gate's refusal never does.
+const StrictNonArmRefusalPrefix = "entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only"
+
 // EntryGate runs the single canonical entry gate chain. Empty reason = allow.
 func EntryGate(in EntryIntent) (reason string, refused bool) {
 	side := strings.ToLower(strings.TrimSpace(in.Action))
@@ -184,7 +190,7 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 	// refused outright.
 	if in.PlanMode == "strict" {
 		if in.Path != "arm" {
-			return fmt.Sprintf("entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a %s-path market entry", in.Path), true
+			return fmt.Sprintf(StrictNonArmRefusalPrefix+", and this is a %s-path market entry", in.Path), true
 		}
 		if strings.TrimSpace(in.CitedScenario) == "" {
 			return "entry_gate: refused: strict — plan_mode=strict requires the entry to cite a plan scenario (none cited)", true
