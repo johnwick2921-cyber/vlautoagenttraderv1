@@ -298,8 +298,8 @@ func (e *StrategyEngine) BuildUserPrompt(ctx *Context) string {
 
 	// BTC market
 	if btcData, hasBTC := ctx.MarketDataMap["BTCUSDT"]; hasBTC {
-		sb.WriteString(fmt.Sprintf("BTC: %.2f (1h: %+.2f%%, 4h: %+.2f%%) | MACD: %.4f | RSI: %.2f\n\n",
-			btcData.CurrentPrice, btcData.PriceChange1h, btcData.PriceChange4h,
+		sb.WriteString(fmt.Sprintf("BTC: %.2f (1h: %s, 4h: %s) | MACD: %.4f | RSI: %.2f\n\n",
+			btcData.CurrentPrice, market.PctOrNA(btcData.PriceChange1h, true), market.PctOrNA(btcData.PriceChange4h, true),
 			btcData.CurrentMACD, btcData.CurrentRSI7))
 	}
 

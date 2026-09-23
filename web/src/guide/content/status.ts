@@ -133,6 +133,10 @@ export const status: GuideSection = {
       kind: 'p',
       text: "On the CME futures trading path — every AI entry, close and entry check — the bot reads only NinjaTrader's own bars and makes no call to Binance or any other outside market-data service. Open interest and funding are crypto-perpetual ideas with no CME symbol behind them, so on futures they are shown as n/a, never a made-up 0: in the AI prompt (when the Open Interest indicator is switched on) and on the 📊 market data boot line. A NinjaTrader trader set up with a non-CME symbol is refused by the market read rather than sent to a crypto data source, and the boot line names it as REFUSED. Before this, every AI entry, close and entry check asked Binance for MNQ's open interest and funding. That request could never succeed and put a third-party network wait inside an entry decision. In the AI decision prompt on the crypto path, a funding value that could not be fetched now reads n/a instead of 0. Not yet removed (the next step, W-NO-BINANCE Part B): the chat assistant's background market watcher and daily briefs, and the chat page's price ticker, still ask Binance for prices; they are not part of trading.",
     },
+    {
+      kind: 'p',
+      text: "A '1h' or '4h' price change means that much wall time. It is measured on bar close times: the latest close against the close of the bar that closed at least 1 hour (or 4 hours) earlier, on the finest bars the read has. When the bars do not reach back that far, or the chart's timeframe is too coarse to measure the window (fewer than 4 bars fit in it — a 1h chart cannot give a 1h change, only 'the previous close'), the change reads n/a, never 0. It appears on the crypto paths only: the BTC line in the AI prompt, the grid prompt and the assistant's market context; the MNQ decision prompt does not print it. Before this (W1, 2026-09-23) the futures '1h' was 100 minutes of 5m bars, the '4h' was the previous bar's close, and a short series read 0.",
+    },
     { kind: 'h', text: 'The boot ledger, line by line' },
     {
       kind: 'code',

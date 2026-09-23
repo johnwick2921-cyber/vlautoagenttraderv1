@@ -16,10 +16,13 @@ type IndicatorPeriods struct {
 
 // Data market data structure
 type Data struct {
-	Symbol        string
-	CurrentPrice  float64
-	PriceChange1h float64 // 1-hour price change percentage
-	PriceChange4h float64 // 4-hour price change percentage
+	Symbol       string
+	CurrentPrice float64
+	// PriceChange1h / PriceChange4h: percent change over that much WALL TIME,
+	// measured on bar close times (ChangeOverWindow). nil = ABSENT (the series
+	// cannot measure the window) — renderers print n/a, never a fabricated 0.
+	PriceChange1h *float64
+	PriceChange4h *float64
 	CurrentEMA20  float64
 	// CurrentEMAByPeriod holds the latest EMA per CONFIGURED period (e.g.
 	// {9: …, 21: …, 200: …}). Populated only when periods are supplied; empty →

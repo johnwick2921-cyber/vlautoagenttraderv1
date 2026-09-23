@@ -174,24 +174,12 @@ func GetWithExchange(symbol, exchange string) (*Data, error) {
 	currentMACD := calculateMACD(klines3m)
 	currentRSI7 := calculateRSI(klines3m, 7)
 
-	// Calculate price change percentage
-	// 1-hour price change = price from 20 3-minute K-lines ago
-	priceChange1h := 0.0
-	if len(klines3m) >= 21 { // Need at least 21 K-lines (current + 20 previous)
-		price1hAgo := klines3m[len(klines3m)-21].Close
-		if price1hAgo > 0 {
-			priceChange1h = ((currentPrice - price1hAgo) / price1hAgo) * 100
-		}
-	}
-
-	// 4-hour price change = price from 1 4-hour K-line ago
-	priceChange4h := 0.0
-	if len(klines4h) >= 2 {
-		price4hAgo := klines4h[len(klines4h)-2].Close
-		if price4hAgo > 0 {
-			priceChange4h = ((currentPrice - price4hAgo) / price4hAgo) * 100
-		}
-	}
+	// Price changes (W1): both windows by bar CLOSE TIME on the short series,
+	// the finest one this read has (futures 5m×200, Hyperliquid 5m×100, CoinAnk
+	// 3m×100); absent when it does not reach back. The long series has the
+	// window's own resolution, so it could only give "the previous bar".
+	priceChange1h := ChangeOverWindow(klines3m, time.Hour)
+	priceChange4h := ChangeOverWindow(klines3m, 4*time.Hour)
 
 	// OI + funding. W-NO-BINANCE A: the CME futures path makes NO external
 	// market-data call — both are Binance crypto-perp feeds with no CME symbol
@@ -415,9 +403,10 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 		}
 	}
 
-	// Calculate price changes
-	priceChange1h := calculatePriceChangeByBars(primaryKlines, primaryTimeframe, 60) // 1 hour
-	priceChange4h := calculatePriceChangeByBars(primaryKlines, primaryTimeframe, 240) // 4 hours
+	// Price changes (W1): by bar close time on the primary series; absent when
+	// its timeframe is too coarse for the window or it does not reach back.
+	priceChange1h := changeOnTimeframe(primaryKlines, primaryTimeframe, time.Hour)
+	priceChange4h := changeOnTimeframe(primaryKlines, primaryTimeframe, 4*time.Hour)
 
 	// Get OI + Funding Rate (Binance crypto-perp feeds). CME futures have no
 	// Binance symbol: the futures path makes no call and reports both ABSENT
@@ -450,7 +439,7 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 		OpenInterest:       oiData,
 		FundingRate:        fundingRate,
 		FundingRateKnown:   fundingKnown,
-		TimeframeData: timeframeData,
+		TimeframeData:      timeframeData,
 	}, nil
 }
 
@@ -815,55 +804,6 @@ func parseFloat(v interface{}) (float64, error) {
 	}
 }
 
-// BuildDataFromKlines constructs market data snapshot from preloaded K-line series.
-func BuildDataFromKlines(symbol string, primary []Kline, longer []Kline) (*Data, error) {
-	if len(primary) == 0 {
-		return nil, fmt.Errorf("primary series is empty")
-	}
-
-	symbol = Normalize(symbol)
-	current := primary[len(primary)-1]
-	currentPrice := current.Close
-
-	data := &Data{
-		Symbol:            symbol,
-		CurrentPrice:      currentPrice,
-		CurrentEMA20:      calculateEMA(primary, 20),
-		CurrentMACD:       calculateMACD(primary),
-		CurrentRSI7:       calculateRSI(primary, 7),
-		PriceChange1h:     priceChangeFromSeries(primary, time.Hour),
-		PriceChange4h:     priceChangeFromSeries(primary, 4*time.Hour),
-		OpenInterest:      &OIData{Latest: 0, Average: 0},
-		FundingRate:       0,
-		IntradaySeries:    calculateIntradaySeries(primary),
-		LongerTermContext: nil,
-	}
-
-	if len(longer) > 0 {
-		data.LongerTermContext = calculateLongerTermData(longer)
-	}
-
-	return data, nil
-}
-
-func priceChangeFromSeries(series []Kline, duration time.Duration) float64 {
-	if len(series) == 0 || duration <= 0 {
-		return 0
-	}
-	last := series[len(series)-1]
-	target := last.CloseTime - duration.Milliseconds()
-	for i := len(series) - 1; i >= 0; i-- {
-		if series[i].CloseTime <= target {
-			price := series[i].Close
-			if price > 0 {
-				return ((last.Close - price) / price) * 100
-			}
-			break
-		}
-	}
-	return 0
-}
-
 // isStaleData detects stale data (consecutive price freeze)
 // Fix DOGEUSDT-style issue: consecutive N periods with completely unchanged prices indicate data source anomaly
 func isStaleData(klines []Kline, symbol string) bool {
@@ -907,7 +847,6 @@ func isStaleData(klines []Kline, symbol string) bool {
 	logger.Infof("⚠️  %s detected extreme price stability (no fluctuation for %d consecutive periods), but volume is normal", symbol, stalePriceThreshold)
 	return false
 }
-
 
 // chatTableCT loads America/Chicago for the chat-path OHLCV table (the one
 // former Time(UTC) site outside the tz-guard dirs — v1 audit §1.1).

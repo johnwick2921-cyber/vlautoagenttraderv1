@@ -1,0 +1,35 @@
+Time: 2026-09-23 09:00:00 CDT | Period: #0 | Runtime: 0 minutes
+
+BTC: 60073.50 (1h: +0.05%, 4h: n/a) | MACD: 10.5000 | RSI: 100.00
+
+Account: Equity 0.00 | Balance 0.00 (NaN%) | PnL +0.00% | Margin 0.0% | Positions 0
+
+## Current Positions
+1. BTCUSDT LONG | Entry 60000.0000 Current 60073.5000 | Qty 0.0100 | Position Value 600.74 USDT | PnL+0.00% | PnL Amount+0.00 USDT | Peak PnL0.00% | Leverage 1x | Margin 0 | Liq Price 0.0000
+
+=== BTCUSDT Market Data ===
+
+current_price = 60073.5000
+
+=== 3M Timeframe (oldest → latest) ===
+
+Time(CT)       Open      High      Low       Close     Volume
+09-23 08:30    60059.5000 60061.0000 60059.0000 60060.0000 10.00       
+09-23 08:33    60061.0000 60062.5000 60060.5000 60061.5000 10.00       
+09-23 08:36    60062.5000 60064.0000 60062.0000 60063.0000 10.00       
+09-23 08:39    60064.0000 60065.5000 60063.5000 60064.5000 10.00       
+09-23 08:42    60065.5000 60067.0000 60065.0000 60066.0000 10.00       
+09-23 08:45    60067.0000 60068.5000 60066.5000 60067.5000 10.00       
+09-23 08:48    60068.5000 60070.0000 60068.0000 60069.0000 10.00       
+09-23 08:51    60070.0000 60071.5000 60069.5000 60070.5000 10.00       
+09-23 08:54    60071.5000 60073.0000 60071.0000 60072.0000 10.00       
+09-23 08:57    60073.0000 60074.5000 60072.5000 60073.5000 10.00         <- current
+
+
+
+## Candidate Coins (1 coins)
+
+
+---
+
+Now please analyze and output your decision (Chain of Thought + JSON)
