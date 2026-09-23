@@ -26,7 +26,7 @@ func effRowsFor(t *testing.T, raw, venue, session string) map[string]EffectiveKn
 	return out
 }
 
-// jsonNum normalises a row value the way the API client sees it.
+// jsonVal normalises a row value the way the API client sees it.
 func jsonVal(t *testing.T, v any) any {
 	t.Helper()
 	b, err := json.Marshal(v)

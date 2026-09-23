@@ -484,7 +484,7 @@ func presenceOrigin(x *effCtx, eff any, defOrigin string) string {
 	return defOrigin
 }
 
-// clampOrigin is for values the engine reads after ClampLimits: the clamped
+// clampRow is for values the engine reads after ClampLimits: the clamped
 // copy's value, "saved value" when that is exactly what was stored, the
 // applyMissingDefaults backfill when an ABSENT field was filled at parse, else
 // the clamp.
