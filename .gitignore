@@ -165,3 +165,6 @@ data/sandbox.db*
 
 # build artifacts from cmd/* (the 2026-08-29 purge: never commit binaries)
 /gate-jwt
+
+# W-ONE-BUTTON M2 — installation-local updater state (hold file, jobs, keys). Covered by /data/ too; explicit so it is never committed.
+data/updater/
