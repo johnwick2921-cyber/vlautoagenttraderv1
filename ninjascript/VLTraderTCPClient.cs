@@ -52,7 +52,9 @@ namespace NinjaTrader.NinjaScript.AddOns
         // E7 capability handshake (2026-08-30): reported on every heartbeat so
         // the Go side refuses frame types this build hasn't proven. Bump on any
         // additive wire change; Go gates on FarSideBuildE7 in tcp_framing.go.
-        private const string  VL_BUILD_ID             = "2026-09-20-p1";
+        // 2026-09-22-m2 (W-ONE-BUTTON M2): maintenance / maintenance_ack frames
+        // + the hello epoch fields. The ISO-date prefix is kept (CTO ruling Q3).
+        private const string  VL_BUILD_ID             = "2026-09-22-m2";
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -62,6 +64,17 @@ namespace NinjaTrader.NinjaScript.AddOns
         private Thread                   heartbeatThread;
         private CancellationTokenSource  cts;
         private Account                  account;   // primary trading account
+
+        // W-ONE-BUTTON M2 site 7 — the installation maintenance hold, as Go last
+        // told it on THIS connection (reset on every connect: Go re-sends it at
+        // accept while held, before any queued signal). While held, HandleSignal
+        // refuses NEW entries; protection, brackets on fill, part-fill amends,
+        // flatten, cancel and modify are never touched.
+        private volatile bool            maintenanceHeld  = false;
+        private volatile string          maintenanceJobId = "";
+        // CTO ruling Q3 — minted once per AddOn activation, carried on every hello.
+        private readonly string          activationNonce  = Guid.NewGuid().ToString("N");
+        private string                   sourceHashCache;   // computed once per activation
         private readonly object          writeLock = new object();
 
         // Track signal_id → original entry price for slippage calculation.
@@ -544,6 +557,10 @@ namespace NinjaTrader.NinjaScript.AddOns
                     client.Connect(GO_SERVER_HOST, GO_SERVER_PORT);
                     stream = client.GetStream();
                     LogInfo("VLTraderTCPClient: CONNECTED");
+                    // W-ONE-BUTTON M2 — a hold belongs to the connection that was
+                    // told it. Go re-sends it at accept while held.
+                    maintenanceHeld = false;
+                    maintenanceJobId = "";
 
                     // P5.2 — hello MUST be the FIRST frame so the Go server
                     // can version-check before any data. On a mismatch the
@@ -684,6 +701,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                 {
                     HandleAccountRegister(payload);
                 }
+                else if (type == "maintenance")
+                {
+                    // W-ONE-BUTTON M2 site 7 — the installation hold.
+                    HandleMaintenance(payload);
+                }
                 else if (type == "heartbeat")
                 {
                     // Ack incoming heartbeats per spec L4410.
@@ -823,6 +845,17 @@ namespace NinjaTrader.NinjaScript.AddOns
             // a new required field; the un-changed Go side keeps working. The actual
             // per-order ROUTING that submits to this account is Phase 3.
             string targetAccount = GetString(p, "account");
+
+            // W-ONE-BUTTON M2 site 7 — the installation is held for an update:
+            // refuse the NEW entry. (Go refuses first; this is the AddOn's half.)
+            // A signal frame is only ever an entry, so nothing protective is here.
+            if (maintenanceHeld)
+            {
+                LogWarn("VLTraderTCPClient: REFUSING entry " + signalId + " — installation maintenance hold (job "
+                        + maintenanceJobId + "); protection, exits and position management continue");
+                SendFillFrame(signalId, 0.0, side, qty, 0.0, "rejected", symbol: symbol);
+                return;
+            }
 
             // Spec L4414: stale signal rejection at 60s.
             if (DateTime.TryParse(ts, null,
@@ -1501,7 +1534,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         /// </summary>
         private void SendHello()
         {
-            WriteEnvelope("hello", new Dictionary<string, object>
+            var hello = new Dictionary<string, object>
             {
                 ["protocol_version"] = PROTOCOL_VERSION,
                 ["source"]           = "vltrader-addon",
@@ -1509,7 +1542,177 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // the Go boot line can answer "which build is NT8 running"
                 // without waiting for a heartbeat or a snapshot.
                 ["build_id"]         = VL_BUILD_ID
-            });
+            };
+            // CTO ruling Q3 — this activation's epoch. Best-effort: a value that
+            // cannot be read is left OUT (absent = unknown), never guessed.
+            int pid = Nt8Pid();
+            if (pid > 0) hello["nt8_pid"] = pid;
+            long startMs = Nt8StartMs();
+            if (startMs > 0) hello["nt8_start_ms"] = startMs;
+            string mvid = AssemblyMvid();
+            if (!string.IsNullOrEmpty(mvid)) hello["assembly_mvid"] = mvid;
+            if (sourceHashCache == null) sourceHashCache = ComputeSourceHash();
+            if (sourceHashCache.Length > 0) hello["source_hash"] = sourceHashCache;
+            hello["activation_nonce"] = activationNonce;
+            WriteEnvelope("hello", hello);
+        }
+
+        // === W-ONE-BUTTON M2 site 7 — installation maintenance hold ===
+        // Go sends `maintenance {held, job_id}` only while the installation is held
+        // for an update (plus one held:false release). Every maintenance frame is
+        // answered with a maintenance_ack carrying a census of what this NT8 can
+        // see: flags and counts only, NEVER names (the repo is public and Go logs
+        // the ack). Go's installation gate fails on any connected non-SIM
+        // connection, any position or working order on ANY account, or a census
+        // this AddOn could not take (census_error / an absent list).
+        private void HandleMaintenance(Dictionary<string, object> p)
+        {
+            bool held = true; // fail-closed: a notice we cannot read holds
+            object hv;
+            if (p != null && p.TryGetValue("held", out hv) && hv is bool)
+                held = (bool)hv;
+            else
+                LogWarn("VLTraderTCPClient: maintenance frame without a boolean 'held' — treating it as HELD (fail-closed)");
+            string job = GetString(p, "job_id") ?? "";
+            bool changed = held != maintenanceHeld || job != maintenanceJobId;
+            maintenanceHeld = held;
+            maintenanceJobId = job;
+            if (changed)
+            {
+                if (held)
+                    LogWarn("VLTraderTCPClient: MAINTENANCE HOLD (job " + job + ") — NEW entries are refused; protection, exits and position management continue");
+                else
+                    LogInfo("VLTraderTCPClient: maintenance hold RELEASED — entries are accepted again");
+            }
+            WriteEnvelope("maintenance_ack", BuildMaintenanceAck(held, job));
+        }
+
+        private Dictionary<string, object> BuildMaintenanceAck(bool held, string job)
+        {
+            var payload = new Dictionary<string, object>
+            {
+                ["held"]            = held,
+                ["job_id"]          = job,
+                // Frames execute synchronously on the read thread: when this ack is
+                // written, every frame received before it has already run. There is
+                // no command queue, so the depth is 0 by construction. A future
+                // asynchronous dispatcher MUST report its real depth here.
+                ["queued_commands"] = 0,
+                ["build_id"]        = VL_BUILD_ID
+            };
+            try
+            {
+                var accounts = new List<object>();
+                // connection -> "every account seen on it is SIM"
+                var connAllSim = new Dictionary<Connection, bool>();
+                lock (Account.All)
+                {
+                    foreach (Account a in Account.All)
+                    {
+                        if (a == null) continue;
+                        bool sim = IsSimAccount(a);
+                        int positions = 0, working = 0;
+                        lock (a.Positions)
+                        {
+                            foreach (Position pos in a.Positions)
+                                if (pos != null && pos.MarketPosition != MarketPosition.Flat && pos.Quantity != 0) positions++;
+                        }
+                        lock (a.Orders)
+                        {
+                            // ANY non-terminal order of ANY action: entries, exits and
+                            // protection alike (a resting exit can reverse a flat account).
+                            foreach (Order o in a.Orders)
+                                if (o != null && !IsTerminalOrderState(o.OrderState)) working++;
+                        }
+                        accounts.Add(new Dictionary<string, object>
+                        {
+                            ["sim"] = sim, ["positions"] = positions, ["working"] = working
+                        });
+                        Connection c = a.Connection;
+                        if (c != null)
+                        {
+                            bool prev;
+                            connAllSim[c] = (connAllSim.TryGetValue(c, out prev) ? prev : true) && sim;
+                        }
+                    }
+                }
+                var connections = new List<object>();
+                lock (Connection.Connections)
+                {
+                    foreach (Connection c in Connection.Connections)
+                    {
+                        if (c == null) continue;
+                        // A connection with no account seen on it is NOT known to be
+                        // SIM, so it reads as non-SIM (fail-closed).
+                        bool allSim;
+                        bool sim = connAllSim.TryGetValue(c, out allSim) && allSim;
+                        connections.Add(new Dictionary<string, object>
+                        {
+                            ["sim"] = sim, ["connected"] = c.Status == ConnectionStatus.Connected
+                        });
+                    }
+                }
+                payload["connections"] = connections;
+                payload["accounts"]    = accounts;
+            }
+            catch (Exception ex)
+            {
+                // The type name only: an exception message could carry an account name.
+                payload["census_error"] = "census failed: " + ex.GetType().Name;
+                payload.Remove("connections");
+                payload.Remove("accounts");
+            }
+            return payload;
+        }
+
+        // Filled / Cancelled / Rejected are history; every other state (Unknown
+        // included) counts as working — the census must never under-report.
+        private static bool IsTerminalOrderState(OrderState st)
+        {
+            return st == OrderState.Filled || st == OrderState.Cancelled || st == OrderState.Rejected;
+        }
+
+        private static int Nt8Pid()
+        {
+            try { return System.Diagnostics.Process.GetCurrentProcess().Id; } catch { return 0; }
+        }
+
+        private static long Nt8StartMs()
+        {
+            try
+            {
+                DateTime st = System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime();
+                return (long)(st - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
+            }
+            catch { return 0; }
+        }
+
+        // The loaded assembly's module version id: NT8 compiles every NinjaScript
+        // into one assembly, and the MVID changes on every compile.
+        private static string AssemblyMvid()
+        {
+            try { return typeof(VLTraderTCPClient).Assembly.ManifestModule.ModuleVersionId.ToString("N"); }
+            catch { return ""; }
+        }
+
+        // SHA-256 of this AddOn's source file as it stood on disk when this
+        // activation started ("" when it cannot be read). Content-derived, unlike
+        // VL_BUILD_ID; read beside assembly_mvid, which is the compile identity.
+        private static string ComputeSourceHash()
+        {
+            try
+            {
+                string path = Path.Combine(Globals.UserDataDir, "bin", "Custom", "AddOns", "VLTraderTCPClient.cs");
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                using (var fs = File.OpenRead(path))
+                {
+                    byte[] h = sha.ComputeHash(fs);
+                    var sb = new StringBuilder(h.Length * 2);
+                    foreach (byte b in h) sb.Append(b.ToString("x2", CultureInfo.InvariantCulture));
+                    return sb.ToString();
+                }
+            }
+            catch { return ""; }
         }
 
         private void SendFillFrame(string signalId, double fillPrice, string side,

@@ -475,3 +475,89 @@ a received entry rejection (`fill.status` or `order_update.state`) settles as
 A local socket return is not broker acceptance. Unanswered placements retain
 their pending state and slot; a queue-age refusal is logged, never presented as
 an NT8 rejection or silently re-authorized as another placement.
+
+## Installation maintenance hold (W-ONE-BUTTON M2, 2026-09-22) — build `2026-09-22-m2`
+
+A partner update holds the whole installation (`data/updater/hold.json`) while it
+drains. Go refuses new entries on every path first; these two frames are the
+AddOn's half. **Additive; protocol version unchanged (3).**
+
+### `maintenance` (Go server → C# AddOn)
+
+```json
+{ "type": "maintenance", "payload": { "held": true, "job_id": "upd-2026-09-22-01" } }
+```
+
+- Sent **only while a hold is present**: at accept (after the account allowlist,
+  **before** the queued-signal flush), on change, and **re-sent every 5 s** so each
+  ack carries a fresh census. When the hold clears, **one** `{"held": false}` goes to
+  a connection that was told it was held. **With no hold file nothing is sent**, so
+  the wire of an installation that never updates is byte-identical to before M2.
+- `job_id` is omitted when released. A corrupt hold file is sent as held with no
+  `job_id` (fail-closed).
+- AddOn: while held, `HandleSignal` **refuses every new entry** with the existing
+  `fill status=rejected` frame. It never touches protection, brackets on fill,
+  part-fill amends, flatten, cancel or modify. A `maintenance` frame without a
+  boolean `held` is treated as **held**. The AddOn resets to not-held on every
+  (re)connect: a hold belongs to the connection it was sent on, and Go re-sends it
+  at accept.
+
+### `maintenance_ack` (C# AddOn → Go server)
+
+```json
+{ "type": "maintenance_ack", "payload": {
+    "held": true, "job_id": "upd-2026-09-22-01", "queued_commands": 0,
+    "build_id": "2026-09-22-m2",
+    "connections": [ { "sim": true,  "connected": true },
+                     { "sim": false, "connected": false } ],
+    "accounts":    [ { "sim": true, "positions": 0, "working": 0 } ] } }
+```
+
+- Sent in answer to **every** `maintenance` frame.
+- **No names, ever.** Flags and counts only: this repo is public and Go logs the ack.
+- `connections[]`: every connection in `Connection.Connections`. `sim` is true only
+  when **every** account seen on that connection is a SIM account (`IsSimAccount`);
+  a connection with no account seen reads **non-SIM** (fail-closed). `connected` is
+  `Status == ConnectionStatus.Connected`.
+- `accounts[]`: every account in `Account.All`. `positions` counts non-flat
+  positions. `working` counts orders **of any action** in any state except
+  Filled / Cancelled / Rejected (Unknown counts as working): a resting exit can
+  reverse a flat account, so exits and protection are counted too.
+- `census_error` (with `connections` / `accounts` **absent**) when the AddOn could not
+  take the census. It carries the exception type only, never the message, which could
+  carry an account name. Go never reads an absent list as an empty one.
+- `queued_commands`: the AddOn executes frames synchronously on its read thread, so
+  when the ack is written every earlier frame has already run. The depth is **0 by
+  construction**. A future asynchronous dispatcher must report its real depth.
+- Go records the ack on the **current connection's record only**. A reconnect
+  starts a fresh record, so connection N's ack is never reported for N+1.
+
+**What Go's installation gate does with it (CTO ruling Q1):** it fails on
+- no ack for the current connection, or a stale one;
+- an ack for another job;
+- a census error or an absent list;
+- **any connected non-SIM connection**;
+- **any position or working order on any account.**
+
+An AddOn older than `2026-09-22-m2` never acks, so the gate reads `addon_ack: n/a` and **fails**.
+
+### `hello` epoch fields (CTO ruling Q3)
+
+`hello` (AddOn → Go) gains additive, `omitempty` fields that identify **this
+activation**, so an update verifier can bind "the new build is running" to
+evidence rather than to the hand-set `VL_BUILD_ID` (M1 finding F4):
+
+| field | meaning |
+|---|---|
+| `nt8_pid` | `NinjaTrader.exe` process id |
+| `nt8_start_ms` | that process's start time, Unix ms UTC |
+| `assembly_mvid` | module version id of the loaded NinjaScript assembly; **changes on every compile** |
+| `source_hash` | SHA-256 of `AddOns\VLTraderTCPClient.cs` as it stood on disk when this activation started (omitted when unreadable) |
+| `activation_nonce` | minted once per AddOn activation |
+
+A value the AddOn cannot read is **left out**, never guessed. The Go reply sets none
+of them, so its bytes are unchanged (`{"protocol_version":3,"source":"nofx-go"}`, pinned
+by `TestGoHelloReplyIsByteIdentical`). Go stores each connection's hello, together with
+its `accept_seq`, monotonic accept time and `remote_port`, as that connection's record.
+The verifier binds to that record, **never** to `FarSideBuildID()`. `VL_BUILD_ID` keeps
+its ISO-date prefix, because the capability floors compare it bytewise.
