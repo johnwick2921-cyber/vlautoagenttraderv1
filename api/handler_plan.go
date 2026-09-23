@@ -544,6 +544,10 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 	if lifecycleReason != "" {
 		resp["lifecycle_reason"] = lifecycleReason
 	}
+	// W-EXEC-TRUTH W2 A1/A2 — the born check the write site stored on THIS
+	// row (policy, read/publish clocks, judged 5m groups); a pre-W2 row says
+	// recorded=false and the card renders n/a.
+	resp["authored_invalidation"] = authoredInvalidationFor(row)
 	c.JSON(200, resp)
 }
 

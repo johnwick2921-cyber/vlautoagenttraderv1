@@ -382,7 +382,10 @@ export function SessionPlanCard({
       role="region"
       aria-label={`${tp('title', language)}, v${plan.version ?? 1}, ${plan.lifecycle ?? 'active'}`}
     >
-      <PlanLiveness value={plan.scenario_liveness} />
+      <PlanLiveness
+        value={plan.scenario_liveness}
+        authored={plan.authored_invalidation}
+      />
       {/* UI-verification (2026-08-18): the owner tapped Reset while a death
           re-plan was writing and the card showed NOTHING for minutes — the reset
           worked but read as "does nothing". F7 (2026-08-30): once a plan row is

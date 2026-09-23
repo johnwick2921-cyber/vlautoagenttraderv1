@@ -277,6 +277,17 @@ export interface ScenarioLiveness {
   reason?: string
 }
 
+/** W-EXEC-TRUTH W2 A1/A2 — the publication-time born check stored on the
+ * served row. recorded=false (pre-W2 row, fail-closed NO-TRADE row) → the card
+ * says n/a; read_clock_ms null on a recorded row = read clock unknown at write. */
+export interface AuthoredInvalidation {
+  recorded: boolean
+  policy?: string
+  read_clock_ms: number | null
+  publish_clock_ms: number | null
+  groups?: number[]
+}
+
 export interface ScenarioDeath {
   plan_id: string
   version: number
@@ -329,6 +340,7 @@ export interface PlanToday {
   scenario_identity?: Record<string, ScenarioLevelIdentity>
   scenario_status?: Record<string, ScenarioStatusValue>
   scenario_liveness?: ScenarioLiveness
+  authored_invalidation?: AuthoredInvalidation
   scenario_deaths?: Record<string, ScenarioDeath>
   // A1/A4: verdict basis ("machine"|"heuristic") + scenarios with no anchor
   /** ONE SETUP (dispatch 102) — the arm seam's recorded verdict per scenario. */
