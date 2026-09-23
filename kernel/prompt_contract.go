@@ -194,6 +194,15 @@ func PromptContracts() []PromptContract {
 			Site:       "kernel/confirm_resolver.go ValidateConfirmHoldProse (parsePlanDocument newAuthoring) + validateConfirmHoldMin (ValidatePlanDocWithCaps)",
 			MustAppear: []string{`"hold_min": <n>`, "hold_min is time_hold ONLY — the minutes of 1m closes your prose states", "2x5m_close waits for TWO completed 5m closes"},
 		},
+		{
+			// W-EXEC-TRUTH W2 A1 (2026-09-23) — scenario.invalid outside the
+			// grammar was accepted as UNKNOWN (row 455: all four sentences).
+			// It is now a write-time refusal, so the prompt states the grammar
+			// and one placeholder example, verbatim from the kernel.
+			Rule:       "scenario.invalid must be exactly one of the 5m / 2x5m close above|below <price> forms — anything else is refused at write",
+			Site:       "trader/plan_liveness.go validateAuthoredScenariosAt → kernel.EvaluateBornCheck (authoredCloseRule grammar, AuthoredUnknownGrammar)",
+			MustAppear: []string{`"invalid" GRAMMAR (machine-checked at write; anything else is REFUSED, never accepted as UNKNOWN)`, `"5m close above <price>" | "5m close below <price>" | "2x5m close above <price>" | "2x5m close below <price>"`, `Example: "invalid": "`},
+		},
 	}
 }
 

@@ -64,6 +64,13 @@ const RepairFlipDirectionLaw = "FLIP DIRECTION: flip side must oppose the bias: 
 // validator's words.
 const RepairFlipSideOfPriceLaw = "LINE SIDE OF PRICE: a flip line must sit on the far side of price at authoring — `flip.side: above` needs the line ABOVE the current price, `flip.side: below` needs it BELOW. The machine fires a line only after price touches it from the near side and then closes beyond it, so a line already beyond price on its own side can never be touched from the near side and never fires; the death line obeys the same law (a death line already crossed is a plan born dead). Move the line to the far side of the current price (keep the side the bias requires); never flip the bias to satisfy it."
 
+// RepairInvalidationGrammarLaw (W-EXEC-TRUTH W2 A1, 2026-09-23) is the excerpt
+// for the combined grammar refusal. Row 455 authored "Any 5m close above
+// 31075.75 invalidates the fade; stand aside for the breakout." — accepted as
+// UNKNOWN before this wave. The model is told the grammar in the forms the
+// validator parses; the sentence is prose, so only 2x5m is a scanned token.
+const RepairInvalidationGrammarLaw = "INVALIDATION GRAMMAR: every scenario's `invalid` is machine-checked at write and must be EXACTLY one of `5m close above <price>` | `5m close below <price>` | `2x5m close above <price>` | `2x5m close below <price>` — one plain number and nothing else (no `any`, `back`, `then`, no second clause, no other timeframe). A sentence outside the grammar is REFUSED, never accepted. Rewrite each quoted line into one of the four forms, keeping its price and side; change nothing else."
+
 // HintRuleField names WHICH enum a hint's rule tokens are drawn from. The same
 // spelling can be legal in one field and illegal in another: "2x5m" is a legal
 // death/flip rule (conditionRules) and an ILLEGAL confirm rule (confirmRules).
@@ -83,7 +90,13 @@ const (
 	// HintFieldRelation — relation_d / relation_4h values:
 	// with-trend | counter-trend | range (S3, 2026-09-16).
 	HintFieldRelation HintRuleField = "relation"
+	// HintFieldInvalidGrammar — scenario.invalid prose (W2 A1, 2026-09-23):
+	// the only scanned token its grammar names is 2x5m ("5m close" is prose).
+	HintFieldInvalidGrammar HintRuleField = "scenario.invalid"
 )
+
+// invalidGrammarTokens are the rule-shaped tokens the invalid grammar may name.
+var invalidGrammarTokens = map[string]bool{"2x5m": true}
 
 // ValidatorHint pairs a validator message/hint site with the enum tokens its
 // text names: condition names (class 34) and rule tokens (class 38).
@@ -114,6 +127,8 @@ func legalRuleTokens(field HintRuleField) map[string]bool {
 		return confirmRules
 	case HintFieldConditionRule:
 		return conditionRules
+	case HintFieldInvalidGrammar:
+		return invalidGrammarTokens
 	}
 	return nil
 }
@@ -192,6 +207,9 @@ func ValidatorHints() []ValidatorHint {
 		// repair excerpt name confirm-field tokens only (time_hold).
 		{Site: "confirm_resolver.go hold_min prose", Text: ConfirmHoldMinHint, RuleField: HintFieldConfirmRule},
 		{Site: "planner_repair.go hold_min law", Text: RepairHoldMinLaw, RuleField: HintFieldConfirmRule},
+		// W2 A1 (2026-09-23) — the invalidation grammar law; field-scoped to
+		// scenario.invalid so a later edit naming a confirm token fails here.
+		{Site: "planner_repair.go invalidation grammar law", Text: RepairInvalidationGrammarLaw, RuleField: HintFieldInvalidGrammar},
 	}
 	// CLASS 38 — the entry law Style strings are quoted VERBATIM into the
 	// rejection the model reads ("… not allowed for %s — entry law: %s"), so

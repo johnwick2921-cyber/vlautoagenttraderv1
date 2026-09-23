@@ -100,6 +100,11 @@ func lawExcerptsFor(errors string) string {
 	if strings.Contains(errors, "hold_min") {
 		add(RepairHoldMinLaw)
 	}
+	// W-EXEC-TRUTH W2 A1 (2026-09-23): scenario.invalid outside the grammar —
+	// the combined refusal opens with AuthoredGrammarRefusalMarker.
+	if strings.Contains(errors, AuthoredGrammarRefusalMarker) {
+		add(RepairInvalidationGrammarLaw)
+	}
 	if len(out) == 0 {
 		add("Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.")
 	}
