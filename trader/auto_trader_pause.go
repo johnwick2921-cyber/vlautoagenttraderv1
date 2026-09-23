@@ -59,6 +59,12 @@ func (at *AutoTrader) ResumeEntries(source string) {
 		_ = at.store.SetSystemConfig(pauseConfigKey(at.id), "0")
 	}
 	at.pauseStoreMu.Unlock()
+	// W-ONE-BUTTON M2 site 6: the maintenance hold is installation-wide and is
+	// NOT a pause — resume never lifts it, and must not claim it did.
+	if reason, held := MaintenanceHeld(); held {
+		at.logWarnf("▶️ stop_until CLEARED (%s) — but NEW entries stay refused: maintenance hold (%s). They resume when the update completes.", source, reason)
+		return
+	}
 	at.logInfof("▶️ stop_until CLEARED (%s): entries resume.", source)
 }
 
