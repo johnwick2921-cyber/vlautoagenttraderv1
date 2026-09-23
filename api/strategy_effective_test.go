@@ -430,6 +430,12 @@ func TestEffectiveCoverageCounted(t *testing.T) {
 	if c.NotEnumerated == nil || c.Unresolved == nil {
 		t.Fatalf("computed lists are [] never null: %+v", c)
 	}
+	// W1 (f) walks the real MarshalJSON paths, so every registered resolver
+	// path is a schema path: a registration the walk cannot reach is a typo
+	// or a path the save never writes.
+	if len(c.NotEnumerated) != 0 {
+		t.Fatalf("registered resolver paths the schema walk does not produce: %v", c.NotEnumerated)
+	}
 }
 
 // effectiveResolvedPin is the number of registered resolvers at this revision

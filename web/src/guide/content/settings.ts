@@ -728,6 +728,10 @@ export const settings: GuideSection = {
       text: 'env-shadows reads "n/a (not counted)": nothing counts which environment variables override a saved knob yet, so the line says so instead of printing a 0 nobody measured. The /api/config/resolved summary leaves env_shadows out for the same reason, and the Settings panel shows n/a.',
     },
     {
+      kind: 'p',
+      text: "Effective value · origin · scope (W1). Each Studio setting can show a chip such as 'eff 3 · saved value · strategy'. EFFECTIVE is the value the running bot uses, computed on the server from the SAVED strategy with the same functions the bot calls — unsaved edits do not change it until you save. ORIGIN says where that value came from: saved value · schema default / shipped default · strategy value · session override · env NAME (a process environment variable) · clamp (…) (a range or ceiling cut it) · suspended (EXIT_MECHS_SUSPENDED) · backfilled default (filled in when the saved block was empty) · code constant (folded) (no control; a constant applies unless a value is stored). '— saved X not used' means you saved X and something else won. SCOPE says where to change it: strategy · session:NY / ASIA / LONDON · process env · venue:ninjatrader. 'n/a — no resolver registered' means the server has no production resolver for that field yet — it never guesses; the coverage count says how many rows are resolved. Secrets always read 'redacted'. Source: GET /api/strategies/:id/effective?session=NY. Known limit: the Studio's own save path still writes some defaults back as values (an unset min R:R is saved as 3, min confidence 0 as 60, max positions 0 as 1), so a strategy saved from the Studio shows those as 'saved value' — pinned by a test until the save path is fixed.",
+    },
+    {
       kind: 'code',
       title: 'boot line shape (the numbers are read at boot, never typed)',
       lines: [
