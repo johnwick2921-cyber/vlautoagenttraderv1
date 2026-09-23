@@ -314,6 +314,9 @@ CRITICAL: Always use the "id" field for strategy_id.`,
 			s.route(protected, "POST", "/strategies/preview-prompt", "Preview the AI prompt that will be generated from a config", s.handlePreviewPrompt)
 			s.route(protected, "POST", "/strategies/test-run", "Test-run strategy AI analysis", s.handleStrategyTestRun)
 			s.route(protected, "GET", "/strategies/:id", "Get strategy by ID", s.handleGetStrategy)
+			// W1 (g): every settings row's effective value, origin and scope —
+			// from the STORED row, never the ClampLimits'd copy the GET above serves.
+			s.route(protected, "GET", "/strategies/:id/effective", "Effective value + origin + scope per strategy setting (?session=NY|ASIA|LONDON, ?venue=)", s.handleStrategyEffective)
 			s.routeWithSchema(protected, "POST", "/strategies", "Create a new trading strategy",
 				`Body: {"name":"<string, required>","description":"<string, optional>","lang":"zh|en","config":<StrategyConfig object, OPTIONAL — if omitted the system applies complete working defaults automatically (ai500 top coins, all standard indicators, standard risk control)>}
 IMPORTANT: For most use cases just POST {"name":"<name>"} — the backend fills everything in. Only include "config" when the user explicitly requests custom settings (specific coins, custom leverage, custom timeframes).

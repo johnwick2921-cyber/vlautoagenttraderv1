@@ -255,10 +255,8 @@ func buildEffectiveRow(x *effCtx, path string) EffectiveKnob {
 	k.Resolver = r.name
 	k.Resolved = true
 
-	// A saved value that lost to a default, an env var, a suspension or (on a
-	// per-session row) the strategy value is said to have lost — the defect
-	// class this row exists to expose is a saved value that silently does not
-	// apply.
+	// A saved value that lost is said to have lost — the defect class this row
+	// exists to expose is a saved value that silently does not apply.
 	if st.present && savedValueLost(path, res.origin) {
 		k.Origin += " — saved " + compactJSON(st.value) + " not used"
 	}
@@ -272,13 +270,19 @@ func presenceOnlyOrigin(present bool) string {
 	return OriginUnset
 }
 
+// savedValueLost: a stored value exists and something else decided the
+// effective value — a default, an env var, a clamp, a suspension, a session
+// override (on a strategy-level row) or the strategy value (on a per-session
+// row). The saved kinds are "saved value", "strategy value" on a strategy row
+// and "session override" on a per-session row.
 func savedValueLost(path, origin string) bool {
-	for _, p := range []string{store.SourceSchemaDefault, store.SourceShippedDefault, "code constant", OriginBackfilled, "env ", OriginSuspended} {
-		if strings.HasPrefix(origin, p) {
-			return true
-		}
+	if strings.HasPrefix(origin, store.SourceSaved) || origin == OriginNA || origin == OriginUnset {
+		return false
 	}
-	return isSessionPath(path) && strings.HasPrefix(origin, store.SourceStrategyValue)
+	if isSessionPath(path) {
+		return !strings.HasPrefix(origin, store.SourceSessionOverride)
+	}
+	return !strings.HasPrefix(origin, store.SourceStrategyValue)
 }
 
 func isSessionPath(path string) bool { return strings.HasPrefix(path, "day_plan.sessions.") }
@@ -858,7 +862,7 @@ func buildEffectiveResolvers() map[string]effResolver {
 		if knob > 0 && v == knob {
 			return effResult{value: v, origin: store.SourceSaved, scope: ScopeFutures}
 		}
-		return effResult{value: v, origin: store.SourceStrategyValue + " (min_risk_reward_ratio floor)", scope: ScopeFutures}
+		return effResult{value: v, origin: "clamp (trader.pictureMinRR: min_risk_reward_ratio floor)", scope: ScopeFutures}
 	})
 	add(dpPath+"structural_stop.buffer_points", "store.ResolveStructuralStop(cfg, \"MNQ\")", func(x *effCtx) effResult {
 		p := store.ResolveStructuralStop(x.cfg, "MNQ")
