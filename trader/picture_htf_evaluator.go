@@ -63,6 +63,9 @@ type PictureHtfEvaluator struct {
 	unknownSince  time.Time
 	unknownWarned bool
 	unknownWarns  int64
+	// tickSkips counts wall-clock fallbacks that found no completed frame to
+	// be late about (W4/D24). READ.
+	tickSkips int64
 
 	// holdRefusedKey dedupes the maintenance-hold refusal (count + WARN) to
 	// once per opportunity rather than once per frame.
@@ -272,6 +275,38 @@ func frameContract(bars []market.Kline) string {
 		}
 	}
 	return out
+}
+
+// HasCompletedFrame reports whether a COMPLETED 5m frame has ever been seen.
+// Until one has, there is no data to judge and no boundary to have missed.
+func (e *PictureHtfEvaluator) HasCompletedFrame() bool {
+	if e == nil {
+		return false
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.freshest5mClose > 0
+}
+
+// noteTickFallbackSkip records a fallback that ran with no completed frame.
+func (e *PictureHtfEvaluator) noteTickFallbackSkip() {
+	if e == nil {
+		return
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.tickSkips++
+}
+
+// TickFallbackSkips reports how many wall-clock fallbacks found nothing to
+// evaluate — a feed that never delivers is then visible, not merely quiet.
+func (e *PictureHtfEvaluator) TickFallbackSkips() int64 {
+	if e == nil {
+		return 0
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.tickSkips
 }
 
 // UnknownContractFrames reports frames evaluated while contract identity

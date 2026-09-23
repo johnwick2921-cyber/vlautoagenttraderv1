@@ -24,7 +24,45 @@ var (
 	liveSinkCh    = make(chan liveSinkMsg, 256)
 	liveSinkOnce  sync.Once
 	liveSinkDrops atomic.Int64
+	// W4/D24: frames refused as LIVE ENTRY EVENTS because they reached us long
+	// after they were emitted, and frames whose age could not be judged at all.
+	// Both are READ; neither is inferred.
+	staleLiveFrames  atomic.Int64
+	unagedLiveFrames atomic.Int64
 )
+
+// liveFrameMaxAgeMs bounds how old a bar_update frame may be and still count
+// as a LIVE entry event. It is deliberately far ABOVE the 10s entry window —
+// an ordinary late emission (NT8 emits a closed bar on the first tick of the
+// next bar) must never be refused here — and far BELOW one 5m candle period,
+// so a frame belonging to an earlier interval cannot present itself as news.
+// The frame still reaches the cache; only the entry fan-out is refused.
+const liveFrameMaxAgeMs = 30_000
+
+// StaleLiveFrames reports frames refused as live entry events for age.
+func StaleLiveFrames() int64 { return staleLiveFrames.Load() }
+
+// UnagedLiveFrames reports frames whose emitted_at was absent, so their age
+// could not be judged. They are NOT refused — an AddOn older than the
+// 2026-09-20 stamp would otherwise go dark — but they are never silent.
+func UnagedLiveFrames() int64 { return unagedLiveFrames.Load() }
+
+// liveFrameTooOld reports whether the frame's own emission stamp puts it
+// outside liveFrameMaxAgeMs. Reads nothing but the frame: this is the wire
+// boundary and it must not depend on any evaluator.
+func liveFrameTooOld(bars []Bar, nowMs int64) bool {
+	newest := int64(0)
+	for _, b := range bars {
+		if b.EmittedAt > newest {
+			newest = b.EmittedAt
+		}
+	}
+	if newest == 0 {
+		unagedLiveFrames.Add(1)
+		return false
+	}
+	return nowMs-newest > liveFrameMaxAgeMs
+}
 
 type liveSinkMsg struct {
 	symbol string

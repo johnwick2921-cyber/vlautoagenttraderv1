@@ -123,7 +123,16 @@ func (at *AutoTrader) NotifyLiveBars(symbol, tf string, bars []market.Kline, rec
 // observes the broker book). The evaluator's freshness gate still applies.
 func (at *AutoTrader) pictureHtfTickFallback(now time.Time) {
 	if ev := at.pictureHtfEvaluator(); ev != nil {
-		ev.Evaluate(at.futuresSymbol(), now)
+		// W4/D24: the fallback covers a MISSED boundary frame. Where no
+		// completed frame has ever arrived there is nothing to be late about,
+		// and the evaluation would run against zero stamps. The reconciliation
+		// sweep still runs either way — pending rows must recover across a
+		// disconnect whether or not the tape has spoken since.
+		if ev.HasCompletedFrame() {
+			ev.Evaluate(at.futuresSymbol(), now)
+		} else {
+			ev.noteTickFallbackSkip()
+		}
 		pictureHtfReconcilePending(at)
 	}
 }

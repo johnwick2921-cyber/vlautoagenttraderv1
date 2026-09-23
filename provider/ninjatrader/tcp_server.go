@@ -1742,7 +1742,20 @@ func (s *TCPServer) drainBarIngest(ctx context.Context) {
 				s.barCache.Upsert(msg.symbol, msg.timeframe, msg.bars)
 				// LIVE-only fan-out to deterministic evaluators (two-picture
 				// mode). Historical replays must NOT mint opportunities.
-				fanOutLiveBars(msg.symbol, msg.timeframe, msg.contract, msg.bars)
+				//
+				// W4/D24: neither may a frame that reached us long after it was
+				// emitted. It is real data and the cache write above keeps it,
+				// but a backlogged queue draining all at once must not present
+				// old prices as news.
+				if liveFrameTooOld(msg.bars, time.Now().UnixMilli()) {
+					staleLiveFrames.Add(1)
+					if n := staleLiveFrames.Load(); n%100 == 1 {
+						s.logger.Warn("picture-htf: bar_update frame refused as a live entry event — too old; cached, not traded",
+							"max_age_ms", liveFrameMaxAgeMs, "refused_total", n, "symbol", msg.symbol, "timeframe", msg.timeframe)
+					}
+				} else {
+					fanOutLiveBars(msg.symbol, msg.timeframe, msg.contract, msg.bars)
+				}
 			}
 			// Bar persistence (2026-08-26) — fan-out AFTER the cache write, in
 			// its own goroutine: a slow/failing DB must never stall the drain
