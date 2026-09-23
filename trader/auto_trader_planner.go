@@ -2326,7 +2326,12 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 				kernel.StampAuthoredIdentity(d, facts.IdentityMap)
 			}()
 		}
-		if feas := at.writeTimeFeasibilityVerdicts(d, atr5m, at.config.StrategyConfig, session); len(feas) > 0 {
+		// W-EXEC-TRUTH W3 (c): the market_in_zone zone verdicts join the
+		// feasibility issues — NOT gated by the write_time_feasibility knob
+		// (D5); hinted on attempts < max, the arm disabled on the last.
+		feas := at.writeTimeFeasibilityVerdicts(d, atr5m, at.config.StrategyConfig, session)
+		feas = append(feas, at.writeTimeZoneVerdicts(d, atr5m, at.config.StrategyConfig, session)...)
+		if len(feas) > 0 {
 			if attempt < plannerMaxAttempts {
 				lastErr = fmt.Errorf("%s", writeTimeFeasibilityHint(feas))
 				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))

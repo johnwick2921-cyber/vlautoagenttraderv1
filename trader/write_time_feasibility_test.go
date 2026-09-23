@@ -72,6 +72,11 @@ func feasPlannerTrader(t *testing.T, writeFeas *bool) *AutoTrader {
 	t.Helper()
 	at := plannerTestTrader(t)
 	at.config.StrategyConfig.DayPlan.WriteTimeFeasibility = writeFeas
+	// W-EXEC-TRUTH W3: these tests pin the LEGACY feasibility path (an arm with
+	// no entry policy). With the shipped default (market_in_zone) the arm would
+	// be stamped and judged by writeTimeZoneVerdicts instead — that path is
+	// pinned in entry_policy_write_test.go. "legacy" = the explicit off.
+	at.config.StrategyConfig.DayPlan.EntryPolicyDefault = store.EntryPolicyLegacy
 	return at
 }
 
