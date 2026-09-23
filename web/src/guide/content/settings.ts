@@ -915,7 +915,7 @@ export const settings: GuideSection = {
         },
         {
           title: 'The knob',
-          body: 'condition_status map, resolved per-condition: session override → strategy base → env (SHADOW_CONDITIONS / LIVE_CONDITIONS) → defaults. Defaults this wave: fvg_entry = shadow, breakout_retest = shadow, all others = live. sweep_reclaim is NOT shadowed (docketed for the Sep-9 court, pre-registered criterion, do not touch).',
+          body: 'condition_status map, resolved per-condition: session override → strategy base → LIVE_CONDITIONS → SHADOW_CONDITIONS → defaults. A condition named in BOTH env lists resolves LIVE (LIVE_CONDITIONS outranks SHADOW_CONDITIONS whatever order they are written in); a strategy or session setting outranks both env lists. Defaults this wave: fvg_entry = shadow, breakout_retest = shadow, all others = live. sweep_reclaim is NOT shadowed (docketed for the Sep-9 court, pre-registered criterion, do not touch).',
         },
         {
           title:

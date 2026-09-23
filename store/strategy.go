@@ -1118,7 +1118,7 @@ type DayPlanConfig struct {
 	// concept is deleted. Old stored JSON carrying the field still loads
 	// (encoding/json ignores unknown fields).
 	// ConditionStatus (0C shadow demotion, 2026-08-31) — per-condition live|
-	// shadow map, resolved base → session override → env → defaults (fvg_entry
+	// shadow map, resolved session override → base → LIVE → SHADOW env → defaults (fvg_entry
 	// and breakout_retest default SHADOW per owner ruling). The ARM SEAM is the
 	// only enforcement point; authoring/validation/E8 scoring stay untouched.
 	ConditionStatus map[string]string `json:"condition_status,omitempty"`

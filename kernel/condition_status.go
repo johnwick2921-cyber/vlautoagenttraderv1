@@ -11,7 +11,9 @@ import (
 // the E8 counterfactual logger; it MUST NOT place any order at the arm seam.
 //
 // Resolution chain (class-8: quote the RESOLVED value, never the file default):
-//   per-session override > strategy base > env > defaults
+//   session override > strategy override > LIVE_CONDITIONS > SHADOW_CONDITIONS > defaults
+// (W1: a name in BOTH env lists resolves LIVE — the order is decided here, not
+// by the order the env string happens to list its tokens in.)
 // The defaults shadow exactly the two owner-ruled conditions:
 //   fvg_entry       = shadow  (external null ×2 + own null)
 //   breakout_retest = shadow  (no evidence anywhere + 80.7% stop-out falsification)
@@ -29,8 +31,10 @@ var defaultConditionStatus = map[string]string{
 }
 
 // ConditionStatus resolves ONE condition's live|shadow status from the full
-// chain. Precedence: session override > base > env > defaults. Empty values in
-// the maps are ignored. Condition names are case-trimmed.
+// chain. Precedence: session override > strategy override (base) >
+// LIVE_CONDITIONS > SHADOW_CONDITIONS > defaults. Within env, a live entry for
+// the name outranks a shadow entry wherever each appears in the string. Empty
+// values in the maps are ignored. Condition names are case-trimmed.
 func ConditionStatus(condition string, base, session map[string]string, env string) string {
 	c := strings.ToLower(strings.TrimSpace(condition))
 	if c == "" {
@@ -43,18 +47,27 @@ func ConditionStatus(condition string, base, session map[string]string, env stri
 		return s
 	}
 	if env != "" {
+		sawLive, sawShadow := false, false
 		for _, tok := range strings.Split(env, ",") {
 			parts := strings.SplitN(strings.TrimSpace(tok), "=", 2)
 			name := strings.ToLower(strings.TrimSpace(parts[0]))
 			if name != c {
 				continue
 			}
-			if len(parts) == 1 {
-				return ConditionShadow // bare name in SHADOW_CONDITIONS
+			switch {
+			case len(parts) == 1:
+				sawShadow = true // bare name in SHADOW_CONDITIONS
+			case parts[1] == ConditionLive:
+				sawLive = true
+			case parts[1] == ConditionShadow:
+				sawShadow = true
 			}
-			if parts[1] == ConditionShadow || parts[1] == ConditionLive {
-				return parts[1]
-			}
+		}
+		if sawLive {
+			return ConditionLive
+		}
+		if sawShadow {
+			return ConditionShadow
 		}
 	}
 	if s, ok := defaultConditionStatus[c]; ok {
@@ -69,24 +82,25 @@ func IsConditionShadowed(condition string, base, session map[string]string, env 
 	return ConditionStatus(condition, base, session, env) == ConditionShadow
 }
 
-// ShadowConditionsEnv composes the env chain the resolver reads: the SHADOW
-// and LIVE condition lists. SHADOW_CONDITIONS=csv adds shadow entries;
-// LIVE_CONDITIONS=csv forces live (highest env priority, below config).
+// ShadowConditionsEnv composes the env chain the resolver reads, in precedence
+// order: LIVE_CONDITIONS=csv forces live (the highest env priority, below
+// config), then SHADOW_CONDITIONS=csv adds shadow entries. ConditionStatus
+// ranks live over shadow itself, so the order here is for the reader.
 func ShadowConditionsEnv() string {
 	var parts []string
-	if v := strings.TrimSpace(os.Getenv("SHADOW_CONDITIONS")); v != "" {
-		for _, tok := range strings.Split(v, ",") {
-			t := strings.TrimSpace(tok)
-			if t != "" {
-				parts = append(parts, t+"="+ConditionShadow)
-			}
-		}
-	}
 	if v := strings.TrimSpace(os.Getenv("LIVE_CONDITIONS")); v != "" {
 		for _, tok := range strings.Split(v, ",") {
 			t := strings.TrimSpace(tok)
 			if t != "" {
 				parts = append(parts, t+"="+ConditionLive)
+			}
+		}
+	}
+	if v := strings.TrimSpace(os.Getenv("SHADOW_CONDITIONS")); v != "" {
+		for _, tok := range strings.Split(v, ",") {
+			t := strings.TrimSpace(tok)
+			if t != "" {
+				parts = append(parts, t+"="+ConditionShadow)
 			}
 		}
 	}

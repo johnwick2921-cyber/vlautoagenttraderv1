@@ -25,9 +25,9 @@ import (
 var conditionsBootLogged sync.Map
 
 // conditionShadowedFor (0C, owner ruling 2026-08-31) resolves one scenario
-// condition's live|shadow status through the SAME config chain as every other
-// knob: session override > strategy base > env > defaults (class-8: quote the
-// RESOLVED value, never the file default).
+// condition's live|shadow status (kernel.ConditionStatus): session override >
+// strategy base > LIVE_CONDITIONS > SHADOW_CONDITIONS > defaults (class-8:
+// quote the RESOLVED value, never the file default).
 func (at *AutoTrader) conditionShadowedFor(condition, session string) bool {
 	cfg := at.config.StrategyConfig
 	if cfg == nil || cfg.DayPlan == nil {
