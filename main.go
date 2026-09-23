@@ -204,7 +204,9 @@ func main() {
 	// go market.NewWSMonitor(150).Start(nil)
 	// logger.Info("📊 WebSocket market monitor started")
 	// time.Sleep(500 * time.Millisecond)
-	logger.Info("📊 Using CoinAnk API for all market data (WebSocket cache disabled)")
+	// W-NO-BINANCE A: the "📊 Using CoinAnk API for all market data" literal that
+	// stood here was false on the futures path (audit H20). The READ line
+	// (trader.MarketDataBootLine) prints after the traders load, below.
 
 	// Create TraderManager
 	traderManager := manager.NewTraderManager()
@@ -304,6 +306,8 @@ func main() {
 	// W-ONE-BUTTON M2 — the installation maintenance hold, every field READ.
 	// The AddOn has usually not connected yet, so addon_ack prints n/a here.
 	logger.Infof("%s", trader.MaintenanceBootLine(traderManager.GetAllTraders()))
+	// W-NO-BINANCE A — the market-data sources, READ (replaces the old literal).
+	logger.Infof("%s", trader.MarketDataBootLine(traderManager.GetAllTraders()))
 	logger.Infof("%s", researchsnapshot.CurrentBootLine())
 	// UI SERVING PATH (owner ruling 2026-09-03). Printed right after the boot
 	// integrity line because it answers the same question about a different
