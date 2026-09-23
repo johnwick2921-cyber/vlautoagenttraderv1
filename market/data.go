@@ -24,6 +24,24 @@ var (
 	frCacheTTL     = 1 * time.Hour
 )
 
+// futuresOIFunding is the ONE place the CME futures path decides open interest
+// and funding (W-NO-BINANCE A): ABSENT — OI nil, funding not known — because
+// the futures path makes no external market-data call. OI and funding are
+// Binance crypto-perp feeds; there is no CME symbol behind them.
+func futuresOIFunding() (oi *OIData, funding float64, fundingKnown bool) {
+	return nil, 0, false
+}
+
+// FuturesOIFundingBootLine READS what the futures path does for OI and
+// funding from futuresOIFunding — the function both GetWithExchange and
+// GetWithTimeframes call on that path.
+func FuturesOIFundingBootLine() string {
+	if oi, _, known := futuresOIFunding(); oi == nil && !known {
+		return "oi/funding: n/a (no external market data on the futures path)"
+	}
+	return "oi/funding: EXTERNAL (the futures path reads an external feed)"
+}
+
 // Get retrieves market data for the specified token (uses Binance data by default)
 func Get(symbol string) (*Data, error) {
 	return GetWithExchange(symbol, "binance")
@@ -126,15 +144,24 @@ func GetWithExchange(symbol, exchange string) (*Data, error) {
 		}
 	}
 
-	// Get OI data
-	oiData, err := getOpenInterestData(symbol)
-	if err != nil {
-		// OI failure doesn't affect overall result, use default values
-		oiData = &OIData{Latest: 0, Average: 0}
+	// OI + funding. W-NO-BINANCE A: the CME futures path makes NO external
+	// market-data call — both are Binance crypto-perp feeds with no CME symbol
+	// — and reports them ABSENT (nil / not known), never a fabricated 0.
+	var oiData *OIData
+	var fundingRate float64
+	var fundingKnown bool
+	if isFutures {
+		oiData, fundingRate, fundingKnown = futuresOIFunding()
+	} else {
+		oiData, err = getOpenInterestData(symbol)
+		if err != nil {
+			// OI failure doesn't affect overall result, use default values
+			oiData = &OIData{Latest: 0, Average: 0}
+		}
+		var ferr error
+		fundingRate, ferr = getFundingRate(symbol)
+		fundingKnown = ferr == nil
 	}
-
-	// Get Funding Rate
-	fundingRate, _ := getFundingRate(symbol)
 
 	// Calculate intraday series data
 	intradayData := calculateIntradaySeries(klines3m)
@@ -152,6 +179,7 @@ func GetWithExchange(symbol, exchange string) (*Data, error) {
 		CurrentRSI7:       currentRSI7,
 		OpenInterest:      oiData,
 		FundingRate:       fundingRate,
+		FundingRateKnown:  fundingKnown,
 		IntradaySeries:    intradayData,
 		LongerTermContext: longerTermData,
 	}, nil
@@ -330,16 +358,21 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 	priceChange4h := calculatePriceChangeByBars(primaryKlines, primaryTimeframe, 240) // 4 hours
 
 	// Get OI + Funding Rate (Binance crypto-perp feeds). CME futures have no
-	// Binance symbol, so these return zeros anyway and just waste a round-trip
-	// per cycle — skip them on futures. oiData stays {0,0} and fundingRate stays
-	// 0 (identical to the prior values for MNQ), but no network call is made.
-	oiData := &OIData{Latest: 0, Average: 0}
+	// Binance symbol: the futures path makes no call and reports both ABSENT
+	// (W-NO-BINANCE A — never the fabricated {0,0} / 0 this used to write).
+	var oiData *OIData
 	var fundingRate float64
-	if !isFutures {
+	var fundingKnown bool
+	if isFutures {
+		oiData, fundingRate, fundingKnown = futuresOIFunding()
+	} else {
+		oiData = &OIData{Latest: 0, Average: 0}
 		if d, oiErr := getOpenInterestData(symbol); oiErr == nil {
 			oiData = d
 		}
-		fundingRate, _ = getFundingRate(symbol)
+		var ferr error
+		fundingRate, ferr = getFundingRate(symbol)
+		fundingKnown = ferr == nil
 	}
 
 	return &Data{
@@ -354,6 +387,7 @@ func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe stri
 		CurrentRSIByPeriod: currentRSIByPeriod,
 		OpenInterest:       oiData,
 		FundingRate:        fundingRate,
+		FundingRateKnown:   fundingKnown,
 		TimeframeData: timeframeData,
 	}, nil
 }

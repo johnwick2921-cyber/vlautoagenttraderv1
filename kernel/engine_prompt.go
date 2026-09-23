@@ -259,7 +259,13 @@ func (e *StrategyEngine) writeAvailableIndicators(sb *strings.Builder) {
 	}
 
 	if indicators.EnableOI {
-		sb.WriteString("- Open Interest (OI) data\n")
+		if e.isFuturesInstrument() {
+			// W-NO-BINANCE A: the futures path reads no external market data;
+			// say so instead of advertising a feed that is not there.
+			sb.WriteString("- Open Interest (OI) data: n/a (no external market data on the futures path)\n")
+		} else {
+			sb.WriteString("- Open Interest (OI) data\n")
+		}
 	}
 
 	if indicators.EnableFundingRate && !e.isFuturesInstrument() {
@@ -701,9 +707,15 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 	if indicators.EnableOI || fundingOn {
 		sb.WriteString(fmt.Sprintf("Additional data for %s:\n\n", data.Symbol))
 
-		if indicators.EnableOI && data.OpenInterest != nil {
-			sb.WriteString(fmt.Sprintf("Open Interest: Latest: %.2f Average: %.2f\n\n",
-				data.OpenInterest.Latest, data.OpenInterest.Average))
+		if indicators.EnableOI {
+			if data.OpenInterest != nil {
+				sb.WriteString(fmt.Sprintf("Open Interest: Latest: %.2f Average: %.2f\n\n",
+					data.OpenInterest.Latest, data.OpenInterest.Average))
+			} else {
+				// W-NO-BINANCE A: ABSENT is n/a, never a fabricated 0.00 (the
+				// futures path reads no external OI).
+				sb.WriteString("Open Interest: n/a\n\n")
+			}
 		}
 
 		if fundingOn {

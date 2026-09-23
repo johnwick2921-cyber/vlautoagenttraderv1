@@ -31,10 +31,15 @@ type Data struct {
 	// Populated only when RSI periods are supplied; empty → readers fall back to the
 	// legacy CurrentRSI7 (period 7). Prompt-data only. Mirrors CurrentEMAByPeriod.
 	CurrentRSIByPeriod map[int]float64
-	OpenInterest       *OIData
-	FundingRate        float64
-	IntradaySeries     *IntradayData
-	LongerTermContext  *LongerTermData
+	// OpenInterest is nil when ABSENT — the CME futures path has no external
+	// market data (W-NO-BINANCE A): it is never a fabricated {0,0}.
+	OpenInterest *OIData
+	FundingRate  float64
+	// FundingRateKnown reports whether FundingRate was actually read. false on
+	// the CME futures path — a 0 there means "absent", and renderers print n/a.
+	FundingRateKnown  bool
+	IntradaySeries    *IntradayData
+	LongerTermContext *LongerTermData
 	// Multi-timeframe data (new)
 	TimeframeData map[string]*TimeframeSeriesData `json:"timeframe_data,omitempty"`
 }
