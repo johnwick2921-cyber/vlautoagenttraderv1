@@ -31,3 +31,23 @@ func TestChatEntryIsRefusedUnderStrictLikeADecision(t *testing.T) {
 		t.Fatal("a close is never admitted (position management)")
 	}
 }
+
+// CTO #1 Q — the REAL chain ADMITS a chat entry in advisory mode (NY session,
+// flat, no plan): every gate passes, and EntryGate's R:R leg (5) and stop-floor
+// leg (6) ABSTAIN because a chat entry carries no stop or target. That
+// abstention is today's contract, pinned here so it cannot change silently;
+// a stop-less chat entry passing the 0B floor is recorded as OWED (not W0b).
+func TestChatEntryIsAdmittedInAdvisoryModeLegs5And6Abstain(t *testing.T) {
+	withMaintenanceDir(t)
+	at := mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "advisory"})
+	at.id = "agent-door-advisory"
+	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: func(string) *kernel.ActivePlan { return nil }})
+	t.Cleanup(func() { kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{}) })
+	nyMidday := time.Date(2026, 9, 15, 16, 0, 0, 0, time.UTC) // 11:00 CT Tuesday
+	if reason, refused := at.AdmitManualEntryAt("MNQ", "open_long", nyMidday); refused {
+		t.Fatalf("advisory, flat, no plan, NY midday: the chat entry must be ADMITTED, got %q", reason)
+	}
+	if reason, refused := at.AdmitManualEntryAt("MNQ", "open_short", nyMidday); refused {
+		t.Fatalf("the short door must be admitted the same way, got %q", reason)
+	}
+}
