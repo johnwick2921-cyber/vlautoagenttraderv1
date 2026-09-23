@@ -1270,6 +1270,9 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 		return false
 	}
 	key := store.MakePlanIDForTrader(at.id, tradeDate, session)
+	if at.refusePlannerClaimWhileHeld(key, "planner read") { // W-ONE-BUTTON M2 site 5
+		return false
+	}
 	if !claimPlannerRead(key) {
 		at.logInfof("🗓️ planner read for %s already in flight — skipping duplicate call.", key)
 		return false

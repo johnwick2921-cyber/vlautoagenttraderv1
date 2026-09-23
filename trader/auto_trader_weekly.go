@@ -201,6 +201,9 @@ func (at *AutoTrader) maybeRunWeeklyRead(now time.Time) {
 	}
 	bootBackfill := now.Sub(deadline) > 2*time.Hour // read time long past → this boot caught up
 	key := fmt.Sprintf("weekly:%s:%s", at.id, monday)
+	if at.refusePlannerClaimWhileHeld(key, "weekly read") { // W-ONE-BUTTON M2 site 5
+		return
+	}
 	if !claimWeeklyRead(key) {
 		at.logInfof("📅 WEEKLY READ already in flight for week %s — skipping duplicate call.", monday)
 		return

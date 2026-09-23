@@ -37,6 +37,9 @@ func (at *AutoTrader) CanForceReread(now time.Time) RereadRefusal {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return RereadRefusal{Reason: "the day plan is off for this trader"}
 	}
+	if _, held := MaintenanceHeld(); held { // W-ONE-BUTTON M2 site 5
+		return RereadRefusal{Reason: maintenanceHoldPlanReason}
+	}
 	reg := at.sessionRegistry(now)
 	sess, ok := reg.ActiveSession(now)
 	if !ok {

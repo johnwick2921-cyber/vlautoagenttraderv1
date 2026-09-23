@@ -52,6 +52,11 @@ func (at *AutoTrader) CanForceReset(now time.Time) ResetRefusal {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return ResetRefusal{Reason: "the day plan is off for this trader"}
 	}
+	// W-ONE-BUTTON M2 site 5: refused up front, before the reset abandons the
+	// chain (the read it launches would be refused by the same hold).
+	if _, held := MaintenanceHeld(); held {
+		return ResetRefusal{Reason: maintenanceHoldPlanReason}
+	}
 	reg := at.sessionRegistry(now)
 	sess, ok := reg.ActiveSession(now)
 	if !ok {
