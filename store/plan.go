@@ -57,6 +57,13 @@ type PlanDB struct {
 	DarkRegimeCount int       `gorm:"column:dark_regime_count;not null;default:0"`
 	Degraded        bool      `gorm:"column:degraded;not null;default:false"`
 	CreatedAt       time.Time `gorm:"column:created_at;autoCreateTime"`
+	// W-EXEC-TRUTH W2 A2 (2026-09-23) — the publication-time born check, READ
+	// by the plan card. All three are NULL on rows written before W2 and on
+	// fail-closed NO-TRADE rows; ReadClockMs is NULL when the read clock was
+	// unknown (legacy facts-less writers). Additive, NULLable, never backfilled.
+	ReadClockMs    *int64  `gorm:"column:read_clock_ms"`
+	PublishClockMs *int64  `gorm:"column:publish_clock_ms"`
+	BornCheck      *string `gorm:"column:born_check"` // kernel.BornCheck JSON
 }
 
 // TableName implements the gorm Tabler interface.
@@ -124,6 +131,9 @@ CREATE TABLE IF NOT EXISTS plans (
 	dark_regime_count INTEGER NOT NULL DEFAULT 0,
 	degraded       INTEGER NOT NULL DEFAULT 0,
 	created_at     DATETIME,
+	read_clock_ms  INTEGER,
+	publish_clock_ms INTEGER,
+	born_check     TEXT,
 	PRIMARY KEY (plan_id, version)
 )`
 
@@ -193,6 +203,10 @@ func (s *PlanStore) initTables() error {
 		s.db.Exec(`ALTER TABLE plans ADD COLUMN ai_config_hash TEXT NOT NULL DEFAULT ''`)
 		s.db.Exec(`ALTER TABLE plans ADD COLUMN dark_regime_count INTEGER NOT NULL DEFAULT 0`)
 		s.db.Exec(`ALTER TABLE plans ADD COLUMN degraded INTEGER NOT NULL DEFAULT 0`)
+		// W2 A2 — NULLable born-check columns (duplicate-column error swallowed).
+		s.db.Exec(`ALTER TABLE plans ADD COLUMN read_clock_ms INTEGER`)
+		s.db.Exec(`ALTER TABLE plans ADD COLUMN publish_clock_ms INTEGER`)
+		s.db.Exec(`ALTER TABLE plans ADD COLUMN born_check TEXT`)
 		return nil
 	}
 	return s.db.AutoMigrate(&PlanDB{}, &PlanOverlayDB{})

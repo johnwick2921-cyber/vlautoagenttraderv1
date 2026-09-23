@@ -14,6 +14,11 @@ const (
 	LivenessExhaustionWarning = "exhaustion_warning"
 	LivenessBornDeadRefusal   = "born_dead_refusal"
 	LivenessAuthoredUnknown   = "authored_unknown"
+	// LivenessAuthoredGrammarRefusal (W-EXEC-TRUTH W2 A1, 2026-09-23) — one
+	// per scenario whose invalid sentence was outside the grammar and REFUSED.
+	// From W2 on, authored_unknown counts TAPE unknowns only; events written
+	// before W2 mix both kinds (the boot line says so).
+	LivenessAuthoredGrammarRefusal = "authored_grammar_refusal"
 )
 
 // This is display freshness, never an entry/wake cutoff.
@@ -83,16 +88,24 @@ type PlanLivenessCounts struct {
 	ExhaustionWarnings int64
 	BornDeadRefusals   int64
 	AuthoredUnknown    int64
+	GrammarRefusals    int64 // W2 A1
 }
 
 // RecordPlanLivenessEvent records a fact, not a derived plan-row count. identity
 // is a version for exhaustion, or a candidate attempt for write validation.
 func (s *Store) RecordPlanLivenessEvent(kind, identity string, now time.Time, detail string) (bool, error) {
+	return s.RecordPlanLivenessEventWithCheck(kind, identity, now, detail, "")
+}
+
+// RecordPlanLivenessEventWithCheck (W2 A2) also carries the attempt's born-check
+// record (read/publish clocks, judged 5m groups, verdicts) — a refused attempt
+// has no plan row to hold it. bornCheck "" writes exactly the legacy JSON.
+func (s *Store) RecordPlanLivenessEventWithCheck(kind, identity string, now time.Time, detail, bornCheck string) (bool, error) {
 	if s == nil || identity == "" || now.IsZero() {
 		return false, fmt.Errorf("event identity and clock required")
 	}
 	switch kind {
-	case LivenessExhaustionWarning, LivenessBornDeadRefusal, LivenessAuthoredUnknown:
+	case LivenessExhaustionWarning, LivenessBornDeadRefusal, LivenessAuthoredUnknown, LivenessAuthoredGrammarRefusal:
 	default:
 		return false, fmt.Errorf("unknown liveness event")
 	}
@@ -103,10 +116,18 @@ func (s *Store) RecordPlanLivenessEvent(kind, identity string, now time.Time, de
 		}
 		identity += ":" + eventID.String()
 	}
+	var check json.RawMessage
+	if bornCheck != "" {
+		if !json.Valid([]byte(bornCheck)) {
+			return false, fmt.Errorf("born check record is not JSON")
+		}
+		check = json.RawMessage(bornCheck)
+	}
 	raw, err := json.Marshal(struct {
-		At     time.Time `json:"at"`
-		Detail string    `json:"detail"`
-	}{now, detail})
+		At        time.Time       `json:"at"`
+		Detail    string          `json:"detail"`
+		BornCheck json.RawMessage `json:"born_check,omitempty"`
+	}{now, detail, check})
 	if err != nil {
 		return false, err
 	}
@@ -120,10 +141,11 @@ func (s *Store) PlanLivenessCounts() (PlanLivenessCounts, error) {
 		return out, fmt.Errorf("store unavailable")
 	}
 	for prefix, dst := range map[string]*int64{
-		ScenarioDeathRecordPrefix:                             &out.DeathsRecorded,
-		LivenessEventPrefix + LivenessExhaustionWarning + ":": &out.ExhaustionWarnings,
-		LivenessEventPrefix + LivenessBornDeadRefusal + ":":   &out.BornDeadRefusals,
-		LivenessEventPrefix + LivenessAuthoredUnknown + ":":   &out.AuthoredUnknown,
+		ScenarioDeathRecordPrefix:                                  &out.DeathsRecorded,
+		LivenessEventPrefix + LivenessExhaustionWarning + ":":      &out.ExhaustionWarnings,
+		LivenessEventPrefix + LivenessBornDeadRefusal + ":":        &out.BornDeadRefusals,
+		LivenessEventPrefix + LivenessAuthoredUnknown + ":":        &out.AuthoredUnknown,
+		LivenessEventPrefix + LivenessAuthoredGrammarRefusal + ":": &out.GrammarRefusals,
 	} {
 		if err := s.gdb.Raw("SELECT COUNT(*) FROM system_config WHERE substr(key,1,?)=?", len(prefix), prefix).Scan(dst).Error; err != nil {
 			return PlanLivenessCounts{}, err
