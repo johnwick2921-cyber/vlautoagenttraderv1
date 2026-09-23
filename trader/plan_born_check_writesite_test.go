@@ -281,6 +281,25 @@ func TestW2AllAttemptsRefusedFailClosedRowHasNoBornCheck(t *testing.T) {
 	if row == nil || row.ReadClockMs != nil || row.PublishClockMs != nil || row.BornCheck != nil {
 		t.Fatalf("fail-closed row must carry NULL born-check columns: %+v", row)
 	}
+
+	// A candidate that PASSED the born check and is refused after the loop
+	// (confirm{} missing once the grace window is over) fails closed too: the
+	// NO-TRADE row must not inherit the refused candidate's record.
+	g := w2Trader(t, bars)
+	if err := g.store.SetSystemConfig(confirmGraceKey, "999"); err != nil {
+		t.Fatal(err)
+	}
+	noConfirm := w2Candidate(t, w2Conformant[:1], func(m map[string]any) {
+		delete(m["scenarios"].([]any)[0].(map[string]any), "confirm")
+	})
+	ver, lc, err, _ = w2Run(g, "LONDON", "2026-09-23", read, publish, noConfirm)
+	if err != nil || ver != 1 || lc != "no_trade" {
+		t.Fatalf("grace-over missing confirm must fail closed: ver=%d lc=%s err=%v", ver, lc, err)
+	}
+	row, _ = g.store.Plan().GetLatestPlanForSession("2026-09-23", "LONDON")
+	if row == nil || row.ReadClockMs != nil || row.PublishClockMs != nil || row.BornCheck != nil {
+		t.Fatalf("a NO-TRADE row must not carry the refused candidate's born check: %+v", row)
+	}
 }
 
 // The shadow A/B replays the live chain; without the born check its legal
