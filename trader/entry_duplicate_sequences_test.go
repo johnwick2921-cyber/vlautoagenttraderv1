@@ -1,0 +1,721 @@
+package trader
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"nofx/kernel"
+	"nofx/market"
+	ntwire "nofx/provider/ninjatrader"
+	"nofx/store"
+	ntTrader "nofx/trader/ninjatrader"
+)
+
+// ── W-EXEC-TRUTH W0 (b), dispatch D10 — THE FIVE DUPLICATE SEQUENCES ────────
+//
+// D10 (the defect): cross-path duplicates were POSSIBLE. Picture read only
+// GetPositions and its own pending rows; the armed oneContractGuard read the
+// book and positions, never the Picture ledger; the AI path read positions; B3
+// keys never collide across paths; nothing serialized the sends; and the AI's
+// reconcileBeforeOpenNT flattened a B/C fill not yet in trader_positions and
+// then opened its own.
+//
+// Every sequence below runs over ONE real in-process TCPTrader — a started
+// ntwire.TCPServer on 127.0.0.1:0, a dialed conn that reads every frame the
+// server writes (the AddOn's side of the wire), ntTrader.NewTCPTrader(s, "MNQ",
+// "Sim101") bound as at.trader, and wireNT8Maintenance + wireNT8EntryLatch
+// exactly as NewAutoTrader wires them. The PRODUCERS are driven, never the
+// latch (canon 53):
+//
+//	B  the armed placement pass   at.maybeManageArmedOrdersAt(nil, armNow)
+//	C  Picture HTF                eval.Evaluate("MNQ", picNow) → claim → pictureHtfSend
+//	A  the AI open (send half)    at.executeOpenLongWithRecord / ...ShortWithRecord
+//
+// and the FrameSignal / FrameClosePosition frames reaching the far side are
+// counted after each step, up to an ordered stream marker (expectFrames).
+//
+//	S1 B→C  an armed entry is working → Picture evaluates and sends → refused
+//	S2 C→B  a Picture entry was sent (stamped) → the armed pass runs → refused
+//	S3 B→A  an armed entry is working (resting, then filled at NT8 but not yet
+//	        in trader_positions) → an AI open → refused, never flattened
+//	S4 C→A  a Picture entry is working (resting, then filled) → an AI open →
+//	        refused, never flattened
+//	S5 A→B  an AI entry was just sent → the armed pass → refused; and two
+//	        producers released at the same instant (AI ‖ armed, Picture ‖ armed)
+//	        → exactly one entry reaches the wire
+//
+// Every sequence ends with EXACTLY ONE FrameSignal on the wire and no
+// FrameClosePosition. S1r/S2r repeat S1/S2 across a process restart (a fresh
+// server + TCPTrader + AutoTrader over the same store), where the in-memory
+// queued/recent evidence is gone and the ledgers are the only evidence left.
+//
+// CLOCKS. Each producer runs on its own pinned clock: Picture on its tape's
+// picNow (2026-09-14 19:00:00.5Z), the armed pass on armNow (2026-09-15
+// 15:00Z). armNow is placed AFTER picNow so the arm's 1m tape is in Picture's
+// future and Picture's newest-1m-close read (latestClose) stays "unknown" — the
+// two fixtures share one bar provider without bending each other's geometry.
+// The AI open's send half takes no clock. The latch itself reads the wall clock
+// (wireNT8EntryLatch passes time.Now — production), so the book is seeded at
+// the wall instant: fresh for the latch, and a negative (fresh) age at both
+// pinned clocks.
+//
+// WHY THE AI's SEND HALF. executeDecisionWithRecord stamps time.Now() into the
+// admission chain (no clock seam), and that chain's date-dependent gates
+// (session window, last-entry, contract roll, EntryGate at the live price) are
+// not the D10 surface; driving it would make these tests depend on the wall
+// clock. The send half (reconcileBeforeOpenNT → positions → OpenLong/Short) is
+// exactly the part D10 names. (Its market read, GetWithExchange, also makes
+// the futures branch's two outbound OI/funding HTTP calls — non-fatal, and
+// not stubbed here.)
+//
+// THE RACES. Picture runs on the live-bar goroutine, concurrently with the
+// cycle (armed pass, AI decision); the agent-chat and debug doors are other
+// goroutines. raceAtPermit holds each producer at the broker's entry permit
+// (the seam just before the latch) until both have arrived, so they reach the
+// latch at the same instant — a test of the per-key send mutex, not of which
+// goroutine happens to run first.
+//
+// RED MAP (mutations of production code, dispatch D10's proof):
+//
+//	latch allows everything (unwired in effect)    → every sequence: 2 signals
+//	ledger clause returns free                     → S1r, S2r (after a restart the
+//	                                                 ledgers are the only evidence)
+//	queued clause free / recent clause free, alone → nothing (each covers the
+//	                                                 other in-process)
+//	queued AND recent free                         → S5 A→B (the AI path has no
+//	                                                 ledger); the AI‖armed race
+//	                                                 when the AI wins the mutex
+//	no per-key send mutex                          → the two races (probabilistic
+//	                                                 per round; Picture‖armed runs 8)
+//	reconcile_owned off                            → S3/S4 filled halves: a
+//	                                                 close_position frame (the flatten)
+
+// dupFrames reads every frame the server writes to one dialed AddOn conn.
+type dupFrames struct {
+	mu      sync.Mutex
+	signals []ntwire.SignalPayload
+	closes  int
+	markers map[string]bool // account_select frames the test wrote as stream markers
+	err     error           // why the reader stopped (diagnostics)
+}
+
+func (f *dupFrames) read(conn net.Conn) {
+	for {
+		env, err := ntwire.ReadFrame(conn)
+		if err != nil {
+			f.mu.Lock()
+			f.err = err
+			f.mu.Unlock()
+			return
+		}
+		switch env.Type {
+		case ntwire.FrameSignal:
+			var p ntwire.SignalPayload
+			_ = json.Unmarshal(env.Payload, &p)
+			f.mu.Lock()
+			f.signals = append(f.signals, p)
+			f.mu.Unlock()
+		case ntwire.FrameClosePosition:
+			f.mu.Lock()
+			f.closes++
+			f.mu.Unlock()
+		case ntwire.FrameAccountSelect:
+			var p ntwire.AccountSelectPayload
+			_ = json.Unmarshal(env.Payload, &p)
+			f.mu.Lock()
+			if f.markers == nil {
+				f.markers = map[string]bool{}
+			}
+			f.markers[p.Account] = true
+			f.mu.Unlock()
+		}
+	}
+}
+
+func (f *dupFrames) sawMarker(tag string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.markers[tag]
+}
+
+func (f *dupFrames) readErr() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.err
+}
+
+func (f *dupFrames) counts() (int, int) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return len(f.signals), f.closes
+}
+
+func (f *dupFrames) signalIDs() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]string, 0, len(f.signals))
+	for _, s := range f.signals {
+		out = append(out, s.SignalID)
+	}
+	return out
+}
+
+// dupLink is one "process": a server, its AddOn conn, the TCPTrader and the
+// AutoTrader over the shared store.
+type dupLink struct {
+	s      *ntwire.TCPServer
+	nt     *ntTrader.TCPTrader
+	at     *AutoTrader
+	eval   *PictureHtfEvaluator
+	frames *dupFrames
+}
+
+type dupWire struct {
+	t      *testing.T
+	st     *store.Store
+	cfg    *store.StrategyConfig
+	pcfg   store.PictureHtfConfig
+	armNow time.Time
+	picNow time.Time
+	links  []*dupLink
+}
+
+const dupTraderID = "dup-seq-trader"
+
+var (
+	dupPicNow = time.UnixMilli(t4h0 + 42*3600*1000 + 500)                  // 2026-09-14 19:00:00.5Z (the Picture tape's instant)
+	dupArmNow = time.Date(2026, time.September, 15, 15, 0, 0, 0, time.UTC) // Tue 10:00 CT, after picNow
+)
+
+func newDupWire(t *testing.T) *dupWire {
+	t.Helper()
+	withMaintenanceDir(t)
+	pcfg := store.PictureHtfConfig{Enabled: true, MinRR: 2.5}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, PictureHtf: &pcfg}}
+	oneSetupOff(&cfg)
+	structuralTestPolicy(&cfg, .5)
+	cfg.RiskControl.MinRiskRewardRatio = 2
+	at, st := resetTrader(t, cfg)
+	w := &dupWire{t: t, st: st, cfg: at.config.StrategyConfig, pcfg: pcfg, armNow: dupArmNow, picNow: dupPicNow}
+
+	// ONE bar provider for every producer: the Picture tape on 4h/1h/5m (the AI
+	// open's market read uses 5m/1h too) and the arm's 1m tape near 100 at armNow.
+	armBars := shadowBarsNearAt(100, w.armNow)
+	p4h, p1h, p5m := pictureBars4H(), pictureBarsH1(), pictureBars5M(true)
+	prevProvider := market.FuturesBarsProvider
+	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline {
+		switch tf {
+		case "4h":
+			return tailOf(p4h, count)
+		case "1h":
+			return tailOf(p1h, count)
+		case "5m":
+			return tailOf(p5m, count)
+		case "1m":
+			return armBars
+		}
+		return nil
+	}
+	prevSeam, prevCap := pictureHtfSubmitSeam, pictureHtfCapabilityProven
+	pictureHtfSubmitSeam = pictureHtfSend // the production send (its init binding)
+	t.Cleanup(func() {
+		market.FuturesBarsProvider = prevProvider
+		pictureHtfSubmitSeam, pictureHtfCapabilityProven = prevSeam, prevCap
+	})
+
+	w.links = append(w.links, w.link(at))
+
+	// The armed plan: S1 long @100, stop 95, target 110 (the liveArmFixture plan).
+	live := kernel.PlanDoc{Bias: kernel.PlanBias{Direction: "long", Conviction: "low", FlipCondition: "n/a"},
+		Levels: []kernel.PlanLevel{{Price: 100, Label: "PDH", Grade: "A", Instruction: "fade"}},
+		Scenarios: []kernel.PlanScenario{{ID: "S1", Trigger: "t", Condition: "reject", Direction: "long",
+			TargetChain: []float64{110}, Invalid: "i", Quality: "B",
+			Confirm: &kernel.PlanConfirm{Rule: "touch", RefPrice: 100, Side: "above"},
+			Arm:     &kernel.PlanArmSpec{Enabled: true, Entry: 100, Stop: 95, Target: 110}},
+		},
+		NoTrade: []string{}, DeathCondition: "n/a",
+	}
+	structuralTestMap(&live, structuralTestZone{100, 95.5, 100, "PDH"}, structuralTestZone{110, 110, 111, "target"})
+	blob, _ := json.Marshal(live)
+	shadowPlanAtTime(t, at, st, string(blob), w.armNow)
+	return w
+}
+
+// link builds one process's wire around at: a started server, a dialed AddOn
+// conn that proves the Picture build on a heartbeat, the TCPTrader bound to
+// Sim101, and NewAutoTrader's production wiring.
+func (w *dupWire) link(at *AutoTrader) *dupLink {
+	t := w.t
+	t.Helper()
+	at.id = dupTraderID
+	at.positionFirstSeenTime = map[string]int64{}
+	at.isRunningMutex.Lock()
+	at.isRunning = true // Picture is admitted only while its trader runs (D26)
+	at.isRunningMutex.Unlock()
+
+	s := ntwire.NewTCPServer(nil)
+	s.SetAddrForTest("127.0.0.1:0")
+	s.SetAccountsList([]ntwire.AccountInfo{{Name: "Sim101", IsSim: true}}, "Sim101")
+	ctx, cancel := context.WithCancel(context.Background())
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Stop(); cancel() })
+	conn, err := net.Dial("tcp", s.ListenAddrForTest().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	frames := &dupFrames{}
+	go frames.read(conn)
+	top := ntwire.MinAddonBuildPictureHtf
+	if err := ntwire.WriteFrame(conn, ntwire.FrameHeartbeat, ntwire.HeartbeatPayload{BuildID: top}); err != nil {
+		t.Fatal(err)
+	}
+	for deadline := time.Now().Add(2 * time.Second); !ntwire.FarSideProven(s.FarSideBuildID(), top); {
+		if time.Now().After(deadline) {
+			t.Fatal("fixture: the AddOn build was never proven on the wire")
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+
+	nt := ntTrader.NewTCPTrader(s, "MNQ", "Sim101")
+	at.trader = nt
+	at.config.NinjaTraderSymbol = "MNQ"
+	// NewAutoTrader's TCPTrader block, verbatim in effect (both calls pinned there).
+	wireNT8Maintenance(at, nt)
+	wireNT8EntryLatch(at, nt)
+	if !nt.EntryLatchWired() {
+		t.Fatal("fixture: the entry latch must be wired as production wires it")
+	}
+	// The AddOn's periodic order snapshot: a flat, empty book on Sim101.
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, time.Now())
+
+	return &dupLink{s: s, nt: nt, at: at, eval: NewPictureHtfEvaluator(at, store.PictureHtfResolved(&w.pcfg)), frames: frames}
+}
+
+// restart is a new process over the same store: a fresh AutoTrader (same id,
+// same strategy), server, TCPTrader and AddOn conn. The old link stays up so a
+// frame it (wrongly) wrote would still be counted.
+func (w *dupWire) restart() *dupLink {
+	w.t.Helper()
+	at := &AutoTrader{id: dupTraderID, store: w.st, exchange: "ninjatrader"}
+	at.config.StrategyConfig = w.cfg
+	at.mcpClient = &fakeDecisionClient{}
+	l := w.link(at)
+	installActivePlanProviderAt(at, w.st, func() time.Time { return w.armNow })
+	w.links = append(w.links, l)
+	return l
+}
+
+func (w *dupWire) main() *dupLink { return w.links[0] }
+
+// totals sums the frames every link's AddOn received.
+func (w *dupWire) totals() (signals, closes int) {
+	for _, l := range w.links {
+		s, c := l.frames.counts()
+		signals += s
+		closes += c
+	}
+	return
+}
+
+var dupMarkerSeq atomic.Int64
+
+// expectFrames pins the exact totals the far side received: `want` signal
+// frames and no close_position. Every producer send is synchronous (SendSignal
+// / SendClosePosition write before they return), so once the step returned,
+// the test writes a MARKER frame (an account_select, which touches no server
+// state) on each link and waits — bounded — until the AddOn side reads it. A
+// TCP stream is ordered, so every frame written before the marker has then
+// been read: no sleep-and-hope quiet window, and a loaded machine only makes
+// the wait longer, never the count wrong.
+func (w *dupWire) expectFrames(step string, want int) {
+	w.t.Helper()
+	diag := func() string {
+		var links []string
+		for i, l := range w.links {
+			links = append(links, fmt.Sprintf("link%d connected=%v queued=%d reader_err=%v", i, l.s.IsConnected(), l.s.PendingSignalCount(), l.frames.readErr()))
+		}
+		return strings.Join(links, "; ")
+	}
+	for i, l := range w.links {
+		tag := fmt.Sprintf("dup-marker-%d", dupMarkerSeq.Add(1))
+		if err := l.s.SendAccountSelect(ntwire.AccountSelectPayload{Account: tag}); err != nil {
+			w.t.Fatalf("%s: link%d marker not written: %v (%s)", step, i, err, diag())
+		}
+		for deadline := time.Now().Add(10 * time.Second); !l.frames.sawMarker(tag); {
+			if time.Now().After(deadline) {
+				w.t.Fatalf("%s: link%d marker never read by the AddOn side (%s)", step, i, diag())
+			}
+			time.Sleep(2 * time.Millisecond)
+		}
+	}
+	s, c := w.totals()
+	if s != want || c != 0 {
+		var ids []string
+		for _, l := range w.links {
+			ids = append(ids, l.frames.signalIDs()...)
+		}
+		w.t.Fatalf("%s: the wire carried %d signal frame(s) and %d close_position frame(s), want exactly %d signal(s) and no close (signals %v; %s)", step, s, c, want, ids, diag())
+	}
+}
+
+// armPass drives the armed producer once on its pinned clock.
+func (w *dupWire) armPass(l *dupLink) { l.at.maybeManageArmedOrdersAt(nil, w.armNow) }
+
+// picture drives Picture once at its tape's instant, with its 5m frame fresh.
+func (w *dupWire) picture(l *dupLink) EvaluateResult {
+	l.eval.mu.Lock()
+	l.eval.freshest5mAt = w.picNow // the 5m frame of the interval was received at picNow
+	l.eval.mu.Unlock()
+	return l.eval.Evaluate("MNQ", w.picNow)
+}
+
+// aiOpen drives the AI decision's send half for action.
+func (w *dupWire) aiOpen(l *dupLink, action string) (*store.DecisionAction, error) {
+	d := &kernel.Decision{Action: action, Symbol: "MNQ", Leverage: 1, Confidence: 70}
+	if action == "open_long" {
+		d.StopLoss, d.TakeProfit = 99, 106
+	} else {
+		d.StopLoss, d.TakeProfit = 104, 97
+	}
+	rec := &store.DecisionAction{Action: action, Symbol: "MNQ"}
+	var err error
+	if action == "open_long" {
+		err = l.at.executeOpenLongWithRecord(d, rec)
+	} else {
+		err = l.at.executeOpenShortWithRecord(d, rec)
+	}
+	return rec, err
+}
+
+// armRow is the plan's one armed row.
+func (w *dupWire) armRow() store.ArmedOrderDB {
+	w.t.Helper()
+	rows, err := w.st.ArmedOrders().ListNonTerminal(dupTraderID)
+	if err != nil {
+		w.t.Fatal(err)
+	}
+	if len(rows) != 1 {
+		w.t.Fatalf("fixture: want exactly one non-terminal armed row, got %+v", rows)
+	}
+	return rows[0]
+}
+
+// placeArm runs the armed pass and pins that it put the arm on the wire.
+func (w *dupWire) placeArm(l *dupLink) store.ArmedOrderDB {
+	w.t.Helper()
+	w.armPass(l)
+	w.expectFrames("the armed placement", 1)
+	r := w.armRow()
+	if r.SignalID == "" || r.State != store.StatePlacePending {
+		w.t.Fatalf("fixture: the armed pass must have stamped its row place_pending with the broker signal: %+v", r)
+	}
+	if ids := l.frames.signalIDs(); len(ids) != 1 || ids[0] != r.SignalID {
+		w.t.Fatalf("fixture: the wire's signal %v must be the armed row's %s", ids, r.SignalID)
+	}
+	return r
+}
+
+// sendPicture runs Picture and pins that its entry reached the wire, stamped.
+func (w *dupWire) sendPicture(l *dupLink) store.PictureHtfOpportunityDB {
+	w.t.Helper()
+	res := w.picture(l)
+	if res.Stage != "submitted" || res.Reason != "" {
+		w.t.Fatalf("fixture: Picture must send: %+v", res)
+	}
+	w.expectFrames("the Picture send", 1)
+	row, ok, err := w.st.PictureHtfGet(res.OppKey)
+	if err != nil || !ok || row == nil || !store.PictureSendStarted(*row) {
+		w.t.Fatalf("fixture: the Picture row must be stamped (a send started): %+v ok=%v err=%v", row, ok, err)
+	}
+	if ids := l.frames.signalIDs(); len(ids) != 1 || ids[0] != row.SignalID {
+		w.t.Fatalf("fixture: the wire's signal %v must be the Picture row's %s", ids, row.SignalID)
+	}
+	return *row
+}
+
+// latched reports a refusal by the entry latch in err or a result reason.
+func latched(s string) bool { return strings.Contains(s, "one_entry_latch") }
+
+// latchRefusals is the entry latch's refusal count. In these fixtures the
+// TCPTrader has no trader id (StartCloseSync never ran), so the latch counts
+// under the process-wide "" bucket; the package's tests run serially.
+func latchRefusals(reason string) int {
+	if reason != "" {
+		return gateBlocks("", "one_entry_latch:"+reason)
+	}
+	n := 0
+	for _, r := range []string{"book_unverifiable", "working_entry_or_position", "ledger_unreadable", "ledger_open", "queued_entry", "recent_send"} {
+		n += gateBlocks("", "one_entry_latch:"+r)
+	}
+	return n
+}
+
+// fillAtNT8 is the AddOn reporting the entry FILLED: NT8's positions frame for
+// Sim101 carries a 1-lot long on MNQ, and trader_positions has nothing yet (the
+// reconciler's untracked grace).
+func fillAtNT8(l *dupLink) {
+	l.s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{{Symbol: "MNQ", Side: "long", Quantity: 1, AvgPrice: 100}})
+}
+
+// ── S1 B→C ──────────────────────────────────────────────────────────────────
+
+// S1: an armed entry is working at NT8 (placed by the armed producer) →
+// Picture evaluates and sends → REFUSED by the entry latch before its ledger
+// stamp: the Picture row settles refused, never sent. One signal on the wire.
+func TestDupS1ArmedWorkingThenPictureIsRefused(t *testing.T) {
+	w := newDupWire(t)
+	l := w.main()
+	w.placeArm(l)
+
+	res := w.picture(l)
+	w.expectFrames("S1 B→C", 1)
+	if res.Stage != "refused" || !latched(res.Reason) || !strings.Contains(res.Reason, "never sent") {
+		t.Fatalf("S1: Picture must be refused by the entry latch, never sent: %+v", res)
+	}
+	if row, _, _ := w.st.PictureHtfGet(res.OppKey); row == nil || store.PictureSendStarted(*row) {
+		t.Fatalf("S1: the refused Picture row must carry no send stamp: %+v", row)
+	}
+}
+
+// S1r: S1 across a process restart. The new process has no queued entry and no
+// recent send in memory; the armed ledger's placed row is the evidence.
+func TestDupS1rArmedWorkingThenPictureAfterRestartIsRefused(t *testing.T) {
+	w := newDupWire(t)
+	w.placeArm(w.main())
+
+	l2 := w.restart()
+	res := w.picture(l2)
+	w.expectFrames("S1r B→C across a restart", 1)
+	if res.Stage != "refused" || !latched(res.Reason) || !strings.Contains(res.Reason, "ledger_open") {
+		t.Fatalf("S1r: after a restart the armed ledger row must refuse Picture (ledger_open): %+v", res)
+	}
+}
+
+// ── S2 C→B ──────────────────────────────────────────────────────────────────
+
+// S2: a Picture entry was sent (its row stamped) → the armed pass runs → the
+// arm is REFUSED at the latch (the arm's own guard reads the book and
+// positions, never the Picture ledger) and stays armed. One signal.
+func TestDupS2PictureSentThenArmedIsRefused(t *testing.T) {
+	w := newDupWire(t)
+	l := w.main()
+	w.sendPicture(l)
+
+	before := latchRefusals("")
+	w.armPass(l)
+	w.expectFrames("S2 C→B", 1)
+	if r := w.armRow(); r.State != store.StateArmed || r.SignalID != "" {
+		t.Fatalf("S2: the refused arm must stay armed and unstamped: %+v", r)
+	}
+	if latchRefusals("") <= before {
+		t.Fatal("S2: the arm must have been refused by the entry latch (counted)")
+	}
+}
+
+// S2r: S2 across a process restart: the Picture ledger's stamped row is the
+// evidence.
+func TestDupS2rPictureSentThenArmedAfterRestartIsRefused(t *testing.T) {
+	w := newDupWire(t)
+	w.sendPicture(w.main())
+
+	l2 := w.restart()
+	before := latchRefusals("ledger_open")
+	w.armPass(l2)
+	w.expectFrames("S2r C→B across a restart", 1)
+	if r := w.armRow(); r.State != store.StateArmed || r.SignalID != "" {
+		t.Fatalf("S2r: the refused arm must stay armed and unstamped: %+v", r)
+	}
+	if latchRefusals("ledger_open") <= before {
+		t.Fatal("S2r: the refusal must be the latch's ledger_open (the Picture row), counted")
+	}
+}
+
+// ── S3 B→A ──────────────────────────────────────────────────────────────────
+
+// S3: an armed entry is working (resting) → an AI open → REFUSED by the latch.
+// Then NT8 reports the arm FILLED (not yet in trader_positions) → an AI open
+// (a flip) → REFUSED by reconcile_owned, and the arm's position is NEVER
+// flattened. One signal, no close_position, throughout.
+func TestDupS3ArmedWorkingThenAIOpenIsRefusedNeverFlattened(t *testing.T) {
+	w := newDupWire(t)
+	l := w.main()
+	arm := w.placeArm(l)
+
+	_, err := w.aiOpen(l, "open_long")
+	w.expectFrames("S3 B→A (resting arm)", 1)
+	if err == nil || !ntTrader.IsEntryLatched(err) {
+		t.Fatalf("S3 (resting): the AI open must be refused by the entry latch: %v", err)
+	}
+
+	fillAtNT8(l)
+	before := gateBlocks(dupTraderID, "reconcile_owned")
+	rec, err := w.aiOpen(l, "open_short")
+	w.expectFrames("S3 B→A (filled arm)", 1)
+	if err != nil || rec.Success || !strings.HasPrefix(rec.Error, "reconcile_owned: ") || !strings.Contains(rec.Error, "armed #"+latchItoa(arm.ID)) {
+		t.Fatalf("S3 (filled): the AI open must be refused as reconcile_owned, naming armed #%d: err=%v rec=%+v", arm.ID, err, rec)
+	}
+	if gateBlocks(dupTraderID, "reconcile_owned") != before+1 {
+		t.Fatal("S3 (filled): the refusal must be counted as reconcile_owned")
+	}
+}
+
+// ── S4 C→A ──────────────────────────────────────────────────────────────────
+
+// S4: a Picture entry is working → an AI open → REFUSED by the latch; then
+// NT8 reports it FILLED → an AI open (a flip) → REFUSED by reconcile_owned,
+// never flattened. One signal, no close_position.
+func TestDupS4PictureWorkingThenAIOpenIsRefusedNeverFlattened(t *testing.T) {
+	w := newDupWire(t)
+	l := w.main()
+	pic := w.sendPicture(l)
+
+	_, err := w.aiOpen(l, "open_long")
+	w.expectFrames("S4 C→A (resting Picture entry)", 1)
+	if err == nil || !ntTrader.IsEntryLatched(err) {
+		t.Fatalf("S4 (resting): the AI open must be refused by the entry latch: %v", err)
+	}
+
+	fillAtNT8(l)
+	rec, err := w.aiOpen(l, "open_short")
+	w.expectFrames("S4 C→A (filled Picture entry)", 1)
+	if err != nil || rec.Success || !strings.HasPrefix(rec.Error, "reconcile_owned: ") || !strings.Contains(rec.Error, "picture "+pic.OppKey) {
+		t.Fatalf("S4 (filled): the AI open must be refused as reconcile_owned, naming picture %s: err=%v rec=%+v", pic.OppKey, err, rec)
+	}
+}
+
+// ── S5 A→B ──────────────────────────────────────────────────────────────────
+
+// S5: an AI entry was just sent (queued at the broker, not filled; the AI path
+// has NO ledger) → the armed pass → REFUSED at the latch; the arm stays armed.
+func TestDupS5AISentThenArmedIsRefused(t *testing.T) {
+	w := newDupWire(t)
+	l := w.main()
+	rec, err := w.aiOpen(l, "open_long")
+	if err != nil || rec.Error != "" {
+		t.Fatalf("fixture: the AI open must send: err=%v rec=%+v", err, rec)
+	}
+	w.expectFrames("the AI send", 1)
+
+	before := latchRefusals("")
+	w.armPass(l)
+	w.expectFrames("S5 A→B", 1)
+	if r := w.armRow(); r.State != store.StateArmed || r.SignalID != "" {
+		t.Fatalf("S5: the refused arm must stay armed and unstamped: %+v", r)
+	}
+	if latchRefusals("") <= before {
+		t.Fatal("S5: the arm must have been refused by the entry latch (counted)")
+	}
+}
+
+// raceAtPermit replaces the broker's entry permit with one that holds each
+// caller until BOTH producers have reached it, then releases them together —
+// so the two entries arrive at the latch at the same instant. The production
+// permit (the maintenance hold) still decides after the barrier.
+func raceAtPermit(t *testing.T, nt *ntTrader.TCPTrader) *atomic.Int32 {
+	t.Helper()
+	var arrived atomic.Int32
+	release := make(chan struct{})
+	nt.SetEntryPermit(func() (func(), bool) {
+		if arrived.Add(1) == 2 {
+			close(release)
+		}
+		select {
+		case <-release:
+		case <-time.After(20 * time.Second): // bound: a producer that never arrives cannot hang the test
+		}
+		return MaintenanceEntryPermit()
+	})
+	return &arrived
+}
+
+// S5 (race): the AI open and the armed placement pass run on two goroutines
+// and meet at the broker at the same instant → exactly ONE entry reaches the
+// wire; the other is refused by the latch.
+func TestDupS5AIAndArmedRaceYieldOneEntry(t *testing.T) {
+	w := newDupWire(t)
+	l := w.main()
+	arrived := raceAtPermit(t, l.nt)
+	before := latchRefusals("")
+
+	var wg sync.WaitGroup
+	var aiErr error
+	var aiRec *store.DecisionAction
+	wg.Add(2)
+	go func() { defer wg.Done(); aiRec, aiErr = w.aiOpen(l, "open_long") }()
+	go func() { defer wg.Done(); w.armPass(l) }()
+	waitGroupBounded(t, &wg, 30*time.Second)
+
+	if n := arrived.Load(); n != 2 {
+		t.Fatalf("fixture: both producers must reach the broker's entry permit (the race is at the latch), got %d", n)
+	}
+	w.expectFrames("S5 AI ‖ armed", 1)
+	aiSent := aiErr == nil && aiRec.Error == ""
+	armSent := w.armRow().SignalID != ""
+	if aiSent == armSent {
+		t.Fatalf("S5: exactly one producer may send (ai sent=%v err=%v, arm sent=%v)", aiSent, aiErr, armSent)
+	}
+	if !aiSent && !ntTrader.IsEntryLatched(aiErr) {
+		t.Fatalf("S5: the losing AI open must be refused by the entry latch: %v", aiErr)
+	}
+	if latchRefusals("") <= before {
+		t.Fatal("S5: the losing producer must have been refused by the entry latch (counted)")
+	}
+}
+
+// S5 (race): Picture on the live-bar goroutine and the armed placement pass on
+// the cycle goroutine meet at the broker at the same instant → exactly ONE
+// entry. Both write a ledger stamp inside the latch, so the window a missing
+// send mutex would open is widest here; the race is run several times (a
+// latch without its per-key mutex lets both through in most rounds).
+func TestDupS5PictureAndArmedRaceYieldOneEntry(t *testing.T) {
+	for i := 0; i < 8; i++ {
+		w := newDupWire(t)
+		l := w.main()
+		arrived := raceAtPermit(t, l.nt)
+		before := latchRefusals("")
+
+		var wg sync.WaitGroup
+		var res EvaluateResult
+		wg.Add(2)
+		go func() { defer wg.Done(); res = w.picture(l) }()
+		go func() { defer wg.Done(); w.armPass(l) }()
+		waitGroupBounded(t, &wg, 30*time.Second)
+
+		if n := arrived.Load(); n != 2 {
+			t.Fatalf("round %d fixture: both producers must reach the broker's entry permit, got %d (picture %+v)", i, n, res)
+		}
+		w.expectFrames("S5 Picture ‖ armed", 1)
+		picSent := res.Stage == "submitted" && res.Reason == ""
+		armSent := w.armRow().SignalID != ""
+		if picSent == armSent {
+			t.Fatalf("round %d S5: exactly one producer may send (picture %+v, arm sent=%v)", i, res, armSent)
+		}
+		if !picSent && !latched(res.Reason) {
+			t.Fatalf("round %d S5: the losing Picture send must be refused by the entry latch: %+v", i, res)
+		}
+		if latchRefusals("") <= before {
+			t.Fatalf("round %d S5: the losing producer must have been refused by the entry latch (counted)", i)
+		}
+	}
+}
+
+func waitGroupBounded(t *testing.T, wg *sync.WaitGroup, d time.Duration) {
+	t.Helper()
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(d):
+		t.Fatalf("the racing producers did not return within %s", d)
+	}
+}
