@@ -114,7 +114,12 @@ func (d *admitDedupe) clear(k string) {
 // alert). Decision/agent: every time; arm/picture: once per change.
 func (at *AutoTrader) admitRefuse(in admitIntent, class, record string, logf func()) (string, bool) {
 	if in.Path == admitArm || in.Path == admitPicture {
-		if !at.admitLast.changed(string(in.Path)+"|"+in.Key, record) {
+		// CTO M3 — deduped on (path, key, CLASS), never on the reason: the
+		// reasons carry moving values (the cooldown's live price and distance,
+		// R:R at the execution price, the loss count), and a reason-keyed
+		// dedupe re-logged and re-counted ONE refusal on every tick the price
+		// moved. The log line still carries the reason.
+		if !at.admitLast.changed(string(in.Path)+"|"+in.Key, admitDedupeClass(class, record)) {
 			return record, true
 		}
 	}
@@ -123,6 +128,19 @@ func (at *AutoTrader) admitRefuse(in admitIntent, class, record string, logf fun
 	}
 	telemetry.IncGateBlock(at.id, class)
 	return record, true
+}
+
+// admitDedupeClass is the value a repeated arm/picture refusal is deduped on
+// (CTO M3): the gate-block class — refined, for entry_gate only, by the leg
+// armRefusalClass reads (the same "entry_gate:<leg>" string the arm-refusal
+// counter family is keyed on), so a new LEG re-logs while a moving number
+// inside one leg does not.
+func admitDedupeClass(class, reason string) string {
+	if class != "entry_gate" {
+		return class
+	}
+	leg := strings.TrimSpace(strings.TrimPrefix(strings.ToLower(reason), "entry_gate:"))
+	return "entry_gate:" + armRefusalClass(leg)
 }
 
 // admitEntry runs the one admission chain. It returns ("", false) when the
