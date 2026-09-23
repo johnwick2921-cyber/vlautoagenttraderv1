@@ -28,11 +28,19 @@ func (at *AutoTrader) plannerAuthoringOpts() kernel.AuthoringOpts {
 	}
 }
 
-// entryPolicyLabel is the prompt/stamp policy: "legacy" → "" (stamp nothing,
-// legacy prompt), otherwise the resolved token.
+// entryPolicyForPrompt is the resolved day_plan.entry_policy_default the
+// prompt, the bias-arm warning and the stamp all read (legacy = the explicit
+// off: legacy prompt, no stamp).
 func entryPolicyForPrompt(dp *store.DayPlanConfig) string {
 	p, _ := store.ResolveEntryPolicyDefault(dp)
 	return p
+}
+
+// zoneMaxPtsForPrompt is the resolved day_plan.zone_max_pts the prompt states
+// (the same resolver the zone-at-write verdict judges with).
+func zoneMaxPtsForPrompt(dp *store.DayPlanConfig) float64 {
+	v, _ := store.ResolveZoneMaxPts(dp)
+	return v
 }
 
 // entryLawBootLine renders the 🎛 entry law boot line. Every value is READ

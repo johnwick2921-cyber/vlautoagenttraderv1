@@ -96,6 +96,14 @@ func TestClass38PromptContractsAllStated(t *testing.T) {
 	if err := ValidatePromptContracts(onPrompt); err != nil {
 		t.Fatalf("a validator restriction is NOT stated in the ON rendering (class 38): %v", err)
 	}
+	// W3: the market_in_zone rendering (the shipped default) is judged too.
+	mizOn := class38MizRendering(true)
+	if err := ValidatePromptContracts(class38MizRendering(false)); err != nil {
+		t.Fatalf("a validator restriction is NOT stated in the market_in_zone rendering (class 38): %v", err)
+	}
+	if err := ValidatePromptContracts(mizOn); err != nil {
+		t.Fatalf("a validator restriction is NOT stated in the market_in_zone ON rendering (class 38): %v", err)
+	}
 	if len(PromptContracts()) < 10 {
 		t.Errorf("the contract registry has only %d rows — the C5 enumeration found more condition-keyed restrictions than that", len(PromptContracts()))
 	}
@@ -111,8 +119,12 @@ func TestClass38PromptContractsAllStated(t *testing.T) {
 		// A gate-gated row must actually be RENDERED somewhere (the ON
 		// rendering) — otherwise the gate would make it silently dead.
 		if c.Gate != "" {
+			rendered := onPrompt
+			if c.Gate == EntryPolicyPromptMarker {
+				rendered = mizOn // W3: the ENTRY POLICY row renders under market_in_zone
+			}
 			for _, frag := range c.MustAppear {
-				if !strings.Contains(onPrompt, frag) {
+				if !strings.Contains(rendered, frag) {
 					t.Errorf("gated contract %q: fragment %q absent from the ON rendering — the row is dead", c.Rule, frag)
 				}
 			}
@@ -132,6 +144,9 @@ func TestClass38ContractTestFailsWhenPromptDropsARule(t *testing.T) {
 		if c.Gate != "" {
 			applicable = onPrompt
 		}
+		if c.Gate == EntryPolicyPromptMarker {
+			applicable = class38MizRendering(true) // W3: the ENTRY POLICY row
+		}
 		mutilated := applicable
 		for _, frag := range c.MustAppear {
 			mutilated = strings.ReplaceAll(mutilated, frag, "")
@@ -144,4 +159,10 @@ func TestClass38ContractTestFailsWhenPromptDropsARule(t *testing.T) {
 			t.Errorf("contract %q: removing its sentence from the prompt did NOT fail the guard", c.Rule)
 		}
 	}
+}
+
+// class38MizRendering is the output contract under the market_in_zone entry
+// policy (W3) — the shipped default's rendering.
+func class38MizRendering(writeFeas bool) string {
+	return plannerOutputContractFor(8, 5, true, true, writeFeas, resolvePromptEntryPolicy(EntryPolicyMarketInZone, 0, 0))
 }

@@ -35,6 +35,12 @@ type PromptContract struct {
 	// enforced (used for knob-gated contract sentences such as the
 	// write-time feasibility clause). Empty = always enforced.
 	Gate string
+	// Unless (W-EXEC-TRUTH W3, 2026-09-23) is a phrase whose presence SUSPENDS
+	// this row: the legacy-policy rows whose sentences the market_in_zone
+	// prompt replaces are suspended by EntryPolicyPromptMarker, and the ENTRY
+	// POLICY row (Gate = the same marker) states the replacement. Empty =
+	// never suspended.
+	Unless string
 }
 
 // PromptContracts is the C5 enumeration: every condition-keyed restriction in
@@ -65,6 +71,7 @@ func PromptContracts() []PromptContract {
 			Rule:       "arm{} legal only on armable conditions",
 			Site:       "plan_doc.go ArmSpecValid (arm enabled on non-armable condition)",
 			MustAppear: []string{"legal ONLY on " + ArmableConditionsPipe()},
+			Unless:     EntryPolicyPromptMarker, // W3: the ENTRY POLICY row states the market_in_zone set
 		},
 		{
 			Rule:       "legs[] only on sweep_reclaim (arm_legs_sweep_reclaim_only)",
@@ -102,9 +109,13 @@ func PromptContracts() []PromptContract {
 			MustAppear: []string{"top-level entry/stop/target mirror leg 1"},
 		},
 		{
-			Rule:       "breakdown/breakup arm requires breakdown{} with entry_mode=pullback",
+			// W3 (2026-09-23): LEGACY policy only — under market_in_zone a
+			// waterfall arm takes pullback OR immediate (armSpecValidPolicy) and
+			// the ENTRY POLICY row below states it; this row is suspended there.
+			Rule:       "breakdown/breakup arm requires breakdown{} with entry_mode=pullback (legacy policy)",
 			Site:       "plan_doc.go ArmSpecValid (arm requires entry_mode=pullback)",
 			MustAppear: []string{"entry_mode=pullback", "entry_mode=immediate is AI-path ONLY"},
+			Unless:     EntryPolicyPromptMarker,
 		},
 		{
 			Rule:       "sweep_reclaim single arm requires wait_confirm:true",
@@ -137,9 +148,26 @@ func PromptContracts() []PromptContract {
 			MustAppear: []string{"structure stop ≥2 ticks beyond the level"},
 		},
 		{
-			Rule:       "breakout_retest never arms (GAR-F4)",
+			// W3 (2026-09-23): LEGACY policy only — under market_in_zone
+			// breakout_retest arms (ArmableConditionFor) and stays SHADOW by
+			// default (D11); the ENTRY POLICY row states it.
+			Rule:       "breakout_retest never arms (GAR-F4) (legacy policy)",
 			Site:       "armed.go ArmableCondition (breakout_retest excluded)",
 			MustAppear: []string{"breakout_retest stays a normal AI play"},
+			Unless:     EntryPolicyPromptMarker,
+		},
+		{
+			// W-EXEC-TRUTH W3 (2026-09-23) — THE ENTRY POLICY. Rendered only when
+			// the resolved day_plan.entry_policy_default is market_in_zone (the
+			// shipped default); every fragment is a restriction the write site
+			// enforces: the policy branch of ArmSpecValid (every condition arms,
+			// pullback|immediate, wait_confirm for a non-touch confirm), the zone
+			// verdict (kernel.ArmZoneVerdict via the trader write hook) and the
+			// armable hold floor.
+			Rule:       "market_in_zone: a limit at the far edge of entry_zone; every condition arms; a non-touch confirm chains; zone contains the entry, sits on the permitted side, ≤ zone_max_pts, bracket outside; waterfall pullback|immediate; armed time_hold ≥ min_hold_min",
+			Site:       "kernel/entry_policy.go armSpecValidPolicy + ArmZoneVerdict (trader/write_time_feasibility.go writeTimeZoneVerdicts) + ValidateArmableHoldFloor",
+			MustAppear: []string{EntryPolicyPromptMarker, "a LIMIT at the FAR edge of your economics.entry_zone", "legal ONLY on " + armableUnderPolicyPipe(EntryPolicyMarketInZone), "must carry wait_confirm:true", "the zone must contain arm.entry", "lie on the permitted side of the confirm ref", "leave the stop and the target OUTSIDE it", "entry_mode=pullback or entry_mode=immediate", "an armed time_hold holds at least"},
+			Gate:       EntryPolicyPromptMarker,
 		},
 		{
 			Rule:       "death/flip.rule is a SEPARATE enum from confirm.rule",
@@ -236,6 +264,9 @@ func ValidatePromptContracts(prompt string) error {
 		if c.Gate != "" && !strings.Contains(prompt, c.Gate) {
 			continue // knob-gated row; the sentence was not rendered
 		}
+		if c.Unless != "" && strings.Contains(prompt, c.Unless) {
+			continue // W3: a legacy row the rendered policy replaces
+		}
 		for _, frag := range c.MustAppear {
 			if !strings.Contains(prompt, frag) {
 				return fmt.Errorf("restriction %q (enforced at %s) is NOT stated in the prompt — missing fragment %q", c.Rule, c.Site, frag)
@@ -252,8 +283,13 @@ func PromptContractBootLine() string {
 	n := len(PromptContracts())
 	// 0/0 → resolvePlanCaps supplies the RESOLVED caps (A11). The contract
 	// sentences are static text, so the cap values never change the verdict.
-	if err := ValidatePromptContracts(plannerOutputContract(0, 0, true, true, true)); err != nil {
-		return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v (class 38 guard)", err)
+	// W3: every entry policy's rendering is judged — the shipped default
+	// (market_in_zone), planned_order and legacy — so a row can never be
+	// "stated" only under a policy the bot is not running.
+	for _, p := range []string{EntryPolicyMarketInZone, EntryPolicyPlannedOrder, EntryPolicyDefaultLegacy} {
+		if err := ValidatePromptContracts(plannerOutputContractFor(0, 0, true, true, true, resolvePromptEntryPolicy(p, 0, 0))); err != nil {
+			return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v [entry policy %s] (class 38 guard)", err, p)
+		}
 	}
 	return fmt.Sprintf("📜 prompt/validator contract: %d restrictions, all stated in prompt (class 38 guard)", n)
 }
