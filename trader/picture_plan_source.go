@@ -134,7 +134,10 @@ func (at *AutoTrader) pictureHandOffAt(ev PictureEvidence, now time.Time) error 
 	}
 	// (v) SETTLE — from here on the scenario exists; never return an error.
 	if moved, serr := at.store.PictureHtfHandOff(ev.OppKey, ev.ClaimID, rec.stageReason()); serr != nil || !moved {
-		at.logWarnf("🖼 picture hand-off: %s recorded as %s in %s but the opportunity row did not settle planned (moved=%v err=%v) — left for the interrupted-hand-off sweep", ev.OppKey, rec.ScenarioID, rec.where(), moved, serr)
+		// A repeat hand-off of an opportunity already settled is not a loss.
+		if cur, ok, gerr := at.store.PictureHtfGet(ev.OppKey); serr != nil || gerr != nil || !ok || cur.Stage != store.PictureStagePlanned {
+			at.logWarnf("🖼 picture hand-off: %s recorded as %s in %s but the opportunity row did not settle planned (moved=%v err=%v) — left for the interrupted-hand-off sweep", ev.OppKey, rec.ScenarioID, rec.where(), moved, serr)
+		}
 	}
 	// (vi) POKE — never a pass on this (the bar sink's) goroutine.
 	at.zoneArmActive.Store(true)
