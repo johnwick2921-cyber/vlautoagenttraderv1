@@ -306,6 +306,12 @@ func TestApplyPlanOverlayRefusesEditsThatTouchAMachineScenario(t *testing.T) {
 				t.Fatalf("%s adding a machine scenario must be refused 409, got %d %q", origin, code, msg)
 			}
 		}
+		// Even an EXACT copy of the recorded P1 is an edit adding a machine
+		// scenario: only the machine records one.
+		p1, _ := json.Marshal(w5aMachineScenario("P1", w5aRef))
+		if _, _, code, msg := s.applyPlanOverlay(ppgTrader, "MNQ", w5aPatch(`{"op":"add","path":"/scenarios/-","value":`+string(p1)+`}`), "owner", w5aDoorNow); code != 409 || !strings.Contains(msg, "may not add a machine scenario") {
+			t.Fatalf("an owner copy of P1 must be refused 409, got %d %q", code, msg)
+		}
 		// The owner's index can never reach P1: it is not in the doc a user
 		// patch applies to (index 1 does not exist there).
 		if _, _, code, _ := s.applyPlanOverlay(ppgTrader, "MNQ", w5aPatch(`{"op":"replace","path":"/scenarios/1/quality","value":"A"}`), "owner", w5aDoorNow); code != 409 {
