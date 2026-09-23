@@ -49,6 +49,14 @@ type PictureHtfEvaluator struct {
 	// foreignFrames counts live frames whose contract is definitely NOT the
 	// one this trader is on. READ by the accessor; never inferred.
 	foreignFrames int64
+	// unknownFrames counts frames EVALUATED while identity could not be
+	// established (either side ""). They are not dropped — see OnBars — so
+	// this counter is the only thing that keeps that window from being
+	// silent. unknownSince/unknownWarned drive one WARN per window.
+	unknownFrames int64
+	unknownSince  time.Time
+	unknownWarned bool
+	unknownWarns  int64
 
 	// holdRefusedKey dedupes the maintenance-hold refusal (count + WARN) to
 	// once per opportunity rather than once per frame.
@@ -133,6 +141,11 @@ func (e *PictureHtfEvaluator) bars(symbol, tf string, n int, nowMs int64) []mark
 // satisfy the requirement — not rarely, but by construction.
 const pictureHtfDepthMargin = 4
 
+// pictureUnknownContractWarnAfter is how long Picture may evaluate frames
+// without contract identity before it says so out loud. One WARN per window;
+// the window re-arms when identity returns.
+const pictureUnknownContractWarnAfter = 60 * time.Second
+
 // PictureDepthEvidence is what one evaluation KNOWS about its own 4H history.
 // Every field is READ from the bars in hand; none is assumed. It is part of
 // the evidence contract the Day Plan scenario source consumes.
@@ -202,6 +215,31 @@ func frameContract(bars []market.Kline) string {
 	return out
 }
 
+// UnknownContractFrames reports frames evaluated while contract identity
+// could not be established — the AddOn named no contract, or this trader has
+// no `subscribed` ACK yet. These frames are NOT dropped, so this is the
+// measure of how long Picture ran without knowing whose tape it was reading.
+func (e *PictureHtfEvaluator) UnknownContractFrames() int64 {
+	if e == nil {
+		return 0
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.unknownFrames
+}
+
+// UnknownContractWarnings reports how many times the unknown window has lasted
+// past pictureUnknownContractWarnAfter. One per window: it re-arms when
+// identity returns, so a reconnect that loses the ACK warns again.
+func (e *PictureHtfEvaluator) UnknownContractWarnings() int64 {
+	if e == nil {
+		return 0
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.unknownWarns
+}
+
 // ForeignContractFrames reports how many live frames named a contract other
 // than the one this trader is on. A rising count means the tape and the
 // trader disagree about the instrument — during a roll, or after the
@@ -243,6 +281,26 @@ func (e *PictureHtfEvaluator) OnBars(symbol, tf string, bars []market.Kline, rec
 		logger.Warnf("picture-htf: frame names contract %s but this trader is on %s — frame ignored (%d so far)",
 			frameC, mine, e.foreignFrames)
 		return
+	}
+	if mine == "" || frameC == "" {
+		// Identity could not be established. The frame is NOT dropped — before
+		// the first `subscribed` ACK that would disable Picture for the whole
+		// boot and reconnect window — but the window is never silent: it is
+		// counted, it is on the boot line, and it warns once if it persists.
+		e.unknownFrames++
+		if e.unknownSince.IsZero() {
+			e.unknownSince = receivedAt
+		}
+		if !e.unknownWarned && receivedAt.Sub(e.unknownSince) >= pictureUnknownContractWarnAfter {
+			e.unknownWarned = true
+			e.unknownWarns++
+			logger.Warnf("picture-htf: contract unknown for %s — Picture frames evaluated without contract identity (trader=%q frame=%q)",
+				pictureUnknownContractWarnAfter, mine, frameC)
+		}
+	} else {
+		// Identity is established again: close the window and re-arm it, so a
+		// later reconnect that loses the ACK warns on its own merits.
+		e.unknownSince, e.unknownWarned = time.Time{}, false
 	}
 	if tf == "5m" {
 		e.freshest5mAt = receivedAt

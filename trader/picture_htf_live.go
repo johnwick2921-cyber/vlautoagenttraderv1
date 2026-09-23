@@ -153,8 +153,15 @@ func (at *AutoTrader) pictureHtfBootLineAt(now time.Time) string {
 	if r := at.pictureStrictVisible(now); r != "" {
 		planGate = r
 	}
-	return fmt.Sprintf("picture-htf: mode=%s rule=v1 %s data=%s addon=%s (build=%q, need ≥ %s) plan_gate=%s",
-		mode, sim, native, cap, at.farSideBuildID(), ntwire.MinAddonBuildPictureHtf, planGate)
+	// W4/D21: contract identity, READ at print time. "n/a" when this trader
+	// has no `subscribed` ACK yet — never a literal, never a guess.
+	contract := "n/a"
+	if c, _ := pictureHtfContractOf(at, at.futuresSymbol()); c != "" {
+		contract = c
+	}
+	return fmt.Sprintf("picture-htf: mode=%s rule=v1 %s data=%s addon=%s (build=%q, need ≥ %s) plan_gate=%s contract=%s · foreign=%d · unknown=%d",
+		mode, sim, native, cap, at.farSideBuildID(), ntwire.MinAddonBuildPictureHtf, planGate,
+		contract, ev.ForeignContractFrames(), ev.UnknownContractFrames())
 }
 
 // logPictureHtfBootLine prints the boot line at trader start.

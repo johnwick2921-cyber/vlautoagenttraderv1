@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -58,4 +59,71 @@ func TestPictureHtf_OwnContractFrameStillEvaluates(t *testing.T) {
 	}
 }
 
-var _ = time.Second
+// CTO ruling on push 4: UNKNOWN identity does not drop the frame, but the
+// window must be MEASURED rather than silent — a counter, the boot line, and
+// one WARN per window.
+
+func TestPictureHtf_UnknownContractIsCountedAndBootLineReadsIt(t *testing.T) {
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	env.seedPictureTape()
+	ev := env.at.pictureHtfEvaluator()
+	if ev == nil {
+		t.Fatalf("fixture: the trader must own an evaluator")
+	}
+	orig := pictureHtfContractOf
+	// No subscribed ACK yet: the trader's own side is unknown.
+	pictureHtfContractOf = func(_ *AutoTrader, _ string) (string, string) { return "", "none" }
+	t.Cleanup(func() { pictureHtfContractOf = orig })
+
+	frame := tailOf(market.FuturesBarsProvider("MNQ", "5m", 28), 1)
+	for i := range frame {
+		frame[i].Contract = "MNQ 12-26"
+	}
+	ev.OnBars("MNQ", "5m", frame, env.now)
+
+	if got := ev.UnknownContractFrames(); got != 1 {
+		t.Fatalf("a frame evaluated without contract identity must be counted, got %d", got)
+	}
+	line := env.at.pictureHtfBootLineAt(env.now)
+	for _, want := range []string{"contract=n/a", "foreign=0", "unknown=1"} {
+		if !strings.Contains(line, want) {
+			t.Fatalf("the boot line must READ %q; got %q", want, line)
+		}
+	}
+}
+
+func TestPictureHtf_UnknownContractWarnsOncePerWindow(t *testing.T) {
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	env.seedPictureTape()
+	ev := env.at.pictureHtfEvaluator()
+	orig := pictureHtfContractOf
+	mine := ""
+	pictureHtfContractOf = func(_ *AutoTrader, _ string) (string, string) { return mine, "test" }
+	t.Cleanup(func() { pictureHtfContractOf = orig })
+
+	frame := tailOf(market.FuturesBarsProvider("MNQ", "5m", 28), 1)
+	for i := range frame {
+		frame[i].Contract = "MNQ 12-26"
+	}
+	ev.OnBars("MNQ", "5m", frame, env.now) // window opens, no warn yet
+	if got := ev.UnknownContractWarnings(); got != 0 {
+		t.Fatalf("no warning before the window elapses, got %d", got)
+	}
+	ev.OnBars("MNQ", "5m", frame, env.now.Add(61*time.Second))
+	if got := ev.UnknownContractWarnings(); got != 1 {
+		t.Fatalf("one warning once the window elapses, got %d", got)
+	}
+	ev.OnBars("MNQ", "5m", frame, env.now.Add(200*time.Second))
+	if got := ev.UnknownContractWarnings(); got != 1 {
+		t.Fatalf("exactly ONE warning per window, got %d", got)
+	}
+	// Identity returns: the window closes and re-arms for the next outage.
+	mine = "MNQ 12-26"
+	ev.OnBars("MNQ", "5m", frame, env.now.Add(210*time.Second))
+	mine = ""
+	ev.OnBars("MNQ", "5m", frame, env.now.Add(220*time.Second))
+	ev.OnBars("MNQ", "5m", frame, env.now.Add(300*time.Second))
+	if got := ev.UnknownContractWarnings(); got != 2 {
+		t.Fatalf("a NEW unknown window must warn again, got %d", got)
+	}
+}
