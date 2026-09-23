@@ -16,6 +16,10 @@
 #   trader/auto_trader_reset.go ForceReset — its time.Now() is a poll DEADLINE
 #     for a real wait on an in-flight read, not a rule. Feeding it fixture time
 #     would change behaviour (instant timeout or none), which this wave forbids.
+#   trader/auto_trader_clock.go entryBlockedByLastEntry — REMOVED (W-EXEC-TRUTH W0,
+#     2026-09-23): its only production caller was the AI path's inline chain,
+#     which moved into admitEntry and passes its own clock to
+#     entryBlockedByLastEntryAt. A wrapper nothing calls is a dead row (A29).
 #   trader/auto_trader_clock.go tickOnce — the loop entry. Its only clock use
 #     already delegates to the seamed staleDodgeCheck(now).
 #   kernel/tz.go NowCT — the clock accessor itself; every consumer (ClockCT,
@@ -26,7 +30,6 @@
 trader/auto_trader_clock.go:latestClosedPrimaryBarMs:latestClosedPrimaryBarMsAt
 trader/auto_trader_clock.go:recordClosedTradeAnalytics:recordClosedTradeAnalyticsAt
 trader/auto_trader_clock.go:maybeRecordClosedTradeAnalytics:maybeRecordClosedTradeAnalyticsAt
-trader/auto_trader_clock.go:entryBlockedByLastEntry:entryBlockedByLastEntryAt
 trader/auto_trader_clock.go:enforceEODFlat:enforceEODFlatAt
 trader/auto_trader_clock.go:enforceT1ForceFlat:enforceT1ForceFlatAt
 trader/auto_trader_transition.go:observeTransitionStanddown:observeTransitionStanddownAt

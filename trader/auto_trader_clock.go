@@ -369,9 +369,6 @@ func pastSessionCutoff(now time.Time, sess *kernel.SessionDef, cutoffMin int) bo
 //
 // Outside every session window this gate never fires — the session gate owns
 // that refusal — and the message names the session + resolved time.
-func (at *AutoTrader) entryBlockedByLastEntry() (string, bool) {
-	return at.entryBlockedByLastEntryAt(time.Now())
-}
 
 // entryBlockedByLastEntryAt is the injectable-clock body, so the T1–T4 table
 // tests can pin real CT instants (including a DST-transition date).

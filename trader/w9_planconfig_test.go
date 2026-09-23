@@ -114,32 +114,32 @@ func TestW9PlanModeBlocked(t *testing.T) {
 	at := mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "advisory"})
 	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: longBiasPlan})
 	t.Cleanup(func() { kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{}) })
-	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_short"}); blocked {
+	if _, blocked := at.planModeBlockedAt(&kernel.Decision{Action: "open_short"}, time.Now()); blocked {
 		t.Fatal("advisory mode must never block")
 	}
 
 	// direction → block a short against a long bias, allow a long.
 	at = mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "direction"})
-	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_short"}); !blocked {
+	if _, blocked := at.planModeBlockedAt(&kernel.Decision{Action: "open_short"}, time.Now()); !blocked {
 		t.Fatal("direction mode must block a short against a long bias")
 	}
-	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_long"}); blocked {
+	if _, blocked := at.planModeBlockedAt(&kernel.Decision{Action: "open_long"}, time.Now()); blocked {
 		t.Fatal("direction mode must allow a long with a long bias")
 	}
 
 	// strict → block an uncited entry, allow a matched-scenario citation.
 	at = mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "strict"})
-	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_long", CitedScenario: "off-plan"}); !blocked {
+	if _, blocked := at.planModeBlockedAt(&kernel.Decision{Action: "open_long", CitedScenario: "off-plan"}, time.Now()); !blocked {
 		t.Fatal("strict mode must block an off-plan entry")
 	}
-	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_long", CitedScenario: "S1"}); blocked {
+	if _, blocked := at.planModeBlockedAt(&kernel.Decision{Action: "open_long", CitedScenario: "S1"}, time.Now()); blocked {
 		t.Fatal("strict mode must allow a matched-scenario entry")
 	}
 
 	// direction/strict with NO active plan → block (nothing authorized).
 	at = mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "strict"})
 	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: func(string) *kernel.ActivePlan { return nil }})
-	if _, blocked := at.planModeBlocked(&kernel.Decision{Action: "open_long", CitedScenario: "S1"}); !blocked {
+	if _, blocked := at.planModeBlockedAt(&kernel.Decision{Action: "open_long", CitedScenario: "S1"}, time.Now()); !blocked {
 		t.Fatal("strict mode with no active plan must block")
 	}
 	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{})

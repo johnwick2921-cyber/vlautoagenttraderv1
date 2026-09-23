@@ -414,11 +414,9 @@ func (at *AutoTrader) entryGateForArm(plan *kernel.ActivePlan, sc kernel.PlanSce
 // EntryGate. livePrice is the execution-time market price (the caller resolves
 // it; ≤0 skips the R:R/min-SL legs, fail-open). All plan inputs resolve from
 // the trader's ActivePlan; absent plan → those legs skip.
-func (at *AutoTrader) entryGateForDecision(d *kernel.Decision, livePrice float64) (string, bool) {
-	return at.entryGateForDecisionAt(d, livePrice, time.Now())
-}
-
-// entryGateForDecisionAt is entryGateForDecision on an injected clock (W0).
+//
+// W-EXEC-TRUTH W0: it takes the caller's clock (admitEntry passes it; the
+// wall-clock wrapper had no production caller left and was removed).
 func (at *AutoTrader) entryGateForDecisionAt(d *kernel.Decision, livePrice float64, now time.Time) (string, bool) {
 	if d == nil {
 		return "", false

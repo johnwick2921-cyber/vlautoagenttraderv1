@@ -181,11 +181,9 @@ func (at *AutoTrader) approvalGranted(now time.Time) bool {
 // no plan mode) never blocks. direction: refuse entries against the plan's bias.
 // strict: refuse entries that don't cite a matched scenario. In direction/strict
 // with NO active plan, nothing is authorized → block (plan restricts).
-func (at *AutoTrader) planModeBlocked(d *kernel.Decision) (string, bool) {
-	return at.planModeBlockedAt(d, time.Now())
-}
-
-// planModeBlockedAt is planModeBlocked on an injected clock (W0).
+//
+// W-EXEC-TRUTH W0: it takes the caller's clock (admitEntry passes it; the
+// wall-clock wrapper had no production caller left and was removed).
 func (at *AutoTrader) planModeBlockedAt(d *kernel.Decision, now time.Time) (string, bool) {
 	if d == nil {
 		return "", false

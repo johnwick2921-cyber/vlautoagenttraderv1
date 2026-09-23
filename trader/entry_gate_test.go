@@ -197,7 +197,7 @@ func TestEntryGateDecisionBuilderRefusesRRAtLivePrice(t *testing.T) {
 		TakeProfit: 29113.25,
 	}
 	// live price = 587's real fill.
-	reason, refused := at.entryGateForDecision(d, 29079.25)
+	reason, refused := at.entryGateForDecisionAt(d, 29079.25, time.Now())
 	if !refused {
 		t.Fatalf("decision builder must refuse 587's intent at the live fill; got allow")
 	}
@@ -264,7 +264,7 @@ func TestArmSeamATR5mIsTheOneResolver(t *testing.T) {
 	wantDist := 0.95 * floor // sub-floor → min-SL leg must fire
 	d := &kernel.Decision{Action: "open_short", Symbol: "MNQ",
 		StopLoss: live + wantDist, TakeProfit: live - 3*wantDist}
-	reason, refused := at.entryGateForDecision(d, live)
+	reason, refused := at.entryGateForDecisionAt(d, live, time.Now())
 	if !refused {
 		t.Fatalf("decision path must refuse the sub-floor stop; got allow")
 	}

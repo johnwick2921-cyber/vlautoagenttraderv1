@@ -29,7 +29,7 @@ func TestPauseBlocksOnlyNewEntries(t *testing.T) {
 	at, _ := pauseTrader(t)
 
 	// Unpaused → gate silent.
-	if reason, paused := at.entryPaused(); paused {
+	if reason, paused := at.entryPausedAt(time.Now()); paused {
 		t.Fatalf("fresh trader must not be paused, got %q", reason)
 	}
 
@@ -37,7 +37,7 @@ func TestPauseBlocksOnlyNewEntries(t *testing.T) {
 	if err := at.PauseEntriesUntil(until, "test"); err != nil {
 		t.Fatal(err)
 	}
-	reason, paused := at.entryPaused()
+	reason, paused := at.entryPausedAt(time.Now())
 	if !paused {
 		t.Fatal("armed pause must refuse entries")
 	}
@@ -79,7 +79,7 @@ func TestPauseSurvivesRestart(t *testing.T) {
 	// A fresh AutoTrader over the SAME store (the restart) restores the pause.
 	at2 := &AutoTrader{id: "tp1", exchange: "ninjatrader", store: st}
 	at2.loadPersistedPause()
-	if _, paused := at2.entryPaused(); !paused {
+	if _, paused := at2.entryPausedAt(time.Now()); !paused {
 		t.Fatal("a pause must survive restart via the persisted system_config key")
 	}
 	got, active := at2.PauseState()
@@ -93,7 +93,7 @@ func TestPauseExpiryAutoResumes(t *testing.T) {
 	at.pauseUntilMs.Store(time.Now().Add(-time.Second).UnixMilli()) // already past
 	_ = st.SetSystemConfig(pauseConfigKey(at.id), "1")              // stale persisted value
 
-	if reason, paused := at.entryPaused(); paused {
+	if reason, paused := at.entryPausedAt(time.Now()); paused {
 		t.Fatalf("an expired pause must auto-resume, got %q", reason)
 	}
 	if at.pauseUntilMs.Load() != 0 {
@@ -110,7 +110,7 @@ func TestResumeClearsImmediately(t *testing.T) {
 		t.Fatal(err)
 	}
 	at.ResumeEntries("test")
-	if _, paused := at.entryPaused(); paused {
+	if _, paused := at.entryPausedAt(time.Now()); paused {
 		t.Fatal("ResumeEntries must clear the pause")
 	}
 	if raw, _ := st.GetSystemConfig(pauseConfigKey(at.id)); raw != "0" {

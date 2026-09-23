@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"nofx/kernel"
 	ntwire "nofx/provider/ninjatrader"
@@ -44,7 +45,7 @@ func TestNtHeldPositionSeesBothSidesOnTheWire(t *testing.T) {
 func TestDecisionLegSevenSeesAStoredPosition(t *testing.T) {
 	w := newDropWire(t)
 	w.at.recordPositionChange("sig-open", "MNQ", "LONG", "open_long", 1, 29000, 1, 0, 0, 70)
-	reason, refused := w.at.entryGateForDecision(&kernel.Decision{Action: "open_long", Symbol: "MNQ", StopLoss: 28900, TakeProfit: 29300}, 29000)
+	reason, refused := w.at.entryGateForDecisionAt(&kernel.Decision{Action: "open_long", Symbol: "MNQ", StopLoss: 28900, TakeProfit: 29300}, 29000, time.Now())
 	if !refused || !strings.Contains(reason, "one_open_position") {
 		t.Fatalf("an OPEN LONG row must refuse a second entry (leg 7), got refused=%v %q", refused, reason)
 	}

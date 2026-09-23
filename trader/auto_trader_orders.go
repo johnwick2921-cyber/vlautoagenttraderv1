@@ -107,11 +107,9 @@ func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.Dec
 // session-day (0 = OFF; resets on a win/break-even close or a new session). It is
 // a per-strategy circuit breaker, NOT gated by the guardrails master switch.
 // Fail-OPEN on a query error — never block a trade because the DB hiccuped.
-func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
-	return at.consecutiveLossHaltedAt(time.Now())
-}
-
-// consecutiveLossHaltedAt is consecutiveLossHalted on an injected clock (W0).
+//
+// W-EXEC-TRUTH W0: it takes the caller's clock (admitEntry passes it; the
+// wall-clock wrapper had no production caller left and was removed).
 func (at *AutoTrader) consecutiveLossHaltedAt(now time.Time) (string, bool) {
 	if at.store == nil || at.config.StrategyConfig == nil {
 		return "", false
