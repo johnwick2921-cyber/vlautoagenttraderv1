@@ -463,6 +463,28 @@ func TestPictureRowFromAPreviousRunNeverPlacedAtPlacement(t *testing.T) {
 	}
 }
 
+// D21 at the SEND POINT: a pass already in flight when Stop lands (running
+// false, the epoch not yet cleared) must not place a Picture row — admitChain
+// asks a source=picture arm row Picture's running question (one chain).
+func TestPictureRowRefusedAtItsSendPointWhenStopped(t *testing.T) {
+	r, epoch := newPicRig(t, "w5b-sendstop", nil)
+	picPlan(r, picScenario("P1", "opp-sendstop", r.now, epoch, picDefault))
+	r.at.isRunningMutex.Lock()
+	r.at.isRunning = false
+	r.at.isRunningMutex.Unlock()
+	before := gateBlocks(r.at.id, "trader_stopped")
+	picPass(r, 0, 100.25)
+	if sigs, _ := r.drain(); len(sigs) != 0 {
+		t.Fatalf("a stopped trader never places a Picture row: %+v", sigs)
+	}
+	if row := r.row("P1"); row.State != store.StateArmed || row.SignalID != "" || row.LastVerdict != "refused: "+pictureRefusalStopped {
+		t.Fatalf("the row is refused at its send point (armed, unstamped, verdict trader_stopped): %+v", row)
+	}
+	if gateBlocks(r.at.id, "trader_stopped") != before+1 {
+		t.Fatal("the refusal is counted (trader_stopped)")
+	}
+}
+
 // ── one_setup (D8 ruling) ───────────────────────────────────────────────────
 
 // one_setup ON: a Picture scenario still places (the planner's non-reject play
@@ -478,7 +500,13 @@ func TestPictureScenarioPlacesWithOneSetupOn(t *testing.T) {
 	obstacle := 105.0
 	p1.Economics.FirstObstacle = &kernel.ScenarioObstacle{Price: &obstacle}
 	picPlan(r, planner, p1)
-	picPass(r, 0, 100.25)
+	// Pass 1 short of the zone: the P1 row waits armed — one_setup's retire
+	// pass (a declined scenario's unplaced row is cancelled) must not touch it.
+	picPass(r, 0, 99.6)
+	if row := r.row("P1"); row.State != store.StateArmed {
+		t.Fatalf("one_setup must not retire a waiting Picture row: %+v", row)
+	}
+	picPass(r, time.Second, 100.25)
 	sigs, _ := r.drain()
 	if len(sigs) != 1 || sigs[0].LimitPrice != 100.5 || sigs[0].TakeProfit != 110 {
 		t.Fatalf("one_setup ON: the Picture scenario places at its own target 110 (never the obstacle): %+v", sigs)
