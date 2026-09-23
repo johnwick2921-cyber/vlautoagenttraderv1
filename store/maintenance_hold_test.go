@@ -3,6 +3,7 @@ package store
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -232,5 +233,27 @@ func TestMaintenanceHoldPresentWithoutABooleanHeldIsCorruptAndHeld(t *testing.T)
 	_ = os.WriteFile(MaintenanceHoldPath(dir), []byte(`{"held":false}`), 0o600)
 	if st := ReadMaintenanceHold(dir); st.Held || st.Corrupt {
 		t.Fatalf("an explicit held:false is valid and not held: %+v", st)
+	}
+}
+
+// M2.1 (review 3 F6): a hold whose presence CANNOT BE PROVEN — stat itself
+// fails for a reason other than not-exist (here EACCES on updater/) — HOLDS.
+// Only an ENOENT proves "absent".
+func TestMaintenanceHoldStatFailureIsHeld(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores directory permissions")
+	}
+	dir := t.TempDir()
+	if err := WriteMaintenanceHold(dir, MaintenanceHold{Held: false}); err != nil {
+		t.Fatal(err)
+	}
+	upd := filepath.Dir(MaintenanceHoldPath(dir))
+	if err := os.Chmod(upd, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(upd, 0o700) })
+	st := ReadMaintenanceHold(dir)
+	if !st.Held || !st.Corrupt || !strings.Contains(st.Err, "stat") {
+		t.Fatalf("a stat failure other than not-exist must read HELD (cannot prove absent): %+v", st)
 	}
 }
