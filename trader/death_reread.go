@@ -246,6 +246,11 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 		at.logWarnf("%s", wakeStreamDeferLine(session, dec.Desc, held))
 		return
 	}
+	// W-ONE-BUTTON M2.1 (review F15/N7): the maintenance hold refuses here,
+	// before the launch clock, the wake timestamp and the in-flight claim.
+	if at.refusePlannerClaimWhileHeld(store.MakePlanIDForTrader(at.id, tradeDate, session), "death re-read") {
+		return
+	}
 	// The two LOAD rules a level wake obeys are computed only to SAY that the
 	// exemption applied (never to refuse) — a death re-read is a reaction to a
 	// machine-confirmed kill, like the flip read.

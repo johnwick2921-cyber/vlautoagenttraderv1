@@ -833,6 +833,13 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 		at.logWarnf("%s", wakeStreamDeferLine(session, dec.Desc, held))
 		return
 	}
+	// W-ONE-BUTTON M2.1 (review F15/N7): the maintenance hold refuses HERE,
+	// with the other refusals — before the launch clock, the wake timestamp and
+	// the in-flight claim. (Inside the launched read it came too late: a short
+	// hold parked the retry for a whole wake_min_interval.)
+	if at.refusePlannerClaimWhileHeld(store.MakePlanIDForTrader(at.id, tradeDate, session), "structure_flip read") {
+		return
+	}
 	// The two LOAD rules a level wake obeys are computed only to SAY that the
 	// exemption applied (never to refuse): the class-47 cooldown since the last
 	// wake-authored version, and the shared wake_min_interval_min throttle.
