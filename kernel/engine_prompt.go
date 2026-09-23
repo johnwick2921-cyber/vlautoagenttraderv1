@@ -719,7 +719,13 @@ func (e *StrategyEngine) formatMarketData(data *market.Data) string {
 		}
 
 		if fundingOn {
-			sb.WriteString(fmt.Sprintf("Funding Rate: %.2e\n\n", data.FundingRate))
+			if data.FundingRateKnown {
+				sb.WriteString(fmt.Sprintf("Funding Rate: %.2e\n\n", data.FundingRate))
+			} else {
+				// W-NO-BINANCE A (CTO F1): a funding fetch that did not succeed is
+				// n/a, never a fabricated 0.00e+00.
+				sb.WriteString("Funding Rate: n/a\n\n")
+			}
 		}
 	}
 
