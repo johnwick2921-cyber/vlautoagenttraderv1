@@ -105,3 +105,50 @@ func TestAddOnRefusesEntriesWhileHeldBeforeCreatingAnOrder(t *testing.T) {
 		t.Fatal("the hold refusal must answer with the existing rejected fill frame")
 	}
 }
+
+// M2.1 (review 3 F14) — the AddOn resets the hold on EVERY connect, before
+// its hello: Go re-sends the hold at accept while held, and never sends
+// held:false to a fresh connection, so a hold that survived a reconnect would
+// refuse entries forever.
+func TestAddOnResetsTheHoldOnEveryConnectBeforeItsHello(t *testing.T) {
+	loop := csMethod(t, csSource(t), "private void RunConnectionLoop(")
+	conn := strings.Index(loop, "stream = client.GetStream();")
+	reset := strings.Index(loop, "maintenanceHeld = false;")
+	hello := strings.Index(loop, "SendHello();")
+	if conn < 0 || reset < 0 || hello < 0 || !(conn < reset && reset < hello) {
+		t.Fatalf("RunConnectionLoop must reset maintenanceHeld after connecting and before SendHello (connect=%d reset=%d hello=%d)", conn, reset, hello)
+	}
+}
+
+// M2.1 (review d) — source_hash is taken when the AddOn ACTIVATES, not at the
+// first hello: a copy-before-F5 must never carry the new file's hash under the
+// old compile.
+func TestAddOnHashesItsSourceAtActivation(t *testing.T) {
+	src := csSource(t)
+	act := strings.Index(src, "sourceHashCache = ComputeSourceHash();")
+	reader := strings.Index(src, "readerThread = new Thread(")
+	if act < 0 || reader < 0 || act > reader {
+		t.Fatalf("source_hash must be computed in the activation block, before the reader thread starts (hash=%d reader=%d)", act, reader)
+	}
+}
+
+// M2.1 (review d, [C] deadlock risk) — the census never takes an NT8 lock
+// while holding another (it runs on the read thread that also carries the
+// close / protective frames).
+func TestAddOnCensusNeverNestsLocks(t *testing.T) {
+	body := csMethod(t, csSource(t), "private Dictionary<string, object> BuildMaintenanceAck(")
+	depth, lockDepths := 0, []int{}
+	for _, line := range strings.Split(body, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "lock (") {
+			if len(lockDepths) > 0 {
+				t.Fatalf("nested lock in BuildMaintenanceAck: %q", trimmed)
+			}
+			lockDepths = append(lockDepths, depth) // closes when depth returns here
+		}
+		depth += strings.Count(line, "{") - strings.Count(line, "}")
+		for len(lockDepths) > 0 && depth <= lockDepths[len(lockDepths)-1] && !strings.HasPrefix(trimmed, "lock (") {
+			lockDepths = lockDepths[:len(lockDepths)-1]
+		}
+	}
+}

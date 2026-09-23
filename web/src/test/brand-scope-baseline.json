@@ -11,8 +11,8 @@
   "deploy/systemd-user/nofx-clock-guard.timer": "a0c9c3c03d9546a76a2f7edba8ad3abb2e769b6893d8a80cea439f0da50bcfc9",
   "go.mod": "a9f0a7ba1bfec59210f2000c623199edbab74b91c848dc538e123f1db00a35a3",
   "logger/logger.go": "2e799bce8b1718cbecc4974b9c1c8746bf10525872a2b641338547e1e5965998",
-  "ninjascript/VLTraderTCPClient.cs": "67f7e19b1ef8ecd9195b401618f607ea764716df85b6a09b3c78b1fb75484006",
-  "provider/ninjatrader/tcp_framing.go": "fdd3576ef1ee7f534e00298ff5bd7ed89acadfb6f4eeb908540f914b102bd263",
-  "provider/ninjatrader/tcp_server.go": "45bddc142a77d2c76658925c51a4ee9db637c051c1eb6d0b851917d7a9b7127b",
+  "ninjascript/VLTraderTCPClient.cs": "2ce9019fc5bbaff18332f2e813bdb2209317c909b6094b3bdecd2e7154e5b7eb",
+  "provider/ninjatrader/tcp_framing.go": "55b0c78657613097692a45ed1b225d2a211d67a77a5c9bace9097af803a8bed6",
+  "provider/ninjatrader/tcp_server.go": "c2b65a96af9cfab9d323a101a04d7995cde4881bc1f7b6dd2836e6a535dc643b",
   "web/src/lib/agentChatStorage.ts": "de7f24ff74a913a4e9d4dad2563712a562239c4f9d206b1099bb1477896f6fb0"
 }

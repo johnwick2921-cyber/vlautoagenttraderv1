@@ -53,8 +53,10 @@ namespace NinjaTrader.NinjaScript.AddOns
         // the Go side refuses frame types this build hasn't proven. Bump on any
         // additive wire change; Go gates on FarSideBuildE7 in tcp_framing.go.
         // 2026-09-22-m2 (W-ONE-BUTTON M2): maintenance / maintenance_ack frames
-        // + the hello epoch fields. The ISO-date prefix is kept (CTO ruling Q3).
-        private const string  VL_BUILD_ID             = "2026-09-22-m2";
+        // + the hello epoch fields. 2026-09-23-m21 (M2.1): census `settled`,
+        // no nested census locks, source_hash at activation. The ISO-date
+        // prefix is kept (CTO ruling Q3).
+        private const string  VL_BUILD_ID             = "2026-09-23-m21";
         private const int    MAX_FRAME_BYTES         = 1 << 20; // 1 MB, spec L4376
 
         // === State ===
@@ -287,6 +289,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                 // and the Go BarCache goes stale with no recovery. Static event
                 // across all connections; the handler filters on PriceStatus.
                 Connection.ConnectionStatusUpdate += OnVLConnectionStatusUpdate;
+
+                // W-ONE-BUTTON M2.1 — hash the AddOn source NOW, at activation, so
+                // the hello's source_hash describes what this activation compiled
+                // (a copy made before the next F5 must not change it).
+                sourceHashCache = ComputeSourceHash();
 
                 readerThread = new Thread(() => RunConnectionLoop(cts.Token))
                 {
@@ -1605,52 +1612,68 @@ namespace NinjaTrader.NinjaScript.AddOns
                 var accounts = new List<object>();
                 // connection -> "every account seen on it is SIM"
                 var connAllSim = new Dictionary<Connection, bool>();
+                // M2.1: snapshot each NT8 collection under ITS OWN lock and count
+                // outside it — never one lock while holding another (this runs on
+                // the read thread that also carries close / protective frames).
+                var accts = new List<Account>();
                 lock (Account.All)
                 {
                     foreach (Account a in Account.All)
+                        if (a != null) accts.Add(a);
+                }
+                foreach (Account a in accts)
+                {
+                    bool sim = IsSimAccount(a);
+                    var positionsSnap = new List<Position>();
+                    lock (a.Positions)
                     {
-                        if (a == null) continue;
-                        bool sim = IsSimAccount(a);
-                        int positions = 0, working = 0;
-                        lock (a.Positions)
-                        {
-                            foreach (Position pos in a.Positions)
-                                if (pos != null && pos.MarketPosition != MarketPosition.Flat && pos.Quantity != 0) positions++;
-                        }
-                        lock (a.Orders)
-                        {
-                            // ANY non-terminal order of ANY action: entries, exits and
-                            // protection alike (a resting exit can reverse a flat account).
-                            foreach (Order o in a.Orders)
-                                if (o != null && !IsTerminalOrderState(o.OrderState)) working++;
-                        }
-                        accounts.Add(new Dictionary<string, object>
-                        {
-                            ["sim"] = sim, ["positions"] = positions, ["working"] = working
-                        });
-                        Connection c = a.Connection;
-                        if (c != null)
-                        {
-                            bool prev;
-                            connAllSim[c] = (connAllSim.TryGetValue(c, out prev) ? prev : true) && sim;
-                        }
+                        foreach (Position pos in a.Positions)
+                            positionsSnap.Add(pos);
+                    }
+                    var ordersSnap = new List<Order>();
+                    lock (a.Orders)
+                    {
+                        foreach (Order o in a.Orders)
+                            ordersSnap.Add(o);
+                    }
+                    int positions = 0, working = 0;
+                    foreach (Position pos in positionsSnap)
+                        if (pos != null && pos.MarketPosition != MarketPosition.Flat && pos.Quantity != 0) positions++;
+                    // ANY non-terminal order of ANY action: entries, exits and
+                    // protection alike (a resting exit can reverse a flat account).
+                    foreach (Order o in ordersSnap)
+                        if (o != null && !IsTerminalOrderState(o.OrderState)) working++;
+                    accounts.Add(new Dictionary<string, object>
+                    {
+                        ["sim"] = sim, ["positions"] = positions, ["working"] = working
+                    });
+                    Connection c = a.Connection;
+                    if (c != null)
+                    {
+                        bool prev;
+                        connAllSim[c] = (connAllSim.TryGetValue(c, out prev) ? prev : true) && sim;
                     }
                 }
-                var connections = new List<object>();
+                var connsSnap = new List<Connection>();
                 lock (Connection.Connections)
                 {
                     foreach (Connection c in Connection.Connections)
+                        if (c != null) connsSnap.Add(c);
+                }
+                var connections = new List<object>();
+                foreach (Connection c in connsSnap)
+                {
+                    // A connection with no account seen on it is NOT known to be
+                    // SIM, so it reads as non-SIM (fail-closed).
+                    bool allSim;
+                    bool sim = connAllSim.TryGetValue(c, out allSim) && allSim;
+                    // M2.1: settled = Connected or Disconnected. Any other state
+                    // (Connecting, ConnectionLost …) cannot vouch for its accounts.
+                    bool settled = c.Status == ConnectionStatus.Connected || c.Status == ConnectionStatus.Disconnected;
+                    connections.Add(new Dictionary<string, object>
                     {
-                        if (c == null) continue;
-                        // A connection with no account seen on it is NOT known to be
-                        // SIM, so it reads as non-SIM (fail-closed).
-                        bool allSim;
-                        bool sim = connAllSim.TryGetValue(c, out allSim) && allSim;
-                        connections.Add(new Dictionary<string, object>
-                        {
-                            ["sim"] = sim, ["connected"] = c.Status == ConnectionStatus.Connected
-                        });
-                    }
+                        ["sim"] = sim, ["connected"] = c.Status == ConnectionStatus.Connected, ["settled"] = settled
+                    });
                 }
                 payload["connections"] = connections;
                 payload["accounts"]    = accounts;

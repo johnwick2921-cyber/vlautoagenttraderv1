@@ -507,9 +507,9 @@ AddOn's half. **Additive; protocol version unchanged (3).**
 ```json
 { "type": "maintenance_ack", "payload": {
     "held": true, "job_id": "upd-2026-09-22-01", "queued_commands": 0,
-    "build_id": "2026-09-22-m2",
-    "connections": [ { "sim": true,  "connected": true },
-                     { "sim": false, "connected": false } ],
+    "build_id": "2026-09-23-m21",
+    "connections": [ { "sim": true,  "connected": true,  "settled": true },
+                     { "sim": false, "connected": false, "settled": true } ],
     "accounts":    [ { "sim": true, "positions": 0, "working": 0 } ] } }
 ```
 
@@ -518,7 +518,10 @@ AddOn's half. **Additive; protocol version unchanged (3).**
 - `connections[]`: every connection in `Connection.Connections`. `sim` is true only
   when **every** account seen on that connection is a SIM account (`IsSimAccount`);
   a connection with no account seen reads **non-SIM** (fail-closed). `connected` is
-  `Status == ConnectionStatus.Connected`.
+  `Status == ConnectionStatus.Connected`. `settled` (M2.1) is `Status` being Connected
+  or Disconnected; any other state (Connecting, ConnectionLost …) cannot vouch for
+  the zeros reported for its accounts, and the gate fails on it. An ack without
+  `settled` (an older build) reads false: fail-closed.
 - `accounts[]`: every account in `Account.All`. `positions` counts non-flat
   positions. `working` counts orders **of any action** in any state except
   Filled / Cancelled / Rejected (Unknown counts as working): a resting exit can
@@ -529,6 +532,9 @@ AddOn's half. **Additive; protocol version unchanged (3).**
 - `queued_commands`: the AddOn executes frames synchronously on its read thread, so
   when the ack is written every earlier frame has already run. The depth is **0 by
   construction**. A future asynchronous dispatcher must report its real depth.
+- The census takes each NT8 collection under **its own** lock and counts outside it; it never
+  holds one lock while taking another, because it runs on the read thread that also carries
+  close and protective frames (M2.1).
 - Go records the ack on the **current connection's record only**. A reconnect
   starts a fresh record, so connection N's ack is never reported for N+1.
 
@@ -552,7 +558,7 @@ evidence rather than to the hand-set `VL_BUILD_ID` (M1 finding F4):
 | `nt8_pid` | `NinjaTrader.exe` process id |
 | `nt8_start_ms` | that process's start time, Unix ms UTC |
 | `assembly_mvid` | module version id of the loaded NinjaScript assembly; **changes on every compile** |
-| `source_hash` | SHA-256 of `AddOns\VLTraderTCPClient.cs` as it stood on disk when this activation started (omitted when unreadable) |
+| `source_hash` | SHA-256 of `AddOns\VLTraderTCPClient.cs`, taken when the AddOn **activates** (`State.Active`), not at the first hello, so a copy made before the next F5 cannot change it (M2.1). Omitted when unreadable |
 | `activation_nonce` | minted once per AddOn activation |
 
 A value the AddOn cannot read is **left out**, never guessed. The Go reply sets none

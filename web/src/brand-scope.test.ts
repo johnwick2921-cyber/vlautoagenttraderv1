@@ -65,6 +65,16 @@
 //     2026-09-22-m2 (lockstep with ExpectedAddonBuild), SendHello builds its
 //     dictionary before the same WriteEnvelope (hello is still the first frame),
 //     HandleMaintenance + census ack + the entry refusal. No identifier renamed.
+// Wire baselines advanced 2026-09-23 for W-ONE-BUTTON M2.1 (review hardening;
+// feat/one-button-m2.1-hardening), each delta measured against the M2 head:
+//   provider/ninjatrader/tcp_framing.go — +4 −0: CensusConnection.Settled.
+//   provider/ninjatrader/tcp_server.go  — +8 −0: the flush re-checks the hold
+//     with the writer lock held (review F1); nothing removed.
+//   ninjascript/VLTraderTCPClient.cs   — +60 −38: VL_BUILD_ID 2026-09-22-m2 →
+//     2026-09-23-m21; the census M2 added is restructured to snapshot each NT8
+//     collection under its own lock (no nesting) and to report 'settled';
+//     source_hash is taken at activation. Every removed line is M2's own census
+//     code; no pre-M2 line, guard or identifier is touched.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
