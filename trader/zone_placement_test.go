@@ -649,3 +649,32 @@ func TestZoneFillReceiptNeverLabelsAnOutsideFillInZone(t *testing.T) {
 		t.Fatal("no tick → slippage is absent (nil), never 0")
 	}
 }
+
+// D7 at the call site, on the non-structural composition (reclaim — legacy
+// kind stop_entry, so this also proves the policy decides the order kind): the
+// stop is composed from the NEAR bound, so min-SL holds at the best fill, and
+// the limit still rests at the FAR bound.
+func TestZoneStopComposedFromTheNearBound(t *testing.T) {
+	sc := zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)
+	sc.Condition = "reclaim"
+	sc.Arm.Stop = 99.25 // tighter than any floor: the composition decides the stop
+	r := newZoneRig(t, "w3-zone-d7", zoneDoc(sc))
+	tape := zoneTape(100.0, r.now, 0)
+	r.setTape(tape)
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 || sigs[0].OrderType != "limit" || sigs[0].LimitPrice != 100.5 {
+		t.Fatalf("a market_in_zone reclaim must rest a LIMIT at the far bound 100.50: %+v", sigs)
+	}
+	floor := kernel.MinSLATRMult() * armSeamATR5mFromBars(tape)
+	if floor <= 0 {
+		t.Fatal("fixture: the tape must yield an ATR5m")
+	}
+	// The wire rounds the stop to the NEAREST tick (RoundToTick), so it may sit
+	// up to half a tick inside the composed floor — a pre-existing property of
+	// every armed stop, not of this wave. From the far bound it would be a
+	// whole point tighter.
+	if got := sigs[0].StopLoss; got > 99.5-floor+0.125+1e-9 {
+		t.Fatalf("stop %.2f must be at least %.2f (min-SL) below the NEAR bound 99.50 (±½ tick) — composed from the far bound it would be %.2f", got, floor, 100.5-floor)
+	}
+}

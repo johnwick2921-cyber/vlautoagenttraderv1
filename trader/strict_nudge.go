@@ -17,8 +17,9 @@ import (
 // scenario whose arm was waiting for the next 2-minute scan. The decision is
 // now a NUDGE: when it cites a matched scenario whose DOC arm is an enabled
 // market_in_zone arm, ONE armed pass runs immediately, scoped to that
-// scenario (placement is still the executor's: the same pass, the same gates,
-// idempotent — it acts only on 'armed' rows), and the decision record carries
+// scenario's placement (the FULL pass: every authoring gate and the admitted
+// set as for the scan, idempotent — it acts only on 'armed' rows), and the
+// decision record carries
 // the executor's verdict. The decision itself stays refused: Success is false
 // and nothing flips it to the arm path.
 //
@@ -73,7 +74,9 @@ func (at *AutoTrader) strictNudgeAt(decision *kernel.Decision, refusal string, n
 	// Never nil: a nil snapshot would skip the HTF veto (fail-open).
 	snap := kernel.StructureSnapshot(bars, now.UnixMilli())
 	scope := &armedPassScope{Scenario: sc.ID, Trigger: "nudge"}
-	at.maybeManageArmedOrdersAt(snap, now, scope) // takes armedPassMu (D14)
+	// The FULL pass (CTO D14 ruling): every authoring gate, the admitted set,
+	// then placement — the scope filters placement rows only.
+	at.maybeManageArmedOrdersAtOpts(snap, now, armedPassOpts{scope: scope}) // takes armedPassMu
 	return at.nudgeVerdict(plan, scope), true
 }
 

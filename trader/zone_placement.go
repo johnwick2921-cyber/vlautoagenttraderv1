@@ -129,10 +129,11 @@ func zonePriceVerdict(price, lo, hi float64, side string) zoneVerdict {
 
 // ── the pass scope (the strict nudge, D13) ──────────────────────────────────
 
-// armedPassScope narrows ONE armed pass to one scenario and carries back what
-// the pass did to it. nil = the scan and the event pass: every scenario, no
-// report. Rows of other scenarios are skipped BEFORE armAdmitted, so a scoped
-// pass never counts arm_not_admitted for a scenario it did not author.
+// armedPassScope narrows ONE armed pass's PLACEMENT to one scenario and
+// carries back what the pass did to it. nil = the scan and the event pass:
+// every scenario, no report. The authoring gates run for every scenario; rows
+// of other scenarios are skipped in the placement loop BEFORE armAdmitted, so
+// a scoped pass never counts arm_not_admitted for them.
 type armedPassScope struct {
 	Scenario string
 	Trigger  string // "nudge"
@@ -143,7 +144,17 @@ type armedPassScope struct {
 	reason string // the first verdict or refusal the pass reached for the scenario
 }
 
-// firstPassScope is the optional scope argument of maybeManageArmedOrdersAt.
+// armedPassOpts are the FULL pass's options (maybeManageArmedOrdersAtOpts).
+// The zero value is the scan's pass.
+type armedPassOpts struct {
+	// scope narrows PLACEMENT to one scenario (the strict nudge). Every
+	// authoring gate still runs for every scenario and the admitted set is
+	// computed exactly as for the scan; the scope filters rows after that and
+	// before armAdmitted.
+	scope *armedPassScope
+}
+
+// firstPassScope is the optional scope argument of runArmedPlacementAt.
 func firstPassScope(scopes []*armedPassScope) *armedPassScope {
 	if len(scopes) == 0 {
 		return nil
@@ -444,7 +455,7 @@ func firstClause(s string) string {
 // guard first, then the wire cancel, then cancel_pending with the reason — a
 // send is not a settlement. Legacy rows are never touched. With the D15 pin,
 // a rest-expired row is terminal for its plan version.
-func (at *AutoTrader) zoneRestCap(nt *ntTrader.TCPTrader, ledger *store.ArmedOrderStore, rows []store.ArmedOrderDB, now time.Time, scope *armedPassScope) {
+func (at *AutoTrader) zoneRestCap(nt *ntTrader.TCPTrader, ledger *store.ArmedOrderStore, rows []store.ArmedOrderDB, now time.Time) {
 	if nt == nil || ledger == nil {
 		return
 	}
@@ -455,7 +466,7 @@ func (at *AutoTrader) zoneRestCap(nt *ntTrader.TCPTrader, ledger *store.ArmedOrd
 	limit := time.Duration(maxMin) * time.Minute
 	for _, r := range rows {
 		if r.TraderID != at.id || r.Policy != kernel.EntryPolicyMarketInZone || r.PlacedAtMs == nil ||
-			strings.TrimSpace(r.SignalID) == "" || scope.skips(r.Scenario) {
+			strings.TrimSpace(r.SignalID) == "" {
 			continue
 		}
 		if store.IsTerminalArmState(r.State) {

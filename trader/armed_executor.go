@@ -190,21 +190,26 @@ func (at *AutoTrader) declineHadFreshMetAt(now time.Time) bool {
 	return false
 }
 
-// W3 D14 — maybeManageArmedOrdersAt is THE armed pass for the scan, the
-// live-bar event pass and the strict nudge, and it takes armedPassMu itself:
-// ONE pass at a time per trader. The pass state (armRefusalLast,
-// armStopCompLast, armAuthoredLast, the in-pass placement latch) was "run-loop
-// goroutine only"; a second trigger over it is a data race without this lock.
-// scopes: none = every scenario (the scan / event pass); one = the nudge,
-// narrowed to its scenario and reporting what the pass did to it.
+// W3 D14 — the FULL armed pass (authoring gates → admitted set → placement)
+// is maybeManageArmedOrdersAtOpts, for the scan, the live-bar event pass and
+// the strict nudge alike; it takes armedPassMu itself: ONE pass at a time per
+// trader. The pass state (armRefusalLast, armStopCompLast, armAuthoredLast,
+// the in-pass placement latch) was "run-loop goroutine only"; a second trigger
+// over it is a data race without this lock. maybeManageArmedOrdersAt is the
+// scan's wrapper (no options = today's pass).
 func (at *AutoTrader) maybeManageArmedOrders(snap map[string]kernel.StructureState) {
 	at.maybeManageArmedOrdersAt(snap, time.Now())
 }
 
-func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureState, now time.Time, scopes ...*armedPassScope) {
+func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureState, now time.Time) {
+	at.maybeManageArmedOrdersAtOpts(snap, now, armedPassOpts{})
+}
+
+func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.StructureState, now time.Time, opts armedPassOpts) {
 	at.armedPassMu.Lock() // W3 D14 — one armed pass at a time (see above)
 	defer at.armedPassMu.Unlock()
-	scope := firstPassScope(scopes)
+	defer armedPassEntered(at.id)()
+	scope := opts.scope
 	if !at.dayPlanEnabled() || at.store == nil || at.exchange != "ninjatrader" {
 		return
 	}
@@ -391,7 +396,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAt(snap map[string]kernel.StructureS
 	// is NOT placed — it was, by any later pass, before this wave.
 	admitted := armAdmission{}
 	for _, sc := range kernel.OneSetupOrder(doc.Scenarios, osCycle.allowed()) {
-		if sc.Arm == nil || !sc.Arm.Enabled || scope.skips(sc.ID) {
+		if sc.Arm == nil || !sc.Arm.Enabled {
 			continue
 		}
 		// E4 (2026-08-30) — split-entry legs: a two-leg arm writes one ledger
@@ -1392,11 +1397,9 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 		}
 	}
 	// W3 D16 — the zone rest cap (policy rows only) and the event trigger's
-	// cached zones.
-	at.zoneRestCap(nt, ledger, rows, now, scope)
-	if scope == nil {
-		at.cacheZoneWatch(rows, price, bars, now)
-	}
+	// cached zones. Housekeeping: never scoped.
+	at.zoneRestCap(nt, ledger, rows, now)
+	at.cacheZoneWatch(rows, price, bars, now)
 	// reconnect/reconcile safety net (separate pass — cancelFn is the wire seam).
 	// The reaper's VERDICT is untouched (class 79 owns it); only its WIRE is
 	// gated. Silence is not death, and neither is it permission to cancel a

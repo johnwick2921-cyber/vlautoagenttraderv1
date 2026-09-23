@@ -32,6 +32,19 @@ import (
 // The pass itself is maybeManageArmedOrdersAt — the same pass the scan runs,
 // serialized with it by armedPassMu. The 2-minute scan stays the fallback.
 
+// armedPassEnterForTest is a TEST SEAM ONLY (nil in production,
+// TestArmedPassEnterSeamIsNilInProduction): called when a pass has taken
+// armedPassMu, its returned func when the pass ends — so a test can observe
+// whether two passes of one trader were ever inside at the same time.
+var armedPassEnterForTest func(traderID string) (exit func())
+
+func armedPassEntered(traderID string) func() {
+	if h := armedPassEnterForTest; h != nil {
+		return h(traderID)
+	}
+	return func() {}
+}
+
 // armedEventMinGap bounds the event pass to ≤ 1 per second per trader.
 const armedEventMinGap = time.Second
 
