@@ -1273,10 +1273,13 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 					continue
 				}
 				d := decideStopEntry(side, r.EntryPx, float64(stopEntryOffsetTicks())*tick, tick, price)
-				if at.placeOneStopEntry(nt, ledger, r, d, price, now, at.armSlotGuard(rows, r, now)) {
-					// The hold landed after this pass's snapshot. Nothing was
-					// sent, so the account is not committed and the plan's
-					// other arms must NOT be cancelled.
+				if at.placeOneStopEntry(nt, ledger, r, d, price, now, at.armSlotGuard(rows, r, now)) != stopPlaceCommitted {
+					// A hold refusal, a guard cancel, an un-adjudicated verdict,
+					// a refused slot, an AddOn too old to build the order, or a
+					// refusal before the ledger stamp: NOTHING was sent, so the
+					// account is not committed and the plan's other arms must NOT
+					// be cancelled (W-EXEC-TRUTH W0 defect 6 — rows 169/176 were
+					// cancelled "one_live_entry" for a "never placed" stop).
 					continue
 				}
 				// A stop entry that reached the wire commits the account exactly
@@ -1576,7 +1579,19 @@ type armStateWriter interface {
 // placeOneStopEntry executes ONE adjudicated stop-entry arm, and is the only
 // path from an armed stop-entry row to the wire. A9: every line names the order
 // type, the trigger, the side and WHICH guard reached the verdict.
-func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWriter, r store.ArmedOrderDB, d stopEntryDecision, price float64, now time.Time, guard slotVerdict) (heldRefused bool) {
+// stopPlaceOutcome is what placeOneStopEntry did, as the caller's latch needs
+// it: only a COMMITTED outcome (sent, or a send attempted after the ledger
+// stamp whose fate is unknown — class 81 pessimism) closes the pass and
+// cancels the plan's other arms. HELD and NOT_SENT are provably unsent.
+type stopPlaceOutcome int
+
+const (
+	stopPlaceNotSent   stopPlaceOutcome = iota // refused, cancelled or not adjudicated before any send
+	stopPlaceHeld                              // the maintenance hold refused it (M2 site 2) — never sent
+	stopPlaceCommitted                         // sent, or attempted after the ledger stamp (ambiguous → pessimistic)
+)
+
+func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWriter, r store.ArmedOrderDB, d stopEntryDecision, price float64, now time.Time, guard slotVerdict) stopPlaceOutcome {
 	// THE PLACEMENT KEYSPACE IS NAMED AND 1-BASED. Every other writer into
 	// at.armRefusalLast keys the same leg as strconv.Itoa(li+1) (:455, :498,
 	// :525, :579); a 0-based key here was byte-identical to the ARM-GATE key for
@@ -1591,14 +1606,14 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// "placed" nor cancels the plan's other arms for an order never sent.
 	if reason, held := MaintenanceHeld(); held {
 		at.refuseMaintenanceHold(r, reason, "stop-entry", now, nil)
-		return true
+		return stopPlaceHeld
 	}
 	switch d.Action {
 	case stopEntryCancel:
 		_ = ledger.SetState(r.ID, "cancelled", d.Why+" — never placed")
 		at.logWarnf("✕ armed %s stop-entry CANCELLED [guard=stop-side verdict=%s action=%s] %s stop-market trigger=%.2f price=%.2f — %s (never placed)",
 			r.Scenario, d.Verdict, d.Action, strings.ToUpper(d.Side), d.Trigger, price, d.Why)
-		return false
+		return stopPlaceNotSent
 	case stopEntryPlace:
 		// The ONE named path to the wire; everything else falls to default.
 	default:
@@ -1610,7 +1625,7 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 			at.logWarnf("⚠️ armed %s stop-entry NOT adjudicated [guard=stop-side verdict=%s action=%s] %s stop-market trigger=%.2f — %s%s",
 				r.Scenario, d.Verdict, d.Action, strings.ToUpper(d.Side), d.Trigger, d.Why, shown)
 		}
-		return false
+		return stopPlaceNotSent
 	}
 	// D3 — THE PER-SLOT INVARIANT. The broker's fresh book must show ZERO
 	// non-terminal orders for this slot before anything else is sent to it.
@@ -1624,9 +1639,19 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 	// was malformed — which Wave B has now fixed.
 	if !guard.Allowed() {
 		at.refuseSlot(r, guard, "stop-entry", now)
-		return false
+		return stopPlaceNotSent
 	}
-	sid, perr := pl.PlaceStopEntry(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error { return ledger.BeginPlacement(r.ID, sid) })
+	// stamped: the ledger row was moved to place_pending under this signal,
+	// so everything after it is the send itself. An error before it is a
+	// refusal (build, account, permit, B3, the ledger CAS) — provably unsent.
+	stamped := false
+	sid, perr := pl.PlaceStopEntry(at.futuresSymbol(), d.Side, 1, d.Trigger, r.StopPx, r.TargetPx, func(sid string) error {
+		if err := ledger.BeginPlacement(r.ID, sid); err != nil {
+			return err
+		}
+		stamped = true // past this point a failure is a SEND failure — its fate is unknown
+		return nil
+	})
 	recordResearchPlacement(r, sid, "stop_entry", d.Trigger, r.StopPx, r.TargetPx, perr)
 	if perr != nil {
 		// D5 — an AddOn that predates the stop-slot fix is refused at the wire,
@@ -1638,21 +1663,26 @@ func (at *AutoTrader) placeOneStopEntry(pl stopEntryPlacer, ledger armStateWrite
 				at.logWarnf("📌 armed %s stop-entry REFUSED [guard=far_side_build verdict=%s] %s stop-market trigger=%.2f: %v%s",
 					r.Scenario, d.Verdict, strings.ToUpper(d.Side), d.Trigger, perr, shown)
 			}
-			return false
+			return stopPlaceNotSent
 		}
 		// The broker permit refused (hold landed between the check above and
 		// the send). Same refusal, same report.
 		if ntTrader.IsMaintenanceHold(perr) {
 			at.refuseMaintenanceHold(r, perr.Error(), "stop-entry", now, perr)
-			return true
+			return stopPlaceHeld
 		}
 		at.logWarnf("📌 stop-entry place failed %s [guard=stop-side passed verdict=%s] %s stop-market trigger=%.2f: %v",
 			r.Scenario, d.Verdict, strings.ToUpper(d.Side), d.Trigger, perr)
-		return false
+		if stamped {
+			// The send itself failed after the ledger stamp: whether the frame
+			// reached NT8 is unknown, so the latch stays pessimistic (class 81).
+			return stopPlaceCommitted
+		}
+		return stopPlaceNotSent
 	}
 	at.logInfof("📌 armed %s placement requested stop-entry [guard=stop-side verdict=%s action=%s] %s stop-market trigger=%.2f price=%.2f signal=%s (%s · no retest in %d bars, offset %dt)",
 		r.Scenario, d.Verdict, d.Action, strings.ToUpper(d.Side), d.Trigger, price, sid, d.Why, retestWaitBars(), stopEntryOffsetTicks())
-	return false
+	return stopPlaceCommitted
 }
 
 // refuseMaintenanceHold records one armed entry refused by the installation

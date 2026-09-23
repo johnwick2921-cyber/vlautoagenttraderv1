@@ -115,8 +115,8 @@ func TestPlaceOneStopEntryRefusesAtEntryWhileHeld(t *testing.T) {
 		t.Fatalf("fixture must be an otherwise-placeable arm, got %q", d.Action)
 	}
 	before := gateBlocks(at.id, "maintenance_hold")
-	if !at.placeOneStopEntry(pl, led, r, d, 99, time.Now(), freeSlot()) {
-		t.Fatal("placeOneStopEntry must report a maintenance-hold refusal to its caller")
+	if got := at.placeOneStopEntry(pl, led, r, d, 99, time.Now(), freeSlot()); got != stopPlaceHeld {
+		t.Fatalf("placeOneStopEntry must report a maintenance-hold refusal to its caller, got outcome %d", got)
 	}
 	if len(pl.calls) != 0 || len(led.states) != 0 {
 		t.Fatalf("held: nothing may reach the placer or the ledger (calls=%d states=%+v)", len(pl.calls), led.states)
@@ -136,8 +136,8 @@ func TestPlaceOneStopEntryReportsABrokerPermitRefusal(t *testing.T) {
 	r := store.ArmedOrderDB{ID: 7, TraderID: at.id, PlanID: "2026-09-22:NY", Version: 1, Session: "NY", Scenario: "S1", Side: "LONG", EntryPx: 100, StopPx: 95, TargetPx: 110, Kind: "stop_entry"}
 	d := decideStopEntry("LONG", r.EntryPx, testOffset(), testTick, 99)
 	before := gateBlocks(at.id, "maintenance_hold")
-	if !at.placeOneStopEntry(pl, led, r, d, 99, time.Now(), freeSlot()) {
-		t.Fatal("a broker-permit refusal must be reported to the caller as a hold refusal")
+	if got := at.placeOneStopEntry(pl, led, r, d, 99, time.Now(), freeSlot()); got != stopPlaceHeld {
+		t.Fatalf("a broker-permit refusal must be reported to the caller as a hold refusal, got outcome %d", got)
 	}
 	if len(led.states) != 0 {
 		t.Fatalf("no ledger write for a held entry: %+v", led.states)
@@ -147,7 +147,7 @@ func TestPlaceOneStopEntryReportsABrokerPermitRefusal(t *testing.T) {
 	}
 	// every other outcome is unchanged: a plain failure is NOT a hold refusal
 	pl2 := &fakePlacer{err: fmt.Errorf("boom")}
-	if at.placeOneStopEntry(pl2, &fakeLedger{}, r, d, 99, time.Now(), freeSlot()) {
+	if got := at.placeOneStopEntry(pl2, &fakeLedger{}, r, d, 99, time.Now(), freeSlot()); got == stopPlaceHeld {
 		t.Fatal("a non-hold failure must not be reported as a hold refusal")
 	}
 }
