@@ -237,3 +237,19 @@ func TestPictureClaimDoesNotLatchItsOwnSend(t *testing.T) {
 		t.Fatalf("the broker signal must be stamped on the row: %+v", got)
 	}
 }
+
+// Q6 — the plan card's read: on an NT8 trader with Picture on, strict carries
+// the refusal text; advisory carries none.
+func TestPicturePlanGateViewIsTheGatesRead(t *testing.T) {
+	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	env.at.exchange = "ninjatrader"
+	env.at.config.StrategyConfig.DayPlan.PictureHtf = &store.PictureHtfConfig{Enabled: true, MinRR: 2.5}
+	env.at.config.StrategyConfig.DayPlan.PlanMode = "strict"
+	if v := env.at.PicturePlanGateAt(env.now); !v.Enabled || v.Refusal != PictureStrictRefusal {
+		t.Fatalf("strict: the card must read enabled + the refusal, got %+v", v)
+	}
+	env.at.config.StrategyConfig.DayPlan.PlanMode = "advisory"
+	if v := env.at.PicturePlanGateAt(env.now); !v.Enabled || v.Refusal != "" {
+		t.Fatalf("advisory: enabled, no refusal, got %+v", v)
+	}
+}

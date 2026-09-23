@@ -133,6 +133,28 @@ func (at *AutoTrader) pictureEntryGate(in admitIntent) (string, bool) {
 	})
 }
 
+// PicturePlanGateView is the plan card's Picture line (CTO Q6), READ from the
+// verdicts the gate enforces: whether the mode is on for this trader, and the
+// strict refusal — "" when plan mode admits Picture.
+type PicturePlanGateView struct {
+	Enabled bool   `json:"enabled"`
+	Refusal string `json:"refusal"`
+}
+
+// PicturePlanGateAt is the plan card's read. It builds nothing: the mode is
+// the resolved knob on the NT8 path (what the evaluator is built from), the
+// refusal is pictureStrictVisible — the same plan-mode read pictureEntryGate
+// refuses on and the 📷 boot line prints.
+func (at *AutoTrader) PicturePlanGateAt(now time.Time) PicturePlanGateView {
+	if at == nil {
+		return PicturePlanGateView{}
+	}
+	return PicturePlanGateView{
+		Enabled: at.exchange == "ninjatrader" && at.pictureHtfResolvedConfig().Enabled,
+		Refusal: at.pictureStrictVisible(now),
+	}
+}
+
 // pictureStrictVisible reports the strict refusal for the 📷 boot line and the
 // plan card: "" when Picture is not refused by plan mode right now.
 func (at *AutoTrader) pictureStrictVisible(now time.Time) string {

@@ -320,6 +320,9 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		"runnable_sessions": runnable,
 		// W7 (weekly-bias wave) — the WEEKLY chip payload (null → grey "none").
 		"weekly": weeklyPayload(s.store, traderID, now),
+		// W-EXEC-TRUTH W0 (CTO Q6) — Picture's plan-mode verdict, READ (null
+		// when the trader is not loaded): the card says when strict refuses it.
+		"picture": s.picturePlanGate(traderID, now),
 	}
 	// An EXPLICITLY requested session is readable whether or not it is the live one
 	// (that is the point of the tabs); without the param we keep the old gate.
@@ -532,6 +535,8 @@ func (s *Server) handlePlanToday(c *gin.Context) {
 		// the found=true branch built its own map WITHOUT this key, so the card
 		// rendered grey "WEEKLY none" while a neutral-invalidated doc existed.
 		"weekly": weeklyPayload(s.store, traderID, now),
+		// W-EXEC-TRUTH W0 (CTO Q6) — Picture's plan-mode verdict, READ.
+		"picture": s.picturePlanGate(traderID, now),
 		// ITEM 4 — owner edits that could NOT be re-anchored onto this version.
 		// Never dropped silently: the card asks for review.
 		"uncarried_edits": s.uncarriedEdits(row.PlanID, row.Version),
@@ -2502,6 +2507,18 @@ func (s *Server) oneSetupFor(traderID, planID string, version int) map[string]an
 		out["scenarios"] = rec.Scenarios
 	}
 	return out
+}
+
+// picturePlanGate is the card's Picture line: the trader's own read (mode on,
+// strict refusal); nil — absent, never a fabricated "admitted" — when the
+// trader is not loaded.
+func (s *Server) picturePlanGate(traderID string, now time.Time) *trader.PicturePlanGateView {
+	at, err := s.traderManager.GetTrader(traderID)
+	if err != nil || at == nil {
+		return nil
+	}
+	v := at.PicturePlanGateAt(now)
+	return &v
 }
 
 // fadePermissionFor evaluates the live fade label for every scenario in doc.

@@ -57,6 +57,15 @@ func (at *AutoTrader) registerPictureHtf() {
 	pictureHtfTraders.Store(at.id, at)
 }
 
+// pictureHtfResolvedConfig is the trader's Picture knobs with defaults
+// applied — the one resolution the evaluator and the plan card both read.
+func (at *AutoTrader) pictureHtfResolvedConfig() store.PictureHtfConfig {
+	if sc := at.GetStrategyConfig(); sc != nil && sc.DayPlan != nil && sc.DayPlan.PictureHtf != nil {
+		return store.PictureHtfResolved(sc.DayPlan.PictureHtf)
+	}
+	return store.PictureHtfResolved(nil)
+}
+
 // pictureHtfEvaluator lazily builds (or rebuilds, when the strategy knobs
 // change) the trader's two-picture evaluator. Returns nil when the mode is
 // absent/disabled or the trader is not on the NT8 path.
@@ -66,12 +75,7 @@ func (at *AutoTrader) pictureHtfEvaluator() *PictureHtfEvaluator {
 	}
 	at.pictureHtfMu.Lock()
 	defer at.pictureHtfMu.Unlock()
-	var cfg store.PictureHtfConfig
-	if sc := at.GetStrategyConfig(); sc != nil && sc.DayPlan != nil && sc.DayPlan.PictureHtf != nil {
-		cfg = store.PictureHtfResolved(sc.DayPlan.PictureHtf)
-	} else {
-		cfg = store.PictureHtfResolved(nil)
-	}
+	cfg := at.pictureHtfResolvedConfig()
 	sig := fmt.Sprintf("%t|%.5f|%d|%d|%d|%d|%.4f",
 		cfg.Enabled, cfg.TickSize, cfg.PivotWindow, cfg.SwingLookback, cfg.EntryWindowSec, cfg.FreshnessSec, cfg.MinRR)
 	if at.pictureHtf != nil && at.pictureHtfSig == sig {
