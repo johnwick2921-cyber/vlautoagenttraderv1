@@ -45,7 +45,7 @@ Before a one-button update replaces the bot and the NinjaTrader AddOn, the whole
 
 1. Armed: per-row refusal instead of an early return, so the pass's tail keeps settling state while held.
 2. Picture: a durable refusal before the claim. An opportunity seen during maintenance never trades afterwards.
-3. A corrupt hold file is sent to the AddOn as held with no job, and the gate needs an ack for job "".
+3. A corrupt hold file is sent to the AddOn as held with no job, so every entry stays refused. The installation gate FAILS on it: no job can be bound to it, so it must be repaired or force-cleared by the operator before an update proceeds. (The first cut passed the gate on an ack for job ""; the adversarial review proved that a false pass, and it is fixed at 5101b7f9.)
 4. The census reads a connection as SIM only when every account seen on it is SIM. A connection with no account reads non-SIM.
 5. `queued_commands` is 0 by construction: the AddOn executes frames synchronously on its read thread. A future async dispatcher must report its real depth.
 
