@@ -530,38 +530,18 @@ func envFloatSet(key string) bool {
 	return err == nil
 }
 
-// ── W1-INTEGRATE ADAPTERS ────────────────────────────────────────────────────
+// ── BREAKER + REPLAN CAP: the production resolvers themselves ────────────────
 //
-// W1-INTEGRATE: the (a)(b) builder is replacing these two resolvers with
-// store.ResolveBreakerHalt(cfg) (n, source) and store.ResolveReplanCap(dp,
-// session) (n, source). Until then the VALUE comes from today's production
-// function (breakerHaltN / DayPlanConfig.ReplanCapFor) and the SOURCE is read
-// from presence the same way that function branches. At integration each body
-// becomes ONE line calling the new resolver — nothing else in this file changes.
+// W1 (a)(b): store.ResolveBreakerHalt and store.ResolveReplanCap are the ONE
+// resolver each (trader.breakerHaltN and DayPlanConfig.ReplanCapFor delegate to
+// them), so these rows call them directly — value and source together.
 
-// W1-INTEGRATE: re-point to `return store.ResolveBreakerHalt(cfg)`.
 func effBreakerHalt(cfg *store.StrategyConfig) (int, string) {
-	n := breakerHaltN(cfg)
-	switch {
-	case cfg != nil && cfg.RiskControl.ConsecutiveLossHalt > 0:
-		return n, store.SourceSaved
-	case envIntSet("BREAKER_HALT_N"):
-		return n, originEnv("BREAKER_HALT_N")
-	default:
-		return n, store.SourceShippedDefault
-	}
+	return store.ResolveBreakerHalt(cfg)
 }
 
-// W1-INTEGRATE: re-point to `return store.ResolveReplanCap(dp, session)`.
 func effReplanCap(dp *store.DayPlanConfig, session string) (int, string) {
-	n := dp.ReplanCapFor(session)
-	if ov := dp.SessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
-		return n, store.SourceSessionOverride
-	}
-	if dp != nil && dp.ReplanCap > 0 {
-		return n, store.SourceStrategyValue
-	}
-	return n, store.SourceShippedDefault
+	return store.ResolveReplanCap(dp, session)
 }
 
 // ── RESOLVER TABLE ───────────────────────────────────────────────────────────
@@ -648,7 +628,7 @@ func buildEffectiveResolvers() map[string]effResolver {
 		v := x.at.reentryCooldownMinutes()
 		return effResult{value: v, origin: presenceOrigin(x, v, store.SourceShippedDefault)}
 	})
-	add(rcPath+"consecutive_loss_halt", "trader.breakerHaltN (W1-INTEGRATE → store.ResolveBreakerHalt)", func(x *effCtx) effResult {
+	add(rcPath+"consecutive_loss_halt", "store.ResolveBreakerHalt (trader.breakerHaltN delegates)", func(x *effCtx) effResult {
 		n, src := effBreakerHalt(x.cfg)
 		return effResult{value: n, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})
@@ -747,7 +727,7 @@ func buildEffectiveResolvers() map[string]effResolver {
 		v, src := store.MinScenarioQualityForWithSource(x.dp(), x.session)
 		return effResult{value: v, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})
-	add(dpPath+"replan_cap", "store.(*DayPlanConfig).ReplanCapFor (W1-INTEGRATE → store.ResolveReplanCap)", func(x *effCtx) effResult {
+	add(dpPath+"replan_cap", "store.ResolveReplanCap (DayPlanConfig.ReplanCapFor delegates)", func(x *effCtx) effResult {
 		v, src := effReplanCap(x.dp(), x.session)
 		return effResult{value: v, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})
@@ -927,7 +907,7 @@ func buildEffectiveResolvers() map[string]effResolver {
 		v, src := store.EODFlatOffsetForWithSource(x.dp(), x.session)
 		return effResult{value: v, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})
-	perSession("replan_cap", "store.(*DayPlanConfig).ReplanCapFor (W1-INTEGRATE → store.ResolveReplanCap)", func(x *effCtx) effResult {
+	perSession("replan_cap", "store.ResolveReplanCap (DayPlanConfig.ReplanCapFor delegates)", func(x *effCtx) effResult {
 		v, src := effReplanCap(x.dp(), x.session)
 		return effResult{value: v, origin: src, scope: scopeForSource(src, x.session, ScopeStrategy)}
 	})

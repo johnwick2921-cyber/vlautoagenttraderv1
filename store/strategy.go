@@ -1170,19 +1170,15 @@ const (
 // LastEntryOffsetFor resolves the per-session last-entry offset (minutes before
 // session end). Override → default. Config only — no caller may carry a literal.
 func (c *DayPlanConfig) LastEntryOffsetFor(session string) int {
-	if ov := c.SessionOverride(session); ov != nil && ov.LastEntryOffsetMin != nil && *ov.LastEntryOffsetMin >= 0 {
-		return *ov.LastEntryOffsetMin
-	}
-	return DefaultLastEntryOffsetMin
+	v, _ := LastEntryOffsetForWithSource(c, session)
+	return v
 }
 
 // EODFlatOffsetFor resolves the per-session EOD-flat offset (minutes before
 // session end). Override → default.
 func (c *DayPlanConfig) EODFlatOffsetFor(session string) int {
-	if ov := c.SessionOverride(session); ov != nil && ov.EODFlatOffsetMin != nil && *ov.EODFlatOffsetMin >= 0 {
-		return *ov.EODFlatOffsetMin
-	}
-	return DefaultEODFlatOffsetMin
+	v, _ := EODFlatOffsetForWithSource(c, session)
+	return v
 }
 
 // SessionOverride returns the named session's override block, or nil. Shared by
@@ -1512,10 +1508,8 @@ func GetResetBaseline(st *Store, traderID, tradeDate, session string) int {
 // configured for this session (the shipped behavior — the strategy-level daily
 // guardrail still applies). A 0 cap is meaningful: no entries this session.
 func (c *DayPlanConfig) MaxTradesFor(session string) (int, bool) {
-	if ov := c.SessionOverride(session); ov != nil && ov.MaxTrades != nil && *ov.MaxTrades >= 0 {
-		return *ov.MaxTrades, true
-	}
-	return 0, false
+	n, ok, _ := MaxTradesForWithSource(c, session)
+	return n, ok
 }
 
 // MinGradeFor (grading audit §4.7, 2026-08-25) resolves the per-session
@@ -1523,10 +1517,8 @@ func (c *DayPlanConfig) MaxTradesFor(session string) (int, bool) {
 // seam so the kernel executor path (KEY LEVELS + PLAN STATUS) and the trader
 // planner path can never disagree on the floor.
 func (c *DayPlanConfig) MinGradeFor(session string) string {
-	if ov := c.SessionOverride(session); ov != nil && ov.MinGrade != nil {
-		return strings.ToUpper(strings.TrimSpace(*ov.MinGrade))
-	}
-	return ""
+	v, _ := MinGradeForWithSource(c, session)
+	return v
 }
 
 // PlanModeFor resolves the plan-restriction mode for a session: per-session
@@ -1790,14 +1782,8 @@ func (c *DayPlanConfig) DeathRereadEnabled() bool {
 // per-session override → strategy-level → "C" (no restriction). The ONE
 // resolution seam so the kernel gate and the Studio card can never disagree.
 func (c *DayPlanConfig) MinScenarioQualityFor(session string) string {
-	floor := "C"
-	if c != nil && strings.TrimSpace(c.MinScenarioQuality) != "" {
-		floor = strings.ToUpper(strings.TrimSpace(c.MinScenarioQuality))
-	}
-	if ov := c.SessionOverride(session); ov != nil && ov.MinScenarioQuality != nil && strings.TrimSpace(*ov.MinScenarioQuality) != "" {
-		floor = strings.ToUpper(strings.TrimSpace(*ov.MinScenarioQuality))
-	}
-	return floor
+	v, _ := MinScenarioQualityForWithSource(c, session)
+	return v
 }
 
 // MinSideLevelsFor REMOVED by owner ruling 2026-08-31 — the per-side count

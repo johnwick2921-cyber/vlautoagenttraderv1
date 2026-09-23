@@ -1,13 +1,8 @@
-// Settings truth W1 (g) — (value, source) twins of the per-session DayPlanConfig
-// resolvers, so the Settings page can say WHERE a per-session value came from.
-//
-// W1-INTEGRATE: store/strategy.go belongs to a parallel builder in this wave, so
-// the existing methods (MinScenarioQualityFor, MinGradeFor, MaxTradesFor,
-// LastEntryOffsetFor, EODFlatOffsetFor) do NOT delegate here yet. Each twin is
-// byte-identical to its method's logic and a parity test pins the pair at the
-// production method (effective_sources_test.go). At integration the method
-// becomes `v, _ := <Twin>(c, session); return v` — one rule, one place
-// (resolve_source.go's pattern) — and the parity test keeps guarding it.
+// Settings truth W1 (g) — the per-session DayPlanConfig resolvers with their
+// source, so the Settings page can say WHERE a per-session value came from.
+// The methods (MinScenarioQualityFor, MinGradeFor, MaxTradesFor,
+// LastEntryOffsetFor, EODFlatOffsetFor) delegate here — one rule, one place
+// (resolve_source.go's pattern); effective_sources_test.go pins the pairs.
 
 package store
 

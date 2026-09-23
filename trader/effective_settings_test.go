@@ -48,27 +48,29 @@ func sameJSON(t *testing.T, a, b any) bool {
 // The two W1-INTEGRATE adapters report the SAME value as today's production
 // resolver across the whole matrix, with the origin its branch implies.
 func TestEffectiveAdaptersMatchProductionResolvers(t *testing.T) {
-	halt := func(n int) *store.StrategyConfig {
+	halt := func(n *int) *store.StrategyConfig {
 		return &store.StrategyConfig{RiskControl: store.RiskControlConfig{ConsecutiveLossHalt: n}}
 	}
 	for _, tc := range []struct {
 		name   string
 		cfg    *store.StrategyConfig
 		env    string
+		want   int
 		origin string
 	}{
-		{"saved 3", halt(3), "", store.SourceSaved},
-		{"saved 3 beats env 5", halt(3), "5", store.SourceSaved},
-		{"unset, env 5", halt(0), "5", "env BREAKER_HALT_N"},
-		{"unset, env 0 = off", halt(0), "0", "env BREAKER_HALT_N"},
-		{"unset, env invalid → default", halt(0), "x", store.SourceShippedDefault},
-		{"unset, no env → default", halt(0), "", store.SourceShippedDefault},
-		{"nil config", nil, "", store.SourceShippedDefault},
+		{"saved 3", halt(store.IntPtr(3)), "", 3, store.SourceSaved},
+		{"saved 3 beats env 5", halt(store.IntPtr(3)), "5", 3, store.SourceSaved},
+		{"saved 0 = OFF beats env 5 (W1)", halt(store.IntPtr(0)), "5", 0, store.SourceSaved},
+		{"unset, env 5", halt(nil), "5", 5, "env BREAKER_HALT_N"},
+		{"unset, env 0 = off", halt(nil), "0", 0, "env BREAKER_HALT_N"},
+		{"unset, env invalid → default, named", halt(nil), "x", 8, store.SourceShippedDefault + " (env BREAKER_HALT_N invalid)"},
+		{"unset, no env → default", halt(nil), "", 8, store.SourceShippedDefault},
+		{"nil config", nil, "", 8, store.SourceShippedDefault},
 	} {
 		t.Setenv("BREAKER_HALT_N", tc.env)
 		n, src := effBreakerHalt(tc.cfg)
-		if want := breakerHaltN(tc.cfg); n != want {
-			t.Fatalf("%s: adapter %d, breakerHaltN %d", tc.name, n, want)
+		if rt := breakerHaltN(tc.cfg); n != rt || n != tc.want {
+			t.Fatalf("%s: row %d, breakerHaltN %d, want %d", tc.name, n, rt, tc.want)
 		}
 		if src != tc.origin {
 			t.Fatalf("%s: origin %q, want %q", tc.name, src, tc.origin)
@@ -80,18 +82,20 @@ func TestEffectiveAdaptersMatchProductionResolvers(t *testing.T) {
 		name    string
 		dp      *store.DayPlanConfig
 		session string
+		want    int
 		origin  string
 	}{
-		{"nil block", nil, "NY", store.SourceShippedDefault},
-		{"strategy 3", &store.DayPlanConfig{ReplanCap: 3}, "NY", store.SourceStrategyValue},
-		{"strategy 0 reads unset today", &store.DayPlanConfig{ReplanCap: 0}, "NY", store.SourceShippedDefault},
-		{"session 0 override", &store.DayPlanConfig{ReplanCap: 3, Sessions: []store.DayPlanSessionOverride{{Session: "NY", ReplanCap: &zero}}}, "NY", store.SourceSessionOverride},
-		{"session override, other case", &store.DayPlanConfig{Sessions: []store.DayPlanSessionOverride{{Session: "ny", ReplanCap: &three}}}, "NY", store.SourceSessionOverride},
-		{"other session inherits", &store.DayPlanConfig{ReplanCap: 3, Sessions: []store.DayPlanSessionOverride{{Session: "NY", ReplanCap: &zero}}}, "ASIA", store.SourceStrategyValue},
+		{"nil block", nil, "NY", 2, store.SourceShippedDefault},
+		{"strategy 3", &store.DayPlanConfig{ReplanCap: store.IntPtr(3)}, "NY", 3, store.SourceStrategyValue},
+		{"strategy 0 is 0 (W1)", &store.DayPlanConfig{ReplanCap: store.IntPtr(0)}, "NY", 0, store.SourceStrategyValue},
+		{"strategy unset → default", &store.DayPlanConfig{}, "NY", 2, store.SourceShippedDefault},
+		{"session 0 override", &store.DayPlanConfig{ReplanCap: store.IntPtr(3), Sessions: []store.DayPlanSessionOverride{{Session: "NY", ReplanCap: &zero}}}, "NY", 0, store.SourceSessionOverride},
+		{"session override, other case", &store.DayPlanConfig{Sessions: []store.DayPlanSessionOverride{{Session: "ny", ReplanCap: &three}}}, "NY", 3, store.SourceSessionOverride},
+		{"other session inherits", &store.DayPlanConfig{ReplanCap: store.IntPtr(3), Sessions: []store.DayPlanSessionOverride{{Session: "NY", ReplanCap: &zero}}}, "ASIA", 3, store.SourceStrategyValue},
 	} {
 		n, src := effReplanCap(tc.dp, tc.session)
-		if want := tc.dp.ReplanCapFor(tc.session); n != want {
-			t.Fatalf("%s: adapter %d, ReplanCapFor %d", tc.name, n, want)
+		if rt := tc.dp.ReplanCapFor(tc.session); n != rt || n != tc.want {
+			t.Fatalf("%s: row %d, ReplanCapFor %d, want %d", tc.name, n, rt, tc.want)
 		}
 		if src != tc.origin {
 			t.Fatalf("%s: origin %q, want %q", tc.name, src, tc.origin)
