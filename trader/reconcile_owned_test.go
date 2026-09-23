@@ -192,3 +192,63 @@ func TestReconcileRefusalIsAGateNotAnError(t *testing.T) {
 }
 
 func errPositionOwnedFor(owner string) error { return errors.Join(errPositionOwned, errors.New(owner)) }
+
+// otherRunningTraderWithFreshFill registers a second MNQ trader on the same
+// account the way Run does (the running-trader registry), with NO Picture
+// evaluator, and an armed SHORT on it that filled just now.
+func (w *reconcileWire) otherRunningTraderWithFreshFill(t *testing.T, register bool) {
+	t.Helper()
+	other := &AutoTrader{id: "reconcile-other", store: w.st, trader: ntTrader.NewTCPTrader(w.s, "MNQ", "Sim101")}
+	other.config.NinjaTraderSymbol = "MNQ"
+	if register {
+		registerPostExitDispatch(other)
+		t.Cleanup(func() { unregisterPostExitDispatch(other) })
+	}
+	led := w.st.ArmedOrders()
+	r := &store.ArmedOrderDB{TraderID: other.id, PlanID: "p-other", Scenario: "S1", Version: 1, State: "armed", Side: "short", EntryPx: 29000, StopPx: 29010, TargetPx: 28970}
+	if err := led.UpsertArm(r); err != nil {
+		t.Fatal(err)
+	}
+	if err := led.BeginPlacement(r.ID, "sig-other-fill"); err != nil {
+		t.Fatal(err)
+	}
+	if err := led.SetState(r.ID, store.StateFilled, "fixture"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// (iii) reads every RUNNING trader in the process — the registry Run and Stop
+// maintain — not only the traders that own a Picture evaluator: another MNQ
+// trader's fill seconds ago on this account explains the held position.
+func TestReconcileSeesAFreshFillOfAnotherRunningTrader(t *testing.T) {
+	w := newReconcileWire(t)
+	w.otherRunningTraderWithFreshFill(t, true)
+	done := make(chan error, 1)
+	go func() { done <- w.at.reconcileBeforeOpenNT("MNQ", "long") }()
+	if w.closeSent(300 * time.Millisecond) {
+		w.s.SeedPositionsForTest("Sim101", nil)
+		<-done
+		t.Fatal("another running trader's fresh fill was FLATTENED as an orphan")
+	}
+	if err := <-done; !errors.Is(err, errPositionOwned) || !strings.Contains(err.Error(), "not yet materialized") {
+		t.Fatalf("another running trader's fresh fill must explain the position: %v", err)
+	}
+}
+
+// THE LIMIT, named: a trader that is STOPPED is not in the running registry,
+// so its fill seconds ago is not seen by (iii) and the position reads as an
+// orphan and is flattened. A stopped trader's in-flight fill is the one case
+// (iii) cannot explain without a ledger-wide fill query (not built in W0b).
+func TestReconcileFreshFillOfAStoppedTraderIsNotSeen(t *testing.T) {
+	w := newReconcileWire(t)
+	w.otherRunningTraderWithFreshFill(t, false)
+	done := make(chan error, 1)
+	go func() { done <- w.at.reconcileBeforeOpenNT("MNQ", "long") }()
+	if !w.closeSent(3 * time.Second) {
+		t.Fatal("the named limit moved: a stopped trader's fill now explains the position — update this test and the comment")
+	}
+	w.s.SeedPositionsForTest("Sim101", nil)
+	if err := <-done; err != nil {
+		t.Fatalf("after the confirmed flatten the open proceeds: %v", err)
+	}
+}

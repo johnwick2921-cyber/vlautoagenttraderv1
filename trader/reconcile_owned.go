@@ -25,7 +25,11 @@ import (
 //	      signal, or a Picture row working / stamped (a send started)
 //	(ii)  an OPEN trader_positions row whose entry_order_id is a ledger signal
 //	(iii) a ledger FILL younger than twice the untracked grace — the
-//	      reconciler has not materialized it yet
+//	      reconciler has not materialized it yet — on this trader or any
+//	      trader RUNNING in the process (the registry Run and Stop maintain).
+//	      LIMIT: a trader that has STOPPED is not in that registry, so its
+//	      fill seconds ago is not seen here and the position reads as an
+//	      orphan (pinned: TestReconcileFreshFillOfAStoppedTraderIsNotSeen).
 //
 // An UNEXPLAINED position keeps today's owner-ruled flatten (TRACK B).
 
@@ -82,14 +86,13 @@ func (at *AutoTrader) ledgerExplainsPosition(symbol, side string, now time.Time)
 		}
 	}
 	// (iii) recent fills, not yet materialized — this trader and every
-	// running trader in the process registry.
+	// running trader in the process (runningTraderIDs).
 	ids := []string{at.id}
-	pictureHtfTraders.Range(func(k, _ any) bool {
-		if id, _ := k.(string); id != "" && id != at.id {
+	for _, id := range runningTraderIDs() {
+		if id != at.id {
 			ids = append(ids, id)
 		}
-		return true
-	})
+	}
 	for _, id := range ids {
 		if !onAccount(id) {
 			continue

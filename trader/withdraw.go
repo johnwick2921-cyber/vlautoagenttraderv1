@@ -32,6 +32,10 @@ import (
 // snapshot (confirmPendingCancels). Protection, reconciliation and exits are
 // never touched. An arm with no signal was never sent: it stays armed and the
 // admission gate refuses it.
+//
+// ARMED rows are the complete set of resting entries: Picture never rests an
+// entry (its send is a market order — it fills or is refused, it does not
+// wait at a price), and the AI path's entries are market orders too.
 
 // WithdrawReasonPrefix marks a withdraw in the ledger's state_reason.
 const WithdrawReasonPrefix = "withdraw: "

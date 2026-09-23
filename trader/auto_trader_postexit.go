@@ -63,6 +63,31 @@ func unregisterPostExitDispatch(at *AutoTrader) {
 	postExitRegistry.Delete(at.id)
 }
 
+// runningTrader returns the live AutoTrader for id. postExitRegistry is the
+// process's RUNNING-trader registry: Run registers every trader before its
+// loop starts and Stop removes it (auto_trader.go) — the one registry that
+// covers traders without a Picture evaluator (W-EXEC-TRUTH W0 (c), CTO #1).
+func runningTrader(id string) (*AutoTrader, bool) {
+	v, ok := postExitRegistry.Load(id)
+	if !ok {
+		return nil, false
+	}
+	at, _ := v.(*AutoTrader)
+	return at, at != nil
+}
+
+// runningTraderIDs lists every trader running in this process.
+func runningTraderIDs() []string {
+	var ids []string
+	postExitRegistry.Range(func(k, _ any) bool {
+		if id, _ := k.(string); id != "" {
+			ids = append(ids, id)
+		}
+		return true
+	})
+	return ids
+}
+
 func dispatchPositionClosed(traderID string, positionID int64) {
 	if v, ok := postExitRegistry.Load(traderID); ok {
 		v.(*AutoTrader).notifyPositionClosed(positionID)
