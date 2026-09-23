@@ -42,7 +42,10 @@ func TestSinkInstalledBeforeStartPersistsTheFirstFrame(t *testing.T) {
 	// ORDER UNDER TEST: sink first, start second.
 	var fired atomic.Int64
 	srv.SetOrderSnapshotSink(func(p OrderSnapshotPayload) {
-		fired.Add(1)
+		// Counted AFTER the insert: the poll below reads the row as soon as the
+		// count moves, and counting first raced the insert (seen once in a
+		// loaded full -race run, 2026-09-22; 0/40 alone at base and at head).
+		defer fired.Add(1)
 		if ierr := db.NT8OrderSnapshots().Insert(&store.NT8OrderSnapshot{
 			Account: p.Account, BuildID: p.BuildID, Reason: p.Reason,
 			OrderCount: len(p.Orders), WorkingCount: len(p.WorkingOrders()),
