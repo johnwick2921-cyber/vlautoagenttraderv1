@@ -149,7 +149,7 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 	// hold
 	st0, configured := maintenanceState()
 	holdJob := ""
-	leg("hold", "data/updater/hold.json (store.ReadMaintenanceHold)", func() (bool, string) {
+	leg("hold", "the installation hold file (store.ReadMaintenanceHold)", func() (bool, string) {
 		switch {
 		case !configured:
 			return false, "maintenance data dir not configured — the hold cannot be read"

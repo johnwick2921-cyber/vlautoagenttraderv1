@@ -1,6 +1,8 @@
 package trader
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -147,4 +149,14 @@ func TestEntryPermitReReadsAHoldNoReaderHasSeenYet(t *testing.T) {
 		release()
 		t.Fatal("a hold written before this permit must refuse it, even with the barrier not yet engaged")
 	}
+}
+
+// writeRaw overwrites the hold file with raw bytes (a TEST helper: it lived in
+// the production file maintenance_gate.go until the M2.1 writer scan — review 3
+// F13 — found it; only the operator CLI may write the hold in production).
+func writeRaw(dir, body string) error {
+	if err := os.MkdirAll(filepath.Dir(store.MaintenanceHoldPath(dir)), 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(store.MaintenanceHoldPath(dir), []byte(body), 0o600)
 }

@@ -23,6 +23,10 @@ func TestOnlyTheOperatorCLIWritesTheMaintenanceHold(t *testing.T) {
 		"internal/holdcli/holdcli.go": true, // cmd/maintenance-hold
 	}
 	writers := map[string]bool{"WriteMaintenanceHold": true, "ClearMaintenanceHold": true, "ForceClearMaintenanceHold": true}
+	// M2.1 (review 3 F13): names alone let os.Remove / os.WriteFile on the hold
+	// path through. The path itself is confined too: MaintenanceHoldPath only in
+	// the store and the CLI, the literal "hold.json" only in the store.
+	pathUsers := map[string]bool{"store/maintenance_hold.go": true, "internal/holdcli/holdcli.go": true}
 	root, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatal(err)
@@ -47,7 +51,8 @@ func TestOnlyTheOperatorCLIWritesTheMaintenanceHold(t *testing.T) {
 		rel = filepath.ToSlash(rel)
 		f, perr := parser.ParseFile(token.NewFileSet(), p, nil, 0)
 		if perr != nil {
-			return nil // not ours to judge; go build will
+			offenders = append(offenders, rel+": cannot be parsed, so it cannot be checked ("+perr.Error()+")")
+			return nil
 		}
 		scanned++
 		ast.Inspect(f, func(n ast.Node) bool {
@@ -64,6 +69,23 @@ func TestOnlyTheOperatorCLIWritesTheMaintenanceHold(t *testing.T) {
 			}
 			if writers[name] && !allowed[rel] {
 				offenders = append(offenders, rel+": "+name)
+			}
+			return true
+		})
+		ast.Inspect(f, func(n ast.Node) bool {
+			switch x := n.(type) {
+			case *ast.SelectorExpr:
+				if x.Sel.Name == "MaintenanceHoldPath" && !pathUsers[rel] {
+					offenders = append(offenders, rel+": references MaintenanceHoldPath")
+				}
+			case *ast.Ident:
+				if x.Name == "MaintenanceHoldPath" && !pathUsers[rel] {
+					offenders = append(offenders, rel+": references MaintenanceHoldPath")
+				}
+			case *ast.BasicLit:
+				if strings.Contains(x.Value, "hold.json") && rel != "store/maintenance_hold.go" {
+					offenders = append(offenders, rel+": names the hold file (\"hold.json\")")
+				}
 			}
 			return true
 		})

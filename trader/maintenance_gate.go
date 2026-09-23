@@ -1,9 +1,6 @@
 package trader
 
 import (
-	"os"
-	"path/filepath"
-
 	"nofx/store"
 )
 
@@ -91,11 +88,6 @@ func MaintenanceInFlight() int64 { return maintenanceBarrier.InFlight() }
 
 // MaintenanceDrained reports held AND no entry send in flight.
 func MaintenanceDrained() bool { return maintenanceBarrier.Drained() }
-
-// writeRaw is a test helper: overwrite the hold file with raw bytes.
-func writeRaw(dir, body string) error {
-	return os.WriteFile(filepath.Join(dir, "updater", "hold.json"), []byte(body), 0o600)
-}
 
 // maintenanceQueueHeld is the predicate the NT8 TCP server's queue consults
 // before writing each queued entry (gap U2): MaintenanceHeld's boolean.
