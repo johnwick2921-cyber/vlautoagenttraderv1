@@ -29,6 +29,11 @@
 #     ClockCTAndUTC, ClockCTSeconds, TableTimeCT) already takes an explicit t.
 #   trader/binance/order_sync.go — live-network request timestamps, env-gated
 #     tests (BINANCE_LIVE_TEST), not in the deploy gate.
+#   trader/armed_event_pass.go startArmedEventLoop / stopArmedEventLoop (W5) —
+#     lifecycle hooks, not rules: start marks the Picture run epoch with the
+#     wall instant the run began, and Stop has no pass clock; the Stop hook's
+#     rule (retirePictureRowsOnStop → invalidatePictureRows) takes `now` as an
+#     argument, and under the pass it is handed the pass's `now`.
 
 trader/auto_trader_clock.go:latestClosedPrimaryBarMs:latestClosedPrimaryBarMsAt
 trader/auto_trader_clock.go:recordClosedTradeAnalytics:recordClosedTradeAnalyticsAt
