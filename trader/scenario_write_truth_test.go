@@ -450,6 +450,12 @@ func TestW2A3ZoneEdgeRejectNamingItsZoneIsAdmitted(t *testing.T) {
 	if lc != "active" || len(prompts) != 1 {
 		t.Fatalf("a reject at its own zone's edge must be admitted on attempt 1: lc=%q calls=%d", lc, len(prompts))
 	}
+	// The stored identity levels come from the SAME projection the check read
+	// (IdentityLevelsFromCandidates, shared with StampAuthoredIdentity).
+	doc := w2StoredDoc(t, at, "NY", "2026-08-14")
+	if len(doc.IdentityLevels) != 1 || len(doc.IdentityLevels[0].Names) != 1 || doc.IdentityLevels[0].Names[0] != "Demand·1h" {
+		t.Fatalf("stored identity_levels lost the map names: %+v", doc.IdentityLevels)
+	}
 }
 
 // A4 on the compact class-39 universe (long reject at PWL 15480, arm target
