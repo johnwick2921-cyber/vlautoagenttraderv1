@@ -145,3 +145,36 @@ func docHasRef(scs []kernel.PlanScenario, ref string) bool {
 	}
 	return false
 }
+
+// CTO 1790195988056 — the premise the machine-plan carve-out rests on: a chain
+// with NO row is "no plan", so the owner's re-read there is the chain's first
+// AI read — one planner call, nothing spent (the gate already promised it).
+func TestOwnerRereadOnAnEmptyChainSpendsNothing(t *testing.T) {
+	at, st := handOffTrader(t)
+	schedulerTape(t)
+	now := handOffNow()
+	pinTraderNow(t, now)
+	c := freeCountingClient()
+	at.mcpClient = c
+	cap := at.replanCapFor("NY")
+	before := store.GetReplanBudget(st, at.id, handOffDate, "NY", cap)
+	gate := at.CanForceReread(now)
+	if !gate.Allowed || gate.ReplansLeft != cap {
+		t.Fatalf("no plan: the re-read is allowed with the full budget, got %+v", gate)
+	}
+	got, err := at.ForceReread(now)
+	defer drainReReads(t)
+	if err != nil || !got.Allowed {
+		t.Fatalf("the re-read must run: %+v err=%v", got, err)
+	}
+	if n := c.calls.Load(); n != 1 {
+		t.Fatalf("exactly one planner call, got %d", n)
+	}
+	v1, _ := st.Plan().GetLatestPlanForTraderSession(handOffDate, "NY", at.id)
+	if v1 == nil || v1.Version != 1 || v1.TriggerReason != store.TriggerOwnerReread {
+		t.Fatalf("the owner's read lands v1 of the chain: %+v", v1)
+	}
+	if after := store.GetReplanBudget(st, at.id, handOffDate, "NY", cap); after.Used != before.Used {
+		t.Fatalf("the first AI read of an empty chain spends nothing: used %d → %d", before.Used, after.Used)
+	}
+}
