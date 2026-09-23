@@ -118,6 +118,25 @@ export interface PlanOrderLeg {
   book_received_at_ms?: number
   book_age_ms: number
   build_id: string
+  /** W3 market_in_zone — read from the ledger row (api/handler_plan_order_truth.go).
+   * Every field is ABSENT on a legacy row (no policy) and whenever the ledger
+   * holds no value: absent is never 0. A present 0 slippage is a measurement.
+   * policy: 'market_in_zone' | 'planned_order'. */
+  policy?: string
+  /** the authored entry (composed.entry is the limit = the zone's far bound) */
+  planned_entry?: number
+  zone_lo?: number
+  zone_hi?: number
+  /** the price and bar the placement verdict read */
+  eval_price?: number
+  eval_bar_ms?: number
+  fill_price?: number
+  /** fill vs the limit sent, side-adjusted: + = worse, − = better */
+  fill_slippage_ticks?: number
+  placed_at_ms?: number
+  filled_at_ms?: number
+  /** the executor's latest verdict for this leg (ledger last_verdict) */
+  verdict?: string
 }
 
 export interface PlanArmView {

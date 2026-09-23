@@ -12,6 +12,7 @@ import type {
   StructuralGeometryView,
 } from '../../lib/api/plan'
 import { OrderTerms } from './OrderTerms'
+import { EntryPolicyLine } from './EntryPolicyLine'
 import { ExecutorVerdict } from './ExecutorVerdict'
 import { ScenarioEconomics } from './ScenarioEconomics'
 import { FadePermissionChip, type FadeLabelView } from './FadePermissionChip'
@@ -434,6 +435,9 @@ export function ScenarioList({
                   <span>?</span>
                   <span className="font-bold">{s.id}</span>
                   <span className="truncate">{s.trigger}</span>
+                  {/* W3 — order evidence stays visible when activation is
+                      unevaluable (same rule as OrderTerms). */}
+                  <EntryPolicyLine legs={armedStates?.[s.id]?.legs} />
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
@@ -450,6 +454,9 @@ export function ScenarioList({
                   )}
                   {/* Wave 2 armed orders — the arm state chip (⏳/📌/⚡/✕). */}
                   <ArmedChip arm={armedStates?.[s.id]} />
+                  {/* W3 market_in_zone — "Entry: around X (zone lo–hi) ·
+                      status", read from the ledger row; legacy renders nothing. */}
+                  <EntryPolicyLine legs={armedStates?.[s.id]?.legs} />
                   {/* W-ARM-STATE-UI — what the EXECUTOR decided (refused / not
                       attempted / armed / filled / cancelled), beside the
                       evaluator's verdict. No record → renders nothing. */}
