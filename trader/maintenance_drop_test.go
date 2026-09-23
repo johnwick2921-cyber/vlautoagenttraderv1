@@ -226,3 +226,22 @@ func TestDroppedAIEntryIsForgottenAndTheGateStaysClosed(t *testing.T) {
 	}
 	w.noSignalOnReconnect(t)
 }
+
+// CTO on F3: an ambiguous (attempted) drop logs the ambiguity AND raises a P1 —
+// an entry that may be at NT8 is an owner-visible event, not a log line.
+func TestAttemptedDropRaisesAP1(t *testing.T) {
+	w := newDropWire(t)
+	w.at.config.StrategyConfig = &store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}
+	setHold(t, w.dir, "job-amb")
+	w.at.onMaintenanceDroppedEntry(ntwire.DroppedEntry{SignalID: "sig-amb", TraderID: w.at.id, Symbol: "MNQ", Side: "long", Attempted: true})
+	rows, err := w.st.Alert().List(w.at.id, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range rows {
+		if r.Level == "P1" && strings.Contains(r.EventID, "sig-amb") {
+			return
+		}
+	}
+	t.Fatalf("an attempted drop must raise a P1 naming the signal; alerts: %+v", rows)
+}

@@ -29,6 +29,9 @@ import (
 func (at *AutoTrader) onMaintenanceDroppedEntry(d ntwire.DroppedEntry) {
 	if d.Attempted {
 		telemetry.IncGateBlock(at.id, "maintenance_drop_attempted")
+		at.emitAlert("P1", "maintenance-drop-ambiguous", "maintenance-drop-ambiguous:"+d.SignalID,
+			fmt.Sprintf("Queued %s %s entry dropped by the update hold AFTER a write started — it may be at NT8", d.Side, d.Symbol),
+			"Check NinjaTrader for this order before the update continues; its records stay pending and the installation gate stays closed until it is reconciled.")
 		at.logWarnf("🔒 maintenance hold dropped queued entry %s %s %s AFTER a write of it was started — it MAY have reached NT8. Its records stay as they are (place_pending = ambiguous); the installation gate stays closed until it is reconciled against the broker.",
 			d.Symbol, d.Side, d.SignalID)
 		return

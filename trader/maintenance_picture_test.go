@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
 	ntTrader "nofx/trader/ninjatrader"
 )
@@ -94,5 +95,27 @@ func TestPictureHtfSendRefusesWhileHeld(t *testing.T) {
 	err := pictureHtfSend(env.eval, row, 95, 110, 1)
 	if !errors.Is(err, ntTrader.ErrMaintenanceHold) {
 		t.Fatalf("held: pictureHtfSend must refuse with ErrMaintenanceHold, got %v", err)
+	}
+}
+
+// Review F3: the Picture caller must NOT settle an AMBIGUOUS own drop (a write
+// had started — it may be at NT8) as refused; the row stays place_pending.
+func TestPictureHtfAmbiguousDropStaysPending(t *testing.T) {
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	orig := pictureHtfSubmitSeam
+	pictureHtfSubmitSeam = func(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, stopPx, targetPx, qty float64) error {
+		env.submits = append(env.submits, row.OppKey)
+		return fmt.Errorf("picture_htf: market entry refused: send signal: %w", ntwire.ErrEntryDropAmbiguous)
+	}
+	defer func() { pictureHtfSubmitSeam = orig }()
+	env.seedPictureTape()
+	env.eval.freshest5mAt = env.now
+	_ = env.eval.Evaluate("MNQ", env.now)
+	if len(env.submits) != 1 {
+		t.Fatalf("fixture: one submit, got %d", len(env.submits))
+	}
+	row, ok, _ := env.st.PictureHtfGet(env.submits[0])
+	if !ok || row.Stage != "place_pending" {
+		t.Fatalf("an ambiguous drop must leave the row place_pending (it may be at NT8), got %+v", row)
 	}
 }
