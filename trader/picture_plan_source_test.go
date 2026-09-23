@@ -380,9 +380,12 @@ func TestPictureHandOffRefusesWithoutARunOrARunnableSession(t *testing.T) {
 		at   time.Time
 		want string
 	}{
-		"no run epoch":          {prep: func(at *AutoTrader) {}, at: now, want: "trader not running"},
-		"stopped":               {prep: func(at *AutoTrader) { at.markPictureRunEpoch(now); at.clearPictureRunEpoch() }, at: now, want: "trader not running"},
-		"day plan off":          {prep: func(at *AutoTrader) { at.markPictureRunEpoch(now); at.config.StrategyConfig.DayPlan.PlanEnabled = false }, at: now, want: "Day Plan is off"},
+		"no run epoch": {prep: func(at *AutoTrader) {}, at: now, want: "trader not running"},
+		"stopped":      {prep: func(at *AutoTrader) { at.markPictureRunEpoch(now); at.clearPictureRunEpoch() }, at: now, want: "trader not running"},
+		"day plan off": {prep: func(at *AutoTrader) {
+			at.markPictureRunEpoch(now)
+			at.config.StrategyConfig.DayPlan.PlanEnabled = false
+		}, at: now, want: "Day Plan is off"},
 		"no live session":       {prep: func(at *AutoTrader) { at.markPictureRunEpoch(now) }, at: time.Date(2026, 9, 14, 15, 30, 0, 0, kernel.CTLocation()), want: "no session is live"},
 		"session not runnable":  {prep: func(at *AutoTrader) { at.markPictureRunEpoch(now) }, at: time.Date(2026, 9, 14, 3, 0, 0, 0, kernel.CTLocation()), want: "not runnable"},
 		"window already closed": {prep: func(at *AutoTrader) { at.markPictureRunEpoch(now) }, at: now, want: "eligibility window closed"},
@@ -650,7 +653,7 @@ func foldFixtures() map[string][]string {
 		return fmt.Sprintf(`{"id":"S%d","trigger":"t","condition":"reclaim","direction":"long","target_chain":[15600],"invalid":"i","quality":"B"}`, i)
 	}
 	return map[string][]string{
-		"no overlays": nil,
+		"no overlays":      nil,
 		"good owner level": {`[{"op":"add","path":"/levels/-","value":{"price":15600,"label":"OWN","grade":"A","instruction":"fade"}}]`},
 		"bad patch skipped": {
 			`[{"op":"replace","path":"/levels/99/price","value":1}]`,
