@@ -35,7 +35,19 @@ func TestNewAutoTraderWiresTheMaintenancePermitAndQueueCheck(t *testing.T) {
 			return true
 		}
 		sel, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok || len(call.Args) != 1 {
+		if !ok {
+			return true
+		}
+		// M2.1: SetDroppedEntrySink(owner, fn) — the owner must be the trader id.
+		if sel.Sel.Name == "SetDroppedEntrySink" && len(call.Args) == 2 {
+			if o, ok := call.Args[0].(*ast.SelectorExpr); ok {
+				if x, ok := o.X.(*ast.Ident); ok {
+					found["SetDroppedEntrySink.owner"] = x.Name + "." + o.Sel.Name
+				}
+			}
+			call = &ast.CallExpr{Fun: call.Fun, Args: call.Args[1:]}
+		}
+		if len(call.Args) != 1 {
 			return true
 		}
 		switch sel.Sel.Name {
@@ -65,7 +77,10 @@ func TestNewAutoTraderWiresTheMaintenancePermitAndQueueCheck(t *testing.T) {
 	}
 	// M-2: this trader settles its own entries the hold dropped from the queue.
 	if found["SetDroppedEntrySink"] != "at.onMaintenanceDroppedEntry" {
-		t.Fatalf("NewAutoTrader must call nt.SetDroppedEntrySink(at.onMaintenanceDroppedEntry); found %q", found["SetDroppedEntrySink"])
+		t.Fatalf("NewAutoTrader must call nt.SetDroppedEntrySink(at.id, at.onMaintenanceDroppedEntry); found %q", found["SetDroppedEntrySink"])
+	}
+	if found["SetDroppedEntrySink.owner"] != "at.id" {
+		t.Fatalf("the drop sink must be keyed by the trader id (reload replaces, never leaks); found owner %q", found["SetDroppedEntrySink.owner"])
 	}
 }
 

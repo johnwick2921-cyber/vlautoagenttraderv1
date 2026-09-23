@@ -15,7 +15,7 @@ func TestDroppedEntrySinkRoutesOwnEntriesAndForgetsOnlyNeverAttempted(t *testing
 	s := ntwire.NewTCPServer(nil)
 	tr := NewTCPTrader(s, "MNQ", "Sim101")
 	var heard []ntwire.DroppedEntry
-	tr.SetDroppedEntrySink(func(d ntwire.DroppedEntry) { heard = append(heard, d) })
+	tr.SetDroppedEntrySink("trader-sink", func(d ntwire.DroppedEntry) { heard = append(heard, d) })
 	tr.pendingMu.Lock()
 	tr.pending["sig-never"], tr.pending["sig-tried"] = "LONG", "LONG"
 	tr.pendingMu.Unlock()
@@ -52,5 +52,26 @@ func TestAnAmbiguousDropIsNotAHoldRefusal(t *testing.T) {
 	}
 	if !IsMaintenanceHold(fmt.Errorf("send: %w", ntwire.ErrEntryHeld)) {
 		t.Fatal("ErrEntryHeld (provably unsent) must still satisfy IsMaintenanceHold")
+	}
+}
+
+// M2.1 (CTO: fix first) — sinks are keyed by the OWNING TRADER'S ID, not the
+// TCPTrader's pointer: a reloaded trader (same id, new TCPTrader) REPLACES its
+// old sink instead of leaving it registered for the life of the process
+// (holding the old AutoTrader and TCPTrader alive).
+func TestDroppedEntrySinkIsReplacedWhenTheSameTraderReloads(t *testing.T) {
+	s := ntwire.NewTCPServer(nil)
+	oldT, newT := NewTCPTrader(s, "MNQ", "Sim101"), NewTCPTrader(s, "MNQ", "Sim101")
+	var oldHeard, newHeard int
+	oldT.SetDroppedEntrySink("trader-x", func(ntwire.DroppedEntry) { oldHeard++ })
+	newT.SetDroppedEntrySink("trader-x", func(ntwire.DroppedEntry) { newHeard++ })
+	for _, tr := range []*TCPTrader{oldT, newT} {
+		tr.pendingMu.Lock()
+		tr.pending["sig-r"] = "LONG"
+		tr.pendingMu.Unlock()
+	}
+	s.FeedDroppedEntryForTest(ntwire.DroppedEntry{SignalID: "sig-r"})
+	if oldHeard != 0 || newHeard != 1 {
+		t.Fatalf("a reload must replace the old sink: old heard %d, new heard %d", oldHeard, newHeard)
 	}
 }

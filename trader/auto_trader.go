@@ -844,7 +844,7 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		nt.SetMaintenanceSource(maintenanceWireState)
 		// M-2 — an entry the hold drops from the queue settles what this trader
 		// recorded for it (never sent), or says why it cannot.
-		nt.SetDroppedEntrySink(at.onMaintenanceDroppedEntry)
+		nt.SetDroppedEntrySink(at.id, at.onMaintenanceDroppedEntry)
 	}
 	return at, nil
 }

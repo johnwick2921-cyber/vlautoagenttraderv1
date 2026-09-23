@@ -71,7 +71,7 @@ func newDropWire(t *testing.T) *dropWire {
 	at.config.StrategyConfig = &store.StrategyConfig{}
 	// Exactly what NewAutoTrader wires.
 	nt.SetEntryHoldCheck(maintenanceQueueHeld)
-	nt.SetDroppedEntrySink(at.onMaintenanceDroppedEntry)
+	nt.SetDroppedEntrySink(at.id, at.onMaintenanceDroppedEntry)
 	return &dropWire{s: s, nt: nt, at: at, st: st, dir: dir, addr: s.ListenAddrForTest().String()}
 }
 

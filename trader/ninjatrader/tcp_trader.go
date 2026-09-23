@@ -183,17 +183,23 @@ func (t *TCPTrader) MaintenanceView() (rec ntwire.ConnectionRecord, connected bo
 	return rec, connected, t.server.PendingSignalCount(), true
 }
 
-// SetDroppedEntrySink registers this trader's handler for ITS OWN queued
+// SetDroppedEntrySink registers, under owner (the AutoTrader id), this trader's handler for ITS OWN queued
 // entries the maintenance hold dropped (W-ONE-BUTTON M2, M-2). Ownership is
 // exact: every entry function registers its signal in t.pending before the
 // send. A never-attempted drop provably never reached NT8, so the trader
 // forgets it (no fill can come, and a stale lastEntrySignalID must not claim a
 // later fill); an ATTEMPTED one may have reached NT8, so it stays tracked.
-func (t *TCPTrader) SetDroppedEntrySink(fn func(ntwire.DroppedEntry)) {
+func (t *TCPTrader) SetDroppedEntrySink(owner string, fn func(ntwire.DroppedEntry)) {
 	if t.server == nil {
 		return
 	}
-	t.server.AddDroppedEntrySink(fmt.Sprintf("tcptrader:%p", t), func(d ntwire.DroppedEntry) {
+	// Keyed by the OWNING TRADER's id (M2.1): a reloaded trader replaces its
+	// old sink rather than leaving it registered for the life of the process.
+	key := "trader:" + strings.TrimSpace(owner)
+	if strings.TrimSpace(owner) == "" {
+		key = fmt.Sprintf("tcptrader:%p", t) // no owner (standalone): per instance
+	}
+	t.server.AddDroppedEntrySink(key, func(d ntwire.DroppedEntry) {
 		if !t.HasPendingEntry(d.SignalID) {
 			return
 		}
