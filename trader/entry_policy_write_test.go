@@ -242,10 +242,11 @@ func TestW3WriteLoopZoneBoundaries(t *testing.T) {
 		{"bracket: stop inside the zone", func(p *accPlan) { p.stop = 15485; p.entry = 15490 }, kernel.ZoneBracket},
 		{"inward rounding leaves no tick", func(p *accPlan) { p.zone = [2]float64{15488.1, 15488.2}; p.entry = 15488.15 }, kernel.ZoneEmpty},
 		{"no zone at all", func(p *accPlan) { p.zone = [2]float64{0, 0} }, ""}, // economics refuses a zero zone first (hard reject) — see below
-		// R:R: at the authored entry 15484 → (15545−15484)/24 = 2.54 ≥ 2; at the
-		// FAR edge 15494 → 51/34 = 1.50 < 2 → refused rr (D7).
+		// R:R (the arm floor here is the schema default 3.0): at the authored
+		// entry 15484 → (15570−15484)/24 = 3.58 ≥ 3; at the FAR edge 15494 →
+		// 76/34 = 2.24 < 3 → refused rr (D7).
 		{"R:R passes at entry, fails at the far edge", func(p *accPlan) {
-			p.entry, p.target, p.obstacle, p.targetChain = 15484, 15545, 15520, []float64{15520, 15545}
+			p.entry, p.target, p.obstacle, p.targetChain = 15484, 15570, 15530, []float64{15530, 15570}
 		}, "rr"},
 		// min-SL: authored stop 15480 is tight; composed from the NEAR edge
 		// (15484 − 1.5×ATR5m 8 = 15472) the near-edge distance is 12.00 = the
