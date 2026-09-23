@@ -80,7 +80,7 @@ func MaintenanceBootLine(loaded map[string]*AutoTrader) string {
 		if a.Held {
 			state = "held"
 		}
-		ack = fmt.Sprintf("%s job=%s build=%s", state, a.JobID, a.BuildID)
+		ack = fmt.Sprintf("%s job=%s build=%s", state, orNA(a.JobID), orNA(a.BuildID))
 	}
 	return fmt.Sprintf("🔒 maintenance: hold=%s job=%s since=%s addon_ack=%s", v.State, job, since, ack)
 }
@@ -101,4 +101,12 @@ func ntTradersOf(loaded map[string]*AutoTrader) []*AutoTrader {
 		}
 	}
 	return out
+}
+
+// orNA prints a value the AddOn did not send as n/a (L7), never as empty.
+func orNA(s string) string {
+	if s == "" {
+		return "n/a"
+	}
+	return s
 }

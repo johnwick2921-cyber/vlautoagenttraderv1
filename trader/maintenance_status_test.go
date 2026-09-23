@@ -111,3 +111,18 @@ func TestMainPrintsTheMaintenanceBootLine(t *testing.T) {
 		t.Fatal("the boot line must be printed after SetMaintenanceDataDir")
 	}
 }
+
+// M2.1 (review NIT 8, L7): an ack field the AddOn did not send prints n/a on
+// the boot line — never an empty "job=" or "build=".
+func TestMaintenanceBootLinePrintsNAForEmptyAckFields(t *testing.T) {
+	dir := withMaintenanceDir(t)
+	setHold(t, dir, "job-e")
+	prev := installationWireView
+	t.Cleanup(func() { installationWireView = prev })
+	installationWireView = func([]*AutoTrader) (installationWire, bool) {
+		return installationWire{Connected: true, HasAck: true, Rec: ntwire.ConnectionRecord{Ack: &ntwire.MaintenanceAckPayload{Held: true}}}, true
+	}
+	if line := MaintenanceBootLine(nil); !strings.HasSuffix(line, "addon_ack=held job=n/a build=n/a") {
+		t.Fatalf("empty ack fields must print n/a: %q", line)
+	}
+}

@@ -298,7 +298,6 @@ func (s *Store) PictureHtfRecoverableByTrader(traderID string) ([]PictureHtfOppo
 	return rows, err
 }
 
-// PictureHtfByTrader lists the trader's opportunity ledger, newest first.
 // PictureHtfRecoverableAll is PictureHtfRecoverableByTrader for EVERY trader
 // (W-ONE-BUTTON M2 installation gate): place_pending or working, any trader
 // id — a stopped or removed trader's send is still unresolved.
@@ -312,6 +311,7 @@ func (s *Store) PictureHtfRecoverableAll() ([]PictureHtfOpportunityDB, error) {
 	return rows, err
 }
 
+// PictureHtfByTrader lists the trader's opportunity ledger, newest first.
 func (s *Store) PictureHtfByTrader(traderID string, limit int) ([]PictureHtfOpportunityDB, error) {
 	if s == nil || s.gdb == nil {
 		return nil, fmt.Errorf("store unavailable")
