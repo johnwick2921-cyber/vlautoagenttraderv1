@@ -68,8 +68,11 @@
 // Wire baselines advanced 2026-09-23 for W-ONE-BUTTON M2.1 (review hardening;
 // feat/one-button-m2.1-hardening), each delta measured against the M2 head:
 //   provider/ninjatrader/tcp_framing.go — +4 −0: CensusConnection.Settled.
-//   provider/ninjatrader/tcp_server.go  — +8 −0: the flush re-checks the hold
-//     with the writer lock held (review F1); nothing removed.
+//   provider/ninjatrader/tcp_server.go  — +16 −4: the flush re-checks the hold
+//     with the writer lock held (review F1), and threads the caller's own signal
+//     id through it so a drop inside its own send is reported Own (review N2).
+//     The four removed lines are M2's own flushPendingReport / reportDrops call
+//     shapes, re-issued with the id; no pre-M2 line, guard or identifier touched.
 //   ninjascript/VLTraderTCPClient.cs   — +60 −38: VL_BUILD_ID 2026-09-22-m2 →
 //     2026-09-23-m21; the census M2 added is restructured to snapshot each NT8
 //     collection under its own lock (no nesting) and to report 'settled';
