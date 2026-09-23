@@ -2410,7 +2410,13 @@ func (s *StrategyStore) Duplicate(userID, sourceID, newID, newName string) error
 		Config:      source.Config,
 	}
 
-	return s.Create(newStrategy)
+	if err := s.Create(newStrategy); err != nil {
+		return err
+	}
+	// W1 (settings truth): the copy holds the same bytes, so it carries the
+	// source's record of which explicit zeros a W1 save confirmed — a copy of a
+	// confirmed OFF breaker is still the owner's OFF.
+	return s.copyExplicitZeros(sourceID, newID)
 }
 
 // ParseConfig parse strategy configuration JSON

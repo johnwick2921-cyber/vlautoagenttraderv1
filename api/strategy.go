@@ -245,6 +245,11 @@ func (s *Server) handleCreateStrategy(c *gin.Context) {
 		SafeInternalError(c, "Failed to create strategy", err)
 		return
 	}
+	// W1 (settings truth) — record which knobs this save holds as an explicit
+	// 0, so the load-time conversion check knows the 0 is the owner's.
+	if err := s.store.Strategy().RecordExplicitZeros(strategy.ID, req.Config); err != nil {
+		logger.Warnf("🩺 settings truth: strategy %s saved but its explicit-zero record failed (%v) — a trader bound to it will be refused at load until the next save", strategy.ID, err)
+	}
 
 	// Validate configuration and collect warnings
 	warnings := validateStrategyConfig(req.Config)
@@ -368,6 +373,12 @@ func (s *Server) handleUpdateStrategy(c *gin.Context) {
 	if err := s.store.Strategy().Update(strategy); err != nil {
 		SafeInternalError(c, "Failed to update strategy", err)
 		return
+	}
+	// W1 (settings truth) — record which knobs this save holds as an explicit
+	// 0 BEFORE the reload below, so the reloaded trader's conversion check
+	// reads the owner's 0 as the owner's.
+	if err := s.store.Strategy().RecordExplicitZeros(strategyID, &mergedConfig); err != nil {
+		logger.Warnf("🩺 settings truth: strategy %s saved but its explicit-zero record failed (%v) — a trader bound to it will be refused at load until the next save", strategyID, err)
 	}
 
 	// REPAIR-PARSE E5 (2026-09-02) — NAME WHAT MOVED. The 2026-09-01 08:13 CT

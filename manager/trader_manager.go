@@ -8,6 +8,7 @@ import (
 	"nofx/logger"
 	"nofx/store"
 	"nofx/trader"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -590,9 +591,24 @@ func (tm *TraderManager) addTraderFromStore(traderCfg *store.Trader, aiModelCfg 
 		if err != nil {
 			return fmt.Errorf("failed to parse strategy config for trader %s: %w", traderCfg.Name, err)
 		}
+		// W1 (settings truth, 2026-09-23) — FAIL-CLOSED CONVERSION. A stored
+		// explicit 0 on consecutive_loss_halt / day_plan.replan_cap meant
+		// "inherit" before W1 and means OFF / 0 now. If this strategy holds one
+		// no Studio save has confirmed, the trader does not load: an inherited
+		// breaker is never silently disabled, and nothing is rewritten.
+		if reason := st.Strategy().SettingsTruthRefusal(strategy, os.Getenv); reason != "" {
+			logger.Warnf("⛔ settings truth: trader %s REFUSED at load — %s", traderCfg.Name, reason)
+			return fmt.Errorf("settings truth: %s", reason)
+		}
 		logger.Infof("✓ Trader %s loaded strategy config: %s", traderCfg.Name, strategy.Name)
 		// S3 (2026-09-16) — the resolved HTF knobs, with their sources.
 		logger.Infof("%s", trader.HtfKnobsBootLine(strategyConfig.DayPlan))
+		// W1 (settings truth, 2026-09-23) — the re-plan cap per session and
+		// the consecutive-loss breaker, READ from the resolvers the gates run,
+		// each with its origin. The process 🛑 line prints breaker=n/a when
+		// more than one strategy is bound; this line is where each one reads.
+		logger.Infof("%s", trader.ReplanCapBootLine(strategyConfig.DayPlan))
+		logger.Infof("🛑 [%s] %s", traderCfg.Name, trader.BreakerBootLineForStrategy(strategyConfig))
 		// W-KNOB-PRUNE (2026-09-18) — every folded knob whose STORED value
 		// differs from its constant, once, so a removed control never keeps
 		// a value silently.

@@ -220,6 +220,23 @@ func main() {
 	} else if n1+n2 > 0 {
 		logger.Infof("🩹 acceptance-rule migration: strategy-level=%d session=%d (2x5m → 5m_close)", n1, n2)
 	}
+	// W1 SETTINGS TRUTH (2026-09-23) — consecutive_loss_halt and
+	// day_plan.replan_cap are presence-aware now (absent inherits, an explicit
+	// 0 is 0). One line per stored strategy: what is stored, what the previous
+	// binary enforced, what this one enforces. READ-ONLY — nothing is
+	// rewritten; a row whose effective value changes without a Studio save
+	// confirming it is REFUSED at trader load (the ⛔ line names it).
+	if rep, rerr := st.Strategy().SettingsTruthBootReport(os.Getenv); rerr != nil {
+		logger.Warnf("🩺 settings truth: report unavailable (%v) — the per-trader load check still applies", rerr)
+	} else {
+		for _, line := range rep.Lines() {
+			if strings.Contains(line, "CHANGED") {
+				logger.Warnf("%s", line)
+			} else {
+				logger.Infof("%s", line)
+			}
+		}
+	}
 
 	// Load all traders from database to memory (may auto-start traders with IsRunning=true)
 	// F12 SINK — REGISTERED BEFORE THE TRADERS LOAD. LoadTradersFromStore builds
