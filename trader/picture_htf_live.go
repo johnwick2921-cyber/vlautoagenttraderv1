@@ -28,14 +28,21 @@ func init() {
 // pictureHtfLiveBars is the process-wide sink: converts wire bars to klines
 // and fans out to every registered trader. Registered traders whose mode is
 // off drop the frame in the evaluator (cheap no-op).
-func pictureHtfLiveBars(symbol, tf string, bars []ntwire.Bar, receivedAt time.Time) {
+func pictureHtfLiveBars(symbol, tf, contract string, bars []ntwire.Bar, receivedAt time.Time) {
 	if len(bars) == 0 {
 		return
 	}
 	dur, ok := kernel.TFDurationMs(tf)
 	kl := make([]market.Kline, 0, len(bars))
 	for _, b := range bars {
-		k := market.Kline{OpenTime: b.T, Open: b.O, High: b.H, Low: b.L, Close: b.C}
+		// W4: Final, EmittedAt and Contract used to be dropped here, so the
+		// evaluator could not tell a closed candle from a forming one, could
+		// not age the frame against the SOURCE clock, and could not tell
+		// which instrument it was reading. They are the evidence; they travel.
+		k := market.Kline{
+			OpenTime: b.T, Open: b.O, High: b.H, Low: b.L, Close: b.C,
+			Final: b.Final, EmittedAt: b.EmittedAt, Contract: contract,
+		}
 		if ok {
 			k.CloseTime = b.T + dur - 1
 		}
@@ -51,6 +58,13 @@ func pictureHtfLiveBars(symbol, tf string, bars []ntwire.Bar, receivedAt time.Ti
 		}
 		return true
 	})
+}
+
+// pictureHtfContractOf reports the front month this trader is trading and
+// where that came from. It is a seam so a test can state the trader's
+// contract without standing up an AddOn ACK.
+var pictureHtfContractOf = func(at *AutoTrader, symbol string) (string, string) {
+	return at.currentContract(symbol)
 }
 
 // registerPictureHtf installs the trader in the live-bar registry.

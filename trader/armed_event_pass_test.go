@@ -45,7 +45,7 @@ func eventRig(t *testing.T, id string, doc kernel.PlanDoc) *zoneRig {
 // production sink.
 func (r *zoneRig) finalFrame(close float64) {
 	b := ntwire.Bar{T: r.now.Add(-time.Minute).Truncate(time.Minute).UnixMilli(), O: close, H: close + 0.25, L: close - 0.25, C: close, Final: true}
-	pictureHtfLiveBars("MNQ 12-26", "1m", []ntwire.Bar{b}, time.Now())
+	pictureHtfLiveBars("MNQ 12-26", "1m", "MNQ 12-26", []ntwire.Bar{b}, time.Now())
 }
 
 func (r *zoneRig) passes() int64 {
@@ -119,7 +119,7 @@ func TestArmedEventPassWakesOnAZoneVerdictChange(t *testing.T) {
 	r.armZoneRow()
 	forming := func(c float64) {
 		b := ntwire.Bar{T: r.now.Truncate(time.Minute).UnixMilli(), O: c, H: c, L: c, C: c}
-		pictureHtfLiveBars("MNQ 12-26", "1m", []ntwire.Bar{b}, time.Now())
+		pictureHtfLiveBars("MNQ 12-26", "1m", "MNQ 12-26", []ntwire.Bar{b}, time.Now())
 	}
 	forming(99.25) // still short of the zone: no change, no pass
 	time.Sleep(200 * time.Millisecond)

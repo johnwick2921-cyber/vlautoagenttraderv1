@@ -46,6 +46,10 @@ type PictureHtfEvaluator struct {
 	// capWarned dedupes the once-per-state "mode unavailable" log.
 	capWarned bool
 
+	// foreignFrames counts live frames whose contract is definitely NOT the
+	// one this trader is on. READ by the accessor; never inferred.
+	foreignFrames int64
+
 	// holdRefusedKey dedupes the maintenance-hold refusal (count + WARN) to
 	// once per opportunity rather than once per frame.
 	holdRefusedKey string
@@ -178,6 +182,39 @@ func (e *PictureHtfEvaluator) rebuildLevels(symbol string, nowMs int64) PictureD
 	return dep
 }
 
+// frameContract is the contract the frame's bars agree on. It returns "" when
+// the frame names none (an AddOn older than the 2026-09-11 ruling) or when its
+// bars disagree — both are UNKNOWN, and unknown is never reported as a match.
+func frameContract(bars []market.Kline) string {
+	out := ""
+	for _, b := range bars {
+		if b.Contract == "" {
+			continue
+		}
+		if out == "" {
+			out = b.Contract
+			continue
+		}
+		if out != b.Contract {
+			return ""
+		}
+	}
+	return out
+}
+
+// ForeignContractFrames reports how many live frames named a contract other
+// than the one this trader is on. A rising count means the tape and the
+// trader disagree about the instrument — during a roll, or after the
+// reconnect path that re-subscribes without a fresh ACK.
+func (e *PictureHtfEvaluator) ForeignContractFrames() int64 {
+	if e == nil {
+		return 0
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.foreignFrames
+}
+
 // OnBars is the event entry point: the trader's bar consumers call it for
 // native LIVE bar updates. receivedAt is the Go-side receipt time; historical
 // or backfill frames must NOT call it. Non-blocking for the caller.
@@ -191,8 +228,22 @@ func (e *PictureHtfEvaluator) OnBars(symbol, tf string, bars []market.Kline, rec
 	if !e.ownsSymbol(symbol) {
 		return // another instrument's frame — never this trader's opportunity
 	}
+	// W4/D21 identity. The AddOn names the front month on EVERY bar frame, so
+	// when the frame names one and this trader is provably on another, the
+	// frame is a different instrument's tape and must never drive an
+	// evaluation — across a roll the SYMBOL alone cannot tell them apart.
+	// Read outside the evaluator's lock: currentContract reaches into the TCP
+	// server, and a Picture evaluation must never hold a lock across that.
+	mine, _ := pictureHtfContractOf(e.at, symbol)
+	frameC := frameContract(bars)
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if mine != "" && frameC != "" && frameC != mine {
+		e.foreignFrames++
+		logger.Warnf("picture-htf: frame names contract %s but this trader is on %s — frame ignored (%d so far)",
+			frameC, mine, e.foreignFrames)
+		return
+	}
 	if tf == "5m" {
 		e.freshest5mAt = receivedAt
 	}

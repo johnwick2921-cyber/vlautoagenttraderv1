@@ -669,7 +669,14 @@ type BarsSubscribePayload struct {
 type BarsHistoricalPayload struct {
 	Symbol    string `json:"symbol"`
 	Timeframe string `json:"timeframe"`
-	Bars      []Bar  `json:"bars"` // ascending by time
+	// Contract is the front month these bars belong to. The AddOn has named
+	// it on EVERY bar frame since 2026-09-11 (owner ruling;
+	// VLBarsSubscriptionManager.cs:488) and Go parsed it nowhere, so every
+	// consumer was blind to which instrument it was reading. ADDITIVE and
+	// omitempty: an AddOn that does not send it leaves this "", which reads
+	// as UNKNOWN, never as a match.
+	Contract string `json:"contract,omitempty"`
+	Bars     []Bar  `json:"bars"` // ascending by time
 }
 
 // BarUpdatePayload is the C#-AddOn → Go-server streaming update per protocol
@@ -678,7 +685,10 @@ type BarsHistoricalPayload struct {
 type BarUpdatePayload struct {
 	Symbol    string `json:"symbol"`
 	Timeframe string `json:"timeframe"`
-	Bars      []Bar  `json:"bars"` // ALWAYS an array — single tick can update multiple indices (NT8 multi-bar gotcha). Walk MinIndex..MaxIndex.
+	// Contract — see BarsHistoricalPayload.Contract
+	// (VLBarsSubscriptionManager.cs:562). "" means UNKNOWN, never a match.
+	Contract string `json:"contract,omitempty"`
+	Bars     []Bar  `json:"bars"` // ALWAYS an array — single tick can update multiple indices (NT8 multi-bar gotcha). Walk MinIndex..MaxIndex.
 }
 
 // BarsUnsubscribePayload is the Go-server → C#-AddOn teardown frame per

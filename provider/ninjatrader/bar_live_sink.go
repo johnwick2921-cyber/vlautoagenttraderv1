@@ -20,21 +20,25 @@ import (
 // qualified setups, but the drain-loop non-blocking invariant is absolute).
 
 var (
-	liveBarSink   atomic.Value // func(symbol, tf string, bars []Bar, receivedAt time.Time)
+	liveBarSink   atomic.Value // func(symbol, tf, contract string, bars []Bar, receivedAt time.Time)
 	liveSinkCh    = make(chan liveSinkMsg, 256)
 	liveSinkOnce  sync.Once
 	liveSinkDrops atomic.Int64
 )
 
 type liveSinkMsg struct {
-	symbol     string
-	tf         string
+	symbol string
+	tf     string
+	// contract is the front month the AddOn named on this frame; "" is
+	// UNKNOWN. It travels WITH the frame because identity is a property of
+	// the frame, not of the cache key it lands in.
+	contract   string
 	bars       []Bar
 	receivedAt time.Time
 }
 
 // SetLiveBarSink installs the process-wide live-bar consumer. nil uninstalls.
-func SetLiveBarSink(fn func(symbol, tf string, bars []Bar, receivedAt time.Time)) {
+func SetLiveBarSink(fn func(symbol, tf, contract string, bars []Bar, receivedAt time.Time)) {
 	liveBarSink.Store(fn)
 	startLiveSinkWorker()
 }
@@ -47,7 +51,7 @@ func startLiveSinkWorker() {
 
 func liveSinkLoop() {
 	for msg := range liveSinkCh {
-		fn, _ := liveBarSink.Load().(func(string, string, []Bar, time.Time))
+		fn, _ := liveBarSink.Load().(func(string, string, string, []Bar, time.Time))
 		if fn == nil {
 			continue
 		}
@@ -59,7 +63,7 @@ func liveSinkLoop() {
 					logger.Errorf("live bar sink panic recovered: %v", r)
 				}
 			}()
-			fn(msg.symbol, msg.tf, msg.bars, msg.receivedAt)
+			fn(msg.symbol, msg.tf, msg.contract, msg.bars, msg.receivedAt)
 		}()
 	}
 }
@@ -68,15 +72,15 @@ func liveSinkLoop() {
 // queue the pending frame is DROPPED and counted loudly — evaluators rebuild
 // their state from the cache on every event, so a dropped frame only delays
 // an evaluation to the next one (the wall-clock fallback covers the rest).
-func fanOutLiveBars(symbol, tf string, bars []Bar) {
+func fanOutLiveBars(symbol, tf, contract string, bars []Bar) {
 	if len(bars) == 0 {
 		return
 	}
-	if _, ok := liveBarSink.Load().(func(string, string, []Bar, time.Time)); !ok {
+	if _, ok := liveBarSink.Load().(func(string, string, string, []Bar, time.Time)); !ok {
 		return
 	}
 	select {
-	case liveSinkCh <- liveSinkMsg{symbol: symbol, tf: tf, bars: bars, receivedAt: time.Now()}:
+	case liveSinkCh <- liveSinkMsg{symbol: symbol, tf: tf, contract: contract, bars: bars, receivedAt: time.Now()}:
 	default:
 		liveSinkDrops.Add(1)
 		if liveSinkDrops.Load()%100 == 1 {

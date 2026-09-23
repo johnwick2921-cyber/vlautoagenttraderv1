@@ -598,7 +598,9 @@ type barIngestMsg struct {
 	historical bool
 	symbol     string
 	timeframe  string
-	bars       []Bar
+	// contract: the front month the AddOn named on this frame ("" = unknown).
+	contract string
+	bars     []Bar
 }
 
 // barIngestChannelBuffer caps the bar ingest channel. FORENSICS HYGIENE
@@ -1740,7 +1742,7 @@ func (s *TCPServer) drainBarIngest(ctx context.Context) {
 				s.barCache.Upsert(msg.symbol, msg.timeframe, msg.bars)
 				// LIVE-only fan-out to deterministic evaluators (two-picture
 				// mode). Historical replays must NOT mint opportunities.
-				fanOutLiveBars(msg.symbol, msg.timeframe, msg.bars)
+				fanOutLiveBars(msg.symbol, msg.timeframe, msg.contract, msg.bars)
 			}
 			// Bar persistence (2026-08-26) — fan-out AFTER the cache write, in
 			// its own goroutine: a slow/failing DB must never stall the drain
@@ -1797,11 +1799,11 @@ func sampleIngestDepth(depth int) {
 	}
 }
 
-func (s *TCPServer) enqueueBarUpdate(symbol, timeframe string, bars []Bar) {
+func (s *TCPServer) enqueueBarUpdate(symbol, timeframe, contract string, bars []Bar) {
 	// Stamp the live-feed freshness signal (IsFeedConnected uses it to override a
 	// stale edge-triggered feed_status). Cheap atomic store on the hot path.
 	s.lastBarNano.Store(time.Now().UnixNano())
-	msg := barIngestMsg{historical: false, symbol: symbol, timeframe: timeframe, bars: bars}
+	msg := barIngestMsg{historical: false, symbol: symbol, timeframe: timeframe, contract: contract, bars: bars}
 	select {
 	case s.barIngestCh <- msg:
 		sampleIngestDepth(len(s.barIngestCh))
@@ -2197,7 +2199,7 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 					"symbol", p.Symbol, "timeframe", p.Timeframe, "bars", len(p.Bars))
 				continue
 			}
-			s.enqueueBarUpdate(p.Symbol, p.Timeframe, p.Bars)
+			s.enqueueBarUpdate(p.Symbol, p.Timeframe, p.Contract, p.Bars)
 
 		case FrameAccountBalance:
 			// Plan 4.11 — real NT account snapshot. Store the latest;
