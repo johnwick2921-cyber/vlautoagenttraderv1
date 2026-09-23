@@ -106,18 +106,18 @@ const dayPlan: KnobSpec[] = [
   {
     label: 'Max re-plans',
     where: 'Strategy → Day Plan → Max re-plans 0–4',
-    what: "Re-read budget per session — a RECORDED counter (class 35): only death re-plans and owner re-reads (↻) spend it. Level-event / MSS wake reads (fast-market included), dormant flips + re-arms, the session's scheduled read, owner reset and fail-closed markers are FREE and never count. Budget exhausted = NO-TRADE terminal marker (⛔).",
+    what: "Re-read budget per session — a RECORDED counter (class 35): only death re-plans and owner re-reads (↻) spend it. Level-event / MSS wake reads (fast-market included), dormant flips + re-arms, the session's scheduled read, owner reset and fail-closed markers are FREE and never count. Budget exhausted = NO-TRADE terminal marker (⛔). PRESENCE-AWARE since W1 (settings truth, 2026-09-23): a BLANK box = inherit the shipped default 2; 0 = no re-plan at all, stored and honoured at the strategy level too (before W1 a strategy-level 0 could not be saved and read as 2). Each trader's boot block prints the cap it will run: '🧮 replan cap: strategy=N[O|I] · NY=… · ASIA=… · LONDON=…' ([O] saved, [I] the shipped default).",
     trader:
       'The v6-after-cap-4 confusion: the last chip IS the no-trade marker, not a real plan. And a chain can legitimately be v6 with the FULL budget left (2026-09-01 LONDON: six rows, zero spends) — the card\'s "re-reads left" is the recorded number, not version−1.',
     consumer:
-      "store/strategy.go (ReplanCap · GetReplanBudget/SpendReplan) · trader/auto_trader_planner.go (deathReplanAllowed → runDeathReplan) · trader/auto_trader_reread.go (owner re-read gate). The re-ALIGN budget (owner level edits → ⟳ Re-align plan) is folded beside this since W-KNOB-PRUNE: constant 5 per plan unless the strategy stores realign_cap (the owner's stores 10), no control.",
-    range: '0 – 4 per session',
-    systemDefault: '2 (owner)',
+      "store/resolve_source.go ResolveReplanCap (the ONE rule: session → strategy → 2; ReplanCapFor delegates) · store/strategy.go (GetReplanBudget/SpendReplan) · trader/auto_trader_planner.go (deathReplanAllowed → runDeathReplan) · trader/auto_trader_reread.go (owner re-read gate). The re-ALIGN budget (owner level edits → ⟳ Re-align plan) is folded beside this since W-KNOB-PRUNE: constant 5 per plan unless the strategy stores realign_cap (the owner's stores 10), no control.",
+    range: '0 – 4 per session · blank = inherit',
+    systemDefault: 'blank → 2 [I] (shipped default)',
     recommended: '⭐ 2 — one re-read after an early death, then sit out.',
     whenToTouch:
       "Raise for violent trend days where one death shouldn't end the session.",
     perSession:
-      'Yes — session override wins; inherit (blank) = the strategy-level value (ReplanCapFor).',
+      'Yes — session override wins (0 = no re-plan in that session); inherit = the strategy-level value (ResolveReplanCap). Turning an override ON starts it at the strategy value it was inheriting.',
   },
   {
     label: 'Require approval',
@@ -505,7 +505,7 @@ const risk: KnobSpec[] = [
   {
     label: 'Guardrails master',
     where: 'Strategy → Risk Control → Guardrails',
-    what: 'Master switch for the daily guardrails stack (loss/profit caps, max trades, consecutive-loss halt, reentry cooldown, consistency, blackout windows).',
+    what: 'Master switch for the daily guardrails stack (loss/profit caps, max trades, reentry cooldown, consistency, blackout windows). The consecutive-loss halt is NOT under this switch — it is its own circuit breaker and bites whether the master is on or off.',
     trader:
       'Currently OFF by owner ruling — the would-have-tripped counters still display.',
     consumer: 'kernel/engine_position.go (guardrail evaluation)',
@@ -597,13 +597,14 @@ const risk: KnobSpec[] = [
   {
     label: 'Consecutive-loss halt',
     where: 'Strategy → Risk Control → Guardrails',
-    what: 'N consecutive losing closes halt entries until the next session.',
+    what: "N consecutive losing closes in one CME session-day halt NEW entries on every path (decision, agent, arm, picture) until the 17:00 CT roll, and resting entries are withdrawn. NOT gated by the guardrails master. PRESENCE-AWARE since W1 (settings truth, 2026-09-23): toggle OFF stores 0 = OFF; toggle ON or a BLANK box = inherit (env BREAKER_HALT_N when set, else 8); a number = that N. Before W1 the row showed a missing value as OFF while the runtime enforced 8, and its OFF wrote a 0 no save could store. The 🛑 boot lines print what is enforced: breaker=8[I] (shipped default), 3[O] / off[O] (saved), 5[E] / off[E] (env), or n/a when not exactly one strategy is bound (each trader's own '🛑 [trader] breaker=' line then speaks for it).",
     trader:
       'The streak-breaker: three losers in a row is the market telling you something.',
     consumer:
-      'store/position_query.go:57 (CountConsecutiveLossesSince) · telemetry gate-block consecutive_loss',
-    range: 'count · enabled with master',
-    systemDefault: 'ON (with master)',
+      'store/resolve_source.go ResolveBreakerHalt (the ONE rule: saved incl. 0 → env BREAKER_HALT_N → 8) · trader/auto_trader_orders.go consecutiveLossHaltedAt (decision/agent) · trader/session_risk.go sessionRiskGateAt (arm/picture) · trader/withdraw.go · store/position_query.go CountConsecutiveLossesSince · telemetry gate-block consecutive_loss',
+    range: 'OFF (0) · inherit (blank) · 1 – N',
+    systemDefault:
+      'inherit → 8 [I]; BREAKER_HALT_N overrides the inherit [E] — ON, not master-gated',
     recommended: '⭐ ON, threshold 2–3.',
     whenToTouch: 'Leave ON — this is the cheapest guardrail in the stack.',
     perSession: 'No.',
