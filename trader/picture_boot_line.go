@@ -49,7 +49,7 @@ func PictureRowsBootLine(st *store.Store, epoch int64, epochOK bool) string {
 	for _, r := range rows {
 		sub := "n/a"
 		if r.SubmittedAt > 0 {
-			sub = time.UnixMilli(r.SubmittedAt).In(kernel.CTLocation()).Format("2006-01-02 15:04:05") + " CT"
+			sub = kernel.ClockCTSeconds(time.UnixMilli(r.SubmittedAt))
 		}
 		parts = append(parts, fmt.Sprintf("#%d %s submitted_at=%s", r.ID, r.Stage, sub))
 	}

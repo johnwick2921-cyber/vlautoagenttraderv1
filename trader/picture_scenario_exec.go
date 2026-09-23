@@ -134,8 +134,8 @@ func (at *AutoTrader) pictureScenarioGate(plan *kernel.ActivePlan, sc kernel.Pla
 	if nowMs > m.EligibleUntilMs {
 		closed := at.closePictureRowsForRef(ledger, m.Ref, now)
 		detail := fmt.Sprintf("deadline %s passed at %s (%d unplaced row(s) retired)",
-			time.UnixMilli(m.EligibleUntilMs).In(kernel.CTLocation()).Format("15:04:05"),
-			now.In(kernel.CTLocation()).Format("15:04:05"), closed)
+			kernel.ClockCTSeconds(time.UnixMilli(m.EligibleUntilMs)),
+			kernel.ClockCTSeconds(now), closed)
 		scope.note(sc.ID, "refused: "+pictureClassWindowClosed+": "+detail)
 		key := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":picture"
 		if armRefusalChanged(&at.armRefusalLast, key, pictureClassWindowClosed) {
@@ -148,7 +148,7 @@ func (at *AutoTrader) pictureScenarioGate(plan *kernel.ActivePlan, sc kernel.Pla
 		return PictureEvidence{}, false
 	}
 	if !kernel.MachineEligibleAt(sc, nowMs) {
-		scope.note(sc.ID, fmt.Sprintf("waiting: picture window opens at %s", time.UnixMilli(m.EligibleFromMs).In(kernel.CTLocation()).Format("15:04:05")))
+		scope.note(sc.ID, fmt.Sprintf("waiting: picture window opens at %s", kernel.ClockCTSeconds(time.UnixMilli(m.EligibleFromMs))))
 		return PictureEvidence{}, false
 	}
 	if live, ok := at.pictureRunEpoch(); !ok || m.RunEpoch != live {

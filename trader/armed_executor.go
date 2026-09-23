@@ -211,10 +211,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 	defer armedPassEntered(at.id)()
 	scope := opts.scope
 	if !at.dayPlanEnabled() || at.store == nil || at.exchange != "ninjatrader" {
-		// W5 D21 — Day Plan OFF invalidates a Picture row's entry permission
-		// (unplaced → terminal, resting → cancel requested). Planner rows are
-		// untouched; a trader with no Picture row only reads the ledger.
-		at.pictureDayPlanOffSweep(now)
+		at.pictureDayPlanOffSweep(now) // W5 D21: Picture rows only
 		return
 	}
 	ledger := at.store.ArmedOrders()

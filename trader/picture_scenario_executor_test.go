@@ -918,13 +918,24 @@ func TestPictureRowsBootLineReadsTheLedgerAndTheEpoch(t *testing.T) {
 	got := PictureRowsBootLine(r.st, epoch, true)
 	for _, want := range []string{
 		"#" + strconv.FormatInt(unstamped, 10) + " " + store.StatePlacePending + " submitted_at=n/a",
-		"#" + strconv.FormatInt(stamped, 10) + " " + store.StatePlacePending + " submitted_at=2",
+		"#" + strconv.FormatInt(stamped, 10) + " " + store.StatePlacePending + " submitted_at=" + stampedAt(t, r.st, "pic-b"),
 		"run_epoch=" + strconv.FormatInt(epoch, 10),
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("the 🖼 line must carry %q: %q", want, got)
 		}
 	}
+}
+
+// stampedAt is the 🖼 line's rendering of a stamped row's submitted_at, READ
+// from the row (the stamp is the store's wall clock).
+func stampedAt(t *testing.T, st *store.Store, key string) string {
+	t.Helper()
+	row, ok, err := st.PictureHtfGet(key)
+	if err != nil || !ok || row.SubmittedAt <= 0 {
+		t.Fatalf("fixture: %s must carry a submission stamp: %+v %v %v", key, row, ok, err)
+	}
+	return kernel.ClockCTSeconds(time.UnixMilli(row.SubmittedAt))
 }
 
 // The latch's ledger source (production: the latch calls it) names a Picture
