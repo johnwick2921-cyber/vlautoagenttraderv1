@@ -75,6 +75,9 @@ type admitIntent struct {
 	Price float64
 	// Picture carries the picture intent for EntryGate (picture path only).
 	Picture *pictureAdmission
+	// Source is the arm row's machine source (W5: store.ArmSourcePicture on a
+	// Picture scenario's row, "" on every planner row and every other path).
+	Source string
 }
 
 func (in admitIntent) side() string {
@@ -162,18 +165,21 @@ func (at *AutoTrader) admitEntry(in admitIntent) (string, bool) {
 }
 
 func (at *AutoTrader) admitChain(in admitIntent, sym, act string, now time.Time) (string, bool) {
-	if in.Path == admitPicture {
+	if in.Path == admitPicture || in.Source == store.ArmSourcePicture {
 		// Picture runs on the live-bar goroutine, outside runCycle, so it has
 		// no loop in front of it that stops when the trader stops or the Day
 		// Plan master is off (D26). The decision and arm paths only run inside
 		// runCycle, which already requires both.
+		// W5 D21 — a Picture scenario's ARM row answers the same two questions
+		// at its send point (one chain): the event pass, and a scan already in
+		// flight when Stop or Day Plan OFF lands, must not place it.
 		if !at.runningNow() {
-			return at.admitRefuse(in, "trader_stopped", "picture: the trader is not running", func() {
+			return at.admitRefuse(in, "trader_stopped", pictureRefusalStopped, func() {
 				at.logWarnf("⏹ picture: %s %s REFUSED — the trader is not running.", sym, act)
 			})
 		}
 		if !at.dayPlanEnabled() {
-			return at.admitRefuse(in, "day_plan_off", "picture: the Day Plan master is off", func() {
+			return at.admitRefuse(in, "day_plan_off", pictureRefusalDayPlanOff, func() {
 				at.logWarnf("⏹ picture: %s %s REFUSED — the Day Plan master is off.", sym, act)
 			})
 		}

@@ -8,14 +8,13 @@ import (
 	"nofx/auth"
 	"nofx/manager"
 	"nofx/store"
-	"nofx/trader"
 )
 
-// ── W-EXEC-TRUTH W0 (CTO Q6) — the plan card says when strict refuses Picture ─
+// ── W-EXEC-TRUTH W0 (CTO Q6) → W5 — the plan card's Picture line ───────────
 //
-// The card's payload carries the trader's own READ of Picture's plan-mode
-// verdict (the same read pictureEntryGate refuses on and the 📷 boot line
-// prints), on the no-plan-yet payload as well as a plan's.
+// The card's payload carries the trader's own READ of Picture's route and any
+// REAL refusal (trader.PicturePlanGateAt), on the no-plan-yet payload as well
+// as a plan's. Since W5 strict refuses nothing: Picture is a plan source.
 
 const ppgUser, ppgTrader = "u-picture-gate", "t-picture-gate"
 
@@ -69,10 +68,19 @@ func picturePayload(t *testing.T, strategyJSON string) map[string]any {
 	return pic
 }
 
-func TestPlanCardCarriesPictureStrictRefusal(t *testing.T) {
+// W5 — strict no longer refuses Picture (it is a Day Plan scenario source):
+// the card's refusal under strict carries no strict text. (A non-NT8 trader
+// never runs Picture, so it has no route either.)
+func TestPlanCardCarriesNoStrictRefusalForPicture(t *testing.T) {
 	pic := picturePayload(t, `{"day_plan":{"plan_enabled":true,"plan_mode":"strict"}}`)
-	if pic["refusal"] != trader.PictureStrictRefusal {
-		t.Fatalf("under strict the card must carry the refusal text %q, got %#v", trader.PictureStrictRefusal, pic)
+	if pic["refusal"] != "" {
+		t.Fatalf("under strict the card must carry no Picture refusal since W5, got %#v", pic)
+	}
+	if _, has := pic["route"]; has {
+		t.Fatalf("a non-NT8 trader never runs Picture — no route, got %#v", pic)
+	}
+	if pic["enabled"] != false {
+		t.Fatalf("a non-NT8 trader never runs Picture, got %#v", pic)
 	}
 }
 

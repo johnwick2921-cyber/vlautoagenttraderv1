@@ -2,6 +2,7 @@ package trader
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"nofx/kernel"
@@ -40,6 +41,13 @@ func (at *AutoTrader) scenarioInvalidationAt(plan *kernel.ActivePlan, scenarioID
 		return InvalidationVerdict{}, false
 	}
 	bars := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
+	// W5 D13 — a MACHINE scenario is judged by its own rule, BEFORE the
+	// prose-anchor path: ScenarioAnchor would call it unevaluable and the gate
+	// would pass it with a WARN on every pass (F14), and its prose is not its
+	// invalidation — its evidence is.
+	if sc, ok := machineScenarioIn(plan, scenarioID); ok {
+		return machineScenarioInvalidation(sc, bars, tapeClock(bars, now))
+	}
 	if len(bars) == 0 {
 		return InvalidationVerdict{}, false
 	}
@@ -89,6 +97,119 @@ func (at *AutoTrader) scenarioInvalidationAt(plan *kernel.ActivePlan, scenarioID
 		}, true
 	}
 	return InvalidationVerdict{}, false // scenario not in this plan
+}
+
+// ── W5 D13 — machine (Picture) invalidation ─────────────────────────────────
+
+// machineScenarioIn finds a machine scenario of the plan by id.
+func machineScenarioIn(plan *kernel.ActivePlan, id string) (kernel.PlanScenario, bool) {
+	if plan == nil {
+		return kernel.PlanScenario{}, false
+	}
+	for _, s := range plan.Doc.Scenarios {
+		if s.ID == id && kernel.IsMachineScenario(s) {
+			return s, true
+		}
+	}
+	return kernel.PlanScenario{}, false
+}
+
+// tapeClock is the instant the resolver judges a machine scenario at: the
+// caller's clock, but never later than the end of the newest bar it read —
+// the verdict is about the tape it holds. (The arm path's resolver is built on
+// the wall clock, entryGateForArm; the pass-clock machine gate judges the
+// deadline authoritatively before this leg is reached.)
+func tapeClock(bars []market.Kline, now time.Time) time.Time {
+	if len(bars) > 0 {
+		if end := time.UnixMilli(bars[len(bars)-1].CloseTime + 1); end.Before(now) {
+			return end
+		}
+	}
+	return now
+}
+
+// machineScenarioInvalidation is D13, pure: a Picture scenario is INVALID when
+// its eligibility deadline has passed at asOf, or when the newest COMPLETED 5m
+// close is back inside the broken 4H body — long: close < BodyTop; short:
+// close > BodyBot (the frozen evidence's body). The tape's 5m buckets are the
+// planner's own aggregation (kernel.AggregateToMinutes). When the tape holds no
+// completed 5m close at or after the confirming H1 close, the newest completed
+// 5m close known is that H1 close itself (the last 5m close of its hour, from
+// the evidence). ok=false: no verdict (no evidence, no body, no direction).
+func machineScenarioInvalidation(sc kernel.PlanScenario, bars []market.Kline, asOf time.Time) (InvalidationVerdict, bool) {
+	if sc.Machine == nil {
+		return InvalidationVerdict{}, false
+	}
+	asOfMs := asOf.UnixMilli()
+	if asOfMs > sc.Machine.EligibleUntilMs {
+		return InvalidationVerdict{
+			Invalidated: true,
+			AtCT:        kernel.FormatCT(time.UnixMilli(sc.Machine.EligibleUntilMs)),
+			Reason:      "picture eligibility window closed (" + sc.Machine.Rule + ")",
+		}, true
+	}
+	ev, err := pictureScenarioEvidence(sc)
+	if err != nil {
+		return InvalidationVerdict{}, false
+	}
+	closePx, closeMs, ok := newestCompleted5mClose(bars, asOfMs, ev.H1CloseMs)
+	if !ok {
+		closePx, closeMs = ev.H1NewClose, ev.H1CloseMs
+	}
+	if closePx <= 0 {
+		return InvalidationVerdict{}, false
+	}
+	anchor := 0.0
+	switch strings.ToLower(strings.TrimSpace(sc.Direction)) {
+	case "long":
+		if ev.BodyTop <= 0 {
+			return InvalidationVerdict{}, false
+		}
+		if closePx < ev.BodyTop {
+			anchor = ev.BodyTop
+		}
+	case "short":
+		if ev.BodyBot <= 0 {
+			return InvalidationVerdict{}, false
+		}
+		if closePx > ev.BodyBot {
+			anchor = ev.BodyBot
+		}
+	default:
+		return InvalidationVerdict{}, false
+	}
+	if anchor == 0 {
+		return InvalidationVerdict{}, true // a verdict, and it is "alive"
+	}
+	atCT := ""
+	if closeMs > 0 {
+		atCT = kernel.FormatCT(time.UnixMilli(closeMs))
+	}
+	return InvalidationVerdict{
+		Invalidated: true,
+		AtCT:        atCT,
+		Anchor:      anchor,
+		Reason: fmt.Sprintf("the newest completed 5m close %.2f is back inside the broken 4H body %.2f–%.2f (%s)",
+			closePx, ev.BodyBot, ev.BodyTop, sc.Machine.Rule),
+	}, true
+}
+
+// newestCompleted5mClose is the newest 5m bucket that has CLOSED at asOfMs
+// (bucket end ≤ asOf) and ends at or after the confirming H1 close; ok=false
+// when the tape holds none (the caller falls back to the evidence).
+func newestCompleted5mClose(bars []market.Kline, asOfMs, h1CloseMs int64) (float64, int64, bool) {
+	b5 := kernel.AggregateToMinutes(bars, 5)
+	for i := len(b5) - 1; i >= 0; i-- {
+		b := b5[i]
+		if b.CloseTime >= asOfMs {
+			continue // still forming at asOf
+		}
+		if h1CloseMs > 0 && b.CloseTime+1 < h1CloseMs {
+			return 0, 0, false // older than the break: nothing after it on the tape
+		}
+		return b.Close, b.CloseTime + 1, true
+	}
+	return 0, 0, false
 }
 
 // ArmGateBootLine (F5) — what the arm gate now reads and renders. Every field

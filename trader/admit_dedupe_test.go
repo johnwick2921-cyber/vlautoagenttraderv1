@@ -58,7 +58,7 @@ func TestEntryGateDedupeClassIsTheLeg(t *testing.T) {
 		{"entry_gate: R:R 1.35 below floor 2.00 at execution price 29601.0000 (SL 29590 TP 29616)", "entry_gate:rr"},
 		{"entry_gate: stop 29590.00 too close (4.00 < 6.00 = 1.5×ATR5m)", "entry_gate:min_sl"},
 		{"entry_gate: refused: daily_force_flat — limit hit (new entries blocked on the picture path …)", "entry_gate:daily_force_flat"},
-		{"entry_gate: picture " + PictureStrictRefusal, "entry_gate:other"},
+		{"entry_gate: picture evidence missing (fail-closed)", "entry_gate:other"},
 	}
 	for _, c := range cases {
 		if got := admitDedupeClass("entry_gate", c.reason); got != c.want {

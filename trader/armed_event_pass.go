@@ -78,6 +78,10 @@ func (at *AutoTrader) startArmedEventLoop() {
 	if at == nil || at.exchange != "ninjatrader" {
 		return
 	}
+	// W5 D21 — THE RUN EPOCH starts with the run: a Picture scenario is
+	// recorded under it, and only this run may place it (a reload starts a
+	// new epoch, so a scenario recorded before it is never placed after it).
+	at.markPictureRunEpoch(time.Now())
 	l := &armedEventLoop{kick: make(chan struct{}, 1), stop: make(chan struct{}), done: make(chan struct{})}
 	if old := at.armedEvent.Swap(l); old != nil {
 		old.close()
@@ -86,13 +90,22 @@ func (at *AutoTrader) startArmedEventLoop() {
 }
 
 // stopArmedEventLoop stops it (Stop): no event pass starts after this returns.
+//
+// W5 D21 — Stop invalidates Picture's entry permission: the run epoch is
+// cleared FIRST (a pass still in flight then refuses a Picture row at its
+// send point — placeZoneRow's epoch check, and admitChain's running check),
+// the loop is closed, and then every non-terminal Picture row of this trader
+// is invalidated under armedPassMu: unplaced → terminal "trader stopped",
+// resting → cancel requested. Planner rows are untouched.
 func (at *AutoTrader) stopArmedEventLoop() {
 	if at == nil {
 		return
 	}
+	at.clearPictureRunEpoch()
 	if l := at.armedEvent.Swap(nil); l != nil {
 		l.close()
 	}
+	at.retirePictureRowsOnStop(time.Now())
 }
 
 func (at *AutoTrader) runArmedEventLoop(l *armedEventLoop) {

@@ -375,6 +375,13 @@ func (at *AutoTrader) noteZoneVerdictOnly(ledger *store.ArmedOrderStore, r store
 // stop path: once stamped, whether the frame reached NT8 is unknown), so the
 // caller closes the pass and cancels the plan's other arms.
 func (at *AutoTrader) placeZoneRow(p zonePass, r store.ArmedOrderDB, side string) bool {
+	// W5 D6/D21 — a machine-sourced row is judged FIRST on its eligibility
+	// deadline and its run epoch: never placed after the deadline, never placed
+	// by a run that did not record it — terminal, named, counted
+	// (picture_scenario_exec.go). A planner row (Source "") passes through.
+	if at.pictureRowRefusedAtPlacement(p, r) {
+		return false
+	}
 	lo, hi := floatOr0(r.ZoneLo), floatOr0(r.ZoneHi)
 	var barOpenMs int64
 	if len(p.bars) > 0 {
@@ -501,6 +508,10 @@ func (at *AutoTrader) zoneRestCap(nt *ntTrader.TCPTrader, ledger *store.ArmedOrd
 	if nt == nil || ledger == nil {
 		return
 	}
+	// W5 D6 — a Picture row's rest is bounded by ITS eligibility deadline, not
+	// by zone_rest_max_min: a resting Picture limit past the deadline gets its
+	// cancel requested here, beside the rest cap, and the rest cap skips it.
+	at.pictureDeadlineCancel(nt, ledger, rows, now)
 	maxMin, src := store.ResolveZoneRestMaxMin(at.dayPlanCfg())
 	if maxMin <= 0 {
 		return
@@ -508,7 +519,7 @@ func (at *AutoTrader) zoneRestCap(nt *ntTrader.TCPTrader, ledger *store.ArmedOrd
 	limit := time.Duration(maxMin) * time.Minute
 	for _, r := range rows {
 		if r.TraderID != at.id || r.Policy != kernel.EntryPolicyMarketInZone || r.PlacedAtMs == nil ||
-			strings.TrimSpace(r.SignalID) == "" {
+			strings.TrimSpace(r.SignalID) == "" || r.Source != "" {
 			continue
 		}
 		if store.IsTerminalArmState(r.State) {

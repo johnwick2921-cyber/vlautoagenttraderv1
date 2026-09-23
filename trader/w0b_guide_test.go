@@ -11,9 +11,9 @@ import (
 // the binary (L5) ───────────────────────────────────────────────────────────
 //
 // The one admission chain counts each gate under its own name on every entry
-// path; the panel must label every one. The guide must carry Picture's strict
-// refusal VERBATIM (the card and the 📷 line print the constant) and name the
-// CLI flag the withdraw is written with.
+// path; the panel must label every one. The guide must carry Picture's route
+// VERBATIM (W5: the card and the 📷 line print the constant — there is no
+// strict refusal any more) and name the CLI flag the withdraw is written with.
 func TestW0bGuideAndGateLabelsMatchTheBinary(t *testing.T) {
 	var src strings.Builder
 	for _, f := range []string{"entry_admission.go", "arm_admission.go", "reconcile_owned.go", "session_risk.go"} {
@@ -49,7 +49,7 @@ func TestW0bGuideAndGateLabelsMatchTheBinary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{PictureStrictRefusal, "--withdraw-entries", "arm_not_admitted", "reconcile_owned", "plan_gate="} {
+	for _, want := range []string{PictureRouteDayPlan, "--withdraw-entries", "arm_not_admitted", "reconcile_owned", "plan_gate="} {
 		if !strings.Contains(string(guide), want) {
 			t.Errorf("the guide (status.ts) does not carry %q", want)
 		}

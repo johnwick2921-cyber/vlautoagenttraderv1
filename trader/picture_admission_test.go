@@ -97,21 +97,24 @@ func TestPictureRRFloorFailsClosedWithoutAConfig(t *testing.T) {
 	}
 }
 
-// Q6 — under plan_mode=strict Picture is REFUSED, and the refusal is VISIBLE:
-// the evaluation says so and the 📷 boot line carries the same text.
-func TestPictureRefusedUnderStrictVisibly(t *testing.T) {
+// W5 (was Q6) — under plan_mode=strict Picture is NO LONGER refused: it enters
+// as a Day Plan scenario, so the pre-claim admission lets it through to the
+// hand-off seam, and the 📷 boot line READS the route and the plan mode —
+// never a "refused under strict" text.
+func TestPictureAdmittedUnderStrictAsADayPlanScenario(t *testing.T) {
 	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	env.at.config.StrategyConfig.DayPlan.PlanMode = "strict"
 	env.eval.freshest5mAt = env.now
 	res := env.eval.Evaluate("MNQ", env.now)
-	if len(env.submits) != 0 {
-		t.Fatalf("strict must refuse Picture, got %d submission(s)", len(env.submits))
+	if len(env.submits) != 1 {
+		t.Fatalf("strict must admit Picture to the hand-off (it is a Day Plan scenario since W5), got %d submission(s): %+v", len(env.submits), res)
 	}
-	if !strings.Contains(res.Reason, PictureStrictRefusal) {
-		t.Fatalf("the evaluation must SAY why: %+v", res)
+	line := env.at.pictureHtfBootLineAt(env.now)
+	if !strings.Contains(line, "plan_gate="+PictureRouteDayPlan+" · plan_mode=strict") {
+		t.Fatalf("the 📷 boot line must READ the route and the plan mode: %q", line)
 	}
-	if line := env.at.pictureHtfBootLineAt(env.now); !strings.Contains(line, PictureStrictRefusal) {
-		t.Fatalf("the 📷 boot line must carry the strict refusal: %q", line)
+	if strings.Contains(line, "refused under strict") {
+		t.Fatalf("the 📷 boot line must not claim a strict refusal any more: %q", line)
 	}
 }
 
@@ -239,18 +242,33 @@ func TestPictureClaimDoesNotLatchItsOwnSend(t *testing.T) {
 	}
 }
 
-// Q6 — the plan card's read: on an NT8 trader with Picture on, strict carries
-// the refusal text; advisory carries none.
+// W5 — the plan card's read: on an NT8 trader with Picture on, the ROUTE is
+// the Day Plan scenario route under every plan mode (strict included) and the
+// refusal carries only a real refusal — the running / Day Plan checks
+// admitChain applies to Picture's source, in their own words.
 func TestPicturePlanGateViewIsTheGatesRead(t *testing.T) {
 	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	env.at.exchange = "ninjatrader"
 	env.at.config.StrategyConfig.DayPlan.PictureHtf = &store.PictureHtfConfig{Enabled: true, MinRR: 2.5}
-	env.at.config.StrategyConfig.DayPlan.PlanMode = "strict"
-	if v := env.at.PicturePlanGateAt(env.now); !v.Enabled || v.Refusal != PictureStrictRefusal {
-		t.Fatalf("strict: the card must read enabled + the refusal, got %+v", v)
+	for _, mode := range []string{"strict", "advisory"} {
+		env.at.config.StrategyConfig.DayPlan.PlanMode = mode
+		if v := env.at.PicturePlanGateAt(env.now); !v.Enabled || v.Route != PictureRouteDayPlan || v.Refusal != "" {
+			t.Fatalf("%s: the card must read enabled + the route, no refusal, got %+v", mode, v)
+		}
 	}
-	env.at.config.StrategyConfig.DayPlan.PlanMode = "advisory"
-	if v := env.at.PicturePlanGateAt(env.now); !v.Enabled || v.Refusal != "" {
-		t.Fatalf("advisory: enabled, no refusal, got %+v", v)
+	env.at.config.StrategyConfig.DayPlan.PlanEnabled = false
+	if v := env.at.PicturePlanGateAt(env.now); v.Refusal != pictureRefusalDayPlanOff {
+		t.Fatalf("Day Plan off is a real refusal, got %+v", v)
+	}
+	env.at.config.StrategyConfig.DayPlan.PlanEnabled = true
+	env.at.isRunningMutex.Lock()
+	env.at.isRunning = false
+	env.at.isRunningMutex.Unlock()
+	if v := env.at.PicturePlanGateAt(env.now); v.Refusal != pictureRefusalStopped {
+		t.Fatalf("a stopped trader is a real refusal, got %+v", v)
+	}
+	env.at.config.StrategyConfig.DayPlan.PictureHtf = &store.PictureHtfConfig{Enabled: false}
+	if v := env.at.PicturePlanGateAt(env.now); v.Enabled || v.Route != "" || v.Refusal != "" {
+		t.Fatalf("Picture off: no route, no refusal, got %+v", v)
 	}
 }

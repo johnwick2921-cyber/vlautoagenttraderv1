@@ -125,6 +125,7 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		})
 	})
 	installActivePlanProvider(at, st)
+	at.logPictureBootLines() // W5 D15/D8 — 🖼 in-flight Picture rows + run epoch; 📷 one_setup WARN (once per trader, READ)
 	// P0-cleanup (2026-08-19) — soft-alert: guardrails that WOULD have tripped
 	// (master OFF) reach the owner's alert feed; they never block.
 	kernel.SoftGuardrailFunc = func(trader, what string) {

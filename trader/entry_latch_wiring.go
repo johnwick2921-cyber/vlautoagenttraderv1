@@ -160,7 +160,7 @@ func (at *AutoTrader) entryLatchLedgers() ([]string, error) {
 		if a, s, ok := at.traderScope(r.TraderID); ok && (!strings.EqualFold(a, acct) || instrumentRoot(s) != root) {
 			continue
 		}
-		ids = append(ids, fmt.Sprintf("armed#%d(%s %s)", r.ID, r.State, r.SignalID))
+		ids = append(ids, latchArmedHolder(r))
 	}
 	prows, err := at.store.PictureHtfRecoverableAll()
 	if err != nil {
@@ -176,8 +176,25 @@ func (at *AutoTrader) entryLatchLedgers() ([]string, error) {
 		if strings.TrimSpace(p.Symbol) != "" && instrumentRoot(p.Symbol) != root {
 			continue
 		}
-		ids = append(ids, fmt.Sprintf("picture:%s(%s)", p.OppKey, p.Stage))
+		ids = append(ids, latchPictureHolder(p))
 	}
 	sort.Strings(ids)
 	return ids, nil
+}
+
+// W5 D15 — THE LATCH NAMES ITS HOLDER. A refusal "ledger_open" used to list
+// "picture:<opp>(<stage>)" with no row id, so a reader could not find the row
+// that held the account. A Picture ledger row is now named "latched by picture
+// row #<id>" (the picture_htf_opportunities id the 🖼 boot line prints), and an
+// armed row a Picture scenario placed says so beside its own id. A planner
+// row reads exactly as before.
+func latchPictureHolder(p store.PictureHtfOpportunityDB) string {
+	return fmt.Sprintf("latched by picture row #%d picture:%s(%s)", p.ID, p.OppKey, p.Stage)
+}
+
+func latchArmedHolder(r store.ArmedOrderDB) string {
+	if r.Source != "" {
+		return fmt.Sprintf("armed#%d(%s %s) latched by %s scenario %s", r.ID, r.State, r.SignalID, r.Source, r.Scenario)
+	}
+	return fmt.Sprintf("armed#%d(%s %s)", r.ID, r.State, r.SignalID)
 }
