@@ -124,6 +124,37 @@ describe('EffectiveChip', () => {
       'eff strict · session override · session:NY'
     )
   })
+
+  // W1 (CTO R2): an explicit 0 the Studio never confirmed refuses its trader at
+  // load — its chip must not wear the owner-green of a confirmed setting.
+  it('warns on an UNCONFIRMED explicit 0 and stays green when a Studio save confirmed it', () => {
+    const { rerender } = render(
+      <EffectiveChip
+        knob={knob({
+          stored: { present: true, value: 0 },
+          effective: 0,
+          origin: 'saved value — explicit 0 UNCONFIRMED — re-save in Studio',
+        })}
+      />
+    )
+    const chip = screen.getByTestId('effective-chip')
+    expect(chip).toHaveTextContent('explicit 0 UNCONFIRMED — re-save in Studio')
+    expect(chip.className).toContain('text-amber-400')
+    expect(chip.className).not.toContain('text-emerald-400')
+    rerender(
+      <EffectiveChip
+        knob={knob({
+          stored: { present: true, value: 0 },
+          effective: 0,
+          origin:
+            'saved value — OFF — confirmed by Studio save 2026-09-23 10:04 CT',
+        })}
+      />
+    )
+    expect(screen.getByTestId('effective-chip').className).toContain(
+      'text-emerald-400'
+    )
+  })
 })
 
 describe('formatEffective', () => {

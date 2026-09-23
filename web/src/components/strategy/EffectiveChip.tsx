@@ -40,6 +40,8 @@ function tone(knob: EffectiveKnob): string {
   if (isNA(knob.effective) || knob.effective === REDACTED)
     return 'text-slate-500'
   if (knob.origin.includes('not used')) return 'text-amber-400'
+  // W1 (CTO R2): an explicit 0 no Studio save confirmed refuses its trader.
+  if (knob.origin.includes('UNCONFIRMED')) return 'text-amber-400'
   if (
     knob.origin.startsWith('saved value') ||
     knob.origin.startsWith('session override')
