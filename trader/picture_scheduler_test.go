@@ -3,6 +3,8 @@ package trader
 import (
 	"encoding/json"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -140,12 +142,15 @@ func TestMachineOnlyChainStillFiresTheAIReadAndP1RidesIntoV2(t *testing.T) {
 func TestReappendRespectsTheLedgerAndTheWindow(t *testing.T) {
 	cases := map[string]struct {
 		state    string
+		unplaced bool // the row never reached the broker (no BeginPlacement)
 		clockOff time.Duration
 		carried  bool
 	}{
-		"working (placed) → carried":  {state: store.StateWorking, clockOff: 2 * time.Second, carried: true},
-		"filled → not carried":        {state: store.StateFilled, clockOff: 2 * time.Second, carried: false},
-		"window closed → not carried": {state: "", clockOff: time.Minute, carried: false},
+		"working (placed) → carried": {state: store.StateWorking, clockOff: 2 * time.Second, carried: true},
+		"filled → not carried":       {state: store.StateFilled, clockOff: 2 * time.Second, carried: false},
+		// F3 (CTO pre-review): v1's P1 UNPLACED and AI v2 active without it.
+		"unplaced, window closed → not carried":       {state: "", clockOff: time.Minute, carried: false},
+		"unplaced, ledger row terminal → not carried": {state: store.StateCancelled, unplaced: true, clockOff: 2 * time.Second, carried: false},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -164,8 +169,10 @@ func TestReappendRespectsTheLedgerAndTheWindow(t *testing.T) {
 					t.Fatal(err)
 				}
 				armID = arm.ID
-				if err := st.ArmedOrders().BeginPlacementEval(armID, "sig-p1", 21530, now.UnixMilli()-60_000, now.UnixMilli()); err != nil {
-					t.Fatal(err)
+				if !c.unplaced {
+					if err := st.ArmedOrders().BeginPlacementEval(armID, "sig-p1", 21530, now.UnixMilli()-60_000, now.UnixMilli()); err != nil {
+						t.Fatal(err)
+					}
 				}
 				if err := st.ArmedOrders().SetState(armID, c.state, "fixture"); err != nil {
 					t.Fatal(err)
@@ -241,5 +248,150 @@ func TestExecutorPlanDeadReasonTreatsAMachinePlanAsNoAIPlan(t *testing.T) {
 	got := at.executorPlanDeadReason()
 	if !strings.Contains(got, "no AI day plan for this session yet") {
 		t.Fatalf("a machine plan must refuse AI decision entries like no plan does, got %q", got)
+	}
+}
+
+// countingPlanClient is the planner's model: it counts calls and holds each
+// one until released, so a test can keep ONE read in flight.
+type countingPlanClient struct {
+	planClient
+	calls   atomic.Int32
+	release chan struct{}
+}
+
+func (c *countingPlanClient) CallWithMessages(_, user string) (string, error) {
+	c.calls.Add(1)
+	<-c.release
+	return mapCompliantPlanJSON(user), nil
+}
+
+// F2 (CTO pre-review) — while the newest row is a machine plan the scheduler
+// fires `go at.runPlannerRead` on EVERY tick, exactly like the no-plan branch.
+// The in-flight guard that makes that ONE planner call is claimPlannerRead
+// (runPlannerReadWithTriggerClaimedCtx, keyed MakePlanIDForTrader(trader,
+// date, session), process-wide plannerReadInFlight): a second tick during the
+// read is refused before any client call.
+func TestTwoTicksOnAMachineOnlyChainMakeOnePlannerCall(t *testing.T) {
+	at, st := handOffTrader(t)
+	schedulerTape(t)
+	now := handOffNow()
+	pinTraderNow(t, now.Add(2*time.Second))
+	machinePlanV1(t, at, st, now)
+	c := &countingPlanClient{release: make(chan struct{})}
+	var once sync.Once
+	release := func() { once.Do(func() { close(c.release) }) }
+	at.mcpClient = c
+	defer drainReReads(t)
+	defer release()
+
+	if fired := at.maybeRunSessionReadsAt(now); len(fired) != 1 {
+		t.Fatalf("tick 1 fires the read on a machine-only chain, got %+v", fired)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for c.calls.Load() < 1 && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if c.calls.Load() != 1 {
+		t.Fatalf("fixture: the first read must be in flight at the model, calls=%d", c.calls.Load())
+	}
+	key := store.MakePlanIDForTrader(at.id, handOffDate, "NY")
+	if _, held := plannerReadInFlight.Load(key); !held {
+		t.Fatalf("the in-flight guard must hold %q while the read runs", key)
+	}
+	// Tick 2 during the read: the chain is still machine-only, so the
+	// scheduler fires again — and the guard makes it no call.
+	if fired := at.maybeRunSessionReadsAt(now.Add(time.Second)); len(fired) != 1 {
+		t.Fatalf("tick 2 still fires (the chain is still machine-only), got %+v", fired)
+	}
+	for end := time.Now().Add(time.Second); time.Now().Before(end); time.Sleep(10 * time.Millisecond) {
+		if n := c.calls.Load(); n != 1 {
+			t.Fatalf("two ticks during one in-flight read made %d planner calls — exactly one expected", n)
+		}
+	}
+	release()
+	if v2 := waitVersion(t, st, 2); v2 == nil || store.IsMachinePlan(v2) {
+		t.Fatalf("the one read lands v2: %+v", v2)
+	}
+	drainReReads(t)
+	if n := c.calls.Load(); n != 1 {
+		t.Fatalf("exactly one planner call in total, got %d", n)
+	}
+	if latest, _ := st.Plan().GetLatestPlanForTraderSession(handOffDate, "NY", at.id); latest.Version != 2 {
+		t.Fatalf("one read → one version, got v%d", latest.Version)
+	}
+}
+
+// F6 (CTO pre-review) — the readers that act on the plan's bias or levels are
+// INERT on a machine plan (bias neutral, levels []), each driven with the
+// machine plan the provider serves; the same readers act on an AI plan
+// (the control), so "inert" is the machine doc's doing, not a dead reader.
+func TestMachinePlanIsInertToTheBiasAndLevelReaders(t *testing.T) {
+	at, st := handOffTrader(t)
+	now := handOffNow()
+	pinTraderNow(t, now)
+	_, p1 := machinePlanV1(t, at, st, now)
+	installActivePlanProviderAt(at, st, func() time.Time { return now })
+	t.Cleanup(func() { kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{}) })
+	plan := kernel.ActivePlanFor(at.id, at.futuresSymbol())
+	if plan == nil || plan.Doc.Bias.Direction != "neutral" || len(plan.Doc.Levels) != 0 {
+		t.Fatalf("fixture: the provider serves the machine plan (neutral, no levels), got %+v", plan)
+	}
+	after := time.Now().Add(time.Minute).UnixMilli() // born after the plan row
+	counterEvents := func() *kernel.Context {
+		return &kernel.Context{Structure: map[string]kernel.StructureState{"15m": {LastEvents: []kernel.StructureEvent{
+			{Type: "CHoCH", Dir: "down", Price: 21500, TimeMs: after}, {Type: "MSS", Dir: "up", Price: 21540, TimeMs: after},
+		}}}}
+	}
+	matched := func() int {
+		counts, err := st.MatchedRandom().CountsByType()
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := 0
+		for _, c := range counts {
+			n += c.Touches
+		}
+		return n
+	}
+	closed := &store.TraderPosition{EntryPrice: 15600, EntryTime: now.UnixMilli()}
+
+	t.Run("transition stand-down", func(t *testing.T) {
+		ctx := counterEvents()
+		at.observeTransitionStanddownAt(now, ctx)
+		if ctx.TransitionActive || at.transition.Active {
+			t.Fatalf("a neutral machine plan never opens a transition stand-down: %+v", at.transition)
+		}
+	})
+	t.Run("HTF veto", func(t *testing.T) {
+		// The machine plan's bias vetoes nothing; the veto reads only the
+		// structure, exactly as for any scenario (gate parity, D12).
+		if v := at.armGateVerdict(p1, biasDirectionFor(plan.Doc.Bias.Direction), nil, 6.5, "", at.config.StrategyConfig, "NY"); v != "" {
+			t.Fatalf("P1 under the machine plan (advisory, no HTF trend) must pass the arm gates, got %q", v)
+		}
+		snap := map[string]kernel.StructureState{"1h": {Trend: "TRENDING_DOWN"}, "4h": {Trend: "TRENDING_DOWN"}}
+		if v := at.armGateVerdict(p1, biasDirectionFor(plan.Doc.Bias.Direction), snap, 6.5, "", at.config.StrategyConfig, "NY"); !strings.HasPrefix(v, "HTF veto") {
+			t.Fatalf("the HTF veto still reads the structure for P1 (parity), got %q", v)
+		}
+	})
+	t.Run("matched-random", func(t *testing.T) {
+		at.recordMatchedRandomForClose(closed, kernel.Excursion{MFE: 10, MAE: 2})
+		if n := matched(); n != 0 {
+			t.Fatalf("a machine plan (no levels) records no matched-random touch, got %d", n)
+		}
+	})
+
+	// CONTROL: an AI plan (bias long, levels) supersedes it — the same readers act.
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: store.MakePlanIDForTrader(at.id, handOffDate, "NY"), StrategyID: at.id,
+		TradeDate: handOffDate, Session: "NY", TriggerReason: "NY_scheduled_read", Lifecycle: "active", Doc: validTraderPlanJSON}); err != nil {
+		t.Fatal(err)
+	}
+	ctx := counterEvents()
+	at.observeTransitionStanddownAt(now, ctx)
+	if !ctx.TransitionActive {
+		t.Fatal("control: the same counter-trend events open a stand-down on a long AI plan — the reader is live")
+	}
+	at.recordMatchedRandomForClose(closed, kernel.Excursion{MFE: 10, MAE: 2})
+	if n := matched(); n != 1 {
+		t.Fatalf("control: an AI plan with levels records the touch, got %d", n)
 	}
 }
