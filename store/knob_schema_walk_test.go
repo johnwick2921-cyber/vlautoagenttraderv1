@@ -131,6 +131,26 @@ func TestEveryEnumeratedPathIsInTheMarshalledBytes(t *testing.T) {
 	}
 }
 
+// EVERY KEY THE MARSHALLER WRITES IS ENUMERATED — the other direction. The
+// strategy types are listed HERE, not read from schemaStrategyTypes, so an
+// enumeration that forgets a MarshalJSON branch (grid_trading writes
+// grid_config and no ai_config) fails instead of agreeing with itself.
+func TestEveryMarshalledKeyIsEnumerated(t *testing.T) {
+	set := enumeratedSet(t)
+	for _, st := range []string{"", "ai_trading", "grid_trading"} {
+		var outside []string
+		for _, k := range marshalKeyPaths(t, populatedStrategyConfig(st)) {
+			if !set[k] {
+				outside = append(outside, k)
+			}
+		}
+		if len(outside) > 0 {
+			t.Errorf("strategy_type %q: MarshalJSON writes %d key(s) the walk does not enumerate:\n  %s",
+				st, len(outside), strings.Join(outside, "\n  "))
+		}
+	}
+}
+
 // dashFieldAllowNotPersisted lists json:"-" StrategyConfig fields that are
 // deliberately runtime-only (MarshalJSON never writes them). Empty today: all
 // five compatibility fields persist under ai_config. A new "-" field must
