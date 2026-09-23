@@ -64,9 +64,24 @@ func (f w2Fixture) idAt(t *testing.T, price float64) string {
 	return ""
 }
 
+// w2GrammarInvalid maps each fixture scenario's stored `invalid` prose to the
+// W2 A1 grammar form ("5m close above|below <price>" / "2x5m …", one plain
+// number) with the SAME side, count and price. The stored rows predate A1;
+// without this every attempt is refused by the grammar check BEFORE A3/A4
+// runs, and the test would no longer discriminate A3/A4.
+var w2GrammarInvalid = map[string]string{
+	"1m close below 31009.75 breaks the acceptance and invalidates the long.":         "5m close below 31009.75",
+	"Any 5m close above 31066.32 invalidates the fade; stand aside for the breakout.": "5m close above 31066.32",
+	"A 2x5m close below 30983.25 means the pool is not reclaimed; stand aside.":       "2x5m close below 30983.25",
+	"A 5m close back above 31050.00 invalidates the hold; abandon the continuation.":  "5m close above 31050",
+}
+
 // scenario returns a deep copy of an authored scenario with the machine-only
 // stamps removed (economics.version is parser-stamped, arm_disabled_reason is
-// written by the write site — neither is model output).
+// written by the write site — neither is model output), its `invalid` in the
+// A1 grammar, and — for a time_hold whose prose states minutes — the A5
+// confirm.hold_min equal to them (row 452 S2: "3 minutes" → hold_min 3). The
+// identity and obstacle facts A3/A4 judge are untouched.
 func (f w2Fixture) scenario(t *testing.T, id string) map[string]any {
 	t.Helper()
 	for _, s := range f.Scenarios {
@@ -81,6 +96,20 @@ func (f w2Fixture) scenario(t *testing.T, id string) map[string]any {
 		}
 		if a, ok := c["arm"].(map[string]any); ok {
 			delete(a, "arm_disabled_reason")
+		}
+		inv, _ := c["invalid"].(string)
+		g, ok := w2GrammarInvalid[inv]
+		if !ok {
+			t.Fatalf("fixture %s invalid %q has no A1 grammar mapping", id, inv)
+		}
+		c["invalid"] = g
+		trig, _ := c["trigger"].(string)
+		for _, k := range []string{"confirm", "confirm2"} {
+			if cf, ok := c[k].(map[string]any); ok && cf["rule"] == "time_hold" {
+				if mins := kernel.ProseHoldMinutes(trig + " " + g); len(mins) > 0 {
+					cf["hold_min"] = mins[0]
+				}
+			}
 		}
 		return c
 	}
