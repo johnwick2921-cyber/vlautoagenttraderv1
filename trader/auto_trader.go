@@ -835,6 +835,11 @@ func NewAutoTrader(config AutoTraderConfig, st *store.Store, userID string) (*Au
 		// THE LEDGER'S EAR FOR A REFUSAL (2026-09-07). Every entry-reject path
 		// in the NT8 trader calls this with the BROKER'S reason, verbatim.
 		nt.SetRejectSink(at.recordBrokerRejection)
+		// W-ONE-BUTTON M2 site 4 — the installation-wide maintenance permit,
+		// taken by the four ENTRY sends only (never protection/exits), and the
+		// queue's hold check (gap U2). Wired at construction, before Run.
+		nt.SetEntryPermit(MaintenanceEntryPermit)
+		nt.SetEntryHoldCheck(maintenanceQueueHeld)
 	}
 	return at, nil
 }

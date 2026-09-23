@@ -82,3 +82,10 @@ func MaintenanceDrained() bool { return maintenanceBarrier.Drained() }
 func writeRaw(dir, body string) error {
 	return os.WriteFile(filepath.Join(dir, "updater", "hold.json"), []byte(body), 0o600)
 }
+
+// maintenanceQueueHeld is the predicate the NT8 TCP server's queue consults
+// before writing each queued entry (gap U2): MaintenanceHeld's boolean.
+func maintenanceQueueHeld() bool {
+	_, held := MaintenanceHeld()
+	return held
+}

@@ -11,6 +11,7 @@
 package ninjatrader
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -133,6 +134,62 @@ type TCPTrader struct {
 	// Used to notify the AutoTrader when the first account_balance frame arrives.
 	// Set by transport.go after creating the trader.
 	parentAutoTrader interface{} // *AutoTrader (avoid circular import)
+
+	// entryPermit (W-ONE-BUTTON M2 site 4) — the installation-wide maintenance
+	// permit, taken by the FOUR entry functions only, after the SIM rail and
+	// before the B3 guard, and held across the wire write. nil = allow (a
+	// standalone TCPTrader, every pre-existing fixture); the AutoTrader wires
+	// it at construction (NewAutoTrader) — pinned by a wiring test.
+	entryPermit func() (func(), bool)
+}
+
+// ErrMaintenanceHold marks an entry refused because the installation is under
+// maintenance (W-ONE-BUTTON). Callers classify it with errors.Is — like
+// ntwire.ErrAddonBuildTooOld, it is a policy refusal, not a broker failure.
+var ErrMaintenanceHold = errors.New("maintenance hold: new entries are refused while the installation is being updated")
+
+// IsMaintenanceHold reports whether err is a maintenance-hold refusal: the
+// permit refused the entry (ErrMaintenanceHold) or the queue dropped it
+// because the hold landed before the flush (ntwire.ErrEntryHeld). Either way
+// the entry did NOT reach NT8.
+func IsMaintenanceHold(err error) bool {
+	return errors.Is(err, ErrMaintenanceHold) || errors.Is(err, ntwire.ErrEntryHeld)
+}
+
+// SetEntryHoldCheck forwards the maintenance predicate to this trader's TCP
+// server, whose queue drops held entries on flush (gap U2).
+func (t *TCPTrader) SetEntryHoldCheck(fn func() bool) {
+	if t.server != nil {
+		t.server.SetEntryHoldCheck(fn)
+	}
+}
+
+// SetEntryPermit installs the maintenance permit. Only entry sends take it:
+// PlaceProtectiveStop, CancelOrder, ModifyBracket, MoveStopToBreakeven and the
+// close paths never do (CTO correction C1).
+func (t *TCPTrader) SetEntryPermit(fn func() (func(), bool)) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.entryPermit = fn
+}
+
+// acquireEntryPermit returns the release to defer across the send, or an
+// ErrMaintenanceHold refusal. Unwired = allow.
+func (t *TCPTrader) acquireEntryPermit(what string) (func(), error) {
+	t.mu.Lock()
+	fn := t.entryPermit
+	t.mu.Unlock()
+	if fn == nil {
+		return func() {}, nil
+	}
+	release, ok := fn()
+	if !ok {
+		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s: %w", what, ErrMaintenanceHold)
+	}
+	if release == nil {
+		release = func() {}
+	}
+	return release, nil
 }
 
 // Compile-time interface guard (ADR-007 pattern — mirrors CSV Trader).
@@ -373,6 +430,14 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	if !t.isAccountTradeable(tradeAcct) {
 		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
 	}
+	// W-ONE-BUTTON M2 site 4 — maintenance permit, before B3 (a refusal must
+	// not consume the dedupe slot) and before any pending/lastEntrySignalID
+	// write; held until SendSignal returns.
+	releasePermit, err := t.acquireEntryPermit(side + " entry on " + symbol)
+	if err != nil {
+		return nil, err
+	}
+	defer releasePermit()
 
 	// B3 — dupe guard + rate limiter at the order-submission chokepoint: a
 	// replayed / double-fired entry (same account|side|symbol|qty within a bar) is
@@ -483,6 +548,13 @@ func (t *TCPTrader) MarketEntryWithProtection(side string, quantity float64, sl,
 	if !t.isAccountTradeable(tradeAcct) {
 		return "", fmt.Errorf("ninjatrader/tcp: refusing picture %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
 	}
+	// W-ONE-BUTTON M2 site 4 — maintenance permit, before B3 and before
+	// beforeSend (the picture ledger stamp); held across SendSignal.
+	releasePermit, err := t.acquireEntryPermit("picture " + side + " entry on " + t.symbol)
+	if err != nil {
+		return "", err
+	}
+	defer releasePermit()
 	if t.guard != nil {
 		key := fmt.Sprintf("picture|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), t.symbol, quantity)
 		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
@@ -544,6 +616,13 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 	if !t.isAccountTradeable(tradeAcct) {
 		return "", fmt.Errorf("ninjatrader/tcp: refusing armed %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
 	}
+	// W-ONE-BUTTON M2 site 4 — maintenance permit, before B3 and before
+	// beforeSend (ledger.BeginPlacement); held across SendSignal.
+	releasePermit, err := t.acquireEntryPermit("armed " + side + " limit entry on " + symbol)
+	if err != nil {
+		return "", err
+	}
+	defer releasePermit()
 	if t.guard != nil {
 		key := fmt.Sprintf("armed|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
 		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
@@ -621,6 +700,13 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 	if !t.isAccountTradeable(tradeAcct) {
 		return "", fmt.Errorf("ninjatrader/tcp: refusing stop-entry %s — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
 	}
+	// W-ONE-BUTTON M2 site 4 — maintenance permit, before B3 and before
+	// beforeSend; held across SendSignal.
+	releasePermit, err := t.acquireEntryPermit("stop-entry " + side + " on " + symbol)
+	if err != nil {
+		return "", err
+	}
+	defer releasePermit()
 	if t.guard != nil {
 		key := fmt.Sprintf("stopentry|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
 		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
