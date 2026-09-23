@@ -194,6 +194,40 @@ func pictureScenarioGeometry(zl zoneLeg, side string, leg kernel.PlanArmLeg, ev 
 	return ""
 }
 
+// pictureDirectionRule is the direction leg's bias for a machine scenario
+// (CTO ruling 1790194913337): on a MACHINE plan the scenario is judged on its
+// own direction — the plan's only direction is the rule's, and a machine
+// plan's "neutral" means no AI opinion, not "refuse everything"; on an AI plan
+// the AI's bias governs, exactly as for a planner scenario. Returns the bias
+// to judge with and the rule's name, which a refusal carries and — under
+// plan_mode=direction — one INFO line per change states.
+func (at *AutoTrader) pictureDirectionRule(plan *kernel.ActivePlan, sc kernel.PlanScenario, machinePlan bool, planBias string) (string, string) {
+	side := strings.ToLower(strings.TrimSpace(sc.Direction))
+	bias, rule := planBias, "direction: plan bias "+planBias
+	if planBias == "" {
+		rule = "direction: plan bias none"
+	}
+	if machinePlan {
+		bias, rule = side, "direction: machine plan — judged on the scenario's own direction ("+side+")"
+	}
+	if at.planModeFor(plan.Session) == "direction" {
+		key := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":direction_rule"
+		if armRefusalChanged(&at.armRefusalLast, key, rule) {
+			at.logInfof("🧭 %s %s %s (plan_mode=direction)", plan.Session, sc.ID, rule)
+		}
+	}
+	return bias, rule
+}
+
+// pictureDirectionVerdict names the rule that judged a direction refusal of a
+// machine scenario ("" rule = a planner scenario: the verdict is untouched).
+func pictureDirectionVerdict(rule, verdict string) string {
+	if rule == "" || verdict == "" || !strings.Contains(verdict, "against plan bias") {
+		return verdict
+	}
+	return rule + " — " + verdict
+}
+
 // stampPictureSource writes the machine source onto an authored row (a
 // planner scenario writes nothing — every W5 column stays empty / NULL).
 func stampPictureSource(row *store.ArmedOrderDB, sc kernel.PlanScenario) {
@@ -293,7 +327,11 @@ func (at *AutoTrader) pictureRowRefusedAtPlacement(p zonePass, r store.ArmedOrde
 		if r.SourceRunEpoch != nil {
 			rec = strconv.FormatInt(*r.SourceRunEpoch, 10)
 		}
-		reason = fmt.Sprintf("recorded by a previous run (epoch %s, live %s) — not placed", rec, pictureEpochText(live, liveOK))
+		who := "a previous run"
+		if !liveOK {
+			who = "a run that is no longer live" // Stop landed while this pass was in flight
+		}
+		reason = fmt.Sprintf("recorded by %s (epoch %s, live %s) — not placed", who, rec, pictureEpochText(live, liveOK))
 		event = "previous_run"
 	default:
 		return false
@@ -327,7 +365,7 @@ func (at *AutoTrader) pictureDeadlineCancel(nt *ntTrader.TCPTrader, ledger *stor
 		if r.EligibleUntilMs != nil && now.UnixMilli() <= *r.EligibleUntilMs {
 			continue
 		}
-		at.requestPictureCancel(nt, ledger, r, pictureWindowClosedCancel, "deadline_cancel", now)
+		at.requestPictureCancel(nt, ledger, r, pictureWindowClosedCancel, "deadline_cancel", now, false)
 	}
 }
 
@@ -336,30 +374,49 @@ func (at *AutoTrader) pictureDeadlineCancel(nt *ntTrader.TCPTrader, ledger *stor
 // never cancelled), then the wire, then cancel_pending with the reason. No
 // broker link → cancel_pending all the same (held, never promoted — the
 // cancelOtherArmsInPlan rule).
-func (at *AutoTrader) requestPictureCancel(nt *ntTrader.TCPTrader, ledger *store.ArmedOrderStore, r store.ArmedOrderDB, reason, event string, now time.Time) bool {
+//
+// holdOnDarkBook (Stop only — CTO pre-review F4): after Stop no pass runs, so
+// a cancel that cannot be adjudicated would leave a live limit at NT8 with a
+// ledger row still reading "working". With the book dark (none) or STALE
+// (older than snapshotMaxAge — cancelSafetyFor itself would adjudicate on the
+// stale snapshot) the row is moved to cancel_pending in the ledger — held,
+// never promoted — and NO wire cancel is sent blind (a blind cancel by signal id can take a filled entry's
+// protective stop with it). The settlement pass re-requests it through the
+// same filled-arm guard once a book exists (confirmPendingCancels →
+// cancelSignalIfSafe), and a restart's class-33 sweep does the same. A
+// refusal WITH a fresh book (the entry filled: its children are the
+// protection) is never overridden.
+func (at *AutoTrader) requestPictureCancel(nt *ntTrader.TCPTrader, ledger *store.ArmedOrderStore, r store.ArmedOrderDB, reason, event string, now time.Time, holdOnDarkBook bool) bool {
 	if nt != nil {
-		if v := at.cancelSafetyFor(r, now); !v.Allow {
+		dark, bookAge := false, time.Duration(0)
+		if holdOnDarkBook {
+			_, haveBook, age := at.liveBook(now)
+			dark, bookAge = !haveBook || age > snapshotMaxAge(), age
+		}
+		if dark {
+			at.logWarnf("🛟 picture cancel HELD (%s) row #%d %s leg %d signal=%s — no fresh broker book (age %s, bound %s): ledger cancel_pending (held, never promoted), NO wire cancel sent blind; the settlement pass re-requests it through the filled-arm guard once a fresh book exists, a restart's sweep likewise",
+				reason, r.ID, r.Scenario, r.LegIndex+1, shortID(r.SignalID), bookAge.Round(time.Second), snapshotMaxAge())
+		} else if v := at.cancelSafetyFor(r, now); !v.Allow {
 			if at.admitLast.changed("picture-cancel|"+r.SignalID, v.Why) {
-				at.logWarnf("🛟 picture cancel REFUSED (%s) %s leg %d signal=%s — %s", reason, r.Scenario, r.LegIndex+1, shortID(r.SignalID), v.Why)
+				at.logWarnf("🛟 picture cancel REFUSED (%s) row #%d %s leg %d signal=%s — %s", reason, r.ID, r.Scenario, r.LegIndex+1, shortID(r.SignalID), v.Why)
 			}
 			return false
-		}
-		if cerr := nt.CancelOrder(r.SignalID); cerr != nil {
-			at.logWarnf("✕ picture cancel SEND failed (%s) %s leg %d signal=%s: %v", reason, r.Scenario, r.LegIndex+1, shortID(r.SignalID), cerr)
+		} else if cerr := nt.CancelOrder(r.SignalID); cerr != nil {
+			at.logWarnf("✕ picture cancel SEND failed (%s) row #%d %s leg %d signal=%s: %v", reason, r.ID, r.Scenario, r.LegIndex+1, shortID(r.SignalID), cerr)
 		}
 	} else {
-		at.logWarnf("✕ picture cancel UNSENDABLE (%s) %s leg %d — no broker link; row held cancel_pending, never promoted", reason, r.Scenario, r.LegIndex+1)
+		at.logWarnf("✕ picture cancel UNSENDABLE (%s) row #%d %s leg %d — no broker link; row held cancel_pending, never promoted", reason, r.ID, r.Scenario, r.LegIndex+1)
 	}
 	if err := ledger.RequestCancel(r.ID, reason, now.UnixMilli()); err != nil {
-		at.logWarnf("✕ picture cancel: ledger write failed for %s leg %d: %v", r.Scenario, r.LegIndex+1, err)
+		at.logWarnf("✕ picture cancel: ledger write failed for row #%d %s leg %d: %v", r.ID, r.Scenario, r.LegIndex+1, err)
 		return false
 	}
 	n := 0
 	if at.store != nil {
 		n, _ = store.IncSystemCounter(at.store, pictureClassSharedPrefix+event)
 	}
-	at.logWarnf("✕ picture cancel REQUESTED (%s): %s %s leg %d limit %.2f signal=%s — pending broker confirmation (%s%s recorded: %d)",
-		reason, r.Session, r.Scenario, r.LegIndex+1, r.EntryPx, shortID(r.SignalID), pictureClassSharedPrefix, event, n)
+	at.logWarnf("✕ picture cancel REQUESTED (%s): row #%d %s %s leg %d limit %.2f signal=%s — pending broker confirmation (%s%s recorded: %d)",
+		reason, r.ID, r.Session, r.Scenario, r.LegIndex+1, r.EntryPx, shortID(r.SignalID), pictureClassSharedPrefix, event, n)
 	return true
 }
 
@@ -367,8 +424,8 @@ func (at *AutoTrader) requestPictureCancel(nt *ntTrader.TCPTrader, ledger *store
 // every non-terminal Picture row of this trader — unplaced → terminal with
 // the reason; resting (a broker signal) → cancel requested. Planner rows are
 // never touched (L4). The caller holds armedPassMu (the pass does; the Stop
-// hook takes it).
-func (at *AutoTrader) invalidatePictureRows(reason, event string, now time.Time) (retired, requested int) {
+// hook takes it). holdOnDarkBook: see requestPictureCancel (Stop only).
+func (at *AutoTrader) invalidatePictureRows(reason, event string, now time.Time, holdOnDarkBook bool) (retired, requested int) {
 	if at == nil || at.store == nil || at.exchange != "ninjatrader" {
 		return 0, 0
 	}
@@ -392,7 +449,7 @@ func (at *AutoTrader) invalidatePictureRows(reason, event string, now time.Time)
 			}
 			continue
 		}
-		if strings.TrimSpace(r.SignalID) != "" && at.requestPictureCancel(nt, ledger, r, "picture: "+reason, event, now) {
+		if strings.TrimSpace(r.SignalID) != "" && at.requestPictureCancel(nt, ledger, r, "picture: "+reason, event, now, holdOnDarkBook) {
 			requested++
 		}
 	}
@@ -407,7 +464,7 @@ func (at *AutoTrader) pictureDayPlanOffSweep(now time.Time) {
 	if at == nil || at.store == nil || at.exchange != "ninjatrader" || at.dayPlanEnabled() {
 		return
 	}
-	at.invalidatePictureRows(pictureDayPlanOffReason, "day_plan_off", now)
+	at.invalidatePictureRows(pictureDayPlanOffReason, "day_plan_off", now, false) // the pass re-asks every cycle
 }
 
 // retirePictureRowsOnStop is the Stop hook (D21), called from
@@ -420,7 +477,7 @@ func (at *AutoTrader) retirePictureRowsOnStop(now time.Time) {
 	}
 	at.armedPassMu.Lock()
 	defer at.armedPassMu.Unlock()
-	if retired, requested := at.invalidatePictureRows(pictureStoppedReason, "stopped", now); retired+requested > 0 {
+	if retired, requested := at.invalidatePictureRows(pictureStoppedReason, "stopped", now, true); retired+requested > 0 {
 		at.logWarnf("⏹ picture: trader stopped — %d unplaced Picture row(s) retired, %d resting cancel(s) requested (W5 D21)", retired, requested)
 	}
 }

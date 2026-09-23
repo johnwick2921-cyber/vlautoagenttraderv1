@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"nofx/kernel"
+	"nofx/logger"
 	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
@@ -365,21 +367,56 @@ func TestPictureScenarioNeverPlacedAfterItsWindow(t *testing.T) {
 			t.Fatal("the closure is counted (row event + scenario refusal)")
 		}
 	})
-	t.Run("an orphan row reaches placement past its deadline", func(t *testing.T) {
+	// CTO pre-review F3: a v1 Picture row whose scenario is NOT in the active
+	// v2 (the re-append refused or skipped) is refused arm_not_admitted (G1)
+	// every pass — it never places under v2 — and ends terminal at its
+	// deadline, retired by placeZoneRow (supersede spares machine rows).
+	t.Run("a v1 row under an active v2 without its scenario", func(t *testing.T) {
 		g := picDefault
 		g.window = 5 * time.Second
 		r, epoch := newPicRig(t, "w5b-orphan", nil)
 		picPlan(r, picScenario("P1", "opp-orphan", r.now, epoch, g))
 		picPass(r, 0, 99.6)
-		picPlan(r) // a new version without P1: the row is an orphan (supersede spares it)
+		picPlan(r)                        // v2, active, WITHOUT P1
+		picPass(r, 2*time.Second, 100.25) // inside the zone AND inside the window
+		if sigs, _ := r.drain(); len(sigs) != 0 {
+			t.Fatalf("the v1 row must never place under a v2 that does not carry its scenario: %+v", sigs)
+		}
+		if row := r.row("P1"); row.State != store.StateArmed || !strings.HasPrefix(row.LastVerdict, "refused: arm_not_admitted") {
+			t.Fatalf("inside its window the v1 row is refused arm_not_admitted (G1), still armed: %+v", row)
+		}
 		picPass(r, 6*time.Second, 100.25)
 		if sigs, _ := r.drain(); len(sigs) != 0 {
 			t.Fatalf("placeZoneRow must never place a Picture row past its deadline: %+v", sigs)
 		}
 		if row := r.row("P1"); row.State != store.StateCancelled || row.StateReason != pictureWindowClosedNeverPlaced {
-			t.Fatalf("the orphan is retired at placement: %+v", row)
+			t.Fatalf("at the deadline the v1 row is retired at placement: %+v", row)
 		}
 	})
+}
+
+// CTO pre-review F3 (second half): a v2 that is NOT active (no_trade) makes
+// the provider report no active plan, and the "1.4" branch cancels the v1
+// Picture row at once — it carries the branch's reason, "no active plan".
+func TestPictureRowOnANoTradeVersionIsCancelledAtOnce(t *testing.T) {
+	r, epoch := newPicRig(t, "w5b-notrade", nil)
+	picPlan(r, picScenario("P1", "opp-notrade", r.now, epoch, picDefault))
+	picPass(r, 0, 99.6)
+	if row := r.row("P1"); row.State != store.StateArmed {
+		t.Fatalf("fixture: v1 row armed: %+v", row)
+	}
+	td, _ := kernel.PlanChainTradeDate(&kernel.SessionDef{Name: "TEST", WindowStartCT: "00:00", WindowEndCT: "23:59"}, r.now)
+	blob, _ := json.Marshal(zoneDoc())
+	if _, err := r.st.Plan().AppendPlan(&store.PlanDB{PlanID: r.pid, TradeDate: td, Session: "TEST", StrategyID: r.at.id, Lifecycle: "no_trade", Doc: string(blob), CreatedAt: r.now}); err != nil {
+		t.Fatal(err)
+	}
+	picPass(r, time.Second, 100.25)
+	if sigs, _ := r.drain(); len(sigs) != 0 {
+		t.Fatalf("nothing places under a no_trade version: %+v", sigs)
+	}
+	if row := r.row("P1"); row.State != store.StateCancelled || row.StateReason != "no active plan" {
+		t.Fatalf("the 1.4 branch cancels the v1 row at once with reason %q: %+v", "no active plan", row)
+	}
 }
 
 // A resting Picture limit past its deadline gets its cancel REQUESTED; the
@@ -560,9 +597,13 @@ func TestPictureScenarioAdmittedUnderStrict(t *testing.T) {
 }
 
 // D12 — the shared legs apply (a parity CORRECTION) and their refusals of a
-// Picture scenario are counted under picture_scenario:<class>.
+// Picture scenario are counted under picture_scenario:<class>. CTO ruling
+// 1790194913337: on an AI plan the AI bias governs — a long Picture scenario
+// against a short plan bias in direction mode is refused, and the refusal
+// NAMES the rule that judged it ("direction: plan bias short").
 func TestPictureScenarioFacesTheSharedLegs(t *testing.T) {
 	r, epoch := newPicRig(t, "w5b-shared", func(c *store.StrategyConfig) { c.DayPlan.PlanMode = "direction" })
+	warns := picWarns(t)
 	d := zoneDoc(picScenario("P1", "opp-shared", r.now, epoch, picDefault))
 	d.Bias.Direction = "short"
 	blob, _ := json.Marshal(d)
@@ -570,11 +611,59 @@ func TestPictureScenarioFacesTheSharedLegs(t *testing.T) {
 	picPass(r, 0, 100.25)
 	picPass(r, time.Second, 100.25)
 	if sigs, _ := r.drain(); len(sigs) != 0 {
-		t.Fatalf("a long Picture scenario against a short bias in direction mode is refused: %+v", sigs)
+		t.Fatalf("a long Picture scenario against a short AI bias in direction mode is refused: %+v", sigs)
 	}
-	class := armRefusalClass(`against plan bias "short" (plan_mode=direction)`)
+	verdict := `direction: plan bias short — against plan bias "short" (plan_mode=direction)`
+	named := 0
+	for _, w := range warns() {
+		if strings.Contains(w, "arm REFUSED") && strings.Contains(w, "P1") && strings.Contains(w, verdict) {
+			named++
+		}
+	}
+	if named != 1 {
+		t.Fatalf("the refusal must name the rule that judged it (%q), once: %q", verdict, warns())
+	}
+	class := armRefusalClass(verdict)
 	if n := r.armRefusals(pictureClassSharedPrefix + class); n != 1 {
 		t.Fatalf("the shared-leg refusal is counted once as picture_scenario:%s, got %d", class, n)
+	}
+}
+
+// picMachinePlan writes the no-plan door's machine plan v1 (D1 b: trigger
+// machine:picture_htf, model machine, bias neutral, no levels, the one machine
+// scenario) and installs the provider on the rig's clock.
+func picMachinePlan(r *zoneRig, sc kernel.PlanScenario) {
+	r.t.Helper()
+	doc := kernel.PlanDoc{Reasoning: "MACHINE-AUTHORED (Picture HTF rule v1) — fixture",
+		Bias: kernel.PlanBias{Direction: "neutral"}, DeathCondition: "machine plan: ends when an AI plan is written",
+		Levels: []kernel.PlanLevel{}, Scenarios: []kernel.PlanScenario{sc}, NoTrade: []string{}}
+	sess := shadowEnableTestSession(r.t, r.st)
+	r.at.config.StrategyConfig.DayPlan.SessionsEnabled = []string{sess}
+	td, _ := kernel.PlanChainTradeDate(&kernel.SessionDef{Name: sess, WindowStartCT: "00:00", WindowEndCT: "23:59"}, r.now)
+	pid := store.MakePlanIDForTrader(r.at.id, td, sess)
+	blob, _ := json.Marshal(doc)
+	if _, err := r.st.Plan().AppendPlan(&store.PlanDB{PlanID: pid, TradeDate: td, Session: sess, StrategyID: r.at.id, Lifecycle: "active",
+		Doc: string(blob), TriggerReason: kernel.MachinePlanTriggerPicture, ModelID: kernel.MachinePlanModelID, CreatedAt: r.now.Add(-time.Minute)}); err != nil {
+		r.t.Fatal(err)
+	}
+	installActivePlanProviderAt(r.at, r.st, func() time.Time { return r.now })
+	r.pid = pid
+}
+
+// CTO ruling 1790194913337: direction mode on a MACHINE plan (bias neutral =
+// no AI opinion) judges the Picture scenario on its own direction — it places.
+func TestPictureScenarioOnAMachinePlanUnderDirectionPlaces(t *testing.T) {
+	r, epoch := newPicRig(t, "w5b-dir-machine", func(c *store.StrategyConfig) { c.DayPlan.PlanMode = "direction" })
+	picMachinePlan(r, picScenario("P1", "opp-dir-machine", r.now, epoch, picDefault))
+	picPass(r, 0, 100.25)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 || sigs[0].LimitPrice != 100.5 {
+		t.Fatalf("direction mode + a machine plan: the long P1 is judged on its own direction and places, got %+v", sigs)
+	}
+	limitOnly(t, sigs)
+	bias, rule := r.at.pictureDirectionRule(kernel.ActivePlanFor(r.at.id, r.at.futuresSymbol()), picScenario("P1", "x", r.now, epoch, picDefault), true, "neutral")
+	if bias != "long" || rule != "direction: machine plan — judged on the scenario's own direction (long)" {
+		t.Fatalf("the machine-plan rule judges on the scenario's own direction and says so, got bias %q rule %q", bias, rule)
 	}
 }
 
@@ -886,5 +975,162 @@ func TestPicturePathWritesOnlyLimitFrames(t *testing.T) {
 			t.Fatalf("price %.2f: one entry frame, got %d", last, len(sigs))
 		}
 		limitOnly(t, sigs)
+	}
+}
+
+// ── CTO pre-review F4 / F5 — Stop with a dark book, Stop never deadlocks ────
+
+// picWarns captures every WARN+ line through the logger's own tee.
+func picWarns(t *testing.T) func() []string {
+	t.Helper()
+	var mu sync.Mutex
+	var got []string
+	logger.AttachDBSink(func(_ int64, _, _, _, message, _ string) {
+		mu.Lock()
+		got = append(got, message)
+		mu.Unlock()
+	})
+	t.Cleanup(func() { logger.AttachDBSink(func(int64, string, string, string, string, string) {}) })
+	return func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return append([]string(nil), got...)
+	}
+}
+
+// F4: Stop with a STALE book (no pass runs after it): the resting Picture row
+// must not be left "working" — it ends cancel_pending (held, never promoted),
+// NO wire cancel is sent blind, and ONE WARN names the row id.
+func TestPictureStopWithADarkBookHoldsCancelPending(t *testing.T) {
+	r, epoch := newPicRig(t, "w5b-stop-dark", nil)
+	picPlan(r, picScenario("P1", "opp-stop-dark", r.now, epoch, picDefault))
+	picPass(r, 0, 100.25)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 {
+		t.Fatalf("fixture: P1 placed, got %d", len(sigs))
+	}
+	row := r.row("P1")
+	warns := picWarns(t)
+	// The book was last put at the fixture instant; Stop reads the wall
+	// clock, where that book is stale by days — a dark book.
+	r.at.stopMonitorCh = make(chan struct{})
+	r.at.Stop()
+	if _, cancels := r.drain(); len(cancels) != 0 {
+		t.Fatalf("no wire cancel may be sent blind on a dark book: %+v", cancels)
+	}
+	got := r.row("P1")
+	if got.State != store.StateCancelPending || got.StateReason != "picture: trader stopped" {
+		t.Fatalf("the resting row ends cancel_pending 'picture: trader stopped' (held, never promoted): %+v", got)
+	}
+	held := 0
+	for _, w := range warns() {
+		if strings.Contains(w, "picture cancel HELD") && strings.Contains(w, "row #"+strconv.FormatInt(row.ID, 10)+" ") {
+			held++
+		}
+	}
+	if held != 1 {
+		t.Fatalf("exactly ONE WARN names the held row #%d, got %d: %q", row.ID, held, warns())
+	}
+}
+
+// F5: every caller of stopArmedEventLoop is AutoTrader.Stop (auto_trader.go),
+// and every caller of Stop runs outside an armed pass (manager StopAll /
+// RemoveTrader, the API stop / delete handlers, the agent's stop tool). Stop
+// now takes armedPassMu (the Picture invalidation), so it must wait for a
+// pass in flight — never interleave with it — and never deadlock: bounded
+// here with no pass, with a scan pass held inside the lock, and with an event
+// pass held inside the lock.
+func TestPictureStopNeverDeadlocks(t *testing.T) {
+	type start func(r *zoneRig)
+	scanPass := func(r *zoneRig) { go r.at.maybeManageArmedOrdersAt(nil, r.now.Add(time.Second)) }
+	eventPass := func(r *zoneRig) {
+		r.at.zoneArmActive.Store(true)
+		r.at.armedEvent.Load().poke()
+	}
+	for _, c := range []struct {
+		name  string
+		pass  start
+		event bool
+	}{{"no pass in flight", nil, false}, {"a scan pass in flight", scanPass, false}, {"an event pass in flight", eventPass, true}} {
+		t.Run(c.name, func(t *testing.T) {
+			r, epoch := newPicRig(t, "w5b-stop-"+strings.ReplaceAll(c.name, " ", "-"), nil)
+			if c.event {
+				if err := r.st.Trader().Create(&store.Trader{ID: r.at.id, Name: r.at.id, Account: "Sim101"}); err != nil {
+					t.Fatal(err)
+				}
+				r.at.armedEventNowForTest = func() time.Time { return r.now.Add(time.Second) }
+				r.at.startArmedEventLoop() // a new run: a new epoch
+				epoch, _ = r.at.pictureRunEpoch()
+			}
+			picPlan(r, picScenario("P1", "opp-stop-"+c.name, r.now, epoch, picDefault))
+			picPass(r, 0, 99.6) // P1 waits armed
+			var once sync.Once
+			entered, release := make(chan struct{}), make(chan struct{})
+			if c.pass != nil {
+				armedPassEnterForTest = func(id string) func() {
+					if id == r.at.id {
+						once.Do(func() { close(entered) })
+						<-release
+					}
+					return func() {}
+				}
+				t.Cleanup(func() { armedPassEnterForTest = nil })
+				c.pass(r)
+				select {
+				case <-entered:
+				case <-time.After(10 * time.Second):
+					t.Fatal("fixture: the pass never entered")
+				}
+			}
+			stopped := make(chan struct{})
+			r.at.stopMonitorCh = make(chan struct{})
+			go func() { r.at.Stop(); close(stopped) }()
+			if c.pass != nil {
+				select {
+				case <-stopped:
+					t.Fatal("Stop returned while a pass held armedPassMu — the invalidation interleaved with the pass")
+				case <-time.After(300 * time.Millisecond):
+				}
+				close(release)
+			}
+			select {
+			case <-stopped:
+			case <-time.After(15 * time.Second):
+				t.Fatal("DEADLOCK: Stop did not return within 15s")
+			}
+			// With a pass in flight, Stop clears the epoch first: the released
+			// pass reaches placement and retires the row there ("a run that is
+			// no longer live"); otherwise the Stop hook retires it.
+			row := r.row("P1")
+			byStop := row.StateReason == "picture: trader stopped — never placed"
+			byPass := strings.HasPrefix(row.StateReason, "recorded by a run that is no longer live (epoch ") && strings.HasSuffix(row.StateReason, ", live none) — not placed")
+			if row.State != store.StateCancelled || !(byStop || (c.pass != nil && byPass)) {
+				t.Fatalf("after Stop the unplaced Picture row is terminal, never placed: %+v", row)
+			}
+			if sigs, _ := r.drain(); len(sigs) != 0 {
+				t.Fatalf("nothing is placed across a Stop: %+v", sigs)
+			}
+		})
+	}
+}
+
+// ── L4 — with no machine scenario the pass is W3's pass ─────────────────────
+
+// Planner rows carry no W5 field, and one live entry per plan still cancels a
+// planner row when a planner row of the same plan places (same source).
+func TestPlannerRowsCarryNoW5FieldAndOneLiveEntryHolds(t *testing.T) {
+	r, _ := newPicRig(t, "w5b-planner-only", nil)
+	picPlan(r, plannerZone("S1", 99.5, 100.5, 100), plannerZone("S2", 99.5, 100.5, 100))
+	picPass(r, 0, 100.25)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 {
+		t.Fatalf("one entry per plan, got %d", len(sigs))
+	}
+	s1, s2 := r.row("S1"), r.row("S2")
+	if s1.Source != "" || s1.SourceRef != "" || s1.SourceRule != "" || s1.EligibleUntilMs != nil || s1.SourceRunEpoch != nil {
+		t.Fatalf("a planner row carries no W5 field: %+v", s1)
+	}
+	if s2.State != store.StateCancelled || s2.StateReason != "one_live_entry: S1 placed" {
+		t.Fatalf("the same-source one-live-entry cancel is unchanged: %+v", s2)
 	}
 }

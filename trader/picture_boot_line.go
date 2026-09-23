@@ -22,10 +22,10 @@ import (
 //	    one_setup governs planner plays only — a Picture scenario is admitted
 //	    by its own switch
 //
-// Printed once per trader (logPictureBootLines, called where the other
+// Printed once per trader run (logPictureBootLines, called where the other
 // day-plan boot lines print).
 
-var pictureBootLogged sync.Map // trader id → true
+var pictureBootLogged sync.Map // trader id|run epoch → true
 
 // PictureRowsBootLine renders the 🖼 line from the store's own reader and the
 // live run epoch. Every field is READ: an unreadable ledger says so, an absent
@@ -68,15 +68,17 @@ func pictureOneSetupWarn(cfg *store.StrategyConfig, pictureOn bool) string {
 		store.OriginLetter(src))
 }
 
-// logPictureBootLines prints the two lines once per trader.
+// logPictureBootLines prints the two lines once per trader run.
 func (at *AutoTrader) logPictureBootLines() {
 	if at == nil || at.exchange != "ninjatrader" {
 		return
 	}
-	if _, done := pictureBootLogged.LoadOrStore(at.id, true); done {
+	// Once per trader RUN: a reload is a new run with a new epoch, and the line
+	// must print the epoch that run places under.
+	epoch, ok := at.pictureRunEpoch()
+	if _, done := pictureBootLogged.LoadOrStore(at.id+"|"+pictureEpochText(epoch, ok), true); done {
 		return
 	}
-	epoch, ok := at.pictureRunEpoch()
 	at.logInfof("%s", PictureRowsBootLine(at.store, epoch, ok))
 	if w := pictureOneSetupWarn(at.GetStrategyConfig(), at.pictureHtfResolvedConfig().Enabled); w != "" {
 		at.logWarnf("%s", w)

@@ -255,6 +255,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 	at.noteZoneArmActive(plan) // W3 D14 — the event pass wakes only for a plan with a zone arm
 	_, sessOK := at.sessionRegistry(now).ActiveSession(now)
 	reason := ""
+	var planRow *store.PlanDB // W5 — whose plan this is (a machine plan judges direction by its rule)
 	if plan == nil {
 		if !sessOK {
 			reason = "session ended (EOD flat)"
@@ -263,6 +264,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 		}
 	} else {
 		row, err := at.store.Plan().GetLatestPlanForTraderSession(kernel.PlanTradeDateFor(plan), plan.Session, at.id)
+		planRow = row
 		if err != nil || row == nil {
 			reason = "plan row unavailable"
 		} else if row.Lifecycle != "active" {
@@ -660,7 +662,15 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 			}
 			// gates AT ARM TIME — a resting order is a pre-passed entry; each gate
 			// input that changes materially later triggers a cancel (1.3).
-			if verdict := at.zoneAwareGateVerdict(zl, sc, leg, biasDirectionFor(doc.Bias.Direction), snap, atr5m, minQuality, cfg, plan.Session, structuralFade); verdict != "" {
+			// W5 (CTO 1790194913337) — the direction leg's bias: a machine
+			// scenario on a MACHINE plan is judged on its own direction (the
+			// plan's only direction is the rule's; neutral = no AI opinion); on
+			// an AI plan the AI bias governs exactly as for a planner scenario.
+			legBias, dirRule := biasDirectionFor(doc.Bias.Direction), ""
+			if machine {
+				legBias, dirRule = at.pictureDirectionRule(plan, sc, store.IsMachinePlan(planRow), legBias)
+			}
+			if verdict := pictureDirectionVerdict(dirRule, at.zoneAwareGateVerdict(zl, sc, leg, legBias, snap, atr5m, minQuality, cfg, plan.Session, structuralFade)); verdict != "" {
 				scope.note(sc.ID, "refused: "+armRefusalClass(verdict)+": "+verdict)
 				if geometry != nil {
 					geometry.Reason = "entry_gate"
@@ -785,7 +795,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 			// be held to a weaker standard than a decision entry. Refusals are
 			// logged AND recorded per path (arm-refusal counters), and an
 			// existing resting arm for this spec is cancelled the same cycle.
-			greason, refused := at.entryGateForArm(plan, sc, leg, side, biasDirectionFor(doc.Bias.Direction), atr5m, structuralFade)
+			greason, refused := at.entryGateForArm(plan, sc, leg, side, legBias, atr5m, structuralFade)
 			recordResearchGate("arm", plan.PlanID, plan.Version, sc.ID, greason, refused)
 			if refused {
 				scope.note(sc.ID, "refused: entry_gate: "+greason)
