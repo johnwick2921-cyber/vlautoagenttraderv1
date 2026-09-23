@@ -109,6 +109,11 @@ func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.Dec
 // a per-strategy circuit breaker, NOT gated by the guardrails master switch.
 // Fail-OPEN on a query error — never block a trade because the DB hiccuped.
 func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
+	return at.consecutiveLossHaltedAt(time.Now())
+}
+
+// consecutiveLossHaltedAt is consecutiveLossHalted on an injected clock (W0).
+func (at *AutoTrader) consecutiveLossHaltedAt(now time.Time) (string, bool) {
 	if at.store == nil || at.config.StrategyConfig == nil {
 		return "", false
 	}
@@ -121,7 +126,7 @@ func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
 	if n <= 0 {
 		return "", false // explicitly OFF (BREAKER_HALT_N=0)
 	}
-	sinceMs := kernel.CMESessionDayStart(time.Now()).UnixMilli()
+	sinceMs := kernel.CMESessionDayStart(now).UnixMilli()
 	losses, err := at.store.Position().CountConsecutiveLossesSince(at.id, sinceMs)
 	if err != nil {
 		at.logWarnf("consecutive-loss halt: count query failed (%v) — allowing entry (fail-open)", err)

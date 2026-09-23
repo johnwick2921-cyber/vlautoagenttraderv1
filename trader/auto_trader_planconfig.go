@@ -182,10 +182,14 @@ func (at *AutoTrader) approvalGranted(now time.Time) bool {
 // strict: refuse entries that don't cite a matched scenario. In direction/strict
 // with NO active plan, nothing is authorized → block (plan restricts).
 func (at *AutoTrader) planModeBlocked(d *kernel.Decision) (string, bool) {
+	return at.planModeBlockedAt(d, time.Now())
+}
+
+// planModeBlockedAt is planModeBlocked on an injected clock (W0).
+func (at *AutoTrader) planModeBlockedAt(d *kernel.Decision, now time.Time) (string, bool) {
 	if d == nil {
 		return "", false
 	}
-	now := time.Now()
 	session := ""
 	if s, ok := at.sessionRegistry(now).ActiveSession(now); ok {
 		session = s.Name
