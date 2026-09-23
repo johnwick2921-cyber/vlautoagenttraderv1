@@ -153,10 +153,28 @@ func parseMaintenanceHold(p string) MaintenanceHoldState {
 	if len(strings.TrimSpace(string(b))) == 0 {
 		return corrupt("empty file")
 	}
+	// A PRESENT file must SAY whether it holds (review F2, CTO MUST-FIX): the
+	// top level must be an object carrying the exact key "held" as a boolean.
+	// {}, null, [], a misspelled or re-cased key, "held":null or a non-boolean
+	// are a hold we cannot read — HELD. (encoding/json matches keys
+	// case-insensitively, so the exact key is checked on the raw object.)
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(b, &raw); err != nil || raw == nil {
+		return corrupt("not a JSON object")
+	}
+	hv, ok := raw["held"]
+	if !ok {
+		return corrupt(`"held" missing`)
+	}
+	var heldp *bool
+	if err := json.Unmarshal(hv, &heldp); err != nil || heldp == nil {
+		return corrupt(`"held" is not a boolean`)
+	}
 	var h MaintenanceHold
 	if err := json.Unmarshal(b, &h); err != nil {
 		return corrupt("parse: " + err.Error())
 	}
+	h.Held = *heldp
 	if h.Held {
 		if strings.TrimSpace(h.JobID) == "" {
 			return corrupt("held without job_id")

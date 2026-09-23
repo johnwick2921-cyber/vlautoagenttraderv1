@@ -207,3 +207,30 @@ func TestMaintenanceHoldWriterAndClearerRaceNeverLosesTheRightJob(t *testing.T) 
 		}
 	}
 }
+
+// Review F2 (CTO MUST-FIX on #182): a PRESENT file that decodes but carries no
+// boolean "held" is a hold we cannot read — HELD + Corrupt, never not-held.
+// The writer never produces these, which is exactly why the reader must not
+// trust presence.
+func TestMaintenanceHoldPresentWithoutABooleanHeldIsCorruptAndHeld(t *testing.T) {
+	for _, body := range []string{`{}`, `null`, `{"Held":true}`, `{"held":"true"}`, `[]`, `{"hold":true,"job_id":"J1","since":"2026-09-22T00:00:00Z"}`} {
+		dir := t.TempDir()
+		if err := os.MkdirAll(filepath.Dir(MaintenanceHoldPath(dir)), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(MaintenanceHoldPath(dir), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		st := ReadMaintenanceHold(dir)
+		if !st.Held || !st.Corrupt {
+			t.Errorf("body %s: want HELD + Corrupt (fail-closed), got held=%v corrupt=%v err=%q", body, st.Held, st.Corrupt, st.Err)
+		}
+	}
+	// An explicit held:false is what it says.
+	dir := t.TempDir()
+	_ = os.MkdirAll(filepath.Dir(MaintenanceHoldPath(dir)), 0o700)
+	_ = os.WriteFile(MaintenanceHoldPath(dir), []byte(`{"held":false}`), 0o600)
+	if st := ReadMaintenanceHold(dir); st.Held || st.Corrupt {
+		t.Fatalf("an explicit held:false is valid and not held: %+v", st)
+	}
+}
