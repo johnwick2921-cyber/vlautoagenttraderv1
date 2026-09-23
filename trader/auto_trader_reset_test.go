@@ -158,8 +158,8 @@ func (e *errorDecisionClient) CallWithMessages(string, string) (string, error) {
 // planClient returns a schema-valid plan so the read writes an ACTIVE row.
 type planClient struct{ fakeDecisionClient }
 
-func (p *planClient) CallWithMessages(string, string) (string, error) {
-	return validTraderPlanJSON, nil
+func (p *planClient) CallWithMessages(_, user string) (string, error) {
+	return mapCompliantPlanJSON(user), nil // W2 A4: a compliant model reads the MAP block
 }
 
 type timeoutErr2 struct{}

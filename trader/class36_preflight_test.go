@@ -322,7 +322,7 @@ func (c *sundayClient) CallWithMessages(sys, user string) (string, error) {
 	if sys == weeklySystemPrompt {
 		return c.weeklyJSON, nil
 	}
-	return validTraderPlanJSON, nil
+	return mapCompliantPlanJSON(user), nil // W2 A4: a compliant model reads the MAP block
 }
 
 func TestClass36PinSundayWeekly(t *testing.T) {

@@ -54,6 +54,10 @@ func (c *scriptedPlannerClient) calls() int {
 // 15620 → long (CLASS 140 relation), death BELOW 15430, levels on both sides
 // of a ~15470 tape (P0.1 both-side rule) and targets inside the 45-pt
 // proximity band, so the REAL write site accepts it.
+// W-EXEC-TRUTH W2 A4 (correction): the real-path machine map this fixture
+// lands on seats RN 15475 (25) five points below the 15480 entry, so the first
+// obstacle is 15475 (it used to name 15450, skipping a seated level), and the
+// rest of the short path is listed in path_levels.
 const validShortPlanJSON = `{
   "reasoning": "Flip fired below PWL; fade rallies into the broken level, short the reject.",
   "bias": {"direction": "short", "conviction": "medium", "flip_condition": "2x5m > 15620"},
@@ -65,7 +69,7 @@ const validShortPlanJSON = `{
     {"price": 15575, "label": "RN 15575", "grade": "B", "instruction": "fade"},
     {"price": 15620, "label": "PDH", "grade": "A", "instruction": "fade"}
   ],
-  "scenarios": [{"id": "S1", "trigger": "reject 15480 from below", "condition": "reject", "direction": "short", "target_chain": [15450, 15430], "invalid": "2x5m>15490", "quality": "A", "confirm":{"rule":"touch","ref_price":15480,"side":"above"},"economics":{"entry_zone":[15480,15480],"geometry":{"entry":15480,"stop":15490,"target":15430},"first_obstacle":{"price":15450,"level":"fixture reference","family":"reference","response":"pass_through"},"r_to_obstacle":3.0,"r_to_arm_target":5.0}}],
+  "scenarios": [{"id": "S1", "trigger": "reject 15480 from below", "condition": "reject", "direction": "short", "target_chain": [15450, 15430], "invalid": "2x5m>15490", "quality": "A", "confirm":{"rule":"touch","ref_price":15480,"side":"above"},"economics":{"entry_zone":[15480,15480],"geometry":{"entry":15480,"stop":15490,"target":15430},"first_obstacle":{"price":15475,"level":"RN 15475 (25)","family":"round","response":"pass_through"},"r_to_obstacle":0.5,"r_to_arm_target":5.0,"path_levels":[{"price":15450,"level":"RN 15450","role":"pass_through"}]}}],
   "no_trade": ["first 5m"],
   "death_condition": "acceptance below 15430",
   "death": {"price": 15430, "side": "below", "rule": "2x5m"},
