@@ -2499,6 +2499,18 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	// fail-closed branch relabels the row: a death re-plan / owner re-read that
 	// fail-closes still landed a row for a consuming class.
 	spendClass, spends := trigger, store.TriggerSpendsReplan(trigger)
+	// W-EXEC-TRUTH W5 (CTO 1790194913337) — a read that lands the FIRST AI
+	// version of a chain whose only row is a MACHINE plan (the Picture no-plan
+	// door) is not a re-plan: it spends nothing, whatever class asked for it.
+	// Judged on the chain's latest row BEFORE this version is appended; a
+	// failed read keeps the spend (fail-closed).
+	if spends {
+		if prev, perr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); perr == nil && store.IsMachinePlan(prev) {
+			spends = false
+			at.logInfof("🧮 replan budget: %s lands the first AI plan of %s %s over a machine Picture plan (v%d) — not a re-plan, nothing spent (class 35)",
+				spendClass, tradeDate, session, prev.Version)
+		}
+	}
 	if doc == nil {
 		// W6-C (2026-08-25) — wake reads are NON-fatal: a failed wake re-read
 		// must NOT no-trade a session whose active plan is still alive (live

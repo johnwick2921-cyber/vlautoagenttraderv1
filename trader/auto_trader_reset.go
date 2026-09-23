@@ -81,6 +81,12 @@ func (at *AutoTrader) CanForceReset(now time.Time) ResetRefusal {
 		// No plan yet: the first read is free and there is no chain to abandon.
 		return ResetRefusal{Session: sess.Name, Reason: "no plan has been written yet — the first read costs nothing"}
 	}
+	if store.IsMachinePlan(row) {
+		// W-EXEC-TRUTH W5 (CTO 1790194913337) — a MACHINE plan is "no plan"
+		// here too: there is no AI chain to abandon and no budget to re-arm.
+		// The first AI read is free (the scheduled read, or ⟳ Re-read).
+		return ResetRefusal{Session: sess.Name, Reason: "no AI plan has been written yet (only a machine Picture plan) — the first read costs nothing; use Re-read"}
+	}
 	out := ResetRefusal{
 		Session:   sess.Name,
 		Version:   row.Version,
