@@ -55,6 +55,23 @@ type planOrderLeg struct {
 	PlacedAtMs        *int64   `json:"placed_at_ms,omitempty"`
 	FilledAtMs        *int64   `json:"filled_at_ms,omitempty"`
 	Verdict           string   `json:"verdict,omitempty"`
+
+	// W-EXEC-TRUTH W5 — a MACHINE-sourced row (a Picture scenario of the Day
+	// Plan): the receipt names where the order came from. Copied ONLY when the
+	// ledger row carries a Source (withMachineSource); every planner row —
+	// legacy or W3 policy — emits none of them, so its JSON is byte-identical.
+	//   source            — armed_orders.source ("picture").
+	//   source_ref        — the opportunity key (armed_orders.source_ref).
+	//   rule              — the rule that produced it (armed_orders.source_rule).
+	//   method            — how it is placed: "<policy> <kind>", e.g.
+	//                       "market_in_zone limit"; absent when the row has no
+	//                       policy (never "market", never guessed).
+	//   eligible_until_ms — the eligibility deadline (NULL → absent, never 0).
+	Source          string `json:"source,omitempty"`
+	SourceRef       string `json:"source_ref,omitempty"`
+	Rule            string `json:"rule,omitempty"`
+	Method          string `json:"method,omitempty"`
+	EligibleUntilMs *int64 `json:"eligible_until_ms,omitempty"`
 }
 
 type planArmView struct {
@@ -112,6 +129,31 @@ func withEntryPolicy(leg *planOrderLeg, row *store.ArmedOrderDB) {
 	leg.EvalPrice, leg.EvalBarMs = displayPricePtr(row.EvalPrice), epochMsPtr(row.EvalBarMs)
 	leg.FillPrice, leg.FillSlippageTicks = displayPrice(row.FillPrice), finitePtr(row.FillSlippageTicks)
 	leg.PlacedAtMs, leg.FilledAtMs = epochMsPtr(row.PlacedAtMs), epochMsPtr(row.FilledAtMs)
+}
+
+// withMachineSource copies the W5 machine-source columns of a SOURCED row onto
+// the leg. A planner row (empty Source) is left untouched — L4 byte-identity.
+func withMachineSource(leg *planOrderLeg, row *store.ArmedOrderDB) {
+	if row == nil || strings.TrimSpace(row.Source) == "" {
+		return
+	}
+	leg.Source, leg.SourceRef, leg.Rule = row.Source, row.SourceRef, row.SourceRule
+	leg.Method = armPlacementMethod(row)
+	leg.EligibleUntilMs = epochMsPtr(row.EligibleUntilMs)
+}
+
+// armPlacementMethod names how the row is placed, read from the ledger: the
+// entry policy and the order kind ("market_in_zone limit"). A row with no
+// policy has no recorded method, so none is named.
+func armPlacementMethod(row *store.ArmedOrderDB) string {
+	policy := strings.TrimSpace(row.Policy)
+	if policy == "" {
+		return ""
+	}
+	if kind := strings.TrimSpace(row.Kind); kind != "" {
+		return policy + " " + kind
+	}
+	return policy
 }
 
 // armedMapFor selects a placement per leg within the displayed version.
@@ -176,6 +218,7 @@ func (s *Server) armedMapFor(planID string, version int, doc kernel.PlanDoc, boo
 				leg.State, leg.Reason, leg.Kind, leg.SignalID, leg.Side = row.State, row.StateReason, row.Kind, row.SignalID, row.Side
 				leg.Composed = orderPrices{Entry: displayPrice(row.EntryPx), Stop: displayPrice(row.StopPx), Target: displayPrice(row.TargetPx), Source: fmt.Sprintf("armed_orders row %d · placement %d · last touched v%d", row.ID, row.PlacementSeq, row.Version)}
 				withEntryPolicy(&leg, row)
+				withMachineSource(&leg, row)
 			}
 			leg.Accepted = acceptedOrderPrices(leg.SignalID, book)
 			if len(view.Legs) == 0 {
