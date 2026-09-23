@@ -432,6 +432,14 @@ Returns: [{"symbol":"<string>","side":"long|short","quantity":<float>,"entry_pri
 Returns: {"ready":<bool>,"legs":[{"n":1..5,"name":"<string>","pass":<bool>,"detail":"<string>","source":"<string>"}],"note":"<string>"}
 Legs: 1 db_open_positions · 2 api_positions · 3 nt8_positions_snapshot · 4 working_orders (broker versus placed/unconfirmed ledger rows) · 5 planner_in_flight. Leg 4's armed_unplaced count is informational: authorized arms without a signal id do not fail it.`,
 				s.handleCutoverGate)
+			s.routeWithSchema(protected, "GET", "/maintenance", "Installation maintenance hold: state, drain and the AddOn's ack (W-ONE-BUTTON M2; read-only)",
+				`Returns: {"held":<bool>,"state":"clear|held|unreadable|unconfigured","job_id":"<string>|null","since":"<RFC3339>|null","reason":"<string>","in_flight_sends":<int>,"drained":<bool>,"addon_ack":{"received":"<RFC3339>","age_ms":<int>,"held":<bool>,"job_id":"<string>","queued_commands":<int>,"build_id":"<string>","accept_seq":<int>}|null}
+addon_ack is the CURRENT AddOn connection's maintenance_ack only (null before one arrives, and always null for an AddOn older than 2026-09-22-m2). No write route exists.`,
+				s.handleMaintenanceStatus)
+			s.routeWithSchema(protected, "GET", "/installation-gate", "Installation-wide update gate: every trader, every account, one verdict (W-ONE-BUTTON M2; read-only)",
+				`Returns: {"ready":<bool>,"job_id":"<string>|n/a","legs":[{"name":"<string>","pass":<bool>,"detail":"<string>","source":"<string>"}],"traders":["<id>"],"note":"<string>"}
+Legs: hold · go_drained · in_flight_sends · queued_signals · planner_in_flight (union of every planner-class claim, any trader) · traders_nt8 · addon_ack · addon_census (no connected non-SIM connection, no position or working order on ANY account) · ledger_exposure (all trader ids) · trader_cutover:<id> (legs 1, 2, 4). A leg that cannot be evaluated fails.`,
+				s.handleInstallationGate)
 			s.routeWithSchema(protected, "GET", "/decisions", "AI trading decisions (decision records)",
 				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>&limit=<int, default 20>
 Returns: [{"id":"<string>","symbol":"<string>","action":"open_long|open_short|close_long|close_short|hold","confidence":<int>,"reasoning":"<string>","created_at":"<timestamp>"}]`,
