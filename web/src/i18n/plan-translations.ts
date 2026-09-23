@@ -465,6 +465,12 @@ export const planStrings = {
     zh: '双图模式 (SIM) — 确定性：4H 实体枢轴 → H1 收盘突破 → 5m 摆动 + 对向区域。AI 仅作点评。',
     id: 'Picture HTF (SIM) — deterministik: pivot body 4H → tembus close H1 → swing 5m + zona lawan. AI hanya komentar.',
   },
+  // W1 (e): the Picture switch's own label (it used to borrow enableDayPlan).
+  pictureHtfEnable: {
+    en: 'Include Picture HTF setups',
+    zh: '纳入双图（Picture HTF）设置',
+    id: 'Sertakan setup Picture HTF',
+  },
   pictureTickSize: { en: 'Tick size', zh: '最小变动', id: 'Ukuran tick' },
   picturePivotWindow: {
     en: 'Pivot window (bars)',
@@ -528,9 +534,9 @@ export const planStrings = {
     id: 'Kualitas skenario min',
   },
   oneSetup: {
-    en: 'One setup — arm only the single best level',
-    zh: '单一设置 — 仅对最佳价位挂单',
-    id: 'One setup — pasang hanya level terbaik',
+    en: 'One setup — arm only the single best reject (fade) level',
+    zh: '单一设置 — 仅对最佳拒绝（fade）价位挂单',
+    id: 'One setup — pasang hanya level reject (fade) terbaik',
   },
   oneSetupMinGrade: {
     en: 'One setup min grade',

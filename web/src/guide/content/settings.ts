@@ -23,7 +23,8 @@ const dayPlan: KnobSpec[] = [
   },
   {
     label: 'One setup (switch)',
-    where: 'Strategy → Day Plan → One setup (switch) + min grade (A/B/C)',
+    where:
+      'Strategy → Day Plan → "One setup — arm only the single best reject (fade) level" (switch) + min grade (A/B/C)',
     what: 'The book arms ONE play — the fade (reject) — at the best level near price, only on a permitted day. Gates arm AUTHORIZATION only; never cancels a resting arm, never places. The follow side is recorded, never armed.',
     trader:
       'ON [O] by default (an unset strategy reads ON — the field is a tri-state so an unset value is never read as OFF). OFF restores the wide book byte-identically (pinned against a golden generated before the wave existed).',
@@ -329,7 +330,8 @@ const dayPlan: KnobSpec[] = [
   },
   {
     label: 'Picture HTF (two-picture mode)',
-    where: 'Strategy → Day Plan → Picture HTF block',
+    where:
+      'Strategy → Day Plan → Picture HTF block → "Include Picture HTF setups" (switch; greyed out while Enable Day Plan is off)',
     what: "The owner's two-picture method as a DETERMINISTIC mode (2026-09-20): a 4H body pivot → the H1 close breaks it by at least one tick → the next 5m interval (entry window, default 10s) searches a strict 5m swing for the stop and the nearest opposing 4H zone for the target. R:R below the configured minimum refuses — the nearer zone is never skipped. The AI is commentary only; timing is the rule, not the model. Since W-EXEC-TRUTH W0b every Picture entry passes the same entry rules as the AI and armed orders (see Status → One set of entry rules), trades only the trader's own instrument, and runs only while the trader is running and the Day Plan is on; under plan_mode=strict it is refused until it becomes a Day Plan scenario (📷 plan_gate= and the plan card say so).",
     trader:
       'OFF by default; enabling it gates on the AddOn proving build ≥ 2026-09-20-p1 (final+emitted_at bar markers, rejection reasons) — below that the evaluator logs "mode unavailable" and never submits. Sends a 1-contract SIM market entry with its protective bracket only when the book is flat, the feed is fresh, and no unreconciled submission blocks re-entry.',

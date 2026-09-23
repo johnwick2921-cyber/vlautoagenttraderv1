@@ -43,8 +43,8 @@ const DEFAULT_DAY_PLAN: DayPlanConfig = {
   // (last_entry_ct, eod_flat_ct, seat_1h_zone, htf_score_multiplier) are gone.
   // R4 (2026-08-25) — scenario quality floor DEFAULT C (no restriction).
   min_scenario_quality: 'C',
-  // ONE SETUP (dispatch 102, 2026-09-10) — arm only the single best live
-  // setup. Pointer-bool mirrors Go: absent = ON; grade floor B.
+  // ONE SETUP (dispatch 102, 2026-09-10) — arm only the single best reject
+  // (fade) setup. Pointer-bool mirrors Go: absent = ON; grade floor B.
   one_setup_enabled: true,
   one_setup_min_grade: 'B',
   // W-PICTURE-HTF (2026-09-20) — the deterministic two-picture mode.
@@ -676,8 +676,8 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
                 disabled={bodyDisabled}
               />
             </FieldRow>
-            {/* ONE SETUP (dispatch 102) — arm only the single best live setup.
-                Pointer-bool mirrors Go: absent = ON; grade floor B. */}
+            {/* ONE SETUP (dispatch 102) — arm only the single best reject (fade)
+                setup. Pointer-bool mirrors Go: absent = ON; grade floor B. */}
             <FieldRow label={tp('oneSetup', language)}>
               <Toggle
                 testId="one-setup-toggle"
@@ -712,7 +712,7 @@ export function DayPlanEditor({ config, onChange, disabled, language }: Props) {
               >
                 {tp('pictureHtf', language)}
               </span>
-              <FieldRow label={tp('enableDayPlan', language)}>
+              <FieldRow label={tp('pictureHtfEnable', language)}>
                 <Toggle
                   testId="picture-htf-toggle"
                   on={cfg.picture_htf?.enabled === true}

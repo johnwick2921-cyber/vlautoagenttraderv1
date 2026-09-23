@@ -138,8 +138,8 @@ export interface DayPlanConfig {
   /** R4 (2026-08-25) — scenario quality floor: A | B | C. Default C = no
    *  restriction. */
   min_scenario_quality?: string
-  /** ONE SETUP (dispatch 102, 2026-09-10) — arm only the single best live
-   *  setup. Pointer-bool mirrors Go: absent = ON. */
+  /** ONE SETUP (dispatch 102, 2026-09-10) — arm only the single best reject
+   *  (fade) setup. Pointer-bool mirrors Go: absent = ON. */
   one_setup_enabled?: boolean
   /** Lowest merged-candidate grade the best level may carry: A | B | C.
    *  Absent = B (mirrors Go). */
