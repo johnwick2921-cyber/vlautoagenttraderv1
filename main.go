@@ -199,7 +199,8 @@ func main() {
 	}
 
 	// WebSocket market monitor is NO LONGER USED
-	// All K-line data now comes from CoinAnk API instead of Binance WebSocket cache
+	// Crypto K-lines come from CoinAnk; the CME futures path reads the NT8
+	// BarCache only (see the 📊 market data boot line after trader load).
 	// Commented out to reduce unnecessary connections:
 	// go market.NewWSMonitor(150).Start(nil)
 	// logger.Info("📊 WebSocket market monitor started")

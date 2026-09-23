@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -28,6 +29,25 @@ var binanceHostAllowlist = map[string]string{
 // Crypto-only renderers of funding that are NOT Binance hosts, for the record
 // (CTO): kernel/grid_engine.go's 'Funding Rate' lines serve crypto grid
 // strategies only; agent/agent.go and market.Format serve crypto tickers.
+
+// binanceHostRe matches any Binance host form, not one spelling (critic G4 —
+// CLASS 168: a guard that recognises one spelling of what it forbids):
+// binance.com, fapi./api./dapi.binance.com, binance.us, binance.vision,
+// testnet.binancefuture.com, binanceapi hosts.
+var binanceHostRe = regexp.MustCompile(`(?i)(binance[a-z0-9-]*\.(com|us|vision|info|me|cc)\b|binancefuture|binanceapi)`)
+
+func TestBinanceHostPatternCoversEverySpelling(t *testing.T) {
+	for _, s := range []string{"https://fapi.binance.com/x", "api.binance.us", "data.binance.vision", "https://testnet.binancefuture.com", "wss://stream.binance.com:9443"} {
+		if !binanceHostRe.MatchString(s) {
+			t.Errorf("the guard must recognise %q", s)
+		}
+	}
+	for _, s := range []string{"binance", "exchange == \"binance\"", "coinank_enum.Binance"} {
+		if binanceHostRe.MatchString(s) {
+			t.Errorf("an exchange NAME is not a host, must not match: %q", s)
+		}
+	}
+}
 
 func TestNoBinanceHostOnTheFuturesPathOutsideTheAllowlist(t *testing.T) {
 	fset := token.NewFileSet()
@@ -61,7 +81,7 @@ func TestNoBinanceHostOnTheFuturesPathOutsideTheAllowlist(t *testing.T) {
 			}
 			ast.Inspect(f, func(n ast.Node) bool {
 				lit, ok := n.(*ast.BasicLit)
-				if !ok || lit.Kind != token.STRING || !strings.Contains(strings.ToLower(lit.Value), "binance.com") {
+				if !ok || lit.Kind != token.STRING || !binanceHostRe.MatchString(lit.Value) {
 					return true
 				}
 				key := rel + ":" + encl(lit.Pos())

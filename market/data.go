@@ -32,14 +32,57 @@ func futuresOIFunding() (oi *OIData, funding float64, fundingKnown bool) {
 	return nil, 0, false
 }
 
-// FuturesOIFundingBootLine READS what the futures path does for OI and
-// funding from futuresOIFunding — the function both GetWithExchange and
-// GetWithTimeframes call on that path.
-func FuturesOIFundingBootLine() string {
-	if oi, _, known := futuresOIFunding(); oi == nil && !known {
-		return "oi/funding: n/a (no external market data on the futures path)"
+// marketRoute is where one market read for (symbol, venue) goes — the ONE
+// decision GetWithExchange takes and the 📊 boot line READS (W-NO-BINANCE A).
+type marketRoute int
+
+const (
+	routeCrypto       marketRoute = iota // CoinAnk / Hyperliquid klines + Binance OI/funding
+	routeFutures                         // NT8 bars; OI/funding absent (futuresOIFunding)
+	routeRefusedVenue                    // the NinjaTrader venue with a non-CME symbol
+)
+
+// marketRouteFor decides the route. The NinjaTrader venue IS the futures
+// path: a non-CME symbol there is REFUSED — it must never fall through to the
+// crypto branch (CoinAnk maps the unknown venue to exchange=Binance, and the
+// crypto branch calls fapi OI/funding). Critic G1, fail-closed.
+func marketRouteFor(symbol, exchange string) marketRoute {
+	if IsCMEFuturesSymbol(symbol) {
+		return routeFutures
 	}
-	return "oi/funding: EXTERNAL (the futures path reads an external feed)"
+	if strings.EqualFold(strings.TrimSpace(exchange), "ninjatrader") {
+		return routeRefusedVenue
+	}
+	return routeCrypto
+}
+
+// FuturesOIFundingBootLine READS what the market read does for OI and funding
+// on the NinjaTrader venue, for the symbols the loaded NT8 traders trade:
+// each goes through marketRouteFor and, on the futures route, through
+// futuresOIFunding — the same two functions the read calls. No symbol → n/a.
+func FuturesOIFundingBootLine(nt8Symbols ...string) string {
+	if len(nt8Symbols) == 0 {
+		return "oi/funding: n/a (no NinjaTrader trader loaded)"
+	}
+	external, refused := false, []string{}
+	for _, s := range nt8Symbols {
+		switch marketRouteFor(Normalize(s), "ninjatrader") {
+		case routeFutures:
+			if oi, _, known := futuresOIFunding(); oi != nil || known {
+				external = true
+			}
+		case routeRefusedVenue:
+			refused = append(refused, s)
+		}
+	}
+	line := "oi/funding: n/a (no external market data on the futures path)"
+	if external {
+		line = "oi/funding: EXTERNAL (the futures path reads an external feed)"
+	}
+	if len(refused) > 0 {
+		line += " · REFUSED on the NinjaTrader venue (non-CME symbol): " + strings.Join(refused, ",")
+	}
+	return line
 }
 
 // Get retrieves market data for the specified token (uses Binance data by default)
@@ -59,7 +102,13 @@ func GetWithExchange(symbol, exchange string) (*Data, error) {
 	// CME futures (NT8) read the live BarCache via the injected provider —
 	// never CoinAnk. BarCache holds 5m/15m/1h (not 3m/4h), so we map 5m->short
 	// and 1h->longer. Crypto path below is untouched.
-	isFutures := IsCMEFuturesSymbol(symbol)
+	// W-NO-BINANCE A: the route is the ONE decision (marketRouteFor); the
+	// NinjaTrader venue with a non-CME symbol is refused, never a crypto read.
+	route := marketRouteFor(symbol, exchange)
+	if route == routeRefusedVenue {
+		return nil, fmt.Errorf("%s: the NinjaTrader venue reads CME futures only — a non-CME symbol is refused (no crypto market read on the futures venue)", symbol)
+	}
+	isFutures := route == routeFutures
 
 	// For hyperliquid exchange, also use Hyperliquid API
 	useHyperliquidAPI := isXyzAsset || strings.ToLower(exchange) == "hyperliquid"

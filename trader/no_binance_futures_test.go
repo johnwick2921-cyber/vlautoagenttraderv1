@@ -18,10 +18,13 @@ import (
 //
 // market.GetWithExchange called getOpenInterestData + getFundingRate
 // (fapi.binance.com) for MNQ on every AI open, close and admission live-price
-// read. Every HTTP call market makes goes through market.NewAPIClient, which
-// consults hook.SET_HTTP_CLIENT; this trap installs a RoundTripper there that
-// FAILS the test on any request to a host containing "binance" and answers
-// every request offline. The drivers are the production call sites.
+// read. The trap FAILS the test on any request to a host containing "binance"
+// and answers every request offline. It is installed on BOTH ways out of the
+// process (critic G3 — the earlier premise that every market HTTP call goes
+// through market.NewAPIClient was false): hook.SET_HTTP_CLIENT, which the
+// Binance OI/funding client consults, AND http.DefaultTransport, which the
+// clients that bypass the hook use (CoinAnk's package client, historical.go,
+// any client with a nil Transport). The drivers are the production call sites.
 
 type binanceTrap struct {
 	t     *testing.T
@@ -54,7 +57,10 @@ func trapBinance(t *testing.T) *binanceTrap {
 	hook.RegisterHook(hook.SET_HTTP_CLIENT, func(args ...any) any {
 		return &hook.SetHttpClientResult{Client: &http.Client{Transport: b, Timeout: time.Second}}
 	})
+	prevDT := http.DefaultTransport
+	http.DefaultTransport = b
 	t.Cleanup(func() {
+		http.DefaultTransport = prevDT
 		if had {
 			hook.Hooks[hook.SET_HTTP_CLIENT] = prev
 		} else {
@@ -156,5 +162,21 @@ func TestAdmissionLiveReadMakesNoBinanceCall(t *testing.T) {
 		if strings.Contains(strings.ToLower(h), "binance") {
 			t.Fatalf("the admission live read reached %s", h)
 		}
+	}
+}
+
+// Critic G1 — the NinjaTrader venue IS the futures path: a non-CME symbol
+// there is REFUSED by the market read, never sent down the crypto branch
+// (CoinAnk exchange=Binance + fapi OI/funding). Zero outbound requests, on
+// either way out of the process.
+func TestNT8VenueRefusesANonCMESymbolWithNoOutboundCall(t *testing.T) {
+	trap := trapBinance(t)
+	futuresTape(t)
+	d, err := market.GetWithExchange("BTCUSDT", "ninjatrader")
+	if err == nil || d != nil || !strings.Contains(err.Error(), "non-CME symbol is refused") {
+		t.Fatalf("a non-CME symbol on the NinjaTrader venue must be refused, got data=%v err=%v", d, err)
+	}
+	if hosts := trap.seen(); len(hosts) != 0 {
+		t.Fatalf("the refused read still went out: %v", hosts)
 	}
 }

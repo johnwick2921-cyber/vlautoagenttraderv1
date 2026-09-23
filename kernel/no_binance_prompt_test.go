@@ -60,3 +60,35 @@ func TestCryptoPromptRendersFundingOnlyWhenKnown(t *testing.T) {
 		t.Fatalf("crypto's Available-Data bullets are unchanged:\n%s", sb.String())
 	}
 }
+
+// Critic G10 — composed at the production call sites: the engine's own market
+// fetch (fetchMarketDataWithStrategy → market.GetWithTimeframes on the futures
+// route) feeds the prompt render, and absent OI arrives as n/a — not a
+// hand-built Data literal.
+func TestFuturesFetchThenRenderSaysOINA(t *testing.T) {
+	prev := market.FuturesBarsProvider
+	t.Cleanup(func() { market.FuturesBarsProvider = prev })
+	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline {
+		out := make([]market.Kline, 120)
+		for i := range out {
+			c := 29000 + float64(i%7)*1.75
+			out[i] = market.Kline{OpenTime: int64(i) * 300000, Open: c - 1, High: c + 2, Low: c - 2, Close: c, Volume: 10, CloseTime: int64(i)*300000 + 299999}
+		}
+		return out
+	}
+	e := oiFundingEngine("MNQ")
+	e.config.Indicators.Klines.PrimaryTimeframe = "5m"
+	e.config.Indicators.Klines.SelectedTimeframes = []string{"5m"}
+	e.config.Indicators.Klines.PrimaryCount = 60
+	ctx := &Context{CandidateCoins: []CandidateCoin{{Symbol: "MNQ"}}}
+	if err := fetchMarketDataWithStrategy(ctx, e); err != nil {
+		t.Fatalf("fixture: the engine's futures fetch failed: %v", err)
+	}
+	d := ctx.MarketDataMap["MNQ"]
+	if d == nil || d.OpenInterest != nil || d.FundingRateKnown {
+		t.Fatalf("the engine's futures fetch must carry OI/funding ABSENT: %+v", d)
+	}
+	if md := e.formatMarketData(d); !strings.Contains(md, "Open Interest: n/a") || strings.Contains(md, "Latest: 0.00") {
+		t.Fatalf("fetched futures data must render OI n/a:\n%s", md)
+	}
+}
