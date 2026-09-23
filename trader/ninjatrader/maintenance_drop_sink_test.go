@@ -1,6 +1,7 @@
 package ninjatrader
 
 import (
+	"fmt"
 	"testing"
 
 	ntwire "nofx/provider/ninjatrader"
@@ -39,5 +40,17 @@ func TestDroppedEntrySinkRoutesOwnEntriesAndForgetsOnlyNeverAttempted(t *testing
 	tr.mu.Unlock()
 	if last != "" {
 		t.Fatalf("a forgotten entry must not stay the last entry (a later fill would be claimed by it): %q", last)
+	}
+}
+
+// Review F3: an ATTEMPTED own drop may be at NT8 — it must never read as a
+// hold refusal, or the Picture row settles 'refused' and the AI path records
+// nothing for an entry that may exist.
+func TestAnAmbiguousDropIsNotAHoldRefusal(t *testing.T) {
+	if IsMaintenanceHold(fmt.Errorf("send: %w", ntwire.ErrEntryDropAmbiguous)) {
+		t.Fatal("ErrEntryDropAmbiguous must not satisfy IsMaintenanceHold")
+	}
+	if !IsMaintenanceHold(fmt.Errorf("send: %w", ntwire.ErrEntryHeld)) {
+		t.Fatal("ErrEntryHeld (provably unsent) must still satisfy IsMaintenanceHold")
 	}
 }

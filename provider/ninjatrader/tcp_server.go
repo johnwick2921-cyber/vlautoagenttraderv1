@@ -1267,8 +1267,8 @@ func (s *TCPServer) SendSignal(payload SignalPayload) error {
 	s.pending = append(s.pending, timedSignal{payload: payload, timestamp: time.Now()})
 	s.pendingMu.Unlock()
 	heldDropped, err := s.flushPendingReport()
-	if err == nil && heldDropped[payload.SignalID] {
-		err = fmt.Errorf("tcp_server: signal %s not sent: %w", payload.SignalID, ErrEntryHeld)
+	if err == nil {
+		err = ownDropError(payload.SignalID, heldDropped)
 	}
 	recordResearchSignal(payload, err)
 	return err
@@ -2445,8 +2445,9 @@ func (s *TCPServer) flushPending() error {
 	return err
 }
 
-// flushPendingReport is flushPending plus the signal ids it DROPPED because of
-// the maintenance hold (so SendSignal can report its own entry as not sent).
+// flushPendingReport is flushPending plus what it DROPPED because of the
+// maintenance hold, as signal id → attempted (so SendSignal can tell its own
+// entry "never sent" from "may have reached NT8" — ownDropError).
 func (s *TCPServer) flushPendingReport() (map[string]bool, error) {
 	// Held: the whole queue is dropped and reported, CONNECTED OR NOT (the
 	// queue holds entries only; nothing in it may reach the wire while held).

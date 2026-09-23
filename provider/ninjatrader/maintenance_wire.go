@@ -1,6 +1,8 @@
 package ninjatrader
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -283,7 +285,8 @@ func (s *TCPServer) reportDrops(queued []timedSignal) map[string]bool {
 	ds := make([]DroppedEntry, 0, len(queued))
 	for _, q := range queued {
 		sig := q.payload
-		ids[sig.SignalID] = true
+		// signal id → attempted; a duplicate id is attempted if ANY copy was.
+		ids[sig.SignalID] = ids[sig.SignalID] || q.attempted
 		ds = append(ds, DroppedEntry{SignalID: sig.SignalID, TraderID: sig.TraderID, Account: sig.Account,
 			Symbol: sig.Symbol, Side: sig.Side, Attempted: q.attempted})
 		s.logger.Warn("tcp_server: 🔒 maintenance hold — queued entry DROPPED, not sent",
@@ -296,3 +299,25 @@ func (s *TCPServer) reportDrops(queued []timedSignal) map[string]bool {
 // FeedDroppedEntryForTest dispatches d to the registered drop sinks exactly as
 // a held queue drop does (the *ForTest seam family, like FeedOrderUpdateForTest).
 func (s *TCPServer) FeedDroppedEntryForTest(d DroppedEntry) { s.dispatchDrops([]DroppedEntry{d}) }
+
+// ErrEntryDropAmbiguous is returned by SendSignal when its OWN entry was
+// dropped by the maintenance hold AFTER a write of it had been started (by a
+// concurrent flush): it may have reached NT8. Deliberately NOT a hold refusal
+// (IsMaintenanceHold is false), so callers keep their records pending — an
+// ambiguous send — and the installation gate stays closed (review F3; CTO
+// condition 1 on M-2: only a never-attempted drop is "never sent").
+var ErrEntryDropAmbiguous = errors.New("entry dropped by the maintenance hold after a write of it was started — it may have reached NT8")
+
+// ownDropError is SendSignal's verdict on its own entry, from the drop report
+// (signal id → attempted): not dropped → nil; dropped, never attempted →
+// ErrEntryHeld (provably unsent); dropped after an attempt → ErrEntryDropAmbiguous.
+func ownDropError(signalID string, drops map[string]bool) error {
+	attempted, dropped := drops[signalID]
+	switch {
+	case !dropped:
+		return nil
+	case attempted:
+		return fmt.Errorf("tcp_server: signal %s: %w", signalID, ErrEntryDropAmbiguous)
+	}
+	return fmt.Errorf("tcp_server: signal %s not sent: %w", signalID, ErrEntryHeld)
+}
