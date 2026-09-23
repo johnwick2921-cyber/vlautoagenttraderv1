@@ -54,7 +54,8 @@ func TestStopEntryHoldRefusalNeverCancelsTheSiblingArm(t *testing.T) {
 	broker.SetEntryPermit(func() (func(), bool) { return nil, false }) // the hold, seen at the permit
 	at.trader = broker
 	at.config.NinjaTraderSymbol = "MNQ"
-	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, time.Now())
+	now := time.Now() // ONE clock, controlled by the test (class 60/113: never a wall-clock entry)
+	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
 
 	ledger := st.ArmedOrders()
 	stop := store.ArmedOrderDB{TraderID: at.id, PlanID: "latch", Scenario: "S1", Version: 1, State: "armed",
@@ -66,7 +67,7 @@ func TestStopEntryHoldRefusalNeverCancelsTheSiblingArm(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	at.runArmedPlacement([]market.Kline{{Close: 29599}}, time.Now().Add(-time.Hour).UnixMilli())
+	at.runArmedPlacementAt([]market.Kline{{Close: 29599}}, now.Add(-time.Hour).UnixMilli(), now)
 
 	for _, r := range []store.ArmedOrderDB{stop, sibling} {
 		var got store.ArmedOrderDB
