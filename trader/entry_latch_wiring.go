@@ -1,0 +1,181 @@
+package trader
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+	"time"
+
+	nt "nofx/provider/ninjatrader"
+	"nofx/store"
+	ntTrader "nofx/trader/ninjatrader"
+)
+
+// ── W-EXEC-TRUTH W0 (b) — the entry latch's production evidence ────────────
+//
+// The latch lives inside TCPTrader (trader/ninjatrader) and cannot import this
+// package, where the ≤60 s book law (snapshotMaxAge), the one working-entry
+// classifier (adjudicateAccountContract / isBracketChild) and both ledgers
+// live. wireNT8EntryLatch hands it both, built from those SAME definitions —
+// never a second copy (A11/A24). Scope is the trader's bound ACCOUNT and its
+// WIRE symbol, so two symbols on one account (P5) do not block each other.
+
+// wireNT8EntryLatch installs the latch's evidence on one NT8 TCP trader. It is
+// the ONLY production caller of SetEntryLatchSource and NewAutoTrader calls it
+// unconditionally for every *TCPTrader (both pinned). Unwired, the latch
+// allows — the 🚦 boot line READS which it is.
+func wireNT8EntryLatch(at *AutoTrader, nt *ntTrader.TCPTrader) {
+	nt.SetEntryLatchSource(&ntTrader.EntryLatchSource{
+		Book:    at.entryLatchBook,
+		Ledgers: at.entryLatchLedgers,
+		Now:     time.Now,
+	})
+}
+
+// entryLatchBootLine READS the wiring (L7): latch=wired|UNWIRED, or n/a for a
+// non-NT8 trader.
+func entryLatchBootLine(at *AutoTrader) string {
+	n, ok := at.trader.(*ntTrader.TCPTrader)
+	if !ok || n == nil {
+		return "entry latch: latch=n/a (not an NT8 TCP trader)"
+	}
+	state := "UNWIRED"
+	if n.EntryLatchWired() {
+		state = "wired"
+	}
+	return fmt.Sprintf("entry latch: latch=%s key=%s|%s book≤%s recent=%s",
+		state, n.BoundAccount(), n.WireSymbol(), snapshotMaxAge().Round(time.Second), ntTrader.EntryLatchRecentWindow)
+}
+
+// instrumentRoot is the root of an NT8 instrument name ("MNQ 12-26" → "MNQ").
+func instrumentRoot(s string) string {
+	f := strings.Fields(strings.ToUpper(strings.TrimSpace(s)))
+	if len(f) == 0 {
+		return ""
+	}
+	return f[0]
+}
+
+// latchScope is this trader's latch key: its bound account and wire symbol.
+func (at *AutoTrader) latchScope() (account, symbol string) {
+	if n, ok := at.trader.(*ntTrader.TCPTrader); ok && n != nil {
+		return n.BoundAccount(), n.WireSymbol()
+	}
+	return "", at.futuresSymbol()
+}
+
+// entryLatchBook adjudicates the account's fresh book and positions for THIS
+// trader's symbol through the one classifier the armed path uses. A stale or
+// absent book, or unreadable positions, is UNVERIFIABLE — a refusal.
+func (at *AutoTrader) entryLatchBook(now time.Time) ntTrader.EntryLatchBookVerdict {
+	_, sym := at.latchScope()
+	root := instrumentRoot(sym)
+	book, have, age := at.liveBook(now)
+	var mine []nt.NT8Order
+	for _, o := range book {
+		// An order with no symbol (an older AddOn) cannot be proven to be on
+		// another instrument — it counts.
+		if strings.TrimSpace(o.Symbol) == "" || instrumentRoot(o.Symbol) == root {
+			mine = append(mine, o)
+		}
+	}
+	positions := 0
+	ps, err := at.trader.GetPositions()
+	if err != nil {
+		return ntTrader.EntryLatchBookVerdict{Verifiable: false, Detail: "positions unreadable: " + err.Error()}
+	}
+	for _, p := range ps {
+		ps, _ := p["symbol"].(string)
+		if instrumentRoot(ps) != root {
+			continue
+		}
+		if amt, _ := p["positionAmt"].(float64); amt != 0 {
+			positions++
+		}
+	}
+	v := adjudicateAccountContract(mine, have, age, snapshotMaxAge(), 0, positions)
+	switch v.Action {
+	case contractUnverifiable:
+		return ntTrader.EntryLatchBookVerdict{Verifiable: false, Detail: v.Why}
+	case contractLive:
+		return ntTrader.EntryLatchBookVerdict{Verifiable: true, Live: true,
+			Detail: fmt.Sprintf("%d working entry order(s) (first %s %q) and %d position(s) on %s; book age %s",
+				v.WorkingEntries, v.FirstOrderID, v.FirstName, positions, root, age.Round(time.Second))}
+	}
+	return ntTrader.EntryLatchBookVerdict{Verifiable: true}
+}
+
+// traderScope resolves the account and wire symbol a ledger row's trader sends
+// on: this trader, then a running trader in the process registry, then the
+// store's account binding (symbol unknown → treated as this symbol). ok=false:
+// nothing binds it — the caller counts the row (fail-closed).
+func (at *AutoTrader) traderScope(traderID string) (account, symbol string, ok bool) {
+	if traderID == at.id {
+		a, s := at.latchScope()
+		return a, s, true
+	}
+	if v, found := pictureHtfTraders.Load(traderID); found {
+		if other, _ := v.(*AutoTrader); other != nil {
+			a, s := other.latchScope()
+			return a, s, true
+		}
+	}
+	if at.store != nil {
+		if tr, err := at.store.Trader().Get(traderID); err == nil && tr != nil && strings.TrimSpace(tr.Account) != "" {
+			_, s := at.latchScope()
+			return tr.Account, s, true
+		}
+	}
+	return "", "", false
+}
+
+// entryLatchLedgers lists the PLACED non-terminal ledger rows on this trader's
+// account and symbol: an armed row carrying a signal in place_pending /
+// working / cancel_pending, a Picture row working or stamped (a send was
+// started). An unplaced arm and an unstamped Picture claim are not placed. A
+// read error is returned — the latch refuses on it.
+func (at *AutoTrader) entryLatchLedgers() ([]string, error) {
+	if at.store == nil {
+		return nil, fmt.Errorf("no store")
+	}
+	acct, sym := at.latchScope()
+	root := instrumentRoot(sym)
+	var ids []string
+	rows, err := at.store.ArmedOrders().ListNonTerminalAllTraders()
+	if err != nil {
+		return nil, fmt.Errorf("armed ledger: %w", err)
+	}
+	for _, r := range rows {
+		if strings.TrimSpace(r.SignalID) == "" {
+			continue
+		}
+		switch strings.ToLower(strings.TrimSpace(r.State)) {
+		case store.StatePlacePending, store.StateWorking, store.StateCancelPending:
+		default:
+			continue
+		}
+		if a, s, ok := at.traderScope(r.TraderID); ok && (!strings.EqualFold(a, acct) || instrumentRoot(s) != root) {
+			continue
+		}
+		ids = append(ids, fmt.Sprintf("armed#%d(%s %s)", r.ID, r.State, r.SignalID))
+	}
+	prows, err := at.store.PictureHtfRecoverableAll()
+	if err != nil {
+		return nil, fmt.Errorf("picture ledger: %w", err)
+	}
+	for _, p := range prows {
+		stage := strings.ToLower(strings.TrimSpace(p.Stage))
+		if stage != store.StateWorking && !(stage == store.StatePlacePending && p.SubmittedAt > 0) {
+			continue
+		}
+		if strings.TrimSpace(p.Account) != "" && !strings.EqualFold(p.Account, acct) {
+			continue
+		}
+		if strings.TrimSpace(p.Symbol) != "" && instrumentRoot(p.Symbol) != root {
+			continue
+		}
+		ids = append(ids, fmt.Sprintf("picture:%s(%s)", p.OppKey, p.Stage))
+	}
+	sort.Strings(ids)
+	return ids, nil
+}

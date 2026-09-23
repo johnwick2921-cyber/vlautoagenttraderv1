@@ -91,13 +91,15 @@ func (v contractVerdict) Refusal() string {
 	return ""
 }
 
-// isBracketChild reports whether a book order is a protective child rather than
-// an entry. NT8 names bracket children "<signal>-sl" / "<signal>-tp" — the same
-// join key orderBelongsToSlot uses (cancel_confirm.go). Counting a stop as an
-// "entry" would make a protected position block its own management.
+// isBracketChild reports whether a book order is a protective child or an exit
+// rather than an entry. NT8 names bracket children "<signal>-sl" / "<signal>-tp"
+// — the same join key orderBelongsToSlot uses (cancel_confirm.go) — and a limit
+// EXIT "<signal>-lx" (VLTraderTCPClient.cs). Counting a stop or an exit as an
+// "entry" would make a protected position block its own management (W-EXEC-TRUTH
+// W0: -lx was missing, so a resting limit exit read as a working entry).
 func isBracketChild(name string) bool {
 	n := strings.ToLower(strings.TrimSpace(name))
-	return strings.HasSuffix(n, "-sl") || strings.HasSuffix(n, "-tp")
+	return strings.HasSuffix(n, "-sl") || strings.HasSuffix(n, "-tp") || strings.HasSuffix(n, "-lx")
 }
 
 // adjudicateAccountContract is the whole decision as a PURE function: book in,

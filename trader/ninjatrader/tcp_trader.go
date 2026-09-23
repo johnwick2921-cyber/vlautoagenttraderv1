@@ -1484,6 +1484,10 @@ func (t *TCPTrader) GetServer() *ntwire.TCPServer { return t.server }
 // twin of the GetBalance/GetPositions/reconcile decouples.
 func (t *TCPTrader) BoundAccount() string { return t.boundAccount }
 
+// WireSymbol is the instrument this trader sends entries on (the payload
+// symbol and the entry latch key) — never the raw, possibly comma-listed config.
+func (t *TCPTrader) WireSymbol() string { return t.symbol }
+
 // flattenKey is the "SYMBOL|SIDE" key for closedAt (upper-cased, trimmed).
 func flattenKey(symbol, side string) string {
 	return strings.ToUpper(strings.TrimSpace(symbol)) + "|" + strings.ToUpper(strings.TrimSpace(side))
