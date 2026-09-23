@@ -133,3 +133,18 @@ func TestMaintenanceGateHoldDuringAnInFlightSend(t *testing.T) {
 		t.Fatal("drained after the in-flight send released")
 	}
 }
+
+// M2.1 (review 3 F12): the permit RE-READS the hold file itself. A hold written
+// a moment ago — before any other reader has engaged the barrier — must refuse
+// the very next permit (mutation: permit from the barrier alone).
+func TestEntryPermitReReadsAHoldNoReaderHasSeenYet(t *testing.T) {
+	dir := withMaintenanceDir(t)
+	if maintenanceBarrier.Held() {
+		t.Fatal("fixture: the barrier must start released")
+	}
+	setHold(t, dir, "job-fresh") // written; no MaintenanceHeld() call has run since
+	if release, ok := MaintenanceEntryPermit(); ok {
+		release()
+		t.Fatal("a hold written before this permit must refuse it, even with the barrier not yet engaged")
+	}
+}
