@@ -24,7 +24,10 @@ func TestStageAProductionWriterCensus(t *testing.T) {
 		// W-EXEC-TRUTH W0: the decision path's gate chain (and this writer)
 		// moved into admitEntry's chain — the census follows the writer.
 		{"trader/entry_admission.go", "admitChain", "recordResearchGate"},
-		{"trader/armed_executor.go", "maybeManageArmedOrdersAt", "recordResearchGate"},
+		// W-EXEC-TRUTH W3 (D14): the pass body moved into the locked
+		// maybeManageArmedOrdersAtOpts (scan, event and nudge all run it); the
+		// census follows the writer.
+		{"trader/armed_executor.go", "maybeManageArmedOrdersAtOpts", "recordResearchGate"},
 		{"trader/detector_record.go", "recordDetectorOutputs", "recordResearchEpisodes"},
 		{"provider/ninjatrader/tcp_server.go", "readLoop", "observe"},
 		{"provider/ninjatrader/tcp_server.go", "SendSignal", "recordResearchSignal"},

@@ -77,11 +77,14 @@ describe('W3 entry-policy line on the plan card', () => {
   })
 
   it('place_pending / working → Placed at <the composed limit>', () => {
-    for (const state of ['place_pending', 'working']) {
-      expect(lineFor({ ...base, state, verdict: 'inside' })).toBe(
-        HEAD + 'Placed at 31,010'
-      )
-    }
+    // One assertion per state: the arm-state guard (store/arm_state_source_guard_test.go)
+    // forbids a retyped list of state names anywhere in the tree.
+    expect(
+      lineFor({ ...base, state: 'place_pending', verdict: 'inside' })
+    ).toBe(HEAD + 'Placed at 31,010')
+    expect(lineFor({ ...base, state: 'working', verdict: 'inside' })).toBe(
+      HEAD + 'Placed at 31,010'
+    )
   })
 
   it('filled → Filled <fill_price> (+ ticks when measured; a 0 is a value)', () => {
