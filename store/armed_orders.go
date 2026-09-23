@@ -399,6 +399,17 @@ func (s *ArmedOrderStore) ListNonTerminal(traderID string) ([]ArmedOrderDB, erro
 	return out, err
 }
 
+// ListNonTerminalAllTraders is the INSTALLATION-WIDE twin of ListNonTerminal
+// (W-ONE-BUTTON M2 gate): every trader id, loaded or not — a row for a
+// stopped, deleted or never-loaded trader may still be an order at the broker.
+// Deliberately unscoped (F4 scoped the per-trader reader, not this one); the
+// state filter is the canonical NonTerminalArmStateSQL.
+func (s *ArmedOrderStore) ListNonTerminalAllTraders() ([]ArmedOrderDB, error) {
+	var out []ArmedOrderDB
+	err := s.db.Where(NonTerminalArmStateSQL()).Order("id").Find(&out).Error
+	return out, err
+}
+
 // SetState transitions one row's state with a reason (the ledger rule: a
 // terminal state change is never silent).
 func (s *ArmedOrderStore) SetState(id int64, state, reason string) error {

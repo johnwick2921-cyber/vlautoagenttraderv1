@@ -172,6 +172,17 @@ func (t *TCPTrader) SetMaintenanceSource(fn func() (bool, string)) {
 	}
 }
 
+// MaintenanceView is what the installation gate reads from this trader's
+// wire: the current connection's record, whether it is still the connected
+// client, and the queued-signal depth. ok=false without a server.
+func (t *TCPTrader) MaintenanceView() (rec ntwire.ConnectionRecord, connected bool, queued int, ok bool) {
+	if t.server == nil {
+		return ntwire.ConnectionRecord{}, false, 0, false
+	}
+	rec, connected = t.server.ConnectionRecord()
+	return rec, connected, t.server.PendingSignalCount(), true
+}
+
 // SetEntryPermit installs the maintenance permit. Only entry sends take it:
 // PlaceProtectiveStop, CancelOrder, ModifyBracket, MoveStopToBreakeven and the
 // close paths never do (CTO correction C1).

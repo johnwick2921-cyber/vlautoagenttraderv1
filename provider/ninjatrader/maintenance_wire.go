@@ -194,3 +194,16 @@ func (s *TCPServer) maintenanceLoop(ctxDone <-chan struct{}, tick time.Duration)
 		}
 	}
 }
+
+// AckAge is how long ago this record's maintenance_ack arrived, on the
+// monotonic clock; ok=false when this connection has not acked.
+func (r ConnectionRecord) AckAge() (time.Duration, bool) {
+	if r.Ack == nil {
+		return 0, false
+	}
+	return time.Duration(monoMs(time.Now())-r.AckMonoMs) * time.Millisecond, true
+}
+
+// MaintenanceAckMaxAge is the oldest ack the installation gate accepts: three
+// resend intervals (the AddOn re-acks every resend while held).
+func MaintenanceAckMaxAge() time.Duration { return 3 * maintenanceResend }
