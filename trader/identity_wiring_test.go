@@ -12,18 +12,22 @@ import (
 // cannot make a disconnected feature pass this wiring gate.
 func TestIdentityProductionWiring(t *testing.T) {
 	claims := map[string][]string{
-		"kernel/levels_assemble.go":        {"CaptureIdentityContext"},
-		"kernel/levels_intraday.go":        {"WithFormationClose"},
-		"kernel/map_candidates.go":         {"CandidateIdentity"},
-		"kernel/planner_prompt.go":         {"RenderIdentityMapBlock"},
-		"trader/auto_trader_planner.go":    {"stampPlanIdentity", "recordPlanIdentity"},
-		"trader/auto_trader_levelstate.go": {"observeScenarioIdentity"},
-		"trader/detector_record.go":        {"EpisodeLevelID"},
-		"trader/episode_close_wiring.go":   {"EpisodeScenarioByID"},
-		"trader/desk_facts.go":             {"ScenarioIdentities"},
-		"api/handler_plan.go":              {"ScenarioIdentities"},
-		"trader/auto_trader.go":            {"logLevelIdentityBootAt"},
-		"trader/research_snapshot.go":      {"recordResearchCandidateIdentity"},
+		"kernel/levels_assemble.go":         {"CaptureIdentityContext"},
+		"kernel/levels_intraday.go":         {"WithFormationClose"},
+		"kernel/map_candidates.go":          {"CandidateIdentity"},
+		"kernel/planner_prompt.go":          {"RenderIdentityMapBlock", "ScenarioWriteTruthSentences"},
+		"trader/auto_trader_planner.go":     {"stampPlanIdentity", "recordPlanIdentity", "scenarioWriteTruth"},
+		"trader/scenario_write_truth.go":    {"CheckScenarioWriteTruth"},
+		"trader/rootfix_shadow_ab.go":       {"CheckScenarioWriteTruth"},
+		"kernel/scenario_level_identity.go": {"IdentityLevelsFromCandidates"},
+		"kernel/scenario_write_truth.go":    {"scenarioIdentityWriteIssues", "obstacleChainWriteIssues", "ResolveScenarioIdentity", "ScenarioAnchor"},
+		"trader/auto_trader_levelstate.go":  {"observeScenarioIdentity"},
+		"trader/detector_record.go":         {"EpisodeLevelID"},
+		"trader/episode_close_wiring.go":    {"EpisodeScenarioByID"},
+		"trader/desk_facts.go":              {"ScenarioIdentities"},
+		"api/handler_plan.go":               {"ScenarioIdentities"},
+		"trader/auto_trader.go":             {"logLevelIdentityBootAt"},
+		"trader/research_snapshot.go":       {"recordResearchCandidateIdentity"},
 	}
 	for path, names := range claims {
 		f, err := parser.ParseFile(token.NewFileSet(), filepath.Join("..", path), nil, 0)
