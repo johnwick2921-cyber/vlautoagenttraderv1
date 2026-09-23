@@ -37,7 +37,7 @@ export const plays: GuideSection = {
         },
         {
           title: 'hold',
-          body: 'Setup: price holds a level → confirm: time_hold (price holds beyond the ref for ACCEPT_HOLD_MIN = 10 minutes of 1m closes, no close back across) or 1x5m_close as the fallback. Written when the plan expects support/resistance to keep working.',
+          body: 'Setup: price holds a level → confirm: time_hold (price holds beyond the ref for the STORED confirm.hold_min minutes of 1m closes, no close back across — a plan that stores none is counted on the ACCEPT_HOLD_MIN = 10 authoring default and the chip says so) or 1x5m_close as the fallback. Written when the plan expects support/resistance to keep working.',
           tag: 'play 2',
         },
         {
@@ -52,7 +52,7 @@ export const plays: GuideSection = {
         },
         {
           title: 'acceptance',
-          body: 'Setup: closes through a level and holds → confirm: time_hold (10 min of 1m closes) or 1x5m_close. HOUSE RULE: acceptance requires a PRIOR sweep + displacement or the plan skips it (0% win evidence for bare acceptance).',
+          body: 'Setup: closes through a level and holds → confirm: time_hold (confirm.hold_min minutes of 1m closes — minutes stated in the prose must be stored there, else the write is refused; absent in the prose → the 10-minute ACCEPT_HOLD_MIN default) or 1x5m_close. HOUSE RULE: acceptance requires a PRIOR sweep + displacement or the plan skips it (0% win evidence for bare acceptance).',
           tag: 'play 5',
         },
         {
@@ -67,12 +67,12 @@ export const plays: GuideSection = {
         },
         {
           title: 'breakdown_continue',
-          body: 'Setup: price closes BELOW a broken level with displacement ≥ 1.0×ATR5m (BD_MIN_DISP_ATR) and no reclaim close → the waterfall SHORT. BD_MIN_CLOSES = 1: ONE confirming close + displacement is the floor (the double close is gone). Two-leg confirm: leg 1 = the breakdown close, leg 2 = the retest that FAILS to reclaim. entry_mode pullback rests at the broken level (ARM path); immediate is AI-path (market entry on the confirming close through the FULL gate chain — no arm; arms stay pullback-only). Born 2026-08-28: the −347pt NY crash — bias right, but NO plan-legal continuation short existed.',
+          body: 'Setup: price closes BELOW a broken level with displacement ≥ 1.0×ATR5m (BD_MIN_DISP_ATR) and no reclaim close → the waterfall SHORT. The STORED confirm.rule governs the count: 1x5m_close = ONE completed 5m close beyond the level, 2x5m_close = TWO — rendered, recorded, desked, armed and write-validated on that count. BD_MIN_CLOSES (1) is only the authoring default for a play that stores no close rule, and is labelled as such. Two-leg confirm: leg 1 = the breakdown close, leg 2 = the retest that FAILS to reclaim. entry_mode pullback rests at the broken level (ARM path); immediate is AI-path (market entry on the confirming close through the FULL gate chain — no arm; arms stay pullback-only). Born 2026-08-28: the −347pt NY crash — bias right, but NO plan-legal continuation short existed.',
           tag: 'play 8 · −347',
         },
         {
           title: 'breakup_continue',
-          body: 'The LONG mirror: closes ABOVE a broken level with displacement ≥ 1.0×ATR5m, no reclaim → continuation long; BD_MIN_CLOSES = 1, same two-leg confirm. entry_mode pullback = arm at the broken level; immediate = AI-path market entry on the confirming close (full gate chain, no arm). 2x5m_close is legal ONLY on this class — everywhere else it is 2x5m_reserved.',
+          body: 'The LONG mirror: closes ABOVE a broken level with displacement ≥ 1.0×ATR5m, no reclaim → continuation long; the stored 1x5m_close / 2x5m_close is the count (BD_MIN_CLOSES = 1 only when none is stored), same two-leg confirm. entry_mode pullback = arm at the broken level; immediate = AI-path market entry on the confirming close (full gate chain, no arm). 2x5m_close is legal ONLY on this class — everywhere else it is 2x5m_reserved.',
           tag: 'play 8b',
         },
       ],
@@ -161,7 +161,8 @@ export const plays: GuideSection = {
         'reclaim               → 1x5m_close | 1m_mss · 2x5m_reserved',
         'breakout_retest       → touch at the retest + stop-entry fallback · 1x5m_close legal',
         'acceptance / hold     → time_hold | 1x5m_close · 2x5m_reserved',
-        'breakdown/breakup     → 1 confirming close + displacement (BD_MIN_CLOSES=1)',
+        'breakdown/breakup     → the STORED 1x5m_close|2x5m_close + displacement',
+        '                       (BD_MIN_CLOSES=1 = authoring default only)',
         '                       → 2x5m_close legal ONLY here',
         '',
         '15m confirms are DEAD — confirm_rule_15m_removed (rejected by name).',
@@ -210,8 +211,11 @@ export const plays: GuideSection = {
         '            beyond it with displacement ≥ MSS_MIN_DISP_ATR × ATR5m (0.5).',
         '            Closed bars only — a wick beyond the swing NEVER counts.',
         '            Renders "1m-MSS: MET/NOT-MET (swing <px> @<t>)".',
-        'time_hold : price holds beyond the ref for ACCEPT_HOLD_MIN (10) minutes',
-        '            of 1m closes with no close back across — for acceptance/hold.',
+        'time_hold : price holds beyond the ref for confirm.hold_min minutes of',
+        '            1m closes with no close back across — for acceptance/hold.',
+        '            hold_min is STORED from the prose ("holds 3 minutes" →',
+        '            hold_min: 3, refused at write if absent or different);',
+        '            none stored → ACCEPT_HOLD_MIN (10), named as the default.',
         'stop_entry: the breakout-retest fallback — a STOP-MARKET entry beyond the',
         '            break candle after RETEST_WAIT_BARS (6) no-retest bars,',
         '            STOP_ENTRY_OFFSET_TICKS (2) beyond. THREE gates, in the order',
@@ -225,7 +229,7 @@ export const plays: GuideSection = {
     { kind: 'h', text: 'Entry-mechanics knobs' },
     {
       kind: 'p',
-      text: "BD_MIN_CLOSES (1) · BD_MIN_DISP_ATR (1.0) · MSS_MIN_DISP_ATR (0.5) · ACCEPT_HOLD_MIN (10) · STOP_ENTRY_OFFSET_TICKS (2) · RETEST_WAIT_BARS (6) · STOP_ENTRY_SEAM (off). Default confirm = 1x5m_close; a sweep_reclaim arm may split into TWO child orders (leg 1 touch + leg 2 chained) — either leg's stop-out cancels the sibling's unfilled order (no doubling into a failed level).",
+      text: "BD_MIN_CLOSES (1) · BD_MIN_DISP_ATR (1.0) · MSS_MIN_DISP_ATR (0.5) · ACCEPT_HOLD_MIN (10) · STOP_ENTRY_OFFSET_TICKS (2) · RETEST_WAIT_BARS (6) · STOP_ENTRY_SEAM (off). BD_MIN_CLOSES and ACCEPT_HOLD_MIN are AUTHORING DEFAULTS: a scenario's stored confirm.rule / confirm.hold_min governs its evaluation, and the env value is read only when nothing valid is stored (the card chip then says \"authoring default\"). Default confirm = 1x5m_close; a sweep_reclaim arm may split into TWO child orders (leg 1 touch + leg 2 chained) — either leg's stop-out cancels the sibling's unfilled order (no doubling into a failed level).",
     },
     { kind: 'h', text: 'THE A-SETUP (the chained play)' },
     {

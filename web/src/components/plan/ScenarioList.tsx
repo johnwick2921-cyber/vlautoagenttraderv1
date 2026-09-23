@@ -55,6 +55,10 @@ export type ConfirmVerdict = {
     closed: boolean
   }
   rule: string
+  // W2 (confirm resolver): where the rule's count/duration came from —
+  // 'stored' (the scenario's own confirm) or 'authoring_default'
+  // (BD_MIN_CLOSES / ACCEPT_HOLD_MIN). Absent on pre-W2 records: unknown.
+  rule_source?: string
   ref_price: number
   side: string
   met: boolean
@@ -91,11 +95,13 @@ export function ConfirmChip({ id, c }: { id: string; c: ConfirmVerdict }) {
   const legs = c.legs && c.legs.length > 0
   const label = confirmRuleLabel(c.rule)
   const outcome = c.outcome || 'UNKNOWN'
+  const source =
+    c.rule_source === 'authoring_default' ? ' (authoring default)' : ''
   return (
     <span
       data-testid={`confirm-chip-${id}`}
       className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-      title={`${label} ${c.side} ${c.ref_price} — ${c.detail} (machine-computed, advisory)`}
+      title={`${label}${source} ${c.side} ${c.ref_price} — ${c.detail} (machine-computed, advisory)`}
       style={
         c.met && outcome === 'MET'
           ? {
@@ -108,7 +114,8 @@ export function ConfirmChip({ id, c }: { id: string; c: ConfirmVerdict }) {
             }
       }
     >
-      Recorded {label} {outcome}
+      Recorded {label}
+      {source} {outcome}
       {legs &&
         ` (${c.legs!.map((l, i) => `${i + 1}/${c.legs!.length} ${l.met ? 'MET' : 'NOT MET'}`).join(' · ')})`}
       <span className="block font-normal">
