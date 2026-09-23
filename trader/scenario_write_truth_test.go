@@ -354,6 +354,27 @@ func TestW2A3MultiAnchorSweepReclaim(t *testing.T) {
 			t.Fatalf("stored two-anchor ids lost: %+v", s)
 		}
 	})
+	// level_id naming the RECLAIM leg's level (not the trigger's first price):
+	// legitimate only because the two-anchor fields vouch for it; without
+	// them it is an identity≠price refusal.
+	t.Run("level_id at a validated leg", func(t *testing.T) {
+		at := w2Trader(t)
+		s := legit()
+		s["level_id"] = vwap2
+		prompts, lc := w2Write(t, at, "LONDON", "2026-09-23", f.facts(), f.planJSON(t, s))
+		if lc != "active" || len(prompts) != 1 {
+			t.Fatalf("level_id at a declared, validated leg must publish: lc=%q calls=%d", lc, len(prompts))
+		}
+		at2 := w2Trader(t)
+		bare := legit()
+		bare["level_id"] = vwap2
+		delete(bare, "sweep_level_id")
+		delete(bare, "reclaim_level_id")
+		prompts, lc = w2Write(t, at2, "LONDON", "2026-09-23", f.facts(), f.planJSON(t, bare), f.planJSON(t, legit()))
+		if lc != "active" || len(prompts) != 2 || !strings.Contains(prompts[1], "S3 identity≠price") {
+			t.Fatalf("without the two-anchor fields the same level_id is identity≠price: lc=%q calls=%d", lc, len(prompts))
+		}
+	})
 	for _, tc := range []struct {
 		name, class, want string
 		mutate            func(map[string]any)

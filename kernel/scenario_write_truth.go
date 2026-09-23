@@ -307,8 +307,10 @@ type pathCandidate struct {
 
 // onPath returns the candidates strictly between entry and target in the
 // trade direction, nearest first. Excluded: the scenario's own level_id
-// candidate, anything inside entry_zone ±1 tick, and anything within one tick
-// of the entry or the target (the target is the destination, not an obstacle).
+// candidate when the entry sits in its zone (the traded level itself — a
+// level_id naming a validated reclaim leg further along stays on the path),
+// anything inside entry_zone ±1 tick, and anything within one tick of the
+// entry or the target (the target is the destination, not an obstacle).
 func onPath(cs []MapCandidate, sc PlanScenario, entry, target, dir, tick float64) []pathCandidate {
 	ownID, hasOwn := authoredID(sc.LevelID)
 	zLo, zHi, hasZone := 0.0, 0.0, false
@@ -321,7 +323,11 @@ func onPath(cs []MapCandidate, sc PlanScenario, entry, target, dir, tick float64
 			continue
 		}
 		if hasOwn && c.ID != nil && *c.ID == ownID {
-			continue
+			own := c.Identity
+			own.Price = c.Price
+			if identityAgreesZoneAware(own, entry) {
+				continue // the traded level itself (entry inside its zone) is not an obstacle
+			}
 		}
 		p := tickRound(c.Price, tick)
 		if hasZone && p >= zLo-1e-9 && p <= zHi+1e-9 {
