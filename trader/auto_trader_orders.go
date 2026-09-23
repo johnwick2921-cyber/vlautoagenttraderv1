@@ -269,6 +269,14 @@ func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
 	if held == "" {
 		return nil // NT8 flat → proceed
 	}
+	// W-EXEC-TRUTH W0 (c): a position a LEDGER row explains is another
+	// producer's (an armed fill, a Picture fill, one not yet materialized in
+	// trader_positions) — never an orphan. Flattening it destroyed that
+	// producer's trade and its bracket; the AI entry is refused instead, named.
+	if owner, owned := at.ledgerExplainsPosition(symbol, held, time.Now()); owned {
+		at.logWarnf("⛔ reconcile-before-open: NT8 holds a %s %s that the ledger explains (%s) — refusing the %s open; the position is NOT flattened.", held, symbol, owner, intendedSide)
+		return fmt.Errorf("%w: %s", errPositionOwned, owner)
+	}
 	at.logWarnf("🚨 reconcile-before-open: NT8 holds a %s %s before an intended %s open — flattening first (awaiting fill) to avoid compounding onto an orphan.", held, symbol, intendedSide)
 	// Timestamp BEFORE the flatten so we only accept a close that our flatten caused.
 	t0 := time.Now().UnixMilli()
@@ -313,7 +321,7 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 
 	// TRACK B — reconcile NT8 net before opening; flatten an orphan first or refuse.
 	if err := at.reconcileBeforeOpenNT(decision.Symbol, "long"); err != nil {
-		return err
+		return at.reconcileRefusal(err, actionRecord)
 	}
 
 	// ⚠️ Get current positions for multiple checks
@@ -461,7 +469,7 @@ func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, acti
 
 	// TRACK B — reconcile NT8 net before opening; flatten an orphan first or refuse.
 	if err := at.reconcileBeforeOpenNT(decision.Symbol, "short"); err != nil {
-		return err
+		return at.reconcileRefusal(err, actionRecord)
 	}
 
 	// ⚠️ Get current positions for multiple checks

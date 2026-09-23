@@ -610,3 +610,9 @@ func RepairArmedLineage(st *store.Store, traderID string) int {
 	}
 	return n
 }
+
+// UntrackedGraceMs is how long an NT8-held position with no open DB row must
+// persist before the reconciler materializes it (W-EXEC-TRUTH W0 (c): the
+// pre-open reconcile treats a ledger fill younger than twice this as not yet
+// materialized, so it explains the position instead of flattening it).
+const UntrackedGraceMs = untrackedGraceMs
