@@ -47,6 +47,17 @@ func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, 
 		return fmt.Errorf("picture_htf: send refused — %s: %w", reason, ntTrader.ErrMaintenanceHold)
 	}
 
+	// --- Re-check 0b (W-EXEC-TRUTH W0 (a)): THE ONE ADMISSION GATE again,
+	// immediately before the wire, on the evidence the evaluator admitted it
+	// on. The row carries no submission stamp yet, so a refusal here is
+	// provably unsent and the evaluator settles it refused. ---
+	if refusal, refused := at.admitEntry(admitIntent{
+		Path: admitPicture, Symbol: row.Symbol, Action: "open_" + row.Direction, Now: now,
+		Key: row.OppKey, Price: row.EntryRef, Picture: e.pendingAdmission,
+	}); refused {
+		return fmt.Errorf("picture_htf: send refused — %s", refusal)
+	}
+
 	// --- Re-check 1: feed freshness at SEND time, not claim time (on the
 	// evaluation's clock — W-EXEC-TRUTH W0, class 60). ---
 	if now.Sub(e.freshest5mAt).Milliseconds() > int64(e.cfg.FreshnessSec)*1000 {
@@ -65,7 +76,7 @@ func pictureHtfSend(e *PictureHtfEvaluator, row *store.PictureHtfOpportunityDB, 
 	// --- Re-check 2: the book must be FLAT on this symbol. ---
 	if pos, err := at.trader.GetPositions(); err == nil {
 		for _, p := range pos {
-			if sym, _ := p["symbol"].(string); sym == row.Symbol {
+			if sym, _ := p["symbol"].(string); instrumentRoot(sym) == instrumentRoot(row.Symbol) {
 				return fmt.Errorf("picture_htf: send refused — open position on %s (flat book required)", row.Symbol)
 			}
 		}

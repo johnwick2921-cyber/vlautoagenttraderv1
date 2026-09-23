@@ -144,6 +144,22 @@ func (at *AutoTrader) admitEntry(in admitIntent) (string, bool) {
 }
 
 func (at *AutoTrader) admitChain(in admitIntent, sym, act string, now time.Time) (string, bool) {
+	if in.Path == admitPicture {
+		// Picture runs on the live-bar goroutine, outside runCycle, so it has
+		// no loop in front of it that stops when the trader stops or the Day
+		// Plan master is off (D26). The decision and arm paths only run inside
+		// runCycle, which already requires both.
+		if !at.runningNow() {
+			return at.admitRefuse(in, "trader_stopped", "picture: the trader is not running", func() {
+				at.logWarnf("⏹ picture: %s %s REFUSED — the trader is not running.", sym, act)
+			})
+		}
+		if !at.dayPlanEnabled() {
+			return at.admitRefuse(in, "day_plan_off", "picture: the Day Plan master is off", func() {
+				at.logWarnf("⏹ picture: %s %s REFUSED — the Day Plan master is off.", sym, act)
+			})
+		}
+	}
 	// Feed-down gate (NinjaTrader, TRACK A): the SIM cannot fill without market
 	// data, so an entry issued while the feed is down is rejected ("no market
 	// data"). Default-ALLOW until a feed_status frame arrives, so a healthy bot
@@ -357,4 +373,11 @@ func (at *AutoTrader) reentryCooldownMinutes() int {
 		return 0
 	}
 	return at.config.StrategyConfig.RiskControl.ReentryCooldownMinutes
+}
+
+// runningNow reads isRunning under its lock (safe from any goroutine).
+func (at *AutoTrader) runningNow() bool {
+	at.isRunningMutex.RLock()
+	defer at.isRunningMutex.RUnlock()
+	return at.isRunning
 }

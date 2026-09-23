@@ -151,6 +151,23 @@ func (s *Store) PictureHtfTransition(oppKey, stage, reason string) error {
 		Updates(map[string]any{"stage": stage, "stage_reason": reason}).Error
 }
 
+// PictureHtfRefuse settles a refusal onto an opportunity ONLY while no send of
+// it has started (W-EXEC-TRUTH W0, CTO Q8): a confirmed row, or a place_pending
+// row that carries no submission stamp. A row whose send started — stamped
+// place_pending, working, filled — or one already terminal is never
+// overwritten: a later refusal of the same hour's opportunity used to clobber
+// a submitted row to 'expired', and the broker consumer then DROPPED a received
+// FILLED frame for it. Returns whether the row moved.
+func (s *Store) PictureHtfRefuse(oppKey, stage, reason string) (bool, error) {
+	if s == nil || s.gdb == nil {
+		return false, fmt.Errorf("store unavailable")
+	}
+	res := s.gdb.Model(&PictureHtfOpportunityDB{}).
+		Where("opp_key = ? AND (stage = ? OR (stage = ? AND submitted_at = 0))", oppKey, "confirmed", StatePlacePending).
+		Updates(map[string]any{"stage": stage, "stage_reason": reason})
+	return res.RowsAffected > 0, res.Error
+}
+
 // PictureHtfMarkBroker stamps the received broker evidence. Only received
 // order events may call this; absent fields stay empty (unknown/unavailable,
 // never a fabricated success).
