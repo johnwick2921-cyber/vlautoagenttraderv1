@@ -264,6 +264,19 @@ func maxConfiguredPeriod(ip IndicatorPeriods) int {
 	return m
 }
 
+// GetWithTimeframesVenue is GetWithTimeframes for a KNOWN venue (CTO F2): the
+// read goes through marketRouteFor exactly like GetWithExchange, so the
+// NinjaTrader venue with a non-CME symbol is REFUSED — never the crypto branch
+// (CoinAnk exchange=Binance + fapi OI/funding). The engine's two cycle reads
+// and the indicator mirror call this with the trader's exchange; an empty
+// venue routes by symbol, as GetWithTimeframes does.
+func GetWithTimeframesVenue(symbol, venue string, timeframes []string, primaryTimeframe string, count int, indPeriods ...IndicatorPeriods) (*Data, error) {
+	if marketRouteFor(Normalize(symbol), venue) == routeRefusedVenue {
+		return nil, fmt.Errorf("%s: the NinjaTrader venue reads CME futures only — a non-CME symbol is refused (no crypto market read on the futures venue)", Normalize(symbol))
+	}
+	return GetWithTimeframes(symbol, timeframes, primaryTimeframe, count, indPeriods...)
+}
+
 func GetWithTimeframes(symbol string, timeframes []string, primaryTimeframe string, count int, indPeriods ...IndicatorPeriods) (*Data, error) {
 	symbol = Normalize(symbol)
 

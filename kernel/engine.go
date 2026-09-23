@@ -260,6 +260,12 @@ type StrategyEngine struct {
 	// Empty by default → the futures prompt is byte-identical (golden safe).
 	svpContextLine string
 
+	// venue is the trading venue of the trader this engine serves (its
+	// exchange). The cycle's market reads route through it (CTO F2): the
+	// NinjaTrader venue never reads a non-CME symbol from a crypto source.
+	// Empty = route by symbol (Studio previews, agent tools).
+	venue string
+
 	// keyLevelsContextLine is the per-cycle day-plan KEY LEVELS block (P1.7),
 	// threaded in from the decision loop like svpContextLine. Consumed by the
 	// futures prompt ONLY when day_plan is enabled AND the line is non-empty, so
@@ -338,6 +344,10 @@ func (e *StrategyEngine) SetPromptSnapshotMs(ms int64) { e.promptSnapshotMs = ms
 
 // NewStrategyEngine creates strategy execution engine.
 // claw402WalletKey is optional — if provided, nofxos data requests are routed through claw402.
+// SetVenue records the venue (the trader's exchange) the cycle's market reads
+// route through (CTO F2).
+func (e *StrategyEngine) SetVenue(venue string) { e.venue = venue }
+
 func NewStrategyEngine(config *store.StrategyConfig, claw402WalletKey ...string) *StrategyEngine {
 	// Create NofxOS client with API key from config
 	apiKey := config.Indicators.NofxOSAPIKey

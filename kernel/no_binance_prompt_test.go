@@ -1,9 +1,14 @@
 package kernel
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
+	"nofx/hook"
 	"nofx/market"
 	"nofx/store"
 )
@@ -90,5 +95,78 @@ func TestFuturesFetchThenRenderSaysOINA(t *testing.T) {
 	}
 	if md := e.formatMarketData(d); !strings.Contains(md, "Open Interest: n/a") || strings.Contains(md, "Latest: 0.00") {
 		t.Fatalf("fetched futures data must render OI n/a:\n%s", md)
+	}
+}
+
+// kernelTrap answers every outbound request offline and records it, on BOTH
+// ways out (hook.SET_HTTP_CLIENT and http.DefaultTransport).
+type kernelTrap struct {
+	mu    sync.Mutex
+	hosts []string
+}
+
+func (k *kernelTrap) RoundTrip(r *http.Request) (*http.Response, error) {
+	k.mu.Lock()
+	k.hosts = append(k.hosts, r.URL.Host)
+	k.mu.Unlock()
+	return nil, fmt.Errorf("no network in this test")
+}
+
+func trapOutbound(t *testing.T) *kernelTrap {
+	t.Helper()
+	k := &kernelTrap{}
+	prev, had := hook.Hooks[hook.SET_HTTP_CLIENT]
+	prevEnabled := hook.EnableHooks
+	hook.EnableHooks = true
+	hook.RegisterHook(hook.SET_HTTP_CLIENT, func(args ...any) any {
+		return &hook.SetHttpClientResult{Client: &http.Client{Transport: k, Timeout: time.Second}}
+	})
+	prevDT := http.DefaultTransport
+	http.DefaultTransport = k
+	t.Cleanup(func() {
+		http.DefaultTransport = prevDT
+		if had {
+			hook.Hooks[hook.SET_HTTP_CLIENT] = prev
+		} else {
+			delete(hook.Hooks, hook.SET_HTTP_CLIENT)
+		}
+		hook.EnableHooks = prevEnabled
+	})
+	return k
+}
+
+// CTO F2 — the engine's cycle read on the NinjaTrader venue never reads a
+// non-CME symbol from a crypto source: fetchMarketDataWithStrategy (the
+// production call site) refuses it, with ZERO outbound requests, while the
+// CME candidate is read from the NT8 bars.
+func TestEngineCycleReadOnNT8RefusesANonCMESymbol(t *testing.T) {
+	trap := trapOutbound(t)
+	prev := market.FuturesBarsProvider
+	t.Cleanup(func() { market.FuturesBarsProvider = prev })
+	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline {
+		out := make([]market.Kline, 120)
+		for i := range out {
+			c := 29000 + float64(i%7)*1.75
+			out[i] = market.Kline{OpenTime: int64(i) * 300000, Open: c - 1, High: c + 2, Low: c - 2, Close: c, Volume: 10, CloseTime: int64(i)*300000 + 299999}
+		}
+		return out
+	}
+	e := oiFundingEngine("MNQ")
+	e.SetVenue("ninjatrader")
+	e.config.Indicators.Klines.PrimaryTimeframe = "5m"
+	e.config.Indicators.Klines.SelectedTimeframes = []string{"5m"}
+	e.config.Indicators.Klines.PrimaryCount = 60
+	ctx := &Context{CandidateCoins: []CandidateCoin{{Symbol: "MNQ"}, {Symbol: "BTCUSDT"}}}
+	_ = fetchMarketDataWithStrategy(ctx, e)
+	if _, ok := ctx.MarketDataMap["BTCUSDT"]; ok {
+		t.Fatalf("a non-CME symbol on the NinjaTrader venue must never be read: %+v", ctx.MarketDataMap["BTCUSDT"])
+	}
+	if _, ok := ctx.MarketDataMap["MNQ"]; !ok {
+		t.Fatalf("fixture: the CME candidate must still be read from the NT8 bars")
+	}
+	trap.mu.Lock()
+	defer trap.mu.Unlock()
+	if len(trap.hosts) != 0 {
+		t.Fatalf("the NT8 cycle read went out to %v", trap.hosts)
 	}
 }

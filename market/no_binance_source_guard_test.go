@@ -20,9 +20,9 @@ import (
 
 // binanceHostAllowlist: "<file>:<enclosing func or const/var name>" → why.
 var binanceHostAllowlist = map[string]string{
-	"market/data.go:getOpenInterestData": "crypto-perp OI; called only from the crypto branch (checked below)",
-	"market/data.go:getFundingRate":      "crypto-perp funding; called only from the crypto branch (checked below)",
-	"market/api_client.go:baseURL":       "APIClient's base URL; NewAPIClient is constructed only inside the two fetchers above",
+	"market/data.go:getOpenInterestData":           "crypto-perp OI; called only from the crypto branch (checked below)",
+	"market/data.go:getFundingRate":                "crypto-perp funding; called only from the crypto branch (checked below)",
+	"market/api_client.go:baseURL":                 "APIClient's base URL; NewAPIClient is constructed only inside the two fetchers above",
 	"market/historical.go:binanceFuturesKlinesURL": "GetKlinesRange — no caller anywhere (dead on the live path); deleted in W-NO-BINANCE Part B",
 }
 
@@ -149,5 +149,66 @@ func TestBinanceFetchersAreCalledOnlyFromTheCryptoBranch(t *testing.T) {
 	}
 	if calls < 4 {
 		t.Fatalf("expected the four crypto-branch calls (two per market read), found %d — the guard is going vacuous", calls)
+	}
+}
+
+// CTO F2 — the symbol-only read (GetWithTimeframes, which cannot see the
+// venue) may be called outside market/ ONLY at these sites; every trader
+// cycle read uses GetWithTimeframesVenue with the trader's exchange.
+var symbolOnlyReadAllowlist = map[string]string{
+	"trader/auto_trader_grid.go:InitializeGrid":        "grid strategies are crypto-only today (W-NO-BINANCE B decides their fate)",
+	"trader/auto_trader_grid.go:buildGridContext":      "grid strategies are crypto-only today (W-NO-BINANCE B decides their fate)",
+	"trader/auto_trader_grid_levels.go:autoAdjustGrid": "grid strategies are crypto-only today (W-NO-BINANCE B decides their fate)",
+	"api/strategy.go:handleStrategyTestRun":            "Studio preview of a strategy — no trader, so no venue; CME symbols take the futures route by symbol",
+}
+
+func TestTraderCycleReadsAreVenueAware(t *testing.T) {
+	fset := token.NewFileSet()
+	found := map[string]bool{}
+	for _, dir := range []string{"../trader", "../kernel", "../api", "../agent"} {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return err
+			}
+			f, perr := parser.ParseFile(fset, path, nil, 0)
+			if perr != nil {
+				t.Fatalf("parse %s: %v", path, perr)
+			}
+			rel := strings.TrimPrefix(filepath.ToSlash(path), "../")
+			for _, d := range f.Decls {
+				fd, ok := d.(*ast.FuncDecl)
+				if !ok || fd.Body == nil {
+					continue
+				}
+				ast.Inspect(fd.Body, func(n ast.Node) bool {
+					ce, ok := n.(*ast.CallExpr)
+					if !ok {
+						return true
+					}
+					sel, ok := ce.Fun.(*ast.SelectorExpr)
+					if !ok || sel.Sel.Name != "GetWithTimeframes" {
+						return true
+					}
+					if x, ok := sel.X.(*ast.Ident); !ok || x.Name != "market" {
+						return true
+					}
+					key := rel + ":" + fd.Name.Name
+					found[key] = true
+					if _, ok := symbolOnlyReadAllowlist[key]; !ok {
+						t.Errorf("%s (%s): market.GetWithTimeframes cannot see the venue — a trader read must use GetWithTimeframesVenue (CTO F2)", key, fset.Position(ce.Pos()))
+					}
+					return true
+				})
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for key := range symbolOnlyReadAllowlist {
+		if !found[key] {
+			t.Errorf("allowlist row %q matches nothing — delete it (the list only shrinks)", key)
+		}
 	}
 }

@@ -180,3 +180,28 @@ func TestNT8VenueRefusesANonCMESymbolWithNoOutboundCall(t *testing.T) {
 		t.Fatalf("the refused read still went out: %v", hosts)
 	}
 }
+
+// CTO F2 — fail-closed at the SOURCE: a trader on the NinjaTrader venue whose
+// NT8 symbol or strategy static coin is not a CME futures symbol is REFUSED at
+// NewAutoTrader (the load path), named, and never started.
+func TestNT8TraderWithANonCMESymbolIsRefusedAtLoad(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cfg  AutoTraderConfig
+		bad  string
+	}{
+		{"nt8 symbol", AutoTraderConfig{Name: "nb-f2-a", Exchange: "ninjatrader", NinjaTraderSymbol: "BTCUSDT"}, "BTCUSDT"},
+		{"static coin", AutoTraderConfig{Name: "nb-f2-b", Exchange: "ninjatrader", NinjaTraderSymbol: "MNQ",
+			StrategyConfig: &store.StrategyConfig{CoinSource: store.CoinSourceConfig{StaticCoins: []string{"MNQ", "ETHUSDT"}}}}, "ETHUSDT"},
+	} {
+		at, err := NewAutoTrader(tc.cfg, nil, "u")
+		if at != nil || err == nil || !strings.Contains(err.Error(), "not CME futures symbols") || !strings.Contains(err.Error(), tc.bad) {
+			t.Errorf("%s: an NT8-venue trader trading %s must be REFUSED at load, named; got trader=%v err=%v", tc.name, tc.bad, at != nil, err)
+		}
+	}
+	// A CME symbol passes THIS check (it may still fail later for other reasons).
+	_, err := NewAutoTrader(AutoTraderConfig{Name: "nb-f2-c", Exchange: "ninjatrader", NinjaTraderSymbol: "MNQ"}, nil, "u")
+	if err != nil && strings.Contains(err.Error(), "not CME futures symbols") {
+		t.Fatalf("a CME symbol must not be refused by the venue check: %v", err)
+	}
+}
