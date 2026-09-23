@@ -92,6 +92,10 @@ export const status: GuideSection = {
     },
     {
       kind: 'p',
+      text: "A hold can also WITHDRAW resting entry orders: 'maintenance-hold set --withdraw-entries' writes the hold with withdraw_entries, and only that flag asks for it — a plain hold never withdraws anything. Two money-safety trips withdraw on their own, with no hold: the consecutive-loss breaker and the daily force-flat, so an entry already resting at NinjaTrader cannot fill after a loss limit tripped. The withdraw cancels ENTRY orders only — armed orders carrying a broker signal — through the filled-order guard the armed cancels use; stops, targets and closes are never touched, and an order that may already have filled is left alone and logged. Armed orders are the whole set of resting entries: the AI and Picture enter at market. A cancelled order is shown as pending until NinjaTrader confirms it — an order update saying cancelled, or its absence from a fresh saved order snapshot — and is never shown as done before that. An arm that was never sent stays armed and is refused by the entry rules. GET /api/maintenance shows withdraw: {requested, pending, confirmed} for the current hold's job; it is null when the hold did not ask for a withdraw.",
+    },
+    {
+      kind: 'p',
       text: "Where to read it: the 🔒 maintenance boot line; GET /api/maintenance (held, job, since, sends still in flight, whether the bot has drained, and the AddOn's acknowledgement); and GET /api/installation-gate, the one verdict an update needs before it may continue. That gate checks every trader and every NinjaTrader account at once. It fails while any planner read is running, while any entry send or queued entry is in flight, while any trader is not a NinjaTrader TCP trader, while the AddOn has not acknowledged this hold, while any non-SIM connection is connected, while any NinjaTrader connection is between states (connecting, connection lost), and while any account holds a position or a working order of any kind. A trader that ran once and has since been removed is listed but only blocks the gate if it is still running. Any leg it cannot check counts as a failure. The gate-block table counts refusals as 'maintenance_hold'. An entry that was waiting in the reconnect queue when the hold landed is dropped, never sent later, and counted as 'maintenance_drop'. If a write of it had already started, it is counted as 'maintenance_drop_attempted' and stays pending until it is reconciled with NinjaTrader.",
     },
     { kind: 'h', text: 'One entry at a time (the entry latch)' },
@@ -103,12 +107,34 @@ export const status: GuideSection = {
       kind: 'p',
       text: "The boot line '🚦 entry latch' READS whether the latch has its evidence: latch=wired means it checks everything above; latch=UNWIRED means nothing installed its evidence and it lets every entry through, which is a defect to report, never a setting.",
     },
+    { kind: 'h', text: 'One set of entry rules (every way in)' },
+    {
+      kind: 'p',
+      text: "Every new entry now asks the same questions, in the same order, whichever way it comes: the AI decision; an armed order, at the moment it is placed; a Picture HTF entry, before it claims the opportunity and again just before it is sent; and an entry typed in the agent chat. The order is: price feed connected → the reconnect check settled (dead-man) → not frozen → boot integrity → no owner pause → no maintenance hold → contract roll resolved → the loss breaker and session risk → the last-entry cutoff → the session open (AI) or CME open (armed, Picture) → plan mode → approval → the re-entry cooldown (armed, Picture) → the entry gate. Before this each way ran its own shorter list — Picture checked only the maintenance hold, its own positions and its own pending rows — so a gate that stopped one way did not always stop the others. A refusal names the gate that refused it and is counted in the gate-block table under that gate's name. An armed or Picture refusal is logged and counted once per change of gate, not once per tick: a reason that carries a moving price (the cooldown's distance from the stop, an R:R at the live price) no longer counts as a new refusal every time the price moves.",
+    },
+    {
+      kind: 'p',
+      text: "An armed order is placed only in a pass whose plan checks passed for it in that SAME pass. Before, a leg the plan checks refused (for example after the daily force-flat tripped) could still be placed in that pass, because it was already armed from an earlier one. A refused leg stays armed and places in a later pass that admits it; it is counted as 'arm_not_admitted', once per change.",
+    },
+    {
+      kind: 'p',
+      text: "Picture HTF runs only while the trader is running and the Day Plan is on. It trades only its own instrument: an MNQ trader never acts on ES bars. Its minimum R:R is the stricter of its own setting and the strategy's. Missing evidence — no entry, stop or target, a stop or target on the wrong side, no 5-minute ATR, unreadable positions, no strategy floor — refuses. Under plan_mode=strict it is refused until it becomes a Day Plan scenario, and says so: the 📷 boot line's plan_gate= field and a red '📷 PICTURE refused under strict until W5 (source not yet a Day Plan scenario)' chip on the plan card carry the same words. A refusal before it claims the opportunity writes nothing, so a passing pause or feed flap does not kill that hour's opportunity; the next frame asks again. A send refused before it was stamped settles the row 'refused' (never sent) instead of leaving it ambiguous.",
+    },
+    {
+      kind: 'p',
+      text: "An entry typed in the agent chat goes through the same chain as an AI decision, plan mode included: under strict it is refused. A chat entry carries no stop or target, so the entry gate's R:R and stop-distance checks do not apply to it — holding a stop-less chat entry to the stop floor is owed, not built.",
+    },
+    {
+      kind: 'p',
+      text: "Before an AI entry, a position NinjaTrader already holds is flattened only when nothing on our books explains it. It is left alone — and the AI entry refused, counted as 'reconcile_owned' — when, for that account, instrument and side, an armed order carrying a broker signal or a sent Picture entry is live; when an open position's entry order is one of those; or when one of them filled in the last two minutes (twice the reconciler's grace) on this trader or any trader running in the process and is not recorded as a position yet. A trader that has already stopped is not checked for that last case. A position nothing explains is flattened as before.",
+    },
     { kind: 'h', text: 'The boot ledger, line by line' },
     {
       kind: 'code',
       title: 'the lines printed at startup, in order',
       lines: [
         '🔐 BOOT INTEGRITY OK — rev <sha> [+dirty] · built <ts>',
+        "📷 picture-htf: mode=<on|off> rule=v1 SIM-only data=… addon=<proven|not proven> (build=…, need ≥ …) plan_gate=<admitted (plan mode is not strict)|refused under strict until W5 (source not yet a Day Plan scenario)> — per trader, READ: plan_gate is the plan-mode verdict Picture's entry gate refuses on  ← W-EXEC-TRUTH W0b",
         '🚦 entry latch: latch=<wired|UNWIRED|n/a> key=<ACCOUNT|SYMBOL> book≤<2×snapshot interval> recent=1m0s — per trader, READ from the NinjaTrader connection: wired means the one entry latch has its book and ledger evidence  ← W-EXEC-TRUTH W0a',
         '🔒 maintenance: hold=<clear|held|unreadable|unconfigured> job=<id|n/a> since=<time|n/a> addon_ack=<held|released job=<id> build=<id>|n/a> — the installation update hold, every field READ. addon_ack is n/a at startup because the NinjaTrader AddOn has not connected yet; an AddOn older than 2026-09-22-m2 never acks, so it stays n/a  ← W-ONE-BUTTON M2',
         '🧾 P&L surfaces: <N> aggregators strict-corrected, 0 raw (corrected-column guard) — every P&L figure the model and the dashboard read is pnl_corrected; unresolved rows are counted and excluded, never coerced',

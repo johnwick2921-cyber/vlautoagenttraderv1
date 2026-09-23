@@ -330,13 +330,13 @@ const dayPlan: KnobSpec[] = [
   {
     label: 'Picture HTF (two-picture mode)',
     where: 'Strategy → Day Plan → Picture HTF block',
-    what: "The owner's two-picture method as a DETERMINISTIC mode (2026-09-20): a 4H body pivot → the H1 close breaks it by at least one tick → the next 5m interval (entry window, default 10s) searches a strict 5m swing for the stop and the nearest opposing 4H zone for the target. R:R below the configured minimum refuses — the nearer zone is never skipped. The AI is commentary only; timing is the rule, not the model.",
+    what: "The owner's two-picture method as a DETERMINISTIC mode (2026-09-20): a 4H body pivot → the H1 close breaks it by at least one tick → the next 5m interval (entry window, default 10s) searches a strict 5m swing for the stop and the nearest opposing 4H zone for the target. R:R below the configured minimum refuses — the nearer zone is never skipped. The AI is commentary only; timing is the rule, not the model. Since W-EXEC-TRUTH W0b every Picture entry passes the same entry rules as the AI and armed orders (see Status → One set of entry rules), trades only the trader's own instrument, and runs only while the trader is running and the Day Plan is on; under plan_mode=strict it is refused until it becomes a Day Plan scenario (📷 plan_gate= and the plan card say so).",
     trader:
       'OFF by default; enabling it gates on the AddOn proving build ≥ 2026-09-20-p1 (final+emitted_at bar markers, rejection reasons) — below that the evaluator logs "mode unavailable" and never submits. Sends a 1-contract SIM market entry with its protective bracket only when the book is flat, the feed is fresh, and no unreconciled submission blocks re-entry.',
     consumer:
       'store/strategy.go PictureHtfResolved · trader/picture_htf_evaluator.go (evaluation + pictureHtfCapabilityProven) · trader/picture_htf_live.go (live-bar fan-out) · trader/picture_htf_send.go (send-side re-checks) · trader/ninjatrader/tcp_trader.go MarketEntryWithProtection · store/picture_htf.go (opportunity ledger)',
     range:
-      'switch + tick size / pivot window / swing lookback / entry window (s) / freshness (s) / min R:R (blank = inherit risk control)',
+      "switch + tick size / pivot window / swing lookback / entry window (s) / freshness (s) / min R:R (the STRICTER of this and risk control's minimum R:R applies; a value below it never loosens it; no strategy floor at all refuses)",
     systemDefault: 'OFF · defaults 0.25 / 120 / 24 / 10s / 2s / inherit',
     recommended:
       '⭐ run it on SIM and read the Picture HTF panel on the dashboard — the ledger shows intended vs broker answer side by side; the mode earns real-money trust only from recorded fills.',

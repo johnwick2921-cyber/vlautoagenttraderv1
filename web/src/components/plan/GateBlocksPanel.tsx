@@ -41,6 +41,25 @@ const GATE_LABELS: Record<string, { en: string; icon: string }> = {
     en: 'Dropped entry may have reached NT8',
     icon: '⚠️',
   },
+  // W-EXEC-TRUTH W0b — the one admission chain counts every gate under its
+  // own name on every entry path; each needs a label (pinned by
+  // trader/w0b_guide_test.go).
+  stop_until: { en: 'Owner pause', icon: '⏸' },
+  contract_roll_resolved: { en: 'Contract roll unresolved', icon: '🔁' },
+  no_trade_band: { en: 'No-trade band', icon: '🚫' },
+  cme_closed: { en: 'CME closed', icon: '🔕' },
+  reentry_cooldown: { en: 'Re-entry cooldown after a stop', icon: '⏳' },
+  entry_gate: { en: 'Entry gate', icon: '🚦' },
+  trader_stopped: { en: 'Trader stopped (Picture)', icon: '⏹' },
+  day_plan_off: { en: 'Day Plan off (Picture)', icon: '📴' },
+  arm_not_admitted: {
+    en: 'Arm not admitted this pass',
+    icon: '⏸',
+  },
+  reconcile_owned: {
+    en: 'Held position belongs to a ledger order',
+    icon: '⛔',
+  },
 }
 
 export function GateBlocksPanel({
