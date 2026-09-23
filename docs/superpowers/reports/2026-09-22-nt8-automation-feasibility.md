@@ -34,6 +34,12 @@ Per the dispatch, **none of steps 3–8 has FAILED, so the full-automation goal 
 
 ## 2. Findings that change the plan (for CTO review and owner ruling)
 
+**CTO rulings, 2026-09-22 (msg `1790133979048-1429-000001`):**
+- **Q1/F1 — CONFIRMED.** Every NT8-affecting step is blocked while ANY non-SIM connection is connected, and unknown coverage blocks. M2's `maintenance_ack` carries a connection/account census with no names. Whether a FLAT non-SIM connection may ever be disconnected is the owner's ruling; until then the answer is NO.
+- **Q2/F3 — CTO ruling, owner may veto.** M4's NT8 step is designed as **compile-in-place primary**: flat gate before the compile, UIA compile, then proof from the artifact, the Terminated→Active pair and a new-epoch hello. A full NT8 restart is an **attended fallback only**. The NT8 step is not built until the owner has seen this. The CLAUDE.md "no hot-reload" line is a canon correction for the owner to make (L12); it is not edited here.
+- **Q3/F4 — YES.** Additive omitempty hello fields (`nt8_pid`, `nt8_start_ms`, `assembly_mvid`, `source_hash`, `activation_nonce`) and a Go per-connection record. The verifier binds to that record. They go in the same C# commit as the maintenance frames.
+- **F7:** parked. **F9:** confirmed. **F10:** hash and back up `vltrader.cs` to the private `~/nofx-backups/addon/`, never the public repo.
+
 Each finding lists the fail-closed default I am taking under R4.
 
 **F1. The NT8 instance is not SIM-only, and the gate as specified cannot see most of what an NT8 restart affects.** [A]
@@ -47,14 +53,26 @@ Each finding lists the fail-closed default I am taking under R4.
 
 **F2. Every NT8 launch goes through the platform login window, so unattended relaunch is unproven and leans BLOCKED.** [A]
 - The trace starts at `LoginInternal`.
-- Recorded failures: "Client app is prohibited" (08-27 ×2, 09-17 ×2, delaying start by 6 min); "Too many incorrect login attempts" with a CAPTCHA and a 30 s then 49 s penalty (09-06, where the process never got past login); "Incorrect username or password" (09-07).
-- One automated relaunch sat at the Welcome window for more than 9 minutes.
-- No stored auto-login exists: nothing in `Config.xml`, the only registry value under `HKCU\Software\NinjaTrader, LLC\NinjaTrader 8` is `Info`, and Credential Manager has 0 matching targets. [A; "no auto-login" is B]
+- Recorded failures:
+  - "Client app is prohibited" ×4 (trace 08-27 ×2 and 09-17 ×2; the 09-17 ones delayed start by 6m05s);
+  - "Too many incorrect login attempts" with a CAPTCHA and a 30 s then 49 s penalty (09-06, where the process never got past login);
+  - "Incorrect username or password" (09-07).
+- Every Session Start has a `LoginInternal` line (31 sessions, 37 login lines). [A, CTO re-verified]
+- **(Corrected by the CTO)** the ">9 min stall at the Welcome window" is **not** in any NT8 log or trace. "Welcome" appears nowhere, and the longest banner-to-connect gap from 08-23 to 09-22 is 6m13s (09-17). **Withdrawn.**
+- **Auth fails in a RUNNING NT8 too (added by the CTO) [A].** The same penalty hit the running instance for about 35.5 h: 3,800 `penaltyTime='30' captcha='True'` lines at a 30 s cadence on the Simulation token refresh, from `trace.20260904.00000.txt:2468` (09-04 12:34:57) to `trace.20260906.00000.txt:61` (09-06 00:04:16). **A connected NT8 is never assumed to stay connected. Readiness is re-proven at every boundary** (M4 design requirement).
+- **Auto-login stays [C].** 31 of 37 logins log `user=''` and reach GetAccessToken within about 0.4 s; the only lines that name a user are the failures. That is consistent with a remembered-credential path. Per the CTO, the credential stores are NOT read to settle it.
 - **Default:** the helper never enters credentials. A login window after relaunch means the job reports **BLOCKED: human login required**, with maintenance still held.
 
-**F3. Canon correction: F5 hot-reloads the AddOn inside the running NT8.** [A/B]
-- **After F5:** within about 10–30 ms the NT8 log shows the pair `VLTraderTCPClient: AddOn Terminated` → `AddOn Active`, with **no Session Break** between them. On 09-22 the pair came 443 ms after the DLL write at 00:27:10.428.
-- **Inside one process** (trigger is [B]): `research_facts.source_build_id` changes from `2026-09-07-h1` (ids ≤102825383, last at 00:27:00.380) to `2026-09-20-p1` (from id 102825384, 00:27:06.768). The next NT8 process started only at 00:27:39. [A]
+**F3. Canon correction: F5 hot-reloads the AddOn inside the running NT8.** [A, n=1 wire proof on 09-22; CTO re-verified]
+- **After F5:** within about 10–30 ms the NT8 log shows the pair `VLTraderTCPClient: AddOn Terminated` → `AddOn Active`, with **no Session Break** between them.
+- **Wire proof, n=1, on 09-22 only [A, CTO re-verified]:**
+  - Process #2 had pairs at 00:27:00.964/.974 and 00:27:10.871/.890, with no Session Break between `log.20260922.00003.txt:1` and 00:27:31.
+  - The DLL was written at 00:27:10.428.
+  - The bot received `build_id=2026-09-20-p1` at 00:27:23 (`nofx_2026-09-19.log:203419`), **before** Session End at 00:27:31 and the next login at 00:27:52.
+- **(Corrected) 09-22 had FIVE pairs, not two** [A]. Three came earlier, in process #1, at 00:11:55, 00:12:07 and 00:12:18 (`log.20260922.00000.txt:234/242`, `:303/311`, `:388/396`), each followed by a hello. **What they were is unknown** [C: F5 presses during that session's edits, with no build change on the wire].
+- **(Corrected) 09-07 does NOT prove an in-process reload.** Both F5 pairs (21:42:50/21:43:02 and 22:16:11/22:16:20) were followed by a restart **before** the bot printed the new build. Only 09-22 is wire proof.
+- **Inside one process: [B].** `research_facts.source_build_id` changed from `2026-09-07-h1` (ids ≤102825383) to `2026-09-20-p1` (from id 102825384). The CTO's verifier had no DB access, so this timing stays [B].
+- **Not tested:** whether an in-process reload leaves runtime residue. The owner restarted 14 s after the pair.
 - **Copy + restart without F5 keeps the old DLL:** on 09-06 and 09-07, Go kept reporting `build_id=2026-09-03-f12 expected=2026-09-05-g2 match=NO` across two restarts until F5 at 09-07 21:42. [A]
 - **Consequences:**
   - The CLAUDE.md line "AddOns do NOT hot-reload" is wrong.
