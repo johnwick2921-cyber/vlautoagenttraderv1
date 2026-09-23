@@ -219,23 +219,41 @@ func TestInstallationGateNonNT8TraderFails(t *testing.T) {
 	mustFail(t, f.run(), "traders_nt8", "csv-or-crypto")
 }
 
-// U3: a trader still in the Picture HTF registry but no longer in the manager
-// is covered too.
-func TestInstallationGateCoversPictureRegistryTraders(t *testing.T) {
+// U3 + M2.1 (CTO ruling on review item b): the Picture HTF registry never
+// unregisters, so it keeps every trader that ever Run() — crypto and removed
+// ones too. A REGISTRY-ONLY trader that is not an NT8 TCP trader cannot reach
+// NT8 (its evaluator is nil unless the exchange is ninjatrader, and the send
+// needs a *TCPTrader), so it is listed as covered and informational — it must
+// not keep the gate failing until a restart the update itself needs. A RUNNING
+// (manager-loaded) non-NT8 trader still fails the leg.
+func TestInstallationGateRegistryOnlyCryptoTraderIsInformational(t *testing.T) {
 	f := newGateFixture(t)
 	ghost, _ := resetTrader(t, store.StrategyConfig{})
-	ghost.id = "picture-ghost"
+	ghost.id = "picture-ghost-crypto"
+	ghost.exchange = "binance"
 	pictureHtfTraders.Store(ghost.id, ghost)
 	defer pictureHtfTraders.Delete(ghost.id)
 	g := f.run()
-	mustFail(t, g, "traders_nt8", "picture-ghost")
+	l, _ := legOf(g, "traders_nt8")
+	if !l.Pass || !strings.Contains(l.Detail, "picture-ghost-crypto") {
+		t.Fatalf("a registry-only crypto trader is informational (listed, not failing): %+v", l)
+	}
+	if !g.Ready {
+		t.Fatalf("a registry-only crypto trader must not keep the gate closed: %+v", g.Legs)
+	}
 	found := false
 	for _, id := range g.Traders {
-		found = found || id == "picture-ghost"
+		found = found || id == "picture-ghost-crypto"
 	}
 	if !found {
-		t.Fatalf("the registry-only trader must be listed as covered: %v", g.Traders)
+		t.Fatalf("the registry-only trader must still be listed as covered: %v", g.Traders)
 	}
+	// ...while a RUNNING non-NT8 trader in the manager still fails the leg.
+	running, _ := resetTrader(t, store.StrategyConfig{})
+	running.id = "running-crypto"
+	running.exchange = "binance"
+	f.loaded[running.id] = running
+	mustFail(t, f.run(), "traders_nt8", "running-crypto")
 }
 
 // Leg (e): the ledger for EVERY trader id, loaded or not; an authorized but

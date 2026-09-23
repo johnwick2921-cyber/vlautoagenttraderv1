@@ -215,21 +215,39 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 
 	// traders_nt8
 	leg("traders_nt8", "TraderManager ∪ pictureHtfTraders", func() (bool, string) {
-		var bad []string
+		registry := map[string]bool{}
+		for _, id := range registryOnly {
+			registry[id] = true
+		}
+		var bad, inert []string
 		for _, id := range ids {
-			if _, ok := all[id].trader.(*ntTrader.TCPTrader); !ok {
-				bad = append(bad, fmt.Sprintf("%s (%T)", id, all[id].trader))
+			if _, ok := all[id].trader.(*ntTrader.TCPTrader); ok {
+				continue
 			}
+			if registry[id] {
+				// M2.1 (CTO ruling on review item b): registry-only and not NT8
+				// — it cannot reach NT8 (no evaluator off ninjatrader, and the
+				// send needs a *TCPTrader). Listed, never failing: the registry
+				// never unregisters, so failing here would hold the gate shut
+				// until a restart the update itself needs.
+				inert = append(inert, id)
+				continue
+			}
+			bad = append(bad, fmt.Sprintf("%s (%T)", id, all[id].trader))
 		}
 		extra := ""
 		if len(registryOnly) > 0 {
 			sort.Strings(registryOnly)
 			extra = "; registry-only (not in the manager): " + strings.Join(registryOnly, ", ")
 		}
+		if len(inert) > 0 {
+			sort.Strings(inert)
+			extra += "; of which not NT8 (cannot reach NT8, informational): " + strings.Join(inert, ", ")
+		}
 		if len(bad) > 0 {
 			return false, "not an NT8 TCP trader — coverage unknown: " + strings.Join(bad, ", ") + extra
 		}
-		return true, fmt.Sprintf("%d trader(s), all NT8 TCP%s", len(ids), extra)
+		return true, fmt.Sprintf("%d trader(s); every running trader is NT8 TCP%s", len(ids), extra)
 	})
 
 	// addon_ack
