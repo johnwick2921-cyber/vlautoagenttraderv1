@@ -144,10 +144,10 @@ These are confirmed at the base: D1, D8, D9, D11 (G1, proven by execution), D12,
   - Build an **entries-only** withdraw primitive: `cancelSafetyFor` → `CancelOrder` by signal → `RequestCancel`. A cancel is complete only on an `order_update` cancelled or the order's absence from a persisted snapshot.
   - Add an additive hold field `withdraw_entries`, written only by `cmd/maintenance-hold --withdraw-entries`.
   - Execute it from `monitorTick`, not the armed pass (which is skipped in exactly the windows an update uses).
-  - It covers armed and picture working rows.
+  - It covers armed and picture working rows. *(As delivered: armed rows only — Picture never rests an entry; its send is a market order. See W0b as delivered.)*
   - `GET /api/maintenance` shows `withdraw: {requested, pending[], confirmed[]}`, and a pending cancel is never shown as complete.
   - Protection, reconciliation and exits are never blocked.
-  - Withdrawing on a breaker or force-flat trip (defect 7) is **not** built: it is not in the dispatch.
+  - Withdrawing on a breaker or force-flat trip (defect 7) is **not** built: it is not in the dispatch. *(Superseded by the CTO's Q14 ruling: built in W0b — see below.)*
 
 **Q15. Races and clock seams.**
 - *Default:*
@@ -219,3 +219,22 @@ All nineteen defaults were accepted. The additions:
 
 - No existing test or golden moved for leg 7; the full trader tree is green.
 - W0b (`admitEntry`, the matrix, G1, the Picture prerequisites + C, (c), (f)) follows on a branch stacked on this one.
+
+## W0b as delivered (branch `fix/exec-admission-gate-b`, base dev `232dfdcc`)
+
+| Item | Commit(s) | What |
+|---|---|---|
+| Q15 clock seams | `c4dc18d7`, `1b6d721e`, `83fe6b2a` | `*At` variants for every gate `admitEntry` reaches; the wall-clock wrappers left with no production caller removed (A29); the dead-man state atomic; one-time log dedupe under a lock (Picture calls the chain from the live-bar goroutine) |
+| Q5 | `20d3c6ca` | `discipline.ReentryPeek` — the cooldown verdict without the unlock side effect the AI path relies on |
+| (a) the one chain | `9b65c2ca`, `92bf1fa7` | `admitEntry` in A's pinned E5 order (`trader/entry_admission.go`); A's inline chain moved verbatim; the order tests re-anchored with unchanged assertions |
+| G1 + (a) for B | `493a0aad`, `d035e30d`, `58ada497` | The placement places only legs this pass's authoring gates admitted, then asks `admitEntry` at the send point. A nil admitted set admits nothing (CTO M2); the `runArmedPlacement` wrapper removed |
+| Picture + C | `f8c53bbb`, `41ac268e` | Picture through `admitEntry` pre-claim (transient, no durable row) and pre-send (right before the wire); defects 2/3/4 fixed; Q6/Q7/Q8/Q18/Q19 |
+| Q17 | `d369f50c`, `47c51a6d` | The agent-chat door asks the chain: refused under strict, ADMITTED in advisory (legs 5/6 abstain on a stop-less entry — owed, not W0b) |
+| (c) | `26595c12`, `e09daf31` | The pre-open reconcile never flattens a ledger-explained position (⛔ `reconcile_owned`); the recent-fill check reads the running-trader registry; the stopped-trader limit named and pinned |
+| (f) + Q14 | `fcca8051`, `e09daf31` | Entries-only withdraw on a hold with `--withdraw-entries`, the breaker trip and the daily force-flat trip, from `monitorTick`; pending until evidence; `GET /api/maintenance` withdraw view |
+| Q6 card | `c8fe8f08`, `620f3478` | `/api/plan/today` carries `picture: {enabled, refusal}` READ from the trader; the card chip renders it verbatim |
+| CTO pre-review | `58ada497`, `60d845a3`, `b89ee764`, `a5db5ff6` | M1 import scope + census; M2 G1 fail-closed; M3 dedupe on class; M5 one Picture send-started predicate; M4 test-only join of async re-reads (pre-existing flake) |
+| Guide + checklist | `bbb671b2`, `dc543bff` | L5 content (GUIDE_BUILT_REV not bumped); four classes, numbers assigned at merge |
+
+**Goldens.** No golden moved for A: its chain moved verbatim into `admitEntry` and the source-order tests assert the same order in the new file. B and C gained gates they did not run before — that is the correction L4 rules for W0's gate parity.
+
