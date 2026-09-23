@@ -16,7 +16,17 @@ it('C5 guide table follows the independently worked break-even equation', () => 
   const text = JSON.stringify(planCard)
   expect(text).toContain('E[net R] = p*b − (1−p) − c')
   expect(text).toContain('Legacy scenarios retain UNKNOWN')
-  expect(text).toContain(
-    'The structural-stop research candidate'
+  expect(text).toContain('The structural-stop research candidate')
+})
+
+it('W2 A3/A4: the guide says identity≠price and the obstacle chain are refused at write', () => {
+  const text = JSON.stringify(planCard)
+  expect(text).not.toContain('A disagreement is recorded; it does not change')
+  expect(text).not.toContain(
+    'accepted with WARN and recorded counters for the first two boots'
   )
+  expect(text).toContain('A disagreement is REFUSED at write')
+  expect(text).toContain('is REFUSED at write and re-authored')
+  expect(text).toContain('Obstacle chain (refused at write, new plans only)')
+  expect(text).toContain('S4 omits SWG-H·5m 31043.00 (4.00 pts from entry)')
 })

@@ -56,10 +56,21 @@ export interface ScenarioEconomics {
   r_to_arm_target: number | null
   target_path_exception?: string
   role_exceptions?: Array<{ level: string; use: string; reason: string }>
+  /** W2 A4 — seated levels on the entry→target path with the planned role;
+   * ABSENT on legacy rows. */
+  path_levels?: Array<{
+    price: number
+    level: string
+    level_id?: string
+    role: string // pass_through | reduce | exit
+  }>
 }
 
 export interface PlanScenario {
   level_id?: string | null
+  /** W2 A3 — a two-anchor setup's sweep / reclaim level ids; ABSENT on legacy rows. */
+  sweep_level_id?: string
+  reclaim_level_id?: string
   economics?: ScenarioEconomics
   arm?: {
     enabled?: boolean

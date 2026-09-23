@@ -15,7 +15,7 @@ export const planCard: GuideSection = {
     { kind: 'h', text: 'Scenario level identity' },
     {
       kind: 'p',
-      text: 'A new scenario can name the candidate shown on its map with a level ID. The card shows that candidate beside the evaluator’s own anchor. A disagreement is recorded; it does not change a trading decision, gate or order.',
+      text: 'A new scenario names the map level it trades with a level ID. The card shows that level beside the evaluator’s own anchor. At write, the named level must sit at the price the scenario trades — its trigger/confirm anchor, within the level’s own zone ±3.00 pts. A disagreement is REFUSED at write: the planner re-authors within the same three attempts, and if every attempt disagrees the read fails closed to the NO-TRADE plan. An anchor inside the named level’s own zone (an FVG’s distal edge, a reject at a supply/demand edge) is not a disagreement. Plans stored before this rule keep their IDs untouched: an old plan’s recorded disagreement is still shown and never rewritten. While a plan is live, a disagreement the evaluator observes is recorded; it does not change a trading decision, gate or order.',
     },
     {
       kind: 'p',
@@ -23,7 +23,7 @@ export const planCard: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'Legacy scenarios keep NULL IDs by design. Missing or unknown IDs on new plans are accepted with WARN and recorded counters for the first two boots. A refusal requires a later owner ruling after at least five plans have been measured. A named level can belong to several scenarios; the episode record does not choose one arbitrarily.',
+      text: 'Legacy scenarios keep NULL IDs by design. On a new plan a NULL level ID is still accepted with WARN (a map row whose own ID is NULL cannot be named). An ID the frozen map does not carry — invented, altered, or a ref| ID whose digest matches no map row — is REFUSED at write and re-authored. A two-anchor setup (a sweep of one level, a reclaim of another) names both in sweep_level_id and reclaim_level_id: two different map IDs, each the level at its own leg’s reference price. Reusing one ID for both, or naming a level at an unrelated price, is refused. A named level can belong to several scenarios; the episode record does not choose one arbitrarily.',
     },
     {
       kind: 'p',
@@ -39,7 +39,11 @@ export const planCard: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'Legacy scenarios retain UNKNOWN by design for economics they never declared. Reading them does not invent or backfill fields and never invokes the new-authoring refusal. At new authoring, missing complete economics is a schema refusal; off-path targets without an explicit exception, obstacles beyond the arm target, and implied R inconsistent with geometry by more than one tick of price distance are contradiction refusals. EXCEPTION (owner ruling): when the machine-computed arm-target R is at or above the minimum R:R floor, the stated value is auto-corrected to the computed value and accepted — the floor gates still refuse every arm below the minimum. An obstacle below 1R and a known role/use difference are WARN plus counter only. A response at an obstacle declares intent; it does not change order management or make a half-contract exit executable. Hypothetical geometry never authorizes an arm.',
+      text: 'Legacy scenarios retain UNKNOWN by design for economics they never declared. Reading them does not invent or backfill fields and never invokes the new-authoring refusal. At new authoring, missing complete economics is a schema refusal; off-path targets without an explicit exception, obstacles beyond the arm target, and implied R inconsistent with geometry by more than one tick of price distance are contradiction refusals. EXCEPTION (owner ruling): when the machine-computed arm-target R is at or above the minimum R:R floor, the stated value is auto-corrected to the computed value and accepted — the floor gates still refuse every arm below the minimum. An obstacle below 1R and a known role/use difference are WARN plus counter only. A response at an obstacle declares intent; it does not change order management. A reduce on a single-contract arm is refused at write (one contract cannot be halved). Hypothetical geometry never authorizes an arm.',
+    },
+    {
+      kind: 'p',
+      text: 'Obstacle chain (refused at write, new plans only): target_chain must run outward from entry in the trade direction. The first obstacle must be the nearest seated map level strictly between entry and the arm target; a level the seat race cut may be named instead when it is nearer, but it is never required, because the planner never sees the cut pool. With no seated level in between, the first obstacle is the arm target itself. Every other seated level on that path must be listed in path_levels with its role (pass through, reduce or exit); a missing level is refused by name, for example “S4 omits SWG-H·5m 31043.00 (4.00 pts from entry)”. Authored obstacle-chain prices are normalized to the tick grid and the normalization is recorded, never refused. A reduce role on a single-contract arm is refused. The boot line “scenario write truth” prints the recorded count per refusal class, retries included; every count reads n/a until the first check is recorded.',
     },
     {
       kind: 'p',
