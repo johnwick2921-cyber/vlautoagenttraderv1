@@ -66,6 +66,10 @@ type PictureHtfEvaluator struct {
 	// tickSkips counts wall-clock fallbacks that found no completed frame to
 	// be late about (W4/D24). READ.
 	tickSkips int64
+	// staleTraderSends counts sends refused at the wire because the trader
+	// that STARTED the evaluation is no longer the one that would send
+	// (W4/D25). READ.
+	staleTraderSends int64
 
 	// holdRefusedKey dedupes the maintenance-hold refusal (count + WARN) to
 	// once per opportunity rather than once per frame.
@@ -277,6 +281,27 @@ func frameContract(bars []market.Kline) string {
 	return out
 }
 
+// traderStillTheSame reports whether the trader that began this evaluation is
+// still the one that would send: same generation, still running, Day Plan
+// still on.
+func (e *PictureHtfEvaluator) traderStillTheSame(startGen int64) bool {
+	if e == nil || e.at == nil {
+		return false
+	}
+	return pictureTraderGenerationOf(e.at) == startGen && e.at.runningNow() && e.at.dayPlanEnabled()
+}
+
+// StaleTraderSends reports sends refused because the trader that started the
+// evaluation was stopped or restarted before it reached the wire.
+func (e *PictureHtfEvaluator) StaleTraderSends() int64 {
+	if e == nil {
+		return 0
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.staleTraderSends
+}
+
 // HasCompletedFrame reports whether a COMPLETED 5m frame has ever been seen.
 // Until one has, there is no data to judge and no boundary to have missed.
 func (e *PictureHtfEvaluator) HasCompletedFrame() bool {
@@ -434,6 +459,10 @@ type EvaluateResult struct {
 
 func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) EvaluateResult {
 	nowMs := now.UnixMilli()
+	// D25: the generation this evaluation BEGAN under. Re-checked immediately
+	// before the wire — a Stop or a restart between here and there must not
+	// send on behalf of a trader that no longer exists.
+	startGen := pictureTraderGenerationOf(e.at)
 	if !pictureHtfCapabilityProven(e.at) {
 		if !e.capWarned {
 			e.capWarned = true
@@ -656,6 +685,18 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 	// (wired with the next wave commit); until then it returns unbound and the
 	// row stays place_pending for the reconciliation sweep — never a blind
 	// resend.
+	// D25 — THE LAST GATE BEFORE THE WIRE. W0b checks running and Day Plan at
+	// ADMISSION; this is the re-check immediately before the send, where a
+	// Stop, a restart or a Day Plan switch-off between the two would otherwise
+	// let an in-flight evaluation reach the broker for a trader that is gone.
+	// It sits HERE rather than in picture_htf_send.go (which W5 retires) and
+	// leaves pictureHtfSubmitSeam's signature untouched.
+	if !e.traderStillTheSame(startGen) {
+		e.staleTraderSends++
+		logger.Warnf("picture-htf: send REFUSED — the trader that began this evaluation is gone (generation %d → %d, running=%v, day_plan=%v); opportunity %s not sent",
+			startGen, pictureTraderGenerationOf(e.at), e.at.runningNow(), e.at.dayPlanEnabled(), oppKey)
+		return e.refuse(oppKey, "refused", "trader stopped or restarted before the send — no entry", stall)
+	}
 	if err := pictureHtfSubmitSeam(e, row, stopPx, targetPx, 0, now); err != nil {
 		// A maintenance-hold refusal PROVES nothing reached the wire: the
 		// permit is taken before the ledger stamp and the send, and a queued

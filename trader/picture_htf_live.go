@@ -67,12 +67,41 @@ var pictureHtfContractOf = func(at *AutoTrader, symbol string) (string, string) 
 	return at.currentContract(symbol)
 }
 
-// registerPictureHtf installs the trader in the live-bar registry.
+// registerPictureHtf installs the trader in the live-bar registry and opens a
+// new GENERATION. Every evaluation records the generation it began under and
+// re-checks it before the wire, so a frame in flight across a Stop/restart
+// cannot send on behalf of a trader that no longer exists (W4/D25).
 func (at *AutoTrader) registerPictureHtf() {
 	if at == nil || at.id == "" {
 		return
 	}
+	at.pictureGen.Add(1)
 	pictureHtfTraders.Store(at.id, at)
+}
+
+// unregisterPictureHtf removes the trader from the live-bar registry on Stop
+// and closes its generation.
+//
+// CompareAndDelete, never Delete: a RESTARTED trader may already have
+// re-registered under the same id, and a late Stop from the OLD instance must
+// not evict the new one. The registry is also W3's armed-kick registry
+// (pictureHtfLiveBars Ranges it to call noteLiveBarsForArmedPass), so evicting
+// the wrong entry would silently stop the armed event pass for a live trader.
+func (at *AutoTrader) unregisterPictureHtf() {
+	if at == nil || at.id == "" {
+		return
+	}
+	at.pictureGen.Add(1)
+	pictureHtfTraders.CompareAndDelete(at.id, at)
+}
+
+// pictureTraderGenerationOf reads a trader's current Picture generation. A seam
+// so a test can move the generation between an evaluation's start and its send.
+var pictureTraderGenerationOf = func(at *AutoTrader) int64 {
+	if at == nil {
+		return 0
+	}
+	return at.pictureGen.Load()
 }
 
 // pictureHtfResolvedConfig is the trader's Picture knobs with defaults
@@ -168,9 +197,13 @@ func (at *AutoTrader) pictureHtfBootLineAt(now time.Time) string {
 	if c, _ := pictureHtfContractOf(at, at.futuresSymbol()); c != "" {
 		contract = c
 	}
-	return fmt.Sprintf("picture-htf: mode=%s rule=v1 %s data=%s addon=%s (build=%q, need ≥ %s) plan_gate=%s contract=%s · foreign=%d · unknown=%d",
+	// W4/D24: the frame-age and fallback counters are READ here too, so a feed
+	// that is quietly being refused (or quietly unaged) is visible on the line
+	// rather than only in a log nobody greps.
+	return fmt.Sprintf("picture-htf: mode=%s rule=v1 %s data=%s addon=%s (build=%q, need ≥ %s) plan_gate=%s contract=%s · foreign=%d · unknown=%d · stale=%d · unaged=%d · tick_skips=%d",
 		mode, sim, native, cap, at.farSideBuildID(), ntwire.MinAddonBuildPictureHtf, planGate,
-		contract, ev.ForeignContractFrames(), ev.UnknownContractFrames())
+		contract, ev.ForeignContractFrames(), ev.UnknownContractFrames(),
+		ntwire.StaleLiveFrames(), ntwire.UnagedLiveFrames(), ev.TickFallbackSkips())
 }
 
 // logPictureHtfBootLine prints the boot line at trader start.
