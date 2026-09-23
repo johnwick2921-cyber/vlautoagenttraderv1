@@ -27,6 +27,14 @@ func TestMaintenanceHoldCLIWritesTheFileTheBotReads(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(inst, ".env"), []byte("DB_PATH=var/db/data.db\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	// The bot's database exists where .env says (a real install has it; the
+	// CLI refuses an --install-dir without it — M2.1, review 2 N5).
+	if err := os.MkdirAll(filepath.Join(inst, "var", "db"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(inst, "var", "db", "data.db"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	t.Setenv("DB_PATH", "placeholder")
 	os.Unsetenv("DB_PATH") // DB_PATH comes ONLY from .env, as on a real install
 

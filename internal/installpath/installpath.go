@@ -32,12 +32,18 @@ func DBPath(getenv func(string) string) string {
 // DataDir is the directory of dbPath, anchored on workDir when dbPath is
 // relative (the bot resolves relative paths against its WorkingDirectory),
 // always absolute.
-func DataDir(workDir, dbPath string) string {
+// DBFile is the absolute database file path, anchored on workDir when dbPath
+// is relative (the bot resolves relative paths against its WorkingDirectory).
+func DBFile(workDir, dbPath string) string {
 	p := dbPath
 	if !filepath.IsAbs(p) {
 		p = filepath.Join(workDir, p)
 	}
-	return filepath.Dir(filepath.Clean(p))
+	return filepath.Clean(p)
+}
+
+func DataDir(workDir, dbPath string) string {
+	return filepath.Dir(DBFile(workDir, dbPath))
 }
 
 // DotEnvGetenv returns a getenv that answers the way the bot's environment

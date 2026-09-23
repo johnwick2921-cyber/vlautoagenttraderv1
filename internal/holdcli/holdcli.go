@@ -26,9 +26,18 @@ import (
 	"nofx/store"
 )
 
+// geteuid is a seam so the root refusal is testable.
+var geteuid = os.Geteuid
+
 // DataDirFor is the CLI's half of the ONE resolver.
 func DataDirFor(installDir string) string {
 	return installpath.DataDir(installDir, installpath.DBPath(installpath.DotEnvGetenv(installDir)))
+}
+
+// DBFileFor is the bot database the same resolver points at; its presence is
+// the CLI's proof that --install-dir really is the bot's installation.
+func DBFileFor(installDir string) string {
+	return installpath.DBFile(installDir, installpath.DBPath(installpath.DotEnvGetenv(installDir)))
 }
 
 // Run executes the CLI and returns the exit code.
@@ -54,6 +63,23 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	if err := sub.Parse(rest[1:]); err != nil {
 		return 2
 	}
+	dbFile := DBFileFor(*installDir)
+	_, dbErr := os.Stat(dbFile)
+	if rest[0] == "set" || rest[0] == "clear" {
+		// M2.1 (review 2 N4): as root the CLI would create a root-owned
+		// data/updater; the bot's stat then fails EACCES and every entry is
+		// refused as unreadable until someone repairs the directory.
+		if geteuid() == 0 {
+			fmt.Fprintln(stderr, "refusing to run as root: run maintenance-hold as the bot's own user (a root-owned data/updater locks the bot into a hold it cannot read)")
+			return 2
+		}
+		// M2.1 (review 2 N5): a hold the bot never reads is a hold that does
+		// not exist — refuse unless this is the bot's installation.
+		if dbErr != nil {
+			fmt.Fprintf(stderr, "refusing: no bot database at %s — --install-dir must be the installation the bot runs from (its WorkingDirectory)\n", dbFile)
+			return 2
+		}
+	}
 	switch rest[0] {
 	case "set":
 		if *job == "" {
@@ -69,7 +95,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "status":
 		st := store.ReadMaintenanceHold(dataDir)
-		out := map[string]any{"held": st.Held, "present": st.Present, "corrupt": st.Corrupt, "path": st.Path}
+		out := map[string]any{"held": st.Held, "present": st.Present, "corrupt": st.Corrupt, "path": st.Path,
+			"db": dbFile, "db_present": dbErr == nil}
 		if st.Err != "" {
 			out["error"] = st.Err
 		}
