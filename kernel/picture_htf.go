@@ -29,7 +29,7 @@ type PictureHtfLevel struct {
 	BodyBottom float64 // body bottom = min(open, close)
 	WickHigh   float64
 	WickLow    float64
-	KnowableAt int64 // open time of the candle two after the pivot (ms)
+	KnowableAt int64 // COMPLETION time of the candle two after the pivot (ms); never 0
 	Retired    bool
 	RetiredAt  int64   // open time of the retiring candle, 0 when active
 	Boundary   float64 // breakout/breakdown boundary: body top (res) / body bottom (sup)
@@ -48,6 +48,22 @@ type PictureHtfSweep struct {
 	BarOpen   int64 // the sweeping candle's open time
 }
 
+// fourNeighboursComplete reports whether the four confirming neighbours of the
+// candle at i — i-2, i-1, i+1, i+2 — all exist and are real completed candles.
+// Open == 0 marks a hole in the series; CloseTime == 0 means the candle carries
+// no completion stamp, so the instant it closed is unknown and no level built
+// on it can be given an honest knowable-time. The evaluator already filters its
+// input to Final, completed bars; this is the kernel's own fail-closed guard so
+// the rule holds for every caller.
+func fourNeighboursComplete(bars []market.Kline, i int) bool {
+	for _, j := range []int{i - 2, i - 1, i + 1, i + 2} {
+		if j < 0 || j >= len(bars) || bars[j].Open == 0 {
+			return false
+		}
+	}
+	return bars[i+2].CloseTime != 0
+}
+
 // BodyPivots4H discovers support/resistance pivots from completed 4H candle
 // bodies over the latest `window` bars. STRICT comparisons: equal extremes do
 // not form a pivot. A pivot at index i is usable only when i+2 exists (both
@@ -61,19 +77,25 @@ func BodyPivots4H(bars []market.Kline, window int) []PictureHtfLevel {
 		bars = bars[len(bars)-window:]
 	}
 	var out []PictureHtfLevel
-	for i := 1; i < len(bars)-1; i++ {
+	// D22 (W-EXEC-TRUTH W4): a body pivot is a claim about FIVE candles — the
+	// pivot and its four neighbours. It is declared only when all four EXIST
+	// and have completed, so the range starts at 2 and stops at len-3. An
+	// index without both leading and both trailing candles cannot be judged,
+	// and "cannot be judged" is not a pivot. Until this wave the range was
+	// 1..len-2 and the neighbour loop skipped a missing neighbour, so a level
+	// could be declared on as few as two observed neighbours.
+	for i := 2; i < len(bars)-2; i++ {
 		bodyTop := maxOf(bars[i].Open, bars[i].Close)
 		bodyBottom := minOf(bars[i].Open, bars[i].Close)
-		if bars[i-1].Open == 0 || bars[i+1].Open == 0 {
+		// A hole among the four is MISSING EVIDENCE, and missing evidence
+		// refuses. It is never skipped past.
+		if !fourNeighboursComplete(bars, i) {
 			continue
 		}
 		res := true
 		sup := true
-		// All four confirming neighbors: i-2, i-1, i+1, i+2.
+		// All four confirming neighbors: i-2, i-1, i+1, i+2 — every one read.
 		for _, j := range []int{i - 2, i - 1, i + 1, i + 2} {
-			if j < 0 || j >= len(bars) || bars[j].Open == 0 {
-				continue
-			}
 			bt := maxOf(bars[j].Open, bars[j].Close)
 			bb := minOf(bars[j].Open, bars[j].Close)
 			if bt >= bodyTop {
@@ -104,9 +126,13 @@ func BodyPivots4H(bars []market.Kline, window int) []PictureHtfLevel {
 			WickHigh:   bars[i].High,
 			WickLow:    bars[i].Low,
 		}
-		if i+2 < len(bars) {
-			lvl.KnowableAt = bars[i+2].OpenTime
-		}
+		// D22: the level becomes knowable when the SECOND trailing candle has
+		// COMPLETED, not when it opens — anchoring to its open made the level
+		// usable a whole period before the evidence for it existed. i+2 is
+		// guaranteed present and stamped by fourNeighboursComplete, so this is
+		// always a real time: KnowableAt is never left at 0 to be read as
+		// "already knowable" by the consumers below.
+		lvl.KnowableAt = bars[i+2].CloseTime
 		switch role {
 		case "resistance":
 			lvl.Boundary = bodyTop
@@ -141,7 +167,8 @@ func BodyPivots4H(bars []market.Kline, window int) []PictureHtfLevel {
 func ActiveLevels(levels []PictureHtfLevel, nowMs int64) []PictureHtfLevel {
 	var out []PictureHtfLevel
 	for _, l := range levels {
-		if !l.Retired && (l.KnowableAt == 0 || l.KnowableAt <= nowMs) {
+		// D22: an absent KnowableAt is missing evidence, not permission.
+		if !l.Retired && l.KnowableAt != 0 && l.KnowableAt <= nowMs {
 			out = append(out, l)
 		}
 	}
@@ -207,7 +234,7 @@ func H1CloseBreak(levels []PictureHtfLevel, prevH1, newH1 market.Kline, tickSize
 	// Long: cross ABOVE a resistance. Short: cross BELOW a support.
 	var longCrossed, shortCrossed []int
 	for li, l := range levels {
-		if l.Retired || (l.KnowableAt != 0 && l.KnowableAt > newH1.OpenTime) {
+		if l.Retired || l.KnowableAt == 0 || l.KnowableAt > newH1.OpenTime {
 			continue
 		}
 		switch l.Role {
@@ -290,7 +317,7 @@ func NearestOpposingZone(levels []PictureHtfLevel, entry float64, direction stri
 		return cand < entry && (!found || cand > best)
 	}
 	for _, l := range levels {
-		if l.Retired || (l.KnowableAt != 0 && l.KnowableAt > nowMs) {
+		if l.Retired || l.KnowableAt == 0 || l.KnowableAt > nowMs {
 			continue
 		}
 		if direction == "long" && l.Role != "resistance" {

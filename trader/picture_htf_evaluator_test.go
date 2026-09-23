@@ -71,21 +71,33 @@ func tailOf(bars []market.Kline, n int) []market.Kline {
 	return bars[len(bars)-n:]
 }
 
-// pictureBars4H builds the full ladder: an OLD 110 resistance (i=1), a
-// pullback, and the RECENT 101 resistance (i=7) that the H1 pair later
+// pictureBars4H builds the full ladder: an OLD 110 resistance (i=3), a
+// pullback, and the RECENT 101 resistance (i=9) that the H1 pair later
 // breaks. No later 4H close exceeds 101, so the 101 level is still ACTIVE
 // (not retired) when the H1 crosses it — and the 110 zone above is the
 // opposing target. This mirrors reality: old high → consolidation →
 // breakout → target the old high.
+//
+// W4/D22: the ladder carries TWO extra leading candles so that both pivots
+// have all four confirming neighbours (i-2, i-1, i+1, i+2). Before this wave
+// the 110 level sat at i=1 and was declared on THREE observed neighbours,
+// because the discovery loop silently skipped the i-2 that does not exist —
+// the fixture encoded the defect. The two added candles are deliberately
+// unremarkable (bodies far below 110) so they add no level of their own.
 func pictureBars4H() []market.Kline {
 	vals := [][4]float64{
+		{100, 101, 99, 100.5}, {101, 102, 100, 101.5},
 		{108, 110, 106, 109}, {109, 111, 107, 110}, {107, 108, 105, 106}, {105, 106, 103, 104},
 		{103, 104, 101, 102}, {100, 101, 99, 100.5}, {98.5, 100, 97.5, 99}, {99, 105, 96, 101},
 		{96, 97, 94, 95}, {94, 95, 92, 93}, {93, 94, 91, 92},
 	}
 	out := make([]market.Kline, 0, len(vals))
 	for i, v := range vals {
-		out = append(out, mkBar(t4h0+int64(i)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
+		// The two added leading candles sit BEFORE t4h0 (i-2), so every
+		// original candle keeps the timestamp the H1 and 5m ladders are
+		// aligned to. Shifting the ladder forward instead would silently
+		// break that grid.
+		out = append(out, mkBar(t4h0+int64(i-2)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
 	}
 	return out
 }
@@ -368,15 +380,20 @@ func TestPictureHtfH1CloseToNext5mSequenceNativeAlignment(t *testing.T) {
 // support at 94.5 (i=3) the H1 pair later breaks down through. No later 4H
 // close trades below 94.5, so the level is still active at the break; the 90
 // support is the opposing target below.
+// W4/D22, mirrored: the 90 support used to sit at i=1 and was declared on
+// three neighbours. Two unremarkable leading candles (bodies well above 90)
+// move it to i=3 where all four exist; they are anchored BEFORE t4h0 so the
+// H1 and 5m grids are untouched.
 func pictureBars4HShort() []market.Kline {
 	vals := [][4]float64{
+		{93, 93.5, 92.5, 93.2}, {93.5, 94, 92.8, 93.8},
 		{92, 92.5, 90.5, 91}, {91.5, 91.8, 90.2, 90}, {95, 96, 94, 95.5},
 		{95.5, 96.8, 95, 96.5}, {96, 96.5, 94, 94.5}, {95.25, 96.2, 95, 95.5},
 		{95.5, 96.3, 95.2, 95.9}, {95.75, 96.4, 95.4, 96},
 	}
 	out := make([]market.Kline, 0, len(vals))
 	for i, v := range vals {
-		out = append(out, mkBar(t4h0+int64(i)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
+		out = append(out, mkBar(t4h0+int64(i-2)*4*3600*1000, 4*3600*1000, v[0], v[1], v[2], v[3]))
 	}
 	return out
 }
