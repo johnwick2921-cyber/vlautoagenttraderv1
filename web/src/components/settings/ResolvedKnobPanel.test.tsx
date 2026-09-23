@@ -20,8 +20,8 @@ const payload = {
     advisory: 0,
     display_only: 0,
     infra: 0,
-    env_shadows: 0,
-    env_shadow_paths: [],
+    // env_shadows / env_shadow_paths are ABSENT: the server has no counter
+    // for them yet, and an uncounted value is not a 0.
   },
   knobs: [
     {
@@ -131,6 +131,34 @@ describe('ResolvedKnobPanel', () => {
     )
     expect(screen.queryAllByTestId('resolved-line')).toHaveLength(0)
     expect(screen.queryByTestId('resolved-section')).toBeNull()
+  })
+
+  // L7: a counter nothing writes reads n/a, never a fabricated 0 — and once a
+  // server does count, its number (0 included) is printed as given.
+  it('reads env-shadows n/a when the server did not count them', async () => {
+    stubFetch(payload)
+    render(<ResolvedKnobPanel />)
+    await waitFor(() =>
+      expect(screen.getByTestId('resolved-panel').textContent).toContain(
+        'env-shadows n/a (not counted)'
+      )
+    )
+    expect(screen.getByTestId('resolved-panel').textContent).not.toMatch(
+      /env-shadows 0/
+    )
+  })
+
+  it('prints a counted env-shadows value as given, 0 included', async () => {
+    stubFetch({
+      ...payload,
+      summary: { ...payload.summary, env_shadows: 0, env_shadow_paths: [] },
+    })
+    render(<ResolvedKnobPanel />)
+    await waitFor(() =>
+      expect(screen.getByTestId('resolved-panel').textContent).toContain(
+        'env-shadows 0'
+      )
+    )
   })
 
   it('sends the bearer token when one is stored', async () => {

@@ -718,6 +718,26 @@ export const settings: GuideSection = {
         ],
       ],
     },
+    { kind: 'h', text: 'What the ⚙ settings boot line counts' },
+    {
+      kind: 'p',
+      text: 'schema= is the number of setting paths the bot actually SAVES — every key the strategy save writes, found by saving a fully filled-in config and reading the keys back, not by reading the Go struct tags. Since W1 (2026-09-23) that includes the ai_config.* blocks (risk_control, indicators, coin_source, prompt_sections, custom_prompt): they are stored under ai_config, and the old count skipped them entirely, so a new risk or indicator field could land with no classification and no ⚠ UNCLASSIFIED warning. This build counts 167 paths (the old count read 75). The boot line and the Settings page panel read the same enumeration, so they cannot disagree.',
+    },
+    {
+      kind: 'p',
+      text: 'env-shadows reads "n/a (not counted)": nothing counts which environment variables override a saved knob yet, so the line says so instead of printing a 0 nobody measured. The /api/config/resolved summary leaves env_shadows out for the same reason, and the Settings panel shows n/a.',
+    },
+    {
+      kind: 'code',
+      title: 'boot line shape (the numbers are read at boot, never typed)',
+      lines: [
+        '⚙ settings: schema=<paths> classified=<rows> live=<n> ineffective=<n> candidate-unverified=<n> suspended=<n> advisory=<n> display-only=<n> infra=<n> folded=<n> · env-shadows=n/a (not counted)',
+      ],
+    },
+    {
+      kind: 'p',
+      text: 'Most saved paths are still classified by their last name (min_risk_reward_ratio), because the registry is keyed that way. Where one last name means two different things, the registry carries the full path instead: the seven ai_config.indicators.external_data_sources.* fields read "ineffective" — nothing in the engine fetches external data — rather than borrowing the live "name" and "type" rows of unrelated settings.',
+    },
     { kind: 'h', text: 'saved → resolved · source' },
     {
       kind: 'p',
