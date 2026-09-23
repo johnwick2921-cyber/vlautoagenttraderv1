@@ -340,15 +340,31 @@ func TestPictureHtfEvaluatorIgnoresUnfinalizedBars(t *testing.T) {
 	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
 	env.seedPictureTape()
 	// Override the 5m ladder: the NEWEST bar is time-complete (CloseTime < now)
-	// but the AddOn never finalized it — it must not count as a completed bar,
-	// so the previous interval's window is past and the evaluation expires.
+	// but the AddOn never finalized it. It is a FORMING candle and must license
+	// nothing.
+	//
+	// W4/D23 changed what "nothing" looks like here, and the new answer is
+	// stricter. This test used to assert "expired", because the window was
+	// measured from the newest COMPLETED 5m candle: dropping the unfinalized
+	// one moved that anchor back five minutes and the window read as past. The
+	// window is now anchored to the H1 close that CONFIRMED the break, so it no
+	// longer moves with whichever candle is newest — and a forming tick no
+	// longer refreshes the freshness stamps at all. So the evaluator reports
+	// that it is still WAITING for completed data, holds no opportunity key,
+	// and writes NO durable refusal a qualifying frame would have to live with.
 	bars5m := pictureBars5M(true)
 	bars5m[len(bars5m)-1].Final = false
 	env.seed(pictureBars4H(), pictureBarsH1(), bars5m)
 	env.eval.OnBars("MNQ", "5m", tailOf(bars5m, 1), env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
-	if res.Stage != "expired" {
-		t.Fatalf("an unfinalized bar must not establish the current interval, got %+v", res)
+	if res.Stage == "confirmed" || res.Stage == "submitted" {
+		t.Fatalf("a forming candle must never license an entry, got %+v", res)
+	}
+	if !strings.Contains(res.Reason, "awaiting the first 5m frame") {
+		t.Fatalf("a forming candle must not refresh freshness — the evaluator must still be awaiting completed data, got %+v", res)
+	}
+	if res.OppKey != "" {
+		t.Fatalf("no opportunity may be keyed off a forming candle, got %q", res.OppKey)
 	}
 	if len(env.submits) != 0 {
 		t.Fatalf("an unfinalized newest bar must never submit")

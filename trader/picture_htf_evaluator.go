@@ -37,8 +37,14 @@ type PictureHtfEvaluator struct {
 	// Evaluation state.
 	lastH1CloseEval int64 // the newest completed H1 close already scanned
 	levels          []kernel.PictureHtfLevel
-	levelsEval4H    int64 // the 4H close time the levels snapshot was built from
-	freshest5mAt    time.Time
+	levelsEval4H    int64     // the 4H close time the levels snapshot was built from
+	freshest5mAt    time.Time // Go RECEIPT clock of the freshest completed 5m frame
+	// D23, the other two clocks. freshest5mEmitted is the AddOn's own stamp
+	// (the SOURCE clock, on another machine); freshest5mClose is the candle's
+	// own close. Both are 0 until a COMPLETED 5m frame arrives — a forming
+	// tick refreshes neither.
+	freshest5mEmitted int64
+	freshest5mClose   int64
 
 	// H1 close series for the advisory momentum stall (last three closes).
 	h1Closes []float64
@@ -140,6 +146,52 @@ func (e *PictureHtfEvaluator) bars(symbol, tf string, n int, nowMs int64) []mark
 // requirement and then filtering to completed candles can therefore never
 // satisfy the requirement — not rarely, but by construction.
 const pictureHtfDepthMargin = 4
+
+// newestFinalBar returns the newest bar the AddOn PROVED closed, if any. A
+// frame of forming ticks carries none.
+func newestFinalBar(bars []market.Kline) (market.Kline, bool) {
+	for i := len(bars) - 1; i >= 0; i-- {
+		if bars[i].Final {
+			return bars[i], true
+		}
+	}
+	return market.Kline{}, false
+}
+
+// staleBy reports how stale the freshest completed 5m data is, and on which
+// clock that was measured — the worst of the source stamp, the candle's own
+// close, and our receipt of it. The clock is NAMED in the refusal because a
+// fallback that cannot be told from the real measurement is worse than no
+// fallback: emitted_at is the AddOn's clock and may simply be absent.
+func (e *PictureHtfEvaluator) staleBy(nowMs int64, now time.Time) (int64, string) {
+	worst, clock := int64(-1), "n/a"
+	consider := func(age int64, name string) {
+		if age > worst {
+			worst, clock = age, name
+		}
+	}
+	if e.freshest5mEmitted > 0 {
+		consider(nowMs-e.freshest5mEmitted, "source")
+	}
+	if e.freshest5mClose > 0 {
+		consider(nowMs-e.freshest5mClose, "completed-candle")
+	}
+	if !e.freshest5mAt.IsZero() {
+		consider(now.Sub(e.freshest5mAt).Milliseconds(), "receipt")
+	}
+	return worst, clock
+}
+
+// fiveMMs is one 5m interval in milliseconds. 5m boundaries are epoch-aligned
+// (300000 divides the epoch), so the arithmetic below needs no session offset.
+const fiveMMs = int64(5 * 60_000)
+
+// nextFiveMBoundary is the start of the first 5m interval beginning strictly
+// after ms. A candle's CloseTime is the last instant it owns, so the boundary
+// after it is the next interval's open.
+func nextFiveMBoundary(ms int64) int64 {
+	return (ms/fiveMMs + 1) * fiveMMs
+}
 
 // pictureUnknownContractWarnAfter is how long Picture may evaluate frames
 // without contract identity before it says so out loud. One WARN per window;
@@ -303,7 +355,14 @@ func (e *PictureHtfEvaluator) OnBars(symbol, tf string, bars []market.Kline, rec
 		e.unknownSince, e.unknownWarned = time.Time{}, false
 	}
 	if tf == "5m" {
-		e.freshest5mAt = receivedAt
+		// D23: only COMPLETED data refreshes freshness. A forming tick is not
+		// new evidence, and treating it as such let a stale setup look current
+		// for as long as ticks kept arriving.
+		if fin, ok := newestFinalBar(bars); ok {
+			e.freshest5mAt = receivedAt
+			e.freshest5mEmitted = fin.EmittedAt
+			e.freshest5mClose = fin.CloseTime
+		}
 	}
 	e.evaluateLocked(symbol, receivedAt)
 }
@@ -400,7 +459,12 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 		return EvaluateResult{Stage: "watching", Momentum: stall}
 	}
 	newest5m := fiveM[len(fiveM)-1]
-	intervalStart := newest5m.OpenTime + 5*60_000 // the boundary of the NEXT 5m interval
+	// D23: the entry window belongs to the H1 close that CONFIRMED the break —
+	// it is the 5m interval that follows THAT close, and it happens once.
+	// Measuring from `newest5m.OpenTime + 5m` moved the anchor forward with
+	// every new 5m candle, so the window re-opened every five minutes,
+	// indefinitely, for a break confirmed long before.
+	intervalStart := nextFiveMBoundary(cur.CloseTime)
 	elapsed := nowMs - intervalStart
 	windowMs := int64(e.cfg.EntryWindowSec) * 1000
 	if elapsed < 0 {
@@ -425,8 +489,13 @@ func (e *PictureHtfEvaluator) evaluateLocked(symbol string, now time.Time) Evalu
 	if e.freshest5mAt.IsZero() {
 		return EvaluateResult{Stage: "watching", Reason: "awaiting the first 5m frame of the interval", Momentum: stall}
 	}
-	if now.Sub(e.freshest5mAt).Milliseconds() > int64(e.cfg.FreshnessSec)*1000 {
-		return e.refuse(oppKey, "expired", "data age exceeds the freshness limit — a late frame cannot enter", stall)
+	// D23: three clocks, separately measured, and the limit binds the WORST of
+	// them. Source age answers "how old is this data"; receipt age answers
+	// "how long did this frame sit in our own queue". Either alone leaves a
+	// hole: fresh data delivered late, or a prompt delivery of stale data.
+	if age, clock := e.staleBy(nowMs, now); age > int64(e.cfg.FreshnessSec)*1000 {
+		return e.refuse(oppKey, "expired",
+			fmt.Sprintf("%s age %dms exceeds the freshness limit (%ds) — a late frame cannot enter", clock, age, e.cfg.FreshnessSec), stall)
 	}
 
 	// --- Geometry: structural stop + opposing-zone target ---
