@@ -305,9 +305,8 @@ func parityDecisionRig(t *testing.T, id, template string) *parityRig {
 	w := newParityWire(t, false)
 	at.trader = w.nt
 	// No bar provider: the entry gate's live price reads 0 (legs 5/6 abstain)
-	// and the order step stops at its price read — market.GetWithExchange for
-	// a CME symbol would otherwise make Binance HTTP calls (market/data.go
-	// getOpenInterestData / getFundingRate), which a test must never reach.
+	// and the order step stops at its price read. (The futures market read
+	// makes no Binance call since W-NO-BINANCE A — TestAIOpenSendHalfMakesNoBinanceCall.)
 	prev := market.FuturesBarsProvider
 	market.FuturesBarsProvider = nil
 	t.Cleanup(func() { market.FuturesBarsProvider = prev })

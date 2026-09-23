@@ -128,6 +128,11 @@ export const status: GuideSection = {
       kind: 'p',
       text: "Before an AI entry, a position NinjaTrader already holds is flattened only when nothing on our books explains it. It is left alone — and the AI entry refused, counted as 'reconcile_owned' — when, for that account, instrument and side, an armed order carrying a broker signal or a sent Picture entry is live; when an open position's entry order is one of those; or when one of them filled in the last two minutes (twice the reconciler's grace) on this trader or any trader running in the process and is not recorded as a position yet. A trader that has already stopped is not checked for that last case. A position nothing explains is flattened as before.",
     },
+    { kind: 'h', text: 'Market data on the futures path' },
+    {
+      kind: 'p',
+      text: "On the CME futures path the bot reads only NinjaTrader's own bars. It makes no call to Binance or any other outside market-data service. Open interest and funding are crypto-perpetual ideas with no CME symbol behind them, so on futures they are shown as n/a, never a made-up 0: in the AI prompt (when the Open Interest indicator is switched on) and on the 📊 market data boot line. Before this, every AI entry, close and entry check asked Binance for MNQ's open interest and funding. That request could never succeed and put a third-party network wait inside an entry decision. On the crypto path a funding value that could not be fetched now also reads n/a instead of 0.",
+    },
     { kind: 'h', text: 'The boot ledger, line by line' },
     {
       kind: 'code',
@@ -135,6 +140,7 @@ export const status: GuideSection = {
       lines: [
         '🔐 BOOT INTEGRITY OK — rev <sha> [+dirty] · built <ts>',
         "📷 picture-htf: mode=<on|off> rule=v1 SIM-only data=… addon=<proven|not proven> (build=…, need ≥ …) plan_gate=<admitted (plan mode is not strict)|refused under strict until W5 (source not yet a Day Plan scenario)> — per trader, READ: plan_gate is the plan-mode verdict Picture's entry gate refuses on  ← W-EXEC-TRUTH W0b",
+        '📊 market data: futures traders=<n> bars=<NT8 BarCache|UNWIRED|n/a> · oi/funding: n/a (no external market data on the futures path) · non-futures traders=<m> — every field READ: the counts from the loaded traders, bars from whether the NinjaTrader bar feed is wired, oi/funding from the function the futures market read itself calls  ← W-NO-BINANCE A (replaces the old "Using CoinAnk API for all market data" line, which was wrong on futures)',
         '🚦 entry latch: latch=<wired|UNWIRED|n/a> key=<ACCOUNT|SYMBOL> book≤<2×snapshot interval> recent=1m0s — per trader, READ from the NinjaTrader connection: wired means the one entry latch has its book and ledger evidence  ← W-EXEC-TRUTH W0a',
         '🔒 maintenance: hold=<clear|held|unreadable|unconfigured> job=<id|n/a> since=<time|n/a> addon_ack=<held|released job=<id> build=<id>|n/a> — the installation update hold, every field READ. addon_ack is n/a at startup because the NinjaTrader AddOn has not connected yet; an AddOn older than 2026-09-22-m2 never acks, so it stays n/a  ← W-ONE-BUTTON M2',
         '🧾 P&L surfaces: <N> aggregators strict-corrected, 0 raw (corrected-column guard) — every P&L figure the model and the dashboard read is pnl_corrected; unresolved rows are counted and excluded, never coerced',

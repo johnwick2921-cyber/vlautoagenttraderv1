@@ -76,20 +76,18 @@ import (
 // clock. The send half (reconcileBeforeOpenNT → positions → OpenLong/Short) is
 // exactly the part D10 names.
 //
-// NO NETWORK. The send half's market read, market.GetWithExchange, also makes
-// two outbound HTTPS calls on the futures branch — getOpenInterestData
-// (market/data.go:130) and getFundingRate (:137), each to fapi.binance.com
-// with a 30 s client timeout (market/api_client.go:24). Production treats a
-// failure there as non-fatal, but a route that HANGS spends up to 60 s of the
-// fixture's 60 s budgets (the latch's book-age bound, snapshotMaxAge = 2 x
-// the 30 s snapshot period, and the server's TCPHeartbeatAckTimeout, which the
-// never-acking fake AddOn hits), and those tests then fail on the budget, not
-// on D10. So
-// newDupWire stubs every client market.NewAPIClient builds, through its own
-// seam (hook.SET_HTTP_CLIENT, market/api_client.go:27), with a RoundTripper
-// that fails at once — the production "OI/funding unavailable" branch, taken
-// in microseconds — and restores the previous hook in t.Cleanup. Removing
-// those calls for futures is a production change for its own wave.
+// NO NETWORK. Until W-NO-BINANCE A the send half's market read,
+// market.GetWithExchange, made two outbound HTTPS calls on the futures branch
+// (getOpenInterestData and getFundingRate, each to fapi.binance.com with a 30 s
+// client timeout). Those calls are GONE: the futures branch now takes
+// market.futuresOIFunding (absent, no network), pinned by
+// TestAIOpenSendHalfMakesNoBinanceCall and the market source guard. The stub
+// stays, belt and braces: newDupWire still routes every client
+// market.NewAPIClient builds through its own seam (hook.SET_HTTP_CLIENT) to a
+// RoundTripper that fails at once — so a future outbound call on this path
+// costs microseconds here instead of the fixture's 60 s budgets (the latch's
+// book-age bound and the server's TCPHeartbeatAckTimeout) — and restores the
+// previous hook in t.Cleanup.
 //
 // THE RACES. Picture runs on the live-bar goroutine, concurrently with the
 // cycle (armed pass, AI decision); the agent-chat and debug doors are other
