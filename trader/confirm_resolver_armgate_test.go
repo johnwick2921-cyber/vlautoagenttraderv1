@@ -86,6 +86,9 @@ func TestConfirmResolverBreakdownArmStoredTwoCloses(t *testing.T) {
 	if d := desk(now); !strings.Contains(d, "S1 NOT MET") {
 		t.Fatalf("desk at 10:10 must read the recorded NOT MET: %s", d)
 	}
+	if at.declineHadFreshMetAt(now) {
+		t.Fatal("the decline consumer reads the same count: NOT MET at 10:10")
+	}
 
 	// 10:15 — the 10:10–10:15 retest fails to reclaim: both legs MET → armed.
 	cut(15)
@@ -103,5 +106,18 @@ func TestConfirmResolverBreakdownArmStoredTwoCloses(t *testing.T) {
 	}
 	if d := desk(now); !strings.Contains(d, "S1 MET") {
 		t.Fatalf("desk at 10:15 must read the recorded MET: %s", d)
+	}
+	if !at.declineHadFreshMetAt(now) {
+		t.Fatal("the decline consumer reads the same count: MET at 10:15")
+	}
+	// A waterfall scenario with NO stored confirm is still a recorded
+	// confirmation (BD_MIN_CLOSES authoring default, named) — the decline
+	// consumer now judges the recorder's scenario set, not only confirm{} ones.
+	sc.Confirm = nil
+	if !at.declineHadFreshMetAt(now) {
+		t.Fatal("a MET waterfall scenario without confirm{} must reach the decline consumer")
+	}
+	if v := meta(now); !v.Met || v.Rule != "1x5m_close" || v.RuleSource != kernel.ConfirmSourceAuthoringDefault {
+		t.Fatalf("no stored confirm → the recorded rule is the named authoring default: %+v", v)
 	}
 }
