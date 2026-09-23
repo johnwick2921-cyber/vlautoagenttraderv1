@@ -887,9 +887,10 @@ func FlipLineBeyondPrice(flip *PlanCondition, price float64) error {
 }
 
 // DeathLineBeyondPrice is FlipLineBeyondPrice for the death object: a death
-// line already crossed at authoring is a plan born dead (the scenario
-// born-dead check, validateAuthoredScenariosAt, evaluates ONLY the
-// scenario.invalid prose grammar on 1m closes and never reads death{}).
+// line already crossed at authoring is a plan born dead. This judges the READ
+// price only; since W-EXEC-TRUTH W2 D5 the born check (EvaluateBornCheck, via
+// validateAuthoredScenariosAt) also judges death{}/flip{} on every 5m group
+// closed between the read clock and publication.
 func DeathLineBeyondPrice(death *PlanCondition, price float64) error {
 	if death == nil {
 		return nil
