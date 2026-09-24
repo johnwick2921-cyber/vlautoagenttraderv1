@@ -30,12 +30,16 @@ type entryPolicyPromptInput struct {
 	Policy     string // resolved: market_in_zone | planned_order | legacy
 	ZoneMaxPts float64
 	MinHoldMin int
+	// ConditionStatus / SessionConditionStatus (WAVE 1a-plan P3) — the
+	// RESOLVED strategy + session maps; nil = no configured demotion.
+	ConditionStatus        map[string]string
+	SessionConditionStatus map[string]string
 }
 
 // resolvePromptEntryPolicy maps the PlannerInput fields onto the rendered
 // policy: an empty policy is the shipped default; zero knobs are their
 // shipped defaults (store.*Default — one source with the resolvers).
-func resolvePromptEntryPolicy(policy string, zoneMax float64, minHold int) entryPolicyPromptInput {
+func resolvePromptEntryPolicy(policy string, zoneMax float64, minHold int, base, session map[string]string) entryPolicyPromptInput {
 	p := strings.ToLower(strings.TrimSpace(policy))
 	if p == "" {
 		p = store.EntryPolicyDefaultShipped
@@ -46,7 +50,7 @@ func resolvePromptEntryPolicy(policy string, zoneMax float64, minHold int) entry
 	if minHold <= 0 {
 		minHold = store.MinHoldMinDefault
 	}
-	return entryPolicyPromptInput{Policy: p, ZoneMaxPts: zoneMax, MinHoldMin: minHold}
+	return entryPolicyPromptInput{Policy: p, ZoneMaxPts: zoneMax, MinHoldMin: minHold, ConditionStatus: base, SessionConditionStatus: session}
 }
 
 func (e entryPolicyPromptInput) miz() bool { return e.Policy == EntryPolicyMarketInZone }

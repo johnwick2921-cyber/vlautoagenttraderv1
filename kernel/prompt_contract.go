@@ -287,7 +287,7 @@ func PromptContractBootLine() string {
 	// (market_in_zone), planned_order and legacy — so a row can never be
 	// "stated" only under a policy the bot is not running.
 	for _, p := range []string{EntryPolicyMarketInZone, EntryPolicyPlannedOrder, EntryPolicyDefaultLegacy} {
-		if err := ValidatePromptContracts(plannerOutputContractFor(0, 0, true, true, true, resolvePromptEntryPolicy(p, 0, 0))); err != nil {
+		if err := ValidatePromptContracts(plannerOutputContractFor(0, 0, true, true, true, resolvePromptEntryPolicy(p, 0, 0, nil, nil))); err != nil {
 			return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v [entry policy %s] (class 38 guard)", err, p)
 		}
 	}

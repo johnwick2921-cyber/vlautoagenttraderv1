@@ -164,5 +164,5 @@ func TestClass38ContractTestFailsWhenPromptDropsARule(t *testing.T) {
 // class38MizRendering is the output contract under the market_in_zone entry
 // policy (W3) — the shipped default's rendering.
 func class38MizRendering(writeFeas bool) string {
-	return plannerOutputContractFor(8, 5, true, true, writeFeas, resolvePromptEntryPolicy(EntryPolicyMarketInZone, 0, 0))
+	return plannerOutputContractFor(8, 5, true, true, writeFeas, resolvePromptEntryPolicy(EntryPolicyMarketInZone, 0, 0, nil, nil))
 }

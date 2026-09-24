@@ -35,6 +35,12 @@ type PlannerInput struct {
 	// renders the arm-disabled-at-write rule. false → the sentence is absent and
 	// the prompt is byte-identical to before the wave.
 	WriteFeasibilityOn bool
+	// ConditionStatus / SessionConditionStatus (WAVE 1a-plan P3, 2026-09-24)
+	// — the RESOLVED strategy + session condition maps (W1 resolver). nil/empty
+	// = no configured demotion — the armable line renders byte-identically to
+	// before this wave.
+	ConditionStatus        map[string]string
+	SessionConditionStatus map[string]string
 	// EntryPolicyDefault / ZoneMaxPts / MinHoldMin (W-EXEC-TRUTH W3, 2026-09-23)
 	// — the RESOLVED day_plan.entry_policy_default, zone_max_pts and
 	// min_hold_min. The ZERO value renders the SHIPPED default (market_in_zone,
@@ -780,7 +786,7 @@ func BuildPlannerPrompt(in PlannerInput) string {
 	}
 
 	b.WriteString(plannerOutputContractFor(in.MaxLevels, in.ScenarioCap, len(in.HTFZones) > 0, has1HSD, in.WriteFeasibilityOn,
-		resolvePromptEntryPolicy(in.EntryPolicyDefault, in.ZoneMaxPts, in.MinHoldMin)))
+		resolvePromptEntryPolicy(in.EntryPolicyDefault, in.ZoneMaxPts, in.MinHoldMin, in.ConditionStatus, in.SessionConditionStatus)))
 	return b.String()
 }
 
@@ -796,7 +802,7 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 	// plannerOutputContractFor with the RESOLVED policy; entry_policy_prompt_test
 	// runs the class-38 contract over every policy's rendering.
 	return plannerOutputContractFor(maxLevels, maxScenarios, hasHTFZones, has1HSDZone, writeFeas,
-		entryPolicyPromptInput{Policy: EntryPolicyDefaultLegacy})
+		entryPolicyPromptInput{Policy: EntryPolicyDefaultLegacy}) // nil maps — the legacy prompt is byte-identical
 }
 
 // plannerOutputContractFor renders the output contract under the resolved
@@ -861,7 +867,7 @@ func plannerOutputContractFor(maxLevels, maxScenarios int, hasHTFZones, has1HSDZ
 		"ARM SPLIT vs ARM SINGLE (class 38 — the validator refuses every other shape): legs[] are the sweep_reclaim SPLIT contract and nothing else — EXACTLY 2 legs, confirm=touch at the sweep ref, leg 1 rests there (wait_confirm false) and leg 2 chains (wait_confirm true) on confirm2 = 1m_mss or 1x5m_close with leg 2's rule EQUAL to confirm2.rule, and the top-level entry/stop/target mirror leg 1. " + ep.armSingleClause() +
 		"ARMED ORDERS (the resting order IS the fast path — prefer it over a 2-minute debate at the touch). " +
 		ep.armsFollowBias() + // W3 (h): the ENTRY POLICY sentence + ARMS FOLLOW THE BIAS
-		"WHICH CONDITIONS CAN BE ARMED — " + ArmableConditionsLineFor(ResolvedConditionStatuses(nil, nil, ShadowConditionsEnv()), ep.Policy) + " " +
+		"WHICH CONDITIONS CAN BE ARMED — " + ArmableConditionsLineFor(ResolvedConditionStatuses(ep.ConditionStatus, ep.SessionConditionStatus, ShadowConditionsEnv()), ep.Policy) + " " +
 		ep.entryTypeSentence() +
 		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target " + ep.breakoutRetestClause() + ". A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). " + ep.neverArmClause() + " Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. " + ep.placementClause() + " FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 " + fmt.Sprintf("%.1f", MinSLATRMult()) + "\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). " + ep.omitArmClause() + " " + ep.waterfallArmsClause() +
 		// A2 (2026-08-26) — condition×session guidance from the week ledger:
