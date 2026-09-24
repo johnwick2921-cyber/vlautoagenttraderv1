@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"nofx/internal/censuswalk"
 )
 
 // ── A29 STANDING GATE — "reported wired, called by nobody" ───────────────────
@@ -155,17 +157,16 @@ func TestEveryClaimedProductionPathHasACallSite(t *testing.T) {
 
 	fset := token.NewFileSet()
 	var goFiles []string
+	// CLASS 258: the skip names come from censuswalk and apply ONLY to direct
+	// children of the module root (SkippedAtRoot). This census also reads
+	// _test.go files (a claim in a test file does not count), so it walks with
+	// the censuswalk policy rather than NonTestGoFiles.
 	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
 		if info.IsDir() {
-			if p == root {
-				return nil // never skip the root itself (its Name() is "..")
-			}
-			base := info.Name()
-			if base == ".git" || base == "node_modules" || base == "web" || base == "vendor" ||
-				strings.HasPrefix(base, ".") {
+			if p != root && filepath.Dir(p) == root && censuswalk.SkippedAtRoot(info.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -282,5 +283,61 @@ func TestEveryClaimedProductionPathHasACallSite(t *testing.T) {
 			continue
 		}
 		t.Logf("A29 ok: %s → %d production call site(s) (%s)", name, sites[name], where)
+	}
+}
+
+// TestWiringGateSeesNestedSkipNamedDirs plants a .go file in EVERY
+// censuswalk.NestedProbeDirs directory of a synthetic module and asserts the
+// gate's walk lists every one. With the old any-depth SkipDir the dirs named
+// like a root skip were invisible (CLASS 258).
+func TestWiringGateSeesNestedSkipNamedDirs(t *testing.T) {
+	root := t.TempDir()
+	dirs := censuswalk.NestedProbeDirs()
+	for _, dir := range dirs {
+		full := filepath.Join(root, filepath.FromSlash(dir))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		src := "package " + censuswalk.PackageName(dir) + "\n"
+		if err := os.WriteFile(filepath.Join(full, "probe.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var goFiles []string
+	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() {
+			if p != root && filepath.Dir(p) == root && censuswalk.SkippedAtRoot(info.Name()) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasSuffix(p, ".go") {
+			goFiles = append(goFiles, p)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, f := range goFiles {
+		rel, err := filepath.Rel(root, f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen[filepath.ToSlash(rel)] = true
+	}
+	var missed []string
+	for _, dir := range dirs {
+		if !seen[dir+"/probe.go"] {
+			missed = append(missed, dir)
+		}
+	}
+	if len(missed) > 0 {
+		t.Fatalf("the wiring gate skipped %d of %d nested probe dirs — a skip by NAME at depth exempts compiled packages (CLASS 258):\n\t%s",
+			len(missed), len(dirs), strings.Join(missed, "\n\t"))
 	}
 }
