@@ -25,6 +25,19 @@
 // fail inside, after the typed confirmation — PR #200 fold #18); the data
 // dir is resolved by internal/installpath exactly as the bot and
 // cmd/maintenance-hold resolve it (ONE resolver).
+//
+// DB_PATH (PR #200 fold F3): the bot started by the shipped systemd unit has
+// no DB_PATH in its own environment, so it resolves <install>/.env, else
+// data/data.db. This CLI runs in the OPERATOR's environment, where an
+// exported DB_PATH would win (installpath.DotEnvGetenv's precedence) and
+// silently divert the enrollment to a database the bot does not use. So both
+// subcommands REFUSE (rc 2, before any prompt, nothing written) when the
+// process environment defines DB_PATH — even empty — and it resolves to a
+// different file than the installation's own; and when <install>/.env exists
+// but cannot be read or parsed (the CLI cannot see what the bot uses). The
+// typed confirmation shows the resolved bot database, data dir and where
+// DB_PATH came from. There is no un-enroll subcommand: un-enroll is the
+// runbook's manual rm of the two files in the data dir shown here.
 package updaterbootstrap
 
 import (
@@ -53,8 +66,11 @@ var (
 	now        = time.Now
 )
 
-// DataDirFor is the CLI's half of the ONE resolver (identical to
-// holdcli.DataDirFor; a test pins the two together).
+// DataDirFor is the ONE resolver's answer for THIS process (identical to
+// holdcli.DataDirFor; a test pins the two together): DotEnvGetenv, so a
+// DB_PATH in the process environment wins. Run acts on resolveTarget, which
+// refuses unless that answer is the installation's own (fold F3), so
+// whenever Run proceeds the two are the same directory.
 func DataDirFor(installDir string) string {
 	return installpath.DataDir(installDir, installpath.DBPath(installpath.DotEnvGetenv(installDir)))
 }
@@ -67,7 +83,8 @@ func DBFileFor(installDir string) string {
 const usage = "usage: updater-bootstrap [--install-dir d] enroll [--replace] <email> | authorize <release_id>"
 
 // Run executes the CLI and returns the exit code: 0 ok, 1 refused/failed,
-// 2 usage or a precondition (root, no bot DB, not attended).
+// 2 usage or a precondition (root, DB_PATH diverges or .env unreadable, no
+// bot DB, not attended).
 func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	top := flag.NewFlagSet("updater-bootstrap", flag.ContinueOnError)
 	top.SetOutput(stderr)
@@ -111,14 +128,71 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "--replace applies to enroll only")
 		return 2
 	}
-	if rc := preconditions(*installDir, stdin, stderr); rc != 0 {
+	tgt, rc := preconditions(*installDir, stdin, stderr)
+	if rc != 0 {
 		return rc
 	}
-	dataDir := DataDirFor(*installDir)
 	if rest[0] == "enroll" {
-		return enroll(dataDir, DBFileFor(*installDir), pos[0], *replace, stdin, stdout, stderr)
+		return enroll(tgt, pos[0], *replace, stdin, stdout, stderr)
 	}
-	return authorize(dataDir, pos[0], stdin, stdout, stderr)
+	return authorize(tgt, pos[0], stdin, stdout, stderr)
+}
+
+// target is what one run acts on: the bot database and data dir that a bot
+// started from installDir (with no DB_PATH in its own environment) resolves,
+// and where DB_PATH came from — shown in the typed confirmation.
+type target struct {
+	installDir, dbFile, dataDir, source string
+}
+
+// resolveTarget is PR #200 fold F3. installDir is absolute (fold #18). It
+// refuses when <install>/.env exists but cannot be read or parsed, and when
+// the process environment defines DB_PATH (even empty) and that resolves to
+// a different file than the installation's own. Files are compared after
+// anchoring and cleaning, so any spelling of the SAME file proceeds.
+func resolveTarget(installDir string) (target, error) {
+	o := installpath.ReadDBPathOrigin(installDir)
+	switch o.DotEnvState {
+	case installpath.DotEnvDenied:
+		return target{}, fmt.Errorf("%s exists but this user cannot read it (permission denied) — the CLI cannot see the DB_PATH the bot uses. Run as the bot's own user", o.DotEnvFile)
+	case installpath.DotEnvUnreadable:
+		// Never the parse error's text: godotenv quotes the file in it.
+		return target{}, fmt.Errorf("%s exists but could not be read or parsed — the CLI cannot see the DB_PATH the bot uses (the bot logs \"⚠️ .env NOT loaded\" for it and falls back to its process environment). Repair the file, then re-run", o.DotEnvFile)
+	}
+	own := o.FromInstallation()
+	t := target{
+		installDir: installDir,
+		dbFile:     installpath.DBFile(installDir, own),
+		dataDir:    installpath.DataDir(installDir, own),
+		source:     installationSource(o),
+	}
+	if !o.InProcess {
+		return t, nil
+	}
+	if procFile := installpath.DBFile(installDir, o.Effective()); procFile != t.dbFile {
+		return target{}, fmt.Errorf("DB_PATH differs between this process and the installation.\n"+
+			"  DB_PATH=%q in this process's environment -> %s\n"+
+			"  the installation: %s -> %s\n"+
+			"A bot started from %s with no DB_PATH in its own environment (the shipped systemd unit sets none) uses %s, so this command would act on a database the bot does not use; nothing was written.\n"+
+			"Unset it and re-run (env -u DB_PATH updater-bootstrap ...). If the bot really runs on %s, make %s say so first",
+			o.ProcessValue, procFile, t.source, t.dbFile, installDir, t.dbFile, procFile, o.DotEnvFile)
+	}
+	t.source += fmt.Sprintf("; this process's DB_PATH=%q names the same file", o.ProcessValue)
+	return t, nil
+}
+
+// installationSource names where the installation's own DB_PATH came from.
+func installationSource(o installpath.DBPathOrigin) string {
+	switch {
+	case o.InDotEnv && o.DotEnvValue != "":
+		return fmt.Sprintf("DB_PATH=%q in %s", o.DotEnvValue, o.DotEnvFile)
+	case o.InDotEnv:
+		return fmt.Sprintf("the default %s (%s sets DB_PATH empty)", installpath.DefaultDBPath, o.DotEnvFile)
+	case o.DotEnvState == installpath.DotEnvAbsent:
+		return fmt.Sprintf("the default %s (no %s)", installpath.DefaultDBPath, o.DotEnvFile)
+	default:
+		return fmt.Sprintf("the default %s (%s sets no DB_PATH)", installpath.DefaultDBPath, o.DotEnvFile)
+	}
 }
 
 // parseInterspersed accepts flags before or after the one positional
@@ -138,26 +212,33 @@ func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
 	}
 }
 
-func preconditions(installDir string, stdin io.Reader, stderr io.Writer) int {
+func preconditions(installDir string, stdin io.Reader, stderr io.Writer) (target, int) {
 	if geteuid() == 0 {
 		fmt.Fprintln(stderr, "refusing to run as root: run updater-bootstrap as the bot's own user (a root-owned data/updater locks the bot out)")
-		return 2
+		return target{}, 2
 	}
-	dbFile := DBFileFor(installDir)
-	if fi, err := os.Stat(dbFile); err != nil || !fi.Mode().IsRegular() {
-		fmt.Fprintf(stderr, "refusing: no bot database at %s — --install-dir must be the installation the bot runs from (its WorkingDirectory)\n", dbFile)
-		return 2
+	tgt, err := resolveTarget(installDir)
+	if err != nil {
+		fmt.Fprintf(stderr, "refusing: %v\n", err)
+		return target{}, 2
+	}
+	if fi, err := os.Stat(tgt.dbFile); err != nil || !fi.Mode().IsRegular() {
+		fmt.Fprintf(stderr, "refusing: no bot database at %s — --install-dir must be the installation the bot runs from (its WorkingDirectory)\n", tgt.dbFile)
+		return target{}, 2
 	}
 	if !isTerminal(stdin) {
 		fmt.Fprintln(stderr, "refusing: updater-bootstrap is attended — run it in a terminal (stdin is not a TTY)")
-		return 2
+		return target{}, 2
 	}
-	return 0
+	return tgt, 0
 }
 
-// confirm reads ONE line and requires it to be exactly want (a trailing
-// "\n" or "\r\n" is the only thing stripped).
-func confirm(stdin io.Reader, stderr io.Writer, want string) bool {
+// confirm shows what the run acts on (fold F3: the resolved bot database,
+// data dir and DB_PATH source), then reads ONE line and requires it to be
+// exactly want (a trailing "\n" or "\r\n" is the only thing stripped).
+func confirm(stdin io.Reader, stderr io.Writer, tgt target, want string) bool {
+	fmt.Fprintf(stderr, "  installation: %s\n  bot database: %s\n  data dir:     %s\n  DB_PATH from: %s\n",
+		tgt.installDir, tgt.dbFile, tgt.dataDir, tgt.source)
 	fmt.Fprintf(stderr, "Type exactly:  %s\n> ", want)
 	line, err := bufio.NewReader(io.LimitReader(stdin, 1024)).ReadString('\n')
 	if err != nil {
@@ -171,8 +252,9 @@ func confirm(stdin io.Reader, stderr io.Writer, want string) bool {
 	return true
 }
 
-func enroll(dataDir, dbFile, email string, replace bool, stdin io.Reader, stdout, stderr io.Writer) int {
-	userID, passwordHash, err := lookupUserReadOnly(dbFile, email)
+func enroll(tgt target, email string, replace bool, stdin io.Reader, stdout, stderr io.Writer) int {
+	dataDir := tgt.dataDir
+	userID, passwordHash, err := lookupUserReadOnly(tgt.dbFile, email)
 	if err != nil {
 		fmt.Fprintf(stderr, "refusing: %v\n", err)
 		return 1
@@ -186,7 +268,7 @@ func enroll(dataDir, dbFile, email string, replace bool, stdin io.Reader, stdout
 		}
 	}
 	fmt.Fprintf(stderr, "Enroll the app user with this exact email as the installation's update administrator.\n")
-	if !confirm(stdin, stderr, "ENROLL "+email) {
+	if !confirm(stdin, stderr, tgt, "ENROLL "+email) {
 		return 1
 	}
 	// passwordHash binds the enrollment to the row's CURRENT password
@@ -204,13 +286,14 @@ func enroll(dataDir, dbFile, email string, replace bool, stdin io.Reader, stdout
 	return 0
 }
 
-func authorize(dataDir, releaseID string, stdin io.Reader, stdout, stderr io.Writer) int {
+func authorize(tgt target, releaseID string, stdin io.Reader, stdout, stderr io.Writer) int {
+	dataDir := tgt.dataDir
 	if !updateauth.ValidReleaseID(releaseID) {
 		fmt.Fprintln(stderr, "refusing: a release id is an identifier (letters, digits, . _ -), never a URL, path or command")
 		return 1
 	}
 	fmt.Fprintf(stderr, "Authorize ONE install of release %s (valid %s, single use).\n", releaseID, updateauth.MaxAuthorizationWindow)
-	if !confirm(stdin, stderr, "AUTHORIZE "+releaseID) {
+	if !confirm(stdin, stderr, tgt, "AUTHORIZE "+releaseID) {
 		return 1
 	}
 	g, err := updateauth.Authorize(dataDir, releaseID, now())

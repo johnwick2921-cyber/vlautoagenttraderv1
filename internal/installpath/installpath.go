@@ -10,6 +10,8 @@
 package installpath
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -61,4 +63,69 @@ func DotEnvGetenv(installDir string) func(string) string {
 		}
 		return vals[k]
 	}
+}
+
+// What happened to <installDir>/.env when DBPathOrigin read it.
+const (
+	DotEnvRead       = "read"       // read and parsed
+	DotEnvAbsent     = "absent"     // no such file (the bot then logs ".env absent")
+	DotEnvDenied     = "denied"     // exists, permission denied to THIS process
+	DotEnvUnreadable = "unreadable" // exists, not readable or not parseable (the bot then logs "⚠️ .env NOT loaded")
+)
+
+// DBPathOrigin is where DB_PATH comes from for one installation, with the
+// two places kept APART (PR #200 fold F3). It is beside DotEnvGetenv, not a
+// change to it: DotEnvGetenv stays the bot's and cmd/maintenance-hold's
+// resolver, and Effective() is exactly DBPath(DotEnvGetenv(installDir)) (a
+// test pins the two together).
+//
+// An operator CLI needs the split because the process environment it runs
+// in is the OPERATOR's, not the bot's: a bot started by the shipped systemd
+// unit (WorkingDirectory=<install>, no DB_PATH in the unit) resolves
+// FromInstallation(), whatever the operator's shell exports.
+type DBPathOrigin struct {
+	DotEnvFile   string // <installDir>/.env
+	DotEnvState  string // DotEnvRead, DotEnvAbsent, DotEnvDenied or DotEnvUnreadable
+	InDotEnv     bool   // the .env was read and defines DB_PATH (possibly empty)
+	DotEnvValue  string // meaningful only when InDotEnv
+	InProcess    bool   // the process environment defines DB_PATH (possibly empty)
+	ProcessValue string // meaningful only when InProcess
+}
+
+// ReadDBPathOrigin reads <installDir>/.env with the same parser DotEnvGetenv
+// (and the bot's godotenv.Load) uses, and the process environment. It never
+// keeps a parse error's text: godotenv quotes the file's remainder in it.
+func ReadDBPathOrigin(installDir string) DBPathOrigin {
+	o := DBPathOrigin{DotEnvFile: filepath.Join(installDir, ".env")}
+	vals, err := godotenv.Read(o.DotEnvFile)
+	switch {
+	case err == nil:
+		o.DotEnvState = DotEnvRead
+		o.DotEnvValue, o.InDotEnv = vals["DB_PATH"]
+	case errors.Is(err, fs.ErrNotExist):
+		o.DotEnvState = DotEnvAbsent
+	case errors.Is(err, fs.ErrPermission):
+		o.DotEnvState = DotEnvDenied
+	default:
+		o.DotEnvState = DotEnvUnreadable
+	}
+	o.ProcessValue, o.InProcess = os.LookupEnv("DB_PATH")
+	return o
+}
+
+// Effective is the DB_PATH this process resolves through DotEnvGetenv: the
+// process environment wins (even when it sets DB_PATH empty — then the
+// default), else the .env, else DefaultDBPath.
+func (o DBPathOrigin) Effective() string {
+	if o.InProcess {
+		return DBPath(func(string) string { return o.ProcessValue })
+	}
+	return o.FromInstallation()
+}
+
+// FromInstallation is the DB_PATH a bot started from installDir with NO
+// DB_PATH in its own environment resolves: the .env's value, else
+// DefaultDBPath (an absent or unreadable .env loads nothing).
+func (o DBPathOrigin) FromInstallation() string {
+	return DBPath(func(string) string { return o.DotEnvValue })
 }
