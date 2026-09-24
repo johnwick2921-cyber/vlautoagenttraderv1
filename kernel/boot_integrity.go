@@ -2,8 +2,8 @@ package kernel
 
 import (
 	"fmt"
+	"nofx/internal/installpath"
 	"os"
-	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"sync/atomic"
@@ -218,21 +218,10 @@ func shortRev(r string) string {
 	return r
 }
 
-// releaseMarkerPaths lists, in priority order, the files that may declare which
-// revision this process is supposed to be running.
-//
-// NOFX_RELEASE_DIR unset returns exactly one path — "deploy/RELEASE" — so the
-// behaviour and the boot line are byte-identical to what they have always been.
-// Set, the ACTIVE release's own marker is consulted first: deploy/RELEASE in
-// the working directory belongs to whatever tree the process was launched from,
-// and under a versioned install that tree answers for a different build.
+// releaseMarkerPaths delegates to internal/installpath, the ONE resolver.
+// It used to call os.Getenv here while api/release_dir.go latched the value
+// behind a sync.Once — two reads that can DISAGREE, which is precisely the
+// failure resolving-once exists to prevent.
 func releaseMarkerPaths() []string {
-	root := strings.TrimSpace(os.Getenv("NOFX_RELEASE_DIR"))
-	if root == "" {
-		return []string{"deploy/RELEASE"}
-	}
-	return []string{
-		filepath.Join(root, "current", "RELEASE"),
-		"deploy/RELEASE",
-	}
+	return installpath.ReleaseMarkerPaths()
 }

@@ -339,6 +339,10 @@ func main() {
 		}
 		// Judged by REV since 2026-09-16 (the served bundle's GUIDE_BUILT_REV vs
 		// integrity.Revision); the build time rides along as a secondary field.
+		// 🗂 is its OWN line: appending the resolved dir to 🖥 would change that
+		// line's bytes and break every golden reading it, while an absent knob
+		// is still a fact worth stating (n/a, never an empty gap).
+		logger.Infof("🗂 %s", api.ReleaseDirBootLine())
 		uiLine := api.UIServingBootLine(api.ResolvedDistDir(), binAt, integrity.Revision)
 		if strings.Contains(uiLine, "STALE") || strings.Contains(uiLine, "served-by=none") {
 			logger.Warnf("🖥 %s", uiLine)
