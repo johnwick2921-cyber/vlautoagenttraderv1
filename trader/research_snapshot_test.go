@@ -103,7 +103,7 @@ func TestStageACandidateProductionAssembly(t *testing.T) {
 	old := market.FuturesBarsProvider
 	market.FuturesBarsProvider = func(string, string, int) []market.Kline { return bars }
 	defer func() { market.FuturesBarsProvider = old }()
-	in := at.assemblePlannerInputWithCtx("ASIA", "2026-09-07", "", nil)
+	in := at.assemblePlannerInputWithCtx(time.Now(), "ASIA", "2026-09-07", "", nil)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err = r.Flush(ctx); err != nil {

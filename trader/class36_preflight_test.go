@@ -174,7 +174,7 @@ func TestClass36DeathReplanAndOwnerRereadInHaltUnchanged(t *testing.T) {
 
 	// death_replan: today it is refused by the freshness check in a halt (no
 	// row, no spend) and retried next cycle — kept exactly.
-	at.runDeathReplan("ASIA", "2026-09-01", row, "all levels consumed")
+	at.runDeathReplan(time.Now(), "ASIA", "2026-09-01", row, "all levels consumed")
 	if fresh := latestRow(t, st, "2026-09-01", "ASIA"); fresh.Version != 1 {
 		t.Fatalf("death_replan in a halt must write nothing (unchanged), got %+v", fresh)
 	}

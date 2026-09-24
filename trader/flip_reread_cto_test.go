@@ -69,7 +69,7 @@ const validShortPlanJSON = `{
     {"price": 15575, "label": "RN 15575", "grade": "B", "instruction": "fade"},
     {"price": 15620, "label": "PDH", "grade": "A", "instruction": "fade"}
   ],
-  "scenarios": [{"id": "S1", "trigger": "reject 15480 from below", "condition": "reject", "direction": "short", "target_chain": [15450, 15430], "invalid": "2x5m>15490", "quality": "A", "confirm":{"rule":"touch","ref_price":15480,"side":"above"},"economics":{"entry_zone":[15480,15480],"geometry":{"entry":15480,"stop":15490,"target":15430},"first_obstacle":{"price":15475,"level":"RN 15475 (25)","family":"round","response":"pass_through"},"r_to_obstacle":0.5,"r_to_arm_target":5.0,"path_levels":[{"price":15450,"level":"RN 15450","role":"pass_through"}]}}],
+  "scenarios": [{"id": "S1", "trigger": "reject 15480 from below", "condition": "reject", "direction": "short", "target_chain": [15450, 15430], "invalid": "2x5m>15490", "quality": "A", "confirm":{"rule":"touch","ref_price":15480,"side":"above"},"economics":{"entry_zone":[15480,15480],"geometry":{"entry":15480,"stop":15490,"target":15430},"first_obstacle":{"price":15475,"level":"RN 15475 (25)","family":"round","response":"pass_through"},"r_to_obstacle":0.5,"r_to_arm_target":5.0,"path_levels":[{"price":15470,"level":"IB-L","role":"pass_through"},{"price":15455,"level":"IB-1.5x","role":"pass_through"},{"price":15450,"level":"RN 15450","role":"pass_through"}]}}],
   "no_trade": ["first 5m"],
   "death_condition": "acceptance below 15430",
   "death": {"price": 15430, "side": "below", "rule": "2x5m"},

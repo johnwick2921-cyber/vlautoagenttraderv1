@@ -56,7 +56,7 @@ func (r *flipRereadRecorder) priors() []string {
 func installFlipRecorder(t *testing.T, r *flipRereadRecorder) {
 	t.Helper()
 	orig := flipRereadRun
-	flipRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
+	flipRereadRun = func(at *AutoTrader, now time.Time, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
 		return r.run(at, session, tradeDate, prior, row, failClosed)
 	}
 	t.Cleanup(func() { flipRereadRun = orig })

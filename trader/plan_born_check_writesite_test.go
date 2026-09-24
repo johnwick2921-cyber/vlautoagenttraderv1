@@ -328,7 +328,7 @@ func TestW2ShadowVerdictIncludesBornCheck(t *testing.T) {
 func TestW2LiveReadStampsTheReadClock(t *testing.T) {
 	at, st := class35Trader(t, 4)
 	before := time.Now()
-	if !at.runPlannerReadWithTriggerClaimedCtx("NY", "2026-09-01", "owner_reset", "", nil, true) {
+	if !at.runPlannerReadWithTriggerClaimedCtx(time.Now(), "NY", "2026-09-01", "owner_reset", "", nil, true) {
 		t.Fatal("read did not run")
 	}
 	after := time.Now()

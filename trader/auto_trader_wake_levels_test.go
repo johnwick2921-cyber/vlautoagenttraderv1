@@ -242,7 +242,7 @@ func TestWakeReadFailureKeepsActivePlan(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	performed := at.runPlannerReadWithTriggerClaimedCtx("NY", tradeDate, "level_event", "level event: x", nil, false)
+	performed := at.runPlannerReadWithTriggerClaimedCtx(time.Now(), "NY", tradeDate, "level_event", "level event: x", nil, false)
 	if !performed {
 		t.Fatalf("the wake read must run (claimed) even though it will fail")
 	}
@@ -253,6 +253,7 @@ func TestWakeReadFailureKeepsActivePlan(t *testing.T) {
 }
 
 func TestMaybeWakePlannerOnLevelEventsThrottleDedupe(t *testing.T) {
+	defer drainReReads(t) // T2: the first wake fires an async planner read; join before the seam resets.
 	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
 	if err != nil {
 		t.Fatalf("store: %v", err)
@@ -311,6 +312,7 @@ func TestMaybeWakePlannerOnLevelEventsThrottleDedupe(t *testing.T) {
 // base-only reader: lastLevelWakeKey stays "" (no candidates). GREEN: the wake
 // fires.
 func TestMaybeWakePlannerFoldsOverlaySeatedLevel(t *testing.T) {
+	defer drainReReads(t) // T2: a fired wake spawns an async planner read; join before the seam resets.
 	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, WakeMinIntervalMin: 10}})
 	now := time.Date(2026, 8, 25, 10, 0, 0, 0, kernel.CTLocation())
 	// 15m bars: last closed bar closes 95.0 — far below a seated Demand 100.

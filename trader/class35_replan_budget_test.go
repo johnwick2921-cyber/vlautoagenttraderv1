@@ -53,12 +53,12 @@ func TestClass35DeathReplanSpendsAndFifthFailsClosed(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		latest := latestRow(t, st, tradeDate, sess)
 		budget := store.GetReplanBudget(st, "trader-1", tradeDate, sess, 4)
-		allowed := at.deathReplanAllowed(sess, tradeDate, latest, killer, budget)
+		allowed := at.deathReplanAllowed(time.Now(), sess, tradeDate, latest, killer, budget)
 		if i <= 4 {
 			if !allowed {
 				t.Fatalf("death %d must be allowed, budget %+v", i, budget)
 			}
-			at.runDeathReplan(sess, tradeDate, latest, killer)
+			at.runDeathReplan(time.Now(), sess, tradeDate, latest, killer)
 			fresh := latestRow(t, st, tradeDate, sess)
 			if fresh.Version != latest.Version+1 || fresh.Lifecycle != "active" {
 				t.Fatalf("death %d: expected a fresh ACTIVE v%d, got %+v", i, latest.Version+1, fresh)
@@ -128,7 +128,7 @@ func TestClass35FreeReadsDoNotSpend(t *testing.T) {
 		{"owner_reset", true, "owner_reset"},
 	} {
 		before := latestRow(t, st, tradeDate, sess)
-		if !at.runPlannerReadWithTriggerClaimedCtx(sess, tradeDate, tc.trigger, "", nil, tc.failClosed) {
+		if !at.runPlannerReadWithTriggerClaimedCtx(time.Now(), sess, tradeDate, tc.trigger, "", nil, tc.failClosed) {
 			t.Fatalf("%q: read did not run", tc.trigger)
 		}
 		fresh := latestRow(t, st, tradeDate, sess)
@@ -152,7 +152,7 @@ func TestClass35RefusedDeathReplanDoesNotSpend(t *testing.T) {
 	const tradeDate, sess = "2026-09-01", "NY"
 	seedV1(t, st, tradeDate, sess)
 	latest := latestRow(t, st, tradeDate, sess)
-	at.runDeathReplan(sess, tradeDate, latest, "all levels consumed")
+	at.runDeathReplan(time.Now(), sess, tradeDate, latest, "all levels consumed")
 	if fresh := latestRow(t, st, tradeDate, sess); fresh.Version != 1 {
 		t.Fatalf("a refused read must write nothing, got %+v", fresh)
 	}

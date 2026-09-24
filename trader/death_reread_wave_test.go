@@ -366,7 +366,10 @@ func TestDeathRereadHeldInsideFlapGuard(t *testing.T) {
 	seedFlipBars(15500, 15470, 6*time.Minute, now)
 	var called atomic.Int32
 	orig := deathRereadRun
-	deathRereadRun = func(*AutoTrader, string, string, string, *store.PlanDB, bool) bool { called.Add(1); return true }
+	deathRereadRun = func(*AutoTrader, time.Time, string, string, string, *store.PlanDB, bool) bool {
+		called.Add(1)
+		return true
+	}
 	t.Cleanup(func() { deathRereadRun = orig })
 
 	// Inside the flap guard (dormant write 1 minute ago): HELD, no launch.
@@ -449,7 +452,10 @@ func TestDeathRereadPreReadRecheckSkipsRearmedRow(t *testing.T) {
 	seedFlipBars(15500, 15470, 6*time.Minute, now)
 	var called atomic.Int32
 	orig := deathRereadRun
-	deathRereadRun = func(*AutoTrader, string, string, string, *store.PlanDB, bool) bool { called.Add(1); return true }
+	deathRereadRun = func(*AutoTrader, time.Time, string, string, string, *store.PlanDB, bool) bool {
+		called.Add(1)
+		return true
+	}
 	t.Cleanup(func() { deathRereadRun = orig })
 
 	at.maybeRereadAfterDeath(now, "NY", td, row, "death-condition: 5m_close close below 15480.00", 15470)

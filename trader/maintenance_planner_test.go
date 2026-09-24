@@ -23,7 +23,7 @@ func TestPlannerReadRefusedWhileHeld(t *testing.T) {
 	before := gateBlocks(at.id, "maintenance_hold")
 
 	for i := 0; i < 2; i++ {
-		if at.runPlannerReadWithTriggerClaimedCtx("NY", "2026-08-18", "owner_reread", "", nil, true) {
+		if at.runPlannerReadWithTriggerClaimedCtx(time.Now(), "NY", "2026-08-18", "owner_reread", "", nil, true) {
 			t.Fatal("held: the planner read must be refused")
 		}
 	}
@@ -102,7 +102,7 @@ func TestPlannerReadRunsWhenConfiguredAndNoHoldFile(t *testing.T) {
 	withMaintenanceDir(t) // configured, no hold file
 	at, _ := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	before := gateBlocks(at.id, "maintenance_hold")
-	if !at.runPlannerReadWithTriggerClaimedCtx("NY", "2026-08-18", "owner_reread", "", nil, true) {
+	if !at.runPlannerReadWithTriggerClaimedCtx(time.Now(), "NY", "2026-08-18", "owner_reread", "", nil, true) {
 		t.Fatal("configured + no hold file: the planner read must run (it did before the hold existed)")
 	}
 	if gateBlocks(at.id, "maintenance_hold") != before {
