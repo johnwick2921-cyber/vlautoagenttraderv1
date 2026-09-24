@@ -91,8 +91,10 @@ func updatesForbid(c *gin.Context, why string) {
 }
 
 // updatesGate is the whole identity gate. It returns the refusal category
-// ("" = admitted). Order: transport checks (no I/O), then the JWT, then the
-// enrollment files, then the users store.
+// ("" = admitted). Order: transport checks (no I/O — the X-NOFX-Update
+// header among them), then the JWT, then the enrollment files, then the
+// users store. A header-less request is refused before any token-derived
+// work (PR #200 F8: TestUpdatesHeaderIsJudgedBeforeTheToken).
 func (s *Server) updatesGate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if why := s.updatesRefusal(c); why != "" {
