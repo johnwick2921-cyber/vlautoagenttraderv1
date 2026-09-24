@@ -12,6 +12,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  RefreshCw,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -20,9 +21,10 @@ import { api } from '../lib/api'
 import { ExchangeConfigModal } from '../components/trader/ExchangeConfigModal'
 import { TelegramConfigModal } from '../components/trader/TelegramConfigModal'
 import { ModelConfigModal } from '../components/trader/ModelConfigModal'
+import UpdatesPage from './UpdatesPage'
 import type { Exchange, AIModel, TraderInfo } from '../types'
 
-type Tab = 'account' | 'models' | 'exchanges' | 'telegram'
+type Tab = 'account' | 'models' | 'exchanges' | 'telegram' | 'updates'
 
 function configBadge(label: string, active: boolean) {
   return (
@@ -420,6 +422,7 @@ export function SettingsPage() {
     { key: 'models', label: 'AI Models', icon: <Cpu size={16} /> },
     { key: 'exchanges', label: 'Exchanges', icon: <Building2 size={16} /> },
     { key: 'telegram', label: 'Telegram', icon: <MessageCircle size={16} /> },
+    { key: 'updates', label: 'Updates', icon: <RefreshCw size={16} /> },
   ]
 
   return (
@@ -769,6 +772,9 @@ export function SettingsPage() {
               </button>
             </div>
           )}
+
+          {/* Updates Tab — W-ONE-BUTTON M5 (U2) */}
+          {activeTab === 'updates' && <UpdatesPage />}
         </div>
       </div>
 

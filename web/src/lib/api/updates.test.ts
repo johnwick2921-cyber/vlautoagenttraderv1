@@ -47,6 +47,30 @@ describe('updatesApi shape pins', () => {
     expect(out?.withdraw).toBeNull()
   })
 
+  it('GET /api/maintenance pins the withdraw shape (trader/withdraw.go WithdrawView)', async () => {
+    mocks.request.mockResolvedValue({
+      success: true,
+      data: {
+        held: true,
+        state: 'held',
+        in_flight_sends: 0,
+        drained: false,
+        addon_ack: null,
+        withdraw: {
+          requested: true,
+          pending: [11, 12],
+          confirmed: [],
+          filled: [3],
+          ended: [{ id: 9, state: 'rejected' }],
+        },
+      },
+    })
+    const out = await updatesApi.maintenance()
+    expect(out?.addon_ack).toBeNull()
+    expect(out?.withdraw?.pending).toEqual([11, 12])
+    expect(out?.withdraw?.ended[0].state).toBe('rejected')
+  })
+
   it('GET /api/installation-gate pins the InstallationGate keys', async () => {
     mocks.request.mockResolvedValue({
       success: true,
@@ -133,6 +157,16 @@ describe('updatesApi shape pins', () => {
     expect(refused.ok).toBe(false)
     expect(refused.error).toBe('install: MAC mismatch')
     expect(refused.status).toBe(403)
+  })
+
+  it('GET /api/health pins the {status, time, revision} keys', async () => {
+    mocks.request.mockResolvedValue({
+      success: true,
+      data: { status: 'ok', time: '2026-09-24T06:00:00Z', revision: 'abc123' },
+    })
+    const out = await updatesApi.health()
+    expect(mocks.request).toHaveBeenCalledWith('/api/health', { silent: true })
+    expect(out?.revision).toBe('abc123')
   })
 
   it('GET /api/updates/jobs/:id pins the M3 404 {error:"not found"} shape', async () => {

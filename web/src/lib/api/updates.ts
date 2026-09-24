@@ -16,10 +16,18 @@ export interface MaintenanceAckView {
   accept_seq: number
 }
 
+export interface MaintenanceWithdrawEnded {
+  id: number
+  state: string
+}
+
 export interface MaintenanceWithdrawView {
-  job_id: string
-  pending: number
-  confirmed: number
+  requested: boolean
+  pending: number[]
+  confirmed: number[]
+  filled: number[]
+  ended: MaintenanceWithdrawEnded[]
+  unread?: string
 }
 
 export interface MaintenanceStatusView {
@@ -31,8 +39,23 @@ export interface MaintenanceStatusView {
   in_flight_sends: number
   drained: boolean
   addon_ack?: MaintenanceAckView | null
+  // withdraw is ABSENT (null) when no hold asks for one — an unread ledger
+  // carries the lists absent and unread says why (L7).
   withdraw?: MaintenanceWithdrawView | null
 }
+
+// ── GET /api/health (api/server.go:669 handleHealth) — panel A revision ──
+export interface HealthStatus {
+  status?: string
+  time?: string
+  revision?: string
+}
+
+// INSTALL_AUTHZ_UNDER_REVIEW ships ON until the CTO announces M3's adversarial
+// review closed; while ON the Install button is disabled with the exact text
+// below and no install POST can fire (pinned by its own test).
+export const INSTALL_AUTHZ_UNDER_REVIEW = true
+export const INSTALL_UNDER_REVIEW_TEXT = 'install authorization under review'
 
 // ── GET /api/installation-gate (trader/installation_gate.go InstallationGate) ──
 export interface InstallationGateLeg {
@@ -89,6 +112,13 @@ export interface UpdateJobView {
 }
 
 export const updatesApi = {
+  async health(silent = true): Promise<HealthStatus | null> {
+    const res = await httpClient.request<HealthStatus>(`${API_BASE}/health`, {
+      silent,
+    })
+    return res.success && res.data ? res.data : null
+  },
+
   async maintenance(silent = true): Promise<MaintenanceStatusView | null> {
     const res = await httpClient.request<MaintenanceStatusView>(
       `${API_BASE}/maintenance`,
