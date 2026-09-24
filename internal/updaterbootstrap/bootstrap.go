@@ -20,8 +20,10 @@
 // with no bot database (the M2.1 N5 lesson: an enrollment the bot never reads
 // is one that does not exist).
 //
-// --install-dir is the bot's WorkingDirectory (default: the current dir); the
-// data dir is resolved by internal/installpath exactly as the bot and
+// --install-dir is the bot's WorkingDirectory (default: the current dir),
+// made absolute at entry (a relative one used to pass every precondition and
+// fail inside, after the typed confirmation — PR #200 fold #18); the data
+// dir is resolved by internal/installpath exactly as the bot and
 // cmd/maintenance-hold resolve it (ONE resolver).
 package updaterbootstrap
 
@@ -34,6 +36,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -73,6 +76,15 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if err := top.Parse(args); err != nil {
 		return 2
 	}
+	// PR #200 fold #18: absolutize at entry. A relative dir used to pass
+	// every precondition (the DB stat resolves against the cwd) and fail
+	// only inside updateauth, after the operator had typed the confirmation.
+	abs, err := filepath.Abs(*installDir)
+	if err != nil {
+		fmt.Fprintf(stderr, "refusing: cannot make --install-dir %q absolute: %v\n", *installDir, err)
+		return 2
+	}
+	*installDir = abs
 	rest := top.Args()
 	if len(rest) == 0 {
 		fmt.Fprintln(stderr, usage)
