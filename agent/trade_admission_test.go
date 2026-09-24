@@ -203,8 +203,35 @@ func TestChatEntryRefusalAfterAnOrphanFlattenSaysTheFlattenWasSent(t *testing.T)
 	trade := &TradeAction{Action: "open_long", Symbol: "MNQ", Quantity: 1, Leverage: 1, StopLoss: 28950, TakeProfit: 29100}
 	ref := &trader.ManualEntryRefusal{Reason: "❌ [RISK CONTROL] Already at max positions (1/1)", Execute: true, FlattenSent: true}
 	err := executeTradeWith(trade, false, &errDoor{err: ref}, &admitUnderlying{})
-	if err == nil || !strings.Contains(err.Error(), "an orphan flatten was sent; the entry was refused") || !strings.Contains(err.Error(), "max positions (1/1)") ||
+	if err == nil || !strings.Contains(err.Error(), "flatten of a position no ledger row explains was SENT") || !strings.Contains(err.Error(), "entry was NOT sent") ||
+		!strings.Contains(err.Error(), "max positions (1/1)") ||
 		strings.Contains(err.Error(), "before any send") || strings.Contains(err.Error(), "admission gate") {
 		t.Fatalf("a refusal after an orphan flatten must say the flatten was sent, got %v", err)
+	}
+}
+
+// W1b FOLD-2 re-verify defect 1 — the reply never says the orphan was CLOSED:
+// reconcile-before-open also refuses (FlattenSent=true) when the flatten submit
+// failed, the feed dropped mid-flatten, or the flatten was not confirmed flat
+// in time — NT8 may still hold the orphan. Telling the owner it is gone is the
+// dangerous direction (L7: an outcome nobody confirmed).
+func TestChatEntryReplyNeverClaimsAnUnconfirmedFlattenClosedTheOrphan(t *testing.T) {
+	for _, reason := range []string{
+		"reconcile-before-open: flatten not confirmed flat within 35s — refusing open (never compound)",
+		"reconcile-before-open: flatten submit failed — refusing open",
+		"❌ [RISK CONTROL] Already at max positions (1/1)",
+	} {
+		trade := &TradeAction{Action: "open_long", Symbol: "MNQ", Quantity: 1, Leverage: 1, StopLoss: 28950, TakeProfit: 29100}
+		err := executeTradeWith(trade, false, &errDoor{err: &trader.ManualEntryRefusal{Reason: reason, Execute: true, FlattenSent: true}}, &admitUnderlying{})
+		if err == nil {
+			t.Fatalf("%q: a refusal must be an error", reason)
+		}
+		msg := err.Error()
+		if strings.Contains(msg, "closed a position") || strings.Contains(msg, "closed the orphan") {
+			t.Fatalf("%q: the reply claims the orphan was closed though no confirmation is implied: %s", reason, msg)
+		}
+		if !strings.Contains(msg, "was SENT") || !strings.Contains(msg, "check NT8") || !strings.Contains(msg, reason) {
+			t.Fatalf("%q: the reply must say the flatten was sent, point at NT8, and carry the reason: %s", reason, msg)
+		}
 	}
 }

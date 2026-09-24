@@ -331,31 +331,84 @@ func TestChatPositionExcursionCarriesItsOwnBracketNeverAnAIDecisions(t *testing.
 // flatten is confirmed flat by the snapshot, then max positions (1/1, the ES
 // long) refuses the entry.
 func TestChatEntryRefusedAfterAnOrphanFlattenSaysTheFlattenWasSent(t *testing.T) {
-	w := newChatDoorWire(t, store.RiskControlConfig{MaxPositions: 1})
+	// Both sides (re-verify defect 3): the short-side flattenSent plumbing is
+	// its own code path (auto_trader_orders.go close-long branch).
+	for _, c := range []struct {
+		action, orphanSide string
+	}{
+		{"open_long", "short"},
+		{"open_short", "long"},
+	} {
+		t.Run(c.action, func(t *testing.T) {
+			w := newChatDoorWire(t, store.RiskControlConfig{MaxPositions: 1})
+			stop, target := chatBracket(t, c.action)
+			es := ntwire.OpenPosition{Symbol: "ES", Side: "long", Quantity: 1, AvgPrice: 6500}
+			w.s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{{Symbol: "MNQ", Side: c.orphanSide, Quantity: 1, AvgPrice: 29000}, es})
+			flattened := make(chan struct{}, 1)
+			go func() {
+				select {
+				case <-w.cls: // the orphan flatten reached the wire → NT8 is flat on MNQ
+					w.s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{es})
+					flattened <- struct{}{}
+				case <-time.After(10 * time.Second):
+				}
+			}()
+			_, err := w.at.OpenManualEntryAt("MNQ", c.action, 1, 1, stop, target, chatDoorMidday)
+			select {
+			case <-flattened:
+			default:
+				t.Fatalf("fixture: reconcile-before-open must have flattened the orphan MNQ %s first (err=%v)", c.orphanSide, err)
+			}
+			var ref *ManualEntryRefusal
+			if !errors.As(err, &ref) || !ref.Execute || !strings.Contains(ref.Reason, "max positions (1/1)") {
+				t.Fatalf("fixture: the entry must be refused by max positions after the flatten: %T %v", err, err)
+			}
+			if !ref.FlattenSent || !strings.Contains(err.Error(), "orphan flatten was sent") {
+				t.Fatalf("a refusal after reconcile sent an orphan flatten must say the flatten was sent, never 'nothing sent': FlattenSent=%v %q", ref.FlattenSent, err.Error())
+			}
+			w.nothingSent(t, "after the flatten") // the ENTRY never reached the wire
+		})
+	}
+}
+
+// Re-verify defect 2 — the orphan flatten is confirmed, then the ENTRY fails
+// at the broker (here the maintenance permit refuses it). The error is the
+// broker's failure wrapped with the flatten that already went out — never a
+// ManualEntryRefusal ("refused before any send") and never a bare send error
+// that hides the flatten.
+func TestChatEntryBrokerFailureAfterAnOrphanFlattenSaysTheFlattenWasSent(t *testing.T) {
+	w := newChatDoorWire(t, store.RiskControlConfig{})
 	stop, target := chatBracket(t, "open_long")
-	es := ntwire.OpenPosition{Symbol: "ES", Side: "long", Quantity: 1, AvgPrice: 6500}
-	w.s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{{Symbol: "MNQ", Side: "short", Quantity: 1, AvgPrice: 29000}, es})
+	w.s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{{Symbol: "MNQ", Side: "short", Quantity: 1, AvgPrice: 29000}})
 	flattened := make(chan struct{}, 1)
 	go func() {
 		select {
-		case <-w.cls: // the orphan flatten reached the wire → NT8 is flat on MNQ
-			w.s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{es})
+		case <-w.cls:
+			w.s.SeedPositionsForTest("Sim101", nil)
 			flattened <- struct{}{}
 		case <-time.After(10 * time.Second):
 		}
 	}()
+	w.nt.SetEntryPermit(func() (func(), bool) { return nil, false }) // the broker refuses the ENTRY
 	_, err := w.at.OpenManualEntryAt("MNQ", "open_long", 1, 1, stop, target, chatDoorMidday)
 	select {
 	case <-flattened:
 	default:
 		t.Fatalf("fixture: reconcile-before-open must have flattened the orphan MNQ short first (err=%v)", err)
 	}
+	if err == nil {
+		t.Fatal("fixture: the refusing permit must fail the entry")
+	}
 	var ref *ManualEntryRefusal
-	if !errors.As(err, &ref) || !ref.Execute || !strings.Contains(ref.Reason, "max positions (1/1)") {
-		t.Fatalf("fixture: the entry must be refused by max positions after the flatten: %T %v", err, err)
+	if errors.As(err, &ref) {
+		t.Fatalf("a broker failure after the flatten is not an admission/execute refusal: %v", err)
 	}
-	if !ref.FlattenSent || !strings.Contains(err.Error(), "orphan flatten was sent") {
-		t.Fatalf("a refusal after reconcile sent an orphan flatten must say the flatten was sent, never 'nothing sent': FlattenSent=%v %q", ref.FlattenSent, err.Error())
+	if !strings.Contains(err.Error(), "an orphan flatten was sent first") || !strings.Contains(err.Error(), "failed at the broker") {
+		t.Fatalf("a broker failure after an orphan flatten must say the flatten was sent first: %q", err.Error())
 	}
-	w.nothingSent(t, "after the flatten") // the ENTRY never reached the wire
+	select {
+	case p := <-w.sigs:
+		t.Fatalf("the refused entry reached the wire: %+v", p)
+	case <-time.After(300 * time.Millisecond):
+	}
 }
