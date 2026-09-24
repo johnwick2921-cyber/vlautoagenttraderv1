@@ -74,10 +74,17 @@ export interface InstallationGate {
 }
 
 // ── GET /api/updates (api/handler_updates.go:213 handleUpdatesStatus) ──
+// The M3 payload carries exactly {enrolled, manifest_verifier, install_enabled}.
+// update_available / install_state are OPTIONAL and ABSENT today — they are the
+// fields a later server rev would add for the badge's 'Update available' /
+// 'Installing' states. The badge shows Unknown whenever the API does not
+// affirm a state; it never invents one.
 export interface UpdatesStatus {
   enrolled: boolean
   manifest_verifier: string
   install_enabled: boolean
+  update_available?: boolean
+  install_state?: string
 }
 
 // ── POST /api/updates/check (api/handler_updates.go:228) ──
