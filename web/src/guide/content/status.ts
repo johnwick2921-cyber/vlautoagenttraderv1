@@ -98,6 +98,26 @@ export const status: GuideSection = {
       kind: 'p',
       text: "Where to read it: the 🔒 maintenance boot line; GET /api/maintenance (held, job, since, sends still in flight, whether the bot has drained, and the AddOn's acknowledgement); and GET /api/installation-gate, the one verdict an update needs before it may continue. That gate checks every trader and every NinjaTrader account at once. It fails while any planner read is running, while any entry send or queued entry is in flight, while any trader is not a NinjaTrader TCP trader, while the AddOn has not acknowledged this hold, while any non-SIM connection is connected, while any NinjaTrader connection is between states (connecting, connection lost), and while any account holds a position or a working order of any kind. A trader that ran once and has since been removed is listed but only blocks the gate if it is still running. Any leg it cannot check counts as a failure. The gate-block table counts refusals as 'maintenance_hold'. An entry that was waiting in the reconnect queue when the hold landed is dropped, never sent later, and counted as 'maintenance_drop'. If a write of it had already started, it is counted as 'maintenance_drop_attempted' and stays pending until it is reconciled with NinjaTrader.",
     },
+    {
+      kind: 'h',
+      text: 'The "rev" on every guide section, and what a release is',
+    },
+    {
+      kind: 'p',
+      text: "Every section of this guide shows a rev in its header. That is the commit the guide was BUILT for, and the banner at the top compares it against the bot that is actually running. If they disagree the guide is describing a different build than the one taking your trades, and it says so rather than letting you read the wrong thing. A build that is not a release shows 'dev' — never a real-looking commit id, because a plausible id you cannot check is worse than an honest 'dev'.",
+    },
+    {
+      kind: 'p',
+      text: 'That rev is now supplied when the guide is built, instead of being typed into a source file by hand. The hand-typed version went stale: updating it was a step in the deploy procedure, and a step in a procedure is a step that gets skipped when someone is in a hurry — which is exactly when a guide that disagrees with the bot does the most damage. A release build with no rev, or a rev that is not a real 40-character commit id, now FAILS to build at all rather than shipping something unverifiable.',
+    },
+    {
+      kind: 'p',
+      text: 'A release itself is cut from a tagged, approved commit — never from whatever happens to be on the development branch at the time — and the owner has to approve it before anything is produced. The build proves it came from a clean tree, packages only an allow-list of files, scans both the staged files and the finished archive for anything secret, and signs a manifest that is checked before the archive is published. The installation keeps its own data and settings: they are never shipped inside a release and never overwritten by one.',
+    },
+    {
+      kind: 'p',
+      text: 'Before a release can claim you are able to go BACK to an older version, that rollback is actually performed first: the old build creates a database, the new build upgrades it, and then the old build is started again on the upgraded database. That last step is the one that matters, because an upgrade that removes something the old build still reads only fails at the moment you need to go back. A version pair that has not passed all three is published as untested rather than quietly left out.',
+    },
     { kind: 'h', text: 'One entry at a time (the entry latch)' },
     {
       kind: 'p',
