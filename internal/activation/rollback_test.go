@@ -110,6 +110,15 @@ func TestRollbackRepointsCurrentAtomicallyAndRecordsWhatItDid(t *testing.T) {
 
 // A `current` that is left dangling is worse than a failed rollback: the next
 // boot serves nothing and the failure is reported nowhere.
+//
+// THE FIRST VERSION OF THIS TEST DID NOT WORK, and the mutation run is the only
+// reason I know. It asserted the END STATE (current points at b, no staging
+// link left behind) — and an implementation that does `os.Remove(name)` and
+// then re-creates it passes that assertion perfectly, because the gap exists
+// only DURING the call. An end-state assertion cannot see an invariant that is
+// about the middle. So this observes the middle: a poller watches the name
+// while the swap runs many times, and any single moment where it is absent
+// fails the test.
 func TestAtomicSymlinkNeverLeavesTheNameMissing(t *testing.T) {
 	root := t.TempDir()
 	a := filepath.Join(root, "a")
@@ -123,12 +132,50 @@ func TestAtomicSymlinkNeverLeavesTheNameMissing(t *testing.T) {
 	if err := atomicSymlink(a, name); err != nil {
 		t.Fatal(err)
 	}
-	if err := atomicSymlink(b, name); err != nil {
-		t.Fatalf("second repoint: %v", err)
+
+	stop := make(chan struct{})
+	missing := make(chan string, 1)
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			if _, err := os.Lstat(name); os.IsNotExist(err) {
+				select {
+				case missing <- "current was absent mid-swap":
+				default:
+				}
+				return
+			}
+		}
+	}()
+
+	for i := 0; i < 400; i++ {
+		target := a
+		if i%2 == 0 {
+			target = b
+		}
+		if err := atomicSymlink(target, name); err != nil {
+			close(stop)
+			t.Fatalf("repoint %d: %v", i, err)
+		}
 	}
+	close(stop)
+
+	select {
+	case msg := <-missing:
+		t.Fatalf("%s — a reader between the unlink and the create sees no release at all", msg)
+	default:
+	}
+
 	got, err := os.Readlink(name)
-	if err != nil || got != b {
-		t.Fatalf("current -> %q (err %v), want %s", got, err, b)
+	if err != nil {
+		t.Fatalf("current unreadable after the swaps: %v", err)
+	}
+	if got != a && got != b {
+		t.Fatalf("current -> %q, want one of the two targets", got)
 	}
 	if _, err := os.Lstat(name + ".swapping"); !os.IsNotExist(err) {
 		t.Fatal("the staging symlink was left behind")
