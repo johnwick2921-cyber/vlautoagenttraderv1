@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"nofx/kernel"
+	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
 	nttrader "nofx/trader/ninjatrader"
@@ -244,5 +245,26 @@ func TestChatNonCMEEntryOnTheNT8VenueIsRefusedBeforeAnySend(t *testing.T) {
 	var ref *ManualEntryRefusal
 	if !errors.As(err, &ref) || !ref.Execute || b.opens != 0 || !strings.Contains(ref.Reason, "CME futures only") {
 		t.Fatalf("a non-CME entry on the NT8 venue must be refused before any send: %T %v (opens=%d)", err, err, b.opens)
+	}
+}
+
+// The same-side check binds a chat entry like an AI entry. On NT8 a held
+// position is met FIRST by reconcile-before-open (refused when the ledger
+// explains it — pinned above — else the owner-ruled orphan flatten), so the
+// check is reached on a venue with no reconcile: an existing long refuses a
+// chat open_long before any broker write, typed as a refusal.
+func TestChatEntryOnAnAlreadyHeldSideIsRefusedLikeAnAIEntry(t *testing.T) {
+	at, _ := resetTrader(t, store.StrategyConfig{})
+	at.exchange = "binance"
+	prev := openEntryMarketRead
+	openEntryMarketRead = func(string, string) (*market.Data, error) { return &market.Data{CurrentPrice: 65000}, nil }
+	t.Cleanup(func() { openEntryMarketRead = prev })
+	b := &doorBroker{openOrderPayload: map[string]interface{}{"orderId": "o-1"}}
+	b.positions = []map[string]interface{}{{"symbol": "BTCUSDT", "side": "long", "positionAmt": 0.01}}
+	at.trader = b
+	_, err := at.sendManualEntry("BTCUSDT", "open_long", 0.01, 1, 60000, 70000)
+	var ref *ManualEntryRefusal
+	if !errors.As(err, &ref) || !ref.Execute || !strings.Contains(ref.Reason, "already has long position") || b.opens != 0 || b.stopSet != 0 {
+		t.Fatalf("a chat entry on an already-held side must be refused before any broker write: %T %v (opens=%d stopSet=%.2f)", err, err, b.opens, b.stopSet)
 	}
 }
