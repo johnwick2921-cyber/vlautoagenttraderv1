@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -75,5 +76,57 @@ func TestChatCloseIsNeverAdmitted(t *testing.T) {
 	}
 	if sel.asked != 0 || und.closes != 1 {
 		t.Fatalf("asked=%d closes=%d", sel.asked, und.closes)
+	}
+}
+
+// ── W1b E9 — the bracket door ───────────────────────────────────────────────
+//
+// A selected trader that owns the bracket door (the AutoTrader's
+// OpenManualEntry) receives EVERY chat open with the chat's own stop and
+// target; the underlying broker's OpenLong/OpenShort — which on NT8 reads
+// per-(symbol, side) maps another producer left behind — is never called.
+
+type bracketSelected struct {
+	admitSelected
+	opens        int
+	stop, target float64
+	refuse       bool
+}
+
+func (f *bracketSelected) OpenManualEntry(symbol, action string, qty float64, lev int, stop, target float64) (map[string]interface{}, error) {
+	f.opens++
+	f.stop, f.target = stop, target
+	if f.refuse {
+		return nil, fmt.Errorf("entry_gate: refused: no explicit stop")
+	}
+	return map[string]interface{}{}, nil
+}
+
+func TestChatEntryWithAStopGoesThroughTheBracketDoor(t *testing.T) {
+	sel, und := &bracketSelected{}, &admitUnderlying{}
+	trade := &TradeAction{Action: "open_long", Symbol: "MNQ", Quantity: 1, Leverage: 1, StopLoss: 28950, TakeProfit: 29100}
+	if err := executeTradeWith(trade, false, sel, und); err != nil {
+		t.Fatalf("an admitted bracket entry must send: %v", err)
+	}
+	if sel.opens != 1 || sel.stop != 28950 || sel.target != 29100 || und.opens != 0 {
+		t.Fatalf("the chat's own bracket must reach the door and nothing else may send: door opens=%d SL=%.2f TP=%.2f underlying opens=%d",
+			sel.opens, sel.stop, sel.target, und.opens)
+	}
+	// Refused by the door → the error names the admission gate, nothing sent.
+	sel2, und2 := &bracketSelected{refuse: true}, &admitUnderlying{}
+	err := executeTradeWith(&TradeAction{Action: "open_short", Symbol: "MNQ", Quantity: 1, Leverage: 1}, false, sel2, und2)
+	if err == nil || !strings.Contains(err.Error(), "admission gate") || !strings.Contains(err.Error(), "no explicit stop") || und2.opens != 0 {
+		t.Fatalf("a refused bracket-door entry must say so and send nothing: err=%v underlying opens=%d", err, und2.opens)
+	}
+}
+
+// A chat entry that CARRIES a stop, on a selected trader with no bracket door,
+// is refused: the underlying broker could only send it on whatever its maps
+// hold (fail-closed).
+func TestChatEntryWithAStopAndNoBracketDoorIsRefused(t *testing.T) {
+	sel, und := &admitSelected{}, &admitUnderlying{}
+	err := executeTradeWith(&TradeAction{Action: "open_long", Symbol: "MNQ", Quantity: 1, Leverage: 1, StopLoss: 28950, TakeProfit: 29100}, false, sel, und)
+	if err == nil || !strings.Contains(err.Error(), "own stop") || und.opens != 0 {
+		t.Fatalf("a bracket the trader cannot send must be refused, nothing sent: err=%v opens=%d", err, und.opens)
 	}
 }

@@ -720,6 +720,14 @@ func buildAgentTools() []mcp.Tool {
 							"type":        "number",
 							"description": "Leverage multiplier (e.g. 5, 10, 20). Optional, defaults to trader's current setting.",
 						},
+						"stop_loss": map[string]any{
+							"type":        "number",
+							"description": "Protective stop price (absolute). REQUIRED for open_long/open_short: an entry without its own stop and target is refused by the admission gate.",
+						},
+						"take_profit": map[string]any{
+							"type":        "number",
+							"description": "Take-profit price (absolute). REQUIRED for open_long/open_short, on the far side of the price from the stop.",
+						},
 					},
 					"required": []string{"action", "symbol", "quantity"},
 				},
@@ -2742,6 +2750,10 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 		Symbol   string  `json:"symbol"`
 		Quantity float64 `json:"quantity"`
 		Leverage int     `json:"leverage"`
+		// W1b E9 — the entry's own bracket (optional here; the admission
+		// chain refuses an open without it).
+		StopLoss   float64 `json:"stop_loss"`
+		TakeProfit float64 `json:"take_profit"`
 	}
 	if err := json.Unmarshal([]byte(argsJSON), &args); err != nil {
 		return fmt.Sprintf(`{"error": "invalid arguments: %s"}`, err)
@@ -2793,13 +2805,15 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 
 	// Create pending trade — requires user confirmation
 	trade := &TradeAction{
-		ID:        fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		Action:    args.Action,
-		Symbol:    sym,
-		Quantity:  args.Quantity,
-		Leverage:  args.Leverage,
-		Status:    "pending_confirmation",
-		CreatedAt: time.Now().Unix(),
+		ID:         fmt.Sprintf("trade_%d", time.Now().UnixNano()),
+		Action:     args.Action,
+		Symbol:     sym,
+		Quantity:   args.Quantity,
+		Leverage:   args.Leverage,
+		StopLoss:   args.StopLoss,
+		TakeProfit: args.TakeProfit,
+		Status:     "pending_confirmation",
+		CreatedAt:  time.Now().Unix(),
 	}
 	if _, selectedTrader, underlyingTrader, err := a.resolveTradeExecutionContext(trade); err != nil {
 		return fmt.Sprintf(`{"error": %q}`, err.Error())
@@ -2823,6 +2837,8 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 		"symbol":                            trade.Symbol,
 		"quantity":                          trade.Quantity,
 		"leverage":                          trade.Leverage,
+		"stop_loss":                         trade.StopLoss,
+		"take_profit":                       trade.TakeProfit,
 		"estimated_price":                   trade.EstimatedPrice,
 		"estimated_notional":                trade.EstimatedNotional,
 		"requires_large_order_confirmation": trade.RequiresLargeOrderConfirmation,

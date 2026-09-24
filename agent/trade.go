@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"nofx/store"
+	"nofx/trader"
 	"strings"
 	"sync"
 	"time"
@@ -33,6 +34,18 @@ type tradeSelectedTrader interface {
 	AdmitManualEntry(symbol, action string) (string, bool)
 }
 
+// tradeBracketDoor is the selected trader's ONE send for a chat entry with its
+// own bracket (W1b E9; *trader.AutoTrader.OpenManualEntry): it admits the
+// entry through the one chain WITH its stop and target, then sends exactly
+// those prices. A trader that has it receives every chat open through it.
+type tradeBracketDoor interface {
+	OpenManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error)
+}
+
+// The production selected trader owns the door, so no chat open reaches the
+// map-reading OpenLong/OpenShort through it (compile-time pin).
+var _ tradeBracketDoor = (*trader.AutoTrader)(nil)
+
 type tradeUnderlyingTrader interface {
 	OpenLong(symbol string, quantity float64, leverage int) (map[string]interface{}, error)
 	OpenShort(symbol string, quantity float64, leverage int) (map[string]interface{}, error)
@@ -43,11 +56,16 @@ type tradeUnderlyingTrader interface {
 
 // TradeAction represents a parsed trade intent from the LLM or user.
 type TradeAction struct {
-	ID                             string  `json:"id"`
-	Action                         string  `json:"action"`    // "open_long", "open_short", "close_long", "close_short"
-	Symbol                         string  `json:"symbol"`    // e.g. "BTCUSDT"
-	Quantity                       float64 `json:"quantity"`  // amount
-	Leverage                       int     `json:"leverage"`  // leverage multiplier
+	ID       string  `json:"id"`
+	Action   string  `json:"action"`   // "open_long", "open_short", "close_long", "close_short"
+	Symbol   string  `json:"symbol"`   // e.g. "BTCUSDT"
+	Quantity float64 `json:"quantity"` // amount
+	Leverage int     `json:"leverage"` // leverage multiplier
+	// W1b E9 — the entry's OWN bracket (absolute prices). An open without a
+	// stop is refused by the admission chain (fail-closed); one with a stop is
+	// sent with exactly these prices, never the broker's leftover SL/TP maps.
+	StopLoss                       float64 `json:"stop_loss,omitempty"`
+	TakeProfit                     float64 `json:"take_profit,omitempty"`
 	TraderID                       string  `json:"trader_id"` // which trader to use
 	Status                         string  `json:"status"`    // "pending", "confirmed", "executed", "failed", "expired"
 	CreatedAt                      int64   `json:"created_at"`
@@ -199,6 +217,22 @@ func executeTradeWith(trade *TradeAction, wantStock bool, selectedTrader tradeSe
 	if trade.Action == "open_long" || trade.Action == "open_short" {
 		if selectedTrader == nil {
 			return fmt.Errorf("entry refused: no selected trader to admit it (fail-closed)")
+		}
+		// W1b E9 — the bracket door: admission WITH the chat's own stop and
+		// target, and the send of exactly those prices, in one call.
+		if door, ok := selectedTrader.(tradeBracketDoor); ok {
+			if trade.Quantity <= 0 {
+				return fmt.Errorf("quantity must be > 0")
+			}
+			if _, err := door.OpenManualEntry(trade.Symbol, trade.Action, trade.Quantity, trade.Leverage, trade.StopLoss, trade.TakeProfit); err != nil {
+				return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", err.Error())
+			}
+			return nil
+		}
+		// No bracket door: the underlying broker could only send the entry on
+		// whatever SL/TP it already holds — refuse a stop it cannot honour.
+		if trade.StopLoss > 0 || trade.TakeProfit > 0 {
+			return fmt.Errorf("entry refused: this trader cannot send a chat entry's own stop/target (fail-closed)")
 		}
 		if refusal, refused := selectedTrader.AdmitManualEntry(trade.Symbol, trade.Action); refused {
 			return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", refusal)

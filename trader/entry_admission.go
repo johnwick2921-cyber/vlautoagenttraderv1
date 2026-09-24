@@ -373,6 +373,15 @@ func (at *AutoTrader) admitChain(in admitIntent, sym, act string, now time.Time)
 		if md, merr := market.GetWithExchange(in.Symbol, at.exchange); merr == nil && md != nil {
 			live = md.CurrentPrice
 		}
+		// W1b E9 — the agent door's bracket, fail-closed, BEFORE EntryGate:
+		// legs 5/6 abstain on a missing stop/target/ATR (their fail-open
+		// contract, written for callers that always supply one), and on a path
+		// that never supplied one that abstention was permanently OFF.
+		if reason, refused := agentBracketRefusal(in.Decision, live, armSeamATR5m(in.Symbol)); refused {
+			return at.admitRefuse(in, "entry_gate", reason, func() {
+				at.logWarnf("🚦 entry-gate REFUSED agent-path: %s", reason)
+			})
+		}
 		if reason, refused := at.entryGateForDecisionAt(in.Decision, live, now); refused {
 			if !strings.HasPrefix(reason, "entry_gate:") {
 				reason = "entry_gate: " + reason
@@ -410,17 +419,112 @@ func (at *AutoTrader) runningNow() bool {
 // for in agent chat (W-EXEC-TRUTH W0, CTO Q17). It is the decision chain with
 // a decision that cites nothing, so STRICT refuses it exactly as it refuses an
 // uncited AI decision. Returns the refusal text and true, or ("", false).
+//
+// W1b E9: it carries no bracket, so an open is ALWAYS refused ("no explicit
+// stop", fail-closed). A chat entry that carries its stop and target goes
+// through OpenManualEntry, which admits it with that bracket and sends it.
 func (at *AutoTrader) AdmitManualEntry(symbol, action string) (string, bool) {
 	return at.AdmitManualEntryAt(symbol, action, time.Now())
 }
 
 // AdmitManualEntryAt is AdmitManualEntry on an injected clock.
 func (at *AutoTrader) AdmitManualEntryAt(symbol, action string, now time.Time) (string, bool) {
+	return at.AdmitManualEntryBracketAt(symbol, action, 0, 0, now)
+}
+
+// AdmitManualEntryBracketAt is the agent door's admission with the entry's
+// own bracket: the decision chain, then the bracket pre-check
+// (agentBracketRefusal) and EntryGate with Stop/Target set, so legs 5 (R:R at
+// the live price) and 6 (min-SL ×ATR5m) JUDGE it instead of abstaining.
+func (at *AutoTrader) AdmitManualEntryBracketAt(symbol, action string, stop, target float64, now time.Time) (string, bool) {
 	if action != "open_long" && action != "open_short" {
 		return "", false
 	}
 	return at.admitEntry(admitIntent{
 		Path: admitAgent, Symbol: symbol, Action: action, Now: now,
-		Decision: &kernel.Decision{Action: action, Symbol: symbol},
+		Decision: &kernel.Decision{Action: action, Symbol: symbol, StopLoss: stop, TakeProfit: target},
 	})
+}
+
+// agentBracketRefusal is the agent door's bracket evidence, fail-closed (W1b
+// E9, CTO ruling): an entry the owner asked for in chat must carry its OWN
+// stop and target, on the right side of the live price, with an ATR5m the stop
+// floor can be judged against. Anything missing is a refusal that names it —
+// never an abstention, and never the broker's maps standing in for it.
+func agentBracketRefusal(d *kernel.Decision, live, atr5m float64) (string, bool) {
+	const pre = "entry_gate: refused: "
+	const why = " — a chat/agent entry must carry its own stop and target; EntryGate legs 5/6 cannot judge an entry without one and the broker would send another decision's bracket (fail-closed)"
+	if d == nil || d.StopLoss <= 0 {
+		return pre + "no explicit stop" + why, true
+	}
+	if d.TakeProfit <= 0 {
+		return pre + "no explicit target" + why, true
+	}
+	if live <= 0 {
+		return pre + "live price unknown — the bracket cannot be checked against it (fail-closed)", true
+	}
+	long := d.Action != "open_short"
+	if (long && !(d.StopLoss < live && live < d.TakeProfit)) || (!long && !(d.TakeProfit < live && live < d.StopLoss)) {
+		return fmt.Sprintf(pre+"bracket on the wrong side of live %.2f for %s (SL %.2f TP %.2f) (fail-closed)", live, d.Action, d.StopLoss, d.TakeProfit), true
+	}
+	if atr5m <= 0 {
+		return pre + "ATR5m unknown — the stop floor (leg 6) cannot be judged (fail-closed)", true
+	}
+	return "", false
+}
+
+// OpenManualEntry is the agent door's ONE send for a new entry (W1b E9): it
+// admits the entry WITH its own bracket, then sends that bracket itself. It
+// never relies on what the broker's per-(symbol, side) SL/TP maps happen to
+// hold — the AI's last decision, or a breakeven stop written into the same key.
+//
+// CME futures (NT8): the bracket is set immediately BEFORE the entry (the AddOn
+// places entry + OCO bracket atomically from the signal), and a failed set
+// REFUSES the entry — unlike the AI path, a chat entry is never sent without
+// its own protective stop. Other venues follow the AI path's order: open, then
+// set; a failed set is returned as an error naming the unprotected position.
+func (at *AutoTrader) OpenManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error) {
+	return at.OpenManualEntryAt(symbol, action, quantity, leverage, stop, target, time.Now())
+}
+
+// OpenManualEntryAt is OpenManualEntry on an injected admission clock.
+func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64, leverage int, stop, target float64, now time.Time) (map[string]interface{}, error) {
+	if action != "open_long" && action != "open_short" {
+		return nil, fmt.Errorf("manual entry: %q is not an entry", action)
+	}
+	if refusal, refused := at.AdmitManualEntryBracketAt(symbol, action, stop, target, now); refused {
+		return nil, fmt.Errorf("%s", refusal)
+	}
+	if at.trader == nil {
+		return nil, fmt.Errorf("manual entry refused: no broker on this trader (fail-closed)")
+	}
+	side := "LONG"
+	open := at.trader.OpenLong
+	if action == "open_short" {
+		side, open = "SHORT", at.trader.OpenShort
+	}
+	setBracket := func() error {
+		if err := at.trader.SetStopLoss(symbol, side, quantity, stop); err != nil {
+			return fmt.Errorf("set stop %.2f: %w", stop, err)
+		}
+		if err := at.trader.SetTakeProfit(symbol, side, quantity, target); err != nil {
+			return fmt.Errorf("set target %.2f: %w", target, err)
+		}
+		return nil
+	}
+	if market.IsCMEFuturesSymbol(symbol) {
+		if err := setBracket(); err != nil {
+			return nil, fmt.Errorf("manual entry refused: its own bracket could not be set (%v) — never sent on another decision's bracket (fail-closed)", err)
+		}
+		return open(symbol, quantity, leverage)
+	}
+	order, err := open(symbol, quantity, leverage)
+	if err != nil {
+		return nil, err
+	}
+	if berr := setBracket(); berr != nil {
+		at.logErrorf("🚨 manual entry %s %s OPENED but its own bracket failed to set — %v (position unprotected)", symbol, side, berr)
+		return order, fmt.Errorf("manual entry opened but its bracket failed to set: %w", berr)
+	}
+	return order, nil
 }

@@ -149,13 +149,14 @@ func TestAIOpenSendHalfMakesNoBinanceCall(t *testing.T) {
 func TestAdmissionLiveReadMakesNoBinanceCall(t *testing.T) {
 	trap := trapBinance(t)
 	withMaintenanceDir(t)
-	futuresTape(t)
+	live := agentTape(t) // W1b E9: the door needs a bracket and an ATR5m to be admitted
 	at := mkPlanTrader(&store.DayPlanConfig{PlanEnabled: true, PlanMode: "advisory"})
 	at.id = "no-binance-admission"
 	kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{ActivePlan: func(string) *kernel.ActivePlan { return nil }})
 	t.Cleanup(func() { kernel.SetTraderPlanProviders(at.id, kernel.TraderPlanProviders{}) })
 	nyMidday := time.Date(2026, 9, 15, 16, 0, 0, 0, time.UTC) // 11:00 CT Tuesday
-	if reason, refused := at.AdmitManualEntryAt("MNQ", "open_long", nyMidday); refused {
+	wide := onGrid(kernel.MinSLATRMult()*armSeamATR5m("MNQ") + 10)
+	if reason, refused := at.AdmitManualEntryBracketAt("MNQ", "open_long", live-wide, live+4*wide, nyMidday); refused {
 		t.Fatalf("fixture: the door must reach its EntryGate live read (admitted), got %q", reason)
 	}
 	for _, h := range trap.seen() {
