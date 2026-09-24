@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -98,6 +99,35 @@ type Grant struct {
 	JobID     string `json:"job_id"`
 	ExpiresAt int64  `json:"expires_at"`
 	HMAC      string `json:"hmac"`
+}
+
+// grantRedacted replaces the MAC wherever a Grant is formatted.
+const grantRedacted = "<redacted>"
+
+// String, GoString and Format make every fmt verb print the Grant with its
+// MAC redacted (red-team red-3 #6): a formatted grant reaches logs
+// (data/nofx_*.log, log_events), and a logged unused grant is a live code for
+// up to MaxAuthorizationWindow. json.Marshal is unaffected — the JSON IS the
+// grant (the CLI's output and the install body). Known limit: a Grant held
+// in an UNEXPORTED struct field is printed by reflection without these
+// methods; never embed one in a type that is logged.
+func (g Grant) String() string {
+	return fmt.Sprintf("{release_id:%s job_id:%s expires_at:%d hmac:%s}", g.ReleaseID, g.JobID, g.ExpiresAt, grantRedacted)
+}
+
+// GoString is the %#v form, redacted.
+func (g Grant) GoString() string {
+	return fmt.Sprintf("updateauth.Grant{ReleaseID:%q, JobID:%q, ExpiresAt:%d, HMAC:%q}", g.ReleaseID, g.JobID, g.ExpiresAt, grantRedacted)
+}
+
+// Format routes EVERY verb (%v %+v %s %q %x %d …, any width/flags) to the
+// redacted forms, so no verb falls through to fmt's field-by-field printer.
+func (g Grant) Format(f fmt.State, verb rune) {
+	if verb == 'v' && f.Flag('#') {
+		_, _ = io.WriteString(f, g.GoString())
+		return
+	}
+	_, _ = io.WriteString(f, g.String())
 }
 
 // ParseInstallRequest strictly parses an install body: one JSON object with
