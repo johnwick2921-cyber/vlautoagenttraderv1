@@ -9,6 +9,7 @@ import (
 
 	"nofx/kernel"
 	"nofx/market"
+	"path/filepath"
 )
 
 // ── OWNER-CONDITION PINS, BARS HORIZON D3 (ruling 2026-09-09 18:18 CT) ──────
@@ -203,13 +204,17 @@ func TestRegimeInputWindowBootLineReportsBeforeAndAfterInDays(t *testing.T) {
 
 // PIN D3-K — A29. THE OWNER-CONDITION CODE IS WIRED.
 func TestRegimeInputWindowIsWired(t *testing.T) {
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatalf("repo root: %v", err)
+	}
 	for fn, wantIn := range map[string]string{
 		"ResolveRVBaselineTape(":      "trader/auto_trader_planner.go",
 		"RegimeInputWindowBootLine(":  "trader/auto_trader_dayplan.go",
 		"rvBaselineFallback5mBarsAsk": "trader/auto_trader_planner.go",
 		"rehydrateTimeframe":          "trader/ninjatrader/bar_persist_wire.go",
 	} {
-		n, where := d2ProdCallSites(t, fn)
+		n, where := d2ProdCallSites(t, root, fn)
 		if n == 0 {
 			t.Errorf("%s: 0 production call sites (A29)", fn)
 			continue
@@ -220,7 +225,7 @@ func TestRegimeInputWindowIsWired(t *testing.T) {
 	}
 	// The pre-ruling name must be GONE, so a stale reader cannot find an ask
 	// that no longer describes what the baseline receives.
-	if n, where := d2ProdCallSites(t, "rvBaseline5mBarsAsk"); n > 0 {
+	if n, where := d2ProdCallSites(t, root, "rvBaseline5mBarsAsk"); n > 0 {
 		t.Errorf("the pre-ruling ask name survives in %v — the rename must be complete", where)
 	}
 }
