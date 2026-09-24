@@ -56,6 +56,34 @@ func machineDenied(fullPath string) bool {
 	return false
 }
 
+// agentOnlyHiddenRoutes are left out of the agent's route list (GetAPIDocs)
+// on top of every machine-denied route: session/account management a
+// machine token has no business with. They are NOT denied (the web UI's
+// login/register are public; logout only revokes the caller's own token;
+// reset-password always answers 410) — omitting them only stops handing the
+// LLM the map (red1 R1: /login was advertised and was step 2 of the chain).
+var agentOnlyHiddenRoutes = []string{
+	"/api/login",
+	"/api/register",
+	"/api/logout",
+	"/api/reset-password",
+}
+
+// agentHidden reports whether a registered route path is omitted from the
+// Telegram agent's route list: every machine-denied route (the agent would
+// only be refused there) plus agentOnlyHiddenRoutes.
+func agentHidden(path string) bool {
+	if machineDenied(path) {
+		return true
+	}
+	for _, r := range agentOnlyHiddenRoutes {
+		if path == r || strings.HasPrefix(path, r+"/") {
+			return true
+		}
+	}
+	return false
+}
+
 // ctxAuthClaims is the gin context key authMiddleware stores the validated
 // claims under (the credential guard reads them; a handler reached WITHOUT
 // authMiddleware has none and is refused).

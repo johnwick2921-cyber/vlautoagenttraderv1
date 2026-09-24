@@ -330,7 +330,9 @@ func TestUpdatesRefuseTheTelegramBotToken(t *testing.T) {
 func TestUpdateRoutesAreNotAdvertisedToTheAgent(t *testing.T) {
 	e := newUpdEnv(t)
 	docs := GetAPIDocs()
-	if !strings.Contains(docs, "/api/reset-account") {
+	// Positive control on an ORDINARY route: /api/reset-account (the old
+	// control) is itself hidden from the agent since M3 red-team H1.
+	if !strings.Contains(docs, "/api/my-traders") {
 		t.Fatal("positive control: GetAPIDocs is empty — setupRoutes did not populate the registry")
 	}
 	if strings.Contains(docs, "/updates") {
