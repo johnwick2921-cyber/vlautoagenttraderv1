@@ -220,13 +220,22 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 // keep the endpoint. It answers 410 Gone and logs the attempt.
 //
 // An authenticated user changes their own password via PUT /api/user/password.
+//
+// PR #200 fold F5 (CTO 1790252194343): the locked-out advice carries the
+// WHOLE statement. users.updated_at is the credential epoch
+// (auth.CredentialEpoch): a hash-only UPDATE moves no epoch, so every
+// session signed in before the reset would stay valid. Placeholders only —
+// never a real email or hash. Pinned byte for byte, and EXECUTED against a
+// temp SQLite store (TestResetPasswordAdviceRetiresPreResetSessionsOnSQLite).
 func (s *Server) handleResetPasswordDisabled(c *gin.Context) {
 	logger.Warnf("🔒 blocked POST /api/reset-password from %s — endpoint permanently disabled (P0 S2)", c.ClientIP())
-	c.JSON(http.StatusGone, gin.H{
-		"error": "Password reset by email is disabled. Sign in and use PUT /api/user/password, " +
-			"or reset the password directly in the database if you are locked out.",
-	})
+	c.JSON(http.StatusGone, gin.H{"error": resetPasswordLockedOutAdvice})
 }
+
+const resetPasswordLockedOutAdvice = "Password reset by email is disabled. Sign in and use PUT /api/user/password. " +
+	"Locked out? Set the new hash AND the credential epoch in ONE statement: " +
+	"UPDATE users SET password_hash='<bcrypt hash of the new password>', updated_at=CURRENT_TIMESTAMP WHERE email='<your account email>'; " +
+	"— moving updated_at is what signs out every session issued before the reset; a hash-only UPDATE leaves those sessions valid."
 
 // handleResetAccount clears user authentication data so the system returns to
 // uninitialized state for re-registration.
