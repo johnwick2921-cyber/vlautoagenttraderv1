@@ -1862,6 +1862,20 @@ func (s *TCPServer) enqueueBarHistorical(symbol, timeframe string, bars []Bar) {
 	}
 }
 
+// helloProcessPair renders the hello identity for the log: n/a when absent,
+// never 0/"" — an unread value must not read as a datum (L7, runbook
+// 2026-09-23-addon-m21-f5.md C5).
+func helloProcessPair(pid int, mvid string) (string, string) {
+	p, m := "n/a", "n/a"
+	if pid != 0 {
+		p = strconv.Itoa(pid)
+	}
+	if mvid != "" {
+		m = mvid
+	}
+	return p, m
+}
+
 func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 	researchWire := newResearchWire()
 	defer s.wg.Done()
@@ -1972,9 +1986,10 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				}
 			}
 			s.recordHello(c, p, time.Now()) // W-ONE-BUTTON M2 (Q3): the epoch, per connection
+			pid, mvid := helloProcessPair(p.NT8PID, p.AssemblyMVID)
 			s.logger.Info("tcp_server: hello handshake OK",
 				"protocol_version", p.ProtocolVersion, "source", p.Source, "build_id", p.BuildID,
-				"nt8_pid", p.NT8PID, "assembly_mvid", p.AssemblyMVID)
+				"nt8_pid", pid, "assembly_mvid", mvid)
 			s.writeMu.Lock()
 			_ = c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			err := WriteFrame(c, FrameHello, HelloPayload{ProtocolVersion: ProtocolVersion, Source: "nofx-go"})

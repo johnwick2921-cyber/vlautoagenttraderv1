@@ -226,7 +226,7 @@ func AddonBuildLine(received, expected string) string {
 		return "nt8 addon: build_id=" + got + " expected=" + expected + " match=yes"
 	}
 	return "nt8 addon: build_id=" + got + " expected=" + expected +
-		" match=NO (NT8 is running an older DLL — recompile the AddOn (F5) and restart NT8)"
+		" match=NO (reload the AddOn (F5) or restart NT8)"
 }
 
 // BuildIDForLog renders a RECEIVED build id for a human: "none" when no frame

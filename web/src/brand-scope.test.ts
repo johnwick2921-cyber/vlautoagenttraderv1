@@ -3,6 +3,11 @@
 // deploy/nofx-lock.sh @ ace51598 (fix/lock-defects-release-meta-halfbuilt),
 // following keeper @ 97a6525cb6d10d6c8898b2d277c0fe7581872c24.
 // Only its recorded hash changes; protected-file mutation checks remain enforced.
+// Bar-feed baseline advanced 2026-09-24 for DS-102 U6 (fix/owed-ui-ci-1):
+//   provider/ninjatrader/tcp_server.go — the hello handshake log now renders an
+//     absent NT8 identity as n/a via helloProcessPair (nt8_pid/assembly_mvid;
+//     runbook 2026-09-23-addon-m21-f5.md C5, L7). Additive; no identifier
+//     renamed.
 // Bar-feed baselines advanced 2026-09-10 for two owner-dispatched waves that
 // touched the protected files without renaming an identifier:
 //   provider/ninjatrader/tcp_server.go  @ a53359ce (fix/contract-roll: the
