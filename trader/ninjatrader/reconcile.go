@@ -398,6 +398,7 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		if nowMs-t.untrackedSince[key] < untrackedGraceMs {
 			continue
 		}
+		firstSeen := t.untrackedSince[key] // W1b E15: anchors the fill ring's window
 		qty := heldQty[key]
 		if qty <= 0 {
 			qty = 1
@@ -439,8 +440,22 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		// pos #567 landed with plan_version 0 / adherence grade F).
 		// GAR-F1 (2026-08-28) — the returned signal identity is cached on the
 		// trader so move_stop/trailing can address the live bracket.
-		if _, sig := StampArmedLineageIfMatched(st, traderID, row.ID, sym, side, avg); sig != "" {
-			t.rememberEntryOrderID(sym, side, sig)
+		//
+		// W1b E15 — the fill ring FIRST: the exact signal of this position's own
+		// fill beats a price guess. Only with NO same-side entry evidence does the
+		// price-match fallback run; an ambiguous or unreadable answer leaves the
+		// row untagged (a guess is fabricated lineage).
+		switch f, verdict, why := t.lateEntryFillFor(st, acct, sym, side, firstSeen); verdict {
+		case lateFillOne:
+			if sig := t.tagLateEntryFill(st, traderID, exchangeID, row.ID, sym, side, f); sig != "" {
+				t.rememberEntryOrderID(sym, side, sig)
+			}
+		case lateFillUnresolved:
+			logger.Warnf("🔗 attribution: pos %d (%s %s) — fill ring %s — left UNTAGGED; no price-match guess", row.ID, sym, side, why)
+		default:
+			if _, sig := StampArmedLineageIfMatched(st, traderID, row.ID, sym, side, avg); sig != "" {
+				t.rememberEntryOrderID(sym, side, sig)
+			}
 		}
 		logger.Warnf("🧩 reconcile: MATERIALIZED untracked NT8 position %s %s qty=%.0f @ %.2f (acct=%s) — manual/NT8-side entry now tracked; its close will record real P&L", sym, side, qty, avg, acct)
 		delete(t.untrackedSince, key)
@@ -528,43 +543,51 @@ func StampArmedLineageIfMatched(st *store.Store, traderID string, posID int64, s
 		if fillPx < entryPx-tick || fillPx > entryPx+tick {
 			continue
 		}
-		tradeDate := r.PlanID
-		if i := strings.Index(r.PlanID, ":"); i > 0 {
-			tradeDate = r.PlanID[:i]
-		}
-		if err := st.Position().SetPlanLinkFull(posID, r.Version, r.Scenario, true, "armed_fill", r.PlanID, tradeDate, r.Session); err != nil {
-			logger.Warnf("🧩 reconcile: armed lineage stamp failed (pos %d): %v", posID, err)
-			return false, ""
-		}
-		// GAR-F1 — the materialized row gets the armed ledger's signal identity
-		// so move_stop/trailing can find the live bracket (the #566 dead cell).
-		if r.SignalID != "" {
-			if err := st.Position().SetEntryOrderID(posID, r.SignalID); err != nil {
-				logger.Warnf("🧩 reconcile: armed entry-order-id stamp failed (pos %d): %v", posID, err)
-			}
-		}
-		// PRE-REOPEN F4 — the fill-time stamp deferred (position row didn't
-		// exist yet) leaves a stamp_pending marker on the ledger row; the
-		// materialization completes the stamp NOW and clears it.
-		if strings.HasSuffix(r.StateReason, ";stamp_pending") {
-			_ = st.ArmedOrders().SetState(r.ID, "filled", strings.TrimSuffix(r.StateReason, ";stamp_pending"))
-		}
-		// F3 GAP (2026-09-03, found via nofx-89's 09-01 audit): fill_quantity is
-		// stamped HERE too. The fill-time stamp in stampArmedFillLineage returns
-		// early on this very path — the position row is not materialized when the
-		// fill frame lands — so stamping only there covered the minority case.
-		// The 09-01 audit recorded 584 of 586 armed fills carrying
-		// ";stamp_pending", and armed row 35 today took the same path and still
-		// reads fill_quantity=0 with the stamp live.
-		if qty := st.Position().QuantityOf(posID); qty > 0 {
-			if err := st.ArmedOrders().SetFillQuantity(r.ID, int(qty)); err != nil {
-				logger.Warnf("🧩 reconcile: armed fill-quantity stamp failed (row %d): %v", r.ID, err)
-			}
-		}
-		logger.Infof("🧩 reconcile: armed-fill lineage stamped — pos %d ← %s v%d %s (fill %.2f, entry_id %s)", posID, r.PlanID, r.Version, r.Scenario, armedFillPriceFor(r), r.SignalID)
-		return true, r.SignalID
+		return stampArmedLineageFromRow(st, posID, r)
 	}
 	return false, ""
+}
+
+// stampArmedLineageFromRow writes one FILLED ledger row's plan linkage and
+// signal identity onto a position row — the stamp body StampArmedLineageIfMatched
+// runs on a price match, and W1b E15 runs on EXACT ring evidence (the fill's own
+// signal) without any price guess. Returns (true, signalID) when stamped.
+func stampArmedLineageFromRow(st *store.Store, posID int64, r store.ArmedOrderDB) (bool, string) {
+	tradeDate := r.PlanID
+	if i := strings.Index(r.PlanID, ":"); i > 0 {
+		tradeDate = r.PlanID[:i]
+	}
+	if err := st.Position().SetPlanLinkFull(posID, r.Version, r.Scenario, true, "armed_fill", r.PlanID, tradeDate, r.Session); err != nil {
+		logger.Warnf("🧩 reconcile: armed lineage stamp failed (pos %d): %v", posID, err)
+		return false, ""
+	}
+	// GAR-F1 — the materialized row gets the armed ledger's signal identity
+	// so move_stop/trailing can find the live bracket (the #566 dead cell).
+	if r.SignalID != "" {
+		if err := st.Position().SetEntryOrderID(posID, r.SignalID); err != nil {
+			logger.Warnf("🧩 reconcile: armed entry-order-id stamp failed (pos %d): %v", posID, err)
+		}
+	}
+	// PRE-REOPEN F4 — the fill-time stamp deferred (position row didn't
+	// exist yet) leaves a stamp_pending marker on the ledger row; the
+	// materialization completes the stamp NOW and clears it.
+	if strings.HasSuffix(r.StateReason, ";stamp_pending") {
+		_ = st.ArmedOrders().SetState(r.ID, "filled", strings.TrimSuffix(r.StateReason, ";stamp_pending"))
+	}
+	// F3 GAP (2026-09-03, found via nofx-89's 09-01 audit): fill_quantity is
+	// stamped HERE too. The fill-time stamp in stampArmedFillLineage returns
+	// early on this very path — the position row is not materialized when the
+	// fill frame lands — so stamping only there covered the minority case.
+	// The 09-01 audit recorded 584 of 586 armed fills carrying
+	// ";stamp_pending", and armed row 35 today took the same path and still
+	// reads fill_quantity=0 with the stamp live.
+	if qty := st.Position().QuantityOf(posID); qty > 0 {
+		if err := st.ArmedOrders().SetFillQuantity(r.ID, int(qty)); err != nil {
+			logger.Warnf("🧩 reconcile: armed fill-quantity stamp failed (row %d): %v", r.ID, err)
+		}
+	}
+	logger.Infof("🧩 reconcile: armed-fill lineage stamped — pos %d ← %s v%d %s (fill %.2f, entry_id %s)", posID, r.PlanID, r.Version, r.Scenario, armedFillPriceFor(r), r.SignalID)
+	return true, r.SignalID
 }
 
 // RepairArmedLineage back-fills plan linkage for this trader's positions that
