@@ -15,6 +15,7 @@ import (
 
 	"nofx/kernel"
 	"nofx/logger"
+	"nofx/market"
 	"nofx/mcp"
 	"nofx/safe"
 	"nofx/security"
@@ -2759,12 +2760,8 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 		return fmt.Sprintf(`{"error": "invalid arguments: %s"}`, err)
 	}
 
-	// Normalize symbol
-	sym := strings.ToUpper(args.Symbol)
-	// Only append USDT for crypto symbols; stock tickers (e.g. AAPL, TSLA) stay as-is
-	if !isStockSymbol(sym) && !strings.HasSuffix(sym, "USDT") {
-		sym += "USDT"
-	}
+	// Normalize symbol (the one chat-symbol canonicalizer, W1b FOLD-5)
+	sym := chatTradeSymbol(args.Symbol)
 
 	// Validate action
 	validActions := map[string]bool{
@@ -2965,16 +2962,14 @@ func (a *Agent) toolGetMarketPrice(argsJSON string) string {
 		return fmt.Sprintf(`{"error": "invalid arguments: %s"}`, err)
 	}
 
-	sym := strings.ToUpper(args.Symbol)
-	if !isStockSymbol(sym) && !strings.HasSuffix(sym, "USDT") {
-		sym += "USDT"
-	}
+	sym := chatTradeSymbol(args.Symbol)
 
 	if a.traderManager == nil {
 		return `{"error": "no trader manager configured"}`
 	}
 
 	wantStock := isStockSymbol(sym)
+	wantCME := isCMEFuturesChatSymbol(sym) // W1b FOLD-5: a CME price is the NT8 trader's
 	for _, t := range a.traderManager.GetAllTraders() {
 		underlying := t.GetUnderlyingTrader()
 		if underlying == nil {
@@ -2986,6 +2981,9 @@ func (a *Agent) toolGetMarketPrice(argsJSON string) string {
 			continue
 		}
 		if !wantStock && isAlpaca {
+			continue
+		}
+		if wantCME && t.GetExchange() != "ninjatrader" {
 			continue
 		}
 		price, err := underlying.GetMarketPrice(sym)
@@ -3049,7 +3047,7 @@ func (a *Agent) toolGetMarketSnapshot(argsJSON string) string {
 	if symbol == "" {
 		return `{"error":"symbol is required"}`
 	}
-	if isStockSymbol(symbol) {
+	if isStockSymbol(symbol) || isCMEFuturesChatSymbol(symbol) {
 		return `{"error":"get_market_snapshot currently supports crypto symbols only"}`
 	}
 	if !strings.HasSuffix(symbol, "USDT") {
@@ -3652,7 +3650,7 @@ func normalizeWatchSymbol(raw string) string {
 		return ""
 	}
 	hasQuoteSuffix := strings.HasSuffix(symbol, "USDT") || strings.HasSuffix(symbol, "BUSD") || strings.HasSuffix(symbol, "USDC")
-	if !hasQuoteSuffix && isStockSymbol(symbol) == false {
+	if !hasQuoteSuffix && isStockSymbol(symbol) == false && !isCMEFuturesChatSymbol(symbol) {
 		return symbol + "USDT"
 	}
 	return symbol
@@ -3753,10 +3751,44 @@ var knownCryptoSymbols = map[string]bool{
 	"BONK": true, "FLOKI": true, "ORDI": true, "STX": true, "RUNE": true,
 }
 
+// isCMEFuturesChatSymbol reports whether a chat symbol is a CME futures
+// symbol (W1b FOLD-5): market.IsCMEFuturesSymbol, or a known CME root in any
+// form (market.FuturesRoot: "mnq", "MNQU6", "MNQ.c.0", "MNQ 06-26").
+func isCMEFuturesChatSymbol(sym string) bool {
+	return market.IsCMEFuturesSymbol(sym) || market.FuturesRoot(sym) != ""
+}
+
+// chatTradeSymbol is the ONE canonicalizer for a symbol a chat trade names
+// (W1b FOLD-5, canon 28), called where it enters: a CME futures symbol is its
+// ROOT ("MNQU6" → "MNQ" — the NT8 trader trades its own resolved front month,
+// and the pending trade the owner confirms shows the root), stock tickers
+// (AAPL, TSLA) stay as-is, crypto gets its USDT quote.
+func chatTradeSymbol(raw string) string {
+	if isCMEFuturesChatSymbol(raw) {
+		if root := market.FuturesRoot(raw); root != "" {
+			return root
+		}
+		return strings.ToUpper(strings.TrimSpace(raw))
+	}
+	sym := strings.ToUpper(raw)
+	// Only append USDT for crypto symbols; stock tickers (e.g. AAPL, TSLA) stay as-is
+	if !isStockSymbol(sym) && !strings.HasSuffix(sym, "USDT") {
+		sym += "USDT"
+	}
+	return sym
+}
+
 // isStockSymbol heuristically determines if a symbol is a stock ticker (not crypto).
 // Stock tickers are 1-5 uppercase letters without numeric suffixes like "USDT".
 // Known crypto base symbols (BTC, ETH, SOL etc.) are excluded.
 func isStockSymbol(sym string) bool {
+	// W1b FOLD-5 — a CME futures symbol is NEVER a stock, checked BEFORE the
+	// letters heuristic: "MNQ" is three uppercase letters, and as a "stock"
+	// every chat MNQ entry was routed to Alpaca and never reached the NT8
+	// trader's door ("no running stock trader (Alpaca) found").
+	if isCMEFuturesChatSymbol(sym) {
+		return false
+	}
 	sym = strings.ToUpper(sym)
 
 	// Check known crypto base symbols first (critical: "BTC", "ETH" etc. are NOT stocks)

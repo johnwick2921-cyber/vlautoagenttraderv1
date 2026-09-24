@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"nofx/market"
 	"nofx/store"
 	"nofx/trader"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -160,11 +162,7 @@ func parseTradeCommand(text string) *TradeAction {
 	if len(words) < 2 {
 		return nil
 	}
-	symbol = words[1]
-	// Only append USDT for crypto symbols, not stock tickers
-	if !isStockSymbol(symbol) && !strings.HasSuffix(symbol, "USDT") {
-		symbol += "USDT"
-	}
+	symbol = chatTradeSymbol(words[1]) // W1b FOLD-5: the one chat-symbol canonicalizer
 
 	// Parse quantity (optional)
 	if len(words) >= 3 {
@@ -194,10 +192,8 @@ func parseTradeCommand(text string) *TradeAction {
 
 // executeTrade performs the actual trade execution via TraderManager.
 func (a *Agent) executeTrade(ctx context.Context, trade *TradeAction) error {
-	if a.traderManager == nil {
-		return fmt.Errorf("no trader manager available")
-	}
-
+	// (W1b FOLD-5) "no trader manager available" is the resolver's own first
+	// answer (tradeCandidatesOf) — one place says it.
 	wantStock, selectedTrader, underlyingTrader, err := a.resolveTradeExecutionContext(trade)
 	if err != nil {
 		return err
@@ -237,15 +233,61 @@ func executeTradeWith(trade *TradeAction, wantStock bool, selectedTrader tradeSe
 	}
 }
 
-func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSelectedTrader, tradeUnderlyingTrader, error) {
-	if a.traderManager == nil {
-		return false, nil, nil, fmt.Errorf("no trader manager available")
+// tradeCandidate is what the chat door's resolver reads of one managed trader
+// (W1b FOLD-5): the manager's *trader.AutoTrader in production, through
+// managedTradeCandidate.
+type tradeCandidate interface {
+	tradeSelectedTrader
+	GetStatus() map[string]interface{}
+	GetExchange() string
+	tradeUnderlying() tradeUnderlyingTrader
+}
+
+// managedTradeCandidate adapts a managed *trader.AutoTrader to tradeCandidate.
+type managedTradeCandidate struct{ *trader.AutoTrader }
+
+func (m managedTradeCandidate) tradeUnderlying() tradeUnderlyingTrader {
+	if ut := m.GetUnderlyingTrader(); ut != nil {
+		return ut
 	}
-	traders := a.traderManager.GetAllTraders()
+	return nil
+}
+
+// tradeCandidatesOf lists the traders resolveTradeExecutionContext may select,
+// in trader-id order (the manager hands back a map; a stable order means the
+// same roster always resolves the same way). A package var ONLY so a test can
+// hand the production resolver a fake roster; production reads the manager.
+var tradeCandidatesOf = func(a *Agent) ([]tradeCandidate, error) {
+	if a.traderManager == nil {
+		return nil, fmt.Errorf("no trader manager available")
+	}
+	all := a.traderManager.GetAllTraders()
+	ids := make([]string, 0, len(all))
+	for id := range all {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]tradeCandidate, 0, len(ids))
+	for _, id := range ids {
+		if t := all[id]; t != nil {
+			out = append(out, managedTradeCandidate{t})
+		}
+	}
+	return out, nil
+}
+
+func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSelectedTrader, tradeUnderlyingTrader, error) {
+	traders, err := tradeCandidatesOf(a)
+	if err != nil {
+		return false, nil, nil, err
+	}
 	if len(traders) == 0 {
 		return false, nil, nil, fmt.Errorf("no traders configured")
 	}
 
+	if isCMEFuturesChatSymbol(trade.Symbol) {
+		return resolveCMETrader(trade.Symbol, traders)
+	}
 	wantStock := isStockSymbol(trade.Symbol)
 	for _, t := range traders {
 		s := t.GetStatus()
@@ -253,7 +295,7 @@ func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSel
 		if !running {
 			continue
 		}
-		ut := t.GetUnderlyingTrader()
+		ut := t.tradeUnderlying()
 		if ut == nil {
 			continue
 		}
@@ -272,6 +314,39 @@ func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSel
 		return true, nil, nil, fmt.Errorf("no running stock trader (Alpaca) found — configure one to trade stocks")
 	}
 	return false, nil, nil, fmt.Errorf("no running trader supports trade execution")
+}
+
+// resolveCMETrader (W1b FOLD-5): a CME futures entry goes to the ONE running
+// NinjaTrader trader whose wire instrument has the symbol's root — never a
+// stock or crypto trader, never an NT8 trader of another instrument (the NT8
+// broker puts its OWN instrument on the wire whatever symbol it is handed),
+// and never a guess between two NT8 traders of the same instrument: which
+// account a chat entry lands on is not the resolver's to choose (fail-closed).
+func resolveCMETrader(symbol string, traders []tradeCandidate) (bool, tradeSelectedTrader, tradeUnderlyingTrader, error) {
+	root := market.FuturesRoot(symbol)
+	var hits []tradeCandidate
+	var hitUnd []tradeUnderlyingTrader
+	for _, t := range traders {
+		running, _ := t.GetStatus()["is_running"].(bool)
+		if !running || t.GetExchange() != "ninjatrader" {
+			continue
+		}
+		ut := t.tradeUnderlying()
+		ws, ok := ut.(interface{ WireSymbol() string })
+		if ut == nil || !ok || root == "" || market.FuturesRoot(ws.WireSymbol()) != root {
+			continue
+		}
+		hits = append(hits, t)
+		hitUnd = append(hitUnd, ut)
+	}
+	switch len(hits) {
+	case 1:
+		return false, hits[0], hitUnd[0], nil
+	case 0:
+		return false, nil, nil, fmt.Errorf("no running NinjaTrader (CME) trader trades %s — a CME entry is sent only by the NT8 trader of that instrument", symbol)
+	default:
+		return false, nil, nil, fmt.Errorf("%d running NinjaTrader traders trade %s — refused (fail-closed): the chat door never picks an account between them", len(hits), root)
+	}
 }
 
 func validateTradeAction(
@@ -341,7 +416,12 @@ func validateTradeAction(
 		trade.RequiresLargeOrderConfirmation = true
 	}
 
-	if wantStock {
+	// W1b FOLD-5 — a CME futures contract is not judged by the crypto
+	// leverage/USDT-size/ratio rules below (a stock's rule set, which MNQ
+	// was validated by while misclassified, stays its proposal check). Its
+	// real rails — reconcile-before-open, max positions, the same-side check,
+	// the max-contracts cap — are the execute path's, at the door.
+	if wantStock || isCMEFuturesChatSymbol(trade.Symbol) {
 		if trade.Leverage < 0 {
 			return fmt.Errorf("leverage must be >= 0")
 		}
