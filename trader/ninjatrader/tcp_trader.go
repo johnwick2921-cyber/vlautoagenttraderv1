@@ -527,22 +527,12 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	// B3 — dupe guard + rate limiter at the order-submission chokepoint: a
 	// replayed / double-fired entry (same account|side|symbol|qty within a bar) is
 	// DROPPED, and an order runaway trips the per-minute breaker.
-	if t.guard != nil {
-		key := fmt.Sprintf("%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
-		if reason, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
-			gate := "b3_order_dedup"
-			if strings.Contains(reason, "breaker") {
-				gate = "b3_rate_breaker"
-				logger.Warnf("🚨 B3 %s", reason)
-			} else {
-				logger.Warnf("⛔ B3 %s", reason)
-			}
-			// B6: B3 fires at the shared submission chokepoint (bound to an account,
-			// not a trader), so it tallies under the process-wide "" trader bucket.
-			telemetry.IncGateBlock("", gate)
-			return nil, fmt.Errorf("ninjatrader/tcp: entry not admitted — %s", reason)
-		}
+	b3Done, reason, ok := t.b3Reserve(fmt.Sprintf("%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity))
+	if !ok {
+		return nil, fmt.Errorf("ninjatrader/tcp: entry not admitted — %s", reason)
 	}
+	b3Sent := false // W1b E12(b): the slot is recorded ONLY by an attempted send
+	defer func() { b3Done(b3Sent) }()
 
 	// Expiry warning — defense in depth (mirrors CSV Trader).
 	if days := databento.DaysUntilExpiry(symbol, time.Now()); days >= 0 && days <= 5 {
@@ -610,6 +600,7 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 
 	serr := t.server.SendSignal(payload)
 	latchSent = sendAttempted(serr)
+	b3Sent = latchSent
 	if err := serr; err != nil {
 		return nil, fmt.Errorf("ninjatrader/tcp: send signal: %w", err)
 	}
@@ -734,12 +725,12 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 	}
 	latchSent := false
 	defer func() { latchDone(latchSent) }()
-	if t.guard != nil {
-		key := fmt.Sprintf("armed|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
-		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
-			return "", fmt.Errorf("ninjatrader/tcp: armed entry not admitted — %s", "B3 dupe/rate guard")
-		}
+	b3Done, reason, ok := t.b3Reserve(fmt.Sprintf("armed|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity))
+	if !ok {
+		return "", fmt.Errorf("ninjatrader/tcp: armed entry not admitted — B3 dupe/rate guard: %s", reason)
 	}
+	b3Sent := false // W1b E12(b): the slot is recorded ONLY by an attempted send
+	defer func() { b3Done(b3Sent) }()
 	tick := InstrumentTickSize(t.symbol)
 	entry, sl, tp, rerr := WireBracket(side, limitPx, sl, tp, tick) // W1b E12(a): stop AWAY from entry
 	if rerr != nil {
@@ -779,6 +770,7 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 	t.mu.Unlock()
 	serr := t.server.SendSignal(payload)
 	latchSent = sendAttempted(serr)
+	b3Sent = latchSent
 	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send armed signal: %w", err)
 	}
@@ -830,12 +822,12 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 	}
 	latchSent := false
 	defer func() { latchDone(latchSent) }()
-	if t.guard != nil {
-		key := fmt.Sprintf("stopentry|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
-		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
-			return "", fmt.Errorf("ninjatrader/tcp: stop-entry not admitted — B3 dupe/rate guard")
-		}
+	b3Done, reason, ok := t.b3Reserve(fmt.Sprintf("stopentry|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity))
+	if !ok {
+		return "", fmt.Errorf("ninjatrader/tcp: stop-entry not admitted — B3 dupe/rate guard: %s", reason)
 	}
+	b3Sent := false // W1b E12(b): the slot is recorded ONLY by an attempted send
+	defer func() { b3Done(b3Sent) }()
 	tick := InstrumentTickSize(t.symbol)
 	entry, sl, tp, rerr := WireBracket(side, stopPx, sl, tp, tick) // W1b E12(a): stop AWAY from entry
 	if rerr != nil {
@@ -875,6 +867,7 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 	t.mu.Unlock()
 	serr := t.server.SendSignal(payload)
 	latchSent = sendAttempted(serr)
+	b3Sent = latchSent
 	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send stop-entry signal: %w", err)
 	}
@@ -1634,6 +1627,34 @@ func (t *TCPTrader) GetOpenOrders(symbol string) ([]types.OpenOrder, error) {
 
 // upperSideStr normalises "long"/"LONG"/"Long" → "LONG" for SL/TP map keys.
 // CSV Trader keys are uppercase, so we mirror that to keep behaviour parallel.
+// b3Reserve runs B3 (dupe guard + rate breaker) for one entry at the
+// submission chokepoint and returns the reservation's done (W1b E12(b)): the
+// caller defers done(sent) with sent = sendAttempted(serr), so the dedupe slot
+// and the rate count are recorded ONLY by a send, never by a refusal after B3.
+// A refusal is logged and counted HERE for every entry path — the armed paths
+// used to discard the reason and count nothing, so the Gate-blocks panel's
+// "Duplicate order dropped" never showed an armed refusal. B6: B3 fires at the
+// shared chokepoint (bound to an account, not a trader), so it tallies under
+// the process-wide "" trader bucket. A nil guard admits (done is a no-op).
+func (t *TCPTrader) b3Reserve(key string) (done func(sent bool), reason string, ok bool) {
+	if t.guard == nil {
+		return func(bool) {}, "", true
+	}
+	done, reason, ok = t.guard.reserve(key, time.Now().UnixMilli())
+	if ok {
+		return done, "", true
+	}
+	gate := "b3_order_dedup"
+	if strings.Contains(reason, "breaker") {
+		gate = "b3_rate_breaker"
+		logger.Warnf("🚨 B3 %s", reason)
+	} else {
+		logger.Warnf("⛔ B3 %s", reason)
+	}
+	telemetry.IncGateBlock("", gate)
+	return nil, reason, false
+}
+
 func upperSideStr(side string) string {
 	switch side {
 	case "long", "LONG", "Long":
