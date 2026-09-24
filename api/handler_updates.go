@@ -23,7 +23,14 @@ import (
 // with distinguishing texts) and deliberately NOT through s.route /
 // s.routeWithSchema, which append to routeRegistry and so to GetAPIDocs — the
 // route list the Telegram LLM agent is given (CTO ruling F1). The agent holds
-// a JWT whose user_id IS the owner's; it must never learn these routes exist.
+// a JWT whose user_id IS the owner's; F1 keeps these routes out of the route
+// LIST it is handed — it hides them from the agent's map, NOT from a prober.
+// Their existence is observable (PR #200 review #15): a registered
+// /api/updates* method+path answers the gate's 403 to anyone — no token, any
+// token — while an unregistered path answers 404, so 403-vs-404 is a
+// route-existence oracle. What the uniform 403 hides is WHY a request was
+// refused, never THAT the route is there (pinned by
+// TestUpdatesRouteExistenceIsObservable).
 //
 // Every gate failure is the SAME response: 403 {"error":"forbidden"}. The
 // cause is logged server-side as a category only — never the token, the MAC
