@@ -22,6 +22,8 @@ import {
 } from '../lib/api/updates'
 import { strategyEffectiveApi } from '../lib/api/strategyEffective'
 import { traderApi } from '../lib/api/traders'
+import { configApi } from '../lib/api/config'
+import { httpClient } from '../lib/httpClient'
 import { loadStoredTraderId } from '../router/selectedTrader'
 
 const POLL_MS = 10_000
@@ -80,8 +82,11 @@ export default function UpdatesPage() {
 
   // Panel E — the resolved PivotWindow (W1 effective settings), or null.
   const [pivotWindow, setPivotWindow] = useState<number | null>(null)
+  const [backfillTraderId, setBackfillTraderId] = useState<string | null>(null)
+  const [futuresSymbol, setFuturesSymbol] = useState<string | null>(null)
+  const [confirmBackfill, setConfirmBackfill] = useState(false)
   const [historyReloading, setHistoryReloading] = useState(false)
-  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [historyReply, setHistoryReply] = useState<string | null>(null)
 
   const poll = useCallback(async () => {
     const [h, m, g, s] = await Promise.all([
@@ -118,18 +123,29 @@ export default function UpdatesPage() {
     }
   }, [maintenance?.job_id])
 
-  // Panel E — resolve PivotWindow from the selected trader's strategy.
+  // Panel E — resolve PivotWindow, the trader id and the trader's futures
+  // symbol (READ from the trader row via its exchange config — never a
+  // literal) from the selected trader.
   useEffect(() => {
     let alive = true
-    traderApi
-      .getTraders(true)
-      .then((traders) => {
+    Promise.all([traderApi.getTraders(true), configApi.getExchangeConfigs()])
+      .then(([traders, exchanges]) => {
         const selected = loadStoredTraderId()
         const trader =
           traders.find((t) => t.trader_id === selected) ??
           (traders.length ? traders[0] : undefined)
         const strategyId = trader?.strategy_id
         if (!alive) return
+        if (trader) setBackfillTraderId(trader.trader_id)
+        const match = trader?.exchange_id
+          ? exchanges.find((e) => e.id === trader.exchange_id)
+          : undefined
+        // The list endpoint returns nt_instrument_name (api/handler_exchange.go:96);
+        // the shared Exchange type predates it — read it here, page-local.
+        const symbol =
+          (match as { nt_instrument_name?: string } | undefined)
+            ?.nt_instrument_name ?? null
+        setFuturesSymbol(symbol ? (symbol.length > 0 ? symbol : null) : null)
         if (!strategyId) {
           setPivotWindow(null)
           return
@@ -148,7 +164,13 @@ export default function UpdatesPage() {
           })
           .catch(() => alive && setPivotWindow(null))
       })
-      .catch(() => alive && setPivotWindow(null))
+      .catch(() => {
+        if (alive) {
+          setPivotWindow(null)
+          setFuturesSymbol(null)
+          setBackfillTraderId(null)
+        }
+      })
     return () => {
       alive = false
     }
@@ -184,33 +206,48 @@ export default function UpdatesPage() {
   const installDisabled =
     INSTALL_AUTHZ_UNDER_REVIEW || status?.install_enabled !== true
 
-  const doReloadHistory = useCallback(async () => {
+  const askReloadHistory = useCallback(() => {
+    setHistoryReply(null)
+    setConfirmBackfill(true)
+  }, [])
+
+  const cancelReloadHistory = useCallback(() => {
+    setConfirmBackfill(false)
+    setHistoryReply(null)
+  }, [])
+
+  const confirmReloadHistory = useCallback(async () => {
+    if (pivotWindow === null || !futuresSymbol) return
     setHistoryReloading(true)
-    setHistoryError(null)
+    setHistoryReply(null)
     try {
-      const traders = await traderApi.getTraders(true)
-      const selected = loadStoredTraderId()
-      const trader =
-        traders.find((t) => t.trader_id === selected) ??
-        (traders.length ? traders[0] : undefined)
-      const res = await fetch('/api/nt/bar-arbiter', {
+      const res = await httpClient.request<{
+        ok?: boolean
+        note?: string
+        error?: string
+      }>('/api/nt/bar-arbiter', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          trader_id: trader?.trader_id ?? '',
+        data: {
+          trader_id: backfillTraderId ?? '',
           action: 'backfill',
-        }),
+          symbol: futuresSymbol,
+          timeframe: '4h',
+          bars_back: pivotWindow + 4,
+        },
       })
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        setHistoryError(body?.error ? String(body.error) : `HTTP ${res.status}`)
-      }
+      setHistoryReply(
+        res.data?.error ||
+          res.data?.note ||
+          (res.success ? 'backfill request accepted' : res.message) ||
+          'no server text'
+      )
     } catch (e) {
-      setHistoryError(e instanceof Error ? e.message : 'request failed')
+      setHistoryReply(e instanceof Error ? e.message : 'request failed')
     } finally {
       setHistoryReloading(false)
+      setConfirmBackfill(false)
     }
-  }, [])
+  }, [pivotWindow, futuresSymbol, backfillTraderId])
 
   const state = maintenance?.state ?? null
   const ack = maintenance?.addon_ack ?? null
@@ -378,21 +415,70 @@ export default function UpdatesPage() {
         <div className="mt-3">
           <button
             type="button"
-            onClick={doReloadHistory}
-            disabled={historyReloading}
+            onClick={askReloadHistory}
+            disabled={pivotWindow === null || futuresSymbol === null}
             className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 disabled:opacity-50"
             data-testid="reload-history"
           >
-            <RefreshCw
-              size={13}
-              className={historyReloading ? 'animate-spin' : ''}
-            />
-            {historyReloading
-              ? up('reloading', language)
-              : up('reloadHistory', language)}
+            <RefreshCw size={13} />
+            {up('reloadHistory', language)}
           </button>
-          {historyError && (
-            <p className="mt-2 text-xs text-red-400">{historyError}</p>
+          {pivotWindow === null && (
+            <p
+              className="mt-2 text-xs text-amber-400"
+              data-testid="pivot-unknown"
+            >
+              {up('pivotWindowUnknown', language)}
+            </p>
+          )}
+          {futuresSymbol === null && (
+            <p
+              className="mt-2 text-xs text-amber-400"
+              data-testid="symbol-unknown"
+            >
+              {up('futuresSymbolUnknown', language)}
+            </p>
+          )}
+          {confirmBackfill &&
+            pivotWindow !== null &&
+            futuresSymbol !== null && (
+              <div className="mt-2 rounded-lg border border-zinc-700 p-3">
+                <p
+                  className="text-xs text-zinc-300"
+                  data-testid="backfill-confirm"
+                >
+                  {up('confirmBackfill', language, { n: pivotWindow + 4 })}
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={confirmReloadHistory}
+                    disabled={historyReloading}
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium bg-nofx-gold text-black disabled:opacity-50"
+                    data-testid="confirm-backfill"
+                  >
+                    {historyReloading
+                      ? up('reloading', language)
+                      : up('confirm', language)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelReloadHistory}
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium bg-zinc-700 text-zinc-200"
+                    data-testid="cancel-backfill"
+                  >
+                    {up('cancel', language)}
+                  </button>
+                </div>
+              </div>
+            )}
+          {historyReply && (
+            <p
+              className="mt-2 text-xs text-zinc-400"
+              data-testid="backfill-reply"
+            >
+              {up('checkReason', language)}: {historyReply}
+            </p>
           )}
         </div>
       </Panel>

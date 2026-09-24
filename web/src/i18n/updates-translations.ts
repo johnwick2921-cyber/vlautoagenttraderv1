@@ -99,6 +99,23 @@ export const updatesStrings = {
   reloading: { en: 'Reloading…', zh: '加载中…', id: 'Memuat…' },
   notApplicable: { en: 'n/a', zh: 'n/a', id: 'n/a' },
   checkReason: { en: 'Server says', zh: '服务器返回', id: 'Kata server' },
+  pivotWindowUnknown: {
+    en: 'PivotWindow unknown',
+    zh: 'PivotWindow 未知',
+    id: 'PivotWindow tidak diketahui',
+  },
+  futuresSymbolUnknown: {
+    en: 'Futures symbol unknown',
+    zh: '期货合约未知',
+    id: 'Simbol futures tidak diketahui',
+  },
+  confirmBackfill: {
+    en: 'Send a 4H backfill of {n} bars to NT8?',
+    zh: '向 NT8 发送 {n} 根 4H K线的回填？',
+    id: 'Kirim backfill 4H sebanyak {n} bar ke NT8?',
+  },
+  confirm: { en: 'Confirm', zh: '确认', id: 'Konfirmasi' },
+  cancel: { en: 'Cancel', zh: '取消', id: 'Batal' },
 } as const
 
 export function up(

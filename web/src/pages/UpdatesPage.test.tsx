@@ -3,7 +3,7 @@
 // button disabled with its exact text while the review is open.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 const mocks = vi.hoisted(() => ({
   health: vi.fn(),
@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   job: vi.fn(),
   getTraders: vi.fn(),
   getStrategyEffective: vi.fn(),
+  getExchangeConfigs: vi.fn(),
+  request: vi.fn(),
 }))
 vi.mock('../lib/api/updates', () => ({
   updatesApi: {
@@ -34,6 +36,12 @@ vi.mock('../lib/api/traders', () => ({
 }))
 vi.mock('../lib/api/strategyEffective', () => ({
   strategyEffectiveApi: { getStrategyEffective: mocks.getStrategyEffective },
+}))
+vi.mock('../lib/api/config', () => ({
+  configApi: { getExchangeConfigs: mocks.getExchangeConfigs },
+}))
+vi.mock('../lib/httpClient', () => ({
+  httpClient: { request: mocks.request },
 }))
 vi.mock('../router/selectedTrader', () => ({
   loadStoredTraderId: () => undefined,
@@ -81,6 +89,7 @@ beforeEach(() => {
     install_enabled: false,
   })
   mocks.getTraders.mockResolvedValue([])
+  mocks.getExchangeConfigs.mockResolvedValue([])
 })
 
 describe('UpdatesPage', () => {
@@ -174,5 +183,135 @@ describe('UpdatesPage', () => {
     await waitFor(() => expect(screen.getByText(/of 12/)).toBeTruthy())
     // the completed count is n/a — never computed in the browser
     expect(screen.getAllByText('n/a').length).toBeGreaterThan(0)
+  })
+
+  it('P1: reload is a two-step confirm that POSTs the exact 4h body through httpClient', async () => {
+    const rawFetch = vi.fn()
+    vi.stubGlobal('fetch', rawFetch)
+    mocks.getTraders.mockResolvedValue([
+      {
+        trader_id: 't1',
+        trader_name: 'T',
+        ai_model: 'm',
+        strategy_id: 's/1',
+        exchange_id: 'ex1',
+      },
+    ])
+    mocks.getExchangeConfigs.mockResolvedValue([
+      { id: 'ex1', nt_instrument_name: 'MNQ' },
+    ])
+    mocks.getStrategyEffective.mockResolvedValue({
+      strategy_id: 's/1',
+      session: null,
+      venue: null,
+      settings: [
+        {
+          path: 'picture_htf.pivot_window',
+          status: 'resolved',
+          ui_label: 'PivotWindow',
+          stored: { present: true, value: 8 },
+          effective: 8,
+          origin: 'stored',
+          scope: 'strategy',
+          resolver: 'direct',
+          resolved: true,
+        },
+      ],
+      coverage: { resolved: 1, total: 1, unresolved: [], not_enumerated: [] },
+    })
+    mocks.request.mockResolvedValue({
+      success: true,
+      data: {
+        ok: true,
+        note: 'deep bars_subscribe sent; run action=diff after ~30s.',
+      },
+    })
+    render(<UpdatesPage />)
+
+    await waitFor(() => {
+      const btn = screen.getByTestId('reload-history') as HTMLButtonElement
+      expect(btn.disabled).toBe(false)
+    })
+
+    // step 1: click asks for confirmation, nothing is sent yet
+    fireEvent.click(screen.getByTestId('reload-history'))
+    expect(
+      screen.getByText('Send a 4H backfill of 12 bars to NT8?')
+    ).toBeTruthy()
+    expect(mocks.request).not.toHaveBeenCalled()
+
+    // step 2: confirm POSTs the exact body through httpClient (auth header)
+    fireEvent.click(screen.getByTestId('confirm-backfill'))
+    await waitFor(() => expect(mocks.request).toHaveBeenCalledTimes(1))
+    expect(mocks.request).toHaveBeenCalledWith('/api/nt/bar-arbiter', {
+      method: 'POST',
+      data: {
+        trader_id: 't1',
+        action: 'backfill',
+        symbol: 'MNQ',
+        timeframe: '4h',
+        bars_back: 12,
+      },
+    })
+    // the server's response text is shown
+    await waitFor(() =>
+      expect(screen.getByText(/deep bars_subscribe sent/)).toBeTruthy()
+    )
+    // the request goes through httpClient, never raw fetch
+    expect(rawFetch).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
+  it('P1: the reload button is DISABLED with "PivotWindow unknown" when the knob is null', async () => {
+    mocks.getTraders.mockResolvedValue([
+      { trader_id: 't1', trader_name: 'T', ai_model: 'm' },
+    ])
+    render(<UpdatesPage />)
+    await waitFor(() =>
+      expect(screen.getByText('PivotWindow unknown')).toBeTruthy()
+    )
+    expect(
+      (screen.getByTestId('reload-history') as HTMLButtonElement).disabled
+    ).toBe(true)
+    expect(mocks.request).not.toHaveBeenCalled()
+  })
+
+  it('P1: the reload button is DISABLED with "Futures symbol unknown" when the trader row has none', async () => {
+    mocks.getTraders.mockResolvedValue([
+      {
+        trader_id: 't1',
+        trader_name: 'T',
+        ai_model: 'm',
+        strategy_id: 's/1',
+        exchange_id: 'ex1',
+      },
+    ])
+    mocks.getStrategyEffective.mockResolvedValue({
+      strategy_id: 's/1',
+      session: null,
+      venue: null,
+      settings: [
+        {
+          path: 'picture_htf.pivot_window',
+          status: 'resolved',
+          ui_label: 'PivotWindow',
+          stored: { present: true, value: 8 },
+          effective: 8,
+          origin: 'stored',
+          scope: 'strategy',
+          resolver: 'direct',
+          resolved: true,
+        },
+      ],
+      coverage: { resolved: 1, total: 1, unresolved: [], not_enumerated: [] },
+    })
+    render(<UpdatesPage />)
+    await waitFor(() =>
+      expect(screen.getByText('Futures symbol unknown')).toBeTruthy()
+    )
+    expect(
+      (screen.getByTestId('reload-history') as HTMLButtonElement).disabled
+    ).toBe(true)
+    expect(mocks.request).not.toHaveBeenCalled()
   })
 })
