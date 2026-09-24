@@ -422,12 +422,14 @@ func TestConsumeCorruptStoreFailsClosedAndIsNeverReset(t *testing.T) {
 	for name, body := range map[string]string{
 		"garbage":       "not json",
 		"empty":         "",
-		"null ids":      `{"v":2,"pruned_through":0,"ids":null}`,
-		"wrong version": `{"v":3,"pruned_through":0,"ids":[]}`,
+		"null ids":      `{"v":3,"pruned_through":0,"clock_floor":0,"ids":null}`,
+		"wrong version": `{"v":4,"pruned_through":0,"clock_floor":0,"ids":[]}`,
 		// v1 refused; no v1 store was ever written by a shipped binary (M3 never shipped).
-		"v1 store":      `{"v":1,"ids":[{"job_id":"0123456789abcdee","expires_at":1,"consumed_at":1}]}`,
-		"unknown field": `{"v":2,"pruned_through":0,"ids":[],"x":1}`,
-		"bad entry":     `{"v":2,"pruned_through":0,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
+		"v1 store": `{"v":1,"ids":[{"job_id":"0123456789abcdee","expires_at":1,"consumed_at":1}]}`,
+		// v2 refused likewise (no clock_floor); no v2 store was ever written by a shipped binary.
+		"v2 store":      `{"v":2,"pruned_through":0,"ids":[{"job_id":"0123456789abcdee","expires_at":1,"consumed_at":1}]}`,
+		"unknown field": `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[],"x":1}`,
+		"bad entry":     `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
 	} {
 		d := t.TempDir()
 		_ = os.MkdirAll(Dir(d), 0o700)
@@ -442,7 +444,7 @@ func TestConsumeCorruptStoreFailsClosedAndIsNeverReset(t *testing.T) {
 	// positive control: an empty-but-valid store accepts
 	d := t.TempDir()
 	_ = os.MkdirAll(Dir(d), 0o700)
-	_ = os.WriteFile(SeenPath(d), []byte(`{"v":2,"pruned_through":0,"ids":[]}`), 0o600)
+	_ = os.WriteFile(SeenPath(d), []byte(`{"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}`), 0o600)
 	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
@@ -481,7 +483,7 @@ func TestConsumePrunesOnlyLongExpiredIDs(t *testing.T) {
 func TestConsumeHardCapRefuses(t *testing.T) {
 	d := t.TempDir()
 	var sb strings.Builder
-	sb.WriteString(`{"v":2,"pruned_through":0,"ids":[`)
+	sb.WriteString(`{"v":3,"pruned_through":0,"clock_floor":0,"ids":[`)
 	for i := 0; i < MaxSeenEntries; i++ {
 		if i > 0 {
 			sb.WriteByte(',')

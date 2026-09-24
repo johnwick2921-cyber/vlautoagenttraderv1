@@ -329,10 +329,17 @@ func TestInstallReplayRefusedAfterAClockStepBackPastRetention(t *testing.T) {
 	if w := e.do("POST", "/api/updates/install", bodyA); w.Code != http.StatusConflict {
 		t.Errorf("after a restart: %d %s, want 409", w.Code, w.Body.String())
 	}
-	// positive control: a grant minted at the stepped-back clock (expires_at
-	// above the watermark) is authorized and reaches the stub
-	if w := e.do("POST", "/api/updates/install", grantBodyUnder(t, key, updRelease, "rollback-job-c0001", cur.Unix()+300)); w.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("positive control: a fresh grant at the stepped-back clock = %d %s, want 422", w.Code, w.Body.String())
+	// a grant minted at the stepped-back clock (expires_at above the
+	// watermark, but at or below the clock floor the store recorded when it
+	// consumed B) is expired: the uniform 403 (red-3 #2)
+	if w := e.do("POST", "/api/updates/install", grantBodyUnder(t, key, updRelease, "rollback-job-c0001", cur.Unix()+300)); w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
+		t.Fatalf("a fresh grant at the stepped-back clock = %d %s, want 403 (below the clock floor)", w.Code, w.Body.String())
+	}
+	// positive control: once the clock passes the floor a fresh grant is
+	// authorized and reaches the stub
+	cur = time.Unix(expA+602, 0)
+	if w := e.do("POST", "/api/updates/install", grantBodyUnder(t, key, updRelease, "rollback-job-d0001", cur.Unix()+300)); w.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("positive control: a fresh grant past the clock floor = %d %s, want 422", w.Code, w.Body.String())
 	}
 }
 

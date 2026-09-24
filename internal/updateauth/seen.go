@@ -14,13 +14,23 @@ import (
 // anything else happens; a second use is ErrReplay (409), across restarts
 // AND across clock step-backs.
 //
-// The store is {"v":2,"pruned_through":N,"ids":[{job_id,expires_at,consumed_at}…]}.
+// The store is
+// {"v":3,"pruned_through":N,"clock_floor":F,"ids":[{job_id,expires_at,consumed_at}…]}.
 // pruned_through is the largest expires_at ever pruned from ids (0 = nothing
 // pruned yet; every valid expires_at is > 0). A grant whose expires_at is at
 // or below it is refused as a replay whatever the clock says: the store can
 // no longer prove its id was never consumed (M3-RT-F1 — a prune followed by a
 // clock step-back of more than SeenRetention used to put a consumed grant
 // back inside its window with its id forgotten).
+//
+// clock_floor is the latest server clock reading (unix seconds) the store has
+// recorded — at every consumption and at every refusal of a genuine expired
+// code (NoteExpired) — 0 = none yet. A grant whose expires_at is at or below
+// it is EXPIRED whatever the clock says afterwards: the server's own
+// "expired" verdict is sticky across a clock step-back (red-team red-3 #2 — a
+// code refused as expired used to be admitted once the clock stepped back
+// inside its window). A step-back smaller than MaxAuthorizationWindow costs
+// nothing; a larger one refuses installs until the clock passes the floor.
 const (
 	// MaxSeenEntries is the hard cap: past it Consume refuses (fail closed)
 	// rather than evicting a live entry.
@@ -30,10 +40,11 @@ const (
 	// expiry is covered by pruned_through.
 	SeenRetention = 10 * time.Minute
 
-	// seenVersion 2 added pruned_through (red-team F1). A v1 file reads
-	// ErrSeenCorrupt under never-reset, and that is safe ONLY because M3 never
-	// shipped: no v1 store was ever written by a shipped binary, so no box holds one.
-	seenVersion      = 2
+	// seenVersion 2 added pruned_through (red-team F1); 3 added clock_floor
+	// (red-team red-3 #2). A v1 or v2 file reads ErrSeenCorrupt under
+	// never-reset, and that is safe ONLY because M3 never shipped: no v1/v2
+	// store was ever written by a shipped binary, so no box holds one.
+	seenVersion      = 3
 	maxSeenFileBytes = 4 << 20
 )
 
@@ -55,6 +66,9 @@ var (
 	// the store's own reader refuses — writing it would wedge the store
 	// (corrupt is never reset) for every later install (M3-RT-F3).
 	ErrBadClock = errors.New("updateauth: clock at or before the unix epoch — refusing to record a consumption")
+	// ErrExpiredAtFloor (errors.Is ErrExpired): expires_at is at or below the
+	// store's clock_floor — the server has already seen a clock past it.
+	ErrExpiredAtFloor = fmt.Errorf("%w: expires_at at or below the seen store's clock floor (the server already saw a later clock; was it stepped back?)", ErrExpired)
 )
 
 type seenEntry struct {
@@ -66,6 +80,7 @@ type seenEntry struct {
 // seenStore is the decoded store.
 type seenStore struct {
 	PrunedThrough int64
+	ClockFloor    int64
 	IDs           []seenEntry
 }
 
@@ -73,6 +88,7 @@ type seenStore struct {
 type seenFile struct {
 	V             int         `json:"v"`
 	PrunedThrough int64       `json:"pruned_through"`
+	ClockFloor    int64       `json:"clock_floor"`
 	IDs           []seenEntry `json:"ids"`
 }
 
@@ -135,7 +151,7 @@ func parseSeen(b []byte) (seenStore, error) {
 	if len(b) > maxSeenFileBytes {
 		return seenStore{}, ErrSeenCorrupt
 	}
-	m, err := decodeStrictObject(bytes.NewReader(b), "v", "pruned_through", "ids")
+	m, err := decodeStrictObject(bytes.NewReader(b), "v", "pruned_through", "clock_floor", "ids")
 	if err != nil {
 		return seenStore{}, errors.Join(ErrSeenCorrupt, err)
 	}
@@ -144,6 +160,9 @@ func parseSeen(b []byte) (seenStore, error) {
 	}
 	var s seenStore
 	if s.PrunedThrough, err = rawNonNegInt(m["pruned_through"]); err != nil {
+		return seenStore{}, errors.Join(ErrSeenCorrupt, err)
+	}
+	if s.ClockFloor, err = rawNonNegInt(m["clock_floor"]); err != nil {
 		return seenStore{}, errors.Join(ErrSeenCorrupt, err)
 	}
 	var raw []json.RawMessage
@@ -179,7 +198,7 @@ func encodeSeen(s seenStore) ([]byte, error) {
 	if ids == nil {
 		ids = []seenEntry{}
 	}
-	b, err := json.Marshal(seenFile{V: seenVersion, PrunedThrough: s.PrunedThrough, IDs: ids})
+	b, err := json.Marshal(seenFile{V: seenVersion, PrunedThrough: s.PrunedThrough, ClockFloor: s.ClockFloor, IDs: ids})
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +247,9 @@ func Consume(dataDir, jobID string, expiresAt int64, now time.Time) error {
 	if expiresAt <= st.PrunedThrough {
 		return ErrPrunedReplay
 	}
+	if expiresAt <= st.ClockFloor {
+		return ErrExpiredAtFloor
+	}
 	cutoff := now.Add(-SeenRetention).Unix()
 	watermark := st.PrunedThrough
 	kept := make([]seenEntry, 0, len(st.IDs)+1)
@@ -242,7 +264,47 @@ func Consume(dataDir, jobID string, expiresAt int64, now time.Time) error {
 		return ErrSeenFull
 	}
 	kept = append(kept, seenEntry{JobID: jobID, ExpiresAt: expiresAt, ConsumedAt: now.Unix()})
-	b, err := encodeSeen(seenStore{PrunedThrough: watermark, IDs: kept})
+	b, err := encodeSeen(seenStore{PrunedThrough: watermark, ClockFloor: max(st.ClockFloor, now.Unix()), IDs: kept})
+	if err != nil {
+		return err
+	}
+	return writeAtomic(dir, SeenPath(dataDir), b)
+}
+
+// NoteExpired records that the server refused a GENUINE code (its MAC
+// verified) as expired at now: it raises clock_floor to now, so that code —
+// and every code expiring at or before now — stays expired after a clock
+// step-back (red-team red-3 #2). It writes nothing when now is not above the
+// floor, and never writes a store its reader would refuse (a clock at or
+// before the epoch is ErrBadClock; a corrupt or, once enrolled, missing store
+// is ErrSeenCorrupt and left untouched). The caller refuses the request
+// whatever this returns. Callers: the install handler, ONLY after VerifyMAC —
+// a caller without the key can never move the floor.
+func NoteExpired(dataDir string, now time.Time) error {
+	if err := checkDataDir(dataDir); err != nil {
+		return err
+	}
+	if now.Unix() <= 0 {
+		return ErrBadClock
+	}
+	dir, err := ensurePrivateDir(dataDir)
+	if err != nil {
+		return err
+	}
+	unlock, err := lockFile(seenLockPath(dataDir))
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	st, err := readSeen(dataDir)
+	if err != nil {
+		return err
+	}
+	if now.Unix() <= st.ClockFloor {
+		return nil
+	}
+	st.ClockFloor = now.Unix()
+	b, err := encodeSeen(st)
 	if err != nil {
 		return err
 	}

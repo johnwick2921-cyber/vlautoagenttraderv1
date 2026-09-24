@@ -297,7 +297,8 @@ func (s *Server) handleUpdatesCheck(c *gin.Context) {
 // handleUpdatesInstall — POST /api/updates/install
 // {release_id, job_id, expires_at, hmac}. Order (each refusal final):
 // strict parse 400 → expiry window 403 → HMAC 403 → consume job id (replay
-// 409) → verified manifest (M3 stub: 422 "release not verified").
+// 409; at/below the seen store's clock floor 403) → verified manifest (M3
+// stub: 422 "release not verified").
 func (s *Server) handleUpdatesInstall(c *gin.Context) {
 	dataDir := trader.MaintenanceDataDir()
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUpdateInstallBody)
@@ -309,6 +310,21 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 	}
 	now := s.updatesClock()
 	if err := updateauth.CheckExpiry(g.ExpiresAt, now); err != nil {
+		// Red-team red-3 #2: a GENUINE code refused as expired raises the
+		// seen store's clock floor, so it stays expired after a clock
+		// step-back. Only a key holder moves the floor (MAC first); a code
+		// from the future (clock behind) is not "expired" and writes nothing.
+		if g.ExpiresAt <= now.Unix() {
+			if key, kerr := updateauth.LoadDeviceKey(dataDir); kerr == nil {
+				genuine := updateauth.VerifyMAC(key, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC)
+				clear(key)
+				if genuine {
+					if nerr := updateauth.NoteExpired(dataDir, now); nerr != nil {
+						logger.Errorf("🔒 [updates] install: could not record the expiry clock floor: %v", nerr)
+					}
+				}
+			}
+		}
 		updatesForbid(c, "install: outside the validity window")
 		return
 	}
@@ -336,6 +352,10 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 				logger.Warnf("🔒 [updates] install: job id replay")
 			}
 			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "job already used"})
+			return
+		}
+		if errors.Is(err, updateauth.ErrExpired) {
+			updatesForbid(c, "install: expires at or below the seen store's clock floor (clock stepped back?)")
 			return
 		}
 		logger.Errorf("🔒 [updates] install: job-id store refused: %v", err)

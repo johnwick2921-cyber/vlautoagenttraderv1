@@ -152,6 +152,7 @@ func TestEncodeSeenRefusesWhatItsReaderRefuses(t *testing.T) {
 		"expires_at 0":         {IDs: []seenEntry{{JobID: good.JobID, ExpiresAt: 0, ConsumedAt: good.ConsumedAt}}},
 		"path-shaped id":       {IDs: []seenEntry{{JobID: "../x", ExpiresAt: good.ExpiresAt, ConsumedAt: good.ConsumedAt}}},
 		"negative watermark":   {PrunedThrough: -1, IDs: []seenEntry{good}},
+		"negative clock floor": {ClockFloor: -1, IDs: []seenEntry{good}},
 	} {
 		if b, err := encodeSeen(s); err == nil {
 			t.Errorf("%s: encodeSeen emitted %q", name, b)
@@ -161,6 +162,7 @@ func TestEncodeSeenRefusesWhatItsReaderRefuses(t *testing.T) {
 		"empty":          {},
 		"one entry":      {IDs: []seenEntry{good}},
 		"with watermark": {PrunedThrough: 1799999000, IDs: []seenEntry{good}},
+		"with floor":     {PrunedThrough: 1799999000, ClockFloor: 1800000000, IDs: []seenEntry{good}},
 	} {
 		b, err := encodeSeen(s)
 		if err != nil {
@@ -224,8 +226,11 @@ func TestPrunedThroughIsTheLargestPrunedExpiryAndBindsAtAnyClock(t *testing.T) {
 			t.Errorf("%s exp=%d at a stepped-back clock: err = %v, want ErrPrunedReplay", id, exp, err)
 		}
 	}
-	if err := Consume(d, "eeeeeeeeeeeeeeee", T.Unix()+301, back); err != nil { // one above: admitted
-		t.Fatalf("exp one above the watermark: %v", err)
+	// one above the watermark is not a replay; at this stepped-back clock it
+	// is at or below the clock floor (T2, recorded when c was consumed), so
+	// it is expired (red-3 #2) — the watermark boundary is still exact
+	if err := Consume(d, "eeeeeeeeeeeeeeee", T.Unix()+301, back); errors.Is(err, ErrReplay) || !errors.Is(err, ErrExpiredAtFloor) {
+		t.Fatalf("exp one above the watermark at a stepped-back clock: %v, want ErrExpiredAtFloor (not a replay)", err)
 	}
 	if err := Consume(d, "ffffffffffffffff", T2.Unix()+300, T2); err != nil { // prunes nothing new
 		t.Fatal(err)
@@ -234,7 +239,7 @@ func TestPrunedThroughIsTheLargestPrunedExpiryAndBindsAtAnyClock(t *testing.T) {
 		t.Fatalf("a Consume that pruned nothing moved pruned_through to %d", st.PrunedThrough)
 	}
 	b, _ := os.ReadFile(SeenPath(d))
-	if !strings.HasPrefix(string(b), `{"v":2,"pruned_through":`) {
+	if !strings.HasPrefix(string(b), `{"v":3,"pruned_through":`) {
 		t.Fatalf("store shape %q", b)
 	}
 }

@@ -146,7 +146,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 		t.Fatal(err)
 	}
 	var b strings.Builder
-	b.WriteString(`{"v":2,"pruned_through":0,"ids":[`)
+	b.WriteString(`{"v":3,"pruned_through":0,"clock_floor":0,"ids":[`)
 	exp := tNow.Unix() + 300
 	for i := 0; i < MaxSeenEntries-1; i++ {
 		if i > 0 {
@@ -168,7 +168,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 	for i := range big {
 		big[i] = ' '
 	}
-	copy(big, []byte(`{"v":2,"pruned_through":0,"ids":[]}`))
+	copy(big, []byte(`{"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}`))
 	if err := os.WriteFile(SeenPath(d), big, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -176,25 +176,32 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 		t.Errorf("oversize store: %v, want ErrSeenCorrupt", err)
 	}
 	for name, body := range map[string]string{
-		"v float":             `{"v":2.0,"pruned_through":0,"ids":[]}`,
-		"ids null":            `{"v":2,"pruned_through":0,"ids":null}`,
-		"dup v":               `{"v":2,"v":2,"pruned_through":0,"ids":[]}`,
-		"entry extra":         `{"v":2,"pruned_through":0,"ids":[{"job_id":"0123456789abcdef","expires_at":1,"consumed_at":1,"x":1}]}`,
-		"entry badid":         `{"v":2,"pruned_through":0,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
-		"entry exp0":          `{"v":2,"pruned_through":0,"ids":[{"job_id":"0123456789abcdef","expires_at":0,"consumed_at":1}]}`,
-		"entry consumed0":     `{"v":2,"pruned_through":0,"ids":[{"job_id":"0123456789abcdef","expires_at":1,"consumed_at":0}]}`,
-		"ids object":          `{"v":2,"pruned_through":0,"ids":{}}`,
-		"two objs":            `{"v":2,"pruned_through":0,"ids":[]}{"v":2,"pruned_through":0,"ids":[]}`,
-		"v string":            `{"v":"2","pruned_through":0,"ids":[]}`,
-		"ids trailing":        `{"v":2,"pruned_through":0,"ids":[] }garbage`,
+		"v float":             `{"v":3.0,"pruned_through":0,"clock_floor":0,"ids":[]}`,
+		"ids null":            `{"v":3,"pruned_through":0,"clock_floor":0,"ids":null}`,
+		"dup v":               `{"v":3,"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}`,
+		"entry extra":         `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[{"job_id":"0123456789abcdef","expires_at":1,"consumed_at":1,"x":1}]}`,
+		"entry badid":         `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
+		"entry exp0":          `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[{"job_id":"0123456789abcdef","expires_at":0,"consumed_at":1}]}`,
+		"entry consumed0":     `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[{"job_id":"0123456789abcdef","expires_at":1,"consumed_at":0}]}`,
+		"ids object":          `{"v":3,"pruned_through":0,"clock_floor":0,"ids":{}}`,
+		"two objs":            `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}{"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}`,
+		"v string":            `{"v":"3","pruned_through":0,"clock_floor":0,"ids":[]}`,
+		"ids trailing":        `{"v":3,"pruned_through":0,"clock_floor":0,"ids":[] }garbage`,
 		"v1 (no watermark)":   `{"v":1,"ids":[]}`,
-		"watermark missing":   `{"v":2,"ids":[]}`,
-		"watermark negative":  `{"v":2,"pruned_through":-1,"ids":[]}`,
-		"watermark float":     `{"v":2,"pruned_through":1.5,"ids":[]}`,
-		"watermark string":    `{"v":2,"pruned_through":"0","ids":[]}`,
-		"watermark leading 0": `{"v":2,"pruned_through":01,"ids":[]}`,
-		"watermark null":      `{"v":2,"pruned_through":null,"ids":[]}`,
-		"watermark dup":       `{"v":2,"pruned_through":0,"pruned_through":0,"ids":[]}`,
+		"watermark missing":   `{"v":3,"clock_floor":0,"ids":[]}`,
+		"watermark negative":  `{"v":3,"pruned_through":-1,"clock_floor":0,"ids":[]}`,
+		"watermark float":     `{"v":3,"pruned_through":1.5,"clock_floor":0,"ids":[]}`,
+		"watermark string":    `{"v":3,"pruned_through":"0","clock_floor":0,"ids":[]}`,
+		"watermark leading 0": `{"v":3,"pruned_through":01,"clock_floor":0,"ids":[]}`,
+		"watermark null":      `{"v":3,"pruned_through":null,"clock_floor":0,"ids":[]}`,
+		"watermark dup":       `{"v":3,"pruned_through":0,"pruned_through":0,"clock_floor":0,"ids":[]}`,
+		"v2 (no clock floor)": `{"v":2,"pruned_through":0,"ids":[]}`,
+		"floor missing":       `{"v":3,"pruned_through":0,"ids":[]}`,
+		"floor negative":      `{"v":3,"pruned_through":0,"clock_floor":-1,"ids":[]}`,
+		"floor float":         `{"v":3,"pruned_through":0,"clock_floor":1.5,"ids":[]}`,
+		"floor string":        `{"v":3,"pruned_through":0,"clock_floor":"0","ids":[]}`,
+		"floor null":          `{"v":3,"pruned_through":0,"clock_floor":null,"ids":[]}`,
+		"floor dup":           `{"v":3,"pruned_through":0,"clock_floor":0,"clock_floor":0,"ids":[]}`,
 	} {
 		if err := os.WriteFile(SeenPath(d), []byte(body), 0o600); err != nil {
 			t.Fatal(err)
@@ -207,7 +214,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 		}
 	}
 	// positive control: a valid empty store accepts
-	if err := os.WriteFile(SeenPath(d), []byte(`{"v":2,"pruned_through":0,"ids":[]}`), 0o600); err != nil {
+	if err := os.WriteFile(SeenPath(d), []byte(`{"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := Consume(d, strings.Repeat("c", 64), exp, tNow); err != nil {
@@ -247,13 +254,21 @@ func TestConsumeRefusesAReplayAfterAClockRollbackPastRetention(t *testing.T) {
 	if err := Consume(d, jobA, expA, T3); !errors.Is(err, ErrReplay) || !errors.Is(err, ErrPrunedReplay) {
 		t.Errorf("job %s after a prune + %ds clock step-back: err = %v, want ErrPrunedReplay (a replay)", jobA, T2.Unix()-T3.Unix(), err)
 	}
-	// positive control: a grant minted at the stepped-back clock carries
-	// expires_at = T3+300 > the watermark (expA) and is admitted once
+	// a grant minted at the stepped-back clock carries expires_at = T3+300,
+	// above the watermark (expA) — not a replay — but at or below the clock
+	// floor T2 the store recorded when it consumed B: expired (red-3 #2, the
+	// server's expiry verdict is sticky across a step-back)
 	fresh := "cccccccccccccccc"
-	if err := Consume(d, fresh, T3.Unix()+300, T3); err != nil {
-		t.Fatalf("positive control: a fresh grant at the stepped-back clock: %v", err)
+	if err := Consume(d, fresh, T3.Unix()+300, T3); !errors.Is(err, ErrExpiredAtFloor) || errors.Is(err, ErrReplay) {
+		t.Fatalf("a fresh grant at the stepped-back clock: err = %v, want ErrExpiredAtFloor (not a replay)", err)
 	}
-	if err := Consume(d, fresh, T3.Unix()+300, T3); !errors.Is(err, ErrReplay) || errors.Is(err, ErrPrunedReplay) {
+	// positive control: once the clock passes the floor a fresh grant is
+	// admitted once, and its replay is the plain ErrReplay
+	T4 := time.Unix(T2.Unix()+1, 0)
+	if err := Consume(d, fresh, T4.Unix()+300, T4); err != nil {
+		t.Fatalf("positive control: a fresh grant past the floor: %v", err)
+	}
+	if err := Consume(d, fresh, T4.Unix()+300, T4); !errors.Is(err, ErrReplay) || errors.Is(err, ErrPrunedReplay) {
 		t.Fatalf("fresh id replay: err = %v, want the plain ErrReplay", err)
 	}
 }
