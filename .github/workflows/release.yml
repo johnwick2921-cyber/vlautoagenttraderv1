@@ -1,0 +1,135 @@
+# W-ONE-BUTTON M4 — cut a signed, scanned release from an APPROVED TAG.
+#
+# Design rules this file exists to enforce (docs/superpowers/plans/
+# 2026-09-22-one-button-m4-design-notes.md):
+#   * A release is cut from a TAG a human approved. Never from a push to a
+#     branch — a branch moves, and "the release" would then mean whatever dev
+#     happened to be when the job ran.
+#   * The binary must be provably built from clean, tagged source
+#     (vcs.modified=false). A dirty build is not a release.
+#   * The guide carries the sha it was built for (VITE_GUIDE_BUILT_REV), so it
+#     cannot lie about the binary it ships beside.
+#   * Only the allow-list is packaged; the staged tree AND the archive are both
+#     scanned for secrets, because they are different things.
+#   * The artifact repository is ONE variable. OPEN OWNER DECISION: it defaults
+#     fail-closed to THIS repo. The partner repo must never be a target.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'existing tag to release'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  # OPEN OWNER DECISION (plan §Owner decisions 4). Fail-closed default: this
+  # repo. Changeable by the owner in ONE line. Never the partner mirror —
+  # deploy/release_contract_test.go fails if that name appears here.
+  RELEASE_REPO: johnwick2921-cyber/nofx
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # The protected Environment carries the owner as a REQUIRED REVIEWER and
+    # holds the signing key. No approval, no release, no signature.
+    environment: release
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Resolve the source sha (40 hex, READ)
+        id: src
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          [ "${#SHA}" -eq 40 ] || { echo "source sha is not 40 hex: $SHA"; exit 1; }
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "release_id=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-go@v5
+        with: { go-version-file: 'go.mod' }
+
+      - name: Build the binary and PROVE the tree was clean
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)" || { echo "REFUSED: working tree dirty before build"; git status --porcelain; exit 1; }
+          go build -trimpath -o nofx-bin ./
+          # The stamp is READ back out of the binary, never assumed: a build
+          # that reports vcs.modified=true is not a release.
+          go version -m nofx-bin | tee /tmp/vcs.txt
+          grep -q 'vcs.modified=false' /tmp/vcs.txt || { echo "REFUSED: vcs.modified is not false"; exit 1; }
+          grep -q "vcs.revision=${{ steps.src.outputs.sha }}" /tmp/vcs.txt || { echo "REFUSED: binary does not carry the tag's revision"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm', cache-dependency-path: web/package-lock.json }
+
+      - name: Build the web assets with the guide rev baked in
+        env:
+          VITE_GUIDE_BUILT_REV: ${{ steps.src.outputs.sha }}
+        run: |
+          set -euo pipefail
+          cd web && npm ci && npm run build
+          grep -rq "${{ steps.src.outputs.sha }}" dist/assets/*.js || { echo "REFUSED: built dist does not carry the guide rev"; exit 1; }
+
+      - name: Stage ONLY the allow-list
+        run: bash deploy/release/package.sh "$PWD" /tmp/stage
+
+      - name: Secret scan — the staged tree
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/scripts/install.sh | sh -s -- -b /usr/local/bin || true
+          bash deploy/release/secret-scan.sh /tmp/stage
+
+      - name: Build the manifest
+        env:
+          # The DB-compat job (next commit in this wave) will supply proven
+          # pairs here. Until it does this is EMPTY, not a plausible-looking
+          # default: an untested rollback pair advertised as tested is worse
+          # than advertising none (R2, no fabricated values).
+          ROLLBACK_PAIRS: '[]'
+        run: |
+          set -euo pipefail
+          bash deploy/release/manifest.sh /tmp/stage "${{ steps.src.outputs.sha }}" "${{ steps.src.outputs.release_id }}" > /tmp/stage/manifest.json
+          python3 -c "import json,sys; json.load(open('/tmp/stage/manifest.json'))"
+
+      - name: Sign the manifest (ed25519; private key lives only in the Environment)
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "${RELEASE_SIGNING_KEY:-}" ] || { echo "REFUSED: no signing key in the release Environment"; exit 1; }
+          printf '%s' "$RELEASE_SIGNING_KEY" > /tmp/sign.key
+          ssh-keygen -Y sign -f /tmp/sign.key -n release /tmp/stage/manifest.json
+          shred -u /tmp/sign.key
+          # Verify with the COMMITTED public key, so a signature that the
+          # shipped public key cannot check never leaves the runner.
+          [ -f deploy/release.pub ] || { echo "REFUSED: deploy/release.pub is missing. The owner creates the release keypair ONCE (see deploy/release/README.md): the PUBLIC half is committed here, the PRIVATE half goes only into the 'release' Environment secret RELEASE_SIGNING_KEY."; exit 1; }
+          ssh-keygen -Y verify -f deploy/release.pub -I release -n release \
+            -s /tmp/stage/manifest.json.sig < /tmp/stage/manifest.json
+
+      - name: Archive, then scan the ARCHIVE too
+        run: |
+          set -euo pipefail
+          tar -C /tmp/stage -czf "/tmp/${{ steps.src.outputs.release_id }}.tar.gz" .
+          mkdir -p /tmp/verify && tar -C /tmp/verify -xzf "/tmp/${{ steps.src.outputs.release_id }}.tar.gz"
+          bash deploy/release/secret-scan.sh /tmp/verify
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "${{ steps.src.outputs.release_id }}" \
+            --repo "$RELEASE_REPO" --verify-tag --notes-file docs/superpowers/plans/2026-09-22-one-button-m4-design-notes.md \
+            "/tmp/${{ steps.src.outputs.release_id }}.tar.gz" \
+            /tmp/stage/manifest.json /tmp/stage/manifest.json.sig
