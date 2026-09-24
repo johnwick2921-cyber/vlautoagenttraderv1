@@ -81,6 +81,11 @@
 // removals, no identifier renamed, no guard removed; the bar-feed guards this
 // pin protects (SubscribeBarsHistoryFor, bars_history_request write,
 // bars_history_data/_error fan-out) are byte-untouched by that delta.
+// tcp_server.go baseline advanced 2026-09-24 for WAVE 1a-plan N2 (comment
+// hunks only, owner GO): the two stale "NT8 does not re-emit the just-closed
+// bar" comments corrected to the real re-emit behaviour
+// (VLBarsSubscriptionManager.cs:539-551, cache finalises the re-emitted bar).
+// Zero code change, no identifier renamed, no guard removed.
 // Wire baselines advanced 2026-09-22 for W-ONE-BUTTON M2 site 7 (CTO-dispatched,
 // feat/one-button-m2-maintenance-hold; the TCP schema must change in lockstep):
 //   provider/ninjatrader/tcp_framing.go — +59 −0: HelloPayload's five omitempty
