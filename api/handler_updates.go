@@ -237,8 +237,12 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 		return "admin user row absent or changed"
 	}
 	// Q8: a token issued before the user row last changed (password change)
-	// is stale for updates. Whole seconds: the JWT iat is second-precision.
-	if claims.IssuedAt == nil || u.UpdatedAt.IsZero() || claims.IssuedAt.Time.Unix() < u.UpdatedAt.Unix() {
+	// is stale for updates. The JWT iat is whole seconds (golang-jwt
+	// TimePrecision), updated_at has whatever precision its writer stored, so
+	// the rule correct at every precision is iat STRICTLY after updated_at
+	// truncated to the second (red-team red-1 #5): a token from the same
+	// second as the change — either side of it — is refused.
+	if claims.IssuedAt == nil || u.UpdatedAt.IsZero() || claims.IssuedAt.Time.Unix() <= u.UpdatedAt.Unix() {
 		return "token older than the user row"
 	}
 	return ""
