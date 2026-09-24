@@ -169,8 +169,16 @@ jobs:
           ROLLBACK_PAIRS: ${{ needs.dbcompat.outputs.rollback_pairs }}
         run: |
           set -euo pipefail
-          bash deploy/release/manifest.sh /tmp/stage "${{ steps.src.outputs.sha }}" "${{ steps.src.outputs.release_id }}" > /tmp/stage/manifest.json
-          python3 -c "import json,sys; json.load(open('/tmp/stage/manifest.json'))"
+          # WRITE OUTSIDE THE STAGE, MOVE IN AFTER ENUMERATION.
+          # Redirecting into the stage creates manifest.json at 0 BYTES before
+          # the script starts — redirection truncates first — so the script
+          # then enumerates the stage, finds its own output file empty, and
+          # refuses (correctly: an entry carrying the sha256 of the empty
+          # string matches nothing that ships). Every tag failed on a guard
+          # that was right. The guard stays; the caller is the bug.
+          bash deploy/release/manifest.sh /tmp/stage "${{ steps.src.outputs.sha }}" "${{ steps.src.outputs.release_id }}" > /tmp/manifest.json
+          python3 -c "import json,sys; json.load(open('/tmp/manifest.json'))"
+          mv /tmp/manifest.json /tmp/stage/manifest.json
 
       - name: Sign the manifest (ed25519; private key lives only in the Environment)
         env:
