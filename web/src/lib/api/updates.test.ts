@@ -1,0 +1,150 @@
+// W-ONE-BUTTON M5 (U1) — shape pins for the updates API client. Each fixture
+// quotes the Go gin.H keys / JSON tags verbatim so a server-side rename or a
+// shape drift fails here, at the component call site, before it reaches the
+// page.
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mocks = vi.hoisted(() => ({ request: vi.fn() }))
+vi.mock('../httpClient', () => ({
+  httpClient: { request: mocks.request },
+}))
+
+import { updatesApi } from './updates'
+
+describe('updatesApi shape pins', () => {
+  beforeEach(() => mocks.request.mockReset())
+
+  it('GET /api/maintenance pins the MaintenanceStatusView keys', async () => {
+    mocks.request.mockResolvedValue({
+      success: true,
+      data: {
+        held: true,
+        state: 'held',
+        job_id: 'job-7',
+        since: '2026-09-24T06:00:00Z',
+        reason: 'operator hold',
+        in_flight_sends: 0,
+        drained: true,
+        addon_ack: {
+          received: '2026-09-24T06:00:00Z',
+          age_ms: 1200,
+          held: true,
+          job_id: 'job-7',
+          queued_commands: 0,
+          build_id: 'b9',
+          accept_seq: 4,
+        },
+        withdraw: null,
+      },
+    })
+    const out = await updatesApi.maintenance()
+    expect(mocks.request).toHaveBeenCalledWith('/api/maintenance', {
+      silent: true,
+    })
+    expect(out?.state).toBe('held')
+    expect(out?.addon_ack?.build_id).toBe('b9')
+    expect(out?.withdraw).toBeNull()
+  })
+
+  it('GET /api/installation-gate pins the InstallationGate keys', async () => {
+    mocks.request.mockResolvedValue({
+      success: true,
+      data: {
+        ready: false,
+        job_id: 'n/a',
+        legs: [
+          {
+            name: 'hold',
+            pass: false,
+            detail: 'held: job-7',
+            source: 'maintenance hold file',
+          },
+        ],
+        traders: ['t1'],
+        note: 'every leg must pass',
+      },
+    })
+    const out = await updatesApi.installationGate()
+    expect(mocks.request).toHaveBeenCalledWith('/api/installation-gate', {
+      silent: true,
+    })
+    expect(out?.ready).toBe(false)
+    expect(out?.legs[0].name).toBe('hold')
+  })
+
+  it('GET /api/updates pins the status keys (enrolled/manifest_verifier/install_enabled)', async () => {
+    mocks.request.mockResolvedValue({
+      success: true,
+      data: {
+        enrolled: true,
+        manifest_verifier: 'stub',
+        install_enabled: false,
+      },
+    })
+    const out = await updatesApi.updatesStatus()
+    expect(out?.enrolled).toBe(true)
+    expect(out?.install_enabled).toBe(false)
+  })
+
+  it('POST /api/updates/check pins {checked, reason}', async () => {
+    mocks.request.mockResolvedValue({
+      success: true,
+      data: { checked: false, reason: 'no release source in this build' },
+    })
+    const out = await updatesApi.check()
+    expect(mocks.request).toHaveBeenCalledWith('/api/updates/check', {
+      method: 'POST',
+      silent: true,
+    })
+    expect(out).toEqual({
+      checked: false,
+      reason: 'no release source in this build',
+    })
+  })
+
+  it('POST /api/updates/install 202 pins {job_id}; a refusal carries the server text', async () => {
+    mocks.request.mockResolvedValueOnce({
+      success: true,
+      statusCode: 202,
+      data: { job_id: 'job-9' },
+    })
+    expect(
+      await updatesApi.install({
+        release_id: 'r1',
+        job_id: 'job-9',
+        expires_at: '2030-01-01T00:00:00Z',
+        hmac: 'x',
+      })
+    ).toEqual({ ok: true, job_id: 'job-9' })
+
+    mocks.request.mockResolvedValueOnce({
+      success: false,
+      statusCode: 403,
+      data: { error: 'install: MAC mismatch' },
+      message: '',
+    })
+    const refused = await updatesApi.install({
+      release_id: 'r1',
+      job_id: 'job-9',
+      expires_at: '2030-01-01T00:00:00Z',
+      hmac: 'x',
+    })
+    expect(refused.ok).toBe(false)
+    expect(refused.error).toBe('install: MAC mismatch')
+    expect(refused.status).toBe(403)
+  })
+
+  it('GET /api/updates/jobs/:id pins the M3 404 {error:"not found"} shape', async () => {
+    mocks.request.mockResolvedValue({
+      success: false,
+      statusCode: 404,
+      data: { error: 'not found' },
+    })
+    const out = await updatesApi.job('job-1')
+    expect(mocks.request).toHaveBeenCalledWith('/api/updates/jobs/job-1', {
+      silent: true,
+    })
+    expect(out).toEqual({ error: 'not found', status: 404 })
+  })
+})
