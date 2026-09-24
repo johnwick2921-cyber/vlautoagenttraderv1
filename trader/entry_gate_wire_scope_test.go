@@ -49,7 +49,7 @@ func TestEntryGateContractCodeSymbolJudgedOnWireTick(t *testing.T) {
 	// wire sends exactly these prices (TestWireTickResolvesContractCodeRoot).
 	// On the 0.25 default: stop 1990.00, target 2029.75 → R:R 2.975 < 3.00.
 	leg := kernel.PlanArmLeg{Entry: 2000.00, Stop: 1990.20, Target: 2029.80}
-	if reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0); refused {
+	if reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC)); refused {
 		t.Fatalf("M2KU6 leg judged on a tick the wire does not use (wire tick 0.10 sends R:R 3.04); got %q", reason)
 	}
 }

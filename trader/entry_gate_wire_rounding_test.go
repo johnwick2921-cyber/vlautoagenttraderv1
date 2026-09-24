@@ -43,7 +43,7 @@ func TestEntryGateArmRRJudgedOnWireRoundedStop(t *testing.T) {
 	plan := &kernel.ActivePlan{PlanID: "2026-09-23:NY:e12", Version: 1, Session: "NY"}
 	sc := kernel.PlanScenario{ID: "S1", Direction: "long", Condition: "reclaim"}
 	leg := kernel.PlanArmLeg{Entry: entry, Stop: stop, Target: target}
-	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0)
+	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC))
 	if !refused {
 		t.Fatalf("arm leg entry %.2f stop %.2f target %.2f: the wire sends stop 29575.75 (R:R %.4f < floor %.2f) — must be REFUSED, got allow",
 			entry, stop, target, (target-entry)/24.25, floor)
@@ -79,7 +79,7 @@ func TestEntryGateArmMinSLJudgedOnWireRoundedEntry(t *testing.T) {
 	sc := kernel.PlanScenario{ID: "S1", Direction: "long", Condition: "reclaim"}
 	atr5m := 24.10 / 1.5
 	leg := kernel.PlanArmLeg{Entry: 29600.12, Stop: 29576.00, Target: 29800.00}
-	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", atr5m)
+	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", atr5m, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC))
 	if !refused {
 		t.Fatalf("wire entry 29600.00 / stop 29576.00 = 24.00 < floor 24.10 — must be REFUSED, got allow")
 	}
@@ -98,7 +98,7 @@ func TestEntryGateArmMinSLFloorStopAdmittedOnWire(t *testing.T) {
 	sc := kernel.PlanScenario{ID: "S1", Direction: "long", Condition: "reclaim"}
 	atr5m := 24.10 / 1.5
 	leg := kernel.PlanArmLeg{Entry: 29600.00, Stop: 29575.90, Target: 29800.00}
-	if reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", atr5m); refused {
+	if reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", atr5m, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC)); refused {
 		t.Fatalf("stop on the floor rounds away (24.25 ≥ 24.10) — must be admitted; got %q", reason)
 	}
 }
