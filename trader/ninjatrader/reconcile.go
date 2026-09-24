@@ -444,8 +444,8 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		// W1b E15 — the fill ring FIRST: the exact signal of this position's own
 		// fill beats a price guess. Only with no same-side evidence in the window
 		// does the price-match fallback run, and (FOLD-4) only over arms filled in
-		// that same window; an ambiguous or unreadable answer leaves the row
-		// untagged (a guess is fabricated lineage).
+		// that same window whose signal explains no position yet; an ambiguous or
+		// unreadable answer leaves the row untagged (a guess is fabricated lineage).
 		// W1b FOLD-6 — origin is what the 🧩 line below says the position WAS:
 		// "manual/NT8-side" only when nothing evidenced this trader's own entry.
 		origin := "manual/NT8-side entry (no fill-ring or in-window armed-fill evidence of this trader's own entry)"

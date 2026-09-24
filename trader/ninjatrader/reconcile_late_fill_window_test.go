@@ -22,11 +22,12 @@ import (
 // the window is judged on the parsed INSTANT, never on the string.
 
 // assertUntaggedNotAdopted is the FOLD-4 verdict on one materialized row: no
-// entry identity, no plan linkage, no cached signal, and the old arm untouched.
+// entry identity, no plan linkage, no cached signal, and the ineligible arm
+// untouched.
 func assertUntaggedNotAdopted(t *testing.T, w *lateFillWire, row *store.TraderPosition, arm *store.ArmedOrderDB) {
 	t.Helper()
 	if row.EntryOrderID != "" || row.PlanID != store.PlanUnresolvable || row.PlanVersion != 0 || row.CitedScenarioID != "" {
-		t.Fatalf("an arm older than the ring's window was adopted: entry_order_id=%q plan_id=%q v%d scenario=%q",
+		t.Fatalf("an arm the fallback may not consider (older than the ring's window, or its signal already explains another position) was adopted: entry_order_id=%q plan_id=%q v%d scenario=%q",
 			row.EntryOrderID, row.PlanID, row.PlanVersion, row.CitedScenarioID)
 	}
 	w.tr.mu.Lock()
@@ -145,4 +146,52 @@ func TestPriceMatchFallbackComparesInstantsNotZoneText(t *testing.T) {
 			t.Fatalf("a fresh arm written in another zone must still stamp: entry_order_id=%q scenario=%q", row.EntryOrderID, row.CitedScenarioID)
 		}
 	})
+}
+
+// RED (FOLD-4 finish): the CTO's own path with a FRESH arm. The ring's only
+// same-side fill is arm X's signal, and X already explains another position
+// (tracked, then closed inside the window), so the verdict is no-evidence and
+// the fallback runs. X is FILLED inside the window at the same price — the time
+// bound alone lets it through, and the second position adopted X's plan and
+// cached X's terminal signal (probe [A] at 95ad925a: entry_order_id="sig-arm-x"
+// plan="2026-09-23:NY" cached="sig-arm-x"). E15's invariant binds the fallback
+// too: a signal that already explains one position never tags a second.
+func TestPriceMatchFallbackNeverReusesAnArmWhoseSignalExplainsAnotherPosition(t *testing.T) {
+	w := newLateFillWire(t)
+	arm := w.filledArm(t, "2026-09-23:NY", "S1", "sig-arm-x", 29001, 30*time.Second)
+	arm.SignalID = "sig-arm-x"
+	prior := &store.TraderPosition{TraderID: lateFillTrader, ExchangeID: lateFillExchange, ExchangeType: "ninjatrader",
+		ExchangePositionID: "tracked-x", Symbol: "MNQ", Side: "LONG", Quantity: 1, EntryPrice: 29001, EntryOrderID: "sig-arm-x",
+		EntryTime: time.Now().UTC().UnixMilli() - 30_000, Status: "OPEN", Account: "Sim101"}
+	if err := w.st.Position().CreateOpenPosition(prior); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.st.Position().ClosePosition(prior.ID, 28990, "x", -10, 0, "sync"); err != nil {
+		t.Fatal(err)
+	}
+	w.fill(t, "sig-arm-x", "long", 29001)
+	row := w.materialize(t, 29001)
+	assertUntaggedNotAdopted(t, w, row, arm)
+}
+
+// The in-use exclusion is per ARM, not a blanket refusal: with X in use and a
+// second, unclaimed in-window arm at the same price, the fallback stamps the
+// unclaimed one.
+func TestPriceMatchFallbackSkipsTheInUseArmForAnUnclaimedOne(t *testing.T) {
+	w := newLateFillWire(t)
+	w.filledArm(t, "2026-09-23:NY", "S2", "sig-arm-free", 29001, 60*time.Second)
+	w.filledArm(t, "2026-09-23:NY", "S1", "sig-arm-x", 29001, 30*time.Second) // newer: the matcher's first pick
+	prior := &store.TraderPosition{TraderID: lateFillTrader, ExchangeID: lateFillExchange, ExchangeType: "ninjatrader",
+		ExchangePositionID: "tracked-x", Symbol: "MNQ", Side: "LONG", Quantity: 1, EntryPrice: 29001, EntryOrderID: "sig-arm-x",
+		EntryTime: time.Now().UTC().UnixMilli() - 30_000, Status: "OPEN", Account: "Sim101"}
+	if err := w.st.Position().CreateOpenPosition(prior); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.st.Position().ClosePosition(prior.ID, 28990, "x", -10, 0, "sync"); err != nil {
+		t.Fatal(err)
+	}
+	row := w.materialize(t, 29001)
+	if row.EntryOrderID != "sig-arm-free" || row.CitedScenarioID != "S2" {
+		t.Fatalf("the unclaimed in-window arm must stamp (the in-use one skipped): entry_order_id=%q scenario=%q", row.EntryOrderID, row.CitedScenarioID)
+	}
 }

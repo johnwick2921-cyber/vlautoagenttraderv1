@@ -36,7 +36,8 @@ import (
 //     every candidate already explains another position) → the price-match
 //     fallback runs, bounded to the SAME window (FOLD-4): only this trader's
 //     FILLED arms whose updated_at is at or after firstSeen −
-//     lateEntryFillWindowMs; an older arm never matches.
+//     lateEntryFillWindowMs and whose signal explains no position yet; an
+//     older arm, or one already in use, never matches.
 //
 // The AddOn sends fill frames only for ENTRY legs (Buy=long, SellShort=short),
 // so the ring never hands an exit's signal to a new entry.
@@ -123,7 +124,11 @@ func (t *TCPTrader) lateEntryFillFor(st *store.Store, acct, sym, side string, fi
 // move_stop to a dead order. updated_at is zone-bearing text
 // (store.LedgerClockSlack): the SQL bound only over-fetches; the window is
 // judged here on the parsed instant and candidates are ordered newest instant
-// first. A read failure leaves the row untagged (WARN).
+// first. An in-window arm whose signal is already some position row's
+// entry_order_id is skipped — E15's invariant binds the fallback too: a signal
+// that already explains one position never tags a second (the CTO's path, every
+// ring candidate in use, reaches here with exactly such an arm). A read failure
+// leaves the row untagged (WARN).
 //
 // W1b FOLD-6 — failed is non-empty when the fallback could NOT answer (the read
 // failed, or an in-window match could not be stamped): the 🧩 line must then
@@ -138,9 +143,18 @@ func stampArmedLineageInWindow(st *store.Store, traderID string, posID int64, sy
 	}
 	inWindow := make([]store.ArmedOrderDB, 0, len(rows))
 	for _, r := range rows {
-		if r.UpdatedAt.UnixMilli() >= lo {
-			inWindow = append(inWindow, r)
+		if r.UpdatedAt.UnixMilli() < lo {
+			continue
 		}
+		used, uerr := st.Position().EntryOrderIDInUse(r.SignalID)
+		if uerr != nil {
+			logger.Warnf("🔗 attribution: pos %d (%s %s) — entry-identity read for armed #%d failed: %v — left UNTAGGED (no guess)", posID, sym, side, r.ID, uerr)
+			return false, "", "entry-identity read for the price-match fallback failed — see the 🔗 WARN"
+		}
+		if used {
+			continue
+		}
+		inWindow = append(inWindow, r)
 	}
 	sort.SliceStable(inWindow, func(i, j int) bool { return inWindow[i].UpdatedAt.After(inWindow[j].UpdatedAt) })
 	if r, ok := matchArmedFillByPrice(inWindow, sym, side, entryPx); ok {
