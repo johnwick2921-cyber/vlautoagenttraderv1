@@ -597,6 +597,24 @@ func TestServeClosesAnIdleConnection(t *testing.T) {
 	if !strings.Contains(s.logs.all(), "reason=timeout") {
 		t.Fatalf("log = %q, want reason=timeout", s.logs.all())
 	}
+	// positive control: the same half frame, completed inside the idle
+	// window, is served — the timeout, not the split write, refused it
+	pc, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: sock, Net: "unix"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pc.Close()
+	pc.SetDeadline(time.Now().Add(5 * time.Second))
+	pc.Write([]byte(`{"v":1,"verb":`))
+	pc.Write([]byte(`"status","payload":{}}` + "\n"))
+	line, err := bufio.NewReader(pc).ReadBytes('\n')
+	ok, _ := updaterwire.EncodeResponse(updaterwire.Response{OK: true, State: "idle"})
+	if err != nil || !bytes.Equal(line, ok) {
+		t.Fatalf("positive control: a split frame completed in time must be served, got %q %v", line, err)
+	}
+	if s.calls.Load() != 1 {
+		t.Fatalf("handler calls = %d, want 1 (the positive control only)", s.calls.Load())
+	}
 }
 
 // A peer that streams a line with no newline is cut off at the cap: the
