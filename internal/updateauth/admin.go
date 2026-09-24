@@ -121,9 +121,21 @@ func LoadDeviceKey(dataDir string) ([]byte, error) {
 // Enroll writes a new enrollment: a fresh random device.key, THEN admin.json
 // (each by the temp+fsync+rename+fsync-dir sequence), under .enroll.lock. It
 // refuses (ErrAlreadyEnrolled) when either file exists and replace is false;
-// replace rotates the key too. A crash between the two writes leaves a new
-// key beside the old/no admin.json — every MAC then fails (fail closed) until
-// enrollment is re-run.
+// replace rotates the key too.
+//
+// The two files are two renames, not one transaction. If the process dies —
+// or the second write fails (ENOSPC, EIO, admin.json replaced by a directory)
+// — after the key rename and before the admin.json rename:
+//   - FIRST enroll: a lone new key, no admin.json — nobody is enrolled (every
+//     /api/updates* 403) and a plain enroll refuses until --replace;
+//   - REPLACE: the NEW key beside the OLD admin.json — a WORKING enrollment
+//     of the incumbent: every grant minted under the old key dies, but
+//     `authorize` mints under the new key and the incumbent's install is
+//     authorized. A replace meant to revoke the incumbent is NOT a revocation
+//     until the CLI prints "enrolled:"; re-run it until it does.
+//
+// Pinned at the production router by
+// api.TestEnrollCommentTruthACrashBetweenTheTwoRenames (red-team red-4 #4).
 //
 // Callers: the attended CLI ONLY (internal/updaterbootstrap). A census test
 // pins that no other non-test file calls it.
