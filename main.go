@@ -398,20 +398,7 @@ func main() {
 				logger.Errorf("🧮 e8 backfill ABORTED — backup failed: %v", bErr)
 			} else {
 				res, rErr := st.AbConfirm().BackfillShortRows(func(planID string, version int, scenario string) (string, bool) {
-					row, e := st.Plan().GetPlan(planID, version)
-					if e != nil || row == nil {
-						return "", false
-					}
-					var doc kernel.PlanDoc
-					if json.Unmarshal([]byte(row.Doc), &doc) != nil {
-						return "", false
-					}
-					for _, sc := range doc.Scenarios {
-						if sc.ID == scenario {
-							return sc.Direction, sc.Direction != ""
-						}
-					}
-					return "", false
+					return e8ScenarioDirection(st, planID, version, scenario)
 				})
 				if rErr != nil {
 					logger.Errorf("🧮 e8 backfill failed: %v", rErr)
@@ -764,4 +751,27 @@ func totalUnrecomputable(r store.BackfillResult) int {
 		n += v
 	}
 	return n
+}
+
+// e8ScenarioDirection resolves the scenario's direction for the E8 short-row
+// backfill. WAVE 1a-plan P2: the backfill must read the ONE fold — the same
+// resolution the executor uses — so an owner overlay that flips a scenario's
+// direction is visible to the recompute. (Extracted from the inline closure at
+// main.go:402 so a main-package test can pin it at the production call site.)
+func e8ScenarioDirection(st *store.Store, planID string, version int, scenario string) (string, bool) {
+	row, e := st.Plan().GetPlan(planID, version)
+	if e != nil || row == nil {
+		return "", false
+	}
+	overlays, _ := st.Plan().ListOverlays(row.PlanID, row.Version)
+	pf, perr := kernel.ResolvePlanFinal([]byte(row.Doc), kernel.OverlayRefsFrom(overlays))
+	if perr != nil {
+		return "", false
+	}
+	for _, sc := range pf.Doc.Scenarios {
+		if sc.ID == scenario {
+			return sc.Direction, sc.Direction != ""
+		}
+	}
+	return "", false
 }
