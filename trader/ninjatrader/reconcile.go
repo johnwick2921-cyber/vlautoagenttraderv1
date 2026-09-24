@@ -455,18 +455,21 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 				t.rememberEntryOrderID(sym, side, sig)
 				origin = what
 			} else {
-				origin = fmt.Sprintf("UNTAGGED entry (fill-ring signal %s not claimable by this trader — see the 🔗 WARN)", f.SignalID)
+				origin = fmt.Sprintf("UNTAGGED entry (fill-ring signal %s %s)", f.SignalID, what)
 			}
 		case lateFillUnresolved:
 			logger.Warnf("🔗 attribution: pos %d (%s %s) — fill ring %s — left UNTAGGED; no price-match guess", row.ID, sym, side, why)
 			origin = fmt.Sprintf("UNTAGGED entry (fill ring %s)", why)
 		default:
-			if stamped, sig := stampArmedLineageInWindow(st, traderID, row.ID, sym, side, avg, firstSeen); stamped {
+			switch stamped, sig, failed := stampArmedLineageInWindow(st, traderID, row.ID, sym, side, avg, firstSeen); {
+			case stamped:
 				t.rememberEntryOrderID(sym, side, sig)
 				if sig == "" {
 					sig = "(none)"
 				}
 				origin = fmt.Sprintf("this trader's armed fill matched by price in the window (signal %s)", sig)
+			case failed != "":
+				origin = fmt.Sprintf("UNTAGGED entry (%s)", failed)
 			}
 		}
 		logger.Warnf("🧩 reconcile: MATERIALIZED untracked NT8 position %s %s qty=%.0f @ %.2f (acct=%s) — %s now tracked; its close will record real P&L", sym, side, qty, avg, acct, origin)

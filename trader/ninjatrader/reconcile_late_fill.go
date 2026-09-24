@@ -124,12 +124,17 @@ func (t *TCPTrader) lateEntryFillFor(st *store.Store, acct, sym, side string, fi
 // (store.LedgerClockSlack): the SQL bound only over-fetches; the window is
 // judged here on the parsed instant and candidates are ordered newest instant
 // first. A read failure leaves the row untagged (WARN).
-func stampArmedLineageInWindow(st *store.Store, traderID string, posID int64, sym, side string, entryPx float64, firstSeenMs int64) (bool, string) {
+//
+// W1b FOLD-6 — failed is non-empty when the fallback could NOT answer (the read
+// failed, or an in-window match could not be stamped): the 🧩 line must then
+// say UNTAGGED, never "no evidence". ("", "", false) with failed == "" is the
+// established answer "no in-window arm of this trader matched".
+func stampArmedLineageInWindow(st *store.Store, traderID string, posID int64, sym, side string, entryPx float64, firstSeenMs int64) (stamped bool, sig, failed string) {
 	lo := firstSeenMs - lateEntryFillWindowMs
 	rows, err := st.ArmedOrders().ListFilledSince(traderID, time.UnixMilli(lo))
 	if err != nil {
 		logger.Warnf("🔗 attribution: pos %d (%s %s) — armed-fill read for the price-match fallback failed: %v — left UNTAGGED (no guess)", posID, sym, side, err)
-		return false, ""
+		return false, "", "armed-fill read for the price-match fallback failed — see the 🔗 WARN"
 	}
 	inWindow := make([]store.ArmedOrderDB, 0, len(rows))
 	for _, r := range rows {
@@ -139,41 +144,46 @@ func stampArmedLineageInWindow(st *store.Store, traderID string, posID int64, sy
 	}
 	sort.SliceStable(inWindow, func(i, j int) bool { return inWindow[i].UpdatedAt.After(inWindow[j].UpdatedAt) })
 	if r, ok := matchArmedFillByPrice(inWindow, sym, side, entryPx); ok {
-		return stampArmedLineageFromRow(st, posID, r)
+		if ok, got := stampArmedLineageFromRow(st, posID, r); ok {
+			return true, got, ""
+		}
+		return false, "", fmt.Sprintf("armed #%d matched by price in the window but its lineage stamp failed — see the 🧩 WARN", r.ID)
 	}
-	return false, ""
+	return false, "", ""
 }
 
 // tagLateEntryFill stamps the materialized position posID with the identity of
-// its own fill f. Returns the signal stamped, "" when it stays untagged, and
-// (W1b FOLD-6) what the position was when tagged — the origin the 🧩
-// MATERIALIZED line names.
+// its own fill f. Returns the signal stamped ("" when it stays untagged) and
+// (W1b FOLD-6) what the attribution step established — the origin the 🧩
+// MATERIALIZED line names: what the position WAS when tagged, or, untagged,
+// why (a refusal, or a store read/write that FAILED — never worded as a
+// refusal, which it did not establish).
 func (t *TCPTrader) tagLateEntryFill(st *store.Store, traderID, exchangeID string, posID int64, sym, side string, f recentFill) (string, string) {
 	sid := f.SignalID
 	arm, err := st.ArmedOrders().FindBySignal(traderID, sid)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Warnf("🔗 attribution: pos %d (%s %s) — armed lookup for fill signal %s failed: %v — left UNTAGGED (no guess)", posID, sym, side, sid, err)
-		return "", ""
+		return "", "armed lookup failed — see the 🔗 WARN"
 	}
 	if arm != nil {
 		if !strings.EqualFold(arm.Side, side) {
 			logger.Warnf("🔗 attribution: pos %d (%s %s) — fill signal %s is armed row #%d of the OTHER side (%s) — left UNTAGGED (no guess)", posID, sym, side, sid, arm.ID, arm.Side)
-			return "", ""
+			return "", fmt.Sprintf("is armed #%d of the OTHER side (%s)", arm.ID, arm.Side)
 		}
 		if ok, got := stampArmedLineageFromRow(st, posID, *arm); ok {
 			logger.Infof("🔗 attribution: late armed fill — pos %d ← signal %s (armed #%d, from the fill ring; no price match)", posID, got, arm.ID)
 			return got, fmt.Sprintf("this trader's late armed fill (signal %s, armed #%d)", got, arm.ID)
 		}
-		return "", ""
+		return "", fmt.Sprintf("is this trader's armed #%d but its lineage stamp failed — see the 🧩 WARN", arm.ID)
 	}
 	o, err := st.Order().GetOrderByExchangeID(exchangeID, sid)
 	if err != nil {
 		logger.Warnf("🔗 attribution: pos %d (%s %s) — order lookup for fill signal %s failed: %v — left UNTAGGED (no guess)", posID, sym, side, sid, err)
-		return "", ""
+		return "", "order lookup failed — see the 🔗 WARN"
 	}
 	if o == nil || o.TraderID != traderID || o.OrderAction != "open_"+strings.ToLower(side) {
 		logger.Warnf("🔗 attribution: pos %d (%s %s) — fill signal %s is neither an arm nor an AI %s open of this trader — left UNTAGGED (no guess)", posID, sym, side, sid, strings.ToLower(side))
-		return "", ""
+		return "", fmt.Sprintf("is neither an arm nor an AI %s open of this trader", strings.ToLower(side))
 	}
 	// W1b E15 repair — only an UNRESOLVED (NEW) AI open is the CLASS 160 case
 	// this path recovers. A row already FILLED / REJECTED / CANCELED is not
@@ -181,11 +191,11 @@ func (t *TCPTrader) tagLateEntryFill(st *store.Store, traderID, exchangeID strin
 	// position flat): untagged, never re-settled.
 	if o.Status != "NEW" {
 		logger.Warnf("🔗 attribution: pos %d (%s %s) — fill signal %s is AI order #%d already %s (not an unresolved open) — left UNTAGGED (no guess)", posID, sym, side, sid, o.ID, o.Status)
-		return "", ""
+		return "", fmt.Sprintf("is AI order #%d already %s, not an unresolved open", o.ID, o.Status)
 	}
 	if err := st.Position().SetEntryOrderID(posID, sid); err != nil {
 		logger.Warnf("🔗 attribution: pos %d entry-order-id stamp failed (signal %s): %v", posID, sid, err)
-		return "", ""
+		return "", fmt.Sprintf("is this trader's AI order #%d but the entry-order-id stamp failed — see the 🔗 WARN", o.ID)
 	}
 	qty := f.Quantity
 	if qty <= 0 {
