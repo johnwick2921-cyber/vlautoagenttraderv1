@@ -791,10 +791,11 @@ func TestCorruptSeenStoreFailsClosedAndIsNotReset(t *testing.T) {
 		t.Fatalf("positive control = %d", w.Code)
 	}
 	garbage := []byte("{ not json")
+	g := e.grant(updRelease) // minted before the corruption: the minter refuses over a corrupt store (red-3 #5)
 	if err := os.WriteFile(updateauth.SeenPath(e.dataDir), garbage, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	w := e.do("POST", "/api/updates/install", grantBody(e.grant(updRelease)))
+	w := e.do("POST", "/api/updates/install", grantBody(g))
 	if w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
 		t.Fatalf("corrupt store = %d %s, want 403", w.Code, w.Body.String())
 	}

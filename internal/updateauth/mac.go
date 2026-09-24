@@ -19,6 +19,13 @@ const MaxAuthorizationWindow = 5 * time.Minute
 // ErrExpired: expires_at is not in (now, now+MaxAuthorizationWindow].
 var ErrExpired = errors.New("updateauth: authorization outside its validity window")
 
+// ErrClockBehindSeenStore: Authorize refused to mint because the code it
+// would mint expires at or below the seen store's pruned-through watermark
+// (the server would answer 409 for a job never used) or its clock floor (the
+// server would answer 403) — this box's clock is behind a reading the store
+// already recorded (red-team red-3 #5).
+var ErrClockBehindSeenStore = errors.New("updateauth: refusing to mint: the clock is behind the seen-job store (a code minted now would be refused) — fix the clock, or wait until it passes the store's floor")
+
 var macHexRe = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 // MACPurpose is the purpose/version tag every install-authorization MAC
@@ -165,7 +172,10 @@ func ParseInstallRequest(r io.Reader) (Grant, error) {
 // Authorize mints one Grant for releaseID from the enrolled device key:
 // a fresh random job id, expires_at = now+MaxAuthorizationWindow. It refuses
 // unless the installation is enrolled (admin.json AND device.key load under
-// the same rules the API gate applies). The key itself is never returned.
+// the same rules the API gate applies) and unless the server could accept
+// the code (the seen-job store is readable and the code expires above its
+// watermark and clock floor — ErrClockBehindSeenStore otherwise). The key
+// itself is never returned.
 //
 // Callers: the attended CLI ONLY (census-pinned).
 func Authorize(dataDir, releaseID string, now time.Time) (Grant, error) {
@@ -184,6 +194,24 @@ func Authorize(dataDir, releaseID string, now time.Time) (Grant, error) {
 		return Grant{}, err
 	}
 	exp := now.Add(MaxAuthorizationWindow).Unix()
+	// Red-team red-3 #5: never hand out a code the server can only refuse.
+	// Read the seen store (read-only: no lock — writers replace it by rename)
+	// under the same rules Consume reads it: unreadable, or missing once
+	// enrolled, refuses; a code expiring at or below the pruned-through
+	// watermark (server: 409 for a job never used) or the clock floor
+	// (server: 403) refuses; a job id already present refuses.
+	st, err := readSeen(dataDir)
+	if err != nil {
+		return Grant{}, err
+	}
+	if exp <= st.PrunedThrough || exp <= st.ClockFloor {
+		return Grant{}, ErrClockBehindSeenStore
+	}
+	for _, e := range st.IDs {
+		if e.JobID == job {
+			return Grant{}, errors.New("updateauth: refusing to mint: the fresh job id is already in the seen-job store")
+		}
+	}
 	mac, err := ComputeMAC(key, releaseID, job, exp)
 	if err != nil {
 		return Grant{}, err

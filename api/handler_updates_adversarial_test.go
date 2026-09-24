@@ -165,6 +165,10 @@ func TestInstallRefusesAnUnsafeSeenStoreUniformlyAndNeverRewritesIt(t *testing.T
 		t.Fatalf("positive control: first install = %d", w.Code)
 	}
 	p := updateauth.SeenPath(e.dataDir)
+	// grants for the unsafe-store requests are minted while the store is
+	// safe: the attended minter itself refuses to mint over an unreadable
+	// store (red-3 #5)
+	g0644, gSymlink := e.grant(updRelease), e.grant(updRelease)
 	if err := os.Chmod(p, 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +176,7 @@ func TestInstallRefusesAnUnsafeSeenStoreUniformlyAndNeverRewritesIt(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if w := e.do("POST", "/api/updates/install", grantBody(e.grant(updRelease))); w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
+	if w := e.do("POST", "/api/updates/install", grantBody(g0644)); w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
 		t.Errorf("0644 seen store = %d %s, want 403 %s", w.Code, w.Body.String(), forbiddenBody)
 	}
 	if after, _ := os.ReadFile(p); !bytes.Equal(before, after) {
@@ -195,7 +199,7 @@ func TestInstallRefusesAnUnsafeSeenStoreUniformlyAndNeverRewritesIt(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if w := e.do("POST", "/api/updates/install", grantBody(e.grant(updRelease))); w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
+	if w := e.do("POST", "/api/updates/install", grantBody(gSymlink)); w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
 		t.Errorf("symlinked seen store = %d %s, want 403 %s", w.Code, w.Body.String(), forbiddenBody)
 	}
 	if fi, err := os.Lstat(p); err != nil || fi.Mode()&os.ModeSymlink == 0 {

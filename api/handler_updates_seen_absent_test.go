@@ -30,10 +30,11 @@ func TestInstallRefusesWhenTheSeenStoreIsMissingAfterEnrollment(t *testing.T) {
 	if w := e.do("POST", "/api/updates/install", grantBody(g)); w.Code != http.StatusConflict {
 		t.Fatalf("positive control: replay = %d, want 409", w.Code)
 	}
+	fresh := e.grant(updRelease) // minted while the store is present (the minter refuses without one)
 	if err := os.Rename(p, p+".aside"); err != nil {
 		t.Fatal(err)
 	}
-	for name, body := range map[string]string{"the consumed grant": grantBody(g), "a fresh grant": grantBody(e.grant(updRelease))} {
+	for name, body := range map[string]string{"the consumed grant": grantBody(g), "a fresh grant": grantBody(fresh)} {
 		if w := e.do("POST", "/api/updates/install", body); w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
 			t.Errorf("seen store missing after enrollment, %s = %d %s, want 403 %s", name, w.Code, w.Body.String(), forbiddenBody)
 		}
