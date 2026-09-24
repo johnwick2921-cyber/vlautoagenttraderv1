@@ -395,6 +395,11 @@ func snapshotTree(t *testing.T, dir string) map[string]string {
 		if err != nil {
 			return nil
 		}
+		// SQLite's WAL index (-shm) is rewritten by READS (the gate's
+		// users-store lookup); it holds no data. data.db and -wal are kept.
+		if strings.HasSuffix(p, "-shm") {
+			return nil
+		}
 		fi, err := os.Lstat(p)
 		if err != nil {
 			return nil
