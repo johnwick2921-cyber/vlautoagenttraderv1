@@ -246,8 +246,8 @@ func TestEnrollRefusesWithoutTheBotDatabase(t *testing.T) {
 	attended(t)
 	inst := install(t)
 	empty := t.TempDir()
-	if rc, _, _ := run(empty, enrollLine(bEmail), "enroll", bEmail); rc == 0 {
-		t.Fatal("enrolled into a dir with no bot database")
+	if rc, _, errb := run(empty, enrollLine(bEmail), "enroll", bEmail); rc != 2 || !strings.Contains(errb, "no bot database") {
+		t.Fatalf("no bot database: rc=%d %q, want the precondition refusal (rc 2)", rc, errb)
 	}
 	noEnrollment(t, empty)
 	if rc, _, errb := run(inst, enrollLine(bEmail), "enroll", bEmail); rc != 0 { // positive control
@@ -384,6 +384,17 @@ func enrolledInstall(t *testing.T) string {
 
 func authorizeLine(rel string) string { return "AUTHORIZE " + rel + "\n" }
 
+// movedDB: an enrolled installation whose bot database is no longer where
+// the resolver points (the --install-dir is not the bot's installation).
+func movedDB(t *testing.T) string {
+	t.Helper()
+	inst := enrolledInstall(t)
+	if err := os.Rename(DBFileFor(inst), DBFileFor(inst)+".moved"); err != nil {
+		t.Fatal(err)
+	}
+	return inst
+}
+
 func TestAuthorizePrintsAGrantAndNeverTheKey(t *testing.T) {
 	attended(t)
 	inst := enrolledInstall(t)
@@ -442,7 +453,7 @@ func TestAuthorizeRefusals(t *testing.T) {
 	}{
 		{"root", inst, authorizeLine(bRel), []string{"authorize", bRel}, func() { geteuid = func() int { return 0 } }},
 		{"not a terminal", inst, authorizeLine(bRel), []string{"authorize", bRel}, func() { isTerminal = stdinIsTerminal }},
-		{"no bot db", t.TempDir(), authorizeLine(bRel), []string{"authorize", bRel}, nil},
+		{"no bot db (enrolled dir, DB moved away)", movedDB(t), authorizeLine(bRel), []string{"authorize", bRel}, nil},
 		{"not enrolled", unenrolled, authorizeLine(bRel), []string{"authorize", bRel}, nil},
 		{"wrong confirmation", inst, authorizeLine("v9"), []string{"authorize", bRel}, nil},
 		{"no confirmation", inst, "", []string{"authorize", bRel}, nil},
