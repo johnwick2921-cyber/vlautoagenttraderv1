@@ -179,7 +179,8 @@ func TestUpdateAuthCensusRefusesRootPackageEmbed(t *testing.T) {
 }
 
 // PIN (verify #3, the configurable data dir): the data dir is the directory
-// of DB_PATH (process env, else <install>/.env, else main.go's os.Args[1]),
+// of the DB path (main.go's os.Args[1] if given — it overrides the config —
+// else DB_PATH from the process env, else <install>/.env, else data/data.db),
 // anchored on the bot's WorkingDirectory — the checkout the deploy builds in
 // (deploy/nofx.service WorkingDirectory=__NOFX_DIR__). So DB_PATH=kernel/data.db
 // puts device.key at <root>/kernel/updater/device.key, in reach of a
@@ -202,6 +203,11 @@ func TestUpdateAuthCensusRefusesEmbedPatternsThatCanMatchTheEnrollment(t *testin
 		{"`upd?ter`", "upd?ter"},
 		{"session_calendar.json */device.key", "*/device.key"},
 		{"*.key", "*.key"},
+		// a case-insensitive filesystem (NTFS, APFS default) resolves a
+		// literal pattern by Lstat, so the spelling's case must not matter
+		// (census-repair verify #3 note 3)
+		{"UPDATER/DEVICE.KEY", "UPDATER/DEVICE.KEY"},
+		{"Updater", "Updater"},
 	} {
 		t.Run(c.args, func(t *testing.T) {
 			root := mintBase(t)

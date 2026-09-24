@@ -16,8 +16,10 @@
 //	  seen_job_ids.json 0600      consumed job ids (single-use)     — written ONLY by Consume
 //	  .enroll.lock / .seen.lock   flock files
 //
-// This file is the ONLY place the file names are spelled (a census test
-// enforces it), exactly as "hold.json" is confined to store/maintenance_hold.go.
+// This file is the ONLY place the file names are spelled in the Go source the
+// census walks (internal/updateauth/census_test.go rule 1; embed patterns are
+// rule 5's), exactly as "hold.json" is confined to store/maintenance_hold.go.
+// What a syntactic census cannot see is listed in its WHAT THIS CANNOT PROVE.
 package updateauth
 
 import (
