@@ -191,14 +191,16 @@ func LoadDeviceKey(dataDir string) ([]byte, error) {
 	return b, nil
 }
 
-// Enroll writes a new enrollment: a fresh random device.key, THEN admin.json
-// (each by the temp+fsync+rename+fsync-dir sequence), under .enroll.lock. It
+// Enroll writes a new enrollment: a fresh random device.key, then the
+// seen-job store if none exists, THEN admin.json (each by the
+// temp+fsync+rename+fsync-dir sequence), under .enroll.lock. It
 // refuses (ErrAlreadyEnrolled) when either file exists and replace is false;
 // replace rotates the key too.
 //
-// The two files are two renames, not one transaction. If the process dies —
-// or the second write fails (ENOSPC, EIO, admin.json replaced by a directory)
-// — after the key rename and before the admin.json rename:
+// The enrollment is separate renames (key, seen store when absent,
+// admin.json), not one transaction. If the process dies — or a later write
+// fails (ENOSPC, EIO, admin.json replaced by a directory) — after the key
+// rename and before the admin.json rename:
 //   - FIRST enroll: a lone new key, no admin.json — nobody is enrolled (every
 //     /api/updates* 403) and a plain enroll refuses until --replace;
 //   - REPLACE: the NEW key beside the OLD admin.json — NOT a working
@@ -275,6 +277,13 @@ func Enroll(dataDir, userID, email, passwordHash string, now time.Time, replace 
 		return err
 	}
 	if err := writeAtomic(dir, DeviceKeyPath(dataDir), key); err != nil {
+		return err
+	}
+	// The seen-job store exists from enrollment on, so that an absent one
+	// afterwards reads as corrupt, never as empty (red-team red-3 #4). An
+	// existing store is kept: a replace rotates the key, and the ids it
+	// already consumed stay consumed.
+	if err := ensureSeenStore(dir, dataDir); err != nil {
 		return err
 	}
 	return writeAtomic(dir, AdminPath(dataDir), append(ab, '\n'))

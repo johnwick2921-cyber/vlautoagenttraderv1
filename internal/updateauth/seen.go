@@ -76,16 +76,57 @@ type seenFile struct {
 	IDs           []seenEntry `json:"ids"`
 }
 
-// readSeen: absent ⇒ empty store; anything else unreadable ⇒ ErrSeenCorrupt.
+// errSeenMissing: the store is absent although the installation is enrolled.
+var errSeenMissing = errors.New("seen-job store missing although the installation is enrolled (Enroll creates it) — never treated as empty")
+
+// readSeen: anything unreadable ⇒ ErrSeenCorrupt. Absent is empty ONLY while
+// nothing is enrolled (neither admin.json nor device.key exists — Consume is
+// reachable only behind the gate, which requires both). Once enrolled, Enroll
+// has created the store, so an absent one was moved, deleted or rolled back
+// with its directory — reading it as empty would re-open every consumed job
+// id (L7: absent ≠ []; red-team red-3 #4).
 func readSeen(dataDir string) (seenStore, error) {
 	b, err := readPrivateFile(SeenPath(dataDir), maxSeenFileBytes)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			if enrolledOnDisk(dataDir) {
+				return seenStore{}, errors.Join(ErrSeenCorrupt, errSeenMissing)
+			}
 			return seenStore{}, nil
 		}
 		return seenStore{}, errors.Join(ErrSeenCorrupt, err)
 	}
 	return parseSeen(b)
+}
+
+// enrolledOnDisk: admin.json or device.key exists in any form (a stat error
+// other than not-exist counts as present — fail closed).
+func enrolledOnDisk(dataDir string) bool {
+	for _, p := range []string{AdminPath(dataDir), DeviceKeyPath(dataDir)} {
+		if _, err := os.Lstat(p); !errors.Is(err, os.ErrNotExist) {
+			return true
+		}
+	}
+	return false
+}
+
+// ensureSeenStore creates an empty seen-job store when none exists, under
+// .seen.lock, through the writer that runs its reader's validator. An
+// existing store — valid or not — is never touched (never-reset).
+func ensureSeenStore(dir, dataDir string) error {
+	unlock, err := lockFile(seenLockPath(dataDir))
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if _, err := os.Lstat(SeenPath(dataDir)); !errors.Is(err, os.ErrNotExist) {
+		return err // present (nil) or unstatable (refuse)
+	}
+	b, err := encodeSeen(seenStore{})
+	if err != nil {
+		return err
+	}
+	return writeAtomic(dir, SeenPath(dataDir), b)
 }
 
 // parseSeen is THE store validator: the reader applies it to what it reads
