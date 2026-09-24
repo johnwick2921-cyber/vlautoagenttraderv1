@@ -152,9 +152,11 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 		return "cross-site fetch"
 	}
 
-	// F2: nothing signed with the public default secret is an identity.
-	if len(auth.JWTSecret) == 0 || string(auth.JWTSecret) == config.InsecureDefaultJWTSecret {
-		return "JWT secret is the insecure default"
+	// F2 + red-team M1: nothing signed with a secret this public repo
+	// publishes (the loader default, the .env.example placeholder, the CI
+	// literal) or with one shorter than 32 bytes is an identity.
+	if why := config.JWTSecretUnfitForUpdates(auth.JWTSecret); why != "" {
+		return why
 	}
 	ah := r.Header.Values("Authorization")
 	if len(ah) != 1 {

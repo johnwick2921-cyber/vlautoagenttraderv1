@@ -47,7 +47,7 @@ const (
 	updAdminPass  = "correct-horse-battery"
 	updOtherID    = "bbbbbbbb-1111-2222-3333-444444444444"
 	updOtherEmail = "someone@example.test"
-	updSecret     = "m3-test-secret-not-the-default"
+	updSecret     = "m3-test-secret-not-the-default-32b+" // ≥ 32 bytes: /api/updates* refuse a shorter secret (red-team M1)
 	updRelease    = "v2026.09.24-1"
 )
 
