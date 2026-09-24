@@ -13,9 +13,24 @@
 # that drops a column the old binary still SELECTs makes the rollback fail at
 # the moment it is needed most.
 #
-# CI has no NT8 and no network, so a binary cannot trade here and is not
-# expected to stay up. Success is judged on THE DATABASE, not on the process:
-# the file exists, carries its core tables, and no migration error was logged.
+# THE NETWORK IS ACTUALLY DISABLED, not merely asserted: each boot runs under
+# `unshare -rn` (its own empty network namespace), so the binary cannot reach a
+# broker, an AI endpoint or NT8 even if something tried. A comment claiming
+# "network disabled" while the process can still dial out is a claim nobody
+# checked; this one is enforced, and when unshare is unavailable the script
+# SAYS the claim does not hold rather than pretending it does.
+#
+# Success is judged on THE DATABASE, not on the process: the file exists,
+# carries its core tables, and no migration error was logged. With no NT8 the
+# binary is not expected to stay up, so its exit code says nothing about the
+# schema.
+#
+# KNOWN LIMIT — BOOT-TIME ONLY. This proves the SCHEMA survives the round trip:
+# old creates, new migrates, old reads it back. It does NOT prove runtime
+# behaviour on that data — a query that only runs mid-session, a migration that
+# rewrites rows lazily, or a code path reached after the first trade are all
+# outside what a boot can observe. A pair marked tested:true means "the rollback
+# boots and reads its schema", never "the rollback is safe in every respect".
 #
 # Usage: db-compat.sh <old-ref> <new-ref> [work-dir]
 # Exit 0 = the pair is proven. Non-zero = NOT proven; the caller must advertise
@@ -38,10 +53,26 @@ build_at() { # <ref> <out>
 # Run a binary long enough to open and migrate the database, then stop it. The
 # exit code is deliberately NOT the verdict: with no NT8 the process may exit on
 # its own, and that says nothing about the schema.
+# NETNS: the real isolation, with an honest fallback.
+NETNS=""
+if unshare -rn true >/dev/null 2>&1; then
+  NETNS="unshare -rn"
+  echo "db-compat: network DISABLED for every boot (unshare -rn)"
+else
+  echo "db-compat: WARNING — unshare -rn unavailable; boots are NOT network-isolated here"
+fi
+
 migrate_with() { # <binary> <datadir> <label>
-  local bin="$1" dir="$2" label="$3" log="$WORK/$label.log"
+  # NOTE: a single `local a=$1 b="$WORK/$a.log"` expands $a BEFORE it is
+  # assigned, which `set -u` rejects with "unbound variable". Found by the
+  # first REAL run — the script had only ever been syntax-checked, and
+  # `bash -n` cannot see this.
+  local bin="$1" dir="$2" label="$3"
+  local log="$WORK/$label.log"
   mkdir -p "$dir"
-  ( cd "$dir" && timeout "${BOOT_SECS}s" "$bin" >"$log" 2>&1 ) || true
+  ( cd "$dir" && $NETNS env RSA_PRIVATE_KEY="$RSA_PRIVATE_KEY" \
+      DATA_ENCRYPTION_KEY="$DATA_ENCRYPTION_KEY" JWT_SECRET="$JWT_SECRET" \
+      timeout "${BOOT_SECS}s" "$bin" >"$log" 2>&1 ) || true
   if [ ! -f "$dir/data/data.db" ]; then
     echo "db-compat: $label — no database was created at $dir/data/data.db"
     tail -20 "$log" | sed 's/^/    /'
@@ -63,7 +94,34 @@ migrate_with() { # <binary> <datadir> <label>
   return 0
 }
 
+# EPHEMERAL BOOT SECRETS — found by the first real run, which reported
+# NOT PROVEN for a reason that had nothing to do with the schema:
+#
+#   [FATA] main.go:60 Failed to initialize encryption service:
+#          environment variable RSA_PRIVATE_KEY not set
+#
+# The binary FATALs on a missing RSA key BEFORE it reaches store init, so
+# without these it can never create the database this job exists to compare.
+# They are generated fresh per run into the work dir, are throwaway by
+# construction, and are never printed. A real key must never appear here: this
+# job proves a SCHEMA round trip, and needs a key only because the boot path
+# demands one.
+gen_boot_secrets() {
+  [ -f "$WORK/rsa.pem" ] && return 0
+  openssl genrsa -out "$WORK/rsa.pem" 2048 >/dev/null 2>&1 || {
+    echo "db-compat: REFUSED — cannot generate an ephemeral RSA key (openssl missing?)"; return 1; }
+  chmod 600 "$WORK/rsa.pem"
+  export RSA_PRIVATE_KEY; RSA_PRIVATE_KEY="$(cat "$WORK/rsa.pem")"
+  # crypto/crypto.go names exactly two: RSA_PRIVATE_KEY (PEM) and
+  # DATA_ENCRYPTION_KEY (AES, base64). Both are demanded before store init, so
+  # both must exist for the binary to reach the migration this job measures.
+  export DATA_ENCRYPTION_KEY; DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+  export JWT_SECRET="db-compat-ephemeral-$$-not-a-real-secret"
+  return 0
+}
+
 OLD_BIN="$WORK/nofx-old"; NEW_BIN="$WORK/nofx-new"
+gen_boot_secrets || exit 1
 build_at "$OLD_REF" "$OLD_BIN" || exit 1
 build_at "$NEW_REF" "$NEW_BIN" || exit 1
 
