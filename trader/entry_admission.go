@@ -1,7 +1,10 @@
 package trader
 
 import (
+	"errors"
 	"fmt"
+	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -493,8 +496,10 @@ func agentBracketRefusal(d *kernel.Decision, live, atr5m float64) (string, bool)
 // REFUSES the entry — unlike the AI path, a chat entry is never sent without
 // its own protective stop. Other venues follow the AI path's order: open, then
 // set; a failed set is returned as *ManualEntryUnprotected (the position is
-// LIVE). An admission refusal is *ManualEntryRefusal; every other error is the
-// broker's (a send failure) and is neither.
+// LIVE). An admission refusal is *ManualEntryRefusal, and so is a refusal by
+// the execute-side rails the entry shares with an AI decision (W1b FOLD-2,
+// Execute set — see sendManualEntry); every other error is the broker's (a
+// send failure) and is neither.
 func (at *AutoTrader) OpenManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error) {
 	return at.OpenManualEntryAt(symbol, action, quantity, leverage, stop, target, time.Now())
 }
@@ -504,7 +509,15 @@ func (at *AutoTrader) OpenManualEntry(symbol, action string, quantity float64, l
 // error a caller may present as "refused by the admission gate" (W1b E9
 // repair) — a broker send error, or an entry that opened without its bracket,
 // is a different event and must never be told as a refusal.
-type ManualEntryRefusal struct{ Reason string }
+type ManualEntryRefusal struct {
+	Reason string
+	// Execute is true when the refusal came from the execute-side rails the
+	// entry shares with an AI decision (W1b FOLD-2: the max-contracts cap,
+	// reconcile-before-open, max positions, the same-side check, a read the
+	// send needs) rather than the admission chain. No entry reached the broker
+	// either way.
+	Execute bool
+}
 
 func (e *ManualEntryRefusal) Error() string { return e.Reason }
 
@@ -534,39 +547,67 @@ func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64,
 	return at.sendManualEntry(symbol, action, quantity, leverage, stop, target)
 }
 
-// sendManualEntry is the door's send, AFTER admission: the entry with its own
-// bracket (see OpenManualEntry for the per-venue order).
+// sendManualEntry is the door's send, AFTER admission (W1b FOLD-2): the AI
+// decision's OWN execute path (executeOpenLong / executeOpenShort →
+// openEntryWithRecord) with a Decision carrying the chat's stop and target.
+// Reconcile-before-open, max positions, the same-side check and the order
+// record (recordAndConfirmOrder: an order row under the entry's signal id)
+// apply exactly as to an AI entry; the quantity is the owner's, judged here
+// first (manualEntryQuantityRefusal: refused, never clamped). Outcomes are
+// typed: a rail refused before any broker write → *ManualEntryRefusal
+// (Execute); an entry that opened without its bracket (non-CME) →
+// *ManualEntryUnprotected; anything else after a broker write is the
+// broker's own failure.
 func (at *AutoTrader) sendManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error) {
 	if at.trader == nil {
 		return nil, fmt.Errorf("manual entry NOT sent: no broker on this trader (fail-closed)")
 	}
-	side := "LONG"
-	open := at.trader.OpenLong
+	if reason, refused := at.manualEntryQuantityRefusal(symbol, quantity); refused {
+		at.logWarnf("⛔ agent-chat entry %s %s REFUSED — %s. Nothing sent.", symbol, action, reason)
+		return nil, &ManualEntryRefusal{Reason: reason, Execute: true}
+	}
+	d := &kernel.Decision{Action: action, Symbol: symbol, Leverage: leverage, StopLoss: stop, TakeProfit: target}
+	rec := &store.DecisionAction{Action: action, Symbol: symbol, Leverage: leverage}
+	m := &manualOpen{Quantity: quantity}
+	execOpen := at.executeOpenLong
 	if action == "open_short" {
-		side, open = "SHORT", at.trader.OpenShort
+		execOpen = at.executeOpenShort
 	}
-	setBracket := func() error {
-		if err := at.trader.SetStopLoss(symbol, side, quantity, stop); err != nil {
-			return fmt.Errorf("set stop %.2f: %w", stop, err)
+	err := execOpen(d, rec, m)
+	if err == nil {
+		if rec.Error != "" { // reconcile_owned: refused, stamped on the record, nil
+			return nil, &ManualEntryRefusal{Reason: rec.Error, Execute: true}
 		}
-		if err := at.trader.SetTakeProfit(symbol, side, quantity, target); err != nil {
-			return fmt.Errorf("set target %.2f: %w", target, err)
-		}
-		return nil
+		return m.order, nil
 	}
-	if market.IsCMEFuturesSymbol(symbol) {
-		if err := setBracket(); err != nil {
-			return nil, fmt.Errorf("manual entry NOT sent: its own bracket could not be set (%v) — never sent on another decision's bracket (fail-closed)", err)
-		}
-		return open(symbol, quantity, leverage)
+	var unp *ManualEntryUnprotected
+	if errors.As(err, &unp) {
+		return unp.Order, err
 	}
-	order, err := open(symbol, quantity, leverage)
-	if err != nil {
-		return nil, err
+	if !m.brokerCalled {
+		return nil, &ManualEntryRefusal{Reason: err.Error(), Execute: true}
 	}
-	if berr := setBracket(); berr != nil {
-		at.logErrorf("🚨 manual entry %s %s OPENED but its own bracket failed to set — %v (position unprotected)", symbol, side, berr)
-		return order, &ManualEntryUnprotected{Symbol: symbol, Side: side, Order: order, Err: berr}
+	return nil, err
+}
+
+// manualEntryQuantityRefusal is the chat door's quantity rule (W1b FOLD-2): on
+// CME the owner's contract count is sent AS TYPED or refused — a whole number,
+// at most the max-contracts cap the AI's sizing clamps to (resolveMaxContracts)
+// — never clamped or truncated (the owner typed that number). Other venues
+// send the requested quantity (the agent's validateTradeAction judged it).
+func (at *AutoTrader) manualEntryQuantityRefusal(symbol string, quantity float64) (string, bool) {
+	if !(quantity > 0) || math.IsInf(quantity, 0) {
+		return fmt.Sprintf("refused: quantity %v must be a positive number", quantity), true
 	}
-	return order, nil
+	if !market.IsCMEFuturesSymbol(symbol) {
+		return "", false
+	}
+	q := strconv.FormatFloat(quantity, 'f', -1, 64)
+	if quantity != math.Trunc(quantity) {
+		return "refused: quantity " + q + " is not a whole number of contracts", true
+	}
+	if c := at.resolveMaxContracts(); c > 0 && quantity > float64(c) {
+		return fmt.Sprintf("refused: quantity %s exceeds the max-contracts cap %d", q, c), true
+	}
+	return "", false
 }

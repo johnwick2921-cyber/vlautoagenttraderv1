@@ -292,6 +292,14 @@ func (at *AutoTrader) GetPositions() ([]map[string]interface{}, error) {
 // action: open_long, open_short, close_long, close_short
 // entryPrice: entry price when closing (0 when opening)
 func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64, confidence int) {
+	at.recordAndConfirmOrderAs(orderResult, symbol, action, quantity, price, leverage, entryPrice, confidence, false)
+}
+
+// recordAndConfirmOrderAs is recordAndConfirmOrder for an open that may be the
+// agent-chat door's (W1b FOLD-2): manual = true records and confirms it
+// exactly as an AI open, except its position never takes the AI decision's
+// pending plan citation (recordPositionChangeAs).
+func (at *AutoTrader) recordAndConfirmOrderAs(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64, confidence int, manual bool) {
 	if at.store == nil {
 		return
 	}
@@ -463,7 +471,7 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 		orderID, action, actualPrice, actualQty, fee)
 
 	// Record position change with actual fill data (use normalized symbol)
-	at.recordPositionChange(orderID, normalizedSymbolForPosition, positionSide, action, actualQty, actualPrice, leverage, entryPrice, fee, confidence)
+	at.recordPositionChangeAs(orderID, normalizedSymbolForPosition, positionSide, action, actualQty, actualPrice, leverage, entryPrice, fee, confidence, manual)
 
 	// Send anonymous trade statistics for experience improvement (async, non-blocking)
 	// This helps us understand overall product usage across all deployments
@@ -480,6 +488,13 @@ func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, 
 
 // recordPositionChange records position change (create record on open, update record on close)
 func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64, confidence int) {
+	at.recordPositionChangeAs(orderID, symbol, side, action, quantity, price, leverage, entryPrice, fee, confidence, false)
+}
+
+// recordPositionChangeAs is recordPositionChange; manual = an agent-chat open
+// (W1b FOLD-2), whose position never consumes lastCitation — the citation is
+// the AI decision's, written and read on the cycle goroutine.
+func (at *AutoTrader) recordPositionChangeAs(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64, confidence int, manual bool) {
 	if at.store == nil {
 		return
 	}
@@ -539,7 +554,7 @@ func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string,
 			// open (day_plan-gated → dormant for crypto). Consumed once.
 			// S3 — full link: plan_id/date/session from the ACTIVE plan at
 			// decision time (never reconstructed later).
-			if at.dayPlanEnabled() && at.lastCitation.valid {
+			if !manual && at.dayPlanEnabled() && at.lastCitation.valid {
 				_ = at.store.Position().SetPlanLinkFull(pos.ID, at.lastCitation.planVersion, at.lastCitation.scenarioID, at.lastCitation.matched, at.lastCitation.band, at.lastCitation.planID, at.lastCitation.tradeDate, at.lastCitation.session)
 				at.lastCitation.valid = false
 			}

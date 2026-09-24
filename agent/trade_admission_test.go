@@ -182,3 +182,16 @@ func TestChatEntryErrorsSayWhatHappened(t *testing.T) {
 		t.Fatalf("a send failure stays a failure: reply=%q status=%q", reply, trade2.Status)
 	}
 }
+
+// W1b FOLD-2 — a refusal by the execute-side rails the chat entry shares with
+// an AI decision (the max-contracts cap, reconcile-before-open, max positions)
+// is a refusal, told as one — never as an admission-gate refusal, never as a
+// broker send failure.
+func TestChatEntryExecuteRailRefusalSaysSo(t *testing.T) {
+	trade := &TradeAction{Action: "open_long", Symbol: "MNQ", Quantity: 3, Leverage: 1, StopLoss: 28950, TakeProfit: 29100}
+	err := executeTradeWith(trade, false, &errDoor{err: &trader.ManualEntryRefusal{Reason: "refused: quantity 3 exceeds the max-contracts cap 1", Execute: true}}, &admitUnderlying{})
+	if err == nil || !strings.Contains(err.Error(), "refused before any send") || !strings.Contains(err.Error(), "max-contracts cap 1") ||
+		strings.Contains(err.Error(), "admission gate") || strings.Contains(err.Error(), "send failed") {
+		t.Fatalf("an execute-rail refusal must be told as a refusal before any send, got %v", err)
+	}
+}

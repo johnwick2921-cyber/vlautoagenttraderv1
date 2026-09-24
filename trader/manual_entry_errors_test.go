@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"nofx/kernel"
+	"nofx/market"
 	"nofx/store"
 )
 
@@ -102,6 +103,13 @@ func TestManualEntryDoorErrorsSayWhatHappened(t *testing.T) {
 	// it is the function OpenManualEntryAt calls after admission.
 	t.Run("non-CME: opened but the bracket failed is typed OPENED and UNPROTECTED", func(t *testing.T) {
 		at, _ := resetTrader(t, store.StrategyConfig{})
+		// W1b FOLD-2: the door runs the AI open's execute path, which reads the
+		// venue's market — a crypto venue here (the NT8 venue refuses a non-CME
+		// symbol before any send), its network price read stubbed offline.
+		at.exchange = "binance"
+		prev := openEntryMarketRead
+		openEntryMarketRead = func(string, string) (*market.Data, error) { return &market.Data{CurrentPrice: 65000}, nil }
+		t.Cleanup(func() { openEntryMarketRead = prev })
 		b := &doorBroker{setStopErr: fmt.Errorf("venue rejected the stop"), openOrderPayload: map[string]interface{}{"orderId": "o-1"}}
 		at.trader = b
 		order, err := at.sendManualEntry("BTCUSDT", "open_long", 1, 1, 60000, 70000)

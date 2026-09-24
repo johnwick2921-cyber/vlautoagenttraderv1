@@ -623,7 +623,9 @@ func (a *Agent) handleTradeConfirmation(ctx context.Context, userID int64, text,
 }
 
 // chatEntryError tells the door's outcome as what HAPPENED (W1b E9 repair):
-// only the typed admission refusal is "refused by the admission gate"; an
+// only the typed admission refusal is "refused by the admission gate" (a
+// refusal by the execute-side rails — the max-contracts cap, reconcile-before-
+// open, max positions — says so instead, W1b FOLD-2); an
 // entry that OPENED with no bracket is OPENED and UNPROTECTED; anything else
 // is the broker's send failure.
 func chatEntryError(err error) error {
@@ -632,6 +634,9 @@ func chatEntryError(err error) error {
 	}
 	var ref *trader.ManualEntryRefusal
 	if errors.As(err, &ref) {
+		if ref.Execute { // W1b FOLD-2: refused by the AI entry's own execute-side rails
+			return fmt.Errorf("entry refused before any send (the same execute-side rails as an AI decision): %s", ref.Reason)
+		}
 		return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", ref.Reason)
 	}
 	var unp *trader.ManualEntryUnprotected
