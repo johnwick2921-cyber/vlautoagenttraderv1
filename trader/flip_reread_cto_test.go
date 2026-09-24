@@ -395,7 +395,6 @@ func TestFlipRereadInFlightGuardBlocksSecondLaunch(t *testing.T) {
 	}
 	// Next cycle, well past wake_min_interval: dormant branch → guard refuses.
 	next := now.Add(time.Duration(store.DefaultWakeMinIntervalMin+1) * time.Minute)
-	flipRereadTestNow(t, next)
 	seedFlipBars(15500, 15470, 6*time.Minute, next)
 	at.maybeRunSessionReadsAt(next)
 	time.Sleep(200 * time.Millisecond)

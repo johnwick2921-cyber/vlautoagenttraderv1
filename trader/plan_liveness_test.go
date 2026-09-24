@@ -47,6 +47,10 @@ func TestPlanLivenessBornDeadWritePin(t *testing.T) {
 	at := plannerTestTrader(t)
 	at.config.NinjaTraderSymbol = "MNQ"
 	now, _ := time.Parse(time.RFC3339, "2026-09-07T22:03:44-05:00")
+	// The publish clock is traderNow: seam the WHOLE read (born-check + stamp)
+	// to the fixture instant so the born-dead verdict judges the fixture tape.
+	testNow = func() time.Time { return now }
+	t.Cleanup(func() { testNow = nil })
 	start := time.UnixMilli(1788836100000)
 	closes := []float64{29668.75, 29668.5, 29668.5, 29665.25, 29661.5}
 	var tape []market.Kline

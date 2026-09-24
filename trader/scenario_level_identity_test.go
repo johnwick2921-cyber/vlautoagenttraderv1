@@ -220,7 +220,13 @@ func TestLevelIdentityBootLineFoldsOverlay(t *testing.T) {
 	}
 
 	var buf strings.Builder
-	old := logger.Log.Writer()
+	// CLASS 142-adjacent (CTO gate RED, 2026-09-24): logger.Log.Writer() is NOT a
+	// getter — it spawns a logrus writerScanner goroutine that logs every later
+	// entry into an io.Pipe nobody reads. The pipe fills (~64KB), the scanner
+	// blocks HOLDING the logrus mutex, and the NEXT test's first log call hangs
+	// forever (the package wall named TestZoneAcceptedIdentitySkips...).
+	// The restore value is Out; Writer() is a producer, never a capture.
+	old := logger.Log.Out
 	logger.Log.SetOutput(&buf)
 	t.Cleanup(func() { logger.Log.SetOutput(old) })
 	at.logLevelIdentityBootAt(now)
@@ -309,4 +315,31 @@ func TestZoneAcceptedIdentitySkipsHeuristicDisagreement(t *testing.T) {
 			t.Fatalf("a seated zone-edge scenario must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
 		}
 	})
+}
+
+// TestLoggerCaptureNeverSpawnsAWriterScanner (CTO gate RED, 2026-09-24) — the
+// capture pattern that took logger.Log.Writer() spawned a logrus writerScanner
+// writing into an io.Pipe nobody read; once the pipe filled, the scanner blocked
+// HOLDING the logrus mutex and the next test's first log call hung the whole
+// package (the wall named TestZoneAcceptedIdentitySkipsHeuristicDisagreement).
+// Pin: a capture that logs MORE than the 64KB pipe can hold must complete —
+// bounded, and a leaked scanner fails here in 10s instead of hanging forever.
+func TestLoggerCaptureNeverSpawnsAWriterScanner(t *testing.T) {
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		var buf strings.Builder
+		old := logger.Log.Out
+		logger.Log.SetOutput(&buf)
+		defer logger.Log.SetOutput(old)
+		big := strings.Repeat("x", 1024)
+		for i := 0; i < 200; i++ { // 200KB > the 64KB pipe
+			logger.Infof("%s %d", big, i)
+		}
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("a leaked log writerScanner blocked logging — the capture pattern must use logger.Log.Out, never logger.Log.Writer()")
+	}
 }

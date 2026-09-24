@@ -2321,7 +2321,10 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock, publishClock fu
 		}
 		pc := publishClock
 		if pc == nil {
-			pc = time.Now // P15 revert: the publish clock stays LIVE
+			// P15 revert + CTO re-fix: the publish clock is the seam-aware
+			// traderNow — LIVE in production (testNow is nil there), seamed in
+			// tests, so a fixture-dated read publishes at the fixture clock.
+			pc = traderNow
 		}
 		authoredAt = pc()
 		// W-EXEC-TRUTH W2 A1/A2/D5: grammar refusal + every 5m group closed

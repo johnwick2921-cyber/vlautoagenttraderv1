@@ -371,11 +371,28 @@ func TestSeamedWakePublishClockStaysLive(t *testing.T) {
 	if *row.ReadClockMs != now.UnixMilli() {
 		t.Fatalf("the READ clock must be the seamed instant, got %d want %d", *row.ReadClockMs, now.UnixMilli())
 	}
-	span := *row.PublishClockMs - *row.ReadClockMs
-	if span < 500 {
-		t.Fatalf("the PUBLISH clock must stay LIVE: publish-read=%dms must cover the AI call (≥500ms) — the frozen publish read 0", span)
+	// CTO re-fix (2026-09-24): publishClock nil ⇒ traderNow — in a SEAMED
+	// test the publish is the seamed instant (deterministic), so the span is 0.
+	// The LIVE property lives where testNow is nil — pinned by
+	// TestTraderNowIsLiveWhenUnseamed below.
+	if span := *row.PublishClockMs - *row.ReadClockMs; span != 0 {
+		t.Fatalf("a seamed read must publish at the seam: publish-read=%dms, want 0", span)
 	}
 	if row.BornCheck == nil || !strings.Contains(*row.BornCheck, "read_clock_ms") {
 		t.Fatalf("the born-check must carry the read/publish span: %v", row.BornCheck)
+	}
+}
+
+// TestTraderNowIsLiveWhenUnseamed (CTO re-fix pin): with testNow nil, traderNow
+// IS the live wall clock — the publish clock production actually uses.
+func TestTraderNowIsLiveWhenUnseamed(t *testing.T) {
+	if testNow != nil {
+		t.Fatal("fixture: testNow must be nil here")
+	}
+	before := time.Now()
+	got := traderNow()
+	after := time.Now()
+	if got.Before(before.Add(-time.Second)) || got.After(after.Add(time.Second)) {
+		t.Fatalf("traderNow must be the live clock when unseamed: got %v, wall [%v, %v]", got, before, after)
 	}
 }
