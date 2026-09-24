@@ -82,6 +82,11 @@ func run(inst string, stdin string, args ...string) (int, string, string) {
 
 func enrollLine(email string) string { return "ENROLL " + email + "\n" }
 
+// replaceLine types the red-4 #6 REPLACE confirmation: "REPLACE <old> WITH <new>".
+func replaceLine(oldEmail, newEmail string) string {
+	return "REPLACE " + oldEmail + " WITH " + newEmail + "\n"
+}
+
 func fileSig(t *testing.T, p string) string {
 	t.Helper()
 	fi, err := os.Lstat(p)
@@ -193,7 +198,8 @@ func TestEnrollBindsTheRowsPasswordHash(t *testing.T) {
 		t.Fatal("the stored binding must name the OLD hash only")
 	}
 	// … and re-enrolls with --replace: the new binding names the new hash.
-	if rc, _, errb := run(inst, enrollLine(bEmail), "enroll", "--replace", bEmail); rc != 0 {
+	// Red-4 #6: replace takes its OWN typed line — REPLACE <old> WITH <new>.
+	if rc, _, errb := run(inst, replaceLine(bEmail, bEmail), "enroll", "--replace", bEmail); rc != 0 {
 		t.Fatalf("replace rc=%d %s", rc, errb)
 	}
 	a2, _ := updateauth.LoadAdmin(d)
