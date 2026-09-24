@@ -92,3 +92,18 @@ func (id Identity) stillAlive() (bool, error) {
 	}
 	return ticks == id.StartTicks, nil
 }
+
+// IdentityOf reads the identity of a pid the caller named. A pid on its own is
+// not an identity: the start-ticks are read here too, so a number that has been
+// recycled since the caller looked it up is refused by the same guard.
+func IdentityOf(pid int) (Identity, error) {
+	line, err := sys.ReadStat(pid)
+	if err != nil {
+		return Identity{}, fmt.Errorf("cannot read /proc/%d/stat: %w", pid, err)
+	}
+	ticks, err := statField22(line)
+	if err != nil {
+		return Identity{}, fmt.Errorf("pid %d: %w", pid, err)
+	}
+	return Identity{PID: pid, StartTicks: ticks}, nil
+}
