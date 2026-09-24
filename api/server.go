@@ -684,7 +684,7 @@ Server rejects non-SIM accounts (is_sim == false) with HTTP 400.`,
 	// route, because it installs the NoRoute handler: anything that reached here
 	// matched no API route, and only then may it be a page request. A stale or
 	// missing bundle degrades loudly via the boot line rather than failing here.
-	MountUI(s.router, UIDistDir)
+	MountUI(s.router, ResolvedDistDir())
 }
 
 // handleHealth Health check

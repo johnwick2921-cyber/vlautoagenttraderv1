@@ -339,7 +339,7 @@ func main() {
 		}
 		// Judged by REV since 2026-09-16 (the served bundle's GUIDE_BUILT_REV vs
 		// integrity.Revision); the build time rides along as a secondary field.
-		uiLine := api.UIServingBootLine(api.UIDistDir, binAt, integrity.Revision)
+		uiLine := api.UIServingBootLine(api.ResolvedDistDir(), binAt, integrity.Revision)
 		if strings.Contains(uiLine, "STALE") || strings.Contains(uiLine, "served-by=none") {
 			logger.Warnf("🖥 %s", uiLine)
 		} else {

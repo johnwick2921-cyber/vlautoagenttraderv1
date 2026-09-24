@@ -3,6 +3,7 @@ package kernel
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"sync/atomic"
@@ -87,7 +88,16 @@ func expectedRevision() string {
 	if v := strings.TrimSpace(os.Getenv("NOFX_EXPECTED_REVISION")); v != "" {
 		return v
 	}
-	if b, err := os.ReadFile("deploy/RELEASE"); err == nil {
+	// With NOFX_RELEASE_DIR set, the marker that matters is the ACTIVE
+	// release's own RELEASE file — deploy/RELEASE in the working directory
+	// belongs to whatever tree the process was started from and would answer
+	// for a different build. Unset (the default) reads exactly what it always
+	// read, from exactly where it always read it.
+	for _, path := range releaseMarkerPaths() {
+		b, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
 		for _, ln := range strings.Split(string(b), "\n") {
 			ln = strings.TrimSpace(ln)
 			if ln != "" && !strings.HasPrefix(ln, "#") {
@@ -206,4 +216,23 @@ func shortRev(r string) string {
 		return r[:12]
 	}
 	return r
+}
+
+// releaseMarkerPaths lists, in priority order, the files that may declare which
+// revision this process is supposed to be running.
+//
+// NOFX_RELEASE_DIR unset returns exactly one path — "deploy/RELEASE" — so the
+// behaviour and the boot line are byte-identical to what they have always been.
+// Set, the ACTIVE release's own marker is consulted first: deploy/RELEASE in
+// the working directory belongs to whatever tree the process was launched from,
+// and under a versioned install that tree answers for a different build.
+func releaseMarkerPaths() []string {
+	root := strings.TrimSpace(os.Getenv("NOFX_RELEASE_DIR"))
+	if root == "" {
+		return []string{"deploy/RELEASE"}
+	}
+	return []string{
+		filepath.Join(root, "current", "RELEASE"),
+		"deploy/RELEASE",
+	}
 }
