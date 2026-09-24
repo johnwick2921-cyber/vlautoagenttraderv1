@@ -30,6 +30,9 @@ const (
 	// expiry is covered by pruned_through.
 	SeenRetention = 10 * time.Minute
 
+	// seenVersion 2 added pruned_through (red-team F1). A v1 file reads
+	// ErrSeenCorrupt under never-reset, and that is safe ONLY because M3 never
+	// shipped: no v1 store was ever written by a shipped binary, so no box holds one.
 	seenVersion      = 2
 	maxSeenFileBytes = 4 << 20
 )

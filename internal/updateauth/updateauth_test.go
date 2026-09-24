@@ -411,6 +411,8 @@ func TestConsumeCorruptStoreFailsClosedAndIsNeverReset(t *testing.T) {
 		"empty":         "",
 		"null ids":      `{"v":2,"pruned_through":0,"ids":null}`,
 		"wrong version": `{"v":3,"pruned_through":0,"ids":[]}`,
+		// v1 refused; no v1 store was ever written by a shipped binary (M3 never shipped).
+		"v1 store":      `{"v":1,"ids":[{"job_id":"0123456789abcdee","expires_at":1,"consumed_at":1}]}`,
 		"unknown field": `{"v":2,"pruned_through":0,"ids":[],"x":1}`,
 		"bad entry":     `{"v":2,"pruned_through":0,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
 	} {
