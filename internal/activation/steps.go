@@ -106,26 +106,14 @@ func Activate(rel, prev Release, id Identity) (Identity, Receipt, error) {
 	}
 	rc.Evidence["installed"] = "binary,dist,RELEASE"
 
-	alive, err := id.stillAlive()
-	if err != nil {
-		return rc.failID(fmt.Errorf("cannot confirm the identity of pid %d: %w", id.PID, err))
-	}
-	if !alive {
-		// REFUSED, not "skipped": we were told to replace a specific process
-		// and that process is not there. Killing whatever holds the pid now
-		// would be the exact bug Identity exists to prevent.
-		return rc.failID(fmt.Errorf(
-			"pid %d is no longer the process this activation measured (recycled or already gone); refusing to signal it", id.PID))
-	}
-	if err := sys.Kill(id.PID); err != nil {
-		return rc.failID(fmt.Errorf("kill -9 %d: %w", id.PID, err))
-	}
-	rc.Evidence["killed"] = "SIGKILL"
-
-	next, err := waitForNewIdentity(id, 90*time.Second)
+	// REFUSED, not "skipped", when the pid is no longer ours: we were told to
+	// replace a specific process. Killing whatever holds that number now is the
+	// exact bug Identity exists to prevent. One guard, used by all three steps.
+	next, err := killAndAwait(rc, id)
 	if err != nil {
 		return rc.failID(err)
 	}
+	rc.Evidence["killed"] = "SIGKILL"
 	rc.Evidence["new_pid"] = fmt.Sprintf("%d", next.PID)
 	r, _ := rc.done()
 	return next, r, nil
@@ -269,4 +257,107 @@ func healthSHA(url string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("health payload names no revision")
+}
+
+// Rollback puts the PREVIOUS release back and hands the caller the identity to
+// prove it with.
+//
+// "Restore the binary" is the version of this step that gets written, and it is
+// the version that fails: the dist and the RELEASE marker are halves too. A
+// rollback that restores only the binary leaves the UI serving the new bundle
+// and the marker claiming the new sha — so the box lies about what it is
+// running at exactly the moment someone is trying to find out.
+//
+// prev is a Release DIRECTORY (NOFX_RELEASE_DIR/<sha>/). Under that layout all
+// three halves move together by repointing the `current` symlink, which is
+// atomic and cannot leave a mixed install. The v6 script kept siblings named
+// nofx-bin.old.<sha>.<timestamp>, which could collide and could not carry the
+// dist or the marker alongside the binary they belonged to.
+//
+// Rollback does NOT Watch: the caller persists the receipt, then watches, so a
+// crash between the restart and the proof is recoverable. Use Watch(prev, ...)
+// with the returned identity.
+func Rollback(prev Release, id Identity) (Identity, Receipt, error) {
+	rc := newReceipt("rollback")
+	rc.Evidence["restore"] = prev.SHA
+	rc.Evidence["kill_pid"] = fmt.Sprintf("%d", id.PID)
+
+	current := filepath.Join(filepath.Dir(prev.Dir), "current")
+	if err := atomicSymlink(prev.Dir, current); err != nil {
+		return rc.failID(fmt.Errorf("repoint %s to %s: %w", current, prev.Dir, err))
+	}
+	// Evidence records what was ACTUALLY done, never a hopeful list: under the
+	// release-dir layout one symlink moves all three halves at once.
+	rc.Evidence["method"] = "current symlink repointed"
+	rc.Evidence["current"] = current
+	rc.Evidence["target"] = prev.Dir
+
+	next, err := killAndAwait(rc, id)
+	if err != nil {
+		return rc.failID(err)
+	}
+	rc.Evidence["new_pid"] = fmt.Sprintf("%d", next.PID)
+	r, _ := rc.done()
+	return next, r, nil
+}
+
+// killAndAwait is the guarded restart shared by Activate, Rollback and
+// RollbackTo: signal ONLY the process the Identity names, then wait for the
+// unit to come back and read the NEW identity.
+func killAndAwait(rc Receipt, id Identity) (Identity, error) {
+	alive, err := id.stillAlive()
+	if err != nil {
+		return Identity{}, fmt.Errorf("cannot confirm the identity of pid %d: %w", id.PID, err)
+	}
+	if !alive {
+		return Identity{}, fmt.Errorf(
+			"pid %d is no longer the process this step measured (recycled or already gone); refusing to signal it", id.PID)
+	}
+	if err := sys.Kill(id.PID); err != nil {
+		return Identity{}, fmt.Errorf("kill -9 %d: %w", id.PID, err)
+	}
+	return waitForNewIdentity(id, 90*time.Second)
+}
+
+// atomicSymlink points name at target without ever unlinking name first: a
+// symlink created beside it and renamed over it means a reader never sees a
+// moment with no `current` at all.
+func atomicSymlink(target, name string) error {
+	tmp := name + ".swapping"
+	_ = os.Remove(tmp)
+	if err := os.Symlink(target, tmp); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, name); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	return nil
+}
+
+// RollbackTo restores prev's three halves INTO the live install paths and then
+// restarts. It is the form the CLI and the worker use; Rollback above is kept
+// for the in-place case where prev already sits at the install paths.
+func RollbackTo(prev Release, install Release, id Identity) (Identity, Receipt, error) {
+	rc := newReceipt("rollback")
+	rc.Evidence["restore"] = prev.SHA
+	rc.Evidence["kill_pid"] = fmt.Sprintf("%d", id.PID)
+	if err := atomicCopy(prev.Binary, install.Binary); err != nil {
+		return rc.failID(fmt.Errorf("restore binary: %w", err))
+	}
+	if err := atomicCopy(prev.ReleaseFile, install.ReleaseFile); err != nil {
+		return rc.failID(fmt.Errorf("restore RELEASE: %w", err))
+	}
+	if err := atomicSwapDir(prev.Dist, install.Dist); err != nil {
+		return rc.failID(fmt.Errorf("restore dist: %w", err))
+	}
+	rc.Evidence["restored"] = "binary,dist,RELEASE"
+
+	next, err := killAndAwait(rc, id)
+	if err != nil {
+		return rc.failID(fmt.Errorf("ROLLBACK FAILED — %w", err))
+	}
+	rc.Evidence["new_pid"] = fmt.Sprintf("%d", next.PID)
+	r, _ := rc.done()
+	return next, r, nil
 }
