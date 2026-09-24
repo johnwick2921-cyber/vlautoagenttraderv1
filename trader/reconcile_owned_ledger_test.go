@@ -157,3 +157,25 @@ func TestReconcileLedgerReadErrorIsExplainedNeverFlattened(t *testing.T) {
 		})
 	}
 }
+
+// W1b E10 verifier repair 6 — the LATER reads in ledgerExplainsPosition each
+// have their own fail-closed guard, pinned one by one: a column only that read
+// needs is renamed away, so the earlier reads succeed and exactly that read
+// fails. Every such failure EXPLAINS the held position and names its read —
+// never a flatten.
+func TestReconcileLaterLedgerReadErrorIsExplainedNeverFlattened(t *testing.T) {
+	for _, tc := range []struct{ name, table, column, want string }{
+		{"ListFilledSinceAllTraders", "armed_orders", "updated_at", "(armed filled: "},
+		{"PictureHtfFilledSinceAll", "picture_htf_opportunities", "updated_at", "(picture filled: "},
+		{"ListFilled_per_id", "armed_orders", "trader_id", "(armed filled of reconcile-owned: "},
+		{"PictureHtfByTrader", "picture_htf_opportunities", "trader_id", "(picture ledger of reconcile-owned: "},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := newReconcileWire(t)
+			if err := w.st.GormDB().Exec(fmt.Sprintf("ALTER TABLE %s RENAME COLUMN %s TO %s_unreadable", tc.table, tc.column, tc.column)).Error; err != nil {
+				t.Fatal(err)
+			}
+			w.refusedNotFlattened(t, tc.want)
+		})
+	}
+}

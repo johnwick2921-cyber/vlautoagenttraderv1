@@ -99,3 +99,76 @@ func TestPictureHtfFilledSinceAllIsLedgerWide(t *testing.T) {
 		t.Fatalf("every trader's fresh Picture fills: %v", seen)
 	}
 }
+
+// W1b E10 verifier repair 4 — LedgerClockSlack is load-bearing: updated_at is
+// zone-bearing TEXT, and a writer in another zone (-05:00, CT) stores a fresh
+// fill that sorts lexically BEFORE a UTC "since" bound. The widened SQL bound
+// must still return it (the caller then judges the exact window on the parsed
+// time). Both ledger-wide reads are pinned.
+func TestLedgerClockSlackReturnsACrossZoneFreshFill(t *testing.T) {
+	st, err := New(filepath.Join(t.TempDir(), "slack.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ct := time.FixedZone("CT", -5*3600)
+	const layout = "2006-01-02 15:04:05.999999999-07:00"
+	freshCT := time.Now().Add(-10 * time.Second).In(ct).Format(layout)
+	since := time.Now().UTC().Add(-2 * time.Minute)
+	if freshCT >= since.Format(layout) {
+		t.Fatalf("fixture: the -05:00 text %q must sort before the UTC bound %q", freshCT, since.Format(layout))
+	}
+
+	led := st.ArmedOrders()
+	r := &ArmedOrderDB{TraderID: "trader-ct", PlanID: "p", Scenario: "S1", Version: 1, State: "armed", Side: "short", EntryPx: 100, StopPx: 101, TargetPx: 98}
+	if err := led.UpsertArm(r); err != nil {
+		t.Fatal(err)
+	}
+	if err := led.BeginPlacement(r.ID, "sig-ct"); err != nil {
+		t.Fatal(err)
+	}
+	if err := led.SetState(r.ID, StateFilled, "fixture"); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.GormDB().Exec("UPDATE armed_orders SET updated_at = ? WHERE id = ?", freshCT, r.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := st.PictureHtfClaim(&PictureHtfOpportunityDB{OppKey: "ct-pic", TraderID: "trader-ct", Account: "Sim101", Symbol: "MNQ", Direction: "short", Stage: "confirmed"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.PictureHtfTransition("ct-pic", StateFilled, "fixture"); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.GormDB().Exec("UPDATE picture_htf_opportunities SET updated_at = ? WHERE opp_key = ?", freshCT, "ct-pic").Error; err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := led.ListFilledSinceAllTraders(since)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, x := range rows {
+		if x.ID == r.ID {
+			found = true
+			if x.UpdatedAt.Before(since) {
+				t.Fatalf("the cross-zone row parses to %v, before since %v — the fixture is not fresh", x.UpdatedAt, since)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("armed: a fresh fill written as %q (-05:00) was dropped by a UTC since bound — LedgerClockSlack must cover the zone gap", freshCT)
+	}
+	pics, err := st.PictureHtfFilledSinceAll(since)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found = false
+	for _, p := range pics {
+		if p.OppKey == "ct-pic" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("picture: a fresh fill written as %q (-05:00) was dropped by a UTC since bound — LedgerClockSlack must cover the zone gap", freshCT)
+	}
+}
