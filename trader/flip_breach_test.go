@@ -270,6 +270,7 @@ func TestFlipBreachScheduledReadsAndDeathUntouched(t *testing.T) {
 //	             born with the line BELOW price; no post-birth bar touched it.
 //	23:10:46     v2 DORMANT — death-condition: 2x5m close above 29755.50.
 func TestFlipBreachReplayASIA0917(t *testing.T) {
+	defer drainReReads(t) // T2: the replayed MSS wake fires an async planner read; join before the seam resets.
 	resetFlipOnceKeys()
 	t.Setenv("FLIP_MIN_HOLD_MIN", "")
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"ASIA"}}}

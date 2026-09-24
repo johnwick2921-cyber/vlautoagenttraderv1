@@ -34,7 +34,7 @@ func drainReReads(t *testing.T) {
 		return n == 0
 	}
 	deadline := time.Now().Add(5 * time.Second)
-	for !(empty(&flipRereadInFlight) && empty(&deathRereadInFlight) && empty(&plannerReadInFlight)) {
+	for !(empty(&flipRereadInFlight) && empty(&deathRereadInFlight) && empty(&plannerReadInFlight) && empty(&weeklyReadClaim)) {
 		if time.Now().After(deadline) {
 			t.Errorf("an async planner re-read never finished before the test's seam resets (the cleanup would race it)")
 			return
