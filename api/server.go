@@ -920,9 +920,9 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Store user information in context
-		c.Set("user_id", claims.UserID)
-		c.Set("email", claims.Email)
+		// Store user information in context (user_id, email and the claims
+		// the credential guard reads — credential_guard.go).
+		setAuthContext(c, claims)
 		c.Next()
 	}
 }

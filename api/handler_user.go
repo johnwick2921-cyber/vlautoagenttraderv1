@@ -181,8 +181,16 @@ func (s *Server) handleLogin(c *gin.Context) {
 }
 
 // handleChangePassword changes the password for the currently authenticated user.
+//
+// H1 (M3 red team): only a token whose email is the row's own may do it —
+// credentialActorRefusal (credential_guard.go) runs before anything else.
 func (s *Server) handleChangePassword(c *gin.Context) {
-	userID := c.GetString("user_id")
+	u, why := s.credentialActorRefusal(c)
+	if why != "" {
+		credentialForbid(c, why)
+		return
+	}
+	userID := u.ID
 	var req struct {
 		NewPassword string `json:"new_password" binding:"required,min=8"`
 	}
@@ -225,14 +233,23 @@ func (s *Server) handleResetPasswordDisabled(c *gin.Context) {
 //
 // SECURITY (P0 S2): this is the most destructive endpoint in the system — it
 // deletes EVERY user, trader and strategy. It used to be public. It now requires
-// all three of:
+// all of:
 //   - a valid JWT (it is registered in the `protected` group), AND
+//   - that JWT's email equal to its user row's (M3 red-team H1 — never a token
+//     that only carries the user_id, like the Telegram bot's), AND
 //   - ALLOW_ACCOUNT_RESET=1 in the server environment (default OFF), AND
 //   - an explicit {"confirm":"RESET-ALL-DATA"} body.
 //
 // Note also that registration no longer adopts orphaned credential rows (S3), so
 // a reset no longer hands the next registrant the previous owner's keys.
 func (s *Server) handleResetAccount(c *gin.Context) {
+	// H1 (M3 red team): the actor must be the account itself, not a token
+	// that merely carries its user_id (the Telegram bot's) — checked FIRST,
+	// so a refused actor learns nothing about the env flag.
+	if _, why := s.credentialActorRefusal(c); why != "" {
+		credentialForbid(c, why)
+		return
+	}
 	if os.Getenv("ALLOW_ACCOUNT_RESET") != "1" {
 		logger.Warnf("🔒 blocked POST /api/reset-account from %s (user %s) — ALLOW_ACCOUNT_RESET is not enabled",
 			c.ClientIP(), c.GetString("user_id"))
