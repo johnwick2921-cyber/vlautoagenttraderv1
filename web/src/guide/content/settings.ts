@@ -431,7 +431,7 @@ const risk: KnobSpec[] = [
     trader: '1 = single position; 3 = diversified.',
     consumer: 'kernel/engine_analysis.go:125 (max_positions)',
     range: '1 – 3',
-    systemDefault: '3 (owner)',
+    systemDefault: 'blank → 1 [I] (ClampLimits floor); 3 [O] (owner)',
     recommended: '⭐ 3 — matches config; MNQ SIM never needs the extra legs.',
     whenToTouch: 'Set 1 for single-position discipline.',
     perSession: 'No.',

@@ -1,6 +1,11 @@
 import { useState, type ReactNode } from 'react'
 import { Shield, AlertTriangle } from 'lucide-react'
 import type { RiskControlConfig } from '../../types'
+import {
+  RISK_DEFAULT_MAX_CONTRACTS_PER_ORDER,
+  RISK_DEFAULT_MAX_POSITIONS,
+  RISK_DEFAULT_TRAILING_ARM_POINTS,
+} from '../../riskControlDefaults'
 import { riskControl, ts } from '../../i18n/strategy-translations'
 import type { StudioEffective } from '../../lib/api/strategyEffective'
 import {
@@ -23,6 +28,7 @@ function ClampedNumberInput({
   step,
   disabled,
   onCommit,
+  testId,
 }: {
   value: number | undefined
   fallback: number
@@ -31,6 +37,7 @@ function ClampedNumberInput({
   step?: number
   disabled?: boolean
   onCommit: (n: number) => void
+  testId?: string
 }) {
   const [draft, setDraft] = useState<string | null>(null)
   const saved = String(value ?? fallback)
@@ -59,6 +66,7 @@ function ClampedNumberInput({
       min={min}
       max={max}
       step={step}
+      data-testid={testId}
       className="w-20 px-3 py-2 rounded ml-2"
       style={{
         background: '#1E2329',
@@ -356,12 +364,13 @@ export function RiskControlEditor({
           {config.trailing_arm === 'after_trigger_points' && (
             <ClampedNumberInput
               value={config.trailing_arm_points}
-              fallback={50}
+              fallback={RISK_DEFAULT_TRAILING_ARM_POINTS}
               min={1}
               max={1000}
               step={5}
               disabled={disabled || config.trailing_enabled !== true}
               onCommit={(n) => updateField('trailing_arm_points', n)}
+              testId="trailing-arm-points-input"
             />
           )}
         </div>
@@ -407,12 +416,15 @@ export function RiskControlEditor({
             <div className="flex items-center gap-3">
               {/* User-set + code-enforced. ClampLimits bounds this to [1,3] on
                   save AND at decision time (store/strategy.go ClampLimits, const
-                  MaxPositions=3) — the onChange clamp keeps the shown value equal
-                  to the saved value (no "typed 5, saved 3" surprise). To allow
-                  >3, raise the MaxPositions const (token-cost decision). */}
+                  MaxPositions=3 = CEILING) — the onChange clamp keeps the shown
+                  value equal to the saved value (no "typed 5, saved 3" surprise).
+                  An UNSET knob shows RISK_DEFAULT_MAX_POSITIONS — the ClampLimits
+                  FLOOR, which is what the runtime resolves, not the ceiling. To
+                  allow >3, raise the MaxPositions const (token-cost decision). */}
               <input
                 type="number"
-                value={config.max_positions ?? 3}
+                value={config.max_positions ?? RISK_DEFAULT_MAX_POSITIONS}
+                data-testid="max-positions-input"
                 onChange={(e) =>
                   updateField(
                     'max_positions',
@@ -1047,7 +1059,8 @@ export function RiskControlEditor({
             <input
               type="number"
               value={config.max_contracts_per_order ?? ''}
-              placeholder="2"
+              placeholder={String(RISK_DEFAULT_MAX_CONTRACTS_PER_ORDER)}
+              data-testid="max-contracts-input"
               onChange={(e) =>
                 updateField(
                   'max_contracts_per_order',

@@ -2,6 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
 import { RiskControlEditor } from './RiskControlEditor'
 import type { RiskControlConfig } from '../../types'
+import {
+  RISK_DEFAULT_MAX_CONTRACTS_PER_ORDER,
+  RISK_DEFAULT_MAX_POSITIONS,
+  RISK_DEFAULT_TRAILING_ARM_POINTS,
+} from '../../riskControlDefaults'
 
 it('keeps the owner daily-loss control without requiring a per-trade cap', () => {
   const onChange = vi.fn()
@@ -102,4 +107,54 @@ it('W1: typing a number writes it; typing 0 writes OFF', () => {
     ...config,
     consecutive_loss_halt: 0,
   })
+})
+
+// ── U2 (owed-ui-ci, 2026-09-23) — UI fallbacks are the SAME constants the
+// Go runtime resolves; component + tests read one module, never two literals ──
+
+it('U2: the shared constants equal the Go runtime defaults', () => {
+  expect(RISK_DEFAULT_MAX_POSITIONS).toBe(1) // store/strategy.go ClampLimits floor
+  expect(RISK_DEFAULT_TRAILING_ARM_POINTS).toBe(0) // RiskControlConfig zero value
+  expect(RISK_DEFAULT_MAX_CONTRACTS_PER_ORDER).toBe(1) // kernel.StageAContractCapDefault
+})
+
+it('U2: an UNSET max_positions shows the ClampLimits floor, never the 3-ceiling', () => {
+  render(
+    <RiskControlEditor
+      config={{} as RiskControlConfig}
+      onChange={vi.fn()}
+      language="en"
+      isFutures
+    />
+  )
+  const input = screen.getByTestId('max-positions-input') as HTMLInputElement
+  expect(input.value).toBe(String(RISK_DEFAULT_MAX_POSITIONS))
+})
+
+it('U2: an UNSET trailing_arm_points shows the runtime zero, never 50', () => {
+  render(
+    <RiskControlEditor
+      config={{ trailing_arm: 'after_trigger_points' } as RiskControlConfig}
+      onChange={vi.fn()}
+      language="en"
+      isFutures
+    />
+  )
+  const input = screen.getByTestId(
+    'trailing-arm-points-input'
+  ) as HTMLInputElement
+  expect(input.value).toBe(String(RISK_DEFAULT_TRAILING_ARM_POINTS))
+})
+
+it('U2: the max_contracts placeholder is the Stage-A effective default', () => {
+  render(
+    <RiskControlEditor
+      config={{} as RiskControlConfig}
+      onChange={vi.fn()}
+      language="en"
+      isFutures
+    />
+  )
+  const input = screen.getByTestId('max-contracts-input') as HTMLInputElement
+  expect(input.placeholder).toBe(String(RISK_DEFAULT_MAX_CONTRACTS_PER_ORDER))
 })
