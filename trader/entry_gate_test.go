@@ -263,7 +263,10 @@ func TestArmSeamATR5mIsTheOneResolver(t *testing.T) {
 	live := 29200.0
 	wantDist := 0.95 * floor // sub-floor → min-SL leg must fire
 	d := &kernel.Decision{Action: "open_short", Symbol: "MNQ",
-		StopLoss: live + wantDist, TakeProfit: live - 3*wantDist}
+		// W1b E12(a): the target sits at 4× (was 3×). At exactly 3.00 the R:R
+		// leg judged on the WIRE-rounded stop (ceil for a short) reads 2.98 and
+		// refuses first, hiding the min-SL leg this test is about.
+		StopLoss: live + wantDist, TakeProfit: live - 4*wantDist}
 	reason, refused := at.entryGateForDecisionAt(d, live, time.Now())
 	if !refused {
 		t.Fatalf("decision path must refuse the sub-floor stop; got allow")

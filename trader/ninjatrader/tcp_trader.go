@@ -565,10 +565,14 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	// wire is for the AddOn's logging + protective bracket reference.
 	entryRef := (sl + tp) / 2.0
 
+	// W1b E12(a) — WireBracket: entry/target nearest tick, the stop AWAY from
+	// the entry (never inside the floor the gate approved). The gate judges
+	// the SAME function's output. An unknown side refuses the send.
 	tick := InstrumentTickSize(t.symbol)
-	entry := RoundToTick(entryRef, tick)
-	sl = RoundToTick(sl, tick)
-	tp = RoundToTick(tp, tick)
+	entry, sl, tp, rerr := WireBracket(side, entryRef, sl, tp, tick)
+	if rerr != nil {
+		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s entry on %s: %w", side, symbol, rerr)
+	}
 
 	signalID := uuid.NewString()
 	payload := ntwire.SignalPayload{
@@ -737,9 +741,10 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 		}
 	}
 	tick := InstrumentTickSize(t.symbol)
-	entry := RoundToTick(limitPx, tick)
-	sl = RoundToTick(sl, tick)
-	tp = RoundToTick(tp, tick)
+	entry, sl, tp, rerr := WireBracket(side, limitPx, sl, tp, tick) // W1b E12(a): stop AWAY from entry
+	if rerr != nil {
+		return "", fmt.Errorf("ninjatrader/tcp: refusing armed %s entry on %s: %w", side, symbol, rerr)
+	}
 	tid := t.traderID
 	signalID := uuid.NewString()
 	payload := ntwire.SignalPayload{
@@ -832,9 +837,10 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 		}
 	}
 	tick := InstrumentTickSize(t.symbol)
-	entry := RoundToTick(stopPx, tick)
-	sl = RoundToTick(sl, tick)
-	tp = RoundToTick(tp, tick)
+	entry, sl, tp, rerr := WireBracket(side, stopPx, sl, tp, tick) // W1b E12(a): stop AWAY from entry
+	if rerr != nil {
+		return "", fmt.Errorf("ninjatrader/tcp: refusing stop-entry %s on %s: %w", side, symbol, rerr)
+	}
 	tid := t.traderID
 	signalID := uuid.NewString()
 	payload := ntwire.SignalPayload{

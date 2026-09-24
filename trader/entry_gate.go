@@ -9,6 +9,7 @@ import (
 	"nofx/market"
 	"nofx/store"
 	"nofx/telemetry"
+	ntTrader "nofx/trader/ninjatrader"
 )
 
 // ── CLASS 48 — ONE ENTRY GATE FOR BOTH ORDER PATHS ──────────────────────────
@@ -265,17 +266,27 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 		return fmt.Sprintf("entry_gate: scenario %s condition %s is SHADOW (0C) — authored + E8-scored, never placed on any path", in.CitedScenario, in.ScenarioCond), true
 	}
 
+	// W1b E12(a) — legs 5 and 6 judge the prices the WIRE sends. The wire
+	// rounds entry and target to the nearest tick and the stop AWAY from the
+	// entry (ntTrader.WireBracket — the SAME function tcp_trader.go sends
+	// with). Judging the continuous prices passed orders the broker then
+	// received with a worse R:R (the wider stop) or a shorter stop distance
+	// (an off-grid entry rounded toward the stop). A rounding that drops
+	// either under its floor is now REFUSED here, never sent. Absent prices
+	// (<= 0) stay absent: the legs below skip them exactly as before.
+	wEntry, wStop, wTarget, wireNote := entryGateWirePrices(side, in)
+
 	// Leg 5 — R:R at the REAL entry price (the fix for 587/589): the floor is
 	// judged at the price the order will transact at, not the prompt snapshot.
 	// entry<=0 or stop<=0 → skip (fail-open; validateDecision owns wrong-side).
 	rr := 0.0
 	ok := false
-	if in.Entry > 0 && in.Stop > 0 && in.Target > 0 && in.Entry != in.Stop {
-		if side == "long" && in.Entry > in.Stop {
-			rr = (in.Target - in.Entry) / (in.Entry - in.Stop)
+	if wEntry > 0 && wStop > 0 && wTarget > 0 && wEntry != wStop {
+		if side == "long" && wEntry > wStop {
+			rr = (wTarget - wEntry) / (wEntry - wStop)
 			ok = true
-		} else if side == "short" && in.Stop > in.Entry {
-			rr = (in.Entry - in.Target) / (in.Stop - in.Entry)
+		} else if side == "short" && wStop > wEntry {
+			rr = (wEntry - wTarget) / (wStop - wEntry)
 			ok = true
 		}
 	}
@@ -285,18 +296,18 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 			floor = 3.0 // same fallback validateDecision uses for an unset knob
 		}
 		if rr+1e-9 < floor {
-			return fmt.Sprintf("entry_gate: R:R %.2f below floor %.2f at execution price %.4f (SL %.4f TP %.4f)", rr, floor, in.Entry, in.Stop, in.Target), true
+			return fmt.Sprintf("entry_gate: R:R %.2f below floor %.2f at execution price %.4f (SL %.4f TP %.4f)%s", rr, floor, wEntry, wStop, wTarget, wireNote), true
 		}
 	}
 
 	// Leg 6 — min-SL ×ATR5m (same floor as both legacy chains).
-	if !in.StructuralStopValidated && in.ATR5m > 0 && in.MinSLMult > 0 && in.Entry > 0 && in.Stop > 0 {
-		dist := in.Entry - in.Stop
+	if !in.StructuralStopValidated && in.ATR5m > 0 && in.MinSLMult > 0 && wEntry > 0 && wStop > 0 {
+		dist := wEntry - wStop
 		if side == "short" {
-			dist = in.Stop - in.Entry
+			dist = wStop - wEntry
 		}
 		if dist+1e-9 < in.MinSLMult*in.ATR5m {
-			return fmt.Sprintf("entry_gate: stop %.2f too close (%.2f < %.2f = %.1f×ATR5m)", in.Stop, dist, in.MinSLMult*in.ATR5m, in.MinSLMult), true
+			return fmt.Sprintf("entry_gate: stop %.2f too close (%.2f < %.2f = %.1f×ATR5m)%s", wStop, dist, in.MinSLMult*in.ATR5m, in.MinSLMult, wireNote), true
 		}
 	}
 
@@ -325,6 +336,46 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 	}
 
 	return "", false
+}
+
+// entryGateWirePrices returns the entry/stop/target legs 5 and 6 judge: the
+// values ntTrader.WireBracket puts on the wire (W1b E12(a)). A price that is
+// absent (<= 0) is returned as given so the legs keep skipping it. note is ""
+// when rounding moved nothing (the refusal text is then byte-identical to the
+// pre-E12 text); otherwise it names the authored prices the wire values came
+// from, so a refusal caused by rounding says so.
+func entryGateWirePrices(side string, in EntryIntent) (entry, stop, target float64, note string) {
+	entry, stop, target = in.Entry, in.Stop, in.Target
+	tick := ntTrader.InstrumentTickSize(entryGateTickRoot(in.Symbol))
+	if in.Entry > 0 {
+		entry = ntTrader.RoundToTick(in.Entry, tick)
+	}
+	if in.Stop > 0 {
+		// side is long/short here (EntryGate returned early otherwise), so the
+		// error branch is unreachable; on one, keep the authored stop.
+		if ws, err := ntTrader.WireStop(side, in.Stop, tick); err == nil {
+			stop = ws
+		}
+	}
+	if in.Target > 0 {
+		target = ntTrader.RoundToTick(in.Target, tick)
+	}
+	if entry != in.Entry || stop != in.Stop || target != in.Target {
+		note = fmt.Sprintf(" — judged on the wire-rounded prices (authored entry %.4f SL %.4f TP %.4f)", in.Entry, in.Stop, in.Target)
+	}
+	return entry, stop, target, note
+}
+
+// entryGateTickRoot reduces a symbol to the instrument root the tick table is
+// keyed on ("MNQ", "MNQ 06-26", "NQ.c.0" → "MNQ"/"MNQ"/"NQ"). The wire keys the
+// same table on the trader's configured symbol; an unknown root falls back to
+// the table's 0.25 index default on both sides.
+func entryGateTickRoot(symbol string) string {
+	s := strings.ToUpper(strings.TrimSpace(symbol))
+	if i := strings.IndexAny(s, " ."); i > 0 {
+		s = s[:i]
+	}
+	return s
 }
 
 // ── Arm-seam builder ────────────────────────────────────────────────────────
