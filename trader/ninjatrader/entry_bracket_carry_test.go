@@ -46,6 +46,16 @@ func TestOpenWithBracketRefusedLeavesTheMapsByteIdentical(t *testing.T) {
 			return tr
 		}, 29050, "one_entry_latch"},
 		{"an incomplete bracket", func() *TCPTrader { return NewTCPTrader(s, "MNQ", "Sim101") }, 0, "must be called before"},
+		// The hold's provably-UNSENT drop (W1b FOLD-3 repair): SendSignal itself
+		// refuses with ErrEntryHeld (the hold landed before the flush, so
+		// sendAttempted is false). Every rail before the send passed; only the
+		// latchSent guard keeps this bracket out of the maps.
+		{"the hold's provably-unsent drop", func() *TCPTrader {
+			hs := ntwire.NewTCPServer(nil)
+			hs.SetAccountsList([]ntwire.AccountInfo{{Name: "Sim101", IsSim: true}}, "Sim101")
+			hs.SetEntryHoldCheck(func() bool { return true })
+			return NewTCPTrader(hs, "MNQ", "Sim101")
+		}, 29050, ntwire.ErrEntryHeld.Error()},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
