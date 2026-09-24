@@ -9,11 +9,13 @@ import (
 	"nofx/store"
 )
 
-// TestE8ScenarioDirectionFoldsOverlay (WAVE 1a-plan P2) — the E8 short-row
-// backfill resolves the scenario direction through the ONE fold: an owner
-// overlay that flips the direction must be visible to the recompute. RED on
-// the base-only reader: direction stays "long" with the flip overlay stored.
-func TestE8ScenarioDirectionFoldsOverlay(t *testing.T) {
+// TestE8ScenarioDirectionReadsBaseIgnoringLaterOverlay (WAVE 1a-plan P2
+// reverted, CTO 03:31 6th order) — the E8 short-row backfill is a HISTORICAL
+// reader: an owner overlay applied AFTER the trade closed must not change that
+// trade's attribution, so the BASE doc governs and overlays are invisible.
+// RED on the folded reader: direction reads "short" with the flip overlay
+// stored. GREEN: the base direction "long" survives the later overlay.
+func TestE8ScenarioDirectionReadsBaseIgnoringLaterOverlay(t *testing.T) {
 	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
 	if err != nil {
 		t.Fatalf("store: %v", err)
@@ -37,7 +39,7 @@ func TestE8ScenarioDirectionFoldsOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir, ok := e8ScenarioDirection(st, "p1", 1, "S1")
-	if !ok || dir != "short" {
-		t.Fatalf("the folded direction must read short, got %q ok=%v", dir, ok)
+	if !ok || dir != "long" {
+		t.Fatalf("the E8 recompute must read the BASE direction (a later overlay cannot rewrite a closed trade), got %q ok=%v", dir, ok)
 	}
 }

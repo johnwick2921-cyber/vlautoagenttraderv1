@@ -758,17 +758,21 @@ func totalUnrecomputable(r store.BackfillResult) int {
 // resolution the executor uses — so an owner overlay that flips a scenario's
 // direction is visible to the recompute. (Extracted from the inline closure at
 // main.go:402 so a main-package test can pin it at the production call site.)
+// e8ScenarioDirection is a HISTORICAL reader (CTO 03:31, 6th order): the
+// E8 backfill re-scores PAST short rows, so an overlay applied after the trade
+// closed must not change that trade's attribution — the BASE doc governs, and
+// overlays are deliberately invisible (the same rule as
+// trade_excursion_backfill.go:148 and expectancy/aggregate).
 func e8ScenarioDirection(st *store.Store, planID string, version int, scenario string) (string, bool) {
 	row, e := st.Plan().GetPlan(planID, version)
 	if e != nil || row == nil {
 		return "", false
 	}
-	overlays, _ := st.Plan().ListOverlays(row.PlanID, row.Version)
-	pf, perr := kernel.ResolvePlanFinal([]byte(row.Doc), kernel.OverlayRefsFrom(overlays))
-	if perr != nil {
+	var doc kernel.PlanDoc
+	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
 		return "", false
 	}
-	for _, sc := range pf.Doc.Scenarios {
+	for _, sc := range doc.Scenarios {
 		if sc.ID == scenario {
 			return sc.Direction, sc.Direction != ""
 		}
