@@ -155,7 +155,9 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 	}
 
 	// F4: loopback judged on the socket peer (RemoteAddr), never ClientIP()
-	// — gin trusts X-Forwarded-For by default in this repo.
+	// — gin trusts X-Forwarded-For by default; NewServer turns that off
+	// (PR #200 F2, SetTrustedProxies(nil)), but this gate must not depend
+	// on the engine's proxy configuration either way.
 	peer, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		return "peer unparseable"

@@ -48,6 +48,17 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 
 	router := gin.Default()
 
+	// PR #200 fold F2: trust NO proxy. gin.Default() trusts X-Forwarded-For /
+	// X-Real-IP from every peer (0.0.0.0/0, ::/0), so c.ClientIP() — which the
+	// H1/H2 audit lines and gin's access log print — was whatever the client
+	// wrote. With no trusted proxy, ClientIP() is the socket peer (RemoteAddr):
+	// the loopback bind has no legitimate proxy. Nothing in this app decides
+	// on ClientIP() (the /updates gate judges RemoteAddr itself, F4) — pinned
+	// by TestForwardedForNeverRewritesTheLoggedCaller.
+	if err := router.SetTrustedProxies(nil); err != nil {
+		logger.Errorf("🔒 [api] SetTrustedProxies(nil): %v", err)
+	}
+
 	// Enable CORS
 	router.Use(corsMiddleware())
 
