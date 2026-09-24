@@ -2,6 +2,7 @@ package kernel
 
 import (
 	"encoding/json"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"nofx/internal/censuswalk"
 	"nofx/market"
 )
 
@@ -443,34 +445,38 @@ func TestProseHoldMinutes(t *testing.T) {
 // the boot ledger and the planner prompt's default text; no "%dx5m_close"
 // synthesis outside the resolver; plan death/flip never call the resolver.
 func TestConfirmResolverSourceScanPin(t *testing.T) {
-	allowed := map[string]map[string]bool{
-		"bdConfirmCloses": {"kernel/confirm_resolver.go": true, "kernel/entry_law.go": true, "kernel/planner_prompt.go": true},
-		"AcceptHoldMin":   {"kernel/confirm_resolver.go": true, "kernel/entry_law.go": true},
-	}
 	root, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			switch info.Name() {
-			case ".git", "node_modules", "data", "web", "sandbox", "docs", ".understand-anything", ".claude", "ninjascript", "screenshots":
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		rel, _ := filepath.Rel(root, path)
-		rel = filepath.ToSlash(rel)
+	offenders, err := confirmResolverOffenders(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, o := range offenders {
+		t.Error(o)
+	}
+}
+
+// confirmResolverOffenders is the shared scan: every non-test .go file under
+// root (censuswalk) is checked against the allowed map; offenders are returned
+// as "rel:line message" strings.
+func confirmResolverOffenders(root string) (offenders []string, err error) {
+	allowed := map[string]map[string]bool{
+		"bdConfirmCloses": {"kernel/confirm_resolver.go": true, "kernel/entry_law.go": true, "kernel/planner_prompt.go": true},
+		"AcceptHoldMin":   {"kernel/confirm_resolver.go": true, "kernel/entry_law.go": true},
+	}
+	files, werr := censuswalk.NonTestGoFiles(root)
+	if werr != nil {
+		return nil, werr
+	}
+	for _, cf := range files {
+		path := cf.Path
+		rel := cf.Rel
 		fset := token.NewFileSet()
 		f, err := parser.ParseFile(fset, path, nil, 0)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		ast.Inspect(f, func(n ast.Node) bool {
 			switch x := n.(type) {
@@ -483,21 +489,55 @@ func TestConfirmResolverSourceScanPin(t *testing.T) {
 					name = fn.Sel.Name
 				}
 				if files, ok := allowed[name]; ok && !files[rel] {
-					t.Errorf("%s:%d calls %s() — the env authoring default is read only by the resolver (and the boot ledger / prompt default text)", rel, fset.Position(x.Pos()).Line, name)
+					offenders = append(offenders, fmt.Sprintf("%s:%d calls %s() — the env authoring default is read only by the resolver (and the boot ledger / prompt default text)", rel, fset.Position(x.Pos()).Line, name))
 				}
 				if (name == "ResolveConfirm" || name == "ResolveScenarioConfirm") && rel == "kernel/plan_lifecycle.go" {
-					t.Errorf("%s:%d — plan death/flip keep their own rules; the confirm resolver never answers for them", rel, fset.Position(x.Pos()).Line)
+					offenders = append(offenders, fmt.Sprintf("%s:%d — plan death/flip keep their own rules; the confirm resolver never answers for them", rel, fset.Position(x.Pos()).Line))
 				}
 			case *ast.BasicLit:
 				if x.Kind == token.STRING && strings.Contains(x.Value, "%dx5m_close") && rel != "kernel/confirm_resolver.go" {
-					t.Errorf("%s:%d synthesizes a close rule from a number — only the resolver may", rel, fset.Position(x.Pos()).Line)
+					offenders = append(offenders, fmt.Sprintf("%s:%d synthesizes a close rule from a number — only the resolver may", rel, fset.Position(x.Pos()).Line))
 				}
 			}
 			return true
 		})
-		return nil
-	})
+	}
+	return offenders, nil
+}
+
+// TestConfirmResolverScanSeesNestedSkipNamedDirs plants a bdConfirmCloses()
+// call in EVERY censuswalk.NestedProbeDirs directory of a synthetic module and
+// asserts the scan reports every one. With the old any-depth SkipDir the dirs
+// named like a root skip were invisible (CLASS 258).
+func TestConfirmResolverScanSeesNestedSkipNamedDirs(t *testing.T) {
+	root := t.TempDir()
+	dirs := censuswalk.NestedProbeDirs()
+	for _, dir := range dirs {
+		full := filepath.Join(root, filepath.FromSlash(dir))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		src := "package " + censuswalk.PackageName(dir) + "\n\nfunc offender() { _ = bdConfirmCloses() }\n"
+		if err := os.WriteFile(filepath.Join(full, "offender.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	offenders, err := confirmResolverOffenders(root)
 	if err != nil {
 		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, o := range offenders {
+		seen[strings.SplitN(o, ":", 2)[0]] = true
+	}
+	var missed []string
+	for _, dir := range dirs {
+		if !seen[dir+"/offender.go"] {
+			missed = append(missed, dir)
+		}
+	}
+	if len(missed) > 0 {
+		t.Fatalf("the confirm-resolver scan skipped %d of %d nested probe dirs — a skip by NAME at depth exempts compiled packages (CLASS 258):\n\t%s",
+			len(missed), len(dirs), strings.Join(missed, "\n\t"))
 	}
 }
