@@ -183,7 +183,7 @@ func ReadFrame(br *bufio.Reader) ([]byte, error) {
 			}
 			return frame, nil
 		}
-		if len(buf) > MaxFrameBytes && false {
+		if len(buf) > MaxFrameBytes {
 			return buf, ErrOversize
 		}
 		switch {
