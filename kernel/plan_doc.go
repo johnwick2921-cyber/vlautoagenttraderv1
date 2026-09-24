@@ -1254,7 +1254,27 @@ func ValidatePlanDocWithFactsMachine(d *PlanDoc, facts PlanFacts, machine map[fl
 		band = 0.012 * facts.Price // warm-up fallback
 	}
 	for i, s := range d.Scenarios {
+		// P5 (WAVE 1a-plan, #190) — a target must sit on the FAR side of the
+		// scenario's own entry, not merely near the current price: a long
+		// target below entry (or a short target above entry) is refused at
+		// write. The entry is the arm's entry when armed, else the confirm's
+		// reference price; no anchored entry = nothing to judge a side against.
+		entry := 0.0
+		if s.Arm != nil && s.Arm.Enabled && s.Arm.Entry > 0 {
+			entry = s.Arm.Entry
+		} else if s.Confirm != nil && s.Confirm.RefPrice > 0 {
+			entry = s.Confirm.RefPrice
+		}
+		long := strings.EqualFold(strings.TrimSpace(s.Direction), "long")
 		for _, t := range s.TargetChain {
+			if entry > 0 {
+				if long && t <= entry {
+					return fmt.Errorf("scenario[%d] target %.2f is on the WRONG SIDE of entry %.2f — a long target must be ABOVE the entry (target_chain is the ordered take-profit path from entry)", i, t, entry)
+				}
+				if !long && t >= entry {
+					return fmt.Errorf("scenario[%d] target %.2f is on the WRONG SIDE of entry %.2f — a short target must be BELOW the entry (target_chain is the ordered take-profit path from entry)", i, t, entry)
+				}
+			}
 			if math.Abs(t-facts.Price) > band {
 				return fmt.Errorf("scenario[%d] target %.2f is %.0f pts from price %.2f — outside the %.0f-pt proximity band (unreachable target)", i, t, math.Abs(t-facts.Price), facts.Price, band)
 			}
