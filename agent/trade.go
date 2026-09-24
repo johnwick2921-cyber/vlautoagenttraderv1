@@ -653,6 +653,9 @@ func chatEntryError(err error) error {
 	}
 	var ref *trader.ManualEntryRefusal
 	if errors.As(err, &ref) {
+		if ref.FlattenSent { // FOLD-2 repair: reconcile-before-open flattened an orphan first
+			return fmt.Errorf("an orphan flatten was sent; the entry was refused (reconcile-before-open closed a position no ledger row explains, then the same execute-side rails as an AI decision refused the entry): %s", ref.Reason)
+		}
 		if ref.Execute { // W1b FOLD-2: refused by the AI entry's own execute-side rails
 			return fmt.Errorf("entry refused before any send (the same execute-side rails as an AI decision): %s", ref.Reason)
 		}

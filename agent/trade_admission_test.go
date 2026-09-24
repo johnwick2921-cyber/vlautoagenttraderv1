@@ -195,3 +195,16 @@ func TestChatEntryExecuteRailRefusalSaysSo(t *testing.T) {
 		t.Fatalf("an execute-rail refusal must be told as a refusal before any send, got %v", err)
 	}
 }
+
+// W1b FOLD-2 repair (verifier defect 4) — a refusal that came AFTER
+// reconcile-before-open sent an orphan flatten is told as exactly that: the
+// flatten went out, the entry was refused. Never "refused before any send".
+func TestChatEntryRefusalAfterAnOrphanFlattenSaysTheFlattenWasSent(t *testing.T) {
+	trade := &TradeAction{Action: "open_long", Symbol: "MNQ", Quantity: 1, Leverage: 1, StopLoss: 28950, TakeProfit: 29100}
+	ref := &trader.ManualEntryRefusal{Reason: "❌ [RISK CONTROL] Already at max positions (1/1)", Execute: true, FlattenSent: true}
+	err := executeTradeWith(trade, false, &errDoor{err: ref}, &admitUnderlying{})
+	if err == nil || !strings.Contains(err.Error(), "an orphan flatten was sent; the entry was refused") || !strings.Contains(err.Error(), "max positions (1/1)") ||
+		strings.Contains(err.Error(), "before any send") || strings.Contains(err.Error(), "admission gate") {
+		t.Fatalf("a refusal after an orphan flatten must say the flatten was sent, got %v", err)
+	}
+}

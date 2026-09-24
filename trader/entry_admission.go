@@ -517,9 +517,19 @@ type ManualEntryRefusal struct {
 	// send needs) rather than the admission chain. No entry reached the broker
 	// either way.
 	Execute bool
+	// FlattenSent is true when reconcile-before-open SUBMITTED a flatten of an
+	// orphan position (one no ledger row explains) before the entry was
+	// refused (W1b FOLD-2 repair): the ENTRY was not sent, but a close order
+	// was. Never told as "nothing was sent".
+	FlattenSent bool
 }
 
-func (e *ManualEntryRefusal) Error() string { return e.Reason }
+func (e *ManualEntryRefusal) Error() string {
+	if e.FlattenSent {
+		return "an orphan flatten was sent first (reconcile-before-open); the entry was refused: " + e.Reason
+	}
+	return e.Reason
+}
 
 // ManualEntryUnprotected is an entry the broker OPENED whose own stop/target
 // then failed to set (the non-CME order: open, then set): a LIVE position with
@@ -555,7 +565,9 @@ func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64,
 // apply exactly as to an AI entry; the quantity is the owner's, judged here
 // first (manualEntryQuantityRefusal: refused, never clamped). Outcomes are
 // typed: a rail refused before any broker write → *ManualEntryRefusal
-// (Execute); an entry that opened without its bracket (non-CME) →
+// (Execute; FlattenSent when reconcile had already sent an orphan flatten —
+// the entry was not sent, the flatten was); an entry that opened without its
+// bracket (non-CME) →
 // *ManualEntryUnprotected; anything else after a broker write is the
 // broker's own failure.
 func (at *AutoTrader) sendManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error) {
@@ -576,7 +588,7 @@ func (at *AutoTrader) sendManualEntry(symbol, action string, quantity float64, l
 	err := execOpen(d, rec, m)
 	if err == nil {
 		if rec.Error != "" { // reconcile_owned: refused, stamped on the record, nil
-			return nil, &ManualEntryRefusal{Reason: rec.Error, Execute: true}
+			return nil, &ManualEntryRefusal{Reason: rec.Error, Execute: true, FlattenSent: m.flattenSent}
 		}
 		return m.order, nil
 	}
@@ -585,7 +597,10 @@ func (at *AutoTrader) sendManualEntry(symbol, action string, quantity float64, l
 		return unp.Order, err
 	}
 	if !m.brokerCalled {
-		return nil, &ManualEntryRefusal{Reason: err.Error(), Execute: true}
+		return nil, &ManualEntryRefusal{Reason: err.Error(), Execute: true, FlattenSent: m.flattenSent}
+	}
+	if m.flattenSent { // FOLD-2 repair: the broker's failure came AFTER an orphan flatten went out
+		return nil, fmt.Errorf("an orphan flatten was sent first (reconcile-before-open); then the entry failed at the broker: %w", err)
 	}
 	return nil, err
 }

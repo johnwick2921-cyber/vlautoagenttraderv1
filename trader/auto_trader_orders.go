@@ -275,16 +275,25 @@ func (at *AutoTrader) ntHeldPosition(symbol string) string {
 // It does NOT cure a stale snapshot (the actual id=46 bypass) — that is Track A +
 // 0118ca77; this acts only on a snapshot that positively reports a held position.
 func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
+	_, err := at.reconcileBeforeOpenNTReport(symbol, intendedSide)
+	return err
+}
+
+// reconcileBeforeOpenNTReport is reconcileBeforeOpenNT that also reports
+// whether it SUBMITTED an orphan flatten (W1b FOLD-2 repair): true from the
+// moment CloseLong/CloseShort was called, whatever followed — so the chat door
+// never tells a refusal that came after a flatten as "nothing was sent".
+func (at *AutoTrader) reconcileBeforeOpenNTReport(symbol, intendedSide string) (flattenSent bool, err error) {
 	if at.exchange != "ninjatrader" {
-		return nil
+		return false, nil
 	}
 	// Never flatten into a dead feed (Track A also gates upstream; be defensive).
 	if down, status := at.ninjaFeedDown(); down {
-		return fmt.Errorf("reconcile-before-open: NT8 feed not Connected (%s) — refusing open", status)
+		return false, fmt.Errorf("reconcile-before-open: NT8 feed not Connected (%s) — refusing open", status)
 	}
 	held := at.ntHeldPosition(symbol)
 	if held == "" {
-		return nil // NT8 flat → proceed
+		return false, nil // NT8 flat → proceed
 	}
 	// W-EXEC-TRUTH W0 (c): a position a LEDGER row explains is another
 	// producer's (an armed fill, a Picture fill, one not yet materialized in
@@ -292,19 +301,20 @@ func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
 	// producer's trade and its bracket; the AI entry is refused instead, named.
 	if owner, owned := at.ledgerExplainsPosition(symbol, held, time.Now()); owned {
 		at.logWarnf("⛔ reconcile-before-open: NT8 holds a %s %s that the ledger explains (%s) — refusing the %s open; the position is NOT flattened.", held, symbol, owner, intendedSide)
-		return fmt.Errorf("%w: %s", errPositionOwned, owner)
+		return false, fmt.Errorf("%w: %s", errPositionOwned, owner)
 	}
 	at.logWarnf("🚨 reconcile-before-open: NT8 holds a %s %s before an intended %s open — flattening first (awaiting fill) to avoid compounding onto an orphan.", held, symbol, intendedSide)
 	// Timestamp BEFORE the flatten so we only accept a close that our flatten caused.
 	t0 := time.Now().UnixMilli()
 	var ferr error
+	flattenSent = true // the flatten is submitted below, whatever follows
 	if held == "long" {
 		_, ferr = at.trader.CloseLong(symbol, 0)
 	} else {
 		_, ferr = at.trader.CloseShort(symbol, 0)
 	}
 	if ferr != nil {
-		return fmt.Errorf("reconcile-before-open: flatten submit failed: %w", ferr)
+		return true, fmt.Errorf("reconcile-before-open: flatten submit failed: %w", ferr)
 	}
 	// AWAIT its own fill (NOT fire-and-forget — the trap 0118ca77 fixed). Prefer the
 	// FILL-CONFIRMED close FRAME (position_close), which arrives ~instantly for the
@@ -316,20 +326,20 @@ func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
 	for time.Now().Before(deadline) {
 		time.Sleep(reconcileFlattenPollInterval)
 		if down, _ := at.ninjaFeedDown(); down {
-			return fmt.Errorf("reconcile-before-open: feed dropped during flatten — refusing open")
+			return true, fmt.Errorf("reconcile-before-open: feed dropped during flatten — refusing open")
 		}
 		// Frame path (fast, account-correct): our flatten's close was fill-confirmed.
 		if ntTCP != nil && ntTCP.CloseConfirmedSince(symbol, held, t0) {
 			at.logInfof("✅ reconcile-before-open: %s flatten fill-confirmed via position_close frame — proceeding to open.", symbol)
-			return nil
+			return true, nil
 		}
 		// Snapshot fallback (covers a manual/external flatten with no close frame).
 		if at.ntHeldPosition(symbol) == "" {
 			at.logInfof("✅ reconcile-before-open: %s flattened + confirmed flat (snapshot) — proceeding to open.", symbol)
-			return nil
+			return true, nil
 		}
 	}
-	return fmt.Errorf("reconcile-before-open: flatten not confirmed flat within %s — refusing open (never compound)", reconcileFlattenTimeout)
+	return true, fmt.Errorf("reconcile-before-open: flatten not confirmed flat within %s — refusing open (never compound)", reconcileFlattenTimeout)
 }
 
 // openEntryMarketRead is the open path's market read — market.GetWithExchange
@@ -348,6 +358,10 @@ type manualOpen struct {
 	// brokerCalled is set immediately before the entry's first broker write
 	// (the CME bracket set, or the open itself).
 	brokerCalled bool
+	// flattenSent is set when reconcile-before-open SUBMITTED an orphan
+	// flatten before this entry (W1b FOLD-2 repair): a later refusal or
+	// failure of the entry is then never told as "nothing was sent".
+	flattenSent bool
 	// order is what the broker returned for the open.
 	order map[string]interface{}
 }
@@ -373,7 +387,11 @@ func (at *AutoTrader) executeOpenLong(decision *kernel.Decision, actionRecord *s
 	logger.Infof("  📈 Open long: %s", decision.Symbol)
 
 	// TRACK B — reconcile NT8 net before opening; flatten an orphan first or refuse.
-	if err := at.reconcileBeforeOpenNT(decision.Symbol, "long"); err != nil {
+	flattened, err := at.reconcileBeforeOpenNTReport(decision.Symbol, "long")
+	if manual != nil {
+		manual.flattenSent = flattened // FOLD-2 repair: the door tells a flatten that went out
+	}
+	if err != nil {
 		return at.reconcileRefusal(err, actionRecord)
 	}
 	return at.openEntryWithRecord(decision, actionRecord, "long", manual)
@@ -390,7 +408,11 @@ func (at *AutoTrader) executeOpenShort(decision *kernel.Decision, actionRecord *
 	logger.Infof("  📉 Open short: %s", decision.Symbol)
 
 	// TRACK B — reconcile NT8 net before opening; flatten an orphan first or refuse.
-	if err := at.reconcileBeforeOpenNT(decision.Symbol, "short"); err != nil {
+	flattened, err := at.reconcileBeforeOpenNTReport(decision.Symbol, "short")
+	if manual != nil {
+		manual.flattenSent = flattened // FOLD-2 repair: the door tells a flatten that went out
+	}
+	if err != nil {
 		return at.reconcileRefusal(err, actionRecord)
 	}
 	return at.openEntryWithRecord(decision, actionRecord, "short", manual)
