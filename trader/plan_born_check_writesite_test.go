@@ -342,7 +342,7 @@ func TestW2LiveReadStampsTheReadClock(t *testing.T) {
 	}
 }
 
-// TestSeamedWakePublishClockStaysLive (WAVE 1a-plan P15 revert, CTO 03:31) —
+// TestSeamedWakePublishesAtTheSeam (WAVE 1a-plan P15 revert, CTO 03:31) —
 // the seamed wake freezes the READ clock ONLY. Driving the production seamed
 // entry (runPlannerReadWithTriggerClaimedCtx with a FROZEN now) and a scripted
 // AI call that occupies a measurable wall duration: ReadClockMs must be the
@@ -350,7 +350,7 @@ func TestW2LiveReadStampsTheReadClock(t *testing.T) {
 // later (the born-check then spans those groups). Under the P15 defect the
 // publish instant WAS the frozen wake instant — PublishClockMs == ReadClockMs,
 // difference 0.
-func TestSeamedWakePublishClockStaysLive(t *testing.T) {
+func TestSeamedWakePublishesAtTheSeam(t *testing.T) {
 	at, st, _ := realPathTrader(t, false, func(int, string) (string, error) {
 		time.Sleep(600 * time.Millisecond) // the AI call occupies the wire
 		return validShortPlanJSON, nil

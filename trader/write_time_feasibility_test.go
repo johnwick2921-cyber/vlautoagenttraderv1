@@ -204,6 +204,33 @@ func TestWriteTimeFeasibilityLastAttemptDisablesArm(t *testing.T) {
 	}
 }
 
+// TestWriteTimeFeasibilityTargetAtEntryDisablesArm (CTO pin request,
+// 2026-09-24 15:33): a target AT the arm entry composes R:R = 0 — the side
+// check may stay strict (< / >) precisely because the arm seam / entry-gate
+// floor (armMinRRFor) refuses R=0 downstream. Pin: the write lands with the
+// arm DISABLED, reason "rr". RED: neutering the floor (armMinRRFor → 0) leaves
+// the R=0 arm enabled and this pin fails.
+func TestWriteTimeFeasibilityTargetAtEntryDisablesArm(t *testing.T) {
+	at := feasPlannerTrader(t, nil)
+	feasStubBars(t)
+	zero := strings.ReplaceAll(infeasibleFeasPlanJSON, `"target":15620`, `"target":15550`)
+	zero = strings.Replace(zero, `"target_chain": [15550, 15620]`, `"target_chain": [15550]`, 1)
+	zero = strings.Replace(zero, `"r_to_arm_target":7.0`, `"r_to_arm_target":0.0`, 1)
+	logBuf := captureTraderLog(t)
+	_, lc, err := at.runPlannerReadCoreWithFactsGradesClock(feasClock(), "NY", "2026-08-14", "owner_reset",
+		"deepseek-v4-pro", "hashFeasZero", "", "", "", "FULLPROMPT",
+		kernel.PlanFacts{Price: 15550, DATR: 300}, nil, map[float64]string{15480: "PWL", 15620: "PDH"}, nil, true,
+		func(userPrompt string) (string, error) { return zero, nil })
+	if err != nil || lc != "no_trade" {
+		t.Fatalf("target == entry (R:R 0.00) must FAIL CLOSED: lc=%q err=%v", lc, err)
+	}
+	// The refusal is kernel/plan_doc.go's strict arm geometry — stop < entry <
+	// target — the downstream floor the side check defers to.
+	if !strings.Contains(logBuf.String(), "stop 15540.00 < entry 15550.00 < target 15550.00 required") {
+		t.Fatalf("the fail-closed reason must name the strict arm geometry; log:\n%s", logBuf.String())
+	}
+}
+
 // CTO RECHECK S6 — the disable WARN carries BOTH the class and the verbose
 // verdict (an arm first authored infeasible on the last attempt still shows
 // the numbers on that line). Asserted via the counter + doc, the verbose half
