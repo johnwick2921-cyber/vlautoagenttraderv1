@@ -169,8 +169,16 @@ func TestTradingAppNeverLinksTheUpdaterWorkerSide(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if guarded < 20 {
-		t.Fatalf("only %d trading-app packages were checked — the walk is not covering the app", guarded)
+	// every guarded root must actually have been walked — a walk that found
+	// nothing (wrong module name, a skipped dir) would otherwise pass vacuously
+	seen := map[string]bool{}
+	for _, g := range guarded {
+		seen[g] = true
+	}
+	for _, want := range append([]string{"nofx"}, prefixed("nofx/", tradingAppDirs)...) {
+		if !seen[want] {
+			t.Fatalf("guarded root %s was not walked (walked %d packages: %v) — the guard is not covering the app", want, len(guarded), guarded)
+		}
 	}
 	if len(offenders) > 0 {
 		t.Fatalf("the trading app must never link the updater worker side:\n%s", strings.Join(offenders, "\n"))
@@ -206,8 +214,8 @@ func TestWorkerImportGuardCatchesDirectAndTransitiveImports(t *testing.T) {
 	}
 	// positive control: the app dials, the worker binary listens — clean
 	root := base()
-	if off, guarded, err := workerImportOffenders(root); err != nil || len(off) != 0 || guarded != 3 {
-		t.Fatalf("clean synthetic module: offenders=%v guarded=%d err=%v (want none, 3 guarded)", off, guarded, err)
+	if off, guarded, err := workerImportOffenders(root); err != nil || len(off) != 0 || strings.Join(guarded, ",") != "nofx,nofx/api,nofx/trader" {
+		t.Fatalf("clean synthetic module: offenders=%v guarded=%v err=%v (want none; guarded nofx, nofx/api, nofx/trader)", off, guarded, err)
 	}
 	for name, c := range map[string]struct{ rel, body, want string }{
 		"direct api":        {"api/worker.go", "package api\nimport _ \"nofx/internal/updaterwire/wireserver\"\n", "api"},
@@ -242,11 +250,11 @@ func TestWorkerImportGuardCatchesDirectAndTransitiveImports(t *testing.T) {
 // workerImportOffenders builds the module's package import graph from every
 // non-test .go file under root (module path from root/go.mod) and reports,
 // for each trading-app package, any path to a forbidden worker package.
-// guarded is how many trading-app packages were checked.
-func workerImportOffenders(root string) (offenders []string, guarded int, err error) {
+// guarded lists the trading-app packages that were checked, sorted.
+func workerImportOffenders(root string) (offenders []string, guarded []string, err error) {
 	modBytes, err := os.ReadFile(filepath.Join(root, "go.mod"))
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, err
 	}
 	module := ""
 	for _, line := range strings.Split(string(modBytes), "\n") {
@@ -255,7 +263,7 @@ func workerImportOffenders(root string) (offenders []string, guarded int, err er
 		}
 	}
 	if module == "" {
-		return nil, 0, fmt.Errorf("no module line in go.mod")
+		return nil, nil, fmt.Errorf("no module line in go.mod")
 	}
 	imports := map[string]map[string]bool{} // import path → module-internal imports
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
@@ -295,7 +303,7 @@ func workerImportOffenders(root string) (offenders []string, guarded int, err er
 		return nil
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, err
 	}
 	forbidden := func(ip string) bool {
 		for _, f := range forbiddenWorkerPackages {
@@ -351,5 +359,13 @@ func workerImportOffenders(root string) (offenders []string, guarded int, err er
 			}
 		}
 	}
-	return offenders, len(starts), nil
+	return offenders, starts, nil
+}
+
+func prefixed(prefix string, xs []string) []string {
+	out := make([]string, 0, len(xs))
+	for _, x := range xs {
+		out = append(out, prefix+x)
+	}
+	return out
 }
