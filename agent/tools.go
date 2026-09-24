@@ -722,7 +722,7 @@ func buildAgentTools() []mcp.Tool {
 						},
 						"stop_loss": map[string]any{
 							"type":        "number",
-							"description": "Protective stop price (absolute). REQUIRED for open_long/open_short: an entry without its own stop and target is refused by the admission gate.",
+							"description": "Protective stop price (absolute). REQUIRED for open_long/open_short: an open proposed without its own stop AND target is refused before any confirmation is asked.",
 						},
 						"take_profit": map[string]any{
 							"type":        "number",
@@ -2750,8 +2750,8 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 		Symbol   string  `json:"symbol"`
 		Quantity float64 `json:"quantity"`
 		Leverage int     `json:"leverage"`
-		// W1b E9 — the entry's own bracket (optional here; the admission
-		// chain refuses an open without it).
+		// W1b E9 — the entry's own bracket: required for an open (refused
+		// below at proposal; the admission chain refuses it again at send).
 		StopLoss   float64 `json:"stop_loss"`
 		TakeProfit float64 `json:"take_profit"`
 	}
@@ -2778,6 +2778,12 @@ func (a *Agent) toolExecuteTrade(ctx context.Context, userID int64, lang, argsJS
 	// For open actions, quantity must be > 0
 	if (args.Action == "open_long" || args.Action == "open_short") && args.Quantity <= 0 {
 		return `{"error": "quantity must be > 0 for opening positions"}`
+	}
+	// W1b E9 repair — an open needs its OWN stop and target at PROPOSAL time:
+	// the admission chain refuses one without them, so a pending trade that
+	// lacks either would only ask the owner to confirm a certain refusal.
+	if (args.Action == "open_long" || args.Action == "open_short") && !(args.StopLoss > 0 && args.TakeProfit > 0) {
+		return `{"error": "stop_loss and take_profit are both required for open_long/open_short (absolute prices): a chat entry is sent with its own bracket or not at all"}`
 	}
 
 	// For stock symbols, check market hours and warn if closed
