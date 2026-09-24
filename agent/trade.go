@@ -10,6 +10,7 @@ import (
 	"nofx/market"
 	"nofx/store"
 	"nofx/trader"
+	ntTrader "nofx/trader/ninjatrader"
 	"sort"
 	"strings"
 	"sync"
@@ -253,15 +254,33 @@ func (m managedTradeCandidate) tradeUnderlying() tradeUnderlyingTrader {
 	return nil
 }
 
-// tradeCandidatesOf lists the traders resolveTradeExecutionContext may select,
-// in trader-id order (the manager hands back a map; a stable order means the
-// same roster always resolves the same way). A package var ONLY so a test can
-// hand the production resolver a fake roster; production reads the manager.
-var tradeCandidatesOf = func(a *Agent) ([]tradeCandidate, error) {
+// The NT8 broker's wire instrument is what resolveCMETrader matches a CME
+// symbol's root against, by assertion on the underlying trader. Pinned at
+// compile time (W1b FOLD-5 repair): a renamed TCPTrader.WireSymbol would
+// otherwise make every CME chat entry silently unroutable.
+var _ interface{ WireSymbol() string } = (*ntTrader.TCPTrader)(nil)
+
+// tradeRosterOf is the manager's roster (GetAllTraders). A package var ONLY so
+// a test can hand the PRODUCTION adapter below (tradeCandidatesOf's body,
+// managedTradeCandidate) a roster of real *trader.AutoTrader (W1b FOLD-5
+// repair, canon 53); production reads the manager.
+var tradeRosterOf = func(a *Agent) (map[string]*trader.AutoTrader, error) {
 	if a.traderManager == nil {
 		return nil, fmt.Errorf("no trader manager available")
 	}
-	all := a.traderManager.GetAllTraders()
+	return a.traderManager.GetAllTraders(), nil
+}
+
+// tradeCandidatesOf lists the traders resolveTradeExecutionContext may select,
+// in trader-id order (the manager hands back a map; a stable order means the
+// same roster always resolves the same way). A package var ONLY so a test can
+// hand the production resolver a fake roster; production reads the manager
+// through tradeRosterOf.
+var tradeCandidatesOf = func(a *Agent) ([]tradeCandidate, error) {
+	all, err := tradeRosterOf(a)
+	if err != nil {
+		return nil, err
+	}
 	ids := make([]string, 0, len(all))
 	for id := range all {
 		ids = append(ids, id)

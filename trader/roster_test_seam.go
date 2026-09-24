@@ -1,0 +1,17 @@
+package trader
+
+// NewAutoTraderOnBrokerForTest builds a minimal AutoTrader over broker for
+// ANOTHER package's call-site test (W1b FOLD-5 repair, canon 53): the agent's
+// chat-door resolver reads the manager's roster of *AutoTrader through its
+// production adapter (managedTradeCandidate → GetStatus / GetExchange /
+// GetUnderlyingTrader), and a test there cannot build one any other way
+// without NewAutoTrader's process-wide side effects (the NT8 listener, the AI
+// client, the bar/level sinks). It carries no store, no AI client and no
+// loop; running only sets the flag GetStatus reports. Never called in
+// production.
+func NewAutoTraderOnBrokerForTest(id, exchange string, broker Trader, running bool) *AutoTrader {
+	at := &AutoTrader{id: id, name: id, exchange: exchange, trader: broker}
+	at.config.ID, at.config.Name, at.config.Exchange = id, id, exchange
+	at.isRunning = running
+	return at
+}
