@@ -16,7 +16,16 @@
 //
 //	go run ./cmd/gate-jwt <email> data/data.db
 //
-// Local, single-owner, SIM-only. Prints the token to stdout and nothing else.
+// Local, single-owner, SIM-only. stdout is NOT the token alone: the logger
+// writes to stdout too, so log lines come first (store.New's "✅ Database
+// initialized", and config.Init's JWT_SECRET warning when the secret is
+// unset). The token is the LAST line, with no trailing newline, and the only
+// eyJ… segment — capture it by that, never the whole of stdout:
+//
+//	go run ./cmd/gate-jwt <email> data/data.db 2>/dev/null | grep -oE 'eyJ[A-Za-z0-9_.-]+' | tail -1
+//
+// (TestGateJWTBinaryPrintsAGateScopedTokenLast runs the built tool and pins
+// this shape; errors go to stderr with a non-zero exit.)
 package main
 
 import (
@@ -71,7 +80,8 @@ func main() {
 // MACHINE token (scope gate-jwt) carrying that row's id and email. main()
 // calls it; main_test.go drives the token it returns through the production
 // server (canon 53), so the scope the tool mints and the routes the API
-// admits it to are pinned together.
+// admits it to are pinned together. main_pin_test.go pins that it is the
+// package's ONE mint and main's only way to one, and runs the built tool.
 func mintGateToken(st *store.Store, email string) (string, error) {
 	user, err := st.User().GetByEmail(email)
 	if err != nil {
