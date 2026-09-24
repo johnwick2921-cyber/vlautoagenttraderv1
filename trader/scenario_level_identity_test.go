@@ -2,12 +2,15 @@ package trader
 
 import (
 	"encoding/json"
-	"nofx/kernel"
-	"nofx/market"
-	"nofx/store"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"nofx/kernel"
+	"nofx/logger"
+	"nofx/market"
+	"nofx/store"
 )
 
 func identityTestLevel(now time.Time, price float64) kernel.DetectedLevel {
@@ -165,5 +168,64 @@ func TestIdentityRecordingPanicContained(t *testing.T) {
 	returned = true
 	if !returned {
 		t.Fatal("recording panic escaped")
+	}
+}
+
+// TestLevelIdentityBootLineFoldsOverlay (WAVE 1a-plan P2) — the boot line's
+// identity map reads the plan through the ONE fold: an owner overlay that adds
+// an identity level must be visible in the boot line. RED on the base-only
+// reader: map ids=0/1. GREEN: map ids=0/2.
+func TestLevelIdentityBootLineFoldsOverlay(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	defer st.Close()
+
+	yes := true
+	at := mkTrader("ninjatrader", &yes, "5m")
+	at.store = st
+	at.id = "trader-1"
+
+	now := ctAt(t, 11, 0)
+	tradeDate := plannerTradeDateCT(now)
+	sessName := at.activeSessionName(now)
+
+	base := kernel.PlanDoc{
+		Reasoning:      "wave-1a-p2-identity",
+		Bias:           kernel.PlanBias{Direction: "neutral"},
+		DeathCondition: "flat",
+		Scenarios: []kernel.PlanScenario{
+			{ID: "S1", Condition: "reclaim", Direction: "long", Quality: "A"},
+		},
+		IdentityLevels: []kernel.PlanLevel{{Label: "ONH", Price: 30000, Grade: "A"}},
+	}
+	baseJSON, _ := json.Marshal(&base)
+	planID := st.Plan().ResolvePlanID(tradeDate, sessName, at.id)
+	_, err = st.Plan().AppendPlan(&store.PlanDB{
+		PlanID: planID, StrategyID: at.id, TradeDate: tradeDate, Session: sessName,
+		TriggerReason: "wave-1a-p2-identity", Lifecycle: "active",
+		ModelID: "deepseek-v4-pro", PromptHash: "deadbeef", Doc: string(baseJSON),
+	})
+	if err != nil {
+		t.Fatalf("append plan: %v", err)
+	}
+	_, err = st.Plan().AppendOverlay(&store.PlanOverlayDB{
+		PlanID: planID, PlanVersion: 1, OverlayID: "owner-add-onl",
+		Origin: "owner",
+		Patch:  `[{"op":"add","path":"/identity_levels/-","value":{"label":"ONL","price":29900,"grade":"A"}}]`,
+	})
+	if err != nil {
+		t.Fatalf("append overlay: %v", err)
+	}
+
+	var buf strings.Builder
+	old := logger.Log.Writer()
+	logger.Log.SetOutput(&buf)
+	t.Cleanup(func() { logger.Log.SetOutput(old) })
+	at.logLevelIdentityBootAt(now)
+
+	if !strings.Contains(buf.String(), "map ids=0/2 (no-formation=2)") {
+		t.Fatalf("the boot line must read the folded identity map (0/2), got:\n%s", buf.String())
 	}
 }

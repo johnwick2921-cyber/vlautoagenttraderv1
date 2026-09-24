@@ -132,7 +132,11 @@ func (at *AutoTrader) logLevelIdentityBootAt(now time.Time) {
 		return
 	}
 	if p, err := at.store.Plan().GetLatestPlanForTraderSession(plannerTradeDateCT(now), at.activeSessionName(now), at.id); err == nil && p != nil {
-		_ = json.Unmarshal([]byte(p.Doc), &doc)
+		// WAVE 1a-plan P2 — the boot line reads the ONE fold: an owner overlay
+		// that adds an identity level must be visible in the boot line.
+		if d, ok := resolveActivePlanDoc(at.store, p); ok {
+			doc = &d
+		}
 	}
 	var counts *store.LevelIdentityCounts
 	if c, err := at.store.LevelIdentityCounts(at.id); err == nil {
