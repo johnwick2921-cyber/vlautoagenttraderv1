@@ -160,20 +160,20 @@ func TestPlaceOneStopEntryOutcomeFollowsTheLedgerStamp(t *testing.T) {
 	if d.Action != stopEntryPlace {
 		t.Fatalf("fixture must be an otherwise-placeable arm, got %q", d.Action)
 	}
-	if got := at.placeOneStopEntry(&fakePlacer{err: fmt.Errorf("refused before the stamp")}, &fakeLedger{}, r, d, 99, time.Now(), freeSlot()); got != stopPlaceNotSent {
+	if got := at.placeOneStopEntry(&fakePlacer{err: fmt.Errorf("refused before the stamp")}, &fakeLedger{}, r, d, 99, rthInstant(), freeSlot()); got != stopPlaceNotSent {
 		t.Fatalf("a refusal before the ledger stamp must be NOT_SENT, got %d", got)
 	}
-	if got := at.placeOneStopEntry(&stampThenFailPlacer{}, &fakeLedger{}, r, d, 99, time.Now(), freeSlot()); got != stopPlaceCommitted {
+	if got := at.placeOneStopEntry(&stampThenFailPlacer{}, &fakeLedger{}, r, d, 99, rthInstant(), freeSlot()); got != stopPlaceCommitted {
 		t.Fatalf("a failure after the ledger stamp must be COMMITTED (ambiguous send), got %d", got)
 	}
-	if got := at.placeOneStopEntry(&fakePlacer{}, &fakeLedger{}, r, d, 99, time.Now(), freeSlot()); got != stopPlaceCommitted {
+	if got := at.placeOneStopEntry(&fakePlacer{}, &fakeLedger{}, r, d, 99, rthInstant(), freeSlot()); got != stopPlaceCommitted {
 		t.Fatalf("a real send must be COMMITTED, got %d", got)
 	}
 	cancelled := decideStopEntry("LONG", r.EntryPx, testOffset(), testTick, 200) // already through the trigger
 	if cancelled.Action != stopEntryCancel {
 		t.Fatalf("fixture must be a guard cancel, got %q", cancelled.Action)
 	}
-	if got := at.placeOneStopEntry(&fakePlacer{}, &fakeLedger{}, r, cancelled, 200, time.Now(), freeSlot()); got != stopPlaceNotSent {
+	if got := at.placeOneStopEntry(&fakePlacer{}, &fakeLedger{}, r, cancelled, 200, rthInstant(), freeSlot()); got != stopPlaceNotSent {
 		t.Fatalf("a guard cancel is never sent, got %d", got)
 	}
 }

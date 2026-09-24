@@ -136,7 +136,7 @@ func TestStopPlacementFastRejectBeforeSendReturns(t *testing.T) {
 		at.onArmedOrderUpdate(ntwire.OrderUpdatePayload{SignalID: "fast-reject", OrderName: "fast-reject", State: "rejected", Reason: "stale signal age=715.3s (max 60s)"}, ledger)
 	}}
 	d := decideStopEntry("long", row.EntryPx, testOffset(), testTick, 29599)
-	at.placeOneStopEntry(pl, ledger, row, d, 29599, time.Now(), freeSlot())
+	at.placeOneStopEntry(pl, ledger, row, d, 29599, rthInstant(), freeSlot())
 	rows, err := ledger.ListForPlan("fast")
 	if err != nil {
 		t.Fatal(err)
@@ -147,7 +147,7 @@ func TestStopPlacementFastRejectBeforeSendReturns(t *testing.T) {
 }
 
 func TestPlacementBookRequiresLiveEntryAndSilenceKeepsSlot(t *testing.T) {
-	at, st, _, _ := shadowWireHarness(t, store.StrategyConfig{})
+	at, st, _, _ := shadowWireHarnessAt(t, store.StrategyConfig{}, rthInstant())
 	ledger := st.ArmedOrders()
 	row := &store.ArmedOrderDB{TraderID: at.id, PlanID: "book-proof", Scenario: "S1", State: store.StateArmed}
 	if err := ledger.UpsertArm(row); err != nil {
@@ -157,7 +157,7 @@ func TestPlacementBookRequiresLiveEntryAndSilenceKeepsSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 	broker := at.armedTrader()
-	now := time.Now()
+	now := rthInstant()
 	if err := ledger.DB().Model(row).UpdateColumn("updated_at", now.Add(-time.Hour)).Error; err != nil {
 		t.Fatal(err)
 	}
