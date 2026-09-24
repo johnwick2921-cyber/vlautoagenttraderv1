@@ -45,15 +45,93 @@ var (
 )
 
 func TestOnlyTheOperatorCLIWritesTheMaintenanceHold(t *testing.T) {
-	allowed := holdWriterFiles
-	writers := map[string]bool{"WriteMaintenanceHold": true, "ClearMaintenanceHold": true, "ForceClearMaintenanceHold": true}
-	pathUsers := holdPathUserFiles
 	root, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var offenders []string
-	scanned := 0
+	offenders, scanned, err := holdWriterOffenders(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scanned < 100 {
+		t.Fatalf("scan saw only %d files — the walk is not covering the module", scanned)
+	}
+	if len(offenders) > 0 {
+		t.Fatalf("the maintenance hold may be written/cleared only by the operator CLI (and the M4 updater, when it lands):\n%s", strings.Join(offenders, "\n"))
+	}
+}
+
+// The census is proved on a synthetic module (M3): the worker's hold writer
+// is admitted by its EXACT repo path. internal/updaterworker/hold.go calling
+// the writers and MaintenanceHoldPath is clean (positive control); the same
+// code under any other path — another file in the worker package, a deeper
+// file with the same base name, the worker binary's main, the app's update
+// handler, the wire — offends; and even the admitted file may not name
+// "hold.json" (that literal stays in the store).
+func TestHoldWriterCensusAdmitsTheWorkerOnlyByName(t *testing.T) {
+	const worker = "package updaterworker\n\nimport \"nofx/store\"\n\n" +
+		"func HoldForJob(d string) error {\n\t_ = store.MaintenanceHoldPath(d)\n\treturn store.WriteMaintenanceHold(d, store.MaintenanceHold{})\n}\n\n" +
+		"func ReleaseJob(d string) error { return store.ClearMaintenanceHold(d) }\n"
+	write := func(root, rel, body string) {
+		t.Helper()
+		p := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	base := func() string {
+		root := t.TempDir()
+		write(root, "go.mod", "module nofx\n\ngo 1.25\n")
+		write(root, "store/maintenance_hold.go", "package store\n\nconst holdFile = \"hold.json\"\n\n"+
+			"func MaintenanceHoldPath(d string) string { return d + \"/\" + holdFile }\n\n"+
+			"func WriteMaintenanceHold(d string, h any) error { return nil }\n")
+		write(root, "internal/holdcli/holdcli.go", "package holdcli\n\nimport \"nofx/store\"\n\nfunc Set(d string) error { return store.WriteMaintenanceHold(d, nil) }\n")
+		write(root, "internal/updaterworker/hold.go", worker)
+		write(root, "api/handler_updates.go", "package api\n")
+		return root
+	}
+	// positive control: the admitted worker file writes, clears and resolves the path
+	root := base()
+	off, scanned, err := holdWriterOffenders(root)
+	if err != nil || len(off) != 0 || scanned != 4 {
+		t.Fatalf("clean synthetic module: offenders=%v scanned=%d err=%v (want none, 4 files)", off, scanned, err)
+	}
+	for name, c := range map[string]struct{ rel, body, want string }{
+		"other file in the worker package": {"internal/updaterworker/other.go", strings.Replace(worker, "HoldForJob", "H2", 1), "internal/updaterworker/other.go: WriteMaintenanceHold"},
+		"same base name, deeper path":      {"internal/updaterworker/sub/hold.go", worker, "internal/updaterworker/sub/hold.go: WriteMaintenanceHold"},
+		"the worker binary's main":         {"cmd/nofx-updater/main.go", "package main\n\nimport \"nofx/store\"\n\nfunc main() { store.ClearMaintenanceHold(\"d\") }\n", "cmd/nofx-updater/main.go: ClearMaintenanceHold"},
+		"the app's update handler":         {"api/handler_updates.go", "package api\n\nimport \"nofx/store\"\n\nfunc clear() { store.ForceClearMaintenanceHold(\"d\") }\n", "api/handler_updates.go: ForceClearMaintenanceHold"},
+		"the wire resolving the hold path": {"internal/updaterwire/dial.go", "package updaterwire\n\nimport \"nofx/store\"\n\nvar p = store.MaintenanceHoldPath(\"d\")\n", "internal/updaterwire/dial.go: references MaintenanceHoldPath"},
+		"admitted file naming hold.json":   {"internal/updaterworker/hold.go", worker + "\nvar raw = \"updater/hold.json\"\n", "internal/updaterworker/hold.go: names the hold file"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := base()
+			write(root, c.rel, c.body)
+			off, _, err := holdWriterOffenders(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			hit := false
+			for _, o := range off {
+				hit = hit || strings.HasPrefix(o, c.want)
+			}
+			if !hit {
+				t.Fatalf("offenders = %v, want one starting %q", off, c.want)
+			}
+		})
+	}
+}
+
+// holdWriterOffenders scans every non-test .go file under root and reports
+// each call to a hold writer, each MaintenanceHoldPath reference and each
+// "hold.json" literal outside the admitted files (repo-relative slash paths).
+func holdWriterOffenders(root string) (offenders []string, scanned int, err error) {
+	allowed := holdWriterFiles
+	writers := map[string]bool{"WriteMaintenanceHold": true, "ClearMaintenanceHold": true, "ForceClearMaintenanceHold": true}
+	pathUsers := holdPathUserFiles
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -112,15 +190,7 @@ func TestOnlyTheOperatorCLIWritesTheMaintenanceHold(t *testing.T) {
 		})
 		return nil
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if scanned < 100 {
-		t.Fatalf("scan saw only %d files — the walk is not covering the module", scanned)
-	}
-	if len(offenders) > 0 {
-		t.Fatalf("the maintenance hold may be written/cleared only by the operator CLI (and the M4 updater, when it lands):\n%s", strings.Join(offenders, "\n"))
-	}
+	return offenders, scanned, err
 }
 
 // The admission list is pinned exactly: widening it is a reviewed act, not a
@@ -151,12 +221,14 @@ func TestHoldWriterAdmissionsArePinned(t *testing.T) {
 // The app DIALS the updater worker (nofx/internal/updaterwire); only the
 // worker binary may LISTEN (nofx/internal/updaterwire/wireserver) or hold
 // the worker's hold writer (nofx/internal/updaterworker, M4). If api/,
-// trader/, kernel/, agent/, telegram/ or the root main package could reach
-// either — directly or through any chain of module packages — an app-side
-// bug could serve forged worker verbs or write the hold. Build tags are
-// ignored (every non-test file counts), which can only over-report.
+// trader/, kernel/, agent/, telegram/, store/ or the root main package could
+// reach either — directly or through any chain of module packages — an
+// app-side bug could serve forged worker verbs or write the hold. (store/ is
+// in the design note's list; the worker's hold.go imports store, so the
+// reverse edge must never appear.) Build tags are ignored (every non-test
+// file counts), which can only over-report.
 var (
-	tradingAppDirs          = []string{"api", "trader", "kernel", "agent", "telegram"}
+	tradingAppDirs          = []string{"api", "trader", "kernel", "agent", "telegram", "store"}
 	forbiddenWorkerPackages = []string{"nofx/internal/updaterwire/wireserver", "nofx/internal/updaterworker"}
 )
 
@@ -222,6 +294,7 @@ func TestWorkerImportGuardCatchesDirectAndTransitiveImports(t *testing.T) {
 		"transitive helper": {"internal/helper/h.go", "package helper\nimport _ \"nofx/internal/updaterworker\"\n", "api"},
 		"trader":            {"trader/w.go", "package trader\nimport w \"nofx/internal/updaterworker\"\nvar _ = w.X\n", "trader"},
 		"root main":         {"main_worker.go", "package main\nimport _ \"nofx/internal/updaterwire/wireserver\"\n", "(root main)"},
+		"store":             {"store/s.go", "package store\nimport _ \"nofx/internal/updaterworker\"\n", "store"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := base()
