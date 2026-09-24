@@ -375,9 +375,9 @@ func (r Request) Validate() error {
 }
 
 type wireRequest struct {
-	V       int    `json:"v"`
-	Verb    Verb   `json:"verb"`
-	Payload any    `json:"payload"`
+	V       int  `json:"v"`
+	Verb    Verb `json:"verb"`
+	Payload any  `json:"payload"`
 }
 
 // EncodeRequest validates r and returns its frame including the newline. An

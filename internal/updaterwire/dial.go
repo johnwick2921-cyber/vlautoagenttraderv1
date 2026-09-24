@@ -34,12 +34,12 @@ type Client struct {
 }
 
 // Dial connects to the worker socket at path (from SocketPath). It refuses —
-// before connecting — a path that is relative, a dir that is not a private
+// before connecting — a path that is relative or not in clean form, a dir that is not a private
 // 0700 dir we own, and a socket that is a symlink, not a socket, not ours or
 // looser than 0600; after connecting, a listener whose SO_PEERCRED uid is not
 // ours. An absent socket (worker not running) wraps fs.ErrNotExist.
 func Dial(path string) (*Client, error) {
-	if !filepath.IsAbs(path) {
+	if !filepath.IsAbs(path) || filepath.Clean(path) != path {
 		return nil, ErrBadPath
 	}
 	euid := dialGeteuid()

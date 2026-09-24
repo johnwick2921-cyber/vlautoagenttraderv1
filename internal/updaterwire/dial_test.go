@@ -220,8 +220,17 @@ func TestDialRefusesASymlinkOrRegularFile(t *testing.T) {
 }
 
 func TestDialRefusesARelativePath(t *testing.T) {
-	if _, err := Dial("data/updater/worker.sock"); !errors.Is(err, ErrBadPath) {
+	if _, err := Dial("data/updater/" + SocketFileName); !errors.Is(err, ErrBadPath) {
 		t.Fatalf("a relative socket path must be refused, got %v", err)
+	}
+	_, sock := privateSockDir(t)
+	echoListener(t, sock, 0o600)
+	unclean := filepath.Dir(sock) + "/../" + UpdaterDirName + "/" + SocketFileName
+	if _, err := Dial(unclean); !errors.Is(err, ErrBadPath) {
+		t.Fatalf("a non-clean socket path must be refused, got %v", err)
+	}
+	if err := dialStatus(sock); err != nil {
+		t.Fatalf("positive control (clean path): %v", err)
 	}
 }
 

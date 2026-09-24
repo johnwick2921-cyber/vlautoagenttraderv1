@@ -220,8 +220,8 @@ func TestReadFrameCapsAt16KiB(t *testing.T) {
 func TestEncodeRefusesAnInvalidRequest(t *testing.T) {
 	bad := []Request{
 		{Verb: "exec"},
-		{Verb: VerbInstall},                                    // no payload
-		{Verb: VerbInstall, Status: &StatusPayload{}},          // wrong payload
+		{Verb: VerbInstall}, // no payload
+		{Verb: VerbInstall, Status: &StatusPayload{}},                                      // wrong payload
 		{Verb: VerbStatus, Status: &StatusPayload{}, Cancel: &CancelPayload{JobID: okJob}}, // two payloads
 		NewInstall("../x", okJob),
 		NewInstall(okRelease, "short"),
