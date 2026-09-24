@@ -179,7 +179,7 @@ func TestEntryGateArmSeamBuilderRefusesShadow(t *testing.T) {
 	// Breakout_retest is shadowed by env in this test process — resolve through
 	// the real chain so the arm seam's builder exercises conditionShadowedFor.
 	t.Setenv("SHADOW_CONDITIONS", "breakout_retest")
-	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0)
+	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC))
 	if !refused {
 		t.Fatalf("arm seam must refuse the shadowed arm through EntryGate; got allow")
 	}

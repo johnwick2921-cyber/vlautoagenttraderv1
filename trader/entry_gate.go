@@ -355,8 +355,10 @@ func armSeamATR5m(symbol string) float64 {
 // entryGateForArm builds the intent for an arm leg and runs EntryGate. The arm
 // chain's own gates (armGateVerdictFor, oneLiveArmGuard) run before this —
 // EntryGate is the SAME function the decision path runs, so an arm can never
-// be held to a weaker standard than a market entry.
-func (at *AutoTrader) entryGateForArm(plan *kernel.ActivePlan, sc kernel.PlanScenario, leg kernel.PlanArmLeg, side, biasDir string, atr5m float64, structural ...bool) (string, bool) {
+// be held to a weaker standard than a market entry. now is the armed pass's
+// clock (maybeManageArmedOrdersAtOpts): leg 3 judges the bars closed at THAT
+// instant, the same instant every other leg of the pass judges (W1b E3).
+func (at *AutoTrader) entryGateForArm(plan *kernel.ActivePlan, sc kernel.PlanScenario, leg kernel.PlanArmLeg, side, biasDir string, atr5m float64, now time.Time, structural ...bool) (string, bool) {
 	openSide, openID, openVer, openScenario := "", int64(0), 0, ""
 	isExit := strings.EqualFold(strings.TrimSpace(leg.Kind), "exit")
 	// ONE OPEN POSITION (2026-09-03): the position's identity rides into the
@@ -388,8 +390,9 @@ func (at *AutoTrader) entryGateForArm(plan *kernel.ActivePlan, sc kernel.PlanSce
 		LastTouchPx:    touchPx,
 		HasTouch:       hasTouch,
 		OnNoChase:      at.noChaseObserver("arm", sc.ID),
-		// INVALIDATION (owner ruling 2026-09-03) — the arm path, and only it.
-		ScenarioInvalidation:      at.scenarioInvalidationResolver(plan),
+		// INVALIDATION (owner ruling 2026-09-03) — the arm path, and only it,
+		// judged on the PASS clock every other leg of the pass reads (W1b E3).
+		ScenarioInvalidation:      at.scenarioInvalidationResolverClock(plan, func() time.Time { return now }),
 		OnInvalidationUnavailable: func(note string) { at.logWarnf("🛡 %s", note) },
 		Action:                    "open_" + side,
 		Symbol:                    at.futuresSymbol(),

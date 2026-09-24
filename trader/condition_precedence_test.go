@@ -3,6 +3,7 @@ package trader
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"nofx/kernel"
 	"nofx/store"
@@ -38,7 +39,7 @@ func TestEntryGateArmSeamAdmitsAConditionLiveOverShadow(t *testing.T) {
 	plan := &kernel.ActivePlan{PlanID: "2026-09-02:NY:pin-test", Version: 5, Session: "NY"}
 	sc := kernel.PlanScenario{ID: "S3", Direction: "long", Condition: "breakout_retest"}
 	leg := kernel.PlanArmLeg{Entry: 29192.50, Stop: 29115.00, Target: 29317.25}
-	if reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0); refused && strings.Contains(reason, "SHADOW") {
+	if reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC)); refused && strings.Contains(reason, "SHADOW") {
 		t.Fatalf("a condition in both env lists resolves LIVE; EntryGate must not refuse it as SHADOW: %q", reason)
 	}
 }
@@ -51,7 +52,7 @@ func TestStrategyShadowOutranksLiveConditionsAtEntryGate(t *testing.T) {
 	plan := &kernel.ActivePlan{PlanID: "2026-09-02:NY:pin-test", Version: 5, Session: "NY"}
 	sc := kernel.PlanScenario{ID: "S3", Direction: "long", Condition: "breakout_retest"}
 	leg := kernel.PlanArmLeg{Entry: 29192.50, Stop: 29115.00, Target: 29317.25}
-	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0)
+	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC))
 	if !refused || !strings.Contains(reason, "SHADOW") {
 		t.Fatalf("the strategy's own shadow must outrank LIVE_CONDITIONS; got refused=%v %q", refused, reason)
 	}

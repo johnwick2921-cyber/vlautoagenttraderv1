@@ -23,6 +23,11 @@
 #   trader/armed_executor.go runArmedPlacement — REMOVED (W-EXEC-TRUTH W0, CTO M2):
 #     its only caller was a test; the production caller maybeManageArmedOrdersAt
 #     calls runArmedPlacementAt with its clock AND its admitted set (G1).
+#   trader/invalidation_resolver.go scenarioInvalidationResolver — REMOVED (W1b E3):
+#     its only production caller, entryGateForArm, runs inside the armed pass and
+#     now hands scenarioInvalidationResolverClock the pass's `now`. The wrapper
+#     passed time.Now as a VALUE, so the seam walk never saw leg 3 read the wall
+#     clock beneath maybeManageArmedOrdersAt. A wrapper nothing calls is a dead row.
 #   trader/auto_trader_clock.go tickOnce — the loop entry. Its only clock use
 #     already delegates to the seamed staleDodgeCheck(now).
 #   kernel/tz.go NowCT — the clock accessor itself; every consumer (ClockCT,
@@ -51,7 +56,6 @@ provider/ninjatrader/bar_persist.go:barPersistSummary:barPersistSummaryAt
 trader/auto_trader_levelstate.go:recordLevelState:recordLevelStateAt
 trader/auto_trader_levelstate.go:recordScenarioState:recordScenarioStateAt
 trader/auto_trader_planner.go:runPlannerReadCoreWithFactsGrades:runPlannerReadCoreWithFactsGradesClock
-trader/invalidation_resolver.go:scenarioInvalidationResolver:scenarioInvalidationResolverClock
 
 trader/armed_executor.go:declineHadFreshMet:declineHadFreshMetAt
 trader/armed_executor.go:maybeManageArmedOrders:maybeManageArmedOrdersAt

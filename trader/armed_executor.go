@@ -792,7 +792,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 			// be held to a weaker standard than a decision entry. Refusals are
 			// logged AND recorded per path (arm-refusal counters), and an
 			// existing resting arm for this spec is cancelled the same cycle.
-			greason, refused := at.entryGateForArm(plan, sc, leg, side, legBias, atr5m, structuralFade)
+			greason, refused := at.entryGateForArm(plan, sc, leg, side, legBias, atr5m, now, structuralFade)
 			recordResearchGate("arm", plan.PlanID, plan.Version, sc.ID, greason, refused)
 			if refused {
 				scope.note(sc.ID, "refused: entry_gate: "+greason)

@@ -21,12 +21,12 @@ import (
 // price, the scenario unevaluable). The gate then PASSES and says so out loud:
 // an unresolved check is not a refusal.
 
-// scenarioInvalidationResolver builds the gate's resolver for one plan.
-// Returns nil when the plan is absent, which switches the leg off entirely.
-func (at *AutoTrader) scenarioInvalidationResolver(plan *kernel.ActivePlan) func(string) (InvalidationVerdict, bool) {
-	return at.scenarioInvalidationResolverClock(plan, time.Now)
-}
-
+// scenarioInvalidationResolverClock builds the gate's resolver for one plan,
+// judged at clock(). Returns nil when the plan is absent, which switches the leg
+// off entirely. There is NO wall-clock form (W1b E3): its one production caller,
+// entryGateForArm, runs inside the armed pass and hands over the pass's clock —
+// the wall-clock wrapper that used to sit here passed time.Now as a VALUE, which
+// the seam walk (it looks for time.Now() CALLS) could not see.
 func (at *AutoTrader) scenarioInvalidationResolverClock(plan *kernel.ActivePlan, clock func() time.Time) func(string) (InvalidationVerdict, bool) {
 	if plan == nil || at == nil {
 		return nil
@@ -116,9 +116,10 @@ func machineScenarioIn(plan *kernel.ActivePlan, id string) (kernel.PlanScenario,
 
 // tapeClock is the instant the resolver judges a machine scenario at: the
 // caller's clock, but never later than the end of the newest bar it read —
-// the verdict is about the tape it holds. (The arm path's resolver is built on
-// the wall clock, entryGateForArm; the pass-clock machine gate judges the
-// deadline authoritatively before this leg is reached.)
+// the verdict is about the tape it holds: on a tape that stops short of the
+// clock, a 5m bucket the tape holds only part of is still forming, not closed.
+// (The caller's clock is the armed pass's since W1b E3; the pass-clock machine
+// gate, pictureScenarioGate, still judges the deadline first and authoritatively.)
 func tapeClock(bars []market.Kline, now time.Time) time.Time {
 	if len(bars) > 0 {
 		if end := time.UnixMilli(bars[len(bars)-1].CloseTime + 1); end.Before(now) {

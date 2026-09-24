@@ -57,7 +57,7 @@ func TestArmLegSevenSeesAStoredPosition(t *testing.T) {
 	w.at.recordPositionChange("sig-open", "MNQ", "SHORT", "open_short", 1, 29000, 1, 0, 0, 70)
 	plan := &kernel.ActivePlan{PlanID: "2026-09-23:NY", Session: "NY", Version: 1}
 	sc := kernel.PlanScenario{ID: "S1", Direction: "long"}
-	reason, refused := w.at.entryGateForArm(plan, sc, kernel.PlanArmLeg{}, "long", "long", 0)
+	reason, refused := w.at.entryGateForArm(plan, sc, kernel.PlanArmLeg{}, "long", "long", 0, time.Date(2026, 9, 23, 15, 0, 0, 0, time.UTC))
 	if !refused || !strings.Contains(reason, "one_open_position") {
 		t.Fatalf("an OPEN SHORT row must refuse an arm (leg 7), got refused=%v %q", refused, reason)
 	}
