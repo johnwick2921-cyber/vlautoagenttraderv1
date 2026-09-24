@@ -210,7 +210,7 @@ func (at *AutoTrader) maybeWakePlannerOnMSSAt(now time.Time, session, tradeDate 
 	// the active plan; failClosed=false) and runs ASYNC so a slow/timing-out
 	// planner can never stall the decision loop for minutes.
 	go func() {
-		_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "structure_mss", "structure MSS: "+mss.Detail, priorPlanLevelLines(row), false)
+		_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "structure_mss", "structure MSS: "+mss.Detail, priorPlanLevelLines(at, row), false)
 		// C5 — sticky owner edits survive the MSS wake exactly like the death path.
 		if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && fresh.Version != row.Version {
 			at.carryOwnerEditsInto(fresh.PlanID, row.Version, fresh.Version)

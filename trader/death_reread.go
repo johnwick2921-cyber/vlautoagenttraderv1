@@ -122,7 +122,7 @@ func (at *AutoTrader) priorDeathLinePriceImpl(row *store.PlanDB) float64 {
 // class-35 death_replan trigger, so a landed fresh version SPENDS one replan
 // budget unit and lands the FlipHoldAnchorReplan anchor.
 var deathRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(row), failClosed)
+	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(at, row), failClosed)
 }
 
 // deathBornWickActive reports whether a death-born plan is inside its birth

@@ -588,8 +588,8 @@ func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDea
 	if market.FuturesBarsProvider == nil || row == nil {
 		return kernel.PlanDeathDetail{}, false
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return kernel.PlanDeathDetail{}, false
 	}
 	noteFlipDirectionInverted(at, row, &doc, "active")
@@ -782,7 +782,7 @@ func (at *AutoTrader) dormantFlipKillerOf(row *store.PlanDB) (string, bool) {
 // flipRereadRun is the read-call seam (fixtures substitute a recorder to assert
 // the request without running a live planner stream).
 var flipRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "structure_flip", prior, priorPlanLevelLines(row), failClosed)
+	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "structure_flip", prior, priorPlanLevelLines(at, row), failClosed)
 }
 
 // maybeRereadAfterFlip (W-FLIP-REREAD, 2026-09-17) — with day_plan.flip_reread
@@ -1037,8 +1037,8 @@ func (at *AutoTrader) describeDormantCleared(row *store.PlanDB) (bool, string) {
 	if market.FuturesBarsProvider == nil || row == nil {
 		return false, ""
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return false, ""
 	}
 	noteFlipDirectionInverted(at, row, &doc, "dormant")
@@ -1214,7 +1214,7 @@ func (at *AutoTrader) deathReplanAllowed(session, tradeDate string, existing *st
 // the version just written, re-anchored by price; anything that cannot be
 // re-anchored is parked for review, never dropped.
 func (at *AutoTrader) runDeathReplan(session, tradeDate string, existing *store.PlanDB, killer string) {
-	_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, killer, priorPlanLevelLines(existing), true)
+	_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, killer, priorPlanLevelLines(at, existing), true)
 	if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && existing != nil && fresh.Version != existing.Version {
 		at.carryOwnerEditsInto(fresh.PlanID, existing.Version, fresh.Version)
 	}
@@ -1543,12 +1543,12 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 
 // priorPlanLevelLines renders the previous version's levels as "price label"
 // lines for the continuity block (empty when the stored doc is unreadable).
-func priorPlanLevelLines(row *store.PlanDB) []string {
-	if row == nil {
+func priorPlanLevelLines(at *AutoTrader, row *store.PlanDB) []string {
+	if row == nil || at == nil || at.store == nil {
 		return nil
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return nil
 	}
 	lines := make([]string, 0, len(doc.Levels))
@@ -1617,10 +1617,11 @@ func (at *AutoTrader) carryMachineGrades(tradeDate, session string, doc *kernel.
 	if err != nil || prev == nil {
 		return
 	}
-	pd := kernel.PlanDoc{}
-	if json.Unmarshal([]byte(prev.Doc), &pd) != nil {
+	resolved, ok := resolveActivePlanDoc(at.store, prev)
+	if !ok {
 		return
 	}
+	pd := resolved
 	carry := map[float64]string{}
 	for _, l := range pd.Levels {
 		if l.Price <= 0 {
