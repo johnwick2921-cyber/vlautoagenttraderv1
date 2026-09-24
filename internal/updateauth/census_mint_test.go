@@ -330,3 +330,41 @@ func Mint(dataDir, releaseID, jobID string, expiresAt int64) (string, error) {
 		rel+": references updateauth.ComputeMAC",
 		rel+": imports nofx/internal/updateauth more than once")
 }
+
+// PIN (M3 census repair, verifier D2 — probe V3 verbatim): the census parsed
+// with mode 0, which drops comments, so a //go:linkname directive was
+// invisible. V3 pulls updateauth.ComputeMAC into package kernel under a local
+// name — no import of updateauth, no selector, no restricted identifier — and
+// a main linking nofx/api printed the exact HMAC-SHA256 with the census green.
+// Any //go:linkname in non-test code is now an offence (the module has none);
+// the directive in a _test.go file is outside the walk (tests are not linked
+// into the app), and a prose mention that is not a directive stays clean.
+func TestUpdateAuthCensusRefusesLinkname(t *testing.T) {
+	root := mintBase(t)
+	const rel = "kernel/zz_v3_link.go"
+	mintWrite(t, root, rel, `package kernel
+
+import _ "unsafe"
+
+//go:linkname v3ComputeMAC nofx/internal/updateauth.ComputeMAC
+func v3ComputeMAC(key []byte, releaseID, jobID string, expiresAt int64) (string, error)
+
+func V3Mint(key []byte, releaseID, jobID string, expiresAt int64) (string, error) {
+	return v3ComputeMAC(key, releaseID, jobID, expiresAt)
+}
+`)
+	requirePrefixes(t, mintOffenders(t, root), rel+": //go:linkname")
+
+	// the push form, inside the package itself, is refused too
+	root = mintBase(t)
+	mintWrite(t, root, "internal/updateauth/push.go", "package updateauth\n\nimport _ \"unsafe\"\n\n//go:linkname computeMACForLink\nfunc computeMACForLink() {}\n")
+	requirePrefixes(t, mintOffenders(t, root), "internal/updateauth/push.go: //go:linkname")
+
+	// controls: a prose mention is not a directive; a test file is not walked
+	root = mintBase(t)
+	mintWrite(t, root, "kernel/doc.go", "// Package kernel never uses go:linkname (see // go:linkname in the census).\npackage kernel\n")
+	mintWrite(t, root, "kernel/zz_link_test.go", "package kernel\n\nimport _ \"unsafe\"\n\n//go:linkname t nofx/internal/updateauth.ComputeMAC\nfunc t()\n")
+	if off := mintOffenders(t, root); len(off) != 0 {
+		t.Fatalf("prose and a test file must stay clean:\n%s", strings.Join(off, "\n"))
+	}
+}
