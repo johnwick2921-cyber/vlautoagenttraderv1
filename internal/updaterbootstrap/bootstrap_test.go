@@ -395,7 +395,8 @@ func TestReEnrollRequiresReplaceAndRotatesTheKey(t *testing.T) {
 		t.Fatal("a refused re-enroll changed the enrollment")
 	}
 	for _, args := range [][]string{{"enroll", "--replace", bEmail}, {"enroll", bEmail, "--replace"}} {
-		if rc, _, errb := run(inst, enrollLine(bEmail), args...); rc != 0 {
+		// a replace takes its own confirmation (red-4 #6), naming the incumbent
+		if rc, _, errb := run(inst, "REPLACE "+bEmail+" WITH "+bEmail+"\n", args...); rc != 0 {
 			t.Fatalf("%v rc=%d %s", args, rc, errb)
 		}
 		key1, _ := updateauth.LoadDeviceKey(d)
