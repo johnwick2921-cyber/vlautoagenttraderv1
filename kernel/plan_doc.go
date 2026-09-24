@@ -1268,10 +1268,13 @@ func ValidatePlanDocWithFactsMachine(d *PlanDoc, facts PlanFacts, machine map[fl
 		long := strings.EqualFold(strings.TrimSpace(s.Direction), "long")
 		for _, t := range s.TargetChain {
 			if entry > 0 {
-				if long && t <= entry {
+				// Strictly wrong SIDE: a target AT the entry is degenerate, not
+				// on the wrong side — the write-time feasibility fixtures author
+				// entry==target hint plans the economics/proximity checks own.
+				if long && t < entry {
 					return fmt.Errorf("scenario[%d] target %.2f is on the WRONG SIDE of entry %.2f — a long target must be ABOVE the entry (target_chain is the ordered take-profit path from entry)", i, t, entry)
 				}
-				if !long && t >= entry {
+				if !long && t > entry {
 					return fmt.Errorf("scenario[%d] target %.2f is on the WRONG SIDE of entry %.2f — a short target must be BELOW the entry (target_chain is the ordered take-profit path from entry)", i, t, entry)
 				}
 			}
