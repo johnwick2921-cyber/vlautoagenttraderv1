@@ -138,7 +138,13 @@ func TestUpdateAuthLoadedKeyFlowsOnlyIntoVerification(t *testing.T) {
 		// census-repair verify P2: the import name is shadowed AFTER the real
 		// LoadDeviceKey, so `admin` is a fake's result and its
 		// PasswordStillBound receives the real key.
-		"LoadAdmin through a shadowed import name": {fn("type fakeAdmin struct{ sink *[]byte }\n\nfunc (a fakeAdmin) PasswordStillBound(k []byte, _ string) bool {\n\t*a.sink = append([]byte(nil), k...)\n\treturn true\n}\n\ntype fakeNS struct{ LoadAdmin func(string) (fakeAdmin, error) }\n\nfunc m(d string) []byte {\n\tkey, _ := updateauth.LoadDeviceKey(d)\n\tvar stolen []byte\n\tupdateauth := fakeNS{LoadAdmin: func(string) (fakeAdmin, error) { return fakeAdmin{sink: &stolen}, nil }}\n\tadmin, _ := updateauth.LoadAdmin(d)\n\tadmin.PasswordStillBound(key, \"\")\n\treturn stolen\n}\n"), used},
+		// census-repair verify P1: a generic method's RECEIVER type parameter
+		// named clear makes clear(key) a conversion whose result carries the
+		// key out unnamed — once plain, once behind parentheses, a pointer
+		// and a two-parameter receiver (go/types unpackRecv's full shape).
+		"clear is a receiver type parameter":                         {fn("type box[P ~[]byte] struct{}\n\nfunc (box[clear]) m(d string) []byte {\n\tkey, _ := updateauth.LoadDeviceKey(d)\n\tleaked := clear(key)\n\treturn leaked\n}\n"), used},
+		"clear is a parenthesized pointer receiver's type parameter": {fn("type box2[K comparable, P ~[]byte] struct{}\n\nfunc (b (*box2[K, clear])) m(d string) []byte {\n\tkey, _ := updateauth.LoadDeviceKey(d)\n\tleaked := clear(key)\n\treturn leaked\n}\n"), used},
+		"LoadAdmin through a shadowed import name":                   {fn("type fakeAdmin struct{ sink *[]byte }\n\nfunc (a fakeAdmin) PasswordStillBound(k []byte, _ string) bool {\n\t*a.sink = append([]byte(nil), k...)\n\treturn true\n}\n\ntype fakeNS struct{ LoadAdmin func(string) (fakeAdmin, error) }\n\nfunc m(d string) []byte {\n\tkey, _ := updateauth.LoadDeviceKey(d)\n\tvar stolen []byte\n\tupdateauth := fakeNS{LoadAdmin: func(string) (fakeAdmin, error) { return fakeAdmin{sink: &stolen}, nil }}\n\tadmin, _ := updateauth.LoadAdmin(d)\n\tadmin.PasswordStillBound(key, \"\")\n\treturn stolen\n}\n"), used},
 	} {
 		t.Run(name, func(t *testing.T) {
 			requirePrefixes(t, keyFlowOffendersFor(t, c.files), c.want)
@@ -226,6 +232,35 @@ func vccP2Mint(dataDir, releaseID, jobID string, expiresAt int64) (string, error
 }
 `
 
+// keyFlowProbeP1 is the census-repair verifier's probe P1, verbatim: rule 6
+// admitted clear(key) when "clear" was declared neither in the declaration
+// nor at package level, but a generic method's RECEIVER type parameter is
+// declared inside the receiver type's index expression, which the census never
+// read. clear(key) is then a conversion to that type parameter, and its
+// result carries the key out unnamed. Appended to the real handler it built,
+// vetted, and minted a grant production VerifyMAC accepted [A, 2026-09-24].
+const keyFlowProbeP1 = `
+// VCC-P1 (verifier, census repair): rule 6 admits clear(key) when "clear" is
+// declared neither in the declaration nor at package level — but a RECEIVER
+// type parameter named clear is declared inside an IndexExpr of the receiver
+// type, which declaredOther never inspects. clear(key) is then a CONVERSION
+// to the type parameter, and its result carries the key out unnamed.
+type vccP1Box[P ~[]byte] struct{}
+
+func (vccP1Box[clear]) vccP1Mint(dataDir, releaseID, jobID string, expiresAt int64) (string, error) {
+	key, err := updateauth.LoadDeviceKey(dataDir)
+	if err != nil {
+		return "", err
+	}
+	leaked := clear(key)
+	sig, err := jwt.SigningMethodHS256.Sign("nofx-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), []byte(leaked))
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(sig), nil
+}
+`
+
 // PIN at the production file (census-repair verify): the REAL
 // api/handler_updates.go, copied into a synthetic module with ONE verifier
 // probe appended (with the imports it needs), yields exactly one offence —
@@ -245,6 +280,7 @@ func TestUpdateAuthKeyFlowRefusesTheVerifierProbesOnTheRealHandler(t *testing.T)
 		probe, leakLine string // leakLine: the one line whose key use must be reported
 	}{
 		"P2 LoadAdmin through a shadowed import name": {keyFlowProbeP2, "\tadmin.PasswordStillBound(key, \"\")"},
+		"P1 clear is a receiver type parameter":       {keyFlowProbeP1, "\tleaked := clear(key)"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			body := withImports + c.probe
