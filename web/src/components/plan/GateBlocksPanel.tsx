@@ -47,6 +47,10 @@ const GATE_LABELS: Record<string, { en: string; icon: string }> = {
   stop_until: { en: 'Owner pause', icon: '⏸' },
   contract_roll_resolved: { en: 'Contract roll unresolved', icon: '🔁' },
   no_trade_band: { en: 'No-trade band', icon: '🚫' },
+  force_flat_window: {
+    en: 'Force-flat window (T1 lead / EOD flat)',
+    icon: '🔚',
+  },
   cme_closed: { en: 'CME closed', icon: '🔕' },
   reentry_cooldown: { en: 'Re-entry cooldown after a stop', icon: '⏳' },
   entry_gate: { en: 'Entry gate', icon: '🚦' },
