@@ -231,33 +231,82 @@ func TestLevelIdentityBootLineFoldsOverlay(t *testing.T) {
 }
 
 // TestZoneAcceptedIdentitySkipsHeuristicDisagreement (WAVE 1a-plan P7, #190) —
-// an FVG entry (distal-edge anchor by design) and a seated zone-edge scenario
-// disagree with the evaluator BY DESIGN; the publish/runtime paths must not
-// record heuristic_disagreed for them.
+// a zone-accepted scenario disagrees with the evaluator BY DESIGN: an FVG entry
+// anchors at its DISTAL edge, and a seated S/D+OB zone edge is a band, not a
+// price. Neither may record heuristic_disagreed — while a plain scenario with
+// the same levels and the same evaluator anchor MUST (the control row proves
+// the fixture is live).
 func TestZoneAcceptedIdentitySkipsHeuristicDisagreement(t *testing.T) {
-	yes := true
-	at := mkTrader("ninjatrader", &yes, "5m")
-	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
+	now := time.Date(2026, 9, 10, 20, 0, 0, 0, kernel.CTLocation())
+	price := 29897.0
+	l := identityTestLevel(now, price)
+	candidates := kernel.BuildMapCandidates([]kernel.ScoredLevel{{DetectedLevel: l, Grade: "A", Score: 1}}, price, 10, kernel.MapCandidateOpts{})
+	if len(candidates) != 1 || candidates[0].ID == nil {
+		t.Fatal("map did not expose identity")
 	}
-	defer st.Close()
-	at.store = st
-	at.id = "trader-1"
+	id := *candidates[0].ID
 
-	doc := &kernel.PlanDoc{Scenarios: []kernel.PlanScenario{{
-		ID: "S1", Condition: "fvg_entry", Direction: "long", Quality: "A",
-		LevelID: kernel.ReferenceLevelID("MNQ", "ONH", 29897, 29897, "2026-09-17", "1m"),
-		Fvg:     &kernel.PlanFvgEntry{Lo: 29900, Hi: 29910, Direction: "long"},
-	}}, IdentityLevels: []kernel.PlanLevel{{Label: "ONH", Price: 29897}}}
-	doc.IdentityLevels[0].ID = doc.Scenarios[0].LevelID
-	// The evaluator anchor sits 8 points away — a disagreement by the price test.
-	at.observeScenarioIdentity(doc, "p1", 1, []kernel.ScenarioEval{{ID: "S1", Anchor: 29905, HasAnchor: true}}, time.Date(2026, 9, 17, 10, 0, 0, 0, kernel.CTLocation()))
-	c, err := st.LevelIdentityCounts(at.id)
-	if err != nil {
-		t.Fatal(err)
+	fresh := func(t *testing.T) (*AutoTrader, *store.Store) {
+		yes := true
+		at := mkTrader("ninjatrader", &yes, "5m")
+		st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { st.Close() })
+		at.store = st
+		at.id = "trader-1"
+		return at, st
 	}
-	if c.HeuristicDisagreed != 0 {
-		t.Fatalf("a zone-accepted FVG scenario must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
+
+	mkDoc := func() kernel.PlanDoc {
+		return kernel.PlanDoc{
+			Scenarios:      []kernel.PlanScenario{{ID: "S1", Condition: "zone_entry", Direction: "long", Quality: "A", LevelID: &id}},
+			IdentityLevels: kernel.IdentityLevelsFromCandidates(candidates),
+		}
 	}
+
+	// CONTROL — same levels, no zone acceptance: the disagreement MUST record.
+	t.Run("plain_scenario_records", func(t *testing.T) {
+		at, st := fresh(t)
+		doc := mkDoc()
+		at.observeScenarioIdentity(&doc, "p1", 1, []kernel.ScenarioEval{{ID: "S1", Anchor: price + 10, HasAnchor: true}}, now)
+		c, err := st.LevelIdentityCounts(at.id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c.HeuristicDisagreed != 1 {
+			t.Fatalf("control: plain scenario must record 1 disagreement, got %d", c.HeuristicDisagreed)
+		}
+	})
+
+	// FVG scenario — distal-edge anchor by design: NEVER a disagreement.
+	t.Run("fvg_scenario_skips", func(t *testing.T) {
+		at, st := fresh(t)
+		doc := mkDoc()
+		doc.Scenarios[0].Fvg = &kernel.PlanFvgEntry{Lo: price, Hi: price + 10, Direction: "long"}
+		at.observeScenarioIdentity(&doc, "p1", 1, []kernel.ScenarioEval{{ID: "S1", Anchor: price + 10, HasAnchor: true}}, now)
+		c, err := st.LevelIdentityCounts(at.id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c.HeuristicDisagreed != 0 {
+			t.Fatalf("a zone-accepted FVG scenario must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
+		}
+	})
+
+	// Seated zone-edge label — a band, not a price: NEVER a disagreement.
+	t.Run("seated_zone_label_skips", func(t *testing.T) {
+		at, st := fresh(t)
+		doc := mkDoc()
+		doc.IdentityLevels[0].Label = "Demand 29897"
+		at.observeScenarioIdentity(&doc, "p1", 1, []kernel.ScenarioEval{{ID: "S1", Anchor: price + 10, HasAnchor: true}}, now)
+		c, err := st.LevelIdentityCounts(at.id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c.HeuristicDisagreed != 0 {
+			t.Fatalf("a seated zone-edge scenario must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
+		}
+	})
 }
