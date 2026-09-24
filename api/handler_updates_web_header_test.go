@@ -42,7 +42,7 @@ func TestWebUpdatesClientSendsTheGatesHeader(t *testing.T) {
 	// 2. Every /api/updates* request the client makes passes that object.
 	// A call is `httpClient.request<…>(` whose URL is `${API_BASE}/updates…`;
 	// its options run to the call's closing `)`.
-	calls := regexp.MustCompile(`httpClient\.request<[^(]*\(\s*` + "`" + `\$\{API_BASE\}/updates[^` + "`" + `]*` + "`" + `,\s*\{([^}]*)\}\s*\)`).FindAllStringSubmatch(src, -1)
+	calls := regexp.MustCompile(`httpClient\.request<[^(]*\(\s*`+"`"+`\$\{API_BASE\}/updates[^`+"`"+`]*`+"`"+`,\s*\{([^}]*)\}\s*\)`).FindAllStringSubmatch(src, -1)
 	all := strings.Count(src, "${API_BASE}/updates")
 	if all == 0 || len(calls) != all {
 		t.Fatalf("%s: %d spellings of ${API_BASE}/updates but %d parsed request calls — a new call shape this pin cannot read; extend it", webUpdatesClient, all, len(calls))
