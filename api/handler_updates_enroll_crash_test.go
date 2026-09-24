@@ -54,11 +54,12 @@ func TestEnrollCommentTruthACrashBetweenTheTwoRenames(t *testing.T) {
 	if w := e.do("POST", "/api/updates/install", grantBody(oldGrant)); w.Code != http.StatusForbidden {
 		t.Fatalf("a grant under the pre-replace key = %d, want 403", w.Code)
 	}
-	// 3. the corrected comment's claim: the pair is a WORKING enrollment of
-	// the incumbent — authorize mints under the new key and the incumbent's
-	// install is authorized (the stub's 422)
-	if w := e.do("POST", "/api/updates/install", grantBody(e.grant(updRelease))); w.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("new key + old admin.json: incumbent's install = %d %s — the Enroll comment says it is a working enrollment; fix the comment with the code", w.Code, w.Body.String())
+	// 3. the Enroll comment's claim since the M3 belt: the pair is NOT a
+	// working enrollment — admin.json's password binding was computed under
+	// the OLD key, so even a grant minted under the NEW key is refused (403)
+	// until a --replace completes. Fail-closed, never the incumbent working.
+	if w := e.do("POST", "/api/updates/install", grantBody(e.grant(updRelease))); w.Code != http.StatusForbidden {
+		t.Fatalf("new key + old admin.json: incumbent's install = %d %s — the Enroll comment says a half-finished replace un-enrolls (403); fix the comment with the code", w.Code, w.Body.String())
 	}
 
 	// A FIRST enroll that dies after the key rename: a lone key, nobody
@@ -73,7 +74,7 @@ func TestEnrollCommentTruthACrashBetweenTheTwoRenames(t *testing.T) {
 	if _, err := updateauth.LoadAdmin(d); !errors.Is(err, updateauth.ErrNotEnrolled) {
 		t.Fatalf("lone key: LoadAdmin = %v, want ErrNotEnrolled", err)
 	}
-	if err := updateauth.Enroll(d, updAdminID, updAdminEmail, time.Now(), false); !errors.Is(err, updateauth.ErrAlreadyEnrolled) {
+	if err := updateauth.Enroll(d, updAdminID, updAdminEmail, "fixture-password-hash", time.Now(), false); !errors.Is(err, updateauth.ErrAlreadyEnrolled) {
 		t.Fatalf("lone key: plain Enroll = %v, want ErrAlreadyEnrolled (re-run with --replace)", err)
 	}
 }

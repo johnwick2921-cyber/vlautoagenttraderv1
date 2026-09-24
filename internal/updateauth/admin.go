@@ -201,11 +201,13 @@ func LoadDeviceKey(dataDir string) ([]byte, error) {
 // — after the key rename and before the admin.json rename:
 //   - FIRST enroll: a lone new key, no admin.json — nobody is enrolled (every
 //     /api/updates* 403) and a plain enroll refuses until --replace;
-//   - REPLACE: the NEW key beside the OLD admin.json — a WORKING enrollment
-//     of the incumbent: every grant minted under the old key dies, but
-//     `authorize` mints under the new key and the incumbent's install is
-//     authorized. A replace meant to revoke the incumbent is NOT a revocation
-//     until the CLI prints "enrolled:"; re-run it until it does.
+//   - REPLACE: the NEW key beside the OLD admin.json — NOT a working
+//     enrollment: admin.json's password binding was computed under the OLD
+//     key (HMAC(device.key, password_hash), the M3 belt), so the /updates
+//     gate refuses every request (403) until a --replace completes. Every
+//     grant minted under the old key dies too. Fail-closed: a half-finished
+//     replace un-enrolls, it never leaves the incumbent working; re-run the
+//     CLI until it prints "enrolled:".
 //
 // Pinned at the production router by
 // api.TestEnrollCommentTruthACrashBetweenTheTwoRenames (red-team red-4 #4).
