@@ -33,8 +33,18 @@ func (at *AutoTrader) sessionEntryBlocked() (string, bool) {
 }
 
 func (at *AutoTrader) sessionEntryBlockedAt(now time.Time) (string, bool) {
+	why, blocked, _ := at.sessionEntryBlockedT1At(now)
+	return why, blocked
+}
+
+// sessionEntryBlockedT1At is sessionEntryBlockedAt that also hands back the
+// T1 windows it read — nil when it returned before reading them (never an
+// empty list standing in for "not read") — so a caller that goes on to
+// forceFlatWindowAt reads the calendar ONCE (W1b E13 repair: the second read
+// doubled the "📅 calendar FAIL-CLOSED" warning on every scan and event pass).
+func (at *AutoTrader) sessionEntryBlockedT1At(now time.Time) (string, bool, *[]kernel.CTWindow) {
 	if !at.dayPlanEnabled() {
-		return "", false
+		return "", false, nil
 	}
 	reg := at.sessionRegistry(now)
 	// W9 + PART A — the strategy's session enable gates ENTRIES too (not just reads),
@@ -43,15 +53,17 @@ func (at *AutoTrader) sessionEntryBlockedAt(now time.Time) (string, bool) {
 	// switched off admits no entries even in advisory mode.
 	if sess, ok := reg.ActiveSession(now); ok {
 		if runnable, why := at.sessionRunnable(sess); !runnable {
-			return why, true
+			return why, true, nil
 		}
 		// W15.B — per-session trade cap (the override was persisted + rendered but
 		// enforced by NOTHING). Absent → no cap, shipped behavior unchanged.
 		if why, blocked := at.sessionTradeCapBlocked(sess, now); blocked {
-			return why, true
+			return why, true, nil
 		}
 	}
-	return sessionGateDecision(reg, now, at.currentT1Windows(now), at.sessionRunnable)
+	windows := at.currentT1Windows(now)
+	why, blocked := sessionGateDecision(reg, now, windows, at.sessionRunnable)
+	return why, blocked, &windows
 }
 
 // sessionWindowStart returns the wall-clock start of the CURRENTLY-RUNNING

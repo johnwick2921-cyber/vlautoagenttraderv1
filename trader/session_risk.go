@@ -133,16 +133,19 @@ func adjudicateSessionRisk(losses, n, m int, bandReason string) sessionRiskVerdi
 func (at *AutoTrader) sessionRiskGateAt(now time.Time) sessionRiskVerdict {
 	n := breakerHaltN(at.config.StrategyConfig)
 	m := breakerWarnM()
-	bandReason, blocked := at.sessionEntryBlockedAt(now)
+	bandReason, blocked, t1 := at.sessionEntryBlockedT1At(now)
+	flatWhy := ""
 	if !blocked {
 		bandReason = ""
 		// W1b E13 — the force-flat windows (T1 lead, in-session EOD flat) are
-		// refused as the band, on both triggers and at the send point. Read
-		// HERE, before the loss-run query: that query fails OPEN below, and a
-		// window is a fact about the clock that no database hiccup may skip.
-		// Class no_trade_band, so the pass keeps its cancel of resting arms.
-		if why, due := at.forceFlatWindowAt(now); due {
-			bandReason = why
+		// refused like the band (a window, checked first), on both triggers
+		// and at the send point. Read HERE, before the loss-run query: that
+		// query fails OPEN below, and a window is a fact about the clock that
+		// no database hiccup may skip. Counted under their OWN class,
+		// force_flat_window (W1b E13 repair — counters record, never infer);
+		// the pass's cancel of resting arms keys on sessionRiskWindowWords.
+		if why, due := at.forceFlatWindowAt(now, t1); due {
+			bandReason, flatWhy = why, why
 		}
 	}
 	losses := 0
@@ -152,10 +155,36 @@ func (at *AutoTrader) sessionRiskGateAt(now time.Time) sessionRiskVerdict {
 			losses = got
 		} else {
 			at.logWarnf("🛑 session-risk: loss-run query failed (%v) — breaker NOT applied this cycle (fail-open)", err)
-			return adjudicateSessionRisk(0, n, m, bandReason)
+			return asForceFlatWindow(adjudicateSessionRisk(0, n, m, bandReason), flatWhy)
 		}
 	}
-	return adjudicateSessionRisk(losses, n, m, bandReason)
+	return asForceFlatWindow(adjudicateSessionRisk(losses, n, m, bandReason), flatWhy)
+}
+
+// asForceFlatWindow re-labels the window refusal adjudicateSessionRisk made
+// from a force-flat reason as what it is: class force_flat_window, never the
+// no-trade band (W1b E13 repair). why == "" → v unchanged.
+func asForceFlatWindow(v sessionRiskVerdict, why string) sessionRiskVerdict {
+	if why == "" || v.Class != "no_trade_band" {
+		return v
+	}
+	return sessionRiskVerdict{
+		Refuse: true, Class: "force_flat_window", Losses: v.Losses, N: v.N, M: v.M,
+		Reason: "force_flat_window: " + why,
+	}
+}
+
+// sessionRiskWindowWords names the session-risk classes that are WINDOWS —
+// the ones whose opening cancels the plan's resting arms (an arm is not
+// grandfathered into a window) — for the cancel reason and its log line.
+func sessionRiskWindowWords(class string) (name, noun string, window bool) {
+	switch class {
+	case "no_trade_band":
+		return "no-trade band", "band", true
+	case "force_flat_window":
+		return "force-flat window", "window", true
+	}
+	return "", "", false
 }
 
 // SessionRiskBootLine — D5. Every field READ from the code that enforces it

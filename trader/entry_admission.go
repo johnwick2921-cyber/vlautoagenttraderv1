@@ -298,17 +298,19 @@ func (at *AutoTrader) admitChain(in admitIntent, sym, act string, now time.Time)
 	if in.Path == admitDecision || in.Path == admitAgent {
 		// P3.1 — SESSION GATE: entries only inside an ENABLED session window and
 		// outside the no-trade sub-windows (first-5m, lunch). Gated on day_plan.
-		if reason, blocked := at.sessionEntryBlockedAt(now); blocked {
+		reason, blocked, t1 := at.sessionEntryBlockedT1At(now)
+		if blocked {
 			return at.admitRefuse(in, "session_gate", "session_gate: "+reason, func() {
 				at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", sym, act, reason)
 			})
 		}
 		// W1b E13 — the force-flat windows (T1 lead, in-session EOD flat): the
 		// arm and picture paths read them inside sessionRiskGateAt; the
-		// decision and agent paths under their own session_gate class.
-		if reason, due := at.forceFlatWindowAt(now); due {
-			return at.admitRefuse(in, "session_gate", "session_gate: "+reason, func() {
-				at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", sym, act, reason)
+		// decision and agent paths here. Both count them under their OWN
+		// class, force_flat_window (W1b E13 repair — never session_gate).
+		if reason, due := at.forceFlatWindowAt(now, t1); due {
+			return at.admitRefuse(in, "force_flat_window", "force_flat_window: "+reason, func() {
+				at.logWarnf("⏹ force-flat window: %s %s REFUSED — %s.", sym, act, reason)
 			})
 		}
 	} else {

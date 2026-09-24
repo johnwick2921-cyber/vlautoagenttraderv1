@@ -373,9 +373,9 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 		// are willing to own, whether it was placed a second ago or an hour ago.
 		// Cancelled through the same seam the close uses, so each cancel is a
 		// wire cancel the book can confirm — never a ledger assumption.
-		if risk.Class == "no_trade_band" {
-			if n, unacked := at.cancelArmedOrdersSync("no-trade band opened — " + risk.Reason); n > 0 || unacked > 0 {
-				at.logWarnf("🔒 no-trade band: %d resting arm(s) cancelled, %d unacked — an arm resting into the band is cancelled, not grandfathered", n, unacked)
+		if name, noun, window := sessionRiskWindowWords(risk.Class); window {
+			if n, unacked := at.cancelArmedOrdersSync(name + " opened — " + risk.Reason); n > 0 || unacked > 0 {
+				at.logWarnf("🔒 %s: %d resting arm(s) cancelled, %d unacked — an arm resting into the %s is cancelled, not grandfathered", name, n, unacked, noun)
 			}
 		}
 		return

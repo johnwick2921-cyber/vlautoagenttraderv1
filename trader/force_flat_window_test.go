@@ -8,6 +8,7 @@ import (
 	"nofx/kernel"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
+	"nofx/telemetry"
 	ntTrader "nofx/trader/ninjatrader"
 )
 
@@ -82,8 +83,10 @@ func TestArmPassRefusesInsideTheT1ForceFlatLead(t *testing.T) {
 			t.Fatalf("a row was placed inside the lead: %+v", row)
 		}
 	}
-	if n := r.armRefusals("no_trade_band"); n < 1 {
-		t.Fatalf("the lead refusal must be counted under no_trade_band, got %d", n)
+	// W1b E13 repair (verifier defect 4): counters RECORD, never infer — the
+	// lead is its own class, never the no-trade band's.
+	if n, band := r.armRefusals("force_flat_window"), r.armRefusals("no_trade_band"); n < 1 || band != 0 {
+		t.Fatalf("the lead refusal must be counted under force_flat_window, never no_trade_band: force_flat_window=%d no_trade_band=%d", n, band)
 	}
 }
 
@@ -180,23 +183,28 @@ func TestArmPassRefusesPastAnEarlierInSessionEODFlat(t *testing.T) {
 	if sigs, _ := r.drain(); len(sigs) != 0 {
 		t.Fatalf("no entry may be placed past the session's EOD flat (08:59 CT): %+v", sigs)
 	}
-	if n := r.armRefusals("no_trade_band"); n < 1 {
-		t.Fatalf("the EOD-flat refusal must be counted under no_trade_band, got %d", n)
+	if n, band := r.armRefusals("force_flat_window"), r.armRefusals("no_trade_band"); n < 1 || band != 0 {
+		t.Fatalf("the EOD-flat refusal must be counted under force_flat_window, never no_trade_band: force_flat_window=%d no_trade_band=%d", n, band)
 	}
 }
 
-// The decision / agent path: the same windows refuse under the decision
-// path's session_gate class.
+// The decision / agent path: the same windows refuse under their OWN class,
+// force_flat_window (W1b E13 repair — was session_gate), in the refusal text
+// and the gate-block telemetry.
 func TestDecisionPathRefusesInsideTheT1ForceFlatLead(t *testing.T) {
 	r := newZoneRig(t, "e13-decision", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
 	t1LeadSlice(t, r.st)
 	reason, refused := r.at.admitEntry(admitIntent{Path: admitDecision, Symbol: "MNQ", Action: "open_long", Now: e13Lead,
 		Decision: &kernel.Decision{Action: "open_long", Symbol: "MNQ"}})
-	if !refused || !strings.HasPrefix(reason, "session_gate:") {
-		t.Fatalf("an AI entry inside the T1 force-flat lead must be refused by session_gate, got refused=%v %q", refused, reason)
+	if !refused || !strings.HasPrefix(reason, "force_flat_window:") {
+		t.Fatalf("an AI entry inside the T1 force-flat lead must be refused as force_flat_window, got refused=%v %q", refused, reason)
 	}
-	if reason, refused := r.at.AdmitManualEntryBracketAt("MNQ", "open_long", 90, 130, e13Lead); !refused || !strings.HasPrefix(reason, "session_gate:") {
-		t.Fatalf("the agent door inside the lead must be refused by session_gate before its bracket is judged, got refused=%v %q", refused, reason)
+	if reason, refused := r.at.AdmitManualEntryBracketAt("MNQ", "open_long", 90, 130, e13Lead); !refused || !strings.HasPrefix(reason, "force_flat_window:") {
+		t.Fatalf("the agent door inside the lead must be refused as force_flat_window before its bracket is judged, got refused=%v %q", refused, reason)
+	}
+	_, table := telemetry.GateBlockSnapshot()
+	if got := table[r.at.id]; got["force_flat_window"] != 2 || got["session_gate"] != 0 || got["no_trade_band"] != 0 {
+		t.Fatalf("gate-block telemetry must count both refusals under force_flat_window only: %v", got)
 	}
 }
 
@@ -214,10 +222,69 @@ func TestForceFlatWindowSurvivesALossRunReadFailure(t *testing.T) {
 		t.Fatal("fixture: the loss-run read must fail")
 	}
 	v := r.at.sessionRiskGateAt(e13Lead)
-	if !v.Refuse || v.Class != "no_trade_band" || !strings.Contains(v.Reason, "T1 force-flat window") {
+	if !v.Refuse || v.Class != "force_flat_window" || !strings.HasPrefix(v.Reason, "force_flat_window: ") || !strings.Contains(v.Reason, "T1 force-flat window") {
 		t.Fatalf("a failed loss-run read must not skip the force-flat window: %+v", v)
 	}
 	if v := r.at.sessionRiskGateAt(e13Before); v.Refuse {
 		t.Fatalf("control: before the lead with the read failing, the gate fails open (breaker skipped): %+v", v)
+	}
+}
+
+// W1b E13 repair (verifier defect 4) — the arm pass's own cancel of the
+// plan's arms when a force-flat window opens is kept (a window refuses on
+// every trigger, and an arm is not grandfathered into it), but it is written
+// as the force-flat window it is: the ledger reason never says "no-trade
+// band". Driven by the pass alone (no enforceT1ForceFlatAt) — the position the
+// live-bar event pass is in. The arm is authored before the lead and never
+// placed, so the cancel is terminal at once and its reason is the pass's own
+// (a placed row's reason is overwritten by the broker's ack).
+func TestArmPassCancelsAnArmIntoTheForceFlatWindowAsItself(t *testing.T) {
+	r := newZoneRig(t, "e13-own-cancel", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	t1LeadSlice(t, r.st)
+	r.now = e13Before
+	r.armZoneRow() // authored and armed before the lead, short of the zone
+	armed := r.row("S1")
+	if armed.ID == 0 || armed.SignalID != "" {
+		t.Fatalf("fixture: an authored, unplaced S1 row: %+v", armed)
+	}
+	r.now = e13Lead
+	r.setTape(zoneTape(99.0, r.now, 0))
+	r.at.maybeManageArmedOrdersAt(nil, r.now)
+	got := r.row("S1")
+	if got.ID != armed.ID || got.State != "cancelled" {
+		t.Fatalf("the arm must be cancelled when the force-flat lead opens: %+v", got)
+	}
+	if !strings.HasPrefix(got.StateReason, "force-flat window opened — force_flat_window: ") ||
+		strings.Contains(got.StateReason, "no-trade band") || strings.Contains(got.StateReason, "no_trade_band") {
+		t.Fatalf("the cancel must be recorded as the force-flat window, never the no-trade band: %q", got.StateReason)
+	}
+}
+
+// W1b E13 repair (verifier defect 7) — ONE calendar read per gate call. The
+// force-flat check used to read the T1 windows again right after the session
+// gate had read them, so a missing slice logged its "📅 calendar FAIL-CLOSED"
+// warning twice per scan and per event pass. Counted at the F6 drift seam,
+// which currentT1Windows consults exactly once per read.
+func TestForceFlatWindowReusesTheSessionGatesCalendarRead(t *testing.T) {
+	r := newZoneRig(t, "e13-one-read", zoneDoc(zoneScenario("S1", kernel.EntryPolicyMarketInZone, zone, false)))
+	t1LeadSlice(t, r.st)
+	reads := 0
+	inner := clockHoldDriftFn
+	clockHoldDriftFn = func(s string) (int64, bool) { reads++; return inner(s) }
+	t.Cleanup(func() { clockHoldDriftFn = inner })
+
+	if v := r.at.sessionRiskGateAt(e13Before); v.Refuse {
+		t.Fatalf("fixture: before the lead the gate admits: %+v", v)
+	}
+	if reads != 1 {
+		t.Fatalf("sessionRiskGateAt read the T1 calendar %d times — the force-flat check must reuse the session gate's read", reads)
+	}
+	reads = 0
+	if reason, refused := r.at.admitEntry(admitIntent{Path: admitDecision, Symbol: "MNQ", Action: "open_long", Now: e13Lead,
+		Decision: &kernel.Decision{Action: "open_long", Symbol: "MNQ"}}); !refused || !strings.HasPrefix(reason, "force_flat_window:") {
+		t.Fatalf("fixture: inside the lead the decision path refuses as force_flat_window: %v %q", refused, reason)
+	}
+	if reads != 1 {
+		t.Fatalf("the decision path read the T1 calendar %d times before refusing — one read, shared", reads)
 	}
 }

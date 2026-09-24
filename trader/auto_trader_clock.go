@@ -1025,8 +1025,10 @@ func (at *AutoTrader) eodSessionFlatAt(reg kernel.SessionRegistry, sess *kernel.
 //
 // Same preconditions as the enforce functions: Day Plan on and an active
 // session. Calendar windows come from currentT1Windows, whose static fallback
-// keeps this fail-closed when the slice is missing.
-func (at *AutoTrader) forceFlatWindowAt(now time.Time) (string, bool) {
+// keeps this fail-closed when the slice is missing — or, when the caller has
+// just read them for the session gate at the same now, from t1 (nil = not
+// read; read here).
+func (at *AutoTrader) forceFlatWindowAt(now time.Time, t1 *[]kernel.CTWindow) (string, bool) {
 	if !at.dayPlanEnabled() {
 		return "", false
 	}
@@ -1035,7 +1037,13 @@ func (at *AutoTrader) forceFlatWindowAt(now time.Time) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	if label := t1ForceFlatDue(ctMinutesNow(now), at.currentT1Windows(now), t1ForceFlatLead); label != "" {
+	var windows []kernel.CTWindow
+	if t1 != nil {
+		windows = *t1
+	} else {
+		windows = at.currentT1Windows(now)
+	}
+	if label := t1ForceFlatDue(ctMinutesNow(now), windows, t1ForceFlatLead); label != "" {
 		return fmt.Sprintf("📰 T1 force-flat window: %s (entries refused from T-%dm before the blackout — the window positions are flattened in)", label, t1ForceFlatLead), true
 	}
 	if hhmm, past, okC := at.eodSessionFlatAt(reg, sess, now); okC && past {
