@@ -27,7 +27,7 @@ func TestClockFloorIsRecordedByConsumeAndNoteExpiredAndBindsExpiry(t *testing.T)
 		t.Fatalf("fresh enrollment: clock_floor = %d, want 0", f)
 	}
 	T := tNow
-	if err := Consume(d, "aaaaaaaaaaaaaaaa", T.Unix()+300, T); err != nil {
+	if err := Consume(d, "aaaaaaaaaaaaaaaa", T.Unix()+300, clockAt(T)); err != nil {
 		t.Fatal(err)
 	}
 	if f := floor(); f != T.Unix() {
@@ -51,10 +51,10 @@ func TestClockFloorIsRecordedByConsumeAndNoteExpiredAndBindsExpiry(t *testing.T)
 	// at a clock stepped back to T+200: exp T+400 (at the floor) is expired,
 	// not a replay; exp T+401 is admitted
 	back := T.Add(200 * time.Second)
-	if err := Consume(d, "bbbbbbbbbbbbbbbb", T.Unix()+400, back); !errors.Is(err, ErrExpiredAtFloor) || !errors.Is(err, ErrExpired) || errors.Is(err, ErrReplay) {
+	if err := Consume(d, "bbbbbbbbbbbbbbbb", T.Unix()+400, clockAt(back)); !errors.Is(err, ErrExpiredAtFloor) || !errors.Is(err, ErrExpired) || errors.Is(err, ErrReplay) {
 		t.Fatalf("exp at the floor: %v, want ErrExpiredAtFloor", err)
 	}
-	if err := Consume(d, "cccccccccccccccc", T.Unix()+401, back); err != nil {
+	if err := Consume(d, "cccccccccccccccc", T.Unix()+401, clockAt(back)); err != nil {
 		t.Fatalf("positive control: exp one above the floor: %v", err)
 	}
 	if f := floor(); f != T.Unix()+400 {

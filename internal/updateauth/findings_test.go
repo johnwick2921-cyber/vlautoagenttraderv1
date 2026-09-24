@@ -118,18 +118,18 @@ func TestEnrollNeverWritesADegenerateKey(t *testing.T) {
 func TestConsumeAtAClockAtOrBeforeTheEpochRefusesAndTouchesNothing(t *testing.T) {
 	for _, clock := range []time.Time{time.Unix(0, 0), time.Unix(-1, 0), time.Unix(0, 999_999_999), time.Unix(-100, 0)} {
 		fresh := t.TempDir()
-		if err := Consume(fresh, "0123456789abcdef", 150, clock); !errors.Is(err, ErrBadClock) {
+		if err := Consume(fresh, "0123456789abcdef", 150, clockAt(clock)); !errors.Is(err, ErrBadClock) {
 			t.Errorf("clock %v: err = %v, want ErrBadClock", clock.Unix(), err)
 		}
 		if _, err := os.Lstat(Dir(fresh)); !errors.Is(err, os.ErrNotExist) {
 			t.Errorf("clock %v: the refused Consume created the updater dir", clock.Unix())
 		}
 		d := t.TempDir()
-		if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, tNow); err != nil {
+		if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, clockAt(tNow)); err != nil {
 			t.Fatal(err)
 		}
 		before, _ := os.ReadFile(SeenPath(d))
-		if err := Consume(d, "0123456789abcdef", 150, clock); !errors.Is(err, ErrBadClock) {
+		if err := Consume(d, "0123456789abcdef", 150, clockAt(clock)); !errors.Is(err, ErrBadClock) {
 			t.Errorf("clock %v on an existing store: err = %v, want ErrBadClock", clock.Unix(), err)
 		}
 		if after, _ := os.ReadFile(SeenPath(d)); !bytes.Equal(before, after) {
@@ -137,7 +137,7 @@ func TestConsumeAtAClockAtOrBeforeTheEpochRefusesAndTouchesNothing(t *testing.T)
 		}
 	}
 	// positive control: the first second after the epoch is a clock
-	if err := Consume(t.TempDir(), "0123456789abcdef", 301, time.Unix(1, 0)); err != nil {
+	if err := Consume(t.TempDir(), "0123456789abcdef", 301, clockAt(time.Unix(1, 0))); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
 }
@@ -199,17 +199,17 @@ func TestPrunedThroughIsTheLargestPrunedExpiryAndBindsAtAnyClock(t *testing.T) {
 		}
 		return st
 	}
-	if err := Consume(d, "aaaaaaaaaaaaaaaa", T.Unix()+100, T); err != nil {
+	if err := Consume(d, "aaaaaaaaaaaaaaaa", T.Unix()+100, clockAt(T)); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, "bbbbbbbbbbbbbbbb", T.Unix()+300, T); err != nil {
+	if err := Consume(d, "bbbbbbbbbbbbbbbb", T.Unix()+300, clockAt(T)); err != nil {
 		t.Fatal(err)
 	}
 	if st := read(); st.PrunedThrough != 0 {
 		t.Fatalf("nothing pruned yet: pruned_through = %d, want 0", st.PrunedThrough)
 	}
 	T2 := T.Add(901 * time.Second) // cutoff = T+301: both a and b prune
-	if err := Consume(d, "cccccccccccccccc", T2.Unix()+300, T2); err != nil {
+	if err := Consume(d, "cccccccccccccccc", T2.Unix()+300, clockAt(T2)); err != nil {
 		t.Fatal(err)
 	}
 	st := read()
@@ -222,17 +222,17 @@ func TestPrunedThroughIsTheLargestPrunedExpiryAndBindsAtAnyClock(t *testing.T) {
 		"bbbbbbbbbbbbbbbb": T.Unix() + 300, // the id AT the watermark
 		"dddddddddddddddd": T.Unix() + 300, // a never-seen id at the watermark
 	} {
-		if err := Consume(d, id, exp, back); !errors.Is(err, ErrPrunedReplay) || !errors.Is(err, ErrReplay) {
+		if err := Consume(d, id, exp, clockAt(back)); !errors.Is(err, ErrPrunedReplay) || !errors.Is(err, ErrReplay) {
 			t.Errorf("%s exp=%d at a stepped-back clock: err = %v, want ErrPrunedReplay", id, exp, err)
 		}
 	}
 	// one above the watermark is not a replay; at this stepped-back clock it
 	// is at or below the clock floor (T2, recorded when c was consumed), so
 	// it is expired (red-3 #2) — the watermark boundary is still exact
-	if err := Consume(d, "eeeeeeeeeeeeeeee", T.Unix()+301, back); errors.Is(err, ErrReplay) || !errors.Is(err, ErrExpiredAtFloor) {
+	if err := Consume(d, "eeeeeeeeeeeeeeee", T.Unix()+301, clockAt(back)); errors.Is(err, ErrReplay) || !errors.Is(err, ErrExpiredAtFloor) {
 		t.Fatalf("exp one above the watermark at a stepped-back clock: %v, want ErrExpiredAtFloor (not a replay)", err)
 	}
-	if err := Consume(d, "ffffffffffffffff", T2.Unix()+300, T2); err != nil { // prunes nothing new
+	if err := Consume(d, "ffffffffffffffff", T2.Unix()+300, clockAt(T2)); err != nil { // prunes nothing new
 		t.Fatal(err)
 	}
 	if st := read(); st.PrunedThrough != T.Unix()+300 {

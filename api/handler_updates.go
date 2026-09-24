@@ -340,7 +340,10 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 		return
 	}
 	// The job id is spent from here on, whatever follows.
-	if err := updateauth.Consume(dataDir, g.JobID, g.ExpiresAt, now); err != nil {
+	// Expiry is judged again by Consume on a clock reading taken UNDER the
+	// seen-store lock (red-team red-3 #3); the check above is only the early,
+	// lock-free refusal.
+	if err := updateauth.Consume(dataDir, g.JobID, g.ExpiresAt, s.updatesClock); err != nil {
 		if errors.Is(err, updateauth.ErrReplay) {
 			if errors.Is(err, updateauth.ErrPrunedReplay) {
 				// M3-RT-F1: expires_at at or below the store's pruned-through
@@ -355,7 +358,7 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, updateauth.ErrExpired) {
-			updatesForbid(c, "install: expires at or below the seen store's clock floor (clock stepped back?)")
+			updatesForbid(c, "install: expired under the seen-store lock, or at/below its clock floor (clock stepped back?)")
 			return
 		}
 		logger.Errorf("🔒 [updates] install: job-id store refused: %v", err)

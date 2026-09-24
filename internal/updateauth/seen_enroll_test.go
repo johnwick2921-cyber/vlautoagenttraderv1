@@ -24,7 +24,7 @@ func TestEnrollCreatesTheSeenStoreAndAMissingOneAfterwardsIsCorrupt(t *testing.T
 	if m := mode(t, SeenPath(d)).Perm(); m != 0o600 {
 		t.Fatalf("seen store mode %04o", m)
 	}
-	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow); err != nil { // positive control
+	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, clockAt(tNow)); err != nil { // positive control
 		t.Fatalf("first consume after enroll: %v", err)
 	}
 	before, _ := os.ReadFile(SeenPath(d))
@@ -37,7 +37,7 @@ func TestEnrollCreatesTheSeenStoreAndAMissingOneAfterwardsIsCorrupt(t *testing.T
 	if err := os.Remove(SeenPath(d)); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, tNow); !errors.Is(err, ErrSeenCorrupt) {
+	if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, clockAt(tNow)); !errors.Is(err, ErrSeenCorrupt) {
 		t.Fatalf("missing store after enrollment: %v, want ErrSeenCorrupt", err)
 	}
 	if _, err := os.Lstat(SeenPath(d)); !errors.Is(err, os.ErrNotExist) {
@@ -47,7 +47,7 @@ func TestEnrollCreatesTheSeenStoreAndAMissingOneAfterwardsIsCorrupt(t *testing.T
 	d2 := enrolled(t)
 	_ = os.Remove(AdminPath(d2))
 	_ = os.Remove(SeenPath(d2))
-	if err := Consume(d2, "0123456789abcdef", tNow.Unix()+60, tNow); !errors.Is(err, ErrSeenCorrupt) {
+	if err := Consume(d2, "0123456789abcdef", tNow.Unix()+60, clockAt(tNow)); !errors.Is(err, ErrSeenCorrupt) {
 		t.Fatalf("lone key, missing store: %v, want ErrSeenCorrupt", err)
 	}
 	// a replace re-creates a missing store (the key rotates: every earlier
@@ -55,12 +55,12 @@ func TestEnrollCreatesTheSeenStoreAndAMissingOneAfterwardsIsCorrupt(t *testing.T
 	if err := Enroll(d, tUser, tEmail, tHash, tNow, true); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, tNow); err != nil {
+	if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, clockAt(tNow)); err != nil {
 		t.Fatalf("after replace re-created the store: %v", err)
 	}
 	// positive control: a directory that was never enrolled still reads an
 	// absent store as empty (Consume is reachable only behind the gate)
-	if err := Consume(t.TempDir(), "0123456789abcdef", tNow.Unix()+60, tNow); err != nil {
+	if err := Consume(t.TempDir(), "0123456789abcdef", tNow.Unix()+60, clockAt(tNow)); err != nil {
 		t.Fatalf("never-enrolled dir: %v", err)
 	}
 }

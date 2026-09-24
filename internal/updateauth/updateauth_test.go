@@ -27,6 +27,10 @@ const (
 
 var tNow = time.Unix(1_800_000_000, 0)
 
+// clockAt is a clock that always reads t (Consume takes a clock, read under
+// its lock — red-team red-3 #3).
+func clockAt(t time.Time) func() time.Time { return func() time.Time { return t } }
+
 func enrolled(t *testing.T) string {
 	t.Helper()
 	d := t.TempDir()
@@ -404,13 +408,13 @@ func TestParseInstallRequestIsStrict(t *testing.T) {
 func TestConsumeIsSingleUseAcrossCalls(t *testing.T) {
 	d := t.TempDir()
 	exp := tNow.Unix() + 60
-	if err := Consume(d, "0123456789abcdef", exp, tNow); err != nil {
+	if err := Consume(d, "0123456789abcdef", exp, clockAt(tNow)); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, "0123456789abcdef", exp, tNow); !errors.Is(err, ErrReplay) {
+	if err := Consume(d, "0123456789abcdef", exp, clockAt(tNow)); !errors.Is(err, ErrReplay) {
 		t.Fatalf("replay: %v", err)
 	}
-	if err := Consume(d, "0123456789abcdee", exp, tNow); err != nil { // positive control
+	if err := Consume(d, "0123456789abcdee", exp, clockAt(tNow)); err != nil { // positive control
 		t.Fatalf("different id: %v", err)
 	}
 	if m := mode(t, SeenPath(d)).Perm(); m != 0o600 {
@@ -434,7 +438,7 @@ func TestConsumeCorruptStoreFailsClosedAndIsNeverReset(t *testing.T) {
 		d := t.TempDir()
 		_ = os.MkdirAll(Dir(d), 0o700)
 		_ = os.WriteFile(SeenPath(d), []byte(body), 0o600)
-		if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow); !errors.Is(err, ErrSeenCorrupt) {
+		if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, clockAt(tNow)); !errors.Is(err, ErrSeenCorrupt) {
 			t.Errorf("%s: err = %v, want ErrSeenCorrupt", name, err)
 		}
 		if b, _ := os.ReadFile(SeenPath(d)); string(b) != body {
@@ -445,12 +449,12 @@ func TestConsumeCorruptStoreFailsClosedAndIsNeverReset(t *testing.T) {
 	d := t.TempDir()
 	_ = os.MkdirAll(Dir(d), 0o700)
 	_ = os.WriteFile(SeenPath(d), []byte(`{"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}`), 0o600)
-	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow); err != nil {
+	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, clockAt(tNow)); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
 	// a loose-mode store is unreadable → corrupt, not empty
 	_ = os.Chmod(SeenPath(d), 0o644)
-	if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, tNow); !errors.Is(err, ErrSeenCorrupt) {
+	if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, clockAt(tNow)); !errors.Is(err, ErrSeenCorrupt) {
 		t.Fatalf("0644 store: %v", err)
 	}
 }
@@ -459,13 +463,13 @@ func TestConsumePrunesOnlyLongExpiredIDs(t *testing.T) {
 	d := t.TempDir()
 	old := "0000000000000001"
 	recent := "0000000000000002"
-	if err := Consume(d, old, tNow.Unix()-11*60, tNow.Add(-15*time.Minute)); err != nil {
+	if err := Consume(d, old, tNow.Unix()-11*60, clockAt(tNow.Add(-15*time.Minute))); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, recent, tNow.Unix()-9*60, tNow.Add(-14*time.Minute)); err != nil {
+	if err := Consume(d, recent, tNow.Unix()-9*60, clockAt(tNow.Add(-14*time.Minute))); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, "0000000000000003", tNow.Unix()+60, tNow); err != nil {
+	if err := Consume(d, "0000000000000003", tNow.Unix()+60, clockAt(tNow)); err != nil {
 		t.Fatal(err)
 	}
 	b, _ := os.ReadFile(SeenPath(d))
@@ -475,7 +479,7 @@ func TestConsumePrunesOnlyLongExpiredIDs(t *testing.T) {
 	if !strings.Contains(string(b), recent) {
 		t.Error("an id expired <10 min ago was pruned")
 	}
-	if err := Consume(d, recent, tNow.Unix()+60, tNow); !errors.Is(err, ErrReplay) {
+	if err := Consume(d, recent, tNow.Unix()+60, clockAt(tNow)); !errors.Is(err, ErrReplay) {
 		t.Errorf("recent replay: %v", err)
 	}
 }
@@ -494,13 +498,13 @@ func TestConsumeHardCapRefuses(t *testing.T) {
 	sb.WriteString(`]}`)
 	_ = os.MkdirAll(Dir(d), 0o700)
 	_ = os.WriteFile(SeenPath(d), []byte(sb.String()), 0o600)
-	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow); !errors.Is(err, ErrSeenFull) {
+	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, clockAt(tNow)); !errors.Is(err, ErrSeenFull) {
 		t.Fatalf("err = %v, want ErrSeenFull", err)
 	}
 	// positive control: once they are long expired they prune and a grant
 	// that is current at that clock is accepted
 	later := tNow.Add(30 * time.Minute)
-	if err := Consume(d, "0123456789abcdef", later.Unix()+60, later); err != nil {
+	if err := Consume(d, "0123456789abcdef", later.Unix()+60, clockAt(later)); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
 }
@@ -514,7 +518,7 @@ func TestConcurrentConsumeAdmitsExactlyOne(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow)
+			err := Consume(d, "0123456789abcdef", tNow.Unix()+60, clockAt(tNow))
 			mu.Lock()
 			defer mu.Unlock()
 			switch {

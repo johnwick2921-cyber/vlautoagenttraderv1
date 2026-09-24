@@ -158,10 +158,10 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 	if err := os.WriteFile(SeenPath(d), []byte(b.String()), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, strings.Repeat("f", 64), exp, tNow); err != nil {
+	if err := Consume(d, strings.Repeat("f", 64), exp, clockAt(tNow)); err != nil {
 		t.Errorf("entry %d (the last under the cap): %v", MaxSeenEntries, err)
 	}
-	if err := Consume(d, strings.Repeat("e", 64), exp, tNow); !errors.Is(err, ErrSeenFull) {
+	if err := Consume(d, strings.Repeat("e", 64), exp, clockAt(tNow)); !errors.Is(err, ErrSeenFull) {
 		t.Errorf("entry %d: %v, want ErrSeenFull", MaxSeenEntries+1, err)
 	}
 	big := make([]byte, maxSeenFileBytes+1)
@@ -172,7 +172,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 	if err := os.WriteFile(SeenPath(d), big, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, strings.Repeat("d", 64), exp, tNow); !errors.Is(err, ErrSeenCorrupt) {
+	if err := Consume(d, strings.Repeat("d", 64), exp, clockAt(tNow)); !errors.Is(err, ErrSeenCorrupt) {
 		t.Errorf("oversize store: %v, want ErrSeenCorrupt", err)
 	}
 	for name, body := range map[string]string{
@@ -206,7 +206,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 		if err := os.WriteFile(SeenPath(d), []byte(body), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		if err := Consume(d, strings.Repeat("c", 64), exp, tNow); !errors.Is(err, ErrSeenCorrupt) {
+		if err := Consume(d, strings.Repeat("c", 64), exp, clockAt(tNow)); !errors.Is(err, ErrSeenCorrupt) {
 			t.Errorf("%s: %v, want ErrSeenCorrupt", name, err)
 		}
 		if got, _ := os.ReadFile(SeenPath(d)); string(got) != body {
@@ -217,7 +217,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 	if err := os.WriteFile(SeenPath(d), []byte(`{"v":3,"pruned_through":0,"clock_floor":0,"ids":[]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, strings.Repeat("c", 64), exp, tNow); err != nil {
+	if err := Consume(d, strings.Repeat("c", 64), exp, clockAt(tNow)); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
 }
@@ -235,15 +235,15 @@ func TestConsumeRefusesAReplayAfterAClockRollbackPastRetention(t *testing.T) {
 	T := time.Unix(1_800_000_000, 0)
 	jobA := "aaaaaaaaaaaaaaaa"
 	expA := T.Unix() + 300
-	if err := Consume(d, jobA, expA, T); err != nil {
+	if err := Consume(d, jobA, expA, clockAt(T)); err != nil {
 		t.Fatal(err)
 	}
-	if err := Consume(d, jobA, expA, T); !errors.Is(err, ErrReplay) {
+	if err := Consume(d, jobA, expA, clockAt(T)); !errors.Is(err, ErrReplay) {
 		t.Fatalf("positive control: immediate replay not refused: %v", err)
 	}
 	// the clock runs forward; a later install prunes A
 	T2 := time.Unix(expA+601, 0)
-	if err := Consume(d, "bbbbbbbbbbbbbbbb", T2.Unix()+300, T2); err != nil {
+	if err := Consume(d, "bbbbbbbbbbbbbbbb", T2.Unix()+300, clockAt(T2)); err != nil {
 		t.Fatal(err)
 	}
 	// the clock is stepped back to before A's expiry: A's MAC is in-window again
@@ -251,7 +251,7 @@ func TestConsumeRefusesAReplayAfterAClockRollbackPastRetention(t *testing.T) {
 	if CheckExpiry(expA, T3) != nil {
 		t.Fatal("precondition: A is not inside its window at T3")
 	}
-	if err := Consume(d, jobA, expA, T3); !errors.Is(err, ErrReplay) || !errors.Is(err, ErrPrunedReplay) {
+	if err := Consume(d, jobA, expA, clockAt(T3)); !errors.Is(err, ErrReplay) || !errors.Is(err, ErrPrunedReplay) {
 		t.Errorf("job %s after a prune + %ds clock step-back: err = %v, want ErrPrunedReplay (a replay)", jobA, T2.Unix()-T3.Unix(), err)
 	}
 	// a grant minted at the stepped-back clock carries expires_at = T3+300,
@@ -259,16 +259,16 @@ func TestConsumeRefusesAReplayAfterAClockRollbackPastRetention(t *testing.T) {
 	// floor T2 the store recorded when it consumed B: expired (red-3 #2, the
 	// server's expiry verdict is sticky across a step-back)
 	fresh := "cccccccccccccccc"
-	if err := Consume(d, fresh, T3.Unix()+300, T3); !errors.Is(err, ErrExpiredAtFloor) || errors.Is(err, ErrReplay) {
+	if err := Consume(d, fresh, T3.Unix()+300, clockAt(T3)); !errors.Is(err, ErrExpiredAtFloor) || errors.Is(err, ErrReplay) {
 		t.Fatalf("a fresh grant at the stepped-back clock: err = %v, want ErrExpiredAtFloor (not a replay)", err)
 	}
 	// positive control: once the clock passes the floor a fresh grant is
 	// admitted once, and its replay is the plain ErrReplay
 	T4 := time.Unix(T2.Unix()+1, 0)
-	if err := Consume(d, fresh, T4.Unix()+300, T4); err != nil {
+	if err := Consume(d, fresh, T4.Unix()+300, clockAt(T4)); err != nil {
 		t.Fatalf("positive control: a fresh grant past the floor: %v", err)
 	}
-	if err := Consume(d, fresh, T4.Unix()+300, T4); !errors.Is(err, ErrReplay) || errors.Is(err, ErrPrunedReplay) {
+	if err := Consume(d, fresh, T4.Unix()+300, clockAt(T4)); !errors.Is(err, ErrReplay) || errors.Is(err, ErrPrunedReplay) {
 		t.Fatalf("fresh id replay: err = %v, want the plain ErrReplay", err)
 	}
 }
@@ -280,8 +280,8 @@ func TestConsumeRefusesAReplayAfterAClockRollbackPastRetention(t *testing.T) {
 func TestConsumeNeverWritesARecordItsReaderRefuses(t *testing.T) {
 	for _, clock := range []time.Time{time.Unix(0, 0), time.Unix(-100, 0), time.Unix(0, 999_999_999)} {
 		d := t.TempDir()
-		_ = Consume(d, "0123456789abcdef", clock.Unix()+150, clock) // admitted or refused: either is fine (exp > 0 for all clocks)
-		if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, tNow); err != nil {
+		_ = Consume(d, "0123456789abcdef", clock.Unix()+150, clockAt(clock)) // admitted or refused: either is fine (exp > 0 for all clocks)
+		if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, clockAt(tNow)); err != nil {
 			t.Errorf("clock %d: the store no longer accepts a fresh id at a sane clock: %v", clock.Unix(), err)
 		}
 	}

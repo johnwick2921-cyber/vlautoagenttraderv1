@@ -209,21 +209,35 @@ func encodeSeen(s seenStore) ([]byte, error) {
 	return b, nil
 }
 
-// Consume records jobID as used, atomically under .seen.lock. A job id
-// already present ⇒ ErrReplay; expiresAt at or below pruned_through ⇒
-// ErrPrunedReplay (errors.Is ErrReplay); a corrupt store ⇒ ErrSeenCorrupt
-// and the file is left byte-identical; MaxSeenEntries live entries ⇒
-// ErrSeenFull; a clock at or before the epoch ⇒ ErrBadClock before any lock
-// or write. Only entries whose expires_at passed more than SeenRetention ago
-// are pruned, and the largest pruned expires_at is kept as pruned_through.
-func Consume(dataDir, jobID string, expiresAt int64, now time.Time) error {
+// Consume records jobID as used, atomically under .seen.lock. It reads the
+// clock (clock()) AFTER the lock is held and judges everything on that
+// reading (red-team red-3 #3: a request parked on the lock must not be
+// judged, or recorded, on a reading taken before the wait): expiresAt outside
+// CheckExpiry's window ⇒ ErrExpired (an expired genuine code also raises
+// clock_floor, as NoteExpired does); a job id already present ⇒ ErrReplay;
+// expiresAt at or below pruned_through ⇒ ErrPrunedReplay (errors.Is
+// ErrReplay); at or below clock_floor ⇒ ErrExpiredAtFloor (errors.Is
+// ErrExpired); a corrupt store ⇒ ErrSeenCorrupt and the file is left
+// byte-identical; MaxSeenEntries live entries ⇒ ErrSeenFull; a clock at or
+// before the epoch ⇒ ErrBadClock (checked before any lock or write, and
+// again under the lock). Only entries whose expires_at passed more than
+// SeenRetention ago are pruned, and the largest pruned expires_at is kept as
+// pruned_through. consumed_at is the reading taken under the lock.
+//
+// Callers pass a clock, never a time: the install handler passes its clock
+// seam. Known limit: the lock wait itself is unbounded (flock LOCK_EX); a
+// hung holder parks the request, but can no longer get a stale verdict.
+func Consume(dataDir, jobID string, expiresAt int64, clock func() time.Time) error {
 	if err := checkDataDir(dataDir); err != nil {
 		return err
 	}
 	if !ValidJobID(jobID) || expiresAt <= 0 {
 		return malformed("job_id/expires_at")
 	}
-	if now.Unix() <= 0 {
+	if clock == nil {
+		return errors.New("updateauth: Consume needs a clock")
+	}
+	if clock().Unix() <= 0 {
 		return ErrBadClock
 	}
 	dir, err := ensurePrivateDir(dataDir)
@@ -235,8 +249,22 @@ func Consume(dataDir, jobID string, expiresAt int64, now time.Time) error {
 		return err
 	}
 	defer unlock()
+	now := clock() // red-3 #3: the reading every verdict below is taken on
+	if now.Unix() <= 0 {
+		return ErrBadClock
+	}
 	st, err := readSeen(dataDir)
 	if err != nil {
+		return err
+	}
+	if err := CheckExpiry(expiresAt, now); err != nil {
+		if expiresAt <= now.Unix() {
+			// a genuine code (the caller verified its MAC) expired while it
+			// waited: its refusal is sticky, like NoteExpired's
+			if werr := raiseClockFloor(dir, dataDir, st, now); werr != nil {
+				return errors.Join(err, werr)
+			}
+		}
 		return err
 	}
 	for _, e := range st.IDs {
@@ -265,6 +293,20 @@ func Consume(dataDir, jobID string, expiresAt int64, now time.Time) error {
 	}
 	kept = append(kept, seenEntry{JobID: jobID, ExpiresAt: expiresAt, ConsumedAt: now.Unix()})
 	b, err := encodeSeen(seenStore{PrunedThrough: watermark, ClockFloor: max(st.ClockFloor, now.Unix()), IDs: kept})
+	if err != nil {
+		return err
+	}
+	return writeAtomic(dir, SeenPath(dataDir), b)
+}
+
+// raiseClockFloor rewrites st with clock_floor = now when now is above it
+// (the caller holds .seen.lock and read st under it).
+func raiseClockFloor(dir, dataDir string, st seenStore, now time.Time) error {
+	if now.Unix() <= st.ClockFloor {
+		return nil
+	}
+	st.ClockFloor = now.Unix()
+	b, err := encodeSeen(st)
 	if err != nil {
 		return err
 	}
@@ -300,13 +342,5 @@ func NoteExpired(dataDir string, now time.Time) error {
 	if err != nil {
 		return err
 	}
-	if now.Unix() <= st.ClockFloor {
-		return nil
-	}
-	st.ClockFloor = now.Unix()
-	b, err := encodeSeen(st)
-	if err != nil {
-		return err
-	}
-	return writeAtomic(dir, SeenPath(dataDir), b)
+	return raiseClockFloor(dir, dataDir, st, now)
 }
