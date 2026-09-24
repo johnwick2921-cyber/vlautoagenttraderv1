@@ -434,3 +434,55 @@ func TestReleaseWorkflowProvesAProdBuildWithoutTheRevFails(t *testing.T) {
 		t.Fatalf("the negative step must fail loudly when the build unexpectedly succeeds")
 	}
 }
+
+// W-ONE-BUTTON M4 — cutover.sh must be a BOOT PROCEDURE, not a restart with a
+// false safety net. These pin the three P1 defects the CTO found in v1.
+func TestCutoverInstallsTheNewBinaryItWasGiven(t *testing.T) {
+	sh := repoFile(t, "deploy/cutover.sh")
+	// P1-a: v1 took no <new-bin> at all. It backed up whatever was already
+	// installed, so either nothing changed or the "backup" WAS the new binary
+	// and rollback restored the thing being rolled back from.
+	if !strings.Contains(sh, "NEW_BIN=") {
+		t.Fatalf("cutover must take the new binary as an argument")
+	}
+	if !strings.Contains(sh, "vcs.revision=$NEW_SHA") || !strings.Contains(sh, "vcs.modified=false") {
+		t.Fatalf("the new binary must be PROVEN (revision + clean tree) before anything is touched")
+	}
+	if !strings.Contains(sh, `mv -f "$INSTALL/nofx-bin.new" "$INSTALL/nofx-bin"`) {
+		t.Fatalf("the new binary must be installed ATOMICALLY (stage + mv -f)")
+	}
+}
+
+func TestCutoverRefusesWithoutAPassingFlatGate(t *testing.T) {
+	sh := repoFile(t, "deploy/cutover.sh")
+	// P1-b: v1 SIGKILLed the trader with no check for an open position, a
+	// non-terminal armed row, or an in-flight send (class 33 legs 1-5).
+	if !strings.Contains(sh, "NOFX_CUTOVER_TOKEN") || !strings.Contains(sh, "cutover gate needs a token") {
+		t.Fatalf("no token must REFUSE, and the token must never be a command-line argument")
+	}
+	if !strings.Contains(sh, "/api/cutover-gate") {
+		t.Fatalf("the flat gate must be asked before the kill")
+	}
+	if !strings.Contains(sh, "the cutover gate is NOT ready") {
+		t.Fatalf("a failing leg must refuse the cutover")
+	}
+}
+
+func TestCutoverRollbackRestartsAndProvesTheOldRev(t *testing.T) {
+	sh := repoFile(t, "deploy/cutover.sh")
+	// P1-c: after a failed boot the RUNNING process is the NEW binary, so a
+	// files-only rollback leaves the bad build serving while printing
+	// "restart the unit". The canon requires a TESTED auto-rollback.
+	if !strings.Contains(sh, "ROLLBACK OK") || !strings.Contains(sh, "ROLLBACK FAILED") {
+		t.Fatalf("rollback must reach a verdict, never leave it to the reader")
+	}
+	if !strings.Contains(sh, `wait_boot "$OLD_SHORT" "rollback"`) {
+		t.Fatalf("rollback must PROVE the old rev booted, not just swap files")
+	}
+	if !strings.Contains(sh, `printf '%s\n' "$OLD_SHA" > "$INSTALL/deploy/RELEASE"`) {
+		t.Fatalf("P3: rollback must write the full 40-hex old sha to RELEASE, not a 12-char stub")
+	}
+	if !strings.Contains(sh, "--dry-run") {
+		t.Fatalf("a procedure nobody has executed is not TESTED; --dry-run is how it gets exercised")
+	}
+}
