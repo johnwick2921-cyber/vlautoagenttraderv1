@@ -160,3 +160,62 @@ func TestLevelStatsNightlyProofDB(t *testing.T) {
 		t.Fatalf("nightly replay wrote nothing for %s (before=%d after=%d)", dayKey, before, after)
 	}
 }
+
+// TestLevelStatsFoldsOverlay (WAVE 1a-plan P2) — the nightly level stats read
+// the ONE fold: an owner overlay adding a level must be evaluated. RED on the
+// base-only reader: 1 evaluated row. GREEN: 2.
+func TestLevelStatsFoldsOverlay(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "ls2.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	ls := st.LevelStats()
+	if err := ls.Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.BarHistory().Migrate(); err != nil {
+		t.Fatal(err)
+	}
+
+	loc := kernel.CTLocation()
+	start := time.Date(2026, 8, 26, 17, 0, 0, 0, loc)
+	rows := make([]store.BarHistoryDB, 0, 120)
+	for i := 0; i < 120; i++ {
+		ms := start.Add(time.Duration(i) * time.Minute).UnixMilli()
+		px := 100.0 + float64(i)*0.1
+		rows = append(rows, store.BarHistoryDB{Contract: "MNQ 09-26", Source: store.BarSourceLive, Symbol: "MNQ", TF: "1m", OpenTimeMs: ms, O: px, H: px + 1, L: px - 1, C: px, V: 10})
+	}
+	if err := st.BarHistory().InsertBars(rows); err != nil {
+		t.Fatal(err)
+	}
+
+	doc := kernel.PlanDoc{
+		Reasoning:      "wave-1a-p2-ls",
+		Bias:           kernel.PlanBias{Direction: "neutral"},
+		DeathCondition: "flat",
+		Levels:         []kernel.PlanLevel{{Price: 100, Label: "PDH", Grade: "A", Instruction: "fade"}},
+		Scenarios:      []kernel.PlanScenario{{ID: "S1", Condition: "reject", Direction: "long", Quality: "A"}},
+	}
+	blob, _ := json.Marshal(doc)
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{
+		PlanID: "2026-08-26:NY:trader-1", TradeDate: "2026-08-26", Session: "NY",
+		StrategyID: "trader-1", Lifecycle: "active", Doc: string(blob),
+		CreatedAt: time.Now(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: "2026-08-26:NY:trader-1", PlanVersion: 1, OverlayID: "owner-add-pdl", Origin: "owner",
+		Patch: `[{"op":"add","path":"/levels/-","value":{"price":101,"label":"PDL","grade":"B","instruction":"fade"}}]`}); err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := runLevelStatsDayOnce(st, ls, "trader-1", "2026-08-26",
+		start.UnixMilli(), start.Add(24*time.Hour).UnixMilli(), time.Now().UnixMilli())
+	if err != nil {
+		t.Fatalf("nightly evaluation: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("the folded plan must evaluate 2 rows (PDH + overlay PDL), got %d", n)
+	}
+}
