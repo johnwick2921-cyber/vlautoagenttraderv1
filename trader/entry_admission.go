@@ -491,10 +491,11 @@ func agentBracketRefusal(d *kernel.Decision, live, atr5m float64) (string, bool)
 // never relies on what the broker's per-(symbol, side) SL/TP maps happen to
 // hold — the AI's last decision, or a breakeven stop written into the same key.
 //
-// CME futures (NT8): the bracket is set immediately BEFORE the entry (the AddOn
-// places entry + OCO bracket atomically from the signal), and a failed set
-// REFUSES the entry — unlike the AI path, a chat entry is never sent without
-// its own protective stop. Other venues follow the AI path's order: open, then
+// CME futures (NT8): the entry CARRIES its own bracket in the signal
+// (OpenWithBracket, W1b FOLD-3 — the AddOn places entry + OCO bracket
+// atomically from it); nothing is written to the shared SL/TP maps before the
+// send, and a refused send leaves them untouched — a chat entry is never sent
+// without its own protective stop. Other venues follow the AI path's order: open, then
 // set; a failed set is returned as *ManualEntryUnprotected (the position is
 // LIVE). An admission refusal is *ManualEntryRefusal, and so is a refusal by
 // the execute-side rails the entry shares with an AI decision (W1b FOLD-2,
