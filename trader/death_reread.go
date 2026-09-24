@@ -121,8 +121,8 @@ func (at *AutoTrader) priorDeathLinePriceImpl(row *store.PlanDB) float64 {
 // assert the request without running a live planner stream). It rides the
 // class-35 death_replan trigger, so a landed fresh version SPENDS one replan
 // budget unit and lands the FlipHoldAnchorReplan anchor.
-var deathRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(at, row), failClosed)
+var deathRereadRun = func(at *AutoTrader, now time.Time, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
+	return at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(at, row), failClosed)
 }
 
 // deathBornWickActive reports whether a death-born plan is inside its birth
@@ -300,7 +300,7 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 			at.logWarnf("🗓️ death re-read %s %s v%d — SKIPPED before the read: the row is %q, no longer dormant; nothing authored, the once-key stays clear.", tradeDate, session, row.Version, lc)
 			return
 		}
-		if !deathRereadRun(at, session, tradeDate, prior, row, false) {
+		if !deathRereadRun(at, now, session, tradeDate, prior, row, false) {
 			at.logWarnf("🗓️ death re-read %s %s v%d did not complete — the dormant plan stands; the once-key is cleared for a retry next cycle.", tradeDate, session, row.Version)
 			_ = at.store.SetSystemConfig(deathRereadDoneKey(row), "0")
 			return

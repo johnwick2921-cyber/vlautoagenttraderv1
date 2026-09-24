@@ -48,7 +48,6 @@ trader/auto_trader_clock.go:enforceT1ForceFlat:enforceT1ForceFlatAt
 trader/auto_trader_transition.go:observeTransitionStanddown:observeTransitionStanddownAt
 trader/auto_trader_transition.go:maybeWakePlannerOnMSS:maybeWakePlannerOnMSSAt
 trader/auto_trader_weekly.go:weeklyConfluenceShadow:weeklyConfluenceShadowAt
-trader/auto_trader_weekly.go:weeklyScenarioGrade:weeklyScenarioGradeAt
 trader/auto_trader_wake_levels.go:maybeWakePlannerOnLevelEvents:maybeWakePlannerOnLevelEventsAt
 kernel/risk_limits.go:ResetDailyPnL:ResetDailyPnLAt
 provider/ninjatrader/bar_persist.go:barPersistSummary:barPersistSummaryAt
@@ -61,7 +60,6 @@ trader/armed_executor.go:declineHadFreshMet:declineHadFreshMetAt
 trader/armed_executor.go:maybeManageArmedOrders:maybeManageArmedOrdersAt
 # W3 (W-EXEC-TRUTH, 2026-09-23): the live-bar armed pass and the strict nudge.
 trader/armed_event_pass.go:armedEventPass:armedEventPassAt
-trader/strict_nudge.go:strictNudge:strictNudgeAt
 
 # Stage A telemetry clocks (no trading verdict changes)
 researchsnapshot/archive.go:Save:saveAt

@@ -400,7 +400,8 @@ func (at *AutoTrader) maybeWakePlannerOnLevelEventsAt(now time.Time, session, tr
 	// never stall the decision loop (live bug: a 2×300s retry chain blocked 14
 	// minutes of cycles and then no-traded a healthy session).
 	go func() {
-		_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "level_event", "level event: "+ev.desc, priorPlanLevelLines(at, row), false)
+		// P15 — the seamed wake hands its OWN instant to the read.
+		_ = at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, "level_event", "level event: "+ev.desc, priorPlanLevelLines(at, row), false)
 		if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && fresh.Version != row.Version {
 			at.carryOwnerEditsInto(fresh.PlanID, row.Version, fresh.Version)
 		}

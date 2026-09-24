@@ -32,13 +32,6 @@ import (
 // Kernel-dropped decisions (validateDecision) never reach executeDecision and
 // so never nudge — unchanged.
 
-// strictNudge is the wall-clock entry (clock-seams.list). The production
-// caller, executeDecisionWithRecordAt, calls strictNudgeAt with admitEntry's
-// OWN instant so the gate and the nudge judge one moment.
-func (at *AutoTrader) strictNudge(decision *kernel.Decision, refusal string) (string, bool) {
-	return at.strictNudgeAt(decision, refusal, time.Now())
-}
-
 // strictNudgeAt runs the nudge at now. ok=false: this refusal does not nudge
 // (the record keeps the refusal alone). ok=true: the verdict to append.
 func (at *AutoTrader) strictNudgeAt(decision *kernel.Decision, refusal string, now time.Time) (string, bool) {

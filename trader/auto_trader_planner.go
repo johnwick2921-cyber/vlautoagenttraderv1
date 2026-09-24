@@ -384,12 +384,12 @@ func (at *AutoTrader) maybeRunSessionReadsAt(now time.Time) []SessionReadFired {
 			for _, l := range detail.Levels {
 				at.logInfof("🗓️   ↳ %s", l)
 			}
-			if at.deathReplanAllowed(s.Name, tradeDate, existing, detail.Killer, budget) {
+			if at.deathReplanAllowed(now, s.Name, tradeDate, existing, detail.Killer, budget) {
 				// F6 (LONDON-FORENSICS 2026-08-28) — the death re-plan's planner
 				// call blocked the cycle 19m33s (the 02:14 overrun). Async, same
 				// pattern as the W6/MSS wake re-reads; the plan-store's single-
 				// writer queue serializes the writes.
-				go at.runDeathReplan(s.Name, tradeDate, existing, detail.Killer)
+				go at.runDeathReplan(now, s.Name, tradeDate, existing, detail.Killer)
 			}
 		}
 		if !handledDeath {
@@ -781,8 +781,8 @@ func (at *AutoTrader) dormantFlipKillerOf(row *store.PlanDB) (string, bool) {
 
 // flipRereadRun is the read-call seam (fixtures substitute a recorder to assert
 // the request without running a live planner stream).
-var flipRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "structure_flip", prior, priorPlanLevelLines(at, row), failClosed)
+var flipRereadRun = func(at *AutoTrader, now time.Time, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
+	return at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, "structure_flip", prior, priorPlanLevelLines(at, row), failClosed)
 }
 
 // maybeRereadAfterFlip (W-FLIP-REREAD, 2026-09-17) — with day_plan.flip_reread
@@ -933,7 +933,7 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 			at.logWarnf("🗓️ structure_flip read %s %s v%d — SKIPPED before the read: the row is %q, no longer dormant; nothing authored, the once-key stays clear.", tradeDate, session, row.Version, lc)
 			return
 		}
-		if !flipRereadRun(at, session, tradeDate, prior, row, false) {
+		if !flipRereadRun(at, now, session, tradeDate, prior, row, false) {
 			at.logWarnf("🗓️ structure_flip read %s %s v%d did not complete — the dormant plan stands; the once-key is cleared for a retry next cycle.", tradeDate, session, row.Version)
 			_ = at.store.SetSystemConfig(flipRereadDoneKey(row), "0")
 			return
@@ -1149,7 +1149,7 @@ func (at *AutoTrader) warnFlipDeathSanity(d *kernel.PlanDoc) {
 // sticky owner levels prepended like the planner input. Returns nil when the
 // detector genuinely has nothing (no bars provider / no bars), which the doc
 // turns into the explicit "detector data unavailable" line.
-func (at *AutoTrader) noTradeLevelMap(session string) []kernel.PlanLevel {
+func (at *AutoTrader) noTradeLevelMap(now time.Time, session string) []kernel.PlanLevel {
 	symbol := at.futuresSymbol()
 	if market.FuturesBarsProvider == nil {
 		return nil
@@ -1158,7 +1158,6 @@ func (at *AutoTrader) noTradeLevelMap(session string) []kernel.PlanLevel {
 	if len(bars) == 0 {
 		return nil
 	}
-	now := time.Now()
 	maxLevels, htfSeats, htfMult, minGrade, _ := resolveSessionPlanCfg(at.dayPlanCfg(), session)
 	// R2 4.7 (2026-08-25) — fail-closed maps obey min_grade: a NO-TRADE doc's
 	// level map must match what an active plan would have carried.
@@ -1183,9 +1182,9 @@ func (at *AutoTrader) noTradeLevelMap(session string) []kernel.PlanLevel {
 // re-plan row lands (runPlannerReadCoreWithFactsGrades, keyed by the
 // death_replan trigger class), so a read refused by preflight / clock-hold /
 // a lost claim still costs nothing — "no plan row, no budget consumed" holds.
-func (at *AutoTrader) deathReplanAllowed(session, tradeDate string, existing *store.PlanDB, killer string, budget store.ReplanBudget) bool {
+func (at *AutoTrader) deathReplanAllowed(now time.Time, session, tradeDate string, existing *store.PlanDB, killer string, budget store.ReplanBudget) bool {
 	if !budget.May() {
-		at.writeNoTradePlan(session, tradeDate,
+		at.writeNoTradePlan(now, session, tradeDate,
 			fmt.Sprintf("re-plans exhausted (%d/%d) after %d death re-plan(s) — last: %s",
 				budget.Used, budget.Cap, budget.Used, killer))
 		return false
@@ -1213,20 +1212,20 @@ func (at *AutoTrader) deathReplanAllowed(session, tradeDate string, existing *st
 // level-set continuity). ITEM 4: the owner's sticky levels re-establish on
 // the version just written, re-anchored by price; anything that cannot be
 // re-anchored is parked for review, never dropped.
-func (at *AutoTrader) runDeathReplan(session, tradeDate string, existing *store.PlanDB, killer string) {
-	_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, killer, priorPlanLevelLines(at, existing), true)
+func (at *AutoTrader) runDeathReplan(now time.Time, session, tradeDate string, existing *store.PlanDB, killer string) {
+	_ = at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, store.TriggerDeathReplan, killer, priorPlanLevelLines(at, existing), true)
 	if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && existing != nil && fresh.Version != existing.Version {
 		at.carryOwnerEditsInto(fresh.PlanID, existing.Version, fresh.Version)
 	}
 }
 
 // writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.
-func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
+func (at *AutoTrader) writeNoTradePlan(now time.Time, session, tradeDate, reason string) {
 	// P7 — levels are market FACTS; the plan is an opinion about them. A no-trade
 	// decision must never erase the map: the fail-closed doc carries the current
 	// detector/scorer output (owner sticky levels included) so the card keeps
 	// showing the map under the NO-TRADE banner. Unavailable detector data says so.
-	doc := kernel.NoTradePlanDocWithLevels(reason, at.noTradeLevelMap(session))
+	doc := kernel.NoTradePlanDocWithLevels(reason, at.noTradeLevelMap(now, session))
 	docJSON, _ := json.Marshal(doc)
 	_, err := at.store.Plan().AppendPlan(&store.PlanDB{
 		PlanID: at.store.Plan().ResolvePlanID(tradeDate, session, at.id), StrategyID: at.id,
@@ -1295,7 +1294,7 @@ func (at *AutoTrader) PlannerReadInFlight(tradeDate, session string) bool {
 // THIS call claimed the read (false = another read was already in flight and
 // this one skipped). The wrapper keeps the old signature for existing callers.
 func (at *AutoTrader) runPlannerReadWithTriggerClaimed(session, tradeDate, triggerOverride string) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, triggerOverride, "", nil, true)
+	return at.runPlannerReadWithTriggerClaimedCtx(time.Now(), session, tradeDate, triggerOverride, "", nil, true)
 }
 
 // runPlannerReadWithTriggerClaimedCtx (P0.4-G, 2026-08-25) is the claimed read
@@ -1308,7 +1307,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimed(session, tradeDate, trigg
 // read that fails every retry writes the terminal NO-TRADE marker.
 // failClosed=false (W6 wake reads): the wake is OPPORTUNISTIC — if the re-read
 // fails, the still-active plan keeps trading and nothing is written.
-func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, triggerOverride, priorKiller string, priorLevels []string, failClosed bool) bool {
+func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(now time.Time, session, tradeDate, triggerOverride, priorKiller string, priorLevels []string, failClosed bool) bool {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return false
 	}
@@ -1346,7 +1345,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 		at.logErrorf("🗓️ planner: no client resolved for %s %s", tradeDate, session)
 		return false
 	}
-	input := at.assemblePlannerInputWithCtx(session, tradeDate, priorKiller, priorLevels)
+	input := at.assemblePlannerInputWithCtx(now, session, tradeDate, priorKiller, priorLevels)
 	// F3 — FAST-MARKET WAKE READS (waterfall-class wave, 2026-08-28): when a wake
 	// fires with |price drift| since the last plan write > FAST_MARKET_ATR ×
 	// ATR5m, this read runs on the fast reasoning wire and the prompt carries a
@@ -1427,7 +1426,8 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 	at.RegisterShadowRunner(client, plannerSystemPrompt, aiPlanMaxTokens(), fMode, fEffort)
 	recordResearchInput(input.ResearchSnapshotID, input, plannerSystemPrompt, modelID)
 	researchTrace := &researchsnapshot.PlanTrace{SnapshotID: input.ResearchSnapshotID, Model: modelID, ConfigVersion: input.AIConfigHash, SystemPrompt: plannerSystemPrompt}
-	at.runPlannerReadCoreObserved(time.Now, researchTrace, session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels(input), failClosed, func(userPrompt string) (string, error) {
+	// P15 — the authoring clock is the caller's instant, not a fresh wall read.
+	at.runPlannerReadCoreObserved(func() time.Time { return now }, researchTrace, session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels(input), failClosed, func(userPrompt string) (string, error) {
 		mcp.ApplyThinking(client, pMode, pEffort)
 		// PLANNER SPEED WAVE 4 (2026-08-31) — the session planner now rides the
 		// SSE streaming client with the idle watchdog (split deadlines). The
@@ -2538,7 +2538,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		// P7 — the fail-closed doc still carries the map: levels from the current
 		// detector/scorer output (same pipeline), scenarios empty, explicit reason.
 		doc = kernel.NoTradePlanDocWithLevels(
-			fmt.Sprintf("read failed after retries: %v", lastErr), at.noTradeLevelMap(session))
+			fmt.Sprintf("read failed after retries: %v", lastErr), at.noTradeLevelMap(authoringClock(), session))
 		lifecycle = "no_trade"
 		trigger = "planner_fail_closed"
 		bornCheck = nil // W2 A2 — no candidate passed; the NO-TRADE row records none
@@ -2774,15 +2774,14 @@ func structureSummaryLines(fetch func(tf string, count int) []market.Kline, time
 // HONORS the day_plan config (max_levels, per-session min_grade, timeframes) —
 // edits apply at the NEXT read (never mid-plan).
 func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.PlannerInput {
-	return at.assemblePlannerInputWithCtx(session, tradeDate, "", nil)
+	return at.assemblePlannerInputWithCtx(time.Now(), session, tradeDate, "", nil)
 }
 
 // assemblePlannerInputWithCtx (P0.4-G, 2026-08-25) is assemblePlannerInput with
 // the prior-plan context for re-plans: the dead plan's killer line and its
 // levels (map continuity).
-func (at *AutoTrader) assemblePlannerInputWithCtx(session, tradeDate, priorKiller string, priorLevels []string) kernel.PlannerInput {
+func (at *AutoTrader) assemblePlannerInputWithCtx(now time.Time, session, tradeDate, priorKiller string, priorLevels []string) kernel.PlannerInput {
 	symbol := at.futuresSymbol()
-	now := time.Now()
 	researchID := uuid.NewString()
 	reg := at.sessionRegistry(now) // W8
 

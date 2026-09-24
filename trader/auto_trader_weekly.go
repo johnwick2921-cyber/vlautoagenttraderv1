@@ -436,14 +436,6 @@ func (at *AutoTrader) weeklyCounterShadow(decision *kernel.Decision) {
 	return // class 50: no weekly direction exists to be counter to
 }
 
-// weeklyScenarioGrade resolves the cited scenario's quality grade from the
-// active session plan ("" when unknown — treated as non-A by the clauses).
-// Clock seam (class 60): the entry point owns the wall clock and does nothing
-// else; the rule lives in the …At body so a test can state its own hour.
-func (at *AutoTrader) weeklyScenarioGrade(cited string) string {
-	return at.weeklyScenarioGradeAt(time.Now(), cited)
-}
-
 func (at *AutoTrader) weeklyScenarioGradeAt(now time.Time, cited string) string {
 	if at.store == nil || strings.TrimSpace(cited) == "" || cited == "off-plan" {
 		return ""

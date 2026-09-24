@@ -188,10 +188,12 @@ func (at *AutoTrader) maybeWakePlannerOnMSSAt(now time.Time, session, tradeDate 
 	// wake: both fire at most once per wake_min_interval_min, whichever
 	// class goes first. This makes the two wake classes budget-parity
 	// siblings instead of a same-cycle double fire.
+	// P15 (WAVE 1a-plan) — the throttle reads the SEAMED clock, not the wall
+	// clock it was handed: now.Sub(…) so a test can state its own hour.
 	if at.config.StrategyConfig != nil && at.config.StrategyConfig.DayPlan != nil &&
 		!at.lastPlannerWakeAt.IsZero() &&
-		time.Since(at.lastPlannerWakeAt) < time.Duration(at.config.StrategyConfig.DayPlan.WakeMinIntervalMinutes())*time.Minute {
-		at.logWarnf("🗓️ structure MSS on %s %s — SKIPPED: %.0fm elapsed < wake_min_interval_min (%dm).", session, tradeDate, time.Since(at.lastPlannerWakeAt).Minutes(), at.config.StrategyConfig.DayPlan.WakeMinIntervalMinutes())
+		now.Sub(at.lastPlannerWakeAt) < time.Duration(at.config.StrategyConfig.DayPlan.WakeMinIntervalMinutes())*time.Minute {
+		at.logWarnf("🗓️ structure MSS on %s %s — SKIPPED: %.0fm elapsed < wake_min_interval_min (%dm).", session, tradeDate, now.Sub(at.lastPlannerWakeAt).Minutes(), at.config.StrategyConfig.DayPlan.WakeMinIntervalMinutes())
 		return
 	}
 	// W6-D (2026-08-25) — wakes are UNLIMITED and spend NO budget: an MSS wake
@@ -210,7 +212,9 @@ func (at *AutoTrader) maybeWakePlannerOnMSSAt(now time.Time, session, tradeDate 
 	// the active plan; failClosed=false) and runs ASYNC so a slow/timing-out
 	// planner can never stall the decision loop for minutes.
 	go func() {
-		_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "structure_mss", "structure MSS: "+mss.Detail, priorPlanLevelLines(at, row), false)
+		// P15 — the seamed wake hands its OWN instant to the read: the planner
+		// input assembly and the authoring clock below must not re-read the wall.
+		_ = at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, "structure_mss", "structure MSS: "+mss.Detail, priorPlanLevelLines(at, row), false)
 		// C5 — sticky owner edits survive the MSS wake exactly like the death path.
 		if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && fresh.Version != row.Version {
 			at.carryOwnerEditsInto(fresh.PlanID, row.Version, fresh.Version)

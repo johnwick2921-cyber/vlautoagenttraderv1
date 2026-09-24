@@ -144,7 +144,7 @@ func (at *AutoTrader) ForceReread(now time.Time) (RereadRefusal, error) {
 	// C9 (2026-08-25) — capture the claim result: a lost claim (another read
 	// already in flight) or a failed preflight must be an HONEST outcome, not a
 	// silent success.
-	performed := at.runPlannerReadWithTriggerClaimedCtx(gate.Session, tradeDate, "owner_reread", "", nil, true)
+	performed := at.runPlannerReadWithTriggerClaimedCtx(now, gate.Session, tradeDate, "owner_reread", "", nil, true)
 	if !performed {
 		return RereadRefusal{
 			Allowed: true, // the budget gate passed; the read itself was skipped
