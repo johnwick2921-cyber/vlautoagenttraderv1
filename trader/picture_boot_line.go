@@ -15,9 +15,11 @@ import (
 //
 //	🖼  every in-flight Picture ledger row (store.PictureHtfRecoverableAll —
 //	    the set the entry latch and the installation gate count), each with
-//	    its id, stage and submitted_at, "none" when there is none; and the
-//	    CURRENT run epoch (pictureRunEpoch), n/a when no run is alive (D15,
-//	    CTO 1790192366762)
+//	    its id, stage and submitted_at, "none" when there is none; PLUS every
+//	    non-terminal armed_orders row with source=picture (since W5 a live
+//	    Picture order lives there — U4, #193 N1): id, state, signal short-id,
+//	    "none" when none, never 0; and the CURRENT run epoch (pictureRunEpoch),
+//	    n/a when no run is alive (D15, CTO 1790192366762)
 //	📷  D8 RULING: while Picture is on and one_setup resolves ON, a WARN that
 //	    one_setup governs planner plays only — a Picture scenario is admitted
 //	    by its own switch
@@ -27,9 +29,9 @@ import (
 
 var pictureBootLogged sync.Map // trader id|run epoch → true
 
-// PictureRowsBootLine renders the 🖼 line from the store's own reader and the
-// live run epoch. Every field is READ: an unreadable ledger says so, an absent
-// submission stamp prints n/a, never 0.
+// PictureRowsBootLine renders the 🖼 line from the store's own readers and the
+// live run epoch. Every field is READ: an unreadable ledger or armed set says
+// so, an absent submission stamp or signal prints n/a, never 0.
 func PictureRowsBootLine(st *store.Store, epoch int64, epochOK bool) string {
 	ep := "n/a"
 	if epochOK {
@@ -42,19 +44,46 @@ func PictureRowsBootLine(st *store.Store, epoch int64, epochOK bool) string {
 	if err != nil {
 		return fmt.Sprintf("🖼 picture rows in flight: UNREADABLE (%v) · run_epoch=%s", err, ep)
 	}
-	if len(rows) == 0 {
-		return "🖼 picture rows in flight (the latch's + installation gate's set, every trader): none · run_epoch=" + ep
-	}
-	parts := make([]string, 0, len(rows))
-	for _, r := range rows {
-		sub := "n/a"
-		if r.SubmittedAt > 0 {
-			sub = kernel.ClockCTSeconds(time.UnixMilli(r.SubmittedAt))
+	ledger := "none"
+	if len(rows) > 0 {
+		parts := make([]string, 0, len(rows))
+		for _, r := range rows {
+			sub := "n/a"
+			if r.SubmittedAt > 0 {
+				sub = kernel.ClockCTSeconds(time.UnixMilli(r.SubmittedAt))
+			}
+			parts = append(parts, fmt.Sprintf("#%d %s submitted_at=%s", r.ID, r.Stage, sub))
 		}
-		parts = append(parts, fmt.Sprintf("#%d %s submitted_at=%s", r.ID, r.Stage, sub))
+		ledger = fmt.Sprintf("%d — %s", len(rows), strings.Join(parts, "; "))
 	}
-	return fmt.Sprintf("🖼 picture rows in flight (the latch's + installation gate's set, every trader): %d — %s · run_epoch=%s",
-		len(rows), strings.Join(parts, "; "), ep)
+	return fmt.Sprintf("🖼 picture rows in flight (the latch's + installation gate's set, every trader): %s · armed picture orders: %s · run_epoch=%s",
+		ledger, pictureArmedBootSegment(st), ep)
+}
+
+// pictureArmedBootSegment renders the armed_orders source=picture part of the
+// 🖼 line: id, state and signal short-id for every non-terminal armed row with
+// Source=ArmSourcePicture, "none" when there is none, UNREADABLE when the
+// store refuses, never 0 (U4, #193 N1).
+func pictureArmedBootSegment(st *store.Store) string {
+	armed, err := st.ArmedOrders().ListNonTerminalAllTraders()
+	if err != nil {
+		return fmt.Sprintf("UNREADABLE (%v)", err)
+	}
+	pics := make([]string, 0)
+	for _, a := range armed {
+		if a.Source != store.ArmSourcePicture {
+			continue
+		}
+		sig := "n/a"
+		if a.SignalID != "" {
+			sig = shortID(a.SignalID)
+		}
+		pics = append(pics, fmt.Sprintf("#%d %s signal=%s", a.ID, a.State, sig))
+	}
+	if len(pics) == 0 {
+		return "none"
+	}
+	return fmt.Sprintf("%d — %s", len(pics), strings.Join(pics, "; "))
 }
 
 // pictureOneSetupWarn is the D8 WARN: "" unless Picture is on and one_setup

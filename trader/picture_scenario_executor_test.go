@@ -896,7 +896,7 @@ func d9Flow(t *testing.T, r *zoneRig, firstSig, waiting, first string, inside, f
 
 func TestPictureRowsBootLineReadsTheLedgerAndTheEpoch(t *testing.T) {
 	r, epoch := newPicRig(t, "w5b-bootline", nil)
-	if got := PictureRowsBootLine(r.st, 0, false); !strings.Contains(got, ": none · run_epoch=n/a") {
+	if got := PictureRowsBootLine(r.st, 0, false); !strings.Contains(got, ": none · armed picture orders: none · run_epoch=n/a") {
 		t.Fatalf("no rows, no run: %q", got)
 	}
 	mk := func(key string, stamp bool) int64 {
@@ -936,6 +936,31 @@ func stampedAt(t *testing.T, st *store.Store, key string) string {
 		t.Fatalf("fixture: %s must carry a submission stamp: %+v %v %v", key, row, ok, err)
 	}
 	return kernel.ClockCTSeconds(time.UnixMilli(row.SubmittedAt))
+}
+
+// U4 — since W5 a live Picture order is an armed_orders row with
+// source='picture' (#193 N1): the 🖼 line must list those too (id, state,
+// signal short-id), READ from the store, "none" when none, never 0.
+func TestPictureRowsBootLineListsArmedPictureOrders(t *testing.T) {
+	r, epoch := newPicRig(t, "w5b-bootline-armed", nil)
+	arm := &store.ArmedOrderDB{
+		TraderID: r.at.id, PlanID: "2026-09-24:NY", Scenario: "P1", Version: 1,
+		State: store.StateWorking, Side: "long", EntryPx: 30000, StopPx: 29950,
+		TargetPx: 30100, Source: store.ArmSourcePicture, SourceRef: "pic-armed-1",
+		SignalID: "armed-signal-0001",
+	}
+	if err := r.st.ArmedOrders().UpsertArm(arm); err != nil {
+		t.Fatal(err)
+	}
+	got := PictureRowsBootLine(r.st, epoch, true)
+	want := "#" + strconv.FormatInt(arm.ID, 10) + " " + store.StateWorking +
+		" signal=" + shortID("armed-signal-0001")
+	if !strings.Contains(got, want) {
+		t.Fatalf("the 🖼 line must list the armed source=picture order %q: %q", want, got)
+	}
+	if !strings.Contains(got, "armed picture orders") {
+		t.Fatalf("the 🖼 line must name the armed picture set: %q", got)
+	}
 }
 
 // The latch's ledger source (production: the latch calls it) names a Picture
