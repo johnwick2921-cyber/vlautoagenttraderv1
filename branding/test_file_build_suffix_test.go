@@ -2,9 +2,12 @@ package branding
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"nofx/internal/censuswalk"
 )
 
 // A Go file whose name ends in _<GOOS>, _<GOARCH> or _<GOOS>_<GOARCH> is
@@ -64,13 +67,15 @@ func TestPlatformSuffixRecognisesEveryShape(t *testing.T) {
 
 func TestNoTestFileCarriesAPlatformBuildSuffix(t *testing.T) {
 	seen := 0
-	err := filepath.WalkDir("..", func(path string, d fs.DirEntry, err error) error {
+	root := ".."
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
-			switch d.Name() {
-			case ".git", "node_modules", "vendor", "dist", ".understand-anything", ".claude", ".Codex":
+			// CLASS 258: skip names come from censuswalk and apply ONLY to
+			// direct children of the module root.
+			if path != root && filepath.Dir(path) == root && censuswalk.SkippedAtRoot(d.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -92,5 +97,67 @@ func TestNoTestFileCarriesAPlatformBuildSuffix(t *testing.T) {
 	}
 	if seen < 500 {
 		t.Fatalf("the guard saw only %d test files — it is going vacuous", seen)
+	}
+}
+
+// TestSuffixGuardSeesNestedSkipNamedDirs plants a platform-suffixed test file
+// in EVERY censuswalk.NestedProbeDirs directory of a synthetic module and
+// asserts the guard reports every one. With the old any-depth SkipDir the dirs
+// named like a root skip were invisible (CLASS 258).
+func TestSuffixGuardSeesNestedSkipNamedDirs(t *testing.T) {
+	root := t.TempDir()
+	dirs := censuswalk.NestedProbeDirs()
+	for _, dir := range dirs {
+		full := filepath.Join(root, filepath.FromSlash(dir))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		src := "package " + censuswalk.PackageName(dir) + "\n"
+		if err := os.WriteFile(filepath.Join(full, "offender_linux_test.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var reported []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if path != root && filepath.Dir(path) == root && censuswalk.SkippedAtRoot(d.Name()) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(d.Name(), "_test.go") {
+			return nil
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
+		if s := platformSuffix(d.Name()); s != "" {
+			if _, ok := platformTestFileAllowlist[rel]; !ok {
+				reported = append(reported, rel)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, r := range reported {
+		seen[r] = true
+	}
+	var missed []string
+	for _, dir := range dirs {
+		if !seen[dir+"/offender_linux_test.go"] {
+			missed = append(missed, dir)
+		}
+	}
+	if len(missed) > 0 {
+		t.Fatalf("the suffix guard skipped %d of %d nested probe dirs — a skip by NAME at depth exempts compiled packages (CLASS 258):\n\t%s",
+			len(missed), len(dirs), strings.Join(missed, "\n\t"))
 	}
 }
