@@ -112,7 +112,7 @@ export const status: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'A release itself is cut from a tagged, approved commit — never from whatever happens to be on the development branch at the time — and the owner has to approve it before anything is produced. The build proves it came from a clean tree, packages only an allow-list of files, scans both the staged files and the finished archive for anything secret, and signs a manifest that is checked before the archive is published. The installation keeps its own data and settings: they are never shipped inside a release and never overwritten by one.',
+      text: 'A release itself is cut from a tagged, approved commit — never from whatever happens to be on the development branch at the time — and, once the release environment is set up with you as its required reviewer, nothing is produced until you approve it. Until that is set up the build still runs every check below, but the approval step is not there to stop it — so treat "nobody can cut a release without me" as true only after you have set it up. The build proves it came from a clean tree, packages only an allow-list of files, scans both the staged files and the finished archive for anything secret, and signs a manifest that is checked before the archive is published. The installation keeps its own data and settings: they are never shipped inside a release and never overwritten by one.',
     },
     {
       kind: 'p',
