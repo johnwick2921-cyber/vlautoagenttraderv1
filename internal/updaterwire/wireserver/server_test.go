@@ -68,6 +68,25 @@ type served struct {
 	last  atomic.Value // updaterwire.Request
 	logs  *logSink
 	done  chan error
+	once  sync.Once
+}
+
+// stop closes the listener and waits for Serve to return. Serve waits for
+// every serveConn goroutine (defer wg.Wait()), so after stop no goroutine of
+// this server reads a package seam, and the receive from done is the
+// happens-before edge that lets a test change the seam (M3 race run at
+// a13b866a: peerUID swapped under a live Serve). Idempotent; the cleanup
+// calls it too.
+func (s *served) stop(t *testing.T) {
+	t.Helper()
+	s.once.Do(func() {
+		s.l.Close()
+		select {
+		case <-s.done:
+		case <-time.After(5 * time.Second):
+			t.Error("Serve did not return after Close")
+		}
+	})
 }
 
 func serve(t *testing.T, sock string) *served {
@@ -85,14 +104,7 @@ func serve(t *testing.T, sock string) *served {
 			return updaterwire.Response{OK: true, State: "idle"}
 		})
 	}()
-	t.Cleanup(func() {
-		l.Close()
-		select {
-		case <-s.done:
-		case <-time.After(5 * time.Second):
-			t.Error("Serve did not return after Close")
-		}
-	})
+	t.Cleanup(func() { s.stop(t) })
 	return s
 }
 
@@ -239,29 +251,46 @@ func TestServeRejectsARefusedFrameAfterAValidOne(t *testing.T) {
 }
 
 func TestServeRejectsAnotherUIDPeer(t *testing.T) {
-	_, sock := dataDir(t)
-	s := serve(t, sock)
+	// One server per seam value: the seam is set while no Serve runs, and
+	// the server is stopped (Serve returned, every serveConn goroutine done)
+	// before the seam changes again. Swapping peerUID under a live Serve was
+	// a data race the M3 race run found at a13b866a (server.go serveConn
+	// reads it per connection; the socket gives no happens-before edge).
 	orig := peerUID
-	t.Cleanup(func() { peerUID = orig })
-	peerUID = func(*net.UnixConn) (uint32, error) { return uint32(os.Geteuid()) + 1, nil }
+	t.Cleanup(func() { peerUID = orig }) // registered first, so it runs after every server's stop
+	phase := func(seam func(*net.UnixConn) (uint32, error)) (*served, string) {
+		t.Helper()
+		peerUID = seam
+		_, sock := dataDir(t)
+		return serve(t, sock), sock
+	}
+
+	s, sock := phase(func(*net.UnixConn) (uint32, error) { return uint32(os.Geteuid()) + 1, nil })
 	if out := rawExchange(t, sock, []byte(validStatus+"\n")); len(out) != 0 {
 		t.Fatalf("another uid's peer must be closed before any read, got %q", out)
 	}
+	s.stop(t)
 	if s.calls.Load() != 0 {
 		t.Fatal("the handler was called for another uid's peer")
 	}
 	if l := s.logs.all(); !strings.Contains(l, fmt.Sprintf("updater-wire: rejected reason=peer_uid uid=%d", os.Geteuid()+1)) {
 		t.Fatalf("log = %q, want the peer_uid refusal", l)
 	}
-	peerUID = func(*net.UnixConn) (uint32, error) { return 0, errors.New("getsockopt failed") }
+
+	s, sock = phase(func(*net.UnixConn) (uint32, error) { return 0, errors.New("getsockopt failed") })
 	if out := rawExchange(t, sock, []byte(validStatus+"\n")); len(out) != 0 {
 		t.Fatalf("an unreadable SO_PEERCRED must be refused (fail closed), got %q", out)
+	}
+	s.stop(t)
+	if s.calls.Load() != 0 {
+		t.Fatal("the handler was called for a peer whose uid could not be read")
 	}
 	if l := s.logs.all(); !strings.Contains(l, "reason=peer_uid uid=unknown") {
 		t.Fatalf("log = %q, want the unknown-uid refusal", l)
 	}
+
 	// positive control: the real SO_PEERCRED (our own uid) is served
-	peerUID = orig
+	s, sock = phase(orig)
 	ok, _ := updaterwire.EncodeResponse(updaterwire.Response{OK: true, State: "idle"})
 	c, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: sock, Net: "unix"})
 	if err != nil {
