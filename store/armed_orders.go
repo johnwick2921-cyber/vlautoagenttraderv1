@@ -874,6 +874,19 @@ func (s *ArmedOrderStore) ListFilledSinceAllTraders(since time.Time) ([]ArmedOrd
 	return out, err
 }
 
+// ListFilledSince returns ONE trader's FILLED rows whose updated_at may fall at
+// or after since (W1b FOLD-4: the untracked materialization's price-match
+// fallback reads only arms filled inside the fill ring's own window — an older
+// arm never matches). The SQL bound is widened by LedgerClockSlack; callers
+// MUST re-check the exact window on the parsed UpdatedAt. Newest first by text
+// (the caller orders by instant).
+func (s *ArmedOrderStore) ListFilledSince(traderID string, since time.Time) ([]ArmedOrderDB, error) {
+	var out []ArmedOrderDB
+	err := s.db.Where("trader_id = ? AND state = ? AND updated_at >= ?", traderID, StateFilled, since.Add(-LedgerClockSlack)).
+		Order("updated_at DESC").Find(&out).Error
+	return out, err
+}
+
 // Touch refreshes UpdatedAt (the stale-working reconnect safety net reads it).
 func (s *ArmedOrderStore) Touch(id int64) error {
 	return s.db.Model(&ArmedOrderDB{}).Where("id = ?", id).

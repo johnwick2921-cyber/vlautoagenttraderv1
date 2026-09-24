@@ -442,9 +442,10 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		// trader so move_stop/trailing can address the live bracket.
 		//
 		// W1b E15 — the fill ring FIRST: the exact signal of this position's own
-		// fill beats a price guess. Only with NO same-side entry evidence does the
-		// price-match fallback run; an ambiguous or unreadable answer leaves the
-		// row untagged (a guess is fabricated lineage).
+		// fill beats a price guess. Only with no same-side evidence in the window
+		// does the price-match fallback run, and (FOLD-4) only over arms filled in
+		// that same window; an ambiguous or unreadable answer leaves the row
+		// untagged (a guess is fabricated lineage).
 		switch f, verdict, why := t.lateEntryFillFor(st, acct, sym, side, firstSeen); verdict {
 		case lateFillOne:
 			if sig := t.tagLateEntryFill(st, traderID, exchangeID, row.ID, sym, side, f); sig != "" {
@@ -453,7 +454,7 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		case lateFillUnresolved:
 			logger.Warnf("🔗 attribution: pos %d (%s %s) — fill ring %s — left UNTAGGED; no price-match guess", row.ID, sym, side, why)
 		default:
-			if _, sig := StampArmedLineageIfMatched(st, traderID, row.ID, sym, side, avg); sig != "" {
+			if _, sig := stampArmedLineageInWindow(st, traderID, row.ID, sym, side, avg, firstSeen); sig != "" {
 				t.rememberEntryOrderID(sym, side, sig)
 			}
 		}
@@ -531,6 +532,15 @@ func StampArmedLineageIfMatched(st *store.Store, traderID string, posID int64, s
 	if err != nil || len(rows) == 0 {
 		return false, ""
 	}
+	if r, ok := matchArmedFillByPrice(rows, sym, side, entryPx); ok {
+		return stampArmedLineageFromRow(st, posID, r)
+	}
+	return false, ""
+}
+
+// matchArmedFillByPrice is the price matcher: the first row, in the order
+// given, of the same side whose true fill price is within one tick of entryPx.
+func matchArmedFillByPrice(rows []store.ArmedOrderDB, sym, side string, entryPx float64) (store.ArmedOrderDB, bool) {
 	tick := market.FuturesTickSize(sym)
 	if tick <= 0 {
 		tick = 0.25
@@ -543,9 +553,9 @@ func StampArmedLineageIfMatched(st *store.Store, traderID string, posID int64, s
 		if fillPx < entryPx-tick || fillPx > entryPx+tick {
 			continue
 		}
-		return stampArmedLineageFromRow(st, posID, r)
+		return r, true
 	}
-	return false, ""
+	return store.ArmedOrderDB{}, false
 }
 
 // stampArmedLineageFromRow writes one FILLED ledger row's plan linkage and

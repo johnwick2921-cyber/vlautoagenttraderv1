@@ -32,8 +32,11 @@ import (
 //   - more than one → AMBIGUOUS: untagged, WARN — never a guess;
 //   - a signal that is neither this trader's arm nor this trader's AI open, or
 //     a store read that fails → untagged, WARN (fail-closed);
-//   - no same-side entry evidence at all (e.g. the ring emptied by a restart)
-//     → today's price-match fallback runs unchanged.
+//   - no same-side evidence in the window (the ring emptied by a restart, or
+//     every candidate already explains another position) → the price-match
+//     fallback runs, bounded to the SAME window (FOLD-4): only this trader's
+//     FILLED arms whose updated_at is at or after firstSeen −
+//     lateEntryFillWindowMs; an older arm never matches.
 //
 // The AddOn sends fill frames only for ENTRY legs (Buy=long, SellShort=short),
 // so the ring never hands an exit's signal to a new entry.
@@ -42,7 +45,7 @@ import (
 type lateFillVerdict int
 
 const (
-	lateFillNoEvidence lateFillVerdict = iota // price-match fallback may run
+	lateFillNoEvidence lateFillVerdict = iota // the window-bounded price-match fallback may run
 	lateFillOne                               // exactly one candidate — tag it
 	lateFillUnresolved                        // ambiguous or unreadable — untagged, no guess
 )
@@ -109,6 +112,36 @@ func (t *TCPTrader) lateEntryFillFor(st *store.Store, acct, sym, side string, fi
 		return bySig[cands[0]], lateFillOne, ""
 	}
 	return recentFill{}, lateFillUnresolved, "ambiguous: " + strings.Join(cands, ", ")
+}
+
+// stampArmedLineageInWindow is the untracked materialization's price-match
+// fallback (W1b FOLD-4): StampArmedLineageIfMatched's one-tick match, over
+// this trader's FILLED arms whose updated_at is at or after firstSeenMs −
+// lateEntryFillWindowMs — the ring's own window, no upper bound. An older arm
+// never matches: a fill at an old arm's price adopting that arm's plan and
+// signal is fabricated lineage, and the terminal signal it would cache sends
+// move_stop to a dead order. updated_at is zone-bearing text
+// (store.LedgerClockSlack): the SQL bound only over-fetches; the window is
+// judged here on the parsed instant and candidates are ordered newest instant
+// first. A read failure leaves the row untagged (WARN).
+func stampArmedLineageInWindow(st *store.Store, traderID string, posID int64, sym, side string, entryPx float64, firstSeenMs int64) (bool, string) {
+	lo := firstSeenMs - lateEntryFillWindowMs
+	rows, err := st.ArmedOrders().ListFilledSince(traderID, time.UnixMilli(lo))
+	if err != nil {
+		logger.Warnf("🔗 attribution: pos %d (%s %s) — armed-fill read for the price-match fallback failed: %v — left UNTAGGED (no guess)", posID, sym, side, err)
+		return false, ""
+	}
+	inWindow := make([]store.ArmedOrderDB, 0, len(rows))
+	for _, r := range rows {
+		if r.UpdatedAt.UnixMilli() >= lo {
+			inWindow = append(inWindow, r)
+		}
+	}
+	sort.SliceStable(inWindow, func(i, j int) bool { return inWindow[i].UpdatedAt.After(inWindow[j].UpdatedAt) })
+	if r, ok := matchArmedFillByPrice(inWindow, sym, side, entryPx); ok {
+		return stampArmedLineageFromRow(st, posID, r)
+	}
+	return false, ""
 }
 
 // tagLateEntryFill stamps the materialized position posID with the identity of
