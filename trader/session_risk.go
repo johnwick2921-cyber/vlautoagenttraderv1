@@ -136,6 +136,14 @@ func (at *AutoTrader) sessionRiskGateAt(now time.Time) sessionRiskVerdict {
 	bandReason, blocked := at.sessionEntryBlockedAt(now)
 	if !blocked {
 		bandReason = ""
+		// W1b E13 — the force-flat windows (T1 lead, in-session EOD flat) are
+		// refused as the band, on both triggers and at the send point. Read
+		// HERE, before the loss-run query: that query fails OPEN below, and a
+		// window is a fact about the clock that no database hiccup may skip.
+		// Class no_trade_band, so the pass keeps its cancel of resting arms.
+		if why, due := at.forceFlatWindowAt(now); due {
+			bandReason = why
+		}
 	}
 	losses := 0
 	if at.store != nil {

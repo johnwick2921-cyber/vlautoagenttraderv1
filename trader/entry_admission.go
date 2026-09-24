@@ -303,6 +303,14 @@ func (at *AutoTrader) admitChain(in admitIntent, sym, act string, now time.Time)
 				at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", sym, act, reason)
 			})
 		}
+		// W1b E13 — the force-flat windows (T1 lead, in-session EOD flat): the
+		// arm and picture paths read them inside sessionRiskGateAt; the
+		// decision and agent paths under their own session_gate class.
+		if reason, due := at.forceFlatWindowAt(now); due {
+			return at.admitRefuse(in, "session_gate", "session_gate: "+reason, func() {
+				at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", sym, act, reason)
+			})
+		}
 	} else {
 		// CME closed (weekend / holiday / daily halt): the arm and picture paths
 		// have no runCycle skip in front of them (Picture runs on the live-bar

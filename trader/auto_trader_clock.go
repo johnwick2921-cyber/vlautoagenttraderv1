@@ -462,19 +462,11 @@ func (at *AutoTrader) enforceEODFlatAt(now time.Time) bool {
 	reg := at.sessionRegistry(now)
 	flat := "" // resolved wall-clock, for the log only
 	if sess, ok := reg.ActiveSession(now); ok {
-		offset := at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(sess.Name)
-		flatMin, hhmm, okC := sessionCutoffCT(sess, offset)
+		hhmm, past, okC := at.eodSessionFlatAt(reg, sess, now)
 		if !okC {
 			return false // malformed registry times — never invent a flatten
 		}
-		// Half-day early close pulls the flat IN. P4 (ledger-close 2026-08-19):
-		// the flat now resolves against early_close_CT − eod_flat_offset (the
-		// dispatch 4.4 contract) — with the default offset 0 this is byte-
-		// identical to the original effectiveEODFlatCT pull-in.
-		if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && halfDayPullsIn(sess, adj, flatMin) {
-			flatMin, hhmm = adj, adjHHMM
-		}
-		if !pastSessionCutoff(now, sess, flatMin) {
+		if !past {
 			return false
 		}
 		flat = fmt.Sprintf("%s CT (%s)", hhmm, sess.Name)
@@ -995,4 +987,59 @@ func (at *AutoTrader) tickOnce(isGrid bool) (closedSkip bool) {
 		at.logErrorf("❌ Execution failed: %v", err)
 	}
 	return
+}
+
+// eodSessionFlatAt is the in-session EOD-flat rule, ONE definition for the
+// flatten (enforceEODFlatAt) and the entry refusal (forceFlatWindowAt): the
+// active session's end − eod_flat_offset_min, pulled IN by a half-day early
+// close. P4 (ledger-close 2026-08-19): the flat resolves against
+// early_close_CT − eod_flat_offset (the dispatch 4.4 contract) — with the
+// default offset 0 this is byte-identical to the original effectiveEODFlatCT
+// pull-in. ok=false on malformed registry times (never invent a flatten).
+func (at *AutoTrader) eodSessionFlatAt(reg kernel.SessionRegistry, sess *kernel.SessionDef, now time.Time) (hhmm string, past, ok bool) {
+	offset := at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(sess.Name)
+	flatMin, hhmm, okC := sessionCutoffCT(sess, offset)
+	if !okC {
+		return "", false, false
+	}
+	if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && halfDayPullsIn(sess, adj, flatMin) {
+		flatMin, hhmm = adj, adjHHMM
+	}
+	return hhmm, pastSessionCutoff(now, sess, flatMin), true
+}
+
+// forceFlatWindowAt (W1b E13) — the two FORCE-FLAT windows as an entry
+// REFUSAL, on every path and every trigger. runCycle enforces them only as
+// CANCELS (enforceT1ForceFlatAt, enforceEODFlatAt), and a cancel covers only
+// what exists when the scan runs: a scan that cancelled nothing went on to
+// author and place, and the live-bar event pass — which never calls either
+// enforce — re-armed within a second what the scan had just emptied.
+//
+//   - the T1 force-flat LEAD: t1ForceFlatDue's [W.Start − t1ForceFlatLead,
+//     W.End]. Inside the blackout itself the no-trade band refuses first, so
+//     this is what closes [W.Start − 2m, W.Start).
+//   - the in-session EOD flat (eodSessionFlatAt), which is earlier than the
+//     last-entry cutoff only when a session's eod_flat_offset_min exceeds its
+//     last_entry_offset_min (nothing validates that pair). Between sessions the
+//     band already refuses ("outside all session windows").
+//
+// Same preconditions as the enforce functions: Day Plan on and an active
+// session. Calendar windows come from currentT1Windows, whose static fallback
+// keeps this fail-closed when the slice is missing.
+func (at *AutoTrader) forceFlatWindowAt(now time.Time) (string, bool) {
+	if !at.dayPlanEnabled() {
+		return "", false
+	}
+	reg := at.sessionRegistry(now)
+	sess, ok := reg.ActiveSession(now)
+	if !ok {
+		return "", false
+	}
+	if label := t1ForceFlatDue(ctMinutesNow(now), at.currentT1Windows(now), t1ForceFlatLead); label != "" {
+		return fmt.Sprintf("📰 T1 force-flat window: %s (entries refused from T-%dm before the blackout — the window positions are flattened in)", label, t1ForceFlatLead), true
+	}
+	if hhmm, past, okC := at.eodSessionFlatAt(reg, sess, now); okC && past {
+		return fmt.Sprintf("🕒 EOD flat: past the %s flat %s CT — entries refused after the flat, not only at last-entry", sess.Name, hhmm), true
+	}
+	return "", false
 }
