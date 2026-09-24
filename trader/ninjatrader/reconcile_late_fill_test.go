@@ -306,7 +306,10 @@ func TestLateFillOlderThanTheWindowIsNotEvidence(t *testing.T) {
 // recorded, or it netted a position flat) is not this position's entry:
 // untagged, WARN, and the row is not re-settled.
 func TestLateFillOfANonNewOrderRowStaysUntagged(t *testing.T) {
-	for _, status := range []string{"FILLED", "REJECTED", "CANCELED"} {
+	// Broker order statuses (trader_orders.status), one per row — not an
+	// armed_orders state set (TestArmStateNoRetypedLists).
+	for _, tc := range []struct{ status string }{{"FILLED"}, {"REJECTED"}, {"CANCELED"}} {
+		status := tc.status
 		t.Run(status, func(t *testing.T) {
 			w := newLateFillWire(t)
 			warns := captureLateWarns(t)
