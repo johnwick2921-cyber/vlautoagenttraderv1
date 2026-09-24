@@ -1427,7 +1427,8 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(now time.Time, session
 	recordResearchInput(input.ResearchSnapshotID, input, plannerSystemPrompt, modelID)
 	researchTrace := &researchsnapshot.PlanTrace{SnapshotID: input.ResearchSnapshotID, Model: modelID, ConfigVersion: input.AIConfigHash, SystemPrompt: plannerSystemPrompt}
 	// P15 — the authoring clock is the caller's instant, not a fresh wall read.
-	at.runPlannerReadCoreObserved(func() time.Time { return now }, researchTrace, session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels(input), failClosed, func(userPrompt string) (string, error) {
+	// P15 revert: `now` is the READ instant only; the publish clock stays live.
+	at.runPlannerReadCoreObserved(func() time.Time { return now }, nil, researchTrace, session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels(input), failClosed, func(userPrompt string) (string, error) {
 		mcp.ApplyThinking(client, pMode, pEffort)
 		// PLANNER SPEED WAVE 4 (2026-08-31) — the session planner now rides the
 		// SSE streaming client with the idle watchdog (split deadlines). The
@@ -1960,14 +1961,19 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
 }
 
 func (at *AutoTrader) runPlannerReadCoreWithFactsGradesClock(authoringClock func() time.Time, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt string, facts kernel.PlanFacts, machineGrades map[float64]string, machineLabels map[float64]string, htfLabels map[float64]string, failClosed bool, call func(userPrompt string) (string, error), extraNoTrade ...string) (int, string, error) {
-	return at.runPlannerReadCoreObserved(authoringClock, nil, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels, failClosed, call, extraNoTrade...)
+	return at.runPlannerReadCoreObserved(authoringClock, nil, nil, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels, failClosed, call, extraNoTrade...)
 }
 
 // plannerMaxAttempts is the single source of the attempt-loop bound
 // (W-WRITE-TIME-FEASIBILITY NIT: the old literal `attempt < 3` duplicated it).
 const plannerMaxAttempts = 3
 
-func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time, researchTrace *researchsnapshot.PlanTrace, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt string, facts kernel.PlanFacts, machineGrades map[float64]string, machineLabels map[float64]string, htfLabels map[float64]string, failClosed bool, call func(userPrompt string) (string, error), extraNoTrade ...string) (int, string, error) {
+// P15 revert (CTO 03:31, W2 A2 regression): authoringClock is the READ-side
+// seam (registry, level map, facts.ReadAt, the no-trade map). The PUBLISH
+// instant is a SEPARATE clock — nil means the live wall clock — because a
+// frozen publish makes AuthoredBornGroups(read, publish) empty on every seamed
+// read and stamps a CreatedAt that lies by the AI call's duration.
+func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock, publishClock func() time.Time, researchTrace *researchsnapshot.PlanTrace, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt string, facts kernel.PlanFacts, machineGrades map[float64]string, machineLabels map[float64]string, htfLabels map[float64]string, failClosed bool, call func(userPrompt string) (string, error), extraNoTrade ...string) (int, string, error) {
 	// H4/H5 — validation must accept EXACTLY what the config allows: the resolved
 	// max_levels / scenario_cap (hard ceilings 12/5). Before this the parse
 	// hardcoded 8/3, so raising either setting made EVERY read fail-closed into a
@@ -2313,7 +2319,11 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		for _, m := range kernel.FantasyTargetWarnings(*d) {
 			at.logWarnf("🔮 fantasy-target warning: %s", m)
 		}
-		authoredAt = authoringClock()
+		pc := publishClock
+		if pc == nil {
+			pc = time.Now // P15 revert: the publish clock stays LIVE
+		}
+		authoredAt = pc()
 		// W-EXEC-TRUTH W2 A1/A2/D5: grammar refusal + every 5m group closed
 		// between the read clock and now, plus the plan's death/flip lines.
 		check, verr := at.validateAuthoredScenariosAt(d, session, tradeDate, facts.ReadAt, authoredAt)

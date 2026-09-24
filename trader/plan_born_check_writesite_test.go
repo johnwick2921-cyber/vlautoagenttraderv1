@@ -111,7 +111,7 @@ func w2Candidate(t *testing.T, invalids []string, mutate func(map[string]any)) s
 
 func w2Run(at *AutoTrader, session, date string, read, publish time.Time, replies ...string) (int, string, error, []string) {
 	var prompts []string
-	ver, lc, err := at.runPlannerReadCoreWithFactsGradesClock(func() time.Time { return publish }, session, date, "", "model", "hash", "", "", "", "FULLPROMPT", kernel.PlanFacts{ReadAt: read}, nil, nil, nil, true, func(p string) (string, error) {
+	ver, lc, err := at.runPlannerReadCoreObserved(func() time.Time { return read }, func() time.Time { return publish }, nil, session, date, "", "model", "hash", "", "", "", "FULLPROMPT", kernel.PlanFacts{ReadAt: read}, nil, nil, nil, true, func(p string) (string, error) {
 		prompts = append(prompts, p)
 		i := len(prompts) - 1
 		if i >= len(replies) {
@@ -339,5 +339,43 @@ func TestW2LiveReadStampsTheReadClock(t *testing.T) {
 	r, p := *row.ReadClockMs, *row.PublishClockMs
 	if r < before.UnixMilli() || r > p || p > after.UnixMilli() {
 		t.Fatalf("read clock %d must be the assembly clock: before %d ≤ read ≤ publish %d ≤ after %d", r, before.UnixMilli(), p, after.UnixMilli())
+	}
+}
+
+// TestSeamedWakePublishClockStaysLive (WAVE 1a-plan P15 revert, CTO 03:31) —
+// the seamed wake freezes the READ clock ONLY. Driving the production seamed
+// entry (runPlannerReadWithTriggerClaimedCtx with a FROZEN now) and a scripted
+// AI call that occupies a measurable wall duration: ReadClockMs must be the
+// frozen instant, and PublishClockMs must sit AT LEAST the call's duration
+// later (the born-check then spans those groups). Under the P15 defect the
+// publish instant WAS the frozen wake instant — PublishClockMs == ReadClockMs,
+// difference 0.
+func TestSeamedWakePublishClockStaysLive(t *testing.T) {
+	at, st, _ := realPathTrader(t, false, func(int, string) (string, error) {
+		time.Sleep(600 * time.Millisecond) // the AI call occupies the wire
+		return validShortPlanJSON, nil
+	})
+	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
+	flipRereadTestNow(t, now)
+	td := "2026-08-18"
+	seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), flipFixtureDoc())
+	seedFlipBars(15500, 15470, 6*time.Minute, now)
+
+	if !at.runPlannerReadWithTriggerClaimedCtx(now, "NY", td, "structure_mss", "", nil, false) {
+		t.Fatal("fixture: the seamed read must run")
+	}
+	row, err := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
+	if err != nil || row == nil || row.ReadClockMs == nil || row.PublishClockMs == nil {
+		t.Fatalf("fixture: an accepted plan must stamp both clocks: %+v %v", row, err)
+	}
+	if *row.ReadClockMs != now.UnixMilli() {
+		t.Fatalf("the READ clock must be the seamed instant, got %d want %d", *row.ReadClockMs, now.UnixMilli())
+	}
+	span := *row.PublishClockMs - *row.ReadClockMs
+	if span < 500 {
+		t.Fatalf("the PUBLISH clock must stay LIVE: publish-read=%dms must cover the AI call (≥500ms) — the frozen publish read 0", span)
+	}
+	if row.BornCheck == nil || !strings.Contains(*row.BornCheck, "read_clock_ms") {
+		t.Fatalf("the born-check must carry the read/publish span: %v", row.BornCheck)
 	}
 }
