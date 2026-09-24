@@ -461,8 +461,12 @@ func (at *AutoTrader) weeklyScenarioGradeAt(now time.Time, cited string) string 
 	if err != nil || row == nil {
 		return ""
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	// WAVE 1a-plan P1 — the cited-scenario reader folds overlays through the
+	// ONE resolution (kernel.ResolvePlanFinal) instead of parsing the base doc
+	// alone, so an owner-added overlay scenario grades exactly as the executor
+	// sees it.
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return ""
 	}
 	for _, s := range doc.Scenarios {

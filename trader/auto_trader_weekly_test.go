@@ -77,3 +77,77 @@ func TestWeeklyPlanRowStorageContract(t *testing.T) {
 		t.Fatalf("proving line: row identity (session/trade_date/lifecycle) — got %+v", row)
 	}
 }
+
+// TestWeeklyScenarioGradeFoldsOverlays (WAVE 1a-plan P1) — the cited-scenario
+// quality reader must resolve the plan through the SAME fold the executor uses
+// (resolveActivePlanDoc → kernel.ResolvePlanFinal). Today it json.Unmarshal's
+// row.Doc alone, so an owner-added overlay scenario is invisible to the grade.
+// RED: grade("S9") is "" with the overlay stored. GREEN: "B" (and the base
+// scenario still grades "A").
+func TestWeeklyScenarioGradeFoldsOverlays(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	defer st.Close()
+
+	yes := true
+	at := mkTrader("ninjatrader", &yes, "5m")
+	at.store = st
+	at.id = "trader-1"
+
+	// The production key derivation, verbatim from weeklyScenarioGradeAt:
+	// the active session at the stated clock, then its plan chain date.
+	now := ctAt(t, 11, 0)
+	sess, ok := at.sessionRegistry(now).ActiveSession(now)
+	if !ok {
+		t.Fatal("11:00 CT: an active session is required for the pin")
+	}
+	tradeDate, okDate := kernel.PlanChainTradeDate(sess, now)
+	if !okDate {
+		tradeDate = plannerTradeDateCT(now)
+	}
+
+	base := kernel.PlanDoc{
+		Reasoning:      "wave-1a-p1",
+		Bias:           kernel.PlanBias{Direction: "neutral"},
+		DeathCondition: "flat",
+		Scenarios: []kernel.PlanScenario{
+			{ID: "S1", Condition: "reclaim", Direction: "long", Quality: "A"},
+		},
+	}
+	baseJSON, _ := json.Marshal(&base)
+	_, err = st.Plan().AppendPlan(&store.PlanDB{
+		PlanID:        st.Plan().ResolvePlanID(tradeDate, sess.Name, at.id),
+		StrategyID:    at.id,
+		TradeDate:     tradeDate,
+		Session:       sess.Name,
+		TriggerReason: "wave-1a-p1",
+		Lifecycle:     "active",
+		ModelID:       "deepseek-v4-pro",
+		PromptHash:    "deadbeef",
+		Doc:           string(baseJSON),
+	})
+	if err != nil {
+		t.Fatalf("append plan: %v", err)
+	}
+
+	// The owner adds an S scenario through an overlay patch.
+	_, err = st.Plan().AppendOverlay(&store.PlanOverlayDB{
+		PlanID:      st.Plan().ResolvePlanID(tradeDate, sess.Name, at.id),
+		PlanVersion: 1,
+		OverlayID:   "owner-add-s9",
+		Origin:      "owner",
+		Patch:       `[{"op":"add","path":"/scenarios/-","value":{"id":"S9","condition":"reclaim","direction":"long","quality":"B"}}]`,
+	})
+	if err != nil {
+		t.Fatalf("append overlay: %v", err)
+	}
+
+	if got := at.weeklyScenarioGradeAt(now, "S9"); got != "B" {
+		t.Fatalf("the owner-added overlay scenario S9 must grade B through the fold, got %q", got)
+	}
+	if got := at.weeklyScenarioGradeAt(now, "S1"); got != "A" {
+		t.Fatalf("the base scenario S1 must still grade A, got %q", got)
+	}
+}
