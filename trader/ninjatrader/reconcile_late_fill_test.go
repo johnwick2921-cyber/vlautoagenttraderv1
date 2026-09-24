@@ -4,9 +4,15 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
+	"nofx/logger"
+	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
 )
@@ -62,8 +68,14 @@ func (w *lateFillWire) aiOrderRow(t *testing.T, traderID, sid, action, posSide, 
 // and waits (bounded) until the ring holds it.
 func (w *lateFillWire) fill(t *testing.T, sid, side string, px float64) {
 	t.Helper()
+	w.fillAt(t, sid, side, px, time.Now())
+}
+
+// fillAt is fill with the frame's own FillTime (the ring keys its window on it).
+func (w *lateFillWire) fillAt(t *testing.T, sid, side string, px float64, at time.Time) {
+	t.Helper()
 	w.s.FeedFillForTest(ntwire.FillPayload{SignalID: sid, Symbol: "MNQ", Account: "Sim101", Side: side, Quantity: 1,
-		FillPrice: px, Status: "filled", FillTime: time.Now().UTC().Format(time.RFC3339)})
+		FillPrice: px, Status: "filled", FillTime: at.UTC().Format(time.RFC3339)})
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
 		if _, _, ok := w.tr.RecentFillFor(sid); ok {
@@ -230,5 +242,122 @@ func TestUntrackedWithNoRingEvidenceKeepsPriceMatchFallback(t *testing.T) {
 	row := w.materialize(t, 29001)
 	if row.EntryOrderID != "sig-armed" || row.PlanID != "2026-09-23:NY" || row.CitedScenarioID != "S3" {
 		t.Fatalf("the price-match fallback must still stamp without ring evidence: entry_order_id=%q plan=%q scenario=%q", row.EntryOrderID, row.PlanID, row.CitedScenarioID)
+	}
+}
+
+// ── W1b E15 verifier repairs ─────────────────────────────────────────────────
+
+// lateWarns collects WARN lines emitted while a test runs.
+type lateWarns struct {
+	mu    sync.Mutex
+	lines []string
+}
+
+func (h *lateWarns) Levels() []logrus.Level { return []logrus.Level{logrus.WarnLevel} }
+func (h *lateWarns) Fire(e *logrus.Entry) error {
+	h.mu.Lock()
+	h.lines = append(h.lines, e.Message)
+	h.mu.Unlock()
+	return nil
+}
+func (h *lateWarns) has(sub string) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for _, l := range h.lines {
+		if strings.Contains(l, sub) {
+			return true
+		}
+	}
+	return false
+}
+
+func captureLateWarns(t *testing.T) *lateWarns {
+	t.Helper()
+	prev := logrus.LevelHooks{}
+	for lvl, hs := range logger.Log.Hooks {
+		prev[lvl] = append([]logrus.Hook(nil), hs...)
+	}
+	h := &lateWarns{}
+	logger.Log.AddHook(h)
+	t.Cleanup(func() { logger.Log.ReplaceHooks(prev) })
+	return h
+}
+
+// Repair 1 — the ring's window has a LOWER bound: a same-side AI fill older
+// than firstSeen − (entry-confirm grace + untracked grace) is not evidence for
+// this position. It is ignored, so the price-match fallback runs, and its own
+// order row is never touched.
+func TestLateFillOlderThanTheWindowIsNotEvidence(t *testing.T) {
+	w := newLateFillWire(t)
+	w.filledArm(t, "2026-09-23:NY", "S3", "sig-armed", 29001, 90*time.Second)
+	w.aiOrderRow(t, lateFillTrader, "sig-ai-stale", "open_long", "LONG", "BUY")
+	w.fillAt(t, "sig-ai-stale", "long", 29001, time.Now().Add(-10*time.Minute))
+	row := w.materialize(t, 29001)
+	if row.EntryOrderID != "sig-armed" || row.PlanID != "2026-09-23:NY" || row.CitedScenarioID != "S3" {
+		t.Fatalf("a fill older than the window must not be evidence (the fallback runs): entry_order_id=%q plan=%q scenario=%q", row.EntryOrderID, row.PlanID, row.CitedScenarioID)
+	}
+	if o, _ := w.st.Order().GetOrderByExchangeID(lateFillExchange, "sig-ai-stale"); o == nil || o.Status != "NEW" {
+		t.Fatalf("an out-of-window fill's order row must not be settled: %+v", o)
+	}
+}
+
+// Repair 2 — the AI-open tag reads the order row ONLY while it is NEW (the
+// unresolved CLASS 160 case). A row already FILLED (its fill was seen and
+// recorded, or it netted a position flat) is not this position's entry:
+// untagged, WARN, and the row is not re-settled.
+func TestLateFillOfANonNewOrderRowStaysUntagged(t *testing.T) {
+	for _, status := range []string{"FILLED", "REJECTED", "CANCELED"} {
+		t.Run(status, func(t *testing.T) {
+			w := newLateFillWire(t)
+			warns := captureLateWarns(t)
+			w.aiOrderRow(t, lateFillTrader, "sig-ai-settled", "open_long", "LONG", "BUY")
+			o, err := w.st.Order().GetOrderByExchangeID(lateFillExchange, "sig-ai-settled")
+			if err != nil || o == nil {
+				t.Fatalf("order row: %v", err)
+			}
+			if err := w.st.Order().UpdateOrderStatus(o.ID, status, 1, 28950, 0); err != nil {
+				t.Fatal(err)
+			}
+			w.fill(t, "sig-ai-settled", "long", 29001)
+			row := w.materialize(t, 29001)
+			if row.EntryOrderID != "" || row.PlanVersion != 0 {
+				t.Fatalf("an order row in status %s must not tag the position: entry_order_id=%q v%d", status, row.EntryOrderID, row.PlanVersion)
+			}
+			if !warns.has("sig-ai-settled") || !warns.has(status) {
+				t.Fatalf("the refusal must be a WARN naming the signal and its status %s", status)
+			}
+			if got, _ := w.st.Order().GetOrderByExchangeID(lateFillExchange, "sig-ai-settled"); got == nil || got.Status != status || got.AvgFillPrice != 28950 {
+				t.Fatalf("a non-NEW order row must not be re-settled: %+v", got)
+			}
+		})
+	}
+}
+
+// Repair 3 — settling the order row FILLED writes the trader_fills row the
+// normal CLASS 160 path writes (recordOrderFill): same order, signal, side,
+// symbol, price, quantity. An order that reads FILLED with zero fill rows is
+// a fabricated half-record.
+func TestLateAIFillWritesTheFillRowTheNormalPathWrites(t *testing.T) {
+	w := newLateFillWire(t)
+	const sid = "sig-ai-late"
+	w.aiOrderRow(t, lateFillTrader, sid, "open_long", "LONG", "BUY")
+	w.fill(t, sid, "long", 29001)
+	w.materialize(t, 29001)
+	o, err := w.st.Order().GetOrderByExchangeID(lateFillExchange, sid)
+	if err != nil || o == nil || o.Status != "FILLED" {
+		t.Fatalf("order row: %+v %v", o, err)
+	}
+	fills, err := w.st.Order().GetOrderFills(o.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fills) != 1 {
+		t.Fatalf("a late fill that settles its order FILLED must write exactly one trader_fills row, got %d", len(fills))
+	}
+	f := fills[0]
+	if f.TraderID != lateFillTrader || f.ExchangeID != lateFillExchange || f.ExchangeType != "ninjatrader" ||
+		f.ExchangeOrderID != sid || f.Side != "BUY" || f.Symbol != market.Normalize("MNQ") ||
+		f.Price != 29001 || f.Quantity != 1 || f.QuoteQuantity != 29001 || f.RealizedPnL != 0 || f.CreatedAt <= 0 {
+		t.Fatalf("the fill row must match the normal path's: %+v", f)
 	}
 }

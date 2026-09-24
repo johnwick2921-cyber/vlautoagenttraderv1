@@ -2,12 +2,15 @@ package ninjatrader
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
 	"nofx/logger"
+	"nofx/market"
 	"nofx/store"
 )
 
@@ -137,19 +140,61 @@ func (t *TCPTrader) tagLateEntryFill(st *store.Store, traderID, exchangeID strin
 		logger.Warnf("🔗 attribution: pos %d (%s %s) — fill signal %s is neither an arm nor an AI %s open of this trader — left UNTAGGED (no guess)", posID, sym, side, sid, strings.ToLower(side))
 		return ""
 	}
+	// W1b E15 repair — only an UNRESOLVED (NEW) AI open is the CLASS 160 case
+	// this path recovers. A row already FILLED / REJECTED / CANCELED is not
+	// this position's entry (e.g. its fill was recorded, or it netted a
+	// position flat): untagged, never re-settled.
+	if o.Status != "NEW" {
+		logger.Warnf("🔗 attribution: pos %d (%s %s) — fill signal %s is AI order #%d already %s (not an unresolved open) — left UNTAGGED (no guess)", posID, sym, side, sid, o.ID, o.Status)
+		return ""
+	}
 	if err := st.Position().SetEntryOrderID(posID, sid); err != nil {
 		logger.Warnf("🔗 attribution: pos %d entry-order-id stamp failed (signal %s): %v", posID, sid, err)
 		return ""
 	}
-	if o.Status != "FILLED" {
-		qty := f.Quantity
-		if qty <= 0 {
-			qty = st.Position().QuantityOf(posID)
-		}
-		if err := st.Order().UpdateOrderStatus(o.ID, "FILLED", qty, f.Price, 0); err != nil {
-			logger.Warnf("🔗 attribution: order #%d FILLED settle failed (signal %s): %v", o.ID, sid, err)
-		}
+	qty := f.Quantity
+	if qty <= 0 {
+		qty = st.Position().QuantityOf(posID)
+	}
+	if err := st.Order().UpdateOrderStatus(o.ID, "FILLED", qty, f.Price, 0); err != nil {
+		logger.Warnf("🔗 attribution: order #%d FILLED settle failed (signal %s): %v", o.ID, sid, err)
+	} else if err := st.Order().CreateFill(lateEntryFillRow(o, traderID, exchangeID, sym, side, f.Price, qty, f.TimeMs)); err != nil {
+		logger.Warnf("🔗 attribution: order #%d settled FILLED but its fill row failed (signal %s): %v", o.ID, sid, err)
 	}
 	logger.Infof("🔗 attribution: late AI fill — pos %d ← signal %s (order #%d, fill %.2f); plan citation stays %s", posID, sid, o.ID, f.Price, store.PlanUnresolvable)
 	return sid
+}
+
+// lateEntryFillRow is the trader_fills row the normal CLASS 160 path writes
+// for an NT8 AI open (recordOrderFill: same order, signal, side, symbol,
+// price, quantity, zero fee on NT8), so an order this path settles FILLED
+// never reads FILLED with no fill row. The trade id is keyed on the order row
+// — one order, one row — so a repeated pass cannot double-count (CreateFill
+// dedupes on it). CreatedAt is the fill's own time from the ring.
+func lateEntryFillRow(o *store.TraderOrder, traderID, exchangeID, sym, side string, price, qty float64, fillMs int64) *store.TraderFill {
+	fillSide := "BUY"
+	if strings.EqualFold(side, "SHORT") {
+		fillSide = "SELL"
+	}
+	if fillMs <= 0 {
+		fillMs = time.Now().UTC().UnixMilli()
+	}
+	return &store.TraderFill{
+		TraderID:        traderID,
+		ExchangeID:      exchangeID,
+		ExchangeType:    o.ExchangeType,
+		OrderID:         o.ID,
+		ExchangeOrderID: o.ExchangeOrderID,
+		ExchangeTradeID: fmt.Sprintf("nt8-late-entry-%d", o.ID),
+		Symbol:          market.Normalize(sym),
+		Side:            fillSide,
+		Price:           price,
+		Quantity:        qty,
+		QuoteQuantity:   price * qty,
+		Commission:      0,
+		CommissionAsset: "USDT",
+		RealizedPnL:     0,
+		IsMaker:         false,
+		CreatedAt:       fillMs,
+	}
 }
