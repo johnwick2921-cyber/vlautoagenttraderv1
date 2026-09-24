@@ -1,8 +1,13 @@
 // Command gate-jwt mints a session token for a LOCAL user via the SAME
-// production path the /api/login handler uses (godotenv.Load → config.Init →
-// auth.SetJWTSecret → auth.GenerateJWT). Used by the acceptance-gate E2E suite
+// secret resolution the server uses (godotenv.Load → config.Init →
+// auth.SetJWTSecret) and the same signer. Used by the acceptance-gate E2E suite
 // so Playwright can drive the owner's own local UI without a password prompt,
 // and by any lane that needs to read a protected GET.
+//
+// It mints a MACHINE token (scope "gate-jwt", M3 red-team H1): no password was
+// proven, so the API refuses it on the credential routes (/api/user/password,
+// /api/reset-account), the Telegram-config routes (/api/telegram*) and
+// /api/updates*. Every other protected route answers it as before.
 //
 // RUN IT FROM THE REPO ROOT (/home/hoang/nofx). godotenv.Load() reads .env
 // relative to the WORKING DIRECTORY, and .env is not tracked, so running this
@@ -59,7 +64,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "no such user:", err)
 		os.Exit(1)
 	}
-	tok, err := auth.GenerateJWT(user.ID, user.Email)
+	tok, err := auth.GenerateScopedJWT(user.ID, user.Email, auth.ScopeGateJWT)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "sign:", err)
 		os.Exit(1)

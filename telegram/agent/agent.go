@@ -68,8 +68,14 @@ func New(apiPort int, botToken, userID string, getLLM func() mcp.AIClient, syste
 // GenerateBotToken creates a long-lived JWT for the bot's internal API calls.
 // userID must match the actual registered user's ID so bot-made changes
 // are visible in the frontend (shared user namespace).
+//
+// It is a MACHINE token (scope "telegram", M3 red-team H1): the API refuses
+// it on the credential routes (/api/user/password, /api/reset-account), the
+// bot's own config routes (/api/telegram*) and /api/updates*, so an LLM
+// steered by an inbound message cannot change the owner's password, rebind or
+// re-token the bot, or reach the updater.
 func GenerateBotToken(userID string) (string, error) {
-	return auth.GenerateJWT(userID, "bot@internal")
+	return auth.GenerateScopedJWT(userID, auth.BotInternalEmail, auth.ScopeTelegram)
 }
 
 // buildAccountContext fetches the live account state (models, exchanges, strategies, traders,

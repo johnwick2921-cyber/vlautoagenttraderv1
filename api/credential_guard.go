@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"nofx/auth"
 	"nofx/logger"
@@ -25,6 +26,35 @@ import (
 // user_id names (the predicate login uses to mint that token in the first
 // place). Any refusal is 403 with one body; the cause is logged as a category
 // only — never the token.
+
+// machineDeniedRoutes are the route patterns (gin FullPath) a MACHINE token
+// (auth.Claims.IsMachine: any scope claim, or the bot's bot@internal email)
+// may never reach — denied BY DEFAULT in authMiddleware, before any handler
+// runs. An entry also covers every route registered beneath it, so a new
+// /api/telegram/... or /api/updates/... route is denied without an edit here.
+//   - /api/user/password, /api/reset-account: the credential routes (H1).
+//   - /api/telegram: the bot's own config — a machine token must not re-token
+//     the bot, change its model, or unbind it (the next /start then binds
+//     whoever sends it).
+//   - /api/updates: the updater (its own gate refuses machine tokens too —
+//     it does not run authMiddleware).
+var machineDeniedRoutes = []string{
+	"/api/user/password",
+	"/api/reset-account",
+	"/api/telegram",
+	"/api/updates",
+}
+
+// machineDenied reports whether fullPath (a registered route pattern) is one
+// a machine token is refused on.
+func machineDenied(fullPath string) bool {
+	for _, r := range machineDeniedRoutes {
+		if fullPath == r || strings.HasPrefix(fullPath, r+"/") {
+			return true
+		}
+	}
+	return false
+}
 
 // ctxAuthClaims is the gin context key authMiddleware stores the validated
 // claims under (the credential guard reads them; a handler reached WITHOUT
@@ -56,6 +86,11 @@ func (s *Server) credentialActorRefusal(c *gin.Context) (*store.User, string) {
 	cl := authClaimsFrom(c)
 	if cl == nil || cl.UserID == "" {
 		return nil, "no authenticated identity"
+	}
+	// H1 layer 2 (authMiddleware already denies these routes; the handler
+	// re-checks so it can never be wired without it).
+	if cl.IsMachine() {
+		return nil, "machine token"
 	}
 	if s.store == nil {
 		return nil, "no user store"

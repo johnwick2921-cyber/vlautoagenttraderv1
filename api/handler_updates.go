@@ -209,6 +209,11 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 	if err != nil || claims == nil {
 		return "token invalid"
 	}
+	// M3 red-team H1: a machine token (any scope, or bot@internal) is never
+	// an update identity, whatever email it carries.
+	if claims.IsMachine() {
+		return "machine token"
+	}
 
 	// The enrollment. Absent = the OFF state.
 	admin, err := updateauth.LoadAdmin(dataDir)

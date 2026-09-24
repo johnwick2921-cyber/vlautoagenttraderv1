@@ -920,6 +920,14 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// M3 red-team H1: a machine token (the Telegram bot's, gate-jwt's —
+		// any scope claim, or bot@internal) is denied BY DEFAULT on the
+		// credential, Telegram-config and update routes (credential_guard.go).
+		if claims.IsMachine() && machineDenied(c.FullPath()) {
+			credentialForbid(c, "machine token on a machine-denied route")
+			return
+		}
+
 		// Store user information in context (user_id, email and the claims
 		// the credential guard reads — credential_guard.go).
 		setAuthContext(c, claims)

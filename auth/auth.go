@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -66,7 +67,36 @@ func IsTokenBlacklisted(token string) bool {
 type Claims struct {
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`
+	// Scope marks a MACHINE token (M3 red-team H1): one minted for a process
+	// rather than by a user proving their password — the Telegram bot
+	// (ScopeTelegram), cmd/gate-jwt (ScopeGateJWT). The API denies machine
+	// tokens by default on the credential, Telegram-config and update routes
+	// (api/credential_guard.go). A user token has NO scope key at all
+	// (omitempty), so a login token's claim set is byte-identical to before.
+	Scope string `json:"scope,omitempty"`
 	jwt.RegisteredClaims
+}
+
+// BotInternalEmail is the email the Telegram bot's token has always carried.
+// A token with it is a machine token even with no scope claim (a bot token
+// minted by an older binary — fail closed).
+const BotInternalEmail = "bot@internal"
+
+// Machine-token scopes. Any non-empty scope is a machine scope; these are the
+// ones this build mints.
+const (
+	ScopeTelegram = "telegram"
+	ScopeGateJWT  = "gate-jwt"
+)
+
+// IsMachine reports whether the token is a machine token: it carries any
+// scope, or the bot's email. nil claims are treated as a machine token (a
+// caller that could not read the claims must not be granted a user's rights).
+func (c *Claims) IsMachine() bool {
+	if c == nil {
+		return true
+	}
+	return c.Scope != "" || strings.EqualFold(strings.TrimSpace(c.Email), BotInternalEmail)
 }
 
 // HashPassword hashes the password
@@ -81,11 +111,26 @@ func CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
-// GenerateJWT generates JWT token
+// GenerateJWT generates a USER token (no scope). Callers: the login and
+// register handlers ONLY — a census test (auth/mint_census_test.go) pins it;
+// every other minting site uses GenerateScopedJWT.
 func GenerateJWT(userID, email string) (string, error) {
+	return signToken(userID, email, "")
+}
+
+// GenerateScopedJWT generates a MACHINE token carrying scope (non-empty).
+func GenerateScopedJWT(userID, email, scope string) (string, error) {
+	if strings.TrimSpace(scope) == "" {
+		return "", fmt.Errorf("auth: a machine token needs a non-empty scope")
+	}
+	return signToken(userID, email, scope)
+}
+
+func signToken(userID, email, scope string) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
+		Scope:  scope,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Expires in 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
