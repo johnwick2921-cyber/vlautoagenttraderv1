@@ -2227,7 +2227,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		// proceeds; this makes the condition visible instead of silent.
 		// W3: under the market_in_zone policy acceptance/hold/breakout_retest are
 		// armable — the warning follows the resolved default policy.
-		if w := kernel.BiasArmWarningFor(d, kernel.ResolvedConditionStatuses(nil, nil, kernel.ShadowConditionsEnv()), entryPolicyForPrompt(at.dayPlanCfg())); w != "" {
+		if w := kernel.BiasArmWarningFor(d, kernel.ResolvedConditionStatuses(baseCond, sessCond, kernel.ShadowConditionsEnv()), entryPolicyForPrompt(at.dayPlanCfg())); w != "" {
 			at.logWarnf("🧭 bias-coherent arms: %s (WARN — write proceeds; owner ruling 2026-09-04 is warn-first)", w)
 		}
 		// FVG ENTRY MODEL (2026-08-26) — write-time re-verification from stored
