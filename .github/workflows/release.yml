@@ -35,7 +35,41 @@ env:
   RELEASE_REPO: johnwick2921-cyber/nofx
 
 jobs:
+  # A rollback pair is advertised tested ONLY when this job has actually done
+  # it: old creates the DB, new migrates it forward, and then OLD BOOTS THE
+  # MIGRATED DB — the step nobody runs, and the one that fails at the moment a
+  # rollback is needed most. Network is disabled so nothing here can reach a
+  # broker, and the verdict is read off the DATABASE rather than the process
+  # (with no NT8 a binary is not expected to stay up).
+  dbcompat:
+    runs-on: ubuntu-latest
+    outputs:
+      rollback_pairs: ${{ steps.pairs.outputs.json }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with: { go-version-file: 'go.mod' }
+      - name: Prove each rollback pair
+        id: pairs
+        env:
+          # First pair, per the dispatch. Add pairs here as they are proven.
+          PAIRS: '0e490e44:662c79bd'
+        run: |
+          set -uo pipefail
+          sudo apt-get install -y -q sqlite3 >/dev/null 2>&1 || true
+          out='['; sep=''
+          for pair in $PAIRS; do
+            old="${pair%%:*}"; new="${pair##*:}"
+            if bash deploy/release/db-compat.sh "$old" "$new"; then tested=true; else tested=false; fi
+            out="${out}${sep}{\"to_release\":\"${old}\",\"tested\":${tested}}"; sep=','
+          done
+          out="${out}]"
+          echo "json=$out" >> "$GITHUB_OUTPUT"
+          echo "$out"
+
   release:
+    needs: [dbcompat]
     runs-on: ubuntu-latest
     # The protected Environment carries the owner as a REQUIRED REVIEWER and
     # holds the signing key. No approval, no release, no signature.
@@ -114,11 +148,10 @@ jobs:
 
       - name: Build the manifest
         env:
-          # The DB-compat job (next commit in this wave) will supply proven
-          # pairs here. Until it does this is EMPTY, not a plausible-looking
-          # default: an untested rollback pair advertised as tested is worse
-          # than advertising none (R2, no fabricated values).
-          ROLLBACK_PAIRS: '[]'
+          # COMPUTED by the dbcompat job, which actually performed each
+          # rollback. A pair it could not prove is carried as tested:false —
+          # never omitted silently and never asserted true (R2).
+          ROLLBACK_PAIRS: ${{ needs.dbcompat.outputs.rollback_pairs }}
         run: |
           set -euo pipefail
           bash deploy/release/manifest.sh /tmp/stage "${{ steps.src.outputs.sha }}" "${{ steps.src.outputs.release_id }}" > /tmp/stage/manifest.json

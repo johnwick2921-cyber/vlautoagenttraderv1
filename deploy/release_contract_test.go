@@ -139,11 +139,18 @@ func TestReleaseWorkflowRefusesWithInstructionsWhenThePublicKeyIsMissing(t *test
 // A rollback pair is advertised tested ONLY when the compat job proved it.
 func TestReleaseWorkflowNeverFabricatesARollbackPair(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
-	if !strings.Contains(y, "ROLLBACK_PAIRS: '[]'") {
-		t.Fatalf("until the DB-compat job supplies proven pairs, ROLLBACK_PAIRS must be EMPTY, never a plausible default")
+	if strings.Contains(y, "ROLLBACK_PAIRS: '[]'") {
+		t.Fatalf("ROLLBACK_PAIRS is now computed by the dbcompat job; a literal would assert a pair nobody proved")
 	}
-	if strings.Contains(y, "needs.dbcompat") {
-		t.Fatalf("the workflow must not reference a job that does not exist — it parses, then fails at run time")
+	// NOTE: this previously asserted that `needs.dbcompat` was ABSENT, because
+	// the job did not exist yet and a reference to a missing job parses but
+	// fails at run time. The job exists now, so the assertion inverts: the
+	// pairs must come FROM it rather than from a literal.
+	if !strings.Contains(y, "needs.dbcompat.outputs.rollback_pairs") {
+		t.Fatalf("ROLLBACK_PAIRS must be COMPUTED by the dbcompat job, not written as a literal")
+	}
+	if !strings.Contains(y, "dbcompat:") {
+		t.Fatalf("the dbcompat job must exist in the same workflow")
 	}
 }
 
@@ -295,7 +302,18 @@ func TestManifestRendersUncomputedListsAsNullNotEmpty(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(stage, "nofx-bin"), []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	out, err := runScript(t, "deploy/release/manifest.sh", stage, strings.Repeat("c", 40), "v9.9.9")
+	// P3 made manifest.sh require a staged deploy/RELEASE that AGREES with the
+	// source sha. This fixture predates that and staged none — the guard
+	// correctly refused it. The fixture is completed rather than the guard
+	// relaxed.
+	sha := strings.Repeat("c", 40)
+	if err := os.MkdirAll(filepath.Join(stage, "deploy"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(stage, "deploy/RELEASE"), []byte(sha+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := runScript(t, "deploy/release/manifest.sh", stage, sha, "v9.9.9")
 	if err != nil {
 		t.Fatalf("manifest failed: %v\n%s", err, out)
 	}
@@ -306,5 +324,53 @@ func TestManifestRendersUncomputedListsAsNullNotEmpty(t *testing.T) {
 	}
 	if out2, err2 := runScript(t, "deploy/release/manifest.sh", stage, "not40hex", "v9.9.9"); err2 == nil {
 		t.Fatalf("a source sha that is not 40 hex must be REFUSED:\n%s", out2)
+	}
+}
+
+// The rollback step that nobody runs must be the one this job insists on: OLD
+// binary booting the MIGRATED database. A forward migration that drops a
+// column the old binary still SELECTs fails exactly there, and only there.
+func TestDbCompatProvesTheRollbackDirectionNotJustTheUpgrade(t *testing.T) {
+	sh := repoFile(t, "deploy/release/db-compat.sh")
+	if !strings.Contains(sh, "3-old-boots-migrated-db") {
+		t.Fatalf("db-compat must boot the OLD binary against the MIGRATED database — that is the rollback")
+	}
+	for _, step := range []string{"1-old-creates-fresh", "2-new-migrates-forward"} {
+		if !strings.Contains(sh, step) {
+			t.Fatalf("missing ordered step %q", step)
+		}
+	}
+	// The verdict must not be taken from the process exit: with no NT8 in CI a
+	// binary is not expected to stay up, so a green exit proves nothing.
+	if !strings.Contains(sh, "sqlite_master") {
+		t.Fatalf("the verdict must be read off the DATABASE (table count), not the process")
+	}
+	if !strings.Contains(sh, "NOT PROVEN") {
+		t.Fatalf("an unproven pair must say so; the caller advertises tested:false")
+	}
+}
+
+// P3 — the packaged marker and the manifest must agree, enforced in CODE and
+// not only by a test, so the guarantee survives outside the suite.
+func TestManifestRefusesWhenTheStagedReleaseDisagreesWithTheSourceSha(t *testing.T) {
+	stage := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(stage, "deploy"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(stage, "nofx-bin"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	want := strings.Repeat("b", 40)
+	if err := os.WriteFile(filepath.Join(stage, "deploy/RELEASE"), []byte(strings.Repeat("a", 40)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := runScript(t, "deploy/release/manifest.sh", stage, want, "v1"); err == nil {
+		t.Fatalf("a staged RELEASE that disagrees with the source sha must be REFUSED:\n%s", out)
+	}
+	if err := os.WriteFile(filepath.Join(stage, "deploy/RELEASE"), []byte(want+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := runScript(t, "deploy/release/manifest.sh", stage, want, "v1"); err != nil {
+		t.Fatalf("an agreeing RELEASE must pass: %v\n%s", err, out)
 	}
 }

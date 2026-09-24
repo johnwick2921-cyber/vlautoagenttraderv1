@@ -16,6 +16,15 @@ STAGE="${1:-}"; SRC_SHA="${2:-}"; REL_ID="${3:-}"
 case "$SRC_SHA" in *[!0-9a-f]*|"") echo "manifest: REFUSED — source sha must be 40 hex: $SRC_SHA" >&2; exit 1;; esac
 [ "${#SRC_SHA}" -eq 40 ] || { echo "manifest: REFUSED — source sha must be 40 hex (got ${#SRC_SHA})" >&2; exit 1; }
 
+# P3: the packaged marker and the manifest must agree. package.sh WRITES
+# deploy/RELEASE from the source sha; if the two ever diverge the archive would
+# claim one revision and carry another, and the updater trusts the manifest.
+STAGED_REL="$STAGE/deploy/RELEASE"
+[ -f "$STAGED_REL" ] || { echo "manifest: REFUSED — $STAGED_REL missing (package.sh writes it)" >&2; exit 1; }
+STAGED_SHA="$(tr -d '[:space:]' < "$STAGED_REL")"
+[ "$STAGED_SHA" = "$SRC_SHA" ] || {
+  echo "manifest: REFUSED — packaged deploy/RELEASE ($STAGED_SHA) != source sha ($SRC_SHA)" >&2; exit 1; }
+
 arts="$(cd "$STAGE" && find . -type f -printf '%P\n' | LC_ALL=C sort | while read -r p; do
   printf '{"path":"%s","sha256":"%s","bytes":%s}\n' "$p" "$(sha256sum "$p" | cut -d' ' -f1)" "$(stat -c%s "$p")"
 done | paste -sd, -)"
