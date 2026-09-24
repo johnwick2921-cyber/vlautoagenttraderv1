@@ -135,6 +135,10 @@ func TestUpdateAuthLoadedKeyFlowsOnlyIntoVerification(t *testing.T) {
 		"bound to the blank identifier":  {fn("func m(d string) error {\n\t_, err := updateauth.LoadDeviceKey(d)\n\treturn err\n}\n"), unbound},
 		"used inline, never bound":       {fn("func must(b []byte, _ error) []byte { return b }\n\nfunc m(d string, g updateauth.Grant) bool {\n\treturn updateauth.VerifyMAC(must(updateauth.LoadDeviceKey(d)), g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC)\n}\n"), unbound},
 		"through a second import name":   {map[string]string{rel: strings.Replace(keyFlowGate, "\t\"nofx/internal/updateauth\"\n", "\t\"nofx/internal/updateauth\"\n\tua \"nofx/internal/updateauth\"\n", 1) + "\nfunc m(d string) []byte {\n\tkey, _ := ua.LoadDeviceKey(d)\n\treturn key\n}\n"}, used},
+		// census-repair verify P2: the import name is shadowed AFTER the real
+		// LoadDeviceKey, so `admin` is a fake's result and its
+		// PasswordStillBound receives the real key.
+		"LoadAdmin through a shadowed import name": {fn("type fakeAdmin struct{ sink *[]byte }\n\nfunc (a fakeAdmin) PasswordStillBound(k []byte, _ string) bool {\n\t*a.sink = append([]byte(nil), k...)\n\treturn true\n}\n\ntype fakeNS struct{ LoadAdmin func(string) (fakeAdmin, error) }\n\nfunc m(d string) []byte {\n\tkey, _ := updateauth.LoadDeviceKey(d)\n\tvar stolen []byte\n\tupdateauth := fakeNS{LoadAdmin: func(string) (fakeAdmin, error) { return fakeAdmin{sink: &stolen}, nil }}\n\tadmin, _ := updateauth.LoadAdmin(d)\n\tadmin.PasswordStillBound(key, \"\")\n\treturn stolen\n}\n"), used},
 	} {
 		t.Run(name, func(t *testing.T) {
 			requirePrefixes(t, keyFlowOffendersFor(t, c.files), c.want)
@@ -179,5 +183,88 @@ func v2MintViaJWT(dataDir, releaseID, jobID string, expiresAt int64) (string, er
 	want := `api/handler_updates.go: the loaded device key "key" is used outside updateauth.VerifyMAC / <LoadAdmin result>.PasswordStillBound / clear (line ` + strconv.Itoa(signLine) + `)`
 	if len(off) != 1 || off[0] != want {
 		t.Fatalf("census offenders =\n%s\nwant exactly\n%s", strings.Join(off, "\n"), want)
+	}
+}
+
+// keyFlowProbeP2 is the census-repair verifier's probe P2, verbatim: the
+// import name `updateauth` is shadowed AFTER the real LoadDeviceKey, so
+// `admin, _ := updateauth.LoadAdmin(d)` binds a FAKE's result, and its
+// PasswordStillBound — admitted by name — copies the key out. With it
+// appended to the real handler, `go build ./api/` and `go vet ./api/` pass
+// and production VerifyMAC accepts the HS256 grant it signs [A, 2026-09-24].
+const keyFlowProbeP2 = `
+// VCC-P2 (verifier, census repair): rule 6 records a LoadAdmin binding for
+// ` + "`admin, _ := <import name>.LoadAdmin(d)`" + ` by NAME, without asking whether the
+// import name was shadowed (it asks that only for VerifyMAC). Shadow the
+// import name AFTER the real LoadDeviceKey, bind a fake "LoadAdmin" result,
+// and its PasswordStillBound receives the key as an admitted first argument.
+type vccP2Admin struct{ sink *[]byte }
+
+func (a vccP2Admin) PasswordStillBound(k []byte, _ string) bool {
+	*a.sink = append([]byte(nil), k...)
+	return true
+}
+
+type vccP2NS struct {
+	LoadAdmin func(string) (vccP2Admin, error)
+}
+
+func vccP2Mint(dataDir, releaseID, jobID string, expiresAt int64) (string, error) {
+	key, err := updateauth.LoadDeviceKey(dataDir)
+	if err != nil {
+		return "", err
+	}
+	var stolen []byte
+	updateauth := vccP2NS{LoadAdmin: func(string) (vccP2Admin, error) { return vccP2Admin{sink: &stolen}, nil }}
+	admin, _ := updateauth.LoadAdmin(dataDir)
+	admin.PasswordStillBound(key, "")
+	sig, err := jwt.SigningMethodHS256.Sign("nofx-update-install/v1|"+releaseID+"|"+jobID+"|"+strconv.FormatInt(expiresAt, 10), stolen)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(sig), nil
+}
+`
+
+// PIN at the production file (census-repair verify): the REAL
+// api/handler_updates.go, copied into a synthetic module with ONE verifier
+// probe appended (with the imports it needs), yields exactly one offence —
+// the probe's key use. Each probe compiled against the real tree and minted a
+// grant production VerifyMAC accepted while TestUpdateAuthCensus stayed green.
+func TestUpdateAuthKeyFlowRefusesTheVerifierProbesOnTheRealHandler(t *testing.T) {
+	real, err := os.ReadFile(filepath.Join("..", "..", "api", "handler_updates.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	src := string(real)
+	if strings.Count(src, "import (\n") != 1 || !strings.Contains(src, "updateauth.LoadDeviceKey(") {
+		t.Fatal("the real handler's import block or key load moved — re-point this pin")
+	}
+	withImports := strings.Replace(src, "import (\n", "import (\n\t\"encoding/hex\"\n\t\"strconv\"\n\n\t\"github.com/golang-jwt/jwt/v5\"\n", 1)
+	for name, c := range map[string]struct {
+		probe, leakLine string // leakLine: the one line whose key use must be reported
+	}{
+		"P2 LoadAdmin through a shadowed import name": {keyFlowProbeP2, "\tadmin.PasswordStillBound(key, \"\")"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			body := withImports + c.probe
+			line := 0
+			for i, l := range strings.Split(body, "\n") {
+				if l == c.leakLine {
+					if line != 0 {
+						t.Fatalf("leak line %q appears twice", c.leakLine)
+					}
+					line = i + 1
+				}
+			}
+			if line == 0 {
+				t.Fatalf("leak line %q not in the probe", c.leakLine)
+			}
+			off := keyFlowOffendersFor(t, map[string]string{"api/handler_updates.go": body})
+			want := `api/handler_updates.go: the loaded device key "key" is used outside updateauth.VerifyMAC / <LoadAdmin result>.PasswordStillBound / clear (line ` + strconv.Itoa(line) + `)`
+			if len(off) != 1 || off[0] != want {
+				t.Fatalf("census offenders =\n%s\nwant exactly\n%s", strings.Join(off, "\n"), want)
+			}
+		})
 	}
 }
