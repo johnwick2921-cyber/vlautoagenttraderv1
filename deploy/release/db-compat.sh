@@ -116,7 +116,9 @@ gen_boot_secrets() {
   # DATA_ENCRYPTION_KEY (AES, base64). Both are demanded before store init, so
   # both must exist for the binary to reach the migration this job measures.
   export DATA_ENCRYPTION_KEY; DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)"
-  export JWT_SECRET="db-compat-ephemeral-$$-not-a-real-secret"
+  # A random secret, never a literal: this repo is public, and the /updates
+  # gate refuses every JWT secret the tree publishes (api/handler_updates_secret_test.go).
+  export JWT_SECRET; JWT_SECRET="$(openssl rand -base64 48)"
   return 0
 }
 
