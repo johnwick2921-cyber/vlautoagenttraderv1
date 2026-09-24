@@ -138,7 +138,7 @@ describe('updatesApi shape pins', () => {
       await updatesApi.install({
         release_id: 'r1',
         job_id: 'job-9',
-        expires_at: '2030-01-01T00:00:00Z',
+        expires_at: 1893456000,
         hmac: 'x',
       })
     ).toEqual({ ok: true, job_id: 'job-9' })
@@ -152,7 +152,7 @@ describe('updatesApi shape pins', () => {
     const refused = await updatesApi.install({
       release_id: 'r1',
       job_id: 'job-9',
-      expires_at: '2030-01-01T00:00:00Z',
+      expires_at: 1893456000,
       hmac: 'x',
     })
     expect(refused.ok).toBe(false)

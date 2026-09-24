@@ -9,14 +9,31 @@
 // adapter: what is asserted is the outgoing request, not a mock's arguments.
 // The Go side pins the header name against api.UpdateHeader
 // (api/handler_updates_web_header_test.go).
+//
+// PR #200 fold F1 (CTO 1790252194343): the same capture pins the install
+// BODY. The server parses expires_at from the raw bytes as a canonical JSON
+// NUMBER (internal/updateauth/strict.go rawUnixSeconds) and answers a quoted
+// one 400; the client typed it as a string. The ONE byte string both sides
+// are pinned to is testdata/updates-install-body.wire.txt (no trailing
+// newline — the file IS the body): the Go side feeds it to the production
+// parser and router (api/handler_updates_web_body_test.go) and pins
+// `updater-bootstrap authorize`'s printed line to it
+// (internal/updaterbootstrap/web_wire_test.go).
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { InternalAxiosRequestConfig } from 'axios'
 
 import { httpClient } from '../httpClient'
 import { updatesApi } from './updates'
 
-type Sent = { url: string; method: string; headers: Record<string, unknown> }
+type Sent = {
+  url: string
+  method: string
+  headers: Record<string, unknown>
+  data: unknown
+}
 
 const sent: Sent[] = []
 // The instance is private in TS only; the adapter swap is the one seam that
@@ -38,6 +55,8 @@ beforeEach(() => {
         typeof h?.toJSON === 'function'
           ? (h.toJSON() as Record<string, unknown>)
           : { ...h },
+      // after axios's transformRequest: the bytes that go on the wire
+      data: config.data,
     })
     return { data: {}, status: 200, statusText: 'OK', headers: {}, config }
   }
@@ -64,7 +83,7 @@ describe('every /api/updates* request carries X-NOFX-Update: 1 (the M3 gate refu
         updatesApi.install({
           release_id: 'r1',
           job_id: 'j1',
-          expires_at: '2026-09-24T10:00:00Z',
+          expires_at: 1790244000,
           hmac: 'fixture-not-a-mac',
         }),
       'POST',
@@ -103,4 +122,30 @@ describe('every /api/updates* request carries X-NOFX-Update: 1 (the M3 gate refu
       expect(updateHeaderValues(sent[0].headers)).toEqual([])
     }
   )
+})
+
+describe('the install body on the wire is the grant `updater-bootstrap authorize` prints', () => {
+  const wire = readFileSync(
+    resolve(__dirname, 'testdata/updates-install-body.wire.txt'),
+    'utf-8'
+  )
+
+  it('a typed body puts the shared wire fixture on the wire, expires_at a bare JSON number', async () => {
+    const body: Parameters<typeof updatesApi.install>[0] = {
+      release_id: 'v2026.09.24-1',
+      job_id: '0123456789abcdef0123456789abcdef',
+      expires_at: 1800000300,
+      hmac: 'c'.repeat(64),
+    }
+    await updatesApi.install(body)
+    expect(sent).toHaveLength(1)
+    expect(sent[0].data).toBe(wire)
+    expect(String(sent[0].data)).toContain('"expires_at":1800000300,')
+  })
+
+  it('a pasted authorize line (JSON.parse) goes back on the wire byte for byte', async () => {
+    await updatesApi.install(JSON.parse(wire))
+    expect(sent).toHaveLength(1)
+    expect(sent[0].data).toBe(wire)
+  })
 })

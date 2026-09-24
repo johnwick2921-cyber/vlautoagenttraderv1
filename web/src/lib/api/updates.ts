@@ -170,10 +170,15 @@ export const updatesApi = {
     return res.success && res.data ? res.data : null
   },
 
+  // The body is EXACTLY the line `updater-bootstrap authorize` prints
+  // (json.Marshal of updateauth.Grant). expires_at is unix seconds as a JSON
+  // NUMBER: the server parses the raw bytes (internal/updateauth/strict.go
+  // rawUnixSeconds) and answers a quoted one 400 — the MAC is over its
+  // decimal text, so no other encoding may alias it (PR #200 fold F1).
   async install(body: {
     release_id: string
     job_id: string
-    expires_at: string
+    expires_at: number
     hmac: string
   }): Promise<UpdatesInstallResult> {
     const res = await httpClient.request<{ job_id: string; error?: string }>(
