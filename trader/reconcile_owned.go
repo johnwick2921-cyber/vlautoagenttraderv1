@@ -76,7 +76,12 @@ func (at *AutoTrader) ledgerExplainsPosition(symbol, side string, now time.Time)
 	unreadable := func(what string, err error) (string, bool) {
 		return fmt.Sprintf("ledger unreadable (%s: %v) — fail-closed: never flattened on a read error", what, err), true
 	}
-	fresh := func(ts time.Time) bool { d := now.Sub(ts); return d >= 0 && d < window }
+	// W1b FOLD-11: now is captured by the caller BEFORE these reads, so a row
+	// the settle pass moved working→filled after it carries UpdatedAt > now
+	// (d < 0). That is fresher than fresh, never "not fresh" — reading it as
+	// stale left the position unexplained and flattened it (D10). Armed and
+	// Picture rows alike.
+	fresh := func(ts time.Time) bool { return now.Sub(ts) < window }
 
 	// (i) armed: non-terminal rows that carry a broker signal.
 	rows, err := at.store.ArmedOrders().ListNonTerminalAllTraders()
