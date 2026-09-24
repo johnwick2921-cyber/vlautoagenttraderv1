@@ -262,7 +262,7 @@ All chained through `ValidatePlanDocWithCaps` — `kernel/plan_doc.go:588`. Each
 | structure | k=2, min-move 0.25×ATR, MSS body 1.5×ATR, MSS displacement 0.5×ATR5m | swing/MSS confirm conditions not met | structure.go:27-29, mss.go:22-30 · [T]/[I] |
 | accepts | 2x5m needs 2 closes, 5m-close needs 1; `AcceptHoldMin=10` min | confirm not MET per rule | plan_confirm.go:52-115, scenario_facts.go:100-119 · [I] |
 
-**Boot lines:** `"entry law: bd_min_closes=%d bd_min_disp_atr=%.2f mss_min_disp_atr=%.2f …"` `entry_law.go:93-96` · confirm-rule ledger at main.go:332.
+**Boot lines:** `"entry law: bd_min_closes=%d (authoring_default) bd_min_disp_atr=%.2f mss_min_disp_atr=%.2f accept_hold_min=%d (authoring_default) …"` `entry_law.go:108-124` · confirm-rule ledger at main.go:332. (`bd_min_closes`/`accept_hold_min` print with the planner's authoring-default label: since W2 the STORED rule governs — #190.)
 
 ## 5 · ARMS — resting orders at plan levels
 
