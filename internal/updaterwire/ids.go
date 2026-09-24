@@ -13,7 +13,8 @@ import (
 // never drift — an id the app authorizes but the wire refuses (or the
 // reverse) splits one decision in two. Until they are folded into one
 // source, a parity test at the merged head is owed (see the M3 wire report).
-// The MAC message release_id|job_id|expires_at is unambiguous ONLY because
+// The MAC message (updateauth.Message: purpose tag|release_id|job_id|
+// expires_at) is unambiguous ONLY because
 // neither id can contain "|"; a release id reaches a filesystem join in M4,
 // so nothing path-shaped may pass. Allow-lists, not deny-lists: a character
 // that is not listed is refused.

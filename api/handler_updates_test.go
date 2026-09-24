@@ -174,7 +174,7 @@ func (e *updEnv) rawMACBody(release, job string, exp int64) string {
 		e.t.Fatal(err)
 	}
 	m := hmac.New(sha256.New, key)
-	fmt.Fprintf(m, "%s|%s|%d", release, job, exp)
+	fmt.Fprintf(m, "%s|%s|%s|%d", updateauth.MACPurpose, release, job, exp)
 	b, _ := json.Marshal(map[string]any{"release_id": release, "job_id": job, "expires_at": exp, "hmac": hex.EncodeToString(m.Sum(nil))})
 	return string(b)
 }
@@ -848,7 +848,7 @@ func TestInstallRefusesABadMACAndDoesNotSpendTheJob(t *testing.T) {
 	}
 	wrongKeyMAC, _ := updateauth.ComputeMAC(otherKey, g.ReleaseID, g.JobID, g.ExpiresAt)
 	m := hmac.New(sha256.New, mustKey(t, e.dataDir))
-	fmt.Fprintf(m, "%s|%s|%d", g.JobID, g.ReleaseID, g.ExpiresAt)
+	fmt.Fprintf(m, "%s|%s|%s|%d", updateauth.MACPurpose, g.JobID, g.ReleaseID, g.ExpiresAt)
 	reordered := hex.EncodeToString(m.Sum(nil))
 	for name, mac := range map[string]string{
 		"flipped":   string(flip),

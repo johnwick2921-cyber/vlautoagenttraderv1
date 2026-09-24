@@ -20,10 +20,18 @@ var ErrExpired = errors.New("updateauth: authorization outside its validity wind
 
 var macHexRe = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
-// Message is the canonical MAC input: release_id|job_id|expires_at, with
-// expires_at in unix seconds as a canonical decimal. Both ids are validated
-// first — the allow-lists exclude '|', so no two field triples share a
-// message.
+// MACPurpose is the purpose/version tag every install-authorization MAC
+// message starts with (red-team red-3 #7). A device-key MAC minted for any
+// other action or layout — a future rollback authorization, a receipt, the
+// pre-tag release|job|exp shape — never verifies as an install. Introduced
+// before M3 shipped, so no untagged code was ever issued. A new layout gets a
+// new version, never a reinterpretation of v1.
+const MACPurpose = "nofx-update-install/v1"
+
+// Message is the canonical MAC input:
+// MACPurpose|release_id|job_id|expires_at, with expires_at in unix seconds as
+// a canonical decimal. Both ids are validated first — the allow-lists exclude
+// '|', so no two field triples share a message.
 func Message(releaseID, jobID string, expiresAt int64) ([]byte, error) {
 	if !ValidReleaseID(releaseID) {
 		return nil, malformed("release_id")
@@ -34,7 +42,7 @@ func Message(releaseID, jobID string, expiresAt int64) ([]byte, error) {
 	if expiresAt <= 0 {
 		return nil, malformed("expires_at")
 	}
-	return []byte(releaseID + "|" + jobID + "|" + strconv.FormatInt(expiresAt, 10)), nil
+	return []byte(MACPurpose + "|" + releaseID + "|" + jobID + "|" + strconv.FormatInt(expiresAt, 10)), nil
 }
 
 // ComputeMAC returns the lowercase-hex HMAC-SHA256 of Message under key.

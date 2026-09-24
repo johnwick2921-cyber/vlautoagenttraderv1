@@ -50,7 +50,7 @@ func TestDegenerateDeviceKeyIsRefusedByTheLoaderVerifierAndMinter(t *testing.T) 
 			t.Errorf("fill %#02x: Authorize = %v, want ErrUnsafe", fill, err)
 		}
 		m := hmac.New(sha256.New, key)
-		m.Write([]byte(rel + "|" + job + "|1800000300"))
+		m.Write([]byte(MACPurpose + "|" + rel + "|" + job + "|1800000300"))
 		if VerifyMAC(key, rel, job, exp, hex.EncodeToString(m.Sum(nil))) {
 			t.Errorf("fill %#02x: VerifyMAC accepted a MAC under a degenerate key", fill)
 		}

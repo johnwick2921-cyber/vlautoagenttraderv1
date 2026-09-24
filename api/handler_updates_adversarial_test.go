@@ -42,11 +42,11 @@ func grantBodyUnder(t *testing.T, key []byte, rel, job string, exp int64) string
 }
 
 // attackerBodyUnder is an install body whose MAC an attacker computes under
-// key with a plain HMAC-SHA256 over release|job|exp — no updateauth minting
-// rule applies (it is how a guessed key would be used).
+// key with a plain HMAC-SHA256 over the canonical tagged message — no
+// updateauth minting rule applies (it is how a guessed key would be used).
 func attackerBodyUnder(key []byte, rel, job string, exp int64) string {
 	m := hmac.New(sha256.New, key)
-	fmt.Fprintf(m, "%s|%s|%d", rel, job, exp)
+	fmt.Fprintf(m, "%s|%s|%s|%d", updateauth.MACPurpose, rel, job, exp)
 	return grantBody(updateauth.Grant{ReleaseID: rel, JobID: job, ExpiresAt: exp, HMAC: hex.EncodeToString(m.Sum(nil))})
 }
 

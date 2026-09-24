@@ -253,11 +253,11 @@ func rawMAC(key []byte, msg string) string {
 func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
 	key := seqKey(7)
 	msg, err := Message("v1.2.3", "0123456789abcdef", 1800000300)
-	if err != nil || string(msg) != "v1.2.3|0123456789abcdef|1800000300" {
+	if err != nil || string(msg) != "nofx-update-install/v1|v1.2.3|0123456789abcdef|1800000300" {
 		t.Fatalf("message %q err %v", msg, err)
 	}
 	mac, err := ComputeMAC(key, "v1.2.3", "0123456789abcdef", 1800000300)
-	if err != nil || mac != rawMAC(key, "v1.2.3|0123456789abcdef|1800000300") {
+	if err != nil || mac != rawMAC(key, "nofx-update-install/v1|v1.2.3|0123456789abcdef|1800000300") {
 		t.Fatalf("mac mismatch: %s", mac)
 	}
 	if !VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac) {
@@ -281,7 +281,7 @@ func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
 		"other expiry":  func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000301, mac) },
 		"short key":     func() bool { return VerifyMAC(key[:31], "v1.2.3", "0123456789abcdef", 1800000300, mac) },
 		"reordered msg": func() bool {
-			return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, rawMAC(key, "0123456789abcdef|v1.2.3|1800000300"))
+			return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, rawMAC(key, "nofx-update-install/v1|0123456789abcdef|v1.2.3|1800000300"))
 		},
 		"trailing space": func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac+" ") },
 	}

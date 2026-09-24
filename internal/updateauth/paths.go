@@ -1,7 +1,7 @@
 // Package updateauth is the W-ONE-BUTTON M3 update-authorization core: the
 // enrollment files (admin.json + device.key), the HMAC over
-// release_id|job_id|expires_at, the single-use job-id store and the manifest
-// verifier seam.
+// nofx-update-install/v1|release_id|job_id|expires_at (Message), the
+// single-use job-id store and the manifest verifier seam.
 //
 // It is a leaf package (stdlib only) so the attended CLI
 // (cmd/updater-bootstrap) and the API gate (api/handler_updates.go) share ONE

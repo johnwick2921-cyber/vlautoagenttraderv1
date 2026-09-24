@@ -49,7 +49,7 @@ func TestMessageSplitsBackIntoItsExactTriple(t *testing.T) {
 		}
 		accepted++
 		parts := strings.Split(string(m), "|")
-		if len(parts) != 3 || parts[0] != rel || parts[1] != job || parts[2] != strconv.FormatInt(exp, 10) {
+		if len(parts) != 4 || parts[0] != MACPurpose || parts[1] != rel || parts[2] != job || parts[3] != strconv.FormatInt(exp, 10) {
 			t.Fatalf("ambiguous message %q from (%q,%q,%d)", m, rel, job, exp)
 		}
 	}

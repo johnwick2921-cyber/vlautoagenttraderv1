@@ -33,8 +33,9 @@ import (
 // OFF state) every route refuses and nothing else in the app changes.
 //
 // Install = the gate (identity factor: JWT of the enrolled admin) AND an
-// HMAC-SHA256 over release_id|job_id|expires_at under device.key (possession
-// factor). Nothing on the API side can mint a MAC (CTO ruling Q1(a)): the
+// HMAC-SHA256 over nofx-update-install/v1|release_id|job_id|expires_at under
+// device.key (possession factor; updateauth.Message is the one layout).
+// Nothing on the API side can mint a MAC (CTO ruling Q1(a)): the
 // owner runs the attended `updater-bootstrap authorize <release_id>` on the
 // box and pastes its {job_id, expires_at, hmac}.
 
