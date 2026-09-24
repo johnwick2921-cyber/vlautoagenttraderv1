@@ -59,15 +59,27 @@ func main() {
 	}
 	defer st.Close()
 
-	user, err := st.User().GetByEmail(email)
+	tok, err := mintGateToken(st, email)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "no such user:", err)
-		os.Exit(1)
-	}
-	tok, err := auth.GenerateScopedJWT(user.ID, user.Email, auth.ScopeGateJWT)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "sign:", err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	fmt.Print(tok)
+}
+
+// mintGateToken is the tool's whole mint: the user row by email, then a
+// MACHINE token (scope gate-jwt) carrying that row's id and email. main()
+// calls it; main_test.go drives the token it returns through the production
+// server (canon 53), so the scope the tool mints and the routes the API
+// admits it to are pinned together.
+func mintGateToken(st *store.Store, email string) (string, error) {
+	user, err := st.User().GetByEmail(email)
+	if err != nil {
+		return "", fmt.Errorf("no such user: %w", err)
+	}
+	tok, err := auth.GenerateScopedJWT(user.ID, user.Email, auth.ScopeGateJWT)
+	if err != nil {
+		return "", fmt.Errorf("sign: %w", err)
+	}
+	return tok, nil
 }
