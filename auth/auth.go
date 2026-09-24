@@ -143,9 +143,17 @@ func signToken(userID, email, scope string) (string, error) {
 	return token.SignedString(JWTSecret)
 }
 
+// strictParser decodes every segment with STRICT base64url (M3 red-team M2,
+// red-1 #4; CTO ruling 1790231205208): jwt v5's default lenient decoder
+// ignores the 2 unused low bits of an HS256 signature's 43rd character, so
+// a token had 4 accepted spellings and the logout blacklist — an exact-string
+// map — knew only one. Strict decoding refuses non-zero padding bits, so each
+// token has exactly one accepted spelling.
+var strictParser = jwt.NewParser(jwt.WithStrictDecoding())
+
 // ValidateJWT validates JWT token
 func ValidateJWT(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := strictParser.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
