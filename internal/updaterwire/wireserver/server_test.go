@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -502,6 +503,47 @@ func TestListenRefusesALiveSocketAndASecondWorker(t *testing.T) {
 		t.Fatalf("first worker status: %+v %v", resp, err)
 	}
 	_ = s
+}
+
+// The worker lock is its own guard, not a restatement of the live-socket
+// probe: a second worker that is still STARTING (holds the lock, has not
+// bound yet) leaves nothing at the path for a probe to find. Without the
+// lock, both would clear the path and bind, and the first would be left
+// serving an unlinked socket nobody can reach.
+func TestListenRefusesWhileAnotherWorkerHoldsTheLock(t *testing.T) {
+	_, sock := dataDir(t)
+	dir := filepath.Dir(sock)
+	if err := os.Mkdir(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	// another worker mid-start: lock held, no socket yet (flock is per open
+	// file description, so this conflicts with Listen's own open)
+	other, err := os.OpenFile(filepath.Join(dir, lockFileName), os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	if err := syscall.Flock(int(other.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		t.Fatal(err)
+	}
+	if l, err := Listen(sock, nil); !errors.Is(err, ErrInUse) {
+		if err == nil {
+			l.Close()
+		}
+		t.Fatalf("Listen while another worker holds the lock = %v, want ErrInUse", err)
+	}
+	if _, err := os.Lstat(sock); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatal("a refused Listen must not bind the socket")
+	}
+	// positive control: the other worker lets go ⇒ Listen succeeds
+	if err := syscall.Flock(int(other.Fd()), syscall.LOCK_UN); err != nil {
+		t.Fatal(err)
+	}
+	l, err := Listen(sock, nil)
+	if err != nil {
+		t.Fatalf("positive control after the lock is released: %v", err)
+	}
+	l.Close()
 }
 
 func TestListenRefusesNonCanonicalPaths(t *testing.T) {
