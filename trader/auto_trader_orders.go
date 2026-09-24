@@ -352,6 +352,16 @@ type manualOpen struct {
 	order map[string]interface{}
 }
 
+// bracketCarryingEntrySender is a broker whose market entry carries ITS OWN
+// bracket into the send (W1b FOLD-3: *ntTrader.TCPTrader.OpenWithBracket) —
+// the shared (symbol, side) SL/TP maps learn it only when the entry may be on
+// the wire. Not part of the 19-method Trader interface.
+type bracketCarryingEntrySender interface {
+	OpenWithBracket(symbol, side string, quantity, stop, target float64) (map[string]interface{}, error)
+}
+
+var _ bracketCarryingEntrySender = (*ntTrader.TCPTrader)(nil)
+
 // executeOpenLongWithRecord executes open long position and records detailed information
 func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
 	return at.executeOpenLong(decision, actionRecord, nil)
@@ -499,13 +509,21 @@ func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecor
 		// Continue execution, doesn't affect trading
 	}
 
+	// W1b FOLD-3 — the NT8 broker carries the entry's OWN bracket into the
+	// send (OpenWithBracket): nothing is written to the shared (symbol, side)
+	// SL/TP maps before it, so a refused or provably-unsent entry never leaves
+	// its stop where MoveStopToBreakeven's widen ban reads the live one.
+	carrier, carries := at.trader.(bracketCarryingEntrySender)
+	carries = carries && market.IsCMEFuturesSymbol(decision.Symbol)
+
 	// CME futures (NT8) require SL/TP set BEFORE the entry — the AddOn places
 	// the market entry + protective OCO bracket atomically from the signal,
 	// which carries SL/TP. (Crypto sets them after the fill, below.) Without
 	// this, placeEntry errors "SetStopLoss and SetTakeProfit must be called
 	// before long". A chat entry is never sent without its own bracket: a
-	// failed set sends nothing (W1b E9).
-	if market.IsCMEFuturesSymbol(decision.Symbol) {
+	// failed set sends nothing (W1b E9). A bracket-carrying broker needs no
+	// set here (FOLD-3, above).
+	if market.IsCMEFuturesSymbol(decision.Symbol) && !carries {
 		if manual != nil {
 			manual.brokerCalled = true
 		}
@@ -529,7 +547,12 @@ func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecor
 	if manual != nil {
 		manual.brokerCalled = true
 	}
-	order, err := open(decision.Symbol, quantity, decision.Leverage)
+	var order map[string]interface{}
+	if carries {
+		order, err = carrier.OpenWithBracket(decision.Symbol, side, quantity, decision.StopLoss, decision.TakeProfit)
+	} else {
+		order, err = open(decision.Symbol, quantity, decision.Leverage)
+	}
 	if err != nil {
 		return err
 	}

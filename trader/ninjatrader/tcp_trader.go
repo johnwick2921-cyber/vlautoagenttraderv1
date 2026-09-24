@@ -490,7 +490,31 @@ func (t *TCPTrader) isAccountTradeable(name string) bool {
 	return true
 }
 
+// entryBracket is a market entry's OWN stop and target, carried INTO the send
+// (W1b FOLD-3) instead of through the shared (symbol, side) maps.
+type entryBracket struct{ stop, target float64 }
+
+// OpenWithBracket places a market entry that carries its OWN bracket (W1b
+// FOLD-3): the same send as OpenLong/OpenShort (every rail, the one rounding),
+// except the stop and target ride in as arguments, and the shared (symbol,
+// side) SL/TP maps — which MoveStopToBreakeven's widen ban reads as the live
+// stop — learn them ONLY once the entry may be on the wire (sendAttempted, the
+// rule B3 and the latch record by). A refusal before the send (bound account,
+// SIM, permit, latch, B3, the bracket itself) and the hold's provably-unsent
+// drop leave the maps byte-identical. An ambiguous send failure keeps the
+// bracket (fail-closed: the entry may be live carrying exactly that stop).
+// Not a Trader interface method; the NT8 open path reaches it by assertion.
+func (t *TCPTrader) OpenWithBracket(symbol, side string, quantity, stop, target float64) (map[string]interface{}, error) {
+	return t.placeEntryWith(symbol, side, quantity, &entryBracket{stop: stop, target: target})
+}
+
+// placeEntry is the legacy market entry: its bracket is whatever
+// SetStopLoss/SetTakeProfit last wrote to the maps.
 func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[string]interface{}, error) {
+	return t.placeEntryWith(symbol, side, quantity, nil)
+}
+
+func (t *TCPTrader) placeEntryWith(symbol, side string, quantity float64, own *entryBracket) (map[string]interface{}, error) {
 	// SAFETY RAIL (Stage-2 Phase-1, defense-in-depth): never SEND an entry for an
 	// account that isn't tradeable (SIM + allow-listed). The C# AddOn enforces this
 	// again right before submit; this refuses in Go before the frame is even sent.
@@ -544,6 +568,9 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	t.mu.Lock()
 	sl := t.stopLoss[keyFor(symbol, upperSide)]
 	tp := t.takePrft[keyFor(symbol, upperSide)]
+	if own != nil { // W1b FOLD-3: the entry's own bracket, never the maps'
+		sl, tp = own.stop, own.target
+	}
 	tid := t.traderID // A2 (G1) — captured under lock (set-once at StartCloseSync)
 	t.mu.Unlock()
 	if sl == 0 || tp == 0 {
@@ -601,6 +628,14 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	serr := t.server.SendSignal(payload)
 	latchSent = sendAttempted(serr)
 	b3Sent = latchSent
+	if own != nil && latchSent {
+		// W1b FOLD-3 — the maps learn the bracket only now: the entry may be on
+		// the wire carrying it (the AUTHORED values, as SetStopLoss stored them).
+		t.mu.Lock()
+		t.stopLoss[keyFor(symbol, upperSide)] = own.stop
+		t.takePrft[keyFor(symbol, upperSide)] = own.target
+		t.mu.Unlock()
+	}
 	if err := serr; err != nil {
 		return nil, fmt.Errorf("ninjatrader/tcp: send signal: %w", err)
 	}
@@ -1185,6 +1220,24 @@ func (t *TCPTrader) SetTakeProfit(symbol, positionSide string, quantity, takePro
 	return nil
 }
 
+// EntryBracketMapsForTest copies the shared (symbol, side) SL/TP maps — what a
+// legacy OpenLong/OpenShort sends and what MoveStopToBreakeven's widen ban
+// reads as the live stop (W1b FOLD-3). Read-only; a test hook like the
+// server's SeedPositionsForTest.
+func (t *TCPTrader) EntryBracketMapsForTest() (stops, targets map[string]float64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	stops = make(map[string]float64, len(t.stopLoss))
+	for k, v := range t.stopLoss {
+		stops[k] = v
+	}
+	targets = make(map[string]float64, len(t.takePrft))
+	for k, v := range t.takePrft {
+		targets[k] = v
+	}
+	return stops, targets
+}
+
 func (t *TCPTrader) CancelAllOrders(symbol string) error {
 	return fmt.Errorf("ninjatrader/tcp: CancelAllOrders not supported")
 }
@@ -1456,14 +1509,12 @@ func (t *TCPTrader) DebugPlaceTestTrade(side string) (map[string]interface{}, er
 	}
 	price := bars[len(bars)-1].C
 	tick := InstrumentTickSize(t.symbol)
+	// W1b FOLD-3: the test trade carries its own bracket into the send, so a
+	// refused one never leaves it in the maps the widen ban reads.
 	if side == "short" {
-		_ = t.SetStopLoss(t.symbol, "short", 1, RoundToTick(price+20, tick))
-		_ = t.SetTakeProfit(t.symbol, "short", 1, RoundToTick(price-40, tick))
-		return t.OpenShort(t.symbol, 1, 1)
+		return t.OpenWithBracket(t.symbol, "short", 1, RoundToTick(price+20, tick), RoundToTick(price-40, tick))
 	}
-	_ = t.SetStopLoss(t.symbol, "long", 1, RoundToTick(price-20, tick))
-	_ = t.SetTakeProfit(t.symbol, "long", 1, RoundToTick(price+40, tick))
-	return t.OpenLong(t.symbol, 1, 1)
+	return t.OpenWithBracket(t.symbol, "long", 1, RoundToTick(price-20, tick), RoundToTick(price+40, tick))
 }
 
 // BarCache exposes the live NT8 bar cache for the Stage 4 SSE chart relay.
