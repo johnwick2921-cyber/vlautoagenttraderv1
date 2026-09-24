@@ -207,18 +207,22 @@ func (t *TCPTrader) tagLateEntryFill(st *store.Store, traderID, exchangeID strin
 		logger.Warnf("🔗 attribution: pos %d (%s %s) — fill signal %s is AI order #%d already %s (not an unresolved open) — left UNTAGGED (no guess)", posID, sym, side, sid, o.ID, o.Status)
 		return "", fmt.Sprintf("is AI order #%d already %s, not an unresolved open", o.ID, o.Status)
 	}
-	if err := st.Position().SetEntryOrderID(posID, sid); err != nil {
-		logger.Warnf("🔗 attribution: pos %d entry-order-id stamp failed (signal %s): %v", posID, sid, err)
-		return "", fmt.Sprintf("is this trader's AI order #%d but the entry-order-id stamp failed — see the 🔗 WARN", o.ID)
-	}
+	// W1b FOLD-13 — settle FIRST (FILLED status + its fill row, one unit), tag
+	// LAST. A settle that fails leaves BOTH untouched — the order NEW with no
+	// fill row, the position untagged — so the unresolved-order sweep keeps the
+	// NEW row visible. Tagging first left the position tagged and the order NEW
+	// forever: the untracked branch never re-enters a tracked row.
 	qty := f.Quantity
 	if qty <= 0 {
 		qty = st.Position().QuantityOf(posID)
 	}
-	if err := st.Order().UpdateOrderStatus(o.ID, "FILLED", qty, f.Price, 0); err != nil {
-		logger.Warnf("🔗 attribution: order #%d FILLED settle failed (signal %s): %v", o.ID, sid, err)
-	} else if err := st.Order().CreateFill(lateEntryFillRow(o, traderID, exchangeID, sym, side, f.Price, qty, f.TimeMs)); err != nil {
-		logger.Warnf("🔗 attribution: order #%d settled FILLED but its fill row failed (signal %s): %v", o.ID, sid, err)
+	if err := st.Order().SettleFilledWithFill(o.ID, qty, f.Price, 0, lateEntryFillRow(o, traderID, exchangeID, sym, side, f.Price, qty, f.TimeMs)); err != nil {
+		logger.Warnf("🔗 attribution: pos %d (%s %s) — AI order #%d FILLED settle failed (signal %s): %v — order left NEW, position left UNTAGGED (no tag without a settled order)", posID, sym, side, o.ID, sid, err)
+		return "", fmt.Sprintf("is this trader's AI order #%d but its FILLED settle failed (order left NEW) — see the 🔗 WARN", o.ID)
+	}
+	if err := st.Position().SetEntryOrderID(posID, sid); err != nil {
+		logger.Warnf("🔗 attribution: pos %d entry-order-id stamp failed (signal %s; order #%d already settled FILLED): %v", posID, sid, o.ID, err)
+		return "", fmt.Sprintf("is this trader's AI order #%d (settled FILLED) but the entry-order-id stamp failed — see the 🔗 WARN", o.ID)
 	}
 	logger.Infof("🔗 attribution: late AI fill — pos %d ← signal %s (order #%d, fill %.2f); plan citation stays %s", posID, sid, o.ID, f.Price, store.PlanUnresolvable)
 	return sid, fmt.Sprintf("this trader's late AI fill (signal %s, order #%d)", sid, o.ID)
