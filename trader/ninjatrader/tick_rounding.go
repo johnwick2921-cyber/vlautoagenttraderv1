@@ -61,6 +61,20 @@ func RoundToTick(price, tick float64) float64 {
 // any price the wire can carry and far above float noise at index levels.
 const wireTickEps = 1e-6
 
+// WireMoved reports whether the wire's rounding moved a price: |wire −
+// authored| beyond wireTickEps of a tick, the same epsilon that keeps an
+// on-grid stop fixed in WireStop. A bare != is wrong on a non-power-of-two
+// tick: RoundToTick(2000.3, 0.10) = 2000.3000000000002, a "move" no tick can
+// see (W1b FOLD-7). On a power-of-two tick (0.25, 1.0) an on-grid price
+// rounds bit-identical, so this agrees with != there. tick <= 0 (no rounding)
+// compares exactly.
+func WireMoved(authored, wire, tick float64) bool {
+	if tick <= 0 {
+		return wire != authored
+	}
+	return math.Abs(wire-authored) > wireTickEps*tick
+}
+
 // WireStop is the stop the wire sends (W1b E12(a)): on the tick grid and
 // rounded AWAY from the entry — a long's stop DOWN, a short's stop UP — so the
 // order NT8 receives is never tighter than the one the gate approved. Nearest

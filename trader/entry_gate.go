@@ -343,7 +343,10 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 // absent (<= 0) is returned as given so the legs keep skipping it. note is ""
 // when rounding moved nothing (the refusal text is then byte-identical to the
 // pre-E12 text); otherwise it names the authored prices the wire values came
-// from, so a refusal caused by rounding says so.
+// from, so a refusal caused by rounding says so. "Moved" is judged within the
+// wire's tick epsilon (ntTrader.WireMoved, W1b FOLD-7): on a non-power-of-two
+// tick an on-grid price rounds to a float a few ulps off (2000.3 on 0.10 →
+// 2000.3000000000002), which is not a rounding and must not claim one.
 //
 // Only a CME futures symbol is rounded (verifier defect 1): the tick grid is
 // the NT8 wire's, and a non-CME venue (a crypto trader still reaches EntryGate
@@ -371,7 +374,7 @@ func entryGateWirePrices(side string, in EntryIntent) (entry, stop, target float
 	if in.Target > 0 {
 		target = ntTrader.RoundToTick(in.Target, tick)
 	}
-	if entry != in.Entry || stop != in.Stop || target != in.Target {
+	if ntTrader.WireMoved(in.Entry, entry, tick) || ntTrader.WireMoved(in.Stop, stop, tick) || ntTrader.WireMoved(in.Target, target, tick) {
 		note = fmt.Sprintf(" — judged on the wire-rounded prices (authored entry %.4f SL %.4f TP %.4f)", in.Entry, in.Stop, in.Target)
 	}
 	return entry, stop, target, note
