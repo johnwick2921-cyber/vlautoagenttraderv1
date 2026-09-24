@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -26,25 +27,21 @@ const (
 type tradeSelectedTrader interface {
 	GetStrategyConfig() *store.StrategyConfig
 	GetAccountInfo() (map[string]interface{}, error)
-	// AdmitManualEntry runs the trader's ONE admission chain for a new entry,
-	// exactly as it runs for an AI decision (W-EXEC-TRUTH W0, CTO Q17): a chat
-	// trade is a real trade the owner can trigger by mistake, and STRICT must
-	// refuse it like a decision. In the interface, so no selected trader can
-	// skip it.
-	AdmitManualEntry(symbol, action string) (string, bool)
-}
-
-// tradeBracketDoor is the selected trader's ONE send for a chat entry with its
-// own bracket (W1b E9; *trader.AutoTrader.OpenManualEntry): it admits the
-// entry through the one chain WITH its stop and target, then sends exactly
-// those prices. A trader that has it receives every chat open through it.
-type tradeBracketDoor interface {
+	// OpenManualEntry is the trader's ONE door for a chat entry (W-EXEC-TRUTH
+	// W0 CTO Q17; W1b E9): it runs the ONE admission chain, exactly as for an
+	// AI decision, WITH the entry's own stop and target, then sends exactly
+	// those prices. In the interface — not a type assertion with a fallback —
+	// so no selected trader can send a chat entry any other way (W1b E9
+	// repair: the old no-door fallback sent on the broker's leftover SL/TP
+	// maps, and only test fakes could reach it). Errors are typed:
+	// *trader.ManualEntryRefusal (refused, nothing sent),
+	// *trader.ManualEntryUnprotected (OPENED, bracket failed), else the broker's.
 	OpenManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error)
 }
 
-// The production selected trader owns the door, so no chat open reaches the
-// map-reading OpenLong/OpenShort through it (compile-time pin).
-var _ tradeBracketDoor = (*trader.AutoTrader)(nil)
+// The production selected trader (manager.GetAllTraders → *trader.AutoTrader)
+// owns the door (compile-time pin).
+var _ tradeSelectedTrader = (*trader.AutoTrader)(nil)
 
 type tradeUnderlyingTrader interface {
 	OpenLong(symbol string, quantity float64, leverage int) (map[string]interface{}, error)
@@ -218,40 +215,17 @@ func executeTradeWith(trade *TradeAction, wantStock bool, selectedTrader tradeSe
 		if selectedTrader == nil {
 			return fmt.Errorf("entry refused: no selected trader to admit it (fail-closed)")
 		}
-		// W1b E9 — the bracket door: admission WITH the chat's own stop and
-		// target, and the send of exactly those prices, in one call.
-		if door, ok := selectedTrader.(tradeBracketDoor); ok {
-			if trade.Quantity <= 0 {
-				return fmt.Errorf("quantity must be > 0")
-			}
-			if _, err := door.OpenManualEntry(trade.Symbol, trade.Action, trade.Quantity, trade.Leverage, trade.StopLoss, trade.TakeProfit); err != nil {
-				return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", err.Error())
-			}
-			return nil
+		if trade.Quantity <= 0 {
+			return fmt.Errorf("quantity must be > 0")
 		}
-		// No bracket door: the underlying broker could only send the entry on
-		// whatever SL/TP it already holds — refuse a stop it cannot honour.
-		if trade.StopLoss > 0 || trade.TakeProfit > 0 {
-			return fmt.Errorf("entry refused: this trader cannot send a chat entry's own stop/target (fail-closed)")
-		}
-		if refusal, refused := selectedTrader.AdmitManualEntry(trade.Symbol, trade.Action); refused {
-			return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", refusal)
-		}
+		// W1b E9 — the door: admission WITH the chat's own stop and target,
+		// and the send of exactly those prices, in one call. The underlying
+		// broker's OpenLong/OpenShort never sends a chat entry.
+		_, err := selectedTrader.OpenManualEntry(trade.Symbol, trade.Action, trade.Quantity, trade.Leverage, trade.StopLoss, trade.TakeProfit)
+		return chatEntryError(err)
 	}
 
 	switch trade.Action {
-	case "open_long":
-		if trade.Quantity <= 0 {
-			return fmt.Errorf("quantity must be > 0")
-		}
-		_, err := underlyingTrader.OpenLong(trade.Symbol, trade.Quantity, trade.Leverage)
-		return err
-	case "open_short":
-		if trade.Quantity <= 0 {
-			return fmt.Errorf("quantity must be > 0")
-		}
-		_, err := underlyingTrader.OpenShort(trade.Symbol, trade.Quantity, trade.Leverage)
-		return err
 	case "close_long":
 		_, err := underlyingTrader.CloseLong(trade.Symbol, trade.Quantity)
 		return err
@@ -541,12 +515,7 @@ func (a *Agent) handleTradeConfirmation(ctx context.Context, userID int64, text,
 
 	err := a.executeTrade(ctx, trade)
 	if err != nil {
-		trade.Status = "failed"
-		trade.Error = err.Error()
-		if lang == "zh" {
-			return fmt.Sprintf("❌ 交易执行失败: %s", err.Error()), true
-		}
-		return fmt.Sprintf("❌ Trade execution failed: %s", err.Error()), true
+		return tradeFailureReply(trade, err, lang), true
 	}
 
 	trade.Status = "executed"
@@ -571,6 +540,47 @@ func (a *Agent) handleTradeConfirmation(ctx context.Context, userID int64, text,
 		return fmt.Sprintf("%s 交易已执行！\n%s %s%s", actionEmoji, trade.Action, symbol, qtyStr), true
 	}
 	return fmt.Sprintf("%s Trade executed!\n%s %s%s", actionEmoji, trade.Action, symbol, qtyStr), true
+}
+
+// chatEntryError tells the door's outcome as what HAPPENED (W1b E9 repair):
+// only the typed admission refusal is "refused by the admission gate"; an
+// entry that OPENED with no bracket is OPENED and UNPROTECTED; anything else
+// is the broker's send failure.
+func chatEntryError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var ref *trader.ManualEntryRefusal
+	if errors.As(err, &ref) {
+		return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", ref.Reason)
+	}
+	var unp *trader.ManualEntryUnprotected
+	if errors.As(err, &unp) {
+		return fmt.Errorf("entry OPENED but UNPROTECTED — set a stop at the broker now: %w", err)
+	}
+	return fmt.Errorf("entry send failed at the broker (not an admission refusal): %w", err)
+}
+
+// tradeFailureReply records a failed execution on the trade and renders the
+// owner's reply. An entry that OPENED without its bracket is not a failure:
+// it is recorded executed, with the error, and told as a live, UNPROTECTED
+// position.
+func tradeFailureReply(trade *TradeAction, err error, lang string) string {
+	var unp *trader.ManualEntryUnprotected
+	if errors.As(err, &unp) {
+		trade.Status = "executed"
+		trade.Error = err.Error()
+		if lang == "zh" {
+			return fmt.Sprintf("🚨 已开仓但无保护（自身止损/止盈未设置成功）: %s", err.Error())
+		}
+		return fmt.Sprintf("🚨 Trade OPENED but UNPROTECTED — its own stop/target did not set: %s", err.Error())
+	}
+	trade.Status = "failed"
+	trade.Error = err.Error()
+	if lang == "zh" {
+		return fmt.Sprintf("❌ 交易执行失败: %s", err.Error())
+	}
+	return fmt.Sprintf("❌ Trade execution failed: %s", err.Error())
 }
 
 // marshals trade action to JSON for embedding in responses

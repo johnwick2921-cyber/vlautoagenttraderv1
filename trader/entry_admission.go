@@ -490,10 +490,36 @@ func agentBracketRefusal(d *kernel.Decision, live, atr5m float64) (string, bool)
 // places entry + OCO bracket atomically from the signal), and a failed set
 // REFUSES the entry — unlike the AI path, a chat entry is never sent without
 // its own protective stop. Other venues follow the AI path's order: open, then
-// set; a failed set is returned as an error naming the unprotected position.
+// set; a failed set is returned as *ManualEntryUnprotected (the position is
+// LIVE). An admission refusal is *ManualEntryRefusal; every other error is the
+// broker's (a send failure) and is neither.
 func (at *AutoTrader) OpenManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error) {
 	return at.OpenManualEntryAt(symbol, action, quantity, leverage, stop, target, time.Now())
 }
+
+// ManualEntryRefusal is the manual-entry door's ADMISSION refusal: the one
+// chain refused the entry and nothing reached the broker. It is the only
+// error a caller may present as "refused by the admission gate" (W1b E9
+// repair) — a broker send error, or an entry that opened without its bracket,
+// is a different event and must never be told as a refusal.
+type ManualEntryRefusal struct{ Reason string }
+
+func (e *ManualEntryRefusal) Error() string { return e.Reason }
+
+// ManualEntryUnprotected is an entry the broker OPENED whose own stop/target
+// then failed to set (the non-CME order: open, then set): a LIVE position with
+// no bracket. Order is what the broker returned for the open.
+type ManualEntryUnprotected struct {
+	Symbol, Side string
+	Order        map[string]interface{}
+	Err          error
+}
+
+func (e *ManualEntryUnprotected) Error() string {
+	return fmt.Sprintf("manual entry %s %s OPENED but its own bracket failed to set: %v (position UNPROTECTED)", e.Symbol, e.Side, e.Err)
+}
+
+func (e *ManualEntryUnprotected) Unwrap() error { return e.Err }
 
 // OpenManualEntryAt is OpenManualEntry on an injected admission clock.
 func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64, leverage int, stop, target float64, now time.Time) (map[string]interface{}, error) {
@@ -501,10 +527,16 @@ func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64,
 		return nil, fmt.Errorf("manual entry: %q is not an entry", action)
 	}
 	if refusal, refused := at.AdmitManualEntryBracketAt(symbol, action, stop, target, now); refused {
-		return nil, fmt.Errorf("%s", refusal)
+		return nil, &ManualEntryRefusal{Reason: refusal}
 	}
+	return at.sendManualEntry(symbol, action, quantity, leverage, stop, target)
+}
+
+// sendManualEntry is the door's send, AFTER admission: the entry with its own
+// bracket (see OpenManualEntry for the per-venue order).
+func (at *AutoTrader) sendManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error) {
 	if at.trader == nil {
-		return nil, fmt.Errorf("manual entry refused: no broker on this trader (fail-closed)")
+		return nil, fmt.Errorf("manual entry NOT sent: no broker on this trader (fail-closed)")
 	}
 	side := "LONG"
 	open := at.trader.OpenLong
@@ -522,7 +554,7 @@ func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64,
 	}
 	if market.IsCMEFuturesSymbol(symbol) {
 		if err := setBracket(); err != nil {
-			return nil, fmt.Errorf("manual entry refused: its own bracket could not be set (%v) — never sent on another decision's bracket (fail-closed)", err)
+			return nil, fmt.Errorf("manual entry NOT sent: its own bracket could not be set (%v) — never sent on another decision's bracket (fail-closed)", err)
 		}
 		return open(symbol, quantity, leverage)
 	}
@@ -532,7 +564,7 @@ func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64,
 	}
 	if berr := setBracket(); berr != nil {
 		at.logErrorf("🚨 manual entry %s %s OPENED but its own bracket failed to set — %v (position unprotected)", symbol, side, berr)
-		return order, fmt.Errorf("manual entry opened but its bracket failed to set: %w", berr)
+		return order, &ManualEntryUnprotected{Symbol: symbol, Side: side, Order: order, Err: berr}
 	}
 	return order, nil
 }
