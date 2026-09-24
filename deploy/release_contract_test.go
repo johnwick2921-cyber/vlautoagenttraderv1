@@ -374,3 +374,63 @@ func TestManifestRefusesWhenTheStagedReleaseDisagreesWithTheSourceSha(t *testing
 		t.Fatalf("an agreeing RELEASE must pass: %v\n%s", err, out)
 	}
 }
+
+// The db-compat job mints throwaway keys. They live in its WORK dir, which the
+// packager never reads — but "never reads" is a claim, so it is asserted: a
+// staged tree must contain neither key, under any name.
+func TestStagedTreeNeverContainsTheEphemeralBootSecrets(t *testing.T) {
+	src := t.TempDir()
+	for _, p := range []string{"nofx-bin", "LICENSE", "ninjascript/x.cs", "ninjascript/vltrader_tcp_PROTOCOL.md", "web/dist/index.html"} {
+		full := filepath.Join(src, p)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Plant both shapes in the SOURCE tree; the allow-list must not carry them.
+	if err := os.WriteFile(filepath.Join(src, "rsa.pem"), []byte("-----BEGIN PRIVATE KEY-----\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stage := filepath.Join(t.TempDir(), "stage")
+	if out, err := runScript(t, "deploy/release/package.sh", src, stage, strings.Repeat("d", 40)); err != nil {
+		t.Fatalf("package failed: %v\n%s", err, out)
+	}
+	_ = filepath.Walk(stage, func(p string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		base := filepath.Base(p)
+		if base == "rsa.pem" || strings.HasSuffix(base, ".pem") || strings.HasSuffix(base, ".key") {
+			t.Fatalf("an ephemeral boot secret reached the stage: %s", p)
+		}
+		return nil
+	})
+	// And the scan agrees independently.
+	if out, err := runScript(t, "deploy/release/secret-scan.sh", stage); err != nil {
+		t.Fatalf("a correctly staged tree must pass the scan: %v\n%s", err, out)
+	}
+}
+
+// The throwaway keys must not outlive the run, by ANY exit path.
+func TestDbCompatShredsItsEphemeralKeysOnExit(t *testing.T) {
+	sh := repoFile(t, "deploy/release/db-compat.sh")
+	if !strings.Contains(sh, "trap cleanup_boot_secrets EXIT INT TERM") {
+		t.Fatalf("the ephemeral keys must be shredded on EXIT, INT and TERM — not only on the happy path")
+	}
+	if !strings.Contains(sh, "shred -u") {
+		t.Fatalf("the key file must be shredded, not merely unlinked")
+	}
+}
+
+// The negative proof must run in CI, not only as a unit re-implementation.
+func TestReleaseWorkflowProvesAProdBuildWithoutTheRevFails(t *testing.T) {
+	y := repoFile(t, ".github/workflows/release.yml")
+	if !strings.Contains(y, "VITE_GUIDE_BUILT_REV= npm run build") {
+		t.Fatalf("CI must prove the NEGATIVE: a prod build with no rev must fail")
+	}
+	if !strings.Contains(y, "the guard is gone") {
+		t.Fatalf("the negative step must fail loudly when the build unexpectedly succeeds")
+	}
+}

@@ -120,6 +120,15 @@ gen_boot_secrets() {
   return 0
 }
 
+# P3 (CTO): a throwaway key is still a key. It is shredded and unset when the
+# run ends by ANY path — success, failure, or interrupt — so it cannot outlive
+# the job in a work dir someone later tars up.
+cleanup_boot_secrets() {
+  [ -f "$WORK/rsa.pem" ] && { shred -u "$WORK/rsa.pem" 2>/dev/null || rm -f "$WORK/rsa.pem"; }
+  unset RSA_PRIVATE_KEY DATA_ENCRYPTION_KEY JWT_SECRET
+}
+trap cleanup_boot_secrets EXIT INT TERM
+
 OLD_BIN="$WORK/nofx-old"; NEW_BIN="$WORK/nofx-new"
 gen_boot_secrets || exit 1
 build_at "$OLD_REF" "$OLD_BIN" || exit 1

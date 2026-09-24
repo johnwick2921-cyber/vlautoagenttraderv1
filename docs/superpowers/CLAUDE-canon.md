@@ -126,3 +126,57 @@ guessing at git's layout.
 That is the same shape as everything else in this file: a statement ABOUT the
 tool, written where nothing compares it to the tool. The remedy is the same —
 ask the tool.
+
+
+---
+
+## RELEASE AND MANUAL BOOT (W-ONE-BUTTON M4)
+
+**The guide's rev is a BUILD INPUT, not a literal.** `web/src/guide/types.ts`
+reads `VITE_GUIDE_BUILT_REV`. A PRODUCTION build with it missing or not 40-hex
+FAILS; a dev build renders `dev`. The old boot step — grep
+`GUIDE_BUILT_REV = '<sha>'` out of that file — cannot work any more, and its
+silence is not a pass. Build with `VITE_GUIDE_BUILT_REV=<sha> npm run build`,
+then VERIFY by finding that sha in `web/dist/assets/*.js`. That is the only
+place the truth can be checked once the constant is gone.
+
+Why it moved: a bump that lives as a step in a deploy procedure is a step
+someone skips under pressure — which is exactly when a guide that disagrees
+with the running binary does the most damage.
+
+**A release is cut from an APPROVED TAG**, in a protected Environment with the
+owner as required reviewer, never from a push to a branch. The tree must be
+clean before the build and `go version -m` is read BACK to prove
+`vcs.modified=false` and that the binary carries the tag's revision. Only the
+allow-list is packaged; the staged tree AND the unpacked archive are scanned
+separately, because they are different things and a check that sees only one is
+bypassed by whatever happens in between. The manifest is signed, and verified
+against the committed ALLOWED-SIGNERS file before upload — a bare `.pub` does
+not work here: `ssh-keygen -Y verify -f` parses its file as
+`<principal> <keytype> <base64>`, so a bare key is read as principal
+`ssh-ed25519` and matches nothing.
+
+**A rollback pair is advertised `tested:true` only when it was PERFORMED**: the
+old binary creates a fresh DB, the new one migrates it forward, and then the
+OLD binary boots the MIGRATED DB. That third step is the rollback, it is the
+one nobody runs, and it is where a migration that dropped a column the old
+binary still SELECTs fails — at the moment a rollback is needed. A pair that
+could not be proven is carried `tested:false`, never omitted silently. The
+proof is BOOT-TIME ONLY: it says the schema survives the round trip, not that
+the rollback is safe in every respect.
+
+**Restart identity is `(MainPID, /proc/<pid>/stat` field 22 starttime`)`,
+never wall clock** — M1 measured two start times disagreeing by 151 s after a
+WSL clock step. Never `pgrep -f nofx-bin`: that also matches
+`go version -m nofx-bin`, so it can return the pid of a tool inspecting the
+binary instead of the server running it. Ask systemd for MainPID.
+
+**The boot proof lives in `data/nofx_<date>.log`, not journald** (journald keeps
+about 4 h for uid 1000). The watchdog wants the `BOOT INTEGRITY OK — rev <sha>`
+line there, `/api/health` reporting the new revision, and the served bundle
+carrying it.
+
+**Only release-owned entries switch**: `nofx-bin`, `web/dist`,
+`deploy/RELEASE`, `calendar_static_t1.json`. The WORKING DIRECTORY is never
+symlinked, or `data/` and `.env` resolve inside a release and are lost at the
+next switch.

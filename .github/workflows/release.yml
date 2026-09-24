@@ -114,12 +114,27 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: '20', cache: 'npm', cache-dependency-path: web/package-lock.json }
 
+      - name: PROVE a prod build without the rev FAILS (negative, before the real build)
+        run: |
+          set -uo pipefail
+          # The vitest for this re-implements the resolver, which proves
+          # self-consistency and not the build (canon 53). This is the real
+          # thing: vite must REFUSE to produce a bundle with no rev. If this
+          # step ever succeeds, the guard has stopped guarding.
+          cd web && npm ci
+          if VITE_GUIDE_BUILT_REV= npm run build >/tmp/negative.log 2>&1; then
+            echo "REFUSED: a production build with no VITE_GUIDE_BUILT_REV SUCCEEDED — the guard is gone"
+            tail -20 /tmp/negative.log
+            exit 1
+          fi
+          echo "ok: a prod build without the rev fails, as it must"
+
       - name: Build the web assets with the guide rev baked in
         env:
           VITE_GUIDE_BUILT_REV: ${{ steps.src.outputs.sha }}
         run: |
           set -euo pipefail
-          cd web && npm ci && npm run build
+          cd web && npm run build
           grep -rq "${{ steps.src.outputs.sha }}" dist/assets/*.js || { echo "REFUSED: built dist does not carry the guide rev"; exit 1; }
 
       - name: Stage ONLY the allow-list
