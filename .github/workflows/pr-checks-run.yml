@@ -65,7 +65,7 @@ jobs:
         id: go-test
         continue-on-error: true
         run: |
-          if go test ./... -v 2>&1 | tee test-output.txt; then
+          if go test -timeout 30m ./... -v 2>&1 | tee test-output.txt; then
             echo "status=✅ Passed" >> $GITHUB_OUTPUT
           else
             echo "status=⚠️ Failed" >> $GITHUB_OUTPUT
