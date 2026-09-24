@@ -9,12 +9,23 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"nofx/market"
 )
 
 // InstrumentTickSize returns the tick size in points for a CME instrument.
 // Returns 0.25 for NQ/MNQ/ES/MES (index futures default). Other instruments
 // can be added as needed.
+//
+// W1b E12: the table is keyed on the instrument ROOT, resolved by
+// market.FuturesRoot, so every symbol form of one instrument ("M2K", "M2KU6",
+// "M2K 12-26", "RTY.c.0") gets the same tick. This is the ONE tick lookup the
+// wire and EntryGate legs 5/6 share. A symbol with no known root is looked up
+// as given (bare roots and unknown symbols are byte-identical to before).
 func InstrumentTickSize(symbol string) float64 {
+	if root := market.FuturesRoot(symbol); root != "" {
+		symbol = root
+	}
 	switch symbol {
 	case "NQ", "MNQ", "ES", "MES":
 		return 0.25

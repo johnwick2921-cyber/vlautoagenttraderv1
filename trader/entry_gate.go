@@ -344,9 +344,20 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 // when rounding moved nothing (the refusal text is then byte-identical to the
 // pre-E12 text); otherwise it names the authored prices the wire values came
 // from, so a refusal caused by rounding says so.
+//
+// Only a CME futures symbol is rounded (verifier defect 1): the tick grid is
+// the NT8 wire's, and a non-CME venue (a crypto trader still reaches EntryGate
+// through admitEntry) fell through to the 0.25 index default — DOGEUSDT entry
+// 0.12 rounded to 0 and legs 5/6 skipped a R:R 0.10 open that base refused.
+// Any other symbol is judged on the authored prices, exactly as at base. The
+// tick comes from ntTrader.InstrumentTickSize, the SAME root-resolving lookup
+// the wire calls on the trader's symbol (verifier defect 4).
 func entryGateWirePrices(side string, in EntryIntent) (entry, stop, target float64, note string) {
 	entry, stop, target = in.Entry, in.Stop, in.Target
-	tick := ntTrader.InstrumentTickSize(entryGateTickRoot(in.Symbol))
+	if !market.IsCMEFuturesSymbol(in.Symbol) && market.FuturesRoot(in.Symbol) == "" {
+		return entry, stop, target, ""
+	}
+	tick := ntTrader.InstrumentTickSize(in.Symbol)
 	if in.Entry > 0 {
 		entry = ntTrader.RoundToTick(in.Entry, tick)
 	}
@@ -364,18 +375,6 @@ func entryGateWirePrices(side string, in EntryIntent) (entry, stop, target float
 		note = fmt.Sprintf(" — judged on the wire-rounded prices (authored entry %.4f SL %.4f TP %.4f)", in.Entry, in.Stop, in.Target)
 	}
 	return entry, stop, target, note
-}
-
-// entryGateTickRoot reduces a symbol to the instrument root the tick table is
-// keyed on ("MNQ", "MNQ 06-26", "NQ.c.0" → "MNQ"/"MNQ"/"NQ"). The wire keys the
-// same table on the trader's configured symbol; an unknown root falls back to
-// the table's 0.25 index default on both sides.
-func entryGateTickRoot(symbol string) string {
-	s := strings.ToUpper(strings.TrimSpace(symbol))
-	if i := strings.IndexAny(s, " ."); i > 0 {
-		s = s[:i]
-	}
-	return s
 }
 
 // ── Arm-seam builder ────────────────────────────────────────────────────────

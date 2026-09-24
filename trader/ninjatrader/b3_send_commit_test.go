@@ -125,3 +125,31 @@ func TestB3ArmedDuplicateRefusedNamedAndCounted(t *testing.T) {
 		}
 	}
 }
+
+// A REAL duplicate MARKET entry is still refused (W1b E12 verifier defect 2).
+// placeEntry records its B3 slot through `b3Sent = latchSent`; without that
+// assignment a sent market entry never records its key and a double-fired
+// OpenLong passes B3. Two OpenLong calls over the real loopback: the second is
+// "duplicate order dropped", sends no frame, and counts b3_order_dedup once.
+func TestB3MarketDuplicateRefusedAndCounted(t *testing.T) {
+	s, _, _, frames := stopEntryServer(t)
+	tr := NewTCPTrader(s, "MNQ", "Sim101")
+	_ = tr.SetStopLoss("MNQ", "long", 1, 29575)
+	_ = tr.SetTakeProfit("MNQ", "long", 1, 29650)
+	if _, err := tr.OpenLong("MNQ", 1, 1); err != nil {
+		t.Fatalf("first market entry refused: %v", err)
+	}
+	awaitFrame(t, frames, "market first")
+	before := gateBlocks("b3_order_dedup")
+	_, err := tr.OpenLong("MNQ", 1, 1)
+	if err == nil {
+		t.Fatal("an identical market entry inside the window was sent twice")
+	}
+	noFrame(t, frames, "market duplicate")
+	if !strings.Contains(err.Error(), "duplicate order dropped") {
+		t.Errorf("market: refusal must carry B3's reason, got %q", err)
+	}
+	if got := gateBlocks("b3_order_dedup") - before; got != 1 {
+		t.Errorf("market: B3 duplicate counted %d times under b3_order_dedup, want 1", got)
+	}
+}

@@ -1625,8 +1625,6 @@ func (t *TCPTrader) GetOpenOrders(symbol string) ([]types.OpenOrder, error) {
 	return rows, nil
 }
 
-// upperSideStr normalises "long"/"LONG"/"Long" → "LONG" for SL/TP map keys.
-// CSV Trader keys are uppercase, so we mirror that to keep behaviour parallel.
 // b3Reserve runs B3 (dupe guard + rate breaker) for one entry at the
 // submission chokepoint and returns the reservation's done (W1b E12(b)): the
 // caller defers done(sent) with sent = sendAttempted(serr), so the dedupe slot
@@ -1655,6 +1653,8 @@ func (t *TCPTrader) b3Reserve(key string) (done func(sent bool), reason string, 
 	return nil, reason, false
 }
 
+// upperSideStr normalises "long"/"LONG"/"Long" → "LONG" for SL/TP map keys.
+// CSV Trader keys are uppercase, so we mirror that to keep behaviour parallel.
 func upperSideStr(side string) string {
 	switch side {
 	case "long", "LONG", "Long":
