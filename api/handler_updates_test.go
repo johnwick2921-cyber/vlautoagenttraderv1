@@ -116,6 +116,18 @@ func mintJWT(t *testing.T, userID, email string, iat, exp time.Time, secret stri
 	return s
 }
 
+// mintNoIAT: a correctly signed admin token with no iat claim (Q8 cannot be
+// judged ⇒ refuse).
+func mintNoIAT(t *testing.T, userID, email string, exp time.Time, secret string) string {
+	t.Helper()
+	c := auth.Claims{UserID: userID, Email: email, RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(exp)}}
+	s, err := jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString([]byte(secret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
 // do sends a request that passes every transport check (loopback peer,
 // loopback Host, the update header, no Origin) with the admin's token; mut
 // then introduces exactly one defect.
@@ -368,6 +380,12 @@ func TestUpdatesRefuseMissingOrInvalidJWT(t *testing.T) {
 		"garbage":      withToken("not.a.jwt"),
 		"wrong secret": withToken(mintJWT(t, updAdminID, updAdminEmail, now.Add(-5*time.Second), now.Add(time.Hour), "some-other-secret")),
 		"expired":      withToken(mintJWT(t, updAdminID, updAdminEmail, now.Add(-2*time.Hour), now.Add(-time.Hour), updSecret)),
+		"no iat":       withToken(mintNoIAT(t, updAdminID, updAdminEmail, now.Add(time.Hour), updSecret)),
+		"alg none": withToken(func() string {
+			s, _ := jwt.NewWithClaims(jwt.SigningMethodNone, auth.Claims{UserID: updAdminID, Email: updAdminEmail, RegisteredClaims: jwt.RegisteredClaims{
+				IssuedAt: jwt.NewNumericDate(now.Add(-5 * time.Second)), ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour))}}).SignedString(jwt.UnsafeAllowNoneSignatureType)
+			return s
+		}()),
 	}
 	for name, mut := range cases {
 		e.expectAllForbidden(name, mut)
@@ -484,6 +502,37 @@ func TestUpdatesRefuseWhenNotEnrolledOrUnsafe(t *testing.T) {
 	}
 }
 
+// L4: the OFF state also covers an app whose data dir was never configured
+// (trader.MaintenanceDataDir() == "") — every route refuses.
+func TestUpdatesRefuseWhenTheDataDirIsUnconfigured(t *testing.T) {
+	e := newUpdEnv(t)
+	e.expectAllAdmitted("configured")
+	trader.SetMaintenanceDataDir("")
+	e.expectAllForbidden("unconfigured data dir")
+	trader.SetMaintenanceDataDir("relative/data")
+	e.expectAllForbidden("relative data dir")
+}
+
+// F3: the admin row must still carry the enrolled email; a row whose email
+// drifted (or vanished) is not the enrolled admin, even for a token whose
+// claims match admin.json.
+func TestUpdatesRefuseWhenTheAdminRowNoLongerMatches(t *testing.T) {
+	e := newUpdEnv(t)
+	e.expectAllAdmitted("row matches")
+	if err := e.st.GormDB().Exec(`UPDATE users SET email = ? WHERE id = ?`, "moved@example.test", updAdminID).Error; err != nil {
+		t.Fatal(err)
+	}
+	e.expectAllForbidden("row email drifted")
+	if err := e.st.GormDB().Exec(`UPDATE users SET email = ? WHERE id = ?`, updAdminEmail, updAdminID).Error; err != nil {
+		t.Fatal(err)
+	}
+	e.expectAllAdmitted("row restored")
+	if err := e.st.GormDB().Exec(`DELETE FROM users WHERE id = ?`, updAdminID).Error; err != nil {
+		t.Fatal(err)
+	}
+	e.expectAllForbidden("row deleted")
+}
+
 // ── reset-account / password routes (F3, Q8) ─────────────────────────────
 
 func TestResetAccountCannotTouchTheEnrollmentAndKillsTheAdminIdentity(t *testing.T) {
@@ -500,6 +549,10 @@ func TestResetAccountCannotTouchTheEnrollmentAndKillsTheAdminIdentity(t *testing
 	e.s.router.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
 		t.Fatalf("reset-account = %d %s", w.Code, w.Body.String())
+	}
+	adminRaw, _ := os.ReadFile(updateauth.AdminPath(e.dataDir))
+	if strings.Contains(w.Body.String(), hex.EncodeToString(mustKey(t, e.dataDir))) || strings.Contains(w.Body.String(), strings.TrimSpace(string(adminRaw))) {
+		t.Fatal("reset-account's response carries enrollment material")
 	}
 	after := snapshotTree(t, updateauth.Dir(e.dataDir))
 	// the seen-job store and lock files legitimately changed from the

@@ -80,7 +80,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	sub := flag.NewFlagSet(rest[0], flag.ContinueOnError)
 	sub.SetOutput(stderr)
-	replace := sub.Bool("replace", false, "enroll: replace an existing enrollment (rotates device.key)")
+	replace := sub.Bool("replace", false, "enroll: replace an existing enrollment (rotates the device key)")
 	pos, err := parseInterspersed(sub, rest[1:])
 	if err != nil {
 		return 2
@@ -168,7 +168,7 @@ func enroll(dataDir, dbFile, email string, replace bool, stdin io.Reader, stdout
 	if !replace {
 		for _, p := range []string{updateauth.AdminPath(dataDir), updateauth.DeviceKeyPath(dataDir)} {
 			if _, err := os.Lstat(p); !errors.Is(err, os.ErrNotExist) {
-				fmt.Fprintln(stderr, "refusing: this installation is already enrolled — re-run with --replace to replace it (rotates device.key)")
+				fmt.Fprintln(stderr, "refusing: this installation is already enrolled — re-run with --replace to replace it (rotates the device key)")
 				return 1
 			}
 		}
@@ -185,7 +185,7 @@ func enroll(dataDir, dbFile, email string, replace bool, stdin io.Reader, stdout
 		}
 		return 1
 	}
-	fmt.Fprintf(stdout, "enrolled: user_id=%s… dir=%s (admin.json + device.key, 0600; the key is never printed)\n",
+	fmt.Fprintf(stdout, "enrolled: user_id=%s… dir=%s (both enrollment files 0600; the key is never printed)\n",
 		shortID(userID), updateauth.Dir(dataDir))
 	return 0
 }
