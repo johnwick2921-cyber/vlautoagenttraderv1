@@ -6,6 +6,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -556,5 +559,69 @@ func TestStubVerifierRefusesEverythingAndTouchesNoFS(t *testing.T) {
 	}
 	if !strings.Contains(string(src), "import \"errors\"\n") || strings.Contains(string(src), "import (") {
 		t.Fatal("verifier.go imports more than \"errors\" — the stub must not be able to reach the filesystem")
+	}
+}
+
+// VerifyMAC's comparison is constant-time: it returns hmac.Equal over the
+// decoded bytes, and never compares MAC material with bytes.Equal,
+// subtle-free string equality, or ==. (A bytes.Equal swap passes every
+// functional MAC test — only a source pin can see it.)
+func TestMACCompareIsConstantTime(t *testing.T) {
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "mac.go", nil, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fn *ast.FuncDecl
+	for _, d := range f.Decls {
+		if fd, ok := d.(*ast.FuncDecl); ok && fd.Name.Name == "VerifyMAC" {
+			fn = fd
+		}
+	}
+	if fn == nil {
+		t.Fatal("VerifyMAC not found in mac.go")
+	}
+	hmacEqual, other := 0, []string{}
+	ast.Inspect(fn.Body, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.CallExpr:
+			if sel, ok := x.Fun.(*ast.SelectorExpr); ok {
+				if id, ok := sel.X.(*ast.Ident); ok {
+					switch id.Name + "." + sel.Sel.Name {
+					case "hmac.Equal":
+						hmacEqual++
+					case "bytes.Equal", "bytes.Compare", "strings.EqualFold", "reflect.DeepEqual":
+						other = append(other, id.Name+"."+sel.Sel.Name)
+					}
+				}
+			}
+		case *ast.BinaryExpr:
+			if x.Op == token.EQL || x.Op == token.NEQ {
+				// the only allowed equalities: the key-length guard and err checks
+				if id, ok := x.Y.(*ast.Ident); ok && (id.Name == "nil" || id.Name == "DeviceKeyLen") {
+					return true
+				}
+				other = append(other, "a "+x.Op.String()+" comparison")
+			}
+		}
+		return true
+	})
+	last, ok := fn.Body.List[len(fn.Body.List)-1].(*ast.ReturnStmt)
+	if !ok || len(last.Results) != 1 {
+		t.Fatal("VerifyMAC must end in `return hmac.Equal(...)`")
+	}
+	call, ok := last.Results[0].(*ast.CallExpr)
+	sel, ok2 := func() (*ast.SelectorExpr, bool) {
+		if !ok {
+			return nil, false
+		}
+		s, ok := call.Fun.(*ast.SelectorExpr)
+		return s, ok
+	}()
+	if !ok || !ok2 || sel.Sel.Name != "Equal" || sel.X.(*ast.Ident).Name != "hmac" {
+		t.Fatal("VerifyMAC's verdict is not hmac.Equal")
+	}
+	if hmacEqual != 1 || len(other) != 0 {
+		t.Fatalf("VerifyMAC: hmac.Equal x%d, other comparisons %v", hmacEqual, other)
 	}
 }
