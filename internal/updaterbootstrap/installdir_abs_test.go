@@ -54,7 +54,11 @@ func TestRelativeInstallDirIsAbsolutizedAtEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 	key, _ := updateauth.LoadDeviceKey(d)
-	if !updateauth.VerifyMAC(key, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
+	a, err := updateauth.LoadAdmin(d) // red-4 #4b: the MAC carries the enrolled admin's user_id
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !updateauth.VerifyMAC(key, a.UserID, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
 		t.Fatal("the grant minted through the relative spelling does not verify under the install's key")
 	}
 }

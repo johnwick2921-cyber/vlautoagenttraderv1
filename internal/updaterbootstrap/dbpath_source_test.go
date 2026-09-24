@@ -226,7 +226,13 @@ func TestProcessDBPathThatDiffersFromTheInstallationRefusesAuthorize(t *testing.
 			}
 			instKey, _ := updateauth.LoadDeviceKey(instData)
 			divKey, _ := updateauth.LoadDeviceKey(divData)
-			if !updateauth.VerifyMAC(instKey, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) || updateauth.VerifyMAC(divKey, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
+			// red-4 #4b: the MAC message now carries the enrolled admin's
+			// user_id — read it from the installation's own admin.json.
+			a, err := updateauth.LoadAdmin(instData)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !updateauth.VerifyMAC(instKey, a.UserID, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) || updateauth.VerifyMAC(divKey, a.UserID, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
 				t.Fatal("positive control: the grant is not the installation's")
 			}
 		})
