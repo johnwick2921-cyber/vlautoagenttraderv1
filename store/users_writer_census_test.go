@@ -4,7 +4,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"nofx/internal/censuswalk"
 )
 
 // ── M3 FOLD-M3-A — the users-table WRITER CENSUS (CTO 1790239512054) ───────
@@ -272,30 +273,21 @@ func usersTableWriters(root string) (sites []string, walked map[string]int, err 
 			sites = append(sites, s)
 		}
 	}
-	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		rel, _ := filepath.Rel(root, p)
-		rel = filepath.ToSlash(rel)
-		if d.IsDir() {
-			n := d.Name()
-			if p != root && (strings.HasPrefix(n, ".") || strings.HasPrefix(n, "_") || n == "testdata") {
-				return filepath.SkipDir
-			}
-			if rel == "web" || rel == "vendor" || rel == "node_modules" {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
-			return nil
-		}
+	// The ONE census walk (internal/censuswalk): skip names apply at the
+	// module ROOT only — a package in api/.hidden, _x or x/testdata/y is
+	// compiled and linked like any other (M5 class; pinned by
+	// TestUsersWriterCensusSeesNestedSkipNamedDirs).
+	goFiles, err := censuswalk.NonTestGoFiles(root)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, gf := range goFiles {
+		rel := gf.Rel
 		walked[strings.SplitN(rel, "/", 2)[0]]++
-		f, perr := parser.ParseFile(token.NewFileSet(), p, nil, parser.SkipObjectResolution)
+		f, perr := parser.ParseFile(token.NewFileSet(), gf.Path, nil, parser.SkipObjectResolution)
 		if perr != nil {
 			add(rel + " · cannot be parsed, so it cannot be checked (" + perr.Error() + ")")
-			return nil
+			continue
 		}
 		cf := usersCensusFile{rel: rel, f: f, inStore: f.Name.Name == "store", aliases: map[string]bool{}}
 		for _, im := range f.Imports {
@@ -311,10 +303,6 @@ func usersTableWriters(root string) (sites []string, walked map[string]int, err 
 			}
 		}
 		files = append(files, cf)
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
 	}
 	// UserStore writer methods, derived to a fixpoint: a UserStore method is
 	// a writer when it writes directly or calls another UserStore writer.
