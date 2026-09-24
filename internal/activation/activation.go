@@ -224,3 +224,96 @@ func statField22(line string) (uint64, error) {
 	}
 	return v, nil
 }
+
+// failID is fail() for the steps that also return an Identity.
+func (r Receipt) failID(err error) (Identity, Receipt, error) {
+	rr, e := r.fail(err)
+	return Identity{}, rr, e
+}
+
+// atomicCopy writes src to dst via a temp file in dst's OWN directory and a
+// rename. The temp file must share a filesystem with the destination or the
+// rename degrades to a copy and stops being atomic — which is the whole point:
+// a half-written binary must never be observable at the destination path.
+func atomicCopy(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	st, err := in.Stat()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(dst), ".activate-*")
+	if err != nil {
+		return err
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName) // no-op once the rename succeeds
+	if _, err := io.Copy(tmp, in); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil { // durable before it is visible
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmpName, st.Mode().Perm()); err != nil {
+		return err
+	}
+	return os.Rename(tmpName, dst)
+}
+
+// atomicSwapDir puts src's CONTENTS at dst by staging a sibling directory and
+// renaming it into place, so a reader never sees a half-populated dist.
+func atomicSwapDir(src, dst string) error {
+	staged := dst + ".activating"
+	_ = os.RemoveAll(staged)
+	if err := copyTree(src, staged); err != nil {
+		return err
+	}
+	old := dst + ".replaced"
+	_ = os.RemoveAll(old)
+	if _, err := os.Stat(dst); err == nil {
+		if err := os.Rename(dst, old); err != nil {
+			return err
+		}
+	}
+	if err := os.Rename(staged, dst); err != nil {
+		_ = os.Rename(old, dst) // put it back rather than leave nothing there
+		return err
+	}
+	_ = os.RemoveAll(old)
+	return nil
+}
+
+func copyTree(src, dst string) error {
+	return filepath.Walk(src, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, p)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dst, rel)
+		if info.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+			return err
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, b, info.Mode().Perm())
+	})
+}

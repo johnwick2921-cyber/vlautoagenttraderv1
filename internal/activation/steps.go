@@ -1,0 +1,272 @@
+package activation
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	_ "github.com/glebarez/go-sqlite"
+)
+
+// Backup takes an ONLINE copy of the database and proves the copy is readable
+// before returning OK. A backup nobody has opened is not a backup — it is a
+// file, and the moment you need it is the worst moment to discover that.
+//
+// It uses the driver's VACUUM INTO rather than shelling out to the sqlite3
+// CLI (as store/ab_confirm.go does) so an unattended worker does not depend on
+// a binary being installed on the box. Both are genuine online backups.
+func Backup(dbPath, dest string) (Receipt, error) {
+	rc := newReceipt("backup")
+	rc.Evidence["db"] = dbPath
+	rc.Evidence["dest"] = dest
+	if st, err := os.Stat(dest); err == nil && st.Size() > 0 {
+		// Idempotent at its own step: a crashed worker re-runs it.
+		if err := verifyBackup(dest); err == nil {
+			rc.Evidence["already"] = "true"
+			rc.Evidence["bytes"] = fmt.Sprintf("%d", st.Size())
+			return rc.done()
+		}
+		// A dest that exists but does NOT verify is worse than none: remove it
+		// rather than leaving a file that looks like a backup.
+		_ = os.Remove(dest)
+	}
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		return rc.fail(fmt.Errorf("cannot create backup dir: %w", err))
+	}
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		return rc.fail(fmt.Errorf("cannot open %s: %w", dbPath, err))
+	}
+	defer db.Close()
+	if _, err := db.Exec("VACUUM INTO ?", dest); err != nil {
+		return rc.fail(fmt.Errorf("online backup failed: %w", err))
+	}
+	if err := verifyBackup(dest); err != nil {
+		return rc.fail(err)
+	}
+	st, err := os.Stat(dest)
+	if err != nil {
+		return rc.fail(fmt.Errorf("backup vanished after writing: %w", err))
+	}
+	rc.Evidence["bytes"] = fmt.Sprintf("%d", st.Size())
+	rc.Evidence["integrity_check"] = "ok"
+	return rc.done()
+}
+
+// verifyBackup opens the copy and asks SQLite whether it is intact. Anything
+// other than exactly "ok" is a refusal — integrity_check reports its findings
+// as rows of prose, so a non-"ok" value is a real problem, never a warning.
+func verifyBackup(path string) error {
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		return fmt.Errorf("backup %s does not open: %w", path, err)
+	}
+	defer db.Close()
+	var verdict string
+	if err := db.QueryRow("pragma integrity_check").Scan(&verdict); err != nil {
+		return fmt.Errorf("backup %s: integrity_check did not run: %w", path, err)
+	}
+	if verdict != "ok" {
+		return fmt.Errorf("backup %s failed integrity_check: %s", path, verdict)
+	}
+	return nil
+}
+
+// Activate swaps a release into place and restarts the process.
+//
+// Order matters and is not negotiable: every file is put in place FIRST, then
+// the process is killed. A kill before the swap leaves the old binary running
+// against new files, or nothing running at all while the copy proceeds.
+//
+// The kill is guarded by Identity: the pid is signalled ONLY if it is still the
+// same process that Identity names. A recycled pid is a different program
+// wearing the same number.
+func Activate(rel, prev Release, id Identity) (Identity, Receipt, error) {
+	rc := newReceipt("activate")
+	rc.Evidence["release"] = rel.SHA
+	rc.Evidence["prev"] = prev.SHA
+	rc.Evidence["old_pid"] = fmt.Sprintf("%d", id.PID)
+
+	for _, half := range []struct{ src, dst string }{
+		{rel.Binary, prev.Binary},
+		{rel.ReleaseFile, prev.ReleaseFile},
+	} {
+		if err := atomicCopy(half.src, half.dst); err != nil {
+			return rc.failID(fmt.Errorf("install %s: %w", filepath.Base(half.dst), err))
+		}
+	}
+	if err := atomicSwapDir(rel.Dist, prev.Dist); err != nil {
+		return rc.failID(fmt.Errorf("install dist: %w", err))
+	}
+	rc.Evidence["installed"] = "binary,dist,RELEASE"
+
+	alive, err := id.stillAlive()
+	if err != nil {
+		return rc.failID(fmt.Errorf("cannot confirm the identity of pid %d: %w", id.PID, err))
+	}
+	if !alive {
+		// REFUSED, not "skipped": we were told to replace a specific process
+		// and that process is not there. Killing whatever holds the pid now
+		// would be the exact bug Identity exists to prevent.
+		return rc.failID(fmt.Errorf(
+			"pid %d is no longer the process this activation measured (recycled or already gone); refusing to signal it", id.PID))
+	}
+	if err := sys.Kill(id.PID); err != nil {
+		return rc.failID(fmt.Errorf("kill -9 %d: %w", id.PID, err))
+	}
+	rc.Evidence["killed"] = "SIGKILL"
+
+	next, err := waitForNewIdentity(id, 90*time.Second)
+	if err != nil {
+		return rc.failID(err)
+	}
+	rc.Evidence["new_pid"] = fmt.Sprintf("%d", next.PID)
+	r, _ := rc.done()
+	return next, r, nil
+}
+
+// waitForNewIdentity waits for systemd to relaunch the unit and returns the
+// identity of the NEW process — never the old one, which is how a restart that
+// silently did not happen gets reported as success.
+func waitForNewIdentity(old Identity, within time.Duration) (Identity, error) {
+	deadline := sys.Now().Add(within)
+	for sys.Now().Before(deadline) {
+		id, err := CurrentIdentity()
+		if err == nil && id.PID != 0 && (id.PID != old.PID || id.StartTicks != old.StartTicks) {
+			return id, nil
+		}
+		sys.Sleep(500 * time.Millisecond)
+	}
+	return Identity{}, fmt.Errorf("no new process within %s — the unit did not come back", within)
+}
+
+// Watch proves the NEW process is the release we installed.
+//
+// CONTRACT NOTE: §2 wrote this as Watch(id, logPath, healthURL, within) with a
+// comment saying it must match "rel.SHA" — but no rel is passed. The sha cannot
+// come from /api/health, because then health would be validating itself: a
+// stale process answering with its own (old) sha would define its own success.
+// The sha must come from the release we INTENDED to activate, so rel is a
+// parameter. Flagged to the CTO; 3b-B imports this signature.
+//
+// GREEN requires BOTH signals, and the boot line must be NEWER than the kill —
+// a boot line read from a log that predates the restart is the previous boot's
+// line, and it says nothing about the process running now (boot lines are READ,
+// never literal).
+func Watch(rel Release, id Identity, logPath, healthURL string, within time.Duration) (Receipt, error) {
+	rc := newReceipt("watch")
+	rc.Evidence["expect_sha"] = rel.SHA
+	rc.Evidence["pid"] = fmt.Sprintf("%d", id.PID)
+	if within <= 0 {
+		within = 90 * time.Second
+	}
+	since := rc.StartedAt
+	deadline := sys.Now().Add(within)
+	var sawLog, sawHealth bool
+	for sys.Now().Before(deadline) {
+		if !sawLog {
+			if ok, err := bootLineAfter(logPath, rel.SHA, since); err == nil && ok {
+				sawLog = true
+				rc.Evidence["boot_line"] = "found after the kill"
+			}
+		}
+		if !sawHealth {
+			if sha, err := healthSHA(healthURL); err == nil {
+				rc.Evidence["health_sha"] = sha
+				if sha == rel.SHA {
+					sawHealth = true
+				}
+			}
+		}
+		if sawLog && sawHealth {
+			return rc.done()
+		}
+		sys.Sleep(time.Second)
+	}
+	// Name which leg failed. "Timed out" alone sends the reader to look at
+	// everything; the failing leg sends them to one place.
+	var missing []string
+	if !sawLog {
+		missing = append(missing, fmt.Sprintf("no boot line for %s in %s after %s", rel.SHA, logPath, since.Format(time.RFC3339)))
+	}
+	if !sawHealth {
+		missing = append(missing, fmt.Sprintf("%s never reported %s (last: %q)", healthURL, rel.SHA, rc.Evidence["health_sha"]))
+	}
+	return rc.fail(fmt.Errorf("not proven within %s: %s", within, strings.Join(missing, "; ")))
+}
+
+// bootLineAfter looks for a boot line naming sha whose timestamp is AFTER
+// since. The file is re-read each call because the process writing it is the
+// one we are waiting for.
+func bootLineAfter(path, sha string, since time.Time) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return false, err
+	}
+	for _, ln := range strings.Split(string(b), "\n") {
+		if !strings.Contains(ln, sha) {
+			continue
+		}
+		ts, ok := lineTime(ln)
+		if !ok {
+			continue
+		}
+		if ts.After(since) || ts.Equal(since) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// lineTime reads the timestamp a nofx log line starts with: "MM-DD HH:MM:SS".
+// The year is absent from the format, so it is taken from the current year —
+// stated rather than hidden, because it is the one assumption here.
+func lineTime(ln string) (time.Time, bool) {
+	fields := strings.Fields(ln)
+	if len(fields) < 2 {
+		return time.Time{}, false
+	}
+	t, err := time.ParseInLocation("2006-01-02 15:04:05",
+		fmt.Sprintf("%d-%s %s", sys.Now().Year(), fields[0], fields[1]), time.Local)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
+}
+
+func healthSHA(url string) (string, error) {
+	if url == "" {
+		return "", fmt.Errorf("no health url")
+	}
+	c := &http.Client{Timeout: 5 * time.Second}
+	resp, err := c.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return "", err
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(b, &payload); err != nil {
+		return "", err
+	}
+	for _, k := range []string{"release", "rev", "sha", "revision", "version"} {
+		if v, ok := payload[k].(string); ok && v != "" {
+			return v, nil
+		}
+	}
+	return "", fmt.Errorf("health payload names no revision")
+}
