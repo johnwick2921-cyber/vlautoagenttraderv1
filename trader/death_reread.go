@@ -149,6 +149,10 @@ func deathBornWickActive(row *store.PlanDB, dp *store.DayPlanConfig, now time.Ti
 	if priorKillLine <= 0 {
 		return false // the prior line is unknown — never suppress on an unknown line
 	}
+	// WAVE 1a-plan P2 — DELIBERATE base read (named in the PR body):
+	// this guard compares the RAW death price space (the killer's buffered
+	// number is a different space, off by the ATR buffer) — the fold would
+	// compare a different space, so the raw stored doc is the contract.
 	var doc kernel.PlanDoc
 	if json.Unmarshal([]byte(row.Doc), &doc) != nil || doc.DeathStructured == nil {
 		return false
@@ -276,13 +280,8 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 	at.lastPlannerWakeAt = now
 
 	oldBias := ""
-	if doc, derr := kernel.ParsePlanDoc(row.Doc); derr == nil {
+	if doc, ok := resolveActivePlanDoc(at.store, row); ok {
 		oldBias = doc.Bias.Direction
-	} else {
-		var raw kernel.PlanDoc
-		if json.Unmarshal([]byte(row.Doc), &raw) == nil {
-			oldBias = raw.Bias.Direction
-		}
 	}
 	prior := deathRereadPriorLine(row.Version, oldBias, killer, priceAtDeath)
 	at.logWarnf("🗓️ death re-read %s %s v%d — waking the planner (W-DEATH-REREAD, budget %d/%d): %s", tradeDate, session, row.Version, budget.Used, budget.Cap, killer)
