@@ -247,6 +247,9 @@ func TestUpdateAuthRestrictedIdentifiersInsideAdmittedFiles(t *testing.T) {
 		"worker consumes a job id":    {"internal/updaterworker/job.go", "package updaterworker\n\nimport \"nofx/internal/updateauth\"\n\nvar f = updateauth.Consume\n", "internal/updaterworker/job.go: references updateauth.Consume"},
 		"unclassified identifier":     {"api/server.go", "package api\n\nimport \"nofx/internal/updateauth\"\n\nvar f = updateauth.SomeNewHelper\n", "api/server.go: references unclassified updateauth.SomeNewHelper"},
 		"aliased import":              {"api/server.go", "package api\n\nimport ua \"nofx/internal/updateauth\"\n\nvar p = ua.AdminPath(\"/d\")\n", "api/server.go: references updateauth.AdminPath"},
+		// verifier D1 / probe V1: a SECOND import name hides the first one
+		"second import name, worker mints (V1)": {"internal/updaterworker/mint.go", "package updaterworker\n\nimport (\n\t\"nofx/internal/updateauth\"\n\tua \"nofx/internal/updateauth\"\n)\n\nvar _ ua.Grant\n\nvar f = updateauth.ComputeMAC\n", "internal/updaterworker/mint.go: references updateauth.ComputeMAC"},
+		"second import name, API gate":          {"api/handler_updates.go", "package api\n\nimport (\n\tua \"nofx/internal/updateauth\"\n\t\"nofx/internal/updateauth\"\n)\n\nvar _ updateauth.Grant\n\nvar p = ua.SeenPath(\"/d\")\n", "api/handler_updates.go: references updateauth.SeenPath"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := mintBase(t)
@@ -291,4 +294,39 @@ func TestUpdateAuthCensusFoldsConcatenationAndFlagsMACPrimitives(t *testing.T) {
 			}
 		})
 	}
+}
+
+// PIN (M3 census repair, verifier D1 — probe V1 verbatim): the census tracked
+// ONE import name per file, overwritten by each import of the package, so a
+// second name (`ua "nofx/internal/updateauth"`) left every reference through
+// the first unchecked. With the census green, the worker minted a MAC the
+// production VerifyMAC accepts — red-team 3 #1(b), the CTO-refused option
+// (c), back through one import line. Every import name now resolves, and a
+// file that imports the package more than once is itself an offence.
+func TestUpdateAuthCensusResolvesEveryImportName(t *testing.T) {
+	root := mintBase(t)
+	const rel = "internal/updaterworker/mint.go"
+	mintWrite(t, root, rel, `package updaterworker
+
+import (
+	"os"
+
+	"nofx/internal/updateauth"
+	ua "nofx/internal/updateauth"
+)
+
+var _ ua.Grant
+
+func Mint(dataDir, releaseID, jobID string, expiresAt int64) (string, error) {
+	key, err := os.ReadFile(updateauth.DeviceKeyPath(dataDir))
+	if err != nil {
+		return "", err
+	}
+	return updateauth.ComputeMAC(key, releaseID, jobID, expiresAt)
+}
+`)
+	requirePrefixes(t, mintOffenders(t, root),
+		rel+": references updateauth.DeviceKeyPath",
+		rel+": references updateauth.ComputeMAC",
+		rel+": imports nofx/internal/updateauth more than once")
 }
