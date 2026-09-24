@@ -446,19 +446,30 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		// does the price-match fallback run, and (FOLD-4) only over arms filled in
 		// that same window; an ambiguous or unreadable answer leaves the row
 		// untagged (a guess is fabricated lineage).
+		// W1b FOLD-6 — origin is what the 🧩 line below says the position WAS:
+		// "manual/NT8-side" only when nothing evidenced this trader's own entry.
+		origin := "manual/NT8-side entry (no fill-ring or in-window armed-fill evidence of this trader's own entry)"
 		switch f, verdict, why := t.lateEntryFillFor(st, acct, sym, side, firstSeen); verdict {
 		case lateFillOne:
-			if sig := t.tagLateEntryFill(st, traderID, exchangeID, row.ID, sym, side, f); sig != "" {
+			if sig, what := t.tagLateEntryFill(st, traderID, exchangeID, row.ID, sym, side, f); sig != "" {
 				t.rememberEntryOrderID(sym, side, sig)
+				origin = what
+			} else {
+				origin = fmt.Sprintf("UNTAGGED entry (fill-ring signal %s not claimable by this trader — see the 🔗 WARN)", f.SignalID)
 			}
 		case lateFillUnresolved:
 			logger.Warnf("🔗 attribution: pos %d (%s %s) — fill ring %s — left UNTAGGED; no price-match guess", row.ID, sym, side, why)
+			origin = fmt.Sprintf("UNTAGGED entry (fill ring %s)", why)
 		default:
-			if _, sig := stampArmedLineageInWindow(st, traderID, row.ID, sym, side, avg, firstSeen); sig != "" {
+			if stamped, sig := stampArmedLineageInWindow(st, traderID, row.ID, sym, side, avg, firstSeen); stamped {
 				t.rememberEntryOrderID(sym, side, sig)
+				if sig == "" {
+					sig = "(none)"
+				}
+				origin = fmt.Sprintf("this trader's armed fill matched by price in the window (signal %s)", sig)
 			}
 		}
-		logger.Warnf("🧩 reconcile: MATERIALIZED untracked NT8 position %s %s qty=%.0f @ %.2f (acct=%s) — manual/NT8-side entry now tracked; its close will record real P&L", sym, side, qty, avg, acct)
+		logger.Warnf("🧩 reconcile: MATERIALIZED untracked NT8 position %s %s qty=%.0f @ %.2f (acct=%s) — %s now tracked; its close will record real P&L", sym, side, qty, avg, acct, origin)
 		delete(t.untrackedSince, key)
 		// A close frame may have arrived while the row was still untracked (the
 		// DROPPED → parked path). Consume it now with the real exit + ×pv P&L.
