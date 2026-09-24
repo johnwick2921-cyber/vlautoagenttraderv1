@@ -189,7 +189,7 @@ func TestReadFrameCapsAt16KiB(t *testing.T) {
 	}
 	// one byte more ⇒ oversize, and the reader stops without draining the stream
 	over := bytes.Repeat([]byte("a"), MaxFrameBytes+1)
-	cr := &countingReader{r: io.MultiReader(bytes.NewReader(over), bytes.NewReader([]byte("\n")), infiniteA{})}
+	cr := &countingReader{r: io.MultiReader(bytes.NewReader(over), bytes.NewReader([]byte("\n")), endlessA())}
 	_, err = ReadFrame(bufio.NewReaderSize(cr, 4096))
 	if !errors.Is(err, ErrOversize) {
 		t.Fatalf("a %d-byte frame must be ErrOversize, got %v", MaxFrameBytes+1, err)
@@ -197,8 +197,10 @@ func TestReadFrameCapsAt16KiB(t *testing.T) {
 	if cr.n > MaxFrameBytes+2*4096 {
 		t.Fatalf("ReadFrame read %d bytes of an endless stream — the cap is not bounding memory", cr.n)
 	}
-	// an endless line with no newline ⇒ oversize, bounded
-	cr2 := &countingReader{r: infiniteA{}}
+	// an endless line with no newline ⇒ oversize, bounded (the stand-in is
+	// 8 MiB, not truly endless, so a regressed cap fails as ErrTruncated
+	// instead of eating the box's memory)
+	cr2 := &countingReader{r: endlessA()}
 	if _, err := ReadFrame(bufio.NewReaderSize(cr2, 4096)); !errors.Is(err, ErrOversize) {
 		t.Fatalf("endless line: got %v", err)
 	}
@@ -315,3 +317,8 @@ func (infiniteA) Read(p []byte) (int, error) {
 	}
 	return len(p), nil
 }
+
+// endlessA is a newline-free stream far past the cap but FINITE (8 MiB): a
+// ReadFrame whose cap regressed returns ErrTruncated after reading it all,
+// so the test goes red instead of growing without bound.
+func endlessA() io.Reader { return io.LimitReader(infiniteA{}, 8<<20) }

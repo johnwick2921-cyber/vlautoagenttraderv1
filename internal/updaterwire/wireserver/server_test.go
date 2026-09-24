@@ -556,3 +556,149 @@ func TestServeClosesAnIdleConnection(t *testing.T) {
 		t.Fatalf("log = %q, want reason=timeout", s.logs.all())
 	}
 }
+
+// A peer that streams a line with no newline is cut off at the cap: the
+// server answers the rejected frame after reading ~16 KiB, never buffers the
+// whole stream. The stream is 1 MiB and half-closed, so a regressed cap
+// reads it all and fails as reason=truncated instead of hanging.
+func TestServeCutsOffAnEndlessLine(t *testing.T) {
+	_, sock := dataDir(t)
+	s := serve(t, sock)
+	c, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: sock, Net: "unix"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	c.SetDeadline(time.Now().Add(5 * time.Second))
+	go func() {
+		c.Write(bytes.Repeat([]byte("a"), 1<<20))
+		c.CloseWrite()
+	}()
+	out, _ := io.ReadAll(c)
+	rejected, _ := updaterwire.EncodeResponse(updaterwire.RejectedResponse)
+	if !bytes.Equal(out, rejected) {
+		t.Fatalf("an endless line must get exactly the rejected frame, got %q", out)
+	}
+	if !strings.Contains(s.logs.all(), "updater-wire: rejected reason=oversize len=") {
+		t.Fatalf("log = %q, want reason=oversize with a length+hash", s.logs.all())
+	}
+	if s.calls.Load() != 0 {
+		t.Fatal("the handler was called for an endless line")
+	}
+	// positive control: a valid frame on a fresh connection is served
+	cl, err := updaterwire.Dial(sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cl.Close()
+	if resp, err := cl.Do(updaterwire.NewStatus("")); err != nil || !resp.OK {
+		t.Fatalf("positive control: %+v %v", resp, err)
+	}
+}
+
+// Connections past the cap are closed unread and logged; the cap frees as
+// connections end (positive control).
+func TestServeCapsConcurrentConnections(t *testing.T) {
+	orig := maxConns
+	t.Cleanup(func() { maxConns = orig })
+	maxConns = 1
+	_, sock := dataDir(t)
+	s := serve(t, sock)
+	first, err := updaterwire.Dial(sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp, err := first.Do(updaterwire.NewStatus("")); err != nil || !resp.OK {
+		t.Fatalf("first connection: %+v %v", resp, err)
+	}
+	// the slot is held: a second connection is closed before any read
+	if out := rawExchange(t, sock, []byte(validStatus+"\n")); len(out) != 0 {
+		t.Fatalf("a connection past the cap must be closed unread, got %q", out)
+	}
+	if !strings.Contains(s.logs.all(), "updater-wire: rejected reason=busy") {
+		t.Fatalf("log = %q, want reason=busy", s.logs.all())
+	}
+	if n := s.calls.Load(); n != 1 {
+		t.Fatalf("handler calls = %d, want 1", n)
+	}
+	first.Close()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		c, err := updaterwire.Dial(sock)
+		if err == nil {
+			resp, derr := c.Do(updaterwire.NewStatus(""))
+			c.Close()
+			if derr == nil && resp.OK {
+				break
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("positive control: the slot never freed after the first connection closed")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+// Close ends live connections: Serve returns promptly even with an idle
+// peer attached, and the shutdown is not logged as a refusal.
+func TestCloseEndsIdleConnectionsPromptly(t *testing.T) {
+	_, sock := dataDir(t)
+	sink := &logSink{}
+	l, err := Listen(sock, sink.logf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		done <- l.Serve(func(updaterwire.Request) updaterwire.Response {
+			return updaterwire.Response{OK: true, State: "idle"}
+		})
+	}()
+	c, err := updaterwire.Dial(sock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	if resp, err := c.Do(updaterwire.NewStatus("")); err != nil || !resp.OK {
+		t.Fatalf("status: %+v %v", resp, err)
+	}
+	start := time.Now()
+	l.Close()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("Serve after Close = %v, want nil", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Serve did not return within 2s of Close with an idle peer attached (idle timeout is 30s)")
+	}
+	if el := time.Since(start); el > time.Second {
+		t.Fatalf("Serve took %v to return after Close", el)
+	}
+	if strings.Contains(sink.all(), "rejected") {
+		t.Fatalf("a shutdown must not be logged as a refusal: %q", sink.all())
+	}
+	if _, err := c.Do(updaterwire.NewStatus("")); err == nil {
+		t.Fatal("the idle connection must be closed by Close")
+	}
+}
+
+// DialWorker resolves the socket from the data dir exactly as the worker's
+// Listen path is built, and refuses a relative data dir.
+func TestDialWorkerResolvesTheDataDir(t *testing.T) {
+	d, sock := dataDir(t)
+	serve(t, sock)
+	c, err := updaterwire.DialWorker(d)
+	if err != nil {
+		t.Fatalf("positive control: DialWorker(%q): %v", d, err)
+	}
+	defer c.Close()
+	if resp, err := c.Do(updaterwire.NewStatus("")); err != nil || !resp.OK {
+		t.Fatalf("status: %+v %v", resp, err)
+	}
+	for _, bad := range []string{"", "data", "./data"} {
+		if _, err := updaterwire.DialWorker(bad); !errors.Is(err, updaterwire.ErrBadDataDir) {
+			t.Fatalf("DialWorker(%q) = %v, want ErrBadDataDir", bad, err)
+		}
+	}
+}

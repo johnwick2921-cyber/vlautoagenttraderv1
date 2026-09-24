@@ -67,6 +67,18 @@ func Dial(path string) (*Client, error) {
 	return &Client{conn: uc, br: bufio.NewReader(uc)}, nil
 }
 
+// DialWorker is the app's one call: it resolves the socket for the bot's data
+// dir (trader.MaintenanceDataDir() in the app) through SocketPath and Dials
+// it. An empty or relative dataDir is ErrBadDataDir — never a cwd-relative
+// socket.
+func DialWorker(dataDir string) (*Client, error) {
+	path, err := SocketPath(dataDir)
+	if err != nil {
+		return nil, err
+	}
+	return Dial(path)
+}
+
 // Do sends one request and reads one response. The request is validated
 // before it is written (an invalid request never reaches the wire); the
 // response is decoded strictly.

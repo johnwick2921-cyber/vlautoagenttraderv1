@@ -85,6 +85,10 @@ type Listener struct {
 	path string
 	logf func(string, ...any)
 
+	mu     sync.Mutex
+	conns  map[*net.UnixConn]struct{}
+	closed bool
+
 	closeOnce sync.Once
 	closeErr  error
 }
@@ -164,7 +168,7 @@ func Listen(path string, logf func(string, ...any)) (*Listener, error) {
 		release()
 		return nil, err
 	}
-	return &Listener{ln: ln, lock: lock, path: path, logf: logf}, nil
+	return &Listener{ln: ln, lock: lock, path: path, logf: logf, conns: map[*net.UnixConn]struct{}{}}, nil
 }
 
 // clearStale decides what to do with whatever already sits at path.
@@ -203,14 +207,40 @@ func clearStale(path string, euid int) error {
 // Path is the bound socket path.
 func (l *Listener) Path() string { return l.path }
 
-// Close stops accepting, unlinks the socket and releases the worker lock.
+// Close stops accepting, closes every live connection (so Serve returns at
+// once instead of waiting out an idle peer), unlinks the socket and releases
+// the worker lock.
 func (l *Listener) Close() error {
 	l.closeOnce.Do(func() {
 		l.closeErr = l.ln.Close()
+		l.mu.Lock()
+		l.closed = true
+		for c := range l.conns {
+			c.Close()
+		}
+		l.mu.Unlock()
 		syscall.Flock(int(l.lock.Fd()), syscall.LOCK_UN)
 		l.lock.Close()
 	})
 	return l.closeErr
+}
+
+// track registers c as live; false means the listener is already closed and
+// c must not be served.
+func (l *Listener) track(c *net.UnixConn) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.closed {
+		return false
+	}
+	l.conns[c] = struct{}{}
+	return true
+}
+
+func (l *Listener) untrack(c *net.UnixConn) {
+	l.mu.Lock()
+	delete(l.conns, c)
+	l.mu.Unlock()
 }
 
 // Serve accepts connections until the listener is closed (then returns nil).
@@ -244,10 +274,16 @@ func (l *Listener) Serve(h Handler) error {
 			c.Close()
 			continue
 		}
+		if !l.track(c) {
+			c.Close()
+			<-sem
+			continue
+		}
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			defer func() { <-sem }()
+			defer l.untrack(c)
 			l.serveConn(c, h)
 		}()
 	}
@@ -281,6 +317,9 @@ func (l *Listener) serveConn(c *net.UnixConn, h Handler) {
 		if err != nil {
 			if errors.Is(err, io.EOF) && len(frame) == 0 {
 				return
+			}
+			if errors.Is(err, net.ErrClosed) {
+				return // Close ended the connection: shutdown, not a refusal
 			}
 			reason := updaterwire.RejectReason(err)
 			if errors.Is(err, os.ErrDeadlineExceeded) {
