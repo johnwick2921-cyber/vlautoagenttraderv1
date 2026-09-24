@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"nofx/auth"
 	"nofx/crypto"
+	"nofx/internal/updateauth"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/manager"
@@ -30,6 +31,13 @@ type Server struct {
 	host                      string // bind interface; "" → 127.0.0.1 (loopback-only default)
 	port                      int
 	telegramReloadCh          chan<- struct{} // signal Telegram bot to reload
+
+	// W-ONE-BUTTON M3 (api/handler_updates.go): the manifest verifier
+	// (StubVerifier refuses everything until M4), the worker hand-off (nil
+	// in M3) and a clock seam for the install expiry window.
+	updateVerifier updateauth.Verifier
+	updateStart    UpdateStarter
+	updatesNow     func() time.Time
 }
 
 // NewServer Creates API server. host is the bind interface — pass
@@ -54,6 +62,7 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 		exchangeAccountStateCache: NewExchangeAccountStateCache(),
 		host:                      host,
 		port:                      port,
+		updateVerifier:            updateauth.StubVerifier{},
 	}
 
 	// Setup routes
@@ -141,6 +150,10 @@ func (s *Server) setupRoutes() {
 		// make it safe); reset-account moved into the protected group below and is
 		// additionally env-gated + confirm-token gated.
 		s.route(api, "POST", "/reset-password", "DISABLED — always 410 (no verification path)", s.handleResetPasswordDisabled)
+
+		// W-ONE-BUTTON M3: /api/updates* — their OWN gate (uniform 403), raw
+		// g.GET/g.POST so they never enter GetAPIDocs (F1). See handler_updates.go.
+		s.registerUpdateRoutes(api)
 
 		// Routes requiring authentication
 		protected := api.Group("/", s.authMiddleware(), s.planTraderOwnership())

@@ -13,6 +13,12 @@ import (
 // Global configuration instance
 var global *Config
 
+// InsecureDefaultJWTSecret is the PUBLIC fallback used when JWT_SECRET is
+// unset. Anything signed with it can be forged by anyone who has read this
+// file, so the update routes (api/handler_updates.go, W-ONE-BUTTON M3 F2)
+// refuse every request while the process runs on it.
+const InsecureDefaultJWTSecret = "default-jwt-secret-change-in-production"
+
 // Config is the global configuration (loaded from .env)
 // Only contains truly global config, trading related config is at trader/strategy level
 type Config struct {
@@ -119,7 +125,7 @@ func Init() {
 		cfg.JWTSecret = strings.TrimSpace(v)
 	}
 	if cfg.JWTSecret == "" {
-		cfg.JWTSecret = "default-jwt-secret-change-in-production"
+		cfg.JWTSecret = InsecureDefaultJWTSecret
 		logger.Warnf("⚠️  JWT_SECRET env var not set; using INSECURE default. " +
 			"Acceptable for localhost-only paper trading. " +
 			"Set JWT_SECRET in .env (e.g. `openssl rand -base64 64`) before any network-exposed deploy.")
