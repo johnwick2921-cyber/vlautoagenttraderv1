@@ -268,16 +268,18 @@ func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
 	}
 	other := bytes.Repeat([]byte{8}, 32)
 	bad := map[string]func() bool{
-		"wrong key":      func() bool { return VerifyMAC(other, "v1.2.3", "0123456789abcdef", 1800000300, mac) },
-		"flipped":        func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, string(flip)) },
-		"uppercase":      func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, strings.ToUpper(mac)) },
-		"truncated":      func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac[:63]) },
-		"empty":          func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, "") },
-		"other release":  func() bool { return VerifyMAC(key, "v1.2.4", "0123456789abcdef", 1800000300, mac) },
-		"other job":      func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdee", 1800000300, mac) },
-		"other expiry":   func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000301, mac) },
-		"short key":      func() bool { return VerifyMAC(key[:31], "v1.2.3", "0123456789abcdef", 1800000300, mac) },
-		"reordered msg":  func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, rawMAC(key, "0123456789abcdef|v1.2.3|1800000300")) },
+		"wrong key":     func() bool { return VerifyMAC(other, "v1.2.3", "0123456789abcdef", 1800000300, mac) },
+		"flipped":       func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, string(flip)) },
+		"uppercase":     func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, strings.ToUpper(mac)) },
+		"truncated":     func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac[:63]) },
+		"empty":         func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, "") },
+		"other release": func() bool { return VerifyMAC(key, "v1.2.4", "0123456789abcdef", 1800000300, mac) },
+		"other job":     func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdee", 1800000300, mac) },
+		"other expiry":  func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000301, mac) },
+		"short key":     func() bool { return VerifyMAC(key[:31], "v1.2.3", "0123456789abcdef", 1800000300, mac) },
+		"reordered msg": func() bool {
+			return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, rawMAC(key, "0123456789abcdef|v1.2.3|1800000300"))
+		},
 		"trailing space": func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac+" ") },
 	}
 	for name, f := range bad {
