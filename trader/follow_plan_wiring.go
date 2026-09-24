@@ -14,7 +14,6 @@
 package trader
 
 import (
-	"encoding/json"
 	"strconv"
 	"time"
 
@@ -32,9 +31,10 @@ func followScopeEnd(openedAtMs int64) int64 {
 	return start.Add(24 * time.Hour).UnixMilli()
 }
 
-// followPlanBias reads the plan's FROZEN bias for the row — json.Unmarshal,
-// never ParsePlanDoc, which rejects stored docs seated at the strategy's own
-// max_levels (the W1 link's live defect, A15). "" when the plan is unknown.
+// followPlanBias reads the plan's FROZEN bias for the row — through the ONE
+// fold (resolveActivePlanDoc), which parses the base leniently (never
+// ParsePlanDoc, which rejects stored docs seated at the strategy's own
+// max_levels — the W1 link's live defect, A15). "" when the plan is unknown.
 func (at *AutoTrader) followPlanBias(cache map[string]string, planID string, version int) string {
 	key := planID + "#" + strconv.Itoa(version)
 	if v, ok := cache[key]; ok {
@@ -43,12 +43,12 @@ func (at *AutoTrader) followPlanBias(cache map[string]string, planID string, ver
 	bias := ""
 	if at != nil && at.store != nil && planID != "" && version > 0 {
 		if p, err := at.store.Plan().GetPlan(planID, version); err == nil && p != nil {
-			var doc struct {
-				Bias struct {
-					Direction string `json:"direction"`
-				} `json:"bias"`
-			}
-			if json.Unmarshal([]byte(p.Doc), &doc) == nil {
+			// WAVE 1a-plan P2 — the ONE fold: the frozen bias comes from the
+			// resolved final doc (base + overlays), the same resolution the
+			// executor reads. With no overlay the result is byte-identical to
+			// the old lenient base parse (resolveActivePlanDoc falls back to
+			// the base when a folded user patch fails re-validation).
+			if doc, ok := resolveActivePlanDoc(at.store, p); ok {
 				bias = doc.Bias.Direction
 			}
 		}
