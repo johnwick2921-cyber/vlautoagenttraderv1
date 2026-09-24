@@ -1,6 +1,7 @@
 package trader
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -152,5 +153,81 @@ func TestOneSetupBackfillThreeState(t *testing.T) {
 	res2 := at.BackfillOneSetupVerdicts(era.UnixMilli(), open.Add(time.Hour))
 	if res2.Recomputed != 0 || res2.Unrecomputable != 0 {
 		t.Fatalf("second run must find nothing to do: %+v", res2)
+	}
+}
+
+// TestOneSetupBackfillFoldsOverlay (WAVE 1a-plan P2) — the backfill's scenario
+// match reads the plan through the ONE fold: an owner overlay that adds an
+// armed scenario at a NEW level must be seen when recomputing that level's
+// verdict. RED on the base-only reader: the 29450 candidate is
+// unrecomputable:no_scenario_at_level. GREEN: recomputed. (The doc carries a
+// Reasoning so the folded re-validation passes — a stored doc that cannot
+// re-validate falls back to the base by design, which is the correct read.)
+func TestOneSetupBackfillFoldsOverlay(t *testing.T) {
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}})
+	ts := st.TouchOutcomes()
+	sym := at.futuresSymbol()
+	era := time.Date(2026, 9, 10, 18, 47, 7, 0, kernel.CTLocation())
+	open := era.Add(30 * time.Minute)
+	pid := "2026-09-11:NY:" + at.id
+
+	base := kernel.PlanDoc{
+		Reasoning:      "wave-1a-p2-onesetup",
+		Bias:           kernel.PlanBias{Direction: "long", Conviction: "low"},
+		DeathCondition: "n/a",
+		Levels: []kernel.PlanLevel{
+			{Price: 29490, Label: "PDL", Grade: "A", Instruction: "fade"},
+		},
+		Scenarios: []kernel.PlanScenario{
+			{ID: "S1", Trigger: "reject at 29490", Condition: "reject", Direction: "long", Quality: "A",
+				Confirm: &kernel.PlanConfirm{Rule: "touch", RefPrice: 29490, Side: "above"},
+				Arm:     &kernel.PlanArmSpec{Enabled: true, Entry: 29490, Stop: 29480, Target: 29530}},
+		},
+	}
+	blob, _ := json.Marshal(base)
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: pid, TradeDate: "2026-09-11", Session: "NY", StrategyID: at.id, Lifecycle: "active", Doc: string(blob), CreatedAt: era}); err != nil {
+		t.Fatal(err)
+	}
+	// The owner adds S9, armed at 29450 — a level the base has no scenario at.
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{
+		PlanID: pid, PlanVersion: 1, OverlayID: "owner-add-s9", Origin: "owner",
+		Patch: `[{"op":"add","path":"/scenarios/-","value":{"id":"S9","trigger":"reject at 29450","condition":"reject","direction":"long","quality":"A","arm":{"enabled":true,"entry":29450,"stop":29440,"target":29500}}}]`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := st.CandidatePool().SavePool([]store.CandidatePoolRow{
+		{TraderID: at.id, Symbol: sym, PlanID: pid, PlanVersion: 1, Session: "NY", ReadAtMs: open.Add(-10 * time.Minute).UnixMilli(), LevelPrice: 29450, LevelKind: "ONL", Label: "ONL", Rank: 1, Seated: true, Score: 0.8, Grade: "B"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.BarHistory().Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	var bars []store.BarHistoryDB
+	for i := -6; i <= 1; i++ {
+		o := open.Add(time.Duration(i) * time.Minute).UnixMilli()
+		bars = append(bars, store.BarHistoryDB{Symbol: sym, TF: "1m", OpenTimeMs: o, O: 29495, H: 29496, L: 29494, C: 29495, V: 1, Contract: "MNQ 09-26", Source: store.BarSourceLive})
+	}
+	if err := st.BarHistory().InsertBars(bars); err != nil {
+		t.Fatal(err)
+	}
+	yes := true
+	r := &store.TouchOutcomeRow{TraderID: at.id, Symbol: sym, LevelPrice: 29450, LevelKind: "X", CandidateSeated: true, PlanID: pid, PlanVersion: 1, Session: "NY", Ordinal: 1,
+		OpenedAtMs: open.UnixMilli(), ClosedAtMs: open.Add(time.Minute).UnixMilli(), Outcome: "hold", Validity: store.ValidityValid, EntrySide: "above", FadePermitted: &yes}
+	if err := ts.SaveOutcome(r); err != nil {
+		t.Fatal(err)
+	}
+
+	res := at.BackfillOneSetupVerdicts(era.UnixMilli(), open.Add(time.Hour))
+	if res.Recomputed != 1 || res.Unrecomputable != 0 {
+		t.Fatalf("the folded S9 must recompute the 29450 candidate: %+v", res)
+	}
+	var got store.TouchOutcomeRow
+	if err := st.GormDB().First(&got, r.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got.OneSetupBackfill == nil || *got.OneSetupBackfill != "recomputed" {
+		t.Fatalf("the 29450 row must be recomputed through the folded S9, got backfill=%v", got.OneSetupBackfill)
 	}
 }

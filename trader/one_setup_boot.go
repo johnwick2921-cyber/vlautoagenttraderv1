@@ -2,7 +2,6 @@
 package trader
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -125,9 +124,11 @@ func (at *AutoTrader) BackfillOneSetupVerdicts(sinceMs int64, now time.Time) sto
 		key := r.PlanID + "#" + fmt.Sprint(r.PlanVersion)
 		doc, seen := docs[key]
 		if !seen {
+			// WAVE 1a-plan P2 — the scenario match reads the ONE fold: an
+			// owner overlay adding an armed scenario must be seen when the
+			// verdict is recomputed. No overlay = byte-identical base.
 			if p, err := at.store.Plan().GetPlan(r.PlanID, r.PlanVersion); err == nil && p != nil {
-				var d kernel.PlanDoc
-				if json.Unmarshal([]byte(p.Doc), &d) == nil {
+				if d, ok := resolveActivePlanDoc(at.store, p); ok {
 					doc = &d
 				}
 			}
