@@ -3,12 +3,14 @@ package api
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"nofx/auth"
 	"nofx/logger"
 	"nofx/store"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // ── M3 red-team H1 — who may act on an account's CREDENTIALS ─────────────
@@ -21,11 +23,12 @@ import (
 // the owner and lock the owner out (red1 R1, red2 #1, reproduced at the
 // production router and through the agent's own tool).
 //
-// credentialActorRefusal is the ONE predicate both handlers run first: the
-// token's email must equal, byte for byte, the email on the stored row its
-// user_id names (the predicate login uses to mint that token in the first
-// place). Any refusal is 403 with one body; the cause is logged as a category
-// only — never the token.
+// credentialActorRefusal is the ONE predicate both handlers run first: not a
+// machine token; the token's email must equal, byte for byte, the email on
+// the stored row its user_id names (the predicate login uses to mint that
+// token in the first place); and (H2) the token must not predate the row's
+// last credential change. Any refusal is 403 with one body; the cause is
+// logged as a category only — never the token.
 
 // machineDeniedRoutes are the route patterns (gin FullPath) a MACHINE token
 // (auth.Claims.IsMachine: any scope claim, or the bot's bot@internal email)
@@ -132,7 +135,24 @@ func (s *Server) credentialActorRefusal(c *gin.Context) (*store.User, string) {
 	if cl.Email == "" || cl.Email != u.Email {
 		return nil, "token email is not the account's email"
 	}
+	// H2 (red1 R2): a token issued before the row's last credential change
+	// (users.updated_at — the retire epoch Q8 applies on /api/updates) cannot
+	// act on the credentials again: a thief's older token cannot change the
+	// password the owner just rotated, log in, and lock the owner out. A row
+	// that never recorded a change (zero updated_at) retires nothing here; the
+	// /updates gate stays stricter (zero ⇒ refuse).
+	if cl.IssuedAt == nil || (!u.UpdatedAt.IsZero() && issuedBefore(cl.IssuedAt, u.UpdatedAt)) {
+		return nil, "token predates the account's last credential change"
+	}
 	return u, ""
+}
+
+// issuedBefore reports whether a token's iat lies before epoch, compared in
+// the whole seconds a JWT NumericDate carries (nil iat ⇒ true, fail closed).
+// The ONE retire predicate: the credential guard above and the /updates gate's
+// Q8 both call it.
+func issuedBefore(iat *jwt.NumericDate, epoch time.Time) bool {
+	return iat == nil || iat.Time.Unix() < epoch.Unix()
 }
 
 func credentialForbid(c *gin.Context, why string) {
