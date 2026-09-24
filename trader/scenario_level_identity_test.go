@@ -229,3 +229,35 @@ func TestLevelIdentityBootLineFoldsOverlay(t *testing.T) {
 		t.Fatalf("the boot line must read the folded identity map (0/2), got:\n%s", buf.String())
 	}
 }
+
+// TestZoneAcceptedIdentitySkipsHeuristicDisagreement (WAVE 1a-plan P7, #190) —
+// an FVG entry (distal-edge anchor by design) and a seated zone-edge scenario
+// disagree with the evaluator BY DESIGN; the publish/runtime paths must not
+// record heuristic_disagreed for them.
+func TestZoneAcceptedIdentitySkipsHeuristicDisagreement(t *testing.T) {
+	yes := true
+	at := mkTrader("ninjatrader", &yes, "5m")
+	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	at.store = st
+	at.id = "trader-1"
+
+	doc := &kernel.PlanDoc{Scenarios: []kernel.PlanScenario{{
+		ID: "S1", Condition: "fvg_entry", Direction: "long", Quality: "A",
+		LevelID: kernel.ReferenceLevelID("MNQ", "ONH", 29897, 29897, "2026-09-17", "1m"),
+		Fvg:     &kernel.PlanFvgEntry{Lo: 29900, Hi: 29910, Direction: "long"},
+	}}, IdentityLevels: []kernel.PlanLevel{{Label: "ONH", Price: 29897}}}
+	doc.IdentityLevels[0].ID = doc.Scenarios[0].LevelID
+	// The evaluator anchor sits 8 points away — a disagreement by the price test.
+	at.observeScenarioIdentity(doc, "p1", 1, []kernel.ScenarioEval{{ID: "S1", Anchor: 29905, HasAnchor: true}}, time.Date(2026, 9, 17, 10, 0, 0, 0, kernel.CTLocation()))
+	c, err := st.LevelIdentityCounts(at.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.HeuristicDisagreed != 0 {
+		t.Fatalf("a zone-accepted FVG scenario must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
+	}
+}

@@ -2614,7 +2614,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		at.logErrorf("🗓️ planner: write plan row failed for %s %s: %v", tradeDate, session, err)
 		return 0, lifecycle, err
 	}
-	at.recordPlanIdentity(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, identityWarnings, authoredAt)
+	at.recordPlanIdentity(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, identityWarnings, doc, authoredAt)
 	researchTrace.Published(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, string(docJSON))
 	at.logInfof("🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s, ai_config %s)", tradeDate, session, version, modelID, lifecycle, promptHash, aiConfigHash)
 	// W-EXEC-TRUTH W5 (CTO 1790191033566) — the AI read that supersedes a

@@ -39,7 +39,7 @@ func identityIDText(id *string) string {
 	}
 	return *id
 }
-func (at *AutoTrader) recordPlanIdentity(planID string, version int, w kernel.IdentityWarnings, now time.Time) {
+func (at *AutoTrader) recordPlanIdentity(planID string, version int, w kernel.IdentityWarnings, doc *kernel.PlanDoc, now time.Time) {
 	defer at.containLevelIdentity()
 	if at.store == nil {
 		return
@@ -53,7 +53,10 @@ func (at *AutoTrader) recordPlanIdentity(planID string, version int, w kernel.Id
 			kind = "unnamed"
 		}
 		at.recordIdentityEvent(planID, version, id, kind, r, now)
-		if r.Disagreed {
+		// P7 (WAVE 1a-plan, #190) — a zone-accepted scenario disagrees with
+		// the evaluator BY DESIGN (FVG distal-edge anchors, seated S/D+OB
+		// zone edges); the publish path must not count it.
+		if r.Disagreed && !zoneAcceptedIdentity(scenarioByID(doc, id), r) {
 			at.recordIdentityEvent(planID, version, id, "heuristic_disagreed", r, now)
 		}
 	}
@@ -87,7 +90,7 @@ func (at *AutoTrader) observeScenarioIdentity(doc *kernel.PlanDoc, planID string
 		e := byID[sc.ID]
 		r := kernel.ResolveScenarioIdentity(sc, doc.IdentityLevels, e.Anchor, e.HasAnchor)
 		out[sc.ID] = r
-		if r.Disagreed && at.store != nil {
+		if r.Disagreed && at.store != nil && !zoneAcceptedIdentity(sc, r) {
 			at.recordIdentityEvent(planID, version, sc.ID, "heuristic_disagreed", r, now)
 		}
 	}
@@ -152,4 +155,27 @@ func (at *AutoTrader) logLevelIdentityBootAt(now time.Time) {
 	}
 	at.logInfof("%s · trader=%s · counters=recorded unique plan-version scenarios; legacy IDs stay NULL", levelIdentityBootLine(doc, counts, backfill), at.id)
 	at.logInfof("%s · trader=%s", writeTruthBootLine(at.store, at.id), at.id)
+}
+
+// zoneAcceptedIdentity (P7, #190) — a zone-accepted scenario disagrees with the
+// evaluator anchor by design: an FVG entry anchors at the DISTAL edge
+// (ScenarioAnchor), and a seated S/D+OB zone edge is a band, not a price. These
+// are never recorded as heuristic disagreement.
+func zoneAcceptedIdentity(sc kernel.PlanScenario, r kernel.ScenarioIdentity) bool {
+	if sc.Fvg != nil {
+		return true
+	}
+	return r.Level != nil && r.Level.Label != "" && seatedLevelSide(r.Level.Label) != ""
+}
+
+func scenarioByID(doc *kernel.PlanDoc, id string) kernel.PlanScenario {
+	if doc == nil {
+		return kernel.PlanScenario{}
+	}
+	for _, sc := range doc.Scenarios {
+		if sc.ID == id {
+			return sc
+		}
+	}
+	return kernel.PlanScenario{}
 }
