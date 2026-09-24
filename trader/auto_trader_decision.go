@@ -292,14 +292,20 @@ func (at *AutoTrader) GetPositions() ([]map[string]interface{}, error) {
 // action: open_long, open_short, close_long, close_short
 // entryPrice: entry price when closing (0 when opening)
 func (at *AutoTrader) recordAndConfirmOrder(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64, confidence int) {
-	at.recordAndConfirmOrderAs(orderResult, symbol, action, quantity, price, leverage, entryPrice, confidence, false)
+	at.recordAndConfirmOrderAs(orderResult, symbol, action, quantity, price, leverage, entryPrice, confidence, nil)
 }
 
+// chatOpenBracket is an agent-chat open's OWN authored stop and target (W1b
+// FOLD-2 repair), known at the door and carried to its position's excursion
+// row. nil = an AI open, whose levels are resolved later from its decision.
+type chatOpenBracket struct{ stop, target float64 }
+
 // recordAndConfirmOrderAs is recordAndConfirmOrder for an open that may be the
-// agent-chat door's (W1b FOLD-2): manual = true records and confirms it
+// agent-chat door's (W1b FOLD-2): manual != nil records and confirms it
 // exactly as an AI open, except its position never takes the AI decision's
-// pending plan citation (recordPositionChangeAs).
-func (at *AutoTrader) recordAndConfirmOrderAs(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64, confidence int, manual bool) {
+// pending plan citation and its excursion row carries the chat's own bracket
+// (recordPositionChangeAs).
+func (at *AutoTrader) recordAndConfirmOrderAs(orderResult map[string]interface{}, symbol, action string, quantity float64, price float64, leverage int, entryPrice float64, confidence int, manual *chatOpenBracket) {
 	if at.store == nil {
 		return
 	}
@@ -488,13 +494,15 @@ func (at *AutoTrader) recordAndConfirmOrderAs(orderResult map[string]interface{}
 
 // recordPositionChange records position change (create record on open, update record on close)
 func (at *AutoTrader) recordPositionChange(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64, confidence int) {
-	at.recordPositionChangeAs(orderID, symbol, side, action, quantity, price, leverage, entryPrice, fee, confidence, false)
+	at.recordPositionChangeAs(orderID, symbol, side, action, quantity, price, leverage, entryPrice, fee, confidence, nil)
 }
 
-// recordPositionChangeAs is recordPositionChange; manual = an agent-chat open
-// (W1b FOLD-2), whose position never consumes lastCitation — the citation is
-// the AI decision's, written and read on the cycle goroutine.
-func (at *AutoTrader) recordPositionChangeAs(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64, confidence int, manual bool) {
+// recordPositionChangeAs is recordPositionChange; manual != nil = an
+// agent-chat open (W1b FOLD-2), whose position never consumes lastCitation —
+// the citation is the AI decision's, written and read on the cycle goroutine —
+// and whose excursion row opens with the chat's OWN stop and target, never
+// resolved later from a nearby AI decision (FOLD-2 repair, L7).
+func (at *AutoTrader) recordPositionChangeAs(orderID, symbol, side, action string, quantity, price float64, leverage int, entryPrice float64, fee float64, confidence int, manual *chatOpenBracket) {
 	if at.store == nil {
 		return
 	}
@@ -554,7 +562,7 @@ func (at *AutoTrader) recordPositionChangeAs(orderID, symbol, side, action strin
 			// open (day_plan-gated → dormant for crypto). Consumed once.
 			// S3 — full link: plan_id/date/session from the ACTIVE plan at
 			// decision time (never reconstructed later).
-			if !manual && at.dayPlanEnabled() && at.lastCitation.valid {
+			if manual == nil && at.dayPlanEnabled() && at.lastCitation.valid {
 				_ = at.store.Position().SetPlanLinkFull(pos.ID, at.lastCitation.planVersion, at.lastCitation.scenarioID, at.lastCitation.matched, at.lastCitation.band, at.lastCitation.planID, at.lastCitation.tradeDate, at.lastCitation.session)
 				at.lastCitation.valid = false
 			}
@@ -563,7 +571,21 @@ func (at *AutoTrader) recordPositionChangeAs(orderID, symbol, side, action strin
 			// position row, so they are opened UNKNOWN (NULL) and resolved on
 			// the next tick from the decision that opened this fill. Nothing
 			// here is guessed and nothing here can block the fill.
-			at.excursionOnOpen(pos, 0, 0, plannerATR5m(at.futuresSymbol()))
+			//
+			// W1b FOLD-2 repair (L7) — an agent-chat open is NOT that path: its
+			// own stop and target are known here, and a row opened UNKNOWN
+			// would be resolved on the next tick from whatever AI decision sits
+			// nearest the fill (StopTargetNear) — another trade's bracket. The
+			// door refuses an entry without both levels; if one were ever
+			// missing, no row is opened rather than one that would inherit.
+			switch {
+			case manual == nil:
+				at.excursionOnOpen(pos, 0, 0, plannerATR5m(at.futuresSymbol()))
+			case manual.stop > 0 && manual.target > 0:
+				at.excursionOnOpen(pos, manual.stop, manual.target, plannerATR5m(at.futuresSymbol()))
+			default:
+				at.logWarnf("📐 excursion NOT opened for chat position pos=%d %s %s: its own stop/target unknown (stop=%.2f target=%.2f) — never resolved from an AI decision", pos.ID, symbol, side, manual.stop, manual.target)
+			}
 			// W6 — P0 fill alert.
 			at.emitAlert("P0", "fill", fmt.Sprintf("fill:%d", pos.ID),
 				fmt.Sprintf("Filled %s %s @ %.2f", side, symbol, price), "")

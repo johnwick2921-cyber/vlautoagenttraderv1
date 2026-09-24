@@ -571,7 +571,11 @@ func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecor
 	if manual == nil {
 		at.captureEntryThesis(decision, upper, marketData.CurrentPrice) // Phase 3: the watcher's anchor
 	}
-	at.recordAndConfirmOrderAs(order, decision.Symbol, action, quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence, manual != nil)
+	var chat *chatOpenBracket // W1b FOLD-2 repair: the chat's own bracket → its excursion row
+	if manual != nil {
+		chat = &chatOpenBracket{stop: decision.StopLoss, target: decision.TakeProfit}
+	}
+	at.recordAndConfirmOrderAs(order, decision.Symbol, action, quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence, chat)
 
 	// Record position opening time
 	if manual == nil {

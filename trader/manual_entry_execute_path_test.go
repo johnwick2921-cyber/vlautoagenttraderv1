@@ -268,3 +268,57 @@ func TestChatEntryOnAnAlreadyHeldSideIsRefusedLikeAnAIEntry(t *testing.T) {
 		t.Fatalf("a chat entry on an already-held side must be refused before any broker write: %T %v (opens=%d stopSet=%.2f)", err, err, b.opens, b.stopSet)
 	}
 }
+
+// W1b FOLD-2 repair (verifier defect 1, L7) — a chat position's excursion row
+// carries the chat entry's OWN stop and target from the open, and a bar tick
+// never replaces them with a nearby AI decision's bracket (StopTargetNear reads
+// the nearest AI open_* decision within ±120s, refused ones included). Driven
+// at the door (OpenManualEntryAt) over a real TCPTrader and store.
+func TestChatPositionExcursionCarriesItsOwnBracketNeverAnAIDecisions(t *testing.T) {
+	w := newChatDoorWire(t, store.RiskControlConfig{})
+	stop, target := chatBracket(t, "open_long")
+	aiStop, aiTarget := stop-37, target+41
+
+	// An AI decision on MNQ a few seconds before the chat entry — refused,
+	// never sent: it has nothing to do with the chat position.
+	if err := w.st.Decision().LogDecision(&store.DecisionRecord{
+		TraderID: w.at.id, Timestamp: time.Now().Add(-5 * time.Second),
+		Decisions: []store.DecisionAction{{Action: "open_long", Symbol: "MNQ", StopLoss: aiStop, TakeProfit: aiTarget, Success: false, Error: "refused (fixture)"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	fillPx := onGrid(stop + 1)
+	go func() {
+		select {
+		case p := <-w.sigs:
+			_ = ntwire.WriteFrame(w.conn, ntwire.FrameFill, ntwire.FillPayload{
+				SignalID: p.SignalID, Symbol: "MNQ", Account: "Sim101", Side: "long", Quantity: 1,
+				FillPrice: fillPx, Status: "filled", FillTime: time.Now().UTC().Format(time.RFC3339),
+			})
+		case <-time.After(5 * time.Second):
+		}
+	}()
+	if _, err := w.at.OpenManualEntryAt("MNQ", "open_long", 1, 1, stop, target, chatDoorMidday); err != nil {
+		t.Fatalf("an admitted chat entry must send: %v", err)
+	}
+	pos, err := w.st.Position().GetOpenPositionBySymbol(w.at.id, "MNQ", "LONG")
+	if err != nil || pos == nil {
+		t.Fatalf("fixture: no chat position: %v", err)
+	}
+	row, err := w.st.TradeExcursions().GetByPosition(pos.ID)
+	if err != nil || row == nil {
+		t.Fatalf("fixture: no excursion row for the chat position: %v", err)
+	}
+	if row.StopPxInitial != stop || row.TargetPx != target {
+		t.Fatalf("at open the chat position's excursion row must carry its OWN bracket: stop=%.2f target=%.2f (want %.2f/%.2f)", row.StopPxInitial, row.TargetPx, stop, target)
+	}
+	w.at.excursionOnBarTick()
+	row, err = w.st.TradeExcursions().GetByPosition(pos.ID)
+	if err != nil || row == nil {
+		t.Fatalf("excursion row vanished after a bar tick: %v", err)
+	}
+	if row.StopPxInitial != stop || row.TargetPx != target {
+		t.Fatalf("after a bar tick the chat position's excursion row must keep its OWN bracket: stop=%.2f target=%.2f (want %.2f/%.2f; the unrelated AI decision's is %.2f/%.2f)", row.StopPxInitial, row.TargetPx, stop, target, aiStop, aiTarget)
+	}
+}
