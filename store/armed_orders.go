@@ -853,6 +853,27 @@ func (s *ArmedOrderStore) ListFilled(traderID string, limit int) ([]ArmedOrderDB
 	return out, err
 }
 
+// LedgerClockSlack widens a SQL bound on a time column stored as zone-bearing
+// text: the lexical compare is exact only when every writer used one zone, so
+// a "since" read fetches this much extra and its caller re-checks the exact
+// window on the parsed time. Over-fetching only costs rows; under-fetching
+// would hide a fresh fill.
+const LedgerClockSlack = 24 * time.Hour
+
+// ListFilledSinceAllTraders returns FILLED rows of EVERY trader — loaded,
+// running, stopped or deleted — whose updated_at may fall at or after since
+// (W1b E10: "did any producer fill on this account just now?" is a ledger
+// question; a trader that stopped between its fill and the read still owns
+// that fill). The SQL bound is widened by LedgerClockSlack; callers MUST
+// re-check the exact window on UpdatedAt. Single-state filter on the canonical
+// StateFilled constant. Newest first.
+func (s *ArmedOrderStore) ListFilledSinceAllTraders(since time.Time) ([]ArmedOrderDB, error) {
+	var out []ArmedOrderDB
+	err := s.db.Where("state = ? AND updated_at >= ?", StateFilled, since.Add(-LedgerClockSlack)).
+		Order("updated_at DESC").Find(&out).Error
+	return out, err
+}
+
 // Touch refreshes UpdatedAt (the stale-working reconnect safety net reads it).
 func (s *ArmedOrderStore) Touch(id int64) error {
 	return s.db.Model(&ArmedOrderDB{}).Where("id = ?", id).

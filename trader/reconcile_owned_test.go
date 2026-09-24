@@ -236,20 +236,6 @@ func TestReconcileSeesAFreshFillOfAnotherRunningTrader(t *testing.T) {
 	}
 }
 
-// THE LIMIT, named: a trader that is STOPPED is not in the running registry,
-// so its fill seconds ago is not seen by (iii) and the position reads as an
-// orphan and is flattened. A stopped trader's in-flight fill is the one case
-// (iii) cannot explain without a ledger-wide fill query (not built in W0b).
-func TestReconcileFreshFillOfAStoppedTraderIsNotSeen(t *testing.T) {
-	w := newReconcileWire(t)
-	w.otherRunningTraderWithFreshFill(t, false)
-	done := make(chan error, 1)
-	go func() { done <- w.at.reconcileBeforeOpenNT("MNQ", "long") }()
-	if !w.closeSent(3 * time.Second) {
-		t.Fatal("the named limit moved: a stopped trader's fill now explains the position — update this test and the comment")
-	}
-	w.s.SeedPositionsForTest("Sim101", nil)
-	if err := <-done; err != nil {
-		t.Fatalf("after the confirmed flatten the open proceeds: %v", err)
-	}
-}
+// W0b's limit pin (TestReconcileFreshFillOfAStoppedTraderIsNotSeen) is replaced
+// by TestReconcileFreshFillOfAStoppedTraderExplainsThePosition
+// (reconcile_owned_ledger_test.go): W1b E10 made (iii) ledger-wide.

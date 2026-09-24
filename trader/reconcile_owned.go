@@ -24,12 +24,18 @@ import (
 //	(i)   a placed non-terminal ledger row: an armed row carrying a broker
 //	      signal, or a Picture row working / stamped (a send started)
 //	(ii)  an OPEN trader_positions row whose entry_order_id is a ledger signal
+//	(ii') W1b E10: an OPEN trader_positions row of ANOTHER trader — running
+//	      or not — on this account, instrument and side (a WARN names the row:
+//	      a stale one blocks every AI open here until it is closed)
 //	(iii) a ledger FILL younger than twice the untracked grace — the
-//	      reconciler has not materialized it yet — on this trader or any
-//	      trader RUNNING in the process (the registry Run and Stop maintain).
-//	      LIMIT: a trader that has STOPPED is not in that registry, so its
-//	      fill seconds ago is not seen here and the position reads as an
-//	      orphan (pinned: TestReconcileFreshFillOfAStoppedTraderIsNotSeen).
+//	      reconciler has not materialized it yet — on ANY trader bound to this
+//	      account, running or stopped (W1b E10: a ledger-wide read; W0b walked
+//	      the running-trader registry, so a trader stopped between its fill
+//	      and our open dropped out and its position read as an orphan)
+//
+// Every read here that FAILS explains the position (W1b E10, fail-closed): an
+// unreadable ledger is never taken for "no owner", so a read error can refuse
+// an AI open but can never flatten a position.
 //
 // An UNEXPLAINED position keeps today's owner-ruled flatten (TRACK B).
 
@@ -66,27 +72,57 @@ func (at *AutoTrader) ledgerExplainsPosition(symbol, side string, now time.Time)
 		return !ok || (strings.EqualFold(a, acct) && instrumentRoot(s) == root)
 	}
 	signals := map[string]string{}
+	// W1b E10: a read that fails is an EXPLANATION, never "no owner".
+	unreadable := func(what string, err error) (string, bool) {
+		return fmt.Sprintf("ledger unreadable (%s: %v) — fail-closed: never flattened on a read error", what, err), true
+	}
+	fresh := func(ts time.Time) bool { d := now.Sub(ts); return d >= 0 && d < window }
 
 	// (i) armed: non-terminal rows that carry a broker signal.
-	if rows, err := at.store.ArmedOrders().ListNonTerminalAllTraders(); err == nil {
-		for _, r := range rows {
-			if strings.TrimSpace(r.SignalID) == "" || store.IsTerminalArmState(r.State) || positionSide(r.Side) != side || !onAccount(r.TraderID) {
-				continue
-			}
-			return fmt.Sprintf("armed #%d %s %s (%s, signal %s)", r.ID, r.Scenario, side, r.State, r.SignalID), true
+	rows, err := at.store.ArmedOrders().ListNonTerminalAllTraders()
+	if err != nil {
+		return unreadable("armed non-terminal", err)
+	}
+	for _, r := range rows {
+		if strings.TrimSpace(r.SignalID) == "" || store.IsTerminalArmState(r.State) || positionSide(r.Side) != side || !onAccount(r.TraderID) {
+			continue
 		}
+		return fmt.Sprintf("armed #%d %s %s (%s, signal %s)", r.ID, r.Scenario, side, r.State, r.SignalID), true
 	}
 	// (i) Picture: working, or place_pending with a submission stamp.
-	if rows, err := at.store.PictureHtfRecoverableAll(); err == nil {
-		for _, p := range rows {
-			if !store.PictureSendStarted(p) || positionSide(p.Direction) != side || !pictureRowOnAccount(p, acct, root) {
-				continue
-			}
-			return fmt.Sprintf("picture %s %s (%s)", p.OppKey, side, p.Stage), true
+	recoverable, err := at.store.PictureHtfRecoverableAll()
+	if err != nil {
+		return unreadable("picture recoverable", err)
+	}
+	for _, p := range recoverable {
+		if !store.PictureSendStarted(p) || positionSide(p.Direction) != side || !pictureRowOnAccount(p, acct, root) {
+			continue
+		}
+		return fmt.Sprintf("picture %s %s (%s)", p.OppKey, side, p.Stage), true
+	}
+	// (iii) recent fills, not yet materialized — LEDGER-WIDE (W1b E10): every
+	// trader bound to this account, running or stopped. The store widens its
+	// SQL bound; the exact window is judged here on the parsed time.
+	filled, err := at.store.ArmedOrders().ListFilledSinceAllTraders(now.Add(-window))
+	if err != nil {
+		return unreadable("armed filled", err)
+	}
+	for _, r := range filled {
+		if positionSide(r.Side) == side && fresh(r.UpdatedAt) && onAccount(r.TraderID) {
+			return fmt.Sprintf("armed #%d %s %s filled %s ago (not yet materialized)", r.ID, r.Scenario, side, now.Sub(r.UpdatedAt).Round(time.Second)), true
 		}
 	}
-	// (iii) recent fills, not yet materialized — this trader and every
-	// running trader in the process (runningTraderIDs).
+	pictureFilled, err := at.store.PictureHtfFilledSinceAll(now.Add(-window))
+	if err != nil {
+		return unreadable("picture filled", err)
+	}
+	for _, p := range pictureFilled {
+		if positionSide(p.Direction) == side && fresh(p.UpdatedAt) && onAccount(p.TraderID) && pictureRowOnAccount(p, acct, root) {
+			return fmt.Sprintf("picture %s %s filled %s ago (not yet materialized)", p.OppKey, side, now.Sub(p.UpdatedAt).Round(time.Second)), true
+		}
+	}
+	// The ledger signals (ii) joins this trader's OPEN rows against — this
+	// trader and every running trader (the W0b scope, unchanged).
 	ids := []string{at.id}
 	for _, id := range runningTraderIDs() {
 		if id != at.id {
@@ -97,33 +133,56 @@ func (at *AutoTrader) ledgerExplainsPosition(symbol, side string, now time.Time)
 		if !onAccount(id) {
 			continue
 		}
-		if rows, err := at.store.ArmedOrders().ListFilled(id, 20); err == nil {
-			for _, r := range rows {
-				signals[r.SignalID] = fmt.Sprintf("armed #%d", r.ID)
-				if positionSide(r.Side) == side && now.Sub(r.UpdatedAt) >= 0 && now.Sub(r.UpdatedAt) < window {
-					return fmt.Sprintf("armed #%d %s %s filled %s ago (not yet materialized)", r.ID, r.Scenario, side, now.Sub(r.UpdatedAt).Round(time.Second)), true
-				}
-			}
+		armed, err := at.store.ArmedOrders().ListFilled(id, 20)
+		if err != nil {
+			return unreadable("armed filled of "+id, err)
 		}
-		if rows, err := at.store.PictureHtfByTrader(id, 20); err == nil {
-			for _, p := range rows {
-				if p.SignalID != "" {
-					signals[p.SignalID] = "picture " + p.OppKey
-				}
-				if p.Stage == store.StateFilled && positionSide(p.Direction) == side && pictureRowOnAccount(p, acct, root) &&
-					now.Sub(p.UpdatedAt) >= 0 && now.Sub(p.UpdatedAt) < window {
-					return fmt.Sprintf("picture %s %s filled %s ago (not yet materialized)", p.OppKey, side, now.Sub(p.UpdatedAt).Round(time.Second)), true
-				}
+		for _, r := range armed {
+			signals[r.SignalID] = fmt.Sprintf("armed #%d", r.ID)
+		}
+		pics, err := at.store.PictureHtfByTrader(id, 20)
+		if err != nil {
+			return unreadable("picture ledger of "+id, err)
+		}
+		for _, p := range pics {
+			if p.SignalID != "" {
+				signals[p.SignalID] = "picture " + p.OppKey
 			}
 		}
 	}
-	// (ii) an OPEN position row whose entry order is a ledger signal.
-	if opens, err := at.store.Position().GetOpenPositions(at.id); err == nil {
-		for _, op := range opens {
-			if owner, ok := signals[op.EntryOrderID]; ok && op.EntryOrderID != "" && positionSide(op.Side) == side && instrumentRoot(op.Symbol) == root {
-				return fmt.Sprintf("position #%d from %s", op.ID, owner), true
-			}
+	opens, err := at.store.Position().GetAllOpenPositions()
+	if err != nil {
+		return unreadable("open positions", err)
+	}
+	// (ii) an OPEN row of THIS trader whose entry order is a ledger signal.
+	for _, op := range opens {
+		if op.TraderID != at.id {
+			continue
 		}
+		if owner, ok := signals[op.EntryOrderID]; ok && op.EntryOrderID != "" && positionSide(op.Side) == side && instrumentRoot(op.Symbol) == root {
+			return fmt.Sprintf("position #%d from %s", op.ID, owner), true
+		}
+	}
+	// (ii') W1b E10: an OPEN row of ANOTHER trader on this account, instrument
+	// and side — that trader's position, running or stopped, whatever its age.
+	// An account-less row counts when its trader is bound here (or bound to
+	// nothing — fail-closed).
+	for _, op := range opens {
+		if op.TraderID == at.id || positionSide(op.Side) != side || instrumentRoot(op.Symbol) != root {
+			continue
+		}
+		if a := strings.TrimSpace(op.Account); a != "" && !strings.EqualFold(a, acct) {
+			continue
+		} else if a == "" && !onAccount(op.TraderID) {
+			continue
+		}
+		age := "age n/a"
+		if op.EntryTime > 0 {
+			age = "open " + now.Sub(time.UnixMilli(op.EntryTime)).Round(time.Second).String()
+		}
+		at.logWarnf("🧷 reconcile (ii'): OPEN row #%d of trader %s (%s %s, account %q, %s) explains the held position — if NT8 no longer holds that trader's position, row #%d is STALE and blocks every AI %s open on this account until it is closed.",
+			op.ID, op.TraderID, op.Symbol, op.Side, op.Account, age, op.ID, side)
+		return fmt.Sprintf("position #%d of trader %s", op.ID, op.TraderID), true
 	}
 	return "", false
 }

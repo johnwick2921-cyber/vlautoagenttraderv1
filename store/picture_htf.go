@@ -328,6 +328,20 @@ func (s *Store) PictureHtfRecoverableAll() ([]PictureHtfOpportunityDB, error) {
 	return rows, err
 }
 
+// PictureHtfFilledSinceAll is ListFilledSinceAllTraders for the Picture
+// ledger: FILLED rows of every trader whose updated_at may fall at or after
+// since (the SQL bound widened by LedgerClockSlack; callers re-check the exact
+// window on UpdatedAt). Newest first.
+func (s *Store) PictureHtfFilledSinceAll(since time.Time) ([]PictureHtfOpportunityDB, error) {
+	if s == nil || s.gdb == nil {
+		return nil, fmt.Errorf("store unavailable")
+	}
+	var rows []PictureHtfOpportunityDB
+	err := s.gdb.Where("stage = ? AND updated_at >= ?", StateFilled, since.Add(-LedgerClockSlack)).
+		Order("updated_at DESC, id DESC").Find(&rows).Error
+	return rows, err
+}
+
 // PictureHtfByTrader lists the trader's opportunity ledger, newest first.
 func (s *Store) PictureHtfByTrader(traderID string, limit int) ([]PictureHtfOpportunityDB, error) {
 	if s == nil || s.gdb == nil {
