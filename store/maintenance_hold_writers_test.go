@@ -227,9 +227,15 @@ func TestHoldWriterAdmissionsArePinned(t *testing.T) {
 // in the design note's list; the worker's hold.go imports store, so the
 // reverse edge must never appear.) Build tags are ignored (every non-test
 // file counts), which can only over-report.
+//
+// M3 fold M4 (red-team 4 #2(b)): the attended CLI's package
+// nofx/internal/updaterbootstrap is forbidden too — its Run reaches
+// updateauth.Authorize → ComputeMAC, the one door that mints an install MAC,
+// and nothing on the app side may mint (CTO ruling Q1(a)). Only its own
+// binary, cmd/updater-bootstrap, links it.
 var (
 	tradingAppDirs          = []string{"api", "trader", "kernel", "agent", "telegram", "store"}
-	forbiddenWorkerPackages = []string{"nofx/internal/updaterwire/wireserver", "nofx/internal/updaterworker"}
+	forbiddenWorkerPackages = []string{"nofx/internal/updaterwire/wireserver", "nofx/internal/updaterworker", "nofx/internal/updaterbootstrap"}
 )
 
 func TestTradingAppNeverLinksTheUpdaterWorkerSide(t *testing.T) {
