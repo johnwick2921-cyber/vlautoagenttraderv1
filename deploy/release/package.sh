@@ -18,10 +18,13 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ALLOW=(
   "nofx-bin"
   "web/dist"
-  "deploy/RELEASE"
   "ninjascript/vltrader_tcp_PROTOCOL.md"
   "LICENSE"
 )
+# deploy/RELEASE is NOT copied. The checked-in file is the marker the BOOT
+# PROCEDURE wrote for the previous boot, so copying it would ship a stale sha
+# that disagrees with the binary in the same archive. It is WRITTEN here from
+# the source sha, and the manifest pins the two to be byte-equal.
 OPTIONAL=( "updater/nofx-updater" "updater/nofx-updater-bootstrap" "calendar_static_t1.json" )
 
 mkdir -p "$OUT"
@@ -40,6 +43,20 @@ copy_one() {
 
 rc=0
 for rel in "${ALLOW[@]}"; do copy_one "$rel" required || rc=1; done
+
+SRC_SHA="${3:-}"
+if [ -n "$SRC_SHA" ]; then
+  case "$SRC_SHA" in *[!0-9a-f]*|"") echo "package: REFUSED — source sha must be 40 hex"; rc=1 ;; esac
+  [ "${#SRC_SHA}" -eq 40 ] || { echo "package: REFUSED — source sha must be 40 hex (got ${#SRC_SHA})"; rc=1; }
+  if [ "$rc" -eq 0 ]; then
+    mkdir -p "$OUT/deploy"
+    printf '%s\n' "$SRC_SHA" > "$OUT/deploy/RELEASE"
+    staged+=("deploy/RELEASE")
+  fi
+else
+  echo "package: REFUSED — the source sha is required; deploy/RELEASE is written, never copied"
+  rc=1
+fi
 # the AddOn sources, by glob, each path checked
 if compgen -G "$SRC/ninjascript/*.cs" >/dev/null; then
   for f in "$SRC"/ninjascript/*.cs; do copy_one "ninjascript/$(basename "$f")" required || rc=1; done

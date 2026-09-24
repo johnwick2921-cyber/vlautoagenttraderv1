@@ -64,9 +64,15 @@ if command -v gitleaks >/dev/null 2>&1; then
     echo "secret-scan: REFUSED — gitleaks found a secret in the staged tree (output redacted by design)"
     found=1
   fi
+elif [ "${GITLEAKS_REQUIRED:-0}" = "1" ]; then
+  # In CI an absent scanner is a FAILURE, never a silent downgrade to the
+  # deny-list. The release job sets GITLEAKS_REQUIRED=1 precisely so that a
+  # failed install cannot quietly weaken the scan that guards a signing key.
+  echo "secret-scan: REFUSED — gitleaks is REQUIRED here and is not installed"
+  found=1
 else
-  # NOT a pass. The workflow installs gitleaks; a local run without it is
-  # explicitly a weaker check and says so rather than implying a clean bill.
+  # NOT a pass. A local run without gitleaks is explicitly a weaker check and
+  # says so rather than implying a clean bill.
   echo "secret-scan: NOTE — gitleaks not installed; deny-list and content pass only"
 fi
 

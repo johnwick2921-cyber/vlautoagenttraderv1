@@ -5,6 +5,10 @@
 # inferred and nothing is defaulted to a plausible value: a pair that has not
 # been proven by the DB-compat job is advertised tested:false, because an
 # untested rollback that claims to be tested is worse than no rollback at all.
+#
+# And an UNCOMPUTED list is null, never []. [] means "a job computed this and
+# found nothing"; null means "nobody computed it". A reader that cannot tell
+# those apart will treat an unrun job as a proven-empty result.
 set -uo pipefail
 STAGE="${1:-}"; SRC_SHA="${2:-}"; REL_ID="${3:-}"
 [ -d "${STAGE:-}" ] && [ -n "${SRC_SHA:-}" ] && [ -n "${REL_ID:-}" ] || {
@@ -31,9 +35,9 @@ cat <<JSON
   "nt8": { "min_version": "${NT8_MIN:-8.1.2.1}", "max_tested_version": "${NT8_MAX_TESTED:-n/a}" },
   "addon": { "build_id": "$ADDON_BUILD", "protocol_version": $PROTO, "transition_order": "${ADDON_TRANSITION_ORDER:-go-then-addon}" },
   "updater_min_version": "${UPDATER_MIN:-0.0.0}",
-  "upgrade_pairs": ${UPGRADE_PAIRS:-[]},
-  "rollback_pairs": ${ROLLBACK_PAIRS:-[]},
-  "capabilities_required": ${CAPABILITIES_REQUIRED:-[]},
+  "upgrade_pairs": ${UPGRADE_PAIRS:-null},
+  "rollback_pairs": ${ROLLBACK_PAIRS:-null},
+  "capabilities_required": ${CAPABILITIES_REQUIRED:-null},
   "data_readiness": [ { "mode": "picture_htf", "tf": "4h", "bars": "pivot_window+4" } ]
 }
 JSON

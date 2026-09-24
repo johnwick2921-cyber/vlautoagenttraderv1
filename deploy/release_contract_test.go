@@ -120,8 +120,13 @@ func TestSecretScanAcceptsACleanTree(t *testing.T) {
 // created the release keypair, rather than a file-not-found from ssh-keygen.
 func TestReleaseWorkflowRefusesWithInstructionsWhenThePublicKeyIsMissing(t *testing.T) {
 	y := repoFile(t, ".github/workflows/release.yml")
-	if !strings.Contains(y, "deploy/release.pub") {
-		t.Fatalf("the workflow must verify against the COMMITTED public key")
+	// NOTE: this used to assert deploy/release.pub. That was the BROKEN form —
+	// ssh-keygen -Y verify reads its -f file as allowed-signers, so a bare
+	// public key never verifies (P1-a, proven by
+	// TestReleaseSignatureVerifiesOnlyWithAnAllowedSignersFile). The assertion
+	// was pinning the defect, which is why it had to move with the fix.
+	if !strings.Contains(y, "deploy/release_allowed_signers") {
+		t.Fatalf("the workflow must verify against the COMMITTED allowed-signers file")
 	}
 	if !strings.Contains(y, "RELEASE_SIGNING_KEY") {
 		t.Fatalf("the private half must come from the release Environment secret")
@@ -149,5 +154,157 @@ func TestPackagerRejectsAnArchivePathThatEscapesTheRoot(t *testing.T) {
 	}
 	if out2, err2 := runScript(t, "deploy/release/check-archive-paths.sh", "web/dist/index.html"); err2 != nil {
 		t.Fatalf("an ordinary relative path must be accepted, got %v:\n%s", err2, out2)
+	}
+}
+
+// P1-a — the signature verify must use an ALLOWED_SIGNERS file, not a bare
+// public key. `ssh-keygen -Y verify -f <file>` parses <file> as
+// "<principal> <keytype> <base64> [comment]". A bare .pub starts with the
+// KEYTYPE, so ssh-keygen reads "ssh-ed25519" as the principal and -I release
+// then matches nothing. This test signs with a REAL local keypair and proves
+// both directions, so the fix is not taken on faith.
+func TestReleaseSignatureVerifiesOnlyWithAnAllowedSignersFile(t *testing.T) {
+	if _, err := exec.LookPath("ssh-keygen"); err != nil {
+		t.Skip("ssh-keygen not available")
+	}
+	dir := t.TempDir()
+	key := filepath.Join(dir, "k")
+	if out, err := exec.Command("ssh-keygen", "-t", "ed25519", "-N", "", "-C", "nofx-release-test", "-f", key).CombinedOutput(); err != nil {
+		t.Fatalf("keygen: %v\n%s", err, out)
+	}
+	msg := filepath.Join(dir, "manifest.json")
+	if err := os.WriteFile(msg, []byte(`{"release_id":"vtest"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := exec.Command("ssh-keygen", "-Y", "sign", "-f", key, "-n", "release", msg).CombinedOutput(); err != nil {
+		t.Fatalf("sign: %v\n%s", err, out)
+	}
+	sig := msg + ".sig"
+
+	verify := func(signersFile string) error {
+		c := exec.Command("ssh-keygen", "-Y", "verify", "-f", signersFile, "-I", "release", "-n", "release", "-s", sig)
+		in, _ := os.Open(msg)
+		defer in.Close()
+		c.Stdin = in
+		_, err := c.CombinedOutput()
+		return err
+	}
+
+	// The WRONG form the workflow used to carry: the bare public key.
+	pub, err := os.ReadFile(key + ".pub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bare := filepath.Join(dir, "bare.pub")
+	if err := os.WriteFile(bare, pub, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if verify(bare) == nil {
+		t.Fatalf("a BARE .pub must NOT verify — if it does, this test proves nothing about the fix")
+	}
+
+	// The correct form: "<principal> <keytype> <base64> [comment]".
+	allowed := filepath.Join(dir, "allowed_signers")
+	if err := os.WriteFile(allowed, []byte("release "+string(pub)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := verify(allowed); err != nil {
+		t.Fatalf("the allowed_signers form MUST verify: %v", err)
+	}
+}
+
+// ...and the workflow and README must actually use that form.
+func TestReleaseWorkflowUsesTheAllowedSignersFile(t *testing.T) {
+	y := repoFile(t, ".github/workflows/release.yml")
+	if !strings.Contains(y, "release_allowed_signers") {
+		t.Fatalf("verify must use deploy/release_allowed_signers, not a bare .pub")
+	}
+	if strings.Contains(y, "-f deploy/release.pub") {
+		t.Fatalf("the bare-.pub verify form is broken and must not appear")
+	}
+	r := repoFile(t, "deploy/release/README.md")
+	if !strings.Contains(r, "release_allowed_signers") {
+		t.Fatalf("the owner instructions must produce the allowed_signers file")
+	}
+}
+
+// P1-b — the job that holds the signing key must not run an unpinned remote
+// script, and an absent scanner must FAIL the job rather than silently
+// downgrade it to the deny-list.
+func TestReleaseWorkflowDoesNotPipeAnUnpinnedRemoteScriptIntoShell(t *testing.T) {
+	y := repoFile(t, ".github/workflows/release.yml")
+	if strings.Contains(y, "install.sh | sh") || strings.Contains(y, "| sh -s") {
+		t.Fatalf("a job holding RELEASE_SIGNING_KEY must not pipe a remote script into a shell")
+	}
+	if strings.Contains(y, "master/scripts") {
+		t.Fatalf("no fetching from a MOVING branch in the signing job")
+	}
+	if !strings.Contains(y, "GITLEAKS_REQUIRED") {
+		t.Fatalf("gitleaks must be REQUIRED in CI — an absent scanner is not a pass")
+	}
+}
+
+// P2-b — deploy/RELEASE must be WRITTEN from the source sha, never copied. The
+// checked-in file is the marker the BOOT procedure wrote for the PREVIOUS
+// boot, so a copy ships a sha that disagrees with the binary beside it.
+func TestPackagerWritesTheReleaseMarkerFromTheSourceSha(t *testing.T) {
+	src := t.TempDir()
+	for _, p := range []string{"nofx-bin", "LICENSE", "ninjascript/x.cs", "ninjascript/vltrader_tcp_PROTOCOL.md", "web/dist/index.html"} {
+		full := filepath.Join(src, p)
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A STALE marker in the source tree — the previous boot's sha.
+	if err := os.MkdirAll(filepath.Join(src, "deploy"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stale := strings.Repeat("a", 40)
+	if err := os.WriteFile(filepath.Join(src, "deploy/RELEASE"), []byte(stale+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	stage := filepath.Join(t.TempDir(), "stage")
+	want := strings.Repeat("b", 40)
+	if out, err := runScript(t, "deploy/release/package.sh", src, stage, want); err != nil {
+		t.Fatalf("package failed: %v\n%s", err, out)
+	}
+	got, err := os.ReadFile(filepath.Join(stage, "deploy/RELEASE"))
+	if err != nil {
+		t.Fatalf("staged RELEASE missing: %v", err)
+	}
+	if strings.TrimSpace(string(got)) == stale {
+		t.Fatalf("the STALE checked-in marker was copied — it must be written from the source sha")
+	}
+	if strings.TrimSpace(string(got)) != want {
+		t.Fatalf("staged RELEASE = %q, want the source sha %q", strings.TrimSpace(string(got)), want)
+	}
+	// No sha at all must be refused rather than defaulted.
+	if out, err := runScript(t, "deploy/release/package.sh", src, filepath.Join(t.TempDir(), "s2")); err == nil {
+		t.Fatalf("packaging without a source sha must be REFUSED:\n%s", out)
+	}
+}
+
+// P2-c — an empty COMPUTED list is []; an UNCOMPUTED one is null. A reader that
+// cannot tell them apart treats an unrun job as a proven-empty result.
+func TestManifestRendersUncomputedListsAsNullNotEmpty(t *testing.T) {
+	stage := t.TempDir()
+	if err := os.WriteFile(filepath.Join(stage, "nofx-bin"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := runScript(t, "deploy/release/manifest.sh", stage, strings.Repeat("c", 40), "v9.9.9")
+	if err != nil {
+		t.Fatalf("manifest failed: %v\n%s", err, out)
+	}
+	for _, field := range []string{`"upgrade_pairs": null`, `"rollback_pairs": null`, `"capabilities_required": null`} {
+		if !strings.Contains(out, field) {
+			t.Fatalf("an UNCOMPUTED list must render null, missing %q in:\n%s", field, out)
+		}
+	}
+	if out2, err2 := runScript(t, "deploy/release/manifest.sh", stage, "not40hex", "v9.9.9"); err2 == nil {
+		t.Fatalf("a source sha that is not 40 hex must be REFUSED:\n%s", out2)
 	}
 }
