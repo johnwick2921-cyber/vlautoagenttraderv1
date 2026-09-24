@@ -486,3 +486,34 @@ func TestCutoverRollbackRestartsAndProvesTheOldRev(t *testing.T) {
 		t.Fatalf("a procedure nobody has executed is not TESTED; --dry-run is how it gets exercised")
 	}
 }
+
+// TestGuideRevIsRefusedByTheBUILDNotByAModuleScopeThrow pins the enforcement
+// POINT, not the message. The first version of this guarantee was a `throw` at
+// module scope in web/src/guide/types.ts; Vite never executes the module while
+// building, so `VITE_GUIDE_BUILT_REV= npx vite build` exited 0 and the throw
+// shipped INTO the bundle to fire on page load — a white screen on the trading
+// UI instead of a refused build.
+//
+// This test cannot run a Vite build, so it is NOT the proof: the proof is the
+// RED/GREEN pair recorded in the commit (empty rev exited 0 before, exits 1
+// after). What this pin CAN do is fail if the build-time gate is ever deleted
+// or silently moved back into application code, which is how the defect got in.
+func TestGuideRevIsRefusedByTheBUILDNotByAModuleScopeThrow(t *testing.T) {
+	cfg := repoFile(t, "web/vite.config.ts")
+	if !strings.Contains(cfg, "guide-built-rev-is-a-build-input") {
+		t.Fatalf("the build-time gate plugin is gone from vite.config.ts — a module-scope guard cannot refuse a build")
+	}
+	if !strings.Contains(cfg, "apply: 'build'") {
+		t.Fatalf("the gate must apply to the BUILD; a dev-only plugin refuses nothing that ships")
+	}
+	if !strings.Contains(cfg, "VITE_GUIDE_BUILT_REV") {
+		t.Fatalf("the gate must read VITE_GUIDE_BUILT_REV")
+	}
+	ts := repoFile(t, "web/src/guide/types.ts")
+	if strings.Contains(ts, "throw new Error") {
+		t.Fatalf("src/guide/types.ts throws again at module scope: that ships a crash into the bundle instead of failing the build")
+	}
+	if !strings.Contains(ts, "'unknown'") {
+		t.Fatalf("an unusable rev must degrade to the honest 'unknown' at runtime, never a real-looking sha and never a crash")
+	}
+}
