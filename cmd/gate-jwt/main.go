@@ -20,12 +20,17 @@
 // writes to stdout too, so log lines come first (store.New's "✅ Database
 // initialized", and config.Init's JWT_SECRET warning when the secret is
 // unset). The token is the LAST line, with no trailing newline, and the only
-// eyJ… segment — capture it by that, never the whole of stdout:
+// eyJ… segment — capture it by that, never the whole of stdout. Errors go to
+// stderr with a non-zero exit, so capture it with pipefail: without it a
+// failed mint leaves TOK empty and the line still exits 0.
 //
-//	go run ./cmd/gate-jwt <email> data/data.db 2>/dev/null | grep -oE 'eyJ[A-Za-z0-9_.-]+' | tail -1
+//	set -o pipefail
+//	TOK=$(go run ./cmd/gate-jwt <email> data/data.db | grep -oE 'eyJ[A-Za-z0-9_.-]+' | tail -1)
+//	test -n "$TOK"
 //
 // (TestGateJWTBinaryPrintsAGateScopedTokenLast runs the built tool and pins
-// this shape; errors go to stderr with a non-zero exit.)
+// this shape; TestGateJWTDocumentedCaptureFailsWhenTheMintFails runs these
+// three lines against it — a failed mint must fail them.)
 package main
 
 import (

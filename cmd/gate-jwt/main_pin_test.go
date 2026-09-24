@@ -19,6 +19,34 @@ package main
 //     /api/cutover-gate exactly as mintGateToken's own, refused 403 on a
 //     machine-denied route — and it is the LAST line of stdout, the only
 //     eyJ… segment, after whatever the logger printed first.
+//
+// M3 hc repair (verifier vf-hc defects 3-4):
+//
+//   - The derivation keys every package-level var and const by its NAME, so
+//     `var Mint = GenerateScopedJWT` (or a map, or a func literal, holding a
+//     minting function) is itself a minting name, and a main() that calls
+//     auth.Mint(…) mints directly (MC8). They were all one skipped "package
+//     scope" entry.
+//   - In package main a hand-rolled token is a direct mint (MC7): any
+//     reference to a crypto/… or golang.org/x/crypto/… package (the signing
+//     primitives), any read of a JWTSecret field other than the one argument
+//     that hands it to auth.SetJWTSecret(…), and any string literal naming
+//     the JWT_SECRET environment variable.
+//   - TestGateJWTDocumentedCaptureFailsWhenTheMintFails (behaviour) runs the
+//     capture main.go's doc comment prescribes, with the built tool in place
+//     of `go run ./cmd/gate-jwt`: a failed mint fails it (non-zero, nothing
+//     captured) and a good one captures exactly the gate-jwt token — as a
+//     script under `bash -e`, and by the block's own exit status as typed at
+//     a prompt. The line it replaced had no pipefail: a failed mint left an
+//     empty capture with exit 0.
+//
+// Known limits: a hand-written signer inside a DEPENDENCY that reads the
+// secret through a getter is not derived (only jwt.* signing calls seed the
+// minting set, and main reaching such a getter would still need a signing
+// primitive, which is flagged); nor is a secret read in main by a road that
+// names neither JWTSecret nor JWT_SECRET (reflection over the config, a
+// hand-parsed .env). Method calls are matched by name, so the derivation can
+// only over-report.
 
 import (
 	"bufio"
@@ -104,16 +132,14 @@ type gjRef struct {
 	pkg, name string // package-qualified (pkg = import path; "" = a method/field by name)
 	local     bool   // a bare identifier: same package (or a dot import, pkg set)
 	call      bool   // the Fun of a call expression
+	lit       bool   // a string literal (name = its quoted source); never a function
 	pos       token.Pos
 }
 
-// gjDeclRefs lists, per top-level declaration of one file, every reference
-// it makes: a qualified identifier through the file's imports (an alias or a
-// dot import included), a bare identifier, a selector's name (a method or
-// field, by name). Keys: "Name", "(T).Name" for a method, "package scope"
-// for a var/const/type declaration.
-func gjDeclRefs(f *ast.File, names map[string]string) map[string][]gjRef {
-	imports := map[string]string{} // local name → import path
+// gjFileImports: one file's imports — local name → import path — and its dot
+// imports.
+func gjFileImports(f *ast.File, names map[string]string) (map[string]string, []string) {
+	imports := map[string]string{}
 	var dots []string
 	for _, im := range f.Imports {
 		p := strings.Trim(im.Path.Value, `"`)
@@ -130,6 +156,22 @@ func gjDeclRefs(f *ast.File, names map[string]string) map[string][]gjRef {
 			imports[im.Name.Name] = p
 		}
 	}
+	return imports, dots
+}
+
+func gjIsCryptoPath(p string) bool {
+	return p == "crypto" || strings.HasPrefix(p, "crypto/") || p == "golang.org/x/crypto" || strings.HasPrefix(p, "golang.org/x/crypto/")
+}
+
+// gjDeclRefs lists, per top-level declaration of one file, every reference
+// it makes: a qualified identifier through the file's imports (an alias or a
+// dot import included), a bare identifier, a selector's name (a method or
+// field, by name), a string literal. Keys: "Name" for a function and for
+// each package-level var or const (verifier vf-hc defect 3: `var Mint =
+// GenerateScopedJWT` is a minting name its callers reach by name), "(T).Name"
+// for a method, "package scope" for a type declaration.
+func gjDeclRefs(f *ast.File, names map[string]string) map[string][]gjRef {
+	imports, dots := gjFileImports(f, names)
 	out := map[string][]gjRef{}
 	collect := func(key string, n ast.Node) {
 		calls := map[ast.Expr]bool{}
@@ -162,6 +204,10 @@ func gjDeclRefs(f *ast.File, names map[string]string) map[string][]gjRef {
 				for _, p := range dots {
 					out[key] = append(out[key], gjRef{pkg: p, name: v.Name, local: true, call: calls[v], pos: v.Pos()})
 				}
+			case *ast.BasicLit:
+				if v.Kind == token.STRING {
+					out[key] = append(out[key], gjRef{name: v.Value, lit: true, pos: v.Pos()})
+				}
 			}
 			return true
 		}
@@ -175,7 +221,27 @@ func gjDeclRefs(f *ast.File, names map[string]string) map[string][]gjRef {
 			}
 			collect(gjDeclKey(v), v.Body)
 		case *ast.GenDecl:
-			if v.Tok != token.IMPORT {
+			switch v.Tok {
+			case token.IMPORT:
+			case token.VAR, token.CONST:
+				for _, s := range v.Specs {
+					vs, ok := s.(*ast.ValueSpec)
+					if !ok {
+						continue
+					}
+					for _, nm := range vs.Names {
+						if _, ok := out[nm.Name]; !ok {
+							out[nm.Name] = nil // declared, even with nothing to reference
+						}
+						if vs.Type != nil {
+							collect(nm.Name, vs.Type)
+						}
+						for _, val := range vs.Values { // `var a, b = f(), g()`: both names get both (over-reports, never under)
+							collect(nm.Name, val)
+						}
+					}
+				}
+			default:
 				collect("package scope", v)
 			}
 		}
@@ -268,6 +334,9 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 		t.Fatalf("go list did not name package main for \".\" — the pin walked nothing")
 	}
 	signing := func(r gjRef) bool {
+		if r.lit {
+			return false
+		}
 		if gjIsJWTPath(r.pkg) {
 			return r.name == "New" || r.name == "NewWithClaims"
 		}
@@ -277,6 +346,8 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 	mintMethods := map[string]bool{} // a minting method's bare name (method calls are matched by name: over-reports, never under)
 	reaches := func(d decl, r gjRef) bool {
 		switch {
+		case r.lit:
+			return false
 		case signing(r):
 			return true
 		case r.pkg != "":
@@ -319,6 +390,30 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 		ps := fset.Position(p)
 		return filepath.Base(ps.Filename) + ":" + strconv.Itoa(ps.Line) + ":" + strconv.Itoa(ps.Column)
 	}
+	// The one read of the secret package main may make: the argument that
+	// hands it to the signer, auth.SetJWTSecret(cfg.JWTSecret).
+	secretArg := map[token.Pos]bool{}
+	for _, f := range mainFiles {
+		imports, _ := gjFileImports(f, names)
+		ast.Inspect(f, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok || len(call.Args) != 1 {
+				return true
+			}
+			se, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
+			if !ok || se.Sel.Name != "SetJWTSecret" {
+				return true
+			}
+			if x, ok := se.X.(*ast.Ident); !ok || imports[x.Name] != "nofx/auth" {
+				return true
+			}
+			if a, ok := ast.Unparen(call.Args[0]).(*ast.SelectorExpr); ok && a.Sel.Name == "JWTSecret" {
+				secretArg[a.Sel.Pos()] = true
+			}
+			return true
+		})
+	}
+
 	directMints := map[string][]string{} // main-package decl → its direct mints
 	localRefs := map[string][]gjRef{}    // main-package decl → bare references
 	mainDecls := map[string]bool{}
@@ -330,10 +425,18 @@ func TestGateJWTMainMintsOnlyThroughMintGateToken(t *testing.T) {
 		mainDecls[key] = true
 		for _, r := range d.refs {
 			switch {
+			case r.lit:
+				if strings.Contains(r.name, "JWT_SECRET") {
+					directMints[key] = append(directMints[key], pos(r.pos)+" "+r.name+" (the secret's environment variable, read by hand)")
+				}
 			case gjIsJWTPath(r.pkg):
 				directMints[key] = append(directMints[key], pos(r.pos)+" "+r.pkg+"."+r.name+" (jwt)")
 			case r.pkg == "nofx/auth" && r.name == "JWTSecret":
 				directMints[key] = append(directMints[key], pos(r.pos)+" auth.JWTSecret (the signing secret)")
+			case gjIsCryptoPath(r.pkg):
+				directMints[key] = append(directMints[key], pos(r.pos)+" "+r.pkg+"."+r.name+" (a signing primitive: a hand-rolled token)")
+			case r.name == "JWTSecret" && r.pkg == "" && !secretArg[r.pos]:
+				directMints[key] = append(directMints[key], pos(r.pos)+" JWTSecret (the signing secret, read outside the auth.SetJWTSecret(…) that hands it to the signer)")
 			case r.pkg != "" && mint[r.pkg+"."+r.name]:
 				directMints[key] = append(directMints[key], pos(r.pos)+" "+r.pkg+"."+r.name)
 			case r.pkg == "" && !r.local && (mintMethods[r.name] || signing(r)):
@@ -509,5 +612,150 @@ func TestGateJWTBinaryPrintsAGateScopedTokenLast(t *testing.T) {
 	}
 	if code, body := gjCall(t, base, "PUT", "/api/user/password", tok, "{}"); code != http.StatusForbidden || body != gjForbidden {
 		t.Fatalf("main()'s token on PUT /api/user/password = %d %s — want 403 %s (a machine token)", code, body, gjForbidden)
+	}
+}
+
+// The capture main.go's doc comment prescribes, run as written — the built
+// tool standing in for `go run ./cmd/gate-jwt` — fails when the mint fails
+// (non-zero, nothing captured) and captures exactly the gate-jwt token when it
+// succeeds: as a script under `bash -e`, and by the block's own exit status as
+// typed at a prompt. Verifier vf-hc defect 4: the documented line had no
+// pipefail, so a failed mint left an empty capture and exit 0.
+func TestGateJWTDocumentedCaptureFailsWhenTheMintFails(t *testing.T) {
+	bash, err := exec.LookPath("bash")
+	if err != nil {
+		t.Fatalf("bash runs the documented capture: %v", err)
+	}
+	goBin, err := gjGoCommand()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The block: the one run of tab-indented doc-comment lines holding `eyJ`.
+	f, err := parser.ParseFile(token.NewFileSet(), "main.go", nil, parser.ParseComments)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Doc == nil {
+		t.Fatal("main.go has no package doc comment — the capture it documents is gone (re-anchor)")
+	}
+	var blocks [][]string
+	var cur []string
+	for _, c := range f.Doc.List {
+		if line, ok := strings.CutPrefix(c.Text, "//\t"); ok {
+			cur = append(cur, line)
+			continue
+		}
+		if cur != nil {
+			blocks = append(blocks, cur)
+			cur = nil
+		}
+	}
+	if cur != nil {
+		blocks = append(blocks, cur)
+	}
+	var capture []string
+	n := 0
+	for _, b := range blocks {
+		if strings.Contains(strings.Join(b, "\n"), "eyJ") {
+			capture, n = b, n+1
+		}
+	}
+	if n != 1 {
+		t.Fatalf("main.go's doc comment holds %d capture blocks (tab-indented lines with eyJ) — want exactly one", n)
+	}
+	script := strings.Join(capture, "\n")
+	for _, s := range []string{"go run ./cmd/gate-jwt", "<email>"} {
+		if c := strings.Count(script, s); c != 1 {
+			t.Fatalf("the documented capture holds %q %d times — want once (the test stands the built tool and an email in for it):\n%s", s, c, script)
+		}
+	}
+
+	// The tool's own database, in a scratch cwd with no .env: the owner's row.
+	tmp := t.TempDir()
+	run := filepath.Join(tmp, "run")
+	if err := os.MkdirAll(filepath.Join(run, "data"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	tst, err := store.New(filepath.Join(run, "data", "data.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	past := time.Now().Add(-time.Hour).UTC()
+	if err := tst.User().Create(&store.User{ID: gjOwnerID, Email: gjOwnerEmail, PasswordHash: "x", CreatedAt: past, UpdatedAt: past}); err != nil {
+		t.Fatal(err)
+	}
+	tst.Plan().Close()
+	_ = tst.Close()
+	bin := filepath.Join(tmp, "gate-jwt")
+	if out, err := exec.Command(goBin, "build", "-o", bin, ".").CombinedOutput(); err != nil {
+		t.Fatalf("go build ./cmd/gate-jwt: %v\n%s", err, out)
+	}
+	prev := auth.JWTSecret
+	auth.SetJWTSecret(gjSecret) // to validate what the capture holds
+	t.Cleanup(func() { auth.JWTSecret = prev })
+
+	var env []string
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(kv, "JWT_SECRET=") && !strings.HasPrefix(kv, "BASH_ENV=") && !strings.HasPrefix(kv, "ENV=") {
+			env = append(env, kv)
+		}
+	}
+	env = append(env, "JWT_SECRET="+gjSecret)
+	quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
+	runBlock := func(email string, errexit bool) (int, string, string) {
+		s := strings.Replace(script, "go run ./cmd/gate-jwt", quote(bin), 1)
+		s = strings.Replace(s, "<email>", quote(email), 1)
+		args := []string{"--noprofile", "--norc"}
+		if errexit {
+			args = append(args, "-e")
+			s += "\nprintf '%s' \"${TOK-}\""
+		}
+		cmd := exec.Command(bash, append(args, "-c", s)...)
+		cmd.Dir = run
+		cmd.Env = env
+		var so, se bytes.Buffer
+		cmd.Stdout, cmd.Stderr = &so, &se
+		rc := 0
+		if err := cmd.Run(); err != nil {
+			var ee *exec.ExitError
+			if !errors.As(err, &ee) {
+				t.Fatalf("bash: %v", err)
+			}
+			rc = ee.ExitCode()
+		}
+		return rc, so.String(), se.String()
+	}
+
+	for _, errexit := range []bool{false, true} {
+		mode := "typed at a prompt (the block's own exit status)"
+		if errexit {
+			mode = "as a script under bash -e"
+		}
+		// A failed mint (no such user): the tool exits 1, the capture must too.
+		if rc, out, _ := runBlock("nobody@example.test", errexit); rc == 0 || strings.Contains(out, "eyJ") {
+			t.Errorf("%s: the documented capture exits %d with %d token(s) on stdout when gate-jwt fails (no such user) — a failed mint must fail the capture, not leave it empty with exit 0 (set -o pipefail; test -n \"$TOK\"):\n%s", mode, rc, len(gjJWT.FindAllString(out, -1)), script)
+		}
+		// A good mint.
+		rc, out, se := runBlock(gjOwnerEmail, errexit)
+		if rc != 0 {
+			t.Errorf("%s: the documented capture exits %d on a good mint:\nstdout: %s\nstderr: %s", mode, rc, gjRedact(out), gjRedact(se))
+			continue
+		}
+		if !errexit {
+			continue
+		}
+		if !gjJWT.MatchString(out) || gjJWT.FindString(out) != out {
+			t.Errorf("%s: the capture holds %q — want exactly one token and nothing else", mode, gjRedact(out))
+			continue
+		}
+		cl, err := auth.ValidateJWT(out)
+		if err != nil {
+			t.Errorf("%s: the captured token does not validate under the server's secret: %v", mode, err)
+			continue
+		}
+		if cl.Scope != auth.ScopeGateJWT || cl.UserID != gjOwnerID {
+			t.Errorf("%s: the captured token carries scope=%q user=%q — want the gate-jwt machine token for the owner", mode, cl.Scope, cl.UserID)
+		}
 	}
 }
