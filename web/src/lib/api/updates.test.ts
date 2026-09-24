@@ -146,7 +146,9 @@ describe('updatesApi shape pins', () => {
     mocks.request.mockResolvedValueOnce({
       success: false,
       statusCode: 403,
-      data: { error: 'install: MAC mismatch' },
+      // the server's ONE 403 body for every /updates refusal (api/handler_updates.go
+      // errForbiddenBody); 'install: MAC mismatch' is a server LOG category, never a body
+      data: { error: 'forbidden' },
       message: '',
     })
     const refused = await updatesApi.install({
@@ -156,7 +158,7 @@ describe('updatesApi shape pins', () => {
       hmac: 'x',
     })
     expect(refused.ok).toBe(false)
-    expect(refused.error).toBe('install: MAC mismatch')
+    expect(refused.error).toBe('forbidden')
     expect(refused.status).toBe(403)
   })
 
