@@ -276,12 +276,25 @@ func ValidateMachineScenario(doc PlanDoc, sc PlanScenario) error {
 // adds, removes or alters a machine scenario. applyPlanOverlay folds user
 // overlays only, so before and after both come from the user fold; a machine
 // scenario appearing there means a patch tried to author one.
+// canonicalScenarioJSON renders a scenario in the canonical form for the
+// semantic comparison: the same values in any key order serialize to the same
+// bytes (encoding/json sorts map keys), so an edit that only re-orders the
+// evidence JSON is not read as an alteration.
+func canonicalScenarioJSON(s PlanScenario) string {
+	b, _ := json.Marshal(s)
+	var v any
+	if json.Unmarshal(b, &v) != nil {
+		return string(b) // unreachable for a marshal of our own struct
+	}
+	c, _ := json.Marshal(v)
+	return string(c)
+}
+
 func MachineScenariosPreserved(before, after PlanDoc) error {
 	prev := map[string]string{}
 	for _, s := range before.Scenarios {
 		if IsMachineScenario(s) {
-			b, _ := json.Marshal(s)
-			prev[s.ID] = string(b)
+			prev[s.ID] = canonicalScenarioJSON(s)
 		}
 	}
 	seen := map[string]bool{}
@@ -289,12 +302,11 @@ func MachineScenariosPreserved(before, after PlanDoc) error {
 		if !IsMachineScenario(s) {
 			continue
 		}
-		b, _ := json.Marshal(s)
 		was, ok := prev[s.ID]
 		if !ok {
 			return fmt.Errorf("an edit may not add a machine scenario (%s) — only the machine records one", s.ID)
 		}
-		if was != string(b) {
+		if was != canonicalScenarioJSON(s) {
 			return fmt.Errorf("an edit may not alter machine scenario %s — its evidence is the machine's record", s.ID)
 		}
 		seen[s.ID] = true

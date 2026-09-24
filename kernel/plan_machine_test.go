@@ -295,3 +295,25 @@ func TestOverlayRefsFrom(t *testing.T) {
 		t.Fatalf("refs = %+v", got)
 	}
 }
+
+// TestMachineScenariosPreservedSemanticCompare (WAVE 1a-plan P14, #193 N3) —
+// the comparison is SEMANTIC: the same evidence in a different key order is
+// not an alteration; an actually-changed value is.
+func TestMachineScenariosPreservedSemanticCompare(t *testing.T) {
+	mk := func(evidence string) PlanDoc {
+		return PlanDoc{Scenarios: []PlanScenario{{
+			ID: "P1", Source: ScenarioSourcePicture,
+			Machine: &PlanMachineSource{Rule: "picture", RuleVer: 1, Ref: "r1",
+				EligibleFromMs: 1, EligibleUntilMs: 2, Evidence: json.RawMessage(evidence)},
+		}}}
+	}
+	before := mk(`{"a":1,"b":{"x":1,"y":2}}`)
+	reordered := mk(`{"b":{"y":2,"x":1},"a":1}`)
+	if err := MachineScenariosPreserved(before, reordered); err != nil {
+		t.Fatalf("key-order-only difference must NOT be an alteration (the 409 bug), got %v", err)
+	}
+	changed := mk(`{"a":1,"b":{"x":3,"y":2}}`)
+	if err := MachineScenariosPreserved(before, changed); err == nil {
+		t.Fatal("a changed evidence value MUST be refused")
+	}
+}
