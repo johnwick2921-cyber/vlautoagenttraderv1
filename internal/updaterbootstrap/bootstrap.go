@@ -160,7 +160,7 @@ func confirm(stdin io.Reader, stderr io.Writer, want string) bool {
 }
 
 func enroll(dataDir, dbFile, email string, replace bool, stdin io.Reader, stdout, stderr io.Writer) int {
-	userID, err := lookupUserReadOnly(dbFile, email)
+	userID, passwordHash, err := lookupUserReadOnly(dbFile, email)
 	if err != nil {
 		fmt.Fprintf(stderr, "refusing: %v\n", err)
 		return 1
@@ -177,7 +177,9 @@ func enroll(dataDir, dbFile, email string, replace bool, stdin io.Reader, stdout
 	if !confirm(stdin, stderr, "ENROLL "+email) {
 		return 1
 	}
-	if err := updateauth.Enroll(dataDir, userID, email, now(), replace); err != nil {
+	// passwordHash binds the enrollment to the row's CURRENT password
+	// (H1/H2 belt): any later password change un-enrolls until --replace.
+	if err := updateauth.Enroll(dataDir, userID, email, passwordHash, now(), replace); err != nil {
 		if errors.Is(err, updateauth.ErrAlreadyEnrolled) {
 			fmt.Fprintln(stderr, "refusing: already enrolled — re-run with --replace")
 		} else {
@@ -241,46 +243,49 @@ func openReadOnly(dbFile string) (*sql.DB, error) {
 // errNoSuchUser is returned when no user has exactly this email.
 var errNoSuchUser = errors.New("no app user has exactly this email (it is matched exactly, as login matches it) — register in the web app first")
 
-// lookupUserReadOnly resolves the user id for EXACTLY email from the bot DB,
-// opened read-only (mode=ro + query_only): store.New migrates on open, and
-// the store has no read-only constructor, so the CLI opens SQLite itself the
-// way cmd/picture_htf_replay does.
-func lookupUserReadOnly(dbFile, email string) (string, error) {
+// lookupUserReadOnly resolves the user id — and its CURRENT password_hash,
+// which the enrollment is bound to (H1/H2 belt) — for EXACTLY email from the
+// bot DB, opened read-only (mode=ro + query_only): store.New migrates on
+// open, and the store has no read-only constructor, so the CLI opens SQLite
+// itself the way cmd/picture_htf_replay does. The hash never leaves this
+// process except as Enroll's HMAC under the new device key.
+func lookupUserReadOnly(dbFile, email string) (userID, passwordHash string, err error) {
 	db, err := openReadOnly(dbFile)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer db.Close()
 	rows, err := db.Query(`SELECT id, password_hash FROM users WHERE email = ?`, email)
 	if err != nil {
-		return "", fmt.Errorf("read users: %w", err)
+		return "", "", fmt.Errorf("read users: %w", err)
 	}
 	defer rows.Close()
-	var ids []string
+	var ids, hashes []string
 	emptyHash := false
 	for rows.Next() {
 		var id, hash sql.NullString
 		if err := rows.Scan(&id, &hash); err != nil {
-			return "", fmt.Errorf("read users: %w", err)
+			return "", "", fmt.Errorf("read users: %w", err)
 		}
 		if !id.Valid || id.String == "" {
-			return "", errors.New("a users row has no id")
+			return "", "", errors.New("a users row has no id")
 		}
 		if !hash.Valid || hash.String == "" {
 			emptyHash = true
 		}
 		ids = append(ids, id.String)
+		hashes = append(hashes, hash.String)
 	}
 	if err := rows.Err(); err != nil {
-		return "", fmt.Errorf("read users: %w", err)
+		return "", "", fmt.Errorf("read users: %w", err)
 	}
 	switch {
 	case len(ids) == 0:
-		return "", errNoSuchUser
+		return "", "", errNoSuchUser
 	case len(ids) > 1:
-		return "", errors.New("more than one app user has this email")
+		return "", "", errors.New("more than one app user has this email")
 	case emptyHash:
-		return "", errors.New("that user has no password (not a login identity) — refusing")
+		return "", "", errors.New("that user has no password (not a login identity) — refusing")
 	}
-	return ids[0], nil
+	return ids[0], hashes[0], nil
 }

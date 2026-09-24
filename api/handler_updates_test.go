@@ -92,7 +92,7 @@ func newUpdEnv(t *testing.T) *updEnv {
 	if err := st.User().Create(&store.User{ID: updAdminID, Email: updAdminEmail, PasswordHash: hash, CreatedAt: past, UpdatedAt: past}); err != nil {
 		t.Fatalf("seed admin: %v", err)
 	}
-	if err := updateauth.Enroll(dataDir, updAdminID, updAdminEmail, time.Now(), false); err != nil {
+	if err := updateauth.Enroll(dataDir, updAdminID, updAdminEmail, hash, time.Now(), false); err != nil {
 		t.Fatalf("enroll: %v", err)
 	}
 	e := &updEnv{t: t, st: st, dataDir: dataDir}
@@ -594,8 +594,13 @@ func TestResetAccountCannotTouchTheEnrollmentAndKillsTheAdminIdentity(t *testing
 }
 
 // Q8: a token issued before the user row last changed (password change) is
-// stale for updates; a token issued after it passes.
-func TestPasswordChangeRetiresOlderTokensForUpdatesButKeepsTheEnrollment(t *testing.T) {
+// stale for updates; a token issued after it passes — once the owner has
+// re-enrolled. (Changed for the M3 red-team H1/H2 belt: the password change
+// now also UN-ENROLLS, so the fresh token is refused until `enroll
+// --replace`; the password routes still never touch the enrollment FILES.
+// Was: TestPasswordChangeRetiresOlderTokensForUpdatesButKeepsTheEnrollment,
+// which admitted the fresh token straight after the change.)
+func TestPasswordChangeRetiresOlderTokensAndUnbindsTheEnrollment(t *testing.T) {
 	e := newUpdEnv(t)
 	e.expectAllAdmitted("old token before the change")
 	before := snapshotTree(t, updateauth.Dir(e.dataDir))
@@ -612,7 +617,7 @@ func TestPasswordChangeRetiresOlderTokensForUpdatesButKeepsTheEnrollment(t *test
 	e.expectAllForbidden("token older than the password change")
 
 	fresh := mintJWT(t, updAdminID, updAdminEmail, time.Now().Add(2*time.Second), time.Now().Add(time.Hour), updSecret)
-	e.expectAllAdmitted("token issued after the change", withToken(fresh))
+	e.expectAllForbidden("token issued after the change, enrollment bound to the old password", withToken(fresh))
 
 	// the disabled public reset route: 410, enrollment untouched
 	r = httptest.NewRequest("POST", "/api/reset-password", strings.NewReader(`{"email":"`+updAdminEmail+`","new_password":"x-x-x-x-x-x"}`))
@@ -629,6 +634,18 @@ func TestPasswordChangeRetiresOlderTokensForUpdatesButKeepsTheEnrollment(t *test
 			t.Fatalf("a password route changed %s", filepath.Base(p))
 		}
 	}
+
+	// The owner re-enrolls (the CLI's writer, --replace, the row's current
+	// hash): the fresh token is admitted, and Q8 still refuses the old one.
+	u, err := e.st.User().GetByID(updAdminID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := updateauth.Enroll(e.dataDir, updAdminID, updAdminEmail, u.PasswordHash, time.Now(), true); err != nil {
+		t.Fatal(err)
+	}
+	e.expectAllAdmitted("token issued after the change, after re-enrolling", withToken(fresh))
+	e.expectAllForbidden("token older than the password change, after re-enrolling")
 }
 
 // ── CSRF / cross-origin / transport ──────────────────────────────────────

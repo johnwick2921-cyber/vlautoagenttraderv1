@@ -11,7 +11,7 @@
 // — the same resolver the maintenance hold uses):
 //
 //	<dataDir>/updater/            0700, owned by the bot's uid
-//	  admin.json       0600       {"user_id","email","enrolled_at"} — written ONLY by `updater-bootstrap enroll`
+//	  admin.json       0600       {"user_id","email","enrolled_at","password_binding"} — written ONLY by `updater-bootstrap enroll`
 //	  device.key       0600       32 random bytes                   — written ONLY by `updater-bootstrap enroll`
 //	  seen_job_ids.json 0600      consumed job ids (single-use)     — written ONLY by Consume
 //	  .enroll.lock / .seen.lock   flock files

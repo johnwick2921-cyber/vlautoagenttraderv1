@@ -223,11 +223,11 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 		}
 		return "enrollment unreadable"
 	}
-	if key, err := updateauth.LoadDeviceKey(dataDir); err != nil {
+	key, err := updateauth.LoadDeviceKey(dataDir)
+	if err != nil {
 		return "device key unreadable"
-	} else {
-		clear(key)
 	}
+	defer clear(key)
 	// F1: BOTH user_id and email (the Telegram bot token carries the owner's
 	// user_id with email bot@internal).
 	if claims.UserID != admin.UserID || claims.Email != admin.Email {
@@ -241,6 +241,13 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 	u, err := s.store.User().GetByID(admin.UserID)
 	if err != nil || u == nil || u.Email != admin.Email {
 		return "admin user row absent or changed"
+	}
+	// H1/H2 belt: the enrollment is bound to the password the row had at
+	// enrollment. Any change since — the owner's own, or one forced through a
+	// machine/stolen/retired token — un-enrolls until the owner re-runs the
+	// attended `updater-bootstrap enroll --replace` on the box.
+	if !admin.PasswordStillBound(key, u.PasswordHash) {
+		return "password changed since enrollment (re-enroll with --replace)"
 	}
 	// Q8: a token issued before the user row last changed (password change)
 	// is stale for updates. The JWT iat is whole seconds (golang-jwt

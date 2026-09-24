@@ -157,6 +157,52 @@ func TestEnrollWritesTheEnrollmentForTheExactEmail(t *testing.T) {
 	}
 }
 
+// H1/H2 belt: the CLI binds the enrollment to the row's password_hash it
+// READ (read-only) — the one the /updates gate later compares against — and
+// a re-enroll after the row's hash changed binds the NEW hash.
+func TestEnrollBindsTheRowsPasswordHash(t *testing.T) {
+	attended(t)
+	inst := install(t)
+	const fixtureHash = "$2a$10$not-a-real-hash-but-non-empty" // install()'s row
+	if rc, _, errb := run(inst, enrollLine(bEmail), "enroll", bEmail); rc != 0 {
+		t.Fatalf("rc=%d %s", rc, errb)
+	}
+	d := DataDirFor(inst)
+	a, err := updateauth.LoadAdmin(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key, err := updateauth.LoadDeviceKey(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !a.PasswordStillBound(key, fixtureHash) {
+		t.Fatal("enroll did not bind the row's password_hash")
+	}
+	// The owner changes the password (the web app writes the row) …
+	st, err := store.New(filepath.Join(inst, "data", "data.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.User().UpdatePassword(bUser, "$2a$10$another-hash-after-a-change"); err != nil {
+		t.Fatal(err)
+	}
+	st.Plan().Close()
+	_ = st.Close()
+	if !a.PasswordStillBound(key, fixtureHash) || a.PasswordStillBound(key, "$2a$10$another-hash-after-a-change") {
+		t.Fatal("the stored binding must name the OLD hash only")
+	}
+	// … and re-enrolls with --replace: the new binding names the new hash.
+	if rc, _, errb := run(inst, enrollLine(bEmail), "enroll", "--replace", bEmail); rc != 0 {
+		t.Fatalf("replace rc=%d %s", rc, errb)
+	}
+	a2, _ := updateauth.LoadAdmin(d)
+	key2, _ := updateauth.LoadDeviceKey(d)
+	if !a2.PasswordStillBound(key2, "$2a$10$another-hash-after-a-change") || a2.PasswordStillBound(key2, fixtureHash) {
+		t.Fatal("--replace did not bind the row's CURRENT password_hash")
+	}
+}
+
 func TestEnrollMatchesTheEmailExactlyLikeLogin(t *testing.T) {
 	attended(t)
 	inst := install(t)

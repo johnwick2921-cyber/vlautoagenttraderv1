@@ -95,7 +95,7 @@ func TestEnrollNeverWritesADegenerateKey(t *testing.T) {
 		return len(b), nil
 	}
 	d := t.TempDir()
-	if err := Enroll(d, tUser, tEmail, tNow, false); err == nil {
+	if err := Enroll(d, tUser, tEmail, tHash, tNow, false); err == nil {
 		t.Fatal("Enroll accepted an all-zero key from the random source")
 	}
 	for _, p := range []string{AdminPath(d), DeviceKeyPath(d)} {
@@ -104,7 +104,7 @@ func TestEnrollNeverWritesADegenerateKey(t *testing.T) {
 		}
 	}
 	randRead = prev // positive control
-	if err := Enroll(d, tUser, tEmail, tNow, false); err != nil {
+	if err := Enroll(d, tUser, tEmail, tHash, tNow, false); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
 	mustLoad(t, d)

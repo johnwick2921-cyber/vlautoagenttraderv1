@@ -21,6 +21,8 @@ import (
 const (
 	tUser  = "11111111-2222-3333-4444-555555555555"
 	tEmail = "owner@example.test"
+	// tHash stands in for users.password_hash (the enrollment is bound to it).
+	tHash = "$2a$10$test-hash-not-real-but-non-empty"
 )
 
 var tNow = time.Unix(1_800_000_000, 0)
@@ -28,7 +30,7 @@ var tNow = time.Unix(1_800_000_000, 0)
 func enrolled(t *testing.T) string {
 	t.Helper()
 	d := t.TempDir()
-	if err := Enroll(d, tUser, tEmail, tNow, false); err != nil {
+	if err := Enroll(d, tUser, tEmail, tHash, tNow, false); err != nil {
 		t.Fatalf("enroll: %v", err)
 	}
 	return d
@@ -85,7 +87,7 @@ func TestEnrollRefusesAnExistingEnrollmentWithoutReplace(t *testing.T) {
 	d := enrolled(t)
 	a0, _ := os.ReadFile(AdminPath(d))
 	k0, _ := os.ReadFile(DeviceKeyPath(d))
-	if err := Enroll(d, "other-user-id", "x@example.test", tNow, false); !errors.Is(err, ErrAlreadyEnrolled) {
+	if err := Enroll(d, "other-user-id", "x@example.test", tHash, tNow, false); !errors.Is(err, ErrAlreadyEnrolled) {
 		t.Fatalf("err = %v, want ErrAlreadyEnrolled", err)
 	}
 	a1, _ := os.ReadFile(AdminPath(d))
@@ -97,11 +99,11 @@ func TestEnrollRefusesAnExistingEnrollmentWithoutReplace(t *testing.T) {
 	d2 := t.TempDir()
 	_ = os.MkdirAll(Dir(d2), 0o700)
 	_ = os.WriteFile(DeviceKeyPath(d2), make([]byte, 32), 0o600)
-	if err := Enroll(d2, tUser, tEmail, tNow, false); !errors.Is(err, ErrAlreadyEnrolled) {
+	if err := Enroll(d2, tUser, tEmail, tHash, tNow, false); !errors.Is(err, ErrAlreadyEnrolled) {
 		t.Fatalf("lone key: err = %v", err)
 	}
 	// positive control: replace rotates key and identity
-	if err := Enroll(d, "22222222-aaaa", "new@example.test", tNow, true); err != nil {
+	if err := Enroll(d, "22222222-aaaa", "new@example.test", tHash, tNow, true); err != nil {
 		t.Fatal(err)
 	}
 	k2, _ := LoadDeviceKey(d)
@@ -117,17 +119,17 @@ func TestEnrollRefusesAnUnsafeUpdaterDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = os.Chmod(Dir(d), 0o755)
-	if err := Enroll(d, tUser, tEmail, tNow, false); !errors.Is(err, ErrUnsafe) {
+	if err := Enroll(d, tUser, tEmail, tHash, tNow, false); !errors.Is(err, ErrUnsafe) {
 		t.Fatalf("0755 dir: err = %v, want ErrUnsafe", err)
 	}
 	if _, err := os.Stat(AdminPath(d)); !os.IsNotExist(err) {
 		t.Fatal("admin.json written into an unsafe dir")
 	}
 	_ = os.Chmod(Dir(d), 0o700) // positive control
-	if err := Enroll(d, tUser, tEmail, tNow, false); err != nil {
+	if err := Enroll(d, tUser, tEmail, tHash, tNow, false); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
-	if err := Enroll("relative/data", tUser, tEmail, tNow, false); !errors.Is(err, ErrNoDataDir) {
+	if err := Enroll("relative/data", tUser, tEmail, tHash, tNow, false); !errors.Is(err, ErrNoDataDir) {
 		t.Fatalf("relative data dir: %v", err)
 	}
 }
@@ -187,20 +189,31 @@ func TestLoadRefusesAFileOwnedByAnotherUID(t *testing.T) {
 }
 
 func TestLoadAdminRefusesMalformedJSON(t *testing.T) {
-	valid := `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"}`
+	// Every case carries a well-formed password_binding (H1/H2 belt) so each
+	// isolates its ONE defect; LoadAdmin judges the binding's FORMAT only —
+	// whether it still matches the row is the gate's check (PasswordStillBound).
+	pb := `,"password_binding":"` + strings.Repeat("ab", 32) + `"`
+	valid := `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`
 	bad := map[string]string{
-		"unknown field":   `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z","role":"admin"}`,
-		"re-cased key":    `{"User_ID":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"}`,
-		"duplicate key":   `{"user_id":"x","user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"}`,
-		"missing email":   `{"user_id":"` + tUser + `","enrolled_at":"2026-09-24T01:00:00Z"}`,
-		"empty user_id":   `{"user_id":"","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"}`,
-		"numeric user_id": `{"user_id":7,"email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"}`,
-		"null email":      `{"user_id":"` + tUser + `","email":null,"enrolled_at":"2026-09-24T01:00:00Z"}`,
-		"bad enrolled_at": `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"yesterday"}`,
+		"unknown field":   `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `,"role":"admin"}`,
+		"re-cased key":    `{"User_ID":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`,
+		"duplicate key":   `{"user_id":"x","user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`,
+		"missing email":   `{"user_id":"` + tUser + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`,
+		"empty user_id":   `{"user_id":"","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`,
+		"numeric user_id": `{"user_id":7,"email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`,
+		"null email":      `{"user_id":"` + tUser + `","email":null,"enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`,
+		"bad enrolled_at": `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"yesterday"` + pb + `}`,
 		"trailing data":   valid + `{}`,
 		"array":           `[` + valid + `]`,
 		"empty":           ``,
-		"pipe in user_id": `{"user_id":"a|b","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"}`,
+		"pipe in user_id": `{"user_id":"a|b","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"` + pb + `}`,
+		// The pre-belt three-key shape (MIGRATION: refused → re-enroll with
+		// --replace; no shipped binary ever wrote one).
+		"no password_binding (pre-belt shape)": `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z"}`,
+		"upper-case binding":                   `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z","password_binding":"` + strings.Repeat("AB", 32) + `"}`,
+		"short binding":                        `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z","password_binding":"` + strings.Repeat("ab", 31) + `"}`,
+		"empty binding":                        `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z","password_binding":""}`,
+		"null binding":                         `{"user_id":"` + tUser + `","email":"` + tEmail + `","enrolled_at":"2026-09-24T01:00:00Z","password_binding":null}`,
 	}
 	d := enrolled(t)
 	if err := os.WriteFile(AdminPath(d), []byte(valid), 0o600); err != nil {
