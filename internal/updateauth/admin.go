@@ -3,6 +3,7 @@ package updateauth
 import (
 	"bytes"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,26 @@ import (
 
 // DeviceKeyLen is the device key's exact length in bytes.
 const DeviceKeyLen = 32
+
+// randRead is a seam so Enroll's degenerate-key refusal is testable.
+var randRead = rand.Read
+
+// degenerateKey reports whether key is empty or every byte of it equals the
+// first (32 zero bytes from a zero-filled restore or sparse copy, 32 × 0xFF,
+// …): a key anyone can enumerate in 256 guesses, so a MAC under it proves
+// nothing about possession (M3-RT-F2). The scan touches every byte and
+// branches only on the verdict. crypto/rand yields such a key with
+// probability 2^-248, so no real enrollment is ever refused.
+func degenerateKey(key []byte) bool {
+	if len(key) == 0 {
+		return true
+	}
+	var acc byte
+	for _, b := range key[1:] {
+		acc |= b ^ key[0]
+	}
+	return subtle.ConstantTimeByteEq(acc, 0) == 1
+}
 
 const maxAdminFileBytes = 4096
 
@@ -72,8 +93,10 @@ func LoadAdmin(dataDir string) (Admin, error) {
 }
 
 // LoadDeviceKey reads device.key under the same file rules as LoadAdmin and
-// requires exactly DeviceKeyLen bytes. The key never leaves this process: no
-// API returns it, logs it, or derives a response from it.
+// requires exactly DeviceKeyLen bytes that are not degenerate (every byte
+// equal — an all-zero key is ErrUnsafe; re-enroll with --replace). The key
+// never leaves this process: no API returns it, logs it, or derives a
+// response from it.
 func LoadDeviceKey(dataDir string) ([]byte, error) {
 	if err := checkDataDir(dataDir); err != nil {
 		return nil, err
@@ -87,6 +110,10 @@ func LoadDeviceKey(dataDir string) ([]byte, error) {
 	}
 	if len(b) != DeviceKeyLen {
 		return nil, unsafeErr(DeviceKeyPath(dataDir), fmt.Sprintf("%d bytes, want %d", len(b), DeviceKeyLen))
+	}
+	if degenerateKey(b) {
+		clear(b)
+		return nil, unsafeErr(DeviceKeyPath(dataDir), "degenerate key (every byte equal) — re-enroll with --replace")
 	}
 	return b, nil
 }
@@ -129,8 +156,13 @@ func Enroll(dataDir, userID, email string, now time.Time, replace bool) error {
 		}
 	}
 	key := make([]byte, DeviceKeyLen)
-	if _, err := rand.Read(key); err != nil {
+	if _, err := randRead(key); err != nil {
 		return err
+	}
+	// Never write a key LoadDeviceKey refuses (the writer passes its own
+	// reader's validator).
+	if degenerateKey(key) {
+		return errors.New("updateauth: the random source returned a degenerate key — nothing written")
 	}
 	a := Admin{UserID: userID, Email: email, EnrolledAt: now.UTC().Format(time.RFC3339)}
 	ab, err := json.MarshalIndent(a, "", "  ")

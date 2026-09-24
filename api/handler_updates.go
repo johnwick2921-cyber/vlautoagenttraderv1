@@ -261,7 +261,15 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 	// The job id is spent from here on, whatever follows.
 	if err := updateauth.Consume(dataDir, g.JobID, g.ExpiresAt, now); err != nil {
 		if errors.Is(err, updateauth.ErrReplay) {
-			logger.Warnf("🔒 [updates] install: job id replay")
+			if errors.Is(err, updateauth.ErrPrunedReplay) {
+				// M3-RT-F1: expires_at at or below the store's pruned-through
+				// watermark — a consumed-and-pruned id, or a fresh grant minted
+				// under a clock stepped back past a prune. Indistinguishable,
+				// so it is a replay (fail closed).
+				logger.Warnf("🔒 [updates] install: job id at or below the pruned-through watermark — refused as a replay (clock stepped back?)")
+			} else {
+				logger.Warnf("🔒 [updates] install: job id replay")
+			}
 			c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": "job already used"})
 			return
 		}

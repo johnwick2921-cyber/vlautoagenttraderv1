@@ -251,7 +251,7 @@ func rawMAC(key []byte, msg string) string {
 }
 
 func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
-	key := bytes.Repeat([]byte{7}, 32)
+	key := seqKey(7)
 	msg, err := Message("v1.2.3", "0123456789abcdef", 1800000300)
 	if err != nil || string(msg) != "v1.2.3|0123456789abcdef|1800000300" {
 		t.Fatalf("message %q err %v", msg, err)
@@ -269,7 +269,7 @@ func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
 	} else {
 		flip[0] = 'a'
 	}
-	other := bytes.Repeat([]byte{8}, 32)
+	other := seqKey(8)
 	bad := map[string]func() bool{
 		"wrong key":     func() bool { return VerifyMAC(other, "v1.2.3", "0123456789abcdef", 1800000300, mac) },
 		"flipped":       func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, string(flip)) },
@@ -409,10 +409,10 @@ func TestConsumeCorruptStoreFailsClosedAndIsNeverReset(t *testing.T) {
 	for name, body := range map[string]string{
 		"garbage":       "not json",
 		"empty":         "",
-		"null ids":      `{"v":1,"ids":null}`,
-		"wrong version": `{"v":2,"ids":[]}`,
-		"unknown field": `{"v":1,"ids":[],"x":1}`,
-		"bad entry":     `{"v":1,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
+		"null ids":      `{"v":2,"pruned_through":0,"ids":null}`,
+		"wrong version": `{"v":3,"pruned_through":0,"ids":[]}`,
+		"unknown field": `{"v":2,"pruned_through":0,"ids":[],"x":1}`,
+		"bad entry":     `{"v":2,"pruned_through":0,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
 	} {
 		d := t.TempDir()
 		_ = os.MkdirAll(Dir(d), 0o700)
@@ -427,7 +427,7 @@ func TestConsumeCorruptStoreFailsClosedAndIsNeverReset(t *testing.T) {
 	// positive control: an empty-but-valid store accepts
 	d := t.TempDir()
 	_ = os.MkdirAll(Dir(d), 0o700)
-	_ = os.WriteFile(SeenPath(d), []byte(`{"v":1,"ids":[]}`), 0o600)
+	_ = os.WriteFile(SeenPath(d), []byte(`{"v":2,"pruned_through":0,"ids":[]}`), 0o600)
 	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
@@ -466,7 +466,7 @@ func TestConsumePrunesOnlyLongExpiredIDs(t *testing.T) {
 func TestConsumeHardCapRefuses(t *testing.T) {
 	d := t.TempDir()
 	var sb strings.Builder
-	sb.WriteString(`{"v":1,"ids":[`)
+	sb.WriteString(`{"v":2,"pruned_through":0,"ids":[`)
 	for i := 0; i < MaxSeenEntries; i++ {
 		if i > 0 {
 			sb.WriteByte(',')
@@ -480,8 +480,10 @@ func TestConsumeHardCapRefuses(t *testing.T) {
 	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow); !errors.Is(err, ErrSeenFull) {
 		t.Fatalf("err = %v, want ErrSeenFull", err)
 	}
-	// positive control: once they are long expired they prune and it accepts
-	if err := Consume(d, "0123456789abcdef", tNow.Unix()+60, tNow.Add(30*time.Minute)); err != nil {
+	// positive control: once they are long expired they prune and a grant
+	// that is current at that clock is accepted
+	later := tNow.Add(30 * time.Minute)
+	if err := Consume(d, "0123456789abcdef", later.Unix()+60, later); err != nil {
 		t.Fatalf("positive control: %v", err)
 	}
 }

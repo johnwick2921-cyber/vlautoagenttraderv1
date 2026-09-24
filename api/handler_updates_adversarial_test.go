@@ -6,13 +6,14 @@ package api
 // canon 53) through the harness in handler_updates_test.go. Each test is
 // named by the property it pins and carries a positive control.
 //
-// Tests gated on NOFX_M3_OPEN_FINDINGS are OPEN FINDINGS, not pins: the
-// attack gets through today. They are the RED proof for the fix and are
-// skipped by default so the suite stays green; the fix commit deletes the
-// gate. Run them with NOFX_M3_OPEN_FINDINGS=1.
+// The triage findings M3-RT-F1 and M3-RT-F2 were RED here (gated on
+// NOFX_M3_OPEN_FINDINGS) until the fix commit removed the gate; they are
+// now ordinary pins.
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -25,18 +26,10 @@ import (
 
 	"nofx/internal/updateauth"
 	"nofx/logger"
+	"nofx/manager"
 
 	"github.com/gin-gonic/gin"
 )
-
-// openUpdateFinding skips an open-finding RED test unless
-// NOFX_M3_OPEN_FINDINGS is set.
-func openUpdateFinding(t *testing.T, id string) {
-	t.Helper()
-	if os.Getenv("NOFX_M3_OPEN_FINDINGS") == "" {
-		t.Skipf("OPEN FINDING %s (not fixed by the triage): RED proof, run with NOFX_M3_OPEN_FINDINGS=1; the fix commit removes this gate", id)
-	}
-}
 
 // grantBodyUnder is an install body whose MAC is computed under key.
 func grantBodyUnder(t *testing.T, key []byte, rel, job string, exp int64) string {
@@ -46,6 +39,15 @@ func grantBodyUnder(t *testing.T, key []byte, rel, job string, exp int64) string
 		t.Fatal(err)
 	}
 	return grantBody(updateauth.Grant{ReleaseID: rel, JobID: job, ExpiresAt: exp, HMAC: mac})
+}
+
+// attackerBodyUnder is an install body whose MAC an attacker computes under
+// key with a plain HMAC-SHA256 over release|job|exp — no updateauth minting
+// rule applies (it is how a guessed key would be used).
+func attackerBodyUnder(key []byte, rel, job string, exp int64) string {
+	m := hmac.New(sha256.New, key)
+	fmt.Fprintf(m, "%s|%s|%d", rel, job, exp)
+	return grantBody(updateauth.Grant{ReleaseID: rel, JobID: job, ExpiresAt: exp, HMAC: hex.EncodeToString(m.Sum(nil))})
 }
 
 // ── replay ───────────────────────────────────────────────────────────────
@@ -295,14 +297,15 @@ func TestInstallJobStaysSpentAfterEveryPostConsumeOutcome(t *testing.T) {
 	}
 }
 
-// ── OPEN FINDINGS (RED proofs; skipped by default) ────────────────────────
+// ── M3-RT-F1 / F2 (were open findings; RED at 6de60f66, fixed after it) ──
 
-// M3-RT-F1 at the router: a consumed job id must stay single-use across a
-// clock step-back. Today the id is pruned once its expiry is SeenRetention
-// old; a later step-back of more than SeenRetention puts the grant back in
-// its window and the install is admitted a second time (422, not 409).
+// M3-RT-F1 at the router: a consumed job id stays single-use across a clock
+// step-back. The id is pruned once its expiry is SeenRetention old; a later
+// step-back of more than SeenRetention puts the grant back in its window.
+// The seen store's pruned-through watermark answers 409 — across a restart
+// too — while a grant minted at the stepped-back clock still reaches the
+// stub.
 func TestInstallReplayRefusedAfterAClockStepBackPastRetention(t *testing.T) {
-	openUpdateFinding(t, "M3-RT-F1")
 	e := newUpdEnv(t)
 	cur := time.Now()
 	e.s.updatesNow = func() time.Time { return cur }
@@ -317,26 +320,56 @@ func TestInstallReplayRefusedAfterAClockStepBackPastRetention(t *testing.T) {
 		t.Fatalf("B = %d", w.Code)
 	}
 	cur = time.Unix(expA-10, 0) // clock stepped back 611s (NTP/WSL correction)
-	if w := e.do("POST", "/api/updates/install", bodyA); w.Code != http.StatusConflict {
+	if w := e.do("POST", "/api/updates/install", bodyA); w.Code != http.StatusConflict || w.Body.String() != `{"error":"job already used"}` {
 		t.Errorf("job rollback-job-a0001 admitted twice after a prune + 611s step-back: %d %s, want 409", w.Code, w.Body.String())
+	}
+	// a restarted app over the same installation still refuses it
+	e.s = NewServer(manager.NewTraderManager(), e.st, nil, "127.0.0.1", 0)
+	e.s.updatesNow = func() time.Time { return cur }
+	if w := e.do("POST", "/api/updates/install", bodyA); w.Code != http.StatusConflict {
+		t.Errorf("after a restart: %d %s, want 409", w.Code, w.Body.String())
+	}
+	// positive control: a grant minted at the stepped-back clock (expires_at
+	// above the watermark) is authorized and reaches the stub
+	if w := e.do("POST", "/api/updates/install", grantBodyUnder(t, key, updRelease, "rollback-job-c0001", cur.Unix()+300)); w.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("positive control: a fresh grant at the stepped-back clock = %d %s, want 422", w.Code, w.Body.String())
 	}
 }
 
 // M3-RT-F2: an all-zero device.key (32 zero bytes, 0600, our uid — e.g. a
 // zero-filled restore) is a key anyone can compute a MAC under; the
-// possession factor must refuse it rather than verify against it.
+// possession factor refuses it rather than verifying against it — and so
+// does every other /api/updates route (the enrollment is unusable), with
+// the byte-identical 403. An all-0xFF key is refused the same way; the
+// restored real key is admitted again (positive control).
 func TestInstallRefusesAMACUnderAnAllZeroDeviceKey(t *testing.T) {
-	openUpdateFinding(t, "M3-RT-F2")
 	e := newUpdEnv(t)
 	if w := e.do("POST", "/api/updates/install", grantBody(e.grant(updRelease))); w.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("positive control: real key = %d", w.Code)
 	}
-	zero := make([]byte, updateauth.DeviceKeyLen)
-	if err := os.WriteFile(updateauth.DeviceKeyPath(e.dataDir), zero, 0o600); err != nil {
+	realKey := mustKey(t, e.dataDir)
+	for _, fill := range []byte{0x00, 0xff} {
+		weak := bytes.Repeat([]byte{fill}, updateauth.DeviceKeyLen)
+		if err := os.WriteFile(updateauth.DeviceKeyPath(e.dataDir), weak, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		// allRoutes mints through the production minter, which (correctly)
+		// cannot mint under a degenerate key — so the routes are listed here
+		// with the attacker's MAC.
+		for _, rt := range []updRoute{
+			{"POST", "/api/updates/install", attackerBodyUnder(weak, updRelease, fmt.Sprintf("weak-key-job-%04x", fill), time.Now().Unix()+120)},
+			{"GET", "/api/updates", ""},
+			{"POST", "/api/updates/check", "{}"},
+			{"GET", "/api/updates/jobs/0123456789abcdef", ""},
+			{"GET", "/api/updates/jobs/0123456789abcdef/receipt", ""},
+		} {
+			if w := e.do(rt.method, rt.path, rt.body); w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
+				t.Errorf("%#02x-filled device.key: %s %s = %d %s, want 403 %s", fill, rt.method, rt.path, w.Code, w.Body.String(), forbiddenBody)
+			}
+		}
+	}
+	if err := os.WriteFile(updateauth.DeviceKeyPath(e.dataDir), realKey, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	w := e.do("POST", "/api/updates/install", grantBodyUnder(t, zero, updRelease, "zero-key-job-0001", time.Now().Unix()+120))
-	if w.Code != http.StatusForbidden || w.Body.String() != forbiddenBody {
-		t.Errorf("a MAC under the all-zero device.key = %d %s, want 403 %s", w.Code, w.Body.String(), forbiddenBody)
-	}
+	e.expectAllAdmitted("real key restored")
 }

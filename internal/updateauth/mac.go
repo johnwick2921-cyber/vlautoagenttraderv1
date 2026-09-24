@@ -41,8 +41,8 @@ func Message(releaseID, jobID string, expiresAt int64) ([]byte, error) {
 // Callers: the attended `updater-bootstrap authorize` ONLY (CTO ruling Q1(a):
 // nothing on the API side mints a MAC). A census test pins it.
 func ComputeMAC(key []byte, releaseID, jobID string, expiresAt int64) (string, error) {
-	if len(key) != DeviceKeyLen {
-		return "", errors.New("updateauth: bad key length")
+	if len(key) != DeviceKeyLen || degenerateKey(key) {
+		return "", errors.New("updateauth: bad key (wrong length or degenerate)")
 	}
 	msg, err := Message(releaseID, jobID, expiresAt)
 	if err != nil {
@@ -55,9 +55,9 @@ func ComputeMAC(key []byte, releaseID, jobID string, expiresAt int64) (string, e
 
 // VerifyMAC reports whether macHex (exactly 64 lowercase hex chars) is the
 // HMAC-SHA256 of Message under key. The comparison is hmac.Equal (constant
-// time).
+// time). A degenerate key (every byte equal) verifies nothing (M3-RT-F2).
 func VerifyMAC(key []byte, releaseID, jobID string, expiresAt int64, macHex string) bool {
-	if len(key) != DeviceKeyLen || !macHexRe.MatchString(macHex) {
+	if len(key) != DeviceKeyLen || degenerateKey(key) || !macHexRe.MatchString(macHex) {
 		return false
 	}
 	msg, err := Message(releaseID, jobID, expiresAt)

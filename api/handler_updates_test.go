@@ -842,7 +842,10 @@ func TestInstallRefusesABadMACAndDoesNotSpendTheJob(t *testing.T) {
 	} else {
 		flip[0] = '0'
 	}
-	otherKey := bytes.Repeat([]byte{9}, 32)
+	otherKey := make([]byte, 32) // non-degenerate (a degenerate key cannot mint)
+	for i := range otherKey {
+		otherKey[i] = byte(9 + i)
+	}
 	wrongKeyMAC, _ := updateauth.ComputeMAC(otherKey, g.ReleaseID, g.JobID, g.ExpiresAt)
 	m := hmac.New(sha256.New, mustKey(t, e.dataDir))
 	fmt.Fprintf(m, "%s|%s|%d", g.JobID, g.ReleaseID, g.ExpiresAt)

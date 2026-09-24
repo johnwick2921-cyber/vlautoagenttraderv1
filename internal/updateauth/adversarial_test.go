@@ -4,10 +4,9 @@ package updateauth
 // probes (zz_redteam_test.go, triaged 2026-09-24). Each test is named by the
 // property it pins; each was run and refused the attack it describes.
 //
-// Tests gated on NOFX_M3_OPEN_FINDINGS are OPEN FINDINGS, not pins: the
-// attack gets through today. They are the RED proof for the fix and are
-// skipped by default so the suite stays green; the fix commit deletes the
-// gate. Run them with NOFX_M3_OPEN_FINDINGS=1.
+// The three triage findings M3-RT-F1..F3 were RED here (gated on
+// NOFX_M3_OPEN_FINDINGS) until the fix commit removed the gate; they are
+// now ordinary pins.
 
 import (
 	"errors"
@@ -19,15 +18,6 @@ import (
 	"testing"
 	"time"
 )
-
-// openFinding skips an open-finding RED test unless NOFX_M3_OPEN_FINDINGS
-// is set.
-func openFinding(t *testing.T, id string) {
-	t.Helper()
-	if os.Getenv("NOFX_M3_OPEN_FINDINGS") == "" {
-		t.Skipf("OPEN FINDING %s (not fixed by the triage): RED proof, run with NOFX_M3_OPEN_FINDINGS=1; the fix commit removes this gate", id)
-	}
-}
 
 // For every (release, job, exp) that Message accepts, the message splits on
 // '|' back into exactly that triple — no two accepted triples share a MAC
@@ -156,7 +146,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 		t.Fatal(err)
 	}
 	var b strings.Builder
-	b.WriteString(`{"v":1,"ids":[`)
+	b.WriteString(`{"v":2,"pruned_through":0,"ids":[`)
 	exp := tNow.Unix() + 300
 	for i := 0; i < MaxSeenEntries-1; i++ {
 		if i > 0 {
@@ -178,7 +168,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 	for i := range big {
 		big[i] = ' '
 	}
-	copy(big, []byte(`{"v":1,"ids":[]}`))
+	copy(big, []byte(`{"v":2,"pruned_through":0,"ids":[]}`))
 	if err := os.WriteFile(SeenPath(d), big, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -186,16 +176,25 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 		t.Errorf("oversize store: %v, want ErrSeenCorrupt", err)
 	}
 	for name, body := range map[string]string{
-		"v float":      `{"v":1.0,"ids":[]}`,
-		"ids null":     `{"v":1,"ids":null}`,
-		"dup v":        `{"v":1,"v":1,"ids":[]}`,
-		"entry extra":  `{"v":1,"ids":[{"job_id":"0123456789abcdef","expires_at":1,"consumed_at":1,"x":1}]}`,
-		"entry badid":  `{"v":1,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
-		"entry exp0":   `{"v":1,"ids":[{"job_id":"0123456789abcdef","expires_at":0,"consumed_at":1}]}`,
-		"ids object":   `{"v":1,"ids":{}}`,
-		"two objs":     `{"v":1,"ids":[]}{"v":1,"ids":[]}`,
-		"v string":     `{"v":"1","ids":[]}`,
-		"ids trailing": `{"v":1,"ids":[] }garbage`,
+		"v float":             `{"v":2.0,"pruned_through":0,"ids":[]}`,
+		"ids null":            `{"v":2,"pruned_through":0,"ids":null}`,
+		"dup v":               `{"v":2,"v":2,"pruned_through":0,"ids":[]}`,
+		"entry extra":         `{"v":2,"pruned_through":0,"ids":[{"job_id":"0123456789abcdef","expires_at":1,"consumed_at":1,"x":1}]}`,
+		"entry badid":         `{"v":2,"pruned_through":0,"ids":[{"job_id":"../x","expires_at":1,"consumed_at":1}]}`,
+		"entry exp0":          `{"v":2,"pruned_through":0,"ids":[{"job_id":"0123456789abcdef","expires_at":0,"consumed_at":1}]}`,
+		"entry consumed0":     `{"v":2,"pruned_through":0,"ids":[{"job_id":"0123456789abcdef","expires_at":1,"consumed_at":0}]}`,
+		"ids object":          `{"v":2,"pruned_through":0,"ids":{}}`,
+		"two objs":            `{"v":2,"pruned_through":0,"ids":[]}{"v":2,"pruned_through":0,"ids":[]}`,
+		"v string":            `{"v":"2","pruned_through":0,"ids":[]}`,
+		"ids trailing":        `{"v":2,"pruned_through":0,"ids":[] }garbage`,
+		"v1 (no watermark)":   `{"v":1,"ids":[]}`,
+		"watermark missing":   `{"v":2,"ids":[]}`,
+		"watermark negative":  `{"v":2,"pruned_through":-1,"ids":[]}`,
+		"watermark float":     `{"v":2,"pruned_through":1.5,"ids":[]}`,
+		"watermark string":    `{"v":2,"pruned_through":"0","ids":[]}`,
+		"watermark leading 0": `{"v":2,"pruned_through":01,"ids":[]}`,
+		"watermark null":      `{"v":2,"pruned_through":null,"ids":[]}`,
+		"watermark dup":       `{"v":2,"pruned_through":0,"pruned_through":0,"ids":[]}`,
 	} {
 		if err := os.WriteFile(SeenPath(d), []byte(body), 0o600); err != nil {
 			t.Fatal(err)
@@ -208,7 +207,7 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 		}
 	}
 	// positive control: a valid empty store accepts
-	if err := os.WriteFile(SeenPath(d), []byte(`{"v":1,"ids":[]}`), 0o600); err != nil {
+	if err := os.WriteFile(SeenPath(d), []byte(`{"v":2,"pruned_through":0,"ids":[]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := Consume(d, strings.Repeat("c", 64), exp, tNow); err != nil {
@@ -216,14 +215,15 @@ func TestSeenStoreEntryCapBindsBeforeTheByteCapAndMalformedShapesFailClosed(t *t
 	}
 }
 
-// ── OPEN FINDINGS (RED proofs; skipped by default) ────────────────────────
+// ── M3-RT-F1..F3 (were open findings; RED at 6de60f66, fixed after it) ────
 
-// M3-RT-F1: a consumed job id must stay single-use across a clock step-back.
-// Today Consume prunes an entry once its expires_at is SeenRetention in the
-// past; a later clock step-back of more than SeenRetention puts the pruned
-// grant back inside its validity window and Consume admits it a second time.
+// M3-RT-F1: a consumed job id stays single-use across a clock step-back.
+// Consume prunes an entry once its expires_at is SeenRetention in the past;
+// a later clock step-back of more than SeenRetention puts the pruned grant
+// back inside its validity window. The pruned-through watermark refuses it
+// as a replay; a grant minted at the stepped-back clock (expires_at above the
+// watermark) is still admitted.
 func TestConsumeRefusesAReplayAfterAClockRollbackPastRetention(t *testing.T) {
-	openFinding(t, "M3-RT-F1")
 	d := t.TempDir()
 	T := time.Unix(1_800_000_000, 0)
 	jobA := "aaaaaaaaaaaaaaaa"
@@ -244,20 +244,28 @@ func TestConsumeRefusesAReplayAfterAClockRollbackPastRetention(t *testing.T) {
 	if CheckExpiry(expA, T3) != nil {
 		t.Fatal("precondition: A is not inside its window at T3")
 	}
-	if err := Consume(d, jobA, expA, T3); err == nil {
-		t.Errorf("job %s consumed twice after a prune + %ds clock step-back", jobA, T2.Unix()-T3.Unix())
+	if err := Consume(d, jobA, expA, T3); !errors.Is(err, ErrReplay) || !errors.Is(err, ErrPrunedReplay) {
+		t.Errorf("job %s after a prune + %ds clock step-back: err = %v, want ErrPrunedReplay (a replay)", jobA, T2.Unix()-T3.Unix(), err)
+	}
+	// positive control: a grant minted at the stepped-back clock carries
+	// expires_at = T3+300 > the watermark (expA) and is admitted once
+	fresh := "cccccccccccccccc"
+	if err := Consume(d, fresh, T3.Unix()+300, T3); err != nil {
+		t.Fatalf("positive control: a fresh grant at the stepped-back clock: %v", err)
+	}
+	if err := Consume(d, fresh, T3.Unix()+300, T3); !errors.Is(err, ErrReplay) || errors.Is(err, ErrPrunedReplay) {
+		t.Fatalf("fresh id replay: err = %v, want the plain ErrReplay", err)
 	}
 }
 
-// M3-RT-F3: Consume must never write a record its own reader refuses. At a
-// clock reading <= the unix epoch it writes consumed_at <= 0, readSeen
-// rejects that as corrupt, and — because a corrupt store is never reset —
-// every later Consume fails until the file is repaired by hand.
+// M3-RT-F3: Consume never writes a record its own reader refuses. At a
+// clock reading <= the unix epoch it used to write consumed_at <= 0, which
+// readSeen rejects as corrupt — and because a corrupt store is never reset,
+// every later Consume failed until the file was repaired by hand.
 func TestConsumeNeverWritesARecordItsReaderRefuses(t *testing.T) {
-	openFinding(t, "M3-RT-F3")
-	for _, clock := range []time.Time{time.Unix(0, 0), time.Unix(-100, 0)} {
+	for _, clock := range []time.Time{time.Unix(0, 0), time.Unix(-100, 0), time.Unix(0, 999_999_999)} {
 		d := t.TempDir()
-		_ = Consume(d, "0123456789abcdef", clock.Unix()+150, clock) // admitted or refused: either is fine (exp > 0 for both clocks)
+		_ = Consume(d, "0123456789abcdef", clock.Unix()+150, clock) // admitted or refused: either is fine (exp > 0 for all clocks)
 		if err := Consume(d, "0123456789abcdee", tNow.Unix()+60, tNow); err != nil {
 			t.Errorf("clock %d: the store no longer accepts a fresh id at a sane clock: %v", clock.Unix(), err)
 		}

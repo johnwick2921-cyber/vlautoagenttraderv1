@@ -102,6 +102,21 @@ func rawUnixSeconds(v json.RawMessage) (int64, error) {
 	return n, nil
 }
 
+// rawNonNegInt decodes a canonical non-negative decimal integer (0 allowed)
+// — the seen store's pruned_through, where 0 means "nothing pruned yet"
+// (every valid expires_at is > 0, so 0 excludes nothing).
+func rawNonNegInt(v json.RawMessage) (int64, error) {
+	t := bytes.TrimSpace(v)
+	if !canonicalUint.Match(t) {
+		return 0, malformed("not a canonical non-negative integer")
+	}
+	n, err := strconv.ParseInt(string(t), 10, 64)
+	if err != nil || n < 0 {
+		return 0, malformed("not a non-negative integer")
+	}
+	return n, nil
+}
+
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
