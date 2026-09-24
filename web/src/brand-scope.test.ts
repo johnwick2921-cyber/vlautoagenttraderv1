@@ -3,6 +3,19 @@
 // deploy/nofx-lock.sh @ ace51598 (fix/lock-defects-release-meta-halfbuilt),
 // following keeper @ 97a6525cb6d10d6c8898b2d277c0fe7581872c24.
 // Only its recorded hash changes; protected-file mutation checks remain enforced.
+// Auth baseline advanced 2026-09-24 for W-ONE-BUTTON M3 (CTO-dispatched,
+// feat/one-button-m3-update-authz; red-team H1/H2/M2 + defect 4, each ruled).
+// Delta against the PR base (dev 710e96aa): auth/auth.go +78 −4. The four
+// removed lines, each re-issued: BlacklistToken's comment; its entry
+// `items[token] = exp` → `exp.Add(ClockLeeway)` (a logged-out token must stay
+// refused through the parser's 60 s exp leeway); GenerateJWT's comment; and
+// `jwt.ParseWithClaims(` → `strictParser.ParseWithClaims(` (strict base64url
+// + WithIssuedAt + WithLeeway(ClockLeeway)). Added: the Scope claim, the
+// machine-token scopes and Claims.IsMachine (machine tokens are denied the
+// credential, Telegram-config and update routes), GenerateScopedJWT, and one
+// signToken every mint goes through. The protected guards are byte-untouched:
+// the HMAC signing-method check, `&& token.Valid`, the Issuer, and the
+// blacklist lookup. No identifier renamed.
 // Bar-feed baseline advanced 2026-09-24 for DS-102 U6 (fix/owed-ui-ci-1):
 //   provider/ninjatrader/tcp_server.go — the hello handshake log now renders an
 //     absent NT8 identity as n/a via helloProcessPair (nt8_pid/assembly_mvid;
