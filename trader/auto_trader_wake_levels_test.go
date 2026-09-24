@@ -63,7 +63,7 @@ func TestCollectWakeCandidates15mReversalZone(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	if len(cands) != 1 {
 		t.Fatalf("expected exactly one 15m reversal-zone candidate, got %d: %+v", len(cands), cands)
 	}
@@ -88,18 +88,18 @@ func TestCollectWakeCandidatesKnobOff15m(t *testing.T) {
 	}
 	// W-KNOB-PRUNE: the single switch off suppresses every class.
 	cfg := &store.DayPlanConfig{WakeOnLevelEvents: &off}
-	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now); len(cands) != 0 {
+	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, nil, now); len(cands) != 0 {
 		t.Fatalf("wake_on_level_events=false must suppress 15m candidates, got %+v", cands)
 	}
 	// Legacy mapping: a lone stored wake_on_15m_zone=false no longer suppresses
 	// (any legacy switch ON — nil reads ON — maps the single switch ON).
 	legacy := &store.DayPlanConfig{WakeOn15mZone: &off}
-	if cands := collectLevelWakeCandidates(legacy, fetch, "MNQ", row, now); len(cands) != 1 {
+	if cands := collectLevelWakeCandidates(legacy, fetch, "MNQ", row, nil, now); len(cands) != 1 {
 		t.Fatalf("legacy lone wake_on_15m_zone=false maps to ON, want 1 candidate, got %+v", cands)
 	}
 	// Legacy mapping: all five false maps OFF.
 	allOff := &store.DayPlanConfig{WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off}
-	if cands := collectLevelWakeCandidates(allOff, fetch, "MNQ", row, now); len(cands) != 0 {
+	if cands := collectLevelWakeCandidates(allOff, fetch, "MNQ", row, nil, now); len(cands) != 0 {
 		t.Fatalf("all five legacy switches false must map to OFF, got %+v", cands)
 	}
 }
@@ -127,7 +127,7 @@ func TestCollectWakeCandidatesHTFZoneAndOB(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	foundZone := false
 	for _, c := range cands {
 		if c.kind == "zone" && c.tier == "1h" && c.prio == wakePrioHTFZone {
@@ -144,7 +144,7 @@ func TestCollectWakeCandidatesHTFZoneAndOB(t *testing.T) {
 	// Enable the OB knob → the displacement bar yields OB candidates.
 	on := true
 	cfg := &store.DayPlanConfig{WakeOnHTFOB: true, WakeOn15mZone: &on}
-	cands = collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now)
+	cands = collectLevelWakeCandidates(cfg, fetch, "MNQ", row, nil, now)
 	foundOB := false
 	for _, c := range cands {
 		if c.kind == "ob" && c.prio == wakePrioHTFOB {
@@ -173,7 +173,7 @@ func TestCollectWakeCandidatesIFVG(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	found := false
 	for _, c := range cands {
 		if c.kind == "ifvg" && c.label == "iFVG(bear)" {
@@ -205,7 +205,7 @@ func TestCollectWakeCandidatesSeatedInvalidation(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	found := false
 	for _, c := range cands {
 		if c.kind == "invalidation" {
@@ -223,7 +223,7 @@ func TestCollectWakeCandidatesSeatedInvalidation(t *testing.T) {
 	// off, nothing fires at all (W-KNOB-PRUNE).
 	off := false
 	cfg := &store.DayPlanConfig{WakeOnLevelEvents: &off}
-	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now); len(cands) != 0 {
+	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, nil, now); len(cands) != 0 {
 		t.Fatalf("wake_on_level_events=false must suppress candidates, got %+v", cands)
 	}
 }
@@ -302,5 +302,52 @@ func TestMaybeWakePlannerOnLevelEventsThrottleDedupe(t *testing.T) {
 	at.maybeWakePlannerOnLevelEventsAt(now, "NY", "2026-08-25", row)
 	if at.lastLevelWakeKey != "" {
 		t.Fatalf("min-interval throttle must suppress the second wake inside the window, got key %q", at.lastLevelWakeKey)
+	}
+}
+
+// TestMaybeWakePlannerFoldsOverlaySeatedLevel (WAVE 1a-plan P2) — the seated-
+// level invalidation reads the plan through the ONE fold: an owner overlay
+// adding a seated Demand level must be able to wake the planner. RED on the
+// base-only reader: lastLevelWakeKey stays "" (no candidates). GREEN: the wake
+// fires.
+func TestMaybeWakePlannerFoldsOverlaySeatedLevel(t *testing.T) {
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, WakeMinIntervalMin: 10}})
+	now := time.Date(2026, 8, 25, 10, 0, 0, 0, kernel.CTLocation())
+	// 15m bars: last closed bar closes 95.0 — far below a seated Demand 100.
+	bars := wakeBars(15, now.UnixMilli(), [][4]float64{
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{99.0, 99.5, 94.5, 95.0},
+	})
+	prev := market.FuturesBarsProvider
+	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline {
+		if tf == "15m" {
+			return bars
+		}
+		return nil
+	}
+	t.Cleanup(func() { market.FuturesBarsProvider = prev })
+
+	pid := "2026-08-25:NY"
+	base := `{"reasoning":"wave-1a-p2-wake","bias":{"direction":"neutral"},"death_condition":"flat","levels":[],"scenarios":[{"id":"S1","condition":"reject","direction":"long","quality":"A"}]}`
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: pid, StrategyID: at.id, TradeDate: "2026-08-25", Session: "NY", Lifecycle: "active", Doc: base, CreatedAt: now.Add(-24 * time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	// The owner adds a seated Demand level at 100 through an overlay.
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: pid, PlanVersion: 1, OverlayID: "owner-add-demand", Origin: "owner",
+		Patch: `[{"op":"add","path":"/levels/-","value":{"price":100,"label":"Demand·15m","grade":"B"}}]`}); err != nil {
+		t.Fatal(err)
+	}
+	row, err := st.Plan().GetLatestPlanForTraderSession("2026-08-25", "NY", at.id)
+	if err != nil || row == nil {
+		t.Fatalf("plan row: %v", err)
+	}
+	at.maybeWakePlannerOnLevelEventsAt(now, "NY", "2026-08-25", row)
+	if at.lastLevelWakeKey == "" {
+		t.Fatal("the owner overlay's seated Demand level must wake the planner through the fold")
 	}
 }

@@ -88,7 +88,7 @@ func TestKnobPrunePin_WakeCandidates(t *testing.T) {
 		Interval   int
 	}{}
 	for name, cfg := range knobPruneConfigs(t) {
-		cs := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now)
+		cs := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, nil, now)
 		list := []cand{}
 		for _, c := range cs {
 			list = append(list, cand{c.key, c.kind, c.tier, c.desc, c.prio, c.birthMs})
@@ -128,14 +128,14 @@ func TestKnobPrunePin_WakeCandidates_SingleSwitchOwnsOB(t *testing.T) {
 	if dp.WakeOnHTFOrderBlocks() {
 		t.Fatal("wake_on_level_events=false must switch the OB class off too")
 	}
-	if cands := collectLevelWakeCandidates(&dp, fetch, "MNQ", row, now); len(cands) != 0 {
+	if cands := collectLevelWakeCandidates(&dp, fetch, "MNQ", row, nil, now); len(cands) != 0 {
 		t.Fatalf("single switch OFF + legacy wake_on_htf_ob=true must yield ZERO wake candidates, got %+v", cands)
 	}
 	// And the fixture DOES produce OBs when the switch is on (so the zero above is the gate, not the fixture).
 	on := true
 	dp.WakeOnLevelEvents = &on
 	obs := 0
-	for _, c := range collectLevelWakeCandidates(&dp, fetch, "MNQ", row, now) {
+	for _, c := range collectLevelWakeCandidates(&dp, fetch, "MNQ", row, nil, now) {
 		if c.kind == "ob" {
 			obs++
 		}
