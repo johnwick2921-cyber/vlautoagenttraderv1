@@ -104,6 +104,33 @@ func (s *Server) updatesGate() gin.HandlerFunc {
 
 var loopbackHostNames = map[string]bool{"127.0.0.1": true, "localhost": true, "::1": true}
 
+// forwardingHeaders are the headers a proxy, load balancer or tunnel adds to
+// say it relayed the request (lower-case, '-' separated). Any x-forwarded-*
+// counts too. No browser and no local UI sends one.
+var forwardingHeaders = map[string]bool{
+	"forwarded": true, "x-real-ip": true, "via": true,
+	"cf-connecting-ip": true, "true-client-ip": true, "x-client-ip": true,
+	"x-cluster-client-ip": true, "fastly-client-ip": true, "x-original-forwarded-for": true,
+}
+
+// forwardingHeader returns the (normalized) name of the first forwarding
+// header present — whatever its value, even empty — or "". Keys are
+// compared case-insensitively with '_' read as '-', so a non-canonical
+// spelling that some relays or CGI bridges produce cannot slip past. The
+// returned name is our own constant spelling, never the client's bytes.
+func forwardingHeader(h http.Header) string {
+	for k := range h {
+		n := strings.ReplaceAll(strings.ToLower(k), "_", "-")
+		if forwardingHeaders[n] {
+			return n
+		}
+		if strings.HasPrefix(n, "x-forwarded-") {
+			return "x-forwarded-*"
+		}
+	}
+	return ""
+}
+
 // requestHostName is the hostname part of r.Host, lower-cased, brackets
 // stripped; "" when the port part is present but not all digits.
 func requestHostName(hostport string) string {
@@ -139,6 +166,14 @@ func (s *Server) updatesRefusal(c *gin.Context) string {
 	// resolving to 127.0.0.1 still arrives with Host: evil.test).
 	if !loopbackHostNames[requestHostName(r.Host)] {
 		return "host not a loopback name"
+	}
+	// Red-team M3: a reverse proxy or tunnel on this box is a loopback peer
+	// for EVERY client it relays (and rewrites Host to ours). A request that
+	// says it was forwarded is refused. Known limit: a relay that adds none of
+	// these headers is indistinguishable from a local client — updates are
+	// loopback-DIRECT only (runbook).
+	if h := forwardingHeader(r.Header); h != "" {
+		return "forwarded request (" + h + ")"
 	}
 	// CSRF: the custom header, exactly one value, exactly "1".
 	if v := r.Header.Values(UpdateHeader); len(v) != 1 || v[0] != "1" {
