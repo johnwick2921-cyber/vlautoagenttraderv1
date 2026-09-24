@@ -5,6 +5,14 @@
 
 import { API_BASE, httpClient } from './helpers'
 
+// The M3 gate (api/handler_updates.go updatesRefusal) refuses every
+// /api/updates* request without exactly one X-NOFX-Update: 1 — before it
+// reads the JWT. It is the CSRF factor: the header is not in the CORS allow
+// list, so a cross-origin page cannot make a browser send it. Sent on the
+// /updates* calls ONLY (updates.header.test.ts; the Go side pins the name
+// against api.UpdateHeader).
+const UPDATE_HEADERS = { 'X-NOFX-Update': '1' }
+
 // ── GET /api/maintenance (trader/maintenance_status.go MaintenanceStatusView) ──
 export interface MaintenanceAckView {
   received: string
@@ -144,6 +152,7 @@ export const updatesApi = {
 
   async updatesStatus(silent = true): Promise<UpdatesStatus | null> {
     const res = await httpClient.request<UpdatesStatus>(`${API_BASE}/updates`, {
+      headers: UPDATE_HEADERS,
       silent,
     })
     return res.success && res.data ? res.data : null
@@ -154,6 +163,7 @@ export const updatesApi = {
       `${API_BASE}/updates/check`,
       {
         method: 'POST',
+        headers: UPDATE_HEADERS,
         silent: true,
       }
     )
@@ -168,7 +178,7 @@ export const updatesApi = {
   }): Promise<UpdatesInstallResult> {
     const res = await httpClient.request<{ job_id: string; error?: string }>(
       `${API_BASE}/updates/install`,
-      { method: 'POST', data: body, silent: true }
+      { method: 'POST', data: body, headers: UPDATE_HEADERS, silent: true }
     )
     if (res.success && res.data?.job_id) {
       return { ok: true, job_id: res.data.job_id }
@@ -183,7 +193,7 @@ export const updatesApi = {
   async job(id: string, silent = true): Promise<UpdateJobView | null> {
     const res = await httpClient.request<UpdateJobView>(
       `${API_BASE}/updates/jobs/${encodeURIComponent(id)}`,
-      { silent }
+      { headers: UPDATE_HEADERS, silent }
     )
     if (!res.data) return null
     return { ...res.data, status: res.statusCode }

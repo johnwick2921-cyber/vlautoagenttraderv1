@@ -119,6 +119,7 @@ describe('updatesApi shape pins', () => {
     const out = await updatesApi.check()
     expect(mocks.request).toHaveBeenCalledWith('/api/updates/check', {
       method: 'POST',
+      headers: { 'X-NOFX-Update': '1' },
       silent: true,
     })
     expect(out).toEqual({
@@ -177,6 +178,7 @@ describe('updatesApi shape pins', () => {
     })
     const out = await updatesApi.job('job-1')
     expect(mocks.request).toHaveBeenCalledWith('/api/updates/jobs/job-1', {
+      headers: { 'X-NOFX-Update': '1' },
       silent: true,
     })
     expect(out).toEqual({ error: 'not found', status: 404 })
