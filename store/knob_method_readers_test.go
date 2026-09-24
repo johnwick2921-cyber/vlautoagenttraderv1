@@ -11,6 +11,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"nofx/internal/censuswalk"
 )
 
 // ── CLEANUP BATCH 2, B1 — THE REGISTRY'S FIELD GREP MISSED METHOD READERS ─────
@@ -62,28 +64,18 @@ func knobFieldOwners(leaf string) [][2]string {
 	return out
 }
 
-// repoGoFiles lists every non-test .go file under the module root.
-func repoGoFiles(t *testing.T) (root string, files []string) {
+// repoGoFiles lists every non-test .go file under the module root via
+// censuswalk.NonTestGoFiles (CLASS 258: skip names apply only as direct
+// children of the module root).
+func repoGoFiles(t *testing.T, rootArg string) (root string, files []string) {
 	t.Helper()
-	root = ".."
-	err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-		if info.IsDir() {
-			base := info.Name()
-			if base == "node_modules" || base == ".git" || base == "web" || (strings.HasPrefix(base, ".") && base != "." && base != "..") {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if strings.HasSuffix(p, ".go") && !strings.HasSuffix(p, "_test.go") {
-			files = append(files, p)
-		}
-		return nil
-	})
+	root = rootArg
+	fs, err := censuswalk.NonTestGoFiles(root)
 	if err != nil {
 		t.Fatal(err)
+	}
+	for _, f := range fs {
+		files = append(files, f.Path)
 	}
 	return root, files
 }
@@ -131,7 +123,7 @@ func methodReadersOfKnob(t *testing.T, leaf string) (accessors []string, callSit
 	if len(owners) == 0 {
 		return nil, nil
 	}
-	root, files := repoGoFiles(t)
+	root, files := repoGoFiles(t, "..")
 	fset := token.NewFileSet()
 	parsed := map[string]*ast.File{}
 	for _, f := range files {
@@ -242,5 +234,43 @@ func TestWakeKnobsAreLiveThroughTheirAccessors(t *testing.T) {
 		if e.UILabel() == "no known reader — pending verification" {
 			t.Errorf("%s renders %q", leaf, e.UILabel())
 		}
+	}
+}
+
+// TestKnobMethodReadersSeeNestedSkipNamedDirs plants a .go file in EVERY
+// censuswalk.NestedProbeDirs directory of a synthetic module and asserts
+// repoGoFiles (the walk the reader census uses) covers every one. With the old
+// any-depth SkipDir the dirs named like a root skip were invisible (CLASS 258).
+func TestKnobMethodReadersSeeNestedSkipNamedDirs(t *testing.T) {
+	root := t.TempDir()
+	dirs := censuswalk.NestedProbeDirs()
+	for _, dir := range dirs {
+		full := filepath.Join(root, filepath.FromSlash(dir))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		src := "package " + censuswalk.PackageName(dir) + "\n"
+		if err := os.WriteFile(filepath.Join(full, "probe.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, files := repoGoFiles(t, root)
+	seen := map[string]bool{}
+	for _, f := range files {
+		rel, err := filepath.Rel(root, f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		seen[filepath.ToSlash(rel)] = true
+	}
+	var missed []string
+	for _, dir := range dirs {
+		if !seen[dir+"/probe.go"] {
+			missed = append(missed, dir)
+		}
+	}
+	if len(missed) > 0 {
+		t.Fatalf("the knob-reader walk skipped %d of %d nested probe dirs — a skip by NAME at depth exempts compiled packages (CLASS 258):\n\t%s",
+			len(missed), len(dirs), strings.Join(missed, "\n\t"))
 	}
 }
