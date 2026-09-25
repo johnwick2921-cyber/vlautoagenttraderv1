@@ -189,9 +189,12 @@ func TestOneSetupBackfillFoldsOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	// The owner adds S9, armed at 29450 — a level the base has no scenario at.
+	// CreatedAt is stated: the overlay lands BEFORE the episode opens (era),
+	// so the backfill's as-of fold sees it (skeptic F8).
 	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{
 		PlanID: pid, PlanVersion: 1, OverlayID: "owner-add-s9", Origin: "owner",
-		Patch: `[{"op":"add","path":"/scenarios/-","value":{"id":"S9","trigger":"reject at 29450","condition":"reject","direction":"long","quality":"A","arm":{"enabled":true,"entry":29450,"stop":29440,"target":29500}}}]`,
+		CreatedAt: era,
+		Patch:     `[{"op":"add","path":"/scenarios/-","value":{"id":"S9","trigger":"reject at 29450","condition":"reject","direction":"long","quality":"A","arm":{"enabled":true,"entry":29450,"stop":29440,"target":29500}}}]`,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -229,5 +232,137 @@ func TestOneSetupBackfillFoldsOverlay(t *testing.T) {
 	}
 	if got.OneSetupBackfill == nil || *got.OneSetupBackfill != "recomputed" {
 		t.Fatalf("the 29450 row must be recomputed through the folded S9, got backfill=%v", got.OneSetupBackfill)
+	}
+}
+
+// ── Skeptic F8 (2026-09-24): the backfill matches on the SAME predicate the
+// live stamper runs — plannerScenariosOnly (D8: one_setup governs PLANNER
+// plays only) — and folds only overlays written AT OR BEFORE the episode's
+// open (a later overlay never rewrites a closed episode's attribution).
+
+// f8Seed mirrors TestOneSetupBackfillFoldsOverlay's seeding: one active plan
+// with a 29490 planner scenario, a pool read, 1m bars, and one episode at
+// levelPrice opened at `open`.
+func f8Seed(t *testing.T, at *AutoTrader, st *store.Store, pid string, open time.Time, levelPrice float64) {
+	t.Helper()
+	ts := st.TouchOutcomes()
+	sym := at.futuresSymbol()
+	if err := st.CandidatePool().SavePool([]store.CandidatePoolRow{
+		{TraderID: at.id, Symbol: sym, PlanID: pid, PlanVersion: 1, Session: "NY", ReadAtMs: open.Add(-10 * time.Minute).UnixMilli(), LevelPrice: levelPrice, LevelKind: "ONL", Label: "ONL", Rank: 1, Seated: true, Score: 0.8, Grade: "B"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.BarHistory().Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	var bars []store.BarHistoryDB
+	for i := -6; i <= 1; i++ {
+		o := open.Add(time.Duration(i) * time.Minute).UnixMilli()
+		bars = append(bars, store.BarHistoryDB{Symbol: sym, TF: "1m", OpenTimeMs: o, O: 29495, H: 29496, L: 29494, C: 29495, V: 1, Contract: "MNQ 09-26", Source: store.BarSourceLive})
+	}
+	if err := st.BarHistory().InsertBars(bars); err != nil {
+		t.Fatal(err)
+	}
+	yes := true
+	r := &store.TouchOutcomeRow{TraderID: at.id, Symbol: sym, LevelPrice: levelPrice, LevelKind: "X", CandidateSeated: true, PlanID: pid, PlanVersion: 1, Session: "NY", Ordinal: 1,
+		OpenedAtMs: open.UnixMilli(), ClosedAtMs: open.Add(time.Minute).UnixMilli(), Outcome: "hold", Validity: store.ValidityValid, EntrySide: "above", FadePermitted: &yes}
+	if err := ts.SaveOutcome(r); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// (F8a) a machine (Picture) overlay armed at the episode's level must NOT
+// match — the live predicate excludes machine scenarios, and a one_setup
+// verdict must never be stamped against a Picture play. RED = drop
+// plannerScenariosOnly → the row recomputes with Scenario=P1.
+func TestOneSetupBackfillExcludesMachineScenarios(t *testing.T) {
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}})
+	era := time.Date(2026, 9, 10, 18, 47, 7, 0, kernel.CTLocation())
+	open := era.Add(30 * time.Minute)
+	pid := "2026-09-11:NY:" + at.id
+	base := kernel.PlanDoc{
+		Reasoning: "f8 machine exclusion", Bias: kernel.PlanBias{Direction: "long", Conviction: "low"},
+		DeathCondition: "n/a",
+		Levels:         []kernel.PlanLevel{{Price: 29490, Label: "PDL", Grade: "A", Instruction: "fade"}},
+		Scenarios: []kernel.PlanScenario{
+			{ID: "S1", Trigger: "reject at 29490", Condition: "reject", Direction: "long", Quality: "A",
+				Confirm: &kernel.PlanConfirm{Rule: "touch", RefPrice: 29490, Side: "above"},
+				Arm:     &kernel.PlanArmSpec{Enabled: true, Entry: 29490, Stop: 29480, Target: 29530}},
+		},
+	}
+	blob, _ := json.Marshal(base)
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: pid, TradeDate: "2026-09-11", Session: "NY", StrategyID: at.id, Lifecycle: "active", Doc: string(blob), CreatedAt: era}); err != nil {
+		t.Fatal(err)
+	}
+	psc := kernel.PlanScenario{
+		ID: "P1", Trigger: "H1 close beyond 29450", Condition: "reject", Direction: "long", Quality: "B",
+		TargetChain: []float64{29500}, Invalid: "window closed",
+		Arm:    &kernel.PlanArmSpec{Enabled: true, Entry: 29450, Stop: 29440, Target: 29500},
+		Source: kernel.ScenarioSourcePicture,
+		Machine: &kernel.PlanMachineSource{Rule: kernel.MachineRulePictureH1CloseBreak, RuleVer: 1, Ref: "opp-f8",
+			EligibleFromMs: open.Add(-time.Minute).UnixMilli(), EligibleUntilMs: open.Add(time.Minute).UnixMilli()},
+	}
+	patch, err := kernel.MachineOverlayPatch(psc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: pid, PlanVersion: 1, Origin: kernel.MachineOverlayOriginPicture, CreatedAt: era, Patch: patch}); err != nil {
+		t.Fatal(err)
+	}
+	f8Seed(t, at, st, pid, open, 29450)
+	res := at.BackfillOneSetupVerdicts(era.UnixMilli(), open.Add(time.Hour))
+	if res.Recomputed != 0 || res.Unrecomputable != 1 {
+		t.Fatalf("a machine scenario must not match the one_setup backfill: %+v", res)
+	}
+	var got store.TouchOutcomeRow
+	if err := st.GormDB().First(&got).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got.OneSetupBackfill == nil || *got.OneSetupBackfill != "unrecomputable:no_scenario_at_level" {
+		t.Fatalf("the episode must read no_scenario_at_level (P1 excluded by the live predicate), got %v", got.OneSetupBackfill)
+	}
+}
+
+// (F8b) an overlay written AFTER the episode opened must not fold into the
+// backfill — the recompute serves what the executor saw at the OPEN, not what
+// the owner added later. RED = drop the as-of filter → recomputed with S9.
+func TestOneSetupBackfillIgnoresOverlaysAfterTheOpen(t *testing.T) {
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}})
+	era := time.Date(2026, 9, 10, 18, 47, 7, 0, kernel.CTLocation())
+	open := era.Add(30 * time.Minute)
+	pid := "2026-09-11:NY:" + at.id
+	base := kernel.PlanDoc{
+		Reasoning: "f8 time gate", Bias: kernel.PlanBias{Direction: "long", Conviction: "low"},
+		DeathCondition: "n/a",
+		Levels:         []kernel.PlanLevel{{Price: 29490, Label: "PDL", Grade: "A", Instruction: "fade"}},
+		Scenarios: []kernel.PlanScenario{
+			{ID: "S1", Trigger: "reject at 29490", Condition: "reject", Direction: "long", Quality: "A",
+				Confirm: &kernel.PlanConfirm{Rule: "touch", RefPrice: 29490, Side: "above"},
+				Arm:     &kernel.PlanArmSpec{Enabled: true, Entry: 29490, Stop: 29480, Target: 29530}},
+		},
+	}
+	blob, _ := json.Marshal(base)
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: pid, TradeDate: "2026-09-11", Session: "NY", StrategyID: at.id, Lifecycle: "active", Doc: string(blob), CreatedAt: era}); err != nil {
+		t.Fatal(err)
+	}
+	// S9 added at 29450 — but a full HOUR after the episode opened.
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{
+		PlanID: pid, PlanVersion: 1, OverlayID: "owner-add-s9-late", Origin: "owner",
+		CreatedAt: open.Add(time.Hour),
+		Patch:     `[{"op":"add","path":"/scenarios/-","value":{"id":"S9","trigger":"reject at 29450","condition":"reject","direction":"long","quality":"A","arm":{"enabled":true,"entry":29450,"stop":29440,"target":29500}}}]`,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	f8Seed(t, at, st, pid, open, 29450)
+	res := at.BackfillOneSetupVerdicts(era.UnixMilli(), open.Add(time.Hour))
+	if res.Recomputed != 0 || res.Unrecomputable != 1 {
+		t.Fatalf("a late overlay must not rewrite the open's attribution: %+v", res)
+	}
+	var got store.TouchOutcomeRow
+	if err := st.GormDB().First(&got).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got.OneSetupBackfill == nil || *got.OneSetupBackfill != "unrecomputable:no_scenario_at_level" {
+		t.Fatalf("the episode must read no_scenario_at_level (the late S9 is invisible at the open), got %v", got.OneSetupBackfill)
 	}
 }

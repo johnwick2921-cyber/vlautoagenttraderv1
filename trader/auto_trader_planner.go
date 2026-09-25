@@ -3593,11 +3593,29 @@ func installActivePlanProviderAt(at *AutoTrader, st *store.Store, clock func() t
 // are appended AFTER, each validated alone and never counted against the caps.
 // With no machine overlay the result is byte-identical to the old fold.
 func resolveActivePlanDoc(st *store.Store, row *store.PlanDB) (kernel.PlanDoc, bool) {
+	return resolveActivePlanDocAsOf(st, row, 0)
+}
+
+// resolveActivePlanDocAsOf is the fold at a PAST instant: only overlays whose
+// created_at sits at or before beforeMs fold (beforeMs 0 = no time gate). A
+// HISTORICAL reader — a backfill recomputing what the executor saw when an
+// episode OPENED — must not let overlays written later rewrite that
+// attribution (skeptic F8; the same shape as the E8 closed-trade revert).
+func resolveActivePlanDocAsOf(st *store.Store, row *store.PlanDB, beforeMs int64) (kernel.PlanDoc, bool) {
 	var base kernel.PlanDoc
 	if json.Unmarshal([]byte(row.Doc), &base) != nil {
 		return kernel.PlanDoc{}, false
 	}
 	overlays, _ := st.Plan().ListOverlays(row.PlanID, row.Version)
+	if beforeMs > 0 {
+		kept := overlays[:0]
+		for _, o := range overlays {
+			if o.CreatedAt.IsZero() || !o.CreatedAt.After(time.UnixMilli(beforeMs)) {
+				kept = append(kept, o)
+			}
+		}
+		overlays = kept
+	}
 	if len(overlays) == 0 {
 		return base, true
 	}

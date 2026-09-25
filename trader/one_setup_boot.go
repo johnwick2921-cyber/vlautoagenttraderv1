@@ -121,14 +121,16 @@ func (at *AutoTrader) BackfillOneSetupVerdicts(sinceMs int64, now time.Time) sto
 		// The scenario this episode belongs to: the plan's scenario whose anchor
 		// sits on the level (price within the map's width). None → not a
 		// scenario's level; two → ambiguous. Both are honest NULLs.
-		key := r.PlanID + "#" + fmt.Sprint(r.PlanVersion)
+		// Skeptic F8: the fold is per EPISODE-OPEN — overlays written after
+		// r.OpenedAtMs never rewrite the attribution of a closed episode — and
+		// the match runs on plannerScenariosOnly, the SAME D8 exclusion the
+		// live stamper applies (one_setup governs PLANNER plays only).
+		key := r.PlanID + "#" + fmt.Sprint(r.PlanVersion) + "@" + fmt.Sprint(r.OpenedAtMs)
 		doc, seen := docs[key]
 		if !seen {
-			// WAVE 1a-plan P2 — the scenario match reads the ONE fold: an
-			// owner overlay adding an armed scenario must be seen when the
-			// verdict is recomputed. No overlay = byte-identical base.
 			if p, err := at.store.Plan().GetPlan(r.PlanID, r.PlanVersion); err == nil && p != nil {
-				if d, ok := resolveActivePlanDoc(at.store, p); ok {
+				if d, ok := resolveActivePlanDocAsOf(at.store, p, r.OpenedAtMs); ok {
+					d = plannerScenariosOnly(d)
 					doc = &d
 				}
 			}
