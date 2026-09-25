@@ -45,10 +45,9 @@ import (
 	"strings"
 	"time"
 
-	_ "modernc.org/sqlite"
-
 	"nofx/kernel"
 	"nofx/logger"
+	"nofx/store/sqlitedriver"
 )
 
 func main() {
@@ -88,7 +87,9 @@ func main() {
 	fmt.Println("            the historical rows 339..370 were written before the column and have none.")
 	fmt.Println()
 
-	db, err := sql.Open("sqlite", "file:"+*dbPath+"?mode=ro&_pragma=busy_timeout(5000)")
+	// The ONE registration site (#205's census: only store/sqlitedriver may
+	// import the driver) — the harness opens the DB through it, never directly.
+	db, err := sqlitedriver.Open("file:" + *dbPath + "?mode=ro&_pragma=busy_timeout(5000)")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "open db: %v\n", err)
 		os.Exit(2)
