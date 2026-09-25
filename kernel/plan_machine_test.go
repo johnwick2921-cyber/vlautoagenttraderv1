@@ -366,3 +366,45 @@ func TestOwnerOverlayFoldPreservesMachineRunEpoch(t *testing.T) {
 		t.Fatalf("owner edit read as a machine alteration: %v", err)
 	}
 }
+
+// TestOwnerReplaceRunEpochRefusedAtD18 (skeptic F1 compare half, CTO
+// follow-up 2026-09-24) — the F1 pin above proves the fold PRESERVES the
+// epoch when the owner edits something else. This one proves the refusal
+// when the owner edits the epoch ITSELF: a patch that does
+//   replace /scenarios/<i>/machine/run_epoch  →  recorded+1
+// must be REFUSED by the D18 door — the exact chain
+// machineScenarioEditRefusal runs (api/handler_plan.go:1146):
+// ResolvePlanFinal folds the owner patch, then
+// MachineScenariosPreserved(cur, merged) must see the +1.
+// RED: drop UseNumber from canonicalScenarioJSON (the compare half of F1).
+// recorded and recorded+1 are ~1.79e18, where float64's ULP is 256, so a
+// plain interface{} decode rounds BOTH to the same double and the compare
+// sees no alteration — this pin fails.
+func TestOwnerReplaceRunEpochRefusedAtD18(t *testing.T) {
+	const recorded int64 = 1790208803235123457 // odd, > 2^53
+	sc := pictureScenarioFixture("P1", "opp-epoch-edit")
+	sc.Machine.RunEpoch = recorded
+	doc := selfCheckPlanDoc()
+	doc.Scenarios = append(doc.Scenarios, sc) // P1 sits at /scenarios/1
+	base := planJSON(t, doc)
+
+	patch := `[{"op":"replace","path":"/scenarios/1/machine/run_epoch","value":1790208803235123458}]`
+	got, err := ResolvePlanFinal(base, []OverlayRef{
+		{Version: 1, Origin: "owner", Patch: patch},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.UserApplied) != 1 {
+		t.Fatalf("the fold must APPLY the owner patch (the refusal is D18, not the fold): applied=%v foldErr=%v", got.UserApplied, got.FoldErr)
+	}
+	var before PlanDoc
+	if err := json.Unmarshal(base, &before); err != nil {
+		t.Fatal(err)
+	}
+	if err := MachineScenariosPreserved(before, got.Doc); err == nil {
+		t.Fatal("an owner replace of machine/run_epoch +1 MUST be refused by the D18 door")
+	} else if !strings.Contains(err.Error(), "an edit may not alter machine scenario") {
+		t.Fatalf("the refusal must name the machine-alteration rule, got: %v", err)
+	}
+}
