@@ -242,14 +242,11 @@ func (at *AutoTrader) liveBook(now time.Time) (orders []nt.NT8Order, haveBook bo
 	if cache == nil {
 		return nil, false, 0
 	}
-	snap, ok := cache.Latest(account)
-	if !ok {
+	snap, receivedAt, ok := cache.LatestReceived(account)
+	if !ok || receivedAt.IsZero() {
 		return nil, false, 0
 	}
-	if a, ok2 := cache.AgeAt(account, now); ok2 {
-		age = a
-	}
-	return snap.Orders, true, age
+	return snap.Orders, true, now.Sub(receivedAt)
 }
 
 // persistedBook returns the freshest PERSISTED snapshot — the one that carries
