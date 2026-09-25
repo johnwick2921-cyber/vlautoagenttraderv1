@@ -321,13 +321,14 @@ func TestW3ZoneLegVerdictWorstFills(t *testing.T) {
 // the default policy meets one_setup ON.
 func TestW3EntryLawBootLineAndOneSetupWarn(t *testing.T) {
 	line := entryLawBootLine(nil)
-	want := "🎛 entry law: write_feas=on · entry_policy_default=market_in_zone[I] zone_max_pts=10[I] zone_rest_max_min=30[I] min_hold_min=3[I]"
+	want := "🎛 entry law: write_feas=on · entry_policy_default=market_in_zone[I] zone_max_pts=10[I] zone_rest_max_min=30[I] zone_place_within_pts=25[I] min_hold_min=3[I]"
 	if line != want {
 		t.Fatalf("boot line:\n got %q\nwant %q", line, want)
 	}
 	z, r, h := 6.5, 45, 4
-	dp := &store.DayPlanConfig{EntryPolicyDefault: "planned_order", ZoneMaxPts: &z, ZoneRestMaxMin: &r, MinHoldMin: &h}
-	if got := entryLawBootLine(dp); !strings.Contains(got, "entry_policy_default=planned_order[O] zone_max_pts=6.5[O] zone_rest_max_min=45[O] min_hold_min=4[O]") {
+	w := 20.0
+	dp := &store.DayPlanConfig{EntryPolicyDefault: "planned_order", ZoneMaxPts: &z, ZoneRestMaxMin: &r, MinHoldMin: &h, ZonePlaceWithinPts: &w}
+	if got := entryLawBootLine(dp); !strings.Contains(got, "entry_policy_default=planned_order[O] zone_max_pts=6.5[O] zone_rest_max_min=45[O] zone_place_within_pts=20[O] min_hold_min=4[O]") {
 		t.Fatalf("saved values must read [O]: %q", got)
 	}
 	bogus := &store.DayPlanConfig{EntryPolicyDefault: "market"}

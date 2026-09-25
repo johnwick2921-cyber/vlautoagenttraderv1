@@ -241,3 +241,23 @@ web/dist.old.<rev12>.<YYYYmmdd-HHMMSS>
 A rollback restores **both**, and restores `web/dist` atomically by moving
 directories rather than copying into a live one — a half-copied dist serves a
 mix of old and new assets, which reads as a UI bug rather than a failed cutover.
+
+## If a cutover refuses the binary you just built
+
+Two different refusals, two different cures — read WHICH one you got.
+
+**"carries NO vcs stamps at all"** — the binary is fine; where it was BUILT is
+not. Go does not stamp VCS information into a build made from a linked git
+worktree, and every lane works in one. `-buildvcs=true` does not help: it exits
+0 and stamps nothing. Build from a clean clone (or the main tree) at the same
+commit and the stamps appear:
+
+    git clone --no-local <repo> /tmp/build && cd /tmp/build
+    git checkout <sha> && go build -o /tmp/nofx-bin .
+    go version -m /tmp/nofx-bin | grep vcs.      # revision + modified=false
+
+**"is stamped, but with a DIFFERENT revision"** — this really is the wrong
+binary for the sha you named. Check the sha, not the build location.
+
+Do not weaken either check to get past it. The identity proof is the only thing
+standing between a cutover and installing a binary nobody can identify later.

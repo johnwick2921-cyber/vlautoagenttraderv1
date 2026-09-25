@@ -112,7 +112,9 @@ func TestAgentToolCannotTakeOverTheOwnersAccount(t *testing.T) {
 		t.Fatalf("positive control: the bot token no longer reaches an ordinary protected route: %.200s", out)
 	}
 
-	out1 := tool.execute(&apiRequest{Method: "PUT", Path: "/api/user/password", Body: map[string]any{"new_password": "agent-chosen-pass-1"}})
+	// Even carrying the owner's REAL current password (required since CTO
+	// ruling item 1 — an agent that was told it must still be refused).
+	out1 := tool.execute(&apiRequest{Method: "PUT", Path: "/api/user/password", Body: map[string]any{"current_password": chainOwnerPass, "new_password": "agent-chosen-pass-1"}})
 	out2 := tool.execute(&apiRequest{Method: "POST", Path: "/api/login", Body: map[string]any{"email": chainOwnerEmail, "password": "agent-chosen-pass-1"}})
 	var login struct {
 		Token string `json:"token"`

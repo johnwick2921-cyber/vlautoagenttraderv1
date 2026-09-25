@@ -91,6 +91,11 @@
 // bar" comments corrected to the real re-emit behaviour
 // (VLBarsSubscriptionManager.cs:539-551, cache finalises the re-emitted bar).
 // Zero code change, no identifier renamed, no guard removed.
+// tcp_server.go baseline advanced again 2026-09-24 by the origin/dev merge of
+// PR #199 (one-button M5): helloProcessPair renders nt8_pid/assembly_mvid as
+// "n/a" when absent (L7 — an unread value must not read as a datum, runbook
+// 2026-09-23-addon-m21-f5.md C5). ADDITIVE helper + one log line; the bar-feed
+// guards this pin protects are byte-untouched by that delta.
 // Wire baselines advanced 2026-09-22 for W-ONE-BUTTON M2 site 7 (CTO-dispatched,
 // feat/one-button-m2-maintenance-hold; the TCP schema must change in lockstep):
 //   provider/ninjatrader/tcp_framing.go — +59 −0: HelloPayload's five omitempty

@@ -31,6 +31,13 @@ func (a armAdmission) admit(planID, scenario string, leg int) {
 	a[armAdmitKey(planID, scenario, leg)] = true
 }
 
+// retract withdraws an admission this pass granted: a leg whose ledger write
+// was REFUSED (W5 R13 — the row under its key belongs to another opportunity)
+// was not authored, so no placement may ride its admit.
+func (a armAdmission) retract(planID, scenario string, leg int) {
+	delete(a, armAdmitKey(planID, scenario, leg))
+}
+
 // armAdmitted is the placement-time check for one armed row: G1 first, then
 // the one admission chain. false = do not place (the row stays armed); the
 // second value is the refusal ("<class>: <text>") so a caller can report it

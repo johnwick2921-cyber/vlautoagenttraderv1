@@ -129,6 +129,11 @@ jobs:
         id: build
         working-directory: ./web
         continue-on-error: true
+        env:
+          # CLASS 250: see pr-checks.yml. continue-on-error hides the failure as
+          # a "⚠️ Failed" line, which is exactly why this one had to be fixed
+          # deliberately rather than noticed.
+          VITE_GUIDE_BUILT_REV: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           # build script includes: tsc && vite build
           if npm run build 2>&1 | tee build-output.txt; then

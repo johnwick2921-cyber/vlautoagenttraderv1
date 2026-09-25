@@ -19,6 +19,7 @@ import (
 	"nofx/trader"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // traderDayPlanEnabled reports whether a trader has the day-plan feature on — the
@@ -1873,10 +1874,13 @@ func (s *Server) handlePlanTrades(c *gin.Context) {
 			// whose signal is the position's entry order, never inferred.
 			"plan_id": p.PlanID, "plan_session": p.PlanSession,
 		}
-		source, sourceRef := s.tradeSource(traderID, p)
+		source, sourceRef, unresolved := s.tradeSource(traderID, p)
 		t["source"] = source
 		if sourceRef != "" {
 			t["source_ref"] = sourceRef
+		}
+		if unresolved {
+			t["source_unresolved"] = true
 		}
 		trades = append(trades, t)
 	}
@@ -1889,23 +1893,30 @@ func (s *Server) handlePlanTrades(c *gin.Context) {
 // reads "armed_entry"). No armed row: a position the armed executor wrote
 // still says "armed_entry"; the decision path's default position source
 // ("system" / empty) reads "ai"; any other stored source (e.g. "snapshot", a
-// reconcile row) is shown as stored — never relabelled.
-func (s *Server) tradeSource(traderID string, p *store.TraderPosition) (string, string) {
+// reconcile row) is shown as stored — never relabelled. The inference runs
+// ONLY when the ledger answered "no such row": a ledger that could not be read
+// says so — source "unknown", unresolved true (W5 R7) — never a guess.
+func (s *Server) tradeSource(traderID string, p *store.TraderPosition) (string, string, bool) {
 	if id := strings.TrimSpace(p.EntryOrderID); id != "" && s.store != nil {
-		if row, err := s.store.ArmedOrders().FindBySignal(traderID, id); err == nil && row != nil {
+		row, err := s.store.ArmedOrders().FindBySignal(traderID, id)
+		switch {
+		case err == nil && row != nil:
 			if row.Source != "" {
-				return row.Source, row.SourceRef
+				return row.Source, row.SourceRef, false
 			}
-			return "armed_entry", ""
+			return "armed_entry", "", false
+		case err != nil && !errors.Is(err, gorm.ErrRecordNotFound):
+			logger.Warnf("plan/trades: the armed ledger could not be read for position #%d (%v) — source unresolved, not inferred", p.ID, err)
+			return "unknown", "", true
 		}
 	}
 	switch strings.TrimSpace(p.Source) {
 	case "armed_entry":
-		return "armed_entry", ""
+		return "armed_entry", "", false
 	case "", "system":
-		return "ai", ""
+		return "ai", "", false
 	default:
-		return p.Source, ""
+		return p.Source, "", false
 	}
 }
 

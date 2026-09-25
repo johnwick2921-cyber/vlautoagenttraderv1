@@ -7,6 +7,7 @@ import (
 
 	"nofx/kernel"
 	"nofx/market"
+	"nofx/store"
 )
 
 // ── PLANNER A6 — a born-dead / flip-met retry re-sights the model on the
@@ -108,8 +109,10 @@ func TestPlannerBornDeadRetryCarriesTheFreshTape(t *testing.T) {
 	facts := kernel.PlanFacts{Price: 15550, DATR: 300, ReadAt: read}
 	machine := map[float64]string{15480: "PWL", 15700: "RN 15700"}
 	blocks := []string{}
-	_, lc, err := at.runPlannerReadCoreWithFactsGradesClock(
-		func() time.Time { return publish },
+	_, lc, err := at.runPlannerReadCoreObserved(
+		func() time.Time { return read },    // authoring (read-side) clock
+		func() time.Time { return publish }, // publish clock — the fixture refusal clock
+		nil,
 		"ASIA", "2026-09-23", "owner_reset", "deepseek-v4-pro", "hashA6", "", "", "", "FULLPROMPT",
 		facts, nil, machine, nil, true,
 		func(userPrompt string) (string, error) {
@@ -144,5 +147,42 @@ func TestPlannerBornDeadRetryCarriesTheFreshTape(t *testing.T) {
 	// A close at the read clock is not between read and refusal.
 	if strings.Contains(attempt2, "19:00 CT 1m close") {
 		t.Fatalf("read-clock close leaked into the window:\n%s", attempt2)
+	}
+}
+
+// TestPlannerBornDeadRetryKnobOffIsByteIdenticalToday — L4: planner_fresh_tape
+// false reproduces today's blind retry (no fresh block) on the SAME refusal.
+func TestPlannerBornDeadRetryKnobOffIsByteIdenticalToday(t *testing.T) {
+	at := plannerTestTrader(t)
+	at.config.StrategyConfig.DayPlan = &store.DayPlanConfig{PlanEnabled: true, PlannerFreshTape: boolPtr(false)}
+	loc := kernel.CTLocation()
+	read := time.Date(2026, 9, 23, 19, 0, 0, 0, loc)
+	publish := time.Date(2026, 9, 23, 19, 7, 0, 0, loc)
+
+	orig := market.FuturesBarsProvider
+	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline { return a6Tape() }
+	defer func() { market.FuturesBarsProvider = orig }()
+
+	facts := kernel.PlanFacts{Price: 15550, DATR: 300, ReadAt: read}
+	machine := map[float64]string{15480: "PWL", 15700: "RN 15700"}
+	blocks := []string{}
+	_, lc, err := at.runPlannerReadCoreObserved(
+		func() time.Time { return read },    // authoring (read-side) clock
+		func() time.Time { return publish }, // publish clock
+		nil,
+		"ASIA", "2026-09-23", "owner_reset", "deepseek-v4-pro", "hashA6off", "", "", "", "FULLPROMPT",
+		facts, nil, machine, nil, true,
+		func(userPrompt string) (string, error) {
+			blocks = append(blocks, userPrompt)
+			if len(blocks) == 1 {
+				return a6BornDeadPlan, nil
+			}
+			return a6RecoveredPlan, nil
+		})
+	if err != nil || lc != "active" {
+		t.Fatalf("knob-off recover: lc=%q err=%v", lc, err)
+	}
+	if strings.Contains(blocks[1], "FRESH TAPE SINCE YOUR READ") {
+		t.Fatalf("planner_fresh_tape=false must reproduce the blind retry, got:\n%s", blocks[1])
 	}
 }

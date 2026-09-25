@@ -15,8 +15,8 @@ import (
 
 // ── W-ONE-BUTTON M2 site 4 — the broker-layer entry permit ─────────────────
 //
-// The hold is enforced at the four ENTRY functions (placeEntry,
-// MarketEntryWithProtection, PlaceLimitEntry, PlaceStopEntry) and NEVER at the
+// The hold is enforced at the three ENTRY functions (placeEntry,
+// PlaceLimitEntry, PlaceStopEntry) and NEVER at the
 // protective / management paths (PlaceProtectiveStop, CancelOrder,
 // ModifyBracket, MoveStopToBreakeven, CloseLong/CloseShort) — CTO correction C1.
 
@@ -101,7 +101,7 @@ func armedTrader(t *testing.T, s *ntwire.TCPServer) *TCPTrader {
 	return tr
 }
 
-// All four entry functions refuse while the permit refuses: the error wraps
+// All three entry functions refuse while the permit refuses: the error wraps
 // ErrMaintenanceHold, the ledger callback (beforeSend) never runs, and no
 // signal frame reaches the wire.
 func TestEntryPermitRefusedBlocksAllFourEntryFunctions(t *testing.T) {
@@ -113,10 +113,6 @@ func TestEntryPermitRefusedBlocksAllFourEntryFunctions(t *testing.T) {
 
 	calls := map[string]func() error{
 		"placeEntry(OpenLong)": func() error { _, err := tr.OpenLong("MNQ", 1, 1); return err },
-		"MarketEntryWithProtection": func() error {
-			_, err := tr.MarketEntryWithProtection("long", 1, 29000, 29200, stamp)
-			return err
-		},
 		"PlaceLimitEntry": func() error {
 			_, err := tr.PlaceLimitEntry("MNQ", "long", 1, 29100, 29000, 29200, stamp)
 			return err
@@ -236,10 +232,6 @@ func TestUnwiredEntryPermitAllows(t *testing.T) {
 func TestEntryPermitRefusalNeverConsumesTheDedupeSlotInAnyEntryFunction(t *testing.T) {
 	calls := map[string]func(tr *TCPTrader) error{
 		"placeEntry(OpenLong)": func(tr *TCPTrader) error { _, err := tr.OpenLong("MNQ", 1, 1); return err },
-		"MarketEntryWithProtection": func(tr *TCPTrader) error {
-			_, err := tr.MarketEntryWithProtection("long", 1, 29000, 29200)
-			return err
-		},
 		"PlaceLimitEntry": func(tr *TCPTrader) error {
 			_, err := tr.PlaceLimitEntry("MNQ", "long", 1, 29100, 29000, 29200)
 			return err

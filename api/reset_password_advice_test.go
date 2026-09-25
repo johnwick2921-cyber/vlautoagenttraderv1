@@ -33,7 +33,7 @@ import (
 
 const resetPasswordGoneBody = `{"error":"Password reset by email is disabled. Sign in and use PUT /api/user/password. ` +
 	`Locked out? Set the new hash AND the credential epoch in ONE statement: ` +
-	`UPDATE users SET password_hash='<bcrypt hash of the new password>', updated_at=CURRENT_TIMESTAMP WHERE email='<your account email>'; ` +
+	`UPDATE users SET password_hash='NEW_BCRYPT_HASH', updated_at=CURRENT_TIMESTAMP WHERE email='YOUR_ACCOUNT_EMAIL'; ` +
 	`— moving updated_at is what signs out every session issued before the reset; a hash-only UPDATE leaves those sessions valid."}`
 
 func resetPasswordAdvice(t *testing.T, e *updEnv) string {
@@ -58,6 +58,15 @@ func TestResetPasswordGoneBodyCarriesTheEpochMovingStatement(t *testing.T) {
 	}
 	if got["error"] != want["error"] || len(got) != 1 {
 		t.Fatalf("410 body:\n got %q\nwant %q", got["error"], want["error"])
+	}
+	// fapi verify note 3: the RAW bytes are what an owner reading curl sees.
+	// gin's c.JSON escapes <, > and & (\u003c …), so a bracketed placeholder
+	// arrives as "\u003cbcrypt hash …\u003e" and a literal fill-in stores a
+	// broken hash. The statement must read the same raw and decoded.
+	for _, esc := range []string{`\u003c`, `\u003e`, `\u0026`} {
+		if strings.Contains(body, esc) {
+			t.Fatalf("the raw 410 body carries %s — an owner reading it with curl sees an escaped placeholder; use placeholders gin does not escape:\n%s", esc, body)
+		}
 	}
 	for _, leak := range []string{"@", "$2a$", "$2b$", "$2y$", updAdminEmail} {
 		if strings.Contains(got["error"], leak) {
@@ -103,7 +112,7 @@ func TestResetPasswordAdviceRetiresPreResetSessionsOnSQLite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for ph, v := range map[string]string{"<bcrypt hash of the new password>": newHash, "<your account email>": updAdminEmail} {
+	for ph, v := range map[string]string{"NEW_BCRYPT_HASH": newHash, "YOUR_ACCOUNT_EMAIL": updAdminEmail} {
 		if !strings.Contains(stmt, ph) {
 			t.Fatalf("the advice lost its placeholder %q: %s", ph, stmt)
 		}

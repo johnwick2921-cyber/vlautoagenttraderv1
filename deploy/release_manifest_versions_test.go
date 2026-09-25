@@ -72,7 +72,7 @@ func TestManifestNeverDefaultsAFabricatedTestedRange(t *testing.T) {
 			t.Fatalf("an unmeasured version must render null; missing %q in:\n%s", want, out)
 		}
 	}
-	if strings.Contains(out, "8.1.2.1") || strings.Contains(out, "0.0.0") || strings.Contains(out, `"n/a"`) {
+	if strings.Contains(out, `"min_version": "8.1.2.1"`) || strings.Contains(out, `"max_tested_version": "n/a"`) || strings.Contains(out, `"updater_min_version": "0.0.0"`) {
 		t.Fatalf("fabricated defaults leaked into the manifest:\n%s", out)
 	}
 

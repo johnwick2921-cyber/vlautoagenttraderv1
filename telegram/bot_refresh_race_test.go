@@ -21,6 +21,7 @@ package telegram
 // reads locals and the test is clean.
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,13 +55,25 @@ func TestRaceBotRefreshAgainstInFlightManager(t *testing.T) {
 	prev := auth.JWTSecret
 	auth.SetJWTSecret(btSecret)
 	t.Cleanup(func() { auth.JWTSecret = prev })
-	// The credential epoch an hour AHEAD: every token the bot mints is issued
-	// at or before it, so EVERY refresh re-mints and rewrites every field of
-	// the identity — the rewrite the race needs, on every iteration.
-	if err := st.User().Create(&store.User{ID: btOwnerID, Email: btOwnerEmail, PasswordHash: "not-a-real-hash",
-		CreatedAt: time.Now().Add(-time.Hour).UTC(), UpdatedAt: time.Now().Add(time.Hour).UTC()}); err != nil {
-		t.Fatal(err)
+	// A NEW first account before every refresh — created a second earlier
+	// than every row so far, and refresh follows users[0] (GetAll orders by
+	// created_at) — so EVERY refresh re-mints, for a different user, and
+	// rewrites every field of the identity: the rewrite the race needs, on
+	// every iteration. (Until PR #200 F7 the credential epoch sat an hour
+	// AHEAD instead, and refresh installed a token retired at birth; refresh
+	// now fails closed on a token the API would refuse and rewrites nothing,
+	// so an epoch ahead no longer drives a rewrite.)
+	oldest := time.Now().Add(-time.Hour).UTC()
+	newFirstUser := func(i int) {
+		t.Helper()
+		at := oldest.Add(-time.Duration(i) * time.Second)
+		if err := st.User().Create(&store.User{ID: fmt.Sprintf("eeeeeeee-1111-2222-3333-%012d", i),
+			Email: fmt.Sprintf("race-%d@example.test", i), PasswordHash: "not-a-real-hash",
+			CreatedAt: at, UpdatedAt: at}); err != nil {
+			t.Fatal(err)
+		}
 	}
+	newFirstUser(0)
 
 	ident := newBotIdentity(st, 0)
 	if !ident.refresh() {
@@ -72,6 +85,7 @@ func TestRaceBotRefreshAgainstInFlightManager(t *testing.T) {
 	rebuilt := 0
 	for i := 0; i < messages; i++ {
 		before := ident.agents
+		newFirstUser(i + 1)
 		// runBot's main loop: refresh before every AI call …
 		if !ident.refresh() {
 			t.Fatal("refresh = false mid-run")

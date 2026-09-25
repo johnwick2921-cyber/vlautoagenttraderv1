@@ -4,12 +4,12 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"nofx/internal/censuswalk"
 	"nofx/internal/installpath"
 )
 
@@ -68,38 +68,7 @@ func TestWorkerSocketLiteralIsConfined(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var offenders []string
-	scanned := 0
-	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			switch d.Name() {
-			case ".git", "node_modules", "web", "vendor", ".claude", ".Codex", ".understand-anything":
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
-			return nil
-		}
-		rel, _ := filepath.Rel(root, p)
-		rel = filepath.ToSlash(rel)
-		f, perr := parser.ParseFile(token.NewFileSet(), p, nil, 0)
-		if perr != nil {
-			offenders = append(offenders, rel+": cannot be parsed")
-			return nil
-		}
-		scanned++
-		ast.Inspect(f, func(n ast.Node) bool {
-			if lit, ok := n.(*ast.BasicLit); ok && strings.Contains(lit.Value, "worker.sock") && rel != "internal/updaterwire/paths.go" {
-				offenders = append(offenders, rel+": names the worker socket (\"worker.sock\")")
-			}
-			return true
-		})
-		return nil
-	})
+	offenders, scanned, err := workerSocketLiteralOffenders(root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,4 +78,30 @@ func TestWorkerSocketLiteralIsConfined(t *testing.T) {
 	if len(offenders) > 0 {
 		t.Fatalf("the worker socket may be named only by internal/updaterwire/paths.go:\n%s", strings.Join(offenders, "\n"))
 	}
+}
+
+// workerSocketLiteralOffenders scans every non-test .go file under root (the
+// ONE root-only walk, internal/censuswalk — M3 fold M5) for the socket
+// filename literal outside internal/updaterwire/paths.go.
+func workerSocketLiteralOffenders(root string) (offenders []string, scanned int, err error) {
+	files, err := censuswalk.NonTestGoFiles(root)
+	if err != nil {
+		return nil, 0, err
+	}
+	for _, file := range files {
+		rel := file.Rel
+		f, perr := parser.ParseFile(token.NewFileSet(), file.Path, nil, 0)
+		if perr != nil {
+			offenders = append(offenders, rel+": cannot be parsed")
+			continue
+		}
+		scanned++
+		ast.Inspect(f, func(n ast.Node) bool {
+			if lit, ok := n.(*ast.BasicLit); ok && strings.Contains(lit.Value, "worker.sock") && rel != "internal/updaterwire/paths.go" {
+				offenders = append(offenders, rel+": names the worker socket (\"worker.sock\")")
+			}
+			return true
+		})
+	}
+	return offenders, scanned, nil
 }

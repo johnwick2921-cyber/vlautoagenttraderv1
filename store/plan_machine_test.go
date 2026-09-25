@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -200,6 +201,47 @@ func TestArmedSourcePinAcrossVersions(t *testing.T) {
 		rows := pictureRows(t, st, "opp-a")
 		if len(rows) != 1 || rows[0].State != end.state || rows[0].Version != 1 {
 			t.Fatalf("%s/%q: the opportunity must stay ended on v2, rows=%+v", end.state, end.signal, rows)
+		}
+	}
+}
+
+// R13(a) — A LEDGER ROW NEVER CHANGES OPPORTUNITY. Opportunity B minted onto
+// v2 under the id A's live v1 row holds must be refused by type, and A's row
+// must come out untouched (source_ref, version, prices, deadline).
+func TestArmedRowNeverChangesOpportunity(t *testing.T) {
+	for _, st0 := range []struct{ state, signal string }{
+		{StateArmed, ""},       // the armed-branch overwrite (armed_orders.go armed branch)
+		{StateCancelled, ""},   // the re-authorize-in-place branch
+		{StateFilled, "sig-1"}, // the next-placement mint
+	} {
+		st := NewArmedOrderStore(newArmedTestDB(t))
+		a := pictureRow(1, "P1", "strat|sim101|MNQ|long|support|1|2", StateArmed, "")
+		if err := st.UpsertArm(a); err != nil {
+			t.Fatal(err)
+		}
+		if st0.state != StateArmed {
+			if err := st.db.Model(&ArmedOrderDB{}).Where("id = ?", a.ID).
+				Updates(map[string]any{"state": st0.state, "signal_id": st0.signal}).Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+		before := pictureRows(t, st, a.SourceRef)[0]
+		b := pictureRow(2, "P1", "strat|sim101|MNQ|short|resistance|3|4", StateArmed, "")
+		b.EntryPx, b.StopPx, b.TargetPx, b.Side = 21600, 21620, 21570, "short"
+		err := st.UpsertArm(b)
+		if !errors.Is(err, ErrArmSourceMismatch) {
+			t.Fatalf("%s: a write carrying another opportunity must refuse with ErrArmSourceMismatch, got %v", st0.state, err)
+		}
+		if strings.Contains(err.Error(), "sim101") {
+			t.Fatalf("the refusal must redact the account segment: %q", err)
+		}
+		after := pictureRows(t, st, a.SourceRef)
+		if len(after) != 1 || after[0].SourceRef != before.SourceRef || after[0].Version != 1 || after[0].State != before.State ||
+			after[0].EntryPx != before.EntryPx || after[0].Side != before.Side || *after[0].EligibleUntilMs != *before.EligibleUntilMs {
+			t.Fatalf("%s: A's row must be untouched: before %+v after %+v", st0.state, before, after)
+		}
+		if rows := pictureRows(t, st, b.SourceRef); len(rows) != 0 {
+			t.Fatalf("%s: B must not get a row under A's key: %+v", st0.state, rows)
 		}
 	}
 }

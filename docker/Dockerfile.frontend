@@ -24,6 +24,12 @@ COPY web/ ./
 # with `Could not resolve "../../../branding/product.txt?raw"` on every run
 # since the rebrand wave.
 COPY branding/ /branding/
+# CLASS 250: VITE_GUIDE_BUILT_REV is a REQUIRED build input — web/vite.config.ts
+# refuses a production build without it, so this image cannot be built without
+# the caller passing --build-arg. That is deliberate: an image built with an
+# unknowable guide revision is the failure this input exists to prevent.
+ARG VITE_GUIDE_BUILT_REV
+ENV VITE_GUIDE_BUILT_REV=${VITE_GUIDE_BUILT_REV}
 RUN npm run build
 
 # ──────────────────────────────────────────────────────────────

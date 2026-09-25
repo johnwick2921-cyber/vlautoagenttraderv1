@@ -52,6 +52,12 @@ const GATE_LABELS: Record<string, { en: string; icon: string }> = {
     icon: '🔚',
   },
   cme_closed: { en: 'CME closed', icon: '🔕' },
+  // PR #200 F9: a failed current-password compare on PUT /api/user/password
+  // (process-wide, under the "" key — it shows on every trader's panel).
+  credential_current_password_wrong: {
+    en: 'Wrong current password (password change)',
+    icon: '🔑',
+  },
   reentry_cooldown: { en: 'Re-entry cooldown after a stop', icon: '⏳' },
   entry_gate: { en: 'Entry gate', icon: '🚦' },
   trader_stopped: { en: 'Trader stopped (Picture)', icon: '⏹' },

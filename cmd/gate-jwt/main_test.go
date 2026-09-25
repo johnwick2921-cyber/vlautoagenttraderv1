@@ -5,7 +5,10 @@ package main
 // (scope gate-jwt). It must keep passing auth on /api/cutover-gate, and it
 // must be refused 403 on every machine-denied surface: /api/updates*,
 // /api/user/password, /api/reset-account, /api/reset-password and
-// /api/telegram*. Pinned with the token the tool itself mints
+// /api/telegram* — and /api/logout (PR #200 F4a), whose gate-jwt refusal is
+// pinned in api/machine_logout_test.go rather than here: this test's
+// owner-token control on the same request would blacklist the owner token
+// part-way through. Pinned with the token the tool itself mints
 // (mintGateToken, what main() runs) against the PRODUCTION server
 // (api.NewServer + Server.Start on a loopback socket), each refusal beside a
 // positive control: the owner's own login token on the same request gets

@@ -1,9 +1,11 @@
 package sqlitedriver
 
 import (
+	"fmt"
 	"go/parser"
 	"go/token"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -65,19 +67,44 @@ func TestNoPackageImportsASQLiteDriverDirectly(t *testing.T) {
 		}
 		f, perr := parser.ParseFile(fset, p, nil, parser.ImportsOnly)
 		if perr != nil {
-			return nil // unparseable files are not this test's business
-		}
-		// THE DOMAIN IS LIBRARIES, and the reason is what makes this a census
-		// rather than a blanket ban. The panic needs TWO registrants in ONE
-		// binary. A `package main` cannot be imported, so its driver choice
-		// affects only itself and can never collide with anything — the
-		// standalone research harnesses under docs/ are each their own binary
-		// with one registrant. A LIBRARY is different: anything may link it,
-		// so a driver import there is a landmine for every future importer,
-		// which is exactly how internal/activation became one for the M4
-		// worker.
-		if f.Name != nil && f.Name.Name == "main" {
+			// A file the parser cannot parse FAILS the census by NAME — a silent
+			// skip is how a violation hides (DS-102 fold, CTO 1790305899255).
+			offenders = append(offenders, rel+" is UNPARSEABLE ("+perr.Error()+")")
 			return nil
+		}
+		// THE DOMAIN IS LIBRARIES, with ONE correction (DS-102 fold, CTO
+		// 1790305899255, option A): a `package main` is exempt ONLY when it
+		// PROVABLY does not link nofx/store/sqlitedriver under either tag set
+		// (`go list -deps .` and `go list -tags cgofree -deps .`). A main that
+		// links this package and also imports a driver directly is the
+		// two-registrant panic in its own binary — cmd/picture_htf_replay did
+		// exactly that (modernc.org/sqlite beside the transitively linked
+		// sqlitedriver under BOTH tag sets). The docs/ research harnesses stay
+		// exempt only because they pass the same proof. A go list that FAILS
+		// proves nothing — fail closed.
+		if f.Name != nil && f.Name.Name == "main" {
+			hasDirect := false
+			for _, im := range f.Imports {
+				if path, uerr := strconv.Unquote(im.Path.Value); uerr == nil {
+					for _, bad := range forbiddenDirect {
+						if path == bad {
+							hasDirect = true
+							break
+						}
+					}
+				}
+			}
+			if !hasDirect {
+				return nil
+			}
+			links, why := mainLinksSqlitedriver(filepath.Dir(p))
+			if !links {
+				return nil
+			}
+			// It links the ONE registration site AND imports a driver directly:
+			// the loop below names the direct import; the why is appended so the
+			// reader sees the proof.
+			_ = why
 		}
 		for _, im := range f.Imports {
 			path, uerr := strconv.Unquote(im.Path.Value)
@@ -101,6 +128,29 @@ func TestNoPackageImportsASQLiteDriverDirectly(t *testing.T) {
 			"Import nofx/store/sqlitedriver instead — it is the ONE registration site.",
 			len(offenders), "nofx/store/sqlitedriver", strings.Join(offenders, "\n  "), DriverName)
 	}
+}
+
+// mainLinksSqlitedriver proves (or fails to prove) that the main package
+// in dir does NOT link nofx/store/sqlitedriver under either tag set. A failed
+// go list is reported as linking (fail closed: absence unproven).
+func mainLinksSqlitedriver(dir string) (bool, string) {
+	for _, tags := range []string{"", "cgofree"} {
+		args := []string{"list", "-deps"}
+		if tags != "" {
+			args = append(args, "-tags", tags)
+		}
+		args = append(args, ".")
+		cmd := exec.Command("go", args...)
+		cmd.Dir = dir
+		out, err := cmd.Output()
+		if err != nil {
+			return true, fmt.Sprintf("go list %v failed for %s (%v) — absence unproven", args, dir, err)
+		}
+		if strings.Contains(string(out), "nofx/store/sqlitedriver") {
+			return true, "links nofx/store/sqlitedriver under " + strings.Join(args, " ")
+		}
+	}
+	return false, ""
 }
 
 // repoRootFromHere walks up to the module root so the census covers the WHOLE

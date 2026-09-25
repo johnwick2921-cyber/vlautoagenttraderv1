@@ -1,7 +1,6 @@
 package trader
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -84,18 +83,88 @@ func TestPictureHtfHoldRefusalAfterTheClaimSettlesRefusedNotPending(t *testing.T
 	}
 }
 
-// pictureHtfSend's own re-check runs FIRST, before any other re-check or the
-// wire, and its error carries ErrMaintenanceHold.
-func TestPictureHtfSendRefusesWhileHeld(t *testing.T) {
-	dir := withMaintenanceDir(t)
-	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
-	setHold(t, dir, "job-send")
-	row := &store.PictureHtfOpportunityDB{OppKey: "k", Symbol: "MNQ", Direction: "long", WindowClose: time.Now().Add(time.Hour).UnixMilli()}
-	env.eval.markFresh5mReceivedAt(time.Now())
-	err := pictureHtfSend(env.eval, row, 95, 110, 1, time.Now())
-	if !errors.Is(err, ntTrader.ErrMaintenanceHold) {
-		t.Fatalf("held: pictureHtfSend must refuse with ErrMaintenanceHold, got %v", err)
+// W5 — the retired send's own hold re-check has no send left to live in: a
+// Picture opportunity reaches the wire only as a Day Plan scenario the armed
+// executor places. The hold is proven where it now lives, at both ends:
+//
+//	(1) the evaluator refuses BEFORE the seam — under the hold the production
+//	    hand-off never runs and no scenario is recorded (the control, with no
+//	    hold, records one: the negative is not vacuous);
+//	(2) a Picture scenario's armed row is refused at the executor's send point
+//	    (maintenance_hold, counted) and stays armed and unstamped — and places
+//	    once the hold clears.
+func TestPictureHtfHoldRefusesBeforeTheHandOffRecordsAScenario(t *testing.T) {
+	record := func(held bool) (EvaluateResult, *store.PlanDB, *store.PictureHtfOpportunityDB) {
+		t.Helper()
+		dir := withMaintenanceDir(t)
+		prod := pictureHtfSubmitSeam
+		env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+		pictureHtfSubmitSeam = prod // the harness recorder out; the production hand-off in (its cleanup restores prod)
+		env.seed(pictureBars4H(), pictureBarsH1(), pictureOnGrid5M())
+		env.at.markPictureRunEpoch(env.now)
+		t.Cleanup(env.at.clearPictureRunEpoch)
+		if held {
+			setHold(t, dir, "job-picture-handoff")
+		}
+		env.eval.markFresh5mReceivedAt(env.now)
+		res := env.eval.Evaluate("MNQ", env.now)
+		sess, ok := env.at.sessionRegistry(env.now).ActiveSession(env.now)
+		if !ok || sess == nil {
+			t.Fatal("fixture: a live session at the Picture instant")
+		}
+		plan, err := env.st.Plan().GetLatestPlanForTraderSession(sessionChainDate(sess, env.now), sess.Name, env.at.id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var row *store.PictureHtfOpportunityDB
+		if res.OppKey != "" {
+			row, _, _ = env.st.PictureHtfGet(res.OppKey)
+		}
+		return res, plan, row
 	}
+	// Control: no hold → the production hand-off records the scenario.
+	res, plan, row := record(false)
+	if res.Stage != store.PictureStagePlanned || plan == nil || !store.IsMachinePlan(plan) || row == nil || row.Stage != store.PictureStagePlanned {
+		t.Fatalf("control: with no hold the hand-off records a machine plan and the row settles planned: res=%+v plan=%+v row=%+v", res, plan, row)
+	}
+	// Held: refused before the seam — nothing recorded, the row durably refused.
+	res, plan, row = record(true)
+	if res.Stage != "refused" || !strings.Contains(res.Reason, "maintenance hold") {
+		t.Fatalf("held: the evaluator must refuse naming the hold, got %+v", res)
+	}
+	if plan != nil {
+		t.Fatalf("held: the hand-off must never run — no Day Plan scenario may be recorded, got plan %+v", plan)
+	}
+	if row == nil || row.Stage != "refused" || row.SubmittedAt != 0 {
+		t.Fatalf("held: the opportunity row is refused and never sent, got %+v", row)
+	}
+}
+
+func TestPictureScenarioRowRefusedAtTheSendPointWhileHeld(t *testing.T) {
+	dir := withMaintenanceDir(t)
+	r, epoch := newPicRig(t, "w5c-hold", nil)
+	picPlan(r, picScenario("P1", "opp-hold", r.now, epoch, picDefault))
+	setHold(t, dir, "job-picture-row")
+	before := gateBlocks(r.at.id, "maintenance_hold")
+	picPass(r, 0, 100.25) // inside the zone: only the hold stands between the row and the wire
+	if sigs, _ := r.drain(); len(sigs) != 0 {
+		t.Fatalf("held: a Picture scenario's row must never reach the wire: %+v", sigs)
+	}
+	if row := r.row("P1"); row.State != store.StateArmed || row.SignalID != "" {
+		t.Fatalf("held: the row is refused at its send point — armed and unstamped: %+v", row)
+	}
+	if gateBlocks(r.at.id, "maintenance_hold") != before+1 {
+		t.Fatal("held: the refusal is counted as maintenance_hold")
+	}
+	if err := store.ClearMaintenanceHold(dir, "job-picture-row"); err != nil {
+		t.Fatal(err)
+	}
+	picPass(r, time.Second, 100.25)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 {
+		t.Fatalf("once the hold clears the same row places (the refusal was the hold's), got %d frame(s)", len(sigs))
+	}
+	limitOnly(t, sigs)
 }
 
 // Review F3: the Picture caller must NOT settle an AMBIGUOUS own drop (a write

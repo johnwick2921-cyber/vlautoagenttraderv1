@@ -34,7 +34,7 @@ import (
 // grantBodyUnder is an install body whose MAC is computed under key.
 func grantBodyUnder(t *testing.T, key []byte, rel, job string, exp int64) string {
 	t.Helper()
-	mac, err := updateauth.ComputeMAC(key, rel, job, exp)
+	mac, err := updateauth.ComputeMAC(key, updAdminID, rel, job, exp)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func grantBodyUnder(t *testing.T, key []byte, rel, job string, exp int64) string
 // updateauth minting rule applies (it is how a guessed key would be used).
 func attackerBodyUnder(key []byte, rel, job string, exp int64) string {
 	m := hmac.New(sha256.New, key)
-	fmt.Fprintf(m, "%s|%s|%s|%d", updateauth.MACPurpose, rel, job, exp)
+	fmt.Fprintf(m, "%s|%s|%s|%s|%d", updateauth.MACPurpose, updAdminID, rel, job, exp)
 	return grantBody(updateauth.Grant{ReleaseID: rel, JobID: job, ExpiresAt: exp, HMAC: hex.EncodeToString(m.Sum(nil))})
 }
 

@@ -545,6 +545,13 @@ func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecor
 	// before long". A chat entry is never sent without its own bracket: a
 	// failed set sends nothing (W1b E9). A bracket-carrying broker needs no
 	// set here (FOLD-3, above).
+	//
+	// W1b FOLD-10 — the set and the open are ONE section per AutoTrader: the
+	// maps are keyed (symbol, side), and the chat door (HTTP goroutine) and
+	// the AI decision (cycle goroutine) both run this path; a foreign set
+	// between this entry's set and its send sent it on the other's bracket.
+	endSend := at.lockEntrySend()
+	defer endSend()
 	if market.IsCMEFuturesSymbol(decision.Symbol) && !carries {
 		if manual != nil {
 			manual.brokerCalled = true
@@ -575,6 +582,7 @@ func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecor
 	} else {
 		order, err = open(decision.Symbol, quantity, decision.Leverage)
 	}
+	endSend() // FOLD-10: the send has returned; the confirmation poll runs outside the section
 	if err != nil {
 		return err
 	}
@@ -605,7 +613,11 @@ func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecor
 		at.positionFirstSeenTime[posKey] = time.Now().UnixMilli()
 	}
 
-	// Set stop loss and take profit
+	// Set stop loss and take profit — inside the entry-send section too
+	// (FOLD-10): on a map-keyed broker this write would otherwise land between
+	// ANOTHER entry's set and its send.
+	endBracket := at.lockEntrySend()
+	defer endBracket()
 	var bracketErr error
 	if err := at.trader.SetStopLoss(decision.Symbol, upper, quantity, decision.StopLoss); err != nil {
 		logger.Infof("  ⚠ Failed to set stop loss: %v", err)
@@ -617,6 +629,7 @@ func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecor
 			bracketErr = fmt.Errorf("set target %.2f: %w", decision.TakeProfit, err)
 		}
 	}
+	endBracket()
 	// A chat entry on a venue that opens first and sets after (not CME: its
 	// bracket rode the signal) is a LIVE position with no bracket if the set
 	// failed — told as OPENED and UNPROTECTED, never as a failure.

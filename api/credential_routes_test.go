@@ -90,7 +90,9 @@ func TestBotTokenCannotChangeTheOwnersPassword(t *testing.T) {
 	bot := mustBotToken(t)
 	before := e.adminRow()
 
-	w := credCall(t, e, "PUT", "/api/user/password", bot, `{"new_password":"bot-chosen-password-1"}`)
+	// Carrying the owner's REAL current password (current_password is required
+	// since CTO ruling item 1): the email/machine rule must refuse on its own.
+	w := credCall(t, e, "PUT", "/api/user/password", bot, `{"current_password":"`+updAdminPass+`","new_password":"bot-chosen-password-1"}`)
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("PUT /api/user/password with the Telegram bot token = %d %s — want 403", w.Code, w.Body.String())
 	}
@@ -106,7 +108,7 @@ func TestBotTokenCannotChangeTheOwnersPassword(t *testing.T) {
 	// Same user_id, any email that is not the row's (not only bot@internal).
 	for _, email := range []string{"someone@example.test", "OWNER@example.test", "owner@example.test ", ""} {
 		tok := mintJWT(t, updAdminID, email, time.Now().Add(-5*time.Second), time.Now().Add(time.Hour), updSecret)
-		if w := credCall(t, e, "PUT", "/api/user/password", tok, `{"new_password":"look-alike-pass-1"}`); w.Code != http.StatusForbidden {
+		if w := credCall(t, e, "PUT", "/api/user/password", tok, `{"current_password":"`+updAdminPass+`","new_password":"look-alike-pass-1"}`); w.Code != http.StatusForbidden {
 			t.Fatalf("owner id with email %q: PUT /api/user/password = %d — want 403", email, w.Code)
 		}
 	}
@@ -147,7 +149,7 @@ func TestBotToAdminChainEndsForbidden(t *testing.T) {
 	bot := mustBotToken(t)
 	e.expectAllForbidden("bot token, direct", withToken(bot))
 
-	if w := credCall(t, e, "PUT", "/api/user/password", bot, `{"new_password":"bot-chosen-password-2"}`); w.Code != http.StatusForbidden {
+	if w := credCall(t, e, "PUT", "/api/user/password", bot, `{"current_password":"`+updAdminPass+`","new_password":"bot-chosen-password-2"}`); w.Code != http.StatusForbidden {
 		t.Fatalf("chain step 1: PUT /api/user/password with the bot token = %d %s — want 403", w.Code, w.Body.String())
 	}
 	if tok, code := credLogin(t, e, updAdminEmail, "bot-chosen-password-2"); code != http.StatusUnauthorized {
@@ -158,16 +160,16 @@ func TestBotToAdminChainEndsForbidden(t *testing.T) {
 }
 
 // Positive control: the owner's OWN password change through the web flow —
-// login, then PUT {new_password} only (web/src/pages/SettingsPage.tsx sends
-// nothing else today; requiring current_password is a UI change for the CTO
-// to rule) — still works, and the new password is the one that logs in.
+// login, then PUT {current_password, new_password} (web/src/pages/
+// SettingsPage.tsx sends both since CTO ruling item 1; was: new_password only)
+// — still works, and the new password is the one that logs in.
 func TestOwnerWebPasswordChangeStillWorks(t *testing.T) {
 	e := newUpdEnv(t)
 	tok, code := credLogin(t, e, updAdminEmail, updAdminPass)
 	if code != http.StatusOK {
 		t.Fatalf("owner login = %d", code)
 	}
-	w := credCall(t, e, "PUT", "/api/user/password", tok, `{"new_password":"owner-new-password-1"}`)
+	w := credCall(t, e, "PUT", "/api/user/password", tok, `{"current_password":"`+updAdminPass+`","new_password":"owner-new-password-1"}`)
 	if w.Code != http.StatusOK {
 		t.Fatalf("the owner's own password change = %d %s — want 200", w.Code, w.Body.String())
 	}

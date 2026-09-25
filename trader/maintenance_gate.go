@@ -13,7 +13,7 @@ import (
 //
 //	MaintenanceHeld()        → (reason, held): the gate predicate (sites 1–3, 5)
 //	MaintenanceEntryPermit() → (release, ok): the send-side permit (site 4,
-//	                           TCPTrader's four entry funcs, held across the
+//	                           TCPTrader's three entry funcs, held across the
 //	                           wire write); ok=false while held
 //
 // Unconfigured (MaintenanceDataDir()=="" — standalone fixtures) is today's

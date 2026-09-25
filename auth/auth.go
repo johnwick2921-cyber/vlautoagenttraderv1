@@ -23,16 +23,27 @@ var tokenBlacklist = struct {
 // maxBlacklistEntries is the maximum capacity threshold for blacklist
 const maxBlacklistEntries = 100_000
 
+// ClockLeeway is the clock skew ValidateJWT forgives on iat, nbf and exp
+// (CTO ruling 1790243040753): a token whose iat is more than ClockLeeway
+// ahead of the server's clock is refused everywhere; a clock step back of up
+// to ClockLeeway costs nothing, a larger one refuses the sessions issued in
+// the skipped interval until the clock catches up. The same leeway admits a
+// token up to ClockLeeway past its exp — bounded, pinned (api
+// TestClockLeewayOnExpAndNbfIsBoundedAtSixtySeconds).
+const ClockLeeway = 60 * time.Second
+
 // SetJWTSecret sets the JWT secret key
 func SetJWTSecret(secret string) {
 	JWTSecret = []byte(secret)
 }
 
-// BlacklistToken adds token to blacklist until expiration
+// BlacklistToken adds token to blacklist until expiration — its exp PLUS
+// ClockLeeway, the last instant ValidateJWT can still admit it (an entry
+// dropped at exp would bring a logged-out token back for that last minute).
 func BlacklistToken(token string, exp time.Time) {
 	tokenBlacklist.Lock()
 	defer tokenBlacklist.Unlock()
-	tokenBlacklist.items[token] = exp
+	tokenBlacklist.items[token] = exp.Add(ClockLeeway)
 
 	// If exceeds capacity threshold, perform expired cleanup; if still over limit, log warning
 	if len(tokenBlacklist.items) > maxBlacklistEntries {
@@ -149,7 +160,17 @@ func signToken(userID, email, scope string) (string, error) {
 // a token had 4 accepted spellings and the logout blacklist — an exact-string
 // map — knew only one. Strict decoding refuses non-zero padding bits, so each
 // token has exactly one accepted spelling.
-var strictParser = jwt.NewParser(jwt.WithStrictDecoding())
+//
+// It also refuses a token issued in the FUTURE (M3 verifier defect 4; CTO
+// ruling 1790243040753): jwt.WithIssuedAt() compares iat with now — present
+// only; a token with NO iat passes the parser and is refused by the H2 retire
+// rule (RetiredBy) instead. Before, iat was never compared with now, so a
+// token stamped ahead of the clock carried an iat AFTER a later password
+// change's epoch and survived H2. jwt.WithLeeway(ClockLeeway) forgives 60 s of
+// clock step, and jwt v5 applies that ONE leeway to iat, nbf AND exp: a token
+// is admitted up to ClockLeeway past its exp, so the logout blacklist holds an
+// entry that long too (BlacklistToken).
+var strictParser = jwt.NewParser(jwt.WithStrictDecoding(), jwt.WithIssuedAt(), jwt.WithLeeway(ClockLeeway))
 
 // ValidateJWT validates JWT token
 func ValidateJWT(tokenString string) (*Claims, error) {

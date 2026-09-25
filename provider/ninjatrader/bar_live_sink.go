@@ -37,13 +37,15 @@ var (
 	unagedLiveFrames atomic.Int64
 )
 
-// liveFrameMaxAgeMs bounds how old a bar_update frame may be and still count
-// as a LIVE entry event. It is deliberately far ABOVE the 10s entry window —
-// an ordinary late emission (NT8 emits a closed bar on the first tick of the
-// next bar) must never be refused here — and far BELOW one 5m candle period,
-// so a frame belonging to an earlier interval cannot present itself as news.
-// The frame still reaches the cache; only the entry fan-out is refused.
-const liveFrameMaxAgeMs = 30_000
+// LiveFrameMaxAgeMs bounds how old a bar_update frame may be and still count
+// as a LIVE entry event. It is deliberately far BELOW one 5m candle period,
+// so a frame belonging to an earlier interval cannot present itself as news,
+// and far above an ordinary late emission (NT8 emits a closed bar on the
+// first tick of the next bar). The frame still reaches the cache; only the
+// entry fan-out is refused. The Picture freshness default is pinned to this
+// bound (trader/picture_htf_defaults_test.go): a freshness default stricter
+// than the sink's own admission would refuse frames the pipeline accepted.
+const LiveFrameMaxAgeMs = 30_000
 
 // StaleLiveFrames reports frames refused as live entry events for age.
 func StaleLiveFrames() int64 { return staleLiveFrames.Load() }
@@ -54,7 +56,7 @@ func StaleLiveFrames() int64 { return staleLiveFrames.Load() }
 func UnagedLiveFrames() int64 { return unagedLiveFrames.Load() }
 
 // liveFrameTooOld reports whether the frame's own emission stamp puts it
-// outside liveFrameMaxAgeMs. Reads nothing but the frame: this is the wire
+// outside LiveFrameMaxAgeMs. Reads nothing but the frame: this is the wire
 // boundary and it must not depend on any evaluator.
 func liveFrameTooOld(bars []Bar, nowMs int64) bool {
 	newest := int64(0)
@@ -67,7 +69,7 @@ func liveFrameTooOld(bars []Bar, nowMs int64) bool {
 		unagedLiveFrames.Add(1)
 		return false
 	}
-	return nowMs-newest > liveFrameMaxAgeMs
+	return nowMs-newest > LiveFrameMaxAgeMs
 }
 
 type liveSinkMsg struct {

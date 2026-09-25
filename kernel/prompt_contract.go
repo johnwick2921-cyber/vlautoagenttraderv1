@@ -47,6 +47,72 @@ type PromptContract struct {
 // ValidatePlanDoc / ArmSpecValid / ValidateEntryLaw.
 func PromptContracts() []PromptContract {
 	return []PromptContract{
+		// WAVE PLANNER A3 (rows 346/352/355/358/359/361/362/364/366) — the schema
+		// legality contract, one row per validator refusal string the prompt must
+		// state BEFORE the planner writes it.
+		{
+			Rule:       "confirm.side is above|below only (row 346)",
+			Site:       "kernel/plan_doc.go:826 scenario.confirm.side invalid",
+			MustAppear: []string{`"side": "above|below"`},
+		},
+		{
+			Rule:       "economics: entry, protective stop and arm target required with nonzero risk (row 352)",
+			Gate:       "NONZERO RISK",
+			Site:       "kernel/scenario_economics.go:232",
+			MustAppear: []string{"economics", "nonzero risk"},
+		},
+		{
+			Rule:       "planned_order is legal on sweep_reclaim leg 0 only (row 355)",
+			Gate:       "Entry policy:",
+			Site:       "kernel/entry_policy.go (planned_order is legal on sweep_reclaim leg 0 only)",
+			MustAppear: []string{"planned_order", "leg 0 ONLY"},
+		},
+		{
+			Rule:       "breakdown_continue/breakup_continue requires the breakdown{} facts object (row 358)",
+			Site:       "kernel/plan_doc.go ArmSpecValid (arm requires the breakdown{} facts object)",
+			MustAppear: []string{"breakdown{} REQUIRED iff"},
+		},
+		{
+			Rule:       "breakdown.level is a NUMBER, never a string (row 359)",
+			Site:       "kernel/plan_doc.go PlanBreakdownContinue.Level (json unmarshal float64)",
+			MustAppear: []string{`"level": <n>`},
+		},
+		{
+			Rule:       "planned_order is NOT legal on breakdown_continue — use market_in_zone (rows 361/364)",
+			Gate:       "those conditions use",
+			Site:       "kernel/entry_policy.go (planned_order is not legal on breakdown_continue)",
+			MustAppear: []string{"planned_order", "market_in_zone"},
+		},
+		{
+			Rule:       "breakdown_continue authors only after the tape shows its confirming close (row 362)",
+			Gate:       "author it ONLY AFTER",
+			Site:       "kernel/breakdown_continue.go (NO confirming close beyond)",
+			MustAppear: []string{"confirming close"},
+		},
+		{
+			Rule:       "gap-down: the short scenario's trigger must reference a level ≤ current price, never a rally back above (row 357)",
+			Gate:       "Gap-reach law:",
+			Site:       "kernel/plan_doc.go:1240 continuationReachable (gap-down)",
+			MustAppear: []string{"gap-down", "trigger", "≤ current price", "rally back above"},
+		},
+		{
+			Rule:       "gap-up: the long scenario's trigger must reference a level ≥ current price, never a sell back below (row 360)",
+			Gate:       "Gap-reach law:",
+			Site:       "kernel/plan_doc.go:1246 continuationReachable (gap-up)",
+			MustAppear: []string{"gap-up", "trigger", "≥ current price", "sell back below"},
+		},
+		{
+			Rule:       "the prompt names which conditions ARM for the gap play under the resolved policy (row 363)",
+			Gate:       "Gap-reach law:",
+			Site:       "kernel/entry_policy.go ArmableConditionFor/ArmKindForPolicy",
+			MustAppear: []string{"conditions that ARM for the gap play", "short:", "long:"},
+		},
+		{
+			Rule:       "fvg displacement body must be ≥ 1.5×ATR5m (row 366)",
+			Gate:       "a weaker body is REFUSED at write",
+			Site:       "kernel/fvg_entry.go:257 (displacement body < 1.5×ATR5m)",
+			MustAppear: []string{"displacement", "1.5×ATR5m"},
+		},
 		// CLASS 45 (2026-09-02) — the two feed-forward facts. They are
 		// CONDITIONAL sections (rendered only when there is something to say),
 		// so the contract asserts the ORDER text that always ships with them.
@@ -287,8 +353,7 @@ func PromptContractBootLine() string {
 	// (market_in_zone), planned_order and legacy — so a row can never be
 	// "stated" only under a policy the bot is not running.
 	for _, p := range []string{EntryPolicyMarketInZone, EntryPolicyPlannedOrder, EntryPolicyDefaultLegacy} {
-		if err := ValidatePromptContracts(plannerOutputContractFor(0, 0, true, true, true, resolvePromptEntryPolicy(p, 0, 0, nil, nil))); err != nil {
-			return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v [entry policy %s] (class 38 guard)", err, p)
+		if err := ValidatePromptContracts(plannerOutputContractFor(0, 0, true, true, true, resolvePromptEntryPolicy(p, 0, 0, nil, nil), true)); err != nil {			return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v [entry policy %s] (class 38 guard)", err, p)
 		}
 	}
 	return fmt.Sprintf("📜 prompt/validator contract: %d restrictions, all stated in prompt (class 38 guard)", n)

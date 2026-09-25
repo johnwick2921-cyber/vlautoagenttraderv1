@@ -66,44 +66,10 @@ func runBot(token string, cfg *config.Config, st *store.Store) bool {
 		allowedChatID = id
 	}
 
-	// botUserID / botToken / agents are resolved lazily and refresh when user registers.
-	var (
-		botUserID    string
-		botUserEmail string
-		botToken     string
-		agents       *agent.Manager
-	)
-
-	resolveBotUser := func() bool {
-		users, err := st.User().GetAll()
-		if err != nil || len(users) == 0 {
-			return false
-		}
-		u := users[0]
-		if u.ID == botUserID {
-			return true
-		}
-		newToken, err := agent.GenerateBotToken(u.ID)
-		if err != nil {
-			logger.Errorf("Failed to generate bot JWT for user %s: %v", u.ID, err)
-			return false
-		}
-		prev := botUserID
-		botUserID = u.ID
-		botUserEmail = u.Email
-		botToken = newToken
-		agents = agent.NewManager(cfg.APIServerPort, botToken, botUserEmail, botUserID,
-			func() mcp.AIClient { return newLLMClient(st, botUserID) },
-			api.GetAPIDocs(),
-		)
-		if prev == "" {
-			logger.Infof("Bot: resolved user %s (%s)", botUserID, botUserEmail)
-		} else {
-			logger.Infof("Bot: user changed → %s (%s)", botUserID, botUserEmail)
-		}
-		return true
-	}
-	resolveBotUser()
+	// The bot's account binding — user, JWT, agent manager — resolved lazily;
+	// ident.refresh() re-reads it (and re-mints a token the API would refuse).
+	ident := newBotIdentity(st, cfg.APIServerPort)
+	ident.refresh()
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -124,7 +90,7 @@ func runBot(token string, cfg *config.Config, st *store.Store) bool {
 			if lang := parseLangChoice(text); lang != "" {
 				awaitingLang = false
 				st.TelegramConfig().SetLanguage(lang) //nolint:errcheck
-				sendMarkdownMsg(bot, chatID, statusMsg(st, botUserID, cfg.APIServerPort, lang))
+				sendMarkdownMsg(bot, chatID, statusMsg(st, ident.userID, cfg.APIServerPort, lang))
 			} else {
 				sendMarkdownMsg(bot, chatID, langMenuMsg())
 			}
@@ -133,8 +99,8 @@ func runBot(token string, cfg *config.Config, st *store.Store) bool {
 
 		// ── /start ────────────────────────────────────────────────────────────
 		if text == "/start" {
-			resolveBotUser()
-			if botUserID == "" {
+			ident.refresh()
+			if ident.userID == "" {
 				sendMsg(bot, chatID,
 					"No account found.\nOpen the web dashboard to register, then send /start.")
 				continue
@@ -152,10 +118,10 @@ func runBot(token string, cfg *config.Config, st *store.Store) bool {
 				sendMsg(bot, chatID, "This bot is already bound to another account.")
 				continue
 			} else {
-				agents.Reset(chatID)
+				ident.agents.Reset(chatID)
 			}
 			lang := st.TelegramConfig().GetLanguage()
-			sendMarkdownMsg(bot, chatID, statusMsg(st, botUserID, cfg.APIServerPort, lang))
+			sendMarkdownMsg(bot, chatID, statusMsg(st, ident.userID, cfg.APIServerPort, lang))
 			continue
 		}
 
@@ -187,8 +153,8 @@ func runBot(token string, cfg *config.Config, st *store.Store) bool {
 		}
 
 		// ── Refresh user before every AI call ────────────────────────────────
-		resolveBotUser()
-		if botUserID == "" {
+		ident.refresh()
+		if ident.userID == "" {
 			sendMsg(bot, chatID, "No account found. Open the web dashboard to register.")
 			continue
 		}
@@ -196,13 +162,20 @@ func runBot(token string, cfg *config.Config, st *store.Store) bool {
 		lang := st.TelegramConfig().GetLanguage()
 
 		// ── Guard: show status if not ready for trading ───────────────────────
-		if newLLMClient(st, botUserID) == nil {
-			sendMarkdownMsg(bot, chatID, statusMsg(st, botUserID, cfg.APIServerPort, lang))
+		if newLLMClient(st, ident.userID) == nil {
+			sendMarkdownMsg(bot, chatID, statusMsg(st, ident.userID, cfg.APIServerPort, lang))
 			continue
 		}
 
 		// ── AI agent ─────────────────────────────────────────────────────────
-		go func(chatID int64, text string) {
+		// The manager is captured HERE, on the main loop, and handed in: the
+		// next message's refresh() may replace ident.agents / ident.token
+		// while this one is still being answered, so the goroutine reads no
+		// field of ident (M3 ha verifier 3 — TestRunBotGoroutinesReadNoBotIdentityField).
+		// A message in flight across a re-mint finishes on the manager, and
+		// the token, it started with.
+		agents := ident.agents
+		go func(agents *agent.Manager, chatID int64, text string) {
 			sent, err := bot.Send(tgbotapi.NewMessage(chatID, "⏳"))
 			placeholderID := 0
 			if err == nil {
@@ -244,10 +217,150 @@ func runBot(token string, cfg *config.Config, st *store.Store) bool {
 					bot.Send(msg) //nolint:errcheck
 				}
 			}
-		}(chatID, text)
+		}(agents, chatID, text)
 	}
 
 	return true
+}
+
+// botIdentity is the bot's account binding: the user it acts for, the JWT
+// its agent's API tool calls with, and the agent manager built on that
+// token. runBot calls refresh() at start, on /start and before every AI
+// call — so the M3 red-team H2 re-mint (botTokenStale) is exercised where
+// runBot reaches it (bot_token_test.go drives refresh against the
+// production server). Its fields belong to runBot's main loop: refresh
+// reassigns them, so the per-message goroutine gets the manager as a value
+// captured before the go statement, and the closures refresh builds read
+// locals, never the receiver (bot_goroutine_test.go pins both).
+type botIdentity struct {
+	st      *store.Store
+	apiPort int
+	userID  string
+	email   string
+	token   string
+	agents  *agent.Manager
+}
+
+func newBotIdentity(st *store.Store, apiPort int) *botIdentity {
+	return &botIdentity{st: st, apiPort: apiPort}
+}
+
+// botSleep is the wait before refresh's one extra mint (PR #200 F7): a
+// package variable so the pins drive that path without sleeping. It is
+// called on runBot's main loop only.
+var botSleep = time.Sleep
+
+// botNow is the clock refresh computes that wait from (CTO 1790255882118): a
+// seam, like botSleep, so the same-second pins step the clock
+// deterministically instead of racing the machine's real second boundary. The
+// mint's own iat stays time.Now() — auth pins that
+// (TestServerNeverMintsAFutureIat, TestEveryMintEntryPointStampsNowNotTheFuture).
+var botNow = time.Now
+
+// botMint mints the bot's token. Production is agent.GenerateBotToken, whose
+// iat is time.Now() (auth pins that); the same-second pins replace it with a
+// mint stamped from botNow, so the whole-second boundary is the test's, not
+// the machine's (CTO 1790255882118). refresh is its only caller
+// (TestRunBotMintsOnlyThroughRefresh), and the production value is pinned by
+// TestBotClockSeamsAreTheRealClockInProduction.
+var botMint = agent.GenerateBotToken
+
+// botNextSecondMargin is slack past the whole-second boundary, so a wall
+// clock slewed a few milliseconds behind the monotonic one still reads the
+// next second when the wait ends.
+const botNextSecondMargin = 10 * time.Millisecond
+
+// botUntilNextSecond is how long to wait from now until the wall clock is in
+// the next whole second — the resolution of a JWT's iat (golang-jwt
+// NumericDate) and of the API's retire rule (auth.RetiredBy).
+func botUntilNextSecond(now time.Time) time.Duration {
+	return now.Truncate(time.Second).Add(time.Second + botNextSecondMargin).Sub(now)
+}
+
+// refresh re-reads the account (the first user) and, when the user changed
+// or the current token would be refused, mints a new token and rebuilds the
+// agent manager on it. false = no account, or the mint failed, or no token
+// the API would admit could be minted (PR #200 F7) — and on false nothing
+// is installed.
+func (b *botIdentity) refresh() bool {
+	users, err := b.st.User().GetAll()
+	if err != nil || len(users) == 0 {
+		return false
+	}
+	u := users[0]
+	// M3 red-team H2: the API refuses a token issued at or before the
+	// account's last credential change on every route, so the SAME user
+	// also re-mints when its token would be refused (botTokenStale).
+	if u.ID == b.userID && !botTokenStale(b.token, u) {
+		return true
+	}
+	// PR #200 F7 (CTO bridge msg 1790252194343, #22): a JWT's iat is whole
+	// seconds, so a mint in the SAME second as the password change is
+	// retired at birth (auth.RetiredBy), and one in the same second as a
+	// blacklisted token's own mint is that token, byte for byte (F4b).
+	// Re-check the fresh token with the predicate that sent us here; if the
+	// API would refuse it, wait to the next whole second and mint ONCE more.
+	// Still refused (a wall-clock step back, an epoch ahead of the clock) →
+	// fail closed: false, nothing installed — refresh never reports success
+	// with a token the API refuses.
+	var newToken string
+	for attempt := 1; ; attempt++ {
+		tok, err := botMint(u.ID)
+		if err != nil {
+			logger.Errorf("Failed to generate bot JWT for user %s: %v", u.ID, err)
+			b.dropIfUserChanged(u.ID)
+			return false
+		}
+		if !botTokenStale(tok, u) {
+			newToken = tok
+			break
+		}
+		if attempt == 2 {
+			logger.Warnf("Bot: a token minted for %s after waiting to the next second would still be refused (credential epoch not behind the clock?) — not installed; the next message retries", u.ID)
+			b.dropIfUserChanged(u.ID)
+			return false
+		}
+		botSleep(botUntilNextSecond(botNow()))
+	}
+	prev := b.userID
+	b.userID = u.ID
+	b.email = u.Email
+	b.token = newToken
+	// The LLM factory runs on the per-message goroutine (Manager.Run →
+	// agent.New / Agent.Run) while the next refresh rewrites b's fields on
+	// the main loop: it closes over locals, never b.<field>
+	// (TestBotIdentityClosuresReadNoReceiverField).
+	st, userID := b.st, b.userID
+	b.agents = agent.NewManager(b.apiPort, b.token, b.email, b.userID,
+		func() mcp.AIClient { return newLLMClient(st, userID) },
+		api.GetAPIDocs(),
+	)
+	switch prev {
+	case "":
+		logger.Infof("Bot: resolved user %s (%s)", b.userID, b.email)
+	case b.userID:
+		logger.Infof("Bot: token re-minted for %s — the previous one would be refused (credential change or expiry)", b.userID)
+	default:
+		logger.Infof("Bot: user changed → %s (%s)", b.userID, b.email)
+	}
+	return true
+}
+
+// dropIfUserChanged is refresh's fail-closed path on a USER change: when the
+// box's first account is no longer the one the bot holds a token for, and no
+// token the API admits could be minted for the new one, the bot acts for
+// NOBODY — never for the previous user, whose token may still be admitted
+// (PR #200 F7 verify note 3; TestBotRefreshFailingClosedOnAUserChangeActsForNobody).
+// The same user keeps its fields: its token is the one being replaced, and
+// the next message retries.
+func (b *botIdentity) dropIfUserChanged(firstUserID string) {
+	if b.userID == firstUserID {
+		return
+	}
+	if b.userID != "" {
+		logger.Warnf("Bot: first account changed %s → %s and no admitted token could be minted — acting for no account until a refresh succeeds", b.userID, firstUserID)
+	}
+	b.userID, b.email, b.token, b.agents = "", "", "", nil
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

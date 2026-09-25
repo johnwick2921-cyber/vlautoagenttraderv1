@@ -108,10 +108,6 @@ func (f *latchFixture) source() *EntryLatchSource {
 func latchedCalls(tr *TCPTrader, stamp func(string) error) map[string]func() error {
 	return map[string]func() error{
 		"placeEntry": func() error { _, err := tr.OpenLong("MNQ", 1, 1); return err },
-		"MarketEntryWithProtection": func() error {
-			_, err := tr.MarketEntryWithProtection("long", 1, 29000, 29200, stamp)
-			return err
-		},
 		"PlaceLimitEntry": func() error {
 			_, err := tr.PlaceLimitEntry("MNQ", "long", 1, 29100, 29000, 29200, stamp)
 			return err

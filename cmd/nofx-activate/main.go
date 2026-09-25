@@ -34,7 +34,7 @@ func main() {
 		install   = fs.String("install", "", "install directory the running process reads from")
 		dbPath    = fs.String("db", "data/data.db", "sqlite database to back up")
 		dest      = fs.String("dest", "", "backup destination file")
-		logPath   = fs.String("log", "", "the bot's log file for the boot line")
+		logPath   = fs.String("log", "", "the bot's log file; empty = the NEWEST data/nofx_*.log (logs are named by BOOT date, not today's date)")
 		healthURL = fs.String("health", "http://127.0.0.1:8080/api/health", "health endpoint")
 		within    = fs.Duration("within", 90*time.Second, "how long watch waits")
 		pid       = fs.Int("pid", 0, "pid to replace; 0 = read it from systemd")
@@ -94,7 +94,24 @@ func run(cmd string, o opts) (activation.Receipt, error) {
 		if err != nil {
 			return activation.Receipt{Step: cmd, OK: false, Err: err.Error()}, err
 		}
-		return activation.Watch(rel, id, o.logPath, o.healthURL, o.within)
+		logPath := o.logPath
+		if logPath == "" {
+			// Logs are named by BOOT date, not calendar date: on the live box
+			// at 08:04 on 09-24 the active file was nofx_2026-09-23.log. A
+			// date-built path points at a file that may not exist, and then
+			// Watch fails for a reason unrelated to the activation.
+			p, lerr := activation.NewestLogPath("data")
+			if lerr != nil {
+				return activation.Receipt{Step: cmd, OK: false, Err: lerr.Error()}, lerr
+			}
+			logPath = p
+		}
+		// Since is left zero here: the attended CLI watches a restart it just
+		// performed, so "now" is the correct anchor. A worker resuming from
+		// persisted state passes its recorded kill instant instead.
+		return activation.Watch(rel, id, activation.WatchOpts{
+			LogPath: logPath, HealthURL: o.healthURL, Within: o.within,
+		})
 
 	case "activate":
 		rel, err := activation.Resolve(o.relDir)

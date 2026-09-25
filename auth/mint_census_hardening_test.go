@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"go/ast"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,6 +27,68 @@ func writeSynthetic(t *testing.T, root, rel, body string) {
 	if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// jwtMintShapes walks f (whose golang-jwt/v5 import is named jwtName) and
+// calls count() once for every PRODUCTION MINTING SHAPE the censuses must
+// refuse outside the admitted minting sites (auth/auth.go signToken):
+//
+//   - a jwt.NewWithClaims / jwt.New CALL;
+//   - a REFERENCE to either held as a value (var mk = jwt.NewWithClaims —
+//     the later mk(…) call carries no jwt selector to count);
+//   - a jwt.Token composite literal (&jwt.Token{…}.SignedString(secret)
+//     mints a token with no NewWithClaims call anywhere).
+//
+// The Fun selector of a counted call is not double-counted: it belongs to
+// the call, not to a separate reference. Skeptic 4c05158b [14] — type-based:
+// any construction of jwt.Token / call-or-reference of NewWithClaims.
+func jwtMintShapes(f *ast.File, jwtName string, count func()) {
+	isSel := func(e ast.Expr, name string) bool {
+		s, ok := e.(*ast.SelectorExpr)
+		if !ok {
+			return false
+		}
+		id, ok := s.X.(*ast.Ident)
+		return ok && id.Name == jwtName && s.Sel.Name == name
+	}
+	var walk func(n ast.Node) bool
+	walk = func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.CallExpr:
+			if isSel(x.Fun, "NewWithClaims") || isSel(x.Fun, "New") {
+				count()
+				for _, a := range x.Args {
+					ast.Inspect(a, walk)
+				}
+				if se, ok := x.Fun.(*ast.SelectorExpr); ok {
+					ast.Inspect(se.X, walk)
+				}
+				return false
+			}
+			ast.Inspect(x.Fun, walk)
+			for _, a := range x.Args {
+				ast.Inspect(a, walk)
+			}
+			return false
+		case *ast.SelectorExpr:
+			if isSel(x, "NewWithClaims") || isSel(x, "New") {
+				count()
+			}
+			ast.Inspect(x.X, walk)
+			return false
+		case *ast.CompositeLit:
+			if isSel(x.Type, "Token") {
+				count()
+			}
+			ast.Inspect(x.Type, walk)
+			for _, e := range x.Elts {
+				ast.Inspect(e, walk)
+			}
+			return false
+		}
+		return true
+	}
+	ast.Inspect(f, walk)
 }
 
 // The admitted minting site's shape: one NewWithClaims call, two now-dated

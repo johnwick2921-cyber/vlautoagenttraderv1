@@ -439,8 +439,17 @@ func (at *AutoTrader) invalidatePictureRows(reason, event string, now time.Time,
 		return 0, 0
 	}
 	nt := at.armedTrader()
+	// WAVE 1b E6 — a Stop invalidates every Picture row EXCEPT a live
+	// successor's: when a reload's new instance Ran before this (old) one
+	// Stops, the rows recorded under the new run's epoch are the new run's to
+	// keep. With no successor this is the old rule, byte for byte; Day Plan
+	// OFF is never scoped this way (its sweep is event "day_plan_off").
+	succ, hasSucc := at.pictureOtherInstanceEpoch() // at Stop, only a successor's (see its doc)
 	for _, r := range rows {
 		if r.TraderID != at.id || r.Source == "" || r.State == store.StateCancelPending {
+			continue
+		}
+		if event == "stopped" && hasSucc && r.SourceRunEpoch != nil && *r.SourceRunEpoch == succ {
 			continue
 		}
 		if store.IsUnplacedArm(r.State, r.SignalID) {

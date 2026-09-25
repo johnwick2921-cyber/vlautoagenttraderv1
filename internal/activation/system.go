@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -106,4 +107,36 @@ func IdentityOf(pid int) (Identity, error) {
 		return Identity{}, fmt.Errorf("pid %d: %w", pid, err)
 	}
 	return Identity{PID: pid, StartTicks: ticks}, nil
+}
+
+// NewestLogPath returns the log the running process is actually writing.
+//
+// LOGS ARE NAMED BY BOOT DATE, NOT CALENDAR DATE. On the live box at 08:04 on
+// 2026-09-24 the active file was data/nofx_2026-09-23.log, because the process
+// booted the previous evening. Anything that builds the path as
+// nofx_$(date +%F).log — as the v6 script did — points at a file that may not
+// exist, and then a Watch fails for a reason that has nothing to do with the
+// activation.
+func NewestLogPath(dir string) (string, error) {
+	hits, err := filepath.Glob(filepath.Join(dir, "nofx_*.log"))
+	if err != nil {
+		return "", err
+	}
+	if len(hits) == 0 {
+		return "", fmt.Errorf("no nofx_*.log in %s", dir)
+	}
+	newest, newestAt := "", time.Time{}
+	for _, h := range hits {
+		st, err := os.Stat(h)
+		if err != nil {
+			continue
+		}
+		if st.ModTime().After(newestAt) {
+			newest, newestAt = h, st.ModTime()
+		}
+	}
+	if newest == "" {
+		return "", fmt.Errorf("no readable nofx_*.log in %s", dir)
+	}
+	return newest, nil
 }

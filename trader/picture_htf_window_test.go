@@ -46,7 +46,7 @@ func TestPictureHtf_ALater5mCandleCannotReopenTheEntryWindow(t *testing.T) {
 	// evaluator reports is "never actionable" rather than "expired" because
 	// this completed candle only reached us AFTER the window had closed, so
 	// there was never an opportunity here to refuse (D23/R2).
-	if res.Stage == "confirmed" || res.Stage == "submitted" {
+	if res.Stage == "confirmed" || res.Stage == "submitted" || res.Stage == pictureHtfSeamDoneStage {
 		t.Fatalf("a newer 5m candle must not re-open the window — got stage=%q reason=%q", res.Stage, res.Reason)
 	}
 	if !strings.Contains(res.Reason, "entry window") {

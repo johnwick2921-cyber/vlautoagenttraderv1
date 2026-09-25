@@ -50,12 +50,14 @@ func entryLawBootLine(dp *store.DayPlanConfig) string {
 	policy, pSrc := store.ResolveEntryPolicyDefault(dp)
 	zmax, zSrc := store.ResolveZoneMaxPts(dp)
 	rest, rSrc := store.ResolveZoneRestMaxMin(dp)
+	reach, reachSrc := store.ResolveZonePlaceWithinPts(dp)
 	hold, hSrc := store.ResolveMinHoldMin(dp)
-	return fmt.Sprintf("🎛 entry law: write_feas=%s · entry_policy_default=%s%s zone_max_pts=%g%s zone_rest_max_min=%d%s min_hold_min=%d%s",
+	return fmt.Sprintf("🎛 entry law: write_feas=%s · entry_policy_default=%s%s zone_max_pts=%g%s zone_rest_max_min=%d%s zone_place_within_pts=%g%s min_hold_min=%d%s",
 		writeFeasLabel(dp),
 		policy, store.OriginLetter(pSrc),
 		zmax, store.OriginLetter(zSrc),
 		rest, store.OriginLetter(rSrc),
+		reach, store.OriginLetter(reachSrc),
 		hold, store.OriginLetter(hSrc))
 }
 

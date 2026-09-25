@@ -200,9 +200,13 @@ func (at *AutoTrader) pictureHtfBootLineAt(now time.Time) string {
 	// W4/D24: the frame-age and fallback counters are READ here too, so a feed
 	// that is quietly being refused (or quietly unaged) is visible on the line
 	// rather than only in a log nobody greps.
-	return fmt.Sprintf("picture-htf: mode=%s rule=v1 %s data=%s addon=%s (build=%q, need ≥ %s) plan_gate=%s contract=%s · foreign=%d · unknown=%d · stale=%d · unaged=%d · tick_skips=%d",
+	// DEFAULTS-SANE (2026-09-24): the window/freshness the evaluator enforces
+	// are READ from the resolver — never literals.
+	rcfg := at.pictureHtfResolvedConfig()
+	return fmt.Sprintf("picture-htf: mode=%s rule=v1 %s data=%s addon=%s (build=%q, need ≥ %s) plan_gate=%s contract=%s · window=%ds fresh=%ds · foreign=%d · unknown=%d · stale=%d · unaged=%d · tick_skips=%d",
 		mode, sim, native, cap, at.farSideBuildID(), ntwire.MinAddonBuildPictureHtf, planGate,
-		contract, ev.ForeignContractFrames(), ev.UnknownContractFrames(),
+		contract, rcfg.EntryWindowSec, rcfg.FreshnessSec,
+		ev.ForeignContractFrames(), ev.UnknownContractFrames(),
 		ntwire.StaleLiveFrames(), ntwire.UnagedLiveFrames(), ev.TickFallbackSkips())
 }
 

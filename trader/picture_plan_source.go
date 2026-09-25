@@ -35,10 +35,18 @@ import (
 // (sweepInterruptedPictureHandOffsAt), which finds the record and settles the
 // row "planned" — never "refused" behind a scenario that may still trade.
 
+// pictureHtfSeamDoneStage is the word the evaluator reports after the bound
+// seam returns nil (W5 F1, CTO 1790194833410). The SEAM decides it, so the
+// evaluator never needs to know which seam is bound: this one records the
+// opportunity as a Day Plan scenario and settles its row "planned" — nothing
+// was submitted. (The ambiguous-send branch after an error keeps its own
+// "submitted" words.)
+var pictureHtfSeamDoneStage = store.PictureStagePlanned
+
 func init() {
-	// Go runs a package's init functions in file-name order: picture_htf_send.go
-	// binds the retired market-entry send first, and this binding (a later
-	// file) wins. Builder C deletes that file; this binding stays.
+	// The ONLY production binding of the seam: the retired market-entry send
+	// and its broker method are deleted, and TestPictureHasNoMarketEntryPath
+	// pins that they stay gone.
 	pictureHtfSubmitSeam = pictureHtfHandOffSeam
 	// D17 — the executor's pass head runs the interrupted-hand-off sweep once
 	// per pass through this hook (declared beside the executor, bound here).
@@ -327,6 +335,13 @@ func (at *AutoTrader) appendPictureOverlay(row *store.PlanDB, sc kernel.PlanScen
 		Origin:      kernel.MachineOverlayOriginPicture,
 	}
 	var hit *pictureRecord
+	// W5 R13(b): the P ids every EARLIER version of this plan used. Earlier
+	// versions are frozen (an overlay on a superseded version is refused by
+	// the writer), so this read outside the writer cannot go stale.
+	earlier, eerr := at.pictureIDsOfEarlierVersions(row.PlanID, row.Version)
+	if eerr != nil {
+		return pictureRecord{}, fmt.Errorf("picture hand-off refused: the earlier versions of %s are unreadable (%v) — nothing recorded", row.PlanID, eerr)
+	}
 	if pictureHandOffBeforeAppendForTest != nil {
 		pictureHandOffBeforeAppendForTest()
 	}
@@ -356,7 +371,7 @@ func (at *AutoTrader) appendPictureOverlay(row *store.PlanDB, sc kernel.PlanScen
 				return true, nil
 			}
 		}
-		sc.ID = nextPictureScenarioID(pf.Doc, existing)
+		sc.ID = nextPictureScenarioID(pf.Doc, existing, earlier)
 		if verr := kernel.ValidateMachineScenario(pf.Doc, sc); verr != nil {
 			return false, verr
 		}
@@ -382,8 +397,18 @@ func (at *AutoTrader) appendPictureOverlay(row *store.PlanDB, sc kernel.PlanScen
 // nextPictureScenarioID mints P<n> past every P id the version holds: those
 // in the resolved doc AND those in any machine overlay (even one the fold
 // skipped), so an id is never reused within a version.
-func nextPictureScenarioID(doc kernel.PlanDoc, existing []*store.PlanOverlayDB) string {
+//
+// W5 R13(b) (CTO round 2): and past every P id any EARLIER version of the
+// plan used. Minting from the current version alone let opportunity B, handed
+// off onto v2 before A's re-append, take A's 'P1': A's re-append was then
+// refused ("id already in the plan") and — the ledger key being (plan,
+// scenario, leg), version-insensitive — B's write landed on A's row. A P id
+// now names ONE opportunity for the whole plan chain.
+func nextPictureScenarioID(doc kernel.PlanDoc, existing []*store.PlanOverlayDB, earlier []string) string {
 	all := kernel.PlanDoc{Scenarios: append([]kernel.PlanScenario(nil), doc.Scenarios...)}
+	for _, id := range earlier {
+		all.Scenarios = append(all.Scenarios, kernel.PlanScenario{ID: id})
+	}
 	for _, e := range existing {
 		if !kernel.IsMachineOverlayOrigin(e.Origin) {
 			continue
@@ -393,6 +418,42 @@ func nextPictureScenarioID(doc kernel.PlanDoc, existing []*store.PlanOverlayDB) 
 		}
 	}
 	return kernel.NextMachineScenarioID(all)
+}
+
+// pictureIDsOfEarlierVersions returns every scenario id versions 1..version-1
+// of planID carried: the resolved doc's scenarios AND every machine overlay's
+// scenario (even one the fold skipped). A read error is returned — the caller
+// refuses the hand-off rather than mint an id it cannot prove is free.
+func (at *AutoTrader) pictureIDsOfEarlierVersions(planID string, version int) ([]string, error) {
+	plans := at.store.Plan()
+	var ids []string
+	for v := 1; v < version; v++ {
+		p, err := plans.GetPlan(planID, v)
+		if err != nil {
+			return nil, fmt.Errorf("%s v%d: %w", planID, v, err)
+		}
+		if p == nil {
+			continue
+		}
+		ovs, err := plans.ListOverlays(planID, v)
+		if err != nil {
+			return nil, fmt.Errorf("%s v%d overlays: %w", planID, v, err)
+		}
+		if pf, perr := kernel.ResolvePlanFinal([]byte(p.Doc), kernel.OverlayRefsFrom(ovs)); perr == nil {
+			for _, s := range pf.Doc.Scenarios {
+				ids = append(ids, s.ID)
+			}
+		}
+		for _, e := range ovs {
+			if !kernel.IsMachineOverlayOrigin(e.Origin) {
+				continue
+			}
+			if s, merr := kernel.MachineScenarioFromPatch(e.Patch); merr == nil {
+				ids = append(ids, s.ID)
+			}
+		}
+	}
+	return ids, nil
 }
 
 // sweepInterruptedPictureHandOffsAt is the D17 sweep: a Picture row left

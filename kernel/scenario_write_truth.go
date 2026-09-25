@@ -189,6 +189,45 @@ func authoredID(p *string) (string, bool) {
 	return *p, true
 }
 
+// nearestValidIDSuffix is WAVE PLANNER A5: the identity-unresolved refusal
+// LISTS the map ids the scenario CAN copy — nearest-first by |level price −
+// ref| when ref > 0 (the leg's confirm price or the scenario anchor), else in
+// candidate order. k caps the list. Empty when the map carries no id (canon
+// 49: never list a fabricated id). The ids print VERBATIM — the point is the
+// planner copies one exactly.
+func nearestValidIDSuffix(levels []PlanLevel, ref float64, k int) string {
+	type entry struct {
+		id    string
+		price float64
+		d     float64
+	}
+	var es []entry
+	for _, l := range levels {
+		if l.ID == nil || strings.TrimSpace(*l.ID) == "" {
+			continue
+		}
+		d := math.Inf(1)
+		if ref > 0 {
+			d = math.Abs(l.Price - ref)
+		}
+		es = append(es, entry{*l.ID, l.Price, d})
+	}
+	if len(es) == 0 {
+		return ""
+	}
+	if ref > 0 {
+		sort.SliceStable(es, func(i, j int) bool { return es[i].d < es[j].d })
+	}
+	if k > 0 && len(es) > k {
+		es = es[:k]
+	}
+	parts := make([]string, 0, len(es))
+	for _, e := range es {
+		parts = append(parts, fmt.Sprintf("%s=%.2f", e.id, e.price))
+	}
+	return " — nearest valid ids: " + strings.Join(parts, " · ")
+}
+
 // scenarioIdentityWriteIssues is A3. Per scenario:
 //   - a level_id / sweep_level_id / reclaim_level_id that does not resolve in
 //     the frozen map (invented, mangled, or a ref| id whose digest matches no
@@ -234,7 +273,11 @@ func scenarioIdentityWriteIssues(d *PlanDoc, candidates []MapCandidate) []WriteT
 			}
 			l, ok := resolveIdentity(&lg.id, levels)
 			if !ok {
-				out = append(out, WriteTruthIssue{sc.ID, WriteTruthIdentityUnresolved, fmt.Sprintf("%s identity unresolved: %s %q is not in the frozen map — copy the id of that leg's level from the map exactly", sc.ID, lg.field, lg.id)})
+				ref := 0.0
+				if lg.ref != nil && lg.ref.RefPrice > 0 {
+					ref = lg.ref.RefPrice
+				}
+				out = append(out, WriteTruthIssue{sc.ID, WriteTruthIdentityUnresolved, fmt.Sprintf("%s identity unresolved: %s %q is not in the frozen map — copy the id of that leg's level from the map exactly%s", sc.ID, lg.field, lg.id, nearestValidIDSuffix(levels, ref, 4))})
 				continue
 			}
 			if lg.ref == nil || lg.ref.RefPrice <= 0 {
@@ -250,12 +293,16 @@ func scenarioIdentityWriteIssues(d *PlanDoc, candidates []MapCandidate) []WriteT
 		if !named {
 			continue
 		}
+		anchor, hasAnchor := ScenarioAnchor(sc, d.Levels)
 		l, ok := resolveIdentity(&id, levels)
 		if !ok {
-			out = append(out, WriteTruthIssue{sc.ID, WriteTruthIdentityUnresolved, fmt.Sprintf("%s identity unresolved: level_id %q is not in the frozen map (no map row carries it) — copy the id of the level this scenario trades from the map exactly, or null when that row's id is NULL", sc.ID, id)})
+			ref := 0.0
+			if hasAnchor {
+				ref = anchor
+			}
+			out = append(out, WriteTruthIssue{sc.ID, WriteTruthIdentityUnresolved, fmt.Sprintf("%s identity unresolved: level_id %q is not in the frozen map (no map row carries it) — copy the id of the level this scenario trades from the map exactly, or null when that row's id is NULL%s", sc.ID, id, nearestValidIDSuffix(levels, ref, 4))})
 			continue
 		}
-		anchor, hasAnchor := ScenarioAnchor(sc, d.Levels)
 		r := ResolveScenarioIdentity(sc, levels, anchor, hasAnchor)
 		if !r.Disagreed || IdentityAgreesZoneAware(l, anchor) || legIDs[id] {
 			continue
@@ -313,6 +360,7 @@ type pathCandidate struct {
 	price float64 // tick-rounded
 	label string
 	dist  float64 // from entry, in the trade direction
+	id    *string // the map row's id; nil = NULL (canon 49)
 }
 
 // onPath returns the candidates strictly between entry and target in the
@@ -352,13 +400,22 @@ func onPath(cs []MapCandidate, sc PlanScenario, entry, target, dir, tick float64
 		if len(c.Names) > 0 {
 			label = c.Names[0]
 		}
-		out = append(out, pathCandidate{p, label, dist})
+		out = append(out, pathCandidate{p, label, dist, c.ID})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].dist < out[j].dist })
 	return out
 }
 
 func within(a, b, tick float64) bool { return math.Abs(a-b) <= tick+1e-9 }
+
+// pathCandidateID renders a path level's id as the refusal names it: the raw
+// id, or NULL when the map row carries none (canon 49 — never a fabricated id).
+func pathCandidateID(p pathCandidate) string {
+	if p.id == nil || strings.TrimSpace(*p.id) == "" {
+		return "NULL"
+	}
+	return *p.id
+}
 
 // obstacleChainWriteIssues is A4. Per scenario with known geometry:
 //   - authored target_chain / first_obstacle / path_levels prices are
@@ -443,7 +500,7 @@ func obstacleChainWriteIssues(d *PlanDoc, seated, cut []MapCandidate, tick float
 			}
 			if !ok {
 				if len(path) > 0 {
-					out = append(out, WriteTruthIssue{sc.ID, WriteTruthObstacleNotNearest, fmt.Sprintf("%s obstacle chain: first_obstacle %.2f is not the nearest seated level on the path — %s %.2f (%.2f pts from entry %.2f) comes first", sc.ID, *fo, path[0].label, path[0].price, path[0].dist, entry)})
+					out = append(out, WriteTruthIssue{sc.ID, WriteTruthObstacleNotNearest, fmt.Sprintf("%s obstacle chain: first_obstacle %.2f is not the nearest seated level on the path — %s %.2f (%.2f pts from entry %.2f) [id=%s] comes first", sc.ID, *fo, path[0].label, path[0].price, path[0].dist, entry, pathCandidateID(path[0]))})
 				} else {
 					out = append(out, WriteTruthIssue{sc.ID, WriteTruthObstacleNotNearest, fmt.Sprintf("%s obstacle chain: no seated level lies between entry %.2f and target %.2f — first_obstacle must be the arm target %.2f (got %.2f)", sc.ID, entry, target, target, *fo)})
 				}
@@ -456,7 +513,7 @@ func obstacleChainWriteIssues(d *PlanDoc, seated, cut []MapCandidate, tick float
 				covered = covered || within(pl.Price, p.price, tick)
 			}
 			if !covered {
-				missing = append(missing, fmt.Sprintf("%s %.2f (%.2f pts from entry)", p.label, p.price, p.dist))
+				missing = append(missing, fmt.Sprintf("%s %.2f (%.2f pts from entry) [id=%s]", p.label, p.price, p.dist, pathCandidateID(p)))
 			}
 		}
 		if len(missing) > 0 {

@@ -505,8 +505,30 @@ func TestZoneRestCap(t *testing.T) {
 		t.Fatalf("31 min must cancel exactly the policy limit %s: %+v", sid, cancels)
 	}
 	row := r.row("S1")
-	if row.State != store.StateCancelPending || !strings.Contains(row.StateReason, "zone rest expired") {
-		t.Fatalf("the rest-capped row must be cancel_pending 'zone rest expired': %+v", row)
+	// WAVE PLANNER B1 (P1 fold, CTO #213): the expiry REQUESTS the cancel —
+	// cancel_pending with the signal id KEPT. The re-arm waits for the broker
+	// book to confirm it and never runs on the request alone (the pre-fold
+	// contract reset here and could orphan a live order or lose a fill).
+	if row.State != store.StateCancelPending || !strings.Contains(row.StateReason, "zone rest expired") ||
+		!strings.Contains(row.StateReason, "re-arm on broker-book confirm") || row.SignalID != sid {
+		t.Fatalf("the rest-capped row must request the cancel and KEEP its signal id: %+v", row)
+	}
+	// The broker book CONFIRMS the cancel → armed-unplaced, stamp cleared,
+	// seq+1. Price sits beyond the band so the settle pass places nothing.
+	at32 := r.now.Add(32 * time.Minute)
+	r.srv.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, at32)
+	r.persistFlat(at32)
+	r.setTape(zoneTape(160.0, at32, 0))
+	r.at.maybeManageArmedOrdersAt(nil, at32)
+	if sigs, cancels := r.drain(); len(sigs) != 0 || len(cancels) != 0 {
+		t.Fatalf("the settle pass must send nothing: sigs=%+v cancels=%+v", sigs, cancels)
+	}
+	row = r.row("S1")
+	if row.State != store.StateArmed || row.SignalID != "" || row.PlacedAtMs != nil {
+		t.Fatalf("the book-confirmed cancel must reset to armed-unplaced 'zone rest expired': %+v", row)
+	}
+	if row.PlacementSeq != 1 {
+		t.Fatalf("the reset mints the next placement seq (0 authored +1), got %d: %+v", row.PlacementSeq, row)
 	}
 	var lg store.ArmedOrderDB
 	if err := r.st.GormDB().First(&lg, legacy.ID).Error; err != nil {

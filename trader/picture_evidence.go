@@ -67,12 +67,28 @@ type PictureEvidence struct {
 	WindowCloseMs int64 `json:"window_close_ms"`
 	EvalAtMs      int64 `json:"eval_at_ms"`
 
-	// W4-owned facts: nil until W4 lands them (absent ≠ 0).
-	SourceEmittedAtMs *int64  `json:"source_emitted_at_ms,omitempty"`
-	ReceivedAtMs      *int64  `json:"received_at_ms,omitempty"`
-	DepthCompleted    *int    `json:"depth_completed,omitempty"`
-	DepthNeeded       *int    `json:"depth_needed,omitempty"`
-	Generation        *uint64 `json:"generation,omitempty"`
+	// W4's evidence (lane 103, fix/w4-picture-evidence @8d0fa6a9), READ at the
+	// seam under the evaluator's lock. A clock the evaluator never saw stays
+	// nil (absent ≠ 0): the three clocks of the freshest COMPLETED 5m frame —
+	// the AddOn's own stamp (SOURCE, another machine's clock), Go's receipt,
+	// and the candle's close — and the 4H depth the levels were drawn from.
+	SourceEmittedAtMs *int64 `json:"source_emitted_at_ms,omitempty"`
+	ReceivedAtMs      *int64 `json:"received_at_ms,omitempty"`
+	FrameCloseMs      *int64 `json:"frame_close_ms,omitempty"`
+	DepthFetched      *int   `json:"depth_fetched,omitempty"`
+	DepthCompleted    *int   `json:"depth_completed,omitempty"`
+	DepthNeeded       *int   `json:"depth_needed,omitempty"`
+	// Generation is W4's trader generation, not exposed at the seam at
+	// 8d0fa6a9 — absent until it is (the run epoch guards reloads meanwhile).
+	Generation *uint64 `json:"generation,omitempty"`
+}
+
+// positiveMs is an optional instant: nil for 0 (never seen), never a fake 0.
+func positiveMs(ms int64) *int64 {
+	if ms <= 0 {
+		return nil
+	}
+	return &ms
 }
 
 // pictureEvidenceFrom reads the evaluator's hand-off (called at the seam,
@@ -104,6 +120,24 @@ func pictureEvidenceFrom(e *PictureHtfEvaluator, row *store.PictureHtfOpportunit
 	if !ok {
 		return PictureEvidence{}, fmt.Errorf("picture evidence: no R:R floor resolves")
 	}
+	// W4 contract: a level becomes usable at its COMPLETION instant, and 0
+	// means "unknown" — refuse, never treat it as already knowable.
+	if row.LevelKnowable <= 0 {
+		return PictureEvidence{}, fmt.Errorf("picture evidence: the level's knowable instant is unknown")
+	}
+	// W4 contract: the depth the levels were drawn from, READ with the same
+	// rule the evaluator judged (depth4H at the evaluation clock). The
+	// evaluator refuses below it before the seam; re-refuse here rather than
+	// record a scenario on history this evaluation cannot justify.
+	dep, _ := e.depth4H(row.Symbol, now.UnixMilli())
+	if !dep.OK() {
+		return PictureEvidence{}, fmt.Errorf("picture evidence: %s", dep.Reason())
+	}
+	fetched, completed, needed := dep.Fetched, dep.Completed, dep.Required
+	var received *int64
+	if !e.freshest5mAt.IsZero() {
+		received = positiveMs(e.freshest5mAt.UnixMilli())
+	}
 	return PictureEvidence{
 		OppKey: row.OppKey, ClaimID: row.SignalID, TraderID: row.TraderID, StrategyID: row.StrategyID,
 		Contract: row.Contract, Symbol: row.Symbol, Direction: dir,
@@ -117,5 +151,7 @@ func pictureEvidenceFrom(e *PictureHtfEvaluator, row *store.PictureHtfOpportunit
 		StopSource: row.StopSource, TargetZone: row.TargetZone,
 		RREstimate: row.RREstimate, RRFloor: floor, KnobMinRR: adm.KnobMinRR,
 		WindowOpenMs: row.WindowOpen, WindowCloseMs: row.WindowClose, EvalAtMs: now.UnixMilli(),
+		SourceEmittedAtMs: positiveMs(e.freshest5mEmitted), ReceivedAtMs: received, FrameCloseMs: positiveMs(e.freshest5mClose),
+		DepthFetched: &fetched, DepthCompleted: &completed, DepthNeeded: &needed,
 	}, nil
 }

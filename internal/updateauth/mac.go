@@ -37,10 +37,15 @@ var macHexRe = regexp.MustCompile(`^[0-9a-f]{64}$`)
 const MACPurpose = "nofx-update-install/v1"
 
 // Message is the canonical MAC input:
-// MACPurpose|release_id|job_id|expires_at, with expires_at in unix seconds as
-// a canonical decimal. Both ids are validated first — the allow-lists exclude
-// '|', so no two field triples share a message.
-func Message(releaseID, jobID string, expiresAt int64) ([]byte, error) {
+// MACPurpose|user_id|release_id|job_id|expires_at, with user_id the ENROLLED
+// administrator's id (admin.json — red-team red-4 #4: a code is bound to the
+// administrator it was minted for) and expires_at in unix seconds as a
+// canonical decimal. Every field is validated first — the allow-lists
+// exclude '|', so no two field tuples share a message.
+func Message(userID, releaseID, jobID string, expiresAt int64) ([]byte, error) {
+	if !validUserID(userID) {
+		return nil, malformed("user_id")
+	}
 	if !ValidReleaseID(releaseID) {
 		return nil, malformed("release_id")
 	}
@@ -50,17 +55,17 @@ func Message(releaseID, jobID string, expiresAt int64) ([]byte, error) {
 	if expiresAt <= 0 {
 		return nil, malformed("expires_at")
 	}
-	return []byte(MACPurpose + "|" + releaseID + "|" + jobID + "|" + strconv.FormatInt(expiresAt, 10)), nil
+	return []byte(MACPurpose + "|" + userID + "|" + releaseID + "|" + jobID + "|" + strconv.FormatInt(expiresAt, 10)), nil
 }
 
 // ComputeMAC returns the lowercase-hex HMAC-SHA256 of Message under key.
 // Callers: the attended `updater-bootstrap authorize` ONLY (CTO ruling Q1(a):
 // nothing on the API side mints a MAC). A census test pins it.
-func ComputeMAC(key []byte, releaseID, jobID string, expiresAt int64) (string, error) {
+func ComputeMAC(key []byte, userID, releaseID, jobID string, expiresAt int64) (string, error) {
 	if len(key) != DeviceKeyLen || degenerateKey(key) {
 		return "", errors.New("updateauth: bad key (wrong length or degenerate)")
 	}
-	msg, err := Message(releaseID, jobID, expiresAt)
+	msg, err := Message(userID, releaseID, jobID, expiresAt)
 	if err != nil {
 		return "", err
 	}
@@ -72,11 +77,11 @@ func ComputeMAC(key []byte, releaseID, jobID string, expiresAt int64) (string, e
 // VerifyMAC reports whether macHex (exactly 64 lowercase hex chars) is the
 // HMAC-SHA256 of Message under key. The comparison is hmac.Equal (constant
 // time). A degenerate key (every byte equal) verifies nothing (M3-RT-F2).
-func VerifyMAC(key []byte, releaseID, jobID string, expiresAt int64, macHex string) bool {
+func VerifyMAC(key []byte, userID, releaseID, jobID string, expiresAt int64, macHex string) bool {
 	if len(key) != DeviceKeyLen || degenerateKey(key) || !macHexRe.MatchString(macHex) {
 		return false
 	}
-	msg, err := Message(releaseID, jobID, expiresAt)
+	msg, err := Message(userID, releaseID, jobID, expiresAt)
 	if err != nil {
 		return false
 	}
@@ -182,7 +187,8 @@ func Authorize(dataDir, releaseID string, now time.Time) (Grant, error) {
 	if !ValidReleaseID(releaseID) {
 		return Grant{}, malformed("release_id")
 	}
-	if _, err := LoadAdmin(dataDir); err != nil {
+	admin, err := LoadAdmin(dataDir)
+	if err != nil {
 		return Grant{}, err
 	}
 	key, err := LoadDeviceKey(dataDir)
@@ -212,7 +218,7 @@ func Authorize(dataDir, releaseID string, now time.Time) (Grant, error) {
 			return Grant{}, errors.New("updateauth: refusing to mint: the fresh job id is already in the seen-job store")
 		}
 	}
-	mac, err := ComputeMAC(key, releaseID, job, exp)
+	mac, err := ComputeMAC(key, admin.UserID, releaseID, job, exp)
 	if err != nil {
 		return Grant{}, err
 	}

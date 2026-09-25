@@ -384,30 +384,12 @@ func replayPlan(r planRow, d *kernel.PlanDoc) []refusal {
 	return out
 }
 
-// classifyRejected maps each rejected row 339..370 to the wave's item class by
-// the STORED reject_reason text. The mapping is the plan file's own table
-// (planner-wave-plan-0924.md §0): A1 no_provenance, A2 write-time feasibility,
-// A3 schema/legality, A4 gap reachability, A5 identity/obstacle chain,
-// A6 born-dead/flip-met. printRejectedTable self-checks against the cited ids.
+// classifyRejected delegates to the ONE classifier (kernel.PlannerRejectItemClass)
+// so the harness and the executor's 🧭 per-read line can never disagree.
 func classifyRejected(rows []rejectedRow) map[int64]string {
 	out := map[int64]string{}
 	for _, r := range rows {
-		reason := strings.ToLower(r.RejectReason)
-		switch {
-		case strings.Contains(reason, "born-dead"), strings.Contains(reason, "born dead"),
-			strings.Contains(reason, "flip"), strings.Contains(reason, "already met"):
-			out[r.ID] = "A6"
-		case strings.Contains(reason, "no_provenance"), strings.Contains(reason, "provenance"):
-			out[r.ID] = "A1"
-		case strings.Contains(reason, "gap"), strings.Contains(reason, "reach"):
-			out[r.ID] = "A4"
-		case strings.Contains(reason, "identity"), strings.Contains(reason, "obstacle"):
-			out[r.ID] = "A5"
-		case strings.HasPrefix(reason, "write-time feasibility"), strings.Contains(reason, "insufficient balance"):
-			out[r.ID] = "A2"
-		default:
-			out[r.ID] = "A3" // schema / legality — everything else the write site refused
-		}
+		out[r.ID] = kernel.PlannerRejectItemClass(r.RejectReason)
 	}
 	return out
 }

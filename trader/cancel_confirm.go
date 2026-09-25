@@ -352,7 +352,10 @@ func (at *AutoTrader) refuseSlot(r store.ArmedOrderDB, v slotVerdict, what strin
 }
 
 // confirmPendingCancels is the per-cycle settlement pass (D1/D2). It is the
-// ONLY place a cancel becomes 'cancelled' through the cancel path.
+// ONLY place a cancel becomes 'cancelled' through the cancel path, and the
+// only place a zone-rest row re-arms after a CONFIRMED cancel (WAVE PLANNER
+// B1, P1 fold — the re-arm is booked on the book's word, never on the
+// request).
 //
 // A10/class 23: it is telemetry-shaped — a failed read WARNs and returns; it
 // never stops the loop and never promotes a row on ignorance.
@@ -394,6 +397,22 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 			ok, why = false, "broker snapshot predates the cancel request or request time is unavailable"
 		}
 		if ok && snapID > 0 {
+			// WAVE PLANNER B1 (P1 fold, CTO #213): a zone-rest cancel the book
+			// CONFIRMS is not the end of the arm — the row returns to
+			// armed-unplaced (placement stamp cleared, seq+1) for a NEW signal
+			// on the next placement. The reset runs on the SAME evidence
+			// ConfirmCancel demands (snapID > 0): a book that never proved the
+			// order gone can never re-arm the row.
+			if rearm, rearmWhy := at.zoneRestReArmOnConfirm(r, why); rearm {
+				if err := ledger.ResetToArmedUnplaced(r.ID, rearmWhy); err != nil {
+					at.logWarnf("🧾 cancel confirm: re-arm write failed for %s: %v", r.Scenario, err)
+					continue
+				}
+				settled++
+				at.logInfof("🧾 cancel CONFIRMED %s signal=%s — %s (snapshot %d, book age %s, attempts %d) — returned to armed-unplaced, re-placeable",
+					r.Scenario, shortID(r.SignalID), why, snapID, age.Round(time.Second), r.CancelAttempts)
+				continue
+			}
 			// The ORIGINAL reason survives the confirmation. Each cancel site
 			// names WHY it cancelled (gate changed, one_live_arm_guard,
 			// entry_gate, condition_shadowed…) and that word is the only record
@@ -656,4 +675,41 @@ func (at *AutoTrader) clearBookOutageIfHealthy(now time.Time) {
 	}
 	at.logWarnf("🚨 broker book RECOVERED after %s — arm placement resumes (outage alert cleared)",
 		time.Duration(now.UnixMilli()-startMs)*time.Millisecond)
+}
+
+// dayPlanOffPassHead is the armed pass's head while Day Plan is OFF (or the
+// trader is not an NT8 trader with a store): settle first, so a fill or a
+// confirmed cancel is in the ledger before the Picture sweep reads it (the
+// FIX 1 drain-before-guards order), then the D21 Picture sweep.
+func (at *AutoTrader) dayPlanOffPassHead(now time.Time) {
+	at.settleArmedLedgerWhileOff(now)
+	at.pictureDayPlanOffSweep(now)
+}
+
+// settleArmedLedgerWhileOff is the SETTLEMENT half of the pass, run at the
+// head while Day Plan is OFF (W5 R8, CTO round 2): drain the order updates and
+// confirm every requested cancel from the fresh broker book, exactly as when
+// ON. Nothing here places, arms or authors. Without it a cancel the OFF sweep
+// requested stayed cancel_pending forever (every settlement site sat below the
+// OFF return, the boot sweep excludes cancel_pending), and the entry latch —
+// which counts a non-terminal row with a signal as PLACED — refused every AI
+// entry until the Day Plan came back ON. Planner rows had the same freeze
+// before W5; this closes it for both.
+func (at *AutoTrader) settleArmedLedgerWhileOff(now time.Time) {
+	if at == nil || at.store == nil || at.exchange != "ninjatrader" || at.dayPlanEnabled() {
+		return
+	}
+	ledger := at.store.ArmedOrders()
+	nt := at.armedTrader()
+	if ledger == nil || nt == nil {
+		return
+	}
+	at.consumeArmedOrderUpdates(nt, ledger)
+	at.confirmPendingCancels(ledger, func(sid string) error {
+		// A re-request is still a cancel: the filled-arm guard decides (W0 (f)).
+		if !at.cancelSignalIfSafe(nt.CancelOrder, sid, "cancel re-request", now) {
+			return errCancelRefused
+		}
+		return nil
+	}, now)
 }

@@ -56,6 +56,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.name }}-amd64
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}-amd64
           build-args: |
+            VITE_GUIDE_BUILT_REV=${{ github.event.pull_request.head.sha }}
             BUILD_DATE=${{ github.event.pull_request.updated_at }}
             VCS_REF=${{ github.event.pull_request.head.sha }}
             VERSION=pr-${{ github.event.pull_request.number }}

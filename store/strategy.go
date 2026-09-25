@@ -908,6 +908,20 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 // list). Additive + defaults-off: a nil *DayPlanConfig (absent day_plan) leaves
 // an existing strategy byte-identical, and PlanEnabled=false is the master
 // switch even when the block is present. Lives at ROOT of StrategyConfig.
+// PictureHtf default timing knobs (DEFAULTS-SANE fold, DS-105 2026-09-25).
+// Sized from the production trace (PR #212 STEP 1 measurements + code read):
+// the evaluator's window is anchored at the 5m interval after the confirming
+// H1 close (nextFiveMBoundary); the live sink admits frames up to 30s old
+// (LiveFrameMaxAgeMs); a dropped boundary frame (measured at EVERY hour
+// storm) is recoverable only by the successor completed 5m frame, whose
+// receipt sits one 5m interval + the sink admission into the window (330s
+// worst). 360s = 330s worst + 30s margin; 30s freshness admits exactly every
+// frame the sink admitted. FLOOR-pinned in trader/picture_htf_floor_pins_test.go.
+const (
+	PictureHtfDefaultEntryWindowSec = 360
+	PictureHtfDefaultFreshnessSec   = 30
+)
+
 // PictureHtfConfig (W-PICTURE-HTF, 2026-09-19) — the named SIM entry mode's
 // knobs. The explicit defaults are ENGINEERING DEFAULTS chosen to translate the
 // owner's two pictures into repeatable rules; they are not research-proven
@@ -917,8 +931,8 @@ type PictureHtfConfig struct {
 	TickSize       float64 `json:"tick_size,omitempty"`        // default 0.25 (MNQ)
 	PivotWindow    int     `json:"pivot_window,omitempty"`     // default 120 completed 4H candles
 	SwingLookback  int     `json:"swing_lookback,omitempty"`   // default 24 completed 5m candles
-	EntryWindowSec int     `json:"entry_window_sec,omitempty"` // default 10s from the new 5m interval start
-	FreshnessSec   int     `json:"freshness_sec,omitempty"`    // default 2s max data age at evaluation
+	EntryWindowSec int     `json:"entry_window_sec,omitempty"` // default 360s from the new 5m interval start
+	FreshnessSec   int     `json:"freshness_sec,omitempty"`    // default 30s max data age at evaluation
 	MinRR          float64 `json:"min_rr,omitempty"`           // 0 = the strategy's configured min R:R
 }
 
@@ -940,10 +954,10 @@ func PictureHtfResolved(c *PictureHtfConfig) PictureHtfConfig {
 		out.SwingLookback = 24
 	}
 	if out.EntryWindowSec <= 0 {
-		out.EntryWindowSec = 10
+		out.EntryWindowSec = PictureHtfDefaultEntryWindowSec
 	}
 	if out.FreshnessSec <= 0 {
-		out.FreshnessSec = 2
+		out.FreshnessSec = PictureHtfDefaultFreshnessSec
 	}
 	return out
 }
@@ -974,6 +988,12 @@ type DayPlanConfig struct {
 	// break → next-5m entry through the shared execution gate) and the AI
 	// provides commentary + momentum context instead of authoring fade entries.
 	PictureHtf *PictureHtfConfig `json:"picture_htf,omitempty"`
+	// PlannerContract (WAVE PLANNER A3, 2026-09-25) — the prompt, the
+	// validator and the executor are ONE contract: confirming-close authorship,
+	// planned_order entry policy, nonzero-risk economics, the REJECT composed-stop
+	// exception. *bool: nil = ON (the shipped default); an explicit false renders
+	// the pre-A3 prompt bytes (pinned by TestW3PlannerPromptLegacyPolicyByteIdentical).
+	PlannerContract *bool `json:"planner_contract,omitempty"`
 	// OneSetupMinGrade — the lowest merged-candidate grade the best level may
 	// carry ("A+" | "A" | "B" | "C"); empty = B [O].
 	OneSetupMinGrade string `json:"one_setup_min_grade,omitempty"`
@@ -1017,6 +1037,14 @@ type DayPlanConfig struct {
 	// prompt. A POINTER because the default is ON: nil = ON, explicit false =
 	// today's behaviour byte-identical (dormant only).
 	DeathReread *bool `json:"death_reread,omitempty"`
+	// PlannerFreshTape (A6, planner-born-dead wave 2026-09-25): when an attempt
+	// is refused born-dead / flip-met, attempt N+1's prompt carries the
+	// COMPLETED bars between the read clock and the refusal (last 30 completed
+	// 1m closes + last 6 completed 5m closes) and the breached condition
+	// verbatim, so the re-author reads the tape that exists now instead of
+	// retrying blind against the stale read. A POINTER because the default is
+	// ON: nil = ON, explicit false = today's behaviour byte-identical.
+	PlannerFreshTape *bool `json:"planner_fresh_tape,omitempty"`
 	// T1Currencies (W-T1-CURRENCIES, 2026-09-18): the currencies whose T1
 	// (red) calendar events HARD-block entries (±T1BlackoutMinutes). Empty/nil
 	// = the shipped default ["USD"]. An explicit ["ALL"] (or ["*"]) restores
@@ -1143,6 +1171,13 @@ type DayPlanConfig struct {
 	// minutes (from placed_at_ms) is cancelled "zone rest expired" by the
 	// executor. nil/≤0 = 30 (ResolveZoneRestMaxMin).
 	ZoneRestMaxMin *int `json:"zone_rest_max_min,omitempty"`
+	// ZonePlaceWithinPts — WAVE PLANNER B1: a market_in_zone arm whose zone is
+	// farther than this many points from the eval price stays armed-unplaced
+	// and places when price comes within the bound; a rest-cap expiry returns
+	// the row to armed-unplaced instead of dismantling it. nil = 25 (the armed
+	// placement band, ResolveZonePlaceWithinPts — ON); 0 = OFF = legacy
+	// behaviour, byte-identical.
+	ZonePlaceWithinPts *float64 `json:"zone_place_within_pts,omitempty"`
 	// MinHoldMin — the floor (minutes) on the RESOLVED hold of an armed
 	// market_in_zone time_hold scenario, refused below it at write (new
 	// authoring only). nil/≤0 = 3 (ResolveMinHoldMin).
@@ -1708,6 +1743,14 @@ func (c *DayPlanConfig) FoldedKnobLines() []string {
 // (absent/false = OFF = today's dormant behaviour).
 func (c *DayPlanConfig) FlipRereadEnabled() bool {
 	return c != nil && c.FlipReread
+}
+
+// PlannerFreshTapeEnabled is the ONE resolution seam for the PLANNER A6 knob:
+// born-dead / flip-met retries carry the fresh completed tape between the read
+// clock and the refusal. nil = ON (the shipped default); explicit false =
+// today's blind-retry behaviour byte-identical.
+func (c *DayPlanConfig) PlannerFreshTapeEnabled() bool {
+	return c == nil || c.PlannerFreshTape == nil || *c.PlannerFreshTape
 }
 
 // T1CurrencyAll is the sentinel meaning "every currency hard-blocks" — the
@@ -2797,4 +2840,13 @@ func (c *StrategyConfig) getEffectiveTimeframeCount() int {
 		count++
 	}
 	return count
+}
+
+// PlannerContractOn (WAVE PLANNER A3): nil = ON (shipped default); explicit
+// false renders the pre-A3 prompt bytes.
+func (c *DayPlanConfig) PlannerContractOn() bool {
+	if c == nil || c.PlannerContract == nil {
+		return true
+	}
+	return *c.PlannerContract
 }

@@ -19,12 +19,13 @@ func TestPasswordChangeUnbindsTheEnrollment(t *testing.T) {
 	e := newUpdEnv(t)
 	e.expectAllAdmitted("before any password change")
 
-	// The owner's own change through the web flow (login, PUT new_password).
+	// The owner's own change through the web flow (login, PUT current +
+	// new password — current_password is required since CTO ruling item 1).
 	owner, code := credLogin(t, e, updAdminEmail, updAdminPass)
 	if code != http.StatusOK {
 		t.Fatalf("owner login = %d", code)
 	}
-	if w := credCall(t, e, "PUT", "/api/user/password", owner, `{"new_password":"owner-rotated-pass-1"}`); w.Code != http.StatusOK {
+	if w := credCall(t, e, "PUT", "/api/user/password", owner, `{"current_password":"`+updAdminPass+`","new_password":"owner-rotated-pass-1"}`); w.Code != http.StatusOK {
 		t.Fatalf("positive control: the owner's password change = %d %s", w.Code, w.Body.String())
 	}
 	// A token minted AFTER the change passes Q8 and names the enrolled
@@ -45,7 +46,7 @@ func TestPasswordChangeUnbindsTheEnrollment(t *testing.T) {
 
 	// And the binding is not the only thing that moved: a SECOND change (the
 	// owner again, with the fresh session) un-enrolls again.
-	if w := credCall(t, e, "PUT", "/api/user/password", fresh, `{"new_password":"owner-rotated-pass-2"}`); w.Code != http.StatusOK {
+	if w := credCall(t, e, "PUT", "/api/user/password", fresh, `{"current_password":"owner-rotated-pass-1","new_password":"owner-rotated-pass-2"}`); w.Code != http.StatusOK {
 		t.Fatalf("second change = %d %s", w.Code, w.Body.String())
 	}
 	fresher := mintJWT(t, updAdminID, updAdminEmail, time.Now().Add(3*time.Second), time.Now().Add(time.Hour), updSecret)

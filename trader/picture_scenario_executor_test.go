@@ -1173,3 +1173,39 @@ func TestPlannerRowsCarryNoW5FieldAndOneLiveEntryHolds(t *testing.T) {
 		t.Fatalf("the same-source one-live-entry cancel is unchanged: %+v", s2)
 	}
 }
+
+// W5 R8 (CTO round 2): Day Plan OFF must not strand a cancel_pending row. The
+// pass head still runs the SETTLEMENT half (drain + confirmPendingCancels)
+// before it returns, so the OFF sweep's cancel confirms from the broker book
+// exactly as when ON — and the entry latch, which counts every non-terminal
+// row with a signal as placed, frees for the AI decision path.
+func TestDayPlanOffStillSettlesTheCancelItRequested(t *testing.T) {
+	r, epoch := newPicRig(t, "w5-r8", nil)
+	picPlan(r, picScenario("P1", "opp-r8", r.now, epoch, picDefault))
+	picPass(r, 0, 100.25)
+	sigs, _ := r.drain()
+	if len(sigs) != 1 {
+		t.Fatalf("fixture: P1 placed, got %d", len(sigs))
+	}
+	workingBook(r, r.now.Add(time.Minute), sigs[0].SignalID, 100.5)
+	r.at.config.StrategyConfig.DayPlan.PlanEnabled = false
+	picPass(r, time.Minute, 100.25)
+	if _, cancels := r.drain(); len(cancels) != 1 {
+		t.Fatalf("fixture: OFF requests the resting limit's cancel: %+v", cancels)
+	}
+	if row := r.row("P1"); row.State != store.StateCancelPending {
+		t.Fatalf("fixture: P1 cancel_pending: %+v", row)
+	}
+	// The broker's fresh book no longer lists the order; Day Plan is still OFF.
+	if err := r.st.NT8OrderSnapshots().Insert(&store.NT8OrderSnapshot{Account: "Sim101", OrdersJSON: "[]", ReceivedMs: r.now.Add(2 * time.Minute).UnixMilli()}); err != nil {
+		t.Fatal(err)
+	}
+	picPass(r, 2*time.Minute, 100.25)
+	if row := r.row("P1"); row.State != store.StateCancelled {
+		t.Fatalf("Day Plan OFF must still settle the cancel from the fresh book (else the account latches): %+v", row)
+	}
+	ids, err := r.at.entryLatchLedgers()
+	if err != nil || len(ids) != 0 {
+		t.Fatalf("the entry latch must be free once the cancel settles: %v %v", ids, err)
+	}
+}

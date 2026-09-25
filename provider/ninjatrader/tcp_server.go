@@ -1751,7 +1751,7 @@ func (s *TCPServer) drainBarIngest(ctx context.Context) {
 					staleLiveFrames.Add(1)
 					if n := staleLiveFrames.Load(); n%100 == 1 {
 						s.logger.Warn("picture-htf: bar_update frame refused as a live entry event — too old; cached, not traded",
-							"max_age_ms", liveFrameMaxAgeMs, "refused_total", n, "symbol", msg.symbol, "timeframe", msg.timeframe)
+							"max_age_ms", LiveFrameMaxAgeMs, "refused_total", n, "symbol", msg.symbol, "timeframe", msg.timeframe)
 					}
 				} else {
 					fanOutLiveBars(msg.symbol, msg.timeframe, msg.contract, msg.bars)

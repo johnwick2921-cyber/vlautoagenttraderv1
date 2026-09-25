@@ -160,7 +160,9 @@ func (s *Server) setupRoutes() {
 		// reset-password is now permanently disabled (no mail/token path exists to
 		// make it safe); reset-account moved into the protected group below and is
 		// additionally env-gated + confirm-token gated.
-		s.route(api, "POST", "/reset-password", "DISABLED — always 410 (no verification path)", s.handleResetPasswordDisabled)
+		// M3 red-team H1 (CTO ruling item 2): a machine token presented here is
+		// refused 403 (denyMachineBearer); everyone else still gets the 410.
+		s.route(api, "POST", "/reset-password", "DISABLED — always 410 (no verification path)", denyMachineBearer(s.handleResetPasswordDisabled))
 
 		// W-ONE-BUTTON M3: /api/updates* — their OWN gate (uniform 403), raw
 		// g.GET/g.POST so they never enter GetAPIDocs (F1). See handler_updates.go.
@@ -191,7 +193,7 @@ func (s *Server) setupRoutes() {
 
 			// User account management
 			s.routeWithSchema(protected, "PUT", "/user/password", "Change current user password",
-				`Body: {"new_password":"<string, min 8 chars>"}`,
+				`Body: {"current_password":"<string>","new_password":"<string, min 8 chars>"}`,
 				s.handleChangePassword)
 
 			// SECURITY (P0 S4): RSA decryption oracle — JWT + only when transport
@@ -931,9 +933,24 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// M3 red-team H2 (CTO ruling 1790231205208): a token issued at or
+		// before its account's last credential change — or with no iat, or
+		// whose account row is gone — acts NOWHERE (credential_guard.go
+		// tokenRetirement; the whole-second rule /api/updates Q8 applies).
+		if code, why := s.tokenRetirement(claims); why != "" {
+			logger.Warnf("🔒 [auth] refused %s %s from %s: %s", c.Request.Method, c.FullPath(), c.ClientIP(), why)
+			msg := "Session ended — please log in again"
+			if code == http.StatusServiceUnavailable {
+				msg = "Account check unavailable — try again"
+			}
+			c.AbortWithStatusJSON(code, gin.H{"error": msg})
+			return
+		}
+
 		// M3 red-team H1: a machine token (the Telegram bot's, gate-jwt's —
 		// any scope claim, or bot@internal) is denied BY DEFAULT on the
-		// credential, Telegram-config and update routes (credential_guard.go).
+		// credential, Telegram-config, update and logout routes
+		// (credential_guard.go machineDeniedRoutes).
 		if claims.IsMachine() && machineDenied(c.FullPath()) {
 			credentialForbid(c, "machine token on a machine-denied route")
 			return

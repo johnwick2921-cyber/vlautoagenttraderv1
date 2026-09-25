@@ -195,7 +195,7 @@ func handOffWire(t *testing.T, at *AutoTrader) func() []ntwire.SignalPayload {
 }
 
 // THE PRODUCTION BINDING: the seam the evaluator calls IS the hand-off (the
-// init order puts it after picture_htf_send.go's binding), and calling it
+// only binding since the market-entry send path was retired), and calling it
 // records a Day Plan scenario while nothing — not one frame — reaches NT8.
 func TestPictureSeamIsTheHandOffAndNeverSends(t *testing.T) {
 	if reflect.ValueOf(pictureHtfSubmitSeam).Pointer() != reflect.ValueOf(pictureHtfHandOffSeam).Pointer() {
@@ -209,9 +209,13 @@ func TestPictureSeamIsTheHandOffAndNeverSends(t *testing.T) {
 	claimHandOff(t, st, ev)
 	e := &PictureHtfEvaluator{at: at, pendingAdmission: &pictureAdmission{
 		EntryRef: ev.EntryRef, LatestClose: ev.LatestClose, Stop: ev.Stop, Target: ev.Target, ATR5m: ev.ATR5m, KnobMinRR: 2}}
+	// W4's evidence contract: a level carries its completion instant (never
+	// 0) and the 4H history in hand meets the depth rule.
+	withFourHourDepthEnding(t, 12, now.UnixMilli())
 	row := &store.PictureHtfOpportunityDB{OppKey: ev.OppKey, SignalID: ev.ClaimID, TraderID: at.id, Symbol: "MNQ", Direction: "long", RuleVer: 1,
 		LevelBodyTop: ev.BodyTop, LevelBodyBot: ev.BodyBot, H1NewClose: ev.H1NewClose, H1Boundary: ev.H1Boundary,
-		WindowOpen: ev.WindowOpenMs, WindowClose: ev.WindowCloseMs}
+		LevelKnowable: now.Add(-time.Hour).UnixMilli(),
+		WindowOpen:    ev.WindowOpenMs, WindowClose: ev.WindowCloseMs}
 	if err := pictureHtfSubmitSeam(e, row, ev.Stop, ev.Target, 0, now); err != nil {
 		t.Fatalf("the hand-off must record the opportunity: %v", err)
 	}
@@ -784,8 +788,8 @@ func onGridPicture5M() []market.Kline {
 // THE PRODUCTION CALL SITE END TO END: the evaluator's own Evaluate claims
 // the opportunity and calls the production seam; the opportunity becomes a
 // recorded Day Plan scenario from the evaluator's OWN row and admission
-// record, the row settles planned, and the evaluator's result stays
-// "submitted" (F17: it now means "handed off").
+// record, the row settles planned, and the evaluator reports the word the
+// seam decides — "planned" (F1: nothing is submitted any more).
 func TestPictureEvaluateHandsOffThroughTheProductionSeam(t *testing.T) {
 	prod := pictureHtfSubmitSeam
 	env := admittedPictureEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
@@ -793,9 +797,10 @@ func TestPictureEvaluateHandsOffThroughTheProductionSeam(t *testing.T) {
 	env.seed(pictureBars4H(), pictureBarsH1(), onGridPicture5M())
 	env.at.markPictureRunEpoch(env.now)
 	t.Cleanup(env.at.clearPictureRunEpoch)
-	env.eval.freshest5mAt = env.now
+	// W4/D23: the boundary 5m candle must be in hand, on all three clocks.
+	env.eval.markFresh5mReceivedAt(env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
-	if res.Stage != "submitted" || res.OppKey == "" {
+	if res.Stage != store.PictureStagePlanned || res.OppKey == "" {
 		t.Fatalf("the hand-off must succeed through the production seam: %+v", res)
 	}
 	row := pictureRow(t, env.st, res.OppKey)

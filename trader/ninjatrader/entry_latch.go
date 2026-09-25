@@ -22,7 +22,8 @@ import (
 // across paths, so two producers could send two entries for one account and
 // symbol inside the window before either fill was visible to the other.
 //
-// The latch sits inside the four entry functions, AFTER the maintenance permit
+// The latch sits inside the three entry functions (the Picture market entry
+// was retired in W5), AFTER the maintenance permit
 // and BEFORE the B3 guard, and holds ONE mutex per server per
 // account|wire-symbol across the ledger stamp (beforeSend) and the send. It
 // refuses when ANY of these is true:

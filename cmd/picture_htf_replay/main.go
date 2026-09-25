@@ -44,7 +44,7 @@ import (
 	"sort"
 	"time"
 
-	_ "modernc.org/sqlite"
+	_ "nofx/store/sqlitedriver"
 
 	"nofx/kernel"
 	"nofx/market"

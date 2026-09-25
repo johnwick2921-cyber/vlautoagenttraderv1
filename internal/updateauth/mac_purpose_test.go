@@ -15,11 +15,11 @@ import (
 
 func TestMACMessageCarriesThePurposeAndVersionTag(t *testing.T) {
 	const rel, job, exp = "v1.2.3", "0123456789abcdef", int64(1800000300)
-	msg, err := Message(rel, job, exp)
+	msg, err := Message(tUser, rel, job, exp)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "nofx-update-install/v1|v1.2.3|0123456789abcdef|1800000300"; string(msg) != want {
+	if want := "nofx-update-install/v1|" + tUser + "|v1.2.3|0123456789abcdef|1800000300"; string(msg) != want {
 		t.Fatalf("Message = %q, want %q", msg, want)
 	}
 	key := seqKey(3)
@@ -30,17 +30,17 @@ func TestMACMessageCarriesThePurposeAndVersionTag(t *testing.T) {
 	}
 	for name, m := range map[string]string{
 		"untagged (pre-tag layout)": "v1.2.3|0123456789abcdef|1800000300",
-		"another purpose":           "nofx-update-rollback/v1|v1.2.3|0123456789abcdef|1800000300",
-		"another version":           "nofx-update-install/v2|v1.2.3|0123456789abcdef|1800000300",
+		"another purpose":           "nofx-update-rollback/v1|" + tUser + "|v1.2.3|0123456789abcdef|1800000300",
+		"another version":           "nofx-update-install/v2|" + tUser + "|v1.2.3|0123456789abcdef|1800000300",
 	} {
-		if VerifyMAC(key, rel, job, exp, mac(m)) {
+		if VerifyMAC(key, tUser, rel, job, exp, mac(m)) {
 			t.Errorf("a MAC over the %s message %q verified as an install", name, m)
 		}
 	}
 	// positive control: the MAC over the tagged message verifies, and
 	// ComputeMAC produces exactly it
-	got, err := ComputeMAC(key, rel, job, exp)
-	if err != nil || got != mac(string(msg)) || !VerifyMAC(key, rel, job, exp, got) {
+	got, err := ComputeMAC(key, tUser, rel, job, exp)
+	if err != nil || got != mac(string(msg)) || !VerifyMAC(key, tUser, rel, job, exp, got) {
 		t.Fatalf("positive control: ComputeMAC = %q (%v), want the MAC over %q", got, err, msg)
 	}
 }

@@ -262,6 +262,19 @@ func ResolveZoneRestMaxMin(c *DayPlanConfig) (int, string) {
 	return resolvePositiveInt(c, func(c *DayPlanConfig) *int { return c.ZoneRestMaxMin }, ZoneRestMaxMinDefault)
 }
 
+// ResolveZonePlaceWithinPts resolves day_plan.zone_place_within_pts (points):
+// nil = 25 (the armed placement band — ON), a saved positive value, else 0
+// (OFF = legacy, place at any distance). WAVE PLANNER B1 reads THIS resolver.
+func ResolveZonePlaceWithinPts(c *DayPlanConfig) (float64, string) {
+	if c == nil || c.ZonePlaceWithinPts == nil {
+		return 25, SourceShippedDefault + " (the armed placement band)"
+	}
+	if *c.ZonePlaceWithinPts > 0 {
+		return *c.ZonePlaceWithinPts, SourceSaved
+	}
+	return 0, SourceShippedDefault + " (saved value " + strconv.FormatFloat(*c.ZonePlaceWithinPts, 'g', -1, 64) + " is not positive — OFF, legacy)"
+}
+
 // ResolveMinHoldMin resolves day_plan.min_hold_min (minutes): a saved positive
 // value, else 3 — the floor on an armed market_in_zone time_hold.
 func ResolveMinHoldMin(c *DayPlanConfig) (int, string) {

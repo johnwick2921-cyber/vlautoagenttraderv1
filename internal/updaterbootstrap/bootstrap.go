@@ -7,7 +7,8 @@
 // enroll binds the installation's update administrator to the app user whose
 // email is EXACTLY <email> (the predicate login uses) and writes
 // <data>/updater/admin.json + device.key (32 random bytes), both 0600 in a
-// 0700 dir. No API creates, resets or reads these files.
+// 0700 dir. No API creates or resets these files; the /updates gate READS
+// them (read-only) on every /api/updates* request (PR #200 review #19).
 //
 // authorize (CTO ruling Q1(a)) prints ONE install authorization for
 // <release_id> — {release_id, job_id, expires_at, hmac}, valid 5 minutes,

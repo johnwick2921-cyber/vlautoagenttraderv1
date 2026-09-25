@@ -785,6 +785,10 @@ func buildEffectiveResolvers() map[string]effResolver {
 		v, src := store.ResolveZoneRestMaxMin(x.dp())
 		return effResult{value: v, origin: src}
 	})
+	add(dpPath+"zone_place_within_pts", "store.ResolveZonePlaceWithinPts", func(x *effCtx) effResult {
+		v, src := store.ResolveZonePlaceWithinPts(x.dp())
+		return effResult{value: v, origin: src}
+	})
 	add(dpPath+"min_hold_min", "store.ResolveMinHoldMin", func(x *effCtx) effResult {
 		v, src := store.ResolveMinHoldMin(x.dp())
 		return effResult{value: v, origin: src}
@@ -818,6 +822,7 @@ func buildEffectiveResolvers() map[string]effResolver {
 		})
 	}
 	dpBool("flip_reread", "store.(*DayPlanConfig).FlipRereadEnabled", store.SourceShippedDefault, (*store.DayPlanConfig).FlipRereadEnabled)
+	dpBool("planner_fresh_tape", "store.(*DayPlanConfig).PlannerFreshTapeEnabled", store.SourceShippedDefault, (*store.DayPlanConfig).PlannerFreshTapeEnabled)
 	dpBool("death_reread", "store.(*DayPlanConfig).DeathRereadEnabled", store.SourceShippedDefault, (*store.DayPlanConfig).DeathRereadEnabled)
 	dpBool("write_time_feasibility", "store.(*DayPlanConfig).WriteTimeFeasibilityEnabled", store.SourceShippedDefault, (*store.DayPlanConfig).WriteTimeFeasibilityEnabled)
 	dpBool("geometry_reference_levels", "store.(*DayPlanConfig).GeometryRefIDsEnabled", store.SourceShippedDefault, (*store.DayPlanConfig).GeometryRefIDsEnabled)

@@ -54,7 +54,45 @@ import (
 // gives it — the legacy phantom epoch, pinned by FOLD-M3-B in api/). The
 // deletes (DeleteAll, handleResetAccount) remove rows; a token whose row is
 // gone is refused everywhere (api tokenRetirement).
+//
+// WHAT THIS CANNOT SEE (named, not chased — M3 ha2 verify defect 1; the
+// census is a syntactic BELT, and a writer it misses can move the epoch
+// ANYWHERE — forward (retires sessions early), back (un-retires), or to
+// zero / == created_at (no epoch: nothing is retired, every previously
+// retired session is re-admitted — auth/retire.go CredentialEpoch). NOT
+// fail-closed: the ONLY reviewed updated_at writer is UpdatePassword with
+// time.Now() (store/user.go:111); a writer the census misses is an
+// unreviewed epoch mover until it is reviewed and pinned. Closed by
+// DS-105 CENSUS-AUTH [17]: adjacent string literals are folded before the
+// SQL match, /* */ and -- comments are stripped, Association
+// Append/Replace/Clear/Delete count as writers, and a Scopes-carried
+// Table("users")/Model(&User{}) names the chain. Each
+// compiles and plants clean [A, planted 2026-09-24 by the ha2 verifier; a
+// type-aware go/packages cross-check found exactly this census's sites at
+// HEAD, and the 23 sites it could not decide statically touch no users row]:
+//   - a User-typed STRUCT FIELD written through (db.Save(&b.u));
+//   - SQL built at run time (Exec(fmt.Sprintf("UPDATE %s …", tbl))), a
+//     schema-qualified table (UPDATE main.users) or UPDATE OR IGNORE users;
+//   - Table(constIdent) — a table named through a constant, not a literal;
+//   - a generic or `any` wrapper (save(db, v any)) called with a User;
+//   - another model whose TableName() returns "users", or a type alias
+//     (type Account = User);
+//   - a method value (save := db.Save; save(&u));
+//   - a UserStore built directly (store.NewUserStore(db).UpdatePassword) or
+//     held in a struct field, not reached through Store.User().
+//
+// The directory-skip gap (a writer under api/.hidden, _x, x/testdata/y) WAS
+// closed: the walk is internal/censuswalk (root-only skips), pinned by
+// TestUsersWriterCensusSeesNestedSkipNamedDirs.
 var reviewedUsersTableWriters = []string{
+	// PR #200 F5 (reviewed 2026-09-24): resetPasswordLockedOutAdvice, the 410
+	// body of POST /api/reset-password. The app never executes it: it is the
+	// statement a locked-out OWNER runs by hand, and it DOES move updated_at
+	// — deliberately, so every pre-reset session retires
+	// (TestResetPasswordAdviceRetiresPreResetSessionsOnSQLite runs it as
+	// served). Listed because the census's question is "what can move the
+	// credential epoch", and this can.
+	"api/handler_user.go · (package level) · raw SQL UPDATE users",
 	"api/handler_user.go · (*Server).handleChangePassword · calls UserStore.UpdatePassword",
 	"api/handler_user.go · (*Server).handleRegister · calls UserStore.Create",
 	"api/handler_user.go · (*Server).handleResetAccount · gorm Delete",
@@ -261,12 +299,60 @@ var (
 		"Create": true, "CreateInBatches": true, "Save": true, "Update": true, "Updates": true,
 		"UpdateColumn": true, "UpdateColumns": true, "Delete": true, "FirstOrCreate": true,
 	}
+	// Association writes (gorm Association.Append/Replace/Clear/Delete) carry
+	// a User in their arguments or ride a chain that names the users model —
+	// skeptic [17]: db.Model(&x{}).Association("Owner").Replace(&User{}) is a
+	// users-table writer gormWriteVerbs alone never sees.
+	associationVerbs = map[string]bool{
+		"Append": true, "Replace": true, "Clear": true, "Delete": true,
+	}
 	migratorVerbs = map[string]bool{
 		"CreateTable": true, "DropTable": true, "AddColumn": true, "DropColumn": true,
 		"AlterColumn": true, "RenameColumn": true, "RenameTable": true,
 	}
 	usersWriteSQL = regexp.MustCompile("(?is)\\b(update|delete\\s+from|insert\\s+(?:or\\s+\\w+\\s+)?into|replace\\s+into|alter\\s+table|drop\\s+table(?:\\s+if\\s+exists)?|truncate(?:\\s+table)?)\\s+[\"'`]?users(?:[\"'`\\s(;]|$)")
+	// SQL comments (/* … */ and -- to end of line) are stripped before the
+	// SQL match — skeptic [17]: `UPDATE /* epoch */ users …` is executed by
+	// SQLite but `\s+` does not cross the comment. The census over-approximates
+	// (stripping inside a quoted string would only surface more sites, never
+	// hide one).
+	sqlBlockComment = regexp.MustCompile(`(?s)/\*.*?\*/`)
+	sqlLineComment  = regexp.MustCompile(`--[^\n]*`)
 )
+
+// stripSQLComments removes /* … */ and -- comments so the users-write SQL
+// regex sees the verb and the table the database sees.
+func stripSQLComments(s string) string {
+	s = sqlBlockComment.ReplaceAllString(s, " ")
+	s = sqlLineComment.ReplaceAllString(s, " ")
+	return s
+}
+
+// foldStringConst evaluates a compile-time string constant built from string
+// literals, parentheses and `+` (skeptic [17]: `"UPDATE " + "users SET …"` is
+// ONE constant the per-literal regex never matches). Returns ok=false for
+// anything non-constant (a run-time operand stays invisible — the named,
+// not-chased run-time Sprintf shape).
+func foldStringConst(e ast.Expr) (string, bool) {
+	switch x := e.(type) {
+	case *ast.BasicLit:
+		if x.Kind != token.STRING {
+			return "", false
+		}
+		v, err := strconv.Unquote(x.Value)
+		return v, err == nil
+	case *ast.ParenExpr:
+		return foldStringConst(x.X)
+	case *ast.BinaryExpr:
+		if x.Op != token.ADD {
+			return "", false
+		}
+		l, lok := foldStringConst(x.X)
+		r, rok := foldStringConst(x.Y)
+		return l + r, lok && rok
+	}
+	return "", false
+}
 
 type usersCensusFile struct {
 	rel     string
@@ -509,7 +595,65 @@ func censusFile(cf usersCensusFile, writers map[string]bool) []usersWriteSite {
 			}
 			return true
 		})
-		chainNamesUsers := func(e ast.Expr) bool {
+		var chainNamesUsers func(e ast.Expr, depth int) bool
+		var funcLitNamesUsers func(fl *ast.FuncLit, depth int) bool
+		funcBodyNamesUsers := func(body *ast.BlockStmt, depth int) bool {
+			found := false
+			ast.Inspect(body, func(n ast.Node) bool {
+				if found {
+					return false
+				}
+				if c, ok := n.(*ast.CallExpr); ok && chainNamesUsers(c, depth+1) {
+					found = true
+					return false
+				}
+				return true
+			})
+			return found
+		}
+		funcLitNamesUsers = func(fl *ast.FuncLit, depth int) bool {
+			return funcBodyNamesUsers(fl.Body, depth)
+		}
+		// scopeNamesUsers resolves a Scopes(...) argument to a scope function
+		// in the SAME file (a FuncLit, or an ident naming a FuncDecl / a var
+		// holding a FuncLit) and reports whether its body names the users
+		// table — skeptic [17]: db.Scopes(usersScope).Updates(...) with
+		// Table("users") inside usersScope writes users while a receiver-only
+		// walk sees nothing.
+		scopeNamesUsers := func(a ast.Expr, depth int) bool {
+			switch v := a.(type) {
+			case *ast.FuncLit:
+				return funcLitNamesUsers(v, depth)
+			case *ast.Ident:
+				for _, d := range cf.f.Decls {
+					switch dd := d.(type) {
+					case *ast.FuncDecl:
+						if dd.Name.Name == v.Name && dd.Body != nil && funcBodyNamesUsers(dd.Body, depth) {
+							return true
+						}
+					case *ast.GenDecl:
+						if dd.Tok != token.VAR && dd.Tok != token.CONST {
+							continue
+						}
+						for _, sp := range dd.Specs {
+							vs, ok := sp.(*ast.ValueSpec)
+							if !ok {
+								continue
+							}
+							for i, nm := range vs.Names {
+								if nm.Name == v.Name && i < len(vs.Values) {
+									if fl, ok := vs.Values[i].(*ast.FuncLit); ok && funcLitNamesUsers(fl, depth) {
+										return true
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			return false
+		}
+		chainNamesUsers = func(e ast.Expr, depth int) bool {
 			for {
 				switch x := e.(type) {
 				case *ast.ParenExpr:
@@ -534,6 +678,36 @@ func censusFile(cf usersCensusFile, writers map[string]bool) []usersWriteSite {
 							}
 						}
 					}
+					if sel.Sel.Name == "Scopes" && depth < 3 {
+						for _, a := range x.Args {
+							if scopeNamesUsers(a, depth+1) {
+								return true
+							}
+						}
+					}
+					e = sel.X
+					continue
+				}
+				return false
+			}
+		}
+		chainHasAssociation := func(e ast.Expr) bool {
+			for {
+				switch x := e.(type) {
+				case *ast.ParenExpr:
+					e = x.X
+					continue
+				case *ast.SelectorExpr:
+					e = x.X
+					continue
+				case *ast.CallExpr:
+					sel, ok := x.Fun.(*ast.SelectorExpr)
+					if !ok {
+						return false
+					}
+					if sel.Sel.Name == "Association" {
+						return true
+					}
 					e = sel.X
 					continue
 				}
@@ -551,12 +725,16 @@ func censusFile(cf usersCensusFile, writers map[string]bool) []usersWriteSite {
 		}
 		ast.Inspect(node, func(n ast.Node) bool {
 			switch x := n.(type) {
-			case *ast.BasicLit:
-				if x.Kind == token.STRING {
-					v, _ := strconv.Unquote(x.Value)
-					if m := usersWriteSQL.FindStringSubmatch(v); m != nil {
-						site("raw SQL " + strings.ToUpper(strings.Join(strings.Fields(m[1]), " ")) + " users")
-					}
+			case *ast.BasicLit, *ast.ParenExpr, *ast.BinaryExpr:
+				// Skeptic [17]: `"UPDATE " + "users SET …"` is ONE compile-time
+				// string constant — fold it, strip SQL comments, then match.
+				v, ok := foldStringConst(x.(ast.Expr))
+				if !ok {
+					return true
+				}
+				v = stripSQLComments(v)
+				if m := usersWriteSQL.FindStringSubmatch(v); m != nil {
+					site("raw SQL " + strings.ToUpper(strings.Join(strings.Fields(m[1]), " ")) + " users")
 				}
 			case *ast.CallExpr:
 				sel, ok := x.Fun.(*ast.SelectorExpr)
@@ -575,7 +753,9 @@ func censusFile(cf usersCensusFile, writers map[string]bool) []usersWriteSite {
 					argUser = argUser || isUserValue(a)
 				}
 				switch {
-				case gormWriteVerbs[verb] && (argUser || chainNamesUsers(sel.X)):
+				case associationVerbs[verb] && chainHasAssociation(sel.X) && (argUser || chainNamesUsers(sel.X, 0)):
+					site("gorm Association." + verb)
+				case gormWriteVerbs[verb] && (argUser || chainNamesUsers(sel.X, 0)):
 					site("gorm " + verb)
 				case verb == "AutoMigrate" && argUser:
 					site("schema AutoMigrate")

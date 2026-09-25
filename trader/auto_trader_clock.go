@@ -577,8 +577,21 @@ func limitClosePrice(close float64, ticks int, tick float64, long bool) float64 
 // fallback when bars are unavailable), KEEPS the protective bracket during the
 // limit's life (the C# cancels it on the limit fill), and schedules a market
 // fallback after LimitCloseMarketAfterS — the fallback re-checks the
-// open-position table, so a filled limit no-ops.
+// original durable position identity, so a filled limit or known replacement
+// no-ops. The broker close protocol has no position-ID fence: DB lag can still
+// hide a broker-side replacement. This check is not an atomic broker identity
+// guarantee (W117-F F6, ports #117 94e08cf0).
 func (at *AutoTrader) flattenPosition(p *store.TraderPosition, tag string) {
+	// Copy caller-owned state before a timer captures it.
+	position := *p
+	p = &position
+	if at.config.LimitCloseTicks > 0 {
+		at.limitFlattenMu.Lock()
+		defer at.limitFlattenMu.Unlock()
+		if at.limitFlattenStopped {
+			return
+		}
+	}
 	side := "LONG"
 	if !strings.EqualFold(p.Side, "LONG") {
 		side = "SHORT"
@@ -632,8 +645,9 @@ func (at *AutoTrader) flattenPosition(p *store.TraderPosition, tag string) {
 	}
 	if _, err := lc.CloseWithLimit(p.Symbol, side, 0, limit); err != nil {
 		at.logWarnf("%s: limit close %s %s failed (%v) — market fallback now", tag, p.Symbol, p.Side, err)
-		closeMarket()
-		_ = at.trader.CancelStopOrders(p.Symbol)
+		if closeMarket() {
+			_ = at.trader.CancelStopOrders(p.Symbol)
+		}
 		return
 	}
 	at.logInfof("%s: limit exit submitted %s %s @ %.2f (market fallback in %ds)",
@@ -642,26 +656,82 @@ func (at *AutoTrader) flattenPosition(p *store.TraderPosition, tag string) {
 	if after <= 0 {
 		after = 10 * time.Second
 	}
-	sym, sd := p.Symbol, side
-	time.AfterFunc(after, func() {
-		if at.store == nil {
+	if p.ID <= 0 || p.TraderID != at.id {
+		at.logWarnf("%s: no durable position identity for %s; refusing delayed market fallback", tag, p.Symbol)
+		return
+	}
+	if at.limitFlattens == nil {
+		at.limitFlattens = make(map[int64]*pendingLimitFlatten)
+	}
+	if old := at.limitFlattens[p.ID]; old != nil {
+		old.timer.Stop()
+	}
+	pending := &pendingLimitFlatten{position: *p, tag: tag, after: after}
+	at.limitFlattens[p.ID] = pending
+	pending.timer = time.AfterFunc(after, func() { at.finishLimitFlatten(pending) })
+}
+
+// pendingLimitFlatten owns an immutable snapshot, never a symbol/side surrogate ID.
+type pendingLimitFlatten struct {
+	position store.TraderPosition
+	tag      string
+	after    time.Duration
+	timer    *time.Timer
+}
+
+func (at *AutoTrader) stopLimitFlattens() {
+	at.limitFlattenMu.Lock()
+	defer at.limitFlattenMu.Unlock()
+	at.limitFlattenStopped = true
+	for _, pending := range at.limitFlattens {
+		pending.timer.Stop()
+	}
+	at.limitFlattens = nil
+}
+
+func (at *AutoTrader) finishLimitFlatten(pending *pendingLimitFlatten) {
+	// Holding the lock through dispatch makes Stop wait for an already-running
+	// callback and prevents any old callback from dispatching after Stop returns.
+	at.limitFlattenMu.Lock()
+	defer at.limitFlattenMu.Unlock()
+	p := pending.position
+	if at.limitFlattenStopped || at.limitFlattens[p.ID] != pending {
+		return
+	}
+	delete(at.limitFlattens, p.ID)
+	if at.store == nil {
+		return
+	}
+	open, err := at.store.Position().GetOpenPositions(at.id)
+	if err != nil {
+		return
+	}
+	for _, po := range open {
+		if po.ID != p.ID && po.Account == p.Account && market.Normalize(po.Symbol) == market.Normalize(p.Symbol) && strings.EqualFold(po.Side, p.Side) {
+			at.logWarnf("%s: ambiguous open position rows for %s; refusing delayed fallback", pending.tag, p.Symbol)
 			return
 		}
-		if open, err := at.store.Position().GetOpenPositions(at.id); err == nil {
-			for _, po := range open {
-				if market.Normalize(po.Symbol) == market.Normalize(sym) && strings.EqualFold(po.Side, sd) {
-					at.logWarnf("%s: limit unfilled after %ds — market flatten %s %s", tag, int(after.Seconds()), sym, sd)
-					if sd == "LONG" {
-						_, _ = at.trader.CloseLong(po.Symbol, 0)
-					} else {
-						_, _ = at.trader.CloseShort(po.Symbol, 0)
-					}
-					_ = at.trader.CancelStopOrders(po.Symbol)
-					return
-				}
-			}
+	}
+	for _, po := range open {
+		if po.ID != p.ID || po.EntryOrderID != p.EntryOrderID || po.EntryTime != p.EntryTime ||
+			po.Account != p.Account || po.ExchangeID != p.ExchangeID || po.ExchangePositionID != p.ExchangePositionID ||
+			po.Symbol != p.Symbol || !strings.EqualFold(po.Side, p.Side) {
+			continue
 		}
-	})
+		at.logWarnf("%s: limit unfilled after %ds — market flatten position %d %s %s", pending.tag, int(pending.after.Seconds()), p.ID, p.Symbol, p.Side)
+		var cerr error
+		if strings.EqualFold(p.Side, "LONG") {
+			_, cerr = at.trader.CloseLong(p.Symbol, 0)
+		} else {
+			_, cerr = at.trader.CloseShort(p.Symbol, 0)
+		}
+		if cerr != nil {
+			at.logErrorf("%s: fallback close position %d failed; preserving protection: %v", pending.tag, p.ID, cerr)
+			return
+		}
+		_ = at.trader.CancelStopOrders(p.Symbol)
+		return
+	}
 }
 
 // t1ForceFlatDue reports whether nowMin (CT minute-of-day) falls inside

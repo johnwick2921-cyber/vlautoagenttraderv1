@@ -127,14 +127,46 @@ That is the same shape as everything else in this file: a statement ABOUT the
 tool, written where nothing compares it to the tool. The remedy is the same —
 ask the tool.
 
+---
 
+## Updates page truth rules (W-ONE-BUTTON M5, 2026-09-24)
+
+The Settings → Updates page is the owner's face of the one-button update and is
+bound harder than any other page by the no-fabrication laws:
+
+- **Renders only API truth.** Every panel value comes from a READ endpoint
+  (`/api/health`, `/api/maintenance`, `/api/installation-gate`, `/api/updates`,
+  `/api/updates/jobs/:id`, `/api/strategies/:id/effective`) — the page derives
+  nothing it could not read, computes nothing in the browser, and invents no
+  optimistic state.
+- **n/a, never a guess.** A value the binary cannot know prints n/a (the MVID /
+  hello match, the completed 4H-bar count, the last-progress age and the
+  paused-while-loading flag have no endpoint yet; each is OWED, not fabricated).
+- **Absent ≠ [].** A job that has not run renders "no update job", never an
+  empty timeline; a null addon ack renders "no ack yet", never "false"; a null
+  withdraw renders nothing, never empty lists.
+- **Exact blocker text.** A refusal is shown with the server's own error text; a
+  403 install refusal renders "not authorized on this device" with that text and
+  is never retried in a loop.
+- **The install button is gated on the review.** While the M3 update
+  authorization adversarial review is open, the install button is disabled with
+  the text "install authorization under review" and no install POST can fire —
+  a constant flag pinned by its own test. The header badge polls once a minute,
+  shows Unknown on any error, and its first-fetch spinner is capped at 10 s so
+  it can never spin forever.
 ---
 
 ## RELEASE AND MANUAL BOOT (W-ONE-BUTTON M4)
 
 **The guide's rev is a BUILD INPUT, not a literal.** `web/src/guide/types.ts`
-reads `VITE_GUIDE_BUILT_REV`. A PRODUCTION build with it missing or not 40-hex
-FAILS; a dev build renders `dev`. The old boot step — grep
+reads `VITE_GUIDE_BUILT_REV`, but the REFUSAL lives in `web/vite.config.ts`
+(`guide-built-rev-is-a-build-input`, `apply: 'build'`) — a PRODUCTION build with
+it missing or not 40-hex FAILS THERE; a dev build renders `dev`, and a
+production bundle that somehow lacks it renders `unknown`, never a crash. The
+refusal CANNOT live in types.ts: a `throw` at module scope is not executed by
+the build, only bundled, so the first version exited 0 and shipped the throw
+into the page (CLASS 240's shape, found 2026-09-24 by running the negative
+case instead of describing it). The old boot step — grep
 `GUIDE_BUILT_REV = '<sha>'` out of that file — cannot work any more, and its
 silence is not a pass. Build with `VITE_GUIDE_BUILT_REV=<sha> npm run build`,
 then VERIFY by finding that sha in `web/dist/assets/*.js`. That is the only

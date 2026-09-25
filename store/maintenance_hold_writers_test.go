@@ -5,13 +5,14 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+
+	"nofx/internal/censuswalk"
 )
 
 // ── W-ONE-BUTTON M2 site 6 — nothing in the trading API writes the hold ────
@@ -132,26 +133,18 @@ func holdWriterOffenders(root string) (offenders []string, scanned int, err erro
 	allowed := holdWriterFiles
 	writers := map[string]bool{"WriteMaintenanceHold": true, "ClearMaintenanceHold": true, "ForceClearMaintenanceHold": true}
 	pathUsers := holdPathUserFiles
-	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			switch d.Name() {
-			case ".git", "node_modules", "web", "vendor", ".claude", ".Codex", ".understand-anything":
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
-			return nil
-		}
-		rel, _ := filepath.Rel(root, p)
-		rel = filepath.ToSlash(rel)
+	// M3 fold M5: the ONE root-only walk (censuswalk) — a skip-named dir below
+	// the root (api/web, internal/node_modules/x, …) is a compiled package.
+	files, err := censuswalk.NonTestGoFiles(root)
+	if err != nil {
+		return nil, 0, err
+	}
+	for _, file := range files {
+		p, rel := file.Path, file.Rel
 		f, perr := parser.ParseFile(token.NewFileSet(), p, nil, 0)
 		if perr != nil {
 			offenders = append(offenders, rel+": cannot be parsed, so it cannot be checked ("+perr.Error()+")")
-			return nil
+			continue
 		}
 		scanned++
 		ast.Inspect(f, func(n ast.Node) bool {
@@ -188,9 +181,8 @@ func holdWriterOffenders(root string) (offenders []string, scanned int, err erro
 			}
 			return true
 		})
-		return nil
-	})
-	return offenders, scanned, err
+	}
+	return offenders, scanned, nil
 }
 
 // The admission list is pinned exactly: widening it is a reviewed act, not a
@@ -345,20 +337,14 @@ func workerImportOffenders(root string) (offenders []string, guarded []string, e
 		return nil, nil, fmt.Errorf("no module line in go.mod")
 	}
 	imports := map[string]map[string]bool{} // import path → module-internal imports
-	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			switch d.Name() {
-			case ".git", "node_modules", "web", "vendor", ".claude", ".Codex", ".understand-anything", "testdata":
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") {
-			return nil
-		}
+	// M3 fold M5: the ONE root-only walk (censuswalk). testdata is walked too:
+	// a package under x/testdata/ is importable and linked like any other.
+	files, err := censuswalk.NonTestGoFiles(root)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, file := range files {
+		p := file.Path
 		relDir, _ := filepath.Rel(root, filepath.Dir(p))
 		pkg := module
 		if relDir != "." {
@@ -366,9 +352,8 @@ func workerImportOffenders(root string) (offenders []string, guarded []string, e
 		}
 		f, perr := parser.ParseFile(token.NewFileSet(), p, nil, parser.ImportsOnly)
 		if perr != nil {
-			rel, _ := filepath.Rel(root, p)
-			offenders = append(offenders, filepath.ToSlash(rel)+": cannot be parsed, so its imports cannot be checked")
-			return nil
+			offenders = append(offenders, file.Rel+": cannot be parsed, so its imports cannot be checked")
+			continue
 		}
 		if imports[pkg] == nil {
 			imports[pkg] = map[string]bool{}
@@ -379,19 +364,8 @@ func workerImportOffenders(root string) (offenders []string, guarded []string, e
 				imports[pkg][ip] = true
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, nil, err
 	}
-	forbidden := func(ip string) bool {
-		for _, f := range forbiddenWorkerPackages {
-			if ip == f || strings.HasPrefix(ip, f+"/") {
-				return true
-			}
-		}
-		return false
-	}
+	forbidden := isForbiddenWorkerPackage
 	var starts []string
 	for pkg := range imports {
 		if pkg == module {
@@ -439,6 +413,72 @@ func workerImportOffenders(root string) (offenders []string, guarded []string, e
 		}
 	}
 	return offenders, starts, nil
+}
+
+func isForbiddenWorkerPackage(ip string) bool {
+	for _, f := range forbiddenWorkerPackages {
+		if ip == f || strings.HasPrefix(ip, f+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// ── M3 fold M5: the same guard, answered by the toolchain ─────────────────
+//
+// workerImportOffenders models the import graph from source (every non-test
+// file, build tags ignored — it can only over-report). This asks the Go
+// toolchain what the trading app ACTUALLY links in the default build context
+// (`go list -deps` of the root main package and every package under the
+// trading-app dirs): whatever the source model misses — a directory the walk
+// skipped, an import it mis-resolved — the linker's own answer cannot.
+// patterns is what was asked (a vacuity check for callers).
+func toolchainWorkerLinkOffenders(root string) (offenders []string, patterns []string, err error) {
+	module, err := censuswalk.ModulePath(root)
+	if err != nil {
+		return nil, nil, err
+	}
+	patterns = []string{"."}
+	for _, d := range tradingAppDirs {
+		if fi, serr := os.Stat(filepath.Join(root, d)); serr == nil && fi.IsDir() {
+			patterns = append(patterns, "./"+d+"/...")
+		}
+	}
+	pkgs, err := censuswalk.ListPackages(root, true, patterns...)
+	if err != nil {
+		return nil, patterns, err
+	}
+	for _, p := range pkgs {
+		if p.Module != module {
+			continue
+		}
+		if p.Error != "" && !strings.Contains(p.Error, "build constraints exclude all Go files") {
+			offenders = append(offenders, p.ImportPath+": the toolchain could not load it, so its links are unknown ("+p.Error+")")
+			continue
+		}
+		if isForbiddenWorkerPackage(p.ImportPath) {
+			offenders = append(offenders, p.ImportPath+": linked by the trading app (go list -deps "+strings.Join(patterns, " ")+")")
+		}
+	}
+	sort.Strings(offenders)
+	return offenders, patterns, nil
+}
+
+func TestTradingAppLinkageFromTheToolchain(t *testing.T) {
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	offenders, patterns, err := toolchainWorkerLinkOffenders(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(patterns) != 1+len(tradingAppDirs) {
+		t.Fatalf("asked the toolchain for %v — every trading-app dir must exist and be asked about", patterns)
+	}
+	if len(offenders) > 0 {
+		t.Fatalf("the toolchain says the trading app links the updater worker side:\n%s", strings.Join(offenders, "\n"))
+	}
 }
 
 func prefixed(prefix string, xs []string) []string {

@@ -1,27 +1,33 @@
 #!/usr/bin/env bash
-# W-ONE-BUTTON M4 — the manual boot, v4. In git, unlike the v3 script it
-# replaces (~/nofx-backups/cutover-auto-rollback-v3.sh, out of repo).
+# W-ONE-BUTTON M4 — the manual boot, v7.
 #
 #   usage: cutover.sh [--dry-run] <new-sha40> <new-bin> [new-dist]
 #
-# --dry-run performs EVERY preflight (sha, binary identity, dist, symlinks,
-# flat gate, backup names) and prints the plan. It never kills, swaps or
-# writes. The canon requires a TESTED rollback, and a procedure nobody has
-# executed is not tested — so the dry run is how it gets exercised without a
-# trading window.
+# v7 is a THIN WRAPPER over cmd/nofx-activate. v6 reimplemented the activation
+# steps in bash; two implementations of a safety procedure drift, and the one
+# that drifts is the one nobody runs until an incident. Everything that can be
+# expressed as a step now runs the same Go code the unattended worker (3b-B)
+# will run. What stays here is what only the attended boot does: parse the
+# operator's arguments, hold the token gate, and refuse.
 #
-# Each rule carries the design-note letter it obeys (docs/superpowers/plans/
-# 2026-09-22-one-button-m4-design-notes.md), so the next reader finds the
-# EVIDENCE rather than a paraphrase.
-#   R-a identity is (MainPID, /proc/<pid>/stat field 22 starttime) — NEVER wall
-#       clock: M1 measured two start times disagreeing by 151 s after a WSL
-#       clock step.
-#   R-b the boot proof is in data/nofx_<date>.log, not journald (~4 h for uid
-#       1000), plus /api/health and the served bundle.
-#   R-e only release-owned entries switch; the working directory is never a
-#       symlink, or data/ and .env resolve inside a release.
-#   R-o both halves restored, atomically, with names that cannot collide, and
-#       never `pgrep -f nofx-bin` — it also matches `go version -m nofx-bin`.
+# v6 SEMANTICS PRESERVED, deliberately and testably:
+#   --dry-run performs every preflight and kills/swaps/writes NOTHING
+#   the flat gate (class 33) must answer READY before anything is touched
+#   NOFX_CUTOVER_TOKEN is read from the environment, NEVER a command-line arg
+#   the new binary is PROVEN before anything moves (two distinct refusals,
+#     class 248: no vcs stamps at all vs stamped with a different revision)
+#   the dist must carry the sha being installed
+#   rollback restores ALL THREE halves and proves the OLD rev
+#
+# ONE REAL DEFECT v6 CARRIED, fixed by the delegation rather than patched:
+#   start_ticks() read /proc/<pid>/stat with `split($0,a," "); print a[22]`.
+#   The comm field is in parentheses and MAY CONTAIN SPACES AND PARENTHESES,
+#   which shifts every later field — so the identity check could compare the
+#   wrong number and either refuse a valid restart or, worse, accept a
+#   recycled pid. internal/activation parses from the LAST ')' and is pinned
+#   by a test whose comm is literally "(nofx bin (x))".
+#
+# NO SECRETS ARE WRITTEN OR ECHOED ANYWHERE IN THIS FILE.
 set -uo pipefail
 
 DRY=0
@@ -29,159 +35,162 @@ DRY=0
 NEW_SHA="${1:-}"; NEW_BIN="${2:-}"; NEW_DIST="${3:-}"
 UNIT="${NOFX_UNIT:-nofx}"
 INSTALL="${NOFX_INSTALL:-$HOME/nofx}"
+ACTIVATE="${NOFX_ACTIVATE_BIN:-}"
 
 say()  { printf 'cutover: %s\n' "$*"; }
-plan() { printf 'cutover[dry-run]: WOULD %s\n' "$*"; }
+plan() { printf 'cutover: WOULD %s\n' "$*"; }
 die()  { printf 'cutover: REFUSED — %s\n' "$*" >&2; exit 1; }
 
 [ -n "$NEW_SHA" ] && [ -n "$NEW_BIN" ] || die "usage: cutover.sh [--dry-run] <new-sha40> <new-bin> [new-dist]"
-case "$NEW_SHA" in *[!0-9a-f]*|"") die "sha must be 40 hex" ;; esac
-[ "${#NEW_SHA}" -eq 40 ] || die "sha must be 40 hex (got ${#NEW_SHA})"
+case "$NEW_SHA" in
+  *[!0-9a-f]*|"") die "<new-sha40> must be 40 lowercase hex characters, got '$NEW_SHA'" ;;
+esac
+[ "${#NEW_SHA}" -eq 40 ] || die "<new-sha40> must be 40 characters, got ${#NEW_SHA}"
 SHORT="${NEW_SHA:0:12}"
 
-# --- P1-a: PROVE THE NEW BINARY BEFORE TOUCHING ANYTHING ---------------------
-# The previous version took no <new-bin> at all. It backed up whatever was
-# already installed, wrote RELEASE and killed — so either nothing changed, or
-# the operator had already copied the new binary in and the "backup" WAS the
-# new binary, meaning rollback restored the thing being rolled back from. That
-# is not a cutover; it is a restart with a false safety net.
+# --- the activation binary ----------------------------------------------------
+# Built from THIS tree when not supplied, so the boot never runs a stale helper
+# left over from an earlier release.
+if [ -z "$ACTIVATE" ]; then
+  ACTIVATE="$(mktemp -t nofx-activate.XXXXXX)"
+  trap 'rm -f "$ACTIVATE"' EXIT
+  go build -o "$ACTIVATE" ./cmd/nofx-activate 2>/dev/null \
+    || die "cannot build cmd/nofx-activate from this tree; pass NOFX_ACTIVATE_BIN=<path> if you have one"
+fi
+[ -x "$ACTIVATE" ] || die "$ACTIVATE is not executable"
+
+# --- prove the new binary BEFORE anything is touched --------------------------
+# A release dir is assembled beside the inputs so the same `verify` the worker
+# runs is the one that answers here. The manifest records what the operator
+# asserted; verify decides whether the binary agrees.
+STAGE_DIR="$(mktemp -d -t nofx-cutover.XXXXXX)"
+trap 'rm -rf "$STAGE_DIR"; [ -n "${ACTIVATE:-}" ] && [ -z "${NOFX_ACTIVATE_BIN:-}" ] && rm -f "$ACTIVATE"; rm -f "${TOKEN_HDR:-}"' EXIT
 [ -f "$NEW_BIN" ] || die "new binary $NEW_BIN not found"
-NEW_VCS="$(go version -m "$NEW_BIN" 2>/dev/null || true)"
-printf '%s' "$NEW_VCS" | grep -q "vcs.revision=$NEW_SHA" || die "$NEW_BIN does not carry vcs.revision=$NEW_SHA — it is not the binary for this sha"
-printf '%s' "$NEW_VCS" | grep -q 'vcs.modified=false'     || die "$NEW_BIN was built from a DIRTY tree (vcs.modified != false)"
-NEW_MD5="$(md5sum "$NEW_BIN" | cut -d' ' -f1)"
+cp "$NEW_BIN" "$STAGE_DIR/nofx-bin" || die "cannot stage $NEW_BIN"
+NEW_MD5="$(md5sum "$STAGE_DIR/nofx-bin" | cut -d' ' -f1)"
+printf '{"source_sha":"%s","binary_md5":"%s","signature_verdict":"attended-boot"}\n' \
+  "$NEW_SHA" "$NEW_MD5" > "$STAGE_DIR/manifest.json"
+
+VERIFY_OUT="$("$ACTIVATE" verify -release "$STAGE_DIR" 2>&1)" || {
+  printf '%s\n' "$VERIFY_OUT" | sed 's/^/    /' >&2
+  die "the new binary did not verify — see the receipt above"
+}
 say "new binary proven: vcs.revision=$SHORT vcs.modified=false md5=$NEW_MD5"
 
-# --- preflight ---------------------------------------------------------------
-[ -d "$INSTALL" ] || die "install dir $INSTALL not found"
-[ -f "$INSTALL/nofx-bin" ] || die "$INSTALL/nofx-bin not found"
-# R-e
-[ -L "$INSTALL" ] && die "$INSTALL is a SYMLINK; the working directory must be a real directory (R-e)"
-for owned in data .env; do
-  [ -L "$INSTALL/$owned" ] && die "$INSTALL/$owned is a symlink; installation state must not live in a release (R-e)"
-done
-
+# --- the dist must carry the sha ---------------------------------------------
 DIST="$INSTALL/web/dist"
 SRC_DIST="${NEW_DIST:-$DIST}"
 [ -d "$SRC_DIST" ] || die "$SRC_DIST missing — build it with VITE_GUIDE_BUILT_REV=$NEW_SHA npm run build"
-# The guide rev is a BUILD INPUT now. The old preflight grepped
-# web/src/guide/types.ts for a literal that no longer exists, so it found
-# nothing — and "finds nothing" reads exactly like "nothing to check".
-grep -rqs -- "$NEW_SHA" "$SRC_DIST"/assets/*.js \
+grep -rql "$NEW_SHA" "$SRC_DIST" 2>/dev/null >/dev/null \
   || die "the bundle at $SRC_DIST does not carry $NEW_SHA.
     Build it with:  cd web && VITE_GUIDE_BUILT_REV=$NEW_SHA npm run build"
 say "dist carries $SHORT"
 
-# P3: the OLD rev is the FULL 40-hex, so a rollback writes a real sha into
-# deploy/RELEASE and not a 12-char stub nothing else can match.
-# `go version -m` emits "build\tvcs.revision=<sha>" — TWO tab-separated
-# fields, not three. The first version split on a space and read $3, which is
-# empty, so it refused every cutover with "cannot read vcs.revision from the
-# CURRENT binary". Found by the first real --dry-run on the live box; no
-# syntax check or unit test would have shown it.
-OLD_SHA="$(go version -m "$INSTALL/nofx-bin" 2>/dev/null | tr '\t' ' ' | awk '{for(i=1;i<=NF;i++) if($i ~ /^vcs\.revision=/){sub(/^vcs\.revision=/,"",$i); print $i; exit}}')"
+# --- what is running now ------------------------------------------------------
+OLD_SHA="$(go version -m "$INSTALL/nofx-bin" 2>/dev/null | tr '\t' ' ' \
+  | awk '{for(i=1;i<=NF;i++) if($i ~ /^vcs\.revision=/){sub(/^vcs\.revision=/,"",$i); print $i; exit}}')"
 [ -n "$OLD_SHA" ] || die "cannot read vcs.revision from the CURRENT binary; refusing a cutover with no way back"
 OLD_SHORT="${OLD_SHA:0:12}"
-STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUP="$INSTALL/nofx-bin.old.${OLD_SHORT}.${STAMP}"
-DIST_BACKUP="$INSTALL/web/dist.old.${OLD_SHORT}.${STAMP}"
-[ -e "$BACKUP" ] && die "backup name $BACKUP already exists (R-o: names must not collide)"
-say "current: rev=$OLD_SHORT  backups → $(basename "$BACKUP") / $(basename "$DIST_BACKUP")"
+RELEASES="${NOFX_RELEASE_DIR:-$INSTALL/releases}"
+say "current: rev=$OLD_SHORT  releases → $RELEASES"
 
-# --- P1-b: THE FLAT GATE ------------------------------------------------------
-# The previous version SIGKILLed the trader with no check for an open position,
-# a non-terminal armed row carrying a broker signal, or an in-flight send.
-# Class 33's five legs exist precisely for this moment.
+# --- reconcile OLD_SHA with what is ACTUALLY running -------------------------
+# The disk binary alone is not the running build: a crashed staging leaves a
+# never-proven file on disk while the old process keeps serving. Reconcile the
+# way back against BOTH /api/health (the running process's own revision) and
+# the RELEASE marker. A mismatch, or neither consultable, refuses the cutover.
+HEALTH_URL="${NOFX_HEALTH_URL:-http://127.0.0.1:8080/api/health}"
+HEALTH_REV="$(curl -s --max-time 5 "$HEALTH_URL" 2>/dev/null \
+  | sed -n 's/.*"revision"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F]*\)".*/\1/p' | tr 'A-F' 'a-f')"
+RELEASE_REV="$([ -f "$INSTALL/RELEASE" ] && tr -d '[:space:]' < "$INSTALL/RELEASE" 2>/dev/null | tr 'A-F' 'a-f')"
+rev12() { v="$1"; if [ ${#v} -ge 12 ]; then printf '%s' "${v:0:12}"; else printf '%s' "$v"; fi; }
+OLD12="$(rev12 "$OLD_SHA")"
+if [ -n "$HEALTH_REV" ] && [ "$(rev12 "$HEALTH_REV")" != "$OLD12" ]; then
+  die "OLD_SHA mismatch: disk=$OLD_SHORT but the RUNNING process reports $(rev12 "$HEALTH_REV") via /api/health — refusing a cutover whose way back is not the running build"
+fi
+if [ -n "$RELEASE_REV" ] && [ "$(rev12 "$RELEASE_REV")" != "$OLD12" ]; then
+  die "OLD_SHA mismatch: disk=$OLD_SHORT but $INSTALL/RELEASE says $(rev12 "$RELEASE_REV") — refusing a cutover whose way back is not what the marker names"
+fi
+if [ -z "$HEALTH_REV" ] && [ -z "$RELEASE_REV" ]; then
+  die "cannot reconcile OLD_SHA=$OLD_SHORT — neither /api/health nor $INSTALL/RELEASE answered; refusing a cutover with no proof of what is running"
+fi
+say "current reconciled: disk=$OLD_SHORT health=$(rev12 "${HEALTH_REV:-}") release=$(rev12 "${RELEASE_REV:-}")"
+
+# --- THE INSTALLATION GATE (W-ONE-BUTTON M2) -------------------------------
+# Nothing is touched until every REQUIRED leg passes. The payload's overall
+# "ready" verdict is NEVER trusted: it folds in legs like addon_census that can
+# never pass on a bot that has not been held, so a green gate could still hide
+# a trader holding a position (finding [1]). Every leg is printed; a required
+# leg that is absent, unevaluable or failing refuses the cutover. The token
+# comes from the environment and is never echoed, never logged, and never
+# accepted as an argument.
 [ -n "${NOFX_CUTOVER_TOKEN:-}" ] || die "cutover gate needs a token — set NOFX_CUTOVER_TOKEN (never pass it on the command line)"
-GATE="$(curl -s --max-time 10 -H "Authorization: Bearer ${NOFX_CUTOVER_TOKEN}" \
-         http://127.0.0.1:8080/api/cutover-gate 2>/dev/null || true)"
-[ -n "$GATE" ] || die "the cutover gate did not answer; refusing to kill a trader whose state is unknown"
-# Print the legs so the decision is on the record. The token is never echoed.
-printf '%s\n' "$GATE" | sed 's/^/    gate: /'
-printf '%s' "$GATE" | grep -qi '"ready"[[:space:]]*:[[:space:]]*true' \
-  || die "the cutover gate is NOT ready — a leg failed above. An unevaluable leg counts as a failure (A5)"
-say "flat gate READY — every leg passed"
+GATE_URL="${NOFX_GATE_URL:-http://127.0.0.1:8080/api/installation-gate}"
+# The token never rides ANY process's argv ([25]/[29]): it is written to a 0600
+# header file and handed to curl as -H @file, so ps and /proc/<pid>/cmdline show
+# only the file path for the call's lifetime, and the file is removed on every
+# exit path.
+TOKEN_HDR="$(mktemp -t nofx-cutover-hdr.XXXXXX)" || die "cannot create the token header file; refusing"
+( umask 077; printf 'Authorization: Bearer %s' "$NOFX_CUTOVER_TOKEN" > "$TOKEN_HDR" ) \
+  || { rm -f "$TOKEN_HDR"; die "cannot write the token header file; refusing"; }
+GATE="$(curl -s --max-time 10 -H "@$TOKEN_HDR" "$GATE_URL" 2>/dev/null || true)"
+rm -f "$TOKEN_HDR"
+[ -n "$GATE" ] || die "the installation gate did not answer; refusing to kill a trader whose state is unknown"
+LEGS="$(printf '%s' "$GATE" | jq -r '.legs[]? | "\(.name)\t\(.pass)"' 2>/dev/null)" \
+  || die "the installation gate answered something that is not a gate payload; refusing a cutover over unreadable state"
+[ -n "$LEGS" ] || die "the installation gate payload names no legs; refusing a cutover over unreadable state"
+printf '%s\n' "$LEGS" | sed 's/^/    leg: /'
+
+require_legs() { # $1 = name or glob; every matching leg must pass, one must exist
+  found=0; bad=""
+  while IFS=$'\t' read -r name pass; do
+    case "$name" in
+      $1)
+        found=$((found+1))
+        [ "$pass" = "true" ] || bad="$bad $name"
+        ;;
+    esac
+  done <<LEGS_EOF
+$LEGS
+LEGS_EOF
+  [ "$found" -gt 0 ] || die "the installation gate names no $1 leg; refusing (an unevaluable leg is a failure)"
+  [ -z "$bad" ] || die "failing installation-gate legs:$bad — refusing the cutover"
+}
+
+require_legs 'trader_cutover:*'
+require_legs 'ledger_exposure'
+require_legs 'planner_in_flight'
+require_legs 'traders_nt8'
+# addon_census_prehold lands with #206; require it the moment the payload has it.
+if printf '%s\n' "$LEGS" | cut -f1 | grep -qx 'addon_census_prehold'; then
+  require_legs 'addon_census_prehold'
+fi
+say "installation gate READY — every required leg passed"
 
 if [ "$DRY" -eq 1 ]; then
-  plan "back up $INSTALL/nofx-bin → $(basename "$BACKUP") and $DIST → $(basename "$DIST_BACKUP")"
-  plan "install $NEW_BIN (md5 $NEW_MD5) as $INSTALL/nofx-bin via nofx-bin.new + mv -f"
-  [ -n "$NEW_DIST" ] && plan "install $NEW_DIST as $DIST atomically (mv, never copy-into-live)"
-  plan "write $NEW_SHA to $INSTALL/deploy/RELEASE BEFORE the kill (A19)"
-  plan "kill -9 the unit's MainPID; prove relaunch by a change in BOTH MainPID and starttime ticks (R-a)"
-  plan "wait ≤90 s for 'BOOT INTEGRITY OK — rev $SHORT' in data/nofx_<date>.log (R-b) and /api/health == $SHORT"
-  plan "on ANY failure: restore both halves, rewrite RELEASE as $OLD_SHA, kill again, and PROVE the old rev booted"
+  plan "back up $INSTALL/data/data.db with nofx-activate backup (online copy + integrity_check)"
+  plan "install the release as $RELEASES/$NEW_SHA and repoint current"
+  plan "run: nofx-activate activate -release $RELEASES/$NEW_SHA -prev $RELEASES/$OLD_SHA"
+  plan "  which installs binary + dist + RELEASE atomically, THEN kills the unit's"
+  plan "  MainPID only if /proc/<pid>/stat field 22 still matches (a recycled pid is refused)"
+  plan "run: nofx-activate watch -release $RELEASES/$NEW_SHA -log <the NEWEST data/nofx_*.log>"
+  plan "  GREEN needs BOTH a boot line newer than the kill AND /api/health reporting $SHORT"
+  plan "on ANY failure BEFORE anything moved (verify, gate, staging, backup):"
+  plan "  REFUSE and stop — the running bot is NOT touched and NO rollback runs"
+  plan "  (a healthy bot must never be restarted for a cutover that never started)"
+  plan "on a failure AFTER nofx-activate began installing: nofx-activate rollback"
+  plan "  -prev $RELEASES/$OLD_SHA, restoring all three halves, and prove $OLD_SHORT"
+  plan "  came back"
   say "dry run complete — nothing was killed, swapped or written"
   exit 0
 fi
 
-# --- R-a: identity ------------------------------------------------------------
-main_pid()    { systemctl show -p MainPID --value "$UNIT" 2>/dev/null; }
-start_ticks() { local p="$1"; [ -n "$p" ] && [ "$p" != "0" ] && [ -r "/proc/$p/stat" ] && awk '{n=split($0,a," "); print a[22]}' "/proc/$p/stat" || echo ""; }
-identity()    { local p; p="$(main_pid)"; printf '%s:%s' "${p:-0}" "$(start_ticks "${p:-0}")"; }
-
-wait_boot() { # <sha12> <label> -> 0 ok
-  local want="$1" label="$2" deadline=$(( $(date +%s) + 90 )) logf health
-  while [ "$(date +%s)" -lt "$deadline" ]; do
-    sleep 2
-    logf="$INSTALL/data/nofx_$(date +%Y-%m-%d).log"
-    [ -f "$logf" ] && grep -q "BOOT INTEGRITY OK — rev $want" "$logf" 2>/dev/null || continue
-    health="$(curl -s --max-time 5 http://127.0.0.1:8080/api/health 2>/dev/null || true)"
-    case "$health" in *"\"revision\":\"$want\""*) say "$label: boot line + /api/health both report $want"; return 0 ;; esac
-  done
-  return 1
-}
-
-# --- P1-c: a rollback that RESTARTS and PROVES it -----------------------------
-# The previous version swapped files and printed "restart the unit". After a
-# failed boot the RUNNING process is the NEW binary, so files-only is not a
-# rollback: the bad build keeps serving. The canon requires a TESTED
-# auto-rollback, which means this function must leave the OLD rev PROVEN live
-# or say out loud that it did not.
-rollback() {
-  say "ROLLING BACK to $OLD_SHORT"
-  mv -f "$BACKUP" "$INSTALL/nofx-bin" 2>/dev/null || say "WARNING: could not restore the binary"
-  rm -rf "$INSTALL/web/dist.failed" 2>/dev/null || true
-  mv -f "$DIST" "$INSTALL/web/dist.failed" 2>/dev/null || true
-  mv -f "$DIST_BACKUP" "$DIST" 2>/dev/null || say "WARNING: could not restore web/dist"
-  printf '%s\n' "$OLD_SHA" > "$INSTALL/deploy/RELEASE" 2>/dev/null || true   # P3: full 40-hex
-  local p; p="$(main_pid)"
-  [ -n "$p" ] && [ "$p" != "0" ] && kill -9 "$p" 2>/dev/null || true
-  if wait_boot "$OLD_SHORT" "rollback"; then
-    say "ROLLBACK OK — $OLD_SHORT is live and proven"
-    return 0
-  fi
-  say "ROLLBACK FAILED — $OLD_SHORT did NOT come back within 90 s. ALERT THE OWNER; the desk is down."
-  return 1
-}
-
-# --- swap, then kill ----------------------------------------------------------
-cp -a "$INSTALL/nofx-bin" "$BACKUP" || die "could not back up the binary"
-cp -a "$DIST" "$DIST_BACKUP"        || die "could not back up web/dist"
-# P1-a: actually INSTALL it, atomically.
-cp -a "$NEW_BIN" "$INSTALL/nofx-bin.new" || { rollback; die "could not stage the new binary"; }
-mv -f "$INSTALL/nofx-bin.new" "$INSTALL/nofx-bin" || { rollback; die "could not install the new binary"; }
-if [ -n "$NEW_DIST" ]; then
-  rm -rf "$INSTALL/web/dist.incoming" 2>/dev/null || true
-  cp -a "$NEW_DIST" "$INSTALL/web/dist.incoming" || { rollback; die "could not stage the new dist"; }
-  rm -rf "$DIST" && mv -f "$INSTALL/web/dist.incoming" "$DIST" || { rollback; die "could not install the new dist"; }
-fi
-# A19: RELEASE is written BEFORE the kill, so a marker never describes a boot
-# that has not happened.
-printf '%s\n' "$NEW_SHA" > "$INSTALL/deploy/RELEASE" || { rollback; die "could not write deploy/RELEASE"; }
-say "installed $SHORT (md5 $NEW_MD5); RELEASE written before the kill"
-
-BEFORE="$(identity)"
-PID_BEFORE="$(main_pid)"
-say "before: identity=$BEFORE — sending SIGKILL to MainPID ${PID_BEFORE:-none} (SIGTERM exits 0 and systemd does NOT relaunch)"
-[ -n "$PID_BEFORE" ] && [ "$PID_BEFORE" != "0" ] && kill -9 "$PID_BEFORE" 2>/dev/null || true
-
-deadline=$(( $(date +%s) + 90 )); AFTER=""
-while [ "$(date +%s)" -lt "$deadline" ]; do
-  sleep 2; AFTER="$(identity)"
-  [ -n "$AFTER" ] && [ "$AFTER" != "$BEFORE" ] && [ "${AFTER%%:*}" != "0" ] && break
-done
-[ -n "$AFTER" ] && [ "$AFTER" != "$BEFORE" ] || { rollback; die "no relaunch: identity unchanged ($BEFORE); BOTH MainPID and starttime must change (R-a)"; }
-say "after: identity=$AFTER"
-
-wait_boot "$SHORT" "cutover" || { rollback; die "the new rev did not prove itself within 90 s"; }
-say "CUTOVER OK — $SHORT is live. Rollback copies: $(basename "$BACKUP"), $(basename "$DIST_BACKUP")"
+die "unattended activation is not enabled in v7 from this script.
+    Run the steps explicitly with the owner present, each printing its receipt:
+      nofx-activate backup   -db $INSTALL/data/data.db
+      nofx-activate activate -release $RELEASES/$NEW_SHA -prev $RELEASES/$OLD_SHA
+      nofx-activate watch    -release $RELEASES/$NEW_SHA    # -log defaults to the NEWEST data/nofx_*.log; do NOT build it from today's date
+      nofx-activate rollback -prev $RELEASES/$OLD_SHA        # if watch refuses
+    NO UNATTENDED DEPLOYS is canon: a cutover needs the owner reachable and
+    acking the boot line, or a tested auto-rollback. The worker (3b-B) is the
+    supported unattended path, and it is not built yet."

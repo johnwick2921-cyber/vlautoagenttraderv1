@@ -154,14 +154,30 @@ func waitForNewIdentity(old Identity, within time.Duration) (Identity, error) {
 // a boot line read from a log that predates the restart is the previous boot's
 // line, and it says nothing about the process running now (boot lines are READ,
 // never literal).
-func Watch(rel Release, id Identity, logPath, healthURL string, within time.Duration) (Receipt, error) {
+func Watch(rel Release, id Identity, opts WatchOpts) (Receipt, error) {
 	rc := newReceipt("watch")
 	rc.Evidence["expect_sha"] = rel.SHA
 	rc.Evidence["pid"] = fmt.Sprintf("%d", id.PID)
+	within := opts.Within
 	if within <= 0 {
 		within = 90 * time.Second
 	}
-	since := rc.StartedAt
+	logPath, healthURL := opts.LogPath, opts.HealthURL
+	// THE KILL INSTANT, not "now". A worker persists its receipt BEFORE the
+	// side effect and may crash between the restart and the proof; when it
+	// resumes it calls Watch again, minutes or hours later. Anchoring on the
+	// current time would reject the boot line the restart actually wrote —
+	// the step would fail because the worker was slow, not because the boot
+	// failed, and the job would roll back a release that came up correctly.
+	// So the caller passes the instant it killed, read back from its own
+	// persisted state.
+	since := opts.Since
+	if since.IsZero() {
+		// No kill instant supplied: the strictest honest anchor is now, which
+		// is right for a caller watching a restart it is about to perform.
+		since = rc.StartedAt
+	}
+	rc.Evidence["since"] = since.Format(time.RFC3339)
 	deadline := sys.Now().Add(within)
 	var sawLog, sawHealth bool
 	for sys.Now().Before(deadline) {
@@ -174,7 +190,7 @@ func Watch(rel Release, id Identity, logPath, healthURL string, within time.Dura
 		if !sawHealth {
 			if sha, err := healthSHA(healthURL); err == nil {
 				rc.Evidence["health_sha"] = sha
-				if sha == rel.SHA {
+				if revisionsAgree(sha, rel.SHA) {
 					sawHealth = true
 				}
 			}
@@ -196,6 +212,28 @@ func Watch(rel Release, id Identity, logPath, healthURL string, within time.Dura
 	return rc.fail(fmt.Errorf("not proven within %s: %s", within, strings.Join(missing, "; ")))
 }
 
+// WatchOpts carries what a proof needs to be repeatable.
+//
+// It is a struct rather than more positional parameters because the worker
+// (3b-B) persists these values as job state and hands them back on resume —
+// a caller assembling them from a database row should be able to see which
+// field is which.
+type WatchOpts struct {
+	// LogPath is the file the RUNNING process writes. Logs are named by BOOT
+	// date, not calendar date, so build it with NewestLogPath rather than
+	// from today's date.
+	LogPath string
+	// HealthURL is asked for the revision it is serving.
+	HealthURL string
+	// Since is THE KILL INSTANT — the moment the old process was signalled.
+	// A boot line older than this belongs to a previous boot and proves
+	// nothing about the process running now. Zero means "now", which is
+	// correct only for a caller that is watching a restart it just performed.
+	Since time.Time
+	// Within bounds the wait; zero means 90s.
+	Within time.Duration
+}
+
 // bootLineAfter looks for a boot line naming sha whose timestamp is AFTER
 // since. The file is re-read each call because the process writing it is the
 // one we are waiting for.
@@ -210,7 +248,7 @@ func bootLineAfter(path, sha string, since time.Time) (bool, error) {
 		return false, err
 	}
 	for _, ln := range strings.Split(string(b), "\n") {
-		if !strings.Contains(ln, sha) {
+		if !lineNamesRevision(ln, sha) {
 			continue
 		}
 		ts, ok := lineTime(ln)
@@ -222,6 +260,33 @@ func bootLineAfter(path, sha string, since time.Time) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// lineNamesRevision reports whether a log line names this revision.
+//
+// FOUND ON THE LIVE BOX, and worse than the health case: the boot line prints
+// the SHORT rev —
+//
+//	🔐 BOOT INTEGRITY OK — rev 662c79bd236f · built 2026-09-23T23:45:35Z · …
+//
+// and the full 40-hex sha appears ZERO times in the live log. A
+// strings.Contains(line, fullSHA) could therefore NEVER match, so the
+// boot-line leg of Watch was as unfalsifiable as the health leg was. Both legs
+// of a two-leg proof could not pass, which would have made every real
+// activation roll back and left the reason looking like "the bot did not come
+// up" (CLASS 240 twice in one function).
+//
+// It scans the line's whitespace-separated tokens rather than substring-
+// matching, so a hex-looking fragment inside some other value is not mistaken
+// for the revision.
+func lineNamesRevision(ln, sha string) bool {
+	for _, tok := range strings.Fields(ln) {
+		tok = strings.Trim(tok, ".,;:()[]")
+		if revisionsAgree(tok, sha) {
+			return true
+		}
+	}
+	return false
 }
 
 // lineTime reads the timestamp a nofx log line starts with: "MM-DD HH:MM:SS".
@@ -238,6 +303,35 @@ func lineTime(ln string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	return t, true
+}
+
+// revisionsAgree compares a revision the machine REPORTED against the one we
+// expect, allowing the reported value to be an abbreviation.
+//
+// FOUND ON THE LIVE BOX, not in a test: /api/health reports the SHORT sha
+// ("662c79bd236f"), while a release names the full 40 hex. A strict equality
+// check therefore could NEVER have matched in production — the health leg of
+// Watch would have failed every real activation, which is CLASS 240: a
+// verification step that cannot succeed as written, whose realistic fate is
+// deletion by whoever hits it mid-incident. kernel/boot_integrity.go already
+// had this right ("prefix match so a short SHA in deploy/RELEASE matches the
+// full one"); this package did not.
+//
+// The comparison is deliberately one-directional and length-floored: the
+// REPORTED value may abbreviate the EXPECTED one, never the reverse, and an
+// abbreviation shorter than 7 characters is not evidence of anything.
+func revisionsAgree(reported, expected string) bool {
+	if reported == "" || expected == "" {
+		return false
+	}
+	if reported == expected {
+		return true
+	}
+	const minAbbrev = 7
+	if len(reported) < minAbbrev || len(reported) >= len(expected) {
+		return false
+	}
+	return strings.HasPrefix(expected, reported)
 }
 
 func healthSHA(url string) (string, error) {
@@ -367,4 +461,49 @@ func RollbackTo(prev Release, install Release, id Identity) (Identity, Receipt, 
 	rc.Evidence["new_pid"] = fmt.Sprintf("%d", next.PID)
 	r, _ := rc.done()
 	return next, r, nil
+}
+
+// Snapshot copies the THREE HALVES of a live install out to a directory, so a
+// later RollbackTo has something to restore from.
+//
+// Without it the rollback story has a hole nobody notices until they need it:
+// Activate overwrites the install in place, and once it has, the previous
+// binary, bundle and marker exist only wherever someone happened to put them.
+// Under NOFX_RELEASE_DIR the old release stays in its own directory and this
+// is unnecessary; without it, this is the step that makes rollback possible at
+// all. Taking it is cheap; discovering it was skipped is not.
+//
+// The receipt records what was actually copied. A half that was missing at the
+// source is named in the error, not silently omitted from a success.
+func Snapshot(install Release, dest string) (Receipt, error) {
+	rc := newReceipt("snapshot")
+	rc.Evidence["from"] = install.Dir
+	rc.Evidence["dest"] = dest
+	if dest == "" {
+		return rc.fail(fmt.Errorf("snapshot needs a destination"))
+	}
+	if err := os.MkdirAll(dest, 0o755); err != nil {
+		return rc.fail(fmt.Errorf("cannot create %s: %w", dest, err))
+	}
+	out := Release{
+		Dir:         dest,
+		SHA:         install.SHA,
+		Binary:      filepath.Join(dest, "nofx-bin"),
+		Dist:        filepath.Join(dest, "web", "dist"),
+		ReleaseFile: filepath.Join(dest, "RELEASE"),
+	}
+	if err := atomicCopy(install.Binary, out.Binary); err != nil {
+		return rc.fail(fmt.Errorf("snapshot binary: %w", err))
+	}
+	if err := atomicCopy(install.ReleaseFile, out.ReleaseFile); err != nil {
+		return rc.fail(fmt.Errorf("snapshot RELEASE: %w", err))
+	}
+	if err := copyTree(install.Dist, out.Dist); err != nil {
+		return rc.fail(fmt.Errorf("snapshot dist: %w", err))
+	}
+	rc.Evidence["captured"] = "binary,dist,RELEASE"
+	if b, err := os.ReadFile(out.ReleaseFile); err == nil {
+		rc.Evidence["release_marker"] = strings.TrimSpace(string(b))
+	}
+	return rc.done()
 }

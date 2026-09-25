@@ -123,7 +123,7 @@ func TestW3EntryPolicyRowHasTeeth(t *testing.T) {
 	if err := ValidatePromptContracts(legacy + " " + EntryPolicyPromptMarker); err == nil {
 		t.Fatal("the marker without the market_in_zone law must fail the class-38 guard")
 	}
-	miz := plannerOutputContractFor(8, 3, true, true, true, resolvePromptEntryPolicy(EntryPolicyMarketInZone, 0, 0, nil, nil))
+	miz := plannerOutputContractFor(8, 3, true, true, true, resolvePromptEntryPolicy(EntryPolicyMarketInZone, 0, 0, nil, nil), false)
 	for _, frag := range []string{"the zone must contain arm.entry", "an armed time_hold holds at least", "entry_mode=pullback or entry_mode=immediate"} {
 		if err := ValidatePromptContracts(strings.ReplaceAll(miz, frag, "")); err == nil {
 			t.Errorf("dropping %q from the market_in_zone prompt must fail the guard", frag)
@@ -137,14 +137,14 @@ func TestW3EntryPolicyRowHasTeeth(t *testing.T) {
 func TestArmableLineUsesResolvedMaps(t *testing.T) {
 	demoted := map[string]string{"reject": ConditionShadow}
 	ep := resolvePromptEntryPolicy(EntryPolicyPlannedOrder, 0, 0, demoted, nil)
-	contract := plannerOutputContractFor(8, 3, false, false, true, ep)
+	contract := plannerOutputContractFor(8, 3, false, false, true, ep, false)
 	if !strings.Contains(contract, "acceptance") {
 		t.Fatal("the armable line must still name every condition under planned_order")
 	}
 	// The demotion must be VISIBLE: the shadowed condition is named but marked
 	// shadowed, and a second call with nil maps renders differently.
 	epNil := resolvePromptEntryPolicy(EntryPolicyPlannedOrder, 0, 0, nil, nil)
-	contractNil := plannerOutputContractFor(8, 3, false, false, true, epNil)
+	contractNil := plannerOutputContractFor(8, 3, false, false, true, epNil, false)
 	if contract == contractNil {
 		t.Fatal("the resolved demotion must change the armable line (the nil call is the pre-P3 render)")
 	}

@@ -47,6 +47,19 @@ package main
 // names neither JWTSecret nor JWT_SECRET (reflection over the config, a
 // hand-parsed .env). Method calls are matched by name, so the derivation can
 // only over-report.
+//
+// NAMED, NOT CHASED (CTO ruling 1790248662535; hc re-verify G1/G7):
+//   - G1: a package-level function VARIABLE keyed only by its declaration's
+//     value — `var Hook func(…)` declared empty and set in an init() (Hook =
+//     GenerateScopedJWT) is not credited to the minting set, so main calling
+//     pkg.Hook(…, ScopeTelegram) and writing the token elsewhere passes these
+//     pins. (If main PRINTS that token, TestGateJWTBinaryPrintsAGateScopedTokenLast
+//     goes RED on the scope.)
+//   - G7: a body-less declaration behind //go:linkname in main is skipped
+//     here — but it is REFUSED module-wide by TestUpdateAuthCensus (rule 5,
+//     no //go:linkname in non-test code) [A, probed: "cmd/gate-jwt/…go:
+//     //go:linkname — binds a symbol of another package past every rule of
+//     this census; none is admitted"].
 
 import (
 	"bufio"

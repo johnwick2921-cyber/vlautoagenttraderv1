@@ -269,15 +269,15 @@ func rawMAC(key []byte, msg string) string {
 
 func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
 	key := seqKey(7)
-	msg, err := Message("v1.2.3", "0123456789abcdef", 1800000300)
-	if err != nil || string(msg) != "nofx-update-install/v1|v1.2.3|0123456789abcdef|1800000300" {
+	msg, err := Message(tUser, "v1.2.3", "0123456789abcdef", 1800000300)
+	if err != nil || string(msg) != "nofx-update-install/v1|"+tUser+"|v1.2.3|0123456789abcdef|1800000300" {
 		t.Fatalf("message %q err %v", msg, err)
 	}
-	mac, err := ComputeMAC(key, "v1.2.3", "0123456789abcdef", 1800000300)
-	if err != nil || mac != rawMAC(key, "nofx-update-install/v1|v1.2.3|0123456789abcdef|1800000300") {
+	mac, err := ComputeMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300)
+	if err != nil || mac != rawMAC(key, "nofx-update-install/v1|"+tUser+"|v1.2.3|0123456789abcdef|1800000300") {
 		t.Fatalf("mac mismatch: %s", mac)
 	}
-	if !VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac) {
+	if !VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300, mac) {
 		t.Fatal("positive control: valid MAC refused")
 	}
 	flip := []byte(mac)
@@ -288,19 +288,21 @@ func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
 	}
 	other := seqKey(8)
 	bad := map[string]func() bool{
-		"wrong key":     func() bool { return VerifyMAC(other, "v1.2.3", "0123456789abcdef", 1800000300, mac) },
-		"flipped":       func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, string(flip)) },
-		"uppercase":     func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, strings.ToUpper(mac)) },
-		"truncated":     func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac[:63]) },
-		"empty":         func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, "") },
-		"other release": func() bool { return VerifyMAC(key, "v1.2.4", "0123456789abcdef", 1800000300, mac) },
-		"other job":     func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdee", 1800000300, mac) },
-		"other expiry":  func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000301, mac) },
-		"short key":     func() bool { return VerifyMAC(key[:31], "v1.2.3", "0123456789abcdef", 1800000300, mac) },
-		"reordered msg": func() bool {
-			return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, rawMAC(key, "nofx-update-install/v1|0123456789abcdef|v1.2.3|1800000300"))
+		"wrong key": func() bool { return VerifyMAC(other, tUser, "v1.2.3", "0123456789abcdef", 1800000300, mac) },
+		"flipped":   func() bool { return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300, string(flip)) },
+		"uppercase": func() bool {
+			return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300, strings.ToUpper(mac))
 		},
-		"trailing space": func() bool { return VerifyMAC(key, "v1.2.3", "0123456789abcdef", 1800000300, mac+" ") },
+		"truncated":     func() bool { return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300, mac[:63]) },
+		"empty":         func() bool { return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300, "") },
+		"other release": func() bool { return VerifyMAC(key, tUser, "v1.2.4", "0123456789abcdef", 1800000300, mac) },
+		"other job":     func() bool { return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdee", 1800000300, mac) },
+		"other expiry":  func() bool { return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000301, mac) },
+		"short key":     func() bool { return VerifyMAC(key[:31], tUser, "v1.2.3", "0123456789abcdef", 1800000300, mac) },
+		"reordered msg": func() bool {
+			return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300, rawMAC(key, "nofx-update-install/v1|"+tUser+"|0123456789abcdef|v1.2.3|1800000300"))
+		},
+		"trailing space": func() bool { return VerifyMAC(key, tUser, "v1.2.3", "0123456789abcdef", 1800000300, mac+" ") },
 	}
 	for name, f := range bad {
 		if f() {
@@ -311,16 +313,19 @@ func TestMACIsHMACSHA256OverTheCanonicalMessage(t *testing.T) {
 
 func TestMACFieldsCannotBeReframed(t *testing.T) {
 	// "a|b" + "|" + "c-job-0001" == "a" + "|" + "b|c-job-0001": both must be refused.
-	if _, err := Message("a|b", "c-job-0001", 1); err == nil {
+	if _, err := Message(tUser, "a|b", "c-job-0001", 1); err == nil {
 		t.Error("'|' in release_id accepted")
 	}
-	if _, err := Message("a", "b|c-job-0001", 1); err == nil {
+	if _, err := Message(tUser, "a", "b|c-job-0001", 1); err == nil {
 		t.Error("'|' in job_id accepted")
 	}
-	if _, err := Message("a", "c-job-0001", 0); err == nil {
+	if _, err := Message(tUser, "a", "c-job-0001", 0); err == nil {
 		t.Error("expires_at 0 accepted")
 	}
-	if _, err := Message("a", "c-job-0001", 1); err != nil { // positive control
+	if _, err := Message("u|x", "a", "c-job-0001", 1); err == nil {
+		t.Error("'|' in user_id accepted")
+	}
+	if _, err := Message(tUser, "a", "c-job-0001", 1); err != nil { // positive control
 		t.Errorf("positive control: %v", err)
 	}
 }
@@ -549,7 +554,7 @@ func TestAuthorizeMintsAGrantTheVerifierAccepts(t *testing.T) {
 		t.Fatalf("grant %+v", g)
 	}
 	key, _ := LoadDeviceKey(d)
-	if !VerifyMAC(key, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
+	if !VerifyMAC(key, tUser, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
 		t.Fatal("grant MAC does not verify")
 	}
 	if CheckExpiry(g.ExpiresAt, tNow) != nil {

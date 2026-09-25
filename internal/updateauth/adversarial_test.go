@@ -43,13 +43,13 @@ func TestMessageSplitsBackIntoItsExactTriple(t *testing.T) {
 	for i := 0; i < 300000; i++ {
 		rel, job := gen(), gen()
 		exp := r.Int63n(1 << 40)
-		m, err := Message(rel, job, exp)
+		m, err := Message(tUser, rel, job, exp)
 		if err != nil {
 			continue
 		}
 		accepted++
 		parts := strings.Split(string(m), "|")
-		if len(parts) != 4 || parts[0] != MACPurpose || parts[1] != rel || parts[2] != job || parts[3] != strconv.FormatInt(exp, 10) {
+		if len(parts) != 5 || parts[0] != MACPurpose || parts[1] != tUser || parts[2] != rel || parts[3] != job || parts[4] != strconv.FormatInt(exp, 10) {
 			t.Fatalf("ambiguous message %q from (%q,%q,%d)", m, rel, job, exp)
 		}
 	}
@@ -105,15 +105,15 @@ func TestParseInstallRequestRefusesEscapedAliasesBOMAndInvalidUTF8(t *testing.T)
 	for i := range key {
 		key[i] = byte(i + 1)
 	}
-	good, err := ComputeMAC(key, "v1", "0123456789abcdef", 1800000300)
+	good, err := ComputeMAC(key, tUser, "v1", "0123456789abcdef", 1800000300)
 	if err != nil {
 		t.Fatal(err)
 	}
 	g, err := ParseInstallRequest(strings.NewReader(body("v1", good+`\n`)))
-	if err == nil && VerifyMAC(key, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
+	if err == nil && VerifyMAC(key, tUser, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
 		t.Error("an hmac with a JSON-escaped trailing newline verified")
 	}
-	if g2, err := ParseInstallRequest(strings.NewReader(body("v1", good))); err != nil || !VerifyMAC(key, g2.ReleaseID, g2.JobID, g2.ExpiresAt, g2.HMAC) {
+	if g2, err := ParseInstallRequest(strings.NewReader(body("v1", good))); err != nil || !VerifyMAC(key, tUser, g2.ReleaseID, g2.JobID, g2.ExpiresAt, g2.HMAC) {
 		t.Fatalf("positive control: the real MAC did not verify (%v)", err)
 	}
 }

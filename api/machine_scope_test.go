@@ -47,7 +47,7 @@ func tokenPayload(t *testing.T, tok string) map[string]any {
 // machineDeniedProbes: every route a machine token must be refused on, with
 // a body the handler would otherwise accept.
 var machineDeniedProbes = []struct{ method, path, body string }{
-	{"PUT", "/api/user/password", `{"new_password":"machine-chosen-pass-1"}`},
+	{"PUT", "/api/user/password", `{"current_password":"` + updAdminPass + `","new_password":"machine-chosen-pass-1"}`},
 	{"POST", "/api/reset-account", `{"confirm":"RESET-ALL-DATA"}`},
 	{"GET", "/api/telegram", ""},
 	{"POST", "/api/telegram", `{"bot_token":"123:abc","model_id":"m"}`},

@@ -50,11 +50,11 @@ func TestDegenerateDeviceKeyIsRefusedByTheLoaderVerifierAndMinter(t *testing.T) 
 			t.Errorf("fill %#02x: Authorize = %v, want ErrUnsafe", fill, err)
 		}
 		m := hmac.New(sha256.New, key)
-		m.Write([]byte(MACPurpose + "|" + rel + "|" + job + "|1800000300"))
-		if VerifyMAC(key, rel, job, exp, hex.EncodeToString(m.Sum(nil))) {
+		m.Write([]byte(MACPurpose + "|" + tUser + "|" + rel + "|" + job + "|1800000300"))
+		if VerifyMAC(key, tUser, rel, job, exp, hex.EncodeToString(m.Sum(nil))) {
 			t.Errorf("fill %#02x: VerifyMAC accepted a MAC under a degenerate key", fill)
 		}
-		if mac, err := ComputeMAC(key, rel, job, exp); err == nil || mac != "" {
+		if mac, err := ComputeMAC(key, tUser, rel, job, exp); err == nil || mac != "" {
 			t.Errorf("fill %#02x: ComputeMAC minted %q under a degenerate key", fill, mac)
 		}
 	}
@@ -74,8 +74,8 @@ func TestDegenerateDeviceKeyIsRefusedByTheLoaderVerifierAndMinter(t *testing.T) 
 	if err != nil {
 		t.Fatalf("positive control: sequential key: %v", err)
 	}
-	mac, err := ComputeMAC(k, rel, job, exp)
-	if err != nil || !VerifyMAC(k, rel, job, exp, mac) {
+	mac, err := ComputeMAC(k, tUser, rel, job, exp)
+	if err != nil || !VerifyMAC(k, tUser, rel, job, exp, mac) {
 		t.Fatalf("positive control: sequential key mint/verify: %v", err)
 	}
 	if !degenerateKey(nil) || !degenerateKey([]byte{}) {

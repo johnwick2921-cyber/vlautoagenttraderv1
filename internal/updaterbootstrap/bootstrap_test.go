@@ -477,7 +477,7 @@ func TestAuthorizePrintsAGrantAndNeverTheKey(t *testing.T) {
 	}
 	d := DataDirFor(inst)
 	key, _ := updateauth.LoadDeviceKey(d)
-	if !updateauth.VerifyMAC(key, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
+	if !updateauth.VerifyMAC(key, bUser, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC) {
 		t.Fatal("the printed MAC does not verify under device.key")
 	}
 	for _, s := range []string{out, errb} {

@@ -416,3 +416,44 @@ func TestPlanTradesNamesPlanSessionAndSource(t *testing.T) {
 		t.Fatalf("a position with no armed row (the decision path) reads ai: %+v", bySource)
 	}
 }
+
+// W5 R7: "no armed row" (not found) infers; a ledger that could not be READ
+// says so — source "unknown" + source_unresolved — never an inferred "ai".
+func TestPlanTradesSaysUnresolvedWhenTheLedgerCannotBeRead(t *testing.T) {
+	s, tok := newPicturePlanGateServer(t, `{"day_plan":{"plan_enabled":true}}`)
+	st := s.store
+	pid := store.MakePlanIDForTrader(ppgTrader, "2026-09-14", "NY")
+	p := &store.TraderPosition{TraderID: ppgTrader, Symbol: "MNQ", Side: "LONG", Quantity: 1, EntryPrice: 21530, EntryOrderID: "sig-x", EntryTime: 1790003000000}
+	if err := st.Position().Create(p); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Position().SetPlanLinkFull(p.ID, 1, "P1", true, "", pid, "2026-09-14", "NY"); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Position().SetAdherence(p.ID, "A"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.Position().ClosePosition(p.ID, 21590, "x-sig-x", 120, 0, "tp"); err != nil {
+		t.Fatal(err)
+	}
+	read := func() map[string]any {
+		rec, body := olDo(t, s, tok, http.MethodGet, "/api/plan/trades?trader_id="+ppgTrader, "")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("plan/trades: %d %s", rec.Code, rec.Body.String())
+		}
+		trades, _ := body["trades"].([]any)
+		if len(trades) != 1 {
+			t.Fatalf("1 graded trade expected: %s", rec.Body.String())
+		}
+		return trades[0].(map[string]any)
+	}
+	if m := read(); m["source"] != "ai" || m["source_unresolved"] != nil {
+		t.Fatalf("not found (no armed row) infers the decision path: %+v", m)
+	}
+	if err := st.GormDB().Migrator().DropTable(&store.ArmedOrderDB{}); err != nil {
+		t.Fatal(err)
+	}
+	if m := read(); m["source"] != "unknown" || m["source_unresolved"] != true {
+		t.Fatalf("a ledger read error must say unresolved, never infer: %+v", m)
+	}
+}

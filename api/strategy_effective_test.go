@@ -40,6 +40,7 @@ func newEffectiveServer(t *testing.T) (*Server, *store.Store, string) {
 	}
 	t.Cleanup(func() { st.Plan().Close(); _ = st.Close() })
 	auth.SetJWTSecret("effective-test-secret")
+	seedTokenOwner(t, st, effUser, "eff@test") // M3 H2: a token needs its account row
 	tok, err := auth.GenerateJWT(effUser, "eff@test")
 	if err != nil {
 		t.Fatalf("jwt: %v", err)
@@ -440,4 +441,4 @@ func TestEffectiveCoverageCounted(t *testing.T) {
 
 // effectiveResolvedPin is the number of registered resolvers at this revision
 // (trader/effective_settings.go). Change it ONLY with the table.
-const effectiveResolvedPin = 85 // W-EXEC-TRUTH W3: +4 (entry_policy_default, zone_max_pts, zone_rest_max_min, min_hold_min); PLANNER B1: +1 zone_place_within_pts
+const effectiveResolvedPin = 86 // PLANNER A6 2026-09-25: +1 (planner_fresh_tape); PLANNER B1 2026-09-25: +1 (zone_place_within_pts); W-EXEC-TRUTH W3: +4 (entry_policy_default, zone_max_pts, zone_rest_max_min, min_hold_min)

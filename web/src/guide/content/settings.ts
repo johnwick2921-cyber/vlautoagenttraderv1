@@ -39,6 +39,22 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No.',
   },
   {
+    label: 'Planner contract (A3)',
+    where: 'Strategy → Day Plan → Planner contract switch (advanced).',
+    what:
+      'WAVE PLANNER A3 (2026-09-25): the prompt, the validator and the executor are ONE contract — breakdown/breakup entries must wait for the tape\'s confirming close, planned_order is legal only on reject / fvg_entry / sweep_reclaim leg 0, every scenario\'s economics must carry nonzero risk, and a REJECT fade\'s stop is composed by the executor from the frozen zone (edge − buffer).',
+    trader:
+      'ON by default (nil). Turning it OFF restores the pre-A3 prompt text byte-for-byte — the machine still refuses the same violations; only the prompt\'s contract wording changes.',
+    consumer:
+      'store/strategy.go PlannerContractOn · kernel/planner_prompt.go (contract fragments) · kernel/class45_feeds_forward.go (stop-floor qualification)',
+    range: 'switch (ON/OFF)',
+    systemDefault: 'ON · nil = ON',
+    recommended:
+      '⭐ leave ON — the contract wording is the machine\'s ground truth. OFF exists only to prove the prompt change is byte-reversible.',
+    whenToTouch: 'Never in normal trading. OFF is a diagnostic position for A/B studies of planner wording.',
+    perSession: 'No.',
+  },
+  {
     label: 'One setup — minimum grade',
     where: 'Strategy → Day Plan → one_setup_min_grade',
     what: 'The lowest merged-candidate grade the best level near price may carry (A+ | A | B | C). The best level is chosen grade-first, distance-second among candidates inside the reachability band; a scenario on a lower-graded level than the best is declined level_not_best.',
@@ -281,7 +297,7 @@ const dayPlan: KnobSpec[] = [
   {
     label: 'Zone rest cap (W3)',
     where: 'Strategy → Day Plan → zone_rest_max_min (API/config field)',
-    what: 'A market_in_zone limit that has rested longer than this many minutes (measured from its placement) is cancelled "zone rest expired" by the executor — a zone the market walked away from is not left working forever.',
+    what: 'A market_in_zone limit that has rested longer than this many minutes (measured from its placement) is cancelled "zone rest expired" by the executor — a zone the market walked away from is not left working forever. The rest cap is no longer the only exit: a new plan version or overlay that moves the zone off the resting limit cancels it sooner ("zone moved by vN").',
     trader:
       'The limit sits at the far edge of the zone; if price never comes back within the cap the order goes away rather than filling hours later in a different market.',
     consumer:
@@ -291,6 +307,21 @@ const dayPlan: KnobSpec[] = [
     recommended:
       '⭐ 30 — the W3 default; there is no fill evidence yet to argue another number.',
     whenToTouch: 'After the receipts (rest duration per fill) exist.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Zone placement reach (PLANNER B1)',
+    where: 'Strategy → Day Plan → zone_place_within_pts (API/config field)',
+    what: 'The distance bound (points) that decides whether an armed market_in_zone arm may place: a row whose zone is farther than this from the eval price stays armed-unplaced (no rest clock, nothing on the wire) and places on a later pass once price comes within the bound; inside and short_of_zone verdicts are unchanged. With the bound ON, a rest-cap expiry (zone_rest_max_min) no longer dismantles the arm — the resting order is cancelled on request (cancel_pending, signal kept) and only once the broker book confirms it does the row return to armed-unplaced (re-placeable) so it can try again when price is near; a failed cancel send is retried and a fill during the wait attributes to the row. 0 turns the whole reach contract OFF and restores the legacy behaviour byte-for-byte (a far arm places at once and an expiry dismantles the arm).',
+    trader:
+      'The bound is the existing armed placement band (25 pts on MNQ, the same distance a legacy limit waits for). A zone the market walked away from is not left resting 148 points away.',
+    consumer:
+      'store/resolve_source.go ResolveZonePlaceWithinPts · trader/zone_placement.go (placeZoneRow beyond-proximity gate + zoneRestCap reset) · 🎛 entry law boot line',
+    range: '0 = OFF (legacy). unset → 25 (the armed placement band).',
+    systemDefault: '25 (ON)',
+    recommended:
+      '⭐ 25 — the same bound legacy limit placement already uses; no evidence yet to argue another number.',
+    whenToTouch: 'After the receipts (placements vs distance per fill) exist.',
     perSession: 'No — strategy-level.',
   },
   {
@@ -357,6 +388,22 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No.',
   },
   {
+    label: 'Planner fresh tape on born-dead retry (PLANNER A6)',
+    where: 'Strategy → Day Plan → planner_fresh_tape toggle',
+    what: "When a planner attempt is refused born-dead or flip-met (the market moved during the 9–15 minute AI read and the validator correctly refused), attempt N+1's prompt carries the COMPLETED bars between the read clock and the refusal — at most the last 30 completed 1m closes and the last 6 completed 5m closes, never the forming bar — plus the breached condition named verbatim, so the re-author reads the tape that exists now instead of retrying blind against the stale read. The born-dead check itself is unchanged: a plan whose lines are already crossed at publication is still refused. ON is the default (nil=ON).",
+    trader:
+      "ON = a born-dead / flip-met retry re-sights the model on the fresh tape instead of burning attempts 2/3 on the identical stale read. The block is appended to BOTH the repair prompt and the full re-author prompt, and the refusal line logs the read→publish latency. OFF = today's behaviour byte-identical (blind retry).",
+    consumer:
+      'kernel.PlannerFreshTape · trader/auto_trader_planner.go retry loop · store.DayPlanConfig.PlannerFreshTapeEnabled',
+    range: 'ON | OFF',
+    systemDefault: 'ON (unset; nil=ON)',
+    recommended:
+      '⭐ ON — the default; OFF only to reproduce the pre-fix blind retry.',
+    whenToTouch:
+      'Turn OFF only for a side-by-side study of a blind born-dead retry.',
+    perSession: 'No.',
+  },
+  {
     label: 'Red-news hard-block currencies (W-T1-CURRENCIES)',
     where: 'Strategy → Day Plan → t1_currencies text field (comma-separated)',
     what: "Which currencies' T1 (red) calendar events open the HARD ±15m no-trade window. Default USD: only USD red events hard-block; a red event in any other currency (a BOJ rate decision, a BoE vote) is shown as an advisory line — on the plan card, in the plan's no_trade list and in the planner prompt — and blocks nothing. Set ALL to restore the old behaviour where every red event in the session's currency filter hard-blocked. Case-insensitive; blanks are ignored; a red event with NO currency still hard-blocks (fail closed) and is named once a day in the log.",
@@ -394,14 +441,14 @@ const dayPlan: KnobSpec[] = [
     label: 'Picture HTF (two-picture mode)',
     where:
       'Strategy → Day Plan → Picture HTF block → "Include Picture HTF setups" (switch; greyed out while Enable Day Plan is off)',
-    what: "The owner's two-picture method as a DETERMINISTIC mode (2026-09-20): a 4H body pivot → the H1 close breaks it by at least one tick → the next 5m interval (entry window, default 10s) searches a strict 5m swing for the stop and the nearest opposing 4H zone for the target. R:R below the configured minimum refuses — the nearer zone is never skipped. The AI is commentary only; timing is the rule, not the model. Since W-EXEC-TRUTH W0b every Picture entry passes the same entry rules as the AI and armed orders (see Status → One set of entry rules), trades only the trader's own instrument, and runs only while the trader is running and the Day Plan is on; since W5 it is a Day Plan scenario source: each opportunity becomes a recorded plan scenario (📷 P1…) that the plan's armed executor places as a market_in_zone limit inside its eligibility window — under every plan mode, strict included (📷 plan_gate= and the plan card show the route), exempt from one_setup, never a widened stop or a swapped target, and never placed after its window, by another run, after Stop or with the Day Plan off.",
+    what: "The owner's two-picture method as a DETERMINISTIC mode (2026-09-20): a 4H body pivot → the H1 close breaks it by at least one tick → the next 5m interval (entry window, default 360s) searches a strict 5m swing for the stop and the nearest opposing 4H zone for the target. R:R below the configured minimum refuses — the nearer zone is never skipped. The AI is commentary only; timing is the rule, not the model. Since W-EXEC-TRUTH W0b every Picture entry passes the same entry rules as the AI and armed orders (see Status → One set of entry rules), trades only the trader's own instrument, and runs only while the trader is running and the Day Plan is on; since W5 it is a Day Plan scenario source: each opportunity becomes a recorded plan scenario (📷 P1…) that the plan's armed executor places as a market_in_zone limit inside its eligibility window — under every plan mode, strict included (📷 plan_gate= and the plan card show the route), exempt from one_setup, never a widened stop or a swapped target, and never placed after its window, by another run, after Stop or with the Day Plan off.",
     trader:
-      'OFF by default; enabling it gates on the AddOn proving build ≥ 2026-09-20-p1 (final+emitted_at bar markers, rejection reasons) — below that the evaluator logs "mode unavailable" and never submits. Sends a 1-contract SIM market entry with its protective bracket only when the book is flat, the feed is fresh, and no unreconciled submission blocks re-entry.',
+      'OFF by default; enabling it gates on the AddOn proving build ≥ 2026-09-20-p1 (final+emitted_at bar markers, rejection reasons) — below that the evaluator logs "mode unavailable" and never submits. Since W5 Picture never sends an order of its own (its market-entry send is retired): each opportunity is recorded as a Day Plan scenario, and the armed executor places it as a 1-contract SIM market_in_zone LIMIT with its protective bracket, through the same entry latch and one-live-entry guards as every armed order.',
     consumer:
-      'store/strategy.go PictureHtfResolved · trader/picture_htf_evaluator.go (evaluation + pictureHtfCapabilityProven) · trader/picture_htf_live.go (live-bar fan-out) · trader/picture_htf_send.go (send-side re-checks) · trader/ninjatrader/tcp_trader.go MarketEntryWithProtection · store/picture_htf.go (opportunity ledger)',
+      'store/strategy.go PictureHtfResolved · trader/picture_htf_evaluator.go (evaluation + pictureHtfCapabilityProven) · trader/picture_htf_live.go (live-bar fan-out) · trader/picture_plan_source.go (the Day Plan hand-off — the submit seam) · trader/armed_executor.go + trader/picture_scenario_exec.go + trader/zone_placement.go (placement as a market_in_zone limit) · store/picture_htf.go (opportunity ledger)',
     range:
       "switch + tick size / pivot window / swing lookback / entry window (s) / freshness (s) / min R:R (the STRICTER of this and risk control's minimum R:R applies; a value below it never loosens it; no strategy floor at all refuses)",
-    systemDefault: 'OFF · defaults 0.25 / 120 / 24 / 10s / 2s / inherit',
+    systemDefault: 'OFF · defaults 0.25 / 120 / 24 / 360s / 30s / inherit',
     recommended:
       '⭐ run it on SIM and read the Picture HTF panel on the dashboard — the ledger shows intended vs broker answer side by side; the mode earns real-money trust only from recorded fills.',
     whenToTouch:
@@ -739,6 +786,10 @@ export const settings: GuideSection = {
     'Every knob on the Strategy page, what it really does, and who reads it.',
   asBuiltRev: GUIDE_BUILT_REV,
   blocks: [
+    {
+      kind: 'p',
+      text: 'AgentBeta uses the authenticated user’s configured AI model for each conversation request. Another user’s request cannot replace that selection. If your account has no enabled model, configure one; it does not inherit another account’s credentials.',
+    },
     {
       kind: 'p',
       text: 'Every knob card below names the engine consumer (file:line) that reads it — so you always know whether a slider is real or decorative. FE persists but NO production code reads: nothing here is in that category; the three that used to be (plan_mode, proximity_filter_atr, …) are wired now.',

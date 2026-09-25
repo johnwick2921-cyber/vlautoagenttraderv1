@@ -10,6 +10,7 @@ import (
 	"nofx/auth"
 	"nofx/logger"
 	"nofx/store"
+	"nofx/telemetry"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,6 +21,27 @@ import (
 // to run the destructive account reset — a deliberate speed bump so the endpoint
 // can never be triggered by a stray click or a replayed empty POST.
 const accountResetConfirmToken = "RESET-ALL-DATA"
+
+// ── PR #200 fold F9 (CTO 1790252194343 #21) — the current_password compare ──
+//
+// PUT /api/user/password had no limiter on the current_password compare. The
+// minimal, fail-closed fold: after a FAILED compare the answer waits a fixed
+// currentPasswordFailDelay, and the refusal is counted — the B6 gate-block
+// table (telemetry.IncGateBlock, the process-wide "" key: this chokepoint has
+// no trader; read at GET /api/risk/gate-blocks) — beside the existing WARN
+// line. A real limiter is a follow-up: a failure-only delay does not bound a
+// client that runs attempts in parallel, or stops waiting once the fast
+// success window has passed.
+const currentPasswordFailDelay = time.Second
+
+// currentPasswordWrongGate is the gate-block counter a failed compare bumps.
+const currentPasswordWrongGate = "credential_current_password_wrong"
+
+// currentPasswordFailSleep is the delay seam: production sleeps. The api test
+// binary swaps it in TestMain (testmain_test.go), so no test ever sleeps the
+// real second; TestWrongCurrentPasswordIsDelayedAndCounted pins that the
+// production value is time.Sleep and the delay 1 s.
+var currentPasswordFailSleep = time.Sleep
 
 // handleLogout Add current token to blacklist
 func (s *Server) handleLogout(c *gin.Context) {
@@ -182,8 +204,14 @@ func (s *Server) handleLogin(c *gin.Context) {
 
 // handleChangePassword changes the password for the currently authenticated user.
 //
-// H1 (M3 red team): only a token whose email is the row's own may do it —
-// credentialActorRefusal (credential_guard.go) runs before anything else.
+// H1 (M3 red team, CTO ruling 1790231205208 item 1): only a token whose email
+// is the row's own may do it — credentialActorRefusal (credential_guard.go)
+// runs before anything else — AND the request must carry the account's
+// CURRENT password, verified against the stored hash. A bearer token alone
+// (the Telegram bot's, a stolen session's) can no longer set the password.
+// Missing/empty current_password → 400; wrong → 403 "current password is
+// incorrect" (the web form shows it; web/src/pages/SettingsPage.tsx sends the
+// field since the same change).
 func (s *Server) handleChangePassword(c *gin.Context) {
 	u, why := s.credentialActorRefusal(c)
 	if why != "" {
@@ -192,10 +220,20 @@ func (s *Server) handleChangePassword(c *gin.Context) {
 	}
 	userID := u.ID
 	var req struct {
-		NewPassword string `json:"new_password" binding:"required,min=8"`
+		CurrentPassword string `json:"current_password" binding:"required"`
+		NewPassword     string `json:"new_password" binding:"required,min=8"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		SafeBadRequest(c, "new_password is required (min 8 chars)")
+		SafeBadRequest(c, "current_password and new_password (min 8 chars) are required")
+		return
+	}
+	if !auth.CheckPassword(req.CurrentPassword, u.PasswordHash) {
+		logger.Warnf("🔒 [credentials] refused %s %s from %s: current password is incorrect", c.Request.Method, c.FullPath(), c.ClientIP())
+		// F9: count it, then hold the answer a fixed second (see the
+		// currentPasswordFailDelay block above).
+		telemetry.IncGateBlock("", currentPasswordWrongGate)
+		currentPasswordFailSleep(currentPasswordFailDelay)
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "current password is incorrect"})
 		return
 	}
 	hash, err := auth.HashPassword(req.NewPassword)
@@ -234,7 +272,7 @@ func (s *Server) handleResetPasswordDisabled(c *gin.Context) {
 
 const resetPasswordLockedOutAdvice = "Password reset by email is disabled. Sign in and use PUT /api/user/password. " +
 	"Locked out? Set the new hash AND the credential epoch in ONE statement: " +
-	"UPDATE users SET password_hash='<bcrypt hash of the new password>', updated_at=CURRENT_TIMESTAMP WHERE email='<your account email>'; " +
+	"UPDATE users SET password_hash='NEW_BCRYPT_HASH', updated_at=CURRENT_TIMESTAMP WHERE email='YOUR_ACCOUNT_EMAIL'; " +
 	"— moving updated_at is what signs out every session issued before the reset; a hash-only UPDATE leaves those sessions valid."
 
 // handleResetAccount clears user authentication data so the system returns to

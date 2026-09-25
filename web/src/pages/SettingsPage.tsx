@@ -41,7 +41,7 @@ function configBadge(label: string, active: boolean) {
 }
 
 export function SettingsPage() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { language } = useLanguage()
   const [activeTab, setActiveTab] = useState<Tab>('account')
 
@@ -58,6 +58,10 @@ export function SettingsPage() {
   }, [])
 
   // Account state
+  // M3 red-team H1 (CTO ruling item 1): the server requires the CURRENT
+  // password with every change; its refusal text is shown in the form.
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
@@ -122,6 +126,11 @@ export function SettingsPage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    setPasswordError('')
+    if (!currentPassword) {
+      toast.error(t('currentPasswordRequired', language))
+      return
+    }
     if (newPassword.length < 8) {
       toast.error('Password must be at least 8 characters')
       return
@@ -134,18 +143,31 @@ export function SettingsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
         },
-        body: JSON.stringify({ new_password: newPassword }),
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Failed to update password')
       }
-      toast.success('Password updated successfully')
+      // M3 red-team H2: the server now refuses EVERY session issued before
+      // the change — this one included — so sign out and let the owner sign
+      // in again with the new password (instead of a dead session 401-ing
+      // on its next call).
+      toast.success(t('passwordChangedSignInAgain', language))
+      setCurrentPassword('')
       setNewPassword('')
+      logout()
     } catch (err) {
-      toast.error(
+      // The server's own refusal text (403 "current password is incorrect",
+      // 400 "current_password and new_password … are required", …) is shown
+      // in the form and in the toast — never replaced by a generic string.
+      const msg =
         err instanceof Error ? err.message : 'Failed to update password'
-      )
+      setPasswordError(msg)
+      toast.error(msg)
     } finally {
       setChangingPassword(false)
     }
@@ -468,12 +490,35 @@ export function SettingsPage() {
                 </h3>
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-zinc-400 mb-2">
+                    <label
+                      htmlFor="settings-current-password"
+                      className="block text-xs font-medium text-zinc-400 mb-2"
+                    >
+                      {t('currentPasswordLabel', language)}
+                    </label>
+                    <input
+                      id="settings-current-password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full bg-zinc-950/80 border border-zinc-700/80 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nofx-gold/60 focus:ring-1 focus:ring-nofx-gold/30 transition-all"
+                      placeholder={t('currentPasswordPlaceholder', language)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="settings-new-password"
+                      className="block text-xs font-medium text-zinc-400 mb-2"
+                    >
                       New Password
                     </label>
                     <div className="relative">
                       <input
+                        id="settings-new-password"
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         className="w-full bg-zinc-950/80 border border-zinc-700/80 rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nofx-gold/60 focus:ring-1 focus:ring-nofx-gold/30 transition-all"
@@ -493,9 +538,22 @@ export function SettingsPage() {
                       </button>
                     </div>
                   </div>
+                  {passwordError && (
+                    <p
+                      role="alert"
+                      data-testid="password-change-error"
+                      className="text-xs text-red-400"
+                    >
+                      {passwordError}
+                    </p>
+                  )}
                   <button
                     type="submit"
-                    disabled={changingPassword || newPassword.length < 8}
+                    disabled={
+                      changingPassword ||
+                      !currentPassword ||
+                      newPassword.length < 8
+                    }
                     className="w-full bg-nofx-gold hover:bg-yellow-400 active:scale-[0.98] text-black font-semibold py-3 rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {changingPassword ? 'Updating...' : 'Update Password'}

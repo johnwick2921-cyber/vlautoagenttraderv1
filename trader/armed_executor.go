@@ -211,7 +211,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 	defer armedPassEntered(at.id)()
 	scope := opts.scope
 	if !at.dayPlanEnabled() || at.store == nil || at.exchange != "ninjatrader" {
-		at.pictureDayPlanOffSweep(now) // W5 D21: Picture rows only
+		at.dayPlanOffPassHead(now) // W5 R8 settle, then D21
 		return
 	}
 	ledger := at.store.ArmedOrders()
@@ -372,9 +372,9 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 		// placed: an arm whose fill would land inside the band is not an arm we
 		// are willing to own, whether it was placed a second ago or an hour ago.
 		// Cancelled through the same seam the close uses, so each cancel is a
-		// wire cancel the book can confirm — never a ledger assumption.
+		// wire cancel the book can confirm — never a ledger assumption. PACED per row (W1b FOLD-12, window_sweep_pace.go).
 		if name, noun, window := sessionRiskWindowWords(risk.Class); window {
-			if n, unacked := at.cancelArmedOrdersSync(name + " opened — " + risk.Reason); n > 0 || unacked > 0 {
+			if n, unacked := at.cancelArmedOrdersSync(name+" opened — "+risk.Reason, at.windowSweepPace(now)); n > 0 || unacked > 0 {
 				at.logWarnf("🔒 %s: %d resting arm(s) cancelled, %d unacked — an arm resting into the %s is cancelled, not grandfathered", name, n, unacked, noun)
 			}
 		}
@@ -422,8 +422,8 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 		// E4 (2026-08-30) — split-entry legs: a two-leg arm writes one ledger
 		// row PER leg (LegIndex 0/1, LegCount 2). A single arm is leg 0 of a
 		// one-row pair (LegCount 0 = legacy shape).
-		legs := sc.Arm.Legs
-		if len(legs) == 0 {
+		legs := armScenarioLegs(sc) // W1b E1 — the ONE scenario→legs turn, AS AUTHORED (arm_respec.go)
+		if len(sc.Arm.Legs) == 0 {
 			// D3 (2026-09-04): the entry TYPE follows the condition, from the
 			// same table the planner prompt is rendered from. This was
 			// hardcoded "limit", which is wrong for a reclaim — it only
@@ -433,8 +433,7 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 				at.logWarnf("✕ armed %s NOT authored — %s", sc.ID, refusal)
 				continue
 			}
-			legs = []kernel.PlanArmLeg{{Entry: sc.Arm.Entry, Stop: sc.Arm.Stop, Target: sc.Arm.Target,
-				WaitConfirm: sc.Arm.WaitConfirm, Rule: "touch", Kind: kind, Policy: sc.Arm.Policy}}
+			legs[0].Kind = kind // a fresh one-leg list; every other field is the arm spec's own
 		}
 		legCount := 0
 		if len(sc.Arm.Legs) == 2 {
@@ -867,13 +866,6 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 			}
 
 			admitted.admit(plan.PlanID, sc.ID, li) // G1: every authoring gate passed THIS pass
-			if geometry != nil {
-				geometry.Quantity = 1
-				geometry.Reason = "admitted"
-				if !at.saveArmGeometry(*geometry) {
-					return // unavailable decision record must not expose older authorizations
-				}
-			}
 
 			// D4 (2026-09-04) — FAR-ARM COUNTER, WARN-first. Nothing is refused
 			// for being far; a week of counts decides the threshold. Per side,
@@ -892,17 +884,38 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 			}
 			zl.stamp(row)               // W3 — policy, zone (inward-rounded), provenance, planned entry
 			stampPictureSource(row, sc) // W5 — source, opportunity, rule, deadline, run epoch
+			// W1b E1: the matched ledger row is KEPT — its prices are what went to the wire.
+			var prior store.ArmedOrderDB
 			existing, err := ledger.ListNonTerminal(at.id)
 			if err == nil {
 				for i := range existing {
 					if existing[i].TraderID == at.id && existing[i].PlanID == row.PlanID && existing[i].Scenario == sc.ID && existing[i].LegIndex == row.LegIndex {
-						row.ID = existing[i].ID // already in the ledger — leave state (churn guard applies to placement)
+						row.ID, prior = existing[i].ID, existing[i] // already in the ledger — leave state
 						break
 					}
 				}
 			}
+			// W1b E1+E2 — a WORKING row the new version re-priced (its AUTHORED entry
+			// or bracket ≥ 2 ticks under a newer version — legs[li], before composition
+			// — or a zone that no longer holds its limit) is CANCELLED via the filled-arm
+			// guard and re-arms once the book confirms (arm_respec.go). The leg IS in
+			// G1's admitted set (admitted.admit above); only its geometry record stops
+			// short of "admitted". No hole: a cancel_pending row is never placed.
+			if row.ID != 0 && at.respecWorkingArm(ledger, plan, sc, li, prior, legs[li], leg, zl, now) {
+				continue
+			}
+			if geometry != nil {
+				geometry.Quantity = 1
+				geometry.Reason = "admitted"
+				if !at.saveArmGeometry(*geometry) {
+					return // unavailable decision record must not expose older authorizations
+				}
+			}
 			if row.ID == 0 {
 				if err := ledger.UpsertArm(row); err != nil {
+					if at.armSourceRefused(plan, sc, li, err, scope, admitted) {
+						continue
+					}
 					at.logWarnf("⚔️ arm write failed %s %s leg %d: %v", plan.Session, sc.ID, li+1, err)
 					continue
 				}
@@ -943,22 +956,21 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 					at.logInfof("⚔️ armed %s %s leg %d %s limit %.2f SL %.2f TP %.2f (tick-managed placement is Phase 2)%s", plan.Session, sc.ID, li+1, side, leg.Entry, leg.Stop, leg.Target, postLossNote)
 				}
 			} else {
-				// CHURN GUARD (2.1): re-spec a working arm's bracket only when the
-				// plan moved SL or TP by ≥ 2 ticks (cancel+re-place on modify).
-				tick := market.FuturesTickSize(at.futuresSymbol())
-				if tick <= 0 {
-					tick = 0.25
-				}
-				if row.State == "working" && churnNeedsModify(row.StopPx, row.TargetPx, leg.Stop, leg.Target, tick) {
-					if nt := at.armedTrader(); nt != nil {
-						_ = nt.ModifyBracket(row.SignalID, leg.Stop, leg.Target)
-						at.logInfof("📌 armed %s leg %d bracket modify (churn guard) SL %.2f→%.2f TP %.2f→%.2f",
-							sc.ID, li+1, row.StopPx, leg.Stop, row.TargetPx, leg.Target)
-					}
+				// A live broker order is never rewritten in place (store D5), so the
+				// refresh write for a non-armed row was refused and dropped every
+				// pass. Skipped — unless the row carries ANOTHER opportunity, whose
+				// typed refusal (W5 R13(a)) must still reach armSourceRefused.
+				if prior.State != store.StateArmed && strings.TrimSpace(prior.SourceRef) == strings.TrimSpace(row.SourceRef) {
+					continue
 				}
 				row.EntryPx, row.StopPx, row.TargetPx = leg.Entry, leg.Stop, leg.Target
 				row.Version = plan.Version
-				_ = ledger.UpsertArm(row)
+				// W5 R13(a): the refresh write can be REFUSED by type (a live row
+				// under this key that carries another opportunity) — a named,
+				// counted refusal, never a discarded error.
+				if err := ledger.UpsertArm(row); err != nil {
+					at.armSourceRefused(plan, sc, li, err, scope, admitted)
+				}
 			}
 		}
 	}
@@ -2005,6 +2017,36 @@ func armRefusalClass(verdict string) string {
 // armRefusalChanged (F4) — true when this arm-spec's refusal verdict is new or
 // changed (the caller logs); false when the identical verdict was already
 // logged for the same spec (the caller stays silent).
+// armSourceRefused handles UpsertArm's W5 R13(a) typed refusal at the
+// authoring loop (CTO round 2): ErrArmSourceMismatch — the row under this
+// (plan, scenario, leg) key belongs to ANOTHER opportunity, and a ledger row
+// never changes opportunity. The leg was NOT authored: the G1 admit this pass
+// granted is withdrawn (the admit key is version-insensitive, so it would
+// otherwise admit the other opportunity's row), scope.note names the refusal,
+// and one WARN + one per-session counter fire per change. false = err is not
+// that refusal (the caller keeps its own handling).
+func (at *AutoTrader) armSourceRefused(plan *kernel.ActivePlan, sc kernel.PlanScenario, li int, err error, scope *armedPassScope, admitted armAdmission) bool {
+	if !errors.Is(err, store.ErrArmSourceMismatch) {
+		return false
+	}
+	const class = "arm_source_mismatch"
+	if admitted != nil {
+		admitted.retract(plan.PlanID, sc.ID, li)
+	}
+	scope.note(sc.ID, "refused: "+class+": "+err.Error())
+	key := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":leg" + strconv.Itoa(li+1) + ":source"
+	if armRefusalChanged(&at.armRefusalLast, key, class) {
+		shown := ""
+		if at.store != nil {
+			if n, cerr := store.IncArmRefusal(at.store, at.id, kernel.PlanTradeDateFor(plan), plan.Session, class); cerr == nil {
+				shown = fmt.Sprintf(" · %s this session: %d", class, n)
+			}
+		}
+		at.logWarnf("✕ armed %s %s leg %d NOT authored — %s: %v%s", plan.Session, sc.ID, li+1, class, err, shown)
+	}
+	return true
+}
+
 func armRefusalChanged(last *map[string]string, key, verdict string) bool {
 	if *last == nil {
 		*last = map[string]string{}
@@ -2442,12 +2484,18 @@ func (at *AutoTrader) armGateVerdictFor(sc kernel.PlanScenario, leg kernel.PlanA
 // It returns the two counts SEPARATELY — retired (never placed, so truthfully
 // terminal) and unsettled (held cancel_pending) — because a number that means
 // "we asked" must never be printed as "we did".
-func (at *AutoTrader) cancelArmedOrders(reason string) (retired, unsettled int) {
+//
+// pace (W1b FOLD-12, window_sweep_pace.go) is the window sweep's: a
+// cancel_pending row whose cancel was requested < 30 s ago is skipped — its
+// intent is already on record. Absent = every row, every call (unchanged).
+func (at *AutoTrader) cancelArmedOrders(reason string, pace ...*armedCancelPace) (retired, unsettled int) {
 	rows, err := at.store.ArmedOrders().ListNonTerminal(at.id)
 	if err != nil {
 		return 0, 0
 	}
-	now := time.Now().UnixMilli()
+	p := firstPace(pace)
+	p.prune(rows)
+	now := p.nowMs()
 	for _, r := range rows {
 		if r.TraderID != at.id {
 			continue
@@ -2462,7 +2510,11 @@ func (at *AutoTrader) cancelArmedOrders(reason string) (retired, unsettled int) 
 			}
 			continue
 		}
+		if p.paced(r) {
+			continue
+		}
 		if err := at.store.ArmedOrders().RequestCancel(r.ID, reason+" (no broker link — intent recorded, never settled)", now); err == nil {
+			p.sent(r.ID)
 			unsettled++
 			at.logWarnf("✕ armed cancel UNSETTLED %s %s signal=%s — no broker link; held cancel_pending, NOT cancelled: %s",
 				r.Scenario, r.PlanID, shortID(r.SignalID), reason)
@@ -2530,7 +2582,11 @@ func (at *AutoTrader) armedUpdateStream(nt *ntTrader.TCPTrader) <-chan ntwire.Or
 // cancelArmedOrdersSync cancels every non-terminal armed row for THIS trader
 // with ack-waited wire cancels (one retry per order). Returns the rows
 // cancelled and the rows whose ack never arrived (ledger flipped anyway).
-func (at *AutoTrader) cancelArmedOrdersSync(reason string) (n, unacked int) {
+//
+// pace (at most one) is the window sweep's alone (W1b FOLD-12,
+// window_sweep_pace.go) and is honoured on every branch below; the EOD flat,
+// session end, news and T1 enforce callers pass none and are unchanged.
+func (at *AutoTrader) cancelArmedOrdersSync(reason string, pace ...*armedCancelPace) (n, unacked int) {
 	if at.store == nil {
 		return 0, 0
 	}
@@ -2539,24 +2595,25 @@ func (at *AutoTrader) cancelArmedOrdersSync(reason string) (n, unacked int) {
 		if timeout <= 0 {
 			timeout = armedCancelAckTimeout()
 		}
-		return at.cancelArmedOrdersSyncWith(reason, timeout, s.Cancel, s.Stream)
+		return at.cancelArmedOrdersSyncWith(reason, timeout, s.Cancel, s.Stream, pace...)
 	}
 	nt := at.armedTrader()
 	if nt == nil {
 		// The unsettled rows are UNACKED, not cancelled — this used to return
 		// them in `n`, so the operator-facing flat line reported rows nothing
 		// had confirmed as "armed order(s) cancelled".
-		return at.cancelArmedOrders(reason)
+		return at.cancelArmedOrders(reason, pace...)
 	}
 	return at.cancelArmedOrdersSyncWith(reason, armedCancelAckTimeout(), nt.CancelOrder,
-		func() <-chan ntwire.OrderUpdatePayload { return at.armedUpdateStream(nt) })
+		func() <-chan ntwire.OrderUpdatePayload { return at.armedUpdateStream(nt) }, pace...)
 }
 
 // cancelArmedOrdersSyncWith is the pure body: per-row cancel + ack drain. Every
 // frame drained is applied through the SAME onArmedOrderUpdate the cycle
 // consumer uses, so no ledger state is lost and no second subscription is ever
-// made (a second subscribe would close the consumer's channel).
-func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Duration, cancelFn func(string) error, src func() <-chan ntwire.OrderUpdatePayload) (n, unacked int) {
+// made (a second subscribe would close the consumer's channel). pace: see
+// cancelArmedOrdersSync.
+func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Duration, cancelFn func(string) error, src func() <-chan ntwire.OrderUpdatePayload, pace ...*armedCancelPace) (n, unacked int) {
 	ledger := at.store.ArmedOrders()
 	if ledger == nil {
 		return 0, 0
@@ -2565,6 +2622,8 @@ func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Dura
 	if err != nil {
 		return 0, 0
 	}
+	p := firstPace(pace)
+	p.prune(rows)
 	// Rows that FILLED during the drain. Counted separately from `n` because a
 	// fill is not a cancel, and separately from `unacked` because the row is
 	// settled — just not the way the flatten wanted.
@@ -2598,6 +2657,11 @@ func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Dura
 			n++
 			continue
 		}
+		if p.paced(r) {
+			// W1b FOLD-12: the window sweep's cancel_pending row, requested
+			// < 30 s ago — no re-send, no block under armedPassMu, no count.
+			continue
+		}
 		if cancelFn == nil || src == nil {
 			// THE WIRE IS GONE, AND THE ROW IS AT THE BROKER.
 			//
@@ -2616,7 +2680,8 @@ func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Dura
 			// to declare the outcome. The row goes cancel_pending (non-terminal,
 			// so the slot stays taken and the settlement pass reconciles it) and
 			// is counted as UNACKED, which is what it is.
-			_ = ledger.RequestCancel(r.ID, reason+" (no broker link — intent recorded, never settled)", time.Now().UnixMilli())
+			_ = ledger.RequestCancel(r.ID, reason+" (no broker link — intent recorded, never settled)", p.nowMs())
+			p.sent(r.ID)
 			at.logWarnf("✕ armed cancel UNSENDABLE (%s): signal=%s — no broker link; row held cancel_pending, never promoted", reason, shortID(r.SignalID))
 			unacked++
 			continue
@@ -2650,6 +2715,7 @@ func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Dura
 				}
 			}
 		}
+		p.sent(r.ID) // the cancel went out (acked or not): the pace runs from here
 		// WHAT ACTUALLY HAPPENED TO THIS ROW — read, not inferred from a boolean.
 		//
 		// `acked` above means only "the row left the non-terminal set". EVERY
@@ -2689,7 +2755,7 @@ func (at *AutoTrader) cancelArmedOrdersSyncWith(reason string, timeout time.Dura
 			//
 			// This is the same ruling the no-broker-link branch above already
 			// follows — a missing answer records the INTENT, never the outcome.
-			_ = ledger.RequestCancel(r.ID, reason+" (ack timeout — unconfirmed, settlement pass owns it)", time.Now().UnixMilli())
+			_ = ledger.RequestCancel(r.ID, reason+" (ack timeout — unconfirmed, settlement pass owns it)", p.nowMs())
 			unacked++
 			at.logWarnf("⚠️ armed sync cancel UNACKED %s signal=%s after retry — held cancel_pending, NOT promoted; the flatten proceeds and the settlement pass will confirm or re-request",
 				r.Scenario, shortID(r.SignalID))

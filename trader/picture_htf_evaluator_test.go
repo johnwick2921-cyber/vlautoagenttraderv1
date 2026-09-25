@@ -362,7 +362,7 @@ func TestPictureHtfEvaluatorIgnoresUnfinalizedBars(t *testing.T) {
 	env.seed(pictureBars4H(), pictureBarsH1(), bars5m)
 	env.eval.OnBars("MNQ", "5m", tailOf(bars5m, 1), env.now)
 	res := env.eval.Evaluate("MNQ", env.now)
-	if res.Stage == "confirmed" || res.Stage == "submitted" {
+	if res.Stage == "confirmed" || res.Stage == "submitted" || res.Stage == pictureHtfSeamDoneStage {
 		t.Fatalf("a forming candle must never license an entry, got %+v", res)
 	}
 	if !strings.Contains(res.Reason, "awaiting the completed 5m close") {
