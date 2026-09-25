@@ -98,6 +98,11 @@ jobs:
 
       - name: Resolve the source sha (40 hex, READ)
         id: src
+        env:
+          # The tag input is USER-INFLUENCED: it rides env:, where bash reads
+          # it as DATA. Spliced raw into a run: body it would execute beside
+          # the signing key (PR B [11]).
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
           SHA="$(git rev-parse HEAD)"
@@ -107,7 +112,7 @@ jobs:
           # from, not the tag — 'gh release create dev --verify-tag' would be
           # the result. Take the input when dispatched, and refuse anything
           # that is not a v-tag either way.
-          REL_ID="${{ github.event.inputs.tag }}"
+          REL_ID="${TAG:-${GITHUB_REF_NAME}}"
           [ -n "$REL_ID" ] || REL_ID="${GITHUB_REF_NAME}"
           case "$REL_ID" in v*) : ;; *) echo "REFUSED: release id '$REL_ID' is not a v* tag"; exit 1 ;; esac
           echo "release_id=$REL_ID" >> "$GITHUB_OUTPUT"
@@ -182,6 +187,9 @@ jobs:
           # rollback. A pair it could not prove is carried as tested:false —
           # never omitted silently and never asserted true (R2).
           ROLLBACK_PAIRS: ${{ needs.dbcompat.outputs.rollback_pairs }}
+          # user-influenced value (the tag) travels via env:, never spliced
+          # into the run body (PR B [11]).
+          RELEASE_ID: ${{ steps.src.outputs.release_id }}
         run: |
           set -euo pipefail
           # WRITE OUTSIDE THE STAGE, MOVE IN AFTER ENUMERATION.
@@ -191,7 +199,7 @@ jobs:
           # refuses (correctly: an entry carrying the sha256 of the empty
           # string matches nothing that ships). Every tag failed on a guard
           # that was right. The guard stays; the caller is the bug.
-          bash deploy/release/manifest.sh /tmp/stage "${{ steps.src.outputs.sha }}" "${{ steps.src.outputs.release_id }}" > /tmp/manifest.json
+          bash deploy/release/manifest.sh /tmp/stage "${{ steps.src.outputs.sha }}" "$RELEASE_ID" > /tmp/manifest.json
           python3 -c "import json,sys; json.load(open('/tmp/manifest.json'))"
           mv /tmp/manifest.json /tmp/stage/manifest.json
 
@@ -214,18 +222,25 @@ jobs:
             -s /tmp/stage/manifest.json.sig < /tmp/stage/manifest.json
 
       - name: Archive, then scan the ARCHIVE too
+        env:
+          # user-influenced value (the tag) travels via env:, never spliced
+          # into the run body (PR B [11]).
+          RELEASE_ID: ${{ steps.src.outputs.release_id }}
         run: |
           set -euo pipefail
-          tar -C /tmp/stage -czf "/tmp/${{ steps.src.outputs.release_id }}.tar.gz" .
-          mkdir -p /tmp/verify && tar -C /tmp/verify -xzf "/tmp/${{ steps.src.outputs.release_id }}.tar.gz"
+          tar -C /tmp/stage -czf "/tmp/${RELEASE_ID}.tar.gz" .
+          mkdir -p /tmp/verify && tar -C /tmp/verify -xzf "/tmp/${RELEASE_ID}.tar.gz"
           bash deploy/release/secret-scan.sh /tmp/verify
 
       - name: Upload to the release
         env:
+          # user-influenced value (the tag) travels via env:, never spliced
+          # into the run body (PR B [11]).
+          RELEASE_ID: ${{ steps.src.outputs.release_id }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "${{ steps.src.outputs.release_id }}" \
+          gh release create "$RELEASE_ID" \
             --repo "$RELEASE_REPO" --verify-tag --notes-file docs/superpowers/plans/2026-09-22-one-button-m4-design-notes.md \
-            "/tmp/${{ steps.src.outputs.release_id }}.tar.gz" \
+            "/tmp/${RELEASE_ID}.tar.gz" \
             /tmp/stage/manifest.json /tmp/stage/manifest.json.sig

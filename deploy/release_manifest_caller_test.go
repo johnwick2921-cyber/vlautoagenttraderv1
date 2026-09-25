@@ -48,6 +48,9 @@ func TestTheWorkflowsOwnManifestCommandProducesAUsableManifest(t *testing.T) {
 
 	cmd := exec.Command("bash", "-c", line)
 	cmd.Dir = root
+	// PR B [11]: the workflow passes the user-influenced release_id via the
+	// step's env:, and so does this caller — the command reads "$RELEASE_ID".
+	cmd.Env = append(os.Environ(), "RELEASE_ID=v0.0.0-test")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("the workflow's own manifest command FAILED:\n  %s\n%s", line, out)
