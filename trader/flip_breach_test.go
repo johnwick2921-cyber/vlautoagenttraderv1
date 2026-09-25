@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -371,4 +372,116 @@ func maxHigh(bars []market.Kline, from time.Time) float64 {
 		}
 	}
 	return hi
+}
+
+// ── Skeptic F7 (2026-09-24): ONE folded doc for the flip evaluator, the wake
+// guard and the flip-window anchors. P2 folded describeActivePlanDeath onto
+// the folded doc; wakeDeferredByFlip, planChainFacts and the flip re-read's
+// old-bias kept reading the BASE line, so the two disagreed for every price
+// between an overlay-moved line and the base line.
+
+// flipMoveOverlay is the owner's two-op move (the fold re-validates: the
+// flip_condition prose must carry a number within 2 pts of the new line).
+func flipMoveOverlay(to float64) string {
+	return fmt.Sprintf(`[{"op":"replace","path":"/flip/price","value":%.2f},{"op":"replace","path":"/bias/flip_condition","value":"flips long on 2x5m above %.0f"}]`, to, to)
+}
+
+// f7FlipDoc is a fold-validatable variant of breachPlanDoc: the overlay
+// fold re-validates at the hard caps, so the base needs the fields the
+// validator demands (reasoning, death_condition, one valid scenario).
+func f7FlipDoc(t *testing.T, flip float64) string {
+	t.Helper()
+	doc := kernel.PlanDoc{
+		Reasoning:      "f7 fixture — flip line move",
+		Bias:           kernel.PlanBias{Direction: "short", FlipCondition: "flips long on 2x5m above 100"},
+		FlipStructured: &kernel.PlanCondition{Price: flip, Side: "above", Rule: "2x5m", FlipTo: "long"},
+		Levels:         []kernel.PlanLevel{{Price: 98, Label: "Supply·1h", Grade: "B", Instruction: "fade"}},
+		Scenarios:      []kernel.PlanScenario{{ID: "S1", Trigger: "retest 98", Condition: "reject", Direction: "short", TargetChain: []float64{95}, Invalid: "2x5m>104", Quality: "A"}},
+		DeathCondition: "acceptance above 110",
+	}
+	blob, _ := json.Marshal(doc)
+	return string(blob)
+}
+
+// (F7a) an owner overlay moves the flip line 100 → 103; the tape closes at
+// 101.5 (2 buckets) — the BASE line reads breached, the FOLDED line does not.
+// The guard must judge the folded line: no deferral. RED = base read → defer.
+func TestWakeDeferredByFlipJudgesTheFoldedLine(t *testing.T) {
+	resetFlipOnceKeys()
+	at, st, now := flipHoldTrader(t)
+	td := "2026-08-18"
+	row := appendVersion(t, st, at, td, "NY_scheduled_read", f7FlipDoc(t, 100), now.Add(-45*time.Minute))
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: row.PlanID, PlanVersion: row.Version, Origin: "owner", Patch: flipMoveOverlay(103)}); err != nil {
+		t.Fatal(err)
+	}
+	bars := flipHoldTape(now, 40, 10)
+	for i := len(bars) - 10; i < len(bars); i++ { // both 5m buckets close at 101.5
+		if i >= 0 {
+			bars[i].Open, bars[i].High, bars[i].Low, bars[i].Close = 101.5, 101.5, 101.5, 101.5
+		}
+	}
+	barsAt(bars)
+	if at.wakeDeferredByFlip(now, "NY", row) {
+		t.Fatalf("the guard must judge the FOLDED line 103 — 101.5 does not breach it, yet the wake was deferred (the base 100 is not the executor's line)")
+	}
+}
+
+// (F7b) the flip-window anchors read the folded line too: planChainFacts must
+// serve v1's flip price from the fold, not the base column. RED = base → 100.
+func TestPlanChainFactsSeesTheFoldedFlipLine(t *testing.T) {
+	resetFlipOnceKeys()
+	at, st, now := flipHoldTrader(t)
+	td := "2026-08-18"
+	row := appendVersion(t, st, at, td, "NY_scheduled_read", f7FlipDoc(t, 100), now.Add(-45*time.Minute))
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: row.PlanID, PlanVersion: row.Version, Origin: "owner", Patch: flipMoveOverlay(103)}); err != nil {
+		t.Fatal(err)
+	}
+	versions, _, _, ok := at.planChainFacts(row)
+	if !ok || len(versions) != 1 {
+		t.Fatalf("chain facts: ok=%v versions=%+v", ok, versions)
+	}
+	if versions[0].FlipPrice != 103 {
+		t.Fatalf("the window anchor must be the FOLDED line 103, got %.2f (base read)", versions[0].FlipPrice)
+	}
+}
+
+// (F7c) the flip re-read's PRIOR line names the FOLDED bias — the bias the
+// executor was trading after the overlay. RED = base parse → "bias long".
+func TestFlipRereadPriorNamesTheFoldedBias(t *testing.T) {
+	var prompts []string
+	at, st, client := realPathTrader(t, true, func(n int, user string) (string, error) {
+		prompts = append(prompts, user)
+		return validShortPlanJSON, nil
+	})
+	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
+	flipRereadTestNow(t, now)
+	td := "2026-08-18"
+	// f7FlipFixtureDoc: flipFixtureDoc + the fields the overlay fold's
+	// re-validation demands (reasoning, death_condition, a valid scenario).
+	ffd := flipFixtureDoc()
+	ffd.Reasoning = "f7 fixture"
+	ffd.DeathCondition = "acceptance above 15600"
+	ffd.Levels = []kernel.PlanLevel{{Price: 15480, Label: "PWL", Grade: "B", Instruction: "fade"}}
+	ffd.Scenarios = []kernel.PlanScenario{{ID: "S1", Trigger: "retest 15480", Condition: "reject", Direction: "long", TargetChain: []float64{15600}, Invalid: "2x5m<15470", Quality: "A"}}
+	row := seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), ffd)
+	// The owner overlay flips the bias long → short; the re-read's prior must
+	// name the folded bias.
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: row.PlanID, PlanVersion: row.Version, Origin: "owner", Patch: `[{"op":"replace","path":"/bias/direction","value":"short"}]`}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.Plan().UpdatePlanLifecycleIf(row.PlanID, row.Version, "active", "dormant", "dormant:flip:test"); err != nil {
+		t.Fatal(err)
+	}
+	row.Lifecycle = "dormant"
+	next := now.Add(time.Duration(store.DefaultWakeMinIntervalMin+1) * time.Minute)
+	seedFlipBars(15500, 15470, 6*time.Minute, next) // fresh at the read time, or preflight refuses
+	flipRereadTestNow(t, next)
+	at.maybeRereadAfterFlip(next, "NY", td, row, "test flip")
+	if !waitFor(t, 10*time.Second, func() bool { return client.calls() >= 1 }) {
+		t.Fatalf("the flip re-read never reached the client")
+	}
+	joined := strings.Join(prompts, "\n")
+	if !strings.Contains(joined, "PRIOR PLAN v1 bias short") {
+		t.Fatalf("the prior line must name the FOLDED bias; prompt:\n%s", joined)
+	}
 }

@@ -904,7 +904,11 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 	// goroutine below has seen a newer active version in the store.
 
 	oldBias, flipTo := "", kernel.FlipToDirection(killer)
-	if doc, derr := kernel.ParsePlanDoc(row.Doc); derr == nil {
+	// Skeptic F7: the flip re-read's prior line must name the bias the
+	// executor was actually trading — the FOLDED doc, the same resolution its
+	// sibling the death re-read (death_reread.go) uses. The base parse stays
+	// only as the unparseable-base fallback.
+	if doc, ok := resolveActivePlanDoc(at.store, row); ok {
 		oldBias = doc.Bias.Direction
 	} else {
 		// The prior is a live plan in prod; here, the bias is metadata — read it

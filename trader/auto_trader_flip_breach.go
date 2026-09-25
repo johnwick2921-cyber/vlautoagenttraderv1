@@ -1,7 +1,6 @@
 package trader
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -46,7 +45,17 @@ func (at *AutoTrader) planChainFacts(row *store.PlanDB) (versions []kernel.PlanV
 		if !f.CreatedAt.IsZero() {
 			ms = f.CreatedAt.UnixMilli()
 		}
-		versions = append(versions, kernel.PlanVersionFact{Version: f.Version, TriggerReason: f.TriggerReason, BiasDirection: f.BiasDirection, CreatedAtMs: ms, FlipPrice: f.FlipPrice, FlipSide: f.FlipSide})
+		// Skeptic F7: the flip-window anchors must see the FOLDED flip line —
+		// the evaluator judges the folded doc, and an owner overlay that moves
+		// the line must move the close-count window with it. The base column
+		// values are the fallback when the version's fold cannot be served.
+		fp, fs := f.FlipPrice, f.FlipSide
+		if ver, vErr := at.store.Plan().GetPlan(row.PlanID, f.Version); vErr == nil && ver != nil {
+			if fd, fOK := resolveActivePlanDoc(at.store, ver); fOK && fd.FlipStructured != nil && fd.FlipStructured.Price > 0 {
+				fp, fs = fd.FlipStructured.Price, fd.FlipStructured.Side
+			}
+		}
+		versions = append(versions, kernel.PlanVersionFact{Version: f.Version, TriggerReason: f.TriggerReason, BiasDirection: f.BiasDirection, CreatedAtMs: ms, FlipPrice: fp, FlipSide: fs})
 	}
 	if events, lErr := at.store.Plan().LifecycleLogForPlan(row.PlanID); lErr == nil {
 		for _, e := range events {
@@ -134,8 +143,13 @@ func (at *AutoTrader) wakeDeferredByFlip(now time.Time, session string, row *sto
 	if row == nil || row.Lifecycle != "active" || market.FuturesBarsProvider == nil {
 		return false
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil || doc.FlipStructured == nil || doc.FlipStructured.Price <= 0 {
+	// Skeptic F7 (2026-09-24): the evaluator (describeActivePlanDeath) reads
+	// the FOLDED doc since P2 — this guard must judge the SAME flip line, or
+	// the two disagree for every price between an overlay-moved line and the
+	// base line (wakes deferred forever, or authored during the evaluator's
+	// breach). One doc for all three.
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok || doc.FlipStructured == nil || doc.FlipStructured.Price <= 0 {
 		return false
 	}
 	bars := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval, kernel.AISVPBarCount)
