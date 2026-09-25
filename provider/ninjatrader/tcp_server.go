@@ -2178,8 +2178,8 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			}
 			s.histSubMu.RLock()
 			ch, ok := s.historyDataSubs[strings.TrimSpace(p.RequestID)]
-			s.histSubMu.RUnlock()
 			if !ok {
+				s.histSubMu.RUnlock()
 				s.logger.Warn("tcp_server: bars_history_data for unknown request id — dropped",
 					"request_id", p.RequestID, "contract", p.Contract, "bars", len(p.Bars))
 				continue
@@ -2190,6 +2190,10 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				s.logger.Warn("tcp_server: bars_history_data channel full — chunk dropped (importer too slow)",
 					"request_id", p.RequestID, "contract", p.Contract)
 			}
+			// F11 (port of #117 2f4db4f3): teardown closes the channel under the
+			// WRITE lock — hold the read lock through the nonblocking send so the
+			// channel cannot close between lookup and delivery.
+			s.histSubMu.RUnlock()
 
 		case FrameBarsHistoryError:
 			var p BarsHistoryErrorPayload
@@ -2199,8 +2203,8 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			}
 			s.histSubMu.RLock()
 			ch, ok := s.historyErrSubs[strings.TrimSpace(p.RequestID)]
-			s.histSubMu.RUnlock()
 			if !ok {
+				s.histSubMu.RUnlock()
 				s.logger.Warn("tcp_server: bars_history_error for unknown request id — dropped",
 					"request_id", p.RequestID, "contract", p.Contract, "reason", p.Reason)
 				continue
@@ -2209,6 +2213,9 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			case ch <- p:
 			default:
 			}
+			// F11: same lock-hold as the data branch — teardown closes under the
+			// write lock, so the send must stay inside the read lock.
+			s.histSubMu.RUnlock()
 
 		case FrameBarUpdate:
 			// Plan 4.4 Stage 2 — streaming updates. The bars array may
