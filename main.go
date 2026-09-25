@@ -754,15 +754,14 @@ func totalUnrecomputable(r store.BackfillResult) int {
 }
 
 // e8ScenarioDirection resolves the scenario's direction for the E8 short-row
-// backfill. WAVE 1a-plan P2: the backfill must read the ONE fold — the same
-// resolution the executor uses — so an owner overlay that flips a scenario's
-// direction is visible to the recompute. (Extracted from the inline closure at
-// main.go:402 so a main-package test can pin it at the production call site.)
-// e8ScenarioDirection is a HISTORICAL reader (CTO 03:31, 6th order): the
-// E8 backfill re-scores PAST short rows, so an overlay applied after the trade
-// closed must not change that trade's attribution — the BASE doc governs, and
-// overlays are deliberately invisible (the same rule as
-// trade_excursion_backfill.go:148 and expectancy/aggregate).
+// backfill. It reads the BASE doc's Direction directly — no fold, no overlay:
+// the recompute sees the scenario as authored. That is exactly what makes it a
+// HISTORICAL reader (CTO 03:31, 6th order): the E8 backfill re-scores PAST
+// short rows, so an overlay applied after the trade closed must not change
+// that trade's attribution — the BASE doc governs, and overlays are
+// deliberately invisible (the same rule as trade_excursion_backfill.go:148 and
+// expectancy/aggregate). (Extracted from the inline closure at main.go:402 so
+// a main-package test can pin it at the production call site.)
 func e8ScenarioDirection(st *store.Store, planID string, version int, scenario string) (string, bool) {
 	row, e := st.Plan().GetPlan(planID, version)
 	if e != nil || row == nil {
