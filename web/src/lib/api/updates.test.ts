@@ -107,8 +107,19 @@ describe('updatesApi shape pins', () => {
       },
     })
     const out = await updatesApi.updatesStatus()
-    expect(out?.enrolled).toBe(true)
-    expect(out?.install_enabled).toBe(false)
+    expect(out?.status?.enrolled).toBe(true)
+    expect(out?.status?.install_enabled).toBe(false)
+    expect(out?.statusCode).toBeUndefined()
+  })
+
+  it('a 403 refusal is carried as statusCode, not silently as null', async () => {
+    mocks.request.mockResolvedValue({
+      success: false,
+      statusCode: 403,
+    })
+    const out = await updatesApi.updatesStatus()
+    expect(out.status).toBeNull()
+    expect(out.statusCode).toBe(403)
   })
 
   it('POST /api/updates/check pins {checked, reason}', async () => {

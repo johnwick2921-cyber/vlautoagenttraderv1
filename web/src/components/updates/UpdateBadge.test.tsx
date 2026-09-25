@@ -77,9 +77,11 @@ describe('UpdateBadge (mounted)', () => {
 
   it('polls GET /api/updates and renders Blocked for the M3 payload', async () => {
     mocks.updatesStatus.mockResolvedValue({
-      enrolled: true,
-      manifest_verifier: 'stub',
-      install_enabled: false,
+      status: {
+        enrolled: true,
+        manifest_verifier: 'stub',
+        install_enabled: false,
+      },
     })
     render(<UpdateBadge />)
     await act(async () => {
@@ -108,6 +110,25 @@ describe('UpdateBadge (mounted)', () => {
       'unknown'
     )
     expect(screen.getByText('Unknown')).toBeTruthy()
+  })
+
+  it('backs off to 15 min after a 403 not-enrolled', async () => {
+    mocks.updatesStatus.mockResolvedValue({ status: null, statusCode: 403 })
+    render(<UpdateBadge />)
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(mocks.updatesStatus).toHaveBeenCalledTimes(1)
+    // NOT re-polled at the old 60 s cadence…
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000)
+    })
+    expect(mocks.updatesStatus).toHaveBeenCalledTimes(1)
+    // …but asked again after the 15 min backoff.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15 * 60_000)
+    })
+    expect(mocks.updatesStatus).toHaveBeenCalledTimes(2)
   })
 
   it('settles to Unknown even when the fetch hangs past the 10 s cap', async () => {

@@ -3,7 +3,11 @@
 // (the spinner exists only until the FIRST fetch settles, whichever way).
 
 import { useEffect, useRef, useState } from 'react'
-import { updatesApi, type UpdatesStatus } from '../../lib/api/updates'
+import {
+  updatesApi,
+  type UpdatesStatus,
+  type UpdatesStatusResult,
+} from '../../lib/api/updates'
 
 export type BadgeState =
   | 'up-to-date'
@@ -13,6 +17,10 @@ export type BadgeState =
   | 'unknown'
 
 const POLL_MS = 60_000
+// A 403 means the box is not enrolled: the refusal is logged server-side with
+// the exact text, and one WARN per poll must not become one per minute per tab
+// (finding [5]) — back off to 15 minutes.
+const BACKOFF_MS = 15 * 60_000
 
 /** Pure state mapping, pinned per state by its own test. A field the API does
  *  not affirm → unknown; the badge never derives an availability verdict. */
@@ -48,29 +56,35 @@ export function UpdateBadge() {
 
   useEffect(() => {
     let alive = true
+    let backingOff = false
     const fetchOnce = async () => {
       // A spinner that can hang forever is a checklist class: the first fetch
       // races a 10 s cap, so the badge settles to Unknown no matter what.
-      let s: UpdatesStatus | null = null
+      let r: UpdatesStatusResult | null = null
       try {
-        s = await Promise.race([
+        r = await Promise.race([
           updatesApi.updatesStatus(),
           new Promise<null>((resolve) =>
             window.setTimeout(() => resolve(null), 10_000)
           ),
         ])
       } catch {
-        s = null
+        r = null
       }
       if (!alive) return
-      setStatus(s)
+      if (r?.statusCode === 403) backingOff = true
+      setStatus(r?.status ?? null)
       setSettled(true)
     }
-    fetchOnce()
-    timer.current = window.setInterval(fetchOnce, POLL_MS)
+    const tick = async () => {
+      await fetchOnce()
+      if (!alive) return
+      timer.current = window.setTimeout(tick, backingOff ? BACKOFF_MS : POLL_MS)
+    }
+    tick()
     return () => {
       alive = false
-      if (timer.current !== null) window.clearInterval(timer.current)
+      if (timer.current !== null) window.clearTimeout(timer.current)
     }
   }, [])
 

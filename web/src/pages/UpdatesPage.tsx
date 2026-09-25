@@ -78,6 +78,7 @@ export default function UpdatesPage() {
   const [check, setCheck] = useState<UpdatesCheck | null>(null)
   const [checking, setChecking] = useState(false)
   const [installError, setInstallError] = useState<string | null>(null)
+  const [notEnrolled, setNotEnrolled] = useState(false)
   const [job, setJob] = useState<UpdateJobView | null>(null)
 
   // Panel E — the resolved PivotWindow (W1 effective settings), or null.
@@ -89,7 +90,7 @@ export default function UpdatesPage() {
   const [historyReply, setHistoryReply] = useState<string | null>(null)
 
   const poll = useCallback(async () => {
-    const [h, m, g, s] = await Promise.all([
+    const [h, m, g, sr] = await Promise.all([
       updatesApi.health(),
       updatesApi.maintenance(),
       updatesApi.installationGate(),
@@ -98,13 +99,29 @@ export default function UpdatesPage() {
     if (h) setHealth(h)
     if (m) setMaintenance(m)
     if (g) setGate(g)
-    if (s) setStatus(s)
+    if (sr.status) setStatus(sr.status)
+    return sr.statusCode
   }, [])
 
   useEffect(() => {
-    poll()
-    const id = window.setInterval(poll, POLL_MS)
-    return () => window.clearInterval(id)
+    let alive = true
+    let timer: number | null = null
+    const tick = async () => {
+      const code = await poll()
+      if (!alive) return
+      if (code === 403) {
+        // not-enrolled: the server refuses with its own text and logs a WARN
+        // per request — stop the page poll instead of 6 more per minute ([5]).
+        setNotEnrolled(true)
+        return
+      }
+      timer = window.setTimeout(tick, POLL_MS)
+    }
+    tick()
+    return () => {
+      alive = false
+      if (timer !== null) window.clearTimeout(timer)
+    }
   }, [poll])
 
   // Job fetch: only when the API names a job. Absent job = "no update job".
@@ -255,6 +272,11 @@ export default function UpdatesPage() {
 
   return (
     <div className="space-y-5" data-testid="updates-page">
+      {notEnrolled && (
+        <div className="rounded-lg border border-amber-600/40 bg-amber-500/10 px-4 py-2 text-xs text-amber-300">
+          {up('pollingStopped', language)}
+        </div>
+      )}
       {/* Panel A — Running now */}
       <Panel title={up('runningNow', language)}>
         <Row

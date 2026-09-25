@@ -9,6 +9,11 @@ type UpdatesKey = keyof typeof updatesStrings
 export const updatesStrings = {
   // page + panels
   pageTitle: { en: 'Updates', zh: '更新', id: 'Pembaruan' },
+  pollingStopped: {
+    en: 'Update surface not enrolled — polling stopped',
+    zh: '更新功能未登记 — 轮询已停止',
+    id: 'Permukaan pembaruan tidak terdaftar — polling dihentikan',
+  },
   runningNow: { en: 'Running now', zh: '当前运行', id: 'Sedang berjalan' },
   revision: { en: 'Revision', zh: '版本号', id: 'Revisi' },
   guideRev: { en: 'Guide rev', zh: '指南版本', id: 'Revisi panduan' },

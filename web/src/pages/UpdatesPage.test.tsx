@@ -3,7 +3,7 @@
 // button disabled with its exact text while the review is open.
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 const mocks = vi.hoisted(() => ({
   health: vi.fn(),
@@ -84,9 +84,11 @@ beforeEach(() => {
     note: 'every leg must pass',
   })
   mocks.updatesStatus.mockResolvedValue({
-    enrolled: true,
-    manifest_verifier: 'stub',
-    install_enabled: false,
+    status: {
+      enrolled: true,
+      manifest_verifier: 'stub',
+      install_enabled: false,
+    },
   })
   mocks.getTraders.mockResolvedValue([])
   mocks.getExchangeConfigs.mockResolvedValue([])
@@ -125,11 +127,35 @@ describe('UpdatesPage', () => {
     expect(mocks.install).not.toHaveBeenCalled()
   })
 
+  it('stops the page poll after a 403 not-enrolled', async () => {
+    vi.useFakeTimers()
+    try {
+      mocks.updatesStatus.mockResolvedValue({ status: null, statusCode: 403 })
+      render(<UpdatesPage />)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+      expect(mocks.updatesStatus).toHaveBeenCalledTimes(1)
+      expect(
+        screen.getByText('Update surface not enrolled — polling stopped')
+      ).toBeTruthy()
+      // the 10 s cadence must NOT keep firing: 30 s later, still one call
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30_000)
+      })
+      expect(mocks.updatesStatus).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('button shows Blocked when the API says install_enabled=false', async () => {
     mocks.updatesStatus.mockResolvedValue({
-      enrolled: true,
-      manifest_verifier: 'stub',
-      install_enabled: false,
+      status: {
+        enrolled: true,
+        manifest_verifier: 'stub',
+        install_enabled: false,
+      },
     })
     render(<UpdatesPage />)
     await waitFor(() => expect(screen.getByText('Blocked')).toBeTruthy())

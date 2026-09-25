@@ -13,6 +13,13 @@ import { API_BASE, httpClient } from './helpers'
 // against api.UpdateHeader).
 const UPDATE_HEADERS = { 'X-NOFX-Update': '1' }
 
+/** The updatesStatus answer plus the HTTP code, so callers can tell a 403
+ *  not-enrolled refusal (back off, stop polling) from any other failure. */
+export interface UpdatesStatusResult {
+  status: UpdatesStatus | null
+  statusCode?: number
+}
+
 // ── GET /api/maintenance (trader/maintenance_status.go MaintenanceStatusView) ──
 export interface MaintenanceAckView {
   received: string
@@ -150,12 +157,17 @@ export const updatesApi = {
     return res.success && res.data ? res.data : null
   },
 
-  async updatesStatus(silent = true): Promise<UpdatesStatus | null> {
+  async updatesStatus(silent = true): Promise<UpdatesStatusResult> {
     const res = await httpClient.request<UpdatesStatus>(`${API_BASE}/updates`, {
       headers: UPDATE_HEADERS,
       silent,
     })
-    return res.success && res.data ? res.data : null
+    // statusCode is undefined on success and carries the refusal code (403
+    // not-enrolled) on failure — the badge/page backoff hangs off it ([5]).
+    return {
+      status: res.success && res.data ? res.data : null,
+      statusCode: res.statusCode,
+    }
   },
 
   async check(): Promise<UpdatesCheck | null> {
