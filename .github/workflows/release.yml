@@ -213,6 +213,10 @@ jobs:
           # requires, and a 0644 key file is refused outright.
           printf '%s\n' "$RELEASE_SIGNING_KEY" > /tmp/sign.key
           chmod 600 /tmp/sign.key
+          # A FAILED sign must never leave the key on the runner: the trap
+          # shreds it on every exit path (set -e included), not just the
+          # success line below (PR B [30]).
+          trap 'shred -u /tmp/sign.key 2>/dev/null || true' EXIT
           ssh-keygen -Y sign -f /tmp/sign.key -n release /tmp/stage/manifest.json
           shred -u /tmp/sign.key
           # Verify with the COMMITTED public key, so a signature that the
