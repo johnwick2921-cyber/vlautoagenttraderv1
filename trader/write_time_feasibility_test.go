@@ -204,13 +204,16 @@ func TestWriteTimeFeasibilityLastAttemptDisablesArm(t *testing.T) {
 	}
 }
 
-// TestWriteTimeFeasibilityTargetAtEntryDisablesArm (CTO pin request,
-// 2026-09-24 15:33): a target AT the arm entry composes R:R = 0 — the side
-// check may stay strict (< / >) precisely because the arm seam / entry-gate
-// floor (armMinRRFor) refuses R=0 downstream. Pin: the write lands with the
-// arm DISABLED, reason "rr". RED: neutering the floor (armMinRRFor → 0) leaves
-// the R=0 arm enabled and this pin fails.
-func TestWriteTimeFeasibilityTargetAtEntryDisablesArm(t *testing.T) {
+// TestTargetAtArmEntryRefusedByStrictArmGeometry (CTO pin request,
+// 2026-09-24 15:33; renamed skeptic F2 — its old name asserted the opposite
+// of its body): a target AT the arm entry composes R:R = 0. The refusal this
+// pin proves is the PARSE-TIME strict arm geometry — armPricesValid
+// (kernel/plan_doc.go:288-290) requires stop < entry < target — which fails
+// the whole plan closed to no_trade BEFORE any R:R floor (armMinRRFor) is
+// ever read. That is the downstream guard that lets the P5 side check stay
+// strict. RED: relaxing the geometry comparator ('< target' → '<= target')
+// lets the R=0 arm parse and this pin fails.
+func TestTargetAtArmEntryRefusedByStrictArmGeometry(t *testing.T) {
 	at := feasPlannerTrader(t, nil)
 	feasStubBars(t)
 	zero := strings.ReplaceAll(infeasibleFeasPlanJSON, `"target":15620`, `"target":15550`)
