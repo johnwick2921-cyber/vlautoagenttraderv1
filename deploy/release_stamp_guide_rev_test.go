@@ -48,6 +48,9 @@ func TestStampGuideRevIsDeletedAndNeverRerouted(t *testing.T) {
 		if strings.HasPrefix(ln, allowedPrefix) {
 			continue // historical archive, not an operator route
 		}
+		if strings.Contains(ln, "release_stamp_guide_rev_test.go:") {
+			continue // this test's own contract prose, not a live route
+		}
 		t.Fatalf("a live reference to the deleted stamp script remains:\n  %s", ln)
 	}
 

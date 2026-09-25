@@ -170,15 +170,16 @@ go version -m ./nofx-bin.next | grep -E 'vcs.revision|vcs.modified'
 #   expect: vcs.revision=<dev sha>   vcs.modified=false
 ```
 
-### 3.5 The Guide rev — stamp AFTER the binary, BEFORE `npm run build`
+### 3.5 The Guide rev — stamp at BUILD time
 
-`web/scripts/stamp-guide-rev.sh` reads the revision from a **running** binary via `/api/health`,
-because the banner compares against `kernel.RunningRevision()` — a **12-char** short rev. A
-hand-typed 40-char sha can never match, which is how the drift banner once got stuck on.
+The guide's drift check compares the build-time constant against what the running
+binary reports. The stamp is a BUILD INPUT now, never a post-boot rewrite: the
+guide is built with `VITE_GUIDE_BUILT_REV` (a 40-hex sha — the release gate
+refuses anything else), never hand-typed. (The old post-boot stamp script was
+deleted 2026-09-24 — it reported a stamp while changing nothing, PR B fold [27].)
 
 ```bash
-web/scripts/stamp-guide-rev.sh http://127.0.0.1:8080/api/health   # default URL, arg optional
-cd web && npm ci && npm run build && cd ..
+cd web && npm ci && VITE_GUIDE_BUILT_REV=$(git rev-parse HEAD) npm run build && cd ..
 ```
 
 **Ordering matters and is the usual mistake:** binary first → stamp from the *old* running bot only
