@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -448,9 +449,14 @@ func TestPlanChainFactsSeesTheFoldedFlipLine(t *testing.T) {
 // (F7c) the flip re-read's PRIOR line names the FOLDED bias — the bias the
 // executor was trading after the overlay. RED = base parse → "bias long".
 func TestFlipRereadPriorNamesTheFoldedBias(t *testing.T) {
-	var prompts []string
+	var (
+		mu      sync.Mutex
+		prompts []string
+	)
 	at, st, client := realPathTrader(t, true, func(n int, user string) (string, error) {
+		mu.Lock()
 		prompts = append(prompts, user)
+		mu.Unlock()
 		return validShortPlanJSON, nil
 	})
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
@@ -477,10 +483,13 @@ func TestFlipRereadPriorNamesTheFoldedBias(t *testing.T) {
 	seedFlipBars(15500, 15470, 6*time.Minute, next) // fresh at the read time, or preflight refuses
 	flipRereadTestNow(t, next)
 	at.maybeRereadAfterFlip(next, "NY", td, row, "test flip")
+	defer drainReReads(t) // CTO gate (2026-09-24): join the reread goroutine before the seam resets
 	if !waitFor(t, 10*time.Second, func() bool { return client.calls() >= 1 }) {
 		t.Fatalf("the flip re-read never reached the client")
 	}
+	mu.Lock()
 	joined := strings.Join(prompts, "\n")
+	mu.Unlock()
 	if !strings.Contains(joined, "PRIOR PLAN v1 bias short") {
 		t.Fatalf("the prior line must name the FOLDED bias; prompt:\n%s", joined)
 	}
