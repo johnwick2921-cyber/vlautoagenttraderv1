@@ -9,7 +9,7 @@
   "deploy/systemd-user/nofx-backup.timer": "8dcd448bd0d302f51bd808d2b20fc19989883cd38c0352a5c93a450bbc229dc4",
   "deploy/systemd-user/nofx-clock-guard.service": "d4311e270a9fdefeda15bdfc2214e2b69161217dc33229110d64d3e91677095a",
   "deploy/systemd-user/nofx-clock-guard.timer": "a0c9c3c03d9546a76a2f7edba8ad3abb2e769b6893d8a80cea439f0da50bcfc9",
-  "go.mod": "a9f0a7ba1bfec59210f2000c623199edbab74b91c848dc538e123f1db00a35a3",
+  "go.mod": "d60ef734365523c2fe45a432da51f625bc0f7f33c933ff141e96ea48dcb17030",
   "logger/logger.go": "2e799bce8b1718cbecc4974b9c1c8746bf10525872a2b641338547e1e5965998",
   "ninjascript/VLTraderTCPClient.cs": "2ce9019fc5bbaff18332f2e813bdb2209317c909b6094b3bdecd2e7154e5b7eb",
   "provider/ninjatrader/tcp_framing.go": "5c5a015c455e4fca274f52f2f12f8cbbab4e9648d78ce8e4f52937c4e53e8191",

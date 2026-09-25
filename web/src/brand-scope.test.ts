@@ -61,6 +61,17 @@
 // compiler (the partner mirror). Nothing removed or bumped: modernc.org/sqlite
 // stays v1.40.0, libc stays v1.66.10, gorm.io/driver/sqlite stays v1.6.0. The
 // Go security guard the pin protects (patched toolchain/deps) is intact.
+// go.mod baseline advanced 2026-09-25 for WAVE 117 PR-I (fix/w117-i-deps,
+// CTO-dispatched dependency-security fold, CTO ruling on F33):
+//   golang.org/x/crypto v0.53.0 -> v0.55.0 — the highest 1.25-compatible
+//     (v0.56.0 declares go 1.26.0; the toolchain wave owns the remainder).
+//     Clears GO-2026-6303; GO-2026-6354/6355 remain, unreachable per
+//     govulncheck; GO-2026-5932 has no fix.
+//   github.com/consensys/gnark-crypto v0.19.0 -> v0.19.2 (patched).
+//   tidy's x/net v0.56.0 -> v0.57.0, x/text v0.39.0 -> v0.41.0,
+//     x/sync v0.21.0 -> v0.22.0, x/sys v0.46.0 -> v0.47.0.
+// The go directive is BYTE-UNTOUCHED: `go 1.25.13` stays (CTO §1(a): a
+// go 1.26.0 directive is a separate owner-visible toolchain wave).
 // tcp_server.go baseline advanced 2026-09-21 for W-PICTURE-HTF (owner GO,
 // merged 23050993): the baseline hash was last pinned at 42c35e2d (the picture
 // branch's own 5/6 commit); the merged-HEAD delta vs that pin is EXACTLY the
