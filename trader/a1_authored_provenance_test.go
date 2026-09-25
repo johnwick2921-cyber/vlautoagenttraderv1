@@ -78,4 +78,27 @@ func TestA1AuthoredEntryZoneAdmitsNullWidthMapLines(t *testing.T) {
 		}
 		t.Logf("%s: ADMITTED stop_source=%s stop=%.2f target=%.2f", id, r.StopSource, *r.Stop, *r.Target)
 	}
+
+	// CTO A1 fold 1 — WIDTH: a 60-pt authored zone on the same PDC line must
+	// stay refused (day_plan.zone_max_pts shipped default 10.0), on EVERY
+	// path — the authored band may not become frozen geometry past the cap.
+	var wide kernel.PlanDoc
+	if err := json.Unmarshal(b, &wide); err != nil {
+		t.Fatal(err)
+	}
+	for i := range wide.Scenarios {
+		if wide.Scenarios[i].ID == "S2" && wide.Scenarios[i].Economics != nil {
+			wide.Scenarios[i].Economics.EntryZone = []float64{30626.5, 30686.5} // 60 pts
+		}
+	}
+	for _, s := range wide.Scenarios {
+		if s.ID != "S2" {
+			continue
+		}
+		rw := ComposeLevelFadeGeometryWith(&wide, s, kernel.PlanArmLeg{Entry: s.Arm.Entry}, policy, 20, 0.25, 2, true)
+		if rw.Reason == "" {
+			t.Fatalf("a 60-pt authored zone (zone_max_pts=10) must stay REFUSED, got admit: %+v", rw)
+		}
+		t.Logf("S2 60-pt zone refused: %s (%s)", rw.Reason, rw.Detail)
+	}
 }

@@ -192,6 +192,14 @@ func authoredEntryZoneBand(sc kernel.PlanScenario, z kernel.LevelZone) (*kernel.
 	if !geometryFinite(lo) || !geometryFinite(hi) || lo <= 0 || hi <= lo || z.Anchor < lo || z.Anchor > hi {
 		return nil, "", false
 	}
+	// WIDTH cap (CTO A1 fold 1): the authored band must fit the resolved
+	// day_plan.zone_max_pts. This helper has no config handle, so it applies
+	// the SHIPPED default (10.0) fail-closed — a saved override can only make
+	// the downstream ZoneTooWide check stricter, never looser than this cap.
+	// A 60-pt authored zone on PDC stays refused.
+	if hi-lo > store.ZoneMaxPtsDefault+1e-9 {
+		return nil, "", false
+	}
 	band := z
 	band.Lo, band.Hi = &lo, &hi
 	band.Incomplete = false
