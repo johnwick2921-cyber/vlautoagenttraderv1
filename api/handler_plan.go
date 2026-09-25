@@ -96,35 +96,43 @@ func maxI(a, b int) int {
 // /risk/errors) carry no trader_id and pass through unchanged.
 func (s *Server) planTraderOwnership() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		p := c.FullPath()
-		if !strings.HasPrefix(p, "/api/plan/") && !strings.HasPrefix(p, "/api/risk/") {
-			c.Next()
-			return
+		// F16 (WAVE 117 PR-D, ports #117 576bd75b) — every trader selector an
+		// authenticated request can carry is checked: the query, a body-carried
+		// trader_id (POST/PUT/PATCH/DELETE) AND the /api/traders/:id path id.
+		// Checking only the query lets a second selector name a different
+		// owner's trader, and prefix-gating to plan/risk left every other
+		// protected route (?trader_id= on desk/accounts/ai-costs/audit/…)
+		// without the gate. Requests without any selector pass through —
+		// the handler's own scope/validation governs.
+		traderIDs := append([]string(nil), c.QueryArray("trader_id")...)
+		if strings.HasPrefix(c.FullPath(), "/api/traders/:id") {
+			traderIDs = append(traderIDs, c.Param("id"))
 		}
-		traderID := strings.TrimSpace(c.Query("trader_id"))
-		// Body-carried trader_id (POST/PUT handlers accept it as an alternative
-		// to the query) is probed WITHOUT consuming the body: the bytes are read
-		// and restored so the handler's ShouldBindJSON still sees them.
-		if traderID == "" && c.Request != nil && c.Request.Body != nil &&
-			(c.Request.Method == "POST" || c.Request.Method == "PUT") {
+		// Body-carried trader_id is probed WITHOUT consuming the body: the
+		// bytes are read and restored so the handler's ShouldBindJSON still
+		// sees them.
+		if c.Request != nil && c.Request.Body != nil &&
+			(c.Request.Method == "POST" || c.Request.Method == "PUT" ||
+				c.Request.Method == "PATCH" || c.Request.Method == "DELETE") {
 			if raw, err := io.ReadAll(c.Request.Body); err == nil {
 				c.Request.Body = io.NopCloser(bytes.NewReader(raw))
 				var probe struct {
 					TraderID string `json:"trader_id"`
 				}
 				if json.Unmarshal(raw, &probe) == nil {
-					traderID = strings.TrimSpace(probe.TraderID)
+					traderIDs = append(traderIDs, probe.TraderID)
 				}
 			}
 		}
-		if traderID == "" {
-			c.Next() // the handler's own "trader_id is required" governs
-			return
-		}
-		if !s.traderOwnedBy(c.GetString("user_id"), traderID) {
-			SafeNotFound(c, "Trader")
-			c.Abort()
-			return
+		for _, traderID := range traderIDs {
+			if strings.TrimSpace(traderID) == "" {
+				continue
+			}
+			if !s.traderOwnedBy(c.GetString("user_id"), traderID) {
+				SafeNotFound(c, "Trader")
+				c.Abort()
+				return
+			}
 		}
 		c.Next()
 	}
