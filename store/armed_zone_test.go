@@ -186,6 +186,11 @@ func TestArmedZoneReArmPinnedWithinVersion(t *testing.T) {
 			rows[1].EvalPrice != nil || rows[1].PlacedAtMs != nil {
 			t.Fatalf("%s: a new version must mint ONE fresh armed placement with no inherited receipts: %+v", ending.reason, rows)
 		}
+		// F23 (port of #117 12b2b33c): the successor is a NEW authorization
+		// by THIS process — its provenance must be re-stamped, never inherited.
+		if rows[1].BootID != ProcessBootID() || rows[1].ArmedUnderVersion != 4 {
+			t.Fatalf("%s: successor lost authorization provenance: boot=%q armed_under=%d", ending.reason, rows[1].BootID, rows[1].ArmedUnderVersion)
+		}
 	}
 	// A legacy row keeps today's D5 mint (the pin is policy-only).
 	st := NewArmedOrderStore(newArmedTestDB(t))

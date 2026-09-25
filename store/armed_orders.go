@@ -416,6 +416,12 @@ func (s *ArmedOrderStore) UpsertArm(row *ArmedOrderDB) error {
 			row.EvalPrice, row.EvalBarMs, row.PlacedAtMs = nil, nil, nil
 			row.FilledAtMs, row.FillSlippageTicks = nil, nil
 			row.LastVerdict, row.LastVerdictMs = "", nil
+			// F23 (port of #117 12b2b33c): this successor is a NEW
+			// authorization by THIS process — stamp the boot and the armed-under
+			// version before the early create, or the row reads as an orphan of
+			// a dead process.
+			row.BootID = ProcessBootID()
+			row.ArmedUnderVersion = row.Version
 			return s.db.Create(row).Error
 		}
 		if existing.State == "armed" {
