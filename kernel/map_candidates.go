@@ -54,6 +54,12 @@ const (
 // MapCandidate is ONE reference on the map after overlapping references merge.
 // It is a view built at render time from []ScoredLevel and is never stored on
 // a ScoredLevel.
+// PlannerArmMinRR is the prompt's own feasibility contract (the FEASIBILITY
+// CONTRACT prose at planner_prompt.go) — the minimum R:R every arm must clear.
+// The candidate table's min_tgt column is computed from THIS constant, the
+// same number the prose names, never a second source (canon 28).
+const PlannerArmMinRR = 2.0
+
 type MapCandidate struct {
 	ID       *string   `json:"id"`
 	Identity PlanLevel `json:"identity"`
@@ -84,6 +90,12 @@ type MapCandidate struct {
 	// candidacy was refused, and says why in words the card can print.
 	EntryCandidate bool
 	RefusedReason  string
+	// MinTargetPts is the A2 column: the minimum target DISTANCE from the
+	// level at PlannerArmMinRR, computed from the executor's own min-SL floor
+	// (MinSLATRMult()×ATR5m) — a fade at this level needs its target at least
+	// this far past the entry to clear the R:R floor. Zero when uncomputed
+	// (no ATR), and the renderer then omits the column (canon 49).
+	MinTargetPts float64
 	// Projection marks a reference PROJECTED beyond the mapped range (D5).
 	// A projection is a target or an obstacle and is NEVER an entry candidate.
 	Projection       bool
@@ -373,9 +385,13 @@ func renderMapBlock(cs []MapCandidate, price float64, showID bool, shortlist ...
 			}
 			fmt.Fprintf(&b, "  id=%s", id)
 		}
-		fmt.Fprintf(&b, "  %-9s %-44s %s  %-16s %s%s pt / %s ATR%s\n",
+		minTgt := ""
+		if c.MinTargetPts > 0 {
+			minTgt = fmt.Sprintf("  min_tgt≥%spts", trimFloat(c.MinTargetPts))
+		}
+		fmt.Fprintf(&b, "  %-9s %-44s %s  %-16s %s%s pt / %s ATR%s%s\n",
 			trimFloat(c.Price), names, grade, c.Role,
-			sign, trimFloat(math.Abs(c.Distance)), c.DistanceATRLabel(), tail)
+			sign, trimFloat(math.Abs(c.Distance)), c.DistanceATRLabel(), tail, minTgt)
 	}
 	if len(shortlist) > 0 && !shortlist[0] {
 		return b.String()
