@@ -11,9 +11,14 @@ import (
 // builder; trader/auto_trader_planner.go fills the three PlannerInput fields
 // from the store resolvers).
 
-// LEGACY byte-identity: "legacy" renders the pre-W3 prompt exactly — the
-// golden is the knob_prune planner prompt as it stood at the W3 base
-// (e74fce17), copied before any W3 prompt edit.
+// LEGACY byte-identity: "legacy" renders the pre-W3 prompt byte-identically
+// EXCEPT the F6 path_levels contract fix (a6a47385) — the golden is the
+// knob_prune planner prompt as it stood at the W3 base (e74fce17), re-blessed
+// only on F6's two lines: line 49 (the scenario schema example gains F6's
+// anchor-rule insert: sweep_level_id states the two legs are TWO DIFFERENT
+// levels) and line 57 (the Rules line's path_levels example moves from the
+// price-less {level, role} shape to the priced {price, level, level_id} shape
+// the obstacle-chain validator reads). Every other line is the W3 base.
 func TestW3PlannerPromptLegacyPolicyByteIdentical(t *testing.T) {
 	want, err := os.ReadFile("testdata/knob_prune/planner_prompt_legacy_policy.txt")
 	if err != nil {
@@ -21,7 +26,7 @@ func TestW3PlannerPromptLegacyPolicyByteIdentical(t *testing.T) {
 	}
 	got := BuildPlannerPrompt(PlannerInput{MaxLevels: 8, ScenarioCap: 3, EntryPolicyDefault: EntryPolicyDefaultLegacy})
 	if got != string(want) {
-		t.Fatalf("entry_policy_default=legacy must render the pre-W3 prompt byte-identically:\n%s", firstDiff(string(want), got))
+		t.Fatalf("entry_policy_default=legacy must render byte-identically to pre-W3 except the F6 path_levels contract fix (a6a47385, lines 49 + 57):\n%s", firstDiff(string(want), got))
 	}
 }
 
