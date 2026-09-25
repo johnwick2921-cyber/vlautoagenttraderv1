@@ -317,3 +317,52 @@ func TestMachineScenariosPreservedSemanticCompare(t *testing.T) {
 		t.Fatal("a changed evidence value MUST be refused")
 	}
 }
+
+// TestOwnerOverlayFoldPreservesMachineRunEpoch (skeptic F1, 2026-09-24) —
+// P1's machine run_epoch is int64 UnixNano (~1.79e18, above float64's 2^53
+// exactness). ApplyPatchStrict's plain interface{} decode rounded it to the
+// nearest ~128ns on re-marshal, so EVERY fold after an owner edit served the
+// ROUNDED epoch and the placement gate refused the recorded Picture entry
+// with the false reason 'recorded by a previous run (reload)'. Pin: the fold
+// serves the epoch byte-exact, and the same fold's D18 guard accepts the
+// owner edit. RED = drop UseNumber (decode through plain interface{}).
+func TestOwnerOverlayFoldPreservesMachineRunEpoch(t *testing.T) {
+	const recorded int64 = 1790208803235123457 // odd, > 2^53
+	sc := pictureScenarioFixture("P1", "opp-epoch")
+	sc.Machine.RunEpoch = recorded
+	doc := selfCheckPlanDoc()
+	doc.Scenarios = append(doc.Scenarios, sc)
+	base := planJSON(t, doc)
+
+	got, err := ResolvePlanFinal(base, []OverlayRef{
+		{Version: 1, Origin: "owner", Patch: `[{"op":"replace","path":"/reasoning","value":"owner note"}]`},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.UserApplied) != 1 {
+		t.Fatalf("the owner edit must be accepted, applied = %v (fold err %v)", got.UserApplied, got.FoldErr)
+	}
+	var folded *PlanScenario
+	for i := range got.Doc.Scenarios {
+		if got.Doc.Scenarios[i].ID == "P1" {
+			folded = &got.Doc.Scenarios[i]
+			break
+		}
+	}
+	if folded == nil || folded.Machine == nil {
+		t.Fatalf("P1 lost from the folded doc: %s", planJSON(t, got.Doc))
+	}
+	if folded.Machine.RunEpoch != recorded {
+		t.Fatalf("folded run_epoch = %d, want the recorded %d (a rounded epoch reads as a previous run)", folded.Machine.RunEpoch, recorded)
+	}
+	// The same fold feeds MachineScenariosPreserved (the D18 semantic guard):
+	// the owner edit must NOT be refused as an alteration of the machine record.
+	var before PlanDoc
+	if err := json.Unmarshal(base, &before); err != nil {
+		t.Fatal(err)
+	}
+	if err := MachineScenariosPreserved(before, got.Doc); err != nil {
+		t.Fatalf("owner edit read as a machine alteration: %v", err)
+	}
+}

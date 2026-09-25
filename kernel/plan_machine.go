@@ -1,6 +1,7 @@
 package kernel
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -280,10 +281,16 @@ func ValidateMachineScenario(doc PlanDoc, sc PlanScenario) error {
 // semantic comparison: the same values in any key order serialize to the same
 // bytes (encoding/json sorts map keys), so an edit that only re-orders the
 // evidence JSON is not read as an alteration.
+// UseNumber (2026-09-24, skeptic F1): the machine run_epoch is an int64
+// UnixNano above 2^53 — a plain interface{} decode rounds it, so a compare
+// through the same float64 lens could not see an epoch that changed by less
+// than ~128ns. The decoded values are json.Number, preserving the literal.
 func canonicalScenarioJSON(s PlanScenario) string {
 	b, _ := json.Marshal(s)
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.UseNumber()
 	var v any
-	if json.Unmarshal(b, &v) != nil {
+	if dec.Decode(&v) != nil {
 		return string(b) // unreachable for a marshal of our own struct
 	}
 	c, _ := json.Marshal(v)
