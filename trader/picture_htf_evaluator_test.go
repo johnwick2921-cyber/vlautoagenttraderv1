@@ -235,7 +235,10 @@ func TestPictureHtfEvaluatorSubmitsOnceAndAdmits(t *testing.T) {
 }
 
 func TestPictureHtfEvaluatorLateFrameExpires(t *testing.T) {
-	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	// FreshnessSec is EXPLICIT here: this pin tests the expiry mechanism at a
+	// tight knob, not the shipped default (that is pinned in
+	// store/picture_defaults_test.go and the boot-line test).
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5, FreshnessSec: 2})
 	env.seedPictureTape()
 	// The freshest 5m frame is 5s old — outside the 2s freshness limit.
 	env.eval.OnBars("MNQ", "5m", tailOf(market.FuturesBarsProvider("MNQ", "5m", 28), 1), env.now.Add(-5*time.Second))
@@ -249,7 +252,9 @@ func TestPictureHtfEvaluatorLateFrameExpires(t *testing.T) {
 }
 
 func TestPictureHtfEvaluatorPastWindowExpires(t *testing.T) {
-	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5})
+	// EntryWindowSec is EXPLICIT here: this pin tests the window mechanism at a
+	// tight knob, not the shipped default (pinned separately).
+	env := newPictureHtfEnv(t, store.PictureHtfConfig{Enabled: true, MinRR: 2.5, EntryWindowSec: 10})
 	env.seedPictureTape()
 	// 30s into the interval — outside the 10s entry window.
 	env.eval.OnBars("MNQ", "5m", tailOf(market.FuturesBarsProvider("MNQ", "5m", 28), 1), env.now)
