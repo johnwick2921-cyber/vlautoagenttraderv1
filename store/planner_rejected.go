@@ -25,8 +25,12 @@ type PlannerRejectedPrompt struct {
 	// (ValidatePlanDocWithFactsMachine, fvg, breakdown_continue) needs the same
 	// price/PDH/PDL/DATR the live call saw, and those are exactly the
 	// validators that reject real plans. Empty on rows written before this.
-	Facts     string    `gorm:"type:text"`
-	CreatedAt time.Time `gorm:"index"`
+	Facts string `gorm:"type:text"`
+	// ResponseText (WAVE PLANNER B2 follow-up, 2026-09-25) — the AI's RAW
+	// answer the validator refused, so a future replay can re-check the SAME
+	// text the live attempt produced. Empty on rows written before this.
+	ResponseText string    `gorm:"type:text"`
+	CreatedAt    time.Time `gorm:"index"`
 }
 
 // TableName is explicit so the cap-trim SQL never guesses.
@@ -58,13 +62,13 @@ const plannerRejectedCap = 200
 // SaveRejectedPrompt persists one rejected attempt's verbatim prompt + reason,
 // trimming the store to the newest plannerRejectedCap rows.
 func (s *PlannerRejectedStore) SaveRejectedPrompt(traderID, tradeDate, session, hash string, attempt int, reason, promptText string) error {
-	return s.SaveRejectedPromptWithFacts(traderID, tradeDate, session, hash, attempt, reason, promptText, "")
+	return s.SaveRejectedPromptWithFacts(traderID, tradeDate, session, hash, attempt, reason, promptText, "", "")
 }
 
 // SaveRejectedPromptWithFacts (B-1) is SaveRejectedPrompt plus the facts
 // snapshot the attempt was validated against, so an offline A/B can run the
 // FULL validator chain rather than the schema gate alone.
-func (s *PlannerRejectedStore) SaveRejectedPromptWithFacts(traderID, tradeDate, session, hash string, attempt int, reason, promptText, factsJSON string) error {
+func (s *PlannerRejectedStore) SaveRejectedPromptWithFacts(traderID, tradeDate, session, hash string, attempt int, reason, promptText, responseText, factsJSON string) error {
 	if s == nil || s.db == nil {
 		return nil
 	}
@@ -77,6 +81,7 @@ func (s *PlannerRejectedStore) SaveRejectedPromptWithFacts(traderID, tradeDate, 
 		Attempt:      attempt,
 		RejectReason: reason,
 		PromptText:   promptText,
+		ResponseText: responseText,
 		CreatedAt:    time.Now().UTC(),
 	}
 	if err := s.db.Create(row).Error; err != nil {

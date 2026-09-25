@@ -79,8 +79,13 @@ func main() {
 	fmt.Printf("  since   : %s (the current build's boot, UTC)\n", since.UTC().Format(time.RFC3339))
 	fmt.Printf("  base    : %s (validator surface identical at head by the lane's report)\n", *base)
 	fmt.Printf("  head    : %s\n", *head)
-	fmt.Println("  NOTE    : zone_max_pts = 0 (uncapped) — the strategy config is not in the replay.")
-	fmt.Println("  NOTE    : AI responses are NOT stored — plans only. Geometry rr/net needs live ATR + stop policy — listed, not re-judged.")
+	fmt.Println("  NOTE    : zone_max_pts = 10 (the SHIPPED default, ResolveZoneMaxPts) — the replay")
+	fmt.Println("            has no strategy config, so a strategy-saved value is NOT applied; LIVE passes")
+	fmt.Println("            the resolved knob (default 10 [I], store/resolve_source.go:ZoneMaxPtsDefault).")
+	fmt.Println("            kernel.ArmZoneVerdict skips the width check only when maxWidthPts <= 0 —")
+	fmt.Println("            the live write site (trader/write_time_feasibility.go:308) never passes 0.")
+	fmt.Println("  NOTE    : AI responses ARE stored for NEW rejected rows (response_text, B2 follow-up);")
+	fmt.Println("            the historical rows 339..370 were written before the column and have none.")
 	fmt.Println()
 
 	db, err := sql.Open("sqlite", "file:"+*dbPath+"?mode=ro&_pragma=busy_timeout(5000)")
@@ -91,9 +96,11 @@ func main() {
 	defer db.Close()
 
 	// ── Part 1: the rejected-prompt rows 339..370 ─────────────────────────
+	hasResponse := rejectedTableHasResponse(db)
 	rejected := loadRejected(db)
 	classOf := classifyRejected(rejected)
 	printRejectedTable(rejected, classOf)
+	recheckResponses(db, hasResponse)
 
 	// ── Part 2: every plan version since the boot ─────────────────────────
 	rows := loadPlans(db)
@@ -181,6 +188,75 @@ func loadRejected(db *sql.DB) []rejectedRow {
 		out = append(out, r)
 	}
 	return out
+}
+
+// rejectedTableHasResponse reports whether the store carries the response_text
+// column (the B2 follow-up migration). On a pre-migration DB the column is
+// absent and the re-check is stated as unavailable, never fabricated.
+func rejectedTableHasResponse(db *sql.DB) bool {
+	rows, err := db.Query(`PRAGMA table_info(planner_rejected_prompts)`)
+	if err != nil {
+		return false
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt any
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return false
+		}
+		if name == "response_text" {
+			return true
+		}
+	}
+	return false
+}
+
+// recheckResponses runs each stored RAW answer through the same write-time
+// predicates and prints per-attempt verdicts — the "future replays re-check
+// the same text" leg of the B2 follow-up.
+func recheckResponses(db *sql.DB, hasResponse bool) {
+	if !hasResponse {
+		fmt.Println("── STORED RESPONSES ── none: this DB predates the response_text column (historical rows have no raw answer) ──")
+		return
+	}
+	rows, err := db.Query(`SELECT id, session, attempt, reject_reason, response_text
+		FROM planner_rejected_prompts WHERE id BETWEEN 339 AND 370 AND response_text <> '' ORDER BY id`)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "responses query: %v\n", err)
+		os.Exit(2)
+	}
+	defer rows.Close()
+	fmt.Println("── STORED RESPONSES (raw answers re-run through the write-time predicates) ──")
+	n := 0
+	for rows.Next() {
+		var id int64
+		var session string
+		var attempt int
+		var reason, raw string
+		if err := rows.Scan(&id, &session, &attempt, &reason, &raw); err != nil {
+			fmt.Fprintf(os.Stderr, "responses scan: %v\n", err)
+			os.Exit(2)
+		}
+		n++
+		fmt.Printf("rejected id %d attempt %d: stored reason %q\n", id, attempt, reason)
+		d, perr := kernel.ParsePlanDocCapped(raw, 12, 5)
+		if perr != nil {
+			fmt.Printf("  recheck: parse_fail — %s\n", perr.Error())
+			continue
+		}
+		refs := replayPlan(planRow{RowID: -id, PlanID: fmt.Sprintf("rejected-%d", id), Session: session, Lifecycle: "rejected"}, d)
+		if len(refs) == 0 {
+			fmt.Println("  recheck: PASSES every replayed predicate")
+			continue
+		}
+		for _, ref := range refs {
+			fmt.Printf("  recheck: rule=%s scenario=%s detail=%s\n", ref.Rule, ref.Scenario, ref.Detail)
+		}
+	}
+	fmt.Printf("responses re-checked: %d\n", n)
 }
 
 func loadPlans(db *sql.DB) []planRow {
@@ -294,7 +370,7 @@ func replayPlan(r planRow, d *kernel.PlanDoc) []refusal {
 				legs = []kernel.PlanArmLeg{{Entry: arm.Entry, Stop: arm.Stop, Target: arm.Target}}
 			}
 			for _, leg := range legs {
-				zv := kernel.ArmZoneVerdict(sc, leg.Entry, leg.Stop, leg.Target, sc.Direction, 0.25, 0)
+				zv := kernel.ArmZoneVerdict(sc, leg.Entry, leg.Stop, leg.Target, sc.Direction, 0.25, 10) // the shipped zone_max_pts default — stated above
 				if zv.Code != "" {
 					add("W3_zone_"+zv.Code, "A2", sc.ID, zv.Code)
 				}
