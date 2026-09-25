@@ -334,6 +334,9 @@ func (w *dupWire) link(at *AutoTrader) *dupLink {
 	s := ntwire.NewTCPServer(nil)
 	s.SetAddrForTest("127.0.0.1:0")
 	s.SetAccountsList([]ntwire.AccountInfo{{Name: "Sim101", IsSim: true}}, "Sim101")
+	// W117-F F7: the bound account's balance frame must be present, exactly as
+	// the live AddOn streams it on connect — GetBalance refuses without one.
+	s.SeedAccountBalanceForTest("Sim101", ntwire.AccountBalancePayload{Account: "Sim101", NetLiquidation: 100000, CashValue: 100000, BuyingPower: 100000})
 	ctx, cancel := context.WithCancel(context.Background())
 	if err := s.Start(ctx); err != nil {
 		t.Fatal(err)
