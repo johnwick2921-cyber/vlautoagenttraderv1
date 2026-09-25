@@ -45,11 +45,13 @@ repository, in a log, or on a developer machine.
 
 ## Known limit
 
-The content pass skips files ≥ 2 MB — in practice the binary — because scanning
+The content pass skips files ≥ 4 MB — in practice the binary — because scanning
 it byte-wise on every release buys little against a deny-list that already
-refuses the shapes secrets arrive in. `gitleaks` covers what the content pass
-skips, and in CI gitleaks is **required** (`GITLEAKS_REQUIRED=1`), so the gap
-exists only in a local run, where the NOTE says so.
+refuses the shapes secrets arrive in. The bound is what the code enforces
+(`find -size -5M`, i.e. ≤ 4 MiB after find's round-up) and covers the shipped JS
+bundle. `gitleaks` covers what the content pass skips, and in CI gitleaks is
+**required** (`GITLEAKS_REQUIRED=1`), so the gap exists only in a local run,
+where the NOTE says so.
 
 ## Open owner decision
 

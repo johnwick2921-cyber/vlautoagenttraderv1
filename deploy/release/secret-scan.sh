@@ -57,7 +57,7 @@ while IFS= read -r -d '' abs; do
     echo "secret-scan: REFUSED — secret-shaped content in: $rel"
     found=1
   fi
-done < <(find "$ROOT" -type f -size -2M -print0)
+done < <(find "$ROOT" -type f -size -5M -print0)
 
 if command -v gitleaks >/dev/null 2>&1; then
   if ! gitleaks detect --no-git --source "$ROOT" --redact --exit-code 1 >/dev/null 2>&1; then
