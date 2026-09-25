@@ -1,0 +1,6 @@
+package main
+import("encoding/json";"os";"time";"nofx/kernel";"nofx/market")
+func main(){loc,_:=time.LoadLocation("America/Chicago");var out []map[string]any
+for _,minute:=range []int{17,18,19,20,21,22,23}{now:=time.Date(2026,9,8,17,minute,13,0,loc);base:=now.Add(-22*time.Minute);var bars []market.Kline
+for i:=0;i<20;i++{ct:=base.Add(time.Duration(i)*time.Minute);b:=market.Kline{OpenTime:ct.UnixMilli(),CloseTime:ct.Add(time.Minute).UnixMilli()};if i==0{b.Open=30048;b.High=30052;b.Low=30046;b.Close=30049}else{px:=30050+8+float64(i);b.Open=px-1;b.High=px+2;b.Low=px-3;b.Close=px};bars=append(bars,b)}
+d:=kernel.DailyRangeProxy(bars,now);price:=bars[19].Close;a:=kernel.ActivePlanLevels([]kernel.PlanLevel{{Price:30050,Label:"nPOC·Tue",Grade:"A"}},price,d,kernel.ActivationWindowK);out=append(out,map[string]any{"now_ct":now.Format(time.RFC3339),"bars_n":len(bars),"range_proxy":d,"activation_k":kernel.ActivationWindowK,"band":d*kernel.ActivationWindowK,"distance":price-30050,"active_levels_n":len(a)})};json.NewEncoder(os.Stdout).Encode(out)}

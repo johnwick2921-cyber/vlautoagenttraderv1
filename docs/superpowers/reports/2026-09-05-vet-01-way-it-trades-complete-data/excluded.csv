@@ -1,0 +1,14 @@
+id,reasons,pnl_corrected
+530,sentinel plan,13.0
+539,sentinel plan,-84.5
+545,sentinel plan,-29.5
+546,sentinel plan,-88.5
+566,sentinel plan,97.0
+571,sentinel plan,-44.5
+572,test seam; null corrected P&L,
+573,test seam; sentinel plan,6.0
+574,test seam; sentinel plan,-1.0
+576,null corrected P&L,
+577,null corrected P&L,
+579,null corrected P&L,
+580,sentinel plan,39.5

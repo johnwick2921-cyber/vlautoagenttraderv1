@@ -1,0 +1,4233 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_source": "July10@7a8adce0 Understand Anything; NOT current or type-resolved",
+  "historical_nodes": [
+    {
+      "id": "file:agent/memory.go",
+      "type": "file",
+      "name": "memory.go",
+      "filePath": "agent/memory.go",
+      "summary": "Conversation memory layer that compresses chat history into a persistent TaskState via LLM summarization, with incremental updates, token estimation and open-loop filtering to keep the agent context small.",
+      "tags": [
+        "memory",
+        "summarization",
+        "llm",
+        "context-compression",
+        "tested"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:agent/memory.go:TaskState",
+      "type": "class",
+      "name": "TaskState",
+      "filePath": "agent/memory.go",
+      "lineRange": [
+        30,
+        39
+      ],
+      "summary": "Persistent structured summary of the user's ongoing tasks (goals, open loops, key facts) used as compressed long-term conversational memory.",
+      "tags": [
+        "data-model",
+        "memory",
+        "summarization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/memory.go:maybeCompressHistory",
+      "type": "function",
+      "name": "maybeCompressHistory",
+      "filePath": "agent/memory.go",
+      "lineRange": [
+        276,
+        307
+      ],
+      "summary": "Compresses older chat history into the TaskState summary when the short-term token estimate exceeds the threshold.",
+      "tags": [
+        "context-compression",
+        "memory",
+        "llm"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/memory.go:summarizeConversationToTaskState",
+      "type": "function",
+      "name": "summarizeConversationToTaskState",
+      "filePath": "agent/memory.go",
+      "lineRange": [
+        335,
+        389
+      ],
+      "summary": "LLM call that folds an old conversation slice into an updated TaskState JSON summary.",
+      "tags": [
+        "summarization",
+        "llm",
+        "memory"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/memory.go:buildTaskStateContext",
+      "type": "function",
+      "name": "buildTaskStateContext",
+      "filePath": "agent/memory.go",
+      "lineRange": [
+        207,
+        248
+      ],
+      "summary": "Renders the stored TaskState into a prompt-ready context block for the agent's system prompt.",
+      "tags": [
+        "prompt-building",
+        "memory",
+        "formatting"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:agent/skill_execution_handlers.go",
+      "type": "file",
+      "name": "skill_execution_handlers.go",
+      "filePath": "agent/skill_execution_handlers.go",
+      "summary": "Synchronous execution handlers for the four management skills (trader, exchange, model, strategy): parse user text into typed patches, apply and persist config updates, run bulk deletes, and collect and format trader-diagnosis evidence with LLM reasoning.",
+      "tags": [
+        "skills",
+        "command-execution",
+        "nlp-parsing",
+        "agent-core",
+        "tested"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_execution_handlers.go:executeTraderManagementAction",
+      "type": "function",
+      "name": "executeTraderManagementAction",
+      "filePath": "agent/skill_execution_handlers.go",
+      "lineRange": [
+        1466,
+        1799
+      ],
+      "summary": "End-to-end trader management executor: create/update/start/stop/bind traders from parsed user text with confirmation and validation.",
+      "tags": [
+        "trader",
+        "command-execution",
+        "skills"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_execution_handlers.go:executeExchangeManagementAction",
+      "type": "function",
+      "name": "executeExchangeManagementAction",
+      "filePath": "agent/skill_execution_handlers.go",
+      "lineRange": [
+        1902,
+        2086
+      ],
+      "summary": "Applies exchange-config management actions (create, update keys, enable/disable, delete) parsed from user text.",
+      "tags": [
+        "exchange",
+        "command-execution",
+        "skills"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_execution_handlers.go:executeModelManagementAction",
+      "type": "function",
+      "name": "executeModelManagementAction",
+      "filePath": "agent/skill_execution_handlers.go",
+      "lineRange": [
+        2088,
+        2256
+      ],
+      "summary": "Applies AI-model management actions (create, update API keys/URLs, enable/disable, delete) parsed from user text.",
+      "tags": [
+        "ai-model",
+        "command-execution",
+        "skills"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_execution_handlers.go:executeStrategyManagementAction",
+      "type": "function",
+      "name": "executeStrategyManagementAction",
+      "filePath": "agent/skill_execution_handlers.go",
+      "lineRange": [
+        2258,
+        2473
+      ],
+      "summary": "Applies strategy management actions (create, activate, update config/prompt, delete) parsed from user text, including pending-update confirmation flows.",
+      "tags": [
+        "strategy",
+        "command-execution",
+        "skills"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_execution_handlers.go:applyStrategyConfigPatch",
+      "type": "function",
+      "name": "applyStrategyConfigPatch",
+      "filePath": "agent/skill_execution_handlers.go",
+      "lineRange": [
+        830,
+        1072
+      ],
+      "summary": "Applies a single parsed field/value patch onto a StrategyConfig, handling every supported config field with validation and clamping.",
+      "tags": [
+        "strategy",
+        "config",
+        "validation"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_execution_handlers.go:executeBulkTraderDelete",
+      "type": "function",
+      "name": "executeBulkTraderDelete",
+      "filePath": "agent/skill_execution_handlers.go",
+      "lineRange": [
+        1801,
+        1900
+      ],
+      "summary": "Deletes all of a user's traders after explicit confirmation, reporting per-trader results.",
+      "tags": [
+        "trader",
+        "bulk-operation",
+        "skills"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_execution_handlers.go:formatTraderDiagnosisEvidence",
+      "type": "function",
+      "name": "formatTraderDiagnosisEvidence",
+      "filePath": "agent/skill_execution_handlers.go",
+      "lineRange": [
+        2941,
+        3060
+      ],
+      "summary": "Formats collected trader-diagnosis evidence (decisions, balances, positions, errors) into a localized report for the user.",
+      "tags": [
+        "formatting",
+        "diagnostics",
+        "i18n"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:agent/entity_field_catalog.go",
+      "type": "file",
+      "name": "entity_field_catalog.go",
+      "filePath": "agent/entity_field_catalog.go",
+      "summary": "Static catalogs of editable/updatable fields for trader, model, and exchange entities, with bilingual keyword synonyms used for intent matching and capability filtering in the conversational agent.",
+      "tags": [
+        "catalog",
+        "metadata",
+        "agent",
+        "field-mapping"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:agent/i18n.go",
+      "type": "file",
+      "name": "i18n.go",
+      "filePath": "agent/i18n.go",
+      "summary": "Bilingual (Chinese/English) message catalog and lookup helper for NOFXi user-facing responses such as help, status, and trader-related texts.",
+      "tags": [
+        "i18n",
+        "localization",
+        "agent",
+        "messages"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/i18n.go:msg",
+      "type": "function",
+      "name": "msg",
+      "filePath": "agent/i18n.go",
+      "lineRange": [
+        78,
+        88
+      ],
+      "summary": "Looks up a message key in the bilingual catalog for the given language, falling back to English and then the key itself.",
+      "tags": [
+        "i18n",
+        "localization",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:agent/model_provider_catalog.go",
+      "type": "file",
+      "name": "model_provider_catalog.go",
+      "filePath": "agent/model_provider_catalog.go",
+      "summary": "Catalog of supported AI model providers (DeepSeek, Qwen, OpenAI, Claude, Gemini, Grok, Kimi, MiniMax, Claw402) with default models, credential labels, and step-by-step bilingual setup and credential guidance used by the agent's model-configuration skill.",
+      "tags": [
+        "catalog",
+        "ai-models",
+        "agent",
+        "guidance",
+        "tested"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/model_provider_catalog.go:supportedModelProviders",
+      "type": "function",
+      "name": "supportedModelProviders",
+      "filePath": "agent/model_provider_catalog.go",
+      "lineRange": [
+        21,
+        64
+      ],
+      "summary": "Returns the full ordered list of supported AI model provider specs \u2014 DeepSeek, Qwen, OpenAI, Claude, Gemini, Grok, Kimi, MiniMax, Claw402 \u2014 with default models and capability flags.",
+      "tags": [
+        "catalog",
+        "ai-models",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/model_provider_catalog.go:defaultModelConfigName",
+      "type": "function",
+      "name": "defaultModelConfigName",
+      "filePath": "agent/model_provider_catalog.go",
+      "lineRange": [
+        93,
+        103
+      ],
+      "summary": "Derives the default display/config name for a provider's model configuration.",
+      "tags": [
+        "catalog",
+        "ai-models",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/model_provider_catalog.go:modelProviderCredentialLabel",
+      "type": "function",
+      "name": "modelProviderCredentialLabel",
+      "filePath": "agent/model_provider_catalog.go",
+      "lineRange": [
+        115,
+        127
+      ],
+      "summary": "Returns the localized credential label (API key vs wallet credential) for a provider.",
+      "tags": [
+        "i18n",
+        "catalog",
+        "ai-models"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/model_provider_catalog.go:modelProviderSummaryList",
+      "type": "function",
+      "name": "modelProviderSummaryList",
+      "filePath": "agent/model_provider_catalog.go",
+      "lineRange": [
+        129,
+        150
+      ],
+      "summary": "Renders a numbered bilingual summary list of providers for the model-selection prompt, flagging recommendations.",
+      "tags": [
+        "prompt-engineering",
+        "catalog",
+        "i18n"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/model_provider_catalog.go:modelProviderDetailedGuidance",
+      "type": "function",
+      "name": "modelProviderDetailedGuidance",
+      "filePath": "agent/model_provider_catalog.go",
+      "lineRange": [
+        159,
+        212
+      ],
+      "summary": "Returns step-by-step bilingual setup guidance \u2014 where to get API keys, base URLs, and model names \u2014 for a specific provider.",
+      "tags": [
+        "guidance",
+        "catalog",
+        "i18n"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/model_provider_catalog.go:modelProviderCredentialGuidance",
+      "type": "function",
+      "name": "modelProviderCredentialGuidance",
+      "filePath": "agent/model_provider_catalog.go",
+      "lineRange": [
+        214,
+        242
+      ],
+      "summary": "Returns bilingual guidance for entering provider credentials, including the Claw402 config-page wallet flow.",
+      "tags": [
+        "guidance",
+        "catalog",
+        "i18n"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:agent/preferences.go",
+      "type": "file",
+      "name": "preferences.go",
+      "filePath": "agent/preferences.go",
+      "summary": "Persistent per-user preference storage: durable user instructions with a 500-character limit, CRUD operations over the config store, FNV-hash session-to-user key mapping, and prompt-context rendering.",
+      "tags": [
+        "preferences",
+        "persistence",
+        "agent",
+        "user-settings",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:agent/preferences.go:PersistentPreference",
+      "type": "class",
+      "name": "PersistentPreference",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        15,
+        19
+      ],
+      "summary": "A durable user instruction (ID, text, created-at) shown in the UI and injected into the agent context for future conversations.",
+      "tags": [
+        "data-model",
+        "preferences",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:NewPersistentPreference",
+      "type": "function",
+      "name": "NewPersistentPreference",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        21,
+        36
+      ],
+      "summary": "Validates and constructs a PersistentPreference with a timestamp-derived ID, enforcing the 500-character limit.",
+      "tags": [
+        "factory",
+        "validation",
+        "preferences"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:SessionUserIDFromKey",
+      "type": "function",
+      "name": "SessionUserIDFromKey",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        40,
+        51
+      ],
+      "summary": "Maps a session key string to a stable numeric user ID via FNV hashing.",
+      "tags": [
+        "utility",
+        "preferences",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:getPersistentPreferences",
+      "type": "function",
+      "name": "getPersistentPreferences",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        57,
+        73
+      ],
+      "summary": "Loads the user's persistent preferences list from the config store.",
+      "tags": [
+        "persistence",
+        "preferences",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:savePersistentPreferences",
+      "type": "function",
+      "name": "savePersistentPreferences",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        75,
+        84
+      ],
+      "summary": "Persists the preferences list as JSON in the config store.",
+      "tags": [
+        "persistence",
+        "preferences",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:addPersistentPreference",
+      "type": "function",
+      "name": "addPersistentPreference",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        86,
+        100
+      ],
+      "summary": "Validates and appends a new preference, persisting the updated list.",
+      "tags": [
+        "preferences",
+        "persistence",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:updatePersistentPreference",
+      "type": "function",
+      "name": "updatePersistentPreference",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        102,
+        120
+      ],
+      "summary": "Updates an existing preference's text by ID and persists the list.",
+      "tags": [
+        "preferences",
+        "persistence",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:deletePersistentPreference",
+      "type": "function",
+      "name": "deletePersistentPreference",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        122,
+        147
+      ],
+      "summary": "Deletes a preference by ID (or index fallback) and persists the remaining list.",
+      "tags": [
+        "preferences",
+        "persistence",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/preferences.go:buildPersistentPreferencesContext",
+      "type": "function",
+      "name": "buildPersistentPreferencesContext",
+      "filePath": "agent/preferences.go",
+      "lineRange": [
+        149,
+        166
+      ],
+      "summary": "Renders stored preferences as a numbered prompt-context block injected into the agent system prompt.",
+      "tags": [
+        "context-building",
+        "prompt-engineering",
+        "preferences"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:agent/sentinel.go",
+      "type": "file",
+      "name": "sentinel.go",
+      "filePath": "agent/sentinel.go",
+      "summary": "Market sentinel that scans a mutable watchlist and emits price-breakout, volume-spike, and funding-rate Signals through a callback (consumed by Brain) for proactive alerts.",
+      "tags": [
+        "monitoring",
+        "market-signals",
+        "agent",
+        "watchlist"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:agent/sentinel.go:Signal",
+      "type": "class",
+      "name": "Signal",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        24,
+        32
+      ],
+      "summary": "A market alert (type, symbol, severity, title, detail, price, change) delivered to the signal callback.",
+      "tags": [
+        "data-model",
+        "market-signals",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:agent/sentinel.go:Sentinel",
+      "type": "class",
+      "name": "Sentinel",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        36,
+        45
+      ],
+      "summary": "Watchlist scanner that polls market data per symbol and emits price-breakout, volume-spike, and funding-rate signals via a SignalCallback.",
+      "tags": [
+        "monitoring",
+        "market-signals",
+        "agent"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/sentinel.go:NewSentinel",
+      "type": "function",
+      "name": "NewSentinel",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        53,
+        62
+      ],
+      "summary": "Constructs a Sentinel with initial symbols, signal callback, and logger.",
+      "tags": [
+        "factory",
+        "monitoring",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/sentinel.go:Start",
+      "type": "function",
+      "name": "Start",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        64,
+        78
+      ],
+      "summary": "Launches the periodic watchlist scan loop in a safe named goroutine.",
+      "tags": [
+        "background-worker",
+        "monitoring",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/sentinel.go:AddSymbol",
+      "type": "function",
+      "name": "AddSymbol",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        89,
+        98
+      ],
+      "summary": "Adds a symbol to the watchlist if not already present, returning whether it was added.",
+      "tags": [
+        "watchlist",
+        "monitoring",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/sentinel.go:RemoveSymbol",
+      "type": "function",
+      "name": "RemoveSymbol",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        99,
+        108
+      ],
+      "summary": "Removes a symbol from the watchlist, returning whether it was present.",
+      "tags": [
+        "watchlist",
+        "monitoring",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/sentinel.go:FormatWatchlist",
+      "type": "function",
+      "name": "FormatWatchlist",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        110,
+        134
+      ],
+      "summary": "Renders the current watchlist with latest cached prices for user display.",
+      "tags": [
+        "watchlist",
+        "formatting",
+        "agent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/sentinel.go:check",
+      "type": "function",
+      "name": "check",
+      "filePath": "agent/sentinel.go",
+      "lineRange": [
+        146,
+        215
+      ],
+      "summary": "Fetches ticker data for one symbol (256KB read limit) and evaluates price-breakout, volume-spike, and funding-rate thresholds, emitting signals.",
+      "tags": [
+        "market-signals",
+        "monitoring",
+        "agent"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:agent/skill_dag_runtime.go",
+      "type": "file",
+      "name": "skill_dag_runtime.go",
+      "filePath": "agent/skill_dag_runtime.go",
+      "summary": "Runtime cursor over a skill DAG: resolves the session's current step from the _dag_step field, sets/clears it, and advances to the next step.",
+      "tags": [
+        "workflow",
+        "dag",
+        "agent",
+        "state-machine",
+        "tested"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_dag_runtime.go:currentSkillDAGStep",
+      "type": "function",
+      "name": "currentSkillDAGStep",
+      "filePath": "agent/skill_dag_runtime.go",
+      "lineRange": [
+        5,
+        20
+      ],
+      "summary": "Resolves the session's current DAG step from the _dag_step field, defaulting to the first step of the skill's DAG.",
+      "tags": [
+        "workflow",
+        "dag",
+        "state-machine"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_dag_runtime.go:advanceSkillDAGStep",
+      "type": "function",
+      "name": "advanceSkillDAGStep",
+      "filePath": "agent/skill_dag_runtime.go",
+      "lineRange": [
+        38,
+        50
+      ],
+      "summary": "Advances the session's DAG cursor to the next step of the current step, clearing it at terminal steps.",
+      "tags": [
+        "workflow",
+        "dag",
+        "state-machine"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:agent/skill_registry.go",
+      "type": "file",
+      "name": "skill_registry.go",
+      "filePath": "agent/skill_registry.go",
+      "summary": "Loads embedded JSON skill definitions into a global registry at init and generates the prompt-context summaries (routing, definitions, dependencies, action contracts, field knowledge, forbidden behaviors) that teach the NOFXi agent LLM how each skill must be invoked.",
+      "tags": [
+        "skill-system",
+        "registry",
+        "prompt-engineering",
+        "agent",
+        "singleton",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Uses go:embed skill JSON files plus a sync.Map cache for expensive prompt-context strings."
+    },
+    {
+      "id": "class:agent/skill_registry.go:SkillDefinition",
+      "type": "class",
+      "name": "SkillDefinition",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        15,
+        28
+      ],
+      "summary": "Declarative skill definition loaded from embedded JSON: intents, capabilities, actions, tool mapping, field constraints, and validation rules.",
+      "tags": [
+        "skill-system",
+        "data-model",
+        "schema"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:agent/skill_registry.go:SkillFieldConstraint",
+      "type": "class",
+      "name": "SkillFieldConstraint",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        30,
+        43
+      ],
+      "summary": "Per-field constraint metadata (type, required, allowed values, aliases, bounds, HTTPS/pattern rules) used for slot validation and prompt field knowledge.",
+      "tags": [
+        "skill-system",
+        "validation",
+        "data-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:agent/skill_registry.go:SkillActionDefinition",
+      "type": "class",
+      "name": "SkillActionDefinition",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        45,
+        54
+      ],
+      "summary": "Describes one skill action: required/optional slots, confirmation requirement, goal, dynamic rules, and success/failure output templates.",
+      "tags": [
+        "skill-system",
+        "data-model",
+        "action"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:loadSkillRegistry",
+      "type": "function",
+      "name": "loadSkillRegistry",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        67,
+        93
+      ],
+      "summary": "Reads the embedded skills/*.json definitions, normalizes each, and returns the name-keyed registry map.",
+      "tags": [
+        "registry",
+        "initialization",
+        "skill-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:normalizeSkillDefinition",
+      "type": "function",
+      "name": "normalizeSkillDefinition",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        95,
+        177
+      ],
+      "summary": "Normalizes a parsed skill definition, applying defaults and canonical forms to fields, actions, and constraints before registry insertion.",
+      "tags": [
+        "normalization",
+        "skill-system",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildSkillRoutingSummary",
+      "type": "function",
+      "name": "buildSkillRoutingSummary",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        193,
+        221
+      ],
+      "summary": "Builds the localized routing summary listing each skill and its intents for the router prompt.",
+      "tags": [
+        "prompt-engineering",
+        "routing",
+        "skill-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildSkillDefinitionSummary",
+      "type": "function",
+      "name": "buildSkillDefinitionSummary",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        223,
+        269
+      ],
+      "summary": "Renders a localized per-skill definition summary (description, capabilities, actions) for prompt context.",
+      "tags": [
+        "prompt-engineering",
+        "skill-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildSkillDependencySummary",
+      "type": "function",
+      "name": "buildSkillDependencySummary",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        280,
+        299
+      ],
+      "summary": "Summarizes cross-skill dependencies relevant to the current session for the prompt.",
+      "tags": [
+        "prompt-engineering",
+        "skill-system",
+        "session"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildSkillActionContractSummary",
+      "type": "function",
+      "name": "buildSkillActionContractSummary",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        301,
+        356
+      ],
+      "summary": "Renders the action contract (slots, confirmation, outputs) of the session's active skill actions for the LLM.",
+      "tags": [
+        "prompt-engineering",
+        "skill-system",
+        "action"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildSkillForbiddenSummary",
+      "type": "function",
+      "name": "buildSkillForbiddenSummary",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        365,
+        398
+      ],
+      "summary": "Lists localized forbidden behaviors per skill so the LLM avoids out-of-contract actions.",
+      "tags": [
+        "prompt-engineering",
+        "guardrails",
+        "skill-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildManagementSkillContext",
+      "type": "function",
+      "name": "buildManagementSkillContext",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        400,
+        423
+      ],
+      "summary": "Assembles the full management-skill prompt context (routing, definitions, contracts) for a session.",
+      "tags": [
+        "prompt-engineering",
+        "skill-system",
+        "session"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildSkillActionRoutingSummary",
+      "type": "function",
+      "name": "buildSkillActionRoutingSummary",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        429,
+        470
+      ],
+      "summary": "Builds the localized action-level routing summary mapping user intents to skill actions.",
+      "tags": [
+        "prompt-engineering",
+        "routing",
+        "skill-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildManagementSkillRoutingContextWithSession",
+      "type": "function",
+      "name": "buildManagementSkillRoutingContextWithSession",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        472,
+        489
+      ],
+      "summary": "Builds the management-skill routing context enriched with session state.",
+      "tags": [
+        "prompt-engineering",
+        "routing",
+        "session"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildCurrentSkillExecutionContext",
+      "type": "function",
+      "name": "buildCurrentSkillExecutionContext",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        491,
+        506
+      ],
+      "summary": "Describes the currently executing skill and action state for the prompt.",
+      "tags": [
+        "prompt-engineering",
+        "skill-system",
+        "session"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:buildSkillFieldKnowledgeSummary",
+      "type": "function",
+      "name": "buildSkillFieldKnowledgeSummary",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        508,
+        561
+      ],
+      "summary": "Renders localized field-knowledge lines (types, allowed values, bounds) for the active skill's fields.",
+      "tags": [
+        "prompt-engineering",
+        "validation",
+        "skill-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:orderedSkillFieldKeys",
+      "type": "function",
+      "name": "orderedSkillFieldKeys",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        563,
+        594
+      ],
+      "summary": "Orders a skill's field keys with action-required slots first for stable prompt output.",
+      "tags": [
+        "ordering",
+        "skill-system",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:formatFieldKnowledgeLine",
+      "type": "function",
+      "name": "formatFieldKnowledgeLine",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        596,
+        671
+      ],
+      "summary": "Formats one field's constraint metadata into a localized human-readable prompt line.",
+      "tags": [
+        "formatting",
+        "i18n",
+        "skill-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_registry.go:fieldKnowledgeDisplayName",
+      "type": "function",
+      "name": "fieldKnowledgeDisplayName",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        673,
+        689
+      ],
+      "summary": "Maps a field key to its localized display name.",
+      "tags": [
+        "i18n",
+        "formatting",
+        "skill-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:missingRequiredActionSlots",
+      "type": "function",
+      "name": "missingRequiredActionSlots",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        699,
+        711
+      ],
+      "summary": "Returns the required slots of a skill action that are still missing from collected values.",
+      "tags": [
+        "validation",
+        "skill-system",
+        "slots"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_registry.go:cachedSkillContext",
+      "type": "function",
+      "name": "cachedSkillContext",
+      "filePath": "agent/skill_registry.go",
+      "lineRange": [
+        712,
+        721
+      ],
+      "summary": "Memoizes expensive skill-context prompt strings in a sync.Map keyed by context kind and language.",
+      "tags": [
+        "caching",
+        "performance",
+        "skill-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:agent/stream_text.go",
+      "type": "file",
+      "name": "stream_text.go",
+      "filePath": "agent/stream_text.go",
+      "summary": "Splits assistant reply text into small chunks and emits them as SSE delta events, simulating incremental streaming for non-streaming responses.",
+      "tags": [
+        "streaming",
+        "sse",
+        "agent",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/stream_text.go:splitStreamText",
+      "type": "function",
+      "name": "splitStreamText",
+      "filePath": "agent/stream_text.go",
+      "lineRange": [
+        14,
+        49
+      ],
+      "summary": "Splits reply text into small chunks on natural boundaries so it can be emitted as incremental SSE deltas.",
+      "tags": [
+        "streaming",
+        "text-processing",
+        "utility"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:agent/web.go",
+      "type": "file",
+      "name": "web.go",
+      "filePath": "agent/web.go",
+      "summary": "HTTP layer for the NOFXi agent: chat and SSE chat-stream endpoints carrying per-request store-user ID and session-policy context, plus public market-data endpoints (klines, ticker, batch tickers) that proxy Binance and merge stock quotes.",
+      "tags": [
+        "api-handler",
+        "sse",
+        "streaming",
+        "agent",
+        "http"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Session policy and store-user ID travel via context.Context values so agent internals never touch Gin directly."
+    },
+    {
+      "id": "class:agent/web.go:SessionPolicy",
+      "type": "class",
+      "name": "SessionPolicy",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        19,
+        24
+      ],
+      "summary": "Per-request capability flags (authenticated, admin, can execute trades, can view secrets) carried through context into the agent.",
+      "tags": [
+        "data-model",
+        "security",
+        "session"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:agent/web.go:WebHandler",
+      "type": "class",
+      "name": "WebHandler",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        67,
+        70
+      ],
+      "summary": "HTTP handler wrapping the Agent with a logger, exposing chat, streaming, and market-data endpoints.",
+      "tags": [
+        "api-handler",
+        "agent",
+        "http"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/web.go:WithStoreUserID",
+      "type": "function",
+      "name": "WithStoreUserID",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        27,
+        29
+      ],
+      "summary": "Attaches the store user ID to a context for downstream agent calls.",
+      "tags": [
+        "context",
+        "session",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/web.go:WithSessionPolicy",
+      "type": "function",
+      "name": "WithSessionPolicy",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        38,
+        40
+      ],
+      "summary": "Attaches a SessionPolicy to a context for downstream permission checks.",
+      "tags": [
+        "context",
+        "security",
+        "utility"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/web.go:NewWebHandler",
+      "type": "function",
+      "name": "NewWebHandler",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        72,
+        74
+      ],
+      "summary": "Constructs a WebHandler bound to an Agent and logger.",
+      "tags": [
+        "factory",
+        "api-handler"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/web.go:HandleHealth",
+      "type": "function",
+      "name": "HandleHealth",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        77,
+        79
+      ],
+      "summary": "Liveness endpoint returning a static OK response.",
+      "tags": [
+        "api-handler",
+        "health-check"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/web.go:HandleChat",
+      "type": "function",
+      "name": "HandleChat",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        82,
+        120
+      ],
+      "summary": "Handles POST chat requests: decodes the message, routes it through the agent for the context's store user, and returns the reply JSON.",
+      "tags": [
+        "api-handler",
+        "chat",
+        "agent"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/web.go:HandleChatStream",
+      "type": "function",
+      "name": "HandleChatStream",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        125,
+        188
+      ],
+      "summary": "Handles streaming chat over SSE: forwards agent events as SSE frames with heartbeats and client-disconnect handling.",
+      "tags": [
+        "api-handler",
+        "sse",
+        "streaming",
+        "chat"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/web.go:HandleKlines",
+      "type": "function",
+      "name": "HandleKlines",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        207,
+        227
+      ],
+      "summary": "Public endpoint proxying Binance klines for a symbol/interval to the frontend chart.",
+      "tags": [
+        "api-handler",
+        "market-data",
+        "proxy"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/web.go:HandleTicker",
+      "type": "function",
+      "name": "HandleTicker",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        230,
+        242
+      ],
+      "summary": "Public endpoint proxying a single Binance 24h ticker.",
+      "tags": [
+        "api-handler",
+        "market-data",
+        "proxy"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/web.go:HandleTickers",
+      "type": "function",
+      "name": "HandleTickers",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        246,
+        323
+      ],
+      "summary": "Batch ticker endpoint: fans out concurrent panic-safe fetches per symbol, merging Binance tickers and stock quotes into one response.",
+      "tags": [
+        "api-handler",
+        "market-data",
+        "concurrency"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/web.go:proxyBinance",
+      "type": "function",
+      "name": "proxyBinance",
+      "filePath": "agent/web.go",
+      "lineRange": [
+        339,
+        366
+      ],
+      "summary": "Fetches a Binance REST URL with timeout and copies the response through to the client.",
+      "tags": [
+        "proxy",
+        "http-client",
+        "market-data"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:agent/skill_management_handlers.go",
+      "type": "file",
+      "name": "skill_management_handlers.go",
+      "filePath": "agent/skill_management_handlers.go",
+      "summary": "Largest chat-skill module: management and creation skill handlers for traders, exchanges, models, and strategies \u2014 bulk/target resolution, strategy-create draft state machine with typed defaults and field hints, bilingual draft summaries, and describe-entity responses mirroring the manual pages.",
+      "tags": [
+        "skill",
+        "crud",
+        "conversation-flow",
+        "agent",
+        "i18n",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Strategy-create drafts are JSON round-tripped through session fields; extensive zh/en formatting helpers keep chat output aligned with the manual UI."
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleTraderManagementSkill",
+      "type": "function",
+      "name": "handleTraderManagementSkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        248,
+        264
+      ],
+      "summary": "Routes trader-management skill turns (start/stop/delete/update) to the simple-entity handler with trader options.",
+      "tags": [
+        "skill",
+        "trader",
+        "routing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleExchangeManagementSkill",
+      "type": "function",
+      "name": "handleExchangeManagementSkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        266,
+        285
+      ],
+      "summary": "Routes exchange-management skill turns to the simple-entity handler with exchange options.",
+      "tags": [
+        "skill",
+        "exchange",
+        "routing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleModelManagementSkill",
+      "type": "function",
+      "name": "handleModelManagementSkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        287,
+        306
+      ],
+      "summary": "Routes model-management skill turns to the simple-entity handler with model options.",
+      "tags": [
+        "skill",
+        "ai-model",
+        "routing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleStrategyManagementSkill",
+      "type": "function",
+      "name": "handleStrategyManagementSkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        308,
+        327
+      ],
+      "summary": "Routes strategy-management skill turns to the simple-entity handler with strategy options.",
+      "tags": [
+        "skill",
+        "strategy",
+        "routing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:applyStrategyCreateTypeDefaults",
+      "type": "function",
+      "name": "applyStrategyCreateTypeDefaults",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        467,
+        514
+      ],
+      "summary": "Applies type-specific defaults (AI vs grid) to a strategy-create draft config.",
+      "tags": [
+        "strategy",
+        "defaults",
+        "factory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:formatStrategyCreateFinalConfirmation",
+      "type": "function",
+      "name": "formatStrategyCreateFinalConfirmation",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        1109,
+        1193
+      ],
+      "summary": "Renders the final bilingual confirmation summary of a strategy-create draft before saving.",
+      "tags": [
+        "formatting",
+        "strategy",
+        "i18n"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:describeStrategy",
+      "type": "function",
+      "name": "describeStrategy",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        1595,
+        1632
+      ],
+      "summary": "Loads a strategy by reference and returns its formatted detail response.",
+      "tags": [
+        "query",
+        "strategy",
+        "describe"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:formatStrategyDetailResponse",
+      "type": "function",
+      "name": "formatStrategyDetailResponse",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        1634,
+        1842
+      ],
+      "summary": "Formats a full strategy detail view (coin source, indicators, risk control, prompts) matching manual-page sections.",
+      "tags": [
+        "formatting",
+        "strategy",
+        "i18n"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:describeTrader",
+      "type": "function",
+      "name": "describeTrader",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        1862,
+        1891
+      ],
+      "summary": "Resolves and describes a trader's configuration and bindings for chat display.",
+      "tags": [
+        "query",
+        "trader",
+        "describe"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:describeExchange",
+      "type": "function",
+      "name": "describeExchange",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        1893,
+        1976
+      ],
+      "summary": "Describes an exchange config including type-specific visible fields with credentials masked as presence flags.",
+      "tags": [
+        "query",
+        "exchange",
+        "describe"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:describeModel",
+      "type": "function",
+      "name": "describeModel",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        1978,
+        2025
+      ],
+      "summary": "Describes an AI-model config with masked credentials and wallet balance hints.",
+      "tags": [
+        "query",
+        "ai-model",
+        "describe"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:loadTraderOptions",
+      "type": "function",
+      "name": "loadTraderOptions",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        2073,
+        2125
+      ],
+      "summary": "Loads the user's traders as selectable skill options with running-state hints.",
+      "tags": [
+        "options",
+        "trader",
+        "query"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleExchangeCreateSkill",
+      "type": "function",
+      "name": "handleExchangeCreateSkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        2127,
+        2238
+      ],
+      "summary": "Drives the exchange-create conversation: infers type/credentials from text, validates the draft, and persists on confirmation.",
+      "tags": [
+        "skill",
+        "exchange",
+        "conversation-flow"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleModelCreateSkill",
+      "type": "function",
+      "name": "handleModelCreateSkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        2240,
+        2338
+      ],
+      "summary": "Drives the model-create conversation: provider-first prompting (Claw402 recommended), credential collection, and creation.",
+      "tags": [
+        "skill",
+        "ai-model",
+        "conversation-flow"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleStrategyCreateSkill",
+      "type": "function",
+      "name": "handleStrategyCreateSkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        2377,
+        2457
+      ],
+      "summary": "Drives the strategy-create conversation: type selection, config draft accumulation, and final confirmation.",
+      "tags": [
+        "skill",
+        "strategy",
+        "conversation-flow"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_management_handlers.go:handleSimpleEntitySkill",
+      "type": "function",
+      "name": "handleSimpleEntitySkill",
+      "filePath": "agent/skill_management_handlers.go",
+      "lineRange": [
+        2528,
+        2626
+      ],
+      "summary": "Generic mutation handler for start/stop/enable/disable/delete actions across entity types with target resolution and bulk support.",
+      "tags": [
+        "skill",
+        "crud",
+        "generic"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:agent/skill_semantic_gate.go",
+      "type": "file",
+      "name": "skill_semantic_gate.go",
+      "filePath": "agent/skill_semantic_gate.go",
+      "summary": "Semantic gate for chat skills: builds per-skill/action summaries of the visible fields and selectable options (matching the manual UI) so the LLM only references fields users can actually edit.",
+      "tags": [
+        "skill",
+        "visibility",
+        "prompt-context",
+        "agent",
+        "tested"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:agent/skill_semantic_gate.go:skillVisibleFieldSummary",
+      "type": "function",
+      "name": "skillVisibleFieldSummary",
+      "filePath": "agent/skill_semantic_gate.go",
+      "lineRange": [
+        10,
+        62
+      ],
+      "summary": "Assembles the list of editable field names for a given skill/action, adapting strategy fields to the target's type.",
+      "tags": [
+        "visibility",
+        "fields",
+        "prompt-context"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_semantic_gate.go:strategyTypeForTarget",
+      "type": "function",
+      "name": "strategyTypeForTarget",
+      "filePath": "agent/skill_semantic_gate.go",
+      "lineRange": [
+        64,
+        98
+      ],
+      "summary": "Looks up the strategy type (AI/grid) for a referenced target to select the right field set.",
+      "tags": [
+        "query",
+        "strategy",
+        "resolution"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_semantic_gate.go:skillVisibleOptionSummary",
+      "type": "function",
+      "name": "skillVisibleOptionSummary",
+      "filePath": "agent/skill_semantic_gate.go",
+      "lineRange": [
+        100,
+        113
+      ],
+      "summary": "Returns the option summary (available choices) for a skill/action, delegating to per-domain summaries.",
+      "tags": [
+        "options",
+        "visibility",
+        "routing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/skill_semantic_gate.go:enumOptionValues",
+      "type": "function",
+      "name": "enumOptionValues",
+      "filePath": "agent/skill_semantic_gate.go",
+      "lineRange": [
+        133,
+        189
+      ],
+      "summary": "Enumerates allowed values for enum-like skill fields (exchange types, providers, strategy types).",
+      "tags": [
+        "enum",
+        "options",
+        "validation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/skill_semantic_gate.go:formatSkillOptionList",
+      "type": "function",
+      "name": "formatSkillOptionList",
+      "filePath": "agent/skill_semantic_gate.go",
+      "lineRange": [
+        215,
+        234
+      ],
+      "summary": "Formats an option list with a bilingual prefix for inclusion in chat replies.",
+      "tags": [
+        "formatting",
+        "i18n",
+        "options"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:agent/onboard.go",
+      "type": "file",
+      "name": "onboard.go",
+      "filePath": "agent/onboard.go",
+      "summary": "Guided onboarding conversation for the chat agent: a per-user step state machine that collects exchange and AI-model credentials, persists SetupState in the config store, and finishes by creating and wiring the user's first trader.",
+      "tags": [
+        "onboarding",
+        "state-machine",
+        "conversation-flow",
+        "agent",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Setup state is serialized into per-user config keys; masked keys and bilingual setup messages guide the flow."
+    },
+    {
+      "id": "class:agent/onboard.go:SetupState",
+      "type": "class",
+      "name": "SetupState",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        21,
+        33
+      ],
+      "summary": "Serializable per-user onboarding state: current step plus collected exchange and AI-model credentials.",
+      "tags": [
+        "data-model",
+        "onboarding",
+        "state"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/onboard.go:getSetupState",
+      "type": "function",
+      "name": "getSetupState",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        44,
+        63
+      ],
+      "summary": "Loads and deserializes a user's onboarding SetupState from the config store.",
+      "tags": [
+        "state",
+        "persistence",
+        "onboarding"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/onboard.go:handleSetupFlowForStoreUser",
+      "type": "function",
+      "name": "handleSetupFlowForStoreUser",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        107,
+        217
+      ],
+      "summary": "Main onboarding dispatcher: routes user text to the current setup step (exchange choice, keys, AI choice) for a store user.",
+      "tags": [
+        "state-machine",
+        "routing",
+        "onboarding"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/onboard.go:handleExchangeChoice",
+      "type": "function",
+      "name": "handleExchangeChoice",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        232,
+        258
+      ],
+      "summary": "Handles the exchange-selection step, matching user text to a supported exchange and advancing the flow.",
+      "tags": [
+        "onboarding",
+        "exchange",
+        "input-parsing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/onboard.go:handleAIChoice",
+      "type": "function",
+      "name": "handleAIChoice",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        260,
+        303
+      ],
+      "summary": "Handles the AI-provider selection step, mapping user text to provider/model and requesting the API key.",
+      "tags": [
+        "onboarding",
+        "ai-model",
+        "input-parsing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:agent/onboard.go:finishSetup",
+      "type": "function",
+      "name": "finishSetup",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        305,
+        357
+      ],
+      "summary": "Final onboarding step: saves exchange and AI-model configs, creates the first trader, and reports the result.",
+      "tags": [
+        "onboarding",
+        "orchestration",
+        "completion"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/onboard.go:createTraderFromSetupForStoreUser",
+      "type": "function",
+      "name": "createTraderFromSetupForStoreUser",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        363,
+        429
+      ],
+      "summary": "Creates the user's first trader record from collected setup state, binding exchange, model, and default strategy.",
+      "tags": [
+        "trader",
+        "factory",
+        "onboarding"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/onboard.go:saveSetupExchange",
+      "type": "function",
+      "name": "saveSetupExchange",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        431,
+        481
+      ],
+      "summary": "Persists the exchange credentials collected during onboarding as an exchange config row.",
+      "tags": [
+        "exchange",
+        "persistence",
+        "credentials"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:agent/onboard.go:saveSetupAIModel",
+      "type": "function",
+      "name": "saveSetupAIModel",
+      "filePath": "agent/onboard.go",
+      "lineRange": [
+        483,
+        507
+      ],
+      "summary": "Persists the AI provider/model and API key collected during onboarding as an AI-model config.",
+      "tags": [
+        "ai-model",
+        "persistence",
+        "credentials"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "historical_incident_edges": [
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/client_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/client.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/config_usage_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/config.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/context_guard_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/context_guard.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/examples_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/hooks.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/interface.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/logger.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/mock_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/options_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/options.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/providers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/registry.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/request_builder_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/request_builder.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:mcp/request.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "class:agent/memory.go:TaskState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "class:agent/memory.go:TaskState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "function:agent/memory.go:maybeCompressHistory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "function:agent/memory.go:summarizeConversationToTaskState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "function:agent/memory.go:buildTaskStateContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/memory.go",
+      "target": "file:agent/memory_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/client_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/client.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/config_usage_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/config.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/context_guard_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/context_guard.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/examples_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/hooks.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/interface.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/logger.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/mock_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/options_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/options.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/providers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/registry.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/request_builder_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/request_builder.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:mcp/request.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/ai_charge.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/ai_model.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/decision_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/decision.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/driver.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/equity.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/exchange.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/gorm.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/grid.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/order.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/position_builder.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/position_entry_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/position_history.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/position_query.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/position.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/store.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/strategy_futures_symbol_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/strategy_schema_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/strategy_token_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/strategy.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/telegram_config.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/trader.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/user.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:store/visibility.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "function:agent/skill_execution_handlers.go:executeTraderManagementAction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "function:agent/skill_execution_handlers.go:executeExchangeManagementAction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "function:agent/skill_execution_handlers.go:executeModelManagementAction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "function:agent/skill_execution_handlers.go:executeStrategyManagementAction",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "function:agent/skill_execution_handlers.go:applyStrategyConfigPatch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "function:agent/skill_execution_handlers.go:executeBulkTraderDelete",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "function:agent/skill_execution_handlers.go:formatTraderDiagnosisEvidence",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:agent/skill_dispatcher_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/skill_execution_handlers.go",
+      "target": "file:agent/trader_scope_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/i18n.go",
+      "target": "function:agent/i18n.go:msg",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/brain.go",
+      "target": "file:agent/sentinel.go",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:agent/model_provider_catalog.go",
+      "target": "function:agent/model_provider_catalog.go:supportedModelProviders",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/model_provider_catalog.go",
+      "target": "function:agent/model_provider_catalog.go:defaultModelConfigName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/model_provider_catalog.go",
+      "target": "function:agent/model_provider_catalog.go:modelProviderCredentialLabel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/model_provider_catalog.go",
+      "target": "function:agent/model_provider_catalog.go:modelProviderSummaryList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/model_provider_catalog.go",
+      "target": "function:agent/model_provider_catalog.go:modelProviderDetailedGuidance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/model_provider_catalog.go",
+      "target": "function:agent/model_provider_catalog.go:modelProviderCredentialGuidance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "class:agent/preferences.go:PersistentPreference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "class:agent/preferences.go:PersistentPreference",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:NewPersistentPreference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:NewPersistentPreference",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:SessionUserIDFromKey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:SessionUserIDFromKey",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:getPersistentPreferences",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:savePersistentPreferences",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:addPersistentPreference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:updatePersistentPreference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:deletePersistentPreference",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "function:agent/preferences.go:buildPersistentPreferencesContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/model_provider_catalog.go",
+      "target": "file:agent/model_provider_catalog_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/preferences.go",
+      "target": "file:agent/preferences_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "class:agent/sentinel.go:Signal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "class:agent/sentinel.go:Signal",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "class:agent/sentinel.go:Sentinel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "class:agent/sentinel.go:Sentinel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:agent/sentinel.go:NewSentinel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:agent/sentinel.go:NewSentinel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:agent/sentinel.go:Start",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:agent/sentinel.go:AddSymbol",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:agent/sentinel.go:RemoveSymbol",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:agent/sentinel.go:FormatWatchlist",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:agent/sentinel.go:check",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_dag_runtime.go",
+      "target": "function:agent/skill_dag_runtime.go:currentSkillDAGStep",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_dag_runtime.go",
+      "target": "function:agent/skill_dag_runtime.go:advanceSkillDAGStep",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "file:safe/go.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "file:safe/io.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:safe/go.go:GoNamed",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/sentinel.go",
+      "target": "function:safe/io.go:ReadAllLimited",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/skill_dag_runtime.go",
+      "target": "file:agent/skill_dag.go",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/skill_dag_runtime.go",
+      "target": "file:agent/skill_dag.go",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:agent/skill_dag_runtime.go",
+      "target": "file:agent/skill_dag_runtime_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "class:agent/skill_registry.go:SkillDefinition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "class:agent/skill_registry.go:SkillDefinition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "class:agent/skill_registry.go:SkillFieldConstraint",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "class:agent/skill_registry.go:SkillFieldConstraint",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "class:agent/skill_registry.go:SkillActionDefinition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "class:agent/skill_registry.go:SkillActionDefinition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:loadSkillRegistry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:normalizeSkillDefinition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildSkillRoutingSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildSkillDefinitionSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildSkillDependencySummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildSkillActionContractSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildSkillForbiddenSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildManagementSkillContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildSkillActionRoutingSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildManagementSkillRoutingContextWithSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildCurrentSkillExecutionContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:buildSkillFieldKnowledgeSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:orderedSkillFieldKeys",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:formatFieldKnowledgeLine",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:fieldKnowledgeDisplayName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:missingRequiredActionSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "function:agent/skill_registry.go:cachedSkillContext",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_registry.go",
+      "target": "file:agent/skill_registry_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/stream_text.go",
+      "target": "function:agent/stream_text.go:splitStreamText",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "class:agent/web.go:SessionPolicy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "class:agent/web.go:SessionPolicy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "class:agent/web.go:WebHandler",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "class:agent/web.go:WebHandler",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:WithStoreUserID",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:WithStoreUserID",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:WithSessionPolicy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:WithSessionPolicy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:NewWebHandler",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:NewWebHandler",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleHealth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleHealth",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleChat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleChat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleChatStream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleChatStream",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleKlines",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleKlines",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleTicker",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleTicker",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleTickers",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:HandleTickers",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:agent/web.go:proxyBinance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "file:safe/go.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "file:safe/io.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:safe/io.go:ReadAllLimited",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/web.go",
+      "target": "function:safe/go.go:GoNamed",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/entity_field_catalog.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/i18n.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/memory.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/model_provider_catalog.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/onboard.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/preferences.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/sentinel.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/skill_dag_runtime.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/skill_execution_handlers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/skill_management_handlers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/skill_registry.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/skill_semantic_gate.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/stream_text.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:main.go",
+      "target": "file:agent/web.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/entity_field_catalog.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/i18n.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/memory.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/model_provider_catalog.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/onboard.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/preferences.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/sentinel.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/skill_dag_runtime.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/skill_execution_handlers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/skill_management_handlers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/skill_registry.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/skill_semantic_gate.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/stream_text.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_preferences.go",
+      "target": "file:agent/web.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/entity_field_catalog.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/i18n.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/memory.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/model_provider_catalog.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/onboard.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/preferences.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/sentinel.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/skill_dag_runtime.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/skill_execution_handlers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/skill_management_handlers.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/skill_registry.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/skill_semantic_gate.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/stream_text.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:api/agent_routes.go",
+      "target": "file:agent/web.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:WithStoreUserID",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:WithSessionPolicy",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:HandleChat",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:HandleChatStream",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:HandleHealth",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:HandleKlines",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:HandleTicker",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:api/agent_routes.go:RegisterAgentHandler",
+      "target": "function:agent/web.go:HandleTickers",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleTraderManagementSkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleExchangeManagementSkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleModelManagementSkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleStrategyManagementSkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:applyStrategyCreateTypeDefaults",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:formatStrategyCreateFinalConfirmation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:describeStrategy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:formatStrategyDetailResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:describeTrader",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:describeExchange",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:describeModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:loadTraderOptions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleExchangeCreateSkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleModelCreateSkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleStrategyCreateSkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "function:agent/skill_management_handlers.go:handleSimpleEntitySkill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/ai_charge.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/ai_model.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/decision_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/decision.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/driver.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/equity.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/exchange.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/gorm.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/grid.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/order.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/position_builder.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/position_entry_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/position_history.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/position_query.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/position.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/store.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/strategy_futures_symbol_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/strategy_schema_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/strategy_token_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/strategy.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/telegram_config.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/trader.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/user.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:store/visibility.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:agent/model_create_flow_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/skill_management_handlers.go",
+      "target": "file:agent/config_visibility_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "function:agent/skill_semantic_gate.go:skillVisibleFieldSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "function:agent/skill_semantic_gate.go:strategyTypeForTarget",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "function:agent/skill_semantic_gate.go:skillVisibleOptionSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "function:agent/skill_semantic_gate.go:enumOptionValues",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "function:agent/skill_semantic_gate.go:formatSkillOptionList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/ai_charge.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/ai_model.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/decision_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/decision.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/driver.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/equity.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/exchange.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/gorm.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/grid.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/order.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/position_builder.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/position_entry_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/position_history.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/position_query.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/position.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/store.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/strategy_futures_symbol_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/strategy_schema_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/strategy_token_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/strategy.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/telegram_config.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/trader.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/user.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:store/visibility.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/skill_semantic_gate.go",
+      "target": "file:agent/config_visibility_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "class:agent/onboard.go:SetupState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "class:agent/onboard.go:SetupState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:getSetupState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:handleSetupFlowForStoreUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:handleExchangeChoice",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:handleAIChoice",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:finishSetup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:createTraderFromSetupForStoreUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:saveSetupExchange",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "function:agent/onboard.go:saveSetupAIModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/ai_charge.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/ai_model.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/decision_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/decision.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/driver.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/equity.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/exchange.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/gorm.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/grid.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/order.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/position_builder.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/position_entry_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/position_history.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/position_query.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/position.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/store.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/strategy_futures_symbol_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/strategy_schema_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/strategy_token_test.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/strategy.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/telegram_config.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/trader.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/user.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:store/visibility.go",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:agent/onboard.go",
+      "target": "file:agent/onboard_test.go",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5,
+      "description": "Path-based pairing (deterministic)"
+    }
+  ],
+  "edge_review_limit": "All 226 selected non-containment incident edges read as historical labels. They are not type-resolved/current dependencies. 100 containment edges retained as historical provenance; current 299 named function census is authoritative.",
+  "source_verified_corrections": [
+    {
+      "path": "agent/skill_dag_runtime.go",
+      "function": "advanceSkillDAGStep",
+      "current": "Terminal cursor remains unchanged; only first successor selected."
+    },
+    {
+      "path": "agent/preferences.go",
+      "current": "Add prepends; update has no length check; deletion matches first ID/substring; context bullet list."
+    },
+    {
+      "path": "agent/sentinel.go",
+      "current": "No funding emitter; AddSymbol/RemoveSymbol return void."
+    },
+    {
+      "path": "agent/web.go",
+      "current": "Binance-only proxies, no stock merging; SSE has no heartbeat producer."
+    },
+    {
+      "path": "agent/skill_registry.go",
+      "current": "Fallback map field ordering not sorted; normalization does not enforce all semantic constraints."
+    },
+    {
+      "path": "agent/skill_execution_handlers.go",
+      "current": "Legacy patch helper parses without clamping; concrete nested update uses separate merger/clamp/tool path."
+    },
+    {
+      "kind": "graph modeling limitation",
+      "current": "Historical imports expand Go package imports into per-file edges, including *_test.go. These are package fanout artifacts, not proof production code imports test files. API route call edges were verified against current api/agent_routes.go."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+close_reason,source,n,min_id,max_id,last_exit_ct
+sync,system,504,1,590,"2026-09-02 10:49:30"
+reconcile_flat,system,60,30,516,"2026-08-13 09:30:49"
+sync,reconcile,12,566,591,"2026-09-03 09:20:45"
+e7_farside_test,e7_farside_test,3,572,574,"2026-08-30 23:04:39"
+unresolved,system,3,110,256,"2026-06-24 18:44:55"
+reconcile_flat,armed_entry,2,576,577,"2026-08-31 12:29:08"
+sync,armed_entry,2,582,585,"2026-09-01 09:40:40"
+unresolved,armed_entry,1,579,579,"2026-08-31 13:13:08"

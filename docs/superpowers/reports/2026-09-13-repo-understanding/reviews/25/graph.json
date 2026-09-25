@@ -1,0 +1,4602 @@
+{
+  "assignment": 25,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "current_edges": [
+    {
+      "source": "web/e2e/fixtures.ts",
+      "target": "@playwright/test",
+      "relation": "external_package_import",
+      "line": 5,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/e2e/playwright.config.ts",
+      "target": "@playwright/test",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "target": "@eslint/js",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "target": "@typescript-eslint/eslint-plugin",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "target": "@typescript-eslint/parser",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "target": "eslint-plugin-react",
+      "relation": "external_package_import",
+      "line": 4,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "target": "eslint-plugin-react-hooks",
+      "relation": "external_package_import",
+      "line": 5,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "target": "eslint-plugin-react-refresh",
+      "relation": "external_package_import",
+      "line": 6,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/eslint.config.js",
+      "target": "eslint-plugin-prettier",
+      "relation": "external_package_import",
+      "line": 7,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/chips-harness.tsx",
+      "target": "react-dom/client",
+      "relation": "external_package_import",
+      "line": 7,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/chips-harness.tsx",
+      "target": "web/src/components/plan/chips.tsx",
+      "relation": "imports_or_reexports",
+      "line": 8,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/chips-harness.tsx",
+      "target": "web/src/components/plan/RereadButton.tsx",
+      "relation": "imports_or_reexports",
+      "line": 9,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/chips-harness.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 10,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/chips-harness.tsx",
+      "target": "web/src/theme/vl-tokens.css",
+      "relation": "imports_or_reexports",
+      "line": 11,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/AgentStepPanel.tsx",
+      "target": "web/src/types/agent.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/ChatMessages.tsx",
+      "target": "web/src/constants/branding.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/ChatMessages.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/agent/ChatMessages.tsx",
+      "target": "framer-motion",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/agent/ChatMessages.tsx",
+      "target": "web/src/components/agent/AgentStepPanel.tsx",
+      "relation": "imports_or_reexports",
+      "line": 4,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/ChatMessages.tsx",
+      "target": "web/src/components/agent/MessageRenderer.tsx",
+      "relation": "imports_or_reexports",
+      "line": 5,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/ChatMessages.tsx",
+      "target": "web/src/types/agent.ts",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/MarketTicker.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/agent/MarketTicker.tsx",
+      "target": "web/src/lib/httpClient.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/MarketTicker.tsx",
+      "target": "web/src/lib/autoRefresh.ts",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/TraderStatusPanel.tsx",
+      "target": "swr",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/agent/TraderStatusPanel.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/agent/TraderStatusPanel.tsx",
+      "target": "web/src/contexts/AuthContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/TraderStatusPanel.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 4,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/TraderStatusPanel.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 5,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/agent/TraderStatusPanel.tsx",
+      "target": "web/src/types/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/WelcomeScreen.tsx",
+      "target": "web/src/constants/branding.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/agent/WelcomeScreen.tsx",
+      "target": "framer-motion",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/agent/WelcomeScreen.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/LoginRequiredOverlay.tsx",
+      "target": "framer-motion",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/LoginRequiredOverlay.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/LoginRequiredOverlay.tsx",
+      "target": "react-router-dom",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/LoginRequiredOverlay.tsx",
+      "target": "web/src/components/common/DeepVoidBackground.tsx",
+      "relation": "imports_or_reexports",
+      "line": 4,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/LoginRequiredOverlay.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 5,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/LoginRequiredOverlay.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/OnboardingModeSelector.tsx",
+      "target": "web/src/lib/onboarding.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "react-router-dom",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "react-password-checklist",
+      "relation": "external_package_import",
+      "line": 4,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "sonner",
+      "relation": "external_package_import",
+      "line": 5,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "web/src/contexts/AuthContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 7,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 8,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "web/src/lib/config.ts",
+      "relation": "imports_or_reexports",
+      "line": 9,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "web/src/components/common/DeepVoidBackground.tsx",
+      "relation": "imports_or_reexports",
+      "line": 10,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "web/src/components/auth/RegistrationDisabled.tsx",
+      "relation": "imports_or_reexports",
+      "line": 11,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/auth/RegisterPage.tsx",
+      "target": "web/src/components/common/WhitelistFullPage.tsx",
+      "relation": "imports_or_reexports",
+      "line": 12,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "web/src/components/charts/EquityChart.tsx",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "web/src/components/charts/AdvancedChart.tsx",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 4,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 5,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "web/src/i18n/strategy-translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 7,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "framer-motion",
+      "relation": "external_package_import",
+      "line": 8,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/ChartWithOrders.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/ChartWithOrders.tsx",
+      "target": "lightweight-charts",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/ChartWithOrders.tsx",
+      "target": "web/src/lib/chartTime.ts",
+      "relation": "imports_or_reexports",
+      "line": 11,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartWithOrders.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 15,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartWithOrders.tsx",
+      "target": "web/src/lib/httpClient.ts",
+      "relation": "imports_or_reexports",
+      "line": 16,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/ChartWithOrders.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 17,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "recharts",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "swr",
+      "relation": "external_package_import",
+      "line": 12,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 13,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 14,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "web/src/contexts/AuthContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 15,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 16,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 17,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/TradingViewChart.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/TradingViewChart.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/TradingViewChart.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/charts/TradingViewChart.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 4,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/primitives/SessionVolumeProfile.ts",
+      "target": "fancy-canvas",
+      "relation": "external_package_import",
+      "line": 17,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/primitives/SessionVolumeProfile.ts",
+      "target": "lightweight-charts",
+      "relation": "external_package_import",
+      "line": 18,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/charts/primitives/SessionVolumeProfile.ts",
+      "target": "web/src/components/charts/primitives/positions.ts",
+      "relation": "imports_or_reexports",
+      "line": 33,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/ConfirmDialog.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/common/ConfirmDialog.tsx",
+      "target": "web/src/components/ui/alert-dialog.tsx",
+      "relation": "imports_or_reexports",
+      "line": 8,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/ConfirmDialog.tsx",
+      "target": "web/src/lib/notify.tsx",
+      "relation": "imports_or_reexports",
+      "line": 17,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/Container.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/common/Header.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/Header.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/Header.tsx",
+      "target": "web/src/components/common/Container.tsx",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/LanguageSwitcher.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/common/LanguageSwitcher.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/LanguageSwitcher.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/common/WhitelistFullPage.tsx",
+      "target": "framer-motion",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/common/WhitelistFullPage.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/common/WhitelistFullPage.tsx",
+      "target": "react-router-dom",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/common/WhitelistFullPage.tsx",
+      "target": "web/src/constants/branding.ts",
+      "relation": "imports_or_reexports",
+      "line": 4,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/faq/FAQSidebar.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/faq/FAQSidebar.tsx",
+      "target": "web/src/data/faqData.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "web/src/contexts/AuthContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "web/src/lib/config.ts",
+      "relation": "imports_or_reexports",
+      "line": 4,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "web/src/components/auth/OnboardingModeSelector.tsx",
+      "relation": "imports_or_reexports",
+      "line": 5,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "web/src/lib/onboarding.ts",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 7,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/SetupPage.tsx",
+      "target": "web/src/components/common/LanguageSwitcher.tsx",
+      "relation": "imports_or_reexports",
+      "line": 8,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/TwoStageKeyModal.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/modals/TwoStageKeyModal.tsx",
+      "target": "react-dom",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/modals/TwoStageKeyModal.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/components/modals/TwoStageKeyModal.tsx",
+      "target": "sonner",
+      "relation": "external_package_import",
+      "line": 4,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/components/modals/TwoStageKeyModal.tsx",
+      "target": "web/src/components/common/WebCryptoEnvironmentCheck.tsx",
+      "relation": "imports_or_reexports",
+      "line": 5,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/constants/branding.ts",
+      "target": "branding/product.txt",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/constants/branding.ts",
+      "target": "branding/persona.txt",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/hooks/useCounterAnimation.ts",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/hooks/useGitHubStats.ts",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/hooks/useSystemConfig.ts",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/hooks/useSystemConfig.ts",
+      "target": "web/src/lib/config.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/i18n/translations.ts",
+      "target": "web/src/constants/branding.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/index.ts",
+      "target": "web/src/lib/api/traders.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/index.ts",
+      "target": "web/src/lib/api/strategies.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/index.ts",
+      "target": "web/src/lib/api/config.ts",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/index.ts",
+      "target": "web/src/lib/api/data.ts",
+      "relation": "imports_or_reexports",
+      "line": 4,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/index.ts",
+      "target": "web/src/lib/api/telegram.ts",
+      "relation": "imports_or_reexports",
+      "line": 5,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/index.ts",
+      "target": "web/src/lib/api/plan.ts",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/traders.ts",
+      "target": "web/src/types/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/traders.ts",
+      "target": "web/src/lib/api/helpers.ts",
+      "relation": "imports_or_reexports",
+      "line": 7,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/api/traders.ts",
+      "target": "web/src/lib/httpClient.ts",
+      "relation": "imports_or_reexports",
+      "line": 8,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/autoRefresh.ts",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 31,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/lib/chartTime.ts",
+      "target": "lightweight-charts",
+      "relation": "external_package_import",
+      "line": 16,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/lib/clipboard.ts",
+      "target": "web/src/lib/notify.tsx",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/lib/httpClient.ts",
+      "target": "axios",
+      "relation": "external_package_import",
+      "line": 12,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/lib/httpClient.ts",
+      "target": "sonner",
+      "relation": "external_package_import",
+      "line": 13,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "react",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "react-router-dom",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "lucide-react",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "qrcode.react",
+      "relation": "external_package_import",
+      "line": 4,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "sonner",
+      "relation": "external_package_import",
+      "line": 5,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 6,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 7,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "web/src/types/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 8,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "web/src/lib/onboarding.ts",
+      "relation": "imports_or_reexports",
+      "line": 9,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/pages/FAQPage.tsx",
+      "target": "web/src/components/faq/FAQLayout.tsx",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/pages/FAQPage.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/router/traderSlug.ts",
+      "target": "web/src/types/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/stores/agentChatStore.ts",
+      "target": "zustand",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/stores/agentChatStore.ts",
+      "target": "web/src/types/agent.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/stores/tradersConfigStore.ts",
+      "target": "zustand",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/stores/tradersConfigStore.ts",
+      "target": "web/src/types/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/stores/tradersConfigStore.ts",
+      "target": "web/src/lib/api/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/stores/tradersModalStore.ts",
+      "target": "zustand",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/stores/tradersModalStore.ts",
+      "target": "web/src/types/index.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/types/index.ts",
+      "target": "web/src/types/trading.ts",
+      "relation": "imports_or_reexports",
+      "line": 1,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/types/index.ts",
+      "target": "web/src/types/strategy.ts",
+      "relation": "imports_or_reexports",
+      "line": 2,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/src/types/index.ts",
+      "target": "web/src/types/config.ts",
+      "relation": "imports_or_reexports",
+      "line": 3,
+      "evidence": "[A] current source import syntax; not function-call resolution"
+    },
+    {
+      "source": "web/vite.config.ts",
+      "target": "node:fs",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/vite.config.ts",
+      "target": "vite",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/vite.config.ts",
+      "target": "@vitejs/plugin-react",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/vite.sandbox.config.ts",
+      "target": "vite",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/vite.sandbox.config.ts",
+      "target": "@vitejs/plugin-react",
+      "relation": "external_package_import",
+      "line": 4,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/vitest.config.ts",
+      "target": "vitest/config",
+      "relation": "external_package_import",
+      "line": 1,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/vitest.config.ts",
+      "target": "@vitejs/plugin-react",
+      "relation": "external_package_import",
+      "line": 2,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/vitest.config.ts",
+      "target": "node:url",
+      "relation": "external_package_import",
+      "line": 3,
+      "evidence": "[A] source declaration, library implementation not reviewed"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/charts/ChartTabs.tsx",
+      "line": 827,
+      "relation": "renders marketOnly with resolved exchange type",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/charts/EquityChart.tsx",
+      "line": 844,
+      "relation": "renders separate account equity chart",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/components/charts/ChartTabs.tsx",
+      "target": "web/src/components/charts/AdvancedChart.tsx",
+      "line": 513,
+      "relation": "passes selected symbol/timeframe/currentExchange",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/components/charts/AdvancedChart.tsx",
+      "target": "web/src/components/charts/primitives/SessionVolumeProfile.ts",
+      "line": 1289,
+      "relation": "constructs and attaches primitive from server SVP payload",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/pages/AgentChatPage.tsx",
+      "target": "web/src/stores/agentChatStore.ts",
+      "line": 99,
+      "relation": "updates current global store in streaming callback",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/pages/AgentChatPage.tsx",
+      "target": "web/src/lib/agentChatStorage.ts",
+      "line": 491,
+      "relation": "migrates fallback history after login",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "target": "web/src/components/modals/TwoStageKeyModal.tsx",
+      "line": 1525,
+      "relation": "keeps modal mounted while isOpen toggles",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/router/AppRoutes.tsx",
+      "target": "web/src/pages/FAQPage.tsx",
+      "line": 499,
+      "relation": "renders public FAQ",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/router/AppRoutes.tsx",
+      "target": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "line": 214,
+      "relation": "renders welcome onboarding overlay",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/pages/BeginnerOnboardingPage.tsx",
+      "target": "api/handler_onboarding.go",
+      "line": 33,
+      "relation": "prepareBeginnerOnboarding POST via configApi executes handler43 and env persistence",
+      "evidence": "[A] manually traced current source, static only"
+    },
+    {
+      "source": "web/src/components/charts/EquityChart.tsx",
+      "target": "api/handler_competition.go",
+      "line": 69,
+      "relation": "getEquityHistory query via dataApi receives scoped snapshot available_balance",
+      "evidence": "[A] manually traced current source, static only"
+    }
+  ],
+  "historical": {
+    "path": "/home/hoang/nofx-untracked-stash-20260816/.understand-anything/knowledge-graph.json",
+    "base": "7a8adce0",
+    "date": "2026-07-10",
+    "status": "Historical orientation only, never current proof",
+    "matched_nodes": [
+      {
+        "id": "file:web/src/components/agent/AgentStepPanel.tsx",
+        "type": "file",
+        "name": "AgentStepPanel.tsx",
+        "filePath": "web/src/components/agent/AgentStepPanel.tsx",
+        "summary": "Collapsible panel rendering the AI agent's execution steps in the chat UI, sanitizing and filtering out placeholder or empty step labels before display.",
+        "tags": [
+          "component",
+          "agent-chat",
+          "ui-panel"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/agent/ChatMessages.tsx",
+        "type": "file",
+        "name": "ChatMessages.tsx",
+        "filePath": "web/src/components/agent/ChatMessages.tsx",
+        "summary": "Scrollable agent chat message list that renders each message through MessageRenderer and attaches an AgentStepPanel only when meaningful execution steps exist.",
+        "tags": [
+          "component",
+          "agent-chat",
+          "message-list"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/agent/MarketTicker.tsx",
+        "type": "file",
+        "name": "MarketTicker.tsx",
+        "filePath": "web/src/components/agent/MarketTicker.tsx",
+        "summary": "Horizontal market ticker strip that periodically fetches spot prices for a fixed symbol list via httpClient and renders formatted price and volume badges.",
+        "tags": [
+          "component",
+          "agent-chat",
+          "market-data",
+          "polling"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/agent/TraderStatusPanel.tsx",
+        "type": "file",
+        "name": "TraderStatusPanel.tsx",
+        "filePath": "web/src/components/agent/TraderStatusPanel.tsx",
+        "summary": "Sidebar panel listing the user's AI traders and their running status, refreshed via SWR and a window-level refresh event.",
+        "tags": [
+          "component",
+          "agent-chat",
+          "trader-status",
+          "data-fetching"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/agent/WelcomeScreen.tsx",
+        "type": "file",
+        "name": "WelcomeScreen.tsx",
+        "filePath": "web/src/components/agent/WelcomeScreen.tsx",
+        "summary": "Empty-state welcome screen for the agent chat showing localized suggestion prompts that feed directly into the send handler when clicked.",
+        "tags": [
+          "component",
+          "agent-chat",
+          "onboarding",
+          "empty-state"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/auth/LoginRequiredOverlay.tsx",
+        "type": "file",
+        "name": "LoginRequiredOverlay.tsx",
+        "filePath": "web/src/components/auth/LoginRequiredOverlay.tsx",
+        "summary": "Modal overlay shown to unauthenticated users when they hit a gated feature, listing localized login benefits with links to the login page.",
+        "tags": [
+          "component",
+          "authentication",
+          "modal",
+          "gating"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/auth/OnboardingModeSelector.tsx",
+        "type": "file",
+        "name": "OnboardingModeSelector.tsx",
+        "filePath": "web/src/components/auth/OnboardingModeSelector.tsx",
+        "summary": "Radio-style selector letting new users choose between beginner and pro onboarding modes, persisted through the onboarding lib.",
+        "tags": [
+          "component",
+          "onboarding",
+          "authentication"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/auth/RegisterPage.tsx",
+        "type": "file",
+        "name": "RegisterPage.tsx",
+        "filePath": "web/src/components/auth/RegisterPage.tsx",
+        "summary": "Registration page with full form validation that gates sign-up on system config (beta mode, initialized flag), rendering RegistrationDisabled or WhitelistFullPage when registration is closed.",
+        "tags": [
+          "component",
+          "authentication",
+          "form",
+          "page",
+          "feature-gating",
+          "tested"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "function:web/src/components/agent/AgentStepPanel.tsx:AgentStepPanel",
+        "type": "function",
+        "name": "AgentStepPanel",
+        "filePath": "web/src/components/agent/AgentStepPanel.tsx",
+        "lineRange": [
+          16,
+          109
+        ],
+        "summary": "Renders the list of agent execution steps, filtering out placeholder labels and empty details before display.",
+        "tags": [
+          "component",
+          "agent-chat",
+          "ui-panel"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/agent/ChatMessages.tsx:hasMeaningfulExecutionSteps",
+        "type": "function",
+        "name": "hasMeaningfulExecutionSteps",
+        "filePath": "web/src/components/agent/ChatMessages.tsx",
+        "lineRange": [
+          11,
+          21
+        ],
+        "summary": "Predicate that decides whether an agent step list contains real content (non-placeholder labels or details) worth rendering.",
+        "tags": [
+          "utility",
+          "validation",
+          "agent-chat"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/components/agent/ChatMessages.tsx:ChatMessages",
+        "type": "function",
+        "name": "ChatMessages",
+        "filePath": "web/src/components/agent/ChatMessages.tsx",
+        "lineRange": [
+          23,
+          143
+        ],
+        "summary": "ForwardRef message list rendering each chat message through renderMessageContent and conditionally attaching an AgentStepPanel.",
+        "tags": [
+          "component",
+          "message-list",
+          "agent-chat"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/agent/MarketTicker.tsx:MarketTicker",
+        "type": "function",
+        "name": "MarketTicker",
+        "filePath": "web/src/components/agent/MarketTicker.tsx",
+        "lineRange": [
+          22,
+          208
+        ],
+        "summary": "Fetches tickers for a fixed symbol list on an auto-refresh interval and renders formatted price/volume cells.",
+        "tags": [
+          "component",
+          "market-data",
+          "polling"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/agent/TraderStatusPanel.tsx:TraderStatusPanel",
+        "type": "function",
+        "name": "TraderStatusPanel",
+        "filePath": "web/src/components/agent/TraderStatusPanel.tsx",
+        "lineRange": [
+          8,
+          119
+        ],
+        "summary": "Displays the authenticated user's traders and running status via SWR with a window-event triggered refresh.",
+        "tags": [
+          "component",
+          "trader-status",
+          "data-fetching"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/agent/WelcomeScreen.tsx:WelcomeScreen",
+        "type": "function",
+        "name": "WelcomeScreen",
+        "filePath": "web/src/components/agent/WelcomeScreen.tsx",
+        "lineRange": [
+          16,
+          188
+        ],
+        "summary": "Renders the localized agent-chat welcome hero with clickable suggestion prompts wired to the onSend callback.",
+        "tags": [
+          "component",
+          "onboarding",
+          "empty-state"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/auth/LoginRequiredOverlay.tsx:LoginRequiredOverlay",
+        "type": "function",
+        "name": "LoginRequiredOverlay",
+        "filePath": "web/src/components/auth/LoginRequiredOverlay.tsx",
+        "lineRange": [
+          14,
+          159
+        ],
+        "summary": "Modal overlay prompting login for gated features, rendering a localized benefits list and login call-to-action.",
+        "tags": [
+          "component",
+          "authentication",
+          "modal"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/auth/OnboardingModeSelector.tsx:OnboardingModeSelector",
+        "type": "function",
+        "name": "OnboardingModeSelector",
+        "filePath": "web/src/components/auth/OnboardingModeSelector.tsx",
+        "lineRange": [
+          9,
+          75
+        ],
+        "summary": "Renders beginner/pro mode option cards and reports the selected onboarding mode through onChange.",
+        "tags": [
+          "component",
+          "onboarding",
+          "selector"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/components/auth/RegisterPage.tsx:RegisterPage",
+        "type": "function",
+        "name": "RegisterPage",
+        "filePath": "web/src/components/auth/RegisterPage.tsx",
+        "lineRange": [
+          14,
+          365
+        ],
+        "summary": "Registration form with field validation that checks system config for beta mode and registration availability, branching to disabled/whitelist screens when closed.",
+        "tags": [
+          "component",
+          "authentication",
+          "form",
+          "feature-gating"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "file:web/src/components/charts/ChartTabs.tsx",
+        "type": "file",
+        "name": "ChartTabs.tsx",
+        "filePath": "web/src/components/charts/ChartTabs.tsx",
+        "summary": "Tabbed chart container for the trader dashboard that switches between the price chart (AdvancedChart) and equity curve (EquityChart), deriving market type and symbol from the trader's exchange id.",
+        "tags": [
+          "component",
+          "charting",
+          "tabs",
+          "dashboard"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "file:web/src/components/charts/ChartWithOrders.tsx",
+        "type": "file",
+        "name": "ChartWithOrders.tsx",
+        "filePath": "web/src/components/charts/ChartWithOrders.tsx",
+        "summary": "Candlestick chart that overlays the trader's order fills as markers, with custom timestamp parsing and kline plus order data loaded through httpClient.",
+        "tags": [
+          "component",
+          "charting",
+          "orders",
+          "market-data"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "file:web/src/components/charts/EquityChart.tsx",
+        "type": "file",
+        "name": "EquityChart.tsx",
+        "filePath": "web/src/components/charts/EquityChart.tsx",
+        "summary": "Single-trader equity curve chart combining account balance and equity history from the api client via SWR, with P&L percentage display and futures-aware formatting.",
+        "tags": [
+          "component",
+          "charting",
+          "equity",
+          "data-fetching"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "file:web/src/components/charts/TradingViewChart.tsx",
+        "type": "file",
+        "name": "TradingViewChart.tsx",
+        "filePath": "web/src/components/charts/TradingViewChart.tsx",
+        "summary": "Embedded TradingView widget wrapper that injects the external widget script, exposes an exchange/symbol toolbar, and is memoized to avoid re-creating the iframe on unrelated renders.",
+        "tags": [
+          "component",
+          "charting",
+          "third-party-widget"
+        ],
+        "complexity": "complex",
+        "languageNotes": "Exports memo(TradingViewChartComponent) so the external TradingView widget script is not re-injected on every parent render."
+      },
+      {
+        "id": "file:web/src/components/common/ConfirmDialog.tsx",
+        "type": "file",
+        "name": "ConfirmDialog.tsx",
+        "filePath": "web/src/components/common/ConfirmDialog.tsx",
+        "summary": "Promise-based confirmation dialog system: a context provider rendering a Radix alert-dialog plus a useConfirmDialog hook, also registering itself as the global confirm handler for the notify library.",
+        "tags": [
+          "component",
+          "provider",
+          "hook",
+          "dialog"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/common/Container.tsx",
+        "type": "file",
+        "name": "Container.tsx",
+        "filePath": "web/src/components/common/Container.tsx",
+        "summary": "Layout wrapper component providing consistent max-width, padding, and fluid options for page content.",
+        "tags": [
+          "component",
+          "layout",
+          "utility"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/components/common/Header.tsx",
+        "type": "file",
+        "name": "Header.tsx",
+        "filePath": "web/src/components/common/Header.tsx",
+        "summary": "Simple site header with branding and a language toggle, wrapped in the shared Container layout.",
+        "tags": [
+          "component",
+          "layout",
+          "navigation",
+          "i18n"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/charts/ChartTabs.tsx:ChartTabs",
+        "type": "function",
+        "name": "ChartTabs",
+        "filePath": "web/src/components/charts/ChartTabs.tsx",
+        "lineRange": [
+          140,
+          498
+        ],
+        "summary": "Tab controller that derives market type from the exchange id and swaps between AdvancedChart and EquityChart views for a trader.",
+        "tags": [
+          "component",
+          "charting",
+          "tabs"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "function:web/src/components/charts/ChartWithOrders.tsx:ChartWithOrders",
+        "type": "function",
+        "name": "ChartWithOrders",
+        "filePath": "web/src/components/charts/ChartWithOrders.tsx",
+        "lineRange": [
+          43,
+          531
+        ],
+        "summary": "Chart component that plots klines and overlays the trader's order fills as markers, including tolerant custom timestamp parsing.",
+        "tags": [
+          "component",
+          "charting",
+          "orders"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "function:web/src/components/charts/EquityChart.tsx:EquityChart",
+        "type": "function",
+        "name": "EquityChart",
+        "filePath": "web/src/components/charts/EquityChart.tsx",
+        "lineRange": [
+          41,
+          521
+        ],
+        "summary": "Renders a trader's equity curve with account balance context via SWR-backed API calls, computing P&L percentages and futures-aware labels.",
+        "tags": [
+          "component",
+          "charting",
+          "equity"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "function:web/src/components/charts/TradingViewChart.tsx:TradingViewChartComponent",
+        "type": "function",
+        "name": "TradingViewChartComponent",
+        "filePath": "web/src/components/charts/TradingViewChart.tsx",
+        "lineRange": [
+          52,
+          395
+        ],
+        "summary": "Injects and configures the external TradingView widget script for the chosen exchange/symbol; exported as memo(TradingViewChartComponent) under the name TradingViewChart.",
+        "tags": [
+          "component",
+          "charting",
+          "third-party-widget"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "function:web/src/components/common/ConfirmDialog.tsx:useConfirmDialog",
+        "type": "function",
+        "name": "useConfirmDialog",
+        "filePath": "web/src/components/common/ConfirmDialog.tsx",
+        "lineRange": [
+          34,
+          42
+        ],
+        "summary": "Hook exposing the promise-based confirm function from the ConfirmDialog context, throwing if used outside the provider.",
+        "tags": [
+          "hook",
+          "dialog",
+          "utility"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/components/common/ConfirmDialog.tsx:ConfirmDialogProvider",
+        "type": "function",
+        "name": "ConfirmDialogProvider",
+        "filePath": "web/src/components/common/ConfirmDialog.tsx",
+        "lineRange": [
+          53,
+          123
+        ],
+        "summary": "Context provider that queues confirm requests, renders the Radix alert-dialog, resolves promises on user choice, and registers the global confirm handler for the notify library.",
+        "tags": [
+          "component",
+          "provider",
+          "dialog"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/common/Container.tsx:Container",
+        "type": "function",
+        "name": "Container",
+        "filePath": "web/src/components/common/Container.tsx",
+        "lineRange": [
+          21,
+          40
+        ],
+        "summary": "Polymorphic layout wrapper applying max-width, padding, and fluid layout classes to page content.",
+        "tags": [
+          "component",
+          "layout",
+          "utility"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/components/common/Header.tsx:Header",
+        "type": "function",
+        "name": "Header",
+        "filePath": "web/src/components/common/Header.tsx",
+        "lineRange": [
+          9,
+          76
+        ],
+        "summary": "Site header rendering branding and a language switcher inside the shared Container.",
+        "tags": [
+          "component",
+          "navigation",
+          "i18n"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/common/LanguageSwitcher.tsx",
+        "type": "file",
+        "name": "LanguageSwitcher.tsx",
+        "filePath": "web/src/components/common/LanguageSwitcher.tsx",
+        "summary": "Compact UI control that toggles the interface language through LanguageContext and the shared translations table.",
+        "tags": [
+          "component",
+          "i18n",
+          "utility"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/components/common/LanguageSwitcher.tsx:LanguageSwitcher",
+        "type": "function",
+        "name": "LanguageSwitcher",
+        "filePath": "web/src/components/common/LanguageSwitcher.tsx",
+        "lineRange": [
+          11,
+          33
+        ],
+        "summary": "Renders the language toggle button and calls useLanguage to switch between supported locales.",
+        "tags": [
+          "component",
+          "i18n"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/components/common/WhitelistFullPage.tsx",
+        "type": "file",
+        "name": "WhitelistFullPage.tsx",
+        "filePath": "web/src/components/common/WhitelistFullPage.tsx",
+        "summary": "Full-page access-denied screen shown to non-whitelisted users, with official Twitter/Telegram links and a back-to-login action.",
+        "tags": [
+          "component",
+          "access-control",
+          "error-state",
+          "page"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/common/WhitelistFullPage.tsx:WhitelistFullPage",
+        "type": "function",
+        "name": "WhitelistFullPage",
+        "filePath": "web/src/components/common/WhitelistFullPage.tsx",
+        "lineRange": [
+          10,
+          132
+        ],
+        "summary": "Renders the animated whitelist-restriction page and navigates back to /login on demand.",
+        "tags": [
+          "component",
+          "access-control",
+          "page"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/faq/FAQSidebar.tsx",
+        "type": "file",
+        "name": "FAQSidebar.tsx",
+        "filePath": "web/src/components/faq/FAQSidebar.tsx",
+        "summary": "Sidebar navigation listing FAQ categories and items, highlighting the active item reported by the content's scroll tracking.",
+        "tags": [
+          "component",
+          "faq",
+          "navigation",
+          "sidebar"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/faq/FAQSidebar.tsx:FAQSidebar",
+        "type": "function",
+        "name": "FAQSidebar",
+        "filePath": "web/src/components/faq/FAQSidebar.tsx",
+        "lineRange": [
+          11,
+          60
+        ],
+        "summary": "Renders category/item links from faqCategories with active-item highlighting and click-to-scroll behavior.",
+        "tags": [
+          "component",
+          "faq",
+          "navigation"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/components/modals/SetupPage.tsx",
+        "type": "file",
+        "name": "SetupPage.tsx",
+        "filePath": "web/src/components/modals/SetupPage.tsx",
+        "summary": "First-run setup page for the single-user system: creates the sole account with email/password (bilingual labels), selects the onboarding user mode, and invalidates the cached system config after setup.",
+        "tags": [
+          "component",
+          "onboarding",
+          "auth",
+          "page",
+          "i18n"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/components/modals/SetupPage.tsx:SetupPage",
+        "type": "function",
+        "name": "SetupPage",
+        "filePath": "web/src/components/modals/SetupPage.tsx",
+        "lineRange": [
+          52,
+          226
+        ],
+        "summary": "Handles the account-creation form (validation, show/hide password, submit via AuthContext) and onboarding mode selection with LanguageSwitcher in the corner.",
+        "tags": [
+          "component",
+          "onboarding",
+          "form",
+          "auth"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/components/modals/TwoStageKeyModal.tsx",
+        "type": "file",
+        "name": "TwoStageKeyModal.tsx",
+        "filePath": "web/src/components/modals/TwoStageKeyModal.tsx",
+        "summary": "Security modal for entering exchange private keys in two stages with random hex obfuscation values logged between stages, hex-format validation, and an embedded WebCrypto environment check.",
+        "tags": [
+          "modal",
+          "security",
+          "private-key",
+          "validation",
+          "component"
+        ],
+        "complexity": "complex",
+        "languageNotes": "Splits private-key entry into two stages and interleaves crypto.getRandomValues-derived obfuscation strings so the full key never sits in one paste buffer."
+      },
+      {
+        "id": "function:web/src/components/modals/TwoStageKeyModal.tsx:validatePrivateKeyFormat",
+        "type": "function",
+        "name": "validatePrivateKeyFormat",
+        "filePath": "web/src/components/modals/TwoStageKeyModal.tsx",
+        "lineRange": [
+          17,
+          26
+        ],
+        "summary": "Validates that a (0x-optional) string is hex of the expected length.",
+        "tags": [
+          "validation",
+          "utility",
+          "security"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/components/modals/TwoStageKeyModal.tsx:TwoStageKeyModal",
+        "type": "function",
+        "name": "TwoStageKeyModal",
+        "filePath": "web/src/components/modals/TwoStageKeyModal.tsx",
+        "lineRange": [
+          42,
+          347
+        ],
+        "summary": "Portal modal orchestrating the two-stage key entry flow, obfuscation log, format validation, and WebCrypto status gating before returning TwoStageKeyModalResult.",
+        "tags": [
+          "modal",
+          "security",
+          "private-key"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "file:web/src/hooks/useSystemConfig.ts",
+        "type": "file",
+        "name": "useSystemConfig.ts",
+        "filePath": "web/src/hooks/useSystemConfig.ts",
+        "summary": "React hook that loads the cached system configuration from the backend, refetches on a window event, and exposes a manual invalidate/refetch callback.",
+        "tags": [
+          "hook",
+          "configuration",
+          "data-fetching"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/hooks/useSystemConfig.ts:useSystemConfig",
+        "type": "function",
+        "name": "useSystemConfig",
+        "filePath": "web/src/hooks/useSystemConfig.ts",
+        "lineRange": [
+          4,
+          42
+        ],
+        "summary": "Fetches system config via getSystemConfig with mounted-guarding, listens for a refresh event to refetch, and returns config/loading/error plus an invalidation callback.",
+        "tags": [
+          "hook",
+          "data-fetching",
+          "configuration"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/i18n/translations.ts",
+        "type": "file",
+        "name": "translations.ts",
+        "filePath": "web/src/i18n/translations.ts",
+        "summary": "Master i18n dictionary for the entire web UI (thousands of keys per language) plus the t() lookup function used by nearly every component.",
+        "tags": [
+          "i18n",
+          "translations",
+          "localization",
+          "core"
+        ],
+        "complexity": "complex",
+        "languageNotes": "Single ~4000-line nested object; t() resolves dot-separated key paths at runtime."
+      },
+      {
+        "id": "function:web/src/i18n/translations.ts:t",
+        "type": "function",
+        "name": "t",
+        "filePath": "web/src/i18n/translations.ts",
+        "lineRange": [
+          3993,
+          4016
+        ],
+        "summary": "Resolves a dot-separated translation key for a language and interpolates {placeholder} params, falling back to the key string when missing.",
+        "tags": [
+          "i18n",
+          "utility",
+          "lookup"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/lib/agentChatStorage.ts",
+        "type": "file",
+        "name": "agentChatStorage.ts",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "summary": "localStorage persistence layer for the NOFXi agent chat: per-user message and draft keys, guest/legacy key fallback and one-time migration, and streaming-flag sanitization before persistence.",
+        "tags": [
+          "storage",
+          "persistence",
+          "agent-chat",
+          "utility",
+          "tested"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/lib/agentChatStorage.ts:normalizeStorageUserId",
+        "type": "function",
+        "name": "normalizeStorageUserId",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "lineRange": [
+          3,
+          12
+        ],
+        "summary": "Normalizes a string or numeric user id into a trimmed storage-key fragment, returning undefined for empty/invalid values.",
+        "tags": [
+          "utility",
+          "normalization",
+          "storage"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/agentChatStorage.ts:getStoredAuthUserId",
+        "type": "function",
+        "name": "getStoredAuthUserId",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "lineRange": [
+          22,
+          31
+        ],
+        "summary": "Reads the persisted auth_user record from storage and extracts a normalized user id for keying chat history.",
+        "tags": [
+          "utility",
+          "storage",
+          "authentication"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/agentChatStorage.ts:loadAgentMessages",
+        "type": "function",
+        "name": "loadAgentMessages",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "lineRange": [
+          53,
+          62
+        ],
+        "summary": "Loads the chat message array for a user, trying the per-user key first then guest/legacy candidate keys, returning messages plus the source key.",
+        "tags": [
+          "storage",
+          "persistence",
+          "agent-chat"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/agentChatStorage.ts:persistAgentMessages",
+        "type": "function",
+        "name": "persistAgentMessages",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "lineRange": [
+          64,
+          70
+        ],
+        "summary": "Serializes and writes a user's chat messages to their per-user storage key.",
+        "tags": [
+          "storage",
+          "persistence",
+          "agent-chat"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/agentChatStorage.ts:prepareAgentMessagesForPersistence",
+        "type": "function",
+        "name": "prepareAgentMessagesForPersistence",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "lineRange": [
+          97,
+          117
+        ],
+        "summary": "Sanitizes in-memory messages before persistence by clearing the streaming flag so restored sessions don't resume as actively streaming.",
+        "tags": [
+          "utility",
+          "serialization",
+          "agent-chat"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/agentChatStorage.ts:migrateAgentMessages",
+        "type": "function",
+        "name": "migrateAgentMessages",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "lineRange": [
+          119,
+          135
+        ],
+        "summary": "One-time migration copying guest or legacy shared-key chat history into the user-specific key when the target is empty.",
+        "tags": [
+          "storage",
+          "migration",
+          "agent-chat"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/agentChatStorage.ts:clearAgentMessages",
+        "type": "function",
+        "name": "clearAgentMessages",
+        "filePath": "web/src/lib/agentChatStorage.ts",
+        "lineRange": [
+          137,
+          142
+        ],
+        "summary": "Removes stored chat messages for a user across per-user, guest, and legacy candidate keys.",
+        "tags": [
+          "storage",
+          "cleanup",
+          "agent-chat"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/lib/api/index.ts",
+        "type": "file",
+        "name": "index.ts",
+        "filePath": "web/src/lib/api/index.ts",
+        "summary": "Barrel aggregating traderApi, strategyApi, configApi, dataApi, and telegramApi into the single flat api object consumed across the frontend.",
+        "tags": [
+          "barrel",
+          "api-client",
+          "entry-point"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/constants/branding.ts",
+        "type": "file",
+        "name": "branding.ts",
+        "filePath": "web/src/constants/branding.ts",
+        "summary": "Project branding constants for this personal fork: brand name 'VL', tagline, version, and intentionally emptied official social links.",
+        "tags": [
+          "constants",
+          "branding",
+          "configuration"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/lib/api/traders.ts",
+        "type": "file",
+        "name": "traders.ts",
+        "filePath": "web/src/lib/api/traders.ts",
+        "summary": "Trader API client exposing the traderApi object with lifecycle endpoints (create, start, stop, delete traders), position close, prompt/config updates, and NinjaTrader account listing/selection, all routed through the shared HttpClient with structured ApiError propagation.",
+        "tags": [
+          "service",
+          "api-handler",
+          "trader-management",
+          "http"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/lib/clipboard.ts",
+        "type": "file",
+        "name": "clipboard.ts",
+        "filePath": "web/src/lib/clipboard.ts",
+        "summary": "Clipboard helper that copies text via navigator.clipboard with a hidden-textarea execCommand fallback, then surfaces success or failure through toast notifications.",
+        "tags": [
+          "utility",
+          "clipboard",
+          "notification"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/clipboard.ts:copyWithToast",
+        "type": "function",
+        "name": "copyWithToast",
+        "filePath": "web/src/lib/clipboard.ts",
+        "lineRange": [
+          6,
+          28
+        ],
+        "summary": "Copies text to the clipboard using the async Clipboard API with a legacy execCommand fallback, showing a success or error toast via notify.",
+        "tags": [
+          "utility",
+          "clipboard",
+          "fallback"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/lib/crypto.ts",
+        "type": "file",
+        "name": "crypto.ts",
+        "filePath": "web/src/lib/crypto.ts",
+        "summary": "Client-side transport encryption for sensitive credentials: CryptoService performs hybrid RSA-OAEP + AES-GCM encryption of API keys using a server-fetched public key, alongside private-key format validation and a WebCrypto environment diagnostic for non-secure contexts.",
+        "tags": [
+          "security",
+          "encryption",
+          "service",
+          "validation"
+        ],
+        "complexity": "complex",
+        "languageNotes": "Uses a hybrid envelope scheme: a random AES-GCM session key encrypts the payload, then RSA-OAEP wraps the AES key; output is base64url-encoded parts."
+      },
+      {
+        "id": "class:web/src/lib/crypto.ts:CryptoService",
+        "type": "class",
+        "name": "CryptoService",
+        "filePath": "web/src/lib/crypto.ts",
+        "lineRange": [
+          24,
+          200
+        ],
+        "summary": "Encapsulates transport encryption: fetches the server RSA public key and crypto config, imports the PEM key via WebCrypto, and encrypts/decrypts sensitive data with an AES-GCM session key wrapped by RSA-OAEP.",
+        "tags": [
+          "security",
+          "encryption",
+          "web-crypto",
+          "service"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "function:web/src/lib/crypto.ts:generateObfuscation",
+        "type": "function",
+        "name": "generateObfuscation",
+        "filePath": "web/src/lib/crypto.ts",
+        "lineRange": [
+          203,
+          209
+        ],
+        "summary": "Generates a random hex string from crypto.getRandomValues used as an obfuscation nonce for sensitive payloads.",
+        "tags": [
+          "security",
+          "random",
+          "utility"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/crypto.ts:validatePrivateKeyFormat",
+        "type": "function",
+        "name": "validatePrivateKeyFormat",
+        "filePath": "web/src/lib/crypto.ts",
+        "lineRange": [
+          212,
+          221
+        ],
+        "summary": "Validates that a wallet private key is hex of the expected length, tolerating an optional 0x prefix, before it is encrypted and submitted.",
+        "tags": [
+          "validation",
+          "security",
+          "wallet"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/crypto.ts:diagnoseWebCryptoEnvironment",
+        "type": "function",
+        "name": "diagnoseWebCryptoEnvironment",
+        "filePath": "web/src/lib/crypto.ts",
+        "lineRange": [
+          223,
+          258
+        ],
+        "summary": "Diagnoses why WebCrypto may be unavailable (non-HTTPS origin, non-localhost host, missing subtle API) and returns a structured report used by the environment-check UI.",
+        "tags": [
+          "diagnostics",
+          "security",
+          "environment"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/lib/httpClient.ts",
+        "type": "file",
+        "name": "httpClient.ts",
+        "filePath": "web/src/lib/httpClient.ts",
+        "summary": "Axios-based HTTP client singleton for the whole frontend: injects the JWT bearer token from localStorage, centralizes error handling (401 logout broadcast with redirect-suppression flag, toast notifications, ApiError normalization), and exposes typed get/post/put/delete/patch helpers.",
+        "tags": [
+          "http-client",
+          "middleware",
+          "error-handling",
+          "singleton",
+          "authentication"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "class:web/src/lib/httpClient.ts:ApiError",
+        "type": "class",
+        "name": "ApiError",
+        "filePath": "web/src/lib/httpClient.ts",
+        "lineRange": [
+          27,
+          44
+        ],
+        "summary": "Error subclass carrying an i18n errorKey, interpolation params, and HTTP status code so UI layers can render localized API failure messages.",
+        "tags": [
+          "error-handling",
+          "type-definition",
+          "i18n"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "class:web/src/lib/httpClient.ts:HttpClient",
+        "type": "class",
+        "name": "HttpClient",
+        "filePath": "web/src/lib/httpClient.ts",
+        "lineRange": [
+          49,
+          308
+        ],
+        "summary": "Wraps an axios instance with request/response interceptors: attaches the auth token, dedupes 401 handling via an isHandling401 latch that clears credentials and dispatches a logout event, shows error toasts, and normalizes failures into ApiError.",
+        "tags": [
+          "http-client",
+          "middleware",
+          "interceptor",
+          "authentication"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "file:web/src/lib/onboarding.ts",
+        "type": "file",
+        "name": "onboarding.ts",
+        "filePath": "web/src/lib/onboarding.ts",
+        "summary": "localStorage helpers for the onboarding flow: persists the user mode (beginner/pro), computes the post-auth landing path, and stores the beginner wallet address and onboarding-completed flag.",
+        "tags": [
+          "utility",
+          "onboarding",
+          "local-storage"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "type": "file",
+        "name": "BeginnerOnboardingPage.tsx",
+        "filePath": "web/src/pages/BeginnerOnboardingPage.tsx",
+        "summary": "Beginner onboarding page that calls the API to prepare a managed wallet, displays the deposit address with balance polling and refresh, stores the wallet address locally, and marks onboarding completed before routing the user onward.",
+        "tags": [
+          "component",
+          "page",
+          "onboarding",
+          "wallet"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "function:web/src/pages/BeginnerOnboardingPage.tsx:BeginnerOnboardingPage",
+        "type": "function",
+        "name": "BeginnerOnboardingPage",
+        "filePath": "web/src/pages/BeginnerOnboardingPage.tsx",
+        "lineRange": [
+          14,
+          295
+        ],
+        "summary": "Onboarding component managing load/refresh state around api.prepareBeginnerOnboarding, persisting the beginner wallet address, and rendering deposit instructions with error and loading states in the active language.",
+        "tags": [
+          "component",
+          "onboarding",
+          "api-consumer"
+        ],
+        "complexity": "complex"
+      },
+      {
+        "id": "file:web/src/pages/FAQPage.tsx",
+        "type": "file",
+        "name": "FAQPage.tsx",
+        "filePath": "web/src/pages/FAQPage.tsx",
+        "summary": "Thin page wrapper that renders the FAQLayout component with the current language from LanguageContext.",
+        "tags": [
+          "component",
+          "page",
+          "documentation"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/stores/agentChatStore.ts",
+        "type": "file",
+        "name": "agentChatStore.ts",
+        "filePath": "web/src/stores/agentChatStore.ts",
+        "summary": "Zustand store for the agent chat page holding the active user id, message list, draft text, loading and hydration flags, with functional message updates and a per-user reset action.",
+        "tags": [
+          "state-management",
+          "store",
+          "chat",
+          "zustand"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/stores/tradersConfigStore.ts",
+        "type": "file",
+        "name": "tradersConfigStore.ts",
+        "filePath": "web/src/stores/tradersConfigStore.ts",
+        "summary": "Zustand store that loads AI model and exchange configurations (plus publicly supported lists) through the api client, deriving configuredModels/configuredExchanges by filtering for enabled entries or present credentials, with special-case handling for Aster and Hyperliquid DEX identities.",
+        "tags": [
+          "state-management",
+          "store",
+          "configuration",
+          "zustand"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/stores/tradersModalStore.ts",
+        "type": "file",
+        "name": "tradersModalStore.ts",
+        "filePath": "web/src/stores/tradersModalStore.ts",
+        "summary": "Zustand store tracking modal visibility and editing targets (create/edit trader, model config, exchange config) for the traders page, with convenience open/close helpers and a reset action.",
+        "tags": [
+          "state-management",
+          "store",
+          "modal",
+          "zustand"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/types/agent.ts",
+        "type": "file",
+        "name": "agent.ts",
+        "filePath": "web/src/types/agent.ts",
+        "summary": "Type definitions for the agent chat: AgentStep (plan/step lifecycle with status states) and AgentMessage (role, text, timestamp, streaming flag, attached steps).",
+        "tags": [
+          "type-definition",
+          "chat",
+          "agent"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/types/index.ts",
+        "type": "file",
+        "name": "index.ts",
+        "filePath": "web/src/types/index.ts",
+        "summary": "Barrel file re-exporting all trading, strategy, and config type definitions as the single import point for frontend types.",
+        "tags": [
+          "barrel",
+          "type-definition",
+          "entry-point"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/utils/traderColors.ts",
+        "type": "file",
+        "name": "traderColors.ts",
+        "filePath": "web/src/utils/traderColors.ts",
+        "summary": "Fixed color palette and lookup helper assigning each trader a stable color by list position, used to keep equity-comparison chart series visually consistent.",
+        "tags": [
+          "utility",
+          "charting",
+          "styling"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/hooks/useCounterAnimation.ts",
+        "type": "file",
+        "name": "useCounterAnimation.ts",
+        "filePath": "web/src/hooks/useCounterAnimation.ts",
+        "summary": "React hook that animates a number from start to end over a configurable duration using requestAnimationFrame with easeOutExpo easing, returning the in-flight value rounded to the requested decimals.",
+        "tags": [
+          "hook",
+          "animation",
+          "utility"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/hooks/useGitHubStats.ts",
+        "type": "file",
+        "name": "useGitHubStats.ts",
+        "filePath": "web/src/hooks/useGitHubStats.ts",
+        "summary": "React hook fetching a repository's stars, forks, contributor count, creation date, and age in days from the public GitHub API, exposing loading and error state for landing-page social proof.",
+        "tags": [
+          "hook",
+          "api-client",
+          "github",
+          "data-fetching"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/lib/text.ts",
+        "type": "file",
+        "name": "text.ts",
+        "filePath": "web/src/lib/text.ts",
+        "summary": "Text utility exporting stripLeadingIcons, which removes decorative leading emoji/symbol blocks and trailing separator punctuation from translated labels so components can render their own icons without duplication.",
+        "tags": [
+          "utility",
+          "text-processing",
+          "i18n"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/src/types/config.ts",
+        "type": "file",
+        "name": "config.ts",
+        "filePath": "web/src/types/config.ts",
+        "summary": "TypeScript interfaces for the settings surface: AI models, Telegram bot binding, and exchange accounts across CEX/DEX brokers (Binance, Bybit, OKX, Hyperliquid, Aster, Lighter) including per-broker credential and masked-secret fields.",
+        "tags": [
+          "type-definition",
+          "configuration",
+          "exchanges",
+          "ai-models"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/src/types/strategy.ts",
+        "type": "file",
+        "name": "strategy.ts",
+        "filePath": "web/src/types/strategy.ts",
+        "summary": "Strategy Studio type definitions: Strategy with visibility/clone metadata, usage stats and performer leaderboards, and StrategyConfig covering strategy type (AI vs grid), language, persisted prompt_variant, coin source, indicators, risk control, prompt sections, and grid-trading config.",
+        "tags": [
+          "type-definition",
+          "strategy-studio",
+          "trading",
+          "configuration"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/hooks/useCounterAnimation.ts:useCounterAnimation",
+        "type": "function",
+        "name": "useCounterAnimation",
+        "filePath": "web/src/hooks/useCounterAnimation.ts",
+        "lineRange": [
+          10,
+          51
+        ],
+        "summary": "Hook driving a requestAnimationFrame loop that eases a counter from start to end with easeOutExpo, cancelling the frame on unmount and snapping to the exact end value on completion.",
+        "tags": [
+          "hook",
+          "animation",
+          "utility"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/hooks/useGitHubStats.ts:useGitHubStats",
+        "type": "function",
+        "name": "useGitHubStats",
+        "filePath": "web/src/hooks/useGitHubStats.ts",
+        "lineRange": [
+          13,
+          91
+        ],
+        "summary": "Hook that fetches repo metadata and the contributors list from api.github.com for an owner/repo pair, deriving days-since-creation and updating a single stats state object with isLoading/error handling.",
+        "tags": [
+          "hook",
+          "data-fetching",
+          "github"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "function:web/src/lib/text.ts:stripLeadingIcons",
+        "type": "function",
+        "name": "stripLeadingIcons",
+        "filePath": "web/src/lib/text.ts",
+        "lineRange": [
+          11,
+          26
+        ],
+        "summary": "Strips leading emoji/symbol Unicode ranges (arrows, misc symbols, geometric shapes, emoticons) and any residual separator characters from a string, returning a trimmed label safe for icon-prefixed rendering.",
+        "tags": [
+          "utility",
+          "text-processing",
+          "unicode"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/eslint.config.js",
+        "type": "file",
+        "name": "eslint.config.js",
+        "filePath": "web/eslint.config.js",
+        "summary": "Flat-format ESLint configuration for the React/TypeScript frontend wiring the typescript-eslint parser and plugin together with react, react-hooks, react-refresh, and prettier plugins, browser globals, and dist/node_modules ignores.",
+        "tags": [
+          "configuration",
+          "linting",
+          "typescript",
+          "build-system"
+        ],
+        "complexity": "moderate"
+      },
+      {
+        "id": "file:web/vite.config.ts",
+        "type": "file",
+        "name": "vite.config.ts",
+        "filePath": "web/vite.config.ts",
+        "summary": "Vite build and dev-server configuration: registers the React plugin, binds the dev server to 0.0.0.0:3000, and proxies /api requests to the Go backend at localhost:8080.",
+        "tags": [
+          "configuration",
+          "build-system",
+          "dev-server",
+          "proxy"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "file:web/vitest.config.ts",
+        "type": "file",
+        "name": "vitest.config.ts",
+        "filePath": "web/vitest.config.ts",
+        "summary": "Vitest test-runner configuration enabling global test APIs, a jsdom browser environment, CSS processing, and the shared setup file at src/test/setup.ts, with the React plugin applied for component tests.",
+        "tags": [
+          "configuration",
+          "test",
+          "build-system",
+          "frontend"
+        ],
+        "complexity": "simple"
+      },
+      {
+        "id": "function:web/src/lib/httpClient.ts:reset401Flag",
+        "type": "function",
+        "name": "reset401Flag",
+        "filePath": "web/src/lib/httpClient.ts",
+        "summary": "Module-level helper that delegates to the shared HttpClient to clear its 401-redirect latch after re-login.",
+        "tags": [
+          "auth",
+          "http",
+          "utility"
+        ],
+        "complexity": "simple"
+      }
+    ],
+    "incident_edges": [
+      {
+        "source": "file:web/src/App.tsx",
+        "target": "file:web/src/components/common/ConfirmDialog.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/AgentStepPanel.tsx",
+        "target": "file:web/src/types/agent.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/ChatMessages.tsx",
+        "target": "file:web/src/components/agent/AgentStepPanel.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/ChatMessages.tsx",
+        "target": "file:web/src/components/agent/MessageRenderer.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/ChatMessages.tsx",
+        "target": "file:web/src/types/agent.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/MarketTicker.tsx",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/PositionsPanel.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/PositionsPanel.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/TraderStatusPanel.tsx",
+        "target": "file:web/src/contexts/AuthContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/TraderStatusPanel.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/TraderStatusPanel.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/UserPreferencesPanel.tsx",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/LoginPage.tsx",
+        "target": "file:web/src/components/auth/OnboardingModeSelector.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/LoginPage.tsx",
+        "target": "file:web/src/components/common/LanguageSwitcher.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/LoginPage.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/LoginPage.tsx",
+        "target": "file:web/src/lib/onboarding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/LoginRequiredOverlay.tsx",
+        "target": "file:web/src/components/common/DeepVoidBackground.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/LoginRequiredOverlay.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/LoginRequiredOverlay.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/OnboardingModeSelector.tsx",
+        "target": "file:web/src/lib/onboarding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/components/auth/RegistrationDisabled.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/components/common/DeepVoidBackground.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/components/common/WhitelistFullPage.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/contexts/AuthContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/lib/config.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/agent/AgentStepPanel.tsx",
+        "target": "function:web/src/components/agent/AgentStepPanel.tsx:AgentStepPanel",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/agent/AgentStepPanel.tsx",
+        "target": "function:web/src/components/agent/AgentStepPanel.tsx:AgentStepPanel",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/agent/ChatMessages.tsx",
+        "target": "function:web/src/components/agent/ChatMessages.tsx:hasMeaningfulExecutionSteps",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/agent/ChatMessages.tsx",
+        "target": "function:web/src/components/agent/ChatMessages.tsx:ChatMessages",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/agent/ChatMessages.tsx",
+        "target": "function:web/src/components/agent/ChatMessages.tsx:ChatMessages",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/agent/MarketTicker.tsx",
+        "target": "function:web/src/components/agent/MarketTicker.tsx:MarketTicker",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/agent/MarketTicker.tsx",
+        "target": "function:web/src/components/agent/MarketTicker.tsx:MarketTicker",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/agent/TraderStatusPanel.tsx",
+        "target": "function:web/src/components/agent/TraderStatusPanel.tsx:TraderStatusPanel",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/agent/TraderStatusPanel.tsx",
+        "target": "function:web/src/components/agent/TraderStatusPanel.tsx:TraderStatusPanel",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/agent/WelcomeScreen.tsx",
+        "target": "function:web/src/components/agent/WelcomeScreen.tsx:WelcomeScreen",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/agent/WelcomeScreen.tsx",
+        "target": "function:web/src/components/agent/WelcomeScreen.tsx:WelcomeScreen",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/auth/LoginRequiredOverlay.tsx",
+        "target": "function:web/src/components/auth/LoginRequiredOverlay.tsx:LoginRequiredOverlay",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/auth/LoginRequiredOverlay.tsx",
+        "target": "function:web/src/components/auth/LoginRequiredOverlay.tsx:LoginRequiredOverlay",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/auth/OnboardingModeSelector.tsx",
+        "target": "function:web/src/components/auth/OnboardingModeSelector.tsx:OnboardingModeSelector",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/auth/OnboardingModeSelector.tsx",
+        "target": "function:web/src/components/auth/OnboardingModeSelector.tsx:OnboardingModeSelector",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "function:web/src/components/auth/RegisterPage.tsx:RegisterPage",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "function:web/src/components/auth/RegisterPage.tsx:RegisterPage",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/auth/RegisterPage.tsx:RegisterPage",
+        "target": "function:web/src/lib/config.ts:getSystemConfig",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/auth/RegistrationDisabled.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/ResetPasswordPage.tsx",
+        "target": "file:web/src/components/common/Header.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/auth/ResetPasswordPage.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/AdvancedChart.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/AdvancedChart.tsx",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartTabs.tsx",
+        "target": "file:web/src/components/charts/AdvancedChart.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartTabs.tsx",
+        "target": "file:web/src/components/charts/EquityChart.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartTabs.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartTabs.tsx",
+        "target": "file:web/src/i18n/strategy-translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartTabs.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartWithOrders.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartWithOrders.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartWithOrders.tsx",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartWithOrdersSimple.tsx",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ComparisonChart.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ComparisonChart.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ComparisonChart.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ComparisonChart.tsx",
+        "target": "file:web/src/utils/traderColors.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/EquityChart.tsx",
+        "target": "file:web/src/contexts/AuthContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/EquityChart.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/EquityChart.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/EquityChart.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/TradingViewChart.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/TradingViewChart.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/ConfirmDialog.tsx",
+        "target": "file:web/src/components/ui/alert-dialog.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/ConfirmDialog.tsx",
+        "target": "file:web/src/lib/notify.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/Header.tsx",
+        "target": "file:web/src/components/common/Container.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/Header.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/Header.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/charts/ChartTabs.tsx",
+        "target": "function:web/src/components/charts/ChartTabs.tsx:ChartTabs",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/charts/ChartTabs.tsx",
+        "target": "function:web/src/components/charts/ChartTabs.tsx:ChartTabs",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/charts/ChartWithOrders.tsx",
+        "target": "function:web/src/components/charts/ChartWithOrders.tsx:ChartWithOrders",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/charts/ChartWithOrders.tsx",
+        "target": "function:web/src/components/charts/ChartWithOrders.tsx:ChartWithOrders",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/charts/EquityChart.tsx",
+        "target": "function:web/src/components/charts/EquityChart.tsx:EquityChart",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/charts/EquityChart.tsx",
+        "target": "function:web/src/components/charts/EquityChart.tsx:EquityChart",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/charts/TradingViewChart.tsx",
+        "target": "function:web/src/components/charts/TradingViewChart.tsx:TradingViewChartComponent",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/charts/TradingViewChart.tsx",
+        "target": "function:web/src/components/charts/TradingViewChart.tsx:TradingViewChartComponent",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/common/ConfirmDialog.tsx",
+        "target": "function:web/src/components/common/ConfirmDialog.tsx:useConfirmDialog",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/common/ConfirmDialog.tsx",
+        "target": "function:web/src/components/common/ConfirmDialog.tsx:useConfirmDialog",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/common/ConfirmDialog.tsx",
+        "target": "function:web/src/components/common/ConfirmDialog.tsx:ConfirmDialogProvider",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/common/ConfirmDialog.tsx",
+        "target": "function:web/src/components/common/ConfirmDialog.tsx:ConfirmDialogProvider",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/common/Container.tsx",
+        "target": "function:web/src/components/common/Container.tsx:Container",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/common/Container.tsx",
+        "target": "function:web/src/components/common/Container.tsx:Container",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/common/Header.tsx",
+        "target": "function:web/src/components/common/Header.tsx:Header",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/common/Header.tsx",
+        "target": "function:web/src/components/common/Header.tsx:Header",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/strategy/GridConfigEditor.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/strategy/GridRiskPanel.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/strategy/IndicatorEditor.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/strategy/PromptSectionsEditor.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/strategy/TokenEstimateBar.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/strategy/TokenEstimateBar.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/AITradersPage.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/AITradersPage.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/AITradersPage.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/AccountSelector.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/AccountSelector.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/DecisionCard.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/DecisionCard.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ExchangeConfigModal.tsx",
+        "target": "file:web/src/components/modals/TwoStageKeyModal.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ExchangeConfigModal.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ExchangeConfigModal.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ExchangeConfigModal.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "function:web/src/components/trader/ExchangeConfigModal.tsx:ExchangeConfigModal",
+        "target": "function:web/src/components/modals/TwoStageKeyModal.tsx:TwoStageKeyModal",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/common/LanguageSwitcher.tsx",
+        "target": "function:web/src/components/common/LanguageSwitcher.tsx:LanguageSwitcher",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/common/LanguageSwitcher.tsx",
+        "target": "function:web/src/components/common/LanguageSwitcher.tsx:LanguageSwitcher",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/common/WhitelistFullPage.tsx",
+        "target": "function:web/src/components/common/WhitelistFullPage.tsx:WhitelistFullPage",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/common/WhitelistFullPage.tsx",
+        "target": "function:web/src/components/common/WhitelistFullPage.tsx:WhitelistFullPage",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/faq/FAQSidebar.tsx",
+        "target": "function:web/src/components/faq/FAQSidebar.tsx:FAQSidebar",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/faq/FAQSidebar.tsx",
+        "target": "function:web/src/components/faq/FAQSidebar.tsx:FAQSidebar",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "function:web/src/components/modals/SetupPage.tsx:SetupPage",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "function:web/src/components/modals/SetupPage.tsx:SetupPage",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/modals/TwoStageKeyModal.tsx",
+        "target": "function:web/src/components/modals/TwoStageKeyModal.tsx:validatePrivateKeyFormat",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/modals/TwoStageKeyModal.tsx",
+        "target": "function:web/src/components/modals/TwoStageKeyModal.tsx:TwoStageKeyModal",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/components/modals/TwoStageKeyModal.tsx",
+        "target": "function:web/src/components/modals/TwoStageKeyModal.tsx:TwoStageKeyModal",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/components/common/HeaderBar.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/HeaderBar.tsx",
+        "target": "file:web/src/lib/onboarding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/LanguageSwitcher.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/LanguageSwitcher.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/MetricTooltip.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/SiteFooter.tsx",
+        "target": "file:web/src/constants/branding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/SiteFooter.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/WebCryptoEnvironmentCheck.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/WebCryptoEnvironmentCheck.tsx",
+        "target": "file:web/src/lib/crypto.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/common/WhitelistFullPage.tsx",
+        "target": "file:web/src/constants/branding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/faq/FAQContent.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/faq/FAQLayout.tsx",
+        "target": "file:web/src/components/faq/FAQSidebar.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/faq/FAQLayout.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/faq/FAQSidebar.tsx",
+        "target": "file:web/src/data/faqData.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/faq/FAQSidebar.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "file:web/src/components/auth/OnboardingModeSelector.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "file:web/src/components/common/LanguageSwitcher.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "file:web/src/contexts/AuthContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "file:web/src/lib/config.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/SetupPage.tsx",
+        "target": "file:web/src/lib/onboarding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/TwoStageKeyModal.tsx",
+        "target": "file:web/src/components/common/WebCryptoEnvironmentCheck.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/modals/TwoStageKeyModal.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "function:web/src/components/faq/FAQLayout.tsx:FAQLayout",
+        "target": "function:web/src/components/faq/FAQSidebar.tsx:FAQSidebar",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/modals/SetupPage.tsx:SetupPage",
+        "target": "function:web/src/components/common/LanguageSwitcher.tsx:LanguageSwitcher",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/modals/TwoStageKeyModal.tsx:TwoStageKeyModal",
+        "target": "function:web/src/components/common/WebCryptoEnvironmentCheck.tsx:WebCryptoEnvironmentCheck",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/hooks/useSystemConfig.ts",
+        "target": "function:web/src/hooks/useSystemConfig.ts:useSystemConfig",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/hooks/useSystemConfig.ts",
+        "target": "function:web/src/hooks/useSystemConfig.ts:useSystemConfig",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/i18n/translations.ts",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/i18n/translations.ts",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:normalizeStorageUserId",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:normalizeStorageUserId",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:getStoredAuthUserId",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:getStoredAuthUserId",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:loadAgentMessages",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:loadAgentMessages",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:persistAgentMessages",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:persistAgentMessages",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:prepareAgentMessagesForPersistence",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:prepareAgentMessagesForPersistence",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:migrateAgentMessages",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:migrateAgentMessages",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:clearAgentMessages",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "function:web/src/lib/agentChatStorage.ts:clearAgentMessages",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/contexts/AuthContext.tsx",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/contexts/AuthContext.tsx",
+        "target": "file:web/src/lib/onboarding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/contexts/LanguageContext.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/hooks/useSystemConfig.ts",
+        "target": "file:web/src/lib/config.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.test.ts",
+        "target": "file:web/src/lib/agentChatStorage.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/config.ts",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/data.ts",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/helpers.ts",
+        "target": "file:web/src/lib/crypto.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/helpers.ts",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/index.ts",
+        "target": "file:web/src/lib/api/config.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/index.ts",
+        "target": "file:web/src/lib/api/data.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/index.ts",
+        "target": "file:web/src/lib/api/strategies.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/index.ts",
+        "target": "file:web/src/lib/api/telegram.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/index.ts",
+        "target": "file:web/src/lib/api/traders.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/strategies.ts",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/telegram.ts",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "function:web/src/hooks/useSystemConfig.ts:useSystemConfig",
+        "target": "function:web/src/lib/config.ts:getSystemConfig",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/agentChatStorage.ts",
+        "target": "file:web/src/lib/agentChatStorage.test.ts",
+        "type": "tested_by",
+        "direction": "forward",
+        "weight": 0.5
+      },
+      {
+        "source": "file:web/src/components/trader/ModelCard.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ModelConfigModal.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/ModelConfigModal.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/PositionHistory.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/PositionHistory.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/PositionHistory.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TelegramConfigModal.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TelegramConfigModal.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TelegramConfigModal.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TraderConfigViewModal.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TraderConfigViewModal.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TradersList.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/components/trader/TradersList.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "function:web/src/components/trader/ModelConfigModal.tsx:ModelConfigModal",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/trader/TelegramConfigModal.tsx:TelegramConfigModal",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/trader/TraderConfigViewModal.tsx:TraderConfigViewModal",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/trader/TradersList.tsx:TradersList",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/components/trader/PositionHistory.tsx:PositionHistory",
+        "target": "function:web/src/i18n/translations.ts:t",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/api/traders.ts",
+        "target": "file:web/src/lib/api/helpers.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/traders.ts",
+        "target": "file:web/src/lib/httpClient.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/api/traders.ts",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/clipboard.ts",
+        "target": "file:web/src/lib/notify.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/AgentChatPage.tsx",
+        "target": "file:web/src/components/agent/ChatMessages.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/AgentChatPage.tsx",
+        "target": "file:web/src/components/agent/MarketTicker.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/AgentChatPage.tsx",
+        "target": "file:web/src/components/agent/TraderStatusPanel.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/AgentChatPage.tsx",
+        "target": "file:web/src/components/agent/WelcomeScreen.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/AgentChatPage.tsx",
+        "target": "file:web/src/lib/agentChatStorage.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/AgentChatPage.tsx",
+        "target": "file:web/src/stores/agentChatStore.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/AgentChatPage.tsx",
+        "target": "file:web/src/types/agent.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "target": "file:web/src/lib/onboarding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/FAQPage.tsx",
+        "target": "file:web/src/components/faq/FAQLayout.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/FAQPage.tsx",
+        "target": "file:web/src/contexts/LanguageContext.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/SettingsPage.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/SettingsPage.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/lib/clipboard.ts",
+        "target": "function:web/src/lib/clipboard.ts:copyWithToast",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "class:web/src/lib/crypto.ts:CryptoService",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "function:web/src/lib/crypto.ts:generateObfuscation",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "function:web/src/lib/crypto.ts:validatePrivateKeyFormat",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "function:web/src/lib/crypto.ts:diagnoseWebCryptoEnvironment",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/httpClient.ts",
+        "target": "class:web/src/lib/httpClient.ts:ApiError",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/httpClient.ts",
+        "target": "class:web/src/lib/httpClient.ts:HttpClient",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "target": "function:web/src/pages/BeginnerOnboardingPage.tsx:BeginnerOnboardingPage",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/clipboard.ts",
+        "target": "function:web/src/lib/clipboard.ts:copyWithToast",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "class:web/src/lib/crypto.ts:CryptoService",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "function:web/src/lib/crypto.ts:generateObfuscation",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "function:web/src/lib/crypto.ts:validatePrivateKeyFormat",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/crypto.ts",
+        "target": "function:web/src/lib/crypto.ts:diagnoseWebCryptoEnvironment",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/httpClient.ts",
+        "target": "class:web/src/lib/httpClient.ts:ApiError",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/httpClient.ts",
+        "target": "class:web/src/lib/httpClient.ts:HttpClient",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "target": "function:web/src/pages/BeginnerOnboardingPage.tsx:BeginnerOnboardingPage",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/api/traders.ts",
+        "target": "class:web/src/lib/httpClient.ts:HttpClient",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/lib/clipboard.ts:copyWithToast",
+        "target": "file:web/src/lib/notify.tsx",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/pages/AgentChatPage.tsx:runAgentStream",
+        "target": "function:web/src/lib/agentChatStorage.ts:clearAgentMessages",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/pages/AgentChatPage.tsx:AgentChatPage",
+        "target": "function:web/src/lib/agentChatStorage.ts:loadAgentMessages",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/pages/AgentChatPage.tsx:runAgentStream",
+        "target": "file:web/src/stores/agentChatStore.ts",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/pages/StrategyStudioPage.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/StrategyStudioPage.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/TraderDashboardPage.tsx",
+        "target": "file:web/src/components/charts/ChartTabs.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/TraderDashboardPage.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/TraderDashboardPage.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/pages/TraderDashboardPage.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/components/auth/LoginRequiredOverlay.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/components/auth/RegisterPage.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/components/modals/SetupPage.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/hooks/useSystemConfig.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/i18n/translations.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/lib/onboarding.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/pages/BeginnerOnboardingPage.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/pages/FAQPage.tsx",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/router/AppRoutes.tsx",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/stores/agentChatStore.ts",
+        "target": "file:web/src/types/agent.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/stores/tradersConfigStore.ts",
+        "target": "file:web/src/lib/api/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/stores/tradersConfigStore.ts",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "file:web/src/stores/tradersModalStore.ts",
+        "target": "file:web/src/types/index.ts",
+        "type": "imports",
+        "direction": "forward",
+        "weight": 0.7
+      },
+      {
+        "source": "document:ENCRYPTION_README.md",
+        "target": "file:web/src/lib/crypto.ts",
+        "type": "documents",
+        "direction": "forward",
+        "weight": 0.5
+      },
+      {
+        "source": "file:web/src/hooks/useCounterAnimation.ts",
+        "target": "function:web/src/hooks/useCounterAnimation.ts:useCounterAnimation",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/hooks/useGitHubStats.ts",
+        "target": "function:web/src/hooks/useGitHubStats.ts:useGitHubStats",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/lib/text.ts",
+        "target": "function:web/src/lib/text.ts:stripLeadingIcons",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1.0
+      },
+      {
+        "source": "file:web/src/hooks/useCounterAnimation.ts",
+        "target": "function:web/src/hooks/useCounterAnimation.ts:useCounterAnimation",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/hooks/useGitHubStats.ts",
+        "target": "function:web/src/hooks/useGitHubStats.ts:useGitHubStats",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/text.ts",
+        "target": "function:web/src/lib/text.ts:stripLeadingIcons",
+        "type": "exports",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/stores/index.ts",
+        "target": "file:web/src/stores/tradersConfigStore.ts",
+        "type": "depends_on",
+        "direction": "forward",
+        "weight": 0.6
+      },
+      {
+        "source": "file:web/src/stores/index.ts",
+        "target": "file:web/src/stores/tradersModalStore.ts",
+        "type": "depends_on",
+        "direction": "forward",
+        "weight": 0.6
+      },
+      {
+        "source": "file:web/src/components/auth/RegisterPage.tsx",
+        "target": "file:web/src/components/auth/RegisterPage.test.tsx",
+        "type": "tested_by",
+        "direction": "forward",
+        "weight": 0.5
+      },
+      {
+        "source": "file:web/eslint.config.js",
+        "target": "file:web/src/main.tsx",
+        "type": "configures",
+        "direction": "forward",
+        "weight": 0.6
+      },
+      {
+        "source": "file:web/vitest.config.ts",
+        "target": "file:web/src/test/setup.ts",
+        "type": "depends_on",
+        "direction": "forward",
+        "weight": 0.6
+      },
+      {
+        "source": "file:web/vite.config.ts",
+        "target": "file:web/index.html",
+        "type": "configures",
+        "direction": "forward",
+        "weight": 0.6
+      },
+      {
+        "source": "file:web/vite.config.ts",
+        "target": "file:web/src/main.tsx",
+        "type": "configures",
+        "direction": "forward",
+        "weight": 0.6
+      },
+      {
+        "source": "function:web/src/contexts/AuthContext.tsx:AuthProvider",
+        "target": "function:web/src/lib/httpClient.ts:reset401Flag",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "function:web/src/hooks/useSystemConfig.ts:useSystemConfig",
+        "target": "function:web/src/lib/config.ts:invalidateSystemConfig",
+        "type": "calls",
+        "direction": "forward",
+        "weight": 0.8
+      },
+      {
+        "source": "file:web/src/lib/httpClient.ts",
+        "target": "function:web/src/lib/httpClient.ts:reset401Flag",
+        "type": "contains",
+        "direction": "forward",
+        "weight": 1
+      }
+    ]
+  },
+  "corrections": [
+    "Exact-path historical coverage is46/54; absent paths: web/e2e/fixtures.ts, web/e2e/playwright.config.ts, web/src/chips-harness.tsx, web/src/components/charts/primitives/SessionVolumeProfile.ts, web/src/lib/autoRefresh.ts, web/src/lib/chartTime.ts, web/src/router/traderSlug.ts, web/vite.sandbox.config.ts",
+    "Live market chart is AdvancedChart from NT8 klines; ChartWithOrders and third-party TradingViewChart have no current production callers.",
+    "Current FAQ route is active although competition/data/strategy-market labels persist in translations.",
+    "Zustand config/modal store definitions are exported but have no observed production consumer.",
+    "Current protected decrypt route contradicts any old public crypto-oracle topology.",
+    "Historical ConfirmDialog queues description is false: current state holds one replaceable resolver.",
+    "Historical Vite0.0.0.0 host is now127.0.0.1; MarketTicker fixed list is MNQ; onboarding modes named beginner/advanced, not pro."
+  ],
+  "cgc": "Historical service index owned by root; no independent reindex or current semantic call graph claimed."
+}

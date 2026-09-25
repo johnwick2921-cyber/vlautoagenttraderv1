@@ -1,0 +1,26 @@
+E8-boot-wire
+path: trader/auto_trader.go
+BEFORE:
+at.logLevelIdentityBootAt(time.Now())
+AFTER:
+// mutation removed level identity boot call
+replacement confirmed: True
+go build ./trader: PASS
+test rc: 1
+--- FAIL: TestIdentityProductionWiring (0.01s)
+    identity_wiring_test.go:51: trader/detector_record.go → EpisodeLevelID: 1
+    identity_wiring_test.go:51: trader/desk_facts.go → ScenarioIdentities: 1
+    identity_wiring_test.go:49: production call sites: 0 — trader/auto_trader.go → logLevelIdentityBootAt
+    identity_wiring_test.go:51: trader/research_snapshot.go → recordResearchCandidateIdentity: 2
+    identity_wiring_test.go:51: kernel/levels_assemble.go → CaptureIdentityContext: 3
+    identity_wiring_test.go:51: kernel/levels_intraday.go → WithFormationClose: 2
+    identity_wiring_test.go:51: kernel/map_candidates.go → CandidateIdentity: 1
+    identity_wiring_test.go:51: trader/auto_trader_planner.go → stampPlanIdentity: 1
+    identity_wiring_test.go:51: trader/auto_trader_planner.go → recordPlanIdentity: 1
+    identity_wiring_test.go:51: trader/episode_close_wiring.go → EpisodeScenarioByID: 1
+    identity_wiring_test.go:51: api/handler_plan.go → ScenarioIdentities: 1
+    identity_wiring_test.go:51: kernel/planner_prompt.go → RenderIdentityMapBlock: 1
+    identity_wiring_test.go:51: trader/auto_trader_levelstate.go → observeScenarioIdentity: 1
+FAIL
+FAIL	nofx/trader	0.016s
+FAIL

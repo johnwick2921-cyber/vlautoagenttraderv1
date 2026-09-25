@@ -1,0 +1,3 @@
+PASS: corrected58population and -466.428572 P&L;12CME days;no post-strict fills;360unique candidate IDs;179seated;forward observations start after read;all resolutions after touch;34pairs satisfy exact matching constraints.
+Public GET /api/health HTTP200,revision36648655cfe0.
+No diff between36648655 and review base for inspected level/scorer/recorder/planner_prompt source paths.

@@ -1,0 +1,14 @@
+UNAUTH MATRIX — BEFORE (bot PID 1223827, HEAD 205b1753), 2026-08-15 23:20:40 CDT
+bind: *:8080
+GET    /api/health                                    200
+GET    /metrics                                       200
+GET    /api/config                                    200
+GET    /api/traders                                   200
+GET    /api/klines?exchange=ninjatrader&symbol=MNQ&limit=1 200
+GET    /api/plan/today?trader_id=x                    401
+GET    /api/positions?trader_id=x                     401
+GET    /api/my-traders                                401
+GET    /api/strategies                                401
+POST   /api/reset-password                            404
+POST   /api/register                                  403
+POST   /api/reset-account                             NOT FIRED (destructive; public per code read server.go:133)

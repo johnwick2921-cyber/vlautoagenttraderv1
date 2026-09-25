@@ -1,0 +1,550 @@
+{
+  "assignment": 9,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "kernel/adherence.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          163
+        ]
+      ],
+      "sha256": "a0f06ae28d2638894c478563cb43a5e289c698b2598b1076f3ae1b3fdfaa110b",
+      "notes": "Post-close discipline grading, independent of P&L: citation/direction/band base plus no-trade and non-killzone penalties. Session windows share central band functions; unknown grades excluded from GPA."
+    },
+    {
+      "path": "kernel/candle_disclosure.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          408
+        ]
+      ],
+      "sha256": "1cb55efb89818724c5a8cd5f0c3632eeb61504076d199bf8d0c545ea20026f0d",
+      "notes": "Presentation-only row and tape completeness. Counts closed 1m intervals against calendar, distinguishes unknown/partial/forming/over-held and absent whole windows, bounds scans. Does not synthesize OHLCV or block trading."
+    },
+    {
+      "path": "kernel/class45_feeds_forward.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          214
+        ]
+      ],
+      "sha256": "e53db7e5c9c14fb6e7ab09b7a01cb7f776954a530cdbcd6ee1c40f97ad34ab5c",
+      "notes": "Planner facts share BreakdownContinueState with validator via resolved VoidScope. Two-sided voids collapse into CHOP; stop floor and boot line read resolved multipliers. One-sided tail instruction overgeneralizes both directions (report)."
+    },
+    {
+      "path": "kernel/condition_status.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          135
+        ]
+      ],
+      "sha256": "9daf52ddd067545b26a07703d0fd7cd673250ecb1b2efef6f067933ba207d486",
+      "notes": "Condition live/shadow resolution session > base > env > defaults; FVG and breakout-retest default shadow. Duplicate env entry first-wins contradicts LIVE override comment; config keys expected pre-canonicalized."
+    },
+    {
+      "path": "kernel/digest.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          116
+        ]
+      ],
+      "sha256": "39c226562f0fe5fccf5cc0506d698423940325cf726ab59920cddb111fa21fe3",
+      "notes": "Session/day digest and tapered seven-day chain; learning averages count Measured explicitly. When no excursion is measured the entire learning line, including available grades, is omitted."
+    },
+    {
+      "path": "kernel/engine.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          1084
+        ]
+      ],
+      "sha256": "ae5b105ab826509425a686803b1610ee73f96b1600a745c2facd7698ad392c0d",
+      "notes": "Shared high-cascade context/decision/account types and mutable per-engine prompt context. Config-driven crypto candidates and data sources; futures session/expiry helpers. External HTTP is URL-validated but body unbounded. Mixed candidate order uses map iteration."
+    },
+    {
+      "path": "kernel/engine_position.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          310
+        ]
+      ],
+      "sha256": "9fbfd2a9ff98f81eb337a284a660fb5fdab9911af8a753a7817c5d2bd9cab37e",
+      "notes": "Action and entry validator applies sizing, leverage clamp, bracket direction, R:R from explicit price or snapshot, confidence, min-SL, HTF/transition/dead-plan/quality gates. Missing entry/ATR fails open; only dead-plan uses nonretryable GateRefusalError. Does not execute orders."
+    },
+    {
+      "path": "kernel/engine_prompt.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          1112
+        ]
+      ],
+      "sha256": "7dbd5697890bb0068e0ec33d0395b841abfaafb0b4f08e9b7d344c3d0cc7dddb",
+      "notes": "Routes futures system prompt externally; shared user prompt renders account, resolved history, positions, candidate data, structure, quant rankings. Tables and indicator formatter are shared. Crypto text contains conflicting output order and outdated R:R labeling; position notional omits futures multiplier."
+    },
+    {
+      "path": "kernel/ensure_market_data.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          33
+        ]
+      ],
+      "sha256": "29934611cf2673f292c07c2feaf32bba5957a33184d8a9542468a6ad316a19c1",
+      "notes": "Nil-safe watcher helper stamps wall-clock snapshot then fetches only when map empty, mutating context/engine. Reused nonempty data receives new stamp without fetch; caller freshness contract matters."
+    },
+    {
+      "path": "kernel/entry_law.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          244
+        ]
+      ],
+      "sha256": "255be26dccf85852ebf7270219c1eb42a30b047ca8aec7211dc258a15fecc6e6",
+      "notes": "Single table of legal per-condition confirm rules, fade touch-only and two-tick structure stop, split-sweep rules; generated sorted prompt table shares authority. Stop-entry feature env defaults off; numeric offsets positive-only."
+    },
+    {
+      "path": "kernel/excursion_path.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          123
+        ]
+      ],
+      "sha256": "6d4f53aea74be534705bd014caacaf53f1cf0ad3faf7f18452d21f678ae15129",
+      "notes": "Research analytics use bars intersecting holding interval, include entry bar, count bars/ambiguity and emit Computed false on no coverage. Intrabar pre-fill/post-exit extremes cannot be separated; invalid side treated short."
+    },
+    {
+      "path": "kernel/feed_policy.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "sha256": "3e8c91863f3c89d92d247c4efe7ab399cbc83eebca168a2c9fa964ad745a2340",
+      "notes": "Unified flat/in-position feed thresholds in milliseconds; latest subscribed bar-open age fallback. Future bars produce negative ages; env millisecond multiplication is not overflow bounded."
+    },
+    {
+      "path": "kernel/flip_freshness.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          78
+        ]
+      ],
+      "sha256": "f561bb1ffb32772c59cc267fb062a502f380f0e39661a159be5b0d9a5990af70",
+      "notes": "Death/flip age uses AcceptanceBars rule aggregation with explicit clock; no closed bar/stale bars skip transition. Separate aggregation stamps true close, so AggregateBars missing CloseTime does not infect this path."
+    },
+    {
+      "path": "kernel/fvg_entry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          438
+        ]
+      ],
+      "sha256": "057765c502b9ddf27eaf82fdc77de3bbcde59007af6d4caf0a8917669a714866",
+      "notes": "Machine FVG candidates and write validator plus advisory/card state. Three-bar contiguous gap and ATR displacement checks; candidates tolerate missing ATR but validator rejects. AggregateBars emits epoch buckets without CloseTime, unlike acceptance aggregator. No subsequent mitigation check in candidate search."
+    },
+    {
+      "path": "kernel/golden_selfcheck.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          158
+        ]
+      ],
+      "sha256": "a3350621bfb8bbcf62940a14f5841beb084e52b53ba547efc3964cd49bbb67a2",
+      "notes": "Three embedded futures golden fixtures rerendered at boot; hashes and first differing lines returned. Checks fixed fixture contracts only, not all runtime configurations or actual broker state."
+    },
+    {
+      "path": "kernel/mae_mfe.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "sha256": "faaa993fb4d9751ad8f48b597f35000c203498d096eb51255245eca22dc9400e",
+      "notes": "Legacy excursion uses bar OPEN timestamps within trade hold; mid-bar entry excludes containing bar. Unknown side is short. No explicit computed flag."
+    },
+    {
+      "path": "kernel/matched_random.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          192
+        ]
+      ],
+      "sha256": "296e0ad7fe1b6ce5cb055b23ccf91275de3bf8f2dab83b3d0e200e290dab18a5",
+      "notes": "Power gate n>=1565 before significance/effect threshold, fixed baseline .5 and Bonferroni family8. Label mapper actually has nine named classes plus other; tests/statistics do not create matched controls."
+    },
+    {
+      "path": "kernel/min_sl.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          94
+        ]
+      ],
+      "sha256": "e9bfaaf9bffe6b1521f4efc9fedf189e3dbed259e41ca572c388e575e2667834",
+      "notes": "Configurable ATR stop-width gate default1.5, zero off, missing values fail open; cited plan lookup supplies anchor. Legacy prose says default1.0 although code constant1.5. Structural reject arm changes are owned outside this file."
+    },
+    {
+      "path": "kernel/prompt_contract.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          172
+        ]
+      ],
+      "sha256": "e0b43fbaaf56b84a0455cdb44abc94e2fdd90a4be2103fb6709cc2d39c8e0ad8",
+      "notes": "Nineteen literal condition-restriction fragment checks against rendered planner output contract, reported BROKEN at boot on first missing fragment. Coverage is registry-defined, not automatic validator census."
+    },
+    {
+      "path": "kernel/prompt_ownership.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          33
+        ]
+      ],
+      "sha256": "1ebe183386424d4f7af073839be0346c1ad1bc89118badad9d3c1956d76cca49",
+      "notes": "Sorted ownership-tag assertion rejects mismatched trader id; absent trader/tags passes. Partial tags do not prove every account-scoped field was tagged."
+    },
+    {
+      "path": "kernel/regime.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          259
+        ]
+      ],
+      "sha256": "ebdc4d935d0abac0fe58e07d24f98b96b2c81a65edf051da0dca52cf8d787d7c",
+      "notes": "Seven-field advisory context from daily/hour/5m series: EMA trend, daily ATR rank, realized log-return vol, optional VIX and gap. No internal closed-bar/time validation. Valid zero RV is rendered absent/dark."
+    },
+    {
+      "path": "kernel/regime_baseline.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          112
+        ]
+      ],
+      "sha256": "5f7d458b611af6743464173bd031968c1e01cfe111dd1bf648f4bc55aa9b9c88",
+      "notes": "CME-session-day bucket baseline using >=200 bars as near-complete proxy; averages up to maxDays once minDays reached. No actual session completion/calendar check, so developing days >=200 included. Gap inputs use final two daily rows."
+    },
+    {
+      "path": "kernel/regime_dark.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          90
+        ]
+      ],
+      "sha256": "8719a76da275e8e6381032c539eadd0891a7e27bf0c2360783aa69f657a03e7e",
+      "notes": "Seven-field unavailable-field list and threshold>3 default degraded flag. Warming positive RV counts available; zero RV marked dark despite valid flat tape possibility."
+    },
+    {
+      "path": "kernel/risk_limits.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          459
+        ]
+      ],
+      "sha256": "ab3c05b24f57067e51ced591b4582b7c06962e3422cc04b75ce207ae15d3095d",
+      "notes": "Primitive risk checks, per-trader in-memory daily trip latch and CME session reset, toggle-aware daily guards and nonblocking soft audit. Generic loss strict< differs daily guard<=. Stage-A default1 clamp configurable env; no extra per-trade dollar cap introduced."
+    },
+    {
+      "path": "kernel/session_registry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          297
+        ]
+      ],
+      "sha256": "e6a712af9cbace7ea9a0100e217c88ac9a8997aeda28e93bf58403bab0d876f9",
+      "notes": "CT registry default NY-only with ASIA/LONDON definitions, JSON codec, syntax validation, active/read/killzone predicates and calendar early flat override. Validation does not reject overlaps/duplicate names or enforce end==flat; first window wins even disabled."
+    },
+    {
+      "path": "kernel/shadow_ab.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          271
+        ]
+      ],
+      "sha256": "5cca605ac4edc173690d52b8e907a8161118d6b45cbf256a7a96471336aea9cf",
+      "notes": "Research-only replay per armed bracket for touch/1x5m/2x5m/MSS; adverse-first ambiguity and friction2 ticks. Close-fill aggregation has zero CloseTime and backdates replay to first bucket minute. Persistence caller records once; not evidence of executable trades."
+    },
+    {
+      "path": "kernel/stale_data.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          181
+        ]
+      ],
+      "sha256": "91e8307531547cce4f53d3932d3bf5ad9795dff567ea1752e3821bbf1b4809f5",
+      "notes": "Entry-only stale rewrite to wait evaluates snapshot clock, prefers1m then5m then any-TF flat threshold. Missing snapshot/data fail open with warning where possible; exits remain. Live diagnostics do not drive gate."
+    },
+    {
+      "path": "kernel/touch_telemetry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          605
+        ]
+      ],
+      "sha256": "51a1392c045f553e39369019e1fe3609bd4f2a37877a0b88fde8913f360c5687",
+      "notes": "Legacy advisory episode registry keyed trader/symbol/label/price/session day with seed hook; bounded per-level ring, active/last state. Reads may retain old-day active states; card dereferences after unlock. closeSide5m uses adjacent-time distance rather than epoch bucket."
+    },
+    {
+      "path": "kernel/tz.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "sha256": "ffde28c50d5c2160a145693e8116176467fde8d4b1dd90984486a382c314cef0",
+      "notes": "Cached America/Chicago location and canonical formatters. Missing zone database falls back UTC but output remains labeled CT; no runtime TZ failure reproduced."
+    },
+    {
+      "path": "kernel/void_scope.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          124
+        ]
+      ],
+      "sha256": "155a2f99e06fe540c2469ff74ed55228bc922276ef50f59e4c3df7819a6c5513",
+      "notes": "One resolved1m tape depth default2000 and session-day lookback for prompt/validator; no-provider yields empty and no void. Horizon tracks served span/gaps; no missing-bar interpolation."
+    },
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          2281,
+          2316
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          23,
+          59
+        ],
+        [
+          152,
+          178
+        ]
+      ],
+      "sha256": "04905d4e659519c1459daa4b96872f3395a83f0c564324ad779301484904d417",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          181,
+          215
+        ]
+      ],
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "kernel/condition_status_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          115
+        ]
+      ],
+      "sha256": "ef6a4a99166aebe3c0dd763ddecbbb4192f81f4a9e66d8d983aa0989351cdd61",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "kernel/flip_freshness_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          120
+        ]
+      ],
+      "sha256": "41e0e216ceb4db45557cd341467b8faf38e5c27a11ba04fab88e88b52c6e24ff",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "kernel/shadow_ab_short_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          141
+        ]
+      ],
+      "sha256": "7ef1438d0345009e33cd46fccc3331781db0da37ac8c4f50fac44729ae062e4d",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "kernel/regime_baseline_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          84
+        ]
+      ],
+      "sha256": "a8e22575b1c5abec92ded77b29641ac70378454008d4c03998d2d7186212a707",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "kernel/scenario_facts.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          135,
+          216
+        ]
+      ],
+      "sha256": "b54c30db0edcf864e375d9d824973a34428b544151de3f0a6e34023018ee1cfb",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "kernel/plan_lifecycle.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          200,
+          223
+        ],
+        [
+          375,
+          437
+        ]
+      ],
+      "sha256": "35734bfbf91667f8b0172318e5d12eb13398b8e5cd36c2db2c160c52041b55b0",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "kernel/engine_analysis.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          85,
+          165
+        ],
+        [
+          278,
+          295
+        ],
+        [
+          530,
+          553
+        ],
+        [
+          605,
+          639
+        ]
+      ],
+      "sha256": "528e83a5c7a442d9ecce3e94311cf03c59cad1f14a2d841b76e1fd56b3a276e2",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "trader/armed_executor.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          935,
+          1000
+        ]
+      ],
+      "sha256": "fcd7e3a1bdd59b1d3e6561359354ab572bcbf34a5eab4011fc1d5ab21c4af57f",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    },
+    {
+      "path": "trader/auto_trader_matched_random.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          89
+        ]
+      ],
+      "sha256": "943c50220b2e9061d74205ed0583a4a8d3ef2eda9f8122852f4b63c7d3e3af3d",
+      "notes": "Additional dependency/test or operating context, not assigned coverage. Relevant semantics documented in report."
+    }
+  ],
+  "unread": [],
+  "instruction_reads": [
+    "/home/hoang/nofx/AGENTS.md",
+    "/tmp/nofx-understanding-review-instructions.md"
+  ],
+  "missing_instruction_paths": [
+    "kernel/AGENTS.md absent at base"
+  ]
+}

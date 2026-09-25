@@ -1,0 +1,17 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          724
+        ]
+      ],
+      "sha256": "6a634d9e7d49aa68ade74f96a5e252906b1d6e51de08380facf6714c274f98f2",
+      "notes": "Boot config\u2192crypto\u2192store and migrations\u2192manager load/autostart\u2192integrity assertion\u2192boot ledgers/backfills\u2192API/agent/Telegram\u2192signal shutdown. Load precedes integrity; current arm gate enforcement still requires follow-through."
+    }
+  ]
+}

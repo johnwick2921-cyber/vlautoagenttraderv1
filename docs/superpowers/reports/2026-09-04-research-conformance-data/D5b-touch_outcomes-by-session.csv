@@ -1,0 +1,4 @@
+session,rows_all,hold,brk,n_den,p_hold,ambiguous,floor_rule
+NY,180,77,76,153,0.5033,27,REPORTED
+LONDON,163,60,60,120,0.5,43,REPORTED
+ASIA,81,25,22,47,0.5319,34,REPORTED

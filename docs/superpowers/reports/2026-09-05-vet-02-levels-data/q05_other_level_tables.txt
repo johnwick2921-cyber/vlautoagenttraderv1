@@ -1,0 +1,69 @@
+t            n    MIN(session_day)  MAX(session_day)
+-----------  ---  ----------------  ----------------
+level_stats  234  2026-08-24        2026-09-03      
+kind    n   touched  reacted  broke  chopped  days
+------  --  -------  -------  -----  -------  ----
+VWAP    35  28       21       15     13       7   
+OB      26  20       12       9      11       8   
+SWG-H   15  13       7        4      9        4   
+SUPPLY  14  10       7        4      6        8   
+ONL     14  11       7        3      7        8   
+EQL     14  10       9        5      5        5   
+SWG-L   13  13       11       6      7        5   
+PDC     13  11       8        4      7        9   
+PDH     12  8        4        4      4        7   
+ONH     12  9        8        6      3        8   
+EQH     11  8        5        3      5        5   
+PDL     9   4        3        1      3        8   
+RTH-H   8   6        5        2      4        7   
+RTH-L   7   1        1        1      0        6   
+DEMAND  7   6        5        2      4        5   
+OR-L    6   4        2        2      2        6   
+OR-H    6   5        3        1      4        6   
+eVWAP   4   3        3        1      2        4   
+POC     3   3        3        1      2        3   
+pdVWAP  1   1        1        0      1        1   
+RN      1   1        1        1      0        1   
+PWL     1   1        1        1      0        1   
+IFVG    1   1        1        0      1        1   
+FVG     1   1        1        0      1        1   
+t               n     MIN(session_day)  MAX(session_day)  days
+--------------  ----  ----------------  ----------------  ----
+touch_episodes  1315  2026-08-25        2026-09-03        8   
+shape       COUNT(*)
+----------  --------
+rejection   976     
+acceptance  339     
+t            n    MIN(origin_date)  MAX(origin_date)
+-----------  ---  ----------------  ----------------
+level_state  675                                    
+level_type     n    consumed  avg_tested  freshness  COUNT(*)
+-------------  ---  --------  ----------  ---------  --------
+other          110  110       1.0         done       110     
+other          97   0         0.0         A          97      
+ONH/ONL        59   59        1.0         done       59      
+equal-H/L      55   55        1.0         done       55      
+S/D+FVG/OB     53   53        1.0         done       53      
+swing-point    49   49        1.0         done       49      
+equal-H/L      46   0         0.0         A          46      
+PDH/PDL/PDC    34   0         0.0         A          34      
+PDH/PDL/PDC    25   25        1.0         done       25      
+swing-point    25   0         0.0         A          25      
+ONH/ONL        24   0         0.0         A          24      
+opening-range  21   21        1.0         done       21      
+S/D+FVG/OB     20   0         0.0         A          20      
+opening-range  12   0         0.0         A          12      
+naked-POC      8    8         1.0         done       8       
+equal-H/L      6    0         1.0         B          6       
+equal-H/L      5    0         0.6         C          5       
+naked-POC      4    0         0.0         A          4       
+ONH/ONL        3    0         1.0         B          3       
+ONH/ONL        3    0         0.0         C          3       
+S/D+FVG/OB     3    0         0.0         B          3       
+opening-range  3    0         0.33        B          3       
+other          3    0         1.0         B          3       
+round-number   3    3         1.0         done       3       
+prior-wk/mo    1    0         0.0         A          1       
+prior-wk/mo    1    0         0.0         C          1       
+prior-wk/mo    1    1         1.0         done       1       
+round-number   1    0         0.0         A          1       

@@ -1,0 +1,13 @@
+plan,version,session,lifecycle,ct_created,bias,scenario,direction,condition,arm_enabled,authored_by_boot8
+LONDON,1,LONDON,active,2026-09-04 01:41:15,long,S1,long,reclaim,no,pre-boot8
+LONDON,1,LONDON,active,2026-09-04 01:41:15,long,S2,long,reject,ARMED,pre-boot8
+LONDON,1,LONDON,active,2026-09-04 01:41:15,long,S3,short,sweep_reclaim,no,pre-boot8
+LONDON,1,LONDON,active,2026-09-04 01:41:15,long,S4,long,reclaim,no,pre-boot8
+LONDON,2,LONDON,active,2026-09-04 02:04:14,short,S1,short,reject,ARMED,pre-boot8
+LONDON,2,LONDON,active,2026-09-04 02:04:14,short,S2,short,acceptance,no,pre-boot8
+LONDON,3,LONDON,active,2026-09-04 07:56:17,short,S1,short,sweep_reclaim,no,pre-boot8
+LONDON,3,LONDON,active,2026-09-04 07:56:17,short,S2,short,reject,no,pre-boot8
+LONDON,3,LONDON,active,2026-09-04 07:56:17,short,S3,long,sweep_reclaim,no,pre-boot8
+NY,1,NY,no_trade,2026-09-04 08:11:45,neutral,S0,long,hold,no,pre-boot8
+NY,2,NY,active,2026-09-04 08:44:46,long,S1,long,sweep_reclaim,ARMED,BOOT8
+NY,2,NY,active,2026-09-04 08:44:46,long,S2,short,sweep_reclaim,ARMED,BOOT8

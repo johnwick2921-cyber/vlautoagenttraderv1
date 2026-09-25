@@ -1,0 +1,93 @@
+q|n|consumed|consumed_tt1|consumed_other
+level_state|675|384|384|110
+q|id|source|plan_id|cited_scenario_id|pnl_corrected
+pos_ids|530|system|UNRESOLVABLE|off-plan|13.0
+pos_ids|539|system|UNRESOLVABLE|off-plan|-84.5
+pos_ids|567|reconcile|2026-08-27:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|S1|-42.0
+pos_ids|572|e7_farside_test|TEST-E7:c15c48a6-a036-4991-b4d0-9c9e0b2295b3|TEST-E7|
+pos_ids|576|armed_entry|2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|S2|
+pos_ids|577|armed_entry|2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|S1|
+pos_ids|578|reconcile|2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|S1|92.0
+pos_ids|579|armed_entry|2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|S3|
+pos_ids|587|system|2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|S3|-62.5
+q|all_cited|e7|unres|null_in_scope
+cited_pop|64|1|2|3
+q|ids|s
+unres_ids|530,539,545,546,566,571,573,574,580|-92.5
+q|id|cited_scenario_id|pnl_corrected
+unres_cited|530|off-plan|13.0
+unres_cited|539|off-plan|-84.5
+q|ids
+null_cited|576,577,579
+q|reason|n|ids
+arm20|gate changed: rr|20|62,65,67,70,73,75,77,79,81,83,85,87,89,91,93,95,97,99,101,102
+q|id|scenario|condition|side|entry_px|substr(state_reason,1,40)
+arm_other_62_102|92|S1|reject|SHORT|29657.38|superseded: never placed (no signal id) 
+arm_other_62_102|94|S1|reject|SHORT|29657.38|superseded: never placed (no signal id) 
+arm_other_62_102|96|S1|reject|SHORT|29657.38|superseded: never placed (no signal id) 
+arm_other_62_102|98|S1|reject|SHORT|29657.38|superseded: never placed (no signal id) 
+arm_other_62_102|100|S1|reject|SHORT|29720.0|no active plan
+q|id|scenario|condition|entry_px|substr(state_reason,1,40)
+arm38|38|S2|sweep_reclaim|29591.02|gate changed: rr
+q|read_ct|plan_id|plan_version|session|n|seated
+pool_reads|2026-09-04 00:30:54|2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|5|ASIA|24|12
+pool_reads|2026-09-04 01:10:49|2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|6|ASIA|24|12
+pool_reads|2026-09-04 01:30:48|2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|0|LONDON|24|11
+pool_reads|2026-09-04 02:00:46|2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|1|LONDON|24|12
+pool_reads|2026-09-04 07:45:01|2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|2|LONDON|24|12
+pool_reads|2026-09-04 08:00:38|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|0|NY|24|12
+pool_reads|2026-09-04 08:17:32|2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|LONDON|24|12
+pool_reads|2026-09-04 08:32:00|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|1|NY|24|12
+pool_reads|2026-09-04 08:46:09|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|2|NY|24|12
+pool_reads|2026-09-04 09:26:06|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|NY|24|12
+pool_reads|2026-09-04 09:58:05|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|NY|24|12
+pool_reads|2026-09-04 10:28:02|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|NY|24|12
+pool_reads|2026-09-04 10:55:10|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|NY|24|12
+pool_reads|2026-09-04 11:25:08|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|4|NY|24|12
+pool_reads|2026-09-04 12:01:01|2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|5|NY|24|12
+q|planvers|reads
+pool_planver|12|15
+q|seated|rows_|lv|reads|days
+pool_distinct|0|181|37|15|1
+pool_distinct|1|179|55|15|1
+q|id|name|ml|prox
+strategies|4104ca0a-cd27-4206-af79-e04375290b3e|均衡策略|8|1.5
+strategies|0362594e-77e6-4c5f-a350-5c3738529d28|稳健策略|8|1.5
+strategies|82b3d482-e018-46cc-984d-122d6f6ddf7e|积极策略|8|1.5
+strategies||MNQ SIM Default|8|1.5
+strategies|578ac8f6-2c16-4b0e-b7af-bca6e5413597|MNQ SIM Default|8|1.5
+strategies|a79ba71f-cd7b-4fbb-8dd7-b85b3049d194|New Strategy|8|1.5
+strategies|70695b25-01a3-4c38-9917-261260b49550|New Strategy|8|1.5
+strategies|a5b7662e-7bf7-49bb-9f09-7efa48f95ac8|MNQ|12|1
+strategies|08539e82-6ba5-417d-8afe-6077ace29ea0|New Strategy|8|1.5
+q|tf|n|mn|mx
+bars_tf|12h|2004|2022-10-19 04:00:00|2026-09-03 17:00:00
+bars_tf|15m|2166|2026-08-04 00:00:00|2026-09-04 12:15:00
+bars_tf|1d|1898|2019-05-02 00:00:00|2026-09-03 00:00:00
+bars_tf|1h|2042|2026-05-04 06:00:00|2026-09-04 12:00:00
+bars_tf|1m|16703|2026-08-19 10:00:00|2026-09-04 12:19:00
+bars_tf|1w|384|2019-04-26 00:00:00|2026-08-28 00:00:00
+bars_tf|2h|2021|2026-01-12 00:00:00|2026-09-04 11:00:00
+bars_tf|30m|2083|2026-07-03 02:00:00|2026-09-04 12:00:00
+bars_tf|3d|634|2019-05-04 00:00:00|2026-09-01 00:00:00
+bars_tf|3m|2829|2026-08-27 08:54:00|2026-09-04 12:18:00
+bars_tf|4h|2010|2025-05-18 17:00:00|2026-09-04 09:00:00
+bars_tf|5m|2497|2026-08-24 11:15:00|2026-09-04 12:15:00
+bars_tf|6h|2006|2024-09-25 05:00:00|2026-09-04 05:00:00
+bars_tf|8h|2007|2024-02-01 18:00:00|2026-09-04 01:00:00
+q|sd|n
+bars_1m_sessday|2026-08-19|361
+bars_1m_sessday|2026-08-20|1381
+bars_1m_sessday|2026-08-21|1381
+bars_1m_sessday|2026-08-24|1380
+bars_1m_sessday|2026-08-25|1380
+bars_1m_sessday|2026-08-26|1380
+bars_1m_sessday|2026-08-27|1380
+bars_1m_sessday|2026-08-28|1380
+bars_1m_sessday|2026-08-31|1380
+bars_1m_sessday|2026-09-01|1380
+bars_1m_sessday|2026-09-02|1380
+bars_1m_sessday|2026-09-03|1380
+bars_1m_sessday|2026-09-04|1160
+q|cal_days
+bars_1m_days|15

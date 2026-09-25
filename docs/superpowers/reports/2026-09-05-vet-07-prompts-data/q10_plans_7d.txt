@@ -1,0 +1,60 @@
+x
+--- plans last 7d by trade_date, session: versions, lifecycles
+trade_date|session|n_versions|maxv|lifecycles|degraded|dark
+2026-08-30|ASIA|3|3|no_trade|0|1
+2026-08-31|ASIA|2|2|no_trade|0|1
+2026-08-31|LONDON|3|3|no_trade,active|0|1
+2026-08-31|NY|7|7|no_trade,active|0|1
+2026-08-31|WEEKLY|1|1|active|0|0
+2026-09-01|ASIA|10|10|no_trade,active|0|1
+2026-09-01|LONDON|6|6|no_trade,active,dormant|0|1
+2026-09-01|NY|5|5|active,dormant|0|1
+2026-09-02|ASIA|15|15|active,dormant|0|1
+2026-09-02|LONDON|6|6|no_trade,active|0|1
+2026-09-02|NY|12|12|dormant,active|0|1
+2026-09-03|ASIA|7|7|active,dormant|0|1
+2026-09-03|LONDON|2|2|dormant,active|0|1
+2026-09-03|NY|7|7|dormant,active|0|1
+2026-09-04|LONDON|3|3|active|0|1
+2026-09-04|NY|6|6|no_trade,active|0|1
+x
+--- plans per trade_date total + rejects per trade_date
+trade_date|n_plans|n_rej
+2026-08-30|3|0
+2026-08-31|13|0
+2026-09-01|21|23
+2026-09-02|33|24
+2026-09-03|16|1
+2026-09-04|9|16
+x
+--- trigger_reason distribution 7d
+substr(trigger_reason,1,60)|COUNT(*)
+level_event|56
+planner_fail_closed|14
+owner_reset|5
+e7_incident_kill:manual_cancel_respected|2
+ASIA_scheduled_read|2
+weekly_boot_backfill|1
+rearmed:5m_close close back below 29211.00 (buffer 0.5×ATR14|1
+rearmed:2x5m close back below 29212.50 (buffer 0.5×ATR14, 2×|1
+rearmed:2x5m close back above 29426.92 (buffer 0.5×ATR14, 2×|1
+rearmed:2x5m close back above 29035.25 (buffer 0.5×ATR14, 2×|1
+dormant:flip:flip-condition: 5m_close close above 29058.75 (|1
+dormant:flip:flip-condition: 2x5m close above 29231.63 (buff|1
+dormant:flip:flip-condition: 2x5m close above 29221.98 (buff|1
+dormant:flip:flip-condition: 2x5m close above 29177.50 (buff|1
+dormant:flip:flip-condition: 2x5m close above 29175.66 (buff|1
+dormant:death:death-condition: 5m_close close above 29132.50|1
+dormant:death:death-condition: 2x5m close below 29502.25 (bu|1
+dormant:death:death-condition: 2x5m close above 29293.00 (bu|1
+dormant:death:death-condition: 2x5m close above 29125.00 (bu|1
+NY_scheduled_read|1
+x
+--- latest NY plan 09-04: version, lifecycle, prompt_hash, created_at, doc length
+plan_id|version|lifecycle|prompt_hash|created_at|length(doc)|substr(trigger_reason,1,80)
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|1|no_trade|f4c76d6a280d|2026-09-04 13:11:45.620506374+00:00|1682|planner_fail_closed
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|2|active|abd391d524ba|2026-09-04 13:44:46.688576529+00:00|3990|owner_reset
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|active|d6af9f4707ad|2026-09-04 13:55:11.782677983+00:00|3864|level_event
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|4|active|1d3cf9c60d37|2026-09-04 16:03:30.521703109+00:00|4334|level_event
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|5|active|e01a49ef3621|2026-09-04 16:28:50.086957702+00:00|3811|level_event
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|6|active|b3753f7ee440|2026-09-04 17:10:35.724026458+00:00|4730|level_event

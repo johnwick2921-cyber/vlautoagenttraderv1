@@ -1,0 +1,52 @@
+from pathlib import Path
+import subprocess,json,hashlib,math
+R=Path('/tmp/nofx-repo-understanding-20260913');D=R/'docs/superpowers/reports/2026-09-13-repo-understanding';files=[f for f in subprocess.check_output(['git','ls-files','-z'],cwd=R).decode().split('\0') if f]
+def istest(f):return any(s in f for s in ['_test.go','.test.','.spec.','/testdata/','/fixtures/'])
+def category(f):
+ if f.startswith('docs/'):return 'research-tools'
+ if f.startswith('provider/ninjatrader/') or f.startswith('ninjascript/'):return 'nt8-wire-and-addon'
+ if f.startswith('trader/ninjatrader/'):return 'nt8-execution-adapter'
+ if f.startswith('trader/'):
+  if len(f.split('/'))>2 and not f.startswith(('trader/types/','trader/testutil/')):return 'crypto-brokers'
+  if any(s in f for s in ['planner','dayplan','weekly','calendar','session','reread','transition','wake','levelstate','watcher','detector','research','matched_random']):return 'trader-planning-and-context'
+  if any(s in f for s in ['arm','entry','one_setup','one_contract','cancel','place_confirm','reaper','structural','scenario','follow_plan','no_chase','discard','fade','invalidation']):return 'trader-admission-and-orders'
+  return 'trader-runtime-and-positions'
+ if f.startswith('kernel/'):
+  if any(s in f for s in ['level','map_','svp','structure','mss','naked','detector','research_score']):return 'kernel-levels-and-structure'
+  if any(s in f for s in ['plan','scenario','weekly','one_setup','fade_permission','follow_plan']):return 'kernel-plans-and-permissions'
+  return 'kernel-engine-clocks-and-risk'
+ if f.startswith('store/'):return 'persistence-and-config'
+ if f.startswith(('api/','auth/','manager/')):return 'api-auth-and-manager'
+ if f.startswith('web/'):
+  if any(s in f for s in ['/components/plan/','/guide/','/lib/api/plan']):return 'web-plan-and-guide'
+  if any(s in f for s in ['/components/strategy/','/components/trader/','/pages/Strategy','/pages/Settings','/pages/Trader']):return 'web-trading-and-settings'
+  return 'web-shell-chart-and-chat'
+ if f.startswith('agent/'):return 'conversational-agent'
+ if f.startswith('mcp/'):return 'ai-client-and-providers'
+ if f.startswith(('market/','provider/')):return 'market-and-other-data-providers'
+ return 'runtime-operations-and-support'
+inv=[];groups={}
+for f in files:
+ p=R/f;raw=p.read_bytes();suffix=p.suffix.lower();source=suffix in ['.go','.ts','.tsx','.js','.jsx','.cs','.py','.sh'];n=len(raw.splitlines())
+ row={'path':f,'bytes':len(raw),'lines':n,'sha256':hashlib.sha256(raw).hexdigest(),'source':source,'test_or_fixture':istest(f),'category':category(f)};inv.append(row)
+ if source and not istest(f):groups.setdefault(category(f),[]).append(row)
+bins=[]
+for group,rows in sorted(groups.items()):
+ rows.sort(key=lambda x:x['path']);parts=max(1,math.ceil(sum(r['lines'] for r in rows)/13000));chunks=[[] for _ in range(parts)]
+ # Balance whole files within subsystem. Keep every path assigned exactly once.
+ for row in sorted(rows,key=lambda r:(-r['lines'],r['path'])):min(chunks,key=lambda c:sum(r['lines'] for r in c)).append(row)
+ for part in chunks:bins.append({'area':group,'files':sorted(part,key=lambda r:r['path'])})
+while len(bins)>28:
+ bins.sort(key=lambda b:sum(r['lines'] for r in b['files']))
+ a,b=bins.pop(0),bins.pop(0);bins.append({'area':a['area']+' + '+b['area'],'files':sorted(a['files']+b['files'],key=lambda r:r['path'])})
+while len(bins)<28:
+ k=max(range(len(bins)),key=lambda i:sum(r['lines'] for r in bins[i]['files']) if len(bins[i]['files'])>1 else -1);old=bins.pop(k);pair=[[],[]]
+ for row in sorted(old['files'],key=lambda r:-r['lines']):min(pair,key=lambda c:sum(r['lines'] for r in c)).append(row)
+ bins.extend({'area':old['area'],'files':sorted(c,key=lambda r:r['path'])} for c in pair)
+assert len(bins)==28,len(bins)
+bins.sort(key=lambda b:b['area']);plan=[]
+for i,b in enumerate(bins,1):
+ b.update({'id':i,'status':'pending','lines':sum(r['lines'] for r in b['files']),'file_count':len(b['files'])});plan.append(b)
+plan += [{'id':29,'area':'independent-control-boundaries','status':'pending','files':[]},{'id':30,'area':'independent-end-to-end-and-graph-validation','status':'pending','files':[]}]
+(D/'file-inventory.json').write_text(json.dumps(inv,indent=2)+'\n');(D/'review-plan.json').write_text(json.dumps({'base':'63968be62e44db2fb07a92883e02127b9064b0be','scope':'All tracked first-party source extensions; test/fixture files catalogued and followed as needed; historical non-code artifacts inventoried, not all manually read.','assignments':plan},indent=2)+'\n')
+for b in plan:print(b['id'],b['area'],b.get('file_count',0),b.get('lines',0))

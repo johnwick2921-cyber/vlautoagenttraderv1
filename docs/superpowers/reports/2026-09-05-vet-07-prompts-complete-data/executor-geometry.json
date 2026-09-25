@@ -1,0 +1,17 @@
+{
+  "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+  "version": 6,
+  "scenario": "S1",
+  "basis": "authored geometry only; no broker fills or initial realized risk inferred",
+  "entry": 29579.56,
+  "stop": 29614.5,
+  "target": 29503.38,
+  "first_chain_target": 29553.75,
+  "displayed_price": 29531.5,
+  "authored_stop_distance": 34.93999999999869,
+  "authored_target_distance": 76.18000000000029,
+  "authored_rr": 2.1803091013166327,
+  "first_chain_distance": 25.81000000000131,
+  "first_chain_rr": 0.7386949055524407,
+  "hypothetical_short_now_same_bracket_rr": 0.3387951807228793
+}

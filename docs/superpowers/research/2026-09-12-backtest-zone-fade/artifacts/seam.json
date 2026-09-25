@@ -1,0 +1,539 @@
+{
+ "summary": "D5 match=true · standalone 06-22=66450 rows · single-contract assert=true · import census rows=76",
+ "import_census": [
+  {
+   "contract": "MNQ 03-23",
+   "tf": "15m",
+   "rows": 5212
+  },
+  {
+   "contract": "MNQ 03-23",
+   "tf": "1h",
+   "rows": 1303
+  },
+  {
+   "contract": "MNQ 03-23",
+   "tf": "1m",
+   "rows": 78178
+  },
+  {
+   "contract": "MNQ 03-23",
+   "tf": "5m",
+   "rows": 15636
+  },
+  {
+   "contract": "MNQ 03-24",
+   "tf": "15m",
+   "rows": 5304
+  },
+  {
+   "contract": "MNQ 03-24",
+   "tf": "1h",
+   "rows": 1326
+  },
+  {
+   "contract": "MNQ 03-24",
+   "tf": "1m",
+   "rows": 79551
+  },
+  {
+   "contract": "MNQ 03-24",
+   "tf": "5m",
+   "rows": 15911
+  },
+  {
+   "contract": "MNQ 03-25",
+   "tf": "15m",
+   "rows": 4799
+  },
+  {
+   "contract": "MNQ 03-25",
+   "tf": "1h",
+   "rows": 1201
+  },
+  {
+   "contract": "MNQ 03-25",
+   "tf": "1m",
+   "rows": 71967
+  },
+  {
+   "contract": "MNQ 03-25",
+   "tf": "5m",
+   "rows": 14395
+  },
+  {
+   "contract": "MNQ 03-26",
+   "tf": "15m",
+   "rows": 4917
+  },
+  {
+   "contract": "MNQ 03-26",
+   "tf": "1h",
+   "rows": 1230
+  },
+  {
+   "contract": "MNQ 03-26",
+   "tf": "1m",
+   "rows": 73743
+  },
+  {
+   "contract": "MNQ 03-26",
+   "tf": "5m",
+   "rows": 14749
+  },
+  {
+   "contract": "MNQ 06-22",
+   "tf": "15m",
+   "rows": 3452
+  },
+  {
+   "contract": "MNQ 06-22",
+   "tf": "1h",
+   "rows": 863
+  },
+  {
+   "contract": "MNQ 06-22",
+   "tf": "1m",
+   "rows": 51779
+  },
+  {
+   "contract": "MNQ 06-22",
+   "tf": "5m",
+   "rows": 10356
+  },
+  {
+   "contract": "MNQ 06-23",
+   "tf": "15m",
+   "rows": 5473
+  },
+  {
+   "contract": "MNQ 06-23",
+   "tf": "1h",
+   "rows": 1369
+  },
+  {
+   "contract": "MNQ 06-23",
+   "tf": "1m",
+   "rows": 82095
+  },
+  {
+   "contract": "MNQ 06-23",
+   "tf": "5m",
+   "rows": 16419
+  },
+  {
+   "contract": "MNQ 06-24",
+   "tf": "15m",
+   "rows": 5411
+  },
+  {
+   "contract": "MNQ 06-24",
+   "tf": "1h",
+   "rows": 1353
+  },
+  {
+   "contract": "MNQ 06-24",
+   "tf": "1m",
+   "rows": 81155
+  },
+  {
+   "contract": "MNQ 06-24",
+   "tf": "5m",
+   "rows": 16231
+  },
+  {
+   "contract": "MNQ 06-25",
+   "tf": "15m",
+   "rows": 5044
+  },
+  {
+   "contract": "MNQ 06-25",
+   "tf": "1h",
+   "rows": 1261
+  },
+  {
+   "contract": "MNQ 06-25",
+   "tf": "1m",
+   "rows": 75655
+  },
+  {
+   "contract": "MNQ 06-25",
+   "tf": "5m",
+   "rows": 15132
+  },
+  {
+   "contract": "MNQ 06-26",
+   "tf": "15m",
+   "rows": 5197
+  },
+  {
+   "contract": "MNQ 06-26",
+   "tf": "1h",
+   "rows": 832
+  },
+  {
+   "contract": "MNQ 06-26",
+   "tf": "1m",
+   "rows": 77955
+  },
+  {
+   "contract": "MNQ 06-26",
+   "tf": "5m",
+   "rows": 15591
+  },
+  {
+   "contract": "MNQ 09-22",
+   "tf": "15m",
+   "rows": 5736
+  },
+  {
+   "contract": "MNQ 09-22",
+   "tf": "1h",
+   "rows": 1434
+  },
+  {
+   "contract": "MNQ 09-22",
+   "tf": "1m",
+   "rows": 85716
+  },
+  {
+   "contract": "MNQ 09-22",
+   "tf": "5m",
+   "rows": 17205
+  },
+  {
+   "contract": "MNQ 09-23",
+   "tf": "15m",
+   "rows": 5473
+  },
+  {
+   "contract": "MNQ 09-23",
+   "tf": "1h",
+   "rows": 1369
+  },
+  {
+   "contract": "MNQ 09-23",
+   "tf": "1m",
+   "rows": 82093
+  },
+  {
+   "contract": "MNQ 09-23",
+   "tf": "5m",
+   "rows": 16419
+  },
+  {
+   "contract": "MNQ 09-24",
+   "tf": "15m",
+   "rows": 5089
+  },
+  {
+   "contract": "MNQ 09-24",
+   "tf": "1h",
+   "rows": 1273
+  },
+  {
+   "contract": "MNQ 09-24",
+   "tf": "1m",
+   "rows": 76302
+  },
+  {
+   "contract": "MNQ 09-24",
+   "tf": "5m",
+   "rows": 15265
+  },
+  {
+   "contract": "MNQ 09-25",
+   "tf": "15m",
+   "rows": 5181
+  },
+  {
+   "contract": "MNQ 09-25",
+   "tf": "1h",
+   "rows": 1296
+  },
+  {
+   "contract": "MNQ 09-25",
+   "tf": "1m",
+   "rows": 77715
+  },
+  {
+   "contract": "MNQ 09-25",
+   "tf": "5m",
+   "rows": 15543
+  },
+  {
+   "contract": "MNQ 09-26",
+   "tf": "15m",
+   "rows": 4065
+  },
+  {
+   "contract": "MNQ 09-26",
+   "tf": "1h",
+   "rows": 66
+  },
+  {
+   "contract": "MNQ 09-26",
+   "tf": "1m",
+   "rows": 75492
+  },
+  {
+   "contract": "MNQ 09-26",
+   "tf": "5m",
+   "rows": 16133
+  },
+  {
+   "contract": "MNQ 12-22",
+   "tf": "15m",
+   "rows": 5695
+  },
+  {
+   "contract": "MNQ 12-22",
+   "tf": "1h",
+   "rows": 1425
+  },
+  {
+   "contract": "MNQ 12-22",
+   "tf": "1m",
+   "rows": 85264
+  },
+  {
+   "contract": "MNQ 12-22",
+   "tf": "5m",
+   "rows": 17081
+  },
+  {
+   "contract": "MNQ 12-23",
+   "tf": "15m",
+   "rows": 5489
+  },
+  {
+   "contract": "MNQ 12-23",
+   "tf": "1h",
+   "rows": 1373
+  },
+  {
+   "contract": "MNQ 12-23",
+   "tf": "1m",
+   "rows": 82332
+  },
+  {
+   "contract": "MNQ 12-23",
+   "tf": "5m",
+   "rows": 16467
+  },
+  {
+   "contract": "MNQ 12-24",
+   "tf": "15m",
+   "rows": 5121
+  },
+  {
+   "contract": "MNQ 12-24",
+   "tf": "1h",
+   "rows": 1281
+  },
+  {
+   "contract": "MNQ 12-24",
+   "tf": "1m",
+   "rows": 76810
+  },
+  {
+   "contract": "MNQ 12-24",
+   "tf": "5m",
+   "rows": 15363
+  },
+  {
+   "contract": "MNQ 12-25",
+   "tf": "15m",
+   "rows": 5170
+  },
+  {
+   "contract": "MNQ 12-25",
+   "tf": "1h",
+   "rows": 1294
+  },
+  {
+   "contract": "MNQ 12-25",
+   "tf": "1m",
+   "rows": 77549
+  },
+  {
+   "contract": "MNQ 12-25",
+   "tf": "5m",
+   "rows": 15510
+  },
+  {
+   "contract": "MNQ 12-26",
+   "tf": "15m",
+   "rows": 4
+  },
+  {
+   "contract": "MNQ 12-26",
+   "tf": "1h",
+   "rows": 4
+  },
+  {
+   "contract": "MNQ 12-26",
+   "tf": "1m",
+   "rows": 4
+  },
+  {
+   "contract": "MNQ 12-26",
+   "tf": "5m",
+   "rows": 4
+  }
+ ],
+ "d5_jsonl_totals": {
+  "MNQ 03-21": {
+   "15m": 0,
+   "1h": 0,
+   "1m": 0,
+   "5m": 0
+  },
+  "MNQ 03-23": {
+   "15m": 5212,
+   "1h": 1303,
+   "1m": 78178,
+   "5m": 15636
+  },
+  "MNQ 03-24": {
+   "15m": 5304,
+   "1h": 1326,
+   "1m": 79551,
+   "5m": 15911
+  },
+  "MNQ 03-25": {
+   "15m": 4799,
+   "1h": 1201,
+   "1m": 71967,
+   "5m": 14395
+  },
+  "MNQ 03-26": {
+   "15m": 4917,
+   "1h": 1230,
+   "1m": 73743,
+   "5m": 14749
+  },
+  "MNQ 06-19": {
+   "15m": 0,
+   "1h": 0,
+   "1m": 0,
+   "5m": 0
+  },
+  "MNQ 06-23": {
+   "15m": 5473,
+   "1h": 1369,
+   "1m": 82095,
+   "5m": 16419
+  },
+  "MNQ 06-24": {
+   "15m": 5411,
+   "1h": 1353,
+   "1m": 81155,
+   "5m": 16231
+  },
+  "MNQ 06-25": {
+   "15m": 5044,
+   "1h": 1261,
+   "1m": 75655,
+   "5m": 15132
+  },
+  "MNQ 06-26": {
+   "15m": 5197,
+   "1h": 832,
+   "1m": 77955,
+   "5m": 15591
+  },
+  "MNQ 09-22": {
+   "15m": 5736,
+   "1h": 1434,
+   "1m": 85716,
+   "5m": 17205
+  },
+  "MNQ 09-23": {
+   "15m": 5473,
+   "1h": 1369,
+   "1m": 82093,
+   "5m": 16419
+  },
+  "MNQ 09-24": {
+   "15m": 5089,
+   "1h": 1273,
+   "1m": 76302,
+   "5m": 15265
+  },
+  "MNQ 09-25": {
+   "15m": 5181,
+   "1h": 1296,
+   "1m": 77715,
+   "5m": 15543
+  },
+  "MNQ 09-26": {
+   "15m": 4065,
+   "1h": 66,
+   "1m": 75492,
+   "5m": 16133
+  },
+  "MNQ 12-22": {
+   "15m": 5695,
+   "1h": 1425,
+   "1m": 85264,
+   "5m": 17081
+  },
+  "MNQ 12-23": {
+   "15m": 5489,
+   "1h": 1373,
+   "1m": 82332,
+   "5m": 16467
+  },
+  "MNQ 12-24": {
+   "15m": 5121,
+   "1h": 1281,
+   "1m": 76810,
+   "5m": 15363
+  },
+  "MNQ 12-25": {
+   "15m": 5170,
+   "1h": 1294,
+   "1m": 77549,
+   "5m": 15510
+  },
+  "MNQ 12-26": {
+   "15m": 4,
+   "1h": 4,
+   "1m": 4,
+   "5m": 4
+  }
+ },
+ "d5_delta_db_minus_jsonl": {
+  "MNQ 03-21": {},
+  "MNQ 03-23": {},
+  "MNQ 03-24": {},
+  "MNQ 03-25": {},
+  "MNQ 03-26": {},
+  "MNQ 06-19": {},
+  "MNQ 06-22": {
+   "15m": 3452,
+   "1h": 863,
+   "1m": 51779,
+   "5m": 10356
+  },
+  "MNQ 06-23": {},
+  "MNQ 06-24": {},
+  "MNQ 06-25": {},
+  "MNQ 06-26": {},
+  "MNQ 09-22": {},
+  "MNQ 09-23": {},
+  "MNQ 09-24": {},
+  "MNQ 09-25": {},
+  "MNQ 09-26": {},
+  "MNQ 12-22": {},
+  "MNQ 12-23": {},
+  "MNQ 12-24": {},
+  "MNQ 12-25": {},
+  "MNQ 12-26": {}
+ },
+ "d5_matches": true,
+ "standalone_mnq_0622_rows": 66450,
+ "series_single_contract_assert": true,
+ "assertion_text": "assert: every bar of every window was fetched from ONE contract's series; a window is built by lastClosed(contract, tf, n, readTime) and sessionBars1m(contract, …) which read only that contract's rows — no window ever concatenates two contracts' bars."
+}

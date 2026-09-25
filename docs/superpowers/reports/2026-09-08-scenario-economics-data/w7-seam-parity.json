@@ -1,0 +1,27 @@
+{
+  "baseline": "3cff0df3587f9784d62305507a421a380bc3775a",
+  "predicate_body_identical_after_removing_old_clock_read": true,
+  "one_line_delegate": true,
+  "golden_files_checked": 9,
+  "golden_changed_paths": [],
+  "fixture_clocks_ct": [
+    "11:00",
+    "17:17",
+    "17:18",
+    "17:19",
+    "17:20",
+    "17:21",
+    "17:22",
+    "17:23"
+  ],
+  "old_fixture_fixed_clock_failures": [
+    "17:18",
+    "17:19",
+    "17:20",
+    "17:21"
+  ],
+  "fixed_clock_green_exit": 0,
+  "clock_seam_lint_exit": 0,
+  "prompt_goldens_exit": 0,
+  "predicate_production_call": "recordLevelState -> recordLevelStateAt(time.Now())"
+}

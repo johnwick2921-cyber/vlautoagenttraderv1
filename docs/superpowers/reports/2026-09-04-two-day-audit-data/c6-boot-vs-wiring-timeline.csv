@@ -1,0 +1,12 @@
+boot_ct,module_path_in_boot_line,rev,built_utc,contains_130a4e70_tables,contains_f1d7cf51_call_site,planner_reads_started_while_this_process_ran
+2026-09-03 10:28:29,cleanclone/main.go:243,528edd78e3b9,2026-09-03T15:27:07Z,NO,NO,n/a
+2026-09-03 11:10:33,cc2/main.go:243,f478ed880dc9,2026-09-03T16:07:06Z,NO,NO,n/a
+2026-09-03 14:18:26,cc2/main.go:243,f478ed880dc9,2026-09-03T16:07:06Z,NO,NO,n/a
+2026-09-03 14:59:03,cc3/main.go:243,8d47cc2108f8,2026-09-03T19:55:23Z,NO,NO,n/a
+2026-09-03 15:02:18,cc3/main.go:243,8d47cc2108f8,2026-09-03T19:55:23Z,NO,NO,n/a
+2026-09-03 18:08:56,cleanbuild/main.go:244,38a63a9bb289,2026-09-03T20:26:02Z,NO,NO,"read ids 13,14 (18:00:24, 18:41:09 CT)"
+2026-09-03 19:06:06,cc6/main.go:245,042ff3608995,2026-09-04T00:01:46Z,YES (first detector boot line 19:06:08),NO,"read ids 15,16,17 (19:18:06, 19:50:05, 20:24:03 CT)"
+2026-09-03 21:19:00,nofx/main.go:255,4d846e2664b4,2026-09-04T02:11:20Z,YES,NO,0
+2026-09-03 21:48:12,nofx/main.go:291,89673ccc5984,2026-09-04T02:43:57Z,YES,YES,0
+2026-09-03 23:11:59,nofx/main.go:287,89673ccc5984,2026-09-04T02:43:57Z,YES,YES,0 (BOOT INTEGRITY REFUSED - ran ~56s, entries blocked)
+2026-09-03 23:12:55,cleanclone/main.go:291,530009ffd540,2026-09-04T04:04:45Z,YES,YES,0 (still running at 23:31 CT; next scheduled read LONDON 01:30 CT)

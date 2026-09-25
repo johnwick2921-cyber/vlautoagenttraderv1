@@ -1,0 +1,1277 @@
+Captured UTC
+"2026-09-05T20:52:37.545010+00:00"
+
+GET /api/health
+{
+  "HTTP": 200,
+  "body": {
+    "revision": "36648655cfe0",
+    "status": "ok",
+    "time": null
+  }
+}
+
+Era exclusions SQL: SELECT id,source,pnl_corrected,pnl_correction_note FROM trader_positions WHERE entry_time >= 1786770000000 AND (source='e7_farside_test' OR pnl_corrected IS NULL OR upper(coalesce(pnl_correction_note,'')) LIKE '%UNRESOLVABLE%') ORDER BY id
+[
+  {
+    "id": 572,
+    "source": "e7_farside_test",
+    "pnl_corrected": null,
+    "pnl_correction_note": ""
+  },
+  {
+    "id": 573,
+    "source": "e7_farside_test",
+    "pnl_corrected": 6.0,
+    "pnl_correction_note": "T7 close-path: pnl_corrected = recompute (Δ+0.00 vs realized)"
+  },
+  {
+    "id": 574,
+    "source": "e7_farside_test",
+    "pnl_corrected": -1.0,
+    "pnl_correction_note": "T7 close-path: pnl_corrected = recompute (Δ+0.00 vs realized)"
+  },
+  {
+    "id": 576,
+    "source": "armed_entry",
+    "pnl_corrected": null,
+    "pnl_correction_note": ""
+  },
+  {
+    "id": 577,
+    "source": "armed_entry",
+    "pnl_corrected": null,
+    "pnl_correction_note": "class-27 backfill: duplicate of row 578 (same NT8 position, same entry order)"
+  },
+  {
+    "id": 579,
+    "source": "armed_entry",
+    "pnl_corrected": null,
+    "pnl_correction_note": "class-27 backfill: S3 entry netted the S1 long — no position ever existed; exit UNKNOWN"
+  }
+]
+
+Canonical era SQL: SELECT id,entry_time,exit_time,side,source,plan_session,cited_scenario_id,pnl_corrected,fee,mae,mfe FROM trader_positions WHERE entry_time >= 1786770000000 AND coalesce(source,'') <> 'e7_farside_test' AND pnl_corrected IS NOT NULL AND upper(coalesce(pnl_correction_note,'')) NOT LIKE '%UNRESOLVABLE%' ORDER BY entry_time,id
+[
+  {
+    "id": 521,
+    "entry_time": 1787127723941,
+    "exit_time": 1787132616909,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 138.0,
+    "fee": 0.0,
+    "mae": 16.0,
+    "mfe": 71.25
+  },
+  {
+    "id": 522,
+    "entry_time": 1787141851173,
+    "exit_time": 1787142784995,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S3",
+    "pnl_corrected": -60.5,
+    "fee": 0.0,
+    "mae": 49.25,
+    "mfe": 10.25
+  },
+  {
+    "id": 523,
+    "entry_time": 1787148412409,
+    "exit_time": 1787148669853,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 118.0,
+    "fee": 0.0,
+    "mae": 11.5,
+    "mfe": 79.5
+  },
+  {
+    "id": 524,
+    "entry_time": 1787156295776,
+    "exit_time": 1787160091498,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 273.5,
+    "fee": 0.0,
+    "mae": 16.5,
+    "mfe": 137.5
+  },
+  {
+    "id": 525,
+    "entry_time": 1787181724764,
+    "exit_time": 1787183980456,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -43.0,
+    "fee": 0.0,
+    "mae": 21.75,
+    "mfe": 19.75
+  },
+  {
+    "id": 526,
+    "entry_time": 1787189302092,
+    "exit_time": 1787192187436,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -69.42857199999708,
+    "fee": 0.0,
+    "mae": 57.5,
+    "mfe": 2.75
+  },
+  {
+    "id": 527,
+    "entry_time": 1787197048862,
+    "exit_time": 1787198834030,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -88.0,
+    "fee": 0.0,
+    "mae": 44.25,
+    "mfe": 5.0
+  },
+  {
+    "id": 528,
+    "entry_time": 1787214391412,
+    "exit_time": 1787220704886,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -97.5,
+    "fee": 0.0,
+    "mae": 49.0,
+    "mfe": 48.0
+  },
+  {
+    "id": 529,
+    "entry_time": 1787221593307,
+    "exit_time": 1787224917648,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 168.0,
+    "fee": 0.0,
+    "mae": 43.75,
+    "mfe": 91.0
+  },
+  {
+    "id": 530,
+    "entry_time": 1787231522210,
+    "exit_time": 1787231726009,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "",
+    "cited_scenario_id": "off-plan",
+    "pnl_corrected": 13.0,
+    "fee": 0.0,
+    "mae": 6.25,
+    "mfe": 10.0
+  },
+  {
+    "id": 531,
+    "entry_time": 1787233297689,
+    "exit_time": 1787233704110,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S3",
+    "pnl_corrected": -147.5,
+    "fee": 0.0,
+    "mae": 75.0,
+    "mfe": 16.25
+  },
+  {
+    "id": 532,
+    "entry_time": 1787236917055,
+    "exit_time": 1787249147278,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 311.0,
+    "fee": 0.0,
+    "mae": 61.5,
+    "mfe": 156.75
+  },
+  {
+    "id": 533,
+    "entry_time": 1787266758375,
+    "exit_time": 1787271163275,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -54.5,
+    "fee": 0.0,
+    "mae": 30.25,
+    "mfe": 36.0
+  },
+  {
+    "id": 534,
+    "entry_time": 1787271748349,
+    "exit_time": 1787276995308,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -66.0,
+    "fee": 0.0,
+    "mae": 36.75,
+    "mfe": 40.5
+  },
+  {
+    "id": 535,
+    "entry_time": 1787278123499,
+    "exit_time": 1787278857194,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -31.0,
+    "fee": 0.0,
+    "mae": 17.75,
+    "mfe": 7.0
+  },
+  {
+    "id": 536,
+    "entry_time": 1787279779762,
+    "exit_time": 1787286454106,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 124.0,
+    "fee": 0.0,
+    "mae": 6.75,
+    "mfe": 62.25
+  },
+  {
+    "id": 537,
+    "entry_time": 1787289910852,
+    "exit_time": 1787294140952,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -79.5,
+    "fee": 0.0,
+    "mae": 42.0,
+    "mfe": 20.25
+  },
+  {
+    "id": 538,
+    "entry_time": 1787294426615,
+    "exit_time": 1787294701430,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 30.5,
+    "fee": 0.0,
+    "mae": 2.75,
+    "mfe": 16.25
+  },
+  {
+    "id": 539,
+    "entry_time": 1787302449656,
+    "exit_time": 1787306411326,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "",
+    "cited_scenario_id": "off-plan",
+    "pnl_corrected": -84.5,
+    "fee": 0.0,
+    "mae": 43.0,
+    "mfe": 42.25
+  },
+  {
+    "id": 540,
+    "entry_time": 1787306680461,
+    "exit_time": 1787310076685,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -98.0,
+    "fee": 0.0,
+    "mae": 50.0,
+    "mfe": 6.5
+  },
+  {
+    "id": 541,
+    "entry_time": 1787311607785,
+    "exit_time": 1787318022696,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -83.0,
+    "fee": 0.0,
+    "mae": 42.25,
+    "mfe": 28.0
+  },
+  {
+    "id": 542,
+    "entry_time": 1787320143292,
+    "exit_time": 1787322462787,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 0.0,
+    "fee": 0.0,
+    "mae": 35.5,
+    "mfe": 89.75
+  },
+  {
+    "id": 543,
+    "entry_time": 1787325163217,
+    "exit_time": 1787326470700,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -88.5,
+    "fee": 0.0,
+    "mae": 45.0,
+    "mfe": 25.0
+  },
+  {
+    "id": 544,
+    "entry_time": 1787327265787,
+    "exit_time": 1787327509227,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -61.5,
+    "fee": 0.0,
+    "mae": 31.5,
+    "mfe": 19.5
+  },
+  {
+    "id": 545,
+    "entry_time": 1787542090280,
+    "exit_time": 1787542345368,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "",
+    "cited_scenario_id": "",
+    "pnl_corrected": -29.5,
+    "fee": 0.0,
+    "mae": 15.25,
+    "mfe": 3.0
+  },
+  {
+    "id": 546,
+    "entry_time": 1787573202596,
+    "exit_time": 1787574773287,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "",
+    "cited_scenario_id": "",
+    "pnl_corrected": -88.5,
+    "fee": 0.0,
+    "mae": 51.0,
+    "mfe": 9.75
+  },
+  {
+    "id": 547,
+    "entry_time": 1787580585134,
+    "exit_time": 1787581850877,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -139.5,
+    "fee": 0.0,
+    "mae": 73.25,
+    "mfe": 15.25
+  },
+  {
+    "id": 548,
+    "entry_time": 1787583313785,
+    "exit_time": 1787585344309,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -54.5,
+    "fee": 0.0,
+    "mae": 44.75,
+    "mfe": 58.5
+  },
+  {
+    "id": 549,
+    "entry_time": 1787588810349,
+    "exit_time": 1787594145174,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 169.5,
+    "fee": 0.0,
+    "mae": 10.5,
+    "mfe": 85.5
+  },
+  {
+    "id": 550,
+    "entry_time": 1787622214378,
+    "exit_time": 1787625115057,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -84.5,
+    "fee": 0.0,
+    "mae": 42.5,
+    "mfe": 20.25
+  },
+  {
+    "id": 551,
+    "entry_time": 1787625786798,
+    "exit_time": 1787627344859,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 0.0,
+    "fee": 0.0,
+    "mae": 0.5,
+    "mfe": 69.75
+  },
+  {
+    "id": 552,
+    "entry_time": 1787627825020,
+    "exit_time": 1787627988172,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -7.5,
+    "fee": 0.0,
+    "mae": 5.5,
+    "mfe": 10.0
+  },
+  {
+    "id": 553,
+    "entry_time": 1787630586859,
+    "exit_time": 1787630723285,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -27.0,
+    "fee": 0.0,
+    "mae": 18.0,
+    "mfe": 0.0
+  },
+  {
+    "id": 554,
+    "entry_time": 1787641758864,
+    "exit_time": 1787646277376,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -62.0,
+    "fee": 0.0,
+    "mae": 58.75,
+    "mfe": 58.0
+  },
+  {
+    "id": 555,
+    "entry_time": 1787649559289,
+    "exit_time": 1787651863713,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 168.0,
+    "fee": 0.0,
+    "mae": 22.5,
+    "mfe": 92.0
+  },
+  {
+    "id": 556,
+    "entry_time": 1787655848500,
+    "exit_time": 1787656183070,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -40.0,
+    "fee": 0.0,
+    "mae": 33.5,
+    "mfe": 0.75
+  },
+  {
+    "id": 557,
+    "entry_time": 1787656476930,
+    "exit_time": 1787661054988,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 46.5,
+    "fee": 0.0,
+    "mae": 17.25,
+    "mfe": 71.75
+  },
+  {
+    "id": 558,
+    "entry_time": 1787662601774,
+    "exit_time": 1787663702041,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -22.5,
+    "fee": 0.0,
+    "mae": 27.5,
+    "mfe": 5.75
+  },
+  {
+    "id": 559,
+    "entry_time": 1787667281458,
+    "exit_time": 1787668202197,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S4",
+    "pnl_corrected": -78.5,
+    "fee": 0.0,
+    "mae": 100.75,
+    "mfe": 23.5
+  },
+  {
+    "id": 560,
+    "entry_time": 1787683989352,
+    "exit_time": 1787686216895,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S3",
+    "pnl_corrected": 81.0,
+    "fee": 0.0,
+    "mae": 3.0,
+    "mfe": 50.5
+  },
+  {
+    "id": 561,
+    "entry_time": 1787703104205,
+    "exit_time": 1787703939651,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -52.0,
+    "fee": 0.0,
+    "mae": 30.0,
+    "mfe": 17.5
+  },
+  {
+    "id": 562,
+    "entry_time": 1787728926645,
+    "exit_time": 1787742109269,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -98.5,
+    "fee": 0.0,
+    "mae": 51.25,
+    "mfe": 25.75
+  },
+  {
+    "id": 563,
+    "entry_time": 1787742765384,
+    "exit_time": 1787744284225,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -49.5,
+    "fee": 0.0,
+    "mae": 29.5,
+    "mfe": 34.75
+  },
+  {
+    "id": 564,
+    "entry_time": 1787822385609,
+    "exit_time": 1787823144273,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S3",
+    "pnl_corrected": -69.0,
+    "fee": 0.0,
+    "mae": 36.75,
+    "mfe": 6.75
+  },
+  {
+    "id": 565,
+    "entry_time": 1787827992777,
+    "exit_time": 1787828737791,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -62.5,
+    "fee": 0.0,
+    "mae": 32.75,
+    "mfe": 4.25
+  },
+  {
+    "id": 566,
+    "entry_time": 1787848373019,
+    "exit_time": 1787850109019,
+    "side": "LONG",
+    "source": "reconcile",
+    "plan_session": "",
+    "cited_scenario_id": "",
+    "pnl_corrected": 97.0,
+    "fee": 0.0,
+    "mae": null,
+    "mfe": null
+  },
+  {
+    "id": 567,
+    "entry_time": 1787898124014,
+    "exit_time": 1787900267898,
+    "side": "SHORT",
+    "source": "reconcile",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -42.0,
+    "fee": 0.0,
+    "mae": 21.5,
+    "mfe": 28.5
+  },
+  {
+    "id": 568,
+    "entry_time": 1787919586429,
+    "exit_time": 1787919782166,
+    "side": "SHORT",
+    "source": "reconcile",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -32.0,
+    "fee": 0.0,
+    "mae": 17.0,
+    "mfe": 1.75
+  },
+  {
+    "id": 569,
+    "entry_time": 1787924668684,
+    "exit_time": 1787924728951,
+    "side": "SHORT",
+    "source": "reconcile",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 63.0,
+    "fee": 0.0,
+    "mae": 0.0,
+    "mfe": 36.0
+  },
+  {
+    "id": 570,
+    "entry_time": 1787937021714,
+    "exit_time": 1787942914951,
+    "side": "LONG",
+    "source": "reconcile",
+    "plan_session": "NY",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 17.0,
+    "fee": 0.0,
+    "mae": 14.5,
+    "mfe": 66.25
+  },
+  {
+    "id": 571,
+    "entry_time": 1788129513175,
+    "exit_time": 1788131593328,
+    "side": "LONG",
+    "source": "reconcile",
+    "plan_session": "",
+    "cited_scenario_id": "",
+    "pnl_corrected": -44.5,
+    "fee": 0.0,
+    "mae": 22.5,
+    "mfe": 17.0
+  },
+  {
+    "id": 575,
+    "entry_time": 1788188358333,
+    "exit_time": 1788189328351,
+    "side": "SHORT",
+    "source": "reconcile",
+    "plan_session": "NY",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 32.5,
+    "fee": 0.0,
+    "mae": 6.0,
+    "mfe": 41.5
+  },
+  {
+    "id": 578,
+    "entry_time": 1788197208950,
+    "exit_time": 1788199848747,
+    "side": "LONG",
+    "source": "reconcile",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 92.0,
+    "fee": 0.0,
+    "mae": 24.75,
+    "mfe": 47.25
+  },
+  {
+    "id": 580,
+    "entry_time": 1788201428615,
+    "exit_time": 1788201499024,
+    "side": "SHORT",
+    "source": "reconcile",
+    "plan_session": "",
+    "cited_scenario_id": "",
+    "pnl_corrected": 39.5,
+    "fee": 0.0,
+    "mae": 0.0,
+    "mfe": 20.75
+  },
+  {
+    "id": 581,
+    "entry_time": 1788249164041,
+    "exit_time": 1788249993712,
+    "side": "SHORT",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": 190.5,
+    "fee": 0.0,
+    "mae": 2.5,
+    "mfe": 73.5
+  },
+  {
+    "id": 582,
+    "entry_time": 1788258208858,
+    "exit_time": 1788260734279,
+    "side": "SHORT",
+    "source": "armed_entry",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 129.5,
+    "fee": 0.0,
+    "mae": 11.25,
+    "mfe": 69.25
+  },
+  {
+    "id": 583,
+    "entry_time": 1788262504776,
+    "exit_time": 1788263807259,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -82.5,
+    "fee": 0.0,
+    "mae": 43.25,
+    "mfe": 25.0
+  },
+  {
+    "id": 584,
+    "entry_time": 1788269807953,
+    "exit_time": 1788269899464,
+    "side": "SHORT",
+    "source": "reconcile",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": 106.0,
+    "fee": 0.0,
+    "mae": 0.0,
+    "mfe": 58.0
+  },
+  {
+    "id": 585,
+    "entry_time": 1788273068046,
+    "exit_time": 1788273640760,
+    "side": "SHORT",
+    "source": "armed_entry",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -77.5,
+    "fee": 0.0,
+    "mae": 38.75,
+    "mfe": 0.0
+  },
+  {
+    "id": 586,
+    "entry_time": 1788287586496,
+    "exit_time": 1788288074189,
+    "side": "LONG",
+    "source": "reconcile",
+    "plan_session": "NY",
+    "cited_scenario_id": "S3",
+    "pnl_corrected": -54.0,
+    "fee": 0.0,
+    "mae": 27.5,
+    "mfe": 0.0
+  },
+  {
+    "id": 587,
+    "entry_time": 1788326264539,
+    "exit_time": 1788329021861,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "ASIA",
+    "cited_scenario_id": "S3",
+    "pnl_corrected": -62.5,
+    "fee": 0.0,
+    "mae": 33.0,
+    "mfe": 25.75
+  },
+  {
+    "id": 588,
+    "entry_time": 1788352865663,
+    "exit_time": 1788353498565,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "LONDON",
+    "cited_scenario_id": "S2",
+    "pnl_corrected": -65.0,
+    "fee": 0.0,
+    "mae": 33.25,
+    "mfe": 0.0
+  },
+  {
+    "id": 589,
+    "entry_time": 1788360064833,
+    "exit_time": 1788361167398,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S3",
+    "pnl_corrected": -155.0,
+    "fee": 0.0,
+    "mae": 80.5,
+    "mfe": 10.25
+  },
+  {
+    "id": 590,
+    "entry_time": 1788363437167,
+    "exit_time": 1788364170319,
+    "side": "LONG",
+    "source": "system",
+    "plan_session": "NY",
+    "cited_scenario_id": "S4",
+    "pnl_corrected": -99.0,
+    "fee": 0.0,
+    "mae": 49.75,
+    "mfe": 1.0
+  },
+  {
+    "id": 591,
+    "entry_time": 1788444314627,
+    "exit_time": 1788445245677,
+    "side": "SHORT",
+    "source": "reconcile",
+    "plan_session": "NY",
+    "cited_scenario_id": "S1",
+    "pnl_corrected": -140.0,
+    "fee": 0.0,
+    "mae": 75.0,
+    "mfe": 43.5
+  }
+]
+
+Canonical totals
+{
+  "n": 65,
+  "ids": [
+    521,
+    522,
+    523,
+    524,
+    525,
+    526,
+    527,
+    528,
+    529,
+    530,
+    531,
+    532,
+    533,
+    534,
+    535,
+    536,
+    537,
+    538,
+    539,
+    540,
+    541,
+    542,
+    543,
+    544,
+    545,
+    546,
+    547,
+    548,
+    549,
+    550,
+    551,
+    552,
+    553,
+    554,
+    555,
+    556,
+    557,
+    558,
+    559,
+    560,
+    561,
+    562,
+    563,
+    564,
+    565,
+    566,
+    567,
+    568,
+    569,
+    570,
+    571,
+    575,
+    578,
+    580,
+    581,
+    582,
+    583,
+    584,
+    585,
+    586,
+    587,
+    588,
+    589,
+    590,
+    591
+  ],
+  "pnl_corrected_sum": -563.9285719999971,
+  "mean": -8.67582418461534,
+  "sd": 101.16196261029,
+  "normal_approx_CI95": [
+    -33.26911466308121,
+    15.91746629385053
+  ],
+  "wins": 21,
+  "losses": 42,
+  "flats": 2,
+  "win_ex_flats": {
+    "k": 21,
+    "n": 63,
+    "rate": 0.3333333333333333,
+    "wilson95": [
+      0.2294961446460398,
+      0.4563275885502441
+    ]
+  },
+  "win_including_flats": {
+    "k": 21,
+    "n": 65,
+    "rate": 0.3230769230769231,
+    "wilson95": [
+      0.22203889060305598,
+      0.44386011278810883
+    ]
+  },
+  "payoff": 1.6204965507495397,
+  "session_days": 12,
+  "days": {
+    "2026-08-18": {
+      "ids": [
+        521,
+        522,
+        523,
+        524
+      ],
+      "pnl": 469.0
+    },
+    "2026-08-19": {
+      "ids": [
+        525,
+        526,
+        527,
+        528,
+        529,
+        530,
+        531,
+        532
+      ],
+      "pnl": 46.571428000002925
+    },
+    "2026-08-20": {
+      "ids": [
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        539,
+        540,
+        541,
+        542,
+        543,
+        544
+      ],
+      "pnl": -492.0
+    },
+    "2026-08-23": {
+      "ids": [
+        545,
+        546,
+        547,
+        548,
+        549
+      ],
+      "pnl": -142.5
+    },
+    "2026-08-24": {
+      "ids": [
+        550,
+        551,
+        552,
+        553,
+        554,
+        555,
+        556,
+        557,
+        558,
+        559,
+        560
+      ],
+      "pnl": -26.5
+    },
+    "2026-08-25": {
+      "ids": [
+        561,
+        562,
+        563
+      ],
+      "pnl": -200.0
+    },
+    "2026-08-26": {
+      "ids": [
+        564,
+        565,
+        566
+      ],
+      "pnl": -34.5
+    },
+    "2026-08-27": {
+      "ids": [
+        567,
+        568,
+        569,
+        570
+      ],
+      "pnl": 6.0
+    },
+    "2026-08-30": {
+      "ids": [
+        571,
+        575,
+        578,
+        580
+      ],
+      "pnl": 119.5
+    },
+    "2026-08-31": {
+      "ids": [
+        581,
+        582,
+        583,
+        584,
+        585,
+        586
+      ],
+      "pnl": 212.0
+    },
+    "2026-09-01": {
+      "ids": [
+        587,
+        588,
+        589,
+        590
+      ],
+      "pnl": -381.5
+    },
+    "2026-09-02": {
+      "ids": [
+        591
+      ],
+      "pnl": -140.0
+    }
+  }
+}
+
+Empty excursion table SQL: SELECT count(*) AS n FROM trade_excursions
+[
+  {
+    "n": 0
+  }
+]
+
+D1 raw RTH-L SQL: SELECT outcome,count(*) n,group_concat(id) ids FROM touch_outcomes WHERE level_kind='RTH-L' GROUP BY outcome
+[
+  {
+    "outcome": "ambiguous_horizon",
+    "n": 16,
+    "ids": "176,225,274,341,406,454,496,500,537,541,582,586,623,627,660,664"
+  },
+  {
+    "outcome": "break",
+    "n": 82,
+    "ids": "172,173,175,177,178,180,181,182,183,221,222,224,226,227,229,230,231,232,270,271,273,275,276,278,279,280,281,338,340,342,343,345,346,347,348,403,405,407,408,410,411,412,413,451,453,455,456,458,459,460,461,493,495,497,498,501,502,503,536,538,539,542,543,544,581,583,584,587,588,589,622,624,625,628,629,630,659,661,662,665,666,667"
+  },
+  {
+    "outcome": "hold",
+    "n": 42,
+    "ids": "174,179,184,185,223,228,233,234,272,277,282,283,339,344,349,350,404,409,414,415,452,457,462,463,494,499,504,505,535,540,545,546,580,585,590,591,626,631,632,663,668,669"
+  }
+]
+
+D1 distinct units SQL: SELECT count(*) n, count(distinct level_kind||'|'||opened_at_ms) kind_time, count(distinct level_kind||'|'||level_price||'|'||opened_at_ms) kind_price_time FROM touch_outcomes
+[
+  {
+    "n": 677,
+    "kind_time": 370,
+    "kind_price_time": 423
+  }
+]
+
+RTH-L distinct units SQL: SELECT count(*) n,count(distinct opened_at_ms) times,count(distinct level_price||'|'||opened_at_ms) price_times FROM touch_outcomes WHERE level_kind='RTH-L'
+[
+  {
+    "n": 140,
+    "times": 14,
+    "price_times": 14
+  }
+]
+
+Snapshot witness rows SQL: SELECT id,emitted_at_ms,received_at_ms,order_count,working_count,orders_json FROM nt8_order_snapshots WHERE id IN (1604,1608,1688,1689)
+[
+  {
+    "id": 1604,
+    "emitted_at_ms": 1788536401117,
+    "received_at_ms": 1788536401395,
+    "order_count": 9,
+    "working_count": 9,
+    "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Initialized\"}]"
+  },
+  {
+    "id": 1608,
+    "emitted_at_ms": 1788536401239,
+    "received_at_ms": 1788536401529,
+    "order_count": 9,
+    "working_count": 9,
+    "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"}]"
+  },
+  {
+    "id": 1688,
+    "emitted_at_ms": 1788537191151,
+    "received_at_ms": 1788537191036,
+    "order_count": 9,
+    "working_count": 9,
+    "orders_json": "[{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"55cf8b4ad4f24d8cb61b28f1324862ba\",\"symbol\":\"MNQ\",\"name\":\"993322b9-6c27-42af-8afb-2a3620b797eb\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"83a76c0dc5964fe1bd2cf44af0a69c0e\",\"symbol\":\"MNQ\",\"name\":\"b42631c8-4737-4e59-aa42-e51b5a7237db\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"63fe23a6e09f4ac1b8c89838fa8f6fb8\",\"symbol\":\"MNQ\",\"name\":\"fa195d44-705e-46c9-be53-5d4a2198e3c8\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"a591d6a12618460880c9d9c8e06ee136\",\"symbol\":\"MNQ\",\"name\":\"60adff7a-afe7-4b11-be91-1c6e8a413c8f\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"c58c25527c834370b207248e222046bd\",\"symbol\":\"MNQ\",\"name\":\"3bea0045-32b4-469d-ae5c-ca24ba366509\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"b8c2169dd05943bc900f02360111a2da\",\"symbol\":\"MNQ\",\"name\":\"04b3e307-eb7f-4bc8-88fe-7088dff9f6a5\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"8373c7bf6a664d48bba76fd144d423fe\",\"symbol\":\"MNQ\",\"name\":\"931a761a-d0c8-492b-a815-a5f41cc9d9ae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Initialized\"}]"
+  },
+  {
+    "id": 1689,
+    "emitted_at_ms": 1788537191163,
+    "received_at_ms": 1788537191036,
+    "order_count": 9,
+    "working_count": 9,
+    "orders_json": "[{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"55cf8b4ad4f24d8cb61b28f1324862ba\",\"symbol\":\"MNQ\",\"name\":\"993322b9-6c27-42af-8afb-2a3620b797eb\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"83a76c0dc5964fe1bd2cf44af0a69c0e\",\"symbol\":\"MNQ\",\"name\":\"b42631c8-4737-4e59-aa42-e51b5a7237db\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"63fe23a6e09f4ac1b8c89838fa8f6fb8\",\"symbol\":\"MNQ\",\"name\":\"fa195d44-705e-46c9-be53-5d4a2198e3c8\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"a591d6a12618460880c9d9c8e06ee136\",\"symbol\":\"MNQ\",\"name\":\"60adff7a-afe7-4b11-be91-1c6e8a413c8f\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"c58c25527c834370b207248e222046bd\",\"symbol\":\"MNQ\",\"name\":\"3bea0045-32b4-469d-ae5c-ca24ba366509\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"b8c2169dd05943bc900f02360111a2da\",\"symbol\":\"MNQ\",\"name\":\"04b3e307-eb7f-4bc8-88fe-7088dff9f6a5\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelSubmitted\"},{\"order_id\":\"8373c7bf6a664d48bba76fd144d423fe\",\"symbol\":\"MNQ\",\"name\":\"931a761a-d0c8-492b-a815-a5f41cc9d9ae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Submitted\"}]"
+  }
+]
+
+Read facts empty columns SQL: SELECT count(*) n,group_concat(id) ids,sum(tokens_in=0) zero_tokens,sum(bias_ai='') empty_ai,sum(bias_tree='') empty_tree FROM planner_read_facts
+[
+  {
+    "n": 32,
+    "ids": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32",
+    "zero_tokens": 32,
+    "empty_ai": 32,
+    "empty_tree": 32
+  }
+]
+
+Candidate components SQL: SELECT count(*) n,group_concat(id) ids,sum(score_components='{}') empty_components FROM candidate_pool
+[
+  {
+    "n": 360,
+    "ids": "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292,293,294,295,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,312,313,314,315,316,317,318,319,320,321,322,323,324,325,326,327,328,329,330,331,332,333,334,335,336,337,338,339,340,341,342,343,344,345,346,347,348,349,350,351,352,353,354,355,356,357,358,359,360",
+    "empty_components": 360
+  }
+]
+
+Bound cadence minutes
+2
+
+Bound strategy ai_config.risk_control.min_risk_reward_ratio
+2
+
+Bound strategy ai_config.risk_control.guardrails_enabled
+false
+
+Bound strategy ai_config.risk_control.daily_loss_limit_usd
+450
+
+Bound strategy ai_config.risk_control.daily_loss_enabled
+false
+
+Bound strategy ai_config.risk_control.max_daily_trades_enabled
+false
+
+Bound strategy ai_config.risk_control.max_contracts_enabled
+false
+
+Bound strategy day_plan.plan_mode
+"strict"
+
+Bound strategy day_plan.max_levels
+12
+
+Bound strategy day_plan.sessions_enabled
+[
+  "NY"
+]
+
+Bound strategy day_plan.sessions.0.session
+"NY"
+
+Bound strategy day_plan.sessions.1.session
+"ASIA"
+
+Bound strategy day_plan.sessions.1.enable
+true
+
+Bound strategy day_plan.sessions.2.session
+"LONDON"
+
+Bound strategy day_plan.sessions.2.enable
+true

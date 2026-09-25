@@ -1,0 +1,8 @@
+counter,storage,key_or_symbol,value_now,readers_in_production,note
+arm_refusal per trader/date/session/class,system_config (persisted),arm_refusals_0b:<trader>:<date>:<session>:<class>,"09-02 ASIA rr=2; 09-02 NY rr=3; 09-03 LONDON rr=1; 09-03 NY rr=1; 09-04 LONDON rr=1; 09-04 LONDON entry_gate:invalidated=1; 09-04 NY rr=1",log line + API,LIVE
+stop_unanchored (0B provisional bound),system_config (persisted),arm_stop_unanchored_0b,196,log line,"review trigger StopUnanchoredReviewN=30 — 6.5x past it, bound still [I] PROVISIONAL"
+no-chase arm path,system_config (persisted),nochase_arm_ok / nochase_arm_run_null,42 / 41,log,"run leg NEVER measurable on the arm path (run_null ~= ok); zero would_refuse / dist_fired keys => 0 refusals ever"
+class 39 arms normalized,system_config (persisted),arms_normalized_class39,ABSENT,-,normalizer has fired ZERO times since deploy 2026-09-02 00:01 CT
+class 47 arm superseded,system_config (persisted),arm_superseded_unplaced_class47,ABSENT,-,SupersedeUnplacedArms has fired ZERO times since deploy 2026-09-02 21:19 CT
+far arms (D4),in-memory atomic ONLY,telemetry.farArmsLong/Short/armsAuthored,not persisted,0 (FarArmCounts has NO caller),"WRITE-ONLY counter; dies at restart; contradicts class-35 lesson stated in trader/no_chase.go:156-157"
+shadowed arm refusals (0C),in-memory atomic ONLY,telemetry.armsRefusedShadowed,not persisted,0 (ShadowedArmRefusalCount has NO caller),WRITE-ONLY counter

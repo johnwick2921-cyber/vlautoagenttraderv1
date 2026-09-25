@@ -1,0 +1,76 @@
+{
+  "checked_ct": "2026-09-05T18:18:51.382314-05:00",
+  "source_reports_verified_on_dev": "8aebb727f13920c541afe6704e977de49f375dbe",
+  "reports": [
+    {
+      "section": 1,
+      "report": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades.md",
+      "sha256": "b090981080b738f93957740452717aff7f02176ae43d8a3655130b5bb5241905",
+      "bytes": 56294,
+      "read_from_dev": true
+    },
+    {
+      "section": 2,
+      "report": "docs/superpowers/reports/2026-09-05-vet-02-levels.md",
+      "sha256": "8bf641266e09e6320278fd5f12963117fc0dc720a47ac8250d4cbbe076b8250a",
+      "bytes": 72341,
+      "read_from_dev": true
+    },
+    {
+      "section": 3,
+      "report": "docs/superpowers/reports/2026-09-05-vet-03-decisions.md",
+      "sha256": "1cb0dbc4f7ee34beb1ea5b06a0b6c4215c129f79cef8ee1810b28f614b826944",
+      "bytes": 62526,
+      "read_from_dev": true
+    },
+    {
+      "section": 4,
+      "report": "docs/superpowers/reports/2026-09-05-vet-04-monitoring.md",
+      "sha256": "da1b94b794dbe771ccc06981cc734d1976237d348a720598508a043efdf0500e",
+      "bytes": 50302,
+      "read_from_dev": true
+    },
+    {
+      "section": 5,
+      "report": "docs/superpowers/reports/2026-09-05-vet-05-execution.md",
+      "sha256": "64b6e759aec4caba969939b9b49fb1106b29b3c88a895af0aea22a79e6a6f320",
+      "bytes": 56083,
+      "read_from_dev": true
+    },
+    {
+      "section": 6,
+      "report": "docs/superpowers/reports/2026-09-05-vet-06-risk.md",
+      "sha256": "4e2e63b00dd68f587159fe49c9483eab479a4adc162f511d49f6484760d16d2b",
+      "bytes": 57063,
+      "read_from_dev": true
+    },
+    {
+      "section": 7,
+      "report": "docs/superpowers/reports/2026-09-05-vet-07-prompts.md",
+      "sha256": "f9b369672a841190e7372960e98bfe9fb8f8c1491d033e722a6b02c9f2f71da7",
+      "bytes": 67371,
+      "read_from_dev": true
+    },
+    {
+      "section": 8,
+      "report": "docs/superpowers/reports/2026-09-05-vet-08-stretch.md",
+      "sha256": "e81df554b321d9fe601bda5a6f88a124aacdd12df0aad95215d2ba6d6c0ab59f",
+      "bytes": 41657,
+      "read_from_dev": true
+    },
+    {
+      "section": 10,
+      "report": "docs/superpowers/reports/2026-09-05-vet-10-ideas.md",
+      "sha256": "16e1af20064209e6b621e133131f3a7bdbf4905435fa31d4350bc6799e8598a3",
+      "bytes": 45118,
+      "read_from_dev": true
+    }
+  ],
+  "health_status": 200,
+  "health": {
+    "revision": "36648655cfe0",
+    "status": "ok",
+    "time": null
+  },
+  "scope": "Documentation-only; no code/config/prompt/DB/order/runtime mutations. Report output publication is not a deployment."
+}

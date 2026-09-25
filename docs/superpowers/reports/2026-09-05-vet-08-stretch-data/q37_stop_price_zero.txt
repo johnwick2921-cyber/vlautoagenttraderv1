@@ -1,0 +1,35 @@
+# q37 — every stop-entry ever placed carried Stop price=0 at NT8 (read 2026-09-05, NT8 log is read-only)
+# source: /mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt (NT8's own order log); grep -c 'Stop Market' lines with Stop price=0 vs !=0 among Name= our signal ids
+count Type='Stop Market' + Stop price=0 + Action='Sell short' New state='Submitted' on 09-04:
+84
+84
+21
+distinct entry signal names submitted as Stop Market on 09-04:
+21
+--- first and 21st submission lines ---
+6496:2026-09-04 10:05:00:097|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error
+7222:2026-09-04 10:53:11:163|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error
+--- bracket SL orders (signal-sl) for comparison: Stop price populated ---
+/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00000.txt:2026-09-03 09:03:53:702|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in 
+/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00000.en.txt:2026-09-03 09:03:53:702|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time 
+--- C# source, repo == deployed (diff 0 lines) ---
+                bool isStopEntry = orderType == "stop_entry" && stopPx > 0;
+                OrderType orderT = isLimit ? OrderType.Limit : (isStopEntry ? OrderType.StopMarket : OrderType.Market);
+                double orderPx  = isLimit ? limitPx : (isStopEntry ? stopPx : 0);
+                var entryOrder = submitAccount.CreateOrder(
+                    instrument, entryAction, orderT, OrderEntry.Manual,
+                    TimeInForce.Day, qty, orderPx, 0, string.Empty, signalId,
+                    Core.Globals.MaxDate, null);
+                var slOrder = ba.CreateOrder(
+                    b.Instrument, b.ExitAction, OrderType.StopMarket, OrderEntry.Manual,
+                    TimeInForce.Day, b.Qty, 0, b.Sl, exitOco, signalId + "-sl",
+                    Core.Globals.MaxDate, null);
+                var tpOrder = ba.CreateOrder(
+                    b.Instrument, b.ExitAction, OrderType.Limit, OrderEntry.Manual,
+                    TimeInForce.Day, b.Qty, b.Tp, 0, exitOco, signalId + "-tp",
+                    Core.Globals.MaxDate, null);
+--- broker echo, nt8_order_snapshots id 1810 (11:49:09) ---
+[{"order_id":"8373c7bf6a664d48bba76fd144d423fe","symbol":"MNQ","name":"931a761a-d0c8-492b-a815-a5f41cc9d9ae","action":"sell","type":"stop","limit_price":29590.5,"quantity":1,"state":"Accepted"}]
+--- Go struct provider/ninjatrader/order_snapshot.go:34-35 (omitempty drops the 0) ---
+	LimitPrice float64 `json:"limit_price,omitempty"`
+	StopPrice  float64 `json:"stop_price,omitempty"`

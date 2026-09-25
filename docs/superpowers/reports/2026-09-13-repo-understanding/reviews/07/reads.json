@@ -1,0 +1,518 @@
+{
+  "assignment": 7,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "trader/aster/trader_positions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          121
+        ]
+      ],
+      "sha256": "5aaab96e1eaa556c1485fbf38a11b19e6d3d4dd1f74ccfb7795a22686f5dd908",
+      "notes": "Signed position-risk JSON; absolute quantity and lowercase side; unchecked string assertions on required price/leverage fields can panic. Margin-change failures mostly log and return nil; leverage errors propagate.",
+      "assigned": true
+    },
+    {
+      "path": "trader/binance/futures_account.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          291
+        ]
+      ],
+      "sha256": "7ae1729f6005144e74b99e8ba6c6d585efba625b2568e953f5c6c17fd091192e",
+      "notes": "Cached wallet/available/unrealized balances. Income-derived GetTrades has no fill quantity, price, fee or side; GetClosedPnL nevertheless wraps those missing values. Per-symbol/from-ID SDK trade reads carry actual fill detail. Commission/PnL symbol discovery each capped at 1000 without pagination.",
+      "assigned": true
+    },
+    {
+      "path": "trader/binance/futures_orders.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          758
+        ]
+      ],
+      "sha256": "f412c70d2041ae08ab2ed0e953ab0a44e972f5ace680e1a68c8b5af76c57324d",
+      "notes": "Hedge-mode market entry/close and Algo SL/TP; quantity-zero close reads signed positions. Opens cancel all symbol orders before validation. Selective cancel list errors omitted; bulk cancellation always nil. Grid placement ignores ReduceOnly, PositionSide, PostOnly and requested ClientID. Protection uses ClosePosition(true), ignoring requested quantity.",
+      "assigned": true
+    },
+    {
+      "path": "trader/binance/futures_positions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          289
+        ]
+      ],
+      "sha256": "e21ab0b0e5696563cf71cdb0651aebfd3162c2fc8b5427629461016fdcefd332",
+      "notes": "Caches signed position quantity. Margin mode mostly fail-open, leverage reads cached positions and sleeps five seconds after update. Sizing helper is margin allocation, not stop-risk. Hardcoded minimum notional 10. Decimal formatting uses rounding/fallback rather than authoritative step-multiple validation.",
+      "assigned": true
+    },
+    {
+      "path": "trader/bitget/trader.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          318
+        ]
+      ],
+      "sha256": "8b1f74fc16f9eb1e92d2320987679a499f8fab3785689051c86c592a7f29a8d2",
+      "notes": "Constructor sets one-way account mode via POST and logs failure. HMAC/base64 signed V2 transport unwraps Data with 30-second timeout; manual GET query assembly lacks URL encoding. 15-second account caches, five-minute contract cache with shared timestamp; FormatQuantity rounds decimals and defaults to four.",
+      "assigned": true
+    },
+    {
+      "path": "trader/bitget/trader_orders.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          711
+        ]
+      ],
+      "sha256": "fc48693a8c82bf653c28a54c3c399466f857e515507d8426c95a8b1dbeaa82e1",
+      "notes": "USDT-FUTURES cross-margin requests; market acknowledgement returned as FILLED, closes reduceOnly YES. Plan placement and cancellation paths; individual cancel errors discarded. GetOpenOrders merges ordinary/plan snapshots and swallows failed reads. Limit path honors ReduceOnly but not PostOnly or ClientID.",
+      "assigned": true
+    },
+    {
+      "path": "trader/bitget/trader_positions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          160
+        ]
+      ],
+      "sha256": "7fe446f97b4008d42b5e886751bdf3b0e68af3b76dd8954c6f541cfbd26a145e",
+      "notes": "15-second positions cache; absolute amount, lower side, numeric prices/time. History limited 100, converts fees and milliseconds; lacks record IDs/pagination.",
+      "assigned": true
+    },
+    {
+      "path": "trader/bybit/order_sync.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          311
+        ]
+      ],
+      "sha256": "a0c4ae6c65cca5dbeb1f4c093c0605e1eaeb588e7b445816766d0f521025f1c4",
+      "notes": "Raw mainnet HMAC execution list through DefaultClient, no timeout or cursor. closedSize decides action; whole execution assigned one action even reversal. 24h sync sorts milliseconds, creates order/fill/position separately, existing order skips all repair; ticker has no stop.",
+      "assigned": true
+    },
+    {
+      "path": "trader/bybit/trader.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          195
+        ]
+      ],
+      "sha256": "0936443136df3668e5654af449b1ee6b654a6f019de33147249cead1bdf645e6",
+      "notes": "Mainnet SDK constructor adds Referer header, not API key. Qty step public GET with no timeout; permanent cache and fallback step 1. FormatQuantity floors to step. SDK acknowledgement parser returns NEW.",
+      "assigned": true
+    },
+    {
+      "path": "trader/gate/order_sync.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          304
+        ]
+      ],
+      "sha256": "5b445118b3f0baee2748a3f4ef96e423c751b6087cd1ae17d025e48f091472b9",
+      "notes": "Latest max-100 fills locally filtered by start time, signed size/closeSize determine action. Quanto multiplier defaults to 1 on lookup failure. Sync uses trade-ID orders and separate writes; existing close trades replay into PositionBuilder without idempotency token enforcement here. No ticker shutdown.",
+      "assigned": true
+    },
+    {
+      "path": "trader/gate/trader_orders.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          644
+        ]
+      ],
+      "sha256": "d1c138d7d0b599e3db9364f1ff296a467c21a8520985fde530ad7652efd2ee59",
+      "notes": "USDT futures SDK. Base quantity divided by quanto then integer truncation; <=0 forced to one contract. Reduce-only closes; all market acks labeled FILLED. Margin setter is no-op, leverage risk-limit rejection becomes nil. Selective cancel ignores orderType; trigger classification ignores short direction. Open-order quantity uses multiplier fallback 1.",
+      "assigned": true
+    },
+    {
+      "path": "trader/hyperliquid/order_sync.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          149
+        ]
+      ],
+      "sha256": "26a2140180199b1e4d04c104a4db5e97849ce8cefc672b7b05692e3bce2a637a",
+      "notes": "24h user fills sorted and written as separate order/fill/PositionBuilder updates; trade-ID dedup prevents later repair after order insertion. Synthetic MARKET/maker=false fields. Unstoppable ticker.",
+      "assigned": true
+    },
+    {
+      "path": "trader/hyperliquid/trader_account.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          592
+        ]
+      ],
+      "sha256": "da1f06c71e03f49e4b347a159d52389171969d523fbb6130c43e6d133e79c516",
+      "notes": "Combines spot USDC, perp summary and XYZ equity with partial auxiliary-read failures ignored. XYZ HTTP always mainnet; SDK calls use configured exchange. Status read error/absence returns FILLED with zero fill data. User fills Dir parsing and PnL fallback; zero-PnL closes omitted by GetClosedPnL. GetOpenOrders compares raw coin to input unlike other methods.",
+      "assigned": true
+    },
+    {
+      "path": "trader/hyperliquid/trader_positions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          167
+        ]
+      ],
+      "sha256": "73cce21292d34536a7988711cf4addb1caedbf867edf0273c89f33b3bc26824c",
+      "notes": "Perp and XYZ positions normalized separately; absolute amounts, pointer-safe optional prices; XYZ failure returns partial success. Margin mode is mutable trader-wide local bool consumed by leverage update.",
+      "assigned": true
+    },
+    {
+      "path": "trader/indodax/trader_account.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          221
+        ]
+      ],
+      "sha256": "1be47cc490d039e30da1700863476931e590e36085e11f05b9ddfc93516dac9d",
+      "notes": "Spot IDR balance and synthetic holdings: total equity counts IDR only, not valued crypto. Position entry equals current mark, unrealized zero; mark lookup errors ignored. ClosedPnL fetches only btc_idr and emits both buys/sells without quantity/entry/PnL; parse failure becomes nil success.",
+      "assigned": true
+    },
+    {
+      "path": "trader/kucoin/order_sync.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          412
+        ]
+      ],
+      "sha256": "d02531c16486b82ffd3bd39392f7b009f04e95b5a98fd16fac2f50b434edc517",
+      "notes": "Single-page max100 fills and recent fills; nanosecond timestamps, multiplier fallback BTC .001/other .01, positive close fee decides closing. Sorted sync separate writes, trade-ID skip on replay, no ticker shutdown. ToTradeRecord preserves parsed action.",
+      "assigned": true
+    },
+    {
+      "path": "trader/kucoin/trader.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          369
+        ]
+      ],
+      "sha256": "2db8127941a1e0c908b483cfaed5abb4235345e240cb3a99d1bf87888dd3237b",
+      "notes": "30-second signed futures transport with server-time offset and HMAC passphrase/partner. Timestamp failure resyncs but does not retry original request. Symbol conversion case-sensitive, not idempotent. Metadata cache all contracts five minutes. Quantity rounds lots and caps maximum, ignores lot-size/minimum.",
+      "assigned": true
+    },
+    {
+      "path": "trader/kucoin/trader_account.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          58
+        ]
+      ],
+      "sha256": "1c9e24f6f94b9929a2194f6e7c4f45141ed340b60e8a7ec494c4580b82136e61",
+      "notes": "Cached USDT account overview; margin balance as wallet, explicit AccountEquity aliases avoid wallet-plus-PnL reconstruction.",
+      "assigned": true
+    },
+    {
+      "path": "trader/kucoin/trader_positions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          115
+        ]
+      ],
+      "sha256": "b765670bad22d128713215d7dd24d94ab6ad3628d2773c6d67e882d9283c9452",
+      "notes": "Open nonzero positions, sign to lower side/absolute base quantity; missing multiplier defaults .001 for every symbol, missing leverage defaults 10. Cache plus explicit invalidation.",
+      "assigned": true
+    },
+    {
+      "path": "trader/lighter/orders.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          345
+        ]
+      ],
+      "sha256": "35caf3c2c82517c7d752fa93d2fa8dc124e7d205013b213e6db8c8e87b7a13fd",
+      "notes": "Stop wrappers to CreateStopOrder, auth/query order reads, SDK cancellation. Query errors return error in GetOrderStatus, but numeric fields remain strings. SL/TP selective cancel routes to all active orders; individual failure logged then nil. uint16 market index narrowed to uint8. Active-order URL debug log may include auth prefix.",
+      "assigned": true
+    },
+    {
+      "path": "trader/lighter/trading.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          974
+        ]
+      ],
+      "sha256": "8ff958c95cad165508d39446c5e5da909ea47b5746d783e54ee56ca0a9d5808b",
+      "notes": "SDK signed market/limit/protective transactions, multipart sendTx, local precision/market cache. Submission distinct internally but wrappers fabricate FILLED. pollForOrderIndex ignores txHash and takes max index. Normalize strips USDT before /USDT causing slash leftovers; lowercase suffix not stripped. 5% market/trigger execution band, 7d limit/30d stop expiry. Leverage always cross, margin setter defaults 10x on position read failure.",
+      "assigned": true
+    },
+    {
+      "path": "trader/lighter/types.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          154
+        ]
+      ],
+      "sha256": "eba2d8a298d23f8df9442d9551999e4cd02b5eb4375310c3d091939ccda15547",
+      "notes": "JSON DTOs with string numeric order fields and trade position-before fields. parseFloat accepts empty as zero. Checksum uses Keccak nibble casing with only length validation; no hexadecimal validation and uppercase 0X prefix unsupported.",
+      "assigned": true
+    },
+    {
+      "path": "trader/okx/trader_account.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          273
+        ]
+      ],
+      "sha256": "2c9da9f82c288e87317505d33aae496f1ddd138a0ca1aef86e0c0df8d85f889f",
+      "notes": "Balance labels totalEq as wallet without totalEquity key; consumer adds UPL again. Local margin setting applied to requests; leverage failures swallowed. ClosedPnL incorrectly expects response envelope after doRequest unwrapped Data; quantity would remain contracts.",
+      "assigned": true
+    },
+    {
+      "path": "trader/okx/trader_orders.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          948
+        ]
+      ],
+      "sha256": "c589b2be55cb9cc0592136953f4877099523d4d32a60e4dae9d7c97169e42080",
+      "notes": "Hedge-style opens, mode-aware closes read fresh positions and cap quantity, but net-mode closes lack reduceOnly. ID/sCode acknowledgement labeled FILLED. Stops and cancels ignore item-level sCode accepted by transport. Selective algo cancellation ignores requested type. Open-order reads swallow errors and quantities stay contracts; synthetic _sl/_tp IDs need routing before cancellation.",
+      "assigned": true
+    },
+    {
+      "path": "trader/okx/trader_positions.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          192
+        ]
+      ],
+      "sha256": "ad725004473801b0b403a9dba6cb5e99c16fbf63ed64b1fea866424657a4cc9f",
+      "notes": "Positions convert ctVal to base quantity when available; net negative position mislabeled long because only posSide short controls side. Metadata failure leaves contract units. Shared timestamp instrument cache; explicit position invalidation.",
+      "assigned": true
+    },
+    {
+      "path": "trader/types/interface.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          238
+        ]
+      ],
+      "sha256": "c4fac8314c3fe01881b7eeefbf5dc368dadce60628538f3f506c884966a03ab4",
+      "notes": "Shared 19-method and GridTrader contracts; selective cancellation semantics and numeric map consumers.",
+      "assigned": false
+    },
+    {
+      "path": "trader/okx/trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          148,
+          158
+        ],
+        [
+          207,
+          309
+        ]
+      ],
+      "sha256": "efcdce9043a62a9109bf99c90a24eafd026520ad728db9f5f2cf4f5e372023dd",
+      "notes": "Data unwrapping, account simulated flag, naming and decimal formatting; relevant dependency excerpts only.",
+      "assigned": false
+    },
+    {
+      "path": "trader/auto_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          625,
+          705
+        ],
+        [
+          852,
+          940
+        ]
+      ],
+      "sha256": "e12c6c53a5cde83caa8927dac1ed52a9fdf8800c749e0884d8f6301c0d829004",
+      "notes": "Config exchange constructor selection and exchange-specific sync startup; NT8 is separate branch.",
+      "assigned": false
+    },
+    {
+      "path": "trader/auto_trader_decision.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          120,
+          149
+        ],
+        [
+          346,
+          380
+        ]
+      ],
+      "sha256": "b584c65fd27133c9cc86e7b102c82a5630e0b51f5ffb2a911fb9600a11176dc7",
+      "notes": "Equity fallback and status float64 consumers; NT close event separate.",
+      "assigned": false
+    },
+    {
+      "path": "store/position_builder.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          190
+        ]
+      ],
+      "sha256": "5ad65ff23f72fc97558f7660b9d169aedd463238f5c3472cf311bdb728cdce4b",
+      "notes": "ProcessTrade action routing and close mutation show no per-trade dedup in observed path.",
+      "assigned": false
+    },
+    {
+      "path": "trader/okx/trader_margin_mode_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          247
+        ]
+      ],
+      "sha256": "43371c127319b0c1f83ff380c4fc118ebf45881554d8d8db6245fdfebf92e890",
+      "notes": "Full offline recording transport tests exercise real request sites and margin mode.",
+      "assigned": false
+    },
+    {
+      "path": "trader/lighter/orders_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          421
+        ]
+      ],
+      "sha256": "d6cac94c168758deed9a4a31e2707231adb1b7c2bb69a060d5e1d166176b7544",
+      "notes": "Full tests: DTO and duplicated conversion logic; mock HTTP test bypasses production method.",
+      "assigned": false
+    },
+    {
+      "path": "trader/kucoin/order_sync_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          125
+        ]
+      ],
+      "sha256": "26a86cee2317ce5fef894d0c189da809df95f52e26dfcf59cfc9eb3ee8e0b7f7",
+      "notes": "Credential-gated network test constructors; deliberately not run.",
+      "assigned": false
+    },
+    {
+      "path": "trader/binance/futures_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          95
+        ]
+      ],
+      "sha256": "fa289b416c0bc0d05531aa2e2a2c9a47c4722985771449f03eb601d453fc7b8d",
+      "notes": "Mock SDK suite setup excerpt; not full suite review.",
+      "assigned": false
+    },
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "notes": "Full tracked canon: keeper ownership, no manual beating, verified worktrees.",
+      "assigned": false
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          190
+        ],
+        [
+          2281,
+          2320
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "Initial bug classes and R1-R10 pre-audit rules; excerpts, not full checklist.",
+      "assigned": false
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          245,
+          267
+        ]
+      ],
+      "sha256": "04905d4e659519c1459daa4b96872f3395a83f0c564324ad779301484904d417",
+      "notes": "Executor and SIM boundary; historical line citations remain hypotheses.",
+      "assigned": false
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          215,
+          227
+        ]
+      ],
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "notes": "Owner policy separated from current enforcement; daily loss choice preserved.",
+      "assigned": false
+    }
+  ],
+  "unread": [],
+  "coverage_note": "25 assigned source files fully read. Additional dependency excerpts do not imply whole-file coverage. AGENTS instruction read separately; historical graph inspected as structured subset."
+}

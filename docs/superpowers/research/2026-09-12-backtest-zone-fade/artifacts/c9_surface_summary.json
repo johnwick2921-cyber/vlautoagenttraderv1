@@ -1,0 +1,22 @@
+{
+ "correction": "Westfall-Young max-T (permutation), Bonferroni bound reported per cell",
+ "perms": 2000,
+ "s1": {
+  "best_p_maxT": 0,
+  "cells_net_positive": 0,
+  "cells_with_data": 81,
+  "max_mean": -0.6369983548542648,
+  "median_mean": -1.0650700507258737,
+  "min_mean": -1.761813814192552,
+  "min_stat_abs": 5.243008788401207
+ },
+ "s2": {
+  "best_p_maxT": 0.0015,
+  "cells_net_positive": 81,
+  "cells_with_data": 81,
+  "max_mean": 0.7459759231705667,
+  "median_mean": 0.6551772257884454,
+  "min_mean": 0.6340150699677072,
+  "min_stat_abs": 0.00005530706573941835
+ }
+}

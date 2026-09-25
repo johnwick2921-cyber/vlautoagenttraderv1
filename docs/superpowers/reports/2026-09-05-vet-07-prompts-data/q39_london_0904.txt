@@ -1,0 +1,4 @@
+version|lifecycle|ct|trig|bias|scen
+1|active|2026-09-04 01:41:15|LONDON_scheduled_read|long|S1:reclaim:long:arm=none | S2:reject:long:arm=1 | S3:sweep_reclaim:short:arm=none | S4:reclaim:long:arm=none
+2|active|2026-09-04 02:04:14|level_event|short|S1:reject:short:arm=1 | S2:acceptance:short:arm=none
+3|active|2026-09-04 07:56:17|level_event|short|S1:sweep_reclaim:short:arm=none | S2:reject:short:arm=none | S3:sweep_reclaim:long:arm=none

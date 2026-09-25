@@ -1,0 +1,9 @@
+'planner_rejected_prompts'|COUNT(*)|MAX(created_at)
+planner_rejected_prompts|64|2026-09-04 15:34:21.28301676+00:00
+planner_read_facts|32|2026-09-04 17:01:01.822523157+00:00
+plans|254|2026-09-04 17:10:35.724026458+00:00
+decision_records|37768|2026-09-04 18:28:01.631065336+00:00
+trader_positions|587|1788444314627
+armed_orders|67|2026-09-04 12:11:02.176920212-05:00
+plan_lifecycle_log|7|2026-09-04 12:05:01.63645235-05:00
+system_config|177|

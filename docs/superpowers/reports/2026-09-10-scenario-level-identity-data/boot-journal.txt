@@ -1,0 +1,7 @@
+Read-only command, issued during this audit on 2026-09-10:
+journalctl -u nofx --since '2026-09-10 12:00:00' --no-pager -o short-iso | rg 'BOOT INTEGRITY|🎫 episodes:|adae3bb4|770e2297|W-TF'
+
+2026-09-10T16:51:31-05:00 DESKTOP-S4IA601 nofx-bin[2560377]: 09-10 16:51:31 [INFO] nofx/main.go:295 🔐 BOOT INTEGRITY OK — rev adae3bb41b31 +dirty · built 2026-09-10T21:09:02Z · expected adae3bb4 · goldens PASS
+2026-09-10T16:51:32-05:00 DESKTOP-S4IA601 nofx-bin[2560377]: 09-10 16:51:32 [INFO] nofx/main.go:488 🎫 episodes: open=5050 · closed today=0 (never_reached=0 reached_declined=0 confirmed_not_armed=0 armed_not_filled=0 filled=0) · backfill recomputed=0 unrecomputable=5050 · k=3[I] Δ=resolved-per-read (kernel.MeanAbsIncrement, the tape's own scale) H=12[I]
+2026-09-10T17:10:34-05:00 DESKTOP-S4IA601 nofx-bin[2605112]: 09-10 17:10:34 [INFO] nofx/main.go:295 🔐 BOOT INTEGRITY OK — rev 770e2297d218 · built 2026-09-10T22:03:33Z · expected 770e2297 · goldens PASS
+2026-09-10T17:10:35-05:00 DESKTOP-S4IA601 nofx-bin[2605112]: 09-10 17:10:35 [INFO] nofx/main.go:488 🎫 episodes: open=5050 · closed today=0 (never_reached=0 reached_declined=0 confirmed_not_armed=0 armed_not_filled=0 filled=0) · backfill recomputed=0 unrecomputable=5050 · k=3[I] Δ=resolved-per-read (kernel.MeanAbsIncrement, the tape's own scale) H=12[I]

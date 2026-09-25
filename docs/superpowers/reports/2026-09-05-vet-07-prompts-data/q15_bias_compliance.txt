@@ -1,0 +1,77 @@
+x
+--- plans since 08-26 (excl WEEKLY/TEST): bias-tree named in reasoning
+n|opens_with|mentions|branch_word
+165|123|123|117
+x
+--- same by session
+session|n|opens_with|mentions
+ASIA|60|50|50
+LONDON|48|29|29
+NY|57|44|44
+x
+--- branch-5 compliance proxy: reasoning says premium/discount vs bias direction
+dir|says_premium|says_discount|n
+long|26|28|54
+neutral|12|4|37
+short|49|18|74
+x
+--- plans with bias long AND reasoning says premium (branch-5 violation candidates)
+plan_id|version|substr(json_extract(doc,'$.reasoning'),1,200)
+2026-08-27:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|bias-tree: branch 3 — inside day, price > PDC 29499.75 → long LOW. Branch 5 flags 95%-of-range premium, so no chase; longs only on pullback/breakout structures. D/1h/15m/5m all up; invalidated 29619.5
+2026-08-27:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|2|bias-tree: inside-day long LOW (branch 3), but branch 5 places price at 77% of range — premium — so I will not chase longs; only hard reclaims or a break of EQH qualify. The auction just made a 5m CHo
+2026-08-27:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|bias-tree: inside-day long LOW. Price 29504 is 4.2 above PDC and 207.6 above VWAP after an overnight reclaim from the 29402.25 15m low, but it sits at 71% of the prior range (premium), so branch 5 for
+2026-08-27:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|4|bias-tree: inside-day long LOW (branch 3, close>PDC), cut to low by branch 5 premium at 94% of the dealing range. D/1h trend is up, overnight gap +0.42×ATR, prior 29539.38 supply invalidated, and 5m B
+2026-08-28:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|2|bias-tree: inside-day long LOW. Price is at 95% of the prior range (premium — branch 5 bars new longs at this location), 51.8 above PDC and 112 above VWAP, with 5m/15m trending up but 1h down and a 5m
+2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|7|bias-tree: inside-day long LOW (premium/discount branch 5). Price 29425.50 sits at 46% of the 29304.90–29569.54 dealing range, below the 50% mark, so longs only at current location; shorts are admissi
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|7|bias-tree: premium/discount branch 5 — discount zone, longs only. Price 29053.50 is below 50% of dealing range (29172.5), so shorts disallowed. Intraday structure is trending down across 1h/15m/5m, bu
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|10|bias-tree: inside-day long LOW. Price 29065 sits at 11% of the prior dealing range (discount — shorts disallowed by branch 5 below the 50% mark). Inside day; close above PDC 29058.75 gives low-convict
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|2|bias-tree: inside-day long LOW (branch 3), but branch 5 premium at 58% disallows premium longs and 1h is flat — so long bias is low and only actionable at discount ONL. Price sits 3.8 below ONH after 
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|5|bias-tree: inside-day long LOW (branch 5 overrides branch 3's short read in discount). Price 29058.25 sits at 10% of the 29001.75–29571.00 range, so shorts are disallowed below the 50% mark; the 06:00
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|3|bias-tree: inside-day long LOW (branch 3 close above PDC; branch 5 discount at 19% of range). Overnight liquidation into ONL 28927.25 reclaimed; 15m HL 29033 holds and price now retests VWAP+1σ 29111.
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8|bias-tree: inside-day long LOW. Price 29138.50 sits inside prior day range, above PDC 29058.75, and at 25% of dealing range (discount) — shorts disallowed by branch 5. 1h trend down but CHoCH-up print
+x
+--- top-level doc keys of latest NY v6
+key
+reasoning
+bias
+levels
+scenarios
+no_trade
+death_condition
+day_type
+death
+flip
+bias_label
+no_trade_windows
+x
+--- reads that died 3/3 (attempt=3 rows) by date vs planner_fail_closed plans by date
+trade_date|n3|fail_closed_plans
+2026-09-01|7|5
+2026-09-02|3|1
+2026-09-04|4|1
+x
+--- off-plan cited on waits sample
+id|substr(decision_json,1,200)
+37747|[
+  {
+    "symbol": "MNQ",
+    "action": "wait",
+    "reasoning": "Price 29568.75 sits just below VWAP 29579.51 and 5m EMA200 29582.04, inside value area. 5m structure is RANGING; 15m still trending d
+37741|[
+  {
+    "symbol": "MNQ",
+    "action": "wait",
+    "reasoning": "Price 29566, flat. Bias short. S1 needs ONH sweep at 29720 (far above, not met). S2 needs 5m break below POC 29530.63 — price is abov
+x
+--- closes token sample
+id|substr(decision_json,1,160)
+37763|[
+  {
+    "symbol": "MNQ",
+    "action": "wait",
+    "reasoning": "Flat. Price sits inside the value area at 29536, just above the session POC 29530.63, in a si
+37759|[
+  {
+    "symbol": "MNQ",
+    "action": "wait",
+    "reasoning": "Flat. Bias remains short — no 2×5m close above 29585.00 to flip. S1 is not met: price is far 

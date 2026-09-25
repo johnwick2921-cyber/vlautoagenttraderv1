@@ -1,0 +1,42 @@
+# q38 — the 09-04 sell-stop stack at the broker, from nt8_order_snapshots (CT)
+-- SELECT id, datetime(emitted_at_ms/1000,'unixepoch','-5 hours'), working_count, reason FROM nt8_order_snapshots WHERE working_count>=5 ORDER BY emitted_at_ms;
+1576-1693|2026-09-04 10:32:02|2026-09-04 10:53:11|5|8
+1583-1692|2026-09-04 10:34:01|2026-09-04 10:53:11|6|8
+1590-1691|2026-09-04 10:36:01|2026-09-04 10:53:11|7|8
+1597-1690|2026-09-04 10:38:01|2026-09-04 10:53:11|8|58
+1604-1689|2026-09-04 10:40:01|2026-09-04 10:53:11|9|36
+-- first 9: ids 1604-1608 at 10:40:01 (8 Accepted + 1 Initialized); steady 8 from 10:40 to 10:53; 9 again at 10:53:11 ids 1688-1689 (8 CancelSubmitted + 931a761a Initialized); sweep 1690-1697 → 1 working (931a761a) until 11:59:02 (ids 1830-1832: CancelPending → CancelSubmitted → empty)
+-- every order in every one of these snapshots: action=sell type=stop limit_price=29590.5, NO stop_price key (Go omitempty, value 0 — see q37)
+snapshot 1604 n= 9 [('719f4bbb', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('c794d0ce', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('4646df81', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('c5d4860a', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('9fcd8c7c', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('9b146ffa', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('7dd07a19', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('6a5da3fa', 'sell', 'stop', 29590.5, '<absent>', 'Accepted'), ('183d16ad', 'sell', 'stop', 29590.5, '<absent>', 'Initialized')]
+snapshot 1688 n= 9 [('6a5da3fa', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('183d16ad', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('993322b9', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('b42631c8', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('fa195d44', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('60adff7a', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('3bea0045', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('04b3e307', 'sell', 'stop', 29590.5, '<absent>', 'CancelSubmitted'), ('931a761a', 'sell', 'stop', 29590.5, '<absent>', 'Initialized')]
+-- ledger rows for the same arm (plan v3 S2, kind stop_entry, entry_px 29591.02, trigger 29590.50 after the 2-tick offset):
+38|0|gate changed: rr|2026-09-04 10:05:00|2026-09-04 10:06:05|e38f1774
+62|1|gate changed: rr|2026-09-04 10:10:04|2026-09-04 10:12:04|f869f788
+65|2|gate changed: rr|2026-09-04 10:15:01|2026-09-04 10:18:03|c1d016b2
+67|3|gate changed: rr|2026-09-04 10:16:03|2026-09-04 10:18:03|a0054682
+70|4|gate changed: rr|2026-09-04 10:20:03|2026-09-04 10:22:03|ccaab035
+73|5|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:25:01|2026-09-04 10:40:01|719f4bbb
+75|6|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:26:02|2026-09-04 10:42:01|c794d0ce
+77|7|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:28:02|2026-09-04 10:44:01|4646df81
+79|8|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:30:02|2026-09-04 10:46:01|c5d4860a
+81|9|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:32:02|2026-09-04 10:48:00|9fcd8c7c
+83|10|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:34:01|2026-09-04 10:50:00|9b146ffa
+85|11|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:36:01|2026-09-04 10:52:00|7dd07a19
+87|12|boot_sweep: pre-boot order, process restarted|2026-09-04 10:38:01|2026-09-04 10:53:10|6a5da3fa
+89|13|boot_sweep: pre-boot order, process restarted|2026-09-04 10:40:01|2026-09-04 10:53:10|183d16ad
+91|14|boot_sweep: pre-boot order, process restarted|2026-09-04 10:42:01|2026-09-04 10:53:11|993322b9
+93|15|boot_sweep: pre-boot order, process restarted|2026-09-04 10:44:01|2026-09-04 10:53:11|b42631c8
+95|16|boot_sweep: pre-boot order, process restarted|2026-09-04 10:46:01|2026-09-04 10:53:11|fa195d44
+97|17|boot_sweep: pre-boot order, process restarted|2026-09-04 10:48:00|2026-09-04 10:53:11|60adff7a
+99|18|boot_sweep: pre-boot order, process restarted|2026-09-04 10:50:00|2026-09-04 10:53:11|3bea0045
+101|19|boot_sweep: pre-boot order, process restarted|2026-09-04 10:52:00|2026-09-04 10:53:11|04b3e307
+102|20|cancelled in NT8|2026-09-04 10:53:11|2026-09-04 11:59:02|931a761a
+-- 09-04 10:00-10:59 1m range (the hour the first placements went in):
+29477.75|29543.5
+-- the crossing the resting stop did not fill on (11:50 high 29596.00, 11:53 low 29585.50):
+2026-09-04 11:49:00|29579.0|29589.75|29578.5|29587.5
+2026-09-04 11:50:00|29587.25|29596.0|29587.25|29595.0
+2026-09-04 11:51:00|29595.0|29595.25|29588.25|29591.25
+2026-09-04 11:52:00|29591.5|29592.25|29587.75|29591.5
+2026-09-04 11:53:00|29591.75|29593.5|29585.5|29585.75
+2026-09-04 11:54:00|29585.75|29589.5|29584.5|29585.25

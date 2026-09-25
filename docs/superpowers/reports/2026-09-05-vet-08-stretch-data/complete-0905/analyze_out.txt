@@ -1,0 +1,88 @@
+{
+  "opportunity_n": 188,
+  "carry_in_only": [
+    "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1"
+  ],
+  "overlap_arm_enabled_opps": 60,
+  "observed_arm_opps": 13,
+  "observed_placed_opps": 7,
+  "observed_filled_arm_opps": 1,
+  "observed_intent_opps": 9,
+  "observed_refused_intent_opps": 5,
+  "observed_traded_opps": 5,
+  "local_pass_opps": 13,
+  "actual_send_opps": 7,
+  "corrected_send_opps": 6,
+  "static": {
+    "checkpoint_evaluated": 66,
+    "disabled": 127
+  },
+  "win_era": [
+    18,
+    58,
+    31.03448275862069,
+    20.622095622819327,
+    43.803064424281345
+  ],
+  "win_decisive": [
+    18,
+    56,
+    32.142857142857146,
+    21.40099479255177,
+    45.177360090261104
+  ],
+  "win_3day": [
+    0,
+    5,
+    0.0,
+    5.551115123125783e-15,
+    43.44824647831612
+  ],
+  "observed_traded_rate": [
+    5,
+    188,
+    2.6595744680851063,
+    1.141244667396855,
+    6.073806190630106
+  ],
+  "trades_pnl_corrected": -521.5
+}
+{
+  "asof_ct": "2026-09-03 10:00:00",
+  "RTH_bars": 90,
+  "RTH_open": 29249.5,
+  "RTH_known_high": 29375.25,
+  "RTH_known_low": 29199.25,
+  "last_close": 29363.25,
+  "known_net": 113.75,
+  "IB_high": 29375.25,
+  "IB_low": 29199.25,
+  "0956": {
+    "rowid": 440388,
+    "symbol": "MNQ",
+    "tf": "1m",
+    "open_time_ms": 1788447360000,
+    "o": 29315.25,
+    "h": 29325.5,
+    "l": 29246.0,
+    "c": 29296.75,
+    "v": 16450.0,
+    "convention": "epoch_floor"
+  },
+  "0959": {
+    "rowid": 440395,
+    "symbol": "MNQ",
+    "tf": "1m",
+    "open_time_ms": 1788447540000,
+    "o": 29339.5,
+    "h": 29367.75,
+    "l": 29338.0,
+    "c": 29363.25,
+    "v": 8823.0,
+    "convention": "epoch_floor"
+  },
+  "0956_volume_vs_prior_RTH_median": 2.366395741926203,
+  "0956_volume_prior_comparison_n": 86,
+  "0956_rank_of_87": 3,
+  "RTH_vwap_proxy": 29302.378673066032
+}

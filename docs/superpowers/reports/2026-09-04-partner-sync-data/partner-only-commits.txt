@@ -1,0 +1,96 @@
+f6ae7597|2026-08-23 23:53:20 -0500|sync(nofx): P0 AI-params config + clock-drift feedNowUTC + close_sync parity
+dfa52364|2026-08-23 23:43:28 -0500|feat(ui): sync DecisionCard to latest nofx (structure-conflict dot, scenario-aware, 703-line card)
+e49ca145|2026-08-23 23:37:46 -0500|fix(mirror): split glued brace line in sendCloseAt (build green, full tests pass)
+dc1d6b4e|2026-08-23 23:36:48 -0500|fix(mirror): restore missing brace in sendCloseAt payload literal
+31a486ce|2026-08-23 23:36:21 -0500|feat(mirror): 4.3 limit-close wire + C# fixes from nofx
+f9a6f001|2026-08-22 19:03:13 -0500|feat(wave4): per-model thinking knobs + exit-fill persistence (mirror of nofx #71/#73)
+5a1d12ef|2026-08-22 15:54:36 -0500|feat(ai): DeepSeek thinking mode defaults — thinking=enabled + reasoning_effort=max
+2bf3342d|2026-08-13 21:45:34 -0500|chore: Part A complete — remove hardening heartbeat
+7b61b04e|2026-08-13 21:45:34 -0500|feat(risk): A5 (G5) — prompt-ownership tags, skip a contaminated cycle
+831cd078|2026-08-13 21:45:34 -0500|fix(nt8): A3 hardening — owner-declared allowlist (fix vacuous self-register)
+4155b404|2026-08-13 21:45:34 -0500|feat(nt8): A4 (G4) — post-fill/reconcile freeze + owner clear API
+5bad88ff|2026-08-13 21:45:34 -0500|feat(nt8-addon): A3 (G2) — session account allowlist (hard refuse off-list)
+2eedf773|2026-08-13 21:45:34 -0500|feat(nt8): A2 (G1) — identity stamp + echo-verify (wire v3, lockstep)
+0099e93d|2026-08-13 21:45:34 -0500|feat(nt8): A1 (G3) — pre-submit identity invariant on the order chokepoint
+923f5116|2026-08-13 21:45:34 -0500|docs: prompt-truth + F-sweep checkpoint (F1/F8/F9/F10/F11a-d + config-truth)
+e2e5ec16|2026-08-13 21:45:34 -0500|test(risk): config-truth 4-step for min_risk_reward_ratio (BROKEN→FIXED)
+8313ef98|2026-08-13 21:45:34 -0500|fix(prompt): F11d — omit a zero EMA instead of emitting current_ema200 = 0.000
+6e497520|2026-08-13 21:45:34 -0500|fix(strategy): F11c — reject out-of-range indicator periods at save
+045f83d5|2026-08-13 21:45:34 -0500|fix(strategy): F11b — a type switch no longer destroys ai_config
+8784d530|2026-08-13 21:45:34 -0500|fix(prompt): F11a — close the dangling '(' + gate AI500/OI_Top on futures
+6c749789|2026-08-13 21:45:34 -0500|fix(trader): F10 — guardrail-skip cycles record the truth, not a ghost
+be79a8b0|2026-08-13 21:45:34 -0500|fix(prompt): F9 — honest RSI snapshot label from the configured period
+caf7be3e|2026-08-13 21:45:34 -0500|fix(market): F8 — fetch enough bars for long-period series (EMA200) to warm up
+5b41bb7a|2026-08-13 21:45:34 -0500|fix(risk): F1 — real risk:reward from the actual entry (kills the 4.0 tautology)
+870e0380|2026-08-13 21:45:34 -0500|docs: session-8 checkpoint — B5·B6·B7·C1·C2·C3·C4 complete
+d64fe751|2026-08-13 21:45:34 -0500|docs: C4 — agent toolbox block added to (gitignored) CLAUDE.md
+ff48755e|2026-08-13 21:45:34 -0500|feat(ops): C3 — journald persistence + 2G cap drop-in (owner-run)
+c2917a13|2026-08-13 21:45:34 -0500|feat(risk): C2 — clock-drift entry guard (local vs feed >60s)
+42efa6a9|2026-08-13 21:45:34 -0500|feat(ops): C1 — twice-daily SQLite auto-backup user timer + RESTORE.md
+43a1329b|2026-08-13 21:45:34 -0500|feat(risk): B7 — re-entry cooldown after a stop-loss exit
+58eae9d1|2026-08-13 21:45:34 -0500|feat(risk): B6 — per-trader/session-day gate-block counters + endpoint
+ccf34af4|2026-08-13 21:45:34 -0500|feat(nt8): B5 (wiring) — dead-man watchdog gates entries on TCP link gap
+b1b4dfc7|2026-08-13 21:45:34 -0500|feat(nt8): B5 (core) — dead-man watchdog state machine
+f12efd00|2026-08-13 21:45:34 -0500|feat(nt8): B4 — stale-data entry block (freshest 1m/5m bar ≤ 2×interval)
+789764c2|2026-08-13 21:45:34 -0500|feat(nt8): B3 — duplicate-order guard + rate limiter
+69c7d0eb|2026-08-13 21:45:34 -0500|test(nt8): B2c — fuzz the AI-output armor (parse + price sanity)
+9776433d|2026-08-13 21:45:34 -0500|feat(nt8): B2a — schema-strict AI parse with bounded retry
+fa96116f|2026-08-13 21:45:34 -0500|feat(nt8): B2b — AI price-sanity armor (post-parse, one authority)
+0698db53|2026-08-13 21:45:34 -0500|feat(nt8): B1 — stop-widen ban (stop modifications are tighten-only)
+2fb6c9e1|2026-08-13 21:45:34 -0500|fix(nt8): B10/F7 — announce primary_timeframe in Available-Data even if unselected
+2419d412|2026-08-13 21:45:34 -0500|feat(nt8): B9/F6 — observability for SVP-ON-but-omitted (silent-skip fix)
+8c359dc4|2026-08-13 21:45:34 -0500|fix(nt8): B8/F4 — suppress funding-rate content on the futures prompt
+b8ee6f06|2026-08-13 21:45:34 -0500|feat(web): D1-FE — consecutive_loss_halt field in Strategy Studio
+fe250333|2026-08-13 21:45:34 -0500|chore(hardening): Part D DEPLOYED — Go restart to 74aac5b6, guardrails live
+3717b816|2026-08-13 21:45:34 -0500|chore(hardening): D2 armed in DB (both live strategies) — restart-required
+0abfdab1|2026-08-13 21:45:34 -0500|feat(nt8): D1 — consecutive-loss halt (backend gate + query + test)
+da2a86d8|2026-08-13 21:45:34 -0500|fix(nt8): D4/F3 — pre-prompt concurrent gate reads per-strategy max_positions
+2a9833d1|2026-08-13 21:45:34 -0500|fix(nt8): D3/F2 — futures size caps are ALWAYS ON, master-independent
+feb0acf1|2026-08-13 21:45:34 -0500|chore(hardening): heartbeat — hardening run started (D→C→B→A)
+04eaea3a|2026-08-13 21:45:26 -0500|realign: restore nofx-canonical base (SVP consts) before hardening train — kills the fork
+5199b7d6|2026-08-13 10:50:02 -0500|fix(web): F5 — hide DEAD-on-futures fields from Strategy Studio (min_position_size, raw_klines)
+78fb0436|2026-08-12 09:00:04 -0500|fix(nt8-addon): on-change PositionUpdate for ALL sim accounts (reconcile freshness)
+b05401f7|2026-08-12 09:00:04 -0500|fix(nt8): reconcile-before-open awaits the fill-confirmed close frame (not the 30s snapshot)
+0e59f136|2026-08-11 12:39:16 -0500|fix(nt8): G7 account-select decouple — select only persists the binding
+e868f14c|2026-08-11 12:39:16 -0500|fix(nt8): H3 — route fills/closes/rejects by (symbol,account), not symbol alone
+bb8e25a8|2026-08-11 12:39:16 -0500|fix(nt8): BUG A — stream open positions for ALL sim accounts (un-blind non-active trader)
+d20e8b59|2026-08-11 12:39:16 -0500|fix(nt8): G6 record ownership — stamp records with the trader's OWN bound account
+50fe0565|2026-08-08 17:42:16 -0500|fix(nt8-addon): stream ALL sim account balances, not just the active one
+02dab54a|2026-08-08 16:38:41 -0500|fix(nt8): show each trader its OWN account balance (GetBalance decouple)
+112625d4|2026-08-08 16:38:41 -0500|fix(web): trader view selection sticks — id-based slug + owner-owned URL
+a882f037|2026-08-08 14:28:39 -0500|fix(models): in-use model tile no longer looks/acts locked
+73949ccf|2026-08-08 12:46:53 -0500|fix(models): delete now shows a clear refusal (or deletes) + edit never blanks
+6e9cd222|2026-08-08 12:01:15 -0500|feat(models): editable display-name (rename) for every AI-model entry
+27c02f0a|2026-08-08 08:05:39 -0500|fix(models): Traders-page model config also creates a 2nd entry (missed path) + real names in trader list
+9535778e|2026-08-08 01:21:47 -0500|fix(models): "+ Add Model" no longer overwrites an existing provider
+68c5c160|2026-08-08 00:49:01 -0500|feat(models): make the multi-entry "add key" control discoverable
+81e17851|2026-08-07 23:11:47 -0500|feat(models): allow multiple AI-model entries per provider
+3d97d075|2026-08-07 18:05:53 -0500|fix(nt8): P&L recorder must never drop a priced close (owner-routing + priced-frame fallback + honest log)
+a433f185|2026-08-07 14:40:23 -0500|fix(nt8): each trader reads its OWN bound account's positions, not the shared display account
+6ff6300c|2026-08-07 14:08:08 -0500|fix(nt8): breakeven move must modify the stop IN PLACE — submit-then-cancel cascaded the whole OCO group (naked position)
+d0d19a30|2026-08-07 10:54:53 -0500|fix(ui): AccountSelector labels when the shared connection account != this trader's bound account
+14aba525|2026-08-07 10:54:53 -0500|fix(nt8): blank-account guard — refuse to trade/start an unbound trader (no shared-account fallback)
+72c73b34|2026-08-06 07:30:44 -0500|fix(ui): SafeFallback decision symbol "ALL" → "(no decision)"
+383a89f8|2026-08-06 07:30:44 -0500|fix(nt8): reconcile-before-open flattened the WRONG side of a long orphan (uppercase side)
+f9e275ea|2026-08-06 07:30:44 -0500|fix(nt8): drawdown-monitor side-casing — correct P&L sign + emergency-close routing for uppercase NT8 side
+62c959f0|2026-08-05 23:39:42 -0500|fix(nt8): auto-breakeven side-casing — compare lowercase so it fires on winners, not losers
+a884d842|2026-08-02 09:19:20 -0500|feat(svp): profile the chart's timeframe so multiple session-days show (not just 2)
+3e04712d|2026-08-02 09:08:18 -0500|feat(svp): multi-session (per-day) profile like TradingView — up/down split + POC per session
+f6a94763|2026-08-02 08:12:06 -0500|fix(svp): empty session returns null (not a null-bins object) — stops chart freeze
+025fb1bf|2026-08-02 00:39:35 -0500|fix(svp): anchor the profile to the futures session (17:00 CT), reset daily, one day only
+b9923f46|2026-08-02 00:28:40 -0500|fix(chart): consolidate SVP indicator to one clean entry (remove hot-reload hacks)
+586e79b9|2026-08-02 00:19:09 -0500|fix(chart): render SVP from a derived list so it shows even through a stale hot-reload
+a3f5c261|2026-08-01 23:49:26 -0500|fix(chart): self-heal indicator list so SVP always appears (survives hot-reload state)
+6f7d8f3d|2026-08-01 23:45:57 -0500|fix(chart): raise indicator-dropdown max-height so SVP (9th item) isn't below the fold
+830d0e43|2026-08-01 19:17:07 -0500|fix(svp): move the SVP toggle into the Technical Indicators grid (was Risk Control)
+ac10e964|2026-08-01 18:59:58 -0500|feat(svp): Part C — SVP as a real chart indicator (v5 primitive + endpoint + toggle)
+cff93550|2026-08-01 18:59:58 -0500|feat(svp): B3 — svp_enabled toggle injects one POC/VAH/VAL line into the futures prompt
+2bbeeade|2026-08-01 18:59:58 -0500|feat(svp): session volume-profile engine — histogram + POC + classic 70% VA
+c3824782|2026-08-01 18:59:58 -0500|feat(session): hoist CME session gate to top of runCycle — bot idles when market closed
+05fe01cf|2026-07-31 18:30:06 -0500|feat(nt8): Auto-Breakeven — move the stop to entry once a trade is +N pts (protect a winner)
+855832ab|2026-07-31 18:30:05 -0500|feat(trader): Hold-Lock — once in a position, suppress AI early-closes (ride to the AI's stop/target)
+1584cc6a|2026-06-24 17:47:17 -0500|fix(nt8-addon): debounce the feed-resume BarsRequest rebuild (flap guard) — completes overnight gap auto-heal
+b3dc0a85|2026-06-24 17:37:59 -0500|fix(nt8-addon): rebuild BarsRequest on bot reconnect — overnight feed-gap self-heals (was frozen N3 snapshot)
+597d12fd|2026-06-24 16:54:04 -0500|feat(nt8): deeper bars_back (500→2000) + cache cap (1024→2500) — self-heal recoverable feed-down gaps
+f05baa96|2026-06-12 01:58:34 -0500|docs: quarterly contract-roll procedure + June→September roll postmortem
+75bcb576|2026-06-11 23:44:09 -0500|mirror: exact contents of nofx main 3ab61978 (fresh history)

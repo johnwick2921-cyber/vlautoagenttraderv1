@@ -1,0 +1,590 @@
+{
+  "assignment": 22,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "trader/accepted_risk_hook.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          162
+        ]
+      ],
+      "sha256": "a5ad0b785c986eca9eddeef69ad8e3617fc000bafcc55a165fdbd4ae64ae39f6",
+      "notes": "Telemetry only: immutable accepted-risk append, panic contained. applyBrokerTerms uses case-sensitive HasPrefix signal matching and suffix role; no exact identity/symbol filter. Latest book used without explicit age cutoff despite stale comment. Must trace brokerBook/cache freshness and order-update scoping before incident claim."
+    },
+    {
+      "path": "trader/auto_trader_ai402.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          122
+        ]
+      ],
+      "sha256": "6056c89070f399b35978cf25eccbe96f6fc84ce42e16a496f3c26711544fab63",
+      "notes": "402 classifier substring-based; outage ID minute granularity can collide within same minute after recovery; optional balance poll uses CustomAPIKey once CME day, no provider check locally; error still consumes daily poll. Must trace serialized callsites."
+    },
+    {
+      "path": "trader/auto_trader_alerts.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          61
+        ]
+      ],
+      "sha256": "27ea45ab9e1f6405daea256e4626eed12b9d19219da92bf708c578c36cae91e2",
+      "notes": "Alert producer day-plan gated, store error recorded. Daily prune latches day before success, so transient failure waits tomorrow. Store owns dedupe and P2 restriction."
+    },
+    {
+      "path": "trader/auto_trader_feedwatch.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          190
+        ]
+      ],
+      "sha256": "b6764706b3704b19f45593fc2c4f5ba498c815ee6e123f85fb59d79c4745b1bc",
+      "notes": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+    },
+    {
+      "path": "trader/auto_trader_halfdays.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          102
+        ]
+      ],
+      "sha256": "2a7dabdcae2126e7b99d3e69b97a2e945016b8ac033d49bb9510465acc7c68c9",
+      "notes": "Half-day source now unified kernel calendar, sorted entries and boot line; old long comments still describe deleted file/full-closure behavior. maybeSeedHalfDays is deliberate no-op. Upcoming selection date-based includes already elapsed same-day close."
+    },
+    {
+      "path": "trader/auto_trader_indicator_mirror.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "sha256": "859354d1b23f5fdcb96a9ea5d636a0fc4400bbe2f9f7ceef8170f6322cdfa4f2",
+      "notes": "Planner indicator mirror resolves configured timeframes/periods and uses market.GetWithTimeframes; returns fingerprint even no bars/timeframes. Needs production fetch parity trace, no fixture assumed."
+    },
+    {
+      "path": "trader/auto_trader_pause.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          227
+        ]
+      ],
+      "sha256": "5f84024d575f3a1cd343e1df265958fb87352b9c7b55f30385eb96c5cc1add5a",
+      "notes": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+    },
+    {
+      "path": "trader/auto_trader_postexit.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "sha256": "4d689b9bba32c3d70af4ca609372e651327d82f0b4c5c273a7e05b0988a32b76",
+      "notes": "Close hook registry once installs package global callback, bounded position-ID dedupe schedules delayed nonblocking kick. Exact once dispatch is best effort queue capacity; delayed timer has no explicit stopped flag. Gate semantics belong runCycle."
+    },
+    {
+      "path": "trader/bar_source_boot.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          91
+        ]
+      ],
+      "sha256": "50740a68993c02107b51fb2847e0a48df870e44e831dbb4450808330d1b98153",
+      "notes": "Boot source fields query resolver for all TF and report unavailable. HistoryHeldBootLine conflates query error with no imported rows. No runtime reads performed."
+    },
+    {
+      "path": "trader/class33_boot_sweep.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          179
+        ]
+      ],
+      "sha256": "8ff912bb4d6eba197cdf8fee3f675359cf1825a7f7878f63c887326fbdf39e92",
+      "notes": "Boot sweep sends cancel then immediately marks ledger cancelled, latches success, counts broker cancellation without receipt. Failure retries; empty signal explicitly skipped. Need trace CancelOrder transport to establish async overlap (known repair lane). ledgerOpenOrders ignores symbol parameter, emits configured futures symbol and quantity1."
+    },
+    {
+      "path": "trader/class33_cutover_gate.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          158
+        ]
+      ],
+      "sha256": "8bd106d0e493925db860e74afc5eff8572118ad12f948b3e55b3e973e9f7ee7b",
+      "notes": "Five read-only cutover legs: DB/API/NT8 positions, broker-vs-ledger working orders, planner claim. Nil armedTrader marked N/A even if configured NT8. Reads non-atomic; no freeze claim. Direct leg3 not recovered wrapper. Known repair overlap possible."
+    },
+    {
+      "path": "trader/contract_current.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          48
+        ]
+      ],
+      "sha256": "89457517b736d00646ff89e664a955f717ec4f98be0e3ccb2fd7612f6b74ae03",
+      "notes": "Current contract from server subscribed ACK else labeled latest usable store contract, no date inference; local code no freshness check. contractFact fallback timestamp zero honest."
+    },
+    {
+      "path": "trader/auto_trader_grid.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          649
+        ]
+      ],
+      "sha256": "8f7623437ab2e542b33fee7b914859a628fa33766816dbaf3ff6965f582c3509",
+      "notes": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+    },
+    {
+      "path": "trader/auto_trader_grid_levels.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          485
+        ]
+      ],
+      "sha256": "8fca4ab219ce0024b3f312e04e4e2c984940cd061b0ee6bff29530c1683be885",
+      "notes": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+    },
+    {
+      "path": "trader/auto_trader_grid_orders.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          419
+        ]
+      ],
+      "sha256": "2a10b823d5ecb776f7a439ba59369ea8018ffcda48b9600ee2c7b59f265b5878",
+      "notes": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+    },
+    {
+      "path": "trader/auto_trader_loop.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          1414
+        ]
+      ],
+      "sha256": "13a7cbbacc519af026d7ee2fe8a8a5b0d3fed9cf01a5ed4476fd22aa97c87115",
+      "notes": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+    },
+    {
+      "path": "trader/auto_trader_orders.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          898
+        ]
+      ],
+      "sha256": "4c4712eef24c44a7f2f60823edfd7deec8224a4632f0aaa02d17f7e1a89cc894",
+      "notes": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+    },
+    {
+      "path": "trader/auto_trader_planconfig.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          258
+        ]
+      ],
+      "sha256": "93af4bee5b5a0e70bf315bb4dad959ee7a06352a711485ae2c9b8f15a93bd27e",
+      "notes": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+    },
+    {
+      "path": "trader/episode_close_wiring.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          131
+        ]
+      ],
+      "sha256": "a0b36d63ce79081d020572b024a606c15889fe4cfbeeb6a97ed48d08ee37f67b",
+      "notes": "Recording-only episode closer closes all trader open rows; legacy no-LevelID scenario nearest may use active other-version facts. New identity explicitly refuses version mismatch. Confirm.RefPrice means definition not observed confirmation; filled map never populated; ArmKind literal limit despite current arm kind expansion. Needs store semantics trace."
+    },
+    {
+      "path": "trader/grid_regime.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          312
+        ]
+      ],
+      "sha256": "e5cf62f2a17826696346452685b0a117a7ac482953ea687602b09c494ca84e9f",
+      "notes": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+    },
+    {
+      "path": "trader/helpers.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          76
+        ]
+      ],
+      "sha256": "4e30525ab057354df6c12bf98ced194408cf3d838268c6b83a5d97e3a5da90b4",
+      "notes": "Map number/string helpers; SafeFloat64 admits NaN/Inf and SafeInt truncates float/range conversion, not domain validation. SafeString nil becomes <nil>. Consumers own validation."
+    },
+    {
+      "path": "trader/regime_input_window.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          112
+        ]
+      ],
+      "sha256": "ee7b9a2872bf990af97c53256b63d3cf3da3785a8f11032f6f4abf9d6c7bc302",
+      "notes": "Baseline selects aggregate1m >=5 complete days else existing5m ring; source/day metadata honest, no gate. Boot before/after measured same estimator; aggregate completeness/contract depends upstream and kernel, not proven here."
+    },
+    {
+      "path": "trader/testutil/test_suite.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          665
+        ]
+      ],
+      "sha256": "c44c6f5a8739b466e71e3491df8fecc2ae162dfd29c1e97ca59e27ae64e40946",
+      "notes": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+    },
+    {
+      "path": "trader/trade_excursion_hook.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          220
+        ]
+      ],
+      "sha256": "9c1777857d6cc07bd06eea5360ad05368d3d3e8eaec64378b564485a759fad37",
+      "notes": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+    },
+    {
+      "path": "trader/types/interface.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          238
+        ]
+      ],
+      "sha256": "c4fac8314c3fe01881b7eeefbf5dc368dadce60628538f3f506c884966a03ab4",
+      "notes": "Trader interface exactly19 methods preserved; GridTrader embeds +3. Fallback adapter uses protective stop/takeprofit setters as supposed entry, fabricated ClientID result NEW, ignores reduce/post/position side; no actual entry semantics. GetOrderBook nil,nil,nil uncomputed ambiguity. Need venue reachability trace."
+    },
+    {
+      "path": "trader/watchdog_fire_wire.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          89
+        ]
+      ],
+      "sha256": "83a11e21e6c5bd0f2049ec1b050a66509a890fec22cb0559e5b5c9f4d0ae7596",
+      "notes": "Global watchdog hook last registered trader labels all fires as that trader; acknowledged single-trader assumption. Latest unresolved fire linking lacks call identity. Table header UTC but formats CT; telemetry only."
+    }
+  ],
+  "unread": [],
+  "additional_dependencies": [
+    {
+      "path": "provider/ninjatrader/order_snapshot.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          150,
+          190
+        ]
+      ],
+      "sha256": "d95f2151df7ee0f8f8555dec08965bc72478f2e6a404538ac05f446468d008fc",
+      "notes": "Additional source-call trace; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/f12_leg4.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          206,
+          235
+        ]
+      ],
+      "sha256": "436e4213d9fc3e47e778bffca5015776db150925ad5ef5ae7207b23fec3c4d53",
+      "notes": "Additional source-call trace; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/ninjatrader/tcp_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          580,
+          617
+        ],
+        [
+          324,
+          415
+        ],
+        [
+          830,
+          850
+        ],
+        [
+          900,
+          952
+        ]
+      ],
+      "sha256": "da3a72adbac538f89495d192e115a4c02f5a01543149a580b6c5b110ca3ba477",
+      "notes": "Additional source-call trace; excluded from26 assigned files."
+    },
+    {
+      "path": "provider/ninjatrader/tcp_server.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1190,
+          1220
+        ]
+      ],
+      "sha256": "8284240bc92299e0c9e6742957cd7076f8ae6d41eb1514a56b7b0f6e398ccf32",
+      "notes": "Additional source-call trace; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/armed_executor.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          180,
+          220
+        ],
+        [
+          1930,
+          2000
+        ]
+      ],
+      "sha256": "fcd7e3a1bdd59b1d3e6561359354ab572bcbf34a5eab4011fc1d5ab21c4af57f",
+      "notes": "Additional source-call trace; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/auto_trader_clock.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          940,
+          980
+        ],
+        [
+          820,
+          850
+        ]
+      ],
+      "sha256": "dac57d4d3b6120bcb8cb7edd12eb95953a8cf7a25a59a9e0a7d5be7d54284154",
+      "notes": "Additional source-call trace; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/interface.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "sha256": "9fb8ed7b208fc10dbff4bc70e3fa172d8c1ef6a4f96a19e39175d3e176e3dbe2",
+      "notes": "Additional source-call trace; excluded from26 assigned files."
+    },
+    {
+      "path": "store/decision.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          492,
+          530
+        ]
+      ],
+      "sha256": "411c23c3d2501dfc41bcf564eaf7ff076cab596e0cc0c767a4aa26617fa22dc6",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "store/bar_history.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          460,
+          492
+        ]
+      ],
+      "sha256": "d22e6a7e46507d48008d6612a857f445ad2822b62498b7867385e237d1d2385d",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "store/opportunity_close.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          166
+        ]
+      ],
+      "sha256": "33452e1f456f513a83c61935ba6ff6ef47a7835ff673a7bbcad3d3638b9e45e3",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/trade_excursion_hook_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          44
+        ]
+      ],
+      "sha256": "9a3d6141fd5f494751052ab89dd0c48d8e1746b62db5d3ecb359c31f6485aeb4",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/class33_boot_sweep_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          197
+        ]
+      ],
+      "sha256": "31df96ec48fc3c43a9af1cdfeb3adda714026447d524f49b6bf380a8afb26975",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/wave_a_safety_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          150
+        ]
+      ],
+      "sha256": "80c58f0faf781f0e4bb9c82a68dfc14e6e7883d91b9ab97685854ed6aaac249c",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/pause_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          120
+        ]
+      ],
+      "sha256": "153e8025a2f367c371052d574c7392f8abc877cbd71360908b678f2f13a37235",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/regime_input_window_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          226
+        ]
+      ],
+      "sha256": "db4c8cc2a9483aa8345d300977589b3c7d3ef5c0c0cc8ca62423f7063c899c77",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "store/bar_contract_roll.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          229,
+          245
+        ]
+      ],
+      "sha256": "85c5fcb206f832687531f7f66cdadc9e250a2d407e99e517a247044b33fa50f2",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "store/strategy.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1076,
+          1096
+        ],
+        [
+          1163,
+          1184
+        ],
+        [
+          1409,
+          1435
+        ]
+      ],
+      "sha256": "cdb08397f6cc062a7990536aee95be33c61ca8913d5dc4bf8ee16923f90c3859",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/auto_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          810,
+          865
+        ]
+      ],
+      "sha256": "e12c6c53a5cde83caa8927dac1ed52a9fdf8800c749e0884d8f6301c0d829004",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/auto_trader_risk.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          40,
+          68
+        ]
+      ],
+      "sha256": "ae55d02221798a7ac37b97d7345250e971aa5972038f0ae417529ba77cb7e9d5",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    },
+    {
+      "path": "trader/arm_cancel_safety_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          155,
+          189
+        ]
+      ],
+      "sha256": "2922e941e7b1e6008a8707c5fbba963e27256a2dd5b2da057e8e341298bbfa9a",
+      "notes": "Additional dependency/test source read; no execution; excluded from26 assigned files."
+    }
+  ],
+  "review_status": "complete source review; static conclusions only; no tests or runtime/data scripts executed"
+}

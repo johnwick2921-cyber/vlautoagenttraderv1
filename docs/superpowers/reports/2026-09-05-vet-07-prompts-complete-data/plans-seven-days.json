@@ -1,0 +1,762 @@
+[
+  {
+    "plan_id": "2026-08-30:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-08-30",
+    "session": "ASIA",
+    "trigger_reason": "e7_incident_kill:manual_cancel_respected",
+    "created_at": "2026-08-30 22:08:56.532686042+00:00"
+  },
+  {
+    "plan_id": "2026-08-30:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-08-30",
+    "session": "ASIA",
+    "trigger_reason": "e7_incident_kill:manual_cancel_respected",
+    "created_at": "2026-08-30 23:35:34.353909887+00:00"
+  },
+  {
+    "plan_id": "2026-08-30:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-08-30",
+    "session": "ASIA",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-08-31 06:06:50.529175609+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-08-31",
+    "session": "LONDON",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-08-31 11:50:50.477203606+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-08-31",
+    "session": "LONDON",
+    "trigger_reason": "owner_reset",
+    "created_at": "2026-08-31 12:40:35.635911784+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-08-31",
+    "session": "LONDON",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-08-31 13:33:54.052197028+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-08-31",
+    "session": "NY",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-08-31 13:47:19.159722616+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-08-31",
+    "session": "NY",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-08-31 14:33:18.205052745+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-08-31",
+    "session": "NY",
+    "trigger_reason": "owner_reset",
+    "created_at": "2026-08-31 14:52:26.136763364+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-08-31",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-08-31 16:58:55.105300828+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-08-31",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-08-31 17:30:09.506461703+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-08-31",
+    "session": "NY",
+    "trigger_reason": "rearmed:2x5m close back above 29426.92 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-08-31 17:53:49.126973847+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 7,
+    "trade_date": "2026-08-31",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-08-31 19:34:06.907129435+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-08-31",
+    "session": "ASIA",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-08-31 22:18:32.424311885+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-08-31",
+    "session": "ASIA",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-01 06:01:09.185985264+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-01",
+    "session": "LONDON",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-01 06:49:31.611303979+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-01",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-01 07:48:27.147608044+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-01",
+    "session": "LONDON",
+    "trigger_reason": "dormant:flip:flip-condition: 2x5m close above 29231.63 (buffer 0.5×ATR14, 2× 5m closes) → bias long",
+    "created_at": "2026-09-01 09:52:43.58927415+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-01",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-01 10:34:30.471875347+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-01",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-01 12:07:32.457995675+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-01",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-01 12:56:33.428824441+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-01",
+    "session": "NY",
+    "trigger_reason": "NY_scheduled_read",
+    "created_at": "2026-09-01 13:06:46.843606074+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-01",
+    "session": "NY",
+    "trigger_reason": "dormant:death:death-condition: 2x5m close above 29125.00 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-09-01 13:53:16.675232915+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-01",
+    "session": "NY",
+    "trigger_reason": "dormant:flip:flip-condition: 2x5m close above 29177.50 (buffer 0.5×ATR14, 8× 5m closes) → bias long",
+    "created_at": "2026-09-01 14:20:44.334636695+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-01",
+    "session": "NY",
+    "trigger_reason": "rearmed:2x5m close back below 29212.50 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-09-01 15:24:39.84200611+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-01",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-01 18:00:02.422545628+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-01 22:23:14.552368773+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-01 23:00:41.426172254+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-02 02:14:52.024318062+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-02 02:53:46.232301994+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "owner_reset",
+    "created_at": "2026-09-02 04:12:44.863744197+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 04:20:29.111842193+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 7,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 04:58:16.814850757+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 8,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 05:19:46.268265315+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 9,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "rearmed:2x5m close back above 29035.25 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-09-02 05:47:12.316108722+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-02",
+    "session": "LONDON",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-02 06:37:44.942514709+00:00"
+  },
+  {
+    "plan_id": "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 10,
+    "trade_date": "2026-09-01",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 06:51:21.943448972+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-02",
+    "session": "LONDON",
+    "trigger_reason": "owner_reset",
+    "created_at": "2026-09-02 12:15:26.91598776+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-02",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 12:21:59.485958261+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-02",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 12:44:03.782123565+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-02",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 13:01:50.097892616+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "dormant:flip:flip-condition: 5m_close close above 29058.75 (buffer 0.5×ATR14, 6× 5m closes) → bias long",
+    "created_at": "2026-09-02 13:09:44.227918797+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-02",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 13:20:47.995221513+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 13:45:28.139602858+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 14:21:18.759691004+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 14:45:52.139962106+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 15:22:33.001174371+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 15:50:53.844862786+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 7,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 16:20:19.936863683+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 8,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 16:47:10.850446345+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 9,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 17:25:10.337787249+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 10,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 18:02:15.540077361+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 11,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 18:28:36.708566299+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 12,
+    "trade_date": "2026-09-02",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 18:56:59.111797481+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "ASIA_scheduled_read",
+    "created_at": "2026-09-02 21:36:02.903601661+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 22:18:29.638859317+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 22:50:56.64361078+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 23:04:42.447685949+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 23:21:05.610804944+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-02 23:43:33.086273923+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 7,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 00:02:39.227442626+00:00"
+  },
+  {
+    "plan_id": "2026-08-31:WEEKLY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-08-31",
+    "session": "WEEKLY",
+    "trigger_reason": "weekly_boot_backfill",
+    "created_at": "2026-09-03 00:06:24.297190952+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 8,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "dormant:flip:flip-condition: 2x5m close above 29175.66 (buffer 0.5×ATR14, 2× 5m closes) → bias long",
+    "created_at": "2026-09-03 01:05:55.400310302+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 9,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 01:38:20.096131858+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 10,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 02:03:03.446167573+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 11,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 02:31:58.603310651+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 12,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 02:49:57.931222128+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 13,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "rearmed:5m_close close back below 29211.00 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-09-03 03:12:42.599271575+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 14,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 05:08:45.841316629+00:00"
+  },
+  {
+    "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 15,
+    "trade_date": "2026-09-02",
+    "session": "ASIA",
+    "trigger_reason": "dormant:death:death-condition: 5m_close close above 29132.50 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-09-03 05:34:14.308317854+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-03",
+    "session": "LONDON",
+    "trigger_reason": "dormant:flip:flip-condition: 2x5m close above 29221.98 (buffer 0.5×ATR14, 2× 5m closes) → bias long",
+    "created_at": "2026-09-03 06:34:53.723760378+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-03",
+    "session": "NY",
+    "trigger_reason": "dormant:death:death-condition: 2x5m close above 29293.00 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-09-03 13:05:19.635757107+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-03",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 13:15:44.050765563+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-03",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 13:45:05.993352176+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-03",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 14:15:31.491335556+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-03",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 14:44:33.127680844+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-03",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 15:14:45.993329351+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-03",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 15:49:57.59345407+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 7,
+    "trade_date": "2026-09-03",
+    "session": "NY",
+    "trigger_reason": "dormant:death:death-condition: 2x5m close below 29502.25 (buffer 0.5×ATR14, 2× 5m closes)",
+    "created_at": "2026-09-03 16:27:53.707887732+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-03",
+    "session": "ASIA",
+    "trigger_reason": "ASIA_scheduled_read",
+    "created_at": "2026-09-03 21:37:36.171279346+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-03",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-03 23:47:53.178711606+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-03",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 00:28:36.380700112+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-03",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 00:53:35.711550511+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-03",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 01:32:32.918462967+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-03",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 05:40:13.82205399+00:00"
+  },
+  {
+    "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 7,
+    "trade_date": "2026-09-03",
+    "session": "ASIA",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 06:20:35.660474748+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-04",
+    "session": "LONDON",
+    "trigger_reason": "LONDON_scheduled_read",
+    "created_at": "2026-09-04 06:41:15.950737367+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-04",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 07:04:14.613481809+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-04",
+    "session": "LONDON",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 12:56:17.729046739+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 1,
+    "trade_date": "2026-09-04",
+    "session": "NY",
+    "trigger_reason": "planner_fail_closed",
+    "created_at": "2026-09-04 13:11:45.620506374+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 2,
+    "trade_date": "2026-09-04",
+    "session": "NY",
+    "trigger_reason": "owner_reset",
+    "created_at": "2026-09-04 13:44:46.688576529+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 3,
+    "trade_date": "2026-09-04",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 13:55:11.782677983+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 4,
+    "trade_date": "2026-09-04",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 16:03:30.521703109+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 5,
+    "trade_date": "2026-09-04",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 16:28:50.086957702+00:00"
+  },
+  {
+    "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+    "version": 6,
+    "trade_date": "2026-09-04",
+    "session": "NY",
+    "trigger_reason": "level_event",
+    "created_at": "2026-09-04 17:10:35.724026458+00:00"
+  }
+]

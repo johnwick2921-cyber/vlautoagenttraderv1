@@ -1,0 +1,42 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_graph_base": "7a8adce0",
+  "corrections": [
+    {
+      "path": "api/handler_user.go",
+      "historical": "registration with orphan adoption",
+      "current": "adoptOrphanRecords deleted; registration explicitly never adopts credentials"
+    },
+    {
+      "path": "api/handler_trader_config.go",
+      "historical": "updates custom prompt",
+      "current": "compatibility column persistence only; live prompt comes from bound strategy"
+    }
+  ],
+  "edges": [
+    {
+      "from": "api/handler_order.go:386",
+      "to": "store/order.go:263",
+      "kind": "direct call",
+      "risk": "numeric order_id only; owned trader not propagated"
+    },
+    {
+      "from": "api/handler_plan.go:1343",
+      "to": "store/plan.go:411",
+      "kind": "direct call",
+      "risk": "global historical fallback"
+    },
+    {
+      "from": "api/exchange_account_state.go:328",
+      "to": "store/visibility.go:5",
+      "kind": "direct call",
+      "risk": "NTDataDir variadic argument omitted"
+    },
+    {
+      "from": "api/handler_risk.go:106",
+      "to": "trader/ninjatrader/tcp_trader.go:730",
+      "kind": "direct call",
+      "risk": "submission is not broker-confirmed flatness"
+    }
+  ]
+}

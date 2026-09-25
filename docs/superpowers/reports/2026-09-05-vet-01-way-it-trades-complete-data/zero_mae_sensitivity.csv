@@ -1,0 +1,5 @@
+group,mode,n,mae_p50,mae_p80,mae_p95,ids,interpretation
+winners,raw_position_proxy,18,11.375,20.400000000000006,46.41249999999997,"521,523,524,529,532,536,538,549,555,557,560,569,570,575,578,581,582,584",UNVERIFIED measurement; sensitivity is not a corrected excursion series
+winners,exclude_uncertain_zero_MAE,16,13.0,22.5,48.1875,"521,523,524,529,532,536,538,549,555,557,560,570,575,578,581,582",UNVERIFIED measurement; sensitivity is not a corrected excursion series
+reject,raw_position_proxy,31,17.75,42.0,66.0,"521,523,524,529,533,535,536,537,538,544,547,548,549,550,551,552,553,554,560,564,565,567,569,570,575,581,582,584,585,587,591",UNVERIFIED measurement; sensitivity is not a corrected excursion series
+reject,exclude_uncertain_zero_MAE,29,18.0,42.2,67.44999999999997,"521,523,524,529,533,535,536,537,538,544,547,548,549,550,551,552,553,554,560,564,565,567,570,575,581,582,585,587,591",UNVERIFIED measurement; sensitivity is not a corrected excursion series

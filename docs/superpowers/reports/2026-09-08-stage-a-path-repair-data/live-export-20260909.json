@@ -1,0 +1,38 @@
+{
+  "command": [
+    "/tmp/stage-a-research-export",
+    "-db",
+    "/home/hoang/nofx/data/data.db.research.db",
+    "-from",
+    "2026-09-09T18:08:08Z",
+    "-to",
+    "2026-09-09T18:08:10Z"
+  ],
+  "exit_codes": [
+    0,
+    0
+  ],
+  "byte_identical": true,
+  "bytes": 3260626,
+  "sha256": "880ae1d9c3e5de730337358217153a8ebfac3807bececc085895bf9bc72032d2",
+  "local_bundle": "/tmp/stage-a-live-export.json",
+  "scope": "Fixed receipt window, read-only live archive; two exports were compared. No freeze or database mutation.",
+  "manifest": {
+    "schema_version": 1,
+    "from_ms": 1788977288000,
+    "to_ms": 1788977290000,
+    "range_basis": "receipt_ms [from,to)",
+    "counts": {
+      "candidate": 801,
+      "exec": 1,
+      "market": 887,
+      "plan": 3,
+      "scenario": 0
+    },
+    "writer_revisions": [
+      "954f11b15f2e7615678f7d2b708c47895faebf1e"
+    ],
+    "unknown_receipt_excluded": 0,
+    "objects_sha256": "8ec12906bed6eb84fe154f3b13654e673b25cea0f917f2b6fbc5684f977ebc41"
+  }
+}

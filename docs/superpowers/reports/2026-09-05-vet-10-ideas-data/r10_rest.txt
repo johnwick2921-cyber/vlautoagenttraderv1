@@ -1,0 +1,42 @@
+== N2 armed rows 104/105 ==
+99|0|0|stop_entry|reclaim|29591.02|cancelled|3|0|S2
+101|0|0|stop_entry|reclaim|29591.02|cancelled|3|0|S2
+102|0|0|stop_entry|reclaim|29591.02|cancelled|3|0|S2
+104|0|2|limit|sweep_reclaim|29720.0|armed|6|6|S2
+105|1|2|limit|sweep_reclaim|29720.0|armed|6|6|S2
+== N4 refused open_short 09-03 20:35-21:13 ==
+13|2026-09-03 20:35:06|2026-09-03 21:12:40
+== N5 08-27 gaps ==
+2026-08-27 11:31:58|2026-08-27 13:44:25|132.4
+2026-08-27 15:59:16|2026-08-27 17:25:20|86.1
+== N6 plans lifecycle ==
+254|200
+245|192
+2026-08-15|2|0
+2026-08-23|4|0
+2026-08-30|3|0
+== N8 09-03 trade 591 and plan versions ==
+591|SHORT|2026-09-03 09:05:14|reconcile|S1|2
+1|2026-09-03 08:05:19|"direction":"short","conviction":"medium
+2|2026-09-03 08:45:05|"direction":"short","conviction":"medium
+3|2026-09-03 09:15:31|"direction":"long","conviction":"medium"
+4|2026-09-03 09:44:33|"direction":"long","conviction":"medium"
+5|2026-09-03 10:14:45|"direction":"long","conviction":"medium"
+6|2026-09-03 10:49:57|"direction":"long","conviction":"medium"
+7|2026-09-03 11:27:53|"direction":"long","conviction":"medium"
+== N10 model-hours per CT day post-0B ==
+2026-09-02|458|3.35
+2026-09-03|596|4.25
+2026-09-04|374|2.09
+== N14 weekdays 09-08..10-16 ==
+weekdays 09-08..10-16 = 29
+weekdays 09-07..10-16 = 30  09-07 is Monday
+half_days": {"2026-09-06": "12:00", "2026-11-25": "12:00", "2026-11-26": "12:15", "2026-12-23": "12:15"}}
+== N17 mae/mfe nonzero ==
+71|70|66|61
+== trade hold minutes, compliant ==
+58|41.6
+25.3
+41|58
+== C19 touch_outcomes created_at day ==
+2026-09-04|677

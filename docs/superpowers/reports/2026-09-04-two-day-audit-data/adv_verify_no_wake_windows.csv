@@ -1,0 +1,9 @@
+window_start_ct,window_end_ct,move_pts,wake_event_lines_in_window,plan_in_force,plan_created_ct,plan_age_min_at_window_start,lifecycle_AT_window_start,claim_said_lifecycle
+2026-09-02 03:45,2026-09-02 04:00,-58.25,0,2026-09-02:LONDON v1,2026-09-02 01:37:44,127.3,no_trade,no_trade
+2026-09-02 06:45,2026-09-02 07:00,+54.00,0,2026-09-02:LONDON v1,2026-09-02 01:37:44,307.3,no_trade,no_trade
+2026-09-02 07:00,2026-09-02 07:15,+40.50,0,2026-09-02:LONDON v1,2026-09-02 01:37:44,322.3,no_trade,no_trade
+2026-09-03 00:45,2026-09-03 01:00,+46.75,0,2026-09-02:ASIA v15,2026-09-03 00:34:14,10.8,dormant(00:45:01),n/a
+2026-09-03 04:45,2026-09-03 05:00,-40.00,0,2026-09-03:LONDON v1,2026-09-03 01:34:53,190.1,ACTIVE(rearmed 04:30:55),dormant[WRONG]
+2026-09-03 07:30,2026-09-03 07:45,+44.50,0,2026-09-03:LONDON v1,2026-09-03 01:34:53,355.1,ACTIVE(rearmed 04:30:55),dormant[WRONG]
+2026-09-03 07:45,2026-09-03 08:00,+55.00,0,2026-09-03:LONDON v1,2026-09-03 01:34:53,370.1,ACTIVE(rearmed 04:30:55),dormant[WRONG]
+2026-09-03 10:15,2026-09-03 10:30,+70.75,0,2026-09-03:NY v5,2026-09-03 10:14:45,0.2,active,n/a

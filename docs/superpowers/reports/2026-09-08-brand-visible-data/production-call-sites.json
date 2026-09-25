@@ -1,0 +1,827 @@
+[
+  {
+    "path": "agent/agent.go",
+    "line": 377,
+    "source": "a.logger.Info(\"starting \" + branding.PersonaName() + \" agent...\")"
+  },
+  {
+    "path": "agent/agent.go",
+    "line": 394,
+    "source": "a.logger.Info(branding.PersonaName() + \" agent is online 🚀\")"
+  },
+  {
+    "path": "agent/agent.go",
+    "line": 560,
+    "source": "return fmt.Sprintf(`你是 `+branding.PersonaName()+`，一个专业的 AI 交易 Agent。你不是一个简单的聊天机器人——你是用户的交易伙伴。"
+  },
+  {
+    "path": "agent/agent.go",
+    "line": 648,
+    "source": "return fmt.Sprintf(`You are `+branding.PersonaName()+`, a professional AI trading agent. Not a chatbot — a trading partner."
+  },
+  {
+    "path": "agent/agent.go",
+    "line": 924,
+    "source": "return \"🤖 我是 \" + branding.PersonaName() + \"。配置 AI 模型后我就能理解你的任何问题——分析股票、制定策略、管理交易。\\n\\n现在可用：\\n• 加密货币实时行情（试试「BTC」）\\n• `/status` 查看系统状态\\n• `/clear` 清空当前对话记忆\\n\\n发送 *开始配置* 配置 AI 模型。\", nil"
+  },
+  {
+    "path": "agent/agent.go",
+    "line": 926,
+    "source": "return \"🤖 I'm \" + branding.PersonaName() + \". Configure an AI model and I can understand anything — analyze stocks, build strategies, manage trades.\\n\\nAvailable now:\\n• Crypto real-time data (try 'BTC')\\n• `/status` to check system status\\n• `/clear` to clear the current conversation memory\\n\\nSend *setup* to configure AI.\", nil"
+  },
+  {
+    "path": "agent/i18n.go",
+    "line": 7,
+    "source": "\"zh\": \"🤖 *\" + branding.PersonaName() + \" — 你的 AI 交易 Agent*\\n\\n\" +"
+  },
+  {
+    "path": "agent/i18n.go",
+    "line": 16,
+    "source": "\"en\": \"🤖 *\" + branding.PersonaName() + \" — Your AI Trading Agent*\\n\\n\" +"
+  },
+  {
+    "path": "agent/i18n.go",
+    "line": 27,
+    "source": "\"zh\": \"📊 *\" + branding.PersonaName() + \" 状态*\\n\\n• Traders: %d/%d 运行中\\n• 监控: %d 个交易对\\n• AI: %s\\n• 时间: %s\","
+  },
+  {
+    "path": "agent/i18n.go",
+    "line": 28,
+    "source": "\"en\": \"📊 *\" + branding.PersonaName() + \" Status*\\n\\n• Traders: %d/%d running\\n• Watching: %d symbols\\n• AI: %s\\n• Time: %s\","
+  },
+  {
+    "path": "agent/i18n.go",
+    "line": 75,
+    "source": "\"zh\": \"你是 \" + branding.PersonaName() + \"，一个专业的 AI 交易 Agent。把用户当交易小白，用简单清楚的大白话回复，先说结论，再说下一步。使用少量交易相关 emoji。\","
+  },
+  {
+    "path": "agent/i18n.go",
+    "line": 76,
+    "source": "\"en\": \"You are \" + branding.PersonaName() + \", a professional AI trading agent. Treat the user like a trading beginner, use plain language, lead with the conclusion, then the next step. Use a small amount of trading emojis.\","
+  },
+  {
+    "path": "agent/onboard.go",
+    "line": 532,
+    "source": "\"zh\": \"👋 你好！我是 *\" + branding.PersonaName() + \"*，你的 AI 交易 Agent。\\n\\n\" +"
+  },
+  {
+    "path": "agent/onboard.go",
+    "line": 536,
+    "source": "\"en\": \"👋 Hi! I'm *\" + branding.PersonaName() + \"*, your AI trading agent.\\n\\n\" +"
+  },
+  {
+    "path": "agent/planner_runtime.go",
+    "line": 3779,
+    "source": "return `你是 ` + branding.PersonaName() + `，用户的 AI 交易伙伴。像朋友聊天一样回复。"
+  },
+  {
+    "path": "agent/planner_runtime.go",
+    "line": 3789,
+    "source": "return `You are ` + branding.PersonaName() + `, the user's AI trading partner. Reply like a friend chatting."
+  },
+  {
+    "path": "agent/prompt_persona.go",
+    "line": 8,
+    "source": "var nofxiAdvisorSystemPreamble = `You are ` + branding.PersonaName() + `, the core intelligence hub of the ` + branding.ProductName() + ` platform."
+  },
+  {
+    "path": "agent/prompt_persona.go",
+    "line": 9,
+    "source": "You understand ` + branding.ProductName() + `'s underlying logic, feature boundaries, and quantitative operating model."
+  },
+  {
+    "path": "agent/prompt_persona.go",
+    "line": 10,
+    "source": "Your first duty is not blind execution. You act as the user's senior quantitative advisor so every ` + branding.ProductName() + ` configuration is correct, safe, and logically consistent."
+  },
+  {
+    "path": "agent/prompt_persona.go",
+    "line": 11,
+    "source": "When the user runs into a problem, combine the current state with ` + branding.ProductName() + ` platform constraints, proactively diagnose what is wrong, and provide concrete next steps."
+  },
+  {
+    "path": "agent/scheduler.go",
+    "line": 76,
+    "source": "sb.WriteString(fmt.Sprintf(\"📊 *\"+branding.PersonaName()+\" 每日报告 — %s*\\n\\n\", time.Now().Format(\"2006-01-02\")))"
+  },
+  {
+    "path": "agent/skill_domain_context.go",
+    "line": 30,
+    "source": "\"- 推荐 provider：claw402。claw402 是 \" + branding.PersonaName() + \" 官方推荐方案，按次付费，使用 Base 链 EVM 钱包 + USDC 支付。\","
+  },
+  {
+    "path": "agent/skill_domain_context.go",
+    "line": 44,
+    "source": "\"- Recommended provider: claw402. claw402 is the \" + branding.PersonaName() + \" recommended pay-per-use option that uses a Base chain wallet + USDC.\","
+  },
+  {
+    "path": "main.go",
+    "line": 46,
+    "source": "logger.Info(\"║           🚀 \" + branding.ProductName() + \" - AI-Powered Trading System              ║\")"
+  },
+  {
+    "path": "telegram/agent/agent.go",
+    "line": 23,
+    "source": "Description: \"Call the \" + branding.ProductName() + \" trading system REST API\","
+  },
+  {
+    "path": "telegram/agent/prompt.go",
+    "line": 13,
+    "source": "return fmt.Sprintf(`You are the `+branding.ProductName()+` quantitative trading system AI assistant."
+  },
+  {
+    "path": "telegram/agent/prompt.go",
+    "line": 22,
+    "source": "Use the api_request tool to call the `+branding.ProductName()+` REST API:"
+  },
+  {
+    "path": "telegram/agent/prompt.go",
+    "line": 27,
+    "source": "## `+branding.ProductName()+` API Documentation"
+  },
+  {
+    "path": "telegram/bot.go",
+    "line": 377,
+    "source": "return `✅ *` + branding.ProductName() + ` 就绪，开始交易吧！*"
+  },
+  {
+    "path": "telegram/bot.go",
+    "line": 388,
+    "source": "return `✅ *` + branding.ProductName() + ` is ready!*"
+  },
+  {
+    "path": "telegram/bot.go",
+    "line": 420,
+    "source": "return `*` + branding.ProductName() + ` 使用指南*"
+  },
+  {
+    "path": "telegram/bot.go",
+    "line": 441,
+    "source": "return `*` + branding.ProductName() + ` Help*"
+  },
+  {
+    "path": "web/index.html",
+    "line": 8,
+    "source": "<title>%PRODUCT_NAME% - AI Trading System</title>"
+  },
+  {
+    "path": "web/src/components/agent/ChatInput.tsx",
+    "line": 1,
+    "source": "import { PERSONA_NAME } from '../../constants/branding'"
+  },
+  {
+    "path": "web/src/components/agent/ChatInput.tsx",
+    "line": 124,
+    "source": "? `跟 ${PERSONA_NAME} 聊点什么...  ⌘K`"
+  },
+  {
+    "path": "web/src/components/agent/ChatInput.tsx",
+    "line": 125,
+    "source": ": `Ask ${PERSONA_NAME} anything...  ⌘K`"
+  },
+  {
+    "path": "web/src/components/agent/ChatInput.tsx",
+    "line": 188,
+    "source": "{PERSONA_NAME} may make mistakes. Always verify trading decisions."
+  },
+  {
+    "path": "web/src/components/agent/ChatMessages.tsx",
+    "line": 1,
+    "source": "import { PERSONA_NAME } from '../../constants/branding'"
+  },
+  {
+    "path": "web/src/components/agent/ChatMessages.tsx",
+    "line": 146,
+    "source": "{m.role === 'bot' && `${PERSONA_NAME} · `}"
+  },
+  {
+    "path": "web/src/components/agent/WelcomeScreen.tsx",
+    "line": 1,
+    "source": "import { PERSONA_NAME } from '../../constants/branding'"
+  },
+  {
+    "path": "web/src/components/agent/WelcomeScreen.tsx",
+    "line": 120,
+    "source": "? `跟 ${PERSONA_NAME} 聊点什么`"
+  },
+  {
+    "path": "web/src/components/common/HeaderBar.tsx",
+    "line": 1,
+    "source": "import { PERSONA_NAME } from '../../constants/branding'"
+  },
+  {
+    "path": "web/src/components/common/HeaderBar.tsx",
+    "line": 97,
+    "source": "{PERSONA_NAME}"
+  },
+  {
+    "path": "web/src/constants/branding.ts",
+    "line": 1,
+    "source": "import productName from '../../../branding/product.txt?raw'"
+  },
+  {
+    "path": "web/src/constants/branding.ts",
+    "line": 2,
+    "source": "import personaName from '../../../branding/persona.txt?raw'"
+  },
+  {
+    "path": "web/src/constants/branding.ts",
+    "line": 4,
+    "source": "export const PRODUCT_NAME = productName"
+  },
+  {
+    "path": "web/src/constants/branding.ts",
+    "line": 5,
+    "source": "export const PERSONA_NAME = personaName"
+  },
+  {
+    "path": "web/src/constants/branding.ts",
+    "line": 21,
+    "source": "name: PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/guide/GuidePage.tsx",
+    "line": 1,
+    "source": "import { PRODUCT_NAME } from '../constants/branding'"
+  },
+  {
+    "path": "web/src/guide/GuidePage.tsx",
+    "line": 488,
+    "source": "{PRODUCT_NAME} System Guide"
+  },
+  {
+    "path": "web/src/guide/content/welcome.ts",
+    "line": 1,
+    "source": "import { PRODUCT_NAME } from '../../constants/branding'"
+  },
+  {
+    "path": "web/src/guide/content/welcome.ts",
+    "line": 15,
+    "source": "title: PRODUCT_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 1,
+    "source": "import { PERSONA_NAME } from '../constants/branding'"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 8,
+    "source": "appTitle: PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 30,
+    "source": "footerTitle: PERSONA_NAME + ' - AI Trading System',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 563,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 571,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 578,
+    "source": "whyChooseNofx: 'Why Choose ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 604,
+    "source": "aboutNofx: 'About ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 605,
+    "source": "whatIsNofx: 'What is ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 607,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 626,
+    "source": "howToStart: 'How to Get Started with ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 644,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 658,
+    "source": "accessNofxPlatform: 'Access ' + PERSONA_NAME + ' Platform',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 684,
+    "source": "faqSubtitle: 'Find answers to common questions about ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 700,
+    "source": "faqWhatIsNOFX: 'What is ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 702,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 705,
+    "source": "faqHowDoesItWork: 'How does ' + PERSONA_NAME + ' work?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 707,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 710,
+    "source": "faqIsProfitable: 'Is ' + PERSONA_NAME + ' profitable?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 713,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 722,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 730,
+    "source": "faqHowToInstall: 'How do I install ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 750,
+    "source": "faqUpdateNOFX: 'How do I update ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 770,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 803,
+    "source": "'Does ' + PERSONA_NAME + ' support stop-loss and take-profit?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 810,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 841,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 847,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 859,
+    "source": "faqEncryptionDetails: 'What encryption does ' + PERSONA_NAME + ' use?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 861,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 867,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 870,
+    "source": "faqCanNOFXStealFunds: 'Can ' + PERSONA_NAME + ' steal my funds?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 872,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 874,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 898,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 904,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 912,
+    "source": "faqHowToContribute: 'How can I contribute to ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 914,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 951,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 1449,
+    "source": "appTitle: PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 1471,
+    "source": "footerTitle: PERSONA_NAME + ' - AI交易系统',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 1963,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 1971,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 1978,
+    "source": "whyChooseNofx: '为什么选择 ' + PERSONA_NAME + '？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2000,
+    "source": "aboutNofx: '关于 ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2001,
+    "source": "whatIsNofx: '什么是 ' + PERSONA_NAME + '？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2003,
+    "source": "PERSONA_NAME + \" 不是另一个交易机器人，而是 AI 交易的 'Linux' ——\","
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2018,
+    "source": "howToStart: '如何开始使用 ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2034,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2048,
+    "source": "accessNofxPlatform: '访问 ' + PERSONA_NAME + ' 平台',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2071,
+    "source": "faqSubtitle: '查找关于 ' + PERSONA_NAME + ' 的常见问题解答',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2087,
+    "source": "faqWhatIsNOFX: PERSONA_NAME + ' 是什么？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2089,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2092,
+    "source": "faqHowDoesItWork: PERSONA_NAME + ' 是如何工作的？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2094,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2097,
+    "source": "faqIsProfitable: PERSONA_NAME + ' 能盈利吗？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2100,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2109,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2117,
+    "source": "faqHowToInstall: '如何安装 ' + PERSONA_NAME + '？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2137,
+    "source": "faqUpdateNOFX: '如何更新 ' + PERSONA_NAME + '？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2157,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2189,
+    "source": "faqStopLossTakeProfit: PERSONA_NAME + ' 支持止损止盈吗？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2196,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2227,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2233,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2245,
+    "source": "faqEncryptionDetails: PERSONA_NAME + ' 使用什么加密？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2247,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2253,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2256,
+    "source": "faqCanNOFXStealFunds: PERSONA_NAME + ' 会盗取我的资金吗？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2258,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2260,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2284,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2290,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2298,
+    "source": "faqHowToContribute: '如何为 ' + PERSONA_NAME + ' 做贡献？',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2300,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2334,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2809,
+    "source": "appTitle: PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 2831,
+    "source": "footerTitle: PERSONA_NAME + ' - Sistem Trading AI',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3350,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3356,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3361,
+    "source": "whyChooseNofx: 'Mengapa Memilih ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3385,
+    "source": "aboutNofx: 'Tentang ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3386,
+    "source": "whatIsNofx: 'Apa itu ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3388,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3404,
+    "source": "howToStart: 'Cara Memulai ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3422,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3430,
+    "source": "accessNofxPlatform: 'Akses Platform ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3456,
+    "source": "'Temukan jawaban untuk pertanyaan umum tentang ' + PERSONA_NAME,"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3469,
+    "source": "faqWhatIsNOFX: 'Apa itu ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3471,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3473,
+    "source": "faqHowDoesItWork: 'Bagaimana cara kerja ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3475,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3477,
+    "source": "faqIsProfitable: 'Apakah ' + PERSONA_NAME + ' menguntungkan?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3480,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3487,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3492,
+    "source": "faqHowToInstall: 'Bagaimana cara menginstal ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3508,
+    "source": "faqUpdateNOFX: 'Bagaimana cara memperbarui ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3523,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3547,
+    "source": "'Apakah ' + PERSONA_NAME + ' mendukung stop-loss dan take-profit?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3553,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3576,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3587,
+    "source": "faqEncryptionDetails: 'Enkripsi apa yang digunakan ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3589,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3594,
+    "source": "faqCanNOFXStealFunds: 'Bisakah ' + PERSONA_NAME + ' mencuri dana saya?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3596,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3613,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3617,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3622,
+    "source": "faqHowToContribute: 'Bagaimana cara berkontribusi ke ' + PERSONA_NAME + '?',"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3624,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "line": 3657,
+    "source": "PERSONA_NAME +"
+  },
+  {
+    "path": "web/src/pages/TraderDashboardPage.tsx",
+    "line": 1,
+    "source": "import { PRODUCT_NAME } from '../constants/branding'"
+  },
+  {
+    "path": "web/src/pages/TraderDashboardPage.tsx",
+    "line": 462,
+    "source": "{PRODUCT_NAME} · {t('dashboardNav', language)} ·{' '}"
+  },
+  {
+    "path": "web/vite.config.ts",
+    "line": 12,
+    "source": "new URL('../branding/product.txt', import.meta.url),"
+  },
+  {
+    "path": "web/vite.config.ts",
+    "line": 15,
+    "source": "return html.replace('%PRODUCT_NAME%', name)"
+  }
+]

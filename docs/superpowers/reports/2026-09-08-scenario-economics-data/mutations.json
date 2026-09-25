@@ -1,0 +1,91 @@
+[
+  {
+    "name": "D2 coherence",
+    "path": "kernel/scenario_economics.go",
+    "changed_line_before": "if !pathCoherent && strings.TrimSpace(e.TargetPathException) == \"\" {",
+    "changed_line_after": "if false && !pathCoherent && strings.TrimSpace(e.TargetPathException) == \"\" {",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals (0.00s)",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/C3_actual_off-path (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "FAIL",
+      "FAIL\tnofx/kernel\t0.009s",
+      "FAIL"
+    ]
+  },
+  {
+    "name": "D4 refusal",
+    "path": "kernel/scenario_economics.go",
+    "changed_line_before": "return fmt.Errorf(\"scenario economics: %s\", strings.Join(errors, \" | \"))",
+    "changed_line_after": "return nil // mutation: swallow all contradiction refusals",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals (0.00s)",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/C3_actual_off-path (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/new_missing_obstacle (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/new_missing_whole_contract (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/obstacle_beyond_long_target (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/wrong_implied_R (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "FAIL",
+      "FAIL\tnofx/kernel\t0.007s",
+      "FAIL"
+    ]
+  },
+  {
+    "name": "parser call site",
+    "path": "kernel/plan_doc.go",
+    "changed_line_before": "if newAuthoring && scenarioEconomicsRequired {",
+    "changed_line_after": "if false && newAuthoring && scenarioEconomicsRequired {",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals (0.00s)",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/C3_actual_off-path (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/new_missing_obstacle (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/new_missing_whole_contract (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/obstacle_beyond_long_target (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "--- FAIL: TestScenarioEconomicsNewAuthoringRefusals/wrong_implied_R (0.00s)",
+      "scenario_economics_test.go:76: new authoring accepted contradiction/missing contract",
+      "FAIL",
+      "FAIL\tnofx/kernel\t0.009s",
+      "FAIL"
+    ]
+  },
+  {
+    "name": "sub1 counter",
+    "path": "kernel/scenario_economics.go",
+    "changed_line_before": "economicsCounts.values.Sub1++",
+    "changed_line_after": "economicsCounts.values.Sub1 += 0",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestScenarioEconomicsCountersAndRoleWarnings (0.00s)",
+      "scenario_economics_test.go:129: WARN not counted/marked: {Geometry:0xc000140510 ObstacleR:0xc0003cfce8 ArmR:0xc0003cfce0 Sub1:true} {Checked:0 PathEvaluated:0 PathCoherent:0 Sub1:0 RoleWarnings:0 Contradictions:0 SchemaRefusals:0} -> {Checked:1 PathEvaluated:1 PathCoherent:1 Sub1:0 RoleWarnings:0 Contradictions:0 SchemaRefusals:0}",
+      "FAIL",
+      "FAIL\tnofx/kernel\t0.007s",
+      "FAIL"
+    ]
+  },
+  {
+    "name": "role counter",
+    "path": "kernel/scenario_economics.go",
+    "changed_line_before": "economicsCounts.values.RoleWarnings += uint64(len(warnings))",
+    "changed_line_after": "economicsCounts.values.RoleWarnings += 0",
+    "exit_code": 1,
+    "failures": [
+      "--- FAIL: TestScenarioEconomicsCountersAndRoleWarnings (0.00s)",
+      "scenario_economics_test.go:143: role WARN was not counted at production call site",
+      "FAIL",
+      "FAIL\tnofx/kernel\t0.007s",
+      "FAIL"
+    ]
+  }
+]

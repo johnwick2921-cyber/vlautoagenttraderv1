@@ -1,0 +1,14 @@
+{
+  "ai_config_hash": "a28d83f159084145",
+  "attempts": 1,
+  "executor_prompt_bytes": 6871,
+  "executor_prompts_identical": true,
+  "lifecycle": "active",
+  "model_id": "deepseek-v4-pro",
+  "plan_block_sha": "a1db44120758",
+  "planner_prompt_bytes": 5166,
+  "prompt_hash": "5d2b5d2579ca",
+  "session": "NY",
+  "trade_date": "2026-08-15",
+  "version": 2
+}

@@ -1,0 +1,188 @@
+{
+  "observed_at": "2026-09-08T23:16:58.644121+00:00",
+  "old_pid": 3566770,
+  "new_pid": 3726840,
+  "exactly_one_process": true,
+  "process_pids": [
+    3726840
+  ],
+  "binary_revision": "6f677b55daa1c7da33b8c35f8bcc67883f36b470",
+  "core_integrity_observed": true,
+  "seconds_from_old_exit_to_integrity": 5.24616,
+  "economics_boot_line_present": true,
+  "confirmation_boot_line_present": true,
+  "liveness_boot_line_present": true,
+  "stage_a_capture_live": false,
+  "stage_a_capture_disabled": true,
+  "combined_watcher_exit": 2,
+  "combined_watcher_reason": "Stage A archive unavailable; schema UNKNOWN",
+  "journal": [
+    {
+      "timestamp_us": 1788909114023696,
+      "message": "09-08 18:11:54 [INFO] nofx/main.go:76 WARN research snapshot archive unavailable; capture disabled"
+    },
+    {
+      "timestamp_us": 1788909114127507,
+      "message": "09-08 18:11:54 [INFO] nofx/main.go:294 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 6f677b55daa1 \u00b7 built 2026-09-08T23:01:58Z \u00b7 expected 6f677b55 \u00b7 goldens PASS"
+    },
+    {
+      "timestamp_us": 1788909114127912,
+      "message": "09-08 18:11:54 [INFO] nofx/main.go:296 \ud83d\uddc4 research snapshot: schema=UNKNOWN \u00b7 objects=5 \u00b7 rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN \u00b7 null-fields=UNKNOWN \u00b7 dropped=UNKNOWN \u00b7 added latency p50=UNKNOWN"
+    },
+    {
+      "timestamp_us": 1788909114175916,
+      "message": "09-08 18:11:54 [INFO] kernel/levels_volume_boot.go:14 \ud83d\udcd0 scenario economics: contract=on \u00b7 obstacle-required=on \u00b7 target-path-coherent=0/0 \u00b7 sub-1R-first-obstacle=0 \u00b7 role-use-disagreements=0 \u00b7 contradictions refused=0 \u00b7 schema refusals=0 \u00b7 checked=0 (new-authoring checks since boot; legacy UNKNOWN by design)"
+    },
+    {
+      "timestamp_us": 1788909114176332,
+      "message": "09-08 18:11:54 [INFO] kernel/levels_volume_boot.go:50 \ud83d\udee1 cutover safety (class 33): flat gate legs=5 (db_open_positions \u00b7 api_positions \u00b7 nt8_positions_snapshot \u00b7 working_orders \u00b7 planner_in_flight) via GET /api/cutover-gate; leg4 reads the armed_orders LEDGER (was a stub returning empty \u2014 passed vacuously at cutovers 35\u219241); boot sweep cancels pre-boot arms before ANY re-arm, counter arms_boot_swept_class33"
+    },
+    {
+      "timestamp_us": 1788909114176458,
+      "message": "09-08 18:11:54 [INFO] nofx/main.go:332 \ud83d\udd0e confirmation: close-requires-closed-bucket=on \u00b7 sequence-order=enforced \u00b7 missing-reference=UNKNOWN(not met) \u00b7 immediate-displacement=1m_displacement \u00b7 forming-bucket refusals=0 \u00b7 out-of-order refusals=0 \u00b7 validation-REJECT\u2192PASS=23 observations/2 scenarios (closure-only audit; evaluated=627 unevaluated=162) \u00b7 with-1m_displacement=24 (+1 audit observation)"
+    },
+    {
+      "timestamp_us": 1788909114176787,
+      "message": "09-08 18:11:54 [INFO] nofx/main.go:346 \ud83e\udded plan liveness: tradeable=n/a \u00b7 exhausted-warnings=0 \u00b7 born-dead refusals=0 \u00b7 deaths recorded=1 \u00b7 authored UNKNOWN=5 \u00b7 exhaustion=warn-only"
+    },
+    {
+      "timestamp_us": 1788909114250721,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114298859,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114304822,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114317346,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114325998,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114330446,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114332445,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114339352,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114341420,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114391336,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114393861,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114405192,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114407347,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114413886,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114420334,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114475753,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114478424,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114522229,
+      "message": "09-08 18:11:54 [WARN] trader/auto_trader.go:49 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udee1 boot sweep CANCELLED pre-boot arm (class 33): ASIA S1 LONG entry=29503.25 stop=29475.25 signal=dfe7d621-9e02-4d84-a379-753cd8169d9e authored_by_boot=\"3566770-1788898651884\" this_boot=\"3726840-1788909114521\" \u2014 the process that placed it is gone"
+    },
+    {
+      "timestamp_us": 1788909114522485,
+      "message": "09-08 18:11:54 [INFO] trader/auto_trader.go:44 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] \ud83d\udee1 cutover safety (class 33): gate legs=5 \u00b7 leg4=ledger (no snapshot yet) \u00b7 boot sweep cancelled 1 pre-boot arm(s) (0 authorized-but-never-placed left for this process)"
+    },
+    {
+      "timestamp_us": 1788909114557909,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114648356,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114658611,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114726364,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114730010,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909114796633,
+      "message": "2026/09/08 18:11:54 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909115047276,
+      "message": "2026/09/08 18:11:55 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909115054937,
+      "message": "2026/09/08 18:11:55 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909115060107,
+      "message": "2026/09/08 18:11:55 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909118550053,
+      "message": "2026/09/08 18:11:58 INFO tcp_server: received frame type=bars_historical"
+    },
+    {
+      "timestamp_us": 1788909118567653,
+      "message": "2026/09/08 18:11:58 INFO tcp_server: received frame type=bars_historical"
+    }
+  ],
+  "postboot_broker_snapshot": {
+    "id": 13462,
+    "build_id": "2026-09-07-h1",
+    "order_count": 0,
+    "working_count": 0,
+    "emitted_at_ms": 1788909396813,
+    "received_at_ms": 1788909397080,
+    "original_order_id": "a03612d773f74eed8ba3d61be4cb0aef",
+    "original_order_present": false
+  },
+  "preboot_arm": {
+    "id": 130,
+    "state": "cancelled",
+    "state_reason": "boot_sweep: pre-boot order, process restarted",
+    "signal_id": "dfe7d621-9e02-4d84-a379-753cd8169d9e",
+    "cancel_settled_snapshot_id": 0
+  },
+  "postboot_authored_plans_n": 0,
+  "postboot_authored_plans": []
+}

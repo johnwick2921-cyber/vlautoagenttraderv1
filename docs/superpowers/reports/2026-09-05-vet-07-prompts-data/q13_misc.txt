@@ -1,0 +1,33 @@
+x
+--- first strict refusal ever
+first_ct|n
+2026-09-03 20:35:06|13
+x
+--- decision-path opens 7d: refused-by-what
+d|what|n|ids
+2026-09-01|unclear|3|35508,35621,35879
+2026-09-02|other entry_gate|5|36640,36641,36642,36645,36703
+2026-09-02|other refusal|1|36164
+2026-09-02|unclear|4|36122,36336,36394,36422
+2026-09-03|other entry_gate|1|36864
+2026-09-03|strict|13|37304,37305,37306,37307,37308,37310,37311,37313,37315,37318,37319,37320,37322
+x
+--- executor prompt stale-bar warnings on 09-04 after boot 13:25 CT
+id|ct|stale|w
+37767|13:26:00|0|Time: 2026-09-04 13:25 CT | Period: #1 | Runtime: 0 minutes
+
+Account:
+37768|13:28:01|1|⚠️ 3m data stale: newest close 12:21 CT is 4008s old (period 180s + ca
+x
+--- how many 7d records carried a stale-bar warning
+d|stale_n|n
+2026-08-30|0|186
+2026-08-31|0|496
+2026-09-01|0|694
+2026-09-02|0|682
+2026-09-03|0|596
+2026-09-04|2|374
+x
+--- plans.doc keys sample (latest NY v6)
+substr(doc,1,1500)
+{"reasoning":"bias-tree: inside-day short LOW. Price 29569.75 sits 27.5 below PDC and at 94% of the 29101.75–29601.00 range — premium, so longs are barred above the 50% mark (branch 5). 1h is up, but 15m is down and 5m is compressing under the 29579.56 VWAP magnet into lunch; the core post-13:30 play is a stall/reject at VWAP, not a chase. FRESH FVG list is empty, so no fvg_entry. The only other short entry with a valid role is the 29720.00 ONH liquidity sweep-reclaim; nearby consumed/target_only levels are used only for targets and invalidations. The sole long fallback sits below the 50% mark at 29144.50 Demand·1h. 5m close above 29601.00 flips to long; 5m close above 29635.00 kills the plan.","bias":{"direction":"short","conviction":"low","flip_condition":"5m close above 29601.00 PDH flips the session to long"},"levels":[{"price":29579.56,"label":"VWAP","grade":"A","instruction":"fade/reject trigger","machine_grade":"A"},{"price":29585,"label":"RTH-H","grade":"B","instruction":"confluence/target","machine_grade":"B"},{"price":29597.25,"label":"PDC","grade":"B","instruction":"target","machine_grade":"B"},{"price":29601,"label":"PDH","grade":"B","instruction":"flip trigger","machine_grade":"B"},{"price":29635,"label":"OR-H","grade":"C","instruction":"death trigger","machine_grade":"C"},{"price":29720,"label":"ONH","grade":"A","instruction":"liquidity sweep/reclaim","machine_grade":"A"},{"price":29553.75,"label":"OR-L","grade":"C","instruction":"target only","machine_grade":"C

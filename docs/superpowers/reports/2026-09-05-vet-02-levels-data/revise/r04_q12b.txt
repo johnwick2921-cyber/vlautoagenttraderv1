@@ -1,0 +1,18 @@
+rows 985
+dist>100: seats 217 (22.0%) touched 68 = 31.3% = 1 in 3.2
+100<dist<200: seats 141 (14.3%) touched 63 = 44.7% = 1 in 2.2
+100<=dist<200: seats 141 (14.3%) touched 63 = 44.7% = 1 in 2.2
+dist>=200: seats 76 (7.7%) touched 5 = 6.6% = 1 in 15.2
+dist>200: seats 76 (7.7%) touched 5 = 6.6% = 1 in 15.2
+dist<175: seats 887 (90.1%) touched 773 = 87.1% = 1 in 1.1
+dist<100: seats 768 (78.0%) touched 711 = 92.6% = 1 in 1.1
+dist<50: seats 554 (56.2%) touched 529 = 95.5% = 1 in 1.0
+dist<25: seats 338 (34.3%) touched 334 = 98.8% = 1 in 1.0
+all: seats 985 (100.0%) touched 779 = 79.1% = 1 in 1.3
+EQH seats 75 first h/b 32 13 0.711 (0.5663, 0.8227)
+EQL seats 87 first h/b 26 29 0.473 (0.3469, 0.6021)
+IB* seats 4 Counter({'untouched': 2, 'hold': 1, 'break': 1}) touched 2
+POC seats 6 Counter({'hold': 2, 'break': 2, 'ambiguous_horizon': 2})
+VWAP±2σ plan-forward rows 36 Counter({'hold': 12, 'ambiguous_horizon': 10, 'break': 9, 'untouched': 5}) sessions 13
+eVWAP seats 18 h/b 11 3 (0.5241, 0.9243)
+hand Wilson 32/45: (0.5663, 0.8227)  4/12: (0.1381, 0.6094)  4/13: (0.1268, 0.5763)  34/60: (0.441, 0.6843)  3977/7857: (0.4951, 0.5172)

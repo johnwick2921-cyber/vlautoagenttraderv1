@@ -1,0 +1,48 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_graph": {
+    "nodes": 252,
+    "edges": 1130,
+    "edge_types": {
+      "imports": 649,
+      "contains": 204,
+      "exports": 154,
+      "tested_by": 16,
+      "calls": 94,
+      "documents": 13
+    },
+    "missing_current_paths": [
+      "market/bar_resolver.go"
+    ]
+  },
+  "corrections": [
+    "market/bar_resolver.go is absent from July graph.",
+    "SafeMultiply adds signed ticks; historical node incorrectly says multiply by factor.",
+    "getOpenInterestData returns latest and invented0.999x average, not delta.",
+    "Hyperliquid NewClient timeout30s (old summary10s); unknown MapTimeframe5m (old summary1h).",
+    "GetMainCoins slices allCoins, not cached mainCoins.",
+    "Historical imports fanout does not demonstrate CheckDataHealth calls; rg finds only test callers."
+  ],
+  "verified_edges": [
+    {
+      "from": "trader/auto_trader_weekly.go:140 weeklyDailyBars",
+      "to": "market/bar_resolver.go:142 CompletedBars",
+      "evidence": "direct source call line141"
+    },
+    {
+      "from": "trader/auto_trader_weekly.go:218 runWeeklyRead",
+      "to": "kernel/weekly_prompt.go:44 ComputeWeeklyFacts",
+      "evidence": "direct source call line232"
+    },
+    {
+      "from": "market/data.go:190 GetWithTimeframes",
+      "to": "market/futures_data.go:14 FuturesBarsProvider",
+      "evidence": "direct function variable call line250"
+    },
+    {
+      "from": "trader/ninjatrader/bars_market_bridge.go:20 wireFuturesBarsProvider",
+      "to": "market/futures_data.go:14 FuturesBarsProvider",
+      "evidence": "assignment to seam line24"
+    }
+  ]
+}

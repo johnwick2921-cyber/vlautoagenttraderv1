@@ -1,0 +1,135 @@
+[
+  {
+    "path": "agent/agent.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "agent/i18n.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "agent/onboard.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "agent/planner_runtime.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "agent/prompt_persona.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "agent/scheduler.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "agent/skill_domain_context.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "main.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "telegram/agent/agent.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "telegram/agent/prompt.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "telegram/bot.go",
+    "added_imports": [
+      "nofx/branding"
+    ]
+  },
+  {
+    "path": "web/src/components/agent/ChatInput.tsx",
+    "added_imports": [
+      "../../constants/branding"
+    ]
+  },
+  {
+    "path": "web/src/components/agent/ChatMessages.tsx",
+    "added_imports": [
+      "../../constants/branding"
+    ]
+  },
+  {
+    "path": "web/src/components/agent/WelcomeScreen.tsx",
+    "added_imports": [
+      "../../constants/branding"
+    ]
+  },
+  {
+    "path": "web/src/components/common/HeaderBar.tsx",
+    "added_imports": [
+      "../../constants/branding"
+    ]
+  },
+  {
+    "path": "web/src/constants/branding.ts",
+    "added_imports": [
+      "../../../branding/product.txt?raw",
+      "../../../branding/persona.txt?raw"
+    ]
+  },
+  {
+    "path": "web/src/guide/GuidePage.tsx",
+    "added_imports": [
+      "../constants/branding"
+    ]
+  },
+  {
+    "path": "web/src/guide/content/welcome.ts",
+    "added_imports": [
+      "../../constants/branding"
+    ]
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "added_imports": [
+      "../constants/branding"
+    ]
+  },
+  {
+    "path": "web/src/pages/TraderDashboardPage.tsx",
+    "added_imports": [
+      "../constants/branding"
+    ]
+  },
+  {
+    "path": "web/vite.config.ts",
+    "added_imports": [
+      "node:fs"
+    ]
+  },
+  {
+    "path": "branding/branding.go",
+    "added_imports": [
+      "embed (blank import; new file)"
+    ]
+  }
+]

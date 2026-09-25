@@ -1,0 +1,23 @@
+{
+  "source_revision": "2a96cf63278f7c836d55e14c5a02597f80280292",
+  "vcs_modified": false,
+  "binary_path": "/tmp/stage-a-build/nofx/nofx-bin",
+  "binary_bytes": 72454640,
+  "binary_sha256": "c94ee81fbe364bee2b7b9352b2c706918da8bcac49bc781895de6466872e211b",
+  "guide_revision_read_from_binary": "2a96cf63278f7c836d55e14c5a02597f80280292",
+  "guide_stamped_at_ct": "2026-09-08T16:49:46.106002-05:00",
+  "full_go_exit_code": 0,
+  "vitest_files": 54,
+  "vitest_tests": 378,
+  "tsc_exit_code": 0,
+  "race_focused_exit_code": 0,
+  "deployment": "Not swapped; owner GO and eligible fresh gate required.",
+  "dist": {
+    "files": 92,
+    "bytes": 7918497,
+    "manifest_sha256": "925919f3063014f8884604ba52fb0356f07967d17da7831de20e1037d342cf15",
+    "guide_revision_found": "2a96cf63278f7c836d55e14c5a02597f80280292",
+    "built_after_guide_stamp": true,
+    "build_exit_code": 0
+  }
+}

@@ -1,0 +1,3 @@
+package main
+import("encoding/json";"net/url";"os";"path/filepath";"nofx/researchsnapshot")
+func main(){d,e:=os.MkdirTemp("/tmp","research-path-probe-");if e!=nil{panic(e)};if e=os.Chdir(d);e!=nil{panic(e)};var out []map[string]any;for _,p:=range []string{"data/data.db.research.db",filepath.Join(d,"data/data.db.research.db")}{u:=url.URL{Scheme:"file",Path:p};a,e:=researchsnapshot.Open(p,"probe");row:=map[string]any{"path":p,"uri":u.String(),"opened":e==nil};if e!=nil{row["error"]=e.Error()};if a!=nil{a.Close()};out=append(out,row)};json.NewEncoder(os.Stdout).Encode(out)}

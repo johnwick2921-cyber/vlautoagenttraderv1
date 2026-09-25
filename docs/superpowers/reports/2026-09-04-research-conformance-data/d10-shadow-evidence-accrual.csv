@@ -1,0 +1,5 @@
+condition,resolved_status_boot8,scenarios_authored_since_2026-09-01,arm_enabled_of_those,ab_confirm_log_rows,is_counterfactual_rows,realized_trades_in_era,promotion_criterion_n,criterion_floor,promotable
+breakout_retest,shadow,25,0,0,0,9,0,30,NO — n=0 and unsatisfiable by construction
+fvg_entry,shadow,0,0,0,0,0,0,30,NO — n=0; never authored at all (all-time scenario census)
+reject,live,87,67,165,0,31,n/a,n/a,n/a
+sweep_reclaim,live,62,6,11,0,6,n/a,n/a,n/a

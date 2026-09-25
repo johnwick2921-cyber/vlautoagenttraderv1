@@ -1,0 +1,523 @@
+{
+ "shas": {
+  "/home/hoang/nofx-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24/episodes.jsonl": "529b41059b81cbdda0d13b5c0c1cad344732224aa3e53719cc5334aeff3bcda1",
+  "/home/hoang/nofx-93r24/docs/superpowers/research/2026-09-17-round-24-htf-zone-entry/out-r24/zones.jsonl": "37df53ab742675e28b0aa8d80dd76e9d2631281320fadfd337971feaaf5ac17f",
+  "/home/hoang/nofx-r101/docs/superpowers/research/2026-09-16-round-23/out-s4/era-trends.jsonl": "63a55eaea29e627505b36e52ca1a5b9995da306b6dbaf37950cab839efef7b1a"
+ },
+ "cells": {
+  "('ref', '2025', 'D-with/4h-against', 'long')": {
+   "n": 1240,
+   "hold": 633,
+   "break": 607,
+   "ambiguous": 716,
+   "rate": 0.5105,
+   "ci_lo": 0.4827,
+   "ci_hi": 0.5382,
+   "first5": [
+    "2025-05-22 LONDON PDL 1m @21039.25 ord1",
+    "2025-05-22 LONDON RTH-L 1m @21113.75 ord1",
+    "2025-05-22 LONDON AS-L 1m @21094 ord1",
+    "2025-05-22 LONDON ONL 1m @21094 ord1",
+    "2025-05-22 LONDON RN 1m @20800 ord1"
+   ]
+  },
+  "('ref', '2025', 'D-against/4h-with', 'short')": {
+   "n": 2085,
+   "hold": 754,
+   "break": 1331,
+   "ambiguous": 267,
+   "rate": 0.3616,
+   "ci_lo": 0.3413,
+   "ci_hi": 0.3825,
+   "first5": [
+    "2025-05-22 LONDON PDC 1m @21151.5 ord1",
+    "2025-05-22 LONDON RN 1m @21150 ord1",
+    "2025-05-22 LONDON RN 1m @21175 ord1",
+    "2025-05-22 LONDON RN 1m @21200 ord1",
+    "2025-05-22 LONDON RN 1m @21225 ord1"
+   ]
+  },
+  "('zone', '2025', 'with', 'long', '1h')": {
+   "n": 585,
+   "hold": 317,
+   "break": 268,
+   "ambiguous": 361,
+   "rate": 0.5419,
+   "ci_lo": 0.5014,
+   "ci_hi": 0.5819,
+   "first5": [
+    "2025-05-22 LONDON RTH-L 1m @21113.75 ord1",
+    "2025-05-22 LONDON RN 1m @20800 ord1",
+    "2025-05-22 LONDON RN 1m @20825 ord1",
+    "2025-05-22 LONDON RN 1m @20850 ord1",
+    "2025-05-22 LONDON RN 1m @20875 ord1"
+   ]
+  },
+  "('zone', '2025', 'with', 'long', '*')": {
+   "n": 585,
+   "hold": 317,
+   "break": 268,
+   "ambiguous": 361,
+   "rate": 0.5419,
+   "ci_lo": 0.5014,
+   "ci_hi": 0.5819,
+   "first5": [
+    "2025-05-22 LONDON RTH-L 1m @21113.75 ord1",
+    "2025-05-22 LONDON RN 1m @20800 ord1",
+    "2025-05-22 LONDON RN 1m @20825 ord1",
+    "2025-05-22 LONDON RN 1m @20850 ord1",
+    "2025-05-22 LONDON RN 1m @20875 ord1"
+   ]
+  },
+  "('zone', '2025', 'with', '*', '*')": {
+   "n": 638,
+   "hold": 347,
+   "break": 291,
+   "ambiguous": 383,
+   "rate": 0.5439,
+   "ci_lo": 0.5051,
+   "ci_hi": 0.5822,
+   "first5": [
+    "2025-05-22 LONDON RTH-L 1m @21113.75 ord1",
+    "2025-05-22 LONDON RN 1m @20800 ord1",
+    "2025-05-22 LONDON RN 1m @20825 ord1",
+    "2025-05-22 LONDON RN 1m @20850 ord1",
+    "2025-05-22 LONDON RN 1m @20875 ord1"
+   ]
+  },
+  "('zone', '2025', 'against', 'long', '1h')": {
+   "n": 439,
+   "hold": 272,
+   "break": 167,
+   "ambiguous": 316,
+   "rate": 0.6196,
+   "ci_lo": 0.5733,
+   "ci_hi": 0.6638,
+   "first5": [
+    "2025-05-22 LONDON RN 1m @20925 ord1",
+    "2025-05-22 LONDON RN 1m @20950 ord1",
+    "2025-05-22 LONDON RN 1m @21000 ord1",
+    "2025-05-22 LONDON EQH 1h @20996 ord1",
+    "2025-05-22 LONDON SUPPLY 1h @20935.75 ord1"
+   ]
+  },
+  "('zone', '2025', 'against', 'long', '*')": {
+   "n": 439,
+   "hold": 272,
+   "break": 167,
+   "ambiguous": 316,
+   "rate": 0.6196,
+   "ci_lo": 0.5733,
+   "ci_hi": 0.6638,
+   "first5": [
+    "2025-05-22 LONDON RN 1m @20925 ord1",
+    "2025-05-22 LONDON RN 1m @20950 ord1",
+    "2025-05-22 LONDON RN 1m @21000 ord1",
+    "2025-05-22 LONDON EQH 1h @20996 ord1",
+    "2025-05-22 LONDON SUPPLY 1h @20935.75 ord1"
+   ]
+  },
+  "('zone', '2025', 'against', '*', '*')": {
+   "n": 506,
+   "hold": 306,
+   "break": 200,
+   "ambiguous": 392,
+   "rate": 0.6047,
+   "ci_lo": 0.5615,
+   "ci_hi": 0.6464,
+   "first5": [
+    "2025-05-22 LONDON RN 1m @20925 ord1",
+    "2025-05-22 LONDON RN 1m @20950 ord1",
+    "2025-05-22 LONDON RN 1m @21000 ord1",
+    "2025-05-22 LONDON EQH 1h @20996 ord1",
+    "2025-05-22 LONDON SUPPLY 1h @20935.75 ord1"
+   ]
+  },
+  "('ref', '2025', 'D-with/4h-against', 'short')": {
+   "n": 374,
+   "hold": 245,
+   "break": 129,
+   "ambiguous": 178,
+   "rate": 0.6551,
+   "ci_lo": 0.6055,
+   "ci_hi": 0.7015,
+   "first5": [
+    "2025-06-29 ASIA RN 1m @22875 ord1",
+    "2025-06-29 ASIA RN 1m @22900 ord1",
+    "2025-06-29 ASIA OR-H 1m @22875.75 ord1",
+    "2025-06-29 ASIA IB-H 1m @22875.75 ord1",
+    "2025-06-29 ASIA EQH 1m @22866.5 ord1"
+   ]
+  },
+  "('ref', '2025', 'D-against/4h-with', 'long')": {
+   "n": 426,
+   "hold": 359,
+   "break": 67,
+   "ambiguous": 54,
+   "rate": 0.8427,
+   "ci_lo": 0.8051,
+   "ci_hi": 0.8742,
+   "first5": [
+    "2025-06-29 ASIA LDN-L 1m @22849.5 ord1",
+    "2025-06-29 ASIA RN 1m @22850 ord1",
+    "2025-06-29 ASIA EQH 1m @22828.25 ord1",
+    "2025-06-29 ASIA EQH 1m @22829.5 ord1",
+    "2025-06-29 ASIA EQH 1m @22830.25 ord1"
+   ]
+  },
+  "('zone', '2025', 'against', 'short', '1h')": {
+   "n": 67,
+   "hold": 34,
+   "break": 33,
+   "ambiguous": 76,
+   "rate": 0.5075,
+   "ci_lo": 0.3906,
+   "ci_hi": 0.6235,
+   "first5": [
+    "2025-06-30 LONDON EQH 1m @22843.25 ord1",
+    "2025-06-30 LONDON EQH 1m @22845.5 ord1",
+    "2025-06-30 LONDON EQH 1m @22846.5 ord1",
+    "2025-06-30 LONDON EQH 1m @22847.25 ord1",
+    "2025-06-30 LONDON EQL 1m @22846.5 ord1"
+   ]
+  },
+  "('zone', '2025', 'against', 'short', '*')": {
+   "n": 67,
+   "hold": 34,
+   "break": 33,
+   "ambiguous": 76,
+   "rate": 0.5075,
+   "ci_lo": 0.3906,
+   "ci_hi": 0.6235,
+   "first5": [
+    "2025-06-30 LONDON EQH 1m @22843.25 ord1",
+    "2025-06-30 LONDON EQH 1m @22845.5 ord1",
+    "2025-06-30 LONDON EQH 1m @22846.5 ord1",
+    "2025-06-30 LONDON EQH 1m @22847.25 ord1",
+    "2025-06-30 LONDON EQL 1m @22846.5 ord1"
+   ]
+  },
+  "('zone', '2025', 'with', 'short', '1h')": {
+   "n": 53,
+   "hold": 30,
+   "break": 23,
+   "ambiguous": 22,
+   "rate": 0.566,
+   "ci_lo": 0.4327,
+   "ci_hi": 0.6905,
+   "first5": [
+    "2025-06-30 NY EQL 1m @22813 ord1",
+    "2025-06-30 NY EQL 1m @22814 ord1",
+    "2025-06-30 NY EQL 1m @22815.25 ord1",
+    "2025-06-30 NY EQL 1m @22818.25 ord1",
+    "2025-06-30 NY EQL 1m @22819.75 ord1"
+   ]
+  },
+  "('zone', '2025', 'with', 'short', '*')": {
+   "n": 53,
+   "hold": 30,
+   "break": 23,
+   "ambiguous": 22,
+   "rate": 0.566,
+   "ci_lo": 0.4327,
+   "ci_hi": 0.6905,
+   "first5": [
+    "2025-06-30 NY EQL 1m @22813 ord1",
+    "2025-06-30 NY EQL 1m @22814 ord1",
+    "2025-06-30 NY EQL 1m @22815.25 ord1",
+    "2025-06-30 NY EQL 1m @22818.25 ord1",
+    "2025-06-30 NY EQL 1m @22819.75 ord1"
+   ]
+  },
+  "('ref', '2026', 'D-against/4h-with', 'short')": {
+   "n": 1346,
+   "hold": 706,
+   "break": 640,
+   "ambiguous": 336,
+   "rate": 0.5245,
+   "ci_lo": 0.4978,
+   "ci_hi": 0.5511,
+   "first5": [
+    "2026-01-19 NY PDL 1m @25236.25 ord1",
+    "2026-01-19 NY PDC 1m @25384.75 ord1",
+    "2026-01-19 NY RTH-H 1m @25418 ord1",
+    "2026-01-19 NY RTH-L 1m @25236.25 ord1",
+    "2026-01-19 NY AS-L 1m @25256.5 ord1"
+   ]
+  },
+  "('ref', '2026', 'D-with/4h-against', 'long')": {
+   "n": 725,
+   "hold": 447,
+   "break": 278,
+   "ambiguous": 246,
+   "rate": 0.6166,
+   "ci_lo": 0.5806,
+   "ci_hi": 0.6512,
+   "first5": [
+    "2026-01-19 NY RN 1m @25125 ord1",
+    "2026-01-19 NY RN 1m @25150 ord1",
+    "2026-01-19 NY RN 1m @25175 ord1",
+    "2026-01-19 NY RN 1m @25200 ord1",
+    "2026-01-19 NY RN 1m @25225 ord1"
+   ]
+  },
+  "('zone', '2026', 'with', 'long', '1h')": {
+   "n": 200,
+   "hold": 153,
+   "break": 47,
+   "ambiguous": 12,
+   "rate": 0.765,
+   "ci_lo": 0.7016,
+   "ci_hi": 0.8184,
+   "first5": [
+    "2026-01-19 NY RN 1m @25125 ord1",
+    "2026-01-19 NY RN 1m @25150 ord1",
+    "2026-01-19 NY RN 1m @25175 ord1",
+    "2026-01-19 NY RN 1m @25200 ord1",
+    "2026-01-19 NY RN 1m @25225 ord1"
+   ]
+  },
+  "('zone', '2026', 'with', 'long', '*')": {
+   "n": 200,
+   "hold": 153,
+   "break": 47,
+   "ambiguous": 12,
+   "rate": 0.765,
+   "ci_lo": 0.7016,
+   "ci_hi": 0.8184,
+   "first5": [
+    "2026-01-19 NY RN 1m @25125 ord1",
+    "2026-01-19 NY RN 1m @25150 ord1",
+    "2026-01-19 NY RN 1m @25175 ord1",
+    "2026-01-19 NY RN 1m @25200 ord1",
+    "2026-01-19 NY RN 1m @25225 ord1"
+   ]
+  },
+  "('zone', '2026', 'with', '*', '*')": {
+   "n": 354,
+   "hold": 244,
+   "break": 110,
+   "ambiguous": 69,
+   "rate": 0.6893,
+   "ci_lo": 0.6392,
+   "ci_hi": 0.7352,
+   "first5": [
+    "2026-01-19 NY RN 1m @25125 ord1",
+    "2026-01-19 NY RN 1m @25150 ord1",
+    "2026-01-19 NY RN 1m @25175 ord1",
+    "2026-01-19 NY RN 1m @25200 ord1",
+    "2026-01-19 NY RN 1m @25225 ord1"
+   ]
+  },
+  "('zone', '2026', 'against', 'long', '1h')": {
+   "n": 286,
+   "hold": 192,
+   "break": 94,
+   "ambiguous": 143,
+   "rate": 0.6713,
+   "ci_lo": 0.6149,
+   "ci_hi": 0.7232,
+   "first5": [
+    "2026-05-20 LONDON RN 1m @29250 ord1",
+    "2026-05-20 LONDON RN 1m @29275 ord1",
+    "2026-05-20 LONDON EQH 1m @29265.5 ord1",
+    "2026-05-20 LONDON EQH 1m @29284.75 ord1",
+    "2026-05-20 LONDON EQL 1m @29252.25 ord1"
+   ]
+  },
+  "('zone', '2026', 'against', 'long', '*')": {
+   "n": 286,
+   "hold": 192,
+   "break": 94,
+   "ambiguous": 143,
+   "rate": 0.6713,
+   "ci_lo": 0.6149,
+   "ci_hi": 0.7232,
+   "first5": [
+    "2026-05-20 LONDON RN 1m @29250 ord1",
+    "2026-05-20 LONDON RN 1m @29275 ord1",
+    "2026-05-20 LONDON EQH 1m @29265.5 ord1",
+    "2026-05-20 LONDON EQH 1m @29284.75 ord1",
+    "2026-05-20 LONDON EQL 1m @29252.25 ord1"
+   ]
+  },
+  "('zone', '2026', 'against', '*', '*')": {
+   "n": 703,
+   "hold": 394,
+   "break": 309,
+   "ambiguous": 330,
+   "rate": 0.5605,
+   "ci_lo": 0.5235,
+   "ci_hi": 0.5967,
+   "first5": [
+    "2026-05-20 LONDON RN 1m @29250 ord1",
+    "2026-05-20 LONDON RN 1m @29275 ord1",
+    "2026-05-20 LONDON EQH 1m @29265.5 ord1",
+    "2026-05-20 LONDON EQH 1m @29284.75 ord1",
+    "2026-05-20 LONDON EQL 1m @29252.25 ord1"
+   ]
+  },
+  "('ref', '2026', 'D-with/4h-against', 'short')": {
+   "n": 571,
+   "hold": 293,
+   "break": 278,
+   "ambiguous": 244,
+   "rate": 0.5131,
+   "ci_lo": 0.4722,
+   "ci_hi": 0.5539,
+   "first5": [
+    "2026-07-02 LONDON RN 1m @29850 ord1",
+    "2026-07-02 LONDON RN 1m @29900 ord1",
+    "2026-07-02 LONDON EQL 1m @29901 ord1",
+    "2026-07-02 LONDON SUPPLY 1m @29911.875 ord1",
+    "2026-07-02 LONDON SUPPLY 1m @29851.625 ord1"
+   ]
+  },
+  "('zone', '2026', 'with', 'short', '1h')": {
+   "n": 104,
+   "hold": 50,
+   "break": 54,
+   "ambiguous": 44,
+   "rate": 0.4808,
+   "ci_lo": 0.3872,
+   "ci_hi": 0.5758,
+   "first5": [
+    "2026-07-02 LONDON RN 1m @29900 ord1",
+    "2026-07-02 LONDON EQL 1m @29901 ord1",
+    "2026-07-02 LONDON DEMAND 1m @29899.625 ord1",
+    "2026-07-02 LONDON OB 1h @29897.875 ord1",
+    "2026-07-02 NY DEMAND 1m @29934.125 ord1"
+   ]
+  },
+  "('zone', '2026', 'with', 'short', '*')": {
+   "n": 154,
+   "hold": 91,
+   "break": 63,
+   "ambiguous": 57,
+   "rate": 0.5909,
+   "ci_lo": 0.512,
+   "ci_hi": 0.6654,
+   "first5": [
+    "2026-07-02 LONDON RN 1m @29900 ord1",
+    "2026-07-02 LONDON EQL 1m @29901 ord1",
+    "2026-07-02 LONDON DEMAND 1m @29899.625 ord1",
+    "2026-07-02 LONDON IFVG 1m @29869.625 ord1",
+    "2026-07-02 LONDON FVG 1m @29868.625 ord1"
+   ]
+  },
+  "('zone', '2026', 'against', 'short', '1h')": {
+   "n": 366,
+   "hold": 151,
+   "break": 215,
+   "ambiguous": 159,
+   "rate": 0.4126,
+   "ci_lo": 0.3633,
+   "ci_hi": 0.4637,
+   "first5": [
+    "2026-07-02 LONDON RN 1m @29850 ord1",
+    "2026-07-02 LONDON SUPPLY 1m @29851.625 ord1",
+    "2026-07-02 LONDON IFVG 1m @29921 ord1",
+    "2026-07-02 LONDON IFVG 1m @29920.125 ord1",
+    "2026-07-02 LONDON IFVG 1m @29920.5 ord1"
+   ]
+  },
+  "('zone', '2026', 'against', 'short', '*')": {
+   "n": 417,
+   "hold": 202,
+   "break": 215,
+   "ambiguous": 187,
+   "rate": 0.4844,
+   "ci_lo": 0.4368,
+   "ci_hi": 0.5323,
+   "first5": [
+    "2026-07-02 LONDON RN 1m @29850 ord1",
+    "2026-07-02 LONDON SUPPLY 1m @29911.875 ord1",
+    "2026-07-02 LONDON SUPPLY 1m @29851.625 ord1",
+    "2026-07-02 LONDON DEMAND 1m @29912.75 ord1",
+    "2026-07-02 LONDON IFVG 1m @29921 ord1"
+   ]
+  },
+  "('ref', '2026', 'D-against/4h-with', 'long')": {
+   "n": 603,
+   "hold": 474,
+   "break": 129,
+   "ambiguous": 93,
+   "rate": 0.7861,
+   "ci_lo": 0.7516,
+   "ci_hi": 0.8169,
+   "first5": [
+    "2026-07-02 LONDON OB 1m @29826.875 ord1",
+    "2026-07-02 LONDON EQL 15m @29826 ord1",
+    "2026-07-02 NY EQH 1m @29890.25 ord1",
+    "2026-07-02 NY EQH 1m @29891.25 ord1",
+    "2026-07-02 NY EQH 1m @29894.75 ord1"
+   ]
+  },
+  "('zone', '2026', 'against', 'short', '4h')": {
+   "n": 51,
+   "hold": 51,
+   "break": 0,
+   "ambiguous": 28,
+   "rate": 1.0,
+   "ci_lo": 0.93,
+   "ci_hi": 1.0,
+   "first5": [
+    "2026-07-02 LONDON SUPPLY 1m @29911.875 ord1",
+    "2026-07-02 LONDON DEMAND 1m @29912.75 ord1",
+    "2026-07-02 LONDON FVG 1m @29911.125 ord1",
+    "2026-07-02 LONDON OB 1m @29913.875 ord1",
+    "2026-07-02 LONDON OB 1m @29915.375 ord1"
+   ]
+  },
+  "('zone', '2026', 'with', 'short', '4h')": {
+   "n": 50,
+   "hold": 41,
+   "break": 9,
+   "ambiguous": 13,
+   "rate": 0.82,
+   "ci_lo": 0.692,
+   "ci_hi": 0.9023,
+   "first5": [
+    "2026-07-02 LONDON IFVG 1m @29869.625 ord1",
+    "2026-07-02 LONDON FVG 1m @29868.625 ord1",
+    "2026-07-02 LONDON IFVG 1m @29868.125 ord1",
+    "2026-07-02 LONDON OB 1m @29868.125 ord1",
+    "2026-07-02 LONDON OB 1m @29867.625 ord1"
+   ]
+  }
+ },
+ "trend_pairs": {
+  "('up', 'down')": {
+   "n": 1510,
+   "hold": 934,
+   "break": 576,
+   "ambiguous": 832,
+   "rate": 0.6185,
+   "ci_lo": 0.5938,
+   "ci_hi": 0.6427,
+   "first5": [
+    "2025-05-22 LONDON RTH-L 1m @21113.75 ord1",
+    "2025-05-22 LONDON RN 1m @20800 ord1",
+    "2025-05-22 LONDON RN 1m @20825 ord1",
+    "2025-05-22 LONDON RN 1m @20850 ord1",
+    "2025-05-22 LONDON RN 1m @20875 ord1"
+   ]
+  },
+  "('down', 'up')": {
+   "n": 691,
+   "hold": 357,
+   "break": 334,
+   "ambiguous": 342,
+   "rate": 0.5166,
+   "ci_lo": 0.4794,
+   "ci_hi": 0.5537,
+   "first5": [
+    "2025-06-30 LONDON EQH 1m @22843.25 ord1",
+    "2025-06-30 LONDON EQH 1m @22845.5 ord1",
+    "2025-06-30 LONDON EQH 1m @22846.5 ord1",
+    "2025-06-30 LONDON EQH 1m @22847.25 ord1",
+    "2025-06-30 LONDON EQL 1m @22846.5 ord1"
+   ]
+  }
+ }
+}

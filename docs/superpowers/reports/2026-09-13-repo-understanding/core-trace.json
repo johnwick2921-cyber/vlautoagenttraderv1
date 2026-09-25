@@ -1,0 +1,286 @@
+{
+  "revision": "13882f01f72c313f4454bd29a309d5e31b6ec0cd",
+  "scope": "selected production declarations; not runtime call graph",
+  "entries": [
+    {
+      "boundary": "Transport",
+      "path": "provider/ninjatrader/tcp_server.go",
+      "function": "readLoop",
+      "line": 1718,
+      "sha256": "ebced810b2a1dcf92cd30b88567d26038ddb2e65a81a81f55592d4b1815b8481",
+      "note": "Decodes broker frames; execution processing order must be verified separately."
+    },
+    {
+      "boundary": "Ordered execution owner",
+      "path": "provider/ninjatrader/ordered_execution.go",
+      "function": "RegisterOrderedExecutionsFor",
+      "line": 17,
+      "sha256": "0a2077e3560dedd73682a50f5739a7eec75349a0c0b745aa7d4c0bd4b6aa41ab",
+      "note": "Exact account/symbol owner; preserves receive order before type fanout."
+    },
+    {
+      "boundary": "Ordered entry delivery",
+      "path": "provider/ninjatrader/ordered_execution.go",
+      "function": "dispatchOrderedOrder",
+      "line": 37,
+      "sha256": "0a2077e3560dedd73682a50f5739a7eec75349a0c0b745aa7d4c0bd4b6aa41ab",
+      "note": "Applies received entry evidence before advisory consumers can reorder it."
+    },
+    {
+      "boundary": "Ordered exit delivery",
+      "path": "provider/ninjatrader/ordered_execution.go",
+      "function": "dispatchOrderedClose",
+      "line": 54,
+      "sha256": "0a2077e3560dedd73682a50f5739a7eec75349a0c0b745aa7d4c0bd4b6aa41ab",
+      "note": "Applies received close evidence through the same serialized owner."
+    },
+    {
+      "boundary": "Shared entry receipt",
+      "path": "provider/ninjatrader/entry_receipt.go",
+      "function": "NoteEntryExecution",
+      "line": 17,
+      "sha256": "056ebe07c731918a81ac4e8455b21566cdf0a72d4d8751e161805c85e21a9663",
+      "note": "Account/symbol cumulative evidence survives adapter replacement for shared server lifetime."
+    },
+    {
+      "boundary": "Atomic position evidence",
+      "path": "provider/ninjatrader/entry_receipt.go",
+      "function": "PositionsForExecutionReceipt",
+      "line": 42,
+      "sha256": "056ebe07c731918a81ac4e8455b21566cdf0a72d4d8751e161805c85e21a9663",
+      "note": "Reads position snapshot and entry receipt under the same mutex; no guessed flat fallback."
+    },
+    {
+      "boundary": "Owner installation",
+      "path": "trader/ninjatrader/ordered_execution.go",
+      "function": "InstallOrderedExecutions",
+      "line": 12,
+      "sha256": "a17e403ac04984b83771775e5c1022f338e35a743b4686cb81055ed3cadfa4e4",
+      "note": "Installs observation at successful construction; ordinary Stop retains it."
+    },
+    {
+      "boundary": "Fill cache",
+      "path": "trader/ninjatrader/tcp_trader.go",
+      "function": "handleFill",
+      "line": 193,
+      "sha256": "9956daa91dee5b1aaf0197f93b20bdfbd061038902734f429c731498cbde1efb",
+      "note": "Preserves actual exposure and refuses duplicate fully exited entry cache replay."
+    },
+    {
+      "boundary": "Market data",
+      "path": "market/data.go",
+      "function": "GetWithTimeframes",
+      "line": 190,
+      "sha256": "35ffe0a4f32144e8ee6406cb79bc96ad861fb99c8710ff7b4b442a5ea4589587",
+      "note": "Builds requested market context; futures provider path differs from legacy crypto."
+    },
+    {
+      "boundary": "Canonical symbol",
+      "path": "market/data.go",
+      "function": "Normalize",
+      "line": 670,
+      "sha256": "35ffe0a4f32144e8ee6406cb79bc96ad861fb99c8710ff7b4b442a5ea4589587",
+      "note": "Preserves the CME normalization boundary."
+    },
+    {
+      "boundary": "Level evidence",
+      "path": "kernel/levels_assemble.go",
+      "function": "AssembleResearchLevels",
+      "line": 212,
+      "sha256": "2fd66c237761b3400aa80c6119e308ffc1010f100a8df619988f46ac5d64ae23",
+      "note": "Assembles raw, pool and seated candidates; heuristic scores are not probabilities."
+    },
+    {
+      "boundary": "Weekly evidence",
+      "path": "trader/auto_trader_weekly.go",
+      "function": "weeklyDailyBars",
+      "line": 138,
+      "sha256": "2e539bee84095e35d0e0482284dfffdab92c6290702d3549105c3c2ce231e51b",
+      "note": "Preserves daily input for CME-week aggregation."
+    },
+    {
+      "boundary": "Weekly facts",
+      "path": "kernel/weekly_bias.go",
+      "function": "CompletedWeekCandles",
+      "line": 93,
+      "sha256": "8641bd63bde530571e26540166143f88f3658910d86c387cf146a585271c42b3",
+      "note": "Groups observations into completed Monday-governed weeks."
+    },
+    {
+      "boundary": "Planner invocation",
+      "path": "trader/auto_trader_planner.go",
+      "function": "runPlannerReadCoreWithFacts",
+      "line": 1121,
+      "sha256": "d33af09ef066dcbb92f0faa81002ed63b1b11bec6f5cc020c98592b6cd94de3c",
+      "note": "Machine facts and model response enter planner persistence/validation."
+    },
+    {
+      "boundary": "Frozen setup identity",
+      "path": "trader/structural_geometry.go",
+      "function": "ResolveEntryGeometryZone",
+      "line": 30,
+      "sha256": "fd9a254e526a955749671943b951d6bd42a838013ce185ba31a850e50c4ed739",
+      "note": "Rejects missing or ambiguous frozen source identity."
+    },
+    {
+      "boundary": "First structural obstacle",
+      "path": "trader/structural_geometry.go",
+      "function": "FirstGeometryTarget",
+      "line": 78,
+      "sha256": "fd9a254e526a955749671943b951d6bd42a838013ce185ba31a850e50c4ed739",
+      "note": "Chooses nearest complete sourced zone beyond the entry zone."
+    },
+    {
+      "boundary": "Geometry",
+      "path": "trader/structural_geometry.go",
+      "function": "ComposeLevelFadeGeometry",
+      "line": 106,
+      "sha256": "fd9a254e526a955749671943b951d6bd42a838013ce185ba31a850e50c4ed739",
+      "note": "Production wrapper freezes structural stop/target before admission."
+    },
+    {
+      "boundary": "Geometry arithmetic",
+      "path": "trader/structural_geometry.go",
+      "function": "composeGeometry",
+      "line": 123,
+      "sha256": "fd9a254e526a955749671943b951d6bd42a838013ce185ba31a850e50c4ed739",
+      "note": "Zone-edge buffer, outward rounding, costs and gross-R refusal; no ranking proof."
+    },
+    {
+      "boundary": "Arm orchestration",
+      "path": "trader/armed_executor.go",
+      "function": "maybeManageArmedOrdersAt",
+      "line": 199,
+      "sha256": "4fcc290be148d741fbb36b9a664dfbc82628dcc056b11b964b5ae1696c923dc7",
+      "note": "Current-cycle authorization and gate results precede placement."
+    },
+    {
+      "boundary": "Placement",
+      "path": "trader/armed_executor.go",
+      "function": "runArmedPlacementAt",
+      "line": 1184,
+      "sha256": "4fcc290be148d741fbb36b9a664dfbc82628dcc056b11b964b5ae1696c923dc7",
+      "note": "Consumes currently eligible arm identities and broker/account evidence."
+    },
+    {
+      "boundary": "One-contract guard",
+      "path": "trader/one_contract.go",
+      "function": "oneContractGuard",
+      "line": 159,
+      "sha256": "5f25b4c34a4e9e4e3421b26a266db94b2a82a4478cc322b7b85ddf568363779c",
+      "note": "Account exposure and entry-order admission boundary."
+    },
+    {
+      "boundary": "Session controls",
+      "path": "trader/session_risk.go",
+      "function": "sessionRiskGateAt",
+      "line": 120,
+      "sha256": "18f67b626a505f314654560fd02f802c4a87d0c07f18fdd29899cd009ad89bd8",
+      "note": "Session breaker/band verdict; does not alone establish daily-loss implementation."
+    },
+    {
+      "boundary": "Daily reporting",
+      "path": "trader/session_risk.go",
+      "function": "bootRiskFacts",
+      "line": 260,
+      "sha256": "18f67b626a505f314654560fd02f802c4a87d0c07f18fdd29899cd009ad89bd8",
+      "note": "Reporting facts only; do not cite as executable daily-loss gate."
+    },
+    {
+      "boundary": "Decision risk",
+      "path": "kernel/engine_analysis.go",
+      "function": "GetFullDecisionWithStrategy",
+      "line": 57,
+      "sha256": "528e83a5c7a442d9ecce3e94311cf03c59cad1f14a2d841b76e1fd56b3a276e2",
+      "note": "Strategy decision/control pipeline; distinct from resting-arm placement."
+    },
+    {
+      "boundary": "Position admission",
+      "path": "trader/auto_trader_orders.go",
+      "function": "ntHeldPosition",
+      "line": 377,
+      "sha256": "ed7d7c483286914be409a84a33a4685d13509b3551ae605ce83b269d2c60973f",
+      "note": "Broker position errors must remain unknown instead of flat."
+    },
+    {
+      "boundary": "Decision long entry",
+      "path": "trader/auto_trader_orders.go",
+      "function": "executeOpenLongWithRecord",
+      "line": 464,
+      "sha256": "ed7d7c483286914be409a84a33a4685d13509b3551ae605ce83b269d2c60973f",
+      "note": "Actual decision entry call site; admission failure must prevent wire submission."
+    },
+    {
+      "boundary": "Decision short entry",
+      "path": "trader/auto_trader_orders.go",
+      "function": "executeOpenShortWithRecord",
+      "line": 612,
+      "sha256": "ed7d7c483286914be409a84a33a4685d13509b3551ae605ce83b269d2c60973f",
+      "note": "Short counterpart requires the same ownership and exposure discipline."
+    },
+    {
+      "boundary": "Resting limit",
+      "path": "trader/ninjatrader/tcp_trader.go",
+      "function": "PlaceLimitEntry",
+      "line": 511,
+      "sha256": "9956daa91dee5b1aaf0197f93b20bdfbd061038902734f429c731498cbde1efb",
+      "note": "Registers identity before transmission; transmission is not broker acceptance."
+    },
+    {
+      "boundary": "Stop entry",
+      "path": "trader/ninjatrader/tcp_trader.go",
+      "function": "PlaceStopEntry",
+      "line": 575,
+      "sha256": "9956daa91dee5b1aaf0197f93b20bdfbd061038902734f429c731498cbde1efb",
+      "note": "Kind-specific stop entry adapter; distinct from protective stop placement."
+    },
+    {
+      "boundary": "Cumulative entry",
+      "path": "trader/armed_executor.go",
+      "function": "onArmedOrderUpdate",
+      "line": 1952,
+      "sha256": "4fcc290be148d741fbb36b9a664dfbc82628dcc056b11b964b5ae1696c923dc7",
+      "note": "Consumes actual entry state/quantity including positive terminal cancellations."
+    },
+    {
+      "boundary": "Entry accounting",
+      "path": "trader/armed_executor.go",
+      "function": "materializeArmedEntry",
+      "line": 2071,
+      "sha256": "4fcc290be148d741fbb36b9a664dfbc82628dcc056b11b964b5ae1696c923dc7",
+      "note": "Preserves cumulative entry quantity/notional and residual position accounting."
+    },
+    {
+      "boundary": "Broker exit",
+      "path": "trader/ninjatrader/close_sync.go",
+      "function": "recordClose",
+      "line": 88,
+      "sha256": "318dc8926f4f66f107e79e79fc1bddd9cb1e42ec02232dc05fbade2632a967ba",
+      "note": "Builds actual exit receipt with account and broker-order identity."
+    },
+    {
+      "boundary": "Atomic exit",
+      "path": "store/nt8_exit_receipt.go",
+      "function": "ApplyNT8Exit",
+      "line": 44,
+      "sha256": "b86c69fa238edf2702729fe2db1f924d9002277e32a85f007b594e189e44505b",
+      "note": "Receipt, actual fill and residual/P&L update share one transaction."
+    },
+    {
+      "boundary": "Reconciliation",
+      "path": "trader/ninjatrader/reconcile.go",
+      "function": "reconcilePositions",
+      "line": 118,
+      "sha256": "4eb71457fb09ad6d4b39ddcbabd800bbc01979a0ca6f135206a2706dd8799479",
+      "note": "Reconciles observations; a database row is not broker-flat proof."
+    },
+    {
+      "boundary": "Positions truth",
+      "path": "trader/ninjatrader/tcp_trader.go",
+      "function": "GetPositions",
+      "line": 986,
+      "sha256": "9956daa91dee5b1aaf0197f93b20bdfbd061038902734f429c731498cbde1efb",
+      "note": "Selected bound-account position snapshot and freshness admission."
+    }
+  ]
+}

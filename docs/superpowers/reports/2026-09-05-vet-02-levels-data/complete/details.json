@@ -1,0 +1,975 @@
+{
+  "read_only": true,
+  "trade_binding": [
+    {
+      "id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "name": "hoang",
+      "strategy_id": "a5b7662e-7bf7-49bb-9f09-7efa48f95ac8",
+      "is_running": 1
+    }
+  ],
+  "rthl_authored": [
+    {
+      "plan_id": "2026-08-18:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 1,
+      "scenario_id": "S3",
+      "condition": "reject",
+      "arm_enabled": false,
+      "reference": 30079.0,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 30079,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "long target / possible rejection"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "Rally into 30079-30096 cluster stalls with an upper wick",
+        "condition": "reject",
+        "direction": "short",
+        "target_chain": [
+          29919,
+          29853
+        ],
+        "invalid": "5m close above 30124.25 ONH",
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-19:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 1,
+      "scenario_id": "S2",
+      "condition": "acceptance",
+      "arm_enabled": false,
+      "reference": 29514.0,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29514,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "breakdown_trigger"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "Acceptance below 29514.00 RTH-L",
+        "condition": "acceptance",
+        "direction": "short",
+        "target_chain": [
+          29505.75,
+          29441,
+          29430.25
+        ],
+        "invalid": "15m close back above 29514.00",
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-19:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 3,
+      "scenario_id": "S3",
+      "condition": "sweep_reclaim",
+      "arm_enabled": false,
+      "reference": 29514.0,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29514,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "watch for breakdown vs sweep-reclaim"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "Sweep of 29514/29505.75 then 5m close back above 29514",
+        "condition": "sweep_reclaim",
+        "direction": "long",
+        "target_chain": [
+          29648.25,
+          29742
+        ],
+        "invalid": "2x5m below 29441.00",
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-20:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 1,
+      "scenario_id": "S2",
+      "condition": "reject",
+      "arm_enabled": false,
+      "reference": 29375.75,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29375.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "fulcrum\u2014shorts below, longs on 15m reclaim"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "Price rallies to 29375.75 RTH-L and rejects, confirming the open fulcrum as resistance",
+        "condition": "reject",
+        "direction": "short",
+        "target_chain": [
+          29275,
+          29263.5,
+          29240.25
+        ],
+        "invalid": "2x5m close above 29375.75 RTH-L",
+        "confirm": {
+          "rule": "2x5m_close",
+          "ref_price": 29375.75,
+          "side": "below"
+        },
+        "quality": "A"
+      }
+    },
+    {
+      "plan_id": "2026-08-20:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 1,
+      "scenario_id": "S3",
+      "condition": "reclaim",
+      "arm_enabled": false,
+      "reference": 29375.75,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29375.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "fulcrum\u2014shorts below, longs on 15m reclaim"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "A 15m close above 29375.75 RTH-L reclaims the open fulcrum",
+        "condition": "reclaim",
+        "direction": "long",
+        "target_chain": [
+          29617,
+          29688.5,
+          29742
+        ],
+        "invalid": "2x5m close below 29275.00",
+        "confirm": {
+          "rule": "15m_close",
+          "ref_price": 29375.75,
+          "side": "above"
+        },
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-25:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 14,
+      "scenario_id": "S3",
+      "condition": "acceptance",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "target",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "Break below 29145.50 RTH-L with a 1x5m close below 29145.50",
+        "condition": "acceptance",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085
+        ],
+        "invalid": "Two 5m closes back above 29145.50 invalidate.",
+        "confirm": {
+          "rule": "1x5m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 2,
+      "scenario_id": "S2",
+      "condition": "breakout_retest",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "target",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "5m close below 29145.50, then retest of 29145.50 from below fails to reclaim",
+        "condition": "breakout_retest",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085
+        ],
+        "invalid": "15m close back above 29145.50 voids the breakdown",
+        "confirm": {
+          "rule": "2x5m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 3,
+      "scenario_id": "S2",
+      "condition": "breakout_retest",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "sell_break",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "Break of 29145.50 RTH-L with 5m close below, then a pullback retest holds below 29145.50.",
+        "condition": "breakout_retest",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085,
+          28711.25
+        ],
+        "invalid": "5m close back above 29145.50 kills this short.",
+        "confirm": {
+          "rule": "2x5m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 5,
+      "scenario_id": "S2",
+      "condition": "breakout_retest",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "breakdown trigger / short target",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "break of 29145.50 RTH-L followed by a failed retest from below",
+        "condition": "breakout_retest",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085
+        ],
+        "invalid": "15m close back above 29145.50",
+        "confirm": {
+          "rule": "1x5m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "A"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 6,
+      "scenario_id": "S3",
+      "condition": "breakout_retest",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "target",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "15m close below 29145.50 RTH-L, then a 5m retest from below rejects",
+        "condition": "breakout_retest",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085
+        ],
+        "invalid": "15m close back above 29145.50",
+        "confirm": {
+          "rule": "15m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "A"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 7,
+      "scenario_id": "S2",
+      "condition": "hold",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "defend",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "A 1x5m close below 29145.50 RTH-L confirms downside break",
+        "condition": "hold",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085
+        ],
+        "invalid": "1x5m close back above 29145.50",
+        "confirm": {
+          "rule": "1x5m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "A"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 11,
+      "scenario_id": "S5",
+      "condition": "hold",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "target",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S5",
+        "trigger": "15m close below 29145.50",
+        "condition": "hold",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085
+        ],
+        "invalid": "5m close back above 29145.50",
+        "confirm": {
+          "rule": "15m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 13,
+      "scenario_id": "S1",
+      "condition": "hold",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "short_trigger",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S1",
+        "trigger": "15m close below 29145.50 RTH-L; retest from below holds below 29145.50",
+        "condition": "hold",
+        "direction": "short",
+        "target_chain": [
+          29095.5,
+          29085
+        ],
+        "invalid": "5m close back above 29145.50",
+        "confirm": {
+          "rule": "15m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "B"
+      }
+    },
+    {
+      "plan_id": "2026-08-26:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 14,
+      "scenario_id": "S1",
+      "condition": "acceptance",
+      "arm_enabled": false,
+      "reference": 29145.5,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29145.5,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "break",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S1",
+        "trigger": "Displacement candle and 2x5m closes below RTH-L 29145.50 after the 07:45 CHoCH-down",
+        "condition": "acceptance",
+        "direction": "short",
+        "target_chain": [
+          29110,
+          29095.5,
+          29085
+        ],
+        "invalid": "5m close back above 29145.50 voids the breakdown",
+        "confirm": {
+          "rule": "2x5m_close",
+          "ref_price": 29145.5,
+          "side": "below"
+        },
+        "quality": "A"
+      }
+    },
+    {
+      "plan_id": "2026-08-27:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 11,
+      "scenario_id": "S4",
+      "condition": "sweep_reclaim",
+      "arm_enabled": false,
+      "reference": 29424.0,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29424,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "reclaim",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S4",
+        "trigger": "Price sweeps below 29424.00 RTH-L and 29402.25 PDL, then a 15m close back above 29424.00 prints the reclaim; long the reclaim only.",
+        "condition": "sweep_reclaim",
+        "direction": "long",
+        "target_chain": [
+          29539.38,
+          29576.5
+        ],
+        "invalid": "15m close below 29402.25 PDL cancels the long.",
+        "confirm": {
+          "rule": "15m_close",
+          "ref_price": 29424,
+          "side": "above"
+        },
+        "quality": "C"
+      }
+    },
+    {
+      "plan_id": "2026-08-27:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 12,
+      "scenario_id": "S3",
+      "condition": "sweep_reclaim",
+      "arm_enabled": true,
+      "reference": 29424.0,
+      "method": "arm.entry",
+      "level_matches": [
+        {
+          "price": 29424,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "target",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "flush through 29402.25 PDL and a 15m close back above 29402.25",
+        "condition": "sweep_reclaim",
+        "direction": "long",
+        "target_chain": [
+          29424,
+          29576.5
+        ],
+        "invalid": "2\u00d75m close below 29316.38 Demand\u00b71h (HTF)",
+        "confirm": {
+          "rule": "15m_close",
+          "ref_price": 29402.25,
+          "side": "above"
+        },
+        "quality": "B",
+        "arm": {
+          "enabled": true,
+          "entry": 29424,
+          "stop": 29316.38,
+          "target": 29576.5,
+          "wait_confirm": true
+        }
+      }
+    },
+    {
+      "plan_id": "2026-08-31:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 2,
+      "scenario_id": "S1",
+      "condition": "reject",
+      "arm_enabled": true,
+      "reference": 29437.0,
+      "method": "arm.entry",
+      "level_matches": [
+        {
+          "price": 29437,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "reject-long",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S1",
+        "trigger": "Retest of 29437.00 RTH-L after the 07:00 sweep reclaimed 29437.00; first-touch rejection from above goes long.",
+        "condition": "reject",
+        "direction": "long",
+        "target_chain": [
+          29498.5,
+          29509.5,
+          29543.5
+        ],
+        "invalid": "5m close below 29432.25 voids the reclaim",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29437,
+          "side": "above"
+        },
+        "quality": "B",
+        "arm": {
+          "enabled": true,
+          "entry": 29437,
+          "stop": 29416,
+          "target": 29498.5
+        }
+      }
+    },
+    {
+      "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 4,
+      "scenario_id": "S3",
+      "condition": "reject",
+      "arm_enabled": true,
+      "reference": 29354.0,
+      "method": "arm.entry",
+      "level_matches": [
+        {
+          "price": 29354,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "reject-short",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "Pullback stalls at 29354.00 RTH-L/PDL and rejects; short the touch",
+        "condition": "reject",
+        "direction": "short",
+        "target_chain": [
+          29280,
+          29182
+        ],
+        "invalid": "5m close above 29354.00",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29354,
+          "side": "below"
+        },
+        "quality": "B",
+        "arm": {
+          "enabled": true,
+          "entry": 29354,
+          "stop": 29385,
+          "target": 29280
+        }
+      }
+    },
+    {
+      "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 4,
+      "scenario_id": "S3",
+      "condition": "reject",
+      "arm_enabled": true,
+      "reference": 29001.75,
+      "method": "arm.entry",
+      "level_matches": [
+        {
+          "price": 29001.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "react_zone \u2014 wait for reject/reclaim",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S3",
+        "trigger": "First touch of RTH-L 29001.75 rejects back up; no 5m close below 29001.75",
+        "condition": "reject",
+        "direction": "long",
+        "target_chain": [
+          29066.56,
+          29171.25
+        ],
+        "invalid": "5m close below 28927.25",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29001.75,
+          "side": "above"
+        },
+        "quality": "B",
+        "arm": {
+          "enabled": true,
+          "entry": 29001.75,
+          "stop": 28927.25,
+          "target": 29171.25,
+          "wait_confirm": true
+        }
+      }
+    },
+    {
+      "plan_id": "2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 6,
+      "scenario_id": "S2",
+      "condition": "reject",
+      "arm_enabled": true,
+      "reference": 29001.75,
+      "method": "arm.entry",
+      "level_matches": [
+        {
+          "price": 29001.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "defend",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "Touch of 29001.75 RTH-L with a 5m bullish reject closing back above 29001.75.",
+        "condition": "reject",
+        "direction": "long",
+        "target_chain": [
+          29058.75,
+          29171.25
+        ],
+        "invalid": "5m close below 29001.75 RTH-L invalidates the long.",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29001.75,
+          "side": "above"
+        },
+        "quality": "B",
+        "arm": {
+          "enabled": true,
+          "entry": 29001.75,
+          "stop": 28975.75,
+          "target": 29058.75,
+          "wait_confirm": true
+        }
+      }
+    },
+    {
+      "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 6,
+      "scenario_id": "S4",
+      "condition": "sweep_reclaim",
+      "arm_enabled": false,
+      "reference": 29001.75,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29001.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "sweep",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S4",
+        "trigger": "Sweep below 29001.75 RTH-L (wick through 29001.75) then 5m close back above 29001.75.",
+        "condition": "sweep_reclaim",
+        "direction": "long",
+        "target_chain": [
+          29058.75,
+          29153.35,
+          29171.25
+        ],
+        "invalid": "5m close below 28927.25 ONL voids the reclaim and opens the bear leg.",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29001.75,
+          "side": "below"
+        },
+        "quality": "B",
+        "confirm2": {
+          "rule": "1x5m_close",
+          "ref_price": 29001.75,
+          "side": "above"
+        }
+      }
+    },
+    {
+      "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 10,
+      "scenario_id": "S2",
+      "condition": "sweep_reclaim",
+      "arm_enabled": false,
+      "reference": 29001.75,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29001.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "sweep_break",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "Price sweeps 29001.75 RTH-L and then prints a 5m close back above it.",
+        "condition": "sweep_reclaim",
+        "direction": "long",
+        "target_chain": [
+          29042.75,
+          29058.75,
+          29102
+        ],
+        "invalid": "A 5m close below 29001.75 before the reclaim close voids the long.",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29001.75,
+          "side": "below"
+        },
+        "quality": "B",
+        "confirm2": {
+          "rule": "1x5m_close",
+          "ref_price": 29001.75,
+          "side": "above"
+        }
+      }
+    },
+    {
+      "plan_id": "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 11,
+      "scenario_id": "S2",
+      "condition": "reject",
+      "arm_enabled": true,
+      "reference": 29001.75,
+      "method": "arm.entry",
+      "level_matches": [
+        {
+          "price": 29001.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "react_zone",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "Clean retest of RTH-L 29001.75; limit long with structure stop 28972.75, target 29102.00 OR-H.",
+        "condition": "reject",
+        "direction": "long",
+        "target_chain": [
+          29102,
+          29165.06,
+          29171.25
+        ],
+        "invalid": "5m close below 28972.75 voids the fade; next downside liquid pool is ONL 28927.25.",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29001.75,
+          "side": "above"
+        },
+        "quality": "B",
+        "arm": {
+          "enabled": true,
+          "entry": 29001.75,
+          "stop": 28972.75,
+          "target": 29102,
+          "wait_confirm": true
+        }
+      }
+    },
+    {
+      "plan_id": "2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 14,
+      "scenario_id": "S2",
+      "condition": "sweep_reclaim",
+      "arm_enabled": false,
+      "reference": 29017.25,
+      "method": "first numeric trigger",
+      "level_matches": [
+        {
+          "price": 29017.25,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "sweep-reclaim long",
+          "machine_grade": "A"
+        }
+      ],
+      "scenario": {
+        "id": "S2",
+        "trigger": "sweep below 29017.25 RTH-L wicks out liquidity, then 1x5m close back above 29017.25",
+        "condition": "sweep_reclaim",
+        "direction": "long",
+        "target_chain": [
+          29132.5,
+          29186.14,
+          29207.5,
+          29218.25
+        ],
+        "invalid": "2x5m close below 28927.25 kills the reclaim",
+        "confirm": {
+          "rule": "touch",
+          "ref_price": 29017.25,
+          "side": "below"
+        },
+        "quality": "B",
+        "confirm2": {
+          "rule": "1x5m_close",
+          "ref_price": 29017.25,
+          "side": "above"
+        }
+      }
+    }
+  ],
+  "authored_conditions": {
+    "reject": 7,
+    "acceptance": 3,
+    "sweep_reclaim": 6,
+    "reclaim": 1,
+    "breakout_retest": 4,
+    "hold": 3
+  },
+  "rthl_arms_exact_version": [
+    {
+      "id": 17,
+      "plan_id": "2026-08-31:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 2,
+      "scenario": "S1",
+      "session": "LONDON",
+      "side": "long",
+      "entry_px": 29437.0,
+      "condition": "",
+      "state": "cancelled",
+      "state_reason": "level accepted through \u2014 marketable, never placed",
+      "fill_price": 0.0,
+      "fill_quantity": 0,
+      "level_matches": [
+        {
+          "price": 29437,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "reject-long",
+          "machine_grade": "A"
+        }
+      ]
+    }
+  ],
+  "arms_total_non_test": 65,
+  "arms_missing_exact_plan": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "rthl_eligible_positions": [
+    {
+      "id": 531,
+      "entry_time": 1787233297689,
+      "exit_time": 1787233704110,
+      "status": "CLOSED",
+      "source": "system",
+      "plan_id": "2026-08-20:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "plan_version": 1,
+      "cited_scenario_id": "S3",
+      "pnl_corrected": -147.5,
+      "condition": "reclaim",
+      "method": "first numeric trigger",
+      "reference": 29375.75,
+      "level_matches": [
+        {
+          "price": 29375.75,
+          "label": "RTH-L",
+          "grade": "A",
+          "instruction": "fulcrum\u2014shorts below, longs on 15m reclaim"
+        }
+      ]
+    }
+  ],
+  "eligible_missing_exact_plan": [],
+  "sept3_rth": {
+    "window_ms": [
+      1788442200000,
+      1788464700000
+    ],
+    "n_bars": 375,
+    "low": 29199.25,
+    "low_bar_ids": [
+      1788442560000
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "status": "BOOT PROOF FAILED OR INCOMPLETE WITHIN90S",
+  "pid": 3726840,
+  "expected": "6f677b55daa1c7da33b8c35f8bcc67883f36b470",
+  "observed_at": "2026-09-08T23:13:19.828868+00:00"
+}

@@ -1,0 +1,349 @@
+{
+  "cme_open_date_groups": {
+    "2026-08-18": {
+      "position_ids": [
+        521,
+        522,
+        523,
+        524
+      ],
+      "n": 4,
+      "pnl_corrected": 469.0
+    },
+    "2026-08-19": {
+      "position_ids": [
+        525,
+        526,
+        527,
+        528,
+        529,
+        530,
+        531,
+        532
+      ],
+      "n": 8,
+      "pnl_corrected": 46.571428000002925
+    },
+    "2026-08-20": {
+      "position_ids": [
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        539,
+        540,
+        541,
+        542,
+        543,
+        544
+      ],
+      "n": 12,
+      "pnl_corrected": -492.0
+    },
+    "2026-08-23": {
+      "position_ids": [
+        545,
+        546,
+        547,
+        548,
+        549
+      ],
+      "n": 5,
+      "pnl_corrected": -142.5
+    },
+    "2026-08-24": {
+      "position_ids": [
+        550,
+        551,
+        552,
+        553,
+        554,
+        555,
+        556,
+        557,
+        558,
+        559,
+        560
+      ],
+      "n": 11,
+      "pnl_corrected": -26.5
+    },
+    "2026-08-25": {
+      "position_ids": [
+        561,
+        562,
+        563
+      ],
+      "n": 3,
+      "pnl_corrected": -200.0
+    },
+    "2026-08-26": {
+      "position_ids": [
+        564,
+        565,
+        566
+      ],
+      "n": 3,
+      "pnl_corrected": -34.5
+    },
+    "2026-08-27": {
+      "position_ids": [
+        567,
+        568,
+        569,
+        570
+      ],
+      "n": 4,
+      "pnl_corrected": 6.0
+    },
+    "2026-08-30": {
+      "position_ids": [
+        571,
+        575,
+        578,
+        580
+      ],
+      "n": 4,
+      "pnl_corrected": 119.5
+    },
+    "2026-08-31": {
+      "position_ids": [
+        581,
+        582,
+        583,
+        584,
+        585,
+        586
+      ],
+      "n": 6,
+      "pnl_corrected": 212.0
+    },
+    "2026-09-01": {
+      "position_ids": [
+        587,
+        588,
+        589,
+        590
+      ],
+      "n": 4,
+      "pnl_corrected": -381.5
+    },
+    "2026-09-02": {
+      "position_ids": [
+        591
+      ],
+      "n": 1,
+      "pnl_corrected": -140.0
+    }
+  },
+  "cme_days": 12,
+  "calendar_days": 14,
+  "calendar_date_groups": {
+    "2026-08-19": {
+      "position_ids": [
+        521,
+        522,
+        523,
+        524,
+        525,
+        526,
+        527
+      ],
+      "n": 7,
+      "pnl_corrected": 268.5714280000029
+    },
+    "2026-08-20": {
+      "position_ids": [
+        528,
+        529,
+        530,
+        531,
+        532,
+        533,
+        534,
+        535,
+        536
+      ],
+      "n": 9,
+      "pnl_corrected": 219.5
+    },
+    "2026-08-21": {
+      "position_ids": [
+        537,
+        538,
+        539,
+        540,
+        541,
+        542,
+        543,
+        544
+      ],
+      "n": 8,
+      "pnl_corrected": -464.5
+    },
+    "2026-08-23": {
+      "position_ids": [
+        545
+      ],
+      "n": 1,
+      "pnl_corrected": -29.5
+    },
+    "2026-08-24": {
+      "position_ids": [
+        546,
+        547,
+        548,
+        549,
+        550,
+        551,
+        552,
+        553
+      ],
+      "n": 8,
+      "pnl_corrected": -232.0
+    },
+    "2026-08-25": {
+      "position_ids": [
+        554,
+        555,
+        556,
+        557,
+        558,
+        559,
+        560,
+        561
+      ],
+      "n": 8,
+      "pnl_corrected": 40.5
+    },
+    "2026-08-26": {
+      "position_ids": [
+        562,
+        563
+      ],
+      "n": 2,
+      "pnl_corrected": -148.0
+    },
+    "2026-08-27": {
+      "position_ids": [
+        564,
+        565,
+        566
+      ],
+      "n": 3,
+      "pnl_corrected": -34.5
+    },
+    "2026-08-28": {
+      "position_ids": [
+        567,
+        568,
+        569,
+        570
+      ],
+      "n": 4,
+      "pnl_corrected": 6.0
+    },
+    "2026-08-30": {
+      "position_ids": [
+        571
+      ],
+      "n": 1,
+      "pnl_corrected": -44.5
+    },
+    "2026-08-31": {
+      "position_ids": [
+        575,
+        578,
+        580
+      ],
+      "n": 3,
+      "pnl_corrected": 164.0
+    },
+    "2026-09-01": {
+      "position_ids": [
+        581,
+        582,
+        583,
+        584,
+        585,
+        586
+      ],
+      "n": 6,
+      "pnl_corrected": 212.0
+    },
+    "2026-09-02": {
+      "position_ids": [
+        587,
+        588,
+        589,
+        590
+      ],
+      "n": 4,
+      "pnl_corrected": -381.5
+    },
+    "2026-09-03": {
+      "position_ids": [
+        591
+      ],
+      "n": 1,
+      "pnl_corrected": -140.0
+    }
+  },
+  "trades": 65,
+  "pnl_corrected": -563.9285719999971,
+  "strict_cut_assumption_ct": "2026-09-03 11:10:00 America/Chicago (parent boot boundary)",
+  "positions_after_cut": [],
+  "latest_position": {
+    "id": 591,
+    "entry_time": 1788444314627
+  },
+  "arm35": {
+    "id": 35,
+    "signal_id": "f2b1eb20-f89e-4a88-bcff-5ce971d17861",
+    "stop_px": 29351.62847289964,
+    "fill_price": 29285.0
+  },
+  "position591": {
+    "id": 591,
+    "entry_time": 1788444314627,
+    "exit_time": 1788445245677,
+    "entry_price": 29285.0,
+    "exit_price": 29355.0,
+    "pnl_corrected": -140.0
+  },
+  "broker_stop_from_q32_nt8_log": 29355,
+  "slippage_pts_vs_authorized_broker_stop": 0.0,
+  "ledger_to_broker_geometry_drift_pts": 3.371527100360254,
+  "snapshots1604": [
+    {
+      "id": 1604,
+      "received_at_ms": 1788536401395,
+      "reason": "state_change",
+      "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Initialized\"}]"
+    },
+    {
+      "id": 1605,
+      "received_at_ms": 1788536401414,
+      "reason": "state_change",
+      "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Submitted\"}]"
+    },
+    {
+      "id": 1606,
+      "received_at_ms": 1788536401414,
+      "reason": "state_change",
+      "orders_json": "[{\"order_id\":\"299043a487fc44499e1806077a5f28ab\",\"symbol\":\"MNQ\",\"name\":\"719f4bbb-069a-4c81-8df0-f0d1e112335a\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"CancelPending\"},{\"order_id\":\"0258b4cb048d4971a5aeef0db025d92b\",\"symbol\":\"MNQ\",\"name\":\"c794d0ce-0ca7-4c03-894c-25ddf4468935\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"81b63886467d4620bcb08df09c583c97\",\"symbol\":\"MNQ\",\"name\":\"4646df81-f408-48bc-9834-477105ed801c\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"5b30d833d96f41cba14541b8652024c0\",\"symbol\":\"MNQ\",\"name\":\"c5d4860a-1d7f-4480-bd27-fc6958221dae\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"6a8ca44d43fd44cd932f15a84c6cdb6d\",\"symbol\":\"MNQ\",\"name\":\"9fcd8c7c-7d13-4e97-871c-21a49f44c643\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"c39974001a914523a8baac57660deddb\",\"symbol\":\"MNQ\",\"name\":\"9b146ffa-d569-44f9-a6b6-0701073418e9\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"4c4cea3b76b54ae788fc3ec8e3367d45\",\"symbol\":\"MNQ\",\"name\":\"7dd07a19-701e-4afa-9b15-655f65810e9e\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"114342817039452cb3ca2d7d4641ffa3\",\"symbol\":\"MNQ\",\"name\":\"6a5da3fa-2992-426f-b56e-9d1eb805c350\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Accepted\"},{\"order_id\":\"d260f9bd68504d55bc5284b4599a472b\",\"symbol\":\"MNQ\",\"name\":\"183d16ad-75df-4fcf-bd9c-685900a8aa25\",\"action\":\"sell\",\"type\":\"stop\",\"limit_price\":29590.5,\"quantity\":1,\"state\":\"Submitted\"}]"
+    }
+  ],
+  "trace_5m_bar": [
+    {
+      "bar_id": 440248,
+      "open_time_ms": 1788444600000,
+      "o": 29267.75,
+      "h": 29303.75,
+      "l": 29249.5,
+      "c": 29301.5
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "measured_at_ct": "2026-09-10T17:32:15.075858-05:00",
+  "service": {
+    "Restart": "on-failure",
+    "MainPID": "2605112",
+    "ExecMainStartTimestamp": "Thu 2026-09-10 17:10:33 CDT"
+  },
+  "health": {
+    "revision": "770e2297d218",
+    "status": "ok",
+    "time": null
+  },
+  "executable": "/proc/2605112/exe",
+  "build": [
+    "path\tnofx",
+    "build\tvcs.revision=770e2297d2188d09de0dcf76c3722e19e022e4c6",
+    "build\tvcs.time=2026-09-10T22:03:33Z",
+    "build\tvcs.modified=false"
+  ]
+}

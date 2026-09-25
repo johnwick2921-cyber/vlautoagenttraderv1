@@ -1,0 +1,15 @@
+scope,trade_date,direction,scenarios_n,arm_enabled_n,rate,source
+trade_date,2026-09-02,long,64,9,0.141,plans.doc.scenarios[].arm.enabled
+trade_date,2026-09-02,short,43,27,0.628,plans.doc.scenarios[].arm.enabled
+trade_date,2026-09-03,long,28,2,0.071,plans.doc.scenarios[].arm.enabled
+trade_date,2026-09-03,short,20,8,0.400,plans.doc.scenarios[].arm.enabled
+trade_date,2026-09-04,long,6,2,0.333,plans.doc.scenarios[].arm.enabled
+trade_date,2026-09-04,short,6,2,0.333,plans.doc.scenarios[].arm.enabled
+ct_created_day,2026-09-03,long,24,1,0.042,datetime(created_at -5h)
+ct_created_day,2026-09-03,short,23,10,0.435,datetime(created_at -5h)
+ct_created_day,2026-09-04,long,11,3,0.273,datetime(created_at -5h)
+ct_created_day,2026-09-04,short,8,2,0.250,datetime(created_at -5h)
+report_claim,2026-09-03,long,23,1,0.043,two-day-audit.md:283
+report_claim,2026-09-03,short,18,8,0.444,two-day-audit.md:284
+report_claim,2026-09-02,long,64,9,0.141,two-day-audit.md:1016 narrative / reproduced exactly
+report_claim,2026-09-02,short,43,27,0.628,two-day-audit.md:1016 narrative / reproduced exactly

@@ -1,0 +1,207 @@
+== ARMS (all, excluding TEST-E7): kind family of the arm level, condition, state
+ 20  ('VWAP*', 'reclaim', 'short', 'cancelled')
+  4  ('NO-LEVEL-MATCH', '', 'long', 'cancelled')
+  4  ('VWAP*', 'reject', 'short', 'cancelled')
+  4  ('VWAP*', 'reject', 'long', 'cancelled')
+  4  ('SUPPLY', 'reject', 'short', 'superseded')
+  3  ('SWG-H', 'reject', 'short', 'cancelled')
+  2  ('VWAP*', 'reject', 'short', 'filled')
+  2  ('ONL', 'sweep_reclaim', 'long', 'cancelled')
+  2  ('ONH', 'sweep_reclaim', 'short', 'armed')
+  1  ('NO-LEVEL-MATCH', 'sweep_reclaim', 'short', 'filled')
+  1  ('NO-LEVEL-MATCH', 'breakout_retest', 'short', 'cancelled')
+  1  ('EQL', 'sweep_reclaim', 'long', 'filled')
+  1  ('VWAP*', 'reject', 'long', 'filled')
+  1  ('NO-LEVEL-MATCH', 'reject', 'short', 'cancelled')
+  1  ('PDL', 'sweep_reclaim', 'long', 'cancelled')
+  1  ('RTH-L', 'reject', 'long', 'cancelled')
+  1  ('SWG-H', 'sweep_reclaim', 'long', 'filled')
+  1  ('OR-L', 'sweep_reclaim', 'long', 'cancelled')
+  1  ('SWG-L', 'reject', 'short', 'cancelled')
+  1  ('SWG-L', 'reject', 'short', 'filled')
+  1  ('EQL', 'reject', 'short', 'cancelled')
+  1  ('ONL', 'sweep_reclaim', 'long', 'filled')
+  1  ('SWG-L', 'reject', 'long', 'cancelled')
+  1  ('NO-LEVEL-MATCH', 'sweep_reclaim', 'long', 'cancelled')
+  1  ('OR-H', 'reject', 'short', 'filled')
+  1  ('VWAP*', 'sweep_reclaim', 'short', 'cancelled')
+  1  ('SUPPLY', 'reject', 'short', 'cancelled')
+  1  ('ONH', 'reject', 'short', 'cancelled')
+  1  ('ONH', 'sweep_reclaim', 'short', 'cancelled')
+
+id session scen side cond entry fam label grade state reason
+(1, 'TEST-E2', 'TEST-E2', 'long', '', 29580.0, 'NO-LEVEL-MATCH', None, None, 'cancelled', 'test seam cancel')
+(2, 'TEST-E2', 'TEST-E2', 'long', '', 29000.0, 'NO-LEVEL-MATCH', None, None, 'cancelled', 'test seam cancel')
+(3, 'TEST-E2', 'TEST-E2', 'long', '', 29050.0, 'NO-LEVEL-MATCH', None, None, 'cancelled', 'test seam cancel')
+(4, 'TEST-E2', 'TEST-E2', 'long', '', 29100.0, 'NO-LEVEL-MATCH', None, None, 'cancelled', 'test seam cancel')
+(5, 'ASIA', 'S1', 'short', 'reject', 29621.01, 'VWAP*', 'VWAP−1σ', 'A', 'filled', 'fill@29621.00')
+(6, 'LONDON', 'S1', 'short', 'sweep_reclaim', 29702.0, 'NO-LEVEL-MATCH', None, None, 'filled', 'fill@29642.00')
+(7, 'LONDON', 'S4', 'short', 'breakout_retest', 29574.0, 'NO-LEVEL-MATCH', None, None, 'cancelled', 'no active plan')
+(8, 'LONDON', 'S2', 'short', 'reject', 29663.45, 'VWAP*', 'VWAP+1σ', 'A', 'cancelled', 'cancelled in NT8')
+(9, 'NY', 'S1', 'long', 'sweep_reclaim', 29464.25, 'EQL', 'EQL', 'A', 'filled', 'fill@29700.00')
+(10, 'NY', 'S2', 'long', 'reject', 29480.0, 'VWAP*', 'VWAP−2σ', 'A', 'filled', 'fill@29463.25')
+(11, 'NY', 'S3', 'short', 'reject', 29586.25, 'NO-LEVEL-MATCH', None, None, 'cancelled', 'session ended (EOD flat)')
+(12, 'ASIA', 'S4', 'long', 'sweep_reclaim', 29437.0, 'PDL', 'PDL', 'A', 'cancelled', 'gate changed: min_sl')
+(13, 'ASIA', 'S3', 'short', 'reject', 29414.21, 'VWAP*', 'VWAP−1σ', 'A', 'cancelled', 'e7_incident_kill:manual_cancel_respected')
+(14, 'ASIA', 'S2', 'long', 'sweep_reclaim', 29371.5, 'ONL', 'ONL', 'A', 'cancelled', 'e7_incident_kill:manual_cancel_respected')
+(17, 'LONDON', 'S1', 'long', 'reject', 29437.0, 'RTH-L', 'RTH-L', 'A', 'cancelled', 'level accepted through — marketable, nev')
+(18, 'LONDON', 'S2', 'long', 'reject', 29398.52, 'VWAP*', 'VWAP', 'A', 'cancelled', 'gate changed: min_sl')
+(19, 'NY', 'S2', 'long', 'reject', 29410.98, 'VWAP*', 'VWAP', 'A', 'cancelled', 'session ended (EOD flat)')
+(20, 'NY', 'S3', 'short', 'reject', 29458.38, 'VWAP*', 'VWAP+1σ', 'A', 'filled', 'fill@29459.00')
+(21, 'NY', 'S1', 'long', 'sweep_reclaim', 29413.0, 'SWG-H', 'SWG-H·5m', 'A', 'filled', 'fill@29413.00')
+(22, 'NY', 'S3', 'long', 'sweep_reclaim', 29417.0, 'OR-L', 'OR-L', 'C', 'cancelled', 'no order_update within stale window (rec')
+(23, 'LONDON', 'S1', 'short', 'reject', 29477.0, 'SWG-L', 'SWG-L·15m', 'A', 'cancelled', 'gate changed: min_sl')
+(24, 'LONDON', 'S2', 'short', 'reject', 29138.0, 'SWG-L', 'SWG-L·5m', 'A', 'filled', '')
+(25, 'LONDON', 'S3', 'long', 'reject', 29161.96, 'VWAP*', 'VWAP−2σ', 'A', 'cancelled', 'level accepted through — marketable, nev')
+(26, 'NY', 'S2', 'short', 'reject', 29162.0, 'SWG-H', 'SWG-H·5m', 'A', 'cancelled', 'session ended (EOD flat)')
+(27, 'NY', 'S1', 'short', 'reject', 29170.0, 'EQL', 'EQL·15m (HTF)', 'A', 'cancelled', 'level accepted through — marketable, nev')
+(28, 'NY', 'S3', 'long', 'sweep_reclaim', 29082.75, 'ONL', 'ONL', 'A', 'filled', '')
+(29, 'ASIA', 'S1', 'long', 'reject', 29044.0, 'SWG-L', 'SWG-L·15m', 'A', 'cancelled', 'no order_update within stale window (rec')
+(30, 'ASIA', 'S1', 'long', 'sweep_reclaim', 29035.25, 'ONL', 'ONL', 'A', 'cancelled', 'no order_update within stale window (rec')
+(31, 'ASIA', 'S3', 'long', 'reject', 29068.05, 'VWAP*', 'VWAP−1σ', 'A', 'cancelled', 'no order_update within stale window (rec')
+(32, 'NY', 'S3', 'long', 'sweep_reclaim', 29070.0, 'NO-LEVEL-MATCH', None, None, 'cancelled', 'session ended (EOD flat)')
+(33, 'NY', 'S3', 'short', 'reject', 29166.8, 'VWAP*', 'VWAP+1σ', 'A', 'cancelled', 'level accepted through — marketable, nev')
+(34, 'ASIA', 'S1', 'short', 'reject', 29199.5, 'SWG-H', 'SWG-H·5m', 'A', 'cancelled', 'level accepted through — marketable, nev')
+(35, 'NY', 'S1', 'short', 'reject', 29285.0, 'OR-H', 'OR-H', 'A', 'filled', '')
+(36, 'NY', 'S2', 'short', 'reject', 29351.05, 'VWAP*', 'VWAP+2σ', 'A', 'cancelled', 'level accepted through — marketable, nev')
+(37, 'NY', 'S3', 'short', 'reject', 29543.75, 'SWG-H', 'SWG-H·5m', 'A', 'cancelled', 'cancelled in NT8')
+(38, 'NY', 'S2', 'SHORT', 'sweep_reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'gate changed: rr')
+(39, 'NY', 'S1', 'SHORT', 'reject', 29657.38, 'SUPPLY', 'Supply·1h (HTF)', 'A', 'cancelled', 'no order_update within stale window (rec')
+(62, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'gate changed: rr')
+(65, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'gate changed: rr')
+(67, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'gate changed: rr')
+(70, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'gate changed: rr')
+(73, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'no order_update within stale window (rec')
+(75, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'no order_update within stale window (rec')
+(77, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'no order_update within stale window (rec')
+(79, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'no order_update within stale window (rec')
+(81, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'no order_update within stale window (rec')
+(83, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'no order_update within stale window (rec')
+(85, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'no order_update within stale window (rec')
+(87, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(89, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(91, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(92, 'NY', 'S1', 'SHORT', 'reject', 29657.38, 'SUPPLY', 'Supply·1h (HTF)', 'A', 'superseded', 'superseded: never placed (no signal id) ')
+(93, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(94, 'NY', 'S1', 'SHORT', 'reject', 29657.38, 'SUPPLY', 'Supply·1h (HTF)', 'A', 'superseded', 'superseded: never placed (no signal id) ')
+(95, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(96, 'NY', 'S1', 'SHORT', 'reject', 29657.38, 'SUPPLY', 'Supply·1h (HTF)', 'A', 'superseded', 'superseded: never placed (no signal id) ')
+(97, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(98, 'NY', 'S1', 'SHORT', 'reject', 29657.38, 'SUPPLY', 'Supply·1h (HTF)', 'A', 'superseded', 'superseded: never placed (no signal id) ')
+(99, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(100, 'NY', 'S1', 'SHORT', 'reject', 29720.0, 'ONH', 'ONH', 'A', 'cancelled', 'no active plan')
+(101, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'boot_sweep: pre-boot order, process rest')
+(102, 'NY', 'S2', 'SHORT', 'reclaim', 29591.02, 'VWAP*', 'VWAP', 'A', 'cancelled', 'cancelled in NT8')
+(103, 'NY', 'S1', 'SHORT', 'sweep_reclaim', 29720.0, 'ONH', 'ONH', 'A', 'cancelled', 'no active plan')
+(104, 'NY', 'S2', 'SHORT', 'sweep_reclaim', 29720.0, 'ONH', 'ONH', 'A', 'armed', '')
+(105, 'NY', 'S2', 'SHORT', 'sweep_reclaim', 29720.0, 'ONH', 'ONH', 'A', 'armed', '')
+
+== POSITIONS since 2026-08-15 with cited_scenario_id (source<>e7): scenario condition, level family at the scenario's arm/entry, pnl_corrected
+  7 n  pnl_corrected_sum=    93.00 wins=3 null_excluded=0  ('ONH', 'reject')  ids=[521, 535, 536, 537, 538, 553, 554]
+  6 n  pnl_corrected_sum=  -219.00 wins=1 null_excluded=1  ('VWAP*', 'reject')  ids=[564, 565, 567, 570, 579, 587]
+  5 n  pnl_corrected_sum=  -270.00 wins=1 null_excluded=0  ('ONH', 'breakout_retest')  ids=[556, 557, 558, 589, 590]
+  4 n  pnl_corrected_sum=   160.50 wins=2 null_excluded=0  ('OR-L', 'reject')  ids=[524, 533, 547, 560]
+  4 n  pnl_corrected_sum=   -29.00 wins=1 null_excluded=0  ('NO-LEVEL-MATCH', 'reject')  ids=[550, 551, 552, 569]
+  4 n  pnl_corrected_sum=   348.50 wins=3 null_excluded=0  ('SWG-L', 'reject')  ids=[581, 582, 584, 585]
+  2 n  pnl_corrected_sum=  -157.43 wins=0 null_excluded=0  ('OR-L', 'acceptance')  ids=[526, 527]
+  2 n  pnl_corrected_sum=   -71.50 wins=1 null_excluded=0  ('NO-LEVEL-MATCH', 'NO-SCEN')  ids=[530, 539]
+  2 n  pnl_corrected_sum=  -181.00 wins=0 null_excluded=0  ('ONH', 'reclaim')  ids=[540, 541]
+  2 n  pnl_corrected_sum=   -88.50 wins=0 null_excluded=0  ('PDC', 'acceptance')  ids=[542, 543]
+  2 n  pnl_corrected_sum=    32.50 wins=1 null_excluded=1  ('PDL', 'reject')  ids=[575, 576]
+  2 n  pnl_corrected_sum=    92.00 wins=1 null_excluded=1  ('SWG-H', 'sweep_reclaim')  ids=[577, 578]
+  1 n  pnl_corrected_sum=   -60.50 wins=0 null_excluded=0  ('EQL', 'acceptance')  ids=[522]
+  1 n  pnl_corrected_sum=   118.00 wins=1 null_excluded=0  ('PDC', 'reject')  ids=[523]
+  1 n  pnl_corrected_sum=   -43.00 wins=0 null_excluded=0  ('OR-L', 'reclaim')  ids=[525]
+  1 n  pnl_corrected_sum=   -97.50 wins=0 null_excluded=0  ('ONL', 'breakout_retest')  ids=[528]
+  1 n  pnl_corrected_sum=   168.00 wins=1 null_excluded=0  ('EQH', 'reject')  ids=[529]
+  1 n  pnl_corrected_sum=  -147.50 wins=0 null_excluded=0  ('RTH-L', 'reclaim')  ids=[531]
+  1 n  pnl_corrected_sum=   311.00 wins=1 null_excluded=0  ('OR-H', 'acceptance')  ids=[532]
+  1 n  pnl_corrected_sum=   -66.00 wins=0 null_excluded=0  ('OR-L', 'breakout_retest')  ids=[534]
+  1 n  pnl_corrected_sum=   -61.50 wins=0 null_excluded=0  ('RTH-H', 'reject')  ids=[544]
+  1 n  pnl_corrected_sum=   -54.50 wins=0 null_excluded=0  ('ONL', 'reject')  ids=[548]
+  1 n  pnl_corrected_sum=   169.50 wins=1 null_excluded=0  ('PWL', 'reject')  ids=[549]
+  1 n  pnl_corrected_sum=   168.00 wins=1 null_excluded=0  ('PDH', 'hold')  ids=[555]
+  1 n  pnl_corrected_sum=   -78.50 wins=0 null_excluded=0  ('RTH-H', 'sweep_reclaim')  ids=[559]
+  1 n  pnl_corrected_sum=   -52.00 wins=0 null_excluded=0  ('PDC', 'sweep_reclaim')  ids=[561]
+  1 n  pnl_corrected_sum=   -98.50 wins=0 null_excluded=0  ('PDC', 'breakout_retest')  ids=[562]
+  1 n  pnl_corrected_sum=   -49.50 wins=0 null_excluded=0  ('NO-LEVEL-MATCH', 'breakout_retest')  ids=[563]
+  1 n  pnl_corrected_sum=   -32.00 wins=0 null_excluded=0  ('NO-LEVEL-MATCH', 'sweep_reclaim')  ids=[568]
+  1 n  pnl_corrected_sum=   -82.50 wins=0 null_excluded=0  ('DEMAND', 'sweep_reclaim')  ids=[583]
+  1 n  pnl_corrected_sum=   -54.00 wins=0 null_excluded=0  ('ONL', 'sweep_reclaim')  ids=[586]
+  1 n  pnl_corrected_sum=   -65.00 wins=0 null_excluded=0  ('PDC', 'reclaim')  ids=[588]
+  1 n  pnl_corrected_sum=  -140.00 wins=0 null_excluded=0  ('OR-H', 'reject')  ids=[591]
+
+== by condition only
+ 33 pnl=   586.00 wins=14 null=2  reject
+  9 pnl=  -581.50 wins=1 null=0  breakout_retest
+  7 pnl=  -207.00 wins=1 null=1  sweep_reclaim
+  6 pnl=     4.57 wins=1 null=0  acceptance
+  5 pnl=  -436.50 wins=0 null=0  reclaim
+  2 pnl=   -71.50 wins=1 null=0  NO-SCEN
+  1 pnl=   168.00 wins=1 null=0  hold
+
+== by level family only
+ 14 pnl=  -358.00 wins=4 null=0  ONH
+  8 pnl=  -105.93 wins=2 null=0  OR-L
+  8 pnl=  -182.00 wins=2 null=0  NO-LEVEL-MATCH
+  6 pnl=  -186.00 wins=1 null=0  PDC
+  6 pnl=  -219.00 wins=1 null=1  VWAP*
+  4 pnl=   348.50 wins=3 null=0  SWG-L
+  3 pnl=  -206.00 wins=0 null=0  ONL
+  2 pnl=   171.00 wins=1 null=0  OR-H
+  2 pnl=  -140.00 wins=0 null=0  RTH-H
+  2 pnl=    32.50 wins=1 null=1  PDL
+  2 pnl=    92.00 wins=1 null=1  SWG-H
+  1 pnl=   -60.50 wins=0 null=0  EQL
+  1 pnl=   168.00 wins=1 null=0  EQH
+  1 pnl=  -147.50 wins=0 null=0  RTH-L
+  1 pnl=   169.50 wins=1 null=0  PWL
+  1 pnl=   168.00 wins=1 null=0  PDH
+  1 pnl=   -82.50 wins=0 null=0  DEMAND
+
+== how each level family is WRITTEN into scenarios (all plans): family x condition (arm entry or first price in trigger matched to a level within 1pt)
+  44 scen   33 arm-enabled  ('VWAP*', 'reject')
+  42 scen    3 arm-enabled  ('ONL', 'sweep_reclaim')
+  40 scen    4 arm-enabled  ('ONH', 'sweep_reclaim')
+  36 scen    0 arm-enabled  ('NO-LEVEL-MATCH', 'hold')
+  32 scen    2 arm-enabled  ('ONH', 'reject')
+  30 scen    0 arm-enabled  ('ONH', 'breakout_retest')
+  24 scen   12 arm-enabled  ('RTH-H', 'reject')
+  16 scen    9 arm-enabled  ('SWG-H', 'reject')
+  15 scen    2 arm-enabled  ('PDL', 'sweep_reclaim')
+  14 scen    3 arm-enabled  ('PDC', 'reject')
+  14 scen    1 arm-enabled  ('VWAP*', 'reclaim')
+  13 scen    5 arm-enabled  ('ONL', 'reject')
+  12 scen    0 arm-enabled  ('PDC', 'reclaim')
+  11 scen    1 arm-enabled  ('OR-L', 'sweep_reclaim')
+  11 scen    7 arm-enabled  ('NO-LEVEL-MATCH', 'reject')
+  11 scen    1 arm-enabled  ('VWAP*', 'breakout_retest')
+  10 scen    0 arm-enabled  ('PDC', 'breakout_retest')
+  10 scen    6 arm-enabled  ('NO-LEVEL-MATCH', 'sweep_reclaim')
+  10 scen    9 arm-enabled  ('SWG-L', 'reject')
+   9 scen    0 arm-enabled  ('PDC', 'acceptance')
+   9 scen    7 arm-enabled  ('NO-LEVEL-MATCH', 'breakout_retest')
+   8 scen    0 arm-enabled  ('EQL', 'acceptance')
+   8 scen    0 arm-enabled  ('ONH', 'reclaim')
+   8 scen    1 arm-enabled  ('EQL', 'reject')
+   8 scen    0 arm-enabled  ('OB', 'sweep_reclaim')
+   8 scen    1 arm-enabled  ('OB', 'reject')
+   8 scen    3 arm-enabled  ('SUPPLY', 'reject')
+   8 scen    0 arm-enabled  ('SWG-H', 'breakout_retest')
+   7 scen    0 arm-enabled  ('ONL', 'acceptance')
+   7 scen    1 arm-enabled  ('PDC', 'sweep_reclaim')
+   7 scen    5 arm-enabled  ('RTH-L', 'reject')
+   7 scen    1 arm-enabled  ('PDL', 'reject')
+   7 scen    0 arm-enabled  ('EQH', 'breakout_retest')
+   7 scen    1 arm-enabled  ('OR-L', 'reject')
+   7 scen    2 arm-enabled  ('ONL', 'breakout_retest')
+   7 scen    1 arm-enabled  ('PDH', 'sweep_reclaim')
+   6 scen    0 arm-enabled  ('OR-L', 'reclaim')
+   6 scen    0 arm-enabled  ('EQL', 'breakout_retest')
+   6 scen    1 arm-enabled  ('RTH-L', 'sweep_reclaim')
+   6 scen    1 arm-enabled  ('EQL', 'sweep_reclaim')
+   5 scen    0 arm-enabled  ('PDC', 'hold')
+   5 scen    0 arm-enabled  ('PWL', 'reject')
+   5 scen    0 arm-enabled  ('PDH', 'breakout_retest')
+   5 scen    1 arm-enabled  ('OR-H', 'sweep_reclaim')
+   5 scen    0 arm-enabled  ('EQH', 'sweep_reclaim')

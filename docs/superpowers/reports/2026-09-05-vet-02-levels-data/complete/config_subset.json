@@ -1,0 +1,83 @@
+[
+  {
+    "id": "4104ca0a-cd27-4206-af79-e04375290b3e",
+    "name": "\u5747\u8861\u7b56\u7565",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  },
+  {
+    "id": "0362594e-77e6-4c5f-a350-5c3738529d28",
+    "name": "\u7a33\u5065\u7b56\u7565",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  },
+  {
+    "id": "82b3d482-e018-46cc-984d-122d6f6ddf7e",
+    "name": "\u79ef\u6781\u7b56\u7565",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  },
+  {
+    "id": "",
+    "name": "MNQ SIM Default",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  },
+  {
+    "id": "578ac8f6-2c16-4b0e-b7af-bca6e5413597",
+    "name": "MNQ SIM Default",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  },
+  {
+    "id": "a79ba71f-cd7b-4fbb-8dd7-b85b3049d194",
+    "name": "New Strategy",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  },
+  {
+    "id": "70695b25-01a3-4c38-9917-261260b49550",
+    "name": "New Strategy",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  },
+  {
+    "id": "a5b7662e-7bf7-49bb-9f09-7efa48f95ac8",
+    "name": "MNQ",
+    "max_levels": 12,
+    "proximity_filter_atr": 1,
+    "min_grade": null,
+    "sessions": "[{\"session\":\"NY\",\"replan_cap\":4,\"acceptance_rule\":\"5m_close\",\"min_grade\":\"B\",\"max_trades\":10},{\"session\":\"ASIA\",\"enable\":true,\"replan_cap\":4,\"acceptance_rule\":\"5m_close\",\"min_grade\":\"B\",\"max_trades\":7},{\"session\":\"LONDON\",\"enable\":true,\"replan_cap\":4,\"acceptance_rule\":\"5m_close\",\"min_grade\":\"B\",\"max_trades\":10}]",
+    "seat_1h_zone": null
+  },
+  {
+    "id": "08539e82-6ba5-417d-8afe-6077ace29ea0",
+    "name": "New Strategy",
+    "max_levels": 8,
+    "proximity_filter_atr": 1.5,
+    "min_grade": null,
+    "sessions": null,
+    "seat_1h_zone": null
+  }
+]

@@ -1,0 +1,539 @@
+{
+  "assignment": 20,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "trader/arm_cancel_safety.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          191
+        ]
+      ],
+      "sha256": "869c47faa51fe422385e10a3e6a5dc5c9708ca18eb9a202c2d98b099acfde954",
+      "notes": "Entry-versus-protective-child adjudication; known flat overrides; production discards book age. Send failure still returns true."
+    },
+    {
+      "path": "trader/arm_far_counter.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "sha256": "6c0f55e57c9b42c0b217620888ec1a3f32f8e22e3f0ea08eefd4ede20ab98c8f",
+      "notes": "Distance in ATR and positive env threshold; observation only, zero conflates invalid input with no distance internally."
+    },
+    {
+      "path": "trader/arm_kind_compose.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          49
+        ]
+      ],
+      "sha256": "64f5304999ef8dbb29a05d9cc4f55202711c1b13435e0d4adefb442e11c7a66a",
+      "notes": "Kernel condition table derives limit versus stop; mismatched authored kind refuses; primary reclaim skips fallback retest window."
+    },
+    {
+      "path": "trader/arm_stop_anchor.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          189
+        ]
+      ],
+      "sha256": "0ff03dfc9378dca4240a503e625cbebff78c3133b89a875a4ca6644b56664b41",
+      "notes": "Legacy widest-of-authored/anchor/ATR stop; frozen structural reject context delegates to new geometry instead."
+    },
+    {
+      "path": "trader/armed_executor.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          2663
+        ]
+      ],
+      "sha256": "fcd7e3a1bdd59b1d3e6561359354ab572bcbf34a5eab4011fc1d5ab21c4af57f",
+      "notes": "Cycle authorization, gate composition, arm placement, cancel/update state machine, fill lineage and env-gated SIM test seam; source risks detailed in report."
+    },
+    {
+      "path": "trader/arms_boot_line.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "sha256": "65f59cd8249d27a2b21f60cdfe09d24fe64dabe063e2f0b10464c9b268b977f0",
+      "notes": "Reads reclaim kind and far threshold; kind availability is not stop-entry seam enabled status."
+    },
+    {
+      "path": "trader/cancel_confirm.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          625
+        ]
+      ],
+      "sha256": "966e04c3ffdbeaa9f0608faa318c4f55f68c9359d052d8ad6ed1bf8aadb6441f",
+      "notes": "Fresh-book slot guards, durable snapshot cancel confirmation, bounded retries and outage alert; absolute freshness lacks request-time ordering."
+    },
+    {
+      "path": "trader/discard_burn.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          253
+        ]
+      ],
+      "sha256": "e69ff49676c824a9c298d4c1ed589ba11c3514f2577cf364389a3550310d4047",
+      "notes": "Twenty-call duration ring, defer cycles near next close; superseded entries recheck stop containment and drift; kick cadence bypass."
+    },
+    {
+      "path": "trader/entry_gate.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          521
+        ]
+      ],
+      "sha256": "b8577eb8d04986edce6093247aaf66f8a5570b110755076e5760b4fc4e0690c6",
+      "notes": "Pure shared gate and arm/decision builders: daily, strict, bias, identity direction, invalidation, shadow, RR, minSL, position; missing optional inputs skip; no boot latch."
+    },
+    {
+      "path": "trader/fade_boot.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          103
+        ]
+      ],
+      "sha256": "6311bbe6afa3239cca83e46d732bdbca4270e3cafb98c8347b4640cd9b08fbbc",
+      "notes": "Bound OR policy and episode counts; historical permission backfill calls runtime facts provider and marks unavailable."
+    },
+    {
+      "path": "trader/fade_facts.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          161
+        ]
+      ],
+      "sha256": "9423ee462338fcca005a873adc1cf13a5161e6d653810f3f293b5ce7cbb9b559",
+      "notes": "Caller-clock OR/IB/live seated map/calendar facts; 12 bars do not prove first hour continuity; historical provider horizon limitation."
+    },
+    {
+      "path": "trader/fade_stamp_wiring.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          64
+        ]
+      ],
+      "sha256": "026ff57b8f552b83074c7a72d3a6c3d7408463c3f994d8d6a0c0c6d25031c676",
+      "notes": "One-time episode-open permission recording with panic containment; excludes only through downstream one-setup policy, stamp itself does not trade."
+    },
+    {
+      "path": "trader/fade_surface.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          133
+        ]
+      ],
+      "sha256": "91414991d2b81bfd0136661f49f3a185f9092c54650c138682fa1d16e5821c52",
+      "notes": "Live scenario fade views versus durable episode counters; caller time and explicit unreadability."
+    },
+    {
+      "path": "trader/follow_plan_wiring.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          238
+        ]
+      ],
+      "sha256": "a425fce6feb1d8e683549b5d5c9887669b78aa94c4c39d1aba04a77004bcbf4b",
+      "notes": "Report-only detector cadence follow/retest analysis and contract-filtered historical backfill; no arm mutations."
+    },
+    {
+      "path": "trader/invalidation_resolver.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          99
+        ]
+      ],
+      "sha256": "3be102fa3a212c6b02036ab500e9ac309ede01557c1998a7c2dc4f5ca6eff215",
+      "notes": "Shared scenario evaluator on plan-birth window; missing inputs pass with warning; production resolver reads wall clock inside caller-clock arm cycle."
+    },
+    {
+      "path": "trader/no_chase.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          239
+        ]
+      ],
+      "sha256": "9dd389b76e9b3c5684cd2ca3aa791734f0622aefd2312cf1ac4dd11e82ec1259",
+      "notes": "Warn-only distance/run counters; last touch uses presence at exact level, so run equals level distance; boot does not show absolute run override."
+    },
+    {
+      "path": "trader/one_contract.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          282
+        ]
+      ],
+      "sha256": "bb33d1bbf8adc78e22d2e66dfe1903e47068505318661c17b33a7de8c2298216",
+      "notes": "Account book/position gate and pass latch; filters protective children; failed positions read blocks; malformed position amount ignored."
+    },
+    {
+      "path": "trader/one_setup_boot.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          249
+        ]
+      ],
+      "sha256": "faea4f329d06b3cea4806e77c3251294ea76bdc3d6955ea2d5e617011f9b8376",
+      "notes": "Bound selection knobs, current counters, plan-linked historical episode backfill; backfill band zero and price window extends after episode open."
+    },
+    {
+      "path": "trader/one_setup_wiring.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          401
+        ]
+      ],
+      "sha256": "6c3cf208ee0c3ea5cfa87efb5d1f8ddaa2f368e712aa56cabd156327cdd32650",
+      "notes": "Live candidate ranking and fade permission; authorization consult, immutable episode stamp, unplaced declined retirement; missing verdict is not retired."
+    },
+    {
+      "path": "trader/place_confirm.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          111
+        ]
+      ],
+      "sha256": "45cf4035f3eb53e2e2737a96de6caa62238cd0e05f068d5a3b2ed8cbcfd02e51",
+      "notes": "Fresh exact-entry receipt promotes place_pending; missing receipt remains pending; snapshot label may describe different persisted snapshot than live evidence."
+    },
+    {
+      "path": "trader/reaper_snapshot.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          125
+        ]
+      ],
+      "sha256": "e7ec75adeae7ce7e737456551cd0a0d683d14b1411da93ac1654529770fa7d1d",
+      "notes": "Fresh broker cache three-way alive/gone/unknown; missing signal never destructive; child/order-id matching."
+    },
+    {
+      "path": "trader/scenario_anchor.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "sha256": "dc6e574fa7560907950ec13bf66ab98ba88a6cc17f2b61e1505983e382072568",
+      "notes": "Confirm reference preferred then enabled arm entry; unanchorable count; map-width band hardcodes 0.25 tick."
+    },
+    {
+      "path": "trader/scenario_economics_desk.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          77
+        ]
+      ],
+      "sha256": "38b67981df1f10d388b03d6b80c2663b03beb979617720ca0de70598692d8024",
+      "notes": "Authored economics plus live fade and recorded one-setup chips; dated plan verified separately from missing economics."
+    },
+    {
+      "path": "trader/scenario_level_identity.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          147
+        ]
+      ],
+      "sha256": "b3dad45b3d01af491602209d4ab17fc3fe95cb31ac2d8e295a8357394479aa40",
+      "notes": "Panic-contained identity recording/backfill and display; validates frozen provenance rather than inventing ID."
+    },
+    {
+      "path": "trader/structural_geometry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          287
+        ]
+      ],
+      "sha256": "fd9a254e526a955749671943b951d6bd42a838013ce185ba31a850e50c4ed739",
+      "notes": "Frozen sourced zone resolves structural stop plus buffer and first distinct target; positive finite geometry/cost/RR; no mandatory per-trade cap; refusals retire old authorizations."
+    },
+    {
+      "path": "trader/structural_geometry_boot.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          41
+        ]
+      ],
+      "sha256": "9a9ce8249acf69e6c7cb33cc8037c5e2f02e8f1983d479e5d3a96a3a31560839",
+      "notes": "Reads bound structural policy and durable daily geometry counts; symbol hardcoded MNQ for boot display."
+    },
+    {
+      "path": "kernel/boot_integrity.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          209
+        ]
+      ],
+      "sha256": "05a084a857ac015a81fbdf401188b0bbfcac5a1d6fb1bbaa775223c54b77a27b",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "kernel/boot_integrity_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          105
+        ]
+      ],
+      "sha256": "3cd06224f5823c5a33d411f47c4777d4f8d9d8f9c617a054b8735cdf04831ffc",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "kernel/golden_selfcheck.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          130
+        ]
+      ],
+      "sha256": "a3350621bfb8bbcf62940a14f5841beb084e52b53ba547efc3964cd49bbb67a2",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/class33_boot_sweep.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          179
+        ]
+      ],
+      "sha256": "8ff912bb4d6eba197cdf8fee3f675359cf1825a7f7878f63c887326fbdf39e92",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/arm_sweep_settlement_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          60
+        ]
+      ],
+      "sha256": "c2d52b1cbd32935ee2a1ce07d16217e1d88e9b65d37aec1ee15332b79b67bef8",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "store/armed_orders.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          130,
+          390
+        ]
+      ],
+      "sha256": "8cb143210ac64397d58c9b9d55a847a66c7cdf2408279a311db6499cb2a24062",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "store/position.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          653,
+          675
+        ]
+      ],
+      "sha256": "6f661fb0c513180df9659d8317df0606baaba8cbec0921800449b030a7057e3a",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "main.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          230,
+          310
+        ]
+      ],
+      "sha256": "6a634d9e7d49aa68ade74f96a5e252906b1d6e51de08380facf6714c274f98f2",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "manager/trader_manager.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          475,
+          595
+        ],
+        [
+          690,
+          740
+        ]
+      ],
+      "sha256": "80d5a0199c7aeb69978c5637db1cc2b95f069202257e88d22349e5bdb8f04dff",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/auto_trader_orders.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          185,
+          235
+        ]
+      ],
+      "sha256": "4c4712eef24c44a7f2f60823edfd7deec8224a4632f0aaa02d17f7e1a89cc894",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/auto_trader_loop.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          385,
+          445
+        ]
+      ],
+      "sha256": "13a7cbbacc519af026d7ee2fe8a8a5b0d3fed9cf01a5ed4476fd22aa97c87115",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/auto_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          955,
+          978
+        ]
+      ],
+      "sha256": "e12c6c53a5cde83caa8927dac1ed52a9fdf8800c749e0884d8f6301c0d829004",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/ninjatrader/tcp_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          430,
+          560
+        ]
+      ],
+      "sha256": "da3a72adbac538f89495d192e115a4c02f5a01543149a580b6c5b110ca3ba477",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "ninjascript/VLTraderTCPClient.cs",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1735,
+          1825
+        ]
+      ],
+      "sha256": "78565bce3703fea028a82217117d64fd29e9c69e6c0e879e87df27c63bbb472e",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/cancel_confirm_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          176
+        ]
+      ],
+      "sha256": "128bbe784515bb69d9092a40df1ca5cd7ab075723fc67d34681f02fb3584f9fc",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/one_setup_retire_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          134
+        ]
+      ],
+      "sha256": "b8a8acfd3b0993daa70979ff1a012c9a1e8674ddea9822907d792c0f281ea27a",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/structural_geometry_wire_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "sha256": "1c73713ee1986a500efb3ae3fe8ad67105d1b579cfbcb261e8bfe43a9d5f2d0c",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    },
+    {
+      "path": "trader/arm_cancel_safety_test.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          155
+        ]
+      ],
+      "sha256": "2922e941e7b1e6008a8707c5fbba963e27256a2dd5b2da057e8e341298bbfa9a",
+      "notes": "Additional dependency/test source read; not counted toward assigned coverage."
+    }
+  ],
+  "unread": []
+}

@@ -1,0 +1,73 @@
+?   	nofx	[no test files]
+ok  	nofx/agent	15.431s
+ok  	nofx/api	5.004s
+?   	nofx/auth	[no test files]
+--- FAIL: TestExistingGoImportTargetsPreserved (0.47s)
+    scope_test.go:73: trader/research_snapshot.go: existing import target changed or removed: encoding/hex
+FAIL
+FAIL	nofx/branding	0.473s
+ok  	nofx/calendar	0.003s
+?   	nofx/cmd/arm-state-sql	[no test files]
+?   	nofx/cmd/bars-export	[no test files]
+?   	nofx/cmd/dayplan-arm	[no test files]
+?   	nofx/cmd/dayplan-level-repair	[no test files]
+?   	nofx/cmd/dayplan-sessions	[no test files]
+?   	nofx/cmd/decisive-test	[no test files]
+?   	nofx/cmd/detector-report	[no test files]
+?   	nofx/cmd/excursions	[no test files]
+?   	nofx/cmd/gate-jwt	[no test files]
+?   	nofx/cmd/levelstats-backfill	[no test files]
+?   	nofx/cmd/nq_smoke	[no test files]
+?   	nofx/cmd/planner_ab	[no test files]
+?   	nofx/cmd/research_export	[no test files]
+?   	nofx/cmd/sandbox-seed	[no test files]
+?   	nofx/config	[no test files]
+?   	nofx/crypto	[no test files]
+ok  	nofx/deploy	0.005s
+ok  	nofx/discipline	0.002s
+?   	nofx/docs/superpowers/reports/2026-09-04-research-conformance-data/d10dump	[no test files]
+?   	nofx/docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905	[no test files]
+ok  	nofx/expectancy	0.063s
+?   	nofx/hook	[no test files]
+ok  	nofx/internal/retry	1.686s
+ok  	nofx/kernel	1.187s
+?   	nofx/levelidentity	[no test files]
+ok  	nofx/logger	0.007s
+?   	nofx/manager	[no test files]
+ok  	nofx/market	0.008s
+ok  	nofx/mcp	45.062s
+?   	nofx/mcp/payment	[no test files]
+ok  	nofx/mcp/provider	0.004s
+?   	nofx/provider/alpaca	[no test files]
+?   	nofx/provider/coinank	[no test files]
+ok  	nofx/provider/coinank/coinank_api	64.685s
+?   	nofx/provider/coinank/coinank_enum	[no test files]
+ok  	nofx/provider/databento	0.103s
+ok  	nofx/provider/hyperliquid	1.909s
+ok  	nofx/provider/ninjatrader	18.511s
+?   	nofx/provider/nofxos	[no test files]
+?   	nofx/provider/twelvedata	[no test files]
+ok  	nofx/researchsnapshot	0.262s
+?   	nofx/safe	[no test files]
+?   	nofx/security	[no test files]
+ok  	nofx/store	69.591s
+?   	nofx/telegram	[no test files]
+ok  	nofx/telegram/agent	0.123s
+?   	nofx/telegram/session	[no test files]
+ok  	nofx/telemetry	0.008s
+ok  	nofx/trader	193.937s
+ok  	nofx/trader/aster	0.069s
+ok  	nofx/trader/binance	15.222s
+?   	nofx/trader/bitget	[no test files]
+?   	nofx/trader/bybit	[no test files]
+ok  	nofx/trader/gate	0.043s
+ok  	nofx/trader/hyperliquid	0.024s
+ok  	nofx/trader/indodax	0.003s
+ok  	nofx/trader/kucoin	0.005s
+ok  	nofx/trader/lighter	0.030s
+ok  	nofx/trader/ninjatrader	10.943s
+ok  	nofx/trader/okx	0.007s
+?   	nofx/trader/testutil	[no test files]
+?   	nofx/trader/types	[no test files]
+?   	nofx/wallet	[no test files]
+FAIL

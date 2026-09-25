@@ -1,0 +1,9 @@
+key,value
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:NY:rr,3
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:ASIA:rr,2
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:LONDON:rr,1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:NY:rr,1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:entry_gate:invalidated,1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:rr,1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:rr,3
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:entry_gate:invalidated,1

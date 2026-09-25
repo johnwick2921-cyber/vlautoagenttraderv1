@@ -1,0 +1,23 @@
+{
+  "mutation-persona.log": [
+    "AssertionError: expected '⚡📊 NOFXi Status●Traders: 0/0 running…' to contain 'VL Status'",
+    "AssertionError: expected '⚡📊 NOFXi 状态●Traders: 0/0 运行中●监控: 0 个…' to contain 'VL 状态'",
+    "AssertionError: expected 'Ask NOFXi anything...  ⌘K' to contain 'Ask VL anything'",
+    "AssertionError: expected '跟 NOFXi 聊点什么...  ⌘K' to contain '跟 VL 聊点什么'",
+    "      Tests  6 failed | 2 passed (8)"
+  ],
+  "mutation-product.log": [
+    "AssertionError: expected 'NOFX - AI Trading System' to be 'VL Intelligent - AI Trading System' // Object.is equality",
+    "AssertionError: expected null not to be null",
+    "      Tests  2 failed | 6 passed (8)"
+  ],
+  "mutation-translations.log": [
+    "AssertionError: expected 'NOFX' to be 'VL' // Object.is equality",
+    "      Tests  1 failed | 3 passed (4)"
+  ],
+  "final-persona-red.log": [
+    "    brand_visible_test.go:24: en final user-reply persona still names old product",
+    "    brand_visible_test.go:24: zh final user-reply persona still names old product",
+    "    brand_visible_test.go:24: id final user-reply persona still names old product"
+  ]
+}

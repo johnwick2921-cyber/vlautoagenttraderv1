@@ -1,0 +1,40 @@
+09-08 17:58:19 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:19 [INFO] kernel/levels_score.go:611 🗺️ seated 1/1 in-band levels (proximity band ±9pt, 1 of them retained)
+09-08 17:58:19 [INFO] kernel/levels_score.go:611 🗺️ seated 4/5 in-band levels (proximity band ±50pt, 4 of them retained)
+09-08 17:58:19 [INFO] kernel/levels_score.go:611 🗺️ seated 1/1 in-band levels (proximity band ±9pt, 1 of them retained)
+09-08 17:58:20 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:20 [INFO] kernel/levels_score.go:611 🗺️ seated 2/6 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:20 [INFO] kernel/levels_score.go:611 🗺️ seated 5/9 in-band levels (proximity band ±27pt, 5 of them retained)
+09-08 17:58:20 [INFO] kernel/levels_score.go:611 🗺️ seated 2/6 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:20 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:20 [INFO] kernel/levels_score.go:611 🗺️ seated 2/6 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:20 [INFO] kernel/levels_score.go:611 🗺️ seated 4/8 in-band levels (proximity band ±26pt, 4 of them retained)
+09-08 17:58:21 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:21 [INFO] kernel/levels_score.go:611 🗺️ seated 2/6 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:21 [INFO] kernel/levels_score.go:611 🗺️ seated 4/8 in-band levels (proximity band ±24pt, 4 of them retained)
+09-08 17:58:21 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:21 [INFO] kernel/levels_score.go:611 🗺️ seated 2/6 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:21 [INFO] kernel/levels_score.go:611 🗺️ seated 3/7 in-band levels (proximity band ±22pt, 3 of them retained)
+09-08 17:58:22 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:22 [INFO] kernel/levels_score.go:611 🗺️ seated 2/6 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:22 [INFO] kernel/levels_score.go:611 🗺️ seated 2/3 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:22 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:22 [INFO] kernel/levels_score.go:611 🗺️ seated 2/5 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:22 [INFO] kernel/levels_score.go:611 🗺️ seated 6/9 in-band levels (proximity band ±50pt, 6 of them retained)
+09-08 17:58:22 [INFO] kernel/levels_score.go:611 🗺️ seated 2/5 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:23 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 17:58:23 [INFO] kernel/levels_score.go:611 🗺️ seated 2/5 in-band levels (proximity band ±9pt, 2 of them retained)
+09-08 17:58:23 [INFO] kernel/levels_score.go:611 🗺️ seated 6/9 in-band levels (proximity band ±50pt, 6 of them retained)
+09-08 17:58:23 [INFO] kernel/levels_score.go:611 🗺️ seated 2/5 in-band levels (proximity band ±9pt, 2 of them retained)
+--- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions (4.03s)
+    --- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions/17:18 (0.50s)
+        w7_levelstate_test.go:133: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
+    --- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions/17:19 (0.49s)
+        w7_levelstate_test.go:133: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
+    --- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions/17:20 (0.48s)
+        w7_levelstate_test.go:133: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
+    --- FAIL: TestW7LevelBurnedStaysBurnedAcrossSessions/17:21 (0.48s)
+        w7_levelstate_test.go:133: touched-and-accepted-through level must be consumed, got consumed=false freshness=A
+FAIL
+FAIL	nofx/trader	4.034s
+FAIL

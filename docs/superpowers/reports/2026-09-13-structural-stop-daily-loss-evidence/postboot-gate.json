@@ -1,0 +1,53 @@
+{
+  "read_ct": "2026-09-13T01:05:09.031426-05:00",
+  "pid": "24534",
+  "loaded_sha256": "5738ec671b9d706e43f545c99c218bfcd18b4e982f22358c6dcf4581ee5045ca",
+  "disk_sha256": "5738ec671b9d706e43f545c99c218bfcd18b4e982f22358c6dcf4581ee5045ca",
+  "health": {
+    "revision": "0c9d4f30a047",
+    "status": "ok",
+    "time": null
+  },
+  "gate": {
+    "ready": true,
+    "legs": [
+      {
+        "n": 1,
+        "name": "db_open_positions",
+        "pass": true,
+        "detail": "0 open row(s)",
+        "source": "sqlite trader_positions"
+      },
+      {
+        "n": 2,
+        "name": "api_positions",
+        "pass": true,
+        "detail": "0 position(s)",
+        "source": "trader.GetPositions"
+      },
+      {
+        "n": 3,
+        "name": "nt8_positions_snapshot",
+        "pass": true,
+        "detail": "count=0",
+        "source": "NT8 positions frame"
+      },
+      {
+        "n": 4,
+        "name": "working_orders",
+        "pass": true,
+        "detail": "0 working order(s) at the broker (ledger agrees: 0)\n0 armed (authorized, no signal id; informational)",
+        "source": "broker \u2014 NT8 order_snapshot frame (age 29s, build 2026-09-07-h1)",
+        "armed_unplaced": 0
+      },
+      {
+        "n": 5,
+        "name": "planner_in_flight",
+        "pass": true,
+        "detail": "no planner read claimed",
+        "source": "plannerReadInFlight claim"
+      }
+    ],
+    "note": "leg 4 compares broker working orders with placed/unconfirmed ledger rows; armed rows without a signal are counted separately and do not fail the leg. Boot sweep counter key: arms_boot_swept_class33"
+  }
+}

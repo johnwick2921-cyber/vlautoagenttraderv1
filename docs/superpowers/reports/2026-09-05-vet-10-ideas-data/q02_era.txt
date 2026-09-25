@@ -1,0 +1,44 @@
+--- all-time / era counts
+587|71|67|71|64|357|70|70|66
+--- source
+armed_entry|5
+e7_farside_test|3
+reconcile|12
+system|567
+--- plan_session
+|525
+ASIA|16
+LONDON|21
+NY|24
+TEST-E7|1
+--- status
+CLOSED|587
+--- era usable (source<>'e7_farside_test', pnl_corrected not null, not UNRESOLVABLE note)
+65|-563.928571999997|-8.68|21|42|2
+--- era by close_reason
+sync|65|-563.93
+--- era pnl_correction_note distinct prefixes
+T7 2026-08-27: pnl_corrected = recompute|43
+T7 close-path: pnl_corrected = recompute|20
+|2
+class-27 backfill: netting exit reconstr|1
+class-27 backfill: duplicate of row 578 |1
+class-27 backfill: S3 entry netted the S|1
+P0 2026-08-20: recorded -1458.00 disagre|1
+0A-2 verified genuine scratch: priced cl|1
+0A-2 verified genuine scratch: NT8 trace|1
+--- era by trade day CT
+2026-08-19|7|268.57|3
+2026-08-20|9|219.5|4
+2026-08-21|8|-464.5|1
+2026-08-23|1|-29.5|0
+2026-08-24|8|-232.0|1
+2026-08-25|8|40.5|3
+2026-08-26|2|-148.0|0
+2026-08-27|3|-34.5|1
+2026-08-28|4|6.0|2
+2026-08-30|1|-44.5|0
+2026-08-31|3|164.0|3
+2026-09-01|6|212.0|3
+2026-09-02|4|-381.5|0
+2026-09-03|1|-140.0|0

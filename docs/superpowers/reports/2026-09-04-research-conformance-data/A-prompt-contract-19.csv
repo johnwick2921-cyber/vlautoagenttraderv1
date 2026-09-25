@@ -1,0 +1,20 @@
+n,rule,validator_site_file_line,enforcement,live_rejects_on_record
+1,void breakdown levels named in facts (both-way voids collapse to one CHOP line),kernel/breakdown_continue.go via ValidateBreakdownContinueScenarios @ trader/auto_trader_planner.go:1722,REJECT,21
+2,gap-side order names a DIRECTION never a condition,kernel/plan_doc.go:892-896 hasDirection + gapDown/UpDirectionMessage:1294-1295,REJECT,2
+3,arm{} legal only on armable conditions,kernel/plan_doc.go:162 ArmSpecValid (via kernel/armed.go:17 ArmableCondition),REJECT,0
+4,legs[] only on sweep_reclaim (arm_legs_sweep_reclaim_only),kernel/plan_doc.go:170 ArmSpecValid (class-39 normalize-first at plan_doc.go:1210),NORMALIZE-then-REJECT,1
+5,legs[] must be EXACTLY 2 when present,kernel/plan_doc.go:173 ArmSpecValid,REJECT,2
+6,every non-sweep condition arms SINGLE (no legs),kernel/plan_doc.go:170 + normalizeArmLegs:1210,NORMALIZE-then-REJECT,1
+7,split requires confirm=touch at the sweep ref,kernel/plan_doc.go:176 ArmSpecValid,REJECT,0
+8,split leg 1 rests (wait_confirm false) leg 2 chains (true),kernel/plan_doc.go:183-187 ArmSpecValid,REJECT,1
+9,split leg 2 rule in {1m_mss 1x5m_close} and equals confirm2.rule,kernel/plan_doc.go:189-193 ArmSpecValid,REJECT,0
+10,split top-level entry/stop/target mirror leg 1,kernel/plan_doc.go:202 ArmSpecValid,REJECT,1
+11,breakdown/breakup arm requires breakdown{} with entry_mode=pullback,kernel/plan_doc.go:146-158 ArmSpecValid,REJECT,0
+12,sweep_reclaim single arm requires wait_confirm:true,kernel/plan_doc.go:140-142 ArmSpecValid,REJECT,0
+13,fvg{} REQUIRED iff condition==fvg_entry,kernel/plan_doc.go ValidatePlanDoc (fvg required) + kernel/fvg_entry.go:156,REJECT,0
+14,breakdown{} REQUIRED iff waterfall-class,kernel/plan_doc.go ValidatePlanDoc (breakdown required),REJECT,0
+15,fades (reject|fvg_entry) are touch-only (fade_requires_touch),kernel/entry_law.go:152-155,REJECT,5
+16,2x5m_close legal ONLY on breakdown/breakup_continue (2x5m_reserved),kernel/entry_law.go:156-159,REJECT,0
+17,armed fade needs a structure stop >=2 ticks beyond the level,kernel/entry_law.go:180-194,REJECT,0
+18,breakout_retest never arms (GAR-F4),kernel/armed.go:17-27 ArmableCondition (excluded),REJECT,0
+19,death/flip.rule is a SEPARATE enum from confirm.rule,kernel/plan_doc.go:314-316 conditionRules vs confirmRules; :701 condition_rule_15m_removed,REJECT,0

@@ -1,0 +1,108 @@
+{
+  "published_floor_subset": {
+    "n": 36,
+    "ids": [
+      550,
+      551,
+      552,
+      553,
+      554,
+      555,
+      556,
+      557,
+      558,
+      559,
+      560,
+      561,
+      562,
+      563,
+      564,
+      565,
+      567,
+      568,
+      569,
+      570,
+      575,
+      576,
+      577,
+      578,
+      579,
+      581,
+      582,
+      583,
+      584,
+      585,
+      586,
+      587,
+      588,
+      589,
+      590,
+      591
+    ],
+    "hits": [
+      555,
+      557,
+      581
+    ],
+    "win_wilson": [
+      0.08333333333333333,
+      0.028748089271291792,
+      0.21827010276918848
+    ]
+  },
+  "eligible_intersection_same_legacy_floor": {
+    "n": 33,
+    "ids": [
+      550,
+      551,
+      552,
+      553,
+      554,
+      555,
+      556,
+      557,
+      558,
+      559,
+      560,
+      561,
+      562,
+      563,
+      564,
+      565,
+      567,
+      568,
+      569,
+      570,
+      575,
+      578,
+      581,
+      582,
+      583,
+      584,
+      585,
+      586,
+      587,
+      588,
+      589,
+      590,
+      591
+    ],
+    "hits": [
+      555,
+      557,
+      581
+    ],
+    "win_wilson": [
+      0.09090909090909091,
+      0.03140337104926306,
+      0.23572943534351032
+    ]
+  },
+  "published_planned_rr": {
+    "n": 17,
+    "median": 2.5535714285714284,
+    "source": "exports/2026-09-02-losses/plans.jsonl; selected identities in legacy_plan_geometry.csv"
+  },
+  "floor_to_atr_max_error": 3.048966400398534e-05,
+  "limitation": "This reproduces published proxy arithmetic. It does not verify initial runtime ATR/floor, ordered MFE/stop path, or actual target outcomes. The 54-row fresh diagnostic uses a different causal bar coverage rule."
+}

@@ -1,0 +1,7 @@
+{
+  "observed_at": "2026-09-10T23:56:55.745772+00:00",
+  "path": "/home/hoang/nofx-backups/identity-cd8f9978-20260910/data.db",
+  "size": 793993216,
+  "integrity_check": "ok",
+  "method": "SQLite online backup from mode=ro source; committed WAL included"
+}

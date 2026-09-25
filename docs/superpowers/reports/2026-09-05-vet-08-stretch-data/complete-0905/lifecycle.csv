@@ -1,0 +1,8 @@
+id,plan_id,version,event,reason,at
+1,2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,2,dormant,"dormant:flip:flip-condition: 5m_close close above 29513.00 (buffer 0.5×ATR14, 2× 5m closes) → bias long",2026-09-03 19:25:00.990684465-05:00
+2,2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,5,dormant,"dormant:flip:flip-condition: 2x5m close above 29548.00 (buffer 0.5×ATR14, 2× 5m closes) → bias long",2026-09-03 21:21:00.167576191-05:00
+3,2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,7,dormant,"dormant:flip:flip-condition: 5m_close close below 29619.50 (buffer 0.5×ATR14, 4× 5m closes) → bias short",2026-09-04 01:50:46.941605536-05:00
+4,2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,2,dormant,"dormant:flip:flip-condition: 5m_close close above 29601.00 (buffer 0.5×ATR14, 5× 5m closes) → bias long",2026-09-04 02:34:43.182537777-05:00
+5,2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,2,active,"rearmed:5m_close close back below 29585.11 (buffer 0.5×ATR14, 2× 5m closes)",2026-09-04 07:40:41.09634911-05:00
+6,2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,5,dormant,"dormant:flip:flip-condition: 2x5m close above 29585.00 (buffer 0.5×ATR14, 2× 5m closes) → bias long",2026-09-04 11:59:02.287942772-05:00
+7,2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,5,active,"rearmed:2x5m close back below 29585.00 (buffer 0.5×ATR14, 2× 5m closes)",2026-09-04 12:05:01.63645235-05:00

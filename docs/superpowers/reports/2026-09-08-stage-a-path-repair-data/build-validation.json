@@ -1,0 +1,25 @@
+{
+  "source_revision": "954f11b15f2e7615678f7d2b708c47895faebf1e",
+  "checks": {
+    "full-go.log": {
+      "exit_code": 0,
+      "bytes": 2499,
+      "sha256": "0fcab60c87878fda6e68a7274d50bfea47d9801594aac5295734a9754a01e355"
+    },
+    "vitest.log": {
+      "exit_code": 0,
+      "bytes": 56056,
+      "sha256": "0c7e40bb7124a80aff7840a7f7770825e68362825fb2ce4830946370c4c4dc8c"
+    },
+    "tsc.log": {
+      "exit_code": 0,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "dist.log": {
+      "exit_code": 0,
+      "bytes": 4867,
+      "sha256": "0d9504449a0ad0e00b7b3638c4019703e7d4dc73e97cb06e1031b18b4ef35939"
+    }
+  }
+}

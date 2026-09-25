@@ -1,0 +1,18 @@
+{
+  "census.json": {
+    "bytes": 1607700,
+    "sha256": "ebb866b403eef766997378396938bb02b6cb3e5670adc904a25854473f0a3763"
+  },
+  "frozen-planning-log.txt": {
+    "bytes": 9157,
+    "sha256": "f02af585087b0a1e30dd35edb251a8df4610e23275472197dd6217a1267d9371"
+  },
+  "nt-symbols.json": {
+    "bytes": 379,
+    "sha256": "4340061f9cc31c9eb046303f9952c84f0dafa7f757a492fa4f4a409868750ac8"
+  },
+  "source-freshness.csv": {
+    "bytes": 3548,
+    "sha256": "51add3795c745da3bf18b6aad2746cfa38d627e12d9f784dfe2a07cefc501ecd"
+  }
+}

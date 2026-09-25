@@ -1,0 +1,1262 @@
+{
+ "C1": {
+  "plans_ge2_armable": 78,
+  "first_touched_armed": {
+   "n": 5,
+   "ids": [
+    [
+     [
+      "2026-09-07:ASIA:",
+      2
+     ],
+     "S2",
+     "09-04 07:01",
+     [
+      "S2",
+      "S4"
+     ]
+    ],
+    [
+     [
+      "2026-09-07:ASIA:",
+      3
+     ],
+     "S3",
+     "09-07 22:28",
+     [
+      "S3"
+     ]
+    ],
+    [
+     [
+      "2026-09-10:LONDO",
+      3
+     ],
+     "S1",
+     "09-09 04:53",
+     [
+      "S1"
+     ]
+    ],
+    [
+     [
+      "2026-09-10:LONDO",
+      5
+     ],
+     "S1",
+     "09-09 05:53",
+     [
+      "S1",
+      "S2",
+      "S3"
+     ]
+    ],
+    [
+     [
+      "2026-09-10:ASIA:",
+      9
+     ],
+     "S3",
+     "09-10 07:32",
+     [
+      "S1",
+      "S3"
+     ]
+    ]
+   ]
+  },
+  "first_touched_not_armed": {
+   "n": 4,
+   "ids": [
+    [
+     [
+      "2026-09-08:LONDO",
+      2
+     ],
+     "S2",
+     "09-04 11:47",
+     [
+      "S1"
+     ]
+    ],
+    [
+     [
+      "2026-09-08:ASIA:",
+      5
+     ],
+     "S1",
+     "09-08 23:10",
+     [
+      "S2"
+     ]
+    ],
+    [
+     [
+      "2026-09-09:NY:8d",
+      2
+     ],
+     "S1",
+     "09-08 09:02",
+     [
+      "S2",
+      "S3"
+     ]
+    ],
+    [
+     [
+      "2026-09-09:ASIA:",
+      1
+     ],
+     "S2",
+     "09-09 08:34",
+     [
+      "S1"
+     ]
+    ]
+   ]
+  },
+  "no_touch_on_any_scenario": {
+   "n": 25,
+   "ids": [
+    [
+     "2026-08-27:ASIA:",
+     12
+    ],
+    [
+     "2026-08-28:LONDO",
+     4
+    ],
+    [
+     "2026-08-28:LONDO",
+     6
+    ],
+    [
+     "2026-08-28:NY:8d",
+     5
+    ],
+    [
+     "2026-08-30:ASIA:",
+     1
+    ],
+    [
+     "2026-08-30:ASIA:",
+     2
+    ],
+    [
+     "2026-08-31:LONDO",
+     2
+    ],
+    [
+     "2026-08-31:NY:8d",
+     4
+    ],
+    [
+     "2026-09-01:LONDO",
+     6
+    ],
+    [
+     "2026-09-01:NY:8d",
+     5
+    ],
+    [
+     "2026-09-01:ASIA:",
+     6
+    ],
+    [
+     "2026-09-01:ASIA:",
+     7
+    ],
+    [
+     "2026-09-02:NY:8d",
+     5
+    ],
+    [
+     "2026-09-04:NY:8d",
+     3
+    ],
+    [
+     "2026-09-04:NY:8d",
+     6
+    ],
+    [
+     "2026-09-06:ASIA:",
+     2
+    ],
+    [
+     "2026-09-06:ASIA:",
+     3
+    ],
+    [
+     "2026-09-06:ASIA:",
+     5
+    ],
+    [
+     "2026-09-08:LONDO",
+     5
+    ],
+    [
+     "2026-09-08:NY:8d",
+     5
+    ],
+    [
+     "2026-09-08:ASIA:",
+     2
+    ],
+    [
+     "2026-09-09:NY:8d",
+     1
+    ],
+    [
+     "2026-09-09:ASIA:",
+     2
+    ],
+    [
+     "2026-09-10:ASIA:",
+     1
+    ],
+    [
+     "2026-09-10:ASIA:",
+     3
+    ]
+   ]
+  },
+  "no_ledger_row": {
+   "n": 44,
+   "ids": [
+    [
+     "2026-08-27:ASIA:",
+     8
+    ],
+    [
+     "2026-08-27:ASIA:",
+     9
+    ],
+    [
+     "2026-08-27:ASIA:",
+     10
+    ],
+    [
+     "2026-08-27:ASIA:",
+     11
+    ],
+    [
+     "2026-08-27:ASIA:",
+     13
+    ],
+    [
+     "2026-08-28:LONDO",
+     1
+    ],
+    [
+     "2026-08-28:LONDO",
+     3
+    ],
+    [
+     "2026-08-28:NY:8d",
+     1
+    ],
+    [
+     "2026-08-31:NY:8d",
+     3
+    ],
+    [
+     "2026-09-01:LONDO",
+     4
+    ],
+    [
+     "2026-09-01:NY:8d",
+     1
+    ],
+    [
+     "2026-09-01:NY:8d",
+     2
+    ],
+    [
+     "2026-09-01:NY:8d",
+     3
+    ],
+    [
+     "2026-09-02:NY:8d",
+     4
+    ],
+    [
+     "2026-09-02:NY:8d",
+     10
+    ],
+    [
+     "2026-09-02:NY:8d",
+     11
+    ],
+    [
+     "2026-09-02:ASIA:",
+     4
+    ],
+    [
+     "2026-09-02:ASIA:",
+     8
+    ],
+    [
+     "2026-09-02:ASIA:",
+     12
+    ],
+    [
+     "2026-09-02:ASIA:",
+     14
+    ],
+    [
+     "2026-09-03:NY:8d",
+     6
+    ],
+    [
+     "2026-09-04:NY:8d",
+     2
+    ],
+    [
+     "2026-09-04:NY:8d",
+     4
+    ],
+    [
+     "2026-09-06:ASIA:",
+     1
+    ],
+    [
+     "2026-09-06:ASIA:",
+     4
+    ],
+    [
+     "2026-09-06:ASIA:",
+     6
+    ],
+    [
+     "2026-09-07:ASIA:",
+     5
+    ],
+    [
+     "2026-09-08:LONDO",
+     1
+    ],
+    [
+     "2026-09-08:LONDO",
+     3
+    ],
+    [
+     "2026-09-08:LONDO",
+     4
+    ],
+    [
+     "2026-09-08:NY:8d",
+     1
+    ],
+    [
+     "2026-09-08:NY:8d",
+     4
+    ],
+    [
+     "2026-09-08:ASIA:",
+     1
+    ],
+    [
+     "2026-09-08:ASIA:",
+     3
+    ],
+    [
+     "2026-09-08:ASIA:",
+     4
+    ],
+    [
+     "2026-09-08:ASIA:",
+     7
+    ],
+    [
+     "2026-09-09:NY:8d",
+     3
+    ],
+    [
+     "2026-09-10:LONDO",
+     1
+    ],
+    [
+     "2026-09-10:LONDO",
+     2
+    ],
+    [
+     "2026-09-10:LONDO",
+     4
+    ],
+    [
+     "2026-09-10:LONDO",
+     6
+    ],
+    [
+     "2026-09-10:ASIA:",
+     5
+    ],
+    [
+     "2026-09-10:ASIA:",
+     6
+    ],
+    [
+     "2026-09-10:ASIA:",
+     7
+    ]
+   ]
+  }
+ },
+ "C2": {
+  "UNLINKED": {
+   "n": 71,
+   "sum_usd": -248.75,
+   "mean": -3.5,
+   "null_excluded": 117,
+   "ids": [
+    288,
+    355,
+    356,
+    357,
+    358,
+    359,
+    360,
+    361,
+    362,
+    363,
+    364,
+    365,
+    366,
+    367,
+    369,
+    370,
+    371,
+    372,
+    373,
+    374,
+    375,
+    376,
+    377,
+    379,
+    381,
+    383,
+    384,
+    393,
+    416,
+    419,
+    425,
+    426,
+    430,
+    431,
+    433,
+    436,
+    437,
+    439,
+    440,
+    442,
+    444,
+    448,
+    452,
+    467,
+    468,
+    470,
+    472,
+    475,
+    481,
+    488,
+    489,
+    500,
+    501,
+    502,
+    503,
+    506,
+    508,
+    509,
+    512,
+    515,
+    516,
+    517,
+    530,
+    539,
+    545,
+    546,
+    566,
+    571,
+    573,
+    574,
+    580
+   ]
+  },
+  "reject": {
+   "n": 39,
+   "sum_usd": 314.0,
+   "mean": 8.05,
+   "null_excluded": 3,
+   "ids": [
+    521,
+    523,
+    524,
+    529,
+    533,
+    535,
+    536,
+    537,
+    538,
+    544,
+    547,
+    548,
+    549,
+    550,
+    551,
+    552,
+    553,
+    554,
+    560,
+    564,
+    565,
+    567,
+    569,
+    570,
+    575,
+    581,
+    582,
+    584,
+    585,
+    587,
+    591,
+    593,
+    596,
+    597,
+    598,
+    599,
+    602,
+    603,
+    604
+   ]
+  },
+  "sweep_reclaim": {
+   "n": 12,
+   "sum_usd": -325.5,
+   "mean": -27.12,
+   "null_excluded": 1,
+   "ids": [
+    368,
+    559,
+    561,
+    568,
+    578,
+    583,
+    586,
+    592,
+    594,
+    600,
+    601,
+    605
+   ]
+  },
+  "acceptance": {
+   "n": 6,
+   "sum_usd": 4.57,
+   "mean": 0.76,
+   "null_excluded": 0,
+   "ids": [
+    522,
+    526,
+    527,
+    532,
+    542,
+    543
+   ]
+  },
+  "reclaim": {
+   "n": 5,
+   "sum_usd": -436.5,
+   "mean": -87.3,
+   "null_excluded": 0,
+   "ids": [
+    525,
+    531,
+    540,
+    541,
+    588
+   ]
+  },
+  "breakout_retest": {
+   "n": 9,
+   "sum_usd": -581.5,
+   "mean": -64.61,
+   "null_excluded": 0,
+   "ids": [
+    528,
+    534,
+    556,
+    557,
+    558,
+    562,
+    563,
+    589,
+    590
+   ]
+  },
+  "hold": {
+   "n": 1,
+   "sum_usd": 168.0,
+   "mean": 168.0,
+   "null_excluded": 0,
+   "ids": [
+    555
+   ]
+  },
+  "breakup_continue": {
+   "n": 1,
+   "sum_usd": -86.5,
+   "mean": -86.5,
+   "null_excluded": 0,
+   "ids": [
+    595
+   ]
+  }
+ },
+ "C3": {
+  "n_reads": 13,
+  "reads": [
+   {
+    "read": "09-10 17:30",
+    "plan": [
+     "2026-09-10:ASIA:",
+     1
+    ],
+    "price": 29120.0,
+    "top": [
+     29117.25,
+     "A",
+     [
+      "ONL"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [
+     [
+      "S1",
+      "cancelled"
+     ]
+    ],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 18:14",
+    "plan": [
+     "2026-09-10:ASIA:",
+     2
+    ],
+    "price": 29110.0,
+    "top": [
+     29106.865003022845,
+     "A",
+     [
+      "VWAP\u22121\u03c3"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 18:46",
+    "plan": [
+     "2026-09-10:ASIA:",
+     2
+    ],
+    "price": 29104.25,
+    "top": [
+     29101.75,
+     "A",
+     [
+      "EQL\u00b715m"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 18:49",
+    "plan": [
+     "2026-09-10:ASIA:",
+     2
+    ],
+    "price": 29098.75,
+    "top": [
+     29101.75,
+     "A",
+     [
+      "EQL\u00b715m"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 19:27",
+    "plan": [
+     "2026-09-10:ASIA:",
+     3
+    ],
+    "price": 29138.0,
+    "top": [
+     29132.5,
+     "A",
+     [
+      "EQL\u00b71h"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [
+     [
+      "S2",
+      "cancelled"
+     ],
+     [
+      "S1",
+      "cancelled"
+     ]
+    ],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 20:00",
+    "plan": [
+     "2026-09-10:ASIA:",
+     4
+    ],
+    "price": 29159.25,
+    "top": [
+     29161.125,
+     "A",
+     [
+      "OB(bull)\u00b71h"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 20:30",
+    "plan": [
+     "2026-09-10:ASIA:",
+     5
+    ],
+    "price": 29129.5,
+    "top": [
+     29132.5,
+     "A",
+     [
+      "EQL\u00b71h"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 21:06",
+    "plan": [
+     "2026-09-10:ASIA:",
+     6
+    ],
+    "price": 29124.75,
+    "top": [
+     29132.5,
+     "A",
+     [
+      "EQL\u00b71h"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 24
+   },
+   {
+    "read": "09-10 21:17",
+    "plan": [
+     "2026-09-10:ASIA:",
+     6
+    ],
+    "price": 29132.0,
+    "top": [
+     29147.474749081553,
+     "A",
+     [
+      "VWAP+1\u03c3"
+     ]
+    ],
+    "scenarios_on_top": [
+     "S1"
+    ],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 22
+   },
+   {
+    "read": "09-10 22:00",
+    "plan": [
+     "2026-09-10:ASIA:",
+     7
+    ],
+    "price": 29089.5,
+    "top": [
+     29104.25,
+     "A",
+     [
+      "SWG-L\u00b75m"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 20
+   },
+   {
+    "read": "09-10 22:41",
+    "plan": [
+     "2026-09-10:ASIA:",
+     8
+    ],
+    "price": 29075.25,
+    "top": [
+     29081.75,
+     "A",
+     [
+      "SWG-L\u00b75m"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [],
+    "armed_on_top": [],
+    "n_merged": 23
+   },
+   {
+    "read": "09-11 00:41",
+    "plan": [
+     "2026-09-10:ASIA:",
+     9
+    ],
+    "price": 29173.25,
+    "top": [
+     29170.5404087306,
+     "A",
+     [
+      "VWAP+2\u03c3"
+     ]
+    ],
+    "scenarios_on_top": [
+     "S3"
+    ],
+    "armed": [
+     [
+      "S1",
+      "filled"
+     ],
+     [
+      "S1",
+      "armed"
+     ],
+     [
+      "S3",
+      "armed"
+     ]
+    ],
+    "armed_on_top": [
+     [
+      "S3",
+      "armed"
+     ]
+    ],
+    "n_merged": 24
+   },
+   {
+    "read": "09-11 00:45",
+    "plan": [
+     "2026-09-10:ASIA:",
+     9
+    ],
+    "price": 29185.5,
+    "top": [
+     29196.0,
+     "A",
+     [
+      "ONH"
+     ]
+    ],
+    "scenarios_on_top": [],
+    "armed": [
+     [
+      "S1",
+      "filled"
+     ],
+     [
+      "S1",
+      "armed"
+     ],
+     [
+      "S3",
+      "armed"
+     ]
+    ],
+    "armed_on_top": [],
+    "n_merged": 23
+   }
+  ]
+ },
+ "C4": {
+  "first_rows": [
+   {
+    "id": 5179,
+    "level_price": 29123.5,
+    "level_kind": "OR-H",
+    "entry_side": "below",
+    "outcome": "hold",
+    "fade_permitted": 1,
+    "fade_exclusions": "",
+    "ev": "2026-09-10 19:07:00"
+   },
+   {
+    "id": 5189,
+    "level_price": 29117.904072633864,
+    "level_kind": "eVWAP",
+    "entry_side": "below",
+    "outcome": "ambiguous_horizon",
+    "fade_permitted": 1,
+    "fade_exclusions": "",
+    "ev": "2026-09-10 19:06:00"
+   },
+   {
+    "id": 5210,
+    "level_price": 29113.25,
+    "level_kind": "SWG-H",
+    "entry_side": "below",
+    "outcome": "ambiguous_horizon",
+    "fade_permitted": 1,
+    "fade_exclusions": "",
+    "ev": "2026-09-10 19:06:00"
+   },
+   {
+    "id": 5211,
+    "level_price": 29113.25,
+    "level_kind": "SWG-H",
+    "entry_side": "below",
+    "outcome": "break",
+    "fade_permitted": 1,
+    "fade_exclusions": "",
+    "ev": "2026-09-10 19:23:00"
+   },
+   {
+    "id": 5223,
+    "level_price": 29109.00324356307,
+    "level_kind": "VWAP",
+    "entry_side": "below",
+    "outcome": "ambiguous_horizon",
+    "fade_permitted": 1,
+    "fade_exclusions": "",
+    "ev": "2026-09-10 19:06:00"
+   },
+   {
+    "id": 5224,
+    "level_price": 29109.00324356307,
+    "level_kind": "VWAP",
+    "entry_side": "below",
+    "outcome": "break",
+    "fade_permitted": 1,
+    "fade_exclusions": "",
+    "ev": "2026-09-10 19:23:00"
+   },
+   {
+    "id": 5231,
+    "level_price": 29089.14240849638,
+    "level_kind": "VWAP",
+    "entry_side": "above",
+    "outcome": "break",
+    "fade_permitted": 0,
+    "fade_exclusions": "ib_held",
+    "ev": "2026-09-10 18:50:00"
+   },
+   {
+    "id": 5232,
+    "level_price": 29089.14240849638,
+    "level_kind": "VWAP",
+    "entry_side": "below",
+    "outcome": "break",
+    "fade_permitted": 0,
+    "fade_exclusions": "ib_held",
+    "ev": "2026-09-10 19:01:00"
+   }
+  ],
+  "since_W2": {
+   "permitted": 114,
+   "excluded": 46,
+   "null": 0,
+   "n": 160
+  },
+  "exclusions": {
+   "ib_held": 46
+  }
+ },
+ "C5": {
+  "scenarios_since_0908": 113,
+  "with_obstacle": 60,
+  "missing": [
+   [
+    "2026-09-07:ASIA:",
+    1,
+    "S1"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    1,
+    "S2"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    1,
+    "S3"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    2,
+    "S1"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    2,
+    "S2"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    2,
+    "S3"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    2,
+    "S4"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    3,
+    "S1"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    3,
+    "S2"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    3,
+    "S3"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    4,
+    "S1"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    4,
+    "S2"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    5,
+    "S1"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    5,
+    "S2"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    5,
+    "S3"
+   ],
+   [
+    "2026-09-07:ASIA:",
+    5,
+    "S4"
+   ],
+   [
+    "2026-09-08:LONDO",
+    1,
+    "S1"
+   ],
+   [
+    "2026-09-08:LONDO",
+    1,
+    "S2"
+   ],
+   [
+    "2026-09-08:LONDO",
+    1,
+    "S3"
+   ],
+   [
+    "2026-09-08:LONDO",
+    2,
+    "S1"
+   ]
+  ],
+  "n_R": 53,
+  "R_p25_p50_p75": [
+   0.61,
+   0.94,
+   1.41
+  ],
+  "R_lt1": 31,
+  "R_lt2": 49
+ },
+ "C9": {
+  "all_rows": {
+   "above|DEMAND": {
+    "hold": 3,
+    "break": 1,
+    "ambiguous": 1
+   },
+   "above|ONH": {
+    "ambiguous": 4,
+    "hold": 1,
+    "break": 6
+   },
+   "above|ONL": {
+    "ambiguous": 1,
+    "hold": 2
+   },
+   "above|OR-H": {
+    "hold": 3,
+    "break": 1,
+    "ambiguous": 1
+   },
+   "above|PDC": {
+    "hold": 4,
+    "break": 2,
+    "ambiguous": 1
+   },
+   "above|PDL": {
+    "hold": 1
+   },
+   "above|SWG-H": {
+    "break": 6,
+    "hold": 10,
+    "ambiguous": 9
+   },
+   "above|SWG-L": {
+    "hold": 16,
+    "ambiguous": 11,
+    "break": 2
+   },
+   "above|VWAP": {
+    "ambiguous": 40,
+    "hold": 22,
+    "break": 17
+   },
+   "above|VWAP\u00b12\u03c3": {
+    "hold": 10,
+    "ambiguous": 3,
+    "break": 7
+   },
+   "above|eVWAP": {
+    "ambiguous": 1
+   },
+   "below|DEMAND": {
+    "hold": 1,
+    "ambiguous": 2
+   },
+   "below|FVG": {
+    "break": 1
+   },
+   "below|IFVG": {
+    "break": 1
+   },
+   "below|OB": {
+    "break": 1
+   },
+   "below|ONH": {
+    "ambiguous": 4,
+    "hold": 12,
+    "break": 3
+   },
+   "below|OR-H": {
+    "hold": 1,
+    "ambiguous": 2,
+    "break": 1
+   },
+   "below|PDC": {
+    "hold": 1,
+    "break": 1,
+    "ambiguous": 2
+   },
+   "below|SWG-H": {
+    "hold": 10,
+    "ambiguous": 13,
+    "break": 9
+   },
+   "below|SWG-L": {
+    "ambiguous": 5,
+    "break": 8
+   },
+   "below|VWAP": {
+    "ambiguous": 16,
+    "break": 27,
+    "hold": 15
+   },
+   "below|VWAP\u00b12\u03c3": {
+    "ambiguous": 3,
+    "hold": 4,
+    "break": 4
+   },
+   "below|eVWAP": {
+    "ambiguous": 1
+   },
+   "below|pdVWAP": {
+    "break": 1
+   }
+  },
+  "valid_only": {
+   "above|DEMAND": {
+    "hold": 3,
+    "break": 1,
+    "ambiguous": 1
+   },
+   "below|DEMAND": {
+    "hold": 1,
+    "ambiguous": 2
+   },
+   "below|FVG": {
+    "break": 1
+   },
+   "below|IFVG": {
+    "break": 1
+   },
+   "below|OB": {
+    "break": 1
+   }
+  },
+  "by_side_all": {
+   "above": {
+    "hold": 72,
+    "ambiguous": 72,
+    "break": 42
+   },
+   "below": {
+    "hold": 44,
+    "ambiguous": 48,
+    "break": 57
+   }
+  }
+ }
+}

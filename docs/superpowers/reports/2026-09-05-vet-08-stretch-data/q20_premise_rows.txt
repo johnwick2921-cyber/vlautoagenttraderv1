@@ -1,0 +1,6 @@
+source           n   pc_null  mae_nz  mfe_nz  sum_pc 
+---------------  --  -------  ------  ------  -------
+armed_entry      5   3        4       3       52.0   
+e7_farside_test  3   1        3       3       5.0    
+reconcile        12  0        8       10      134.5  
+system           51  0        51      49      -750.43

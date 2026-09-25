@@ -1,0 +1,32 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "edges": [
+    {
+      "from": "trader/armed_executor.go:790-806",
+      "to": "store/armed_orders.go:235-385",
+      "evidence": "[A] candidate literal and UpsertArm call; omitted provenance fields"
+    },
+    {
+      "from": "trader/cancel_confirm.go:349-425",
+      "to": "store/armed_orders.go:465-504",
+      "evidence": "[A] confirmation and RequestCancel calls; cap checked before reset"
+    },
+    {
+      "from": "store/store.go:63-126",
+      "to": "store/gorm.go:22-64",
+      "evidence": "[A] constructors call InitGorm or config dispatcher"
+    },
+    {
+      "from": "store/store.go:144-246",
+      "to": "store/exchange.go:56-124",
+      "evidence": "[A] initTables invokes Exchange.initTables and cleanup"
+    },
+    {
+      "from": "store/position_history.go:39-123",
+      "to": "store/position.go:953-958",
+      "evidence": "[A] recent summary calls strict corrected accessor but denominator remains all recent"
+    }
+  ],
+  "historical_export": "historical-graph.json",
+  "limitations": "Only edges directly read above are asserted; functions.json callee lists are syntax-only."
+}

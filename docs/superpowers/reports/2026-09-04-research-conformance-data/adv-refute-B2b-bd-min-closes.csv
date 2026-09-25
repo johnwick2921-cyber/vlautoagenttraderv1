@@ -1,0 +1,2 @@
+rule,file_line,resolved_now,label,report_line_grounding,live_effect,conforms,prod_callers
+B2b BD_MIN_CLOSES (ex-BD_CONFIRM_CLOSES),kernel/breakdown_continue.go:65-72 + :260-263,1,[I],2026-09-02-belief-census.md:42 ([I]) + 2026-08-30-knob-census.md:42 ([C] = "no external citation found" per legend :14),REJECT at write (pullback only; immediate exempt) + runtime confirm-rule NAME "1x5m_close" (plan_confirm.go:192),N/A - no research value exists to compare (NOT "NO"),6 (kernel/breakdown_continue.go:142)

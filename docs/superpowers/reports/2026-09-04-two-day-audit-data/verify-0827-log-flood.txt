@@ -1,0 +1,54 @@
+VERIFY: nofx_2026-08-27.log 2GB flood claim   (adversarial re-run, 2026-09-04)
+Source rev read: dfbfa660 (deployed 530009ff / boot 7). Main tree READ-ONLY.
+
+[A] SIZE - reproduces exactly
+  $ stat -c '%s %n' /home/hoang/nofx/data/nofx_2026-08-27.log
+  2049637081 /home/hoang/nofx/data/nofx_2026-08-27.log
+
+[A] PEER HISTOGRAM - reproduces exactly (180139)
+  $ head -c 40000000 nofx_2026-08-27.log | sed -E 's/^[0-9-]+ [0-9:]+ //; s/\[trader_id=[^]]*\]//; s/[0-9]+/N/g' | cut -c1-110 | sort | uniq -c | sort -rn | head -1
+   180139 [INFO] trader/auto_trader.go:N  ... armed order_update frame: state= signal= acct= fill=N.N
+  NOTE the log stamps the line trader/auto_trader.go:N -- NOT armed_executor.go.
+
+[A] WHOLE FILE (peer measured only the first 40MB = 1.95% of the file; the defect is LARGER)
+  $ wc -l nofx_2026-08-27.log                            -> 10021387 lines
+  $ grep -ac "armed order_update frame" ...              ->  9951919  (99.31% of lines)
+  $ grep -a  "armed order_update frame" ... | wc -c      -> 2040144330 bytes (99.54% of the file)
+  $ grep -a -o "armed order_update frame: state=.*" ... | sed -E 's/[0-9]+/N/g' | sort | uniq -c | sort -rn | head -2
+   9951901 armed order_update frame: state= signal= acct= fill=N.N      <- empty payload
+         1 armed order_update frame: state=working signal=... acct=SimN fill=N.N
+  => all but 18 of the 9,951,919 frames carry the empty payload.
+
+[A] IT IS AN 11.5-MINUTE BURST, NOT A DAY-LONG LEAK
+  $ grep -a "armed order_update frame" nofx_2026-08-27.log | cut -c1-11 | uniq -c
+    539637 08-27 13:32     1385060 08-27 13:33     1384842 08-27 13:34
+   1380261 08-27 13:35     1383776 08-27 13:36     1382445 08-27 13:37
+   1390686 08-27 13:38      233731 08-27 13:39      770262 08-27 13:41
+    101212 08-27 13:42           7 08-27 13:44                (sum = 9951919)
+  first 08-27 13:32:37 CT, last 08-27 13:44:11 CT. Peak 1,390,686 lines/min = ~23,178 lines/s.
+  (The in-code comment in trader/armed_executor.go says "25k lines/s ... at 13:35-14:35 CT";
+   the 1-hour span in that comment is NOT supported by the file - frames stop at 13:44:11.)
+
+[A] FIX EXISTS AND IS IN THE DEPLOYED REV - but NOT at line 974
+  $ git log -S'logArmedOrderUpdateSummary' -- trader/armed_executor.go trader/auto_trader.go
+  871583a940accd220bd1bf6cdd9e5bdcd2b03979  2026-08-27 18:06:10 -0500
+    fix(forensics-hygiene): S-1 order_update flood->DEBUG+summary ...
+  $ git show dfbfa660:trader/armed_executor.go | grep -n 'armed order_update\|logArmedOrderUpdateSummary'
+   1082 func armedOrderUpdateLogSample()        (env ARMED_ORDER_UPDATE_LOG_SAMPLE, default 500; NOT set in .env)
+   1091 func logArmedOrderUpdateSummary()
+   1101   "...armed order_update summary (1-line/min): frames=%d"
+   1121   if armedOUSample.Add(1)%armedOrderUpdateLogSample() == 0 {
+   1122       logger.Debugf("...armed order_update frame: ...")
+   1125   logArmedOrderUpdateSummary()
+  $ git show dfbfa660:trader/armed_executor.go | sed -n '974p'   -> inside func churnNeedsModify (unrelated)
+
+[A] FIX PROVEN BEHAVIOURALLY (frame lines gone, summary lines present)
+  $ for f in nofx_2026-08-{28..31}.log nofx_2026-09-0{1,2,3}.log; do grep -ac 'armed order_update frame' $f; grep -ac 'armed order_update summary' $f; done
+   08-28 frame=0 summary=16 | 08-29 0/0 | 08-30 0/18 | 08-31 0/15 | 09-01 0/20 | 09-02 0/12 | 09-03 0/2
+
+[A] SIZE-RANGE LOW BOUND IS WRONG
+  smallest daily log is nofx_2026-08-22.log = 123747 bytes = 0.12 MB (not 0.6 MB).
+  0.63 MB (08-29) is the SECOND smallest. Largest non-flood day = 09-02 at 13.04 MB.
+
+[A] ARTIFACT NOT RECLAIMED: the 2.0 GB file is still on disk today.
+  $ df -h /home/hoang/nofx/data -> 1007G total, 144G used, 813G avail, 15%  (no current disk risk)

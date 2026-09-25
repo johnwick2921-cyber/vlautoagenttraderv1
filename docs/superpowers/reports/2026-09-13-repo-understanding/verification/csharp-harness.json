@@ -1,0 +1,18 @@
+{
+  "task": "csharp-harness",
+  "command": [
+    "/tmp/nofx-csharp-verification/final-marker-harness.exe"
+  ],
+  "cwd": "/tmp/nofx-audit-repairs-20260913",
+  "source_revision": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+  "end_revision": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+  "source_clean_before": true,
+  "source_clean_after": true,
+  "started_utc": "2026-09-13T14:45:28.485632+00:00",
+  "duration_seconds": 0.13,
+  "exit_code": 0,
+  "log": "/tmp/nofx-final-verification/csharp-harness.log",
+  "log_bytes": 6523,
+  "log_sha256": "388f95048a1d81190deeebb1994e680877624c6c5fe976e534b7e93fccd8647c",
+  "revision_unchanged": true
+}

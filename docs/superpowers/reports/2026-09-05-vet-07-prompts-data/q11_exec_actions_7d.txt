@@ -1,0 +1,23 @@
+x
+--- decision-path actions last 7d (CT dates 08-29..09-04), by action token in decision_json
+d|open_long|open_short|wait|hold|closes|eg_any|eg_strict|offplan|f4_phrase|n
+2026-08-30|0|0|155|0|131|0|0|13|30|186
+2026-08-31|0|0|463|0|131|0|0|12|33|496
+2026-09-01|1|2|640|0|228|0|0|28|73|694
+2026-09-02|5|5|623|0|285|5|0|19|29|682
+2026-09-03|0|14|574|0|360|14|13|26|49|596
+2026-09-04|0|0|370|0|197|0|0|13|23|374
+x
+--- sample execution_log with strict refusal
+id|ct|substr(execution_log,1,300)
+37322|2026-09-03 21:12:40|["AI call duration: 123727 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a decision-path market entry"]
+37320|2026-09-03 21:09:03|["AI call duration: 60890 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a decision-path market entry"]
+37319|2026-09-03 21:06:44|["AI call duration: 98968 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a decision-path market entry"]
+37318|2026-09-03 21:03:22|["AI call duration: 82148 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a decision-path market entry"]
+37315|2026-09-03 20:58:56|["AI call duration: 84566 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a decision-path market entry"]
+x
+--- error_class distribution 7d
+error_class|COUNT(*)
+|3013
+ai_call_failed|12
+ai_payment_402|3

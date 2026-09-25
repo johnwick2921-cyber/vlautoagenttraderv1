@@ -1,0 +1,4 @@
+id,entry_ct,plan_session,cited_scenario_id,plan_matched,plan_band,adherence_grade,base_grade,step_down_cause,note
+588,2026-09-02 07:41:05,LONDON,S2,1,,B,A,!InKillzone,"inside prompt primary window 07:30-10:00 CT; outside registry ny_am 08:30-11:00 CT"
+558,2026-08-25 07:56:41,LONDON,S1,1,,B,A,!InKillzone,"inside prompt primary window 07:30-10:00 CT; outside registry ny_am 08:30-11:00 CT"
+530,2026-08-20 08:12:02,,off-plan,0,,D,D,off-plan+!InKillzone,"same disputed hour; off-plan base D"

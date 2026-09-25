@@ -1,0 +1,16 @@
+kind,id,plan_scenario,side,entry,at,state_end,cause,note
+arm,32,NY v5 S3,long,29070.0,2026-09-02 10:30:30 CT,2026-09-02 14:45:01 CT,never_reached,price never returned to 29070 in NY; EOD flat cancelled
+arm,33,NY v12 S3,short,29166.8,2026-09-02 14:10:29 CT,2026-09-02 14:10:29 CT,marketable_guard,price 29204.25 already above entry; would-have hit stop 29199.50 at 15:00
+arm,34,ASIA v13 S1,short,29199.5,2026-09-02 22:15:01 CT,2026-09-02 22:15:01 CT,marketable_guard,price 29204.25 already above entry; would-have hit stop 29226.00 at 22:18
+seam,,NY v10 S1,long,29163.99,2026-09-02 13:06:29 CT,-,rr_refused,R:R 1.32 after 0B widening 29138.75->29101.50; authored-stop version stops out 13:12
+seam,,ASIA v6 S2,short,29209.25,2026-09-02 18:47:17 CT,-,rr_refused,R:R 1.30 after widening; target 29181.64 hit 19:07 (missed +27.6pt)
+seam,,ASIA v8 S3,short,29175.66,2026-09-02 20:07:16 CT,-,rr_refused,R:R 1.75 after widening; authored stop 29194.30 hit 20:16 (loss avoided)
+decision,36640,ASIA S2,short,,2026-09-02 18:48:49 CT,-,entrygate_min_sl,dATR defect: 25.25 < 450.56 = 1.5xATR5m(300.4); real ATR5m ~13.5 admits; target 29149 hit 19:16
+decision,36641,ASIA S2,short,,2026-09-02 18:50:36 CT,-,entrygate_min_sl,dATR defect: 21.00 < 450.56; target 29162.75 hit 19:15
+decision,36642,ASIA S2,short,,2026-09-02 18:52:33 CT,-,entrygate_min_sl,dATR defect: 22.00 < 450.56; target 29149 hit 19:16
+decision,36645,ASIA S2,short,29197.0,2026-09-02 19:00:23 CT,-,entrygate_rr_at_fill,R:R 1.42 < 2.0 (SL 29228 TP 29153)
+decision,36703,ASIA S2,short,29159.75,2026-09-02 20:53:52 CT,-,entrygate_rr_at_fill,R:R 1.73 < 2.0 (SL 29193.25 TP 29101.75)
+decision,36864,LONDON S1,short,29193.25,2026-09-03 02:12:56 CT,-,entrygate_rr_at_fill,R:R 1.76 < 2.0 (SL 29242 TP 29107.25)
+parked,,ASIA v13 S1,short,29199.5,2026-09-03 00:01:00 CT,-,parked,condition touched 29199.50 at 00:01 while death-parked (22:35->00:08)
+planner,,ASIA,-,,2026-09-02 16:36:29 CT,-,planner_failed,preflight refused: stale_bars_2189s
+fill,36422,NY v5 S4,long,,2026-09-02 10:37:18 CT,-,baseline_last_fill,trade 590 (pnl_corrected -99.00) — the window's last fill

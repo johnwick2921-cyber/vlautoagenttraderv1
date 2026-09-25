@@ -1,0 +1,350 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-13T14:44:20.198446+00:00",
+  "scope": "Curated synthetic/offline test and review artifacts only; no live database, application runtime logs or secrets collected.",
+  "verification_head": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+  "entries": [
+    {
+      "path": "/tmp/nofx-combined-review/deeper-ordering-repro-a982cc74.log",
+      "bytes": 1281,
+      "sha256": "5f8237da9b5be13b5e8fb877aeb430c48f2ee90d110791b4a293be12239bffa8",
+      "group": "ordered_execution",
+      "result": "expected_failure",
+      "proves": "Actual entry callback + queued cumulative entry + exit receipt reproduces vanished residual when separate consumers reorder events.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "a982cc74"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/ordering-repro-a982cc74.log",
+      "bytes": 1148,
+      "sha256": "3d08ddfb9ad55ed74000543352f6ae8a629fd0b7147cc31868c14f32a6dc0b1c",
+      "group": "ordered_execution",
+      "result": "expected_failure",
+      "proves": "Exit quantity exceeding currently materialized partial entry was discarded before delayed entry evidence.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "a982cc74"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/first-snapshot-before-d3e4638e.log",
+      "bytes": 408,
+      "sha256": "1f6e8df3fe74eed4191cdcb18fa1480be0876cd83f447e69c50b66a72c1f204a",
+      "group": "ordered_execution",
+      "result": "expected_failure",
+      "proves": "Real adapter treated missing first account snapshot as flat.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "d3e4638e"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/bounded-followup-race-0913.log",
+      "bytes": 83,
+      "sha256": "4422c3609d9e8166e881e49fd14cf2038c2373d4bb2f235aa2c75ab747613010",
+      "group": "ordered_execution",
+      "result": "pass",
+      "proves": "Focused race regressions for retained oversized pending exit receipt and missing/stale first snapshot refusal.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "c20d0a82 precursor"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/ordered-final-06.log",
+      "bytes": 98,
+      "sha256": "ccd32a87e30b454ba4577cefc732353927955b5b5dbc2fc8cb95522218a6300f",
+      "group": "ordered_execution",
+      "result": "pass",
+      "proves": "Ordered TCP chronology, advisory/raw fill replay, owner replacement/isolation, reentrant outbound Signal, and manual final accounting.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "9b379c8c precursor"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/ordered-positive-reject-before-07.log",
+      "bytes": 2762,
+      "sha256": "cf41406835d2b4a6361587048306e6065af3565c62f0433c0c9a4a859be15236",
+      "group": "ordered_execution",
+      "result": "expected_failure",
+      "proves": "Actual ordered positive rejected entry Fill loses known execution cache.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "9b379c8c"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/ordered-old-flat-before-08.log",
+      "bytes": 2700,
+      "sha256": "44422ecb8f8d0b045836727b951753b4488cbdb69c25f4bedc1d498d1feb53a1",
+      "group": "ordered_execution",
+      "result": "expected_failure",
+      "proves": "Actual explicit[] then positive cancelled entry OrderUpdate is incorrectly reported flat before fresh account evidence.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "9b379c8c"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/ordered-final-boundaries-14.log",
+      "bytes": 121,
+      "sha256": "5449915fa255aafbbb9087026753adb0c195ad61be4df7f894b1a01611791d36",
+      "group": "ordered_execution",
+      "result": "pass",
+      "proves": "Final focused race checks: ordered chronology, positive/zero/lower/legacy guard refusals, entry fences, raw-fill ring versus residual cache, cumulative entry/exit accounting.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "d7b70a90 precursor"
+    },
+    {
+      "path": "/tmp/nofx-combined-review/ordered-adapter-full-race-13.log",
+      "bytes": 37,
+      "sha256": "9a2a2b8f15b94bd337c51039ad2a60538338ceaaf39f08294e1c3b6861278339",
+      "group": "ordered_execution",
+      "result": "pass",
+      "proves": "Complete adapter package race suite on rejection and snapshot handling.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "Before final raw executionFill copy adjustment; that adjustment covered in focused14"
+    },
+    {
+      "path": "/tmp/nofx-entry-replacement-before.log",
+      "bytes": 1225,
+      "sha256": "e76b9d2ec54581b3daa624bdbbdf0e17ddbe1ebf1b8fc2b8dd2f7bbc44e373b4",
+      "group": "shared_entry_receipt",
+      "result": "expected_failure",
+      "proves": "Both actual NewTCPTrader replacement failures: old empty snapshot becomes flat; duplicate cumulative event wrongly invalidates newer snapshot.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "cd2978b7 precursor"
+    },
+    {
+      "path": "/tmp/nofx-entry-replacement-focused-02.log",
+      "bytes": 98,
+      "sha256": "129605333e9b30657fd854a4e76abf7a89ab663f028aa8fd00becd18bf7268eb",
+      "group": "shared_entry_receipt",
+      "result": "pass",
+      "proves": "Focused race provider/adapter/trader tests for shared receipt scope/maxima, actual replacement, ordered callbacks and related entry/exit boundaries.",
+      "limitations": "Synthetic production-callsite tests with temporary SQLite and/or local loopback peers; no real NT8/broker validation. Not final all-package merged-HEAD certification.",
+      "revision_context": "cd2978b7 precursor"
+    },
+    {
+      "path": "/tmp/nofx-shared-entry-watermark-review.md",
+      "bytes": 4875,
+      "sha256": "0ab6d4f6ab255f7e89973733f216bd65994aa005f37f54787af9d5940b8991c6",
+      "group": "review_report",
+      "result": "review",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-shared-entry-watermark-review.md.",
+      "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-positive-entry-independent-review.md",
+      "bytes": 5306,
+      "sha256": "ed268e4346c42be1d1f3c23e37dba33742ad3408c6c20dcac43e21ef454f09c2",
+      "group": "review_report",
+      "result": "review",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-positive-entry-independent-review.md.",
+      "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-ordered-execution-independent-review.md",
+      "bytes": 10359,
+      "sha256": "eeb950251b6b4b7235c12539971423621e3f76821af4b3aaec511c8c27521cd6",
+      "group": "review_report",
+      "result": "review",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-ordered-execution-independent-review.md.",
+      "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-ordered-execution-repair.md",
+      "bytes": 7342,
+      "sha256": "b042aee13f2178a7f94e787f86eb412af8b3321b4852a571a3b36da140d4656e",
+      "group": "review_report",
+      "result": "review",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-ordered-execution-repair.md.",
+      "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-entry-replacement-report.md",
+      "bytes": 3465,
+      "sha256": "eebb2ce67786f1cc0ca6b958cb3c6ac4056800b4d7b5a04661cbf7948c34eb58",
+      "group": "review_report",
+      "result": "review",
+      "proves": "Source reasoning, test provenance and explicit scope/limitations for nofx-entry-replacement-report.md.",
+      "limitations": "Narrative evidence, not an independent test run. Earlier report sections may describe subsequently repaired intermediate limits; shared receipt replacement supersedes adapter-local watermark limitation.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-csharp-verification/terminal-exit-before.log",
+      "bytes": 2334,
+      "sha256": "b9dbc32211b69a95d63391ddc3147d79c317b981173e4ae3f060d0355191169d",
+      "group": "csharp_offline",
+      "result": "expected_failure",
+      "proves": "Extracted production OnOrderUpdate fails terminal cancelled partial exit receipt regression.",
+      "limitations": "Offline fake-account harness; does not establish actual NT8 event scheduling.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-csharp-verification/terminal-exit-report.md",
+      "bytes": 3526,
+      "sha256": "3bf7f665537d94f2dc91f8028ea8fe3a6503da9bf1fddb9089f974d7c2e84272",
+      "group": "csharp_offline",
+      "result": "review",
+      "proves": "C# terminal exit cumulative quantity repair, installed-reference compilation provenance and 89-assertion harness scope.",
+      "limitations": "Report predates later Go ordering repair and final C# marker-only adjustment.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-csharp-verification/final-marker-compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "csharp_offline",
+      "result": "no_diagnostics",
+      "proves": "Retained diagnostic output of final-marker compilation against installed NT8 references.",
+      "limitations": "File is empty. Empty output alone does NOT prove compiler exit0 or successful runtime execution; pair with reported invocation/exit provenance and harness results.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-csharp-verification/final-marker-harness-compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "csharp_offline",
+      "result": "no_diagnostics",
+      "proves": "Retained diagnostic output of final-marker extracted harness compilation.",
+      "limitations": "File is empty; not standalone success evidence.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-csharp-verification/final-marker-harness-results.log",
+      "bytes": 6523,
+      "sha256": "388f95048a1d81190deeebb1994e680877624c6c5fe976e534b7e93fccd8647c",
+      "group": "csharp_offline",
+      "result": "pass",
+      "proves": "89 PASS assertions plus ALL OFFLINE LIFECYCLE TESTS PASSED for extracted production lifecycle methods and terminal exit matrix.",
+      "limitations": "Fake-account offline harness. No AddOn deployment, F5, restart, actual account changes or NT8 callback timing validation.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-csharp-verification/terminal-exit-go-pins.log",
+      "bytes": 24,
+      "sha256": "6b2e842e0cda39866055935c9726b93de90fab5adc7196a5198c0d1afe41755e",
+      "group": "csharp_offline",
+      "result": "pass",
+      "proves": "Focused Go AddOn/bracket/limit source pins associated with terminal-exit C# protocol checks.",
+      "limitations": "Source compatibility pins only, not cross-process broker execution.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-terminal-notional-final-0858-run2.log",
+      "bytes": 47,
+      "sha256": "164dd560f9bcc8957ace9f001261ab6af6aadd675c21e79868d5f37ff9f040fa",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Cumulative entry notional/residual basis, CAS interleave and final-close normalization focused trader/store race tests.",
+      "limitations": "Historical precursor to combined a982cc74; later receive-order and rejection fixes are separate.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-terminal-migration-0856.log",
+      "bytes": 23,
+      "sha256": "d7d1621217c3744112624653b8fb1f71b84ef0b01f67f238579e0ed05cb6b53f",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Existing SQLite schema migration adds nullable cumulative notional idempotently and preserves values.",
+      "limitations": "Temporary SQLite only; PostgreSQL migration was source-reviewed, not executed against a live PostgreSQL server.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-partialclose-review/related-race-02.log",
+      "bytes": 126,
+      "sha256": "052de1952581fdc7b4355e715c6485d283e51a729eab23dc89afa549572b02e9",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Full related store/provider/adapter/trader package race checks for partial-close/receipt/snapshot changes.",
+      "limitations": "Earlier coherent combined source, before latest ordered dispatch/shared entry receipt extension.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-partialclose-review/observer-handoff-01.log",
+      "bytes": 36,
+      "sha256": "19981daec7c0538ce51d41f31dd6247b252d1358b4f23f49211652f5ab9bb53a",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Synthetic observer replacement drains close stream and retires old reconciliation while ordinary Stop preserves observation.",
+      "limitations": "Bounded lifecycle fixture; no process control or live reload.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-stop-refusal-after.log",
+      "bytes": 24,
+      "sha256": "48d815117885d2a33e2c2fee72ab265aadecba5bc1be212a324dea6ea2096f4b",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Actual stop refusal and placement safety regression group.",
+      "limitations": "Historical earlier repair evidence, not final merged candidate suite.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-agent-client-after.log",
+      "bytes": 23,
+      "sha256": "ed920ef8dd4b82d522e853f29b4ff4af39effcbe6950d56988ce089e505344ec",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Synthetic concurrent authenticated request client isolation and shared owner-state behavior.",
+      "limitations": "No external AI endpoint called; historical earlier source.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-overlay-revision-02.log",
+      "bytes": 44,
+      "sha256": "e19ca7d81a9dff9206afddfdb1f29a37c384b27d344e835df83e583e47308976",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Temporary-database overlay revision and stale-edit refusal checks.",
+      "limitations": "Historical earlier source; not live settings or database writes.",
+      "revision_context": null
+    },
+    {
+      "path": "/tmp/nofx-repair-full-suite-03.log",
+      "bytes": 2852,
+      "sha256": "a7e1bf60640916e5836f6929aa2065c017358ecd2c564825916df78a9daee168",
+      "group": "earlier_repair",
+      "result": "pass",
+      "proves": "Earlier full go test ./... all-package pass.",
+      "limitations": "HEAD99a06543 only; explicitly predates later C#/frontend/ordered execution/shared watermark fixes and does not certify e333de41.",
+      "revision_context": null
+    }
+  ],
+  "entry_count": 30,
+  "total_bytes": 56890,
+  "metadata_review": {
+    "from_revision": "cd2978b77da54e2fceddfb19e1d3d148bd2bfb62",
+    "to_revision": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+    "changed_paths": [
+      "docs/superpowers/reports/2026-09-13-repository-repairs/README.md",
+      "web/src/guide/types.ts",
+      "web/src/test/brand-scope-baseline.json"
+    ],
+    "protected_hash_checks": [
+      {
+        "path": "provider/ninjatrader/tcp_server.go",
+        "actual_sha256": "ebced810b2a1dcf92cd30b88567d26038ddb2e65a81a81f55592d4b1815b8481",
+        "recorded_sha256": "ebced810b2a1dcf92cd30b88567d26038ddb2e65a81a81f55592d4b1815b8481",
+        "matches": true
+      },
+      {
+        "path": "provider/ninjatrader/tcp_framing.go",
+        "actual_sha256": "9f10885f8287b15d269554b53c078100c59bbc7f817c01ce0af61c1371360369",
+        "recorded_sha256": "9f10885f8287b15d269554b53c078100c59bbc7f817c01ce0af61c1371360369",
+        "matches": true
+      },
+      {
+        "path": "ninjascript/VLTraderTCPClient.cs",
+        "actual_sha256": "e500dbc8309d6bd9d11e3d9df45a38a568c5ce578fb76561c73f460c237908ef",
+        "recorded_sha256": "e500dbc8309d6bd9d11e3d9df45a38a568c5ce578fb76561c73f460c237908ef",
+        "matches": true
+      }
+    ],
+    "guide_revision": "cd2978b77da54e2fceddfb19e1d3d148bd2bfb62",
+    "guide_matches_reviewed_source_candidate": true,
+    "disposition": "No issue found in metadata-only delta. Candidate stamp is explicitly not deployment; mutation guard remains enabled."
+  },
+  "global_limitations": [
+    "Final root committed-HEAD validation is running separately and deliberately not captured as completed here.",
+    "Hashes prove captured artifact bytes, not correctness of the tested implementation or live deployment.",
+    "Expected failures are before-fix synthetic reproductions, not claimed production incidents.",
+    "Some historical artifacts describe intermediate limitations later repaired; entries state revision context and later evidence must take precedence.",
+    "Empty compiler logs alone are not proof of successful compilation.",
+    "Only enumerated known synthetic artifacts were indexed; simple secret-pattern screening is not a general privacy/security audit."
+  ]
+}

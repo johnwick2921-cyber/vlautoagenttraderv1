@@ -1,0 +1,22 @@
+ny_version,plan_created_ct,lifecycle,scenario,arm_enabled,arm_side,arm_entry,arm_wait_confirm,confirm_rule,confirm_ref,armed_orders_row_written,evidence
+1,2026-09-03 08:05:19,dormant,S1,true,short,29259.67,n/a,touch,n/a,no,plan doc; no armed row for v1
+1,2026-09-03 08:05:19,dormant,S2,false,,,,,,no,arm=null in plan doc
+1,2026-09-03 08:05:19,dormant,S3,false,,,,,,no,arm=null in plan doc
+2,2026-09-03 08:45:05,active,S1,true,short,29285,true,touch,29285,id 35 (filled 09:05:14 -> pos 591),log 09:02:54 "armed NY S1 leg 1 short limit 29285.00"
+2,2026-09-03 08:45:05,active,S2,false,,,,,,no,arm=null in plan doc
+2,2026-09-03 08:45:05,active,S3,false,,,,,,no,arm=null in plan doc
+3,2026-09-03 09:15:31,active,S1,false,,,,,,no,arm=null in plan doc — S1 NEVER re-authored after v2
+3,2026-09-03 09:15:31,active,S2,true,short,29351.05,true,touch,29351.05,id 36 (cancelled marketable 09:20:47),log 09:20:47 "armed NY S2 leg 1 short limit 29351.05"
+3,2026-09-03 09:15:31,active,S3,false,,,,,,no,arm=null
+3,2026-09-03 09:15:31,active,S4,false,,,,,,no,arm=null — a 4th scenario existed; index would have allowed a 4th slot
+4,2026-09-03 09:44:33,active,S1,false,,,,,,no,arm=null
+4,2026-09-03 09:44:33,active,S2,false,,,,,,no,arm=null
+4,2026-09-03 09:44:33,active,S3,false,,,,,,no,arm=null — v4 is the version live at the AI's 10:13:24 "no plan arm is live" line
+5,2026-09-03 10:14:45,active,S1,false,,,,,,no,arm=null
+5,2026-09-03 10:14:45,active,S2,false,,,,,,no,arm=null
+6,2026-09-03 10:49:57,active,S1,false,,,,,,no,arm=null
+6,2026-09-03 10:49:57,active,S2,true,long,29481.05,true,touch,29481.05,NO ROW — wait_confirm never MET,"bars 10:49:57-11:27:53: 38 bars, 0 touch 29481.05, low 29489.25"
+6,2026-09-03 10:49:57,active,S3,true,short,29543.75,true,touch,29543.75,NO ROW — wait_confirm never MET,"same window: 0 touch 29543.75, high 29539.50"
+7,2026-09-03 11:27:53,dormant,S1,false,,,,,,no,arm=null
+7,2026-09-03 11:27:53,dormant,S2,false,,,,,,no,arm=null
+7,2026-09-03 11:27:53,dormant,S3,true,short,29543.75,true,touch,29543.75,id 37 created 11:58:33,"log 11:58:33 'arm S3 leg 1 wait_confirm MET (touch)' + 'armed NY S3'; first 1m bar touching 29543.75 after v7 birth = 11:58"

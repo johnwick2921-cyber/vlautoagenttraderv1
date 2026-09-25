@@ -1,0 +1,58 @@
+reason|n|ids
+boot_sweep: pre-boot order, process restarted|8|87,89,91,93,95,97,99,101
+cancelled in NT8|1|102
+gate changed: rr|4|62,65,67,70
+no order_update within stale window (reconnec|7|73,75,77,79,81,83,85
+q|COUNT(*)
+all_rr|5
+q|id|source|cited_scenario_id|pnl_corrected|et
+unres_detail|530|system|off-plan|13.0|2026-08-20 08:12:02
+unres_detail|539|system|off-plan|-84.5|2026-08-21 03:54:09
+unres_detail|545|system||-29.5|2026-08-23 22:28:10
+unres_detail|546|system||-88.5|2026-08-24 07:06:42
+unres_detail|566|reconcile||97.0|2026-08-27 11:32:53
+unres_detail|571|reconcile||-44.5|2026-08-30 17:38:33
+unres_detail|573|e7_farside_test||6.0|2026-08-30 22:52:16
+unres_detail|574|e7_farside_test||-1.0|2026-08-30 23:00:16
+unres_detail|580|reconcile||39.5|2026-08-31 13:37:08
+q|opened_ct|outcome|n
+rthl_conflict|2026-09-02 22:10:00|break|3
+rthl_conflict|2026-09-03 00:01:00|break|7
+rthl_conflict|2026-09-03 01:06:00|hold|9
+rthl_conflict|2026-09-03 02:03:00|break|11
+rthl_conflict|2026-09-03 02:07:00|ambiguous_horizon|11
+rthl_conflict|2026-09-03 02:25:00|break|11
+rthl_conflict|2026-09-03 02:27:00|break|11
+rthl_conflict|2026-09-03 02:48:00|hold|11
+rthl_conflict|2026-09-03 04:21:00|ambiguous_horizon|5
+rthl_conflict|2026-09-03 04:21:00|break|6
+rthl_conflict|2026-09-03 07:30:00|break|11
+rthl_conflict|2026-09-03 07:35:00|break|11
+rthl_conflict|2026-09-03 07:48:00|break|11
+rthl_conflict|2026-09-03 08:07:00|hold|11
+rthl_conflict|2026-09-03 08:36:00|hold|11
+q|t|l
+rthl_formation_bar|2026-09-03 02:48:00|29199.25
+rthl_formation_bar|2026-09-03 08:36:00|29199.25
+q|level_price|opened_ct|outcome|n
+demand_conflict|29278|2026-09-03 09:00:00|break|1
+demand_conflict|29278|2026-09-03 09:00:00|hold|4
+q|d|lo|hi
+fortnight|2026-08-21|29220.25|29539.75
+fortnight|2026-08-23|29263.25|29480.5
+fortnight|2026-08-24|28947.75|29297.75
+fortnight|2026-08-25|29095.5|29420.0
+fortnight|2026-08-26|29133.0|29655.75
+fortnight|2026-08-27|29402.25|29707.5
+fortnight|2026-08-28|29437.0|29811.75
+fortnight|2026-08-30|29273.5|29543.5
+fortnight|2026-08-31|29354.0|29538.75
+fortnight|2026-09-01|29001.75|29571.0
+fortnight|2026-09-02|28927.25|29255.0
+fortnight|2026-09-03|29075.0|29601.0
+q|c
+close_0821|29370.0
+q|c
+close_0903|29597.25
+q|sessions|rows_
+vwap2s_census|13|37

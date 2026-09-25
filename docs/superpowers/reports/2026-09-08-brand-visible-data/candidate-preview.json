@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-09-09T18:43:08.814290+00:00",
+  "surface": "candidate dist preview, not live 8080",
+  "url": "http://localhost:4173/agent",
+  "title": "VL Intelligent - AI Trading System",
+  "placeholders": [
+    "Ask VL anything...  \u2318K"
+  ],
+  "brandText": [
+    "VL may make mistakes."
+  ],
+  "running_release_unchanged": true
+}

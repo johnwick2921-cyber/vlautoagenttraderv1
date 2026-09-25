@@ -1,0 +1,44 @@
+# ADVERSARIAL VERIFY — "armed_orders unique index exhausted 3 slots for 09-03 NY" (2026-09-04)
+# All times CT. DB opened read-only.
+
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" ".schema armed_orders"
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT id,plan_id,version,armed_under_version,session,scenario,leg_index,side,entry_px,stop_px,target_px,state,state_reason,datetime(created_at) utc_created,datetime(updated_at) utc_updated FROM armed_orders WHERE id>=23 ORDER BY id;"
+
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT version,session,lifecycle,trigger_reason,datetime(created_at,'-5 hours') ct FROM plans WHERE trade_date='2026-09-03' ORDER BY session,version;"
+
+# per-version arm authoring (scenarios + arm.enabled + confirm)
+for v in 1 2 3 4 5 6 7; do sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT doc FROM plans WHERE trade_date='2026-09-03' AND session='NY' AND version=$v;" | python3 -c "
+import sys,json;d=json.load(sys.stdin)
+[print(json.dumps({'id':s.get('id'),'dir':s.get('direction'),'arm':s.get('arm'),'confirm':s.get('confirm')})) for s in d.get('scenarios') or []]"; done
+
+# tape during NY v6's life (10:49:57 -> 11:27:53 CT) — the touch confirms both arms waited on
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" "
+SELECT COUNT(*) bars, SUM(l<=29481.05 AND h>=29481.05) touch_S2, SUM(l<=29543.75 AND h>=29543.75) touch_S3, MIN(l) lo, MAX(h) hi
+FROM bars WHERE symbol='MNQ' AND tf='1m'
+ AND open_time_ms >= (strftime('%s','2026-09-03 10:49:57')+5*3600)*1000
+ AND open_time_ms <= (strftime('%s','2026-09-03 11:27:53')+5*3600)*1000;"
+# -> bars=38 touch_S2=0 touch_S3=0 lo=29489.25 hi=29539.50
+
+# every NY arm-write log line of 09-03 (INFO lives only in the file logs)
+grep -h "^09-03 " /home/hoang/nofx/data/nofx_2026-09-02.log /home/hoang/nofx/data/nofx_2026-09-03.log | grep "⚔️ armed NY S"
+# -> 6x S1 @29285 (09:02:54-09:15:01, all v2) · 13x S2 @29351.05 (09:20:47-09:42:54, all v3) · 1x S3 @29543.75 (11:58:33, v7) · ZERO under v4/v5/v6
+
+# no arm refusal of any class fired during v6's life
+awk '$1=="09-03" && $2>="10:49:57" && $2<="11:27:53"' /home/hoang/nofx/data/nofx_2026-09-03.log | grep -c "arm REFUSED"   # -> 0
+
+# the AI line the peer quoted, and the plan version it was written under
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT id,datetime(timestamp,'-5 hours'),plan_version,decision_json FROM decision_records WHERE datetime(timestamp,'-5 hours')='2026-09-03 10:13:24';"
+# -> id 37105, plan_version=4 — and NY v4 authored ZERO enabled arms
+
+# the code the peer cited, and the branch they stopped short of
+sed -n '190,235p' /home/hoang/nofx-2day04/store/armed_orders.go
+# 197-211 comment · 212 `if existing.Version == row.Version && !IsBootSweepReason(...)` -> return nil
+# 222   "// New plan version → RE-AUTHORIZE: fresh armed state, fresh lineage."
+grep -n "BirthMs: row.CreatedAt.UnixMilli()" /home/hoang/nofx-2day04/trader/auto_trader_planner.go   # 2637 — confirm window is PER VERSION
+
+cd /home/hoang/nofx-2day04 && go test ./store/ -run 'TestUpsertArmReauthorizesOnVersionBump|TestUpsertArmManualCancelWinsSameVersion' -v
+# -> both PASS: a CANCELLED row for (P1,S2,leg0) comes back state=armed version=3 on a version bump

@@ -1,0 +1,32 @@
+=== strict leg history
+c8c90dcc 2026-09-03 10:43:09 -0500 feat(R4): plan_mode strict — first implementation, by owner ruling, as leg 0 of the ONE EntryGate
+=== boots 09-03 (revs)
+09-03 10:28:29 [INFO
+09-03 11:10:33 [INFO
+09-03 14:18:26 [INFO
+09-03 14:59:03 [INFO
+09-03 15:02:18 [INFO
+09-03 18:08:56 [INFO
+09-03 19:06:06 [INFO
+09-03 21:19:00 [INFO
+09-03 21:48:12 [INFO
+09-03 23:11:59 [INFO
+09-03 23:12:55 [INFO
+=== too-close refusals all time
+id|ct|r
+36640|2026-09-02 18:48:49|too close (25.25 \u003c 450.56 = 1.5×ATR5m)"]
+36641|2026-09-02 18:50:36|too close (21.00 \u003c 450.56 = 1.5×ATR5m)"]
+36642|2026-09-02 18:52:33|too close (22.00 \u003c 450.56 = 1.5×ATR5m)"]
+=== atr source for decision-path min-SL (running rev)
+17:// consistency, min-SL ×ATR5m, one-live-arm) historically lived ONLY at the arm
+47:	ATR5m     float64
+261:	// Leg 6 — min-SL ×ATR5m (same floor as both legacy chains).
+262:	if in.ATR5m > 0 && in.MinSLMult > 0 && in.Entry > 0 && in.Stop > 0 {
+267:		if dist+1e-9 < in.MinSLMult*in.ATR5m {
+268:			return fmt.Sprintf("entry_gate: stop %.2f too close (%.2f < %.2f = %.1f×ATR5m)", in.Stop, dist, in.MinSLMult*in.ATR5m, in.MinSLMult), true
+292:			ATR5m: in.ATR5m, MinSLMult: in.MinSLMult,
+301:// armSeamATR5mFromBars is the ONE ATR5m math for BOTH seams (no-trade-rider
+306:// were refused against `1.5×ATR5m = 450.56` (dATR 300.4) while the arm seam in
+307:// the same minutes used ATR5m 12.78-14.12. "One gate, two ATRs" is the bug.
+308:func armSeamATR5mFromBars(bars []market.Kline) float64 {
+315:// armSeamATR5m is the decision path's entry to the same resolver: fetch the

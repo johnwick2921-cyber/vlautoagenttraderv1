@@ -1,0 +1,29 @@
+placed_ct,placed_limit,signal_id,db_id,db_entry_px,db_stop_px,db_target_px,db_version,db_state,db_state_reason,drift
+08-30 17:35:01,29437.00,84f15f79-d9e2-4d6e-98a8-04ffe2dbafbb,12,29437.0,29414.75,29509.5,1,cancelled,gate changed: min_sl,same
+08-30 18:40:01,29371.50,3ad69de4-dff9-41ab-b7d4-a5c09500f401,NOTFOUND,,,,,,n/a
+08-30 19:35:01,29414.21,e15579eb-1704-414a-be06-ea052c286d3f,NOTFOUND,,,,,,n/a
+08-30 19:45:01,29414.21,a87e9f83-b85f-45b4-9954-97b5725bbca7,NOTFOUND,,,,,,n/a
+08-30 22:44:36,29371.50,8115d2ec-738e-4de5-80c0-00b8051f2c81,NOTFOUND,,,,,,n/a
+08-30 22:50:36,29371.50,6f0ce8fa-764f-4e6a-960e-ee10e1526a9b,NOTFOUND,,,,,,n/a
+08-30 22:55:01,29371.50,325c0a9c-0c2b-467b-8460-602902a5433e,NOTFOUND,,,,,,n/a
+08-30 22:58:36,29371.50,916fd225-c6fe-4c9a-9c6b-1acdfe48b52c,NOTFOUND,,,,,,n/a
+08-30 23:02:24,29371.50,b6811ca0-2064-44ad-8df9-2e213dbebe6e,NOTFOUND,,,,,,n/a
+08-30 23:04:41,29371.50,e6eb0ec1-d725-42a9-84e7-e30aab70cf9f,NOTFOUND,,,,,,n/a
+08-30 23:06:36,29371.50,675f0022-6c5a-4e8a-94c0-1cfe70600c8f,NOTFOUND,,,,,,n/a
+08-30 23:10:36,29371.50,58f77728-4925-45aa-830d-c1c6d003cd58,14,29371.5,29350.0,29420.0,2,cancelled,e7_incident_kill:manual_cancel_respected,same
+09-01 02:55:29,29477.00,ca315135-f697-435d-b00f-70be3fa9d5ba,23,29477.0,29500.21,29418.62,2,cancelled,gate changed: min_sl,same
+09-01 04:55:29,29246.75,0c77307d-92df-4400-86ef-e6b4f8f71c2d,NOTFOUND,,,,,,n/a
+09-01 07:57:28,29138.00,6b5b89c6-7abc-4897-93a0-c97c7679acc4,24,29138.0,29162.0,29085.0,6,filled,,same
+09-01 08:55:08,29137.29,fd71b48f-8904-4f93-86fb-f3d5d185f915,NOTFOUND,,,,,,n/a
+09-01 09:21:08,29182.00,18a7cc55-7a5b-4885-af2e-149340d49538,NOTFOUND,,,,,,n/a
+09-01 13:31:06,29082.75,d5fed440-0814-4d9b-97f2-ae010ab28c35,28,29082.75,29055.75,29162.0,5,filled,,same
+09-01 23:21:03,29035.25,d00abc07-fe32-4534-9eae-f6fa0e31a070,29,29044.0,29025.0,29099.85,7,cancelled,no order_update within stale window (reconnect/reconcile),8.75
+09-01 23:51:02,29035.25,c86c5cd0-6649-4615-949d-f15a5fc2f81a,30,29035.25,29018.0,29071.41,6,cancelled,no order_update within stale window (reconnect/reconcile),same
+09-03 11:58:33,29543.75,43512e1d-123f-4925-b852-a7f953735c6f,37,29543.75,29592.5,29397.11,7,cancelled,cancelled in NT8,same
+08-31 08:15:51,29398.52,a541d9e4-4eb2-4ec3-a0d0-32b7281cc2c8,18,29398.52,29378.02,29498.5,2,cancelled,gate changed: min_sl,same
+08-31 09:57:38,29437.00,0aa6032e-c6b6-4b65-9730-204538d8babd,NOTFOUND,,,,,,n/a
+08-31 12:00:01,29459.08,060192ea-7281-4b55-b7f7-11a9c11adbe7,20,29458.38,29482.5,29394.75,6,filled,fill@29459.00,-0.70
+08-31 12:20:01,29413.00,f0bbe9af-c6ce-4444-8243-974c1ce03208,21,29413.0,29363.25,29517.0,4,filled,fill@29413.00,same
+08-31 12:41:29,29417.00,4b41dd13-defa-4adb-8d5b-7236f0f31a50,22,29417.0,29387.0,29517.0,5,cancelled,no order_update within stale window (reconnect/reconcile),same
+09-02 00:16:32,29068.05,dc8405f1-2c8b-44ab-a376-ca2f4804c9d8,31,29068.05,29044.0,29131.66,7,cancelled,no order_update within stale window (reconnect/reconcile),same
+09-03 09:02:54,29285.00,f2b1eb20-f89e-4a88-bcff-5ce971d17861,35,29285.0,29351.6284728996,29144.5,2,filled,,same

@@ -1,0 +1,6 @@
+arm_id,scenario,leg_index,side,entry_px,signal_id,working_at_ct,terminal_at_ct,working_minutes,terminal_reason,stale_killed,min_low_in_working_window,gap_pts_above_limit
+29,S1,0,long,29044.00,d00abc07-fe32-4534-9eae-f6fa0e31a070,2026-09-01 23:21:03,2026-09-02 00:31:48,70.75,"no order_update within stale window (reconnect/reconcile)",yes,,
+30,S1,1,long,29035.25,c86c5cd0-6649-4615-949d-f15a5fc2f81a,2026-09-01 23:51:02,2026-09-02 00:07:07,16.08,"no order_update within stale window (reconnect/reconcile)",yes,29037.25,2.00
+31,S3,0,long,29068.05,dc8405f1-2c8b-44ab-a376-ca2f4804c9d8,2026-09-02 00:16:32,2026-09-02 00:31:48,15.27,"no order_update within stale window (reconnect/reconcile)",yes,29068.75,0.70
+35,S1,0,short,29285.00,f2b1eb20-f89e-4a88-bcff-5ce971d17861,2026-09-03 09:02:54,2026-09-03 09:05:14,2.33,filled,no,,
+37,S3,0,short,29543.75,43512e1d-123f-4925-b852-a7f953735c6f,2026-09-03 11:58:33,2026-09-03 12:15:01,16.47,"cancelled in NT8 (plan lifecycle: no active plan)",no,,

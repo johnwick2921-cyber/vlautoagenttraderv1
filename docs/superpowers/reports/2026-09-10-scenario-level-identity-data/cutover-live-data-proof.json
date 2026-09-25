@@ -1,0 +1,44 @@
+{
+  "swept_arm": [
+    {
+      "id": 152,
+      "plan_id": "2026-09-10:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "version": 3,
+      "scenario": "S1",
+      "state": "cancelled",
+      "signal_id": "62a9aa52-0c57-432b-bbc5-67a967550ca4",
+      "entry_px": 29094.0,
+      "created_at": "2026-09-10 19:11:05.158026443-05:00",
+      "updated_at": "2026-09-11 02:15:03.214740248+00:00",
+      "cancel_settled_snapshot_id": 0
+    }
+  ],
+  "level_id_column": [
+    {
+      "cid": 43,
+      "name": "level_id",
+      "type": "TEXT",
+      "notnull": 0,
+      "dflt_value": null,
+      "pk": 0
+    }
+  ],
+  "postboot_plans": [],
+  "backfill_keys": [
+    "recomputed",
+    "unrecomputable",
+    "untouched",
+    "rows"
+  ],
+  "backfill_counts": {
+    "recomputed": 0,
+    "unrecomputable": 321,
+    "untouched": 5050
+  },
+  "episode_id_counts": [
+    {
+      "n": 5371,
+      "named": 0
+    }
+  ]
+}

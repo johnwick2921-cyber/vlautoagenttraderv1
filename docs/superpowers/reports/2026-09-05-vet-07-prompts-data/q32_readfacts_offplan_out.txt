@@ -1,0 +1,16 @@
+n|tokens_in_zero|plan_id_null|distinct_hash|bias_ai_null
+32|32|32|1|32
+'---opens 09-03: cited_scenario'
+---opens 09-03: cited_scenario
+id|ct|act|cited|outcome
+36864|2026-09-03 02:12:56|open_short|S1|other_gate
+'---off-plan mentions 7d: waits vs opens'
+---off-plan mentions 7d: waits vs opens
+act|n
+open_short|1
+wait|110
+'---09-04 decision_records by cycle_type'
+---09-04 decision_records by cycle_type
+ct|pv|n|sys|inp
+||8|5322.0|8139.0
+|futures|366|9188.0|16276.0

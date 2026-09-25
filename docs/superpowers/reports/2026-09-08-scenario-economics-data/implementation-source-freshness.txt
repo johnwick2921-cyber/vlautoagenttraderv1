@@ -1,0 +1,37 @@
+Candidate source at 95e7b420df0960edc67a91ff2a719fe105f441ae
+kernel/plan_doc.go
+d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/plan_doc.go:447 func ParsePlanDocCapped(raw string, maxLevels, maxScenarios int) (*PlanDoc, error) {
+kernel/plan_doc.go:452 func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring bool) (*PlanDoc, error) {
+kernel/scenario_economics.go
+0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations
+kernel/scenario_economics.go:59 func EconomicsFor(s PlanScenario) ScenarioEconomicsView {
+kernel/scenario_economics.go:95 func EconomicsSummary(s PlanScenario) string {
+kernel/scenario_economics.go:120 func ScenarioEconomicsCounters() ScenarioEconomicsCounts {
+kernel/scenario_economics.go:125 func ScenarioEconomicsBootLine() string {
+kernel/scenario_economics.go:139 func validateNewScenarioEconomics(d *PlanDoc) error {
+kernel/scenario_economics.go:188 func scenarioEconomicsIssues(s PlanScenario) (issues []string, contradiction, pathKnown, pathCoherent bool) {
+kernel/scenario_economics.go:313 func logScenarioEconomics(verdict string, s PlanScenario, issues, warnings []string) {
+kernel/planner_prompt.go
+d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+kernel/levels_volume_boot.go
+d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+trader/desk_facts.go
+d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+trader/scenario_economics_desk.go
+d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+trader/scenario_economics_desk.go:10 func (at *AutoTrader) deskScenarioEconomics(now time.Time) DeskLine {
+web/src/components/plan/ScenarioList.tsx
+0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations
+web/src/components/plan/ScenarioEconomics.tsx
+d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+web/src/components/plan/ScenarioEconomics.tsx:5 export function ScenarioEconomics({ scenario: s }: { scenario: PlanScenario }) {
+web/src/lib/api/plan.ts
+d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns
+web/src/lib/api/plan.ts:26 export interface ScenarioEconomics {
+web/src/guide/content/planCard.ts
+0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations
+docs/superpowers/SYSTEM-MAP.md
+0533c8d052e8f871af26d8725522a019d0ebafe1 2026-09-08T16:19:16-05:00 test(scenario-economics): pin write boundary, legacy parity and counter mutations
+docs/superpowers/AUDIT-CHECKLIST.md
+95e7b420df0960edc67a91ff2a719fe105f441ae 2026-09-08T16:20:22-05:00 docs(scenario-economics): assign class 92 at integration

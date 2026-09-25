@@ -1,0 +1,25 @@
+k|n
+total|64
+full(len>=20000)|47
+repair(len<8000)|17
+killzone_0730|11
+conviction_monday|47
+week75|47
+accept0|47
+fvg_none_fresh|47
+attempt1_total|30
+attempt1_with_corrections|0
+both_lists(valid7+schema9)|16
+minsl10_literal|47
+floor15_section|16
+errors_today_x2|47
+'---'
+---
+id|trade_date|session|attempt|r
+116|2026-09-03|ASIA|1|gap-up at 29622.25 (> PDH 29601.00): the long scenario's trigger must reference a level ≥ current price (breakout/retest), not a dip back below
+120|2026-09-04|NY|3|S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+122|2026-09-04|LONDON|2|S2 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+123|2026-09-04|NY|1|gap-up at 29607.75 (> PDH 29601.00): the long scenario's trigger must reference a level ≥ current price (breakout/retest), not a dip back below
+125|2026-09-04|NY|2|S2 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+128|2026-09-04|NY|2|S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+131|2026-09-04|NY|2|S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)

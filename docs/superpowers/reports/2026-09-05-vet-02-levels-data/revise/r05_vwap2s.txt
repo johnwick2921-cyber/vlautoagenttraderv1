@@ -1,0 +1,17 @@
+q       rows_  plan_sessions  minus  plus
+------  -----  -------------  -----  ----
+vwap2s  37     13             19     18  
+label  
+-------
+VWAP   
+VWAP+1σ
+VWAP+2σ
+VWAP−1σ
+VWAP−2σ
+label    rows_  sessions
+-------  -----  --------
+VWAP+2σ  18     8       
+VWAP−2σ  19     10      
+q                   COUNT(DISTINCT trade_date||'|'||session)
+------------------  ----------------------------------------
+nonweekly_sessions  47                                      

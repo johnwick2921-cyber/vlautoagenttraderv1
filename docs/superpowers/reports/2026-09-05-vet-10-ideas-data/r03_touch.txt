@@ -1,0 +1,66 @@
+== detector barrier params ==
+12|3.0|close|677|4.24474737368684|4.84904952476238|12.7342421210605|14.5471485742871
+== outcome vs bars_to_exit and wallclock minutes ==
+ambiguous_horizon|151|13.0|13.0|13.0
+break|264|4.73|4.73|12.0
+hold|262|3.95|3.95|12.0
+== excursion mins by outcome (barrier artefact test) ==
+ambiguous_horizon|151|0.0|19.75|0.0|17.34
+break|264|13.71|111.13|0.0|85.0
+hold|262|0.0|28.0|13.75|159.0
+== hold |mae| median overall and RTH-L/NY and VWAP/NY ==
+-- 1=1 hold |mae| p50:
+262|26.09
+22.0
+-- 1=1 break mfe p50:
+20.5
+-- level_kind='RTH-L' and session='NY' hold |mae| p50:
+34|34.1
+24.25
+-- level_kind='RTH-L' and session='NY' break mfe p50:
+20.0
+-- level_kind='VWAP' and session='NY' hold |mae| p50:
+58|23.1
+21.62
+-- level_kind='VWAP' and session='NY' break mfe p50:
+19.06
+== stop_floor_pts distribution (planner_read_facts) ==
+32|13.6|39.57|72.61|21|22
+== kinds: n, ambiguous share ==
+VWAP|199|67|33.7
+RTH-L|140|16|11.4
+DEMAND|139|11|7.9
+SWG-H|29|14|48.3
+OR-H|22|4|18.2
+SUPPLY|22|8|36.4
+POC|20|6|30.0
+SWG-L|16|8|50.0
+OR-L|12|4|33.3
+PDC|12|1|8.3
+RTH-H|12|2|16.7
+OB|11|4|36.4
+PDH|10|1|10.0
+eVWAP|10|5|50.0
+== VWAP NY ambiguity ==
+ASIA|21|11|4|6
+LONDON|55|24|20|11
+NY|123|32|58|33
+== cells with resolved>50 ==
+DEMAND|NY|94|38|103|9
+RTH-L|NY|98|34|112|14
+VWAP|NY|91|58|123|32
+== first touch (ordinal=1) ==
+471|177|200|94
+== RTH-L NY ordinal split and ambiguity ==
+1|112|34|64|14
+== touch_episodes session_day / label vocab ==
+2026-08-25|29
+2026-08-26|83
+2026-08-27|176
+2026-08-30|172
+2026-08-31|316
+2026-09-01|215
+2026-09-02|201
+2026-09-03|123
+44
+20

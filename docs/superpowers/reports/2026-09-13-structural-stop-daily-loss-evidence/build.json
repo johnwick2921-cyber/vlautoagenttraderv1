@@ -1,0 +1,9 @@
+{
+  "build_sha": "0c9d4f30a0470510a15e4aa92d7fa6ec96e9c38d",
+  "path": "/tmp/structural-daily-loss-release/nofx-bin.next",
+  "bytes": 73422552,
+  "md5": "1dba3de51d4813481546ecb933325d4c",
+  "sha256": "5738ec671b9d706e43f545c99c218bfcd18b4e982f22358c6dcf4581ee5045ca",
+  "vcs_modified": false,
+  "toolchain": "go1.25.13"
+}

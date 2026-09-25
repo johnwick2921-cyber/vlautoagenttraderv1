@@ -1,0 +1,39 @@
+{
+  "asof_ct": "2026-09-03 10:00:00",
+  "RTH_bars": 90,
+  "RTH_open": 29249.5,
+  "RTH_known_high": 29375.25,
+  "RTH_known_low": 29199.25,
+  "last_close": 29363.25,
+  "known_net": 113.75,
+  "IB_high": 29375.25,
+  "IB_low": 29199.25,
+  "0956": {
+    "rowid": 440388,
+    "symbol": "MNQ",
+    "tf": "1m",
+    "open_time_ms": 1788447360000,
+    "o": 29315.25,
+    "h": 29325.5,
+    "l": 29246.0,
+    "c": 29296.75,
+    "v": 16450.0,
+    "convention": "epoch_floor"
+  },
+  "0959": {
+    "rowid": 440395,
+    "symbol": "MNQ",
+    "tf": "1m",
+    "open_time_ms": 1788447540000,
+    "o": 29339.5,
+    "h": 29367.75,
+    "l": 29338.0,
+    "c": 29363.25,
+    "v": 8823.0,
+    "convention": "epoch_floor"
+  },
+  "0956_volume_vs_prior_RTH_median": 2.366395741926203,
+  "0956_volume_prior_comparison_n": 86,
+  "0956_rank_of_87": 3,
+  "RTH_vwap_proxy": 29302.378673066032
+}

@@ -1,0 +1,599 @@
+trade_date,session,version,price,label,grade,instr
+2026-09-02,LONDON,1,29317.25,RTH-H,A,monitor
+2026-09-02,LONDON,1,29171.25,ONH,A,monitor
+2026-09-02,LONDON,1,29125.5594423496,"VWAP+1σ",A,monitor
+2026-09-02,LONDON,1,29113.228125,POC,A,monitor
+2026-09-02,LONDON,1,29091.6860456685,VWAP,A,monitor
+2026-09-02,LONDON,1,29070,"SWG-L·5m",A,monitor
+2026-09-02,LONDON,1,29065.75,"SWG-H·5m",A,monitor
+2026-09-02,LONDON,1,29058.75,PDC,B,monitor
+2026-09-02,LONDON,1,29035.25,"SWG-L·5m",A,monitor
+2026-09-02,LONDON,1,29023.9392523062,"VWAP−2σ",A,monitor
+2026-09-02,LONDON,1,29016.5,ONL,A,monitor
+2026-09-02,LONDON,1,29001.75,PDL,A,monitor
+2026-09-02,LONDON,2,29571,PDH,A,react_zone
+2026-09-02,LONDON,2,29324.5,"OB(bull)·1h (HTF)",A,target_only
+2026-09-02,LONDON,2,29317.25,RTH-H,A,react_zone
+2026-09-02,LONDON,2,29246.25,"OB(bull)·4h (HTF)",A,target_only
+2026-09-02,LONDON,2,29209.25,"Supply·1h",C,confluence_reference
+2026-09-02,LONDON,2,29171.25,ONH,A,liquidity_break
+2026-09-02,LONDON,2,29113.23,POC,A,target
+2026-09-02,LONDON,2,29058.75,PDC,B,target_only
+2026-09-02,LONDON,2,29001.75,PDL,A,react_zone
+2026-09-02,LONDON,2,28970.38,"OB(bull)·4h (HTF)",A,target_only
+2026-09-02,LONDON,2,28927.25,ONL,A,sweep_reclaim
+2026-09-02,LONDON,2,28921.5,"OB(bull)·1h (HTF)",A,target_only
+2026-09-02,LONDON,3,29571,PDH,A,target
+2026-09-02,LONDON,3,29324.5,"OB(bull)·1h (HTF)",A,target
+2026-09-02,LONDON,3,29317.25,RTH-H,A,fade
+2026-09-02,LONDON,3,29246.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,LONDON,3,29209.25,"Supply·1h",C,watch
+2026-09-02,LONDON,3,29171.25,ONH,A,target
+2026-09-02,LONDON,3,29117.48,"VWAP+1σ",A,hold
+2026-09-02,LONDON,3,29058.75,PDC,B,support
+2026-09-02,LONDON,3,29001.75,RTH-L,A,support
+2026-09-02,LONDON,3,28927.25,ONL,A,sweep
+2026-09-02,LONDON,4,29571,PDH,A,target_only
+2026-09-02,LONDON,4,29317.25,RTH-H,A,"react_zone — target/fade above 50% mark"
+2026-09-02,LONDON,4,29246.25,"OB(bull)·4h (HTF)",A,target_only
+2026-09-02,LONDON,4,29209.25,"Supply·1h",C,"confluence cap — no chase"
+2026-09-02,LONDON,4,29171.25,ONH,A,"liquidity_break — target/breakout trigger"
+2026-09-02,LONDON,4,29066.56,VWAP,A,"magnet_meanrevert — retest/reclaim zone"
+2026-09-02,LONDON,4,29058.75,PDC,B,"target_only — hold reference"
+2026-09-02,LONDON,4,29001.75,RTH-L,A,"react_zone — wait for reject/reclaim"
+2026-09-02,LONDON,4,28927.25,ONL,A,"liquidity_break — sweep-reclaim reference"
+2026-09-02,LONDON,4,28921.5,"OB(bull)·1h (HTF)",A,"target_only — lower liquidity"
+2026-09-02,LONDON,5,29324.5,"OB(bull)·1h (HTF)",A,target_only
+2026-09-02,LONDON,5,29317.25,RTH-H,A,react_zone
+2026-09-02,LONDON,5,29209.25,"Supply·1h",C,confluence_ref
+2026-09-02,LONDON,5,29171.25,ONH,A,liquidity_break
+2026-09-02,LONDON,5,29058.75,PDC,B,target_only
+2026-09-02,LONDON,5,29014.19,"VWAP−1σ",A,mean_revert
+2026-09-02,LONDON,5,29001.75,RTH-L,A,react_zone
+2026-09-02,LONDON,5,28927.25,ONL,A,liquidity_break
+2026-09-02,NY,1,29571,PDH,A,target
+2026-09-02,NY,1,29317.25,RTH-H,A,fade
+2026-09-02,NY,1,29246.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,NY,1,29209.25,"Supply·1h",C,confluence_supply
+2026-09-02,NY,1,29171.25,ONH,A,target
+2026-09-02,NY,1,29058.75,PDC,B,reclaim
+2026-09-02,NY,1,29014.14,"VWAP−1σ",A,mean_revert
+2026-09-02,NY,1,29001.75,RTH-L,A,react
+2026-09-02,NY,1,28927.25,ONL,A,sweep_reclaim
+2026-09-02,NY,1,28921.5,"OB(bull)·1h (HTF)",A,target
+2026-09-02,NY,1,28917.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,LONDON,6,29571,PDH,A,target
+2026-09-02,LONDON,6,29563.12,"OB(bear)·4h (HTF)",A,target
+2026-09-02,LONDON,6,29317.25,RTH-H,A,target
+2026-09-02,LONDON,6,29246.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,LONDON,6,29209.25,"Supply·1h",C,target_confluence
+2026-09-02,LONDON,6,29171.25,ONH,A,break_retest
+2026-09-02,LONDON,6,29058.75,PDC,B,target
+2026-09-02,LONDON,6,29014.42,"VWAP−1σ",A,fade
+2026-09-02,LONDON,6,29001.75,RTH-L,A,defend
+2026-09-02,LONDON,6,28927.25,ONL,A,sweep_reclaim
+2026-09-02,NY,2,29571,PDH,A,react_zone
+2026-09-02,NY,2,29317.25,RTH-H,A,react_zone
+2026-09-02,NY,2,29246.25,"OB(bull)·4h (HTF)",A,target_only
+2026-09-02,NY,2,29209.25,"Supply·1h",C,"HTF confluence"
+2026-09-02,NY,2,29171.25,ONH,A,liquidity_break
+2026-09-02,NY,2,29115.1,"VWAP+1σ",A,magnet_meanrevert
+2026-09-02,NY,2,29102,OR-H,A,liquidity_break
+2026-09-02,NY,2,29058.75,PDC,B,target_only
+2026-09-02,NY,2,29042.75,OR-L,A,liquidity_break
+2026-09-02,NY,2,29001.75,RTH-L,A,react_zone
+2026-09-02,NY,2,28927.25,ONL,A,liquidity_break
+2026-09-02,NY,3,29324.5,"OB(bull)·1h (HTF)",A,"stop reference for RTH-H fade"
+2026-09-02,NY,3,29317.25,RTH-H,A,"premium reject short only above mid"
+2026-09-02,NY,3,29246.25,"OB(bull)·4h (HTF)",A,"target only"
+2026-09-02,NY,3,29209.25,"Supply·1h",C,"HTF confluence reference only"
+2026-09-02,NY,3,29171.25,ONH,A,"liquidity target"
+2026-09-02,NY,3,29111.58,"VWAP+1σ",A,"magnet/mean-revert; reclaimed = long trigger"
+2026-09-02,NY,3,29102,OR-H,C,"reclaim reference; above favors longs"
+2026-09-02,NY,3,29058.75,PDC,B,pivot/target
+2026-09-02,NY,3,29042.75,OR-L,C,"retest reference/target"
+2026-09-02,NY,3,29001.75,RTH-L,A,"reclaim long trigger only"
+2026-09-02,NY,3,28927.25,ONL,A,"liquidity; sweep-reclaim long only"
+2026-09-02,NY,3,28921.5,"OB(bull)·1h (HTF)",A,"confluence below ONL, not a trigger"
+2026-09-02,NY,4,29571,PDH,A,react_zone
+2026-09-02,NY,4,29324.5,"OB(bull)·1h (HTF)",A,target_only
+2026-09-02,NY,4,29317.25,RTH-H,A,react_zone
+2026-09-02,NY,4,29246.25,"OB(bull)·4h (HTF)",A,target_only
+2026-09-02,NY,4,29209.25,"Supply·1h",C,"HTF zone confluence reference"
+2026-09-02,NY,4,29171.25,ONH,C,target_only
+2026-09-02,NY,4,29135.65,"VWAP+1σ",A,magnet_meanrevert
+2026-09-02,NY,4,29058.75,PDC,B,target_only
+2026-09-02,NY,4,29001.75,RTH-L,A,react_zone
+2026-09-02,NY,4,28927.25,ONL,A,liquidity_break
+2026-09-02,NY,5,29571,PDH,A,watch
+2026-09-02,NY,5,29317.25,RTH-H,A,watch
+2026-09-02,NY,5,29246.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,NY,5,29209.25,"Supply·1h",C,target
+2026-09-02,NY,5,29171.25,ONH,C,target
+2026-09-02,NY,5,29143.97,"VWAP+1σ",A,reclaim
+2026-09-02,NY,5,29102,OR-H,C,fade
+2026-09-02,NY,5,29058.75,PDC,B,sweep-buy
+2026-09-02,NY,5,29042.75,OR-L,C,break
+2026-09-02,NY,5,29001.75,RTH-L,A,watch
+2026-09-02,NY,5,28927.25,ONL,A,watch
+2026-09-02,NY,5,28921.5,"OB(bull)·1h (HTF)",A,target
+2026-09-02,NY,6,29571,PDH,A,target
+2026-09-02,NY,6,29317.25,RTH-H,A,target
+2026-09-02,NY,6,29246.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,NY,6,29209.25,"Supply·1h",C,watch
+2026-09-02,NY,6,29171.25,ONH,C,retest
+2026-09-02,NY,6,29153.35,"VWAP+1σ",A,buy
+2026-09-02,NY,6,29102,OR-H,C,invalidate
+2026-09-02,NY,6,29058.75,PDC,B,gauge
+2026-09-02,NY,6,29042.75,OR-L,C,watch
+2026-09-02,NY,6,29001.75,RTH-L,A,sweep
+2026-09-02,NY,6,28927.25,ONL,A,guard
+2026-09-02,NY,6,28921.5,"OB(bull)·1h (HTF)",A,target
+2026-09-02,NY,7,29571,PDH,A,target
+2026-09-02,NY,7,29317.25,RTH-H,A,"react_zone / short reject reference"
+2026-09-02,NY,7,29246.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,NY,7,29209.25,"Supply·1h",C,"confluence reference / breakout trigger"
+2026-09-02,NY,7,29171.25,ONH,C,"breakout-retest / sweep-reclaim anchor"
+2026-09-02,NY,7,29158.47,"VWAP+1σ",A,"fade/reclaim magnet"
+2026-09-02,NY,7,29102,OR-H,C,reference
+2026-09-02,NY,7,29058.75,PDC,B,"bias line / support"
+2026-09-02,NY,7,29042.75,OR-L,C,"support / invalidation"
+2026-09-02,NY,7,29001.75,RTH-L,A,"liquidity target / support"
+2026-09-02,NY,7,28927.25,ONL,A,"liquidity break reference"
+2026-09-02,NY,8,29317.25,RTH-H,A,react_zone
+2026-09-02,NY,8,29246.25,"OB(bull)·4h (HTF)",A,target_only
+2026-09-02,NY,8,29209.25,"Supply·1h",C,"confluence reference"
+2026-09-02,NY,8,29161.16,"VWAP+1σ",A,magnet_meanrevert
+2026-09-02,NY,8,29102,OR-H,C,target_only
+2026-09-02,NY,8,29058.75,PDC,B,target_only
+2026-09-02,NY,8,29042.75,OR-L,C,target_only
+2026-09-02,NY,8,29001.75,RTH-L,A,react_zone
+2026-09-02,NY,9,29317.25,RTH-H,A,"premium reject short"
+2026-09-02,NY,9,29246.25,"OB(bull)·4h (HTF)",A,"target only"
+2026-09-02,NY,9,29209.25,"Supply·1h",C,"confluence only (HTF)"
+2026-09-02,NY,9,29171.25,ONH,C,"breakout retest / target"
+2026-09-02,NY,9,29163.03,"VWAP+1σ",A,"fade magnet / first long target"
+2026-09-02,NY,9,29102,OR-H,C,"target only"
+2026-09-02,NY,9,29058.75,PDC,B,"sweep-reclaim long reference"
+2026-09-02,NY,9,29042.75,OR-L,C,"stop / plan death line"
+2026-09-02,NY,9,29001.75,RTH-L,A,"liquidity floor / flip line"
+2026-09-02,NY,9,28927.25,ONL,A,"liquidity break target"
+2026-09-02,NY,10,29550.75,PDH,A,target
+2026-09-02,NY,10,29317.25,RTH-H,A,reject
+2026-09-02,NY,10,29246.25,"OB(bull)·4h (HTF)",A,target
+2026-09-02,NY,10,29209.25,"Supply·1h",C,confluence
+2026-09-02,NY,10,29171.25,ONH,C,draw
+2026-09-02,NY,10,29163.99,"VWAP+1σ",A,mean_revert
+2026-09-02,NY,10,29102,OR-H,C,target
+2026-09-02,NY,10,29058.75,PDC,B,target
+2026-09-02,NY,10,29042.75,OR-L,C,target
+2026-09-02,NY,10,29001.75,RTH-L,A,sweep_break
+2026-09-02,NY,10,28927.25,ONL,A,liquidity_break
+2026-09-02,NY,11,29462.5,"Supply·4h (HTF)",A,react_zone
+2026-09-02,NY,11,29450.5,PDH,A,react_zone
+2026-09-02,NY,11,29317.25,RTH-H,A,react_zone
+2026-09-02,NY,11,29246.25,"OB(bull)·4h (HTF)",A,target_only
+2026-09-02,NY,11,29209.25,"Supply·1h",C,confluence_reference
+2026-09-02,NY,11,29171.25,ONH,C,target_only
+2026-09-02,NY,11,29165.06,"VWAP+1σ",A,magnet_meanrevert
+2026-09-02,NY,11,29102,OR-H,C,target_only
+2026-09-02,NY,11,29058.75,PDC,B,target_only
+2026-09-02,NY,11,29042.75,OR-L,C,target_only
+2026-09-02,NY,11,29001.75,RTH-L,A,react_zone
+2026-09-02,NY,11,28927.25,ONL,A,liquidity_break
+2026-09-02,NY,12,29336.88,"FVG·1h (HTF)",A,target_only
+2026-09-02,NY,12,29317.25,PDH,A,react_zone
+2026-09-02,NY,12,29171.25,ONH,C,target_only
+2026-09-02,NY,12,29166.8,"VWAP+1σ",A,fade_short
+2026-09-02,NY,12,29154.38,"OB(bear)·4h",C,confluence_reference
+2026-09-02,NY,12,29108.47,VWAP,A,reclaim_long
+2026-09-02,NY,12,29102,OR-H,C,target_only
+2026-09-02,NY,12,29058.75,PDC,B,target_then_react
+2026-09-02,NY,12,29050.13,"VWAP−1σ",A,sweep_reclaim_long
+2026-09-02,NY,12,29042.75,OR-L,C,target_only
+2026-09-02,NY,12,29001.75,RTH-L,A,react_zone
+2026-09-02,NY,12,28927.25,ONL,A,liquidity_break
+2026-09-02,ASIA,1,29346.88,"FVG·4h (HTF)",A,"runner target only"
+2026-09-02,ASIA,1,29317.25,PDH,A,"target/reaction; fade only on confirmed close back below"
+2026-09-02,ASIA,1,29209.25,"Supply·1h",C,"confluence cap only, never standalone"
+2026-09-02,ASIA,1,29171.25,ONH,C,"liquidity draw/target; short only after confirmed sweep+reclaim"
+2026-09-02,ASIA,1,29113.89,VWAP,A,"mean-reversion long floor; reclaim entry"
+2026-09-02,ASIA,1,29102,OR-H,C,"support/breadcrumb; plan integrity below"
+2026-09-02,ASIA,1,29058.75,PDC,B,"bias death line; not a fade"
+2026-09-02,ASIA,1,29055.46,"VWAP−1σ",A,"secondary magnet/target"
+2026-09-02,ASIA,1,29042.75,OR-L,C,"sweep-reclaim long trigger; below flips short"
+2026-09-02,ASIA,1,29004.5,"iFVG(bear)·4h (HTF)",A,"target; sustained loss opens 29001.75"
+2026-09-02,ASIA,1,28927.25,ONL,A,"liquidity target; no fade without reclaim"
+2026-09-02,ASIA,2,29324.5,"OB(bull)·1h (HTF)",A,"target_only runner"
+2026-09-02,ASIA,2,29317.25,PDH,A,"react_zone upside target"
+2026-09-02,ASIA,2,29209.25,"Supply·1h",C,"HTF confluence only, not standalone"
+2026-09-02,ASIA,2,29189.25,ONH,A,"liquidity_break / failed-sweep fade trigger"
+2026-09-02,ASIA,2,29175.56,"VWAP+1σ",A,"magnet_meanrevert target"
+2026-09-02,ASIA,2,29149,ONL,A,"liquidity_break / sweep-reclaim long trigger"
+2026-09-02,ASIA,2,29136.25,"Demand·4h (HTF)",A,target_only
+2026-09-02,ASIA,2,29058.75,PDC,B,"target_only / bias invalid"
+2026-09-02,ASIA,2,29042.75,OR-L,C,target_only
+2026-09-02,ASIA,3,29324.5,"OB(bull)·1h (HTF)",A,target
+2026-09-02,ASIA,3,29317.25,PDH,A,target
+2026-09-02,ASIA,3,29212.5,"OB(bull)·1h",C,confluence
+2026-09-02,ASIA,3,29208.75,ONH,A,sweep
+2026-09-02,ASIA,3,29199.68,"VWAP+1σ",A,fade
+2026-09-02,ASIA,3,29149,ONL,A,sweep
+2026-09-02,ASIA,3,29136.25,"Demand·4h (HTF)",A,target
+2026-09-02,ASIA,3,29102,OR-H,C,target
+2026-09-02,ASIA,3,29058.75,PDC,B,target
+2026-09-02,ASIA,3,29042.75,OR-L,C,target
+2026-09-02,ASIA,3,29001.75,RTH-L,A,react
+2026-09-02,ASIA,4,29346.88,"FVG·4h (HTF)",A,target
+2026-09-02,ASIA,4,29324.5,"OB(bull)·1h (HTF)",A,target
+2026-09-02,ASIA,4,29317.25,PDH,A,react
+2026-09-02,ASIA,4,29208.75,ONH,A,"liquidity break/fade cap"
+2026-09-02,ASIA,4,29183.59,VWAP,A,"magnet mean-revert"
+2026-09-02,ASIA,4,29149,ONL,A,"liquidity sweep"
+2026-09-02,ASIA,4,29136.25,"Demand·4h (HTF)",A,target
+2026-09-02,ASIA,4,29102,OR-H,C,target
+2026-09-02,ASIA,4,29058.75,PDC,B,target
+2026-09-02,ASIA,4,29042.75,OR-L,C,target
+2026-09-02,ASIA,4,29001.75,RTH-L,A,react
+2026-09-02,ASIA,5,29324.5,"OB(bull)·1h (HTF)",C,target
+2026-09-02,ASIA,5,29317.25,PDH,A,target
+2026-09-02,ASIA,5,29208.75,ONH,A,sweep_or_break_reference
+2026-09-02,ASIA,5,29197.57,"VWAP+1σ",A,fade
+2026-09-02,ASIA,5,29149,ONL,A,sweep_reclaim_reference
+2026-09-02,ASIA,5,29136.25,"Demand·4h (HTF)",A,target
+2026-09-02,ASIA,5,29102,OR-H,C,target
+2026-09-02,ASIA,5,29058.75,PDC,B,target
+2026-09-02,ASIA,5,29042.75,OR-L,C,target
+2026-09-02,ASIA,5,29001.75,RTH-L,A,react
+2026-09-02,ASIA,6,29317.25,PDH,A,target
+2026-09-02,ASIA,6,29212.5,"OB(bull)·1h",C,resist
+2026-09-02,ASIA,6,29209.25,"Supply·1h",C,resist
+2026-09-02,ASIA,6,29181.64,VWAP,A,fade_back
+2026-09-02,ASIA,6,29149,ONL,A,sweep_reclaim
+2026-09-02,ASIA,6,29136.25,"Demand·4h (HTF)",A,target
+2026-09-02,ASIA,6,29102,OR-H,C,target
+2026-09-02,ASIA,6,29058.75,PDC,B,target
+2026-09-02,ASIA,7,29324.5,"OB(bull)·1h (HTF)",A,target_only
+2026-09-02,ASIA,7,29317.25,PDH,A,react_zone
+2026-09-02,ASIA,7,29218.25,ONH,A,liquidity_break
+2026-09-02,ASIA,7,29212.5,"OB(bull)·1h",C,confluence_reference
+2026-09-02,ASIA,7,29149,ONL,A,liquidity_break
+2026-09-02,ASIA,7,29136.25,"Demand·4h (HTF)",A,target_only
+2026-09-02,ASIA,7,29058.75,PDC,B,target_only
+2026-09-02,ASIA,7,29042.75,OR-L,C,target_only
+2026-09-02,ASIA,8,29324.5,"OB(bull)·1h",C,"confluence only"
+2026-09-02,ASIA,8,29218.25,ONH,C,target/liquidity
+2026-09-02,ASIA,8,29194.3,"VWAP+1σ",A,invalidation
+2026-09-02,ASIA,8,29189.25,"SWG-H·5m",A,"stop reference"
+2026-09-02,ASIA,8,29175.66,VWAP,A,fade/reject
+2026-09-02,ASIA,8,29167,"SWG-L·5m",A,"stop reference"
+2026-09-02,ASIA,8,29157.03,"VWAP−1σ",A,fade/reject
+2026-09-02,ASIA,8,29141.25,ONL,A,liquidity/target
+2026-09-02,ASIA,8,29136.25,"Demand·4h (HTF)",A,target_only
+2026-09-02,ASIA,8,29102,OR-H,C,target_only
+2026-09-02,ASIA,8,29076.5,"Demand·1h (HTF)",A,target_only
+2026-09-02,ASIA,9,29218.25,ONH,C,"target / invalidation"
+2026-09-02,ASIA,9,29212.5,"OB(bull)·1h",C,"confluence / invalidation"
+2026-09-02,ASIA,9,29208.75,"SWG-H·15m",A,"reject reference"
+2026-09-02,ASIA,9,29200.5,"SWG-H·5m",A,"reject trigger"
+2026-09-02,ASIA,9,29193.19,"VWAP+1σ",A,"reject reference"
+2026-09-02,ASIA,9,29176.29,VWAP,A,"breakdown trigger / target"
+2026-09-02,ASIA,9,29159.39,"VWAP−1σ",A,target
+2026-09-02,ASIA,9,29141.25,ONL,A,"liquidity target"
+2026-09-02,ASIA,9,29136.25,"Demand·4h (HTF)",A,target
+2026-09-02,ASIA,9,29102,OR-H,C,target
+2026-09-02,ASIA,9,29042.75,OR-L,C,target
+2026-09-02,ASIA,10,29218.25,ONH,C,"liquidity sweep/breakout reference"
+2026-09-02,ASIA,10,29212.5,"OB(bull)·1h",C,"HTF confluence resistance only"
+2026-09-02,ASIA,10,29208.75,"SWG-H·15m",A,"reject/fade reference"
+2026-09-02,ASIA,10,29200.5,"SWG-H·5m",A,"reject/fade reference"
+2026-09-02,ASIA,10,29193.38,"VWAP+1σ",A,"mean-revert resistance / short target"
+2026-09-02,ASIA,10,29159.02,POC,A,"mean-revert magnet / target"
+2026-09-02,ASIA,10,29141.25,ONL,A,"liquidity break reference"
+2026-09-02,ASIA,10,29136.25,"Demand·4h (HTF)",A,"target only"
+2026-09-02,ASIA,10,29113.9,pdVWAP,A,"mean-revert long reference"
+2026-09-02,ASIA,10,29102,OR-H,C,"target only"
+2026-09-02,ASIA,11,29218.25,ONH,C,watch
+2026-09-02,ASIA,11,29212.5,"OB(bull)·1h",C,watch
+2026-09-02,ASIA,11,29208.63,"VWAP+2σ",A,watch
+2026-09-02,ASIA,11,29199.5,"SWG-H·5m",A,fade
+2026-09-02,ASIA,11,29191.25,"VWAP+1σ",A,watch
+2026-09-02,ASIA,11,29173.88,VWAP,A,watch
+2026-09-02,ASIA,11,29156.5,"VWAP−1σ",A,watch
+2026-09-02,ASIA,11,29141.25,"SWG-L·5m",A,watch
+2026-09-02,ASIA,11,29132.5,ONL,A,watch
+2026-09-02,ASIA,11,29113.9,pdVWAP,A,target
+2026-09-02,ASIA,11,29102,OR-H,C,target
+2026-09-02,ASIA,11,29042.75,OR-L,C,target
+2026-09-02,ASIA,12,29218.25,ONH,C,target
+2026-09-02,ASIA,12,29212.5,"OB(bull)·1h",C,respect
+2026-09-02,ASIA,12,29208.69,"VWAP+2σ",A,fade
+2026-09-02,ASIA,12,29199.5,"SWG-H·5m",A,fade
+2026-09-02,ASIA,12,29191.51,"VWAP+1σ",A,target
+2026-09-02,ASIA,12,29174.34,VWAP,A,target
+2026-09-02,ASIA,12,29157.25,"SWG-L·5m",A,target
+2026-09-02,ASIA,12,29141.25,"SWG-L·5m",A,target
+2026-09-02,ASIA,12,29132.5,ONL,A,break
+2026-09-02,ASIA,12,29102,OR-H,C,target
+2026-09-02,ASIA,12,29042.75,OR-L,C,target
+2026-09-02,ASIA,12,29004.5,"iFVG(bear)·4h",A,target
+2026-09-02,ASIA,13,29218.25,ONH,C,sweep_reclaim
+2026-09-02,ASIA,13,29212.5,"OB(bull)·1h",C,confluence
+2026-09-02,ASIA,13,29208.39,"VWAP+2σ",A,fade
+2026-09-02,ASIA,13,29199.5,"SWG-H·5m",A,fade
+2026-09-02,ASIA,13,29195,"SWG-H·5m",A,watch
+2026-09-02,ASIA,13,29167.5,"SWG-L·5m",A,target
+2026-09-02,ASIA,13,29157.25,"SWG-L·5m",A,target
+2026-09-02,ASIA,13,29141.44,"VWAP−2σ",A,target
+2026-09-02,ASIA,13,29132.5,ONL,A,sweep_reclaim
+2026-09-02,ASIA,13,29105.75,"Demand·1h (HTF)",A,target
+2026-09-02,ASIA,14,29255,PDH,A,"rejection or breakout gate"
+2026-09-02,ASIA,14,29235,"SWG-H·5m",A,target
+2026-09-02,ASIA,14,29228.75,"SWG-L·5m",A,"short reject"
+2026-09-02,ASIA,14,29218.25,"SWG-H·15m",A,"first resistance target"
+2026-09-02,ASIA,14,29212.5,"OB(bull)·1h",C,"confluence only"
+2026-09-02,ASIA,14,29207.5,PDC,A,"pivot — range anchor"
+2026-09-02,ASIA,14,29200.5,"SWG-H·15m",A,"first support"
+2026-09-02,ASIA,14,29195,"SWG-H·5m",A,support
+2026-09-02,ASIA,14,29186.14,VWAP,A,"magnet — flip line"
+2026-09-02,ASIA,14,29132.5,ONL,A,"liquidity break"
+2026-09-02,ASIA,14,29098.88,"Demand·1h",C,"target confluence"
+2026-09-02,ASIA,14,29017.25,RTH-L,A,"sweep-reclaim long"
+2026-09-02,ASIA,15,29207.5,PDC,A,pivot
+2026-09-02,ASIA,15,29132.5,"SWG-L·15m",A,react_zone
+2026-09-02,ASIA,15,29113.9,pdVWAP,A,magnet_meanrevert
+2026-09-02,ASIA,15,29107.02,"VWAP−2σ",A,react_zone
+2026-09-02,ASIA,15,29098.88,"Demand·1h",C,confluence_reference
+2026-09-02,ASIA,15,29075,ONL,A,liquidity_break
+2026-09-02,ASIA,15,29017.25,RTH-L,A,target
+2026-09-02,ASIA,15,28927.25,PDL,A,target_only
+2026-09-03,LONDON,1,29255,PDH,A,"range high"
+2026-09-03,LONDON,1,29235,"SWG-H·5m",A,"secondary resistance"
+2026-09-03,LONDON,1,29228.75,"SWG-L·5m",A,"short stop / death"
+2026-09-03,LONDON,1,29218.25,"SWG-H·15m",A,"minor resistance"
+2026-09-03,LONDON,1,29207.5,PDC,A,"flip pivot"
+2026-09-03,LONDON,1,29204.25,"SWG-H·5m",A,"short reject trigger"
+2026-09-03,LONDON,1,29173.56,VWAP,A,"magnet / short target"
+2026-09-03,LONDON,1,29162.5,"SWG-L·5m",A,"short target"
+2026-09-03,LONDON,1,29139.1,"VWAP−1σ",A,"final short target"
+2026-09-03,LONDON,1,29098.88,"Demand·1h",C,"HTF confluence only"
+2026-09-03,LONDON,1,29075,ONL,A,"long sweep_reclaim trigger"
+2026-09-03,LONDON,1,29017.25,RTH-L,A,"long invalidation / deeper support"
+2026-09-03,NY,1,29293,ONH,A,"liquidity_break — sweep or reclaim only"
+2026-09-03,NY,1,29259.67,"VWAP+2σ",A,"react_zone — fade + flip line"
+2026-09-03,NY,1,29255,PDH,B,"target_only / invalidation cap"
+2026-09-03,NY,1,29219.2,"VWAP+1σ",A,"magnet target"
+2026-09-03,NY,1,29209.25,"Supply·1h",C,"HTF confluence — target cap"
+2026-09-03,NY,1,29178.73,VWAP,A,"mean-revert target"
+2026-09-03,NY,1,29144.5,"Demand·1h (HTF)",A,"deep confluence target"
+2026-09-03,LONDON,2,29293,ONH,A,"liquidity_break - sweep_reclaim short reference"
+2026-09-03,LONDON,2,29255,PDH,B,"target_only / flip reference"
+2026-09-03,LONDON,2,29219.97,"VWAP+1σ",A,"magnet_meanrevert - fade/reject short"
+2026-09-03,LONDON,2,29209.25,"Supply·1h",C,"HTF confluence reference, never standalone"
+2026-09-03,LONDON,2,29187.25,"SWG-H·5m",A,react_zone
+2026-09-03,LONDON,2,29179.57,VWAP,A,"magnet_meanrevert - target"
+2026-09-03,LONDON,2,29144.5,"Demand·1h",A,"HTF react_zone/target"
+2026-09-03,LONDON,2,29075,ONL,A,"liquidity_break - sweep_reclaim long reference"
+2026-09-03,LONDON,2,29017.25,RTH-L,A,"react_zone - target"
+2026-09-03,NY,2,29498.5,"OB(bear)·1h",C,confluence
+2026-09-03,NY,2,29293,ONH,A,liquidity_break
+2026-09-03,NY,2,29285,OR-H,A,reject
+2026-09-03,NY,2,29255,PDH,B,target_only
+2026-09-03,NY,2,29233.08,"VWAP+1σ",A,mean_revert
+2026-09-03,NY,2,29222.75,OR-L,A,liquidity_break
+2026-09-03,NY,2,29209.25,"Supply·1h",C,confluence
+2026-09-03,NY,2,29144.5,"Demand·1h",C,react
+2026-09-03,NY,2,29075,ONL,A,target
+2026-09-03,NY,3,29351.05,"VWAP+2σ",A,react
+2026-09-03,NY,3,29293,ONH,C,target
+2026-09-03,NY,3,29285,OR-H,C,watch
+2026-09-03,NY,3,29255,PDH,B,watch
+2026-09-03,NY,3,29222.75,OR-L,A,target
+2026-09-03,NY,3,29217.09,VWAP,A,invalid
+2026-09-03,NY,3,29209.25,"Supply·1h",C,confluence
+2026-09-03,NY,3,29150.11,"VWAP−1σ",A,target
+2026-09-03,NY,3,29144.5,"Demand·1h (HTF)",A,react
+2026-09-03,NY,3,29075,ONL,A,react
+2026-09-03,NY,3,29017.25,RTH-L,A,invalid
+2026-09-03,NY,4,29375.25,"SWG-H·5m",A,reject
+2026-09-03,NY,4,29346.88,"FVG·4h (HTF)",A,target
+2026-09-03,NY,4,29303.68,"VWAP+1σ",A,breakout
+2026-09-03,NY,4,29293,ONH,C,target
+2026-09-03,NY,4,29285,OR-H,C,target
+2026-09-03,NY,4,29260,"SWG-H·5m",A,retest
+2026-09-03,NY,4,29255,PDH,B,target
+2026-09-03,NY,4,29222.75,OR-L,A,reclaim
+2026-09-03,NY,4,29209.25,"Supply·1h",C,confluence
+2026-09-03,NY,4,29144.5,"Demand·1h",C,confluence
+2026-09-03,NY,4,29075,ONL,A,sweep
+2026-09-03,NY,5,29539.38,"Supply·1h",C,confluence/target
+2026-09-03,NY,5,29455,"EQL·1h (HTF)",A,target
+2026-09-03,NY,5,29445.5,"EQH·15m (HTF)",A,fade/target
+2026-09-03,NY,5,29435.75,"EQL·15m (HTF)",A,"reclaim/break trigger"
+2026-09-03,NY,5,29406.28,"VWAP+2σ",A,support/target
+2026-09-03,NY,5,29364.75,"SWG-H·5m",A,support/target
+2026-09-03,NY,5,29326.74,"VWAP+1σ",A,magnet/target
+2026-09-03,NY,5,29255,PDH,B,target_only
+2026-09-03,NY,6,29619.5,"Supply·1h",C,"stretch runner cap"
+2026-09-03,NY,6,29543.75,"SWG-H·5m",A,"supply re-test fade"
+2026-09-03,NY,6,29539.38,"Supply·1h",C,"confluence cap on rallies"
+2026-09-03,NY,6,29526.5,"EQL·1h",A,"target / runner hurdle"
+2026-09-03,NY,6,29517,"EQH·15m",A,"reclaim trigger — accept only on a 5m close above"
+2026-09-03,NY,6,29502.88,"OB(bear)·1h",C,"flip trigger — must hold above"
+2026-09-03,NY,6,29481.05,"VWAP+2σ",A,"premium support — arm first-touch long"
+2026-09-03,NY,6,29364.75,"SWG-H·5m",A,"deeper support / down target"
+2026-09-03,NY,6,29255,PDH,B,"target only / trend floor"
+2026-09-03,NY,7,29619.5,"Supply·1h",C,target
+2026-09-03,NY,7,29567,"EQL·15m (HTF)",A,target
+2026-09-03,NY,7,29543.75,"SWG-H·5m",A,react
+2026-09-03,NY,7,29539.38,"Supply·1h",C,confluence
+2026-09-03,NY,7,29529.5,"EQH·15m (HTF)",A,target
+2026-09-03,NY,7,29512.29,"VWAP+2σ",A,reclaim
+2026-09-03,NY,7,29502.25,"SWG-L·5m",A,invalidate
+2026-09-03,NY,7,29397.11,"VWAP+1σ",A,magnet
+2026-09-03,NY,7,29364.75,"SWG-H·5m",A,react
+2026-09-03,NY,7,29293,ONH,C,target_only
+2026-09-03,NY,7,29255,PDH,B,target_only
+2026-09-03,ASIA,1,29619.5,"Supply·1h",C,target/confluence
+2026-09-03,ASIA,1,29539.38,"Supply·1h",C,target/confluence
+2026-09-03,ASIA,1,29525.75,"SWG-H·5m",A,"break/fade reference"
+2026-09-03,ASIA,1,29517.5,"SWG-H·5m",A,invalidation/target
+2026-09-03,ASIA,1,29512.54,eVWAP,A,"magnet/reclaim trigger"
+2026-09-03,ASIA,1,29502.88,"OB(bear)·1h",C,"confluence only"
+2026-09-03,ASIA,1,29460.16,"VWAP+2σ",A,"pullback long support"
+2026-09-03,ASIA,1,29362.15,"VWAP+1σ",A,"mean-revert magnet"
+2026-09-03,ASIA,1,29304.62,"Demand·1h (HTF)",A,target/invalid
+2026-09-03,ASIA,1,29293,ONH,C,target/invalid
+2026-09-03,ASIA,1,29222.75,OR-L,A,"liquidity sweep/death"
+2026-09-03,ASIA,2,29545,"OB(bull)·4h (HTF)",A,target
+2026-09-03,ASIA,2,29539.38,"Supply·1h",C,react
+2026-09-03,ASIA,2,29513,ONH,A,break_reclaim
+2026-09-03,ASIA,2,29509.25,"OB(bear)·1h (HTF)",A,target
+2026-09-03,ASIA,2,29502.88,"OB(bear)·1h",C,confluence
+2026-09-03,ASIA,2,29481.5,ONL,A,break_reclaim
+2026-09-03,ASIA,2,29462.5,"Supply·4h (HTF)",A,react
+2026-09-03,ASIA,2,29324.5,"OB(bull)·1h (HTF)",A,target
+2026-09-03,ASIA,3,29577.12,"OB(bear)·1h (HTF)",A,target_only
+2026-09-03,ASIA,3,29545,"OB(bull)·4h (HTF)",A,target_only
+2026-09-03,ASIA,3,29539.38,"Supply·1h",C,htf_confluence_only
+2026-09-03,ASIA,3,29527.62,POC,A,first_target_magnet
+2026-09-03,ASIA,3,29521.25,ONH,A,breakout_or_sweep_reclaim_reference
+2026-09-03,ASIA,3,29503.08,VWAP,A,long_reclaim_reference
+2026-09-03,ASIA,3,29481.5,ONL,A,sweep_reclaim_long_reference
+2026-09-03,ASIA,3,29255,PDH,A,trend_anchor_reference
+2026-09-03,ASIA,4,29574.38,"OB(bull)·1h (HTF)",A,target_only
+2026-09-03,ASIA,4,29548,"SWG-H·15m",A,react_zone
+2026-09-03,ASIA,4,29541.75,ONH,A,liquidity_break
+2026-09-03,ASIA,4,29522.22,"VWAP+1σ",A,magnet_meanrevert
+2026-09-03,ASIA,4,29516.75,"SWG-H·5m",A,react_zone
+2026-09-03,ASIA,4,29509.18,VWAP,A,magnet_meanrevert
+2026-09-03,ASIA,4,29481.5,ONL,A,liquidity_break
+2026-09-03,ASIA,5,29585,"SWG-H·15m",A,reject
+2026-09-03,ASIA,5,29548,"SWG-H·15m",A,breakout_retest_or_reject
+2026-09-03,ASIA,5,29541.12,"Demand·1h",C,confluence
+2026-09-03,ASIA,5,29532,"OB(bull)·1h",C,confluence
+2026-09-03,ASIA,5,29528.63,"VWAP+1σ",A,mean_revert
+2026-09-03,ASIA,5,29517.5,"SWG-L·5m",A,support
+2026-09-03,ASIA,5,29499.27,"VWAP−1σ",A,magnet
+2026-09-03,ASIA,5,29481.5,ONL,A,liquidity_target
+2026-09-03,ASIA,6,29848.75,"Supply·1h",C,target
+2026-09-03,ASIA,6,29643.5,ONH,A,target
+2026-09-03,ASIA,6,29633.25,"OB(bull)·1h (HTF)",A,target
+2026-09-03,ASIA,6,29619.5,"OB(bear)·1h",C,confluence
+2026-09-03,ASIA,6,29601,PDH,A,buy
+2026-09-03,ASIA,6,29585,RTH-H,A,buy
+2026-09-03,ASIA,6,29541.12,"Demand·1h",C,confluence
+2026-09-03,ASIA,6,29509.09,"VWAP−1σ",A,watch
+2026-09-03,ASIA,6,29481.5,ONL,A,watch
+2026-09-03,ASIA,7,29848.75,"Supply·1h",C,target
+2026-09-03,ASIA,7,29652.12,"OB(bear)·1h (HTF)",A,target
+2026-09-03,ASIA,7,29643.5,ONH,A,break
+2026-09-03,ASIA,7,29637.52,"VWAP+2σ",A,fade
+2026-09-03,ASIA,7,29619.5,"OB(bear)·1h",C,watch
+2026-09-03,ASIA,7,29601,PDH,B,target
+2026-09-03,ASIA,7,29597.25,PDC,A,pivot
+2026-09-03,ASIA,7,29591.5,"SWG-L·5m",A,support
+2026-09-03,ASIA,7,29579.5,"SWG-H·5m",A,stop
+2026-09-03,ASIA,7,29554.2,VWAP,A,magnet
+2026-09-03,ASIA,7,29549.25,eVWAP,A,magnet
+2026-09-03,ASIA,7,29541.12,"Demand·1h",C,support
+2026-09-04,LONDON,1,29863.5,"OB(bull)·4h",C,target
+2026-09-04,LONDON,1,29848.75,"Supply·1h",C,target
+2026-09-04,LONDON,1,29644.25,ONH,A,sweep_fade
+2026-09-04,LONDON,1,29639.5,"EQL·15m (HTF)",A,target
+2026-09-04,LONDON,1,29619.5,"OB(bear)·1h",C,confluence
+2026-09-04,LONDON,1,29601,PDH,B,target_only
+2026-09-04,LONDON,1,29597.25,PDC,A,reclaim_long
+2026-09-04,LONDON,1,29591.5,"SWG-L·5m",A,support
+2026-09-04,LONDON,1,29579.5,"SWG-H·15m",A,reject_long
+2026-09-04,LONDON,1,29558.34,VWAP,A,stop_ref
+2026-09-04,LONDON,1,29481.5,ONL,A,target
+2026-09-04,LONDON,2,29649.59,"VWAP+2σ",A,react_zone
+2026-09-04,LONDON,2,29644.25,ONH,A,liquidity_break
+2026-09-04,LONDON,2,29611,"OB(bull)·1h",C,confluence_ref
+2026-09-04,LONDON,2,29601,PDH,B,target_only
+2026-09-04,LONDON,2,29597.25,PDC,B,target_only
+2026-09-04,LONDON,2,29561.43,VWAP,A,mean_revert
+2026-09-04,LONDON,2,29541.12,"Demand·1h",C,confluence_ref
+2026-09-04,LONDON,2,29517.35,"VWAP−1σ",A,mean_revert
+2026-09-04,LONDON,2,29490.88,"OB(bull)·1h (HTF)",A,target_only
+2026-09-04,LONDON,2,29481.5,ONL,A,liquidity_break
+2026-09-04,LONDON,2,29473.28,"VWAP−2σ",A,react_zone
+2026-09-04,LONDON,3,29863.5,"OB(bull)·4h",C,"HTF confluence"
+2026-09-04,LONDON,3,29720,ONH,A,"sweep-reclaim short / liquidity"
+2026-09-04,LONDON,3,29601,PDH,B,"invalid / flip reference"
+2026-09-04,LONDON,3,29597.25,PDC,B,"target only"
+2026-09-04,LONDON,3,29585,RTH-H,B,"target only"
+2026-09-04,LONDON,3,29538.84,"VWAP−1σ",A,"first-touch fade / magnet reference"
+2026-09-04,LONDON,3,29503.38,"OB(bear)·4h",C,"HTF confluence"
+2026-09-04,LONDON,3,29496.25,"Supply·1h (HTF)",A,"react / fade touch"
+2026-09-04,LONDON,3,29481.5,ONL,A,"liquidity target; break or sweep-reclaim"
+2026-09-04,LONDON,3,29278,"Demand·1h (HTF)",A,"discount long react"
+2026-09-04,NY,1,29720,ONH,A,monitor
+2026-09-04,NY,1,29644.25,"SWG-H·15m",A,monitor
+2026-09-04,NY,1,29616.25,"SWG-L·5m",A,monitor
+2026-09-04,NY,1,29601,PDH,B,monitor
+2026-09-04,NY,1,29597.25,PDC,B,monitor
+2026-09-04,NY,1,29585,RTH-H,B,monitor
+2026-09-04,NY,1,29573.75,"SWG-L·15m",A,monitor
+2026-09-04,NY,1,29531.2756752053,"VWAP−1σ",A,monitor
+2026-09-04,NY,1,29481.5,ONL,A,monitor
+2026-09-04,NY,1,29476.0830719778,"VWAP−2σ",A,monitor
+2026-09-04,NY,1,29199.25,RTH-L,A,monitor
+2026-09-04,NY,1,29075,PDL,A,monitor
+2026-09-04,NY,2,29863.5,"OB(bull)·4h",C,confluence
+2026-09-04,NY,2,29720,ONH,A,sweep
+2026-09-04,NY,2,29611.25,OR-H,A,break
+2026-09-04,NY,2,29601,PDH,B,target
+2026-09-04,NY,2,29597.25,PDC,B,target
+2026-09-04,NY,2,29585,RTH-H,B,target
+2026-09-04,NY,2,29553.75,OR-L,A,sweep_entry
+2026-09-04,NY,2,29532.64,"VWAP−1σ",A,magnet
+2026-09-04,NY,2,29503.38,"OB(bear)·4h",C,confluence
+2026-09-04,NY,2,29481.5,ONL,A,invalidate
+2026-09-04,NY,3,29863.5,"OB(bull)·4h",C,reference
+2026-09-04,NY,3,29720,ONH,A,target
+2026-09-04,NY,3,29657.38,"Supply·1h (HTF)",A,fade
+2026-09-04,NY,3,29635,OR-H,A,sweep-reclaim
+2026-09-04,NY,3,29601,PDH,B,target
+2026-09-04,NY,3,29597.25,PDC,B,target
+2026-09-04,NY,3,29591.02,VWAP,A,reclaim
+2026-09-04,NY,3,29553.75,OR-L,A,sweep-reclaim
+2026-09-04,NY,3,29503.38,"OB(bear)·4h",C,target
+2026-09-04,NY,3,29481.5,ONL,A,target
+2026-09-04,NY,4,29852.38,"Demand·4h",C,death
+2026-09-04,NY,4,29720,ONH,A,sweep
+2026-09-04,NY,4,29697.75,"OB(bull)·4h (HTF)",A,target
+2026-09-04,NY,4,29635,OR-H,C,target
+2026-09-04,NY,4,29601,PDH,B,target
+2026-09-04,NY,4,29585,RTH-H,B,fade
+2026-09-04,NY,4,29553.75,OR-L,C,target
+2026-09-04,NY,4,29526.38,"VWAP−1σ",A,fade
+2026-09-04,NY,4,29503.38,"OB(bear)·4h",C,confluence
+2026-09-04,NY,4,29481.5,ONL,C,target
+2026-09-04,NY,4,29199.25,RTH-L,A,react
+2026-09-04,NY,4,29144.5,"Demand·1h (HTF)",A,react
+2026-09-04,NY,5,29720,ONH,A,"liquidity break reference"
+2026-09-04,NY,5,29635,OR-H,C,target
+2026-09-04,NY,5,29601,PDH,B,target
+2026-09-04,NY,5,29597.25,PDC,B,target
+2026-09-04,NY,5,29585,RTH-H,B,target
+2026-09-04,NY,5,29553.75,OR-L,C,target
+2026-09-04,NY,5,29530.63,POC,A,"magnet/fade reference"
+2026-09-04,NY,5,29503.38,"OB(bear)·4h",C,"HTF confluence"
+2026-09-04,NY,5,29481.5,ONL,C,target
+2026-09-04,NY,5,29425.12,"FVG·1h (HTF)",A,target
+2026-09-04,NY,5,29199.25,RTH-L,B,target
+2026-09-04,NY,5,29144.5,"Demand·1h (HTF)",A,"react zone"
+2026-09-04,NY,6,29720,ONH,A,"liquidity sweep/reclaim"
+2026-09-04,NY,6,29635,OR-H,C,"death trigger"
+2026-09-04,NY,6,29601,PDH,B,"flip trigger"
+2026-09-04,NY,6,29597.25,PDC,B,target
+2026-09-04,NY,6,29585,RTH-H,B,confluence/target
+2026-09-04,NY,6,29579.56,VWAP,A,"fade/reject trigger"
+2026-09-04,NY,6,29553.75,OR-L,C,"target only"
+2026-09-04,NY,6,29503.38,"OB(bear)·4h",C,"HTF confluence only"
+2026-09-04,NY,6,29481.5,ONL,C,"target only"
+2026-09-04,NY,6,29425.12,"FVG·1h (HTF)",A,"target only"
+2026-09-04,NY,6,29144.5,"Demand·1h (HTF)",A,"react_zone long fallback"
+2026-09-04,NY,6,29101.75,PDL,A,react_zone

@@ -1,0 +1,91 @@
+level_key                                                                                 level_type   origin_date  price     times_tested  consumed  freshness  created_ct         
+----------------------------------------------------------------------------------------  -----------  -----------  --------  ------------  --------  ---------  -------------------
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||24133  PDH/PDL/PDC               30166.25  0             0         A          2026-08-17 21:15:19
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||24187  PDH/PDL/PDC               30234.5   0             0         A          2026-08-17 21:15:19
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||24203  PDH/PDL/PDC               30254.75  0             0         A          2026-08-17 21:15:19
+MNQ|PDH/PDL/PDC||23882                                                                    PDH/PDL/PDC               29853.0   1             1         done       2026-08-18 00:22:22
+MNQ|PDH/PDL/PDC||23935                                                                    PDH/PDL/PDC               29919.0   0             0         A          2026-08-18 00:22:22
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23935  PDH/PDL/PDC               29919.25  0             0         A          2026-08-18 18:28:54
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23882  PDH/PDL/PDC               29853.0   0             0         A          2026-08-18 20:25:39
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23597  PDH/PDL/PDC               29496.25  1             1         done       2026-08-19 01:35:44
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23552  PDH/PDL/PDC               29441.0   1             1         done       2026-08-19 01:35:45
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23936  PDH/PDL/PDC               29920.0   0             0         A          2026-08-19 01:35:45
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23604  PDH/PDL/PDC               29505.75  1             1         done       2026-08-19 02:02:17
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23828  PDH/PDL/PDC               29785.5   0             0         A          2026-08-19 17:02:41
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23816  PDH/PDL/PDC               29770.0   0             0         A          2026-08-19 19:21:21
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23807  PDH/PDL/PDC               29759.0   0             0         A          2026-08-20 02:00:32
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23693  PDH/PDL/PDC               29617.0   1             1         done       2026-08-20 02:00:32
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23500  PDH/PDL/PDC               29375.75  1             1         done       2026-08-20 02:00:32
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23798  PDH/PDL/PDC               29748.25  0             0         A          2026-08-20 19:19:45
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23588  PDH/PDL/PDC               29485.0   0             0         A          2026-08-20 21:33:40
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23749  PDH/PDL/PDC               29686.75  0             0         A          2026-08-21 02:03:07
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23486  PDH/PDL/PDC               29358.25  1             1         done       2026-08-21 02:03:07
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23362  PDH/PDL/PDC               29202.5   0             0         A          2026-08-21 02:03:07
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23410  PDH/PDL/PDC               29263.25  1             1         done       2026-08-24 08:31:43
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23584  PDH/PDL/PDC               29480.5   0             0         A          2026-08-24 08:31:43
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23413  PDH/PDL/PDC               29266.25  0             0         A          2026-08-24 17:04:54
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23438  PDH/PDL/PDC               29297.75  1             1         done       2026-08-25 01:38:15
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23359  PDH/PDL/PDC               29199.75  1             1         done       2026-08-25 01:38:15
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23158  PDH/PDL/PDC               28947.75  0             0         A          2026-08-25 04:09:27
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23426  PDH/PDL/PDC               29283.5   0             0         A          2026-08-25 17:05:07
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23409  PDH/PDL/PDC               29261.25  0             0         A          2026-08-25 18:08:17
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23403  PDH/PDL/PDC               29254.75  0             0         A          2026-08-25 18:16:18
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23398  PDH/PDL/PDC               29247.5   1             1         done       2026-08-25 18:22:18
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23395  PDH/PDL/PDC               29243.75  0             0         A          2026-08-25 18:46:19
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23382  PDH/PDL/PDC               29228.5   1             1         done       2026-08-26 00:30:57
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23276  PDH/PDL/PDC               29095.5   0             0         A          2026-08-26 00:30:57
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23536  PDH/PDL/PDC               29420.0   0             0         A          2026-08-26 00:30:57
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23599  PDH/PDL/PDC               29499.75  1             1         done       2026-08-27 02:01:51
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23724  PDH/PDL/PDC               29655.75  1             1         done       2026-08-27 03:23:25
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23713  PDH/PDL/PDC               29642.0   1             1         done       2026-08-28 00:45:01
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23766  PDH/PDL/PDC               29707.5   1             1         done       2026-08-28 00:45:01
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23521  PDH/PDL/PDC               29402.25  0             0         A          2026-08-28 00:45:01
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23539  PDH/PDL/PDC               29424.0   0             0         A          2026-08-28 13:01:07
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23549  PDH/PDL/PDC               29437.0   1             1         done       2026-08-30 17:09:18
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23607  PDH/PDL/PDC               29509.5   1             1         done       2026-08-30 17:09:18
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23849  PDH/PDL/PDC               29811.75  0             0         A          2026-08-31 07:42:30
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23631  PDH/PDL/PDC               29538.75  0             0         A          2026-09-01 02:49:29
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23483  PDH/PDL/PDC               29354.0   1             1         done       2026-09-01 02:49:29
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23578  PDH/PDL/PDC               29473.25  0             0         A          2026-09-01 04:53:29
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23201  PDH/PDL/PDC               29001.75  1             1         done       2026-09-02 00:19:48
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23247  PDH/PDL/PDC               29058.75  1             1         done       2026-09-02 00:19:48
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23656  PDH/PDL/PDC               29571.0   0             0         A          2026-09-02 07:15:50
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23640  PDH/PDL/PDC               29550.75  0             0         A          2026-09-02 13:02:29
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23560  PDH/PDL/PDC               29450.5   0             0         A          2026-09-02 13:30:29
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23453  PDH/PDL/PDC               29317.25  0             0         A          2026-09-02 13:58:29
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23366  PDH/PDL/PDC               29207.5   1             1         done       2026-09-03 00:08:56
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23404  PDH/PDL/PDC               29255.0   1             1         done       2026-09-03 00:08:56
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23141  PDH/PDL/PDC               28927.25  0             0         A          2026-09-03 00:35:01
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23680  PDH/PDL/PDC               29601.0   1             1         done       2026-09-04 00:40:53
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23677  PDH/PDL/PDC               29597.25  1             1         done       2026-09-04 01:20:48
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|MNQ|PDH/PDL/PDC||23281  PDH/PDL/PDC               29101.75  0             0         A          2026-09-04 12:11:02
+hr_ct          n   hi        lo      
+-------------  --  --------  --------
+2026-09-02 17  60  29208.75  29149.0 
+2026-09-02 18  60  29218.25  29167.0 
+2026-09-02 19  60  29201.75  29141.25
+2026-09-02 20  60  29200.5   29132.5 
+2026-09-02 21  60  29199.0   29133.0 
+2026-09-02 22  60  29242.75  29179.75
+2026-09-02 23  60  29255.0   29204.5 
+2026-09-03 00  60  29208.75  29075.0 
+2026-09-03 01  60  29204.25  29158.25
+2026-09-03 02  60  29245.75  29159.25
+2026-09-03 03  60  29293.0   29212.75
+2026-09-03 04  60  29226.0   29127.0 
+2026-09-03 05  60  29159.25  29105.5 
+2026-09-03 06  60  29187.25  29101.75
+2026-09-03 07  60  29260.0   29104.0 
+2026-09-03 08  60  29375.25  29194.5 
+2026-09-03 09  60  29367.75  29241.5 
+2026-09-03 10  60  29543.75  29362.0 
+2026-09-03 11  60  29548.0   29482.5 
+2026-09-03 12  60  29553.0   29476.0 
+2026-09-03 13  60  29585.0   29543.0 
+2026-09-03 14  60  29570.25  29509.0 
+2026-09-03 15  60  29536.25  29498.75
+tf   hi       lo       COUNT(*)
+---  -------  -------  --------
+15m  29585.0  29075.0  92      
+1m   29585.0  29075.0  1380    
+5m   29585.0  29075.0  276     

@@ -1,0 +1,6 @@
+ct_time,plan,version,transition,marker_price,log_file,evidence
+2026-09-03 01:34:53,2026-09-03 LONDON,1,PLAN written (lifecycle active),,nofx_2026-09-02.log,"🗓️ PLAN written ... LONDON v1"
+2026-09-03 02:40:00,2026-09-03 LONDON,1,DORMANT (flip-condition),29207.50,nofx_2026-09-02.log,"😴 line 73925"
+2026-09-03 04:30:55,2026-09-03 LONDON,1,REARMED (2x5m close back below),29197.36,nofx_2026-09-02.log,"⚡ line 75846"
+2026-09-03 08:00:54,2026-09-03 LONDON,1,DORMANT (flip-condition),29221.98,nofx_2026-09-02.log,"😴 line 81223"
+2026-09-03 08:15:44,2026-09-03 LONDON,2,PLAN written (level_event),,nofx_2026-09-02.log,"plans.created_at 13:15:44+00:00 = 08:15:44 CT"

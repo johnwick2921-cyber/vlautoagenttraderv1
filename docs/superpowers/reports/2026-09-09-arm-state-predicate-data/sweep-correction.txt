@@ -1,0 +1,9 @@
+RED: integrated branch before the correction (e4064cfd)
+    arm_sweep_settlement_test.go:32: boot bypassed confirmation: swept=1 sends=1 state=cancelled snapshot=0
+--- FAIL: TestArmSweepLeavesPendingCancelForSnapshotConfirmation (0.86s)
+
+GREEN: named exclusion; production sweep and settlement
+    arm_sweep_settlement_test.go:59: boot swept=0; no book pending=1; resting book pending=1; empty book cancelled with snapshot=2
+--- PASS: TestArmSweepLeavesPendingCancelForSnapshotConfirmation (0.90s)
+
+All focused store/trader arm-state, class-33 and unconfirmable-cancel tests passed.

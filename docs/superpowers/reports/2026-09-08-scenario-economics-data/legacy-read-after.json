@@ -1,0 +1,1231 @@
+{
+  "rows": [
+    {
+      "plan_rowid": 1,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 2,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 3,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 4,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 5,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 6,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 7,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 8,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 9,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 10,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 11,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 12,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 13,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 14,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 15,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 16,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 17,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 18,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 19,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 20,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 21,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 22,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 23,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 24,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 25,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 26,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 27,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 28,
+      "scenarios": 2,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 29,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 30,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 31,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 32,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 33,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 34,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 35,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 36,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 37,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 38,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 39,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 40,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 41,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 42,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 43,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 44,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 45,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 46,
+      "scenarios": 3,
+      "error": "scenario[1].confirm.rule \"1x5m_close\" — fade_requires_touch (a reject fade enters on the touch at the level, never on a close-confirm: touch-entry at the level (limit), stop behind structure by ≥2 ticks)"
+    },
+    {
+      "plan_rowid": 47,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 48,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 49,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 50,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 51,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 52,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 53,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 54,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 55,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 56,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 57,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 58,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 59,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 60,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 61,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 62,
+      "scenarios": 3,
+      "error": "scenario[0].confirm.rule \"2x5m_close\" — fade_requires_touch (a reject fade enters on the touch at the level, never on a close-confirm: touch-entry at the level (limit), stop behind structure by ≥2 ticks)"
+    },
+    {
+      "plan_rowid": 63,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 64,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 65,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 66,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 67,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 68,
+      "scenarios": 4,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 69,
+      "scenarios": 5,
+      "error": "scenario[4].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 70,
+      "scenarios": 3,
+      "error": "scenario[0].confirm.rule 2x5m_close — 2x5m_reserved (double-close confirms are legal ONLY on breakdown_continue|breakup_continue; breakout_retest uses: touch at the retest limit + stop-entry fallback (E7); 1x5m_close legal for the break leg)"
+    },
+    {
+      "plan_rowid": 71,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 72,
+      "scenarios": 4,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 73,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 74,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 75,
+      "scenarios": 4,
+      "error": "scenario[1].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 76,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 77,
+      "scenarios": 4,
+      "error": "scenario[3].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 78,
+      "scenarios": 4,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 79,
+      "scenarios": 4,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 80,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 81,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 82,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 83,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 84,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 85,
+      "scenarios": 4,
+      "error": "scenario[3].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 86,
+      "scenarios": 5,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 87,
+      "scenarios": 4,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 88,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 89,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 90,
+      "scenarios": 4,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 91,
+      "scenarios": 4,
+      "error": "scenario[3].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 92,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 93,
+      "scenarios": 5,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 94,
+      "scenarios": 4,
+      "error": "scenario[1].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 95,
+      "scenarios": 4,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 96,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 97,
+      "scenarios": 4,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 98,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 99,
+      "scenarios": 5,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 100,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 101,
+      "scenarios": 4,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 102,
+      "scenarios": 4,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 103,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 104,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 105,
+      "scenarios": 4,
+      "error": "scenario[3].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 106,
+      "scenarios": 5,
+      "error": "scenario[3].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 107,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 108,
+      "scenarios": 4,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 109,
+      "scenarios": 3,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 110,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 111,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 112,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 113,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 114,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 115,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 116,
+      "scenarios": 3,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 117,
+      "scenarios": 3,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 118,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 119,
+      "scenarios": 4,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 120,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 121,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 122,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 123,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 124,
+      "scenarios": 4,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 125,
+      "scenarios": 3,
+      "error": "scenario[1].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 126,
+      "scenarios": 3,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 127,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 128,
+      "scenarios": 2,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 129,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 130,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 131,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 132,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 133,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 134,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 135,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 136,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 137,
+      "scenarios": 5,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 138,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 139,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 140,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 141,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 142,
+      "scenarios": 4,
+      "error": "scenario[1].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 143,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 144,
+      "scenarios": 4,
+      "error": "scenario[3].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 145,
+      "scenarios": 3,
+      "error": "scenario[2].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 146,
+      "scenarios": 5,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 147,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 148,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 149,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 150,
+      "scenarios": 4,
+      "error": "scenario[0].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 151,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 152,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 153,
+      "scenarios": 4,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 154,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 155,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 156,
+      "scenarios": 3,
+      "error": "death.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 157,
+      "scenarios": 3,
+      "error": "flip.rule \"15m_close\" — condition_rule_15m_removed (the 15m condition variant is dead; use 2x5m|5m_close)"
+    },
+    {
+      "plan_rowid": 158,
+      "scenarios": 3,
+      "error": "scenario[0].confirm.rule 2x5m_close — 2x5m_reserved (double-close confirms are legal ONLY on breakdown_continue|breakup_continue; sweep_reclaim uses: split contract (E4): leg-1 touch at the sweep ref, leg-2 1m_mss (1x5m_close accepted as the leg-2 alternative))"
+    },
+    {
+      "plan_rowid": 159,
+      "scenarios": 3,
+      "error": "scenario[1].confirm.rule 2x5m_close — 2x5m_reserved (double-close confirms are legal ONLY on breakdown_continue|breakup_continue; breakout_retest uses: touch at the retest limit + stop-entry fallback (E7); 1x5m_close legal for the break leg)"
+    },
+    {
+      "plan_rowid": 162,
+      "scenarios": 4,
+      "error": "scenario[3].confirm.rule \"15m_close\" — confirm_rule_15m_removed (the 15m confirm variant is dead; use touch|1x5m_close|2x5m_close|1m_mss|time_hold)"
+    },
+    {
+      "plan_rowid": 163,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 164,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 165,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 166,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 167,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 168,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 169,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 170,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 171,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 172,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 173,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 174,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 175,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 176,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 177,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 178,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 179,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 180,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 181,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 182,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 183,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 184,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 185,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 186,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 187,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 188,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 189,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 190,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 191,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 192,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 193,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 194,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 195,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 196,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 197,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 198,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 199,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 200,
+      "scenarios": 5
+    },
+    {
+      "plan_rowid": 201,
+      "scenarios": 5
+    },
+    {
+      "plan_rowid": 202,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 203,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 204,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 205,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 206,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 207,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 208,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 209,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 210,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 211,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 212,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 213,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 214,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 215,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 216,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 217,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 218,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 219,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 220,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 221,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 222,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 223,
+      "scenarios": 0,
+      "error": "unmarshal: json: cannot unmarshal string into Go struct field PlanDoc.bias of type kernel.PlanBias"
+    },
+    {
+      "plan_rowid": 224,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 225,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 226,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 227,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 228,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 229,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 230,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 231,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 232,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 233,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 234,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 235,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 236,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 237,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 238,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 239,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 240,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 241,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 242,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 243,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 244,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 245,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 246,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 247,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 248,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 249,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 250,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 251,
+      "scenarios": 1
+    },
+    {
+      "plan_rowid": 252,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 253,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 254,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 255,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 256,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 257,
+      "scenarios": 0,
+      "error": "unmarshal: json: cannot unmarshal string into Go struct field PlanDoc.bias of type kernel.PlanBias"
+    },
+    {
+      "plan_rowid": 258,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 259,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 260,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 261,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 262,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 263,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 264,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 265,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 266,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 267,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 268,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 269,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 270,
+      "scenarios": 4
+    },
+    {
+      "plan_rowid": 271,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 272,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 273,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 274,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 275,
+      "scenarios": 3
+    },
+    {
+      "plan_rowid": 276,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 277,
+      "scenarios": 2
+    },
+    {
+      "plan_rowid": 278,
+      "scenarios": 3
+    }
+  ],
+  "scenario_n": 799,
+  "schema_accepted_scenarios": 394
+}

@@ -1,0 +1,236 @@
+[
+  {
+    "id": 16482370,
+    "event": "bars_historical",
+    "receipt_ms": 1789092903148,
+    "observation_ms": 1789092900000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092840000,
+      "bar_close_ms": 1789092900000,
+      "open": 29134,
+      "high": 29134.5,
+      "low": 29130,
+      "close": 29132,
+      "volume": 360
+    }
+  },
+  {
+    "id": 16482371,
+    "event": "bars_historical",
+    "receipt_ms": 1789092903148,
+    "observation_ms": 1789092960000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092900000,
+      "bar_close_ms": 1789092960000,
+      "open": 29131.5,
+      "high": 29131.5,
+      "low": 29131,
+      "close": 29131.5,
+      "volume": 6
+    }
+  },
+  {
+    "id": 16505304,
+    "event": "bar_update",
+    "receipt_ms": 1789092926359,
+    "observation_ms": 1789092960000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092900000,
+      "bar_close_ms": 1789092960000,
+      "open": 29131.5,
+      "high": 29418.25,
+      "low": 29126,
+      "close": 29418.25,
+      "volume": 308
+    }
+  },
+  {
+    "id": 16505310,
+    "event": "bar_update",
+    "receipt_ms": 1789092934039,
+    "observation_ms": 1789092960000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092900000,
+      "bar_close_ms": 1789092960000,
+      "open": 29131.5,
+      "high": 29418.25,
+      "low": 29126,
+      "close": 29416.25,
+      "volume": 309
+    }
+  },
+  {
+    "id": 16505322,
+    "event": "bar_update",
+    "receipt_ms": 1789092934041,
+    "observation_ms": 1789092960000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092900000,
+      "bar_close_ms": 1789092960000,
+      "open": 29131.5,
+      "high": 29418.25,
+      "low": 29126,
+      "close": 29416.25,
+      "volume": 310
+    }
+  },
+  {
+    "id": 16505334,
+    "event": "bar_update",
+    "receipt_ms": 1789092934041,
+    "observation_ms": 1789092960000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092900000,
+      "bar_close_ms": 1789092960000,
+      "open": 29131.5,
+      "high": 29418.25,
+      "low": 29126,
+      "close": 29416,
+      "volume": 311
+    }
+  },
+  {
+    "id": 16505348,
+    "event": "bars_historical",
+    "receipt_ms": 1789092983249,
+    "observation_ms": 1789093020000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092960000,
+      "bar_close_ms": 1789093020000,
+      "open": 29124.5,
+      "high": 29128.5,
+      "low": 29123,
+      "close": 29128,
+      "volume": 305
+    }
+  },
+  {
+    "id": 16505349,
+    "event": "bar_update",
+    "receipt_ms": 1789092986174,
+    "observation_ms": 1789093020000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092960000,
+      "bar_close_ms": 1789093020000,
+      "open": 29124.5,
+      "high": 29417.5,
+      "low": 29123,
+      "close": 29417.5,
+      "volume": 306
+    }
+  },
+  {
+    "id": 16505356,
+    "event": "bar_update",
+    "receipt_ms": 1789093010667,
+    "observation_ms": 1789093020000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789092960000,
+      "bar_close_ms": 1789093020000,
+      "open": 29124.5,
+      "high": 29421.25,
+      "low": 29123,
+      "close": 29421.25,
+      "volume": 307
+    }
+  },
+  {
+    "id": 16506189,
+    "event": "bar_update",
+    "receipt_ms": 1789093024565,
+    "observation_ms": 1789093080000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789093020000,
+      "bar_close_ms": 1789093080000,
+      "open": 29418.25,
+      "high": 29418.25,
+      "low": 29418.25,
+      "close": 29418.25,
+      "volume": 1
+    }
+  },
+  {
+    "id": 16506200,
+    "event": "bar_update",
+    "receipt_ms": 1789093061859,
+    "observation_ms": 1789093080000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789093020000,
+      "bar_close_ms": 1789093080000,
+      "open": 29129.25,
+      "high": 29408.25,
+      "low": 29126.75,
+      "close": 29408.25,
+      "volume": 65
+    }
+  },
+  {
+    "id": 16506214,
+    "event": "bar_update",
+    "receipt_ms": 1789093065239,
+    "observation_ms": 1789093080000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789093020000,
+      "bar_close_ms": 1789093080000,
+      "open": 29129.25,
+      "high": 29408.25,
+      "low": 29126.75,
+      "close": 29405.5,
+      "volume": 66
+    }
+  },
+  {
+    "id": 16506228,
+    "event": "bar_update",
+    "receipt_ms": 1789093065239,
+    "observation_ms": 1789093080000,
+    "fields": {
+      "contract": "MNQ 12-26",
+      "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+      "source_build_id": "2026-09-07-h1",
+      "bar_open_ms": 1789093020000,
+      "bar_close_ms": 1789093080000,
+      "open": 29129.25,
+      "high": 29408.25,
+      "low": 29126.75,
+      "close": 29405.25,
+      "volume": 67
+    }
+  }
+]

@@ -1,0 +1,189 @@
+{
+  "reasoning": "bias-tree: inside-day short LOW (branch 3). Price is 98% of the 29075\u201329601 dealing range (premium) and sits just below PDC/PDH, so branch 5 disallows longs above the 50% mark; I skip long sweep-reclaims at OR-L/ONL for that reason. Post-NFP tape swept ONH 29720 then dumped to 29502; the rebound stalled at 29645.25 and fell back under 29635 OR-H \u2014 a failed pump, with 5m trending down inside a 15m range. I read this as a balance day with a short tilt. No fvg_entry: the fresh FVGs list is empty. Plan: fade a rally into 29657.38 Supply\u00b71h and sell a 5m close below 29591.02 VWAP toward OR-L/ONL/29503.38. Both strikes carry arms with stops beyond 29645/29720. Death: 5m close above 29720; flip long only on two 5m closes above 29657.38.",
+  "bias": {
+    "direction": "short",
+    "conviction": "low",
+    "flip_condition": "two 5m closes above 29657.38 Supply\u00b71h flip to long"
+  },
+  "levels": [
+    {
+      "price": 29863.5,
+      "label": "OB(bull)\u00b74h",
+      "grade": "C",
+      "instruction": "reference",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29720,
+      "label": "ONH",
+      "grade": "A",
+      "instruction": "target",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29657.38,
+      "label": "Supply\u00b71h (HTF)",
+      "grade": "A",
+      "instruction": "fade",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29635,
+      "label": "OR-H",
+      "grade": "A",
+      "instruction": "sweep-reclaim",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29601,
+      "label": "PDH",
+      "grade": "B",
+      "instruction": "target",
+      "machine_grade": "B"
+    },
+    {
+      "price": 29597.25,
+      "label": "PDC",
+      "grade": "B",
+      "instruction": "target",
+      "machine_grade": "B"
+    },
+    {
+      "price": 29591.02,
+      "label": "VWAP",
+      "grade": "A",
+      "instruction": "reclaim",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29553.75,
+      "label": "OR-L",
+      "grade": "A",
+      "instruction": "sweep-reclaim",
+      "machine_grade": "A"
+    },
+    {
+      "price": 29503.38,
+      "label": "OB(bear)\u00b74h",
+      "grade": "C",
+      "instruction": "target",
+      "machine_grade": "C"
+    },
+    {
+      "price": 29481.5,
+      "label": "ONL",
+      "grade": "A",
+      "instruction": "target",
+      "machine_grade": "A"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "trigger": "Price retests 29657.38 Supply\u00b71h and rejects; the limit sell rests at 29657.38.",
+      "condition": "reject",
+      "direction": "short",
+      "target_chain": [
+        29591.02,
+        29553.75,
+        29503.38,
+        29481.5
+      ],
+      "invalid": "5m close above 29720.00 ONH cancels the fade.",
+      "confirm": {
+        "rule": "touch",
+        "ref_price": 29657.38,
+        "side": "below"
+      },
+      "quality": "B",
+      "arm": {
+        "enabled": true,
+        "entry": 29657.38,
+        "stop": 29720,
+        "target": 29503.38,
+        "wait_confirm": true
+      }
+    },
+    {
+      "id": "S2",
+      "trigger": "A 5m close below 29591.02 VWAP triggers a reclaim short; the sell stop is at 29591.02.",
+      "condition": "reclaim",
+      "direction": "short",
+      "target_chain": [
+        29553.75,
+        29503.38,
+        29481.5
+      ],
+      "invalid": "5m close back above 29645.25 cancels the VWAP reclaim.",
+      "confirm": {
+        "rule": "1x5m_close",
+        "ref_price": 29591.02,
+        "side": "below"
+      },
+      "quality": "C",
+      "arm": {
+        "enabled": true,
+        "entry": 29591.02,
+        "stop": 29645.25,
+        "target": 29481.5,
+        "wait_confirm": true
+      }
+    }
+  ],
+  "no_trade": [
+    "\ud83d\udd34 Average Hourly Earnings m/m 07:30 CT \u00b115m \u2014 HARD no-trade (red news)",
+    "\ud83d\udd34 Non-Farm Employment Change 07:30 CT \u00b115m \u2014 HARD no-trade (red news)",
+    "\ud83d\udd34 Unemployment Rate 07:30 CT \u00b115m \u2014 HARD no-trade (red news)"
+  ],
+  "death_condition": "A 5m close above 29720.00 ONH invalidates the premium-short plan.",
+  "day_type": "balance",
+  "death": {
+    "price": 29720,
+    "side": "above",
+    "rule": "5m_close"
+  },
+  "flip": {
+    "price": 29657.38,
+    "side": "above",
+    "rule": "2x5m",
+    "flip_to": "long"
+  },
+  "bias_label": "bias: AI short \u00b7 tree short \u00b7 regime up",
+  "no_trade_windows": [
+    {
+      "start_min": 510,
+      "end_min": 515,
+      "kind": "first_n",
+      "label": "first 5m after the NY open (08:30\u201308:35 CT)",
+      "source": "code-constant"
+    },
+    {
+      "start_min": 720,
+      "end_min": 810,
+      "kind": "lunch",
+      "label": "lunch 12:00\u201313:30 CT",
+      "source": "code-constant"
+    },
+    {
+      "start_min": 434,
+      "end_min": 466,
+      "kind": "t1",
+      "label": "\ud83d\udd34 Average Hourly Earnings m/m 07:30 CT \u00b115m \u2014 HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 434,
+      "end_min": 466,
+      "kind": "t1",
+      "label": "\ud83d\udd34 Non-Farm Employment Change 07:30 CT \u00b115m \u2014 HARD no-trade (red news)",
+      "source": "calendar"
+    },
+    {
+      "start_min": 434,
+      "end_min": 466,
+      "kind": "t1",
+      "label": "\ud83d\udd34 Unemployment Rate 07:30 CT \u00b115m \u2014 HARD no-trade (red news)",
+      "source": "calendar"
+    }
+  ]
+}

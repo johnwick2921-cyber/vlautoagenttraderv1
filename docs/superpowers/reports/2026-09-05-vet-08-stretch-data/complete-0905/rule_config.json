@@ -1,0 +1,11 @@
+{
+  "ai_config.risk_control.min_risk_reward_ratio": 2,
+  "ai_config.risk_control.guardrails_enabled": false,
+  "ai_config.risk_control.daily_loss_limit_usd": 450,
+  "ai_config.risk_control.daily_loss_enabled": false,
+  "ai_config.risk_control.max_contracts_per_order": 2,
+  "day_plan.acceptance_rule": "5m_close",
+  "day_plan.sessions.0.acceptance_rule": "5m_close",
+  "day_plan.sessions.1.acceptance_rule": "5m_close",
+  "day_plan.sessions.2.acceptance_rule": "5m_close"
+}

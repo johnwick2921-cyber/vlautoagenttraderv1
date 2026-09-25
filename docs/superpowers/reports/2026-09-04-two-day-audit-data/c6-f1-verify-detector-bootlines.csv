@@ -1,0 +1,6 @@
+log_line,ct_time,log_site,binary_dir,rev_booted,release_marker,recordDetectorOutputs_prod_callsites,bootline_counts
+16299,2026-09-03 19:06:08,main.go:341,cc6,829a6176 (merge fix/live-detector-1b 18:49:27),none,0,touch_outcomes=0 candidate_pool=0
+22563,2026-09-03 21:19:00,main.go:368,nofx,4d846e26 (21:11:20),0b877204 21:19:42 RELEASE=4d846e26,0,touch_outcomes=0 candidate_pool=0
+24680,2026-09-03 21:48:12,main.go:404,nofx,89673ccc (21:43:57),26594412 21:49:36 RELEASE=89673ccc,1,touch_outcomes=0 candidate_pool=0
+28810,2026-09-03 23:11:59,main.go:404,nofx,>=89673ccc,,1,touch_outcomes=0 candidate_pool=0
+29005,2026-09-03 23:12:55,main.go:404,cleanclone,530009ff,fb44b23e RELEASE=530009ff,1,touch_outcomes=0 candidate_pool=0

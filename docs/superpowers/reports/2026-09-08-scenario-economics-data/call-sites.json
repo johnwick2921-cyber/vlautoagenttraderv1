@@ -1,0 +1,89 @@
+[
+  {
+    "function": "EconomicsFor",
+    "production_calls": [
+      "kernel/scenario_economics.go:96",
+      "kernel/scenario_economics.go:146",
+      "kernel/scenario_economics.go:199",
+      "kernel/scenario_economics.go:244",
+      "trader/scenario_economics_desk.go:20"
+    ]
+  },
+  {
+    "function": "economicsPrice",
+    "production_calls": [
+      "kernel/scenario_economics.go:71",
+      "kernel/scenario_economics.go:75",
+      "kernel/scenario_economics.go:79",
+      "kernel/scenario_economics.go:98",
+      "kernel/scenario_economics.go:182",
+      "kernel/scenario_economics.go:189",
+      "kernel/scenario_economics.go:201",
+      "kernel/scenario_economics.go:231"
+    ]
+  },
+  {
+    "function": "economicsNumber",
+    "production_calls": [
+      "kernel/scenario_economics.go:104",
+      "kernel/scenario_economics.go:110"
+    ]
+  },
+  {
+    "function": "EconomicsSummary",
+    "production_calls": [
+      "kernel/scenario_economics.go:303",
+      "trader/scenario_economics_desk.go:19"
+    ]
+  },
+  {
+    "function": "ScenarioEconomicsCounters",
+    "production_calls": [
+      "kernel/scenario_economics.go:121"
+    ]
+  },
+  {
+    "function": "ScenarioEconomicsBootLine",
+    "production_calls": [
+      "kernel/scenario_economics.go:303",
+      "kernel/levels_volume_boot.go:14"
+    ]
+  },
+  {
+    "function": "validateNewScenarioEconomics",
+    "production_calls": [
+      "kernel/plan_doc.go:465"
+    ]
+  },
+  {
+    "function": "scenarioEconomicsIssues",
+    "production_calls": [
+      "kernel/scenario_economics.go:139"
+    ]
+  },
+  {
+    "function": "scenarioRoleWarnings",
+    "production_calls": [
+      "kernel/scenario_economics.go:150"
+    ]
+  },
+  {
+    "function": "logScenarioEconomics",
+    "production_calls": [
+      "kernel/scenario_economics.go:167"
+    ]
+  },
+  {
+    "function": "deskScenarioEconomics",
+    "production_calls": [
+      "trader/desk_facts.go:151"
+    ]
+  },
+  {
+    "function": "parsePlanDocument",
+    "production_calls": [
+      "kernel/plan_doc.go:440",
+      "kernel/plan_doc.go:448"
+    ]
+  }
+]

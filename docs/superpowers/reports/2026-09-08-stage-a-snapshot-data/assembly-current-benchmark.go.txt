@@ -1,0 +1,31 @@
+package trader
+
+import (
+ "path/filepath"
+ "testing"
+ "time"
+ "nofx/market"
+ "nofx/store"
+ "nofx/researchsnapshot"
+)
+
+// Paired offline production assembler benchmark. No model or broker call.
+func BenchmarkStageAWholeInputAssembly(b *testing.B) {
+ archive, err := researchsnapshot.Open(filepath.Join(b.TempDir(), "research.db"), "offline-benchmark"); if err != nil { b.Fatal(err) }
+ recorder:=researchsnapshot.NewRecorder(archive,128,func(string){})
+ researchsnapshot.Install(recorder)
+ defer func(){researchsnapshot.Install(nil); recorder.Close(); _=archive.Close()}()
+ st, err := store.New(filepath.Join(b.TempDir(), "fixture.db")); if err != nil { b.Fatal(err) }
+ defer func(){st.Plan().Close(); _=st.Close()}()
+ at:=&AutoTrader{id:"stage-a-benchmark",exchange:"ninjatrader",store:st,config:AutoTraderConfig{NinjaTraderSymbol:"MNQ",StrategyConfig:&store.StrategyConfig{DayPlan:&store.DayPlanConfig{PlanEnabled:true}}}}
+ base:=time.Date(2026,9,7,18,0,0,0,time.UTC)
+ bars:=make([]market.Kline,300)
+ for i:=range bars { stamp:=base.Add(time.Duration(i)*time.Minute); px:=30000+float64(i%20); bars[i]=market.Kline{OpenTime:stamp.UnixMilli(),CloseTime:stamp.Add(time.Minute).UnixMilli(),Open:px,High:px+3,Low:px-3,Close:px+1,Volume:100} }
+ prior:=market.FuturesBarsProvider
+ market.FuturesBarsProvider=func(string,string,int)[]market.Kline{return bars}
+ defer func(){market.FuturesBarsProvider=prior}()
+ b.ResetTimer()
+ for i:=0;i<b.N;i++ { at.assemblePlannerInputWithCtx("ASIA","2026-09-07","",nil) }
+ b.StopTimer()
+ b.ReportMetric(float64(recorder.Dropped()),"dropped-batches")
+}

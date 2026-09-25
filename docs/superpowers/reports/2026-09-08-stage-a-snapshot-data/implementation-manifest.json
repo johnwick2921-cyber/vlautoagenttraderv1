@@ -1,0 +1,186 @@
+{
+  "D3-capture-red.log": {
+    "bytes": 525,
+    "sha256": "66539e583947f16531a570ab7a0e824f7558a1b5f4aece68f33302d210145b7a"
+  },
+  "D4-reason-red.log": {
+    "bytes": 567,
+    "sha256": "3765c8b81fc8fa6fcdbcb45fb089135ecfccb61522a54f48d0cc14f7c17f973a"
+  },
+  "E-guide-green.log": {
+    "bytes": 214,
+    "sha256": "0f6529c85efcf3a56de538a873f2970643c1ef7efbb8a630760a9b6fa69713a0"
+  },
+  "E-guide-red.log": {
+    "bytes": 8992,
+    "sha256": "07c4f1194887bf496176e05447e306f6e7815b07e0d088c469806c524afecb2a"
+  },
+  "E-price-role-red.log": {
+    "bytes": 367,
+    "sha256": "112bae09a21457c3957987d802ca7298d5581c80304281efc04cb6261b71f7fe"
+  },
+  "E2-null-red.log": {
+    "bytes": 2049,
+    "sha256": "b7994a49e115a6e67ae52aaf053bde555f157e9b4525da151a40d5b9cfff7efb"
+  },
+  "E2-sql-null-red.log": {
+    "bytes": 243,
+    "sha256": "fe12c8e864ef2f6a095da2011ae9b32dcdf48e4a4f28c63b6d5b14d52b27f3e3"
+  },
+  "E3-clocks-red.log": {
+    "bytes": 756,
+    "sha256": "4828adf053dc1ca67606b195a41d1b30b1bd9037916f9138c17badc7a2a06bdc"
+  },
+  "E4-green.log": {
+    "bytes": 3213,
+    "sha256": "bc664335b5dfe0d483c4a4c8c38c1588c4eab8e7de3ca7835cd99fe6d77dd07a"
+  },
+  "E4-red.log": {
+    "bytes": 2017,
+    "sha256": "7a245103040529c6cfc93c7b81ebd61716a4256093da3f536dbc38513230ccec"
+  },
+  "E5-manifest-red.log": {
+    "bytes": 307,
+    "sha256": "f429ced63844f0fea7c51ecb091d7cc99367f0a7685337ee07600fffdd487284"
+  },
+  "E6-drop-red.log": {
+    "bytes": 405,
+    "sha256": "ac568d8e1714d0de88d6b1c3b7257ad6e0bd4a689eb246b1e3271a382e99f5ce"
+  },
+  "E7-budget-red.log": {
+    "bytes": 269,
+    "sha256": "47860d51cccae9bf4ebaf0ad47241a5bfb7d8d5418997088c1fdbb750d9c1b9f"
+  },
+  "E7-nonblocking-red.log": {
+    "bytes": 371,
+    "sha256": "1b006e38aeb0802c0ec21d8e42d653194397e74b9e1014c5fe67dc1f5ae52c31"
+  },
+  "E8-candidate-red.log": {
+    "bytes": 1466,
+    "sha256": "fd6e58a28d391d37f21099ab6f628571c18f3009edf84ac1e7942882f0f8b4ed"
+  },
+  "E8-install-red.log": {
+    "bytes": 374,
+    "sha256": "18138b350ce1bcd80298ef3245b87bb56e7e9875fcd9c6aec6317f05f8efa3bb"
+  },
+  "E8-outcome-red.log": {
+    "bytes": 1685,
+    "sha256": "e1239ffe6020a7b2513fa39786a2453ac9909e38f707f55d4a302810ec6fe3c9"
+  },
+  "E8-permission-red.log": {
+    "bytes": 1742,
+    "sha256": "2faf642fa999f2e9a3e92b96fe8b01ae55f862b9679734f195166e2da8b17d51"
+  },
+  "E8-wire-red.log": {
+    "bytes": 1054,
+    "sha256": "1ea96ecc27e2b3ed3aa316c6cea69cc48f8ae0e1afec92550dd161da479ab2d3"
+  },
+  "assembly-baseline-benchmark.go.txt": {
+    "bytes": 1170,
+    "sha256": "85835bcc6dad462f33cb78fcea6e8aa9137bd0b4ff71d737bf0ead50c0e922c5"
+  },
+  "assembly-current-benchmark.go.txt": {
+    "bytes": 1581,
+    "sha256": "2e97334cda98dda4bb6b0b22d5197ac108982984428c6bfa59971b7eb1c6b1ae"
+  },
+  "assembly-sequential-baseline.log": {
+    "bytes": 304408,
+    "sha256": "2e5bc254b79e6fcf79a70740735a66b9bba383a4c4b25881e5dd2add9c75fbcf"
+  },
+  "assembly-sequential-current.log": {
+    "bytes": 304495,
+    "sha256": "87d396ebd1995ee8ac2bcfaab124b9c6d1fa1e4da1fa33c75eecd78a76d9caa8"
+  },
+  "assembly-summary.json": {
+    "bytes": 413,
+    "sha256": "a1450427cca2506b5603150e728d8621e04427b5d0c717235479f1fa7efcdeb8"
+  },
+  "candidate.json": {
+    "bytes": 883,
+    "sha256": "cc42fc82550ba3ad3a13bff09455db9365dc8f461eca5ce1ead95cf398c7ff83"
+  },
+  "census.json": {
+    "bytes": 1607700,
+    "sha256": "ebb866b403eef766997378396938bb02b6cb3e5670adc904a25854473f0a3763"
+  },
+  "checklist-at-merge.txt": {
+    "bytes": 1098,
+    "sha256": "9e230401526c5c0e45c74190d896ce5a0978a0b64e9112869dccb80d2fd68021"
+  },
+  "dist-manifest.json": {
+    "bytes": 13492,
+    "sha256": "925919f3063014f8884604ba52fb0356f07967d17da7831de20e1037d342cf15"
+  },
+  "field-dictionary.md": {
+    "bytes": 8986,
+    "sha256": "c52ec403711430b6b82e23ea338d26b423238bcb05fcbf2caa3ecc384f618d3c"
+  },
+  "focused-green.log": {
+    "bytes": 120,
+    "sha256": "6f9a457af66543bc64f9bb5a2f4ab999e4ef92b2150e13bf3eca05fea2058fee"
+  },
+  "frozen-planning-log.txt": {
+    "bytes": 9157,
+    "sha256": "f02af585087b0a1e30dd35edb251a8df4610e23275472197dd6217a1267d9371"
+  },
+  "full-go.log": {
+    "bytes": 2428,
+    "sha256": "9f0f1b5e54e4f681a2444d6d125c6b80f7bdc3091b94d1eab77139b688d21827"
+  },
+  "implementation-source-freshness.csv": {
+    "bytes": 18386,
+    "sha256": "422d287806a5372ad2e9aea2b45c61b6c47b881bddae11a8f59f4fb08792f987"
+  },
+  "integrated-focused.log": {
+    "bytes": 120,
+    "sha256": "f34158e96d3671abb6d54485c3a85d2e0172cdb01d900014e884eb10cfae0ea6"
+  },
+  "manifest.json": {
+    "bytes": 526,
+    "sha256": "c1c2beba378349cf33a17636fc2c4cd3194ca3dd561805883787dab32f42431e"
+  },
+  "map-green.log": {
+    "bytes": 24,
+    "sha256": "71adcbb2b322f7fb9088523407ee1498cb6449dcf1549f2ffdb0ded141f31d64"
+  },
+  "nt-symbols.json": {
+    "bytes": 379,
+    "sha256": "4340061f9cc31c9eb046303f9952c84f0dafa7f757a492fa4f4a409868750ac8"
+  },
+  "parity-baseline-bench.log": {
+    "bytes": 393783,
+    "sha256": "115fa05c5317587441114813c2f74277bd307b2f71f7d8e993a88b2cd8ea5a9f"
+  },
+  "parity-baseline.log": {
+    "bytes": 24,
+    "sha256": "5bc7b4f89d498e065e8fc7813974fd78029dc6cc6130d63451c58be679472237"
+  },
+  "parity-current.log": {
+    "bytes": 418743,
+    "sha256": "db745da3c8042ec26f0b457d239518660ed855a0ae4a04853508552aac1592e9"
+  },
+  "production-call-census.json": {
+    "bytes": 53861,
+    "sha256": "2240ca235ef0c387d399a45f831d1cbb2aba6dcc1b007d2b7d79db1323a5f51a"
+  },
+  "race-focused.log": {
+    "bytes": 96,
+    "sha256": "5437b5405df1e2646b5425892113ec8822e869f2db96cf17887730d168727a60"
+  },
+  "read-adapter-bench.log": {
+    "bytes": 1179,
+    "sha256": "e05e66e72b6ae82f1c8491bfe5e915423de4267a5b08f958f5887f8243b32e50"
+  },
+  "red-score-capture.log": {
+    "bytes": 832,
+    "sha256": "fdf7dd697b5e1b9aeaba96a479cc55f2b3b40f40ff9123ded3b52fb6663e3cf5"
+  },
+  "source-freshness.csv": {
+    "bytes": 3548,
+    "sha256": "51add3795c745da3bf18b6aad2746cfa38d627e12d9f784dfe2a07cefc501ecd"
+  },
+  "validation-receipt.json": {
+    "bytes": 1175,
+    "sha256": "fe4361714068ba23b8a99edacb76008d45ec4f9cceb950e0c50db1bb6b7aff70"
+  }
+}

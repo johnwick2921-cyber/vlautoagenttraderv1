@@ -1,0 +1,14 @@
+id,side,source,plan_band,plan_id,plan_version,cited_scenario_id,plan_session,plan_matched,adherence_grade,entry_order_id,entry_price,entry_ct,pnl_corrected
+567,SHORT,reconcile,armed_fill,2026-08-27:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,12,S1,ASIA,1,B,"",29621.0,"2026-08-28 01:22:04",-42.0
+568,SHORT,reconcile,armed_fill,2026-08-28:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,6,S1,LONDON,1,B,888bcd99-e89a-4d9d-b989-cf2db1b238df,29642.0,"2026-08-28 07:19:46",-32.0
+569,SHORT,reconcile,armed_fill,2026-08-28:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,1,S1,NY,1,A,"",29700.0,"2026-08-28 08:44:28",63.0
+570,LONG,reconcile,armed_fill,2026-08-28:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,5,S2,NY,1,C,54ece976-6d62-4350-8234-ddac5a06e65f,29463.25,"2026-08-28 12:10:21",17.0
+572,SHORT,e7_farside_test,armed_fill,TEST-E7:c15c48a6-a036-4991-b4d0-9c9e0b2295b3,0,TEST-E7,TEST-E7,1,"",c15c48a6-a036-4991-b4d0-9c9e0b2295b3,29346.25,"2026-08-30 22:34:16",
+575,SHORT,reconcile,armed_fill,2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,3,S2,NY,1,A,0aa6032e-c6b6-4b65-9730-204538d8babd,29437.0,"2026-08-31 09:59:18",32.5
+576,short,armed_entry,armed_fill,2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,3,S2,NY,1,A,0aa6032e-c6b6-4b65-9730-204538d8babd,29437.0,"2026-08-31 10:00:01",
+577,long,armed_entry,armed_fill,2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,4,S1,NY,1,C,f0bbe9af-c6ce-4444-8243-974c1ce03208,29413.0,"2026-08-31 12:25:29",
+578,LONG,reconcile,armed_fill,2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,4,S1,NY,1,C,f0bbe9af-c6ce-4444-8243-974c1ce03208,29413.0,"2026-08-31 12:26:48",92.0
+579,short,armed_entry,armed_fill,2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,6,S3,NY,1,B,060192ea-7281-4b55-b7f7-11a9c11adbe7,29459.0,"2026-08-31 13:09:28",
+584,SHORT,reconcile,armed_fill,2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,6,S2,LONDON,1,A,6b5b89c6-7abc-4897-93a0-c97c7679acc4,29138.0,"2026-09-01 08:36:47",106.0
+586,LONG,reconcile,armed_fill,2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,5,S3,NY,1,A,d5fed440-0814-4d9b-97f2-ae010ab28c35,29082.75,"2026-09-01 13:33:06",-54.0
+591,SHORT,reconcile,armed_fill,2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265,2,S1,NY,1,A,f2b1eb20-f89e-4a88-bcff-5ce971d17861,29285.0,"2026-09-03 09:05:14",-140.0

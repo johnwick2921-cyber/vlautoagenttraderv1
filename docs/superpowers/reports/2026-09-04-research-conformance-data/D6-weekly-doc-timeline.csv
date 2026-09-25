@@ -1,0 +1,11 @@
+when_ct,event,source,detail
+2026-08-30 17:01:18,WEEKLY READ starting week 2026-08-31 boot_backfill=false,data/nofx_2026-08-30.log,the scheduled Sunday read (WeeklyReadDeadline sun 16:30 CT)
+2026-08-30 17:07:15,WEEKLY READ written 2026-08-31 v1,data/nofx_2026-08-30.log,"bias=bear conviction=low draw=PWL@28947.75 invalid=29535.00 thin=true facts_hash=b8591ad6 — PRE-class-50 directional doc"
+2026-08-30 17:10:47 .. 2026-09-02 ~18:xx,skip-fresh (v2),data/nofx_2026-08-30..09-02.log,"a v2 existed for ~3 days; 33 skip-fresh lines name it"
+2026-09-02 ~18:xx-19:03,WEEKLY rows for the week disappear from plans,inferred from the next line,"the 19:03 verdict was 'read' which requires GetLatestPlanForTraderSession == nil; the 19:06 write returned v1 not v3"
+2026-09-02 19:03:17,WEEKLY READ starting week 2026-08-31 boot_backfill=true,data/nofx_2026-09-02.log,bar-source wave: 383 daily bars from nt8_agg via 1d -> 383 completed weeks (was thin=true on 1m)
+2026-09-02 19:06:24,WEEKLY READ stamped NEUTRAL AT WRITE (F5 DOA),data/nofx_2026-09-02.log,"F4/F5-DOA firing LIVE: 'invalidation 29811.75 already crossed by a closed 1h bar' — the last observed firing before class 50 retired it"
+2026-09-02 19:06:24,WEEKLY READ written 2026-08-31 v1,data/nofx_2026-09-02.log,"bias=neutral conviction=low draw=PWL@28927.25 invalid=29811.75 thin=false facts_hash=5b4e907886 — THIS IS THE ROW LIVE NOW"
+2026-09-02 21:16:06,class 50 kernel commit 882c2b7a,git log,validator flips to refs-only (r4 rejects directional tokens)
+2026-09-02 22:37:38,class-50 boot (marker cf8ed4f4 RELEASE=1cee77a8),data/nofx_2026-09-02.log + git,"first skip-fresh after the boot names the SAME v1 — the running refs-only code has never written a weekly doc"
+2026-09-04 08:30:11,boot 8 (rev 70af663d),data/nofx_2026-09-04.log,"skip-fresh v1 — the live doc is still the 09-02 PRE-WAVE directional row"

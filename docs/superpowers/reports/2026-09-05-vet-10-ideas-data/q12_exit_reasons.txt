@@ -1,0 +1,11 @@
+/home/hoang/nofx-analysis/vet-10-0905/q12_exit_reasons.py:20: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+  xt=datetime.datetime.utcfromtimestamp(r['exit_time']/1000)-datetime.timedelta(hours=5)
+close-sync lines parsed: 66
+matched 64 unmatched [578]
+exit reasons (matched era trades): {'tp': 13, 'sl': 44, 'manual': 4, 'limit': 3}
+  tp: n=13 wins=13 sum$=2032.5 ids=[521, 523, 524, 529, 532, 536, 549, 555, 566, 580, 581, 582, 584]
+  sl: n=44 wins=2 sum$=-2816.5 ids=[522, 525, 527, 528, 531, 533, 534, 535, 537, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 550, 551, 552, 553, 554, 556, 557, 559, 561, 562, 563, 564, 565, 567, 568, 570, 571, 583, 585, 586, 587, 588, 589, 590, 591]
+  manual: n=4 wins=3 sum$=6.6 ids=[526, 530, 538, 575]
+  limit: n=3 wins=2 sum$=121.5 ids=[558, 560, 569]
+losers exited by sl: 40/42=0.952 wilson[0.842,0.987]
+winners exited by tp: 13/20=0.650 wilson[0.433,0.819]; other winner exits: Counter({'manual': 3, 'sl': 2, 'limit': 2})

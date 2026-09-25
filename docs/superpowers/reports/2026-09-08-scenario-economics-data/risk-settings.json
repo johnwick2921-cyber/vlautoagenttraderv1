@@ -1,0 +1,9 @@
+{
+  "strategy_row_id": "a5b7662e-7bf7-49bb-9f09-7efa48f95ac8",
+  "settings": {
+    "ai_config.risk_control.min_risk_reward_ratio": 2,
+    "ai_config.risk_control.max_contracts_per_order": 2,
+    "ai_config.risk_control.max_contracts_enabled": false,
+    "day_plan.plan_mode": "strict"
+  }
+}

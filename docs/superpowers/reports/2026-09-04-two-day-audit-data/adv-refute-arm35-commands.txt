@@ -1,0 +1,68 @@
+ADVERSARIAL RE-DERIVATION — "stop floor 54.61 quoted / 69.91 enforced / 0.0096 R margin" (arm 35 -> position 591)
+Run 2026-09-04. Worktree /home/hoang/nofx-2day04 @ 8579df0a (base dev dfbfa660 = deployed 530009ff / boot 7). DB opened mode=ro.
+
+1) planner_read_facts (created_at is UTC, explicit +00:00 -> CT = -5h in September)
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT id,trade_date,session,stop_floor_pts,atr5m,stop_floor_mlt,scope_since_ms,scope_bars,scope_intv,created_at FROM planner_read_facts ORDER BY id;"
+ -> id 6 | 2026-09-03 | NY | 54.6119168345225 | 36.4079445563483 | 1.5 | 2026-09-03 13:36:54.786850044+00:00  == 08:36:54 CT   [A]
+ (plan_id='' and version=0 on EVERY row -> the read->plan link is INFERRED, not stored.
+  Nearest reads: id 6 @08:36:54 CT, id 7 @09:06:54 CT. NY v2 written 08:45:05 CT -> id 6 is the only candidate.)
+
+2) plan version timestamps
+sqlite3 -header "file:.../data.db?mode=ro" "SELECT plan_id,version,session,lifecycle,datetime(created_at) FROM plans WHERE trade_date='2026-09-03' ORDER BY created_at;"
+ -> 2026-09-03:NY v1 @2026-09-03 13:05:19 UTC = 08:05:19 CT ; v2 @13:45:05 UTC = 08:45:05 CT   [A]
+
+3) plan v2 S1 arm spec
+sqlite3 "file:.../data.db?mode=ro" "SELECT doc FROM plans WHERE trade_date='2026-09-03' AND session='NY' AND version=2;"  | python3 -m json.tool
+ -> S1 short quality=B arm={"enabled":true,"entry":29285,"stop":29340,"target":29144.5,"wait_confirm":true}
+    authored stop distance = 29340-29285 = 55.00 pts  (floor quoted was 54.6)   [A]
+
+4) armed_orders ledger row
+sqlite3 -header -column "file:.../data.db?mode=ro" "SELECT id,version,scenario,side,entry_px,stop_px,target_px,state,fill_price,datetime(created_at),datetime(updated_at) FROM armed_orders WHERE id>=32;"
+ -> id 35 | v2 | S1 | short | 29285 | 29351.6284728996 | 29144.5 | filled | 29285 | created 2026-09-03 14:02:54 UTC = 09:02:54 CT
+    NOTE: stop_px 29351.63 is NOT the stop placed at 09:02:54 (29354.91) — it is the 09:05:35 CT recompute.   [A]
+
+5) THE LOG IS IN THE 09-02 FILE. The process that ran 09-03 00:00-10:28 CT booted on 09-02, so its lines live in
+   data/nofx_2026-09-02.log (that file's last line is "09-03 10:28:08"). data/nofx_2026-09-03.log STARTS at 09-03 10:28:29 CT
+   and contains NOTHING from the 09:02:54 window. Log timestamps are CT (boot at 09-03 23:12:55 matches PID 594377 start 23:12:54 CT).
+grep -n "arm stop NY S1" data/nofx_2026-09-02.log | grep "09-03"
+grep -n "29354.91\|29351.63" data/nofx_2026-09-02.log
+ -> 09-03 09:02:54  arm stop NY S1 leg 1 short: stop 29354.91 (authored 29340.00 WIDENED) . anchor ONH 29293.00 -> beyond 29293.50 . atr_floor 29354.91 (1.5xATR5m 46.61) . bound=atr_floor
+ -> 09-03 09:02:54  armed NY S1 leg 1 short limit 29285.00 SL 29354.91 TP 29144.50
+ -> 09-03 09:05:35  arm stop NY S1 leg 1 short: stop 29351.63 ... (1.5xATR5m 44.42) . bound=atr_floor
+ (per-cycle series in adv-refute-arm35-rr-per-cycle.csv)
+
+6) the floor actually QUOTED to the planner
+grep -n "read facts" data/nofx_2026-09-02.log | grep "09-03 08:36"
+ -> 09-03 08:36:54  read facts: void=14 . floor=54.6 pts (1.5xATR5m 36.41) . scope=1mx2000 since=1788386400000 (cap 500)
+ kernel/class45_feeds_forward.go:195 RenderStopFloorLine formats "%.1f pts (%.1f×ATR5m %.2f, resolved)" -> the prompt string is "54.6 pts", not "54.61".   [A]
+
+7) gate code + ordering (worktree, dev tip)
+ trader/armed_executor.go:373-383  composeArmStop runs and assigns leg.Stop = comp.Stop
+ trader/armed_executor.go:395-406  wait_confirm gate: `continue` BEFORE the R:R gate when the chain is not MET
+ trader/armed_executor.go:409      armGateVerdictFor(sc, leg, ...)  <- sees the WIDENED stop
+ trader/armed_executor.go:1309-1317  rr = (Entry-Target)/(Stop-Entry) for short; refuse when rr+1e-9 < armMinRRFor(cfg)
+ -> peer cited 1310-1317; actual span 1309-1317. Same code.   [A]
+
+8) the live floor value (not a quoted default)
+ boot line (READ of at.armMinRRFor(nil), trader/auto_trader_dayplan.go:65):
+ 09-02 23:24:56 ... armed_orders=on place_band=100t stale_working=15m test_seam=ON arm_rr=2.0
+ that is the last boot before the event. store.ResolveMinRiskReward: cfg value if >0 else SafeDefaultMinRiskReward.
+ sqlite3 "SELECT id,name,datetime(updated_at),json_extract(config,'$.risk_control.min_risk_reward_ratio') FROM strategies;"
+ -> min_risk_reward_ratio NULL on every row; newest strategies.updated_at = 2026-09-01 13:13:06 (before that boot) -> arm min = 2.0 live.   [A]
+ boot line 09-03 10:28:29 "exits: stop=max(anchor+clr, 1.5xATR5m)" -> MinSLATRMult = 1.5 live.   [A]
+
+9) arithmetic
+ python3 -c "e,t=29285.0,29144.5; print((e-t)/69.91, (e-t)/66.62847289959973, (e-t)/2.0/1.5)"
+ -> 2.00973 (placement, log stop 29354.91) | 2.10866 (ledger stop 29351.63) | 46.8333... = ATR at which rr hits exactly 2.0
+ ATR is printed to 2 dp, so rr at placement = 2.0094..2.0098 -> margin 0.0094..0.0098 R.
+ Boundary: refusal needs rr+1e-9 < 2.0, i.e. 1.5*atr > 70.25, i.e. atr > 46.83333... — at atr = 46.8333 exactly it still PASSES.
+
+10) how many times the gate ran on v2 before placement
+grep -n "wait_confirm MET" data/nofx_2026-09-02.log | grep "09-03"
+ -> S1 MET lines at 08:18:54 ... 08:42:54 (all plan v1), then NOTHING until 09:02:54.
+ v2 was written 08:45:05; composition lines exist every cycle 08:46:54-09:00:54 but no MET line ->
+ the loop `continue`d before the R:R gate on every one of those cycles.
+ => for plan v2 S1 the R:R gate was evaluated for the FIRST time at 09:02:54, and it placed the same cycle.   [A]
+grep -n "arm REFUSED" data/nofx_2026-09-02.log | grep "09-03 0[89]"
+ -> 08:18:54 LONDON S1 R:R 1.68 ; 08:30:54 NY S1 R:R 1.68 (plan v1) — no NY S1 refusal after v2.

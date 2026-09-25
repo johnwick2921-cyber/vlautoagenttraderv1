@@ -1,0 +1,1520 @@
+{
+  "knobs": [
+    {
+      "path": "acceptance_rule",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "ai500_limit",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:448"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "altcoin_max_leverage",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:552"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "altcoin_max_position_value_ratio",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:554"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "approval_required",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planconfig.go:155"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "atr_multiplier",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid_levels.go:35"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "atr_periods",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:791"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "blackout_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:188"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "blackout_end_ct",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:167"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "blackout_start_ct",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:167"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "boll_periods",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:792"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "breakdown",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/plan_confirm.go:190"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "breakeven_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader.go:196"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "breakeven_trigger_points",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader.go:199"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "btc_eth_max_leverage",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:551"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "btc_eth_max_position_value_ratio",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:553"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "condition_status",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planner.go:1481"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "config",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid_regime.go:157"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "config_visible",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/strategy.go:44"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "consecutive_loss_halt",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_orders.go:116"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "consistency_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:196"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "consistency_max_day_pct",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:169"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "context_limit",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "created_at",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_calendar.go:36"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "custom_prompt",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt_futures.go:257"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "daily_loss_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:157"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "daily_loss_limit_pct",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid.go:187"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "daily_loss_limit_usd",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:158"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "daily_profit_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:160"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "daily_profit_target_usd",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:161"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "data_path",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:815"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "decision_process",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt_futures.go:213"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "description",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/strategy.go:76"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "direction_bias_ratio",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid_levels.go:103"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "distribution",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/grid_engine.go:153"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "ema_periods",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:789"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planconfig.go:73"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_atr",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:241"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_boll",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:249"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_direction_adjust",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid_regime.go:65"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_ema",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:221"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_funding_rate",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:265"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_macd",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:229"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_multi_timeframe",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:209"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_netflow_ranking",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:966"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_oi",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:261"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_oi_ranking",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:935"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_price_ranking",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:998"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_quant_data",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:276"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_quant_netflow",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:965"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_quant_oi",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:965"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_raw_klines",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "agent/skill_management_handlers.go:1197"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_rsi",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:233"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_svp",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:328"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "enable_volume",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:257"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "entry_standards",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt_futures.go:203"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "eod_flat_ct",
+      "status": "ineffective",
+      "ui_label": "read; does not take effect (unreachable (auto_trader_clock.go))",
+      "consumers": [],
+      "dual_level": false,
+      "note": "unreachable (auto_trader_clock.go)"
+    },
+    {
+      "path": "eod_flat_offset_min",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "evening_digest",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planconfig.go:165"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "excluded_coins",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:613"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "external_data_sources",
+      "status": "ineffective",
+      "ui_label": "read; does not take effect (zero engine consumers)",
+      "consumers": [],
+      "dual_level": false,
+      "note": "zero engine consumers"
+    },
+    {
+      "path": "fixed_overhead",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "grid_config",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_decision.go:108"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "grid_count",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/grid_engine.go:153"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "guardrails_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:153"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "headers",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:795"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "hold_discipline",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_orders.go:84"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "htf_veto",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "hyper_main_limit",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:527"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "id",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/plan_confirm.go:372"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "indicators",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:328"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "is_active",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/handler_user.go:411"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "is_default",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/strategy.go:126"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "is_public",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/strategy.go:43"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "klines",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/stale_data.go:74"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "language",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:384"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "last_entry_ct",
+      "status": "ineffective",
+      "ui_label": "read; does not take effect (unreachable (auto_trader_clock.go))",
+      "consumers": [],
+      "dual_level": false,
+      "note": "unreachable (auto_trader_clock.go)"
+    },
+    {
+      "path": "last_entry_offset_min",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "level",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/plan_confirm.go:192"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "leverage",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/grid_engine.go:153"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "longer_count",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "longer_timeframe",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:773"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "lower_price",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/grid_engine.go:283"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_contracts_enabled",
+      "status": "ineffective",
+      "ui_label": "read; does not take effect (parse-only (strategy.go))",
+      "consumers": [],
+      "dual_level": false,
+      "note": "parse-only (strategy.go)"
+    },
+    {
+      "path": "max_contracts_per_order",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_orders.go:57"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_daily_trades",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:164"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_daily_trades_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:163"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_drawdown_pct",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/formatter.go:162"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_levels",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:366"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_margin_usage",
+      "status": "ineffective",
+      "ui_label": "read; does not take effect (prompt text only — advisory, never a gate (engine_prompt.go))",
+      "consumers": [],
+      "dual_level": false,
+      "note": "prompt text only — advisory, never a gate (engine_prompt.go)"
+    },
+    {
+      "path": "max_notional_leverage",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:557"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_positions",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:131"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "max_trades",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "method",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:790"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "min_confidence",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:556"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "min_grade",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planner.go:1994"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "min_position_size",
+      "status": "ineffective",
+      "ui_label": "read; does not take effect (crypto path hardcodes 12/60 (engine_position.go))",
+      "consumers": [],
+      "dual_level": false,
+      "note": "crypto path hardcodes 12/60 (engine_position.go)"
+    },
+    {
+      "path": "min_risk_reward_ratio",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:555"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "min_scenario_quality",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_position.go:300"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "model_limits",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/strategy.go:384"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "name",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/no_trade_band.go:91"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "netflow_ranking_duration",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:970"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "netflow_ranking_limit",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:975"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "nofxos_api_key",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:343"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "notional_cap_enabled",
+      "status": "ineffective",
+      "ui_label": "read; does not take effect (parse-only (strategy.go))",
+      "consumers": [],
+      "dual_level": false,
+      "note": "parse-only (strategy.go)"
+    },
+    {
+      "path": "oi_low_limit",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:488"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "oi_ranking_duration",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:939"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "oi_ranking_limit",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:944"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "oi_top_limit",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:468"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "plan_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:365"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "plan_mode",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/entry_gate.go:160"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "planner_model",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planner.go:71"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "planner_timeframes",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planner.go:1990"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "price_ranking_duration",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:1002"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "price_ranking_limit",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:1007"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "primary_count",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:764"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "primary_timeframe",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:763"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "prompt_variant",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_loop.go:546"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "proximity_filter_atr",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:375"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "publish_config",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/strategy.go:42"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "quant_data",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:858"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "realign_cap",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planconfig.go:234"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "reentry_cooldown_minutes",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:619"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "refresh_secs",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:782"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "replan_cap",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_reset.go:112"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "role_definition",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt_futures.go:99"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "rsi_periods",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:790"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "scenario_cap",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/planner_prompt.go:674"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "seat_1h_zone",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planner.go:2136"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "selected_timeframes",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:762"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "session",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:403"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "sessions_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planconfig.go:77"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "source_type",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:418"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "static_coins",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:272"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "stop_loss_pct",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid_orders.go:362"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "strategy_type",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_decision.go:107"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "suggestions",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "symbol",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/grid_engine.go:153"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "system_prompt",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:590"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "total",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_analysis.go:256"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "total_investment",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/grid_engine.go:153"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "trading_frequency",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt_futures.go:142"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "trailing_arm",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_trailing.go:52"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "trailing_arm_points",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_trailing.go:58"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "trailing_atr_mult",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_trailing.go:44"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "trailing_atr_period",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_trailing.go:48"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "trailing_enabled",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_trailing.go:43"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "transition_standdown",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "type",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/htf_veto.go:115"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "updated_at",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/armed_executor.go:1027"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "upper_price",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/grid_engine.go:283"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "url",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:778"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "usage_pct",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "api/strategy.go:385"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "use_ai500",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:272"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "use_atr_bounds",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid.go:304"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "use_hyper_all",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:497"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "use_hyper_main",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:516"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "use_maker_only",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_grid_orders.go:127"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "use_oi_low",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine.go:477"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "use_oi_top",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "kernel/engine_prompt.go:272"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "user_id",
+      "status": "live",
+      "ui_label": "live",
+      "consumers": [
+        "trader/auto_trader_planner.go:61"
+      ],
+      "dual_level": false
+    },
+    {
+      "path": "wake_min_interval_min",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "wake_on_15m_zone",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "wake_on_htf_ob",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "wake_on_htf_zone",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "wake_on_ifvg",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    },
+    {
+      "path": "wake_on_seated_invalidation",
+      "status": "candidate-unverified",
+      "ui_label": "no known reader — pending verification",
+      "consumers": [],
+      "dual_level": false,
+      "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change."
+    }
+  ],
+  "resolved": [
+    {
+      "path": "risk_control.min_risk_reward_ratio",
+      "saved": "2",
+      "resolved": "2",
+      "source": "saved value",
+      "line": "2 → 2 · saved value"
+    },
+    {
+      "path": "day_plan.plan_mode",
+      "saved": "strict",
+      "resolved": "strict",
+      "source": "strategy value",
+      "line": "strict → strict · strategy value"
+    },
+    {
+      "path": "regime.htf_veto",
+      "saved": "(unset)",
+      "resolved": "true",
+      "source": "shipped default",
+      "line": "(unset) → true · shipped default"
+    }
+  ],
+  "summary": {
+    "schema": 57,
+    "classified": 167,
+    "live": 144,
+    "ineffective": 7,
+    "candidate_unverified": 16,
+    "suspended": 0,
+    "advisory": 0,
+    "display_only": 0,
+    "infra": 0,
+    "env_shadows": 0,
+    "env_shadow_paths": []
+  }
+}

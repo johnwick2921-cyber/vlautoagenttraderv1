@@ -1,0 +1,2245 @@
+[
+  {
+    "plan_rowid": 57,
+    "logical": "2026-08-24:NY:v2",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 2,
+    "label": "IB-2x",
+    "price": "28708.75",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 72,
+    "logical": "2026-08-25:NY:v2",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 1,
+    "label": "EQL·15m (HTF)",
+    "price": "29220.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 82,
+    "logical": "2026-08-25:ASIA:v10",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 6,
+    "label": "OB(bear)·4h",
+    "price": "29154.38",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 86,
+    "logical": "2026-08-25:ASIA:v14",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 2,
+    "label": "RTH-L",
+    "price": "29145.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 89,
+    "logical": "2026-08-26:LONDON:v1",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 1,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence_only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 89,
+    "logical": "2026-08-26:LONDON:v1",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 1,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence_only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 90,
+    "logical": "2026-08-26:LONDON:v2",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "RTH-L",
+    "price": "29145.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 94,
+    "logical": "2026-08-26:LONDON:v6",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 3,
+    "label": "RTH-L",
+    "price": "29145.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 95,
+    "logical": "2026-08-26:LONDON:v7",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 1,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29085",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 97,
+    "logical": "2026-08-26:LONDON:v9",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 5,
+    "label": "ONH",
+    "price": "29310",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 99,
+    "logical": "2026-08-26:LONDON:v11",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 0,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence_only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 99,
+    "logical": "2026-08-26:LONDON:v11",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "ONH",
+    "price": "29310",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 99,
+    "logical": "2026-08-26:LONDON:v11",
+    "scenario": "S5",
+    "frozen": false,
+    "level_index": 1,
+    "label": "RTH-L",
+    "price": "29145.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 102,
+    "logical": "2026-08-26:LONDON:v14",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29085",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 103,
+    "logical": "2026-08-26:LONDON:v15",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "RTH-L",
+    "price": "29145.5",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 103,
+    "logical": "2026-08-26:LONDON:v15",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 0,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29085",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 104,
+    "logical": "2026-08-26:NY:v1",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "RTH-L",
+    "price": "29145.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 104,
+    "logical": "2026-08-26:NY:v1",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 0,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29085",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 104,
+    "logical": "2026-08-26:NY:v1",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 3,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 105,
+    "logical": "2026-08-26:NY:v2",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 6,
+    "label": "Supply·1h",
+    "price": "29539.38",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 105,
+    "logical": "2026-08-26:NY:v2",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 105,
+    "logical": "2026-08-26:NY:v2",
+    "scenario": "S4",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 106,
+    "logical": "2026-08-26:NY:v3",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 106,
+    "logical": "2026-08-26:NY:v3",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 3,
+    "label": "PDC",
+    "price": "29228.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 106,
+    "logical": "2026-08-26:NY:v3",
+    "scenario": "S4",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 106,
+    "logical": "2026-08-26:NY:v3",
+    "scenario": "S5",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 108,
+    "logical": "2026-08-26:NY:v5",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 6,
+    "label": "Supply·1h",
+    "price": "29539.38",
+    "instruction": "confluence_only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 110,
+    "logical": "2026-08-26:NY:v7",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 4,
+    "label": "PDC",
+    "price": "29228.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 114,
+    "logical": "2026-08-26:ASIA:v3",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 0,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 114,
+    "logical": "2026-08-26:ASIA:v3",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 7,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 114,
+    "logical": "2026-08-26:ASIA:v3",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 0,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 114,
+    "logical": "2026-08-26:ASIA:v3",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 4,
+    "label": "Demand·4h (HTF)",
+    "price": "29654",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 117,
+    "logical": "2026-08-26:ASIA:v6",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 5,
+    "label": "eVWAP",
+    "price": "29491",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 118,
+    "logical": "2026-08-26:ASIA:v7",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 5,
+    "label": "OB(bear)·1h",
+    "price": "29539.38",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 118,
+    "logical": "2026-08-26:ASIA:v7",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 6,
+    "label": "OB(bull)·1h",
+    "price": "29532",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 118,
+    "logical": "2026-08-26:ASIA:v7",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 5,
+    "label": "OB(bear)·1h",
+    "price": "29539.38",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 118,
+    "logical": "2026-08-26:ASIA:v7",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 6,
+    "label": "OB(bull)·1h",
+    "price": "29532",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 118,
+    "logical": "2026-08-26:ASIA:v7",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 6,
+    "label": "OB(bull)·1h",
+    "price": "29532",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 121,
+    "logical": "2026-08-26:ASIA:v10",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 4,
+    "label": "VWAP+1σ",
+    "price": "29596.05",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 125,
+    "logical": "2026-08-27:LONDON:v4",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 4,
+    "label": "Demand·1h (HTF)",
+    "price": "29631",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 127,
+    "logical": "2026-08-27:LONDON:v6",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 4,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 127,
+    "logical": "2026-08-27:LONDON:v6",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "Supply·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 131,
+    "logical": "2026-08-27:NY:v3",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 4,
+    "label": "VWAP",
+    "price": "29547.39",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 139,
+    "logical": "2026-08-27:ASIA:v6",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 5,
+    "label": "eVWAP",
+    "price": "29640.78",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 139,
+    "logical": "2026-08-27:ASIA:v6",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 8,
+    "label": "Supply·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 142,
+    "logical": "2026-08-27:ASIA:v9",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 7,
+    "label": "Supply·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 142,
+    "logical": "2026-08-27:ASIA:v9",
+    "scenario": "S4",
+    "frozen": false,
+    "level_index": 7,
+    "label": "Supply·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 143,
+    "logical": "2026-08-27:ASIA:v10",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 5,
+    "label": "Supply·1h",
+    "price": "29619.5",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 143,
+    "logical": "2026-08-27:ASIA:v10",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "VWAP+2σ",
+    "price": "29703.14",
+    "instruction": "target only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 145,
+    "logical": "2026-08-27:ASIA:v12",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 5,
+    "label": "Demand·1h (HTF)",
+    "price": "29316.38",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 146,
+    "logical": "2026-08-27:ASIA:v13",
+    "scenario": "S5",
+    "frozen": false,
+    "level_index": 0,
+    "label": "PDH",
+    "price": "29707.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 148,
+    "logical": "2026-08-28:LONDON:v2",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 149,
+    "logical": "2026-08-28:LONDON:v3",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 6,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 149,
+    "logical": "2026-08-28:LONDON:v3",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 6,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 149,
+    "logical": "2026-08-28:LONDON:v3",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 6,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 149,
+    "logical": "2026-08-28:LONDON:v3",
+    "scenario": "S4",
+    "frozen": false,
+    "level_index": 6,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 150,
+    "logical": "2026-08-28:LONDON:v4",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 6,
+    "label": "OB(bear)·1h",
+    "price": "29644.38",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 152,
+    "logical": "2026-08-28:LONDON:v6",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 3,
+    "label": "Demand·1h (HTF)",
+    "price": "29722.62",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 152,
+    "logical": "2026-08-28:LONDON:v6",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 1,
+    "label": "RTH-H",
+    "price": "29678.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 152,
+    "logical": "2026-08-28:LONDON:v6",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 7,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29490.88",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 153,
+    "logical": "2026-08-28:NY:v1",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 7,
+    "label": "OB(bear)·1h",
+    "price": "29644.38",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 153,
+    "logical": "2026-08-28:NY:v1",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 4,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 153,
+    "logical": "2026-08-28:NY:v1",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 11,
+    "label": "Supply·1h",
+    "price": "29848.75",
+    "instruction": "confluence",
+    "uses": [
+      "arm_target",
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 154,
+    "logical": "2026-08-28:NY:v2",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 1,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29715.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 154,
+    "logical": "2026-08-28:NY:v2",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 4,
+    "label": "RTH-H",
+    "price": "29678.25",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 154,
+    "logical": "2026-08-28:NY:v2",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 9,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 3,
+    "label": "PDC",
+    "price": "29642",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 7,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 8,
+    "label": "OB(bull)·1h",
+    "price": "29532",
+    "instruction": "confluence_reference",
+    "uses": [
+      "arm_target",
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 1,
+    "label": "ONL",
+    "price": "29577.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 7,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 8,
+    "label": "OB(bull)·1h",
+    "price": "29532",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 6,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29715.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 155,
+    "logical": "2026-08-28:NY:v3",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 7,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 156,
+    "logical": "2026-08-28:NY:v4",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 3,
+    "label": "RTH-H",
+    "price": "29678.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 157,
+    "logical": "2026-08-28:NY:v5",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 5,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 162,
+    "logical": "2026-08-30:ASIA:v1",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 0,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence_only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 162,
+    "logical": "2026-08-30:ASIA:v1",
+    "scenario": "S4",
+    "frozen": false,
+    "level_index": 0,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence_only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 162,
+    "logical": "2026-08-30:ASIA:v1",
+    "scenario": "S4",
+    "frozen": false,
+    "level_index": 3,
+    "label": "EQL·1h (HTF)",
+    "price": "29424",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 163,
+    "logical": "2026-08-30:ASIA:v2",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·15m",
+    "price": "29357.25",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 163,
+    "logical": "2026-08-30:ASIA:v2",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 5,
+    "label": "EQL·4h",
+    "price": "29396.75",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 163,
+    "logical": "2026-08-30:ASIA:v2",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bull)·15m",
+    "price": "29357.25",
+    "instruction": "confluence",
+    "uses": [
+      "arm_target",
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 166,
+    "logical": "2026-08-31:LONDON:v2",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OB(bear)·1h (HTF)",
+    "price": "29498.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 170,
+    "logical": "2026-08-31:NY:v3",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 2,
+    "label": "iFVG(bear)·4h (HTF)",
+    "price": "29280.88",
+    "instruction": "target only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 171,
+    "logical": "2026-08-31:NY:v4",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OR-L",
+    "price": "29417",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 171,
+    "logical": "2026-08-31:NY:v4",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29432.25",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 171,
+    "logical": "2026-08-31:NY:v4",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OR-L",
+    "price": "29417",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 171,
+    "logical": "2026-08-31:NY:v4",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29432.25",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 179,
+    "logical": "2026-09-01:LONDON:v3",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 3,
+    "label": "Demand·1h",
+    "price": "29212.5",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 179,
+    "logical": "2026-09-01:LONDON:v3",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 3,
+    "label": "Demand·1h",
+    "price": "29212.5",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 194,
+    "logical": "2026-09-01:ASIA:v7",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 0,
+    "label": "Supply·4h (HTF)",
+    "price": "29029.88",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 194,
+    "logical": "2026-09-01:ASIA:v7",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 3,
+    "label": "OR-L",
+    "price": "29062.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 195,
+    "logical": "2026-09-01:ASIA:v8",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29085",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 195,
+    "logical": "2026-09-01:ASIA:v8",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29085",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 196,
+    "logical": "2026-09-01:ASIA:v9",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 1,
+    "label": "OB(bull)·1h",
+    "price": "29085",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 198,
+    "logical": "2026-09-01:ASIA:v10",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 0,
+    "label": "OB(bull)·4h (HTF)",
+    "price": "28970.38",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 199,
+    "logical": "2026-09-02:LONDON:v2",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 2,
+    "label": "OB(bull)·4h (HTF)",
+    "price": "28970.38",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 199,
+    "logical": "2026-09-02:LONDON:v2",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 7,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 199,
+    "logical": "2026-09-02:LONDON:v2",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 7,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 199,
+    "logical": "2026-09-02:LONDON:v2",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 10,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29324.5",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 200,
+    "logical": "2026-09-02:LONDON:v3",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 8,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29324.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 202,
+    "logical": "2026-09-02:LONDON:v5",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 7,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29324.5",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 203,
+    "logical": "2026-09-02:NY:v1",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OB(bull)·4h (HTF)",
+    "price": "28917.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 205,
+    "logical": "2026-09-02:NY:v2",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 3,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "HTF confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 205,
+    "logical": "2026-09-02:NY:v2",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 7,
+    "label": "PDC",
+    "price": "29058.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 205,
+    "logical": "2026-09-02:NY:v2",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 7,
+    "label": "PDC",
+    "price": "29058.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 206,
+    "logical": "2026-09-02:NY:v3",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 8,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "HTF confluence reference only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 206,
+    "logical": "2026-09-02:NY:v3",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 8,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "HTF confluence reference only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 206,
+    "logical": "2026-09-02:NY:v3",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 8,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "HTF confluence reference only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 206,
+    "logical": "2026-09-02:NY:v3",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 8,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "HTF confluence reference only",
+    "uses": [
+      "arm_target",
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 207,
+    "logical": "2026-09-02:NY:v4",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 2,
+    "label": "PDC",
+    "price": "29058.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 207,
+    "logical": "2026-09-02:NY:v4",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 8,
+    "label": "OB(bull)·1h (HTF)",
+    "price": "29324.5",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 211,
+    "logical": "2026-09-02:NY:v8",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 5,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 211,
+    "logical": "2026-09-02:NY:v8",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 1,
+    "label": "OR-L",
+    "price": "29042.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 213,
+    "logical": "2026-09-02:NY:v10",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 3,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 213,
+    "logical": "2026-09-02:NY:v10",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 3,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 214,
+    "logical": "2026-09-02:NY:v11",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 7,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 214,
+    "logical": "2026-09-02:NY:v11",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 7,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 215,
+    "logical": "2026-09-02:NY:v12",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 2,
+    "label": "OR-L",
+    "price": "29042.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 215,
+    "logical": "2026-09-02:NY:v12",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 7,
+    "label": "OB(bear)·4h",
+    "price": "29154.38",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 215,
+    "logical": "2026-09-02:NY:v12",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OR-H",
+    "price": "29102",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 215,
+    "logical": "2026-09-02:NY:v12",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 7,
+    "label": "OB(bear)·4h",
+    "price": "29154.38",
+    "instruction": "confluence_reference",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 218,
+    "logical": "2026-09-02:ASIA:v3",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 6,
+    "label": "Demand·4h (HTF)",
+    "price": "29136.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 219,
+    "logical": "2026-09-02:ASIA:v4",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 6,
+    "label": "Demand·4h (HTF)",
+    "price": "29136.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 220,
+    "logical": "2026-09-02:ASIA:v5",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 5,
+    "label": "Demand·4h (HTF)",
+    "price": "29136.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 221,
+    "logical": "2026-09-02:ASIA:v6",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 5,
+    "label": "Demand·4h (HTF)",
+    "price": "29136.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 222,
+    "logical": "2026-09-02:ASIA:v7",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 1,
+    "label": "Demand·4h (HTF)",
+    "price": "29136.25",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 226,
+    "logical": "2026-09-02:ASIA:v10",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 9,
+    "label": "OR-H",
+    "price": "29102",
+    "instruction": "target only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 228,
+    "logical": "2026-09-02:ASIA:v12",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 3,
+    "label": "ONH",
+    "price": "29218.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 228,
+    "logical": "2026-09-02:ASIA:v12",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 7,
+    "label": "SWG-L·5m",
+    "price": "29141.25",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 228,
+    "logical": "2026-09-02:ASIA:v12",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 9,
+    "label": "OR-H",
+    "price": "29102",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 230,
+    "logical": "2026-09-02:ASIA:v14",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 1,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 230,
+    "logical": "2026-09-02:ASIA:v14",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 1,
+    "label": "OB(bull)·1h",
+    "price": "29212.5",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 235,
+    "logical": "2026-09-03:NY:v2",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 6,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 235,
+    "logical": "2026-09-03:NY:v2",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 8,
+    "label": "ONL",
+    "price": "29075",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 236,
+    "logical": "2026-09-03:NY:v3",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 6,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence",
+    "uses": [
+      "arm_target",
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 236,
+    "logical": "2026-09-03:NY:v3",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 6,
+    "label": "Supply·1h",
+    "price": "29209.25",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 237,
+    "logical": "2026-09-03:NY:v4",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 3,
+    "label": "ONH",
+    "price": "29293",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 240,
+    "logical": "2026-09-03:NY:v7",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 0,
+    "label": "EQH·15m (HTF)",
+    "price": "29529.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 241,
+    "logical": "2026-09-03:ASIA:v1",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 241,
+    "logical": "2026-09-03:ASIA:v1",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 242,
+    "logical": "2026-09-03:ASIA:v2",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 242,
+    "logical": "2026-09-03:ASIA:v2",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 243,
+    "logical": "2026-09-03:ASIA:v3",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 5,
+    "label": "Supply·1h",
+    "price": "29539.38",
+    "instruction": "htf_confluence_only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 246,
+    "logical": "2026-09-03:ASIA:v6",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 6,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 246,
+    "logical": "2026-09-03:ASIA:v6",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 1,
+    "label": "ONH",
+    "price": "29643.5",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 246,
+    "logical": "2026-09-03:ASIA:v6",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 6,
+    "label": "Demand·1h",
+    "price": "29541.12",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 247,
+    "logical": "2026-09-03:ASIA:v7",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 2,
+    "label": "OB(bear)·1h (HTF)",
+    "price": "29652.12",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 248,
+    "logical": "2026-09-04:LONDON:v1",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OB(bear)·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 248,
+    "logical": "2026-09-04:LONDON:v1",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OB(bear)·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 248,
+    "logical": "2026-09-04:LONDON:v1",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 4,
+    "label": "OB(bear)·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 248,
+    "logical": "2026-09-04:LONDON:v1",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 5,
+    "label": "PDH",
+    "price": "29601",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 253,
+    "logical": "2026-09-04:NY:v3",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 1,
+    "label": "ONH",
+    "price": "29720",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 254,
+    "logical": "2026-09-04:NY:v4",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 7,
+    "label": "PDH",
+    "price": "29601",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 255,
+    "logical": "2026-09-04:NY:v5",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OR-L",
+    "price": "29553.75",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 256,
+    "logical": "2026-09-04:NY:v6",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 7,
+    "label": "OB(bear)·4h",
+    "price": "29503.38",
+    "instruction": "HTF confluence only",
+    "uses": [
+      "arm_target",
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 256,
+    "logical": "2026-09-04:NY:v6",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 7,
+    "label": "OB(bear)·4h",
+    "price": "29503.38",
+    "instruction": "HTF confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 262,
+    "logical": "2026-09-06:ASIA:v5",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 9,
+    "label": "ONH",
+    "price": "29623",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 263,
+    "logical": "2026-09-06:ASIA:v6",
+    "scenario": "S1",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 263,
+    "logical": "2026-09-06:ASIA:v6",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 263,
+    "logical": "2026-09-06:ASIA:v6",
+    "scenario": "S2",
+    "frozen": true,
+    "level_index": 8,
+    "label": "PDH",
+    "price": "29720",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 263,
+    "logical": "2026-09-06:ASIA:v6",
+    "scenario": "S3",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 263,
+    "logical": "2026-09-06:ASIA:v6",
+    "scenario": "S4",
+    "frozen": true,
+    "level_index": 5,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence only",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 267,
+    "logical": "2026-09-07:ASIA:v4",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 2,
+    "label": "OB(bear)·1h",
+    "price": "29845.25",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 269,
+    "logical": "2026-09-08:LONDON:v1",
+    "scenario": "S1",
+    "frozen": false,
+    "level_index": 7,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 269,
+    "logical": "2026-09-08:LONDON:v1",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 7,
+    "label": "OB(bull)·1h",
+    "price": "29611",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 270,
+    "logical": "2026-09-08:LONDON:v2",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 9,
+    "label": "Supply·1h",
+    "price": "29657.38",
+    "instruction": "confluence",
+    "uses": [
+      "arm_target",
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 270,
+    "logical": "2026-09-08:LONDON:v2",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 10,
+    "label": "SWG-L·5m",
+    "price": "29675.75",
+    "instruction": "target",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 272,
+    "logical": "2026-09-08:LONDON:v4",
+    "scenario": "S3",
+    "frozen": false,
+    "level_index": 3,
+    "label": "OB(bear)·1h",
+    "price": "29502.88",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  },
+  {
+    "plan_rowid": 274,
+    "logical": "2026-09-08:NY:v1",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 9,
+    "label": "PDH",
+    "price": "29764.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 275,
+    "logical": "2026-09-08:NY:v2",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 5,
+    "label": "PDL",
+    "price": "29521.75",
+    "instruction": "target_only",
+    "uses": [
+      "invalidation"
+    ]
+  },
+  {
+    "plan_rowid": 276,
+    "logical": "2026-09-08:NY:v3",
+    "scenario": "S2",
+    "frozen": false,
+    "level_index": 9,
+    "label": "Supply·1h",
+    "price": "29619.5",
+    "instruction": "confluence",
+    "uses": [
+      "target_chain"
+    ]
+  }
+]

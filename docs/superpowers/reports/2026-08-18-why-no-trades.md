@@ -1,0 +1,15 @@
+# WHY NO TRADES — decisive test + full-session autopsy (2026-08-18)
+
+**LINE 1:** **0 of 3** wait cycles become entry proposals with the plan block stripped — the dominant reason is the BASE prompt's level-only discipline ("react AT levels", "no trade inside sideways zone"), NOT the gates and NOT the day plan alone.
+
+**Decisive test [A].** 3 stored NY waits (cycles 29222/29218/29215), same stored bars, same model (deepseek-v4-pro, temp 0.5), DAY PLAN block + PLAN STATUS tail removed: 3/3 still wait. The model quoted "react at levels, not between them" and the personalized "avoid trading inside a sideways zone" — both survive stripping.
+**Control group [A].** The `15m` trader runs day_plan DISABLED, same market, same gates: 36/36 NY waits today. The base prompt alone suppresses entries.
+**Today's buckets (NY so far).** 67 cycles: 59 wait, 8 guardrail-skips, 0 entries proposed, 0 gate refusals, 0 parse losses. Zero entries ever reached a gate — gate math never got to vote.
+**Prior full session (your 08-17 = system 08-16).** Only 16 ASIA cycles (all wait), then the bot idled through LONDON+NY (no cycles 17:11→07:45 UTC in the log) — that window has zero decisions to autopsy. Honest statement, not an excuse.
+**True ranges (from stored 1h bars).** ASIA 78.75 pts (30166.25–30245.00) · LONDON 159.75 (30180–30339.75) · NY so far 130.25 (30156.50–30286.75). Your ~100-pt estimate is right; NY already exceeded it.
+**Geometry count [A].** Of the 31 plan-bearing NY wait cycles: **28 had a 3:1 trade geometrically possible** (stop beyond nearest structure, target inside the session extreme); **4** within the prompt's own 15–50 pt stop band. Example 29218: 9:1 breakout available at 30265.75 — declined because the target read "flipped…watch the trap".
+**Suppressor ranking.** 1) KEY LEVELS anchor ("do not chase between levels") — quoted by the model. 2) Your own custom line "No trade inside sideway zone". 3) Day-plan "entries per plan only" + consumed labels (29218 declined exactly on a consumed label). Verdict: ADVISORY **was** behaving like DIRECTION by persuasion — but the plan layer only aggravates; the base prompt does it by itself.
+**Plan lifecycle.** v1 08:28 CT scheduled · v2 09:54 CT `owner_reset` (hence "re-plans left 4") · no death today · last-entry 13:00 / flat 14:45 not yet reached.
+**What changed (committed aeaf7076 + 7e152559, NOT deployed — market open).** 3 wording changes: plan header now "preferred: follow it · a valid off-plan setup may still be traded (cite off-plan)"; anchor line now "…between them, a confirmed momentum/breakout may still be traded"; consumed label now "flipped — tradeable both directions". Goldens regenerated deliberately: futures_mnq_plan.golden (2 lines), futures_mnq_keylevels.golden (1 line). Plus a reusable `cmd/decisive-test` harness (read-only, 3 real calls).
+**Exit bar.** build/vet/test/-race green · FE untouched (no tsc/vitest impact).
+**Deploy (yours, after 14:45 CT):** git pull → go build -o nofx-bin . → git rev-parse HEAD > deploy/RELEASE → restart → no FE change. If waits persist, next levers: your personalized-strategy line and the Entry-Standards block.

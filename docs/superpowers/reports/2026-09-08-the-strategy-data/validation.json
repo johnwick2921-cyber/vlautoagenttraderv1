@@ -1,0 +1,368 @@
+{
+  "validated_ct": "2026-09-08T18:44:58.636428-05:00",
+  "checks": [
+    {
+      "check": "806 unique retained scenario keys",
+      "result": "PASS"
+    },
+    {
+      "check": "770 real plus 36 stand-aside",
+      "result": "PASS"
+    },
+    {
+      "check": "play_session partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "play_day_type partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "family_session partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "family_day_type partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "sides_session partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "sides_day_type partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "sides_regime partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "reached partitions all real IDs",
+      "result": "PASS"
+    },
+    {
+      "check": "all calendar rows partition 770 authored scenarios",
+      "result": "PASS"
+    },
+    {
+      "check": "eligible positions all linked to retained scenarios",
+      "result": "PASS"
+    },
+    {
+      "check": "78 era positions split into 65 eligible and 13 excluded",
+      "result": "PASS"
+    },
+    {
+      "check": "eligible P&L fields resolved; no test/unresolvable",
+      "result": "PASS"
+    },
+    {
+      "check": "all 65 fill IDs represented exactly once in plan-day table",
+      "result": "PASS"
+    },
+    {
+      "check": "24 acceptance observations represent 12 unique orders",
+      "result": "PASS"
+    },
+    {
+      "check": "183 correct-side parent geometries",
+      "result": "PASS"
+    },
+    {
+      "check": "198 expanded correct-side leg geometries",
+      "result": "PASS"
+    },
+    {
+      "check": "49 real session-days; 280 defined comparison pairs",
+      "result": "PASS"
+    },
+    {
+      "check": "Python artifact syntax (AST parse, no trading imports)",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan supplement.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan provenance.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan exit-runtime.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan positions.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan analyze.py",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan scenarios.csv",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan lifecycle.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan extract.py",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan validation.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan tables.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan accepted.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan summary.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan candidates.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan build_report.py",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan position-cohort.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan levels.csv",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan queries.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan excursions.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan arms.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan bars.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan runtime.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan validate.py",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan config.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan runtime-final.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan facts.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan supplement.py",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan plan-inventory.csv",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan plans.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan runtime-log.json",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan read_runtime.py",
+      "result": "PASS"
+    },
+    {
+      "check": "private-value scan 2026-09-08-the-strategy.md",
+      "result": "PASS"
+    }
+  ],
+  "evidence_units": {
+    "plans": 279,
+    "scenarios": 806,
+    "real_scenarios": 770,
+    "position_cohort": 65,
+    "expanded_arm_legs": 198
+  },
+  "artifacts": [
+    {
+      "file": "supplement.json",
+      "bytes": 236615,
+      "sha256": "9334917fb31e37feccd25e662da62bad9ffd06fc4f0c8c7b9b831b699d3242d0"
+    },
+    {
+      "file": "provenance.json",
+      "bytes": 10046,
+      "sha256": "ae8bfeea368fd0839ce26fa803122fa66360efb8a80f3199811a5aaf182a19ec"
+    },
+    {
+      "file": "exit-runtime.json",
+      "bytes": 445,
+      "sha256": "b38150ef52b81248c3e2acd56cca2ed23496921aaec6a7d8ed1167897f1ad27f"
+    },
+    {
+      "file": "positions.json",
+      "bytes": 45271,
+      "sha256": "17897e0683c303817042ce425757c443b1205c624de5a332d0c2c6dfdf170d93"
+    },
+    {
+      "file": "analyze.py",
+      "bytes": 17704,
+      "sha256": "30bc78ab30cbc06fc18dd4c90e430092d25ad9cabfa5073a2f61a737e487b0f5"
+    },
+    {
+      "file": "scenarios.csv",
+      "bytes": 408892,
+      "sha256": "592340b8e4ee16d7a918de7d1662b966e1d15d8ee702d5202fe1b2cfc4e14913"
+    },
+    {
+      "file": "lifecycle.json",
+      "bytes": 4684,
+      "sha256": "ecf9b9af4aa3a8ba356c129471adc33d9939b33a80418f56485d35573ab4b60a"
+    },
+    {
+      "file": "extract.py",
+      "bytes": 5080,
+      "sha256": "e9f6f77bcaa12665f625ffb2d605780578299b02219a6991794b6cfaad6805dc"
+    },
+    {
+      "file": "tables.json",
+      "bytes": 597322,
+      "sha256": "df0406819c5ff5e877140e19ccbbb11b47c709adf55b721f0c7f13a9bff25fa4"
+    },
+    {
+      "file": "accepted.json",
+      "bytes": 12212,
+      "sha256": "15510c87502e5b9f68d1f181f12339bd3c3219a4ed011fb9d7deee1ae651e42b"
+    },
+    {
+      "file": "summary.json",
+      "bytes": 250941,
+      "sha256": "4fbd844b52c09b5d6bbc1e26e2f987b548eb3560a1cd06cc7efc40caa95feabc"
+    },
+    {
+      "file": "candidates.json",
+      "bytes": 405300,
+      "sha256": "e7cbcab69802d41fc03b6bcfe09f75d5b16941be744f973893154ab2de5b3963"
+    },
+    {
+      "file": "build_report.py",
+      "bytes": 48147,
+      "sha256": "2fe0f10fc84acfff725df7194aa45b15b2356fdc6fb816bd144f7fcd8c4c6725"
+    },
+    {
+      "file": "position-cohort.json",
+      "bytes": 64211,
+      "sha256": "3acd3833785cf7fdbe4c4d627b4fcb85345f0953cc3c75ad7865ad2067b5f9b0"
+    },
+    {
+      "file": "levels.csv",
+      "bytes": 232163,
+      "sha256": "285542d8125e878c8ce233e6d9c0701bcaaee3f1936f44b1f20b22caa1fc0b77"
+    },
+    {
+      "file": "queries.json",
+      "bytes": 3861,
+      "sha256": "1c1b5e9ef53c0de0e280f3fc34194e31613d8c2e224a41ba3e05fb37b6f3767d"
+    },
+    {
+      "file": "excursions.json",
+      "bytes": 46428,
+      "sha256": "60437bf3a4aba264abf970eb99a49bc07a397fc7970fb692d05618f99a7f5709"
+    },
+    {
+      "file": "arms.json",
+      "bytes": 64141,
+      "sha256": "527277b874ab4f275cd6a78962e38cbcbf3397a87842b3eda835cebd73a74e84"
+    },
+    {
+      "file": "bars.json",
+      "bytes": 3850692,
+      "sha256": "8fd0ed49dabe436964a13b2720c784d262f6c6bbebcd4f528058fe6986a7b9d5"
+    },
+    {
+      "file": "runtime.json",
+      "bytes": 53161,
+      "sha256": "8a1f3a60f513116330d927aa434ce72853a43adada72e82b3b6a4529887fe11e"
+    },
+    {
+      "file": "validate.py",
+      "bytes": 3561,
+      "sha256": "7d98fa562a85c5ad0bb5a79a410fc189b14cbab52317c514726167015b45c2b9"
+    },
+    {
+      "file": "config.json",
+      "bytes": 3186,
+      "sha256": "f2a518d3985791b5c891693a93c420bc35f2d70d33ad08455ca296b82394f922"
+    },
+    {
+      "file": "runtime-final.json",
+      "bytes": 16494,
+      "sha256": "daa038a8d4b34097645ef088afb7bc1ef5761f226cbd036315a6b1c846ff416d"
+    },
+    {
+      "file": "facts.json",
+      "bytes": 27563,
+      "sha256": "d6eb910d2e7820e505065d556ae70d19880ca437d13ddeb49888435fbe565eac"
+    },
+    {
+      "file": "supplement.py",
+      "bytes": 6301,
+      "sha256": "4be0d0ca55edddebe56d107209bdccb6bd569e91d2691a9ef9c54759ddf21eae"
+    },
+    {
+      "file": "plan-inventory.csv",
+      "bytes": 40279,
+      "sha256": "58edde9a2005bb9e37db3afb26bb4140e3430a6f6142c421c0f156000be45bb7"
+    },
+    {
+      "file": "plans.json",
+      "bytes": 2191482,
+      "sha256": "e16ba713b353b4db50456bae111c8b7d93973cc63f428b3df62039100f6f67dc"
+    },
+    {
+      "file": "runtime-log.json",
+      "bytes": 6773,
+      "sha256": "7507570b507a61d33d23a52ff2d43f5e70b1c79f800d296054f9573e3f543a18"
+    },
+    {
+      "file": "read_runtime.py",
+      "bytes": 3167,
+      "sha256": "1da3ee9b97fa7c7e2e1249dea95f019e2494fe3cf1382eeb2b68f63c023beb1b"
+    },
+    {
+      "file": "2026-09-08-the-strategy.md",
+      "bytes": 65178,
+      "sha256": "1cedbc5b582d54d9effa9ec5676a9da568eafccc4e43310fb1878bd037112cf3"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+n=64 rows, trade_date 2026-09-01..2026-09-04
+
+class | n | share | wilson95 | ids
+B3 breakdown VOID (close came back across) | 21 | 32.8% | [22.6%,45.0%] | 73,74,75,77,83,88,92,94,96,98,100,101,102,103,105,107,108,109,110,111,113
+TRANSPORT (503/timeout) — not a validator | 6 | 9.4% | [4.4%,19.0%] | 71,72,87,89,90,91
+B1 BD_MIN_DISP_ATR (displacement below floor) | 6 | 9.4% | [4.4%,19.0%] | 114,115,117,126,129,132
+EntryLaw rule not allowed for condition | 5 | 7.8% | [3.4%,17.0%] | 70,78,81,112,118
+EntryLaw fade_requires_touch | 5 | 7.8% | [3.4%,17.0%] | 76,93,99,104,106
+B2 BD_MIN_CLOSES (no confirming close yet) | 5 | 7.8% | [3.4%,17.0%] | 119,121,124,127,130
+ArmSpec entry_mode=pullback required | 5 | 7.8% | [3.4%,17.0%] | 120,122,125,128,131
+ArmSpec legs/split contract | 3 | 4.7% | [1.6%,12.9%] | 69,80,84
+Schema: confirm rule enum invalid | 2 | 3.1% | [0.9%,10.7%] | 79,82
+OTHER | 2 | 3.1% | [0.9%,10.7%] | 85,86
+Gap-direction order | 2 | 3.1% | [0.9%,10.7%] | 116,123
+B2 BD_MAX_LEVEL_DIST_ATR (level too far) | 1 | 1.6% | [0.3%,8.3%] | 95
+Levels: too many / duplicates / one-sided | 1 | 1.6% | [0.3%,8.3%] | 97
+
+by trade_date x class
+2026-09-01 {'ArmSpec legs/split contract': 3, 'EntryLaw rule not allowed for condition': 3, 'TRANSPORT (503/timeout) — not a validator': 6, 'B3 breakdown VOID (close came back across)': 6, 'EntryLaw fade_requires_touch': 1, 'Schema: confirm rule enum invalid': 2, 'OTHER': 2}
+2026-09-02 {'B3 breakdown VOID (close came back across)': 15, 'EntryLaw fade_requires_touch': 4, 'B2 BD_MAX_LEVEL_DIST_ATR (level too far)': 1, 'Levels: too many / duplicates / one-sided': 1, 'EntryLaw rule not allowed for condition': 1, 'B1 BD_MIN_DISP_ATR (displacement below floor)': 2}
+2026-09-03 {'Gap-direction order': 1}
+2026-09-04 {'B1 BD_MIN_DISP_ATR (displacement below floor)': 4, 'EntryLaw rule not allowed for condition': 1, 'B2 BD_MIN_CLOSES (no confirming close yet)': 5, 'ArmSpec entry_mode=pullback required': 5, 'Gap-direction order': 1}
+
+by session: Counter({'ASIA': 33, 'NY': 25, 'LONDON': 6})
+by attempt: Counter({'1': 30, '2': 20, '3': 14})
+
+OTHER rows:
+85 arm on S1 top-level entry/stop/target must equal leg 1's (legacy readers read the top-level)
+86 arm on S1 leg 2 must chain (wait_confirm true) on its confirm rule
+
+rows carrying >1 defect (heuristic): 0 []

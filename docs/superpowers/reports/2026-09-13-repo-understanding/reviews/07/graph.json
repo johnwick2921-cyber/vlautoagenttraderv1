@@ -1,0 +1,48 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_source": "July 10 @ 7a8adce0; stash knowledge-graph.json",
+  "historical_subset_counts": {
+    "nodes": 195,
+    "outgoing_noncontainment_edges": 222
+  },
+  "inspection": "All 25 historic file summaries and first 20 outgoing dependency/testing edges read; whole graph not manually certified. Current source is authority.",
+  "corrections": [
+    {
+      "path": "trader/bybit/trader.go",
+      "old": "API-key-injecting round-tripper",
+      "current": "RoundTrip sets Referer only; SDK owns auth."
+    },
+    {
+      "path": "trader/indodax/trader_account.go",
+      "old": "closed PnL reconstruction",
+      "current": "BTCIDR history rows lack realized PnL and quantity and include buys; not PnL reconstruction."
+    },
+    {
+      "path": "trader/lighter/orders_test.go",
+      "old": "tested_by graph implies coverage",
+      "current": "Tests mostly decode DTOs/copy conversion logic; mock-server test does not call GetActiveOrders."
+    }
+  ],
+  "evidenced_edges": [
+    {
+      "source": "trader/auto_trader.go:632",
+      "target": "trader/{binance,bybit,okx,bitget,gate,kucoin,hyperliquid,aster,lighter,indodax}",
+      "relation": "exchange-selected alternative constructors; distinct from ninjatrader branch"
+    },
+    {
+      "source": "trader/{bybit,gate,kucoin,hyperliquid}/order_sync.go",
+      "target": "store/position_builder.go:29",
+      "relation": "Direct ProcessTrade call after separate CreateOrder/CreateFill writes"
+    },
+    {
+      "source": "trader/okx/trader_account.go:168",
+      "target": "trader/okx/trader.go:256",
+      "relation": "GetClosedPnL expects envelope but doRequest returns Data"
+    },
+    {
+      "source": "trader/lighter/trading.go:443",
+      "target": "trader/lighter/orders.go:204",
+      "relation": "pollForOrderIndex picks highest returned active index without matching txHash"
+    }
+  ]
+}

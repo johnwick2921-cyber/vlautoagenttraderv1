@@ -1,0 +1,8 @@
+{
+  "id": 37768,
+  "plan_id": "2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+  "plan_version": 6,
+  "decision_json": "[\n  {\n    \"symbol\": \"MNQ\",\n    \"action\": \"wait\",\n    \"reasoning\": \"Price 29531.50 sits exactly at session POC 29530.63, inside value, with no plan confirm met. S1 requires a touch of VWAP 29579.56 for a reject short — price is ~48 points below and not moving to it yet. S2/S3 are far away. 5m and 15m RSI are neutral-to-weak (~43), no displacement or momentum trigger. Structure is mixed: 5m trending up, 15m trending down, 1h ranging. No high-confidence setup; overtrading risk from recent history argues for patience. Wait for either a rally into the 29579.56 VWAP reject or a clean sweep/reclaim signal.\"\n  }\n]",
+  "execution_log": "[\"AI call duration: 8443 ms\",\"✓ MNQ wait succeeded\"]",
+  "error_message": ""
+}

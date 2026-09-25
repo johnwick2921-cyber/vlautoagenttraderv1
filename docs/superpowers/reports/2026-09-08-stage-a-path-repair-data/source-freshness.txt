@@ -1,0 +1,12 @@
+researchsnapshot/archive.go
+896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+researchsnapshot/runtime.go
+ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+main.go
+896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+web/src/guide/content/expectancy.ts
+ccef731d251b57d9caf08c4834767a83a0f18d32 2026-09-08T16:36:00-05:00 fix(research): preserve unknown entry roles and refresh guarded source references
+docs/superpowers/AUDIT-CHECKLIST.md
+6f677b55daa1c7da33b8c35f8bcc67883f36b470 2026-09-08T18:01:58-05:00 test(w7): freeze consumed-level clocks and add behavior-preserving clock seam
+docs/superpowers/SYSTEM-MAP.md
+6f677b55daa1c7da33b8c35f8bcc67883f36b470 2026-09-08T18:01:58-05:00 test(w7): freeze consumed-level clocks and add behavior-preserving clock seam

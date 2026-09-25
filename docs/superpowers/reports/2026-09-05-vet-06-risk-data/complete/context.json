@@ -1,0 +1,200 @@
+{
+  "calendar_count": 21,
+  "calendar_recent": [
+    {
+      "trade_date": "2026-09-03",
+      "source": "forexfactory",
+      "events_json": "[{\"time\":\"2026-09-03T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims\",\"impact\":\"T2\"},{\"time\":\"2026-09-03T14:00:00Z\",\"currency\":\"USD\",\"title\":\"ISM Services PMI\",\"impact\":\"T2\"}]",
+      "created_at": 1788100641850
+    },
+    {
+      "trade_date": "2026-09-04",
+      "source": "forexfactory",
+      "events_json": "[{\"time\":\"2026-09-04T08:50:00Z\",\"currency\":\"GBP\",\"title\":\"BOE Gov Bailey Speaks\",\"impact\":\"T1\"},{\"time\":\"2026-09-04T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Average Hourly Earnings m/m\",\"impact\":\"T1\"},{\"time\":\"2026-09-04T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Non-Farm Employment Change\",\"impact\":\"T1\"},{\"time\":\"2026-09-04T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Rate\",\"impact\":\"T1\"}]",
+      "created_at": 1788100641850
+    },
+    {
+      "trade_date": "2026-09-10",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-10T12:30:00Z\",\"currency\":\"USD\",\"title\":\"PPI m/m (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-10T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims (static fallback)\",\"impact\":\"T2\"}]",
+      "created_at": 1788128093263
+    },
+    {
+      "trade_date": "2026-09-11",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-11T12:30:00Z\",\"currency\":\"USD\",\"title\":\"CPI m/m (static fallback)\",\"impact\":\"T1\"}]",
+      "created_at": 1788128093263
+    },
+    {
+      "trade_date": "2026-09-16",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-16T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Retail Sales m/m (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-16T18:00:00Z\",\"currency\":\"USD\",\"title\":\"FOMC Statement (static fallback)\",\"impact\":\"T1\"},{\"time\":\"2026-09-16T18:30:00Z\",\"currency\":\"USD\",\"title\":\"FOMC Press Conference (static fallback)\",\"impact\":\"T1\"}]",
+      "created_at": 1788128093263
+    },
+    {
+      "trade_date": "2026-09-17",
+      "source": "static",
+      "events_json": "[{\"time\":\"2026-09-17T12:30:00Z\",\"currency\":\"USD\",\"title\":\"Unemployment Claims (static fallback)\",\"impact\":\"T2\"}]",
+      "created_at": 1788128093263
+    }
+  ],
+  "static_files": [
+    {
+      "path": "/home/hoang/nofx-vet-06-complete/calendar_static_t1.json",
+      "sha256": "32f9824e907e20b11d850eb54e1e005feee931804a64d18d318a1670fa34f9e6",
+      "events": 16,
+      "t1": 8,
+      "notes": 3
+    },
+    {
+      "path": "/home/hoang/nofx/calendar_static_t1.json",
+      "sha256": "32f9824e907e20b11d850eb54e1e005feee931804a64d18d318a1670fa34f9e6",
+      "events": 16,
+      "t1": 8,
+      "notes": 3
+    }
+  ],
+  "guard_scope_sensitivity": {
+    "sql": "SELECT id,entry_time,exit_time,pnl_corrected,plan_id,close_reason FROM trader_positions WHERE status='CLOSED' AND close_reason NOT IN ('reconcile_flat','unresolved','e7_farside_test') AND pnl_corrected IS NOT NULL AND entry_time>=1786770000000 ORDER BY exit_time,id",
+    "note": "All stored traders/accounts aggregate; account identity not reconstructed. Analytic comparison only, NOT exact live risk replay.",
+    "days": [
+      {
+        "day": "2026-08-18",
+        "ids": [
+          521,
+          522,
+          523,
+          524
+        ],
+        "pnl": 469.0
+      },
+      {
+        "day": "2026-08-19",
+        "ids": [
+          525,
+          526,
+          527,
+          528,
+          529,
+          530,
+          531,
+          532
+        ],
+        "pnl": 46.571428000002925
+      },
+      {
+        "day": "2026-08-20",
+        "ids": [
+          533,
+          534,
+          535,
+          536,
+          537,
+          538,
+          539,
+          540,
+          541,
+          542,
+          543,
+          544
+        ],
+        "pnl": -492.0
+      },
+      {
+        "day": "2026-08-23",
+        "ids": [
+          545,
+          546,
+          547,
+          548,
+          549
+        ],
+        "pnl": -142.5
+      },
+      {
+        "day": "2026-08-24",
+        "ids": [
+          550,
+          551,
+          552,
+          553,
+          554,
+          555,
+          556,
+          557,
+          558,
+          559,
+          560
+        ],
+        "pnl": -26.5
+      },
+      {
+        "day": "2026-08-25",
+        "ids": [
+          561,
+          562,
+          563
+        ],
+        "pnl": -200.0
+      },
+      {
+        "day": "2026-08-26",
+        "ids": [
+          564,
+          565,
+          566
+        ],
+        "pnl": -34.5
+      },
+      {
+        "day": "2026-08-27",
+        "ids": [
+          567,
+          568,
+          569,
+          570
+        ],
+        "pnl": 6.0
+      },
+      {
+        "day": "2026-08-30",
+        "ids": [
+          571,
+          575,
+          578,
+          580
+        ],
+        "pnl": 119.5
+      },
+      {
+        "day": "2026-08-31",
+        "ids": [
+          581,
+          582,
+          583,
+          584,
+          585,
+          586
+        ],
+        "pnl": 212.0
+      },
+      {
+        "day": "2026-09-01",
+        "ids": [
+          587,
+          588,
+          589,
+          590
+        ],
+        "pnl": -381.5
+      },
+      {
+        "day": "2026-09-02",
+        "ids": [
+          591
+        ],
+        "pnl": -140.0
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+distinct (kind,price): 84 first-seated: 49 ever-seated: 55
+== status at FIRST appearance
+seated       levels  49 touched  39 (79.6%) 1st hold/brk/amb 17/10/12 p=0.630 [0.442,0.785] n=27 mean_dist 83.2
+cut          levels  35 touched   9 (25.7%) 1st hold/brk/amb 4/4/1 p=0.500 [0.215,0.785] n=8 mean_dist 188.5
+== EVER seated in any read
+seated       levels  55 touched  42 (76.4%) 1st hold/brk/amb 19/11/12 p=0.633 [0.455,0.781] n=30 mean_dist 91.3
+cut          levels  29 touched   6 (20.7%) 1st hold/brk/amb 2/3/1 p=0.400 [0.118,0.769] n=5 mean_dist 194.9

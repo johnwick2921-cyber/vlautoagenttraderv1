@@ -1,0 +1,16 @@
+{
+  "merged_head": "05125bd6efffd2a9afd179728f32b29d679f71ac",
+  "clean_clone": "/tmp/brand-visible-build/nofx",
+  "go_test_all_exit": 0,
+  "vitest_exit": 0,
+  "vitest_files": 57,
+  "vitest_tests": 408,
+  "tsc_exit": 0,
+  "embedded_prompt_goldens_exit": 0,
+  "go_build_exit": 0,
+  "dist_build_exit": 0,
+  "before_build_vcs_modified": false,
+  "candidate_guide_from_binary": true,
+  "runtime_swapped": false,
+  "runtime_booted": false
+}

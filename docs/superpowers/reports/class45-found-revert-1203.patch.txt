@@ -1,0 +1,1201 @@
+THIS FILE IS EVIDENCE, NOT A PATCH TO APPLY.
+
+It is the preserved content of stash@{0} "On dev: class45-found-revert-1203"
+(6b770196bb01ce549d874085adb1c5177326048c, 2026-09-02T12:03:34-05:00): the
+VS Code stale-buffer revert of class 45 — 127 insertions, 596 DELETIONS of
+shipped safety code across six files, including the class-33 boot sweep
+(at.sweepPreBootArms). Applying it re-ships the exact deletion class 45 exists
+to prevent.
+
+It lives here because a stash is GLOBAL to the repository and every one of the
+worktrees can pop it by accident (class 71). Kept as a file, it is inert.
+Also preserved as the annotated tag class45-found-revert-1203.
+
+----------------------------------------------------------------------------
+
+diff --git a/kernel/plan_doc.go b/kernel/plan_doc.go
+index 8694fe7f..d5504754 100644
+--- a/kernel/plan_doc.go
++++ b/kernel/plan_doc.go
+@@ -265,13 +265,6 @@ type PlanDoc struct {
+ 	// remains for legacy stored plans.
+ 	DeathStructured *PlanCondition `json:"death,omitempty"`
+ 	FlipStructured  *PlanCondition `json:"flip,omitempty"`
+-
+-	// CLASS 39 (owner ruling 2026-09-01) — every normalize-don't-reject event
+-	// applied to this doc at validation: legs dropped from a non-sweep arm.
+-	// Kept IN the stored doc so the write site can WARN, the E8 row can be
+-	// stamped, and forensics can compare what the model authored with what
+-	// the machine kept.
+-	ArmNormalizations []ArmNormalization `json:"arm_normalizations,omitempty"`
+ }
+ 
+ // PlanCondition is a checkable predicate: price closes beyond `Price` on the
+@@ -461,8 +454,6 @@ func NormalizePlanDocRules(d *PlanDoc) {
+ 	if d.DeathStructured != nil {
+ 		d.DeathStructured.Rule = NormalizeConditionRule(d.DeathStructured.Rule)
+ 	}
+-	// CLASS 39 — legs on a non-sweep condition collapse to the single arm.
+-	normalizeArmLegs(d)
+ }
+ 
+ // NormalizeConfirmRule canonicalizes a confirm{} rule spelling.
+@@ -1122,115 +1113,3 @@ func confirmRuleMentions15m(rule string) bool {
+ 	}
+ 	return false
+ }
+-
+-// ArmNormalization (CLASS 39, owner ruling 2026-09-01) records ONE
+-// normalize-don't-reject event: on a non-sweep_reclaim condition the authored
+-// arm carried a legs array, the array was dropped, and the remaining single
+-// (top-level) arm validated. DroppedLegs is exactly what the model authored;
+-// Kept* is exactly what the machine kept — nothing is synthesized.
+-type ArmNormalization struct {
+-	Scenario    string       `json:"scenario"`
+-	Condition   string       `json:"condition"`
+-	DroppedLegs []PlanArmLeg `json:"dropped_legs"`
+-	KeptEntry   float64      `json:"kept_entry"`
+-	KeptStop    float64      `json:"kept_stop"`
+-	KeptTarget  float64      `json:"kept_target"`
+-	KeptRule    string       `json:"kept_rule"` // the scenario's confirm rule the single arm chains on ("" when none)
+-	KeptWait    bool         `json:"kept_wait_confirm"`
+-}
+-
+-// normalizeArmLegs — CLASS 39, Section B of the owner ruling, applied
+-// literally:
+-//
+-//  1. on a NON-sweep_reclaim condition with ANY legs array (one leg or many):
+-//     DROP the array;
+-//  2. RE-RUN the full arm validation (ArmSpecValid) on what remains — the
+-//     top-level entry / stop / target / wait_confirm;
+-//  3. VALID → keep the single arm and record the normalization (the write
+-//     site emits the ⚖ WARN, the E8 row is stamped, the counter is bumped);
+-//  4. STILL INVALID → leave the scenario UNCHANGED, so validateArmSpecs emits
+-//     the ORIGINAL reason to the model's retry. No second normalization pass.
+-//
+-// NEVER synthesizes a leg. NEVER touches sweep_reclaim — one leg there stays a
+-// reject (rows 69-S2 / 85-S1); a legal two-leg split passes through untouched.
+-// Runs from NormalizePlanDocRules, i.e. before validateArmSpecs on every
+-// parse/validate path. Idempotent: a stored doc whose legs are already gone
+-// is a no-op and its recorded normalizations are preserved.
+-func normalizeArmLegs(d *PlanDoc) {
+-	if d == nil {
+-		return
+-	}
+-	for i := range d.Scenarios {
+-		sc := &d.Scenarios[i]
+-		if sc.Arm == nil || len(sc.Arm.Legs) == 0 {
+-			continue
+-		}
+-		if strings.EqualFold(strings.TrimSpace(sc.Condition), "sweep_reclaim") {
+-			continue // D7 — the split contract is never normalized
+-		}
+-		trial := *sc
+-		single := *sc.Arm
+-		single.Legs = nil
+-		trial.Arm = &single
+-		if err := ArmSpecValid(trial); err != nil {
+-			continue // step 4 — unchanged; the original reason surfaces downstream
+-		}
+-		rec := ArmNormalization{
+-			Scenario: sc.ID, Condition: sc.Condition,
+-			DroppedLegs: append([]PlanArmLeg(nil), sc.Arm.Legs...), // a COPY of what was authored — never a new leg
+-			KeptEntry:   sc.Arm.Entry, KeptStop: sc.Arm.Stop, KeptTarget: sc.Arm.Target, KeptWait: sc.Arm.WaitConfirm,
+-		}
+-		if sc.Confirm != nil {
+-			rec.KeptRule = sc.Confirm.Rule
+-		}
+-		sc.Arm.Legs = nil // step 1, in place — the top-level arm IS the single arm
+-		d.ArmNormalizations = append(d.ArmNormalizations, rec)
+-	}
+-}
+-
+-// ArmNormalizationWarn renders the class-39 write-site WARN (D2): the
+-// condition, the scenario, every dropped leg, and the single arm that was kept.
+-// Pure, so the fixture pins the wording the journal will carry.
+-func ArmNormalizationWarn(n ArmNormalization) string {
+-	parts := make([]string, 0, len(n.DroppedLegs))
+-	for i, l := range n.DroppedLegs {
+-		r := l.Rule
+-		if r == "" {
+-			r = "-"
+-		}
+-		parts = append(parts, fmt.Sprintf("#%d entry=%.2f stop=%.2f target=%.2f rule=%s", i+1, l.Entry, l.Stop, l.Target, r))
+-	}
+-	kr := n.KeptRule
+-	if kr == "" {
+-		kr = "-"
+-	}
+-	return fmt.Sprintf("⚖ arm normalized (class 39): %s %s — dropped legs[%d] (%s); single arm kept entry=%.2f stop=%.2f target=%.2f rule=%s wait_confirm=%t",
+-		n.Condition, n.Scenario, len(n.DroppedLegs), strings.Join(parts, "; "), n.KeptEntry, n.KeptStop, n.KeptTarget, kr, n.KeptWait)
+-}
+-
+-// ArmNormalizationFor returns the recorded class-39 normalization for a
+-// scenario id, or nil — the E8 stamp lookup at arm time.
+-func ArmNormalizationFor(d *PlanDoc, scenarioID string) *ArmNormalization {
+-	if d == nil {
+-		return nil
+-	}
+-	for i := range d.ArmNormalizations {
+-		if d.ArmNormalizations[i].Scenario == scenarioID {
+-			return &d.ArmNormalizations[i]
+-		}
+-	}
+-	return nil
+-}
+-
+-// DroppedLegsJSON renders a normalization's dropped legs for the E8 column
+-// (dropped_legs). "" when there is nothing to record.
+-func DroppedLegsJSON(n *ArmNormalization) string {
+-	if n == nil || len(n.DroppedLegs) == 0 {
+-		return ""
+-	}
+-	b, err := json.Marshal(n.DroppedLegs)
+-	if err != nil {
+-		return ""
+-	}
+-	return string(b)
+-}
+diff --git a/store/position_query.go b/store/position_query.go
+index 1e84f9c2..b07465b3 100644
+--- a/store/position_query.go
++++ b/store/position_query.go
+@@ -6,27 +6,19 @@ import (
+ 	"strings"
+ )
+ 
+-// TraderStats trading statistics metrics.
+-//
+-// P&L-TRUTH WAVE (2026-09-01, corrected-column law A22): every figure here is
+-// computed over RESOLVED rows only (pnl_corrected NOT NULL). TotalTrades IS the
+-// resolved count; UnresolvedExcluded is how many closed rows were left out
+-// because their P&L is unknown — returned alongside so no surface can show a
+-// total without its exclusion count.
++// TraderStats trading statistics metrics
+ type TraderStats struct {
+-	TotalTrades        int     `json:"total_trades"`        // == ResolvedTrades (compat)
+-	ResolvedTrades     int     `json:"resolved_trades"`     // rows with pnl_corrected present
+-	UnresolvedExcluded int     `json:"unresolved_excluded"` // rows with pnl_corrected NULL — excluded, never coerced
+-	WinTrades          int     `json:"win_trades"`
+-	LossTrades         int     `json:"loss_trades"`
+-	WinRate            float64 `json:"win_rate"`
+-	ProfitFactor       float64 `json:"profit_factor"`
+-	SharpeRatio        float64 `json:"sharpe_ratio"`
+-	TotalPnL           float64 `json:"total_pnl"`
+-	TotalFee           float64 `json:"total_fee"`
+-	AvgWin             float64 `json:"avg_win"`
+-	AvgLoss            float64 `json:"avg_loss"`
+-	MaxDrawdownPct     float64 `json:"max_drawdown_pct"`
++	TotalTrades    int     `json:"total_trades"`
++	WinTrades      int     `json:"win_trades"`
++	LossTrades     int     `json:"loss_trades"`
++	WinRate        float64 `json:"win_rate"`
++	ProfitFactor   float64 `json:"profit_factor"`
++	SharpeRatio    float64 `json:"sharpe_ratio"`
++	TotalPnL       float64 `json:"total_pnl"`
++	TotalFee       float64 `json:"total_fee"`
++	AvgWin         float64 `json:"avg_win"`
++	AvgLoss        float64 `json:"avg_loss"`
++	MaxDrawdownPct float64 `json:"max_drawdown_pct"`
+ }
+ 
+ // GetPositionStats gets position statistics
+@@ -34,8 +26,8 @@ func (s *PositionStore) GetPositionStats(traderID string) (map[string]interface{
+ 	stats := make(map[string]interface{})
+ 
+ 	type result struct {
+-		Total int
+-		Wins  int
++		Total    int
++		Wins     int
+ 		// 0A-2 (2026-08-31): explicit column tags — GORM's default snake-casing
+ 		// mapped TotalPnL→"total_pn_l" and silently scanned 0 from the
+ 		// "total_pnl" alias (the surface under-reported P&L as zero).
+@@ -45,10 +37,7 @@ func (s *PositionStore) GetPositionStats(traderID string) (map[string]interface{
+ 	var r result
+ 
+ 	err := s.db.Model(&TraderPosition{}).
+-		// P&L-TRUTH WAVE: strict pnl_corrected — the raw column is never read
+-		// here (the WHERE already excludes NULL; the old COALESCE fallback was a
+-		// dead-but-dangerous reference).
+-		Select("COUNT(*) as total, SUM(CASE WHEN pnl_corrected > 0 THEN 1 ELSE 0 END) as wins, COALESCE(SUM(pnl_corrected), 0) as total_pnl, COALESCE(SUM(fee), 0) as total_fee").
++		Select("COUNT(*) as total, SUM(CASE WHEN COALESCE(pnl_corrected, realized_pnl) > 0 THEN 1 ELSE 0 END) as wins, COALESCE(SUM(COALESCE(pnl_corrected, realized_pnl)), 0) as total_pnl, COALESCE(SUM(fee), 0) as total_fee").
+ 		// A-2 (2026-08-28, bar-truth wave): legacy CLOSED rows with
+ 		// pnl_corrected NULL (317 sync + 37 reconcile_flat — never
+ 		// re-verified against stored prices) are EXCLUDED from every
+@@ -70,7 +59,6 @@ func (s *PositionStore) GetPositionStats(traderID string) (map[string]interface{
+ 	}
+ 
+ 	stats["total_trades"] = r.Total
+-	stats["resolved_trades"] = r.Total
+ 	stats["win_trades"] = r.Wins
+ 	stats["total_pnl"] = r.TotalPnL
+ 	stats["total_fee"] = r.TotalFee
+@@ -103,11 +91,7 @@ func (s *PositionStore) CountConsecutiveLossesSince(traderID string, sinceMs int
+ 	}
+ 	n := 0
+ 	for _, r := range rows {
+-		pnl, resolved := r.CorrectedPnL()
+-		if !resolved {
+-			continue // UNRESOLVED (defensive — the WHERE excludes these): never counted either way
+-		}
+-		if pnl < 0 {
++		if r.EffectivePnL() < 0 {
+ 			n++
+ 		} else {
+ 			break // a win / break-even ends the losing streak
+@@ -130,7 +114,7 @@ func (s *PositionStore) GetSessionDayActivity(traderID string, sinceMs int64, ac
+ 
+ 	var pnl struct{ Total float64 }
+ 	pq := s.db.Model(&TraderPosition{}).
+-		Select("COALESCE(SUM(pnl_corrected), 0) as total"). /* P&L-TRUTH WAVE: strict corrected column; NULL rows are excluded by the WHERE and never coerced */
++		Select("COALESCE(SUM(COALESCE(pnl_corrected, realized_pnl)), 0) as total"). /* P0 2026-08-20: corrections win */
+ 		// A-2 (2026-08-28): no silent NULLs — legacy unverified rows are
+ 		// excluded from the guardrail P&L too.
+ 		Where("trader_id = ? AND status = ? AND close_reason NOT IN (?, ?, ?) AND pnl_corrected IS NOT NULL AND exit_time >= ?",
+@@ -169,25 +153,20 @@ func (s *PositionStore) GetFullStats(traderID string, account ...string) (*Trade
+ 	// Exclude unknown-P&L orphan closes: their realized P&L is UNKNOWN (exit
+ 	// fill never captured), not a real $0 — counting them would skew win-rate /
+ 	// total P&L. They still appear in the position LIST (rendered "—").
+-	// P&L-TRUTH WAVE (2026-09-01, corrected-column law): the unresolved class
+-	// (pnl_corrected NULL) is COUNTED here and EXCLUDED from every figure
+-	// below. Before this wave the rows were loaded and summed through
+-	// EffectivePnL(), which coerced NULL → raw realized_pnl: 115 such rows put
+-	// "Total PnL -203.68 (220 trades)" in front of the executor when the truth
+-	// was +304.32 over 105 resolved (row 526 alone: raw −1,458.00 vs corrected
+-	// −69.43). The model must never read a fabricated track record.
+-	var unresolved int64
+-	uq := s.db.Model(&TraderPosition{}).Where("trader_id = ? AND status = ? AND close_reason NOT IN (?, ?, ?) AND pnl_corrected IS NULL", traderID, "CLOSED", CloseReasonReconcileFlat, CloseReasonUnresolved, CloseReasonTestSeam)
++	var count int64
++	cq := s.db.Model(&TraderPosition{}).Where("trader_id = ? AND status = ? AND close_reason NOT IN (?, ?, ?)", traderID, "CLOSED", CloseReasonReconcileFlat, CloseReasonUnresolved, CloseReasonTestSeam)
+ 	if acct != "" {
+-		uq = uq.Where("account = ?", acct)
++		cq = cq.Where("account = ?", acct)
+ 	}
+-	if err := uq.Count(&unresolved).Error; err != nil {
++	if err := cq.Count(&count).Error; err != nil {
+ 		return nil, err
+ 	}
+-	stats.UnresolvedExcluded = int(unresolved)
++	if count == 0 {
++		return stats, nil
++	}
+ 
+ 	var positions []TraderPosition
+-	pq := s.db.Where("trader_id = ? AND status = ? AND close_reason NOT IN (?, ?, ?) AND pnl_corrected IS NOT NULL", traderID, "CLOSED", CloseReasonReconcileFlat, CloseReasonUnresolved, CloseReasonTestSeam)
++	pq := s.db.Where("trader_id = ? AND status = ? AND close_reason NOT IN (?, ?, ?)", traderID, "CLOSED", CloseReasonReconcileFlat, CloseReasonUnresolved, CloseReasonTestSeam)
+ 	if acct != "" {
+ 		pq = pq.Where("account = ?", acct)
+ 	}
+@@ -196,31 +175,22 @@ func (s *PositionStore) GetFullStats(traderID string, account ...string) (*Trade
+ 	if err != nil {
+ 		return nil, fmt.Errorf("failed to query position statistics: %w", err)
+ 	}
+-	if len(positions) == 0 {
+-		return stats, nil
+-	}
+ 
+ 	var pnls []float64
+ 	var totalWin, totalLoss float64
+ 
+ 	for _, pos := range positions {
+-		pnl, resolved := pos.CorrectedPnL()
+-		if !resolved {
+-			stats.UnresolvedExcluded++ // defensive: the WHERE excludes these
+-			continue
+-		}
+ 		stats.TotalTrades++
+-		stats.ResolvedTrades++
+-		stats.TotalPnL += pnl
++		stats.TotalPnL += pos.EffectivePnL()
+ 		stats.TotalFee += pos.Fee
+-		pnls = append(pnls, pnl)
++		pnls = append(pnls, pos.EffectivePnL())
+ 
+-		if pnl > 0 {
++		if pos.EffectivePnL() > 0 {
+ 			stats.WinTrades++
+-			totalWin += pnl
+-		} else if pnl < 0 {
++			totalWin += pos.EffectivePnL()
++		} else if pos.EffectivePnL() < 0 {
+ 			stats.LossTrades++
+-			totalLoss += -pnl
++			totalLoss += -pos.EffectivePnL()
+ 		}
+ 	}
+ 
+@@ -246,16 +216,8 @@ func (s *PositionStore) GetFullStats(traderID string, account ...string) (*Trade
+ 	return stats, nil
+ }
+ 
+-// RecentTrade recent trade record.
+-//
+-// P&L-TRUTH WAVE: Resolved=false marks a row whose P&L is UNKNOWN
+-// (pnl_corrected NULL). Such a row carries NO P&L and NO percentage — the old
+-// code rendered an unresolved short with exit 0 as "+0.00 (+100.00%)".
+-// RealizedPnL (json name kept for API compatibility) holds the CORRECTED
+-// value for resolved rows and 0 for unresolved ones.
++// RecentTrade recent trade record
+ type RecentTrade struct {
+-	ID           int64   `json:"id"`
+-	Resolved     bool    `json:"resolved"`
+ 	Symbol       string  `json:"symbol"`
+ 	Side         string  `json:"side"`
+ 	EntryPrice   float64 `json:"entry_price"`
+@@ -273,10 +235,7 @@ type RecentTrade struct {
+ // (account=”). Variadic so existing callers stay trader-global unchanged.
+ func (s *PositionStore) GetRecentTrades(traderID string, limit int, account ...string) ([]RecentTrade, error) {
+ 	var positions []TraderPosition
+-	// P&L-TRUTH WAVE: test-seam rows are quarantined from every strategy-P&L
+-	// surface (0A-2) — including the model's recent-trade list. Unresolved /
+-	// reconcile_flat rows STAY listed, rendered as UNRESOLVED, never as $0.
+-	q := s.db.Where("trader_id = ? AND status = ? AND close_reason <> ?", traderID, "CLOSED", CloseReasonTestSeam)
++	q := s.db.Where("trader_id = ? AND status = ?", traderID, "CLOSED")
+ 	if len(account) > 0 && account[0] != "" {
+ 		q = q.Where("account = ?", account[0])
+ 	}
+@@ -289,15 +248,12 @@ func (s *PositionStore) GetRecentTrades(traderID string, limit int, account ...s
+ 
+ 	var trades []RecentTrade
+ 	for _, pos := range positions {
+-		pnl, resolved := pos.CorrectedPnL()
+ 		t := RecentTrade{
+-			ID:          pos.ID,
+-			Resolved:    resolved,
+ 			Symbol:      pos.Symbol,
+ 			Side:        strings.ToLower(pos.Side),
+ 			EntryPrice:  pos.EntryPrice,
+ 			ExitPrice:   pos.ExitPrice,
+-			RealizedPnL: pnl,                  // 0 when unresolved — and Resolved=false says so
++			RealizedPnL: pos.EffectivePnL(),
+ 			EntryTime:   pos.EntryTime / 1000, // Convert ms to seconds for API compatibility
+ 		}
+ 
+@@ -307,9 +263,7 @@ func (s *PositionStore) GetRecentTrades(traderID string, limit int, account ...s
+ 			t.HoldDuration = formatDurationMs(durationMs)
+ 		}
+ 
+-		// A percentage is only meaningful for a RESOLVED row with a real exit:
+-		// exit 0 on an unresolved short used to render as "+100.00%".
+-		if resolved && pos.EntryPrice > 0 && pos.ExitPrice > 0 {
++		if pos.EntryPrice > 0 {
+ 			if t.Side == "long" {
+ 				t.PnLPct = (pos.ExitPrice - pos.EntryPrice) / pos.EntryPrice * 100 * float64(pos.Leverage)
+ 			} else {
+@@ -377,14 +331,13 @@ func calculateMaxDrawdownFromPnls(pnls []float64) float64 {
+ 
+ // SymbolStats per-symbol trading statistics
+ type SymbolStats struct {
+-	Symbol             string  `json:"symbol"`
+-	TotalTrades        int     `json:"total_trades"`        // resolved rows only
+-	UnresolvedExcluded int     `json:"unresolved_excluded"` // P&L-TRUTH WAVE
+-	WinTrades          int     `json:"win_trades"`
+-	WinRate            float64 `json:"win_rate"`
+-	TotalPnL           float64 `json:"total_pnl"`
+-	AvgPnL             float64 `json:"avg_pnl"`
+-	AvgHoldMins        float64 `json:"avg_hold_mins"`
++	Symbol      string  `json:"symbol"`
++	TotalTrades int     `json:"total_trades"`
++	WinTrades   int     `json:"win_trades"`
++	WinRate     float64 `json:"win_rate"`
++	TotalPnL    float64 `json:"total_pnl"`
++	AvgPnL      float64 `json:"avg_pnl"`
++	AvgHoldMins float64 `json:"avg_hold_mins"`
+ }
+ 
+ // GetSymbolStats gets per-symbol trading statistics
+@@ -406,14 +359,9 @@ func (s *PositionStore) GetSymbolStats(traderID string, limit int) ([]SymbolStat
+ 			symbolHoldMins[pos.Symbol] = []float64{}
+ 		}
+ 		s := symbolMap[pos.Symbol]
+-		pnl, resolved := pos.CorrectedPnL()
+-		if !resolved {
+-			s.UnresolvedExcluded++ // P&L-TRUTH WAVE: counted, never coerced
+-			continue
+-		}
+ 		s.TotalTrades++
+-		s.TotalPnL += pnl
+-		if pnl > 0 {
++		s.TotalPnL += pos.EffectivePnL()
++		if pos.EffectivePnL() > 0 {
+ 			s.WinTrades++
+ 		}
+ 
+@@ -457,28 +405,24 @@ func (s *PositionStore) GetSymbolStats(traderID string, limit int) ([]SymbolStat
+ 
+ // HoldingTimeStats holding duration analysis
+ type HoldingTimeStats struct {
+-	Range              string  `json:"range"`
+-	TradeCount         int     `json:"trade_count"`         // resolved rows only
+-	UnresolvedExcluded int     `json:"unresolved_excluded"` // P&L-TRUTH WAVE
+-	WinRate            float64 `json:"win_rate"`
+-	AvgPnL             float64 `json:"avg_pnl"`
++	Range      string  `json:"range"`
++	TradeCount int     `json:"trade_count"`
++	WinRate    float64 `json:"win_rate"`
++	AvgPnL     float64 `json:"avg_pnl"`
+ }
+ 
+ // GetHoldingTimeStats analyzes performance by holding duration
+ func (s *PositionStore) GetHoldingTimeStats(traderID string) ([]HoldingTimeStats, error) {
+ 	var positions []TraderPosition
+-	// P&L-TRUTH WAVE: same ledger exclusions as every other aggregator
+-	// (unknown-P&L / test-seam reasons out); unresolved rows counted below.
+-	err := s.db.Where("trader_id = ? AND status = ? AND exit_time > 0 AND close_reason NOT IN (?, ?, ?)", traderID, "CLOSED", CloseReasonReconcileFlat, CloseReasonUnresolved, CloseReasonTestSeam).Find(&positions).Error
++	err := s.db.Where("trader_id = ? AND status = ? AND exit_time > 0", traderID, "CLOSED").Find(&positions).Error
+ 	if err != nil {
+ 		return nil, fmt.Errorf("failed to query holding time stats: %w", err)
+ 	}
+ 
+ 	rangeStats := map[string]*struct {
+-		count      int
+-		unresolved int
+-		wins       int
+-		totalPnL   float64
++		count    int
++		wins     int
++		totalPnL float64
+ 	}{
+ 		"<1h":   {},
+ 		"1-4h":  {},
+@@ -505,14 +449,9 @@ func (s *PositionStore) GetHoldingTimeStats(traderID string) ([]HoldingTimeStats
+ 		}
+ 
+ 		r := rangeStats[rangeKey]
+-		pnl, resolved := pos.CorrectedPnL()
+-		if !resolved {
+-			r.unresolved++ // P&L-TRUTH WAVE: counted, never coerced
+-			continue
+-		}
+ 		r.count++
+-		r.totalPnL += pnl
+-		if pnl > 0 {
++		r.totalPnL += pos.EffectivePnL()
++		if pos.EffectivePnL() > 0 {
+ 			r.wins++
+ 		}
+ 	}
+@@ -522,11 +461,10 @@ func (s *PositionStore) GetHoldingTimeStats(traderID string) ([]HoldingTimeStats
+ 		r := rangeStats[rangeKey]
+ 		if r.count > 0 {
+ 			stats = append(stats, HoldingTimeStats{
+-				Range:              rangeKey,
+-				TradeCount:         r.count,
+-				UnresolvedExcluded: r.unresolved,
+-				WinRate:            float64(r.wins) / float64(r.count) * 100,
+-				AvgPnL:             r.totalPnL / float64(r.count),
++				Range:      rangeKey,
++				TradeCount: r.count,
++				WinRate:    float64(r.wins) / float64(r.count) * 100,
++				AvgPnL:     r.totalPnL / float64(r.count),
+ 			})
+ 		}
+ 	}
+@@ -536,12 +474,11 @@ func (s *PositionStore) GetHoldingTimeStats(traderID string) ([]HoldingTimeStats
+ 
+ // DirectionStats long/short performance comparison
+ type DirectionStats struct {
+-	Side               string  `json:"side"`
+-	TradeCount         int     `json:"trade_count"`
+-	WinRate            float64 `json:"win_rate"`
+-	TotalPnL           float64 `json:"total_pnl"`
+-	AvgPnL             float64 `json:"avg_pnl"`
+-	UnresolvedExcluded int     `json:"unresolved_excluded"` // P&L-TRUTH WAVE: counted, never coerced
++	Side       string  `json:"side"`
++	TradeCount int     `json:"trade_count"`
++	WinRate    float64 `json:"win_rate"`
++	TotalPnL   float64 `json:"total_pnl"`
++	AvgPnL     float64 `json:"avg_pnl"`
+ }
+ 
+ // GetDirectionStats analyzes long vs short performance
+@@ -559,14 +496,9 @@ func (s *PositionStore) GetDirectionStats(traderID string) ([]DirectionStats, er
+ 			sideStats[pos.Side] = &DirectionStats{Side: pos.Side}
+ 		}
+ 		s := sideStats[pos.Side]
+-		pnl, resolved := pos.CorrectedPnL()
+-		if !resolved {
+-			s.UnresolvedExcluded++ // P&L-TRUTH WAVE: counted, never coerced
+-			continue
+-		}
+ 		s.TradeCount++
+-		s.TotalPnL += pnl
+-		if pnl > 0 {
++		s.TotalPnL += pos.EffectivePnL()
++		if pos.EffectivePnL() > 0 {
+ 			s.WinRate++
+ 		}
+ 	}
+diff --git a/trader/armed_executor.go b/trader/armed_executor.go
+index 8da21dd7..bd615ef8 100644
+--- a/trader/armed_executor.go
++++ b/trader/armed_executor.go
+@@ -176,12 +176,6 @@ func (at *AutoTrader) maybeManageArmedOrders(snap map[string]kernel.StructureSta
+ 	if ledger == nil {
+ 		return
+ 	}
+-	// CLASS 33 (2026-09-02) — BOOT SWEEP FIRST. Before ANY authoring, gating,
+-	// cancelling or placement in this process: every non-terminal row stamped
+-	// by a DEAD process is cancelled at the broker and in the ledger. This is
+-	// the head of the armed subsystem, so sweep-before-arm is guaranteed by
+-	// position — runArmedPlacement is reached from BELOW this line only.
+-	at.sweepPreBootArms(ledger)
+ 	now := time.Now()
+ 
+ 	// 1.4 — plan → dormant/no_trade/absent = ALL its armed orders cancelled
+@@ -332,32 +326,6 @@ func (at *AutoTrader) maybeManageArmedOrders(snap map[string]kernel.StructureSta
+ 			continue
+ 		}
+ 		for li, leg := range legs {
+-			// 0B (2026-09-02) — STOP ANCHORED TO SEATED STRUCTURE. Compose the
+-			// leg's stop BEFORE every downstream consumer (the gate's R:R and
+-			// min-SL legs, the ledger row, the churn guard, placement): stop =
+-			// beyond the nearest seated level on the risk side + clearance,
+-			// floored at MIN_SL_ATR_MULT×ATR5m, widest wins, never tighter than
+-			// authored. Logged once per (plan, version, scenario, leg, stop).
+-			if comp := composeArmStop(strings.ToLower(strings.TrimSpace(sc.Direction)), leg.Entry, leg.Stop, atr5m,
+-				market.FuturesTickSize(at.futuresSymbol()), doc.Levels, kernel.MinSLATRMult(),
+-				kernel.MinSLTickClearance, armStopAnchorMaxATR()); comp.Stop != leg.Stop || comp.Unanchored {
+-				skey := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":leg" + strconv.Itoa(li+1) + ":stop"
+-				if armRefusalChanged(&at.armStopCompLast, skey, fmt.Sprintf("%.2f/%s", comp.Stop, comp.Bound)) {
+-					at.logInfof("%s", armStopCompositionLine(plan.Session, sc.ID, li+1, sc.Direction, comp, atr5m, kernel.MinSLATRMult()))
+-					// OWNER RULING 1 (0B): ARM_STOP_ANCHOR_MAX_ATR 3.0 is a
+-					// PROVISIONAL [I] default, reviewed at n≥30 dead zones. The
+-					// count is RECORDED (class-35 law), never inferred from logs.
+-					if comp.Unanchored && at.store != nil {
+-						if n, cerr := store.IncStopUnanchored(at.store); cerr != nil {
+-							at.logWarnf("🛑 stop_unanchored counter write failed: %v", cerr)
+-						} else {
+-							at.logWarnf("🛑 stop_unanchored %s %s leg %d — no seated level within %.1f×ATR5m on the risk side; ATR floor governs. Recorded n=%d (provisional bound reviewed at n≥%d).",
+-								plan.Session, sc.ID, li+1, armStopAnchorMaxATR(), n, store.StopUnanchoredReviewN)
+-						}
+-					}
+-				}
+-				leg.Stop = comp.Stop
+-			}
+ 			// S2b chained arm (autopsy-response wave): wait_confirm legs stay
+ 			// DORMANT until the chain confirm is machine-MET. E4: leg 1 chains
+ 			// on confirm2 (1m_mss|1x5m_close); a legacy single arm chains on
+@@ -404,21 +372,7 @@ func (at *AutoTrader) maybeManageArmedOrders(snap map[string]kernel.StructureSta
+ 				}
+ 				key := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":leg" + strconv.Itoa(li+1)
+ 				if armRefusalChanged(&at.armRefusalLast, key, armRefusalClass(verdict)) {
+-					// OWNER RULING 2 (0B): more R:R refusals with the wider stops
+-					// is the intended trade — the COST side of the stop floor.
+-					// Recorded per session-day and per class (one distinct
+-					// arm-spec per bump, never per re-refusal cycle) so it can be
+-					// quoted against the benefit later.
+-					class := armRefusalClass(verdict)
+-					shown := ""
+-					if at.store != nil {
+-						if n, cerr := store.IncArmRefusal(at.store, at.id, kernel.PlanTradeDateFor(plan), plan.Session, class); cerr != nil {
+-							at.logWarnf("⚔️ arm refusal counter write failed: %v", cerr)
+-						} else {
+-							shown = fmt.Sprintf(" · %s refusals this session: %d", class, n)
+-						}
+-					}
+-					at.logWarnf("⚔️ arm REFUSED %s %s leg %d: %s%s", plan.Session, sc.ID, li+1, verdict, shown)
++					at.logWarnf("⚔️ arm REFUSED %s %s leg %d: %s", plan.Session, sc.ID, li+1, verdict)
+ 				}
+ 				continue
+ 			}
+@@ -601,10 +555,6 @@ func (at *AutoTrader) logShadowAB(plan *kernel.ActivePlan, sc kernel.PlanScenari
+ 		return
+ 	}
+ 	shadowed := at.conditionShadowedFor(sc.Condition, plan.Session)
+-	// CLASS 39 — stamp the counterfactual row when this scenario's arm was
+-	// normalized at plan write (legs dropped), with the dropped legs as JSON, so
+-	// the effect of normalizing instead of rejecting is measurable later.
+-	norm := kernel.ArmNormalizationFor(&plan.Doc, sc.ID)
+ 	ac := at.store.AbConfirm()
+ 	now := time.Now()
+ 	for _, r := range rows {
+@@ -625,7 +575,6 @@ func (at *AutoTrader) logShadowAB(plan *kernel.ActivePlan, sc kernel.PlanScenari
+ 			TimeToMFEBars: r.TimeToMFEBars, TimeToMAEBars: r.TimeToMAEBars,
+ 			TimeToResolveBars: r.TimeToResolveBars, NetPnL: r.NetPnL,
+ 			Ambiguous: r.Ambiguous, IsCounterfactual: shadowed,
+-			Normalized: norm != nil, DroppedLegs: kernel.DroppedLegsJSON(norm),
+ 			CreatedAt: now, UpdatedAt: now,
+ 		}); err != nil {
+ 			at.logWarnf("ab-confirm shadow write failed %s %s: %v", sc.ID, r.Rule, err)
+diff --git a/trader/auto_trader_dayplan.go b/trader/auto_trader_dayplan.go
+index 8024c6cd..e8a0897d 100644
+--- a/trader/auto_trader_dayplan.go
++++ b/trader/auto_trader_dayplan.go
+@@ -71,10 +71,6 @@ func (at *AutoTrader) snapshotSessionProfiles() {
+ 		// (the cutover verification quotes it): plan_max_tokens resolved from
+ 		// AI_PLAN_MAX_TOKENS, default 65536 = 2× the observed truncation ceiling.
+ 		at.logInfof("📐 planner cap: plan_max_tokens=%d (AI_PLAN_MAX_TOKENS; default 65536) · truncation → 🚨 WARN, never silent", aiPlanMaxTokens())
+-		at.logPlannerClientBootLine() // class 37 (C7): effective planner client config, resolved
+-		// ROOT-FIX part B — the shadow A/B instrument's resolved state.
+-		done, _ := store.ShadowABCount(at.store)
+-		at.logInfof("%s", ShadowABBootLine(ShadowABEnabled(), ShadowABTarget(), done))
+ 	})
+ 	installActivePlanProvider(at, st)
+ 	// P0-cleanup (2026-08-19) — soft-alert: guardrails that WOULD have tripped
+diff --git a/trader/auto_trader_planner.go b/trader/auto_trader_planner.go
+index 5503e8a8..3d06bd0c 100644
+--- a/trader/auto_trader_planner.go
++++ b/trader/auto_trader_planner.go
+@@ -313,25 +313,49 @@ func (at *AutoTrader) maybeRunSessionReadsAt(now time.Time) []SessionReadFired {
+ 				continue // skip MSS/level wakes while dormant (re-arm path above runs first next cycle)
+ 			}
+ 			replanCap := at.replanCapFor(s.Name) // W9 — per-session override wins
+-			// CLASS 35 (2026-09-01) — the budget is a RECORDED counter keyed under
+-			// the chain baseline (an owner reset re-arms it): only death re-plans
+-			// and owner re-reads spend; wake reads, dormant flips and fail-closed
+-			// markers never did and now never count. Every consumer reads this seam.
+-			budget := store.GetReplanBudget(at.store, at.id, tradeDate, s.Name, replanCap)
++			// P6 — the budget is measured from the CURRENT chain baseline (an
++			// owner reset re-arms it; the default baseline is 1 = the original
++			// chain). Every consumer reads the same seam.
++			baseline := store.GetResetBaseline(at.store, at.id, tradeDate, s.Name)
+ 			// A death must never again be an unexplained line. On 2026-08-16 six
+ 			// plans died in 25 minutes and the only record was five identical
+ 			// "DIED" lines with no condition and no price.
+-			at.logInfof("🗓️ plan %s %s v%d DIED — %s. Re-planning (cap %d/session, %d spent, %d left).",
+-				tradeDate, s.Name, existing.Version, detail.Killer, replanCap, budget.Used, budget.Left())
++			at.logInfof("🗓️ plan %s %s v%d DIED — %s. Re-planning (cap %d/session).",
++				tradeDate, s.Name, existing.Version, detail.Killer, replanCap)
+ 			for _, l := range detail.Levels {
+ 				at.logInfof("🗓️   ↳ %s", l)
+ 			}
+-			if at.deathReplanAllowed(s.Name, tradeDate, existing, detail.Killer, budget) {
++			if !store.MayReplanFrom(existing.Version, baseline, replanCap) {
++				at.writeNoTradePlan(s.Name, tradeDate,
++					fmt.Sprintf("re-plans exhausted (%d/%d) after %d deaths — last: %s",
++						store.ReplansUsedFrom(existing.Version, baseline), replanCap, existing.Version-baseline, detail.Killer))
++			} else {
++				at.warnIfReplanOrphansOverlays(existing)
++				// The guard the owner asked for: once deaths reach the cap, the alert
++				// NAMES the killing condition and the price rather than the count.
++				if !store.MayReplanFrom(existing.Version+1, baseline, replanCap) {
++					at.emitAlert("P1", "plan-death-streak",
++						fmt.Sprintf("deaths:%s:%s:v%d", tradeDate, s.Name, existing.Version),
++						fmt.Sprintf("%s plan died %d× this session", s.Name, existing.Version),
++						fmt.Sprintf("Killed by: %s. This is the last re-plan before the session sits out.", detail.Killer))
++				}
++				// P0.4-G (2026-08-25) — carry the killer + the prior plan's
++				// levels into the re-plan: the map keeps continuity (no more
++				// rebuilt-from-scratch level sets) and a fired flip's bias is
++				// enforced at write.
+ 				// F6 (LONDON-FORENSICS 2026-08-28) — the death re-plan's planner
+ 				// call blocked the cycle 19m33s (the 02:14 overrun). Async, same
+ 				// pattern as the W6/MSS wake re-reads; the plan-store's single-
+ 				// writer queue serializes the writes.
+-				go at.runDeathReplan(s.Name, tradeDate, existing, detail.Killer)
++				go func() {
++					at.runPlannerReadWithCtx(s.Name, tradeDate, detail.Killer, priorPlanLevelLines(existing))
++					// ITEM 4 — the owner's levels are sticky: re-establish them on
++					// the version just written, re-anchored by price. Anything that
++					// cannot be re-anchored is parked for review, never dropped.
++					if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, s.Name, at.id); fErr == nil && fresh != nil {
++						at.carryOwnerEditsInto(fresh.PlanID, existing.Version, fresh.Version)
++					}
++				}()
+ 			}
+ 		}
+ 		if !handledDeath {
+@@ -726,49 +750,6 @@ func (at *AutoTrader) noTradeLevelMap(session string) []kernel.PlanLevel {
+ 	return out
+ }
+ 
+-// deathReplanAllowed (CLASS 35, 2026-09-01) is the death path's budget gate:
+-// false ⇒ the NO-TRADE marker was written and the session sits out; true ⇒
+-// the caller may run the re-plan. The spend itself is RECORDED when the
+-// re-plan row lands (runPlannerReadCoreWithFactsGrades, keyed by the
+-// death_replan trigger class), so a read refused by preflight / clock-hold /
+-// a lost claim still costs nothing — "no plan row, no budget consumed" holds.
+-func (at *AutoTrader) deathReplanAllowed(session, tradeDate string, existing *store.PlanDB, killer string, budget store.ReplanBudget) bool {
+-	if !budget.May() {
+-		at.writeNoTradePlan(session, tradeDate,
+-			fmt.Sprintf("re-plans exhausted (%d/%d) after %d death re-plan(s) — last: %s",
+-				budget.Used, budget.Cap, budget.Used, killer))
+-		return false
+-	}
+-	at.warnIfReplanOrphansOverlays(existing)
+-	// The guard the owner asked for: once deaths reach the cap, the alert
+-	// NAMES the killing condition and the price rather than the count.
+-	if !(store.ReplanBudget{Used: budget.Used + 1, Cap: budget.Cap}).May() {
+-		version := 0
+-		if existing != nil {
+-			version = existing.Version
+-		}
+-		at.emitAlert("P1", "plan-death-streak",
+-			fmt.Sprintf("deaths:%s:%s:v%d", tradeDate, session, version),
+-			fmt.Sprintf("%s plan died — re-plan %d of %d", session, budget.Used+1, budget.Cap),
+-			fmt.Sprintf("Killed by: %s. This is the last re-plan before the session sits out.", killer))
+-	}
+-	return true
+-}
+-
+-// runDeathReplan (CLASS 35) — the death re-plan read, labelled with the
+-// SPENDING class death_replan (it used to land as "<S>_scheduled_read", which
+-// is why the row count had to stand in for the spend). P0.4-G: the killer and
+-// the prior plan's levels ride into the prompt (flip bias enforced at write,
+-// level-set continuity). ITEM 4: the owner's sticky levels re-establish on
+-// the version just written, re-anchored by price; anything that cannot be
+-// re-anchored is parked for review, never dropped.
+-func (at *AutoTrader) runDeathReplan(session, tradeDate string, existing *store.PlanDB, killer string) {
+-	_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, killer, priorPlanLevelLines(existing), true)
+-	if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && existing != nil && fresh.Version != existing.Version {
+-		at.carryOwnerEditsInto(fresh.PlanID, existing.Version, fresh.Version)
+-	}
+-}
+-
+ // writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.
+ func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
+ 	// P7 — levels are market FACTS; the plan is an opinion about them. A no-trade
+@@ -875,7 +856,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
+ 	// U1 3.2 — never call the LLM on an empty/stale bar window (the 08-19
+ 	// outage produced 0-scenario fail-closed stubs this way). No plan row is
+ 	// written and no budget consumed; the read window retries next cycle.
+-	if !at.plannerPreflight(session, tradeDate, triggerOverride) { // CLASS 36 — scoped by trigger class
++	if !at.plannerPreflight(session, tradeDate) {
+ 		return false
+ 	}
+ 	client, modelID := at.resolvePlannerClient()
+@@ -952,11 +933,6 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
+ 		pMode, pEffort = fastMarketReasoningWire()
+ 		modeLabel = fastMarketReasoningLabel()
+ 	}
+-	// ROOT-FIX part B (2026-09-02) — register what a SHADOW fast-mode call needs
+-	// (client, system prompt, budget, fast wire). The shadow fires only after
+-	// the live read finishes, writes no plan, and is off by default.
+-	fMode, fEffort := fastMarketReasoningWire()
+-	at.RegisterShadowRunner(client, plannerSystemPrompt, aiPlanMaxTokens(), fMode, fEffort)
+ 	at.runPlannerReadCoreWithFactsGrades(session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels(input), failClosed, func(userPrompt string) (string, error) {
+ 		mcp.ApplyThinking(client, pMode, pEffort)
+ 		// PLANNER SPEED WAVE 4 (2026-08-31) — the session planner now rides the
+@@ -974,11 +950,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
+ 		var raw string
+ 		var err error
+ 		if bc, ok := client.(interface{ BaseClient() *mcp.Client }); ok {
+-			// CLASS 37 (2026-09-01) — the planner's OWN whole-call ceiling
+-			// (AI_PLAN_TOTAL_DEADLINE_SECS) rides beside the idle watchdog; the
+-			// 600s http.Client.Timeout no longer bounds a LIVE reasoning stream
+-			// (it killed 11 of 80 max-reasoning attempts 08-30 → 09-01).
+-			raw, err = bc.BaseClient().CallWithRequestStreamRetryDeadlines(req, nil, plannerStreamIdle(), plannerStreamTotal())
++			raw, err = bc.BaseClient().CallWithRequestStreamRetry(req, nil, plannerStreamIdle())
+ 		} else {
+ 			// Non-base clients (tests, legacy callers) keep the full-body path.
+ 			raw, err = client.CallWithMessages(plannerSystemPrompt, userPrompt)
+@@ -986,17 +958,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
+ 		if err == nil && mcp.LastFinishReason(client) == "length" {
+ 			at.logWarnf("📐 planner output TRUNCATED by the provider (finish_reason=length, cap=%d) — the plan JSON may be incomplete; retrying at the same cap will not fix truncation", cap)
+ 		}
+-		if err != nil {
+-			// CLASS 37 — every failed provider call names its class, the
+-			// provider ROW (never the key), HTTP status and request id: "the
+-			// API keeps failing" is never again a log line without a class.
+-			at.logWarnf("🛰 planner call FAILED class=%s provider_row=%s model=%s http_status=%d request_id=%q elapsed=%.1fs idle=%ds total=%ds — %v",
+-				mcp.LastErrClass(client), at.config.AIModelID, modelID, mcp.LastHTTPStatus(client), mcp.LastRequestID(client),
+-				time.Since(start).Seconds(), int(plannerStreamIdle().Seconds()), int(plannerStreamTotal().Seconds()), err)
+-		}
+-		at.logInfof("🧠 planner call (reasoning=%s wire=%s/%s cap=%d stream idle=%ds total=%ds) completed in %.1fs", modeLabel, pMode, pEffort, cap, int(plannerStreamIdle().Seconds()), int(plannerStreamTotal().Seconds()), time.Since(start).Seconds())
+-		// root-fix part B: the live side of the A/B pair.
+-		at.RecordLiveCallMetrics(mcp.LastCompletionTokens(client), time.Since(start).Milliseconds())
++		at.logInfof("🧠 planner call (reasoning=%s wire=%s/%s cap=%d stream idle=%ds) completed in %.1fs", modeLabel, pMode, pEffort, cap, int(plannerStreamIdle().Seconds()), time.Since(start).Seconds())
+ 		return raw, err
+ 	}, t1Lines...)
+ 	return true
+@@ -1047,6 +1009,13 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
+ 	at.runPlannerReadWithTrigger(session, tradeDate, "")
+ }
+ 
++// runPlannerReadWithCtx (P0.4-G, 2026-08-25) is the re-plan form: the dead
++// plan's killer line + its levels ride into the prompt (flip bias enforced at
++// write, level-set continuity).
++func (at *AutoTrader) runPlannerReadWithCtx(session, tradeDate, priorKiller string, priorLevels []string) {
++	_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "", priorKiller, priorLevels, true)
++}
++
+ // priorPlanLevelLines renders the previous version's levels as "price label"
+ // lines for the continuity block (empty when the stored doc is unreadable).
+ func priorPlanLevelLines(row *store.PlanDB) []string {
+@@ -1246,35 +1215,11 @@ func plannerRejectBlock(err error, live []string) string {
+ 	return "\n\n## PREVIOUS ATTEMPT REJECTED / Validator reason (verbatim):\n" + err.Error() + "\nFix ONLY this defect, keep the rest structurally identical." + kernel.LiveConditionsLine(live)
+ }
+ 
+-// repairUnparseableLine (CLASS 38 F6, 2026-09-01) renders the loud line for a
+-// repair attempt whose output would not parse: the parse error, the defect the
+-// repair was aimed at, and the HEAD of what the model actually sent. Before
+-// this the journal carried one bare sentence, so rejected-prompt row 79 could
+-// only be reconstructed from the DB. Pure, so the fixture pins the wording;
+-// bounded, so a 30k malformed response cannot flood the journal (class 12).
+-// Retry semantics are untouched — the caller still falls back to ONE full
+-// re-author.
+-func repairUnparseableLine(raw, repairingReason string, parseErr error) string {
+-	return fmt.Sprintf("🧩 repair returned UNPARSEABLE output — falling back to a full re-author next attempt · parse_err=%v · was repairing: %s · raw_head=%q",
+-		parseErr, clampLine(repairingReason, 200), clampLine(raw, 400))
+-}
+-
+-// clampLine truncates to n runes on ONE line (newlines collapsed) with an
+-// explicit ellipsis, so a log line can never be mistaken for the whole payload.
+-func clampLine(s string, n int) string {
+-	s = strings.ReplaceAll(strings.ReplaceAll(s, "\n", " "), "\r", " ")
+-	r := []rune(s)
+-	if len(r) <= n {
+-		return s
+-	}
+-	return string(r[:n]) + "…"
+-}
+-
+ // plannerRejectBookkeeping (planner-speed wave 1.4/3.4, 2026-08-31) runs at
+ // every reject site: persists the rejected attempt's verbatim prompt + reason
+ // for the offline A/B, and bumps the whack-a-mole counter when attempt N
+ // repeats attempt N-1's defect.
+-func (at *AutoTrader) plannerRejectBookkeeping(attempt int, tradeDate, session, hash, userPrompt string, rejectErr error, prevReason *string, factsJSON ...string) {
++func (at *AutoTrader) plannerRejectBookkeeping(attempt int, tradeDate, session, hash, userPrompt string, rejectErr error, prevReason *string) {
+ 	if rejectErr == nil {
+ 		return
+ 	}
+@@ -1284,13 +1229,7 @@ func (at *AutoTrader) plannerRejectBookkeeping(attempt int, tradeDate, session,
+ 	}
+ 	*prevReason = rejectErr.Error()
+ 	if at.store != nil {
+-		// ROOT-FIX B-1: the facts snapshot travels with the prompt so an offline
+-		// A/B runs the FULL validator chain, not just the schema gate.
+-		fj := ""
+-		if len(factsJSON) > 0 {
+-			fj = factsJSON[0]
+-		}
+-		if serr := at.store.PlannerRejected().SaveRejectedPromptWithFacts(at.id, tradeDate, session, hash, attempt, rejectErr.Error(), userPrompt, fj); serr != nil {
++		if serr := at.store.PlannerRejected().SaveRejectedPrompt(at.id, tradeDate, session, hash, attempt, rejectErr.Error(), userPrompt); serr != nil {
+ 			at.logWarnf("🧾 rejected-prompt persist failed: %v", serr)
+ 		}
+ 	}
+@@ -1318,41 +1257,6 @@ func plannerStreamIdle() time.Duration {
+ 	return time.Duration(kernel.PlannerStreamIdleSeconds()) * time.Second
+ }
+ 
+-// plannerStreamTotal (class 37) delegates to the kernel resolver
+-// (AI_PLAN_TOTAL_DEADLINE_SECS, default 1200; always > idle).
+-func plannerStreamTotal() time.Duration {
+-	return time.Duration(kernel.PlannerStreamTotalSeconds()) * time.Second
+-}
+-
+-// plannerClientBootLine (class 37, C7) renders the EFFECTIVE planner client
+-// config — resolved values, never file defaults — for the per-trader boot
+-// block: both stream deadlines, the HTTP ceiling that still governs the
+-// non-stream paths, retries/backoff and the provider ROW the trader is bound
+-// to. Pure so the fixture can pin the wording.
+-func plannerClientBootLine(providerRow string, idleS, totalS, httpCeilingS, retries, backoffS, cap int) string {
+-	return fmt.Sprintf("🛰 planner client: provider_row=%s stream_idle=%ds stream_total=%ds (AI_PLAN_TOTAL_DEADLINE_SECS) http_ceiling=%ds (non-stream paths only) retries=%d backoff=%ds cap=%d",
+-		providerRow, idleS, totalS, httpCeilingS, retries, backoffS, cap)
+-}
+-
+-// plannerStreamPolicyBootLine (class 41, 2026-09-02) — the planner STREAM
+-// retry policy in one line: calls per attempt, the exponential wait schedule,
+-// watchdog fire logging, the dialer keepalive in effect, executor
+-// serialization (off: P3 found no overlap effect), and identical-prompt resend.
+-func plannerStreamPolicyBootLine(tries int, sched []time.Duration, keepaliveS int) string {
+-	parts := make([]string, 0, len(sched))
+-	for _, d := range sched {
+-		parts = append(parts, d.String())
+-	}
+-	return fmt.Sprintf("🔁 planner stream policy (class 41): stream_tries=%d (AI_PLAN_STREAM_TRIES, counts CALLS; AI_MAX_RETRIES=%s non-stream only) backoff=%s (AI_PLAN_STREAM_BACKOFF) watchdog_log=on (⏱ line on fire, per SSE line) keepalive=%ds (dialer) serialize_executor=off resend_identical=on (transport/deadline → same prompt, no reject block)",
+-		tries, "calls", strings.Join(parts, "→"), keepaliveS)
+-}
+-
+-func (at *AutoTrader) logPlannerClientBootLine() {
+-	ai := mcp.EffectiveAIParamsSnapshot("")
+-	at.logInfof("%s", plannerClientBootLine(at.config.AIModelID, kernel.PlannerStreamIdleSeconds(), kernel.PlannerStreamTotalSeconds(), ai.TimeoutSeconds, ai.MaxRetries, ai.RetryBackoffSeconds, aiPlanMaxTokens()))
+-	at.logInfof("%s", plannerStreamPolicyBootLine(mcp.StreamRetryTries(), mcp.StreamRetryBackoffSchedule(), 30))
+-}
+-
+ // sundayAsiaDeferred (A2, owner ruling 2026-08-31) — the Sunday sequencing
+ // gate: the ASIA session read (now 16:30) defers while Sunday's weekly read
+ // (also 16:30) has not yet landed this week's doc. Pure + fixture-tested; the
+@@ -1415,22 +1319,12 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 	var prevReason string
+ 	lastRaw := ""
+ 	forceReauthor := false
+-	resendIdentical := ""                       // class 41 M0: the exact prompt a provider-failed attempt sent
+ 	for attempt := 1; attempt <= 3; attempt++ { // 1 + ≤2 retries
+ 		userPrompt := prompt
+ 		modeLabel := "author"
+-		if attempt >= 2 && resendIdentical != "" {
+-			// CLASS 41 M0 (owner ruling class 37, 2026-09-01; implemented
+-			// 2026-09-02): a transport/deadline failure produced NO model
+-			// answer, so there is nothing to repair and no validator reason —
+-			// re-send the IDENTICAL prompt, no reject block appended.
+-			userPrompt = resendIdentical
+-			resendIdentical = ""
+-			modeLabel = "resend-identical"
+-			at.logInfof("🧩 planner attempt %d/3 %s: prompt ~%d tokens (byte-identical to the provider-failed attempt; no reject block)", attempt, modeLabel, estimatePromptTokens(userPrompt))
+-		} else if attempt >= 2 {
++		if attempt >= 2 {
+ 			if retryMode == "repair" && !forceReauthor && lastRaw != "" && lastErr != nil {
+-				userPrompt = kernel.BuildPlannerRepairPrompt(lastRaw, lastErr.Error(), liveConditions)
++				userPrompt = kernel.BuildPlannerRepairPrompt(lastRaw, lastErr.Error())
+ 				modeLabel = "repair"
+ 			} else {
+ 				userPrompt = prompt + rejectBlock
+@@ -1439,35 +1333,11 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 			at.logInfof("🧩 planner attempt %d/3 %s: prompt ~%d tokens (full-author ~%d tokens)", attempt, modeLabel, estimatePromptTokens(userPrompt), estimatePromptTokens(prompt))
+ 		}
+ 		raw, err := call(userPrompt)
+-		if err != nil && mcp.IsProviderFailure(err) {
+-			// CLASS 41 M0: provider failure → the next attempt re-sends this
+-			// exact prompt. No reject block, no rejected-prompt row (that table
+-			// samples VALIDATOR rejects; the 🛰/ai_call lines already carry the
+-			// class), lastRaw/lastErr untouched so a later validator reject
+-			// still repairs against the last real model output.
+-			at.logWarnf("📐 planner attempt %d/3 failed on the provider (class=%s) — attempt %d re-sends the IDENTICAL prompt: %v", attempt, mcp.ClassifyAIError(err), attempt+1, err)
+-			resendIdentical = userPrompt
+-			if attempt == 3 {
+-				lastErr = err
+-			}
+-			continue
+-		}
+ 		lastRaw = raw
+ 		if err != nil {
+ 			lastErr = err
+ 			at.logWarnf("📐 planner attempt %d/3 failed: %v", attempt, err)
+-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+-			rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+-			continue
+-		}
+-		if modeLabel == "repair" && kernel.IsPlanFragment(raw) {
+-			// REPAIR-PARSE E2: a partial document gets its OWN reason instead of
+-			// a confusing schema error. Not observed in the 2026-09-01 journals
+-			// — a guard, not a fix for a measured failure.
+-			lastErr = fmt.Errorf("%s", kernel.FragmentReason)
+-			forceReauthor = true
+-			at.recordRepairOutcome(raw, lastErr, prevReason)
+-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
++			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason)
+ 			rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+ 			continue
+ 		}
+@@ -1477,9 +1347,9 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 			at.logWarnf("📐 planner attempt %d/3 parse/schema rejected: %v", attempt, perr)
+ 			if modeLabel == "repair" {
+ 				forceReauthor = true // 3.6 — a malformed repair falls back to one full re-author
+-				at.recordRepairOutcome(raw, perr, prevReason)
++				at.logWarnf("🧩 repair returned unparseable output — falling back to a full re-author next attempt")
+ 			}
+-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
++			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason)
+ 			rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+ 			continue
+ 		}
+@@ -1490,22 +1360,6 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 		// evaluator still tracks consumption — scenarios demote only when a
+ 		// level is actually re-touched after the plan is born, never at
+ 		// birth. demoteConsumedScenarios stays for reference/tests only.
+-		// CLASS 39 (owner ruling 2026-09-01) — normalize, don't reject: inside
+-		// ParsePlanDocCapped the kernel dropped legs from every non-sweep arm
+-		// whose single top-level arm validates, and recorded each event on the
+-		// doc. Surface every one LOUDLY (A9) — the WARN names the condition, the
+-		// scenario, every dropped leg and the kept arm — and RECORD the count
+-		// (D5: system_config, survives restarts; the class-35 lesson).
+-		for _, n := range d.ArmNormalizations {
+-			at.logWarnf("%s", kernel.ArmNormalizationWarn(n))
+-			if at.store != nil {
+-				if cnt, cerr := store.IncArmsNormalized(at.store); cerr != nil {
+-					at.logWarnf("⚖ arms_normalized_class39 counter write failed: %v", cerr)
+-				} else {
+-					at.logInfof("⚖ arms_normalized_class39 = %d (recorded)", cnt)
+-				}
+-			}
+-		}
+ 		// P0.4-C (2026-08-24) — the model may write near-duplicate levels (2.13
+ 		// pts apart killed ASIA v2 with the duplicate-seat rule). Collapse them
+ 		// with the same cluster tolerance the scorer uses, instead of burning
+@@ -1521,7 +1375,7 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 		// the evaluator and ignored by the re-planner.
+ 		if requiredBias != "" && strings.ToLower(strings.TrimSpace(d.Bias.Direction)) != requiredBias {
+ 			lastErr = fmt.Errorf("prior plan flip already fired → bias %s is MANDATORY, got %q — the flip cannot be re-written away", requiredBias, d.Bias.Direction)
+-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
++			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason)
+ 			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, lastErr)
+ 			rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+ 			continue
+@@ -1533,7 +1387,7 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 		// was 29290.5 — the flip anchor rode a phantom label.
+ 		if mis := kernel.MislabeledStructuralLevels(d, machineLabels); len(mis) > 0 {
+ 			lastErr = fmt.Errorf("level label provenance: %s — copy the machine table's label for these prices", strings.Join(mis, "; "))
+-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
++			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason)
+ 			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, lastErr)
+ 			rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+ 			continue
+@@ -1544,12 +1398,9 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 		// reachable targets. Everything else fails → retry → fail-closed.
+ 		if verr := kernel.ValidatePlanDocWithFactsMachine(d, facts, machineLabels, maxLevels, scenarioCap); verr != nil {
+ 			lastErr = verr
+-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
++			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason)
+ 			rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+ 			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
+-			if modeLabel == "repair" {
+-				at.recordRepairOutcome(raw, verr, prevReason)
+-			}
+ 			continue
+ 		}
+ 		// F4 (LONDON-FORENSICS 2026-08-28) — arm feasibility WARN, never a
+@@ -1583,12 +1434,9 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 			}
+ 			if verr := kernel.ValidateFvgEntryScenarios(d, fvgBars, at.futuresSymbol(), origin, time.Now()); verr != nil {
+ 				lastErr = verr
+-				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
++				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason)
+ 				rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+ 				at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
+-				if modeLabel == "repair" {
+-					at.recordRepairOutcome(raw, verr, prevReason)
+-				}
+ 				continue
+ 			}
+ 		}
+@@ -1603,12 +1451,9 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 			}
+ 			if verr := kernel.ValidateBreakdownContinueScenarios(d, bdBars, kernel.StaleConfirmATR5m(bdBars), facts.Price, time.Now().UnixMilli()); verr != nil {
+ 				lastErr = verr
+-				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
++				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason)
+ 				rejectBlock = plannerRejectBlock(lastErr, liveConditions)
+ 				at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
+-				if modeLabel == "repair" {
+-					at.recordRepairOutcome(raw, verr, prevReason)
+-				}
+ 				continue
+ 			}
+ 		}
+@@ -1656,14 +1501,6 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 		for i := 0; i < nArms; i++ {
+ 			telemetry.IncGateBlock(at.id, "arm_authored")
+ 		}
+-		if modeLabel == "repair" {
+-			// The denominator: an accepted repair is recorded ONLY here, where
+-			// the doc has survived the whole validator chain (A24: a rate
+-			// without its base is not a rate).
+-			if _, ierr := store.IncRepairOutcome(at.store, string(kernel.RepairOK)); ierr != nil {
+-				at.logWarnf("🩹 repair counter write failed: %v", ierr)
+-			}
+-		}
+ 		doc = d
+ 		break
+ 	}
+@@ -1733,10 +1570,6 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 	if strings.TrimSpace(triggerOverride) != "" {
+ 		trigger = triggerOverride
+ 	}
+-	// CLASS 35 — decide the spend by the CLASS the caller passed, before the
+-	// fail-closed branch relabels the row: a death re-plan / owner re-read that
+-	// fail-closes still landed a row for a consuming class.
+-	spendClass, spends := trigger, store.TriggerSpendsReplan(trigger)
+ 	if doc == nil {
+ 		// W6-C (2026-08-25) — wake reads are NON-fatal: a failed wake re-read
+ 		// must NOT no-trade a session whose active plan is still alive (live
+@@ -1805,23 +1638,7 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
+ 		return 0, lifecycle, err
+ 	}
+ 	at.logInfof("🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s, ai_config %s)", tradeDate, session, version, modelID, lifecycle, promptHash, aiConfigHash)
+-	if spends {
+-		// CLASS 35 — RECORD the spend now that the row exists (counters record
+-		// events; they do not infer them from row counts).
+-		if used, sErr := store.SpendReplan(at.store, at.id, tradeDate, session); sErr != nil {
+-			at.logErrorf("🧮 replan budget: %s %s v%d landed as %s but the spend FAILED to record: %v — the gate may over-allow by one until the row is fixed (class 35)",
+-				tradeDate, session, version, spendClass, sErr)
+-		} else {
+-			b := store.ReplanBudget{Used: used, Cap: at.replanCapFor(session)}
+-			at.logInfof("🧮 replan budget: %s spent one — %d/%d used, %d left (%s %s v%d; class 35 recorded-counter)",
+-				spendClass, b.Used, b.Cap, b.Left(), tradeDate, session, version)
+-		}
+-	}
+ 	at.recordPlanWritePrice(facts.Price) // F3 fast-market drift baseline
+-	// ROOT-FIX part B — fire ONE shadow fast-mode call on the IDENTICAL prompt,
+-	// AFTER the live read has finished (never a concurrent stream: class 41's
+-	// concurrency question is still open). Writes nothing; measurement only.
+-	at.maybeRunShadowAB(session, tradeDate, prompt, maxLevels, scenarioCap, facts, machineLabels, htfLabels, requiredBias)
+ 	// W6 — P1 plan-born/armed alert (active plans only; fail-closed already alerted P0).
+ 	if lifecycle == "active" {
+ 		at.emitAlert("P1", "armed", fmt.Sprintf("planborn:%s:%s:%d", tradeDate, session, version),
+@@ -2389,8 +2206,9 @@ func installActivePlanProvider(at *AutoTrader, st *store.Store) {
+ 			// ASIA to 4 mid-session, so at v3 the card said "replans left 2" while the
+ 			// AI was being told 0. P6 — the budget is measured from the chain baseline
+ 			// (an owner reset re-arms it), same seam the death path reads.
+-			replansLeft := store.GetReplanBudget(st, at.id, row.TradeDate, sess.Name,
+-				storedReplanCap(st, row.StrategyID, sess.Name)).Left()
++			replansLeft := store.ReplansLeftFrom(row.Version,
++				store.GetResetBaseline(st, at.id, row.TradeDate, sess.Name),
++				storedReplanCap(st, row.StrategyID, sess.Name))
+ 			// P0-cleanup — decision records carry the full plan attribution
+ 			// (plan_id, plan_version, overlay_version).
+ 			overlayVersion := 0
+@@ -2539,17 +2357,3 @@ func (at *AutoTrader) noteConfirmCompliantSession() {
+ 	}
+ 	_ = at.store.SetSystemConfig(confirmGraceKey, strconv.Itoa(confirmGraceSessions()))
+ }
+-
+-// recordRepairOutcome (REPAIR-PARSE E4, 2026-09-02) classifies what a repair
+-// attempt actually produced, logs it loudly with the class, and RECORDS it.
+-// The old line called every failure "UNPARSEABLE"; measured, 17 of 18 parsed
+-// fine and were rejected on field values, so the label was misleading exactly
+-// where a diagnosis was needed.
+-func (at *AutoTrader) recordRepairOutcome(raw string, err error, repairingReason string) {
+-	outcome := kernel.ClassifyRepairOutcome(raw, err)
+-	at.logWarnf("🩹 repair outcome=%s — falling back to a full re-author next attempt · reject=%v · was repairing: %s · raw_head=%q",
+-		outcome, err, clampLine(repairingReason, 200), clampLine(raw, 400))
+-	if _, ierr := store.IncRepairOutcome(at.store, string(outcome)); ierr != nil {
+-		at.logWarnf("🩹 repair counter write failed: %v", ierr)
+-	}
+-}
+diff --git a/trader/ninjatrader/tcp_trader.go b/trader/ninjatrader/tcp_trader.go
+index c25d5c2b..35762a18 100644
+--- a/trader/ninjatrader/tcp_trader.go
++++ b/trader/ninjatrader/tcp_trader.go
+@@ -48,11 +48,8 @@ type TCPTrader struct {
+ 	stopLoss map[string]float64 // key: "<symbol>:<side>"
+ 	takePrft map[string]float64
+ 	guard    *orderGuard // B3: dupe-drop + rate breaker at the order-submission chokepoint
+-	// openOrdersSrc (class 33) — the ledger-backed working-order source for
+-	// GetOpenOrders (flat-gate leg 4). nil = unwired = the leg FAILS.
+-	openOrdersSrc func(symbol string) ([]types.OpenOrder, error)
+-	lastFill      ntwire.FillPayload
+-	hasFill       bool
++	lastFill ntwire.FillPayload
++	hasFill  bool
+ 
+ 	// recentFills is a bounded ring of the last confirmed fills (class 27,
+ 	// 2026-08-31). A NETTING close emits no position_close frame — the only
+@@ -1149,34 +1146,8 @@ func (t *TCPTrader) CancelStopOrders(symbol string) error {
+ 	return fmt.Errorf("ninjatrader/tcp: CancelStopOrders not supported")
+ }
+ 
+-// SetOpenOrdersSource (CLASS 33, 2026-09-02) wires the working-order source
+-// for GetOpenOrders. NT8 emits NO working-order frame (audit F12), so the only
+-// truth about resting entries is the armed_orders ledger — the AutoTrader owns
+-// the store and injects it here at start.
+-func (t *TCPTrader) SetOpenOrdersSource(fn func(symbol string) ([]types.OpenOrder, error)) {
+-	t.mu.Lock()
+-	t.openOrdersSrc = fn
+-	t.mu.Unlock()
+-}
+-
+-// GetOpenOrders answers flat-gate leg 4. Until 2026-09-02 this was
+-// `return []types.OpenOrder{}, nil` — a gate that could not fail, which passed
+-// VACUOUSLY at every cutover 35 → 41 (class 33) including 09-02 00:16 CT with
+-// two arms resting at the broker. It now reports the armed_orders ledger's
+-// non-terminal rows, each stamped with its Source. A source that errors FAILS
+-// the leg; an UNWIRED source fails it too — never a silent empty (A24).
+ func (t *TCPTrader) GetOpenOrders(symbol string) ([]types.OpenOrder, error) {
+-	t.mu.Lock()
+-	fn := t.openOrdersSrc
+-	t.mu.Unlock()
+-	if fn == nil {
+-		return nil, fmt.Errorf("open-orders source not wired (class 33): NT8 has no working-order frame, so leg 4 has no truth to report — refusing to answer empty")
+-	}
+-	rows, err := fn(symbol)
+-	if err != nil {
+-		return nil, fmt.Errorf("open-orders (armed_orders ledger): %w", err)
+-	}
+-	return rows, nil
++	return []types.OpenOrder{}, nil
+ }
+ 
+ // upperSideStr normalises "long"/"LONG"/"Long" → "LONG" for SL/TP map keys.

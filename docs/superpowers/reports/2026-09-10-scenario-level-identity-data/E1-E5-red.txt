@@ -1,0 +1,7 @@
+--- FAIL: TestIdentityE1ParserKeepsAuthoredID (0.00s)
+    level_identity_test.go:20: production ParsePlanDoc discarded authored level_id
+--- FAIL: TestIdentityE5OpeningRangeKeepsTradingFields (0.00s)
+    level_identity_test.go:43: OR OR-H has no recorded actual 08:35 formation close: <nil>
+FAIL
+FAIL	nofx/kernel	0.006s
+FAIL

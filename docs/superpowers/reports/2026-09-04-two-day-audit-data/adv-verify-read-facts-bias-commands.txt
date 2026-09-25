@@ -1,0 +1,49 @@
+ADVERSARIAL VERIFY — planner_read_facts.bias_ai/bias_tree/plan_id/version empty
+Run 2026-09-04, worktree /home/hoang/nofx-2day04 @ 8579df0a. DB opened mode=ro only.
+
+--- 1. Reproduce the row state (WHOLE table, no time window -> no off-by-one possible) ---
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT COUNT(*) AS n_total, SUM(CASE WHEN plan_id IS NULL THEN 1 ELSE 0 END) AS pid_null, SUM(CASE WHEN plan_id='' THEN 1 ELSE 0 END) AS pid_empty, SUM(CASE WHEN version=0 THEN 1 ELSE 0 END) AS ver0, SUM(CASE WHEN bias_ai IS NULL THEN 1 ELSE 0 END) AS ai_null, SUM(CASE WHEN bias_ai='' THEN 1 ELSE 0 END) AS ai_empty, SUM(CASE WHEN bias_tree IS NULL THEN 1 ELSE 0 END) AS tree_null, SUM(CASE WHEN bias_tree='' THEN 1 ELSE 0 END) AS tree_empty, SUM(CASE WHEN bias_regime IS NULL OR bias_regime='' THEN 1 ELSE 0 END) AS reg_blank FROM planner_read_facts;"
+-> n_total=17 pid_null=0 pid_empty=17 ver0=17 ai_null=0 ai_empty=17 tree_null=0 tree_empty=17 reg_blank=0   [A] EXACT MATCH to the claim
+
+--- 2. The unnamed FIFTH field is tokens_in ---
+sqlite3 ... "SELECT COUNT(*) n, SUM(tokens_in=0) tok0, SUM(prompt_hash='' OR prompt_hash IS NULL) ph_blank, SUM(void_levels='' OR void_levels IS NULL) vl_blank, SUM(trader_id='') tid_blank, SUM(scope_intv='') intv_blank FROM planner_read_facts;"
+-> n=17 tok0=17 ph_blank=0 vl_blank=0 tid_blank=0 intv_blank=0   [A]
+
+--- 3. Writer inventory (is persistReadFacts really the ONLY writer?) ---
+grep -rn "PlannerReadFacts\|planner_read_facts" --include=*.go .
+grep -rn "PlannerReadFact{" --include=*.go .
+-> single production construction site: trader/auto_trader_planner.go:2433 -> SaveReadFact :2448
+-> persistReadFacts called once, auto_trader_planner.go:2414
+grep -n "Updates\|\.Save(\|Update(" store/planner_read_facts.go   -> EMPTY: Create-only, no UPDATE path   [A]
+
+--- 4. Has any revision EVER assigned those fields? ---
+git log --all --format='%h %ci %s' -S 'BiasAI:'  -- .   -> EMPTY (never)
+git log --all --format='%h %ci %s' -S 'BiasTree:' -- .   -> EMPTY (never)
+git log --all --format='%h %ci %s' -S 'store.PlannerReadFact{' -- trader/auto_trader_planner.go
+  -> 4659874a 2026-09-02 22:38:48 -0500 fix(void-parity): ... (introduced once, never amended)   [A]
+
+--- 5. Is the DEPLOYED code the same? ---
+md5sum /home/hoang/nofx/trader/auto_trader_planner.go /home/hoang/nofx-2day04/trader/auto_trader_planner.go
+-> 251fdf544d38ec37218e513e476dabdb BOTH   [A] deployed binary's source carries the defect
+
+--- 6. REFUTATION of "extraction is therefore impossible": plans.doc.bias_label ---
+grep -rn "bias_label\|BiasLabel" --include=*.go .
+-> kernel/plan_doc.go:279 BiasLabel `json:"bias_label,omitempty"`
+-> trader/auto_trader_planner.go:1927 doc.BiasLabel = kernel.BiasLabelLine(doc.Bias.Direction, TreeCallWord(...), RegimeCallWord(...))
+sqlite3 ... "SELECT trade_date, COUNT(*) n_plans, SUM(COALESCE(json_extract(doc,'\$.bias_label'),'')<>'') n_bias FROM plans WHERE trade_date>='2026-09-01' GROUP BY 1;"
+-> 2026-09-01: 21 plans / 0 bias   |  2026-09-02: 33 / 2  |  2026-09-03: 14 / 14   [A]
+
+--- 7. Join-key test (is prompt_hash a usable version key?) ---
+sqlite3 ... "SELECT substr(prompt_hash,1,16) ph, COUNT(*) n FROM planner_read_facts GROUP BY 1;"        -> a28d83f159084145 / 17
+sqlite3 ... "SELECT substr(ai_config_hash,1,16) h, COUNT(*) n FROM plans WHERE trade_date='2026-09-03' GROUP BY 1;" -> a28d83f159084145 / 14
+-> cardinality 1 on both sides: NOT a version discriminator. No key join exists.   [A]
+
+--- 8. Time-ordered association instead of a join (heuristic, NOT a key) ---
+SELECT f.id, f.session, datetime(f.created_at,'-5 hours') rf_ct,
+ (SELECT p.version FROM plans p WHERE p.trade_date=f.trade_date AND p.session=f.session AND p.created_at>f.created_at ORDER BY p.created_at LIMIT 1) next_ver, ... FROM planner_read_facts f;
+-> 14 of 17 resolve within 3.5-10.5 min. FAILS on 3: ids 1,2 (gap 996.7 / 966.7 min) and id 13 (47.5 min, collides with id 14 -> both point at ASIA v2).   [A]/[B]
+
+--- 9. Coverage limitation the original claim did not state ---
+sqlite3 ... "SELECT trade_date, COUNT(*) n, MIN(datetime(created_at,'-5 hours')), MAX(datetime(created_at,'-5 hours')) FROM planner_read_facts GROUP BY 1;"
+-> 2026-09-03 only, n=17, 00:00:56 CT .. 20:24:03 CT. ZERO rows for 2026-09-02.   [A]
+   (created_at is stored UTC by SaveReadFact -> time.Now().UTC(); CT = UTC-5.)

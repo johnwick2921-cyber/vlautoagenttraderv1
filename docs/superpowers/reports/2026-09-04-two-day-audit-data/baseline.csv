@@ -1,0 +1,10 @@
+day,is_trading_day,positions_n,pnl_corrected_sum,excl_null,excl_unresolvable,excl_seam,arms_authored,arms_filled,arms_cancelled,fill_rate,plans_n,top_cause
+2026-08-26,yes_full,2,-148.0,0,0,0,0,0,0,,39,no_arm_subsystem_yet
+2026-08-27,yes_full,2,-131.5,0,1,0,1,1,0,1.000,21,none_all_filled
+2026-08-28,yes_fri_close_1600CT,4,6.0,0,0,0,6,3,3,0.500,17,tie_never_reached_1|planner_failed_1|cannot_distinguish_1
+2026-08-29,no_saturday_CME_closed,0,,0,0,0,0,0,0,,0,market_closed
+2026-08-30,partial_sunday_reopen_1700CT,0,,0,1,3,3,0,3,0.000,2,incident_kill_2
+2026-08-31,yes_full,2,124.5,3,1,0,6,2,4,0.333,12,tie_marketable_guard_1|gate_min_sl_1|never_reached_1|defect_1
+2026-09-01,yes_full,6,212.0,0,0,0,8,2,6,0.250,19,tie_marketable_guard_2|defect_2
+2026-09-02,yes_full,4,-381.5,0,0,0,4,0,4,0.000,35,marketable_guard_2
+2026-09-03,yes_full,1,-140.0,0,0,0,3,1,2,0.333,16,marketable_guard_1

@@ -1,0 +1,11 @@
+trader/w7_levelstate_test.go
+54bbef124c3fa55377784ea53d7d3b71dbd2cdd6 2026-08-30T16:29:15-05:00 E4+E7: sweep-reclaim split entry (2 legs, sibling stop-out cancel, ledger leg columns) + stop-entry orders (wire stop_price, PlaceStopEntry, C# StopMarket, STOP_ENTRY_SEAM gate, fallback window); fixtures incl. loopback stop_entry frame proof
+
+trader/auto_trader_levelstate.go
+0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes
+
+kernel/levels_assemble.go
+896aeea5abb2faa2daabe247b7c551ab9f30ac9a 2026-09-08T15:55:50-05:00 feat(research): capture scorer evidence and stage append-only snapshot writers
+
+kernel/plan_lifecycle.go
+1a6878bc3dcd05d97111be99101e426172e9bd1f 2026-08-30T16:42:02-05:00 docs: entry-mechanics wave park report (E1-E9 + acceptance-rule ADDENDUM, D-rule sequencing); gofmt touched files

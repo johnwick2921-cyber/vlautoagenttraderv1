@@ -1,0 +1,60 @@
+{
+  "assignment": 30,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "repair_revision": "99a065430cb28ced23c4992fe04ff9b13787dc3d",
+  "scope": "Independent bounded cross-boundary review; no assigned whole-repository source census",
+  "edges": [
+    {
+      "source": "store.ResolveStructuralStop",
+      "target": "trader.ComposeLevelFadeGeometry",
+      "evidence": "armed executor composes policy input",
+      "tier": "A/static"
+    },
+    {
+      "source": "trader.ComposeLevelFadeGeometry",
+      "target": "store.SaveStructuralGeometry",
+      "evidence": "saveArmGeometry persists composition/refusal",
+      "tier": "A/static"
+    },
+    {
+      "source": "trader.oneSetupVerdictsAt",
+      "target": "kernel.OneSetupAllowsAt",
+      "evidence": "current production call consumes FadePermissionAt result",
+      "tier": "A/static"
+    },
+    {
+      "source": "trader.runArmedPlacementAt",
+      "target": "TCPTrader.PlaceLimitEntry",
+      "evidence": "beforeSend registers BeginPlacement",
+      "tier": "A/static"
+    },
+    {
+      "source": "trader.runArmedPlacementAt",
+      "target": "TCPTrader.PlaceStopEntry",
+      "evidence": "placeOneStopEntry returns registration commitment",
+      "tier": "A/static"
+    },
+    {
+      "source": "TCPTrader.PlaceLimitEntry",
+      "target": "TCPServer.SendSignal",
+      "evidence": "wire send after durable registration",
+      "tier": "A/static"
+    },
+    {
+      "source": "trader.materializeArmedEntry",
+      "target": "PositionStore.CreateOpenPosition",
+      "evidence": "fill creates account and plan lineage",
+      "tier": "A/static"
+    },
+    {
+      "source": "web.EditSheet",
+      "target": "plan.postOverlay",
+      "evidence": "two mutation call sites; no expected revision at reviewed revision",
+      "tier": "A/static"
+    }
+  ],
+  "historical": {
+    "UA": "July10@7a8adce0,3121 nodes9588edges; sha25623aa686864d6e1af4e6b43ae52856175356d07e8baf066fe36d0e90418a2c43f",
+    "CGC": "Historical781files5095functions; new structural composer absent per root export/search. Not current type-resolved architecture."
+  }
+}

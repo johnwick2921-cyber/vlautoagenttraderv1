@@ -1,0 +1,19 @@
+check,method,result,tier
+worktree_file_unchanged_since_deployed_rev,"git diff 70af663d..HEAD --stat -- kernel/risk_limits.go trader/auto_trader_orders.go trader/exit_mechs_suspend.go",empty diff; 70af663d is ancestor of HEAD,A
+file_lines_current,"grep -n kernel/risk_limits.go","const :305 · StageAContractCap() :308 · ClampStageAContracts :318 · ResolveMaxContracts decl :284 (Clamp call :289)",A
+env_STAGE_A_CONTRACT_CAP_in_dotenv,"grep -n STAGE_A_CONTRACT_CAP /home/hoang/nofx/.env",absent (rc=1; file is 40 lines),A
+env_STAGE_A_in_running_process,"tr '\0' '\n' < /proc/878451/environ | grep -i stage",absent (362 bytes / 11 vars),A
+resolved_value_now,"StageAContractCap() -> StageAContractCapDefault; boot line producer trader/exit_mechs_suspend.go:100",1,A
+production_callers_market_path,"grep -rn futuresOrderQuantity / at.resolveMaxContracts","2: trader/auto_trader_orders.go:532 and :680 -> :57 kernel.ResolveMaxContracts",A
+production_reader_bootline,"grep -rn stageAContractCapForBoot","trader/exit_mechs_suspend.go:100 (3rd production reader; peer omitted)",A
+armed_path_consults_cap,"grep -rn ClampStageAContracts / splitLegCapacity","NO — armed entries place literal 1 at trader/armed_executor.go:945 (PlaceStopEntry) and :965 (PlaceLimitEntry); leg count gated by splitLegCapacity :688 which never clamps",A
+live_strategy_max_contracts_per_order,"sqlite3 ro: traders JOIN strategies; json path ai_config.risk_control.max_contracts_per_order",2 (trader hoang is_running=1 acct Sim101 -> strategy MNQ; updated_at 2026-09-01 13:13:06),A
+market_path_clamp_binds,"ResolveMaxContracts(2,2) -> ClampStageAContracts(2)",1 — the cap DOES bind on the market path,A
+arm_leg_capacity_now,"splitLegCapacity(2)",2 — split 2-leg arms AUTHORIZED; 2 fills = 2 contracts = 2x the Stage-A ceiling,A
+split_arms_authored_post_0B,"sqlite3 ro: armed_orders WHERE leg_count=2","4 rows; id 32 2026-09-02 10:30:30 CT (post-0B cutover 07:49 CT) and id 38 2026-09-04 08:46:09 CT (on boot-8 binary, sweep_reclaim); 0 filled, max fill_quantity=1",A
+split_leg_capacity_refusals,"grep -c split_leg_capacity data/nofx_*.log","0 across 2026-08-17..2026-09-04 -> capN>=2 confirmed independently of the DB read",A
+clamp_fires_logged,"grep -c 'exceeds max' data/nofx_*.log","0 across all 19 retained daily logs (INFO does reach these files: 35437 INFO lines on 09-03)",A
+position_quantity_distribution,"sqlite3 ro: trader_positions GROUP BY quantity","1.0 x586 · 2.0 x1 (id 574, opened 2026-08-30 23:00:16 CT = PRE-0B); post-0B rows n=3, all size 1",A
+mc_drawdown_line_230,"sed -n 230,234p 2026-09-03-mc-drawdown.md","says 'expectancy statistically indistinguishable from zero (CI -31 to +18)' but is labelled [C]; :234 'per the stop-line it issues no verdict on size, limits or exits'; n=64 is on :16/:54/:119 not :230; report dated 09-03 POSTDATES the 09-02 0B ruling",A
+correct_report_grounding,"grep -rn Stage-A docs/","docs/superpowers/reports/2026-09-02-0b-exit-sanity.md:28 (resolved table 2->1) and docs/superpowers/AUDIT-CHECKLIST.md:646 (class 43 ruling text) — peer cited neither",A
+release_criterion_in_code,"grep for n>=30 / lower-CI logic",none — comment only; release is a manual env flip. n>=30 already MET (n=64 usable per mc-drawdown:119; 587 closed rows); cap holds only on the negative lower CI,A

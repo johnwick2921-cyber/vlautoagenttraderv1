@@ -1,0 +1,54 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_graph_base": "7a8adce0",
+  "historical_nodes": 129,
+  "historical_incident_edges": 1110,
+  "corrections": [
+    {
+      "claim": "AIClient has six methods",
+      "source": "mcp/interface.go:15",
+      "correction": "Seven methods including ResolvedModel."
+    },
+    {
+      "claim": "x402 retry without double-charge guaranteed",
+      "source": "mcp/payment/x402.go:253",
+      "correction": "New authorization on repeated 402; client alone does not prove remote settlement idempotence."
+    },
+    {
+      "claim": "graph covers present adapter safety logic",
+      "correction": "14 assigned paths absent from July10 graph; see report."
+    }
+  ],
+  "edges": [
+    {
+      "from": "api/handler_account.go:199",
+      "to": "trader/ninjatrader/tcp_trader.go:1173",
+      "relation": "direct call ResetAccountState"
+    },
+    {
+      "from": "trader/ninjatrader/reconcile.go:376",
+      "to": "store/position.go:751",
+      "relation": "account-empty lookup broadens ownership to all accounts"
+    },
+    {
+      "from": "trader/auto_trader_loop.go:999",
+      "to": "trader/ninjatrader/tcp_trader.go:848",
+      "relation": "interface GetBalance consumer under NT8 adapter; numeric fields consumed without account match in read range"
+    },
+    {
+      "from": "mcp/payment/x402.go:132",
+      "to": "mcp/payment/x402.go:627",
+      "relation": "decoded first accept option feeds signing"
+    },
+    {
+      "from": "mcp/payment/x402.go:627",
+      "to": "mcp/payment/x402.go:738",
+      "relation": "dynamic domain asset copy can panic on oversized decoded address"
+    },
+    {
+      "from": "trader/ninjatrader/transport.go:51",
+      "to": "trader/ninjatrader/bars_market_bridge.go:20",
+      "relation": "singleton startup wires market bars closure"
+    }
+  ]
+}

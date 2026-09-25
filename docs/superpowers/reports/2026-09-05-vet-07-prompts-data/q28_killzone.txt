@@ -1,0 +1,29 @@
+=== killzone context 640-660
+	// The hard-gate half is RESOLVED, not typed: it was a third copy of the
+	// lunch window, and the F4 literal scan missed it because the bounds sit
+	// unquoted inside a longer sentence. The 11:30–13:30 ET half is the lunch
+	// LULL (trading lore, advisory) and is deliberately not the same window as
+	// the machine gate — see the report for that discrepancy.
+	// ONE window (owner ruling 2026-09-03). This line used to carry an
+	// 11:30–13:30 ET lull BESIDE the machine's 12:00–13:30 CT gate — two
+	// different windows in one sentence, in two clocks, one of them enforced.
+	// The machine's is the only one, stated in CT, rendered from its resolver.
+	b.WriteString(fmt.Sprintf("  - lunch %s–%s CT: no new entries (hard-gated — entries inside it are refused)\n", lunchStartCT, lunchEndCT))
+	b.WriteString("  - Tier-1 news → stand aside until a fresh post-news swing prints\n\n")
+
+	// A4 — killzone weighting (advisory, not a gate).
+	b.WriteString("## Killzone weighting (advisory)\n")
+	b.WriteString(fmt.Sprintf("  NY AM %s–%s CT is the primary window; %s–%s CT is the premium FVG window; mind the macro minutes. ",
+		ETtoCT("08:30"), ETtoCT("11:00"), ETtoCT("10:00"), ETtoCT("11:00")))
+	b.WriteString("Conviction: down on Monday, up Thursday/Friday.\n\n")
+
+	// A5 — stop-doing line: bare acceptance entries have no edge.
+	b.WriteString("## STOP-DOING (week evidence, advisory)\n")
+	b.WriteString("  acceptance entries WITHOUT a prior sweep + displacement are 0% win evidence — skip them (A5).\n\n")
+=== git log -S ETtoCT(08:30)
+7851c1b1 2026-09-03 00:21:10 -0500 fix(no-trade-band): the example stops demonstrating the machine's windows; one clock in the prompt
+=== store: prompts with 08:30–11:00 CT killzone
+0
+116|2026-09-04 00:37:17
+117|2026-09-04 07:52:37
+118|2026-09-04 08:07:20

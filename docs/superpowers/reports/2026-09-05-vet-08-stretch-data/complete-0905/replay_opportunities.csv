@@ -1,0 +1,61 @@
+opportunity,checkpoints,statuses,pass_local_count,first_pass_ct,actual_send_checkpoints,corrected_send_checkpoints,guard_values,first_actual_send_ct,fills,pnl_points
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1,20,"{""waiting_confirm"": 3, ""passes_known_local_checks"": 7, ""invalidation_refused"": 10}",7,2026-09-02T00:03:00-05:00,2,2,cancel_marketable;outside_band;send_limit,2026-09-02T00:04:00-05:00,UNMEASURABLE,UNMEASURABLE
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S3,20,"{""waiting_confirm"": 15, ""invalidation_refused"": 5}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S2,8,"{""waiting_confirm"": 8}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S3,6,"{""waiting_confirm"": 6}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S4,23,"{""waiting_confirm"": 23}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S3,17,"{""waiting_confirm"": 17}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,19,"{""waiting_confirm"": 19}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S4,16,"{""waiting_confirm"": 11, ""recorded_dormant_requires_fresh_authorization"": 5}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,9,"{""waiting_confirm"": 9}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S4,24,"{""waiting_confirm"": 24}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,37,"{""waiting_confirm"": 8, ""rr_refused"": 29}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,37,"{""waiting_confirm"": 37}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S2,28,"{""waiting_confirm"": 28}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S3,56,"{""rr_refused"": 30, ""waiting_confirm"": 24, ""passes_known_local_checks"": 2}",2,2026-09-02T10:31:00-05:00,0,0,outside_band,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S4,27,"{""waiting_confirm"": 27}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S2,38,"{""waiting_confirm"": 38}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S3,37,"{""waiting_confirm"": 37}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S1,26,"{""waiting_confirm"": 3, ""rr_refused"": 23}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S3,26,"{""waiting_confirm"": 26}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S4,26,"{""waiting_confirm"": 26}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S2,28,"{""waiting_confirm"": 28}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S4,28,"{""waiting_confirm"": 28}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3,48,"{""waiting_confirm"": 13, ""passes_known_local_checks"": 20, ""invalidation_refused"": 15}",20,2026-09-02T14:10:00-05:00,16,16,cancel_marketable;send_limit,2026-09-02T14:10:00-05:00,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,14,"{""waiting_confirm"": 14}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,17,"{""waiting_confirm"": 17}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S3,17,"{""waiting_confirm"": 17}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,22,"{""waiting_confirm"": 22}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,19,"{""waiting_confirm"": 3, ""rr_refused"": 16}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1,63,"{""waiting_confirm"": 63}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S1,33,"{""waiting_confirm"": 32, ""recorded_dormant_requires_fresh_authorization"": 1}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S2,33,"{""waiting_confirm"": 32, ""recorded_dormant_requires_fresh_authorization"": 1}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S3,33,"{""waiting_confirm"": 1, ""rr_refused"": 31, ""recorded_dormant_requires_fresh_authorization"": 1}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S1,28,"{""waiting_confirm"": 28}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S1,18,"{""waiting_confirm"": 18}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S1,23,"{""waiting_confirm"": 23}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S2,23,"{""waiting_confirm"": 23}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v13/S1,116,"{""waiting_confirm"": 1, ""passes_known_local_checks"": 1, ""invalidation_refused"": 21, ""recorded_dormant_requires_fresh_authorization"": 93}",1,2026-09-02T22:14:00-05:00,0,0,cancel_marketable,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v14/S1,26,"{""waiting_confirm"": 26}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v14/S4,26,"{""waiting_confirm"": 26}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,16,"{""waiting_confirm"": 1, ""rr_refused"": 15}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,14,"{""waiting_confirm"": 3, ""rr_refused"": 11}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,30,"{""waiting_confirm"": 15, ""invalidation_refused"": 4, ""passes_known_local_checks"": 10, ""rr_refused"": 1}",10,2026-09-03T09:05:00-05:00,5,5,cancel_marketable;outside_band;send_limit,2026-09-03T09:05:00-05:00,UNMEASURABLE,UNMEASURABLE
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,29,"{""waiting_confirm"": 5, ""passes_known_local_checks"": 22, ""rr_refused"": 2}",22,2026-09-03T09:21:00-05:00,9,9,cancel_marketable;outside_band;send_limit,2026-09-03T09:21:00-05:00,UNMEASURABLE,UNMEASURABLE
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,38,"{""waiting_confirm"": 38}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,38,"{""waiting_confirm"": 38}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S3,197,"{""waiting_confirm"": 31, ""passes_known_local_checks"": 16, ""recorded_dormant_requires_fresh_authorization"": 150}",16,2026-09-03T11:59:00-05:00,5,5,outside_band;send_limit,2026-09-03T11:59:00-05:00,UNMEASURABLE,UNMEASURABLE
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,39,"{""waiting_confirm"": 39}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S3,248,"{""waiting_confirm"": 48, ""recorded_dormant_requires_fresh_authorization"": 200}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,40,"{""waiting_confirm"": 40}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S2,5,"{""invalidation_refused"": 5}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,352,"{""waiting_confirm"": 30, ""recorded_dormant_requires_fresh_authorization"": 322}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,22,"{""rr_refused"": 13, ""waiting_confirm"": 9}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,22,"{""passes_known_local_checks"": 11, ""waiting_confirm"": 11}",11,2026-09-04T08:45:00-05:00,0,0,outside_band,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,128,"{""waiting_confirm"": 6, ""invalidation_refused"": 8, ""passes_known_local_checks"": 114}",114,2026-09-04T09:10:00-05:00,3,3,outside_band;send_limit,2026-09-04T09:10:00-05:00,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,128,"{""waiting_confirm"": 30, ""rr_refused"": 58, ""passes_known_local_checks"": 40}",40,2026-09-04T10:16:00-05:00,40,0,send_stop_price_zero,2026-09-04T10:16:00-05:00,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,25,"{""waiting_confirm"": 25}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,50,"{""passes_known_local_checks"": 25, ""waiting_confirm"": 25}",25,2026-09-04T11:04:00-05:00,0,0,outside_band,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,84,"{""passes_known_local_checks"": 61, ""recorded_dormant_requires_fresh_authorization"": 22, ""waiting_confirm"": 1}",61,2026-09-04T11:29:00-05:00,0,0,outside_band,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1,10,"{""waiting_confirm"": 10}",0,,0,0,,,UNMEASURABLE,UNMEASURABLE
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,20,"{""passes_known_local_checks"": 19, ""waiting_confirm"": 1}",19,2026-09-04T12:11:00-05:00,0,0,outside_band,,UNMEASURABLE,UNMEASURABLE

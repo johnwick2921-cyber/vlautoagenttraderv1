@@ -1,0 +1,35 @@
+{
+  "asof_utc": "2026-09-05T22:48:22.156771+00:00",
+  "query_only": 1,
+  "counts": {
+    "candidate_pool": 360,
+    "touch_outcomes": 677,
+    "trade_excursions": 0,
+    "plans": 254,
+    "level_state": 675
+  },
+  "pool_n": 360,
+  "seated": 179,
+  "cuts": 181,
+  "cut_reasons": {
+    "max_levels: 12 seated, cap 12": 181
+  },
+  "score_components": {
+    "{}": 360
+  },
+  "distinct_touch_keys": 423,
+  "bars_bounds": [
+    1787151600000,
+    1788542340000
+  ],
+  "matched_n": 34,
+  "matched_distinct_price_touch_keys": {
+    "seated": 11,
+    "cut": 9
+  }
+}
+first_exposure 0 {'outcome_counts': {'untouched': 30, 'break': 3, 'ambiguous_horizon': 1, 'hold': 1}, 'touch': {'k': 5, 'n': 35, 'p': 0.14285714285714285, 'wilson95': [0.06260231079433715, 0.29375554086595146]}, 'hold': {'k': 1, 'n': 4, 'p': 0.25, 'wilson95': [0.04558726080970055, 0.6993581574175981]}}
+first_exposure 1 {'outcome_counts': {'ambiguous_horizon': 5, 'hold': 5, 'untouched': 30, 'break': 6, 'censored_12bar': 1}, 'touch': {'k': 17, 'n': 47, 'p': 0.3617021276595745, 'wilson95': [0.23966213245714155, 0.5046410346520489]}, 'hold': {'k': 5, 'n': 11, 'p': 0.45454545454545453, 'wilson95': [0.21271271622459764, 0.719908462590678]}}
+matched seated {'outcome_counts': {'untouched': 21, 'ambiguous_horizon': 2, 'break': 10, 'hold': 1}, 'touch': {'k': 13, 'n': 34, 'p': 0.38235294117647056, 'wilson95': [0.23900183324508897, 0.549589826555693]}, 'hold': {'k': 1, 'n': 11, 'p': 0.09090909090909091, 'wilson95': [0.016232172885884855, 0.37735843645159567]}}
+matched cut {'outcome_counts': {'untouched': 22, 'break': 4, 'ambiguous_horizon': 5, 'hold': 2, 'censored_12bar': 1}, 'touch': {'k': 12, 'n': 34, 'p': 0.35294117647058826, 'wilson95': [0.21487920594879492, 0.5208603688021826]}, 'hold': {'k': 2, 'n': 6, 'p': 0.3333333333333333, 'wilson95': [0.09677141110578041, 0.700006684861608]}}
+eligible 58 -466.4285719999971 days 12

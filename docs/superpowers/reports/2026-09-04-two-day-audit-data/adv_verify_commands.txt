@@ -1,0 +1,71 @@
+# ADVERSARIAL RE-VERIFICATION of the "8 of 21 big-move windows drew no wake line" claim
+# All read-only. Clock: log timestamps are CT (proved below). DB opened mode=ro.
+
+## 0. Log files are named by PROCESS START date, NOT calendar day  [A]
+head -1 /home/hoang/nofx/data/nofx_2026-09-02.log   # -> 09-02 00:01:06
+tail -1 /home/hoang/nofx/data/nofx_2026-09-02.log   # -> 09-03 10:28:08   <-- 09-03 lines live here
+head -1 /home/hoang/nofx/data/nofx_2026-09-03.log   # -> 09-03 10:28:29
+grep -n "NOFX - AI-Powered" /home/hoang/nofx/data/nofx_2026-09-03.log | tail -1
+#   -> 09-03 23:12:54  == the brief's PID 594377 start time  => log clock is CT
+
+## 1. The 21 big-move windows, re-derived from bars (NOT from their tape.csv)
+sqlite3 -header -csv "file:/home/hoang/nofx/data/data.db?mode=ro" "
+WITH b AS (SELECT open_time_ms,o,c,(open_time_ms/1000/900)*900 AS w FROM bars
+           WHERE symbol='MNQ' AND tf='1m'
+             AND open_time_ms >= strftime('%s','2026-09-02 05:00:00')*1000
+             AND open_time_ms <  strftime('%s','2026-09-04 05:00:00')*1000),
+agg AS (SELECT w, datetime(w,'unixepoch','-5 hours') AS win_ct, COUNT(*) n,
+        (SELECT o FROM b b2 WHERE b2.w=b.w ORDER BY b2.open_time_ms ASC  LIMIT 1) AS wopen,
+        (SELECT c FROM b b3 WHERE b3.w=b.w ORDER BY b3.open_time_ms DESC LIMIT 1) AS wclose
+        FROM b GROUP BY w)
+SELECT win_ct,n,wopen,wclose,ROUND(wclose-wopen,2) FROM agg WHERE ABS(wclose-wopen)>=40 ORDER BY w;"
+#   -> exactly 21 rows, identical to their list. Denominator CONFIRMED.
+
+## 2. Wake EVENT lines (all four emitters), boot banner "⏱ wakes:" EXCLUDED
+grep -hE "🗓️ level wake|🗓️ structure MSS|⏱ wake (SKIPPED|DEFERRED)" \
+  /home/hoang/nofx/data/nofx_2026-09-02.log /home/hoang/nofx/data/nofx_2026-09-03.log \
+  | awk '{print $1" "$2}' | sort > adv_wake_event_ts.txt      # 567 lines
+#   NOTE: a naive grep for "⏱ wake" also matches the 09-03 10:28:29 boot banner
+#   "⏱ wakes: cutoff=25m(enforce) ..." and falsely puts 1 line in [10:15,10:30).
+#   -> counts per window: 0,0,0,0,0,0,0,0 for the 8; 4..10 for the other 13. 8/21 CONFIRMED.
+
+## 3. Their 09-03 evidence command produces NOTHING
+grep -h 'on LONDON 2026-09-03' /home/hoang/nofx/data/nofx_2026-09-03.log | grep 'level wake' | head -3
+#   -> empty (that file starts 10:28:29)
+grep -h 'on LONDON 2026-09-03' /home/hoang/nofx/data/nofx_2026-09-0{2,3}.log | grep 'level wake' | awk '{print $1,$2}' | head -1
+#   -> 09-03 08:06:54   (NOT 08:02:54)
+#   08:02:54 is a "⏱ wake DEFERRED ... on LONDON." line: no date, no "level wake" substring.
+
+## 4. LONDON flat is 08:30 CT from the LIVE registry, not the shipped default
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "SELECT value FROM system_config WHERE key='session_registry';"
+#   -> LONDON read_ct 01:30, window_end_ct 08:30, flat_ct 08:30
+#   07:15:49 -> 08:30:00 = 74m11s   (NOT "inside the final 30 minutes")
+#   08:02:54 -> 08:30:00 = 27m06s   (inside 30)
+
+## 5. 2026-09-03 LONDON v1 was ACTIVE, not dormant, at 04:45 / 07:30 / 07:45
+grep -h "😴 plan\|⚡ plan" /home/hoang/nofx/data/nofx_2026-09-0{2,3}.log | awk '$1=="09-03" && $2<"12:00:00"'
+#   09-03 02:40:00 DORMANT · 09-03 04:30:55 REARMED · 09-03 08:00:54 DORMANT
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT key,value,datetime(CAST(value AS INTEGER)/1000,'unixepoch','-5 hours') FROM system_config WHERE key LIKE '%dormant%2026-09-03:LONDON%';"
+#   -> 1788440454842 = 2026-09-03 08:00:54 CT
+#   plans.lifecycle is a TERMINAL, overwritten-in-place column; it is not the state in force.
+
+## 6. Plan ages / versions in force  (all reproduce)
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT trade_date,session,version,lifecycle,trigger_reason,datetime(created_at,'-5 hours')
+  FROM plans WHERE trade_date IN ('2026-09-02','2026-09-03') ORDER BY created_at;"
+#   09-02 LONDON v1 created 01:37:44 (no_trade, planner_fail_closed) -> 127.3/307.3/322.3 OK
+#   09-03 LONDON v1 created 01:34:53                                 -> 190.1/355.1/370.1 OK
+#   09-02 LONDON v2 created 07:15:26 by OWNER_RESET, 23s BEFORE the 07:15:49 "first wake line"
+
+## 7. "loop not running" is refuted in all 8 windows
+grep -h "Decision record saved" /home/hoang/nofx/data/nofx_2026-09-0{2,3}.log | awk '<per-window filter>'
+#   -> 7-8 decision cycles inside every one of the 8 windows
+#   trader/auto_trader_clock.go:98-100 evaluateWallClockSessionReads -> maybeRunSessionReadsAt
+#   runs at the TOP of tickOnce, before the bar-close gate and the no-new-data dedup.
+
+## 8. Both v1 plans had 12 seated levels (so "empty level map" is not the cause either)
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT trade_date||' '||session||' v'||version, json_array_length(json_extract(doc,'\$.levels'))
+  FROM plans WHERE session='LONDON' AND version=1 AND trade_date IN ('2026-09-02','2026-09-03');"
+#   -> 12 and 12

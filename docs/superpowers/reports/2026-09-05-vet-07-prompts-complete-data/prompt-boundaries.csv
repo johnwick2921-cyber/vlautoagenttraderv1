@@ -1,0 +1,1924 @@
+document,line,category,text
+planner-132-actual.txt,1,I,"## CORRECTIONS FROM THIS READ — read these FIRST
+"
+planner-132-actual.txt,2,I,"The standing rules below still apply EXCEPT where this correction overrides them.
+"
+planner-132-actual.txt,3,I,"This read has already been rejected 2 times, for 2 DISTINCT defects. Avoid ALL of them, not only the last:
+"
+planner-132-actual.txt,4,I,"  1. S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)
+"
+planner-132-actual.txt,5,I,"  2. S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+"
+planner-132-actual.txt,6,I,"
+"
+planner-132-actual.txt,7,I,"Valid conditions: [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] (use exactly ONE token from this list; do NOT combine condition names).
+"
+planner-132-actual.txt,8,I,"
+"
+planner-132-actual.txt,9,I,"# DAY-PLAN READER — CME MNQ futures
+"
+planner-132-actual.txt,10,I,"You are a disciplined pro reading the market ONCE, carefully. Write ONE structured day plan for this session. Facts below are Go-computed; your job is JUDGMENT, not re-deriving the map.
+"
+planner-132-actual.txt,11,F,"
+"
+planner-132-actual.txt,12,F,"## Session
+"
+planner-132-actual.txt,13,F,"trade_date 2026-09-04 · session NY · NY scheduled read (stored+cached data) · price 29503.75 · dATR 510.0
+"
+planner-132-actual.txt,14,F,clock 10:28 CT (15:28 UTC)
+planner-132-actual.txt,14,I," — EVERY time in this prompt is CT (America/Chicago): session windows, read/flat times and the lunch no-trade (12:00–13:30 CT) are CT wall-clock. Never apply these numbers to a UTC clock.
+"
+planner-132-actual.txt,15,F,⚡ FAST TAPE — price has moved 89.0 pts (2.4×ATR5m) since the last plan write.
+planner-132-actual.txt,15,I," Write the SHORTEST valid plan you can: fewer scenarios, tight prose. A fast market does not reward long deliberation.
+"
+planner-132-actual.txt,16,F,"
+"
+planner-132-actual.txt,17,F,"## Regime
+"
+planner-132-actual.txt,18,F,"REGIME: trend D=up 1h=up · ATR14=455.8 (NORMAL p42) · RV=101%-of-normal · VIX=n/a · exp-range≈456pts · o/n-gap=+0.06×ATR
+"
+planner-132-actual.txt,19,F,"
+"
+planner-132-actual.txt,20,F,"## Candles (oldest→latest)
+"
+planner-132-actual.txt,21,F,"### 15m (last 12)
+"
+planner-132-actual.txt,22,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-actual.txt,23,F,"09-04 07:30    29676.2500 29720.0000 29532.5000 29556.7500 67174.00    
+"
+planner-132-actual.txt,24,F,"09-04 07:45    29557.2500 29557.7500 29502.0000 29546.5000 43401.00    
+"
+planner-132-actual.txt,25,F,"09-04 08:00    29546.5000 29556.7500 29523.0000 29548.7500 26654.00    
+"
+planner-132-actual.txt,26,F,"09-04 08:15    29548.5000 29591.7500 29547.0000 29588.2500 26919.00    
+"
+planner-132-actual.txt,27,F,"09-04 08:30    29588.5000 29645.2500 29553.7500 29616.5000 142346.00   
+"
+planner-132-actual.txt,28,F,"09-04 08:45    29615.7500 29692.0000 29577.5000 29691.2500 102308.00   
+"
+planner-132-actual.txt,29,F,"09-04 09:00    29691.0000 29691.2500 29594.0000 29648.2500 98561.00    
+"
+planner-132-actual.txt,30,F,"09-04 09:15    29648.2500 29649.7500 29564.0000 29595.7500 94209.00    
+"
+planner-132-actual.txt,31,F,"09-04 09:30    29596.0000 29598.2500 29530.0000 29533.5000 80350.00    
+"
+planner-132-actual.txt,32,F,"09-04 09:45    29533.0000 29544.2500 29498.5000 29520.7500 72899.00    
+"
+planner-132-actual.txt,33,F,"09-04 10:00    29520.5000 29541.0000 29491.0000 29540.2500 62376.00    
+"
+planner-132-actual.txt,34,F,"09-04 10:15    29541.0000 29543.5000 29483.2500 29503.7500 57097.00      <- current
+"
+planner-132-actual.txt,35,F,"
+"
+planner-132-actual.txt,36,F,"### 1h (last 12)
+"
+planner-132-actual.txt,37,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-actual.txt,38,F,"09-03 23:00    29571.0000 29601.0000 29556.2500 29597.2500 28301.00    
+"
+planner-132-actual.txt,39,F,"09-04 00:00    29597.7500 29643.5000 29591.5000 29619.5000 38372.00    
+"
+planner-132-actual.txt,40,F,"09-04 01:00    29620.0000 29644.2500 29573.7500 29576.0000 41498.00    
+"
+planner-132-actual.txt,41,F,"09-04 02:00    29577.2500 29658.7500 29575.0000 29653.0000 35334.00    
+"
+planner-132-actual.txt,42,F,"09-04 03:00    29653.7500 29673.0000 29634.7500 29658.5000 35616.00    
+"
+planner-132-actual.txt,43,F,"09-04 04:00    29657.5000 29661.7500 29616.2500 29657.2500 24346.00    
+"
+planner-132-actual.txt,44,F,"09-04 05:00    29656.7500 29698.5000 29654.2500 29681.0000 22374.00    
+"
+planner-132-actual.txt,45,F,"09-04 06:00    29681.2500 29689.5000 29650.5000 29681.7500 26038.00    
+"
+planner-132-actual.txt,46,F,"09-04 07:00    29682.2500 29720.0000 29502.0000 29546.5000 143899.00   
+"
+planner-132-actual.txt,47,F,"09-04 08:00    29546.5000 29692.0000 29523.0000 29691.2500 298227.00   
+"
+planner-132-actual.txt,48,F,"09-04 09:00    29691.0000 29691.2500 29498.5000 29520.7500 346019.00   
+"
+planner-132-actual.txt,49,F,"09-04 10:00    29520.5000 29543.5000 29483.2500 29503.7500 119473.00     <- current
+"
+planner-132-actual.txt,50,F,"
+"
+planner-132-actual.txt,51,F,"### 4h (last 8)
+"
+planner-132-actual.txt,52,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-actual.txt,53,F,"09-03 03:00    29219.7500 29293.0000 29101.7500 29105.2500 178695.00   
+"
+planner-132-actual.txt,54,F,"09-03 07:00    29105.2500 29543.7500 29104.0000 29538.2500 1149263.00  
+"
+planner-132-actual.txt,55,F,"09-03 11:00    29538.7500 29585.0000 29476.0000 29531.0000 502432.00   
+"
+planner-132-actual.txt,56,F,"09-03 15:00    29530.5000 29536.2500 29481.5000 29504.5000 70288.00    
+"
+planner-132-actual.txt,57,F,"09-03 19:00    29503.7500 29579.5000 29491.0000 29570.2500 121352.00   
+"
+planner-132-actual.txt,58,F,"09-03 23:00    29571.0000 29658.7500 29556.2500 29653.0000 143505.00   
+"
+planner-132-actual.txt,59,F,"09-04 03:00    29653.7500 29698.5000 29616.2500 29681.7500 108374.00   
+"
+planner-132-actual.txt,60,F,"09-04 07:00    29682.2500 29720.0000 29483.2500 29503.7500 907618.00     <- current
+"
+planner-132-actual.txt,61,F,"
+"
+planner-132-actual.txt,62,F,"### daily session candles (last 8)
+"
+planner-132-actual.txt,63,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-actual.txt,64,F,"09-02 22:11    29198.5000 29585.0000 29075.0000 29502.7500 2113311.00  
+"
+planner-132-actual.txt,65,F,"09-03 17:00    29500.0000 29720.0000 29481.5000 29503.7500 1318615.00    <- current
+"
+planner-132-actual.txt,66,F,"
+"
+planner-132-actual.txt,67,F,"
+"
+planner-132-actual.txt,68,F,"## Weekly Context
+"
+planner-132-actual.txt,69,F,"WEEKLY: refs only — PWH 29811.75 · PWL 28927.25
+"
+planner-132-actual.txt,70,F,"
+"
+planner-132-actual.txt,71,F,"## Indicators (executor mirror — your ai_config toggles, computed values)
+"
+planner-132-actual.txt,72,F,"### 1h
+"
+planner-132-actual.txt,73,F,"EMA50: [29264.2964, 29273.6475, 29282.8574, 29291.5492, 29300.9101, 29310.5901, 29320.5571, 29330.3490, 29340.8157, 29351.7445, 29360.5388, 29372.0079, 29383.2429, 29393.9883, 29405.2436, 29416.0870, 29421.2012, 29431.7914, 29435.2800, 29437.9651]
+"
+planner-132-actual.txt,74,F,"EMA200: [29331.2711, 29332.9773, 29334.7238, 29336.4131, 29338.3419, 29340.4255, 29342.6576, 29344.9222, 29347.4329, 29350.1401, 29352.3874, 29355.3786, 29358.3947, 29361.3684, 29364.5488, 29367.7051, 29369.4841, 29372.6858, 29374.1590, 29375.4485]
+"
+planner-132-actual.txt,75,F,"RSI14: [69.8168, 66.5953, 66.9298, 66.4315, 68.0791, 69.1861, 70.2648, 70.6231, 72.3825, 73.7764, 66.6899, 71.8452, 72.1764, 71.9692, 73.5246, 73.5745, 53.8692, 64.7504, 49.8383, 48.6356]
+"
+planner-132-actual.txt,76,F,"ATR14: 84.3005
+"
+planner-132-actual.txt,77,F,"### 4h
+"
+planner-132-actual.txt,78,F,"EMA50: [29453.4690, 29441.1859, 29429.3355, 29415.4302, 29401.9427, 29385.1312, 29372.4790, 29364.1269, 29355.4553, 29346.8982, 29340.6963, 29332.7082, 29332.6902, 29340.9573, 29347.3021, 29355.1628, 29365.5290, 29376.9690, 29389.2938, 29393.7822]
+"
+planner-132-actual.txt,79,F,"EMA200: [29229.2092, 29228.3240, 29227.4352, 29225.9160, 29224.3795, 29221.8807, 29220.2948, 29219.6899, 29218.9268, 29218.1141, 29217.8219, 29217.0177, 29218.1643, 29221.4015, 29224.2010, 29227.4204, 29231.3217, 29235.5598, 29240.0940, 29242.7174]
+"
+planner-132-actual.txt,80,F,"RSI14: [35.9581, 37.8289, 37.7861, 35.5612, 35.4475, 32.1055, 37.8387, 43.4298, 42.7258, 42.4675, 45.6380, 43.0695, 53.6651, 61.9224, 59.7118, 61.3526, 63.8785, 65.1685, 66.3345, 55.3332]
+"
+planner-132-actual.txt,81,F,"ATR14: 164.5878
+"
+planner-132-actual.txt,82,F,"### 1d
+"
+planner-132-actual.txt,83,F,"EMA50: [29178.1025, 29195.6671, 29221.4547, 29259.3780, 29293.9809, 29325.4326, 29335.6509, 29342.5960, 29340.9452, 29342.7806, 29333.4853, 29331.2604, 29329.6227, 29343.9807, 29349.7756, 29356.1765, 29347.1304, 29340.8213, 29348.0342, 29354.1407]
+"
+planner-132-actual.txt,84,F,"EMA200: [27218.0028, 27241.9630, 27267.9459, 27297.0062, 27325.3121, 27352.8811, 27375.1012, 27396.3713, 27415.3179, 27434.9441, 27451.5690, 27469.7300, 27487.8372, 27509.8065, 27529.5273, 27549.2633, 27564.9473, 27581.0797, 27600.4197, 27619.3583]
+"
+planner-132-actual.txt,85,F,"RSI14: [55.5064, 54.2614, 56.4168, 59.4525, 58.8371, 58.2021, 51.5264, 50.6282, 48.0163, 49.1770, 45.6307, 48.0759, 48.2627, 53.9488, 50.9223, 51.2292, 45.6258, 46.6118, 51.8506, 51.5129]
+"
+planner-132-actual.txt,86,F,"ATR14: 455.8262
+"
+planner-132-actual.txt,87,F,"### 15m
+"
+planner-132-actual.txt,88,F,"EMA50: [29587.0399, 29590.7246, 29593.4315, 29596.1694, 29599.1236, 29602.3638, 29603.9378, 29606.8422, 29604.8778, 29602.5885, 29600.4772, 29599.9977, 29600.6448, 29604.1980, 29605.9255, 29605.5265, 29602.7019, 29599.4881, 29597.1650, 29593.5017]
+"
+planner-132-actual.txt,89,F,"EMA200: [29308.1125, 29311.8229, 29315.2848, 29318.7472, 29322.2572, 29325.8342, 29328.9851, 29332.4579, 29334.6896, 29336.7972, 29338.9062, 29341.3872, 29344.1247, 29347.5787, 29350.5704, 29353.0100, 29354.8059, 29356.4571, 29358.2859, 29359.7333]
+"
+planner-132-actual.txt,90,F,"RSI14: [65.9239, 66.1879, 57.9667, 58.8728, 61.0066, 63.5377, 50.1210, 58.6299, 36.0252, 34.8036, 35.3220, 43.7753, 48.9175, 59.4781, 52.7254, 45.8770, 39.3504, 38.1532, 41.1045, 37.4975]
+"
+planner-132-actual.txt,91,F,"ATR14: 55.8040
+"
+planner-132-actual.txt,92,F,"### 3m
+"
+planner-132-actual.txt,93,F,"EMA50: [29616.4176, 29614.6561, 29613.2382, 29611.6505, 29608.5857, 29605.6510, 29602.4294, 29599.2165, 29595.3452, 29592.4199, 29589.2172, 29586.1597, 29583.8005, 29581.4848, 29579.8677, 29577.4905, 29574.2752, 29571.4213, 29568.6401, 29566.0954]
+"
+planner-132-actual.txt,94,F,"EMA200: [29629.8439, 29629.2633, 29628.7582, 29628.2009, 29627.2586, 29626.3282, 29625.3050, 29624.2622, 29623.0307, 29622.0130, 29620.9059, 29619.8148, 29618.8813, 29617.9447, 29617.1716, 29616.1973, 29614.9963, 29613.8670, 29612.7390, 29611.6545]
+"
+planner-132-actual.txt,95,F,"RSI14: [42.1821, 41.3228, 43.0713, 41.9651, 35.3004, 35.3708, 33.7493, 33.2685, 30.1819, 36.5961, 34.8914, 35.0543, 39.8365, 39.5706, 44.5164, 39.7675, 35.1948, 37.1606, 36.9594, 38.1320]
+"
+planner-132-actual.txt,96,F,"ATR14: 27.3621
+"
+planner-132-actual.txt,97,F,"### 5m
+"
+planner-132-actual.txt,98,F,"EMA50: [29620.3601, 29623.1401, 29624.9189, 29625.6770, 29626.5622, 29625.5696, 29624.4100, 29623.2861, 29620.7650, 29619.4801, 29616.1084, 29611.9865, 29608.2517, 29604.8203, 29601.3469, 29598.3921, 29596.1121, 29592.3920, 29588.8766, 29585.5383]
+"
+planner-132-actual.txt,99,F,"EMA200: [29587.2895, 29588.3239, 29589.1217, 29589.6702, 29590.2531, 29590.3625, 29590.4186, 29590.4717, 29590.1585, 29590.1371, 29589.5735, 29588.7917, 29588.0748, 29587.4049, 29586.6969, 29586.0930, 29585.6368, 29584.7972, 29583.9808, 29583.1825]
+"
+planner-132-actual.txt,100,F,"RSI14: [61.6319, 66.6102, 60.5043, 54.7437, 55.4964, 45.8478, 44.9085, 44.8614, 38.4700, 45.1151, 37.0229, 34.2885, 35.5976, 36.5446, 35.9050, 38.4200, 42.0021, 35.8549, 36.2414, 36.5160]
+"
+planner-132-actual.txt,101,F,"ATR14: 36.3706
+"
+planner-132-actual.txt,102,F,"
+"
+planner-132-actual.txt,103,I,"## VOID breakdown levels (a close came back across since the break, THIS session day — the write-site validator REFUSES a waterfall play at these)
+"
+planner-132-actual.txt,104,F,- CHOP (broken and reclaimed both ways this session): 29533.94 · 29553.75 · 29585.00 · 29597.25 · 29601.00 · 29635.00 (6 of 12 seated)
+planner-132-actual.txt,104,I," — waterfall plays at these will be refused; prefer touch/fade plays there.
+"
+planner-132-actual.txt,105,I,"- do NOT author breakdown_continue or breakup_continue at these prices. Any other condition is legal there.
+"
+planner-132-actual.txt,106,F,"
+"
+planner-132-actual.txt,107,F,"## Minimum stop distance this cycle
+"
+planner-132-actual.txt,108,F,"54.6 pts (1.5×ATR5m 36.37, resolved)."
+planner-132-actual.txt,108,I," Stops tighter than this are WIDENED by the executor before the R:R gate sees them — author stops AND targets consistent with it, or your R:R will not survive the widening.
+"
+planner-132-actual.txt,109,F,"
+"
+planner-132-actual.txt,110,F,"## Waterfall displacement floor this cycle
+"
+planner-132-actual.txt,111,F,"36.4 pts (1.0×ATR5m 36.37, resolved)."
+planner-132-actual.txt,111,I," A breakdown_continue / breakup_continue authored at a level whose MEASURED displacement is below this is REFUSED at write.
+"
+planner-132-actual.txt,112,F,"
+"
+planner-132-actual.txt,113,F,"## Measured displacement per level (floor 36.4 pts)
+"
+planner-132-actual.txt,114,F,"  29075.00 PDL — 645.00 pts up · at or above the floor — authorable
+"
+planner-132-actual.txt,115,F,"  29144.50 Demand·1h — 575.50 pts up · at or above the floor — authorable
+"
+planner-132-actual.txt,116,F,"  29199.25 RTH-L — 520.75 pts up · at or above the floor — authorable
+"
+planner-132-actual.txt,117,F,"  29481.50 ONL — 238.50 pts up · at or above the floor — authorable
+"
+planner-132-actual.txt,118,F,"  29533.94 VWAP−1σ — none — no break
+"
+planner-132-actual.txt,119,F,"  29553.75 OR-L — none — no break
+"
+planner-132-actual.txt,120,F,"  29585.00 RTH-H — none — no break
+"
+planner-132-actual.txt,121,F,"  29597.25 PDC — none — no break
+"
+planner-132-actual.txt,122,F,"  29601.00 PDH — none — no break
+"
+planner-132-actual.txt,123,F,"  29635.00 OR-H — none — no break
+"
+planner-132-actual.txt,124,F,"  29720.00 ONH — 238.50 pts down · at or above the floor — authorable
+"
+planner-132-actual.txt,125,F,"  29767.50 Supply·4h — 286.00 pts down · at or above the floor — authorable
+"
+planner-132-actual.txt,126,F,"
+"
+planner-132-actual.txt,127,I,"## Ranked levels (Go-graded; you never re-sort)
+"
+planner-132-actual.txt,128,I,"## Consumed levels (already role-flipped — plan AROUND them; a re-test is a NEW setup)
+"
+planner-132-actual.txt,129,F,"- 29481.50 ONL
+"
+planner-132-actual.txt,130,F,"- 29533.94 VWAP−1σ
+"
+planner-132-actual.txt,131,F,"- 29553.75 OR-L
+"
+planner-132-actual.txt,132,F,"- 29585.00 RTH-H
+"
+planner-132-actual.txt,133,F,"- 29597.25 PDC
+"
+planner-132-actual.txt,134,F,"- 29601.00 PDH
+"
+planner-132-actual.txt,135,F,"- 29635.00 OR-H
+"
+planner-132-actual.txt,136,F,"- 29720.00 ONH
+"
+planner-132-actual.txt,137,F,"- 29199.25 RTH-L
+"
+planner-132-actual.txt,138,F,"- 29144.50 Demand·1h
+"
+planner-132-actual.txt,139,F,"- 29075.00 PDL
+"
+planner-132-actual.txt,140,F,"
+"
+planner-132-actual.txt,141,I,"## FRESH FVGs (machine-computed candidates — author fvg_entry ONLY from this list; if empty, do NOT author any fvg_entry; if NON-empty and a candidate's direction agrees with your bias, an fvg_entry is EXPECTED unless you state why not in one line)
+"
+planner-132-actual.txt,142,F,"(none fresh right now)
+"
+planner-132-actual.txt,143,F,"
+"
+planner-132-actual.txt,144,F,"  29481.50  ONL                  grade A  fresh    liquidity_break -22.2
+"
+planner-132-actual.txt,145,F,"  29533.94  VWAP−1σ              grade A  fresh    magnet_meanrevert +30.2
+"
+planner-132-actual.txt,146,F,"  29553.75  OR-L                 grade C  flipped  target_only     +50.0
+"
+planner-132-actual.txt,147,F,"  29585.00  RTH-H                grade B  flipped  target_only     +81.2
+"
+planner-132-actual.txt,148,F,"  29597.25  PDC                  grade B  flipped  target_only     +93.5
+"
+planner-132-actual.txt,149,F,"  29601.00  PDH                  grade B  flipped  target_only     +97.2
+"
+planner-132-actual.txt,150,F,"  29635.00  OR-H                 grade C  flipped  target_only     +131.2
+"
+planner-132-actual.txt,151,F,"  29720.00  ONH                  grade A  fresh    liquidity_break +216.2
+"
+planner-132-actual.txt,152,F,"  29767.50  Supply·4h (HTF)      grade A  fresh    react_zone      +263.8
+"
+planner-132-actual.txt,153,F,"  29199.25  RTH-L                grade A  fresh    react_zone      -304.5
+"
+planner-132-actual.txt,154,F,"  29144.50  Demand·1h (HTF)      grade A  fresh    react_zone      -359.2
+"
+planner-132-actual.txt,155,F,"  29075.00  PDL                  grade A  fresh    react_zone      -428.8
+"
+planner-132-actual.txt,156,F,"
+"
+planner-132-actual.txt,157,I,"## Level roles (machine-assigned, 5-line playbook)
+"
+planner-132-actual.txt,158,I,"role playbook: magnet_meanrevert = price gravitates back (fade/reversion setups) · liquidity_break = resting stops (break or sweep-reclaim, never a blind fade) · react_zone = first-touch reaction reference (reject/hold evidence) · target_only = take-profit / invalid reference only, NEVER an entry trigger · pivot = the auction's fulcrum (bias flips measured against it).
+"
+planner-132-actual.txt,159,F,"
+"
+planner-132-actual.txt,160,F,"bias_ctx: price 29503.75 · 57.3 vs VWAP 29446.49 · -93.5 vs PDC 29597.25 · inside value area (29327.62–29720.00) · nearest magnet VWAP−1σ (+30.2) · nearest liquidity ONL (-22.2)
+"
+planner-132-actual.txt,161,F,"
+"
+planner-132-actual.txt,162,F,"## Structure (1 line/TF)
+"
+planner-132-actual.txt,163,F,"  D: unavailable
+"
+planner-132-actual.txt,164,F,"  4h: unavailable
+"
+planner-132-actual.txt,165,F,"  1h: TRENDING_UP (HH 29720.00 @08:00 CT)
+"
+planner-132-actual.txt,166,F,"  15m: TRENDING_DOWN (LH 29692.00 @09:00 CT)
+"
+planner-132-actual.txt,167,F,"  5m: RANGING (LL 29491.00 @10:05 CT)
+"
+planner-132-actual.txt,168,F,"  last event: SWEEP-down 5m @10:25 CT
+"
+planner-132-actual.txt,169,F,"
+"
+planner-132-actual.txt,170,I,"## HTF zones (nearest first — confluence references, NEVER standalone triggers)
+"
+planner-132-actual.txt,171,F,"  29503.38  OB(bear)·4h    grade C  -0.4 (HTF zone)
+"
+planner-132-actual.txt,172,F,"  29863.50  OB(bull)·4h    grade C  +359.8 (HTF zone)
+"
+planner-132-actual.txt,173,F,"  29927.12  OB(bear)·4h    grade C  +423.4 (HTF zone)
+"
+planner-132-actual.txt,174,F,"  29947.75  OB(bull)·4h    grade C  +444.0 (HTF zone)
+"
+planner-132-actual.txt,175,F,"
+"
+planner-132-actual.txt,176,F,"## Calendar (this session's window — times CT)
+"
+planner-132-actual.txt,177,F,  07:30 USD T1 — Average Hourly Earnings m/m
+planner-132-actual.txt,177,I," (HARD no-trade blackout — the machine writes and enforces it; stand aside around it)
+"
+planner-132-actual.txt,178,F,  07:30 USD T1 — Non-Farm Employment Change
+planner-132-actual.txt,178,I," (HARD no-trade blackout — the machine writes and enforces it; stand aside around it)
+"
+planner-132-actual.txt,179,F,  07:30 USD T1 — Unemployment Rate
+planner-132-actual.txt,179,I," (HARD no-trade blackout — the machine writes and enforces it; stand aside around it)
+"
+planner-132-actual.txt,180,F,"
+"
+planner-132-actual.txt,181,F,"## Recent context (digest chain)
+"
+planner-132-actual.txt,182,F,"  LONDON 2026-09-04 — —
+"
+planner-132-actual.txt,183,F,"0 entries · realized +0.0
+"
+planner-132-actual.txt,184,F,"outcome: flat
+"
+planner-132-actual.txt,185,F,"  NY 2026-09-04 — —
+"
+planner-132-actual.txt,186,F,"0 entries · realized +0.0
+"
+planner-132-actual.txt,187,F,"outcome: flat
+"
+planner-132-actual.txt,188,F,"  ASIA 2026-09-04 — —
+"
+planner-132-actual.txt,189,F,"0 entries · realized +0.0
+"
+planner-132-actual.txt,190,F,"outcome: flat
+"
+planner-132-actual.txt,191,F,"  2026-09-03 (daily) — —
+"
+planner-132-actual.txt,192,F,"3 session(s), 1 entries · realized -140.0
+"
+planner-132-actual.txt,193,F,"outcome: red
+"
+planner-132-actual.txt,194,F,"learning: avg MAE 23.2 · avg MFE 24.7 (n=20 of 20) · adherence map[A:5 B:4 C:3 D:7 F:1] · plan v[2 5 3 3 7 5 3 6 4 3 2 6 4 4 3 3]
+"
+planner-132-actual.txt,195,F,"errors today: 1 (types: no_balance_frame), decisions lost: 0
+"
+planner-132-actual.txt,196,F,"errors today: 1 (types: no_balance_frame), decisions lost: 0
+"
+planner-132-actual.txt,197,F,"  2026-09-02 (daily) — —
+"
+planner-132-actual.txt,198,F,"3 session(s), 4 entries · realized -381.5
+"
+planner-132-actual.txt,199,F,"outcome: red
+"
+planner-132-actual.txt,200,F,"learning: avg MAE 20.6 · avg MFE 23.4 · adherence map[A:4 B:4 C:3 D:7 F:2] · plan v[5 3 3 7 5 3 6 4 3 2 6 4 4 3 3]
+"
+planner-132-actual.txt,201,F,"errors today: 145 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-actual.txt,202,F,"errors today: 145 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-actual.txt,203,F,"  2026-09-01 (daily) — —
+"
+planner-132-actual.txt,204,F,"3 session(s), 6 entries · realized +212.0
+"
+planner-132-actual.txt,205,F,"outcome: green
+"
+planner-132-actual.txt,206,F,"learning: avg MAE 13.4 · avg MFE 28.1 · adherence map[A:3 B:4 C:4 D:7 F:2] · plan v[3 4 3 2 6 4 4 3 3 5 1 6 12]
+"
+planner-132-actual.txt,207,F,"errors today: 234 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-actual.txt,208,F,"errors today: 234 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-actual.txt,209,F,"  2026-08-31 (daily) — —
+"
+planner-132-actual.txt,210,F,"  2026-08-28 (daily) — —
+"
+planner-132-actual.txt,211,F,"  2026-08-27 (daily) — —
+"
+planner-132-actual.txt,212,F,"  2026-08-26 (daily) — —
+"
+planner-132-actual.txt,213,F,"
+"
+planner-132-actual.txt,214,I,"## Prior plan invalidation (MANDATORY context)
+"
+planner-132-actual.txt,215,F,"  level event: seated OB(bull)·4h invalidated: close 29540.25 below 29863.50 (noise 8.37)
+"
+planner-132-actual.txt,216,F,"
+"
+planner-132-actual.txt,217,I,"## Prior plan levels (continuity — carry over or re-anchor by price, do not silently drop the set)
+"
+planner-132-actual.txt,218,F,"- 29863.50 OB(bull)·4h
+"
+planner-132-actual.txt,219,F,"- 29720.00 ONH
+"
+planner-132-actual.txt,220,F,"- 29657.38 Supply·1h (HTF)
+"
+planner-132-actual.txt,221,F,"- 29635.00 OR-H
+"
+planner-132-actual.txt,222,F,"- 29601.00 PDH
+"
+planner-132-actual.txt,223,F,"- 29597.25 PDC
+"
+planner-132-actual.txt,224,F,"- 29591.02 VWAP
+"
+planner-132-actual.txt,225,F,"- 29553.75 OR-L
+"
+planner-132-actual.txt,226,F,"- 29503.38 OB(bear)·4h
+"
+planner-132-actual.txt,227,F,"- 29481.50 ONL
+"
+planner-132-actual.txt,228,F,"
+"
+planner-132-actual.txt,229,I,"## Anchor roles (week evidence, advisory)
+"
+planner-132-actual.txt,230,I,"  ONH/ONL = LIQUIDITY/BREAKOUT references — broken intraday ~94% of days (2,827-day NQ sample). Fade ONLY on a confirmed sweep-reclaim (wick through + close back inside on the decision TF). Otherwise treat them as targets / breakout-retest anchors, never fade walls.
+"
+planner-132-actual.txt,231,I,"
+"
+planner-132-actual.txt,232,I,"## BIAS-TREE (machine branches — your reasoning MUST state the branch you took, e.g. ""bias-tree: inside-day long LOW"")
+"
+planner-132-actual.txt,233,I,"  1. close > PDH → bull-continuation, conviction HIGH
+"
+planner-132-actual.txt,234,I,"  2. sweep of PDH + close back inside → bear, conviction MEDIUM  (mirror: sweep PDL + close inside → bull MEDIUM)
+"
+planner-132-actual.txt,235,I,"  3. inside the day (between PDH/PDL) → direction of close vs PDC (prior close), conviction LOW
+"
+planner-132-actual.txt,236,I,"  4. closed OUTSIDE the prior day's range but now inside → NO bias (write neutral; trade the structure, not a thesis)
+"
+planner-132-actual.txt,237,I,"  5. premium/discount: longs ONLY below the 50% mark of the dealing range, shorts ONLY above it
+"
+planner-132-actual.txt,238,I,"  6. draw-on-liquidity: the runner target is the DRAW — the nearest opposing liquidity pool beyond the first target
+"
+planner-132-actual.txt,239,F,"  computed: PDH 29601.00 · PDL 29075.00 · PDC 29597.25 · dealing range 29075.00–29601.00 · price at 82% of the range (PREMIUM — longs disallowed by branch 5) · facts match branch 3 (inside day; close short PDC → short LOW) · draw/liquidity: ONL (-22.2)
+"
+planner-132-actual.txt,240,F,"
+"
+planner-132-actual.txt,241,F,bias: AI yours · tree short · regime up
+planner-132-actual.txt,241,I," — labels only, no MUST on either
+"
+planner-132-actual.txt,242,F,"
+"
+planner-132-actual.txt,243,I,"## Priority setup — THE CHAIN (A2, week evidence, advisory)
+"
+planner-132-actual.txt,244,I,"  The A-setup: sweep of a pool → displacement → FVG retrace at a Tier-1/fresh-zone origin, inside a killzone. fvg_entry scenarios SHOULD declare ""chain_after"": ""S#"" naming the sweep_reclaim that swept the origin pool. entry_mode=ce is the DEFAULT; edge only for A-grade HTF-confluent origins. Stop beyond the sweep extreme; T1 = first opposing pool; the runner = the draw. Citation: raw-FVG carries no standalone edge (40k-sample null) — the edge is conditional on the sweep→displacement chain.
+"
+planner-132-actual.txt,245,I,"
+"
+planner-132-actual.txt,246,I,"## No-trade gates (the machine enforces the windows below; the rest are yours to weigh — skip the day if they stack up)
+"
+planner-132-actual.txt,247,I,"  - balance-day (open inside prior value area AND VAs overlap) → edges-only, or skip
+"
+planner-132-actual.txt,248,I,"  - opening gap >1.2×ATR or open outside the prior range → NEVER fade; the gap is a target
+"
+planner-132-actual.txt,249,I,"  - no A/B zone in reach AND no pool swept by 09:30 CT → declare the skip in the plan
+"
+planner-132-actual.txt,250,I,"  - lunch 12:00–13:30 CT: no new entries (hard-gated — entries inside it are refused)
+"
+planner-132-actual.txt,251,I,"  - Tier-1 news → stand aside until a fresh post-news swing prints
+"
+planner-132-actual.txt,252,I,"
+"
+planner-132-actual.txt,253,I,"## Killzone weighting (advisory)
+"
+planner-132-actual.txt,254,I,"  NY AM 07:30–10:00 CT is the primary window; 09:00–10:00 CT is the premium FVG window; mind the macro minutes. Conviction: down on Monday, up Thursday/Friday.
+"
+planner-132-actual.txt,255,I,"
+"
+planner-132-actual.txt,256,I,"## STOP-DOING (week evidence, advisory)
+"
+planner-132-actual.txt,257,I,"  acceptance entries WITHOUT a prior sweep + displacement are 0% win evidence — skip them (A5).
+"
+planner-132-actual.txt,258,I,"
+"
+planner-132-actual.txt,259,I,"## OUTPUT — one JSON object, reasoning FIRST, no prose outside it
+"
+planner-132-actual.txt,260,S,"{
+"
+planner-132-actual.txt,261,S,"  ""reasoning"": ""<your read: what the auction is doing and why this plan — ≤200 words, decision-focused>"",
+"
+planner-132-actual.txt,262,S,"  ""bias"": {""direction"": ""long|short|neutral"", ""conviction"": ""high|medium|low"", ""flip_condition"": ""<explicit>""},
+"
+planner-132-actual.txt,263,S,"  ""levels"": [{""price"": <n>, ""label"": ""<PDH|ONH|nPOC…>"", ""grade"": ""A|B|C"", ""instruction"": ""<verb>""}],  // max 12, MUST include ≥3 below AND ≥3 above the current price
+"
+planner-132-actual.txt,264,S,"  ""scenarios"": [{""id"": ""S1"", ""trigger"": ""<setup>"", ""condition"": ""reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue"", ""direction"": ""long|short"", ""target_chain"": [<n>,…], ""invalid"": ""<line>"", ""quality"": ""A+|A|B|C"", ""chain_after"": ""<S# of the sweep_reclaim this fvg_entry follows, or omit>"", ""confirm"": {""rule"": ""touch|1x5m_close|2x5m_close|1m_mss|time_hold"", ""ref_price"": <n>, ""side"": ""above|below""}, ""confirm2"": {""rule"": ""<leg 2 rule>"", ""ref_price"": <n>, ""side"": ""above|below""} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), ""fvg"": {""fvg_lo"": <n>, ""fvg_hi"": <n>, ""entry_mode"": ""edge|ce"", ""displacement_atr"": <n>, ""origin_level"": ""<label>"", ""direction"": ""long|short""}, ""breakdown"": {""level"": <n>, ""level_label"": ""<label>"", ""entry_mode"": ""pullback|immediate""} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \""none — no break\"" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), ""arm"": {""enabled"": true, ""entry"": <n>, ""stop"": <n>, ""target"": <n>, ""wait_confirm"": true, ""legs"": [{""entry"": <n>, ""stop"": <n>, ""target"": <n>, ""size"": 1, ""wait_confirm"": false, ""rule"": ""<rule>""}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..5 — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition==""fvg_entry"" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on fvg_entry|reject|breakdown_continue|breakup_continue (sweep_reclaim arms only via wait_confirm; breakout_retest|reclaim|hold|acceptance NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules
+"
+planner-132-actual.txt,265,S,"  ""no_trade"": [""<your own sit-out conditions, or omit>""],
+"
+planner-132-actual.txt,266,S,"  ""death_condition"": ""<the single line that invalidates this whole plan>"",
+"
+planner-132-actual.txt,267,S,"  ""death"": {""price"": <level>, ""side"": ""below|above"", ""rule"": ""2x5m|5m_close""},
+"
+planner-132-actual.txt,268,S,"  ""flip"": {""price"": <level>, ""side"": ""below|above"", ""rule"": ""2x5m|5m_close"", ""flip_to"": ""long|short""},  // NOTE: death/flip rules use their OWN vocabulary (2x5m | 5m_close) — NEVER the confirm enum; do not move a token between the two
+"
+planner-132-actual.txt,269,S,"  ""day_type"": ""trend|balance|<optional>""
+"
+planner-132-actual.txt,270,S,"}
+"
+planner-132-actual.txt,271,I,"Rules: levels chosen ONLY from the ranked table above — plus the HTF zones section, where you MUST include at least ONE HTF zone row in your levels as a confluence reference, never as a standalone trigger; levels MUST be at least 3 points apart — near-duplicates are merged by the system; S/D & FVG are confluence, never standalone. Copy the EXACT label from the table row for the price you choose — never re-label a table level as a different anchor (a zone price relabeled 'PDH/PDL/PDC' is a phantom level and is REJECTED at write). Quality: A+ = highest-conviction setup, A = strong, B = workable, C = machine-demoted (trigger level consumed at write — G5) — use C honestly for a demoted setup, never as a default. The scenario MIX must follow the regime + day_type: a trend-down day gets breakdown/pullback-short plays, a trend-up day the reverse, balance days get two-sided plays — do NOT default to 2 longs + 1 rally-rejection short on every day. If price sits BELOW PDL the plan MUST include a SHORT-direction scenario (ANY legal condition — reject, breakdown_continue, acceptance, sweep_reclaim, hold, reclaim); ABOVE PDH, a LONG-direction scenario. Pick the condition the TAPE supports: if a breakdown level is listed as VOID above, author a different condition there. A1: your reasoning MUST open by naming the bias-tree branch you took (e.g. ""bias-tree: inside-day long LOW""), then argue from it. A2: an fvg_entry SHOULD chain after a sweep_reclaim (chain_after: S#) — bare gaps at non-A/B origins get a WARN at write, not a reject. A2b (machine grounding, 2026-08-27): author an fvg_entry scenario ONLY from the ## FRESH FVGs list above — copy its direction and lo–hi EXACTLY. If the list is empty, do NOT author any fvg_entry (invented/stale gaps are REJECTED at write). A2c (FVG demand, 2026-08-28): when ## FRESH FVGs is NON-empty and at least one candidate's direction agrees with your bias, you SHOULD author an fvg_entry from that candidate; if you decide not to, state the reason in ONE line in your reasoning (e.g. 'no fvg_entry: nearest fresh gap is 30pt away — outside my reach'). death.flip objects are MACHINE-EVALUATED — choose levels from your level list and a rule; they must match the prose lines. The flip and death MUST be DIFFERENT events: never the same level AND same rule for both (a flip at the same tick death fires is void). A short-biased plan's flip sits BELOW its death line or uses a stricter rule, so the flip can actually fire. Every scenario's confirm{} is MACHINE-EVALUATED the same way: rule + ref_price + side, and ref_price MUST equal a number written in that scenario's trigger/invalid prose. ENTRY LAW (per condition — the machine REJECTS violations by name): reject → touch ONLY (fade_requires_touch) with a structure stop ≥2 ticks beyond the level · fvg_entry → touch ONLY, entry price inside the FVG edge..CE band · sweep_reclaim → leg-1 touch at the sweep ref, leg-2 1m_mss (1x5m_close accepted as the leg-2 alternative) · reclaim → 1x5m_close or 1m_mss, never 2x5m_close · breakout_retest → touch at the retest + stop-entry fallback, 1x5m_close legal for the break leg · acceptance/hold → time_hold (price holds beyond ref for ACCEPT_HOLD_MIN minutes of 1m closes) with 1x5m_close as fallback · breakdown/breakup_continue → 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m (BD_MIN_CLOSES=1) or stop-entry — 2x5m_close is legal ONLY here (everywhere else: 2x5m_reserved). Default confirm = 1x5m_close (single close). target_chain is GUIDANCE for the executor AI (which sets the actual take_profit) — it is validated for reachability at write time but never enforced at execution (D2 ruling). ARM SPLIT vs ARM SINGLE (class 38 — the validator refuses every other shape): legs[] are the sweep_reclaim SPLIT contract and nothing else — EXACTLY 2 legs, confirm=touch at the sweep ref, leg 1 rests there (wait_confirm false) and leg 2 chains (wait_confirm true) on confirm2 = 1m_mss or 1x5m_close with leg 2's rule EQUAL to confirm2.rule, and the top-level entry/stop/target mirror leg 1. EVERY other condition — breakdown_continue, breakup_continue, reject, fvg_entry — must arm SINGLE: arm{} with wait_confirm:true and no legs. A breakdown/breakup arm additionally needs breakdown{} with entry_mode=pullback. ARMED ORDERS (the resting order IS the fast path — prefer it over a 2-minute debate at the touch). ARMS FOLLOW THE BIAS: with the decision path closed, a RESTING ORDER IS THE ONLY WAY INTO THE MARKET — a scenario with no arm cannot trade, however well argued. Every scenario in the plan's bias direction that has a concrete trigger price MUST carry an arm. A long plan with no long arm is invalid; a short plan with no short arm is invalid, for the same reason and in the same words. If you cannot arm your own bias direction, say so in reasoning and state a NEUTRAL bias rather than arguing for a direction you have left no way to take. WHICH CONDITIONS CAN BE ARMED — ARMABLE + LIVE (these are the only conditions an arm can rest on): breakdown_continue→limit · breakup_continue→limit · reclaim→stop_entry · reject→limit · sweep_reclaim→limit. armable but SHADOWED — do not arm these: fvg_entry. NOT armable at all: acceptance, breakout_retest, hold. ENTRY TYPE FOLLOWS THE CONDITION (the machine derives it and REFUSES a contradiction): a play that rests AT a price is a limit (reject→limit, fvg_entry→limit, sweep_reclaim→limit); a play that is only valid once price travels BEYOND its trigger is a stop entry (reclaim→stop_entry — a BUY STOP above the reclaim level for a long, a SELL STOP below it for a short). A waterfall (breakup_continue→limit / breakdown_continue→limit) rests as a PULLBACK limit AT the broken level and chains on confirm leg 1 — do not author a stop entry for it. Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target−entry| ÷ |stop−entry| must be ≥ 2.0 (ARM_MIN_RR) AND the stop distance must be ≥ 1.0× the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). Condition×session guidance (week evidence): reject-based setups are best in NY RTH (75% win, +665 this week); acceptance needs a clear displacement or skip (0% win this week); sweep_reclaim requires the reclaim CLOSE on the decision TF, never the wick alone (0% win this week). WATERFALL PLAY (F1): author breakdown_continue|breakup_continue when the tape shows one-sided delivery, a >1.2×ATR gap-and-go, or a waterfall after a failed rally — the momentum-follow class. breakdown{} = broken level + entry_mode; confirm = leg 1 (breakdown), confirm2 = leg 2 (failed retest). entry_mode=immediate is AI-path ONLY (no arm; the machine rejects immediate arms): the market entry fires on the CONFIRMING close (BD_MIN_CLOSES, default 1) and runs the FULL gate chain (min-SL ≥ 1.0×ATR5m, R:R ≥ min_risk_reward_ratio, min-conf, HTF veto) — CHOOSE immediate for no-retest waterfalls (one-sided delivery, displacement EXPANDING, price running away from the level): SL beyond the pullback extreme, target at the next liquidity pool. entry_mode=pullback is the ARM path (resting limit AT the broken level, chains on leg 1 — the pullback-that-fails FILLS it) — CHOOSE pullback when a retest is likely. NOISE FILTER (≤5): at most 5 of your included level rows may be line-levels clustered within 3 points of each other — keep the strongest of any such cluster, never a crowd. FVG ENTRY (fvg_entry): author when displacement off a Tier-1 level (VWAP/POC/PDH/PDL/ON/IB/fresh S/D) leaves a FRESH gap toward the trade direction · prefer the FIRST retrace (the freshness ladder applies to the gap as a zone) · entry_mode=ce for gaps > 20pts, edge for tighter · SL beyond the DISTAL edge · targets chain to the next liquidity (EQH/EQL, ON, PDH/PDL). Citations: NQ gap sweet spot 20–80pts; 1h+ fill ~70–80%; displacement floor per MSS research. no_trade: the machine enforces the session windows and T1 blackouts regardless; do not list them — no_trade is for your OWN sit-out conditions, or omit it. A T2 caution event is NEVER added to no_trade and never stops entries. Respect the no-trade windows. If you cannot form a credible plan, say so in reasoning and output a neutral/no-trade plan. Candles are ground truth for structure; ranked levels and tags are summaries. On conflict, trust the candles and say so in the scenario rationale. Weekly guidance (soft law): counter-weekly scenarios are allowed but must state their justification (an HTF level or a sweep-reclaim of the draw); target chains toward the draw are preferred. The weekly bias never gates your plan.
+"
+planner-132-actual.txt,272,F,"
+"
+planner-132-actual.txt,273,F,"
+"
+planner-132-actual.txt,274,I,"## CORRECTIONS FROM THIS READ (repeated — these override the rules above)
+"
+planner-132-actual.txt,275,I,"  1. S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)
+"
+planner-132-actual.txt,276,I,"  2. S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+"
+planner-132-actual.txt,277,I,"Fix ALL of the above; keep the rest structurally identical.
+"
+planner-132-actual.txt,278,I,"Valid conditions: [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] (use exactly ONE token from this list; do NOT combine condition names)."
+planner-132-current-contract-replay.txt,1,I,"## CORRECTIONS FROM THIS READ — read these FIRST
+"
+planner-132-current-contract-replay.txt,2,I,"The standing rules below still apply EXCEPT where this correction overrides them.
+"
+planner-132-current-contract-replay.txt,3,I,"This read has already been rejected 2 times, for 2 DISTINCT defects. Avoid ALL of them, not only the last:
+"
+planner-132-current-contract-replay.txt,4,I,"  1. S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)
+"
+planner-132-current-contract-replay.txt,5,I,"  2. S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+"
+planner-132-current-contract-replay.txt,6,I,"
+"
+planner-132-current-contract-replay.txt,7,I,"Valid conditions: [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] (use exactly ONE token from this list; do NOT combine condition names).
+"
+planner-132-current-contract-replay.txt,8,I,"
+"
+planner-132-current-contract-replay.txt,9,I,"# DAY-PLAN READER — CME MNQ futures
+"
+planner-132-current-contract-replay.txt,10,I,"You are a disciplined pro reading the market ONCE, carefully. Write ONE structured day plan for this session. Facts below are Go-computed; your job is JUDGMENT, not re-deriving the map.
+"
+planner-132-current-contract-replay.txt,11,F,"
+"
+planner-132-current-contract-replay.txt,12,F,"## Session
+"
+planner-132-current-contract-replay.txt,13,F,"trade_date 2026-09-04 · session NY · NY scheduled read (stored+cached data) · price 29503.75 · dATR 510.0
+"
+planner-132-current-contract-replay.txt,14,F,clock 10:28 CT (15:28 UTC)
+planner-132-current-contract-replay.txt,14,I," — EVERY time in this prompt is CT (America/Chicago): session windows, read/flat times and the lunch no-trade (12:00–13:30 CT) are CT wall-clock. Never apply these numbers to a UTC clock.
+"
+planner-132-current-contract-replay.txt,15,F,⚡ FAST TAPE — price has moved 89.0 pts (2.4×ATR5m) since the last plan write.
+planner-132-current-contract-replay.txt,15,I," Write the SHORTEST valid plan you can: fewer scenarios, tight prose. A fast market does not reward long deliberation.
+"
+planner-132-current-contract-replay.txt,16,F,"
+"
+planner-132-current-contract-replay.txt,17,F,"## Regime
+"
+planner-132-current-contract-replay.txt,18,F,"REGIME: trend D=up 1h=up · ATR14=455.8 (NORMAL p42) · RV=101%-of-normal · VIX=n/a · exp-range≈456pts · o/n-gap=+0.06×ATR
+"
+planner-132-current-contract-replay.txt,19,F,"
+"
+planner-132-current-contract-replay.txt,20,F,"## Candles (oldest→latest)
+"
+planner-132-current-contract-replay.txt,21,F,"### 15m (last 12)
+"
+planner-132-current-contract-replay.txt,22,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-current-contract-replay.txt,23,F,"09-04 07:30    29676.2500 29720.0000 29532.5000 29556.7500 67174.00    
+"
+planner-132-current-contract-replay.txt,24,F,"09-04 07:45    29557.2500 29557.7500 29502.0000 29546.5000 43401.00    
+"
+planner-132-current-contract-replay.txt,25,F,"09-04 08:00    29546.5000 29556.7500 29523.0000 29548.7500 26654.00    
+"
+planner-132-current-contract-replay.txt,26,F,"09-04 08:15    29548.5000 29591.7500 29547.0000 29588.2500 26919.00    
+"
+planner-132-current-contract-replay.txt,27,F,"09-04 08:30    29588.5000 29645.2500 29553.7500 29616.5000 142346.00   
+"
+planner-132-current-contract-replay.txt,28,F,"09-04 08:45    29615.7500 29692.0000 29577.5000 29691.2500 102308.00   
+"
+planner-132-current-contract-replay.txt,29,F,"09-04 09:00    29691.0000 29691.2500 29594.0000 29648.2500 98561.00    
+"
+planner-132-current-contract-replay.txt,30,F,"09-04 09:15    29648.2500 29649.7500 29564.0000 29595.7500 94209.00    
+"
+planner-132-current-contract-replay.txt,31,F,"09-04 09:30    29596.0000 29598.2500 29530.0000 29533.5000 80350.00    
+"
+planner-132-current-contract-replay.txt,32,F,"09-04 09:45    29533.0000 29544.2500 29498.5000 29520.7500 72899.00    
+"
+planner-132-current-contract-replay.txt,33,F,"09-04 10:00    29520.5000 29541.0000 29491.0000 29540.2500 62376.00    
+"
+planner-132-current-contract-replay.txt,34,F,"09-04 10:15    29541.0000 29543.5000 29483.2500 29503.7500 57097.00      <- current
+"
+planner-132-current-contract-replay.txt,35,F,"
+"
+planner-132-current-contract-replay.txt,36,F,"### 1h (last 12)
+"
+planner-132-current-contract-replay.txt,37,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-current-contract-replay.txt,38,F,"09-03 23:00    29571.0000 29601.0000 29556.2500 29597.2500 28301.00    
+"
+planner-132-current-contract-replay.txt,39,F,"09-04 00:00    29597.7500 29643.5000 29591.5000 29619.5000 38372.00    
+"
+planner-132-current-contract-replay.txt,40,F,"09-04 01:00    29620.0000 29644.2500 29573.7500 29576.0000 41498.00    
+"
+planner-132-current-contract-replay.txt,41,F,"09-04 02:00    29577.2500 29658.7500 29575.0000 29653.0000 35334.00    
+"
+planner-132-current-contract-replay.txt,42,F,"09-04 03:00    29653.7500 29673.0000 29634.7500 29658.5000 35616.00    
+"
+planner-132-current-contract-replay.txt,43,F,"09-04 04:00    29657.5000 29661.7500 29616.2500 29657.2500 24346.00    
+"
+planner-132-current-contract-replay.txt,44,F,"09-04 05:00    29656.7500 29698.5000 29654.2500 29681.0000 22374.00    
+"
+planner-132-current-contract-replay.txt,45,F,"09-04 06:00    29681.2500 29689.5000 29650.5000 29681.7500 26038.00    
+"
+planner-132-current-contract-replay.txt,46,F,"09-04 07:00    29682.2500 29720.0000 29502.0000 29546.5000 143899.00   
+"
+planner-132-current-contract-replay.txt,47,F,"09-04 08:00    29546.5000 29692.0000 29523.0000 29691.2500 298227.00   
+"
+planner-132-current-contract-replay.txt,48,F,"09-04 09:00    29691.0000 29691.2500 29498.5000 29520.7500 346019.00   
+"
+planner-132-current-contract-replay.txt,49,F,"09-04 10:00    29520.5000 29543.5000 29483.2500 29503.7500 119473.00     <- current
+"
+planner-132-current-contract-replay.txt,50,F,"
+"
+planner-132-current-contract-replay.txt,51,F,"### 4h (last 8)
+"
+planner-132-current-contract-replay.txt,52,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-current-contract-replay.txt,53,F,"09-03 03:00    29219.7500 29293.0000 29101.7500 29105.2500 178695.00   
+"
+planner-132-current-contract-replay.txt,54,F,"09-03 07:00    29105.2500 29543.7500 29104.0000 29538.2500 1149263.00  
+"
+planner-132-current-contract-replay.txt,55,F,"09-03 11:00    29538.7500 29585.0000 29476.0000 29531.0000 502432.00   
+"
+planner-132-current-contract-replay.txt,56,F,"09-03 15:00    29530.5000 29536.2500 29481.5000 29504.5000 70288.00    
+"
+planner-132-current-contract-replay.txt,57,F,"09-03 19:00    29503.7500 29579.5000 29491.0000 29570.2500 121352.00   
+"
+planner-132-current-contract-replay.txt,58,F,"09-03 23:00    29571.0000 29658.7500 29556.2500 29653.0000 143505.00   
+"
+planner-132-current-contract-replay.txt,59,F,"09-04 03:00    29653.7500 29698.5000 29616.2500 29681.7500 108374.00   
+"
+planner-132-current-contract-replay.txt,60,F,"09-04 07:00    29682.2500 29720.0000 29483.2500 29503.7500 907618.00     <- current
+"
+planner-132-current-contract-replay.txt,61,F,"
+"
+planner-132-current-contract-replay.txt,62,F,"### daily session candles (last 8)
+"
+planner-132-current-contract-replay.txt,63,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+planner-132-current-contract-replay.txt,64,F,"09-02 22:11    29198.5000 29585.0000 29075.0000 29502.7500 2113311.00  
+"
+planner-132-current-contract-replay.txt,65,F,"09-03 17:00    29500.0000 29720.0000 29481.5000 29503.7500 1318615.00    <- current
+"
+planner-132-current-contract-replay.txt,66,F,"
+"
+planner-132-current-contract-replay.txt,67,F,"
+"
+planner-132-current-contract-replay.txt,68,F,"## Weekly Context
+"
+planner-132-current-contract-replay.txt,69,F,"WEEKLY: refs only — PWH 29811.75 · PWL 28927.25
+"
+planner-132-current-contract-replay.txt,70,F,"
+"
+planner-132-current-contract-replay.txt,71,F,"## Indicators (executor mirror — your ai_config toggles, computed values)
+"
+planner-132-current-contract-replay.txt,72,F,"### 1h
+"
+planner-132-current-contract-replay.txt,73,F,"EMA50: [29264.2964, 29273.6475, 29282.8574, 29291.5492, 29300.9101, 29310.5901, 29320.5571, 29330.3490, 29340.8157, 29351.7445, 29360.5388, 29372.0079, 29383.2429, 29393.9883, 29405.2436, 29416.0870, 29421.2012, 29431.7914, 29435.2800, 29437.9651]
+"
+planner-132-current-contract-replay.txt,74,F,"EMA200: [29331.2711, 29332.9773, 29334.7238, 29336.4131, 29338.3419, 29340.4255, 29342.6576, 29344.9222, 29347.4329, 29350.1401, 29352.3874, 29355.3786, 29358.3947, 29361.3684, 29364.5488, 29367.7051, 29369.4841, 29372.6858, 29374.1590, 29375.4485]
+"
+planner-132-current-contract-replay.txt,75,F,"RSI14: [69.8168, 66.5953, 66.9298, 66.4315, 68.0791, 69.1861, 70.2648, 70.6231, 72.3825, 73.7764, 66.6899, 71.8452, 72.1764, 71.9692, 73.5246, 73.5745, 53.8692, 64.7504, 49.8383, 48.6356]
+"
+planner-132-current-contract-replay.txt,76,F,"ATR14: 84.3005
+"
+planner-132-current-contract-replay.txt,77,F,"### 4h
+"
+planner-132-current-contract-replay.txt,78,F,"EMA50: [29453.4690, 29441.1859, 29429.3355, 29415.4302, 29401.9427, 29385.1312, 29372.4790, 29364.1269, 29355.4553, 29346.8982, 29340.6963, 29332.7082, 29332.6902, 29340.9573, 29347.3021, 29355.1628, 29365.5290, 29376.9690, 29389.2938, 29393.7822]
+"
+planner-132-current-contract-replay.txt,79,F,"EMA200: [29229.2092, 29228.3240, 29227.4352, 29225.9160, 29224.3795, 29221.8807, 29220.2948, 29219.6899, 29218.9268, 29218.1141, 29217.8219, 29217.0177, 29218.1643, 29221.4015, 29224.2010, 29227.4204, 29231.3217, 29235.5598, 29240.0940, 29242.7174]
+"
+planner-132-current-contract-replay.txt,80,F,"RSI14: [35.9581, 37.8289, 37.7861, 35.5612, 35.4475, 32.1055, 37.8387, 43.4298, 42.7258, 42.4675, 45.6380, 43.0695, 53.6651, 61.9224, 59.7118, 61.3526, 63.8785, 65.1685, 66.3345, 55.3332]
+"
+planner-132-current-contract-replay.txt,81,F,"ATR14: 164.5878
+"
+planner-132-current-contract-replay.txt,82,F,"### 1d
+"
+planner-132-current-contract-replay.txt,83,F,"EMA50: [29178.1025, 29195.6671, 29221.4547, 29259.3780, 29293.9809, 29325.4326, 29335.6509, 29342.5960, 29340.9452, 29342.7806, 29333.4853, 29331.2604, 29329.6227, 29343.9807, 29349.7756, 29356.1765, 29347.1304, 29340.8213, 29348.0342, 29354.1407]
+"
+planner-132-current-contract-replay.txt,84,F,"EMA200: [27218.0028, 27241.9630, 27267.9459, 27297.0062, 27325.3121, 27352.8811, 27375.1012, 27396.3713, 27415.3179, 27434.9441, 27451.5690, 27469.7300, 27487.8372, 27509.8065, 27529.5273, 27549.2633, 27564.9473, 27581.0797, 27600.4197, 27619.3583]
+"
+planner-132-current-contract-replay.txt,85,F,"RSI14: [55.5064, 54.2614, 56.4168, 59.4525, 58.8371, 58.2021, 51.5264, 50.6282, 48.0163, 49.1770, 45.6307, 48.0759, 48.2627, 53.9488, 50.9223, 51.2292, 45.6258, 46.6118, 51.8506, 51.5129]
+"
+planner-132-current-contract-replay.txt,86,F,"ATR14: 455.8262
+"
+planner-132-current-contract-replay.txt,87,F,"### 15m
+"
+planner-132-current-contract-replay.txt,88,F,"EMA50: [29587.0399, 29590.7246, 29593.4315, 29596.1694, 29599.1236, 29602.3638, 29603.9378, 29606.8422, 29604.8778, 29602.5885, 29600.4772, 29599.9977, 29600.6448, 29604.1980, 29605.9255, 29605.5265, 29602.7019, 29599.4881, 29597.1650, 29593.5017]
+"
+planner-132-current-contract-replay.txt,89,F,"EMA200: [29308.1125, 29311.8229, 29315.2848, 29318.7472, 29322.2572, 29325.8342, 29328.9851, 29332.4579, 29334.6896, 29336.7972, 29338.9062, 29341.3872, 29344.1247, 29347.5787, 29350.5704, 29353.0100, 29354.8059, 29356.4571, 29358.2859, 29359.7333]
+"
+planner-132-current-contract-replay.txt,90,F,"RSI14: [65.9239, 66.1879, 57.9667, 58.8728, 61.0066, 63.5377, 50.1210, 58.6299, 36.0252, 34.8036, 35.3220, 43.7753, 48.9175, 59.4781, 52.7254, 45.8770, 39.3504, 38.1532, 41.1045, 37.4975]
+"
+planner-132-current-contract-replay.txt,91,F,"ATR14: 55.8040
+"
+planner-132-current-contract-replay.txt,92,F,"### 3m
+"
+planner-132-current-contract-replay.txt,93,F,"EMA50: [29616.4176, 29614.6561, 29613.2382, 29611.6505, 29608.5857, 29605.6510, 29602.4294, 29599.2165, 29595.3452, 29592.4199, 29589.2172, 29586.1597, 29583.8005, 29581.4848, 29579.8677, 29577.4905, 29574.2752, 29571.4213, 29568.6401, 29566.0954]
+"
+planner-132-current-contract-replay.txt,94,F,"EMA200: [29629.8439, 29629.2633, 29628.7582, 29628.2009, 29627.2586, 29626.3282, 29625.3050, 29624.2622, 29623.0307, 29622.0130, 29620.9059, 29619.8148, 29618.8813, 29617.9447, 29617.1716, 29616.1973, 29614.9963, 29613.8670, 29612.7390, 29611.6545]
+"
+planner-132-current-contract-replay.txt,95,F,"RSI14: [42.1821, 41.3228, 43.0713, 41.9651, 35.3004, 35.3708, 33.7493, 33.2685, 30.1819, 36.5961, 34.8914, 35.0543, 39.8365, 39.5706, 44.5164, 39.7675, 35.1948, 37.1606, 36.9594, 38.1320]
+"
+planner-132-current-contract-replay.txt,96,F,"ATR14: 27.3621
+"
+planner-132-current-contract-replay.txt,97,F,"### 5m
+"
+planner-132-current-contract-replay.txt,98,F,"EMA50: [29620.3601, 29623.1401, 29624.9189, 29625.6770, 29626.5622, 29625.5696, 29624.4100, 29623.2861, 29620.7650, 29619.4801, 29616.1084, 29611.9865, 29608.2517, 29604.8203, 29601.3469, 29598.3921, 29596.1121, 29592.3920, 29588.8766, 29585.5383]
+"
+planner-132-current-contract-replay.txt,99,F,"EMA200: [29587.2895, 29588.3239, 29589.1217, 29589.6702, 29590.2531, 29590.3625, 29590.4186, 29590.4717, 29590.1585, 29590.1371, 29589.5735, 29588.7917, 29588.0748, 29587.4049, 29586.6969, 29586.0930, 29585.6368, 29584.7972, 29583.9808, 29583.1825]
+"
+planner-132-current-contract-replay.txt,100,F,"RSI14: [61.6319, 66.6102, 60.5043, 54.7437, 55.4964, 45.8478, 44.9085, 44.8614, 38.4700, 45.1151, 37.0229, 34.2885, 35.5976, 36.5446, 35.9050, 38.4200, 42.0021, 35.8549, 36.2414, 36.5160]
+"
+planner-132-current-contract-replay.txt,101,F,"ATR14: 36.3706
+"
+planner-132-current-contract-replay.txt,102,F,"
+"
+planner-132-current-contract-replay.txt,103,I,"## VOID breakdown levels (a close came back across since the break, THIS session day — the write-site validator REFUSES a waterfall play at these)
+"
+planner-132-current-contract-replay.txt,104,F,- CHOP (broken and reclaimed both ways this session): 29533.94 · 29553.75 · 29585.00 · 29597.25 · 29601.00 · 29635.00 (6 of 12 seated)
+planner-132-current-contract-replay.txt,104,I," — waterfall plays at these will be refused; prefer touch/fade plays there.
+"
+planner-132-current-contract-replay.txt,105,I,"- do NOT author breakdown_continue or breakup_continue at these prices. Any other condition is legal there.
+"
+planner-132-current-contract-replay.txt,106,F,"
+"
+planner-132-current-contract-replay.txt,107,F,"## Minimum stop distance this cycle
+"
+planner-132-current-contract-replay.txt,108,F,"54.6 pts (1.5×ATR5m 36.37, resolved)."
+planner-132-current-contract-replay.txt,108,I," Stops tighter than this are WIDENED by the executor before the R:R gate sees them — author stops AND targets consistent with it, or your R:R will not survive the widening.
+"
+planner-132-current-contract-replay.txt,109,F,"
+"
+planner-132-current-contract-replay.txt,110,F,"## Waterfall displacement floor this cycle
+"
+planner-132-current-contract-replay.txt,111,F,"36.4 pts (1.0×ATR5m 36.37, resolved)."
+planner-132-current-contract-replay.txt,111,I," A breakdown_continue / breakup_continue authored at a level whose MEASURED displacement is below this is REFUSED at write.
+"
+planner-132-current-contract-replay.txt,112,F,"
+"
+planner-132-current-contract-replay.txt,113,F,"## Measured displacement per level (floor 36.4 pts)
+"
+planner-132-current-contract-replay.txt,114,F,"  29075.00 PDL — 645.00 pts up · at or above the floor — authorable
+"
+planner-132-current-contract-replay.txt,115,F,"  29144.50 Demand·1h — 575.50 pts up · at or above the floor — authorable
+"
+planner-132-current-contract-replay.txt,116,F,"  29199.25 RTH-L — 520.75 pts up · at or above the floor — authorable
+"
+planner-132-current-contract-replay.txt,117,F,"  29481.50 ONL — 238.50 pts up · at or above the floor — authorable
+"
+planner-132-current-contract-replay.txt,118,F,"  29533.94 VWAP−1σ — none — no break
+"
+planner-132-current-contract-replay.txt,119,F,"  29553.75 OR-L — none — no break
+"
+planner-132-current-contract-replay.txt,120,F,"  29585.00 RTH-H — none — no break
+"
+planner-132-current-contract-replay.txt,121,F,"  29597.25 PDC — none — no break
+"
+planner-132-current-contract-replay.txt,122,F,"  29601.00 PDH — none — no break
+"
+planner-132-current-contract-replay.txt,123,F,"  29635.00 OR-H — none — no break
+"
+planner-132-current-contract-replay.txt,124,F,"  29720.00 ONH — 238.50 pts down · at or above the floor — authorable
+"
+planner-132-current-contract-replay.txt,125,F,"  29767.50 Supply·4h — 286.00 pts down · at or above the floor — authorable
+"
+planner-132-current-contract-replay.txt,126,F,"
+"
+planner-132-current-contract-replay.txt,127,I,"## Ranked levels (Go-graded; you never re-sort)
+"
+planner-132-current-contract-replay.txt,128,I,"## Consumed levels (already role-flipped — plan AROUND them; a re-test is a NEW setup)
+"
+planner-132-current-contract-replay.txt,129,F,"- 29481.50 ONL
+"
+planner-132-current-contract-replay.txt,130,F,"- 29533.94 VWAP−1σ
+"
+planner-132-current-contract-replay.txt,131,F,"- 29553.75 OR-L
+"
+planner-132-current-contract-replay.txt,132,F,"- 29585.00 RTH-H
+"
+planner-132-current-contract-replay.txt,133,F,"- 29597.25 PDC
+"
+planner-132-current-contract-replay.txt,134,F,"- 29601.00 PDH
+"
+planner-132-current-contract-replay.txt,135,F,"- 29635.00 OR-H
+"
+planner-132-current-contract-replay.txt,136,F,"- 29720.00 ONH
+"
+planner-132-current-contract-replay.txt,137,F,"- 29199.25 RTH-L
+"
+planner-132-current-contract-replay.txt,138,F,"- 29144.50 Demand·1h
+"
+planner-132-current-contract-replay.txt,139,F,"- 29075.00 PDL
+"
+planner-132-current-contract-replay.txt,140,F,"
+"
+planner-132-current-contract-replay.txt,141,I,"## FRESH FVGs (machine-computed candidates — author fvg_entry ONLY from this list; if empty, do NOT author any fvg_entry; if NON-empty and a candidate's direction agrees with your bias, an fvg_entry is EXPECTED unless you state why not in one line)
+"
+planner-132-current-contract-replay.txt,142,F,"(none fresh right now)
+"
+planner-132-current-contract-replay.txt,143,F,"
+"
+planner-132-current-contract-replay.txt,144,F,"  29481.50  ONL                  grade A  fresh    liquidity_break -22.2
+"
+planner-132-current-contract-replay.txt,145,F,"  29533.94  VWAP−1σ              grade A  fresh    magnet_meanrevert +30.2
+"
+planner-132-current-contract-replay.txt,146,F,"  29553.75  OR-L                 grade C  flipped  target_only     +50.0
+"
+planner-132-current-contract-replay.txt,147,F,"  29585.00  RTH-H                grade B  flipped  target_only     +81.2
+"
+planner-132-current-contract-replay.txt,148,F,"  29597.25  PDC                  grade B  flipped  target_only     +93.5
+"
+planner-132-current-contract-replay.txt,149,F,"  29601.00  PDH                  grade B  flipped  target_only     +97.2
+"
+planner-132-current-contract-replay.txt,150,F,"  29635.00  OR-H                 grade C  flipped  target_only     +131.2
+"
+planner-132-current-contract-replay.txt,151,F,"  29720.00  ONH                  grade A  fresh    liquidity_break +216.2
+"
+planner-132-current-contract-replay.txt,152,F,"  29767.50  Supply·4h (HTF)      grade A  fresh    react_zone      +263.8
+"
+planner-132-current-contract-replay.txt,153,F,"  29199.25  RTH-L                grade A  fresh    react_zone      -304.5
+"
+planner-132-current-contract-replay.txt,154,F,"  29144.50  Demand·1h (HTF)      grade A  fresh    react_zone      -359.2
+"
+planner-132-current-contract-replay.txt,155,F,"  29075.00  PDL                  grade A  fresh    react_zone      -428.8
+"
+planner-132-current-contract-replay.txt,156,F,"
+"
+planner-132-current-contract-replay.txt,157,I,"## Level roles (machine-assigned, 5-line playbook)
+"
+planner-132-current-contract-replay.txt,158,I,"role playbook: magnet_meanrevert = price gravitates back (fade/reversion setups) · liquidity_break = resting stops (break or sweep-reclaim, never a blind fade) · react_zone = first-touch reaction reference (reject/hold evidence) · target_only = take-profit / invalid reference only, NEVER an entry trigger · pivot = the auction's fulcrum (bias flips measured against it).
+"
+planner-132-current-contract-replay.txt,159,F,"
+"
+planner-132-current-contract-replay.txt,160,F,"bias_ctx: price 29503.75 · 57.3 vs VWAP 29446.49 · -93.5 vs PDC 29597.25 · inside value area (29327.62–29720.00) · nearest magnet VWAP−1σ (+30.2) · nearest liquidity ONL (-22.2)
+"
+planner-132-current-contract-replay.txt,161,F,"
+"
+planner-132-current-contract-replay.txt,162,F,"## Structure (1 line/TF)
+"
+planner-132-current-contract-replay.txt,163,F,"  D: unavailable
+"
+planner-132-current-contract-replay.txt,164,F,"  4h: unavailable
+"
+planner-132-current-contract-replay.txt,165,F,"  1h: TRENDING_UP (HH 29720.00 @08:00 CT)
+"
+planner-132-current-contract-replay.txt,166,F,"  15m: TRENDING_DOWN (LH 29692.00 @09:00 CT)
+"
+planner-132-current-contract-replay.txt,167,F,"  5m: RANGING (LL 29491.00 @10:05 CT)
+"
+planner-132-current-contract-replay.txt,168,F,"  last event: SWEEP-down 5m @10:25 CT
+"
+planner-132-current-contract-replay.txt,169,F,"
+"
+planner-132-current-contract-replay.txt,170,I,"## HTF zones (nearest first — confluence references, NEVER standalone triggers)
+"
+planner-132-current-contract-replay.txt,171,F,"  29503.38  OB(bear)·4h    grade C  -0.4 (HTF zone)
+"
+planner-132-current-contract-replay.txt,172,F,"  29863.50  OB(bull)·4h    grade C  +359.8 (HTF zone)
+"
+planner-132-current-contract-replay.txt,173,F,"  29927.12  OB(bear)·4h    grade C  +423.4 (HTF zone)
+"
+planner-132-current-contract-replay.txt,174,F,"  29947.75  OB(bull)·4h    grade C  +444.0 (HTF zone)
+"
+planner-132-current-contract-replay.txt,175,F,"
+"
+planner-132-current-contract-replay.txt,176,F,"## Calendar (this session's window — times CT)
+"
+planner-132-current-contract-replay.txt,177,F,  07:30 USD T1 — Average Hourly Earnings m/m
+planner-132-current-contract-replay.txt,177,I," (HARD no-trade blackout — the machine writes and enforces it; stand aside around it)
+"
+planner-132-current-contract-replay.txt,178,F,  07:30 USD T1 — Non-Farm Employment Change
+planner-132-current-contract-replay.txt,178,I," (HARD no-trade blackout — the machine writes and enforces it; stand aside around it)
+"
+planner-132-current-contract-replay.txt,179,F,  07:30 USD T1 — Unemployment Rate
+planner-132-current-contract-replay.txt,179,I," (HARD no-trade blackout — the machine writes and enforces it; stand aside around it)
+"
+planner-132-current-contract-replay.txt,180,F,"
+"
+planner-132-current-contract-replay.txt,181,F,"## Recent context (digest chain)
+"
+planner-132-current-contract-replay.txt,182,F,"  LONDON 2026-09-04 — —
+"
+planner-132-current-contract-replay.txt,183,F,"0 entries · realized +0.0
+"
+planner-132-current-contract-replay.txt,184,F,"outcome: flat
+"
+planner-132-current-contract-replay.txt,185,F,"  NY 2026-09-04 — —
+"
+planner-132-current-contract-replay.txt,186,F,"0 entries · realized +0.0
+"
+planner-132-current-contract-replay.txt,187,F,"outcome: flat
+"
+planner-132-current-contract-replay.txt,188,F,"  ASIA 2026-09-04 — —
+"
+planner-132-current-contract-replay.txt,189,F,"0 entries · realized +0.0
+"
+planner-132-current-contract-replay.txt,190,F,"outcome: flat
+"
+planner-132-current-contract-replay.txt,191,F,"  2026-09-03 (daily) — —
+"
+planner-132-current-contract-replay.txt,192,F,"3 session(s), 1 entries · realized -140.0
+"
+planner-132-current-contract-replay.txt,193,F,"outcome: red
+"
+planner-132-current-contract-replay.txt,194,F,"learning: avg MAE 23.2 · avg MFE 24.7 (n=20 of 20) · adherence map[A:5 B:4 C:3 D:7 F:1] · plan v[2 5 3 3 7 5 3 6 4 3 2 6 4 4 3 3]
+"
+planner-132-current-contract-replay.txt,195,F,"errors today: 1 (types: no_balance_frame), decisions lost: 0
+"
+planner-132-current-contract-replay.txt,196,F,"errors today: 1 (types: no_balance_frame), decisions lost: 0
+"
+planner-132-current-contract-replay.txt,197,F,"  2026-09-02 (daily) — —
+"
+planner-132-current-contract-replay.txt,198,F,"3 session(s), 4 entries · realized -381.5
+"
+planner-132-current-contract-replay.txt,199,F,"outcome: red
+"
+planner-132-current-contract-replay.txt,200,F,"learning: avg MAE 20.6 · avg MFE 23.4 · adherence map[A:4 B:4 C:3 D:7 F:2] · plan v[5 3 3 7 5 3 6 4 3 2 6 4 4 3 3]
+"
+planner-132-current-contract-replay.txt,201,F,"errors today: 145 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-current-contract-replay.txt,202,F,"errors today: 145 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-current-contract-replay.txt,203,F,"  2026-09-01 (daily) — —
+"
+planner-132-current-contract-replay.txt,204,F,"3 session(s), 6 entries · realized +212.0
+"
+planner-132-current-contract-replay.txt,205,F,"outcome: green
+"
+planner-132-current-contract-replay.txt,206,F,"learning: avg MAE 13.4 · avg MFE 28.1 · adherence map[A:3 B:4 C:4 D:7 F:2] · plan v[3 4 3 2 6 4 4 3 3 5 1 6 12]
+"
+planner-132-current-contract-replay.txt,207,F,"errors today: 234 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-current-contract-replay.txt,208,F,"errors today: 234 (types: guardrail_would_trip, no_balance_frame), decisions lost: 0
+"
+planner-132-current-contract-replay.txt,209,F,"  2026-08-31 (daily) — —
+"
+planner-132-current-contract-replay.txt,210,F,"  2026-08-28 (daily) — —
+"
+planner-132-current-contract-replay.txt,211,F,"  2026-08-27 (daily) — —
+"
+planner-132-current-contract-replay.txt,212,F,"  2026-08-26 (daily) — —
+"
+planner-132-current-contract-replay.txt,213,F,"
+"
+planner-132-current-contract-replay.txt,214,I,"## Prior plan invalidation (MANDATORY context)
+"
+planner-132-current-contract-replay.txt,215,F,"  level event: seated OB(bull)·4h invalidated: close 29540.25 below 29863.50 (noise 8.37)
+"
+planner-132-current-contract-replay.txt,216,F,"
+"
+planner-132-current-contract-replay.txt,217,I,"## Prior plan levels (continuity — carry over or re-anchor by price, do not silently drop the set)
+"
+planner-132-current-contract-replay.txt,218,F,"- 29863.50 OB(bull)·4h
+"
+planner-132-current-contract-replay.txt,219,F,"- 29720.00 ONH
+"
+planner-132-current-contract-replay.txt,220,F,"- 29657.38 Supply·1h (HTF)
+"
+planner-132-current-contract-replay.txt,221,F,"- 29635.00 OR-H
+"
+planner-132-current-contract-replay.txt,222,F,"- 29601.00 PDH
+"
+planner-132-current-contract-replay.txt,223,F,"- 29597.25 PDC
+"
+planner-132-current-contract-replay.txt,224,F,"- 29591.02 VWAP
+"
+planner-132-current-contract-replay.txt,225,F,"- 29553.75 OR-L
+"
+planner-132-current-contract-replay.txt,226,F,"- 29503.38 OB(bear)·4h
+"
+planner-132-current-contract-replay.txt,227,F,"- 29481.50 ONL
+"
+planner-132-current-contract-replay.txt,228,F,"
+"
+planner-132-current-contract-replay.txt,229,I,"## Anchor roles (week evidence, advisory)
+"
+planner-132-current-contract-replay.txt,230,I,"  ONH/ONL = LIQUIDITY/BREAKOUT references — broken intraday ~94% of days (2,827-day NQ sample). Fade ONLY on a confirmed sweep-reclaim (wick through + close back inside on the decision TF). Otherwise treat them as targets / breakout-retest anchors, never fade walls.
+"
+planner-132-current-contract-replay.txt,231,I,"
+"
+planner-132-current-contract-replay.txt,232,I,"## BIAS-TREE (machine branches — your reasoning MUST state the branch you took, e.g. ""bias-tree: inside-day long LOW"")
+"
+planner-132-current-contract-replay.txt,233,I,"  1. close > PDH → bull-continuation, conviction HIGH
+"
+planner-132-current-contract-replay.txt,234,I,"  2. sweep of PDH + close back inside → bear, conviction MEDIUM  (mirror: sweep PDL + close inside → bull MEDIUM)
+"
+planner-132-current-contract-replay.txt,235,I,"  3. inside the day (between PDH/PDL) → direction of close vs PDC (prior close), conviction LOW
+"
+planner-132-current-contract-replay.txt,236,I,"  4. closed OUTSIDE the prior day's range but now inside → NO bias (write neutral; trade the structure, not a thesis)
+"
+planner-132-current-contract-replay.txt,237,I,"  5. premium/discount: longs ONLY below the 50% mark of the dealing range, shorts ONLY above it
+"
+planner-132-current-contract-replay.txt,238,I,"  6. draw-on-liquidity: the runner target is the DRAW — the nearest opposing liquidity pool beyond the first target
+"
+planner-132-current-contract-replay.txt,239,F,"  computed: PDH 29601.00 · PDL 29075.00 · PDC 29597.25 · dealing range 29075.00–29601.00 · price at 82% of the range (PREMIUM — longs disallowed by branch 5) · facts match branch 3 (inside day; close short PDC → short LOW) · draw/liquidity: ONL (-22.2)
+"
+planner-132-current-contract-replay.txt,240,F,"
+"
+planner-132-current-contract-replay.txt,241,F,bias: AI yours · tree short · regime up
+planner-132-current-contract-replay.txt,241,I," — labels only, no MUST on either
+"
+planner-132-current-contract-replay.txt,242,F,"
+"
+planner-132-current-contract-replay.txt,243,I,"## Priority setup — THE CHAIN (A2, week evidence, advisory)
+"
+planner-132-current-contract-replay.txt,244,I,"  The A-setup: sweep of a pool → displacement → FVG retrace at a Tier-1/fresh-zone origin, inside a killzone. fvg_entry scenarios SHOULD declare ""chain_after"": ""S#"" naming the sweep_reclaim that swept the origin pool. entry_mode=ce is the DEFAULT; edge only for A-grade HTF-confluent origins. Stop beyond the sweep extreme; T1 = first opposing pool; the runner = the draw. Citation: raw-FVG carries no standalone edge (40k-sample null) — the edge is conditional on the sweep→displacement chain.
+"
+planner-132-current-contract-replay.txt,245,I,"
+"
+planner-132-current-contract-replay.txt,246,I,"## No-trade gates (the machine enforces the windows below; the rest are yours to weigh — skip the day if they stack up)
+"
+planner-132-current-contract-replay.txt,247,I,"  - balance-day (open inside prior value area AND VAs overlap) → edges-only, or skip
+"
+planner-132-current-contract-replay.txt,248,I,"  - opening gap >1.2×ATR or open outside the prior range → NEVER fade; the gap is a target
+"
+planner-132-current-contract-replay.txt,249,I,"  - no A/B zone in reach AND no pool swept by 09:30 CT → declare the skip in the plan
+"
+planner-132-current-contract-replay.txt,250,I,"  - lunch 12:00–13:30 CT: no new entries (hard-gated — entries inside it are refused)
+"
+planner-132-current-contract-replay.txt,251,I,"  - Tier-1 news → stand aside until a fresh post-news swing prints
+"
+planner-132-current-contract-replay.txt,252,I,"
+"
+planner-132-current-contract-replay.txt,253,I,"## Killzone weighting (advisory)
+"
+planner-132-current-contract-replay.txt,254,I,"  NY AM 07:30–10:00 CT is the primary window; 09:00–10:00 CT is the premium FVG window; mind the macro minutes. Conviction: down on Monday, up Thursday/Friday.
+"
+planner-132-current-contract-replay.txt,255,I,"
+"
+planner-132-current-contract-replay.txt,256,I,"## STOP-DOING (week evidence, advisory)
+"
+planner-132-current-contract-replay.txt,257,I,"  acceptance entries WITHOUT a prior sweep + displacement are 0% win evidence — skip them (A5).
+"
+planner-132-current-contract-replay.txt,258,I,"
+"
+planner-132-current-contract-replay.txt,259,I,"## OUTPUT — one JSON object, reasoning FIRST, no prose outside it
+"
+planner-132-current-contract-replay.txt,260,S,"{
+"
+planner-132-current-contract-replay.txt,261,S,"  ""reasoning"": ""<your read: what the auction is doing and why this plan — ≤200 words, decision-focused>"",
+"
+planner-132-current-contract-replay.txt,262,S,"  ""bias"": {""direction"": ""long|short|neutral"", ""conviction"": ""high|medium|low"", ""flip_condition"": ""<explicit>""},
+"
+planner-132-current-contract-replay.txt,263,S,"  ""levels"": [{""price"": <n>, ""label"": ""<PDH|ONH|nPOC…>"", ""grade"": ""A|B|C"", ""instruction"": ""<verb>""}],  // max 12, MUST include ≥3 below AND ≥3 above the current price
+"
+planner-132-current-contract-replay.txt,264,S,"  ""scenarios"": [{""id"": ""S1"", ""trigger"": ""<setup>"", ""condition"": ""reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue"", ""direction"": ""long|short"", ""target_chain"": [<n>,…], ""invalid"": ""<line>"", ""quality"": ""A+|A|B|C"", ""chain_after"": ""<S# of the sweep_reclaim this fvg_entry follows, or omit>"", ""confirm"": {""rule"": ""touch|1x5m_close|2x5m_close|1m_mss|time_hold"", ""ref_price"": <n>, ""side"": ""above|below""}, ""confirm2"": {""rule"": ""<leg 2 rule>"", ""ref_price"": <n>, ""side"": ""above|below""} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), ""fvg"": {""fvg_lo"": <n>, ""fvg_hi"": <n>, ""entry_mode"": ""edge|ce"", ""displacement_atr"": <n>, ""origin_level"": ""<label>"", ""direction"": ""long|short""}, ""breakdown"": {""level"": <n>, ""level_label"": ""<label>"", ""entry_mode"": ""pullback|immediate""} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \""none — no break\"" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), ""arm"": {""enabled"": true, ""entry"": <n>, ""stop"": <n>, ""target"": <n>, ""wait_confirm"": true, ""legs"": [{""entry"": <n>, ""stop"": <n>, ""target"": <n>, ""size"": 1, ""wait_confirm"": false, ""rule"": ""<rule>""}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..5 — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition==""fvg_entry"" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on reclaim|reject|fvg_entry|breakdown_continue|breakup_continue (sweep_reclaim arms only via wait_confirm; hold|acceptance|breakout_retest NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules
+"
+planner-132-current-contract-replay.txt,265,S,"  ""no_trade"": [""<your own sit-out conditions, or omit>""],
+"
+planner-132-current-contract-replay.txt,266,S,"  ""death_condition"": ""<the single line that invalidates this whole plan>"",
+"
+planner-132-current-contract-replay.txt,267,S,"  ""death"": {""price"": <level>, ""side"": ""below|above"", ""rule"": ""2x5m|5m_close""},
+"
+planner-132-current-contract-replay.txt,268,S,"  ""flip"": {""price"": <level>, ""side"": ""below|above"", ""rule"": ""2x5m|5m_close"", ""flip_to"": ""long|short""},  // NOTE: death/flip rules use their OWN vocabulary (2x5m | 5m_close) — NEVER the confirm enum; do not move a token between the two
+"
+planner-132-current-contract-replay.txt,269,S,"  ""day_type"": ""trend|balance|<optional>""
+"
+planner-132-current-contract-replay.txt,270,S,"}
+"
+planner-132-current-contract-replay.txt,271,I,"Rules: levels chosen ONLY from the ranked table above — plus the HTF zones section, where you MUST include at least ONE HTF zone row in your levels as a confluence reference, never as a standalone trigger; levels MUST be at least 3 points apart — near-duplicates are merged by the system; S/D & FVG are confluence, never standalone. Copy the EXACT label from the table row for the price you choose — never re-label a table level as a different anchor (a zone price relabeled 'PDH/PDL/PDC' is a phantom level and is REJECTED at write). Quality: A+ = highest-conviction setup, A = strong, B = workable, C = machine-demoted (trigger level consumed at write — G5) — use C honestly for a demoted setup, never as a default. The scenario MIX must follow the regime + day_type: a trend-down day gets breakdown/pullback-short plays, a trend-up day the reverse, balance days get two-sided plays — do NOT default to 2 longs + 1 rally-rejection short on every day. If price sits BELOW PDL the plan MUST include a SHORT-direction scenario (ANY legal condition — reject, breakdown_continue, acceptance, sweep_reclaim, hold, reclaim); ABOVE PDH, a LONG-direction scenario. Pick the condition the TAPE supports: if a breakdown level is listed as VOID above, author a different condition there. A1: your reasoning MUST open by naming the bias-tree branch you took (e.g. ""bias-tree: inside-day long LOW""), then argue from it. A2: an fvg_entry SHOULD chain after a sweep_reclaim (chain_after: S#) — bare gaps at non-A/B origins get a WARN at write, not a reject. A2b (machine grounding, 2026-08-27): author an fvg_entry scenario ONLY from the ## FRESH FVGs list above — copy its direction and lo–hi EXACTLY. If the list is empty, do NOT author any fvg_entry (invented/stale gaps are REJECTED at write). A2c (FVG demand, 2026-08-28): when ## FRESH FVGs is NON-empty and at least one candidate's direction agrees with your bias, you SHOULD author an fvg_entry from that candidate; if you decide not to, state the reason in ONE line in your reasoning (e.g. 'no fvg_entry: nearest fresh gap is 30pt away — outside my reach'). death.flip objects are MACHINE-EVALUATED — choose levels from your level list and a rule; they must match the prose lines. The flip and death MUST be DIFFERENT events: never the same level AND same rule for both (a flip at the same tick death fires is void). A short-biased plan's flip sits BELOW its death line or uses a stricter rule, so the flip can actually fire. Every scenario's confirm{} is MACHINE-EVALUATED the same way: rule + ref_price + side, and ref_price MUST equal a number written in that scenario's trigger/invalid prose. ENTRY LAW (per condition — the machine REJECTS violations by name): reject → touch ONLY (fade_requires_touch) with a structure stop ≥2 ticks beyond the level · fvg_entry → touch ONLY, entry price inside the FVG edge..CE band · sweep_reclaim → leg-1 touch at the sweep ref, leg-2 1m_mss (1x5m_close accepted as the leg-2 alternative) · reclaim → 1x5m_close or 1m_mss, never 2x5m_close · breakout_retest → touch at the retest + stop-entry fallback, 1x5m_close legal for the break leg · acceptance/hold → time_hold (price holds beyond ref for ACCEPT_HOLD_MIN minutes of 1m closes) with 1x5m_close as fallback · breakdown/breakup_continue → 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m (BD_MIN_CLOSES=1) or stop-entry — 2x5m_close is legal ONLY here (everywhere else: 2x5m_reserved). Default confirm = 1x5m_close (single close). target_chain is GUIDANCE for the executor AI (which sets the actual take_profit) — it is validated for reachability at write time but never enforced at execution (D2 ruling). ARM SPLIT vs ARM SINGLE (class 38 — the validator refuses every other shape): legs[] are the sweep_reclaim SPLIT contract and nothing else — EXACTLY 2 legs, confirm=touch at the sweep ref, leg 1 rests there (wait_confirm false) and leg 2 chains (wait_confirm true) on confirm2 = 1m_mss or 1x5m_close with leg 2's rule EQUAL to confirm2.rule, and the top-level entry/stop/target mirror leg 1. EVERY other condition — breakdown_continue, breakup_continue, reject, fvg_entry — must arm SINGLE: arm{} with wait_confirm:true and no legs. A breakdown/breakup arm additionally needs breakdown{} with entry_mode=pullback. ARMED ORDERS (the resting order IS the fast path — prefer it over a 2-minute debate at the touch). ARMS FOLLOW THE BIAS: with the decision path closed, a RESTING ORDER IS THE ONLY WAY INTO THE MARKET — a scenario with no arm cannot trade, however well argued. Every scenario in the plan's bias direction that has a concrete trigger price MUST carry an arm. A long plan with no long arm is invalid; a short plan with no short arm is invalid, for the same reason and in the same words. If you cannot arm your own bias direction, say so in reasoning and state a NEUTRAL bias rather than arguing for a direction you have left no way to take. WHICH CONDITIONS CAN BE ARMED — ARMABLE + LIVE (these are the only conditions an arm can rest on): breakdown_continue→limit · breakup_continue→limit · reclaim→stop_entry · reject→limit · sweep_reclaim→limit. armable but SHADOWED — do not arm these: fvg_entry. NOT armable at all: acceptance, breakout_retest, hold. ENTRY TYPE FOLLOWS THE CONDITION (the machine derives it and REFUSES a contradiction): a play that rests AT a price is a limit (reject→limit, fvg_entry→limit, sweep_reclaim→limit); a play that is only valid once price travels BEYOND its trigger is a stop entry (reclaim→stop_entry — a BUY STOP above the reclaim level for a long, a SELL STOP below it for a short). A waterfall (breakup_continue→limit / breakdown_continue→limit) rests as a PULLBACK limit AT the broken level and chains on confirm leg 1 — do not author a stop entry for it. Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target−entry| ÷ |stop−entry| must be ≥ 2.0 (ARM_MIN_RR) AND the stop distance must be ≥ 1.5× the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). Condition×session guidance (week evidence): reject-based setups are best in NY RTH (75% win, +665 this week); acceptance needs a clear displacement or skip (0% win this week); sweep_reclaim requires the reclaim CLOSE on the decision TF, never the wick alone (0% win this week). WATERFALL PLAY (F1): author breakdown_continue|breakup_continue when the tape shows one-sided delivery, a >1.2×ATR gap-and-go, or a waterfall after a failed rally — the momentum-follow class. breakdown{} = broken level + entry_mode; confirm = leg 1 (breakdown), confirm2 = leg 2 (failed retest). entry_mode=immediate is AI-path ONLY (no arm; the machine rejects immediate arms): the market entry fires on the CONFIRMING close (BD_MIN_CLOSES, default 1) and runs the FULL gate chain (min-SL ≥ 1.0×ATR5m, R:R ≥ min_risk_reward_ratio, min-conf, HTF veto) — CHOOSE immediate for no-retest waterfalls (one-sided delivery, displacement EXPANDING, price running away from the level): SL beyond the pullback extreme, target at the next liquidity pool. entry_mode=pullback is the ARM path (resting limit AT the broken level, chains on leg 1 — the pullback-that-fails FILLS it) — CHOOSE pullback when a retest is likely. NOISE FILTER (≤5): at most 5 of your included level rows may be line-levels clustered within 3 points of each other — keep the strongest of any such cluster, never a crowd. FVG ENTRY (fvg_entry): author when displacement off a Tier-1 level (VWAP/POC/PDH/PDL/ON/IB/fresh S/D) leaves a FRESH gap toward the trade direction · prefer the FIRST retrace (the freshness ladder applies to the gap as a zone) · entry_mode=ce for gaps > 20pts, edge for tighter · SL beyond the DISTAL edge · targets chain to the next liquidity (EQH/EQL, ON, PDH/PDL). Citations: NQ gap sweet spot 20–80pts; 1h+ fill ~70–80%; displacement floor per MSS research. no_trade: the machine enforces the session windows and T1 blackouts regardless; do not list them — no_trade is for your OWN sit-out conditions, or omit it. A T2 caution event is NEVER added to no_trade and never stops entries. Respect the no-trade windows. If you cannot form a credible plan, say so in reasoning and output a neutral/no-trade plan. Candles are ground truth for structure; ranked levels and tags are summaries. On conflict, trust the candles and say so in the scenario rationale. Weekly guidance (soft law): counter-weekly scenarios are allowed but must state their justification (an HTF level or a sweep-reclaim of the draw); target chains toward the draw are preferred. The weekly bias never gates your plan.
+"
+planner-132-current-contract-replay.txt,272,F,"
+"
+planner-132-current-contract-replay.txt,273,F,"
+"
+planner-132-current-contract-replay.txt,274,I,"## CORRECTIONS FROM THIS READ (repeated — these override the rules above)
+"
+planner-132-current-contract-replay.txt,275,I,"  1. S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)
+"
+planner-132-current-contract-replay.txt,276,I,"  2. S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only)
+"
+planner-132-current-contract-replay.txt,277,I,"Fix ALL of the above; keep the rest structurally identical.
+"
+planner-132-current-contract-replay.txt,278,I,"Valid conditions: [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] (use exactly ONE token from this list; do NOT combine condition names)."
+executor-37768-system_prompt.txt,1,I,"# You are a professional day trade CME index-futures trader trade MNQ
+"
+executor-37768-system_prompt.txt,2,I,"
+"
+executor-37768-system_prompt.txt,3,I,"You trade CME index futures (e.g. MNQ / ES) with disciplined technical analysis and risk management. You size by contract count and tick-aligned stops — NOT crypto leverage.
+"
+executor-37768-system_prompt.txt,4,I,"
+"
+executor-37768-system_prompt.txt,5,I,"## Clock
+"
+executor-37768-system_prompt.txt,6,F,13:27 CT (18:27 UTC) · Snapshot: 13:27:48 CT
+executor-37768-system_prompt.txt,6,I," — ALL times in this prompt are CT (America/Chicago), including every session/window bound. Never apply CT window numbers to a UTC clock.
+"
+executor-37768-system_prompt.txt,7,I,"
+"
+executor-37768-system_prompt.txt,8,I,"## Instrument
+"
+executor-37768-system_prompt.txt,9,F,"- Symbol: MNQ (Micro E-mini Nasdaq-100 futures)
+"
+executor-37768-system_prompt.txt,10,F,"- Tick size: 0.25 index points
+"
+executor-37768-system_prompt.txt,11,F,"- Contract multiplier: $2.00 per index point (1 point = $2)
+"
+executor-37768-system_prompt.txt,12,I,"- This is a FUTURES contract, NOT a crypto perpetual: there is NO funding rate and NO crypto-style open interest. Ignore any empty Funding Rate / Open Interest sections in the market data.
+"
+executor-37768-system_prompt.txt,13,I,"- Session: CME futures hours (nearly 23h on weekdays, with a daily maintenance break). Do NOT assume 24/7 trading.
+"
+executor-37768-system_prompt.txt,14,I,"
+"
+executor-37768-system_prompt.txt,15,I,"# Hard Constraints (Risk Control)
+"
+executor-37768-system_prompt.txt,16,I,"
+"
+executor-37768-system_prompt.txt,17,I,"- Trade ONLY the MNQ symbol provided in the market data. Do NOT invent other symbols.
+"
+executor-37768-system_prompt.txt,18,I,"- Every open_long / open_short MUST include stop_loss and take_profit as ABSOLUTE index prices (e.g. 21500.25), in tick increments (multiples of 0.25), NOT deltas.
+"
+executor-37768-system_prompt.txt,19,I,"- Stop distance: roughly 1.5-3x ATR; sanity range ~15-50 points from entry.
+"
+executor-37768-system_prompt.txt,20,I,"- Risk/Reward: reward must be at least 2.00x the risk (take_profit vs stop_loss distance from entry).
+"
+executor-37768-system_prompt.txt,21,I,"- Min confidence to open: 60. Below that, use hold or wait.
+"
+executor-37768-system_prompt.txt,22,I,"- One position at a time. No averaging in / pyramiding.
+"
+executor-37768-system_prompt.txt,23,I,"- leverage: always 1 for futures (margin is contract-based; the broker handles it). Do NOT use crypto leverage tiers.
+"
+executor-37768-system_prompt.txt,24,I,"- position_size_usd: the contract notional you intend (≈ price × $2 × contracts). Keep it conservative (start with 1 contract).
+"
+executor-37768-system_prompt.txt,25,I,"
+"
+executor-37768-system_prompt.txt,26,I,"# Trading Frequency
+"
+executor-37768-system_prompt.txt,27,I,"# ⏱️ Trading Frequency Awareness
+"
+executor-37768-system_prompt.txt,28,I,"-Focus On Quality trtade and 50 point  move stop loss to breakeven 
+"
+executor-37768-system_prompt.txt,29,I,"- Excellent trader: 2-4 trades per day ≈ 0.1-0.2 trades per hour
+"
+executor-37768-system_prompt.txt,30,I,"- >2 trades per hour = overtrading
+"
+executor-37768-system_prompt.txt,31,I,"- Single position holding time ≥ 30-60 minutes
+"
+executor-37768-system_prompt.txt,32,I,"If you find yourself trading every cycle → standards are too low; if closing positions in <30 minutes → too impulsive.
+"
+executor-37768-system_prompt.txt,33,I,"
+"
+executor-37768-system_prompt.txt,34,I,"# DAY PLAN (NY) — preferred: follow it · a valid off-plan setup may still be traded (cite ""off-plan"")
+"
+executor-37768-system_prompt.txt,35,F,"Bias: short (low) · flips: 5m close above 29601.00 PDH flips the session to long
+"
+executor-37768-system_prompt.txt,36,F,"Levels:
+"
+executor-37768-system_prompt.txt,37,F,"  29579.56 VWAP [A] fade/reject trigger
+"
+executor-37768-system_prompt.txt,38,F,"  29585.00 RTH-H [B] confluence/target
+"
+executor-37768-system_prompt.txt,39,F,"  29597.25 PDC [B] target
+"
+executor-37768-system_prompt.txt,40,F,"  29601.00 PDH [B] flip trigger
+"
+executor-37768-system_prompt.txt,41,F,"  29635.00 OR-H [C] death trigger
+"
+executor-37768-system_prompt.txt,42,F,"  29720.00 ONH [A] liquidity sweep/reclaim
+"
+executor-37768-system_prompt.txt,43,F,"  29553.75 OR-L [C] target only
+"
+executor-37768-system_prompt.txt,44,F,"  29503.38 OB(bear)·4h [C] HTF confluence only
+"
+executor-37768-system_prompt.txt,45,F,"  29481.50 ONL [C] target only
+"
+executor-37768-system_prompt.txt,46,F,"  29425.12 FVG·1h (HTF) [A] target only
+"
+executor-37768-system_prompt.txt,47,F,"  29144.50 Demand·1h (HTF) [A] react_zone long fallback
+"
+executor-37768-system_prompt.txt,48,F,"  29101.75 PDL [A] react_zone
+"
+executor-37768-system_prompt.txt,49,F,"Scenarios:
+"
+executor-37768-system_prompt.txt,50,F,"  S1 [B] reject short: After 13:30 CT, price rallies into 29579.56 VWAP and stalls; sell the touch, not a chase. → 29553.75,29503.38,29481.50 · invalid A 5m close above 29601.00 PDH invalidates this fade.
+"
+executor-37768-system_prompt.txt,51,F,"  S2 [B] sweep_reclaim short: Price rallies to 29720.00 ONH and sweeps it; a 5m close back below 29720.00 confirms the reclaim and the short. → 29635.00,29579.56,29553.75 · invalid A 5m close above 29755.00 invalidates the fade.
+"
+executor-37768-system_prompt.txt,52,F,"  S3 [C] sweep_reclaim long: A flush to 29144.50 Demand·1h that sweeps the level and then posts a 5m close back above it. → 29425.12,29503.38 · invalid A 5m close below 29101.75 PDL invalidates.
+"
+executor-37768-system_prompt.txt,53,F,"No-trade NOTES (the model's prose — NOT machine-enforced; the enforced band is the code constant): 🔴 Average Hourly Earnings m/m 07:30 CT ±15m — HARD no-trade (red news) · 🔴 Non-Farm Employment Change 07:30 CT ±15m — HARD no-trade (red news) · 🔴 Unemployment Rate 07:30 CT ±15m — HARD no-trade (red news)
+"
+executor-37768-system_prompt.txt,54,F,"Plan dies if: A 5m close above 29635.00 OR-H invalidates the entire short plan.
+"
+executor-37768-system_prompt.txt,55,I,"Cite rule: your decision JSON MUST include ""cited_scenario"" = ""S1""|""S2""|…|""off-plan"".
+"
+executor-37768-system_prompt.txt,56,I,"
+"
+executor-37768-system_prompt.txt,57,F,"# Available Data
+"
+executor-37768-system_prompt.txt,58,F,"Multi-timeframe MNQ bars:
+"
+executor-37768-system_prompt.txt,59,F,"- 1h, 4h, 1d, 15m, 3m, 5m price series
+"
+executor-37768-system_prompt.txt,60,F,"- EMA indicators (periods: [50 200])
+"
+executor-37768-system_prompt.txt,61,F,"- RSI indicators (periods: [14])
+"
+executor-37768-system_prompt.txt,62,F,"- ATR indicators (periods: [14])
+"
+executor-37768-system_prompt.txt,63,F,"- Volume data
+"
+executor-37768-system_prompt.txt,64,I,"Use confluence across timeframes. Confidence ≥ 60 required to open.
+"
+executor-37768-system_prompt.txt,65,I,"
+"
+executor-37768-system_prompt.txt,66,I,"# Entry Standards
+"
+executor-37768-system_prompt.txt,67,I,"# 🎯 Entry Standards (Strict)
+"
+executor-37768-system_prompt.txt,68,I,"
+"
+executor-37768-system_prompt.txt,69,I,"Only enter positions when multiple signals resonate. Freely use any effective analysis methods, avoid low-quality behaviors such as single indicators, contradictory signals, sideways oscillation, or immediately restarting after closing positions.
+"
+executor-37768-system_prompt.txt,70,I,"
+"
+executor-37768-system_prompt.txt,71,I,"# Decision Process
+"
+executor-37768-system_prompt.txt,72,I,"1. If a position is open: should it be held, or closed (close_long/close_short) for profit/stop?
+"
+executor-37768-system_prompt.txt,73,I,"2. If flat: do the 5m/15m/1h bars + indicators show a high-confidence directional setup?
+"
+executor-37768-system_prompt.txt,74,I,"3. Write your chain of thought, THEN output the structured JSON decision.
+"
+executor-37768-system_prompt.txt,75,I,"4. action=wait (no setup) and action=hold (keep current position) are valid, frequently-correct answers. Do NOT force a trade.
+"
+executor-37768-system_prompt.txt,76,I,"
+"
+executor-37768-system_prompt.txt,77,I,"# Output Format (Strictly Follow)
+"
+executor-37768-system_prompt.txt,78,I,"
+"
+executor-37768-system_prompt.txt,79,I,"**Must use XML tags <reasoning> and <decision> to separate chain of thought and decision JSON, avoiding parsing errors**
+"
+executor-37768-system_prompt.txt,80,I,"
+"
+executor-37768-system_prompt.txt,81,I,"Output the <decision> JSON block FIRST — it is MANDATORY and must appear in every response. THEN write <reasoning>: ≤200 words, decision-focused, no restating the input data. If you are running out of room, drop reasoning — never drop <decision>.
+"
+executor-37768-system_prompt.txt,82,I,"
+"
+executor-37768-system_prompt.txt,83,I,"<reasoning>
+"
+executor-37768-system_prompt.txt,84,I,"Your chain-of-thought analysis of the MNQ bars and indicators.
+"
+executor-37768-system_prompt.txt,85,I,"</reasoning>
+"
+executor-37768-system_prompt.txt,86,I,"
+"
+executor-37768-system_prompt.txt,87,S,"<decision>
+"
+executor-37768-system_prompt.txt,88,S,"```json
+"
+executor-37768-system_prompt.txt,89,S,"[
+"
+executor-37768-system_prompt.txt,90,S,"  {""symbol"": ""MNQ"", ""action"": ""open_long"", ""leverage"": 1, ""position_size_usd"": 60000, ""stop_loss"": 21480.00, ""take_profit"": 21560.00, ""confidence"": 80, ""cited_scenario"": ""S1""}
+"
+executor-37768-system_prompt.txt,91,S,"]
+"
+executor-37768-system_prompt.txt,92,S,"```
+"
+executor-37768-system_prompt.txt,93,S,"</decision>
+"
+executor-37768-system_prompt.txt,94,S,"
+"
+executor-37768-system_prompt.txt,95,S,"When there is no good setup, output a single wait decision:
+"
+executor-37768-system_prompt.txt,96,S,"<decision>
+"
+executor-37768-system_prompt.txt,97,S,"```json
+"
+executor-37768-system_prompt.txt,98,S,"[{""symbol"": ""MNQ"", ""action"": ""wait""}]
+"
+executor-37768-system_prompt.txt,99,S,"```
+"
+executor-37768-system_prompt.txt,100,S,"</decision>
+"
+executor-37768-system_prompt.txt,101,I,"
+"
+executor-37768-system_prompt.txt,102,I,"## Field Description
+"
+executor-37768-system_prompt.txt,103,I,"- `action`: open_long | open_short | close_long | close_short | hold | wait
+"
+executor-37768-system_prompt.txt,104,I,"- `symbol`: always ""MNQ""
+"
+executor-37768-system_prompt.txt,105,I,"- `confidence`: 0-100 (open only when ≥ 60)
+"
+executor-37768-system_prompt.txt,106,I,"- `leverage`: 1 (futures)
+"
+executor-37768-system_prompt.txt,107,I,"- Required when opening: stop_loss, take_profit, confidence (absolute tick-aligned prices)
+"
+executor-37768-system_prompt.txt,108,I,"- **IMPORTANT**: all numeric values must be concrete numbers, NOT formulas (e.g. `21480.00`, not `21500 - 20`).
+"
+executor-37768-system_prompt.txt,109,I,"- Plan target chains are guidance — YOU set take_profit (D2 ruling); the R:R gate is the only TP constraint.
+"
+executor-37768-system_prompt.txt,110,I,"- `cited_scenario`: REQUIRED on every open when a DAY PLAN is shown — the plan scenario id (""S1""…) you are trading, or ""off-plan"" for a valid non-plan setup. (A6/F12: this used to live only inside the plan block; a contract-literal model omitted it and every adherence grade silently degraded to D.)
+"
+executor-37768-system_prompt.txt,111,I,"- F4 (waterfall-class wave): if you see a valid breakdown/continuation thesis (a level broken with displacement and no reclaim) but the DAY PLAN has no matching scenario, SAY SO in your wait reasoning with the exact phrase `no breakdown scenario authored` — the system counts these; the planning gap must be visible, never silent.
+"
+executor-37768-system_prompt.txt,112,I,"- ARMED PATH (autopsy-response): if a scenario confirm is MET and you decline on timing/extension grounds, the retrace is already covered by the plan's wait_confirm arm (it rests at the retrace level and fills without you) — prefer leaving that arm live over waiting for a cleaner touch; do not chase, and do not skip the retrace.
+"
+executor-37768-system_prompt.txt,113,I,"- The <decision> block MUST be a JSON array, even for a single decision.
+"
+executor-37768-system_prompt.txt,114,I,"
+"
+executor-37768-system_prompt.txt,115,I,"# Personalized Strategy
+"
+executor-37768-system_prompt.txt,116,I,"
+"
+executor-37768-system_prompt.txt,117,I,"No trade inside sideway zone becareful 
+"
+executor-37768-system_prompt.txt,118,I,"all trade consider good stop loss abnd profit , no panic sell have to respect the stop loss we give out and target , discipline is a key 
+"
+executor-37768-system_prompt.txt,119,I,"
+"
+executor-37768-system_prompt.txt,120,I,"
+"
+executor-37768-system_prompt.txt,121,I,"Note: supplements the rules above; cannot violate the risk-control constraints.
+"
+executor-37768-system_prompt.txt,122,I,"
+"
+executor-37768-system_prompt.txt,123,I,"# Live map (dynamic — re-read each bar)
+"
+executor-37768-system_prompt.txt,124,F,"SVP (today's session, since 17:00 CT open): POC 29539.38 VAH 29622.50 VAL 29496.25
+"
+executor-37768-system_prompt.txt,125,I,"
+"
+executor-37768-system_prompt.txt,126,F,"KEY LEVELS (map, nearest-first; price 29531.50):
+"
+executor-37768-system_prompt.txt,127,F,"  29530.63  POC                  A  fresh·x55 magnet_meanrevert -0.9
+"
+executor-37768-system_prompt.txt,128,F,"  29553.75  OR-L                 C  flipped·x47 target_only     +22.2
+"
+executor-37768-system_prompt.txt,129,F,"  29481.50  ONL                  C  flipped·x29 target_only     -50.0
+"
+executor-37768-system_prompt.txt,130,F,"  29585.00  RTH-H                B  flipped·x31 target_only     +53.5
+"
+executor-37768-system_prompt.txt,131,F,"  29597.25  PDC                  B  flipped·x39 target_only     +65.8
+"
+executor-37768-system_prompt.txt,132,F,"  29601.00  PDH                  B  flipped·x15 target_only     +69.5
+"
+executor-37768-system_prompt.txt,133,F,"  29635.00  OR-H                 C  flipped·x21 target_only     +103.5
+"
+executor-37768-system_prompt.txt,134,F,"  29720.00  ONH                  A  fresh·x35 liquidity_break +188.5
+"
+executor-37768-system_prompt.txt,135,F,"  29199.25  RTH-L                B  flipped·x19 target_only     -332.2
+"
+executor-37768-system_prompt.txt,136,F,"  29144.50  Demand·1h (HTF)      A  fresh·x4  react_zone      -387.0
+"
+executor-37768-system_prompt.txt,137,F,"  29144.50  OB(bull)·1h (HTF)    A  fresh·x4  target_only     -387.0
+"
+executor-37768-system_prompt.txt,138,F,"  29101.75  PDL                  A  fresh·x7  react_zone      -429.8
+"
+executor-37768-system_prompt.txt,139,I,"Anchor: react AT these levels (grade A>B>C); between them, a confirmed momentum/breakout may still be traded.
+"
+executor-37768-system_prompt.txt,140,I,"role playbook: magnet_meanrevert = price gravitates back (fade/reversion setups) · liquidity_break = resting stops (break or sweep-reclaim, never a blind fade) · react_zone = first-touch reaction reference (reject/hold evidence) · target_only = take-profit / invalid reference only, NEVER an entry trigger · pivot = the auction's fulcrum (bias flips measured against it).
+"
+executor-37768-system_prompt.txt,141,I,"
+"
+executor-37768-system_prompt.txt,142,F,"TOUCH: POC 29530.63 · 3th touch · none · n/a · shape: forming
+"
+executor-37768-system_prompt.txt,143,I,"
+"
+executor-37768-system_prompt.txt,144,F,"bias_ctx: price 29531.50 · 66.6 vs VWAP 29464.86 · -65.8 vs PDC 29597.25 · inside value area (29354.20–29720.00) · nearest magnet POC (-0.9) · nearest liquidity OR-L (+22.2)
+"
+executor-37768-system_prompt.txt,145,I,"
+"
+executor-37768-system_prompt.txt,146,I,"# PLAN STATUS (live) — facts=Go, judgment=you
+"
+executor-37768-system_prompt.txt,147,F,"price 29531.50 · re-plans left 4
+"
+executor-37768-system_prompt.txt,148,I,"(1 level(s) outside the 1.5×dATR activation window — re-arm when price returns)
+"
+executor-37768-system_prompt.txt,149,F,"  29579.56 VWAP: dist -48.1 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid
+"
+executor-37768-system_prompt.txt,150,F,"  29585.00 RTH-H: dist -53.5 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid · flipped(consumed — tradeable both directions)
+"
+executor-37768-system_prompt.txt,151,F,"  29597.25 PDC: dist -65.8 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid · flipped(consumed — tradeable both directions)
+"
+executor-37768-system_prompt.txt,152,F,"  29601.00 PDH: dist -69.5 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid · flipped(consumed — tradeable both directions)
+"
+executor-37768-system_prompt.txt,153,F,"  29635.00 OR-H: dist -103.5 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid · flipped(consumed — tradeable both directions)
+"
+executor-37768-system_prompt.txt,154,F,"  29720.00 ONH: dist -188.5 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid
+"
+executor-37768-system_prompt.txt,155,F,"  29553.75 OR-L: dist -22.2 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid · flipped(consumed — tradeable both directions)
+"
+executor-37768-system_prompt.txt,156,F,"  29481.50 ONL: dist +50.0 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid · flipped(consumed — tradeable both directions)
+"
+executor-37768-system_prompt.txt,157,F,"  29425.12 FVG·1h (HTF): dist +106.4 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid
+"
+executor-37768-system_prompt.txt,158,F,"  29144.50 Demand·1h (HTF): dist +387.0 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid
+"
+executor-37768-system_prompt.txt,159,F,"  29101.75 PDL: dist +429.8 · sweep=F · closes-beyond 2 · acceptance 0/1 · valid
+"
+executor-37768-system_prompt.txt,160,I,"Machine-computed confirmations (advisory — you remain the judge):
+"
+executor-37768-system_prompt.txt,161,F,"  S1 confirm: touch below 29579.56 — NOT MET (not touched since plan birth)
+"
+executor-37768-system_prompt.txt,162,F,"  S2 confirm: leg 1/2 touch — NOT MET · leg 2/2 1x5m close — NOT MET → overall NOT MET (last 1x5m close 29531.50 (best run 2/1 closes below 29720.00 since plan birth))
+"
+executor-37768-system_prompt.txt,163,F,"  S3 confirm: leg 1/2 touch — NOT MET · leg 2/2 1x5m close — NOT MET → overall NOT MET (last 1x5m close 29531.50 (best run 2/1 closes above 29144.50 since plan birth))
+"
+executor-37768-system_prompt.txt,164,F,"
+"
+executor-37768-system_prompt.txt,165,F,"WEEKLY: refs only — PWH 29811.75 · PWL 28927.25
+"
+executor-37768-input_prompt.txt,1,F,"Time: 2026-09-04 13:27 CT | Period: #2 | Runtime: 2 minutes
+"
+executor-37768-input_prompt.txt,2,F,"
+"
+executor-37768-input_prompt.txt,3,F,"Account: Equity 51906.50 | Balance 51906.50 (100.0%) | PnL +3.81% | Margin 0.0% | Positions 0
+"
+executor-37768-input_prompt.txt,4,F,"
+"
+executor-37768-input_prompt.txt,5,F,"## Recent Completed Trades
+"
+executor-37768-input_prompt.txt,6,F,"1. MNQ short | Entry 29285.0000 Exit 29355.0000 | Loss: -140.00 USDT (-0.24%) | 2026-09-03 09:05 CT→2026-09-03 09:20 CT (15m)
+"
+executor-37768-input_prompt.txt,7,F,"2. MNQ long | Entry 29193.2500 Exit 29143.7500 | Loss: -99.00 USDT (-0.17%) | 2026-09-02 10:37 CT→2026-09-02 10:49 CT (12m)
+"
+executor-37768-input_prompt.txt,8,F,"3. MNQ long | Entry 29192.5000 Exit 29115.0000 | Loss: -155.00 USDT (-0.27%) | 2026-09-02 09:41 CT→2026-09-02 09:59 CT (18m)
+"
+executor-37768-input_prompt.txt,9,F,"4. MNQ long | Entry 29082.5000 Exit 29050.0000 | Loss: -65.00 USDT (-0.11%) | 2026-09-02 07:41 CT→2026-09-02 07:51 CT (10m)
+"
+executor-37768-input_prompt.txt,10,F,"5. MNQ long | Entry 29079.2500 Exit 29048.0000 | Loss: -62.50 USDT (-0.11%) | 2026-09-02 00:17 CT→2026-09-02 01:03 CT (45m)
+"
+executor-37768-input_prompt.txt,11,F,"6. MNQ long | Entry 29082.7500 Exit 29055.7500 | Loss: -54.00 USDT (-0.09%) | 2026-09-01 13:33 CT→2026-09-01 13:41 CT (8m)
+"
+executor-37768-input_prompt.txt,12,F,"7. MNQ short | Entry 29182.0000 Exit 29220.7500 | Loss: -77.50 USDT (-0.13%) | 2026-09-01 09:31 CT→2026-09-01 09:40 CT (9m)
+"
+executor-37768-input_prompt.txt,13,F,"8. MNQ short | Entry 29138.0000 Exit 29085.0000 | Profit: +106.00 USDT (+0.18%) | 2026-09-01 08:36 CT→2026-09-01 08:38 CT (1m)
+"
+executor-37768-input_prompt.txt,14,F,"9. MNQ long | Entry 29213.2500 Exit 29172.0000 | Loss: -82.50 USDT (-0.14%) | 2026-09-01 06:35 CT→2026-09-01 06:56 CT (21m)
+"
+executor-37768-input_prompt.txt,15,F,"10. MNQ short | Entry 29246.7500 Exit 29182.0000 | Profit: +129.50 USDT (+0.22%) | 2026-09-01 05:23 CT→2026-09-01 06:05 CT (42m)
+"
+executor-37768-input_prompt.txt,16,F,"
+"
+executor-37768-input_prompt.txt,17,F,"## Historical Trading Statistics
+"
+executor-37768-input_prompt.txt,18,F,"Resolved Trades: 110 | Profit Factor: 0.95 | Sharpe: -0.02 | Win/Loss Ratio: 1.61
+"
+executor-37768-input_prompt.txt,19,F,"Track record: -217.18 over 110 resolved trades (115 unresolved trades excluded — see note).
+"
+executor-37768-input_prompt.txt,20,F,"Avg Win: +100.55 | Avg Loss: -62.34 | Max Drawdown: 9.9%
+"
+executor-37768-input_prompt.txt,21,I,"Note: an unresolved trade has no verified exit fill; its P&L is UNKNOWN and is never counted, never coerced to a raw value.
+"
+executor-37768-input_prompt.txt,22,I,"Performance: NEEDS IMPROVEMENT - improve win/loss ratio, optimize TP/SL
+"
+executor-37768-input_prompt.txt,23,F,"
+"
+executor-37768-input_prompt.txt,24,F,"Current Positions: None
+"
+executor-37768-input_prompt.txt,25,F,"
+"
+executor-37768-input_prompt.txt,26,F,"## Candidate Coins (1 coins)
+"
+executor-37768-input_prompt.txt,27,F,"
+"
+executor-37768-input_prompt.txt,28,F,"### 1. MNQ (Manual selection)
+"
+executor-37768-input_prompt.txt,29,F,"
+"
+executor-37768-input_prompt.txt,30,F,"=== MNQ Market Data ===
+"
+executor-37768-input_prompt.txt,31,F,"
+"
+executor-37768-input_prompt.txt,32,F,"current_price = 29531.5000, current_ema50 = 29561.656, current_ema200 = 29584.833, current_rsi14 = 43.675
+"
+executor-37768-input_prompt.txt,33,F,"
+"
+executor-37768-input_prompt.txt,34,F,"=== 3M Timeframe (oldest → latest) ===
+"
+executor-37768-input_prompt.txt,35,F,"
+"
+executor-37768-input_prompt.txt,36,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+executor-37768-input_prompt.txt,37,F,"09-04 11:21    29554.7500 29565.2500 29546.0000 29552.5000 8265.00     
+"
+executor-37768-input_prompt.txt,38,F,"09-04 11:24    29552.2500 29556.2500 29546.0000 29548.2500 4988.00     
+"
+executor-37768-input_prompt.txt,39,F,"09-04 11:27    29548.5000 29560.7500 29548.2500 29554.0000 5519.00     
+"
+executor-37768-input_prompt.txt,40,F,"09-04 11:30    29553.7500 29567.7500 29548.5000 29566.7500 6361.00     
+"
+executor-37768-input_prompt.txt,41,F,"09-04 11:33    29566.5000 29574.0000 29562.5000 29570.5000 5989.00     
+"
+executor-37768-input_prompt.txt,42,F,"09-04 11:36    29570.5000 29570.5000 29558.0000 29559.2500 5694.00     
+"
+executor-37768-input_prompt.txt,43,F,"09-04 11:39    29559.5000 29567.5000 29557.2500 29562.7500 4113.00     
+"
+executor-37768-input_prompt.txt,44,F,"09-04 11:42    29563.0000 29569.0000 29557.2500 29568.0000 4906.00     
+"
+executor-37768-input_prompt.txt,45,F,"09-04 11:45    29568.2500 29580.7500 29564.5000 29579.5000 6708.00     
+"
+executor-37768-input_prompt.txt,46,F,"09-04 11:48    29579.2500 29596.0000 29573.5000 29595.0000 9914.00     
+"
+executor-37768-input_prompt.txt,47,F,"09-04 11:51    29595.0000 29595.2500 29585.5000 29585.7500 5179.00     
+"
+executor-37768-input_prompt.txt,48,F,"09-04 11:54    29585.7500 29589.5000 29577.2500 29580.0000 6279.00     
+"
+executor-37768-input_prompt.txt,49,F,"09-04 11:57    29580.0000 29587.0000 29575.0000 29575.7500 5540.00     
+"
+executor-37768-input_prompt.txt,50,F,"09-04 12:00    29576.0000 29580.5000 29552.2500 29556.7500 11686.00    
+"
+executor-37768-input_prompt.txt,51,F,"09-04 12:03    29557.0000 29560.5000 29544.7500 29557.0000 11021.00    
+"
+executor-37768-input_prompt.txt,52,F,"09-04 12:06    29557.2500 29558.0000 29541.0000 29542.0000 5450.00     
+"
+executor-37768-input_prompt.txt,53,F,"09-04 12:09    29541.7500 29547.0000 29532.7500 29532.7500 6662.00     
+"
+executor-37768-input_prompt.txt,54,F,"09-04 12:12    29533.0000 29542.2500 29531.2500 29535.2500 5517.00     
+"
+executor-37768-input_prompt.txt,55,F,"09-04 12:15    29535.0000 29543.5000 29529.7500 29540.7500 6109.00     
+"
+executor-37768-input_prompt.txt,56,F,"09-04 12:18    29541.0000 29541.5000 29526.5000 29531.5000 4294.00       <- current
+"
+executor-37768-input_prompt.txt,57,F,"
+"
+executor-37768-input_prompt.txt,58,F,"EMA50: [29544.0421, 29544.2071, 29544.5912, 29545.4601, 29546.4421, 29546.9444, 29547.5642, 29548.3656, 29549.5866, 29551.3675, 29552.7158, 29553.7858, 29554.6471, 29554.7296, 29554.8186, 29554.3159, 29553.4702, 29552.7557, 29552.2849, 29551.4698]
+"
+executor-37768-input_prompt.txt,59,F,"EMA200: [29613.2878, 29612.6407, 29612.0572, 29611.6064, 29611.1973, 29610.6805, 29610.2035, 29609.7836, 29609.4823, 29609.3382, 29609.1035, 29608.8139, 29608.4849, 29607.9701, 29607.4629, 29606.8116, 29606.0746, 29605.3699, 29604.7269, 29603.9983]
+"
+executor-37768-input_prompt.txt,60,F,"RSI14: [59.0718, 57.0615, 59.0900, 63.2373, 64.3811, 58.5009, 59.7331, 61.5761, 65.3203, 69.6177, 64.4824, 61.4481, 59.2296, 50.4587, 50.5624, 44.5365, 41.2702, 42.4977, 45.2107, 41.6514]
+"
+executor-37768-input_prompt.txt,61,F,"ATR14: 16.3275
+"
+executor-37768-input_prompt.txt,62,F,"
+"
+executor-37768-input_prompt.txt,63,F,"current 3m bar: CLOSED at 12:21 CT (next close 12:24 CT)
+"
+executor-37768-input_prompt.txt,64,F,"
+"
+executor-37768-input_prompt.txt,65,F,"⚠️ 3m data stale: newest close 12:21 CT is 4008s old (period 180s + cap 90s)
+"
+executor-37768-input_prompt.txt,66,F,"
+"
+executor-37768-input_prompt.txt,67,F,"=== 5M Timeframe (oldest → latest) ===
+"
+executor-37768-input_prompt.txt,68,F,"
+"
+executor-37768-input_prompt.txt,69,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+executor-37768-input_prompt.txt,70,F,"09-04 10:40    29501.7500 29524.5000 29497.7500 29520.5000 14715.00    
+"
+executor-37768-input_prompt.txt,71,F,"09-04 10:45    29519.7500 29522.5000 29487.0000 29501.7500 18440.00    
+"
+executor-37768-input_prompt.txt,72,F,"09-04 10:50    29501.5000 29516.2500 29494.7500 29504.0000 13324.00    
+"
+executor-37768-input_prompt.txt,73,F,"09-04 10:55    29504.0000 29519.0000 29497.2500 29515.2500 10219.00    
+"
+executor-37768-input_prompt.txt,74,F,"09-04 11:00    29514.7500 29520.2500 29504.0000 29514.2500 9025.00     
+"
+executor-37768-input_prompt.txt,75,F,"09-04 11:05    29513.7500 29536.5000 29507.7500 29532.0000 15416.00    
+"
+executor-37768-input_prompt.txt,76,F,"09-04 11:10    29532.2500 29552.5000 29527.5000 29547.7500 13879.00    
+"
+executor-37768-input_prompt.txt,77,F,"09-04 11:15    29547.7500 29548.2500 29535.5000 29544.0000 9629.00     
+"
+executor-37768-input_prompt.txt,78,F,"09-04 11:20    29544.0000 29565.2500 29544.0000 29554.2500 14361.00    
+"
+executor-37768-input_prompt.txt,79,F,"09-04 11:25    29554.2500 29560.7500 29546.2500 29554.0000 8490.00     
+"
+executor-37768-input_prompt.txt,80,F,"09-04 11:30    29553.7500 29571.5000 29548.5000 29570.7500 10026.00    
+"
+executor-37768-input_prompt.txt,81,F,"09-04 11:35    29570.7500 29574.0000 29557.2500 29562.0000 9320.00     
+"
+executor-37768-input_prompt.txt,82,F,"09-04 11:40    29562.2500 29569.0000 29557.2500 29568.0000 7717.00     
+"
+executor-37768-input_prompt.txt,83,F,"09-04 11:45    29568.2500 29589.7500 29564.5000 29587.5000 13420.00    
+"
+executor-37768-input_prompt.txt,84,F,"09-04 11:50    29587.2500 29596.0000 29584.5000 29585.2500 10155.00    
+"
+executor-37768-input_prompt.txt,85,F,"09-04 11:55    29585.0000 29588.5000 29575.0000 29575.7500 10045.00    
+"
+executor-37768-input_prompt.txt,86,F,"09-04 12:00    29576.0000 29580.5000 29544.7500 29550.7500 18283.00    
+"
+executor-37768-input_prompt.txt,87,F,"09-04 12:05    29550.7500 29560.5000 29538.5000 29539.5000 12226.00    
+"
+executor-37768-input_prompt.txt,88,F,"09-04 12:10    29539.7500 29547.0000 29531.2500 29535.2500 9827.00     
+"
+executor-37768-input_prompt.txt,89,F,"09-04 12:15    29535.0000 29543.5000 29526.5000 29531.5000 10403.00      <- current
+"
+executor-37768-input_prompt.txt,90,F,"
+"
+executor-37768-input_prompt.txt,91,F,"EMA50: [29576.5409, 29573.6079, 29570.8782, 29568.6967, 29566.5616, 29565.2062, 29564.5216, 29563.7169, 29563.3456, 29562.9791, 29563.2839, 29563.2335, 29563.4204, 29564.3647, 29565.1838, 29565.5981, 29565.0158, 29564.0152, 29562.8872, 29561.6563]
+"
+executor-37768-input_prompt.txt,92,F,"EMA200: [29592.8108, 29591.9047, 29591.0300, 29590.2760, 29589.5195, 29588.9472, 29588.5372, 29588.0941, 29587.7573, 29587.4214, 29587.2556, 29587.0043, 29586.8152, 29586.8220, 29586.8063, 29586.6963, 29586.3386, 29585.8726, 29585.3689, 29584.8329]
+"
+executor-37768-input_prompt.txt,93,F,"RSI14: [42.9081, 39.4465, 40.0713, 43.2256, 43.0089, 47.9928, 52.0036, 50.9952, 53.6413, 53.5653, 57.8706, 55.0017, 56.5909, 61.3662, 60.5387, 57.0411, 49.0155, 45.8868, 44.7253, 43.6748]
+"
+executor-37768-input_prompt.txt,94,F,"ATR14: 23.3754
+"
+executor-37768-input_prompt.txt,95,F,"
+"
+executor-37768-input_prompt.txt,96,F,"current 5m bar: CLOSED at 12:20 CT (next close 12:25 CT)
+"
+executor-37768-input_prompt.txt,97,F,"
+"
+executor-37768-input_prompt.txt,98,F,"⚠️ 5m data stale: newest close 12:20 CT is 4068s old (period 300s + cap 90s)
+"
+executor-37768-input_prompt.txt,99,F,"
+"
+executor-37768-input_prompt.txt,100,F,"=== 15M Timeframe (oldest → latest) ===
+"
+executor-37768-input_prompt.txt,101,F,"
+"
+executor-37768-input_prompt.txt,102,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+executor-37768-input_prompt.txt,103,F,"09-04 07:30    29676.2500 29720.0000 29532.5000 29556.7500 67174.00    
+"
+executor-37768-input_prompt.txt,104,F,"09-04 07:45    29557.2500 29557.7500 29502.0000 29546.5000 43401.00    
+"
+executor-37768-input_prompt.txt,105,F,"09-04 08:00    29546.5000 29556.7500 29523.0000 29548.7500 26654.00    
+"
+executor-37768-input_prompt.txt,106,F,"09-04 08:15    29548.5000 29591.7500 29547.0000 29588.2500 26919.00    
+"
+executor-37768-input_prompt.txt,107,F,"09-04 08:30    29588.5000 29645.2500 29553.7500 29616.5000 142423.00   
+"
+executor-37768-input_prompt.txt,108,F,"09-04 08:45    29615.7500 29692.0000 29577.5000 29691.2500 102314.00   
+"
+executor-37768-input_prompt.txt,109,F,"09-04 09:00    29691.0000 29691.2500 29594.0000 29648.2500 98561.00    
+"
+executor-37768-input_prompt.txt,110,F,"09-04 09:15    29648.2500 29649.7500 29564.0000 29595.7500 94209.00    
+"
+executor-37768-input_prompt.txt,111,F,"09-04 09:30    29596.0000 29598.2500 29530.0000 29533.5000 80350.00    
+"
+executor-37768-input_prompt.txt,112,F,"09-04 09:45    29533.0000 29544.2500 29498.5000 29520.7500 72899.00    
+"
+executor-37768-input_prompt.txt,113,F,"09-04 10:00    29520.5000 29541.0000 29491.0000 29540.2500 62376.00    
+"
+executor-37768-input_prompt.txt,114,F,"09-04 10:15    29541.0000 29543.5000 29483.2500 29507.2500 61732.00    
+"
+executor-37768-input_prompt.txt,115,F,"09-04 10:30    29507.0000 29524.5000 29477.7500 29520.5000 48666.00    
+"
+executor-37768-input_prompt.txt,116,F,"09-04 10:45    29519.7500 29522.5000 29487.0000 29515.2500 41983.00    
+"
+executor-37768-input_prompt.txt,117,F,"09-04 11:00    29514.7500 29552.5000 29504.0000 29547.7500 38320.00    
+"
+executor-37768-input_prompt.txt,118,F,"09-04 11:15    29547.7500 29565.2500 29535.5000 29554.0000 32480.00    
+"
+executor-37768-input_prompt.txt,119,F,"09-04 11:30    29553.7500 29574.0000 29548.5000 29568.0000 27063.00    
+"
+executor-37768-input_prompt.txt,120,F,"09-04 11:45    29568.2500 29596.0000 29564.5000 29575.7500 33620.00    
+"
+executor-37768-input_prompt.txt,121,F,"09-04 12:00    29576.0000 29580.5000 29531.2500 29535.2500 40336.00    
+"
+executor-37768-input_prompt.txt,122,F,"09-04 12:15    29535.0000 29543.5000 29526.5000 29531.5000 10403.00      <- current
+"
+executor-37768-input_prompt.txt,123,F,"
+"
+executor-37768-input_prompt.txt,124,F,"EMA50: [29604.8618, 29602.5731, 29600.4624, 29599.9835, 29600.6312, 29604.1849, 29605.9129, 29605.5144, 29602.6903, 29599.4769, 29597.1543, 29593.6286, 29590.7609, 29587.7996, 29586.2291, 29584.9652, 29584.2999, 29583.9646, 29582.0542, 29580.0717]
+"
+executor-37768-input_prompt.txt,125,F,"EMA200: [29330.4147, 29332.5648, 29334.7159, 29337.2387, 29340.0174, 29343.5122, 29346.5444, 29349.0241, 29350.8597, 29352.5501, 29354.4178, 29355.9385, 29357.5759, 29359.1448, 29361.0215, 29362.9417, 29364.9821, 29367.0793, 29368.7526, 29370.3720]
+"
+executor-37768-input_prompt.txt,126,F,"RSI14: [36.0252, 34.8036, 35.3220, 43.7753, 48.9175, 59.4781, 52.7254, 45.8770, 39.3504, 38.1532, 41.1045, 37.8157, 39.8951, 39.3339, 44.5358, 45.5035, 47.7047, 48.9343, 43.2157, 42.7180]
+"
+executor-37768-input_prompt.txt,127,F,"ATR14: 46.3092
+"
+executor-37768-input_prompt.txt,128,F,"
+"
+executor-37768-input_prompt.txt,129,F,"current 15m bar: CLOSED at 12:30 CT (next close 12:45 CT)
+"
+executor-37768-input_prompt.txt,130,F,"
+"
+executor-37768-input_prompt.txt,131,F,"⚠️ 15m data stale: newest close 12:30 CT is 3468s old (period 900s + cap 90s)
+"
+executor-37768-input_prompt.txt,132,F,"
+"
+executor-37768-input_prompt.txt,133,F,"=== 1H Timeframe (oldest → latest) ===
+"
+executor-37768-input_prompt.txt,134,F,"
+"
+executor-37768-input_prompt.txt,135,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+executor-37768-input_prompt.txt,136,F,"09-03 17:00    29500.0000 29513.0000 29481.5000 29508.5000 20561.00    
+"
+executor-37768-input_prompt.txt,137,F,"09-03 18:00    29508.2500 29516.7500 29496.0000 29504.5000 17205.00    
+"
+executor-37768-input_prompt.txt,138,F,"09-03 19:00    29503.7500 29542.0000 29491.0000 29530.2500 37919.00    
+"
+executor-37768-input_prompt.txt,139,F,"09-03 20:00    29530.0000 29549.2500 29516.0000 29547.7500 37790.00    
+"
+executor-37768-input_prompt.txt,140,F,"09-03 21:00    29548.2500 29568.5000 29537.0000 29564.7500 25201.00    
+"
+executor-37768-input_prompt.txt,141,F,"09-03 22:00    29565.0000 29579.5000 29557.0000 29570.2500 20442.00    
+"
+executor-37768-input_prompt.txt,142,F,"09-03 23:00    29571.0000 29601.0000 29556.2500 29597.2500 28301.00    
+"
+executor-37768-input_prompt.txt,143,F,"09-04 00:00    29597.7500 29643.5000 29591.5000 29619.5000 38372.00    
+"
+executor-37768-input_prompt.txt,144,F,"09-04 01:00    29620.0000 29644.2500 29573.7500 29576.0000 41498.00    
+"
+executor-37768-input_prompt.txt,145,F,"09-04 02:00    29577.2500 29658.7500 29575.0000 29653.0000 35334.00    
+"
+executor-37768-input_prompt.txt,146,F,"09-04 03:00    29653.7500 29673.0000 29634.7500 29658.5000 35616.00    
+"
+executor-37768-input_prompt.txt,147,F,"09-04 04:00    29657.5000 29661.7500 29616.2500 29657.2500 24346.00    
+"
+executor-37768-input_prompt.txt,148,F,"09-04 05:00    29656.7500 29698.5000 29654.2500 29681.0000 22374.00    
+"
+executor-37768-input_prompt.txt,149,F,"09-04 06:00    29681.2500 29689.5000 29650.5000 29681.7500 26038.00    
+"
+executor-37768-input_prompt.txt,150,F,"09-04 07:00    29682.2500 29720.0000 29502.0000 29546.5000 143899.00   
+"
+executor-37768-input_prompt.txt,151,F,"09-04 08:00    29546.5000 29692.0000 29523.0000 29691.2500 298310.00   
+"
+executor-37768-input_prompt.txt,152,F,"09-04 09:00    29691.0000 29691.2500 29498.5000 29520.7500 346019.00   
+"
+executor-37768-input_prompt.txt,153,F,"09-04 10:00    29520.5000 29543.5000 29477.7500 29515.2500 214757.00   
+"
+executor-37768-input_prompt.txt,154,F,"09-04 11:00    29514.7500 29596.0000 29504.0000 29575.7500 131483.00   
+"
+executor-37768-input_prompt.txt,155,F,"09-04 12:00    29576.0000 29580.5000 29526.5000 29531.5000 50739.00      <- current
+"
+executor-37768-input_prompt.txt,156,F,"
+"
+executor-37768-input_prompt.txt,157,F,"EMA50: [29282.8512, 29291.5433, 29300.9043, 29310.5845, 29320.5518, 29330.3439, 29340.8108, 29351.7398, 29360.5343, 29372.0036, 29383.2387, 29393.9843, 29405.2398, 29416.0833, 29421.1977, 29431.7880, 29435.2767, 29438.4129, 29443.7987, 29447.2379]
+"
+executor-37768-input_prompt.txt,158,F,"EMA200: [29333.5038, 29335.2052, 29337.1460, 29339.2415, 29341.4854, 29343.7616, 29346.2839, 29349.0025, 29351.2612, 29354.2635, 29357.2908, 29360.2754, 29363.4667, 29366.6337, 29368.4234, 29371.6356, 29373.1194, 29374.5336, 29376.5358, 29378.0777]
+"
+executor-37768-input_prompt.txt,159,F,"RSI14: [66.9298, 66.4315, 68.0791, 69.1861, 70.2648, 70.6231, 72.3826, 73.7764, 66.6899, 71.8452, 72.1764, 71.9692, 73.5246, 73.5745, 53.8692, 64.7504, 49.8383, 49.4427, 53.7877, 50.3775]
+"
+executor-37768-input_prompt.txt,160,F,"ATR14: 82.9856
+"
+executor-37768-input_prompt.txt,161,F,"
+"
+executor-37768-input_prompt.txt,162,F,"current 1h bar: CLOSED at 13:00 CT (next close 14:00 CT)
+"
+executor-37768-input_prompt.txt,163,F,"
+"
+executor-37768-input_prompt.txt,164,F,"=== 4H Timeframe (oldest → latest) ===
+"
+executor-37768-input_prompt.txt,165,F,"
+"
+executor-37768-input_prompt.txt,166,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+executor-37768-input_prompt.txt,167,F,"09-01 05:00    29213.0000 29258.0000 29040.0000 29105.5000 533807.00   
+"
+executor-37768-input_prompt.txt,168,F,"09-01 09:00    29107.2500 29317.2500 29085.0000 29140.2500 996510.00   
+"
+executor-37768-input_prompt.txt,169,F,"09-01 12:00    29140.5000 29160.2500 29001.7500 29139.0000 437264.00   
+"
+executor-37768-input_prompt.txt,170,F,"09-01 17:00    29137.2500 29171.2500 29047.2500 29074.7500 197553.00   
+"
+executor-37768-input_prompt.txt,171,F,"09-01 21:00    29075.2500 29105.0000 29035.2500 29071.5000 150220.00   
+"
+executor-37768-input_prompt.txt,172,F,"09-02 01:00    29072.5000 29121.0000 28940.7500 28973.2500 191534.00   
+"
+executor-37768-input_prompt.txt,173,F,"09-02 05:00    28973.2500 29149.2500 28927.2500 29062.5000 480265.00   
+"
+executor-37768-input_prompt.txt,174,F,"09-02 09:00    29062.0000 29211.7500 29032.2500 29159.5000 855017.00   
+"
+executor-37768-input_prompt.txt,175,F,"09-02 12:00    29159.2500 29212.5000 29130.2500 29143.0000 303047.00   
+"
+executor-37768-input_prompt.txt,176,F,"09-02 17:00    29175.7500 29218.2500 29132.5000 29137.2500 172885.00   
+"
+executor-37768-input_prompt.txt,177,F,"09-02 21:00    29137.2500 29255.0000 29075.0000 29188.7500 207827.00   
+"
+executor-37768-input_prompt.txt,178,F,"09-03 01:00    29188.5000 29293.0000 29127.0000 29137.0000 179951.00   
+"
+executor-37768-input_prompt.txt,179,F,"09-03 05:00    29138.0000 29375.2500 29101.7500 29332.2500 540800.00   
+"
+executor-37768-input_prompt.txt,180,F,"09-03 09:00    29332.2500 29553.0000 29241.5000 29543.5000 957856.00   
+"
+executor-37768-input_prompt.txt,181,F,"09-03 12:00    29543.5000 29585.0000 29498.7500 29502.7500 275949.00   
+"
+executor-37768-input_prompt.txt,182,F,"09-03 17:00    29500.0000 29549.2500 29481.5000 29547.7500 113475.00   
+"
+executor-37768-input_prompt.txt,183,F,"09-03 21:00    29548.2500 29643.5000 29537.0000 29619.5000 112316.00   
+"
+executor-37768-input_prompt.txt,184,F,"09-04 01:00    29620.0000 29673.0000 29573.7500 29657.2500 136794.00   
+"
+executor-37768-input_prompt.txt,185,F,"09-04 05:00    29656.7500 29720.0000 29502.0000 29691.2500 490621.00   
+"
+executor-37768-input_prompt.txt,186,F,"09-04 09:00    29691.0000 29691.2500 29477.7500 29531.5000 742998.00     <- current
+"
+executor-37768-input_prompt.txt,187,F,"
+"
+executor-37768-input_prompt.txt,188,F,"EMA50: [29453.4690, 29441.1859, 29429.3355, 29415.4302, 29401.9427, 29385.1312, 29372.4790, 29364.1269, 29355.4553, 29346.8982, 29340.6963, 29332.7082, 29332.6902, 29340.9573, 29347.3021, 29355.1628, 29365.5290, 29376.9690, 29389.2938, 29394.8705]
+"
+executor-37768-input_prompt.txt,189,F,"EMA200: [29229.2092, 29228.3240, 29227.4352, 29225.9160, 29224.3795, 29221.8807, 29220.2948, 29219.6899, 29218.9268, 29218.1141, 29217.8219, 29217.0177, 29218.1643, 29221.4015, 29224.2010, 29227.4204, 29231.3217, 29235.5598, 29240.0940, 29242.9935]
+"
+executor-37768-input_prompt.txt,190,F,"RSI14: [35.9581, 37.8289, 37.7861, 35.5612, 35.4475, 32.1055, 37.8387, 43.4298, 42.7258, 42.4675, 45.6380, 43.0695, 53.6651, 61.9224, 59.7118, 61.3526, 63.8785, 65.1685, 66.3345, 56.7255]
+"
+executor-37768-input_prompt.txt,191,F,"ATR14: 164.9807
+"
+executor-37768-input_prompt.txt,192,F,"
+"
+executor-37768-input_prompt.txt,193,F,"current 4h bar: CLOSED at 13:00 CT (next close 17:00 CT)
+"
+executor-37768-input_prompt.txt,194,F,"
+"
+executor-37768-input_prompt.txt,195,F,"=== 1D Timeframe (oldest → latest) ===
+"
+executor-37768-input_prompt.txt,196,F,"
+"
+executor-37768-input_prompt.txt,197,F,"Time(CT)       Open      High      Low       Close     Volume
+"
+executor-37768-input_prompt.txt,198,F,"08-09 00:00    29851.5000 29985.0000 29719.0000 29737.0000 2219540.00  
+"
+executor-37768-input_prompt.txt,199,F,"08-10 00:00    29764.2500 29887.0000 29533.5000 29626.0000 2245157.00  
+"
+executor-37768-input_prompt.txt,200,F,"08-11 00:00    29663.0000 30001.5000 29625.0000 29853.2500 2007590.00  
+"
+executor-37768-input_prompt.txt,201,F,"08-12 00:00    29820.2500 30273.2500 29780.5000 30188.5000 1956105.00  
+"
+executor-37768-input_prompt.txt,202,F,"08-13 00:00    30213.0000 30287.2500 30025.0000 30141.7500 1925427.00  
+"
+executor-37768-input_prompt.txt,203,F,"08-16 00:00    30168.5000 30339.7500 30053.2500 30096.0000 1940635.00  
+"
+executor-37768-input_prompt.txt,204,F,"08-17 00:00    30078.7500 30124.2500 29514.0000 29586.0000 2507720.00  
+"
+executor-37768-input_prompt.txt,205,F,"08-18 00:00    29565.2500 29759.0000 29375.7500 29512.7500 2741650.00  
+"
+executor-37768-input_prompt.txt,206,F,"08-19 00:00    29562.5000 29688.5000 29202.5000 29300.5000 2655562.00  
+"
+executor-37768-input_prompt.txt,207,F,"08-20 00:00    29331.0000 29539.7500 29220.2500 29387.7500 2061750.00  
+"
+executor-37768-input_prompt.txt,208,F,"08-23 00:00    29392.2500 29480.5000 28947.7500 29105.7500 2443794.00  
+"
+executor-37768-input_prompt.txt,209,F,"08-24 00:00    29140.0000 29420.0000 29016.7500 29276.7500 2161983.00  
+"
+executor-37768-input_prompt.txt,210,F,"08-25 00:00    29288.7500 29437.2500 29095.5000 29289.5000 2443438.00  
+"
+executor-37768-input_prompt.txt,211,F,"08-26 00:00    29500.0000 29707.5000 29402.2500 29695.7500 2700061.00  
+"
+executor-37768-input_prompt.txt,212,F,"08-27 00:00    29635.0000 29811.7500 29437.0000 29491.7500 2617654.00  
+"
+executor-37768-input_prompt.txt,213,F,"08-30 00:00    29535.0000 29543.5000 29273.5000 29513.0000 2340435.00  
+"
+executor-37768-input_prompt.txt,214,F,"08-31 00:00    29518.5000 29571.0000 29001.7500 29125.5000 2550843.00  
+"
+executor-37768-input_prompt.txt,215,F,"09-01 00:00    29137.2500 29212.5000 28927.2500 29186.2500 2177636.00  
+"
+executor-37768-input_prompt.txt,216,F,"09-02 00:00    29175.7500 29585.0000 29075.0000 29524.7500 2335268.00  
+"
+executor-37768-input_prompt.txt,217,F,"09-03 00:00    29551.5000 29720.0000 29477.7500 29531.5000 1474331.00    <- current
+"
+executor-37768-input_prompt.txt,218,F,"
+"
+executor-37768-input_prompt.txt,219,F,"EMA50: [29178.1025, 29195.6671, 29221.4547, 29259.3780, 29293.9809, 29325.4326, 29335.6509, 29342.5960, 29340.9452, 29342.7806, 29333.4853, 29331.2604, 29329.6227, 29343.9807, 29349.7756, 29356.1765, 29347.1304, 29340.8213, 29348.0342, 29355.2290]
+"
+executor-37768-input_prompt.txt,220,F,"EMA200: [27218.0028, 27241.9630, 27267.9459, 27297.0062, 27325.3121, 27352.8811, 27375.1012, 27396.3713, 27415.3179, 27434.9441, 27451.5690, 27469.7300, 27487.8372, 27509.8065, 27529.5273, 27549.2633, 27564.9473, 27581.0797, 27600.4197, 27619.6344]
+"
+executor-37768-input_prompt.txt,221,F,"RSI14: [55.5064, 54.2614, 56.4168, 59.4525, 58.8371, 58.2021, 51.5264, 50.6282, 48.0163, 49.1770, 45.6307, 48.0759, 48.2627, 53.9488, 50.9223, 51.2292, 45.6258, 46.6118, 51.8506, 51.9518]
+"
+executor-37768-input_prompt.txt,222,F,"ATR14: 456.2190
+"
+executor-37768-input_prompt.txt,223,F,"
+"
+executor-37768-input_prompt.txt,224,F,"current 1d bar: CLOSED at 00:00 CT (next close 00:00 CT)
+"
+executor-37768-input_prompt.txt,225,F,"
+"
+executor-37768-input_prompt.txt,226,F,"
+"
+executor-37768-input_prompt.txt,227,F,"
+"
+executor-37768-input_prompt.txt,228,F,"STRUCTURE 5m: TRENDING_UP (HH 29596.00 @11:55 CT) · 15m: TRENDING_DOWN (LH 29596.00 @12:00 CT) · 1h: RANGING (LL 29477.75 @11:00 CT)
+"
+executor-37768-input_prompt.txt,229,F,"
+"
+executor-37768-input_prompt.txt,230,F,"---
+"
+executor-37768-input_prompt.txt,231,F,"
+"
+executor-37768-input_prompt.txt,232,I,"Now please analyze and output your decision (Chain of Thought + JSON)
+"

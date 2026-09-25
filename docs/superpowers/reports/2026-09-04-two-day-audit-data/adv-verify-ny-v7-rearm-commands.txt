@@ -1,0 +1,71 @@
+ADVERSARIAL VERIFICATION — "2026-09-03:NY v7 never re-armed" (run 2026-09-04, worktree /home/hoang/nofx-2day04 @24685b70)
+All DB reads: sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro"
+
+[1] plans rows for the NY chain (created_at is stored UTC with an explicit +00:00 suffix; CT = UTC-5)
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT plan_id,version,lifecycle,trigger_reason,created_at FROM plans WHERE plan_id LIKE '2026-09-0%' ORDER BY plan_id,version;"
+ -> 2026-09-03:NY v1..v7 only. v7 lifecycle=dormant, trigger_reason='dormant:death:death-condition: 2x5m close below 29502.25 (buffer 0.5xATR14, 2x 5m closes)',
+    created_at 2026-09-03 16:27:53+00:00 = 11:27:53 CT (version BIRTH; lifecycle/trigger_reason are updated in place at dormancy).
+
+[2] dormancy stamp
+sqlite3 ... "SELECT key,value,datetime(CAST(value AS INTEGER)/1000,'unixepoch','-5 hours') FROM system_config WHERE key LIKE '%dormant%';"
+ -> plan_dormant_since:2026-09-03:NY:<sid>:7 = 1788455700999 = 2026-09-03 12:15:00.999 CT.  Never reset to 0.
+
+[3] log proof of dormancy + arm death
+sed -n '5250,5266p' /home/hoang/nofx/data/nofx_2026-09-03.log
+ -> 09-03 12:15:00  "plan 2026-09-03 NY v7 DORMANT - death-condition: 2x5m close below 29502.25"
+ -> 09-03 12:15:01  "armed S3 cancelled in NT8" + "armed cancel: no active plan - 1 order(s) disarmed"
+
+[4] armed_orders (created_at/updated_at are stored UTC)
+sqlite3 -header -column ... "SELECT id,version,session,scenario,side,entry_px,stop_px,target_px,state,state_reason,armed_under_version,datetime(created_at),datetime(updated_at) FROM armed_orders WHERE id>=30;"
+ -> id 37 NY S3 short 29543.75 armed_under_version=7 created 16:58:33 UTC = 11:58:33 CT, cancelled 17:15:01 UTC = 12:15:01 CT ("cancelled in NT8").
+ -> id 37 is the LAST armed_orders row (no row created after it, any session, through 2026-09-04).
+
+[5] outage
+awk '{t=substr($0,7,5); if(t!=p){print NR" "substr($0,1,14); p=t}}' /home/hoang/nofx/data/nofx_2026-09-03.log | grep -E " (12|13|14):"
+ -> 5422 "09-03 12:23:33" then 5424 "09-03 14:18:24".  Gap = 1h54m51s.  L5422 is a WARN cut mid-write (hard kill);
+    L5424 is a fresh banner from cc2/main.go (the pre-outage process banner at L1 is cleanclone/main.go) -> different binary = a cutover.
+
+[6] 1m bar availability (resolver probe, market/bar_resolver.go CompletedBars via trader/bar_source_boot.go:49)
+for n in 143 170 5561 5614 6012 6153 6310; do sed -n "${n}p" /home/hoang/nofx/data/nofx_2026-09-03.log | grep -o '. 1m [^.]*'; done
+ -> 10:28:29 UNAVAILABLE / 10:28:44 nt8 (1999) / 14:18:27 UNAVAILABLE / 14:23:24 UNAVAILABLE / 14:59:04 UNAVAILABLE / 15:02:18 UNAVAILABLE / 15:06:48 nt8 (2001)
+
+[7] DIRECT probe of the SAME call describeDormantCleared makes (trader/auto_trader_feedwatch.go:51-61 feedNewestBarAge -> market.FuturesBarsProvider(sym,"1m",2))
+grep "FEED DOWN" /home/hoang/nofx/data/nofx_2026-09-03.log | awk '{ts=$2; match($0,/no NT8 bar for [^ ]+/); print ts" "substr($0,RSTART,RLENGTH)}'
+ -> 31 consecutive lines 14:28:39 (10m0s) .. 14:58:28 (40m0s), age advancing exactly 1m each fire, baseline 14:18:39 = at.startTime.
+    checkFeedDown sets gapStart = at.startTime ONLY when !haveBars, so the unbroken from-boot ladder proves
+    FuturesBarsProvider(MNQ,"1m",N) returned ZERO bars for the whole 14:18:39 -> 14:58:28 stretch.
+ corroboration: "bars: persisting 28 symbolxtf retention=90d rows=75140 (backfilled 0)" repeats every 15s from 14:18:39 with an UNCHANGED row count.
+
+[8] decision cycles in the window
+grep "skipping decision cycle" /home/hoang/nofx/data/nofx_2026-09-03.log
+ -> 26 consecutive skips 14:18:27 .. 15:06:18 CT, all "no balance frame yet (equity 0)" (trader/auto_trader_loop.go:455-461).
+ first "Account equity" line after the restart: 09-03 15:08:18 CT.
+
+[9] re-arm never logged
+grep -c REARMED /home/hoang/nofx/data/nofx_2026-09-03.log -> 0
+(note: the log file is named by PROCESS-START day, not line day - nofx_2026-09-02.log carries 09-03 00:00..10:28 CT,
+ including REARMED at 09-03 00:05:01 and 04:30:55; both precede the NY window and neither is a NY plan.)
+
+[10] live session registry (NOT the "08:25->15:00" in the auto_trader_clock.go:291 comment)
+sqlite3 ... "SELECT value FROM system_config WHERE key='session_registry';"
+ -> NY: read_ct 08:00, window_end_ct 14:45, flat_ct 14:45, enabled true.
+ inSessionReadWindow(now,"08:00","14:45") => the re-arm call site (trader/auto_trader_planner.go:261) is live only 08:00-14:45 CT.
+ Post-restart re-arm opportunity = 14:18:24 -> 14:45:00 CT (14 ticks). 1m bars returned 15:06:48, 21m48s after the window shut.
+
+[11] counterfactual (would it have re-armed with bars?)
+sqlite3 -header -column ... "SELECT datetime(open_time_ms/1000,'unixepoch','-5 hours'),o,h,l,c FROM bars WHERE symbol='MNQ' AND tf='5m' AND open_time_ms BETWEEN strftime('%s','2026-09-03 16:00:00')*1000 AND strftime('%s','2026-09-03 20:15:00')*1000 ORDER BY open_time_ms;"
+ re-arm predicate (kernel/plan_lifecycle.go:283-318): line = 29502.25 + 0.5xATR14(5m); dir=above; need = max(RuleAcceptanceNeed("2x5m"), FlipConfirmCloses()) = 2
+ CONSECUTIVE most-recent closed 5m closes (kernel/scenario_facts.go:251 RuleClosesBeyond -> ClosesBeyond).
+ ATR14(5m) over 13:10-14:15 ranges ~= 14.6 pt -> buffer ~= 7.3 -> line ~= 29509.5.
+ 5m closes 14:00 29557.00 | 14:05 29549.50 | 14:10 29538.75 | 14:15 29543.25  -> n>=4 >= need 2  => re-arm WOULD have fired at 14:20:26.
+ and earlier: 12:30 close 29514.25, 12:35 close 29520.25 -> 2 consecutive above by 12:40 => it would have re-armed ~12:40 had the process not died.
+ knobs are DEFAULTS (verified, not assumed): no FLIP_ATR_BUFFER / FLIP_CONFIRM_CLOSES / DORMANT_MIN_HOLD_MIN in /home/hoang/nofx/.env
+ (grep -cE "FLIP|DORMANT" /home/hoang/nofx/.env -> 0) and none in the live process env (tr '\0' '\n' < /proc/594377/environ | grep -E '^(FLIP_ATR_BUFFER|FLIP_CONFIRM_CLOSES|DORMANT_MIN_HOLD_MIN)=' -> no match).
+
+[12] call-order proof that the re-arm check is NOT behind the data gates
+trader/auto_trader_clock.go:878-894  tickOnce -> evaluateWallClockWeeklyRead(); evaluateWallClockSessionReads()  <- TOP of the tick
+trader/auto_trader_clock.go:100      evaluateWallClockSessionReads -> maybeRunSessionReadsAt(now)
+trader/auto_trader_planner.go:261    if existing.Lifecycle=="dormant" { if cleared,why := at.describeDormantCleared(existing); cleared {...} }
+trader/auto_trader_planner.go:625-627  bars := market.FuturesBarsProvider(at.futuresSymbol(), kernel.AISVPBarInterval /*="1m", kernel/svp.go:46*/, kernel.AISVPBarCount /*=2000*/); if len(bars)==0 { return false,"" }
+ -> the bail is a SILENT return: no log line marks it.

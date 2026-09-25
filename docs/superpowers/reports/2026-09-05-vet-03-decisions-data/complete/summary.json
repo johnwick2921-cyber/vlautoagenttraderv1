@@ -1,0 +1,1583 @@
+{
+  "population": {
+    "era_ms": 1786770000000,
+    "raw_n": 71,
+    "excluded": [
+      {
+        "id": 530,
+        "test": false,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 539,
+        "test": false,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 545,
+        "test": false,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 546,
+        "test": false,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 566,
+        "test": false,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 571,
+        "test": false,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 572,
+        "test": true,
+        "unresolvable": false,
+        "null_pnl": true
+      },
+      {
+        "id": 573,
+        "test": true,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 574,
+        "test": true,
+        "unresolvable": true,
+        "null_pnl": false
+      },
+      {
+        "id": 576,
+        "test": false,
+        "unresolvable": false,
+        "null_pnl": true
+      },
+      {
+        "id": 577,
+        "test": false,
+        "unresolvable": false,
+        "null_pnl": true
+      },
+      {
+        "id": 579,
+        "test": false,
+        "unresolvable": false,
+        "null_pnl": true
+      },
+      {
+        "id": 580,
+        "test": false,
+        "unresolvable": true,
+        "null_pnl": false
+      }
+    ],
+    "eligible": {
+      "n": 58,
+      "ids": [
+        521,
+        522,
+        523,
+        524,
+        525,
+        526,
+        527,
+        528,
+        529,
+        531,
+        532,
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        540,
+        541,
+        542,
+        543,
+        544,
+        547,
+        548,
+        549,
+        550,
+        551,
+        552,
+        553,
+        554,
+        555,
+        556,
+        557,
+        558,
+        559,
+        560,
+        561,
+        562,
+        563,
+        564,
+        565,
+        567,
+        568,
+        569,
+        570,
+        575,
+        578,
+        581,
+        582,
+        583,
+        584,
+        585,
+        586,
+        587,
+        588,
+        589,
+        590,
+        591
+      ],
+      "pnl": -466.4285719999971,
+      "mean": -8.041871931034432,
+      "WLF": [
+        18,
+        38,
+        2
+      ],
+      "win_exflat": {
+        "k": 18,
+        "n": 56,
+        "pct": 32.143,
+        "wilson95": [
+          21.401,
+          45.178
+        ]
+      },
+      "win_all": {
+        "k": 18,
+        "n": 58,
+        "pct": 31.034,
+        "wilson95": [
+          20.622,
+          43.803
+        ]
+      },
+      "payoff": 1.7497502479284985,
+      "days": 12
+    },
+    "post_strict": {
+      "n": 0,
+      "ids": [],
+      "pnl": 0,
+      "mean": null,
+      "WLF": [
+        0,
+        0,
+        0
+      ],
+      "win_exflat": {
+        "k": 0,
+        "n": 0,
+        "pct": null,
+        "wilson95": null
+      },
+      "win_all": {
+        "k": 0,
+        "n": 0,
+        "pct": null,
+        "wilson95": null
+      },
+      "payoff": null,
+      "days": 0
+    }
+  },
+  "source": {
+    "armed_entry": {
+      "n": 2,
+      "ids": [
+        582,
+        585
+      ],
+      "pnl": 52.0,
+      "mean": 26.0,
+      "WLF": [
+        1,
+        1,
+        0
+      ],
+      "win_exflat": {
+        "k": 1,
+        "n": 2,
+        "pct": 50.0,
+        "wilson95": [
+          9.453,
+          90.547
+        ]
+      },
+      "win_all": {
+        "k": 1,
+        "n": 2,
+        "pct": 50.0,
+        "wilson95": [
+          9.453,
+          90.547
+        ]
+      },
+      "payoff": 1.6709677419354838,
+      "days": 1
+    },
+    "reconcile": {
+      "n": 9,
+      "ids": [
+        567,
+        568,
+        569,
+        570,
+        575,
+        578,
+        584,
+        586,
+        591
+      ],
+      "pnl": 42.5,
+      "mean": 4.722222222222222,
+      "WLF": [
+        5,
+        4,
+        0
+      ],
+      "win_exflat": {
+        "k": 5,
+        "n": 9,
+        "pct": 55.556,
+        "wilson95": [
+          26.665,
+          81.122
+        ]
+      },
+      "win_all": {
+        "k": 5,
+        "n": 9,
+        "pct": 55.556,
+        "wilson95": [
+          26.665,
+          81.122
+        ]
+      },
+      "payoff": 0.926865671641791,
+      "days": 4
+    },
+    "system": {
+      "n": 47,
+      "ids": [
+        521,
+        522,
+        523,
+        524,
+        525,
+        526,
+        527,
+        528,
+        529,
+        531,
+        532,
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        540,
+        541,
+        542,
+        543,
+        544,
+        547,
+        548,
+        549,
+        550,
+        551,
+        552,
+        553,
+        554,
+        555,
+        556,
+        557,
+        558,
+        559,
+        560,
+        561,
+        562,
+        563,
+        564,
+        565,
+        581,
+        583,
+        587,
+        588,
+        589,
+        590
+      ],
+      "pnl": -560.9285719999971,
+      "mean": -11.934650468085044,
+      "WLF": [
+        12,
+        33,
+        2
+      ],
+      "win_exflat": {
+        "k": 12,
+        "n": 45,
+        "pct": 26.667,
+        "wilson95": [
+          15.965,
+          41.039
+        ]
+      },
+      "win_all": {
+        "k": 12,
+        "n": 47,
+        "pct": 25.532,
+        "wilson95": [
+          15.253,
+          39.508
+        ]
+      },
+      "payoff": 2.101712595556748,
+      "days": 9
+    }
+  },
+  "session": {
+    "ASIA": {
+      "n": 16,
+      "ids": [
+        525,
+        526,
+        527,
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        550,
+        551,
+        552,
+        553,
+        561,
+        567,
+        587
+      ],
+      "pnl": -552.4285719999971,
+      "mean": -34.52678574999982,
+      "WLF": [
+        2,
+        13,
+        1
+      ],
+      "win_exflat": {
+        "k": 2,
+        "n": 15,
+        "pct": 13.333,
+        "wilson95": [
+          3.736,
+          37.882
+        ]
+      },
+      "win_all": {
+        "k": 2,
+        "n": 16,
+        "pct": 12.5,
+        "wilson95": [
+          3.498,
+          36.023
+        ]
+      },
+      "payoff": 1.420581993395514,
+      "days": 6
+    },
+    "LONDON": {
+      "n": 21,
+      "ids": [
+        521,
+        522,
+        528,
+        529,
+        540,
+        541,
+        554,
+        555,
+        556,
+        557,
+        558,
+        562,
+        563,
+        564,
+        565,
+        568,
+        581,
+        582,
+        583,
+        584,
+        588
+      ],
+      "pnl": 24.0,
+      "mean": 1.1428571428571428,
+      "WLF": [
+        7,
+        14,
+        0
+      ],
+      "win_exflat": {
+        "k": 7,
+        "n": 21,
+        "pct": 33.333,
+        "wilson95": [
+          17.195,
+          54.627
+        ]
+      },
+      "win_all": {
+        "k": 7,
+        "n": 21,
+        "pct": 33.333,
+        "wilson95": [
+          17.195,
+          54.627
+        ]
+      },
+      "payoff": 2.0520325203252034,
+      "days": 9
+    },
+    "NY": {
+      "n": 21,
+      "ids": [
+        523,
+        524,
+        531,
+        532,
+        542,
+        543,
+        544,
+        547,
+        548,
+        549,
+        559,
+        560,
+        569,
+        570,
+        575,
+        578,
+        585,
+        586,
+        589,
+        590,
+        591
+      ],
+      "pnl": 62.0,
+      "mean": 2.9523809523809526,
+      "WLF": [
+        9,
+        11,
+        1
+      ],
+      "win_exflat": {
+        "k": 9,
+        "n": 20,
+        "pct": 45.0,
+        "wilson95": [
+          25.82,
+          65.792
+        ]
+      },
+      "win_all": {
+        "k": 9,
+        "n": 21,
+        "pct": 42.857,
+        "wilson95": [
+          24.47,
+          63.454
+        ]
+      },
+      "payoff": 1.2913940869212435,
+      "days": 10
+    }
+  },
+  "side": {
+    "LONG": {
+      "n": 19,
+      "ids": [
+        525,
+        531,
+        540,
+        541,
+        555,
+        556,
+        557,
+        558,
+        559,
+        561,
+        563,
+        570,
+        578,
+        583,
+        586,
+        587,
+        588,
+        589,
+        590
+      ],
+      "pnl": -808.5,
+      "mean": -42.55263157894737,
+      "WLF": [
+        4,
+        15,
+        0
+      ],
+      "win_exflat": {
+        "k": 4,
+        "n": 19,
+        "pct": 21.053,
+        "wilson95": [
+          8.508,
+          43.335
+        ]
+      },
+      "win_all": {
+        "k": 4,
+        "n": 19,
+        "pct": 21.053,
+        "wilson95": [
+          8.508,
+          43.335
+        ]
+      },
+      "payoff": 1.0716651943462898,
+      "days": 8
+    },
+    "SHORT": {
+      "n": 39,
+      "ids": [
+        521,
+        522,
+        523,
+        524,
+        526,
+        527,
+        528,
+        529,
+        532,
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        542,
+        543,
+        544,
+        547,
+        548,
+        549,
+        550,
+        551,
+        552,
+        553,
+        554,
+        560,
+        562,
+        564,
+        565,
+        567,
+        568,
+        569,
+        575,
+        581,
+        582,
+        584,
+        585,
+        591
+      ],
+      "pnl": 342.0714280000029,
+      "mean": 8.771062256410332,
+      "WLF": [
+        14,
+        23,
+        2
+      ],
+      "win_exflat": {
+        "k": 14,
+        "n": 37,
+        "pct": 37.838,
+        "wilson95": [
+          24.064,
+          53.9
+        ]
+      },
+      "win_all": {
+        "k": 14,
+        "n": 39,
+        "pct": 35.897,
+        "wilson95": [
+          22.742,
+          51.582
+        ]
+      },
+      "payoff": 1.9956504185478179,
+      "days": 11
+    }
+  },
+  "slot": {
+    "S1": {
+      "n": 27,
+      "ids": [
+        521,
+        523,
+        524,
+        525,
+        528,
+        532,
+        535,
+        536,
+        537,
+        538,
+        540,
+        541,
+        544,
+        548,
+        556,
+        557,
+        558,
+        561,
+        563,
+        565,
+        567,
+        568,
+        569,
+        578,
+        581,
+        585,
+        591
+      ],
+      "pnl": 321.0,
+      "mean": 11.88888888888889,
+      "WLF": [
+        10,
+        17,
+        0
+      ],
+      "win_exflat": {
+        "k": 10,
+        "n": 27,
+        "pct": 37.037,
+        "wilson95": [
+          21.532,
+          55.771
+        ]
+      },
+      "win_all": {
+        "k": 10,
+        "n": 27,
+        "pct": 37.037,
+        "wilson95": [
+          21.532,
+          55.771
+        ]
+      },
+      "payoff": 2.2119136960600376,
+      "days": 11
+    },
+    "S2": {
+      "n": 22,
+      "ids": [
+        526,
+        527,
+        529,
+        533,
+        534,
+        542,
+        543,
+        547,
+        549,
+        550,
+        551,
+        552,
+        553,
+        554,
+        555,
+        562,
+        570,
+        575,
+        582,
+        583,
+        584,
+        588
+      ],
+      "pnl": -142.42857199999708,
+      "mean": -6.474025999999867,
+      "WLF": [
+        7,
+        13,
+        2
+      ],
+      "win_exflat": {
+        "k": 7,
+        "n": 20,
+        "pct": 35.0,
+        "wilson95": [
+          18.119,
+          56.715
+        ]
+      },
+      "win_all": {
+        "k": 7,
+        "n": 22,
+        "pct": 31.818,
+        "wilson95": [
+          16.36,
+          52.682
+        ]
+      },
+      "payoff": 1.5736161080630224,
+      "days": 9
+    },
+    "S3": {
+      "n": 7,
+      "ids": [
+        522,
+        531,
+        560,
+        564,
+        586,
+        587,
+        589
+      ],
+      "pnl": -467.5,
+      "mean": -66.78571428571429,
+      "WLF": [
+        1,
+        6,
+        0
+      ],
+      "win_exflat": {
+        "k": 1,
+        "n": 7,
+        "pct": 14.286,
+        "wilson95": [
+          2.568,
+          51.313
+        ]
+      },
+      "win_all": {
+        "k": 1,
+        "n": 7,
+        "pct": 14.286,
+        "wilson95": [
+          2.568,
+          51.313
+        ]
+      },
+      "payoff": 0.886052871467639,
+      "days": 6
+    },
+    "S4": {
+      "n": 2,
+      "ids": [
+        559,
+        590
+      ],
+      "pnl": -177.5,
+      "mean": -88.75,
+      "WLF": [
+        0,
+        2,
+        0
+      ],
+      "win_exflat": {
+        "k": 0,
+        "n": 2,
+        "pct": 0.0,
+        "wilson95": [
+          0.0,
+          65.763
+        ]
+      },
+      "win_all": {
+        "k": 0,
+        "n": 2,
+        "pct": 0.0,
+        "wilson95": [
+          0.0,
+          65.763
+        ]
+      },
+      "payoff": null,
+      "days": 2
+    }
+  },
+  "excursions_count": 0,
+  "subset47": {
+    "n": 47,
+    "plan_scenario_join": {
+      "k": 47,
+      "n": 47,
+      "pct": 100.0,
+      "wilson95": [
+        92.444,
+        100.0
+      ]
+    },
+    "plan_precedes_entry": {
+      "k": 47,
+      "n": 47,
+      "pct": 100.0,
+      "wilson95": [
+        92.444,
+        100.0
+      ]
+    },
+    "unique_exact_executed_ticket": {
+      "k": 47,
+      "n": 47,
+      "pct": 100.0,
+      "wilson95": [
+        92.444,
+        100.0
+      ]
+    },
+    "by_condition": {
+      "acceptance": {
+        "n": 6,
+        "ids": [
+          522,
+          526,
+          527,
+          532,
+          542,
+          543
+        ],
+        "pnl": 4.571428000002925,
+        "mean": 0.7619046666671542,
+        "WLF": [
+          1,
+          4,
+          1
+        ],
+        "win_exflat": {
+          "k": 1,
+          "n": 5,
+          "pct": 20.0,
+          "wilson95": [
+            3.622,
+            62.447
+          ]
+        },
+        "win_all": {
+          "k": 1,
+          "n": 6,
+          "pct": 16.667,
+          "wilson95": [
+            3.005,
+            56.351
+          ]
+        },
+        "payoff": 4.0596736521032115,
+        "days": 3
+      },
+      "breakout_retest": {
+        "n": 9,
+        "ids": [
+          528,
+          534,
+          556,
+          557,
+          558,
+          562,
+          563,
+          589,
+          590
+        ],
+        "pnl": -581.5,
+        "mean": -64.61111111111111,
+        "WLF": [
+          1,
+          8,
+          0
+        ],
+        "win_exflat": {
+          "k": 1,
+          "n": 9,
+          "pct": 11.111,
+          "wilson95": [
+            1.989,
+            43.501
+          ]
+        },
+        "win_all": {
+          "k": 1,
+          "n": 9,
+          "pct": 11.111,
+          "wilson95": [
+            1.989,
+            43.501
+          ]
+        },
+        "payoff": 0.5923566878980892,
+        "days": 5
+      },
+      "hold": {
+        "n": 1,
+        "ids": [
+          555
+        ],
+        "pnl": 168.0,
+        "mean": 168.0,
+        "WLF": [
+          1,
+          0,
+          0
+        ],
+        "win_exflat": {
+          "k": 1,
+          "n": 1,
+          "pct": 100.0,
+          "wilson95": [
+            20.654,
+            100.0
+          ]
+        },
+        "win_all": {
+          "k": 1,
+          "n": 1,
+          "pct": 100.0,
+          "wilson95": [
+            20.654,
+            100.0
+          ]
+        },
+        "payoff": null,
+        "days": 1
+      },
+      "reclaim": {
+        "n": 5,
+        "ids": [
+          525,
+          531,
+          540,
+          541,
+          588
+        ],
+        "pnl": -436.5,
+        "mean": -87.3,
+        "WLF": [
+          0,
+          5,
+          0
+        ],
+        "win_exflat": {
+          "k": 0,
+          "n": 5,
+          "pct": 0.0,
+          "wilson95": [
+            -0.0,
+            43.449
+          ]
+        },
+        "win_all": {
+          "k": 0,
+          "n": 5,
+          "pct": 0.0,
+          "wilson95": [
+            -0.0,
+            43.449
+          ]
+        },
+        "payoff": null,
+        "days": 3
+      },
+      "reject": {
+        "n": 23,
+        "ids": [
+          521,
+          523,
+          524,
+          529,
+          533,
+          535,
+          536,
+          537,
+          538,
+          544,
+          547,
+          548,
+          549,
+          550,
+          551,
+          552,
+          553,
+          554,
+          560,
+          564,
+          565,
+          581,
+          587
+        ],
+        "pnl": 497.5,
+        "mean": 21.630434782608695,
+        "WLF": [
+          9,
+          13,
+          1
+        ],
+        "win_exflat": {
+          "k": 9,
+          "n": 22,
+          "pct": 40.909,
+          "wilson95": [
+            23.256,
+            61.266
+          ]
+        },
+        "win_all": {
+          "k": 9,
+          "n": 23,
+          "pct": 39.13,
+          "wilson95": [
+            22.157,
+            59.215
+          ]
+        },
+        "payoff": 2.347789650115231,
+        "days": 8
+      },
+      "sweep_reclaim": {
+        "n": 3,
+        "ids": [
+          559,
+          561,
+          583
+        ],
+        "pnl": -213.0,
+        "mean": -71.0,
+        "WLF": [
+          0,
+          3,
+          0
+        ],
+        "win_exflat": {
+          "k": 0,
+          "n": 3,
+          "pct": 0.0,
+          "wilson95": [
+            0.0,
+            56.151
+          ]
+        },
+        "win_all": {
+          "k": 0,
+          "n": 3,
+          "pct": 0.0,
+          "wilson95": [
+            0.0,
+            56.151
+          ]
+        },
+        "payoff": null,
+        "days": 3
+      }
+    }
+  },
+  "last7": {
+    "all_session_types_versions": 95,
+    "excluded_non_intraday_rows": [
+      {
+        "plan_rowid": 223,
+        "plan_id": "2026-08-31:WEEKLY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+        "version": 1,
+        "session": "WEEKLY",
+        "trade_date": "2026-08-31",
+        "trigger_reason": "weekly_boot_backfill",
+        "created_at": "2026-09-03 00:06:24.297190952+00:00"
+      }
+    ],
+    "window_ct": [
+      "2026-08-29T00:00:00-05:00",
+      "2026-09-05T00:00:00-05:00"
+    ],
+    "plan_versions": 94,
+    "triggers": {
+      "e7_incident_kill:manual_cancel_respected": 2,
+      "planner_fail_closed": 14,
+      "owner_reset": 5,
+      "level_event": 56,
+      "rearmed:2x5m close back above 29426.92 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "dormant:flip:flip-condition: 2x5m close above 29231.63 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes) \u2192 bias long": 1,
+      "NY_scheduled_read": 1,
+      "dormant:death:death-condition: 2x5m close above 29125.00 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "dormant:flip:flip-condition: 2x5m close above 29177.50 (buffer 0.5\u00d7ATR14, 8\u00d7 5m closes) \u2192 bias long": 1,
+      "rearmed:2x5m close back below 29212.50 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "rearmed:2x5m close back above 29035.25 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "dormant:flip:flip-condition: 5m_close close above 29058.75 (buffer 0.5\u00d7ATR14, 6\u00d7 5m closes) \u2192 bias long": 1,
+      "ASIA_scheduled_read": 2,
+      "dormant:flip:flip-condition: 2x5m close above 29175.66 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes) \u2192 bias long": 1,
+      "rearmed:5m_close close back below 29211.00 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "dormant:death:death-condition: 5m_close close above 29132.50 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "dormant:flip:flip-condition: 2x5m close above 29221.98 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes) \u2192 bias long": 1,
+      "dormant:death:death-condition: 2x5m close above 29293.00 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "dormant:death:death-condition: 2x5m close below 29502.25 (buffer 0.5\u00d7ATR14, 2\u00d7 5m closes)": 1,
+      "LONDON_scheduled_read": 1
+    },
+    "reject_rows": 64,
+    "first_reject": "2026-09-01 16:59:57.290493794+00:00",
+    "family_shares_of_persisted_rejects": {
+      "arm_legs": {
+        "k": 5,
+        "n": 64,
+        "pct": 7.812,
+        "wilson95": [
+          3.383,
+          17.02
+        ],
+        "ids": [
+          69,
+          80,
+          84,
+          85,
+          86
+        ]
+      },
+      "arm_requires_pullback": {
+        "k": 5,
+        "n": 64,
+        "pct": 7.812,
+        "wilson95": [
+          3.383,
+          17.02
+        ],
+        "ids": [
+          120,
+          122,
+          125,
+          128,
+          131
+        ]
+      },
+      "confirmation_vocabulary": {
+        "k": 7,
+        "n": 64,
+        "pct": 10.938,
+        "wilson95": [
+          5.4,
+          20.899
+        ],
+        "ids": [
+          70,
+          78,
+          79,
+          81,
+          82,
+          112,
+          118
+        ]
+      },
+      "continuation_displacement_zero": {
+        "k": 6,
+        "n": 64,
+        "pct": 9.375,
+        "wilson95": [
+          4.368,
+          18.983
+        ],
+        "ids": [
+          114,
+          115,
+          117,
+          126,
+          129,
+          132
+        ]
+      },
+      "continuation_missing_close": {
+        "k": 5,
+        "n": 64,
+        "pct": 7.812,
+        "wilson95": [
+          3.383,
+          17.02
+        ],
+        "ids": [
+          119,
+          121,
+          124,
+          127,
+          130
+        ]
+      },
+      "continuation_void": {
+        "k": 21,
+        "n": 64,
+        "pct": 32.812,
+        "wilson95": [
+          22.57,
+          45.001
+        ],
+        "ids": [
+          73,
+          74,
+          75,
+          77,
+          83,
+          88,
+          92,
+          94,
+          96,
+          98,
+          100,
+          101,
+          102,
+          103,
+          105,
+          107,
+          108,
+          109,
+          110,
+          111,
+          113
+        ]
+      },
+      "fade_requires_touch": {
+        "k": 5,
+        "n": 64,
+        "pct": 7.812,
+        "wilson95": [
+          3.383,
+          17.02
+        ],
+        "ids": [
+          76,
+          93,
+          99,
+          104,
+          106
+        ]
+      },
+      "gap_up": {
+        "k": 2,
+        "n": 64,
+        "pct": 3.125,
+        "wilson95": [
+          0.861,
+          10.697
+        ],
+        "ids": [
+          116,
+          123
+        ]
+      },
+      "level_cap": {
+        "k": 1,
+        "n": 64,
+        "pct": 1.562,
+        "wilson95": [
+          0.276,
+          8.334
+        ],
+        "ids": [
+          97
+        ]
+      },
+      "retest_distance": {
+        "k": 1,
+        "n": 64,
+        "pct": 1.562,
+        "wilson95": [
+          0.276,
+          8.334
+        ],
+        "ids": [
+          95
+        ]
+      },
+      "transport": {
+        "k": 6,
+        "n": 64,
+        "pct": 9.375,
+        "wilson95": [
+          4.368,
+          18.983
+        ],
+        "ids": [
+          71,
+          72,
+          87,
+          89,
+          90,
+          91
+        ]
+      }
+    },
+    "true_attempt_reject_rate": "UNMEASURABLE: no read UUID or exhaustive success/transport attempt table; lifecycle rows and fail-closed versions are not accepted LLM attempts"
+  },
+  "reauthor": {
+    "episode_count": 31,
+    "matched": 22,
+    "median_seconds_association": 298.706014,
+    "min": 27.053355,
+    "max": 2131.077437,
+    "fail_closed_associations": 6,
+    "true_latency": "UNMEASURABLE without read/attempt start-end IDs; use worked log example separately"
+  },
+  "bar_conventions": {
+    "null": 12548,
+    "epoch_floor": 4155
+  },
+  "trigger": {
+    "all_version_scenarios": 261,
+    "statuses": {
+      "EXCLUDED_INACTIVE": 55,
+      "TOUCHED": 79,
+      "NOT_TOUCHED": 124,
+      "UNKNOWN_GAP": 3
+    },
+    "reachability_observable": {
+      "k": 79,
+      "n": 203,
+      "pct": 38.916,
+      "wilson95": [
+        32.474,
+        45.77
+      ]
+    },
+    "complete_grid_touch": {
+      "k": 79,
+      "n": 203,
+      "pct": 38.916,
+      "wilson95": [
+        32.474,
+        45.77
+      ]
+    },
+    "touch_only_confirmation_component": {
+      "k": 36,
+      "n": 96,
+      "pct": 37.5,
+      "wilson95": [
+        28.472,
+        47.489
+      ]
+    },
+    "n_distinct_geometry_per_plan": 255,
+    "by_condition_complete_grid": {
+      "acceptance": {
+        "k": 1,
+        "n": 1,
+        "pct": 100.0,
+        "wilson95": [
+          20.654,
+          100.0
+        ]
+      },
+      "breakdown_continue": {
+        "k": 1,
+        "n": 2,
+        "pct": 50.0,
+        "wilson95": [
+          9.453,
+          90.547
+        ]
+      },
+      "breakout_retest": {
+        "k": 13,
+        "n": 24,
+        "pct": 54.167,
+        "wilson95": [
+          35.075,
+          72.109
+        ]
+      },
+      "hold": {
+        "k": 2,
+        "n": 3,
+        "pct": 66.667,
+        "wilson95": [
+          20.765,
+          93.851
+        ]
+      },
+      "reclaim": {
+        "k": 14,
+        "n": 27,
+        "pct": 51.852,
+        "wilson95": [
+          33.985,
+          69.257
+        ]
+      },
+      "reject": {
+        "k": 30,
+        "n": 84,
+        "pct": 35.714,
+        "wilson95": [
+          26.299,
+          46.379
+        ]
+      },
+      "sweep_reclaim": {
+        "k": 18,
+        "n": 62,
+        "pct": 29.032,
+        "wilson95": [
+          19.223,
+          41.288
+        ]
+      }
+    },
+    "full_trigger_share": "UNMEASURABLE: full ordered confirmation/invalidation and live availability; bar reachability is not execution"
+  },
+  "refusals": {
+    "last_entry_cutoff (P2.3)": {
+      "event_count": 1,
+      "csv_lines": [
+        2
+      ],
+      "same_cycle_executed_lines": [],
+      "legacy_cf_usd_sum_not_causal": 22.5
+    },
+    "min_sl (EntryGate leg 6)": {
+      "event_count": 3,
+      "csv_lines": [
+        17,
+        19,
+        21
+      ],
+      "same_cycle_executed_lines": [],
+      "legacy_cf_usd_sum_not_causal": 317.0
+    },
+    "min_sl (validateDecision A3)": {
+      "event_count": 34,
+      "csv_lines": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        14,
+        16,
+        18,
+        20,
+        22,
+        23,
+        24,
+        25,
+        26,
+        30,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        40,
+        41,
+        42,
+        44,
+        47,
+        48,
+        50,
+        53,
+        56,
+        60
+      ],
+      "same_cycle_executed_lines": [
+        7,
+        10,
+        11
+      ],
+      "legacy_cf_usd_sum_not_causal": -435.0
+    },
+    "rr (armGateVerdictFor)": {
+      "event_count": 7,
+      "csv_lines": [
+        8,
+        9,
+        13,
+        15,
+        28,
+        37,
+        38
+      ],
+      "same_cycle_executed_lines": [],
+      "legacy_cf_usd_sum_not_causal": -43.14
+    },
+    "rr_at_fill (EntryGate leg 5)": {
+      "event_count": 3,
+      "csv_lines": [
+        27,
+        29,
+        31
+      ],
+      "same_cycle_executed_lines": [],
+      "legacy_cf_usd_sum_not_causal": -76.5
+    },
+    "strict (EntryGate leg 0)": {
+      "event_count": 13,
+      "csv_lines": [
+        43,
+        45,
+        46,
+        49,
+        51,
+        52,
+        54,
+        55,
+        57,
+        58,
+        59,
+        61,
+        62
+      ],
+      "same_cycle_executed_lines": [],
+      "legacy_cf_usd_sum_not_causal": -511.0
+    }
+  },
+  "strict_open_intents": {
+    "ids": [
+      37304,
+      37305,
+      37306,
+      37307,
+      37308,
+      37310,
+      37311,
+      37313,
+      37315,
+      37318,
+      37319,
+      37320,
+      37322
+    ],
+    "refused": {
+      "k": 13,
+      "n": 13,
+      "pct": 100.0,
+      "wilson95": [
+        77.19,
+        100.0
+      ]
+    }
+  },
+  "facts": {
+    "n": 32,
+    "empty_bias_n": 32
+  }
+}

@@ -1,0 +1,26 @@
+knob,registry_status,registry_consumer,census_label,census_source_line,resolved_value_live,conforms,note
+min_confidence,KnobLive,kernel/engine_analysis.go:557(riskConfig.MinConfidence),[O],knob-census.md:80,60,yes,"safe default also [R/O] (knob-census.md:105)"
+min_risk_reward_ratio,KnobLive,kernel/engine_analysis.go:556,[O],knob-census.md:81,2.0,NO,"census [O]=3.0; live DB=2.0"
+max_positions,KnobLive,kernel/engine_analysis.go,[O],knob-census.md:82,3,yes,
+btc_eth_max_leverage,KnobLive,kernel/engine_analysis.go:551,[O],knob-census.md:83,5,yes,"crypto-shaped; still clamps futures decisions via parseFullDecisionResponse"
+altcoin_max_leverage,KnobLive,kernel/engine_analysis.go:552,[O],knob-census.md:83,5,yes,
+btc_eth_max_position_value_ratio,KnobLive,kernel/engine_analysis.go:553,[O],knob-census.md:84,5,yes,
+altcoin_max_position_value_ratio,KnobLive,kernel/engine_analysis.go:554,[O],knob-census.md:84,1,yes,
+daily_loss_limit_usd,KnobLive,kernel/engine_analysis.go:158,[O],knob-census.md:87,450,yes,"NOT ENFORCED: guardrails master OFF (boot WARN) + daily_loss_enabled=false"
+daily_profit_target_usd,KnobLive,kernel/engine_analysis.go:161,[O],knob-census.md:88,900,yes,"same: master OFF"
+max_daily_trades,KnobLive,kernel/engine_analysis.go,[O],knob-census.md:89,3,yes,"max_daily_trades_enabled=false"
+max_contracts_per_order,KnobLive,kernel/engine_analysis.go,[O],knob-census.md:90,2,yes,"max_contracts_enabled=false and that toggle is KnobIneffective"
+breakeven_trigger_points,KnobLive,trader/auto_trader.go:199,[O],knob-census.md:91 + belief-census.md:84(E1),40,yes,"SUSPENDED at the wire by 0B (exit_mechs_suspend.go:34) - boot says BE=off"
+guardrails_enabled,KnobLive,kernel/engine_analysis.go,[O],knob-census.md:92,false,yes,"boot WARN confirms master OFF"
+plan_mode,KnobLive,trader/auto_trader_planconfig.go,[O],knob-census.md:95,strict,yes,
+proximity_filter_atr,KnobLive,trader/auto_trader_planconfig.go,[O],knob-census.md:96 + belief-census.md:75(D7),1.0,NO,"census [O]=0.3; live DB=1.0"
+max_levels,KnobLive,trader/auto_trader_planner.go,[O/C],knob-census.md:97,12,yes,
+scenario_cap,KnobLive,trader/auto_trader_planner.go,[O/C],knob-census.md:98,5,yes,
+replan_cap,KnobLive,trader/auto_trader_planconfig.go,[O],knob-census.md:100,4,yes,
+realign_cap,KnobLive,trader/auto_trader_planconfig.go,[O],knob-census.md:101,10,yes,
+min_grade,KnobLive,trader/auto_trader_planner.go,[O],knob-census.md:104,B,yes,"all three sessions B"
+breakeven_enabled,KnobLive,trader/auto_trader.go:196,[O](E1 family),belief-census.md:84,true,NO,"DB true but 0B refuses at the wire; boot BE=off"
+trailing_enabled,KnobLive,trader/auto_trader_trailing.go:43,[O](E2 family),belief-census.md:85,true,NO,"DB true but 0B refuses at the wire; boot trail=off"
+trailing_atr_mult,KnobLive,trader/auto_trader_trailing.go:44,[O](E2),belief-census.md:85,2.0(code default; DB absent),NO,SUSPENDED
+trailing_atr_period,KnobLive,trader/auto_trader_trailing.go,[O](E2),belief-census.md:85,14,NO,SUSPENDED
+sessions_enabled,KnobLive,trader/auto_trader_planconfig.go:77,[X]-candidate(queue #7),belief-census.md:135,"[""NY""]",NO,"per-session enable:true OVERRIDES it - ASIA+LONDON still run"

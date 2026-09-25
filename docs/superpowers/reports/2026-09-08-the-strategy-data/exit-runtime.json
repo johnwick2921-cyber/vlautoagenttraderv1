@@ -1,0 +1,10 @@
+{
+  "read_ct": "2026-09-08T18:32:00.328485-05:00",
+  "allowlisted_dotenv": {
+    "HTF_VETO_MODE": "cross",
+    "STOP_ENTRY_SEAM": "off"
+  },
+  "exit_boot_lines": [
+    "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] nofx/main.go:340 \ud83d\uded1 exits: stop=max(anchor+clr, 1.5\u00d7ATR5m) \u00b7 anchor_max=3.0\u00d7ATR5m \u00b7 BE=off \u00b7 trail=off \u00b7 size=1 \u00b7 re-arm-after-sweep=on (0B)"
+  ]
+}

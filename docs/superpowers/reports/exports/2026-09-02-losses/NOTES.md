@@ -1,0 +1,5 @@
+# source notes for config_at_trade.csv (no config_changes table exists in the DB — class-44 table never migrated; values from journal boot/arm lines + owner statement)
+# min_risk_reward_ratio: 3.0 -> 2.0 owner Studio change 2026-09-01 08:13 CT (owner statement; DB risk_control row = 2 today)
+# ARM_MIN_RR 2.0: boot line armed_orders arm_rr=2.0 (all eras)
+# min_sl_atr_mult: 1.0 pre-0B (09-01 S1 "1.0×ATR5m" feasibility lines) -> 1.5 post-0B (09-02 09:21+ "atr_floor ... (1.5×ATR5m ...)" stop-composition lines); 0B cutover = nofx.service restart 07:32:10 CT (journal)
+# BE 40 / trail 2.0×ATR14 / max_contracts 2: boot ledger line (unchanged)

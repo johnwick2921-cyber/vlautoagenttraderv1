@@ -1,0 +1,10 @@
+version|lifecycle|ct|trig|s1|s1_cond|s1_dir|s1_arm|s1_entry|s1_confirm
+1|active|2026-09-03 16:37:36|ASIA_scheduled_read|S1|breakout_retest|long|||1x5m_close
+2|dormant|2026-09-03 18:47:53|level_event|S1|sweep_reclaim|long|||touch
+3|active|2026-09-03 19:28:36|level_event|S1|reclaim|long|||1x5m_close
+4|active|2026-09-03 19:53:35|level_event|S1|reject|short|1|29548|touch
+5|dormant|2026-09-03 20:32:32|level_event|S1|sweep_reclaim|short|||touch
+6|active|2026-09-04 00:40:13|level_event|S1|breakout_retest|long|||1x5m_close
+7|dormant|2026-09-04 01:20:35|level_event|S1|breakout_retest|long|||touch
+'--- armed_orders for that plan'
+--- armed_orders for that plan

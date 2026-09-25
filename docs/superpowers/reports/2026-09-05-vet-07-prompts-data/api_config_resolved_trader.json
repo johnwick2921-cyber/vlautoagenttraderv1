@@ -1,0 +1,1331 @@
+{
+ "summary": {
+  "schema": 57,
+  "classified": 167,
+  "live": 144,
+  "ineffective": 7,
+  "candidate_unverified": 16,
+  "suspended": 0,
+  "advisory": 0,
+  "display_only": 0,
+  "infra": 0,
+  "env_shadows": 0,
+  "env_shadow_paths": []
+ },
+ "resolved": [
+  {
+   "path": "risk_control.min_risk_reward_ratio",
+   "saved": "2",
+   "resolved": "2",
+   "source": "saved value",
+   "line": "2 \u2192 2 \u00b7 saved value"
+  },
+  {
+   "path": "day_plan.plan_mode",
+   "saved": "strict",
+   "resolved": "strict",
+   "source": "strategy value",
+   "line": "strict \u2192 strict \u00b7 strategy value"
+  },
+  {
+   "path": "regime.htf_veto",
+   "saved": "(unset)",
+   "resolved": "true",
+   "source": "shipped default",
+   "line": "(unset) \u2192 true \u00b7 shipped default"
+  }
+ ],
+ "knob_count": 167,
+ "knobs": [
+  {
+   "path": "acceptance_rule",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "ai500_limit",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:448"
+   ]
+  },
+  {
+   "path": "altcoin_max_leverage",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:552"
+   ]
+  },
+  {
+   "path": "altcoin_max_position_value_ratio",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:554"
+   ]
+  },
+  {
+   "path": "approval_required",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planconfig.go:155"
+   ]
+  },
+  {
+   "path": "atr_multiplier",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid_levels.go:35"
+   ]
+  },
+  {
+   "path": "atr_periods",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:791"
+   ]
+  },
+  {
+   "path": "blackout_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:188"
+   ]
+  },
+  {
+   "path": "blackout_end_ct",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:167"
+   ]
+  },
+  {
+   "path": "blackout_start_ct",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:167"
+   ]
+  },
+  {
+   "path": "boll_periods",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:792"
+   ]
+  },
+  {
+   "path": "breakdown",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/plan_confirm.go:190"
+   ]
+  },
+  {
+   "path": "breakeven_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader.go:196"
+   ]
+  },
+  {
+   "path": "breakeven_trigger_points",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader.go:199"
+   ]
+  },
+  {
+   "path": "btc_eth_max_leverage",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:551"
+   ]
+  },
+  {
+   "path": "btc_eth_max_position_value_ratio",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:553"
+   ]
+  },
+  {
+   "path": "condition_status",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planner.go:1481"
+   ]
+  },
+  {
+   "path": "config",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid_regime.go:157"
+   ]
+  },
+  {
+   "path": "config_visible",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/strategy.go:44"
+   ]
+  },
+  {
+   "path": "consecutive_loss_halt",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_orders.go:116"
+   ]
+  },
+  {
+   "path": "consistency_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:196"
+   ]
+  },
+  {
+   "path": "consistency_max_day_pct",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:169"
+   ]
+  },
+  {
+   "path": "context_limit",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "created_at",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_calendar.go:36"
+   ]
+  },
+  {
+   "path": "custom_prompt",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt_futures.go:257"
+   ]
+  },
+  {
+   "path": "daily_loss_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:157"
+   ]
+  },
+  {
+   "path": "daily_loss_limit_pct",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid.go:187"
+   ]
+  },
+  {
+   "path": "daily_loss_limit_usd",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:158"
+   ]
+  },
+  {
+   "path": "daily_profit_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:160"
+   ]
+  },
+  {
+   "path": "daily_profit_target_usd",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:161"
+   ]
+  },
+  {
+   "path": "data_path",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:815"
+   ]
+  },
+  {
+   "path": "decision_process",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt_futures.go:213"
+   ]
+  },
+  {
+   "path": "description",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/strategy.go:76"
+   ]
+  },
+  {
+   "path": "direction_bias_ratio",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid_levels.go:103"
+   ]
+  },
+  {
+   "path": "distribution",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/grid_engine.go:153"
+   ]
+  },
+  {
+   "path": "ema_periods",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:789"
+   ]
+  },
+  {
+   "path": "enable",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planconfig.go:73"
+   ]
+  },
+  {
+   "path": "enable_atr",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:241"
+   ]
+  },
+  {
+   "path": "enable_boll",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:249"
+   ]
+  },
+  {
+   "path": "enable_direction_adjust",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid_regime.go:65"
+   ]
+  },
+  {
+   "path": "enable_ema",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:221"
+   ]
+  },
+  {
+   "path": "enable_funding_rate",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:265"
+   ]
+  },
+  {
+   "path": "enable_macd",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:229"
+   ]
+  },
+  {
+   "path": "enable_multi_timeframe",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:209"
+   ]
+  },
+  {
+   "path": "enable_netflow_ranking",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:966"
+   ]
+  },
+  {
+   "path": "enable_oi",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:261"
+   ]
+  },
+  {
+   "path": "enable_oi_ranking",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:935"
+   ]
+  },
+  {
+   "path": "enable_price_ranking",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:998"
+   ]
+  },
+  {
+   "path": "enable_quant_data",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:276"
+   ]
+  },
+  {
+   "path": "enable_quant_netflow",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:965"
+   ]
+  },
+  {
+   "path": "enable_quant_oi",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:965"
+   ]
+  },
+  {
+   "path": "enable_raw_klines",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "agent/skill_management_handlers.go:1197"
+   ]
+  },
+  {
+   "path": "enable_rsi",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:233"
+   ]
+  },
+  {
+   "path": "enable_svp",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:328"
+   ]
+  },
+  {
+   "path": "enable_volume",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:257"
+   ]
+  },
+  {
+   "path": "entry_standards",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt_futures.go:203"
+   ]
+  },
+  {
+   "path": "eod_flat_ct",
+   "status": "ineffective",
+   "ui_label": "read; does not take effect (unreachable (auto_trader_clock.go))",
+   "consumers": []
+  },
+  {
+   "path": "eod_flat_offset_min",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "evening_digest",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planconfig.go:165"
+   ]
+  },
+  {
+   "path": "excluded_coins",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:613"
+   ]
+  },
+  {
+   "path": "external_data_sources",
+   "status": "ineffective",
+   "ui_label": "read; does not take effect (zero engine consumers)",
+   "consumers": []
+  },
+  {
+   "path": "fixed_overhead",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "grid_config",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_decision.go:108"
+   ]
+  },
+  {
+   "path": "grid_count",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/grid_engine.go:153"
+   ]
+  },
+  {
+   "path": "guardrails_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:153"
+   ]
+  },
+  {
+   "path": "headers",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:795"
+   ]
+  },
+  {
+   "path": "hold_discipline",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_orders.go:84"
+   ]
+  },
+  {
+   "path": "htf_veto",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "hyper_main_limit",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:527"
+   ]
+  },
+  {
+   "path": "id",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/plan_confirm.go:372"
+   ]
+  },
+  {
+   "path": "indicators",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:328"
+   ]
+  },
+  {
+   "path": "is_active",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/handler_user.go:411"
+   ]
+  },
+  {
+   "path": "is_default",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/strategy.go:126"
+   ]
+  },
+  {
+   "path": "is_public",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/strategy.go:43"
+   ]
+  },
+  {
+   "path": "klines",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/stale_data.go:74"
+   ]
+  },
+  {
+   "path": "language",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:384"
+   ]
+  },
+  {
+   "path": "last_entry_ct",
+   "status": "ineffective",
+   "ui_label": "read; does not take effect (unreachable (auto_trader_clock.go))",
+   "consumers": []
+  },
+  {
+   "path": "last_entry_offset_min",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "level",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/plan_confirm.go:192"
+   ]
+  },
+  {
+   "path": "leverage",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/grid_engine.go:153"
+   ]
+  },
+  {
+   "path": "longer_count",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "longer_timeframe",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:773"
+   ]
+  },
+  {
+   "path": "lower_price",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/grid_engine.go:283"
+   ]
+  },
+  {
+   "path": "max_contracts_enabled",
+   "status": "ineffective",
+   "ui_label": "read; does not take effect (parse-only (strategy.go))",
+   "consumers": []
+  },
+  {
+   "path": "max_contracts_per_order",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_orders.go:57"
+   ]
+  },
+  {
+   "path": "max_daily_trades",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:164"
+   ]
+  },
+  {
+   "path": "max_daily_trades_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:163"
+   ]
+  },
+  {
+   "path": "max_drawdown_pct",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/formatter.go:162"
+   ]
+  },
+  {
+   "path": "max_levels",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:366"
+   ]
+  },
+  {
+   "path": "max_margin_usage",
+   "status": "ineffective",
+   "ui_label": "read; does not take effect (prompt text only \u2014 advisory, never a gate (engine_prompt.go))",
+   "consumers": []
+  },
+  {
+   "path": "max_notional_leverage",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:557"
+   ]
+  },
+  {
+   "path": "max_positions",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:131"
+   ]
+  },
+  {
+   "path": "max_trades",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "method",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:790"
+   ]
+  },
+  {
+   "path": "min_confidence",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:556"
+   ]
+  },
+  {
+   "path": "min_grade",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planner.go:1994"
+   ]
+  },
+  {
+   "path": "min_position_size",
+   "status": "ineffective",
+   "ui_label": "read; does not take effect (crypto path hardcodes 12/60 (engine_position.go))",
+   "consumers": []
+  },
+  {
+   "path": "min_risk_reward_ratio",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:555"
+   ]
+  },
+  {
+   "path": "min_scenario_quality",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_position.go:300"
+   ]
+  },
+  {
+   "path": "model_limits",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/strategy.go:384"
+   ]
+  },
+  {
+   "path": "name",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/no_trade_band.go:91"
+   ]
+  },
+  {
+   "path": "netflow_ranking_duration",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:970"
+   ]
+  },
+  {
+   "path": "netflow_ranking_limit",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:975"
+   ]
+  },
+  {
+   "path": "nofxos_api_key",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:343"
+   ]
+  },
+  {
+   "path": "notional_cap_enabled",
+   "status": "ineffective",
+   "ui_label": "read; does not take effect (parse-only (strategy.go))",
+   "consumers": []
+  },
+  {
+   "path": "oi_low_limit",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:488"
+   ]
+  },
+  {
+   "path": "oi_ranking_duration",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:939"
+   ]
+  },
+  {
+   "path": "oi_ranking_limit",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:944"
+   ]
+  },
+  {
+   "path": "oi_top_limit",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:468"
+   ]
+  },
+  {
+   "path": "plan_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:365"
+   ]
+  },
+  {
+   "path": "plan_mode",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/entry_gate.go:160"
+   ]
+  },
+  {
+   "path": "planner_model",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planner.go:71"
+   ]
+  },
+  {
+   "path": "planner_timeframes",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planner.go:1990"
+   ]
+  },
+  {
+   "path": "price_ranking_duration",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:1002"
+   ]
+  },
+  {
+   "path": "price_ranking_limit",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:1007"
+   ]
+  },
+  {
+   "path": "primary_count",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:764"
+   ]
+  },
+  {
+   "path": "primary_timeframe",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:763"
+   ]
+  },
+  {
+   "path": "prompt_variant",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_loop.go:546"
+   ]
+  },
+  {
+   "path": "proximity_filter_atr",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:375"
+   ]
+  },
+  {
+   "path": "publish_config",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/strategy.go:42"
+   ]
+  },
+  {
+   "path": "quant_data",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:858"
+   ]
+  },
+  {
+   "path": "realign_cap",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planconfig.go:234"
+   ]
+  },
+  {
+   "path": "reentry_cooldown_minutes",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:619"
+   ]
+  },
+  {
+   "path": "refresh_secs",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:782"
+   ]
+  },
+  {
+   "path": "replan_cap",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_reset.go:112"
+   ]
+  },
+  {
+   "path": "role_definition",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt_futures.go:99"
+   ]
+  },
+  {
+   "path": "rsi_periods",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:790"
+   ]
+  },
+  {
+   "path": "scenario_cap",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/planner_prompt.go:674"
+   ]
+  },
+  {
+   "path": "seat_1h_zone",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planner.go:2136"
+   ]
+  },
+  {
+   "path": "selected_timeframes",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:762"
+   ]
+  },
+  {
+   "path": "session",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:403"
+   ]
+  },
+  {
+   "path": "sessions_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planconfig.go:77"
+   ]
+  },
+  {
+   "path": "source_type",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:418"
+   ]
+  },
+  {
+   "path": "static_coins",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:272"
+   ]
+  },
+  {
+   "path": "stop_loss_pct",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid_orders.go:362"
+   ]
+  },
+  {
+   "path": "strategy_type",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_decision.go:107"
+   ]
+  },
+  {
+   "path": "suggestions",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "symbol",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/grid_engine.go:153"
+   ]
+  },
+  {
+   "path": "system_prompt",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:590"
+   ]
+  },
+  {
+   "path": "total",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_analysis.go:256"
+   ]
+  },
+  {
+   "path": "total_investment",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/grid_engine.go:153"
+   ]
+  },
+  {
+   "path": "trading_frequency",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt_futures.go:142"
+   ]
+  },
+  {
+   "path": "trailing_arm",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_trailing.go:52"
+   ]
+  },
+  {
+   "path": "trailing_arm_points",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_trailing.go:58"
+   ]
+  },
+  {
+   "path": "trailing_atr_mult",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_trailing.go:44"
+   ]
+  },
+  {
+   "path": "trailing_atr_period",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_trailing.go:48"
+   ]
+  },
+  {
+   "path": "trailing_enabled",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_trailing.go:43"
+   ]
+  },
+  {
+   "path": "transition_standdown",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "type",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/htf_veto.go:115"
+   ]
+  },
+  {
+   "path": "updated_at",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/armed_executor.go:1027"
+   ]
+  },
+  {
+   "path": "upper_price",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/grid_engine.go:283"
+   ]
+  },
+  {
+   "path": "url",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:778"
+   ]
+  },
+  {
+   "path": "usage_pct",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "api/strategy.go:385"
+   ]
+  },
+  {
+   "path": "use_ai500",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:272"
+   ]
+  },
+  {
+   "path": "use_atr_bounds",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid.go:304"
+   ]
+  },
+  {
+   "path": "use_hyper_all",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:497"
+   ]
+  },
+  {
+   "path": "use_hyper_main",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:516"
+   ]
+  },
+  {
+   "path": "use_maker_only",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_grid_orders.go:127"
+   ]
+  },
+  {
+   "path": "use_oi_low",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine.go:477"
+   ]
+  },
+  {
+   "path": "use_oi_top",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "kernel/engine_prompt.go:272"
+   ]
+  },
+  {
+   "path": "user_id",
+   "status": "live",
+   "ui_label": "live",
+   "consumers": [
+    "trader/auto_trader_planner.go:61"
+   ]
+  },
+  {
+   "path": "wake_min_interval_min",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "wake_on_15m_zone",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "wake_on_htf_ob",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "wake_on_htf_zone",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "wake_on_ifvg",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  },
+  {
+   "path": "wake_on_seated_invalidation",
+   "status": "candidate-unverified",
+   "ui_label": "no known reader \u2014 pending verification",
+   "consumers": []
+  }
+ ]
+}

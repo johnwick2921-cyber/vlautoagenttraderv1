@@ -1,0 +1,66 @@
+{
+  "build-validation.json": {
+    "bytes": 692,
+    "sha256": "13eeac3c1542a5e36d78b2c65379894d286bb2f43a321984ad7c73deeeb45085"
+  },
+  "candidate.json": {
+    "bytes": 15508,
+    "sha256": "65989b79cfe2a27ee6fc128817f64b3dab4af451b9127847d0e6d9089b289325"
+  },
+  "checklist-census.txt": {
+    "bytes": 1086,
+    "sha256": "0e58d9799c978a8c419fc2067f90105eec3ea8c326ca456e373e568984331ef0"
+  },
+  "failed-live-boot.json": {
+    "bytes": 1770,
+    "sha256": "228bcf7116fcbbc0959b356cb45f5524ac8a901f76b9aeb0e8117493c17bd66c"
+  },
+  "full-go.log": {
+    "bytes": 2499,
+    "sha256": "0fcab60c87878fda6e68a7274d50bfea47d9801594aac5295734a9754a01e355"
+  },
+  "mutation-false-schema-red.log": {
+    "bytes": 514,
+    "sha256": "52bff4ee36914188c0425cde2aca19bb3b6e8f489dc70233292ecfb87a583969"
+  },
+  "mutation-reader-red.log": {
+    "bytes": 349,
+    "sha256": "47feb2d9028cd14a9414a73e341b7bbcb8c8ea74c94f4cef555dcabb892dad77"
+  },
+  "mutation-writer-red.log": {
+    "bytes": 1103,
+    "sha256": "d24a5857ea8a4c00489c16aa209a6c6ab8eadcdd76994e738e0efdbbac9eb6f6"
+  },
+  "research-path-config.json": {
+    "bytes": 243,
+    "sha256": "58518d3bb6123ebea3244042403b9c008deb10cdc365268fdcbc5d48970492aa"
+  },
+  "research-path-probe.go.txt": {
+    "bytes": 578,
+    "sha256": "e2c6cbda777022221aa91d2ba044f1b436683029863110d5019fe66f5afd1719"
+  },
+  "research-path-probe.json": {
+    "bytes": 345,
+    "sha256": "b3bf17dfc6998ad70e158fd0057fbbe87e75558364a69fa27f32649f92d8b550"
+  },
+  "restored-green.log": {
+    "bytes": 34,
+    "sha256": "dfdedd2d5c48a942ac62bd591bc452fcf962a328b0cf0f545c7b9b5bd2afcc64"
+  },
+  "source-freshness.txt": {
+    "bytes": 1047,
+    "sha256": "1b6cbd52c544961152b2e36f010b55bf61c7b9df0a92da022a5cf1837afd2cd1"
+  },
+  "startup-green-verbose.log": {
+    "bytes": 1227,
+    "sha256": "1e96960b28ea86544065895cb523bc0a795b54e740ca8f4b7f5947f6ca018620"
+  },
+  "startup-green.log": {
+    "bytes": 34,
+    "sha256": "2091c507ed70ebf326784b6ff28728eb62761aca83223d12afe5af9c0127c504"
+  },
+  "startup-red.log": {
+    "bytes": 1122,
+    "sha256": "ab42dcf973feca80c00fb1016f517ddf46e782ed123eb4d7ff516f475f2d975e"
+  }
+}

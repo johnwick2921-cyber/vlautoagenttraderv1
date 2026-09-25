@@ -1,0 +1,2180 @@
+[
+  {
+    "path": "trader/accepted_risk_hook.go",
+    "name": "recordAcceptedRisk",
+    "start_line": 27,
+    "end_line": 69,
+    "purpose": "recordAcceptedRisk appends the immutable record of an accepted order. It is called once per acceptance; a re-authorization appends ANOTHER row rather than editing this one, so ledger drift becomes a query.",
+    "connections": [
+      "Source call expressions, not type-resolved: func, recover, at.logWarnf, time.Now, UTC, now.UnixMilli, at.brokerBook, cache.AgeAt, age.Milliseconds, cache.Latest, applyBrokerTerms, snap.WorkingOrders, store.AcceptedRisk, Append, at.logInfof, fmtPx"
+    ],
+    "invariants_or_risks": "Telemetry only: immutable accepted-risk append, panic contained. applyBrokerTerms uses case-sensitive HasPrefix signal matching and suffix role; no exact identity/symbol filter. Latest book used without explicit age cutoff despite stale comment. Must trace brokerBook/cache freshness and order-update scoping before incident claim."
+  },
+  {
+    "path": "trader/accepted_risk_hook.go",
+    "name": "applyBrokerTerms",
+    "start_line": 74,
+    "end_line": 137,
+    "purpose": "applyBrokerTerms fills the accepted prices from the broker's book. NT8 names the bracket children \"<signal>-sl\" and \"<signal>-tp\", so the leg each order IS comes from its own name rather than from a guess about its price.",
+    "connections": [
+      "Source call expressions, not type-resolved: strings.HasPrefix, isCancelInFlight, o.IsLiveAtExchange, strings.HasSuffix, strings.ToLower, entryPriceOf"
+    ],
+    "invariants_or_risks": "Telemetry only: immutable accepted-risk append, panic contained. applyBrokerTerms uses case-sensitive HasPrefix signal matching and suffix role; no exact identity/symbol filter. Latest book used without explicit age cutoff despite stale comment. Must trace brokerBook/cache freshness and order-update scoping before incident claim."
+  },
+  {
+    "path": "trader/accepted_risk_hook.go",
+    "name": "isCancelInFlight",
+    "start_line": 143,
+    "end_line": 145,
+    "purpose": "isCancelInFlight reports whether the broker is already withdrawing this order. It now delegates to the one shared vocabulary rather than carrying its own copy of the four spellings (A24: no fixture \u2014 and no caller \u2014 holds its own copy of a constant).",
+    "connections": [
+      "Source call expressions, not type-resolved: nt.ClassifyOrderState"
+    ],
+    "invariants_or_risks": "Telemetry only: immutable accepted-risk append, panic contained. applyBrokerTerms uses case-sensitive HasPrefix signal matching and suffix role; no exact identity/symbol filter. Latest book used without explicit age cutoff despite stale comment. Must trace brokerBook/cache freshness and order-update scoping before incident claim."
+  },
+  {
+    "path": "trader/accepted_risk_hook.go",
+    "name": "entryPriceOf",
+    "start_line": 149,
+    "end_line": 154,
+    "purpose": "entryPriceOf is the price the entry order rests at: a stop's trigger, otherwise its limit. Same rule orderPrice uses for leg 4 \u2014 one definition.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Telemetry only: immutable accepted-risk append, panic contained. applyBrokerTerms uses case-sensitive HasPrefix signal matching and suffix role; no exact identity/symbol filter. Latest book used without explicit age cutoff despite stale comment. Must trace brokerBook/cache freshness and order-update scoping before incident claim."
+  },
+  {
+    "path": "trader/accepted_risk_hook.go",
+    "name": "fmtPx",
+    "start_line": 157,
+    "end_line": 162,
+    "purpose": "fmtPx renders a nullable price so a log line cannot print 0.00 for \"unknown\".",
+    "connections": [
+      "Source call expressions, not type-resolved: strconv.FormatFloat"
+    ],
+    "invariants_or_risks": "Telemetry only: immutable accepted-risk append, panic contained. applyBrokerTerms uses case-sensitive HasPrefix signal matching and suffix role; no exact identity/symbol filter. Latest book used without explicit age cutoff despite stale comment. Must trace brokerBook/cache freshness and order-update scoping before incident claim."
+  },
+  {
+    "path": "trader/auto_trader_ai402.go",
+    "name": "classifyAIError",
+    "start_line": 31,
+    "end_line": 40,
+    "purpose": "classifyAIError maps an AI-call error to the typed decision_records class. The substrings mirror the existing telemetry classifier \u2014 the mcp layer flattens HTTP status into text, and that text shape is load-bearing.",
+    "connections": [
+      "Source call expressions, not type-resolved: err.Error, strings.Contains"
+    ],
+    "invariants_or_risks": "402 classifier substring-based; outage ID minute granularity can collide within same minute after recovery; optional balance poll uses CustomAPIKey once CME day, no provider check locally; error still consumes daily poll. Must trace serialized callsites."
+  },
+  {
+    "path": "trader/auto_trader_ai402.go",
+    "name": "ai402EventID",
+    "start_line": 44,
+    "end_line": 46,
+    "purpose": "ai402EventID names the CURRENT outage (latched start instant) \u2014 the alert bus dedupes on it, so cycle #2..#139 of one outage are silent no-ops.",
+    "connections": [
+      "Source call expressions, not type-resolved: time.UnixMilli, UTC, Format"
+    ],
+    "invariants_or_risks": "402 classifier substring-based; outage ID minute granularity can collide within same minute after recovery; optional balance poll uses CustomAPIKey once CME day, no provider check locally; error still consumes daily poll. Must trace serialized callsites."
+  },
+  {
+    "path": "trader/auto_trader_ai402.go",
+    "name": "on402Failure",
+    "start_line": 49,
+    "end_line": 61,
+    "purpose": "on402Failure latches the outage and raises the one P0 banner.",
+    "connections": [
+      "Source call expressions, not type-resolved: now.UnixMilli, at.emitAlert, at.ai402EventID, fmt.Sprintf, kernel.FormatCT, at.logErrorf"
+    ],
+    "invariants_or_risks": "402 classifier substring-based; outage ID minute granularity can collide within same minute after recovery; optional balance poll uses CustomAPIKey once CME day, no provider check locally; error still consumes daily poll. Must trace serialized callsites."
+  },
+  {
+    "path": "trader/auto_trader_ai402.go",
+    "name": "onAISuccess",
+    "start_line": 64,
+    "end_line": 78,
+    "purpose": "onAISuccess clears a latched 402 outage: recovery log + banner auto-ack.",
+    "connections": [
+      "Source call expressions, not type-resolved: now.Sub, time.UnixMilli, Round, at.ai402EventID, store.Alert, AckByEvent, at.logWarnf, at.logInfof"
+    ],
+    "invariants_or_risks": "402 classifier substring-based; outage ID minute granularity can collide within same minute after recovery; optional balance poll uses CustomAPIKey once CME day, no provider check locally; error still consumes daily poll. Must trace serialized callsites."
+  },
+  {
+    "path": "trader/auto_trader_ai402.go",
+    "name": "aiBalanceWarnThreshold",
+    "start_line": 82,
+    "end_line": 92,
+    "purpose": "aiBalanceWarnThreshold reads AI_BALANCE_WARN (USD). Unset/invalid = OFF \u2014 the poller never fires (dispatch 5.4 default).",
+    "connections": [
+      "Source call expressions, not type-resolved: os.Getenv, strconv.ParseFloat"
+    ],
+    "invariants_or_risks": "402 classifier substring-based; outage ID minute granularity can collide within same minute after recovery; optional balance poll uses CustomAPIKey once CME day, no provider check locally; error still consumes daily poll. Must trace serialized callsites."
+  },
+  {
+    "path": "trader/auto_trader_ai402.go",
+    "name": "maybeCheckAIBalance",
+    "start_line": 98,
+    "end_line": 122,
+    "purpose": "maybeCheckAIBalance polls the DeepSeek balance endpoint once per CME session-day when AI_BALANCE_WARN is set. DeepSeek exposes GET /user/balance (Bearer auth) \u2014 mcp.DeepSeekBalance wraps it defensively; any error is a WARN-and-move-on (never blocks trading).",
+    "connections": [
+      "Source call expressions, not type-resolved: aiBalanceWarnThreshold, kernel.CMESessionDayKey, mcp.DeepSeekBalance, at.logWarnf, at.logInfof, at.emitAlert, fmt.Sprintf"
+    ],
+    "invariants_or_risks": "402 classifier substring-based; outage ID minute granularity can collide within same minute after recovery; optional balance poll uses CustomAPIKey once CME day, no provider check locally; error still consumes daily poll. Must trace serialized callsites."
+  },
+  {
+    "path": "trader/auto_trader_alerts.go",
+    "name": "emitAlert",
+    "start_line": 15,
+    "end_line": 33,
+    "purpose": "W6 \u2014 in-app alert emit (the audit's dead wire: AlertStore.Emit had zero production callers). emitAlert is the single gated + deduped producer. P0 = pop-up + banner-until-ack \u00b7 P1 = feed \u00b7 P2 = digest. Gated on day_plan (the alert center only renders for a futures day-plan trader).",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanEnabled, store.Alert, Emit, time.Now, Unix, at.logErrorf, telemetry.RecordError, err.Error"
+    ],
+    "invariants_or_risks": "Alert producer day-plan gated, store error recorded. Daily prune latches day before success, so transient failure waits tomorrow. Store owns dedupe and P2 restriction."
+  },
+  {
+    "path": "trader/auto_trader_alerts.go",
+    "name": "maybePruneAckedAlerts",
+    "start_line": 43,
+    "end_line": 61,
+    "purpose": "maybePruneAckedAlerts runs the alert-feed prune ONCE per CME session-day. PruneAckedOlderThan has existed since the alert center shipped and had ZERO production callers (B-audit 2026-08-18): the feed grew without bound. P0/P1 are never auto-pruned.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanEnabled, kernel.CMESessionDayKey, now.AddDate, Unix, store.Alert, PruneAckedOlderThan, now.Unix, at.logErrorf, at.logInfof, alert"
+    ],
+    "invariants_or_risks": "Alert producer day-plan gated, store error recorded. Daily prune latches day before success, so transient failure waits tomorrow. Store owns dedupe and P2 restriction."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "feedDownAfter",
+    "start_line": 23,
+    "end_line": 25,
+    "purpose": "feedDownAfter() \u2014 B2 (T6): the flat-state threshold now comes from the ONE feed policy (kernel.LoadFeedPolicy, env FEED_ALERT_S, default 600s \u2014 the same 10 minutes as before, env-tunable and shared with the B4 fallback).",
+    "connections": [
+      "Source call expressions, not type-resolved: time.Duration, kernel.LoadFeedPolicy"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "intradeFeedAlertAfter",
+    "start_line": 34,
+    "end_line": 36,
+    "purpose": "intradeFeedAlertAfter \u2014 B2 (T6): same env, resolved through the ONE policy.",
+    "connections": [
+      "Source call expressions, not type-resolved: time.Duration, kernel.LoadFeedPolicy"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "holdingOpenPosition",
+    "start_line": 41,
+    "end_line": 47,
+    "purpose": "holdingOpenPosition reports whether this trader has any OPEN position row. Deliberately NOT gated on day_plan (unlike skipWhileOpen): the tightened in-position feed alert protects every held futures trade.",
+    "connections": [
+      "Source call expressions, not type-resolved: store.Position, GetOpenPositions, len"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "feedNewestBarAge",
+    "start_line": 51,
+    "end_line": 61,
+    "purpose": "feedNewestBarAge returns the age of the newest 1m bar (open-stamp + interval = NT8's own stamp), ok=false when no bars exist at all.",
+    "connections": [
+      "Source call expressions, not type-resolved: market.FuturesBarsProvider, at.futuresSymbol, len, time.Duration, now.UnixMilli"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "checkFeedDown",
+    "start_line": 68,
+    "end_line": 103,
+    "purpose": "checkFeedDown (3.1) fires a P0 alert + CRITICAL log when no bar has arrived for >10 min while the CME session is open. P0 renders as the persistent dashboard banner (in-app only \u2014 the owner's no-external-push rule). Deduped per gap: the event id carries the gap's start bucket, so one outage = one alert, and a NEW outage alerts again.",
+    "connections": [
+      "Source call expressions, not type-resolved: kernel.IsCMEOpen, feedDownAfter, at.holdingOpenPosition, intradeFeedAlertAfter, at.feedNewestBarAge, now.Add, now.Sub, fmt.Sprintf, Round, at.logErrorf, at.emitAlert, gapStart.UTC, Format"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "plannerPreflight",
+    "start_line": 110,
+    "end_line": 147,
+    "purpose": "plannerPreflight (3.2) refuses to CALL the LLM when the bar window is empty or feed-down stale. It saves the API spend and kills the confusing 0-scenario fail-closed stubs the 08-19 outage produced. NOT writing a plan row is deliberate: the read window retries next cycle, and no re-plan budget is consumed by a refusal.",
+    "connections": [
+      "Source call expressions, not type-resolved: traderNow, time.Now, at.feedNewestBarAge, feedDownAfter, preflightScheduledBypass, newestStoredBarInfo, at.futuresSymbol, at.logWarnf, preflightBypassLine, fmt.Sprintf, int, age.Seconds, at.logErrorf, preflightRefusalLine, at.emitAlert"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "preflightTriggerClass",
+    "start_line": 151,
+    "end_line": 157,
+    "purpose": "preflightTriggerClass names the trigger class for log lines: the scheduled session read passes \"\" (the write path labels it \"<S>_scheduled_read\").",
+    "connections": [
+      "Source call expressions, not type-resolved: strings.TrimSpace"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "preflightIsScheduled",
+    "start_line": 162,
+    "end_line": 165,
+    "purpose": "preflightIsScheduled reports whether a trigger class is SCHEDULED work \u2014 the session's open\u221230 read (\"\" / \"<S>_scheduled_read\") or the Sunday weekly read. Everything else is event-driven or owner-driven and keeps the freshness check.",
+    "connections": [
+      "Source call expressions, not type-resolved: strings.TrimSpace, strings.HasSuffix"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "preflightScheduledBypass",
+    "start_line": 171,
+    "end_line": 173,
+    "purpose": "preflightScheduledBypass (CLASS 36) \u2014 the freshness check is skipped ONLY for a scheduled class AND only while the market is closed (halt / weekend / holiday). A scheduled read that runs into a live-but-silent tape (feed down during open hours) still refuses \u2014 that is the 08-19 outage class.",
+    "connections": [
+      "Source call expressions, not type-resolved: preflightIsScheduled, kernel.IsCMEOpen"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "preflightBypassLine",
+    "start_line": 176,
+    "end_line": 179,
+    "purpose": "preflightBypassLine is the loud positive outcome (D5) \u2014 fixture-tested.",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Sprintf, preflightTriggerClass"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "preflightRefusalLine",
+    "start_line": 182,
+    "end_line": 185,
+    "purpose": "preflightRefusalLine is the loud negative outcome (D5) \u2014 fixture-tested.",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Sprintf, preflightTriggerClass"
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_feedwatch.go",
+    "name": "PreflightBootLine",
+    "start_line": 188,
+    "end_line": 190,
+    "purpose": "PreflightBootLine (D7) names the class-36 accounting in the boot block.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Feed stale alert tightens using DB open rows; query failure treated flat. Age based latest bar close may be negative for future data. Planner nil provider fails open; scheduled closed-market stale bypass intentional. Alert says OCO still protects without verifying actual book."
+  },
+  {
+    "path": "trader/auto_trader_halfdays.go",
+    "name": "LoadHalfDaysFile",
+    "start_line": 63,
+    "end_line": 71,
+    "purpose": "LoadHalfDaysFile now reads the SESSION CALENDAR rather than half_days.json. The name and signature are kept so callers and their pins survive the fold; the source of truth moved, the API did not.",
+    "connections": [
+      "Source call expressions, not type-resolved: kernel.SessionShortenedDays, make, len, append, sort.Slice, func"
+    ],
+    "invariants_or_risks": "Half-day source now unified kernel calendar, sorted entries and boot line; old long comments still describe deleted file/full-closure behavior. maybeSeedHalfDays is deliberate no-op. Upcoming selection date-based includes already elapsed same-day close."
+  },
+  {
+    "path": "trader/auto_trader_halfdays.go",
+    "name": "NextUpcomingHalfDay",
+    "start_line": 74,
+    "end_line": 82,
+    "purpose": "NextUpcomingHalfDay is the next early close at or after now, in CT.",
+    "connections": [
+      "Source call expressions, not type-resolved: now.In, kernel.CTLocation, Format"
+    ],
+    "invariants_or_risks": "Half-day source now unified kernel calendar, sorted entries and boot line; old long comments still describe deleted file/full-closure behavior. maybeSeedHalfDays is deliberate no-op. Upcoming selection date-based includes already elapsed same-day close."
+  },
+  {
+    "path": "trader/auto_trader_halfdays.go",
+    "name": "LogHalfDaysBoot",
+    "start_line": 87,
+    "end_line": 95,
+    "purpose": "LogHalfDaysBoot states the early-close days the calendar holds. Every field is READ from the calendar the gate consults (A11), so this line and the gate can never disagree.",
+    "connections": [
+      "Source call expressions, not type-resolved: LoadHalfDaysFile, NextUpcomingHalfDay, fmt.Sprintf, logger.Infof, close, len"
+    ],
+    "invariants_or_risks": "Half-day source now unified kernel calendar, sorted entries and boot line; old long comments still describe deleted file/full-closure behavior. maybeSeedHalfDays is deliberate no-op. Upcoming selection date-based includes already elapsed same-day close."
+  },
+  {
+    "path": "trader/auto_trader_halfdays.go",
+    "name": "maybeSeedHalfDays",
+    "start_line": 102,
+    "end_line": 102,
+    "purpose": "maybeSeedHalfDays is now a NO-OP kept as a call-site seam. Seeding existed to copy half_days.json into the registry; after the fold there is nothing to copy \u2014 EffectiveFlatCT resolves from the calendar directly. Removing the call site would touch the cycle's hot path for no behavioural gain, so the seam stays and states why it does nothing.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Half-day source now unified kernel calendar, sorted entries and boot line; old long comments still describe deleted file/full-closure behavior. maybeSeedHalfDays is deliberate no-op. Upcoming selection date-based includes already elapsed same-day close."
+  },
+  {
+    "path": "trader/auto_trader_indicator_mirror.go",
+    "name": "renderIndicatorMirror",
+    "start_line": 15,
+    "end_line": 54,
+    "purpose": "W11 \u2014 render the planner's INDICATOR MIRROR: the SAME per-timeframe indicator state the executor prompt shows, computed from the SAME market path (market.GetWithTimeframes \u2192 FuturesBarsProvider for CME, offline) with the SAME ai_config toggles + periods. Returns (renderedBlock, aiConfigFingerprint). The block is \"\" when no indicator is enabled or bars are unavailable (\u2192 the planner omits it, disabled state = byte-identical prompt). Zero new config: everything is read from the strategy's existing ai_config.",
+    "connections": [
+      "Source call expressions, not type-resolved: ic.AIConfigFingerprint, append, len, market.GetWithTimeframes, kernel.RenderPlannerIndicatorBlock"
+    ],
+    "invariants_or_risks": "Planner indicator mirror resolves configured timeframes/periods and uses market.GetWithTimeframes; returns fingerprint even no bars/timeframes. Needs production fetch parity trace, no fixture assumed."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "pauseConfigKey",
+    "start_line": 32,
+    "end_line": 32,
+    "purpose": "Namespace persisted pause by trader ID.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "PauseEntriesUntil",
+    "start_line": 35,
+    "end_line": 52,
+    "purpose": "PauseEntriesUntil arms the pause. source names the actor for the log (\"owner\").",
+    "connections": [
+      "Source call expressions, not type-resolved: until.After, time.Now, fmt.Errorf, until.Format, pauseStoreMu.Lock, pauseUntilMs.Store, until.UnixMilli, store.SetSystemConfig, pauseConfigKey, strconv.FormatInt, pauseStoreMu.Unlock, at.logWarnf, kernel.FormatCT"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "ResumeEntries",
+    "start_line": 55,
+    "end_line": 63,
+    "purpose": "ResumeEntries clears the pause immediately.",
+    "connections": [
+      "Source call expressions, not type-resolved: pauseStoreMu.Lock, pauseUntilMs.Store, store.SetSystemConfig, pauseConfigKey, pauseStoreMu.Unlock, at.logInfof"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "loadPersistedPause",
+    "start_line": 66,
+    "end_line": 81,
+    "purpose": "loadPersistedPause restores a pause across restart (called from Run()).",
+    "connections": [
+      "Source call expressions, not type-resolved: store.GetSystemConfig, pauseConfigKey, strconv.ParseInt, time.Now, UnixMilli, pauseUntilMs.Store, at.logWarnf, kernel.FormatCT, time.UnixMilli"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "PauseState",
+    "start_line": 84,
+    "end_line": 90,
+    "purpose": "PauseState reports (until, active) \u2014 the API/status surface.",
+    "connections": [
+      "Source call expressions, not type-resolved: pauseUntilMs.Load, time.UnixMilli, time.Now, UnixMilli"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "entryPaused",
+    "start_line": 94,
+    "end_line": 117,
+    "purpose": "entryPaused is the gate predicate: reason + true while the pause holds. The first read at/after the deadline AUTO-RESUMES (clears state + store).",
+    "connections": [
+      "Source call expressions, not type-resolved: pauseUntilMs.Load, time.Now, UnixMilli, pauseUntilMs.CompareAndSwap, pauseStoreMu.Lock, store.SetSystemConfig, pauseConfigKey, pauseStoreMu.Unlock, at.logInfof, kernel.FormatCT, time.UnixMilli, fmt.Sprintf"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "pauseStatusString",
+    "start_line": 122,
+    "end_line": 127,
+    "purpose": "pauseStatusString renders the status-API \"stop_until\" value: the pause deadline while armed, else the zero time \u2014 byte-identical to the legacy (never-assigned) field's rendering when unpaused.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.PauseState, until.Format, Format"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "logLedgerBootBlock",
+    "start_line": 134,
+    "end_line": 207,
+    "purpose": "logLedgerBootBlock (E1, ledger-close 2026-08-19) \u2014 the per-trader half of the boot integrity block: session windows + resolved cutoffs, stop_until state, cadence, roll status, balance-alert arming. Called once from Run(); the process half (build hash, clock, half-days, log-shipping) prints in main.go.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.sessionRegistry, make, len, sessionCutoffCT, DayPlan.LastEntryOffsetFor, DayPlan.EODFlatOffsetFor, append, fmt.Sprintf, at.PauseState, kernel.FormatCT, aiBalanceWarnThreshold, at.RollStatus, staleDodgeEnabled, postExitRescanEnabled, hlBool, kernel.LoadRiskLimitsFromConfig, trailingConfig, at.logInfof, strings.Join, at.cadenceMode, at.positionMode, watchInvalidateMinConf, watchMinHoldCycles, watchWarnConsecutive, reevalDriftATRMult"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_pause.go",
+    "name": "SessionEndTime",
+    "start_line": 212,
+    "end_line": 227,
+    "purpose": "SessionEndTime resolves the ACTIVE session's window end as a wall-clock instant (wrap-aware: an end HH:MM at/before now belongs to tomorrow CT). ok=false when no session is active (overnight/interim \u2014 nothing to pause to).",
+    "connections": [
+      "Source call expressions, not type-resolved: at.sessionRegistry, ActiveSession, hhmmToMin, now.In, kernel.CTLocation, time.Date, ct.Year, ct.Month, ct.Day, end.After, end.Add"
+    ],
+    "invariants_or_risks": "Owner pause atomic+mutex persistence; expiry CAS clears then concurrent re-pause may occur before return false, even though persistence protected. Resume/expiry ignore persistence errors. Boot config log may overstate daily enabled enforcement; trace resolved consumer."
+  },
+  {
+    "path": "trader/auto_trader_postexit.go",
+    "name": "postExitRescanEnabled",
+    "start_line": 30,
+    "end_line": 36,
+    "purpose": "Read default-on POST_EXIT_RESCAN toggle.",
+    "connections": [
+      "Source call expressions, not type-resolved: strings.ToLower, os.Getenv"
+    ],
+    "invariants_or_risks": "Close hook registry once installs package global callback, bounded position-ID dedupe schedules delayed nonblocking kick. Exact once dispatch is best effort queue capacity; delayed timer has no explicit stopped flag. Gate semantics belong runCycle."
+  },
+  {
+    "path": "trader/auto_trader_postexit.go",
+    "name": "postExitDelayMs",
+    "start_line": 38,
+    "end_line": 45,
+    "purpose": "Read nonnegative POST_EXIT_DELAY_MS, default2000.",
+    "connections": [
+      "Source call expressions, not type-resolved: os.Getenv, strconv.ParseInt"
+    ],
+    "invariants_or_risks": "Close hook registry once installs package global callback, bounded position-ID dedupe schedules delayed nonblocking kick. Exact once dispatch is best effort queue capacity; delayed timer has no explicit stopped flag. Gate semantics belong runCycle."
+  },
+  {
+    "path": "trader/auto_trader_postexit.go",
+    "name": "registerPostExitDispatch",
+    "start_line": 54,
+    "end_line": 60,
+    "purpose": "Register live instance and install process close callback once.",
+    "connections": [
+      "Source call expressions, not type-resolved: postExitRegistry.Store, Run, postExitHookOnce.Do, func"
+    ],
+    "invariants_or_risks": "Close hook registry once installs package global callback, bounded position-ID dedupe schedules delayed nonblocking kick. Exact once dispatch is best effort queue capacity; delayed timer has no explicit stopped flag. Gate semantics belong runCycle."
+  },
+  {
+    "path": "trader/auto_trader_postexit.go",
+    "name": "unregisterPostExitDispatch",
+    "start_line": 62,
+    "end_line": 64,
+    "purpose": "Remove live trader close-event destination.",
+    "connections": [
+      "Source call expressions, not type-resolved: postExitRegistry.Delete"
+    ],
+    "invariants_or_risks": "Close hook registry once installs package global callback, bounded position-ID dedupe schedules delayed nonblocking kick. Exact once dispatch is best effort queue capacity; delayed timer has no explicit stopped flag. Gate semantics belong runCycle."
+  },
+  {
+    "path": "trader/auto_trader_postexit.go",
+    "name": "dispatchPositionClosed",
+    "start_line": 66,
+    "end_line": 70,
+    "purpose": "Route close callback by trader ID to deduped delayed kick.",
+    "connections": [
+      "Source call expressions, not type-resolved: postExitRegistry.Load, notifyPositionClosed"
+    ],
+    "invariants_or_risks": "Close hook registry once installs package global callback, bounded position-ID dedupe schedules delayed nonblocking kick. Exact once dispatch is best effort queue capacity; delayed timer has no explicit stopped flag. Gate semantics belong runCycle."
+  },
+  {
+    "path": "trader/auto_trader_postexit.go",
+    "name": "notifyPositionClosed",
+    "start_line": 74,
+    "end_line": 106,
+    "purpose": "notifyPositionClosed schedules the one post-exit cycle. Called from the close-sync / reconcile goroutines \u2014 everything here is thread-safe.",
+    "connections": [
+      "Source call expressions, not type-resolved: postExitRescanEnabled, postExitMu.Lock, make, postExitMu.Unlock, len, time.Duration, postExitDelayMs, at.logInfof, time.AfterFunc, func, at.logWarnf"
+    ],
+    "invariants_or_risks": "Close hook registry once installs package global callback, bounded position-ID dedupe schedules delayed nonblocking kick. Exact once dispatch is best effort queue capacity; delayed timer has no explicit stopped flag. Gate semantics belong runCycle."
+  },
+  {
+    "path": "trader/bar_source_boot.go",
+    "name": "BarSourceBootLineAfterBackfill",
+    "start_line": 28,
+    "end_line": 30,
+    "purpose": "BarSourceBootLine (BAR-SOURCE WAVE 2026-09-02) reports, per TF, WHERE the resolver actually answers from and the earliest bar it can reach \u2014 every value READ from the resolver at boot, never a literal (A24). A TF the resolver cannot answer says so rather than being omitted.  Shape:  \ud83d\udcca bars: 1w nt8_agg via 1d since 2020-11-11 (1500) \u00b7 1d nt8 since 2020-11-11 (1500) \u00b7 \u2026 \u00b7 ladder(1w)=[1d 1m] native 1w EXCLUDED (Fri\u2192Thu stamps) \u00b7 retention 1m=90d coarse=forever  BarSourceBootLineAfterBackfill (R1) is the SECOND print, emitted once the first NT8 backfill has landed. The boot print runs before the AddOn replays bars_historical, so on a cold cache the resolver honestly answers \"own1m via 1m\" for every TF \u2014 true of that instant, and a misleading report of capability. Observed twice (2026-09-02 17:51 and 18:27) with 22 years of weekly data already on disk.",
+    "connections": [
+      "Source call expressions, not type-resolved: barSourceFields"
+    ],
+    "invariants_or_risks": "Boot source fields query resolver for all TF and report unavailable. HistoryHeldBootLine conflates query error with no imported rows. No runtime reads performed."
+  },
+  {
+    "path": "trader/bar_source_boot.go",
+    "name": "BarSourceBootLine",
+    "start_line": 32,
+    "end_line": 37,
+    "purpose": "Report actual per-timeframe resolver sources at cold boot.",
+    "connections": [
+      "Source call expressions, not type-resolved: barSourceFields"
+    ],
+    "invariants_or_risks": "Boot source fields query resolver for all TF and report unavailable. HistoryHeldBootLine conflates query error with no imported rows. No runtime reads performed."
+  },
+  {
+    "path": "trader/bar_source_boot.go",
+    "name": "HistoryHeldBootLine",
+    "start_line": 44,
+    "end_line": 58,
+    "purpose": "Report per-contract/timeframe imported bar census.",
+    "connections": [
+      "Source call expressions, not type-resolved: st.BarHistory, HistoryHeld, len, make, append, fmt.Sprintf, time.UnixMilli, UTC, Format, strings.Join"
+    ],
+    "invariants_or_risks": "Boot source fields query resolver for all TF and report unavailable. HistoryHeldBootLine conflates query error with no imported rows. No runtime reads performed."
+  },
+  {
+    "path": "trader/bar_source_boot.go",
+    "name": "barSourceFields",
+    "start_line": 61,
+    "end_line": 91,
+    "purpose": "barSourceFields renders the per-TF source report both prints share.",
+    "connections": [
+      "Source call expressions, not type-resolved: make, len, r.CompletedBars, now.UnixMilli, append, fmt.Sprintf, string, time.UnixMilli, UTC, Format, market.ExcludedNative, strings.Index, ladder, strings.Join, market.LadderFor, store.RetentionDaysFor"
+    ],
+    "invariants_or_risks": "Boot source fields query resolver for all TF and report unavailable. HistoryHeldBootLine conflates query error with no imported rows. No runtime reads performed."
+  },
+  {
+    "path": "trader/class33_boot_sweep.go",
+    "name": "ResetBootSweepForTest",
+    "start_line": 43,
+    "end_line": 43,
+    "purpose": "ResetBootSweepForTest clears the per-trader latch (fixtures only).",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Boot sweep sends cancel then immediately marks ledger cancelled, latches success, counts broker cancellation without receipt. Failure retries; empty signal explicitly skipped. Need trace CancelOrder transport to establish async overlap (known repair lane). ledgerOpenOrders ignores symbol parameter, emits configured futures symbol and quantity1."
+  },
+  {
+    "path": "trader/class33_boot_sweep.go",
+    "name": "sweepPreBootArms",
+    "start_line": 47,
+    "end_line": 57,
+    "purpose": "sweepPreBootArms is the wired entry point: it resolves the NT8 link and delegates. Deferring (no link) is LOUD and leaves the latch unset.",
+    "connections": [
+      "Source call expressions, not type-resolved: bootSweepDone.Load, at.armedTrader, at.logWarnf, at.sweepPreBootArmsWith"
+    ],
+    "invariants_or_risks": "Boot sweep sends cancel then immediately marks ledger cancelled, latches success, counts broker cancellation without receipt. Failure retries; empty signal explicitly skipped. Need trace CancelOrder transport to establish async overlap (known repair lane). ledgerOpenOrders ignores symbol parameter, emits configured futures symbol and quantity1."
+  },
+  {
+    "path": "trader/class33_boot_sweep.go",
+    "name": "sweepPreBootArmsWith",
+    "start_line": 61,
+    "end_line": 126,
+    "purpose": "sweepPreBootArmsWith is the seam: cancelFn is the wire (nt.CancelOrder in production, a recorder in fixtures). Returns the number of rows swept.",
+    "connections": [
+      "Source call expressions, not type-resolved: bootSweepDone.Load, store.ProcessBootID, ledger.ListPreBoot, at.logWarnf, at.logInfof, cancelFn, ledger.SetState, store.IncBootSwept, row, bootSweepDone.Store, at.brokerBook, BootSweepBootLine, Leg4SourceLabel, time.Now, ntwire.AddonBuildLine, at.farSideBuildID, ntwire.OrderSnapshotLineAt"
+    ],
+    "invariants_or_risks": "Boot sweep sends cancel then immediately marks ledger cancelled, latches success, counts broker cancellation without receipt. Failure retries; empty signal explicitly skipped. Need trace CancelOrder transport to establish async overlap (known repair lane). ledgerOpenOrders ignores symbol parameter, emits configured futures symbol and quantity1."
+  },
+  {
+    "path": "trader/class33_boot_sweep.go",
+    "name": "BootSweepBootLine",
+    "start_line": 131,
+    "end_line": 134,
+    "purpose": "BootSweepBootLine is the pure boot line (fixture-pinned wording). leg4Source is passed in rather than written here: F12 made it a resolved value, and a literal in a boot line is a claim that cannot fail (A24).",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Sprintf, arm"
+    ],
+    "invariants_or_risks": "Boot sweep sends cancel then immediately marks ledger cancelled, latches success, counts broker cancellation without receipt. Failure retries; empty signal explicitly skipped. Need trace CancelOrder transport to establish async overlap (known repair lane). ledgerOpenOrders ignores symbol parameter, emits configured futures symbol and quantity1."
+  },
+  {
+    "path": "trader/class33_boot_sweep.go",
+    "name": "ledgerOpenOrders",
+    "start_line": 138,
+    "end_line": 179,
+    "purpose": "ledgerOpenOrders renders THIS trader's non-terminal rows. Leg 4 separately counts unplaced ARMED rows; placed/unconfirmed rows cross-check the broker.",
+    "connections": [
+      "Source call expressions, not type-resolved: store.ArmedOrders, fmt.Errorf, ListNonTerminal, make, len, strings.ToLower, strings.TrimSpace, append, at.futuresSymbol"
+    ],
+    "invariants_or_risks": "Boot sweep sends cancel then immediately marks ledger cancelled, latches success, counts broker cancellation without receipt. Failure retries; empty signal explicitly skipped. Need trace CancelOrder transport to establish async overlap (known repair lane). ledgerOpenOrders ignores symbol parameter, emits configured futures symbol and quantity1."
+  },
+  {
+    "path": "trader/class33_cutover_gate.go",
+    "name": "AnyPlannerReadInFlight",
+    "start_line": 45,
+    "end_line": 57,
+    "purpose": "AnyPlannerReadInFlight (leg 5) reports whether ANY planner read is claimed for THIS trader \u2014 any trade date, any session. PlannerReadInFlight answers for one (date, session); a cutover must ask about all of them.",
+    "connections": [
+      "Source call expressions, not type-resolved: plannerReadInFlight.Range, func, strings.HasSuffix"
+    ],
+    "invariants_or_risks": "Five read-only cutover legs: DB/API/NT8 positions, broker-vs-ledger working orders, planner claim. Nil armedTrader marked N/A even if configured NT8. Reads non-atomic; no freeze claim. Direct leg3 not recovered wrapper. Known repair overlap possible."
+  },
+  {
+    "path": "trader/class33_cutover_gate.go",
+    "name": "CutoverGateStatus",
+    "start_line": 60,
+    "end_line": 134,
+    "purpose": "CutoverGateStatus computes all five legs. Read-only.",
+    "connections": [
+      "Source call expressions, not type-resolved: func, append, store.Position, add, GetOpenPositions, fmt.Sprintf, len, row, at.gatePositions, position, at.armedTrader, nt.GetPositions, at.gateOpenOrders, at.brokerBook, Leg4FromBrokerAt, OrderSnapshotInterval, time.Now, at.AnyPlannerReadInFlight"
+    ],
+    "invariants_or_risks": "Five read-only cutover legs: DB/API/NT8 positions, broker-vs-ledger working orders, planner claim. Nil armedTrader marked N/A even if configured NT8. Reads non-atomic; no freeze claim. Direct leg3 not recovered wrapper. Known repair overlap possible."
+  },
+  {
+    "path": "trader/class33_cutover_gate.go",
+    "name": "gatePositions",
+    "start_line": 139,
+    "end_line": 149,
+    "purpose": "gatePositions / gateOpenOrders are the panic-safe wrappers the gate uses: an uninitialised broker link is reported as a FAILED leg, never a crash and never a silent pass.",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Errorf, func, recover, at.GetPositions"
+    ],
+    "invariants_or_risks": "Five read-only cutover legs: DB/API/NT8 positions, broker-vs-ledger working orders, planner claim. Nil armedTrader marked N/A even if configured NT8. Reads non-atomic; no freeze claim. Direct leg3 not recovered wrapper. Known repair overlap possible."
+  },
+  {
+    "path": "trader/class33_cutover_gate.go",
+    "name": "gateOpenOrders",
+    "start_line": 151,
+    "end_line": 158,
+    "purpose": "Contain panics while reading this trader ledger orders.",
+    "connections": [
+      "Source call expressions, not type-resolved: func, recover, fmt.Errorf, at.ledgerOpenOrders, at.futuresSymbol"
+    ],
+    "invariants_or_risks": "Five read-only cutover legs: DB/API/NT8 positions, broker-vs-ledger working orders, planner claim. Nil armedTrader marked N/A even if configured NT8. Reads non-atomic; no freeze claim. Direct leg3 not recovered wrapper. Known repair overlap possible."
+  },
+  {
+    "path": "trader/contract_current.go",
+    "name": "currentContract",
+    "start_line": 16,
+    "end_line": 30,
+    "purpose": "currentContract is the trader-side face of the ONE source: the AddOn's most recent `subscribed` ACK, via the TCP server; else the newest usable bar in the store (labelled a fallback); else \"\". Never a date rule (A24).  It returns the source beside the value so every line that prints the contract can say where it came from (A11).",
+    "connections": [
+      "Source call expressions, not type-resolved: at.armedTrader, nt.GetServer, srv.CurrentContract, kernel.ClockCTSeconds, store.BarHistory, LatestContract"
+    ],
+    "invariants_or_risks": "Current contract from server subscribed ACK else labeled latest usable store contract, no date inference; local code no freshness check. contractFact fallback timestamp zero honest."
+  },
+  {
+    "path": "trader/contract_current.go",
+    "name": "contractFactFor",
+    "start_line": 34,
+    "end_line": 48,
+    "purpose": "contractFactFor is currentContract with the full provenance (roll history), for the boot line and the desk strip. ok=false \u2192 print n/a, never a literal.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.armedTrader, nt.GetServer, srv.CurrentContract, store.BarHistory, LatestContract"
+    ],
+    "invariants_or_risks": "Current contract from server subscribed ACK else labeled latest usable store contract, no date inference; local code no freshness check. contractFact fallback timestamp zero honest."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "NewGridState",
+    "start_line": 75,
+    "end_line": 82,
+    "purpose": "NewGridState creates a new grid state",
+    "connections": [
+      "Source call expressions, not type-resolved: make"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "checkBreakout",
+    "start_line": 99,
+    "end_line": 129,
+    "purpose": "checkBreakout detects if price has broken out of grid range Returns breakout type and percentage beyond boundary",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.GetMarketPrice, mu.RLock, mu.RUnlock"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "checkMaxDrawdown",
+    "start_line": 133,
+    "end_line": 181,
+    "purpose": "checkMaxDrawdown checks if current drawdown exceeds maximum allowed Returns: (exceeded bool, currentDrawdown float64)",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.GetBalance, mu.Lock, mu.Unlock"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "checkDailyLossLimit",
+    "start_line": 185,
+    "end_line": 209,
+    "purpose": "checkDailyLossLimit checks if daily loss exceeds limit Returns: (exceeded bool, dailyLossPct float64)",
+    "connections": [
+      "Source call expressions, not type-resolved: mu.Lock, time.Now, now.YearDay, LastDailyReset.YearDay, now.Year, LastDailyReset.Year, mu.Unlock"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "updateDailyPnL",
+    "start_line": 212,
+    "end_line": 217,
+    "purpose": "updateDailyPnL updates the daily PnL tracking",
+    "connections": [
+      "Source call expressions, not type-resolved: mu.Lock, mu.Unlock"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "emergencyExit",
+    "start_line": 220,
+    "end_line": 252,
+    "purpose": "emergencyExit closes all positions and cancels all orders",
+    "connections": [
+      "Source call expressions, not type-resolved: logger.Errorf, at.cancelAllGridOrders, trader.GetPositions, trader.CloseLong, trader.CloseShort, mu.Lock, mu.Unlock"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "handleBreakout",
+    "start_line": 255,
+    "end_line": 282,
+    "purpose": "handleBreakout handles price breakout from grid range",
+    "connections": [
+      "Source call expressions, not type-resolved: logger.Warnf, at.cancelAllGridOrders, logger.Errorf, mu.Lock, mu.Unlock, fmt.Errorf, logger.Infof"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "InitializeGrid",
+    "start_line": 289,
+    "end_line": 350,
+    "purpose": "InitializeGrid initializes the grid state and calculates levels",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Errorf, NewGridState, trader.GetMarketPrice, market.GetWithTimeframes, logger.Warnf, at.calculateDefaultBounds, at.calculateATRBounds, float64, at.initializeGridLevels, trader.SetMarginMode, logger.Infof, trader.SetLeverage"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "RunGridCycle",
+    "start_line": 353,
+    "end_line": 462,
+    "purpose": "RunGridCycle executes one grid trading cycle",
+    "connections": [
+      "Source call expressions, not type-resolved: Stop, isRunningMutex.RLock, isRunningMutex.RUnlock, logger.Infof, at.InitializeGrid, fmt.Errorf, at.checkBreakout, at.handleBreakout, at.checkMaxDrawdown, at.emergencyExit, fmt.Sprintf, at.checkDailyLossLimit, logger.Errorf, mu.Lock, mu.Unlock, at.checkBoxBreakout, at.checkFalseBreakoutRecovery, mu.RLock, mu.RUnlock, at.buildGridContext, kernel.GetGridDecisions, len, at.executeGridDecision, logger.Warnf, at.syncGridState"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "buildGridContext",
+    "start_line": 465,
+    "end_line": 527,
+    "purpose": "buildGridContext builds the context for AI grid decisions",
+    "connections": [
+      "Source call expressions, not type-resolved: market.GetWithTimeframes, fmt.Errorf, kernel.BuildGridContextFromMarketData, mu.RLock, mu.RUnlock, trader.GetBalance, trader.GetPositions"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "executeGridDecision",
+    "start_line": 530,
+    "end_line": 560,
+    "purpose": "executeGridDecision executes a single grid decision",
+    "connections": [
+      "Source call expressions, not type-resolved: at.placeGridLimitOrder, at.cancelGridOrder, at.cancelAllGridOrders, at.pauseGrid, at.resumeGrid, at.adjustGrid, logger.Infof, trader.CloseLong, trader.CloseShort, logger.Warnf"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "IsGridStrategy",
+    "start_line": 563,
+    "end_line": 568,
+    "purpose": "IsGridStrategy returns true if current strategy is grid trading",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid.go",
+    "name": "saveGridDecisionRecord",
+    "start_line": 571,
+    "end_line": 617,
+    "purpose": "saveGridDecisionRecord saves the grid decision to database",
+    "connections": [
+      "Source call expressions, not type-resolved: time.Now, UTC, len, json.MarshalIndent, string, append, fmt.Sprintf, store.Decision, LogDecision, logger.Warnf"
+    ],
+    "invariants_or_risks": "Alternative grid lifecycle bypasses normal runCycle entry gates, conditional on grid config; no claim configured live. Drawdown reads total_equity unlike totalEquity; daily local-day in-memory estimate. Emergency ignores close errors and pauses. Grid records each action success despite execution errors; parent Success field swallowed inside comment. GridCount1 divides by0. Context Levels aliases slice."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "calculateDefaultBounds",
+    "start_line": 16,
+    "end_line": 21,
+    "purpose": "calculateDefaultBounds calculates default bounds based on price",
+    "connections": [
+      "Source call expressions, not type-resolved: float64"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "calculateATRBounds",
+    "start_line": 24,
+    "end_line": 43,
+    "purpose": "calculateATRBounds calculates bounds using ATR",
+    "connections": [
+      "Source call expressions, not type-resolved: at.calculateDefaultBounds"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "initializeGridLevels",
+    "start_line": 46,
+    "end_line": 94,
+    "purpose": "initializeGridLevels creates the grid level structure",
+    "connections": [
+      "Source call expressions, not type-resolved: make, float64, math.Exp, math.Pow, at.applyGridDirection"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "applyGridDirection",
+    "start_line": 98,
+    "end_line": 182,
+    "purpose": "applyGridDirection adjusts grid level sides based on the current direction This redistributes buy/sell levels according to the direction bias ratio",
+    "connections": [
+      "Source call expressions, not type-resolved: direction.GetBuySellRatio, len, int, float64, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "checkGridSkew",
+    "start_line": 186,
+    "end_line": 225,
+    "purpose": "checkGridSkew checks if grid is heavily skewed (too many fills on one side) Returns: (skewed bool, buyFilledCount int, sellFilledCount int)",
+    "connections": [
+      "Source call expressions, not type-resolved: mu.RLock, mu.RUnlock"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "autoAdjustGrid",
+    "start_line": 228,
+    "end_line": 330,
+    "purpose": "autoAdjustGrid automatically adjusts grid when heavily skewed",
+    "connections": [
+      "Source call expressions, not type-resolved: at.checkGridSkew, logger.Warnf, trader.GetMarketPrice, logger.Errorf, mu.RLock, mu.RUnlock, math.Abs, logger.Infof, at.cancelAllGridOrders, mu.Lock, mu.Unlock, make, InitializeGrid, market.GetWithTimeframes, at.calculateDefaultBoundsLocked, at.calculateATRBoundsLocked, float64, at.initializeGridLevelsLocked"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "calculateDefaultBoundsLocked",
+    "start_line": 333,
+    "end_line": 338,
+    "purpose": "calculateDefaultBoundsLocked calculates default bounds (caller must hold lock)",
+    "connections": [
+      "Source call expressions, not type-resolved: float64"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "calculateATRBoundsLocked",
+    "start_line": 341,
+    "end_line": 360,
+    "purpose": "calculateATRBoundsLocked calculates bounds using ATR (caller must hold lock)",
+    "connections": [
+      "Source call expressions, not type-resolved: at.calculateDefaultBoundsLocked"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "initializeGridLevelsLocked",
+    "start_line": 363,
+    "end_line": 411,
+    "purpose": "initializeGridLevelsLocked creates the grid level structure (caller must hold lock)",
+    "connections": [
+      "Source call expressions, not type-resolved: make, float64, math.Exp, math.Pow, at.applyGridDirectionLocked"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_levels.go",
+    "name": "applyGridDirectionLocked",
+    "start_line": 414,
+    "end_line": 485,
+    "purpose": "applyGridDirectionLocked adjusts grid level sides based on the current direction (caller must hold lock)",
+    "connections": [
+      "Source call expressions, not type-resolved: direction.GetBuySellRatio, len, int, float64"
+    ],
+    "invariants_or_risks": "Grid bound/weight/direction helpers duplicated locked variants. Auto-adjust continues after cancel failure, resets levels, nearest-level restoration can overwrite multiple positions into one slot with map iteration order; failed pending orders lost. adjustGrid sibling does not recompute bounds. No production incident inferred."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "checkTotalPositionLimit",
+    "start_line": 17,
+    "end_line": 55,
+    "purpose": "checkTotalPositionLimit checks if adding a new position would exceed total limits Returns: (allowed bool, currentPositionValue float64, maxAllowed float64)",
+    "connections": [
+      "Source call expressions, not type-resolved: float64, trader.GetPositions, math.Abs, mu.RLock, mu.RUnlock"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "placeGridLimitOrder",
+    "start_line": 58,
+    "end_line": 151,
+    "purpose": "placeGridLimitOrder places a limit order for grid trading",
+    "connections": [
+      "Source call expressions, not type-resolved: NewGridTraderAdapter, float64, mu.RLock, len, mu.RUnlock, logger.Warnf, logger.Errorf, fmt.Errorf, at.checkTotalPositionLimit, fmt.Sprintf, time.Now, UnixNano, gridTrader.PlaceLimitOrder, mu.Lock, mu.Unlock, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "cancelGridOrder",
+    "start_line": 154,
+    "end_line": 178,
+    "purpose": "cancelGridOrder cancels a specific grid order",
+    "connections": [
+      "Source call expressions, not type-resolved: NewGridTraderAdapter, gridTrader.CancelOrder, fmt.Errorf, mu.Lock, len, delete, mu.Unlock, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "cancelAllGridOrders",
+    "start_line": 181,
+    "end_line": 202,
+    "purpose": "cancelAllGridOrders cancels all grid orders",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.CancelAllOrders, fmt.Errorf, mu.Lock, make, mu.Unlock, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "pauseGrid",
+    "start_line": 205,
+    "end_line": 214,
+    "purpose": "pauseGrid pauses grid trading",
+    "connections": [
+      "Source call expressions, not type-resolved: at.cancelAllGridOrders, mu.Lock, mu.Unlock, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "resumeGrid",
+    "start_line": 217,
+    "end_line": 224,
+    "purpose": "resumeGrid resumes grid trading",
+    "connections": [
+      "Source call expressions, not type-resolved: mu.Lock, mu.Unlock, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "adjustGrid",
+    "start_line": 227,
+    "end_line": 244,
+    "purpose": "adjustGrid adjusts grid parameters",
+    "connections": [
+      "Source call expressions, not type-resolved: at.cancelAllGridOrders, trader.GetMarketPrice, fmt.Errorf, at.initializeGridLevels, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "syncGridState",
+    "start_line": 247,
+    "end_line": 321,
+    "purpose": "syncGridState syncs grid state with exchange",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.GetOpenOrders, logger.Warnf, make, trader.GetPositions, mu.Lock, math.Abs, logger.Infof, delete, mu.Unlock, logger.Debugf, len, at.checkAndExecuteStopLoss, at.autoAdjustGrid"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "closeAllPositions",
+    "start_line": 324,
+    "end_line": 357,
+    "purpose": "closeAllPositions closes all open positions for the grid symbol",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.GetPositions, fmt.Errorf, trader.CloseLong, trader.CloseShort, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_grid_orders.go",
+    "name": "checkAndExecuteStopLoss",
+    "start_line": 360,
+    "end_line": 419,
+    "purpose": "checkAndExecuteStopLoss checks if any filled level has exceeded stop loss and closes it",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.GetMarketPrice, logger.Warnf, mu.Lock, mu.Unlock, trader.CloseLong, trader.CloseShort, logger.Errorf, logger.Infof"
+    ],
+    "invariants_or_risks": "Grid placement caps quantity but stores/logs d.Quantity, making ledger differ accepted request. No local bounds/state/symbol/finite validation. Position limit overwrites last matching position, query errors zero. sync disappearance heuristic reuses unchanged expected size across missing orders and clears ID before delete on cancellation. Stop PnL uses allocated margin percent not actual fills/quantity/leverage; synchronous network calls under mutex."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "reasoningWire",
+    "start_line": 24,
+    "end_line": 51,
+    "purpose": "reasoningWire maps a reasoning knob (off|fast|low|high|max) to DeepSeek wire values (thinking mode + reasoning_effort). \"fast\" maps to effort \"low\" \u2014 DeepSeek only accepts low|high|max, and low is the cheapest/fastest. Returns (mode, effort, label).",
+    "connections": [
+      "Source call expressions, not type-resolved: strings.ToLower, strings.TrimSpace"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "execReasoningWire",
+    "start_line": 55,
+    "end_line": 58,
+    "purpose": "execReasoningWire is the EXECUTOR in-loop thinking (AI_EXEC_REASONING, default fast) \u2014 entries must land fresh.",
+    "connections": [
+      "Source call expressions, not type-resolved: reasoningWire, os.Getenv"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "execReasoningLabel",
+    "start_line": 60,
+    "end_line": 63,
+    "purpose": "Render executor reasoning environment resolution.",
+    "connections": [
+      "Source call expressions, not type-resolved: reasoningWire, os.Getenv"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "planReasoningWire",
+    "start_line": 67,
+    "end_line": 70,
+    "purpose": "planReasoningWire is the PLANNER read thinking (AI_PLAN_REASONING, default max) \u2014 full reasoning is reserved for the once-per-session plan reads.",
+    "connections": [
+      "Source call expressions, not type-resolved: reasoningWire, os.Getenv"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "planReasoningLabel",
+    "start_line": 72,
+    "end_line": 75,
+    "purpose": "Render planner reasoning environment resolution.",
+    "connections": [
+      "Source call expressions, not type-resolved: reasoningWire, os.Getenv"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "fastMarketATR",
+    "start_line": 80,
+    "end_line": 87,
+    "purpose": "fastMarketATR \u2014 F3 (waterfall-class wave, 2026-08-28): the drift threshold in ATR5m multiples (FAST_MARKET_ATR, default 1.5). A wake read whose price has moved more than this since the last plan write runs on the fast wire.",
+    "connections": [
+      "Source call expressions, not type-resolved: os.Getenv, strconv.ParseFloat, strings.TrimSpace"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "fastMarketReasoningWire",
+    "start_line": 91,
+    "end_line": 94,
+    "purpose": "fastMarketReasoningWire \u2014 F3: FAST_MARKET_REASONING, default fast. Fast-tape reads must return fast (<120s target), not deep-think 6-minute answers.",
+    "connections": [
+      "Source call expressions, not type-resolved: reasoningWire, os.Getenv"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "fastMarketReasoningLabel",
+    "start_line": 96,
+    "end_line": 99,
+    "purpose": "Render fast-tape reasoning environment resolution.",
+    "connections": [
+      "Source call expressions, not type-resolved: reasoningWire, os.Getenv"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "resolvePromptVariant",
+    "start_line": 107,
+    "end_line": 115,
+    "purpose": "resolvePromptVariant picks the live AI prompt mode (Strategy Studio Phase 2). A non-empty per-strategy saved variant wins; otherwise the original venue rule applies \u2014 CME futures (NinjaTrader) \u2192 \"futures\", everything else \u2192 \"balanced\". This is the back-compat guarantee: an empty savedVariant resolves EXACTLY as the pre-Phase-2 code, so strategies with no saved variant are byte-identical. Prompt-layer only \u2014 it never touches a risk gate.",
+    "connections": [
+      "Source call expressions, not type-resolved: strings.TrimSpace"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "stampGuardrailSkip",
+    "start_line": 123,
+    "end_line": 129,
+    "purpose": "runCycle runs one trading cycle (using AI full decision-making) stampGuardrailSkip (F10) records the TRUTH for a cycle held by a guardrail/gate: a named execution_status + the gate reason, never a silently-empty success (the \"ghost record\" bug where guardrail-skip cycles were saved success=1 with an empty prompt). An empty prompt on such a record is fine \u2014 the pre-prompt gates fire before any prompt is built.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "orNight",
+    "start_line": 151,
+    "end_line": 156,
+    "purpose": "staleBarDiscard reports whether a decision must be DISCARDED because the bar it was computed on (decisionBarCloseMs) is no longer the latest closed primary bar (latestClosedMs > decisionBarCloseMs) \u2014 the AI call spanned a bar close, so acting on it would trade on data the market has already moved past. haveBar=false (no bars / provider down) never discards: absent evidence, the existing stale-data armor (B4) is the only judge. decisionBarCloseMs==0 means the cycle never captured a bar (e.g. crypto) \u2192 never discards.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "staleBarDiscard",
+    "start_line": 158,
+    "end_line": 160,
+    "purpose": "Compare captured and latest closed primary bar watermarks.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "applyDecisionCallTimeout",
+    "start_line": 167,
+    "end_line": 172,
+    "purpose": "applyDecisionCallTimeout aligns the futures decision client with the ONE config-driven AI timeout \u2014 futures (ninjatrader) only. Crypto and the planner client (a separate client, auto_trader_planner.go) already inherit the same resolved value through DefaultConfig, so executor and planner can no longer diverge (the 180s-vs-300s split was defect class 7).",
+    "connections": [
+      "Source call expressions, not type-resolved: mcpClient.SetTimeout, mcp.ResolvedAITimeout"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "runCycle",
+    "start_line": 174,
+    "end_line": 931,
+    "purpose": "Orchestrate normal decision loop: account/session/context/armed management, AI/watch, stale re-evaluation, ordered execution and durable records.",
+    "connections": [
+      "Source call expressions, not type-resolved: logger.Info, strings.Repeat, logger.Infof, kernel.FormatCT, time.Now, Stop, isRunningMutex.RLock, isRunningMutex.RUnlock, at.logInfof, at.maybeFetchCalendar, at.maybeSeedHalfDays, at.maybeCheckAIBalance, at.cmeSessionClosedSkip, store.Trader, GetByID, at.logWarnf, at.driveDeadManWatchdog, telemetry.RolloverGateBlocks, kernel.CMESessionDayStart, UnixMilli, telemetry.SetErrorSessionDay, at.snapshotSessionProfiles, at.observeNightEdge, at.maybeWriteDigests, at.maybePruneAckedAlerts"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "cmeSessionClosedSkip",
+    "start_line": 937,
+    "end_line": 953,
+    "purpose": "cmeSessionClosedSkip is the hoisted CME session gate (PART A). It returns true when the whole cycle should be skipped because the futures market is closed \u2014 after logging the open\u21c4closed edge and idling with a backoff. In non-futures (crypto) mode it always returns false, so those traders are byte-identical.",
+    "connections": [
+      "Source call expressions, not type-resolved: config.Get, kernel.IsCMEOpen, time.Now, at.noteCMESessionEdge, Stop, at.backoffWhileClosed"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "noteCMESessionEdge",
+    "start_line": 959,
+    "end_line": 973,
+    "purpose": "noteCMESessionEdge logs the market open\u21c4closed transition ONCE (not every cycle). On a fresh start into a closed market it announces the closure + the next open immediately; a fresh start into an open market stays silent (there is nothing to \"resume\"). Single-goroutine (runCycle) \u2192 no locking on cmePrevOpen.",
+    "connections": [
+      "Source call expressions, not type-resolved: kernel.CMEClosedReason, time.Now, kernel.NextCMEOpen, kernel.CTLocation, at.logInfof, next.In, Format"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "backoffWhileClosed",
+    "start_line": 979,
+    "end_line": 994,
+    "purpose": "backoffWhileClosed idles for cmeClosedBackoff while the market is shut, in short stop-responsive slices so Stop() returns promptly instead of the loop spinning a full cycle every ScanInterval (~1 min) all weekend. Returns early the moment the trader is stopped.",
+    "connections": [
+      "Source call expressions, not type-resolved: kernel.SetClosedBackoffForBootLine, time.Duration, isRunningMutex.RLock, isRunningMutex.RUnlock, time.Sleep"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "buildTradingContext",
+    "start_line": 997,
+    "end_line": 1254,
+    "purpose": "buildTradingContext builds trading context",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.GetBalance, fmt.Errorf, trader.GetPositions, make, int, float64, calculatePnLPercentage, store.Position, GetOpenPositionBySymbol, time.Now, UnixMilli, peakPnLCacheMutex.RLock, peakPnLCacheMutex.RUnlock, append, delete, at.logWarnf, strategyEngine.GetCandidateCoins, logger.Infof, len, strategyEngine.GetConfig, kernel.FormatCT, time.Since, Minutes, at.attachTradeContext, strategyEngine.FetchQuantDataBatch"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "sortDecisionsByPriority",
+    "start_line": 1258,
+    "end_line": 1291,
+    "purpose": "sortDecisionsByPriority sorts decisions: close positions first, then open positions, finally hold/wait This avoids position stacking overflow when changing positions",
+    "connections": [
+      "Source call expressions, not type-resolved: len, func, make, copy, getActionPriority"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "checkClaw402Balance",
+    "start_line": 1294,
+    "end_line": 1324,
+    "purpose": "checkClaw402Balance checks USDC balance and logs warnings if low",
+    "connections": [
+      "Source call expressions, not type-resolved: int, ScanInterval.Minutes, store.EstimateRunway, logger.Infof, wallet.QueryUSDCBalance, at.logWarnf, at.logErrorf, float64"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_loop.go",
+    "name": "attachTradeContext",
+    "start_line": 1333,
+    "end_line": 1414,
+    "purpose": "attachTradeContext (P&L-TRUTH WAVE, 2026-09-01) fills the prompt-facing trade context from the STRICT corrected-column aggregators: the session-day guardrail inputs, the recent closed trades (UNRESOLVED rows carry no P&L and no percentage) and the track record (figure + resolved n + unresolved exclusion count). Before this wave the block summed EffectivePnL(), which coerced 115 unresolved rows to raw realized_pnl and told the executor \"Total PnL -203.68 (220 trades)\" when the truth was +304.32 over 105.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.logWarnf, kernel.CMESessionDayStart, time.Now, UnixMilli, store.Position, GetSessionDayActivity, at.currentAccountName, GetRecentTrades, kernel.FormatCT, time.Unix, append, logger.Infof, len, GetFullStats"
+    ],
+    "invariants_or_risks": "Full cycle orchestrates context/armed manager before balance wait, then AI/watch/skip, stale reevaluation and ordered execution. Context tags assigned current trader rather than derived provenance. Account DB selection not actual bound snapshot validation locally. AI nil/SkipReason clears outage/safeMode before checking skip. Parent success not lowered on execute error branch. buildTradingContext warns nil engine then dereferences it. Daily activity failure leaves computed-looking zero. See report call traces."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "futuresOrderQuantity",
+    "start_line": 31,
+    "end_line": 47,
+    "purpose": "futuresOrderQuantity converts a decision's notional (position_size_usd) into a clamped contract count for CME futures: contracts = notional / (price \u00d7 pointValue), rounded, floored at 1, capped at maxFuturesContracts. Bypasses the crypto notional/leverage margin model (futures margin is per-contract).",
+    "connections": [
+      "Source call expressions, not type-resolved: market.FuturesPointValue, math.Round, float64, logger.Infof"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "resolveMaxContracts",
+    "start_line": 52,
+    "end_line": 58,
+    "purpose": "resolveMaxContracts returns the futures max-contracts clamp for this trader's strategy (per-strategy value, else the 2-contract venue default; 6.6 comment-truth fix). Hardening D3 (audit F2): ALWAYS ON \u2014 the guardrails master switch no longer disables it.",
+    "connections": [
+      "Source call expressions, not type-resolved: int, kernel.ResolveMaxContracts"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "hlBool",
+    "start_line": 61,
+    "end_line": 66,
+    "purpose": "hlBool resolves a three-state *bool toggle (nil \u2192 default).",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "holdLockSuppressesClose",
+    "start_line": 77,
+    "end_line": 105,
+    "purpose": "holdLockSuppressesClose reports whether the \"Hold discipline\" hold-lock should suppress this AI-initiated close: the per-strategy toggle is ON AND an OPEN position exists for the decision's symbol/side. When it returns true it has already logged the suppression loudly and marked the record as a deliberate no-op (Success, no error). The trade then rides to the stop/target the AI set \u2014 a real OCO bracket resting at the exchange (VLTraderTCPClient.SubmitBracketOnEntryFill), so the position stays protected. Emergency Flat (handler_risk.go) and the drawdown monitor call the trader directly and never reach this path, so human and safety closes always go through. Default OFF \u21d2 behavior byte-identical.",
+    "connections": [
+      "Source call expressions, not type-resolved: hlBool, store.Position, GetOpenPositionBySymbol, market.Normalize, market.GetWithExchange, at.logWarnf"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "consecutiveLossHalted",
+    "start_line": 112,
+    "end_line": 135,
+    "purpose": "consecutiveLossHalted reports whether new entries are blocked by the D1 consecutive-loss halt: N consecutive LOSING closed trades in the current CME session-day (0 = OFF; resets on a win/break-even close or a new session). It is a per-strategy circuit breaker, NOT gated by the guardrails master switch. Fail-OPEN on a query error \u2014 never block a trade because the DB hiccuped.",
+    "connections": [
+      "Source call expressions, not type-resolved: breakerHaltN, kernel.CMESessionDayStart, time.Now, UnixMilli, store.Position, CountConsecutiveLossesSince, at.logWarnf, fmt.Sprintf"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "executeDecisionWithRecord",
+    "start_line": 138,
+    "end_line": 366,
+    "purpose": "executeDecisionWithRecord executes AI decision and records detailed information",
+    "connections": [
+      "Source call expressions, not type-resolved: at.applyWeeklyDecisionShadow, at.ninjaFeedDown, at.logWarnf, telemetry.IncGateBlock, fmt.Sprintf, deadMan.entriesBlocked, discipline.IsFrozen, at.logErrorf, kernel.TradingRefused, at.emitAlert, kernel.CMESessionDayKey, time.Now, at.entryPaused, at.entryBlockedByRoll, at.consecutiveLossHalted, at.entryBlockedByLastEntry, at.sessionEntryBlocked, at.planModeBlocked, at.approvalRequired, at.approvalGranted, market.GetWithExchange, at.entryGateForDecision, recordResearchGate, entryGateDecisionTelemetry, at.recordPlanCitation"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "ntHeldPosition",
+    "start_line": 382,
+    "end_line": 409,
+    "purpose": "ntHeldPosition returns the side (\"long\"/\"short\") NT8 currently holds for symbol, or \"\" if flat / unreadable. Reads the NT8 positions snapshot via GetPositions.",
+    "connections": [
+      "Source call expressions, not type-resolved: trader.GetPositions, at.logWarnf, telemetry.RecordError, err.Error, strings.ToLower"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "reconcileBeforeOpenNT",
+    "start_line": 424,
+    "end_line": 472,
+    "purpose": "reconcileBeforeOpenNT (TRACK B): NinjaTrader-only defense-in-depth run before an entry. The bot is about to OPEN, so it believes it is flat; if NT8 still holds a position for this symbol (an orphan), flatten-first AWAITING its own fill, then allow the open. If the flatten cannot be confirmed flat (timeout / feed drop), REFUSE the open \u2014 never compound onto an unreconciled net (the id=46 harm). No-op for non-NT traders or when NT8 is flat.  STEP-A note: the open path already refuses to open on a SAME-side held position, and 0118ca77 (no phantom close \u2192 the bot knows it is still in a position) + the Track-A feed gate prevent the orphan at the source. This adds AUTO-RECOVERY (flatten + proceed instead of refusing every cycle) and widens to EITHER side. It does NOT cure a stale snapshot (the actual id=46 bypass) \u2014 that is Track A + 0118ca77; this acts only on a snapshot that positively reports a held position.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.ninjaFeedDown, fmt.Errorf, at.ntHeldPosition, at.logWarnf, time.Now, UnixMilli, trader.CloseLong, trader.CloseShort, Add, Before, time.Sleep, ntTCP.CloseConfirmedSince, at.logInfof"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "executeOpenLongWithRecord",
+    "start_line": 475,
+    "end_line": 620,
+    "purpose": "executeOpenLongWithRecord executes open long position and records detailed information",
+    "connections": [
+      "Source call expressions, not type-resolved: logger.Infof, at.reconcileBeforeOpenNT, trader.GetPositions, fmt.Errorf, at.enforceMaxPositions, len, market.GetWithExchange, trader.GetBalance, at.enforcePositionValueRatio, market.IsCMEFuturesSymbol, futuresOrderQuantity, at.resolveMaxContracts, float64, at.enforceMinPositionSize, trader.SetMarginMode, trader.SetStopLoss, at.logErrorf, telemetry.RecordError, err.Error, trader.SetTakeProfit, trader.OpenLong, at.captureEntryThesis, at.recordAndConfirmOrder, time.Now, UnixMilli"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "executeOpenShortWithRecord",
+    "start_line": 623,
+    "end_line": 762,
+    "purpose": "executeOpenShortWithRecord executes open short position and records detailed information",
+    "connections": [
+      "Source call expressions, not type-resolved: logger.Infof, at.reconcileBeforeOpenNT, trader.GetPositions, fmt.Errorf, at.enforceMaxPositions, len, market.GetWithExchange, trader.GetBalance, at.enforcePositionValueRatio, market.IsCMEFuturesSymbol, futuresOrderQuantity, at.resolveMaxContracts, float64, at.enforceMinPositionSize, trader.SetMarginMode, trader.SetStopLoss, trader.SetTakeProfit, trader.OpenShort, at.captureEntryThesis, at.recordAndConfirmOrder, time.Now, UnixMilli"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "executeCloseLongWithRecord",
+    "start_line": 765,
+    "end_line": 826,
+    "purpose": "executeCloseLongWithRecord executes close long position and records detailed information",
+    "connections": [
+      "Source call expressions, not type-resolved: logger.Infof, market.GetWithExchange, market.Normalize, store.Position, GetOpenPositionBySymbol, trader.GetPositions, trader.CloseLong, at.recordAndConfirmOrder"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "executeCloseShortWithRecord",
+    "start_line": 829,
+    "end_line": 890,
+    "purpose": "executeCloseShortWithRecord executes close short position and records detailed information",
+    "connections": [
+      "Source call expressions, not type-resolved: logger.Infof, market.GetWithExchange, market.Normalize, store.Position, GetOpenPositionBySymbol, trader.GetPositions, trader.CloseShort, at.recordAndConfirmOrder"
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_orders.go",
+    "name": "isBootIntegrityGatedAction",
+    "start_line": 896,
+    "end_line": 898,
+    "purpose": "isBootIntegrityGatedAction documents (and lets tests assert) which actions the P1 boot-integrity refusal blocks: NEW ENTRIES ONLY. Closes, holds and waits are never gated \u2014 a refused process must still be able to manage an open position down to flat.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Entry wrapper gate order covers feed (opens/closes), deadman/freeze/boot/pause/roll/loss/session/plan/approval/canonical gate; lower open methods bypass wrapper if direct. Reconcile treats read error flat, can confirm failed snapshot and proceed (later positions read still another check). Same-side lowercase differs NT uppercase. Futures long logs prebracket failures, short ignores; post-fill setters both again. Quantity clamps default2 but invalid nonpositive inputs can floor1/NaN. Close logs success after submit without local confirmation result. Trace TCP defenses before consequence."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "dayPlanCfg",
+    "start_line": 18,
+    "end_line": 23,
+    "purpose": "Return optional strategy DayPlan config pointer.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "sessionOverride",
+    "start_line": 26,
+    "end_line": 37,
+    "purpose": "sessionOverride returns this session's minimal override block, or nil.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg, strings.EqualFold"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "planModeFor",
+    "start_line": 41,
+    "end_line": 43,
+    "purpose": "planModeFor resolves the plan-restriction mode for a session: per-session override \u2192 strategy PlanMode \u2192 \"advisory\". advisory (default) never gates.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg, PlanModeFor"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "replanCapFor",
+    "start_line": 47,
+    "end_line": 49,
+    "purpose": "replanCapFor resolves the per-session re-read cap (default 2); a per-session override wins (0 = no re-plan after death).",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg, ReplanCapFor"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "acceptanceRuleFor",
+    "start_line": 55,
+    "end_line": 57,
+    "purpose": "acceptanceRuleFor resolves the per-session acceptance rule (W15.B \u2014 the override was persisted and rendered but read by NOTHING; every consumer went straight to the strategy-level field). One resolver, shared with the kernel prompt path and the API card renderer so all three narrate the same rulebook.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg, AcceptanceRuleFor"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "activeSessionName",
+    "start_line": 62,
+    "end_line": 67,
+    "purpose": "activeSessionName returns the currently-active session's name, or \"\" when we are outside every window (night/interim). \"\" resolves to strategy-level settings, which is the correct fallback for an off-hours evaluation.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.sessionRegistry, ActiveSession"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "sessionEnabledForStrategy",
+    "start_line": 72,
+    "end_line": 86,
+    "purpose": "sessionEnabledForStrategy gates which sessions THIS trader runs (on top of the registry Enabled flag): the SessionsEnabled subset (default [NY]). A per-session Enable override wins over the subset.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.sessionOverride, at.dayPlanCfg, len, strings.EqualFold, strings.TrimSpace"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "sessionRunnable",
+    "start_line": 104,
+    "end_line": 121,
+    "purpose": "sessionRunnable resolves whether THIS strategy runs a session, combining the two enable layers the spec defines, with the inherit/override model the accordion chips already show:  EXPLICIT per-session override (sessions[].enable) \u2192 authoritative. \ud83d\udd38override otherwise \u2192 inherit: the admin registry's Enabled AND the sessions_enabled subset (default [NY]).                            \u26aainherit  Before this, the read scheduler ANDed the registry flag in unconditionally, so a strategy-level \"turn ASIA on\" could never take effect \u2014 the hardcoded DefaultSessionRegistry (ASIA/LONDON false) vetoed it forever. That is what made the session toggle dead on arrival. The registry still owns the CLOCK (window / read / flat / killzones) and still supplies the default; an explicit owner choice now wins for that strategy.  Returns (runnable, why) \u2014 why is a short reason for the gate log when false.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.sessionOverride, at.sessionEnabledForStrategy"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "SessionRunnable",
+    "start_line": 126,
+    "end_line": 128,
+    "purpose": "SessionRunnable is the EXPORTED form of sessionRunnable for the API layer (P1/H8-residuals): the card/edit/ask/apply handlers must resolve enablement through the SAME resolver the bot gates use, never the raw registry flag.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.sessionRunnable"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "proximityFilterATR",
+    "start_line": 135,
+    "end_line": 142,
+    "purpose": "proximityFilterATR is the level activation half-width in daily-range-proxy multiples (day-trade lock). Valid 0.1\u20133.0; anything else \u2192 the default 1.5. S1 (mega-research 2026-08-26) \u2014 the 0.5 lower clamp made sane values unreachable when the proxy runs ~350pt (0.5\u00d7350 = \u00b1175pt); 0.1 allows the owner's 0.3 retune (\u00b1~105pt).",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg, kernel.ResolveProximityK"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "scenarioCap",
+    "start_line": 145,
+    "end_line": 150,
+    "purpose": "scenarioCap is the max scenarios kept from a planner read (1\u20135; default 3).",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "approvalRequired",
+    "start_line": 153,
+    "end_line": 156,
+    "purpose": "approvalRequired reports whether entries must be owner-approved before firing.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "eveningDigestEnabled",
+    "start_line": 160,
+    "end_line": 166,
+    "purpose": "eveningDigestEnabled gates the end-of-day roll-up digest (default true; the FE seeds it via DefaultDayPlanConfig, so absent \u2192 the writer keeps writing).",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "ApprovalKey",
+    "start_line": 170,
+    "end_line": 172,
+    "purpose": "ApprovalKey is the system_config key granting entries for one trader + CME session-day (set by POST /api/plan/approve; consumed by the entry gate).",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "approvalGranted",
+    "start_line": 176,
+    "end_line": 182,
+    "purpose": "approvalGranted reports whether the owner has approved entries for the current CME session-day.",
+    "connections": [
+      "Source call expressions, not type-resolved: store.GetSystemConfig, ApprovalKey, kernel.CMESessionDayKey"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "planModeBlocked",
+    "start_line": 188,
+    "end_line": 226,
+    "purpose": "planModeBlocked applies the plan-restriction mode to a NEW entry. advisory (or no plan mode) never blocks. direction: refuse entries against the plan's bias. strict: refuse entries that don't cite a matched scenario. In direction/strict with NO active plan, nothing is authorized \u2192 block (plan restricts).",
+    "connections": [
+      "Source call expressions, not type-resolved: time.Now, at.sessionRegistry, ActiveSession, at.planModeFor, kernel.HasTraderPlanProvider, kernel.ActivePlanFor, at.futuresSymbol, strings.ToLower, strings.TrimSpace, kernel.ClassifyCitation"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "RealignCap",
+    "start_line": 233,
+    "end_line": 238,
+    "purpose": "RealignCap returns this strategy's auto re-align ceiling (W13). Exported because the API layer enforces the cap at the /api/plan/realign entry point.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanCfg"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "DayPlanOn",
+    "start_line": 242,
+    "end_line": 242,
+    "purpose": "DayPlanOn reports whether the day-plan feature is enabled for this trader \u2014 the API uses it to skip re-align entirely on non-day-plan traders.",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/auto_trader_planconfig.go",
+    "name": "RunnableSessions",
+    "start_line": 249,
+    "end_line": 258,
+    "purpose": "RunnableSessions returns the session names THIS strategy actually runs, in registry order. Exported so the plan card's session tabs reflect the owner's real configuration instead of a hardcoded frontend constant \u2014 and so they resolve it through the SAME sessionRunnable the gates use, which is the whole point of having one resolver.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.sessionRegistry, time.Now, make, len, at.sessionRunnable, append"
+    ],
+    "invariants_or_risks": "Session overrides win registry enabled; nil config delegates store nil-safe resolvers to verify. Empty subset defaultsNY, approval key CME day. Plan strict missing registered provider fails open. No feature flag check locally on planModeBlocked. RealignCap0 falls back5. Shared clamp keeps proximity parity."
+  },
+  {
+    "path": "trader/episode_close_wiring.go",
+    "name": "closeCauseFor",
+    "start_line": 22,
+    "end_line": 31,
+    "purpose": "closeCauseFor maps the arm-cancel reason to the episode's recorded cause. The reasons are the ones maybeManageArmedOrders already computed, so there is no second vocabulary to drift (class 97).",
+    "connections": [
+      "Source call expressions, not type-resolved: strings.Contains"
+    ],
+    "invariants_or_risks": "Recording-only episode closer closes all trader open rows; legacy no-LevelID scenario nearest may use active other-version facts. New identity explicitly refuses version mismatch. Confirm.RefPrice means definition not observed confirmation; filled map never populated; ArmKind literal limit despite current arm kind expansion. Needs store semantics trace."
+  },
+  {
+    "path": "trader/episode_close_wiring.go",
+    "name": "closeEpisodesForSessionClose",
+    "start_line": 50,
+    "end_line": 131,
+    "purpose": "closeEpisodesForSessionClose closes every open touch row for this trader.  THE FACTS COME FROM THE SCENARIO, NOT FROM A MUTATED STATE ROW. armed_orders is overwritten in place, so reading it here would ask a row that has already forgotten. It is also the reason historical terms are unrecomputable at all (see the backfill's terms_mutated_in_place). Under the settlement wave a timed-out cancel now rests at cancel_pending rather than reaching \"cancelled\", so a state read would additionally be reading a value that is deliberately not yet final.  KNOWN LIMITATION, stated rather than hidden: the touch \u2192 scenario link is a price-proximity HEURISTIC and is NULL whenever two levels sit inside the band or nothing is close. A row with a NULL link closes as reached_declined \u2014 correct for a touch nothing was armed at, and not yet distinguishable from one whose arm this wave cannot see. The identity wave is what fixes that; until it lands, the honest reading of reached_declined is \"no arm was linked to this touch\", not \"no arm existed\".",
+    "connections": [
+      "Source call expressions, not type-resolved: store.TouchOutcomes, kernel.ActivePlanFor, at.futuresSymbol, func, to.CloseOpenOpportunities, closeCauseFor, kernel.EpisodeScenarioByID, at.logWarnf, at.logInfof"
+    ],
+    "invariants_or_risks": "Recording-only episode closer closes all trader open rows; legacy no-LevelID scenario nearest may use active other-version facts. New identity explicitly refuses version mismatch. Confirm.RefPrice means definition not observed confirmation; filled map never populated; ArmKind literal limit despite current arm kind expansion. Needs store semantics trace."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "classifyRegimeLevel",
+    "start_line": 16,
+    "end_line": 34,
+    "purpose": "classifyRegimeLevel determines the regime level based on market indicators bollingerWidth: Bollinger band width as percentage atr14Pct: ATR14 as percentage of current price",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "getRegimeLeverageLimit",
+    "start_line": 37,
+    "end_line": 62,
+    "purpose": "getRegimeLeverageLimit returns the effective leverage limit for a regime level",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "getRegimePositionLimit",
+    "start_line": 65,
+    "end_line": 90,
+    "purpose": "getRegimePositionLimit returns the position limit percentage for a regime level",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "detectBoxBreakout",
+    "start_line": 98,
+    "end_line": 130,
+    "purpose": "detectBoxBreakout checks if price has broken out of any box level Returns the highest breakout level and direction",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "confirmBreakout",
+    "start_line": 147,
+    "end_line": 168,
+    "purpose": "confirmBreakout updates breakout state and returns true if breakout is confirmed",
+    "connections": [
+      "Source call expressions, not type-resolved: time.Now"
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "getBreakoutAction",
+    "start_line": 185,
+    "end_line": 196,
+    "purpose": "getBreakoutAction returns the appropriate action for a breakout level",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "determineGridDirection",
+    "start_line": 212,
+    "end_line": 248,
+    "purpose": "determineGridDirection determines the new grid direction based on box breakout currentDirection: the current grid direction breakoutLevel: which box level has been broken (short/mid/long) direction: breakout direction (\"up\" or \"down\") Returns: the new grid direction",
+    "connections": [
+      "Source call expressions, not type-resolved: determineRecoveryDirection"
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "determineRecoveryDirection",
+    "start_line": 252,
+    "end_line": 278,
+    "purpose": "determineRecoveryDirection determines if grid direction should recover toward neutral This implements the gradual recovery logic: long \u2192 long_bias \u2192 neutral \u2190 short_bias \u2190 short",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "getBreakoutActionWithDirection",
+    "start_line": 282,
+    "end_line": 301,
+    "purpose": "getBreakoutActionWithDirection returns the appropriate action for a breakout level when direction adjustment is enabled",
+    "connections": [
+      "Source call expressions, not type-resolved: getBreakoutAction"
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/grid_regime.go",
+    "name": "shouldRecoverDirection",
+    "start_line": 304,
+    "end_line": 312,
+    "purpose": "shouldRecoverDirection checks if the current grid direction should start recovering toward neutral",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Pure grid regime/breakout/direction rules. Confirmation increments per function call, not distinct candle; no timestamp input. Caller must supply cadence. Defaults nil config panic, invalid metrics classify without finite guards. Separate from NT structural regime."
+  },
+  {
+    "path": "trader/helpers.go",
+    "name": "SafeFloat64",
+    "start_line": 9,
+    "end_line": 34,
+    "purpose": "SafeFloat64 Safely extract float64 value from map",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Errorf, float64, strconv.ParseFloat"
+    ],
+    "invariants_or_risks": "Map number/string helpers; SafeFloat64 admits NaN/Inf and SafeInt truncates float/range conversion, not domain validation. SafeString nil becomes <nil>. Consumers own validation."
+  },
+  {
+    "path": "trader/helpers.go",
+    "name": "SafeString",
+    "start_line": 37,
+    "end_line": 51,
+    "purpose": "SafeString Safely extract string value from map",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Errorf, v.String, fmt.Sprintf"
+    ],
+    "invariants_or_risks": "Map number/string helpers; SafeFloat64 admits NaN/Inf and SafeInt truncates float/range conversion, not domain validation. SafeString nil becomes <nil>. Consumers own validation."
+  },
+  {
+    "path": "trader/helpers.go",
+    "name": "SafeInt",
+    "start_line": 54,
+    "end_line": 76,
+    "purpose": "SafeInt Safely extract int value from map",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Errorf, int, strconv.Atoi"
+    ],
+    "invariants_or_risks": "Map number/string helpers; SafeFloat64 admits NaN/Inf and SafeInt truncates float/range conversion, not domain validation. SafeString nil becomes <nil>. Consumers own validation."
+  },
+  {
+    "path": "trader/regime_input_window.go",
+    "name": "Line",
+    "start_line": 65,
+    "end_line": 72,
+    "purpose": "Line renders the tape for a log. An uncomputed baseline says UNKNOWN, never 0.",
+    "connections": [
+      "Source call expressions, not type-resolved: fmt.Sprintf"
+    ],
+    "invariants_or_risks": "Baseline selects aggregate1m >=5 complete days else existing5m ring; source/day metadata honest, no gate. Boot before/after measured same estimator; aggregate completeness/contract depends upstream and kernel, not proven here."
+  },
+  {
+    "path": "trader/regime_input_window.go",
+    "name": "ResolveRVBaselineTape",
+    "start_line": 77,
+    "end_line": 88,
+    "purpose": "ResolveRVBaselineTape is THE selection, extracted so a pin drives IT rather than a copy of it (class 86). bars1m is the store-deepened 1m tape; ring5m is the pre-wave 5m ring read, used only when the 1m tape cannot answer.",
+    "connections": [
+      "Source call expressions, not type-resolved: kernel.AggregateBars, kernel.RVBaselineFrom5mDays, len"
+    ],
+    "invariants_or_risks": "Baseline selects aggregate1m >=5 complete days else existing5m ring; source/day metadata honest, no gate. Boot before/after measured same estimator; aggregate completeness/contract depends upstream and kernel, not proven here."
+  },
+  {
+    "path": "trader/regime_input_window.go",
+    "name": "RegimeInputWindowBootLine",
+    "start_line": 99,
+    "end_line": 112,
+    "purpose": "RegimeInputWindowBootLine is owner condition (c): the regime input's served window IN DAYS, BEFORE and AFTER, printed once at boot after the rehydrate has landed, so the change this wave makes is visible and dated.  EVERY FIELD IS RESOLVED (A11): BEFORE is the 5m ring read that fed the baseline before this wave, measured HERE at boot; AFTER is the tape the planner will actually use, measured through the SAME production selection (ResolveRVBaselineTape) the read will run. Neither number is a literal, and an uncomputed window prints UNKNOWN rather than 0.",
+    "connections": [
+      "Source call expressions, not type-resolved: len, kernel.RVBaselineFrom5mDays, ResolveRVBaselineTape, fmt.Sprintf, day, kernel.ClockCTSeconds, before.Line, after.Line"
+    ],
+    "invariants_or_risks": "Baseline selects aggregate1m >=5 complete days else existing5m ring; source/day metadata honest, no gate. Boot before/after measured same estimator; aggregate completeness/contract depends upstream and kernel, not proven here."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "NewTraderTestSuite",
+    "start_line": 25,
+    "end_line": 31,
+    "purpose": "NewTraderTestSuite Create new base test suite",
+    "connections": [
+      "Source call expressions, not type-resolved: gomonkey.NewPatches"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "Cleanup",
+    "start_line": 34,
+    "end_line": 38,
+    "purpose": "Cleanup Clean up mock patches",
+    "connections": [
+      "Source call expressions, not type-resolved: Patches.Reset"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "RunAllTests",
+    "start_line": 42,
+    "end_line": 68,
+    "purpose": "RunAllTests Run all generic interface tests Note: Before calling this method, please set up required mocks via SetupMocks",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, s.TestGetBalance, s.TestGetPositions, s.TestGetMarketPrice, s.TestSetLeverage, s.TestSetMarginMode, s.TestFormatQuantity, s.TestOpenLong, s.TestOpenShort, s.TestCloseLong, s.TestCloseShort, s.TestSetStopLoss, s.TestSetTakeProfit, s.TestCancelAllOrders, s.TestCancelStopOrders, s.TestCancelStopLossOrders, s.TestCancelTakeProfitOrders"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestGetBalance",
+    "start_line": 71,
+    "end_line": 101,
+    "purpose": "TestGetBalance Test getting account balance",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.NotNil, assert.Contains, T.Run, Trader.GetBalance, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestGetPositions",
+    "start_line": 104,
+    "end_line": 138,
+    "purpose": "TestGetPositions Test getting positions",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.NotNil, assert.Contains, T.Run, Trader.GetPositions, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestGetMarketPrice",
+    "start_line": 141,
+    "end_line": 177,
+    "purpose": "TestGetMarketPrice Test getting market price",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.Greater, T.Run, Trader.GetMarketPrice, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestSetLeverage",
+    "start_line": 180,
+    "end_line": 211,
+    "purpose": "TestSetLeverage Test setting leverage",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.SetLeverage, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestSetMarginMode",
+    "start_line": 214,
+    "end_line": 245,
+    "purpose": "TestSetMarginMode Test setting margin mode",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.SetMarginMode, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestFormatQuantity",
+    "start_line": 248,
+    "end_line": 289,
+    "purpose": "TestFormatQuantity Test formatting quantity",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.NotEmpty, T.Run, Trader.FormatQuantity, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestCancelAllOrders",
+    "start_line": 292,
+    "end_line": 315,
+    "purpose": "TestCancelAllOrders Test canceling all orders",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.CancelAllOrders, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestOpenLong",
+    "start_line": 322,
+    "end_line": 368,
+    "purpose": "TestOpenLong Test opening long position",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.NotNil, assert.Contains, assert.Equal, T.Run, Trader.OpenLong, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestOpenShort",
+    "start_line": 371,
+    "end_line": 417,
+    "purpose": "TestOpenShort Test opening short position",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.NotNil, assert.Contains, assert.Equal, T.Run, Trader.OpenShort, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestCloseLong",
+    "start_line": 420,
+    "end_line": 460,
+    "purpose": "TestCloseLong Test closing long position",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.NotNil, assert.Contains, T.Run, Trader.CloseLong, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestCloseShort",
+    "start_line": 463,
+    "end_line": 503,
+    "purpose": "TestCloseShort Test closing short position",
+    "connections": [
+      "Source call expressions, not type-resolved: func, assert.NotNil, assert.Contains, T.Run, Trader.CloseShort, assert.Error, assert.NoError, tt.validate"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestSetStopLoss",
+    "start_line": 510,
+    "end_line": 547,
+    "purpose": "TestSetStopLoss Test setting stop-loss",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.SetStopLoss, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestSetTakeProfit",
+    "start_line": 550,
+    "end_line": 587,
+    "purpose": "TestSetTakeProfit Test setting take-profit",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.SetTakeProfit, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestCancelStopOrders",
+    "start_line": 590,
+    "end_line": 613,
+    "purpose": "TestCancelStopOrders Test canceling stop-loss/take-profit orders",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.CancelStopOrders, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestCancelStopLossOrders",
+    "start_line": 616,
+    "end_line": 639,
+    "purpose": "TestCancelStopLossOrders Test canceling stop-loss orders",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.CancelStopLossOrders, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/testutil/test_suite.go",
+    "name": "TestCancelTakeProfitOrders",
+    "start_line": 642,
+    "end_line": 665,
+    "purpose": "TestCancelTakeProfitOrders Test canceling take-profit orders",
+    "connections": [
+      "Source call expressions, not type-resolved: T.Run, func, Trader.CancelTakeProfitOrders, assert.Error, assert.NoError"
+    ],
+    "invariants_or_risks": "Generic gomonkey suite tests16 interface methods with mocked BTC/ETH inputs; omits GetOrderStatus/GetClosedPnL/GetOpenOrders. It invokes real interface methods unless caller installs mocks; not executed. No account/SIM/async failure coverage."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "safeExcursion",
+    "start_line": 23,
+    "end_line": 32,
+    "purpose": "safeExcursion runs one telemetry unit. It NEVER propagates a panic and never returns an error to a caller who could act on it.",
+    "connections": [
+      "Source call expressions, not type-resolved: func, recover, at.logWarnf, fn"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "excursionsEnabled",
+    "start_line": 35,
+    "end_line": 37,
+    "purpose": "excursionsEnabled reports whether this trader can log excursions at all.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.dayPlanEnabled"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "excursionOnOpen",
+    "start_line": 41,
+    "end_line": 71,
+    "purpose": "excursionOnOpen (E1) writes the entry half. Every excursion column stays NULL: nothing has been measured yet.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.excursionsEnabled, at.safeExcursion, fmt.Sprintf, func, excursionCondition, store.TradeExcursions, Open, at.logInfof"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "excursionOnBarTick",
+    "start_line": 77,
+    "end_line": 97,
+    "purpose": "excursionOnBarTick (E2) recomputes the path for every open position of this trader. It runs from monitorTick, i.e. about once a minute, and rebuilds the WHOLE path from the stored bars each time rather than accumulating \u2014 so a missed tick, a restart or a late bar costs nothing.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.excursionsEnabled, at.safeExcursion, func, store.Position, GetOpenPositions, store.TradeExcursions, GetByPosition, at.resolveExcursionLevels, at.recomputeExcursionPath, time.Now, UnixMilli"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "resolveExcursionLevels",
+    "start_line": 104,
+    "end_line": 118,
+    "purpose": "resolveExcursionLevels fills a row's stop/target from the decision that opened the position, for entries whose execution path never carried them down to the position row (the AI path; armed fills bring their own from the ledger). It reads the authoritative record and writes nothing when there is nothing to read \u2014 an unknown level stays unknown.",
+    "connections": [
+      "Source call expressions, not type-resolved: store.Decision, StopTargetNear, store.TradeExcursions, SetLevels, at.logWarnf, at.logInfof"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "recomputeExcursionPath",
+    "start_line": 127,
+    "end_line": 147,
+    "purpose": "recomputeExcursionPath rebuilds one row's path from the bar store and writes it. A hold with no bar coverage is marked \"none\" and keeps its NULLs.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.excursionBars, kernel.ComputePathExcursion, store.TradeExcursions, MarkNoCoverage, at.logWarnf, UpdatePath"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "excursionBars",
+    "start_line": 152,
+    "end_line": 179,
+    "purpose": "excursionBars reads the 1m tape covering a hold. The persisted bars table is the source: it is the same tape a replay would read, so a live row and a backfilled row are built from identical inputs.",
+    "connections": [
+      "Source call expressions, not type-resolved: store.BarHistory, WindowContract, at.futuresSymbol, BarsBetweenOn, len, make, append"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/trade_excursion_hook.go",
+    "name": "excursionOnClose",
+    "start_line": 183,
+    "end_line": 220,
+    "purpose": "excursionOnClose (E3) writes the exit half and one final path recomputation. The exit is read AGAINST the trade when the closing bar reached both levels.",
+    "connections": [
+      "Source call expressions, not type-resolved: at.excursionsEnabled, at.safeExcursion, fmt.Sprintf, func, store.TradeExcursions, GetByPosition, time.Now, UnixMilli, at.recomputeExcursionPath, at.excursionBars, len, kernel.ResolveAmbiguousExit, at.logWarnf, Close, at.logInfof"
+    ],
+    "invariants_or_risks": "Excursion telemetry panic-contained. Initial levels can be inferred via nearest decision2min; authored != accepted. Contract window avoids roll mixes; close ambiguity picks last bar from padded window, potentially after exit. StopPxFinal forcibly initial despite trailing existing; source comment stale. No runtime row-impact claim."
+  },
+  {
+    "path": "trader/types/interface.go",
+    "name": "NewGridTraderAdapter",
+    "start_line": 177,
+    "end_line": 179,
+    "purpose": "NewGridTraderAdapter creates an adapter for basic Trader",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Trader interface exactly19 methods preserved; GridTrader embeds +3. Fallback adapter uses protective stop/takeprofit setters as supposed entry, fabricated ClientID result NEW, ignores reduce/post/position side; no actual entry semantics. GetOrderBook nil,nil,nil uncomputed ambiguity. Need venue reachability trace."
+  },
+  {
+    "path": "trader/types/interface.go",
+    "name": "PlaceLimitOrder",
+    "start_line": 183,
+    "end_line": 214,
+    "purpose": "PlaceLimitOrder implements limit order using available methods For exchanges without native limit order support, this uses conditional orders",
+    "connections": [
+      "Source call expressions, not type-resolved: Trader.SetLeverage, logger.Warnf, Trader.SetStopLoss, Trader.SetTakeProfit"
+    ],
+    "invariants_or_risks": "Trader interface exactly19 methods preserved; GridTrader embeds +3. Fallback adapter uses protective stop/takeprofit setters as supposed entry, fabricated ClientID result NEW, ignores reduce/post/position side; no actual entry semantics. GetOrderBook nil,nil,nil uncomputed ambiguity. Need venue reachability trace."
+  },
+  {
+    "path": "trader/types/interface.go",
+    "name": "CancelOrder",
+    "start_line": 217,
+    "end_line": 232,
+    "purpose": "CancelOrder cancels a specific order",
+    "connections": [
+      "Source call expressions, not type-resolved: CancelOrder, canceler.CancelOrder, logger.Warnf, fmt.Errorf"
+    ],
+    "invariants_or_risks": "Trader interface exactly19 methods preserved; GridTrader embeds +3. Fallback adapter uses protective stop/takeprofit setters as supposed entry, fabricated ClientID result NEW, ignores reduce/post/position side; no actual entry semantics. GetOrderBook nil,nil,nil uncomputed ambiguity. Need venue reachability trace."
+  },
+  {
+    "path": "trader/types/interface.go",
+    "name": "GetOrderBook",
+    "start_line": 235,
+    "end_line": 238,
+    "purpose": "GetOrderBook returns empty order book (not supported in basic Trader)",
+    "connections": [
+      "Source call expressions, not type-resolved: "
+    ],
+    "invariants_or_risks": "Trader interface exactly19 methods preserved; GridTrader embeds +3. Fallback adapter uses protective stop/takeprofit setters as supposed entry, fabricated ClientID result NEW, ignores reduce/post/position side; no actual entry semantics. GetOrderBook nil,nil,nil uncomputed ambiguity. Need venue reachability trace."
+  },
+  {
+    "path": "trader/watchdog_fire_wire.go",
+    "name": "installWatchdogFireRecorder",
+    "start_line": 24,
+    "end_line": 40,
+    "purpose": "installWatchdogFireRecorder wires the mcp hook to this trader's store. Called once per trader at start; the hook is process-wide, so the LAST trader to register owns it \u2014 acceptable because the row carries the trader id and the single-trader case is the live one. Stated rather than hidden.",
+    "connections": [
+      "Source call expressions, not type-resolved: store.WatchdogFires, mcp.SetWatchdogFireHook, func, st.WatchdogFires, Record, time.Now, UTC, log"
+    ],
+    "invariants_or_risks": "Global watchdog hook last registered trader labels all fires as that trader; acknowledged single-trader assumption. Latest unresolved fire linking lacks call identity. Table header UTC but formats CT; telemetry only."
+  },
+  {
+    "path": "trader/watchdog_fire_wire.go",
+    "name": "recordWatchdogResend",
+    "start_line": 46,
+    "end_line": 58,
+    "purpose": "recordWatchdogResend attaches the identical resend's outcome to the newest unresolved fire. Called by the planner loop after a provider-failure resend completes. An unresolved row stays visibly unresolved rather than becoming a false success.",
+    "connections": [
+      "Source call expressions, not type-resolved: store.WatchdogFires, ResolveLatest, took.Milliseconds, at.logWarnf, at.logInfof, took.Seconds"
+    ],
+    "invariants_or_risks": "Global watchdog hook last registered trader labels all fires as that trader; acknowledged single-trader assumption. Latest unresolved fire linking lacks call identity. Table header UTC but formats CT; telemetry only."
+  },
+  {
+    "path": "trader/watchdog_fire_wire.go",
+    "name": "WatchdogFireTable",
+    "start_line": 62,
+    "end_line": 89,
+    "purpose": "WatchdogFireTable renders the week's table (pure, so the report and any future endpoint share one rendering).",
+    "connections": [
+      "Source call expressions, not type-resolved: len, fmt.Sprintf, float64, kernel.FormatCT, fire"
+    ],
+    "invariants_or_risks": "Global watchdog hook last registered trader labels all fires as that trader; acknowledged single-trader assumption. Latest unresolved fire linking lacks call identity. Table header UTC but formats CT; telemetry only."
+  }
+]

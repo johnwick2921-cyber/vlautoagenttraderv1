@@ -1,0 +1,51 @@
+# C6 — 1B PROOF: exact commands (all read-only)
+
+## row counts
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT 'touch_outcomes', COUNT(*) FROM touch_outcomes UNION ALL SELECT 'candidate_pool', COUNT(*) FROM candidate_pool;"
+# -> touch_outcomes|0   candidate_pool|0   (2026-09-03 23:28 CT)
+
+## tables exist
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('touch_outcomes','candidate_pool');"
+# -> both present
+
+## writer inventory
+grep -rn "touch_outcomes\|candidate_pool" --include=*.go /home/hoang/nofx-2day04
+grep -rn "RecordDetectorPass\|recordDetector\|SavePool\|SaveOutcome\|NextOrdinal" --include=*.go . | grep -v "_test.go"
+
+## the one production call site
+grep -n "recordDetectorOutputs" /home/hoang/nofx-2day04/trader/auto_trader_planner.go
+# -> 2333, inside assemblePlannerInputWithCtx (line 2092), reached only from
+#    runPlannerReadWithTriggerClaimedCtx:895
+
+## merge-vs-boot timeline
+git -C /home/hoang/nofx-2day04 log --pretty='%h %ad %s' --date=iso-local -- trader/detector_record.go store/touch_outcomes.go store/candidate_pool.go
+git -C /home/hoang/nofx-2day04 log -S"at.recordDetectorOutputs(symbol, detPlanID" --pretty='%h %ad %s' --date=iso-local -- trader/auto_trader_planner.go
+# -> f1d7cf51 2026-09-03 21:31:00 -0500
+git -C /home/hoang/nofx-2day04 merge-base --is-ancestor f1d7cf51 530009ff && echo YES
+git -C /home/hoang/nofx-2day04 diff --stat 530009ff dfbfa660 -- trader/detector_record.go store/touch_outcomes.go store/candidate_pool.go trader/auto_trader_planner.go kernel/detector_d1prime.go main.go
+# -> empty: worktree source is byte-identical to the deployed rev for every 1B file
+
+## flag hunt
+grep -rn "DETECTOR_" --include=*.go /home/hoang/nofx-2day04 | grep -v _test.go
+grep -nE "^\s*DETECTOR_[A-Z_]*=" /home/hoang/nofx/.env   # -> no match
+
+## log hunt (every string the hook can emit)
+grep -n "detector recorded\|no bars in scope\|Δ resolved to 0\|touch_outcomes write failed\|candidate_pool write failed\|detector recording panicked" \
+  /home/hoang/nofx/data/nofx_2026-09-01.log /home/hoang/nofx/data/nofx_2026-09-02.log /home/hoang/nofx/data/nofx_2026-09-03.log
+# -> rc=1, zero matches
+
+## boot lines
+grep -n "BOOT INTEGRITY" /home/hoang/nofx/data/nofx_2026-09-03.log
+grep -n "detector: D1" /home/hoang/nofx/data/nofx_2026-09-0{1,2,3}.log
+
+## planner reads
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT id, session, datetime(created_at,'-5 hours') FROM planner_read_facts ORDER BY id;"
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+  "SELECT COUNT(*) FROM planner_read_facts WHERE created_at > '2026-09-04 04:12:54';"   # -> 0
+
+## live-fire proof that the wiring works (temp DB, no repo/DB mutation)
+cd /home/hoang/nofx-2day04 && go test ./trader/ -run 'TestPlannerReadWritesDetectorStores' -count=1 -v
+# -> PASS: candidate_pool=12 touch_outcomes=171, emits "🔬 detector recorded: 171 new episode(s) · pool 12 candidate(s) (8 seated, 4 cut) · k=3 Δ=2.69 band=±8.08 H=12 close"

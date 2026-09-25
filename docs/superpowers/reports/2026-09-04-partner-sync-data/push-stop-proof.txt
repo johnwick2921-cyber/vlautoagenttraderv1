@@ -1,0 +1,21 @@
+PARTNER SYNC — PUSH STOPPED (B2), 2026-09-04, session nofx-c6
+================================================================
+our  origin/dev            = b2d3826e0f9db87f93d7a059ed0bf8af0ce04ef9
+partner origin/main        = f6ae7597fb3bc9caeaaedb25ce8c3c48bca72247
+merge-base                 = <NONE — unrelated histories>
+partner main ancestor of our dev? NO
+partner-only commits       = 96   (newest 2026-08-23 23:53:20 -0500)
+our-only commits           = 1622
+content diff               = 1440 files, 418289 insertions, 2115 deletions
+our root commits           = 81f5be33 6df9e8b6 85794a72
+partner root commit        = 75bcb576   (in NEITHER of ours)
+
+VERDICT: fast-forward IMPOSSIBLE. Per PARTNER REPO LAW (never force-push;
+fast-forward only; if it cannot fast-forward, STOP and report) NOTHING was
+pushed to vlautoagenttraderv1. No merge, no force, no tags.
+
+CAUSE (predicted in CLAUDE.md): the 2026-08-29 origin history rewrite (binary
+purge). Every sha on our side was rewritten; the partner clone is from 08-23,
+pre-rewrite. CLAUDE.md: "After any origin history rewrite ... the partner repo
+and every other clone MUST re-clone fresh — format-patch -> am against a
+rewritten remote is corrupt by construction."

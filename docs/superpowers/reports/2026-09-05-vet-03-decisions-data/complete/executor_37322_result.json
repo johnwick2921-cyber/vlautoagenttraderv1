@@ -1,0 +1,8 @@
+{
+  "id": 37322,
+  "timestamp": "2026-09-04 02:12:40.9842155+00:00",
+  "decision_json": "[\n  {\n    \"symbol\": \"MNQ\",\n    \"action\": \"open_short\",\n    \"leverage\": 1,\n    \"position_size_usd\": 59093.5,\n    \"stop_loss\": 29566,\n    \"take_profit\": 29508.25,\n    \"confidence\": 62,\n    \"reasoning\": \"S1 sweep-reclaim short is machine-confirmed: price swept ONH (29549.25) and printed a 5m close back below 29543 (21:00 close 29539.50). Price now back at 29546.75, retesting the ONH apex. Confluences favor a fade: 1h RSI 69 overbought, 15m RANGING at top, bias short (medium), VWAP magnet below (29519) and VAL at 29506.25. Range-top short with stop above ONH/VWAP+2\u03c3. Risk 19.25 \u2192 TP 29508.25 (VAL area) gives exactly 2.0R. Cautions: 5m uptrend intact and tight coil could squeeze; to offset, stop is placed above 29566 (outside VWAP+2\u03c3 and recent high), not the tight ONH wick. Position 1 contract, notional ~$59k. If a 5m closes above 29548, S2 breakout-long consideration re-activates \u2014 stop sits below 29585 kill line.\",\n    \"cited_scenario\": \"S1\"\n  }\n]",
+  "execution_log": "[\"AI call duration: 123727 ms\",\"\u26d4 MNQ open_short refused: entry_gate: refused: strict \u2014 plan_mode=strict executes plan scenarios on the ARM path only, and this is a decision-path market entry\"]",
+  "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+  "plan_version": 5
+}

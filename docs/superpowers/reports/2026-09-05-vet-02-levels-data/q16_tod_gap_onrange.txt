@@ -1,0 +1,38 @@
+== hour-of-day (CT) mean |1m close increment| over 11 completed session days; session-wide Δ used by D1′ ≈ 5.339
+  00:00  n=  660  mean|Δ|= 4.366  band k=3 -> ± 13.1 pt
+  01:00  n=  660  mean|Δ|= 4.422  band k=3 -> ± 13.3 pt
+  02:00  n=  660  mean|Δ|= 5.116  band k=3 -> ± 15.3 pt
+  03:00  n=  660  mean|Δ|= 6.164  band k=3 -> ± 18.5 pt
+  04:00  n=  660  mean|Δ|= 4.200  band k=3 -> ± 12.6 pt
+  05:00  n=  660  mean|Δ|= 3.856  band k=3 -> ± 11.6 pt
+  06:00  n=  660  mean|Δ|= 5.394  band k=3 -> ± 16.2 pt
+  07:00  n=  660  mean|Δ|= 5.433  band k=3 -> ± 16.3 pt
+  08:00  n=  660  mean|Δ|=11.184  band k=3 -> ± 33.6 pt
+  09:00  n=  660  mean|Δ|=11.121  band k=3 -> ± 33.4 pt
+  10:00  n=  660  mean|Δ|= 7.640  band k=3 -> ± 22.9 pt
+  11:00  n=  660  mean|Δ|= 6.015  band k=3 -> ± 18.0 pt
+  12:00  n=  660  mean|Δ|= 5.032  band k=3 -> ± 15.1 pt
+  13:00  n=  660  mean|Δ|= 4.923  band k=3 -> ± 14.8 pt
+  14:00  n=  660  mean|Δ|= 5.080  band k=3 -> ± 15.2 pt
+  15:00  n=  660  mean|Δ|= 3.131  band k=3 -> ±  9.4 pt
+  16:00  n=    2  mean|Δ|= 0.000  band k=3 -> ±  0.0 pt
+  17:00  n=  649  mean|Δ|= 3.469  band k=3 -> ± 10.4 pt
+  18:00  n=  660  mean|Δ|= 3.128  band k=3 -> ±  9.4 pt
+  19:00  n=  660  mean|Δ|= 5.949  band k=3 -> ± 17.8 pt
+  20:00  n=  660  mean|Δ|= 5.555  band k=3 -> ± 16.7 pt
+  21:00  n=  660  mean|Δ|= 4.508  band k=3 -> ± 13.5 pt
+  22:00  n=  660  mean|Δ|= 3.679  band k=3 -> ± 11.0 pt
+  23:00  n=  660  mean|Δ|= 3.409  band k=3 -> ± 10.2 pt
+
+== per day: prior RTH close -> RTH open gap, filled within RTH? ; ON range vs RTH range ; opening drive (first 30m dir vs RTH close)
+  2026-08-21  gap=+167.00  filled=Y  ON= 266.2 RTH= 268.2 ratio=0.99  drive30=-167.5 close=  -75.0 agree=True
+  2026-08-24  gap=-160.50  filled=n  ON= 363.8 RTH= 296.0 ratio=1.23  drive30=-213.8 close= -135.8 agree=True
+  2026-08-25  gap=+195.50  filled=n  ON= 403.2 RTH= 270.5 ratio=1.49  drive30= +16.2 close=  -24.5 agree=False
+  2026-08-26  gap= -96.50  filled=Y  ON= 214.5 RTH= 212.5 ratio=1.01  drive30=+157.2 close= +124.5 agree=True
+  2026-08-27  gap=+225.00  filled=n  ON= 259.0 RTH= 280.0 ratio=0.93  drive30= -41.0 close= +168.5 agree=False
+  2026-08-28  gap= -64.25  filled=Y  ON= 129.5 RTH= 374.8 ratio=0.35  drive30=  +1.8 close= -131.8 agree=False
+  2026-08-31  gap= -58.00  filled=Y  ON= 270.0 RTH= 184.0 ratio=1.47  drive30=  +0.5 close=  +69.2 agree=True
+  2026-09-01  gap=-395.75  filled=n  ON= 488.2 RTH= 315.5 ratio=1.55  drive30=  -6.2 close=  +13.5 agree=False
+  2026-09-02  gap= -27.00  filled=Y  ON= 244.0 RTH= 194.5 ratio=1.25  drive30= -35.8 close=  +91.5 agree=False
+  2026-09-03  gap= +59.75  filled=n  ON= 218.0 RTH= 385.8 ratio=0.57  drive30= +82.8 close= +281.5 agree=True
+gap filled within RTH: 5/10 ; ON/RTH range median=1.23 ; opening-drive direction == RTH close direction: 5/10

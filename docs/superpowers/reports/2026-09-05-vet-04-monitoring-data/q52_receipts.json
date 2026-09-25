@@ -1,0 +1,140 @@
+{
+  "captured_ct": "2026-09-05T17:41:52.446492-05:00",
+  "receipts": [
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 1,
+      "text": "2026-09-03 15:06:15:851|2|4|Session Break (Version 8.1.8.1)"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 28,
+      "text": "2026-09-03 15:06:36:822|1|4|Vendor assembly 'Nito.ConnectedProperties' version='4.1.0.0' loaded."
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 44,
+      "text": "2026-09-03 15:06:39:012|1|16|VLTraderTCPClient: CONNECTED"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 49,
+      "text": "2026-09-03 15:06:39:016|1|16|@@@ stream status: CONNECTED"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 94,
+      "text": "2026-09-03 15:06:43:900|1|2|lucid : Primary connection=Connected, Price feed=Connected"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 100,
+      "text": "2026-09-03 15:06:44:158|1|16|VLTraderTCPClient: data feed Connected (prev=Connecting) \u2014 recreating BarsRequests via OnConnectionReconnected"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 195,
+      "text": "2026-09-03 15:06:46:867|1|2|tardeify: Primary connection=Connected, Price feed=Connected"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt",
+      "line": 198,
+      "text": "2026-09-03 15:06:46:875|1|16|VLTraderTCPClient: feed Connected but a BarsRequest rebuild fired <30s ago \u2014 debounced (feed-flap guard)"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8162,
+      "text": "2026-09-04 12:20:16:803|1|2|lucid : Primary connection=Connected, Price feed=Connection lost"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8163,
+      "text": "2026-09-04 12:20:16:805|2|16|VLTraderTCPClient: data feed lost (PriceStatus=ConnectionLost) \u2014 BarsRequests will be recreated on recovery"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8164,
+      "text": "2026-09-04 12:20:17:926|1|2|lucid : Primary connection=Connection lost, Price feed=Connection lost"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8165,
+      "text": "2026-09-04 12:20:20:104|3|2|Connection lost to the NinjaTrader Historical Data Server: hds-us-nt-011.ninjatrader.com"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8183,
+      "text": "2026-09-04 12:22:24:902|3|2|Connection lost to the NinjaTrader Information Server: is-us-nt-006.ninjatrader.com"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8184,
+      "text": "2026-09-04 12:22:26:412|3|4|Unable to load server side config file: The remote name could not be resolved: 'license2.ninjatrader.com'"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8186,
+      "text": "2026-09-04 12:22:29:193|1|2|lucid : Primary connection=Disconnecting, Price feed=Connection lost"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8188,
+      "text": "2026-09-04 12:22:29:198|1|2|lucid : Primary connection=Disconnected, Price feed=Disconnected"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8200,
+      "text": "2026-09-04 12:22:56:494|1|2|lucid : Primary connection=Disconnected, Price feed=Disconnected"
+    },
+    {
+      "path": "/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt",
+      "line": 8201,
+      "text": "2026-09-04 12:23:00:423|2|16|Error downloading A.P.E.X. announcements: The remote name could not be resolved: 'api.apexinvesting.com'"
+    },
+    {
+      "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+      "line": 3658,
+      "text": "09-03 11:10:33 [INFO] cc2/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev f478ed880dc9 \u00b7 built 2026-09-03T16:07:06Z \u00b7 expected f478ed880dc9 \u00b7 goldens PASS"
+    },
+    {
+      "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+      "line": 5465,
+      "text": "09-03 14:18:26 [INFO] cc2/main.go:243 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev f478ed880dc9 \u00b7 built 2026-09-03T16:07:06Z \u00b7 expected f478ed880dc9 \u00b7 goldens PASS"
+    },
+    {
+      "path": "/home/hoang/nofx/data/nofx_2026-09-03.log",
+      "line": 6308,
+      "text": "09-03 15:06:45 [WARN] ninjatrader/bar_persist.go:304 bars: ingest drop summary: intrabar_dropped=0 current_dropped=0 historical_dropped=0 peak_depth=1/4096 (1-line/min; intra-bar drops self-heal on the next tick \u2014 closed bars are NEVER dropped on this path)"
+    }
+  ],
+  "non_docs_source_diff": {
+    "command": [
+      "git",
+      "diff",
+      "--name-only",
+      "2a66d91c",
+      "b4376246",
+      "--",
+      ".",
+      ":(exclude)docs"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  "public_health": {
+    "command": [
+      "curl",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "10",
+      "--write-out",
+      "\nHTTP %{http_code}\n",
+      "http://127.0.0.1:8080/api/health"
+    ],
+    "exit_code": 0,
+    "output": "{\"revision\":\"36648655cfe0\",\"status\":\"ok\",\"time\":null}\nHTTP 200\n",
+    "error": "",
+    "meaning": "Process response only; no readiness or historical availability claim. No JWT used."
+  }
+}

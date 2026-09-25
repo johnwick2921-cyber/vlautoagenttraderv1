@@ -1,0 +1,25 @@
+{
+  "observed_at_ct": "2026-09-13T00:22:09.078718-05:00",
+  "pid": "4165029",
+  "health": {
+    "revision": "4127979f2fcc",
+    "status": "ok",
+    "time": null
+  },
+  "running_md5": "300dc70535f708be9f6278d252124ba4",
+  "binary_revision": "4127979f2fcc5615f4e8b17540f7aba74bb4ea92",
+  "vcs_modified": false,
+  "boot_lines": [
+    "09-13 00:21:42 [INFO] nofx/main.go:295 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 4127979f2fcc \u00b7 built 2026-09-13T05:10:17Z \u00b7 expected 4127979f2fcc \u00b7 goldens PASS",
+    "09-13 00:21:42 [INFO] kernel/levels_volume_boot.go:50 \ud83d\udee1 cutover safety (class 33): flat gate legs=5 (db_open_positions \u00b7 api_positions \u00b7 nt8_positions_snapshot \u00b7 working_orders \u00b7 planner_in_flight) via GET /api/cutover-gate; leg4 reads the armed_orders LEDGER (was a stub returning empty \u2014 passed vacuously at cutovers 35\u219241); boot sweep cancels pre-boot arms before ANY re-arm, counter arms_boot_swept_class33",
+    "09-13 00:21:42 [INFO] nofx/main.go:548 \ud83c\udfaf stop/target: stop=zone-edge+buffer buffer=4.50[I] (p95 of measured overshoot; resolver=ResolveStructuralStop:C5_MNQ_default[I]; calibration=C5-H12-IS-6181-p95-20260912; sweep=[0.25 1.25 4.5] points[I]) \u00b7 atr-fallback=0 \u00b7 refused today=0 (no_target=0 net<=0=0 rr<2.00=0 risk_cap=0 no_provenance=0 other=0) \u00b7 target=first-distinct-eligible-zone \u00b7 MNQ risk-cap=UNSET (refuse) \u00b7 never-widened=asserted \u00b7 research-candidate"
+  ],
+  "release_disk": "4127979f2fcc5615f4e8b17540f7aba74bb4ea92",
+  "release_head": "4127979f2fcc5615f4e8b17540f7aba74bb4ea92",
+  "guide_source": "4127979f2fcc5615f4e8b17540f7aba74bb4ea92",
+  "dist_revision_assets": [
+    "web/dist/assets/index-CGuFCQsg.js"
+  ],
+  "dist_files_verified": 92,
+  "disk_md5": "300dc70535f708be9f6278d252124ba4"
+}

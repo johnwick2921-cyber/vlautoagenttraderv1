@@ -1,0 +1,7 @@
+('2026-09-02', 'open_long', 'executed') 4
+('2026-09-02', 'open_long', 'refused:cutoff') 1
+('2026-09-02', 'open_short', 'refused:min_sl') 3
+('2026-09-02', 'open_short', 'refused:rr') 2
+('2026-09-03', 'open_short', 'refused:rr') 1
+('2026-09-03', 'open_short', 'refused:strict') 13
+total open intents: 24 executed: 4

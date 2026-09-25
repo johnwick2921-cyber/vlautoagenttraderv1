@@ -1,0 +1,97 @@
+{
+  "read_ct": "2026-09-08T18:20:45.991334-05:00",
+  "era_ms": 1786770000000,
+  "era_ct": "2026-08-15T00:00:00-05:00",
+  "queries": [
+    {
+      "label": "plans",
+      "sql": "SELECT rowid AS row_id,plan_id,version,trade_date,session,trigger_reason,lifecycle,prompt_hash,ai_config_hash,doc,indicators_block,created_at FROM plans WHERE trade_date>=? ORDER BY rowid",
+      "parameters": [
+        "2026-08-15"
+      ],
+      "n": 279,
+      "output": "plans.json"
+    },
+    {
+      "label": "positions",
+      "sql": "SELECT id,symbol,side,entry_quantity,quantity,entry_price,entry_time,exit_price,exit_time,status,close_reason,source,entry_confidence,plan_version,cited_scenario_id,plan_matched,pnl_corrected,plan_id,plan_trade_date,plan_session,plan_link_note FROM trader_positions WHERE trader_id=? AND entry_time>=? ORDER BY id",
+      "parameters": [
+        "[redacted]",
+        1786770000000
+      ],
+      "n": 78,
+      "output": "positions.json"
+    },
+    {
+      "label": "arms",
+      "sql": "SELECT id,plan_id,version,session,scenario,side,entry_px,stop_px,target_px,state,state_reason,entry_class,signal_id,fill_price,fill_quantity,created_at,updated_at,leg_index,leg_count,kind,armed_under_version,condition,placement_seq FROM armed_orders WHERE trader_id=? ORDER BY id",
+      "parameters": [
+        "[redacted]"
+      ],
+      "n": 94,
+      "output": "arms.json"
+    },
+    {
+      "label": "facts",
+      "sql": "SELECT id,trade_date,session,plan_id,version,prompt_hash,atr5m,stop_floor_pts,stop_floor_mlt,bias_ai,bias_tree,bias_regime,scope_since_ms,scope_bars,scope_intv,created_at FROM planner_read_facts WHERE trader_id=? ORDER BY id",
+      "parameters": [
+        "[redacted]"
+      ],
+      "n": 59,
+      "output": "facts.json"
+    },
+    {
+      "label": "candidates",
+      "sql": "SELECT id,symbol,plan_id,plan_version,session,read_at_ms,level_price,level_kind,label,rank,seated,cut_reason,score,threshold,grade,score_components FROM candidate_pool WHERE trader_id=? ORDER BY id",
+      "parameters": [
+        "[redacted]"
+      ],
+      "n": 1008,
+      "output": "candidates.json"
+    },
+    {
+      "label": "excursions",
+      "sql": "SELECT id,position_id,plan_id,version,session,scenario,condition,side,entry_px,entry_ts,exit_px,exit_ts,exit_reason,stop_px_initial,stop_px_final,target_px,size,mae_pts,mfe_pts,bars_held,ambiguous_exit,atr5m_at_entry,atr_mult_stop_at_entry,resolution,source FROM trade_excursions WHERE entry_ts>=? ORDER BY id",
+      "parameters": [
+        1786770000000
+      ],
+      "n": 73,
+      "output": "excursions.json"
+    },
+    {
+      "label": "accepted",
+      "sql": "SELECT id,signal_id,order_name,symbol,side,order_type,quantity,accepted_entry_px,accepted_stop_px,accepted_target_px,ledger_entry_px,ledger_stop_px,ledger_target_px,book_age_ms,book_source,accepted_at_ms FROM accepted_risk WHERE trader_id=? ORDER BY id",
+      "parameters": [
+        "[redacted]"
+      ],
+      "n": 24,
+      "output": "accepted.json"
+    },
+    {
+      "label": "bars",
+      "sql": "SELECT symbol,tf,open_time_ms,o,h,l,c,v FROM bars WHERE symbol='MNQ' AND tf IN ('1m','5m') AND open_time_ms>=? ORDER BY tf,open_time_ms",
+      "parameters": [
+        1786770000000
+      ],
+      "n": 22584,
+      "output": "bars.json"
+    },
+    {
+      "label": "lifecycle",
+      "sql": "SELECT id,plan_id,version,event,reason,at FROM plan_lifecycle_log ORDER BY id",
+      "parameters": [],
+      "n": 18,
+      "output": "lifecycle.json"
+    },
+    {
+      "label": "config",
+      "sql": "SELECT config FROM strategies WHERE id=(SELECT strategy_id FROM traders WHERE id=?)",
+      "parameters": [
+        "[redacted]"
+      ],
+      "n": 1,
+      "output": "config.json",
+      "projection": "Only day_plan, risk_control, custom_prompt and prompt_sections; keys and connection details omitted."
+    }
+  ]
+}

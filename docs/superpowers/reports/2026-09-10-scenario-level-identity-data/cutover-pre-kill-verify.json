@@ -1,0 +1,12 @@
+{
+  "candidate_revision": "cd8f99780eafe20fbb0b51a9c87955d3a2a4e887",
+  "vcs_modified": false,
+  "binary_md5": "b32d80dba7d9dcfb335a194c71fcd7d9",
+  "RELEASE": "cd8f9978",
+  "Guide_source": "cd8f99780eafe20fbb0b51a9c87955d3a2a4e887",
+  "dist_files_verified": 92,
+  "current_pid": "2778818",
+  "Restart": "on-failure",
+  "kill_command": "kill -9 2778818",
+  "note": "Candidate swapped and verified; old process still running. No identity boot claimed."
+}

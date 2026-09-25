@@ -1,0 +1,20 @@
+file,commit,time,subject
+docs/superpowers/research/2026-09-08-trading-policy/README.md,0ec5bd2cb4c678e524cc21033d7622a7783765c1,2026-09-08T08:30:15-05:00,docs(research): publish four-policy trading study with 28 cited sources
+docs/superpowers/SYSTEM-MAP.md,e020885b86621d68534fbc237472fc3171688d62,2026-09-08T14:21:34-05:00,fix(confirmation): require closed buckets and ordered reference evidence
+docs/superpowers/AUDIT-CHECKLIST.md,78eed09b7969022408e3279d89c895c553885843,2026-09-08T14:32:14-05:00,docs(confirmation): assign class 91 at integration
+kernel/levels.go,7b19e7533975225964613ba4bc976f7f7f969e56,2026-09-03T23:00:08-05:00,style(kernel): gofmt the 10 files that were unformatted on dev — formatting ONLY
+kernel/levels_score.go,e86ae805784b7b0ee10299a3c977738a813d0cd4,2026-08-31T08:11:57-05:00,remove min_side_levels entirely (owner ruling 2026-08-31)
+kernel/levels_assemble.go,422680c6a4a329a4c5998176b091f07cc420034b,2026-08-27T14:11:57-05:00,"level-truth T3: SWG-H/SWG-L swing-point detector (5m+15m structure swings, react_zone, anchor-class evidence 0.85) + role/label/family registration"
+kernel/detector_recorder.go,89aeb8bec6fcbcff3e6684bb5b8325be6afc9c86,2026-09-03T18:43:16-05:00,"feat(1B): the writers — the detector now records, through the production call path"
+trader/detector_record.go,455dce5affd69a60e6d3ad21f2524cc3ed20bd31,2026-09-05T21:37:17-05:00,"feat(wave-a D1+D3): the touch recorder stops fabricating episodes; the exit cause is recorded, not inferred"
+trader/auto_trader_planner.go,9c754e369f397d04a462fbcbefb47c2feef37ab0,2026-09-08T08:56:19-05:00,fix(plan-liveness): bind death evidence to version and validate authored closes
+store/candidate_pool.go,130a4e70da6c38652275923019f60b173e6aadd8,2026-09-03T18:43:16-05:00,"feat(1B D2-D7): the calibrated detector starts recording — touch_outcomes, candidate_pool, legacy rates retired"
+store/planner_read_facts.go,4659874a2dcf41fcb0e0d8194df5d2918afd27fc,2026-09-02T22:38:48-05:00,"fix(void-parity): one resolver for the void scope — the prompt reads the validator's tape, and every read records what the model was told"
+store/touch_outcomes.go,455dce5affd69a60e6d3ad21f2524cc3ed20bd31,2026-09-05T21:37:17-05:00,"feat(wave-a D1+D3): the touch recorder stops fabricating episodes; the exit cause is recorded, not inferred"
+provider/ninjatrader/tcp_framing.go,6262bf427276d3e00102de64247b122af743c1fe,2026-09-07T23:34:58-05:00,fix: stamp entry creation time and await received placement truth
+provider/ninjatrader/tcp_server.go,7e0c5527f42bec9beee164773c279e6ce077e964,2026-09-07T23:39:11-05:00,fix: install receipt routing before entries and preserve rejection evidence
+provider/ninjatrader/bar_persist.go,f5912fbb4c5f3b1309d3c911fc86a954af1c10af,2026-09-03T23:32:32-05:00,fix(persist): a counter must survive being reported (class 77)
+ninjascript/VLBarsSubscriptionManager.cs,fda66c89df4f8a76f705ab4c624b9185623926bb,2026-08-25T14:10:09-05:00,revert(C12): cursor persistence broke the N4 full replay after Go restart
+ninjascript/VLContractResolver.cs,0d1110c24ed28c2ccdfb1ee7853d7087f960259a,2026-06-02T16:53:35-05:00,feat(nt8): Phase 2 — drive bar subscription from the active symbol + resolver to all quarterly families
+trader/auto_trader_levelstate.go,5710cb5d353046aca531eb9ce049ab3bd780fdcb,2026-09-08T09:00:25-05:00,test(plan-liveness): pin unknown qualifiers and versioned readers
+kernel/plan_confirm.go,b99963857c453f909570eba7a854a8ec23eed087,2026-09-08T14:30:06-05:00,test(confirmation): pin the ruled carve-out and publish mutation evidence

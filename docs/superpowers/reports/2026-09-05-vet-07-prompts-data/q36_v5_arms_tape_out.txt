@@ -1,0 +1,40 @@
+version|bias|conv|scen
+4|short|low|S1:reject:short:arm=1 | S2:breakout_retest:long:arm=none
+5|short|medium|S1:sweep_reclaim:short:arm=none | S2:breakout_retest:long:arm=none | S3:reject:short:arm=1
+6|long|medium|S1:breakout_retest:long:arm=none | S2:sweep_reclaim:long:arm=none | S3:reject:long:arm=1 | S4:sweep_reclaim:short:arm=none
+'--- armed_orders plan_id sample + 09-03 rows'
+--- armed_orders plan_id sample + 09-03 rows
+id|pid|version|scenario|side|entry_px|state|c
+35|2026-09-03:NY:8d5c8af5|2|S1|short|29285.0|filled|2026-09-03 09:02:54
+36|2026-09-03:NY:8d5c8af5|3|S2|short|29351.05|cancelled|2026-09-03 09:20:47
+37|2026-09-03:NY:8d5c8af5|7|S3|short|29543.75|cancelled|2026-09-03 11:58:33
+'--- 37304 decision'
+--- 37304 decision
+act|sl|rsn
+"action": "open_short",
+    "leverage": 1,
+    "position_siz|"stop_loss": 29561.5,
+    "take_profit": 29500.75,
+    "confidence": 7|"reasoning": "S1 sweep-reclaim confirmed: price swept above ONH 29543/29546.50 and the last closed 5m printed back below 29543. Bias remains short. Enter short at 29541.25 with stop above the recent swing high/invalidation at 29561.50 (20.25 pts risk) and targ
+'--- 5m tape 09-03 20:30-22:00 CT'
+--- 5m tape 09-03 20:30-22:00 CT
+ct|o|h|l|c
+2026-09-03 20:30:00|29540.0|29546.5|29536.5|29542.0
+2026-09-03 20:35:00|29542.0|29549.25|29535.75|29538.5
+2026-09-03 20:40:00|29537.25|29546.5|29534.25|29545.0
+2026-09-03 20:45:00|29545.0|29545.75|29531.0|29532.75
+2026-09-03 20:50:00|29532.5|29541.0|29526.0|29527.5
+2026-09-03 20:55:00|29528.0|29549.0|29523.25|29547.75
+2026-09-03 21:00:00|29548.25|29548.5|29537.0|29539.5
+2026-09-03 21:05:00|29539.75|29547.0|29539.0|29546.25
+2026-09-03 21:10:00|29546.0|29553.5|29544.75|29550.0
+2026-09-03 21:15:00|29550.0|29551.25|29547.5|29550.75
+2026-09-03 21:20:00|29550.25|29556.5|29547.0|29554.5
+2026-09-03 21:25:00|29554.75|29556.25|29552.25|29555.25
+2026-09-03 21:30:00|29555.0|29566.75|29549.0|29549.0
+2026-09-03 21:35:00|29549.5|29552.5|29544.25|29551.5
+2026-09-03 21:40:00|29552.0|29555.0|29545.5|29546.25
+2026-09-03 21:45:00|29547.0|29560.5|29545.0|29559.0
+2026-09-03 21:50:00|29558.75|29568.5|29555.5|29565.5
+2026-09-03 21:55:00|29565.5|29566.5|29561.75|29564.75
+2026-09-03 22:00:00|29565.0|29566.75|29561.25|29563.25

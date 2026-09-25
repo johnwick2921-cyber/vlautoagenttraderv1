@@ -1,0 +1,250 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "worktree": "/tmp/nofx-understanding-surfaces-20260913",
+  "method": "Read-only source inspection. Search/index results alone excluded. No tests executed. Truncated reads conservatively labeled excerpts.",
+  "files": [
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "lines": 128
+    },
+    {
+      "path": "api/handler_trader_config.go",
+      "mode": "full/manual",
+      "lines": 76
+    },
+    {
+      "path": "api/route_registry.go",
+      "mode": "full/manual",
+      "lines": 66
+    },
+    {
+      "path": "api/handler_desk.go",
+      "mode": "full/manual",
+      "lines": 39
+    },
+    {
+      "path": "api/config_resolved.go",
+      "mode": "full/manual",
+      "lines": 202
+    },
+    {
+      "path": "store/trader.go",
+      "mode": "full/manual",
+      "lines": 338
+    },
+    {
+      "path": "store/resolve_source.go",
+      "mode": "full/manual",
+      "lines": 80
+    },
+    {
+      "path": "api/handler_plan_geometry.go",
+      "mode": "full/manual",
+      "lines": 12
+    },
+    {
+      "path": "api/handler_plan_order_truth.go",
+      "mode": "full/manual",
+      "lines": 194
+    },
+    {
+      "path": "api/handler_plan_position_provenance.go",
+      "mode": "full/manual",
+      "lines": 50
+    },
+    {
+      "path": "api/handler_plan_idor_test.go",
+      "mode": "full/manual",
+      "lines": 194
+    },
+    {
+      "path": "api/handler_plan_order_truth_test.go",
+      "mode": "full/manual",
+      "lines": 86
+    },
+    {
+      "path": "store/knob_registry_test.go",
+      "mode": "full/manual",
+      "lines": 81
+    },
+    {
+      "path": "web/src/App.tsx",
+      "mode": "full/manual",
+      "lines": 18
+    },
+    {
+      "path": "web/src/lib/api/strategies.ts",
+      "mode": "full/manual",
+      "lines": 72
+    },
+    {
+      "path": "web/src/lib/api/helpers.ts",
+      "mode": "full/manual",
+      "lines": 40
+    },
+    {
+      "path": "web/src/lib/httpClient.ts",
+      "mode": "full/manual",
+      "lines": 321
+    },
+    {
+      "path": "web/src/guide/types.ts",
+      "mode": "full/manual",
+      "lines": 98
+    },
+    {
+      "path": "web/src/components/plan/DeskStrip.tsx",
+      "mode": "full/manual",
+      "lines": 210
+    },
+    {
+      "path": "web/src/components/strategy/RiskControlEditor.test.tsx",
+      "mode": "full/manual",
+      "lines": 31
+    },
+    {
+      "path": "api/handler_account.go",
+      "mode": "full/manual",
+      "lines": 238
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013110,348\u2013371; additional displayed excerpts in truncated combined read; not full",
+      "lines": 606
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": "181\u2013216,329\u2013416; additional displayed excerpts in truncated combined read; not full",
+      "lines": 416
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": "1\u201395,4110\u20134205; keyword excerpts for config/auth/Guide",
+      "lines": 4673
+    },
+    {
+      "path": "api/strategy.go",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013470",
+      "lines": 873
+    },
+    {
+      "path": "api/server.go",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013180,450\u2013463,700\u2013950; route registration search for accounts/config/desk/delete",
+      "lines": 950
+    },
+    {
+      "path": "api/handler_plan.go",
+      "mode": "excerpts/manual",
+      "ranges": "85\u2013155,250\u2013525",
+      "lines": 2395
+    },
+    {
+      "path": "manager/trader_manager.go",
+      "mode": "excerpts/manual",
+      "ranges": "20\u201380,350\u2013475,575\u2013755",
+      "lines": 755
+    },
+    {
+      "path": "config/config.go",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013115 and displayed tail from truncated combined read; not full",
+      "lines": 277
+    },
+    {
+      "path": "store/strategy.go",
+      "mode": "excerpts/manual",
+      "ranges": "518\u2013554,605\u2013654,715\u2013909,1710\u20131740,1990\u20132190",
+      "lines": 2487
+    },
+    {
+      "path": "web/src/lib/api/config.ts",
+      "mode": "excerpts/manual",
+      "ranges": "displayed configuration/credential API methods from combined read; not audited fully",
+      "lines": 304
+    },
+    {
+      "path": "web/src/router/AppRoutes.tsx",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013245 partly displayed;245\u2013465 fully displayed",
+      "lines": 585
+    },
+    {
+      "path": "web/src/router/selectedTrader.ts",
+      "mode": "excerpts/manual",
+      "ranges": "resolveSelectedTrader displayed; prefix truncated",
+      "lines": 108
+    },
+    {
+      "path": "web/src/contexts/AuthContext.tsx",
+      "mode": "excerpts/manual",
+      "ranges": "displayed full content in truncated combined tool response; conservatively excerpt mode",
+      "lines": 355
+    },
+    {
+      "path": "web/src/pages/StrategyStudioPage.tsx",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013105,200\u2013283,551\u2013640; save/editor symbol references",
+      "lines": 1674
+    },
+    {
+      "path": "web/src/components/strategy/RiskControlEditor.tsx",
+      "mode": "excerpts/manual",
+      "ranges": "735\u2013820",
+      "lines": 1083
+    },
+    {
+      "path": "web/src/guide/GuidePage.tsx",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013160,450\u2013480",
+      "lines": 633
+    },
+    {
+      "path": "store/structural_geometry.go",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013145",
+      "lines": 181
+    },
+    {
+      "path": "store/knob_registry.go",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013180",
+      "lines": 215
+    },
+    {
+      "path": "api/handler_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": "767\u2013943 with last portion re-read900\u2013943; incomplete middle of start due truncation",
+      "lines": 1027
+    },
+    {
+      "path": "store/store.go",
+      "mode": "excerpts/manual",
+      "ranges": "1\u2013110",
+      "lines": 739
+    },
+    {
+      "path": "api/config_resolved_test.go",
+      "mode": "excerpts/manual",
+      "ranges": "125\u2013165",
+      "lines": 256
+    },
+    {
+      "path": "kernel/engine.go",
+      "mode": "excerpts/manual",
+      "ranges": "335\u2013355",
+      "lines": 1084
+    },
+    {
+      "path": "trader/auto_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": "770\u2013790,1115\u20131130",
+      "lines": 1253
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+scope,filter,n,sum,mean,sd,se,ci_lo_95,ci_hi_95,t,wins,losses,flats,straddles_zero,source
+MC rig report (77e1cdfc 2026-09-03 00:39 CT),"status!=OPEN AND created_at>=era AND pnl_corrected NOT NULL AND source IN (system,armed_entry,reconcile)",64,-423.9286,-6.6239,100.5891,12.5736,-31.2682,18.0204,-0.5268,21,41,2,yes,2026-09-03-mc-drawdown.md:122-175
+MC filter re-measured 2026-09-04 (minus 591),same,64,-423.9286,-6.6239,100.5891,12.5736,-31.2682,18.0204,-0.5268,21,41,2,yes,live store reproduction
+MC filter LIVE NOW 2026-09-04,same,65,-563.9286,-8.6758,101.1620,12.5476,-33.2691,15.9175,-0.6914,21,42,2,yes,live store
+1D expectancy scope LIVE NOW,"CLOSED AND entry_time>=era AND NOT test-seam AND NOT UNRESOLVABLE AND condition recovered AND pnl_corrected NOT NULL",58,-466.4286,-8.0419,104.8926,13.7731,-35.0371,18.9533,-0.5839,18,38,2,yes,expectancy.LoadAndBuildAt

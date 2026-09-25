@@ -1,0 +1,17 @@
+/tmp/identity-build/nofx-bin: go1.25.3
+	path	nofx
+	mod	nofx	v0.0.0-20260910233148-b30afc657093	
+	build	-buildmode=exe
+	build	-compiler=gc
+	build	CGO_ENABLED=1
+	build	CGO_CFLAGS=
+	build	CGO_CPPFLAGS=
+	build	CGO_CXXFLAGS=
+	build	CGO_LDFLAGS=
+	build	GOARCH=amd64
+	build	GOOS=linux
+	build	GOAMD64=v1
+	build	vcs=git
+	build	vcs.revision=b30afc6570936a628c8cef1f462dc9e8dd8216d9
+	build	vcs.time=2026-09-10T23:31:48Z
+	build	vcs.modified=false

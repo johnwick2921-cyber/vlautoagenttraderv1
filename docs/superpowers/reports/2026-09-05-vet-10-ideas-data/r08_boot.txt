@@ -1,0 +1,4 @@
+days: {'2026-08-19': (3, -200.43), '2026-08-20': (6, -76.5), '2026-08-24': (4, -119.0), '2026-08-25': (1, -52.0), '2026-08-27': (1, -42.0), '2026-09-01': (1, -62.5)}
+day-cluster bootstrap of the per-trade mean: -34.53  95% CI [-61.44, -19.24]
+share of resamples with mean<0: 1.0000
+compliant book distinct plan_trade_dates: 12

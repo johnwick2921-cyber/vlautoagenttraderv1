@@ -1,0 +1,11 @@
+n_prompts|vix_na|d_unavail|h4_unavail|fvg_empty|fvg_expected_line|valid7|schema9|monday|week75|minsl10_literal|floor15_section|arm_min_rr|killzone_0730|digest_errors
+64|47|47|47|47|47|27|47|47|47|47|16|47|11|47
+x
+--- daily-candle rows rendered per prompt (rows under "daily session candles")
+id|trade_date|session|daily_rows
+132|2026-09-04|NY|3
+130|2026-09-04|NY|3
+129|2026-09-04|NY|3
+127|2026-09-04|NY|3
+126|2026-09-04|NY|3
+124|2026-09-04|NY|3

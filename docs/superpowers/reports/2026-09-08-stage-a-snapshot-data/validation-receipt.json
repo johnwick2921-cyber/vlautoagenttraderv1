@@ -1,0 +1,36 @@
+{
+  "tested_revision": "2a96cf63278f7c836d55e14c5a02597f80280292",
+  "clean_clone": "/tmp/stage-a-build/nofx",
+  "checks": {
+    "full-go.log": {
+      "exit_code": 0,
+      "bytes": 2428,
+      "sha256": "9f0f1b5e54e4f681a2444d6d125c6b80f7bdc3091b94d1eab77139b688d21827",
+      "local_receipt": "/tmp/stage-a-build/full-go.log"
+    },
+    "vitest.log": {
+      "exit_code": 0,
+      "bytes": 54056,
+      "sha256": "c75a964874e4cdb66da644b674fca2222689fd5b1e0c9d219b90b145db3d8bf3",
+      "local_receipt": "/tmp/stage-a-build/vitest.log"
+    },
+    "tsc.log": {
+      "exit_code": 0,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "local_receipt": "/tmp/stage-a-build/tsc.log"
+    },
+    "race-focused.log": {
+      "exit_code": 0,
+      "bytes": 96,
+      "sha256": "5437b5405df1e2646b5425892113ec8822e869f2db96cf17887730d168727a60",
+      "local_receipt": "/tmp/stage-a-build/race-focused.log"
+    },
+    "dist.log": {
+      "exit_code": 0,
+      "bytes": 4867,
+      "sha256": "e69087bbe35c19f7702d1e6ad2f49eafef5240a23641d26d925b41185396f18c",
+      "local_receipt": "/tmp/stage-a-build/dist.log"
+    }
+  }
+}

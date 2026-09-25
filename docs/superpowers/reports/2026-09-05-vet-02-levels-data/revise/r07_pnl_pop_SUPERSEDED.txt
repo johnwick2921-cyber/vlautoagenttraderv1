@@ -1,0 +1,18 @@
+== SUPERSEDED by r08_pnl_cond.txt — wrong mapping (latest plan version instead of the position own plan_version). Kept to document the trap.
+all cited era rows: 64
+e7: [572]  UNRESOLVABLE: [(530, 'off-plan', 13.0), (539, 'off-plan', -84.5)]
+compliant in-scope: 61
+NULL pnl_corrected (excluded, UNRESOLVED): [576, 577, 579] count 3
+usable: 58 sum -466.43
+acceptance: n=11 sum=-416.43 wins=1 ids=[522, 526, 527, 531, 532, 533, 534, 542, 543, 548, 562]
+breakout_retest: n=8 sum=-368.0 wins=2 ids=[528, 556, 557, 558, 564, 570, 587, 591]
+hold: n=4 sum=146.0 wins=2 ids=[554, 555, 561, 578]
+reject: n=32 sum=195.0 wins=12 ids=[521, 523, 524, 525, 529, 535, 536, 537, 538, 540, 541, 544, 547, 549, 550, 551, 552, 553, 559, 560, 563, 565, 567, 575, 581, 582, 583, 584, 585, 588, 589, 590]
+sweep_reclaim: n=3 sum=-23.0 wins=1 ids=[568, 569, 586]
+--- sensitivity incl UNRESOLVABLE ---
+acceptance: n=11 sum=-416.43
+breakout_retest: n=8 sum=-368.0
+hold: n=4 sum=146.0
+reject: n=32 sum=195.0
+sweep_reclaim: n=3 sum=-23.0
+None: n=2 sum=-71.5

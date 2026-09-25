@@ -1,0 +1,9 @@
+UNAUTH MATRIX — AFTER ALL FIXES (isolated, 8dcc4521), 2026-08-15 23:38:02 CDT
+bind: 127.0.0.1:8232
+
+METHOD ROUTE                              CODE   NOTE
+POST   /api/reset-password                410    was: reset ANY account
+POST   /api/reset-account                 401    was: deleted ALL users
+POST   /api/crypto/decrypt                401    was: RSA oracle, 200
+GET    /api/plan/today                    401    unchanged
+GET    /api/health                        200    public by design

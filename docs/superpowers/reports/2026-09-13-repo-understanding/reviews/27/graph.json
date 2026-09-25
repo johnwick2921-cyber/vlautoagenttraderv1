@@ -1,0 +1,2403 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_graph_revision": "7a8adce0",
+  "historical_graph_date": "2026-07-10",
+  "historical_nodes": [
+    {
+      "id": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "type": "file",
+      "name": "IndicatorEditor.tsx",
+      "filePath": "web/src/components/strategy/IndicatorEditor.tsx",
+      "summary": "Strategy Studio indicator configuration editor: timeframe selection, EMA/BOLL/RSI/ATR period inputs, funding-rate toggle (hidden for CME futures since funding is crypto-only), and a NofxOS API-key section validated via SWR.",
+      "tags": [
+        "component",
+        "strategy-studio",
+        "indicators",
+        "editor",
+        "trading-config"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Configured indicator periods flow through to the Go kernel's computations \u2014 the editor is the single source for EMA/BOLL/RSI/ATR periods."
+    },
+    {
+      "id": "function:web/src/components/strategy/IndicatorEditor.tsx:PeriodInput",
+      "type": "function",
+      "name": "PeriodInput",
+      "filePath": "web/src/components/strategy/IndicatorEditor.tsx",
+      "lineRange": [
+        59,
+        108
+      ],
+      "summary": "Clamped numeric input that keeps raw typed text in local draft state while editing and parses/clamps to range only on blur/commit, so clearing a field doesn't snap back to the default.",
+      "tags": [
+        "component",
+        "input",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/strategy/IndicatorEditor.tsx:IndicatorEditor",
+      "type": "function",
+      "name": "IndicatorEditor",
+      "filePath": "web/src/components/strategy/IndicatorEditor.tsx",
+      "lineRange": [
+        110,
+        1285
+      ],
+      "summary": "Main editor mutating IndicatorConfig: timeframes, indicator toggles and periods, futures-aware funding-rate hiding, and NofxOS data-source key management.",
+      "tags": [
+        "component",
+        "editor",
+        "indicators"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/strategy/PromptSectionsEditor.tsx",
+      "type": "file",
+      "name": "PromptSectionsEditor.tsx",
+      "filePath": "web/src/components/strategy/PromptSectionsEditor.tsx",
+      "summary": "Collapsible editor for the strategy prompt's custom sections (role definition, decision process, etc.) with futures-aware defaults: empty boxes show the CME index-futures role text mirroring engine_prompt_futures.go instead of crypto-neutral text.",
+      "tags": [
+        "component",
+        "strategy-studio",
+        "prompt-editing",
+        "editor"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:web/src/components/strategy/PromptSectionsEditor.tsx:PromptSectionsEditor",
+      "type": "function",
+      "name": "PromptSectionsEditor",
+      "filePath": "web/src/components/strategy/PromptSectionsEditor.tsx",
+      "lineRange": [
+        69,
+        254
+      ],
+      "summary": "Renders expand/collapse section textareas over PromptSectionsConfig with reset-to-default actions and isFutures-dependent placeholder defaults.",
+      "tags": [
+        "component",
+        "editor",
+        "prompt-editing"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "type": "file",
+      "name": "RiskControlEditor.tsx",
+      "filePath": "web/src/components/strategy/RiskControlEditor.tsx",
+      "summary": "Risk-control editor for RiskControlConfig with clamped numeric inputs (min R/R, limits), toggles, and prop-firm guardrail rows featuring master plus per-guardrail switches.",
+      "tags": [
+        "component",
+        "strategy-studio",
+        "risk-management",
+        "editor",
+        "guardrails"
+      ],
+      "complexity": "complex",
+      "languageNotes": "ClampedNumberInput commits only on blur and preserves the saved value on empty/invalid commit, mirroring the IndicatorEditor PeriodInput fix."
+    },
+    {
+      "id": "function:web/src/components/strategy/RiskControlEditor.tsx:ClampedNumberInput",
+      "type": "function",
+      "name": "ClampedNumberInput",
+      "filePath": "web/src/components/strategy/RiskControlEditor.tsx",
+      "lineRange": [
+        12,
+        64
+      ],
+      "summary": "Numeric field holding raw draft text while editing and clamping to [min,max] only on blur/Enter; keeps the existing saved value on empty or invalid commit.",
+      "tags": [
+        "component",
+        "input",
+        "validation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/strategy/RiskControlEditor.tsx:Toggle",
+      "type": "function",
+      "name": "Toggle",
+      "filePath": "web/src/components/strategy/RiskControlEditor.tsx",
+      "lineRange": [
+        79,
+        107
+      ],
+      "summary": "Styled on/off switch used across the risk-control panels.",
+      "tags": [
+        "component",
+        "toggle",
+        "ui"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/strategy/RiskControlEditor.tsx:GuardrailRow",
+      "type": "function",
+      "name": "GuardrailRow",
+      "filePath": "web/src/components/strategy/RiskControlEditor.tsx",
+      "lineRange": [
+        110,
+        141
+      ],
+      "summary": "Row combining a guardrail label, description, and per-guardrail toggle inside the prop-firm guardrail section.",
+      "tags": [
+        "component",
+        "guardrails",
+        "ui"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/strategy/RiskControlEditor.tsx:RiskControlEditor",
+      "type": "function",
+      "name": "RiskControlEditor",
+      "filePath": "web/src/components/strategy/RiskControlEditor.tsx",
+      "lineRange": [
+        143,
+        840
+      ],
+      "summary": "Main editor mutating RiskControlConfig: position sizing, stop rules, R/R minimums, and the prop-firm guardrail layer with master and per-guardrail toggles.",
+      "tags": [
+        "component",
+        "editor",
+        "risk-management"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/trader/AITradersPage.tsx",
+      "type": "file",
+      "name": "AITradersPage.tsx",
+      "filePath": "web/src/components/trader/AITradersPage.tsx",
+      "summary": "Main Config/Settings page orchestrating trader management: SWR-backed lists of traders, AI models, and exchanges; create/edit/delete trader flows; and launching the model, exchange, Telegram, and trader config modals.",
+      "tags": [
+        "component",
+        "page",
+        "trader-management",
+        "modal-orchestration",
+        "api-client"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/components/trader/AITradersPage.tsx:AITradersPage",
+      "type": "function",
+      "name": "AITradersPage",
+      "filePath": "web/src/components/trader/AITradersPage.tsx",
+      "lineRange": [
+        33,
+        802
+      ],
+      "summary": "Page component wiring AuthContext/LanguageContext, SWR data for traders/models/exchanges, modal open/close state, and trader CRUD actions with confirm toasts.",
+      "tags": [
+        "component",
+        "page",
+        "trader-management"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "type": "file",
+      "name": "ConfigStatusGrid.tsx",
+      "filePath": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "summary": "Dashboard grid summarizing configured AI models and exchanges with brand icons, in-use/running counts per item, and exchange address show/hide plus copy-to-clipboard actions.",
+      "tags": [
+        "component",
+        "dashboard",
+        "configuration",
+        "status-display"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/components/trader/ConfigStatusGrid.tsx:ConfigStatusGrid",
+      "type": "function",
+      "name": "ConfigStatusGrid",
+      "filePath": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "lineRange": [
+        43,
+        295
+      ],
+      "summary": "Renders model and exchange cards with usage info callbacks, account-state badges, address reveal/copy controls, and click-through to the respective config modals.",
+      "tags": [
+        "component",
+        "dashboard",
+        "status-display"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/trader/DecisionAudit.tsx",
+      "type": "file",
+      "name": "DecisionAudit.tsx",
+      "filePath": "web/src/components/trader/DecisionAudit.tsx",
+      "summary": "Decisions audit table consuming GET /api/audit/decisions: flattens each DecisionRecord into one row per nested action with the 8 audit-trail fields (AI model/latency, risk check, execution status, fill price/latency, prompt version) and expandable reasoning.",
+      "tags": [
+        "component",
+        "audit",
+        "table",
+        "trading-decisions",
+        "polling"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/components/trader/DecisionAudit.tsx:flattenDecisions",
+      "type": "function",
+      "name": "flattenDecisions",
+      "filePath": "web/src/components/trader/DecisionAudit.tsx",
+      "lineRange": [
+        60,
+        88
+      ],
+      "summary": "Flattens DecisionRecord rows into per-action table rows, carrying parent audit-trail fields onto each nested action.",
+      "tags": [
+        "utility",
+        "data-transformation",
+        "audit"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:web/src/components/trader/DecisionAudit.tsx:DecisionAudit",
+      "type": "function",
+      "name": "DecisionAudit",
+      "filePath": "web/src/components/trader/DecisionAudit.tsx",
+      "lineRange": [
+        101,
+        329
+      ],
+      "summary": "Auto-refreshing audit table fetching decisions for a trader and rendering the 11-column spec with click-to-expand reasoning panels.",
+      "tags": [
+        "component",
+        "audit",
+        "table"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/trader/EmergencyFlatButton.tsx",
+      "type": "file",
+      "name": "EmergencyFlatButton.tsx",
+      "filePath": "web/src/components/trader/EmergencyFlatButton.tsx",
+      "summary": "Red Emergency Flat button with a confirmation modal that POSTs /api/risk/force-flat?trader_id=X to flatten all positions; carries mandatory data-testids for the Playwright runbook.",
+      "tags": [
+        "component",
+        "risk-management",
+        "emergency",
+        "api-client"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:web/src/components/trader/EmergencyFlatButton.tsx:EmergencyFlatButton",
+      "type": "function",
+      "name": "EmergencyFlatButton",
+      "filePath": "web/src/components/trader/EmergencyFlatButton.tsx",
+      "lineRange": [
+        19,
+        123
+      ],
+      "summary": "Manages the confirm-modal state, sends the authorized force-flat POST, and displays the raw JSON result.",
+      "tags": [
+        "component",
+        "emergency",
+        "api-client"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+      "type": "file",
+      "name": "CoinSourceEditor.tsx",
+      "filePath": "web/src/components/strategy/CoinSourceEditor.tsx",
+      "summary": "Strategy Studio editor for the instrument/coin source config: static coin lists, gainers/losers modes, blacklists, and CME-futures awareness (read-only symbol handling for futures instruments).",
+      "tags": [
+        "component",
+        "strategy-studio",
+        "editor",
+        "trading-config"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/components/strategy/CoinSourceEditor.tsx:CoinSourceEditor",
+      "type": "function",
+      "name": "CoinSourceEditor",
+      "filePath": "web/src/components/strategy/CoinSourceEditor.tsx",
+      "lineRange": [
+        24,
+        517
+      ],
+      "summary": "Edits CoinSourceConfig (source mode, coin list add/remove, blacklist) with NofxSelect dropdowns, bilingual strategy translations, and futures-specific behavior via isCMEFutures.",
+      "tags": [
+        "component",
+        "editor",
+        "trading-config"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/trader/ModelCard.tsx",
+      "type": "file",
+      "name": "ModelCard.tsx",
+      "filePath": "web/src/components/trader/ModelCard.tsx",
+      "summary": "Presentational card for a single AI model option showing provider icon, short name, and price, with selected/configured visual states in the model configuration flow.",
+      "tags": [
+        "component",
+        "presentational",
+        "ai-model",
+        "ui"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/trader/ModelCard.tsx:ModelCard",
+      "type": "function",
+      "name": "ModelCard",
+      "filePath": "web/src/components/trader/ModelCard.tsx",
+      "lineRange": [
+        13,
+        58
+      ],
+      "summary": "Renders a selectable AI model card with provider icon, display name, price, and a configured badge; fires onClick to select the model.",
+      "tags": [
+        "component",
+        "ui",
+        "selection"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/src/components/trader/Tooltip.tsx",
+      "type": "file",
+      "name": "Tooltip.tsx",
+      "filePath": "web/src/components/trader/Tooltip.tsx",
+      "summary": "Minimal hover tooltip wrapper component using local show/hide state on mouse enter/leave.",
+      "tags": [
+        "component",
+        "ui",
+        "tooltip",
+        "presentational"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/trader/Tooltip.tsx:Tooltip",
+      "type": "function",
+      "name": "Tooltip",
+      "filePath": "web/src/components/trader/Tooltip.tsx",
+      "lineRange": [
+        8,
+        44
+      ],
+      "summary": "Wraps children with mouse-enter/leave handlers and conditionally renders a positioned tooltip bubble with the given content.",
+      "tags": [
+        "component",
+        "ui",
+        "tooltip"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "type": "file",
+      "name": "TraderConfigModal.tsx",
+      "filePath": "web/src/components/trader/TraderConfigModal.tsx",
+      "summary": "Create/edit modal for AI traders: picks strategy, AI model, exchange, and initial balance, fetching the strategy list via httpClient and deriving the AI config embedded in the chosen strategy.",
+      "tags": [
+        "component",
+        "modal",
+        "trader",
+        "configuration",
+        "form"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/components/trader/TraderConfigModal.tsx:getStrategyAIConfig",
+      "type": "function",
+      "name": "getStrategyAIConfig",
+      "filePath": "web/src/components/trader/TraderConfigModal.tsx",
+      "lineRange": [
+        28,
+        38
+      ],
+      "summary": "Extracts the AI configuration from a strategy record, falling back to assembling one from coin_source and risk_control when ai_config is absent.",
+      "tags": [
+        "utility",
+        "strategy",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
+      "type": "function",
+      "name": "TraderConfigModal",
+      "filePath": "web/src/components/trader/TraderConfigModal.tsx",
+      "lineRange": [
+        86,
+        589
+      ],
+      "summary": "Modal form managing trader creation/editing state: loads strategies, syncs form data with the selected strategy and edit target, validates input, and invokes onSave with the assembled trader config.",
+      "tags": [
+        "component",
+        "modal",
+        "form",
+        "data-fetching"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/trader/TradersList.tsx",
+      "type": "file",
+      "name": "TradersList.tsx",
+      "filePath": "web/src/components/trader/TradersList.tsx",
+      "summary": "Traders list section of the AI Traders page: renders each trader row with avatar, model/exchange badges, wallet-address reveal/copy for perp DEXes, and run/edit/competition/delete actions, plus loading skeleton and empty state.",
+      "tags": [
+        "component",
+        "list",
+        "trader",
+        "dashboard"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/components/trader/TradersList.tsx:TradersList",
+      "type": "function",
+      "name": "TradersList",
+      "filePath": "web/src/components/trader/TradersList.tsx",
+      "lineRange": [
+        43,
+        108
+      ],
+      "summary": "Exported list container that shows the loading skeleton, empty state, or maps traders to TraderRow entries, forwarding all action callbacks.",
+      "tags": [
+        "component",
+        "list",
+        "container"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:web/src/components/trader/TradersList.tsx:TradersLoadingSkeleton",
+      "type": "function",
+      "name": "TradersLoadingSkeleton",
+      "filePath": "web/src/components/trader/TradersList.tsx",
+      "lineRange": [
+        110,
+        135
+      ],
+      "summary": "Placeholder skeleton rows displayed while the traders list is loading.",
+      "tags": [
+        "component",
+        "ui",
+        "loading-state"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/trader/TradersList.tsx:TradersEmptyState",
+      "type": "function",
+      "name": "TradersEmptyState",
+      "filePath": "web/src/components/trader/TradersList.tsx",
+      "lineRange": [
+        137,
+        171
+      ],
+      "summary": "Empty-state panel guiding the user to configure AI models and exchanges before creating a trader.",
+      "tags": [
+        "component",
+        "ui",
+        "empty-state",
+        "i18n"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "type": "function",
+      "name": "TraderRow",
+      "filePath": "web/src/components/trader/TradersList.tsx",
+      "lineRange": [
+        173,
+        417
+      ],
+      "summary": "Row component for one trader: resolves exchange/model display names, perp-DEX wallet address with reveal/copy, avatar, running state toggle, and edit/competition/delete actions.",
+      "tags": [
+        "component",
+        "ui",
+        "trader",
+        "actions"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/components/trader/utils.ts",
+      "type": "file",
+      "name": "utils.ts",
+      "filePath": "web/src/components/trader/utils.ts",
+      "summary": "Small helper duplicates for AI model display names (getModelDisplayName, getShortName) kept alongside the trader components.",
+      "tags": [
+        "utility",
+        "ai-model",
+        "formatting"
+      ],
+      "complexity": "simple",
+      "languageNotes": "Duplicates the same-named helpers in model-constants.ts; candidates for consolidation."
+    },
+    {
+      "id": "function:web/src/components/trader/utils.ts:getModelDisplayName",
+      "type": "function",
+      "name": "getModelDisplayName",
+      "filePath": "web/src/components/trader/utils.ts",
+      "lineRange": [
+        2,
+        13
+      ],
+      "summary": "Maps a model id to a friendly display name, defaulting to the uppercased id.",
+      "tags": [
+        "utility",
+        "formatting",
+        "ai-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/components/trader/utils.ts:getShortName",
+      "type": "function",
+      "name": "getShortName",
+      "filePath": "web/src/components/trader/utils.ts",
+      "lineRange": [
+        16,
+        19
+      ],
+      "summary": "Returns the last underscore-separated segment of an identifier.",
+      "tags": [
+        "utility",
+        "formatting"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:web/src/pages/StrategyStudioPage.tsx",
+      "type": "file",
+      "name": "StrategyStudioPage.tsx",
+      "filePath": "web/src/pages/StrategyStudioPage.tsx",
+      "summary": "Strategy Studio page for creating and editing trading strategies: composes prompt-section, indicator, risk-control, coin-source, grid-config, and publish-settings editors, resolves the crypto/futures prompt variant (combineVariant/decomposeMode), normalizes loaded strategy configs, and saves via the API with token-estimate feedback.",
+      "tags": [
+        "component",
+        "page",
+        "strategy",
+        "configuration",
+        "trading"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/pages/StrategyStudioPage.tsx:getAIConfig",
+      "type": "function",
+      "name": "getAIConfig",
+      "filePath": "web/src/pages/StrategyStudioPage.tsx",
+      "lineRange": [
+        57,
+        69
+      ],
+      "summary": "Extracts the AI model configuration block from a strategy config object, providing defaults when fields are missing.",
+      "tags": [
+        "utility",
+        "strategy",
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/pages/StrategyStudioPage.tsx:normalizeStrategyConfig",
+      "type": "function",
+      "name": "normalizeStrategyConfig",
+      "filePath": "web/src/pages/StrategyStudioPage.tsx",
+      "lineRange": [
+        71,
+        84
+      ],
+      "summary": "Normalizes a strategy config loaded from the backend into the editor's expected shape, filling missing sections with defaults so all editor panels can bind safely.",
+      "tags": [
+        "utility",
+        "strategy",
+        "normalization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/pages/StrategyStudioPage.tsx:StrategyStudioPage",
+      "type": "function",
+      "name": "StrategyStudioPage",
+      "filePath": "web/src/pages/StrategyStudioPage.tsx",
+      "lineRange": [
+        103,
+        1569
+      ],
+      "summary": "Main studio component managing strategy list/selection, editable vs read-only default strategies, per-section editor state (prompt, indicators, risk control, coin source, grid, publish), futures/crypto mode dropdown persisted as prompt_variant, save/create/delete flows with notifications, and honest prompt preview.",
+      "tags": [
+        "component",
+        "strategy",
+        "editor",
+        "api-consumer"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:web/src/pages/TraderDashboardPage.tsx",
+      "type": "file",
+      "name": "TraderDashboardPage.tsx",
+      "filePath": "web/src/pages/TraderDashboardPage.tsx",
+      "summary": "Trader dashboard page rendering live account stats (equity, P&L), open positions table with formatted prices, AI decision feed with audit view, chart tabs, NT8 account selector, and emergency flat control for the selected trader.",
+      "tags": [
+        "component",
+        "page",
+        "dashboard",
+        "trading",
+        "positions"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/pages/TraderDashboardPage.tsx:getModelDisplayName",
+      "type": "function",
+      "name": "getModelDisplayName",
+      "filePath": "web/src/pages/TraderDashboardPage.tsx",
+      "lineRange": [
+        31,
+        42
+      ],
+      "summary": "Maps an AI model id to a human-readable display name for the dashboard header.",
+      "tags": [
+        "utility",
+        "formatting",
+        "display"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/pages/TraderDashboardPage.tsx:getExchangeDisplayNameFromList",
+      "type": "function",
+      "name": "getExchangeDisplayNameFromList",
+      "filePath": "web/src/pages/TraderDashboardPage.tsx",
+      "lineRange": [
+        45,
+        56
+      ],
+      "summary": "Resolves an exchange id to its display name by looking it up in the loaded exchange list with a sensible fallback.",
+      "tags": [
+        "utility",
+        "formatting",
+        "display"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/pages/TraderDashboardPage.tsx:getWalletAddress",
+      "type": "function",
+      "name": "getWalletAddress",
+      "filePath": "web/src/pages/TraderDashboardPage.tsx",
+      "lineRange": [
+        77,
+        90
+      ],
+      "summary": "Extracts the wallet address for perp-DEX exchanges (Hyperliquid, Aster) from the exchange config so the dashboard can show a truncated address link.",
+      "tags": [
+        "utility",
+        "wallet",
+        "dex"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:web/src/pages/TraderDashboardPage.tsx:TraderDashboardPage",
+      "type": "function",
+      "name": "TraderDashboardPage",
+      "filePath": "web/src/pages/TraderDashboardPage.tsx",
+      "lineRange": [
+        123,
+        1108
+      ],
+      "summary": "Primary dashboard component receiving trader/status/account/positions/decisions props, rendering stat cards, the positions table with formatPrice/formatQuantity, decision cards with configurable limit, chart tabs, account selector, and grid risk panel.",
+      "tags": [
+        "component",
+        "dashboard",
+        "positions",
+        "decisions"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:web/src/pages/TraderDashboardPage.tsx:StatCard",
+      "type": "function",
+      "name": "StatCard",
+      "filePath": "web/src/pages/TraderDashboardPage.tsx",
+      "lineRange": [
+        1111,
+        1177
+      ],
+      "summary": "Reusable stat card rendering a titled metric with value, unit, change indicator, subtitle, icon, and loading skeleton state.",
+      "tags": [
+        "component",
+        "ui",
+        "dashboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:web/src/components/trader/BeginnerGuideCards.tsx",
+      "type": "file",
+      "name": "BeginnerGuideCards.tsx",
+      "filePath": "web/src/components/trader/BeginnerGuideCards.tsx",
+      "summary": "Bilingual (zh/en) onboarding card strip for the trader dashboard walking new users through AI-model setup, exchange connection, strategy selection, and trader creation, with per-step readiness flags, a truncated wallet address display, and callback props for each action.",
+      "tags": [
+        "component",
+        "onboarding",
+        "dashboard",
+        "i18n"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:web/src/components/trader/BeginnerGuideCards.tsx:BeginnerGuideCards",
+      "type": "function",
+      "name": "BeginnerGuideCards",
+      "filePath": "web/src/components/trader/BeginnerGuideCards.tsx",
+      "lineRange": [
+        22,
+        211
+      ],
+      "summary": "React component rendering the four-step beginner setup cards (AI model, exchange, strategy, trader) with language-aware copy, readiness-driven styling, and per-card action buttons wired to the supplied callbacks.",
+      "tags": [
+        "component",
+        "onboarding",
+        "i18n"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "historical_edges": [
+    {
+      "source": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "function:web/src/components/strategy/IndicatorEditor.tsx:PeriodInput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "function:web/src/components/strategy/IndicatorEditor.tsx:IndicatorEditor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "function:web/src/components/strategy/IndicatorEditor.tsx:IndicatorEditor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/strategy/PromptSectionsEditor.tsx",
+      "target": "function:web/src/components/strategy/PromptSectionsEditor.tsx:PromptSectionsEditor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/PromptSectionsEditor.tsx",
+      "target": "function:web/src/components/strategy/PromptSectionsEditor.tsx:PromptSectionsEditor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "function:web/src/components/strategy/RiskControlEditor.tsx:ClampedNumberInput",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "function:web/src/components/strategy/RiskControlEditor.tsx:Toggle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "function:web/src/components/strategy/RiskControlEditor.tsx:GuardrailRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "function:web/src/components/strategy/RiskControlEditor.tsx:RiskControlEditor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "function:web/src/components/strategy/RiskControlEditor.tsx:RiskControlEditor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "function:web/src/components/trader/AITradersPage.tsx:AITradersPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "function:web/src/components/trader/AITradersPage.tsx:AITradersPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "function:web/src/components/trader/ConfigStatusGrid.tsx:ConfigStatusGrid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "function:web/src/components/trader/ConfigStatusGrid.tsx:ConfigStatusGrid",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/DecisionAudit.tsx",
+      "target": "function:web/src/components/trader/DecisionAudit.tsx:flattenDecisions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/DecisionAudit.tsx",
+      "target": "function:web/src/components/trader/DecisionAudit.tsx:DecisionAudit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/DecisionAudit.tsx",
+      "target": "function:web/src/components/trader/DecisionAudit.tsx:DecisionAudit",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/EmergencyFlatButton.tsx",
+      "target": "function:web/src/components/trader/EmergencyFlatButton.tsx:EmergencyFlatButton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/EmergencyFlatButton.tsx",
+      "target": "function:web/src/components/trader/EmergencyFlatButton.tsx:EmergencyFlatButton",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "file:web/src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "file:web/src/i18n/strategy-translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/PromptSectionsEditor.tsx",
+      "target": "file:web/src/i18n/strategy-translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/PromptSectionsEditor.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "file:web/src/i18n/strategy-translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/components/common/DeepVoidBackground.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/components/trader/ExchangeConfigModal.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/components/trader/ModelConfigModal.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/components/trader/TelegramConfigModal.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/components/trader/TradersList.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/contexts/AuthContext.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/contexts/LanguageContext.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/i18n/translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/lib/api/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/lib/notify.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/AITradersPage.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "file:web/src/components/common/ExchangeIcons.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "file:web/src/components/common/ModelIcons.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "file:web/src/components/trader/model-constants.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "file:web/src/i18n/translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ExchangeConfigModal.tsx",
+      "target": "file:web/src/components/trader/Tooltip.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ExchangeConfigModal.tsx",
+      "target": "file:web/src/components/trader/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:web/src/components/trader/AITradersPage.tsx:AITradersPage",
+      "target": "function:web/src/components/trader/ConfigStatusGrid.tsx:ConfigStatusGrid",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/AITradersPage.tsx:AITradersPage",
+      "target": "function:web/src/components/trader/ExchangeConfigModal.tsx:ExchangeConfigModal",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/ConfigStatusGrid.tsx:ConfigStatusGrid",
+      "target": "function:web/src/components/common/ModelIcons.tsx:getModelIcon",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "function:web/src/components/strategy/CoinSourceEditor.tsx:CoinSourceEditor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "function:web/src/components/strategy/CoinSourceEditor.tsx:CoinSourceEditor",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "file:web/src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "file:web/src/i18n/strategy-translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ModelCard.tsx",
+      "target": "function:web/src/components/trader/ModelCard.tsx:ModelCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/ModelCard.tsx",
+      "target": "function:web/src/components/trader/ModelCard.tsx:ModelCard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/Tooltip.tsx",
+      "target": "function:web/src/components/trader/Tooltip.tsx:Tooltip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/Tooltip.tsx",
+      "target": "function:web/src/components/trader/Tooltip.tsx:Tooltip",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "function:web/src/components/trader/TraderConfigModal.tsx:getStrategyAIConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "function:web/src/components/trader/TradersList.tsx:TradersList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "function:web/src/components/trader/TradersList.tsx:TradersList",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "function:web/src/components/trader/TradersList.tsx:TradersLoadingSkeleton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "function:web/src/components/trader/TradersList.tsx:TradersEmptyState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/utils.ts",
+      "target": "function:web/src/components/trader/utils.ts:getModelDisplayName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/utils.ts",
+      "target": "function:web/src/components/trader/utils.ts:getModelDisplayName",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/utils.ts",
+      "target": "function:web/src/components/trader/utils.ts:getShortName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/utils.ts",
+      "target": "function:web/src/components/trader/utils.ts:getShortName",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/components/trader/ModelCard.tsx",
+      "target": "file:web/src/components/common/ModelIcons.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ModelCard.tsx",
+      "target": "file:web/src/components/trader/model-constants.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ModelCard.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/ModelConfigModal.tsx",
+      "target": "file:web/src/components/trader/ModelCard.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "file:web/src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "file:web/src/contexts/LanguageContext.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "file:web/src/i18n/translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "file:web/src/lib/httpClient.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TraderConfigModal.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "file:web/src/components/common/PunkAvatar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "file:web/src/components/trader/model-constants.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "file:web/src/i18n/translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/components/trader/TradersList.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "function:web/src/components/trader/ModelConfigModal.tsx:ModelConfigModal",
+      "target": "function:web/src/components/trader/ModelCard.tsx:ModelCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
+      "target": "function:web/src/components/ui/select.tsx:NofxSelect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "function:web/src/components/trader/ModelCard.tsx:ModelCard",
+      "target": "function:web/src/components/common/ModelIcons.tsx:getModelIcon",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/ModelCard.tsx:ModelCard",
+      "target": "function:web/src/components/trader/model-constants.ts:getShortName",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
+      "target": "function:web/src/i18n/translations.ts:t",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TraderConfigModal.tsx:TraderConfigModal",
+      "target": "function:web/src/contexts/LanguageContext.tsx:useLanguage",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "target": "function:web/src/components/trader/model-constants.ts:getWalletAddress",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "target": "function:web/src/components/trader/model-constants.ts:isPerpDexExchange",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "target": "function:web/src/components/trader/model-constants.ts:getModelDisplayName",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "target": "function:web/src/components/trader/model-constants.ts:getExchangeDisplayName",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "target": "function:web/src/components/trader/model-constants.ts:truncateAddress",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TradersList.tsx:TraderRow",
+      "target": "function:web/src/components/common/PunkAvatar.tsx:getTraderAvatar",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/components/trader/TradersList.tsx:TradersList",
+      "target": "function:web/src/i18n/translations.ts:t",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/common/DeepVoidBackground.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/strategy/CoinSourceEditor.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/strategy/GridConfigEditor.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/strategy/IndicatorEditor.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/strategy/PromptSectionsEditor.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/strategy/PublishSettingsEditor.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/strategy/RiskControlEditor.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/components/strategy/TokenEstimateBar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/contexts/AuthContext.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/contexts/LanguageContext.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/i18n/translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/lib/notify.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/charts/ChartTabs.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/common/DeepVoidBackground.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/common/PunkAvatar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/strategy/GridRiskPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/trader/AccountSelector.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/trader/DecisionAudit.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/trader/DecisionCard.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/trader/EmergencyFlatButton.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/trader/PositionHistory.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/i18n/translations.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/lib/api/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/lib/notify.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/types/index.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "file:web/src/utils/format.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/router/AppRoutes.tsx",
+      "target": "file:web/src/components/trader/AITradersPage.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/router/AppRoutes.tsx",
+      "target": "file:web/src/pages/StrategyStudioPage.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/router/AppRoutes.tsx",
+      "target": "file:web/src/pages/TraderDashboardPage.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "function:web/src/pages/StrategyStudioPage.tsx:getAIConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "function:web/src/pages/StrategyStudioPage.tsx:normalizeStrategyConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "function:web/src/pages/StrategyStudioPage.tsx:StrategyStudioPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "function:web/src/pages/TraderDashboardPage.tsx:getModelDisplayName",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "function:web/src/pages/TraderDashboardPage.tsx:getExchangeDisplayNameFromList",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "function:web/src/pages/TraderDashboardPage.tsx:getWalletAddress",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "function:web/src/pages/TraderDashboardPage.tsx:TraderDashboardPage",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "function:web/src/pages/TraderDashboardPage.tsx:StatCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/pages/StrategyStudioPage.tsx",
+      "target": "function:web/src/pages/StrategyStudioPage.tsx:StrategyStudioPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:web/src/pages/TraderDashboardPage.tsx",
+      "target": "function:web/src/pages/TraderDashboardPage.tsx:TraderDashboardPage",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/pages/TraderDashboardPage.tsx:TraderDashboardPage",
+      "target": "function:web/src/utils/format.ts:formatPrice",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:web/src/pages/TraderDashboardPage.tsx:TraderDashboardPage",
+      "target": "function:web/src/utils/format.ts:formatQuantity",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md",
+      "target": "file:web/src/pages/TraderDashboardPage.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/superpowers/plans/2026-05-29-account-rebinding.md",
+      "target": "file:web/src/pages/TraderDashboardPage.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:web/src/components/trader/BeginnerGuideCards.tsx",
+      "target": "function:web/src/components/trader/BeginnerGuideCards.tsx:BeginnerGuideCards",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:web/src/components/trader/BeginnerGuideCards.tsx",
+      "target": "function:web/src/components/trader/BeginnerGuideCards.tsx:BeginnerGuideCards",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    }
+  ],
+  "current_edges": [
+    {
+      "source": "web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 12,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "web/src/i18n/strategy-translations.ts",
+      "line": 13,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "web/src/components/ui/select.tsx",
+      "line": 14,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/CoinSourceEditor.tsx",
+      "target": "web/src/lib/instrument.ts",
+      "line": 15,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "line": 16,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 17,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "web/src/i18n/strategy-translations.ts",
+      "line": 18,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/IndicatorEditor.tsx",
+      "target": "web/src/components/ui/select.tsx",
+      "line": 19,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/PromptSectionsEditor.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 3,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/PromptSectionsEditor.tsx",
+      "target": "web/src/i18n/strategy-translations.ts",
+      "line": 7,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 3,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/strategy/RiskControlEditor.tsx",
+      "target": "web/src/i18n/strategy-translations.ts",
+      "line": 4,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "line": 4,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 10,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "line": 11,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 12,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/contexts/AuthContext.tsx",
+      "line": 13,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/router/selectedTrader.ts",
+      "line": 14,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/components/trader/TraderConfigModal.tsx",
+      "line": 15,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/components/common/DeepVoidBackground.tsx",
+      "line": 16,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/components/trader/ExchangeConfigModal.tsx",
+      "line": 17,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/components/trader/TelegramConfigModal.tsx",
+      "line": 18,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/components/trader/ModelConfigModal.tsx",
+      "line": 19,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "line": 20,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/components/trader/TradersList.tsx",
+      "line": 21,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/AITradersPage.tsx",
+      "target": "web/src/lib/notify.tsx",
+      "line": 23,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 2,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 3,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 4,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "web/src/components/common/ModelIcons.tsx",
+      "line": 5,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "web/src/components/common/ExchangeIcons.tsx",
+      "line": 6,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ConfigStatusGrid.tsx",
+      "target": "web/src/components/trader/model-constants.ts",
+      "line": 11,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/DecisionAudit.tsx",
+      "target": "web/src/lib/autoRefresh.ts",
+      "line": 17,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ModelCard.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 2,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ModelCard.tsx",
+      "target": "web/src/components/common/ModelIcons.tsx",
+      "line": 3,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/ModelCard.tsx",
+      "target": "web/src/components/trader/model-constants.ts",
+      "line": 4,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/PauseButton.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "line": 13,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/PauseButton.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "line": 14,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TraderConfigModal.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 8,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TraderConfigModal.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "line": 9,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TraderConfigModal.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 10,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TraderConfigModal.tsx",
+      "target": "web/src/lib/httpClient.ts",
+      "line": 19,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TraderConfigModal.tsx",
+      "target": "web/src/components/ui/select.tsx",
+      "line": 20,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TradersList.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 12,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TradersList.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 13,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TradersList.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 14,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TradersList.tsx",
+      "target": "web/src/components/common/PunkAvatar.tsx",
+      "line": 15,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/components/trader/TradersList.tsx",
+      "target": "web/src/components/trader/model-constants.ts",
+      "line": 22,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/lib/api/guarded.ts",
+      "line": 1,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/contexts/AuthContext.tsx",
+      "line": 3,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/contexts/LanguageContext.tsx",
+      "line": 4,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 40,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/lib/notify.tsx",
+      "line": 41,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/lib/instrument.ts",
+      "line": 42,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/CoinSourceEditor.tsx",
+      "line": 43,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/IndicatorEditor.tsx",
+      "line": 44,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/RiskControlEditor.tsx",
+      "line": 45,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/DayPlanEditor.tsx",
+      "line": 46,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/i18n/plan-translations.ts",
+      "line": 47,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/PromptSectionsEditor.tsx",
+      "line": 48,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/PublishSettingsEditor.tsx",
+      "line": 49,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/GridConfigEditor.tsx",
+      "line": 53,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/strategy/TokenEstimateBar.tsx",
+      "line": 54,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/components/common/DeepVoidBackground.tsx",
+      "line": 55,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/StrategyStudioPage.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 56,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/constants/branding.ts",
+      "line": 1,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/trader/LedgerDayPnl.tsx",
+      "line": 2,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/lib/api/index.ts",
+      "line": 5,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/lib/api/plan.ts",
+      "line": 6,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/charts/EquityChart.tsx",
+      "line": 7,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/charts/ChartTabs.tsx",
+      "line": 8,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/trader/DecisionCard.tsx",
+      "line": 9,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/trader/DecisionAudit.tsx",
+      "line": 10,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/trader/EmergencyFlatButton.tsx",
+      "line": 11,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/trader/PauseButton.tsx",
+      "line": 16,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/trader/PositionHistory.tsx",
+      "line": 17,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/trader/AccountSelector.tsx",
+      "line": 18,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/common/PunkAvatar.tsx",
+      "line": 19,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/lib/notify.tsx",
+      "line": 20,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/utils/format.ts",
+      "line": 21,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/i18n/translations.ts",
+      "line": 22,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/common/DeepVoidBackground.tsx",
+      "line": 24,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/ui/select.tsx",
+      "line": 25,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/strategy/GridRiskPanel.tsx",
+      "line": 26,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/components/plan/PlanCard.tsx",
+      "line": 27,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    },
+    {
+      "source": "web/src/pages/TraderDashboardPage.tsx",
+      "target": "web/src/types/index.ts",
+      "line": 36,
+      "meaning": "Explicit relative import; possibly type-only",
+      "evidence": "A current source"
+    }
+  ],
+  "corrections": [
+    "Historical IndicatorEditor description calls NofxOS key validated via SWR; current SWR validates timeframe capability only and key badge checks nonempty.",
+    "Historical PeriodInput says range clamp; actual parser filters positive integers without upper bound; backend separately validates periods.",
+    "Historical ModelCard says price rendered; current card has provider/name/state only.",
+    "Historical TraderConfigModal says initial-balance picker; current form has cadence and position mode, no initial-balance field.",
+    "Historic getAIConfig/normalize summary claims filling missing defaults; actual getAIConfig returns null without legacy fields and normalization selects fields.",
+    "PauseButton and newer PlanCard/health/ledger consumers absent from old snapshot; current imports and exact source supersede graph."
+  ]
+}

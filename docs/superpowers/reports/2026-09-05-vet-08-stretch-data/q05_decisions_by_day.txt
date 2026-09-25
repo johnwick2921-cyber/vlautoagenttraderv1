@@ -1,0 +1,20 @@
+day         cycles  eg_in_execlog  refused_word  has_open_long  has_open_short  ok   errs
+----------  ------  -------------  ------------  -------------  --------------  ---  ----
+2026-09-01  694     0              0             1              2               685  9   
+2026-09-02  682     5              6             6              6               649  27  
+2026-09-03  596     14             14            2              15              571  11  
+2026-09-04  374     0              0             1              1               366  8   
+day         cycle_type  cycle_trigger  COUNT(*)
+----------  ----------  -------------  --------
+2026-09-02                             561     
+2026-09-02              post_exit      4       
+2026-09-02              stale_dodge    78      
+2026-09-02  watch                      28      
+2026-09-02  watch       stale_dodge    11      
+2026-09-03                             488     
+2026-09-03              post_exit      1       
+2026-09-03              stale_dodge    99      
+2026-09-03  watch                      7       
+2026-09-03  watch       stale_dodge    1       
+2026-09-04                             346     
+2026-09-04              stale_dodge    28      

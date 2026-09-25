@@ -1,0 +1,86 @@
+{
+  "purpose": "Sensitivity excludes two uncertain stored zero-MAE winners; not a validated excursion cohort. Raw primary P&L population remains58.",
+  "input": "2026-09-05-vet-05-execution-data/complete/q31_verified.json",
+  "excluded_rows": [
+    {
+      "id": 569,
+      "side": "SHORT",
+      "entry_price": 29700.0,
+      "exit_price": 29668.5,
+      "entry_time": 1787924668684,
+      "exit_time": 1787924728951,
+      "entry_order_id": "",
+      "exit_order_id": "845ea5ae-a9db-4941-b365-eb13b1892ca0",
+      "pnl_corrected": 63.0,
+      "mae": 0.0,
+      "mfe": 36.0,
+      "source": "reconcile",
+      "close_reason": "sync",
+      "plan_id": "2026-08-28:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "plan_version": 1,
+      "cited_scenario_id": "S1"
+    },
+    {
+      "id": 584,
+      "side": "SHORT",
+      "entry_price": 29138.0,
+      "exit_price": 29085.0,
+      "entry_time": 1788269807953,
+      "exit_time": 1788269899464,
+      "entry_order_id": "6b5b89c6-7abc-4897-93a0-c97c7679acc4",
+      "exit_order_id": "6b5b89c6-7abc-4897-93a0-c97c7679acc4",
+      "pnl_corrected": 106.0,
+      "mae": 0.0,
+      "mfe": 58.0,
+      "source": "reconcile",
+      "close_reason": "sync",
+      "plan_id": "2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+      "plan_version": 6,
+      "cited_scenario_id": "S2"
+    }
+  ],
+  "winner_ids": [
+    521,
+    523,
+    524,
+    529,
+    532,
+    536,
+    538,
+    549,
+    555,
+    557,
+    560,
+    570,
+    575,
+    578,
+    581,
+    582
+  ],
+  "winner_mae_quantiles": {
+    "0.5": 13.0,
+    "0.8": 22.5,
+    "0.95": 48.1875
+  },
+  "floor_ids": [
+    555,
+    557,
+    560,
+    570,
+    575,
+    578,
+    581,
+    582
+  ],
+  "floor_ratio_quantiles": {
+    "0.5": 0.29308409034900573,
+    "0.8": 0.5274996384193734,
+    "0.95": 0.6994937093066725
+  },
+  "floor_exceeds": 0,
+  "floor_n": 8,
+  "source_excerpts": {
+    "trader/auto_trader_clock.go": "749: \t}\n750: \tbars := market.FuturesBarsProvider(at.futuresSymbol(), \"1m\", kernel.AISVPBarCount)\n751: \t// E4 (wave 1A, 2026-09-02) \u2014 the same path computation the excursion table\n752: \t// uses, so trader_positions.mae/mfe and trade_excursions cannot disagree.\n753: \t// It INCLUDES the bar containing the fill; ComputeExcursion dropped it\n754: \t// whenever a fill did not land exactly on a bar boundary.\n755: \tpath := kernel.ComputePathExcursion(p.EntryPrice, p.Side, 0, 0, bars, p.EntryTime, exitMs, \"1m\")\n756: \tif !path.Computed {\n757: \t\t// No coverage. The columns stay NULL: an uncomputed excursion is not a\n758: \t\t// zero, and writing 0 here is what made 517 closed rows unreadable.\n759: \t\tat.logWarnf(\"\ud83d\udcd0 excursion for %s pos=%d has no 1m coverage \u2014 mae/mfe left NULL, not zeroed\", p.Symbol, p.ID)\n760: \t} else if err := at.store.Position().UpdateExcursion(p.ID, path.MAEPts, path.MFEPts); err != nil {\n761: \t\tat.logWarnf(\"\ud83d\udcd0 excursion update failed for %s: %v\", p.Symbol, err)\n762: \t\treturn\n763: \t}\n764: \tex := kernel.Excursion{MAE: path.MAEPts, MFE: path.MFEPts}\n765: \t// E3 (wave 1A) \u2014 the excursion row's exit half. This funnel is reached by",
+    "docs/superpowers/reports/2026-08-17-cto-final-verification.md": "10: >\n11: > The live values were correct all along: **`min_risk_reward_ratio: 3` \u00b7 `min_confidence: 65` \u00b7 `max_contracts_per_order: 2` \u00b7 `hold_discipline: true` \u00b7 `breakeven_enabled: true`**, on BOTH running strategies. Proven by loading the real stored JSON through the production codec: after `ClampLimits()` the effective gate values are **minRR=3.00 \u00b7 minConf=65 \u00b7 maxContracts=2 \u00b7 holdLock=true**.\n12: >\n13: > Therefore, in the table and prose below: **R:R gate = \u2705 MATCH (3.0)**, **confidence gate = \u2705 MATCH (65)**, **size cap = \u2705 MATCH (2)**, and the \u00a75.3 finding \"hold-lock is OFF on both live traders\" is **withdrawn**. `guardrails_enabled: false` is unchanged and remains the owner's deliberate decision.\n14: >"
+  }
+}

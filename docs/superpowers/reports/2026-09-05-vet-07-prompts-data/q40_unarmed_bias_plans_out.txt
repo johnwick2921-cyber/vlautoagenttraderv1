@@ -1,0 +1,10 @@
+n_plans|directional|directional_no_arm_in_bias|zero_arms
+16|15|5|5
+'--- the directional plans with no arm in bias'
+--- the directional plans with no arm in bias
+pid|version|lifecycle|ct|bias|n_scen|arms_total
+2026-09-03:NY:8d5|7|dormant|2026-09-03 11:27:53|long|3|1
+2026-09-03:ASIA:8|1|active|2026-09-03 16:37:36|long|4|0
+2026-09-03:ASIA:8|3|active|2026-09-03 19:28:36|long|3|0
+2026-09-03:ASIA:8|7|dormant|2026-09-04 01:20:35|long|3|0
+2026-09-04:LONDON|3|active|2026-09-04 07:56:17|short|3|0

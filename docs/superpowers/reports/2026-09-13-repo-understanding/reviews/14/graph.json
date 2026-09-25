@@ -1,0 +1,211 @@
+{
+  "assignment": 14,
+  "historical_base": "July10@7a8adce0",
+  "current_base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "matched_nodes": 102,
+  "matched_edges": 320,
+  "historical_file_nodes": [
+    {
+      "id": "file:provider/ninjatrader/bar_cache.go",
+      "type": "file",
+      "name": "bar_cache.go",
+      "filePath": "provider/ninjatrader/bar_cache.go",
+      "summary": "Thread-safe bounded BarCache holding the latest OHLCV bars per (symbol, timeframe) from the NT8 TCP feed; bars_historical frames merge-seed (preserving reconnect chart depth) and bar_update frames upsert, read by the kernel decision feed and the chart relay.",
+      "tags": [
+        "data-model",
+        "cache",
+        "ohlcv",
+        "concurrency",
+        "ninjatrader",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Copy-on-read snapshots under sync.RWMutex keep kernel/chart reads from blocking the socket drain goroutine; 2500-bar ring per key covers the 2000-bar re-seed window."
+    },
+    {
+      "id": "file:provider/ninjatrader/csv_tailer.go",
+      "type": "file",
+      "name": "csv_tailer.go",
+      "filePath": "provider/ninjatrader/csv_tailer.go",
+      "summary": "Legacy CSV-bridge fill tailer that polls trades_taken.csv and delivers newly appended fill rows to a callback, tracking the read offset across polls.",
+      "tags": [
+        "csv-bridge",
+        "file-polling",
+        "ninjatrader",
+        "legacy",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:provider/ninjatrader/csv_writer.go",
+      "type": "file",
+      "name": "csv_writer.go",
+      "filePath": "provider/ninjatrader/csv_writer.go",
+      "summary": "Legacy CSV-bridge signal writer producing the 5-field trade_signals.csv row atomically (temp file plus retried rename) for the vltrader.cs AddOn to consume.",
+      "tags": [
+        "csv-bridge",
+        "serialization",
+        "ninjatrader",
+        "legacy",
+        "tested"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Atomic temp-file + rename write with the rename retried via internal/retry to survive transient Windows file locks seen through WSL."
+    },
+    {
+      "id": "file:provider/ninjatrader/mock_nt.go",
+      "type": "file",
+      "name": "mock_nt.go",
+      "filePath": "provider/ninjatrader/mock_nt.go",
+      "summary": "Mock NinjaTrader harness for the CSV bridge: a background goroutine polls trade_signals.csv, dedups signals by DateTime+Direction+EntryPrice, and writes synthetic fills to trades_taken.csv \u2014 for tests and nq_smoke only, never production.",
+      "tags": [
+        "mock",
+        "test-harness",
+        "csv-bridge",
+        "ninjatrader",
+        "tested"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:provider/ninjatrader/tcp_client_mock.go",
+      "type": "file",
+      "name": "tcp_client_mock.go",
+      "filePath": "provider/ninjatrader/tcp_client_mock.go",
+      "summary": "In-process mock TCP client emulating the C# AddOn's wire behaviour: dials the Go TCPServer, acks signals and heartbeats, and emits fill frames after a configurable delay; drives tcp_server tests and the nq_smoke tcp sub-command.",
+      "tags": [
+        "mock",
+        "test-harness",
+        "tcp",
+        "ninjatrader"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:provider/ninjatrader/tcp_framing.go",
+      "type": "file",
+      "name": "tcp_framing.go",
+      "filePath": "provider/ninjatrader/tcp_framing.go",
+      "summary": "TCP wire codec for the NT8 bridge: 4-byte big-endian length-prefixed JSON envelopes with WriteFrame/ReadFrame plus the full set of payload structs (signals, fills, bars, accounts, positions, feed status) shared with the C# AddOn.",
+      "tags": [
+        "protocol",
+        "serialization",
+        "tcp",
+        "type-definition",
+        "ninjatrader",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Length-prefixed JSON framing with a 1 MB cap; the exported payload structs double as the wire schema contract with the C# AddOn."
+    },
+    {
+      "id": "file:provider/ninjatrader/types.go",
+      "type": "file",
+      "name": "types.go",
+      "filePath": "provider/ninjatrader/types.go",
+      "summary": "Defines the 5-field SignalRow and 3-field FillRow CSV records exchanged with NT8\u2019s vltrader.cs strategy, with SignalRow validation of direction and stop-loss/take-profit price ordering.",
+      "tags": [
+        "type-definition",
+        "csv-protocol",
+        "validation",
+        "broker-bridge"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:provider/ninjatrader/tcp_server.go",
+      "type": "file",
+      "name": "tcp_server.go",
+      "filePath": "provider/ninjatrader/tcp_server.go",
+      "summary": "Go-side endpoint of the NT8 TCP bridge: single-client listener on 127.0.0.1:36974 with a pending-signal queue (stale-drop on reconnect), 30s heartbeats, per-symbol bar subscriptions feeding the BarCache, multi-account state, and per-symbol fan-out routers for fills, closes, rejects, and instrument info.",
+      "tags": [
+        "tcp-server",
+        "broker-bridge",
+        "market-data",
+        "concurrency",
+        "service",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Heavy goroutine architecture: accept loop, per-connection read loop (a 340-line frame dispatcher), heartbeat loop, and a buffered bar-ingest drain channel; sync.Once-guarded routers fan frames out to per-symbol subscriber channels."
+    },
+    {
+      "id": "file:ninjascript/VLBarsSubscriptionManager.cs",
+      "type": "file",
+      "name": "VLBarsSubscriptionManager.cs",
+      "filePath": "ninjascript/VLBarsSubscriptionManager.cs",
+      "summary": "C# side of the NT8 bar feed: owns one BarsRequest per symbol/timeframe, streams bars_historical and bar_update frames to the Go bot through VLTraderTCPClient's writeLock-serialized SendFrame, and self-heals feed gaps via reconnect rebuilds plus a two-tier stall watchdog (20s fast guard, 75-min backstop).",
+      "tags": [
+        "ninjatrader",
+        "market-data",
+        "tcp-bridge",
+        "watchdog",
+        "event-handler"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Dependencies are injected as delegates (sendFrame/logInfo/logWarn) instead of a parent back-reference, keeping the class off the parent's network state; handles NT8 quirks like local-time bars, multi-bar .Update ranges, and BarsRequests that silently die after feed drops."
+    },
+    {
+      "id": "file:ninjascript/VLContractResolver.cs",
+      "type": "file",
+      "name": "VLContractResolver.cs",
+      "filePath": "ninjascript/VLContractResolver.cs",
+      "summary": "Shared static resolver mapping Go-side symbols (bare roots like MNQ or Databento continuous forms like NQ.c.0) to NT8 qualified front-month instrument names (\"MNQ 06-26\") using quarterly third-Friday expiries with an 8-day pre-roll, keeping the bars and signal paths in lockstep.",
+      "tags": [
+        "ninjatrader",
+        "futures",
+        "symbol-resolution",
+        "utility"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Deliberately pure C# \u2014 no Newtonsoft, LINQ, or NT8 API \u2014 so it can be unit-tested outside NinjaTrader; only quarterly-cycle CME roots are whitelisted, energy/metals pass through unresolved rather than mis-rolling."
+    },
+    {
+      "id": "file:ninjascript/VLTraderTCPClient.cs",
+      "type": "file",
+      "name": "VLTraderTCPClient.cs",
+      "filePath": "ninjascript/VLTraderTCPClient.cs",
+      "summary": "NinjaScript AddOn implementing the NT8-side TCP bridge: connects to the Go bot at 127.0.0.1:36974, exchanges length-prefixed JSON frames (protocol v2), executes AI signals as entry orders with fill-triggered SL/TP brackets on per-account routing, and streams fills, position closes, accounts, balances, feed status, and heartbeats back to Go.",
+      "tags": [
+        "ninjatrader",
+        "tcp-bridge",
+        "order-execution",
+        "entry-point",
+        "event-handler"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Uses a hand-rolled JSON encoder/parser (no Newtonsoft) with all socket writes serialized through a single writeLock; dedicated reader and heartbeat threads with CancellationTokenSource; BarsRequest rebuilds on reconnect are debounced 30s so a flapping feed coalesces into one deep (2000-bar) refetch."
+    }
+  ],
+  "corrections": [
+    "Old graph AddOn summary says protocol v2; current constants3 on both sides.",
+    "Old resolver summary says date-derived primary; rolling->platform next expiry now primary, date fallback only.",
+    "Graph lacks9 of20 assigned files including history, instrument lookup, roll, source, persistence, echo, research and book/state additions.",
+    "Graph package imports expanded to every package file are not evidence of function-level call edges.",
+    "Current fanout owner key is symbol+account, not merely symbol.",
+    "Historical ResolveFrontMonthContract -> ResolveFrontMonthContractAt edge no longer describes production primary; now calls RollingContractName. DateRuleContract calls date variant only as fallback."
+  ],
+  "edges": [
+    {
+      "source": "VLTraderTCPClient.HandleFrame",
+      "target": "VLBarsSubscriptionManager.HandleBarsSubscribe",
+      "evidence": "ninjascript/VLTraderTCPClient.cs:700"
+    },
+    {
+      "source": "VLTraderTCPClient.OnOrderUpdate",
+      "target": "VLTraderTCPClient.SubmitBracketOnEntryFill",
+      "evidence": "ninjascript/VLTraderTCPClient.cs:1445"
+    },
+    {
+      "source": "TCPServer.readLoop/FrameSubscribed",
+      "target": "TCPServer.observeContract",
+      "evidence": "provider/ninjatrader/tcp_server.go:1944"
+    },
+    {
+      "source": "TCPServer.drainBarIngest",
+      "target": "BarCache.SeedHistorical/Upsert",
+      "evidence": "provider/ninjatrader/tcp_server.go:1600"
+    }
+  ]
+}
