@@ -75,7 +75,7 @@ func TestUpdateAuthCensusFoldsSiblingFileConstants(t *testing.T) {
 	writeCensusFile(t, root, "kernel/zz_frag.go", fragFile)
 	writeCensusFile(t, root, "kernel/zz_rel.go", relFile)
 	writeCensusFile(t, root, "kernel/zz_mint.go", mintFile)
-	off, _, err := updateAuthOffenders(root)
+	off, _, err := updateAuthOffenders(t, root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func TestUpdateAuthCensusFoldsExportedConstantsOfAnotherPackage(t *testing.T) {
 	writeCensusFile(t, root, "kernel/zz_frag.go", fragFile)
 	writeCensusFile(t, root, "kernel/zz_rel.go", relFile)
 	writeCensusFile(t, root, "api/zz_read.go", apiReaderFile)
-	off, _, err := updateAuthOffenders(root)
+	off, _, err := updateAuthOffenders(t, root)
 	if err != nil {
 		t.Fatal(err)
 	}

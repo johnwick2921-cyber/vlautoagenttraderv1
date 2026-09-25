@@ -69,7 +69,7 @@ func mintBase(t *testing.T) string {
 
 func mintOffenders(t *testing.T, root string) []string {
 	t.Helper()
-	off, _, err := updateAuthOffenders(root)
+	off, _, err := updateAuthOffenders(t, root)
 	if err != nil {
 		t.Fatal(err)
 	}

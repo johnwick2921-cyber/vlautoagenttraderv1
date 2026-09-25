@@ -2,6 +2,7 @@ package updateauth
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -14,12 +15,22 @@ import (
 //
 // The fixture: a go.mod whose module line is well-formed (censuswalk's
 // ModulePath reads it leniently, and the walk itself succeeds) but whose
-// REST is not a valid go.mod — `go list` refuses it. Old code: constTypeInfo
-// degrades silently, the planted package is scanned with the name fold and
-// the census returns no offenders and no error — the subtest passes and this
-// test FAILS. New code: constTypeInfo t.Fatalf's inside the subtest, so the
-// subtest FAILS and this test passes.
+// REST is not a valid go.mod — `go list` refuses it.
+//
+// The mechanism is a re-exec child: the child test runs the REAL census over
+// the broken module and must die inside constTypeInfo's t.Fatalf (the loud
+// failure), so the child FAILS. The parent passes IFF the child failed — on
+// the old silent-degradation code the child passes and this test FAILS.
 func TestUpdateAuthCensusRefusesAModuleWhoseGoListCannotRun(t *testing.T) {
+	if root := os.Getenv("CENSUS_FAILLOUD_ROOT"); root != "" {
+		// CHILD: the census over this broken module must NOT return.
+		_, _, err := updateAuthOffenders(t, root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Fatal("the census returned over a module whose go list cannot run — constTypeInfo degraded to the name fold silently")
+		return
+	}
 	tmp := t.TempDir()
 	if err := os.WriteFile(filepath.Join(tmp, "go.mod"), []byte("module censusbroken\n\nnot a go.mod directive\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -33,13 +44,11 @@ func TestUpdateAuthCensusRefusesAModuleWhoseGoListCannotRun(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(pkg, "x.go"), []byte("package p\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	sub := t.Run("census over the broken module", func(st *testing.T) {
-		// Must not pass silently: on old code this returns no error and the
-		// subtest PASSES; on new code constTypeInfo st.Fatalf's and the
-		// subtest FAILS — which is the refusal this test demands.
-		_, _, _ = updateAuthOffenders(tmp)
-	})
-	if sub {
-		t.Fatalf("the census passed a module whose go list cannot run — constTypeInfo degraded to the name fold silently")
+	cmd := exec.Command(os.Args[0], "-test.run=^TestUpdateAuthCensusRefusesAModuleWhoseGoListCannotRun$", "-test.count=1")
+	cmd.Env = append(os.Environ(), "CENSUS_FAILLOUD_ROOT="+tmp)
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatalf("the census PASSED a module whose go list cannot run — constTypeInfo degraded to the name fold silently\n%s", out)
 	}
 }
+
