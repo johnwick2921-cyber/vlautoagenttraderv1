@@ -7,7 +7,6 @@ import (
 
 	"nofx/kernel"
 	"nofx/market"
-	"nofx/store"
 )
 
 // ── PLANNER A6 — a born-dead / flip-met retry re-sights the model on the
