@@ -30,7 +30,7 @@ func geometryZoneNames(z kernel.LevelZone) []string {
 // This exported form is the LEGACY contract (no tf wildcard) and stays
 // byte-identical to today; the executor resolves through ArmGeometryVerdict.
 func ResolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario) (int, string) {
-	idx, why, _ := resolveEntryGeometryZone(doc, sc, false)
+	idx, why, _, _ := resolveEntryGeometryZone(doc, sc, false)
 	return idx, why
 }
 
@@ -41,7 +41,7 @@ func ResolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario) (int,
 // zone-source tf is a wildcard (VWAP-family sources carry tf "" against
 // identity tf "1m"); false = today's exact-match behaviour.
 func ArmGeometryVerdict(doc *kernel.PlanDoc, sc kernel.PlanScenario, geometryRefLevels bool) (int, string) {
-	idx, why, _ := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
+	idx, why, _, _ := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
 	return idx, why
 }
 
@@ -52,12 +52,12 @@ func ArmGeometryVerdict(doc *kernel.PlanDoc, sc kernel.PlanScenario, geometryRef
 // every scenario, leg and shadow in the cycle, and the old in-place edge write
 // made composed targets depend on scenario ORDER. Non-admission paths return
 // nil.
-func resolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario, geometryRefLevels bool) (int, string, *kernel.LevelZone) {
+func resolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario, geometryRefLevels bool) (int, string, *kernel.LevelZone, string) {
 	if doc == nil || doc.Zones == nil {
-		return -1, "frozen_zone_map_missing", nil
+		return -1, "frozen_zone_map_missing", nil, ""
 	}
 	if sc.LevelID == nil || *sc.LevelID == "" {
-		return -1, "scenario_level_id_missing", nil
+		return -1, "scenario_level_id_missing", nil, ""
 	}
 	identityValue, valid := kernel.LevelByID(sc.LevelID, doc.IdentityLevels)
 	if !valid && geometryRefLevels {
@@ -67,7 +67,7 @@ func resolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario, geome
 		identityValue, valid = kernel.LevelByReferenceID(sc.LevelID, doc.IdentityLevels)
 	}
 	if !valid {
-		return -1, "identity_not_valid_in_frozen_map", nil
+		return -1, "identity_not_valid_in_frozen_map", nil, ""
 	}
 	identity := &identityValue
 	match := -1
@@ -94,14 +94,14 @@ func resolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario, geome
 				wildcardMatch = true // the wildcard was actually exercised
 			}
 			if match >= 0 && match != i {
-				return -1, "entry_zone_ambiguous", nil
+				return -1, "entry_zone_ambiguous", nil, ""
 			}
 			match = i
 			break
 		}
 	}
 	if match < 0 {
-		return -1, "entry_source_not_in_frozen_zones", nil
+		return -1, "entry_source_not_in_frozen_zones", nil, ""
 	}
 	if geometryRefLevels && wildcardMatch {
 		// W-GEOMETRY-REFUSAL (F4, narrowed after the v9/v14 regressions): ONLY a
@@ -117,7 +117,7 @@ func resolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario, geome
 				if math.Abs(s.Price-identity.Price) > 1e-7 || s.Label != identity.Label {
 					continue
 				}
-				return -1, "entry_zone_ambiguous", nil
+				return -1, "entry_zone_ambiguous", nil, ""
 			}
 		}
 	}
@@ -138,11 +138,22 @@ func resolveEntryGeometryZone(doc *kernel.PlanDoc, sc kernel.PlanScenario, geome
 			a := z.Anchor
 			z.Lo, z.Hi = &a, &a
 			z.Incomplete = false
-			return match, "", &z
+			return match, "", &z, ""
 		}
-		return -1, "entry_zone_edges_or_provenance_unusable", nil
+		// A1 (WAVE PLANNER, W3 ruling): a matched NULL-WIDTH line whose kind
+		// is NOT a reference-anchor kind (PDC/PDH/PDL — prior-day lines) is
+		// still a real level. When the authored economics.entry_zone passes
+		// the sanity checks, provenance is RECORDED not refused: admit the
+		// authored band and mark it "authored:<label>". Knob OFF = today's
+		// refusal byte-identical.
+		if geometryRefLevels {
+			if band, prov, ok := authoredEntryZoneBand(sc, doc.Zones.Zones[match]); ok {
+				return match, "", band, prov
+			}
+		}
+		return -1, "entry_zone_edges_or_provenance_unusable", nil, ""
 	}
-	return match, "", nil
+	return match, "", nil, ""
 }
 
 // referenceLineZone reports whether a frozen zone is a NULL-WIDTH reference
@@ -158,6 +169,34 @@ func referenceLineZone(z kernel.LevelZone) bool {
 		return false
 	}
 	return s.Price > 0 && math.Abs(s.Price-z.Anchor) <= 1e-7
+}
+
+// nullWidthMapLine reports the PDC/PDH/PDL prior-day shape: lo/hi nil,
+// incomplete, at least one source at the anchor — WITHOUT requiring a
+// reference-anchor kind (A1).
+func nullWidthMapLine(z kernel.LevelZone) bool {
+	if z.Anchor <= 0 || !z.Incomplete || z.Lo != nil || z.Hi != nil || len(z.Sources) == 0 {
+		return false
+	}
+	return z.Sources[0].Price > 0 && math.Abs(z.Sources[0].Price-z.Anchor) <= 1e-7
+}
+
+// authoredEntryZoneBand sanity-checks the scenario's authored
+// economics.entry_zone (finite, lo > 0, hi > lo, CONTAINS the level price) and
+// returns it as a synthesized band with provenance authored:<label> (A1).
+func authoredEntryZoneBand(sc kernel.PlanScenario, z kernel.LevelZone) (*kernel.LevelZone, string, bool) {
+	if sc.Economics == nil || len(sc.Economics.EntryZone) != 2 {
+		return nil, "", false
+	}
+	lo, hi := sc.Economics.EntryZone[0], sc.Economics.EntryZone[1]
+	if !geometryFinite(lo) || !geometryFinite(hi) || lo <= 0 || hi <= lo || z.Anchor < lo || z.Anchor > hi {
+		return nil, "", false
+	}
+	band := z
+	band.Lo, band.Hi = &lo, &hi
+	band.Incomplete = false
+	label := z.Sources[0].Label
+	return &band, "authored:" + label, true
 }
 
 // FirstGeometryTarget consumes the map's already merged intervals. It performs
@@ -193,16 +232,16 @@ func FirstGeometryTarget(zones []kernel.LevelZone, entryIdx int, long bool) (int
 // Quantity remains zero here; only the production path can authorize one after
 // the remaining, unchanged entry gates have passed.
 func ComposeLevelFadeGeometry(doc *kernel.PlanDoc, sc kernel.PlanScenario, leg kernel.PlanArmLeg, p store.StructuralStopPolicy, atr, tick, pointValue float64) store.StructuralGeometryRecord {
-	idx, why, _ := resolveEntryGeometryZone(doc, sc, false)
-	return composeGeometry(doc, sc, leg, p, atr, tick, pointValue, idx, why, nil)
+	idx, why, _, _ := resolveEntryGeometryZone(doc, sc, false)
+	return composeGeometry(doc, sc, leg, p, atr, tick, pointValue, idx, why, nil, "")
 }
 
 // ComposeLevelFadeGeometryWith is ComposeLevelFadeGeometry resolving the
 // geometry_reference_levels knob — the executor's arm path; the research
 // harness keeps the legacy form byte-identical.
 func ComposeLevelFadeGeometryWith(doc *kernel.PlanDoc, sc kernel.PlanScenario, leg kernel.PlanArmLeg, p store.StructuralStopPolicy, atr, tick, pointValue float64, geometryRefLevels bool) store.StructuralGeometryRecord {
-	idx, why, band := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
-	return composeGeometry(doc, sc, leg, p, atr, tick, pointValue, idx, why, band)
+	idx, why, band, provenance := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
+	return composeGeometry(doc, sc, leg, p, atr, tick, pointValue, idx, why, band, provenance)
 }
 
 // ComposeFrozenLevelFadeGeometry replays an already identified detector zone.
@@ -214,10 +253,10 @@ func ComposeFrozenLevelFadeGeometry(zones []kernel.LevelZone, idx int, side stri
 		idx = -1
 		why = "frozen_zone_unusable"
 	}
-	return composeGeometry(&kernel.PlanDoc{Zones: &kernel.LevelZoneMap{Zones: zones}}, kernel.PlanScenario{Direction: side}, kernel.PlanArmLeg{Entry: entry}, p, atr, tick, pointValue, idx, why, nil)
+	return composeGeometry(&kernel.PlanDoc{Zones: &kernel.LevelZoneMap{Zones: zones}}, kernel.PlanScenario{Direction: side}, kernel.PlanArmLeg{Entry: entry}, p, atr, tick, pointValue, idx, why, nil, "")
 }
 
-func composeGeometry(doc *kernel.PlanDoc, sc kernel.PlanScenario, leg kernel.PlanArmLeg, p store.StructuralStopPolicy, atr, tick, pointValue float64, idx int, why string, band *kernel.LevelZone) store.StructuralGeometryRecord {
+func composeGeometry(doc *kernel.PlanDoc, sc kernel.PlanScenario, leg kernel.PlanArmLeg, p store.StructuralStopPolicy, atr, tick, pointValue float64, idx int, why string, band *kernel.LevelZone, provenance string) store.StructuralGeometryRecord {
 	r := store.StructuralGeometryRecord{Side: strings.ToLower(sc.Direction), Entry: leg.Entry, Scenario: sc.ID, BufferSource: p.BufferSource, Calibration: p.Calibration, Percentile: p.Percentile}
 	refuse := func(reason, detail string) store.StructuralGeometryRecord {
 		r.Reason = reason
@@ -265,6 +304,9 @@ func composeGeometry(doc *kernel.PlanDoc, sc kernel.PlanScenario, leg kernel.Pla
 	r.ZoneHi = z.Hi
 	r.ZoneNames = geometryZoneNames(z)
 	r.StopSource = "zone_edge"
+	if provenance != "" {
+		r.StopSource = provenance
+	}
 	if !p.BufferKnown || !geometryFinite(p.BufferPoints) || p.BufferPoints <= 0 {
 		return refuse("no_provenance", "buffer_missing_or_invalid")
 	}

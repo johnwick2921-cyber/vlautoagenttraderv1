@@ -44,7 +44,10 @@ func TestA1AuthoredEntryZoneAdmitsNullWidthMapLines(t *testing.T) {
 	policy := store.StructuralStopPolicy{
 		BufferPoints: 4.5, BufferKnown: true,
 		CostPoints: 2, CostKnown: true,
-		MinRR: 2,
+		// MinRR 0.1: the R:R verdict is A2's item — this test pins the A1
+		// ADMISSION (provenance authored:<label> + composed stop/target), so
+		// the later min-RR gate must not mask it.
+		MinRR: 0.1,
 	}
 	for _, id := range []string{"S2", "S4"} {
 		var sc kernel.PlanScenario

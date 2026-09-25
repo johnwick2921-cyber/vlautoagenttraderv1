@@ -406,7 +406,7 @@ func zoneIssueText(sc kernel.PlanScenario, leg kernel.PlanArmLeg, code string, z
 // planner_only(<why>) when the scenario does not resolve in the frozen map. A
 // LABEL, never a refusal.
 func zoneProvenanceLabel(doc *kernel.PlanDoc, sc kernel.PlanScenario, lo, hi float64, geometryRefLevels bool) string {
-	idx, why, synth := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
+	idx, why, synth, prov := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
 	if why != "" || idx < 0 {
 		return "planner_only(" + why + ")"
 	}
@@ -414,6 +414,9 @@ func zoneProvenanceLabel(doc *kernel.PlanDoc, sc kernel.PlanScenario, lo, hi flo
 	kind := ""
 	if synth != nil {
 		z, kind = *synth, "frozen_line"
+		if prov != "" {
+			kind = prov // A1 (WAVE PLANNER): authored:<label> admission
+		}
 	}
 	names := strings.Join(geometryZoneNames(z), "+")
 	if z.Lo == nil || z.Hi == nil {
