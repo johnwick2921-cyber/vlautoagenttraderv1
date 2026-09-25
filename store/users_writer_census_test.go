@@ -196,6 +196,22 @@ func TestUsersWriterCensusCatchesEveryWriterShape(t *testing.T) {
 		"a bare User declared by another package": {"agent/u.go",
 			"package agent\n\ntype User struct{ ID string }\n\nfunc save(db dbish) { db.Save(&User{}) }\n",
 			"agent/u.go · save · gorm Save"},
+		// ── skeptic [17] RED (DS-105): the four shapes the census misses ──────
+		"raw SQL split across adjacent literals": {"api/x.go",
+			"package api\n\nfunc splitSQL(db dbish) { db.Exec(\"UPDATE \" + \"users SET updated_at = 0\") }\n",
+			"api/x.go · splitSQL · raw SQL UPDATE users"},
+		"raw SQL with a block comment": {"api/x.go",
+			"package api\n\nfunc commentSQL(db dbish) { db.Exec(\"UPDATE /* epoch */ users SET updated_at = 0\") }\n",
+			"api/x.go · commentSQL · raw SQL UPDATE users"},
+		"raw SQL with a line comment": {"api/x.go",
+			"package api\n\nfunc lineSQL(db dbish) { db.Exec(\"UPDATE --epoch\\nusers SET updated_at = 0\") }\n",
+			"api/x.go · lineSQL · raw SQL UPDATE users"},
+		"gorm Association Replace carrying a User": {"api/x.go",
+			"package api\n\nimport \"nofx/store\"\n\nfunc assoc(db dbish) { db.Model(&store.Trader{}).Association(\"Owner\").Replace(&store.User{ID: \"x\"}) }\n",
+			"api/x.go · assoc · gorm Association.Replace"},
+		"Scopes-carried Table(\"users\")": {"api/x.go",
+			"package api\n\nvar usersScope = func(db dbish) dbish { return db.Table(\"users\") }\n\nfunc scoped(db dbish) { db.Scopes(usersScope).Updates(map[string]any{\"updated_at\": 1}) }\n",
+			"api/x.go · scoped · gorm Updates"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			root := base()
