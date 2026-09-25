@@ -236,12 +236,13 @@ func TestLevelIdentityBootLineFoldsOverlay(t *testing.T) {
 	}
 }
 
-// TestZoneAcceptedIdentitySkipsHeuristicDisagreement (WAVE 1a-plan P7, #190) —
-// a zone-accepted scenario disagrees with the evaluator BY DESIGN: an FVG entry
-// anchors at its DISTAL edge, and a seated S/D+OB zone edge is a band, not a
-// price. Neither may record heuristic_disagreed — while a plain scenario with
-// the same levels and the same evaluator anchor MUST (the control row proves
-// the fixture is live).
+// TestZoneAcceptedIdentitySkipsHeuristicDisagreement (WAVE 1a-plan P7, #190;
+// skeptic F12 re-pinned on the KERNEL predicate) — a zone-accepted scenario
+// disagrees with the evaluator BY DESIGN: the anchor sits inside the resolved
+// level's [lo−tol, hi+tol]. The exemption is the kernel's zone-aware test
+// (IdentityAgreesZoneAware — the write check's own predicate), never a
+// label/type allowlist: an out-of-zone anchor records even under a
+// Demand/Supply/OB label, and a plain FVG zone edge anchor is exempt.
 func TestZoneAcceptedIdentitySkipsHeuristicDisagreement(t *testing.T) {
 	now := time.Date(2026, 9, 10, 20, 0, 0, 0, kernel.CTLocation())
 	price := 29897.0
@@ -286,10 +287,13 @@ func TestZoneAcceptedIdentitySkipsHeuristicDisagreement(t *testing.T) {
 		}
 	})
 
-	// FVG scenario — distal-edge anchor by design: NEVER a disagreement.
-	t.Run("fvg_scenario_skips", func(t *testing.T) {
+	// FVG/zone case — a zone level (Lo..Hi) whose DISTAL edge is the anchor:
+	// inside [lo−tol, hi+tol] by the KERNEL predicate → NEVER a disagreement.
+	t.Run("fvg_zone_edge_skips", func(t *testing.T) {
 		at, st := fresh(t)
 		doc := mkDoc()
+		lo, hi := price, price+10
+		doc.IdentityLevels[0].Lo, doc.IdentityLevels[0].Hi = &lo, &hi
 		doc.Scenarios[0].Fvg = &kernel.PlanFvgEntry{Lo: price, Hi: price + 10, Direction: "long"}
 		at.observeScenarioIdentity(&doc, "p1", 1, []kernel.ScenarioEval{{ID: "S1", Anchor: price + 10, HasAnchor: true}}, now)
 		c, err := st.LevelIdentityCounts(at.id)
@@ -297,12 +301,14 @@ func TestZoneAcceptedIdentitySkipsHeuristicDisagreement(t *testing.T) {
 			t.Fatal(err)
 		}
 		if c.HeuristicDisagreed != 0 {
-			t.Fatalf("a zone-accepted FVG scenario must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
+			t.Fatalf("an edge anchor inside the level's zone must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
 		}
 	})
 
-	// Seated zone-edge label — a band, not a price: NEVER a disagreement.
-	t.Run("seated_zone_label_skips", func(t *testing.T) {
+	// Skeptic F12 (b) — the P7 LABEL allowlist's false negative: a line level
+	// labelled Demand whose evaluator anchor sits OUTSIDE the zone is a real
+	// disagreement and MUST record. RED = the label allowlist → 0 recorded.
+	t.Run("demand_label_out_of_zone_records", func(t *testing.T) {
 		at, st := fresh(t)
 		doc := mkDoc()
 		doc.IdentityLevels[0].Label = "Demand 29897"
@@ -311,8 +317,28 @@ func TestZoneAcceptedIdentitySkipsHeuristicDisagreement(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if c.HeuristicDisagreed != 1 {
+			t.Fatalf("an out-of-zone anchor must record even when the level is labelled Demand, got %d", c.HeuristicDisagreed)
+		}
+	})
+
+	// Skeptic F12 (a) — the P7 label allowlist's false positive: a plain FVG
+	// zone level (label "FVG", not S/D/OB) whose edge anchor is INSIDE the
+	// zone must NOT record. RED = the allowlist → 1 recorded.
+	t.Run("plain_fvg_label_edge_anchor_skips", func(t *testing.T) {
+		at, st := fresh(t)
+		doc := mkDoc()
+		lo, hi := price, price+10
+		doc.IdentityLevels[0].Lo, doc.IdentityLevels[0].Hi = &lo, &hi
+		doc.IdentityLevels[0].Label = "FVG"
+		// No sc.Fvg: a plain scenario naming the FVG zone level.
+		at.observeScenarioIdentity(&doc, "p1", 1, []kernel.ScenarioEval{{ID: "S1", Anchor: price + 10, HasAnchor: true}}, now)
+		c, err := st.LevelIdentityCounts(at.id)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if c.HeuristicDisagreed != 0 {
-			t.Fatalf("a seated zone-edge scenario must NOT record heuristic disagreement, got %d", c.HeuristicDisagreed)
+			t.Fatalf("a zone-accepted edge anchor must NOT record for a plain FVG zone level, got %d", c.HeuristicDisagreed)
 		}
 	})
 }

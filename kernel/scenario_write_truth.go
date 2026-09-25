@@ -135,11 +135,12 @@ func identityZone(l PlanLevel) (lo, hi float64) {
 	return lo, hi
 }
 
-// identityAgreesZoneAware is ResolveScenarioIdentity's Disagreed predicate
+// IdentityAgreesZoneAware is ResolveScenarioIdentity's Disagreed predicate
 // (|price − anchor| > cluster tolerance) made zone-aware: an anchor inside the
 // resolved level's own [lo − tol, hi + tol] agrees. For a line level the two
-// predicates are identical.
-func identityAgreesZoneAware(l PlanLevel, anchor float64) bool {
+// predicates are identical. Exported: the trader's zone-exemption predicate
+// (skeptic F12) must be this SAME test, never a label/type allowlist.
+func IdentityAgreesZoneAware(l PlanLevel, anchor float64) bool {
 	tol := clusterToleranceFor(l.Price)
 	lo, hi := identityZone(l)
 	return anchor >= lo-tol-1e-9 && anchor <= hi+tol+1e-9
@@ -171,7 +172,7 @@ func shortIdentityID(id string) string {
 func identityAtPrice(levels []PlanLevel, price float64) (PlanLevel, bool) {
 	best, found, bestD := PlanLevel{}, false, math.Inf(1)
 	for _, l := range levels {
-		if l.ID == nil || *l.ID == "" || !identityAgreesZoneAware(l, price) {
+		if l.ID == nil || *l.ID == "" || !IdentityAgreesZoneAware(l, price) {
 			continue
 		}
 		if d := math.Abs(l.Price - price); d < bestD {
@@ -239,7 +240,7 @@ func scenarioIdentityWriteIssues(d *PlanDoc, candidates []MapCandidate) []WriteT
 			if lg.ref == nil || lg.ref.RefPrice <= 0 {
 				continue // no leg price to compare — UNKNOWN, not refused
 			}
-			if !identityAgreesZoneAware(l, lg.ref.RefPrice) {
+			if !IdentityAgreesZoneAware(l, lg.ref.RefPrice) {
 				out = append(out, WriteTruthIssue{sc.ID, WriteTruthAnchorUnrelated, fmt.Sprintf("%s identity≠price: %s %s names %s %.2f but that leg (%s) is %.2f — name the level at %.2f", sc.ID, lg.field, shortIdentityID(lg.id), identityLabel(l), l.Price, lg.name, lg.ref.RefPrice, lg.ref.RefPrice)})
 				continue
 			}
@@ -256,7 +257,7 @@ func scenarioIdentityWriteIssues(d *PlanDoc, candidates []MapCandidate) []WriteT
 		}
 		anchor, hasAnchor := ScenarioAnchor(sc, d.Levels)
 		r := ResolveScenarioIdentity(sc, levels, anchor, hasAnchor)
-		if !r.Disagreed || identityAgreesZoneAware(l, anchor) || legIDs[id] {
+		if !r.Disagreed || IdentityAgreesZoneAware(l, anchor) || legIDs[id] {
 			continue
 		}
 		fix := fmt.Sprintf("no map level sits at %.2f — name the level the trigger trades", anchor)
@@ -334,7 +335,7 @@ func onPath(cs []MapCandidate, sc PlanScenario, entry, target, dir, tick float64
 		if hasOwn && c.ID != nil && *c.ID == ownID {
 			own := c.Identity
 			own.Price = c.Price
-			if identityAgreesZoneAware(own, entry) {
+			if IdentityAgreesZoneAware(own, entry) {
 				continue // the traded level itself (entry inside its zone) is not an obstacle
 			}
 		}

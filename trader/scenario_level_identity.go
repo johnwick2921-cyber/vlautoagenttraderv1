@@ -56,7 +56,7 @@ func (at *AutoTrader) recordPlanIdentity(planID string, version int, w kernel.Id
 		// P7 (WAVE 1a-plan, #190) — a zone-accepted scenario disagrees with
 		// the evaluator BY DESIGN (FVG distal-edge anchors, seated S/D+OB
 		// zone edges); the publish path must not count it.
-		if r.Disagreed && !zoneAcceptedIdentity(scenarioByID(doc, id), r) {
+		if r.Disagreed && !zoneAcceptedIdentity(r) {
 			at.recordIdentityEvent(planID, version, id, "heuristic_disagreed", r, now)
 		}
 	}
@@ -90,7 +90,7 @@ func (at *AutoTrader) observeScenarioIdentity(doc *kernel.PlanDoc, planID string
 		e := byID[sc.ID]
 		r := kernel.ResolveScenarioIdentity(sc, doc.IdentityLevels, e.Anchor, e.HasAnchor)
 		out[sc.ID] = r
-		if r.Disagreed && at.store != nil && !zoneAcceptedIdentity(sc, r) {
+		if r.Disagreed && at.store != nil && !zoneAcceptedIdentity(r) {
 			at.recordIdentityEvent(planID, version, sc.ID, "heuristic_disagreed", r, now)
 		}
 	}
@@ -157,25 +157,18 @@ func (at *AutoTrader) logLevelIdentityBootAt(now time.Time) {
 	at.logInfof("%s · trader=%s", writeTruthBootLine(at.store, at.id), at.id)
 }
 
-// zoneAcceptedIdentity (P7, #190) — a zone-accepted scenario disagrees with the
-// evaluator anchor by design: an FVG entry anchors at the DISTAL edge
-// (ScenarioAnchor), and a seated S/D+OB zone edge is a band, not a price. These
-// are never recorded as heuristic disagreement.
-func zoneAcceptedIdentity(sc kernel.PlanScenario, r kernel.ScenarioIdentity) bool {
-	if sc.Fvg != nil {
-		return true
+// zoneAcceptedIdentity (P7, #190; skeptic F12) — a zone-accepted scenario
+// disagrees with the evaluator anchor by design: an FVG entry anchors at the
+// DISTAL edge, and a seated S/D+OB zone edge is a band, not a price. The ONE
+// predicate is the KERNEL's zone-aware one — the same test the write check
+// runs (kernel.IdentityAgreesZoneAware) — so an anchor inside the resolved
+// level's [lo−tol, hi+tol] agrees, whatever the level's label or type. The
+// P7 label/type allowlist was wrong in BOTH directions: a plain FVG zone
+// level (label "FVG") at a zone edge still recorded, and an out-of-zone
+// anchor naming a Demand/Supply/OB label stopped recording.
+func zoneAcceptedIdentity(r kernel.ScenarioIdentity) bool {
+	if r.Level == nil || r.EvaluatorAnchor == nil {
+		return false
 	}
-	return r.Level != nil && r.Level.Label != "" && seatedLevelSide(r.Level.Label) != ""
-}
-
-func scenarioByID(doc *kernel.PlanDoc, id string) kernel.PlanScenario {
-	if doc == nil {
-		return kernel.PlanScenario{}
-	}
-	for _, sc := range doc.Scenarios {
-		if sc.ID == id {
-			return sc
-		}
-	}
-	return kernel.PlanScenario{}
+	return kernel.IdentityAgreesZoneAware(*r.Level, *r.EvaluatorAnchor)
 }
