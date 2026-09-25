@@ -1,9 +1,0 @@
-{
-  "build_sha": "4127979f2fcc5615f4e8b17540f7aba74bb4ea92",
-  "path": "/tmp/structural-stop-release-build/nofx-bin.next",
-  "bytes": 73418400,
-  "md5": "300dc70535f708be9f6278d252124ba4",
-  "sha256": "a826d045a5cf831def4f52af0762e9dc1a8505034cc9b0f2e20c4c2f10b800f9",
-  "vcs_modified": false,
-  "toolchain": "go1.25.13"
-}
