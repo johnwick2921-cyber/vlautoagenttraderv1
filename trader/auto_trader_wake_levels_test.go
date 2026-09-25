@@ -315,6 +315,11 @@ func TestMaybeWakePlannerFoldsOverlaySeatedLevel(t *testing.T) {
 	defer drainReReads(t) // T2: a fired wake spawns an async planner read; join before the seam resets.
 	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, WakeMinIntervalMin: 10}})
 	now := time.Date(2026, 8, 25, 10, 0, 0, 0, kernel.CTLocation())
+	// Skeptic F10: seam the trader clock to the fixture — the read's preflight
+	// freshness (traderNow) must judge the fixture tape, not the wall clock
+	// (30 days later, every fixture bar stale).
+	testNow = func() time.Time { return now }
+	t.Cleanup(func() { testNow = nil })
 	// 15m bars: last closed bar closes 95.0 — far below a seated Demand 100.
 	bars := wakeBars(15, now.UnixMilli(), [][4]float64{
 		{100.0, 101.0, 99.0, 100.0},
@@ -326,9 +331,19 @@ func TestMaybeWakePlannerFoldsOverlaySeatedLevel(t *testing.T) {
 		{99.0, 99.5, 94.5, 95.0},
 	})
 	prev := market.FuturesBarsProvider
+	// 1m serves the read's preflight freshness — feedNewestBarAge assumes 1m
+	// spacing (newestStamp = last OpenTime + 60s), so the 1m tape must be
+	// 1m-spaced and end at now, or the read refuses stale before it claims.
+	oneMin := wakeBars(1, now.UnixMilli(), make([][4]float64, 130))
+	for i := range oneMin {
+		oneMin[i].Open, oneMin[i].High, oneMin[i].Low, oneMin[i].Close = 100, 100, 100, 100
+	}
 	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline {
-		if tf == "15m" {
+		if tf == "15m" || tf == "5m" {
 			return bars
+		}
+		if tf == "1m" {
+			return oneMin
 		}
 		return nil
 	}
@@ -351,5 +366,22 @@ func TestMaybeWakePlannerFoldsOverlaySeatedLevel(t *testing.T) {
 	at.maybeWakePlannerOnLevelEventsAt(now, "NY", "2026-08-25", row)
 	if at.lastLevelWakeKey == "" {
 		t.Fatal("the owner overlay's seated Demand level must wake the planner through the fold")
+	}
+	// Skeptic F10: the deferred drain alone is NOT a join here — the goroutine
+	// evaluates priorPlanLevelLines (store reads) BEFORE it claims, so the
+	// drain can run while the claim maps are empty and return, and the seam
+	// resets (provider restore, store close) land while the read is still
+	// ahead. Wait until the claim was SEEN and the stream closed again: the
+	// read ran to completion before the test returns, and the drain below
+	// then has nothing left to wait for (or joins a real claim).
+	seenOpen := false
+	if !waitFor(t, 10*time.Second, func() bool {
+		_, open := anyPlannerStreamOpen()
+		if open {
+			seenOpen = true
+		}
+		return seenOpen && !open
+	}) {
+		t.Fatal("the fired wake's read never ran to completion before the seam resets (the join must see the claim)")
 	}
 }
