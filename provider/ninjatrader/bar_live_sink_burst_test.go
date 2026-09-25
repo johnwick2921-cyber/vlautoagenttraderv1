@@ -87,7 +87,7 @@ func TestLiveSinkRealisticHourOpenBurstDropsNothing(t *testing.T) {
 
 func TestLiveSinkOverCapBurstIsCountedAndWarnedOnce(t *testing.T) {
 	var buf bytes.Buffer
-	old := logger.Log.Writer()
+	old := logger.Log.Out
 	logger.Log.SetOutput(&buf)
 	defer logger.Log.SetOutput(old)
 

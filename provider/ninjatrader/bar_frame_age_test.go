@@ -27,6 +27,7 @@ func TestDrainBarIngest_StaleLiveFrameReachesTheCacheButNotTheSink(t *testing.T)
 	defer func() { cancel(); s.wg.Wait() }()
 	go s.drainBarIngest(ctx)
 
+	before := StaleLiveFrames()
 	old := time.Now().Add(-5 * time.Minute).UnixMilli()
 	s.barIngestCh <- barIngestMsg{
 		symbol: "MNQ", timeframe: "5m", contract: "MNQ 12-26",
@@ -37,8 +38,11 @@ func TestDrainBarIngest_StaleLiveFrameReachesTheCacheButNotTheSink(t *testing.T)
 		t.Fatalf("a frame emitted five minutes ago must not be fanned out as a live entry event (got tf=%s)", tf)
 	case <-time.After(400 * time.Millisecond):
 	}
-	if n := StaleLiveFrames(); n != 1 {
-		t.Fatalf("the refused frame must be counted, got %d", n)
+	// The counter is a package-wide singleton that other tests and -count=N
+	// iterations only ever ADD to — the refusal is judged by the DELTA, never
+	// an absolute value (the class-60 singleton-counter class).
+	if n := StaleLiveFrames() - before; n != 1 {
+		t.Fatalf("the refused frame must be counted exactly once, got %d", n)
 	}
 	if s.barCache.Count("MNQ", "5m") == 0 {
 		t.Fatalf("the frame is still real data and must reach the cache")
