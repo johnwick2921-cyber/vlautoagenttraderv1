@@ -1257,10 +1257,13 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 	// bound account has no snapshot yet (AddOn hasn't streamed it), so this never
 	// regresses to zeros vs today's behavior. The returned "account" field names
 	// which NT account these numbers actually reflect.
-	acct, ok := t.server.AccountStateFor(t.boundAccount)
-	if !ok || t.boundAccount == "" {
-		acct, ok = t.server.AccountState()
+	// W117-F F7: risk sizing and display must use the bound account's own
+	// received snapshot. Another account's equity is never a substitute for no
+	// answer (ports #117 23c24c6d).
+	if t.server == nil || strings.TrimSpace(t.boundAccount) == "" {
+		return nil, fmt.Errorf("ninjatrader/tcp: balance unavailable — no bound account")
 	}
+	acct, ok := t.server.AccountStateFor(t.boundAccount)
 	if ok {
 		// Plan 4 Stage 4 — notify parent AutoTrader that balance has arrived
 		// (used by defer-until-balance guard in runCycle).
@@ -1284,9 +1287,7 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 			"availableBalance":      avail,
 			"totalWalletBalance":    acct.CashValue,
 			"totalUnrealizedProfit": acct.UnrealizedPnL,
-			// Which NT account these numbers actually reflect (bound account when
-			// its snapshot exists, else the streamed current — see the decouple
-			// above). Lets the dashboard label/guard the balance accurately.
+			// The received bound account, never the shared display account.
 			"account": acct.Account,
 			// Issue 2B — NT reports its own realized/unrealized P&L per account.
 			// brokerNativePnL signals GetAccountInfo to use realized+unrealized as
@@ -1297,10 +1298,7 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 			"brokerNativePnL":     true,
 		}, nil
 	}
-	return map[string]interface{}{
-		"totalEquity":      0.0,
-		"availableBalance": 0.0,
-	}, nil
+	return nil, fmt.Errorf("ninjatrader/tcp: balance unavailable for bound account %q — no snapshot", t.boundAccount)
 }
 
 // IsFeedConnected reports whether the NT8 price feed is usable (delegates to the
@@ -1570,6 +1568,9 @@ func (t *TCPTrader) CloseConfirmedSince(symbol, side string, sinceMs int64) bool
 // Called by the /api/account/select handler to ensure GetPositions() fetches fresh
 // data from the newly selected account (not stale cached fills from the old account).
 func (t *TCPTrader) ResetAccountState() {
+	// Reconcile also takes pendingMu before mu; keep that lock order.
+	t.pendingMu.Lock()
+	defer t.pendingMu.Unlock()
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.hasFill = false

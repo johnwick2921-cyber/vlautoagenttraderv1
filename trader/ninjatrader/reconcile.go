@@ -370,12 +370,14 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 			// 577+578 duplicates — an armed-materialized row can carry
 			// account="" (its order_update frame predates the account binding),
 			// so the account-scoped lookup above misses it and reconcile
-			// materializes a SECOND row for the same NT8 position. Retry
-			// account-agnostically; if found, backfill the bound account so the
-			// later close-sync frame (which carries the account) finds its owner.
-			owner, oerr = st.Position().GetOpenPositionByAccountSymbol("", sym, side)
+			// materializes a SECOND row for the same NT8 position. Retry only
+			// within THIS trader's unassigned rows; if found, backfill the bound
+			// account so the later close-sync frame (which carries the account)
+			// finds its owner (W117-F F7 — a cross-trader row must never swallow
+			// the backfill).
+			owner, oerr = unassignedOpenForTrader(st, traderID, sym, side)
 			if oerr != nil {
-				logger.Warnf("ninjatrader/tcp: reconcile untracked owner lookup (account-agnostic) failed (%s %s): %v", sym, side, oerr)
+				logger.Warnf("ninjatrader/tcp: reconcile untracked owner lookup (trader-scoped) failed (%s %s): %v", sym, side, oerr)
 				continue
 			}
 			if owner != nil && owner.Account == "" && acct != "" {
@@ -663,3 +665,29 @@ func RepairArmedLineage(st *store.Store, traderID string) int {
 // pre-open reconcile treats a ledger fill younger than twice this as not yet
 // materialized, so it explains the position instead of flattening it).
 const UntrackedGraceMs = untrackedGraceMs
+
+// unassignedOpenForTrader returns THIS trader's newest unassigned (account="")
+// open row for symbol/side. The CLASS-27 dedupe retry must never reach into
+// another trader's rows (W117-F F7, ports #117 23c24c6d). store/position.go is
+// slice A's file in this wave, so the trader-scoped filter lives here on top of
+// the already trader-scoped GetOpenPositions.
+func unassignedOpenForTrader(st *store.Store, traderID, symbol, side string) (*store.TraderPosition, error) {
+	if st == nil || st.Position() == nil {
+		return nil, nil
+	}
+	open, err := st.Position().GetOpenPositions(traderID)
+	if err != nil {
+		return nil, err
+	}
+	var newest *store.TraderPosition
+	for _, po := range open {
+		if po.Account != "" || !strings.EqualFold(po.Side, side) ||
+			market.Normalize(po.Symbol) != market.Normalize(symbol) {
+			continue
+		}
+		if newest == nil || po.EntryTime > newest.EntryTime {
+			newest = po
+		}
+	}
+	return newest, nil
+}
