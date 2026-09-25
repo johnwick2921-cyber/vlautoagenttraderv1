@@ -73,6 +73,24 @@ migrate_with() { # <binary> <datadir> <label>
   ( cd "$dir" && $NETNS env RSA_PRIVATE_KEY="$RSA_PRIVATE_KEY" \
       DATA_ENCRYPTION_KEY="$DATA_ENCRYPTION_KEY" JWT_SECRET="$JWT_SECRET" \
       timeout "${BOOT_SECS}s" "$bin" >"$log" 2>&1 ) || true
+  # THE OPEN PROOF (PR B [9]): the binary logs "✅ Database initialized" ONLY
+  # after store init completes (store/store.go). Steps 2 and 3 used to pass on
+  # artifacts inherited from step 1 — this gate reads the boot line THIS boot
+  # printed, so a binary that never opened the database fails here.
+  local open_line
+  open_line="$(grep -F '✅ Database initialized' "$log" 2>/dev/null | tail -1 || true)"
+  if [ -z "$open_line" ]; then
+    echo "db-compat: $label — the binary never opened the database (no '✅ Database initialized' boot line)"
+    tail -20 "$log" | sed 's/^/    /'
+    return 1
+  fi
+  # ANY fatal line fails the step (logrus prints level=fatal). A migration
+  # error the regex below misses can no longer pass as tested:true.
+  if grep -qiE 'fatal' "$log"; then
+    echo "db-compat: $label — fatal line in the log:"
+    grep -inE 'fatal' "$log" | head -5 | sed 's/^/    /'
+    return 1
+  fi
   if [ ! -f "$dir/data/data.db" ]; then
     echo "db-compat: $label — no database was created at $dir/data/data.db"
     tail -20 "$log" | sed 's/^/    /'

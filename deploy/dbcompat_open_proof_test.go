@@ -108,16 +108,19 @@ func TestDbcompatStepRequiresTheDatabaseToOpen(t *testing.T) {
 		t.Fatalf("the refusal must name the missing open proof; got:\n%s", out)
 	}
 
-	// (b) a FATAL the old regex misses ("duplicate column name") must fail.
+	// (b) a fatal the old regex misses must fail: the boot OPENS the database
+	//     (marker present) and THEN fatals — the open gate passes and the fatal
+	//     gate is what must fire. ("Failed to start API server" is a real
+	//     post-init fatal, absent from the old migration regex.)
 	dirB := t.TempDir()
 	makeFiveTableDB(t, dirB)
-	fatalBin := writeStub("fatal-before-open.sh", `printf '%s\n' "[FATA] store: duplicate column name: foo" >&2; exit 1`)
+	fatalBin := writeStub("fatal-after-open.sh", `printf '%s\n' '✅ Database initialized (GORM, SQLite)'; printf '%s\n' 'time="2026-09-25T03:00:00Z" level=fatal msg="❌ Failed to start API server: listen tcp :8080: bind: address already in use"'; exit 1`)
 	out, rc = runMigrateWith(t, fn, fatalBin, dirB, "probe-unmatched-fatal")
 	if rc == 0 {
-		t.Fatalf("a boot that FATALs before opening the database passed the step:\n%s", out)
+		t.Fatalf("a boot that fatals after opening passed the step:\n%s", out)
 	}
-	if !strings.Contains(out, "FATAL") {
-		t.Fatalf("the refusal must name the FATAL; got:\n%s", out)
+	if !strings.Contains(out, "fatal line in the log") {
+		t.Fatalf("the refusal must name the fatal gate; got:\n%s", out)
 	}
 
 	// (c) the honest minimal proof: the binary's own post-store-init boot line
