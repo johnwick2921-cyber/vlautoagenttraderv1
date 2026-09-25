@@ -744,15 +744,40 @@ func (s *ArmedOrderStore) RequestCancel(id int64, reason string, nowMs int64) er
 // ConfirmCancel is the ONLY way a row becomes 'cancelled' through the cancel
 // path, and it requires the id of the snapshot whose book no longer listed the
 // order. A caller with no snapshot cannot call it — which is the point.
+//
+// F8 (port of #117 234b0262): a confirmation is not a write — it is a state
+// transition with broker evidence. No persisted snapshot id refuses; a row that
+// is not cancel_pending refuses; an unavailable store is an error, never a
+// silent success; and the transition is a transaction, so a row that changed
+// under the caller is refused, not overwritten.
 func (s *ArmedOrderStore) ConfirmCancel(id int64, snapshotID int64, reason string) error {
 	if s == nil || s.db == nil {
-		return nil
+		return fmt.Errorf("armed order store unavailable")
 	}
-	return s.db.Model(&ArmedOrderDB{}).Where("id = ?", id).Updates(map[string]any{
-		"state":                      StateCancelled,
-		"state_reason":               reasonKeepingWithdraw(reason),
-		"cancel_settled_snapshot_id": snapshotID,
-	}).Error
+	if snapshotID <= 0 {
+		return fmt.Errorf("cancel confirmation requires a persisted snapshot id")
+	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		var row ArmedOrderDB
+		if err := tx.First(&row, id).Error; err != nil {
+			return err
+		}
+		if row.State != StateCancelPending {
+			return fmt.Errorf("arm %d is %s, not cancel_pending", id, row.State)
+		}
+		res := tx.Model(&ArmedOrderDB{}).Where("id = ? AND state = ?", id, StateCancelPending).Updates(map[string]any{
+			"state":                      StateCancelled,
+			"state_reason":               reasonKeepingWithdraw(reason),
+			"cancel_settled_snapshot_id": snapshotID,
+		})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected != 1 {
+			return fmt.Errorf("arm %d changed during cancel confirmation", id)
+		}
+		return nil
+	})
 }
 
 // ListCancelPending returns this trader's rows awaiting confirmation, oldest
