@@ -354,13 +354,31 @@ func composeGeometry(doc *kernel.PlanDoc, sc kernel.PlanScenario, leg kernel.Pla
 	r.NetGainPoints = geometryNumber(net)
 	r.LossUSD = geometryNumber(loss)
 	if net <= 0 {
-		return refuse("net_nonpositive", fmt.Sprintf("gain=%.4f cost=%.4f net=%.4f", g, p.CostPoints, net))
+		// A2: state the minimum target that would pass (net strictly positive),
+		// computed from the same cost model that judged it.
+		minTarget := math.Ceil((leg.Entry+p.CostPoints)/tick) * tick
+		if !long {
+			minTarget = math.Floor((leg.Entry-p.CostPoints)/tick) * tick
+		}
+		if long && minTarget-leg.Entry <= p.CostPoints {
+			minTarget += tick
+		}
+		if !long && leg.Entry-minTarget <= p.CostPoints {
+			minTarget -= tick
+		}
+		return refuse("net_nonpositive", fmt.Sprintf("gain=%.4f cost=%.4f net=%.4f min_target=%.2f", g, p.CostPoints, net, minTarget))
 	}
 	if p.MinRR <= 0 || !geometryFinite(p.MinRR) {
 		return refuse("no_provenance", "rr_policy_missing")
 	}
 	if g/d+1e-9 < p.MinRR {
-		return refuse("rr", fmt.Sprintf("gain=%.4f risk=%.4f rr=%.6f min=%.6f", g, d, g/d, p.MinRR))
+		// A2: state the minimum target that would pass at min_rr, tick-rounded
+		// outward (a target at exactly the minimum is legal).
+		minTarget := math.Ceil((leg.Entry+d*p.MinRR)/tick) * tick
+		if !long {
+			minTarget = math.Floor((leg.Entry-d*p.MinRR)/tick) * tick
+		}
+		return refuse("rr", fmt.Sprintf("gain=%.4f risk=%.4f rr=%.6f min=%.6f min_target=%.2f", g, d, g/d, p.MinRR, minTarget))
 	}
 	// Owner clarification 2026-09-13: the owner controls the DAILY loss limit.
 	// Geometry reports planned contract exposure; the existing daily-loss and

@@ -307,7 +307,13 @@ func EntryGate(in EntryIntent) (reason string, refused bool) {
 			dist = wStop - wEntry
 		}
 		if dist+1e-9 < in.MinSLMult*in.ATR5m {
-			return fmt.Sprintf("entry_gate: stop %.2f too close (%.2f < %.2f = %.1f×ATR5m)%s", wStop, dist, in.MinSLMult*in.ATR5m, in.MinSLMult, wireNote), true
+			// A2: name the stop that would pass the floor (or farther).
+			floorV := in.MinSLMult * in.ATR5m
+			passStop := wEntry - floorV
+			if side == "short" {
+				passStop = wEntry + floorV
+			}
+			return fmt.Sprintf("entry_gate: stop %.2f too close (%.2f < %.2f = %.1f×ATR5m) — passing stop %.2f or farther%s", wStop, dist, floorV, in.MinSLMult, passStop, wireNote), true
 		}
 	}
 

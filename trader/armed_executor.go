@@ -2372,7 +2372,17 @@ func (at *AutoTrader) armGateVerdictFor(sc kernel.PlanScenario, leg kernel.PlanA
 		rr = (leg.Entry - leg.Target) / (leg.Stop - leg.Entry)
 	}
 	if rr+1e-9 < at.armMinRRFor(cfg) {
-		return fmt.Sprintf("R:R %.2f below arm min %.2f (studio min_risk_reward_ratio)", rr, at.armMinRRFor(cfg))
+		// A2: name the minimum target that would pass at the arm floor.
+		minRR := at.armMinRRFor(cfg)
+		dmin := leg.Entry - leg.Stop
+		if side == "short" {
+			dmin = leg.Stop - leg.Entry
+		}
+		minTarget := leg.Entry + dmin*minRR
+		if side == "short" {
+			minTarget = leg.Entry - dmin*minRR
+		}
+		return fmt.Sprintf("R:R %.2f below arm min %.2f (studio min_risk_reward_ratio) — minimum target %.2f", rr, minRR, minTarget)
 	}
 	// min-SL — the same floor (×ATR5m) the entry path enforces.
 	if atr5m > 0 && !(len(structural) == 1 && structural[0]) {
@@ -2381,7 +2391,13 @@ func (at *AutoTrader) armGateVerdictFor(sc kernel.PlanScenario, leg kernel.PlanA
 			dist = leg.Stop - leg.Entry
 		}
 		if dist+1e-9 < kernel.MinSLATRMult()*atr5m {
-			return fmt.Sprintf("stop %.2f too close (%.2f < %.2f = %.1f×ATR5m)", leg.Stop, dist, kernel.MinSLATRMult()*atr5m, kernel.MinSLATRMult())
+			// A2: name the stop that would pass the floor (or farther).
+			floorV := kernel.MinSLATRMult() * atr5m
+			passStop := leg.Entry - floorV
+			if side == "short" {
+				passStop = leg.Entry + floorV
+			}
+			return fmt.Sprintf("stop %.2f too close (%.2f < %.2f = %.1f×ATR5m) — passing stop %.2f or farther", leg.Stop, dist, floorV, kernel.MinSLATRMult(), passStop)
 		}
 	}
 	// HTF veto — the same veto the entry path enforces, AND the same switch.
