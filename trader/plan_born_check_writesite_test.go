@@ -343,13 +343,12 @@ func TestW2LiveReadStampsTheReadClock(t *testing.T) {
 }
 
 // TestSeamedWakePublishesAtTheSeam (WAVE 1a-plan P15 revert, CTO 03:31) —
-// the seamed wake freezes the READ clock ONLY. Driving the production seamed
-// entry (runPlannerReadWithTriggerClaimedCtx with a FROZEN now) and a scripted
-// AI call that occupies a measurable wall duration: ReadClockMs must be the
-// frozen instant, and PublishClockMs must sit AT LEAST the call's duration
-// later (the born-check then spans those groups). Under the P15 defect the
-// publish instant WAS the frozen wake instant — PublishClockMs == ReadClockMs,
-// difference 0.
+// the seamed wake freezes the READ clock ONLY. publishClock nil ⇒ traderNow,
+// and traderNow is the SEAMED instant when testNow is set — so a seamed read
+// publishes AT the seam (span 0, deterministic). That is the seam contract,
+// not the P15 defect. The P15 defect this wave closed is the LIVE case: the
+// LIVE publish clock must sit at least the AI call's duration after the read
+// — pinned by TestLivePublishClockCoversTheAICall below.
 func TestSeamedWakePublishesAtTheSeam(t *testing.T) {
 	at, st, _ := realPathTrader(t, false, func(int, string) (string, error) {
 		time.Sleep(600 * time.Millisecond) // the AI call occupies the wire
@@ -374,7 +373,7 @@ func TestSeamedWakePublishesAtTheSeam(t *testing.T) {
 	// CTO re-fix (2026-09-24): publishClock nil ⇒ traderNow — in a SEAMED
 	// test the publish is the seamed instant (deterministic), so the span is 0.
 	// The LIVE property lives where testNow is nil — pinned by
-	// TestTraderNowIsLiveWhenUnseamed below.
+	// TestLivePublishClockCoversTheAICall below.
 	if span := *row.PublishClockMs - *row.ReadClockMs; span != 0 {
 		t.Fatalf("a seamed read must publish at the seam: publish-read=%dms, want 0", span)
 	}
@@ -394,5 +393,39 @@ func TestTraderNowIsLiveWhenUnseamed(t *testing.T) {
 	after := time.Now()
 	if got.Before(before.Add(-time.Second)) || got.After(after.Add(time.Second)) {
 		t.Fatalf("traderNow must be the live clock when unseamed: got %v, wall [%v, %v]", got, before, after)
+	}
+}
+
+// slowPlanClient occupies the wire for a measurable duration so the live
+// publish clock's coverage of the AI call is observable at the write site.
+type slowPlanClient struct{ planClient }
+
+func (p *slowPlanClient) CallWithMessages(_, user string) (string, error) {
+	time.Sleep(600 * time.Millisecond)
+	return mapCompliantPlanJSON(user), nil
+}
+
+// TestLivePublishClockCoversTheAICall (skeptic F4, 2026-09-24) — the LIVE
+// publish clock (publishClock nil ⇒ traderNow with testNow nil) must sit AT
+// LEAST the AI call's duration after the read instant on the written row, or
+// every born group closing during the call is never checked. The seamed pins
+// are blind to this: they publish at the seam BY CONTRACT. RED = the P15
+// defect (publishClock := the read-start instant) → publish == read.
+func TestLivePublishClockCoversTheAICall(t *testing.T) {
+	if testNow != nil {
+		t.Fatal("fixture: testNow must be nil — this pin is for the LIVE clock")
+	}
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
+	at.mcpClient = &slowPlanClient{}
+	now := time.Now()
+	if !at.runPlannerReadWithTriggerClaimedCtx(now, "NY", "2026-09-01", "owner_reset", "", nil, true) {
+		t.Fatal("read did not run")
+	}
+	row := latestRow(t, st, "2026-09-01", "NY")
+	if row.ReadClockMs == nil || row.PublishClockMs == nil {
+		t.Fatalf("a live read must stamp both clocks: %+v", row)
+	}
+	if span := *row.PublishClockMs - *row.ReadClockMs; span < 500 {
+		t.Fatalf("the live publish clock must cover the AI call: publish-read=%dms, want ≥ 500 (the P15 defect stamps 0)", span)
 	}
 }
