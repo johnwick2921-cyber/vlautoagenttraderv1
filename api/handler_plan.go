@@ -1806,23 +1806,17 @@ func (s *Server) handlePlanAskApply(c *gin.Context) {
 	}
 	// Bind the apply to the plan the reply was authored against: a PROPOSE-MERGE
 	// from an earlier (rolled/expired) plan must not silently patch a different
-	// active plan.
+	// active plan. F18 — the session resolves through the wrap-aware chain date
+	// BEFORE it is dereferenced; a gap is the refusal, never a nil session.
 	now := time.Now()
-	reg := s.planRegistry()
-	tradeDate := now.In(planChicago()).Format("2006-01-02")
-	sess, ok := reg.ActiveSession(now)
-	// P1 — sessionRunnable, not the raw registry flag.
-	runnable := true
-	if s.traderManager != nil {
-		if at, aErr := s.traderManager.GetTrader(traderID); aErr == nil && at != nil {
-			if okR, _ := at.SessionRunnable(sess); !okR {
-				runnable = false
-			}
-		}
+	sess, tradeDate, ok := s.planMutationSessionAt(traderID, now)
+	if !ok {
+		c.JSON(409, gin.H{"error": "this reply was authored against a plan that is no longer active"})
+		return
 	}
 	legacy := store.MakePlanID(tradeDate, sess.Name)
 	scoped := store.MakePlanIDForTrader(traderID, tradeDate, sess.Name)
-	if !ok || !runnable || (msg.PlanID != legacy && msg.PlanID != scoped) {
+	if msg.PlanID != legacy && msg.PlanID != scoped {
 		c.JSON(409, gin.H{"error": "this reply was authored against a plan that is no longer active"})
 		return
 	}
@@ -2387,20 +2381,11 @@ func (s *Server) handlePlanRealign(c *gin.Context) {
 	}
 
 	// SKIP: no active plan · night / disabled session · expired plan.
+	// F18 — the session resolves through the wrap-aware chain date (the same
+	// date plan reads use), and a gap is a skip, never a nil session.
 	now := time.Now()
-	reg := s.planRegistry()
-	tradeDate := now.In(planChicago()).Format("2006-01-02")
-	sess, ok := reg.ActiveSession(now)
-	// P1 — sessionRunnable, not the raw registry flag.
-	runnable := true
-	if s.traderManager != nil {
-		if at, aErr := s.traderManager.GetTrader(traderID); aErr == nil && at != nil {
-			if okR, _ := at.SessionRunnable(sess); !okR {
-				runnable = false
-			}
-		}
-	}
-	if !ok || !runnable {
+	sess, tradeDate, ok := s.planMutationSessionAt(traderID, now)
+	if !ok {
 		c.JSON(200, gin.H{"status": "skipped", "reason": "night_or_disabled_session"})
 		return
 	}
