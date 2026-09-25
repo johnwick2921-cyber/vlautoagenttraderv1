@@ -143,6 +143,12 @@
 //   The bar-feed guards this pin protects are byte-untouched by both deltas:
 //   SubscribeBarsHistoryFor, the bars_history_request write, and the
 //   bars_history_data / _error fan-out.
+// Wire baseline advanced 2026-09-25 for W117 slice B (fix/w117-b-cancel-truth,
+// port of #117 2f4db4f3): tcp_server.go's history-delivery send now holds
+// histSubMu through the nonblocking channel send (teardown closes the channel
+// under the write lock, so the read lock must span lookup + delivery). The
+// bars_history_data / _error fan-out guards themselves are byte-untouched;
+// only the lock release point moved. No identifier renamed.
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
