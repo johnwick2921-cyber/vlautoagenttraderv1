@@ -56,7 +56,10 @@ import (
 	"nofx/internal/installpath"
 	"nofx/internal/updateauth"
 
-	_ "modernc.org/sqlite"
+	// See the note in internal/activation/steps.go: a library never imports a
+	// driver directly. This package and that one are linked together by the M4
+	// worker, so between them they were two registrants in one binary.
+	_ "nofx/store/sqlitedriver"
 )
 
 // Seams (tests only): root refusal, the attended check and the clock.
