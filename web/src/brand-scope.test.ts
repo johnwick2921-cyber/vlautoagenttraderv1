@@ -21,6 +21,11 @@
 //     absent NT8 identity as n/a via helloProcessPair (nt8_pid/assembly_mvid;
 //     runbook 2026-09-23-addon-m21-f5.md C5, L7). Additive; no identifier
 //     renamed.
+// Bar-feed baseline advanced 2026-09-25 for DS-105 DEFAULTS-SANE (#212 fold):
+//   provider/ninjatrader/tcp_server.go — the live-sink age bound's name is
+//     exported for the Picture floor pins (liveFrameMaxAgeMs → LiveFrameMaxAgeMs
+//     in bar_live_sink.go; tcp_server.go only re-qualifies its WARN field, one
+//     identifier renamed, no guard touched).
 // Bar-feed baselines advanced 2026-09-10 for two owner-dispatched waves that
 // touched the protected files without renaming an identifier:
 //   provider/ninjatrader/tcp_server.go  @ a53359ce (fix/contract-roll: the
