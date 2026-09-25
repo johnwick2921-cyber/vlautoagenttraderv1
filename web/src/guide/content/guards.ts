@@ -8,6 +8,14 @@ export const guards: GuideSection = {
   asBuiltRev: GUIDE_BUILT_REV,
   blocks: [
     {
+      kind: 'p',
+      text: 'An owner plan edit names the revision it was drafted against. If the plan or its overlays moved while the sheet was open, the server refuses the stale draft (409) and the sheet shows the reason inline — a stale edit can never overwrite a newer one.',
+    },
+    {
+      kind: 'p',
+      text: 'Chat memory and clear requests belong to the signed-in owner. A numeric conversation ID in a request cannot select another owner’s history, for either normal or streaming chat.',
+    },
+    {
       kind: 'h',
       text: 'Structural stop and first-zone target — research candidate',
     },

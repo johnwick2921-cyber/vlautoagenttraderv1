@@ -503,6 +503,11 @@ export interface PlanToday {
   /** ITEM 15 — true when ?version= served a superseded version, not the latest. */
   historical?: boolean /** ITEM 15 — the newest stored version, so the card can offer the way back. */
   latest_version?: number
+  /** F17 (WAVE 117 PR-D) — the revision the server served: the client echoes
+   * plan_id + version + overlay_version back on every overlay edit, and a
+   * stale draft is refused 409 instead of overwriting a newer edit. */
+  plan_id?: string
+  overlay_version?: number
   created_at?: string
   /** W7 (weekly-bias wave) — the Sunday weekly-bias doc for the current week
    * (null → grey "none" chip). Advisory view only. */
@@ -876,11 +881,18 @@ export const planApi = {
   // ── P5.1 overlay editing ──
   // Post an RFC-6902 overlay. Returns {ok, error?} — non-silent so armor/conflict
   // rejections (409/422) surface their message for the sheet to show inline.
+  // F17 (WAVE 117 PR-D) — the edit names the plan revision the user VIEWED; a
+  // stale draft is refused 409 by the server, never applied.
   async postOverlay(
     traderId: string,
     patch: PatchOp[],
     origin: 'owner' | 'planner-revised' = 'owner',
-    symbol = 'MNQ'
+    symbol = 'MNQ',
+    revision: {
+      expected_plan_id: string
+      expected_plan_version: number
+      expected_overlay_version: number
+    } | null = null
   ): Promise<{ ok: boolean; error?: string; overlay_version?: number }> {
     const res = await httpClient.request<{ overlay_version: number }>(
       `${API_BASE}/plan/overlay`,
@@ -891,6 +903,7 @@ export const planApi = {
           symbol,
           patch: JSON.stringify(patch),
           origin,
+          ...(revision ?? {}),
         },
         silent: true,
       }

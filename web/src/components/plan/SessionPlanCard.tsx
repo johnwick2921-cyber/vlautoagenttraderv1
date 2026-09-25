@@ -992,6 +992,11 @@ export function SessionPlanCard({
             level={edit.level}
             levelIndex={edit.index}
             scenarioIds={(doc.scenarios ?? []).map((s) => s.id)}
+            planRevision={{
+              planId: plan?.plan_id,
+              planVersion: plan?.version,
+              overlayVersion: plan?.overlay_version,
+            }}
             onClose={() => setEdit({ open: false })}
             onSaved={(change) => {
               onChanged?.()
