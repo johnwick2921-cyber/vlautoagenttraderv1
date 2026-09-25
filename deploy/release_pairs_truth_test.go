@@ -68,11 +68,11 @@ func stepRunBody(t *testing.T, yaml, stepName string) string {
 	if len(body) == 0 {
 		t.Fatalf("step %q run body is empty", stepName)
 	}
-	// strip the common indentation of the run block
+	// strip the run block's own indentation (YAML run bodies nest 2 past run:)
 	out := make([]string, len(body))
 	for i, l := range body {
-		if len(l) >= indent+4 {
-			l = l[indent+4:]
+		if len(l) >= indent+2 {
+			l = l[indent+2:]
 		}
 		out[i] = l
 	}

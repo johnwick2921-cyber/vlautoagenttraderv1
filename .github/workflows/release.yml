@@ -24,6 +24,10 @@ on:
       tag:
         description: 'existing tag to release'
         required: true
+      rollback_from:
+        description: 'optional 40-hex sha of the last released commit to prove rollback against (default: previous v* tag)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -53,20 +57,31 @@ jobs:
       - name: Prove each rollback pair
         id: pairs
         env:
-          # First pair, per the dispatch. Add pairs here as they are proven.
-          PAIRS: '0e490e44:662c79bd'
+          # The pair is DERIVED, never authored: new = the tag being released
+          # (read from refs/tags), old = the last released sha (a 40-hex
+          # ROLLBACK_FROM input, else the highest v* tag below it). Unprovable
+          # ⇒ [] — an uncomputed pair is absent, never fabricated (canon 49/53).
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          ROLLBACK_FROM: ${{ github.event.inputs.rollback_from }}
         run: |
           set -uo pipefail
           sudo apt-get install -y -q sqlite3 >/dev/null 2>&1 || true
-          out='['; sep=''
-          for pair in $PAIRS; do
-            old="${pair%%:*}"; new="${pair##*:}"
-            if bash deploy/release/db-compat.sh "$old" "$new"; then tested=true; else tested=false; fi
-            out="${out}${sep}{\"to_release\":\"${old}\",\"tested\":${tested}}"; sep=','
-          done
-          out="${out}]"
-          echo "json=$out" >> "$GITHUB_OUTPUT"
-          echo "$out"
+          TAG="${TAG:-${GITHUB_REF_NAME:-}}"
+          NEW="$(git rev-parse "refs/tags/${TAG}^{}" 2>/dev/null || true)"
+          printf '%s' "$NEW" | grep -Eqx '[0-9a-f]{40}' || NEW=""
+          OLD="${ROLLBACK_FROM:-}"
+          printf '%s' "$OLD" | grep -Eqx '[0-9a-f]{40}' || OLD=""
+          if [ -z "$OLD" ]; then
+            OLD="$(git for-each-ref --sort=-v:refname --format='%(refname:short) %(objectname)' 'refs/tags/v*' | awk -v cur="$TAG" -v new="$NEW" '$1 != cur && $2 != new { print $2; exit }')"
+          fi
+          if [ -z "$NEW" ] || [ -z "$OLD" ]; then
+            echo '[]'
+            echo 'json=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if bash deploy/release/db-compat.sh "$OLD" "$NEW"; then tested=true; else tested=false; fi
+          echo "[{\"to_release\":\"${OLD}\",\"tested\":${tested}}]"
+          echo "json=[{\"to_release\":\"${OLD}\",\"tested\":${tested}}]" >> "$GITHUB_OUTPUT"
 
   release:
     needs: [dbcompat]
