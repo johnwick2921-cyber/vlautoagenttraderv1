@@ -15,7 +15,7 @@ func TestIdentityProductionWiring(t *testing.T) {
 		"kernel/levels_assemble.go":         {"CaptureIdentityContext"},
 		"kernel/levels_intraday.go":         {"WithFormationClose"},
 		"kernel/map_candidates.go":          {"CandidateIdentity"},
-		"kernel/planner_prompt.go":          {"RenderIdentityMapBlock", "ScenarioWriteTruthSentences"},
+		"kernel/planner_prompt.go":          {"RenderIdentityMapBlockContract", "ScenarioWriteTruthSentences"},
 		"trader/auto_trader_planner.go":     {"stampPlanIdentity", "recordPlanIdentity", "scenarioWriteTruth"},
 		"trader/scenario_write_truth.go":    {"CheckScenarioWriteTruth"},
 		"trader/rootfix_shadow_ab.go":       {"CheckScenarioWriteTruth"},
