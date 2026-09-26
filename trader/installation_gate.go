@@ -277,14 +277,11 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 	})
 
 	// addon_census
-	leg("addon_census", "maintenance_ack census (AddOn; every connection and account, no names)", func() (bool, string) {
-		if !haveWire {
-			return false, noWire
-		}
-		a := wire.Rec.Ack
+	// censusVerdict judges a census that EXISTS: never called with a == nil
+	// (the two census legs disagree on what a nil census means, and their
+	// own cases handle it).
+	censusVerdict := func(a *ntwire.MaintenanceAckPayload) (bool, string) {
 		switch {
-		case a == nil:
-			return false, "addon_ack=n/a — no census"
 		case a.CensusError != "":
 			return false, a.CensusError
 		case a.Connections == nil:
@@ -324,6 +321,41 @@ func InstallationGateStatus(loaded map[string]*AutoTrader, st *store.Store) (g I
 			return false, strings.Join(why, "; ") + " — " + detail
 		}
 		return true, detail
+	}
+	leg("addon_census", "maintenance_ack census (AddOn; every connection and account, no names)", func() (bool, string) {
+		if !haveWire {
+			return false, noWire
+		}
+		a := wire.Rec.Ack
+		if a == nil {
+			return false, "addon_ack=n/a — no census"
+		}
+		return censusVerdict(a)
+	})
+
+	// addon_census_prehold — the C22 pre-hold flat evidence (#206 review
+	// fold). The wire sends maintenance frames ONLY while held
+	// (provider/ninjatrader/maintenance_wire.go: pushMaintenance sends nothing
+	// when !held), so a connection that has never been held has no census and
+	// will not have one until the worker's own hold step. That absence is a
+	// STATE, not missing evidence: the other preflight legs (ledger, planner,
+	// traders) still fail closed on their own evidence, and drain re-checks a
+	// FRESH census right after the hold exists. When a census DOES exist (a
+	// held:false release ack after a prior hold or an operator drill), it is
+	// evidence only while FRESH: a census of any age proves nothing about
+	// right now, so a stale one fails the leg.
+	leg("addon_census_prehold", "maintenance_ack census, pre-hold (C22): fresh when present; never-held connections carry no census yet", func() (bool, string) {
+		if !haveWire {
+			return false, noWire
+		}
+		a := wire.Rec.Ack
+		if a == nil {
+			return true, "no census — this connection has never been held (flat is vouched for by the ledger, planner and trader legs; drain re-checks a fresh census after the hold)"
+		}
+		if wire.AckAge < 0 || wire.AckAge > ntwire.MaintenanceAckMaxAge() {
+			return false, fmt.Sprintf("the census ack is %s old (max %s) — a pre-hold census must be fresh (restart the bot for a fresh connection, or hold it for fresh acks)", wire.AckAge.Round(time.Second), ntwire.MaintenanceAckMaxAge())
+		}
+		return censusVerdict(a)
 	})
 
 	// ledger_exposure — every trader id

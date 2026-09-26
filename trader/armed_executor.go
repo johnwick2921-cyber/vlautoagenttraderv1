@@ -396,7 +396,12 @@ func (at *AutoTrader) maybeManageArmedOrdersAtOpts(snap map[string]kernel.Struct
 	// THE GAP THE FIRST BOOT FOUND (owner ruling 2026-09-11): an authorization
 	// whose scenario is currently declined is retired here, before D4's slot
 	// check and before the placement pass — never placed. OFF → no-op.
-	at.oneSetupRetireDeclined(osCycle, plan, ledger, now)
+	if _, err := at.oneSetupRetireDeclined(osCycle, plan, ledger, now); err != nil {
+		// F13: a retirement that cannot write means inherited arms may place
+		// without a CURRENT permission verdict — no new placement this cycle.
+		at.logWarnf("🎯 one setup retirement unavailable — no new placement this cycle: %v", err)
+		return
+	}
 	// W-EXEC-TRUTH W0 (G1) — the legs THIS pass's authoring gates admitted.
 	// The placement below places only these: a leg a gate refused this pass
 	// (daily force-flat, invalidation, strict, R:R, min-SL, HTF veto, quality,
@@ -1446,8 +1451,19 @@ func (at *AutoTrader) runArmedPlacementAt(bars []market.Kline, sinceMs int64, no
 					at.refuseSlot(r, g, "limit", now)
 					continue
 				}
-				sid, perr := nt.PlaceLimitEntry(at.futuresSymbol(), side, 1, r.EntryPx, r.StopPx, r.TargetPx, func(sid string) error { return ledger.BeginPlacement(r.ID, sid) })
+				registered := false
+				sid, perr := nt.PlaceLimitEntry(at.futuresSymbol(), side, 1, r.EntryPx, r.StopPx, r.TargetPx, func(sid string) error {
+					err := ledger.BeginPlacement(r.ID, sid)
+					registered = err == nil
+					return err
+				})
 				recordResearchPlacement(r, sid, "limit", r.EntryPx, r.StopPx, r.TargetPx, perr)
+				if registered {
+					// Registration commits this pass even when transmission fails;
+					// reconciliation owns the pending attempt, not another arm.
+					placedThisPass = true
+					at.cancelOtherArmsInPlan(ledger, rows, r, now)
+				}
 				if perr != nil {
 					if ntTrader.IsMaintenanceHold(perr) {
 						at.refuseMaintenanceHold(r, perr.Error(), "limit", now, perr)
@@ -2191,6 +2207,12 @@ func logArmedOrderUpdateSummary() {
 
 // onArmedOrderUpdate applies one NT8 order state change to the armed ledger.
 func (at *AutoTrader) onArmedOrderUpdate(u ntwire.OrderUpdatePayload, ledger *store.ArmedOrderStore) {
+	// W117 F2 — a frame owned by the ordered-execution worker has already been
+	// applied (or will be) on the worker goroutine in receive order; the
+	// advisory channel copy must never apply it a second time.
+	if u.OrderedOwned {
+		return
+	}
 	// Frame-receipt proof (cutover confirmation wave): the C# dispatcher's
 	// receive path stays provable from the journal via the 1-line/min summary;
 	// the per-frame content is DEBUG + 1-in-N sampled (FORENSICS HYGIENE —

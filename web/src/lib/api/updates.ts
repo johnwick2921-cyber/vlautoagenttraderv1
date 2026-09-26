@@ -88,8 +88,11 @@ export interface InstallationGate {
   note: string
 }
 
-// ── GET /api/updates (api/handler_updates.go:213 handleUpdatesStatus) ──
-// The M3 payload carries exactly {enrolled, manifest_verifier, install_enabled}.
+// ── GET /api/updates (api/handler_updates.go:495 handleUpdatesStatus) ──
+// The M3 payload carried exactly {enrolled, manifest_verifier, install_enabled};
+// #206's ruling adds worker_listening — MEASURED by the route at request time
+// (a 250 ms bounded dial of the worker socket), never inferred. The UI gates
+// Install on BOTH flags being true and shows the exact reason otherwise.
 // update_available / install_state are OPTIONAL and ABSENT today — they are the
 // fields a later server rev would add for the badge's 'Update available' /
 // 'Installing' states. The badge shows Unknown whenever the API does not
@@ -98,6 +101,7 @@ export interface UpdatesStatus {
   enrolled: boolean
   manifest_verifier: string
   install_enabled: boolean
+  worker_listening?: boolean
   update_available?: boolean
   install_state?: string
 }
@@ -214,5 +218,20 @@ export const updatesApi = {
     )
     if (!res.data) return null
     return { ...res.data, status: res.statusCode }
+  },
+
+  // The receipt route sits behind the same M3 gate as every /updates* call;
+  // a bare <a href> navigation cannot carry X-NOFX-Update and 403s. The page
+  // downloads through this method instead (OQ-7).
+  async receipt(
+    id: string,
+    silent = true
+  ): Promise<{ data: unknown; error?: string } | null> {
+    const res = await httpClient.request<unknown>(
+      `${API_BASE}/updates/jobs/${encodeURIComponent(id)}/receipt`,
+      { headers: UPDATE_HEADERS, silent }
+    )
+    if (!res.success) return { data: null, error: res.message }
+    return { data: res.data }
   },
 }

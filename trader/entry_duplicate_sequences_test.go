@@ -416,6 +416,11 @@ func (w *dupWire) link(at *AutoTrader) *dupLink {
 	// stubbed.
 	born := time.Now()
 	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, born)
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill.
+	// The AddOn emits a positions frame on connect; the rig models that with a
+	// known-flat snapshot so the one-contract guard reads a fresh empty book
+	// (fillAtNT8 later upgrades it to committed for the fill scenarios).
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 
 	return &dupLink{s: s, nt: nt, at: at, eval: NewPictureHtfEvaluator(at, pictureTestResolved(&w.pcfg)), frames: frames, born: born}
 }

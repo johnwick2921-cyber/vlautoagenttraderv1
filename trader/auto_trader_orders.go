@@ -233,14 +233,16 @@ const (
 
 // ntHeldPosition returns the side ("long"/"short") NT8 currently holds for symbol,
 // or "" if flat / unreadable. Reads the NT8 positions snapshot via GetPositions.
-func (at *AutoTrader) ntHeldPosition(symbol string) string {
+func (at *AutoTrader) ntHeldPosition(symbol string) (string, error) {
 	positions, err := at.trader.GetPositions()
 	if err != nil {
-		// P0-cleanup — read error is NOT flat; say so (it changes the
-		// reconcile decision downstream).
-		at.logWarnf("⚠️ positions read failed — reconcile treats as flat, reason: %v", err)
+		// CTO 2026-09-25 addendum 2 — an unreadable book is UNKNOWN, never
+		// flat. Returning "" alone made reconcile read the error as "NT8
+		// flat → proceed" — the exact unknown-as-flat reading F4 exists to
+		// kill. Callers must refuse (or keep waiting) on the error.
+		at.logWarnf("⚠️ positions read failed — reconcile REFUSES as unknown (never flat), reason: %v", err)
 		telemetry.RecordError(at.id, "positions_read_failed", err.Error(), telemetry.CostNone)
-		return ""
+		return "", err
 	}
 	for _, pos := range positions {
 		if pos["symbol"] != symbol {
@@ -254,11 +256,11 @@ func (at *AutoTrader) ntHeldPosition(symbol string) string {
 		amt, _ := pos["positionAmt"].(float64)
 		if amt != 0 {
 			if side := brokerPositionSide(pos); side != "" {
-				return side
+				return side, nil
 			}
 		}
 	}
-	return ""
+	return "", nil
 }
 
 // reconcileBeforeOpenNT (TRACK B): NinjaTrader-only defense-in-depth run before an
@@ -287,11 +289,21 @@ func (at *AutoTrader) reconcileBeforeOpenNTReport(symbol, intendedSide string) (
 	if at.exchange != "ninjatrader" {
 		return false, nil
 	}
+	// W117 F4 (CTO addendum 2) — an UNBOUND NT trader has no book to read and
+	// cannot flatten; reconcile would refuse with a misleading "positions
+	// unknown". Skip so the broker's own binding refusal names the cause (the
+	// entry still refuses at the broker — fail-closed either way).
+	if ntTCP, ok := at.trader.(*ntTrader.TCPTrader); ok && !ntTCP.IsBound() {
+		return false, nil
+	}
 	// Never flatten into a dead feed (Track A also gates upstream; be defensive).
 	if down, status := at.ninjaFeedDown(); down {
 		return false, fmt.Errorf("reconcile-before-open: NT8 feed not Connected (%s) — refusing open", status)
 	}
-	held := at.ntHeldPosition(symbol)
+	held, hErr := at.ntHeldPosition(symbol)
+	if hErr != nil {
+		return false, fmt.Errorf("reconcile-before-open: %w — refusing open (an unreadable book is not an empty book)", hErr)
+	}
 	if held == "" {
 		return false, nil // NT8 flat → proceed
 	}
@@ -334,7 +346,9 @@ func (at *AutoTrader) reconcileBeforeOpenNTReport(symbol, intendedSide string) (
 			return true, nil
 		}
 		// Snapshot fallback (covers a manual/external flatten with no close frame).
-		if at.ntHeldPosition(symbol) == "" {
+		// An UNKNOWN read here is NOT flat: keep waiting (the deadline
+		// refusal fires on timeout — never declare flat on an error).
+		if heldNow, hErr := at.ntHeldPosition(symbol); hErr == nil && heldNow == "" {
 			at.logInfof("✅ reconcile-before-open: %s flattened + confirmed flat (snapshot) — proceeding to open.", symbol)
 			return true, nil
 		}

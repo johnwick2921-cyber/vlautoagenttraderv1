@@ -1,8 +1,11 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+
+	"gorm.io/gorm"
 
 	"nofx/logger"
 	"nofx/market"
@@ -370,20 +373,13 @@ func (s *Server) handleOrderFills(c *gin.Context) {
 		return
 	}
 
-	trader, err := s.traderManager.GetTrader(traderID)
-	if err != nil {
-		SafeNotFound(c, "Trader")
+	// Historical fills belong to the authenticated trader even when its
+	// execution engine is stopped. Never query the shared store by order ID alone.
+	fills, err := s.store.Order().GetTraderOrderFills(traderID, orderID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		SafeNotFound(c, "Order")
 		return
 	}
-
-	store := trader.GetStore()
-	if store == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Store not available"})
-		return
-	}
-
-	// Get fills for this order
-	fills, err := store.Order().GetOrderFills(orderID)
 	if err != nil {
 		SafeInternalError(c, "Get order fills", err)
 		return

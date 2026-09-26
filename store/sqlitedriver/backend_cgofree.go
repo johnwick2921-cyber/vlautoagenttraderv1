@@ -13,3 +13,7 @@ const backendName = "github.com/glebarez/go-sqlite + github.com/glebarez/sqlite 
 func gormDialector(dsn string) gorm.Dialector {
 	return glebsqlite.Open(dsn)
 }
+
+func dialectorConn(conn gorm.ConnPool) gorm.Dialector {
+	return glebsqlite.New(glebsqlite.Config{Conn: conn})
+}

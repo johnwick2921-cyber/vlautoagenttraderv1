@@ -21,6 +21,28 @@
 //     absent NT8 identity as n/a via helloProcessPair (nt8_pid/assembly_mvid;
 //     runbook 2026-09-23-addon-m21-f5.md C5, L7). Additive; no identifier
 //     renamed.
+// Bar-feed baselines advanced 2026-09-25 for W117 PR-A execution-evidence
+// (fix/w117-a-exec-evidence, PR #218; re-pinned after the CTO's frontend gate
+// found the red at HEAD cb025d64 — the wave changed both files and never
+// re-pinned, class 110 again). Deltas against the PR base 0fb0f980, +63 −38:
+//   provider/ninjatrader/tcp_framing.go  sha256 09344e8b… — F1 c66e2d5e
+//     (entry receipt fences: EntryReceipt/ReadOnlyReceipt bookkeeping and the
+//     readLoop note) + F2 e3af23ec (ordered execution dispatch frame fields).
+//   provider/ninjatrader/tcp_server.go   sha256 92bcd868… — F1's GetPositions
+//     fence and F2's ordered-execution dispatch: OrderedHandled guards around
+//     the order fan-out, the handleFill extraction, installNTOrderedExecutions.
+//   No identifier renamed, no guard removed; every removed line re-issued.
+// Bar-feed baselines advanced AGAIN the same day (2026-09-25, CTO review
+// of PR #218): F2 was ruled OUT of the PR and reverted (e3af23ec + b49f659c),
+// and the F-1 P0 fix landed on the PRODUCTION FramePositions path.
+//   provider/ninjatrader/tcp_framing.go  sha256 5c5a015c… — the F2 revert
+//     restored the pre-F2 bytes exactly (the earlier 09344e8b… pin is gone).
+//   provider/ninjatrader/tcp_server.go   sha256 479de30b… — the F2 revert
+//     minus the F-1 receipt-clock stamp in the FramePositions case.
+//   No identifier renamed, no guard removed.
+// Bar-feed baselines advanced AGAIN on the dev merge (origin/dev 9c106d0b,
+// #216/#219 touched tcp_server.go): the MERGED bytes pin to sha256 fdb54226…
+//   (re-computed from the merged tree — both pre-merge pins are superseded).
 // Bar-feed baseline advanced 2026-09-25 for DS-105 DEFAULTS-SANE (#212 fold):
 //   provider/ninjatrader/tcp_server.go — the live-sink age bound's name is
 //     exported for the Picture floor pins (liveFrameMaxAgeMs → LiveFrameMaxAgeMs
@@ -154,6 +176,18 @@
 // under the write lock, so the read lock must span lookup + delivery). The
 // bars_history_data / _error fan-out guards themselves are byte-untouched;
 // only the lock release point moved. No identifier renamed.
+// Wire baselines advanced 2026-09-25 for W117 slice A (fix/w117-a2-ordered-exec,
+// the F2 rebuild — per-(symbol,account) FIFO workers instead of the failed
+// read-goroutine consumers), each delta measured against the PR base:
+//   provider/ninjatrader/tcp_framing.go — the three wire structs gain
+//     OrderedOwned / BookGate json:"-" fields (routing flags, never
+//     serialized). No identifier renamed, no frame type changed.
+//   provider/ninjatrader/tcp_server.go  — orderedMu/orderedOwners/snapSeq
+//     fields; the read loop enqueues order/fill/close to the owner's worker
+//     before the advisory channel send, and advances the snapshot watermark.
+//     The bar-feed guards this pin protects are byte-untouched by the delta.
+//     Re-pinned at the dev-merge heads against the MERGED bytes (093a40e7 →
+//     9ef5a75b…, 9c106d0b → 664cc10b…).
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'

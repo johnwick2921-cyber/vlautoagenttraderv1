@@ -121,6 +121,10 @@ func newPicRig(t *testing.T, id string, tune func(*store.StrategyConfig)) (*zone
 	}
 	t.Cleanup(func() { _ = st.Close() })
 	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill;
+	// the AddOn emits a positions frame on connect. Seed the known-flat book so
+	// the one-contract guard reads an empty account, not an unreadable one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 	at := &AutoTrader{id: id, exchange: "ninjatrader", store: st, trader: ntTrader.NewTCPTrader(s, "MNQ", "Sim101")}
 	at.config.StrategyConfig = &cfg
 	at.mcpClient = &fakeDecisionClient{}

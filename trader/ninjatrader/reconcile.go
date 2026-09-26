@@ -80,6 +80,11 @@ func (t *TCPTrader) StartPositionReconcile(traderID, exchangeID, exchangeType st
 	}
 	t.mu.Unlock()
 	t.reconcileOnce.Do(func() {
+		done := t.observerLifetime()
+		stopped := make(chan struct{})
+		t.mu.Lock()
+		t.reconcileStopped = stopped
+		t.mu.Unlock()
 		// F3 (LONDON-FORENSICS 2026-08-28) — one-time idempotent repair: positions
 		// materialized before the lineage stamp existed (live proof: pos #567)
 		// get their armed-fill plan linkage back from the armed ledger.
@@ -89,8 +94,19 @@ func (t *TCPTrader) StartPositionReconcile(traderID, exchangeID, exchangeType st
 		go func() {
 			ticker := time.NewTicker(reconcileInterval)
 			defer ticker.Stop()
-			for range ticker.C {
-				t.reconcilePositions(traderID, exchangeID, exchangeType, st)
+			defer close(stopped)
+			for {
+				select {
+				case <-done:
+					return
+				case <-ticker.C:
+					select {
+					case <-done:
+						return
+					default:
+					}
+					t.reconcilePositions(traderID, exchangeID, exchangeType, st)
+				}
 			}
 		}()
 		logger.Infof("🔧 NinjaTrader position-reconcile started (anchors entry_price to NT8 avg + clears orphan rows)")

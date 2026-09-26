@@ -41,6 +41,10 @@ func newLatchWiringFixture(t *testing.T) *latchWiringFixture {
 	}
 	t.Cleanup(func() { _ = s.Stop(); cancel() })
 	nt := ntTrader.NewTCPTrader(s, "MNQ", "Sim101")
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill;
+	// the AddOn emits a positions frame on connect. Seed the known-flat book so
+	// the entry path reads an empty account, not an unreadable one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 	at.trader = nt
 	at.config.NinjaTraderSymbol = "MNQ"
 	return &latchWiringFixture{at: at, st: st, s: s, nt: nt}

@@ -72,6 +72,9 @@ func newAIEntryWire(t *testing.T) *aiEntryWire {
 		time.Sleep(time.Millisecond)
 	}
 	nt := nttrader.NewTCPTrader(s, "MNQ", "Sim101")
+	// W117 F4 — the AddOn emits a positions frame on connect; seed the
+	// known-flat book so the entry path reads empty, not unreadable.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 	at.trader = nt
 	at.config.NinjaTraderSymbol = "MNQ"
 	_ = nt.SetStopLoss("MNQ", "LONG", 1, 28950)

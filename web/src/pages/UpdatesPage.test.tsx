@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   check: vi.fn(),
   install: vi.fn(),
   job: vi.fn(),
+  receipt: vi.fn(),
   getTraders: vi.fn(),
   getStrategyEffective: vi.fn(),
   getExchangeConfigs: vi.fn(),
@@ -27,6 +28,7 @@ vi.mock('../lib/api/updates', () => ({
     check: mocks.check,
     install: mocks.install,
     job: mocks.job,
+    receipt: mocks.receipt,
   },
   INSTALL_AUTHZ_UNDER_REVIEW: true,
   INSTALL_UNDER_REVIEW_TEXT: 'install authorization under review',
@@ -115,6 +117,93 @@ describe('UpdatesPage', () => {
     await waitFor(() => expect(screen.getByText(/not found/)).toBeTruthy())
   })
 
+  it('renders the job timestamps the guide promises, one row per state', async () => {
+    mocks.maintenance.mockResolvedValue(heldMaintenance)
+    mocks.job.mockResolvedValue({
+      job_id: 'job-7',
+      state: 'complete',
+      timestamps: {
+        downloaded: '2026-09-24T07:00:00Z',
+        complete: '2026-09-24T08:00:00Z',
+      },
+    })
+    render(<UpdatesPage />)
+    await waitFor(() =>
+      expect(screen.getByText('2026-09-24T08:00:00Z')).toBeTruthy()
+    )
+    expect(screen.getByText('2026-09-24T07:00:00Z')).toBeTruthy()
+    // "complete" now appears twice: the state row AND the timestamp row's
+    // label — both are the guide's promise (state + one timestamp per state).
+    expect(screen.getAllByText('complete').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByTestId('job-timestamps')).toBeTruthy()
+  })
+
+  it('keeps polling the last job id after the hold clears (no frozen snapshot)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      mocks.maintenance
+        .mockResolvedValueOnce(heldMaintenance) // first poll: held, names job-7
+        .mockResolvedValue({
+          held: false,
+          state: 'clear',
+          in_flight_sends: 0,
+          drained: true,
+          addon_ack: null,
+        })
+      mocks.job
+        .mockResolvedValueOnce({
+          job_id: 'job-7',
+          state: 'maintenance_held',
+          timestamps: { maintenance_held: '2026-09-24T06:00:00Z' },
+        })
+        .mockResolvedValue({
+          job_id: 'job-7',
+          state: 'rolled_back',
+          timestamps: { rolled_back: '2026-09-24T09:00:00Z' },
+        })
+      render(<UpdatesPage />)
+      await waitFor(() =>
+        expect(screen.getByText('2026-09-24T06:00:00Z')).toBeTruthy()
+      )
+      // the hold clears on the next maintenance poll; the page keeps polling
+      // the remembered id and reaches the terminal state.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000) // maintenance poll: hold clears
+        await vi.advanceTimersByTimeAsync(10_000) // job poll: rolled_back
+      })
+      expect(screen.getByText('2026-09-24T09:00:00Z')).toBeTruthy()
+      expect(mocks.job.mock.calls[mocks.job.mock.calls.length - 1][0]).toBe(
+        'job-7'
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('downloads the receipt through the API client, not a bare navigation (OQ-7)', async () => {
+    mocks.maintenance.mockResolvedValue(heldMaintenance)
+    mocks.job.mockResolvedValue({
+      job_id: 'job-7',
+      state: 'maintenance_held',
+      receipt_url: '/api/updates/jobs/job-7/receipt',
+    })
+    mocks.receipt.mockResolvedValue({
+      data: { receipts: [{ step: 'preflight', ok: true }] },
+    })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByTestId('receipt-link')).toBeTruthy())
+    const link = screen.getByTestId('receipt-link')
+    // A browser navigation to the URL cannot carry X-NOFX-Update and 403s;
+    // the page fetches through the client instead.
+    expect(link.tagName).toBe('BUTTON')
+    fireEvent.click(link)
+    await waitFor(() => expect(mocks.receipt).toHaveBeenCalledWith('job-7'))
+    // a refused receipt shows the server's own text
+    mocks.receipt.mockResolvedValueOnce({ data: null, error: 'not found' })
+    fireEvent.click(link)
+    await waitFor(() => expect(screen.getByText('not found')).toBeTruthy())
+  })
+
   it('install stays disabled with the exact review text and never POSTs', async () => {
     render(<UpdatesPage />)
     await waitFor(() =>
@@ -159,6 +248,36 @@ describe('UpdatesPage', () => {
     })
     render(<UpdatesPage />)
     await waitFor(() => expect(screen.getByText('Blocked')).toBeTruthy())
+  })
+
+  it('install_enabled=true but worker_listening=false blocks the button with the exact reason', async () => {
+    mocks.updatesStatus.mockResolvedValue({
+      status: {
+        enrolled: true,
+        manifest_verifier: 'configured',
+        install_enabled: true,
+        worker_listening: false,
+      },
+    })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Blocked')).toBeTruthy())
+    // the exact reason the CTO ruling names — never a generic message
+    expect(screen.getByText('updater worker not running')).toBeTruthy()
+    expect(screen.getByTestId('update-button')).toBeTruthy()
+  })
+
+  it('install_enabled=true and worker_listening=true does not block the button', async () => {
+    mocks.updatesStatus.mockResolvedValue({
+      status: {
+        enrolled: true,
+        manifest_verifier: 'configured',
+        install_enabled: true,
+        worker_listening: true,
+      },
+    })
+    render(<UpdatesPage />)
+    await waitFor(() => expect(screen.getByText('Update now')).toBeTruthy())
+    expect(screen.queryByText('updater worker not running')).toBeNull()
   })
 
   it('gate legs render with each leg’s exact detail text', async () => {

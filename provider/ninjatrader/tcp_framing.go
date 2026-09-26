@@ -91,6 +91,10 @@ type FillPayload struct {
 	// trader (A4). Empty = pre-v3 AddOn (echo absent) → tolerated in the deploy window.
 	TraderID string `json:"trader_id,omitempty"`
 	Seq      uint64 `json:"seq,omitempty"`
+	// W117 F2 — true when a registered ordered-execution owner will apply this
+	// frame on its worker (receive order). Advisory consumers skip it so the
+	// fill is never double-applied. json:"-" keeps goldens byte-identical.
+	OrderedOwned bool `json:"-"`
 }
 
 // P5.2 — protocol handshake. The C# AddOn sends `hello` as the FIRST frame on
@@ -237,6 +241,12 @@ type OrderUpdatePayload struct {
 	Account   string  `json:"account"`
 	TraderID  string  `json:"trader_id,omitempty"`
 	Seq       uint64  `json:"seq,omitempty"`
+
+	// W117 F2 — see FillPayload.OrderedOwned.
+	OrderedOwned bool `json:"-"`
+	// W117 F2 — whether the broker book is proven post-change at application
+	// time (bookFresh / bookNotFresh / bookUnspecified, ordered_exec.go).
+	BookGate int8 `json:"-"`
 }
 
 // P5.3 — subscription acks (C#-AddOn → Go-server). The AddOn confirms or// rejects each bars_subscribe/bars_unsubscribe so the Go side (and the owner
@@ -466,6 +476,8 @@ type PositionClosePayload struct {
 	// A2 (G1, wire v3) — echoed originator identity + op seq for echo-verify.
 	TraderID string `json:"trader_id,omitempty"`
 	Seq      uint64 `json:"seq,omitempty"`
+	// W117 F2 — see FillPayload.OrderedOwned.
+	OrderedOwned bool `json:"-"`
 }
 
 // Rejected exit/flatten — C#-AddOn → Go-server, additive frame. The SIM (or

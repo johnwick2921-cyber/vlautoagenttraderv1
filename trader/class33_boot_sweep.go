@@ -22,8 +22,10 @@ import (
 //
 // This sweep runs ONCE per process per trader, at the head of the armed
 // subsystem, BEFORE anything is authored or placed. Sweepable rows stamped by
-// a DIFFERENT boot are cancelled at the broker and in the ledger; cancel_pending
-// belongs to confirmPendingCancels and is deliberately excluded from this sweep.
+// a DIFFERENT boot receive cancellation intent; their rows stay cancel_pending
+// until confirmPendingCancels verifies a persisted broker snapshot. Pending
+// rows are deliberately excluded from this sweep (B2: the sweep never writes
+// 'cancelled' at send time — that is F8's rule, everywhere).
 // It generalises the 0C shadow sweep (armed_executor.go — "the first cycle
 // after boot IS the boot-time sweep") from shadowed conditions to ALL pre-boot
 // arms. The stale-window reconcile stays exactly as it is: the backstop.
@@ -53,7 +55,15 @@ func (at *AutoTrader) sweepPreBootArms(ledger *store.ArmedOrderStore) {
 		at.logWarnf("🛡 boot sweep DEFERRED (class 33): NT8 link not ready — pre-boot arms are UNVERIFIED this cycle; retrying next cycle")
 		return
 	}
-	at.sweepPreBootArmsWith(ledger, nt.CancelOrder)
+	at.sweepPreBootArmsWith(ledger, func(signalID string) error {
+		// B2: the send rides the same broker-book gate as every other cancel —
+		// a sweep that cannot prove the order exists refuses and retries next
+		// cycle rather than 'cancelling' on faith.
+		if !at.cancelSignalIfSafe(nt.CancelOrder, signalID, "boot sweep", time.Now()) {
+			return fmt.Errorf("cancel refused or send failed")
+		}
+		return nil
+	})
 }
 
 // sweepPreBootArmsWith is the seam: cancelFn is the wire (nt.CancelOrder in
@@ -95,16 +105,23 @@ func (at *AutoTrader) sweepPreBootArmsWith(ledger *store.ArmedOrderStore, cancel
 				r.Session, r.Scenario, r.SignalID, r.EntryPx, cerr)
 			continue
 		}
-		if serr := ledger.SetState(r.ID, "cancelled", BootSweepReason); serr != nil {
+		// B2: the send is a REQUEST, never a settlement. The row becomes
+		// cancel_pending with the boot_sweep reason; confirmPendingCancels
+		// settles it through ConfirmCancel with a persisted snapshot id once a
+		// fresh post-request book shows the order absent.
+		if rerr := ledger.RequestCancel(r.ID, BootSweepReason, time.Now().UnixMilli()); rerr != nil {
 			failed++
-			at.logWarnf("🛡 boot sweep: cancelled at the broker but the ledger write FAILED for %s %s: %v", r.Session, r.Scenario, serr)
+			at.logWarnf("🛡 boot sweep: cancel requested at the broker but the ledger request FAILED for %s %s: %v", r.Session, r.Scenario, rerr)
 			continue
 		}
 		swept++
-		at.logWarnf("🛡 boot sweep CANCELLED pre-boot arm (class 33): %s %s %s entry=%.2f stop=%.2f signal=%s authored_by_boot=%q this_boot=%q — the process that placed it is gone",
+		at.logWarnf("🛡 boot sweep cancel REQUESTED for pre-boot arm (class 33): %s %s %s entry=%.2f stop=%.2f signal=%s authored_by_boot=%q this_boot=%q — cancel_pending until the broker book confirms; the process that placed it is gone",
 			r.Session, r.Scenario, r.Side, r.EntryPx, r.StopPx, r.SignalID, r.BootID, bootID)
 	}
 	if swept > 0 {
+		// B2: the recorded counter counts the SEND (the request), not the
+		// settlement — a requested cancel the book later shows never existed is
+		// still a swept send.
 		if _, ierr := store.IncBootSwept(at.store, swept); ierr != nil {
 			at.logWarnf("🛡 boot sweep: counter write failed: %v", ierr)
 		}
@@ -129,7 +146,8 @@ func (at *AutoTrader) sweepPreBootArmsWith(ledger *store.ArmedOrderStore, cancel
 // is passed in rather than written here: F12 made it a resolved value, and a
 // literal in a boot line is a claim that cannot fail (A24).
 func BootSweepBootLine(swept, skippedUnplaced int, leg4Source string) string {
-	return fmt.Sprintf("🛡 cutover safety (class 33): gate legs=5 · leg4=%s · boot sweep cancelled %d pre-boot arm(s) (%d authorized-but-never-placed left for this process)",
+	// B2: the count is the SEND (cancel requests), not settled rows.
+	return fmt.Sprintf("🛡 cutover safety (class 33): gate legs=5 · leg4=%s · boot sweep requested cancel on %d pre-boot arm(s) (%d authorized-but-never-placed left for this process)",
 		leg4Source, swept, skippedUnplaced)
 }
 

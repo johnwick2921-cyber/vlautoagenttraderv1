@@ -192,6 +192,9 @@ func newParityWire(t *testing.T, heartbeat bool) *parityWire {
 		}
 		parityWaitFor(t, "far side proven", func() bool { return ntwire.FarSideProven(s.FarSideBuildID(), top) })
 	}
+	// W117 F4 — the AddOn emits a positions frame on connect; seed the
+	// known-flat book so the entry path reads empty, not unreadable.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 	return &parityWire{srv: s, conn: conn, nt: ntTrader.NewTCPTrader(s, "MNQ", "Sim101"), frames: frames}
 }
 

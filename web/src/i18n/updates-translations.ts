@@ -52,6 +52,11 @@ export const updatesStrings = {
     zh: '安装授权审核中',
     id: 'otorisasi pemasangan sedang ditinjau',
   },
+  workerNotRunning: {
+    en: 'updater worker not running',
+    zh: '更新器工作进程未运行',
+    id: 'pekerja updater tidak berjalan',
+  },
 
   // hold / gate
   holdState: { en: 'Hold state', zh: '挂起状态', id: 'Status tahan' },

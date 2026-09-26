@@ -11,7 +11,6 @@ in CLAUDE.md).
 ## PART 1 — THE BUG CLASSES (name · root cause · probe · law)
 
 *Highest occupied class: **268** (2026-09-24). Numbers are assigned AT MERGE and
-
 never renumbered; a gap means a wave took a later slot to avoid a collision.*
 
 1. **Self-imposed caps.** Root cause: an AI/HTTP/token cap chosen without
@@ -7560,3 +7559,128 @@ Two authenticated chats must retain their own selected model credentials through
 ## CLASS NN (assigned at merge) — a request-supplied key selects server-side per-owner state
 
 **Found:** 2026-09-25, W117 PR-D, porting #117 e39d2070 [A]. `HandleChat`/`HandleChatStream` read a `user_id` from the caller's request body — a request carrying another owner's numeric key selected THAT owner's persisted conversation history; the authenticated owner's own clear didn't address it. **Fixed:** HTTP conversation identity derives ONLY from the authenticated middleware (`WithStoreUserID`); the caller-supplied key is ignored; a caller census confirms the two chat handlers are mounted exclusively behind the auth middleware (no telegram/agent-door/internal callers exist today). **Probe:** any endpoint that persists or clears per-owner state must derive the owner from the AUTHENTICATED session, never from a request field — grep the body keys for `user_id`-shaped names and prove each is ignored.
+
+## CLASS NN (assigned at merge) — a cross-process hold specified as an in-process call
+
+**Found:** 2026-09-24, WAVE 3b-B brief (CTO ruling 1790258770876) [A]. The M4 dispatch specified the updater's maintenance hold as `EntryBarrier.Hold(ctx)`. That barrier is an unexported package-level value in the TRADING APP (`trader/maintenance_gate.go:21 var maintenanceBarrier EntryBarrier`); the updater worker is a SEPARATE binary. Had the worker imported `trader`, it would have received its own inert copy of the barrier: every worker test green, and the app still trading.
+
+That is the shape: a spec says "call X" where X's value lives in another process. A Go call cannot cross a process boundary, and nothing in either binary's test suite can notice, because each suite runs one binary.
+
+**Fixed in 3b-B:** a hold that must cross a process boundary is a FILE plus a READER. The worker writes `data/updater/hold.json` through the census-admitted writer `internal/updaterworker/hold.go` (owner `updater`, `withdraw_entries` never set). The app engages its own barrier from the file (`maintenanceState → Engage`), and `drained_acked` is read from the app's own view (`/api/installation-gate`, `/api/maintenance`), never inferred from the worker's write. No `trader/` edits; `Hold(ctx)` stays test-only. Pinned by `TestTradingAppNeverLinksTheUpdaterWorkerSide`, `TestHoldWriterCensusAdmitsTheWorkerOnlyByName`, `TestTheWorkerHoldNeverCarriesWithdrawEntries`, `TestOnlyTheOperatorCLISetsWithdrawEntries` (`caadafa1`, `754a85ce`, `79ff03c2`, `457e3c86`).
+
+**Probe:** for every "call X" in a spec, ask which binary X's VALUE lives in (`go list -deps ./cmd/<caller>`), whether X is exported, and whether it is package state. If caller and owner are different binaries, the call cannot reach it: the spec needs a file, a socket or an HTTP route, and a reader on the owner's side.
+
+## CLASS NN (assigned at merge) — per-step idempotence claimed for a kill
+
+**Found:** 2026-09-24, WAVE 3b-B brief C3 [A code, B outcome]. The activation library's contract said "every step is idempotent", but only `Backup` (`already=true`) is. `Activate`, `Rollback` and `RollbackTo` SIGKILL a recorded process identity; after a crash-resume that pid is gone (or recycled), so a blind re-run either refuses or signals the wrong process. A resumed `Watch` given a fresh `since` misses a boot line already written and reports a false RED.
+
+**Fixed in 3b-B:** the worker makes resume idempotent itself. It re-reads `CurrentIdentity()` and re-runs the persisted step against the CURRENT identity (at most one extra restart); `Watch` takes the PERSISTED kill instant (`WatchOpts.Since`, #201 `afd60391`); a resumed activate re-proves readiness before any kill. Pinned by `TestCrashAtEveryBoundaryResumesToTheRightState` (108 state/phase boundaries × skip/park/rollback), `TestResumeAtActivatedRereadsTheIdentity`, `TestResumeAtRollingBackRereadsTheIdentity` (`535e7e43`, `370b41e7`, `3f650fc6`).
+
+**Probe:** for each step, list its external side effects (kill, restart, file install). Replay the step after a simulated crash at each boundary, with the identity and time READ AT RESUME, not the persisted ones. "Idempotent" is a claim about the effect, and a kill's target does not survive the crash.
+
+## CLASS NN (assigned at merge) — a boot proof a REFUSED boot satisfies
+
+**Found:** 2026-09-24, WAVE 3b-B brief C13 [A]. "Booted" was judged by the new revision appearing in the log or in `/api/health`. A binary that starts and then REFUSES at boot integrity still prints its revision: the REFUSED line carries the same rev token, and health answers "ok" while trading is refused. Separately, health returns 12 characters, so a check `== source_sha` (40) could never pass.
+
+**Fixed in 3b-B:** `boot_verified` requires the literal `BOOT INTEGRITY OK — rev <sha12> ·` after the log offset recorded before the kill, NO `BOOT INTEGRITY REFUSED` line for that rev, a post-boot AddOn ack newer than the kill, and health's revision to be a prefix of `source_sha` of at least 7 characters. Pinned by `TestBootVerifyRefusesARefusedBootLine` and the unpinned-rules pins (`96239d49`, `904cc5dd`).
+
+**Probe:** boot a build that FAILS boot integrity against the watcher; it must go RED. Diff the length of the revision the watcher compares against the length health actually returns. A proof must be one the failure mode cannot also produce.
+
+## CLASS NN (assigned at merge) — a per-request refusal log under a polling client is a flood
+
+**Found:** 2026-09-24, skeptic pass on live `4c05158b`, finding [5] (CTO ruling 1790280466263) [A]. `api/handler_updates.go` `updatesForbid` WARNed on EVERY refusal; the header badge polls `/api/updates` every 60 s, so an un-enrolled box wrote one 🔒 WARN and one `log_events` row per minute per open tab, forever. The signal drowns, and the log becomes a byte sink proportional to uptime.
+
+**Fixed in 3b-B:** WARN once per (route PATTERN, closed category) per process, DEBUG for repeats, and every refusal counted in `nofx_updates_refused_total{route,category}` on `/metrics`. The route is gin's pattern (`FullPath`), never the client's path; the category comes from a closed map pinned by an AST scan of every reason literal, never from free text; a pair that never refused has no series. `logger/db_sink.go` ships only WARN and above to `log_events`, so DEBUG repeats write no rows. Pinned by `TestUpdatesRefusalWarnsOncePerRouteAndCategoryThenCounts`, `TestEveryUpdatesRefusalReasonHasACategory`, `TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal` (`3eacf2d6`, `b3522251`).
+
+**Probe:** for every log call on a refusal path, find whether anything polls the route (grep the web for `setInterval` / `refetchInterval` against it), and count WARN lines per hour in the refusing state. Confirm which levels the `log_events` sink ships (`logger/db_sink.go` Levels): a DEBUG repeat is flood-free only if the sink drops DEBUG.
+
+## CLASS NN (assigned at merge) — a package-registered process-wide name: green alone, panicking in the first binary that links both
+
+**Found:** 2026-09-24, WAVE 3b-B U4, while wiring the activation adapter; reproduced on dev `e401eb5e` [A]. `internal/activation/steps.go:14` blank-imported `github.com/glebarez/go-sqlite`, and `store/sqlitedriver/backend_default.go` imports `modernc.org/sqlite`: both register the database/sql driver `"sqlite"`. Each package's own tests are green. The first binary that links both, the updater worker (`hold.go` → `store`), panics at init before `main`: `panic: sql: Register called twice for driver sqlite` (rc 2). `nofx-activate` alone never trips it because it does not link `store`.
+
+**Fixed:** in #205 (Claude-103): `internal/activation` imports `nofx/store/sqlitedriver`. In 3b-B: the trading app can never link `internal/activation` (`94e6caae`: the import guard's forbidden set, `go list -deps` leg), and the worker binary links exactly one sqlite registration (`e376bf88`); the adapter lands only after #205 (CTO ruling D4).
+
+**Instance (#205):** `internal/activation/steps.go` and `internal/updaterbootstrap/bootstrap.go` blank-imported a SQLite driver directly; the M4 worker links both → init panic. Fixed by importing `nofx/store/sqlitedriver`; enforced by `store/sqlitedriver/one_registration_census_test.go` (AST, libraries + mains that link sqlitedriver).
+
+**Probe:** for each `cmd/*` and each TEST binary that imports the worker side (`go list -deps -test ./<pkg>`, under the default build AND `-tags cgofree`, since the tag changes which driver `store/sqlitedriver` registers), intersect with packages that register process-global names (`sql.Register`, promauto/`MustRegister` names, `flag` names, `gob.Register`, `http.Handle` on `DefaultServeMux`). Build each binary and run it with a no-op flag in a temp dir. A test binary is a binary: a `_test.go` import inherits every registrant of what it imports.
+
+## CLASS NN (assigned at merge) — containment compared as a string prefix, not path elements, without resolving symlinks
+
+**Found:** 2026-09-24, WAVE 3b-B U4N verify [A]. `nofx-updater fetch` refused a release root inside the install with `!strings.HasPrefix(rel, "..")`, so `NOFX_RELEASE_DIR=<install>/..rel` counted as OUTSIDE and the release was written INSIDE the install (rc 0). A symlinked parent put the root inside the install the same way; a symlinked `<install>/deploy` let the trust anchor (`release_allowed_signers`) be read from outside the install; the backup-root check and a test guard (`HasPrefix(p, os.TempDir())`) carried the same shape.
+
+**Fixed in 3b-B:** one helper, `updaterworker.ReleaseRoot`: P is outside D only when `rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator))`, after `filepath.EvalSymlinks` on BOTH sides, and a trusted root must equal its own resolved path. The trust anchor is read through `open(deploy/, O_DIRECTORY|O_NOFOLLOW)` then `openat(name, O_NOFOLLOW|O_NONBLOCK)`; `os.Root` was rejected because its `OpenFile` follows an in-root final symlink even with `O_NOFOLLOW`. A verdict re-proves only when its `release_dir` equals `<resolved root>/<source_sha>`. Pinned in `TestFetchRefusesWithoutItsInputs`, `TestReleaseReverifierRefuses`, `TestAVerdictIsReprovedOnlyUnderTheCurrentReleaseRoot` (`2e907033`, `6c378d15`, `178e6fa8`, `0b228202`, `f231fc8d`).
+
+**Probe:** for every "P is inside/outside D" check: (a) is it an ELEMENT compare (`<D>/..x` is INSIDE)? (b) are symlinks resolved on BOTH sides first, and for a path not yet created, is the deepest existing ancestor resolved and a dangling symlink among the rest refused — and every Lstat error other than not-exist
+refuses, pinned by a `PathWithin` table test? (c) is a trust anchor opened without following a symlinked PARENT (`O_NOFOLLOW` guards only the last element)? (d) is there ONE helper per repo, and does the census cover var-declared and alias-imported
+`filepath.Rel`? Every check-then-write by path string is a same-UID TOCTOU limit: name it.
+## CLASS NN (assigned at merge) — a filled armed row moved out of 'filled' by a racing pass
+
+**Found:** 2026-09-25, W117 slice A, F2 rebuild [A]. A late fill (order_update
+arriving after the armed pass had moved on) could be UNWOUND: the pass's
+`RequestCancel` or an invalidation `SetState` overwrote the row's state, so a
+fill the broker had executed was no longer ledger-visible as a position while
+the materialized position row said otherwise. **Fixed:** the store's `SetState`
+and `RequestCancel` now carry `AND state <> 'filled'` in their WHERE — a CAS on
+state: a filled row is terminal, no later writer can move it out. Pinned at the
+production call sites (store test + `TestLateFillSurvivesThePassCancelRequest`,
+RED by removing the guard). **Probe:** for every terminal state, list every
+writer that can change a row's state; each must carry the precondition, or be
+proven post-terminal.
+
+## CLASS NN (assigned at merge) — the pre-change broker book read at acceptance
+
+**Found:** 2026-09-25, W117 slice A, F2 rebuild [A]. The AddOn sends
+`order_update` THEN `order_snapshot` on the same state change
+(VLTraderTCPClient.cs ~1948 then ~1955). A consumer that applied the
+order_update the moment it arrived read the PRE-change broker book, so
+`recordAcceptedRisk` stamped the OLD prices as "what the broker accepted".
+**Fixed:** the ordered worker stamps each order_update with the snapshot
+watermark at enqueue and waits (bounded) for a post-update snapshot before
+applying; on timeout it applies with `BookGate=BookGateNotFresh` and the book is
+suppressed — never read stale. Pinned with the real frame order
+(`TestAcceptedRiskUsesThePostChangeBook`). **Probe:** for every read of a
+frame-fed cache by a durable consumer, name the frame that MUST precede the
+read, and pin the pair in receive order.
+
+## CLASS NN (assigned at merge) — an exit receipt dropped when it beat its cumulative entry
+
+**Found:** 2026-09-25, W117 slice A, F2 rebuild, porting #117 F3 [A]. A valid
+completed `position_close` could arrive before the later cumulative entry
+update; the old path hard-errored (losing the exit forever) or trimmed the
+evidence. **Fixed:** `recordCloseOrdered` → `store.ApplyNT8Exit`
+apply-or-park: one transaction reduces the exact owned residual, writes the
+deduped exit fill, flips the receipt and closes at zero residual; an incomplete
+or missing row RETAINS the receipt as pending, retried (idempotent) after the
+entry update lands. Pinned: `TestExitBeforeCumulativeEntryIsRetainedThenApplied`
+(RED: retry removed → the exit stays parked forever). **Probe:** every event
+whose write depends on an earlier event must either park-until-it-lands or
+prove the earlier event always wins by construction — never a hard error, never
+a silent drop.
+
+## CLASS NN (assigned at merge) — a deferred transaction's read→write upgrade lost a live close
+
+**Found:** 2026-09-25, live boot-2 binary d7a442d5 [A]. `ApplyNT8Exit` ran as a
+DEFERRED transaction: it read first (the receipt lookup, which WAL readers
+always allow) and sought the write lock only at the first write. Under WAL an
+upgrade while another connection holds the write lock returns SQLITE_BUSY /
+SQLITE_BUSY_SNAPSHOT IMMEDIATELY — the busy handler is deliberately not invoked
+for an upgrade that risks deadlock, so busy_timeout cannot help. At 08:55 CT the
+ordered worker's `recordCloseOrdered` got "database is locked", logged and
+returned: no receipt persisted, no priced close parked, hasFill not cleared —
+row 618 stayed OPEN and reconcile's orphan close had no real price (class 40).
+Compounding it, `store/gorm.go`'s pool-wide `PRAGMA busy_timeout` is ONE
+`db.Exec` on a pool of 4 — it reaches exactly one connection, the rest keep 0.
+**Fixed:** `ApplyNT8Exit` takes the write lock UP FRONT (BEGIN IMMEDIATE on a
+dedicated pooled connection, where the busy handler DOES apply); the worker
+retries a busy error bounded (5 tries, backoff sleeps ≤ ~1.6s, in receive
+order); on final failure it NEVER drops — the broker price is parked
+(putPricedClose) + hasFill cleared, then the receipt is persisted in its own
+small write (dedicated connection, full busy wait) so RetryPendingNT8Exits
+applies it later, with an ERROR log + counter. Pinned at the production call
+sites: `TestApplyNT8ExitTakesTheWriteLockUpFront` (RED: deferred tx returns
+"database is locked" while the holder still holds) and
+`TestBusyCloseFrameIsNeverDropped` (RED: today's single-shot error→return loses
+the close — no receipt, no park). **Probe:** for every SQLite transaction whose
+loss is a lost exit/fill, assert the lock is acquired AT BEGIN (IMMEDIATE), not
+at the first write after reads; for every per-connection PRAGMA issued once via
+a pool handle, prove which pooled connections actually carry it.

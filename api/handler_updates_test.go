@@ -253,10 +253,10 @@ func TestUpdatesStatusNeverLeaksTheEnrollment(t *testing.T) {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	if strings.Join(keys, ",") != "enrolled,install_enabled,manifest_verifier" {
+	if strings.Join(keys, ",") != "enrolled,install_enabled,manifest_verifier,worker_listening" {
 		t.Fatalf("GET /api/updates keys = %v", keys)
 	}
-	if m["enrolled"] != true || m["install_enabled"] != false || m["manifest_verifier"] != "stub" {
+	if m["enrolled"] != true || m["install_enabled"] != false || m["manifest_verifier"] != "stub" || m["worker_listening"] != false {
 		t.Fatalf("GET /api/updates = %s", w.Body.String())
 	}
 	key, _ := updateauth.LoadDeviceKey(e.dataDir)

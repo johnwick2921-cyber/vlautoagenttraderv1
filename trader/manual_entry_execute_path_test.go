@@ -79,6 +79,11 @@ func newChatDoorWire(t *testing.T, rc store.RiskControlConfig) *chatDoorWire {
 	}()
 	w.nt = nttrader.NewTCPTrader(s, "MNQ", "Sim101")
 	at.trader = w.nt
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill;
+	// the AddOn emits a positions frame on connect. Seed the known-flat book so
+	// the entry path reads an empty account, not an unreadable one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
+
 	at.config.NinjaTraderSymbol = "MNQ"
 	return w
 }

@@ -116,6 +116,12 @@ func newZoneRig(t *testing.T, id string, doc kernel.PlanDoc) *zoneRig {
 		t.Fatalf("server start: %v", err)
 	}
 	t.Cleanup(func() { _ = s.Stop(); cancel() })
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill
+	// exists (never fabricated as flat). Production always has one: the AddOn
+	// emits a positions frame on connect. The rig models that with the
+	// known-flat seed so the one-contract guard reads a fresh empty book
+	// instead of refusing the whole pass as unverifiable.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 	conn, err := net.Dial("tcp", s.ListenAddrForTest().String())
 	if err != nil {
 		t.Fatalf("dial: %v", err)

@@ -114,6 +114,11 @@ type TCPTrader struct {
 	// reconcileOnce guards StartPositionReconcile (mirrors closeSyncOnce) so a
 	// re-entrant AutoTrader.Run never spawns a second reconcile goroutine.
 	reconcileOnce sync.Once
+	// W117 F5 — observer lifetime ends only after same-account replacement
+	// drains closes. Ordinary trading Stop and socket disconnect do not retire
+	// these observers.
+	observerDone     chan struct{} // initialized under mu; closed by the close consumer
+	reconcileStopped chan struct{} // initialized under mu; closed by the reconcile worker
 
 	// flatSince tracks, per open-position row id, the first time the reconcile loop
 	// observed it NT8-flat-but-DB-open (Unix ms). It implements the flat-grace
@@ -164,6 +169,13 @@ func IsMaintenanceHold(err error) bool {
 
 // SetEntryHoldCheck forwards the maintenance predicate to this trader's TCP
 // server, whose queue drops held entries on flush (gap U2).
+// IsBound reports whether the trader has a bound NT8 sub-account. An unbound
+// trader has no book to read and cannot flatten: reconcile-before-open skips it
+// so the broker's own binding refusal names the cause (still fail-closed).
+func (t *TCPTrader) IsBound() bool {
+	return strings.TrimSpace(t.boundAccount) != ""
+}
+
 func (t *TCPTrader) SetEntryHoldCheck(fn func() bool) {
 	if t.server != nil {
 		t.server.SetEntryHoldCheck(fn)
@@ -309,83 +321,95 @@ func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *T
 		// channel CLOSES when a reloaded trader re-subscribes, ending this
 		// goroutine (fixes the pre-P5.4 reload leak).
 		for fill := range fills {
-			// P5.2 split-brain defense: a symbol-tagged fill for a DIFFERENT
-			// instrument must never be attributed to this trader. Empty symbol
-			// = legacy (pre-P5.2) AddOn → assumed primary (back-compat).
-			if fill.Symbol != "" && !equalSymbol(fill.Symbol, symbol) {
-				logger.Warnf("⚠️ ninjatrader/tcp: REJECTED fill for symbol %q (this trader trades %q) — signal_id=%s (split-brain defense)",
-					fill.Symbol, symbol, fill.SignalID)
-				continue
-			}
-			// H3 account guard (defense in depth on top of the (symbol,account)
-			// routing): with two same-symbol traders, NEVER cache another account's
-			// fill as this trader's position. Empty account = legacy AddOn → trust
-			// the symbol routing.
-			if fill.Account != "" && t.boundAccount != "" && !strings.EqualFold(fill.Account, t.boundAccount) {
-				// A4 (G4) — a fill on an account this trader is NOT bound to reached it:
-				// the (symbol,account) routing should make this impossible, so a fire is
-				// a real cross-account event. Reject the fill AND FREEZE the trader (new
-				// entries blocked until the owner clears; open-position management goes on).
-				t.mu.Lock()
-				tid := t.traderID
-				t.mu.Unlock()
-				if discipline.FreezeTrader(tid, "post-fill account mismatch: fill account "+fill.Account+" ≠ bound "+t.boundAccount, time.Now().UnixMilli()) {
-					logger.Errorf("🚨 A4 FREEZE: fill for account %q reached trader bound to %q — signal_id=%s (post-fill account guard). Trader FROZEN.",
-						fill.Account, t.boundAccount, fill.SignalID)
-				}
-				continue
-			}
-			// C8 (2026-08-25) — a REJECTED entry must never become the
-			// fill-derived position (the phantom-position class). NT8 truth: NO
-			// position exists. Drop the pending marker, clear any cached fill for
-			// that signal, and alarm.
-			if strings.EqualFold(fill.Status, "rejected") {
-				t.pendingMu.Lock()
-				if fill.SignalID != "" {
-					delete(t.pending, fill.SignalID)
-					delete(t.pendingAt, fill.SignalID)
-				}
-				t.pendingMu.Unlock()
-				t.mu.Lock()
-				if t.lastFill.SignalID == fill.SignalID {
-					t.lastFill = ntwire.FillPayload{}
-					t.hasFill = false
-				}
-				if t.lastEntrySignalID == fill.SignalID {
-					t.lastEntrySignalID = ""
-				}
-				t.recordRecentReject(fill.SignalID, fill.Reason)
-				tid := t.traderID
-				t.mu.Unlock()
-				t.notifyReject(fill.SignalID, fill.Reason)
-				reason := fill.Reason
-				if strings.TrimSpace(reason) == "" {
-					reason = store.PlacementReasonUnavailable
-				}
-				logger.Errorf("🚨 C8 ENTRY REJECTED by NT8: %s %s qty=%d signal_id=%s reason=%q — no position exists; pending entry dropped (no phantom).",
-					fill.Symbol, fill.Side, fill.Quantity, fill.SignalID, reason)
-				telemetry.RecordError(tid, "nt_entry_rejected", fmt.Sprintf("%s %s rejected (signal %s)", fill.Symbol, fill.Side, fill.SignalID), telemetry.CostNone)
-				continue
-			}
-			// A CONFIRMED fill resolves its pending entry marker.
-			t.pendingMu.Lock()
-			if fill.SignalID != "" {
-				delete(t.pending, fill.SignalID)
-				delete(t.pendingAt, fill.SignalID)
-			}
-			t.pendingMu.Unlock()
-			t.mu.Lock()
-			t.lastFill = fill
-			t.hasFill = true
-			// Class 27 (2026-08-31): retain confirmed fills in the netting ring
-			// so reconcile can reconstruct a netting-close's real exit price.
-			if strings.EqualFold(fill.Status, "filled") || strings.EqualFold(fill.Status, "partial") {
-				t.recordRecentFill(fill)
-			}
-			t.mu.Unlock()
+			t.handleFillInbound(fill)
 		}
 	}()
 	return t
+}
+
+// handleFillInbound applies one inbound fill to this trader's durable
+// state. It is THE single fill funnel: both the legacy advisory
+// consumer and the W117 F2 ordered worker call it. A frame already
+// owned by the ordered worker is a no-op here (no double-application).
+func (t *TCPTrader) handleFillInbound(fill ntwire.FillPayload) {
+	if fill.OrderedOwned {
+		return
+	}
+	// P5.2 split-brain defense: a symbol-tagged fill for a DIFFERENT
+	// instrument must never be attributed to this trader. Empty symbol
+	// = legacy (pre-P5.2) AddOn → assumed primary (back-compat).
+	if fill.Symbol != "" && !equalSymbol(fill.Symbol, t.symbol) {
+		logger.Warnf("⚠️ ninjatrader/tcp: REJECTED fill for symbol %q (this trader trades %q) — signal_id=%s (split-brain defense)",
+			fill.Symbol, t.symbol, fill.SignalID)
+		return
+	}
+	// H3 account guard (defense in depth on top of the (symbol,account)
+	// routing): with two same-symbol traders, NEVER cache another account's
+	// fill as this trader's position. Empty account = legacy AddOn → trust
+	// the symbol routing.
+	if fill.Account != "" && t.boundAccount != "" && !strings.EqualFold(fill.Account, t.boundAccount) {
+		// A4 (G4) — a fill on an account this trader is NOT bound to reached it:
+		// the (symbol,account) routing should make this impossible, so a fire is
+		// a real cross-account event. Reject the fill AND FREEZE the trader (new
+		// entries blocked until the owner clears; open-position management goes on).
+		t.mu.Lock()
+		tid := t.traderID
+		t.mu.Unlock()
+		if discipline.FreezeTrader(tid, "post-fill account mismatch: fill account "+fill.Account+" ≠ bound "+t.boundAccount, time.Now().UnixMilli()) {
+			logger.Errorf("🚨 A4 FREEZE: fill for account %q reached trader bound to %q — signal_id=%s (post-fill account guard). Trader FROZEN.",
+				fill.Account, t.boundAccount, fill.SignalID)
+		}
+		return
+	}
+	// C8 (2026-08-25) — a REJECTED entry must never become the
+	// fill-derived position (the phantom-position class). NT8 truth: NO
+	// position exists. Drop the pending marker, clear any cached fill for
+	// that signal, and alarm.
+	if strings.EqualFold(fill.Status, "rejected") {
+		t.pendingMu.Lock()
+		if fill.SignalID != "" {
+			delete(t.pending, fill.SignalID)
+			delete(t.pendingAt, fill.SignalID)
+		}
+		t.pendingMu.Unlock()
+		t.mu.Lock()
+		if t.lastFill.SignalID == fill.SignalID {
+			t.lastFill = ntwire.FillPayload{}
+			t.hasFill = false
+		}
+		if t.lastEntrySignalID == fill.SignalID {
+			t.lastEntrySignalID = ""
+		}
+		t.recordRecentReject(fill.SignalID, fill.Reason)
+		tid := t.traderID
+		t.mu.Unlock()
+		t.notifyReject(fill.SignalID, fill.Reason)
+		reason := fill.Reason
+		if strings.TrimSpace(reason) == "" {
+			reason = store.PlacementReasonUnavailable
+		}
+		logger.Errorf("🚨 C8 ENTRY REJECTED by NT8: %s %s qty=%d signal_id=%s reason=%q — no position exists; pending entry dropped (no phantom).",
+			fill.Symbol, fill.Side, fill.Quantity, fill.SignalID, reason)
+		telemetry.RecordError(tid, "nt_entry_rejected", fmt.Sprintf("%s %s rejected (signal %s)", fill.Symbol, fill.Side, fill.SignalID), telemetry.CostNone)
+		return
+	}
+	// A CONFIRMED fill resolves its pending entry marker.
+	t.pendingMu.Lock()
+	if fill.SignalID != "" {
+		delete(t.pending, fill.SignalID)
+		delete(t.pendingAt, fill.SignalID)
+	}
+	t.pendingMu.Unlock()
+	t.mu.Lock()
+	t.lastFill = fill
+	t.hasFill = true
+	// Class 27 (2026-08-31): retain confirmed fills in the netting ring
+	// so reconcile can reconstruct a netting-close's real exit price.
+	if strings.EqualFold(fill.Status, "filled") || strings.EqualFold(fill.Status, "partial") {
+		t.recordRecentFill(fill)
+	}
+	t.mu.Unlock()
+
 }
 
 // --- Trader interface methods (19 total) ---
@@ -1242,7 +1266,13 @@ func (t *TCPTrader) GetPositions() ([]map[string]interface{}, error) {
 	// reflects positions opened MANUALLY in NT8 (the AddOn emits a `positions`
 	// snapshot on select / connect / PositionUpdate).
 	acct := t.boundAccount
-	if snap, ok := t.server.PositionsFor(acct); ok {
+	if snap, received, entryAfter, ok := t.server.PositionsForExecutionReceipt(acct, t.symbol); ok &&
+		(entryAfter.IsZero() || received.After(entryAfter)) {
+		// W117 F1 — a snapshot received at-or-before the latest entry receipt
+		// is stale: an adapter replacement that forgot an entry would read the
+		// pre-entry flat snapshot as truth and double-open. Only a snapshot
+		// NEWER than the entry receipt serves as NT8 truth; otherwise fall to
+		// the fill-derived cache below (which knows the entry).
 		// NT8-truth uPnL: the account_balance frame carries the account's LIVE
 		// unrealized P&L. When exactly ONE position is open, that total IS this
 		// position's uPnL — use it (and derive the mark) so the displayed P&L
@@ -1276,7 +1306,10 @@ func (t *TCPTrader) GetPositions() ([]map[string]interface{}, error) {
 	t.mu.Lock()
 	if !t.hasFill {
 		t.mu.Unlock()
-		return []map[string]interface{}{}, nil
+		// W117 F4 — no snapshot AND no confirmed entry fill is UNKNOWN, never
+		// flat: fabricating an empty book here let the caller read a silent
+		// "no position" as truth and re-enter on a position NT8 holds.
+		return nil, fmt.Errorf("NT8 account positions unknown: no account snapshot or confirmed entry fill")
 	}
 	fill := t.lastFill
 	t.mu.Unlock()

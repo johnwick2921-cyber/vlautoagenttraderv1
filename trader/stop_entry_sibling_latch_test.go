@@ -84,6 +84,9 @@ func TestUnsentStopEntryNeverCancelsTheSiblingArm(t *testing.T) {
 				}
 			}
 			broker := nttrader.NewTCPTrader(s, "MNQ", "Sim101")
+			// W117 F4 — the AddOn emits a positions frame on connect; seed the
+			// known-flat book so the entry path reads empty, not unreadable.
+			s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 			broker.StartCloseSync(at.id, "fixture", "ninjatrader", st)
 			at.trader = broker
 			at.config.NinjaTraderSymbol = "MNQ"

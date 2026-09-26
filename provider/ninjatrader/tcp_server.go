@@ -108,6 +108,16 @@ type TCPServer struct {
 	rejectCh   chan PositionCloseRejectedPayload
 	instrCh    chan InstrumentInfoPayload
 
+	// W117 F2 — per-(symbol,account) ordered-execution owners: one FIFO worker
+	// goroutine each, fed by the read loop's non-blocking enqueue. snapSeq is
+	// the PER-ACCOUNT order_snapshot watermark (bumped in the read loop) the
+	// workers wait on so recordAcceptedRisk never reads the pre-change broker
+	// book — an account's snapshot certifies only that account (F-B).
+	orderedMu     sync.Mutex
+	orderedOwners map[string]*orderedOwner
+	snapSeqMu     sync.Mutex
+	snapSeq       map[string]int64
+
 	// Coordinated order_update fan-out (picture-htf round, 2026-09-20):
 	// subscribeFor REPLACES the (symbol, account) channel, so two in-process
 	// consumers (armed executor + picture broker consumer) subscribing directly
@@ -188,6 +198,14 @@ type TCPServer struct {
 	// GetPositions reflects NT8 truth across account switch-back + manual trades.
 	// Guarded by acctMu. Each frame REPLACES the account's slice (full snapshot).
 	acctPositions map[string][]OpenPosition
+	// acctPositionsReceived is the local receipt clock of the LAST positions
+	// frame per account (guarded by acctMu). W117 F1: a snapshot older than
+	// the account's latest entry receipt must not read as flat.
+	acctPositionsReceived map[string]time.Time
+	// entryReceipts (W117 F1) — positive entry-execution evidence per
+	// (symbol, account). Lives on the SERVER so adapter replacement (trader
+	// reload) cannot forget which flat snapshots predate an entry.
+	entryReceipts map[string]*entryReceiptState
 
 	// Plan 4 Stage 4 — available accounts discovered by the C# AddOn
 	// (accounts_list frame). Emitted on connect and on account change.
@@ -696,12 +714,14 @@ func NewTCPServer(logger *slog.Logger) *TCPServer {
 		orderSnaps: NewOrderSnapshotCache(),
 		fillCh:     make(chan FillPayload, fillChannelBuffer),
 		orderUpdCh: make(chan OrderUpdatePayload, fillChannelBuffer), closeCh: make(chan PositionClosePayload, fillChannelBuffer),
-		rejectCh:      make(chan PositionCloseRejectedPayload, fillChannelBuffer),
-		instrCh:       make(chan InstrumentInfoPayload, fillChannelBuffer),
-		barCache:      NewBarCache(0),
-		barIngestCh:   make(chan barIngestMsg, ingestQueueCap()),
-		acctBalances:  make(map[string]AccountBalancePayload),
-		acctPositions: make(map[string][]OpenPosition),
+		rejectCh:              make(chan PositionCloseRejectedPayload, fillChannelBuffer),
+		instrCh:               make(chan InstrumentInfoPayload, fillChannelBuffer),
+		barCache:              NewBarCache(0),
+		barIngestCh:           make(chan barIngestMsg, ingestQueueCap()),
+		acctBalances:          make(map[string]AccountBalancePayload),
+		acctPositionsReceived: make(map[string]time.Time),
+		entryReceipts:         make(map[string]*entryReceiptState),
+		acctPositions:         make(map[string][]OpenPosition),
 		barsSubscribe: BarsSubscribePayload{
 			Symbol:     defaultAutoBarsSymbol,
 			Timeframes: append([]string(nil), defaultAutoBarsTimeframes...),
@@ -754,18 +774,8 @@ func (s *TCPServer) AccountStateFor(account string) (AccountBalancePayload, bool
 // (caller falls back to the fill-derived cache). A non-nil empty slice means
 // the account is known-flat. Returns a defensive copy.
 func (s *TCPServer) PositionsFor(account string) ([]OpenPosition, bool) {
-	s.acctMu.RLock()
-	defer s.acctMu.RUnlock()
-	if account == "" || s.acctPositions == nil {
-		return nil, false
-	}
-	v, ok := s.acctPositions[account]
-	if !ok {
-		return nil, false
-	}
-	out := make([]OpenPosition, len(v))
-	copy(out, v)
-	return out, true
+	positions, _, _, ok := s.PositionsForExecutionReceipt(account, "")
+	return positions, ok
 }
 
 // GetAccountsList returns the list of available NT accounts discovered by the
@@ -1475,7 +1485,11 @@ func (s *TCPServer) SeedPositionsForTest(account string, ps []OpenPosition) {
 	if s.acctPositions == nil {
 		s.acctPositions = make(map[string][]OpenPosition)
 	}
+	if s.acctPositionsReceived == nil {
+		s.acctPositionsReceived = make(map[string]time.Time)
+	}
 	s.acctPositions[account] = ps
+	s.acctPositionsReceived[account] = time.Now()
 	s.acctMu.Unlock()
 }
 
@@ -2032,6 +2046,12 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			if fill.Status == "rejected" {
 				s.retirePending(fill.Seq, fill.SignalID)
 			}
+			// W117 F2 — enqueue to the (symbol,account) owner's worker first
+			// (non-blocking, never drops). Owned frames are skipped by the
+			// advisory consumer below.
+			if s.enqueueOrdered(subKey(fill.Symbol, fill.Account), orderedItem{kind: orderedFill, fill: fill}) {
+				fill.OrderedOwned = true
+			}
 			select {
 			case s.fillCh <- fill:
 			default:
@@ -2046,6 +2066,19 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			if err := json.Unmarshal(env.Payload, &oup); err != nil {
 				s.logger.Warn("tcp_server: bad order_update payload", "err", err)
 				continue
+			}
+			// W117 F2 — enqueue to the owner's worker (stamped with the
+			// snapshot watermark for the post-change book gate, R4).
+			if s.enqueueOrdered(subKey(oup.Symbol, oup.Account), orderedItem{kind: orderedOrder, order: oup, snapAt: s.snapSeqFor(oup.Account)}) {
+				oup.OrderedOwned = true
+			}
+			// W117 F1 — positive cumulative entry evidence from an order
+			// frame (the signal's own order name, partfilled or terminal)
+			// fences older flat snapshots, even when no companion fill
+			// frame ever arrives.
+			if oup.Quantity > 0 && oup.SignalID != "" && (oup.OrderName == "" || oup.OrderName == oup.SignalID) &&
+				(strings.EqualFold(oup.State, "partfilled") || ClassifyOrderState(oup.State) == LivenessTerminal) {
+				s.NoteEntryExecution(oup.Symbol, oup.Account, oup.SignalID, oup.Quantity)
 			}
 			select {
 			case s.orderUpdCh <- oup:
@@ -2065,6 +2098,10 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			if s.orderSnaps != nil {
 				s.orderSnaps.PutAt(p, time.Now())
 			}
+			// W117 F2 — R4 watermark: every order_snapshot advances the
+			// counter the ordered workers wait on before applying the
+			// order_update that preceded it.
+			s.snapSeqBump(p.Account)
 			// The snapshot's build_id feeds the SAME far-side field the E7
 			// heartbeat handshake owns — one received value, one source.
 			if p.BuildID != "" {
@@ -2312,6 +2349,11 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 				continue
 			}
 			s.retirePending(p.Seq, p.SignalID)
+			// W117 F2 — enqueue to the owner's worker first; owned frames
+			// are skipped by the advisory close consumer.
+			if s.enqueueOrdered(subKey(p.Symbol, p.Account), orderedItem{kind: orderedClose, close_: p}) {
+				p.OrderedOwned = true
+			}
 			select {
 			case s.closeCh <- p:
 			default:
@@ -2333,7 +2375,15 @@ func (s *TCPServer) readLoop(ctx context.Context, c net.Conn) {
 			if s.acctPositions == nil {
 				s.acctPositions = make(map[string][]OpenPosition)
 			}
+			if s.acctPositionsReceived == nil {
+				s.acctPositionsReceived = make(map[string]time.Time)
+			}
 			s.acctPositions[p.Account] = p.Positions
+			// W117 F-1 (CTO P0) — stamp the receipt clock HERE, on the
+			// production receive path. Only the test seeder stamped it, so
+			// in production the clock stayed 0001-01-01 forever and every
+			// snapshot after the first entry receipt was refused as stale.
+			s.acctPositionsReceived[p.Account] = time.Now()
 			s.acctMu.Unlock()
 			s.logger.Info("tcp_server: positions snapshot", "account", p.Account, "count", len(p.Positions))
 

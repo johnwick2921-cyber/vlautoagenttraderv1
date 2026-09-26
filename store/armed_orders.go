@@ -586,8 +586,20 @@ func (s *ArmedOrderStore) SettleNeverSent(signalID, reason string) (int64, error
 
 // SetState transitions one row's state with a reason (the ledger rule: a
 // terminal state change is never silent).
+//
+// W117 F2 — TERMINAL FILL GUARD (a CAS on state): a row in StateFilled is an
+// entry that BECAME a position; its fill evidence may arrive LATE (after the
+// armed pass already moved on), and no later writer may move it out of
+// 'filled' — not the armed pass's RequestCancel, not an invalidation, not a
+// re-placement. The WHERE clause is the CAS: the update fires when the row is
+// NOT filled (any transition) OR when the TARGET is 'filled' — same-state
+// reason updates stay legal (lineage stamps, stamp_pending clears), so a
+// filled row stays filled no matter which goroutine writes.
 func (s *ArmedOrderStore) SetState(id int64, state, reason string) error {
-	return s.db.Model(&ArmedOrderDB{}).Where("id = ?", id).
+	if s == nil || s.db == nil {
+		return nil
+	}
+	return s.db.Model(&ArmedOrderDB{}).Where("id = ? AND (state <> ? OR ? = ?)", id, StateFilled, state, StateFilled).
 		Updates(map[string]any{"state": state, "state_reason": reasonKeepingWithdraw(reason)}).Error
 }
 
@@ -786,7 +798,10 @@ func (s *ArmedOrderStore) RequestCancel(id int64, reason string, nowMs int64) er
 	if row.CancelRequestedAtMs == 0 {
 		upd["cancel_requested_at_ms"] = nowMs
 	}
-	return s.db.Model(&ArmedOrderDB{}).Where("id = ?", id).Updates(upd).Error
+	// W117 F2 — TERMINAL FILL GUARD (CAS): a filled row can never be moved to
+	// cancel_pending, even by the armed pass racing a late fill. The WHERE is
+	// the precondition: the update only fires when the row is not filled.
+	return s.db.Model(&ArmedOrderDB{}).Where("id = ? AND state <> ?", id, StateFilled).Updates(upd).Error
 }
 
 // ConfirmCancel is the ONLY way a row becomes 'cancelled' through the cancel

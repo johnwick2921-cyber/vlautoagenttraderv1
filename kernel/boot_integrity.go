@@ -71,8 +71,8 @@ func (b BootIntegrity) Line() string {
 	if b.Modified {
 		dirty = " +dirty"
 	}
-	return fmt.Sprintf("🔐 BOOT INTEGRITY %s — rev %s%s · built %s · expected %s · goldens %s",
-		status, rev, dirty, b.BuildTime, exp, goldensWord(b.GoldensOK))
+	return fmt.Sprintf("🔐 BOOT INTEGRITY %s — rev %s%s · pid %d · built %s · expected %s · goldens %s",
+		status, rev, dirty, os.Getpid(), b.BuildTime, exp, goldensWord(b.GoldensOK))
 }
 
 func goldensWord(ok bool) string {

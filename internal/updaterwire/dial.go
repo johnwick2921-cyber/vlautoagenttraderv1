@@ -33,12 +33,19 @@ type Client struct {
 	br   *bufio.Reader
 }
 
-// Dial connects to the worker socket at path (from SocketPath). It refuses —
-// before connecting — a path that is relative or not in clean form, a dir that is not a private
-// 0700 dir we own, and a socket that is a symlink, not a socket, not ours or
-// looser than 0600; after connecting, a listener whose SO_PEERCRED uid is not
-// ours. An absent socket (worker not running) wraps fs.ErrNotExist.
+// Dial connects to the worker socket at path (from SocketPath) with the
+// default dialTimeout. See DialWithTimeout.
 func Dial(path string) (*Client, error) {
+	return DialWithTimeout(path, dialTimeout)
+}
+
+// DialWithTimeout is Dial with the caller's dial bound. The safety checks are
+// identical and happen before any connection: it refuses a path that is
+// relative or not in clean form, a dir that is not a private 0700 dir we own,
+// and a socket that is a symlink, not a socket, not ours or looser than 0600;
+// after connecting, a listener whose SO_PEERCRED uid is not ours. An absent
+// socket (worker not running) wraps fs.ErrNotExist.
+func DialWithTimeout(path string, timeout time.Duration) (*Client, error) {
 	if !filepath.IsAbs(path) || filepath.Clean(path) != path {
 		return nil, ErrBadPath
 	}
@@ -49,7 +56,7 @@ func Dial(path string) (*Client, error) {
 	if err := CheckSocketFile(path, euid); err != nil {
 		return nil, err
 	}
-	d := net.Dialer{Timeout: dialTimeout}
+	d := net.Dialer{Timeout: timeout}
 	c, err := d.Dial("unix", path)
 	if err != nil {
 		return nil, fmt.Errorf("updaterwire: dial: %w", err)
@@ -77,6 +84,17 @@ func DialWorker(dataDir string) (*Client, error) {
 		return nil, err
 	}
 	return Dial(path)
+}
+
+// DialWorkerBounded is DialWorker with the caller's dial bound — the status
+// route's request-time probe (a measured worker_listening, never inferred)
+// uses 250 ms so a status call cannot stall on a half-dead socket.
+func DialWorkerBounded(dataDir string, timeout time.Duration) (*Client, error) {
+	path, err := SocketPath(dataDir)
+	if err != nil {
+		return nil, err
+	}
+	return DialWithTimeout(path, timeout)
 }
 
 // Do sends one request and reads one response. The request is validated

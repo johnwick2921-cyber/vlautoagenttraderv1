@@ -2,18 +2,25 @@ package api
 
 import (
 	"errors"
+	"fmt"
+	"io/fs"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"nofx/auth"
 	"nofx/config"
 	"nofx/internal/updateauth"
+	"nofx/internal/updaterjob"
+	"nofx/internal/updaterwire"
 	"nofx/logger"
 	"nofx/trader"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // ── W-ONE-BUTTON M3 — update authorization ────────────────────────────────
@@ -60,6 +67,12 @@ const UpdateHeader = "X-NOFX-Update"
 // maxUpdateInstallBody caps the install body (a Grant is ~200 bytes).
 const maxUpdateInstallBody = 4096
 
+// workerProbeTimeout is the dial bound on the status route's request-time
+// worker probe: worker_listening is measured within 250 ms, so a status call
+// can never stall on a half-dead socket (CTO ruling on #206 — a measured
+// value, never inferred).
+const workerProbeTimeout = 250 * time.Millisecond
+
 var errForbiddenBody = gin.H{"error": "forbidden"}
 
 // UpdateStarter hands a fully authorized, verified install to the updater
@@ -79,6 +92,117 @@ func (s *Server) SetUpdateVerifier(v updateauth.Verifier) {
 // SetUpdateStarter installs the M4 worker hand-off. nil = none (503).
 func (s *Server) SetUpdateStarter(f UpdateStarter) { s.updateStart = f }
 
+// ── W-ONE-BUTTON M4 3b-B U5b — the updater glue knob ────────────────────
+//
+// NOFX_UPDATER=1 (exactly "1"; anything else, or unset, is OFF) wires the
+// M4 worker behind the M3 routes. OFF is M3 byte for byte — the stub
+// verifier, no starter, the job routes' literal 404 before any filesystem
+// access, and no boot line (TestUpdatesKnobOffIsByteIdentical pins M3's
+// bytes as literals).
+const updaterKnobEnv = "NOFX_UPDATER"
+
+// updateVerifierName is the name the boot line READS off the verifier the
+// server holds (never a literal the line asserts about itself).
+func updateVerifierName(v updateauth.Verifier) string {
+	switch v.(type) {
+	case updateauth.StubVerifier:
+		return "stub"
+	case verdictVerifier:
+		return "verdict-file"
+	case nil:
+		return "n/a"
+	}
+	return "n/a"
+}
+
+// configureUpdater reads the knob ONCE, at NewServer (main sets the data
+// dir first: main.go SetMaintenanceDataDir precedes api.NewServer). OFF:
+// nothing — no field set, no line. ON: the glue is wired and ONE line is
+// printed whose every value is read: the verifier's name off the verifier
+// the server now holds, and "dial ok" only when the worker socket actually
+// dialled (a worker is started by hand, attended — not dialling at boot is
+// not knowing yet, so n/a, never "down").
+func (s *Server) configureUpdater() {
+	if os.Getenv(updaterKnobEnv) != "1" {
+		return
+	}
+	s.updaterOn = true
+	s.updateVerifier = verdictVerifier{}
+	s.updateStart = socketStarter
+	logger.Infof("📦 updater glue: on · verifier=%s · worker=%s", updateVerifierName(s.updateVerifier), probeUpdaterWorker(trader.MaintenanceDataDir()))
+}
+
+// verdictVerifier (knob ON) is the install gate's real verifier: a release is
+// verified iff the worker's attended `fetch` wrote its verdict file —
+// <data>/updater/verdicts/<release_id>.json, written ONCE, after every
+// signature and digest check, by internal/updaterworker (which the app never
+// links). The app only READS it, through updaterjob.ReadVerdict: a private
+// regular file, exactly one JSON object, the id asked for, every field
+// computed. The data dir is the one the maintenance hold already resolves
+// (trader.MaintenanceDataDir) — no second resolver. Absent, unreadable,
+// malformed or naming another release ⇒ ErrNoVerifiedManifest, M3's 422.
+type verdictVerifier struct{}
+
+func (verdictVerifier) VerifiedManifest(releaseID string) (updateauth.Manifest, error) {
+	v, err := updaterjob.ReadVerdict(trader.MaintenanceDataDir(), releaseID)
+	if err != nil || v.ReleaseID != releaseID {
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			logger.Errorf("🔒 [updates] verdict for %q refused: %v", releaseID, err)
+		}
+		return updateauth.Manifest{}, updateauth.ErrNoVerifiedManifest
+	}
+	return updateauth.Manifest{ReleaseID: v.ReleaseID}, nil
+}
+
+// socketStarter (knob ON) hands a fully authorized, verified install to the
+// worker over its unix socket — the API never runs a step itself. It sends
+// exactly install{release_id, job_id} and accepts only:
+//   - OK with state "requested" (the worker wrote the job file), or
+//   - a re-send: OK with the job's OWN state, where the job file (read with
+//     updaterjob.Read) exists, names THIS release and holds that very
+//     non-terminal state.
+//
+// Anything else — no socket, a refusal, a different state — is an error and
+// so M3's 503. The error never carries the grant (only ids and the worker's
+// validated error text).
+func socketStarter(g updateauth.Grant, _ updateauth.Manifest) error {
+	dataDir := trader.MaintenanceDataDir()
+	c, err := updaterwire.DialWorker(dataDir)
+	if err != nil {
+		return fmt.Errorf("updater worker unreachable (job %s): %w", g.JobID, err)
+	}
+	defer c.Close()
+	resp, err := c.Do(updaterwire.NewInstall(g.ReleaseID, g.JobID))
+	if err != nil {
+		return fmt.Errorf("updater worker install (job %s): %w", g.JobID, err)
+	}
+	if !resp.OK {
+		return fmt.Errorf("updater worker refused job %s: %s", g.JobID, resp.Error)
+	}
+	if resp.State == string(updaterjob.StateRequested) {
+		return nil
+	}
+	j, err := updaterjob.Read(dataDir, g.JobID)
+	if err != nil {
+		return fmt.Errorf("updater worker answered state %q for job %s and its job file does not read: %w", resp.State, g.JobID, err)
+	}
+	if j.ReleaseID != g.ReleaseID || string(j.State) != resp.State || updaterjob.IsTerminal(j.State) {
+		return fmt.Errorf("updater worker answered state %q for job %s; its job file holds %s for release %q", resp.State, g.JobID, j.State, j.ReleaseID)
+	}
+	return nil
+}
+
+// probeUpdaterWorker dials the worker socket and hangs up without a frame
+// (the listener treats a frameless close as a clean EOF).
+func probeUpdaterWorker(dataDir string) string {
+	c, err := updaterwire.DialWorker(dataDir)
+	if err != nil {
+		return "n/a"
+	}
+	_ = c.Close()
+	return "dial ok"
+}
+
 func (s *Server) updatesClock() time.Time {
 	if s.updatesNow != nil {
 		return s.updatesNow()
@@ -97,8 +221,96 @@ func (s *Server) registerUpdateRoutes(api *gin.RouterGroup) {
 	upd.GET("/jobs/:id/receipt", s.handleUpdatesJob)
 }
 
-func updatesForbid(c *gin.Context, why string) {
-	logger.Warnf("🔒 [updates] refused %s %.96q: %s", c.Request.Method, c.Request.URL.Path, why)
+// ── CTO fold 1790280466263 — the refusal log is not a flood ─────────────
+//
+// updatesRefusedTotal counts EVERY refusal by the route PATTERN (gin's
+// FullPath — never the client's path or id) and a CLOSED category. A
+// (route, category) that never refused has no series at all: absent, never
+// a fabricated 0.
+var updatesRefusedTotal = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "nofx_updates_refused_total",
+		Help: "Refusals by the /api/updates gate and install handler, by route pattern and closed refusal category.",
+	},
+	[]string{"route", "category"},
+)
+
+// updatesRefusalUnmapped is the category of a reason the closed map does not
+// know (TestEveryUpdatesRefusalReasonHasACategory keeps it unreachable).
+const updatesRefusalUnmapped = "unmapped"
+
+// updatesRefusalCategories is the CLOSED map reason → category. The label is
+// always one of these constants, never the reason text (which may carry a
+// header name or a configuration detail).
+var updatesRefusalCategories = map[string]string{
+	"data dir unconfigured":                "data_dir_unconfigured",
+	"peer unparseable":                     "peer_unparseable",
+	"peer not loopback":                    "peer_not_loopback",
+	"host not a loopback name":             "host_not_loopback",
+	"update header missing or wrong":       "update_header",
+	"cross-origin":                         "cross_origin",
+	"cross-site fetch":                     "cross_site_fetch",
+	"JWT secret empty":                     "jwt_secret_unfit",
+	"JWT secret is a public placeholder":   "jwt_secret_unfit",
+	"JWT secret shorter than 32 bytes":     "jwt_secret_unfit",
+	"authorization missing":                "authorization_missing",
+	"authorization malformed":              "authorization_malformed",
+	"token revoked":                        "token_revoked",
+	"token invalid":                        "token_invalid",
+	"machine token":                        "machine_token",
+	"not enrolled":                         "not_enrolled",
+	"enrollment unreadable":                "enrollment_unreadable",
+	"device key unreadable":                "device_key_unreadable",
+	"not the enrolled admin":               "not_enrolled_admin",
+	"no user store":                        "no_user_store",
+	"admin user row absent or changed":     "admin_row_changed",
+	"token older than the user row":        "token_older_than_row",
+	"install: outside the validity window": "install_expired",
+	"install: device key unreadable":       "install_key_unreadable",
+	"install: MAC mismatch":                "install_mac",
+	"password changed since enrollment (re-enroll with --replace)":                                  "password_changed",
+	"install: expired under the seen-store lock, or at/below its clock floor (clock stepped back?)": "install_expired_under_lock",
+	"install: job-id store refused":                                                                    "job_store_refused",
+}
+
+// updatesRefusalCategory maps a refusal reason onto its closed category.
+func updatesRefusalCategory(why string) string {
+	if c, ok := updatesRefusalCategories[why]; ok {
+		return c
+	}
+	if strings.HasPrefix(why, "forwarded request (") {
+		return "forwarded"
+	}
+	return updatesRefusalUnmapped
+}
+
+// updatesForbid is every /api/updates refusal: the uniform 403, the count,
+// and the log line — a WARN the FIRST time a (route, category) refuses in
+// this process (the process builds exactly one Server: main.go api.NewServer),
+// DEBUG for every repeat. An unmapped reason (none exist — pinned) would key
+// its once-set on the reason too, so two different unknown reasons never
+// hide behind one another.
+func (s *Server) updatesForbid(c *gin.Context, why string) {
+	route := c.FullPath()
+	if route == "" {
+		route = "unmatched"
+	}
+	cat := updatesRefusalCategory(why)
+	updatesRefusedTotal.WithLabelValues(route, cat).Inc()
+	key := route + "\x00" + cat
+	if cat == updatesRefusalUnmapped {
+		key += "\x00" + why
+	}
+	// The line logs the ROUTE (c.FullPath()), never c.Request.URL.Path: the
+	// raw path is client-supplied and would land in the boot log the worker
+	// scans (#206 review fold — an unauthenticated loopback GET of
+	// /api/updates/jobs/BOOT%20INTEGRITY%20REFUSED once printed a WARN that
+	// verifyBootLine read as a refused boot and rolled back a good install).
+	if _, seen := s.updatesWarned.LoadOrStore(key, struct{}{}); !seen {
+		logger.Warnf("🔒 [updates] refused %s %.96q: %s — first %s refusal on %s this process; repeats log at DEBUG, all count in nofx_updates_refused_total", c.Request.Method, route, why, cat, route)
+	} else {
+		logger.Debugf("🔒 [updates] refused %s %.96q: %s (repeat, counted as %s on %s)", c.Request.Method, route, why, cat, route)
+	}
 	c.AbortWithStatusJSON(http.StatusForbidden, errForbiddenBody)
 }
 
@@ -110,7 +322,7 @@ func updatesForbid(c *gin.Context, why string) {
 func (s *Server) updatesGate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if why := s.updatesRefusal(c); why != "" {
-			updatesForbid(c, why)
+			s.updatesForbid(c, why)
 			return
 		}
 		c.Next()
@@ -292,10 +504,23 @@ func (s *Server) handleUpdatesStatus(c *gin.Context) {
 	if stub {
 		verifier = "stub"
 	}
+	enabled := !stub && s.updateStart != nil
+	// worker_listening is MEASURED at request time, never inferred: a
+	// bounded dial of the worker socket (the listener treats a frameless
+	// close as a clean EOF). No dial when install is not enabled — a
+	// configuration-only answer carries false, never a guess.
+	workerListening := false
+	if enabled {
+		if wc, err := updaterwire.DialWorkerBounded(trader.MaintenanceDataDir(), workerProbeTimeout); err == nil {
+			_ = wc.Close()
+			workerListening = true
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"enrolled":          true,
 		"manifest_verifier": verifier,
-		"install_enabled":   !stub && s.updateStart != nil,
+		"install_enabled":   enabled,
+		"worker_listening":  workerListening,
 	})
 }
 
@@ -339,18 +564,18 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 				}
 			}
 		}
-		updatesForbid(c, "install: outside the validity window")
+		s.updatesForbid(c, "install: outside the validity window")
 		return
 	}
 	key, err := updateauth.LoadDeviceKey(dataDir)
 	if err != nil {
-		updatesForbid(c, "install: device key unreadable")
+		s.updatesForbid(c, "install: device key unreadable")
 		return
 	}
 	ok := adminID != "" && updateauth.VerifyMAC(key, adminID, g.ReleaseID, g.JobID, g.ExpiresAt, g.HMAC)
 	clear(key)
 	if !ok {
-		updatesForbid(c, "install: MAC mismatch")
+		s.updatesForbid(c, "install: MAC mismatch")
 		return
 	}
 	// The job id is spent from here on, whatever follows.
@@ -372,11 +597,14 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, updateauth.ErrExpired) {
-			updatesForbid(c, "install: expired under the seen-store lock, or at/below its clock floor (clock stepped back?)")
+			s.updatesForbid(c, "install: expired under the seen-store lock, or at/below its clock floor (clock stepped back?)")
 			return
 		}
 		logger.Errorf("🔒 [updates] install: job-id store refused: %v", err)
-		c.AbortWithStatusJSON(http.StatusForbidden, errForbiddenBody)
+		// #206 review fold: this refusal goes through updatesForbid too — the
+		// guide says every refusal increments nofx_updates_refused_total, and
+		// the raw 403 used to skip the counter silently.
+		s.updatesForbid(c, "install: job-id store refused")
 		return
 	}
 	m, err := s.updateVerifier.VerifiedManifest(g.ReleaseID)
@@ -397,9 +625,40 @@ func (s *Server) handleUpdatesInstall(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"job_id": g.JobID})
 }
 
-// handleUpdatesJob — GET /api/updates/jobs/:id and /jobs/:id/receipt. M3 has
-// no jobs (no worker): every id is unknown ⇒ 404. It never touches the
-// filesystem, so no id — however shaped — can reach a path.
+// handleUpdatesJob — GET /api/updates/jobs/:id and /jobs/:id/receipt.
+//
+// Knob OFF (M3): no jobs — every id is unknown ⇒ the literal 404, before any
+// filesystem access, so no id however shaped can reach a path.
+//
+// Knob ON: the id must pass updaterwire.ValidJobID (the ONE id rule the wire
+// and the job file share) before anything else; then the WORKER's job file
+// is read with updaterjob.Read (private dirs, a safe regular file, the strict
+// decoder, the file-name binding) and projected — updaterjob.View for the
+// job, updaterjob.Receipts for /receipt. Every miss is the SAME 404 body:
+// absent is silent; a corrupt file or an unsafe dir is logged at ERROR
+// server-side and still answers 404, so the response is never a filesystem
+// oracle and never carries a byte of the file.
 func (s *Server) handleUpdatesJob(c *gin.Context) {
-	c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+	if !s.updaterOn {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	id := c.Param("id")
+	if !updaterwire.ValidJobID(id) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	j, err := updaterjob.Read(trader.MaintenanceDataDir(), id)
+	if err != nil {
+		if !errors.Is(err, updaterjob.ErrNotFound) {
+			logger.Errorf("🔒 [updates] job %s unreadable — answered 404: %v", id, err)
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	if strings.HasSuffix(c.FullPath(), "/receipt") {
+		c.JSON(http.StatusOK, updaterjob.Receipts(j))
+		return
+	}
+	c.JSON(http.StatusOK, updaterjob.View(j))
 }

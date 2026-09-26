@@ -49,14 +49,23 @@ func (at *AutoTrader) recordAcceptedRisk(r store.ArmedOrderDB, u nt.OrderUpdateP
 	// THE BROKER'S OWN PRICES, from the same F12 book cutover leg 4 answers
 	// from. Absent or stale leaves them NULL: an unknown accepted price is
 	// never 0, and never the ledger's number wearing the broker's name.
-	if cache, account, _ := at.brokerBook(); cache != nil {
-		if age, ok := cache.AgeAt(account, now); ok {
-			row.BookAgeMs = age.Milliseconds()
+	//
+	// W117 F2 (R4) — the book is only read when it is not proven PRE-change:
+	// the AddOn sends order_update THEN order_snapshot, and the ordered
+	// worker that proved the snapshot never arrived stamps BookGateNotFresh.
+	// A not-fresh book is suppressed entirely — never read stale.
+	if u.BookGate != nt.BookGateNotFresh {
+		if cache, account, _ := at.brokerBook(); cache != nil {
+			if age, ok := cache.AgeAt(account, now); ok {
+				row.BookAgeMs = age.Milliseconds()
+			}
+			if snap, ok := cache.Latest(account); ok {
+				row.BookSource = "f12"
+				applyBrokerTerms(row, snap.WorkingOrders(), u.SignalID)
+			}
 		}
-		if snap, ok := cache.Latest(account); ok {
-			row.BookSource = "f12"
-			applyBrokerTerms(row, snap.WorkingOrders(), u.SignalID)
-		}
+	} else {
+		at.logWarnf("🧾 accepted-risk: book suppressed for %s — no post-update snapshot proven (never read the pre-change book)", u.SignalID)
 	}
 
 	if err := at.store.AcceptedRisk().Append(row); err != nil {

@@ -30,14 +30,14 @@ func TestNtHeldPositionSeesBothSidesOnTheWire(t *testing.T) {
 	at := &AutoTrader{trader: nt, exchange: "ninjatrader"}
 	for _, side := range []string{"long", "short"} {
 		s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{{Symbol: "MNQ", Side: side, Quantity: 1, AvgPrice: 30000}})
-		if got := at.ntHeldPosition("MNQ"); got != side {
+		if got, err := at.ntHeldPosition("MNQ"); err != nil || got != side {
 			pos, _ := nt.GetPositions()
-			t.Fatalf("NT8 holds a %s (GetPositions %+v) but ntHeldPosition = %q", side, pos, got)
+			t.Fatalf("NT8 holds a %s (GetPositions %+v) but ntHeldPosition = %q err=%v", side, pos, got, err)
 		}
 	}
 	s.SeedPositionsForTest("Sim101", nil)
-	if got := at.ntHeldPosition("MNQ"); got != "" {
-		t.Fatalf("flat NT8 must read flat, got %q", got)
+	if got, err := at.ntHeldPosition("MNQ"); err != nil || got != "" {
+		t.Fatalf("flat NT8 must read flat, got %q err=%v", got, err)
 	}
 }
 

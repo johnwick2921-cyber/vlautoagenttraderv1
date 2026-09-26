@@ -371,26 +371,38 @@ func oneSetupVerdictText(v kernel.OneSetupVerdict) string {
 // check never counts a doomed row and the placement engine never sees it.
 // Rows already at the broker (signal id set) are not touched here — the
 // predicate never cancels a broker order (file header).
-func (at *AutoTrader) oneSetupRetireDeclined(c *oneSetupCycle, plan *kernel.ActivePlan, ledger *store.ArmedOrderStore, now time.Time) (retired int) {
+func (at *AutoTrader) oneSetupRetireDeclined(c *oneSetupCycle, plan *kernel.ActivePlan, ledger *store.ArmedOrderStore, now time.Time) (retired int, retireErr error) {
 	if !c.on() || plan == nil || ledger == nil {
-		return 0
+		return 0, nil
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			at.logWarnf("🎯 one setup: retire pass recovered from panic: %v (nothing retired this cycle)", r)
+			retireErr = fmt.Errorf("one-setup retirement panic: %v", r)
 		}
 	}()
 	rows, err := ledger.ListNonTerminal(at.id)
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	for _, r := range rows {
 		if r.TraderID != at.id || r.PlanID != plan.PlanID || r.State != store.StateArmed || strings.TrimSpace(r.SignalID) != "" {
 			continue
 		}
-		v, ok := c.verdicts[r.Scenario]
-		if !ok || v.Allowed {
+		if r.Source == store.ArmSourcePicture {
+			// Picture rows answer to their own epoch/admission gates, not to
+			// one-setup verdicts — a waiting Picture arm has no verdict here
+			// and must never be retired by this pass (W5 picture executor).
 			continue
+		}
+		v, ok := c.verdicts[r.Scenario]
+		if ok && v.Allowed {
+			continue
+		}
+		if !ok {
+			// F13 (port of #117 2dc94a19): no current verdict is NOT an
+			// authorization — an inherited row whose permission is unknown is
+			// retired, never placed.
+			v = kernel.OneSetupVerdict{Level: "unknown", Play: "unknown", Permission: "unknown", Reason: "current verdict unavailable"}
 		}
 		origin := "authorization not placed"
 		if r.BootID != "" && r.BootID != store.ProcessBootID() {
@@ -398,8 +410,7 @@ func (at *AutoTrader) oneSetupRetireDeclined(c *oneSetupCycle, plan *kernel.Acti
 		}
 		reason := "declined by one-setup; " + origin + " · " + oneSetupVerdictText(v)
 		if err := ledger.SetState(r.ID, store.StateCancelled, reason); err != nil {
-			at.logWarnf("🎯 one setup: retire of row %d failed: %v", r.ID, err)
-			continue
+			return retired, fmt.Errorf("retire row %d: %w", r.ID, err)
 		}
 		retired++
 		if at.store != nil {
@@ -408,5 +419,5 @@ func (at *AutoTrader) oneSetupRetireDeclined(c *oneSetupCycle, plan *kernel.Acti
 		at.logWarnf("🎯 one setup RETIRED row %d (%s %s leg %d %s entry=%.2f, %s): level=%s · play=%s · permission=%s — never placed, nothing at the broker under it",
 			r.ID, plan.Session, r.Scenario, r.LegIndex+1, r.Side, r.EntryPx, origin, v.Level, v.Play, v.Permission)
 	}
-	return retired
+	return retired, nil
 }

@@ -145,6 +145,12 @@ func shadowWireHarnessAt(t *testing.T, cfg store.StrategyConfig, now time.Time) 
 	if snaps := s.OrderSnapshots(); snaps != nil {
 		snaps.PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
 	}
+	// W117 F4 — the SAME argument for positions: GetPositions is UNKNOWN until
+	// a snapshot or a confirmed fill, and the one-contract guard's A24
+	// fail-safe reads that error as committed. The AddOn emits a positions
+	// frame on connect; seed the known-flat book so placement tests read an
+	// empty account, not a dark one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 
 	at := &AutoTrader{id: "trader-1", exchange: "ninjatrader", store: st, trader: tr}
 	at.config.StrategyConfig = &cfg

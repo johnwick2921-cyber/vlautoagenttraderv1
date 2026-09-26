@@ -14,6 +14,7 @@ import (
 	"nofx/market"
 	"nofx/store"
 	"nofx/telemetry"
+	ntTrader "nofx/trader/ninjatrader"
 )
 
 // ── W-EXEC-TRUTH W0 (a) — ONE ADMISSION GATE ────────────────────────────────
@@ -574,6 +575,13 @@ func (at *AutoTrader) OpenManualEntryAt(symbol, action string, quantity float64,
 func (at *AutoTrader) sendManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error) {
 	if at.trader == nil {
 		return nil, fmt.Errorf("manual entry NOT sent: no broker on this trader (fail-closed)")
+	}
+	// W117 F4 (CTO addendum 2) — an UNBOUND NT trader has no book: every
+	// position read (margin, reconcile) would refuse with a misleading
+	// "positions unknown". Refuse HERE, with the broker's own binding
+	// wording, before any read — the entry still never sends.
+	if ntTCP, ok := at.trader.(*ntTrader.TCPTrader); ok && !ntTCP.IsBound() {
+		return nil, fmt.Errorf("ninjatrader/tcp: refusing manual %s entry on %s — trader has no bound account (select an account first)", action, symbol)
 	}
 	if reason, refused := at.manualEntryQuantityRefusal(symbol, quantity); refused {
 		at.logWarnf("⛔ agent-chat entry %s %s REFUSED — %s. Nothing sent.", symbol, action, reason)

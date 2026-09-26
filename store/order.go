@@ -271,6 +271,20 @@ func (s *OrderStore) GetOrderFills(orderID int64) ([]*TraderFill, error) {
 	return fills, nil
 }
 
+// GetTraderOrderFills binds both the parent order and child rows to the owner.
+// The unscoped method remains for internal venue synchronization callers.
+func (s *OrderStore) GetTraderOrderFills(traderID string, orderID int64) ([]*TraderFill, error) {
+	var order TraderOrder
+	if err := s.db.Select("id").Where("id = ? AND trader_id = ?", orderID, traderID).First(&order).Error; err != nil {
+		return nil, err
+	}
+	fills := []*TraderFill{}
+	if err := s.db.Where("order_id = ? AND trader_id = ?", orderID, traderID).Order("created_at ASC").Find(&fills).Error; err != nil {
+		return nil, err
+	}
+	return fills, nil
+}
+
 // GetTraderOrderStats gets trader's order statistics
 func (s *OrderStore) GetTraderOrderStats(traderID string) (map[string]interface{}, error) {
 	type result struct {

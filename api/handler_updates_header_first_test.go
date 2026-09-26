@@ -22,6 +22,9 @@ import (
 	"testing"
 	"time"
 
+	"nofx/logger"
+
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -43,6 +46,12 @@ func countUsersReads(t *testing.T, e *updEnv) *atomic.Int64 {
 
 func TestUpdatesHeaderIsJudgedBeforeTheToken(t *testing.T) {
 	logs := captureLogs(t)
+	// CTO fold 1790280466263: a (route, category) WARNs once per process and
+	// every repeat logs at DEBUG with the same "refused … : <category>" text.
+	// This pin reads the category of EVERY request, so it reads at DEBUG.
+	prevLevel := logger.Log.GetLevel()
+	logger.Log.SetLevel(logrus.DebugLevel)
+	t.Cleanup(func() { logger.Log.SetLevel(prevLevel) })
 	e := newUpdEnv(t)
 	reads := countUsersReads(t, e)
 	now := time.Now()

@@ -76,6 +76,11 @@ func newAgentDoorWire(t *testing.T) *agentDoorWire {
 	nt := nttrader.NewTCPTrader(s, "MNQ", "Sim101")
 	at.trader = nt
 	at.config.NinjaTraderSymbol = "MNQ"
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill;
+	// the AddOn emits a positions frame on connect. Seed the known-flat book so
+	// the entry's reconcile/one-contract reads see an empty account, not an
+	// unreadable one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 	return &agentDoorWire{at: at, nt: nt, sigs: sigs}
 }
 

@@ -124,21 +124,73 @@ export default function UpdatesPage() {
     }
   }, [poll])
 
-  // Job fetch: only when the API names a job. Absent job = "no update job".
+  // Job fetch: while the API names a job, AND after the hold clears — the
+  // LAST id the API named keeps being polled, so the terminal state
+  // (complete / rolled_back) is the last thing shown, never a frozen
+  // snapshot of the moment the hold appeared (#206 review fold). Absent job
+  // = "no update job".
+  const [lastJobID, setLastJobID] = useState<string | null>(null)
+  const polledJobID = maintenance?.job_id ?? lastJobID
   useEffect(() => {
-    const jobId = maintenance?.job_id
-    if (!jobId) {
+    if (!polledJobID) {
       setJob(null)
       return
     }
     let alive = true
-    updatesApi.job(jobId).then((j) => {
-      if (alive) setJob(j)
-    })
+    const fetch = () => {
+      updatesApi.job(polledJobID).then((j) => {
+        if (alive) setJob(j)
+      })
+    }
+    fetch()
+    const id = window.setInterval(fetch, POLL_MS)
     return () => {
       alive = false
+      window.clearInterval(id)
     }
+  }, [polledJobID])
+
+  // Remember the id the API named: it stays the polled id once the hold
+  // clears (the job route reads the worker's own job file, which outlives
+  // the hold).
+  useEffect(() => {
+    if (maintenance?.job_id) setLastJobID(maintenance.job_id)
   }, [maintenance?.job_id])
+
+  // The receipt download (OQ-7): the route sits behind the M3 gate, so a bare
+  // navigation 403s — the receipt is fetched through the API client (which
+  // sends X-NOFX-Update) and saved as a file. A refusal shows the server's
+  // own text, never a fabricated one.
+  const [receiptBusy, setReceiptBusy] = useState(false)
+  const [receiptError, setReceiptError] = useState<string | null>(null)
+  const downloadReceipt = useCallback(async () => {
+    const id = polledJobID
+    if (!id || receiptBusy) return
+    setReceiptBusy(true)
+    setReceiptError(null)
+    try {
+      const res = await updatesApi.receipt(id)
+      if (!res?.data) {
+        // The server's own text when it said one; nothing fabricated when it
+        // did not (the button simply stops spinning).
+        setReceiptError(res?.error ?? null)
+        return
+      }
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], {
+        type: 'application/json',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `receipt-${id}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } finally {
+      setReceiptBusy(false)
+    }
+  }, [polledJobID, receiptBusy, language])
 
   // Panel E — resolve PivotWindow, the trader id and the trader's futures
   // symbol (READ from the trader row via its exchange config — never a
@@ -197,6 +249,7 @@ export default function UpdatesPage() {
   let buttonState: UpdateButtonState = 'update-now'
   if (checking) buttonState = 'checking'
   else if (status?.install_enabled === false) buttonState = 'blocked'
+  else if (status?.worker_listening === false) buttonState = 'blocked'
   else if (check?.checked) buttonState = 'up-to-date'
   else if (installError) buttonState = 'retry'
 
@@ -219,9 +272,15 @@ export default function UpdatesPage() {
 
   // The install action exists but is unreachable while M3's adversarial review
   // is open (INSTALL_AUTHZ_UNDER_REVIEW ships ON): the disabled button carries
-  // the exact text and no install POST can fire.
+  // the exact text and no install POST can fire. #206's ruling: BOTH
+  // install_enabled (configuration) AND worker_listening (measured) must be
+  // true, and the exact reason is shown when the worker is not running.
+  const workerDown =
+    status?.install_enabled === true && status?.worker_listening === false
   const installDisabled =
-    INSTALL_AUTHZ_UNDER_REVIEW || status?.install_enabled !== true
+    INSTALL_AUTHZ_UNDER_REVIEW ||
+    status?.install_enabled !== true ||
+    status?.worker_listening !== true
 
   const askReloadHistory = useCallback(() => {
     setHistoryReply(null)
@@ -312,6 +371,15 @@ export default function UpdatesPage() {
           <p className="mt-2 text-xs text-amber-400 flex items-center gap-1.5">
             <ShieldAlert size={13} />
             {up('installUnderReview', language)}
+          </p>
+        )}
+        {workerDown && (
+          <p
+            className="mt-2 text-xs text-amber-400 flex items-center gap-1.5"
+            data-testid="worker-not-running"
+          >
+            <ShieldAlert size={13} />
+            {up('workerNotRunning', language)}
           </p>
         )}
         {installError && (
@@ -408,15 +476,36 @@ export default function UpdatesPage() {
             {job?.blocker && (
               <Row label={up('jobBlocker', language)} value={job.blocker} />
             )}
-            {job?.receipt_url && (
-              <a
-                href={job.receipt_url}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs text-nofx-gold hover:underline"
-                data-testid="receipt-link"
+            {job?.timestamps && Object.keys(job.timestamps).length > 0 && (
+              <div
+                className="mt-3 border-t border-zinc-800 pt-3 space-y-1.5"
+                data-testid="job-timestamps"
               >
-                <Download size={13} />
-                {up('downloadReceipt', language)}
-              </a>
+                {Object.entries(job.timestamps).map(([state, at]) => (
+                  <Row key={state} label={state} value={at} />
+                ))}
+              </div>
+            )}
+            {job?.receipt_url && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={downloadReceipt}
+                  disabled={receiptBusy}
+                  className="inline-flex items-center gap-1.5 text-xs text-nofx-gold hover:underline disabled:opacity-60"
+                  data-testid="receipt-link"
+                >
+                  {receiptBusy ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Download size={13} />
+                  )}
+                  {up('downloadReceipt', language)}
+                </button>
+                {receiptError && (
+                  <p className="mt-1 text-xs text-red-400">{receiptError}</p>
+                )}
+              </div>
             )}
           </>
         )}

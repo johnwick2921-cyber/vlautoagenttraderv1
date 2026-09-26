@@ -1,7 +1,10 @@
 // Package updaterwire is the W-ONE-BUTTON M3 channel between the Go app and
 // the updater worker: a unix socket at <data>/updater/worker.sock carrying
 // newline-delimited, typed JSON frames with a FIXED verb set
-// {status, install, cancel-before-boundary}. Anything else is rejected.
+// {status, install, cancel-before-boundary, resume}. Anything else is
+// rejected. resume (M4 3b-B) is the attended `nofx-updater resume <job>`:
+// only the updater CLI builds one (TestOnlyTheUpdaterCLIBuildsAResume), never
+// the app.
 //
 // This package is the codec, the id allow-lists, the socket path, and the
 // app-side Dial. The worker side (Listen/Serve) lives in
@@ -14,6 +17,7 @@
 //	{"v":1,"verb":"status","payload":{"job_id":"<job>"}}
 //	{"v":1,"verb":"install","payload":{"release_id":"<rel>","job_id":"<job>"}}
 //	{"v":1,"verb":"cancel-before-boundary","payload":{"job_id":"<job>"}}
+//	{"v":1,"verb":"resume","payload":{"job_id":"<job>"}}
 //
 //	{"v":1,"ok":true,"state":"<state>"}
 //	{"v":1,"ok":false,"error":"<text>"}
@@ -51,17 +55,20 @@ const (
 	VerbStatus               Verb = "status"
 	VerbInstall              Verb = "install"
 	VerbCancelBeforeBoundary Verb = "cancel-before-boundary"
+	// VerbResume continues a job the worker parked for an attended step
+	// (nt8_updated: the owner's F5). Built only by cmd/nofx-updater.
+	VerbResume Verb = "resume"
 )
 
 // Verbs is the complete verb set, in a fixed order.
 func Verbs() []Verb {
-	return []Verb{VerbStatus, VerbInstall, VerbCancelBeforeBoundary}
+	return []Verb{VerbStatus, VerbInstall, VerbCancelBeforeBoundary, VerbResume}
 }
 
-// Known reports whether v is one of the three verbs (exact bytes).
+// Known reports whether v is one of the four verbs (exact bytes).
 func (v Verb) Known() bool {
 	switch v {
-	case VerbStatus, VerbInstall, VerbCancelBeforeBoundary:
+	case VerbStatus, VerbInstall, VerbCancelBeforeBoundary, VerbResume:
 		return true
 	}
 	return false
@@ -84,6 +91,13 @@ type CancelPayload struct {
 	JobID string `json:"job_id"`
 }
 
+// ResumePayload names the parked job to continue. Exactly this one field: the
+// worker re-proves every precondition from its own job file, so the frame
+// carries no release, path, requester or MAC.
+type ResumePayload struct {
+	JobID string `json:"job_id"`
+}
+
 // Request is one decoded frame: Verb plus exactly the one payload that verb
 // takes (the others nil).
 type Request struct {
@@ -91,6 +105,7 @@ type Request struct {
 	Status  *StatusPayload
 	Install *InstallPayload
 	Cancel  *CancelPayload
+	Resume  *ResumePayload
 }
 
 // NewStatus builds a status request (jobID "" = the worker as a whole).
@@ -106,6 +121,12 @@ func NewInstall(releaseID, jobID string) Request {
 // NewCancelBeforeBoundary builds a cancel-before-boundary request.
 func NewCancelBeforeBoundary(jobID string) Request {
 	return Request{Verb: VerbCancelBeforeBoundary, Cancel: &CancelPayload{JobID: jobID}}
+}
+
+// NewResume builds a resume request. Only cmd/nofx-updater may call it
+// (TestOnlyTheUpdaterCLIBuildsAResume).
+func NewResume(jobID string) Request {
+	return Request{Verb: VerbResume, Resume: &ResumePayload{JobID: jobID}}
 }
 
 // Response is the worker's answer. OK ⇒ State set, Error empty; !OK ⇒ Error
@@ -261,6 +282,7 @@ var (
 		VerbStatus:               {"job_id": true},
 		VerbInstall:              {"release_id": true, "job_id": true},
 		VerbCancelBeforeBoundary: {"job_id": true},
+		VerbResume:               {"job_id": true},
 	}
 )
 
@@ -336,6 +358,12 @@ func DecodeRequest(frame []byte) (Request, error) {
 			return Request{}, err
 		}
 		req = NewCancelBeforeBoundary(job)
+	case VerbResume:
+		job, _, err := str("job_id")
+		if err != nil {
+			return Request{}, err
+		}
+		req = NewResume(job)
 	}
 	if err := req.Validate(); err != nil {
 		return Request{}, err
@@ -349,7 +377,7 @@ func (r Request) Validate() error {
 		return ErrUnknownVerb
 	}
 	n := 0
-	for _, set := range []bool{r.Status != nil, r.Install != nil, r.Cancel != nil} {
+	for _, set := range []bool{r.Status != nil, r.Install != nil, r.Cancel != nil, r.Resume != nil} {
 		if set {
 			n++
 		}
@@ -369,6 +397,10 @@ func (r Request) Validate() error {
 	case VerbCancelBeforeBoundary:
 		if r.Cancel == nil || !ValidJobID(r.Cancel.JobID) {
 			return fmt.Errorf("%w: cancel-before-boundary", ErrBadPayload)
+		}
+	case VerbResume:
+		if r.Resume == nil || !ValidJobID(r.Resume.JobID) {
+			return fmt.Errorf("%w: resume", ErrBadPayload)
 		}
 	}
 	return nil
@@ -394,6 +426,8 @@ func EncodeRequest(r Request) ([]byte, error) {
 		w.Payload = r.Install
 	case VerbCancelBeforeBoundary:
 		w.Payload = r.Cancel
+	case VerbResume:
+		w.Payload = r.Resume
 	}
 	b, err := json.Marshal(w)
 	if err != nil {

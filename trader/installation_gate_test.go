@@ -35,7 +35,9 @@ func newGateFixture(t *testing.T) *gateFixture {
 	dir := withMaintenanceDir(t)
 	at, st := resetTrader(t, store.StrategyConfig{})
 	at.id = "gate-t1"
-	at.trader = ntTrader.NewTCPTrader(ntwire.NewTCPServer(nil), "MNQ", "Sim101")
+	s := ntwire.NewTCPServer(nil)
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{}) // W117 F4: known-flat on connect
+	at.trader = ntTrader.NewTCPTrader(s, "MNQ", "Sim101")
 	setHold(t, dir, "job-g")
 	f := &gateFixture{dir: dir, st: st, loaded: map[string]*AutoTrader{at.id: at},
 		wire: installationWire{Connected: true, Rec: ntwire.ConnectionRecord{AcceptSeq: 3, RemotePort: 50123, Ack: goodCensusAck("job-g")}, HasAck: true, AckAge: time.Second}}
@@ -89,7 +91,7 @@ func TestInstallationGateReadyWhenEveryLegPasses(t *testing.T) {
 	if g.JobID != "job-g" {
 		t.Fatalf("job_id: %q", g.JobID)
 	}
-	for _, name := range []string{"hold", "go_drained", "in_flight_sends", "queued_signals", "planner_in_flight", "traders_nt8", "addon_ack", "addon_census", "ledger_exposure", "trader_cutover:gate-t1"} {
+	for _, name := range []string{"hold", "go_drained", "in_flight_sends", "queued_signals", "planner_in_flight", "traders_nt8", "addon_ack", "addon_census", "addon_census_prehold", "ledger_exposure", "trader_cutover:gate-t1"} {
 		if _, ok := legOf(g, name); !ok {
 			t.Errorf("leg %s missing", name)
 		}
@@ -163,9 +165,58 @@ func TestInstallationGateCensusCases(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f := newGateFixture(t)
 			c.mut(f.wire.Rec.Ack)
-			mustFail(t, f.run(), "addon_census", c.want)
+			g := f.run()
+			mustFail(t, g, "addon_census", c.want)
+			// The pre-hold census leg shares the content judgment: a census
+			// that names exposure fails BOTH legs (#206 review fold).
+			mustFail(t, g, "addon_census_prehold", c.want)
 		})
 	}
+}
+
+// The C22 pre-hold probe on a NEVER-HELD connection: the wire has sent no
+// maintenance frame (it only sends while held), so the census does not exist
+// yet. That absence is a state, not missing evidence — the pre-hold leg must
+// PASS (the ledger/planner/trader legs vouch for flat; drain re-checks a fresh
+// census after the hold), while the drain leg addon_census must still FAIL on
+// the same absent census. (#206 review fold: the old preflight demanded
+// addon_census and refused every install on a fresh bot process.)
+func TestInstallationGatePreholdCensusOnAFreshConnection(t *testing.T) {
+	f := newGateFixture(t)
+	f.wire.Rec.Ack, f.wire.HasAck, f.wire.AckAge = nil, false, 0
+	g := f.run()
+	l, ok := legOf(g, "addon_census_prehold")
+	if !ok {
+		t.Fatalf("leg addon_census_prehold missing: %+v", g.Legs)
+	}
+	if !l.Pass {
+		t.Fatalf("a never-held connection must pass the pre-hold census leg: %s", l.Detail)
+	}
+	if !strings.Contains(l.Detail, "never been held") {
+		t.Fatalf("the pass must say WHY (the never-held state), got %q", l.Detail)
+	}
+	mustFail(t, g, "addon_census", "no census")
+}
+
+// The other half of the #206 fold: a census that EXISTS but is old is
+// evidence of nothing — the pre-hold leg must refuse it. (The ack here is a
+// held:false release ack from a prior hold or an operator drill, which the
+// wire never refreshes.)
+func TestInstallationGatePreholdCensusMustBeFresh(t *testing.T) {
+	f := newGateFixture(t)
+	f.wire.Rec.Ack.Held = false // a released ack: nothing resends it
+	f.wire.AckAge = ntwire.MaintenanceAckMaxAge() + time.Second
+	mustFail(t, f.run(), "addon_census_prehold", "fresh")
+}
+
+// A FRESH released census that shows exposure fails the pre-hold leg too:
+// content and freshness are both judged (the leg must not pass a stale ack
+// through the content check or a bad census through the age check).
+func TestInstallationGatePreholdCensusFreshButExposed(t *testing.T) {
+	f := newGateFixture(t)
+	f.wire.Rec.Ack.Held = false
+	f.wire.Rec.Ack.Accounts[0].Working = 1
+	mustFail(t, f.run(), "addon_census_prehold", "working")
 }
 
 func TestInstallationGateQueuedSignalsFail(t *testing.T) {
@@ -178,7 +229,7 @@ func TestInstallationGateNoWireFailsTheWireLegs(t *testing.T) {
 	f := newGateFixture(t)
 	installationWireView = func([]*AutoTrader) (installationWire, bool) { return installationWire{}, false }
 	g := f.run()
-	for _, leg := range []string{"addon_ack", "addon_census", "queued_signals"} {
+	for _, leg := range []string{"addon_ack", "addon_census", "addon_census_prehold", "queued_signals"} {
 		mustFail(t, g, leg, "no NT8")
 	}
 }

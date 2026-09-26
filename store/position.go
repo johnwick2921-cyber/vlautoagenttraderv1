@@ -384,6 +384,10 @@ func (s *PositionStore) InitTables() error {
 	if err := s.db.AutoMigrate(&TraderPosition{}); err != nil {
 		return fmt.Errorf("failed to migrate trader_positions table: %w", err)
 	}
+	// W117 F3 — durable NT8 exit receipts (pending-exit retention).
+	if err := s.db.AutoMigrate(&NT8ExitReceipt{}); err != nil {
+		return fmt.Errorf("failed to migrate nt8_exit_receipts: %w", err)
+	}
 
 	// Create unique partial index for exchange position deduplication
 	var indexSQL string

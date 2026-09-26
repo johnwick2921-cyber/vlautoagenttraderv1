@@ -8,6 +8,7 @@ import (
 	"nofx/mcp"
 	_ "nofx/mcp/payment"
 	_ "nofx/mcp/provider"
+	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
 	"nofx/telemetry"
 	"nofx/trader/aster"
@@ -523,6 +524,12 @@ type AutoTrader struct {
 	// armedEvent is the per-trader event-pass loop (started in Run, stopped
 	// in Stop); nil while the trader is not running.
 	armedEvent atomic.Pointer[armedEventLoop]
+
+	// W117 F2 (R5) — the ordered-execution unregister closure, installed at
+	// Run (installNTOrderedExecutions) and called on Stop. Guarded so a Stop
+	// racing the install can never drop a live registration.
+	orderedExecMu    sync.Mutex
+	orderedExecUnreg func()
 	// armedEventNowForTest is a TEST SEAM ONLY (nil in production): the event
 	// loop's clock, so a fixture-time plan can be driven through the REAL
 	// goroutine. TestArmedEventClockSeamIsNilInProduction pins it.
@@ -1052,6 +1059,9 @@ func (at *AutoTrader) Run() error {
 			ntTCP.SetParentAutoTrader(at)
 			ntTCP.StartCloseSync(at.id, at.exchangeID, at.exchange, at.store)
 			at.logInfof("🔄 NinjaTrader close-sync enabled (SL/TP exits → position history)")
+			// W117 F2 (R5) — install the ordered-execution worker registration at
+			// RUN (never at construction); the closure is kept for Stop.
+			at.installNTOrderedExecutions(ntTCP)
 			// Anchor entry_price to the NT8 position average + clear orphan rows
 			// (the 5m-mark entry the AI-decision write records goes stale/frozen).
 			ntTCP.StartPositionReconcile(at.id, at.exchangeID, at.exchange, at.store)
@@ -1134,8 +1144,16 @@ func (at *AutoTrader) Stop() {
 	unregisterPostExitDispatch(at) // Phase 4: stop routing close events here
 	at.unregisterPictureHtf()      // W4 D25 — no Picture frame after Stop
 	at.stopArmedEventLoop()        // W3 D14 — no event pass after Stop
-	close(at.stopMonitorCh)        // Notify monitoring goroutine to stop
-	at.monitorWg.Wait()            // Wait for monitoring goroutine to finish
+	// W117 F2 (R5) — the ordered worker's unregister closure is kept and
+	// called HERE (the worker drains its queue, then exits; nothing is lost).
+	at.orderedExecMu.Lock()
+	if at.orderedExecUnreg != nil {
+		at.orderedExecUnreg()
+		at.orderedExecUnreg = nil
+	}
+	at.orderedExecMu.Unlock()
+	close(at.stopMonitorCh) // Notify monitoring goroutine to stop
+	at.monitorWg.Wait()     // Wait for monitoring goroutine to finish
 	logger.Info("⏹ Automatic trading system stopped")
 }
 
@@ -1362,6 +1380,40 @@ func (at *AutoTrader) recordBrokerRejection(signalID, brokerReason string) {
 	}
 	at.logWarnf("🚨 received armed entry rejection %s leg %d signal=%s reason=%q", row.Scenario, row.LegIndex+1, signalID, reason)
 	telemetry.IncGateBlock(at.id, "place_rejected_by_broker")
+}
+
+// installNTOrderedExecutions (W117 F2, R5) registers this trader's durable
+// execution consumers with the server's per-(symbol,account) ordered worker at
+// RUN time — never at construction. The unregister closure is kept and called
+// on Stop. A second LIVE owner for the same (symbol, account) is refused
+// loudly by the server; the refusal is logged as an error (never a silent
+// eviction, never a double-application).
+func (at *AutoTrader) installNTOrderedExecutions(nt *ntTrader.TCPTrader) {
+	if at == nil || at.store == nil || nt == nil {
+		return
+	}
+	unreg, err := nt.InstallOrderedExecutions(at.id, at.exchangeID, at.exchange, at.store,
+		func(u ntwire.OrderUpdatePayload) {
+			at.onArmedOrderUpdate(u, at.store.ArmedOrders())
+			// R6 — a cumulative entry update is exactly what a parked exit was
+			// waiting for: retry the account's pending exit receipts now.
+			if strings.EqualFold(u.State, "filled") || strings.EqualFold(u.State, "partfilled") {
+				nt.RetryPendingNT8Exits(at.store)
+			}
+		})
+	if err != nil {
+		at.logErrorf("❌ ordered-execution install refused (%v) — the durable consumers stay on the legacy advisory path", err)
+		return
+	}
+	at.orderedExecMu.Lock()
+	// A previous registration (reload edge) is retired before the new one is
+	// recorded — the old owner's worker drains and exits.
+	if at.orderedExecUnreg != nil {
+		at.orderedExecUnreg()
+	}
+	at.orderedExecUnreg = unreg
+	at.orderedExecMu.Unlock()
+	at.logInfof("🧭 ordered execution installed: (symbol,account) worker applies order/fill/close in TCP receive order")
 }
 
 // firstFor reports whether key is new for the dedupe-once field *f and records

@@ -87,11 +87,12 @@ func TestGetPositions_ReadsBoundAccountNotCurrent(t *testing.T) {
 	}
 
 	// Empty-bound trader must NOT borrow the current account (ef550df7 refuse
-	// semantics): PositionsFor("") is !ok → fill-derived cache (empty here).
+	// semantics): PositionsFor("") is !ok; absent fill evidence is UNKNOWN
+	// (W117 F4 — never fabricated as flat).
 	unbound := NewTCPTrader(s, "MNQ")
 	upos, err := unbound.GetPositions()
-	if err != nil {
-		t.Fatalf("GetPositions unbound: %v", err)
+	if err == nil {
+		t.Fatal("GetPositions unbound must report unknown rather than flat")
 	}
 	if len(upos) != 0 {
 		t.Fatalf("unbound trader must not read the shared current account's positions; got %d", len(upos))

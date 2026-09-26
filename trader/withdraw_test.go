@@ -196,6 +196,11 @@ func withdrawFixture(t *testing.T, id string, tune func(*store.StrategyConfig)) 
 	// A real AddOn emits a book whether or not it holds anything; an absent
 	// book is a dark AddOn (see shadowWireHarnessAt).
 	s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill;
+	// the AddOn emits a positions frame on connect. Seed the known-flat book so
+	// the one-contract guard reads empty (pre-F4 contract) rather than the A24
+	// fail-safe refusal.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 
 	at := &AutoTrader{id: id, exchange: "ninjatrader", store: st, trader: ntTrader.NewTCPTrader(s, "MNQ", "Sim101")}
 	at.config.StrategyConfig = &cfg

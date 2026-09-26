@@ -44,7 +44,16 @@ func mustReject(t *testing.T, frame string, want error) {
 	}
 }
 
-func TestWireVerbSetIsExactlyThree(t *testing.T) {
+// L4 CHANGE OF AN EXISTING PIN (was TestWireVerbSetIsExactlyThree, M3). The
+// M4 worker's attended `nofx-updater resume <job>` (3b-B dispatch §0/§3,
+// brief C14) adds exactly ONE verb, so the count this pin asserts had to
+// change; nothing else did. start_install / cancel are NOT added: install and
+// cancel-before-boundary already are those verbs, and a second spelling of a
+// verb is the parser differential this package refuses. The three M3 verbs
+// keep their exact bytes (TestM3VerbFramesAreByteIdentical, green at the base
+// before this change); every M3 forgery below is kept, and the resume
+// forgeries join it.
+func TestWireVerbSetIsExactlyFour(t *testing.T) {
 	got := []string{}
 	for _, v := range Verbs() {
 		got = append(got, string(v))
@@ -53,14 +62,99 @@ func TestWireVerbSetIsExactlyThree(t *testing.T) {
 		}
 	}
 	sort.Strings(got)
-	want := []string{"cancel-before-boundary", "install", "status"}
+	want := []string{"cancel-before-boundary", "install", "resume", "status"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("verb set = %v, want exactly %v", got, want)
 	}
-	for _, v := range []Verb{"exec", "STATUS", "Status", "install ", "", "cancel_before_boundary", "shell"} {
+	for _, v := range []Verb{"exec", "STATUS", "Status", "install ", "", "cancel_before_boundary", "shell",
+		"Resume", "RESUME", "resume ", " resume", "resume_job", "start_install", "start-install", "cancel"} {
 		if v.Known() {
 			t.Fatalf("%q must not be a known verb", v)
 		}
+	}
+}
+
+// The resume payload is the job id and nothing else: no release, path, URL,
+// MAC or requester (the worker re-proves everything from its own job file).
+func TestResumePayloadCarriesOnlyTheJob(t *testing.T) {
+	typ := reflect.TypeOf(ResumePayload{})
+	var names []string
+	for i := 0; i < typ.NumField(); i++ {
+		names = append(names, typ.Field(i).Tag.Get("json"))
+	}
+	if !reflect.DeepEqual(names, []string{"job_id"}) {
+		t.Fatalf("resume payload fields = %v, want exactly [job_id]", names)
+	}
+}
+
+// PIN (M4 3b-B U2, brief C14): resume is decoded with the same strictness as
+// the M3 verbs — exact bytes for the verb, exact keys for its payload, one
+// verb per frame. Every forgery has the positive control: the same frame with
+// the one defect removed decodes to NewResume(job).
+func TestDecodeRejectsResumeForgeries(t *testing.T) {
+	control := `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd"}}`
+	if got := mustDecode(t, control); !reflect.DeepEqual(got, NewResume(okJob)) {
+		t.Fatalf("positive control decoded to %+v, want %+v", got, NewResume(okJob))
+	}
+	// the verb: exact bytes only — re-cased, padded, snake/kebab variants, and
+	// the start_install / cancel duplicates C14 did not add
+	for _, verb := range []string{"Resume", "RESUME", "resume ", " resume", "resume_job", "resume-job",
+		"start_install", "start-install", "cancel", `resume\u0000`} {
+		t.Run("verb "+verb, func(t *testing.T) {
+			mustReject(t, strings.Replace(control, `"resume"`, `"`+verb+`"`, 1), ErrUnknownVerb)
+		})
+	}
+	mustReject(t, `{"v":1,"verb":["resume"],"payload":{"job_id":"job-0001abcd"}}`, ErrUnknownVerb)
+	// one verb per frame
+	mustReject(t, `{"v":1,"verb":"resume","verb":"status","payload":{"job_id":"job-0001abcd"}}`, ErrDuplicateField)
+	mustReject(t, control+control, ErrTrailingData)
+	// the payload: job_id and nothing else, exact case, once
+	for name, frame := range map[string]string{
+		"release beside job": `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd","release_id":"v1.4.2"}}`,
+		"hmac":               `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd","hmac":"00"}}`,
+		"path":               `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd","path":"/tmp/x"}}`,
+		"requested_by":       `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd","requested_by":"1"}}`,
+		"re-cased key":       `{"v":1,"verb":"resume","payload":{"Job_ID":"job-0001abcd"}}`,
+		"top-level extra":    `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd"},"force":true}`,
+	} {
+		t.Run(name, func(t *testing.T) { mustReject(t, frame, ErrUnknownField) })
+	}
+	mustReject(t, `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd","job_id":"job-0002abcd"}}`, ErrDuplicateField)
+	for name, frame := range map[string]string{
+		"no job":         `{"v":1,"verb":"resume","payload":{}}`,
+		"empty job":      `{"v":1,"verb":"resume","payload":{"job_id":""}}`,
+		"upper job":      `{"v":1,"verb":"resume","payload":{"job_id":"JOB-0001ABCD"}}`,
+		"path job":       `{"v":1,"verb":"resume","payload":{"job_id":"../job-0001abcd"}}`,
+		"number job":     `{"v":1,"verb":"resume","payload":{"job_id":12345678}}`,
+		"null payload":   `{"v":1,"verb":"resume","payload":null}`,
+		"string payload": `{"v":1,"verb":"resume","payload":"job-0001abcd"}`,
+	} {
+		t.Run(name, func(t *testing.T) { mustReject(t, frame, ErrBadPayload) })
+	}
+	mustReject(t, `{"v":2,"verb":"resume","payload":{"job_id":"job-0001abcd"}}`, ErrBadVersion)
+}
+
+// A resume request that is not exactly {verb resume, one valid ResumePayload}
+// never reaches the wire, and a resume payload cannot ride beside another
+// verb's.
+func TestEncodeRefusesAnInvalidResume(t *testing.T) {
+	bad := map[string]Request{
+		"no payload":             {Verb: VerbResume},
+		"cancel payload":         {Verb: VerbResume, Cancel: &CancelPayload{JobID: okJob}},
+		"resume beside status":   {Verb: VerbResume, Resume: &ResumePayload{JobID: okJob}, Status: &StatusPayload{}},
+		"status smuggles resume": {Verb: VerbStatus, Status: &StatusPayload{}, Resume: &ResumePayload{JobID: okJob}},
+		"cancel verb, resume":    {Verb: VerbCancelBeforeBoundary, Resume: &ResumePayload{JobID: okJob}},
+		"empty job":              NewResume(""),
+		"upper job":              NewResume("JOB-0001ABCD"),
+		"path job":               NewResume("../job-0001abcd"),
+	}
+	for name, r := range bad {
+		if _, err := EncodeRequest(r); err == nil {
+			t.Fatalf("%s: EncodeRequest(%+v) must refuse", name, r)
+		}
+	}
+	if _, err := EncodeRequest(NewResume(okJob)); err != nil {
+		t.Fatalf("positive control: %v", err)
 	}
 }
 
@@ -81,6 +175,7 @@ func TestCodecRoundTripsEveryVerb(t *testing.T) {
 		NewStatus(okJob),
 		NewInstall(okRelease, okJob),
 		NewCancelBeforeBoundary(okJob),
+		NewResume(okJob),
 	} {
 		frame, err := EncodeRequest(req)
 		if err != nil {
@@ -106,6 +201,12 @@ func TestCodecRoundTripsEveryVerb(t *testing.T) {
 	want := `{"v":1,"verb":"install","payload":{"release_id":"v1.4.2","job_id":"job-0001abcd"}}` + "\n"
 	if string(frame) != want {
 		t.Fatalf("install frame = %q, want %q", frame, want)
+	}
+	// the exact resume frame on the wire (M4 3b-B U2)
+	frame, _ = EncodeRequest(NewResume(okJob))
+	want = `{"v":1,"verb":"resume","payload":{"job_id":"job-0001abcd"}}` + "\n"
+	if string(frame) != want {
+		t.Fatalf("resume frame = %q, want %q", frame, want)
 	}
 }
 
