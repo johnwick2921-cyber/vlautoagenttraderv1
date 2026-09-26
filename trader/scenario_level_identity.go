@@ -39,7 +39,7 @@ func identityIDText(id *string) string {
 	}
 	return *id
 }
-func (at *AutoTrader) recordPlanIdentity(planID string, version int, w kernel.IdentityWarnings, now time.Time) {
+func (at *AutoTrader) recordPlanIdentity(planID string, version int, w kernel.IdentityWarnings, doc *kernel.PlanDoc, now time.Time) {
 	defer at.containLevelIdentity()
 	if at.store == nil {
 		return
@@ -53,7 +53,10 @@ func (at *AutoTrader) recordPlanIdentity(planID string, version int, w kernel.Id
 			kind = "unnamed"
 		}
 		at.recordIdentityEvent(planID, version, id, kind, r, now)
-		if r.Disagreed {
+		// P7 (WAVE 1a-plan, #190) — a zone-accepted scenario disagrees with
+		// the evaluator BY DESIGN (FVG distal-edge anchors, seated S/D+OB
+		// zone edges); the publish path must not count it.
+		if r.Disagreed && !zoneAcceptedIdentity(r) {
 			at.recordIdentityEvent(planID, version, id, "heuristic_disagreed", r, now)
 		}
 	}
@@ -87,7 +90,7 @@ func (at *AutoTrader) observeScenarioIdentity(doc *kernel.PlanDoc, planID string
 		e := byID[sc.ID]
 		r := kernel.ResolveScenarioIdentity(sc, doc.IdentityLevels, e.Anchor, e.HasAnchor)
 		out[sc.ID] = r
-		if r.Disagreed && at.store != nil {
+		if r.Disagreed && at.store != nil && !zoneAcceptedIdentity(r) {
 			at.recordIdentityEvent(planID, version, sc.ID, "heuristic_disagreed", r, now)
 		}
 	}
@@ -128,10 +131,15 @@ func (at *AutoTrader) logLevelIdentityBootAt(now time.Time) {
 	var doc *kernel.PlanDoc
 	if at.store == nil {
 		at.logInfof("%s · trader=%s", levelIdentityBootLine(nil, nil, nil), at.id)
+		at.logInfof("%s · trader=%s", writeTruthBootLine(nil, at.id), at.id)
 		return
 	}
 	if p, err := at.store.Plan().GetLatestPlanForTraderSession(plannerTradeDateCT(now), at.activeSessionName(now), at.id); err == nil && p != nil {
-		_ = json.Unmarshal([]byte(p.Doc), &doc)
+		// WAVE 1a-plan P2 — the boot line reads the ONE fold: an owner overlay
+		// that adds an identity level must be visible in the boot line.
+		if d, ok := resolveActivePlanDoc(at.store, p); ok {
+			doc = &d
+		}
 	}
 	var counts *store.LevelIdentityCounts
 	if c, err := at.store.LevelIdentityCounts(at.id); err == nil {
@@ -146,4 +154,21 @@ func (at *AutoTrader) logLevelIdentityBootAt(now time.Time) {
 		at.logWarnf("🪪 backfill unavailable: %v", err)
 	}
 	at.logInfof("%s · trader=%s · counters=recorded unique plan-version scenarios; legacy IDs stay NULL", levelIdentityBootLine(doc, counts, backfill), at.id)
+	at.logInfof("%s · trader=%s", writeTruthBootLine(at.store, at.id), at.id)
+}
+
+// zoneAcceptedIdentity (P7, #190; skeptic F12) — a zone-accepted scenario
+// disagrees with the evaluator anchor by design: an FVG entry anchors at the
+// DISTAL edge, and a seated S/D+OB zone edge is a band, not a price. The ONE
+// predicate is the KERNEL's zone-aware one — the same test the write check
+// runs (kernel.IdentityAgreesZoneAware) — so an anchor inside the resolved
+// level's [lo−tol, hi+tol] agrees, whatever the level's label or type. The
+// P7 label/type allowlist was wrong in BOTH directions: a plain FVG zone
+// level (label "FVG") at a zone edge still recorded, and an out-of-zone
+// anchor naming a Demand/Supply/OB label stopped recording.
+func zoneAcceptedIdentity(r kernel.ScenarioIdentity) bool {
+	if r.Level == nil || r.EvaluatorAnchor == nil {
+		return false
+	}
+	return kernel.IdentityAgreesZoneAware(*r.Level, *r.EvaluatorAnchor)
 }

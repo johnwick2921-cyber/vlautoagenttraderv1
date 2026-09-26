@@ -31,7 +31,10 @@ echo "RELEASE written: $BUILD_SHA"
 
 # 3. Binary swap + kill -9 (SIGTERM exits 0 and does NOT relaunch).
 if [ ! -x "$BIN" ]; then echo "ABORT: $BIN missing"; exit 4; fi
-OLDPID=$(pgrep -f "nofx-bin$" | head -1)
+# R-o: `pgrep -f nofx-bin` also matches `go version -m nofx-bin`, so it can
+# return the pid of a tool INSPECTING the binary instead of the server running
+# it. Ask systemd, which knows which process it supervises.
+OLDPID=$(systemctl show -p MainPID --value nofx 2>/dev/null)
 mv nofx-bin "nofx-bin.old.leveltruth" 2>/dev/null
 mv "$BIN" nofx-bin
 echo "binary swapped (old PID $OLDPID)"
@@ -43,7 +46,7 @@ for i in $(seq 1 30); do
   BOOT=$(journalctl -u nofx --since "2 min ago" -o cat 2>/dev/null | grep -E "BOOT INTEGRITY OK" | tail -1)
   if [ -n "$BOOT" ]; then
     echo "BOOT: $BOOT"
-    NEWPID=$(pgrep -f "nofx-bin$" | head -1)
+    NEWPID=$(systemctl show -p MainPID --value nofx 2>/dev/null)
     echo "CUTOVER COMPLETE — PID $NEWPID"
     exit 0
   fi

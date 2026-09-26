@@ -3,13 +3,13 @@ package ninjatrader
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"nofx/internal/censuswalk"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
 	"nofx/telemetry"
@@ -142,7 +142,7 @@ func TestBarHorizonHasProductionCallSites(t *testing.T) {
 		"telemetry.BarHorizonCounts(": "trader/ninjatrader/bar_horizon_warn.go",
 		"barHorizonCountsTxt(":        "trader/ninjatrader/bar_horizon_warn.go",
 	} {
-		n, where := prodCallSites(t, fn)
+		n, where := prodCallSites(t, repoRoot(t), fn)
 		if n == 0 {
 			t.Fatalf("%s: 0 production call sites — a new function with no caller is not shipped (A29)", fn)
 		}
@@ -156,48 +156,38 @@ func TestBarHorizonHasProductionCallSites(t *testing.T) {
 // `needle`, and returns their repo-relative paths. Precedent for source-scanning
 // wiring pins in this repo: kernel/wiring_riskforceflat_pin_test.go,
 // trader/wiring_gate_test.go, researchsnapshot/wiring_test.go.
-func prodCallSites(t *testing.T, needle string) (int, []string) {
+func repoRoot(t *testing.T) string {
 	t.Helper()
 	root, err := filepath.Abs("../..")
 	if err != nil {
 		t.Fatalf("repo root: %v", err)
 	}
+	return root
+}
+
+func prodCallSites(t *testing.T, root, needle string) (int, []string) {
+	t.Helper()
 	n := 0
 	var where []string
-	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return nil
-		}
-		if d.IsDir() {
-			switch d.Name() {
-			case ".git", "node_modules", "web", "docs", ".understand-anything", ".claude":
-				return fs.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		b, rerr := os.ReadFile(path)
+	files, werr := censuswalk.NonTestGoFiles(root)
+	if werr != nil {
+		t.Fatalf("census walk: %v", werr)
+	}
+	for _, cf := range files {
+		b, rerr := os.ReadFile(cf.Path)
 		if rerr != nil {
-			return nil
+			continue
 		}
 		for _, line := range strings.Split(string(b), "\n") {
 			if strings.Contains(line, needle) && !strings.HasPrefix(strings.TrimSpace(line), "//") {
-				// The DEFINITION is not a call site.
 				if strings.HasPrefix(strings.TrimSpace(line), "func ") {
 					continue
 				}
-				rel, _ := filepath.Rel(root, path)
 				n++
-				where = append(where, rel)
+				where = append(where, cf.Rel)
 				break
 			}
 		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("walk: %v", err)
 	}
 	return n, where
 }
@@ -209,7 +199,7 @@ func TestRingRehydrateIsWiredAtBoot(t *testing.T) {
 		"cache.RehydrateOlder(":   "trader/ninjatrader/bar_persist_wire.go",
 		"bh.LastNBars(":           "trader/ninjatrader/bar_persist_wire.go",
 	} {
-		n, where := prodCallSites(t, fn)
+		n, where := prodCallSites(t, repoRoot(t), fn)
 		if n == 0 {
 			t.Fatalf("%s: 0 production call sites — a new function with no caller is not shipped (A29)", fn)
 		}
@@ -261,7 +251,7 @@ func TestRehydrateSelectsEveryPair(t *testing.T) {
 		}
 	}
 	// A29 — the production loop consults it.
-	if n, where := prodCallSites(t, "pairsToRehydrate("); n == 0 {
+	if n, where := prodCallSites(t, repoRoot(t), "pairsToRehydrate("); n == 0 {
 		t.Fatalf("pairsToRehydrate has 0 production call sites (A29) — the filter can be bypassed with the suite green (%v)", where)
 	}
 }
@@ -401,5 +391,39 @@ func TestScaleBreakP0TextMatchesTheRefillAndTheReask(t *testing.T) {
 	down := scaleBreakRefillTxt("5m", errors.New("tcp_server: feed down"))
 	if !strings.Contains(down, "NT8 NOT re-asked") || !strings.Contains(down, "feed down") {
 		t.Fatalf("a refused re-ask must carry its reason, got %q", down)
+	}
+}
+
+// TestBarHorizonCensusSeesNestedSkipNamedDirs plants the needle in EVERY
+// censuswalk.NestedProbeDirs directory of a synthetic module and asserts
+// prodCallSites reports every one. With the old any-depth SkipDir the dirs
+// named like a root skip were invisible (CLASS 258).
+func TestBarHorizonCensusSeesNestedSkipNamedDirs(t *testing.T) {
+	root := t.TempDir()
+	dirs := censuswalk.NestedProbeDirs()
+	for _, dir := range dirs {
+		full := filepath.Join(root, filepath.FromSlash(dir))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		src := "package " + censuswalk.PackageName(dir) + "\n\nfunc offender() {\n\t_ = barHorizonWarn(0, 0)\n}\n"
+		if err := os.WriteFile(filepath.Join(full, "offender.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	n, where := prodCallSites(t, root, "barHorizonWarn(")
+	seen := map[string]bool{}
+	for _, w := range where {
+		seen[w] = true
+	}
+	var missed []string
+	for _, dir := range dirs {
+		if !seen[dir+"/offender.go"] {
+			missed = append(missed, dir)
+		}
+	}
+	if len(missed) > 0 {
+		t.Fatalf("the bar-horizon census skipped %d of %d nested probe dirs (saw %d sites) — a skip by NAME at depth exempts compiled packages (CLASS 258):\n\t%s",
+			len(missed), len(dirs), n, strings.Join(missed, "\n\t"))
 	}
 }

@@ -25,7 +25,18 @@ func invertedShortPlanDoc(t *testing.T) string {
 	return string(blob)
 }
 
+// resetFlipDirectionNoted clears the once-per-version memo. It is a package
+// global that survives across -count repeats and across tests in one process,
+// so a second run of the same (trader, plan, version) would suppress the warn
+// and the assert-once tests would fail on the repeat. Test seam only.
+func resetFlipDirectionNoted() {
+	flipDirectionNotedMu.Lock()
+	flipDirectionNoted = map[string]bool{}
+	flipDirectionNotedMu.Unlock()
+}
+
 func TestDescribeActivePlanDeath_InvertedStoredFlipWarns(t *testing.T) {
+	resetFlipDirectionNoted()
 	at, st, now := flipHoldTrader(t)
 	td := "2026-08-18"
 	row := appendVersion(t, st, at, td, "NY_scheduled_read", invertedShortPlanDoc(t), now.Add(-45*time.Minute))
@@ -51,6 +62,7 @@ func TestDescribeActivePlanDeath_InvertedStoredFlipWarns(t *testing.T) {
 // A DORMANT plan is evaluated by describeDormantCleared, not
 // describeActivePlanDeath; the inverted shape must be named there too.
 func TestDescribeDormantCleared_InvertedStoredFlipWarns(t *testing.T) {
+	resetFlipDirectionNoted()
 	at, st, now := flipHoldTrader(t)
 	td := "2026-08-19" // distinct plan id from the active-plan test (once-per-version memory)
 	row := appendVersion(t, st, at, td, "dormant:flip:flip-condition", invertedShortPlanDoc(t), now.Add(-45*time.Minute))

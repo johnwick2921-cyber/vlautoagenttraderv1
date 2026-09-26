@@ -92,7 +92,7 @@ func TestClass45VoidListMatchesValidator(t *testing.T) {
 func TestClass45FloorLineMatchesResolver(t *testing.T) {
 	const atr = 26.02
 	mult := MinSLATRMult()
-	line := RenderStopFloorLine(atr, mult)
+	line := RenderStopFloorLine(atr, mult, false)
 	want := fmt.Sprintf("%.1f pts", mult*atr)
 	if !strings.Contains(line, want) {
 		t.Fatalf("the floor line must state %s (mult %.2f × ATR %.2f), got %q", want, mult, atr, line)

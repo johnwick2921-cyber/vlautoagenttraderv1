@@ -189,3 +189,75 @@ SELECT COUNT(*) FROM bars b WHERE b.contract='MNQ 12-26' AND b.symbol='MNQ' AND 
   mid-trade is still valid — no torn writes.
 - These automated backups are **separate** from the ad-hoc `~/nofx-backups/<name>/`
   guarded-write snapshots; both live under `~/nofx-backups/`.
+
+## Manual boot after W-ONE-BUTTON M4 — the guide rev is a BUILD INPUT
+
+**What changed and why the old preflight silently stops working.** Until this
+wave `web/src/guide/types.ts` carried a literal:
+
+```
+export const GUIDE_BUILT_REV = '<40-hex sha>'
+```
+
+and the boot procedure grepped that line to check the guide matched the binary.
+That literal **no longer exists**. The rev now arrives at build time, so the old
+grep finds nothing — and "finds nothing" reads exactly like "nothing to check".
+It is not a failure; it is a check that has quietly stopped checking.
+
+**Every manual boot now does two things instead:**
+
+```
+# 1. BUILD with the rev of the commit you are booting
+cd web && VITE_GUIDE_BUILT_REV=<40-hex merge sha> npm run build
+
+# 2. VERIFY the served bundle actually carries it
+grep -rq -- '<40-hex merge sha>' web/dist/assets/*.js \
+  || { echo 'the dist does not carry the rev — do NOT boot'; exit 1; }
+```
+
+A production build with the variable missing or not 40-hex **fails at build
+time** rather than shipping a guide whose claim about the running binary cannot
+be checked. `deploy/cutover.sh` performs step 2 as a preflight and refuses the
+cutover if it fails; `.github/workflows/release.yml` does exactly the same for a
+tagged release, and additionally proves the negative — `VITE_GUIDE_BUILT_REV=
+npm run build` must FAIL before the real build runs.
+
+**Out-of-repo script:** the CTO's `~/nofx-backups/cutover-auto-rollback-v3.sh`
+still greps the old literal. It must be edited the same way before the next
+boot, or it will report a green preflight for a check that no longer exists.
+`deploy/cutover.sh` is its in-git successor and already does this.
+
+## Rollback copies
+
+`deploy/cutover.sh` keeps both halves of the previous release, named so they
+cannot collide (R-o — the old script reused `nofx-bin.old.<rev>`, so two
+cutovers at the same rev overwrote the only way back):
+
+```
+nofx-bin.old.<rev12>.<YYYYmmdd-HHMMSS>
+web/dist.old.<rev12>.<YYYYmmdd-HHMMSS>
+```
+
+A rollback restores **both**, and restores `web/dist` atomically by moving
+directories rather than copying into a live one — a half-copied dist serves a
+mix of old and new assets, which reads as a UI bug rather than a failed cutover.
+
+## If a cutover refuses the binary you just built
+
+Two different refusals, two different cures — read WHICH one you got.
+
+**"carries NO vcs stamps at all"** — the binary is fine; where it was BUILT is
+not. Go does not stamp VCS information into a build made from a linked git
+worktree, and every lane works in one. `-buildvcs=true` does not help: it exits
+0 and stamps nothing. Build from a clean clone (or the main tree) at the same
+commit and the stamps appear:
+
+    git clone --no-local <repo> /tmp/build && cd /tmp/build
+    git checkout <sha> && go build -o /tmp/nofx-bin .
+    go version -m /tmp/nofx-bin | grep vcs.      # revision + modified=false
+
+**"is stamped, but with a DIFFERENT revision"** — this really is the wrong
+binary for the sha you named. Check the sha, not the build location.
+
+Do not weaken either check to get past it. The identity proof is the only thing
+standing between a cutover and installing a binary nobody can identify later.

@@ -47,9 +47,15 @@ func (s *Server) routeWithSchema(g *gin.RouterGroup, method, path, description, 
 
 // GetAPIDocs returns formatted API documentation for injection into the LLM system prompt.
 // Routes with schema documentation include full parameter details.
+//
+// M3 red-team H1: routes the agent must not be handed (agentHidden —
+// credential_guard.go) are omitted; they stay registered for the web UI.
 func GetAPIDocs() string {
 	var sb strings.Builder
 	for _, r := range routeRegistry {
+		if agentHidden(r.Path) {
+			continue
+		}
 		sb.WriteString(fmt.Sprintf("%-8s %s\n", r.Method, r.Path))
 		sb.WriteString(fmt.Sprintf("         %s\n", r.Description))
 		if r.Schema != "" {

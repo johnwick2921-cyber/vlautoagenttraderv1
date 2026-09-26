@@ -33,6 +33,7 @@ func class27DesyncHarness(t *testing.T) (*AutoTrader, *ntwire.TCPServer, chan nt
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 
 	frames := make(chan ntwire.CancelOrderPayload, 4)
@@ -59,6 +60,10 @@ func class27DesyncHarness(t *testing.T) (*AutoTrader, *ntwire.TCPServer, chan nt
 	t.Cleanup(func() { _ = st.Close() })
 
 	tr := ntTrader.NewTCPTrader(s, "MNQ", "Sim101")
+	// W117 F4 — GetPositions is UNKNOWN until a snapshot or a confirmed fill;
+	// the AddOn emits a positions frame on connect. Seed the known-flat book so
+	// the entry path reads an empty account, not an unreadable one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 	at := &AutoTrader{id: "td1", exchange: "ninjatrader", store: st, trader: tr}
 	at.config.Exchange = "ninjatrader"
 	at.config.StrategyConfig = &store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}

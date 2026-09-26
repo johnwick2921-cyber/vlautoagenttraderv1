@@ -22,7 +22,7 @@ func fullDayPlan() *DayPlanConfig {
 		MaxLevels:          8,
 		ScenarioCap:        3,
 		AcceptanceRule:     "2x5m",
-		ReplanCap:          2,
+		ReplanCap:          intPtr(2),
 		SessionsEnabled:    []string{"NY"},
 		ApprovalRequired:   false,
 		EveningDigest:      true,

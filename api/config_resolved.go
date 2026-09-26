@@ -40,19 +40,26 @@ type resolvedKnob struct {
 	Note      string   `json:"note,omitempty"`
 }
 
+// resolvedSummary carries the same numbers as the ⚙ settings boot line. A
+// value the process has not computed is ABSENT, never a typed 0 (L7):
+//   - schema is absent (and schema_error says why) if the enumeration failed;
+//   - env_shadows / env_shadow_paths are absent while nothing counts env
+//     shadows (W1 (f), 2026-09-23: the counter has no writer — the boot line
+//     reads "env-shadows=n/a (not counted)").
 type resolvedSummary struct {
-	Schema              int      `json:"schema"`
-	Classified          int      `json:"classified"`
-	Live                int      `json:"live"`
-	Ineffective         int      `json:"ineffective"`
-	CandidateUnverified int      `json:"candidate_unverified"`
-	Suspended           int      `json:"suspended"`
-	Advisory            int      `json:"advisory"`
-	DisplayOnly         int      `json:"display_only"`
-	Infra               int      `json:"infra"`
-	Folded              int      `json:"folded"`
-	EnvShadows          int      `json:"env_shadows"`
-	EnvShadowPaths      []string `json:"env_shadow_paths"`
+	Schema              *int      `json:"schema,omitempty"`
+	SchemaError         string    `json:"schema_error,omitempty"`
+	Classified          int       `json:"classified"`
+	Live                int       `json:"live"`
+	Ineffective         int       `json:"ineffective"`
+	CandidateUnverified int       `json:"candidate_unverified"`
+	Suspended           int       `json:"suspended"`
+	Advisory            int       `json:"advisory"`
+	DisplayOnly         int       `json:"display_only"`
+	Infra               int       `json:"infra"`
+	Folded              int       `json:"folded"`
+	EnvShadows          *int      `json:"env_shadows,omitempty"`
+	EnvShadowPaths      *[]string `json:"env_shadow_paths,omitempty"`
 }
 
 // resolvedField is one "saved → resolved · source" line. Saved is what is in
@@ -157,14 +164,31 @@ func configResolvedPayload(cfg *store.StrategyConfig, session string) gin.H {
 		})
 	}
 
-	paths := sum.EnvShadowPaths
-	if paths == nil {
-		paths = []string{}
+	// Counted → the list, [] when empty. Not counted → absent.
+	var envPaths *[]string
+	if sum.EnvShadows != nil {
+		paths := sum.EnvShadowPaths
+		if paths == nil {
+			paths = []string{}
+		}
+		envPaths = &paths
+	}
+
+	// schema is the same enumeration the boot line reads (the production
+	// MarshalJSON key paths, ai_config.* included since W1 (f)).
+	var schema *int
+	schemaErr := ""
+	if err := store.SchemaEnumerationErr(); err != nil {
+		schemaErr = err.Error()
+	} else {
+		n := len(store.EnumerateSchemaKnobs())
+		schema = &n
 	}
 
 	payload := gin.H{
 		"summary": resolvedSummary{
-			Schema:              len(store.EnumerateSchemaKnobs()),
+			Schema:              schema,
+			SchemaError:         schemaErr,
 			Classified:          sum.Total,
 			Live:                sum.Live,
 			Ineffective:         sum.Ineffective,
@@ -175,7 +199,7 @@ func configResolvedPayload(cfg *store.StrategyConfig, session string) gin.H {
 			Infra:               sum.Infra,
 			Folded:              sum.Folded,
 			EnvShadows:          sum.EnvShadows,
-			EnvShadowPaths:      paths,
+			EnvShadowPaths:      envPaths,
 		},
 		"knobs": knobs,
 	}

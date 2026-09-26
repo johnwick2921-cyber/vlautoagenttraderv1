@@ -8,11 +8,11 @@ const dayPlan: KnobSpec[] = [
   {
     label: 'Plan mode',
     where: 'Strategy → Day Plan → top',
-    what: 'How the plan constrains entries: ADVISORY informs · DIRECTION blocks against-bias entries · STRICT blocks anything not citing an armed scenario (and ALL entries with no plan).',
+    what: "How the plan constrains entries: ADVISORY informs · DIRECTION blocks against-bias entries · STRICT executes entries ONLY through armed plan scenarios (W3: the market_in_zone policy — a limit inside the planner's entry zone); an AI decision is refused as a market entry, and one that CITES a market_in_zone scenario is a nudge that runs that scenario's armed pass (placement only). No plan = no entries in direction/strict.",
     trader:
-      'Strict means no-plan = flat day — the plan is the law, not advice.',
+      'Strict means no-plan = flat day — the plan is the law, not advice. Since W3 the executor prompt\'s PLAN BLOCK header says exactly that under strict ("… off-plan is refused") instead of the advisory "a valid off-plan setup may still be traded".',
     consumer:
-      'store/resolve_source.go ResolvePlanMode — the one resolver (session override → strategy → advisory) · entry points store/strategy.go PlanModeFor and trader/auto_trader_planconfig.go planModeFor · direction block trader/auto_trader_planconfig.go planModeBlocked',
+      "store/resolve_source.go ResolvePlanMode — the one resolver (session override → strategy → advisory) · entry points store/strategy.go PlanModeFor and trader/auto_trader_planconfig.go planModeFor · direction block trader/auto_trader_planconfig.go planModeBlocked · executor header kernel/plan_render.go RenderPlanBlockForMode via setExecutorPlanContext (the plan's own session)",
     range: 'advisory | direction | strict',
     systemDefault: 'advisory',
     recommended:
@@ -23,7 +23,8 @@ const dayPlan: KnobSpec[] = [
   },
   {
     label: 'One setup (switch)',
-    where: 'Strategy → Day Plan → One setup (switch) + min grade (A/B/C)',
+    where:
+      'Strategy → Day Plan → "One setup — arm only the single best reject (fade) level" (switch) + min grade (A/B/C)',
     what: 'The book arms ONE play — the fade (reject) — at the best level near price, only on a permitted day. Gates arm AUTHORIZATION only; never cancels a resting arm, never places. The follow side is recorded, never armed.',
     trader:
       'ON [O] by default (an unset strategy reads ON — the field is a tri-state so an unset value is never read as OFF). OFF restores the wide book byte-identically (pinned against a golden generated before the wave existed).',
@@ -34,7 +35,23 @@ const dayPlan: KnobSpec[] = [
     recommended:
       "⭐ ON — the owner's ruling of 2026-09-10; the less-contradicted side of round 17, not a proven one.",
     whenToTouch:
-      'Only to restore the wide book for a comparison; the boot line names the switch and its source.',
+      'Only to restore the wide book for a comparison; the boot line names the switch and its source. W3 PRECONDITION: with entry_policy_default=market_in_zone, ON declines every non-reject play (play_not_reject) — only reject arms can place; set it OFF to trade acceptance/hold/reclaim/waterfall arms under strict. The 🎛 entry law boot line WARNs while both are on. W5 (D8 ruling): one_setup governs PLANNER plays only — a Picture scenario (📷 P1…) is admitted by its own switch and one_setup never declines, retires, ranks or re-targets it; a 📷 WARN says so at boot while Picture is on and this is ON.',
+    perSession: 'No.',
+  },
+  {
+    label: 'Planner contract (A3)',
+    where: 'Strategy → Day Plan → Planner contract switch (advanced).',
+    what: "WAVE PLANNER A3 (2026-09-25): the prompt, the validator and the executor are ONE contract — breakdown/breakup entries must wait for the tape's confirming close, planned_order is legal only on reject / fvg_entry / sweep_reclaim leg 0, every scenario's economics must carry nonzero risk, and a REJECT fade's stop is composed by the executor from the frozen zone (edge − buffer).",
+    trader:
+      "ON by default (nil). Turning it OFF restores the pre-A3 prompt text byte-for-byte — the machine still refuses the same violations; only the prompt's contract wording changes.",
+    consumer:
+      'store/strategy.go PlannerContractOn · kernel/planner_prompt.go (contract fragments) · kernel/class45_feeds_forward.go (stop-floor qualification)',
+    range: 'switch (ON/OFF)',
+    systemDefault: 'ON · nil = ON',
+    recommended:
+      "⭐ leave ON — the contract wording is the machine's ground truth. OFF exists only to prove the prompt change is byte-reversible.",
+    whenToTouch:
+      'Never in normal trading. OFF is a diagnostic position for A/B studies of planner wording.',
     perSession: 'No.',
   },
   {
@@ -105,18 +122,18 @@ const dayPlan: KnobSpec[] = [
   {
     label: 'Max re-plans',
     where: 'Strategy → Day Plan → Max re-plans 0–4',
-    what: "Re-read budget per session — a RECORDED counter (class 35): only death re-plans and owner re-reads (↻) spend it. Level-event / MSS wake reads (fast-market included), dormant flips + re-arms, the session's scheduled read, owner reset and fail-closed markers are FREE and never count. Budget exhausted = NO-TRADE terminal marker (⛔).",
+    what: "Re-read budget per session — a RECORDED counter (class 35): only death re-plans and owner re-reads (↻) spend it. Level-event / MSS wake reads (fast-market included), dormant flips + re-arms, the session's scheduled read, owner reset and fail-closed markers are FREE and never count. Budget exhausted = NO-TRADE terminal marker (⛔). PRESENCE-AWARE since W1 (settings truth, 2026-09-23): a BLANK box = inherit the shipped default 2; 0 = no re-plan at all, stored and honoured at the strategy level too (before W1 a strategy-level 0 could not be saved and read as 2). Each trader's boot block prints the cap it will run: '🧮 replan cap: strategy=N[O|I] · NY=… · ASIA=… · LONDON=…' ([O] saved, [I] the shipped default).",
     trader:
       'The v6-after-cap-4 confusion: the last chip IS the no-trade marker, not a real plan. And a chain can legitimately be v6 with the FULL budget left (2026-09-01 LONDON: six rows, zero spends) — the card\'s "re-reads left" is the recorded number, not version−1.',
     consumer:
-      "store/strategy.go (ReplanCap · GetReplanBudget/SpendReplan) · trader/auto_trader_planner.go (deathReplanAllowed → runDeathReplan) · trader/auto_trader_reread.go (owner re-read gate). The re-ALIGN budget (owner level edits → ⟳ Re-align plan) is folded beside this since W-KNOB-PRUNE: constant 5 per plan unless the strategy stores realign_cap (the owner's stores 10), no control.",
-    range: '0 – 4 per session',
-    systemDefault: '2 (owner)',
+      "store/resolve_source.go ResolveReplanCap (the ONE rule: session → strategy → 2; ReplanCapFor delegates) · store/strategy.go (GetReplanBudget/SpendReplan) · trader/auto_trader_planner.go (deathReplanAllowed → runDeathReplan) · trader/auto_trader_reread.go (owner re-read gate). The re-ALIGN budget (owner level edits → ⟳ Re-align plan) is folded beside this since W-KNOB-PRUNE: constant 5 per plan unless the strategy stores realign_cap (the owner's stores 10), no control.",
+    range: '0 – 4 per session · blank = inherit',
+    systemDefault: 'blank → 2 [I] (shipped default)',
     recommended: '⭐ 2 — one re-read after an early death, then sit out.',
     whenToTouch:
       "Raise for violent trend days where one death shouldn't end the session.",
     perSession:
-      'Yes — session override wins; inherit (blank) = the strategy-level value (ReplanCapFor).',
+      'Yes — session override wins (0 = no re-plan in that session); inherit = the strategy-level value (ResolveReplanCap). Turning an override ON starts it at the strategy value it was inheriting.',
   },
   {
     label: 'Require approval',
@@ -245,6 +262,83 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No — strategy-level.',
   },
   {
+    label: 'Entry policy default (W-EXEC-TRUTH W3)',
+    where: 'Strategy → Day Plan → entry_policy_default (API/config field)',
+    what: "The entry policy STAMPED at parse on every arm of a NEWLY authored plan (a stored plan is never re-stamped; an absent policy executes as legacy, byte-identical). market_in_zone: a LIMIT at the far edge of the planner's economics.entry_zone (buy → zone high, sell → zone low) — every condition is armable, a non-touch confirm chains (wait_confirm), the zone is judged at write. planned_order: the resting order at the exact entry, stamped only on reject / fvg_entry / sweep_reclaim leg 1 (elsewhere the arm stays legacy — an illegal policy is never stamped). legacy: stamp nothing — the planner prompt and the validator are the pre-W3 text byte-for-byte.",
+    trader:
+      'market_in_zone = "enter around the price": the plan names a small zone and the machine fills anywhere in it, never beyond it; acceptance, hold, reclaim and immediate waterfalls finally have a route under strict. The planner prompt carries ONE "ENTRY POLICY" sentence that follows this knob.',
+    consumer:
+      'store/resolve_source.go ResolveEntryPolicyDefault · trader/entry_policy_authoring.go plannerAuthoringOpts → kernel.ParsePlanDocForAuthoring (StampEntryPolicyDefault before ValidatePlanDocWithCaps) · kernel/planner_prompt.go PlannerInput.EntryPolicyDefault · trader/rootfix_shadow_ab.go (shadow parity)',
+    range:
+      'market_in_zone | planned_order | legacy (anything else → market_in_zone, named in the source)',
+    systemDefault: 'market_in_zone (R4)',
+    recommended:
+      '⭐ market_in_zone — the W3 ruling (R4); legacy only to reproduce pre-W3 plans for a comparison.',
+    whenToTouch:
+      'legacy to switch the whole policy off for new plans; the 🎛 entry law boot line prints the resolved value and its origin letter.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Zone max width (W3)',
+    where: 'Strategy → Day Plan → zone_max_pts (API/config field)',
+    what: 'The widest economics.entry_zone (points) a market_in_zone arm may carry, judged at write (not gated by write_time_feasibility). Wider → hinted ("S# entry zone: zone_too_wide — …"), then written with the arm disabled (arm_disabled_reason zone_too_wide) on the last attempt. The prompt states the resolved value.',
+    trader:
+      'Caps how far "around the price" may reach: with a 10-pt zone the worst fill is at most 10 pts from the best one, and the gates judge the worst (R:R at the far edge, stop distance at the near edge).',
+    consumer:
+      'store/resolve_source.go ResolveZoneMaxPts · trader/write_time_feasibility.go writeTimeZoneVerdicts → kernel.ArmZoneVerdict · kernel PlannerInput.ZoneMaxPts (prompt)',
+    range: '> 0 points (≤ 0 or unset → 10)',
+    systemDefault: '10',
+    recommended:
+      '⭐ 10 — the R2 ruling; a wider zone buys fills with worse worst-case R:R.',
+    whenToTouch:
+      'Only after the receipts show zones refused for width that would have traded well.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Zone rest cap (W3)',
+    where: 'Strategy → Day Plan → zone_rest_max_min (API/config field)',
+    what: 'A market_in_zone limit that has rested longer than this many minutes (measured from its placement) is cancelled "zone rest expired" by the executor — a zone the market walked away from is not left working forever. The rest cap is no longer the only exit: a new plan version or overlay that moves the zone off the resting limit cancels it sooner ("zone moved by vN").',
+    trader:
+      'The limit sits at the far edge of the zone; if price never comes back within the cap the order goes away rather than filling hours later in a different market.',
+    consumer:
+      'store/resolve_source.go ResolveZoneRestMaxMin · trader/armed_executor.go (the market_in_zone rest cap) · 🎛 entry law boot line',
+    range: '> 0 minutes (≤ 0 or unset → 30)',
+    systemDefault: '30',
+    recommended:
+      '⭐ 30 — the W3 default; there is no fill evidence yet to argue another number.',
+    whenToTouch: 'After the receipts (rest duration per fill) exist.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Zone placement reach (PLANNER B1)',
+    where: 'Strategy → Day Plan → zone_place_within_pts (API/config field)',
+    what: 'The distance bound (points) that decides whether an armed market_in_zone arm may place: a row whose zone is farther than this from the eval price stays armed-unplaced (no rest clock, nothing on the wire) and places on a later pass once price comes within the bound; inside and short_of_zone verdicts are unchanged. With the bound ON, a rest-cap expiry (zone_rest_max_min) no longer dismantles the arm — the resting order is cancelled on request (cancel_pending, signal kept) and only once the broker book confirms it does the row return to armed-unplaced (re-placeable) so it can try again when price is near; a failed cancel send is retried and a fill during the wait attributes to the row. 0 turns the whole reach contract OFF and restores the legacy behaviour byte-for-byte (a far arm places at once and an expiry dismantles the arm).',
+    trader:
+      'The bound is the existing armed placement band (25 pts on MNQ, the same distance a legacy limit waits for). A zone the market walked away from is not left resting 148 points away.',
+    consumer:
+      'store/resolve_source.go ResolveZonePlaceWithinPts · trader/zone_placement.go (placeZoneRow beyond-proximity gate + zoneRestCap reset) · 🎛 entry law boot line',
+    range: '0 = OFF (legacy). unset → 25 (the armed placement band).',
+    systemDefault: '25 (ON)',
+    recommended:
+      '⭐ 25 — the same bound legacy limit placement already uses; no evidence yet to argue another number.',
+    whenToTouch: 'After the receipts (placements vs distance per fill) exist.',
+    perSession: 'No — strategy-level.',
+  },
+  {
+    label: 'Armable hold floor (W3)',
+    where: 'Strategy → Day Plan → min_hold_min (API/config field)',
+    what: 'The floor (minutes) on the RESOLVED hold of an ARMED market_in_zone time_hold scenario (acceptance / hold): the stored confirm.hold_min, else the ACCEPT_HOLD_MIN authoring default. Below it the plan is refused at write with its own law ("armable hold floor: …") — an unarmed scenario or a legacy arm is never judged. New plans only.',
+    trader:
+      'Once acceptance and hold can arm, a 1–2 minute hold would place a limit on noise; the floor keeps the armed hold honest.',
+    consumer:
+      'store/resolve_source.go ResolveMinHoldMin · kernel/entry_policy.go ValidateArmableHoldFloor via kernel.ParsePlanDocForAuthoring · kernel PlannerInput.MinHoldMin (prompt)',
+    range: '> 0 minutes (≤ 0 or unset → 3)',
+    systemDefault: '3',
+    recommended: '⭐ 3 — the CTO ruling of 2026-09-23.',
+    whenToTouch: 'Only with evidence that shorter armed holds fill well.',
+    perSession: 'No — strategy-level.',
+  },
+  {
     label: 'Geometry reference levels (W-GEOMETRY-REFUSAL)',
     where: 'Strategy → Day Plan → geometry_reference_levels (API/config field)',
     what: "Since the 2026-09-12 structural-stop wave, a reject play at a session reference level (ONH/ONL and the other anchor kinds) was REFUSED at arm time 100% of the time: the identity map showed id=NULL for a reference whose source window was still developing (no formation close), the planner wrote level_id null as instructed, and the executor's frozen-zone match failed with no_provenance / scenario_level_id_missing. ON (default — owner ruling 2026-09-18 'both fix now') assigns a STABLE id to reference-anchor levels whose formation close is unknown, and treats an empty zone-source tf as a wildcard (VWAP-family sources). The arm gate now logs one ⚔️ arm REFUSED WARN line per (geometry key, reason) change instead of a silent INFO-only refusal. OFF = today's behaviour byte-identical.",
@@ -294,6 +388,22 @@ const dayPlan: KnobSpec[] = [
     perSession: 'No.',
   },
   {
+    label: 'Planner fresh tape on born-dead retry (PLANNER A6)',
+    where: 'Strategy → Day Plan → planner_fresh_tape toggle',
+    what: "When a planner attempt is refused born-dead or flip-met (the market moved during the 9–15 minute AI read and the validator correctly refused), attempt N+1's prompt carries the COMPLETED bars between the read clock and the refusal — at most the last 30 completed 1m closes and the last 6 completed 5m closes, never the forming bar — plus the breached condition named verbatim, so the re-author reads the tape that exists now instead of retrying blind against the stale read. The born-dead check itself is unchanged: a plan whose lines are already crossed at publication is still refused. ON is the default (nil=ON).",
+    trader:
+      "ON = a born-dead / flip-met retry re-sights the model on the fresh tape instead of burning attempts 2/3 on the identical stale read. The block is appended to BOTH the repair prompt and the full re-author prompt, and the refusal line logs the read→publish latency. OFF = today's behaviour byte-identical (blind retry).",
+    consumer:
+      'kernel.PlannerFreshTape · trader/auto_trader_planner.go retry loop · store.DayPlanConfig.PlannerFreshTapeEnabled',
+    range: 'ON | OFF',
+    systemDefault: 'ON (unset; nil=ON)',
+    recommended:
+      '⭐ ON — the default; OFF only to reproduce the pre-fix blind retry.',
+    whenToTouch:
+      'Turn OFF only for a side-by-side study of a blind born-dead retry.',
+    perSession: 'No.',
+  },
+  {
     label: 'Red-news hard-block currencies (W-T1-CURRENCIES)',
     where: 'Strategy → Day Plan → t1_currencies text field (comma-separated)',
     what: "Which currencies' T1 (red) calendar events open the HARD ±15m no-trade window. Default USD: only USD red events hard-block; a red event in any other currency (a BOJ rate decision, a BoE vote) is shown as an advisory line — on the plan card, in the plan's no_trade list and in the planner prompt — and blocks nothing. Set ALL to restore the old behaviour where every red event in the session's currency filter hard-blocked. Case-insensitive; blanks are ignored; a red event with NO currency still hard-blocks (fail closed) and is named once a day in the log.",
@@ -329,15 +439,16 @@ const dayPlan: KnobSpec[] = [
   },
   {
     label: 'Picture HTF (two-picture mode)',
-    where: 'Strategy → Day Plan → Picture HTF block',
-    what: "The owner's two-picture method as a DETERMINISTIC mode (2026-09-20): a 4H body pivot → the H1 close breaks it by at least one tick → the next 5m interval (entry window, default 10s) searches a strict 5m swing for the stop and the nearest opposing 4H zone for the target. R:R below the configured minimum refuses — the nearer zone is never skipped. The AI is commentary only; timing is the rule, not the model.",
+    where:
+      'Strategy → Day Plan → Picture HTF block → "Include Picture HTF setups" (switch; greyed out while Enable Day Plan is off)',
+    what: "The owner's two-picture method as a DETERMINISTIC mode (2026-09-20): a 4H body pivot → the H1 close breaks it by at least one tick → the next 5m interval (entry window, default 360s) searches a strict 5m swing for the stop and the nearest opposing 4H zone for the target. R:R below the configured minimum refuses — the nearer zone is never skipped. The AI is commentary only; timing is the rule, not the model. Since W-EXEC-TRUTH W0b every Picture entry passes the same entry rules as the AI and armed orders (see Status → One set of entry rules), trades only the trader's own instrument, and runs only while the trader is running and the Day Plan is on; since W5 it is a Day Plan scenario source: each opportunity becomes a recorded plan scenario (📷 P1…) that the plan's armed executor places as a market_in_zone limit inside its eligibility window — under every plan mode, strict included (📷 plan_gate= and the plan card show the route), exempt from one_setup, never a widened stop or a swapped target, and never placed after its window, by another run, after Stop or with the Day Plan off.",
     trader:
-      'OFF by default; enabling it gates on the AddOn proving build ≥ 2026-09-20-p1 (final+emitted_at bar markers, rejection reasons) — below that the evaluator logs "mode unavailable" and never submits. Sends a 1-contract SIM market entry with its protective bracket only when the book is flat, the feed is fresh, and no unreconciled submission blocks re-entry.',
+      'OFF by default; enabling it gates on the AddOn proving build ≥ 2026-09-20-p1 (final+emitted_at bar markers, rejection reasons) — below that the evaluator logs "mode unavailable" and never submits. Since W5 Picture never sends an order of its own (its market-entry send is retired): each opportunity is recorded as a Day Plan scenario, and the armed executor places it as a 1-contract SIM market_in_zone LIMIT with its protective bracket, through the same entry latch and one-live-entry guards as every armed order.',
     consumer:
-      'store/strategy.go PictureHtfResolved · trader/picture_htf_evaluator.go (evaluation + pictureHtfCapabilityProven) · trader/picture_htf_live.go (live-bar fan-out) · trader/picture_htf_send.go (send-side re-checks) · trader/ninjatrader/tcp_trader.go MarketEntryWithProtection · store/picture_htf.go (opportunity ledger)',
+      'store/strategy.go PictureHtfResolved · trader/picture_htf_evaluator.go (evaluation + pictureHtfCapabilityProven) · trader/picture_htf_live.go (live-bar fan-out) · trader/picture_plan_source.go (the Day Plan hand-off — the submit seam) · trader/armed_executor.go + trader/picture_scenario_exec.go + trader/zone_placement.go (placement as a market_in_zone limit) · store/picture_htf.go (opportunity ledger)',
     range:
-      'switch + tick size / pivot window / swing lookback / entry window (s) / freshness (s) / min R:R (blank = inherit risk control)',
-    systemDefault: 'OFF · defaults 0.25 / 120 / 24 / 10s / 2s / inherit',
+      "switch + tick size / pivot window / swing lookback / entry window (s) / freshness (s) / min R:R (the STRICTER of this and risk control's minimum R:R applies; a value below it never loosens it; no strategy floor at all refuses)",
+    systemDefault: 'OFF · defaults 0.25 / 120 / 24 / 360s / 30s / inherit',
     recommended:
       '⭐ run it on SIM and read the Picture HTF panel on the dashboard — the ledger shows intended vs broker answer side by side; the mode earns real-money trust only from recorded fills.',
     whenToTouch:
@@ -367,7 +478,7 @@ const risk: KnobSpec[] = [
     trader: '1 = single position; 3 = diversified.',
     consumer: 'kernel/engine_analysis.go:125 (max_positions)',
     range: '1 – 3',
-    systemDefault: '3 (owner)',
+    systemDefault: 'blank → 1 [I] (ClampLimits floor); 3 [O] (owner)',
     recommended: '⭐ 3 — matches config; MNQ SIM never needs the extra legs.',
     whenToTouch: 'Set 1 for single-position discipline.',
     perSession: 'No.',
@@ -503,7 +614,7 @@ const risk: KnobSpec[] = [
   {
     label: 'Guardrails master',
     where: 'Strategy → Risk Control → Guardrails',
-    what: 'Master switch for the daily guardrails stack (loss/profit caps, max trades, consecutive-loss halt, reentry cooldown, consistency, blackout windows).',
+    what: 'Master switch for the daily guardrails stack (loss/profit caps, max trades, reentry cooldown, consistency, blackout windows). The consecutive-loss halt is NOT under this switch — it is its own circuit breaker and bites whether the master is on or off.',
     trader:
       'Currently OFF by owner ruling — the would-have-tripped counters still display.',
     consumer: 'kernel/engine_position.go (guardrail evaluation)',
@@ -595,15 +706,17 @@ const risk: KnobSpec[] = [
   {
     label: 'Consecutive-loss halt',
     where: 'Strategy → Risk Control → Guardrails',
-    what: 'N consecutive losing closes halt entries until the next session.',
+    what: "N consecutive losing closes in one CME session-day halt NEW entries on every path (decision, agent, arm, picture) until the 17:00 CT roll, and resting entries are withdrawn. NOT gated by the guardrails master. PRESENCE-AWARE since W1 (settings truth, 2026-09-23): toggle OFF stores 0 = OFF; toggle ON or a BLANK box = inherit (env BREAKER_HALT_N when set, else 8); a number = that N. Before W1 the row showed a missing value as OFF while the runtime enforced 8, and its OFF wrote a 0 no save could store. The 🛑 boot lines print what is enforced: breaker=8[I] (shipped default), 3[O] / off[O] (saved), 5[E] / off[E] (env), or n/a when not exactly one strategy is bound (each trader's own '🛑 [trader] breaker=' line then speaks for it).",
     trader:
       'The streak-breaker: three losers in a row is the market telling you something.',
     consumer:
-      'store/position_query.go:57 (CountConsecutiveLossesSince) · telemetry gate-block consecutive_loss',
-    range: 'count · enabled with master',
-    systemDefault: 'ON (with master)',
+      'store/resolve_source.go ResolveBreakerHalt (the ONE rule: saved incl. 0 → env BREAKER_HALT_N → 8) · trader/auto_trader_orders.go consecutiveLossHaltedAt (decision/agent) · trader/session_risk.go sessionRiskGateAt (arm/picture) · trader/withdraw.go · store/position_query.go CountConsecutiveLossesSince · telemetry gate-block consecutive_loss',
+    range: 'OFF (0) · inherit (blank) · 1 – N',
+    systemDefault:
+      'inherit → 8 [I]; BREAKER_HALT_N overrides the inherit [E] — ON, not master-gated',
     recommended: '⭐ ON, threshold 2–3.',
-    whenToTouch: 'Leave ON — this is the cheapest guardrail in the stack.',
+    whenToTouch:
+      "Leave ON — this is the cheapest guardrail in the stack. CAVEAT (W1): a Studio save writes an OFF (0) together with its confirmation record (system_config settings_truth_zero:<strategy id>) in one transaction, and the 🩺 boot line and the effective chip print 'OFF — confirmed by Studio save <time CT>'. A strategy restored or imported WITHOUT that record row reads 'explicit 0 UNCONFIRMED — re-save in Studio' and refuses its trader at load until it is re-saved in the Studio. This is fail-closed, by design. A strategy-level replan cap of 0 works the same way.",
     perSession: 'No.',
   },
   {
@@ -675,6 +788,10 @@ export const settings: GuideSection = {
   blocks: [
     {
       kind: 'p',
+      text: 'AgentBeta uses the authenticated user’s configured AI model for each conversation request. Another user’s request cannot replace that selection. If your account has no enabled model, configure one; it does not inherit another account’s credentials.',
+    },
+    {
+      kind: 'p',
       text: 'Every knob card below names the engine consumer (file:line) that reads it — so you always know whether a slider is real or decorative. FE persists but NO production code reads: nothing here is in that category; the three that used to be (plan_mode, proximity_filter_atr, …) are wired now.',
     },
     { kind: 'h', text: 'What the status labels mean' },
@@ -715,6 +832,30 @@ export const settings: GuideSection = {
           'Ports, paths, keys — not a trading knob. Never carries a value on the wire.',
         ],
       ],
+    },
+    { kind: 'h', text: 'What the ⚙ settings boot line counts' },
+    {
+      kind: 'p',
+      text: 'schema= is the number of setting paths the bot actually SAVES — every key the strategy save writes, found by saving a fully filled-in config and reading the keys back, not by reading the Go struct tags. Since W1 (2026-09-23) that includes the ai_config.* blocks (risk_control, indicators, coin_source, prompt_sections, custom_prompt): they are stored under ai_config, and the old count skipped them entirely, so a new risk or indicator field could land with no classification and no ⚠ UNCLASSIFIED warning. The W1 build counted 167 paths where the old count read 75; the number on your boot line is the one that is true for the running binary. The boot line and the Settings page panel read the same enumeration, so they cannot disagree.',
+    },
+    {
+      kind: 'p',
+      text: 'env-shadows reads "n/a (not counted)": nothing counts which environment variables override a saved knob yet, so the line says so instead of printing a 0 nobody measured. The /api/config/resolved summary leaves env_shadows out for the same reason, and the Settings panel shows n/a.',
+    },
+    {
+      kind: 'p',
+      text: "Effective value · origin · scope (W1). Every Risk Control and Day Plan row in the Studio shows a chip under it such as 'eff 3 · saved value · strategy' (the per-session rows in the NY / ASIA / LONDON accordion read that session's answer; a row the server did not answer shows no chip, never a guessed one). The chips re-read after a successful Save. The min-confidence note 'unset/0 → default 60' and the Futures Risk panel's '≤ 10' / 'equity × 20' fallbacks are gone: the chip and the panel print the value the server resolved for the saved strategy, or n/a when it could not be read. EFFECTIVE is the value the running bot uses, computed on the server from the SAVED strategy with the same functions the bot calls — unsaved edits do not change it until you save. ORIGIN says where that value came from: saved value · schema default / shipped default · strategy value · session override · env NAME (a process environment variable) · clamp (…) (a range or ceiling cut it) · suspended (EXIT_MECHS_SUSPENDED) · backfilled default (filled in when the saved block was empty) · code constant (folded) (no control; a constant applies unless a value is stored). '— saved X not used' means you saved X and something else won. SCOPE says where to change it: strategy · session:NY / ASIA / LONDON · process env · venue:ninjatrader. 'n/a — no resolver registered' means the server has no production resolver for that field yet — it never guesses; the coverage count says how many rows are resolved. Secrets always read 'redacted'. Source: GET /api/strategies/:id/effective?session=NY. Known limit: the Studio's own save path still writes some defaults back as values (an unset min R:R is saved as 3, min confidence 0 as 60, max positions 0 as 1), so a strategy saved from the Studio shows those as 'saved value' — pinned by a test until the save path is fixed.",
+    },
+    {
+      kind: 'code',
+      title: 'boot line shape (the numbers are read at boot, never typed)',
+      lines: [
+        '⚙ settings: schema=<paths> classified=<rows> live=<n> ineffective=<n> candidate-unverified=<n> suspended=<n> advisory=<n> display-only=<n> infra=<n> folded=<n> · env-shadows=n/a (not counted)',
+      ],
+    },
+    {
+      kind: 'p',
+      text: 'Most saved paths are still classified by their last name (min_risk_reward_ratio), because the registry is keyed that way. Where one last name means two different things, the registry carries the full path instead: the seven ai_config.indicators.external_data_sources.* fields read "ineffective" — nothing in the engine fetches external data — rather than borrowing the live "name" and "type" rows of unrelated settings.',
     },
     { kind: 'h', text: 'saved → resolved · source' },
     {
@@ -915,7 +1056,7 @@ export const settings: GuideSection = {
         },
         {
           title: 'The knob',
-          body: 'condition_status map, resolved per-condition: session override → strategy base → env (SHADOW_CONDITIONS / LIVE_CONDITIONS) → defaults. Defaults this wave: fvg_entry = shadow, breakout_retest = shadow, all others = live. sweep_reclaim is NOT shadowed (docketed for the Sep-9 court, pre-registered criterion, do not touch).',
+          body: 'condition_status map, resolved per-condition: session override → strategy base → LIVE_CONDITIONS → SHADOW_CONDITIONS → defaults. A condition named in BOTH env lists resolves LIVE (LIVE_CONDITIONS outranks SHADOW_CONDITIONS whatever order they are written in); a strategy or session setting outranks both env lists. Defaults this wave: fvg_entry = shadow, breakout_retest = shadow, all others = live. sweep_reclaim is NOT shadowed (docketed for the Sep-9 court, pre-registered criterion, do not touch).',
         },
         {
           title:

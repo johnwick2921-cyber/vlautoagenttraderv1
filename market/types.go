@@ -16,10 +16,13 @@ type IndicatorPeriods struct {
 
 // Data market data structure
 type Data struct {
-	Symbol        string
-	CurrentPrice  float64
-	PriceChange1h float64 // 1-hour price change percentage
-	PriceChange4h float64 // 4-hour price change percentage
+	Symbol       string
+	CurrentPrice float64
+	// PriceChange1h / PriceChange4h: percent change over that much WALL TIME,
+	// measured on bar close times (ChangeOverWindow). nil = ABSENT (the series
+	// cannot measure the window) — renderers print n/a, never a fabricated 0.
+	PriceChange1h *float64
+	PriceChange4h *float64
 	CurrentEMA20  float64
 	// CurrentEMAByPeriod holds the latest EMA per CONFIGURED period (e.g.
 	// {9: …, 21: …, 200: …}). Populated only when periods are supplied; empty →
@@ -31,10 +34,15 @@ type Data struct {
 	// Populated only when RSI periods are supplied; empty → readers fall back to the
 	// legacy CurrentRSI7 (period 7). Prompt-data only. Mirrors CurrentEMAByPeriod.
 	CurrentRSIByPeriod map[int]float64
-	OpenInterest       *OIData
-	FundingRate        float64
-	IntradaySeries     *IntradayData
-	LongerTermContext  *LongerTermData
+	// OpenInterest is nil when ABSENT — the CME futures path has no external
+	// market data (W-NO-BINANCE A): it is never a fabricated {0,0}.
+	OpenInterest *OIData
+	FundingRate  float64
+	// FundingRateKnown reports whether FundingRate was actually read. false on
+	// the CME futures path — a 0 there means "absent", and renderers print n/a.
+	FundingRateKnown  bool
+	IntradaySeries    *IntradayData
+	LongerTermContext *LongerTermData
 	// Multi-timeframe data (new)
 	TimeframeData map[string]*TimeframeSeriesData `json:"timeframe_data,omitempty"`
 }

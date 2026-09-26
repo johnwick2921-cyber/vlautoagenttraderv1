@@ -173,8 +173,7 @@ func (at *AutoTrader) t1WindowsFor(tradeDate string, sess *kernel.SessionDef) []
 		// P0.6 fail-closed: static T1 fallback + alert instead of silent nil.
 		evs = calendarStaticLoader()
 		fromStatic = true
-		if at.lastCalFailClosedAlert != tradeDate {
-			at.lastCalFailClosedAlert = tradeDate
+		if at.firstFor(&at.lastCalFailClosedAlert, tradeDate) {
 			at.emitAlert("P0", "calendar-slice-missing",
 				fmt.Sprintf("calendar-fail-closed:%s:%s", tradeDate, sess.Name),
 				"Calendar slice missing",
@@ -189,8 +188,7 @@ func (at *AutoTrader) t1WindowsFor(tradeDate string, sess *kernel.SessionDef) []
 	// and is named once per trade date.
 	split := kernel.SplitT1(sessionPlannerEvents(evs, sess.Name), at.t1Currencies())
 	windows := split.Hard
-	if len(split.Uncurrencied) > 0 && at.lastT1NoCurrencyWarn != tradeDate {
-		at.lastT1NoCurrencyWarn = tradeDate
+	if len(split.Uncurrencied) > 0 && at.firstFor(&at.lastT1NoCurrencyWarn, tradeDate) {
 		for _, title := range split.Uncurrencied {
 			at.logWarnf("⚠️ T1 event without currency treated as hard: %s (%s %s, t1_currencies=%s)",
 				title, tradeDate, sess.Name, kernel.T1CurrencySetLabel(at.t1Currencies()))
@@ -211,8 +209,7 @@ func (at *AutoTrader) t1WindowsFor(tradeDate string, sess *kernel.SessionDef) []
 	if drift, ok := clockHoldDriftFn(at.futuresSymbol()); ok {
 		if _, widen := kernel.ClockHoldDecision(drift, true, kernel.ClockWarnMs(), kernel.C2ToleranceMs()); widen > 0 {
 			windows = kernel.WidenCTWindows(windows, drift)
-			if at.lastClockWidenLog != tradeDate {
-				at.lastClockWidenLog = tradeDate
+			if at.firstFor(&at.lastClockWidenLog, tradeDate) {
 				at.logWarnf("🕰 clock-hold: T1 no-trade windows widened by %dm (|drift| %dms, cap %dm) for %s %s (F6)",
 					kernel.ClockWidenMinutes(drift), widen, kernel.ClockWidenCapMinutes, tradeDate, sess.Name)
 				if note := kernel.ClockDriftStaleNote(drift); note != "" {

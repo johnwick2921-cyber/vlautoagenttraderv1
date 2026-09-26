@@ -1,0 +1,168 @@
+
+======================================================================
+S1 — table state (read 2026-09-11, live DB, mode=ro)
+======================================================================
+  touch_episodes: 1977 rows
+  touch_outcomes: 6311 rows
+  candidate_pool: 2136 rows
+  trade_excursions: 592 rows
+  touch_episodes opened 08-26 10:07 → 09-11 13:21 CT; session_days 2026-08-25 → 2026-09-10
+  touch_episodes created 2026-08-26 15:12:24.803287772+00:00 → 2026-09-11 18:30:10.852584358+00:00 (UTC) — STILL BEING WRITTEN
+  touch_outcomes opened 09-02 22:10 → 09-11 11:57 CT
+  touch_outcomes created 2026-09-04 05:30:54.82771663+00:00 → 2026-09-11 12:30:12.571730195-05:00
+  touch_outcomes outcome mix: [{'outcome': 'ambiguous_horizon', 'n': 1224}, {'outcome': 'break', 'n': 2445}, {'outcome': 'hold', 'n': 2642}]
+  touch_outcomes validity: [{'validity': 'invalid:duplicate', 'n': 254}, {'validity': 'legacy:unverified', 'n': 423}, {'validity': 'unverified:no_formation', 'n': 5380}, {'validity': 'valid', 'n': 254}]
+  touch_outcomes k/horizon/exit_on: [{'k': 3.0, 'horizon': 12, 'exit_on': 'close', 'n': 6311}]
+  touch_episodes close_1m==close_5m on all rows: 1
+  touch_episodes duplicate (trader,symbol,label,price,day,number) keys: 123
+  touch_episodes touch_number distribution: [{'touch_number': 1, 'n': 850}, {'touch_number': 2, 'n': 379}, {'touch_number': 3, 'n': 218}, {'touch_number': 4, 'n': 145}, {'touch_number': 5, 'n': 101}, {'touch_number': 6, 'n': 60}, {'touch_number': 7, 'n': 46}, {'touch_number': 8, 'n': 35}, {'touch_number': 9, 'n': 33}, {'touch_number': 10, 'n': 21}, {'touch_number': 11, 'n': 21}, {'touch_number': 12, 'n': 15}]
+  W1 opportunity_outcome: [{'opportunity_outcome': None, 'n': 162}, {'opportunity_outcome': 'reached_declined', 'n': 6149}]
+
+======================================================================
+S2 — B4 base-rate reproduction attempts (pinned: 48.8%, n=423, Wilson[44.1,53.6])
+======================================================================
+  ordinal=1 AND created_at<='2026-09-05 15:00:00': n=377 hold=177 break=200 amb=94 p=0.4695 Wilson[42.0,52.0]
+  created_at<='2026-09-05 15:00:00': n=526 hold=262 break=264 amb=151 p=0.4981 Wilson[45.6,54.1]
+  ordinal=1 AND validity IN ('legacy:unverified','valid','invalid:duplicate'): n=418 hold=199 break=219 amb=101 p=0.4761 Wilson[42.9,52.4]
+  ordinal=1 AND validity='unverified:no_formation': n=474 hold=230 break=244 amb=147 p=0.4852 Wilson[44.1,53.0]
+  ordinal=1: n=892 hold=429 break=463 amb=248 p=0.4809 Wilson[44.8,51.4]
+  ordinal=1 AND validity!='invalid:duplicate': n=663 hold=338 break=325 amb=223 p=0.5098 Wilson[47.2,54.8]
+  1=1: n=5087 hold=2642 break=2445 amb=1224 p=0.5194 Wilson[50.6,53.3]
+  note: the 677-row 09-05 corpus holds 677 rows / 423 price-time keys — n=423 reproduces as the KEY count of that corpus, not as any first-touch rate today.
+
+======================================================================
+S3 — B2 join yields
+======================================================================
+  overlap episodes (opened >= 09-02 22:10): 962 of 1977 total
+  STRICT join (trader,symbol,level_price,session_day,ordinal): matched 431 (44.8%); pair gaps n=528 median=-30.5 min |gap|<=10min: 19.5%  → UNRELIABLE pairing
+  episodes with ANY outcome row for (price, cme_day): 497; with NONE: 465
+  TIME join (same price+day, |gap|<=10min): 366 pairs (38.0% of overlap episodes); median gap 0.0 min; unique-outcome pairs: 245
+  why episodes do not join: 465 have no outcome row for that (price, day) at all (level not seated at any read, price re-anchored, or a band-only touch that never crossed the level — D1' requires a genuine touch); 131 have outcome rows but none within 10 min (different touches / ordinal drift across the two instruments)
+  wrote pairs_primary.csv (245 rows: the A21 sample-id artifact)
+
+======================================================================
+S4 — B3 population cells (time-verified pairs)
+======================================================================
+  [all pairs] n=366 verdicts {'hold': 173, 'break': 127, 'ambiguous_horizon': 66}
+  [unique-outcome pairs (PRIMARY)] n=245 verdicts {'hold': 130, 'break': 80, 'ambiguous_horizon': 35}
+  verdict x entry_side (all pairs; 'OK' = both hold&break cells >=30):
+    above            n= 180 {'hold': 88, 'ambiguous_horizon': 28, 'break': 64} OK
+    below            n= 186 {'break': 63, 'ambiguous_horizon': 38, 'hold': 85} OK
+  verdict x family (all pairs; 'OK' = both hold&break cells >=30):
+    EQH/EQL          n=  29 {'ambiguous_horizon': 3, 'break': 13, 'hold': 13} n<30
+    OB/FVG/SD        n=  17 {'break': 6, 'hold': 8, 'ambiguous_horizon': 3} n<30
+    ON               n=  42 {'hold': 33, 'ambiguous_horizon': 6, 'break': 3} n<30
+    OR               n=  59 {'hold': 27, 'break': 18, 'ambiguous_horizon': 14} n<30
+    PD               n=  63 {'break': 23, 'hold': 30, 'ambiguous_horizon': 10} n<30
+    POC/nPOC         n=   5 {'break': 3, 'hold': 2} n<30
+    RTH              n=  41 {'ambiguous_horizon': 9, 'break': 12, 'hold': 20} n<30
+    SWG              n=  97 {'ambiguous_horizon': 21, 'hold': 33, 'break': 43} OK
+    VWAP-family      n=   2 {'hold': 1, 'break': 1} n<30
+    other            n=  11 {'hold': 6, 'break': 5} n<30
+  verdict x tf (all pairs; 'OK' = both hold&break cells >=30):
+    15m              n=  21 {'break': 8, 'ambiguous_horizon': 9, 'hold': 4} n<30
+    1h               n=  37 {'hold': 20, 'ambiguous_horizon': 5, 'break': 12} n<30
+    4h               n=  20 {'break': 12, 'hold': 7, 'ambiguous_horizon': 1} n<30
+    5m               n=  76 {'ambiguous_horizon': 12, 'hold': 29, 'break': 35} n<30
+    daily/line       n= 212 {'hold': 113, 'ambiguous_horizon': 39, 'break': 60} OK
+  verdict x session (all pairs; 'OK' = both hold&break cells >=30):
+    ASIA             n= 166 {'hold': 65, 'break': 56, 'ambiguous_horizon': 45} OK
+    LONDON           n=  68 {'break': 30, 'ambiguous_horizon': 9, 'hold': 29} n<30
+    NY               n= 132 {'hold': 79, 'break': 41, 'ambiguous_horizon': 12} OK
+  verdict x validity (all pairs; 'OK' = both hold&break cells >=30):
+    legacy:unverified n=  64 {'hold': 31, 'break': 20, 'ambiguous_horizon': 13} n<30
+    unverified:no_formation n= 279 {'ambiguous_horizon': 50, 'break': 97, 'hold': 132} OK
+    valid            n=  23 {'hold': 10, 'break': 10, 'ambiguous_horizon': 3} n<30
+
+======================================================================
+S5 — B5 field-by-field, hold vs break
+======================================================================
+
+  [unique-outcome pairs (PRIMARY)] n=210 hold=130 break=80  (Westfall-Young max-T over 7 fields, 20000 perms; Bonferroni x7)
+  field              medH    medB         U   p_raw    p_WY  p_bonf
+  wick_pen_pts       5.50   16.25    3603.5  0.0002  0.0006  0.0012
+  body_pen_pts       0.00    6.50    4527.0  0.0907  0.4478  0.6346
+  penetration_pts    5.50   16.25    3603.5  0.0002  0.0006  0.0012
+  vol_ratio          5.16    8.11    4160.0  0.0151  0.0697  0.1054
+  approach_atr       1.50    1.67    4918.0  0.5103  0.9719  1.0000
+  bars_in            5.00    5.00    4620.0  0.1702  0.6106  1.0000
+  touch_number       2.00    2.00    5287.5  0.8312  1.0000  1.0000
+    high-wick half: hold 53/105 = 0.505 Wilson[41.1,59.9]
+    low-wick half: hold 77/105 = 0.733 Wilson[64.2,80.9]
+    wick quartiles (hold rate):
+      ( -1.0,  1.0]: n=53 hold=45 0.849 Wilson[72.9,92.1]
+      (  1.0, 10.8]: n=52 hold=32 0.615 Wilson[48.0,73.5]
+      ( 10.8, 25.1]: n=52 hold=28 0.538 Wilson[40.5,66.7]
+      ( 25.1,  inf]: n=53 hold=25 0.472 Wilson[34.4,60.3]
+
+  [all pairs (sensitivity)] n=300 hold=173 break=127  (Westfall-Young max-T over 7 fields, 20000 perms; Bonferroni x7)
+  field              medH    medB         U   p_raw    p_WY  p_bonf
+  wick_pen_pts       3.75   11.00    9354.5  0.0262  0.1234  0.1832
+  body_pen_pts       0.00    0.00   10261.0  0.2790  0.8502  1.0000
+  penetration_pts    3.75   11.00    9354.5  0.0262  0.1234  0.1832
+  vol_ratio          4.99    6.42    9642.5  0.0705  0.2793  0.4938
+  approach_atr       1.29    1.38   11129.5  0.8467  1.0000  1.0000
+  bars_in            4.00    5.00   10436.5  0.4518  0.9496  1.0000
+  touch_number       2.00    3.00   10367.5  0.3938  0.9176  1.0000
+    high-wick half: hold 78/150 = 0.520 Wilson[44.1,59.8]
+    low-wick half: hold 95/150 = 0.633 Wilson[55.4,70.6]
+    wick quartiles (hold rate):
+      ( -1.0,  0.0]: n=87 hold=56 0.644 Wilson[53.9,73.6]
+      (  0.0,  5.4]: n=63 hold=39 0.619 Wilson[49.6,72.9]
+      (  5.4, 20.5]: n=76 hold=38 0.500 Wilson[39.0,61.0]
+      ( 20.5,  inf]: n=74 hold=40 0.541 Wilson[42.8,64.9]
+
+======================================================================
+S6 — mechanical-overlap check + B6 duration confound (PRIMARY, H=12)
+======================================================================
+  hold: n=130 gap(outcome.closed - episode.closed) min median=-2.0 p25=-3.0 p75=-1.0
+  break: n=80 gap(outcome.closed - episode.closed) min median=-2.0 p25=-3.0 p75=-1.0
+  recorded band k*delta: median=13.48 pts (break wick median 16.25 pts)
+  spearman(vol_ratio, bars_in) = 0.481 (p=1.53e-13, n=210)
+  vol_ratio raw:      medH=5.164 medB=8.107 U p=0.0151
+  vol_ratio/bars_in:  medH=1.138 medB=1.225 U p=0.2096
+
+======================================================================
+S7 — B7 horizons (PRIMARY set; 5m verdicts recomputed from bars table)
+======================================================================
+
+  horizon recorded D1' (12x1m bars): resolved 210 (censored 0); hold 130/210 = 0.6190
+  field              medH    medB   p_raw
+  wick_pen_pts       5.50   16.25  0.0002
+  body_pen_pts       0.00    6.50  0.0907
+  penetration_pts    5.50   16.25  0.0002
+  vol_ratio          5.16    8.11  0.0151
+  approach_atr       1.50    1.67  0.5103
+  bars_in            5.00    5.00  0.1702
+  touch_number       2.00    2.00  0.8312
+
+  horizon 10x5m recomputed: resolved 208 (censored 2); hold 111/208 = 0.5337
+  field              medH    medB   p_raw
+  wick_pen_pts       5.50   16.25  0.0004
+  body_pen_pts       0.00    8.75  0.0026
+  penetration_pts    5.50   16.25  0.0004
+  vol_ratio          4.94    8.77  0.0000
+  approach_atr       1.50    1.56  0.7995
+  bars_in            5.00    6.00  0.0067
+  touch_number       2.00    2.00  0.1135
+  vol_ratio/bars_in at this horizon: medH=1.019 medB=1.279 U p=0.0006
+
+  horizon 20x5m recomputed: resolved 210 (censored 0); hold 113/210 = 0.5381
+  field              medH    medB   p_raw
+  wick_pen_pts       5.50   16.25  0.0004
+  body_pen_pts       0.00    8.75  0.0026
+  penetration_pts    5.50   16.25  0.0004
+  vol_ratio          4.94    8.77  0.0000
+  approach_atr       1.50    1.56  0.8163
+  bars_in            5.00    6.00  0.0055
+  touch_number       2.00    2.00  0.0999
+  vol_ratio/bars_in at this horizon: medH=1.019 medB=1.279 U p=0.0007
+
+======================================================================
+S8 — closing: minimum n per cell for a 5-point effect
+======================================================================
+  alpha=0.05             n per group = 1568  (two-proportion, 80% power, 2-sided, p0=0.488, p1=0.538)
+  Bonferroni alpha/7     n per group = 2491  (two-proportion, 80% power, 2-sided, p0=0.488, p1=0.538)
+  alpha=0.025            n per group = 1898  (two-proportion, 80% power, 2-sided, p0=0.488, p1=0.538)
+
+  Today's largest joined cell: hold n=130 / break n=80 (H=12, unique pairs).

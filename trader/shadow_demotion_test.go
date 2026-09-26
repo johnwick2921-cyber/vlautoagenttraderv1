@@ -35,6 +35,15 @@ func shadowEnableTestSession(t *testing.T, st *store.Store) string {
 	return "TEST"
 }
 
+// shadowTestClock is a FIXED mid-session CT instant (2026-09-24 10:00 CT).
+// The shadow harness must never read the wall clock: between the TEST
+// session's last-entry cutoff (23:44 CT) and midnight, time.Now() lands the
+// arm pass in the cutoff refusal and these pins fail for the WRONG reason
+// (CI 23:59 CT job 107948875422). A fixed mid-session instant never does.
+func shadowTestClock() time.Time {
+	return time.Date(2026, 9, 24, 10, 0, 0, 0, kernel.CTLocation())
+}
+
 func shadowPlanAt(t *testing.T, at *AutoTrader, st *store.Store, doc string) string {
 	t.Helper()
 	pid := shadowPlanAtTime(t, at, st, doc, time.Now())
@@ -93,6 +102,7 @@ func shadowWireHarnessAt(t *testing.T, cfg store.StrategyConfig, now time.Time) 
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
+	waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 	t.Cleanup(func() { _ = conn.Close() })
 
 	sigs := make(chan ntwire.SignalPayload, 8)
@@ -135,6 +145,12 @@ func shadowWireHarnessAt(t *testing.T, cfg store.StrategyConfig, now time.Time) 
 	if snaps := s.OrderSnapshots(); snaps != nil {
 		snaps.PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, now)
 	}
+	// W117 F4 — the SAME argument for positions: GetPositions is UNKNOWN until
+	// a snapshot or a confirmed fill, and the one-contract guard's A24
+	// fail-safe reads that error as committed. The AddOn emits a positions
+	// frame on connect; seed the known-flat book so placement tests read an
+	// empty account, not a dark one.
+	s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 
 	at := &AutoTrader{id: "trader-1", exchange: "ninjatrader", store: st, trader: tr}
 	at.config.StrategyConfig = &cfg
@@ -150,9 +166,9 @@ func TestShadowDemotionAuthorsInertRow(t *testing.T) {
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}
 	cfg.RiskControl.MinRiskRewardRatio = 2 // R1 (2026-09-03): the arm floor is the Studio value; this fixture arms at R:R 2.0
 	at, st := resetTrader(t, cfg)
-	pid := shadowPlanAt(t, at, st, armedDoc()) // fvg_entry
+	pid := shadowPlanAtTime(t, at, st, armedDoc(), shadowTestClock()) // fvg_entry
 
-	at.maybeManageArmedOrdersAt(nil, armTestClock(t, at))
+	at.maybeManageArmedOrdersAt(nil, armTestClockFrom(t, at, shadowTestClock()))
 
 	rows, err := st.ArmedOrders().ListForPlan(pid)
 	if err != nil || len(rows) != 1 {
@@ -278,8 +294,8 @@ func TestLiveConditionPlacesOnLoopback(t *testing.T) {
 func TestShadowedRestingOrderCancelledAtBoot(t *testing.T) {
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}
 	cfg.RiskControl.MinRiskRewardRatio = 2 // R1 (2026-09-03): the arm floor is the Studio value; this fixture arms at R:R 2.0
-	at, st, _, cancels := shadowWireHarness(t, cfg)
-	now := time.Now()
+	at, st, _, cancels := shadowWireHarnessAt(t, cfg, shadowTestClock())
+	now := shadowTestClock()
 	sessName := shadowEnableTestSession(t, st)
 	cfg.DayPlan.SessionsEnabled = []string{sessName}
 	td, _ := kernel.PlanChainTradeDate(&kernel.SessionDef{Name: sessName, WindowStartCT: "00:00", WindowEndCT: "23:59"}, now)
@@ -291,8 +307,11 @@ func TestShadowedRestingOrderCancelledAtBoot(t *testing.T) {
 	if err := st.ArmedOrders().UpsertArm(&store.ArmedOrderDB{TraderID: at.id, PlanID: pid, Version: 1, Session: sessName, Scenario: "S1", Side: "long", EntryPx: 100, StopPx: 95, TargetPx: 110, State: "working", SignalID: "sig-pre-wave"}); err != nil {
 		t.Fatal(err)
 	}
-	installActivePlanProvider(at, st)
-	at.maybeManageArmedOrdersAt(nil, armTestClock(t, at))
+	// The provider must answer at the SAME fixed clock — a live-wall provider
+	// looks for a plan on the wall's trade date and finds none ("no active
+	// plan"), sweeping the resting order to cancel_pending instead of shadowed.
+	installActivePlanProviderAt(at, st, func() time.Time { return shadowTestClock() })
+	at.maybeManageArmedOrdersAt(nil, armTestClockFrom(t, at, shadowTestClock()))
 
 	select {
 	case c := <-cancels:
@@ -323,8 +342,8 @@ func TestConfigFlipToLiveAllowsArming(t *testing.T) {
 	if at.conditionShadowedFor("fvg_entry", "NY") {
 		t.Fatal("config live must resolve live")
 	}
-	shadowPlanAt(t, at, st, armedDoc())
-	at.maybeManageArmedOrdersAt(nil, armTestClock(t, at))
+	shadowPlanAtTime(t, at, st, armedDoc(), shadowTestClock())
+	at.maybeManageArmedOrdersAt(nil, armTestClockFrom(t, at, shadowTestClock()))
 	// The live-configured condition must arm normally (state armed, not shadowed).
 	allRows, err2 := st.ArmedOrders().ListNonTerminal(at.id)
 	if err2 != nil || len(allRows) != 1 || allRows[0].State != "armed" {

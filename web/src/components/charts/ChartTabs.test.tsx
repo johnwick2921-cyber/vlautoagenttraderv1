@@ -8,8 +8,16 @@ vi.mock('./EquityChart', () => ({
   EquityChart: () => <div data-testid="equity" />,
 }))
 vi.mock('./AdvancedChart', () => ({
-  AdvancedChart: ({ symbol }: { symbol: string }) => (
-    <div data-testid="market">{symbol}</div>
+  AdvancedChart: ({
+    symbol,
+    selectedAccount,
+  }: {
+    symbol: string
+    selectedAccount?: string
+  }) => (
+    <div data-testid="market" data-account={selectedAccount}>
+      {symbol}
+    </div>
   ),
 }))
 beforeEach(() =>
@@ -38,6 +46,14 @@ describe('ChartTabs composition modes', () => {
     expect(
       screen.queryByRole('button', { name: 'Account Equity Curve' })
     ).toBeNull()
+  })
+  it('passes selected account changes into the order snapshot scope', () => {
+    const { rerender } = render(
+      <ChartTabs traderId="test" selectedAccount="SimA" marketOnly />
+    )
+    expect(screen.getByTestId('market')).toHaveAttribute('data-account', 'SimA')
+    rerender(<ChartTabs traderId="test" selectedAccount="SimB" marketOnly />)
+    expect(screen.getByTestId('market')).toHaveAttribute('data-account', 'SimB')
   })
   it('offers all six markets through the same mobile selection path', async () => {
     render(<ChartTabs traderId="test" exchangeId="ninjatrader" marketOnly />)

@@ -37,6 +37,9 @@ func (at *AutoTrader) CanForceReread(now time.Time) RereadRefusal {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return RereadRefusal{Reason: "the day plan is off for this trader"}
 	}
+	if _, held := MaintenanceHeld(); held { // W-ONE-BUTTON M2 site 5
+		return RereadRefusal{Reason: maintenanceHoldPlanReason}
+	}
 	reg := at.sessionRegistry(now)
 	sess, ok := reg.ActiveSession(now)
 	if !ok {
@@ -62,6 +65,14 @@ func (at *AutoTrader) CanForceReread(now time.Time) RereadRefusal {
 	if row == nil {
 		// No plan yet today: the first read is not a re-plan and costs no budget.
 		return RereadRefusal{Allowed: true, Session: sess.Name, ReplanCap: cap, ReplansLeft: cap, Version: 0}
+	}
+	if store.IsMachinePlan(row) {
+		// W-EXEC-TRUTH W5 (CTO 1790194913337) — a MACHINE plan (the Picture
+		// no-plan door) is "no plan" here, exactly as for the scheduler: the
+		// read is the chain's first AI read — allowed, and it spends nothing
+		// (the write site skips the spend when it supersedes a machine plan).
+		// Version is the machine row's, so owner edits on it still carry.
+		return RereadRefusal{Allowed: true, Session: sess.Name, ReplanCap: cap, ReplansLeft: cap, Version: row.Version}
 	}
 	// CLASS 35 — the RECORDED budget (same seam as the death gate and the card).
 	budget := store.GetReplanBudget(at.store, at.id, tradeDate, sess.Name, cap)
@@ -105,8 +116,17 @@ func (at *AutoTrader) ForceReread(now time.Time) (RereadRefusal, error) {
 	reg := at.sessionRegistry(now)
 	sess, _ := reg.ActiveSession(now)
 	tradeDate := sessionChainDate(sess, now)
-	at.logInfof("🗓️ OWNER RE-READ requested for %s %s (v%d, %d of %d re-reads left) — spending one.",
-		tradeDate, gate.Session, gate.Version, gate.ReplansLeft, gate.ReplanCap)
+	// W5 — the chain's latest row decides what this read costs: over a
+	// MACHINE plan it is the first AI read (free, like no plan at all).
+	latest, lErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, gate.Session, at.id)
+	overMachine := lErr == nil && store.IsMachinePlan(latest)
+	if overMachine {
+		at.logInfof("🗓️ OWNER RE-READ requested for %s %s over a machine Picture plan (v%d) — the first AI read of the chain; no re-read spent (%d of %d left).",
+			tradeDate, gate.Session, gate.Version, gate.ReplansLeft, gate.ReplanCap)
+	} else {
+		at.logInfof("🗓️ OWNER RE-READ requested for %s %s (v%d, %d of %d re-reads left) — spending one.",
+			tradeDate, gate.Session, gate.Version, gate.ReplansLeft, gate.ReplanCap)
+	}
 	at.emitAlert("P2", "owner-reread",
 		fmt.Sprintf("reread:%s:%s:v%d", tradeDate, gate.Session, gate.Version),
 		fmt.Sprintf("%s plan re-read on request", gate.Session),
@@ -115,7 +135,8 @@ func (at *AutoTrader) ForceReread(now time.Time) (RereadRefusal, error) {
 	// C9/D6 (2026-08-25) — re-verify the budget against the LATEST row right
 	// before the read: a death re-plan racing this request could already have
 	// spent the last re-plan (the pre-claim CanForceReread TOCTOU).
-	if latest, lErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, gate.Session, at.id); lErr == nil && latest != nil {
+	// W5 — a machine plan is "no plan": nothing is spent, so nothing to re-verify.
+	if lErr == nil && latest != nil && !overMachine {
 		if !store.GetReplanBudget(at.store, at.id, tradeDate, gate.Session, gate.ReplanCap).May() {
 			return RereadRefusal{Allowed: false, Session: gate.Session, Reason: "the re-read budget was spent by a concurrent re-plan — try the owner reset instead"}, nil
 		}
@@ -123,7 +144,7 @@ func (at *AutoTrader) ForceReread(now time.Time) (RereadRefusal, error) {
 	// C9 (2026-08-25) — capture the claim result: a lost claim (another read
 	// already in flight) or a failed preflight must be an HONEST outcome, not a
 	// silent success.
-	performed := at.runPlannerReadWithTriggerClaimedCtx(gate.Session, tradeDate, "owner_reread", "", nil, true)
+	performed := at.runPlannerReadWithTriggerClaimedCtx(now, gate.Session, tradeDate, "owner_reread", "", nil, true)
 	if !performed {
 		return RereadRefusal{
 			Allowed: true, // the budget gate passed; the read itself was skipped

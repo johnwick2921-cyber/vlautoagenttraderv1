@@ -35,12 +35,84 @@ type PromptContract struct {
 	// enforced (used for knob-gated contract sentences such as the
 	// write-time feasibility clause). Empty = always enforced.
 	Gate string
+	// Unless (W-EXEC-TRUTH W3, 2026-09-23) is a phrase whose presence SUSPENDS
+	// this row: the legacy-policy rows whose sentences the market_in_zone
+	// prompt replaces are suspended by EntryPolicyPromptMarker, and the ENTRY
+	// POLICY row (Gate = the same marker) states the replacement. Empty =
+	// never suspended.
+	Unless string
 }
 
 // PromptContracts is the C5 enumeration: every condition-keyed restriction in
 // ValidatePlanDoc / ArmSpecValid / ValidateEntryLaw.
 func PromptContracts() []PromptContract {
 	return []PromptContract{
+		// WAVE PLANNER A3 (rows 346/352/355/358/359/361/362/364/366) — the schema
+		// legality contract, one row per validator refusal string the prompt must
+		// state BEFORE the planner writes it.
+		{
+			Rule:       "confirm.side is above|below only (row 346)",
+			Site:       "kernel/plan_doc.go:826 scenario.confirm.side invalid",
+			MustAppear: []string{`"side": "above|below"`},
+		},
+		{
+			Rule:       "economics: entry, protective stop and arm target required with nonzero risk (row 352)",
+			Gate:       "NONZERO RISK",
+			Site:       "kernel/scenario_economics.go:232",
+			MustAppear: []string{"economics", "nonzero risk"},
+		},
+		{
+			Rule:       "planned_order is legal on sweep_reclaim leg 0 only (row 355)",
+			Gate:       "Entry policy:",
+			Site:       "kernel/entry_policy.go (planned_order is legal on sweep_reclaim leg 0 only)",
+			MustAppear: []string{"planned_order", "leg 0 ONLY"},
+		},
+		{
+			Rule:       "breakdown_continue/breakup_continue requires the breakdown{} facts object (row 358)",
+			Site:       "kernel/plan_doc.go ArmSpecValid (arm requires the breakdown{} facts object)",
+			MustAppear: []string{"breakdown{} REQUIRED iff"},
+		},
+		{
+			Rule:       "breakdown.level is a NUMBER, never a string (row 359)",
+			Site:       "kernel/plan_doc.go PlanBreakdownContinue.Level (json unmarshal float64)",
+			MustAppear: []string{`"level": <n>`},
+		},
+		{
+			Rule:       "planned_order is NOT legal on breakdown_continue — use market_in_zone (rows 361/364)",
+			Gate:       "those conditions use",
+			Site:       "kernel/entry_policy.go (planned_order is not legal on breakdown_continue)",
+			MustAppear: []string{"planned_order", "market_in_zone"},
+		},
+		{
+			Rule:       "breakdown_continue authors only after the tape shows its confirming close (row 362)",
+			Gate:       "author it ONLY AFTER",
+			Site:       "kernel/breakdown_continue.go (NO confirming close beyond)",
+			MustAppear: []string{"confirming close"},
+		},
+		{
+			Rule:       "gap-down: the short scenario's trigger must reference a level ≤ current price, never a rally back above (row 357)",
+			Gate:       "Gap-reach law:",
+			Site:       "kernel/plan_doc.go:1240 continuationReachable (gap-down)",
+			MustAppear: []string{"gap-down", "trigger", "≤ current price", "rally back above"},
+		},
+		{
+			Rule:       "gap-up: the long scenario's trigger must reference a level ≥ current price, never a sell back below (row 360)",
+			Gate:       "Gap-reach law:",
+			Site:       "kernel/plan_doc.go:1246 continuationReachable (gap-up)",
+			MustAppear: []string{"gap-up", "trigger", "≥ current price", "sell back below"},
+		},
+		{
+			Rule:       "the prompt names which conditions ARM for the gap play under the resolved policy (row 363)",
+			Gate:       "Gap-reach law:",
+			Site:       "kernel/entry_policy.go ArmableConditionFor/ArmKindForPolicy",
+			MustAppear: []string{"conditions that ARM for the gap play", "short:", "long:"},
+		},
+		{
+			Rule:       "fvg displacement body must be ≥ 1.5×ATR5m (row 366)",
+			Gate:       "a weaker body is REFUSED at write",
+			Site:       "kernel/fvg_entry.go:257 (displacement body < 1.5×ATR5m)",
+			MustAppear: []string{"displacement", "1.5×ATR5m"},
+		},
 		// CLASS 45 (2026-09-02) — the two feed-forward facts. They are
 		// CONDITIONAL sections (rendered only when there is something to say),
 		// so the contract asserts the ORDER text that always ships with them.
@@ -65,6 +137,7 @@ func PromptContracts() []PromptContract {
 			Rule:       "arm{} legal only on armable conditions",
 			Site:       "plan_doc.go ArmSpecValid (arm enabled on non-armable condition)",
 			MustAppear: []string{"legal ONLY on " + ArmableConditionsPipe()},
+			Unless:     EntryPolicyPromptMarker, // W3: the ENTRY POLICY row states the market_in_zone set
 		},
 		{
 			Rule:       "legs[] only on sweep_reclaim (arm_legs_sweep_reclaim_only)",
@@ -102,9 +175,13 @@ func PromptContracts() []PromptContract {
 			MustAppear: []string{"top-level entry/stop/target mirror leg 1"},
 		},
 		{
-			Rule:       "breakdown/breakup arm requires breakdown{} with entry_mode=pullback",
+			// W3 (2026-09-23): LEGACY policy only — under market_in_zone a
+			// waterfall arm takes pullback OR immediate (armSpecValidPolicy) and
+			// the ENTRY POLICY row below states it; this row is suspended there.
+			Rule:       "breakdown/breakup arm requires breakdown{} with entry_mode=pullback (legacy policy)",
 			Site:       "plan_doc.go ArmSpecValid (arm requires entry_mode=pullback)",
 			MustAppear: []string{"entry_mode=pullback", "entry_mode=immediate is AI-path ONLY"},
+			Unless:     EntryPolicyPromptMarker,
 		},
 		{
 			Rule:       "sweep_reclaim single arm requires wait_confirm:true",
@@ -137,9 +214,26 @@ func PromptContracts() []PromptContract {
 			MustAppear: []string{"structure stop ≥2 ticks beyond the level"},
 		},
 		{
-			Rule:       "breakout_retest never arms (GAR-F4)",
+			// W3 (2026-09-23): LEGACY policy only — under market_in_zone
+			// breakout_retest arms (ArmableConditionFor) and stays SHADOW by
+			// default (D11); the ENTRY POLICY row states it.
+			Rule:       "breakout_retest never arms (GAR-F4) (legacy policy)",
 			Site:       "armed.go ArmableCondition (breakout_retest excluded)",
 			MustAppear: []string{"breakout_retest stays a normal AI play"},
+			Unless:     EntryPolicyPromptMarker,
+		},
+		{
+			// W-EXEC-TRUTH W3 (2026-09-23) — THE ENTRY POLICY. Rendered only when
+			// the resolved day_plan.entry_policy_default is market_in_zone (the
+			// shipped default); every fragment is a restriction the write site
+			// enforces: the policy branch of ArmSpecValid (every condition arms,
+			// pullback|immediate, wait_confirm for a non-touch confirm), the zone
+			// verdict (kernel.ArmZoneVerdict via the trader write hook) and the
+			// armable hold floor.
+			Rule:       "market_in_zone: a limit at the far edge of entry_zone; every condition arms; a non-touch confirm chains; zone contains the entry, sits on the permitted side, ≤ zone_max_pts, bracket outside; waterfall pullback|immediate; armed time_hold ≥ min_hold_min",
+			Site:       "kernel/entry_policy.go armSpecValidPolicy + ArmZoneVerdict (trader/write_time_feasibility.go writeTimeZoneVerdicts) + ValidateArmableHoldFloor",
+			MustAppear: []string{EntryPolicyPromptMarker, "a LIMIT at the FAR edge of your economics.entry_zone", "legal ONLY on " + armableUnderPolicyPipe(EntryPolicyMarketInZone), "must carry wait_confirm:true", "the zone must contain arm.entry", "lie on the permitted side of the confirm ref", "leave the stop and the target OUTSIDE it", "entry_mode=pullback or entry_mode=immediate", "an armed time_hold holds at least"},
+			Gate:       EntryPolicyPromptMarker,
 		},
 		{
 			Rule:       "death/flip.rule is a SEPARATE enum from confirm.rule",
@@ -185,6 +279,47 @@ func PromptContracts() []PromptContract {
 			MustAppear: []string{"written with arm.enabled=false", "arm_disabled_reason", "stop-entry trigger already through price"},
 			Gate:       "WRITE-TIME FEASIBILITY",
 		},
+		{
+			// W-EXEC-TRUTH W2 A5 (2026-09-23) — the stored duration. A time_hold
+			// whose prose states minutes must store them as confirm.hold_min
+			// (row 452 S2 "3 minutes" was counted as the 10-minute default), and
+			// hold_min is legal on time_hold only.
+			Rule:       "time_hold prose minutes must be stored as confirm.hold_min (time_hold only); the machine counts the stored rule exactly",
+			Site:       "kernel/confirm_resolver.go ValidateConfirmHoldProse (parsePlanDocument newAuthoring) + validateConfirmHoldMin (ValidatePlanDocWithCaps)",
+			MustAppear: []string{`"hold_min": <n>`, "hold_min is time_hold ONLY — the minutes of 1m closes your prose states", "2x5m_close waits for TWO completed 5m closes"},
+		},
+		{
+			// W-EXEC-TRUTH W2 A1 (2026-09-23) — scenario.invalid outside the
+			// grammar was accepted as UNKNOWN (row 455: all four sentences).
+			// It is now a write-time refusal, so the prompt states the grammar
+			// and one placeholder example, verbatim from the kernel.
+			Rule:       "scenario.invalid must be exactly one of the 5m / 2x5m close above|below <price> forms — anything else is refused at write",
+			Site:       "trader/plan_liveness.go validateAuthoredScenariosAt → kernel.EvaluateBornCheck (authoredCloseRule grammar, AuthoredUnknownGrammar)",
+			MustAppear: []string{`"invalid" GRAMMAR (machine-checked at write; anything else is REFUSED, never accepted as UNKNOWN)`, `"5m close above <price>" | "5m close below <price>" | "2x5m close above <price>" | "2x5m close below <price>"`, `Example: "invalid": "`},
+		},
+		// W-EXEC-TRUTH W2 A3 (2026-09-23) — identity ≠ price is a write-time
+		// refusal (correction; unconditional), including an id not in the map.
+		{
+			Rule:       "a level_id names the map level at the traded price; an id at another price or not in the map is refused at write",
+			Site:       "kernel/scenario_write_truth.go scenarioIdentityWriteIssues ← CheckScenarioWriteTruth (trader write loop + shadowVerdictFor)",
+			MustAppear: []string{"IDENTITY = PRICE (refused at write)", "an id not in the map (invented or altered), is REFUSED"},
+		},
+		{
+			Rule:       "a two-anchor setup names two different map ids (sweep_level_id / reclaim_level_id), each at its own leg",
+			Site:       "kernel/scenario_write_truth.go scenarioIdentityWriteIssues (anchor_reuse / anchor_unrelated)",
+			MustAppear: []string{"sweep_level_id and reclaim_level_id: two DIFFERENT map ids"},
+		},
+		// W-EXEC-TRUTH W2 A4 (2026-09-23) — the obstacle-chain contract.
+		{
+			Rule:       "target_chain sorted outward; first_obstacle = nearest seated level on the path; every seated path level listed in path_levels with a role",
+			Site:       "kernel/scenario_write_truth.go obstacleChainWriteIssues ← CheckScenarioWriteTruth",
+			MustAppear: []string{"target_chain is sorted outward from entry in the trade direction", "first_obstacle is the NEAREST seated map level strictly between entry and the arm target", "a seated level missing from the path is REFUSED by name"},
+		},
+		{
+			Rule:       "reduce on a single-contract arm is refused as infeasible",
+			Site:       "kernel/scenario_write_truth.go obstacleChainWriteIssues (reduce_qty1, ArmQuantityFor)",
+			MustAppear: []string{"reduce on a single-contract arm", "is REFUSED at write as infeasible"},
+		},
 	}
 }
 
@@ -194,6 +329,9 @@ func ValidatePromptContracts(prompt string) error {
 	for _, c := range PromptContracts() {
 		if c.Gate != "" && !strings.Contains(prompt, c.Gate) {
 			continue // knob-gated row; the sentence was not rendered
+		}
+		if c.Unless != "" && strings.Contains(prompt, c.Unless) {
+			continue // W3: a legacy row the rendered policy replaces
 		}
 		for _, frag := range c.MustAppear {
 			if !strings.Contains(prompt, frag) {
@@ -211,8 +349,12 @@ func PromptContractBootLine() string {
 	n := len(PromptContracts())
 	// 0/0 → resolvePlanCaps supplies the RESOLVED caps (A11). The contract
 	// sentences are static text, so the cap values never change the verdict.
-	if err := ValidatePromptContracts(plannerOutputContract(0, 0, true, true, true)); err != nil {
-		return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v (class 38 guard)", err)
+	// W3: every entry policy's rendering is judged — the shipped default
+	// (market_in_zone), planned_order and legacy — so a row can never be
+	// "stated" only under a policy the bot is not running.
+	for _, p := range []string{EntryPolicyMarketInZone, EntryPolicyPlannedOrder, EntryPolicyDefaultLegacy} {
+		if err := ValidatePromptContracts(plannerOutputContractFor(0, 0, true, true, true, resolvePromptEntryPolicy(p, 0, 0, nil, nil), true)); err != nil {			return fmt.Sprintf("📜 prompt/validator contract: BROKEN — %v [entry policy %s] (class 38 guard)", err, p)
+		}
 	}
 	return fmt.Sprintf("📜 prompt/validator contract: %d restrictions, all stated in prompt (class 38 guard)", n)
 }

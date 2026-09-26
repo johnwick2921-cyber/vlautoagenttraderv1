@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -86,5 +87,32 @@ func TestKnobPrunePin_PlannerPromptDefaults(t *testing.T) {
 	knobPruneGolden(t, "planner_prompt_defaults.txt", []byte(p))
 	if q := BuildPlannerPrompt(PlannerInput{MaxLevels: 8}); q != p {
 		t.Fatal("ScenarioCap 0 must render the shipped default 3 byte-identically")
+	}
+}
+
+// TestPathLevelsPromptShapeMatchesTheValidator (skeptic F6, 2026-09-24) — ONE
+// shape for economics.path_levels: the prompt example must carry exactly what
+// the validator reads (price + level_id), because obstacle-chain coverage
+// matches path levels ONLY by price and a price-less entry parses as 0 and is
+// refused as missing. RED = the price-less shape in the economics example.
+func TestPathLevelsPromptShapeMatchesTheValidator(t *testing.T) {
+	p := BuildPlannerPrompt(PlannerInput{MaxLevels: 8, ScenarioCap: 3})
+	if !strings.Contains(p, "path_levels:[{price:<n>,level:<label>,level_id:<map id>,role:pass_through|reduce|exit}]") {
+		t.Fatal("the rendered prompt must carry the VALIDATOR's priced path_levels shape")
+	}
+	if strings.Contains(p, "path_levels:[{level:<label>,role:") {
+		t.Fatal("the price-less path_levels shape must not appear in the prompt — the validator matches ONLY by price")
+	}
+	// Validator side: the struct decodes the priced shape.
+	var pl ScenarioPathLevel
+	if err := json.Unmarshal([]byte(`{"price":30000.25,"level":"PDH","level_id":"m1","role":"pass_through"}`), &pl); err != nil {
+		t.Fatal(err)
+	}
+	if pl.Price != 30000.25 || pl.LevelID == nil || *pl.LevelID != "m1" {
+		t.Fatalf("the validator's ScenarioPathLevel must read price + level_id, got %+v", pl)
+	}
+	// The unconditional obstacle-chain sentence names the same shape.
+	if !strings.Contains(ScenarioWriteTruthSentences(), "path_levels:[{price:<n>,level:<label>,level_id:<map id>") {
+		t.Fatal("ScenarioWriteTruthSentences must name the priced shape")
 	}
 }

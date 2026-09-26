@@ -256,6 +256,13 @@ func pictureHtfApplyTerminal(at *AutoTrader, row store.PictureHtfOpportunityDB, 
 // process-local and disappear on restart. A terminal outcome the machine
 // never received stays UNKNOWN after a restart — this sweep is duplicate
 // PREVENTION, not complete recovery of broker history.
+//
+// NEVER-SENT ROWS ARE NOT OURS (W5 R11): a row still carrying the evaluator's
+// synthetic claim id with no submission stamp (pictureHtfUnsentClaim) is a
+// Day Plan hand-off in flight or interrupted. Nothing was sent, so there is no
+// broker outcome to reconcile and no "outcome unknown" to record — the D17
+// sweep (sweepInterruptedPictureHandOffsAt) owns it. A stamped row under the
+// same prefix (submitted_at > 0) was sent and stays here.
 func pictureHtfReconcilePending(at *AutoTrader) {
 	if at == nil || at.store == nil {
 		return
@@ -265,7 +272,7 @@ func pictureHtfReconcilePending(at *AutoTrader) {
 		return
 	}
 	for _, row := range rows {
-		if row.SignalID == "" {
+		if row.SignalID == "" || pictureHtfUnsentClaim(row) {
 			continue
 		}
 		haveReceipt := false
@@ -319,6 +326,13 @@ func pictureHtfReconcilePending(at *AutoTrader) {
 			_ = at.store.PictureHtfAppendBrokerStatus(row.OppKey, "reconcile:no_received_evidence (outcome unknown — will not resend)")
 		}
 	}
+}
+
+// pictureHtfUnsentClaim reports a row that was claimed but never sent: the
+// synthetic claim id (store.PictureHtfClaimPrefix) and submitted_at 0 — the
+// same predicate as the D17 sweep's input (PictureHtfHandOffPendingByTrader).
+func pictureHtfUnsentClaim(row store.PictureHtfOpportunityDB) bool {
+	return row.SubmittedAt == 0 && strings.HasPrefix(row.SignalID, store.PictureHtfClaimPrefix)
 }
 
 // pictureRecentFillFor reads the trader's received-fill ring (real execution

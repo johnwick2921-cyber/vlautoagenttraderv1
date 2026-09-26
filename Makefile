@@ -59,10 +59,11 @@ build:
 	go build -o nofx
 	@echo "✅ Backend built: ./nofx"
 
-# Build frontend
+# Build frontend (VITE_GUIDE_BUILT_REV required — the vite gate refuses a
+# production build without it; dev builds carry the tree sha, canon 250/PR B [12])
 build-frontend:
 	@echo "🔨 Building frontend..."
-	cd web && npm run build
+	cd web && VITE_GUIDE_BUILT_REV=$$(git rev-parse HEAD) npm run build
 	@echo "✅ Frontend built: ./web/dist"
 
 # =============================================================================

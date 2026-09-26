@@ -44,7 +44,7 @@ func dormantDeathFixture(t *testing.T, marker string, doc kernel.PlanDoc, legacy
 	t.Helper()
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}}}
 	at, st := resetTrader(t, cfg)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC) // 09:00 CT, inside NY
 	testNow = func() time.Time { return now }
@@ -105,6 +105,7 @@ func TestDeathDormantNoFlipStaysDormantWhileDeathBreached(t *testing.T) {
 	dormantDeathTape(now, 96, 96) // death line (below 100) still breached
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	fresh := dormantDeathRow(t, st, row)
 	if fresh.Lifecycle != "dormant" {
@@ -125,6 +126,7 @@ func TestDeathDormantFlipClearedDeathBreachedStaysDormant(t *testing.T) {
 	dormantDeathTape(now, 96, 96) // above the flip line, below the death line
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	fresh := dormantDeathRow(t, st, row)
 	if fresh.Lifecycle != "dormant" {
@@ -144,6 +146,7 @@ func TestDeathDormantRearmsWhenDeathClears(t *testing.T) {
 	dormantDeathTape(now, 96, 104) // two 5m buckets close back above 100
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	fresh := dormantDeathRow(t, st, row)
 	if fresh.Lifecycle != "active" {
@@ -163,6 +166,7 @@ func TestFlipDormantRearmsWhenFlipClears(t *testing.T) {
 	dormantDeathTape(now, 96, 104) // closes back above 90
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	fresh := dormantDeathRow(t, st, row)
 	if fresh.Lifecycle != "active" {
@@ -183,6 +187,7 @@ func TestLegacyTriggerReasonDeathDormantStillJudgedByDeath(t *testing.T) {
 	at, st, row, now := dormantDeathFixture(t, "", doc, "dormant:death:death-condition: 2x5m close below 100.00")
 	dormantDeathTape(now, 96, 96)
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if fresh := dormantDeathRow(t, st, row); fresh.Lifecycle != "dormant" {
 		t.Fatalf("legacy death-dormant must stay dormant while breached, got %s", fresh.Lifecycle)
 	}

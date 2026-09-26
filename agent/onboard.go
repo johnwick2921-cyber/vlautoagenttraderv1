@@ -43,7 +43,7 @@ func (a *Agent) needsSetup() bool {
 
 // getSetupState loads the current setup state from user preferences.
 func (a *Agent) getSetupState(userID int64) *SetupState {
-	if cached, ok := a.setupStates.Load(userID); ok {
+	if cached, ok := a.stateOwner().setupStates.Load(userID); ok {
 		if state, ok := cached.(*SetupState); ok && state != nil {
 			return cloneSetupState(state)
 		}
@@ -64,7 +64,7 @@ func (a *Agent) getSetupState(userID int64) *SetupState {
 }
 
 func (a *Agent) saveSetupState(userID int64, s *SetupState) {
-	a.setupStates.Store(userID, cloneSetupState(s))
+	a.stateOwner().setupStates.Store(userID, cloneSetupState(s))
 	a.store.SetSystemConfig(fmt.Sprintf("setup_step_%d", userID), s.Step)
 	setConfig(a.store, userID, "exchange", s.Exchange)
 	setConfig(a.store, userID, "exchange_id", s.ExchangeID)
@@ -75,7 +75,7 @@ func (a *Agent) saveSetupState(userID int64, s *SetupState) {
 }
 
 func (a *Agent) clearSetupState(userID int64) {
-	a.setupStates.Delete(userID)
+	a.stateOwner().setupStates.Delete(userID)
 	for _, k := range []string{"step", "exchange", "exchange_id", "ai_provider", "ai_model", "ai_model_id", "ai_base_url"} {
 		a.store.SetSystemConfig(fmt.Sprintf("setup_%s_%d", k, userID), "")
 	}

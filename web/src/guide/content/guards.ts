@@ -8,6 +8,14 @@ export const guards: GuideSection = {
   asBuiltRev: GUIDE_BUILT_REV,
   blocks: [
     {
+      kind: 'p',
+      text: 'An owner plan edit names the revision it was drafted against. If the plan or its overlays moved while the sheet was open, the server refuses the stale draft (409) and the sheet shows the reason inline — a stale edit can never overwrite a newer one.',
+    },
+    {
+      kind: 'p',
+      text: 'Chat memory and clear requests belong to the signed-in owner. A numeric conversation ID in a request cannot select another owner’s history, for either normal or streaming chat.',
+    },
+    {
       kind: 'h',
       text: 'Structural stop and first-zone target — research candidate',
     },
@@ -50,7 +58,7 @@ export const guards: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'The AddOn sends its working-order book every 30 seconds and whenever an order changes state. Leg 4 compares that book with placed ledger orders. An armed row with no signal id is only an authorization: it appears on a separate informational line and does not fail the gate. A placement awaiting a broker receipt still counts as working/unconfirmed and blocks cutover, even if the book is empty. Working orders at either source, or disagreement between them, fail the leg. Terminal rows are excluded by one shared classifier, also used by audit queries. A book older than 60 seconds is refused as stale. Before the first AddOn snapshot, the existing explicitly labelled ledger fallback remains; it is not broker proof.',
+      text: 'The AddOn sends its working-order book every 30 seconds and whenever an order changes state. Leg 4 compares that book with placed ledger orders. An armed row with no signal id is only an authorization: it appears on a separate informational line and does not fail the gate. A placement awaiting a broker receipt still counts as working/unconfirmed and blocks cutover, even if the book is empty. Working orders at either source, or disagreement between them, fail the leg. Terminal rows are excluded by one shared classifier, also used by audit queries. A book older than 60 seconds is refused as stale. Before the first AddOn snapshot, the existing explicitly labelled ledger fallback remains; it is not broker proof. The Settings → Updates page shows the installation-wide gate, which includes the cutover legs of every trader, with the exact reason text of every leg.',
     },
     { kind: 'h', text: 'Overriding the gate with a position open' },
     {
@@ -64,7 +72,19 @@ export const guards: GuideSection = {
     { kind: 'h', text: 'Which AddOn build is actually running' },
     {
       kind: 'p',
-      text: "Editing the AddOn source changes nothing until you recompile it in NinjaTrader (F5) and restart NT8 — NinjaTrader keeps executing the DLL it last compiled. The bot now prints, at every boot, the build id it has RECEIVED on the wire next to the one it expects: '🔌 nt8 addon: build_id=… expected=… match=yes|NO'. It says NO — loudly, every boot — until a frame from the running AddOn proves otherwise. A build id read from our own source would report success for a change that never landed, which is precisely how a distributed change gets believed without being made.",
+      text: "An AI entry becomes a position only when NinjaTrader reports a fill for that exact order. Each entry is matched by its own signal id. A fill records the position at the real fill price. A rejection records the order as rejected, with no position and no 'Filled' alert. No answer within about three seconds leaves the order recorded as submitted and unconfirmed, with a warning, and no position: if it fills later, the position is picked up from NinjaTrader's own position list and tagged with that entry's own signal id from the fill NinjaTrader reported, so breakeven and trailing can move its stop. A fill counts when it landed no more than 105 seconds (the 45-second entry-confirmation grace plus the 60-second untracked grace) BEFORE the bot first saw the untracked position; there is no upper bound, so a fill reported after that first sighting counts too. The order is settled first, the tag comes last: the order is marked filled at the real fill price and its fill is recorded as usual, both in one store write. On a store failure neither is written: the order stays waiting for its fill, the position stays untagged, and a WARN names the order and the signal. If only the tag fails after the order settled, the order stays filled and the position untagged, again with a WARN. It only claims an order still waiting for its fill, and a signal that already explains another position is never used again. If two entries filled on the same side in that window, or the order was already settled, the position stays untagged rather than guess. When NinjaTrader reported no same-side fill of the bot's own in that window (for example after a restart emptied the list), the bot may match one of its own armed orders by price, but only one that filled inside that same window and whose signal explains no other position; an older armed order is never matched there. The 🧩 log line says which it was: the bot's late AI fill, its late armed fill, an armed fill matched by price, UNTAGGED with the reason (a failed database read is named as a failure), or a manual/NinjaTrader-side entry when every read succeeded and found nothing of the bot's own. Not yet bounded (owed): the one-time lineage repair that runs when a trader starts (every boot and trader reload) still matches filled armed orders by price with no time limit, so after a restart an untagged position can still take on an older armed order's plan link. Before this, an entry that was only queued, or even rejected, was recorded as an open position at the market price, and a fill belonging to an armed or Picture order could be recorded as the AI's.",
+    },
+    {
+      kind: 'p',
+      text: "A short position is seen as a position. NinjaTrader reports a short with a negative quantity, and the check run before an AI entry used to read that as flat, so an AI entry could net against a held short. The one-open-position rule and the same-side checks also compared 'long' against the stored 'LONG' and never fired; they now read sides the same way everywhere.",
+    },
+    {
+      kind: 'p',
+      text: "A stop entry that never reached NinjaTrader no longer cancels the plan's other arms. Only an order that was sent, or whose send failed after it was recorded, counts as 'placed' and closes the plan to its other arms.",
+    },
+    {
+      kind: 'p',
+      text: "Editing the AddOn source changes nothing until you reload the AddOn in NinjaTrader (F5) or restart NT8 — NinjaTrader keeps executing the DLL it last compiled. The bot now prints, at every boot, the build id it has RECEIVED on the wire next to the one it expects: '🔌 nt8 addon: build_id=… expected=… match=yes|NO'. It says NO — loudly, every boot — until a frame from the running AddOn proves otherwise. A build id read from our own source would report success for a change that never landed, which is precisely how a distributed change gets believed without being made.",
     },
     {
       kind: 'p',
@@ -98,7 +118,7 @@ export const guards: GuideSection = {
         [
           'plan_mode direction/strict',
           'HARD',
-          'Refuses entries against plan bias (direction) or without a cited scenario (strict); no plan + direction/strict = no trades.',
+          'Refuses entries against plan bias (direction); under strict every decision-path entry is refused — entries execute ONLY through armed plan scenarios, and a decision that cites a market_in_zone scenario runs that scenario\'s armed pass (a nudge: placement only, the record still reads refused + " · 🚦 <verdict>"). No plan + direction/strict = no trades.',
         ],
         [
           'min_confidence',
@@ -108,7 +128,7 @@ export const guards: GuideSection = {
         [
           'MIN-SL (env MIN_SL_ATR_MULT, 1.0)',
           'HARD',
-          'Stop closer than the floor (×ATR + 2-tick clearance) → refused.',
+          'Stop closer than the floor (×ATR + 2-tick clearance) → refused. On CME futures, judged on the tick-rounded prices the broker receives (the stop rounds away from the entry).',
         ],
         [
           'HTF veto',
@@ -123,22 +143,22 @@ export const guards: GuideSection = {
         [
           'Entry gate (class 48) — ONE gate, BOTH paths',
           'HARD',
-          'Before any order leaves — resting arm or AI market entry — the SAME chain runs: scenario direction vs the cited scenario, shadow map (0C: breakout_retest + fvg_entry are authored + scored but NEVER placed), R:R vs min_risk_reward_ratio judged at the LIVE execution price (not the prompt snapshot), min-SL ×ATR5m, one-live-arm. Refusals are recorded per path. (2026-09-02: 587 and 589 filled BELOW the 2.0 floor because the floor was judged on a stale snapshot; 589/590 traded the shadowed breakout_retest.)',
+          "Before any order leaves — resting arm or AI market entry — the SAME chain runs: scenario direction vs the cited scenario, shadow map (0C: breakout_retest + fvg_entry are authored + scored but NEVER placed), R:R vs min_risk_reward_ratio judged at the LIVE execution price (not the prompt snapshot), min-SL ×ATR5m, one-live-arm (on CME futures, R:R and min-SL are judged on the tick-rounded prices that will be sent, and a rounding that crosses a floor is refused, not sent; a stop-entry's R:R is still judged at the plan entry, not the offset trigger). An agent-chat entry is judged by the same R:R and min-SL checks on its own stop and target, and is refused without them. Refusals are recorded per path. (2026-09-02: 587 and 589 filled BELOW the 2.0 floor because the floor was judged on a stale snapshot; 589/590 traded the shadowed breakout_retest.)",
         ],
         [
           'T1 red news blackout',
           'HARD',
-          'No entries in the ±15m window around T1 events (calendar) whose currency is in day_plan.t1_currencies — default USD only (W-T1-CURRENCIES, 2026-09-18). A red event in any other currency (the 2026-09-17 BOJ rate decision, JPY, 21:54 CT, which hard-blocked the MNQ bot) is an ADVISORY line on the card, in the plan\'s no_trade list and in the prompt — visible, never blocking; set ALL to restore the old every-currency block. An event with no currency still hard-blocks (fail closed). When the host clock measurably disagrees with the NT8 feed the band is widened, but only by a CAPPED amount: 2 minutes a side at most (the 60 s tolerance plus one boundary minute), and the card says "(clock drift)" only when the measured skew is between 60 s and 5 min. A larger positive reading is the AGE of the last bar — a CME halt or a feed gap — not the clock; since 2026-09-17 (CLASS 145) it widens nothing beyond the cap and the journal says "feed stale Nm — halt or gap". Before that, the ASIA read authored inside the 16:00–17:00 halt widened the BOJ ±15m band by 39 minutes a side: an hour and three-quarters of the session blocked by a clock that was never wrong.',
+          'No entries in the ±15m window around T1 events (calendar) whose currency is in day_plan.t1_currencies — default USD only (W-T1-CURRENCIES, 2026-09-18). A red event in any other currency (the 2026-09-17 BOJ rate decision, JPY, 21:54 CT, which hard-blocked the MNQ bot) is an ADVISORY line on the card, in the plan\'s no_trade list and in the prompt — visible, never blocking; set ALL to restore the old every-currency block. An event with no currency still hard-blocks (fail closed). When the host clock measurably disagrees with the NT8 feed the band is widened, but only by a CAPPED amount: 2 minutes a side at most (the 60 s tolerance plus one boundary minute), and the card says "(clock drift)" only when the measured skew is between 60 s and 5 min. A larger positive reading is the AGE of the last bar — a CME halt or a feed gap — not the clock; since 2026-09-17 (CLASS 145) it widens nothing beyond the cap and the journal says "feed stale Nm — halt or gap". While the Day Plan is on, entries are also refused from 2 minutes BEFORE the window (the force-flat lead, when open positions are flattened), on every path and trigger — scan, live-bar pass and AI decision — and any unfilled arm is cancelled. While the window stays open, a cancel NinjaTrader has not yet confirmed is re-sent at most once every 30 seconds per order, not on every scan and live-bar pass, so a lost cancel is still retried without the sweep blocking each pass on a dark book. These refusals are counted as force_flat_window, not as the no-trade band. Before that, the ASIA read authored inside the 16:00–17:00 halt widened the BOJ ±15m band by 39 minutes a side: an hour and three-quarters of the session blocked by a clock that was never wrong.',
         ],
         [
           'Lunch / session windows / EOD flat',
           'HARD',
-          'Outside an enabled session window, inside the lunch or first-N no-trade band (the lunch window is the one kernel.LunchWindowCT() resolves — read, never a literal), or past the session close: no NEW entry, and flat at session end. Since 2026-09-09 the band binds the ARM path too. Until then it was read by the AI-decision gate and the adherence grader and by NOTHING on the arm path, so under plan_mode=strict — where a resting order is the only way in — it refused nothing. An arm inside the band is now refused, and an arm already resting when the band opens is CANCELLED rather than grandfathered: refusing only NEW arms while one placed at 11:58 rests into 12:00 is a band that stops authoring and not entering.',
+          'Outside an enabled session window, inside the lunch or first-N no-trade band (the lunch window is the one kernel.LunchWindowCT() resolves — read, never a literal), or past the session close: no NEW entry, and flat at session end. Since 2026-09-09 the band binds the ARM path too. Until then it was read by the AI-decision gate and the adherence grader and by NOTHING on the arm path, so under plan_mode=strict — where a resting order is the only way in — it refused nothing. An arm inside the band is now refused, and an arm already resting when the band opens is CANCELLED rather than grandfathered: refusing only NEW arms while one placed at 11:58 rests into 12:00 is a band that stops authoring and not entering. A cancel still unconfirmed by NinjaTrader is re-sent at most once every 30 seconds per order while the band stays open, not on every pass. A session whose EOD flat is set earlier than its last-entry cutoff refuses entries from the flat on, not only at last-entry (counted as force_flat_window).',
         ],
         [
           'Consecutive-loss breaker',
           'HARD',
-          'After N consecutive losing closes in one CME session-day, no new entry on EITHER path until the 17:00 CT roll. N is 8 by default and the owner may set it; a WARN at 5 counts and surfaces without refusing. This is the ONE session limit that is not gated by the guardrails master, so it bites whether or not that switch is on — and since 2026-09-09 it is wired to the ARM path as well as the decision path, which under plan_mode=strict is the only path that trades. Honest about its own reach: on the retained tape the longest run of losers is SEVEN, so a threshold of 8 would never have fired. An UNRESOLVABLE P&L ends a run rather than bridging it — an unknown outcome must not push the desk toward a halt.',
+          'After N consecutive losing closes in one CME session-day, no new entry on EITHER path until the 17:00 CT roll. N is 8 by default and the owner may set it — since W1 (settings truth, 2026-09-23) presence-aware: a saved number wins, a saved 0 is OFF, and a BLANK strategy value inherits env BREAKER_HALT_N (0 = off) else 8; the 🛑 boot line tags each [O] saved, [E] env, [I] default; a WARN at 5 counts and surfaces without refusing. This is the ONE session limit that is not gated by the guardrails master, so it bites whether or not that switch is on — and since 2026-09-09 it is wired to the ARM path as well as the decision path, which under plan_mode=strict is the only path that trades. Honest about its own reach: on the retained tape the longest run of losers is SEVEN, so a threshold of 8 would never have fired — the boot line says so only when N ≥ 8. A stored 0 from before W1 meant "inherit" then and "OFF" now: the trader bound to it is REFUSED at load (the ⛔ line names the strategy, the field and both meanings) until a Studio save confirms it — the conversion never silently disables a breaker. An UNRESOLVABLE P&L ends a run rather than bridging it — an unknown outcome must not push the desk toward a halt.',
         ],
         [
           'Side-quota (0-on-a-side / empty map)',
@@ -181,7 +201,7 @@ export const guards: GuideSection = {
         },
         {
           title: 'no matched scenario cited (strict mode)',
-          body: "plan_mode=strict and the action didn't cite an armed S#. The plan is the law.",
+          body: "plan_mode=strict and the action didn't cite an armed S#. The plan is the law. Even a CITED decision is never a market entry under strict (entry_gate: refused: strict — … ARM path only): if the cited scenario is an enabled market_in_zone arm, the decision nudges one armed pass for it and the record carries the executor's verdict.",
           cite: 'trader/auto_trader_planconfig.go:206-249',
         },
         {
@@ -230,14 +250,14 @@ export const guards: GuideSection = {
         ],
         [
           'strict',
-          'Entries not citing an armed scenario; ANY entry with no active plan',
-          'Only on-plan, scenario-cited entries.',
+          'EVERY decision-path market entry; ANY entry with no active plan',
+          "Only armed plan scenarios (market_in_zone: a limit inside the planner's entry zone); a decision citing one is a nudge for its armed pass.",
         ],
       ],
     },
     {
       kind: 'p',
-      text: 'Strict\'s warning, plain: "no plan = no trades" — a fail-closed day in strict mode is a flat day, by design. Strict is the optional NY experiment. Per-session overrides exist (Strategy → Day Plan → Sessions).',
+      text: 'Strict\'s warning, plain: "no plan = no trades" — a fail-closed day in strict mode is a flat day, by design. Per-session overrides exist (Strategy → Day Plan → Sessions). Since W3 the executor prompt says the same thing the gate does: its PLAN BLOCK header renders the RESOLVED mode\'s rule for the plan\'s session — strict "entries execute ONLY through armed plan scenarios (market_in_zone policy); an AI decision is a nudge — cite the scenario; off-plan is refused", direction the bias rule, advisory the old "a valid off-plan setup may still be traded". Before W3 every mode read the advisory line (decision 45139 read it under strict while log 92685 refused the entry).',
     },
     { kind: 'h', text: 'Guardrails + SIM lock' },
     {

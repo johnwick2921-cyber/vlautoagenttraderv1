@@ -8,7 +8,10 @@
 
 package store
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestResolveMinRiskRewardReportsSource(t *testing.T) {
 	cfg := &StrategyConfig{}
@@ -93,5 +96,26 @@ func TestResolvePlanModeReportsSource(t *testing.T) {
 	// And the shipped entry point delegates: same answer, both paths.
 	if got := withOv.PlanModeFor("NY"); got != mode {
 		t.Errorf("PlanModeFor=%q but ResolvePlanMode=%q — two opinions", got, mode)
+	}
+}
+
+// WAVE PLANNER B1 — the reach knob resolves with a shipped-default ON: nil →
+// 25 (the armed placement band), a saved positive value as-is, 0/negative →
+// OFF (legacy). The executor's gate and reset read THIS resolver.
+func TestResolveZonePlaceWithinPts(t *testing.T) {
+	if v, src := ResolveZonePlaceWithinPts(nil); v != 25 || !strings.HasPrefix(src, SourceShippedDefault) {
+		t.Errorf("nil day plan: got (%g, %q), want (25, %q…) — the shipped default is ON", v, src, SourceShippedDefault)
+	}
+	on := 20.0
+	if v, src := ResolveZonePlaceWithinPts(&DayPlanConfig{ZonePlaceWithinPts: &on}); v != 20 || src != SourceSaved {
+		t.Errorf("saved positive: got (%g, %q), want (20, %q)", v, src, SourceSaved)
+	}
+	off := 0.0
+	if v, _ := ResolveZonePlaceWithinPts(&DayPlanConfig{ZonePlaceWithinPts: &off}); v != 0 {
+		t.Errorf("0 must resolve OFF (legacy), got %g", v)
+	}
+	neg := -3.0
+	if v, _ := ResolveZonePlaceWithinPts(&DayPlanConfig{ZonePlaceWithinPts: &neg}); v != 0 {
+		t.Errorf("a negative saved value must resolve OFF (legacy), got %g", v)
 	}
 }

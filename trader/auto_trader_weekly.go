@@ -201,6 +201,9 @@ func (at *AutoTrader) maybeRunWeeklyRead(now time.Time) {
 	}
 	bootBackfill := now.Sub(deadline) > 2*time.Hour // read time long past → this boot caught up
 	key := fmt.Sprintf("weekly:%s:%s", at.id, monday)
+	if at.refusePlannerClaimWhileHeld(key, "weekly read") { // W-ONE-BUTTON M2 site 5
+		return
+	}
 	if !claimWeeklyRead(key) {
 		at.logInfof("📅 WEEKLY READ already in flight for week %s — skipping duplicate call.", monday)
 		return
@@ -433,14 +436,6 @@ func (at *AutoTrader) weeklyCounterShadow(decision *kernel.Decision) {
 	return // class 50: no weekly direction exists to be counter to
 }
 
-// weeklyScenarioGrade resolves the cited scenario's quality grade from the
-// active session plan ("" when unknown — treated as non-A by the clauses).
-// Clock seam (class 60): the entry point owns the wall clock and does nothing
-// else; the rule lives in the …At body so a test can state its own hour.
-func (at *AutoTrader) weeklyScenarioGrade(cited string) string {
-	return at.weeklyScenarioGradeAt(time.Now(), cited)
-}
-
 func (at *AutoTrader) weeklyScenarioGradeAt(now time.Time, cited string) string {
 	if at.store == nil || strings.TrimSpace(cited) == "" || cited == "off-plan" {
 		return ""
@@ -458,8 +453,12 @@ func (at *AutoTrader) weeklyScenarioGradeAt(now time.Time, cited string) string 
 	if err != nil || row == nil {
 		return ""
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	// WAVE 1a-plan P1 — the cited-scenario reader folds overlays through the
+	// ONE resolution (kernel.ResolvePlanFinal) instead of parsing the base doc
+	// alone, so an owner-added overlay scenario grades exactly as the executor
+	// sees it.
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return ""
 	}
 	for _, s := range doc.Scenarios {

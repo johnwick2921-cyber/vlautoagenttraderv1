@@ -150,7 +150,7 @@ func deathRealPathTrader(t *testing.T, deathReread *bool, respond func(n int, us
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
 	off := false
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-		PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: deathReread,
+		PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: deathReread,
 		WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 	}}
 	at, st := resetTrader(t, cfg)
@@ -185,6 +185,7 @@ func TestDeathRereadRealPathLandsFreshPlanAndSupersedes(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("death must park dormant first, got %q", got)
@@ -257,6 +258,7 @@ func TestDeathRereadOffByteIdentical(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t)              // CTO M4: join the async re-read before the seam resets
 	time.Sleep(300 * time.Millisecond) // let any (wrong) async launch start
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
@@ -286,7 +288,7 @@ func TestDeathRereadBudgetExhaustedStaysDormant(t *testing.T) {
 	td := "2026-08-18"
 	row := seedActivePlan(t, at, td, "NY", now.Add(-40*time.Minute), deathFixtureDoc())
 	// Exhaust a cap-1 budget deterministically (one recorded spend).
-	at.dayPlanCfg().ReplanCap = 1
+	at.dayPlanCfg().ReplanCap = store.IntPtr(1)
 	if _, err := store.SpendReplan(st, at.id, td, "NY"); err != nil {
 		t.Fatal(err)
 	}
@@ -294,6 +296,7 @@ func TestDeathRereadBudgetExhaustedStaysDormant(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	time.Sleep(300 * time.Millisecond)
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
@@ -341,7 +344,7 @@ func TestDeathRereadHeldInsideFlapGuard(t *testing.T) {
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "5")
 	off := false
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-		PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: nil,
+		PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: nil,
 		WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 	}}
 	at, st := resetTrader(t, cfg)
@@ -363,7 +366,10 @@ func TestDeathRereadHeldInsideFlapGuard(t *testing.T) {
 	seedFlipBars(15500, 15470, 6*time.Minute, now)
 	var called atomic.Int32
 	orig := deathRereadRun
-	deathRereadRun = func(*AutoTrader, string, string, string, *store.PlanDB, bool) bool { called.Add(1); return true }
+	deathRereadRun = func(*AutoTrader, time.Time, string, string, string, *store.PlanDB, bool) bool {
+		called.Add(1)
+		return true
+	}
 	t.Cleanup(func() { deathRereadRun = orig })
 
 	// Inside the flap guard (dormant write 1 minute ago): HELD, no launch.
@@ -410,6 +416,7 @@ func TestDeathRereadRealPathRearmedMeanwhileSupersedeRefused(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if !waitFor(t, 10*time.Second, func() bool {
 		return strings.Contains(logBuf.String(), "RE-ARMED meanwhile") &&
 			strings.Contains(logBuf.String(), "supersede REFUSED")
@@ -445,10 +452,14 @@ func TestDeathRereadPreReadRecheckSkipsRearmedRow(t *testing.T) {
 	seedFlipBars(15500, 15470, 6*time.Minute, now)
 	var called atomic.Int32
 	orig := deathRereadRun
-	deathRereadRun = func(*AutoTrader, string, string, string, *store.PlanDB, bool) bool { called.Add(1); return true }
+	deathRereadRun = func(*AutoTrader, time.Time, string, string, string, *store.PlanDB, bool) bool {
+		called.Add(1)
+		return true
+	}
 	t.Cleanup(func() { deathRereadRun = orig })
 
 	at.maybeRereadAfterDeath(now, "NY", td, row, "death-condition: 5m_close close below 15480.00", 15470)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	time.Sleep(300 * time.Millisecond)
 	if called.Load() != 0 {
 		t.Fatalf("the pre-read re-check must skip a non-dormant row (0 launches), got %d", called.Load())
@@ -466,7 +477,7 @@ func TestDeathRereadRealPathFlapGuardHoldsLaunch(t *testing.T) {
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "5")
 	off := false
 	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-		PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: nil,
+		PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: nil,
 		WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 	}}
 	at, st := resetTrader(t, cfg)
@@ -485,6 +496,7 @@ func TestDeathRereadRealPathFlapGuardHoldsLaunch(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("death must park dormant first, got %q", got)
 	}
@@ -515,7 +527,7 @@ func TestDeathRereadWickThroughProductionCallSite(t *testing.T) {
 		t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
 		off := false
 		cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{
-			PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, DeathReread: nil,
+			PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, DeathReread: nil,
 			WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off,
 		}}
 		at, st := resetTrader(t, cfg)

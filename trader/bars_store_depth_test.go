@@ -3,13 +3,13 @@ package trader
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"nofx/internal/censuswalk"
 	"nofx/kernel"
 	"nofx/market"
 	"nofx/store"
@@ -183,6 +183,10 @@ func TestRVBaselineCarriesItsActualDayCount(t *testing.T) {
 
 // PIN D2-F — A29. The new depth path and the day-count helper are WIRED.
 func TestD2WiredAtTheThreeCallSites(t *testing.T) {
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatalf("repo root: %v", err)
+	}
 	for fn, wantIn := range map[string]string{
 		"barsWithStoreDepth(":     "trader/auto_trader_planner.go",
 		"barsWithStoreDepthFrom(": "trader/bars_store_depth.go",
@@ -195,7 +199,7 @@ func TestD2WiredAtTheThreeCallSites(t *testing.T) {
 		"rvBaselineFallback5mBarsAsk": "trader/auto_trader_planner.go",
 		"at.barsWithStoreDepth(at.fu": "trader/auto_trader_weekly.go",
 	} {
-		n, where := d2ProdCallSites(t, fn)
+		n, where := d2ProdCallSites(t, root, fn)
 		if n == 0 {
 			t.Errorf("%s: 0 production call sites (A29)", fn)
 			continue
@@ -206,7 +210,7 @@ func TestD2WiredAtTheThreeCallSites(t *testing.T) {
 	}
 	// The three unreachable asks are GONE.
 	for _, gone := range []string{`"1m", 12000`, `"5m", 3000`} {
-		n, where := d2ProdCallSites(t, gone)
+		n, where := d2ProdCallSites(t, root, gone)
 		if n > 0 {
 			t.Errorf("an ask above the ring ceiling survives: %s in %v", gone, where)
 		}
@@ -274,45 +278,30 @@ func TestBarsWithStoreDepthSeamDegradesWhenUnanswerable(t *testing.T) {
 	}
 }
 
-func d2ProdCallSites(t *testing.T, needle string) (int, []string) {
+func d2ProdCallSites(t *testing.T, root, needle string) (int, []string) {
 	t.Helper()
-	root, err := filepath.Abs("..")
-	if err != nil {
-		t.Fatalf("repo root: %v", err)
-	}
 	n := 0
 	var where []string
-	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return nil
-		}
-		if d.IsDir() {
-			switch d.Name() {
-			case ".git", "node_modules", "web", "docs", ".understand-anything", ".claude":
-				return fs.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
-		b, rerr := os.ReadFile(path)
+	files, werr := censuswalk.NonTestGoFiles(root)
+	if werr != nil {
+		t.Fatalf("census walk: %v", werr)
+	}
+	for _, cf := range files {
+		b, rerr := os.ReadFile(cf.Path)
 		if rerr != nil {
-			return nil
+			continue
 		}
 		for _, line := range strings.Split(string(b), "\n") {
 			if strings.Contains(line, needle) && !strings.HasPrefix(strings.TrimSpace(line), "//") {
 				if strings.HasPrefix(strings.TrimSpace(line), "func ") {
 					continue
 				}
-				rel, _ := filepath.Rel(root, path)
 				n++
-				where = append(where, rel)
+				where = append(where, cf.Rel)
 				break
 			}
 		}
-		return nil
-	})
+	}
 	return n, where
 }
 
@@ -366,4 +355,38 @@ func TestPlannerStoreReaderServesNoImportRows(t *testing.T) {
 	// the exported seam that documents itself as "the same splice the planner uses"
 	out := BarsWithStoreDepth(nil, st, "MNQ 12-26", "MNQ", "1m", 12000, time.UnixMilli(base+700*oneMin))
 	_ = out // an EMPTY ring is never backfilled — the seam's own pin; the reader behind it is what this test names
+}
+
+// TestD2CensusSeesNestedSkipNamedDirs plants the d2 needle in EVERY
+// censuswalk.NestedProbeDirs directory of a synthetic module and asserts
+// d2ProdCallSites reports every one. With the old any-depth SkipDir the dirs
+// named like a root skip were invisible (CLASS 258).
+func TestD2CensusSeesNestedSkipNamedDirs(t *testing.T) {
+	root := t.TempDir()
+	dirs := censuswalk.NestedProbeDirs()
+	for _, dir := range dirs {
+		full := filepath.Join(root, filepath.FromSlash(dir))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		src := "package " + censuswalk.PackageName(dir) + "\n\nfunc offender() {\n\t_ = barsWithStoreDepthFrom(0, 0)\n}\n"
+		if err := os.WriteFile(filepath.Join(full, "offender.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	n, where := d2ProdCallSites(t, root, "barsWithStoreDepthFrom(")
+	seen := map[string]bool{}
+	for _, w := range where {
+		seen[filepath.ToSlash(w)] = true
+	}
+	var missed []string
+	for _, dir := range dirs {
+		if !seen[dir+"/offender.go"] {
+			missed = append(missed, dir)
+		}
+	}
+	if len(missed) > 0 {
+		t.Fatalf("the d2 census skipped %d of %d nested probe dirs (saw %d sites) — a skip by NAME at depth exempts compiled packages (CLASS 258):\n\t%s",
+			len(missed), len(dirs), n, strings.Join(missed, "\n\t"))
+	}
 }

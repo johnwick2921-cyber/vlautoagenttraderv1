@@ -908,6 +908,20 @@ func (c *StrategyConfig) UnmarshalJSON(data []byte) error {
 // list). Additive + defaults-off: a nil *DayPlanConfig (absent day_plan) leaves
 // an existing strategy byte-identical, and PlanEnabled=false is the master
 // switch even when the block is present. Lives at ROOT of StrategyConfig.
+// PictureHtf default timing knobs (DEFAULTS-SANE fold, DS-105 2026-09-25).
+// Sized from the production trace (PR #212 STEP 1 measurements + code read):
+// the evaluator's window is anchored at the 5m interval after the confirming
+// H1 close (nextFiveMBoundary); the live sink admits frames up to 30s old
+// (LiveFrameMaxAgeMs); a dropped boundary frame (measured at EVERY hour
+// storm) is recoverable only by the successor completed 5m frame, whose
+// receipt sits one 5m interval + the sink admission into the window (330s
+// worst). 360s = 330s worst + 30s margin; 30s freshness admits exactly every
+// frame the sink admitted. FLOOR-pinned in trader/picture_htf_floor_pins_test.go.
+const (
+	PictureHtfDefaultEntryWindowSec = 360
+	PictureHtfDefaultFreshnessSec   = 30
+)
+
 // PictureHtfConfig (W-PICTURE-HTF, 2026-09-19) — the named SIM entry mode's
 // knobs. The explicit defaults are ENGINEERING DEFAULTS chosen to translate the
 // owner's two pictures into repeatable rules; they are not research-proven
@@ -917,8 +931,8 @@ type PictureHtfConfig struct {
 	TickSize       float64 `json:"tick_size,omitempty"`        // default 0.25 (MNQ)
 	PivotWindow    int     `json:"pivot_window,omitempty"`     // default 120 completed 4H candles
 	SwingLookback  int     `json:"swing_lookback,omitempty"`   // default 24 completed 5m candles
-	EntryWindowSec int     `json:"entry_window_sec,omitempty"` // default 10s from the new 5m interval start
-	FreshnessSec   int     `json:"freshness_sec,omitempty"`    // default 2s max data age at evaluation
+	EntryWindowSec int     `json:"entry_window_sec,omitempty"` // default 360s from the new 5m interval start
+	FreshnessSec   int     `json:"freshness_sec,omitempty"`    // default 30s max data age at evaluation
 	MinRR          float64 `json:"min_rr,omitempty"`           // 0 = the strategy's configured min R:R
 }
 
@@ -940,10 +954,10 @@ func PictureHtfResolved(c *PictureHtfConfig) PictureHtfConfig {
 		out.SwingLookback = 24
 	}
 	if out.EntryWindowSec <= 0 {
-		out.EntryWindowSec = 10
+		out.EntryWindowSec = PictureHtfDefaultEntryWindowSec
 	}
 	if out.FreshnessSec <= 0 {
-		out.FreshnessSec = 2
+		out.FreshnessSec = PictureHtfDefaultFreshnessSec
 	}
 	return out
 }
@@ -974,6 +988,12 @@ type DayPlanConfig struct {
 	// break → next-5m entry through the shared execution gate) and the AI
 	// provides commentary + momentum context instead of authoring fade entries.
 	PictureHtf *PictureHtfConfig `json:"picture_htf,omitempty"`
+	// PlannerContract (WAVE PLANNER A3, 2026-09-25) — the prompt, the
+	// validator and the executor are ONE contract: confirming-close authorship,
+	// planned_order entry policy, nonzero-risk economics, the REJECT composed-stop
+	// exception. *bool: nil = ON (the shipped default); an explicit false renders
+	// the pre-A3 prompt bytes (pinned by TestW3PlannerPromptLegacyPolicyByteIdentical).
+	PlannerContract *bool `json:"planner_contract,omitempty"`
 	// OneSetupMinGrade — the lowest merged-candidate grade the best level may
 	// carry ("A+" | "A" | "B" | "C"); empty = B [O].
 	OneSetupMinGrade string `json:"one_setup_min_grade,omitempty"`
@@ -1017,6 +1037,14 @@ type DayPlanConfig struct {
 	// prompt. A POINTER because the default is ON: nil = ON, explicit false =
 	// today's behaviour byte-identical (dormant only).
 	DeathReread *bool `json:"death_reread,omitempty"`
+	// PlannerFreshTape (A6, planner-born-dead wave 2026-09-25): when an attempt
+	// is refused born-dead / flip-met, attempt N+1's prompt carries the
+	// COMPLETED bars between the read clock and the refusal (last 30 completed
+	// 1m closes + last 6 completed 5m closes) and the breached condition
+	// verbatim, so the re-author reads the tape that exists now instead of
+	// retrying blind against the stale read. A POINTER because the default is
+	// ON: nil = ON, explicit false = today's behaviour byte-identical.
+	PlannerFreshTape *bool `json:"planner_fresh_tape,omitempty"`
 	// T1Currencies (W-T1-CURRENCIES, 2026-09-18): the currencies whose T1
 	// (red) calendar events HARD-block entries (±T1BlackoutMinutes). Empty/nil
 	// = the shipped default ["USD"]. An explicit ["ALL"] (or ["*"]) restores
@@ -1030,8 +1058,12 @@ type DayPlanConfig struct {
 	// regardless of what is stored (the old resolver already mapped every other
 	// vocabulary onto it). Field kept so old JSON round-trips; no Studio control.
 	AcceptanceRule string `json:"acceptance_rule,omitempty"`
-	// ReplanCap: re-reads per session, 0–4 (default 2).
-	ReplanCap int `json:"replan_cap,omitempty"`
+	// ReplanCap: re-reads per session, 0–4. W1 (settings truth, 2026-09-23):
+	// a POINTER because 0 is a legal value — nil/absent = the shipped default 2,
+	// an explicit 0 = no re-plan at all, N = N. As an int, 0 could never be
+	// stored (omitempty dropped it) and the resolver read a hand-set 0 as 2.
+	// Resolved ONLY by ResolveReplanCap (store/resolve_source.go).
+	ReplanCap *int `json:"replan_cap,omitempty"`
 	// SessionsEnabled: subset of NY | ASIA | LONDON (default [NY]); each other
 	// session earns enablement via replay + NY match-rate evidence.
 	SessionsEnabled []string `json:"sessions_enabled,omitempty"`
@@ -1118,10 +1150,38 @@ type DayPlanConfig struct {
 	// concept is deleted. Old stored JSON carrying the field still loads
 	// (encoding/json ignores unknown fields).
 	// ConditionStatus (0C shadow demotion, 2026-08-31) — per-condition live|
-	// shadow map, resolved base → session override → env → defaults (fvg_entry
+	// shadow map, resolved session override → base → LIVE → SHADOW env → defaults (fvg_entry
 	// and breakout_retest default SHADOW per owner ruling). The ARM SEAM is the
 	// only enforcement point; authoring/validation/E8 scoring stay untouched.
 	ConditionStatus map[string]string `json:"condition_status,omitempty"`
+	// W-EXEC-TRUTH W3 (2026-09-23) — STRICT: follow the plan, enter around the
+	// price. EntryPolicyDefault is the entry policy STAMPED at parse on every
+	// arm of a NEWLY authored plan (a stored doc is never stamped):
+	// market_in_zone (empty = the shipped default) — a LIMIT at the far edge of
+	// the planner's economics.entry_zone; planned_order — today's resting order
+	// (legal on reject, fvg_entry and sweep_reclaim leg 0 only; anywhere else the
+	// arm stays legacy); legacy — stamp nothing (the explicit off: prompt and
+	// validator byte-identical to before W3). An unrecognised value resolves to
+	// the shipped default and the source says so (ResolveEntryPolicyDefault).
+	EntryPolicyDefault string `json:"entry_policy_default,omitempty"`
+	// ZoneMaxPts — the widest economics.entry_zone (points) a market_in_zone
+	// arm may carry, judged at write. nil/≤0 = 10 (ResolveZoneMaxPts).
+	ZoneMaxPts *float64 `json:"zone_max_pts,omitempty"`
+	// ZoneRestMaxMin — a resting market_in_zone limit older than this many
+	// minutes (from placed_at_ms) is cancelled "zone rest expired" by the
+	// executor. nil/≤0 = 30 (ResolveZoneRestMaxMin).
+	ZoneRestMaxMin *int `json:"zone_rest_max_min,omitempty"`
+	// ZonePlaceWithinPts — WAVE PLANNER B1: a market_in_zone arm whose zone is
+	// farther than this many points from the eval price stays armed-unplaced
+	// and places when price comes within the bound; a rest-cap expiry returns
+	// the row to armed-unplaced instead of dismantling it. nil = 25 (the armed
+	// placement band, ResolveZonePlaceWithinPts — ON); 0 = OFF = legacy
+	// behaviour, byte-identical.
+	ZonePlaceWithinPts *float64 `json:"zone_place_within_pts,omitempty"`
+	// MinHoldMin — the floor (minutes) on the RESOLVED hold of an armed
+	// market_in_zone time_hold scenario, refused below it at write (new
+	// authoring only). nil/≤0 = 3 (ResolveMinHoldMin).
+	MinHoldMin *int `json:"min_hold_min,omitempty"`
 }
 
 // DayPlanSessionOverride is a minimal per-session override. Every field is a
@@ -1166,19 +1226,15 @@ const (
 // LastEntryOffsetFor resolves the per-session last-entry offset (minutes before
 // session end). Override → default. Config only — no caller may carry a literal.
 func (c *DayPlanConfig) LastEntryOffsetFor(session string) int {
-	if ov := c.SessionOverride(session); ov != nil && ov.LastEntryOffsetMin != nil && *ov.LastEntryOffsetMin >= 0 {
-		return *ov.LastEntryOffsetMin
-	}
-	return DefaultLastEntryOffsetMin
+	v, _ := LastEntryOffsetForWithSource(c, session)
+	return v
 }
 
 // EODFlatOffsetFor resolves the per-session EOD-flat offset (minutes before
 // session end). Override → default.
 func (c *DayPlanConfig) EODFlatOffsetFor(session string) int {
-	if ov := c.SessionOverride(session); ov != nil && ov.EODFlatOffsetMin != nil && *ov.EODFlatOffsetMin >= 0 {
-		return *ov.EODFlatOffsetMin
-	}
-	return DefaultEODFlatOffsetMin
+	v, _ := EODFlatOffsetForWithSource(c, session)
+	return v
 }
 
 // SessionOverride returns the named session's override block, or nil. Shared by
@@ -1284,16 +1340,11 @@ func (s *StrategyStore) RepairAcceptanceRuleMigration() (baseMigrated, sessionMi
 }
 
 // ReplanCapFor resolves the re-read cap for a session: per-session override →
-// strategy-level → the shipped default of 2. A 0 override is meaningful (no
-// re-plan after death), hence the >= 0 test rather than > 0.
+// strategy-level → the shipped default of 2. A 0 is meaningful at BOTH levels
+// (no re-plan after death). W1: delegates to ResolveReplanCap — one resolver,
+// canon 28 — so the boot line, the card and the gates read one rule.
 func (c *DayPlanConfig) ReplanCapFor(session string) int {
-	n := 2
-	if c != nil && c.ReplanCap > 0 {
-		n = c.ReplanCap
-	}
-	if ov := c.SessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
-		n = *ov.ReplanCap
-	}
+	n, _ := ResolveReplanCap(c, session)
 	return n
 }
 
@@ -1513,10 +1564,8 @@ func GetResetBaseline(st *Store, traderID, tradeDate, session string) int {
 // configured for this session (the shipped behavior — the strategy-level daily
 // guardrail still applies). A 0 cap is meaningful: no entries this session.
 func (c *DayPlanConfig) MaxTradesFor(session string) (int, bool) {
-	if ov := c.SessionOverride(session); ov != nil && ov.MaxTrades != nil && *ov.MaxTrades >= 0 {
-		return *ov.MaxTrades, true
-	}
-	return 0, false
+	n, ok, _ := MaxTradesForWithSource(c, session)
+	return n, ok
 }
 
 // MinGradeFor (grading audit §4.7, 2026-08-25) resolves the per-session
@@ -1524,10 +1573,8 @@ func (c *DayPlanConfig) MaxTradesFor(session string) (int, bool) {
 // seam so the kernel executor path (KEY LEVELS + PLAN STATUS) and the trader
 // planner path can never disagree on the floor.
 func (c *DayPlanConfig) MinGradeFor(session string) string {
-	if ov := c.SessionOverride(session); ov != nil && ov.MinGrade != nil {
-		return strings.ToUpper(strings.TrimSpace(*ov.MinGrade))
-	}
-	return ""
+	v, _ := MinGradeForWithSource(c, session)
+	return v
 }
 
 // PlanModeFor resolves the plan-restriction mode for a session: per-session
@@ -1549,7 +1596,7 @@ func DefaultDayPlanConfig() *DayPlanConfig {
 		ProximityFilterATR: 1.5,
 		MaxLevels:          8,
 		HtfSeats:           intPtr(2),
-		ReplanCap:          2,
+		ReplanCap:          intPtr(2),
 		SessionsEnabled:    []string{"NY"},
 		ApprovalRequired:   false,
 		// W-KNOB-PRUNE (2026-09-18): the folded knobs (scenario_cap,
@@ -1565,6 +1612,10 @@ func DefaultDayPlanConfig() *DayPlanConfig {
 func wakeBoolPtr(v bool) *bool { return &v }
 
 func intPtr(v int) *int { return &v }
+
+// IntPtr returns a pointer to v — for presence-aware *int knobs (W1:
+// consecutive_loss_halt, replan_cap), where nil = inherit and &0 = an explicit 0.
+func IntPtr(v int) *int { return &v }
 
 // DefaultWakeMinIntervalMin is the shipped wake spacing (minutes). W6-D
 // (2026-08-25): raised 10 → 30 — wakes are unlimited (no budget), so the
@@ -1694,6 +1745,14 @@ func (c *DayPlanConfig) FlipRereadEnabled() bool {
 	return c != nil && c.FlipReread
 }
 
+// PlannerFreshTapeEnabled is the ONE resolution seam for the PLANNER A6 knob:
+// born-dead / flip-met retries carry the fresh completed tape between the read
+// clock and the refusal. nil = ON (the shipped default); explicit false =
+// today's blind-retry behaviour byte-identical.
+func (c *DayPlanConfig) PlannerFreshTapeEnabled() bool {
+	return c == nil || c.PlannerFreshTape == nil || *c.PlannerFreshTape
+}
+
 // T1CurrencyAll is the sentinel meaning "every currency hard-blocks" — the
 // pre-W-T1-CURRENCIES behaviour. "*" is accepted on input and canonicalised
 // to this.
@@ -1787,14 +1846,8 @@ func (c *DayPlanConfig) DeathRereadEnabled() bool {
 // per-session override → strategy-level → "C" (no restriction). The ONE
 // resolution seam so the kernel gate and the Studio card can never disagree.
 func (c *DayPlanConfig) MinScenarioQualityFor(session string) string {
-	floor := "C"
-	if c != nil && strings.TrimSpace(c.MinScenarioQuality) != "" {
-		floor = strings.ToUpper(strings.TrimSpace(c.MinScenarioQuality))
-	}
-	if ov := c.SessionOverride(session); ov != nil && ov.MinScenarioQuality != nil && strings.TrimSpace(*ov.MinScenarioQuality) != "" {
-		floor = strings.ToUpper(strings.TrimSpace(*ov.MinScenarioQuality))
-	}
-	return floor
+	v, _ := MinScenarioQualityForWithSource(c, session)
+	return v
 }
 
 // MinSideLevelsFor REMOVED by owner ruling 2026-08-31 — the per-side count
@@ -2004,10 +2057,17 @@ type RiskControlConfig struct {
 
 	// D1 — CONSECUTIVE-LOSS halt: after this many consecutive LOSING closed trades
 	// in the CME session-day, block NEW entries until the next session (open-pos
-	// management via SL/TP is unaffected). 0 = OFF. Resets on a winning/break-even
-	// close or a new session. New guardrail → default 0 (off). NOT gated by the
-	// guardrails master switch — it is a per-strategy circuit breaker.
-	ConsecutiveLossHalt int `json:"consecutive_loss_halt,omitempty"`
+	// management via SL/TP is unaffected). Resets on a winning/break-even close or
+	// a new session. NOT gated by the guardrails master switch — it is a
+	// per-strategy circuit breaker.
+	//
+	// W1 (settings truth, 2026-09-23) — PRESENCE-AWARE. nil/absent = INHERIT
+	// (env BREAKER_HALT_N, else the shipped default 8 — the breaker is ON);
+	// an explicit 0 = OFF; N = N. The old int said "0 = OFF" here while the
+	// runtime read 0 as "unset → 8" and no writer could store a 0 at all
+	// (omitempty) — the UI's OFF was a switch wired to nothing. Resolved ONLY
+	// by ResolveBreakerHalt (store/resolve_source.go).
+	ConsecutiveLossHalt *int `json:"consecutive_loss_halt,omitempty"`
 
 	// B7 — RE-ENTRY COOLDOWN: after a STOP-LOSS exit, block a SAME-DIRECTION
 	// re-entry on that symbol for this many minutes OR until price moves ≥ 1×ATR15
@@ -2244,10 +2304,10 @@ func applyFuturesIndicatorDefaults(ind *IndicatorConfig) {
 	ind.EnableOIRanking = false
 	ind.EnableNetFlowRanking = false
 	ind.EnablePriceRanking = false
-	// Open Interest is the Binance crypto-perp feed too — it returns zeros for
-	// MNQ and the futures prompt already says to ignore it (no real futures OI
-	// is wired; the NT8 bridge carries OHLCV only). Off by default so a new
-	// futures strategy doesn't list/value an empty OI section.
+	// Open Interest is the Binance crypto-perp feed too — the futures path never
+	// reads it (W-NO-BINANCE A: OI is absent and renders n/a on MNQ; the NT8
+	// bridge carries OHLCV only). Off by default so a new futures strategy
+	// doesn't list an OI section that can only say n/a.
 	ind.EnableOI = false
 	// (2) computed technical indicators ON for futures.
 	ind.EnableATR = true
@@ -2270,7 +2330,13 @@ func (s *StrategyStore) Create(strategy *Strategy) error {
 
 // Update update a strategy
 func (s *StrategyStore) Update(strategy *Strategy) error {
-	return s.db.Model(&Strategy{}).
+	return updateStrategyRow(s.db, strategy, time.Now().UTC()).Error
+}
+
+// updateStrategyRow is Update's one statement, on db (the store or a
+// transaction) — UpdateWithExplicitZeros runs it inside its transaction.
+func updateStrategyRow(db *gorm.DB, strategy *Strategy, updatedAt time.Time) *gorm.DB {
+	return db.Model(&Strategy{}).
 		Where("id = ? AND user_id = ?", strategy.ID, strategy.UserID).
 		Updates(map[string]interface{}{
 			"name":           strategy.Name,
@@ -2278,8 +2344,8 @@ func (s *StrategyStore) Update(strategy *Strategy) error {
 			"config":         strategy.Config,
 			"is_public":      strategy.IsPublic,
 			"config_visible": strategy.ConfigVisible,
-			"updated_at":     time.Now().UTC(),
-		}).Error
+			"updated_at":     updatedAt,
+		})
 }
 
 // Delete delete a strategy
@@ -2332,8 +2398,13 @@ func (s *StrategyStore) ListPublic() ([]*Strategy, error) {
 
 // Get get a single strategy
 func (s *StrategyStore) Get(userID, id string) (*Strategy, error) {
+	return getStrategy(s.db, userID, id)
+}
+
+// getStrategy is Get on db (the store or a transaction).
+func getStrategy(db *gorm.DB, userID, id string) (*Strategy, error) {
 	var st Strategy
-	err := s.db.Where("id = ? AND (user_id = ? OR is_default = ?)", id, userID, true).
+	err := db.Where("id = ? AND (user_id = ? OR is_default = ?)", id, userID, true).
 		First(&st).Error
 	if err != nil {
 		return nil, err
@@ -2382,25 +2453,36 @@ func (s *StrategyStore) SetActive(userID, strategyID string) error {
 }
 
 // Duplicate duplicate a strategy (used to create custom strategy based on default strategy)
+//
+// W1 (settings truth): the copy holds the same bytes, so it carries the
+// source's record of which explicit zeros a W1 save confirmed — a copy of a
+// confirmed OFF breaker is still the owner's OFF. The source read, the new row
+// and the copied record are ONE transaction (CTO ruling msg 1790176346377): a
+// copy never lands without its record, nor pairs one source's bytes with
+// another moment's record.
 func (s *StrategyStore) Duplicate(userID, sourceID, newID, newName string) error {
-	// get source strategy
-	source, err := s.Get(userID, sourceID)
-	if err != nil {
-		return fmt.Errorf("failed to get source strategy: %w", err)
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// get source strategy
+		source, err := getStrategy(tx, userID, sourceID)
+		if err != nil {
+			return fmt.Errorf("failed to get source strategy: %w", err)
+		}
 
-	// create new strategy
-	newStrategy := &Strategy{
-		ID:          newID,
-		UserID:      userID,
-		Name:        newName,
-		Description: "Created based on [" + source.Name + "]",
-		IsActive:    false,
-		IsDefault:   false,
-		Config:      source.Config,
-	}
-
-	return s.Create(newStrategy)
+		// create new strategy
+		newStrategy := &Strategy{
+			ID:          newID,
+			UserID:      userID,
+			Name:        newName,
+			Description: "Created based on [" + source.Name + "]",
+			IsActive:    false,
+			IsDefault:   false,
+			Config:      source.Config,
+		}
+		if err := tx.Create(newStrategy).Error; err != nil {
+			return err
+		}
+		return copyExplicitZeroMarker(tx, sourceID, newID)
+	})
 }
 
 // ParseConfig parse strategy configuration JSON
@@ -2758,4 +2840,13 @@ func (c *StrategyConfig) getEffectiveTimeframeCount() int {
 		count++
 	}
 	return count
+}
+
+// PlannerContractOn (WAVE PLANNER A3): nil = ON (shipped default); explicit
+// false renders the pre-A3 prompt bytes.
+func (c *DayPlanConfig) PlannerContractOn() bool {
+	if c == nil || c.PlannerContract == nil {
+		return true
+	}
+	return *c.PlannerContract
 }

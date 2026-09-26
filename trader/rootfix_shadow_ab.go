@@ -126,7 +126,7 @@ func shadowABLine(n, target int, session, tradeDate string, v ShadowABVerdict, l
 // have been rejected for. It writes nothing.
 func (at *AutoTrader) shadowVerdictFor(raw string, maxLevels, scenarioCap int, facts kernel.PlanFacts, machineLabels, htfLabels map[float64]string, requiredBias string) (bool, []string) {
 	var reasons []string
-	d, perr := kernel.ParsePlanDocCappedWithMinRR(raw, maxLevels, scenarioCap, at.armMinRRFor(nil))
+	d, perr := kernel.ParsePlanDocForAuthoring(raw, maxLevels, scenarioCap, at.plannerAuthoringOpts()) // W3: same opts as the live write loop
 	if perr != nil {
 		return false, []string{"parse/schema: " + perr.Error()}
 	}
@@ -159,6 +159,18 @@ func (at *AutoTrader) shadowVerdictFor(raw string, maxLevels, scenarioCap int, f
 		if verr := kernel.ValidateBreakdownContinueScenarios(d, scope, kernel.StaleConfirmATR5m(scope.Bars), facts.Price, time.Now().UnixMilli()); verr != nil {
 			reasons = append(reasons, verr.Error())
 		}
+	}
+	// W-EXEC-TRUTH W2 A1/A2 — the live chain's born check, PURE here (no
+	// liveness events): without it the shadow's legal rate overstates.
+	if market.FuturesBarsProvider != nil {
+		if berr := kernel.EvaluateBornCheck(d, market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount), facts.ReadAt, time.Now()).Err(); berr != nil {
+			reasons = append(reasons, berr.Error())
+		}
+	}
+	// W-EXEC-TRUTH W2 A3+A4 — the SAME kernel check the write loop runs; the
+	// shadow records nothing.
+	if verr := kernel.CheckScenarioWriteTruth(d, facts.IdentityMap, facts.CapacityCut, market.FuturesTickSize(at.futuresSymbol())).Err(); verr != nil {
+		reasons = append(reasons, verr.Error())
 	}
 	return len(reasons) == 0, reasons
 }

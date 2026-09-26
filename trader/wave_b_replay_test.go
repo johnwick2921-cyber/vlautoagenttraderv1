@@ -310,6 +310,28 @@ func TestSystemMapStopEntryRefsResolve(t *testing.T) {
 	if checked < 5 {
 		t.Errorf("only %d of the region's references were checkable — the pin is going vacuous", checked)
 	}
+
+	// Range refs (`symbol` :NNN-MMM) name a branch's SPAN. The symbol must sit
+	// on the range's start line and both endpoints must be real lines. Without
+	// this the stop-branch range ref drifted silently — a colonless bare range
+	// is invisible to the pair regex (class 75, second strike).
+	rangeRe := regexp.MustCompile("`([A-Za-z_][A-Za-z0-9_]*)`[^`\n]{0,60}?:(\\d+)-(\\d+)")
+	for _, m := range rangeRe.FindAllStringSubmatch(region, -1) {
+		sym, s1, s2 := m[1], m[2], m[3]
+		n1, err1 := strconv.Atoi(s1)
+		n2, err2 := strconv.Atoi(s2)
+		if err1 != nil || err2 != nil || n1 <= 0 || n2 <= n1 || n2 > len(lines) {
+			t.Errorf("%s :%s-%s — armed_executor.go has %d lines", sym, s1, s2, len(lines))
+			continue
+		}
+		if !strings.Contains(string(cb), sym) {
+			continue // not a symbol of this file
+		}
+		checked++
+		if !strings.Contains(lines[n1-1], sym) {
+			t.Errorf("SYSTEM-MAP says %s's branch starts at armed_executor.go:%d, but that line reads:\n\t%s", sym, n1, strings.TrimSpace(lines[n1-1]))
+		}
+	}
 }
 
 // TestStopEntryBootLineStatesTheSeam — D4 / A11, owner ruling 2026-09-05.

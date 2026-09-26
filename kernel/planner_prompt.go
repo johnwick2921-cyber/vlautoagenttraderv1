@@ -35,6 +35,20 @@ type PlannerInput struct {
 	// renders the arm-disabled-at-write rule. false → the sentence is absent and
 	// the prompt is byte-identical to before the wave.
 	WriteFeasibilityOn bool
+	// ConditionStatus / SessionConditionStatus (WAVE 1a-plan P3, 2026-09-24)
+	// — the RESOLVED strategy + session condition maps (W1 resolver). nil/empty
+	// = no configured demotion — the armable line renders byte-identically to
+	// before this wave.
+	ConditionStatus        map[string]string
+	SessionConditionStatus map[string]string
+	// EntryPolicyDefault / ZoneMaxPts / MinHoldMin (W-EXEC-TRUTH W3, 2026-09-23)
+	// — the RESOLVED day_plan.entry_policy_default, zone_max_pts and
+	// min_hold_min. The ZERO value renders the SHIPPED default (market_in_zone,
+	// 10 pt, 3 min) — what production renders for a strategy that saved
+	// nothing; "legacy" renders the pre-W3 prompt byte-identically.
+	EntryPolicyDefault string
+	ZoneMaxPts         float64
+	MinHoldMin         int
 	Zones              *LevelZoneMap // Uncut presentation snapshot; never used as trading inputs.
 	ResearchSnapshotID string        `json:"-"` // record link, never prompt content
 	TradeDate          string
@@ -50,7 +64,17 @@ type PlannerInput struct {
 	// GeometryRefIDs (W-GEOMETRY-REFUSAL, 2026-09-18) — the resolved
 	// day_plan.geometry_reference_levels knob: true = reference-anchor levels
 	// with an unknown formation close carry a stable id (never NULL).
-	GeometryRefIDs   bool
+	GeometryRefIDs bool
+	// PlannerContractOn gates the A3 prompt additions (confirming close,
+	// the legality schema, the planned_order entry policy, the REJECT
+	// composed-stop exception, the A4 gap-reach law, the A5 obstacle chains) —
+	// nil=ON at the store, this field is the resolved bool.
+	PlannerContractOn bool
+	// MinTargetRR is the A2 min_tgt column's resolved R:R floor. Zero → the
+	// prompt's own PlannerArmMinRR (2.0); the executor passes its
+	// resolvedMinRR(cfg) so the prompt and the arm seam judge with ONE floor
+	// (canon 28).
+	MinTargetRR      float64
 	Regime           RegimeBlock
 	Levels           []ScoredLevel // Go-ranked, graded (P1.5) — the decision-critical block
 	StructureSummary []string      // one line per timeframe
@@ -517,7 +541,7 @@ func BuildPlannerPrompt(in PlannerInput) string {
 	// Both are computed from the SAME code the enforcer runs, so the prompt can
 	// never hold a second opinion. Empty inputs render nothing.
 	b.WriteString(RenderVoidBreakdownLevels(in.VoidBreakdownLevels, len(in.Levels)))
-	b.WriteString(RenderStopFloorLine(in.StopFloorATR5m, in.StopFloorMult))
+	b.WriteString(RenderStopFloorLine(in.StopFloorATR5m, in.StopFloorMult, in.PlannerContractOn))
 	// The waterfall floor, stated the same way the stop floor is: the number
 	// the validator judges by, and which levels can actually meet it.
 	b.WriteString(RenderDisplacementFloorLine(in.StopFloorATR5m))
@@ -573,7 +597,7 @@ func BuildPlannerPrompt(in PlannerInput) string {
 		// distance in ATR5m, projections beyond the mapped range, and the entry
 		// shortlist in reachability order. Rendered BELOW the ranked table, which
 		// is left exactly as the scorer produced it (the score is untouched).
-		candidates := BuildMapCandidates(in.Levels, in.Price, in.ATR5m, MapCandidateOpts{})
+		candidates := BuildMapCandidates(in.Levels, in.Price, in.ATR5m, MapCandidateOpts{MinRR: in.MinTargetRR})
 		// W-GEOMETRY-REFUSAL (2026-09-18) — with day_plan.geometry_reference_levels
 		// ON (the owner's default), reference-anchor levels whose formation close
 		// is unknown get a STABLE sha id instead of NULL, so the planner can author
@@ -581,7 +605,7 @@ func BuildPlannerPrompt(in PlannerInput) string {
 		if in.GeometryRefIDs {
 			EnsureReferenceLevelIDs(candidates)
 		}
-		mb := RenderIdentityMapBlock(candidates, in.Price)
+		mb := RenderIdentityMapBlockContract(candidates, in.Price, in.PlannerContractOn)
 		if in.Zones != nil {
 			mb = RenderScoredReferenceBlock(candidates, in.Price)
 		}
@@ -771,7 +795,8 @@ func BuildPlannerPrompt(in PlannerInput) string {
 		}
 	}
 
-	b.WriteString(plannerOutputContract(in.MaxLevels, in.ScenarioCap, len(in.HTFZones) > 0, has1HSD, in.WriteFeasibilityOn))
+	b.WriteString(plannerOutputContractFor(in.MaxLevels, in.ScenarioCap, len(in.HTFZones) > 0, has1HSD, in.WriteFeasibilityOn,
+		resolvePromptEntryPolicy(in.EntryPolicyDefault, in.ZoneMaxPts, in.MinHoldMin, in.ConditionStatus, in.SessionConditionStatus), in.PlannerContractOn))
 	return b.String()
 }
 
@@ -781,6 +806,18 @@ func BuildPlannerPrompt(in PlannerInput) string {
 // gets requested AND passes instead of fail-closing every read against a
 // hardcoded 8/3.
 func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone bool, writeFeas bool) string {
+	// W-EXEC-TRUTH W3: the five-argument form is the LEGACY-policy rendering
+	// (the pre-W3 text byte-identical — every existing contract test keeps
+	// judging exactly what it judged). Production (BuildPlannerPrompt) calls
+	// plannerOutputContractFor with the RESOLVED policy; entry_policy_prompt_test
+	// runs the class-38 contract over every policy's rendering.
+	return plannerOutputContractFor(maxLevels, maxScenarios, hasHTFZones, has1HSDZone, writeFeas,
+		entryPolicyPromptInput{Policy: EntryPolicyDefaultLegacy}, false) // nil maps — the legacy prompt is byte-identical
+}
+
+// plannerOutputContractFor renders the output contract under the resolved
+// entry policy (W3 (h)).
+func plannerOutputContractFor(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone bool, writeFeas bool, ep entryPolicyPromptInput, contractOn bool) string {
 	maxL, maxS := resolvePlanCaps(maxLevels, maxScenarios)
 	htfRule := ""
 	if hasHTFZones {
@@ -794,7 +831,9 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 		`  "reasoning": "<your read: what the auction is doing and why this plan — ≤200 words, decision-focused>",` + "\n" +
 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
 		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d, MUST include ≥3 below AND ≥3 above the current price`, maxL) + "\n" +
-		fmt.Sprintf(`  "scenarios": [{"id": "S1", "level_id": "<candidate id from map, or null when map id is NULL>", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B|C", "chain_after": "<S# of the sweep_reclaim this fvg_entry follows, or omit>", "confirm": {"rule": "touch|1x5m_close|2x5m_close|1m_mss|time_hold", "ref_price": <n>, "side": "above|below"}, "confirm2": {"rule": "<leg 2 rule>", "ref_price": <n>, "side": "above|below"} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), "fvg": {"fvg_lo": <n>, "fvg_hi": <n>, "entry_mode": "edge|ce", "displacement_atr": <n>, "origin_level": "<label>", "direction": "long|short"}, "breakdown": {"level": <n>, "level_label": "<label>", "entry_mode": "pullback|immediate"} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \"none — no break\" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), "arm": {"enabled": true, "entry": <n>, "stop": <n>, "target": <n>, "wait_confirm": true, "legs": [{"entry": <n>, "stop": <n>, "target": <n>, "size": 1, "wait_confirm": false, "rule": "<rule>"}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..%d — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition=="fvg_entry" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on %s (sweep_reclaim arms only via wait_confirm; %s NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules`, maxS, ArmableConditionsPipe(), NonArmableConditionsPipe()) + "\n" +
+		fmt.Sprintf(`  "scenarios": [{"id": "S1", "level_id": "<candidate id from map, or null when map id is NULL>", "sweep_level_id": "<level candidate id of leg 1 — the sweep_reclaim split contract only; the two legs are TWO DIFFERENT levels (a sweep and reclaim of ONE level uses level_id alone)>", "reclaim_level_id": "<level candidate id of leg 2 — the split contract only>", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<ONE sentence in the invalid GRAMMAR below>", "quality": "A+|A|B|C", "chain_after": "<S# of the sweep_reclaim this fvg_entry follows, or omit>", "confirm": {"rule": "touch|1x5m_close|2x5m_close|1m_mss|time_hold", "ref_price": <n>, "side": "above|below", "hold_min": <n>} (hold_min is time_hold ONLY — the minutes of 1m closes your prose states; the machine counts EXACTLY the stored rule: 2x5m_close waits for TWO completed 5m closes, a time_hold waits hold_min minutes), "confirm2": {"rule": "<leg 2 rule>", "ref_price": <n>, "side": "above|below"} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), "fvg": {"fvg_lo": <n>, "fvg_hi": <n>, "entry_mode": "edge|ce", "displacement_atr": <n>, "origin_level": "<label>", "direction": "long|short"}`+plannerContractSchemaFrag(contractOn)+`, "breakdown": {"level": <n>, "level_label": "<label>", "entry_mode": "pullback|immediate"} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \"none — no break\" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), "arm": {"enabled": true, "entry": <n>, "stop": <n>, "target": <n>, "wait_confirm": true, "legs": [{"entry": <n>, "stop": <n>, "target": <n>, "size": 1, "wait_confirm": false, "rule": "<rule>"}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..%d — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition=="fvg_entry" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; %s — see the ARMED ORDERS + ENTRY LAW rules`, maxS, ep.armLegalClause()) + "\n" +
+
+		AuthoredInvalidationGrammarLine() + "\n" + // W2 A1 — the grammar the born check enforces (class 38 row)
 		NoTradeSchemaExample() + "\n" + // S3 (2026-09-16) — the relation contract: always rendered (the
 		// class-38 guard asserts the fragment), conditionally relevant.
 		"RELATION FIELDS (S3): relation_d and relation_4h are VALIDATOR-STAMPED from the structure table (with-trend | counter-trend | range) — the validator stamps relation_d / relation_4h itself, the model never writes them. Your own claim may go in relation_claimed and is kept but never trusted. A counter-trend scenario is FLAGGED, never blocked. " + `  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
@@ -812,7 +851,7 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 		// already void the order was UNSATISFIABLE, and the model obeyed it into
 		// a guaranteed reject (LONDON 01:32→01:37, three attempts, session lost).
 		// It now orders a DIRECTION and names the legal conditions.
-		"If price sits BELOW PDL the plan MUST include a SHORT-direction scenario (ANY legal condition — reject, breakdown_continue, acceptance, sweep_reclaim, hold, reclaim); ABOVE PDH, a LONG-direction scenario. Pick the condition the TAPE supports: if a breakdown level is listed as VOID above, author a different condition there. " +
+		"If price sits BELOW PDL the plan MUST include a SHORT-direction scenario (ANY legal condition — reject, breakdown_continue, acceptance, sweep_reclaim, hold, reclaim); ABOVE PDH, a LONG-direction scenario. Pick the condition the TAPE supports: if a breakdown level is listed as VOID above, author a different condition there. " + gapReachFrag(contractOn, ep.Policy) +
 		"A1: your reasoning MUST open by naming the bias-tree branch you took (e.g. \"bias-tree: inside-day long LOW\"), then argue from it. " +
 		"A2: an fvg_entry SHOULD chain after a sweep_reclaim (chain_after: S#) — bare gaps at non-A/B origins get a WARN at write, not a reject. " + "A2b (machine grounding, 2026-08-27): author an fvg_entry scenario ONLY from the ## FRESH FVGs list above — copy its direction and lo–hi EXACTLY. If the list is empty, do NOT author any fvg_entry (invented/stale gaps are REJECTED at write). " + "A2c (FVG demand, 2026-08-28): when ## FRESH FVGs is NON-empty and at least one candidate's direction agrees with your bias, you SHOULD author an fvg_entry from that candidate; if you decide not to, state the reason in ONE line in your reasoning (e.g. 'no fvg_entry: nearest fresh gap is 30pt away — outside my reach'). " + "death.flip objects are MACHINE-EVALUATED — choose levels from your level list and a rule; they must match the prose lines. " +
 		"The flip and death MUST be DIFFERENT events: never the same level AND same rule for both (a flip at the same tick death fires is void). A short-biased plan's flip sits BELOW its death line or uses a stricter rule, so the flip can actually fire. " +
@@ -823,24 +862,25 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 		"Every scenario's confirm{} is MACHINE-EVALUATED the same way: rule + ref_price + side, and ref_price MUST equal a number written in that scenario's trigger/invalid prose. " +
 		// ENTRY-MECHANICS E1/E2 (2026-08-30) — the per-condition entry law.
 		// 15m confirms are DEAD (schema reject confirm_rule_15m_removed).
-		"ENTRY LAW (per condition — the machine REJECTS violations by name): reject → touch ONLY (fade_requires_touch) with a structure stop ≥2 ticks beyond the level · fvg_entry → touch ONLY, entry price inside the FVG edge..CE band · sweep_reclaim → leg-1 touch at the sweep ref, leg-2 1m_mss (1x5m_close accepted as the leg-2 alternative) · reclaim → 1x5m_close or 1m_mss, never 2x5m_close · breakout_retest → touch at the retest + stop-entry fallback, 1x5m_close legal for the break leg · acceptance/hold → time_hold (price holds beyond ref for ACCEPT_HOLD_MIN minutes of 1m closes) with 1x5m_close as fallback · breakdown/breakup_continue → 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m (BD_MIN_CLOSES=1) or stop-entry — 2x5m_close is legal ONLY here (everywhere else: 2x5m_reserved). Default confirm = 1x5m_close (single close). " +
+		"ENTRY LAW (per condition — the machine REJECTS violations by name): reject → touch ONLY (fade_requires_touch) with a structure stop ≥2 ticks beyond the level · fvg_entry → touch ONLY, entry price inside the FVG edge..CE band · sweep_reclaim → leg-1 touch at the sweep ref, leg-2 1m_mss (1x5m_close accepted as the leg-2 alternative) · reclaim → 1x5m_close or 1m_mss, never 2x5m_close · breakout_retest → touch at the retest + stop-entry fallback, 1x5m_close legal for the break leg · acceptance/hold → time_hold (price holds beyond ref for ACCEPT_HOLD_MIN minutes of 1m closes) with 1x5m_close as fallback · breakdown/breakup_continue → " + confirmingCloseFrag(contractOn) + "1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m (BD_MIN_CLOSES=" + fmt.Sprintf("%d", bdConfirmCloses()) + ") or stop-entry — 2x5m_close is legal ONLY here (everywhere else: 2x5m_reserved). Default confirm = 1x5m_close (single close). " +
 		"SCENARIO ECONOMICS CONTRACT (required for NEW AUTHORING; legacy reads remain UNKNOWN): every scenario states entry zone, trigger, confirm{}, structural invalidation (invalid), protective stop, first opposing obstacle with level/family/price provenance, planned response there, arm target and both implied R values. " +
-		"Include economics:{entry_zone:[low,high],first_obstacle:{price:<n>,level:<label>,family:<family>,response:pass_through|reduce|exit|decline_setup},r_to_obstacle:<n>,r_to_arm_target:<n>,target_path_exception:<reason if needed>,role_exceptions:[{level:<label>,use:entry|target|invalidation,reason:<why>}]} on EVERY scenario. " +
+		"Include economics:{entry_zone:[low,high],first_obstacle:{price:<n>,level:<label>,family:<family>,response:pass_through|reduce|exit|decline_setup},path_levels:[{price:<n>,level:<label>,level_id:<map id>,role:pass_through|reduce|exit}],r_to_obstacle:<n>,r_to_arm_target:<n>,target_path_exception:<reason if needed>,role_exceptions:[{level:<label>,use:entry|target|invalidation,reason:<why>}]} on EVERY scenario. " +
 		"With arm{}, read entry/stop/target from that arm ONLY; do not duplicate them in economics. Without an arm, provide economics.geometry:{entry:<n>,stop:<protective stop>,target:<arm objective>} as hypothetical geometry; this NEVER authorizes an arm or changes which conditions are armable. " +
-		"R = abs(price-entry)/abs(entry-stop), from the same proposed geometry, before rounding/costs. State r_to_obstacle and r_to_arm_target EXACTLY as computed (6+ decimals, never a rounded shorthand like 2.0); the machine recomputes both and refuses a stated R that drifts more than one tick of price distance from geometry, though an arm-target R whose computed value meets the minimum floor is auto-corrected to the computed value and accepted. The FIRST opposing obstacle must be between entry and the arm target; name the action there. A sub-1R obstacle is WARN only and remains admissible. No structural, fixed-R, ATR, partial, trailing or mandatory-1R target policy is prescribed. A reduce response is a declared intention, not executable half-contract permission; one contract cannot be halved. " +
+		"R = abs(price-entry)/abs(entry-stop), from the same proposed geometry, before rounding/costs. State r_to_obstacle and r_to_arm_target EXACTLY as computed (6+ decimals, never a rounded shorthand like 2.0); the machine recomputes both and refuses a stated R that drifts more than one tick of price distance from geometry, though an arm-target R whose computed value meets the minimum floor is auto-corrected to the computed value and accepted. The FIRST opposing obstacle must be between entry and the arm target; name the action there. A sub-1R obstacle is WARN only and remains admissible. No structural, fixed-R, ATR, partial, trailing or mandatory-1R target policy is prescribed. A reduce response needs more than one contract: reduce on a single-contract arm (every single arm, or split legs summing to 1 contract) is REFUSED at write as infeasible — one contract cannot be halved; use pass_through or exit there. " +
 		"NEW-authoring REFUSALS: missing complete economics/obstacle; arm target absent from target_chain within one MNQ tick without target_path_exception; obstacle beyond arm target; stated R differing from geometry by more than one tick of price distance (an arm-target R whose machine-computed value meets the minimum R:R floor is auto-corrected and accepted instead — never round R values). Role/use differences are WARN + counter only; state role_exceptions when using a level differently. Entry exclusion never removes a level as a possible target, obstacle or invalidation reference. " +
+		ScenarioWriteTruthSentences() + // W-EXEC-TRUTH W2 A3+A4 (correction; unconditional)
 		"target_chain is GUIDANCE for the executor AI (which sets the actual take_profit) — it is validated for reachability at write time but never enforced at execution (D2 ruling). " +
 		// WAVE 2 armed orders (2026-08-27) — the arming authorization. The LLM
 		// chooses WHAT to arm; Go manages WHEN it fills (tick-level).
 		// Autopsy-response wave: armable A/B setups SHOULD carry arm{} (the
 		// resting order is the fast path); sweep_reclaim retraces chain via
 		// wait_confirm; fantasy targets (planned R > 6) are WARN-flagged.
-		"ARM SPLIT vs ARM SINGLE (class 38 — the validator refuses every other shape): legs[] are the sweep_reclaim SPLIT contract and nothing else — EXACTLY 2 legs, confirm=touch at the sweep ref, leg 1 rests there (wait_confirm false) and leg 2 chains (wait_confirm true) on confirm2 = 1m_mss or 1x5m_close with leg 2's rule EQUAL to confirm2.rule, and the top-level entry/stop/target mirror leg 1. EVERY other condition — breakdown_continue, breakup_continue, reject, fvg_entry — must arm SINGLE: arm{} with wait_confirm:true and no legs. A breakdown/breakup arm additionally needs breakdown{} with entry_mode=pullback. " +
-		"ARMED ORDERS (the resting order IS the fast path — prefer it over a 2-minute debate at the touch). " +
-		"ARMS FOLLOW THE BIAS: with the decision path closed, a RESTING ORDER IS THE ONLY WAY INTO THE MARKET — a scenario with no arm cannot trade, however well argued. Every scenario in the plan's bias direction that has a concrete trigger price MUST carry an arm. A long plan with no long arm is invalid; a short plan with no short arm is invalid, for the same reason and in the same words. If you cannot arm your own bias direction, say so in reasoning and state a NEUTRAL bias rather than arguing for a direction you have left no way to take. " +
-		"WHICH CONDITIONS CAN BE ARMED — " + ArmableConditionsLine(ResolvedConditionStatuses(nil, nil, ShadowConditionsEnv())) + " " +
-		"ENTRY TYPE FOLLOWS THE CONDITION (the machine derives it and REFUSES a contradiction): a play that rests AT a price is a limit (reject→limit, fvg_entry→limit, sweep_reclaim→limit); a play that is only valid once price travels BEYOND its trigger is a stop entry (reclaim→stop_entry — a BUY STOP above the reclaim level for a long, a SELL STOP below it for a short). A waterfall (breakup_continue→limit / breakdown_continue→limit) rests as a PULLBACK limit AT the broken level and chains on confirm leg 1 — do not author a stop entry for it. " +
-		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 " + fmt.Sprintf("%.1f", MinSLATRMult()) + "\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). " +
+		"ARM SPLIT vs ARM SINGLE (class 38 — the validator refuses every other shape): legs[] are the sweep_reclaim SPLIT contract and nothing else — EXACTLY 2 legs, confirm=touch at the sweep ref, leg 1 rests there (wait_confirm false) and leg 2 chains (wait_confirm true) on confirm2 = 1m_mss or 1x5m_close with leg 2's rule EQUAL to confirm2.rule, and the top-level entry/stop/target mirror leg 1. " + ep.armSingleClause() +
+		"ARMED ORDERS (the resting order IS the fast path — prefer it over a 2-minute debate at the touch). " + entryPolicyPlannedOrderFrag(contractOn) + "" +
+		ep.armsFollowBias() + // W3 (h): the ENTRY POLICY sentence + ARMS FOLLOW THE BIAS
+		"WHICH CONDITIONS CAN BE ARMED — " + ArmableConditionsLineFor(ResolvedConditionStatuses(ep.ConditionStatus, ep.SessionConditionStatus, ShadowConditionsEnv()), ep.Policy) + " " +
+		ep.entryTypeSentence() +
+		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target " + ep.breakoutRetestClause() + ". A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). " + ep.neverArmClause() + " Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. " + ep.placementClause() + " FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 " + fmt.Sprintf("%.1f", MinSLATRMult()) + "\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). " + rejectComposedStopFrag(contractOn) + "" + ep.omitArmClause() + " " + ep.waterfallArmsClause() +
 		// A2 (2026-08-26) — condition×session guidance from the week ledger:
 		// reject 75% win +665 in NY RTH vs acceptance 0% −157 and sweep_reclaim
 		// 0% −192. Advisory truth, not a hard rule.
@@ -859,7 +899,7 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
 		// renders both legs and a partial NEVER reads MET. Targets chain to the
 		// next liquidity below (above for longs); SL beyond the failed pullback
 		// extreme, ≥1×ATR5m.
-		"WATERFALL PLAY (F1): author breakdown_continue|breakup_continue when the tape shows one-sided delivery, a >1.2×ATR gap-and-go, or a waterfall after a failed rally — the momentum-follow class. breakdown{} = broken level + entry_mode; confirm = leg 1 (breakdown), confirm2 = leg 2 (failed retest). entry_mode=immediate is AI-path ONLY (no arm; the machine rejects immediate arms): the market entry fires on the CONFIRMING close (BD_MIN_CLOSES, default 1) and runs the FULL gate chain (min-SL ≥ 1.0×ATR5m, R:R ≥ min_risk_reward_ratio, min-conf, HTF veto) — CHOOSE immediate for no-retest waterfalls (one-sided delivery, displacement EXPANDING, price running away from the level): SL beyond the pullback extreme, target at the next liquidity pool. entry_mode=pullback is the ARM path (resting limit AT the broken level, chains on leg 1 — the pullback-that-fails FILLS it) — CHOOSE pullback when a retest is likely. " + // B3 (2026-08-26) — the ≤5-line noise-filter gate: the plan may include		// at most 5 near-duplicate LINE rows (within 3 points of each other);
+		"WATERFALL PLAY (F1): author breakdown_continue|breakup_continue when the tape shows one-sided delivery, a >1.2×ATR gap-and-go, or a waterfall after a failed rally — the momentum-follow class. breakdown{} = broken level + entry_mode; confirm = leg 1 (breakdown), confirm2 = leg 2 (failed retest). " + ep.waterfallEntryModes(fmt.Sprintf("%d", bdConfirmCloses())) + // B3 (2026-08-26) — the ≤5-line noise-filter gate: the plan may include		// at most 5 near-duplicate LINE rows (within 3 points of each other);
 		// keep the strongest anchor, drop the crowd.
 		"NOISE FILTER (≤5): at most 5 of your included level rows may be line-levels clustered within 3 points of each other — keep the strongest of any such cluster, never a crowd. " +
 		// FVG ENTRY MODEL (2026-08-26) — the 5th condition's ≤6-line playbook.
@@ -893,4 +933,65 @@ func absF(x float64) float64 {
 		return -x
 	}
 	return x
+}
+
+// plannerContractSchemaFrag returns the A3 schema additions (fvg displacement
+// floor + economics entry_zone contract) when the planner contract is ON, and
+// the empty string when OFF (pre-A3 bytes).
+
+// confirmingCloseFrag returns the A3 ENTRY-LAW phrase (breakdown/breakup_continue
+// must be authored only after the tape prints its confirming close) when ON.
+func confirmingCloseFrag(on bool) string {
+	if !on {
+		return ""
+	}
+	return "author it ONLY AFTER the tape prints its confirming close ("
+}
+
+// gapReachFrag returns the A4 gap-reach sentence: the gap-direction play's
+// trigger level must be reachable from price (the plan_doc.go continuationReachable
+// refusals, evidence rows 357/360), and it names which conditions ARM for the play
+// under the resolved entry policy (row 363).
+func gapReachFrag(on bool, policy string) string {
+	if !on {
+		return ""
+	}
+	shortConds := []string{"reject", "breakdown_continue", "acceptance", "sweep_reclaim", "hold", "reclaim"}
+	longConds := []string{"breakout_retest", "breakup_continue", "acceptance", "sweep_reclaim", "hold", "reclaim"}
+	names := func(cs []string) string {
+		var out []string
+		for _, c := range cs {
+			if ArmableConditionFor(c, policy) {
+				out = append(out, c+"→"+ArmKindForPolicy(c, policy))
+			}
+		}
+		if len(out) == 0 {
+			return "none"
+		}
+		return strings.Join(out, " · ")
+	}
+	return "Gap-reach law: price BELOW PDL (gap-down) — the short scenario's trigger MUST reference a level ≤ current price (breakdown/retest), never a rally back above; price ABOVE PDH (gap-up) — the mirror: a long trigger level ≥ current price (breakout/retest), never a sell back below. The conditions that ARM for the gap play under your policy — short: " + names(shortConds) + "; long: " + names(longConds) + ". "
+}
+
+// entryPolicyPlannedOrderFrag returns the A3 planned_order entry-policy sentence.
+func entryPolicyPlannedOrderFrag(on bool) string {
+	if !on {
+		return ""
+	}
+	return "Entry policy: planned_order is legal on reject, fvg_entry and sweep_reclaim leg 0 ONLY (planned_order on breakdown_continue/breakup_continue is REFUSED \u2014 those conditions use market_in_zone); on any other leg or condition planned_order is REFUSED by name. "
+}
+
+// rejectComposedStopFrag returns the A3 REJECT composed-stop exception sentence.
+func rejectComposedStopFrag(on bool) string {
+	if !on {
+		return ""
+	}
+	return "REJECT fades are the exception to authoring the stop yourself: the executor composes their stop from the FROZEN ZONE (zone edge \u2212 buffer), never your literal \u2014 that composed stop must still clear the same floor. "
+}
+
+func plannerContractSchemaFrag(on bool) string {
+	if !on {
+		return ""
+	}
+	return ` (displacement must be ≥ 1.5×ATR5m — the measured impulse body; a weaker body is REFUSED at write), "economics": {"entry_zone": [<near>, <far>]} (entry inside the zone, arm stop/target carry NONZERO RISK — entry, protective stop and arm target with nonzero risk are REQUIRED)`
 }

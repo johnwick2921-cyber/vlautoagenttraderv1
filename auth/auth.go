@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,16 +23,27 @@ var tokenBlacklist = struct {
 // maxBlacklistEntries is the maximum capacity threshold for blacklist
 const maxBlacklistEntries = 100_000
 
+// ClockLeeway is the clock skew ValidateJWT forgives on iat, nbf and exp
+// (CTO ruling 1790243040753): a token whose iat is more than ClockLeeway
+// ahead of the server's clock is refused everywhere; a clock step back of up
+// to ClockLeeway costs nothing, a larger one refuses the sessions issued in
+// the skipped interval until the clock catches up. The same leeway admits a
+// token up to ClockLeeway past its exp — bounded, pinned (api
+// TestClockLeewayOnExpAndNbfIsBoundedAtSixtySeconds).
+const ClockLeeway = 60 * time.Second
+
 // SetJWTSecret sets the JWT secret key
 func SetJWTSecret(secret string) {
 	JWTSecret = []byte(secret)
 }
 
-// BlacklistToken adds token to blacklist until expiration
+// BlacklistToken adds token to blacklist until expiration — its exp PLUS
+// ClockLeeway, the last instant ValidateJWT can still admit it (an entry
+// dropped at exp would bring a logged-out token back for that last minute).
 func BlacklistToken(token string, exp time.Time) {
 	tokenBlacklist.Lock()
 	defer tokenBlacklist.Unlock()
-	tokenBlacklist.items[token] = exp
+	tokenBlacklist.items[token] = exp.Add(ClockLeeway)
 
 	// If exceeds capacity threshold, perform expired cleanup; if still over limit, log warning
 	if len(tokenBlacklist.items) > maxBlacklistEntries {
@@ -66,7 +78,36 @@ func IsTokenBlacklisted(token string) bool {
 type Claims struct {
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`
+	// Scope marks a MACHINE token (M3 red-team H1): one minted for a process
+	// rather than by a user proving their password — the Telegram bot
+	// (ScopeTelegram), cmd/gate-jwt (ScopeGateJWT). The API denies machine
+	// tokens by default on the credential, Telegram-config and update routes
+	// (api/credential_guard.go). A user token has NO scope key at all
+	// (omitempty), so a login token's claim set is byte-identical to before.
+	Scope string `json:"scope,omitempty"`
 	jwt.RegisteredClaims
+}
+
+// BotInternalEmail is the email the Telegram bot's token has always carried.
+// A token with it is a machine token even with no scope claim (a bot token
+// minted by an older binary — fail closed).
+const BotInternalEmail = "bot@internal"
+
+// Machine-token scopes. Any non-empty scope is a machine scope; these are the
+// ones this build mints.
+const (
+	ScopeTelegram = "telegram"
+	ScopeGateJWT  = "gate-jwt"
+)
+
+// IsMachine reports whether the token is a machine token: it carries any
+// scope, or the bot's email. nil claims are treated as a machine token (a
+// caller that could not read the claims must not be granted a user's rights).
+func (c *Claims) IsMachine() bool {
+	if c == nil {
+		return true
+	}
+	return c.Scope != "" || strings.EqualFold(strings.TrimSpace(c.Email), BotInternalEmail)
 }
 
 // HashPassword hashes the password
@@ -81,11 +122,26 @@ func CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
-// GenerateJWT generates JWT token
+// GenerateJWT generates a USER token (no scope). Callers: the login and
+// register handlers ONLY — a census test (auth/mint_census_test.go) pins it;
+// every other minting site uses GenerateScopedJWT.
 func GenerateJWT(userID, email string) (string, error) {
+	return signToken(userID, email, "")
+}
+
+// GenerateScopedJWT generates a MACHINE token carrying scope (non-empty).
+func GenerateScopedJWT(userID, email, scope string) (string, error) {
+	if strings.TrimSpace(scope) == "" {
+		return "", fmt.Errorf("auth: a machine token needs a non-empty scope")
+	}
+	return signToken(userID, email, scope)
+}
+
+func signToken(userID, email, scope string) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
+		Scope:  scope,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Expires in 24 hours
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -98,9 +154,27 @@ func GenerateJWT(userID, email string) (string, error) {
 	return token.SignedString(JWTSecret)
 }
 
+// strictParser decodes every segment with STRICT base64url (M3 red-team M2,
+// red-1 #4; CTO ruling 1790231205208): jwt v5's default lenient decoder
+// ignores the 2 unused low bits of an HS256 signature's 43rd character, so
+// a token had 4 accepted spellings and the logout blacklist — an exact-string
+// map — knew only one. Strict decoding refuses non-zero padding bits, so each
+// token has exactly one accepted spelling.
+//
+// It also refuses a token issued in the FUTURE (M3 verifier defect 4; CTO
+// ruling 1790243040753): jwt.WithIssuedAt() compares iat with now — present
+// only; a token with NO iat passes the parser and is refused by the H2 retire
+// rule (RetiredBy) instead. Before, iat was never compared with now, so a
+// token stamped ahead of the clock carried an iat AFTER a later password
+// change's epoch and survived H2. jwt.WithLeeway(ClockLeeway) forgives 60 s of
+// clock step, and jwt v5 applies that ONE leeway to iat, nbf AND exp: a token
+// is admitted up to ClockLeeway past its exp, so the logout blacklist holds an
+// entry that long too (BlacklistToken).
+var strictParser = jwt.NewParser(jwt.WithStrictDecoding(), jwt.WithIssuedAt(), jwt.WithLeeway(ClockLeeway))
+
 // ValidateJWT validates JWT token
 func ValidateJWT(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := strictParser.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}

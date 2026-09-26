@@ -1,0 +1,40 @@
+## Current Time: 2026-09-23 09:00:00
+
+## Market Data
+- Current Price: $60043.50
+- 1h Change: 0.03%
+- 4h Change: n/a
+- ATR14: $2.50 (0.00%)
+- Bollinger Bands: Upper $60046.55, Middle $60029.25, Lower $60011.95
+- Bollinger Width: 0.06%
+- EMA20: $60029.25, EMA50: $0.00, Distance: 0.00%
+- RSI14: 100.0
+- MACD: 10.5000, Signal: 0.0000, Histogram: 0.0000
+- Funding Rate: 0.0000%
+
+## Account Status
+- Total Equity: $0.00
+- Available Balance: $0.00
+- Current Position: 0.0000 (net)
+- Unrealized PnL: $0.00
+
+## Grid Status
+- Grid Range: $0.00 - $0.00
+- Grid Spacing: $0.00
+- Active Orders: 0
+- Filled Levels: 0
+- Grid Paused: false
+
+## Grid Levels Detail
+| Level | Price | State | Side | Order Qty | Position | Unrealized PnL |
+|-------|-------|-------|------|-----------|----------|----------------|
+
+## Performance Stats
+- Total Profit: $0.00
+- Total Trades: 0
+- Win Rate: 0.0%
+- Max Drawdown: 0.00%
+- Daily PnL: $0.00
+
+## Please analyze the data above and make grid trading decisions
+Output a JSON array of decisions.

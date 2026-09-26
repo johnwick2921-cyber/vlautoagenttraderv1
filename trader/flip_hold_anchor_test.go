@@ -39,7 +39,7 @@ func flipHoldTrader(t *testing.T) (*AutoTrader, *store.Store, time.Time) {
 	t.Helper()
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("FLIP_MIN_HOLD_MIN", "")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}}}
 	at, st := resetTrader(t, cfg)
 	// 14:35:30 UTC = 09:35:30 CT, 30s past a 5m boundary so the 09:30 bucket is
 	// the newest CLOSED bucket (fresh for the G7 gate).
@@ -166,7 +166,7 @@ func TestFlipHoldAnchorAfterFlipThenReReadHeld(t *testing.T) {
 // Pre-fix: held. With the fix: the flip is EVALUATED and fires.
 func TestFlipHoldAnchorReplayASIA0916(t *testing.T) {
 	t.Setenv("FLIP_MIN_HOLD_MIN", "")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"ASIA"}}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"ASIA"}}}
 	at, st := resetTrader(t, cfg)
 	ct := kernel.CTLocation()
 	now := time.Date(2026, 9, 17, 1, 35, 0, 0, ct)

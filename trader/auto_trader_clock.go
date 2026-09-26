@@ -369,9 +369,6 @@ func pastSessionCutoff(now time.Time, sess *kernel.SessionDef, cutoffMin int) bo
 //
 // Outside every session window this gate never fires — the session gate owns
 // that refusal — and the message names the session + resolved time.
-func (at *AutoTrader) entryBlockedByLastEntry() (string, bool) {
-	return at.entryBlockedByLastEntryAt(time.Now())
-}
 
 // entryBlockedByLastEntryAt is the injectable-clock body, so the T1–T4 table
 // tests can pin real CT instants (including a DST-transition date).
@@ -465,19 +462,11 @@ func (at *AutoTrader) enforceEODFlatAt(now time.Time) bool {
 	reg := at.sessionRegistry(now)
 	flat := "" // resolved wall-clock, for the log only
 	if sess, ok := reg.ActiveSession(now); ok {
-		offset := at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(sess.Name)
-		flatMin, hhmm, okC := sessionCutoffCT(sess, offset)
+		hhmm, past, okC := at.eodSessionFlatAt(reg, sess, now)
 		if !okC {
 			return false // malformed registry times — never invent a flatten
 		}
-		// Half-day early close pulls the flat IN. P4 (ledger-close 2026-08-19):
-		// the flat now resolves against early_close_CT − eod_flat_offset (the
-		// dispatch 4.4 contract) — with the default offset 0 this is byte-
-		// identical to the original effectiveEODFlatCT pull-in.
-		if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && halfDayPullsIn(sess, adj, flatMin) {
-			flatMin, hhmm = adj, adjHHMM
-		}
-		if !pastSessionCutoff(now, sess, flatMin) {
+		if !past {
 			return false
 		}
 		flat = fmt.Sprintf("%s CT (%s)", hhmm, sess.Name)
@@ -588,8 +577,21 @@ func limitClosePrice(close float64, ticks int, tick float64, long bool) float64 
 // fallback when bars are unavailable), KEEPS the protective bracket during the
 // limit's life (the C# cancels it on the limit fill), and schedules a market
 // fallback after LimitCloseMarketAfterS — the fallback re-checks the
-// open-position table, so a filled limit no-ops.
+// original durable position identity, so a filled limit or known replacement
+// no-ops. The broker close protocol has no position-ID fence: DB lag can still
+// hide a broker-side replacement. This check is not an atomic broker identity
+// guarantee (W117-F F6, ports #117 94e08cf0).
 func (at *AutoTrader) flattenPosition(p *store.TraderPosition, tag string) {
+	// Copy caller-owned state before a timer captures it.
+	position := *p
+	p = &position
+	if at.config.LimitCloseTicks > 0 {
+		at.limitFlattenMu.Lock()
+		defer at.limitFlattenMu.Unlock()
+		if at.limitFlattenStopped {
+			return
+		}
+	}
 	side := "LONG"
 	if !strings.EqualFold(p.Side, "LONG") {
 		side = "SHORT"
@@ -643,8 +645,9 @@ func (at *AutoTrader) flattenPosition(p *store.TraderPosition, tag string) {
 	}
 	if _, err := lc.CloseWithLimit(p.Symbol, side, 0, limit); err != nil {
 		at.logWarnf("%s: limit close %s %s failed (%v) — market fallback now", tag, p.Symbol, p.Side, err)
-		closeMarket()
-		_ = at.trader.CancelStopOrders(p.Symbol)
+		if closeMarket() {
+			_ = at.trader.CancelStopOrders(p.Symbol)
+		}
 		return
 	}
 	at.logInfof("%s: limit exit submitted %s %s @ %.2f (market fallback in %ds)",
@@ -653,26 +656,82 @@ func (at *AutoTrader) flattenPosition(p *store.TraderPosition, tag string) {
 	if after <= 0 {
 		after = 10 * time.Second
 	}
-	sym, sd := p.Symbol, side
-	time.AfterFunc(after, func() {
-		if at.store == nil {
+	if p.ID <= 0 || p.TraderID != at.id {
+		at.logWarnf("%s: no durable position identity for %s; refusing delayed market fallback", tag, p.Symbol)
+		return
+	}
+	if at.limitFlattens == nil {
+		at.limitFlattens = make(map[int64]*pendingLimitFlatten)
+	}
+	if old := at.limitFlattens[p.ID]; old != nil {
+		old.timer.Stop()
+	}
+	pending := &pendingLimitFlatten{position: *p, tag: tag, after: after}
+	at.limitFlattens[p.ID] = pending
+	pending.timer = time.AfterFunc(after, func() { at.finishLimitFlatten(pending) })
+}
+
+// pendingLimitFlatten owns an immutable snapshot, never a symbol/side surrogate ID.
+type pendingLimitFlatten struct {
+	position store.TraderPosition
+	tag      string
+	after    time.Duration
+	timer    *time.Timer
+}
+
+func (at *AutoTrader) stopLimitFlattens() {
+	at.limitFlattenMu.Lock()
+	defer at.limitFlattenMu.Unlock()
+	at.limitFlattenStopped = true
+	for _, pending := range at.limitFlattens {
+		pending.timer.Stop()
+	}
+	at.limitFlattens = nil
+}
+
+func (at *AutoTrader) finishLimitFlatten(pending *pendingLimitFlatten) {
+	// Holding the lock through dispatch makes Stop wait for an already-running
+	// callback and prevents any old callback from dispatching after Stop returns.
+	at.limitFlattenMu.Lock()
+	defer at.limitFlattenMu.Unlock()
+	p := pending.position
+	if at.limitFlattenStopped || at.limitFlattens[p.ID] != pending {
+		return
+	}
+	delete(at.limitFlattens, p.ID)
+	if at.store == nil {
+		return
+	}
+	open, err := at.store.Position().GetOpenPositions(at.id)
+	if err != nil {
+		return
+	}
+	for _, po := range open {
+		if po.ID != p.ID && po.Account == p.Account && market.Normalize(po.Symbol) == market.Normalize(p.Symbol) && strings.EqualFold(po.Side, p.Side) {
+			at.logWarnf("%s: ambiguous open position rows for %s; refusing delayed fallback", pending.tag, p.Symbol)
 			return
 		}
-		if open, err := at.store.Position().GetOpenPositions(at.id); err == nil {
-			for _, po := range open {
-				if market.Normalize(po.Symbol) == market.Normalize(sym) && strings.EqualFold(po.Side, sd) {
-					at.logWarnf("%s: limit unfilled after %ds — market flatten %s %s", tag, int(after.Seconds()), sym, sd)
-					if sd == "LONG" {
-						_, _ = at.trader.CloseLong(po.Symbol, 0)
-					} else {
-						_, _ = at.trader.CloseShort(po.Symbol, 0)
-					}
-					_ = at.trader.CancelStopOrders(po.Symbol)
-					return
-				}
-			}
+	}
+	for _, po := range open {
+		if po.ID != p.ID || po.EntryOrderID != p.EntryOrderID || po.EntryTime != p.EntryTime ||
+			po.Account != p.Account || po.ExchangeID != p.ExchangeID || po.ExchangePositionID != p.ExchangePositionID ||
+			po.Symbol != p.Symbol || !strings.EqualFold(po.Side, p.Side) {
+			continue
 		}
-	})
+		at.logWarnf("%s: limit unfilled after %ds — market flatten position %d %s %s", pending.tag, int(pending.after.Seconds()), p.ID, p.Symbol, p.Side)
+		var cerr error
+		if strings.EqualFold(p.Side, "LONG") {
+			_, cerr = at.trader.CloseLong(p.Symbol, 0)
+		} else {
+			_, cerr = at.trader.CloseShort(p.Symbol, 0)
+		}
+		if cerr != nil {
+			at.logErrorf("%s: fallback close position %d failed; preserving protection: %v", pending.tag, p.ID, cerr)
+			return
+		}
+		_ = at.trader.CancelStopOrders(p.Symbol)
+		return
+	}
 }
 
 // t1ForceFlatDue reports whether nowMin (CT minute-of-day) falls inside
@@ -998,4 +1057,67 @@ func (at *AutoTrader) tickOnce(isGrid bool) (closedSkip bool) {
 		at.logErrorf("❌ Execution failed: %v", err)
 	}
 	return
+}
+
+// eodSessionFlatAt is the in-session EOD-flat rule, ONE definition for the
+// flatten (enforceEODFlatAt) and the entry refusal (forceFlatWindowAt): the
+// active session's end − eod_flat_offset_min, pulled IN by a half-day early
+// close. P4 (ledger-close 2026-08-19): the flat resolves against
+// early_close_CT − eod_flat_offset (the dispatch 4.4 contract) — with the
+// default offset 0 this is byte-identical to the original effectiveEODFlatCT
+// pull-in. ok=false on malformed registry times (never invent a flatten).
+func (at *AutoTrader) eodSessionFlatAt(reg kernel.SessionRegistry, sess *kernel.SessionDef, now time.Time) (hhmm string, past, ok bool) {
+	offset := at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(sess.Name)
+	flatMin, hhmm, okC := sessionCutoffCT(sess, offset)
+	if !okC {
+		return "", false, false
+	}
+	if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && halfDayPullsIn(sess, adj, flatMin) {
+		flatMin, hhmm = adj, adjHHMM
+	}
+	return hhmm, pastSessionCutoff(now, sess, flatMin), true
+}
+
+// forceFlatWindowAt (W1b E13) — the two FORCE-FLAT windows as an entry
+// REFUSAL, on every path and every trigger. runCycle enforces them only as
+// CANCELS (enforceT1ForceFlatAt, enforceEODFlatAt), and a cancel covers only
+// what exists when the scan runs: a scan that cancelled nothing went on to
+// author and place, and the live-bar event pass — which never calls either
+// enforce — re-armed within a second what the scan had just emptied.
+//
+//   - the T1 force-flat LEAD: t1ForceFlatDue's [W.Start − t1ForceFlatLead,
+//     W.End]. Inside the blackout itself the no-trade band refuses first, so
+//     this is what closes [W.Start − 2m, W.Start).
+//   - the in-session EOD flat (eodSessionFlatAt), which is earlier than the
+//     last-entry cutoff only when a session's eod_flat_offset_min exceeds its
+//     last_entry_offset_min (nothing validates that pair). Between sessions the
+//     band already refuses ("outside all session windows").
+//
+// Same preconditions as the enforce functions: Day Plan on and an active
+// session. Calendar windows come from currentT1Windows, whose static fallback
+// keeps this fail-closed when the slice is missing — or, when the caller has
+// just read them for the session gate at the same now, from t1 (nil = not
+// read; read here).
+func (at *AutoTrader) forceFlatWindowAt(now time.Time, t1 *[]kernel.CTWindow) (string, bool) {
+	if !at.dayPlanEnabled() {
+		return "", false
+	}
+	reg := at.sessionRegistry(now)
+	sess, ok := reg.ActiveSession(now)
+	if !ok {
+		return "", false
+	}
+	var windows []kernel.CTWindow
+	if t1 != nil {
+		windows = *t1
+	} else {
+		windows = at.currentT1Windows(now)
+	}
+	if label := t1ForceFlatDue(ctMinutesNow(now), windows, t1ForceFlatLead); label != "" {
+		return fmt.Sprintf("📰 T1 force-flat window: %s (entries refused from T-%dm before the blackout — the window positions are flattened in)", label, t1ForceFlatLead), true
+	}
+	if hhmm, past, okC := at.eodSessionFlatAt(reg, sess, now); okC && past {
+		return fmt.Sprintf("🕒 EOD flat: past the %s flat %s CT — entries refused after the flat, not only at last-entry", sess.Name, hhmm), true
+	}
+	return "", false
 }

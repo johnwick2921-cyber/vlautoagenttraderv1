@@ -45,6 +45,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"nofx/internal/censuswalk"
 )
 
 type seamPkg struct {
@@ -465,27 +467,21 @@ func (p *seamPkg) walkBeneath(recv, name string) walkResult {
 }
 
 // callersOf counts production call sites of (recv, name) across the module,
-// receiver-aware where the receiver resolves, name-unique otherwise.
+// receiver-aware where the receiver resolves, name-unique otherwise. The walk
+// is internal/censuswalk.NonTestGoFiles (CLASS 258): skip names apply ONLY as
+// direct children of the module root.
 func callersOf(t *testing.T, root string, recv, name string) (sites []string) {
 	t.Helper()
 	fset := token.NewFileSet()
-	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-		if info.IsDir() {
-			b := info.Name()
-			if b == "node_modules" || b == ".git" || b == "web" || (strings.HasPrefix(b, ".") && b != "." && b != "..") {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
-			return nil
-		}
+	files, werr := censuswalk.NonTestGoFiles(root)
+	if werr != nil {
+		t.Fatalf("census walk: %v", werr)
+	}
+	for _, cf := range files {
+		path := cf.Path
 		af, err := parser.ParseFile(fset, path, nil, 0)
 		if err != nil {
-			return nil
+			continue
 		}
 		for _, d := range af.Decls {
 			fd, ok := d.(*ast.FuncDecl)
@@ -503,7 +499,7 @@ func callersOf(t *testing.T, root string, recv, name string) (sites []string) {
 				switch f := call.Fun.(type) {
 				case *ast.Ident:
 					if recv == "" && f.Name == name {
-						rel, _ := filepath.Rel(root, path)
+						rel := cf.Rel
 						sites = append(sites, fmt.Sprintf("%s:%d", rel, fset.Position(call.Pos()).Line))
 					}
 				case *ast.SelectorExpr:
@@ -516,21 +512,20 @@ func callersOf(t *testing.T, root string, recv, name string) (sites []string) {
 					// (r.sink.Save) and an unresolved identifier all count.
 					x, ok := f.X.(*ast.Ident)
 					if !ok {
-						rel, _ := filepath.Rel(root, path)
+						rel := cf.Rel
 						sites = append(sites, fmt.Sprintf("%s:%d", rel, fset.Position(call.Pos()).Line))
 						return true
 					}
 					tn := declaredTypeOf(fd, x.Name)
 					if tn == "" || strings.EqualFold(tn, recv) {
-						rel, _ := filepath.Rel(root, path)
+						rel := cf.Rel
 						sites = append(sites, fmt.Sprintf("%s:%d", rel, fset.Position(call.Pos()).Line))
 					}
 				}
 				return true
 			})
 		}
-		return nil
-	})
+	}
 	sort.Strings(sites)
 	return sites
 }
@@ -838,5 +833,40 @@ func mystery() interface{ Save() } { return nil }
 	}
 	if len(unresolved) != 1 || !strings.Contains(unresolved[0], "x.Save") {
 		t.Fatalf("unresolved = %v, want exactly x.Save()", unresolved)
+	}
+}
+
+// TestSeamWalkSeesNestedSkipNamedDirs plants a caller of a wall-clock entry in
+// EVERY censuswalk.NestedProbeDirs directory of a synthetic module and asserts
+// callersOf sees every one. With the old any-depth SkipDir the dirs named like
+// a root skip (api/web, internal/node_modules/p, api/.git, every dot-dir) were
+// invisible (CLASS 258).
+func TestSeamWalkSeesNestedSkipNamedDirs(t *testing.T) {
+	root := t.TempDir()
+	dirs := censuswalk.NestedProbeDirs()
+	for _, dir := range dirs {
+		full := filepath.Join(root, filepath.FromSlash(dir))
+		if err := os.MkdirAll(full, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		src := "package " + censuswalk.PackageName(dir) + "\n\nfunc offender() { _ = clockNow() }\n"
+		if err := os.WriteFile(filepath.Join(full, "offender.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sites := callersOf(t, root, "", "clockNow")
+	seen := map[string]bool{}
+	for _, site := range sites {
+		seen[strings.SplitN(site, ":", 2)[0]] = true
+	}
+	var missed []string
+	for _, dir := range dirs {
+		if !seen[dir+"/offender.go"] {
+			missed = append(missed, dir)
+		}
+	}
+	if len(missed) > 0 {
+		t.Fatalf("the seam walk skipped %d of %d nested probe dirs — a skip by NAME at depth exempts compiled packages (CLASS 258):\n\t%s",
+			len(missed), len(dirs), strings.Join(missed, "\n\t"))
 	}
 }

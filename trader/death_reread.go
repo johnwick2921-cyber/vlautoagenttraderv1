@@ -121,8 +121,8 @@ func (at *AutoTrader) priorDeathLinePriceImpl(row *store.PlanDB) float64 {
 // assert the request without running a live planner stream). It rides the
 // class-35 death_replan trigger, so a landed fresh version SPENDS one replan
 // budget unit and lands the FlipHoldAnchorReplan anchor.
-var deathRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(row), failClosed)
+var deathRereadRun = func(at *AutoTrader, now time.Time, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
+	return at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, store.TriggerDeathReplan, prior, priorPlanLevelLines(at, row), failClosed)
 }
 
 // deathBornWickActive reports whether a death-born plan is inside its birth
@@ -149,6 +149,10 @@ func deathBornWickActive(row *store.PlanDB, dp *store.DayPlanConfig, now time.Ti
 	if priorKillLine <= 0 {
 		return false // the prior line is unknown — never suppress on an unknown line
 	}
+	// WAVE 1a-plan P2 — DELIBERATE base read (named in the PR body):
+	// this guard compares the RAW death price space (the killer's buffered
+	// number is a different space, off by the ATR buffer) — the fold would
+	// compare a different space, so the raw stored doc is the contract.
 	var doc kernel.PlanDoc
 	if json.Unmarshal([]byte(row.Doc), &doc) != nil || doc.DeathStructured == nil {
 		return false
@@ -246,6 +250,11 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 		at.logWarnf("%s", wakeStreamDeferLine(session, dec.Desc, held))
 		return
 	}
+	// W-ONE-BUTTON M2.1 (review F15/N7): the maintenance hold refuses here,
+	// before the launch clock, the wake timestamp and the in-flight claim.
+	if at.refusePlannerClaimWhileHeld(store.MakePlanIDForTrader(at.id, tradeDate, session), "death re-read") {
+		return
+	}
 	// The two LOAD rules a level wake obeys are computed only to SAY that the
 	// exemption applied (never to refuse) — a death re-read is a reaction to a
 	// machine-confirmed kill, like the flip read.
@@ -271,13 +280,8 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 	at.lastPlannerWakeAt = now
 
 	oldBias := ""
-	if doc, derr := kernel.ParsePlanDoc(row.Doc); derr == nil {
+	if doc, ok := resolveActivePlanDoc(at.store, row); ok {
 		oldBias = doc.Bias.Direction
-	} else {
-		var raw kernel.PlanDoc
-		if json.Unmarshal([]byte(row.Doc), &raw) == nil {
-			oldBias = raw.Bias.Direction
-		}
 	}
 	prior := deathRereadPriorLine(row.Version, oldBias, killer, priceAtDeath)
 	at.logWarnf("🗓️ death re-read %s %s v%d — waking the planner (W-DEATH-REREAD, budget %d/%d): %s", tradeDate, session, row.Version, budget.Used, budget.Cap, killer)
@@ -296,7 +300,7 @@ func (at *AutoTrader) maybeRereadAfterDeath(now time.Time, session, tradeDate st
 			at.logWarnf("🗓️ death re-read %s %s v%d — SKIPPED before the read: the row is %q, no longer dormant; nothing authored, the once-key stays clear.", tradeDate, session, row.Version, lc)
 			return
 		}
-		if !deathRereadRun(at, session, tradeDate, prior, row, false) {
+		if !deathRereadRun(at, now, session, tradeDate, prior, row, false) {
 			at.logWarnf("🗓️ death re-read %s %s v%d did not complete — the dormant plan stands; the once-key is cleared for a retry next cycle.", tradeDate, session, row.Version)
 			_ = at.store.SetSystemConfig(deathRereadDoneKey(row), "0")
 			return

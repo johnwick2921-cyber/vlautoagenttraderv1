@@ -1,7 +1,18 @@
 import { useState, type ReactNode } from 'react'
 import { Shield, AlertTriangle } from 'lucide-react'
 import type { RiskControlConfig } from '../../types'
+import {
+  RISK_DEFAULT_MAX_CONTRACTS_PER_ORDER,
+  RISK_DEFAULT_MAX_POSITIONS,
+  RISK_DEFAULT_TRAILING_ARM_POINTS,
+} from '../../riskControlDefaults'
 import { riskControl, ts } from '../../i18n/strategy-translations'
+import type { StudioEffective } from '../../lib/api/strategyEffective'
+import {
+  EffectiveLine,
+  EffectiveSavedNote,
+  effectiveValueText,
+} from './EffectiveChip'
 
 // ClampedNumberInput edits a single clamped number (e.g. min R/R). It holds the
 // RAW typed text in local state WHILE editing — so clearing + retyping work — and
@@ -17,6 +28,7 @@ function ClampedNumberInput({
   step,
   disabled,
   onCommit,
+  testId,
 }: {
   value: number | undefined
   fallback: number
@@ -25,6 +37,7 @@ function ClampedNumberInput({
   step?: number
   disabled?: boolean
   onCommit: (n: number) => void
+  testId?: string
 }) {
   const [draft, setDraft] = useState<string | null>(null)
   const saved = String(value ?? fallback)
@@ -53,6 +66,7 @@ function ClampedNumberInput({
       min={min}
       max={max}
       step={step}
+      data-testid={testId}
       className="w-20 px-3 py-2 rounded ml-2"
       style={{
         background: '#1E2329',
@@ -71,7 +85,13 @@ interface RiskControlEditorProps {
   // CME futures (e.g. MNQ) size by contract count, not exchange leverage, and
   // settle in USD — so the crypto leverage tiers are hidden and "USDT" → "USD".
   isFutures?: boolean
+  // W1 (g) — the server's effective rows for the SAVED strategy (GET
+  // /api/strategies/:id/effective). Optional: absent → no chips, and a row the
+  // map does not carry renders nothing extra.
+  effective?: StudioEffective
 }
+
+const RC_PATH = 'ai_config.risk_control.'
 
 // A small on/off switch (Chunk 6). Writes a guardrail's `…_enabled` flag — these
 // toggles only set kernel-gate guardrail config; they have NO path to the broker-
@@ -80,10 +100,12 @@ function Toggle({
   on,
   onChange,
   disabled,
+  testId,
 }: {
   on: boolean
   onChange: (v: boolean) => void
   disabled?: boolean
+  testId?: string
 }) {
   return (
     <button
@@ -91,6 +113,7 @@ function Toggle({
       role="switch"
       aria-checked={on}
       disabled={disabled}
+      data-testid={testId}
       onClick={() => !disabled && onChange(!on)}
       className="relative inline-block w-9 h-5 rounded-full transition-colors shrink-0"
       style={{
@@ -113,12 +136,14 @@ function GuardrailRow({
   onToggle,
   disabled,
   children,
+  testId,
 }: {
   label: string
   enabled: boolean
   onToggle: (v: boolean) => void
   disabled?: boolean
   children: ReactNode
+  testId?: string
 }) {
   return (
     <div
@@ -133,7 +158,12 @@ function GuardrailRow({
         <label className="text-sm" style={{ color: '#EAECEF' }}>
           {label}
         </label>
-        <Toggle on={enabled} onChange={onToggle} disabled={disabled} />
+        <Toggle
+          on={enabled}
+          onChange={onToggle}
+          disabled={disabled}
+          testId={testId}
+        />
       </div>
       {children}
     </div>
@@ -185,7 +215,15 @@ export function RiskControlEditor({
   disabled,
   language,
   isFutures = false,
+  effective,
 }: RiskControlEditorProps) {
+  // W1 (g) — one server row per schema path; undefined → no chip.
+  const eff = (leaf: string) => effective?.byPath[RC_PATH + leaf]
+  const onOff = ts(riskControl.effOnOff, language)
+  const valueLbl = ts(riskControl.effValue, language)
+  // The futures risk panel prints the server's resolved value (or n/a).
+  const maxContractsText = effectiveValueText(eff('max_contracts_per_order'))
+  const notionalText = effectiveValueText(eff('max_notional_leverage'))
   const updateField = <K extends keyof RiskControlConfig>(
     key: K,
     value: RiskControlConfig[K]
@@ -197,7 +235,7 @@ export function RiskControlEditor({
 
   return (
     <div className="space-y-6">
-
+      {effective && <EffectiveSavedNote language={language} />}
       {/* Hold discipline (hold-lock) — applies to futures + crypto; default OFF */}
       <div
         className="p-4 rounded-lg"
@@ -216,6 +254,7 @@ export function RiskControlEditor({
         <p className="text-xs mt-2" style={{ color: '#848E9C' }}>
           {ts(riskControl.holdDisciplineDesc, language)}
         </p>
+        <EffectiveLine knob={eff('hold_discipline')} />
       </div>
 
       {/* Auto-breakeven — NT8 futures; default OFF */}
@@ -250,6 +289,11 @@ export function RiskControlEditor({
             onCommit={(n) => updateField('breakeven_trigger_points', n)}
           />
         </div>
+        <EffectiveLine knob={eff('breakeven_enabled')} label={onOff} />
+        <EffectiveLine
+          knob={eff('breakeven_trigger_points')}
+          label={ts(riskControl.breakevenTrigger, language)}
+        />
       </div>
 
       {/* Trailing profit (Phase 3B) — NT8 futures; mechanical, default OFF */}
@@ -320,15 +364,33 @@ export function RiskControlEditor({
           {config.trailing_arm === 'after_trigger_points' && (
             <ClampedNumberInput
               value={config.trailing_arm_points}
-              fallback={50}
+              fallback={RISK_DEFAULT_TRAILING_ARM_POINTS}
               min={1}
               max={1000}
               step={5}
               disabled={disabled || config.trailing_enabled !== true}
               onCommit={(n) => updateField('trailing_arm_points', n)}
+              testId="trailing-arm-points-input"
             />
           )}
         </div>
+        <EffectiveLine knob={eff('trailing_enabled')} label={onOff} />
+        <EffectiveLine
+          knob={eff('trailing_atr_mult')}
+          label={ts(riskControl.trailingMult, language)}
+        />
+        <EffectiveLine
+          knob={eff('trailing_atr_period')}
+          label={ts(riskControl.trailingPeriod, language)}
+        />
+        <EffectiveLine
+          knob={eff('trailing_arm')}
+          label={ts(riskControl.trailingArm, language)}
+        />
+        <EffectiveLine
+          knob={eff('trailing_arm_points')}
+          label={ts(riskControl.trailingArmPts, language)}
+        />
       </div>
 
       {/* Position Limits */}
@@ -354,12 +416,15 @@ export function RiskControlEditor({
             <div className="flex items-center gap-3">
               {/* User-set + code-enforced. ClampLimits bounds this to [1,3] on
                   save AND at decision time (store/strategy.go ClampLimits, const
-                  MaxPositions=3) — the onChange clamp keeps the shown value equal
-                  to the saved value (no "typed 5, saved 3" surprise). To allow
-                  >3, raise the MaxPositions const (token-cost decision). */}
+                  MaxPositions=3 = CEILING) — the onChange clamp keeps the shown
+                  value equal to the saved value (no "typed 5, saved 3" surprise).
+                  An UNSET knob shows RISK_DEFAULT_MAX_POSITIONS — the ClampLimits
+                  FLOOR, which is what the runtime resolves, not the ceiling. To
+                  allow >3, raise the MaxPositions const (token-cost decision). */}
               <input
                 type="number"
-                value={config.max_positions ?? 3}
+                value={config.max_positions ?? RISK_DEFAULT_MAX_POSITIONS}
+                data-testid="max-positions-input"
                 onChange={(e) =>
                   updateField(
                     'max_positions',
@@ -381,6 +446,7 @@ export function RiskControlEditor({
                 user-set · enforced (range 1–3)
               </span>
             </div>
+            <EffectiveLine knob={eff('max_positions')} />
           </div>
         </div>
 
@@ -579,6 +645,7 @@ export function RiskControlEditor({
                 onCommit={(n) => updateField('min_risk_reward_ratio', n)}
               />
             </div>
+            <EffectiveLine knob={eff('min_risk_reward_ratio')} />
           </div>
 
           {/* Max Margin Usage — crypto-only + ADVICE-ONLY. Stored as a 0-1
@@ -717,8 +784,9 @@ export function RiskControlEditor({
             </label>
             <p className="text-xs mb-2" style={{ color: '#848E9C' }}>
               {ts(riskControl.minConfidenceDesc, language)}
-              {/* 6.1: the unset default is ONE shared constant (gate + prompt) */}
-              {!config.min_confidence && ' · unset/0 → default 60'}
+              {/* W1 (g): the literal ' · unset/0 → default 60' hint is gone —
+                  the chip below prints what the server resolves for the saved
+                  row (value · origin · scope), never a typed default. */}
             </p>
             <div className="flex items-center gap-2">
               <input
@@ -739,6 +807,7 @@ export function RiskControlEditor({
                 {config.min_confidence ?? 60}
               </span>
             </div>
+            <EffectiveLine knob={eff('min_confidence')} />
           </div>
         </div>
       </div>
@@ -768,6 +837,11 @@ export function RiskControlEditor({
           {ts(riskControl.guardrailsDesc, language)}{' '}
           {ts(riskControl.masterSwitchDesc, language)}
         </p>
+        <EffectiveLine
+          knob={eff('guardrails_enabled')}
+          label={ts(riskControl.masterSwitch, language)}
+          className="-mt-3 mb-4"
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <GuardrailRow
@@ -803,6 +877,11 @@ export function RiskControlEditor({
                 master switch is ON
               </p>
             )}
+            <EffectiveLine knob={eff('daily_loss_enabled')} label={onOff} />
+            <EffectiveLine
+              knob={eff('daily_loss_limit_usd')}
+              label={valueLbl}
+            />
           </GuardrailRow>
 
           <GuardrailRow
@@ -830,6 +909,11 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            <EffectiveLine knob={eff('daily_profit_enabled')} label={onOff} />
+            <EffectiveLine
+              knob={eff('daily_profit_target_usd')}
+              label={valueLbl}
+            />
           </GuardrailRow>
 
           <GuardrailRow
@@ -854,24 +938,43 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            <EffectiveLine
+              knob={eff('max_daily_trades_enabled')}
+              label={onOff}
+            />
+            <EffectiveLine knob={eff('max_daily_trades')} label={valueLbl} />
           </GuardrailRow>
 
+          {/* W1 (settings truth, 2026-09-23) — PRESENCE-AWARE. absent/null =
+              INHERIT (env BREAKER_HALT_N, else 8 — the breaker is ON), an
+              explicit 0 = OFF, N = N. The old row showed an absent breaker as
+              OFF while the runtime enforced 8, its OFF wrote a 0 no save could
+              store, and ON wrote a literal 2. OFF now writes 0; ON writes null
+              (inherit — a PUT keeps absent keys, so only null clears a 0);
+              clearing the box writes null, never 0. */}
           <GuardrailRow
             label={ts(riskControl.consecutiveLossHalt, language)}
-            enabled={(config.consecutive_loss_halt ?? 0) > 0}
-            onToggle={(v) => updateField('consecutive_loss_halt', v ? 2 : 0)}
+            enabled={config.consecutive_loss_halt !== 0}
+            onToggle={(v) => updateField('consecutive_loss_halt', v ? null : 0)}
             disabled={disabled}
+            testId="breaker-toggle"
           >
             <input
               type="number"
-              value={config.consecutive_loss_halt || ''}
-              placeholder="e.g. 2"
-              onChange={(e) =>
-                updateField(
-                  'consecutive_loss_halt',
-                  parseInt(e.target.value) || 0
-                )
-              }
+              data-testid="breaker-halt-input"
+              value={config.consecutive_loss_halt ?? ''}
+              placeholder={language === 'zh' ? '继承' : 'inherit'}
+              onChange={(e) => {
+                const raw = e.target.value.trim()
+                if (raw === '') {
+                  updateField('consecutive_loss_halt', null)
+                  return
+                }
+                const n = parseInt(raw, 10)
+                if (!Number.isNaN(n)) {
+                  updateField('consecutive_loss_halt', Math.max(0, n))
+                }
+              }}
               disabled={disabled}
               min={0}
               className="w-full px-3 py-2 rounded font-mono"
@@ -881,6 +984,7 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            <EffectiveLine knob={eff('consecutive_loss_halt')} />
           </GuardrailRow>
 
           {isFutures && (
@@ -911,6 +1015,7 @@ export function RiskControlEditor({
                   color: '#EAECEF',
                 }}
               />
+              <EffectiveLine knob={eff('reentry_cooldown_minutes')} />
             </GuardrailRow>
           )}
 
@@ -940,6 +1045,11 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            <EffectiveLine knob={eff('consistency_enabled')} label={onOff} />
+            <EffectiveLine
+              knob={eff('consistency_max_day_pct')}
+              label={valueLbl}
+            />
           </GuardrailRow>
 
           <AlwaysOnRow
@@ -949,7 +1059,8 @@ export function RiskControlEditor({
             <input
               type="number"
               value={config.max_contracts_per_order ?? ''}
-              placeholder="2"
+              placeholder={String(RISK_DEFAULT_MAX_CONTRACTS_PER_ORDER)}
+              data-testid="max-contracts-input"
               onChange={(e) =>
                 updateField(
                   'max_contracts_per_order',
@@ -965,6 +1076,7 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            <EffectiveLine knob={eff('max_contracts_per_order')} />
           </AlwaysOnRow>
 
           <AlwaysOnRow
@@ -990,6 +1102,7 @@ export function RiskControlEditor({
                 color: '#EAECEF',
               }}
             />
+            <EffectiveLine knob={eff('max_notional_leverage')} />
           </AlwaysOnRow>
 
           <div className="col-span-2">
@@ -1035,6 +1148,15 @@ export function RiskControlEditor({
                   CT (HH:MM)
                 </span>
               </div>
+              <EffectiveLine knob={eff('blackout_enabled')} label={onOff} />
+              <EffectiveLine
+                knob={eff('blackout_start_ct')}
+                label={ts(riskControl.blackoutStart, language)}
+              />
+              <EffectiveLine
+                knob={eff('blackout_end_ct')}
+                label={ts(riskControl.blackoutEnd, language)}
+              />
             </GuardrailRow>
           </div>
         </div>
@@ -1060,13 +1182,20 @@ export function RiskControlEditor({
                 <span style={{ color: '#EAECEF' }}>
                   {ts(riskControl.estContracts, language)}:{' '}
                 </span>
-                ≤ {config.max_contracts_per_order ?? 10}
+                {/* W1 (g): the server's resolved ceiling for the SAVED row
+                    (unset → the Stage-A cap), never the old '?? 10' literal;
+                    unknown → n/a. */}
+                <span data-testid="futures-panel-contracts">
+                  {maxContractsText !== null ? `≤ ${maxContractsText}` : 'n/a'}
+                </span>
               </div>
               <div>
                 <span style={{ color: '#EAECEF' }}>
                   {ts(riskControl.notionalCapField, language)}:{' '}
                 </span>
-                equity × {config.max_notional_leverage ?? 20}
+                <span data-testid="futures-panel-notional">
+                  {notionalText !== null ? `equity × ${notionalText}` : 'n/a'}
+                </span>
               </div>
               <div>
                 <span style={{ color: '#EAECEF' }}>

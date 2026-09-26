@@ -45,7 +45,7 @@ func oneBarFeed() func(string, string, int) []market.Kline {
 
 func TestWriteNoTradePlanKeepsTheMap(t *testing.T) {
 	at := noTradeTestTrader(t, oneBarFeed())
-	at.writeNoTradePlan("ASIA", "2026-08-16", "re-plans exhausted (4/4)")
+	at.writeNoTradePlan(time.Now(), "ASIA", "2026-08-16", "re-plans exhausted (4/4)")
 
 	row, err := at.store.Plan().GetLatestPlanForSession("2026-08-16", "ASIA")
 	if err != nil || row == nil {
@@ -71,7 +71,7 @@ func TestWriteNoTradePlanKeepsTheMap(t *testing.T) {
 
 func TestWriteNoTradePlanSaysSoWhenDetectorDark(t *testing.T) {
 	at := noTradeTestTrader(t, func(string, string, int) []market.Kline { return nil })
-	at.writeNoTradePlan("ASIA", "2026-08-16", "re-plans exhausted (4/4)")
+	at.writeNoTradePlan(time.Now(), "ASIA", "2026-08-16", "re-plans exhausted (4/4)")
 
 	row, _ := at.store.Plan().GetLatestPlanForSession("2026-08-16", "ASIA")
 	var doc kernel.PlanDoc

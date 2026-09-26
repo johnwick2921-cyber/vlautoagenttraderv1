@@ -54,6 +54,12 @@ const (
 // MapCandidate is ONE reference on the map after overlapping references merge.
 // It is a view built at render time from []ScoredLevel and is never stored on
 // a ScoredLevel.
+// PlannerArmMinRR is the prompt's own feasibility contract (the FEASIBILITY
+// CONTRACT prose at planner_prompt.go) — the minimum R:R every arm must clear.
+// The candidate table's min_tgt column is computed from THIS constant, the
+// same number the prose names, never a second source (canon 28).
+const PlannerArmMinRR = 2.0
+
 type MapCandidate struct {
 	ID       *string   `json:"id"`
 	Identity PlanLevel `json:"identity"`
@@ -84,6 +90,12 @@ type MapCandidate struct {
 	// candidacy was refused, and says why in words the card can print.
 	EntryCandidate bool
 	RefusedReason  string
+	// MinTargetPts is the A2 column: the minimum target DISTANCE from the
+	// level at PlannerArmMinRR, computed from the executor's own min-SL floor
+	// (MinSLATRMult()×ATR5m) — a fade at this level needs its target at least
+	// this far past the entry to clear the R:R floor. Zero when uncomputed
+	// (no ATR), and the renderer then omits the column (canon 49).
+	MinTargetPts float64
 	// Projection marks a reference PROJECTED beyond the mapped range (D5).
 	// A projection is a target or an obstacle and is NEVER an entry candidate.
 	Projection       bool
@@ -118,6 +130,12 @@ type MapCandidateOpts struct {
 	// risk is impossible by construction. Zero → the stop floor
 	// (MinSLATRMult() × atr5m), which is exactly that guarantee.
 	MinTargetDistance float64
+	// MinRR is the A2 column's resolved floor: the min_tgt≥Npts value is
+	// MinSLATRMult() × atr5m × this floor. Zero → PlannerArmMinRR (the prompt's
+	// own feasibility contract — the same value the FEASIBILITY CONTRACT
+	// states). The executor passes its resolvedMinRR(cfg) so the prompt and the
+	// arm seam judge with ONE floor (canon 28, CTO fold 2026-09-25).
+	MinRR float64
 }
 
 // BuildMapCandidates is the W3 selection path: merge overlapping references,
@@ -195,6 +213,7 @@ func BuildMapCandidates(scored []ScoredLevel, price, atr5m float64, opts MapCand
 	}
 
 	assignMapRoles(out, price, minTarget)
+	setMinTargetColumn(out, atr5m, opts.MinRR)
 
 	// D4 — the entry shortlist orders by REACHABILITY: nearest first, in ATR5m
 	// when it is available and in points when it is not. [I] until E4.
@@ -267,6 +286,7 @@ func BuildMapWithProjections(scored []ScoredLevel, projections []MapCandidate, p
 	}
 
 	assignMapRoles(out, price, minTarget)
+	setMinTargetColumn(out, atr5m, opts.MinRR)
 	sort.SliceStable(out, func(i, j int) bool {
 		di, dj := math.Abs(out[i].Distance), math.Abs(out[j].Distance)
 		if di != dj {
@@ -275,6 +295,23 @@ func BuildMapWithProjections(scored []ScoredLevel, projections []MapCandidate, p
 		return out[i].Score > out[j].Score
 	})
 	return out
+}
+
+// setMinTargetColumn stamps the A2 column on every candidate: the minimum
+// target DISTANCE the planner must clear, = min-SL floor × the resolved R:R
+// floor. Omitted (0) when ATR is absent — canon 49, an uncomputed value is not
+// a fabricated one.
+func setMinTargetColumn(cs []MapCandidate, atr5m, minRR float64) {
+	if atr5m <= 0 {
+		return
+	}
+	if minRR <= 0 {
+		minRR = PlannerArmMinRR
+	}
+	pts := MinSLATRMult() * atr5m * minRR
+	for i := range cs {
+		cs[i].MinTargetPts = pts
+	}
 }
 
 // EntryShortlist returns only the entry candidates, in the reachability order
@@ -326,22 +363,30 @@ func CountMap(detected int, cs []MapCandidate) MapCounts {
 // text (that is the Guide-strings lane's). This renders what the map IS, never
 // what to do about it.
 func RenderMapBlock(cs []MapCandidate, price float64) string {
-	return renderMapBlock(cs, price, false)
+	return renderMapBlock(cs, price, false, false)
 }
 
 // RenderIdentityMapBlock adds only the identity column to the planner table.
 // The executor's existing map text is unchanged.
 func RenderIdentityMapBlock(cs []MapCandidate, price float64) string {
-	return renderMapBlock(cs, price, true)
+	return renderMapBlock(cs, price, true, false)
+}
+
+// RenderIdentityMapBlockContract is WAVE PLANNER A5: with contract ON each
+// ENTRY SHORTLIST row carries its ordered obstacle list (seated levels in the
+// fade direction, nearest-first, id+price). OFF is byte-identical to
+// RenderIdentityMapBlock.
+func RenderIdentityMapBlockContract(cs []MapCandidate, price float64, contractOn bool) string {
+	return renderMapBlock(cs, price, true, contractOn)
 }
 
 // RenderScoredReferenceBlock preserves the legacy identity/score references
 // without offering a second entry ordering beside the full zone shortlist.
 func RenderScoredReferenceBlock(cs []MapCandidate, price float64) string {
-	return renderMapBlock(cs, price, true, false)
+	return renderMapBlock(cs, price, true, false, false)
 }
 
-func renderMapBlock(cs []MapCandidate, price float64, showID bool, shortlist ...bool) string {
+func renderMapBlock(cs []MapCandidate, price float64, showID, contractOn bool, shortlist ...bool) string {
 	if len(cs) == 0 {
 		return ""
 	}
@@ -373,9 +418,13 @@ func renderMapBlock(cs []MapCandidate, price float64, showID bool, shortlist ...
 			}
 			fmt.Fprintf(&b, "  id=%s", id)
 		}
-		fmt.Fprintf(&b, "  %-9s %-44s %s  %-16s %s%s pt / %s ATR%s\n",
+		minTgt := ""
+		if c.MinTargetPts > 0 {
+			minTgt = fmt.Sprintf("  min_tgt≥%spts", trimFloat(c.MinTargetPts))
+		}
+		fmt.Fprintf(&b, "  %-9s %-44s %s  %-16s %s%s pt / %s ATR%s%s\n",
 			trimFloat(c.Price), names, grade, c.Role,
-			sign, trimFloat(math.Abs(c.Distance)), c.DistanceATRLabel(), tail)
+			sign, trimFloat(math.Abs(c.Distance)), c.DistanceATRLabel(), tail, minTgt)
 	}
 	if len(shortlist) > 0 && !shortlist[0] {
 		return b.String()
@@ -386,7 +435,13 @@ func renderMapBlock(cs []MapCandidate, price float64, showID bool, shortlist ...
 	} else {
 		b.WriteString("ENTRY SHORTLIST (reachability order — nearest first; [I] unvalidated, E4 pending):\n")
 		for i, c := range short {
-			fmt.Fprintf(&b, "  %d. %-9s %-44s score %s\n", i+1, trimFloat(c.Price), c.NamesLine(), trimFloat(c.Score))
+			fmt.Fprintf(&b, "  %d. %-9s %-44s score %s", i+1, trimFloat(c.Price), c.NamesLine(), trimFloat(c.Score))
+			if contractOn && showID {
+				if chain := orderedObstacleChain(cs, c, price, 6); chain != "" {
+					fmt.Fprintf(&b, "  obstacles→ %s", chain)
+				}
+			}
+			b.WriteByte('\n')
 		}
 	}
 	b.WriteString("Levels excluded from the shortlist remain on the map as target/obstacle/invalidation — exclusion is not invalidation.\n")
@@ -536,6 +591,54 @@ func trimFloat(f float64) string {
 		return "0"
 	}
 	return s
+}
+
+// orderedObstacleChain is WAVE PLANNER A5: the seated (non-projection) levels
+// strictly beyond the entry candidate in the FADE direction (a reference above
+// price fades short → the levels below it; one below price fades long → the
+// levels above it), nearest-first. Each entry names label, price and — when the
+// row carries one — its id (NULL when the map row's id is NULL, canon 49).
+// Capped at cap with an honest remainder count.
+func orderedObstacleChain(cs []MapCandidate, entry MapCandidate, price float64, cap int) string {
+	fadeUp := entry.Price < price
+	var out []MapCandidate
+	for _, c := range cs {
+		if c.Projection || c.Price == entry.Price {
+			continue
+		}
+		if fadeUp && c.Price > entry.Price {
+			out = append(out, c)
+		}
+		if !fadeUp && c.Price < entry.Price {
+			out = append(out, c)
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if fadeUp {
+			return out[i].Price < out[j].Price
+		}
+		return out[i].Price > out[j].Price
+	})
+	if len(out) == 0 {
+		return ""
+	}
+	remaining := 0
+	if len(out) > cap {
+		remaining = len(out) - cap
+		out = out[:cap]
+	}
+	parts := make([]string, 0, len(out)+1)
+	for _, c := range out {
+		id := "NULL"
+		if c.ID != nil {
+			id = *c.ID
+		}
+		parts = append(parts, fmt.Sprintf("%s %s [id=%s]", c.NamesLine(), trimFloat(c.Price), id))
+	}
+	if remaining > 0 {
+		parts = append(parts, fmt.Sprintf("(+%d more)", remaining))
+	}
+	return strings.Join(parts, " · ")
 }
 
 // MatchMapCandidate finds the merged candidate a price belongs to, using the

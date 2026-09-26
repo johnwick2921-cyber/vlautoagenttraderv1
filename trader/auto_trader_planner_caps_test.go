@@ -25,7 +25,7 @@ func widePlanJSON(levels, scenarios int) string {
 		if i > 0 {
 			sc.WriteString(",")
 		}
-		fmt.Fprintf(&sc, `{"id": "S%d", "trigger": "touch 15000", "condition": "reject", "direction": "long", "target_chain": [15100], "invalid": "n/a", "quality": "B", "confirm":{"rule":"touch","ref_price":15000,"side":"above"},"economics":{"entry_zone":[15000,15000],"geometry":{"entry":15000,"stop":14990,"target":15100},"first_obstacle":{"price":15100,"level":"fixture reference","family":"reference","response":"pass_through"},"r_to_obstacle":10.0,"r_to_arm_target":10.0}}`, i+1)
+		fmt.Fprintf(&sc, `{"id": "S%d", "trigger": "touch 15000", "condition": "reject", "direction": "long", "target_chain": [15100], "invalid": "5m close below 14990", "quality": "B", "confirm":{"rule":"touch","ref_price":15000,"side":"above"},"economics":{"entry_zone":[15000,15000],"geometry":{"entry":15000,"stop":14990,"target":15100},"first_obstacle":{"price":15100,"level":"fixture reference","family":"reference","response":"pass_through"},"r_to_obstacle":10.0,"r_to_arm_target":10.0}}`, i+1)
 	}
 	return fmt.Sprintf(`{"reasoning": "ok", "bias": {"direction": "neutral", "conviction": "low", "flip_condition": "n/a"}, "levels": [%s], "scenarios": [%s], "no_trade": [], "death_condition": "n/a"}`, lv.String(), sc.String())
 }

@@ -1,0 +1,23 @@
+── attempt 1 (err=<nil>) ──
+{
+  "reasoning": "Warming 0/10, regime/VIX absent, RV 72% normal: no edge; this is a conditional plan, not a prediction. Price is at PDC 30154.75, above 15m/3m EMAs but below 5m EMA200 (~30161); 5m/3m RSI >70 warns against chasing. The 30150 gate is immediate invalidation, overhead EQH cluster 30218-30223.5 is the first supply zone, and 30025 is the lower range. Plan: neutral-balance unless 5m acceptance proves direction.",
+  "bias": {"direction": "neutral", "conviction": "low", "flip_condition": "5m close above 30223.5 flips to long; 5m close below 30150 flips to short"},
+  "levels": [
+    {"price": 30150.00, "label": "GATE 30150", "grade": "A", "instruction": "Hold / invalidate below"},
+    {"price": 30154.75, "label": "PDC", "grade": "A", "instruction": "Reclaim for long cue"},
+    {"price": 30218.00, "label": "EQH", "grade": "A", "instruction": "Fade first rally"},
+    {"price": 30219.50, "label": "EQH", "grade": "A", "instruction": "Complete overhead target"},
+    {"price": 30223.50, "label": "EQL", "grade": "A", "instruction": "Acceptance break for trend"},
+    {"price": 30280.75, "label": "RTH-H", "grade": "A", "instruction": "Stretch target"},
+    {"price": 30287.25, "label": "PDH", "grade": "A", "instruction": "Final resistance"},
+    {"price": 30025.00, "label": "PDL/RTH-L", "grade": "A", "instruction": "Downside magnet"}
+  ],
+  "scenarios": [
+    {"id": "S1", "trigger": "5m close above PDC 30154.75 and holds 30150 as floor", "condition": "reclaim", "direction": "long", "target_chain": [30218.00, 30219.50, 30223.50, 30280.75, 30287.25], "invalid": "5m close back below 30150", "quality": "B"},
+    {"id": "S2", "trigger": "Rally into 30218-30223.5 cluster and 5m RSI roll/rejection", "condition": "reject", "direction": "short", "target_chain": [30154.75, 30150.00, 30025.00], "invalid": "5m close above 30223.50", "quality": "B"},
+    {"id": "S3", "trigger": "5m close below 30150 gate and failed retest", "condition": "breakout_retest", "direction": "short", "target_chain": [30025.00], "invalid": "5m close back above 30154.75", "quality": "B"}
+  ],
+  "no_trade": ["first 5m", "12:00-13:30 lunch"],
+  "death_condition": "5m close below 30025 or above 30287.25 invalidates this range plan and demands trend-breakout treatment",
+  "day_type": "balance"
+}

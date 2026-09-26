@@ -60,6 +60,10 @@ func (at *AutoTrader) monitorTick(now time.Time) {
 	// beat is wall-clock and runs while a position is held — which is exactly
 	// the window position 592 spent naked with nothing looking.
 	at.reconcileProtectionAt(now, "monitor")
+	// W-EXEC-TRUTH W0 (f) — withdraw resting ENTRIES while a hold asks for it
+	// or a loss limit has tripped. Here, not in the armed pass: that pass does
+	// not run in exactly the windows an update or a halt use.
+	at.withdrawEntriesIfDue(now)
 }
 
 // positionPnLPct computes a position's leveraged P&L percent. Side is normalized:

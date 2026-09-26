@@ -7,6 +7,7 @@ import (
 
 	"nofx/kernel"
 	"nofx/market"
+	"nofx/mcp"
 	"nofx/store"
 )
 
@@ -63,7 +64,7 @@ func TestCollectWakeCandidates15mReversalZone(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	if len(cands) != 1 {
 		t.Fatalf("expected exactly one 15m reversal-zone candidate, got %d: %+v", len(cands), cands)
 	}
@@ -88,18 +89,18 @@ func TestCollectWakeCandidatesKnobOff15m(t *testing.T) {
 	}
 	// W-KNOB-PRUNE: the single switch off suppresses every class.
 	cfg := &store.DayPlanConfig{WakeOnLevelEvents: &off}
-	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now); len(cands) != 0 {
+	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, nil, now); len(cands) != 0 {
 		t.Fatalf("wake_on_level_events=false must suppress 15m candidates, got %+v", cands)
 	}
 	// Legacy mapping: a lone stored wake_on_15m_zone=false no longer suppresses
 	// (any legacy switch ON — nil reads ON — maps the single switch ON).
 	legacy := &store.DayPlanConfig{WakeOn15mZone: &off}
-	if cands := collectLevelWakeCandidates(legacy, fetch, "MNQ", row, now); len(cands) != 1 {
+	if cands := collectLevelWakeCandidates(legacy, fetch, "MNQ", row, nil, now); len(cands) != 1 {
 		t.Fatalf("legacy lone wake_on_15m_zone=false maps to ON, want 1 candidate, got %+v", cands)
 	}
 	// Legacy mapping: all five false maps OFF.
 	allOff := &store.DayPlanConfig{WakeOn15mZone: &off, WakeOnHTFZone: &off, WakeOnHTFOB: false, WakeOnSeatedInvalidation: &off, WakeOnIFVG: &off}
-	if cands := collectLevelWakeCandidates(allOff, fetch, "MNQ", row, now); len(cands) != 0 {
+	if cands := collectLevelWakeCandidates(allOff, fetch, "MNQ", row, nil, now); len(cands) != 0 {
 		t.Fatalf("all five legacy switches false must map to OFF, got %+v", cands)
 	}
 }
@@ -127,7 +128,7 @@ func TestCollectWakeCandidatesHTFZoneAndOB(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	foundZone := false
 	for _, c := range cands {
 		if c.kind == "zone" && c.tier == "1h" && c.prio == wakePrioHTFZone {
@@ -144,7 +145,7 @@ func TestCollectWakeCandidatesHTFZoneAndOB(t *testing.T) {
 	// Enable the OB knob → the displacement bar yields OB candidates.
 	on := true
 	cfg := &store.DayPlanConfig{WakeOnHTFOB: true, WakeOn15mZone: &on}
-	cands = collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now)
+	cands = collectLevelWakeCandidates(cfg, fetch, "MNQ", row, nil, now)
 	foundOB := false
 	for _, c := range cands {
 		if c.kind == "ob" && c.prio == wakePrioHTFOB {
@@ -173,7 +174,7 @@ func TestCollectWakeCandidatesIFVG(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	found := false
 	for _, c := range cands {
 		if c.kind == "ifvg" && c.label == "iFVG(bear)" {
@@ -205,7 +206,7 @@ func TestCollectWakeCandidatesSeatedInvalidation(t *testing.T) {
 		}
 		return nil
 	}
-	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, now)
+	cands := collectLevelWakeCandidates(nil, fetch, "MNQ", row, nil, now)
 	found := false
 	for _, c := range cands {
 		if c.kind == "invalidation" {
@@ -223,7 +224,7 @@ func TestCollectWakeCandidatesSeatedInvalidation(t *testing.T) {
 	// off, nothing fires at all (W-KNOB-PRUNE).
 	off := false
 	cfg := &store.DayPlanConfig{WakeOnLevelEvents: &off}
-	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, now); len(cands) != 0 {
+	if cands := collectLevelWakeCandidates(cfg, fetch, "MNQ", row, nil, now); len(cands) != 0 {
 		t.Fatalf("wake_on_level_events=false must suppress candidates, got %+v", cands)
 	}
 }
@@ -232,7 +233,7 @@ func TestCollectWakeCandidatesSeatedInvalidation(t *testing.T) {
 // bug): a wake re-read that fails every retry must NOT fail-close the session —
 // the still-active plan keeps trading and no row is written.
 func TestWakeReadFailureKeepsActivePlan(t *testing.T) {
-	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4}})
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4)}})
 	at.mcpClient = &errorDecisionClient{} // every planner call fails
 	tradeDate := "2026-08-25"
 	if _, err := st.Plan().AppendPlan(&store.PlanDB{
@@ -242,7 +243,7 @@ func TestWakeReadFailureKeepsActivePlan(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	performed := at.runPlannerReadWithTriggerClaimedCtx("NY", tradeDate, "level_event", "level event: x", nil, false)
+	performed := at.runPlannerReadWithTriggerClaimedCtx(time.Now(), "NY", tradeDate, "level_event", "level event: x", nil, false)
 	if !performed {
 		t.Fatalf("the wake read must run (claimed) even though it will fail")
 	}
@@ -253,6 +254,7 @@ func TestWakeReadFailureKeepsActivePlan(t *testing.T) {
 }
 
 func TestMaybeWakePlannerOnLevelEventsThrottleDedupe(t *testing.T) {
+	defer drainReReads(t) // T2: the first wake fires an async planner read; join before the seam resets.
 	st, err := store.New(filepath.Join(t.TempDir(), "t.db"))
 	if err != nil {
 		t.Fatalf("store: %v", err)
@@ -303,4 +305,112 @@ func TestMaybeWakePlannerOnLevelEventsThrottleDedupe(t *testing.T) {
 	if at.lastLevelWakeKey != "" {
 		t.Fatalf("min-interval throttle must suppress the second wake inside the window, got key %q", at.lastLevelWakeKey)
 	}
+}
+
+// TestMaybeWakePlannerFoldsOverlaySeatedLevel (WAVE 1a-plan P2) — the seated-
+// level invalidation reads the plan through the ONE fold: an owner overlay
+// adding a seated Demand level must be able to wake the planner. RED on the
+// base-only reader: lastLevelWakeKey stays "" (no candidates). GREEN: the wake
+// fires.
+func TestMaybeWakePlannerFoldsOverlaySeatedLevel(t *testing.T) {
+	defer drainReReads(t) // T2: a fired wake spawns an async planner read; join before the seam resets.
+	at, st := resetTrader(t, store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, WakeMinIntervalMin: 10}})
+	now := time.Date(2026, 8, 25, 10, 0, 0, 0, kernel.CTLocation())
+	// Skeptic F10: seam the trader clock to the fixture — the read's preflight
+	// freshness (traderNow) must judge the fixture tape, not the wall clock
+	// (30 days later, every fixture bar stale).
+	testNow = func() time.Time { return now }
+	t.Cleanup(func() { testNow = nil })
+	// 15m bars: last closed bar closes 95.0 — far below a seated Demand 100.
+	bars := wakeBars(15, now.UnixMilli(), [][4]float64{
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{100.0, 101.0, 99.0, 100.0},
+		{99.0, 99.5, 94.5, 95.0},
+	})
+	prev := market.FuturesBarsProvider
+	// 1m serves the read's preflight freshness — feedNewestBarAge assumes 1m
+	// spacing (newestStamp = last OpenTime + 60s), so the 1m tape must be
+	// 1m-spaced and end at now, or the read refuses stale before it claims.
+	oneMin := wakeBars(1, now.UnixMilli(), make([][4]float64, 130))
+	for i := range oneMin {
+		oneMin[i].Open, oneMin[i].High, oneMin[i].Low, oneMin[i].Close = 100, 100, 100, 100
+	}
+	market.FuturesBarsProvider = func(symbol, tf string, count int) []market.Kline {
+		if tf == "15m" || tf == "5m" {
+			return bars
+		}
+		if tf == "1m" {
+			return oneMin
+		}
+		return nil
+	}
+	t.Cleanup(func() { market.FuturesBarsProvider = prev })
+
+	pid := "2026-08-25:NY"
+	base := `{"reasoning":"wave-1a-p2-wake","bias":{"direction":"neutral"},"death_condition":"flat","levels":[],"scenarios":[{"id":"S1","condition":"reject","direction":"long","quality":"A"}]}`
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{PlanID: pid, StrategyID: at.id, TradeDate: "2026-08-25", Session: "NY", Lifecycle: "active", Doc: base, CreatedAt: now.Add(-24 * time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	// The owner adds a seated Demand level at 100 through an overlay.
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: pid, PlanVersion: 1, OverlayID: "owner-add-demand", Origin: "owner",
+		Patch: `[{"op":"add","path":"/levels/-","value":{"price":100,"label":"Demand·15m","grade":"B"}}]`}); err != nil {
+		t.Fatal(err)
+	}
+	row, err := st.Plan().GetLatestPlanForTraderSession("2026-08-25", "NY", at.id)
+	if err != nil || row == nil {
+		t.Fatalf("plan row: %v", err)
+	}
+	// T2 join (CTO 2026-09-25, root cause of the 06:07 CI fail): the claim is a
+	// TRANSIENT state — on the fast runner the read opened and released it
+	// between two waitFor polls, and the observation failed on a read that DID
+	// run (the CI log shows all three planner attempts completing in 0.0s).
+	// Durable fix: the fake planner BLOCKS inside the claim until the test has
+	// OBSERVED the claim open, so the observation cannot race the read; the
+	// release then lets the read finish fail-closed and the deferred
+	// drainReReads joins it.
+	bp := &blockingPlannerClient{entered: make(chan struct{}, 1), release: make(chan struct{})}
+	at.mcpClient = bp
+	at.maybeWakePlannerOnLevelEventsAt(now, "NY", "2026-08-25", row)
+	if at.lastLevelWakeKey == "" {
+		t.Fatal("the owner overlay's seated Demand level must wake the planner through the fold")
+	}
+	if !waitFor(t, 10*time.Second, func() bool {
+		_, open := anyPlannerStreamOpen()
+		return open
+	}) {
+		t.Fatal("the fired wake's read never started — no planner stream claim appeared (a wall-clock gate refused it: check session/clock/seam)")
+	}
+	close(bp.release) // the claim is observed open; let the read run to its fail-closed end
+}
+
+// blockingPlannerClient (CTO 2026-09-25) is the wake test's planner: it BLOCKS
+// inside the claimed read until released, so the claim stays open while the
+// test observes it. It returns no JSON (fail-closed), exactly like the CI
+// runner's fake.
+type blockingPlannerClient struct {
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (b *blockingPlannerClient) SetAPIKey(string, string, string) {}
+func (b *blockingPlannerClient) SetTimeout(time.Duration)         {}
+func (b *blockingPlannerClient) ResolvedModel() string            { return "test-model" }
+func (b *blockingPlannerClient) CallWithMessages(_, _ string) (string, error) {
+	select {
+	case b.entered <- struct{}{}:
+	default:
+	}
+	<-b.release
+	return "", nil
+}
+func (b *blockingPlannerClient) CallWithRequest(*mcp.Request) (string, error) { return "", nil }
+func (b *blockingPlannerClient) CallWithRequestStream(*mcp.Request, func(string)) (string, error) {
+	return "", nil
+}
+func (b *blockingPlannerClient) CallWithRequestFull(*mcp.Request) (*mcp.LLMResponse, error) {
+	return nil, nil
 }

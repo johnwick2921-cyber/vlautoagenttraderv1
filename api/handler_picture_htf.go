@@ -11,6 +11,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"nofx/store"
 
@@ -46,6 +47,23 @@ type pictureHtfRowDTO struct {
 	FillRR        float64 `json:"fill_rr"`
 	RejectReason  string  `json:"reject_reason"`
 	CreatedAt     int64   `json:"created_at_ms"`
+	// W-EXEC-TRUTH W5 — where the opportunity went in the Day Plan: the
+	// armed_orders row whose source_ref is this opp_key (a Picture scenario
+	// P<n> of a plan). ABSENT when no such row exists — a legacy row, or a
+	// scenario not yet armed — never an empty object.
+	PlanLink *pictureHtfPlanLinkDTO `json:"plan_link,omitempty"`
+}
+
+// pictureHtfPlanLinkDTO is read from ONE armed_orders row (source_ref =
+// opp_key): the plan chain it belongs to, the scenario id, the plan version
+// that last authorized it, and the row's own id / state / broker signal.
+type pictureHtfPlanLinkDTO struct {
+	PlanID      string `json:"plan_id"`
+	ScenarioID  string `json:"scenario_id"`
+	PlanVersion int    `json:"plan_version"`
+	ArmRowID    int64  `json:"arm_row_id"`
+	ArmState    string `json:"arm_state"`
+	ArmSignalID string `json:"arm_signal_id,omitempty"`
 }
 
 func pictureHtfRowToDTO(r store.PictureHtfOpportunityDB) pictureHtfRowDTO {
@@ -73,9 +91,62 @@ func (s *Server) handlePictureHtfOpportunities(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	links, linkErr := s.pictureHtfPlanLinks(traderID, rows)
 	out := make([]pictureHtfRowDTO, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, pictureHtfRowToDTO(r))
+		dto := pictureHtfRowToDTO(r)
+		dto.PlanLink = links[r.OppKey]
+		out = append(out, dto)
 	}
-	c.JSON(http.StatusOK, gin.H{"rows": out, "count": len(out)})
+	resp := gin.H{"rows": out, "count": len(out)}
+	if linkErr != "" {
+		// A link read that failed is NOT "no link": say so instead of letting
+		// the absent plan_link read as "never became a Day Plan scenario".
+		resp["plan_links_unread"] = linkErr
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// pictureHtfPlanLinks joins the listed opportunities to the armed_orders rows
+// that carry them (source = picture, source_ref = opp_key), one row per
+// opportunity: a live row first, else the newest — the order UpsertArm's
+// source pin reads them in. Read-only. The second value is the reason the
+// ledger could not be read ("" when it was).
+func (s *Server) pictureHtfPlanLinks(traderID string, rows []store.PictureHtfOpportunityDB) (map[string]*pictureHtfPlanLinkDTO, string) {
+	keys := make([]string, 0, len(rows))
+	for _, r := range rows {
+		if k := strings.TrimSpace(r.OppKey); k != "" {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return nil, ""
+	}
+	if s.store == nil {
+		return nil, "arm ledger unavailable"
+	}
+	var arms []store.ArmedOrderDB
+	if err := s.store.ArmedOrders().DB().
+		Where("trader_id = ? AND source = ? AND source_ref IN ?", traderID, store.ArmSourcePicture, keys).
+		Order("id DESC").Find(&arms).Error; err != nil {
+		return nil, "arm ledger unavailable: " + err.Error()
+	}
+	chosen := map[string]*store.ArmedOrderDB{}
+	for i := range arms {
+		a := &arms[i]
+		cur := chosen[a.SourceRef]
+		// id DESC: the first row seen is the newest; a later (older) row
+		// replaces it only when it is live and the chosen one is terminal.
+		if cur == nil || (store.IsTerminalArmState(cur.State) && !store.IsTerminalArmState(a.State)) {
+			chosen[a.SourceRef] = a
+		}
+	}
+	out := make(map[string]*pictureHtfPlanLinkDTO, len(chosen))
+	for ref, a := range chosen {
+		out[ref] = &pictureHtfPlanLinkDTO{
+			PlanID: a.PlanID, ScenarioID: a.Scenario, PlanVersion: a.Version,
+			ArmRowID: a.ID, ArmState: a.State, ArmSignalID: a.SignalID,
+		}
+	}
+	return out, ""
 }

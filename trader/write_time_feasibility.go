@@ -60,7 +60,8 @@ type writeTimeFeasibilityIssue struct {
 	// Verbose is the full refusal text the repair hint carries (with numbers).
 	Verbose string
 	// Kind is "gate" (armGateVerdictFor / geometry) or "stop_side" (the
-	// executor's stop-side placement guard, CTO amendment 2026-09-18).
+	// executor's stop-side placement guard, CTO amendment 2026-09-18) or
+	// "zone" (W3: the market_in_zone entry-zone verdict, kernel.ArmZoneVerdict).
 	Kind    string
 	Cond    string  // scenario condition, for the stop-side hint words
 	Trigger float64 // stop-side only: the tick-rounded trigger the wire would carry
@@ -89,6 +90,12 @@ func (at *AutoTrader) writeTimeFeasibilityVerdicts(d *kernel.PlanDoc, atr5m floa
 	for i := range d.Scenarios {
 		sc := &d.Scenarios[i]
 		if sc.Arm == nil || !sc.Arm.Enabled {
+			continue
+		}
+		// W3: a market_in_zone arm is judged by writeTimeZoneVerdicts at the
+		// zone's worst fills (R:R at the far edge, min-SL at the near edge) —
+		// judging it here too, at the authored entry, would double-count it.
+		if kernel.EffectiveArmPolicy(sc.Arm, nil) == kernel.EntryPolicyMarketInZone {
 			continue
 		}
 		leg := kernel.PlanArmLeg{Entry: sc.Arm.Entry, Stop: sc.Arm.Stop, Target: sc.Arm.Target}
@@ -217,6 +224,12 @@ func writeTimeFeasibilityHint(issues []writeTimeFeasibilityIssue) string {
 			b.WriteString(fmt.Sprintf("%s %s trigger %.2f is already %s price %.2f: a stop entry there fills at market on placement — author the trigger ahead of price, or author a reject/limit at the level", is.Scenario, is.Cond, is.Trigger, aboveBelow, is.Price))
 			continue
 		}
+		if is.Kind == "zone" {
+			// W3 (c): the zone refusal carries its own marker ("entry zone:")
+			// so the repair prompt routes RepairEntryZoneLaw.
+			b.WriteString(fmt.Sprintf("%s %s %s — %s", is.Scenario, kernel.EntryZoneRefusalMarker, is.Class, is.Verbose))
+			continue
+		}
 		gateIssues++
 		b.WriteString(fmt.Sprintf("%s would be refused at arm — %s", is.Scenario, is.Verbose))
 	}
@@ -262,4 +275,162 @@ func (at *AutoTrader) applyWriteTimeArmDisable(d *kernel.PlanDoc, issues []write
 			at.logWarnf("⚔️ arm-disabled counter write failed: %v", err)
 		}
 	}
+}
+
+// ── W-EXEC-TRUTH W3 (c) — THE ZONE AT WRITE ──────────────────────────────────
+//
+// writeTimeZoneVerdicts judges every ENABLED market_in_zone arm (each leg of a
+// split, D8: the scenario's one entry_zone applies to every market_in_zone
+// leg) at write time. NOT gated by the write_time_feasibility knob (D5): a
+// market_in_zone arm without a usable zone can never be placed, so the planner
+// must hear it whatever that knob says.
+//
+//  1. kernel.ArmZoneVerdict — the ONE zone reading (present · entry inside ·
+//     width ≤ day_plan.zone_max_pts · the permitted side of the trigger · the
+//     bracket outside · a tick left after inward rounding). A code → an issue
+//     Kind "zone", Class = the code (zone_missing, zone_too_wide, …).
+//  2. the executor's own gate chain at each gate's WORST fill (D7): the stop is
+//     composed from the NEAR bound by the executor's composeArmStop (0B), then
+//     armGateVerdictFor judges R:R at the FAR bound and, when that passes, the
+//     min-SL distance at the NEAR bound.
+//  3. provenance (resolveEntryGeometryZone via zoneProvenanceLabel) is a LABEL,
+//     logged — never a refusal (R2).
+//
+// Legacy and planned_order arms are untouched (they return no issue here).
+func (at *AutoTrader) writeTimeZoneVerdicts(d *kernel.PlanDoc, atr5m float64, cfg *store.StrategyConfig, session string) []writeTimeFeasibilityIssue {
+	if d == nil {
+		return nil
+	}
+	var dp *store.DayPlanConfig
+	if cfg != nil {
+		dp = cfg.DayPlan
+	}
+	zoneMax, _ := store.ResolveZoneMaxPts(dp)
+	minQuality := ""
+	if dp != nil {
+		minQuality = dp.MinGradeFor(session)
+	}
+	sym := at.futuresSymbol()
+	tick := market.FuturesTickSize(sym)
+	bias := biasDirectionFor(d.Bias.Direction)
+	var out []writeTimeFeasibilityIssue
+	for i := range d.Scenarios {
+		sc := &d.Scenarios[i]
+		if sc.Arm == nil || !sc.Arm.Enabled {
+			continue
+		}
+		legs := sc.Arm.Legs
+		if len(legs) == 0 {
+			legs = []kernel.PlanArmLeg{{Entry: sc.Arm.Entry, Stop: sc.Arm.Stop, Target: sc.Arm.Target}}
+		}
+		for li := range legs {
+			leg := legs[li]
+			if kernel.EffectiveArmPolicy(sc.Arm, &leg) != kernel.EntryPolicyMarketInZone {
+				continue
+			}
+			is, label, ok := at.zoneLegVerdict(d, *sc, leg, bias, atr5m, minQuality, cfg, session, tick, zoneMax)
+			if !ok {
+				out = append(out, is)
+				break // one issue per scenario (the disable is per scenario)
+			}
+			at.logInfof("🎯 zone at write: %s %s leg %d market_in_zone %s", session, sc.ID, li+1, label)
+		}
+	}
+	return out
+}
+
+// zoneLegVerdict judges ONE market_in_zone leg. ok=false → the issue; ok=true
+// → the provenance/geometry label for the INFO line.
+func (at *AutoTrader) zoneLegVerdict(d *kernel.PlanDoc, sc kernel.PlanScenario, leg kernel.PlanArmLeg, bias string, atr5m float64, minQuality string, cfg *store.StrategyConfig, session string, tick, zoneMax float64) (writeTimeFeasibilityIssue, string, bool) {
+	v := kernel.ArmZoneVerdict(sc, leg.Entry, leg.Stop, leg.Target, sc.Direction, tick, zoneMax)
+	if v.Code != "" {
+		return writeTimeFeasibilityIssue{Scenario: sc.ID, Class: v.Code, Kind: "zone", Cond: sc.Condition,
+			Verbose: zoneIssueText(sc, leg, v.Code, zoneMax)}, "", false
+	}
+	side := strings.ToLower(strings.TrimSpace(sc.Direction))
+	stop := leg.Stop
+	if comp := composeArmStop(side, v.Near, leg.Stop, atr5m, tick, d.Levels, kernel.MinSLATRMult(),
+		kernel.MinSLTickClearance, armStopAnchorMaxATR()); comp.Stop > 0 {
+		stop = comp.Stop
+	}
+	far := kernel.PlanArmLeg{Entry: v.Far, Stop: stop, Target: leg.Target}
+	g := at.armGateVerdictFor(sc, far, bias, nil, atr5m, minQuality, cfg, session)
+	edge := fmt.Sprintf("far edge %.2f", v.Far)
+	if g == "" {
+		near := far
+		near.Entry = v.Near
+		g = at.armGateVerdictFor(sc, near, bias, nil, atr5m, minQuality, cfg, session)
+		edge = fmt.Sprintf("near edge %.2f", v.Near)
+	}
+	if g != "" {
+		return writeTimeFeasibilityIssue{Scenario: sc.ID, Class: armRefusalClass(g), Kind: "gate", Cond: sc.Condition,
+			Verbose: fmt.Sprintf("market_in_zone at the zone's %s (stop %.2f composed from the near edge): %s", edge, stop, g)}, "", false
+	}
+	label := fmt.Sprintf("[%.2f, %.2f] far=%.2f near=%.2f stop=%.2f provenance=%s", v.Lo, v.Hi, v.Far, v.Near, stop,
+		zoneProvenanceLabel(d, sc, v.Lo, v.Hi, at.dayPlanCfg().GeometryRefIDsEnabled()))
+	return writeTimeFeasibilityIssue{}, label, true
+}
+
+// zoneIssueText names the refusal, the numbers and the fix, per zone code.
+func zoneIssueText(sc kernel.PlanScenario, leg kernel.PlanArmLeg, code string, zoneMax float64) string {
+	lo, hi := 0.0, 0.0
+	if sc.Economics != nil && len(sc.Economics.EntryZone) == 2 {
+		lo, hi = sc.Economics.EntryZone[0], sc.Economics.EntryZone[1]
+	}
+	switch code {
+	case kernel.ZoneMissing:
+		return "economics.entry_zone [low, high] is absent or not a positive low ≤ high — write the zone the limit may fill in (market_in_zone buys at its high / sells at its low)"
+	case kernel.ZoneTooWide:
+		return fmt.Sprintf("zone [%.2f, %.2f] is %.2f pts wide > zone_max_pts %g — narrow it around arm.entry %.2f", lo, hi, hi-lo, zoneMax, leg.Entry)
+	case kernel.ZoneEntryOutside:
+		return fmt.Sprintf("arm.entry %.2f is outside the zone [%.2f, %.2f] — put the entry inside the zone", leg.Entry, lo, hi)
+	case kernel.ZoneBadSide:
+		return fmt.Sprintf("direction %q is not long|short", sc.Direction)
+	case kernel.ZoneTriggerSide:
+		ref, rule, side := 0.0, "", ""
+		if r, ok := kernel.ResolveScenarioConfirm(sc); ok {
+			ref, rule, side = r.RefPrice, r.Rule, r.Side
+		}
+		return fmt.Sprintf("zone [%.2f, %.2f] is not on the permitted side of the confirm ref %.2f (%s, side %s) — a touch zone must contain the ref; a close / time_hold / 1m_mss zone lies wholly on the confirm side of it", lo, hi, ref, rule, side)
+	case kernel.ZoneBracket:
+		return fmt.Sprintf("stop %.2f / target %.2f must sit OUTSIDE the zone [%.2f, %.2f] (long: stop below low, target above high; short mirrored)", leg.Stop, leg.Target, lo, hi)
+	case kernel.ZoneEmpty:
+		return fmt.Sprintf("no tick lies inside [%.2f, %.2f] after rounding inward to the tick — widen the zone to at least one tick", lo, hi)
+	}
+	return code
+}
+
+// zoneProvenanceLabel (R2) — where the planner's zone sits against the frozen
+// geometry: frozen_subrange (inside the matched frozen zone), frozen_overlap,
+// frozen_disjoint, frozen_line (a zero-width reference line), or
+// planner_only(<why>) when the scenario does not resolve in the frozen map. A
+// LABEL, never a refusal.
+func zoneProvenanceLabel(doc *kernel.PlanDoc, sc kernel.PlanScenario, lo, hi float64, geometryRefLevels bool) string {
+	idx, why, synth, prov := resolveEntryGeometryZone(doc, sc, geometryRefLevels)
+	if why != "" || idx < 0 {
+		return "planner_only(" + why + ")"
+	}
+	z := doc.Zones.Zones[idx]
+	kind := ""
+	if synth != nil {
+		z, kind = *synth, "frozen_line"
+		if prov != "" {
+			kind = prov // A1 (WAVE PLANNER): authored:<label> admission
+		}
+	}
+	names := strings.Join(geometryZoneNames(z), "+")
+	if z.Lo == nil || z.Hi == nil {
+		return "frozen_unbounded:" + names
+	}
+	zl, zh := *z.Lo, *z.Hi
+	switch {
+	case kind != "":
+	case lo >= zl-1e-9 && hi <= zh+1e-9:
+		kind = "frozen_subrange"
+	case hi < zl-1e-9 || lo > zh+1e-9:
+		kind = "frozen_disjoint"
+	default:
+		kind = "frozen_overlap"
+	}
+	return fmt.Sprintf("%s:%s[%.2f,%.2f]", kind, names, zl, zh)
 }

@@ -1,8 +1,13 @@
 // Command gate-jwt mints a session token for a LOCAL user via the SAME
-// production path the /api/login handler uses (godotenv.Load → config.Init →
-// auth.SetJWTSecret → auth.GenerateJWT). Used by the acceptance-gate E2E suite
+// secret resolution the server uses (godotenv.Load → config.Init →
+// auth.SetJWTSecret) and the same signer. Used by the acceptance-gate E2E suite
 // so Playwright can drive the owner's own local UI without a password prompt,
 // and by any lane that needs to read a protected GET.
+//
+// It mints a MACHINE token (scope "gate-jwt", M3 red-team H1): no password was
+// proven, so the API refuses it on the credential routes (/api/user/password,
+// /api/reset-account), the Telegram-config routes (/api/telegram*) and
+// /api/updates*. Every other protected route answers it as before.
 //
 // RUN IT FROM THE REPO ROOT (/home/hoang/nofx). godotenv.Load() reads .env
 // relative to the WORKING DIRECTORY, and .env is not tracked, so running this
@@ -11,7 +16,21 @@
 //
 //	go run ./cmd/gate-jwt <email> data/data.db
 //
-// Local, single-owner, SIM-only. Prints the token to stdout and nothing else.
+// Local, single-owner, SIM-only. stdout is NOT the token alone: the logger
+// writes to stdout too, so log lines come first (store.New's "✅ Database
+// initialized", and config.Init's JWT_SECRET warning when the secret is
+// unset). The token is the LAST line, with no trailing newline, and the only
+// eyJ… segment — capture it by that, never the whole of stdout. Errors go to
+// stderr with a non-zero exit, so capture it with pipefail: without it a
+// failed mint leaves TOK empty and the line still exits 0.
+//
+//	set -o pipefail
+//	TOK=$(go run ./cmd/gate-jwt <email> data/data.db | grep -oE 'eyJ[A-Za-z0-9_.-]+' | tail -1)
+//	test -n "$TOK"
+//
+// (TestGateJWTBinaryPrintsAGateScopedTokenLast runs the built tool and pins
+// this shape; TestGateJWTDocumentedCaptureFailsWhenTheMintFails runs these
+// three lines against it — a failed mint must fail them.)
 package main
 
 import (
@@ -54,15 +73,28 @@ func main() {
 	}
 	defer st.Close()
 
-	user, err := st.User().GetByEmail(email)
+	tok, err := mintGateToken(st, email)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "no such user:", err)
-		os.Exit(1)
-	}
-	tok, err := auth.GenerateJWT(user.ID, user.Email)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "sign:", err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	fmt.Print(tok)
+}
+
+// mintGateToken is the tool's whole mint: the user row by email, then a
+// MACHINE token (scope gate-jwt) carrying that row's id and email. main()
+// calls it; main_test.go drives the token it returns through the production
+// server (canon 53), so the scope the tool mints and the routes the API
+// admits it to are pinned together. main_pin_test.go pins that it is the
+// package's ONE mint and main's only way to one, and runs the built tool.
+func mintGateToken(st *store.Store, email string) (string, error) {
+	user, err := st.User().GetByEmail(email)
+	if err != nil {
+		return "", fmt.Errorf("no such user: %w", err)
+	}
+	tok, err := auth.GenerateScopedJWT(user.ID, user.Email, auth.ScopeGateJWT)
+	if err != nil {
+		return "", fmt.Errorf("sign: %w", err)
+	}
+	return tok, nil
 }

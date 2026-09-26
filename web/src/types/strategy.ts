@@ -116,7 +116,9 @@ export interface DayPlanConfig {
   /** FOLDED (W-KNOB-PRUNE 2026-09-18): one rule exists (1×5m close); a
    *  stored value is read by nothing. */
   acceptance_rule?: string
-  replan_cap?: number
+  /** W1 PRESENCE-AWARE — re-plans per session 0-4: absent/null = the shipped
+   *  default 2; an explicit 0 = no re-plan. Send null to clear a stored value. */
+  replan_cap?: number | null
   sessions_enabled?: string[]
   approval_required?: boolean
   /** FOLDED (W-KNOB-PRUNE 2026-09-18): constant OFF unless stored true. */
@@ -138,8 +140,8 @@ export interface DayPlanConfig {
   /** R4 (2026-08-25) — scenario quality floor: A | B | C. Default C = no
    *  restriction. */
   min_scenario_quality?: string
-  /** ONE SETUP (dispatch 102, 2026-09-10) — arm only the single best live
-   *  setup. Pointer-bool mirrors Go: absent = ON. */
+  /** ONE SETUP (dispatch 102, 2026-09-10) — arm only the single best reject
+   *  (fade) setup. Pointer-bool mirrors Go: absent = ON. */
   one_setup_enabled?: boolean
   /** Lowest merged-candidate grade the best level may carry: A | B | C.
    *  Absent = B (mirrors Go). */
@@ -151,6 +153,23 @@ export interface DayPlanConfig {
    *  window 120, swing lookback 24, entry window 10s, freshness 2s); min_rr
    *  blank inherits the strategy's risk-control minimum. */
   picture_htf?: PictureHtfConfig
+  /** W-EXEC-TRUTH W3 (2026-09-23) — the entry policy stamped on every arm of a
+   *  NEWLY authored plan: market_in_zone (absent = the shipped default) — a
+   *  limit at the far edge of the planner's entry_zone; planned_order — the
+   *  resting order at the exact entry (reject / fvg_entry / sweep_reclaim leg
+   *  1 only); legacy — stamp nothing (the explicit off). A string, not a
+   *  union: Go resolves an unrecognised stored value to the default and names
+   *  it (ResolveEntryPolicyDefault), so the wire can carry one. */
+  entry_policy_default?: string
+  /** W3 — widest entry_zone (points) a market_in_zone arm may carry. Absent =
+   *  10. Pointer semantics mirror Go: absent ≠ 0. */
+  zone_max_pts?: number
+  /** W3 — minutes a market_in_zone limit may rest before it is cancelled
+   *  ("zone rest expired"). Absent = 30. */
+  zone_rest_max_min?: number
+  /** W3 — floor (minutes) on the resolved hold of an ARMED market_in_zone
+   *  time_hold scenario, refused at write below it. Absent = 3. */
+  min_hold_min?: number
   sessions?: DayPlanSessionOverride[]
 }
 
@@ -331,7 +350,11 @@ export interface RiskControlConfig {
   daily_profit_enabled?: boolean // default OFF
   max_daily_trades?: number // max entries per CME session-day
   max_daily_trades_enabled?: boolean // default OFF
-  consecutive_loss_halt?: number // D1: halt new entries after N consecutive losing trades this session (0=off; not master-gated)
+  /** D1 — halt new entries after N consecutive losing trades this CME
+   *  session-day (not master-gated). W1 PRESENCE-AWARE: absent/null = inherit
+   *  (env BREAKER_HALT_N, else 8 — ON); an explicit 0 = OFF; N = N. Send null
+   *  (never undefined) to clear a stored value — the PUT merge keeps absent keys. */
+  consecutive_loss_halt?: number | null
   reentry_cooldown_minutes?: number // B7: after a stop-loss, block same-dir re-entry for N min or until price moves ≥1×ATR15 from the stop (0=off; futures-only)
   max_contracts_per_order?: number // futures contracts-per-order clamp
   max_contracts_enabled?: boolean // default ON

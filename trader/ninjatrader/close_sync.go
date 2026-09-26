@@ -1,6 +1,8 @@
 package ninjatrader
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +12,8 @@ import (
 	"nofx/market"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/store"
+	"nofx/store/sqlitedriver"
+	"nofx/telemetry"
 )
 
 // StartCloseSync consumes position_close frames from the TCP bridge and records
@@ -31,8 +35,22 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 	t.mu.Unlock()
 	pb := store.NewPositionBuilder(st.Position())
 	t.closeSyncOnce.Do(func() {
+		done := t.observerLifetime()
+		// W117 F5 — subscribe BEFORE the goroutines: a delayed old goroutine must
+		// never subscribe after the replacement and steal its account stream.
+		closes := t.server.SubscribeClosesFor(t.symbol, t.boundAccount)
+		rejects := t.server.SubscribeRejectsFor(t.symbol, t.boundAccount)
+		instruments := t.server.SubscribeInstrumentInfoFor(t.symbol, t.boundAccount)
 		go func() {
-			for p := range t.server.SubscribeClosesFor(t.symbol, t.boundAccount) { // P5.4 router-fed (per-symbol)
+			defer close(done) // drain all queued receipts before stopping reconcile
+			for p := range closes {
+				// W117 F2 — the ordered worker owns this frame's durable close; the
+				// advisory copy only marks it (never records it twice), and the
+				// consumer still drains its channel and closes done after the skip.
+				if p.OrderedOwned {
+					t.MarkCloseConfirmed(p.Symbol, p.PositionSide)
+					continue
+				}
 				t.recordClose(traderID, exchangeID, exchangeType, st, pb, p)
 				// Fast, account-correct flat signal for reconcile-before-open: a
 				// position_close arrived for this trader's bound account (frame path
@@ -48,7 +66,7 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 		// natural bounded retry) and the periodic reconcile keeps the DB anchored to
 		// NT8 truth, so the orphan can't be netted onto by the next entry.
 		go func() {
-			for r := range t.server.SubscribeRejectsFor(t.symbol, t.boundAccount) { // P5.4 router-fed (per-symbol)
+			for r := range rejects { // P5.4 router-fed (per-symbol)
 				logger.Warnf("🚨 NT close REJECTED: %s %s — STILL OPEN in NT8, NOT recording closed (reason: %q, account: %s). Will retry on next decision cycle / reconnect.",
 					r.Symbol, r.PositionSide, r.Reason, r.Account)
 			}
@@ -59,7 +77,7 @@ func (t *TCPTrader) StartCloseSync(traderID, exchangeID, exchangeType string, st
 		// (no table entry) NT8 is the only source. The tables stay authoritative for
 		// the math; this is defense-in-depth + drift detection.
 		go func() {
-			for in := range t.server.SubscribeInstrumentInfoFor(t.symbol, t.boundAccount) { // P5.4 router-fed (per-symbol)
+			for in := range instruments { // P5.4 router-fed (per-symbol)
 				tablePV := market.FuturesPointValue(in.Symbol)
 				tableTick := market.FuturesTickSize(in.Symbol)
 				switch {
@@ -216,6 +234,193 @@ func (t *TCPTrader) recordClose(
 	t.mu.Unlock()
 }
 
+// W117 a3 — bounded busy retry on the worker, in receive order. Five total
+// tries (the first call + ntExitBusyRetries retries); the backoff sleeps sum to
+// 1.55s, so the worker's own retry schedule stays inside ~3s wall. Each
+// attempt's BEGIN IMMEDIATE busy wait is capped by the store's busy_timeout
+// (5000ms live); a holder that outlives it parks the exit instead of dropping.
+const ntExitBusyRetries = 4
+
+func ntExitBusyBackoff(attempt int) time.Duration {
+	switch attempt {
+	case 1:
+		return 50 * time.Millisecond
+	case 2:
+		return 100 * time.Millisecond
+	case 3:
+		return 200 * time.Millisecond
+	default:
+		return 400 * time.Millisecond
+	}
+}
+
+// ── W117 F3 / slice-A R6 — durable exit receipts, apply-or-park ON THE WORKER ──
+//
+// recordCloseOrdered is the ordered worker's close consumer: the same evidence
+// recordClose applies, but through store.ApplyNT8Exit — one transaction that
+// reduces the exact owned residual, writes the exit fill (deduped by receipt
+// id), flips the receipt, and closes + stamps pnl_corrected when the residual
+// hits zero. A valid exit that beats its later cumulative entry update is
+// RETAINED as a pending receipt — never dropped, never a hard error — and
+// retried (RetryPendingNT8Exits) once the row catches up.
+
+func (t *TCPTrader) recordCloseOrdered(
+	traderID, exchangeID, exchangeType string,
+	st *store.Store,
+	p ntwire.PositionClosePayload,
+) {
+	if st == nil || st.Position() == nil {
+		return
+	}
+	side := "LONG"
+	if strings.EqualFold(p.PositionSide, "short") {
+		side = "SHORT"
+	}
+	symbol := t.symbol
+	if symbol == "" {
+		symbol = p.Symbol
+	}
+	qty := float64(p.Quantity)
+	if qty <= 0 {
+		qty = 1
+	}
+	exitMs := time.Now().UTC().UnixMilli()
+	if p.ExitTime != "" {
+		if ts, err := time.Parse(time.RFC3339, p.ExitTime); err == nil {
+			exitMs = ts.UTC().UnixMilli()
+		}
+	}
+	reason := strings.ToLower(strings.TrimSpace(p.ExitReason))
+	leg := "exit"
+	if reason == "sl" || reason == "tp" {
+		leg = reason
+	}
+	// Receipt identity: stable for idempotent replay of the SAME frame, and
+	// distinct for a partial vs a final close of the same bracket leg (qty +
+	// exit time are part of the identity when no broker exit-order id exists).
+	identity, _ := json.Marshal([]any{p.Account, symbol, side, p.SignalID, leg, p.Seq, qty, exitMs})
+	key := fmt.Sprintf("nt8-exit-v2-%x", sha256.Sum256(identity))
+	receipt := store.NT8ExitReceipt{
+		ID: key, Account: p.Account, Symbol: symbol, Side: side, SignalID: p.SignalID,
+		TraderID: traderID, ExchangeID: exchangeID, ExchangeType: exchangeType,
+		Reason: reason, Quantity: qty, Price: p.ExitPrice,
+		PointValue: market.FuturesPointValue(symbol), ExitMs: exitMs, ReceivedMs: time.Now().UnixMilli(),
+	}
+	if receipt.PointValue <= 0 {
+		receipt.PointValue = 1
+	}
+
+	// Earlier parked exits for this account retry FIRST: by the time a later
+	// close arrives, the rows the earlier exits were waiting on may exist.
+	t.RetryPendingNT8Exits(st)
+
+	// W117 a3 — SQLite lock contention must never lose a close. BEGIN
+	// IMMEDIATE already moves the lock wait to transaction start (the busy
+	// handler applies there); when the holder outlives busy_timeout the worker
+	// retries BOUNDED, in receive order, then parks on final failure.
+	result, err := st.Position().ApplyNT8Exit(receipt)
+	if err != nil && sqlitedriver.IsBusy(err) {
+		for attempt := 1; attempt <= ntExitBusyRetries && sqlitedriver.IsBusy(err); attempt++ {
+			time.Sleep(ntExitBusyBackoff(attempt))
+			result, err = st.Position().ApplyNT8Exit(receipt)
+		}
+	}
+	if err != nil {
+		if !sqlitedriver.IsBusy(err) {
+			logger.Warnf("NT8 exit receipt refused/uncommitted account=%s signal=%s qty=%.0f: %v", p.Account, p.SignalID, qty, err)
+			return
+		}
+		// FINAL FAILURE — never drop. The two legacy contracts run first (the
+		// broker's real price is parked for reconcile's orphan close and the
+		// flat signal is dropped, exactly like legacy recordClose), THEN the
+		// receipt is persisted in its own small write so
+		// RetryPendingNT8Exits applies it once the lock storm passes.
+		putPricedClose(p.Account, symbol, side, p.ExitPrice, qty, exitMs)
+		t.mu.Lock()
+		t.hasFill = false
+		t.mu.Unlock()
+		telemetry.IncNT8ExitBusyPark()
+		if perr := st.Position().SavePendingExit(receipt); perr != nil {
+			telemetry.IncNT8ExitBusyParkPersistFailure()
+			logger.Errorf("❌ NT8 exit PARKED after busy retries but the receipt persist FAILED account=%s signal=%s qty=%.0f exit=%.2f: %v — the 2-minute priced park is the only net until the next frame",
+				p.Account, p.SignalID, qty, p.ExitPrice, perr)
+			return
+		}
+		logger.Errorf("❌ NT8 exit PARKED after busy retries exhausted account=%s signal=%s qty=%.0f exit=%.2f — priced + receipt persisted (applied=false); RetryPendingNT8Exits will apply it",
+			p.Account, p.SignalID, qty, p.ExitPrice)
+		return
+	}
+	if result.Pending {
+		// The receipt is RETAINED (the store parked it) — the exit is never
+		// dropped; it applies when the cumulative entry update lands. AND the
+		// two legacy contracts are kept (F-A, class 40): the broker's price is
+		// parked for reconcile's orphan close (a no-row close or a manual
+		// flatten like #526's qty=21-over-1-lot would otherwise close at
+		// exit=entry pnl=0), and the flat signal is dropped exactly like
+		// legacy recordClose.
+		putPricedClose(p.Account, symbol, side, p.ExitPrice, qty, exitMs)
+		t.mu.Lock()
+		t.hasFill = false
+		t.mu.Unlock()
+		logger.Warnf("NT8 exit receipt PENDING owned entry evidence account=%s signal=%s qty=%.0f exit=%.2f (retained + price parked for reconcile; will apply when the row catches up)",
+			p.Account, p.SignalID, qty, p.ExitPrice)
+		return
+	}
+	owner := result.Position
+	if OnPositionClosed != nil {
+		OnPositionClosed(owner.TraderID, owner.ID)
+	}
+	if strings.EqualFold(p.ExitReason, "sl") {
+		discipline.NoteStopLossExit(owner.TraderID, symbol, side, p.ExitPrice, exitMs)
+		logger.Infof("⏳ re-entry cooldown armed: %s %s stop=%.2f (owner=%s)", symbol, side, p.ExitPrice, owner.TraderID)
+	}
+	if result.Closed {
+		logger.Warnf("📕 NT position closed: %s %s qty=%.2f exit=%.2f reason=%s pnl=%.2f (owner=%s row=%d, durable receipt)",
+			symbol, side, qty, p.ExitPrice, p.ExitReason, result.RealizedPnL, owner.TraderID, owner.ID)
+	} else {
+		logger.Infof("📊 NT partial exit recorded: row=%d actual_qty=%.0f residual=%.0f price=%.2f pnl=%.2f (still OPEN)",
+			owner.ID, result.Quantity, owner.Quantity, receipt.Price, result.RealizedPnL)
+	}
+	// A received close for this trader's bound account is the flat signal.
+	t.mu.Lock()
+	t.hasFill = false
+	t.mu.Unlock()
+}
+
+// RetryPendingNT8Exits re-applies every parked (pending) exit receipt for this
+// trader's bound account. ApplyNT8Exit is idempotent; a receipt whose row still
+// is not there stays parked. Called by the worker's close handler and after a
+// cumulative entry update lands (the order handler), so an exit that arrived
+// BEFORE its entry applies as soon as the entry does — the R6 contract.
+func (t *TCPTrader) RetryPendingNT8Exits(st *store.Store) {
+	if st == nil || st.Position() == nil {
+		return
+	}
+	receipts, err := st.Position().PendingNT8Exits(t.boundAccount)
+	if err != nil {
+		logger.Warnf("NT8 pending exit read failed: %v", err)
+		return
+	}
+	for _, receipt := range receipts {
+		result, err := st.Position().ApplyNT8Exit(receipt)
+		if err != nil {
+			logger.Warnf("NT8 pending exit unresolved signal=%s: %v", receipt.SignalID, err)
+			continue
+		}
+		if result.Pending {
+			continue
+		}
+		owner := result.Position
+		if OnPositionClosed != nil {
+			OnPositionClosed(owner.TraderID, owner.ID)
+		}
+		if result.Closed {
+			logger.Warnf("📕 NT parked exit APPLIED after the entry caught up: %s %s qty=%.0f exit=%.2f pnl=%.2f (owner=%s row=%d)",
+				receipt.Symbol, receipt.Side, receipt.Quantity, receipt.Price, result.RealizedPnL, owner.TraderID, owner.ID)
+		}
+	}
+}
+
 // OnPositionClosed (Phase 4, final-bundle 2026-08-19) is the package-level
 // close-event hook: the trader layer registers a dispatcher so a confirmed
 // position close (close_sync priced close, reconcile priced/flat close)
@@ -255,4 +460,17 @@ func buildExitFill(owner *store.TraderPosition, exchangeID, exchangeType, symbol
 		IsMaker:         false,
 		CreatedAt:       exitMs,
 	}
+}
+
+// observerLifetime (W117 F5) returns the shared observer-done channel,
+// initialized under mu. The close consumer closes it AFTER draining its queued
+// receipts, which retires the reconcile worker — same-account replacement
+// drains; a foreign account or a socket disconnect does not.
+func (t *TCPTrader) observerLifetime() chan struct{} {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.observerDone == nil {
+		t.observerDone = make(chan struct{})
+	}
+	return t.observerDone
 }

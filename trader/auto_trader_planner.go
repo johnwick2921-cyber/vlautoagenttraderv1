@@ -247,7 +247,12 @@ func (at *AutoTrader) maybeRunSessionReadsAt(now time.Time) []SessionReadFired {
 			telemetry.RecordError(at.id, "plan_read_failed", "GetLatestPlanForTraderSession: "+err.Error(), telemetry.CostDecisionLost)
 			continue
 		}
-		if existing == nil {
+		// W-EXEC-TRUTH W5 (F3/D20) — a chain whose newest row is a MACHINE plan
+		// (the Picture no-plan door) is "no plan" to the scheduler: the AI
+		// session read still fires and lands the next version, which supersedes
+		// it. Nothing below — dormant re-arm, death, flip, MSS or level wakes —
+		// ever runs on a machine row: the `continue` skips all of it.
+		if existing == nil || store.IsMachinePlan(existing) {
 			// F6 (LONDON-FORENSICS 2026-08-28) — the first read's planner call
 			// (300-500s observed) must not stall the executor loop: async, the
 			// same pattern as the W6/MSS wake re-reads. The plan-store dedupe
@@ -379,12 +384,12 @@ func (at *AutoTrader) maybeRunSessionReadsAt(now time.Time) []SessionReadFired {
 			for _, l := range detail.Levels {
 				at.logInfof("🗓️   ↳ %s", l)
 			}
-			if at.deathReplanAllowed(s.Name, tradeDate, existing, detail.Killer, budget) {
+			if at.deathReplanAllowed(now, s.Name, tradeDate, existing, detail.Killer, budget) {
 				// F6 (LONDON-FORENSICS 2026-08-28) — the death re-plan's planner
 				// call blocked the cycle 19m33s (the 02:14 overrun). Async, same
 				// pattern as the W6/MSS wake re-reads; the plan-store's single-
 				// writer queue serializes the writes.
-				go at.runDeathReplan(s.Name, tradeDate, existing, detail.Killer)
+				go at.runDeathReplan(now, s.Name, tradeDate, existing, detail.Killer)
 			}
 		}
 		if !handledDeath {
@@ -423,11 +428,29 @@ func (at *AutoTrader) warnIfReplanOrphansOverlays(row *store.PlanDB) {
 		return
 	}
 	overlays, err := at.store.Plan().ListOverlays(row.PlanID, row.Version)
-	if err != nil || len(overlays) == 0 {
+	if err != nil {
+		return
+	}
+	// W5 (F5) — a machine overlay is not an owner edit: never counted here,
+	// never carried (a live Picture scenario is re-appended instead).
+	overlays = userOverlays(overlays)
+	if len(overlays) == 0 {
 		return
 	}
 	at.logInfof("🗓️ re-plan %s v%d carries %d owner overlay(s) forward by price identity.",
 		row.PlanID, row.Version, len(overlays))
+}
+
+// userOverlays drops machine-origin overlay rows (W5): the owner-edit carry and
+// its count see only what a person or the planner's revision wrote.
+func userOverlays(rows []*store.PlanOverlayDB) []*store.PlanOverlayDB {
+	out := make([]*store.PlanOverlayDB, 0, len(rows))
+	for _, r := range rows {
+		if r != nil && !kernel.IsMachineOverlayOrigin(r.Origin) {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // carryOwnerEditsInto re-establishes the PREVIOUS version's owner edits on the
@@ -447,7 +470,13 @@ func (at *AutoTrader) carryOwnerEditsInto(planID string, oldVersion, newVersion 
 		return
 	}
 	overlays, err := at.store.Plan().ListOverlays(planID, oldVersion)
-	if err != nil || len(overlays) == 0 {
+	if err != nil {
+		return
+	}
+	// W5 (F5) — machine overlays are never owner edits: carrying one would
+	// raise a false P1 "overlays-need-review" on every re-plan.
+	overlays = userOverlays(overlays)
+	if len(overlays) == 0 {
 		return
 	}
 	oldRow, err := at.store.Plan().GetPlan(planID, oldVersion)
@@ -559,8 +588,8 @@ func (at *AutoTrader) describeActivePlanDeath(row *store.PlanDB) (kernel.PlanDea
 	if market.FuturesBarsProvider == nil || row == nil {
 		return kernel.PlanDeathDetail{}, false
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return kernel.PlanDeathDetail{}, false
 	}
 	noteFlipDirectionInverted(at, row, &doc, "active")
@@ -651,6 +680,13 @@ func (at *AutoTrader) executorPlanDeadReason() string {
 	row, err := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, sess.Name, at.id)
 	if err != nil || row == nil {
 		return "no active day plan for this session (day_plan on) — planless entries refused"
+	}
+	// W5 (D20) — a MACHINE plan (the Picture no-plan door) is not an AI plan:
+	// the decision path stays exactly where "no plan" left it (refused), and
+	// no death/flip predicate is ever run on the machine row. Its Picture
+	// scenario trades only through the armed executor.
+	if store.IsMachinePlan(row) {
+		return "no AI day plan for this session yet (only a machine Picture plan, which trades through the armed executor alone) — planless AI entries refused"
 	}
 	if row.Lifecycle == "dormant" {
 		reason := strings.TrimPrefix(row.TriggerReason, "dormant:")
@@ -745,8 +781,8 @@ func (at *AutoTrader) dormantFlipKillerOf(row *store.PlanDB) (string, bool) {
 
 // flipRereadRun is the read-call seam (fixtures substitute a recorder to assert
 // the request without running a live planner stream).
-var flipRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "structure_flip", prior, priorPlanLevelLines(row), failClosed)
+var flipRereadRun = func(at *AutoTrader, now time.Time, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
+	return at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, "structure_flip", prior, priorPlanLevelLines(at, row), failClosed)
 }
 
 // maybeRereadAfterFlip (W-FLIP-REREAD, 2026-09-17) — with day_plan.flip_reread
@@ -833,6 +869,13 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 		at.logWarnf("%s", wakeStreamDeferLine(session, dec.Desc, held))
 		return
 	}
+	// W-ONE-BUTTON M2.1 (review F15/N7): the maintenance hold refuses HERE,
+	// with the other refusals — before the launch clock, the wake timestamp and
+	// the in-flight claim. (Inside the launched read it came too late: a short
+	// hold parked the retry for a whole wake_min_interval.)
+	if at.refusePlannerClaimWhileHeld(store.MakePlanIDForTrader(at.id, tradeDate, session), "structure_flip read") {
+		return
+	}
 	// The two LOAD rules a level wake obeys are computed only to SAY that the
 	// exemption applied (never to refuse): the class-47 cooldown since the last
 	// wake-authored version, and the shared wake_min_interval_min throttle.
@@ -861,7 +904,11 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 	// goroutine below has seen a newer active version in the store.
 
 	oldBias, flipTo := "", kernel.FlipToDirection(killer)
-	if doc, derr := kernel.ParsePlanDoc(row.Doc); derr == nil {
+	// Skeptic F7: the flip re-read's prior line must name the bias the
+	// executor was actually trading — the FOLDED doc, the same resolution its
+	// sibling the death re-read (death_reread.go) uses. The base parse stays
+	// only as the unparseable-base fallback.
+	if doc, ok := resolveActivePlanDoc(at.store, row); ok {
 		oldBias = doc.Bias.Direction
 	} else {
 		// The prior is a live plan in prod; here, the bias is metadata — read it
@@ -890,7 +937,7 @@ func (at *AutoTrader) maybeRereadAfterFlip(now time.Time, session, tradeDate str
 			at.logWarnf("🗓️ structure_flip read %s %s v%d — SKIPPED before the read: the row is %q, no longer dormant; nothing authored, the once-key stays clear.", tradeDate, session, row.Version, lc)
 			return
 		}
-		if !flipRereadRun(at, session, tradeDate, prior, row, false) {
+		if !flipRereadRun(at, now, session, tradeDate, prior, row, false) {
 			at.logWarnf("🗓️ structure_flip read %s %s v%d did not complete — the dormant plan stands; the once-key is cleared for a retry next cycle.", tradeDate, session, row.Version)
 			_ = at.store.SetSystemConfig(flipRereadDoneKey(row), "0")
 			return
@@ -994,8 +1041,8 @@ func (at *AutoTrader) describeDormantCleared(row *store.PlanDB) (bool, string) {
 	if market.FuturesBarsProvider == nil || row == nil {
 		return false, ""
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return false, ""
 	}
 	noteFlipDirectionInverted(at, row, &doc, "dormant")
@@ -1106,7 +1153,7 @@ func (at *AutoTrader) warnFlipDeathSanity(d *kernel.PlanDoc) {
 // sticky owner levels prepended like the planner input. Returns nil when the
 // detector genuinely has nothing (no bars provider / no bars), which the doc
 // turns into the explicit "detector data unavailable" line.
-func (at *AutoTrader) noTradeLevelMap(session string) []kernel.PlanLevel {
+func (at *AutoTrader) noTradeLevelMap(now time.Time, session string) []kernel.PlanLevel {
 	symbol := at.futuresSymbol()
 	if market.FuturesBarsProvider == nil {
 		return nil
@@ -1115,7 +1162,6 @@ func (at *AutoTrader) noTradeLevelMap(session string) []kernel.PlanLevel {
 	if len(bars) == 0 {
 		return nil
 	}
-	now := time.Now()
 	maxLevels, htfSeats, htfMult, minGrade, _ := resolveSessionPlanCfg(at.dayPlanCfg(), session)
 	// R2 4.7 (2026-08-25) — fail-closed maps obey min_grade: a NO-TRADE doc's
 	// level map must match what an active plan would have carried.
@@ -1140,9 +1186,9 @@ func (at *AutoTrader) noTradeLevelMap(session string) []kernel.PlanLevel {
 // re-plan row lands (runPlannerReadCoreWithFactsGrades, keyed by the
 // death_replan trigger class), so a read refused by preflight / clock-hold /
 // a lost claim still costs nothing — "no plan row, no budget consumed" holds.
-func (at *AutoTrader) deathReplanAllowed(session, tradeDate string, existing *store.PlanDB, killer string, budget store.ReplanBudget) bool {
+func (at *AutoTrader) deathReplanAllowed(now time.Time, session, tradeDate string, existing *store.PlanDB, killer string, budget store.ReplanBudget) bool {
 	if !budget.May() {
-		at.writeNoTradePlan(session, tradeDate,
+		at.writeNoTradePlan(now, session, tradeDate,
 			fmt.Sprintf("re-plans exhausted (%d/%d) after %d death re-plan(s) — last: %s",
 				budget.Used, budget.Cap, budget.Used, killer))
 		return false
@@ -1170,20 +1216,20 @@ func (at *AutoTrader) deathReplanAllowed(session, tradeDate string, existing *st
 // level-set continuity). ITEM 4: the owner's sticky levels re-establish on
 // the version just written, re-anchored by price; anything that cannot be
 // re-anchored is parked for review, never dropped.
-func (at *AutoTrader) runDeathReplan(session, tradeDate string, existing *store.PlanDB, killer string) {
-	_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, store.TriggerDeathReplan, killer, priorPlanLevelLines(existing), true)
+func (at *AutoTrader) runDeathReplan(now time.Time, session, tradeDate string, existing *store.PlanDB, killer string) {
+	_ = at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, store.TriggerDeathReplan, killer, priorPlanLevelLines(at, existing), true)
 	if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && existing != nil && fresh.Version != existing.Version {
 		at.carryOwnerEditsInto(fresh.PlanID, existing.Version, fresh.Version)
 	}
 }
 
 // writeNoTradePlan appends a NO-TRADE plan (re-plans exhausted) + an alert event.
-func (at *AutoTrader) writeNoTradePlan(session, tradeDate, reason string) {
+func (at *AutoTrader) writeNoTradePlan(now time.Time, session, tradeDate, reason string) {
 	// P7 — levels are market FACTS; the plan is an opinion about them. A no-trade
 	// decision must never erase the map: the fail-closed doc carries the current
 	// detector/scorer output (owner sticky levels included) so the card keeps
 	// showing the map under the NO-TRADE banner. Unavailable detector data says so.
-	doc := kernel.NoTradePlanDocWithLevels(reason, at.noTradeLevelMap(session))
+	doc := kernel.NoTradePlanDocWithLevels(reason, at.noTradeLevelMap(now, session))
 	docJSON, _ := json.Marshal(doc)
 	_, err := at.store.Plan().AppendPlan(&store.PlanDB{
 		PlanID: at.store.Plan().ResolvePlanID(tradeDate, session, at.id), StrategyID: at.id,
@@ -1252,7 +1298,7 @@ func (at *AutoTrader) PlannerReadInFlight(tradeDate, session string) bool {
 // THIS call claimed the read (false = another read was already in flight and
 // this one skipped). The wrapper keeps the old signature for existing callers.
 func (at *AutoTrader) runPlannerReadWithTriggerClaimed(session, tradeDate, triggerOverride string) bool {
-	return at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, triggerOverride, "", nil, true)
+	return at.runPlannerReadWithTriggerClaimedCtx(time.Now(), session, tradeDate, triggerOverride, "", nil, true)
 }
 
 // runPlannerReadWithTriggerClaimedCtx (P0.4-G, 2026-08-25) is the claimed read
@@ -1265,11 +1311,14 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimed(session, tradeDate, trigg
 // read that fails every retry writes the terminal NO-TRADE marker.
 // failClosed=false (W6 wake reads): the wake is OPPORTUNISTIC — if the re-read
 // fails, the still-active plan keeps trading and nothing is written.
-func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, triggerOverride, priorKiller string, priorLevels []string, failClosed bool) bool {
+func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(now time.Time, session, tradeDate, triggerOverride, priorKiller string, priorLevels []string, failClosed bool) bool {
 	if !at.dayPlanEnabled() || at.store == nil {
 		return false
 	}
 	key := store.MakePlanIDForTrader(at.id, tradeDate, session)
+	if at.refusePlannerClaimWhileHeld(key, "planner read") { // W-ONE-BUTTON M2 site 5
+		return false
+	}
 	if !claimPlannerRead(key) {
 		at.logInfof("🗓️ planner read for %s already in flight — skipping duplicate call.", key)
 		return false
@@ -1300,7 +1349,7 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 		at.logErrorf("🗓️ planner: no client resolved for %s %s", tradeDate, session)
 		return false
 	}
-	input := at.assemblePlannerInputWithCtx(session, tradeDate, priorKiller, priorLevels)
+	input := at.assemblePlannerInputWithCtx(now, session, tradeDate, priorKiller, priorLevels)
 	// F3 — FAST-MARKET WAKE READS (waterfall-class wave, 2026-08-28): when a wake
 	// fires with |price drift| since the last plan write > FAST_MARKET_ATR ×
 	// ATR5m, this read runs on the fast reasoning wire and the prompt carries a
@@ -1328,7 +1377,8 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 	if dp := at.dayPlanCfg(); dp.GeometryRefIDsEnabled() {
 		kernel.EnsureReferenceLevelIDs(identityMap)
 	}
-	facts := kernel.PlanFacts{Zones: input.Zones, IdentityMap: identityMap, Price: input.Price, DATR: input.DATR, Regime: input.Regime, Structure: input.Structure}
+	facts := kernel.PlanFacts{Zones: input.Zones, IdentityMap: identityMap, Price: input.Price, DATR: input.DATR, Regime: input.Regime, Structure: input.Structure, ReadAt: input.Now}
+	facts.CapacityCut = kernel.CapacityCutCandidates(input.Pool, identityMap, input.Price, input.ATR5m) // W2 A4 — accepted as a first obstacle, never required
 	// 8.4 — machine grades from the Go-ranked candidate table, keyed by rounded
 	// price so the write-site stamp can match the model's levels.
 	machineGrades := map[float64]string{}
@@ -1380,7 +1430,9 @@ func (at *AutoTrader) runPlannerReadWithTriggerClaimedCtx(session, tradeDate, tr
 	at.RegisterShadowRunner(client, plannerSystemPrompt, aiPlanMaxTokens(), fMode, fEffort)
 	recordResearchInput(input.ResearchSnapshotID, input, plannerSystemPrompt, modelID)
 	researchTrace := &researchsnapshot.PlanTrace{SnapshotID: input.ResearchSnapshotID, Model: modelID, ConfigVersion: input.AIConfigHash, SystemPrompt: plannerSystemPrompt}
-	at.runPlannerReadCoreObserved(time.Now, researchTrace, session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels(input), failClosed, func(userPrompt string) (string, error) {
+	// P15 — the authoring clock is the caller's instant, not a fresh wall read.
+	// P15 revert: `now` is the READ instant only; the publish clock stays live.
+	at.runPlannerReadCoreObserved(func() time.Time { return now }, nil, researchTrace, session, tradeDate, triggerOverride, modelID, hash, input.IndicatorsBlock, input.AIConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels(input), failClosed, func(userPrompt string) (string, error) {
 		mcp.ApplyThinking(client, pMode, pEffort)
 		// PLANNER SPEED WAVE 4 (2026-08-31) — the session planner now rides the
 		// SSE streaming client with the idle watchdog (split deadlines). The
@@ -1496,12 +1548,12 @@ func (at *AutoTrader) runPlannerRead(session, tradeDate string) {
 
 // priorPlanLevelLines renders the previous version's levels as "price label"
 // lines for the continuity block (empty when the stored doc is unreadable).
-func priorPlanLevelLines(row *store.PlanDB) []string {
-	if row == nil {
+func priorPlanLevelLines(at *AutoTrader, row *store.PlanDB) []string {
+	if row == nil || at == nil || at.store == nil {
 		return nil
 	}
-	var doc kernel.PlanDoc
-	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+	doc, ok := resolveActivePlanDoc(at.store, row)
+	if !ok {
 		return nil
 	}
 	lines := make([]string, 0, len(doc.Levels))
@@ -1570,10 +1622,11 @@ func (at *AutoTrader) carryMachineGrades(tradeDate, session string, doc *kernel.
 	if err != nil || prev == nil {
 		return
 	}
-	pd := kernel.PlanDoc{}
-	if json.Unmarshal([]byte(prev.Doc), &pd) != nil {
+	resolved, ok := resolveActivePlanDoc(at.store, prev)
+	if !ok {
 		return
 	}
+	pd := resolved
 	carry := map[float64]string{}
 	for _, l := range pd.Levels {
 		if l.Price <= 0 {
@@ -1755,6 +1808,46 @@ func plannerRejectHeader(history []string, live []string) string {
 	return b.String()
 }
 
+// plannerReadLine (WAVE PLANNER B3) is the ONE per-read line: session,
+// attempts, each reject's item class (the shared kernel classifier), the
+// read→publish latency and the final lifecycle. n/a when the read never
+// published a born-check (no_trade / fail-closed reads record none).
+func plannerReadLine(session string, attempts int, rejectReasons []string, readMs, publishMs *int64, lifecycle string) string {
+	classes := make([]string, 0, len(rejectReasons))
+	for _, r := range rejectReasons {
+		classes = append(classes, kernel.PlannerRejectItemClass(r))
+	}
+	classesPart := "none"
+	if len(classes) > 0 {
+		classesPart = strings.Join(classes, ",")
+	}
+	latency := "n/a"
+	if readMs != nil && publishMs != nil {
+		latency = fmt.Sprintf("%dms", *publishMs-*readMs)
+	}
+	return fmt.Sprintf("🧭 planner read: session=%s attempts=%d reject_classes=%s read→publish=%s lifecycle=%s",
+		session, attempts, classesPart, latency, lifecycle)
+}
+
+// logPlannerReadLine (WAVE PLANNER B3) emits the ONE 🧭 per-read line and
+// records its counters — read total + per-class rejects, counted from the
+// read's own recorded history, never inferred from row counts.
+func (at *AutoTrader) logPlannerReadLine(session string, attempts int, rejectReasons []string, readMs, publishMs *int64, lifecycle string) {
+	at.logInfof("%s", plannerReadLine(session, attempts, rejectReasons, readMs, publishMs, lifecycle))
+	if at.store == nil {
+		return
+	}
+	_, _ = store.IncSystemCounter(at.store, "planner:read")
+	seen := map[string]bool{}
+	for _, r := range rejectReasons {
+		c := kernel.PlannerRejectItemClass(r)
+		if !seen[c] {
+			seen[c] = true
+			_, _ = store.IncSystemCounter(at.store, "planner:read_reject_"+c)
+		}
+	}
+}
+
 // plannerRejectTail repeats the same cumulative list at the end — the model
 // reads a 6.6k-token prompt; the correction appears at both ends of it.
 func plannerRejectTail(history []string, live []string) string {
@@ -1797,9 +1890,11 @@ func clampLine(s string, n int) string {
 
 // plannerRejectBookkeeping (planner-speed wave 1.4/3.4, 2026-08-31) runs at
 // every reject site: persists the rejected attempt's verbatim prompt + reason
-// for the offline A/B, and bumps the whack-a-mole counter when attempt N
-// repeats attempt N-1's defect.
-func (at *AutoTrader) plannerRejectBookkeeping(attempt int, tradeDate, session, hash, userPrompt string, rejectErr error, prevReason *string, factsJSON ...string) {
+// for the offline A/B, bumps the whack-a-mole counter when attempt N repeats
+// attempt N-1's defect, and (WAVE PLANNER B2 follow-up) persists the AI's RAW
+// answer so a future replay can re-check the same text the live attempt
+// produced.
+func (at *AutoTrader) plannerRejectBookkeeping(attempt int, tradeDate, session, hash, userPrompt, raw string, rejectErr error, prevReason *string, factsJSON ...string) {
 	if rejectErr == nil {
 		return
 	}
@@ -1815,7 +1910,7 @@ func (at *AutoTrader) plannerRejectBookkeeping(attempt int, tradeDate, session, 
 		if len(factsJSON) > 0 {
 			fj = factsJSON[0]
 		}
-		if serr := at.store.PlannerRejected().SaveRejectedPromptWithFacts(at.id, tradeDate, session, hash, attempt, rejectErr.Error(), userPrompt, fj); serr != nil {
+		if serr := at.store.PlannerRejected().SaveRejectedPromptWithFacts(at.id, tradeDate, session, hash, attempt, rejectErr.Error(), userPrompt, raw, fj); serr != nil {
 			at.logWarnf("🧾 rejected-prompt persist failed: %v", serr)
 		}
 	}
@@ -1837,6 +1932,38 @@ func samePlannerDefect(a, b string) bool {
 
 // resolvePlannerRetryMode delegates to the kernel resolver (RETRY_MODE env).
 func resolvePlannerRetryMode() string { return kernel.ResolvePlannerRetryMode() }
+
+// bornCheckRefused reports the born-dead / flip-met class from the stored
+// check record — outcome invalidated = a scenario's authored condition
+// breached between read and publish, subject death|flip met = a structured
+// line already crossed. It reads the SAME verdicts the refusal error was
+// built from, so it can never disagree with the refusal. DS-106's
+// kernel.PlannerRejectItemClass will supersede this classification when #213
+// lands; the A6 wiring keys off this until then.
+func bornCheckRefused(check *kernel.BornCheck) bool {
+	if check == nil {
+		return false
+	}
+	for _, v := range check.Verdicts {
+		switch v.Outcome {
+		case "invalidated":
+			return true
+		case "met":
+			if v.Subject == "death" || v.Subject == "flip" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// plannerFreshTapeOn resolves the A6 knob at the retry loop: nil config or nil
+// knob = ON (shipped default); an explicit false reproduces today's blind
+// retry byte-identically.
+func (at *AutoTrader) plannerFreshTapeOn() bool {
+	cfg := at.dayPlanCfg()
+	return cfg == nil || cfg.PlannerFreshTapeEnabled()
+}
 
 // plannerStreamIdle delegates to the kernel resolver (AI_PLAN_STREAM_IDLE_SECS).
 func plannerStreamIdle() time.Duration {
@@ -1910,14 +2037,19 @@ func (at *AutoTrader) runPlannerReadCoreWithFactsGrades(session, tradeDate, trig
 }
 
 func (at *AutoTrader) runPlannerReadCoreWithFactsGradesClock(authoringClock func() time.Time, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt string, facts kernel.PlanFacts, machineGrades map[float64]string, machineLabels map[float64]string, htfLabels map[float64]string, failClosed bool, call func(userPrompt string) (string, error), extraNoTrade ...string) (int, string, error) {
-	return at.runPlannerReadCoreObserved(authoringClock, nil, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels, failClosed, call, extraNoTrade...)
+	return at.runPlannerReadCoreObserved(authoringClock, nil, nil, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt, facts, machineGrades, machineLabels, htfLabels, failClosed, call, extraNoTrade...)
 }
 
 // plannerMaxAttempts is the single source of the attempt-loop bound
 // (W-WRITE-TIME-FEASIBILITY NIT: the old literal `attempt < 3` duplicated it).
 const plannerMaxAttempts = 3
 
-func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time, researchTrace *researchsnapshot.PlanTrace, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt string, facts kernel.PlanFacts, machineGrades map[float64]string, machineLabels map[float64]string, htfLabels map[float64]string, failClosed bool, call func(userPrompt string) (string, error), extraNoTrade ...string) (int, string, error) {
+// P15 revert (CTO 03:31, W2 A2 regression): authoringClock is the READ-side
+// seam (registry, level map, facts.ReadAt, the no-trade map). The PUBLISH
+// instant is a SEPARATE clock — nil means the live wall clock — because a
+// frozen publish makes AuthoredBornGroups(read, publish) empty on every seamed
+// read and stamps a CreatedAt that lies by the AI call's duration.
+func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock, publishClock func() time.Time, researchTrace *researchsnapshot.PlanTrace, session, tradeDate, triggerOverride, modelID, promptHash, indicatorsBlock, aiConfigHash, requiredBias, prompt string, facts kernel.PlanFacts, machineGrades map[float64]string, machineLabels map[float64]string, htfLabels map[float64]string, failClosed bool, call func(userPrompt string) (string, error), extraNoTrade ...string) (int, string, error) {
 	// H4/H5 — validation must accept EXACTLY what the config allows: the resolved
 	// max_levels / scenario_cap (hard ceilings 12/5). Before this the parse
 	// hardcoded 8/3, so raising either setting made EVERY read fail-closed into a
@@ -1926,6 +2058,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	scenarioCap := at.scenarioCap()
 
 	var authoredAt time.Time
+	var bornCheck *kernel.BornCheck // W2 A2 — the accepted attempt's record
 	var doc *kernel.PlanDoc
 	// CLASS 34 (owner ruling 2026-08-31): the reject block now carries the
 	// RESOLVED live condition vocabulary so the model can never be hinted
@@ -1934,15 +2067,19 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	var sessCond map[string]string
 	if cfg := at.dayPlanCfg(); cfg != nil {
 		baseCond = cfg.ConditionStatus
-		for _, o := range cfg.Sessions {
-			if o.Session == session && o.ConditionStatus != nil {
-				sessCond = *o.ConditionStatus
-			}
+		if o := cfg.SessionOverride(session); o != nil && o.ConditionStatus != nil {
+			sessCond = *o.ConditionStatus
 		}
 	}
 	liveConditions := kernel.ResolvedLiveConditions(baseCond, sessCond, kernel.ShadowConditionsEnv())
 
 	var lastErr error
+	// A6 (planner-born-dead wave): when an attempt is refused born-dead /
+	// flip-met, attempt N+1 re-sights the model on the COMPLETED tape between
+	// the read clock and the refusal (kernel.PlannerFreshTape), behind the
+	// planner_fresh_tape knob (nil = ON). OFF = today's blind retry.
+	prevBornDead := false
+	var prevPublishAt time.Time
 	// RETRY-APPEND-REJECT-REASON (owner ruling 2026-08-31): attempt N≥2 carries
 	// the PREVIOUS attempt's validator reason VERBATIM in the prompt tail — the
 	// 2026-08-31 LONDON read burned attempts 1+2 on the IDENTICAL split-arm
@@ -1960,7 +2097,9 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	resendIdentical := ""        // class 41 M0: the exact prompt a provider-failed attempt sent
 	resendAfterWatchdog := false // the prior attempt died on a watchdog close
 	resendStart := time.Time{}
+	lastAttempt := 0                            // WAVE PLANNER B3 — the final attempt count, recorded by the read line
 	for attempt := 1; attempt <= 3; attempt++ { // 1 + ≤2 retries
+		lastAttempt = attempt
 		researchTrace.Finish(lastErr)
 		userPrompt := prompt
 		modeLabel := "author"
@@ -1991,6 +2130,16 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 				}
 			}
 			at.logInfof("🧩 planner attempt %d/3 %s: prompt ~%d tokens (full-author ~%d tokens)", attempt, modeLabel, estimatePromptTokens(userPrompt), estimatePromptTokens(prompt))
+		}
+		// A6 — after a born-dead / flip-met refusal, attempt N+1 carries the
+		// fresh completed tape between the read clock and the refusal, so the
+		// re-author reads the market that exists now instead of the stale read.
+		if attempt >= 2 && prevBornDead && at.plannerFreshTapeOn() {
+			var tape []market.Kline
+			if market.FuturesBarsProvider != nil {
+				tape = market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount)
+			}
+			userPrompt += "\n\n" + kernel.PlannerFreshTape(tape, facts.ReadAt, prevPublishAt, lastErr.Error())
 		}
 		researchTrace.Begin(attempt, modeLabel, userPrompt)
 		raw, err := call(userPrompt)
@@ -2025,7 +2174,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		if err != nil {
 			lastErr = err
 			at.logWarnf("📐 planner attempt %d/3 failed: %v", attempt, err)
-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
 			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, lastErr)
 			continue
@@ -2036,21 +2185,38 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			// — a guard, not a fix for a measured failure.
 			lastErr = fmt.Errorf("%s", kernel.FragmentReason)
 			forceReauthor = true
-			at.recordRepairOutcome(raw, lastErr, prevReason)
-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			// Skeptic F5 (2026-09-24, reverses P9): 'was repairing' names the
+			// defect the repair was AIMED at — the PREVIOUS attempt's reason,
+			// captured BEFORE bookkeeping rewrites prevReason to THIS attempt's
+			// defect. P9 recorded after the rewrite, so the field printed the
+			// FragmentReason twice and the diagnosis was lost. The W2 A1/A2
+			// site (:2340/:2346) already does it this way. (#213 keeps the raw
+			// answer in the bookkeeping — both behaviours, neither dropped.)
+			repairing := prevReason
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			at.recordRepairOutcome(raw, lastErr, repairing)
 			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, lastErr)
 			continue
 		}
-		d, perr := kernel.ParsePlanDocCappedWithMinRR(raw, maxLevels, scenarioCap, at.armMinRRFor(nil))
+		// W-EXEC-TRUTH W3 (R4): the resolved entry-policy default is stamped at
+		// parse (before the validator) and the armable hold floor runs beside
+		// the A5 prose check — ONE resolution shared with the shadow A/B replay.
+		d, perr := kernel.ParsePlanDocForAuthoring(raw, maxLevels, scenarioCap, at.plannerAuthoringOpts())
 		if perr != nil {
 			lastErr = perr
 			at.logWarnf("📐 planner attempt %d/3 parse/schema rejected: %v", attempt, perr)
 			if modeLabel == "repair" {
 				forceReauthor = true // 3.6 — a malformed repair falls back to one full re-author
-				at.recordRepairOutcome(raw, perr, prevReason)
 			}
-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			// Skeptic F5 — same order as the fragment site: capture the defect
+			// being repaired BEFORE bookkeeping rewrites the pointer.
+			// (#213 keeps the raw answer in the bookkeeping — both behaviours.)
+			repairing := prevReason
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			if modeLabel == "repair" {
+				at.recordRepairOutcome(raw, perr, repairing)
+			}
 			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, lastErr)
 			continue
@@ -2093,7 +2259,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		// the evaluator and ignored by the re-planner.
 		if requiredBias != "" && strings.ToLower(strings.TrimSpace(d.Bias.Direction)) != requiredBias {
 			lastErr = fmt.Errorf("prior plan flip already fired → bias %s is MANDATORY, got %q — the flip cannot be re-written away", requiredBias, d.Bias.Direction)
-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
 			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, lastErr)
 			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, lastErr)
@@ -2106,7 +2272,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		// was 29290.5 — the flip anchor rode a phantom label.
 		if mis := kernel.MislabeledStructuralLevels(d, machineLabels); len(mis) > 0 {
 			lastErr = fmt.Errorf("level label provenance: %s — copy the machine table's label for these prices", strings.Join(mis, "; "))
-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
 			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, lastErr)
 			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, lastErr)
@@ -2118,7 +2284,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		// reachable targets. Everything else fails → retry → fail-closed.
 		if verr := kernel.ValidatePlanDocWithFactsMachine(d, facts, machineLabels, maxLevels, scenarioCap); verr != nil {
 			lastErr = verr
-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
 			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, lastErr)
 			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
@@ -2173,7 +2339,9 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		// kernel/arms_bias_coherent.go: a hard reject would have refused
 		// 50/68 longs and 66/103 shorts across 171 stored plans. The write
 		// proceeds; this makes the condition visible instead of silent.
-		if w := kernel.BiasArmWarning(d, kernel.ResolvedConditionStatuses(nil, nil, kernel.ShadowConditionsEnv())); w != "" {
+		// W3: under the market_in_zone policy acceptance/hold/breakout_retest are
+		// armable — the warning follows the resolved default policy.
+		if w := kernel.BiasArmWarningFor(d, kernel.ResolvedConditionStatuses(baseCond, sessCond, kernel.ShadowConditionsEnv()), entryPolicyForPrompt(at.dayPlanCfg())); w != "" {
 			at.logWarnf("🧭 bias-coherent arms: %s (WARN — write proceeds; owner ruling 2026-09-04 is warn-first)", w)
 		}
 		// FVG ENTRY MODEL (2026-08-26) — write-time re-verification from stored
@@ -2194,7 +2362,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			}
 			if verr := kernel.ValidateFvgEntryScenarios(d, fvgBars, at.futuresSymbol(), origin, time.Now()); verr != nil {
 				lastErr = verr
-				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
 				rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 				rejectHistory = addDistinctReject(rejectHistory, lastErr)
 				at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
@@ -2216,7 +2384,7 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			bdScope := kernel.ResolveVoidScope(at.futuresSymbol(), time.Now())
 			if verr := kernel.ValidateBreakdownContinueScenarios(d, bdScope, kernel.StaleConfirmATR5m(bdScope.Bars), facts.Price, time.Now().UnixMilli()); verr != nil {
 				lastErr = verr
-				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
 				rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 				rejectHistory = addDistinctReject(rejectHistory, lastErr)
 				at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
@@ -2259,14 +2427,53 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		for _, m := range kernel.FantasyTargetWarnings(*d) {
 			at.logWarnf("🔮 fantasy-target warning: %s", m)
 		}
-		authoredAt = authoringClock()
-		if verr := at.validateAuthoredScenariosAt(d, session, tradeDate, authoredAt); verr != nil {
+		pc := publishClock
+		if pc == nil {
+			// P15 revert + CTO re-fix: the publish clock is the seam-aware
+			// traderNow — LIVE in production (testNow is nil there), seamed in
+			// tests, so a fixture-dated read publishes at the fixture clock.
+			pc = traderNow
+		}
+		authoredAt = pc()
+		// W-EXEC-TRUTH W2 A1/A2/D5: grammar refusal + every 5m group closed
+		// between the read clock and now, plus the plan's death/flip lines.
+		check, verr := at.validateAuthoredScenariosAt(d, session, tradeDate, facts.ReadAt, authoredAt)
+		if verr != nil {
 			lastErr = verr
-			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, verr, &prevReason, FactsSnapshotJSON(facts))
+			repairing := prevReason
+			if check != nil && bornCheckRefused(check) {
+				// A6 — the market moved during the read: remember the class and
+				// the refusal clock so attempt N+1 carries the fresh tape, and
+				// record the read→publish latency on the refusal line (B3 reads
+				// it; the counters themselves stay in B3's lane).
+				prevBornDead = true
+				prevPublishAt = authoredAt
+				at.logWarnf("📐 planner attempt %d/3 born-dead/flip-met refusal: read→publish latency %s — attempt %d re-sights on the fresh tape", attempt, authoredAt.Sub(facts.ReadAt), attempt+1)
+			}
+			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, verr, &prevReason, FactsSnapshotJSON(facts))
 			rejectBlock = plannerRejectBlock(verr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 			rejectHistory = addDistinctReject(rejectHistory, verr)
+			if modeLabel == "repair" {
+				at.recordRepairOutcome(raw, verr, repairing)
+			}
 			continue
 		}
+		// W-EXEC-TRUTH W2 A3+A4 (corrections, no knob) — identity ≠ price and
+		// the obstacle chain are WRITE-TIME refusals: re-author within the
+		// existing attempts; attempt 3 failing → the existing fail-closed path.
+		if verr := at.scenarioWriteTruth(d, facts); verr != nil {
+			lastErr = verr
+			at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
+			rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
+			rejectHistory = addDistinctReject(rejectHistory, lastErr)
+			at.logWarnf("📐 planner attempt %d/3 rejected: %v", attempt, verr)
+			if modeLabel == "repair" {
+				at.recordRepairOutcome(raw, verr, prevReason)
+			}
+			continue
+		}
+		bornCheck = check
 		// W-WRITE-TIME-FEASIBILITY (2026-09-18, owner "fix all") — judge
 		// the SAME predicates the gate-at-arm chain runs, at write time.
 		// Runs LAST among the validators (CTO SHOULD-FIX 8): hard rejects
@@ -2290,10 +2497,15 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 				kernel.StampAuthoredIdentity(d, facts.IdentityMap)
 			}()
 		}
-		if feas := at.writeTimeFeasibilityVerdicts(d, atr5m, at.config.StrategyConfig, session); len(feas) > 0 {
+		// W-EXEC-TRUTH W3 (c): the market_in_zone zone verdicts join the
+		// feasibility issues — NOT gated by the write_time_feasibility knob
+		// (D5); hinted on attempts < max, the arm disabled on the last.
+		feas := at.writeTimeFeasibilityVerdicts(d, atr5m, at.config.StrategyConfig, session)
+		feas = append(feas, at.writeTimeZoneVerdicts(d, atr5m, at.config.StrategyConfig, session)...)
+		if len(feas) > 0 {
 			if attempt < plannerMaxAttempts {
 				lastErr = fmt.Errorf("%s", writeTimeFeasibilityHint(feas))
-				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastErr, &prevReason, FactsSnapshotJSON(facts))
+				at.plannerRejectBookkeeping(attempt, tradeDate, session, promptHash, userPrompt, lastRaw, lastErr, &prevReason, FactsSnapshotJSON(facts))
 				rejectBlock = plannerRejectBlock(lastErr, liveConditions, kernel.StructureTrend4h(facts.Structure))
 				rejectHistory = addDistinctReject(rejectHistory, lastErr)
 				at.logWarnf("📐 planner attempt %d/%d write-time feasibility: %v", attempt, plannerMaxAttempts, lastErr)
@@ -2420,6 +2632,27 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 	// fail-closed branch relabels the row: a death re-plan / owner re-read that
 	// fail-closes still landed a row for a consuming class.
 	spendClass, spends := trigger, store.TriggerSpendsReplan(trigger)
+	// W-EXEC-TRUTH W5 (CTO 1790194913337 + 1790195988056) — a read that lands
+	// the FIRST AI version of a chain is not a re-plan: it spends nothing,
+	// whatever class asked for it. "First AI version" = the chain has NO row
+	// (nil IS the definition of no plan, and the re-read gate already promises
+	// that read is free — recording a spend the gate denied was the class-35
+	// lie), or its only row is a MACHINE plan (the Picture no-plan door).
+	// Judged on the chain's latest row BEFORE this version is appended; a
+	// failed read keeps the spend (fail-closed).
+	if spends {
+		if prev, perr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); perr == nil && (prev == nil || store.IsMachinePlan(prev)) {
+			spends = false
+			over := "an empty chain"
+			if prev != nil {
+				over = fmt.Sprintf("machine plan v%d", prev.Version)
+			}
+			// W5 R6: say only what is known here — whether this read lands a
+			// plan, a NO-TRADE row or nothing is decided below.
+			at.logInfof("🧮 replan budget: %s is the chain's first AI read of %s %s over %s — not a re-plan, nothing spent (class 35)",
+				spendClass, tradeDate, session, over)
+		}
+	}
 	if doc == nil {
 		// W6-C (2026-08-25) — wake reads are NON-fatal: a failed wake re-read
 		// must NOT no-trade a session whose active plan is still alive (live
@@ -2432,14 +2665,16 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 			} else {
 				at.logWarnf("🗓️ wake re-read failed for %s %s (benign — active plan kept): %v", tradeDate, session, lastErr)
 			}
+			at.logPlannerReadLine(session, lastAttempt, rejectHistory, nil, nil, "kept_active")
 			return 0, "kept_active", nil
 		}
 		// P7 — the fail-closed doc still carries the map: levels from the current
 		// detector/scorer output (same pipeline), scenarios empty, explicit reason.
 		doc = kernel.NoTradePlanDocWithLevels(
-			fmt.Sprintf("read failed after retries: %v", lastErr), at.noTradeLevelMap(session))
+			fmt.Sprintf("read failed after retries: %v", lastErr), at.noTradeLevelMap(authoringClock(), session))
 		lifecycle = "no_trade"
 		trigger = "planner_fail_closed"
+		bornCheck = nil // W2 A2 — no candidate passed; the NO-TRADE row records none
 		at.logErrorf("🚨 PLANNER FAIL-CLOSED %s %s: %v — writing a NO-TRADE plan (never stale, never uncalibrated).", tradeDate, session, lastErr)
 		telemetry.IncGateBlock(at.id, "planner_fail_closed")
 		// W6 — P0 read-fail / fail-closed alert.
@@ -2504,14 +2739,27 @@ func (at *AutoTrader) runPlannerReadCoreObserved(authoringClock func() time.Time
 		DarkRegimeCount: at.lastRegimeHealth.DarkCount, // P2
 		Degraded:        at.lastRegimeHealth.Degraded,
 		Doc:             string(docJSON),
+		ReadClockMs:     bornCheck.ReadClockPtr(), // W2 A2 — NULL when unknown
+		PublishClockMs:  bornCheck.PublishClockPtr(),
+		BornCheck:       bornCheck.JSONPtr(),
 	})
 	if err != nil {
 		at.logErrorf("🗓️ planner: write plan row failed for %s %s: %v", tradeDate, session, err)
 		return 0, lifecycle, err
 	}
-	at.recordPlanIdentity(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, identityWarnings, authoredAt)
+	at.recordPlanIdentity(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, identityWarnings, doc, authoredAt)
 	researchTrace.Published(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, string(docJSON))
 	at.logInfof("🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s, ai_config %s)", tradeDate, session, version, modelID, lifecycle, promptHash, aiConfigHash)
+	at.logPlannerReadLine(session, lastAttempt, rejectHistory, bornCheck.ReadClockPtr(), bornCheck.PublishClockPtr(), lifecycle)
+	// W-EXEC-TRUTH W5 (CTO 1790191033566) — the AI read that supersedes a
+	// version carrying LIVE Picture scenarios re-appends each of them to the
+	// version just written: the same scenario value (same id, same machine
+	// record) as the same overlay, idempotent on the opportunity. Evidence
+	// survives an AI read; an opportunity the ledger already finished is
+	// never re-offered. A NO-TRADE version gets nothing (the Day Plan said no).
+	if lifecycle == "active" {
+		at.reappendLiveMachineScenarios(at.store.Plan().ResolvePlanID(tradeDate, session, at.id), version, traderNow())
+	}
 	if spends {
 		// CLASS 35 — RECORD the spend now that the row exists (counters record
 		// events; they do not infer them from row counts).
@@ -2569,10 +2817,8 @@ func resolveSessionPlanCfg(dp *store.DayPlanConfig, session string) (maxLevels i
 	if len(dp.PlannerTimeframes) > 0 {
 		timeframes = dp.PlannerTimeframes
 	}
-	for _, so := range dp.Sessions {
-		if so.Session == session && so.MinGrade != nil {
-			minGrade = *so.MinGrade
-		}
+	if so := dp.SessionOverride(session); so != nil && so.MinGrade != nil {
+		minGrade = *so.MinGrade
 	}
 	return maxLevels, htfSeats, htfMult, minGrade, timeframes
 }
@@ -2662,15 +2908,14 @@ func structureSummaryLines(fetch func(tf string, count int) []market.Kline, time
 // HONORS the day_plan config (max_levels, per-session min_grade, timeframes) —
 // edits apply at the NEXT read (never mid-plan).
 func (at *AutoTrader) assemblePlannerInput(session, tradeDate string) kernel.PlannerInput {
-	return at.assemblePlannerInputWithCtx(session, tradeDate, "", nil)
+	return at.assemblePlannerInputWithCtx(time.Now(), session, tradeDate, "", nil)
 }
 
 // assemblePlannerInputWithCtx (P0.4-G, 2026-08-25) is assemblePlannerInput with
 // the prior-plan context for re-plans: the dead plan's killer line and its
 // levels (map continuity).
-func (at *AutoTrader) assemblePlannerInputWithCtx(session, tradeDate, priorKiller string, priorLevels []string) kernel.PlannerInput {
+func (at *AutoTrader) assemblePlannerInputWithCtx(now time.Time, session, tradeDate, priorKiller string, priorLevels []string) kernel.PlannerInput {
 	symbol := at.futuresSymbol()
-	now := time.Now()
 	researchID := uuid.NewString()
 	reg := at.sessionRegistry(now) // W8
 
@@ -2995,23 +3240,38 @@ func (at *AutoTrader) assemblePlannerInputWithCtx(session, tradeDate, priorKille
 		at.logInfof("%s", kernel.StructureLogLine(structureMap, session))
 	}
 
+	// WAVE 1a-plan P3 — the RESOLVED condition maps ride the prompt so
+	// the armable line reflects the strategy's own demotions (never the file
+	// defaults). nil when the strategy saved none.
+	baseCond := map[string]string(nil)
+	var sessCond map[string]string
+	if cfg := at.dayPlanCfg(); cfg != nil {
+		baseCond = cfg.ConditionStatus
+		if o := cfg.SessionOverride(session); o != nil && o.ConditionStatus != nil {
+			sessCond = *o.ConditionStatus
+		}
+	}
 	in := kernel.PlannerInput{
-		TradeDate:        tradeDate,
-		Session:          session,
-		Now:              now, // P0 timezone — the planner's labelled CT clock
-		ReadKind:         session + " scheduled read (stored+cached data)",
-		Price:            price,
-		DATR:             dATR,
-		ATR5m:            kernel.StaleConfirmATR5m(bars),
-		GeometryRefIDs:   at.dayPlanCfg().GeometryRefIDsEnabled(), // W-GEOMETRY-REFUSAL (b1)
-		Regime:           regime,
-		Levels:           scored,
-		Pool:             pool,
-		HTFZones:         htfZoneScored,
-		HTFZonesFull:     htfZonesFull,
-		StructureSummary: structure,
-		Structure:        structureMap, // S1 — nil unless day_plan.structure_map is on
-		ConsumedLevels:   consumedLines,
+		TradeDate:              tradeDate,
+		ConditionStatus:        baseCond,
+		SessionConditionStatus: sessCond,
+		Session:                session,
+		Now:                    now, // P0 timezone — the planner's labelled CT clock
+		ReadKind:               session + " scheduled read (stored+cached data)",
+		Price:                  price,
+		DATR:                   dATR,
+		ATR5m:                  kernel.StaleConfirmATR5m(bars),
+		GeometryRefIDs:         at.dayPlanCfg().GeometryRefIDsEnabled(), // W-GEOMETRY-REFUSAL (b1)
+		PlannerContractOn:      at.dayPlanCfg().PlannerContractOn(),     // WAVE PLANNER A3 (nil=ON)
+		MinTargetRR:            at.armMinRRFor(nil),                     // A2 min_tgt column = the SAME floor the arm seam judges (canon 28)
+		Regime:                 regime,
+		Levels:                 scored,
+		Pool:                   pool,
+		HTFZones:               htfZoneScored,
+		HTFZonesFull:           htfZonesFull,
+		StructureSummary:       structure,
+		Structure:              structureMap, // S1 — nil unless day_plan.structure_map is on
+		ConsumedLevels:         consumedLines,
 		// CLASS 45 E2/E3 (2026-09-02) — feed forward what the enforcers already
 		// know. The void verdict is the VALIDATOR'S OWN predicate reached through
 		// a level-oriented entry point (never a second implementation), and the
@@ -3029,6 +3289,11 @@ func (at *AutoTrader) assemblePlannerInputWithCtx(session, tradeDate, priorKille
 		// W-WRITE-TIME-FEASIBILITY (2026-09-18): the prompt renders the
 		// arm-disabled-at-write rule only when the knob is ON.
 		WriteFeasibilityOn: at.writeTimeFeasibilityOn(),
+		// W-EXEC-TRUTH W3 (h): the ENTRY POLICY sentence follows the SAME
+		// resolved knobs the parse stamps and judges with (plannerAuthoringOpts).
+		EntryPolicyDefault: entryPolicyForPrompt(at.dayPlanCfg()),
+		ZoneMaxPts:         zoneMaxPtsForPrompt(at.dayPlanCfg()),
+		MinHoldMin:         at.plannerAuthoringOpts().MinHoldMin,
 		DigestChain:        digestChain,
 		Warming:            warming,
 		IndicatorsBlock:    indicatorsBlock,
@@ -3440,38 +3705,53 @@ func installActivePlanProviderAt(at *AutoTrader, st *store.Store, clock func() t
 // failure) — the SAME resolution GET /api/plan/today does, so the card and the
 // executor can never diverge. Returns (doc, ok=false) only when the base itself is
 // unparseable.
+//
+// W-EXEC-TRUTH W5 — the fold is kernel.ResolvePlanFinal, the ONE fold every
+// reader uses: user overlays fold and re-validate at the hard caps exactly as
+// before (a failure falls back to the base), and machine (Picture) scenarios
+// are appended AFTER, each validated alone and never counted against the caps.
+// With no machine overlay the result is byte-identical to the old fold.
 func resolveActivePlanDoc(st *store.Store, row *store.PlanDB) (kernel.PlanDoc, bool) {
+	return resolveActivePlanDocAsOf(st, row, 0)
+}
+
+// resolveActivePlanDocAsOf is the fold at a PAST instant: only overlays whose
+// created_at sits at or before beforeMs fold (beforeMs 0 = no time gate). A
+// HISTORICAL reader — a backfill recomputing what the executor saw when an
+// episode OPENED — must not let overlays written later rewrite that
+// attribution (skeptic F8; the same shape as the E8 closed-trade revert).
+func resolveActivePlanDocAsOf(st *store.Store, row *store.PlanDB, beforeMs int64) (kernel.PlanDoc, bool) {
 	var base kernel.PlanDoc
 	if json.Unmarshal([]byte(row.Doc), &base) != nil {
 		return kernel.PlanDoc{}, false
 	}
 	overlays, _ := st.Plan().ListOverlays(row.PlanID, row.Version)
+	if beforeMs > 0 {
+		kept := overlays[:0]
+		for _, o := range overlays {
+			if o.CreatedAt.IsZero() || !o.CreatedAt.After(time.UnixMilli(beforeMs)) {
+				kept = append(kept, o)
+			}
+		}
+		overlays = kept
+	}
 	if len(overlays) == 0 {
 		return base, true
 	}
-	patches := make([]string, 0, len(overlays))
-	for _, o := range overlays {
-		patches = append(patches, o.Patch)
+	pf, err := kernel.ResolvePlanFinal([]byte(row.Doc), kernel.OverlayRefsFrom(overlays))
+	if err != nil {
+		return base, true // unreachable: the base parsed above
 	}
-	final, _ := kernel.ApplyOverlayPatches([]byte(row.Doc), patches)
-	var merged kernel.PlanDoc
-	// H4/H5 — re-validation integrity check at the HARD ceilings (12/5): a plan
-	// validly written under raised caps must survive overlay resolution.
-	if vErrDoc := func() error {
-		if err := json.Unmarshal(final, &merged); err != nil {
-			return err
-		}
-		return kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios)
-	}(); vErrDoc != nil {
+	if pf.FoldErr != nil {
 		// A8 (F14): the fallback-to-base is no longer silent — the owner's
 		// overlay is NOT in what the executor reads, and they must know.
 		// (free function — package logger, still WARN → log_events sink)
-		logger.Warnf("⚠️ merged plan+overlay FAILED re-validation for %s v%d (%v) — falling back to the BASE plan; the overlay edits are NOT active.", row.PlanID, row.Version, vErrDoc)
+		logger.Warnf("⚠️ merged plan+overlay FAILED re-validation for %s v%d (%v) — falling back to the BASE plan; the overlay edits are NOT active.", row.PlanID, row.Version, pf.FoldErr)
 	}
-	if json.Unmarshal(final, &merged) == nil && kernel.ValidatePlanDocWithCaps(&merged, kernel.PlanHardMaxLevels, kernel.PlanHardMaxScenarios) == nil {
-		return merged, true // plan_final
+	for _, ms := range pf.MachineSkipped {
+		logger.Warnf("⚠️ machine overlay SKIPPED at the fold for %s v%d (%v) — that Picture scenario is NOT in the plan the executor reads.", row.PlanID, row.Version, ms)
 	}
-	return base, true // armor: a bad overlay never corrupts the executor's plan
+	return pf.Doc, true // plan_final (the base on a failed user fold — a bad overlay never corrupts the executor's plan)
 }
 
 // recordPlanCitation records the executor's plan citation for an entry decision
@@ -3700,4 +3980,98 @@ func buildReadFactRow(traderID string, in kernel.PlannerInput, scope kernel.Void
 		row.ReadHorizons = string(b)
 	}
 	return row
+}
+
+// reappendLiveMachineScenarios (W5) re-appends every LIVE machine scenario of
+// version newVersion-1 to newVersion as a machine overlay carrying the SAME
+// scenario value. LIVE = inside its eligibility window (kernel.MachineEligibleAt)
+// and no ledger row for its opportunity is terminal (the ledger's source pin:
+// one opportunity, one order, across versions). Idempotent on the opportunity
+// (the check runs inside the plan store's single writer).
+func (at *AutoTrader) reappendLiveMachineScenarios(planID string, newVersion int, now time.Time) {
+	if at.store == nil || planID == "" || newVersion <= 1 {
+		return
+	}
+	plans := at.store.Plan()
+	prev, err := plans.GetPlan(planID, newVersion-1)
+	if err != nil || prev == nil {
+		return
+	}
+	prevOvs, err := plans.ListOverlays(planID, prev.Version)
+	if err != nil {
+		at.logWarnf("🖼 picture re-append %s v%d: the previous version's overlays are unreadable (%v) — no Picture scenario carried", planID, newVersion, err)
+		return
+	}
+	pf, err := kernel.ResolvePlanFinal([]byte(prev.Doc), kernel.OverlayRefsFrom(prevOvs))
+	if err != nil {
+		return // the previous doc does not parse: it carried nothing we can read
+	}
+	var live []kernel.PlanScenario
+	for _, sc := range pf.Doc.Scenarios {
+		if sc.Machine == nil {
+			continue
+		}
+		if !kernel.MachineEligibleAt(sc, now.UnixMilli()) {
+			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — its eligibility window closed at %s", sc.ID, store.RedactPictureOppKey(sc.Machine.Ref), planID, newVersion, kernel.ClockCTSeconds(time.UnixMilli(sc.Machine.EligibleUntilMs)))
+			continue
+		}
+		if done, why := at.machineOpportunityFinished(planID, sc.Machine.Ref); done {
+			at.logInfof("🖼 picture scenario %s (ref %s) not re-appended to %s v%d — %s", sc.ID, store.RedactPictureOppKey(sc.Machine.Ref), planID, newVersion, why)
+			continue
+		}
+		live = append(live, sc)
+	}
+	if len(live) == 0 {
+		return
+	}
+	row, err := plans.GetPlan(planID, newVersion)
+	if err != nil || row == nil {
+		at.logWarnf("🖼 picture re-append: %s v%d is unreadable (%v) — %d live Picture scenario(s) NOT carried", planID, newVersion, err, len(live))
+		return
+	}
+	for _, sc := range live {
+		sc := sc
+		ref := sc.Machine.Ref
+		o := &store.PlanOverlayDB{OverlayID: "picture:" + ref, PlanID: planID, PlanVersion: newVersion, Origin: kernel.MachineOverlayOriginPicture}
+		ver, appended, aerr := plans.AppendOverlayChecked(o, func(existing []*store.PlanOverlayDB) (bool, error) {
+			cur, perr := kernel.ResolvePlanFinal([]byte(row.Doc), kernel.OverlayRefsFrom(existing))
+			if perr != nil {
+				return false, perr
+			}
+			if _, ok := kernel.MachineScenarioByRef(cur.Doc, ref); ok {
+				return true, nil // already carried
+			}
+			if verr := kernel.ValidateMachineScenario(cur.Doc, sc); verr != nil {
+				return false, verr
+			}
+			patch, merr := kernel.MachineOverlayPatch(sc)
+			if merr != nil {
+				return false, merr
+			}
+			o.Patch = patch
+			return false, nil
+		})
+		switch {
+		case aerr != nil:
+			at.logWarnf("🖼 picture scenario %s (ref %s) could NOT be re-appended to %s v%d: %v — it is not in the new plan and will not trade", sc.ID, store.RedactPictureOppKey(ref), planID, newVersion, aerr)
+		case appended:
+			at.logInfof("🖼 picture scenario %s re-appended to %s v%d (overlay o%d) — same ref %s, same evidence; window until %s", sc.ID, planID, newVersion, ver, store.RedactPictureOppKey(ref), kernel.ClockCTSeconds(time.UnixMilli(sc.Machine.EligibleUntilMs)))
+		}
+	}
+}
+
+// machineOpportunityFinished reports whether the armed ledger already finished
+// an opportunity: any row for its source_ref is terminal (the same rule as
+// UpsertArm's source pin — a finished opportunity never arms again).
+func (at *AutoTrader) machineOpportunityFinished(planID, ref string) (bool, string) {
+	rows, err := at.store.ArmedOrders().ListForPlan(planID)
+	if err != nil {
+		return true, fmt.Sprintf("the armed ledger is unreadable (%v) — fail-closed", err)
+	}
+	for _, r := range rows {
+		if r.TraderID == at.id && r.SourceRef == ref && store.IsTerminalArmState(r.State) {
+			return true, fmt.Sprintf("its ledger row #%d is %s", r.ID, r.State)
+		}
+	}
+	return false, ""
 }

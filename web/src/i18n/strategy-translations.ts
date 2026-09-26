@@ -639,6 +639,10 @@ export const riskControl = {
   },
   toggleOn: { zh: '开', en: 'On', es: 'On' },
   toggleOff: { zh: '关', en: 'Off', es: 'Off' },
+  // W1 (g) — the short labels on a card's effective chips when one card holds
+  // a switch AND its value (the chip itself is the server's row).
+  effOnOff: { zh: '开关', en: 'on/off', es: 'on/off' },
+  effValue: { zh: '数值', en: 'value', es: 'valor' },
 }
 
 // ============================================================================

@@ -13,11 +13,11 @@ func TestNtHeldPosition_NormalizesUppercaseNT8SideToLower(t *testing.T) {
 	}}
 	at := &AutoTrader{trader: m}
 
-	if got := at.ntHeldPosition("MNQ"); got != "long" {
-		t.Fatalf("ntHeldPosition(MNQ) = %q, want \"long\" (uppercase NT8 side must normalize so reconcile routes to CloseLong)", got)
+	if got, err := at.ntHeldPosition("MNQ"); err != nil || got != "long" {
+		t.Fatalf("ntHeldPosition(MNQ) = %q err=%v, want \"long\" (uppercase NT8 side must normalize so reconcile routes to CloseLong)", got, err)
 	}
 	// No matching symbol → flat.
-	if got := at.ntHeldPosition("ES"); got != "" {
-		t.Fatalf("ntHeldPosition(ES) = %q, want \"\" (flat)", got)
+	if got, err := at.ntHeldPosition("ES"); err != nil || got != "" {
+		t.Fatalf("ntHeldPosition(ES) = %q err=%v, want \"\" (flat)", got, err)
 	}
 }

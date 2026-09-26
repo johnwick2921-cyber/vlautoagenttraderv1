@@ -21,7 +21,7 @@ import (
 //
 // Pure + allocation-light (three prompt renders) — it runs once at startup.
 
-//go:embed testdata/futures_mnq_empty.golden testdata/futures_mnq_keylevels.golden testdata/futures_mnq_plan.golden
+//go:embed testdata/futures_mnq_empty.golden testdata/futures_mnq_keylevels.golden testdata/futures_mnq_plan.golden testdata/futures_mnq_plan_strict.golden
 var goldenFS embed.FS
 
 // sampleKeyLevelsBlockSelfCheck mirrors the test fixture byte-for-byte.
@@ -81,6 +81,23 @@ func selfCheckPlanEngine() *StrategyEngine {
 	return e
 }
 
+// selfCheckPlanStrictEngine mirrors selfCheckPlanEngine with day_plan
+// plan_mode=strict (W-EXEC-TRUTH W3 §3). Its PLAN BLOCK comes from
+// setExecutorPlanContext — the SAME helper the production call site
+// (kernel/engine_analysis.go) uses to pick RenderPlanBlockForMode — never a
+// hand-built string (canon 53), so the strict header the live executor reads
+// is under the boot contract too.
+func selfCheckPlanStrictEngine() *StrategyEngine {
+	e := selfCheckEngine()
+	e.config.DayPlan = &store.DayPlanConfig{PlanEnabled: true, MaxLevels: 8, PlanMode: "strict"}
+	e.config.Indicators.EnableSVP = true
+	e.SetSVPContext("SVP (today's session, since 17:00 CT open): POC 21500.00 VAH 21503.75 VAL 21497.50")
+	e.SetKeyLevelsContext(sampleKeyLevelsBlockSelfCheck)
+	e.setExecutorPlanContext(selfCheckPlanDoc(), "NY",
+		"# PLAN STATUS (live)\nprice 21500.00 · re-plans left 2\n  21520.00 PDH: dist +20.0 · sweep=F · closes-beyond 0 · acceptance 0/2 · valid")
+	return e
+}
+
 // GoldenSelfCheckResult reports one fixture's outcome.
 type GoldenSelfCheckResult struct {
 	Name    string
@@ -89,7 +106,8 @@ type GoldenSelfCheckResult struct {
 	GotHash string
 }
 
-// VerifyPromptGoldens re-renders the three golden fixtures and compares them to
+// VerifyPromptGoldens re-renders the golden fixtures (four since W3: the
+// strict plan header joined the advisory three) and compares them to
 // the embedded goldens. Returns (results, allPassed).
 func VerifyPromptGoldens() ([]GoldenSelfCheckResult, bool) {
 	cases := []struct {
@@ -103,6 +121,8 @@ func VerifyPromptGoldens() ([]GoldenSelfCheckResult, bool) {
 			func() string { return selfCheckKeyLevelsEngine().BuildFuturesDecisionSystemPrompt("MNQ", 50000) }},
 		{"futures-plan", "testdata/futures_mnq_plan.golden",
 			func() string { return selfCheckPlanEngine().BuildFuturesDecisionSystemPrompt("MNQ", 50000) }},
+		{"futures-plan-strict", "testdata/futures_mnq_plan_strict.golden",
+			func() string { return selfCheckPlanStrictEngine().BuildFuturesDecisionSystemPrompt("MNQ", 50000) }},
 	}
 	out := make([]GoldenSelfCheckResult, 0, len(cases))
 	all := true

@@ -30,6 +30,10 @@ import (
 )
 
 type Agent struct {
+	// F20 — request-local clients share conversation/state with the owner;
+	// never copy the mutexes themselves.
+	runtimeOwner  *Agent
+	historyMu     sync.Mutex
 	traderManager *manager.TraderManager
 	store         *store.Store
 	aiClient      mcp.AIClient
@@ -83,6 +87,8 @@ func New(tm *manager.TraderManager, st *store.Store, cfg *Config, logger *slog.L
 func (a *Agent) SetAIClient(c mcp.AIClient) { a.aiClient = c }
 
 func (a *Agent) ensureHistory() {
+	a.historyMu.Lock()
+	defer a.historyMu.Unlock()
 	if a.history == nil {
 		a.history = newChatHistory(100)
 	}
@@ -99,7 +105,7 @@ func (a *Agent) flowLock(userID int64) *sync.Mutex {
 	if a == nil {
 		return &sync.Mutex{}
 	}
-	lock, _ := a.flowLocks.LoadOrStore(userID, &sync.Mutex{})
+	lock, _ := a.stateOwner().flowLocks.LoadOrStore(userID, &sync.Mutex{})
 	return lock.(*sync.Mutex)
 }
 
@@ -135,9 +141,8 @@ func (a *Agent) loadAIClientFromStoreUser(storeUserID string) (mcp.AIClient, str
 		storeUserID = "default"
 	}
 	candidateUserIDs := []string{storeUserID}
-	if storeUserID != "default" {
-		candidateUserIDs = append(candidateUserIDs, "default")
-	}
+	// F20 — no fallback to another user's credentials: an authenticated user
+	// without an enabled model gets NO client, never the default user's key.
 	for _, candidateUserID := range candidateUserIDs {
 		models, err := a.store.AIModel().List(candidateUserID)
 		if err != nil {
@@ -415,7 +420,6 @@ func (a *Agent) Stop() {
 
 // HandleMessage — the core. Everything goes through the LLM.
 func (a *Agent) HandleMessage(ctx context.Context, userID int64, text string) (string, error) {
-	a.EnsureAIClient()
 	return a.handleMessageForStoreUser(ctx, "default", userID, text)
 }
 
@@ -426,7 +430,7 @@ func (a *Agent) HandleMessageForStoreUser(ctx context.Context, storeUserID strin
 }
 
 func (a *Agent) handleMessageForStoreUser(ctx context.Context, storeUserID string, userID int64, text string) (string, error) {
-	a.ensureAIClientForStoreUser(storeUserID)
+	a = a.requestRuntime(storeUserID)
 
 	lang := a.config.Language
 	if strings.HasPrefix(text, "[lang:") {
@@ -464,7 +468,6 @@ func (a *Agent) handleMessageForStoreUser(ctx context.Context, storeUserID strin
 // onEvent is called with (eventType, data) — see StreamEvent* constants.
 // Non-streamable responses (commands, trade confirmations) return immediately without events.
 func (a *Agent) HandleMessageStream(ctx context.Context, userID int64, text string, onEvent func(event, data string)) (string, error) {
-	a.EnsureAIClient()
 	return a.handleMessageStreamForStoreUser(ctx, "default", userID, text, onEvent)
 }
 
@@ -474,7 +477,7 @@ func (a *Agent) HandleMessageStreamForStoreUser(ctx context.Context, storeUserID
 }
 
 func (a *Agent) handleMessageStreamForStoreUser(ctx context.Context, storeUserID string, userID int64, text string, onEvent func(event, data string)) (string, error) {
-	a.ensureAIClientForStoreUser(storeUserID)
+	a = a.requestRuntime(storeUserID)
 
 	lang := a.config.Language
 	if strings.HasPrefix(text, "[lang:") {
@@ -777,8 +780,8 @@ func (a *Agent) gatherContext(storeUserID, text string) string {
 		}
 		md, err := market.Get(sym + "USDT")
 		if err == nil && md.CurrentPrice > 0 {
-			parts = append(parts, fmt.Sprintf("[%s/USDT Real-time]\nPrice: $%.4f | 1h: %+.2f%% | 4h: %+.2f%% | RSI7: %.1f | EMA20: %.4f | MACD: %.6f | Funding: %.4f%%",
-				sym, md.CurrentPrice, md.PriceChange1h, md.PriceChange4h, md.CurrentRSI7, md.CurrentEMA20, md.CurrentMACD, md.FundingRate*100))
+			parts = append(parts, fmt.Sprintf("[%s/USDT Real-time]\nPrice: $%.4f | 1h: %s | 4h: %s | RSI7: %.1f | EMA20: %.4f | MACD: %.6f | Funding: %.4f%%",
+				sym, md.CurrentPrice, market.PctOrNA(md.PriceChange1h, true), market.PctOrNA(md.PriceChange4h, true), md.CurrentRSI7, md.CurrentEMA20, md.CurrentMACD, md.FundingRate*100))
 			count++
 		}
 	}

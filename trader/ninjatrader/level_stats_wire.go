@@ -1,7 +1,6 @@
 package ninjatrader
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -145,10 +144,14 @@ func runLevelStatsDayOnce(st *store.Store, ls *store.LevelStatsStore, traderID, 
 			continue
 		}
 		last := vers[len(vers)-1]
-		doc := kernel.PlanDoc{}
-		if err := json.Unmarshal([]byte(last.Doc), &doc); err != nil {
-			return 0, fmt.Errorf("plan doc unmarshal %s/%s v%d: %w", dayKey, sess, last.Version, err)
+		// WAVE 1a-plan P2 — the nightly stats read the ONE fold: an owner
+		// overlay adding a level must be evaluated. No overlay = the base.
+		overlays, _ := st.Plan().ListOverlays(last.PlanID, last.Version)
+		pf, perr := kernel.ResolvePlanFinal([]byte(last.Doc), kernel.OverlayRefsFrom(overlays))
+		if perr != nil {
+			return 0, fmt.Errorf("plan doc unmarshal %s/%s v%d: %w", dayKey, sess, last.Version, perr)
 		}
+		doc := pf.Doc
 		for _, l := range doc.Levels {
 			key := dayKey + "|" + strconv.FormatFloat(l.Price, 'f', 2, 64) + "|" + l.Label
 			if seen[key] {

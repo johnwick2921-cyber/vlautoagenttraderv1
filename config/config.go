@@ -1,6 +1,7 @@
 package config
 
 import (
+	"nofx/internal/installpath"
 	"nofx/logger"
 	"nofx/mcp"
 	"nofx/telemetry"
@@ -11,6 +12,53 @@ import (
 
 // Global configuration instance
 var global *Config
+
+// InsecureDefaultJWTSecret is the PUBLIC fallback used when JWT_SECRET is
+// unset. Anything signed with it can be forged by anyone who has read this
+// file, so the update routes (api/handler_updates.go, W-ONE-BUTTON M3 F2)
+// refuse every request while the process runs on it.
+const InsecureDefaultJWTSecret = "default-jwt-secret-change-in-production"
+
+// MinUpdatesJWTSecretBytes is the shortest JWT secret the update routes
+// accept (W-ONE-BUTTON M3 red-team fold M1). The loader itself accepts any
+// length — only /api/updates* refuse a shorter one.
+const MinUpdatesJWTSecretBytes = 32
+
+// publicJWTSecrets are the JWT secrets this PUBLIC repository publishes: the
+// loader's default, the .env.example placeholder (INSTALL.md says `cp
+// .env.example .env`, and only start.sh regenerates it), and the CI literal
+// in .github/workflows/pr-docker-compose-healthcheck.yml. A census over the
+// tracked tree (api/handler_updates_secret_test.go) fails when a literal of
+// 32+ bytes lands anywhere in the repo without being listed here.
+var publicJWTSecrets = []string{
+	InsecureDefaultJWTSecret,
+	"your-jwt-secret-change-this-in-production", // .env.example
+	"test-jwt-secret-minimum-32-chars",          // CI docker-compose healthcheck
+}
+
+// JWTSecretUnfitForUpdates reports why secret cannot anchor the update
+// administrator's identity ("" = fit): empty, one of the secrets this public
+// repository publishes (compared after TrimSpace, as the loader trims), or
+// shorter than MinUpdatesJWTSecretBytes. A token signed with such a secret
+// can be forged by anyone who reads the repo or searches the short key space.
+// Used ONLY by /api/updates* — the loader and the rest of the app are
+// unchanged (CTO ruling: the app keeps its load-time WARN; the refusal is the
+// update routes').
+func JWTSecretUnfitForUpdates(secret []byte) string {
+	s := strings.TrimSpace(string(secret))
+	if s == "" {
+		return "JWT secret empty"
+	}
+	for _, p := range publicJWTSecrets {
+		if s == p {
+			return "JWT secret is a public placeholder"
+		}
+	}
+	if len(s) < MinUpdatesJWTSecretBytes {
+		return "JWT secret shorter than 32 bytes"
+	}
+	return ""
+}
 
 // Config is the global configuration (loaded from .env)
 // Only contains truly global config, trading related config is at trader/strategy level
@@ -118,7 +166,7 @@ func Init() {
 		cfg.JWTSecret = strings.TrimSpace(v)
 	}
 	if cfg.JWTSecret == "" {
-		cfg.JWTSecret = "default-jwt-secret-change-in-production"
+		cfg.JWTSecret = InsecureDefaultJWTSecret
 		logger.Warnf("⚠️  JWT_SECRET env var not set; using INSECURE default. " +
 			"Acceptable for localhost-only paper trading. " +
 			"Set JWT_SECRET in .env (e.g. `openssl rand -base64 64`) before any network-exposed deploy.")
@@ -197,9 +245,9 @@ func Init() {
 	if v := os.Getenv("SANDBOX_MODE"); v == "1" || strings.EqualFold(v, "true") {
 		cfg.SandboxMode = true
 	}
-	if v := os.Getenv("DB_PATH"); v != "" {
-		cfg.DBPath = v
-	}
+	// W-ONE-BUTTON M2 (MUST-2): the ONE DB-path resolver, shared with the
+	// maintenance-hold CLI — same default ("data/data.db"), same DB_PATH rule.
+	cfg.DBPath = installpath.DBPath(os.Getenv)
 	if v := os.Getenv("DB_HOST"); v != "" {
 		cfg.DBHost = v
 	}

@@ -1,0 +1,27 @@
+# DAY PLAN (ASIA) — preferred: follow it · a valid off-plan setup may still be traded (cite "off-plan")
+Bias: short (low) · flips: Two consecutive 5m closes above 31052.51 flip the bias long.
+Levels:
+  31014.99 VWAP−2σ [A] target only — consumed
+  31025.50 SWG-L·15m [A] target only — chop void
+  31000.50 ONL [A] first draw target
+  31040.00 VWAP [A] obstacle/fade reference — chop void
+  31052.51 VWAP+1σ [A] short from reject — chop void fade only
+  31075.75 ONH [A] short from breakdown retest
+  30942.56 POC [A] mean-revert target
+  30868.25 OR-H [A] target/confluence
+  30841.00 FVG·1h (HTF) [A] target only — never entry
+  30769.75 Demand·1h (HTF) [A] long from first-touch reaction
+  31151.62 OB(bear)·4h [C] HTF supply confluence above
+Scenarios:
+  S1 [A] breakdown_continue short: Pullback to 31075.75 ONH after the measured 75.25pt break down; short the failed retest of the broken high. → 31052.51,31040.00,31025.50,31014.99,31000.50,30942.56 · invalid A 5m close above 31075.75 or trade beyond 31103.50 signals acceptance back through the broken ONH.
+  S2 [B] reject short: Price touches 31052.51 VWAP+1σ and rejects; enter short at the touch. → 31025.50,31014.99,31000.50,30942.56,30868.25 · invalid A 5m close above 31080.26 voids the rejection and exposes the ONH retest.
+  S3 [B] reject long: Price trades down to 30769.75 Demand·1h (HTF) with the OR-L 30763.25 liquidity beneath; first-touch reaction at 30769.75 is the long trigger. → 30841.00,30868.25,30942.56 · invalid A 5m close below 30740.75 breaks the 1h demand; the long is void.
+Plan dies if: A 5m close above 31075.75 invalidates this whole plan.
+Cite rule: your decision JSON MUST include "cited_scenario" = "S1"|"S2"|…|"off-plan".
+- `leverage`: 1 (futures)
+- Required when opening: stop_loss, take_profit, confidence (absolute tick-aligned prices)
+- **IMPORTANT**: all numeric values must be concrete numbers, NOT formulas (e.g. `21480.00`, not `21500 - 20`).
+- Plan target chains are guidance — YOU set take_profit (D2 ruling); the R:R gate is the only TP constraint.
+- `cited_scenario`: REQUIRED on every open when a DAY PLAN is shown — the plan scenario id ("S1"…) you are trading, or "off-plan" for a valid non-plan setup. (A6/F12: this used to live only inside the plan block; a contract-literal model omitted it and every adherence grade silently degraded to D.)
+- F4 (waterfall-class wave): if you see a valid breakdown/continuation thesis (a level broken with displacement and no reclaim) but the DAY PLAN has no matching scenario, SAY SO in your wait reasoning with the exact phrase `no breakdown scenario authored` — the system counts these; the planning gap must be visible, never silent.
+- ARMED PATH (autopsy-response): if a scenario confirm is MET and you decline on timing/extension grounds, the retrace is already covered by the plan's wait_confirm arm (it rests at the retrace level and fills without you) — prefer leaving that arm live over waiting for a cleaner touch; do not chase, and do not skip the retrace.

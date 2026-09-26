@@ -25,6 +25,7 @@ package sqlitedriver
 
 import (
 	"database/sql"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -41,6 +42,26 @@ func Open(dsn string) (*sql.DB, error) {
 // GormDialector returns the GORM dialector for the selected backend.
 func GormDialector(dsn string) gorm.Dialector {
 	return gormDialector(dsn)
+}
+
+// DialectorConn returns the GORM dialector for the compiled-in backend bound to
+// an EXISTING database/sql connection (or *sql.Tx) instead of opening a DSN.
+// Callers use it for transactions whose BEGIN must be issued manually — e.g.
+// BEGIN IMMEDIATE, which GORM's own Transaction cannot express.
+func DialectorConn(conn gorm.ConnPool) gorm.Dialector {
+	return dialectorConn(conn)
+}
+
+// IsBusy reports whether err is a SQLite lock-contention error
+// (SQLITE_BUSY / SQLITE_BUSY_SNAPSHOT: "database is locked"), across both
+// backends. The mattn text is "database is locked"; modernc (and glebarez over
+// it) appends the code, e.g. "database is locked (5) (SQLITE_BUSY)".
+func IsBusy(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "database is locked") || strings.Contains(s, "SQLITE_BUSY")
 }
 
 // Backend names the compiled-in backend (for boot lines / diagnostics).

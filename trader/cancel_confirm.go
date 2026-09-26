@@ -2,6 +2,7 @@ package trader
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -161,6 +162,9 @@ func cancelSettled(
 	if !haveBook {
 		return false, "no broker snapshot has been received"
 	}
+	if bookAge < 0 {
+		return false, "broker snapshot receipt is in the future relative to the evaluation clock"
+	}
 	if maxAge > 0 && bookAge > maxAge {
 		return false, fmt.Sprintf("book is %s old, older than the %s bound", bookAge.Round(time.Second), maxAge.Round(time.Second))
 	}
@@ -238,14 +242,11 @@ func (at *AutoTrader) liveBook(now time.Time) (orders []nt.NT8Order, haveBook bo
 	if cache == nil {
 		return nil, false, 0
 	}
-	snap, ok := cache.Latest(account)
-	if !ok {
+	snap, receivedAt, ok := cache.LatestReceived(account)
+	if !ok || receivedAt.IsZero() {
 		return nil, false, 0
 	}
-	if a, ok2 := cache.AgeAt(account, now); ok2 {
-		age = a
-	}
-	return snap.Orders, true, age
+	return snap.Orders, true, now.Sub(receivedAt)
 }
 
 // persistedBook returns the freshest PERSISTED snapshot — the one that carries
@@ -266,9 +267,13 @@ func (at *AutoTrader) persistedBook(now time.Time) (orders []nt.NT8Order, haveBo
 		at.logWarnf("🧾 cancel: snapshot %d has unreadable orders_json — settling nothing from it: %v", row.ID, err)
 		return nil, false, 0, row.ID
 	}
-	if row.ReceivedMs > 0 {
-		age = time.Duration(now.UnixMilli()-row.ReceivedMs) * time.Millisecond
+	if book == nil || row.ReceivedMs <= 0 {
+		// A nil book is not "the order is gone" — it is "we cannot read what the
+		// broker held", and a snapshot with no receipt time is undated evidence
+		// (F9, port of #117 efcb13c9): settling a cancel on either is guessing.
+		return nil, false, 0, row.ID
 	}
+	age = time.Duration(now.UnixMilli()-row.ReceivedMs) * time.Millisecond
 	return book, true, age, row.ID
 }
 
@@ -347,14 +352,28 @@ func (at *AutoTrader) refuseSlot(r store.ArmedOrderDB, v slotVerdict, what strin
 }
 
 // confirmPendingCancels is the per-cycle settlement pass (D1/D2). It is the
-// ONLY place a cancel becomes 'cancelled' through the cancel path.
+// ONLY place a cancel becomes 'cancelled' through the cancel path, and the
+// only place a zone-rest row re-arms after a CONFIRMED cancel (WAVE PLANNER
+// B1, P1 fold — the re-arm is booked on the book's word, never on the
+// request).
 //
 // A10/class 23: it is telemetry-shaped — a failed read WARNs and returns; it
 // never stops the loop and never promotes a row on ignorance.
+// errCancelRefused is what a re-request's cancelFn returns when the filled-arm
+// guard refused the cancel: nothing was sent (W-EXEC-TRUTH W0 (f), canon 35).
+var errCancelRefused = errors.New("cancel refused by the filled-arm guard")
+
 func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cancelFn func(string) error, now time.Time) (settled, stillPending, reRequested int) {
 	if at == nil || ledger == nil {
 		return 0, 0, 0
 	}
+	// W-EXEC-TRUTH W0 (f): the armed pass (runCycle) and the withdraw
+	// (monitorTick) both settle cancels — never both at once, or one re-request
+	// is sent and counted twice.
+	if !at.cancelConfirmMu.TryLock() {
+		return 0, 0, 0
+	}
+	defer at.cancelConfirmMu.Unlock()
 	rows, err := ledger.ListCancelPending(at.id)
 	if err != nil {
 		at.logWarnf("🧾 cancel confirm: ledger read failed — settling nothing this cycle: %v", err)
@@ -372,7 +391,28 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 	for i := range rows {
 		r := rows[i]
 		ok, why := cancelSettled(book, have, age, maxAge, r.SignalID)
+		if ok && (r.CancelRequestedAtMs <= 0 || now.Add(-age).UnixMilli() < r.CancelRequestedAtMs) {
+			// F9: a snapshot persisted BEFORE the cancel request cannot prove the
+			// cancel; an undated request cannot be proven either.
+			ok, why = false, "broker snapshot predates the cancel request or request time is unavailable"
+		}
 		if ok && snapID > 0 {
+			// WAVE PLANNER B1 (P1 fold, CTO #213): a zone-rest cancel the book
+			// CONFIRMS is not the end of the arm — the row returns to
+			// armed-unplaced (placement stamp cleared, seq+1) for a NEW signal
+			// on the next placement. The reset runs on the SAME evidence
+			// ConfirmCancel demands (snapID > 0): a book that never proved the
+			// order gone can never re-arm the row.
+			if rearm, rearmWhy := at.zoneRestReArmOnConfirm(r, why); rearm {
+				if err := ledger.ResetToArmedUnplaced(r.ID, rearmWhy); err != nil {
+					at.logWarnf("🧾 cancel confirm: re-arm write failed for %s: %v", r.Scenario, err)
+					continue
+				}
+				settled++
+				at.logInfof("🧾 cancel CONFIRMED %s signal=%s — %s (snapshot %d, book age %s, attempts %d) — returned to armed-unplaced, re-placeable",
+					r.Scenario, shortID(r.SignalID), why, snapID, age.Round(time.Second), r.CancelAttempts)
+				continue
+			}
 			// The ORIGINAL reason survives the confirmation. Each cancel site
 			// names WHY it cancelled (gate changed, one_live_arm_guard,
 			// entry_gate, condition_shadowed…) and that word is the only record
@@ -397,9 +437,15 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 			continue // still inside its window; nothing to say yet
 		}
 		telemetry.IncGateBlock(at.id, "cancel_unconfirmed")
-		if r.CancelAttempts >= cap {
+		attempts := r.CancelAttempts
+		if r.CancelAttemptsBoot != store.ProcessBootID() {
+			// Attempts from an earlier process are not THIS process's re-requests;
+			// RequestCancel records the first attempt of this boot below.
+			attempts = 0
+		}
+		if attempts >= cap {
 			at.logWarnf("🧾 cancel UNCONFIRMED %s signal=%s after %s and %d attempt(s) — attempt cap reached, NOT re-requesting and NOT promoting to cancelled (%s)",
-				r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), r.CancelAttempts, why)
+				r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), attempts, why)
 			continue
 		}
 		if cancelFn == nil {
@@ -407,7 +453,14 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 				r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), why)
 			continue
 		}
-		if cerr := cancelFn(r.SignalID); cerr != nil {
+		if cerr := cancelFn(r.SignalID); errors.Is(cerr, errCancelRefused) {
+			// The filled-arm guard refused it: nothing was sent, so nothing is
+			// recorded or counted as a re-request (canon 35). The row stays
+			// cancel_pending and the guard is asked again next pass.
+			at.logWarnf("🧾 cancel re-request REFUSED %s signal=%s after %s — not sent, not recorded (%s)",
+				r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), why)
+			continue
+		} else if cerr != nil {
 			at.logWarnf("🧾 cancel re-request SEND FAILED %s signal=%s: %v", r.Scenario, shortID(r.SignalID), cerr)
 		}
 		// The re-request is recorded whether or not the SEND returned nil —
@@ -418,7 +471,7 @@ func (at *AutoTrader) confirmPendingCancels(ledger *store.ArmedOrderStore, cance
 		}
 		reRequested++
 		at.logWarnf("🧾 cancel UNCONFIRMED %s signal=%s after %s (%s) — re-requested, attempt %d of %d; the row stays %s",
-			r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), why, r.CancelAttempts+1, cap, store.StateCancelPending)
+			r.Scenario, shortID(r.SignalID), reqAge.Round(time.Second), why, attempts+1, cap, store.StateCancelPending)
 	}
 	return settled, stillPending, reRequested
 }
@@ -622,4 +675,41 @@ func (at *AutoTrader) clearBookOutageIfHealthy(now time.Time) {
 	}
 	at.logWarnf("🚨 broker book RECOVERED after %s — arm placement resumes (outage alert cleared)",
 		time.Duration(now.UnixMilli()-startMs)*time.Millisecond)
+}
+
+// dayPlanOffPassHead is the armed pass's head while Day Plan is OFF (or the
+// trader is not an NT8 trader with a store): settle first, so a fill or a
+// confirmed cancel is in the ledger before the Picture sweep reads it (the
+// FIX 1 drain-before-guards order), then the D21 Picture sweep.
+func (at *AutoTrader) dayPlanOffPassHead(now time.Time) {
+	at.settleArmedLedgerWhileOff(now)
+	at.pictureDayPlanOffSweep(now)
+}
+
+// settleArmedLedgerWhileOff is the SETTLEMENT half of the pass, run at the
+// head while Day Plan is OFF (W5 R8, CTO round 2): drain the order updates and
+// confirm every requested cancel from the fresh broker book, exactly as when
+// ON. Nothing here places, arms or authors. Without it a cancel the OFF sweep
+// requested stayed cancel_pending forever (every settlement site sat below the
+// OFF return, the boot sweep excludes cancel_pending), and the entry latch —
+// which counts a non-terminal row with a signal as PLACED — refused every AI
+// entry until the Day Plan came back ON. Planner rows had the same freeze
+// before W5; this closes it for both.
+func (at *AutoTrader) settleArmedLedgerWhileOff(now time.Time) {
+	if at == nil || at.store == nil || at.exchange != "ninjatrader" || at.dayPlanEnabled() {
+		return
+	}
+	ledger := at.store.ArmedOrders()
+	nt := at.armedTrader()
+	if ledger == nil || nt == nil {
+		return
+	}
+	at.consumeArmedOrderUpdates(nt, ledger)
+	at.confirmPendingCancels(ledger, func(sid string) error {
+		// A re-request is still a cancel: the filled-arm guard decides (W0 (f)).
+		if !at.cancelSignalIfSafe(nt.CancelOrder, sid, "cancel re-request", now) {
+			return errCancelRefused
+		}
+		return nil
+	}, now)
 }

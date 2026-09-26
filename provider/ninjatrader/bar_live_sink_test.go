@@ -14,12 +14,12 @@ import (
 
 func TestFanOutLiveBarsDelivers(t *testing.T) {
 	got := make(chan liveSinkMsg, 2)
-	SetLiveBarSink(func(symbol, tf string, bars []Bar, receivedAt time.Time) {
-		got <- liveSinkMsg{symbol: symbol, tf: tf, bars: bars, receivedAt: receivedAt}
+	SetLiveBarSink(func(symbol, tf, contract string, bars []Bar, receivedAt time.Time) {
+		got <- liveSinkMsg{symbol: symbol, tf: tf, contract: contract, bars: bars, receivedAt: receivedAt}
 	})
 	t.Cleanup(func() { SetLiveBarSink(nil) })
 
-	fanOutLiveBars("MNQ", "5m", []Bar{{T: 1, C: 101.5}})
+	fanOutLiveBars("MNQ", "5m", "MNQ 12-26", []Bar{{T: 1, C: 101.5}})
 	select {
 	case m := <-got:
 		if m.symbol != "MNQ" || m.tf != "5m" || len(m.bars) != 1 || m.bars[0].C != 101.5 {
@@ -28,23 +28,28 @@ func TestFanOutLiveBarsDelivers(t *testing.T) {
 		if m.receivedAt.IsZero() {
 			t.Fatalf("receivedAt must be stamped at the drain instant")
 		}
+		// W4: identity travels with the frame — a consumer that cannot see
+		// the contract cannot tell whose bars it is reading.
+		if m.contract != "MNQ 12-26" {
+			t.Fatalf("the frame's contract must reach the sink, got %q", m.contract)
+		}
 	case <-time.After(2 * time.Second):
 		t.Fatalf("live frame never delivered")
 	}
 }
 
 func TestFanOutLiveBarsEmptyNoOp(t *testing.T) {
-	SetLiveBarSink(func(symbol, tf string, bars []Bar, receivedAt time.Time) {
+	SetLiveBarSink(func(symbol, tf, contract string, bars []Bar, receivedAt time.Time) {
 		t.Fatalf("empty batch must not fan out")
 	})
 	t.Cleanup(func() { SetLiveBarSink(nil) })
-	fanOutLiveBars("MNQ", "5m", nil)
+	fanOutLiveBars("MNQ", "5m", "MNQ 12-26", nil)
 	time.Sleep(50 * time.Millisecond)
 }
 
 func TestDrainBarIngestHistoricalNeverFansOut(t *testing.T) {
 	live := make(chan string, 1)
-	SetLiveBarSink(func(symbol, tf string, bars []Bar, receivedAt time.Time) {
+	SetLiveBarSink(func(symbol, tf, contract string, bars []Bar, receivedAt time.Time) {
 		live <- tf
 	})
 	t.Cleanup(func() { SetLiveBarSink(nil) })
@@ -105,7 +110,7 @@ func TestBarFinalEvidenceRoundTrip(t *testing.T) {
 // only, and a replay receipt cannot mint a real opportunity.
 func TestSept17ReplayNeverMintsOpportunities(t *testing.T) {
 	sinkCalls := make(chan string, 16)
-	SetLiveBarSink(func(symbol, tf string, bars []Bar, receivedAt time.Time) {
+	SetLiveBarSink(func(symbol, tf, contract string, bars []Bar, receivedAt time.Time) {
 		sinkCalls <- tf
 	})
 	t.Cleanup(func() { SetLiveBarSink(nil) })

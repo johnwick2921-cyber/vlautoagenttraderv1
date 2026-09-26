@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ChevronDown, Settings } from 'lucide-react'
+import { UpdateBadge } from '../updates/UpdateBadge'
 import { t, type Language } from '../../i18n/translations'
 import {
   getPostAuthPath,
@@ -184,6 +185,7 @@ export default function HeaderBar({
 
           {/* Right Side - User Actions */}
           <div className="flex items-center gap-4">
+            {isLoggedIn && user && <UpdateBadge />}
             {/* User Info and Actions */}
             {isLoggedIn && user ? (
               <div className="flex items-center gap-3">

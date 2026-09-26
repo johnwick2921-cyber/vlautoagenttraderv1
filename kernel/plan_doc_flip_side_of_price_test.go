@@ -103,8 +103,8 @@ func TestFlipLineBeyondPrice_LineAtPriceRejected(t *testing.T) {
 	}
 }
 
-// The death line obeys the same law: the scenario born-dead check
-// (validateAuthoredScenariosAt) reads ONLY scenario.invalid prose and never
+// The death line obeys the same law: before W2 D5 the scenario born-dead check
+// (validateAuthoredScenariosAt) read ONLY scenario.invalid prose and never
 // the death object, so the ASIA v2 death{29755.50 above} at price 29764 was
 // a plan born dead that nothing refused.
 func TestDeathLineBeyondPrice_ASIAv2DeathRejected(t *testing.T) {

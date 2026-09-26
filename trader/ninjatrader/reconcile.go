@@ -80,6 +80,11 @@ func (t *TCPTrader) StartPositionReconcile(traderID, exchangeID, exchangeType st
 	}
 	t.mu.Unlock()
 	t.reconcileOnce.Do(func() {
+		done := t.observerLifetime()
+		stopped := make(chan struct{})
+		t.mu.Lock()
+		t.reconcileStopped = stopped
+		t.mu.Unlock()
 		// F3 (LONDON-FORENSICS 2026-08-28) — one-time idempotent repair: positions
 		// materialized before the lineage stamp existed (live proof: pos #567)
 		// get their armed-fill plan linkage back from the armed ledger.
@@ -89,8 +94,19 @@ func (t *TCPTrader) StartPositionReconcile(traderID, exchangeID, exchangeType st
 		go func() {
 			ticker := time.NewTicker(reconcileInterval)
 			defer ticker.Stop()
-			for range ticker.C {
-				t.reconcilePositions(traderID, exchangeID, exchangeType, st)
+			defer close(stopped)
+			for {
+				select {
+				case <-done:
+					return
+				case <-ticker.C:
+					select {
+					case <-done:
+						return
+					default:
+					}
+					t.reconcilePositions(traderID, exchangeID, exchangeType, st)
+				}
 			}
 		}()
 		logger.Infof("🔧 NinjaTrader position-reconcile started (anchors entry_price to NT8 avg + clears orphan rows)")
@@ -370,12 +386,14 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 			// 577+578 duplicates — an armed-materialized row can carry
 			// account="" (its order_update frame predates the account binding),
 			// so the account-scoped lookup above misses it and reconcile
-			// materializes a SECOND row for the same NT8 position. Retry
-			// account-agnostically; if found, backfill the bound account so the
-			// later close-sync frame (which carries the account) finds its owner.
-			owner, oerr = st.Position().GetOpenPositionByAccountSymbol("", sym, side)
+			// materializes a SECOND row for the same NT8 position. Retry only
+			// within THIS trader's unassigned rows; if found, backfill the bound
+			// account so the later close-sync frame (which carries the account)
+			// finds its owner (W117-F F7 — a cross-trader row must never swallow
+			// the backfill).
+			owner, oerr = unassignedOpenForTrader(st, traderID, sym, side)
 			if oerr != nil {
-				logger.Warnf("ninjatrader/tcp: reconcile untracked owner lookup (account-agnostic) failed (%s %s): %v", sym, side, oerr)
+				logger.Warnf("ninjatrader/tcp: reconcile untracked owner lookup (trader-scoped) failed (%s %s): %v", sym, side, oerr)
 				continue
 			}
 			if owner != nil && owner.Account == "" && acct != "" {
@@ -398,6 +416,7 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		if nowMs-t.untrackedSince[key] < untrackedGraceMs {
 			continue
 		}
+		firstSeen := t.untrackedSince[key] // W1b E15: anchors the fill ring's window
 		qty := heldQty[key]
 		if qty <= 0 {
 			qty = 1
@@ -439,10 +458,39 @@ func (t *TCPTrader) reconcilePositions(traderID, exchangeID, exchangeType string
 		// pos #567 landed with plan_version 0 / adherence grade F).
 		// GAR-F1 (2026-08-28) — the returned signal identity is cached on the
 		// trader so move_stop/trailing can address the live bracket.
-		if _, sig := StampArmedLineageIfMatched(st, traderID, row.ID, sym, side, avg); sig != "" {
-			t.rememberEntryOrderID(sym, side, sig)
+		//
+		// W1b E15 — the fill ring FIRST: the exact signal of this position's own
+		// fill beats a price guess. Only with no same-side evidence in the window
+		// does the price-match fallback run, and (FOLD-4) only over arms filled in
+		// that same window whose signal explains no position yet; an ambiguous or
+		// unreadable answer leaves the row untagged (a guess is fabricated lineage).
+		// W1b FOLD-6 — origin is what the 🧩 line below says the position WAS:
+		// "manual/NT8-side" only when nothing evidenced this trader's own entry.
+		origin := "manual/NT8-side entry (no fill-ring or in-window armed-fill evidence of this trader's own entry)"
+		switch f, verdict, why := t.lateEntryFillFor(st, acct, sym, side, firstSeen); verdict {
+		case lateFillOne:
+			if sig, what := t.tagLateEntryFill(st, traderID, exchangeID, row.ID, sym, side, f); sig != "" {
+				t.rememberEntryOrderID(sym, side, sig)
+				origin = what
+			} else {
+				origin = fmt.Sprintf("UNTAGGED entry (fill-ring signal %s %s)", f.SignalID, what)
+			}
+		case lateFillUnresolved:
+			logger.Warnf("🔗 attribution: pos %d (%s %s) — fill ring %s — left UNTAGGED; no price-match guess", row.ID, sym, side, why)
+			origin = fmt.Sprintf("UNTAGGED entry (fill ring %s)", why)
+		default:
+			switch stamped, sig, failed := stampArmedLineageInWindow(st, traderID, row.ID, sym, side, avg, firstSeen); {
+			case stamped:
+				t.rememberEntryOrderID(sym, side, sig)
+				if sig == "" {
+					sig = "(none)"
+				}
+				origin = fmt.Sprintf("this trader's armed fill matched by price in the window (signal %s)", sig)
+			case failed != "":
+				origin = fmt.Sprintf("UNTAGGED entry (%s)", failed)
+			}
 		}
-		logger.Warnf("🧩 reconcile: MATERIALIZED untracked NT8 position %s %s qty=%.0f @ %.2f (acct=%s) — manual/NT8-side entry now tracked; its close will record real P&L", sym, side, qty, avg, acct)
+		logger.Warnf("🧩 reconcile: MATERIALIZED untracked NT8 position %s %s qty=%.0f @ %.2f (acct=%s) — %s now tracked; its close will record real P&L", sym, side, qty, avg, acct, origin)
 		delete(t.untrackedSince, key)
 		// A close frame may have arrived while the row was still untracked (the
 		// DROPPED → parked path). Consume it now with the real exit + ×pv P&L.
@@ -516,6 +564,15 @@ func StampArmedLineageIfMatched(st *store.Store, traderID string, posID int64, s
 	if err != nil || len(rows) == 0 {
 		return false, ""
 	}
+	if r, ok := matchArmedFillByPrice(rows, sym, side, entryPx); ok {
+		return stampArmedLineageFromRow(st, posID, r)
+	}
+	return false, ""
+}
+
+// matchArmedFillByPrice is the price matcher: the first row, in the order
+// given, of the same side whose true fill price is within one tick of entryPx.
+func matchArmedFillByPrice(rows []store.ArmedOrderDB, sym, side string, entryPx float64) (store.ArmedOrderDB, bool) {
 	tick := market.FuturesTickSize(sym)
 	if tick <= 0 {
 		tick = 0.25
@@ -528,43 +585,51 @@ func StampArmedLineageIfMatched(st *store.Store, traderID string, posID int64, s
 		if fillPx < entryPx-tick || fillPx > entryPx+tick {
 			continue
 		}
-		tradeDate := r.PlanID
-		if i := strings.Index(r.PlanID, ":"); i > 0 {
-			tradeDate = r.PlanID[:i]
-		}
-		if err := st.Position().SetPlanLinkFull(posID, r.Version, r.Scenario, true, "armed_fill", r.PlanID, tradeDate, r.Session); err != nil {
-			logger.Warnf("🧩 reconcile: armed lineage stamp failed (pos %d): %v", posID, err)
-			return false, ""
-		}
-		// GAR-F1 — the materialized row gets the armed ledger's signal identity
-		// so move_stop/trailing can find the live bracket (the #566 dead cell).
-		if r.SignalID != "" {
-			if err := st.Position().SetEntryOrderID(posID, r.SignalID); err != nil {
-				logger.Warnf("🧩 reconcile: armed entry-order-id stamp failed (pos %d): %v", posID, err)
-			}
-		}
-		// PRE-REOPEN F4 — the fill-time stamp deferred (position row didn't
-		// exist yet) leaves a stamp_pending marker on the ledger row; the
-		// materialization completes the stamp NOW and clears it.
-		if strings.HasSuffix(r.StateReason, ";stamp_pending") {
-			_ = st.ArmedOrders().SetState(r.ID, "filled", strings.TrimSuffix(r.StateReason, ";stamp_pending"))
-		}
-		// F3 GAP (2026-09-03, found via nofx-89's 09-01 audit): fill_quantity is
-		// stamped HERE too. The fill-time stamp in stampArmedFillLineage returns
-		// early on this very path — the position row is not materialized when the
-		// fill frame lands — so stamping only there covered the minority case.
-		// The 09-01 audit recorded 584 of 586 armed fills carrying
-		// ";stamp_pending", and armed row 35 today took the same path and still
-		// reads fill_quantity=0 with the stamp live.
-		if qty := st.Position().QuantityOf(posID); qty > 0 {
-			if err := st.ArmedOrders().SetFillQuantity(r.ID, int(qty)); err != nil {
-				logger.Warnf("🧩 reconcile: armed fill-quantity stamp failed (row %d): %v", r.ID, err)
-			}
-		}
-		logger.Infof("🧩 reconcile: armed-fill lineage stamped — pos %d ← %s v%d %s (fill %.2f, entry_id %s)", posID, r.PlanID, r.Version, r.Scenario, armedFillPriceFor(r), r.SignalID)
-		return true, r.SignalID
+		return r, true
 	}
-	return false, ""
+	return store.ArmedOrderDB{}, false
+}
+
+// stampArmedLineageFromRow writes one FILLED ledger row's plan linkage and
+// signal identity onto a position row — the stamp body StampArmedLineageIfMatched
+// runs on a price match, and W1b E15 runs on EXACT ring evidence (the fill's own
+// signal) without any price guess. Returns (true, signalID) when stamped.
+func stampArmedLineageFromRow(st *store.Store, posID int64, r store.ArmedOrderDB) (bool, string) {
+	tradeDate := r.PlanID
+	if i := strings.Index(r.PlanID, ":"); i > 0 {
+		tradeDate = r.PlanID[:i]
+	}
+	if err := st.Position().SetPlanLinkFull(posID, r.Version, r.Scenario, true, "armed_fill", r.PlanID, tradeDate, r.Session); err != nil {
+		logger.Warnf("🧩 reconcile: armed lineage stamp failed (pos %d): %v", posID, err)
+		return false, ""
+	}
+	// GAR-F1 — the materialized row gets the armed ledger's signal identity
+	// so move_stop/trailing can find the live bracket (the #566 dead cell).
+	if r.SignalID != "" {
+		if err := st.Position().SetEntryOrderID(posID, r.SignalID); err != nil {
+			logger.Warnf("🧩 reconcile: armed entry-order-id stamp failed (pos %d): %v", posID, err)
+		}
+	}
+	// PRE-REOPEN F4 — the fill-time stamp deferred (position row didn't
+	// exist yet) leaves a stamp_pending marker on the ledger row; the
+	// materialization completes the stamp NOW and clears it.
+	if strings.HasSuffix(r.StateReason, ";stamp_pending") {
+		_ = st.ArmedOrders().SetState(r.ID, "filled", strings.TrimSuffix(r.StateReason, ";stamp_pending"))
+	}
+	// F3 GAP (2026-09-03, found via nofx-89's 09-01 audit): fill_quantity is
+	// stamped HERE too. The fill-time stamp in stampArmedFillLineage returns
+	// early on this very path — the position row is not materialized when the
+	// fill frame lands — so stamping only there covered the minority case.
+	// The 09-01 audit recorded 584 of 586 armed fills carrying
+	// ";stamp_pending", and armed row 35 today took the same path and still
+	// reads fill_quantity=0 with the stamp live.
+	if qty := st.Position().QuantityOf(posID); qty > 0 {
+		if err := st.ArmedOrders().SetFillQuantity(r.ID, int(qty)); err != nil {
+			logger.Warnf("🧩 reconcile: armed fill-quantity stamp failed (row %d): %v", r.ID, err)
+		}
+	}
+	logger.Infof("🧩 reconcile: armed-fill lineage stamped — pos %d ← %s v%d %s (fill %.2f, entry_id %s)", posID, r.PlanID, r.Version, r.Scenario, armedFillPriceFor(r), r.SignalID)
+	return true, r.SignalID
 }
 
 // RepairArmedLineage back-fills plan linkage for this trader's positions that
@@ -609,4 +674,36 @@ func RepairArmedLineage(st *store.Store, traderID string) int {
 		}
 	}
 	return n
+}
+
+// UntrackedGraceMs is how long an NT8-held position with no open DB row must
+// persist before the reconciler materializes it (W-EXEC-TRUTH W0 (c): the
+// pre-open reconcile treats a ledger fill younger than twice this as not yet
+// materialized, so it explains the position instead of flattening it).
+const UntrackedGraceMs = untrackedGraceMs
+
+// unassignedOpenForTrader returns THIS trader's newest unassigned (account="")
+// open row for symbol/side. The CLASS-27 dedupe retry must never reach into
+// another trader's rows (W117-F F7, ports #117 23c24c6d). store/position.go is
+// slice A's file in this wave, so the trader-scoped filter lives here on top of
+// the already trader-scoped GetOpenPositions.
+func unassignedOpenForTrader(st *store.Store, traderID, symbol, side string) (*store.TraderPosition, error) {
+	if st == nil || st.Position() == nil {
+		return nil, nil
+	}
+	open, err := st.Position().GetOpenPositions(traderID)
+	if err != nil {
+		return nil, err
+	}
+	var newest *store.TraderPosition
+	for _, po := range open {
+		if po.Account != "" || !strings.EqualFold(po.Side, side) ||
+			market.Normalize(po.Symbol) != market.Normalize(symbol) {
+			continue
+		}
+		if newest == nil || po.EntryTime > newest.EntryTime {
+			newest = po
+		}
+	}
+	return newest, nil
 }

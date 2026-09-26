@@ -10,7 +10,7 @@ in CLAUDE.md).
 
 ## PART 1 — THE BUG CLASSES (name · root cause · probe · law)
 
-*Highest occupied class: **112** (2026-09-10). Numbers are assigned AT MERGE and
+*Highest occupied class: **268** (2026-09-24). Numbers are assigned AT MERGE and
 never renumbered; a gap means a wave took a later slot to avoid a collision.*
 
 1. **Self-imposed caps.** Root cause: an AI/HTTP/token cap chosen without
@@ -257,6 +257,16 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     a string, ask where the string was normalized and whether BOTH sides use
     the same normalizer. **Law:** one canonicalizer per identifier, called at
     the boundary where the value enters, not at each comparison.
+   *Instance 2026-09-24 (WAVE 3b-A):* `NOFX_RELEASE_DIR` was read in TWO
+   packages — `api/release_dir.go` latched it behind a `sync.Once`, while
+   `kernel/boot_integrity.go:230` called `os.Getenv` on every use. One
+   identifier, two resolutions, and they DISAGREE the moment the environment
+   moves: the process serves a bundle from one release while judging its boot
+   integrity against another, each half internally consistent. **Resolving
+   "once" per package is not resolving once.** Fixed: one resolver in
+   `internal/installpath`, consumers pass through, exactly one `os.Getenv`
+   left in non-test code. The api file's own comment had named this exact
+   hazard — a comment warning about a hazard is not a control.
 
 29. **The silent-aggregate family.** Root cause: aggregates that answer
     confidently from data they should have excluded or never had — an exit
@@ -843,6 +853,8 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     label earns its default, and every kill switch must have an input that
     fires it and an output you can tell apart.
 
+    **Instance 2026-09-24 M3:** (c) the CTO's dictated boot-runbook line predicted a phantom-epoch owner re-login from FOLD-M3-B without reading the code: tokens live 24 h (`auth/auth.go:146` at 0cd6df49), the `updated_at` ALTER is Postgres-only (`store/user.go:32-42`) and the live store is SQLite. The CTO put it on the record as "class 45/49 shape, mine this time", and the ha2 verifier's corrected line (no re-login expected) replaced it. A claim about what the running process will show, written where nothing compares it to the process; read with 105 (CTO on the record; ha2 verifier)
+
 50. **The prompt withheld what the validator enforces — and the correction
     remembered only the last mistake.** (Dispatch "class 45"; checklist slot 45
     was already the pantry class, hence 50.) Root cause: the planner prompt and
@@ -944,10 +956,14 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     kept for every input. **Law:** a surface renders a rule's STATUS, never its
     text — and a rule with more than one definition has none.
 
+    **Instance 2026-09-24 M3:** **OPEN.** `ValidJobID`/`ValidReleaseID` are defined in both `internal/updateauth/ids.go` and `internal/updaterwire/ids.go`. They agreed on 2,000,014 and 2,402,098 differential samples, but only the comment was fixed and no parity pin exists [A: grep]. Owed: one source, or a parity pin such as `TestIDAllowListsAgreeAcrossAuthAndWire` (`34f24525`)
+
 53. **One question, two answers: a predicate shared by two callers that fed it
     different inputs.** (Numbered 51 at merge against a tree that did not
     yet carry class 50's entry; renumbered to 53 by owner ruling 2026-09-02 —
     class 50 keeps 51, the no-trade band keeps 52. Class 46 is deliberately
+
+    **Instance 2026-09-24 M3:** the Telegram bot's re-mint was tested only through its predicate `botTokenStale`, so a compiling revert of the call in runBot stayed green, and the bot would then 401 after every password change (ha-verify #1). The re-mint now lives in `botIdentity.refresh` and is pinned at that call site: `TestBotRefreshReMintsAfterAPasswordChangeAtItsCallSite`, `TestRunBotMintsOnlyThroughRefresh` (`d637b7e1`)
 
 54. **A refresh that deletes before it knows what comes back.** (Renumbered 52→54 AT MERGE, 2026-09-03 combined boot — 52 was taken by the no-trade-band class. Dispatch
     "bar-arbiter merge"; class 52 wave, 2026-09-02.) Root cause: the
@@ -1002,6 +1018,8 @@ never renumbered; a gap means a wave took a later slot to avoid a collision.*
     column named for a moment must be written once; and measure the rate before
     building for it — an alarming percentage over the wrong denominator will
     buy a large fix for a small problem.
+
+    **Instance 2026-09-24 M3:** FOLD-M3-B. `users.updated_at` was promoted to "credential epoch", but a legacy or migration value (the Postgres-only `ALTER … updated_at DEFAULT CURRENT_TIMESTAMP`, `store/user.go:42`) reads as a password change and retires older sessions. Documented and pinned by `TestLegacyUpdatedAtIsAnEpochWithoutAPasswordChange` (`b849e9eb`)
 
 56. **A default of 0 on a column that means "how far did it go against us".**
     (Highest occupied at merge: 53.) `trader_positions.mae REAL DEFAULT 0`
@@ -2929,6 +2947,8 @@ Assigned at merge for `fix/scenario-economics`, 2026-09-08, after a fresh two-fo
 
 **Law:** complete economics belongs to NEW AUTHORING only. Stored legacy UNKNOWN is first-class, never inferred/backfilled, never refused. The new-authoring parser refuses missing completeness and the three owner-approved contradictions: target off path without exception; obstacle beyond target; R inconsistent with geometry by more than one registry tick of price distance. Role differences and sub-1R obstacles WARN and count, never refuse. No target policy, R:R/stop floor, arm/gate/confirmation/cadence change. Process counters count authoring checks, including retries, not independent trades.
 
+**Law amended 2026-09-23 (W-EXEC-TRUTH W2 A4, CTO amendment msg 1790166603535; see the obstacle-chain CLASS 191 at the end of this file):** the obstacle chain is no longer free prose. At NEW-authoring write it is a REFUSAL when target_chain is not sorted outward from entry in the trade direction, when first_obstacle is not the nearest SEATED level strictly between entry and the arm target (a capacity-cut candidate nearer on the path is accepted, never required; an empty seated path requires the arm target), when a seated level on that path is missing from `economics.path_levels` (refused by name), and when `reduce` rides a single-contract arm. The prompt's "a reduce response is a declared intention" sentence is RETIRED — the two never coexist. Off-tick authored chain prices are normalized to the tick grid and recorded, never refused. Role/use differences against a level's instruction and sub-1R obstacles still WARN only. Legacy reads are unchanged.
+
 **Pins:** production parser RED→GREEN on real C3; missing new obstacle refused while legacy reads remain UNKNOWN/accepted; full writer retries then persists contract; 276 retained plan-read verdicts covering 799 scenarios match baseline exactly (394 scenarios in accepted plans, zero new legacy refusals); both London warnings; all six C2 UI ratios; actual D2/D4/call-site/counter mutations fail; Guide C5 table independent arithmetic. See `reports/2026-09-08-scenario-economics.md` and its pinned evidence. Boot line reads `ScenarioEconomicsBootLine`; card and desk show both Rs. Built/tested is not live proof.
 
 
@@ -3144,7 +3164,7 @@ note above; a single-format grep reports a free number that is taken.
 *Numbers are assigned AT MERGE (A16). Two classes, both found by measurement
 during this wave and both fixed in the same branch.*
 
-### (pending) A COUNT IS NOT A HORIZON
+## CLASS 172 — A COUNT IS NOT A HORIZON
 
 **Root cause.** A recorded or rendered COUNT — "2000 bars served", "8 rows" —
 cannot express a SPAN or a HOLE, and every reader silently treats it as if it
@@ -3179,7 +3199,7 @@ learns to skim past. Coverage is measured against the SAME calendar the
 trading gate reads, an unclassifiable day is UNKNOWN and never guessed, and a
 missing bar is MARKED — never interpolated, carried forward or synthesised.
 
-### (pending) A CROSS-SESSION COMPARISON IS A REGIME COMPARISON, NOT A MEASUREMENT
+## CLASS 173 — A CROSS-SESSION COMPARISON IS A REGIME COMPARISON, NOT A MEASUREMENT
 
 **Root cause.** This wave's opening dispatch asserted, as fact, that the ATR was
 inflated and that a resting arm was over-sized on it. The claim rested on
@@ -3210,7 +3230,7 @@ a level, a floor, a size or a threshold is only a measurement when both sides
 come from the same session and the same calendar class, and the report quotes
 the row ids on both sides (A21).
 
-### (pending) A MARKER ON EVERY READ IS A MARKER ON NOTHING — and a COUNT cannot see a row that is NOT there
+## CLASS 174 — A MARKER ON EVERY READ IS A MARKER ON NOTHING — and a COUNT cannot see a row that is NOT there
 
 *Appended by the SAME wave, after review, 2026-09-09. Both instances are the
 wave's own defect class reproduced one layer down, INSIDE the fix — which is
@@ -3255,7 +3275,7 @@ UNKNOWN — never zero. And a completeness claim is scoped to what was actually
 printed (`every row PRINTED here is COMPLETE`), never to rows that were never
 rendered.
 
-### (pending) A REPORT THAT CLAIMS NO BEHAVIOUR CHANGE WHILE THE BOOT LINE SHOWS ONE (class 82, restated)
+## CLASS 175 — A REPORT THAT CLAIMS NO BEHAVIOUR CHANGE WHILE THE BOOT LINE SHOWS ONE (class 82, restated)
 
 **Root cause.** A wave corrected the INPUT to an estimator and then wrote, in
 three shipped artifacts at once — the report, `SYSTEM-MAP.md` and a user-facing
@@ -3609,6 +3629,8 @@ Partial remedy already on dev: `docs/superpowers/CLAUDE-canon.md` (landed `55749
 
 Related: **slot 50** (the prompt withheld what the validator enforces — a document that instructs a reader to do the thing a guard forbids; the dispatch called it "class 45", the merged slot is 50), the **SPEC-FRESHNESS LAW** (CLAUDE.md canon — it has NO checklist slot, and CLAUDE.md's claim that it is class 73 is instance 3 above), and the **GUIDE CONTENT LAW**, which is this law already applied to one surface: a guide that lies about the running binary is worse than no guide.
 
+**Instance 2026-09-24 M3:** eight M3 sites where prose described code that no test read: the admin.go crash comment (`a785fe45`); "censuswalk is test tooling only", now asked of the toolchain (`87255ef9`); `ids.go`'s "updateauth imports these" (`34f24525`); the guide's "refused once" and the same words in `auth/retire.go` (`06ca207d`, `efdf3988`); the census header's "spelled ONLY in paths.go" and `paths.go`'s "the ONLY place" (`3e368492`, `964396ef`); and the guide's bot sentence, true only for the bot's own account (`4699edce`). The census's false "can only over-report" is recorded in CLASS 259 (`a785fe45`, `87255ef9`, `34f24525`, `06ca207d`, `efdf3988`, `3e368492`, `964396ef`, `4699edce`)
+
 ## CLASS 106 — A CORRECT READ OF A NOT-YET-CORRECT STATE (born 2026-09-10; generalised out of class 104 at a peer's suggestion)
 
 **Number note (updated at merge):** 105 is now OCCUPIED on dev by *documentation
@@ -3754,12 +3776,16 @@ omission is deliberate BEFORE changing anything, and quote the code path*. Askin
 "is this a bug or a decision?" first is what separates 99 from 107; the
 refactor had already been written, tested and pushed on the other reading.
 
+**Instance 2026-09-24 M3:** Q8 on /api/updates is documented as STRICTER than the shared `auth.RetiredBy`, but the only same-second pin probed where the two agree, so moving Q8 onto `RetiredBy` stayed green (ha-verify #2). Pinned by `TestUpdatesQ8StaysStricterThanTheSharedRetireRule` (a never-changed row and a NULL row): one name per intent (`8f4b2d9b`)
+
 
 ## CLASS 108 — A SOURCE GUARD THAT SCANS NOTHING (assigned at arm-state cutover follow-up merge, 2026-09-10)
 
 **Finding:** TestTZGuardSingleTimeSource searched for a directory basename ending in nofx and swallowed walk errors. `/tmp/nofx-arm-state` therefore scanned `/kernel`, `/trader`, `/api`, `/agent`, read nothing and passed. A clean clone named nofx exposed four pre-existing timezone violations. A successful process exit was not evidence that the guard had examined source.
 
 **Law and pin:** resolve the package's actual repository parent, require go.mod and propagate directory/read errors. A restored bare layout must fail in a worktree whose name does not end in nofx. The four renderers now use canonical CT helpers with byte-identical output. This guard correction is independent of arm-state classification and never weakens a terminal-state or flat-gate check. Receipt: `reports/2026-09-10-arm-state-cutover.md`.
+
+**Instance 2026-09-24 M3:** the worker import guard asserted a package-count floor (20 vs 21 roots), which could not say which root went missing; every guarded root must now be walked (`911e69a3`)
 
 ## CLASS 109 — A CENSUS THAT CANNOT SEE ITS OWN THIRD FORMAT (born 2026-09-10, fix/episode-contract)
 
@@ -4217,6 +4243,18 @@ parity. C1–C4 and W1's pinned basis are in the
 [105 report](reports/2026-09-10-scenario-level-identity.md), initially published
 in `f19afe5dbd04199ddaa253a51958c0b909b8c4ae` before implementation.
 
+**Law amended 2026-09-23 (W-EXEC-TRUTH W2 A3, CTO amendment msg 1790166603535 +
+tightening 1790178967603; see the identity≠price CLASS 190 at the end of this
+file):** "WARN-only missing/unknown ID" and "disagreement is a counted finding"
+no longer hold AT NEW-AUTHORING WRITE. A level_id / sweep_level_id /
+reclaim_level_id the frozen map does not carry (invented, altered, or a `ref|`
+id whose digest matches no map row) is REFUSED, and a resolved level_id whose
+level sits outside its own zone ±3.00 of the scenario anchor is REFUSED; both
+re-author within the existing attempts and fail closed after the third. A NULL
+level_id stays the WARN path. What still holds: the evaluator's anchor is never
+replaced, stored ids are never rewritten, stored/overlay reads never run the
+refusal, and the runtime per-cycle observation stays a counted finding.
+
 ## CLASS 117 — ONE IDENTITY, TWO RESOLVERS, RESOLVED AT DIFFERENT MOMENTS (born 2026-09-10, the contract roll)
 
 **Name.** Two subsystems need the same identity — here, *which futures
@@ -4522,6 +4560,8 @@ placed · level=… play=… permission=…` — and nothing is sent to the brok
 rows with a signal id are never touched. Pinned on the loopback wire: the
 declined scenario's pre-boot row is retired, never placed; the allowed one
 still places. Counted `one_setup:retired`; on the boot line.
+
+**Instance 2026-09-24 M3:** H2. Q8 retired pre-change tokens on /api/updates only, and authMiddleware consulted no credential epoch, so a stolen pre-change token kept every other route and could `PUT /user/password` again to re-mint an identity (red-1 #2). fh's narrow `3103894d` still left `GET /api/my-traders`, `POST /api/telegram` and `DELETE /api/telegram/binding` open (fh-verify #1). `0f48b52b` puts the ONE retire predicate (`auth.RetiredBy`) in authMiddleware and folds the guard's `<` copy into it (CLASS 257); the bot's own token is one of the inherited authorizations and re-mints (`d637b7e1`). Pins: `TestRetiredTokenCannotActAnywhere`, `TestTokenWithoutAnAccountRowOrIatIsRefusedEverywhere`, `TestCredentialGuardReChecksRetirement`, `TestBotReMintsItsTokenWhenAPasswordChangeRetiresIt` (`3103894d`, `0f48b52b`, `d637b7e1`)
 
 ## CLASS 122 — A CLASSIFIER THAT NAMES ITS OWN BLIND SPOT AND REPORTS THROUGH IT ANYWAY (assigned at merge of cleanup batch 2, 2026-09-11)
 
@@ -5099,6 +5139,30 @@ day.
   this class, checked: `class33_boot_sweep_test.go` L25/L156 stamp
   CreatedAt/UpdatedAt only and the sweep is not band-gated. None of the listed
   tests fails by the clock today; each is one registry change from doing so.
+- **DISCHARGED IN PART, and the sentence above was already false when written —
+  2026-09-23, W-EXEC-TRUTH W4 (`fix/w4-picture-evidence`), CTO ruling
+  `1790198929468`.** Two tests that the census did not list DID fail by the
+  clock, on the same afternoon, for two lanes at once:
+  `TestFourPlacementPathsWaitForEntryReceipt` (subtests `limit`, `stop_entry`:
+  "production path did not send") and
+  `TestUnsentStopEntryNeverCancelsTheSiblingArm/sent_commits` ("signal on the
+  wire = false, want true"). Both hand `time.Now()` to a production send path;
+  the admission chain asks `kernel.CMEClosedReason(now)` on the clock it is
+  GIVEN (`entry_admission.go:304`), so the 16:00–17:00 CT daily break refuses
+  them with "🌙 cme closed: … REFUSED — daily break". They were green at 15:50
+  CT and red at 16:13 CT at the SAME commit, and red on an unrelated branch
+  (`fix/w5-picture-source @c1d96494`) in the same hour — confirmed by the CTO
+  at clean dev `eb7294c9` at 16:27 CT.
+  **Fixed (test-only):** `trader/rth_clock_test.go` `rthInstant()` — a fixed RTH
+  instant (Wed 2026-09-23 10:30 CT) passed through the existing `…At` seams at
+  the three production-facing sites. Verified by running both tests AT 16:30 CT,
+  inside the band that had just failed them: green. No production change, no
+  retry, no skip.
+  **The lesson the census missed:** it searched for tests that SKIP or SEARCH on
+  the band, and these two do neither — they simply do not send, and read as an
+  ordinary assertion failure. A census of a failure mode must be built from the
+  mode (which clock reaches a gate), not from the symptom it happened to show
+  the day it was written.
 
 ## CLASS 139 — A HOLD THAT RESTARTS ON EVERY RE-READ: hysteresis anchored to the version, not the plan (born 2026-08-21 with the regime wave's G3 hold, reported by the owner 2026-09-17 "it went up all night and never flipped", fix/flip-hold-anchor, W-FLIP-HOLD-ANCHOR)
 
@@ -5564,6 +5628,10 @@ only v2 was born impossible. The death line was also born crossed — a plan
 born dead — and the existing born-dead refusal (`validateAuthoredScenariosAt`)
 never saw it, because it evaluates ONLY the scenario `invalid` prose grammar
 on 1m closes and never reads the death object.
+(W-EXEC-TRUTH W2 D5, 2026-09-23: the born check now also judges death{} and
+flip{} on every 5m group closed between the read clock and publication — see
+the CLASS 189 "a write-time check that judges only the read-time price or the
+latest window" at the end of this file.)
 
 **Why it hid.** (1) Two validators each answered a real question — side vs
 bias, number vs prose — and a reader assumes "the flip is validated". The
@@ -6077,7 +6145,7 @@ Counter: `death_reread:<trader>:<date>:<session>`.
 
 **Rule (probe).** Per contract per tf, compare the last stored bar time on the roll day against the 1m last bar: any tf whose last bar is earlier than the 1m last bar is this class. The display fix derives the prior segment from that contract's 1m rows with the planner's own bucket helper, shifts it by the basis measured at THAT timeframe's own seam (the new contract's first bar of that tf vs the last prior 1m close before it — the pair sits <1 minute apart), marks derived/adjusted on each bar and the envelope, never touches the current contract or volume, and keeps CHART_ROLL_STITCH=legacy byte-identical. Follow-up (2026-09-19, owner: the first boot still showed the cliff): the shipped basis was measured at the TRUE 1m switch, hours after the 15m/30m/1h seam — the Sep/Dec basis decays from ~290 in the morning to ~15 at that switch, so one 15.25 shift left a ~274-280-point cliff; measuring at each tf's own seam makes the seam continuous by construction. Second follow-up (2026-09-19, owner: "5m day 11" hole on every tf): the prior contract's 1m rows have interior gaps where NT8 was off (Sept 11 ~00:29-07:45 CT) while the current contract's imported 1m rows cover them — the derive now fills such gaps with the current rows converted into the prior contract's price space (basis at the nearest minute both contracts share); gaps neither contract has stay gaps, never fabricated.
 
-## Pending class assignment at merge — Inverted async cancellation guard blanks a live chart
+## CLASS 158 — Inverted async cancellation guard blanks a live chart
 
 **Wave:** `fix/planner-chart-response-20260922`. **Found:** 2026-09-22.
 The roll-chart change `0e7573485` inverted the PlanMiniChart response guard
@@ -6093,3 +6161,1526 @@ older interval request after the replacement request and assert it cannot
 overwrite the series. Resolve after unmount and assert no write or further poll.
 **Law:** test both live response delivery and cancellation at the production
 component boundary; placeholder rendering alone does not verify chart loading.
+
+## CLASS 159 — single-consumer pause mistaken for a global hold
+
+**Wave:** `feat/one-button-m2-maintenance-hold` (W-ONE-BUTTON M2). **Found:** 2026-09-22, building the one-button partner update.
+**Shape.** Before an update replaces the binary and the AddOn, every producer of new entries must stop. The only brake the bot had was `stop_until`/Resume, which pauses ONE consumer: one trader's AI decision path. Everything else kept sending:
+- the armed executor;
+- the Picture HTF evaluator, whose registry never unregisters, so a stopped or deleted trader still reaches `pictureHtfSend`;
+- the planner (a 5–20 min AI call a restart would kill);
+- the reconnect queue, which wrote a queued entry on the next connect with no permit held;
+- the AddOn itself.
+
+Any per-trader Resume could also lift the pause. A pause scoped to one consumer reads like a hold and is not one.
+
+**Probe.**
+- (1) Enumerate every producer of a wire entry: every `SendSignal` caller, every `CreateOrder` entry in the AddOn, and every registry that feeds one. Check that each consults the ONE installation hold at its send point.
+- (2) Check that the queue and reconnect paths honour the hold **connected or not**. The first cut returned early on "no connection" before checking the hold, which parked held entries for as long as NT8 was down.
+- (3) Check that no API route, Resume or clear-freeze can write or clear the hold. An AST scan pins the allowlist.
+- (4) Check that the gate reading "drained" covers every trader id, loaded or not; every account the AddOn can see; and every planner-class claim. An unevaluable leg fails. A vacuous "not applicable" pass is a failure.
+- (5) Check that a refused send never latches "placed" and never cancels siblings.
+
+**Law:** a hold is installation-wide, file-backed, written only by the operator or the updater, and read at every send point. A pause is not a hold.
+
+## CLASS 160 — a queued send recorded as a fill (pre-existing; found in M2, fix deferred)
+
+**Found:** 2026-09-22 in W-ONE-BUTTON M2 (CTO condition 3 on M-2), [A] at the production caller (`TestDroppedAIEntryIsForgottenAndTheGateStaysClosed`).
+**Shape.** An AI entry sent while NT8 is disconnected is QUEUED: `SendSignal` returns nil and `TCPTrader.placeEntry` returns `"submitted"`. Its result carries `"signal_id"` but no `"orderId"`, so `recordAndConfirmOrder` formats the missing key as the string `"<nil>"`, which is not skipped. It then:
+- writes an order row;
+- polls `GetOrderStatus` (still "pending") for ~3 s;
+- falls through to `recordPositionChange`, which writes an **OPEN** `trader_positions` row at the mark price with `entry_order_id "<nil>"` and emits a P0 "Filled …" alert.
+
+That happens for an entry that never left this process. If the queued entry is then refused (stale queue age, or the maintenance hold's drop), the DB carries a position NT8 never had, and nothing links that row to the signal.
+
+**Probe:** send an AI entry with no client connected and run the production caller: an OPEN row with `entry_order_id "<nil>"` appears.
+
+**Status:** M2 does not fabricate a close for it. A hold drop forgets the entry, logs ERROR naming the signal and `db_open_positions`, raises P1, and the installation gate stays closed on cutover leg 1 until an operator reconciles. **The fix needs its own owner-ruled wave:** record the signal id as the order id, and do not record a position before a received fill.
+
+**Fixed in W-EXEC-TRUTH W0a (`fix/exec-admission-gate`, 8edf3d97).** The probe work found it wider than the entry above: a REJECTED entry was recorded OPEN too, the AI poll adopted another path's fill through the shared `lastEntrySignalID`, and every AI order row collapsed onto one `"<nil>"` row. NT8 opens are now keyed by the signal the entry returns, and a position is recorded only on a fill for THAT signal (`RecentFillFor`; a new `RecentRejectFor` ring for rejects). No evidence leaves the order row NEW and records no position; the maintenance drop settles that row CANCELED. Pinned: `TestQueuedAIEntryWithNoFillRecordsNoPosition`, `TestRejectedAIEntryRecordsNoPosition`, `TestFilledAIEntryRecordsThePositionAtItsFill`, `TestAnotherPathsFillIsNeverTheAIsFill`, `TestTwoAIEntriesAreTwoOrderRows`, `TestDroppedAIEntrySettlesItsOrderRowAndNoPositionExists`.
+
+**Addition (W1b E15, `fix/executor-owed-1`):** a queued entry that fills LATE (after the ~3 s poll left its order row NEW) and is then materialized by reconcile as an untracked position is tagged with its OWN signal from the fill ring (`lateEntryFillFor` / `tagLateEntryFill`, `trader/ninjatrader/reconcile_late_fill.go`), claims its AI order row only while that row is still `NEW`, settles it FILLED at the ring's price, and writes the `trader_fills` row the normal path writes (`lateEntryFillRow`, trade id `nt8-late-entry-<order id>`). See the W1b class "a price-similarity lineage with no time bound…" below. Pinned: `TestLateAIFillMaterializesTaggedWithItsSignal`, `TestLateFillOfANonNewOrderRowStaysUntagged`, `TestLateAIFillWritesTheFillRowTheNormalPathWrites`.
+
+## CLASS 161 — A HAND-SET BUILD LABEL TREATED AS PROOF OF WHAT IS RUNNING (born 2026-09-22, feat/one-button-updates, W-ONE-BUTTON M1)
+
+**Shape.** The AddOn's `VL_BUILD_ID` is a constant a human bumps "on any additive wire change"
+(`ninjascript/VLTraderTCPClient.cs:55`), mirrored by a Go constant (`provider/ninjatrader/order_snapshot.go:214`)
+and pinned equal by a test that proves only that two literals match. Seven commits changed the AddOn under
+`2026-09-07-h1` without a bump; at least 8 distinct source states reported the same id. The Go side keeps the last
+received id in a process-global slot that no disconnect clears, with no connection or process epoch — so after an
+NT8 restart the "received build" is the PREVIOUS process's until a new frame arrives, and a Go restart gets a
+fresh hello from the SAME AddOn instance. Any verifier that says "the new AddOn is running" from this id is
+reading a label, not the artifact.
+
+**How it hid.** The id matched on every successful deploy (because every successful deploy also bumped it), and
+the capability floors are string compares that pass on any later label. Nobody asked what the id is when two
+different sources carry it.
+
+**Probes.**
+- A build identity used as proof must be DERIVED from the artifact (source hash over every compiled release file
+  + the compiled assembly's MVID), not typed.
+- Verification binds to a per-connection record (accept sequence after the old process was observed gone) and to
+  the sending process's identity (PID + StartTime), never to a cached "last received" value.
+- A test that two constants are equal proves the constants are equal. Say that in the test's name.
+- Canon text about runtime behaviour ("AddOns do NOT hot-reload") is re-checked against the logs before a design
+  rests on it — F5 does reload in-process (09-22 research_facts h1→p1 inside one NT8 process).
+
+**Fix pattern.** Additive hello fields (process identity, MVID, source hash, activation nonce) + a Go
+per-connection record + a verifier that refuses cached or wrong-epoch evidence (M2/M4 of W-ONE-BUTTON, subject
+to owner ruling on "no new protocol work").
+
+## CLASS 162 — an optional field a newer producer legitimately leaves nil, dereferenced by an older reader
+
+**Found:** 2026-09-23, live after the M2 boot: `🔭 desk strip: line 10 (planner) panicked and was contained: nil pointer`, on every scan. Present before the boot too.
+**Shape.**
+- W-GEOMETRY-REFUSAL (b1) added reference-anchor level ids (`ref|…`, ONH/ONL/VWAP…). Those levels have **no formation close by construction**: `FormedCloseMs == nil`.
+- The desk strip's planner line was written before that. It rendered every resolved level with `*r.Level.FormedCloseMs`.
+- The containment (`deskSafe`) kept the loop alive but turned the line into UNKNOWN, for as long as any plan named a reference level.
+
+**Probe:** for every pointer field a producer documents as optional, grep its readers for a bare `*x.Field`. Drive the reader at its production entry with the nil case; the fixture must use the producer's real nil-case shape. Fixed in M2.1: the line prints `formed_close_ms=n/a` (L7).
+
+## CLASS 163 — a refusal that returns the same value as a send
+
+**Found:** 2026-09-23 in W-EXEC-TRUTH W0 (the read-only map, proven by an overlay test and by live rows) [A].
+**Shape.** `placeOneStopEntry` returned a bool meaning only "the hold refused this". A guard cancel ("never placed"), an un-adjudicated verdict, a refused slot, an AddOn too old to build the order and a real send all returned the SAME value, and the caller read it as "sent": it latched `placedThisPass` and cancelled every other arm of the plan `one_live_entry: <S> placed`. Live: rows 169 and 176 were cancelled that way 0.3 ms after the "placed" row itself was cancelled "never placed" (2026-09-21 00:30:59, 2026-09-22 05:50:10 UTC).
+**Probe:** for every function whose return value decides whether a SEND happened, list its non-send outcomes and check each is distinguishable from a send at the caller. A two-valued return with more than two outcomes is the smell. Fixed in W0a: an explicit outcome (NOT_SENT / HELD / COMMITTED; a failure after the ledger stamp is COMMITTED, class 81). Pinned: `TestUnsentStopEntryNeverCancelsTheSiblingArm`, `TestPlaceOneStopEntryOutcomeFollowsTheLedgerStamp`.
+
+## CLASS 164 — a safety leg fed a value compared BEFORE it was canonicalized
+
+**Found:** 2026-09-23 in W-EXEC-TRUTH W0 [A], by probe at the production writers.
+**Shape.** Three safety checks were dead for one reason: the value was compared raw.
+- EntryGate leg 7 (one open position) is fed by builders that filtered `p.Side == "long" || p.Side == "short"` while every writer stores `"LONG"`/`"SHORT"`: leg 7 never saw a position (the builder even lower-cased the value — AFTER the comparison).
+- The `executeOpen*` same-side guards compared NT8's `"LONG"` against `"long"`.
+- `ntHeldPosition` required `positionAmt > 0`, but a short is signed negative on NT8 and on every crypto broker: a held SHORT read as flat, so the AI's pre-open reconcile let an entry net onto it.
+**Probe:** for every comparison against a literal side/state/symbol, find where the compared value ENTERS and check it passes through the one canonicalizer before any comparison (canon 28). A test fixture that writes the value in the reader's casing hides it — drive the check with a row the PRODUCTION writer wrote. Fixed in W0a: `positionSide` / `brokerPositionSide` at every entry point. Pinned: `TestNtHeldPositionSeesBothSidesOnTheWire`, `TestDecisionLegSevenSeesAStoredPosition`, `TestArmLegSevenSeesAStoredPosition`, `TestOrderPathsReadBrokerSidesCanonically`.
+
+**Instance 2026-09-24 M3:** M2. The logout blacklist is an exact-string map, while jwt v5's lenient base64url accepted 3 other spellings of a 43-char HS256 signature, so a logged-out token was live again, /api/updates included (red-1 #4). `WithStrictDecoding` leaves one accepted spelling per token; pinned by `TestLoggedOutTokenStaysRevokedUnderASignatureRespelling`, `TestValidateJWTRefusesNonCanonicalSignatureSpellings` (`62579330`)
+
+## CLASS 165 — four doors to the broker, no lock between them
+
+**Found:** 2026-09-23 in W-EXEC-TRUTH W0 (dispatch D10, confirmed by probe: three signal frames from three paths back to back on one TCPTrader with a position open) [A].
+**Shape.** The AI decision, the armed path, Picture HTF and the side doors (agent chat, the debug test trade, the test-arm seam) each checked only their OWN evidence before sending, and their B3 dedupe keys never collide across paths. Nothing serialized the four entry functions, so two producers could each send an entry for one account and instrument inside the window before either fill was visible to the other.
+**Probe:** list every function that puts an ENTRY on the wire and every caller of each. If two callers read different evidence and no lock spans the send, sequence them back to back over a real in-process connection and count the frames. Fixed in W0a: one latch inside the four entry functions, per account|wire-symbol, after the maintenance permit and before B3, fed by the same book and ledger definitions the armed path uses; the 🚦 boot line READS whether it is wired. Pinned: `TestEntryLatchRefusesAllFourEntryFunctionsOnEachClause`, `TestEntryLatchQueuedThenRecentThenOpen`, `TestEntryLatchSpansTradersOnOneAccount`, `TestEntryLatchRefusalDoesNotConsumeTheDedupeSlot`, `TestEntryLatchLedgersListPlacedRowsOnTheAccount`, `TestNewAutoTraderCallsWireNT8EntryLatchUnconditionally`.
+
+
+## CLASS 166 — three entry paths, one set of rules on paper, three in code (a gate with a per-path copy / a producer that skips the chain)
+
+**Found:** 2026-09-23 in W-EXEC-TRUTH W0 (dispatch D1, D8, D11, D26; the W0 six-lens map at base `855309b7`) [A].
+**Shape.** The AI decision ran an ordered chain of entry gates inline in `executeDecisionWithRecord`; the armed path re-ran a partial copy at authoring and NONE at placement (G1: a leg the authoring EntryGate refused on a daily force-flat was placed in the same pass because it was already `armed`); Picture HTF called only the maintenance hold, its own positions read and its own pending rows, ran with the trader stopped and the Day Plan master off, and read its own R:R knob with no strategy floor; the agent chat's OpenLong/OpenShort ran none. Each copy was right about itself — every per-path test passed — and the set of rules was different on each path. A gate added to one copy was absent from the others, and nothing compared them.
+**Probe:** enumerate every producer that can put an ENTRY on the wire (not the send functions — the callers that DECIDE to send) and, for each gate, ask which producers run it. A gate reached by a copy on each path is a finding even when every copy is correct today. Then drive each producer at its production call site with each gate tripped (a matrix, one row per gate per path) and remove each gate in turn: a gate whose removal turns no row red is not enforced anywhere the tests can see.
+**Fixed in W0b:** one chain, `admitEntry` (`trader/entry_admission.go`), in A's pinned order, called by every producer — A (decision), B (armed, at placement, behind G1's per-pass admitted set, fail-closed on nil), C (Picture, pre-claim and again pre-send), the agent door (`AdmitManualEntryAt`). Pinned: the gate-parity matrix (`TestGateParityMatrix`, `trader/gate_parity_matrix_test.go`: 95 `<gate>@<path>` rows over the five producer entry points, RED per gate removed — `scripts/w0b_gate_parity_mutations.py`, report `docs/superpowers/reports/2026-09-23-w0b-gate-parity-red-proof.md`); the five D10 sequences over one real TCPTrader (`TestDupS1ArmedWorkingThenPictureIsRefused`, `TestDupS2PictureSentThenArmedIsRefused`, `TestDupS3ArmedWorkingThenAIOpenIsRefusedNeverFlattened`, `TestDupS4PictureWorkingThenAIOpenIsRefusedNeverFlattened`, `TestDupS5AISentThenArmedIsRefused`, `TestDupS5AIAndArmedRaceYieldOneEntry`, `TestDupS5PictureAndArmedRaceYieldOneEntry`, + `S1r`/`S2r` across a restart); `TestArmRefusedAtAuthoringIsNotPlacedThatPass`, `TestArmPlacementWithNoAuthoringPassPlacesNothing`, `TestPictureRefusedWhenStoppedOrDayPlanOff`, `TestPictureRRFloorIsTheStricterOfKnobAndStrategy`, `TestChatEntryIsRefusedUnderStrictLikeADecision`, `TestChatEntryWithNoStopIsRefused` (was `TestChatEntryIsAdmittedInAdvisoryModeLegs5And6Abstain`, which pinned "the REAL chain ADMITS a chat entry in advisory mode … legs 5/6 ABSTAIN" as W0b's contract; flipped in W1b E9 by CTO ruling — a chat/agent-door entry with no explicit stop is now REFUSED, see the W1b class "a fail-open leg on a path that never supplies its input" below), `TestManualEntryDoorErrorsSayWhatHappened`, `TestChatEntryErrorsSayWhatHappened`, `TestW0bGuideAndGateLabelsMatchTheBinary`. Since W1b E9 the agent door is `OpenManualEntryAt` → `AdmitManualEntryBracketAt` (the chain with the entry's own Stop/Target); `AdmitManualEntryAt` remains as the bracket-less wrapper used by trader tests only.
+
+**Instance 2026-09-24 M3:** the machine-token deny lived in authMiddleware, which the PUBLIC `/api/reset-password` never runs, so a bot token met only the route's generic 410. `denyMachineBearer` now wraps the route itself, and the pin `TestEveryRuledMachineDeniedRouteRefusesMachineTokens` is written from the ruling, not read from `machineDeniedRoutes` (`f58088bb`)
+
+## CLASS 167 — a refusal deduped on text that carries a moving value
+
+**Found:** 2026-09-23, CTO pre-review #1 of W0b (M3) [A].
+**Shape.** "Log and count once per change" was keyed on the refusal's REASON string. The re-entry cooldown's reason embeds the live price and its distance from the stop; EntryGate's R:R leg the execution price and the ratio; the breaker its loss count. So one unchanged refusal was a "change" on every tick the price moved, and was logged and counted again each time (RED: 4 counts for one cooldown refusal over four price ticks). Canon 35 (counters record events) was broken by the dedupe meant to uphold it.
+**Probe:** for every `changed(key, value)` / last-seen dedupe, read what `value` is built from. If it is a formatted message, list every `%v`/`%.2f` in every message that can reach it — a number that moves while the condition stands makes the dedupe a no-op. Dedupe on the CLASS (the gate-block name), refined only by a stable sub-class; keep the reason in the log line.
+**Fixed in W0b:** `admitDedupeClass` — the gate-block class; for `entry_gate`, the leg `armRefusalClass` reads (the same `entry_gate:<leg>` string the arm-refusal counter family is keyed on). Pinned: `TestArmRefusalWithAMovingReasonIsCountedOnce`, `TestEntryGateDedupeClassIsTheLeg`.
+
+## CLASS 168 — a source guard that recognises one spelling of the predicate it forbids
+
+**Found:** 2026-09-23, CTO pre-review #2 of W0b (M5) [A].
+**Shape.** `TestArmStateNoRetypedLists` flags a re-typed arm-state set written as an `||` of two `State*` names. W0b's `reconcile_owned.go` wrote the Picture "send started" predicate that way and was caught — but W0a's `entry_latch_wiring.go` had written the SAME predicate as `!= … && !(… && …)` and passed the guard for a whole merged wave. Two copies of one predicate, one visible to the guard and one not; the guard's green on the second was read as "no copy exists".
+**Probe:** when a guard forbids a pattern, write the forbidden thing three ways (the positive `||` form, the negated `!=`/`&&` form, a `switch`) and run the guard on each. When a guard fires, grep the tree for the same predicate in its OTHER spellings before fixing only the hit. Fix by giving the predicate ONE owner beside its classifier and calling it from every reader.
+**Fixed in W0b:** `store.PictureSendStarted` (beside `IsTerminalArmState`), called from both readers. Pinned: `TestPictureSendStarted`; the negated-form copy is gone from `entry_latch_wiring.go`.
+
+**Instance 2026-09-24 M3:** the checklist numbering guard recognised only two placeholder spellings ("(assigned at merge)", "(pending)"), so the M3 drafts' `M3-07`-style class headings passed it silently. It is now an allow pattern, `^## CLASS \d+ — `, pinned RED-first by `TestChecklistNumberingRefusesEveryNonNumberedClassHeading` (`0cd6df49`)
+
+## CLASS 169 — a test that returns while the goroutine it launched still reads the seam its cleanup resets
+
+**Found:** 2026-09-23, the CTO's full `-race` run of W0b at `41ac268e` (M4; pre-existing on dev, flaky — 0 of 40 local `-race` iterations reproduced it) [A].
+**Shape.** `maybeRunSessionReadsAt` / `maybeRereadAfterDeath` / `maybeRereadAfterFlip` launch the planner read on a goroutine. `TestFlipRereadDeathConditionUnchanged` triggered the death re-read and returned; its deferred `market.FuturesBarsProvider = nil` ran while the goroutine was still inside `kernel.FeedClockDriftMs` reading the provider. The race detector saw it only when the scheduler interleaved that way, so the suite was green most runs and red on some — on whichever PR happened to be running.
+**Probe:** for every test that calls a function which spawns a goroutine, find the package-level seams the test (or its helpers' `t.Cleanup`s) resets, and ask what joins the goroutine before the reset. Remember the order: defers run before any `t.Cleanup`, both after the test body — a join registered with `t.Cleanup` does NOT run before a `defer`'s reset. An in-flight marker stored before the `go` and deleted as the goroutine's last deferred act is an exact join; one claimed inside the goroutine is exact only after the test has observed the goroutine's work.
+**Fixed in W0b (test-only):** `drainReReads(t)` waits, bounded, until the flip/death/planner in-flight maps are empty; registered as a `defer` right after the first trigger in 32 trigger tests (10 files), inline where a test moves a seam mid-body. Not audited: the wake-level, transition and weekly reads' own goroutines.
+
+## CLASS 170 — a status view that finds its rows by text a later writer overwrites
+
+**Found:** 2026-09-23, W0b's own (f) test suite (the withdraw builder's defect probes, confirmed 5/5 by its verifier) [A].
+**Shape.** The withdraw marked each resting entry it asked NinjaTrader to cancel with `state_reason = "withdraw: maintenance job <id>"`, and `GET /api/maintenance` found the job's rows by that prefix. `state_reason` is a lifecycle field, and three writers replace it as a cancel progresses: the re-request, the received order_update, and the snapshot confirm. So a row left the view the moment its cancel moved on, and the view read "nothing pending" or "nothing confirmed" while the rows sat in the ledger. The same view also matched the job id as a bare prefix (`job1` matched `job10`). It reported `[]` for a ledger it never read, and listed a withdrawn entry that FILLED as "confirmed".
+**Probe:** for every status surface that selects rows by a field value, list every writer of that field (grep the column name in the store, not the caller). If any writer can run after the marker is written, the selection is lossy. Either the marker lives where nothing overwrites it, or the store owns a rule that keeps it. Then drive the row through each writer at its production call site and assert the view still lists it. A prefix match on free text also needs a terminator.
+**Fixed in W0b:** `store.reasonKeepingWithdraw`. Every lifecycle writer (`SetState`, `ApplyPlacementReceipt`, `RequestCancel`, `ConfirmCancel`) appends to a withdrawn row's reason after `' ‖ '`, never replacing the head. `store.ListWithdrawn` matches the exact head or the head plus the separator. The view lists pending / confirmed (`IsCancelledArmState`) / filled / ended and reports unread lists as absent. Pinned: `TestWithdrawHeadSurvivesEveryLifecycleWrite`, `TestListWithdrawnMatchesTheExactHeadNotAPrefix`, `TestMaintenanceWithdrawViewKeepsARowConfirmedByOrderUpdate`, `TestMaintenanceWithdrawViewKeepsARowThroughAReRequest`, `TestMaintenanceWithdrawViewDoesNotFabricateEmptyListsItNeverRead`, `TestMaintenanceWithdrawViewListsAFillAsFilledNeverConfirmed`.
+
+## CLASS 171 — a wire fixture that dials and returns before the server registered the client; the producer races the accept
+
+**Found:** 2026-09-23, CI "Backend Tests" on PR #186 (job 107165325139, 2-core runner), CTO M7 [A].
+**Shape.** `net.Dial` returns when the TCP handshake completes. The in-process `TCPServer` registers the client later, on its accept loop (`acceptLoop` sets `s.conn` under `connMu`). Every immediate send (close_position, cancel_order, move_stop) reads `s.conn` and fails with "no NT client connected" until then. `newReconcileWire` dialed and returned, and the test then drove `reconcileBeforeOpenNT`. On CI the flatten was attempted before the "client connected" log line; `closeSent` waited 3 s for a frame that was never sent, and `TestReconcileStillFlattensAnUnexplainedShort` failed. Every developer box won the race, so nothing local ever showed it. 12 fixture sites in `trader/` had the shape, or had a barrier that fell through silently on timeout (a `FarSideProven` loop with no `t.Fatal`).
+**Probe:** for every test fixture that dials an in-process server, find what it waits on before returning. "The dial returned" and "a reader goroutine started" are not registration. The barrier must read the SAME state the send path reads (`IsConnected()` ⇔ `s.conn != nil`), be bounded, and fail closed. Then check whether a fast machine is hiding the race: run the test at `-cpu 1` or on a 2-core runner.
+**Fixed in W0b (test-only):** `waitAddonRegistered(t, s)` (`trader/wire_fixture_test.go`) — a bounded poll of `IsConnected()` with `t.Fatalf`, called right after the dial's error check at all 12 sites. `TestWireFixturesWaitForTheServerToRegisterTheClient` is a source guard: every `net.Dial` in the package's tests must be followed within 8 lines by `waitAddonRegistered`, or be allowlisted with a reason (two raw dials in `maintenance_drop_test.go` that assert on what does NOT arrive). It was RED on the 12 sites before the fix.
+
+## CLASS 176 — a third-party market-data call on the trade path, keyed on the symbol instead of the venue
+
+**Found:** 2026-09-23, W-NO-BINANCE Part A (dispatch §0; the read-only map `wf_862bacd5-080` and its completeness critic, G1) [A].
+**Shape.** `market.GetWithExchange` called Binance's crypto-perp open-interest and funding endpoints for every symbol, MNQ included, on every AI open, close, hold-lock check and admission live-price read. That is a request that cannot succeed for a CME symbol, with a 30 s client timeout, inside an entry decision. The later futures branch was chosen by `IsCMEFuturesSymbol(symbol)` alone, so a NinjaTrader trader handed a non-CME symbol still fell through to the crypto branch: CoinAnk maps the unknown venue to `exchange=Binance`, and fapi OI/funding followed. The venue that defines the path was never consulted.
+**Probe:** for every function on the trade path that performs I/O, list the hosts it can reach and the predicate that selects them. A predicate on the symbol alone, where the venue decides which data exists, is a finding. So is any outbound call inside an entry decision whose answer the decision does not use.
+**Fixed in W-NO-BINANCE A:** `marketRouteFor(symbol, venue)` is the ONE decision: futures → NT8 bars with OI/funding absent (`futuresOIFunding`); the NinjaTrader venue with a non-CME symbol → REFUSED; everything else → crypto. The 📊 boot line READS the same route over the loaded traders' symbols. Pinned: `TestFuturesMarketReadMakesNoBinanceCall`, `TestAIOpenSendHalfMakesNoBinanceCall`, `TestAdmissionLiveReadMakesNoBinanceCall`, `TestNT8VenueRefusesANonCMESymbolWithNoOutboundCall` (a trap on hook.SET_HTTP_CLIENT AND http.DefaultTransport); the source guard `TestNoBinanceHostOnTheFuturesPathOutsideTheAllowlist` (every Binance host spelling) plus `TestBinanceFetchersAreCalledOnlyFromTheCryptoBranch`.
+
+## CLASS 177 — a numeric field that cannot say "absent", so the code writes a fabricated 0
+
+**Found:** 2026-09-23, W-NO-BINANCE Part A (R2; CTO F1) [A].
+**Shape.** `market.Data.FundingRate` is a plain `float64`. With no way to say "not read", every writer that had no value wrote `0`. `GetWithTimeframes` wrote `OIData{0,0}` and `0` on futures by design; `GetWithExchange` substituted `{0,0}` on an OI error and discarded the funding error. So the AI prompt could read `Open Interest: Latest: 0.00 Average: 0.00` or `Funding Rate: 0.00e+00`: a confident zero standing in for "we have no data", which reads as a real market fact. The funding cache also stored a parse-failure 0 for an hour.
+**Probe:** for every numeric field that feeds a prompt, a gate or a display, ask what the writer does when the source is unavailable. If the answer is "0", check whether a reader can tell that 0 from a real zero. If it cannot, the field needs presence (a pointer, or a `Known` flag), and the renderer must print n/a.
+**Fixed in W-NO-BINANCE A:** `OpenInterest` nil = absent on futures; additive `Data.FundingRateKnown`; the prompt renders `n/a` for both (futures) and for an unread funding (crypto). Pinned: `TestFuturesPromptRendersAbsentOIAsNA`, `TestCryptoPromptRendersFundingOnlyWhenKnown`, `TestFuturesFetchThenRenderSaysOINA`. **Not fixed (Part B / crypto leftovers):** the crypto branch's `{0,0}` on an OI error, the `oi*0.999` "average", `market.Format`, and the agent and grid funding renderers.
+
+## CLASS 178 — a precedence stated in prose, implemented by the append order of a first-match scan
+
+**Found:** 2026-09-23, W-EXEC-TRUTH master dispatch D16, re-read at dev `656b7418` for W1 (c) [A].
+**Shape.** `kernel.ConditionStatus` resolved the env step by scanning one composed string and returning the FIRST token that named the condition. `ShadowConditionsEnv` built that string with every `SHADOW_CONDITIONS` token first and every `LIVE_CONDITIONS` token after, so a condition named in both lists resolved SHADOW. The comment one line above the builder promised the opposite ("LIVE_CONDITIONS forces live, highest env priority"). The rule lived in a comment; the behaviour lived in an `append` order two functions away, and nothing compared them. Under a collision a SHADOW result means an arm is cancelled and never placed.
+**Probe:** for every resolver that documents a precedence, find where the order is actually decided. If it is decided by the order values were concatenated, sorted or appended rather than by an explicit rank, write the collision test: put one name at two levels and assert the documented winner, with the inputs built by the production composer (for env, `t.Setenv` plus the real builder), not a hand-written string.
+**Fixed in W1:** the env step records whether it saw a live and a shadow entry for the name, and live wins wherever each appears; the builder now emits the LIVE block first so the string also reads in precedence order. Pinned: `TestConditionEnvCollisionResolvesLive` (the resolver and the boot ledger), `TestConditionPrecedenceLadder` (all five levels), `TestPlannerPromptArmableLineHonoursLiveOverShadow`, and at the trader seams `TestEnvCollisionLetsTheConditionArm` (arm seam) and `TestEntryGateArmSeamAdmitsAConditionLiveOverShadow`; a strategy override still outranks both env lists (`TestStrategyShadowOutranksLiveConditionsAtEntryGate`). The first two trader tests FAIL on the base resolver [A].
+
+## CLASS 179 — a window named by a duration but measured by a bar count (or by the previous bar)
+
+**Found:** 2026-09-23, W-NO-BINANCE Part B's ticker re-point (the agent builder's concern, [A] at `market/data.go:177-194`), ruled into W1 by the CTO (`1790171256933-12445-000001`).
+**Shape.** `market.Data.PriceChange1h` / `PriceChange4h` carried the names "1h" and "4h", but each writer counted bars. `GetWithExchange` took the close 20 bars back: 60 minutes on the CoinAnk 3m series, 100 minutes on the NT8 and Hyperliquid 5m series. Its "4h" was the previous bar of the LONG series: the prior 1h close on futures (0–60 min), the prior 4h close on crypto. `GetWithTimeframes` divided the window by the timeframe, so a 1h primary's "1h" was the previous close and a 4h primary's "1h" was a 4h change. Every writer returned 0 when the series ran short, and a reader could not tell that 0 from a flat market. The field name promised a duration; nothing measured one.
+**Probe:** for every value named after a duration or a window, find how its reference point is chosen. A bar index (`len-N`, `len-2`) is a finding unless the bar's timeframe is fixed and asserted beside it. Then check the short-series branch: it must return absent, not 0. Then check resolution: a series whose bar is as long as the window can only report "the previous bar".
+**Fixed in W1:** `market.ChangeOverWindow(bars, window) *float64` measures by bar close time and returns nil when the series does not reach back. `changeOnTimeframe` adds the resolution guard (at least 4 bars must fit in the window). The `Data` fields are `*float64`, and `market.PctOrNA` renders n/a at every reader: the BTC line, the grid prompt (zh/en) and the agent context. The futures values were never rendered, so no MNQ prompt moved. Pinned: `TestChangeOverWindowMeasuresBarTime`, `TestChangeOverWindowAcrossAGap`, `TestResolutionGuardRefusesAWindowTheSeriesCannotResolve`, `TestFuturesReadMeasuresBothWindowsByTime`, `TestFuturesReadWithAShortTapeReportsTheChangesAbsent`, `TestTimeframesReadMeasuresOnThePrimarySeries`, `TestUserPromptBTCLineRendersAnUnmeasurableWindowAsNA` and `TestGridPromptRendersAnUnmeasurableWindowAsNA` (goldens `user_prompt_crypto_change_na.txt`, `grid_user_en_change.txt`). RED: 5 of 5 mutations were CAUGHT (the 20-bar lookback, the previous long bar, the guard removed, absent rendered as 0, and no reference returned as 0).
+
+## CLASS 180 — a drift counter that skips the fields a custom MarshalJSON re-emits
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W1 (f) (CTO master dispatch §2; read-only map at `f179a1bc`, re-read at `853981d2`) [A].
+**Shape.** `store.EnumerateSchemaKnobs` built the settings schema by walking Go struct tags and skipped every `json:"-"` field. `StrategyConfig` has five of those (`CoinSource`, `Indicators`, `CustomPrompt`, `RiskControl`, `PromptSections`), and its custom `MarshalJSON` writes all five back out under `ai_config`. So the fields most likely to change behaviour (every risk control, indicator, coin-source and prompt-section setting) were never counted. The ⚙ boot line printed `schema=75` against the 167 paths a save actually writes. `UNCLASSIFIED` could not warn about a new risk field, because the walk never reached one. The audit list checked against the registry named `risk_control.*` and `indicator_config.external_data_sources`. Neither was in the walk, and the second path exists nowhere. They resolved only through the leaf-name fallback in `LookupKnob`. Separately, `env-shadows=0` came from a counter with no writer.
+**Probe:** for every counter or inventory built by reflecting over a type, ask whether that type (or any type it contains) has a custom `MarshalJSON`/`UnmarshalJSON`, or `json:"-"` fields. If it does, the tags are not the schema, and the count must come from the bytes the production marshaller writes. Then check each classification that rests on a name fallback: does the same leaf mean something else under a different parent? And for every number on a boot line, find its writer. If nothing writes it, it prints n/a.
+**Fixed in W1 (f):** the enumeration fills in every field by reflection, runs `json.Marshal` through the production `MarshalJSON` once for `ai_trading` and once for `grid_trading`, and walks the union of key paths (maps end at a sentinel key; arrays read element 0; memoized). The real paths are `ai_config.*`. `LookupKnob` tries exact, then exact with `ai_config.` stripped, then the leaf (149 of 167 paths still classify by leaf; that is a separate wave). Seven exact rows mark `ai_config.indicators.external_data_sources.*` ineffective, which stops them borrowing the live `name`/`type` rows and the `FetchExternalData` cites (that function has no production caller). The audit list now uses real paths. `env-shadows` prints `n/a (not counted)`, and `/api/config/resolved` omits the key. Pinned: `TestAuditDeadKnobsAreInTheSchemaWalk`, `TestEveryEnumeratedPathIsInTheMarshalledBytes`, `TestEveryMarshalledKeyIsEnumerated`, `TestEveryDashFieldLandsInsideTheEnumeration`, `TestSchemaKeySetSurvivesTheUnmarshalMarshalRoundTrip` (a legacy flat config included), `TestExternalDataSourcesChildrenClassifyIneffective`, `TestLookupKnobStripsTheAIConfigEnvelopeBeforeTheLeaf`, `TestKnobBootLineIsCounted` (schema= read, not literal) and `TestConfigResolvedSchemaIsTheMarshalWalkAndEnvShadowsAbsent`. RED: reverting to the tag walk is CAUGHT by five store tests and one api test; dropping the grid branch, the `ai_config.` strip, the seven exact rows or the n/a are each CAUGHT.
+
+## CLASS 181 — a clamped copy stands in for the saved value
+
+**Found:** 2026-09-23, W1 (g) builder, while building `GET /api/strategies/:id/effective` [A].
+**Shape.** Some surfaces run a normaliser (`StrategyConfig.ClampLimits`) on the config and then serve or persist the result. That erases the difference between "you set 3" and "default 3". The strategy GET's `attachPublishConfig` (`api/strategy.go:41`) serves a clamped copy. The create path (`:205`) and the update path (`:339`) persist the clamped config, so an unset min R:R is written as 3, min_confidence 0 as 60 and max_positions 0 as 1. Each of those then reads back as a "saved value". The running engine clamps its live config pointer in place every cycle (`kernel/engine_analysis.go:252-253`), so anything reading that pointer sees the clamp as well.
+**Probe:** store an absent value, a 0 and an explicit value, then read them back through every surface (API GET, editor, effective endpoint, boot line). The three origins must differ. Any normaliser that runs before a read or a write that reports origin is a finding.
+**Fixed in W1 (partly):** the effective endpoint reads the STORED row (raw JSON for presence + `ParseConfig`) and never the clamped copy or the engine pointer. `TestEffectiveMinRROriginsAbsentZeroSaved` pins this; a mutation that reads the clamped config makes it FAIL. **Not fixed — OWED to a save-semantics wave (deferred by the CTO, ruling msg 1790176346377 R4):** the Studio save path still persists the ClampLimits'd config (unset min R:R saved as 3, min_confidence 0 as 60, max_positions 0 as 1). `TestEffectiveClampAtSaveErasesOriginPin` pins today's behaviour, and must be updated deliberately when the save path is fixed.
+
+## CLASS 182 — a UI fallback literal names a default the runtime does not use
+
+**Found:** 2026-09-23, W1 (g) builder [A].
+**Shape.** Editors render `value ?? <literal>` for an unset field. The literal is a guess about the runtime default, written where the runtime can never correct it. Examples: `RiskControlEditor.tsx` renders "≤ {max_contracts_per_order ?? 10}", but the runtime resolves an unset value to 2 (`kernel.ResolveMaxContracts`) and then to 1 (the Stage-A cap). The breaker toggle showed an absent value as OFF while the runtime enforced 8. The min-confidence hint states the default "60" as a literal.
+**Probe:** grep the editors for `?? <number>` / `|| <number>` and literal "default N" strings. For each one, compare it with the production resolver's result for an unset value. Either they are equal and a test pins it, or the row shows the server's effective value (the W1 chip) instead of a literal.
+**Fixed in W1:** the effective chip carries the server-resolved value and origin on the covered rows. Any remaining literals are listed in the W1 PR.
+
+## CLASS 183 — a 0 that means "unset" to one reader and "off" to another
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W1 (a)+(b), `fix/settings-truth` [A]. Sibling of the fabricated-0 class above (a numeric field that cannot say "absent"): there the WRITER invents a 0; here the stored 0 is real but two readers disagree on what it means, and the encoding makes the disagreement invisible.
+**Shape.** `risk_control.consecutive_loss_halt` was an `int` with `omitempty`. The struct comment, `web/src/types/strategy.ts` and the Studio row all said "0 = OFF"; the runtime (`breakerHaltN`) read 0 as "unset → env `BREAKER_HALT_N` else 8". The Studio row rendered an ABSENT breaker as OFF while the runtime enforced 8, its OFF wrote a 0 that no save could store (every writer re-marshals the struct and omitempty drops it), and its ON wrote a literal 2. `day_plan.replan_cap` had the same shape at the strategy level: the session override (`*int`) honoured 0, the strategy level read 0 as the default 2. Nothing compared the three descriptions to the one resolver, and the unstorable 0 meant no test of the save path could ever observe the lie.
+**Probe:** for every numeric knob, list every reader of a stored 0 — the resolver, the UI's enabled/checked expression, the struct comment, the guide. If any two disagree ("unset" vs "off" vs "none"), the knob needs presence (`*int`: nil inherits, &0 is 0) and ONE resolver. Then walk the WRITE path through the real handler and read the stored bytes back: an `omitempty` int cannot store 0, so "0 = off" there is a switch wired to nothing. And for any change of meaning of stored data, report every stored row's before/after effective value before the new binary acts on it.
+**Fixed in W1:** both knobs are `*int` under the same JSON keys; `store.ResolveBreakerHalt` (saved incl. 0 → env `BREAKER_HALT_N`, an invalid env named in the source → 8) and `store.ResolveReplanCap` (session → strategy → 2) are the only rules, and `breakerHaltN` / `ReplanCapFor` delegate; `store.OriginLetter` is the one [O]/[E]/[I] mapping for the boot lines. The Studio writes OFF = 0, inherit = JSON null (the PUT merge keeps absent keys, so only null clears a 0), clear = null. The conversion is fail-closed with NO boot write: `store.SettingsTruthReport` prints every stored strategy's stored/before/after at boot, and a changed row no Studio save confirmed (`system_config settings_truth_zero:<id>`, written by POST/PUT `/api/strategies` in the SAME transaction as the row, carrying `saved_at` — see the class below) refuses its trader at `addTraderFromStore`, naming the strategy id, the exact field and both meanings (CTO ruling 1790173735176). The 09-16 research copy holds no explicit zero (9 rows) — expected live change 0 [A for the copy, B for live]. Pinned: `TestResolveBreakerHaltPrecedence`, `TestResolveReplanCapPrecedence`, `TestOriginLetterIsOneMapping`, `TestSettingsTruthReportGolden` + `TestSettingsTruthBootReportReadsTheStore` (one golden, the pure report and the store seat), `TestSettingsTruthResearchRowsChangeNothing`, `TestSettingsTruthRefusesOnlyUnconfirmedChanges`, `TestUpdateWithExplicitZerosReplacesTheRecordPerSave`, `TestDuplicateCarriesTheExplicitZeroRecord`; trader `TestW1BreakerBothPathsPresenceAware` (decision AND arm path on real closes), `TestW1SessionRiskBootLineReadsTheBreaker`, `TestW1StrategyReplanCapZeroIsZeroEverywhere`; api `TestW1BreakerSaveReloadThroughHandlers`, `TestW1ReplanCapSaveReloadThroughHandlers`, `TestW1LegacyZeroRefusesTheTraderUntilAStudioSave`; vitest `RiskControlEditor.test.tsx` / `DayPlanEditor.test.tsx` "W1" cases. RED: 14 of 14 Go mutations and 7 of 7 UI mutations were CAUGHT (the pre-W1 `> 0` rule at each resolver, an unnamed invalid env, env tagged [I], the tape clause on every N, the default printed as the breaker with ≠1 bound, no load refusal, no record at create / update, Duplicate dropping the record, the report's BEFORE using the new rule, the confirmation ignored, the legacy flat key missed, the boot line ignoring session overrides; in the UI: absent read OFF, ON writing 2, ON writing undefined, clear writing 0, a fake 2 in the replan box, a cleared replan box ignored, a session override seeded with a literal 2).
+
+## CLASS 184 — a record that vouches for a row is written outside the row's transaction
+
+**Found:** 2026-09-23, CTO review of W-EXEC-TRUTH W1 `fix/settings-truth` (ruling msg 1790176346377) [A]. Sibling of the 0-meaning class above: its fix introduced the record this class is about.
+**Shape.** W1's load check trusts a stored explicit 0 only when a second row — `system_config settings_truth_zero:<strategy id>` — says a Studio save wrote it. The first build wrote that record in a SECOND statement after the strategy row had committed (`api/strategy.go` create and update: `Create`/`Update`, then `RecordExplicitZeros`, whose error was only `Warnf`'d and the save answered 200). A failure between the two left a saved 0 with no record — the owner's own OFF refused at the next load — and the handler told the owner the save had worked. The record also carried no time, so no surface could say WHICH save confirmed a 0; and a record that arrives without its row (or a row without its record — a DB restore, an import, a hand copy) had no defined reading.
+**Probe:** for every "marker", "record", "confirmation", "claim" or "stamp" row that another reader uses to trust or refuse a primary row, find its writer. It must be in the SAME transaction as the primary write, and a failed marker must fail the whole save — so the caller sees an error, not a 200. Prove it by making ONLY the marker's write fail inside the database (a trigger, no seam in production code) and asserting the primary row is unchanged. Then read the marker's parser. A value it cannot vouch for (truncated, missing its time, naming an unknown field) must read as UNCONFIRMED, never as confirmed. Every surface that prints the verdict must say which save confirmed it, and when.
+**Fixed in W1:** `StrategyStore.CreateWithExplicitZeros` / `UpdateWithExplicitZeros` run the row write and the record upsert/delete inside one `s.db.Transaction`; `Duplicate` reads the source, creates the copy and copies the record verbatim inside one transaction; POST/PUT `/api/strategies` call them and answer 500 when the record fails (the row rolls back); `RecordExplicitZeros` is gone. The record is `{"fields":[…],"saved_at":"<RFC3339 UTC>"}`; the first W1 shape (bare comma list) still confirms with no time (`n/a — the record predates saved_at`); anything else confirms nothing. `store.ExplicitZeroVerdict` is the one phrase — `OFF — confirmed by Studio save <2006-01-02 15:04 CT>` (replan: `0 — …`) or `explicit 0 UNCONFIRMED — re-save in Studio` — printed on the 🩺 boot line and appended to the effective endpoint's `origin`. Pinned: store `TestSaveRollsBackTheRowWhenTheRecordFails`, `TestParseExplicitZeroMarker`, `TestUpdateWithExplicitZerosReplacesTheRecordPerSave`, `TestSettingsTruthRefusesOnlyUnconfirmedChanges` + the report golden (confirmed, UNCONFIRMED, legacy-shape, unparsable and CST rows); api `TestStudioSaveRowAndRecordAreOneTransaction` (PUT and POST through the real router), `TestEffectiveExplicitZeroSaysConfirmedOrUnconfirmed`. RED: 7 of 7 mutations were CAUGHT (9 seat runs): two separate writes in all three writers, in create only, and in Duplicate only; the effective row dropping the verdict; the verdict ignoring the record (store and api); a JSON record without `saved_at` accepted; a UTC clock labelled CT (store and api).
+
+**Instance 2026-09-24 M3:** the update enrollment is two files written by two renames. The half-written pair (a new device.key beside the old admin.json) was a WORKING enrollment of the incumbent, while the Enroll comment said the opposite (red-4 #4 [A]). Closed by the password-binding belt: the pair fails the binding, so it is 403 until an `enroll --replace` completes (`399ab651`, `a8f5db20`)
+
+## CLASS 185 — a stored rule evaluated with an env default
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W2 `fix/confirm-resolver` (master dispatch §2 W2 + amendment A5, extends D19) [A]. Siblings: the W1 "0 that means unset to one reader and off to another" class above (one value, two readers), and CLASS 38 (the prompt offers what the validator refuses). Here the plan STORES the rule and the evaluator reads the env instead.
+**Shape.** A scenario's `confirm.rule` is authored, validated against the entry law and stored in the plan row. `EvaluateScenarioConfirm`'s continuation branch (`kernel/plan_confirm.go:146` at f2ac79eb) and `BreakdownContinueState` (`kernel/breakdown_continue.go:151`) never read it. They synthesized `fmt.Sprintf("%dx5m_close", bdConfirmCloses())` at EVALUATION time. Plan row 435 (2026-09-21 LONDON v5, S1 `breakdown_continue` short, confirm `{2x5m_close, 30264, below}`) was therefore rendered, recorded, desked, armed and write-validated on ONE close. Leg 1 was MET at the 05:30 close; the stored rule makes it MET at 05:35. The `time_hold` duration had the same defect with nothing to store it in. Row 452 S2 says "holds above it for 3 minutes of 1m closes", and was judged on `ACCEPT_HOLD_MIN` = 10. Nothing reported the substitution. The arm log even printed the leg literal `touch` for every single arm (`armed_executor.go:597`).
+**Probe:** for every stored rule-shaped field (confirm/confirm2 rule, hold duration, death/flip rule), list every reader that decides with it: evaluator, render, recorder/card, desk, arm gate + its log, write-time validator, planner facts. Grep each reader for an env/knob read (`os.Getenv`, a `*Min*()`/`*Closes()` helper) on the same path, and for a rule string built from a number (`Sprintf("%dx…")`). Then check two things. (1) A stored value exists and the env is set to something else. At least one reader must read the env, and a test must show the stored value winning (`t.Setenv` the env to the opposite). (2) Nothing is stored. The default must be NAMED as a default on every surface, never presented as the plan's own rule. Find prose that states a value its object does not store ("3 minutes"). The write site must refuse it, and history must never be re-judged.
+**Fixed in W2:** `kernel/confirm_resolver.go` `ResolveConfirm` / `ResolveScenarioConfirm` returns `{rule, kind, closes, tf, hold_min, ref, side, SOURCE, why}`. It is the ONE reader. `BD_MIN_CLOSES` / `ACCEPT_HOLD_MIN` are read only there, plus `EntryLawBootLedger` and the prompt's authoring-default text (the source-scan pin). `BreakdownState.Rule` carries the resolution to the evaluator, `retestLegDetail`, the validator's "NO confirming close" message (now naming `rule 2x5m_close [stored]`), `RenderConfirmLines`, the recorded `scenario_meta.confirm` (new `rule_source`), the desk, the card chip ("(authoring default)" when it is one) and the arm log (`wait_confirm MET (leg 1 2x5m_close [stored] → leg 2 retest_fail)`). The decline consumer now reads the recorder's scenario set and the verdict's own ref. A5 adds `PlanConfirm.hold_min` (`*int`, omitempty — absent on every legacy row, resolved as "authoring default (no hold_min stored)"). It is structurally valid only on `time_hold` with a value > 0. It has a new-authoring-only refusal: the prose states minutes and `hold_min` is absent, or is none of them (`ValidateConfirmHoldProse`, `parsePlanDocument` newAuthoring branch; the stored-read path never runs it). The prompt schema states it, and a contract row, a hint and a repair excerpt were appended. Kept DISTINCT and untouched: touch, displacement (`BD_MIN_DISP_ATR`, write-time), plan death (`PlanIsDeadSince`), flip (`FlipConfirmCloses`). Pinned: `TestConfirmResolverStoredOneCloseIgnoresEnv`, `…StoredTwoCloses`, `…TouchUnchanged`, `…DisplacementUnchangedAcrossCloseRules`, `…FormingBoundary`, `…Row435`, `…Row452HoldMinutes`, `…HoldMinStructural`, `TestProseHoldMinutes`, `…SourceScanPin`, `…ReplayRenderByteIdentical` (RenderConfirmLines over the 09-08 replay corpus, golden written at the base before any code), `TestBreakdownContinueValidatorRealTape` (re-pinned as the correction), trader `TestConfirmResolverBreakdownArmStoredTwoCloses`, and vitest `ConfirmationTruth.test.tsx` W2 cases. RED: 17 of 17 Go mutations and 1 of 1 UI mutation were CAUGHT, after one survivor (a dropped leg-1 `rule_source`) was closed by a stronger pin. The mutations were: stored rule ignored, hold_min ignored, write check off, absent hold_min accepted, dedupe off, drop off, pre-birth kept, forming off by one, arm log literal, leg-1 source dropped, validator message unnamed, displacement measured after leg 1 only, decline set narrowed, env re-read in `retestLegDetail`, `hold_min` gone from the prompt schema, hold_min on any rule, and the timeframe tail not excluded; in the UI, the default label dropped.
+
+## CLASS 186 — a close count that trusts the order of its input
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W2 (d) [A].
+**Shape.** The confirmation counters assumed a sorted, unique 1m series and never checked it. There were three consequences. (1) `evaluateConfirmAfter` windowed with `BarsSince`, which returns `bars[i:]` from the first in-window bar, so a late PRE-BIRTH bar after it leaked in. (2) `aggregateToMinutes` merges only ADJACENT same-bucket bars, so a late copy of an earlier bucket's minute re-opened that bucket after a later one. That is a phantom completed close: buckets `[Z, A, Z′]` made run 2 → a `2x5m_close` MET. (3) `time_hold` counted every bar, so a repeated minute counted twice: nine distinct minutes plus one copy read "10/10 MET". The live BarCache keeps bars ascending and unique (`bar_cache.go` Upsert), so this is defence in depth — but nothing proved the input was ordered, and replay/test tapes are not the cache.
+**Probe:** feed every counter (a) a duplicate minute, (b) a late copy of an earlier bucket's minute, (c) a late pre-window bar, and assert the count and the bucket open times (strictly increasing). Then check that the rejected input is RECORDED — a counter, not a silent skip.
+**Fixed in W2:** `confirmationTape` (`kernel/confirmation_bucket.go`) is the one confirmation input. It keeps `[since, now)` by bar OPEN; a same-OpenTime copy replaces the kept bar (the freshest print); a strictly-older bar is dropped. Its recorded counters appear in the 🔎 confirmation boot line (`tape out-of-order drops=…`, `tape same-minute replacements=…`), with one WARN on the first drop in a process. `evaluateConfirmAfter` and `confirmationBuckets` read it. Plan death/flip windowing is untouched. The forming guard is unchanged (`EvaluateBucketClose`). Pinned: `TestConfirmResolverDuplicateMinuteCountsOnce`, `TestConfirmResolverOutOfOrderNoPhantomBucket`, `TestConfirmResolverFormingBoundary`. RED: dedupe off, drop off and pre-birth kept were each CAUGHT.
+
+## CLASS 187 — a test file silently excluded by a GOOS/GOARCH filename suffix
+
+**Found:** 2026-09-23, W2 builder, before commit [A]. It never shipped, but it cost a build cycle and would have shipped a green suite that never ran the test.
+**Shape.** Go treats a `_<GOOS>` or `_<GOARCH>` filename suffix as a build constraint. A test named `confirm_resolver_arm_test.go` ("arm" as in armed orders) is built only on `GOARCH=arm`. On amd64, `go test -run <its test>` prints `testing: warning: no tests to run` and exits 0. `go list -f '{{.IgnoredGoFiles}}'` lists the file; nothing else does.
+**Probe:** `go list -f '{{.ImportPath}}: {{join .IgnoredGoFiles " "}}' ./...` must list only deliberate build-tagged files. On 2026-09-23 that is exactly one: `store/sqlitedriver/backend_cgofree.go`, a cgo/driver build tag [A]. Suspicious suffixes in this repo's vocabulary: `_arm`, `_arm64`, `_js`, `_linux`, `_windows`. A test that you just wrote must be seen to RUN (`-v`, its `=== RUN` line) before it counts as green. `ok … [no tests to run]` is a finding.
+**Fixed:** the file was renamed `confirm_resolver_armgate_test.go`. A repo scan for every GOOS/GOARCH suffix found no other hits (2026-09-23 [A]). Guarded (CTO ruling 1790181002671): `branding/test_file_build_suffix_test.go` `TestNoTestFileCarriesAPlatformBuildSuffix` walks every `*_test.go` and fails on a `_<GOOS>`/`_<GOARCH>` name suffix unless allowlisted with a reason (empty today); a vacuity floor of 500 files. RED: a planted `kernel/zz_probe_arm_test.go` is CAUGHT.
+
+**Instance 2026-09-24 M3:** `TestCensusWalkIsTestToolingOnly` read `go list .Imports`, which covers the current GOOS/GOARCH only, and `./...` never matches a package every file of which is excluded. `TestNonTestImportersSeesEveryPlatform` asks every platform (`6e7e7117`)
+
+## CLASS 188 — an unparseable safety sentence accepted as UNKNOWN
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W2 A1 (CTO amendment msg 1790166603535; lane decision D1) [A]. Sibling of CLASS 90 (whose closing note recorded "unsupported ... evidence is UNKNOWN and accepted" as the design) and of the class-38 prompt/validator contract.
+**Shape.** The write-time born-dead check (`validateAuthoredScenariosAt` → `kernel.EvaluateAuthoredInvalidationAt`) parsed `scenario.invalid` with a small grammar and treated a sentence it could not parse exactly like a missing minute: UNKNOWN, `ACCEPTED for this check`, one `authored_unknown` count. The prompt never stated the grammar (the schema said `"invalid": "<line>"`), so the model had no way to comply. Plans rowid 455 (2026-09-23 LONDON v1) published four scenarios whose invalidation lines were all outside the grammar ("Any 5m close above 31075.75 invalidates the fade; stand aside for the breakout.", …; log_events 92916–92919). No machine check could judge any of them. The verdict struct had no field that told the author's defect (grammar) apart from the feed's (tape), so one number counted both.
+**Probe:** for every write-time check that parses model-authored text, list its UNKNOWN outcomes and ask whose fault each one is. If the author could have written a parseable sentence, UNKNOWN must be a refusal inside the existing attempt budget. The refusal quotes the sentence, the prompt states the grammar the parser accepts (a class-38 row plus a parity test that runs the prompt's own example through the parser), and the repair prompt carries the law. An UNKNOWN the author could not have avoided (missing, malformed or duplicated tape) stays accepted and counted. Two different causes must never share one counter.
+**Fixed in W2 A1:** `AuthoredInvalidationVerdict.Unknown` = `grammar` | `tape`. Grammar unknowns are refused through ONE combined error that opens with `invalidation grammar refusal` and quotes every offending sentence (`%q`), with one counted `authored_grammar_refusal` event per scenario. Tape unknowns keep `authored_unknown` (accepted). The prompt carries `AuthoredInvalidationGrammarLine()`: the four canonical forms plus ONE placeholder example (`PromptContracts` row). `RepairInvalidationGrammarLaw` sits on its own hint field (`scenario.invalid`, token set {2x5m}) and is routed in `lawExcerptsFor` on the marker. The 🧭 boot line READS `invalidation: <kernel.AuthoredInvalidationPolicy()>` and `grammar refusals=N`, and relabels the old count as tape-only; pre-W2 events mix both kinds, and the line says so. Pinned: kernel `TestBornCheckRow455FourGrammarRefusals`, `TestAuthoredInvalidationUnknownSplitsGrammarFromTape`, `TestAuthoredGrammarPromptExampleParses`, `TestAuthoredGrammarRefusalRoutesRepairLaw`, `TestClass38PromptContractsAllStated`. Trader, at `runPlannerReadCoreWithFactsGradesClock`: `TestW2Row455GrammarRefusedAtWriteSiteThenConformantPublishes`, `TestW2Row452GrammarRefusalAndTapeUnknownAccepted`, `TestPlanLivenessBootAndDeskUseRecordedFacts`. Store: `TestLivenessGrammarRefusalCountedSeparately`. RED: every one of these mutations was CAUGHT — grammar accepted, tape refused, marker routing removed, boot line fed the tape count, event kind not recorded, sentence unquoted, grammar line dropped from the prompt.
+
+## CLASS 189 — a write-time check that judges only the read-time price or the latest window
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W2 A2 + D5 (CTO amendment msg 1790166603535) [A]. Sibling of CLASS 148 (side of price judged against the read price) and CLASS 91 (a close counted before its bucket closed).
+**Shape.** A planner read is assembled at one clock and published at another. For plans rowid 455 the read clock was 01:30:27 CT (per the amendment) and the publish clock (row created_at) 01:51:47 CT. Between them four 5m groups closed: 01:35 31081.00, 01:40 31090.75, 01:45 31083.00, 01:50 31079.75 (MNQ 1m, open_time_ms 1790145000000..1790146140000). The scenario born-dead check sampled only the latest completed window at publish. The death/flip side-of-price rule (`DeathLineBeyondPrice` / `FlipLineBeyondPrice`) judged only `facts.Price`, the read-time price 31057.50. So the plan's own `death{2x5m above 31075.75}`, met by 01:35 + 01:40 before the plan existed, was never judged. Neither was `flip{5m_close above 31066.32}`, which fired at 01:35. The runtime evaluator judges only closes after birth, so a condition met in that gap is visible to nobody.
+**Probe:** for every write-time validator that judges market state, name the clock it reads and the window it covers. If the model's input was assembled earlier than publication, the validator must cover the whole span (read, publish]: every group, not a sample. It must record the clocks and the judged groups on the row, so a reader can see what was checked. Build the discriminating fixture: a breach that exists ONLY between read and publish must refuse with the read clock and must be accepted by the old check. That is the proof the new window did the refusing.
+**Fixed in W2 A2 / D5:** `kernel.PlanFacts.ReadAt` (`json:"-"`) = `input.Now`. `AuthoredBornGroups(read, publish)` returns every group whose close B satisfies read < B ≤ publish, plus the latest completed group. It uses the canonical `EvaluateBucketClose`, and each group needs all five minutes. A group with a gap is tape-UNKNOWN for that group only and is never a refusal. A zero read (legacy facts-less callers) is today's latest-window check, and the record says read n/a. `EvaluatePlanConditionBetween` judges death{} and flip{} on the same groups (raw line, rule, side). A met death joins the born-dead refusal; a fired flip refuses with "re-author on the flipped side". The runtime buffers, windows, touch gate and flip hold are unchanged. The record `{policy, read_clock_ms, publish_clock_ms, groups, verdicts}` lands on NULLable `plans.read_clock_ms / publish_clock_ms / born_check`, and in a refused attempt's liveness-event `born_check`. The card line reads it back (`authored_invalidation`; a pre-W2 row shows n/a). The shadow A/B replays it purely. Pinned: kernel `TestBornGroupsRow455ReadToPublish`, `TestBornCheckA2DiscriminatesReadToPublish` ("5m close above 31085.00" and "2x5m close above 31080.00": refused with the read clock, accepted with zero read), `TestBornCheckTapeUnknownIsPerGroup`, `TestBornCheckConformantPassesAndRecords`. Trader, at `runPlannerReadCoreWithFactsGradesClock`: `TestW2A2RefusesOnlyWithTheReadClock`, `TestW2DeathAndFlipMetBetweenReadAndPublishRefuse`, `TestW2AllAttemptsRefusedFailClosedRowHasNoBornCheck`, `TestW2LiveReadStampsTheReadClock` (the live `runPlannerReadWithTriggerClaimedCtx` path), `TestW2ShadowVerdictIncludesBornCheck`. Store: `TestPlanRowBornCheckColumnsNullable`, `TestPlanBornCheckColumnsMigrateExistingTable`, `TestLivenessEventCarriesBornCheck`. API: `TestAuthoredInvalidationViewReadsTheRow`. Vitest: `PlanLiveness.test.tsx`. RED: every one of these mutations was CAUGHT — the group set ignoring read, the write site passing a zero read, facts not stamped from `input.Now`, death/flip unjudged, bad minutes ignored, the record not stored, the NO-TRADE row inheriting a refused candidate's record, the API inferring a policy for a pre-W2 row, the shadow skipping the check, and three UI mutations.
+
+## CLASS 190 — an identity that names one level while the scenario trades another, published as a "recorded" finding
+
+**Found:** 2026-09-22/23, CTO amendment msg 1790166603535 [A]. Plans rowid 452 (2026-09-22:ASIA v1) S2: `level_id` resolves to PDH 30917.50 while trigger, confirm (`time_hold` ref 31009.75) and economics all trade SWG-H·5m 31009.75; log_events 90563 printed `🪪 heuristic-disagreed … candidate=30917.50 evaluator=31009.75 — recorded; evaluator unchanged` and the plan was PUBLISHED. `resolveEntryGeometryZone` takes the reject/fade entry zone BY level_id, so the stored identity steers execution geometry toward a level 92 points away. The 09-22 London row 443 carried `ref|`-prefixed ids with an altered digest that no map row carries.
+**Shape.** A write-time check that was built as recording (class 116: "WARN-only", "a counted finding") and stayed recording after downstream code started to TRUST the recorded field. A published contradiction is two truths on one row; whichever reader you pick decides which one trades.
+**Law.** At NEW-authoring write — never on stored or overlay reads — an authored id that does not resolve in the frozen map is refused, and a resolved level_id whose level lies outside its own zone [lo−3.00, hi+3.00] of the scenario's evaluator anchor (`kernel.ScenarioAnchor`, the same predicate the recording uses — `kernel.ResolveScenarioIdentity`) is refused. Two-anchor setups name `sweep_level_id` / `reclaim_level_id`: two different ids, each at its own leg's `ref_price` (confirm / confirm2). A NULL id stays WARN. Refusals re-author within the three attempts; the third failing attempt takes the existing fail-closed NO-TRADE path. History is untouched: no stored id is rewritten.
+**Probe:** for every field a validator "records" instead of refusing, grep its readers. If any reader drives an order, a stop, a target or a gate from that field, the recording is a published contradiction — refuse at write, or stop the reader from trusting it.
+**Fixed in W2:** `kernel.CheckScenarioWriteTruth` (A3 half `scenarioIdentityWriteIssues`) is called ONCE in the planner write loop, right after the born-dead check (`at.scenarioWriteTruth`), and in `shadowVerdictFor`. The error names both ids and both prices and routes to `RepairIdentityPriceLaw`. `IdentityLevelsFromCandidates` is the one projection shared with `StampAuthoredIdentity`. Counters `scenario_write_truth:<trader>:refused:<class>` (keyed by class, never by price text) and the `🪪📐 scenario write truth` boot line (n/a until the first recorded check). Pinned: trader `TestW2A3Row452S2RefusedThenRepublishedWithTheRightID`, `TestW2A3AlwaysDisagreeingFailsClosed`, `TestW2A3UnresolvedIDsRefusedThenRepublished` (invented strict id AND `ref|` altered digest), `TestW2A3MultiAnchorSweepReclaim`, `TestW2A3ZoneEdgeRejectNamingItsZoneIsAdmitted`, `TestW2LegacyStoredDocReadsUnchanged`, `TestW2ShadowVerdictParity`, `TestIdentityE1…` (re-pinned as the correction); kernel `TestW2A3FvgNamingItsOwnGapIsAdmitted`, `TestW2NilMapIsUnknownEmptyMapIsKnown`, `TestW2RepairLawRoutesTheNewRejections`, `TestW2Class38RowsRegisteredAndRendered`.
+
+## CLASS 191 — a first obstacle that skips a seated level, and a path nobody had to list
+
+**Found:** 2026-09-23, CTO amendment msg 1790166603535 [A]. Plans rowid 455 (2026-09-23:LONDON v1): S2 short from 31066.32 names RTH-H 31050.00 as `first_obstacle` (0.71R) while its own `target_chain` starts at SWG-H·15m 31059.00 (0.32R) — a seated level; S4 short from 31047.00 names PDC 31035.25 and omits SWG-H·5m 31043.00, a seated level 4 points from entry. Log 90561 (row 452): an arm disabled `net_nonpositive (gain 2 cost 2)`. The prompt accepted `reduce` on a single contract as "a declared intention".
+**Shape.** The economics contract checked that an obstacle was PRESENT and not beyond the target, never that it was the FIRST one, and never that the levels in between were accounted for. The model's R-to-obstacle then measured to whichever level it chose.
+**Law.** At NEW-authoring write: `target_chain` sorted outward from entry in the trade direction; `first_obstacle` equals the nearest SEATED level (the frozen `facts.IdentityMap`) strictly between entry and the arm target within one tick — a capacity-cut candidate nearer on the path is accepted, never required (the model never sees the cut pool); an empty seated path requires the arm target; every other seated level on that path appears in `economics.path_levels` `{price, level, level_id?, role: pass_through|reduce|exit}`, and a missing one is refused BY NAME; `reduce` with an arm of quantity 1 (a single arm, or legs summing to 1) is refused; no arm → quantity UNKNOWN → not checked. Excluded from the path: the scenario's own level_id candidate when the entry sits in its zone (the traded level itself; a level_id naming a validated reclaim leg further along stays on the path), anything inside `entry_zone` ±1 tick, and anything within a tick of entry or target. Authored chain prices (target_chain, first_obstacle, path_levels) are normalized to the tick grid and each normalization is recorded, never refused. `facts.IdentityMap` nil → the check is UNKNOWN and skipped (not []).
+**Probe:** for any "first X" field, ask whether the validator ever computes the first X itself. If it only checks presence, a later X can stand in for it and every ratio computed from it is wrong.
+**Fixed in W2:** `kernel.CheckScenarioWriteTruth` (A4 half `obstacleChainWriteIssues`) at the same single write-loop block and in `shadowVerdictFor`; `PlanFacts.CapacityCut` built from `input.Pool` minus the seated set (`CapacityCutCandidates`); errors route to `RepairObstacleChainLaw`; the prompt's reduce sentence is REPLACED (never both); four class-38 rows. Golden moved: `kernel/testdata/knob_prune/planner_prompt_defaults.txt` (the reduce sentence replaced; the A3/A4 sentences inserted after the NEW-authoring REFUSALS sentence — a correction, quoted in the PR). Pinned: trader `TestW2A4Row455S2AndS4RefusedByNameThenRepublished`, `TestW2A4ChainContractOnTheWriteLoop` (off-tick seated midpoint, skipped seated level, unsorted chain, reduce on a single arm, capacity-cut accepted/never required, nil map), `TestW2A4ShortMirrorSortedDescendingPasses`, `TestWriteTimeFeasibilityRejectPlayAtRealZoneAdmitted` (class-39 fixture: empty seated path, obstacle == arm target — stays green); kernel `TestW2CapacityCutIsPoolMinusSeated`, `TestW2Class38RowsRegisteredAndRendered`.
+
+## CLASS 192 — a prompt header that tells the model the opposite of what the gate does
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W3 §3 (CTO amendment msg 1790166603535 §3) [A]. Decision 45139 (2026-09-23 06:38:50 UTC, plan 2026-09-22:ASIA v3) stored an executor system prompt whose PLAN BLOCK header read `preferred: follow it · a valid off-plan setup may still be traded (cite "off-plan")`, and whose field line offered `"off-plan" for a valid non-plan setup` — while plan_mode was strict and the entry gate refused every decision-path entry (log_events 92685: `entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only`). `kernel.RenderPlanBlock` rendered ONE header in every plan mode; the KEY LEVELS anchor line (`between them, a confirmed momentum/breakout may still be traded`) said the same.
+**Shape.** A prompt sentence written for one gate configuration (advisory) and never re-derived when the gate became configurable. The model obeys the prompt; the gate refuses; the record reads "refused" and nobody reads the prompt that caused it.
+**Probe:** for every gate the executor meets, list the prompt sentences that describe it and render the prompt under EVERY value of that gate's knob. A sentence that is true under one value and false under another must be rendered from the resolved value — through the SAME helper the production call site uses — and a golden per value pins it. When the advisory render is a boot-integrity golden, keep it byte-identical and add the new value as its own embedded case.
+**Fixed in W3:** `kernel.RenderPlanBlockForMode(doc, session, mode)` (strict: `plan_mode=strict: entries execute ONLY through armed plan scenarios (market_in_zone policy); an AI decision is a nudge — cite the scenario; off-plan is refused`; direction: the bias rule; advisory/unknown: today's text); `RenderPlanBlock` = the advisory render, byte-identical (futures_mnq_plan.golden unchanged; the api Ask-Planner/realign callers stay advisory). ONE production selection `(*StrategyEngine).setExecutorPlanContext` (engine_analysis.go; `DayPlan.PlanModeFor(plan.Session)`) remembers the mode; the cited_scenario field line and the KEY LEVELS anchor are mode-aware under strict only. The boot self-check gained `futures-plan-strict` (embedded `futures_mnq_plan_strict.golden`, built through the same helper). Pinned: `TestW3FuturesPlanGoldenPerMode` (strict + direction goldens; advisory through the helper == the boot golden), `TestW3StrictPromptNeverOffersOffPlan`, `TestW3RenderPlanBlockForModeOnlyTheHeaderDiffers`, `TestW3ExecutorPlanModeHelperPerSessionOverride`, `TestW3Decision45139HeaderFixture` (redacted fixture), `TestW3BootSelfCheckHasFourCasesAllPassing`. RED: the strict header text drifted → `futures-plan-strict ok=false` with the three advisory cases `ok=true`; the helper ignoring the mode, and the field line not mode-aware, were each CAUGHT.
+
+## CLASS 193 — an order policy stamped after the validator that refuses it
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W3 R4 (lane map, read-only @9ab006d4) [A]. The validator chain runs inside `ValidatePlanDocWithCaps` → `validateArmSpecs` → `ArmSpecValid`, whose legacy branch refuses acceptance / hold / breakout_retest arms and immediate waterfalls. A default entry policy stamped by the composer (or anywhere after parse) would never reach a plan that authored those arms: the plan is refused before the stamp exists, so the policy that makes them legal can never apply. The mirror defect: a default stamped where it is ILLEGAL (planned_order on a reclaim) turns a valid legacy arm into a refused one.
+**Shape.** A field that changes what the validator accepts, written by a stage that runs after the validator. Order of operations decides the law, and nothing tests the order.
+**Probe:** for every value that is stamped onto a document by the machine, name the validator that reads it and prove the stamp runs FIRST, on the new-authoring path only (a stored reader never stamps). Then prove the stamp is fail-closed: a stamp the validator would refuse is never written (the doc stays as authored), and a planner-set value is never overwritten.
+**Fixed in W3:** `kernel.StampEntryPolicyDefault` runs in `parsePlanDocument`'s newAuthoring branch BEFORE `ValidatePlanDocWithCaps`, reached only through `kernel.ParsePlanDocForAuthoring(raw, maxL, maxS, AuthoringOpts{MinRR, EntryPolicyDefault, MinHoldMin})` (the planner write loop and the shadow A/B, one `plannerAuthoringOpts`); it stamps only when the policy is legal on EVERY leg (`EntryPolicyLegal`) and never over a planner-set policy; `ParsePlanDoc` / `ParsePlanDocCappedWithMinRR` stamp nothing. Pinned: kernel `TestW3StampAtParse`, `TestW3ValidatorNineConditionsByPolicyAndShape` (9 conditions × {absent, market_in_zone, planned_order} × {single, split}, the verdict derived from the policy table), `TestW3LegacyCorpusByteIdentical` (plan-{170,178,180,182,185,187,252,265,270} + class39 rows 69/85 through the stored reader: same verdicts, no policy key); trader `TestW3WriteLoopAcceptanceArmStoredWithPolicy`, `TestW3WriteLoopLegacyDefaultKeepsTheOldLaw`. RED: stamp a no-op, stamp ignoring legality, stored reader stamping, and the write loop parsing without the policy were each CAUGHT.
+
+## CLASS 194 — a price range judged at one point of the range
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W3 (c) D7 [A]. A market_in_zone entry can fill anywhere in `economics.entry_zone`, but the write-time gates (`armGateVerdictFor`) judge ONE `leg.Entry`. Judging at the authored entry admits a zone whose far edge fails the R:R floor (write loop fixture: entry 15484 → R 3.58, far edge 15494 → R 2.24 < 3.0), and composing the stop from the far edge leaves the near-edge stop distance under the min-SL floor (authored stop 15479.75: 4.50 < 12.00).
+**Shape.** A check written for a point applied to a range: it is correct for the one price it reads and silent about every other price the order can reach.
+**Probe:** for every gate on an order that can fill across a range, name the fill that is WORST for that gate and judge it there — R:R at the far bound (least reward, most risk), stop distance at the near bound (least risk distance). A fixture must pass at the authored point and fail at the worst fill, or the test proves nothing.
+**Fixed in W3:** `writeTimeZoneVerdicts` (trader/write_time_feasibility.go, NOT gated by write_time_feasibility — D5): `kernel.ArmZoneVerdict` first (a code → Kind "zone", arm_disabled_reason = the code), then the executor's `composeArmStop` from the NEAR bound and `armGateVerdictFor` at the FAR bound, then at the NEAR bound; the legacy feasibility path skips market_in_zone arms (no double judgement). Hinted with the `entry zone:` marker (`RepairEntryZoneLaw`), disabled on the last attempt. Pinned: trader `TestW3WriteLoopZoneBoundaries` (lo/hi inclusive, ±1 tick, width max / max+1 tick, trigger side ±1 tick, bracket, inward rounding, R:R far vs entry, stop from near), `TestW3WriteLoopZoneViolationHintedThenDisabled` (incl. write_time_feasibility OFF), `TestW3ZoneLegVerdictWorstFills`. RED: R:R at the authored entry and the stop composed from the far edge were each CAUGHT — the first only after its fixture was corrected: at the 2.0 floor it assumed, the case was refused at the entry too (the real floor is the 3.0 schema default) and the mutation SURVIVED.
+
+## CLASS 195 — a re-arm loop that re-places a filled order within the same plan version
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W3 D15 (`fix/strict-follow-plan`, executor builder) [A for the code path, B for the live consequence]. Sibling of the MANUAL-CANCEL-WINS law (`store/armed_orders.go` UpsertArm, the E7 2026-08-30 re-place loop) and D5 (append-only placements).
+**Shape.** UpsertArm's D5 branch mints a NEW armed row at `placement_seq+1` for ANY terminal row that reached the broker, whatever the plan version — pinned by `store/armed_placement_dup_test.go` and `armed_orders_test.go` for legacy rows. For a market_in_zone row that is the re-place loop by construction: the limit sits at the zone's far edge and is MARKETABLE whenever price is inside the zone, so fill → stop-out → the next pass re-authorizes the same scenario → seq+1 → a marketable limit → fill… And the W3 rest cap ("zone rest expired") would turn into a 30-minute re-placement timer. [B: the loop needs only the D5 mint plus a marketable price; no live row has shown it because no market_in_zone row existed before W3.]
+**Probe:** for every order kind whose price can be marketable at authoring, walk fill → close → next pass → UpsertArm and count the rows and the signal frames. A terminal row that reached the broker under the SAME version must end its scenario's placements for that version unless a rule names why it may re-arm (today only the class-33 boot sweep). Check every terminal reason a rule of the wave produces (fill, rest-cap cancel, maintenance withdraw) and a new version (must re-arm).
+**Fixed in W3:** the D15 pin in `UpsertArm`, before the D5 mint: `existing.State != armed && signal != '' && existing.Policy == market_in_zone && existing.Version == row.Version && !IsBootSweepReason` → `return nil`. Legacy rows keep today's mint byte-identically. Pinned: store `TestArmedZoneReArmPinnedWithinVersion` (filled / zone rest expired / withdraw: … each pinned; a new version mints ONE clean row with no inherited receipts; a legacy row still mints; a boot-swept policy row re-arms), trader `TestZoneReArmPinnedWithinVersionAtTheCallSite` (fill via `onArmedOrderUpdate` → the position closed → a FRESH tape inside the zone and a FRESH flat book → no new row and no frame; a new plan version re-arms and places once). RED: the pin removed is CAUGHT by both.
+
+## CLASS 196 — a second pass trigger over state guarded only by "run-loop goroutine only"
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W3 D14 [A]. The armed pass's dedupe maps (`armRefusalLast`, `armStopCompLast`, `armAuthoredLast` — `trader/auto_trader.go`, commented "Run-loop goroutine only — no lock") and its in-pass placement latch were safe ONLY because one goroutine ever ran the pass. W3 adds two more triggers: the live-bar event pass (its own goroutine) and the strict nudge (inside the decision path).
+**Shape.** A comment ("goroutine X only", "touched only from runCycle") is the lock. The moment a second caller exists, plain map writes race (a Go `concurrent map writes` fatal, not a wrong answer), and two passes can each read the same `armed` row and each believe it is the first placement of the plan. The ledger CAS (`BeginPlacement*`) stops a double stamp of ONE row, not two scenarios of one plan in two passes.
+**Probe:** grep for "only — no lock", "single goroutine", "touched only from" on every field a new caller will reach. For each, name the lock that now guards it or prove the new caller cannot reach it. Then run the two callers at once with each held INSIDE its critical section long enough for the other to arrive, and assert they never overlap — a race detector alone can be satisfied by incidental happens-before edges (the logger's mutex, the DB) and stay green on a real race.
+**Fixed in W3:** one per-trader `armedPassMu`, taken by `maybeManageArmedOrdersAtOpts` itself, so the scan (`maybeManageArmedOrdersAt`, runCycle), the event pass and the nudge are one pass at a time; no reentrancy (the nudge runs after the scan's pass returned). The event loop is started in Run and stopped in Stop, kicked non-blocking, ≤1 pass/s coalesced to the trailing edge. Test seam `armedPassEnterForTest` (nil in production, pinned). Pinned: `TestArmedEventAndScanPassesAreSerialized` (run under `-race`: exactly one frame, never two passes inside). RED: the lock removed is CAUGHT (the overlap assertion; the race detector did NOT flag it on its own — 0 DATA RACE reports in 4 runs, which is why the probe asks for a held critical section).
+
+## CLASS 197 — a new trigger that places through the send point without the authoring gates
+
+**Found:** 2026-09-23, CTO ruling on W3 D14 (relayed by the lane) [A for the rule; the defect was designed out before it was built].
+**Shape.** `runArmedPlacementAt` is the SEND POINT. It places what an authoring pass admitted THIS pass (G1, W0b M2: a nil admitted set admits nothing). A new trigger — an event-driven pass, a nudge — that calls the send point "to place faster" must build an admitted set from somewhere, and the easy source is the ledger's armed rows: an arm the authoring gates would refuse this instant (daily force-flat, quality floor, invalidation, R:R at the live stop, HTF veto) is then placed because it was admitted by some EARLIER pass. That is G1 re-opened by a new road.
+**Probe:** for every caller of the send point, show the admitted set it passes was computed by the authoring gates in the SAME pass. Build the discriminating fixture: an armed row from an earlier pass, the price inside, and an authoring gate that refuses it now — the trigger must place nothing.
+**Fixed in W3:** the event pass and the nudge both run the FULL pass (`maybeManageArmedOrdersAtOpts`: authoring gates → admitted set → placement). The nudge's scenario scope filters PLACEMENT rows only, after the admitted set is computed and before `armAdmitted`, so other scenarios get no `arm_not_admitted` count. Pinned: `TestArmedEventPassHonoursTheAdmittedSet`, `TestStrictNudgeOnAGateExcludedScenarioPlacesNothing`, `TestStrictNudgeIsScopedToTheCitedScenario`. RED: the event pass calling `runArmedPlacementAt` bare with the armed rows admitted, and the nudge calling it bare with the cited scenario admitted, are each CAUGHT.
+
+## CLASS 198 — a guard that reads a field its own caller never copied (fixed in W1b)
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W3 mapping (`fix/strict-follow-plan`), CTO ruling `1790185785421`: OWED, not W3 [A]. The churn guard in `trader/armed_executor.go` (`row.State == "working" && churnNeedsModify(row.StopPx, row.TargetPx, leg.Stop, leg.Target, tick)`, base `e74fce17` :867, now :904) can never be true. `row` is the struct the arm loop just built with `State: "armed"` and the NEW leg prices; when a ledger row already exists only `row.ID` is copied from it (:851). So the state is never `working` and the "old" bracket is the new one. `nt.ModifyBracket` is unreachable, and a re-spec'd plan never moves a working order's stop or target.
+**Shape.** A guard compares "old vs new" on a value that was never loaded from the old record. It type-checks, reads plausibly, and is dead.
+**Probe:** for every guard comparing a stored value with a fresh one, trace where the "stored" operand is assigned on the path that reaches the guard. If it comes from the same constructor as the fresh one, the guard is dead. A test at the call site must drive the guard TRUE at least once.
+**Owed (as written at W3 — superseded by the fix below):** load `State`, `StopPx`, `TargetPx`, `SignalID` from the matched `existing[i]` (or delete the guard and its log line), with a call-site test that a working row whose plan moved the stop ≥ 2 ticks sends exactly one bracket modify. *The "one bracket modify" half was wrong:* the AddOn's `modify_bracket` acts only on a FILLED entry's bracket (`placedBrackets`, `HandleModifyBracket`), a working row is an unfilled entry, so the frame is refused ("no live bracket") and nothing in Go read the reply. The fix is cancel + re-arm, not modify.
+
+**Fixed in W1b (fix/executor-owed-1):** the arm loop keeps the matched ledger row (`prior`) and hands it to ONE function, `respecWorkingArm` / the pure `armRespecFor` (`trader/arm_respec.go`), which issues AT MOST ONE cancel per row — E2 (the moved zone, class below) is asked first, E1 only when E2 is silent. E1 fires only for a WORKING row with a signal and no Picture source, under a NEWER plan version (`plan.Version > prior.Version`), when the AUTHORED stop or target of that scenario's leg moved by ≥ 2 ticks (`churnNeedsModify`) from what the row's own version AUTHORED. "Authored" is the plan doc's price before any composition: `armScenarioLegs` is the ONE turn of a scenario into legs, used by the loop and by the prior-version reader `armAuthoredLegAt`, which folds `prior.Version` through the ONE fold (`GetPlan` + `ListOverlays` + `kernel.ResolvePlanFinal`). The composed wire bracket (live-ATR min-SL floor, structure anchor, obstacle target) is NEVER compared: the first build compared placed vs composed, and its verifier showed an identical scenario re-published as v2 cancelling a working order as "SL 97.70→96.82" and counting `arm:respec_cancel` for a re-spec nobody made (class 35). An unreadable prior authored leg does NOT fire (absent ≠ changed, L7) and WARNs once ("armed re-spec NOT judged … the authored bracket of v<N> is absent"). The cancel goes through `cancelSafetyFor` (a refusal sends nothing, WARNs once per `plan:version:scenario:legN:respec` key, retried next pass) → `nt.CancelOrder` → `RequestCancel` with reason `bracket re-spec by v<N>: authored SL a→b TP c→d (…)` → counter `arm:respec_cancel`; the row is `cancel_pending` until the broker's book confirms it, then the next pass authors the scenario afresh and `UpsertArm` mints a new row under the new version (the D15 pin blocks a mint only within the version the old row was placed under); every existing gate judges the new placement. A leg cancelled in a pass IS in G1's admitted set (`admitted.admit` runs before the re-spec call); only that pass's geometry record stops short of "admitted" (the re-spec call sits before `saveArmGeometry`). **W1b FOLD-8** corrected the `trader/armed_executor.go` comment that claimed the leg was "not recorded admitted" (comment-only, line-neutral, no SYSTEM-MAP re-pin): there is no hole, because a `cancel_pending` row is never placed and TWO layers enforce it — the placement switch (`case "armed":`, `trader/armed_executor.go` :1344) and the `BeginPlacement` compare-and-set (`store/armed_orders.go` :634, `state = armed AND signal_id empty`). Pinned by `TestRespecCancelPendingRowIsNeverPlacedOnAFlatLiveBook` (a flat live book after the cancel, no persisted confirmation: no signal, no successor row, and neither "armed place failed" nor "placement requested" in the log). Mutating the switch alone is RED; the compare-and-set alone stays green behind the switch; both together re-send the v1 order (see the class "a pin overdetermined by a second guard" below — the respec tests' "place nothing" assertions do NOT pin the switch). The dead `ModifyBracket` call and its 📌 log are gone from the arm loop (`TCPTrader.ModifyBracket` itself is kept; no C# change, no NT8 deploy). The refresh `UpsertArm` of a non-armed row is skipped only when `prior.SourceRef == row.SourceRef`, so the W5 R13(a) typed `ErrArmSourceMismatch` refusal still fires for a working row. CTO ruling (Wave 1b Q1): version-gated cancel + re-arm, ONE function for E1+E2, ≤ 1 cancel per prior row, compare authored brackets across versions only. Pinned at `maybeManageArmedOrdersAt` over the real TCP wire: `TestWorkingArmBracketRespecByNewVersionReplacesTheOrder`, `TestLegacyWorkingArmAuthoredRespecByNewVersionReplacesTheOrder` (a legacy row: cancel_pending naming the AUTHORED change → the book confirms → ONE new row, `placement_seq` 1, v2, one new signal; geometry not recorded "admitted"), `TestArmRespecIgnoresATRDriftAcrossVersions` (version bump + ATR drift, authored bracket unchanged → NO cancel, NO counter; RED on the composed-compare mutation: "ATR drift across versions with an unchanged authored bracket must send nothing: sigs=0 cancels=1"), `TestRespecIgnoresATRDriftWithinOneVersion`, `TestArmRespecAbsentPriorAuthoredLegNeverCancels`, `TestRespecCancelRefusedByTheFilledArmGuardRetriesNextPass`, `TestRespecSkipKeepsTheTypedSourceRefusalForAWorkingRow`, plus the pure edges table `TestArmRespecForEdges`.
+**Known limits (named, not fixed):** (1) an authored change the composition absorbs — e.g. a legacy arm whose structural (PDH) stop composes to the same wire stop either way — still cancels and re-places the SAME bracket once (the CTO formula compares authored prices; kept). (2) A re-spec'd legacy working limit loses its queue position, and while `cancel_pending` the row keeps the plan's slot (second-setup / one-contract / slot guards). (3) A working row placed under an older version costs one `GetPlan` + `ListOverlays` per pass until it settles. (4) Still OWED, fail-open as before: a new version whose zone is refused (`!zok`) `continue`s before the re-spec and leaves the old limit resting; so does a scenario removed or its arm disabled, a `wait_confirm` added, or a one-setup decline — the rest cap is the only exit in those cases. (A legacy or planned_order working limit whose AUTHORED ENTRY moved by ≥ 2 ticks without a bracket change no longer rests: W1b FOLD-1 re-specs it, see the next class.)
+**Known limits (CTO rulings, Wave 1b folds — named, not folded):**
+- **(L1) The re-spec cancel is fire-and-forget**, like the four existing cancel sites: `nt.CancelOrder` + `RequestCancel`, no ack wait, and a `cancel_pending` row is never re-judged by the re-spec. A lost cancel frame leaves the broker order live under a re-priced plan; the only retries are the settlement pass's bounded re-requests (`cancelReRequestMax`, `trader/cancel_confirm.go`) [B] and, inside a force-flat window or no-trade band only, FOLD-12's paced window re-send (it softens L1 there and nowhere else). **OWED:** the E11 one-`cancelArmRow` refactor (owner call).
+- **(L4) Overlays on the LIVE version are never re-specced.** E1 judges only across VERSIONS (the version guard `planVersion <= prior.Version`, `trader/arm_respec.go` :156). An owner or machine overlay on the live version that moves a working arm's bracket (or, since FOLD-1, its entry) leaves the resting order as placed. And `armAuthoredLegAt` folds that version's overlays AS THEY ARE AT READ TIME onto `prior.Version` (`GetPlan` + `ListOverlays` + `ResolvePlanFinal`, `trader/arm_respec.go` :89-100), so an overlay added after placement makes `was` the patched value: a v2 equal to patched-v1 reads "unchanged" while the resting order still carries the pre-patch prices. Root [A]: the ledger records only the COMPOSED placed prices (`EntryPx`/`StopPx`/`TargetPx`, `store/armed_orders.go` :38-40), never the authored leg at placement. **OWED (separate wave, owner call):** three nullable `authored_*` columns stamped at placement; compare authored-at-placement with authored-now, version-free.
+
+## CLASS 199 — a working order that outlives the plan version that priced it (fixed in W1b)
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W3 (`fix/strict-follow-plan`), CTO ruling `1790185785421`: OWED, not W3 [A]. When a new plan version moves a scenario's `entry_zone`, a `market_in_zone` limit already WORKING at the old far edge is not re-priced or cancelled by the version change. Only the zone rest cap (`day_plan.zone_rest_max_min`, default 30) ends it, so for up to 30 minutes the book can hold an order priced by a zone the current plan no longer states. Legacy arms have the same shape [B]: the arm loop matches an existing non-terminal row by plan id + scenario + leg, not version (:847-851), so a working legacy order keeps the price it was placed at.
+**Shape.** The order's identity (plan, scenario, leg) survives a re-plan, but the price that justified it does not. Nothing compares the working order's price with the current version's.
+**Probe:** for every resting order, name the plan version that priced it and the code path that runs when a newer version re-prices the same scenario. "The rest cap will end it" is a bound, not an answer.
+**Owed:** on a new version, a working `market_in_zone` row whose zone no longer contains its limit is cancelled ("zone moved by v<N>") and the scenario re-arms under the new version; a call-site test drives a version bump with a moved zone.
+
+**Fixed in W1b (fix/executor-owed-1):** E2 is the first question of the ONE re-spec function (`armRespecFor` / `respecWorkingArm`, `trader/arm_respec.go`; the E1 class above is asked only when E2 is silent, so a row gets at most one cancel). A WORKING `market_in_zone` planner row (signal set, no Picture source) whose resting limit lies outside the zone the CURRENT plan authorizes (`zl.v.Lo`–`zl.v.Hi`, 1e-9 tolerance) is cancelled through `cancelSafetyFor` → `nt.CancelOrder` → `RequestCancel` with reason `zone moved by v<N>: limit X outside Lo–Hi` → counter `market_in_zone:zone_moved`; once the book confirms, the scenario re-arms at the new zone's far edge as a new row under the new version. E2 is NOT version-gated: the zone comes only from `economics.entry_zone` plus the tick, never from ATR, and the row's limit IS the zone's far edge, so an unmoved zone always contains it and E2 is silent. **Named behaviour change:** an overlay that moves the zone WITHIN one version also cancels, and the D15 pin then blocks a re-arm for the rest of that version (fail-closed, deliberate). Pinned at `maybeManageArmedOrdersAt` over the real TCP wire: `TestZoneMovedByNewVersionCancelsTheWorkingLimitAndReArms` (cancel_pending "zone moved by v2", counter +1, then one re-arm at 100.00 under v2), `TestRespecLeavesAContainedUnchangedOrderAlone` (RED with containment forced true), `TestRespecCancelRefusedByTheFilledArmGuardRetriesNextPass`, `TestArmRespecForEdges` (E2 wins when both would fire; armed / place_pending / cancel_pending / blank-signal / Picture rows are never judged). The rest cap (`zone_rest_max_min`) is no longer the only exit — but it still is for the OWED cases named in the E1 class above (a refused zone, a removed/disabled scenario, a one-setup decline).
+
+**Extended in W1b FOLD-1 (CTO ruling part 1, P1) — the ENTRY is a price the version priced too.** The first E1 compared only the bracket (`churnNeedsModify(was.Stop, was.Target, authored.Stop, authored.Target)`), so a v2 that moved a `planned_order` / legacy limit's ENTRY with the stop and target unchanged left the v1 limit resting at the old price, with v1's bracket, until the 30-minute rest cap [A at `75b83080`]. A non-market_in_zone row rests AT its authored entry (composition changes it only by `RoundToTick`) and the AddOn cannot move a resting entry, so the entry is judged like the bracket: in `armRespecFor` (`trader/arm_respec.go` :163-178), after the E2 zone check and the version guard and BEFORE the bracket (one decision per row), a row whose `Policy != market_in_zone`, with both entries > 0 (zero on either side = absent, never a change, L7), whose AUTHORED entry moved by ≥ 2 ticks (`churnNeedsModify(was.Entry, 0, authored.Entry, 0, tick)` — one threshold with the bracket) is cancelled with reason `entry re-spec by v<N>: E a→b (…)` and counted `arm:respec_cancel`; it re-arms under the new version once the book confirms, exactly like a bracket re-spec. A `market_in_zone` row keeps E2's zone rule (its limit is the zone's far edge, not the authored entry). Pinned at `maybeManageArmedOrdersAt` over the real TCP wire: `TestPlannedOrderEntryRespecByNewVersionReplacesTheOrder` (v1 cancelled once → cancel_pending, counter +1, settle, ONE new signal at the new entry under v2, `placement_seq` 1), `TestLegacyWorkingArmEntryRespecByNewVersionCancelsTheOrder`, `TestPlannedOrderEntryMovedUnderTwoTicksLeavesTheOrderAlone`, `TestMarketInZoneEntryMovedInsideTheSameZoneLeavesTheOrderAlone`, plus the pure `TestArmRespecForEntryEdges`. RED on a compiling revert of the 9-line rule ("a re-priced entry must cancel the working order … sigs=[] cancels=[]"), on dropping the market_in_zone exclusion, on a 1-tick threshold and on dropping the absent guards (the last caught only by the pure test — there is no call-site case for an absent prior entry).
+**Known limits (FOLD-1):** (a) L4 (E1 class above) applies to the entry too: an overlay added after placement that moved the entry makes `was` the patched value. (b) [B, rounding edge] the rule compares RAW authored entries while the wire rests at `RoundToTick(authored)`: an off-grid authored pair whose raw move is between 1 and 2 ticks can round to a 2-tick wire move and not re-spec. A raw move ≥ 2 ticks always rounds to ≥ 2 ticks, so this can only MISS a move, never over-fire; the bracket rule has the same shape; unreachable when authored prices sit on the tick grid [C: planner grid enforcement not verified]. (c) The absent WARN still reads "the authored bracket of v<N> is absent" although the prior leg now feeds the entry rule too (`trader/arm_respec.go` ~:204, cosmetic).
+**Probe (added):** for every resting order, list EVERY price it carries on the wire (entry, stop, target, trigger) and check the re-spec compares each one the new version can move; a re-spec over a subset of the order's prices is this class again.
+
+## CLASS 200 — a producer with its own send path trades behind "No plan"
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 (D27; lane map `w5-map.md` §1/§2 at 42d90959) [A]. The Picture HTF evaluator claimed an opportunity and called `pictureHtfSubmitSeam`, bound (`trader/picture_htf_send.go` init) to `pictureHtfSend` → `TCPTrader.MarketEntryWithProtection` — a MARKET entry with its own admission, its own sizing and its own ledger, beside the Day Plan and never recorded in it. The plan card (`handlePlanToday`) rendered `found:false` → "No plan yet" while that path could trade under any non-strict plan mode.
+**Shape.** A second producer owns a send. Every guard the plan path grew (the one fold, the executor's gates, the ledger's one-order pin, the card) is bypassed by construction, and the card's "No plan" is a statement about ONE producer presented as the truth about the account.
+**Probe:** list every production caller of a broker entry method (`PlaceLimitEntry`, `PlaceStopEntry`, `placeEntry`, any market entry). Each must be reached from the Day Plan's armed executor or the gated decision path; a producer that reaches one directly is this class. Then ask the card: can an order exist while it says "No plan"? A recorded scenario must precede every order (created_at < placed_at_ms on the rows).
+**Fixed in W5 (builder A):** the seam is the HAND-OFF (`trader/picture_plan_source.go` init binds `pictureHtfSubmitSeam = pictureHtfHandOffSeam`): the opportunity is RECORDED as a machine scenario — one machine overlay on an active plan, or a machine plan v1 when none exists, "Day Plan says no" when the plan is not active — the Picture row settles `planned` (`store.PictureHtfHandOff`), and only the armed executor may place it. Pinned: `TestPictureSeamIsTheHandOffAndNeverSends` (the production seam pointer + a real NT8 wire: zero signal frames), `TestPictureEvaluateHandsOffThroughTheProductionSeam`, `TestPictureHandOffOverlaysAnActivePlan`, `TestPictureHandOffWritesAMachinePlanWhenThereIsNone`, `TestPictureHandOffRefusesWhenTheDayPlanSaysNo`, `TestPictureHandOffPokesTheEventLoopOnlyAfterRecording`. The send path (`trader/picture_htf_send.go`) and `TCPTrader.MarketEntryWithProtection` are DELETED in W5 (retirement pinned by `TestPictureHasNoMarketEntryPath`).
+
+## CLASS 201 — a new row kind every "latest row" reader already interprets
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 (F3 of the lane map; builder A's walk of every `GetLatestPlanForTraderSession` reader) [A]. The session scheduler fired the AI read only when `existing == nil` (`trader/auto_trader_planner.go:250`): ANY row meant "the read happened". A machine plan (the Picture no-plan door) is a row, so without a carve-out it would have silenced the AI session read for the whole session and fed the machine row to the dormant / death / flip / MSS / level-wake paths below it. The AI decision gate (`executorPlanDeadReason`) would have read the same row as an active plan and lifted the "planless entries refused" block.
+**Shape.** A presence check stands in for a question about provenance ("did the AI read run?", "is there an AI plan?"). The moment a second writer can create the row, every reader of "the latest row" silently changes meaning.
+**Probe:** when a new writer can produce a row kind, grep every reader of the table's "latest" row and answer, for each, what it does with the new kind. The list for plans at W5: the scheduler (fires the read — carved out), `executorPlanDeadReason` (refuses AI entries — carved out), the provider (serves the machine plan to the executor — intended), `lastWakeAuthoredVersionAge` / `carryMachineGrades` / the episode anchors / matched-random / the transition stand-down (inert on a machine doc: no levels, neutral bias — checked), and, outside builder A's files: the wake-levels / MSS / death re-read readers run only from the scheduler branches the carve-out skips (inert); the owner reset is owner-initiated; the OWNER RE-READ gate (`auto_trader_reread.go:61`) counted a machine plan as a plan — FIXED (CTO 1790194913337): the gate, its pre-read budget re-verify and the write-site spend treat a machine-only chain as the chain's first AI read (allowed, nothing spent), and the OWNER RESET gate refuses it like no plan (no AI chain to abandon); pinned by `TestOwnerRereadOnAMachineOnlyChainIsOneFreeRead`, `…IgnoresTheCounterLikeNoPlan`, `TestOwnerRereadOverAnAIPlanStillSpendsOne`, `TestOwnerResetRefusesAMachineOnlyChainLikeNoPlan`. Found on the way [A]: on a chain with NO row the re-read gate promises "the first read … costs no budget" (ReplansLeft = cap) but the write site spends one for `owner_reread` whatever the chain held (FIXED — CTO 1790195988056: nil IS the definition of no plan, and a recorded spend the gate denied is the class-35 lie; the write-site check is now `prev == nil || IsMachinePlan(prev)`, pinned by `TestOwnerRereadOnAnEmptyChainSpendsNothing`, RED with `prev == nil ||` removed: used 0 → 1); the cited-scenario quality read (`auto_trader_weekly.go:460`) reads the BASE doc, so a P-scenario cited on an AI plan reads "" (unknown) — pre-existing for owner overlays too (OWED — its own class below, CTO 1790194913337).
+**Fixed in W5 (builder A):** `if existing == nil || store.IsMachinePlan(existing)` fires the read and `continue`s past every lifecycle path; `executorPlanDeadReason` returns "no AI day plan … planless AI entries refused" on a machine plan. Pinned: `TestMachineOnlyChainStillFiresTheAIReadAndP1RidesIntoV2` (the read fires, v2 is the scheduled read, no lifecycle event on v1, no budget spent), `TestExecutorPlanDeadReasonTreatsAMachinePlanAsNoAIPlan`.
+
+## CLASS 202 — a failure reported after the durable effect
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 builder A, designing the hand-off's error contract [A for the contract; designed out before it was built]. The evaluator treats a seam error with `submitted_at = 0` as "never sent" and settles the opportunity `refused`. A hand-off that RECORDED the scenario and then failed to settle the row (a store error, a lost claim) would, by returning that error, have the opportunity marked "refused — never sent" while its scenario sits in plan_final and the armed executor places it.
+**Shape.** A step returns an error for a failure that happened AFTER its durable effect; the caller reads the error as "nothing happened" and writes the opposite of the truth.
+**Probe:** for every function with a durable write followed by more work, ask what its error means to the caller. Once the effect is durable the function must either succeed or leave a recoverable, named state — never an error the caller turns into "never happened".
+**Fixed in W5 (builder A):** after the record `pictureHandOffAt` never returns an error; a failed settle WARNs and is left to the D17 sweep (`sweepInterruptedPictureHandOffsAt`), which settles from the RECORD (`planned`) and refuses only an unrecorded claim whose eligibility window has closed, under the same per-trader lock as the hand-off. Pinned: `TestPictureHandOffSweepSettlesFromTheRecord` (recorded-but-unsettled → planned; unrecorded + window open → untouched; closed → refused "hand-off interrupted — never sent"; recorded in a superseded version → planned).
+
+## CLASS 203 — a plan reader that predates the ONE fold (OWED)
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 (`fix/w5-picture-source`, plan-source builder), CTO ruling `1790194913337`: OWED, not W5 [A]. The ONE-fold law: every reader of "the plan" folds through `kernel.ResolvePlanFinal` (base + user overlays, re-validated at the hard caps, then machine scenarios), so the executor, the card and every report see the same document. The cited-scenario quality reader in `trader/auto_trader_weekly.go` (base `eb7294c9` ~:460-470, `json.Unmarshal([]byte(row.Doc), &doc)`) reads the BASE doc: a cited Picture scenario (P<n>, only ever in an overlay) reads quality "", and so did a scenario an owner overlay added, before W5.
+**Shape.** A second path to the same document, written before the fold existed, keeps answering from the base. Nothing fails; the answer is quietly different from what the executor traded.
+**Probe:** grep every `Unmarshal([]byte(row.Doc)` / `ParsePlanDoc(row.Doc)` outside the fold; each is either a deliberate base read (named as such) or a reader that must fold.
+**Owed:** route the reader through `kernel.ResolvePlanFinal(row.Doc, kernel.OverlayRefsFrom(overlays))`, with a call-site test citing a P scenario and an owner-added S scenario.
+
+## CLASS 204 — entry permission that outlives the run or the switch that granted it
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 map F6 (`fix/w5-picture-source`, executor builder B) [A]. `Stop()` set isRunning=false, unregistered post-exit dispatch, stopped the event loop and the monitor — and cancelled nothing; the armed pass returned on `!dayPlanEnabled()` without a cancel; a reload builds a new AutoTrader in the same process, so the class-33 boot sweep (keyed on the process BootID) never fires. A resting or authorized entry therefore survived Stop, Day Plan OFF and a reload, and the next run's first pass could place a scenario the previous run recorded.
+**Shape.** Permission is checked where an entry is AUTHORED and never again where it is SENT, and the thing that grants permission (the run, the master switch) has no hook that revokes what it already granted.
+**Probe:** for every producer, name (1) what revokes its authorizations when the trader stops, when its master switch goes off, and when the process reloads without restarting; (2) where the send point re-asks those questions. Drive each: authorize, flip the switch / Stop / start a new run, run the pass — nothing may reach the wire, and every unplaced authorization must end terminal with a reason.
+**Fixed in W5 (Picture rows):** a run epoch marked at `startArmedEventLoop` and stamped on every Picture scenario and row (`source_run_epoch`); the machine gate refuses a scenario from another epoch at authoring and `placeZoneRow` retires a row from another epoch at placement ("recorded by a previous run (epoch X, live Y) — not placed"); `admitChain` asks a source=picture arm row the running / Day Plan questions at its send point; `stopArmedEventLoop` clears the epoch and invalidates Picture rows under `armedPassMu` (unplaced → terminal "trader stopped", resting → cancel requested); the pass head's Day-Plan-OFF branch does the same. Wave 1b E6: the epoch belongs to the INSTANCE that Ran (`pictureRunEpochEntry{owner, epoch}`; the read stays id-level, last Run wins); `clearPictureRunEpoch` is owner-checked and `CompareAndDelete`s the exact entry it loaded; Stop's invalidation spares rows whose `source_run_epoch` is another instance's live epoch (`pictureOtherInstanceEpoch` — at Stop only a successor's is reachable), for event "stopped" only — Day Plan OFF still retires every Picture row of the trader, the successor's included. Planner rows are untouched (their behaviour is W3's; extending this to them is an owner call). Pinned: `TestPictureStopInvalidatesPictureRows`, `TestPictureDayPlanOffInvalidatesPictureRows`, `TestPictureRowFromAPreviousRunNeverPlacedAtPlacement`, `TestPictureScenarioRecordedByAPreviousRunIsRefused`, `TestPictureRowRefusedAtItsSendPointWhenStopped`, `TestPictureOldInstanceStopNeverClearsTheNewRunsEpoch`, `TestPictureOldInstanceStopNeverRetiresTheNewRunsRow`, `TestPictureDayPlanOffOnTheOldInstanceStillRetiresTheNewRunsRow`.
+
+## CLASS 205 — a single-source rule applied to a second source
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 map F1 / F9, CTO rulings D8 + D9 (and the D9 mirror) [A]. Two rules written when the planner was the only source reached a second one the moment Picture became a plan scenario: one_setup (nil = ON) declines every non-`reject` play, so a Picture scenario (condition acceptance) would never place on any strategy that left the switch unset; and `cancelOtherArmsInPlan` ("one live entry per plan") would kill every unplaced planner arm the moment a Picture limit placed — and a planner placement would kill the Picture arm, which the source pin then keeps dead for good.
+**Shape.** A rule's scope is "the plan" or "every scenario" in code, but its reason is about one producer's plays. A new producer inherits it silently: nothing refuses loudly, the other source just never places.
+**Probe:** when a new producer joins a shared path, list every rule on that path whose REASON names the old producer's behaviour (a play filter, a slot rule, a cancel-the-rest rule) and decide per rule, in writing, whether it governs the newcomer. Drive both sources in one plan through the pass, in both orders, and count frames, cancels and terminal rows.
+**Fixed in W5:** one_setup evaluates the planner-only doc and its consult is skipped for machine scenarios (a READ boot WARN says so while Picture is on and one_setup is ON); `cancelOtherArmsInPlan` never cancels an UNPLACED arm of the other source, in either direction (the one-live-entry guards refuse the second order until the first is terminal and flat); an other-source row already at the broker still gets its cancel requested. Pinned: `TestPictureScenarioPlacesWithOneSetupOn`, `TestPicturePlacementKeepsThePlannerArm`, `TestPlannerPlacementKeepsThePictureArm`, `TestPictureAndPlannerScenarioInOnePassYieldOneFrame`.
+
+## CLASS 206 — a pass-clocked path that builds a wall-clock resolver (fixed in W1b)
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 builder B while wiring D13 [A]. `entryGateForArm` (trader/entry_gate.go) wires EntryGate leg 3 with `at.scenarioInvalidationResolver(plan)`, which closes over `time.Now` — inside `maybeManageArmedOrdersAt`, whose clock is `now`. The seam walk does not see it: `time.Now` is passed as a VALUE, not called. In production the two instants are microseconds apart; in a fixture pinned to another day the invalidation leg judges a different instant from every other leg of the same pass (a deadline evaluated there reads "passed" for every fixture window).
+**Shape.** A seam that is honoured by every call but one, where the one hands the wall clock over as a function value.
+**Probe:** grep every `…Clock(` / `…Resolver(` constructor reached beneath a registered `…At` variant for a `time.Now` argument; each must be handed the variant's `now`.
+**Owed:** `entryGateForArm` takes the pass clock (`scenarioInvalidationResolverClock(plan, func() time.Time { return now })`) with its three test callers updated. W5 works around it for machine scenarios only: the resolver judges a machine deadline on the tape it read (`tapeClock`), and the pass-clock machine gate judges the deadline first (`pictureScenarioGate`).
+
+**Fixed in W1b (fix/executor-owed-1, E3):** `entryGateForArm(plan, sc, leg, side, biasDir, atr5m, now, structural…)` takes the pass clock (before the variadic structural flag) and wires leg 3 as `at.scenarioInvalidationResolverClock(plan, func() time.Time { return now })`; its one production caller (`trader/armed_executor.go` ~:794, inside `maybeManageArmedOrdersAtOpts`) passes the pass's `now`, changed in place (line-neutral; the Class 33 byte-cap region untouched). The wall-clock wrapper `scenarioInvalidationResolver` is DELETED (nothing called it) and its `clock-seams.list` row is a "REMOVED (W1b E3)" note. The "three test callers" were four calls in three files (`entry_gate_test.go`, `condition_precedence_test.go` ×2, `position_side_casing_test.go`); all now pass fixed instants. `tapeClock` stays: besides the wall-clock workaround it keeps a 5m bucket the tape only partly holds from counting as closed on a stale tape (`AggregateToMinutes` sets a bucket's CloseTime to its end), so Picture behaves exactly as before. Pinned at the production call site: `TestArmInvalidationLegJudgesThePassClock` (`maybeManageArmedOrdersAt` on a rig clock fixed at 2026-09-11 15:00 UTC; reach proven twice — the main subtest places one limit, which comes after leg 3, and a control subtest on a pass clock 6 minutes later refuses exactly once at `entry_gate:invalidated`). RED on both compiling reverts (the resolver back on `time.Now`; the call site passing `time.Now()`): "leg 3 judged a 5m bucket that closes after the pass clock … the resolver is not on the pass clock".
+**This is CONSISTENCY, not strictness (CTO-accepted, Wave 1b rulings).** The wall clock counts at least as many bars closed as the pass clock does, so moving leg 3 onto the pass clock can LOOSEN it: (a) by bars that close while the pass is running, and (b) by the `armedPassMu` wait — `now` is taken before `armedPassMu.Lock()`, so a pass queued behind another (e.g. a strict-nudge full pass with synchronous cancels) judges leg 3 at an instant older by the whole wait, where before it read the wall clock after the wait. An invalidation that lands in that gap can let one placement through; the next pass (event-paced, ≤ 1/s) sees it. Every other leg of the pass already judged on `now`; if fail-closed is ever wanted here, the ruling would be "the later of the pass clock and the wall clock" for leg 3.
+**Still open (OWED):** `lastTouchFor` (`trader/no_chase.go` ~:232) still keys its touch count on `kernel.CMESessionDayKey(time.Now())` beneath `entryGateForArm` — the same class; the no-chase leg only WARNs, so only its telemetry's session day is wall-clocked; thread `now` into it. The seam walk (class 113) still cannot see `time.Now` passed as a VALUE, so this Probe remains a grep until the walk learns it. Only the Picture path is proven RED/GREEN at the call site; planner scenarios get the pass clock through the same line (`activeSessionName(now)`, `EvaluatePlanScenarios(…, now.UnixMilli())`) [B] with no twin test yet.
+
+## CLASS 207 — a log line carries the account name inside a composite key (OWED for the pre-W5 lines)
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 (`fix/w5-picture-source`), CTO ruling `1790197560916` [A]. A Picture opportunity key is `"<strategy>|<account>|<contract>|<direction>|<role>|<levelOpen>|<h1Close>"` (`store.PictureHtfOppKey`). Printing the key prints the ACCOUNT NAME, which L12 forbids in logs, and nobody sees it because the key reads like an opaque id.
+**Shape.** An identifier assembled from several fields is logged as one token; one of those fields is a secret-by-policy value.
+**Fixed in W5:** every W5-authored line and error prints the key through ONE redactor, `store.RedactPictureOppKey` (account segment → "…"); the entry latch names a Picture holder by row id and stage only (`latched by picture row #<id> (<stage>)`). Pinned: `TestRedactPictureOppKey`, `TestHandOffLinesNeverCarryTheAccountName` (RED: redactor removed from the 🖼 hand-off line → caught), `TestEntryLatchLedgersListPlacedRowsOnTheAccount` (the latch text never carries the key), `TestReappendLinesNeverCarryTheAccountName` (RED: redactor removed from the re-append 🖼 line → caught; CTO round 1 R3 — the two re-append lines in `reappendLiveMachineScenarios` printed the raw ref). The plan doc, the ledger's `source_ref` and the API/card keep the full key — storage and the owner's own UI, not a log.
+**Pre-W5 lines — CLOSED in W5 (CTO round 1 R5, ruled: W4 is dev's now):** the evaluator printed the raw key at two places, not the `:398` this entry first cited (that is the foreign-contract WARN, no key) — the generation-refusal WARN (`trader/picture_htf_evaluator.go` ~:696-697, "the trader that began this evaluation is gone … opportunity %s") and the 🔒 maintenance-hold WARN (~:731). Both now print `store.RedactPictureOppKey(oppKey)`. `trader/picture_htf_send.go:110` went with the file (W5 step 2 deleted the send path).
+**Probe:** grep every log/format call for a variable that holds a composite key (`OppKey`, `oppKey`, `SourceRef`, `Machine.Ref`); each goes through the redactor or names the row by id.
+
+**Instance 2026-09-24 M3:** `%v`, `%+v`, `%#v` and `%s` of `updateauth.Grant` printed its 64-hex MAC, and the install hand-off error is logged with `%v` (red-3 #6). Pinned by `TestGrantNeverFormatsItsMAC`, `TestInstallHandOffErrorNeverLogsTheGrantMAC` (`f1b7370d`)
+
+## CLASS 208 — a level declared on fewer witnesses than its own definition names
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W4 (`fix/w4-picture-evidence`), D22 [A].
+
+**Shape.** `kernel.BodyPivots4H` defines a 4H body pivot as a candle whose four
+neighbours (i−2, i−1, i+1, i+2) all fail to exceed it. The loop ran
+`i := 1 .. len-2` and the neighbour loop `continue`d past any neighbour that was
+out of range or absent — so a "pivot" could be declared on as few as TWO
+observed neighbours and still carry the authority of the four-neighbour rule.
+The doc comment said "All four confirming neighbors"; the code skipped the ones
+it could not find. Nothing in the type recorded how many had actually been read.
+
+**Fixed in W4:** the range is `i := 2 .. len-3` and `fourNeighboursComplete`
+requires all four to exist and i+2 to carry a completion stamp; a hole REFUSES
+instead of being skipped. RED: "pivot formed at idx 1 with no i-2 neighbour".
+
+**The tell to look for elsewhere:** a loop that states a quorum in prose and
+implements it with `continue`. Ask what the code does when a witness is missing
+— skipping one is not the same as not needing it.
+
+## CLASS 209 — an absent timestamp that reads as permission
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W4, D22 [A]. Same wave as the above; the
+two travel together and are worth reading as one.
+
+**Shape.** `PictureHtfLevel.KnowableAt` was assigned only when i+2 happened to
+exist. When it did not, the field kept Go's zero value — and all three
+consumers (`ActiveLevels`, `H1CloseBreak`, `NearestOpposingZone`) tested
+`KnowableAt == 0 || KnowableAt <= now`, i.e. read "we never established when
+this became knowable" as "it has always been knowable". The safest-looking
+reading of an absent value was the most permissive one. It was also anchored to
+the OPEN of the confirming candle rather than its close, making every level
+usable a whole period early.
+
+**Fixed in W4:** the pivot rule guarantees i+2 exists, so `KnowableAt` is
+always a real completion time and never 0; all three consumers now refuse 0 as
+missing evidence. RED: "level carries KnowableAt=0 (absent standing in for a
+real time)".
+
+**The tell:** `x == 0 || x <= now`. A zero that shares a comparison with a real
+value is a fabricated value wearing the type's clothes (canon: absent ≠ []).
+
+**Instance 2026-09-24 M3:** **CLOSED** in `fix/m3-install-path-lows` `cb23f6ca` (fa `dd3c472e` cherry-picked): `Enroll` creates the seen store; once enrolled, a missing store is `ErrSeenCorrupt`, never empty; pinned by `TestEnrollCreatesTheSeenStoreAndAMissingOneAfterwardsIsCorrupt` and `TestInstallRefusesWhenTheSeenStoreIsMissingAfterEnrollment`.
+
+## CLASS 210 — a requirement whose own fetch cannot satisfy it
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W4, D21/F2 [A] (arithmetic from the code;
+101's read-only map raised it, verified independently at this wave's base).
+
+**Shape.** The spec said "require ≥ PivotWindow+4 COMPLETED 4H candles". The
+evaluator fetched exactly `PivotWindow+4` and only THEN filtered to completed
+ones — and the provider returns the TAIL, which always holds the candle still
+forming. So the rule could never pass: not rarely, by construction. Implemented
+literally it would have refused every Picture entry within about a trading day.
+
+**Fixed in W4:** `pictureHtfDepthMargin` makes the FETCH exceed the
+REQUIREMENT, and `PictureDepthEvidence{Fetched, Completed, Required}` reports
+the count that was READ ("insufficient depth 8/12"). RED at the provider seam:
+"the 4H fetch asked for 12, which cannot yield 12 completed bars once the
+forming bar is filtered out".
+
+**The tell:** a threshold compared against a filtered subset of a fetch sized to
+the threshold. Ask what the filter removes, then ask whether the fetch accounts
+for it. A dispatch can carry this defect too — this one did, and was corrected
+before it shipped rather than after.
+
+## CLASS 211 — evidence stripped at a seam that rebuilds the type
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W4, D21 identity [A].
+
+**Shape.** Three separate facts about a bar frame — the contract it belongs to,
+whether the AddOn PROVED the bar closed, and when the source emitted it — were
+each carried correctly by the wire and each lost in Go. `contract` had no field
+on `BarsHistoricalPayload`/`BarUpdatePayload` at all, though the AddOn has
+stamped it on EVERY bar frame since 2026-09-11. `Final` and `EmittedAt` existed
+on both types but were dropped where `pictureHtfLiveBars` built its klines by
+naming five fields: `market.Kline{OpenTime, Open, High, Low, Close}`. So the
+Picture evaluator received frames stripped of everything that made them
+evidence, and could not tell whose tape it was reading, a closed candle from a
+forming one, or how old the data was.
+
+**Fixed in W4:** the payloads parse `contract` (no AddOn change — only a
+field); the consumer carries Final, EmittedAt and Contract; OnBars ignores and
+counts a definite contract mismatch. RED at the type level: "p.Contract
+undefined (type BarUpdatePayload has no field or method Contract)".
+
+**The tell:** a struct literal that names fields instead of copying. Every field
+added to the source type afterwards is silently dropped there, and no test
+fails. Grep for the seams that rebuild a type rather than pass it.
+
+## CLASS 212 — a clock that always dominates, added as belt-and-braces
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W4, D23/R1 — found by CTO review of this
+wave's own push 6 [A]. Recorded because the defect was INTRODUCED by the fix
+for the class above it, which is the more useful lesson.
+
+**Shape.** Freshness had read only our own RECEIPT clock, so data emitted long
+ago but delivered this instant passed. The fix bound the limit to the worst of
+three clocks: source `emitted_at`, the candle's own close, and receipt. But NT8
+emits a closed bar on the FIRST TICK OF THE NEXT BAR, so `emitted >= close`
+ALWAYS and candle age dominates source age unconditionally. "Worst of three"
+silently became "elapsed since the boundary ≤ freshness_sec" — 2s against a 10s
+entry window — refusing the ordinary late-emission case outright: a candle
+closing 14:00:00 and emitted 14:00:03 has a source age of 0.1s and a candle age
+of 3s.
+
+**Fixed in W4:** the limit binds worse(source, receipt) only; the candle close
+stays as READ evidence and binds nothing. RED: "a candle emitted 3s after its
+boundary is 3s late, not stale — it must send inside the 10s window, got 0".
+
+**The tell:** adding a clock, a bound or a check "for safety" without asking
+whether it can ever LOSE. A term that always dominates has replaced the rule,
+not reinforced it.
+
+## CLASS 213 — a registry entry evicted by an owner that has already been replaced
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W4, D25 [A].
+
+**Shape.** `Stop()` never removed the trader from `pictureHtfTraders`, so a
+stopped trader kept receiving live frames. The obvious fix — `Delete(at.id)` —
+introduces a worse bug: a RESTARTED trader has already re-registered under the
+same id, so a late Stop from the old instance evicts the live one. And that
+registry is shared: `pictureHtfLiveBars` Ranges it to drive W3's armed-kick
+pass, so evicting the wrong entry silently stops the armed event pass for a
+running trader — a Picture change breaking an executor feature, with nothing in
+either place to connect them.
+
+**Fixed in W4:** `CompareAndDelete(at.id, at)`, plus a trader GENERATION that
+an evaluation records at its start and re-checks immediately before the wire,
+so an evaluation in flight across a Stop or restart cannot send for a trader
+that is gone. RED: "the RESTARTED trader was evicted by the old instance's Stop
+— W3's armed kicks would stop with it".
+
+**The tell:** any `Delete(key)` on a shared registry whose values can be
+replaced. Removal keyed by identity alone cannot tell "mine" from "the one that
+took my place". Ask who else Ranges the map before changing what is in it.
+**Second instance (Wave 1b E6):** W5 added `pictureRunEpochs` beside this very
+registry, keyed by trader id and cleared by a bare `Delete(at.id)` — an old
+instance's late Stop erased the successor's run epoch and retired its rows.
+Fixed the same way (owner-checked `CompareAndDelete`), plus a Stop-time
+cleanup that spares another instance's live rows; see the W1b class "ownership
+state keyed by a shared id, cleared by a bare Delete (second instance)" below.
+
+## CLASS 214 — a settlement half gated behind the switch whose OFF it must settle
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 CTO review round 2 (R8, two independent reviewers) [A]. The armed pass returned at its head when Day Plan was OFF (`trader/armed_executor.go` `maybeManageArmedOrdersAtOpts`, `!at.dayPlanEnabled() … return`). A Day Plan toggle reaches a live trader only through a strategy save → RemoveTrader → Stop → `retirePictureRowsOnStop` → a NEW trader (CTO 1790205640621). The Stop-side retire holds a resting Picture limit `cancel_pending` when the book is dark or stale (no blind wire cancel). The trader that comes back with the master OFF returns at the head, and the W5 OFF sweep inside that return can request more cancels. But every settlement site sat BELOW the return: the order-update drain, `confirmPendingCancels`, and the withdraw path only under a withdraw reason. The boot sweep (`SweepableArmStateSQL`) excludes `cancel_pending`, and the OFF sweep skips it on later passes. So the row never settled. The entry latch counts any non-terminal row with a signal as PLACED (`entry_latch_wiring.go` `entryLatchLedgers`), so the AI decision path — the only entry path while OFF — was refused on every entry until the Day Plan came back ON, and a restart did not clear it. Planner rows had the same freeze under OFF before W5 (pre-existing); W5 made it reachable on every OFF reload with a resting Picture limit (Stop retire → reload OFF → never settled).
+
+**Fixed in W5:** the OFF head runs `dayPlanOffPassHead` (`trader/cancel_confirm.go`): the SETTLEMENT half first (`settleArmedLedgerWhileOff` — drain + `confirmPendingCancels`, re-requests through the filled-arm guard), then the Picture sweep. Nothing in it places, arms or authors. Pinned at the call site: `TestDayPlanOffStillSettlesTheCancelItRequested` (OFF + a `cancel_pending` Picture row + a fresh persisted book without the order → `cancelled`, `entryLatchLedgers` empty). RED with the settlement call removed: "Day Plan OFF must still settle the cancel from the fresh book (else the account latches)".
+
+**Probe:** for every early return at the head of a periodic pass, list what the pass SETTLES below it (drains, confirmations, reapers) and ask whether anything that runs on the early-return branch — or anything a previous pass left behind — needs that settlement to reach a terminal state. A switch that turns off NEW work must not turn off the bookkeeping of work already sent.
+
+## CLASS 215 — a reconcile sweep that annotates a row another sweep owns
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 CTO review round 2 (R11, confirmed by both skeptics) [A]. The Picture broker reconcile (`trader/picture_htf_broker.go` `pictureHtfReconcilePending`) read every `place_pending` / `working` row and skipped only `signal_id == ''`. Since W5 a hand-off in flight (or interrupted) sits `place_pending` with the evaluator's synthetic claim id (`store.PictureHtfClaimPrefix` + ms) and `submitted_at` 0 — nothing was sent. The sweep stamped it `reconcile:no_received_evidence (outcome unknown — will not resend)`, and the note survived the row settling `planned`: the ledger claimed a send that never happened.
+
+**Fixed in W5:** the sweep skips `pictureHtfUnsentClaim` rows (claim prefix AND `submitted_at == 0`) — the exact input predicate of the D17 sweep (`PictureHtfHandOffPendingByTrader`), so every `place_pending` row belongs to exactly one sweep. Pinned: `TestPictureHtfReconcileNeverAnnotatesAnUnstampedClaim` (RED without the skip: "annotated a claim that was never sent"), `TestPictureHtfReconcileStillAnnotatesAStampedClaimPrefixRow` (RED with the `submitted_at` half dropped: "over-skip … got 0").
+
+**Probe:** when two sweeps read the same table, write each one's input predicate side by side and prove they partition the rows. A row both can read gets two stories; a row neither reads is stranded.
+
+## CLASS 216 — a version-insensitive ledger key under a version-local id mint
+
+**Found:** 2026-09-23, W-EXEC-TRUTH W5 CTO review round 2 (R13, confirmed by both skeptics) [A]. `nextPictureScenarioID` minted a Picture scenario id (P<n>) from the CURRENT plan version only, while the armed ledger's key is `(plan, scenario, leg)` — version-INSENSITIVE. Opportunity B handed off onto v2 before A's re-append took A's `P1`; A's re-append was refused ("id already in the plan"), and `UpsertArm`'s armed branch rewrote A's unplaced row to B's `source_ref`, deadline, run epoch and prices with only an INFO. One opportunity silently became another.
+
+**Fixed in W5:** (a) `UpsertArm` refuses any write whose existing row carries a non-empty `source_ref` different from the write's — typed `store.ErrArmSourceMismatch`, logged nowhere in the store (the error carries row, scenario, leg, state and both keys, redacted); the authoring loop turns it into a named refusal (`arm_source_mismatch`: scope note, one WARN + counter per change, the leg's G1 admit withdrawn) and is the ONLY place it is logged on the authoring path (Wave 1b E7: the store's own per-write WARN was removed — five passes had printed five store WARNs beside the loop's one; the trader-side `armSourceRefused` WARNs once per change). The shadow path and the API seams log or return the error themselves. (b) P ids are minted past every scenario id any EARLIER version of the plan used (`pictureIDsOfEarlierVersions`: resolved doc + every machine overlay; a read error refuses the hand-off). Pinned: `TestArmedRowNeverChangesOpportunity` (store; armed / cancelled-unplaced / filled), `TestPictureIDsNeverCollideAcrossVersions`, `TestAReusedPIDNeverRewritesAnotherOpportunitysRow`, `TestArmSourceMismatchWarnsOncePerChange`.
+
+**Probe:** for every id a writer mints, find every table keyed on it and ask whether the key's scope (per version, per plan, per chain) is the mint's scope. A key wider than its mint lets two things share one row.
+
+
+## CLASS 217 — a UI state not backed by an API field
+
+**Found:** 2026-09-24, W-ONE-BUTTON M5 build [A]. The Updates page vocabulary
+(Update available, Installing, Up to date) had no backing fields on
+GET /api/updates — the M3 payload is exactly {enrolled, manifest_verifier,
+install_enabled}. The page would have had to invent a verdict to fill them.
+Shipped: the optional fields are typed but ABSENT today, and the badge maps
+them to Unknown whenever the API does not affirm a state; the page's Blocked
+is the only M3-reachable verdict.
+
+**Probe:** for every label a component can render, ask which API field it reads.
+A label with no field is either dead (remove it) or a future field (type it
+optional, render Unknown / n/a until the server ships it) — never a browser-side
+derivation.
+
+## CLASS 218 — a spinner with no timeout
+
+**Found:** 2026-09-24, W-ONE-BUTTON M5 build [A]. The header badge's first-fetch
+spinner would hang forever if the poll promise neither resolved nor rejected
+(a hung connection). Shipped: the first fetch races a 10 s cap and the badge
+settles to Unknown; a rejected poll is caught and also settles to Unknown.
+
+**Probe:** every spinner in the UI must name the condition that ends it, and one
+of those conditions must be a clock.
+
+## CLASS 219 — a null rendered as false
+
+**Found:** 2026-09-24, W-ONE-BUTTON M5 build [A]. A null addon_ack (the AddOn
+has not acknowledged the hold yet) read naturally as "false" in JS boolean
+context; rendering it as false claims the AddOn REFUSED the hold, which the
+server never said. Shipped: null renders "no ack yet" and a test pins that the
+page never renders the word false for it.
+
+**Probe:** every nullable verdict field rendered into a yes/no slot must have an
+explicit null branch with its own text — null is "no answer yet", never "no".
+
+## CLASS 220 — a re-spec gate that compares the COMPOSED wire price, so drift reads as a plan change
+
+**Found:** 2026-09-23, W-EXEC-TRUTH Wave 1b E1 (lane Claude-101, `fix/executor-owed-1`), by the E1-E2 verifier's probe on the first build [A]. The first E1 fix compared the resting order's bracket (`prior.StopPx`/`prior.TargetPx`, composed when it was placed) with THIS pass's composed leg (`leg.Stop`/`leg.Target`) under a newer version. The wire stop is composed at every pass from live ATR (the min-SL floor), the structure anchor and the obstacle target, so any version bump — an overlay on another scenario, a replan, a Picture re-append — carried all accumulated ATR drift through as a "bracket re-spec": an identical scenario re-published as v2 cancelled a working order as "SL 97.70→96.82" and counted `arm:respec_cancel` for a change nobody made (class 35: counters record, never infer). The version gate only stopped the churn inside one version.
+**Shape.** A "did the plan change?" question answered by comparing two values the EXECUTOR derived from the plan plus live inputs. Every derived value drifts with its inputs; only the authored value answers the question.
+**Fixed in W1b E1 repair:** `armRespecFor` compares the AUTHORED leg of the current version (`legs[li]`, from `armScenarioLegs`, before any composition) with the AUTHORED leg of `prior.Version`, read by `armAuthoredLegAt` through the ONE fold (`GetPlan` + `ListOverlays` + `kernel.ResolvePlanFinal`) and the same scenario-to-legs function the loop uses. An unreadable prior leg does not fire and WARNs once (absent ≠ changed). E2 (a limit outside the current zone) is not version-gated because authoring alone moves the zone, never ATR. CTO ruling (Wave 1b Q1): "compare AUTHORED brackets across versions through the ONE fold of prior.Version, never composed/live-ATR brackets … RED it against the fake-cancel case".
+**Probe:** for every gate that asks "did the plan/owner change X?", name where each operand comes from. If either passes through a composer that reads live data (ATR, the tape, a structure map), the gate is judging drift. Build the discriminating fixture: identical authored input, a version bump, and moved live data — nothing may be sent and no counter may move. Pinned: `TestArmRespecIgnoresATRDriftAcrossVersions` (RED on the composed-compare mutation: "ATR drift across versions with an unchanged authored bracket must send nothing: sigs=0 cancels=1"), `TestArmRespecAbsentPriorAuthoredLegNeverCancels`, `TestLegacyWorkingArmAuthoredRespecByNewVersionReplacesTheOrder`, `TestArmRespecForEdges` ("a < 2-tick AUTHORED move is not a re-spec").
+**Known limit (named):** an authored change the composition absorbs (a legacy structural stop that composes from the PDH zone either way) still cancels and re-places the same bracket once — kept by the CTO formula.
+
+## CLASS 221 — ownership state keyed by a shared id, cleared by a bare Delete (second instance)
+
+**Found:** 2026-09-23, Wave 1b E6 (lane Claude-101, `fix/executor-owed-1`) [A]. W5's run epoch (`trader/picture_run_epoch.go`) lived in a process-wide `sync.Map` keyed by trader id and was cleared with `pictureRunEpochs.Delete(at.id)`. A reload builds a NEW AutoTrader under the SAME id; if the new instance Runs before the old one Stops, the old Stop erased the new run's epoch (every hand-off "trader not running (no live run epoch)", every placement retired its row), and `invalidatePictureRows` — scoped by trader id only — retired the rows the new run had recorded. The W4 `pictureHtfTraders` class ("a registry entry evicted by an owner that has already been replaced", above), repeated in the map W5 added beside it. Not proven reachable in production today [B: `RemoveTrader` is believed to stop synchronously before the reload builds — unverified]; pinned so no reload ordering can reach it.
+**Shape.** Per-run state keyed by an id that outlives the run's owner; any cleanup keyed by that id alone cannot tell "my run" from "the run that replaced me".
+**Fixed in W1b E6:** each entry names its owner (`pictureRunEpochEntry{owner, epoch}`); the read stays id-level (last Run wins); `clearPictureRunEpoch` is owner-checked and `CompareAndDelete`s the exact entry it loaded; Stop's invalidation spares rows whose `source_run_epoch` is another instance's live epoch (`pictureOtherInstanceEpoch`; at Stop only a successor's is reachable, because Stop requires `isRunning` and Run marks its epoch right after setting it — the one exception, a Stop between those two steps, leaves a still-live predecessor's rows to that predecessor's own Stop). The skip is event "stopped" ONLY — Day Plan OFF is the strategy's master switch, not a run boundary, and still retires every Picture row, the successor's included. No other instance's run = the pre-wave rule.
+**Probe:** `grep -n '\.Delete(at\.id)\|\.Delete(.*\.id)' trader/*.go` on any registry whose values a later instance can replace → must be an owner/identity-checked `CompareAndDelete`. Any Stop-time cleanup scoped by trader id alone must say, in code and test, what it does to a successor's rows — and any exemption must be scoped to the event that is a run boundary. Pinned (order old.Run → new.Run → …, production `startPictureRunWith` + `Stop` + pass head): `TestPictureOldInstanceStopNeverClearsTheNewRunsEpoch`, `TestPictureOldInstanceStopNeverRetiresTheNewRunsRow`, `TestPictureDayPlanOffOnTheOldInstanceStillRetiresTheNewRunsRow` (RED with the event scoping removed: "Day Plan OFF on the old instance must retire the new run's row too (the successor skip is Stop's only): armed \"\"").
+**Owed:** orphan-Run (`handleStartTrader` `go Run()` vs `RemoveTrader`) and double-Run-on-one-instance (`handleUpdateTrader`) lifecycle guards; the old instance's in-flight pass authoring under the id-level (successor's) epoch (follows the "last Run wins" ruling; not a regression); a same-nanosecond epoch collision between two Runs is unguarded [C] (placement already refuses a row whose run is not live).
+**Known limit (L5, CTO ruling part 2 — named, not folded): E6 amplifies a PRE-EXISTING reload race.** `RemoveTrader` (`manager/trader_manager.go` :361-375) stops the old instance ONLY if its status already reads `is_running`; the update handler (`api/handler_trader.go` :736-752) removes, reloads, then starts the new instance with `go reloadedTrader.Run()`. A second reload while the previous `go Run()` has not yet set `isRunning` therefore skips `Stop` and orphans instance B; B's `Run` then stores its epoch unconditionally over the live successor's, and the successor's own `Stop` treats its rows as another instance's and strands them. So the "not proven reachable" note above is answered by a reachable ordering. Root = the reload path, not E6. **OWED there** (owner call): the orphan-Run / double-Run lifecycle guards named above.
+
+## CLASS 222 — a loud log at a layer with no identity to dedupe on
+
+**Found:** 2026-09-23, Wave 1b E7 [A]. W5 R13(a) put `logger.Warnf("⛔ arm write refused …")` inside `store.UpsertArm` at the `ErrArmSourceMismatch` refusal. Every event pass and cycle re-authors the same leg and re-hits the refusal: 5 passes → 5 store WARNs beside the trader's single once-per-change WARN. The store is process-shared (`{db}` only) and knows no plan/version/scenario/instance, so it cannot apply the once-per-change rule.
+**Shape.** A refusal logged where it is DETECTED rather than where it is OWNED; the layer that detects it re-detects it every pass and has no key to dedupe on.
+**Fixed in W1b E7:** the store refuses by type only, silently; the typed error carries every field the WARN printed (row, scenario, leg, state, both redacted keys). The trader-side `armSourceRefused` stays the single WARN + counter per change; the shadow path (`trader/armed_executor.go` ~:519) and the API seams (~:2808, ~:2865) log or return the error. The W5 R13 class above is corrected to match.
+**Probe:** `grep -n 'logger\.\(Warn\|Error\)' store/*.go` beside a `return fmt.Errorf("%w` of a typed refusal → the log belongs to the caller that owns the dedupe key. Pinned: `TestArmSourceMismatchWarnsOncePerChange` (5 passes → 0 store lines, 1 loop WARN naming the row and both keys, counter 1).
+**Owed:** the shadow path still WARNs "shadowed arm write failed" once per pass and runs `SetState(…"shadowed")` before the ownership refusal (`trader/armed_executor.go` ~:508-521) — a later armed_executor.go wave with a MAPCHECK re-pin.
+
+## CLASS 223 — a price-similarity lineage with no time bound adopts a stale identity while exact signal evidence sits unread
+
+**Found:** 2026-09-23, Wave 1b E15 (map overlay probes 1–2; verifier defects 1–3) [A]. Reconcile's untracked materialization recovered a position's identity only through `StampArmedLineageIfMatched`: any FILLED arm of this trader within ±1 tick, with no time bound. A late CLASS-160 AI fill therefore landed anonymous, or took the plan and signal of an arm filled 72 h earlier; move_stop and trailing then addressed a dead signal — while the fill ring held that fill's exact `SignalID`.
+**Shape.** An identity recovered by similarity (price, side) when the process holds exact evidence (a signal-keyed ring or row) that nobody reads first.
+**Fixed in W1b E15 and its repairs:** `lateEntryFillFor` (`trader/ninjatrader/reconcile_late_fill.go`) reads the ring FIRST: same-side entry fills with a signal id, same instrument root and account, fill time ≥ firstSeen − `lateEntryFillWindowMs` (`entryConfirmGraceMs` 45 s + `untrackedGraceMs` 60 s); a signal already used as ANY position's `entry_order_id` is excluded (`PositionStore.EntryOrderIDInUse`). Exactly one candidate: this trader's arm (`FindBySignal`) → lineage stamped from THAT arm; else this trader's `open_<side>` order row, claimed only while `Status == "NEW"` (`tagLateEntryFill`), settled FILLED at the ring's price and quantity, and its `trader_fills` row written through `CreateFill` (`lateEntryFillRow`: the `recordOrderFill` fields, `ExchangeTradeID` `nt8-late-entry-<order id>` so `CreateFill` dedupes it, `CreatedAt` = the ring's fill time; since W1b FOLD-13 the status and the fill row are ONE transaction written BEFORE the tag — see the class "an identity tagged before the record it names is settled" below; the first E15 build tagged first and let a failed fill write only WARN). Any other status, more than one candidate, a read error or an unowned signal → untagged with a WARN, no price guess. No same-side ring evidence → the price-match fallback, bounded to the ring's own window since W1b FOLD-4 (below). `PlanID` stays `UNRESOLVABLE` for AI fills.
+**Probe:** for every identity recovery, list the exact evidence the process holds (the ring, signal-keyed rows) and check it is read before any similarity match. Each exact-evidence reader needs (a) a pinned time window, with a test feeding evidence older than the window, and (b) a status gate on the row it adopts — only an unresolved row may be claimed. More than one candidate means "untagged", never "first". Any row the recovery settles must also get the child records the normal path writes. Pinned: `TestLateAIFillMaterializesTaggedWithItsSignal`, `TestLateAIFillNeverAdoptsAnOldArmsLineage`, `TestLateArmedFillStampsItsOwnArmNotTheNewestSamePriceArm`, `TestLateFillAmbiguousAcrossTwoSignalsStaysUntagged`, `TestLateFillExcludesASignalAnotherPositionAlreadyOwns`, `TestLateFillOfAnUnownedSignalStaysUntagged`, `TestLateFillOlderThanTheWindowIsNotEvidence`, `TestLateFillOfANonNewOrderRowStaysUntagged` (FILLED / REJECTED / CANCELED), `TestLateAIFillWritesTheFillRowTheNormalPathWrites`, `TestUntrackedWithNoRingEvidenceKeepsPriceMatchFallback`.
+**Known residual at the E15 merge (CLOSED by FOLD-4 below):** after a restart empties the ring, the price-match fallback still had no time bound. The ring's account and instrument-root filters are defence in depth (the router `dispatchToOwner` already routes fills by symbol and account) and survive mutation.
+
+**Extended in W1b FOLD-4 (CTO ruling part 1, P2) — time-bounded AND identity-bounded.** With every ring candidate already in use the verdict was `NoEvidence` and `StampArmedLineageIfMatched` ran (`ListFilled(traderID, 20)`, ±1 tick, ANY age): a fill at an old arm's price adopted that arm's plan and signal, `rememberEntryOrderID` cached a terminal signal and move_stop went to a dead order. Fixed: the untracked materialization's fallback is `stampArmedLineageInWindow` (`trader/ninjatrader/reconcile_late_fill.go` :118-167) — this trader's FILLED arms whose `UpdatedAt` is at or after `firstSeen − lateEntryFillWindowMs` (the ring's own window, :57; no upper bound), judged on the PARSED instant (the new `ArmedOrderStore.ListFilledSince` only widens its SQL bound by `LedgerClockSlack`, because `updated_at` is zone-bearing text), newest instant first; and an in-window arm whose signal is already some position's `entry_order_id` (`EntryOrderIDInUse`) is skipped — the time bound alone missed the CTO's own path (every ring candidate in use, a FRESH arm re-adopted). A read failure leaves the row untagged with a 🔗 WARN. The doc comments say "no same-side evidence in the window" (`reconcile_late_fill.go` :35, `reconcile.go` :445). Pinned at `reconcilePositions` (two passes through the materialize wire): `TestPriceMatchFallbackNeverAdoptsYesterdaysArm` (the ruling's RED: "an arm older than the ring's window was adopted: entry_order_id=\"sig-armed-yesterday\" plan_id=\"2026-09-22:NY\" v3 scenario=\"S1\""), `TestPriceMatchFallbackAfterAllRingCandidatesInUseIsTimeBound`, `TestPriceMatchFallbackWindowEdge`, `TestPriceMatchFallbackComparesInstantsNotZoneText` (+14:00 old text that sorts after the bound; −05:00 fresh text that sorts before it), `TestPriceMatchFallbackNeverReusesAnArmWhoseSignalExplainsAnotherPosition`, `TestPriceMatchFallbackSkipsTheInUseArmForAnUnclaimedOne`; store `TestListFilledSinceIsTraderScopedAndZoneSafe`. RED on the old matcher, on the parsed-time check removed, on the zone-text compare, on the in-use skip removed and on the SQL slack removed.
+**Known residuals after FOLD-4 (OWED, not ruled):** (1) [A, P1 per the FOLD-4 verifier] **the boot lineage repair undoes FOLD-4:** `RepairArmedLineage` (`trader/ninjatrader/reconcile.go` :619) runs once per TCPTrader from `StartPositionReconcile` (:86) — every boot and trader reload — over `ListUnlinked` (any `plan_version = 0` row, UNRESOLVABLE materializations included) and still calls the unbounded `StampArmedLineageIfMatched` (:544: `ListFilled(20)`, ±1 tick, any age, no in-use check). Verifier probe: a row FOLD-4 left untagged got `entry_order_id="sig-armed-yesterday" plan="2026-09-22:NY" v3 S1` from one repair call, and an in-use arm's signal ended up on two rows. Proposed rule (fail-closed): the repair matches only arms with `UpdatedAt ≥ EntryTime − untrackedGraceMs − lateEntryFillWindowMs` and applies the same in-use skip (it can reuse `stampArmedLineageInWindow`); [B] also limit it to `Source = "reconcile"` rows. (2) `updated_at` is the last write, not the fill time: a later write can freshen an old filled arm (`filled_at_ms` is written only for policy rows). (3) [B] the in-use skip trade-off: a phantom-closed row whose position NT8 still holds, re-materialized, now stays untagged where it used to get the live arm. (4) The `🔗 attribution: materialized … with NO recoverable lineage` WARN (`reconcile.go` :431) still prints before attribution, so it can contradict the 🧩 line two lines later (log only). (5) [C] `LedgerClockSlack` (24 h) cannot cover a +14:00 writer against a −12:00 reader (26 h); every realistic reader zone is covered.
+
+## CLASS 224 — a running-process registry used as the scope of a ledger question
+
+**Found:** 2026-09-23, Wave 1b E10, and the W0b pin `TestReconcileFreshFillOfAStoppedTraderIsNotSeen` (which pinned the limit and said "update this test"); verifier defects 4 and 6 [A]. The pre-open reconcile's check (iii) — "did any producer fill on this account in the last 120 s?" — walked `runningTraderIDs()`. A trader stopped between its fill and our open dropped out, and its position was flattened as an orphan. (ii) was scoped by owner id rather than by account, so another trader's OPEN row never explained the position. Read errors were swallowed by `err == nil` guards and fell through to "flatten". And a SQL time bound on zone-bearing text (`updated_at`) compares lexically, so a fresh row written in −05:00 sorts before a UTC bound and is dropped.
+**Shape.** A question about the LEDGER (what filled, what is open, on this account) answered from a registry of live processes or from the caller's own id; and a read failure that lands on the destructive branch.
+**Fixed in W1b E10 and its repairs (`trader/reconcile_owned.go`):** (iii) reads `ListFilledSinceAllTraders` and `PictureHtfFilledSinceAll` (store; the SQL bound widened by `LedgerClockSlack` = 24 h, the exact 120 s window re-checked in Go on the parsed time) filtered by account, side and root. New (ii′): an OPEN `trader_positions` row of ANOTHER trader, running or not, on this account, instrument and side explains the held position (a row with an empty account counts only when `onAccount(traderID)` is true), with the 🧷 WARN naming the row on every attempted open. EVERY read error in `ledgerExplainsPosition` counts as explained (`ledger unreadable (<what>: <err>) — fail-closed`): the AI entry is refused and nothing is flattened. `at.store == nil` still returns not-explained (no store is not a read error).
+**Named availability change (ii′):** a STALE OPEN row of another trader on this account/instrument/side — including one with an empty account whose trader is unknown or deleted — blocks every AI open on that side for as long as NT8 holds a position there, until the row is closed. Fail-closed by design; the 🧷 WARN names the row. The 09-23 17:30 backup copy had 0 OPEN rows [A: verifier], so nothing is blocked today.
+**Known limit (L2, CTO ruling, Wave 1b folds — named, not folded):** a STALE OPEN row of another trader (its NT8 stop fired while that trader was stopped, so the close was never recorded) explains ANY position NT8 later holds on that account, instrument and side. While it stands, the owner-ruled orphan flatten is disabled there — a real orphan on that side is never flattened — and every AI open on the account and instrument is refused at reconcile-before-open (`reconcileBeforeOpenNT` refuses on `ledgerExplainsPosition` before its flatten branch, `trader/auto_trader_orders.go` :293-296), until the row is closed. The 🧷 WARN names the row. **OWED:** a stale-OPEN-row detector (an OPEN row whose account/instrument/side NT8 has reported flat since the row's entry).
+**Extended by W1b FOLD-11:** the (iii) freshness window no longer drops a row stamped after the captured `now` — see the class "a freshness window measured against a `now` captured before its reads" below.
+**Probe:** for every check that answers a ledger question, ask what the data is keyed by: process liveness, or the caller's own id when the question is about an account, is a finding. For every read in the check, make that ONE read fail alone (rename a column only it needs) and assert refusal, never action. For every SQL time bound on a text column, write a row in another zone and assert it comes back. Pinned: `TestReconcileFreshFillOfAStoppedTraderExplainsThePosition` (replaces the W0b limit pin), `TestReconcileAnotherTradersOpenRowExplainsThePosition`, `TestReconcileOldFillOfAStoppedTraderStillFlattens`, `TestReconcileAnotherAccountsOpenRowDoesNotExplain`, `TestReconcileLedgerReadErrorIsExplainedNeverFlattened` (armed_orders / picture_htf_opportunities / trader_positions), `TestReconcileLaterLedgerReadErrorIsExplainedNeverFlattened` (the four later reads), `TestLedgerClockSlackReturnsACrossZoneFreshFill`, `TestListFilledSinceAllTradersIsLedgerWide`, `TestPictureHtfFilledSinceAllIsLedgerWide`. Note [A]: the armed filled-since guard's RED is on the wording only — with it removed, the per-id `ListFilled` read (a superset of its columns) still fails closed behind it.
+
+## CLASS 225 — a floor judged on continuous prices, sent on the tick grid by a side-blind rounding
+
+**Found:** 2026-09-23, Wave 1b E12(a) [A]. `RoundToTick` (`math.Round`) was the only rounding on the entry wire. A stop composed exactly on the min-SL floor (entry − 1.5×ATR5m, off the grid) went out half a tick inside it: 29575.90 → 29576.00, a broker distance of 24.00 against a 24.10 floor. EntryGate legs 5/6 judged the unrounded prices, so the gate approved one order and the broker received a tighter one. The away-rounded (wider) stop can also drop R:R up to a tick under its floor, and an off-grid entry that rounds toward the stop shortens the distance the same way (#191). Two traps were found in the first fix: (1) it rounded EVERY venue on the NT8 grid — a non-CME symbol fell to the 0.25 default, DOGEUSDT entry 0.12 rounded to 0, and legs 5/6 skipped an R:R 0.10 open that base refused (fail-open); (2) the gate and the wire keyed the tick table through different root reducers, so a contract-code symbol (`M2KU6`) got the 0.25 default instead of M2K's 0.10.
+**Fixed in W1b E12(a) and its repair:** ONE helper, `WireBracket` (`trader/ninjatrader/tick_rounding.go`), rounds entry and target to the nearest tick and the stop AWAY from the entry (`WireStop`: long floor, short ceil, a 1e-6-tick epsilon keeps an on-grid stop on its own grid index — bit-identical to the authored price only on an exact, power-of-two tick such as 0.25 or 1.0; on 0.10 / 0.01 the wire float lands a few ulps off the authored price, `RoundToTick(2000.3, 0.10)` = 2000.3000000000002 (W1b FOLD-7 scoped this claim); an unknown side refuses the send). `placeEntry`, `PlaceLimitEntry` and `PlaceStopEntry` send its output, and EntryGate legs 5/6 judge that same output (`entryGateWirePrices`, `trader/entry_gate.go`), so a rounding that crosses a floor is REFUSED, not sent; a refusal caused by rounding appends "— judged on the wire-rounded prices (authored entry … SL … TP …)" — since W1b FOLD-7 only when rounding moved a price by more than `wireTickEps` of a tick (`ntTrader.WireMoved`, `trader/ninjatrader/tick_rounding.go` :71, called at `trader/entry_gate.go` :377); the first build compared with a bare `!=`, so on a non-power-of-two tick an ON-GRID leg's refusal claimed a rounding that moved nothing (M2K 0.10: "R:R 1.00 below floor … — judged on the wire-rounded prices (authored entry 2000.3000 …)"). An on-grid leg on any tick now keeps the pre-E12 refusal text byte-identical; live 0.25 (MNQ/NQ/ES/MES) is unaffected. The gate rounds ONLY a CME futures symbol (`market.IsCMEFuturesSymbol` or a non-empty `market.FuturesRoot`); every other venue is judged on the authored prices, exactly as before. The tick comes from ONE lookup, `InstrumentTickSize`, which resolves the root through `market.FuturesRoot` (the wire calls it on the trader symbol, the gate on the intent symbol; `entryGateTickRoot` is deleted). Named consequence: a contract-code symbol on a non-index root now gets its real tick on every `InstrumentTickSize` caller (`CLZ6` → 0.01, `M2KU6` → 0.10), including `PlaceProtectiveStop` and `MoveStopToBreakeven`; MNQ is unchanged. CTO ruling (Wave 1b E12(a)): stop rounds AWAY from entry, target nearest-tick, R:R judged on the WIRE-ROUNDED prices through one shared helper, fail-closed when rounding drops R:R under the floor, CME-only via the wire's own root/tick resolver.
+**Remaining gap (recorded, not fixed):** a stop-entry arm is judged at `leg.Entry` (`entryGateForArm` at `trader/armed_executor.go` ~:794), but the wire sends the trigger `entry ± offset ticks` (`decideStopEntry`, ~:1681-1685), so its R:R is judged up to the offset better than the order sent (min-SL only widens, so that leg is safe). Fix when that file is owned: judge `decideStopEntry(...).Trigger`. Also still unrounded: `armGateVerdictFor`'s min-SL leg (~:2414; the EntryGate binds as the stricter check), the ledger / research / 🛑 stop values (up to one tick from the wire), `kernel` `MinSLVerdict` (pre-admission), and the nearest-rounded management moves (`PlaceProtectiveStop`, `MoveStopToBreakeven`, the deprecated CSV path).
+**Probe:** for every gate that compares a price to a floor, name the function that produces the price the wire sends and check the gate calls THAT function, with the SAME tick lookup and the SAME venue scope. Grep the wire for `RoundToTick(` on a stop: a protective stop rounded to nearest is a finding unless it is a management move not judged against a floor. Feed the gate one non-CME symbol and one contract-code symbol and compare against base and against the wire frame. Pinned: `TestWireStopRoundsAwayFromEntryLimit` (+ StopEntry / Market), `TestWireStopTable`, `TestWireRefusesUnknownSideBeforeAnySend`, `TestEntryGateArmRRJudgedOnWireRoundedStop`, `TestEntryGateArmMinSLJudgedOnWireRoundedEntry`, `TestEntryGateDecisionRRJudgedOnWireRoundedStop`, `TestEntryGateArmMinSLFloorStopAdmittedOnWire`, `TestEntryGateNonCMESymbolJudgedOnAuthoredPrices` (the DOGEUSDT case), `TestEntryGateContractCodeSymbolJudgedOnWireTick`, `TestWireTickResolvesContractCodeRoot`, `TestInstrumentTickSizeResolvesRoot`. One fixture moved on purpose: `TestArmSeamATR5mIsTheOneResolver`'s target (at exactly R:R 3.00 the ceil-rounded short stop reads 2.98 and leg 5 refused first).
+**W1b FOLD-7 (CTO ruling part 1, P2) — "did rounding move it?" is a tick-epsilon question, never `!=`.** Pinned at the production call sites `entryGateForArm` / `entryGateForDecisionAt` (`trader/entry_gate_wire_note_test.go`): `TestEntryGateArmOnGridNonPow2TickReportsNoWireRounding`, `TestEntryGateArmOnGridNonPow2TickMinSLReportsNoWireRounding`, `TestEntryGateDecisionOnGridNonPow2TickReportsNoWireRounding`, `TestEntryGateArmOffGridNonPow2TickStillReportsWireRounding` (the fix never hides a real move), `TestEntryGateArmOnGridQuarterTickByteIdentical` (live 0.25, text and `Float64bits`); helper `TestWireMovedJudgesMovementWithinTheWireTickEps`. RED on both compiling reverts (the call site back to `entry != in.Entry || …`; `WireMoved`'s body back to `wire != authored`). The note is text only — admission is unchanged, the legs still judge exactly the wire prices. **Probe (added):** wherever a float comparison means "did rounding move this value", compare within the epsilon the rounding itself uses; `!=` agrees only on an exact (power-of-two) grid. **Gap [A, FOLD-7 verifier]:** no test covers the ENTRY or TARGET operand of the note — deleting either `WireMoved` term compiles and passes (the gap predates FOLD-7); fix: two `entryGateForArm` cases on M2KU6, entry-only off-grid and target-only off-grid, asserting the note.
+**Known limit L3 (CTO ruling part 1: "state whether decision.StopLoss can be re-composed between admitChain and SetStopLoss") — it cannot [A].** A grep of non-test `trader/` and `kernel/` for any write to a `StopLoss` field, `*decision =` or `*d =` finds one hit, `trader/auto_trader_watcher.go` :134 `th.StopLoss = d.StopLoss` — a copy FROM the decision into a thesis. The decision path in order (HEAD `48707044`): `admitEntry` (`trader/auto_trader_orders.go` :182; the gate reads `Stop: d.StopLoss` at `trader/entry_gate.go` :519 and rounds it with `WireStop`) → `recordPlanCitation` (:203, read-only) → `executeOpen*WithRecord` (:207 / :209) → the pre-entry `SetStopLoss(decision.StopLoss)` (:441 long, :589 short) → `placeEntry` → `WireBracket` (`trader/ninjatrader/tcp_trader.go` :562) → `WireStop` (`tick_rounding.go` :90), the same function the gate used, which depends only on side, stop and tick. The kernel's 0B floor on the decision path is a REFUSAL (`sl_too_tight`, `kernel/engine_position.go` ~:212-250), never a re-composition; `composeArmStop` (`trader/arm_stop_anchor.go` :76) is called only from `trader/armed_executor.go` :555 / :603 and `trader/write_time_feasibility.go` :115 / :145 / :352. The chat path puts the admitted stop by value into its Decision. So gate/wire parity holds on the decision path; the only way a DIFFERENT stop could reach the wire was the shared (symbol, side) map being overwritten between set and send — FOLD-10's interleaving (class below). Source: the FOLD-2 builder's and verifier's L3 answers, re-cited at this HEAD.
+At HEAD `c4111476` (FOLD-3 + FOLD-10) the NT8 decision path is: `executeOpen*WithRecord` (`trader/auto_trader_orders.go` :380 / :401) → `executeOpenLong` / `executeOpenShort` (:386 / :407, reconcile-before-open) → `openEntryWithRecord` (:431) → `carrier.OpenWithBracket(…, decision.StopLoss, decision.TakeProfit)` (:581) → `placeEntryWith` (`trader/ninjatrader/tcp_trader.go` :517; the carried stop/target replace the map values it read, :571) → `WireBracket` (:589) → `WireStop`. The pre-entry `SetStopLoss(decision.StopLoss)` (:559) now runs only for a CME entry on a broker that does not carry its bracket (a map-keyed one), and FOLD-10's entry-send section (`lockEntrySend`, :553 → released :585) spans that set → the send on the AI and chat paths. The stop still reaches the wire by value from the admitted Decision, so gate/wire parity holds [A: code read at `c4111476`].
+
+## CLASS 226 — a dedupe slot recorded at admit is consumed by refusals that never reached the wire
+
+**Found:** 2026-09-23, Wave 1b E12(b) [A]. B3 `orderGuard.admit` recorded the key before the ledger registration, the SL/TP precondition and the send. Any refusal after B3 therefore blocked the legitimate retry for 55 s as a "duplicate" of an order the broker never saw. The armed paths also discarded B3's reason and never called `IncGateBlock`, so the panel's "Duplicate order dropped" never showed an armed refusal.
+**Fixed in W1b E12(b) (reduced scope, CTO ruling Q3):** `orderGuard.reserve` (check; the key is IN FLIGHT — the same key is refused as a duplicate and reservations count toward the rate breaker, so the check/commit gap is closed fail-closed) is separate from `done(sent)` (commit: `sent` records the key and the action; `!sent` releases and records nothing; `sync.Once`). Each of the three entry functions defers `b3Done(b3Sent)` with `b3Sent = latchSent = sendAttempted(serr)` — the entry latch's own predicate (`ErrEntryHeld` = not sent; a queued send = sent). `TCPTrader.b3Reserve` logs every B3 refusal (⛔ / 🚨) and calls `telemetry.IncGateBlock("", b3_order_dedup | b3_rate_breaker)` on all three paths; the armed errors keep "B3 dupe/rate guard" and append the reason. Named consequence: the breaker now counts SENT actions plus reservations in flight, not admitted ones.
+**By design, NOT changed (CTO ruling, W0a rule):** the 60 s entry latch's recent-send clause refuses any re-entry within 60 s of a SEND on the account/symbol, so a stop-out followed by a re-arm inside 60 s is refused. That is W0a's intended rule; the identity-key plumbing (`PlacementIdentity`, the `*As` methods, the `stopEntryPlacer` change) stays PARKED and the latch is not weakened.
+**Probe:** for every dedupe or rate structure, check where the key is written relative to the last refusal before the send — a write before a later refusal is a finding. Check every refusal site calls the gate counter. For every "commit only on send" flag, delete its assignment and confirm a real duplicate on THAT path turns a test RED (the market path's flag was first unpinned: deleting it left the whole package green). Pinned: `TestB3UnsentLimitRefusalDoesNotConsumeSlot`, `TestB3UnsentStopEntryRefusalDoesNotConsumeSlot`, `TestB3UnsentMarketRefusalDoesNotConsumeSlot`, `TestB3ArmedDuplicateRefusedNamedAndCounted` (limit + stop-entry), `TestB3MarketDuplicateRefusedAndCounted`, `TestOrderGuard_ReserveCommitsOnlyOnSend`, `TestOrderGuard_ReservationsCountTowardBreaker`.
+
+## CLASS 227 — a fail-open leg on a path that never supplies its input (abstain = permanently off)
+
+**Found:** 2026-09-23, Wave 1b E9 [A]. The agent door (`AdmitManualEntryAt`) built a Decision with stop = target = 0. EntryGate legs 5 and 6 ABSTAIN on a missing stop, so every chat entry skipped R:R and the stop floor — W0b pinned that as the contract (`TestChatEntryIsAdmittedInAdvisoryModeLegs5And6Abstain`, CLASS 166). The NT8 broker then sent whatever SL/TP its per-(symbol, side) maps held from the last AI decision or a breakeven move. Found again in repair: every door error was told as "refused by the admission gate", including a broker send error and an entry that OPENED unprotected; a no-door fallback reachable only by test fakes kept a map-reading send path alive; and the `execute_trade` tool proposed opens with no bracket, asking the owner to confirm an order certain to be refused.
+**Shape.** A gate leg that abstains when its input is absent, on a path that can NEVER supply that input — the leg is off for that path forever, and the test suite pins the abstention as behaviour.
+**Fixed in W1b E9 and its repair (CTO ruling Q2: refuse a chat/agent-door entry with no explicit stop; flip the pinned test with the reason quoted):** `agentBracketRefusal` (`trader/entry_admission.go`) refuses by name, class `entry_gate`, when the stop, the target, the live price or ATR5m is missing, or when the bracket is on the wrong side of live ("entry_gate: refused: no explicit stop — …(fail-closed)"). `AdmitManualEntryBracketAt` carries the entry's own Stop/Target into the chain, so legs 5 and 6 judge it. `AutoTrader.OpenManualEntry[At]` is the door's ONE send: it admits with the bracket, then on CME futures sets its own SL/TP immediately BEFORE the entry (a failed set refuses; nothing is sent); on other venues it opens then sets, returning `*ManualEntryUnprotected` if the set fails. Errors are typed — `*ManualEntryRefusal` (admission refused, nothing sent), `*ManualEntryUnprotected` (opened, bracket failed), anything else is the broker's — and the agent labels each by its type (`chatEntryError`; `tradeFailureReply` records an unprotected entry as executed and replies "🚨 Trade OPENED but UNPROTECTED"). The door is part of `tradeSelectedTrader`, pinned at compile time by `var _ tradeSelectedTrader = (*trader.AutoTrader)(nil)`; the no-door fallback is deleted. `execute_trade` refuses `open_long` / `open_short` unless both `stop_loss > 0` and `take_profit > 0`, before any pending trade exists.
+**Named behaviour, fail-closed:** chat entries currently CANNOT be sent on non-CME venues — `agentBracketRefusal` reads ATR5m through `armSeamATR5m`, which serves only the NT8 BarCache, so an Alpaca or crypto symbol is refused "ATR5m unknown" [A code read]. At the E9 merge the chat's symbol routing did not reach the NT8 door EITHER — this entry then said so [B, map probe] while the guide said a chat entry "can only pass the gate on an NT8 (CME) trader": one commit, two answers (CTO FOLD-5). The CTO verified the cause [A]: `isStockSymbol("MNQ")` was true (1–5 uppercase letters, not a known crypto base), so `resolveTradeExecutionContext` looked for a stock trader and replied "no running stock trader (Alpaca) found — configure one to trade stocks"; no chat entry could be sent on any venue.
+**One truth since W1b FOLD-5 (the same story as the guide, `web/src/guide/content/status.ts`):** a CME chat symbol reaches the NT8 door. `isStockSymbol` asks the CME predicate (`isCMEFuturesChatSymbol` = `market.IsCMEFuturesSymbol` or a non-empty `market.FuturesRoot`) BEFORE the letters heuristic, and `resolveCMETrader` (`agent/trade.go`) picks the ONE running NinjaTrader trader whose wire instrument has that root — refused by name when none is running or two or more are (the chat never picks an account). So a chat entry can be sent on an NT8 (CME) trader, and only there: MNQ reaches `OpenManualEntry` [A at `c4111476`: `TestChatMNQEntryReachesTheNT8TraderDoor`, through `resolveTradeExecutionContext` → `executeTradeWith` → `OpenManualEntry` on an NT8 fake]. The "no running stock trader (Alpaca)" reply quoted above is the pre-FOLD-5 behaviour: a CME symbol no longer reaches that branch. E9's own send described above (set the bracket immediately before the entry, then open) is superseded too: since FOLD-2 the door sends through the AI decision's execute path, and since FOLD-3 the NT8 send carries the chat's bracket inside it (`OpenWithBracket`) — classes below. The non-CME open-then-set branch stays unreachable end-to-end and is tested only at `sendManualEntry`. **Still open at the E9 merge — folded in W1b:** the chat's Set→Open and the AI's Set→Open wrote the same broker SL/TP map keys without a shared lock [B at E9; CTO-verified as FOLD-10 [A]] — closed by FOLD-3 (`OpenWithBracket`: the NT8 send carries its own bracket) and FOLD-10 (one entry-send section per trader, taken by the AI and chat paths), classes below. `parseTradeCommand` builds a bracket-less open but has no production caller [A: grep].
+**Probe:** for every EntryGate caller, name the input each abstaining leg needs and prove that path can supply it; a path that never can must refuse, not abstain. For every door that can fail in more than one way, check the caller's label comes from an error TYPE, never from the fact that some error occurred. For every interface a production type satisfies, ask whether a branch keyed on a type assertion is reachable only by test fakes. Pinned: `TestChatEntryWithNoStopIsRefused` (the flipped W0b pin), `TestChatEntryBracketIsJudgedByLegs5And6`, `TestChatEntryWithAStopSendsItsOwnBracket` (real TCPTrader + server: the wire carries the chat entry's own SL/TP, never the stale map values), `TestManualEntryDoorErrorsSayWhatHappened`, agent `TestChatEntryWithAStopGoesThroughTheBracketDoor`, `TestChatEntryErrorsSayWhatHappened`, `TestExecuteTradeProposalNeedsItsOwnBracket`.
+
+## CLASS 228 — a flat window enforced only by a cancel: a second trigger re-arms what the first cancelled
+
+**Found:** 2026-09-23, Wave 1b E13 [A]. The T1 force-flat lead [W.Start − 2m, W.Start) (`t1ForceFlatDue`, `t1ForceFlatLead` = 2) and an in-session EOD flat earlier than the last-entry cutoff were enforced only by CANCELS inside runCycle (`enforceT1ForceFlatAt`, `enforceEODFlatAt`). The live-bar event pass (W3 D14) never calls them: it re-minted (D5) a T1-cancelled placed LEGACY arm as the next placement under the same version, and placed arms authored before the lead; a scan that had nothing to cancel placed first-time arms inside the lead. (The map's first design — an unplaced `armZoneRow` — would have passed at base: MANUAL-CANCEL-WINS keeps an unplaced same-version row terminal, and the D15 pin protects placed market_in_zone rows; the critic re-routed the RED tests.) Found again in repair: the new refusal was counted under `no_trade_band` on the arm path and `session_gate` on the decision path — the counters inferred a class instead of recording it — and the check re-read the T1 calendar, doubling the "calendar FAIL-CLOSED" WARN.
+**Shape.** A window whose only enforcement is "cancel what is resting when it opens", on a system with more than one trigger that can author and place.
+**Fixed in W1b E13 and its repair:** one predicate, `forceFlatWindowAt(now, t1)` (`trader/auto_trader_clock.go`; Day Plan on and an active session, like the enforce functions), covers the T1 lead and the in-session EOD flat (`eodSessionFlatAt`, now also used by `enforceEODFlatAt` — the flatten behaves the same). `sessionRiskGateAt` reads it BEFORE the loss-run query (which fails OPEN), so the scan, the event pass and the arm/Picture send point all refuse inside the window; decision/agent admission refuses too. Both count it as its OWN class, `force_flat_window` (`asForceFlatWindow`; `admitRefuse(in, "force_flat_window", …)`), and the arm pass's cancel of resting arms keys on `sessionRiskWindowWords`, so its reason reads "force-flat window opened — force_flat_window: …" (the `no_trade_band` text is byte-identical to before). The T1 windows are read ONCE per gate call (`sessionEntryBlockedT1At` hands them to `forceFlatWindowAt`). The GateBlocksPanel label is 'Force-flat window (T1 lead / EOD flat)' (`TestW0bGuideAndGateLabelsMatchTheBinary`). The event pass only refuses; flattening stays with the scan and the monitor. Nothing validates `eod_flat_offset_min ≤ last_entry_offset_min` at save (the gap is refused at entry; blocking a saved config is an owner call); the defaults (last-entry 15, EOD flat 0) make the EOD half inert unless a session override sets it.
+**Probe:** for every `cancelArmedOrdersSync` caller that represents a window, name the matching REFUSAL on every trigger (scan, event pass, nudge, send point) and every path. Every new refusal gets its own counter class; grep that no reason text uses another class's prefix. A window check placed after a fail-open read is skipped by that read's failure. Pinned: `TestArmPassRefusesInsideTheT1ForceFlatLead` (route (a): first-time authorization, with a reach control outside the lead), `TestEventPassNeverReMintsAT1CancelledLegacyArmInsideTheLead` (route (b): placed legacy row, T1 cancel settles, the event pass must not mint seq+1), `TestEventPassNeverPlacesInsideTheT1ForceFlatLead`, `TestArmPassRefusesPastAnEarlierInSessionEODFlat`, `TestDecisionPathRefusesInsideTheT1ForceFlatLead`, `TestForceFlatWindowSurvivesALossRunReadFailure` (the only test that detects the ordering), `TestArmPassCancelsAnArmIntoTheForceFlatWindowAsItself`, `TestForceFlatWindowReusesTheSessionGatesCalendarRead`. Test seams named: `clockHoldDriftFn` is set to "no drift" in the fixtures (the F6 2-minute widening happens to equal the lead and would mask it), and the route-(b) test swaps in a fresh TCPTrader to stand in for the wall-clock minute that clears B3's 55 s window.
+**Extended by W1b FOLD-12:** the window's cancel sweep re-sent its cancel on every pass; it is now paced per row — see the class "a per-pass sweep that re-sends an unpaced cancel" below.
+
+## CLASS 229 — a pin overdetermined by a second guard
+
+**Found:** 2026-09-24, Wave 1b FOLD-8 (finisher + verifier, lane Claude-101, `fix/executor-owed-1`) [A]. The FOLD-8 comment fix (`8c220b35`) said the "no hole" claim was "pinned by the E1/E2 respec tests' 'place nothing' assertions on the cancelling pass". It was not. With the placement switch widened to `case "armed", "cancel_pending":`, all five respec call-site tests stayed green, because on the cancelling pass the one-contract guard ALSO refuses. The first pin (`7a5be0c8`) over-claimed the other way ("only the placement switch keeps it off the wire"): with the switch alone mutated, the `BeginPlacement` compare-and-set still refuses ("row 1 is no longer eligible for placement"). Corrected in `365aaa92`.
+**Shape.** A "nothing happened" assertion on a pass where two guards both refuse pins neither of them. Each test is green for a reason other than the one its name gives, and a mutation of the named guard survives.
+**Probe:** for every pin that claims to hold a specific guard, mutate THAT guard alone (compiling, restored with `cmp`) and confirm RED. When guards are stacked, assert on a signal only the named layer controls — a log line that proves the path was reached, a store state only that layer writes — not on the shared outcome "nothing was sent". Then mutate the layers together and confirm the harm the guards exist for actually appears.
+**Pinned (the corrected FOLD-8 pin):** `TestRespecCancelPendingRowIsNeverPlacedOnAFlatLiveBook` (`trader/arm_respec_test.go`) — switch alone mutated → RED on the "armed place failed" log line; compare-and-set alone → green (the switch holds); both → RED, the v1 order is re-sent.
+
+**Instance 2026-09-24 M3:** three cases. The update worker's second-Listen test was satisfied by both the flock AND the live-socket probe (`002ede41`, `TestListenRefusesWhileAnotherWorkerHoldsTheLock`); the triage repaired legs that were green for another reason (a trailing-newline leg with a zero key and a fake MAC, a Logf-only MAC check, a "within retention" leg that moved the clock forward); and the red-team's future-iat probe was refused by nbf before Q8 ran and was dropped, so the finding it masked returned later as CLASS 264 (`002ede41`, `0c0253db`)
+
+## CLASS 230 — a log line that states an attribution the code never established
+
+**Found:** 2026-09-23, CTO ruling FOLD-6 (Wave 1b part 1) [A]. `trader/ninjatrader/reconcile.go` printed `🧩 reconcile: MATERIALIZED … manual/NT8-side entry now tracked` unconditionally, two lines after `🔗` had tagged the same position as this trader's own late AI fill. The first repair (`7095ef4c`) still worded failures as answers: a failed store read printed "not claimable by this trader", and a failed fallback read fell through to "manual/NT8-side (no … evidence)".
+**Shape.** A summary line prints a default origin whatever the code before it established. A failed read is worded as a negative answer ("not claimable", "no evidence"), which it never established.
+**Fixed in W1b FOLD-6 (`7095ef4c`, `07a9d85c`):** `tagLateEntryFill` and `stampArmedLineageInWindow` return what the attribution step ESTABLISHED, and the 🧩 line (`reconcile.go` :475) names it: this trader's late AI fill, its late armed fill, an armed fill matched by price in the window, or `UNTAGGED entry (…)` with the reason, a failed read or write named as a failure ("… lookup failed — see the 🔗 WARN"). "manual/NT8-side entry" prints only when every read succeeded and none found this trader's entry. Pinned at `reconcilePositions`: `TestMaterializedLineNamesTheOriginAttributionEstablished` (7 cases), `TestMaterializedLineNamesAnAttributionThatFailed` (7 cases; failures injected by renaming `armed_orders` or by a `BEFORE UPDATE OF entry_order_id, plan_id` trigger). RED on the old unconditional text, on the "not claimable" text and on the dropped fallback-failure reason.
+**Probe:** for every line that summarizes a decision ("X is now tracked as Y"), trace Y back to a value the code set on EVERY branch; a default that survives a failed branch is this class. Inject a failure into each read in turn and assert the line says "failed", never a negative answer.
+**Residual [A]:** the `🔗 attribution: materialized … with NO recoverable lineage` WARN (`reconcile.go` :431) still prints before attribution runs, so it can contradict the 🧩 line two lines later. [B] The manual/NT8-side default also covers two unnamed cases: every ring fill already in use, and a same-side in-window arm more than one tick off.
+
+## CLASS 231 — an identity tagged before the record it names is settled
+
+**Found:** 2026-09-24, CTO ruling FOLD-13 (Wave 1b part 2) [A]. `tagLateEntryFill` wrote the position's `entry_order_id` FIRST and settled the AI order afterwards. A failed `UpdateOrderStatus` left the position tagged and the order NEW for good: the untracked branch never re-enters a tracked row, so nothing retried the settle.
+**Shape.** A path both stamps an identity on record A and settles record B. It tags first, so a failed settle turns into a permanent orphan: the tagged record has left the set of rows the path re-enters.
+**Fixed in W1b FOLD-13 (`9597f8d4`):** settle FIRST, tag LAST (`trader/ninjatrader/reconcile_late_fill.go` :210-228). The settle is ONE unit, `OrderStore.SettleFilledWithFill` (`store/order_settle.go` :12-20): `UpdateOrderStatus(…, "FILLED", …)` and `CreateFill` in one gorm transaction, so either both land or neither does. A failed settle WARNs `🔗 attribution: pos N (…) — AI order #X FILLED settle failed (signal S): <err> — order left NEW, position left UNTAGGED (no tag without a settled order)` and leaves both untouched. No tag is written and no signal is remembered, so move_stop and trailing cannot address a bracket whose order row is unresolved. A tag that fails AFTER the settle leaves the order FILLED with its one fill row (broker truth) and the position untagged, with a 🔗 WARN. The 🧩 line says which ("… its FILLED settle failed (order left NEW) …" / "… (settled FILLED) but the entry-order-id stamp failed …"). Pinned at the production call site, with real SQLite `RAISE(ABORT)` triggers: `TestLateAIFillSettleFailureLeavesOrderNewAndPositionUntagged` (status write fails; fill-row write fails), `TestLateAIFillSettlesBeforeItTags`. RED on the tag-first revert, on a failed settle falling through to the tag, and on a non-atomic settle ("the order row must be untouched (NEW, unfilled) … status=\"FILLED\"").
+**Probe:** for every function that writes an identity onto one record and a state change onto another, check the order: the record whose failure must stay visible is written first, as one unit with its child rows, and the tag comes last. Inject a real store failure on each write in turn at the production call site, and assert what each record reads afterwards.
+**Residuals (named, not ruled):** (1) [A, FOLD-13 verifier] the 🔗 settle-failure WARN (:220) and tag-failure WARN (:224) are not asserted on their own: the test's substring check also matches the 🧩 line, so deleting the 🔗 WARN stays green. Fix: assert one line carrying "🔗 attribution", the signal, "settle failed" and the injected error text. (2) [B] The settle is not a compare-and-set on `status = 'NEW'`. Another path settling the same order between the NEW read and this settle would be overwritten, and a second fill row added (`nt8-late-entry-<id>`). (3) [B] No periodic sweep reads NEW `trader_orders` rows. The row stays NEW and visible, but nothing brings it back up on its own; the CTO to name the sweep the ruling meant.
+
+## CLASS 232 — a freshness window measured against a `now` captured before its reads
+
+**Found:** 2026-09-24, CTO ruling FOLD-11 (Wave 1b part 2) [A]. In `trader/reconcile_owned.go`, `fresh()` was `d >= 0 && d < window`. The caller captures `now` BEFORE the ledger reads (`ledgerExplainsPosition(symbol, held, time.Now())`, `trader/auto_trader_orders.go` :293). So an armed row the settle pass moved working→filled AFTER that `now` had `d < 0` and was "not fresh". Filled is terminal, so check (i) no longer listed it either. The position was not yet materialized, came out UNEXPLAINED, and was FLATTENED. A sub-millisecond window, and exactly the D10 class that W0(c) exists to close.
+**Shape.** A window check written as `0 ≤ age < window` against a clock read before the data. A row written between the clock read and the data read has a negative age; it is fresher than fresh and is read as stale.
+**Fixed in W1b FOLD-11 (`410dc62f`):** `fresh := func(ts time.Time) bool { return now.Sub(ts) < window }` (`reconcile_owned.go` :84). The one closure judges the armed filled rows and the Picture filled rows. Pinned at `reconcileBeforeOpenNT`: `TestReconcileFillStampedAfterTheCapturedNowExplainsThePosition` (armed and Picture: "the held position was FLATTENED" on the revert, and on the lower bound put back on either loop alone), `TestReconcileFillStampedAfterNowOffThisAccountOrInstrumentExplainsNothing` (a fill stamped after `now` on another account or instrument still explains nothing; RED under a mutation that takes "after now" as owned before the account check).
+**Probe:** grep `>= 0 &&` next to `now.Sub(` (or `d >= 0`, `age >= 0`) in any window check. Find where that `now` is captured: if it is captured before the read, negative ages must pass.
+**Residual [B] (FOLD-11 builder C3):** `fresh()` has no lower bound now. A row whose `UpdatedAt` is in the future (a clock step back) reads as fresh until the wall clock passes it. This fails closed: the AI open is refused and nothing is flattened. Any future upper bound must exceed the test's +30 s stamp.
+
+**Instance 2026-09-24 M3:** **CLOSED** in `fix/m3-install-path-lows` `c777235f` (fa `100371ff` cherry-picked): `Consume` now takes a clock function and judges expiry on a reading taken UNDER the seen-store lock; pinned by `TestInstallJudgesExpiryUnderTheSeenStoreLock`.
+
+## CLASS 233 — a per-pass sweep that re-sends an unpaced cancel
+
+**Found:** 2026-09-24, CTO ruling FOLD-12 (Wave 1b part 2) [A]. The E13 / no-trade-band window sweep (`trader/armed_executor.go` :377) re-sent a cancel EVERY pass — the scan AND each live-bar pass — to every non-terminal row, `cancel_pending` ones included: `cancelArmedOrdersSyncWith` filtered only `SignalID == ''`. Each re-send blocked under `armedPassMu` for up to 2× the ack timeout per row and incremented `cancel_attempts` when no ack came. On a dark book, the 2-minute T1 lead × per-bar passes could exhaust the re-request cap (`cancelReRequestMax`) the settlement pass paces by.
+**Shape.** A sweep written as "make it so" on every pass, where each attempt has a cost (a blocking wait under a shared mutex, a count against another pass's budget) and the thing it waits on can be dark.
+**Fixed in W1b FOLD-12 (`e2fc0c2b`; pins `48707044`):** only the window sweep passes a pace (`at.windowSweepPace(now)`, `trader/window_sweep_pace.go`). It skips a `cancel_pending` row whose latest request is under `windowSweepCancelPace` (30 s, :32) old. "Latest" is the later of the ledger's `cancel_requested_at_ms` and the sweep's own last send, judged on the pass clock. Past 30 s the cancel is re-sent once, so a lost frame is still retried, and the pace restarts from that send. The EOD flat, session end, news and T1 enforce callers pass no pace and keep their behaviour. Pinned: `TestWindowSweepPacesOnlyACancelPendingRow`, `TestWindowSweepPaceCountsAnotherPathsRequest`, `TestWindowSweepReSendsEveryThirtySecondsAcrossALongWindow` (cadence 0 s / 30 s / 60 s …), `TestWindowSweepPaceLeavesTheUnpacedCallersUnchanged`, and the ruling's RED (window open + dark book + 3 passes in 10 s → one cancel per row; "the sweep re-sent 2 cancel frame(s) to a cancel_pending row requested 4s ago"). RED on the call-site revert, on an always-false pace, on the verifier's deletion of the no-link pace check, on first-request-only pacing, on ignoring the ledger time, on pacing every state, and on a 20 s pace.
+**Probe:** for every sweep that runs per pass, count the sends per row over N passes inside its pace. For each send, name what it costs (a mutex held, an attempt counted) and who else reads that budget. Separately: a test that "legacy callers are unchanged" must drive each legacy CALL SITE, not the shared helper. The FOLD-12 verifier's V12 (pacing passed at the EOD call site) survived every targeted test, because `TestWindowSweepPaceLeavesTheUnpacedCallersUnchanged` calls `cancelArmedOrdersSync` directly (canon 53).
+**Residuals (named, CTO calls):** (1) [A] the pace limits how OFTEN, not how many: over a dark 2-minute T1 lead the sweep still sends at 0/30/60/90/120 s, so `cancel_attempts` reaches the cap of 5 and the settlement pass is capped soon after its timeout. Whether the sweep should respect the cap is open. (2) [A] Re-requests from the settlement pass are not timestamped (`RequestCancel` never updates `cancel_requested_at_ms` after the first request), so the sweep can re-send within 30 s of one. Closing it needs an additive `last_cancel_requested_at_ms` column. (3) [B] Paced skips leave no log line and no counter.
+
+## CLASS 234 — a WIP snapshot taken while a mutation probe runs commits the mutation
+
+**Found:** 2026-09-24, Wave 1b folds (CTO ruling part 2 names `b387f95f`; the fold lane found a second) [A]. An owner hold stopped the builders mid-run, and their uncommitted work was saved as `wip(STOP)` commits. On the f11 fold, `e3bff5d8` captured a mutation probe in flight: `trader/armed_executor.go` had lost the FOLD-12 pace check in the no-broker-link branch of `cancelArmedOrders` (3 lines deleted), and a verifier probe file `trader/zz_verifier_probe_test.go` (154 lines, "temporary, deleted after the run") had been added. The revert is `91dfadc4` (the file restored from the fold commit, the probe deleted, `git diff` against the pre-snapshot fold empty). `b387f95f` (M3, "snapshot at the second interruption") carries the same hazard and must never be cherry-picked alone.
+**Shape.** A snapshot captures the tree as it IS at that moment. A probe that mutates a guard to prove its test goes RED is, at that moment, a weakened guard, and the snapshot commits it under a message that says nothing about it.
+**Probe:** before building on any `wip(STOP)` / snapshot commit, diff it against the last fold commit and read every REMOVED line in production code; look for `zz_*probe*` files. Restore from the last fold commit, confirm with `cmp`, delete the probe file, and commit the revert as its own commit, naming the snapshot. Squash, or say so in the PR body, so nobody bisects or cherry-picks onto the mutated commit.
+
+**Instance 2026-09-24 M3:** `b387f95f`, already named above, was restored by `a51115ae`; the `ef03e033` wip(STOP) carried the red-team `zz_*` probe files, and the triage verified that no production file was mutated [A] (`a51115ae`, `ef03e033`)
+
+## CLASS 235 — a side door that re-implements the send skips the producer's execute-side rails
+
+**Found:** 2026-09-24, CTO ruling FOLD-2 (Wave 1b part 1) [A at `4f0f2399`]. The E9 chat door `sendManualEntry` (`trader/entry_admission.go`) called `at.trader.OpenLong/OpenShort` directly. It skipped every rail the AI open runs AFTER admission: no `reconcileBeforeOpenNT`, no `enforceMaxPositions`, no same-side check, and no `futuresOrderQuantity(…, resolveMaxContracts())` cap. A chat "buy 3 MNQ" sent 3 against the Stage-A cap of 1; `validateTradeAction`'s USDT arithmetic was the only cap. There was also no `recordAndConfirmOrder`, so no order row: the position appeared untracked as `PlanUnresolvable`, and E15's AI-order branch could never tag it.
+**Shape.** The admission chain was shared (CLASS 166), but the SEND was re-implemented. Every rail that lives in the producer's execute function, below the chain, was absent from the door, and each door test was green about its own copy.
+**Fixed in W1b FOLD-2 (`349a7351`; repairs `c41293bd`, `77a8bfc5`, `c4111476` — f2 `6de15b84` / `f66aaada` / `7ff03ae6`):** the door sends through the AI decision's own execute path: `sendManualEntry` → `executeOpenLong/Short` (manual) → `openEntryWithRecord`, with a Decision carrying the chat's SL/TP. That runs reconcile-before-open, the max-positions limit and the same-side check. On CME a typed quantity is REFUSED, never clamped (`manualEntryQuantityRefusal`: "refused: quantity N exceeds the max-contracts cap C" / "refused: quantity N is not a whole number of contracts") — the owner typed that number. It writes an order row through `recordAndConfirmOrderAs` under the chat's signal id, never taking the AI's plan citation. A rail refusal is typed `ManualEntryRefusal{Execute: true}`, and the chat replies "entry refused before any send (the same execute-side rails as an AI decision): …". When reconcile had ALREADY submitted an orphan flatten (`reconcileBeforeOpenNTReport` returns `flattenSent` = true from the moment `CloseLong`/`CloseShort` is called), the refusal carries `FlattenSent` and `chatEntryError` replies "a flatten of a position no ledger row explains was SENT first (reconcile-before-open) — it is flat only if the reason below says so, check NT8; the entry was NOT sent: …" — never "nothing sent", and never that the orphan was closed: reconcile also refuses with `FlattenSent` when the flatten submit failed, the feed dropped mid-flatten, or flat was not confirmed within `reconcileFlattenTimeout` (`c4111476`). A broker failure of the ENTRY after an orphan flatten is not a refusal: `sendManualEntry` returns "an orphan flatten was sent first (reconcile-before-open); then the entry failed at the broker: …", which the chat tells as "entry send failed at the broker (not an admission refusal): …". The excursion row opened when the door confirms the chat's fill (`recordPositionChangeAs` → `excursionOnOpen(pos, manual.stop, manual.target, …)`) carries the chat's OWN authored stop/target, never a nearby AI decision's (`StopTargetNear`); with either level missing no row is opened. Pinned at `OpenManualEntryAt` (a fixed admission clock; `OpenManualEntry` itself is wall-clocked): `TestChatEntryOverTheMaxContractsCapIsRefusedNeverClamped`, `TestChatEntryIsReconciledBeforeOpenLikeAnAIEntry`, `TestChatEntryAtMaxPositionsIsRefusedLikeAnAIEntry`, `TestChatEntrySendIsRecordedUnderItsSignalID`, `TestChatPositionExcursionCarriesItsOwnBracketNeverAnAIDecisions`, `TestChatEntryRefusedAfterAnOrphanFlattenSaysTheFlattenWasSent` (both sides: `open_long` over an orphan short, `open_short` over an orphan long), `TestChatEntryBrokerFailureAfterAnOrphanFlattenSaysTheFlattenWasSent`; at `sendManualEntry` (the non-CME branch the admission chain refuses end-to-end): `TestChatNonCMEEntryOnTheNT8VenueIsRefusedBeforeAnySend`, `TestChatEntryOnAnAlreadyHeldSideIsRefusedLikeAnAIEntry`; agent `TestChatEntryExecuteRailRefusalSaysSo`, `TestChatEntryRefusalAfterAnOrphanFlattenSaysTheFlattenWasSent`, `TestChatEntryReplyNeverClaimsAnUnconfirmedFlattenClosedTheOrphan`.
+**Probe:** for every door that puts an entry on the wire, name the execute function it shares with the main producer. List each rail of that function (reconcile, position limits, same-side, the quantity cap, the order record) and pin each one AT THE DOOR with the rail tripped. A door that calls the broker method directly is this class, even when its admission is shared.
+**Residuals (named):** (1) [B; the bounds A: code read] on NT8 the door blocks its HTTP goroutine for up to 35 s of reconcile (`reconcileFlattenTimeout`, polled every 500 ms) plus ~3 s of confirm polling (500 ms, then up to 5 × 500 ms), plus any wait for another entry's send section (FOLD-10). (2) [A] E15 logs a late chat fill as a "late AI fill": order rows carry nothing that tells a chat order from an AI one (`createOrderRecord`). (3) [B] the hop `executeTradeWith → OpenManualEntry` is covered only by fakes; a clock seam for `OpenManualEntry` would let the literal ruling test run without failing in the CME halt hour. (4) [A: code read] the chat's own levels reach only the excursion row opened when the door CONFIRMS the fill inside that ~3 s poll. A later fill is materialized by the reconciler, which opens no excursion row (`excursionOnOpen` is called only from `recordPositionChangeAs` and `trader/armed_executor.go` :2318), and the flag-gated wave-A backfill (`BackfillExcursions`, `main.go` :472) reads levels through `StopTargetNear` for every closed position it walks, a chat position included — so it would judge that position's path and exit on a nearby AI decision's levels (its `SetLevels` never overwrites a row's non-zero stop). Named, not fixed.
+
+## CLASS 236 — shared state written before a send that can fail, then read as truth
+
+**Found:** 2026-09-24, CTO ruling FOLD-3 (Wave 1b part 1) [A at `4f0f2399`]. The E9 CME chat order wrote the shared (symbol, side) SL/TP maps BEFORE the open. A refused open (the entry latch, B3, an unbound account) left the chat's stop in the map. `MoveStopToBreakeven` reads that map as `cur` for the widen ban (`tcp_trader.go` :919-927 at the ruling's base), so a legitimate breakeven tighten against the REAL stop could be refused as a widen.
+**Shape.** A value written ahead of a broker call that can refuse, never undone on the non-sent outcomes, and read later as a fact about the broker.
+**Fixed in W1b FOLD-3 (`350e7c38`, pin `a474014e`; f2 `dac9d1c9` / `5db1442d`):** `TCPTrader.OpenWithBracket(symbol, side, qty, stop, target)` carries the bracket INTO the send (`placeEntryWith`: the carried stop/target replace the map values it read, so the maps feed the wire only when no bracket is carried). The maps are written only once the send was attempted (`if own != nil && latchSent`; `sendAttempted` = no error, or an error other than `ntwire.ErrEntryHeld`), so every refusal before the send, and the hold's provably-unsent drop, leave them byte-identical. An AMBIGUOUS send failure keeps the bracket in the maps by design (fail-closed: the entry may be live with exactly that stop). `openEntryWithRecord` uses it on CME through the `bracketCarryingEntrySender` assertion; the Trader interface stays 19 methods. Brokers without it (the CSV Trader, test fakes) keep set-then-open (the CSV Trader has no `MoveStopToBreakeven`, so the harm does not apply there [A]). Pinned: `TestOpenWithBracketRefusedLeavesTheMapsByteIdentical` (no bound account, a non-tradeable account, the maintenance permit, the one entry latch, an incomplete bracket, and the hold's provably-unsent drop), `TestOpenWithBracketSentRecordsItsOwnBracketAndABlockedRepeatDoesNot`, `TestRefusedEntryNeverTurnsABreakevenTightenIntoAWiden` (`trader/ninjatrader/entry_bracket_carry_test.go`), and at the chat door through `EntryBracketMapsForTest`: `TestRefusedChatOpenLeavesTheBracketMapsByteIdentical`, `TestSentChatOpenLeavesItsOwnBracketInTheMaps` (`trader/chat_bracket_maps_test.go`).
+**Probe:** for every value written before a broker call, list the call's non-sent outcomes and check the value is undone or never written on each. Prefer passing the value INTO the send over writing shared state ahead of it.
+**Residual [C] (FOLD-2 verifier N5):** the maps are written AFTER `SendSignal` (`tcp_trader.go` :628 → :631), so for a sub-millisecond window `MoveStopToBreakeven` can read the previous value (a 0 skips the widen ban, `cur > 0 &&`). SYSTEM-MAP's note (`docs/superpowers/SYSTEM-MAP.md` :332) that `SetStopLoss` "writes a local map a later `placeEntry` reads" now holds only for the legacy `OpenLong`/`OpenShort` → `placeEntry` path; on the carried path `SetStopLoss` still writes the map after the open, and its reader is `MoveStopToBreakeven`.
+
+## CLASS 237 — a shape heuristic asked before the domain predicate
+
+**Found:** 2026-09-24, CTO ruling FOLD-5 (Wave 1b part 1, P1 truth) [A]. `agent/tools.go` `isStockSymbol("MNQ")` returned true: three uppercase letters, not in `knownCryptoSymbols`. So `resolveTradeExecutionContext` skipped the NT8 trader, and every chat MNQ entry was refused "no running stock trader (Alpaca) found". The E9 door was unreachable for its only venue, while the E9 checklist entry and the guide gave two different answers about it in the same commit.
+**Shape.** A classifier chain asks a generic SHAPE test ("1–5 uppercase letters = a stock") before the specific domain predicate that owns the symbol. Every symbol of the specific domain that happens to fit the shape is claimed by the wrong branch.
+**Fixed in W1b FOLD-5 (`eb746183`, repair `d9d0ef4d`; f2 `820786e8` / `c0dda4c7`):** `isStockSymbol` asks `isCMEFuturesChatSymbol` (`market.IsCMEFuturesSymbol` or a non-empty `market.FuturesRoot`) FIRST. `chatTradeSymbol` canonicalizes a CME chat symbol to its root where it enters (canon 28). `resolveCMETrader` (`agent/trade.go`) picks the ONE running NinjaTrader trader whose `WireSymbol()` has that root; none, or two or more, is refused by name. Named consequence: a CME root that is also a stock ticker (CL, ES, NG) now routes only to NT8 — Colgate cannot be traded through chat, fail-closed. A chat close of a CME symbol now reaches the NT8 trader too (`resolveTradeExecutionContext` routes every action; it used to go to Alpaca). Pinned: `TestChatMNQEntryReachesTheNT8TraderDoor` (execute_trade → confirm → `resolveTradeExecutionContext` → `executeTradeWith` → `OpenManualEntry` on an NT8 fake), `TestChatCMEEntryResolvesOnlyTheOneNT8TraderOfItsInstrument` (MNQ, MNQU6, MNQ.c.0), `TestCMESymbolsAreNeverStocks`, `TestChatCMEResolverSelectsTheNT8TraderThroughTheProductionAdapter` (the production roster adapter; the compile-time `var _ interface{ WireSymbol() string } = (*ntTrader.TCPTrader)(nil)` sits in `agent/trade.go`).
+**Probe:** in every classifier chain (symbol → venue, string → type), list the predicates in the order they are asked. A domain-specific predicate must come before any shape heuristic its members could match. Pin it with a call-site test through the RESOLVER, not the classifier alone, and build at least one test roster through the production adapter (a seam that replaces the whole candidate list hid a nil `tradeUnderlying`, verifier m5c).
+
+## CLASS 238 — a set→send pair on shared state with no lock spanning it
+
+**Found:** 2026-09-24, CTO ruling FOLD-10 (Wave 1b part 2, P1) [A at `4f0f2399`]. The (symbol, side) SL/TP maps were set-then-read across goroutines with NO lock spanning set → send: `SetStopLoss` / `SetTakeProfit` then `OpenLong` (`trader/auto_trader_orders.go`, no AutoTrader-level mutex). The AI entry runs on the cycle goroutine and the chat door on the HTTP goroutine, and `placeEntry` reads the maps only after the permit and the latch, milliseconds later. The interleaving C.set(S1,T1) → A.set(S2,T2) → C.send reads (S2,T2) sends the chat quantity with the AI's bracket, or the reverse. CLASS 165 serialized the four entry FUNCTIONS at the broker; this is the finer grain: the set and the send are two calls, and nothing held them together.
+**Shape.** A write and the read that consumes it are separate calls on shared state, reachable from two goroutines, and the lock (if any) covers each call but not the pair.
+**Fixed in W1b FOLD-10 (`5e49cb14`; f10 `8f7e0a9e`):** ONE AutoTrader-level entry-send section, `entrySendMu`, taken only in `openEntryWithRecord` through `lockEntrySend` (idempotent release, deferred for every early return and panic, and called where the section ends). Section 1 spans the pre-entry bracket set (run only when the broker does not carry the bracket, FOLD-3) → the open send (released as soon as the send returns; the order-confirmation poll runs outside it). Section 2 covers the post-open `SetStopLoss` / `SetTakeProfit`, which on a map-keyed broker would otherwise land inside ANOTHER entry's set → read. Both paths take it: the AI decision's and, since FOLD-2, the chat door's. No other send takes it: armed entries (`PlaceLimitEntry` / `PlaceStopEntry`) and the debug test trade (`DebugPlaceTestTrade` → `OpenWithBracket`) carry their own prices into the send. The Trader interface is unchanged (19 methods). On the live NT8 path, FOLD-3's `OpenWithBracket` already carries each entry's own bracket; the section closes the class for every map-keyed broker (legacy NT8 `placeEntry`, the CSV transport). Pinned: `TestConcurrentAIAndChatEntriesEachSendTheirOwnBracket` (production call sites `executeOpenLongWithRecord` + `OpenManualEntryAt`, a broker that records the maps' (sl, tp) AT OPEN and forces the interleave deterministically, both orders). RED at base ("AI sent (SL 28983.25, TP 29078.25) want (28981.25, 29080.25)") and on both compiling reverts (both sections off; post-open section only) — the builder's record, not re-run in the W1b docs pass.
+**Probe:** for every shared map or field that a producer writes and a later call reads (`Set…` then `Open…`), find every goroutine that can reach the pair. If more than one can, one lock must span write → read. Test it by forcing the interleave in a fake that records what the read saw, in both orders — never by a timing loop.
+
+**Instance 2026-09-24 M3:** **OPEN.** The H2 retire check reads `users.updated_at`, then bcrypt runs, then `UpdatePassword` writes by id alone, with no lock spanning the three, so a retired token's in-flight password write can land after the owner's rotation (fh-verify #4 [B]). The route now also needs the current password; it is a PR-body known limit (fh-verify #4)
+
+## CLASS 239 — a test that pins a defect will defend the defect
+
+**Found:** 2026-09-24, WAVE 3a (M4 release workflow) [A]. `TestReleaseWorkflowRefusesWithInstructionsWhenThePublicKeyIsMissing` asserted that `.github/workflows/release.yml` names `deploy/release.pub`. That path WAS the bug — `ssh-keygen -Y verify` reads its `-f` file as allowed-signers, so a bare public key can never verify (CLASS 240). When the fix landed the test went RED, and the red was the pin defending the broken shape, not the fix breaking anything. A green suite does not distinguish "this behaviour is correct" from "this behaviour is what I wrote down"; the pin had been written from the same wrong assumption as the code, in the same hour, by the same author.
+
+**Fixed in 3a:** the assertion moved WITH the fix in the same commit (`53051073`) and now pins `deploy/release_allowed_signers`, carrying a comment at `deploy/release_contract_test.go:122-127` that names the shape it used to pin and why that shape was wrong — so the next reader learns the defect instead of re-deriving it. The correct behaviour is proven independently by `TestReleaseSignatureVerifiesOnlyWithAnAllowedSignersFile` (`deploy/release_contract_test.go:173`), which mints a throwaway keypair and exercises BOTH directions.
+
+**Probe:** when a test goes red because a FIX landed, ask which of the two is wrong before touching either. If the test is, it moves with the fix, in the same commit, with a comment naming the superseded shape. Never adjust a fix to keep a pin green. A pin on a value the author has not independently verified is a pin on the author's own assumption.
+
+**Instance 2026-09-24 M3:** fa's characterization pin `TestEnrollCommentTruthACrashBetweenTheTwoRenames` pinned the pre-belt "the incumbent still works". It flipped WITH the belt and the comment in one commit, as this class prescribes (`a8f5db20`)
+
+## CLASS 240 — a verification step that cannot succeed as written
+
+**Found:** 2026-09-24, WAVE 3a, CTO review of push 2 [A]. The release workflow ran `ssh-keygen -Y verify -f deploy/release.pub -I release`. `-Y verify` parses each line of `-f` as `<principal> <keytype> <base64>`; a `.pub` file's first field is `ssh-ed25519`, so the principal never matches `-I release` and verification ALWAYS fails. The step is named like a signature check, reads like one in review, and can never pass. Its realistic fate is deletion by whoever hits it mid-incident — which removes the guarantee entirely rather than fixing it, and does so under time pressure with no one reviewing.
+
+**Fixed in 3a:** the workflow verifies against a COMMITTED allowed-signers file (`.github/workflows/release.yml:189-190`), refusing with owner instructions when it is absent; `deploy/release/README.md` gives the one-line creation step. `TestReleaseSignatureVerifiesOnlyWithAnAllowedSignersFile` proves both directions with a real generated keypair: the allowed-signers form VERIFIES, the bare-`.pub` form FAILS.
+
+**Probe:** every verification step ships proven in BOTH directions — a real artifact that must pass, and a tampered one that must fail. A step that has only ever been observed failing has not been tested, it has been assumed; a step that has only ever been observed passing may not be looking at anything.
+
+**Instances 2026-09-24 (WAVE 3b-A):** BOTH legs of `activation.Watch` were unpassable against the real machine — `/api/health` returns the SHORT sha and the boot line prints the short rev, while both comparisons used the full 40-hex, which appears ZERO times in the live log. Recorded in full as CLASS 267, because the cause there is not a mis-written step but evidence the system never emits in the form the proof expects.
+
+## CLASS 241 — a parser written against a guessed output format
+
+**Found:** 2026-09-24, WAVE 3a, first real `--dry-run` on the live box [A]. `cutover.sh` read the installed binary's revision with an awk that split on spaces and took `$3`. `go version -m` emits TAB-separated fields — `build\tvcs.revision=<sha>` is TWO fields, not three — so `$3` was empty and the script refused EVERY cutover with "cannot read vcs.revision from the CURRENT binary". Written from memory of what the output looks like; never compared against the command. No syntax check and no unit test would have shown it, because both would have been written from the same memory.
+
+**Fixed in 3a:** `deploy/cutover.sh:82` normalises tabs and scans the fields for a `vcs.revision=` prefix rather than trusting a position, with the failure recorded in the comment above it (`deploy/cutover.sh:77-81`). The same read proves the NEW binary before anything is touched (`deploy/cutover.sh:49-53`).
+
+**Probe:** a parser for another tool's output is written with that tool's REAL output in front of you — `cmd | cat -A` when whitespace decides — and pinned by a test fed the captured bytes. Positional field reads (`$3`, `[2]`, `split()[1]`) are the tell. This is the same shape as every other entry here: a statement ABOUT a tool, written where nothing compares it to the tool.
+
+## CLASS 242 — a process guard that matches its own asker
+
+**Found:** 2026-09-24, WAVE 3a [A]. The load-rule guard `pgrep -f 'go test.*-race'` matches the shell that is RUNNING the pgrep, because the pattern is in that shell's own command line. It reported "race run in flight" on a box with no `go test` running at all, and the rule on that answer is to SKIP — so the guard had been unconditionally skipping and never once guarding. It failed in the direction that looks safe, which is why nothing surfaced it: no run was ever wrongly started, so no symptom appeared. Proven both ways: `pgrep -af 'go test.*-race'` → 1 match (itself), `pgrep -af '[g]o test'` → the real runs only. Exact twin of `pgrep -f nofx-bin` also matching `go version -m nofx-bin`, already fixed once at `deploy/leveltruth-cutover.sh:34-37` by reading `systemctl show -p MainPID --value nofx`: the one call site was fixed, the PATTERN survived and reappeared in a lane's procedure.
+
+**Probe:** a `pgrep -f` pattern either excludes itself (`'[g]o test'`) or is replaced by a positive identification of the target (`systemctl show -p MainPID`, a pidfile, a cgroup). Verify a guard by running it when the condition is KNOWN ABSENT and confirming it says absent — a guard is only trustworthy if its NEGATIVE answer has been observed. Fixing a pattern at one call site does not retire the pattern.
+
+## CLASS 243 — a refusal that is actually an absence
+
+**Found:** 2026-09-24, WAVE 3a [A]. A contract test asserting "this script refuses bad input" passed while the script did not exist: a missing file exits 127, which is non-zero, which the assertion read as a refusal. The test would have stayed GREEN if the entire guarantee had been deleted from the repo — the strongest possible false green, since it survives removal of the thing it tests.
+
+**Fixed in 3a:** `runScript` in `deploy/release_contract_test.go:81` requires the path to exist AND be executable (`st.Mode()&0o111`) before any exit code may be interpreted, and the refusal assertions match the refusal's own MESSAGE, not merely its status.
+
+**Probe:** for every test that asserts a non-zero exit, ask what happens if the subject is deleted. If the test still passes, it is asserting absence. Exit codes are a channel shared by "refused", "crashed", "not found" and "interpreter missing"; a refusal is identified by what it SAYS.
+
+## CLASS 244 — a wrapper masks the exit code it is reporting
+
+**Found:** 2026-09-24, WAVE 3a [A]. The db-compat run was reported as "exit code 0" while the script's own final line read `VERDICT EXIT=1`. `cmd | tee log` yields tee's status, not `cmd`'s. The harness was honest about what it observed; what it observed was the wrong process. Had the verdict line not been printed, a failing rollback proof would have been recorded as a passing one — and the whole point of that job is to be believed.
+
+**Fixed in 3a:** every db-compat and cutover verdict is READ from the output text (`db-compat: PROVEN <old> <-> <new>` / `ROLLBACK OK` / `ROLLBACK FAILED`), never inferred from a wrapper's status, and the scripts print a verdict line a human reads.
+
+**Probe:** any place a status crosses a pipe, a `tee`, a subshell, a timeout wrapper or a CI step boundary, name which process's status survived. Use `set -o pipefail` / `PIPESTATUS` where the code matters — and make the subject print its own verdict, so the truth does not depend on plumbing.
+
+## CLASS 245 — a one-line `local` expands before it assigns
+
+**Found:** 2026-09-24, WAVE 3a, first real run of the db-compat job [A]. `local bin="$1" dir="$2" label="$3" log="$WORK/$label.log"` expands `$label` BEFORE the assignment completes in the same statement: under `set -u` it aborts with "unbound variable", and without `set -u` it silently builds the wrong path. Invisible in review — it reads exactly like working code — and `bash -n` cannot see it, so the script had passed every check it had been given.
+
+**Fixed in 3a:** split into two statements at `deploy/release/db-compat.sh:70-71`, with the failure recorded in the comment above (`:66-69`).
+
+**Probe:** no assignment statement reads a name it assigns in the same statement — `local`, `declare`, `export`, and the same trap in `env A=1 B=$A`. Generalises past shell: a syntax check proves a file parses, never that it runs. A script whose only evidence is `bash -n` has not been tested.
+
+## CLASS 246 — an unpinned installer inside the job that holds the key
+
+**Found:** 2026-09-24, WAVE 3a, CTO review of push 2 [A]. The signing job ran `curl -sSfL <moving-branch>/install.sh | sh … || true` on the runner that LATER holds `RELEASE_SIGNING_KEY`: arbitrary code from a branch anyone upstream can move, executing beside the release private key. Worse, `|| true` meant a FAILED install silently downgraded the secret scan to a deny-list fallback that then PASSED — the control reported success in exactly the case where it had stopped working.
+
+**Fixed in 3a:** a pinned gitleaks version with a verified sha256 before anything executes (`.github/workflows/release.yml:143-156`), every action pinned by full commit sha, and `GITLEAKS_REQUIRED: '1'` in CI (`:161`) so an absent scanner FAILS the job instead of degrading it. The local deny-list fallback remains, with its NOTE, only outside CI.
+
+**Probe:** in any job that touches a signing key or a deploy credential, list every executable it fetches and ask who can change it between now and the next run. `| sh` from a branch, an unpinned action, `latest` — all the same finding. And `|| true` on a security control converts it into decoration: a control that cannot fail cannot protect.
+
+## CLASS 247 — a guard exemption keyed by a function NAME silently expires on a rename
+
+**Found:** 2026-09-24, the Wave 1b full gate at `3f0c831c` [A]. `store/arm_state_source_guard_test.go` `TestArmStateNoRetypedLists` exempts the reviewed broker order-status readers by FUNCTION NAME (its `brokerFunctions` map: `trader/auto_trader_decision.go` → `recordAndConfirmOrder`). W1b FOLD-2 moved the broker-status poll into `recordAndConfirmOrderAs`, and the old name became a thin wrapper. The exemption no longer covered the code it was written for: the guard read the broker's `FILLED`/`CANCELED` as a copied arm-state set and failed twice. Every fold builder's targeted run passed because none ran the store package; only the full gate saw it.
+
+**Shape.** An allow-list keyed by a symbol name inside a static guard. A refactor that moves the reviewed code under a new name silently turns the exemption into a false positive (loud), or, when the old name keeps a different body, into a false negative (silent).
+
+**Fixed in W1b (`99a7c323`):** the exemption names `recordAndConfirmOrderAs`, and nothing else in the guard changed. FOLD-12's pin (`TestWindowSweepPacesOnlyACancelPendingRow`) also retyped a state list; it now calls two named subtests.
+
+**Probe:** for every guard exemption keyed by a name (function, file, type), grep the repo for that name at HEAD. Zero hits, or a hit that is now a thin wrapper, means the exemption has expired. A wave that renames code inside a guarded file must run that guard's package, not only the targeted tests of the files it edited.
+
+**Instance 2026-09-24 M3:** the hold-writer census admitted the not-yet-existing `internal/updaterworker/hold.go` by a bare map entry that nothing proved admits exactly that path; `TestHoldWriterCensusAdmitsTheWorkerOnlyByName` proves it on a synthetic module (`b0749a47`)
+
+## CLASS 248 — a verifier that rejects the artifact the workflow actually produces
+
+**Found:** 2026-09-24, WAVE 3a, while building a binary to exercise `cutover.sh --dry-run` [A]. The script proves a new binary by reading `vcs.revision`/`vcs.modified` back out of it — and a binary built in a linked git worktree carries NO `vcs.*` entries at all. Proven by elimination on one box, one toolchain (go1.25.13), one module, one commit: worktree `go build` → 0 vcs lines; worktree `go build -buildvcs=true` → **rc=0 and still 0 vcs lines** (the flag whose purpose is to make stamping mandatory fails OPEN); clean clone of the same commit `0adaee41` → `vcs.revision=0adaee41…`, `vcs.modified=false`. WORKTREE LAW puts every lane in a worktree, so the wave's central guarantee refused a correct binary for everyone except the deploy lane — and refused it with "it is not the binary for this sha", which accuses the artifact when the cause is the build LOCATION. An operator checks the sha, finds it already correct, and concludes the check is broken. That is how a guard gets deleted at 3am. (A linked worktree's `.git` is a FILE, `gitdir: …/worktrees/<name>` — the same layout fact that broke a `[ -d "$W/.git" ]` guard on 09-10, biting a second time in a different tool.)
+
+**Fixed in 3a:** `deploy/cutover.sh` tests for the zero-stamp case FIRST and refuses with the cause and the cure ("carries NO vcs stamps at all … Go does not stamp a build from a linked git worktree on this toolchain … build from a clean clone or the main tree", with the clone/checkout/build/verify lines); a stamped-but-different binary gets its own distinct message. `deploy/RESTORE.md` and `deploy/release/README.md` both say which refusal means what. Pinned by `TestCutoverDistinguishesAnUnstampedBinaryFromAWrongOne`, which asserts the two messages exist separately and that the wrong-sha wording appears on the wrong-sha path only.
+
+**Probe:** for every verifier, build the artifact the way the TEAM actually builds it and run the verifier on it. A check whose passing case is unreachable from your own procedure is worse than no check: it trains people to bypass checks. And when one refusal can have two causes, give it two messages — a refusal that names the wrong cause sends the reader to fix something that is not broken.
+
+## CLASS 249 — a guard that runs at module scope is not a build-time check
+
+**Found:** 2026-09-24, WAVE 3a, by running the negative case instead of describing it [A]. The build-time `GUIDE_BUILT_REV` guarantee was a `throw` inside a function called at module scope in `web/src/guide/types.ts`, with a comment above it asserting "A PRODUCTION build with the variable missing … FAILS here". It does not. Vite does not EXECUTE the module while building — it substitutes `import.meta.env` and bundles the result — so `VITE_GUIDE_BUILT_REV= npx vite build` exited **0**, and `grep 'must be a 40-hex commit sha' dist/assets/*.js` found the throw compiled INTO the bundle, where it fires at module evaluation on page load. A release cut with a missing rev would have shown the owner a white screen on the trading UI.
+
+**Why it is worse than what it replaced:** the hand-edited constant went stale and MISINFORMED; this shipped an AVAILABILITY failure on the trading UI over a documentation revision, and the code comment, the canon file and the owner-facing guide all asserted the opposite. Second order, it would also have blocked every release: `release.yml` carries a negative-proof step asserting that same build must FAIL, so the step — whose passing case was unreachable — would have failed the release job (CLASS 240).
+
+**Fixed in 3a:** the refusal moved to `web/vite.config.ts` as the `guide-built-rev-is-a-build-input` plugin (`apply: 'build'`, validated in `config()`), which is the only place that can refuse a build. `types.ts` no longer throws: at runtime an unusable value degrades to `'unknown'` — an honest unknowable (A24), never a real-looking sha and never a crash path — and its comment now records WHY the check cannot live there. RED→GREEN at the real call site: before, empty rev → exit 0; after, exit 1 with the message; positive, exit 0 with the sha in the bundle and the throw string gone. `TestGuideRevIsRefusedByTheBUILDNotByAModuleScopeThrow` fails if the gate is deleted or moved back into application code — it is not the proof (it cannot run a build), it is the tripwire.
+
+**Probe:** ask of every "build-time" check whether the build EXECUTES the file it lives in, or only transforms it. Bundlers, transpilers and code generators read and rewrite; they do not run your module. A guard in transformed code reads in review exactly like a build gate and ships as a runtime crash. The enforcement point must be something the build itself runs: a plugin, a prebuild script, a CI step — and the negative case must be RUN, not described.
+
+## CLASS 250 — a required build input proven only NEGATIVELY, with no census of its producers
+
+**Found:** 2026-09-24, WAVE 3a, by CI — the first producer to run [A]. `VITE_GUIDE_BUILT_REV` became a REQUIRED production build input (CLASS 249 moved the refusal into `web/vite.config.ts`). It shipped with a careful NEGATIVE proof — `release.yml` asserts the empty-rev build is refused, and that refusal was demonstrated RED→GREEN — and **no positive proof**: nobody asked who else builds this artifact. Five GitHub checks failed on PR #199 with one root cause, every one of them a production `npm run build` that supplies nothing: `pr-checks.yml` "Build and Type Check", `pr-checks-run.yml` (hidden behind `continue-on-error` as a "⚠️ Failed" line), `docker/Dockerfile.frontend`, and the image builders in `pr-docker-check.yml` / `docker-build.yml`; `docker-compose.yml` builds the same image for anyone running compose.
+
+**The negative proof is what created the confidence.** Demonstrating that a guard REFUSES tells you the guard works; it tells you nothing about how many places now have to satisfy it. A new required input is a new obligation on every producer of the guarded artifact, and that set is a census — not something that can be inferred from the guard.
+
+**A sixth producer nobody listed.** The first version of the pin used `t.Fatalf` and stopped at the FIRST offending file, so its census was itself incomplete — the exact failure being pinned, inside the pin. Fixed to accumulate and report all, it immediately found `.github/workflows/pr-docker-compose-healthcheck.yml`, which never types `npm run build` but runs `docker compose up` and therefore BUILDS the frontend image. It was on no one's list, and the `:?` guard added to compose would have broken it — trading one red check for another.
+
+**Fixed in 3a:** every producer supplies the input (step `env:` from the head sha; `ARG`+`ENV` above the `RUN` in `Dockerfile.frontend`; `build-args` in both image workflows; `args:` in compose using `${VITE_GUIDE_BUILT_REV:?…}` so compose REFUSES loudly rather than building an unstamped guide; job-level `env:` in the healthcheck workflow because `compose down` reads the same file). Pinned by `TestEveryProductionFrontendBuildSuppliesTheGuideRev` + the compose and workflow boundary tests, which scan `.github/workflows/`, `docker/`, `docker-compose*.yml` and `deploy/`, skip comment lines (the pin failed on its own explanatory comments first), and carry a NAMED exemption for `pr-checks-comment.yml` with the reason — an unexplained exemption is how a real producer gets waved through later (CLASS 242). `deploy/release/README.md` lists the producers so the next one added knows the input exists.
+
+**Probe:** when you add a required build input, enumerate every place that produces the artifact — workflows, Dockerfiles, compose, deploy scripts, the manual boot procedure — and make the enumeration a TEST, not a list in a PR. Prove the guard fires (negative) AND that every producer satisfies it (positive); the second is the one that gets skipped, because the first feels like proof. And a census that stops at its first finding is not a census: report all, or you will fix what you found and ship what you did not.
+
+**Instance 2026-09-24 M3:** FOLD-M3-A. `auth/retire.go` rested the credential epoch on "updated_at is moved only by UpdatePassword", and no census of the users table's writers existed. `TestUsersTableWriterCensus` pins the writer set by (file, function, kind) and the comment names it; its walk hole was CLASS 258 (`7e47767d`), and the 11 compiling writer shapes it cannot see are named in its header (`efdf3988`) (`84954734`, `31605a24`)
+
+## CLASS 251 — a check with no census of WHEN IT RUNS
+
+**Found:** 2026-09-24, WAVE 3a [A]. `Test Docker Compose Healthcheck` failed on PR #199. It was not caused by the PR: `gh run list --workflow=pr-docker-compose-healthcheck.yml` returns FOUR runs in the workflow's entire life and **all four are failures** — three on an unrelated branch on 2026-09-13, one here. It has never once been green. The cause is one missing line: its "Create minimal .env for testing" step writes `DATA_ENCRYPTION_KEY` and `JWT_SECRET` and never `RSA_PRIVATE_KEY`, so since that key became mandatory the backend has FATALed at `main.go:60` and restart-looped until the healthcheck timed out. What hid it is the paths filter — `docker-compose.yml`, `docker/Dockerfile.frontend`, the workflow itself — narrow enough that months pass between triggers. A wave that touches none of those never sees it, and the one that does assumes it broke it.
+
+**The inverse of CLASS 250.** There, a guard had no census of its PRODUCERS: many places had to satisfy it and nobody enumerated them. Here, a check has no census of its TRIGGERS: it almost never runs, so its permanent redness is invisible. Both are failures of enumeration, and both stay hidden for the same reason — the event that would reveal them is rare.
+
+**A check that has never been green is not a check.** It is a name in a list. Worse, it teaches every lane that hits it to treat that name as noise, which is exactly the habit that lets a real failure through later.
+
+**Fixed in 3a:** the step mints an EPHEMERAL RSA key per run (`openssl genrsa` into a 600-mode temp file, folded to one line with literal `\n` as `crypto/crypto.go:30` documents, written straight into `.env`, the file removed and the key never echoed — A25), exactly as `deploy/release/db-compat.sh` does for its throwaway boots. Both PEM encodings are accepted by the loader (`ParsePKCS1PrivateKey` / `ParsePKCS8PrivateKey`, `crypto/crypto.go:117-119`), verified by reading the parser rather than assuming the header.
+
+**A never-green check does not stay broken in ONE way — it collects breakages, and each hides the next.** This one had TWO, both introduced by security hardening that was never re-run against it: the mandatory RSA key (above), and the probe `wget --spider http://localhost:8080/api/health`, where busybox resolves `localhost` to `[::1]` while the API has bound `127.0.0.1:8080` (IPv4 only) since the 08-15 P0 fix (`api/server.go:916-925`) [A]. The second was invisible until the first was fixed, because the container never got far enough to be probed. Fixed by using `127.0.0.1` in the compose healthcheck and the workflow's `docker exec` probe — the frontend probe beside it already did [A].
+
+**KNOWN LIMIT, named rather than left implied [A]:** with that loopback bind, compose's published `8080:8080` forwards to the container's `eth0`, which the API never answers — so a `docker compose` deployment is DEAD ON ARRIVAL until the owner opts in with `API_SERVER_HOST=0.0.0.0` inside the container, where the container network is the security boundary (`config/config.go:134-140`). This check therefore proves the backend BOOTS and SERVES ON LOOPBACK; it does NOT prove the published port works, and nothing in this repo currently does [B]. Setting that variable is a security-posture decision and belongs to the owner, not to a CI fix.
+
+**Probe:** for every workflow in `.github/workflows/`, name what triggers it and when it last ran GREEN — `gh run list --workflow=<file>` answers both in one line. A workflow with no green run in its history is broken or vestigial; decide which and act, rather than leaving a red name that everyone learns to ignore. Treat "this check has always been red" as a finding, never as context.
+## CLASS 252 — a single-use ledger that forgets by wall clock re-admits a spent id after a clock step-back
+
+**Found:** 2026-09-24 00:46 CT, M3 triage of the stop-snapshot red-team probes (`0c0253db`) [A]. The red team's `TestRT_ClockRollbackAfterPruneReopensReplay` and `TestRTA_ClockRollbackAfterPruneReplaysThroughTheRouter` (in the `ef03e033` wip(STOP)) were kept RED behind `NOFX_M3_OPEN_FINDINGS=1` as `TestConsumeRefusesAReplayAfterAClockRollbackPastRetention` and `TestInstallReplayRefusedAfterAClockStepBackPastRetention`.
+
+The seen-job store pruned an entry once `expires_at < now − SeenRetention` (`internal/updateauth/seen.go`, then :116-119).
+
+The replay:
+1. Install A.
+2. A later install at ≥ expA+600 s prunes A.
+3. The wall clock steps back more than 600 s. Causes: NTP, a WSL2 resync, or chrony `makestep 1 -1` on this box (red-3).
+4. POST A again. Expiry, MAC and Consume all pass.
+
+RED at the router: `handler_updates_adversarial_test.go:321: job rollback-job-a0001 admitted twice after a prune + 611s step-back: 422 …, want 409`. That breaks the spec's unconditional "job_id single-use", and it disproved the design note's "pruning cannot re-open a replay" (§4.1).
+
+**Shape.** A ledger whose forgetting is keyed on the wall clock assumes the clock only moves forward. Every test drove it forward, so every test agreed.
+
+**Fixed in M3 (`f0a0c15e`):**
+- The store is now v2, `{"v":2,"pruned_through":N,"ids":[…]}`, where N is the largest `expires_at` ever pruned.
+- Any grant with `expires_at ≤ N` is refused with `ErrPrunedReplay`, whatever the clock says. It wraps `ErrReplay`, so the API answers 409 and logs a separate WARN.
+- CTO ruling 00:53 CDT: "a clock step-back is a fault, refusing until the clock passes the floor is the right fail-closed".
+- A v1 store is refused and never reset. That is safe only because M3 never shipped (`2a58cc84`).
+- Pins: `TestConsumeRefusesAReplayAfterAClockRollbackPastRetention`, `TestInstallReplayRefusedAfterAClockStepBackPastRetention`, `TestPrunedThroughIsTheLargestPrunedExpiryAndBindsAtAnyClock`.
+
+**OPEN, same shape.** These are not folded, because the CTO ruled LOWs to known limits:
+- **Red-3 #2:** an UNUSED code that the server refused as expired is admitted after a step-back, because the watermark covers consumed-then-pruned ids only [A]. A `clock_floor` fix was built on fa `d970b7e0`, which is not on this branch.
+- **Built-0 Q4** [B]: a far-forward jump followed by an install lifts the watermark into the future. Every later install then gets 409 until real time catches up.
+
+**Probe:** for every single-use, replay or expiry verdict that consults the wall clock:
+- prune, then step the clock BACK past retention, and replay;
+- separately, let a code expire, step back, and resend it.
+
+The verdict must not depend on the clock being monotonic. Persist a high-water mark of what the ledger forgot or refused, and refuse at or below it.
+
+## CLASS 253 — a writer that can emit a record its own strict reader refuses (under never-reset, a permanent wedge)
+
+**Found:** 2026-09-24 00:46 CT, M3 triage (`0c0253db`). The red-team probe `TestRT_ConsumedAtNonPositivePoisons` (in `ef03e033`) only logged the problem; the triage made it assert, as `TestConsumeNeverWritesARecordItsReaderRefuses` [A].
+
+What happened:
+- `Consume` wrote `ConsumedAt: now.Unix()` unchecked (`seen.go:126` then).
+- The strict reader refuses `n <= 0` as corrupt (`strict.go:99`).
+- A corrupt store is never reset, by design.
+
+Reproduced through the router with a scratch probe:
+1. An install at clock 0 returns 422, and the store records `"consumed_at":0`.
+2. The next install at a real clock returns 403 "job-id store refused".
+3. Every later install is refused until someone repairs the file by hand.
+
+RED: `adversarial_test.go:262: clock 0: the store no longer accepts a fresh id at a sane clock: updateauth: seen-job store unreadable`.
+
+**Shape.** Writer and reader are each correct alone. The writer never runs the predicate the reader will judge it by. A fail-closed, never-reset policy then turns one bad write into a permanent outage. It is invisible because it cannot be triggered by an attacker and it fails SAFE.
+
+**CTO ruling (00:53 CDT), generalized as the class:** "every record the store WRITES is validated with the SAME predicate its reader applies BEFORE it is persisted (write-through-the-read-validator)".
+
+**Fixed in M3:**
+- `f0a0c15e`:
+  - `Consume` refuses a clock at or before the epoch with `ErrBadClock`, before it creates the dir, takes the lock or writes.
+  - `encodeSeen` runs every store through `parseSeen`.
+  - `Enroll` never writes a degenerate key.
+- `399ab651` applies the law to the enrollment: `validateAdmin` is the ONE predicate `LoadAdmin` applies to what it reads and `Enroll` applies to what it writes.
+- Pins:
+  - `TestConsumeAtAClockAtOrBeforeTheEpochRefusesAndTouchesNothing`
+  - `TestEncodeSeenRefusesWhatItsReaderRefuses`
+  - `TestConsumeNeverWritesARecordItsReaderRefuses`
+  - `TestEnrollNeverWritesADegenerateKey`
+  - `TestEnrollWritesTheRecordItsReaderAccepts`
+
+**Read beside 120,** its mirror: there a reader re-refused what the writer had accepted, and the law says the reader yields. Here the strict reader is the security boundary and stays; the writer goes through it.
+
+**Probe:** for every store with a strict reader:
+- list each field the reader refuses;
+- find the writer's path for each field, and confirm the writer calls the reader's validator on the exact bytes it persists;
+- drive the writer at its boundaries (a clock ≤ 0, empty, maximum, a constant fill) and read back through the production reader.
+
+## CLASS 254 — a secret checked for its form, never for whether anyone else can know it
+
+**Found:** 2026-09-24. There are two instances of one shape.
+
+**F2** (triage `0c0253db`; the red-team probe `TestRTA_AllZeroDeviceKeyIsAccepted` in `ef03e033`) [A]:
+- `LoadDeviceKey` checked the length only (`admin.go:88` then), and `VerifyMAC` checked the key's length only.
+- With a 32-byte all-zero `device.key`, mode 0600 and our uid (a zero-filled restore or a sparse copy [C]), anyone holding the admin JWT computes the second factor.
+- RED: `handler_updates_adversarial_test.go:340: a MAC under the all-zero device.key = 422 …, want 403`.
+
+**M1** (red-team 1 #3, ~01:2x CT) [A]:
+- The /updates gate refused only the loader's default JWT secret.
+- A token forged under the `.env.example` placeholder, under the CI workflow literal, or under a 1-byte secret was an admin identity (GET 200, install 422).
+- RED: `handler_updates_secret_test.go:123: JWT secret tracked literal at .env.example:35 (len 41): GET /api/updates = 200 …`.
+
+**Shape.** The check asks whether the secret is PRESENT and WELL-FORMED: non-empty, the right length, not the one known default. The property that matters is that nobody else can know it. A constant fill is guessable, and a value committed to a public repository is published. A deny-list of the one public value you remember is a list of one.
+
+**Fixed in M3:**
+- `f0a0c15e`: a degenerate key (all bytes equal) is refused by `LoadDeviceKey` (`ErrUnsafe` → uniform 403), by `VerifyMAC` and by `ComputeMAC`. `Enroll` draws from crypto/rand through a `randRead` seam and never writes one.
+- `4e1283b3`: `config.JWTSecretUnfitForUpdates` refuses, on `/api/updates*` only, an empty secret, every public literal and anything under 32 bytes. Per the CTO ruling, the loader and its WARN are unchanged.
+- Pins:
+  - `TestDegenerateDeviceKeyIsRefusedByTheLoaderVerifierAndMinter`
+  - `TestInstallRefusesAMACUnderAnAllZeroDeviceKey`
+  - `TestUpdatesRefuseEveryPublicPlaceholderAndShortJWTSecret`. It is a census of every literal `JWT_SECRET` in the TRACKED tree (`git ls-files`, never the untracked `.env`). It fails if it stops finding `.env.example` or the CI workflow, and any new 32+-byte literal turns it RED until listed. It is the census that caught CLASS 261 at the merged head.
+
+**Known limits:**
+- The list is exact-match. An edited or re-cased placeholder passes (fa-verify [A]).
+- The scan needs git, and fails closed without it.
+
+**Probe:**
+- For every secret a gate relies on, ask who else can know its value: the repo (census tracked files for the variable's name), a default, a constant fill, or a PID-sized family.
+- Refuse the published values by census, not by memory.
+- Refuse constant fills at the loader AND at the writer (CLASS 253).
+
+## CLASS 255 — an identity factor a machine credential can re-mint through a credential route
+
+**Found:** the design anticipated it; red-team 1 R1 and red-team 2 #1 proved it on 2026-09-24 ~01:2x CT [A].
+
+**The design** (§4.4, 09-23) named the risk "an owner-only gate a same-user machine credential (bot JWT) passes". F1 answered it: the JWT's user_id AND email must equal admin.json, and the bot token used directly gets 403.
+
+**Both red teams went round F1** (at the production router, and red-2 also through the agent's own `apiCallTool.execute`):
+1. `GenerateBotToken` carries the OWNER's user_id.
+2. `PUT /api/user/password` took only `new_password`, acted on the JWT's user_id, and returned 200.
+3. `POST /api/login` with the owner's email (which is in the agent's prompt) returned a genuine owner token.
+4. That token passed F1, F3 and Q8: `GET /api/updates` 200, install 422. The owner was locked out.
+
+`GetAPIDocs` handed the LLM both links of the chain. The CTO verified it live at 662c79bd with the bot running (ruling 1790231205208, 01:26 CDT): fold in M3.
+
+**Shape.** The test asked "does the machine token pass?" and not "what can the machine token MAKE?". A factor is only as strong as the weakest credential that can mint it. An account route with no current-password check let a bearer token re-mint the identity the gate trusts.
+
+**Fixed in M3:**
+- `18577f99`: `credentialActorRefusal` requires the token's email to equal the row's email. It runs first on the credential routes.
+- `366d024c`: a `scope` claim. `IsMachine` is true for any scope, for the bot's constant email with no scope, and for nil claims. Machine tokens are denied by default on `/user/password`, `/reset-account`, `/telegram*` and `/updates*`.
+- `36f94bb5`: the agent's route list drops these routes plus login, register, logout and reset-password.
+- `399ab651`: the M3-local belt. admin.json binds HMAC(device.key, password_hash), so any password change un-enrolls until `enroll --replace`.
+- `7db37ec9`: `current_password` is required, with the server and the SettingsPage field in ONE commit. A server that demands a field the UI does not send locks the owner out.
+- `f58088bb`: `/api/reset-password` (the M3 instance under CLASS 166).
+- Pins:
+  - `TestBotTokenCannotChangeTheOwnersPassword`
+  - `TestAgentToolCannotTakeOverTheOwnersAccount`
+  - `TestMachineScopedTokenIsDeniedOnCredentialTelegramAndUpdateRoutes`
+  - `TestAgentRouteListOmitsAccountBotConfigAndUpdateRoutes`
+  - `TestPasswordChangeUnbindsTheEnrollment`
+  - `TestPasswordChangeRequiresTheCurrentPassword`
+  - `TestRedTeamChainAtTheProductionRouter`
+  - `TestEveryRuledMachineDeniedRouteRefusesMachineTokens`
+  - `TestGateJWTTokenPassesTheCutoverGateAndIsDeniedTheMachineDeniedRoutes` (`c3f5d247`: the cutover tool's scoped token keeps `/api/cutover-gate`).
+
+**Known limits** (red-1, outside M3 [A read]):
+- The bot binds to the first chat that sends `/start`.
+- `/api/onboarding/beginner` returns the wallet key to any token carrying the owner's id.
+
+**Probe:**
+- For each factor of a gate, walk every account-management route (password, reset, email, register) with each machine token, and CHAIN the outputs: a login response is a new credential.
+- Run the chain at the production router through the machine client's own request builder.
+- Read the route list the client is handed; it is the client's map.
+
+## CLASS 256 — a loopback check that a same-box relay satisfies for every remote client
+
+**Found:** 2026-09-24 ~01:2x CT, red-team 2 #2, over real sockets [A].
+
+The /updates gate judged `RemoteAddr` (loopback) and `Host` (a loopback name). Both are properties of the LAST HOP:
+- An `httputil.ReverseProxy` on the box's LAN address rewrote Host to the upstream, as nginx's default does, and added X-Forwarded-*.
+- A LAN client got GET 200 and install 422.
+- `config/config.go:147` and the P0 report both tell operators to put "a firewall/reverse proxy" in front of an off-loopback API.
+
+**Shape.** A locality check certifies the hop it can see. A relay on the same box is a local peer for everyone it relays, so the check certifies the relay. Every test dialled directly, and the positive control (a LAN client straight to a LAN-bound router gets 403) passed.
+
+**Fixed in M3 (`2606f7f4`):**
+- The gate refuses any request that carries any of these headers, whatever the value, even empty: Forwarded, any X-Forwarded-*, X-Real-IP, Via, CF-Connecting-IP, True-Client-IP, X-Client-IP, X-Cluster-Client-IP, Fastly-Client-IP, X-Original-Forwarded-For.
+- Names are compared case-insensitively, with `_` read as `-`.
+- The log names our own constant spelling, never the client's.
+- Pins:
+  - `TestUpdatesRefuseRequestsCarryingAForwardingHeader`: 13 names × canonical/lower-case/underscore/empty × 5 routes. Control: a look-alike `X-Forwarding-Note` is admitted.
+  - `TestUpdatesRefuseAClientRelayedByASameBoxReverseProxy`: real sockets, both Rewrite+SetXForwarded and legacy Director proxies. Control: a direct client is admitted.
+
+**Known limits (named):**
+- A relay that adds no header (nginx's default `proxy_pass`, `ssh -L`, socat) cannot be told apart from a local client. Updates are loopback-DIRECT only (runbook `45739f9f`).
+- fa-verify [A]: bare `X-Forwarded`, `X-Envoy-External-Address`, `X-Original-Host`, `Client-IP` and similar are still admitted. This is optional hardening.
+- Under WSL mirrored networking, every Windows process is a loopback peer [B].
+
+**Probe:**
+- For every locality or identity check, name the hop it judges.
+- Put a same-box relay (reverse proxy, tunnel) in front of it and dial from elsewhere. A check the relay satisfies for every client is a check on the relay.
+- Write the runbook line for the relays that cannot be detected.
+
+## CLASS 257 — a whole-second claim compared with a sub-second column by a strict operator
+
+**Found:** 2026-09-24, red-team 1 #5 [A].
+
+Q8 retires, on /updates, any token issued before the admin's last password change, and it compared `iat < updated_at`:
+- A JWT `iat` is whole seconds. golang-jwt v5 has `TimePrecision = time.Second`, and a fractional iat is truncated on parse.
+- GORM stored `users.updated_at` with sub-second precision (`…:29.9Z`).
+
+So a token issued 800 ms BEFORE the change, in the same wall second, compared as not-before and was admitted (GET 200). The control, one second older, got 403.
+
+A second copy then drifted: the H2 credential guard's own `issuedBefore` used `<` while Q8 had moved to `<=`. A same-second token was admitted there and refused on /updates (`0f48b52b` message).
+
+**Shape.** Two timestamps of different precision are compared with a strict operator. The truncation window falls to whichever side the operator favours, and here that was the permissive side. Tests set times whole seconds apart, where every operator agrees.
+
+**Fixed in M3:**
+- `4df2a429`: iat must be STRICTLY after `updated_at` truncated to the second.
+- `0f48b52b` made that THE rule: `auth.RetiredBy` / `IssuedNotAfter` / `CredentialEpoch` in `auth/retire.go`, used by authMiddleware, the credential guard, the bot and Q8.
+- The cost, named: a sign-in within the change's own second succeeds, but its session is refused on first use. The guide says exactly that (`06ca207d`), and so does `auth/retire.go` since `efdf3988`.
+- Pins:
+  - `TestUpdatesQ8RefusesATokenIssuedInTheSameSecondAsThePasswordChange` (row at sec.900: tokens at sec.100 and sec.950 refused, sec+1 admitted; row at sec.000: iat=sec refused)
+  - `TestRetiredByIsTheWholeSecondRuleAgainstTheCredentialEpoch`
+  - RED on `<=` → `<`: `retire_test.go:33/:38`.
+
+**Probe:**
+- Wherever two timestamps meet, find each one's precision at its WRITER: a token claim, a DB column, a log field.
+- Compare at the coarser precision and send the tie to the safe side.
+- Test at .100 and .950 of the same second, never only whole seconds apart.
+- Grep for every copy of the comparison; there must be one.
+
+## CLASS 258 — a census walk that skips a directory NAME at any depth exempts compiled packages
+
+**Found:** 2026-09-24 ~01:2x CT, red-team 4 #1 [A].
+
+Five censuses each `SkipDir`'d any directory NAMED web, node_modules, vendor, .git, .claude, .Codex or .understand-anything, at ANY depth; the import guard also skipped testdata. The five were the hold-writer census, the worker import guard, the update-auth census, the worker-socket literal census and M2's maintenance-setter census.
+
+Go compiles and links `api/web`, `internal/node_modules/x`, `api/.git`, `x/testdata/y`, `_x` and `api/.hidden` like any other package ([A] go1.25.13). A planted `api/web` minter passed `TestUpdateAuthCensus`, and `go list -deps` showed the app linking the worker side through `nofx/api/web`.
+
+**It happened again inside M3.** FOLD-M3-A's users-table writer census (`84954734`) did its own walk and skipped `.*`, `_*` and testdata at any depth. The ha verifier (note A [A]) planted `api/.hidden/w.go`, a raw `UPDATE users`: it was linked (`go list -deps` names `nofx/api/.hidden`), and the census passed. A writer there would move the credential epoch unseen.
+
+**Shape.** A skip list copied from habit ("keep the census off node_modules") reads as hygiene. It encodes a model of which directories the toolchain builds, and nobody compared that model with the toolchain. Even `go list ./...` is not the answer: it never matches `_x` or `testdata`, yet an import still links them.
+
+**Fixed in M3:**
+- `053d8618`: ONE walk, `internal/censuswalk`, which skips names only as direct children of the module root.
+  - All five censuses call it.
+  - `TestWalkCoversEveryPackageTheToolchainLinks` cross-checks the walk against `go list -deps`, run offline.
+  - `TestTradingAppLinkageFromTheToolchain` answers the import guard from the toolchain.
+- `7e47767d`: the users census moves onto `censuswalk.NonTestGoFiles`, accepted by the CTO at integration (1790242842706).
+- `11348765`: **a third time inside M3**, found while drafting this entry. Two auth censuses M3 itself added, `TestOnlyLoginAndRegisterMintUnscopedTokens` (`366d024c`) and `TestServerNeverMintsAFutureIat` (`45e1404a`), skipped `.`, `_` and testdata at ANY depth. The first one's comment said "the way the go tool skips them", which is true of `./...` pattern matching and false of an import. Both now walk with censuswalk. `TestMintCensusesSeeNestedSkipNamedDirs` plants an unscoped `auth.GenerateJWT` and a direct `jwt.NewWithClaims` in every probe dir. It went RED with the old any-depth skip re-imposed ("api/.Codex/unscoped.go … the mint census counts 0 — want 1") [A].
+- Pins: every census has a `…SeesNestedSkipNamedDirs` over `censuswalk.NestedProbeDirs`, including `TestUsersWriterCensusSeesNestedSkipNamedDirs` and `TestMintCensusesSeeNestedSkipNamedDirs`; plus `TestWalkSkipsOnlyAtTheModuleRoot` and `TestRootSkipsArePinned`.
+
+**OPEN.** Nine older walks still use their own `SkipDir` and not censuswalk. The fc builder read them as skipping names at any depth [A at 2a58cc84]:
+  - `trader/cancel_contract_test.go`
+  - `trader/clock_seam_walk_test.go`
+  - `kernel/confirm_resolver_test.go`
+  - `trader/bars_store_depth_test.go`
+  - `trader/ninjatrader/bar_horizon_warn_test.go`
+  - `store/knob_method_readers_test.go`
+  - `kernel/acceptance_interval_guard_test.go`
+  - `trader/wiring_gate_test.go`
+  - `branding/test_file_build_suffix_test.go`
+
+The follow-up is to move all nine onto censuswalk.
+
+**Read beside 108** (a source guard that scans nothing).
+
+**Probe:**
+- Grep every census for `SkipDir` and name-based skips. A skip must be anchored at the module root.
+- Ask the toolchain: every file of every package that `go list -deps` links must lie inside the walk.
+- Plant the offender at `api/<skipname>/` and `internal/<skipname>/p`, and require RED.
+
+## CLASS 259 — a security census that judges spellings (names as IT resolves them), not the capability
+
+**Found:** 2026-09-24, in three rounds, each ended by a FAIL [A].
+
+**Round 1** (red-team 3 #1, red-team 4 #2, ~01:2x CT). The update-auth census pinned four NAMES (Enroll, Authorize, ComputeMAC, LoadDeviceKey) and admitted any importer under `internal/updater*`. With every census green, an API file minted a MAC from the raw key with `crypto/hmac` and `"device"+".key"` (422 at the router), a worker file minted through the exported `DeviceKeyPath` and `Message`, and the app could link the minting CLI. Fold M4 (`90ff04d0`) classified every exported identifier, admitted importers exactly, refused `crypto/hmac` beside the updater dir and constant-folded `+`.
+
+**Round 2** (fc verifier FAIL). D1: one `alias` variable per file, so a second import name went unchecked, and V1 minted a MAC that production `VerifyMAC` accepted. D3: the key holder minted with `jwt.SigningMethodHS256.Sign`. Repairs: `eb999df0` resolves every import name; `d8fa81bf` (rule 6) confines the loaded key's VALUE to VerifyMAC, PasswordStillBound and the builtin `clear`.
+
+**Round 3** (cc verifier FAIL). Rule 6 admitted by name: `updateauth := fakeNS{…}` shadowed the import (P2), and a generic receiver type parameter named `clear` made `clear(key)` a conversion (P1). Both minted accepted MACs while the census comment said rule 6 "can only over-report". `88d4af24` and `f6c5fe07` close them; `a3bccf5e` replaces the sentence with a test over 84 cells, go/types as the oracle. The directive round that followed is CLASS 262.
+
+**Shape.** A census used as a SECURITY tripwire lists spellings of a capability, and the next spelling passes. CLASS 168 is this with honest duplicates; here the spelling is chosen. CLASS 113 certifies a name that is present; this certifies one that is absent. The remedy: confine where the protected VALUE flows, and take the oracle for names from the compiler.
+
+**Pins:** `TestUpdateAuthCensusRefusesTheAPISideRawKeyMinter`, `TestUpdateAuthCensusRefusesTheWorkerSideMinter`, `TestUpdateAuthImporterAdmissionIsExact`, `TestWorkerImportGuardRefusesTheMintingCLI`, `TestUpdateAuthCensusResolvesEveryImportName`, `TestUpdateAuthCensusRefusesTheKeyHolderMintingViaJWT`, `TestUpdateAuthLoadedKeyFlowsOnlyIntoVerification`, `TestUpdateAuthKeyFlowRefusesTheVerifierProbesOnTheRealHandler`, `TestUpdateAuthKeyFlowAdmissionMatchesTheCompilersResolution`, `TestUpdateAuthResolutionMatrixIsNamedInTheCensus`.
+
+**Stated limits** [A]: the census is syntactic (a run-time path, key bytes through an interface, a hand-rolled HMAC, a re-bound name in rule 1's fold `4c16dca2` all pass), and the process shares device.key's uid: a belt, never a boundary. **OPEN, same shape:** the hold-writer census matches direct call names and `"hold.json"` only (red-4 #3); the mint census matches only the `GenerateJWT` selector while `auth.JWTSecret` is exported (fh-verify #3); the users-writer census names 11 compiling writer shapes it cannot see (`efdf3988`).
+
+**Probe:** plant the capability in every spelling that compiles (another helper, a second import name, a shadowed name, a receiver type parameter, an equal-power primitive, a directive: CLASS 262) and require RED for each. Confine the value's flow, not the primitive's import. Check any "can only over-report" claim against go/types; never assert it in prose.
+
+## CLASS 260 — two waves each pinned their own side of a wire; nothing ran the call across it
+
+**Found:** 2026-09-24 ~04:4x CT, integrating M3 with M5 (#196, merged via `760eb015`). The CTO ruled it a class [A].
+
+The M3 gate (`updatesRefusal`, `api/handler_updates.go`) refuses any `/api/updates*` request without exactly one `X-NOFX-Update: 1`, with 403 "update header missing or wrong", before it reads the JWT. `web/src/lib/api/updates.ts` (M5 U1/U2) never sent the header [A: grep, no occurrence outside tests]. On the merged tree, the enrolled admin's own Updates page and header badge would have read not-authorized/Unknown forever.
+
+**Shape.** Each wave pinned its own half:
+- M5's shape pins mocked the transport.
+- M3's pins drove the server with hand-built Go requests.
+
+Both suites were green, and neither contained the call site that crosses the wire. The CTO called it "the canon 53 shape one level up": 53 is parity at one package's call sites; here the two call sites are in two languages and two waves. Ruling 1790243172089: M3 owns the wire contract.
+
+**Fixed in M3** (`eece064d`, gofmt `9a2cf44a`):
+- One `UPDATE_HEADERS` object, passed by the four /updates readers and by nothing else.
+- `web/src/lib/api/updates.header.test.ts` runs the REAL `httpClient`, interceptors included, over a capturing axios adapter:
+  - every /updates request carries the header once, with value "1";
+  - `/api/health`, `/api/maintenance` and `/api/installation-gate` do not.
+  - RED before the fix: `4 failed | 3 passed — expected [] to deeply equal [ '1' ]`.
+- `api/handler_updates_web_header_test.go` `TestWebUpdatesClientSendsTheGatesHeader` is the Go↔TS parity pin. It checks the client's header object against `api.UpdateHeader` + "1", and checks that every `${API_BASE}/updates` call passes it. It goes RED on a TS rename, on one dropped call and on a Go constant rename.
+
+**Known limits:**
+- Under the Vite dev proxy (changeOrigin), POSTs read cross-origin, so they get 403 in dev only [B].
+- The receipt link is a plain `<a href>` that carries neither the header nor the bearer token. M4/M5 must fetch it through the client.
+
+**Read beside 5** (the far side never emitted what the consumer waits for) **and 53**.
+
+**Probe:** for every contract that crosses a language or wave boundary (a header, a field, a route shape), find ONE test that runs the producer's real client code against the consumer's real rule. If each side has only its own pins (a mocked transport on one side, hand-built requests on the other), the wire is unpinned. Add a parity pin that reads the constant from one side and the call sites from the other.
+
+**Instance 2026-09-24 PR #200 review F1:** the web client typed the install body's `expires_at` as a STRING while `rawUnixSeconds` takes only a bare JSON number, so every UI install would have been 400. Pinned by ONE committed byte string (`web/src/lib/api/testdata/updates-install-body.wire.txt`) that vitest (wire bytes), api (parser, router, and the TS-declared kinds derived from the parser) and updaterbootstrap (the line `Run` prints) all read (`21a22d04`). The same review found an older test mock that invented a 403 body (`'install: MAC mismatch'`, which is a LOG category); the real body is `forbidden` (`0dc7bd2f`).
+
+## CLASS 261 — a literal that is green on each branch and red at the merged head
+
+**Found:** 2026-09-24 04:55 CT, merging dev 710e96aa (#199, WAVE 3a) into M3 (merge `c27a8851`) [A].
+
+M3's M1 census (CLASS 254) went RED at the merged head on all 5 routes:
+
+`handler_updates_secret_test.go:128: JWT secret tracked literal at deploy/release/db-compat.sh:119 (len 40): GET /api/updates = 200 {"enrolled":true,...}, want 403 {"error":"forbidden"}`
+
+db-compat's throwaway boot secret was a literal prefix + `$$` + a literal suffix. The repo is public, so the pattern is published and the values form a PID-sized family.
+
+Each branch was green alone: 3a had no such census, and M3 had no db-compat.sh. The failure exists only on the merged tree.
+
+**Shape.** Two lanes, each correct, each suite complete for its own tree. A tree-wide census on one side meets a new file on the other only at the merge. This is the CLAUDE.md canon "A branch green alone is not green merged" (09-03 boot: a bare time layout that failed only once two green lanes were on one HEAD). Until now that canon had no checklist slot.
+
+**Fixed in M3 (`775b2bcb`):**
+- `JWT_SECRET` is generated the way `DATA_ENCRYPTION_KEY` two lines above already was: `openssl rand -base64 48` (`deploy/release/db-compat.sh:121`).
+- The public-literal list is NOT widened, so no repo literal is added.
+- The cleanup trap still unsets it.
+- The file belongs to Claude-103 (3a); the change was announced to the CTO.
+- GREEN: `TestUpdatesRefuseEveryPublicPlaceholderAndShortJWTSecret`, `./deploy` (`TestDbCompatShredsItsEphemeralKeysOnExit` unchanged), and `bash -n`.
+
+**Probe:**
+- Run the FULL suite at the merged head before calling a merge green.
+- When a merge turns a census RED, read it as a finding about the incoming file, not about the census.
+- Fix the offender, not the census's allow-list. An allow-list entry for a published secret is a published secret.
+
+**Instance 2026-09-24 PR #200 review folds:** four fold builders each went green on the packages they touched. At the merged head, the users-table writer census (`store/`) went RED on F5's served advice constant, `UPDATE users SET … updated_at=CURRENT_TIMESTAMP …` in `api/handler_user.go`. The fix was to review and list it, because it IS a way to move the credential epoch (the owner runs it by hand), not to weaken the census (`35899dea`). Run every real-tree census at the merged head, not only the touched packages.
+
+## CLASS 262 — a census that reads one compiler directive but not its siblings
+
+**Found:** 2026-09-24, in two verifier rounds on the update-auth census [A].
+- **fc verifier D2:** the census parsed with mode 0, which drops comments. `//go:linkname v3ComputeMAC nofx/internal/updateauth.ComputeMAC` needs no import, no selector and no restricted name; a main linking `nofx/api` printed the exact HMAC with the census green. Fixed by `aa7da00a`: parse with comments, and refuse any `//go:linkname` in non-test code (`TestUpdateAuthCensusRefusesLinkname`).
+- **The next census-repair verifier FAIL** (the commits title it "verify #3"): rule 5 now read comments, but for `//go:linkname` ONLY. With a random key under `data/updater/`, three probes built, vetted (rc 0) and minted a MAC that production `VerifyMAC` accepted, with `TestUpdateAuthCensus`, the store censuses and censuswalk all green:
+  - **N1a:** `//go:embed data/updater/device.key` in the module-root package, minting through golang-jwt HS256;
+  - **N1b:** the glob `//go:embed data/upd*r/dev*`, which never spells the file name;
+  - **N2:** a cgo preamble with `.incbin "data/upd" "ater/dev" "ice.k" "ey"`.
+- That made two of the census header's claims false: "spelled ONLY in paths.go" and "the direct spellings … fail loudly".
+- Reach: an embed cannot cross a symlinked directory [A], so only a package whose directory holds the data dir can embed the key; `.incbin` takes `../` and absolute paths [B]. A clean-checkout CI build fails "no matching files", but `deploy/install-autostart.sh` builds in the checkout, where `data/` exists [B].
+
+**Shape.** A syntactic census learned to read ONE compiler directive after a verifier used it, and still treated the rest of the comment channel as prose. Every directive the toolchain acts on at compile time is code: `//go:linkname` binds a symbol; `//go:embed` and a cgo preamble (`.incbin`, `#embed`, `#cgo LDFLAGS`) pull a file into the binary with no literal, import or call for the census to read. Closing the directive that was used, one at a time, is CLASS 259 again, one channel down. And the protected path is not a constant: the data dir is the directory of DB_PATH (`os.Args[1]`, else the environment, else `.env`, else `data/data.db`), anchored on the checkout the service runs in, so a configured data dir moves the boundary the census defends [A read; precedence corrected in `964396ef`].
+
+**Fixed in M3:**
+- `f59b848d`: `import "C"` is refused in every non-test file, under any import name and even behind a build tag. The module has no cgo [A: `go list` CgoFiles empty over `./...`].
+- `ac947870`: no `//go:embed` at all in the module-root package; in every package, no pattern element that `path.Match`es "updater" or "device.key" (`all:` stripped; bare, quoted and raw forms parsed); an argument list that cannot be parsed is refused. The directive recognizer is a superset of what go/build and cmd/compile accept [A read, go1.25.13].
+- `3e368492`: the header's claims are qualified to the Go source the walk reads, and WHAT THIS CANNOT PROVE is regrouped as run time, compile time, build time, by hand and test files.
+- `964396ef` (the round's four notes): each pattern element is lower-cased before matching, because cmd/go resolves a literal pattern by Lstat and a case-insensitive filesystem would let `UPDATER/DEVICE.KEY` reach the key [C for the ext4 deploy; fail-closed anyway]. The DB-path precedence comment is corrected, `go.work` is named, and `paths.go`'s "the ONLY place" is qualified.
+- Pins, each judged by `updateAuthOffenders` (the function `TestUpdateAuthCensus` runs over the real tree) in a synthetic module:
+  - `TestUpdateAuthCensusRefusesCgo`: N2 byte-identical to the verifier's file, plus non-root, aliased and build-tag-excluded forms;
+  - `TestUpdateAuthCensusRefusesRootPackageEmbed`: N1a and N1b byte-identical, and each must draw BOTH the root and the pattern offence;
+  - `TestUpdateAuthCensusRefusesEmbedPatternsThatCanMatchTheEnrollment`, including `UPDATER/DEVICE.KEY` and `Updater`;
+  - control `TestUpdateAuthCensusAdmitsOrdinaryEmbeds` (the real tree's embeds in agent, branding and kernel stay admitted).
+- RED before, and RED on a compiling revert of each rule (cgo, root, pattern, unparseable, a widened recognizer), `vet` rc 0 each, restored `cmp`-identical [A: builder and verifier]. Round verdict PASS_WITH_NOTES at the cc worktree head `990d9096` (patch-identical to `f59b848d`/`ac947870`/`3e368492`), notes folded in `964396ef`. At that head the verifier replayed every earlier probe (RT3-1a/b, RT4-1, RT4-2a/b, V1–V3, P1, P2): all still refused [A].
+
+**Still named, not closed** (census header, WHAT THIS CANNOT PROVE) [B]:
+- a data dir configured strictly BELOW a package directory, reached by an embed of an ancestor directory (`DB_PATH=kernel/st/x.db` with `//go:embed st`);
+- source the walk never opens: an `.s` `#include`, a `.syso`, SWIG, third-party modules, a `go.mod` replace or `go.work` use/replace pointing outside the tree;
+- build inputs outside the source: `go generate`, `-toolexec`, `-ldflags -X`, `-overlay`, GOFLAGS/go.env;
+- by hand: a key file copied into the tree under another name.
+
+**Probe:** list every directive and non-Go input the toolchain acts on at compile time (for Go: `//go:linkname`, `//go:embed`, a cgo preamble behind `import "C"`, `.s` includes, `.syso`, SWIG). A census that reads source must read every one of them or refuse it outright; "we read comments for X" is a list of one. Plant each in a synthetic module at the census's production function, byte-identical to the probe that found it, and require RED on a compiling revert of each rule. Where the protected path is configurable, derive it the way the binary does and defend every place it can land.
+
+## CLASS 263 — loop-owned state read from a goroutine the loop spawned
+
+**Found:** 2026-09-24, ha verifier defect 3 [A read]. `telegram/bot.go` runBot answers each AI message on a goroutine, and that goroutine read `ident.agents`. The main loop's `ident.refresh()` (at start, on `/start`, before every AI call) reassigns the identity's agents, token, user id and email on every re-mint. The race predates M3 for a change of user; M3's H2 made it routine, because the bot now re-mints after every password change on its own account and at every 24 h expiry. `d637b7e1`'s own message names the race as not fixed there.
+
+The builder found a second path of the same shape while fixing the first [A]. The LLM factory that `refresh` hands to `agent.NewManager` was `func() mcp.AIClient { return newLLMClient(b.st, b.userID) }`. The manager calls it on the per-message goroutine (`Manager.Run → agent.New → getLLM`, then `Agent.Run → getLLM`) while the next refresh writes `b.userID` on the main loop.
+
+RED before the fix, structural [A]:
+```
+bot.go:196:13: ident.agents — read inside a closure in runBot
+bot.go:263:45: b.st — in a closure built by (*botIdentity).refresh
+bot.go:263:51: b.userID — in a closure built by (*botIdentity).refresh
+```
+
+**Shape.** A loop owns a struct and reassigns its fields, and a goroutine the loop spawns reads those fields: directly, or one call deep through a closure the struct handed to a long-lived consumer. No test without `-race` can see it, and the second path hides inside the consumer's call graph. Read beside CLASS 196, where a comment stood in for a lock until a second trigger arrived; here the second reader is created by the loop itself, once per message.
+
+**Fixed in M3:**
+- `570b58d4`: runBot captures `agents := ident.agents` on the main loop BEFORE the `go` statement and passes it in, so the goroutine references no field of `ident`. refresh's LLM factory closes over locals (`st, userID := b.st, b.userID`), never the receiver.
+- Structural pins, go/parser over the package's production source, each with vacuity guards:
+  - `TestRunBotGoroutinesReadNoBotIdentityField`: the identity variable is found from runBot's own `newBotIdentity(...)` assignment; no closure in runBot reads it, no `go` statement's function reads it, and none hands the pointer over. A selector in the `go` arguments is allowed, since it is evaluated on the loop.
+  - `TestBotIdentityClosuresReadNoReceiverField`: no closure built by a `*botIdentity` method reads the receiver.
+  - RED on each compiling revert: the goroutine back to `ident.agents.Run`, the factory back to `newLLMClient(b.st, b.userID)`, the pointer handed to the goroutine [A].
+- `1591e1c5`: `TestRaceBotRefreshAgainstInFlightManager`, race-tagged (a `//go:build race` / `!race` constant pair; it SKIPs without the detector). The production `refresh` re-mints on every call on the test goroutine while 64 answers run through managers captured before each `go` statement. Vacuity guards: 64 rebuilds, 64 no-model replies.
+  - **Run by the CTO in the race slot at `1591e1c5` [A, CTO-run]:** clean, `ok nofx/telegram 1.249s`. With the factory reverted to `newLLMClient(st, b.userID)`: `WARNING: DATA RACE` ×2, "race detected during execution of test", `--- FAIL: TestRaceBotRefreshAgainstInFlightManager (0.26s)`.
+  - It cannot drive runBot itself (that needs a live Telegram API); the structural pin covers that half.
+
+**Known limits:**
+- **Pin by TYPE, not by name (hc, `a34f467d` → `87963759`).** The ha2 verifier's compiling revert `id := ident; go func(…){ agents := id.agents … }` brought the race back with both name-based pins green [A]. The pins now type-check package telegram (go/types, gc importer over `go list -export -deps`). They flag any value that HOLDS or points INTO a `*botIdentity`, wherever it reaches a closure, a go statement or a method value: a pointer into a field, a captured holder reached through a helper, a method value on a holder, a generic hand-off. `TestBotIdentityPinRulesCatchEveryRoad` runs the same rule code over 45 synthetic roads, 9 of them allowed controls. Two verify rounds found 11 and then 9 compiling escapes [A]. After the second, the CTO ruled the rest NAMED, not chased (1790248662535). The pin is a belt; the boundary is the capture-before-go code.
+- **Named escapes** (the pin header): the interface conversion is read in single-value assignment contexts only. A tuple result (`f(g())`, `a, b = g()`, `return g()`), comma-ok, a re-declaring `:=`, `range =` and `panic`/`recover` each convert the identity unseen (hc re-verify T1–T9 [A]).
+- A message in flight across a re-mint keeps the manager and token it started with. Its remaining API calls get 401 once the credential event lands, whether or not a refresh has run yet. That is fail-closed and ruled acceptable [A read].
+- `/start` → `ident.agents.Reset` → `session.Memory.ResetFull` runs on the main loop while a goroutine may be inside `Agent.Run` on the same memory, and `telegram/session/memory.go` has no mutex [A read; the race itself B]. Named for a later wave (CTO ruling 1790244970032 (h)); untouched here.
+
+**Probe:**
+- For every `go` statement, list every identifier its function reads. Any field the spawning loop can reassign is a race: capture the value on the loop and pass it in.
+- For every closure a method hands to a consumer that outlives the call (a factory, a callback, a handler), require that it captures locals, never the receiver.
+- Pin by TYPE (go/types), not by variable name: an alias must not escape the pin.
+- Pair the structural pin with a race-tagged reproduction that skips without the detector, and see it RED on the revert in the race slot before calling it a pin (CLASS 196: a detector can stay green on a real race when nothing drives the interleave).
+
+**Instance 2026-09-24 PR #200 review F4b/F7:** the bot now re-mints when its own token is blacklisted, and a same-second re-mint is re-checked and retried once. Failing closed then had two gaps, both folded. On a USER change it kept acting for the PREVIOUS user; it now acts for nobody (`45197f48`). And the fail-closed pin's token check could never fire, because its starting token came from the same second (`89deaa5b`). Named, not folded: runBot still says "No account found" when an account exists but no admitted token could be minted.
+
+## CLASS 264 — a clock-skew fix judged at one instant, on a token shape the server never mints
+
+**Found:** 2026-09-24, three times, and each time the finding was narrower than it read.
+1. **Triage O3** [B]: a token minted while the server clock ran ahead survives a later password change once real time passes its iat. The red-team probe `TestRTA_FutureIatTokenSurvivesPasswordChange` (in `ef03e033`) was DROPPED as broken: its helper set nbf = iat−1m, 59 minutes in the future, so nbf refused the token before Q8 ran (the M3 instance under CLASS 229). Red-1 marked the same residual [B].
+2. **ha verifier defect 4** [A]: a token with iat = now+10 min and nbf = now−1 min, minted before a password change, still got `GET /api/my-traders` 200 after it. `RetiredBy(iat=t0+10m, epoch=t0+1m) = false`, and jwt v5 checks iat only when asked (`WithIssuedAt`).
+3. **The corrections** [A]:
+   - The ha2 builder: the proposed tightening, `WithIssuedAt`, refuses only while `now < iat − leeway` (jwt v5.2.2 `validator.go:198`). At t0+11m the same token validates again and is still not retired. It defers the hole; it does not close it.
+   - The ha2 verifier (defect 6) and the hb builder: the probe token has a shape `signToken` never mints. signToken stamps nbf == iat == now (`auth/auth.go`), and nbf is always checked, so a MINTED token with a future iat was already refused by nbf. With the real shape, at t0+2m today's parser says "token is not valid yet", `WithIssuedAt` only adds "token used before issued", and at t0+11m the parser returns `<nil>` with `RetiredBy = false`. The exposure the finding described (a minted future token accepted now) did not exist. The residual (it survives once the clock reaches its iat) does.
+
+**Shape.** One mistake with three faces: a time-based mitigation checked at a single point of its timeline, with inputs that are not the production inputs.
+- **Judged at one instant.** A clock-skew fix was checked at the moment of skew. It must be checked across the whole timeline, including after the clock catches up. A fix that only defers is a known limit, not a closure.
+- **On a token shape the server never mints.** The probe built its claims by hand. A defect argued on claims the minter never produces misstates the live exposure, and a pin assembled from the probe's shape can be green for a reason the name does not give.
+- **A shared leeway widening a second consumer.** jwt v5.2.2 has ONE `leeway` for iat, nbf and exp (`validator.go:177/198/219`). Adding `WithLeeway(60 s)` to forgive iat also admitted a token for 60 s past its exp, while the logout blacklist still dropped each entry AT exp, so a logged-out token came back for that minute. RED at the router: `token_clock_window_test.go:140: a token logged out 30 s past its exp: GET /api/my-traders = 200 [] — want 401`, and 200 on /api/updates. That is CLASS 102 (a fix that rebuilds its defect one layer down) inside this fix. It is kept in this class rather than numbered separately: it was born of and closed in the same commit, and its probe is the same walk over every consumer of the moved window.
+
+**Fixed in M3** (CTO ruling 1790243040753, TIGHTEN, fail-closed):
+- `45e1404a`: `strictParser = jwt.NewParser(jwt.WithStrictDecoding(), jwt.WithIssuedAt(), jwt.WithLeeway(ClockLeeway))` with `ClockLeeway = 60 s`. A token whose iat is more than 60 s ahead is 401 on the protected group and the uniform 403 on /api/updates. `BlacklistToken` holds each entry until exp + ClockLeeway. The guide (`web/src/guide/content/updates.ts`) states the cost. RED before: `token_clock_window_test.go:79: iat = now+2min (nbf past): GET /api/my-traders = 200 [] — want 401` (all 5 /updates routes admitted too).
+- Why 60 s: the leeway forgives this box's chrony backward steps, 138 since 09-23 20:40 CT with median 1.09 s, max 1.71 s and a median gap of 131 s [A, hb verifier]. Before, nbf == iat refused a just-minted session on ANY backward step. Now a step of 60 s or less costs nothing, and a larger one refuses the sessions signed in during the skipped interval until the clock catches up.
+- `b9e2511e`: the census `TestServerNeverMintsAFutureIat` judged the SPELLING (every IssuedAt/NotBefore written `jwt.NewNumericDate(time.Now())`). The hb verifier's compiling mutation `claims.IssuedAt.Time = claims.IssuedAt.Time.Add(30*time.Second)` minted a future iat while the census and the whole auth package stayed green; only an unrelated password-change test caught it [A]. `TestEveryMintEntryPointStampsNowNotTheFuture` mints through `auth.GenerateJWT`, `agent.GenerateBotToken` and `auth.GenerateScopedJWT(gate-jwt)`, decodes each token and asserts that iat is the mint instant, nbf ≈ iat and exp ≈ iat+24h (±1 s). RED under that mutation: `mint_behaviour_test.go:52: auth.GenerateJWT (login/register): minted iat 05:19:21 is not the mint instant …`. That is CLASS 259's shape: a census of how a value is written, not of the value.
+- Pins:
+  - api `TestFutureIatTokenIsRefusedEverywhere` (iat now+2 min with nbf past; iat = nbf = now+2 min, the minted shape; iat now+30 s admitted; defect 4 end to end), `TestClockLeewayOnExpAndNbfIsBoundedAtSixtySeconds` (30 s admitted, 2 min refused), `TestLoggedOutTokenStaysRevokedThroughTheExpiryLeeway`;
+  - auth `TestValidateJWTClockWindow`, `TestBlacklistEntryOutlivesExpByTheLeeway`, `TestServerNeverMintsAFutureIat`, `TestEveryMintEntryPointStampsNowNotTheFuture`.
+  - RED on each compiling revert: no `WithIssuedAt`; no `WithLeeway` (the existing `token_retire_global_test.go:114` also goes RED, so the leeway is required); leeway 180 s; blacklist held only to exp; minted iat +30 s; strict decoding removed [A: hb builder M1–M6, hb verifier R1–R6].
+
+**Known limits (named; fail-closed default):**
+- A token minted while the clock ran ahead, whose iat still lies after a later password change's epoch once the clock returns, survives that change as soon as the clock reaches its iat. No iat-versus-now check can tell it apart [B].
+- Inside the leeway: a token with iat up to +59 s, minted before a change, is admitted right after it (hb verifier: `GET /api/my-traders` 200; /api/updates 403 only because the change un-enrolls) [A].
+- `/api/updates` answers its own uniform 403, not 401, and the 60 s exp grace reaches `POST /api/updates/install` (422 at exp+30 s) [A].
+- **Proposed follow-up, NOT folded** (a new wave is an owner call): bind the token to the credential rather than to time, with a credential-generation claim (a fingerprint of the password hash, or a users-row counter that `UpdatePassword` bumps) checked in `authMiddleware`. It touches every mint site and the users-table writer census, and signs out every earlier token once.
+
+**Read beside** 252 (a ledger that forgets by wall clock) and 257 (whole-second against sub-second): the M3 clock family. The hb builder also saw one full-suite failure at the same second as a chrony step (04:56:05, 1.34 s) in the unchanged whole-second H2 rule [A for the timing, B for the cause]. Whole-second tests are flaky on a stepping clock; that is a follow-up, not folded.
+
+**Probe:**
+- For every clock-based mitigation, assert at three points of the timeline: before the skew, during it, and after the clock catches up. A verdict that flips back once the clock passes a stamped instant is deferred, not fixed.
+- Build every probe token with the production minter, or pin the probe's shape AND the minted shape side by side and say which one the fix changes.
+- When a parser option widens an accepted window, list every other structure keyed on the same claims (blacklists, caches, TTL sweeps, the UI's own expiry) and pin, at the production router, that each covers the new window.
+- Pin minted VALUES by decoding real mints from every entry point, not the spelling of the stamp (CLASS 259).
+
+**Instance 2026-09-24 PR #200 review F6:** a credential epoch in the FUTURE (a clock step-back after a password change) refuses every new sign-in until the clock passes it. That stays fail-closed, and the refusal now says so: "credential epoch is Ns in the future — clock stepped back; sign-in refused until then". The bound is the size of the step. It is pinned at the production router for authMiddleware and, through a gorm hook between the two reads, for the credential guard (`53bc9734`, `fc17a1c9`). The /updates gate's Q8 line has no clock note (a follow-up).
+
+## CLASS 265 — a repair outcome recorded after the bookkeeping that rewrites its reason
+
+**Found:** 2026-09-24, WAVE 1a-plan P9 (issue #190) [A]. `plannerRejectBookkeeping` unconditionally rewrites `*prevReason` to THIS attempt's defect. The repair-outcome line's `"was repairing: %s"` field means the defect the repair was AIMED at — the PREVIOUS attempt's reason (CLASS 38 F6; the W2 A1/A2 site captures `repairing := prevReason` BEFORE bookkeeping at :2340/:2346). P9 re-ordered the fragment and parse sites to record AFTER bookkeeping, so the field repeated this attempt's defect (the FragmentReason, twice) and the diagnosis was lost; this class then codified that inversion. Reversed 2026-09-24 by skeptic F5: both sites capture the reason BEFORE bookkeeping and pass that to `recordRepairOutcome`.
+
+**Fixed:** fragment + parse sites record the pre-bookkeeping reason, mirroring the untouched W2 A1/A2 site. Pinned: `TestRepairWasRepairingNamesThePreviousDefect` (attempt 1 rejected with a known defect, the attempt-2 repair returns a fragment; the line must quote attempt 1's defect — RED with the record-after-bookkeeping order, the P9 inversion) plus `TestPlannerRejectBookkeepingRewritesPrevReason` for the rewrite itself.
+
+**Probe:** when a function takes a pointer it rewrites (`*prevReason`), grep its call sites for consumers of the same variable on either side of the call. A consumer upstream of the writer reads the OLD value; one downstream reads the NEW — the order is part of the contract, not an implementation detail. The order is only "line-read" until a pin drives the call site.
+
+## CLASS 266 — a pin that asserts a recorded event which the fixture never produces
+
+**Found:** 2026-09-24, WAVE 1a-plan P7 [A]. The first `TestZoneAcceptedIdentitySkipsHeuristicDisagreement` fixture built a scenario whose `ReferenceLevelID` never resolved against `IdentityLevels` (the derived reference id needs the identity fields the fixture's `PlanLevel` did not carry). `observeScenarioIdentity` therefore recorded NOTHING, the pin asserted "count == 0", and neutering BOTH predicate branches of `zoneAcceptedIdentity` still left it green — RED could not fire. The pin certified an empty path, not the fix.
+
+**Fixed:** the pin was rebuilt on the E1 fixture (real map candidates → `IdentityLevelsFromCandidates` → a control row that MUST record 1 disagreement with the same levels and anchor, then FVG + seated-Demand rows that MUST record 0). RED: neutering the predicate fails the two zone rows while the control keeps passing.
+
+**Probe:** for every pin that asserts a zero or absence, run a control row that asserts the SAME path produces a nonzero (or a presence) with the fix removed. A pin whose RED is not demonstrated at least once is a comment, not a test.
+
+## CLASS 267 — a proof whose evidence the system never emits in the form the proof expects
+
+**Found:** 2026-09-24, WAVE 3b-A, by the read-only live evidence the dispatch required — not by any test [A]. `activation.Watch` proves an activation with two legs: a boot line written after the restart, and `/api/health` reporting the new revision. Both compared against the release's FULL 40-hex sha. The live box emits neither in that form:
+
+- `/api/health` returns the SHORT sha — `{"revision":"662c79bd236f", …}` [A]
+- the boot line prints the short rev too — `🔐 BOOT INTEGRITY OK — rev 662c79bd236f · built 2026-09-23T23:45:35Z` — and the full sha appears **zero times** in the live log (`grep -c` = 0) [A]
+
+So BOTH legs of a two-leg proof were unpassable. Every real activation would have watched, failed, and rolled back, and the failure would have read as "the bot did not come up" — sending whoever was on the boot to investigate a process that had started perfectly, while the rollback undid a good release.
+
+**The tests could not catch it, because they shared the defect.** Every unit test passed. They were written by the same author, in the same hour, from the same assumption, using full shas throughout. A test written from the author's belief about a value tests the belief, not the value.
+
+**The rule already existed in this repo.** `kernel/boot_integrity.go` has carried "a prefix match so short SHAs work" since it was written. The knowledge was present and had not been carried across to new code that needed it — CLASS 242's lesson in a different costume.
+
+**Fixed in 3b-A:** `revisionsAgree(reported, expected)` — the REPORTED value may abbreviate the expected one, never the reverse, with a 7-character floor so an abbreviation too short to identify anything is not evidence. `lineNamesRevision` scans a line's whitespace-separated TOKENS rather than substring-matching, so a hex-looking fragment inside another value cannot be mistaken for the revision. Pinned with the REAL artifacts copied off the live box: the actual boot line string, the actual short health value. A third defect fell out of the same run — logs are named by BOOT date, not calendar date (at 08:04 on 09-24 the active file was `nofx_2026-09-23.log`), so `NewestLogPath` now picks the file actually being written rather than building a path from today's date.
+
+**Probe:** before writing any comparison, obtain the evidence from the RUNNING SYSTEM — `curl` the endpoint, `grep` the real log — and pin the test with those captured bytes. A proof is a claim about what the system EMITS; writing it from what you expect the system to emit produces a check that cannot pass and a suite that agrees with you. Ask of every compared value: does it have a short form, a prefix form, a different case, a trailing newline, a unit?
+
+## CLASS 268 — a guard that no dry run reaches is first exercised during the cutover
+
+**Found:** 2026-09-24, WAVE 3b-A, reading `deploy/cutover.sh` v6 while replacing it [A]. v6 read the process start time with `awk '{n=split($0,a," "); print a[22]}' /proc/$p/stat`. Field 2 of that line is the executable name in parentheses and MAY CONTAIN SPACES AND PARENTHESES — `(nofx bin (x))` — which shifts every later field. The identity check could therefore compare the wrong number: refusing a valid restart, or, worse, ACCEPTING a recycled pid, which is the single thing the identity check exists to prevent.
+
+**It had never run.** Every `--dry-run` refuses earlier — at the token gate, or the dist check, or the binary proof — so the identity code sits *after* every exit a rehearsal takes. The rehearsal that exists to make the procedure safe never reached the line that makes it dangerous, and its first execution would have been during a real cutover, on a live trading box, under time pressure.
+
+That is the shape worth naming: a dry run proves the steps it REACHES. Code after the last refusal a rehearsal hits is unexercised no matter how many times the rehearsal is run, and a passing dry run is therefore evidence about a PREFIX of the procedure, not the procedure.
+
+**Fixed in 3b-A:** the parse moved into `internal/activation` and reads from the LAST `)` in the line, pinned by a test whose comm is literally `(nofx bin (x))`. `deploy/cutover.sh` v7 delegates rather than carrying its own copy, so the attended boot and the unattended worker share one implementation and one test suite.
+
+**Probe:** for every procedure with a rehearsal mode, list the steps the rehearsal never reaches and ask what tests them. If the answer is "nothing", they are exercised first in production. Either the rehearsal must reach them (a seam, a fixture, a `--force-through` for the safe parts) or they must be moved into code a unit test can call — the second is usually right, because a step that only a live cutover can exercise is a step nobody can afford to debug.
+
+## CLASS NN (assigned at merge) — A RETRY THAT READS THE SAME STALE TAPE IS A BLIND RETRY
+
+A multi-attempt loop whose refusal is caused by the market moving during the read (born-dead, flip-met, tape-window) must re-sight attempt N+1 on the tape that exists now — the completed bars between the read clock and the refusal, bounded, never the forming bar, with the breached condition verbatim. Retrying against the identical stale read burns the attempt budget fail-closed. The refusal check itself is never relaxed to make retries pass.
+
+## CLASS NN (assigned at merge) — UI TRUTH MUST DISTINGUISH UNKNOWN FROM EMPTY, AND STALE WRITES MUST NOT LAND
+
+A failed or malformed snapshot fetch (orders, positions, balances) must render UNKNOWN, never an empty table — only a validated success may clear prior state, and late or out-of-scope responses must be discarded against the request's own view identity (symbol/interval/account). Streamed session writes (SSE chat) must be owned by the session that started them: an old stream's completion or failure must not write into a newer session's store, clear its loading flag, or overwrite its history.
+
+## CLASS NN (assigned at merge) — REQUEST MODEL SELECTION MUST NOT MUTATE SHARED AGENT
+
+Two authenticated chats must retain their own selected model credentials through all follow-up calls and summaries. Shared history/flow locks stay shared without copying mutexes. Missing user configuration must not select another owner's default credentials. Exercise both HTTP identity and concurrent model selection.
+
+
+
+## CLASS NN (assigned at merge) — a selector in a path the ownership middleware's prefix gate does not match
+
+**Found:** 2026-09-25, W117 PR-D, porting #117 576bd75b [A]. `planTraderOwnership` only ran on plan/risk-prefixed routes; a second `trader_id` selector (query array, `/api/traders/:id` path, body on POST/PUT/PATCH/DELETE) on any OTHER protected route named another owner's trader and sailed through with a 200. **Fixed:** the prefix gate is dropped — the selector sweep runs on every protected route; path segments, query values and body fields are all compared against the session owner. Pinned by a production-router test that plants a second selector at every location and demands 403. **Probe:** for every ownership middleware, list the selector LOCATIONS it reads and the routes it GATES; any location outside the gate is a second selector.
+
+## CLASS NN (assigned at merge) — an optimistic-concurrency edit with no revision the server can compare
+
+**Found:** 2026-09-25, W117 PR-D, porting #117 09e24a08 [A]. Overlay saves carried no expected-revision fields, so a stale draft silently superseded newer rows (no 409 existed). **Fixed:** `handlePlanOverlay` requires `expected_plan_id/expected_plan_version/expected_overlay_version` (400 without); `applyPlanOverlay` 409s when the current row or overlay revision moved past them, and appends via `AppendOverlayChecked` with a writer-side revision guard; `plan/today` returns `plan_id` + `overlay_version` for the client to echo; the web client sends the viewed revision and shows the 409 inline. **Probe:** every edit endpoint that touches per-owner persisted state must name the revision the CLIENT viewed and refuse when the stored one has moved — including the client half that echoes it.
+
+## CLASS NN (assigned at merge) — a gap value resolved after dereference
+
+**Found:** 2026-09-25, W117 PR-D, porting #117 a6b88b7d [A]. `handlePlanAskApply` dereferenced `sess.Name` before the ok check, so a session-gap instant (default window closes 14:45, applies at 15:00) panicked the apply route; `handlePlanRealign` shared the inline form. **Fixed:** `planMutationSessionAt` resolves the session BEFORE any dereference, uses the wrap-aware chain trade date (the date plan reads use), refuses the gap as `ok=false`, and keeps the `sessionRunnable` gate; both handlers guard before touching `sess`. **Probe:** for every `thing, ok := lookup()` followed by a use of `thing`, walk the path from a missing lookup — the use must be behind the `ok` check, and a test must plant the MISSING case at the production call site.
+
+## CLASS NN (assigned at merge) — a request-supplied key selects server-side per-owner state
+
+**Found:** 2026-09-25, W117 PR-D, porting #117 e39d2070 [A]. `HandleChat`/`HandleChatStream` read a `user_id` from the caller's request body — a request carrying another owner's numeric key selected THAT owner's persisted conversation history; the authenticated owner's own clear didn't address it. **Fixed:** HTTP conversation identity derives ONLY from the authenticated middleware (`WithStoreUserID`); the caller-supplied key is ignored; a caller census confirms the two chat handlers are mounted exclusively behind the auth middleware (no telegram/agent-door/internal callers exist today). **Probe:** any endpoint that persists or clears per-owner state must derive the owner from the AUTHENTICATED session, never from a request field — grep the body keys for `user_id`-shaped names and prove each is ignored.
+
+## CLASS NN (assigned at merge) — a cross-process hold specified as an in-process call
+
+**Found:** 2026-09-24, WAVE 3b-B brief (CTO ruling 1790258770876) [A]. The M4 dispatch specified the updater's maintenance hold as `EntryBarrier.Hold(ctx)`. That barrier is an unexported package-level value in the TRADING APP (`trader/maintenance_gate.go:21 var maintenanceBarrier EntryBarrier`); the updater worker is a SEPARATE binary. Had the worker imported `trader`, it would have received its own inert copy of the barrier: every worker test green, and the app still trading.
+
+That is the shape: a spec says "call X" where X's value lives in another process. A Go call cannot cross a process boundary, and nothing in either binary's test suite can notice, because each suite runs one binary.
+
+**Fixed in 3b-B:** a hold that must cross a process boundary is a FILE plus a READER. The worker writes `data/updater/hold.json` through the census-admitted writer `internal/updaterworker/hold.go` (owner `updater`, `withdraw_entries` never set). The app engages its own barrier from the file (`maintenanceState → Engage`), and `drained_acked` is read from the app's own view (`/api/installation-gate`, `/api/maintenance`), never inferred from the worker's write. No `trader/` edits; `Hold(ctx)` stays test-only. Pinned by `TestTradingAppNeverLinksTheUpdaterWorkerSide`, `TestHoldWriterCensusAdmitsTheWorkerOnlyByName`, `TestTheWorkerHoldNeverCarriesWithdrawEntries`, `TestOnlyTheOperatorCLISetsWithdrawEntries` (`caadafa1`, `754a85ce`, `79ff03c2`, `457e3c86`).
+
+**Probe:** for every "call X" in a spec, ask which binary X's VALUE lives in (`go list -deps ./cmd/<caller>`), whether X is exported, and whether it is package state. If caller and owner are different binaries, the call cannot reach it: the spec needs a file, a socket or an HTTP route, and a reader on the owner's side.
+
+## CLASS NN (assigned at merge) — per-step idempotence claimed for a kill
+
+**Found:** 2026-09-24, WAVE 3b-B brief C3 [A code, B outcome]. The activation library's contract said "every step is idempotent", but only `Backup` (`already=true`) is. `Activate`, `Rollback` and `RollbackTo` SIGKILL a recorded process identity; after a crash-resume that pid is gone (or recycled), so a blind re-run either refuses or signals the wrong process. A resumed `Watch` given a fresh `since` misses a boot line already written and reports a false RED.
+
+**Fixed in 3b-B:** the worker makes resume idempotent itself. It re-reads `CurrentIdentity()` and re-runs the persisted step against the CURRENT identity (at most one extra restart); `Watch` takes the PERSISTED kill instant (`WatchOpts.Since`, #201 `afd60391`); a resumed activate re-proves readiness before any kill. Pinned by `TestCrashAtEveryBoundaryResumesToTheRightState` (108 state/phase boundaries × skip/park/rollback), `TestResumeAtActivatedRereadsTheIdentity`, `TestResumeAtRollingBackRereadsTheIdentity` (`535e7e43`, `370b41e7`, `3f650fc6`).
+
+**Probe:** for each step, list its external side effects (kill, restart, file install). Replay the step after a simulated crash at each boundary, with the identity and time READ AT RESUME, not the persisted ones. "Idempotent" is a claim about the effect, and a kill's target does not survive the crash.
+
+## CLASS NN (assigned at merge) — a boot proof a REFUSED boot satisfies
+
+**Found:** 2026-09-24, WAVE 3b-B brief C13 [A]. "Booted" was judged by the new revision appearing in the log or in `/api/health`. A binary that starts and then REFUSES at boot integrity still prints its revision: the REFUSED line carries the same rev token, and health answers "ok" while trading is refused. Separately, health returns 12 characters, so a check `== source_sha` (40) could never pass.
+
+**Fixed in 3b-B:** `boot_verified` requires the literal `BOOT INTEGRITY OK — rev <sha12> ·` after the log offset recorded before the kill, NO `BOOT INTEGRITY REFUSED` line for that rev, a post-boot AddOn ack newer than the kill, and health's revision to be a prefix of `source_sha` of at least 7 characters. Pinned by `TestBootVerifyRefusesARefusedBootLine` and the unpinned-rules pins (`96239d49`, `904cc5dd`).
+
+**Probe:** boot a build that FAILS boot integrity against the watcher; it must go RED. Diff the length of the revision the watcher compares against the length health actually returns. A proof must be one the failure mode cannot also produce.
+
+## CLASS NN (assigned at merge) — a per-request refusal log under a polling client is a flood
+
+**Found:** 2026-09-24, skeptic pass on live `4c05158b`, finding [5] (CTO ruling 1790280466263) [A]. `api/handler_updates.go` `updatesForbid` WARNed on EVERY refusal; the header badge polls `/api/updates` every 60 s, so an un-enrolled box wrote one 🔒 WARN and one `log_events` row per minute per open tab, forever. The signal drowns, and the log becomes a byte sink proportional to uptime.
+
+**Fixed in 3b-B:** WARN once per (route PATTERN, closed category) per process, DEBUG for repeats, and every refusal counted in `nofx_updates_refused_total{route,category}` on `/metrics`. The route is gin's pattern (`FullPath`), never the client's path; the category comes from a closed map pinned by an AST scan of every reason literal, never from free text; a pair that never refused has no series. `logger/db_sink.go` ships only WARN and above to `log_events`, so DEBUG repeats write no rows. Pinned by `TestUpdatesRefusalWarnsOncePerRouteAndCategoryThenCounts`, `TestEveryUpdatesRefusalReasonHasACategory`, `TestUpdatesRefusalSeriesIsAbsentUntilTheFirstRefusal` (`3eacf2d6`, `b3522251`).
+
+**Probe:** for every log call on a refusal path, find whether anything polls the route (grep the web for `setInterval` / `refetchInterval` against it), and count WARN lines per hour in the refusing state. Confirm which levels the `log_events` sink ships (`logger/db_sink.go` Levels): a DEBUG repeat is flood-free only if the sink drops DEBUG.
+
+## CLASS NN (assigned at merge) — a package-registered process-wide name: green alone, panicking in the first binary that links both
+
+**Found:** 2026-09-24, WAVE 3b-B U4, while wiring the activation adapter; reproduced on dev `e401eb5e` [A]. `internal/activation/steps.go:14` blank-imported `github.com/glebarez/go-sqlite`, and `store/sqlitedriver/backend_default.go` imports `modernc.org/sqlite`: both register the database/sql driver `"sqlite"`. Each package's own tests are green. The first binary that links both, the updater worker (`hold.go` → `store`), panics at init before `main`: `panic: sql: Register called twice for driver sqlite` (rc 2). `nofx-activate` alone never trips it because it does not link `store`.
+
+**Fixed:** in #205 (Claude-103): `internal/activation` imports `nofx/store/sqlitedriver`. In 3b-B: the trading app can never link `internal/activation` (`94e6caae`: the import guard's forbidden set, `go list -deps` leg), and the worker binary links exactly one sqlite registration (`e376bf88`); the adapter lands only after #205 (CTO ruling D4).
+
+**Instance (#205):** `internal/activation/steps.go` and `internal/updaterbootstrap/bootstrap.go` blank-imported a SQLite driver directly; the M4 worker links both → init panic. Fixed by importing `nofx/store/sqlitedriver`; enforced by `store/sqlitedriver/one_registration_census_test.go` (AST, libraries + mains that link sqlitedriver).
+
+**Probe:** for each `cmd/*` and each TEST binary that imports the worker side (`go list -deps -test ./<pkg>`, under the default build AND `-tags cgofree`, since the tag changes which driver `store/sqlitedriver` registers), intersect with packages that register process-global names (`sql.Register`, promauto/`MustRegister` names, `flag` names, `gob.Register`, `http.Handle` on `DefaultServeMux`). Build each binary and run it with a no-op flag in a temp dir. A test binary is a binary: a `_test.go` import inherits every registrant of what it imports.
+
+## CLASS NN (assigned at merge) — containment compared as a string prefix, not path elements, without resolving symlinks
+
+**Found:** 2026-09-24, WAVE 3b-B U4N verify [A]. `nofx-updater fetch` refused a release root inside the install with `!strings.HasPrefix(rel, "..")`, so `NOFX_RELEASE_DIR=<install>/..rel` counted as OUTSIDE and the release was written INSIDE the install (rc 0). A symlinked parent put the root inside the install the same way; a symlinked `<install>/deploy` let the trust anchor (`release_allowed_signers`) be read from outside the install; the backup-root check and a test guard (`HasPrefix(p, os.TempDir())`) carried the same shape.
+
+**Fixed in 3b-B:** one helper, `updaterworker.ReleaseRoot`: P is outside D only when `rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator))`, after `filepath.EvalSymlinks` on BOTH sides, and a trusted root must equal its own resolved path. The trust anchor is read through `open(deploy/, O_DIRECTORY|O_NOFOLLOW)` then `openat(name, O_NOFOLLOW|O_NONBLOCK)`; `os.Root` was rejected because its `OpenFile` follows an in-root final symlink even with `O_NOFOLLOW`. A verdict re-proves only when its `release_dir` equals `<resolved root>/<source_sha>`. Pinned in `TestFetchRefusesWithoutItsInputs`, `TestReleaseReverifierRefuses`, `TestAVerdictIsReprovedOnlyUnderTheCurrentReleaseRoot` (`2e907033`, `6c378d15`, `178e6fa8`, `0b228202`, `f231fc8d`).
+
+**Probe:** for every "P is inside/outside D" check: (a) is it an ELEMENT compare (`<D>/..x` is INSIDE)? (b) are symlinks resolved on BOTH sides first, and for a path not yet created, is the deepest existing ancestor resolved and a dangling symlink among the rest refused — and every Lstat error other than not-exist
+refuses, pinned by a `PathWithin` table test? (c) is a trust anchor opened without following a symlinked PARENT (`O_NOFOLLOW` guards only the last element)? (d) is there ONE helper per repo, and does the census cover var-declared and alias-imported
+`filepath.Rel`? Every check-then-write by path string is a same-UID TOCTOU limit: name it.
+## CLASS NN (assigned at merge) — a filled armed row moved out of 'filled' by a racing pass
+
+**Found:** 2026-09-25, W117 slice A, F2 rebuild [A]. A late fill (order_update
+arriving after the armed pass had moved on) could be UNWOUND: the pass's
+`RequestCancel` or an invalidation `SetState` overwrote the row's state, so a
+fill the broker had executed was no longer ledger-visible as a position while
+the materialized position row said otherwise. **Fixed:** the store's `SetState`
+and `RequestCancel` now carry `AND state <> 'filled'` in their WHERE — a CAS on
+state: a filled row is terminal, no later writer can move it out. Pinned at the
+production call sites (store test + `TestLateFillSurvivesThePassCancelRequest`,
+RED by removing the guard). **Probe:** for every terminal state, list every
+writer that can change a row's state; each must carry the precondition, or be
+proven post-terminal.
+
+## CLASS NN (assigned at merge) — the pre-change broker book read at acceptance
+
+**Found:** 2026-09-25, W117 slice A, F2 rebuild [A]. The AddOn sends
+`order_update` THEN `order_snapshot` on the same state change
+(VLTraderTCPClient.cs ~1948 then ~1955). A consumer that applied the
+order_update the moment it arrived read the PRE-change broker book, so
+`recordAcceptedRisk` stamped the OLD prices as "what the broker accepted".
+**Fixed:** the ordered worker stamps each order_update with the snapshot
+watermark at enqueue and waits (bounded) for a post-update snapshot before
+applying; on timeout it applies with `BookGate=BookGateNotFresh` and the book is
+suppressed — never read stale. Pinned with the real frame order
+(`TestAcceptedRiskUsesThePostChangeBook`). **Probe:** for every read of a
+frame-fed cache by a durable consumer, name the frame that MUST precede the
+read, and pin the pair in receive order.
+
+## CLASS NN (assigned at merge) — an exit receipt dropped when it beat its cumulative entry
+
+**Found:** 2026-09-25, W117 slice A, F2 rebuild, porting #117 F3 [A]. A valid
+completed `position_close` could arrive before the later cumulative entry
+update; the old path hard-errored (losing the exit forever) or trimmed the
+evidence. **Fixed:** `recordCloseOrdered` → `store.ApplyNT8Exit`
+apply-or-park: one transaction reduces the exact owned residual, writes the
+deduped exit fill, flips the receipt and closes at zero residual; an incomplete
+or missing row RETAINS the receipt as pending, retried (idempotent) after the
+entry update lands. Pinned: `TestExitBeforeCumulativeEntryIsRetainedThenApplied`
+(RED: retry removed → the exit stays parked forever). **Probe:** every event
+whose write depends on an earlier event must either park-until-it-lands or
+prove the earlier event always wins by construction — never a hard error, never
+a silent drop.
+
+## CLASS NN (assigned at merge) — a deferred transaction's read→write upgrade lost a live close
+
+**Found:** 2026-09-25, live boot-2 binary d7a442d5 [A]. `ApplyNT8Exit` ran as a
+DEFERRED transaction: it read first (the receipt lookup, which WAL readers
+always allow) and sought the write lock only at the first write. Under WAL an
+upgrade while another connection holds the write lock returns SQLITE_BUSY /
+SQLITE_BUSY_SNAPSHOT IMMEDIATELY — the busy handler is deliberately not invoked
+for an upgrade that risks deadlock, so busy_timeout cannot help. At 08:55 CT the
+ordered worker's `recordCloseOrdered` got "database is locked", logged and
+returned: no receipt persisted, no priced close parked, hasFill not cleared —
+row 618 stayed OPEN and reconcile's orphan close had no real price (class 40).
+Compounding it, `store/gorm.go`'s pool-wide `PRAGMA busy_timeout` is ONE
+`db.Exec` on a pool of 4 — it reaches exactly one connection, the rest keep 0.
+**Fixed:** `ApplyNT8Exit` takes the write lock UP FRONT (BEGIN IMMEDIATE on a
+dedicated pooled connection, where the busy handler DOES apply); the worker
+retries a busy error bounded (5 tries, backoff sleeps ≤ ~1.6s, in receive
+order); on final failure it NEVER drops — the broker price is parked
+(putPricedClose) + hasFill cleared, then the receipt is persisted in its own
+small write (dedicated connection, full busy wait) so RetryPendingNT8Exits
+applies it later, with an ERROR log + counter. Pinned at the production call
+sites: `TestApplyNT8ExitTakesTheWriteLockUpFront` (RED: deferred tx returns
+"database is locked" while the holder still holds) and
+`TestBusyCloseFrameIsNeverDropped` (RED: today's single-shot error→return loses
+the close — no receipt, no park). **Probe:** for every SQLite transaction whose
+loss is a lost exit/fill, assert the lock is acquired AT BEGIN (IMMEDIATE), not
+at the first write after reads; for every per-connection PRAGMA issued once via
+a pool handle, prove which pooled connections actually carry it.

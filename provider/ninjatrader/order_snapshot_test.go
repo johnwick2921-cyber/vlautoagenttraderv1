@@ -193,3 +193,19 @@ func TestOrderSnapshotEnvelopeRoundTrips(t *testing.T) {
 		t.Errorf("round-trip lost data: %+v", back)
 	}
 }
+
+// F10 (port of #117 da2f76c9) — AN ABSENT BOOK IS NOT AN EMPTY BOOK.
+func TestParseOrderSnapshotRefusesMissingOrNullOrders(t *testing.T) {
+	for _, body := range []string{
+		`{"account":"Sim101","orders":null}`,
+		`{"account":"Sim101"}`, // the orders key is absent entirely
+	} {
+		if _, err := ParseOrderSnapshot([]byte(body)); err == nil {
+			t.Fatalf("body %s: a missing/null orders list parsed as a real book", body)
+		}
+	}
+	p, err := ParseOrderSnapshot([]byte(`{"account":"Sim101","orders":[]}`))
+	if err != nil || p.Orders == nil {
+		t.Fatalf("an explicit empty list must remain a real (empty) book: %+v err=%v", p, err)
+	}
+}

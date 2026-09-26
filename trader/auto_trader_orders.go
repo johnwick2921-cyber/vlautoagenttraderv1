@@ -3,14 +3,12 @@ package trader
 import (
 	"fmt"
 	"math"
-	"nofx/discipline"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/market"
 	"nofx/store"
 	"nofx/telemetry"
 	ntTrader "nofx/trader/ninjatrader"
-	"strings"
 	"time"
 )
 
@@ -106,10 +104,15 @@ func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.Dec
 
 // consecutiveLossHalted reports whether new entries are blocked by the D1
 // consecutive-loss halt: N consecutive LOSING closed trades in the current CME
-// session-day (0 = OFF; resets on a win/break-even close or a new session). It is
-// a per-strategy circuit breaker, NOT gated by the guardrails master switch.
+// session-day (resets on a win/break-even close or a new session). N resolves
+// through store.ResolveBreakerHalt (W1): a saved 0 = OFF, an absent knob
+// inherits env BREAKER_HALT_N else 8. It is a per-strategy circuit breaker,
+// NOT gated by the guardrails master switch.
 // Fail-OPEN on a query error — never block a trade because the DB hiccuped.
-func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
+//
+// W-EXEC-TRUTH W0: it takes the caller's clock (admitEntry passes it; the
+// wall-clock wrapper had no production caller left and was removed).
+func (at *AutoTrader) consecutiveLossHaltedAt(now time.Time) (string, bool) {
 	if at.store == nil || at.config.StrategyConfig == nil {
 		return "", false
 	}
@@ -120,9 +123,9 @@ func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
 	// whether the desk is halted (A24: never a second copy).
 	n := breakerHaltN(at.config.StrategyConfig)
 	if n <= 0 {
-		return "", false // explicitly OFF (BREAKER_HALT_N=0)
+		return "", false // OFF: a saved 0, or BREAKER_HALT_N=0 with no saved value
 	}
-	sinceMs := kernel.CMESessionDayStart(time.Now()).UnixMilli()
+	sinceMs := kernel.CMESessionDayStart(now).UnixMilli()
 	losses, err := at.store.Position().CountConsecutiveLossesSince(at.id, sinceMs)
 	if err != nil {
 		at.logWarnf("consecutive-loss halt: count query failed (%v) — allowing entry (fail-open)", err)
@@ -136,6 +139,13 @@ func (at *AutoTrader) consecutiveLossHalted() (string, bool) {
 
 // executeDecisionWithRecord executes AI decision and records detailed information
 func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
+	return at.executeDecisionWithRecordAt(decision, actionRecord, time.Now())
+}
+
+// executeDecisionWithRecordAt is executeDecisionWithRecord on the caller's
+// clock (W3): `now` is the instant the admission chain judges, and the strict
+// nudge's armed pass judges the SAME instant.
+func (at *AutoTrader) executeDecisionWithRecordAt(decision *kernel.Decision, actionRecord *store.DecisionAction, now time.Time) error {
 	// W5.2 (weekly-bias wave) — SHADOW counter-trend annotation for entries.
 	// Log/counters ONLY: this call can never block, resize or re-grade the trade
 	// (the real gates below are untouched — W5.4 THE LAW).
@@ -143,202 +153,46 @@ func (at *AutoTrader) executeDecisionWithRecord(decision *kernel.Decision, actio
 		at.applyWeeklyDecisionShadow(decision)
 	}
 
-	// Feed-down gate (NinjaTrader, TRACK A): the SIM cannot fill without market
-	// data, so an entry/flatten issued while the feed is down is rejected ("no
-	// market data") — the upstream condition behind the phantom-close mess. Refuse
-	// opens AND closes until the feed is Connected; the position simply waits (the
-	// close path retries on the next cycle / reconnect). Default-ALLOW until a
-	// feed_status frame arrives, so a healthy bot is never false-halted.
+	// Feed-down gate (NinjaTrader, TRACK A), CLOSE half: the SIM cannot fill
+	// without market data, so a flatten issued while the feed is down is
+	// rejected ("no market data") — the upstream condition behind the
+	// phantom-close mess. The position simply waits (the close path retries on
+	// the next cycle / reconnect). Default-ALLOW until a feed_status frame
+	// arrives. The ENTRY half runs FIRST inside admitEntry, below.
 	switch decision.Action {
-	case "open_long", "open_short", "close_long", "close_short":
+	case "close_long", "close_short":
 		if down, status := at.ninjaFeedDown(); down {
 			at.logWarnf("⛔ feed-gate: %s %s skipped — NT8 price feed not Connected (status=%q); SIM would reject 'no market data'. Will act when the feed returns.", decision.Action, decision.Symbol, status)
 			telemetry.IncGateBlock(at.id, "feed_down")
-			// W16/R3 — stamp the refusal like every sibling gate. This was the ONE
-			// gate that returned nil without touching actionRecord, so after
-			// f7fa2d3c (which classifies on Error != "") a feed-down skip still fell
-			// into the success branch and was recorded as an executed trade.
+			// W16/R3 — stamp the refusal like every sibling gate.
 			actionRecord.Success = false
 			actionRecord.Error = fmt.Sprintf("feed_down: NT8 price feed not Connected (status=%q)", status)
 			return nil
 		}
 	}
 
-	// B5 — dead-man watchdog: after an NT8 TCP disconnect, NEW entries stay blocked
-	// until a clean positions/orders reconciliation, so we never open on top of a
-	// state we haven't re-verified across a link gap. Closes / open-position
-	// management are NEVER blocked. State is advanced once per cycle in runCycle
-	// (driveDeadManWatchdog); here we only enforce the block.
+	// W-EXEC-TRUTH W0 (a) — THE ONE ADMISSION GATE. The chain that ran inline
+	// here (feed → dead-man → freeze → boot integrity → owner pause →
+	// maintenance → contract roll → breaker → last entry → session → plan mode
+	// → approval → EntryGate) now lives in entry_admission.go, in the SAME
+	// pinned order with the SAME strings, and the armed path and Picture ask it
+	// too. Closes are never admitted — only NEW entries.
 	switch decision.Action {
 	case "open_long", "open_short":
-		if at.deadMan.entriesBlocked() {
-			at.logWarnf("⛔ dead-man watchdog: %s %s REFUSED — NT8 link not yet reconciled after a disconnect; entries resume after a clean reconciliation.", decision.Symbol, decision.Action)
-			telemetry.IncGateBlock(at.id, "dead_man")
+		if refusal, refused := at.admitEntry(admitIntent{
+			Path: admitDecision, Symbol: decision.Symbol, Action: decision.Action,
+			Now: now, Decision: decision, Record: actionRecord,
+		}); refused {
 			actionRecord.Success = false
-			actionRecord.Error = "dead_man_watchdog: awaiting reconciliation after link gap"
-			return nil
-		}
-	}
-
-	// A4 (G4) — FREEZE gate: a trader frozen by an identity/account echo mismatch
-	// (A2) or a reconcile belief≠broker divergence is blocked from NEW entries until
-	// the owner clears it (POST /api/risk/clear-freeze). Open-position management
-	// (closes/stop-moves/reconcile) is NEVER blocked — a frozen trader can still be
-	// brought flat.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, frozen := discipline.IsFrozen(at.id); frozen {
-			at.logErrorf("🚨 A4 FROZEN: %s %s REFUSED — trader is frozen (%s). Investigate, then clear via /api/risk/clear-freeze to resume.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "frozen")
-			actionRecord.Success = false
-			actionRecord.Error = "frozen: " + reason
-			return nil
-		}
-	}
-
-	// P1 — BOOT INTEGRITY: a binary that is not the intended release, or whose
-	// prompt goldens drifted, must not open positions. This outranks every other
-	// gate (it means we cannot trust WHAT this process is). Closes stay allowed so
-	// an existing position can still be managed out.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, refused := kernel.TradingRefused(); refused {
-			at.logErrorf("🔐 BOOT INTEGRITY REFUSAL: %s %s BLOCKED — %s. Fix the deploy and restart; closes still work.",
-				decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "boot_integrity")
-			at.emitAlert("P0", "boot-integrity", "boot-integrity:"+kernel.CMESessionDayKey(time.Now()),
-				"🔐 Trading refused — boot integrity", reason)
-			actionRecord.Success = false
-			actionRecord.Error = "boot_integrity_refused: " + reason
-			return nil
-		}
-	}
-
-	// P2 (ledger-close 2026-08-19) — stop_until OWNER PAUSE: the FIRST owner/
-	// policy gate (system-integrity gates above rank it; every policy gate below
-	// defers to it, so a paused refusal always NAMES the pause — gate-order
-	// contract 2.4/E5). Blocks NEW entries only; closes, EOD-flat, the 60s
-	// monitor guards, and NT8 brackets continue. Master-INDEPENDENT.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, paused := at.entryPaused(); paused {
-			at.logWarnf("⏸ stop_until: %s %s REFUSED — %s. Position management continues; entries resume on expiry or POST /api/traders/:id/resume.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "stop_until")
-			actionRecord.Success = false
-			actionRecord.Error = "stop_until: " + reason
-			return nil
-		}
-	}
-
-	// P3 (ledger-close 2026-08-19) — CONTRACT-ROLL gate for the continuous
-	// symbol: within ROLL_BLOCK_DAYS_BEFORE_EXPIRY of the ACK-resolved front
-	// contract's third-Friday expiry, NEW entries are refused (the dated-code
-	// T19 gate never fires on bare "MNQ"). Runs AFTER stop_until (a paused
-	// refusal must name the pause — E5) and fail-opens when unresolved. Closes
-	// and position management are NEVER blocked; existing positions may exit.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.entryBlockedByRoll(time.Now()); blocked {
-			at.logWarnf("📅 contract-roll: %s %s REFUSED — %s. Position management continues; the resolver rolls to the next quarterly.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "contract_roll_resolved")
-			actionRecord.Success = false
-			actionRecord.Error = "contract_roll: " + reason
-			return nil
-		}
-	}
-
-	// D1 — consecutive-loss halt: after N consecutive losing closed trades this CME
-	// session-day, block NEW entries until the next session. Closes (open-position
-	// management) are NEVER blocked. 0 = OFF.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, halted := at.consecutiveLossHalted(); halted {
-			at.logWarnf("🛑 consecutive-loss halt: %s entry REFUSED — %s. No new entries until the next CME session.", decision.Symbol, reason)
-			telemetry.IncGateBlock(at.id, "consecutive_loss")
-			// W6 — P0 halt alert, deduped to once per CME session-day.
-			at.emitAlert("P0", "halt", "halt:"+kernel.CMESessionDayKey(time.Now()),
-				"🛑 Consecutive-loss halt", reason)
-			actionRecord.Success = false
-			actionRecord.Error = "consecutive_loss_halt: " + reason
-			return nil
-		}
-	}
-
-	// P2.3 — LAST-ENTRY cutoff: block NEW entries after the day-trader last-entry
-	// time (default 13:00 CT = 14:00 ET). Gated on day_plan → dormant by default.
-	// Closes (open-position management) are NEVER blocked.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.entryBlockedByLastEntry(); blocked {
-			at.logWarnf("🕒 last-entry cutoff: %s %s REFUSED — %s. Entries reopen next session.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "last_entry")
-			actionRecord.Success = false
-			actionRecord.Error = "last_entry_cutoff: " + reason
-			return nil
-		}
-	}
-
-	// P3.1 — SESSION GATE: entries only inside an ENABLED session window (NY-only
-	// default → closes the overnight/interim window) and outside the no-trade
-	// sub-windows (first-5m, lunch). Gated on day_plan → dormant by default.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.sessionEntryBlocked(); blocked {
-			at.logWarnf("🗓️ session gate: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "session_gate")
-			actionRecord.Success = false
-			actionRecord.Error = "session_gate: " + reason
-			return nil
-		}
-	}
-
-	// W9 — PLAN-MODE gate: advisory (default) never gates; direction blocks entries
-	// against the plan bias; strict blocks entries with no matched scenario cited.
-	// Gated on day_plan → dormant by default.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if reason, blocked := at.planModeBlocked(decision); blocked {
-			at.logWarnf("📐 plan-mode: %s %s REFUSED — %s.", decision.Symbol, decision.Action, reason)
-			telemetry.IncGateBlock(at.id, "plan_mode")
-			actionRecord.Success = false
-			actionRecord.Error = "plan_mode: " + reason
-			return nil
-		}
-	}
-
-	// W9 — APPROVAL gate: when approval_required is ON, entries are HELD until the
-	// owner approves this CME session-day (POST /api/plan/approve). Default OFF =
-	// fully automatic. Closes are never held.
-	switch decision.Action {
-	case "open_long", "open_short":
-		if at.approvalRequired() && !at.approvalGranted(time.Now()) {
-			at.logWarnf("✋ approval required: %s %s HELD — awaiting owner approval for this session.", decision.Symbol, decision.Action)
-			telemetry.IncGateBlock(at.id, "approval_required")
-			at.emitAlert("P0", "approval", "approval:"+kernel.CMESessionDayKey(time.Now()),
-				"✋ Entry held — approval required", decision.Symbol+" "+decision.Action)
-			actionRecord.Success = false
-			actionRecord.Error = "approval_required"
-			return nil
-		}
-	}
-
-	// CLASS 48 — the ONE canonical entry gate, shared with the arm seam. Runs
-	// AFTER the legacy decision gates and BEFORE any order leaves: scenario
-	// direction, shadow map (0C), R:R at the LIVE execution price (fixes the
-	// snapshot-reference sub-floor fills of 587/589), min-SL ×ATR5m, and
-	// one-live-arm. Refusals are logged AND recorded per path: the refusal is
-	// stamped into actionRecord (→ decision_records.execution_log +
-	// risk_check_error) with a gate-block counter.
-	switch decision.Action {
-	case "open_long", "open_short":
-		live := 0.0
-		if md, merr := market.GetWithExchange(decision.Symbol, at.exchange); merr == nil && md != nil {
-			live = md.CurrentPrice
-		}
-		reason, refused := at.entryGateForDecision(decision, live)
-		recordResearchGate("decision", "", 0, decision.CitedScenario, reason, refused)
-		if refused {
-			entryGateDecisionTelemetry(at, actionRecord, reason)
+			actionRecord.Error = refusal
+			// W3 D13 — THE STRICT NUDGE. A decision refused ONLY for not being
+			// on the arm path, that cites a matched scenario whose doc arm is a
+			// market_in_zone arm, runs ONE armed pass for that scenario and the
+			// record carries the executor's verdict. The decision itself stays
+			// refused (Success false) — never a Path flip.
+			if v, ok := at.strictNudgeAt(decision, refusal, now); ok {
+				actionRecord.Error = refusal + " · 🚦 " + v
+			}
 			return nil
 		}
 	}
@@ -379,33 +233,34 @@ const (
 
 // ntHeldPosition returns the side ("long"/"short") NT8 currently holds for symbol,
 // or "" if flat / unreadable. Reads the NT8 positions snapshot via GetPositions.
-func (at *AutoTrader) ntHeldPosition(symbol string) string {
+func (at *AutoTrader) ntHeldPosition(symbol string) (string, error) {
 	positions, err := at.trader.GetPositions()
 	if err != nil {
-		// P0-cleanup — read error is NOT flat; say so (it changes the
-		// reconcile decision downstream).
-		at.logWarnf("⚠️ positions read failed — reconcile treats as flat, reason: %v", err)
+		// CTO 2026-09-25 addendum 2 — an unreadable book is UNKNOWN, never
+		// flat. Returning "" alone made reconcile read the error as "NT8
+		// flat → proceed" — the exact unknown-as-flat reading F4 exists to
+		// kill. Callers must refuse (or keep waiting) on the error.
+		at.logWarnf("⚠️ positions read failed — reconcile REFUSES as unknown (never flat), reason: %v", err)
 		telemetry.RecordError(at.id, "positions_read_failed", err.Error(), telemetry.CostNone)
-		return ""
+		return "", err
 	}
 	for _, pos := range positions {
 		if pos["symbol"] != symbol {
 			continue
 		}
+		// W-EXEC-TRUTH W0 (canon 28): a held position is any NON-ZERO amount —
+		// NT8 signs a SHORT negative, and the old `amt > 0` read every held
+		// short as flat, so an entry netted onto it. The side is read through
+		// the one canonicalizer (NT8 emits UPPERCASE; the earlier casing fix
+		// lowered it only on the long branch).
 		amt, _ := pos["positionAmt"].(float64)
-		if amt > 0 {
-			// Normalize casing: NT8 GetPositions/positionMap emits UPPERCASE
-			// "LONG"/"SHORT"; reconcileBeforeOpenNT compares held == "long", so an
-			// un-normalized "LONG" fell to the else branch and flattened the WRONG
-			// side (CloseShort on a long orphan) — the flatten never confirmed flat
-			// and the open was refused every cycle. Return lowercase to match.
-			if s, _ := pos["side"].(string); s != "" {
-				return strings.ToLower(s)
+		if amt != 0 {
+			if side := brokerPositionSide(pos); side != "" {
+				return side, nil
 			}
-			return "long"
 		}
 	}
-	return ""
+	return "", nil
 }
 
 // reconcileBeforeOpenNT (TRACK B): NinjaTrader-only defense-in-depth run before an
@@ -422,28 +277,56 @@ func (at *AutoTrader) ntHeldPosition(symbol string) string {
 // It does NOT cure a stale snapshot (the actual id=46 bypass) — that is Track A +
 // 0118ca77; this acts only on a snapshot that positively reports a held position.
 func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
+	_, err := at.reconcileBeforeOpenNTReport(symbol, intendedSide)
+	return err
+}
+
+// reconcileBeforeOpenNTReport is reconcileBeforeOpenNT that also reports
+// whether it SUBMITTED an orphan flatten (W1b FOLD-2 repair): true from the
+// moment CloseLong/CloseShort was called, whatever followed — so the chat door
+// never tells a refusal that came after a flatten as "nothing was sent".
+func (at *AutoTrader) reconcileBeforeOpenNTReport(symbol, intendedSide string) (flattenSent bool, err error) {
 	if at.exchange != "ninjatrader" {
-		return nil
+		return false, nil
+	}
+	// W117 F4 (CTO addendum 2) — an UNBOUND NT trader has no book to read and
+	// cannot flatten; reconcile would refuse with a misleading "positions
+	// unknown". Skip so the broker's own binding refusal names the cause (the
+	// entry still refuses at the broker — fail-closed either way).
+	if ntTCP, ok := at.trader.(*ntTrader.TCPTrader); ok && !ntTCP.IsBound() {
+		return false, nil
 	}
 	// Never flatten into a dead feed (Track A also gates upstream; be defensive).
 	if down, status := at.ninjaFeedDown(); down {
-		return fmt.Errorf("reconcile-before-open: NT8 feed not Connected (%s) — refusing open", status)
+		return false, fmt.Errorf("reconcile-before-open: NT8 feed not Connected (%s) — refusing open", status)
 	}
-	held := at.ntHeldPosition(symbol)
+	held, hErr := at.ntHeldPosition(symbol)
+	if hErr != nil {
+		return false, fmt.Errorf("reconcile-before-open: %w — refusing open (an unreadable book is not an empty book)", hErr)
+	}
 	if held == "" {
-		return nil // NT8 flat → proceed
+		return false, nil // NT8 flat → proceed
+	}
+	// W-EXEC-TRUTH W0 (c): a position a LEDGER row explains is another
+	// producer's (an armed fill, a Picture fill, one not yet materialized in
+	// trader_positions) — never an orphan. Flattening it destroyed that
+	// producer's trade and its bracket; the AI entry is refused instead, named.
+	if owner, owned := at.ledgerExplainsPosition(symbol, held, time.Now()); owned {
+		at.logWarnf("⛔ reconcile-before-open: NT8 holds a %s %s that the ledger explains (%s) — refusing the %s open; the position is NOT flattened.", held, symbol, owner, intendedSide)
+		return false, fmt.Errorf("%w: %s", errPositionOwned, owner)
 	}
 	at.logWarnf("🚨 reconcile-before-open: NT8 holds a %s %s before an intended %s open — flattening first (awaiting fill) to avoid compounding onto an orphan.", held, symbol, intendedSide)
 	// Timestamp BEFORE the flatten so we only accept a close that our flatten caused.
 	t0 := time.Now().UnixMilli()
 	var ferr error
+	flattenSent = true // the flatten is submitted below, whatever follows
 	if held == "long" {
 		_, ferr = at.trader.CloseLong(symbol, 0)
 	} else {
 		_, ferr = at.trader.CloseShort(symbol, 0)
 	}
 	if ferr != nil {
-		return fmt.Errorf("reconcile-before-open: flatten submit failed: %w", ferr)
+		return true, fmt.Errorf("reconcile-before-open: flatten submit failed: %w", ferr)
 	}
 	// AWAIT its own fill (NOT fire-and-forget — the trap 0118ca77 fixed). Prefer the
 	// FILL-CONFIRMED close FRAME (position_close), which arrives ~instantly for the
@@ -455,29 +338,114 @@ func (at *AutoTrader) reconcileBeforeOpenNT(symbol, intendedSide string) error {
 	for time.Now().Before(deadline) {
 		time.Sleep(reconcileFlattenPollInterval)
 		if down, _ := at.ninjaFeedDown(); down {
-			return fmt.Errorf("reconcile-before-open: feed dropped during flatten — refusing open")
+			return true, fmt.Errorf("reconcile-before-open: feed dropped during flatten — refusing open")
 		}
 		// Frame path (fast, account-correct): our flatten's close was fill-confirmed.
 		if ntTCP != nil && ntTCP.CloseConfirmedSince(symbol, held, t0) {
 			at.logInfof("✅ reconcile-before-open: %s flatten fill-confirmed via position_close frame — proceeding to open.", symbol)
-			return nil
+			return true, nil
 		}
 		// Snapshot fallback (covers a manual/external flatten with no close frame).
-		if at.ntHeldPosition(symbol) == "" {
+		// An UNKNOWN read here is NOT flat: keep waiting (the deadline
+		// refusal fires on timeout — never declare flat on an error).
+		if heldNow, hErr := at.ntHeldPosition(symbol); hErr == nil && heldNow == "" {
 			at.logInfof("✅ reconcile-before-open: %s flattened + confirmed flat (snapshot) — proceeding to open.", symbol)
-			return nil
+			return true, nil
 		}
 	}
-	return fmt.Errorf("reconcile-before-open: flatten not confirmed flat within %s — refusing open (never compound)", reconcileFlattenTimeout)
+	return true, fmt.Errorf("reconcile-before-open: flatten not confirmed flat within %s — refusing open (never compound)", reconcileFlattenTimeout)
 }
+
+// openEntryMarketRead is the open path's market read — market.GetWithExchange
+// in production. A package var only so a test can drive a non-CME venue's open
+// offline (that read is a network call); nothing reassigns it at run time.
+var openEntryMarketRead = market.GetWithExchange
+
+// manualOpen marks an open as the agent-chat door's (W1b FOLD-2): the entry
+// runs the AI decision's own execute path with the OWNER's quantity. The path
+// records whether a broker write was reached, so the door can tell a refusal
+// before any send from the broker's own failure (E9's typed errors).
+type manualOpen struct {
+	// Quantity is the owner's requested quantity (contracts on CME), sent as
+	// typed: the door already refused one that breaks the cap — never clamped.
+	Quantity float64
+	// brokerCalled is set immediately before the entry's first broker write
+	// (the CME bracket set, or the open itself).
+	brokerCalled bool
+	// flattenSent is set when reconcile-before-open SUBMITTED an orphan
+	// flatten before this entry (W1b FOLD-2 repair): a later refusal or
+	// failure of the entry is then never told as "nothing was sent".
+	flattenSent bool
+	// order is what the broker returned for the open.
+	order map[string]interface{}
+}
+
+// bracketCarryingEntrySender is a broker whose market entry carries ITS OWN
+// bracket into the send (W1b FOLD-3: *ntTrader.TCPTrader.OpenWithBracket) —
+// the shared (symbol, side) SL/TP maps learn it only when the entry may be on
+// the wire. Not part of the 19-method Trader interface.
+type bracketCarryingEntrySender interface {
+	OpenWithBracket(symbol, side string, quantity, stop, target float64) (map[string]interface{}, error)
+}
+
+var _ bracketCarryingEntrySender = (*ntTrader.TCPTrader)(nil)
 
 // executeOpenLongWithRecord executes open long position and records detailed information
 func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
+	return at.executeOpenLong(decision, actionRecord, nil)
+}
+
+// executeOpenLong is the long open's ONE execute path (W1b FOLD-2): an AI
+// decision (manual == nil) and an agent-chat entry (manual != nil) alike.
+func (at *AutoTrader) executeOpenLong(decision *kernel.Decision, actionRecord *store.DecisionAction, manual *manualOpen) error {
 	logger.Infof("  📈 Open long: %s", decision.Symbol)
 
 	// TRACK B — reconcile NT8 net before opening; flatten an orphan first or refuse.
-	if err := at.reconcileBeforeOpenNT(decision.Symbol, "long"); err != nil {
-		return err
+	flattened, err := at.reconcileBeforeOpenNTReport(decision.Symbol, "long")
+	if manual != nil {
+		manual.flattenSent = flattened // FOLD-2 repair: the door tells a flatten that went out
+	}
+	if err != nil {
+		return at.reconcileRefusal(err, actionRecord)
+	}
+	return at.openEntryWithRecord(decision, actionRecord, "long", manual)
+}
+
+// executeOpenShortWithRecord executes open short position and records detailed information
+func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
+	return at.executeOpenShort(decision, actionRecord, nil)
+}
+
+// executeOpenShort is the short open's ONE execute path (W1b FOLD-2): an AI
+// decision (manual == nil) and an agent-chat entry (manual != nil) alike.
+func (at *AutoTrader) executeOpenShort(decision *kernel.Decision, actionRecord *store.DecisionAction, manual *manualOpen) error {
+	logger.Infof("  📉 Open short: %s", decision.Symbol)
+
+	// TRACK B — reconcile NT8 net before opening; flatten an orphan first or refuse.
+	flattened, err := at.reconcileBeforeOpenNTReport(decision.Symbol, "short")
+	if manual != nil {
+		manual.flattenSent = flattened // FOLD-2 repair: the door tells a flatten that went out
+	}
+	if err != nil {
+		return at.reconcileRefusal(err, actionRecord)
+	}
+	return at.openEntryWithRecord(decision, actionRecord, "short", manual)
+}
+
+// openEntryWithRecord is the open after reconcile, one body for both sides
+// (W1b FOLD-2 — it was two copies): max positions, the same-side check,
+// sizing, the bracket, the send, and the order record.
+//
+// manual != nil is the agent-chat door: its quantity is the owner's (the AI's
+// notional sizing never re-sizes it), its position never takes the AI
+// decision's plan citation, a failed bracket is typed (CME: nothing sent;
+// other venues: *ManualEntryUnprotected), and it never writes the two
+// cycle-goroutine maps (entryTheses, positionFirstSeenTime) — the door runs
+// on the chat's goroutine, and those maps have no lock.
+func (at *AutoTrader) openEntryWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction, side string, manual *manualOpen) error {
+	upper, action, open := "LONG", "open_long", at.trader.OpenLong
+	if side == "short" {
+		upper, action, open = "SHORT", "open_short", at.trader.OpenShort
 	}
 
 	// ⚠️ Get current positions for multiple checks
@@ -493,74 +461,80 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 
 	// Check if there's already a position in the same symbol and direction
 	for _, pos := range positions {
-		if pos["symbol"] == decision.Symbol && pos["side"] == "long" {
-			return fmt.Errorf("❌ %s already has long position, close it first", decision.Symbol)
+		if pos["symbol"] == decision.Symbol && brokerPositionSide(pos) == side {
+			return fmt.Errorf("❌ %s already has %s position, close it first", decision.Symbol, side)
 		}
 	}
 
 	// Get current price
-	marketData, err := market.GetWithExchange(decision.Symbol, at.exchange)
+	marketData, err := openEntryMarketRead(decision.Symbol, at.exchange)
 	if err != nil {
 		return err
 	}
 
-	// Get balance (needed for multiple checks)
-	balance, err := at.trader.GetBalance()
-	if err != nil {
-		return fmt.Errorf("failed to get account balance: %w", err)
-	}
-	availableBalance := 0.0
-	if avail, ok := balance["availableBalance"].(float64); ok {
-		availableBalance = avail
-	}
-
-	// Get equity for position value ratio check
-	equity := 0.0
-	if eq, ok := balance["totalEquity"].(float64); ok && eq > 0 {
-		equity = eq
-	} else if eq, ok := balance["totalWalletBalance"].(float64); ok && eq > 0 {
-		equity = eq
-	} else {
-		equity = availableBalance // Fallback to available balance
-	}
-
-	// [CODE ENFORCED] Position Value Ratio Check: position_value <= equity × ratio
-	adjustedPositionSize, wasCapped := at.enforcePositionValueRatio(decision.PositionSizeUSD, equity, decision.Symbol)
-	if wasCapped {
-		decision.PositionSizeUSD = adjustedPositionSize
-	}
-
 	// Calculate order quantity.
 	var quantity float64
-	if market.IsCMEFuturesSymbol(decision.Symbol) {
-		// CME futures: size in contracts (notional / (price × point value)),
-		// clamped. Skip the crypto notional/leverage margin model — futures
-		// margin is per-contract, not notional/leverage.
-		quantity = futuresOrderQuantity(decision.Symbol, decision.PositionSizeUSD, marketData.CurrentPrice, at.resolveMaxContracts())
+	if manual != nil {
+		// The owner's quantity, as typed (the door judged it against the
+		// max-contracts cap and whole contracts before this path ran).
+		quantity = manual.Quantity
 	} else {
-		// ⚠️ Auto-adjust position size if insufficient margin (crypto)
-		// Formula: totalRequired = positionSize/leverage + positionSize*0.001 + positionSize/leverage*0.01
-		//        = positionSize * (1.01/leverage + 0.001)
-		marginFactor := 1.01/float64(decision.Leverage) + 0.001
-		maxAffordablePositionSize := availableBalance / marginFactor
-
-		actualPositionSize := decision.PositionSizeUSD
-		if actualPositionSize > maxAffordablePositionSize {
-			// Use 98% of max to leave buffer for price fluctuation
-			adjustedSize := maxAffordablePositionSize * 0.98
-			logger.Infof("  ⚠️ Position size %.2f exceeds max affordable %.2f, auto-reducing to %.2f",
-				actualPositionSize, maxAffordablePositionSize, adjustedSize)
-			actualPositionSize = adjustedSize
-			decision.PositionSizeUSD = actualPositionSize
+		// Get balance (needed for multiple checks)
+		balance, err := at.trader.GetBalance()
+		if err != nil {
+			return fmt.Errorf("failed to get account balance: %w", err)
+		}
+		availableBalance := 0.0
+		if avail, ok := balance["availableBalance"].(float64); ok {
+			availableBalance = avail
 		}
 
-		// [CODE ENFORCED] Minimum position size check
-		if err := at.enforceMinPositionSize(decision.PositionSizeUSD); err != nil {
-			return err
+		// Get equity for position value ratio check
+		equity := 0.0
+		if eq, ok := balance["totalEquity"].(float64); ok && eq > 0 {
+			equity = eq
+		} else if eq, ok := balance["totalWalletBalance"].(float64); ok && eq > 0 {
+			equity = eq
+		} else {
+			equity = availableBalance // Fallback to available balance
 		}
 
-		// Calculate quantity with adjusted position size
-		quantity = actualPositionSize / marketData.CurrentPrice
+		// [CODE ENFORCED] Position Value Ratio Check: position_value <= equity × ratio
+		adjustedPositionSize, wasCapped := at.enforcePositionValueRatio(decision.PositionSizeUSD, equity, decision.Symbol)
+		if wasCapped {
+			decision.PositionSizeUSD = adjustedPositionSize
+		}
+
+		if market.IsCMEFuturesSymbol(decision.Symbol) {
+			// CME futures: size in contracts (notional / (price × point value)),
+			// clamped. Skip the crypto notional/leverage margin model — futures
+			// margin is per-contract, not notional/leverage.
+			quantity = futuresOrderQuantity(decision.Symbol, decision.PositionSizeUSD, marketData.CurrentPrice, at.resolveMaxContracts())
+		} else {
+			// ⚠️ Auto-adjust position size if insufficient margin (crypto)
+			// Formula: totalRequired = positionSize/leverage + positionSize*0.001 + positionSize/leverage*0.01
+			//        = positionSize * (1.01/leverage + 0.001)
+			marginFactor := 1.01/float64(decision.Leverage) + 0.001
+			maxAffordablePositionSize := availableBalance / marginFactor
+
+			actualPositionSize := decision.PositionSizeUSD
+			if actualPositionSize > maxAffordablePositionSize {
+				// Use 98% of max to leave buffer for price fluctuation
+				adjustedSize := maxAffordablePositionSize * 0.98
+				logger.Infof("  ⚠️ Position size %.2f exceeds max affordable %.2f, auto-reducing to %.2f",
+					actualPositionSize, maxAffordablePositionSize, adjustedSize)
+				actualPositionSize = adjustedSize
+				decision.PositionSizeUSD = actualPositionSize
+			}
+
+			// [CODE ENFORCED] Minimum position size check
+			if err := at.enforceMinPositionSize(decision.PositionSizeUSD); err != nil {
+				return err
+			}
+
+			// Calculate quantity with adjusted position size
+			quantity = actualPositionSize / marketData.CurrentPrice
+		}
 	}
 	actionRecord.Quantity = quantity
 	actionRecord.Price = marketData.CurrentPrice
@@ -571,26 +545,63 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 		// Continue execution, doesn't affect trading
 	}
 
+	// W1b FOLD-3 — the NT8 broker carries the entry's OWN bracket into the
+	// send (OpenWithBracket): nothing is written to the shared (symbol, side)
+	// SL/TP maps before it, so a refused or provably-unsent entry never leaves
+	// its stop where MoveStopToBreakeven's widen ban reads the live one.
+	carrier, carries := at.trader.(bracketCarryingEntrySender)
+	carries = carries && market.IsCMEFuturesSymbol(decision.Symbol)
+
 	// CME futures (NT8) require SL/TP set BEFORE the entry — the AddOn places
 	// the market entry + protective OCO bracket atomically from the signal,
 	// which carries SL/TP. (Crypto sets them after the fill, below.) Without
 	// this, placeEntry errors "SetStopLoss and SetTakeProfit must be called
-	// before long".
-	if market.IsCMEFuturesSymbol(decision.Symbol) {
-		if err := at.trader.SetStopLoss(decision.Symbol, "LONG", quantity, decision.StopLoss); err != nil {
-			at.logErrorf("🚨 pre-entry bracket STOP set FAILED for LONG — %v (entry proceeds without the protective stop)", err)
+	// before long". A chat entry is never sent without its own bracket: a
+	// failed set sends nothing (W1b E9). A bracket-carrying broker needs no
+	// set here (FOLD-3, above).
+	//
+	// W1b FOLD-10 — the set and the open are ONE section per AutoTrader: the
+	// maps are keyed (symbol, side), and the chat door (HTTP goroutine) and
+	// the AI decision (cycle goroutine) both run this path; a foreign set
+	// between this entry's set and its send sent it on the other's bracket.
+	endSend := at.lockEntrySend()
+	defer endSend()
+	if market.IsCMEFuturesSymbol(decision.Symbol) && !carries {
+		if manual != nil {
+			manual.brokerCalled = true
+		}
+		if err := at.trader.SetStopLoss(decision.Symbol, upper, quantity, decision.StopLoss); err != nil {
+			if manual != nil {
+				return fmt.Errorf("manual entry NOT sent: its own bracket could not be set (set stop %.2f: %v) — never sent on another decision's bracket (fail-closed)", decision.StopLoss, err)
+			}
+			at.logErrorf("🚨 pre-entry bracket STOP set FAILED for %s — %v (entry proceeds without the protective stop)", upper, err)
 			telemetry.RecordError(at.id, "bracket_set_failed", "pre-entry SetStopLoss: "+err.Error(), telemetry.CostTradeLost)
 		}
-		if err := at.trader.SetTakeProfit(decision.Symbol, "LONG", quantity, decision.TakeProfit); err != nil {
-			at.logErrorf("🚨 pre-entry bracket TARGET set FAILED for LONG — %v (entry proceeds without the protective target)", err)
+		if err := at.trader.SetTakeProfit(decision.Symbol, upper, quantity, decision.TakeProfit); err != nil {
+			if manual != nil {
+				return fmt.Errorf("manual entry NOT sent: its own bracket could not be set (set target %.2f: %v) — never sent on another decision's bracket (fail-closed)", decision.TakeProfit, err)
+			}
+			at.logErrorf("🚨 pre-entry bracket TARGET set FAILED for %s — %v (entry proceeds without the protective target)", upper, err)
 			telemetry.RecordError(at.id, "bracket_set_failed", "pre-entry SetTakeProfit: "+err.Error(), telemetry.CostTradeLost)
 		}
 	}
 
 	// Open position
-	order, err := at.trader.OpenLong(decision.Symbol, quantity, decision.Leverage)
+	if manual != nil {
+		manual.brokerCalled = true
+	}
+	var order map[string]interface{}
+	if carries {
+		order, err = carrier.OpenWithBracket(decision.Symbol, side, quantity, decision.StopLoss, decision.TakeProfit)
+	} else {
+		order, err = open(decision.Symbol, quantity, decision.Leverage)
+	}
+	endSend() // FOLD-10: the send has returned; the confirmation poll runs outside the section
 	if err != nil {
 		return err
+	}
+	if manual != nil {
+		manual.order = order
 	}
 
 	// Record order ID
@@ -601,161 +612,44 @@ func (at *AutoTrader) executeOpenLongWithRecord(decision *kernel.Decision, actio
 	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
 
 	// Record order to database and poll for confirmation
-	at.captureEntryThesis(decision, "LONG", marketData.CurrentPrice) // Phase 3: the watcher's anchor
-	at.recordAndConfirmOrder(order, decision.Symbol, "open_long", quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence)
+	if manual == nil {
+		at.captureEntryThesis(decision, upper, marketData.CurrentPrice) // Phase 3: the watcher's anchor
+	}
+	var chat *chatOpenBracket // W1b FOLD-2 repair: the chat's own bracket → its excursion row
+	if manual != nil {
+		chat = &chatOpenBracket{stop: decision.StopLoss, target: decision.TakeProfit}
+	}
+	at.recordAndConfirmOrderAs(order, decision.Symbol, action, quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence, chat)
 
 	// Record position opening time
-	posKey := decision.Symbol + "_long"
-	at.positionFirstSeenTime[posKey] = time.Now().UnixMilli()
+	if manual == nil {
+		posKey := decision.Symbol + "_" + side
+		at.positionFirstSeenTime[posKey] = time.Now().UnixMilli()
+	}
 
-	// Set stop loss and take profit
-	if err := at.trader.SetStopLoss(decision.Symbol, "LONG", quantity, decision.StopLoss); err != nil {
+	// Set stop loss and take profit — inside the entry-send section too
+	// (FOLD-10): on a map-keyed broker this write would otherwise land between
+	// ANOTHER entry's set and its send.
+	endBracket := at.lockEntrySend()
+	defer endBracket()
+	var bracketErr error
+	if err := at.trader.SetStopLoss(decision.Symbol, upper, quantity, decision.StopLoss); err != nil {
 		logger.Infof("  ⚠ Failed to set stop loss: %v", err)
+		bracketErr = fmt.Errorf("set stop %.2f: %w", decision.StopLoss, err)
 	}
-	if err := at.trader.SetTakeProfit(decision.Symbol, "LONG", quantity, decision.TakeProfit); err != nil {
+	if err := at.trader.SetTakeProfit(decision.Symbol, upper, quantity, decision.TakeProfit); err != nil {
 		logger.Infof("  ⚠ Failed to set take profit: %v", err)
-	}
-
-	return nil
-}
-
-// executeOpenShortWithRecord executes open short position and records detailed information
-func (at *AutoTrader) executeOpenShortWithRecord(decision *kernel.Decision, actionRecord *store.DecisionAction) error {
-	logger.Infof("  📉 Open short: %s", decision.Symbol)
-
-	// TRACK B — reconcile NT8 net before opening; flatten an orphan first or refuse.
-	if err := at.reconcileBeforeOpenNT(decision.Symbol, "short"); err != nil {
-		return err
-	}
-
-	// ⚠️ Get current positions for multiple checks
-	positions, err := at.trader.GetPositions()
-	if err != nil {
-		return fmt.Errorf("failed to get positions: %w", err)
-	}
-
-	// [CODE ENFORCED] Check max positions limit
-	if err := at.enforceMaxPositions(len(positions)); err != nil {
-		return err
-	}
-
-	// Check if there's already a position in the same symbol and direction
-	for _, pos := range positions {
-		if pos["symbol"] == decision.Symbol && pos["side"] == "short" {
-			return fmt.Errorf("❌ %s already has short position, close it first", decision.Symbol)
+		if bracketErr == nil {
+			bracketErr = fmt.Errorf("set target %.2f: %w", decision.TakeProfit, err)
 		}
 	}
-
-	// Get current price
-	marketData, err := market.GetWithExchange(decision.Symbol, at.exchange)
-	if err != nil {
-		return err
-	}
-
-	// Get balance (needed for multiple checks)
-	balance, err := at.trader.GetBalance()
-	if err != nil {
-		return fmt.Errorf("failed to get account balance: %w", err)
-	}
-	availableBalance := 0.0
-	if avail, ok := balance["availableBalance"].(float64); ok {
-		availableBalance = avail
-	}
-
-	// Get equity for position value ratio check
-	equity := 0.0
-	if eq, ok := balance["totalEquity"].(float64); ok && eq > 0 {
-		equity = eq
-	} else if eq, ok := balance["totalWalletBalance"].(float64); ok && eq > 0 {
-		equity = eq
-	} else {
-		equity = availableBalance // Fallback to available balance
-	}
-
-	// [CODE ENFORCED] Position Value Ratio Check: position_value <= equity × ratio
-	adjustedPositionSize, wasCapped := at.enforcePositionValueRatio(decision.PositionSizeUSD, equity, decision.Symbol)
-	if wasCapped {
-		decision.PositionSizeUSD = adjustedPositionSize
-	}
-
-	// Calculate order quantity.
-	var quantity float64
-	if market.IsCMEFuturesSymbol(decision.Symbol) {
-		// CME futures: size in contracts (notional / (price × point value)),
-		// clamped. Skip the crypto notional/leverage margin model — futures
-		// margin is per-contract, not notional/leverage.
-		quantity = futuresOrderQuantity(decision.Symbol, decision.PositionSizeUSD, marketData.CurrentPrice, at.resolveMaxContracts())
-	} else {
-		// ⚠️ Auto-adjust position size if insufficient margin (crypto)
-		// Formula: totalRequired = positionSize/leverage + positionSize*0.001 + positionSize/leverage*0.01
-		//        = positionSize * (1.01/leverage + 0.001)
-		marginFactor := 1.01/float64(decision.Leverage) + 0.001
-		maxAffordablePositionSize := availableBalance / marginFactor
-
-		actualPositionSize := decision.PositionSizeUSD
-		if actualPositionSize > maxAffordablePositionSize {
-			// Use 98% of max to leave buffer for price fluctuation
-			adjustedSize := maxAffordablePositionSize * 0.98
-			logger.Infof("  ⚠️ Position size %.2f exceeds max affordable %.2f, auto-reducing to %.2f",
-				actualPositionSize, maxAffordablePositionSize, adjustedSize)
-			actualPositionSize = adjustedSize
-			decision.PositionSizeUSD = actualPositionSize
-		}
-
-		// [CODE ENFORCED] Minimum position size check
-		if err := at.enforceMinPositionSize(decision.PositionSizeUSD); err != nil {
-			return err
-		}
-
-		// Calculate quantity with adjusted position size
-		quantity = actualPositionSize / marketData.CurrentPrice
-	}
-	actionRecord.Quantity = quantity
-	actionRecord.Price = marketData.CurrentPrice
-
-	// Set margin mode
-	if err := at.trader.SetMarginMode(decision.Symbol, at.config.IsCrossMargin); err != nil {
-		logger.Infof("  ⚠️ Failed to set margin mode: %v", err)
-		// Continue execution, doesn't affect trading
-	}
-
-	// CME futures (NT8) require SL/TP set BEFORE the entry — the AddOn places
-	// the market entry + protective OCO bracket atomically from the signal,
-	// which carries SL/TP. (Crypto sets them after the fill, below.) Without
-	// this, placeEntry errors "SetStopLoss and SetTakeProfit must be called
-	// before short".
-	if market.IsCMEFuturesSymbol(decision.Symbol) {
-		_ = at.trader.SetStopLoss(decision.Symbol, "SHORT", quantity, decision.StopLoss)
-		_ = at.trader.SetTakeProfit(decision.Symbol, "SHORT", quantity, decision.TakeProfit)
-	}
-
-	// Open position
-	order, err := at.trader.OpenShort(decision.Symbol, quantity, decision.Leverage)
-	if err != nil {
-		return err
-	}
-
-	// Record order ID
-	if orderID, ok := order["orderId"].(int64); ok {
-		actionRecord.OrderID = orderID
-	}
-
-	logger.Infof("  ✓ Position opened successfully, order ID: %v, quantity: %.4f", order["orderId"], quantity)
-
-	// Record order to database and poll for confirmation
-	at.captureEntryThesis(decision, "SHORT", marketData.CurrentPrice) // Phase 3: the watcher's anchor
-	at.recordAndConfirmOrder(order, decision.Symbol, "open_short", quantity, marketData.CurrentPrice, decision.Leverage, 0, decision.Confidence)
-
-	// Record position opening time
-	posKey := decision.Symbol + "_short"
-	at.positionFirstSeenTime[posKey] = time.Now().UnixMilli()
-
-	// Set stop loss and take profit
-	if err := at.trader.SetStopLoss(decision.Symbol, "SHORT", quantity, decision.StopLoss); err != nil {
-		logger.Infof("  ⚠ Failed to set stop loss: %v", err)
-	}
-	if err := at.trader.SetTakeProfit(decision.Symbol, "SHORT", quantity, decision.TakeProfit); err != nil {
-		logger.Infof("  ⚠ Failed to set take profit: %v", err)
+	endBracket()
+	// A chat entry on a venue that opens first and sets after (not CME: its
+	// bracket rode the signal) is a LIVE position with no bracket if the set
+	// failed — told as OPENED and UNPROTECTED, never as a failure.
+	if manual != nil && bracketErr != nil && !market.IsCMEFuturesSymbol(decision.Symbol) {
+		at.logErrorf("🚨 manual entry %s %s OPENED but its own bracket failed to set — %v (position unprotected)", decision.Symbol, upper, bracketErr)
+		return &ManualEntryUnprotected{Symbol: decision.Symbol, Side: upper, Order: order, Err: bracketErr}
 	}
 
 	return nil
@@ -793,7 +687,7 @@ func (at *AutoTrader) executeCloseLongWithRecord(decision *kernel.Decision, acti
 		positions, err := at.trader.GetPositions()
 		if err == nil {
 			for _, pos := range positions {
-				if pos["symbol"] == decision.Symbol && pos["side"] == "long" {
+				if pos["symbol"] == decision.Symbol && brokerPositionSide(pos) == "long" {
 					if ep, ok := pos["entryPrice"].(float64); ok {
 						entryPrice = ep
 					}
@@ -857,7 +751,7 @@ func (at *AutoTrader) executeCloseShortWithRecord(decision *kernel.Decision, act
 		positions, err := at.trader.GetPositions()
 		if err == nil {
 			for _, pos := range positions {
-				if pos["symbol"] == decision.Symbol && pos["side"] == "short" {
+				if pos["symbol"] == decision.Symbol && brokerPositionSide(pos) == "short" {
 					if ep, ok := pos["entryPrice"].(float64); ok {
 						entryPrice = ep
 					}

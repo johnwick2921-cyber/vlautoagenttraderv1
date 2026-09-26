@@ -104,6 +104,66 @@ describe('EditSheet', () => {
     expect(patch[0].path).toBe('/levels/2')
   })
 
+  it('edit mode sends the VIEWED revision with the overlay', async () => {
+    render(
+      <EditSheet
+        open
+        traderId="t1"
+        symbol="MNQ"
+        language="en"
+        level={fact({ price: 30246.5, label: '1h-LH' })}
+        levelIndex={2}
+        planRevision={{
+          planId: '2026-09-25:NY:t1',
+          planVersion: 3,
+          overlayVersion: 2,
+        }}
+        onClose={() => {}}
+        onSaved={() => {}}
+      />
+    )
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() => expect(postOverlay).toHaveBeenCalled())
+    const revision = postOverlay.mock.calls[0][4]
+    expect(revision).toEqual({
+      expected_plan_id: '2026-09-25:NY:t1',
+      expected_plan_version: 3,
+      expected_overlay_version: 2,
+    })
+  })
+
+  it('a 409 conflict surfaces inline and keeps the sheet open', async () => {
+    postOverlay.mockResolvedValueOnce({
+      ok: false,
+      error: 'plan changed; refresh and review your edit',
+    })
+    const onSaved = vi.fn()
+    const onClose = vi.fn()
+    render(
+      <EditSheet
+        open
+        traderId="t1"
+        symbol="MNQ"
+        language="en"
+        level={fact({ price: 30246.5, label: '1h-LH' })}
+        levelIndex={2}
+        planRevision={{ planId: 'p', planVersion: 1, overlayVersion: 0 }}
+        onClose={onClose}
+        onSaved={onSaved}
+      />
+    )
+    fireEvent.click(screen.getByText('Save'))
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    const msgs = (
+      toast.error as unknown as { mock: { calls: unknown[][] } }
+    ).mock.calls.map((c) => String(c[1]?.description ?? ''))
+    expect(
+      msgs.some((d) => d.includes('plan changed; refresh and review your edit'))
+    ).toBe(true)
+    expect(onSaved).not.toHaveBeenCalled()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
   it('add mode posts a sticky owner level', async () => {
     render(
       <EditSheet

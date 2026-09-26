@@ -105,3 +105,22 @@ func TestReentry_ZeroATRFallsBackToTimer(t *testing.T) {
 		t.Fatal("timer must unlock even with atr15<=0")
 	}
 }
+
+// W-EXEC-TRUTH W0 (Q5) — ReentryPeek reports the same verdict as
+// ReentryBlocked but NEVER clears the record: a peek that sees an unlock (a
+// price a full ATR15 away) must leave the cooldown in place for the kernel's
+// own read at a price that is still near the stop.
+func TestReentryPeekNeverClearsTheRecord(t *testing.T) {
+	const tr, sym = "peek-trader", "MNQ"
+	NoteStopLossExit(tr, sym, "long", 29000, 1_000_000)
+	t.Cleanup(func() { clearReentry(reentryKey{tr, sym, "long"}) })
+	if _, _, blocked := ReentryPeek(tr, sym, "long", 15, 10, 29002, 1_060_000); !blocked {
+		t.Fatal("inside the cooldown, near the stop: the peek must report blocked")
+	}
+	if _, _, blocked := ReentryPeek(tr, sym, "long", 15, 10, 29050, 1_060_000); blocked {
+		t.Fatal("a full ATR15 away: the peek reports the unlock")
+	}
+	if _, _, blocked := ReentryBlocked(tr, sym, "long", 15, 10, 29002, 1_060_000); !blocked {
+		t.Fatal("the peek's unlock must NOT have cleared the record — the kernel's read near the stop still blocks")
+	}
+}

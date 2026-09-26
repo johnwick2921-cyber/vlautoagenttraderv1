@@ -74,7 +74,7 @@ func lastClosedBar(bars []market.Kline, nowMs int64) (market.Kline, bool) {
 // plan row's birth time. `row` may be nil (no candidates). `cfg` may be nil
 // (all ON defaults). It never mutates state — maybeWakePlannerOnLevelEvents
 // applies the throttle, dedupe and budget.
-func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, count int) []market.Kline, symbol string, row *store.PlanDB, now time.Time) []levelWakeCandidate {
+func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, count int) []market.Kline, symbol string, row *store.PlanDB, resolved *kernel.PlanDoc, now time.Time) []levelWakeCandidate {
 	if row == nil || fetch == nil {
 		return nil
 	}
@@ -181,8 +181,16 @@ func collectLevelWakeCandidates(cfg *store.DayPlanConfig, fetch func(tf string, 
 	// (Supply/OB(bear)/iFVG(bear)) above. Fresh only (violating close within
 	// 2× the wake interval) so a stale invalidation never fires on restart.
 	if levelEvents {
+		// WAVE 1a-plan P2 — the seated-level invalidation reads the ONE fold:
+		// `resolved` is the folded final doc from the production caller; the
+		// nil fallback is the legacy base parse for non-store callers.
 		var doc kernel.PlanDoc
-		if json.Unmarshal([]byte(row.Doc), &doc) == nil {
+		if resolved != nil {
+			doc = *resolved
+		} else if row != nil {
+			_ = json.Unmarshal([]byte(row.Doc), &doc)
+		}
+		{
 			close, ok := lastClosedBar(barsByTF["15m"], nowMs)
 			if ok {
 				noise := 2 * tick
@@ -272,7 +280,13 @@ func (at *AutoTrader) maybeWakePlannerOnLevelEventsAt(now time.Time, session, tr
 	fetch := func(tf string, count int) []market.Kline {
 		return market.FuturesBarsProvider(symbol, tf, count)
 	}
-	cands := collectLevelWakeCandidates(cfg, fetch, symbol, row, now)
+	// WAVE 1a-plan P2 — the wake candidates read the ONE fold (the same
+	// resolution the executor uses); the base on an unreadable row.
+	var resolved *kernel.PlanDoc
+	if d, ok := resolveActivePlanDoc(at.store, row); ok {
+		resolved = &d
+	}
+	cands := collectLevelWakeCandidates(cfg, fetch, symbol, row, resolved, now)
 	if len(cands) == 0 {
 		return
 	}
@@ -386,7 +400,8 @@ func (at *AutoTrader) maybeWakePlannerOnLevelEventsAt(now time.Time, session, tr
 	// never stall the decision loop (live bug: a 2×300s retry chain blocked 14
 	// minutes of cycles and then no-traded a healthy session).
 	go func() {
-		_ = at.runPlannerReadWithTriggerClaimedCtx(session, tradeDate, "level_event", "level event: "+ev.desc, priorPlanLevelLines(row), false)
+		// P15 — the seamed wake hands its OWN instant to the read.
+		_ = at.runPlannerReadWithTriggerClaimedCtx(now, session, tradeDate, "level_event", "level event: "+ev.desc, priorPlanLevelLines(at, row), false)
 		if fresh, fErr := at.store.Plan().GetLatestPlanForTraderSession(tradeDate, session, at.id); fErr == nil && fresh != nil && fresh.Version != row.Version {
 			at.carryOwnerEditsInto(fresh.PlanID, row.Version, fresh.Version)
 		}

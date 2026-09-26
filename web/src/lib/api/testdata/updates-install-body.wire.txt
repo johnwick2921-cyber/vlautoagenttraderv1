@@ -1,0 +1,1 @@
+{"release_id":"v2026.09.24-1","job_id":"0123456789abcdef0123456789abcdef","expires_at":1800000300,"hmac":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}

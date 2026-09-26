@@ -131,6 +131,15 @@ func acceptanceTFMinutes(rule string) int {
 	}
 }
 
+// acceptanceRuleShape (W-EXEC-TRUTH W2, 2026-09-23) is the confirm resolver's
+// read of an acceptance rule: the completed closes it needs and the bucket
+// length they are counted on. It counts NO bars — it only names the rule's
+// shape, composed here where the raw counters live (H10 guard), so the
+// resolver, the evaluator and the validator can never disagree about "2x5m".
+func acceptanceRuleShape(rule string) (need, minutes int) {
+	return acceptanceNeed(rule), acceptanceTFMinutes(rule)
+}
+
 // AcceptanceIntervalMinutes returns the bar length (in minutes) the rule's N
 // consecutive closes are meant to be counted on: 5 for "2x5m" (and the default),
 // 15 for "15m-close". This is the single source of truth for the acceptance
@@ -498,11 +507,6 @@ func AcceptanceRunEver(bars []market.Kline, rule string, ref float64, above bool
 // publication policy. Its final bucket can be forming; only the shared
 // predicate decides whether a consumer may count it.
 func confirmationBuckets(bars []market.Kline, sinceMs, nowMs int64, minutes int) []market.Kline {
-	var available []market.Kline
-	for _, b := range bars {
-		if b.OpenTime >= sinceMs && b.OpenTime < nowMs {
-			available = append(available, b)
-		}
-	}
-	return aggregateToMinutes(available, minutes)
+	// W2 (d): the canonical tape — ordered, one bar per minute, [since, now).
+	return aggregateToMinutes(confirmationTape(bars, sinceMs, nowMs), minutes)
 }

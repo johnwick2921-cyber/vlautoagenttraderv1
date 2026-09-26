@@ -1,5 +1,5 @@
 {
-  "auth/auth.go": "5f03d4ee50086221d92db7461b8255bfbec7b5c0d2f694f700a572d0bd0238ea",
+  "auth/auth.go": "548b1fc7baeda784d999f0bcf6e3c2d84ae49f97ef1367e1d7b9c68b30d2a75b",
   "deploy/nofx-claim.sh": "d110a108cb7d1d6f3e92a48a1cca0ef8ab59ec4df320ec519898ead08e7bc236",
   "deploy/nofx-db-backup.sh": "2f762c1f41fcef933583e570a73acaab6ef4751add3ef6a577939e1d43e99757",
   "deploy/nofx-lock.sh": "46fcbf76478c43943fb7607bd2929fe3629371ae5b8571ec9da8e1fa6e96c6ab",
@@ -9,10 +9,10 @@
   "deploy/systemd-user/nofx-backup.timer": "8dcd448bd0d302f51bd808d2b20fc19989883cd38c0352a5c93a450bbc229dc4",
   "deploy/systemd-user/nofx-clock-guard.service": "d4311e270a9fdefeda15bdfc2214e2b69161217dc33229110d64d3e91677095a",
   "deploy/systemd-user/nofx-clock-guard.timer": "a0c9c3c03d9546a76a2f7edba8ad3abb2e769b6893d8a80cea439f0da50bcfc9",
-  "go.mod": "a9f0a7ba1bfec59210f2000c623199edbab74b91c848dc538e123f1db00a35a3",
+  "go.mod": "d60ef734365523c2fe45a432da51f625bc0f7f33c933ff141e96ea48dcb17030",
   "logger/logger.go": "2e799bce8b1718cbecc4974b9c1c8746bf10525872a2b641338547e1e5965998",
-  "ninjascript/VLTraderTCPClient.cs": "50c95b1fdd6cf6b8a202252bb70c84363cd2eaa7ce34a50f5c1e338c5e7d17b3",
-  "provider/ninjatrader/tcp_framing.go": "33e38ec44a142a79604429de54c12a0763adfffb4b15e477643f9d130cf7b9cf",
-  "provider/ninjatrader/tcp_server.go": "12464d7a06d382a6854d73695cc78b976a746e6fa23ab3fbca111a7171dcfb50",
+  "ninjascript/VLTraderTCPClient.cs": "2ce9019fc5bbaff18332f2e813bdb2209317c909b6094b3bdecd2e7154e5b7eb",
+  "provider/ninjatrader/tcp_framing.go": "545f65f636c91b10a2ca3643a488b069a3e57647d77bc5314725b8e26dd8a1df",
+  "provider/ninjatrader/tcp_server.go": "4fe5e4e32a97a415cea4cad7dac18800280dec1ac69a70dece1d96dd89fa5aab",
   "web/src/lib/agentChatStorage.ts": "de7f24ff74a913a4e9d4dad2563712a562239c4f9d206b1099bb1477896f6fb0"
 }

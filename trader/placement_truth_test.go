@@ -32,6 +32,7 @@ func TestFourPlacementPathsWaitForEntryReceipt(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			waitAddonRegistered(t, s) // CTO M7: the producer must not race the accept
 			defer conn.Close()
 			frames := make(chan ntwire.SignalPayload, 4)
 			go func() {
@@ -56,10 +57,14 @@ func TestFourPlacementPathsWaitForEntryReceipt(t *testing.T) {
 				time.Sleep(time.Millisecond)
 			}
 			broker := nttrader.NewTCPTrader(s, "MNQ", "Sim101")
+			// W117 F4 — the AddOn emits a positions frame on connect; seed the
+			// known-flat book so the entry path reads empty, not unreadable.
+			s.SeedPositionsForTest("Sim101", []ntwire.OpenPosition{})
 			broker.StartCloseSync(at.id, "fixture", "ninjatrader", st)
 			at.trader = broker
 			at.config.NinjaTraderSymbol = "MNQ"
-			s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, time.Now())
+			// class 110: pinned to RTH — the admission chain reads THIS clock.
+			s.OrderSnapshots().PutAt(ntwire.OrderSnapshotPayload{Account: "Sim101", Orders: []ntwire.NT8Order{}}, rthInstant())
 			ledger := st.ArmedOrders()
 			var row store.ArmedOrderDB
 			switch path {
@@ -76,7 +81,9 @@ func TestFourPlacementPathsWaitForEntryReceipt(t *testing.T) {
 				if path == "stop_entry" {
 					price = 29599
 				}
-				at.runArmedPlacement([]market.Kline{{Close: price}}, time.Now().Add(-time.Hour).UnixMilli())
+				// the authoring pass this direct call stands in for admitted S1 (G1)
+				at.runArmedPlacementAt([]market.Kline{{Close: price}}, rthInstant().Add(-time.Hour).UnixMilli(), rthInstant(),
+					armAdmission{armAdmitKey("placement", "S1", 0): true})
 			}
 			if err != nil {
 				t.Fatal(err)
@@ -132,7 +139,7 @@ func TestStopPlacementFastRejectBeforeSendReturns(t *testing.T) {
 		at.onArmedOrderUpdate(ntwire.OrderUpdatePayload{SignalID: "fast-reject", OrderName: "fast-reject", State: "rejected", Reason: "stale signal age=715.3s (max 60s)"}, ledger)
 	}}
 	d := decideStopEntry("long", row.EntryPx, testOffset(), testTick, 29599)
-	at.placeOneStopEntry(pl, ledger, row, d, 29599, time.Now(), freeSlot())
+	at.placeOneStopEntry(pl, ledger, row, d, 29599, rthInstant(), freeSlot())
 	rows, err := ledger.ListForPlan("fast")
 	if err != nil {
 		t.Fatal(err)
@@ -143,7 +150,7 @@ func TestStopPlacementFastRejectBeforeSendReturns(t *testing.T) {
 }
 
 func TestPlacementBookRequiresLiveEntryAndSilenceKeepsSlot(t *testing.T) {
-	at, st, _, _ := shadowWireHarness(t, store.StrategyConfig{})
+	at, st, _, _ := shadowWireHarnessAt(t, store.StrategyConfig{}, rthInstant())
 	ledger := st.ArmedOrders()
 	row := &store.ArmedOrderDB{TraderID: at.id, PlanID: "book-proof", Scenario: "S1", State: store.StateArmed}
 	if err := ledger.UpsertArm(row); err != nil {
@@ -153,7 +160,7 @@ func TestPlacementBookRequiresLiveEntryAndSilenceKeepsSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 	broker := at.armedTrader()
-	now := time.Now()
+	now := rthInstant()
 	if err := ledger.DB().Model(row).UpdateColumn("updated_at", now.Add(-time.Hour)).Error; err != nil {
 		t.Fatal(err)
 	}

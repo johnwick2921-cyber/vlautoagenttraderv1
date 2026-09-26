@@ -42,8 +42,9 @@ func class33Seed(t *testing.T, at *AutoTrader, scenario, signal, bootID, state s
 }
 
 // E4 — the 00:16 CT shape: two WORKING arms placed by a process that is now
-// dead. Both are cancelled at the broker AND in the ledger, with the
-// boot_sweep reason, and the recorded counter moves.
+// dead. Both receive cancel REQUESTS (rows become cancel_pending with the
+// boot_sweep reason); the recorded counter counts the sends. Settlement is the
+// settlement pass's job (B2), pinned separately.
 func TestClass33BootSweepCancelsPreBootArms(t *testing.T) {
 	at := class33Trader(t)
 	class33Seed(t, at, "S1", "sig-S1", "999-1", "working")
@@ -60,15 +61,13 @@ func TestClass33BootSweepCancelsPreBootArms(t *testing.T) {
 	if len(cancelled) != 2 || cancelled[0] != "sig-S1" || cancelled[1] != "sig-S3" {
 		t.Fatalf("cancel frames wrong: %v", cancelled)
 	}
-	rows, _ := at.store.ArmedOrders().ListNonTerminal(at.id)
-	if len(rows) != 0 {
-		t.Fatalf("swept rows must be terminal, %d still non-terminal", len(rows))
+	pending, _ := at.store.ArmedOrders().ListCancelPending(at.id)
+	if len(pending) != 2 {
+		t.Fatalf("swept rows must be cancel_pending (B2), got %d pending", len(pending))
 	}
-	var all []store.ArmedOrderDB
-	at.store.ArmedOrders().DB().Find(&all)
-	for _, r := range all {
-		if r.State != "cancelled" || r.StateReason != BootSweepReason {
-			t.Fatalf("row %s: state=%q reason=%q", r.Scenario, r.State, r.StateReason)
+	for _, r := range pending {
+		if r.StateReason != BootSweepReason || r.CancelRequestedAtMs <= 0 {
+			t.Fatalf("row %s: reason=%q requested_at=%d", r.Scenario, r.StateReason, r.CancelRequestedAtMs)
 		}
 	}
 	if got, _ := store.BootSweptCount(at.store); got != 2 {
@@ -102,7 +101,7 @@ func TestClass33BootSweepNoPreBootRows(t *testing.T) {
 		t.Fatalf("this process's own arm must survive, got %d", len(rows))
 	}
 	// F12: leg4's source is a RESOLVED argument now, not a literal in the line.
-	if line := BootSweepBootLine(0, 0, "ledger (no snapshot yet)"); !strings.Contains(line, "cancelled 0 pre-boot arm(s)") {
+	if line := BootSweepBootLine(0, 0, "ledger (no snapshot yet)"); !strings.Contains(line, "requested cancel on 0 pre-boot arm(s)") {
 		t.Fatalf("boot line: %s", line)
 	}
 }

@@ -67,6 +67,11 @@ func main() {
 	if len(os.Args) > 1 {
 		cfg.DBPath = os.Args[1]
 	}
+	// W-ONE-BUTTON M2 (MUST-2): resolve the installation data dir ONCE, with
+	// the resolver the maintenance-hold CLI uses, BEFORE traders load (they
+	// auto-start inside LoadTradersFromStore) so every entry gate reads the
+	// hold file the CLI and the updater write.
+	trader.SetMaintenanceDataDir(resolveMaintenanceDataDir(cfg.DBPath))
 	// Ensure data directory exists (for SQLite)
 	if cfg.DBType == "sqlite" {
 		if dir := filepath.Dir(cfg.DBPath); dir != "." {
@@ -194,12 +199,15 @@ func main() {
 	}
 
 	// WebSocket market monitor is NO LONGER USED
-	// All K-line data now comes from CoinAnk API instead of Binance WebSocket cache
+	// Crypto K-lines come from CoinAnk; the CME futures path reads the NT8
+	// BarCache only (see the 📊 market data boot line after trader load).
 	// Commented out to reduce unnecessary connections:
 	// go market.NewWSMonitor(150).Start(nil)
 	// logger.Info("📊 WebSocket market monitor started")
 	// time.Sleep(500 * time.Millisecond)
-	logger.Info("📊 Using CoinAnk API for all market data (WebSocket cache disabled)")
+	// W-NO-BINANCE A: the "📊 Using CoinAnk API for all market data" literal that
+	// stood here was false on the futures path (audit H20). The READ line
+	// (trader.MarketDataBootLine) prints after the traders load, below.
 
 	// Create TraderManager
 	traderManager := manager.NewTraderManager()
@@ -211,6 +219,23 @@ func main() {
 		logger.Warnf("⚠️ acceptance-rule migration FAILED: %v (resolver self-heals at read; fix the DB row)", merr)
 	} else if n1+n2 > 0 {
 		logger.Infof("🩹 acceptance-rule migration: strategy-level=%d session=%d (2x5m → 5m_close)", n1, n2)
+	}
+	// W1 SETTINGS TRUTH (2026-09-23) — consecutive_loss_halt and
+	// day_plan.replan_cap are presence-aware now (absent inherits, an explicit
+	// 0 is 0). One line per stored strategy: what is stored, what the previous
+	// binary enforced, what this one enforces. READ-ONLY — nothing is
+	// rewritten; a row whose effective value changes without a Studio save
+	// confirming it is REFUSED at trader load (the ⛔ line names it).
+	if rep, rerr := st.Strategy().SettingsTruthBootReport(os.Getenv); rerr != nil {
+		logger.Warnf("🩺 settings truth: report unavailable (%v) — the per-trader load check still applies", rerr)
+	} else {
+		for _, line := range rep.Lines() {
+			if strings.Contains(line, "CHANGED") {
+				logger.Warnf("%s", line)
+			} else {
+				logger.Infof("%s", line)
+			}
+		}
 	}
 
 	// Load all traders from database to memory (may auto-start traders with IsRunning=true)
@@ -296,6 +321,11 @@ func main() {
 	} else {
 		logger.Infof("%s", integrity.Line())
 	}
+	// W-ONE-BUTTON M2 — the installation maintenance hold, every field READ.
+	// The AddOn has usually not connected yet, so addon_ack prints n/a here.
+	logger.Infof("%s", trader.MaintenanceBootLine(traderManager.GetAllTraders()))
+	// W-NO-BINANCE A — the market-data sources, READ (replaces the old literal).
+	logger.Infof("%s", trader.MarketDataBootLine(traderManager.GetAllTraders()))
 	logger.Infof("%s", researchsnapshot.CurrentBootLine())
 	// UI SERVING PATH (owner ruling 2026-09-03). Printed right after the boot
 	// integrity line because it answers the same question about a different
@@ -309,7 +339,11 @@ func main() {
 		}
 		// Judged by REV since 2026-09-16 (the served bundle's GUIDE_BUILT_REV vs
 		// integrity.Revision); the build time rides along as a secondary field.
-		uiLine := api.UIServingBootLine(api.UIDistDir, binAt, integrity.Revision)
+		// 🗂 is its OWN line: appending the resolved dir to 🖥 would change that
+		// line's bytes and break every golden reading it, while an absent knob
+		// is still a fact worth stating (n/a, never an empty gap).
+		logger.Infof("🗂 %s", api.ReleaseDirBootLine())
+		uiLine := api.UIServingBootLine(api.ResolvedDistDir(), binAt, integrity.Revision)
 		if strings.Contains(uiLine, "STALE") || strings.Contains(uiLine, "served-by=none") {
 			logger.Warnf("🖥 %s", uiLine)
 		} else {
@@ -364,20 +398,7 @@ func main() {
 				logger.Errorf("🧮 e8 backfill ABORTED — backup failed: %v", bErr)
 			} else {
 				res, rErr := st.AbConfirm().BackfillShortRows(func(planID string, version int, scenario string) (string, bool) {
-					row, e := st.Plan().GetPlan(planID, version)
-					if e != nil || row == nil {
-						return "", false
-					}
-					var doc kernel.PlanDoc
-					if json.Unmarshal([]byte(row.Doc), &doc) != nil {
-						return "", false
-					}
-					for _, sc := range doc.Scenarios {
-						if sc.ID == scenario {
-							return sc.Direction, sc.Direction != ""
-						}
-					}
-					return "", false
+					return e8ScenarioDirection(st, planID, version, scenario)
 				})
 				if rErr != nil {
 					logger.Errorf("🧮 e8 backfill failed: %v", rErr)
@@ -730,4 +751,30 @@ func totalUnrecomputable(r store.BackfillResult) int {
 		n += v
 	}
 	return n
+}
+
+// e8ScenarioDirection resolves the scenario's direction for the E8 short-row
+// backfill. It reads the BASE doc's Direction directly — no fold, no overlay:
+// the recompute sees the scenario as authored. That is exactly what makes it a
+// HISTORICAL reader (CTO 03:31, 6th order): the E8 backfill re-scores PAST
+// short rows, so an overlay applied after the trade closed must not change
+// that trade's attribution — the BASE doc governs, and overlays are
+// deliberately invisible (the same rule as trade_excursion_backfill.go:148 and
+// expectancy/aggregate). (Extracted from the inline closure at main.go:402 so
+// a main-package test can pin it at the production call site.)
+func e8ScenarioDirection(st *store.Store, planID string, version int, scenario string) (string, bool) {
+	row, e := st.Plan().GetPlan(planID, version)
+	if e != nil || row == nil {
+		return "", false
+	}
+	var doc kernel.PlanDoc
+	if json.Unmarshal([]byte(row.Doc), &doc) != nil {
+		return "", false
+	}
+	for _, sc := range doc.Scenarios {
+		if sc.ID == scenario {
+			return sc.Direction, sc.Direction != ""
+		}
+	}
+	return "", false
 }

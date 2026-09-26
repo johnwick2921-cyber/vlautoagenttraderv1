@@ -15,6 +15,7 @@ interface ChartTabsProps {
   updateKey?: number // Force update key
   exchangeId?: string // Exchange ID
   isFutures?: boolean // NT futures: USD instead of USDT (Plan 4.3.1)
+  selectedAccount?: string // F31 — dashboard account scope for the order snapshot
 }
 
 type ChartTab = 'equity' | 'kline'
@@ -146,6 +147,7 @@ export function ChartTabs({
   updateKey,
   exchangeId,
   isFutures = false,
+  selectedAccount,
 }: ChartTabsProps) {
   const { language } = useLanguage()
   const [activeTab, setActiveTab] = useState<ChartTab>('equity')
@@ -515,6 +517,7 @@ export function ChartTabs({
                 symbol={chartSymbol}
                 interval={interval}
                 traderID={traderId}
+                selectedAccount={selectedAccount}
                 // Dynamic auto-sizing via ResizeObserver
                 exchange={currentExchange}
                 onSymbolChange={setChartSymbol}

@@ -11,6 +11,7 @@
 package ninjatrader
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -62,6 +63,12 @@ type TCPTrader struct {
 	// ring to reconstruct the real exit price instead of fabricating exit=entry.
 	// Guarded by mu. Reconcile goroutine reads via takeNettingExit.
 	recentFills []recentFill
+	// recentRejects is the bounded ring of broker rejections by signal
+	// (W-EXEC-TRUTH W0 (d), CLASS 160). Guarded by mu.
+	recentRejects []recentReject
+	// latchSource is the W0 (b) entry latch's evidence (nil = UNWIRED = allow;
+	// production wiring is wireNT8EntryLatch, pinned). Guarded by mu.
+	latchSource *EntryLatchSource
 
 	// closedAt records the wall-clock (ms) of the most recent FILL-CONFIRMED close
 	// (position_close frame) per "SYMBOL|SIDE" for THIS trader's bound account. The
@@ -107,6 +114,11 @@ type TCPTrader struct {
 	// reconcileOnce guards StartPositionReconcile (mirrors closeSyncOnce) so a
 	// re-entrant AutoTrader.Run never spawns a second reconcile goroutine.
 	reconcileOnce sync.Once
+	// W117 F5 — observer lifetime ends only after same-account replacement
+	// drains closes. Ordinary trading Stop and socket disconnect do not retire
+	// these observers.
+	observerDone     chan struct{} // initialized under mu; closed by the close consumer
+	reconcileStopped chan struct{} // initialized under mu; closed by the reconcile worker
 
 	// flatSince tracks, per open-position row id, the first time the reconcile loop
 	// observed it NT8-flat-but-DB-open (Unix ms). It implements the flat-grace
@@ -133,6 +145,138 @@ type TCPTrader struct {
 	// Used to notify the AutoTrader when the first account_balance frame arrives.
 	// Set by transport.go after creating the trader.
 	parentAutoTrader interface{} // *AutoTrader (avoid circular import)
+
+	// entryPermit (W-ONE-BUTTON M2 site 4) — the installation-wide maintenance
+	// permit, taken by the FOUR entry functions only, after the SIM rail and
+	// before the B3 guard, and held across the wire write. nil = allow (a
+	// standalone TCPTrader, every pre-existing fixture); the AutoTrader wires
+	// it at construction (NewAutoTrader) — pinned by a wiring test.
+	entryPermit func() (func(), bool)
+}
+
+// ErrMaintenanceHold marks an entry refused because the installation is under
+// maintenance (W-ONE-BUTTON). Callers classify it with errors.Is — like
+// ntwire.ErrAddonBuildTooOld, it is a policy refusal, not a broker failure.
+var ErrMaintenanceHold = errors.New("maintenance hold: new entries are refused while the installation is being updated")
+
+// IsMaintenanceHold reports whether err is a maintenance-hold refusal: the
+// permit refused the entry (ErrMaintenanceHold) or the queue dropped it
+// because the hold landed before the flush (ntwire.ErrEntryHeld). Either way
+// the entry did NOT reach NT8.
+func IsMaintenanceHold(err error) bool {
+	return errors.Is(err, ErrMaintenanceHold) || errors.Is(err, ntwire.ErrEntryHeld)
+}
+
+// SetEntryHoldCheck forwards the maintenance predicate to this trader's TCP
+// server, whose queue drops held entries on flush (gap U2).
+// IsBound reports whether the trader has a bound NT8 sub-account. An unbound
+// trader has no book to read and cannot flatten: reconcile-before-open skips it
+// so the broker's own binding refusal names the cause (still fail-closed).
+func (t *TCPTrader) IsBound() bool {
+	return strings.TrimSpace(t.boundAccount) != ""
+}
+
+func (t *TCPTrader) SetEntryHoldCheck(fn func() bool) {
+	if t.server != nil {
+		t.server.SetEntryHoldCheck(fn)
+	}
+}
+
+// SetMaintenanceSource forwards the installation hold to this trader's TCP
+// server, which pushes it to the AddOn as the maintenance frame (M2 site 7).
+func (t *TCPTrader) SetMaintenanceSource(fn func() (bool, string)) {
+	if t.server != nil {
+		t.server.SetMaintenanceSource(fn)
+	}
+}
+
+// MaintenanceView is what the installation gate reads from this trader's
+// wire: the current connection's record, whether it is still the connected
+// client, and the queued-signal depth. ok=false without a server.
+func (t *TCPTrader) MaintenanceView() (rec ntwire.ConnectionRecord, connected bool, queued int, ok bool) {
+	if t.server == nil {
+		return ntwire.ConnectionRecord{}, false, 0, false
+	}
+	rec, connected = t.server.ConnectionRecord()
+	return rec, connected, t.server.PendingSignalCount(), true
+}
+
+// SetDroppedEntrySink registers, under owner (the AutoTrader id), this trader's handler for ITS OWN queued
+// entries the maintenance hold dropped (W-ONE-BUTTON M2, M-2). Ownership is
+// exact: every entry function registers its signal in t.pending before the
+// send. A never-attempted drop provably never reached NT8, so the trader
+// forgets it (no fill can come, and a stale lastEntrySignalID must not claim a
+// later fill); an ATTEMPTED one may have reached NT8, so it stays tracked.
+func (t *TCPTrader) SetDroppedEntrySink(owner string, fn func(ntwire.DroppedEntry)) {
+	if t.server == nil {
+		return
+	}
+	// Keyed by the OWNING TRADER's id (M2.1): a reloaded trader replaces its
+	// old sink rather than leaving it registered for the life of the process.
+	key := "trader:" + strings.TrimSpace(owner)
+	if strings.TrimSpace(owner) == "" {
+		key = fmt.Sprintf("tcptrader:%p", t) // no owner (standalone): per instance
+	}
+	t.server.AddDroppedEntrySink(key, func(d ntwire.DroppedEntry) {
+		if !t.HasPendingEntry(d.SignalID) {
+			return
+		}
+		if !d.Attempted {
+			t.forgetUnsentEntry(d.SignalID)
+		}
+		if fn != nil {
+			fn(d)
+		}
+	})
+}
+
+// HasPendingEntry reports whether this trader still tracks signalID as an
+// entry awaiting its fill.
+func (t *TCPTrader) HasPendingEntry(signalID string) bool {
+	t.pendingMu.Lock()
+	defer t.pendingMu.Unlock()
+	_, ok := t.pending[signalID]
+	return ok
+}
+
+func (t *TCPTrader) forgetUnsentEntry(signalID string) {
+	t.pendingMu.Lock()
+	delete(t.pending, signalID)
+	delete(t.pendingAt, signalID)
+	t.pendingMu.Unlock()
+	t.mu.Lock()
+	if t.lastEntrySignalID == signalID {
+		t.lastEntrySignalID = ""
+	}
+	t.mu.Unlock()
+}
+
+// SetEntryPermit installs the maintenance permit. Only entry sends take it:
+// PlaceProtectiveStop, CancelOrder, ModifyBracket, MoveStopToBreakeven and the
+// close paths never do (CTO correction C1).
+func (t *TCPTrader) SetEntryPermit(fn func() (func(), bool)) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.entryPermit = fn
+}
+
+// acquireEntryPermit returns the release to defer across the send, or an
+// ErrMaintenanceHold refusal. Unwired = allow.
+func (t *TCPTrader) acquireEntryPermit(what string) (func(), error) {
+	t.mu.Lock()
+	fn := t.entryPermit
+	t.mu.Unlock()
+	if fn == nil {
+		return func() {}, nil
+	}
+	release, ok := fn()
+	if !ok {
+		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s: %w", what, ErrMaintenanceHold)
+	}
+	if release == nil {
+		release = func() {}
+	}
+	return release, nil
 }
 
 // Compile-time interface guard (ADR-007 pattern — mirrors CSV Trader).
@@ -177,82 +321,95 @@ func NewTCPTrader(server *ntwire.TCPServer, symbol string, account ...string) *T
 		// channel CLOSES when a reloaded trader re-subscribes, ending this
 		// goroutine (fixes the pre-P5.4 reload leak).
 		for fill := range fills {
-			// P5.2 split-brain defense: a symbol-tagged fill for a DIFFERENT
-			// instrument must never be attributed to this trader. Empty symbol
-			// = legacy (pre-P5.2) AddOn → assumed primary (back-compat).
-			if fill.Symbol != "" && !equalSymbol(fill.Symbol, symbol) {
-				logger.Warnf("⚠️ ninjatrader/tcp: REJECTED fill for symbol %q (this trader trades %q) — signal_id=%s (split-brain defense)",
-					fill.Symbol, symbol, fill.SignalID)
-				continue
-			}
-			// H3 account guard (defense in depth on top of the (symbol,account)
-			// routing): with two same-symbol traders, NEVER cache another account's
-			// fill as this trader's position. Empty account = legacy AddOn → trust
-			// the symbol routing.
-			if fill.Account != "" && t.boundAccount != "" && !strings.EqualFold(fill.Account, t.boundAccount) {
-				// A4 (G4) — a fill on an account this trader is NOT bound to reached it:
-				// the (symbol,account) routing should make this impossible, so a fire is
-				// a real cross-account event. Reject the fill AND FREEZE the trader (new
-				// entries blocked until the owner clears; open-position management goes on).
-				t.mu.Lock()
-				tid := t.traderID
-				t.mu.Unlock()
-				if discipline.FreezeTrader(tid, "post-fill account mismatch: fill account "+fill.Account+" ≠ bound "+t.boundAccount, time.Now().UnixMilli()) {
-					logger.Errorf("🚨 A4 FREEZE: fill for account %q reached trader bound to %q — signal_id=%s (post-fill account guard). Trader FROZEN.",
-						fill.Account, t.boundAccount, fill.SignalID)
-				}
-				continue
-			}
-			// C8 (2026-08-25) — a REJECTED entry must never become the
-			// fill-derived position (the phantom-position class). NT8 truth: NO
-			// position exists. Drop the pending marker, clear any cached fill for
-			// that signal, and alarm.
-			if strings.EqualFold(fill.Status, "rejected") {
-				t.pendingMu.Lock()
-				if fill.SignalID != "" {
-					delete(t.pending, fill.SignalID)
-					delete(t.pendingAt, fill.SignalID)
-				}
-				t.pendingMu.Unlock()
-				t.mu.Lock()
-				if t.lastFill.SignalID == fill.SignalID {
-					t.lastFill = ntwire.FillPayload{}
-					t.hasFill = false
-				}
-				if t.lastEntrySignalID == fill.SignalID {
-					t.lastEntrySignalID = ""
-				}
-				tid := t.traderID
-				t.mu.Unlock()
-				t.notifyReject(fill.SignalID, fill.Reason)
-				reason := fill.Reason
-				if strings.TrimSpace(reason) == "" {
-					reason = store.PlacementReasonUnavailable
-				}
-				logger.Errorf("🚨 C8 ENTRY REJECTED by NT8: %s %s qty=%d signal_id=%s reason=%q — no position exists; pending entry dropped (no phantom).",
-					fill.Symbol, fill.Side, fill.Quantity, fill.SignalID, reason)
-				telemetry.RecordError(tid, "nt_entry_rejected", fmt.Sprintf("%s %s rejected (signal %s)", fill.Symbol, fill.Side, fill.SignalID), telemetry.CostNone)
-				continue
-			}
-			// A CONFIRMED fill resolves its pending entry marker.
-			t.pendingMu.Lock()
-			if fill.SignalID != "" {
-				delete(t.pending, fill.SignalID)
-				delete(t.pendingAt, fill.SignalID)
-			}
-			t.pendingMu.Unlock()
-			t.mu.Lock()
-			t.lastFill = fill
-			t.hasFill = true
-			// Class 27 (2026-08-31): retain confirmed fills in the netting ring
-			// so reconcile can reconstruct a netting-close's real exit price.
-			if strings.EqualFold(fill.Status, "filled") || strings.EqualFold(fill.Status, "partial") {
-				t.recordRecentFill(fill)
-			}
-			t.mu.Unlock()
+			t.handleFillInbound(fill)
 		}
 	}()
 	return t
+}
+
+// handleFillInbound applies one inbound fill to this trader's durable
+// state. It is THE single fill funnel: both the legacy advisory
+// consumer and the W117 F2 ordered worker call it. A frame already
+// owned by the ordered worker is a no-op here (no double-application).
+func (t *TCPTrader) handleFillInbound(fill ntwire.FillPayload) {
+	if fill.OrderedOwned {
+		return
+	}
+	// P5.2 split-brain defense: a symbol-tagged fill for a DIFFERENT
+	// instrument must never be attributed to this trader. Empty symbol
+	// = legacy (pre-P5.2) AddOn → assumed primary (back-compat).
+	if fill.Symbol != "" && !equalSymbol(fill.Symbol, t.symbol) {
+		logger.Warnf("⚠️ ninjatrader/tcp: REJECTED fill for symbol %q (this trader trades %q) — signal_id=%s (split-brain defense)",
+			fill.Symbol, t.symbol, fill.SignalID)
+		return
+	}
+	// H3 account guard (defense in depth on top of the (symbol,account)
+	// routing): with two same-symbol traders, NEVER cache another account's
+	// fill as this trader's position. Empty account = legacy AddOn → trust
+	// the symbol routing.
+	if fill.Account != "" && t.boundAccount != "" && !strings.EqualFold(fill.Account, t.boundAccount) {
+		// A4 (G4) — a fill on an account this trader is NOT bound to reached it:
+		// the (symbol,account) routing should make this impossible, so a fire is
+		// a real cross-account event. Reject the fill AND FREEZE the trader (new
+		// entries blocked until the owner clears; open-position management goes on).
+		t.mu.Lock()
+		tid := t.traderID
+		t.mu.Unlock()
+		if discipline.FreezeTrader(tid, "post-fill account mismatch: fill account "+fill.Account+" ≠ bound "+t.boundAccount, time.Now().UnixMilli()) {
+			logger.Errorf("🚨 A4 FREEZE: fill for account %q reached trader bound to %q — signal_id=%s (post-fill account guard). Trader FROZEN.",
+				fill.Account, t.boundAccount, fill.SignalID)
+		}
+		return
+	}
+	// C8 (2026-08-25) — a REJECTED entry must never become the
+	// fill-derived position (the phantom-position class). NT8 truth: NO
+	// position exists. Drop the pending marker, clear any cached fill for
+	// that signal, and alarm.
+	if strings.EqualFold(fill.Status, "rejected") {
+		t.pendingMu.Lock()
+		if fill.SignalID != "" {
+			delete(t.pending, fill.SignalID)
+			delete(t.pendingAt, fill.SignalID)
+		}
+		t.pendingMu.Unlock()
+		t.mu.Lock()
+		if t.lastFill.SignalID == fill.SignalID {
+			t.lastFill = ntwire.FillPayload{}
+			t.hasFill = false
+		}
+		if t.lastEntrySignalID == fill.SignalID {
+			t.lastEntrySignalID = ""
+		}
+		t.recordRecentReject(fill.SignalID, fill.Reason)
+		tid := t.traderID
+		t.mu.Unlock()
+		t.notifyReject(fill.SignalID, fill.Reason)
+		reason := fill.Reason
+		if strings.TrimSpace(reason) == "" {
+			reason = store.PlacementReasonUnavailable
+		}
+		logger.Errorf("🚨 C8 ENTRY REJECTED by NT8: %s %s qty=%d signal_id=%s reason=%q — no position exists; pending entry dropped (no phantom).",
+			fill.Symbol, fill.Side, fill.Quantity, fill.SignalID, reason)
+		telemetry.RecordError(tid, "nt_entry_rejected", fmt.Sprintf("%s %s rejected (signal %s)", fill.Symbol, fill.Side, fill.SignalID), telemetry.CostNone)
+		return
+	}
+	// A CONFIRMED fill resolves its pending entry marker.
+	t.pendingMu.Lock()
+	if fill.SignalID != "" {
+		delete(t.pending, fill.SignalID)
+		delete(t.pendingAt, fill.SignalID)
+	}
+	t.pendingMu.Unlock()
+	t.mu.Lock()
+	t.lastFill = fill
+	t.hasFill = true
+	// Class 27 (2026-08-31): retain confirmed fills in the netting ring
+	// so reconcile can reconstruct a netting-close's real exit price.
+	if strings.EqualFold(fill.Status, "filled") || strings.EqualFold(fill.Status, "partial") {
+		t.recordRecentFill(fill)
+	}
+	t.mu.Unlock()
+
 }
 
 // --- Trader interface methods (19 total) ---
@@ -357,7 +514,31 @@ func (t *TCPTrader) isAccountTradeable(name string) bool {
 	return true
 }
 
+// entryBracket is a market entry's OWN stop and target, carried INTO the send
+// (W1b FOLD-3) instead of through the shared (symbol, side) maps.
+type entryBracket struct{ stop, target float64 }
+
+// OpenWithBracket places a market entry that carries its OWN bracket (W1b
+// FOLD-3): the same send as OpenLong/OpenShort (every rail, the one rounding),
+// except the stop and target ride in as arguments, and the shared (symbol,
+// side) SL/TP maps — which MoveStopToBreakeven's widen ban reads as the live
+// stop — learn them ONLY once the entry may be on the wire (sendAttempted, the
+// rule B3 and the latch record by). A refusal before the send (bound account,
+// SIM, permit, latch, B3, the bracket itself) and the hold's provably-unsent
+// drop leave the maps byte-identical. An ambiguous send failure keeps the
+// bracket (fail-closed: the entry may be live carrying exactly that stop).
+// Not a Trader interface method; the NT8 open path reaches it by assertion.
+func (t *TCPTrader) OpenWithBracket(symbol, side string, quantity, stop, target float64) (map[string]interface{}, error) {
+	return t.placeEntryWith(symbol, side, quantity, &entryBracket{stop: stop, target: target})
+}
+
+// placeEntry is the legacy market entry: its bracket is whatever
+// SetStopLoss/SetTakeProfit last wrote to the maps.
 func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[string]interface{}, error) {
+	return t.placeEntryWith(symbol, side, quantity, nil)
+}
+
+func (t *TCPTrader) placeEntryWith(symbol, side string, quantity float64, own *entryBracket) (map[string]interface{}, error) {
 	// SAFETY RAIL (Stage-2 Phase-1, defense-in-depth): never SEND an entry for an
 	// account that isn't tradeable (SIM + allow-listed). The C# AddOn enforces this
 	// again right before submit; this refuses in Go before the frame is even sent.
@@ -373,26 +554,33 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	if !t.isAccountTradeable(tradeAcct) {
 		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
 	}
+	// W-ONE-BUTTON M2 site 4 — maintenance permit, before B3 (a refusal must
+	// not consume the dedupe slot) and before any pending/lastEntrySignalID
+	// write; held until SendSignal returns.
+	releasePermit, err := t.acquireEntryPermit(side + " entry on " + symbol)
+	if err != nil {
+		return nil, err
+	}
+	defer releasePermit()
+	// W-EXEC-TRUTH W0 (b) — the ONE entry latch: after the permit, BEFORE B3
+	// (a latch refusal never consumes the dedupe slot), held across the
+	// ledger stamp and the send.
+	latchDone, lerr := t.acquireEntryLatch("market entry " + side + " on " + symbol)
+	if lerr != nil {
+		return nil, lerr
+	}
+	latchSent := false
+	defer func() { latchDone(latchSent) }()
 
 	// B3 — dupe guard + rate limiter at the order-submission chokepoint: a
 	// replayed / double-fired entry (same account|side|symbol|qty within a bar) is
 	// DROPPED, and an order runaway trips the per-minute breaker.
-	if t.guard != nil {
-		key := fmt.Sprintf("%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
-		if reason, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
-			gate := "b3_order_dedup"
-			if strings.Contains(reason, "breaker") {
-				gate = "b3_rate_breaker"
-				logger.Warnf("🚨 B3 %s", reason)
-			} else {
-				logger.Warnf("⛔ B3 %s", reason)
-			}
-			// B6: B3 fires at the shared submission chokepoint (bound to an account,
-			// not a trader), so it tallies under the process-wide "" trader bucket.
-			telemetry.IncGateBlock("", gate)
-			return nil, fmt.Errorf("ninjatrader/tcp: entry not admitted — %s", reason)
-		}
+	b3Done, reason, ok := t.b3Reserve(fmt.Sprintf("%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity))
+	if !ok {
+		return nil, fmt.Errorf("ninjatrader/tcp: entry not admitted — %s", reason)
 	}
+	b3Sent := false // W1b E12(b): the slot is recorded ONLY by an attempted send
+	defer func() { b3Done(b3Sent) }()
 
 	// Expiry warning — defense in depth (mirrors CSV Trader).
 	if days := databento.DaysUntilExpiry(symbol, time.Now()); days >= 0 && days <= 5 {
@@ -404,6 +592,9 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	t.mu.Lock()
 	sl := t.stopLoss[keyFor(symbol, upperSide)]
 	tp := t.takePrft[keyFor(symbol, upperSide)]
+	if own != nil { // W1b FOLD-3: the entry's own bracket, never the maps'
+		sl, tp = own.stop, own.target
+	}
 	tid := t.traderID // A2 (G1) — captured under lock (set-once at StartCloseSync)
 	t.mu.Unlock()
 	if sl == 0 || tp == 0 {
@@ -415,10 +606,14 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	// wire is for the AddOn's logging + protective bracket reference.
 	entryRef := (sl + tp) / 2.0
 
+	// W1b E12(a) — WireBracket: entry/target nearest tick, the stop AWAY from
+	// the entry (never inside the floor the gate approved). The gate judges
+	// the SAME function's output. An unknown side refuses the send.
 	tick := InstrumentTickSize(t.symbol)
-	entry := RoundToTick(entryRef, tick)
-	sl = RoundToTick(sl, tick)
-	tp = RoundToTick(tp, tick)
+	entry, sl, tp, rerr := WireBracket(side, entryRef, sl, tp, tick)
+	if rerr != nil {
+		return nil, fmt.Errorf("ninjatrader/tcp: refusing %s entry on %s: %w", side, symbol, rerr)
+	}
 
 	signalID := uuid.NewString()
 	payload := ntwire.SignalPayload{
@@ -454,7 +649,18 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 	t.lastEntrySignalID = signalID
 	t.mu.Unlock()
 
-	if err := t.server.SendSignal(payload); err != nil {
+	serr := t.server.SendSignal(payload)
+	latchSent = sendAttempted(serr)
+	b3Sent = latchSent
+	if own != nil && latchSent {
+		// W1b FOLD-3 — the maps learn the bracket only now: the entry may be on
+		// the wire carrying it (the AUTHORED values, as SetStopLoss stored them).
+		t.mu.Lock()
+		t.stopLoss[keyFor(symbol, upperSide)] = own.stop
+		t.takePrft[keyFor(symbol, upperSide)] = own.target
+		t.mu.Unlock()
+	}
+	if err := serr; err != nil {
 		return nil, fmt.Errorf("ninjatrader/tcp: send signal: %w", err)
 	}
 	return map[string]interface{}{
@@ -464,72 +670,6 @@ func (t *TCPTrader) placeEntry(symbol, side string, quantity float64) (map[strin
 		"quantity":  quantity,
 		"signal_id": signalID,
 	}, nil
-}
-
-// MarketEntryWithProtection (W-PICTURE-HTF, 2026-09-20) places a MARKET entry
-// with an explicit protective bracket — the two-picture mode's wire call. It
-// carries the same safety rails as placeEntry (bound account + SIM + B3
-// guard + identity assertion) but takes the bracket prices and the beforeSend
-// persistence callback as arguments instead of reading the AI-set stop maps.
-// The entry price on the wire is the SL/TP midpoint reference (market orders
-// fill at NT8's price); the AddOn defers SL/TP to SubmitBracketOnEntryFill,
-// identical to every other entry path. On the CONCRETE type only — the
-// 19-method trader/types.Trader interface is untouched.
-func (t *TCPTrader) MarketEntryWithProtection(side string, quantity float64, sl, tp float64, beforeSend ...func(string) error) (string, error) {
-	tradeAcct := t.boundAccount
-	if tradeAcct == "" {
-		return "", fmt.Errorf("ninjatrader/tcp: refusing picture %s entry on %s — trader has no bound account", side, t.symbol)
-	}
-	if !t.isAccountTradeable(tradeAcct) {
-		return "", fmt.Errorf("ninjatrader/tcp: refusing picture %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
-	}
-	if t.guard != nil {
-		key := fmt.Sprintf("picture|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), t.symbol, quantity)
-		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
-			return "", fmt.Errorf("ninjatrader/tcp: picture entry not admitted — B3 dupe/rate guard")
-		}
-	}
-	if sl <= 0 || tp <= 0 {
-		return "", fmt.Errorf("ninjatrader/tcp: refusing picture %s entry — protective bracket incomplete (sl=%.2f tp=%.2f)", side, sl, tp)
-	}
-	tick := InstrumentTickSize(t.symbol)
-	entry := RoundToTick((sl+tp)/2.0, tick)
-	sl = RoundToTick(sl, tick)
-	tp = RoundToTick(tp, tick)
-	tid := t.traderID
-	signalID := uuid.NewString()
-	payload := ntwire.SignalPayload{
-		Symbol:     t.symbol,
-		Account:    t.boundAccount,
-		TraderID:   tid,
-		Side:       side,
-		Quantity:   int(quantity),
-		Entry:      entry,
-		StopLoss:   sl,
-		TakeProfit: tp,
-		SignalID:   signalID,
-		Timestamp:  time.Now().UTC().Truncate(time.Millisecond).Format(time.RFC3339Nano),
-	}
-	if err := assertBoundAccount("picture-entry", t.symbol, payload.Account, t.boundAccount); err != nil {
-		logger.Errorf("🚨 %v — REFUSING to submit picture entry", err)
-		return "", err
-	}
-	for _, register := range beforeSend {
-		if err := register(signalID); err != nil {
-			return "", fmt.Errorf("ninjatrader/tcp: register picture placement: %w", err)
-		}
-	}
-	t.pendingMu.Lock()
-	t.pending[signalID] = upperSideStr(side)
-	t.pendingAt[signalID] = time.Now().UTC().UnixMilli()
-	t.pendingMu.Unlock()
-	t.mu.Lock()
-	t.lastEntrySignalID = signalID
-	t.mu.Unlock()
-	if err := t.server.SendSignal(payload); err != nil {
-		return "", fmt.Errorf("ninjatrader/tcp: send picture signal: %w", err)
-	}
-	return signalID, nil
 }
 
 // PlaceLimitEntry (PHASE 2 armed orders) places a RESTING limit entry with its
@@ -544,16 +684,33 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 	if !t.isAccountTradeable(tradeAcct) {
 		return "", fmt.Errorf("ninjatrader/tcp: refusing armed %s entry — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
 	}
-	if t.guard != nil {
-		key := fmt.Sprintf("armed|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
-		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
-			return "", fmt.Errorf("ninjatrader/tcp: armed entry not admitted — %s", "B3 dupe/rate guard")
-		}
+	// W-ONE-BUTTON M2 site 4 — maintenance permit, before B3 and before
+	// beforeSend (ledger.BeginPlacement); held across SendSignal.
+	releasePermit, err := t.acquireEntryPermit("armed " + side + " limit entry on " + symbol)
+	if err != nil {
+		return "", err
 	}
+	defer releasePermit()
+	// W-EXEC-TRUTH W0 (b) — the ONE entry latch: after the permit, BEFORE B3
+	// (a latch refusal never consumes the dedupe slot), held across the
+	// ledger stamp and the send.
+	latchDone, lerr := t.acquireEntryLatch("armed limit " + side + " on " + symbol)
+	if lerr != nil {
+		return "", lerr
+	}
+	latchSent := false
+	defer func() { latchDone(latchSent) }()
+	b3Done, reason, ok := t.b3Reserve(fmt.Sprintf("armed|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity))
+	if !ok {
+		return "", fmt.Errorf("ninjatrader/tcp: armed entry not admitted — B3 dupe/rate guard: %s", reason)
+	}
+	b3Sent := false // W1b E12(b): the slot is recorded ONLY by an attempted send
+	defer func() { b3Done(b3Sent) }()
 	tick := InstrumentTickSize(t.symbol)
-	entry := RoundToTick(limitPx, tick)
-	sl = RoundToTick(sl, tick)
-	tp = RoundToTick(tp, tick)
+	entry, sl, tp, rerr := WireBracket(side, limitPx, sl, tp, tick) // W1b E12(a): stop AWAY from entry
+	if rerr != nil {
+		return "", fmt.Errorf("ninjatrader/tcp: refusing armed %s entry on %s: %w", side, symbol, rerr)
+	}
 	tid := t.traderID
 	signalID := uuid.NewString()
 	payload := ntwire.SignalPayload{
@@ -586,7 +743,10 @@ func (t *TCPTrader) PlaceLimitEntry(symbol, side string, quantity float64, limit
 	t.mu.Lock()
 	t.lastEntrySignalID = signalID
 	t.mu.Unlock()
-	if err := t.server.SendSignal(payload); err != nil {
+	serr := t.server.SendSignal(payload)
+	latchSent = sendAttempted(serr)
+	b3Sent = latchSent
+	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send armed signal: %w", err)
 	}
 	return signalID, nil
@@ -621,16 +781,33 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 	if !t.isAccountTradeable(tradeAcct) {
 		return "", fmt.Errorf("ninjatrader/tcp: refusing stop-entry %s — account %q is not tradeable (not on allow-list / not SIM)", side, tradeAcct)
 	}
-	if t.guard != nil {
-		key := fmt.Sprintf("stopentry|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity)
-		if _, ok := t.guard.admit(key, time.Now().UnixMilli()); !ok {
-			return "", fmt.Errorf("ninjatrader/tcp: stop-entry not admitted — B3 dupe/rate guard")
-		}
+	// W-ONE-BUTTON M2 site 4 — maintenance permit, before B3 and before
+	// beforeSend; held across SendSignal.
+	releasePermit, err := t.acquireEntryPermit("stop-entry " + side + " on " + symbol)
+	if err != nil {
+		return "", err
 	}
+	defer releasePermit()
+	// W-EXEC-TRUTH W0 (b) — the ONE entry latch: after the permit, BEFORE B3
+	// (a latch refusal never consumes the dedupe slot), held across the
+	// ledger stamp and the send.
+	latchDone, lerr := t.acquireEntryLatch("stop-entry " + side + " on " + symbol)
+	if lerr != nil {
+		return "", lerr
+	}
+	latchSent := false
+	defer func() { latchDone(latchSent) }()
+	b3Done, reason, ok := t.b3Reserve(fmt.Sprintf("stopentry|%s|%s|%s|%.0f", tradeAcct, upperSideStr(side), symbol, quantity))
+	if !ok {
+		return "", fmt.Errorf("ninjatrader/tcp: stop-entry not admitted — B3 dupe/rate guard: %s", reason)
+	}
+	b3Sent := false // W1b E12(b): the slot is recorded ONLY by an attempted send
+	defer func() { b3Done(b3Sent) }()
 	tick := InstrumentTickSize(t.symbol)
-	entry := RoundToTick(stopPx, tick)
-	sl = RoundToTick(sl, tick)
-	tp = RoundToTick(tp, tick)
+	entry, sl, tp, rerr := WireBracket(side, stopPx, sl, tp, tick) // W1b E12(a): stop AWAY from entry
+	if rerr != nil {
+		return "", fmt.Errorf("ninjatrader/tcp: refusing stop-entry %s on %s: %w", side, symbol, rerr)
+	}
 	tid := t.traderID
 	signalID := uuid.NewString()
 	payload := ntwire.SignalPayload{
@@ -663,7 +840,10 @@ func (t *TCPTrader) PlaceStopEntry(symbol, side string, quantity float64, stopPx
 	t.mu.Lock()
 	t.lastEntrySignalID = signalID
 	t.mu.Unlock()
-	if err := t.server.SendSignal(payload); err != nil {
+	serr := t.server.SendSignal(payload)
+	latchSent = sendAttempted(serr)
+	b3Sent = latchSent
+	if err := serr; err != nil {
 		return "", fmt.Errorf("ninjatrader/tcp: send stop-entry signal: %w", err)
 	}
 	return signalID, nil
@@ -980,6 +1160,24 @@ func (t *TCPTrader) SetTakeProfit(symbol, positionSide string, quantity, takePro
 	return nil
 }
 
+// EntryBracketMapsForTest copies the shared (symbol, side) SL/TP maps — what a
+// legacy OpenLong/OpenShort sends and what MoveStopToBreakeven's widen ban
+// reads as the live stop (W1b FOLD-3). Read-only; a test hook like the
+// server's SeedPositionsForTest.
+func (t *TCPTrader) EntryBracketMapsForTest() (stops, targets map[string]float64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	stops = make(map[string]float64, len(t.stopLoss))
+	for k, v := range t.stopLoss {
+		stops[k] = v
+	}
+	targets = make(map[string]float64, len(t.takePrft))
+	for k, v := range t.takePrft {
+		targets[k] = v
+	}
+	return stops, targets
+}
+
 func (t *TCPTrader) CancelAllOrders(symbol string) error {
 	return fmt.Errorf("ninjatrader/tcp: CancelAllOrders not supported")
 }
@@ -999,10 +1197,13 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 	// bound account has no snapshot yet (AddOn hasn't streamed it), so this never
 	// regresses to zeros vs today's behavior. The returned "account" field names
 	// which NT account these numbers actually reflect.
-	acct, ok := t.server.AccountStateFor(t.boundAccount)
-	if !ok || t.boundAccount == "" {
-		acct, ok = t.server.AccountState()
+	// W117-F F7: risk sizing and display must use the bound account's own
+	// received snapshot. Another account's equity is never a substitute for no
+	// answer (ports #117 23c24c6d).
+	if t.server == nil || strings.TrimSpace(t.boundAccount) == "" {
+		return nil, fmt.Errorf("ninjatrader/tcp: balance unavailable — no bound account")
 	}
+	acct, ok := t.server.AccountStateFor(t.boundAccount)
 	if ok {
 		// Plan 4 Stage 4 — notify parent AutoTrader that balance has arrived
 		// (used by defer-until-balance guard in runCycle).
@@ -1026,9 +1227,7 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 			"availableBalance":      avail,
 			"totalWalletBalance":    acct.CashValue,
 			"totalUnrealizedProfit": acct.UnrealizedPnL,
-			// Which NT account these numbers actually reflect (bound account when
-			// its snapshot exists, else the streamed current — see the decouple
-			// above). Lets the dashboard label/guard the balance accurately.
+			// The received bound account, never the shared display account.
 			"account": acct.Account,
 			// Issue 2B — NT reports its own realized/unrealized P&L per account.
 			// brokerNativePnL signals GetAccountInfo to use realized+unrealized as
@@ -1039,10 +1238,7 @@ func (t *TCPTrader) GetBalance() (map[string]interface{}, error) {
 			"brokerNativePnL":     true,
 		}, nil
 	}
-	return map[string]interface{}{
-		"totalEquity":      0.0,
-		"availableBalance": 0.0,
-	}, nil
+	return nil, fmt.Errorf("ninjatrader/tcp: balance unavailable for bound account %q — no snapshot", t.boundAccount)
 }
 
 // IsFeedConnected reports whether the NT8 price feed is usable (delegates to the
@@ -1070,7 +1266,13 @@ func (t *TCPTrader) GetPositions() ([]map[string]interface{}, error) {
 	// reflects positions opened MANUALLY in NT8 (the AddOn emits a `positions`
 	// snapshot on select / connect / PositionUpdate).
 	acct := t.boundAccount
-	if snap, ok := t.server.PositionsFor(acct); ok {
+	if snap, received, entryAfter, ok := t.server.PositionsForExecutionReceipt(acct, t.symbol); ok &&
+		(entryAfter.IsZero() || received.After(entryAfter)) {
+		// W117 F1 — a snapshot received at-or-before the latest entry receipt
+		// is stale: an adapter replacement that forgot an entry would read the
+		// pre-entry flat snapshot as truth and double-open. Only a snapshot
+		// NEWER than the entry receipt serves as NT8 truth; otherwise fall to
+		// the fill-derived cache below (which knows the entry).
 		// NT8-truth uPnL: the account_balance frame carries the account's LIVE
 		// unrealized P&L. When exactly ONE position is open, that total IS this
 		// position's uPnL — use it (and derive the mark) so the displayed P&L
@@ -1104,7 +1306,10 @@ func (t *TCPTrader) GetPositions() ([]map[string]interface{}, error) {
 	t.mu.Lock()
 	if !t.hasFill {
 		t.mu.Unlock()
-		return []map[string]interface{}{}, nil
+		// W117 F4 — no snapshot AND no confirmed entry fill is UNKNOWN, never
+		// flat: fabricating an empty book here let the caller read a silent
+		// "no position" as truth and re-enter on a position NT8 holds.
+		return nil, fmt.Errorf("NT8 account positions unknown: no account snapshot or confirmed entry fill")
 	}
 	fill := t.lastFill
 	t.mu.Unlock()
@@ -1251,14 +1456,12 @@ func (t *TCPTrader) DebugPlaceTestTrade(side string) (map[string]interface{}, er
 	}
 	price := bars[len(bars)-1].C
 	tick := InstrumentTickSize(t.symbol)
+	// W1b FOLD-3: the test trade carries its own bracket into the send, so a
+	// refused one never leaves it in the maps the widen ban reads.
 	if side == "short" {
-		_ = t.SetStopLoss(t.symbol, "short", 1, RoundToTick(price+20, tick))
-		_ = t.SetTakeProfit(t.symbol, "short", 1, RoundToTick(price-40, tick))
-		return t.OpenShort(t.symbol, 1, 1)
+		return t.OpenWithBracket(t.symbol, "short", 1, RoundToTick(price+20, tick), RoundToTick(price-40, tick))
 	}
-	_ = t.SetStopLoss(t.symbol, "long", 1, RoundToTick(price-20, tick))
-	_ = t.SetTakeProfit(t.symbol, "long", 1, RoundToTick(price+40, tick))
-	return t.OpenLong(t.symbol, 1, 1)
+	return t.OpenWithBracket(t.symbol, "long", 1, RoundToTick(price-20, tick), RoundToTick(price+40, tick))
 }
 
 // BarCache exposes the live NT8 bar cache for the Stage 4 SSE chart relay.
@@ -1277,6 +1480,10 @@ func (t *TCPTrader) GetServer() *ntwire.TCPServer { return t.server }
 // owner even while another account is being streamed/viewed. It is the missed
 // twin of the GetBalance/GetPositions/reconcile decouples.
 func (t *TCPTrader) BoundAccount() string { return t.boundAccount }
+
+// WireSymbol is the instrument this trader sends entries on (the payload
+// symbol and the entry latch key) — never the raw, possibly comma-listed config.
+func (t *TCPTrader) WireSymbol() string { return t.symbol }
 
 // flattenKey is the "SYMBOL|SIDE" key for closedAt (upper-cased, trimmed).
 func flattenKey(symbol, side string) string {
@@ -1310,6 +1517,9 @@ func (t *TCPTrader) CloseConfirmedSince(symbol, side string, sinceMs int64) bool
 // Called by the /api/account/select handler to ensure GetPositions() fetches fresh
 // data from the newly selected account (not stale cached fills from the old account).
 func (t *TCPTrader) ResetAccountState() {
+	// Reconcile also takes pendingMu before mu; keep that lock order.
+	t.pendingMu.Lock()
+	defer t.pendingMu.Unlock()
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.hasFill = false
@@ -1414,6 +1624,34 @@ func (t *TCPTrader) GetOpenOrders(symbol string) ([]types.OpenOrder, error) {
 		return nil, fmt.Errorf("open-orders (armed_orders ledger): %w", err)
 	}
 	return rows, nil
+}
+
+// b3Reserve runs B3 (dupe guard + rate breaker) for one entry at the
+// submission chokepoint and returns the reservation's done (W1b E12(b)): the
+// caller defers done(sent) with sent = sendAttempted(serr), so the dedupe slot
+// and the rate count are recorded ONLY by a send, never by a refusal after B3.
+// A refusal is logged and counted HERE for every entry path — the armed paths
+// used to discard the reason and count nothing, so the Gate-blocks panel's
+// "Duplicate order dropped" never showed an armed refusal. B6: B3 fires at the
+// shared chokepoint (bound to an account, not a trader), so it tallies under
+// the process-wide "" trader bucket. A nil guard admits (done is a no-op).
+func (t *TCPTrader) b3Reserve(key string) (done func(sent bool), reason string, ok bool) {
+	if t.guard == nil {
+		return func(bool) {}, "", true
+	}
+	done, reason, ok = t.guard.reserve(key, time.Now().UnixMilli())
+	if ok {
+		return done, "", true
+	}
+	gate := "b3_order_dedup"
+	if strings.Contains(reason, "breaker") {
+		gate = "b3_rate_breaker"
+		logger.Warnf("🚨 B3 %s", reason)
+	} else {
+		logger.Warnf("⛔ B3 %s", reason)
+	}
+	telemetry.IncGateBlock("", gate)
+	return nil, reason, false
 }
 
 // upperSideStr normalises "long"/"LONG"/"Long" → "LONG" for SL/TP map keys.

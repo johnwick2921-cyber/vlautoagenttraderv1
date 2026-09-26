@@ -91,6 +91,10 @@ type FillPayload struct {
 	// trader (A4). Empty = pre-v3 AddOn (echo absent) → tolerated in the deploy window.
 	TraderID string `json:"trader_id,omitempty"`
 	Seq      uint64 `json:"seq,omitempty"`
+	// W117 F2 — true when a registered ordered-execution owner will apply this
+	// frame on its worker (receive order). Advisory consumers skip it so the
+	// fill is never double-applied. json:"-" keeps goldens byte-identical.
+	OrderedOwned bool `json:"-"`
 }
 
 // P5.2 — protocol handshake. The C# AddOn sends `hello` as the FIRST frame on
@@ -117,6 +121,75 @@ type HelloPayload struct {
 	// only after a snapshot arrives. omitempty keeps the wire byte-identical
 	// for an older AddOn that does not send it.
 	BuildID string `json:"build_id,omitempty"`
+
+	// W-ONE-BUTTON M2 (CTO ruling Q3) — the running AddOn's EPOCH, so a
+	// verifier can bind "this connection is the new build" to evidence rather
+	// than to the hand-set BuildID (M1 F4). All additive + omitempty: an older
+	// AddOn sends none, and the Go reply (which never sets them) stays
+	// byte-identical. nt8_pid + nt8_start_ms identify the NinjaTrader.exe
+	// process; assembly_mvid is the loaded assembly's module version id (it
+	// changes on every compile); source_hash is content-derived over the
+	// AddOn source; activation_nonce is minted once per AddOn activation.
+	NT8PID          int    `json:"nt8_pid,omitempty"`
+	NT8StartMs      int64  `json:"nt8_start_ms,omitempty"`
+	AssemblyMVID    string `json:"assembly_mvid,omitempty"`
+	SourceHash      string `json:"source_hash,omitempty"`
+	ActivationNonce string `json:"activation_nonce,omitempty"`
+}
+
+// ── W-ONE-BUTTON M2 site 7 — the installation maintenance frames ───────────
+//
+// maintenance (Go → AddOn) tells the AddOn the installation is held for an
+// update: it must refuse NEW entry signals (never protection, brackets on
+// fill, part-fill amends, flatten, cancel or modify). Sent ONLY while a hold is
+// present (on accept, on change, re-sent every few seconds) plus one held:false
+// release — with no hold file the wire is byte-identical to before M2.
+//
+// maintenance_ack (AddOn → Go) echoes held/job_id and reports what the AddOn
+// can see, WITHOUT NAMES (the repo is public; the census is counts and flags
+// only). The installation gate fails on: no ack for the current connection, an
+// ack for another job, a census the AddOn could not enumerate (CensusError, or
+// a nil list), any connected non-SIM connection, or any position / working
+// order on ANY account (CTO ruling Q1).
+const (
+	FrameMaintenance    FrameType = "maintenance"
+	FrameMaintenanceAck FrameType = "maintenance_ack"
+)
+
+// MaintenancePayload is the Go → AddOn hold notice.
+type MaintenancePayload struct {
+	Held  bool   `json:"held"`
+	JobID string `json:"job_id,omitempty"`
+}
+
+// CensusConnection is one NT8 connection, by flags only.
+type CensusConnection struct {
+	Sim       bool `json:"sim"`       // every account on it is a SIM account (false when it has none: fail-closed)
+	Connected bool `json:"connected"` // ConnectionStatus.Connected
+	// Settled (M2.1): Status is Connected or Disconnected. Any other state
+	// (Connecting, ConnectionLost, …) means the census cannot vouch for the
+	// accounts on it; absent (an older build) reads false — fail-closed.
+	Settled bool `json:"settled"`
+}
+
+// CensusAccount is one NT8 account, by flags and counts only.
+type CensusAccount struct {
+	Sim       bool `json:"sim"`
+	Positions int  `json:"positions"` // non-flat positions
+	Working   int  `json:"working"`   // non-terminal orders of ANY action (entries, exits, protection)
+}
+
+// MaintenanceAckPayload is the AddOn → Go acknowledgement + census.
+type MaintenanceAckPayload struct {
+	Held           bool   `json:"held"`
+	JobID          string `json:"job_id,omitempty"`
+	QueuedCommands int    `json:"queued_commands"`
+	BuildID        string `json:"build_id,omitempty"`
+	// Connections / Accounts are nil when the AddOn could not enumerate them
+	// (never a fabricated empty list); CensusError says why.
+	Connections []CensusConnection `json:"connections"`
+	Accounts    []CensusAccount    `json:"accounts"`
+	CensusError string             `json:"census_error,omitempty"`
 }
 
 // PHASE 2 armed orders — order-management frames (Go-server → C#-AddOn) +
@@ -168,6 +241,12 @@ type OrderUpdatePayload struct {
 	Account   string  `json:"account"`
 	TraderID  string  `json:"trader_id,omitempty"`
 	Seq       uint64  `json:"seq,omitempty"`
+
+	// W117 F2 — see FillPayload.OrderedOwned.
+	OrderedOwned bool `json:"-"`
+	// W117 F2 — whether the broker book is proven post-change at application
+	// time (bookFresh / bookNotFresh / bookUnspecified, ordered_exec.go).
+	BookGate int8 `json:"-"`
 }
 
 // P5.3 — subscription acks (C#-AddOn → Go-server). The AddOn confirms or// rejects each bars_subscribe/bars_unsubscribe so the Go side (and the owner
@@ -397,6 +476,8 @@ type PositionClosePayload struct {
 	// A2 (G1, wire v3) — echoed originator identity + op seq for echo-verify.
 	TraderID string `json:"trader_id,omitempty"`
 	Seq      uint64 `json:"seq,omitempty"`
+	// W117 F2 — see FillPayload.OrderedOwned.
+	OrderedOwned bool `json:"-"`
 }
 
 // Rejected exit/flatten — C#-AddOn → Go-server, additive frame. The SIM (or
@@ -600,7 +681,14 @@ type BarsSubscribePayload struct {
 type BarsHistoricalPayload struct {
 	Symbol    string `json:"symbol"`
 	Timeframe string `json:"timeframe"`
-	Bars      []Bar  `json:"bars"` // ascending by time
+	// Contract is the front month these bars belong to. The AddOn has named
+	// it on EVERY bar frame since 2026-09-11 (owner ruling;
+	// VLBarsSubscriptionManager.cs:488) and Go parsed it nowhere, so every
+	// consumer was blind to which instrument it was reading. ADDITIVE and
+	// omitempty: an AddOn that does not send it leaves this "", which reads
+	// as UNKNOWN, never as a match.
+	Contract string `json:"contract,omitempty"`
+	Bars     []Bar  `json:"bars"` // ascending by time
 }
 
 // BarUpdatePayload is the C#-AddOn → Go-server streaming update per protocol
@@ -609,7 +697,10 @@ type BarsHistoricalPayload struct {
 type BarUpdatePayload struct {
 	Symbol    string `json:"symbol"`
 	Timeframe string `json:"timeframe"`
-	Bars      []Bar  `json:"bars"` // ALWAYS an array — single tick can update multiple indices (NT8 multi-bar gotcha). Walk MinIndex..MaxIndex.
+	// Contract — see BarsHistoricalPayload.Contract
+	// (VLBarsSubscriptionManager.cs:562). "" means UNKNOWN, never a match.
+	Contract string `json:"contract,omitempty"`
+	Bars     []Bar  `json:"bars"` // ALWAYS an array — single tick can update multiple indices (NT8 multi-bar gotcha). Walk MinIndex..MaxIndex.
 }
 
 // BarsUnsubscribePayload is the Go-server → C#-AddOn teardown frame per

@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"nofx/auth"
 	"nofx/crypto"
+	"nofx/internal/updateauth"
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/manager"
 	"nofx/store"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +32,18 @@ type Server struct {
 	host                      string // bind interface; "" → 127.0.0.1 (loopback-only default)
 	port                      int
 	telegramReloadCh          chan<- struct{} // signal Telegram bot to reload
+
+	// W-ONE-BUTTON M3 (api/handler_updates.go): the manifest verifier
+	// (StubVerifier refuses everything until M4), the worker hand-off (nil
+	// in M3) and a clock seam for the install expiry window.
+	updateVerifier updateauth.Verifier
+	updateStart    UpdateStarter
+	updatesNow     func() time.Time
+	// M4 3b-B U5b: NOFX_UPDATER=1 read once at NewServer (configureUpdater).
+	updaterOn bool
+	// CTO fold 1790280466263: the (route, category) pairs already WARNed
+	// (handler_updates.go updatesForbid).
+	updatesWarned sync.Map
 }
 
 // NewServer Creates API server. host is the bind interface — pass
@@ -39,6 +53,17 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
+
+	// PR #200 fold F2: trust NO proxy. gin.Default() trusts X-Forwarded-For /
+	// X-Real-IP from every peer (0.0.0.0/0, ::/0), so c.ClientIP() — which the
+	// H1/H2 audit lines and gin's access log print — was whatever the client
+	// wrote. With no trusted proxy, ClientIP() is the socket peer (RemoteAddr):
+	// the loopback bind has no legitimate proxy. Nothing in this app decides
+	// on ClientIP() (the /updates gate judges RemoteAddr itself, F4) — pinned
+	// by TestForwardedForNeverRewritesTheLoggedCaller.
+	if err := router.SetTrustedProxies(nil); err != nil {
+		logger.Errorf("🔒 [api] SetTrustedProxies(nil): %v", err)
+	}
 
 	// Enable CORS
 	router.Use(corsMiddleware())
@@ -54,7 +79,10 @@ func NewServer(traderManager *manager.TraderManager, st *store.Store, cryptoServ
 		exchangeAccountStateCache: NewExchangeAccountStateCache(),
 		host:                      host,
 		port:                      port,
+		updateVerifier:            updateauth.StubVerifier{},
 	}
+	// M4 3b-B U5b: the updater glue knob (OFF = M3, byte for byte).
+	s.configureUpdater()
 
 	// Setup routes
 	s.setupRoutes()
@@ -140,7 +168,13 @@ func (s *Server) setupRoutes() {
 		// reset-password is now permanently disabled (no mail/token path exists to
 		// make it safe); reset-account moved into the protected group below and is
 		// additionally env-gated + confirm-token gated.
-		s.route(api, "POST", "/reset-password", "DISABLED — always 410 (no verification path)", s.handleResetPasswordDisabled)
+		// M3 red-team H1 (CTO ruling item 2): a machine token presented here is
+		// refused 403 (denyMachineBearer); everyone else still gets the 410.
+		s.route(api, "POST", "/reset-password", "DISABLED — always 410 (no verification path)", denyMachineBearer(s.handleResetPasswordDisabled))
+
+		// W-ONE-BUTTON M3: /api/updates* — their OWN gate (uniform 403), raw
+		// g.GET/g.POST so they never enter GetAPIDocs (F1). See handler_updates.go.
+		s.registerUpdateRoutes(api)
 
 		// Routes requiring authentication
 		protected := api.Group("/", s.authMiddleware(), s.planTraderOwnership())
@@ -167,7 +201,7 @@ func (s *Server) setupRoutes() {
 
 			// User account management
 			s.routeWithSchema(protected, "PUT", "/user/password", "Change current user password",
-				`Body: {"new_password":"<string, min 8 chars>"}`,
+				`Body: {"current_password":"<string>","new_password":"<string, min 8 chars>"}`,
 				s.handleChangePassword)
 
 			// SECURITY (P0 S4): RSA decryption oracle — JWT + only when transport
@@ -314,6 +348,9 @@ CRITICAL: Always use the "id" field for strategy_id.`,
 			s.route(protected, "POST", "/strategies/preview-prompt", "Preview the AI prompt that will be generated from a config", s.handlePreviewPrompt)
 			s.route(protected, "POST", "/strategies/test-run", "Test-run strategy AI analysis", s.handleStrategyTestRun)
 			s.route(protected, "GET", "/strategies/:id", "Get strategy by ID", s.handleGetStrategy)
+			// W1 (g): every settings row's effective value, origin and scope —
+			// from the STORED row, never the ClampLimits'd copy the GET above serves.
+			s.route(protected, "GET", "/strategies/:id/effective", "Effective value + origin + scope per strategy setting (?session=NY|ASIA|LONDON, ?venue=)", s.handleStrategyEffective)
 			s.routeWithSchema(protected, "POST", "/strategies", "Create a new trading strategy",
 				`Body: {"name":"<string, required>","description":"<string, optional>","lang":"zh|en","config":<StrategyConfig object, OPTIONAL — if omitted the system applies complete working defaults automatically (ai500 top coins, all standard indicators, standard risk control)>}
 IMPORTANT: For most use cases just POST {"name":"<name>"} — the backend fills everything in. Only include "config" when the user explicitly requests custom settings (specific coins, custom leverage, custom timeframes).
@@ -432,6 +469,14 @@ Returns: [{"symbol":"<string>","side":"long|short","quantity":<float>,"entry_pri
 Returns: {"ready":<bool>,"legs":[{"n":1..5,"name":"<string>","pass":<bool>,"detail":"<string>","source":"<string>"}],"note":"<string>"}
 Legs: 1 db_open_positions · 2 api_positions · 3 nt8_positions_snapshot · 4 working_orders (broker versus placed/unconfirmed ledger rows) · 5 planner_in_flight. Leg 4's armed_unplaced count is informational: authorized arms without a signal id do not fail it.`,
 				s.handleCutoverGate)
+			s.routeWithSchema(protected, "GET", "/maintenance", "Installation maintenance hold: state, drain and the AddOn's ack (W-ONE-BUTTON M2; read-only)",
+				`Returns: {"held":<bool>,"state":"clear|held|unreadable|unconfigured","job_id":"<string>|null","since":"<RFC3339>|null","reason":"<string>","in_flight_sends":<int>,"drained":<bool>,"addon_ack":{"received":"<RFC3339>","age_ms":<int>,"held":<bool>,"job_id":"<string>","queued_commands":<int>,"build_id":"<string>","accept_seq":<int>}|null}
+addon_ack is the CURRENT AddOn connection's maintenance_ack only (null before one arrives, and always null for an AddOn older than 2026-09-22-m2). No write route exists.`,
+				s.handleMaintenanceStatus)
+			s.routeWithSchema(protected, "GET", "/installation-gate", "Installation-wide update gate: every trader, every account, one verdict (W-ONE-BUTTON M2; read-only)",
+				`Returns: {"ready":<bool>,"job_id":"<string>|n/a","legs":[{"name":"<string>","pass":<bool>,"detail":"<string>","source":"<string>"}],"traders":["<id>"],"note":"<string>"}
+Legs: hold · go_drained · in_flight_sends · queued_signals · planner_in_flight (union of every planner-class claim, any trader) · traders_nt8 · addon_ack · addon_census (no connected non-SIM connection, no position or working order on ANY account) · ledger_exposure (all trader ids) · trader_cutover:<id> (legs 1, 2, 4). A leg that cannot be evaluated fails.`,
+				s.handleInstallationGate)
 			s.routeWithSchema(protected, "GET", "/decisions", "AI trading decisions (decision records)",
 				`Query: ?trader_id=<EXACT trader_id from GET /api/my-traders>&limit=<int, default 20>
 Returns: [{"id":"<string>","symbol":"<string>","action":"open_long|open_short|close_long|close_short|hold","confidence":<int>,"reasoning":"<string>","created_at":"<timestamp>"}]`,
@@ -649,7 +694,7 @@ Server rejects non-SIM accounts (is_sim == false) with HTTP 400.`,
 	// route, because it installs the NoRoute handler: anything that reached here
 	// matched no API route, and only then may it be a page request. A stale or
 	// missing bundle degrades loudly via the boot line rather than failing here.
-	MountUI(s.router, UIDistDir)
+	MountUI(s.router, ResolvedDistDir())
 }
 
 // handleHealth Health check
@@ -896,9 +941,32 @@ func (s *Server) authMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Store user information in context
-		c.Set("user_id", claims.UserID)
-		c.Set("email", claims.Email)
+		// M3 red-team H2 (CTO ruling 1790231205208): a token issued at or
+		// before its account's last credential change — or with no iat, or
+		// whose account row is gone — acts NOWHERE (credential_guard.go
+		// tokenRetirement; the whole-second rule /api/updates Q8 applies).
+		if code, why := s.tokenRetirement(claims); why != "" {
+			logger.Warnf("🔒 [auth] refused %s %s from %s: %s", c.Request.Method, c.FullPath(), c.ClientIP(), why)
+			msg := "Session ended — please log in again"
+			if code == http.StatusServiceUnavailable {
+				msg = "Account check unavailable — try again"
+			}
+			c.AbortWithStatusJSON(code, gin.H{"error": msg})
+			return
+		}
+
+		// M3 red-team H1: a machine token (the Telegram bot's, gate-jwt's —
+		// any scope claim, or bot@internal) is denied BY DEFAULT on the
+		// credential, Telegram-config, update and logout routes
+		// (credential_guard.go machineDeniedRoutes).
+		if claims.IsMachine() && machineDenied(c.FullPath()) {
+			credentialForbid(c, "machine token on a machine-denied route")
+			return
+		}
+
+		// Store user information in context (user_id, email and the claims
+		// the credential guard reads — credential_guard.go).
+		setAuthContext(c, claims)
 		c.Next()
 	}
 }

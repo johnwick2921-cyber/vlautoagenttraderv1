@@ -8,7 +8,10 @@ import (
 
 // Fixture helpers: synthetic 4H / H1 / 5m bars around a pivot at index 2.
 func bar4h(i int, o, h, l, c float64) market.Kline {
-	return market.Kline{OpenTime: int64(1789000000000) + int64(i)*4*3600*1000, Open: o, High: h, Low: l, Close: c}
+	ot := int64(1789000000000) + int64(i)*4*3600*1000
+	// W4/D22: cache-delivered bars always carry their completion stamp, and
+	// KnowableAt is now read from it, so the fixture carries it too.
+	return market.Kline{OpenTime: ot, CloseTime: ot + fourHMs, Open: o, High: h, Low: l, Close: c}
 }
 
 func barh1(i int, o, h, l, c float64) market.Kline {
@@ -48,8 +51,10 @@ func TestBodyPivots4HFindsBothPivotsAndNoLookahead(t *testing.T) {
 	if levels[1].Role != "support" || levels[1].BodyBottom != 80 || levels[1].Boundary != 80 {
 		t.Fatalf("support pivot wrong: %+v", levels[1])
 	}
-	// No lookahead: the pivot is knowable only at bars[4].OpenTime.
-	wantKnowable := bar4h(4, 0, 0, 0, 0).OpenTime
+	// No lookahead: the pivot is knowable only once bars[4] has COMPLETED
+	// (W4/D22 — it used to be anchored to that candle's OPEN, one whole 4H
+	// period early).
+	wantKnowable := bar4h(4, 0, 0, 0, 0).CloseTime
 	if levels[0].KnowableAt != wantKnowable {
 		t.Fatalf("resistance KnowableAt = %d, want %d", levels[0].KnowableAt, wantKnowable)
 	}
@@ -144,9 +149,13 @@ func TestH1CloseBreakMirroredShort(t *testing.T) {
 
 func TestH1CloseBreakExtremeLevelWins(t *testing.T) {
 	// Two resistances crossed by the same H1: the HIGHEST boundary wins.
+	// W4/D22: KnowableAt is never 0 — a level with no knowable time is missing
+	// evidence and is refused — so these literals carry the instant the level
+	// became knowable, which is before the breaking H1 candle opens.
+	knowable := barh1(0, 0, 0, 0, 0).OpenTime
 	levels := []PictureHtfLevel{
-		{Role: "resistance", Boundary: 101, KnowableAt: 0},
-		{Role: "resistance", Boundary: 105, KnowableAt: 0},
+		{Role: "resistance", Boundary: 101, KnowableAt: knowable},
+		{Role: "resistance", Boundary: 105, KnowableAt: knowable},
 	}
 	prev := barh1(0, 99, 100, 98, 100)
 	cur := barh1(1, 101, 108, 100, 106)
@@ -197,28 +206,32 @@ func TestStructuralSwing5MStrictAndDeadline(t *testing.T) {
 }
 
 func TestNearestOpposingZonePolarityAndNearest(t *testing.T) {
+	// W4/D22: 0 no longer means "always knowable" — it means unknown, and
+	// unknown refuses. The zones carry a real knowable time and the reads
+	// happen after it.
+	const zoneKnowable, zoneNow = int64(1000), int64(2000)
 	levels := []PictureHtfLevel{
-		{Role: "resistance", TargetEdge: 110, KnowableAt: 0},
-		{Role: "resistance", TargetEdge: 105, KnowableAt: 0},
-		{Role: "support", TargetEdge: 90, KnowableAt: 0},
+		{Role: "resistance", TargetEdge: 110, KnowableAt: zoneKnowable},
+		{Role: "resistance", TargetEdge: 105, KnowableAt: zoneKnowable},
+		{Role: "support", TargetEdge: 90, KnowableAt: zoneKnowable},
 	}
 	// Long at 100: nearest resistance = 105, never a support, never skip.
-	edge, ok := NearestOpposingZone(levels, 100, "long", 0)
+	edge, ok := NearestOpposingZone(levels, 100, "long", zoneNow)
 	if !ok || edge != 105 {
 		t.Fatalf("nearest resistance must be 105, got %v %v", edge, ok)
 	}
 	// Short at 100: nearest support = 90.
-	edge, ok = NearestOpposingZone(levels, 100, "short", 0)
+	edge, ok = NearestOpposingZone(levels, 100, "short", zoneNow)
 	if !ok || edge != 90 {
 		t.Fatalf("nearest support must be 90, got %v %v", edge, ok)
 	}
 	// No eligible opposing zone above a long → no trade.
-	if _, ok := NearestOpposingZone(levels, 120, "long", 0); ok {
+	if _, ok := NearestOpposingZone(levels, 120, "long", zoneNow); ok {
 		t.Fatalf("no resistance above entry must refuse")
 	}
 	// Retired zone ineligible.
 	levels[0].Retired = true
-	edge, ok = NearestOpposingZone(levels, 100, "long", 0)
+	edge, ok = NearestOpposingZone(levels, 100, "long", zoneNow)
 	if !ok || edge != 105 {
 		t.Fatalf("retired 110 must be skipped, nearest active must be 105: %v %v", edge, ok)
 	}

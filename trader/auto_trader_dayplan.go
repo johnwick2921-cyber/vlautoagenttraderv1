@@ -61,7 +61,13 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 			kernel.MinSLATRMult(), kernel.MinSLTickClearance)
 		// W-WRITE-TIME-FEASIBILITY (2026-09-18) — READ from the resolved knob,
 		// never typed.
-		at.logInfof("🎛 entry law: write_feas=%s", writeFeasLabel(dp))
+		// W-EXEC-TRUTH W3 (2026-09-23): + the four entry-policy knobs, each READ
+		// from its resolver with its origin letter; D12 WARN when the default
+		// policy meets one_setup ON (a precondition, no behaviour change).
+		at.logInfof("%s", entryLawBootLine(dp))
+		if w := entryPolicyOneSetupWarn(at.config.StrategyConfig); w != "" {
+			at.logWarnf("%s", w)
+		}
 		// PLAN-LIFECYCLE WAVE (2026-08-27) — hysteresis + dormant/re-arm +
 		// latency routing observability, so the mode is answerable from the log.
 		// W-FLIP-HOLD-ANCHOR (2026-09-17): the hold length and its anchor kinds
@@ -119,6 +125,7 @@ func (at *AutoTrader) snapshotSessionProfiles() {
 		})
 	})
 	installActivePlanProvider(at, st)
+	at.logPictureBootLines() // W5 D15/D8 — 🖼 in-flight Picture rows + run epoch; 📷 one_setup WARN (once per trader, READ)
 	// P0-cleanup (2026-08-19) — soft-alert: guardrails that WOULD have tripped
 	// (master OFF) reach the owner's alert feed; they never block.
 	kernel.SoftGuardrailFunc = func(trader, what string) {

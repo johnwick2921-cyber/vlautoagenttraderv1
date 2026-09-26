@@ -95,6 +95,33 @@ func lawExcerptsFor(errors string) string {
 	if strings.Contains(errors, "far side of price") {
 		add(RepairFlipSideOfPriceLaw)
 	}
+	// W-EXEC-TRUTH W2 A5 (2026-09-23): a time_hold whose prose minutes are not
+	// stored as confirm.hold_min (confirm_resolver.go ValidateConfirmHoldProse).
+	if strings.Contains(errors, "hold_min") {
+		add(RepairHoldMinLaw)
+	}
+	// W-EXEC-TRUTH W2 A1 (2026-09-23): scenario.invalid outside the grammar —
+	// the combined refusal opens with AuthoredGrammarRefusalMarker.
+	if strings.Contains(errors, AuthoredGrammarRefusalMarker) {
+		add(RepairInvalidationGrammarLaw)
+	}
+	// W-EXEC-TRUTH W2 A3/A4 (scenario_write_truth.go) — identity ≠ price /
+	// unresolved id, and the obstacle-chain contract.
+	if strings.Contains(errors, "identity≠price") || strings.Contains(errors, "identity unresolved") {
+		add(RepairIdentityPriceLaw)
+	}
+	if strings.Contains(errors, "obstacle chain:") {
+		add(RepairObstacleChainLaw)
+	}
+	// W-EXEC-TRUTH W3 (2026-09-23): the market_in_zone zone refusal (trader
+	// write-time hook) and the armable hold floor (ValidateArmableHoldFloor) —
+	// each routes on its OWN marker, never on a shared field token.
+	if strings.Contains(errors, EntryZoneRefusalMarker) {
+		add(RepairEntryZoneLaw)
+	}
+	if strings.Contains(errors, ArmableHoldFloorMarker) {
+		add(RepairArmableHoldFloorLaw)
+	}
 	if len(out) == 0 {
 		add("Copy the machine table's labels and prices; collapse duplicate seats; targets must sit within the proximity band of price.")
 	}

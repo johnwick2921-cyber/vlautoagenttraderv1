@@ -56,7 +56,7 @@ func (r *flipRereadRecorder) priors() []string {
 func installFlipRecorder(t *testing.T, r *flipRereadRecorder) {
 	t.Helper()
 	orig := flipRereadRun
-	flipRereadRun = func(at *AutoTrader, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
+	flipRereadRun = func(at *AutoTrader, now time.Time, session, tradeDate, prior string, row *store.PlanDB, failClosed bool) bool {
 		return r.run(at, session, tradeDate, prior, row, failClosed)
 	}
 	t.Cleanup(func() { flipRereadRun = orig })
@@ -148,7 +148,7 @@ func dormantFlipKiller(t *testing.T, st *store.Store, row *store.PlanDB) string 
 func TestFlipRereadKnobOffStaysDormantNoRead(t *testing.T) {
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}}}
 	at, st := resetTrader(t, cfg)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
 	testNow = func() time.Time { return now }
@@ -163,6 +163,7 @@ func TestFlipRereadKnobOffStaysDormantNoRead(t *testing.T) {
 	seedFlipBars(100, 96, 6*time.Minute, now)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	row, err := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
 	if err != nil || row == nil {
@@ -185,7 +186,7 @@ func TestFlipRereadKnobOffStaysDormantNoRead(t *testing.T) {
 func TestFlipRereadOnRequestsStructureFlipOnce(t *testing.T) {
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, FlipReread: true}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, FlipReread: true}}
 	at, st := resetTrader(t, cfg)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
 	testNow = func() time.Time { return now }
@@ -205,6 +206,7 @@ func TestFlipRereadOnRequestsStructureFlipOnce(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	// Sync half first: the dormant marker is written before the read launches.
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
@@ -242,7 +244,7 @@ func TestFlipRereadOnRequestsStructureFlipOnce(t *testing.T) {
 func TestFlipRereadSameBiasStillSupersedesNoLoop(t *testing.T) {
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, FlipReread: true}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, FlipReread: true}}
 	at, st := resetTrader(t, cfg)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
 	testNow = func() time.Time { return now }
@@ -262,6 +264,7 @@ func TestFlipRereadSameBiasStillSupersedesNoLoop(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 	if !waitFor(t, 5*time.Second, func() bool {
 		return versionLifecycle(t, st, td, "NY", at.id, 1) == "superseded:flip"
 	}) {
@@ -276,7 +279,7 @@ func TestFlipRereadSameBiasStillSupersedesNoLoop(t *testing.T) {
 }
 
 func TestFlipRereadPreflightRefusalKeepsDormantPlan(t *testing.T) {
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, FlipReread: true}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, FlipReread: true}}
 	at, st := resetTrader(t, cfg)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
 	testNow = func() time.Time { return now }
@@ -294,6 +297,7 @@ func TestFlipRereadPreflightRefusalKeepsDormantPlan(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRereadAfterFlip(now, "NY", td, row, "flip-condition: 2x5m close below 100.00 → bias short")
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if rec.count() != 0 {
 		t.Fatalf("a preflight refusal must not launch the read, got %d calls", rec.count())
@@ -306,7 +310,7 @@ func TestFlipRereadPreflightRefusalKeepsDormantPlan(t *testing.T) {
 func TestFlipRereadDeathConditionUnchanged(t *testing.T) {
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}, FlipReread: true}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}, FlipReread: true}}
 	at, st := resetTrader(t, cfg)
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
 	testNow = func() time.Time { return now }
@@ -321,6 +325,7 @@ func TestFlipRereadDeathConditionUnchanged(t *testing.T) {
 	installFlipRecorder(t, rec)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "NY", at.id, 1); got != "dormant" {
 		t.Fatalf("structured death must park dormant, got %q", got)
@@ -344,7 +349,7 @@ func TestFlipRereadDeathConditionUnchanged(t *testing.T) {
 func TestFlipRereadAsiaV13ReplayFixture(t *testing.T) {
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"ASIA"}, FlipReread: true}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"ASIA"}, FlipReread: true}}
 	at, st := resetTrader(t, cfg)
 	// Enable ASIA in the ADMIN registry the way a production edit does.
 	reg := kernel.DefaultSessionRegistry()
@@ -371,6 +376,7 @@ func TestFlipRereadAsiaV13ReplayFixture(t *testing.T) {
 	logBuf := captureTraderLog(t)
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	if got := versionLifecycle(t, st, td, "ASIA", at.id, 1); got != "dormant" {
 		t.Fatalf("ASIA v13 flip must park dormant, got %q", got)

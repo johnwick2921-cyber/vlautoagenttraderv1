@@ -56,10 +56,21 @@ export interface ScenarioEconomics {
   r_to_arm_target: number | null
   target_path_exception?: string
   role_exceptions?: Array<{ level: string; use: string; reason: string }>
+  /** W2 A4 — seated levels on the entry→target path with the planned role;
+   * ABSENT on legacy rows. */
+  path_levels?: Array<{
+    price: number
+    level: string
+    level_id?: string
+    role: string // pass_through | reduce | exit
+  }>
 }
 
 export interface PlanScenario {
   level_id?: string | null
+  /** W2 A3 — a two-anchor setup's sweep / reclaim level ids; ABSENT on legacy rows. */
+  sweep_level_id?: string
+  reclaim_level_id?: string
   economics?: ScenarioEconomics
   arm?: {
     enabled?: boolean
@@ -80,6 +91,52 @@ export interface PlanScenario {
   quality: string // A+ | A | B
   /** G5 (regime wave) — trigger level was consumed at write time. */
   consumed?: boolean
+  /** W-EXEC-TRUTH W5 — a MACHINE-authored scenario (kernel.PlanScenario.Source);
+   * 'picture' is the only machine source. ABSENT on every planner scenario. */
+  source?: string
+  /** W5 — the machine scenario's own record (kernel.PlanMachineSource). */
+  machine?: PlanMachineSource
+}
+
+/** W-EXEC-TRUTH W5 — mirrors kernel.PlanMachineSource: the rule that produced a
+ * machine scenario, the opportunity it stands for (ref), its eligibility window
+ * and the evidence frozen at hand-off. `evidence` is opaque to the plan grammar
+ * (the trader's PictureEvidence adapter owns its shape) — read it through
+ * readPictureEvidence, never as a typed object. */
+export interface PlanMachineSource {
+  rule: string
+  rule_ver: number
+  ref: string
+  eligible_from_ms: number
+  eligible_until_ms: number
+  run_epoch?: number
+  evidence?: unknown
+}
+
+/** W5 — trader/picture_evidence.go PictureEvidence, as the card reads it. Every
+ * field is optional: a missing number renders "n/a", never 0. */
+export interface PictureEvidenceView {
+  opp_key?: string
+  direction?: string
+  rule?: string
+  rule_ver?: number
+  level_role?: string
+  body_top?: number
+  body_bot?: number
+  h1_prev_close?: number
+  h1_new_close?: number
+  h1_boundary?: number
+  h1_close_ms?: number
+  entry_ref?: number
+  latest_close?: number
+  stop?: number
+  target?: number
+  stop_source?: string
+  target_zone?: string
+  rr_estimate?: number
+  rr_floor?: number
+  window_open_ms?: number
+  window_close_ms?: number
 }
 
 export interface OrderPrices {
@@ -107,6 +164,35 @@ export interface PlanOrderLeg {
   book_received_at_ms?: number
   book_age_ms: number
   build_id: string
+  /** W3 market_in_zone — read from the ledger row (api/handler_plan_order_truth.go).
+   * Every field is ABSENT on a legacy row (no policy) and whenever the ledger
+   * holds no value: absent is never 0. A present 0 slippage is a measurement.
+   * policy: 'market_in_zone' | 'planned_order'. */
+  policy?: string
+  /** the authored entry (composed.entry is the limit = the zone's far bound) */
+  planned_entry?: number
+  zone_lo?: number
+  zone_hi?: number
+  /** the price and bar the placement verdict read */
+  eval_price?: number
+  eval_bar_ms?: number
+  fill_price?: number
+  /** fill vs the limit sent, side-adjusted: + = worse, − = better */
+  fill_slippage_ticks?: number
+  placed_at_ms?: number
+  filled_at_ms?: number
+  /** the executor's latest verdict for this leg (ledger last_verdict) */
+  verdict?: string
+  /** W-EXEC-TRUTH W5 — a MACHINE-sourced row (a Picture scenario). Every field
+   * is ABSENT on a planner row (api/handler_plan_order_truth.go
+   * withMachineSource). source: 'picture'; source_ref: the opportunity key;
+   * rule: the rule that produced it (h1_close_break); method: '<policy> <kind>'
+   * e.g. 'market_in_zone limit'; eligible_until_ms: the eligibility deadline. */
+  source?: string
+  source_ref?: string
+  rule?: string
+  method?: string
+  eligible_until_ms?: number
 }
 
 export interface PlanArmView {
@@ -277,6 +363,17 @@ export interface ScenarioLiveness {
   reason?: string
 }
 
+/** W-EXEC-TRUTH W2 A1/A2 — the publication-time born check stored on the
+ * served row. recorded=false (pre-W2 row, fail-closed NO-TRADE row) → the card
+ * says n/a; read_clock_ms null on a recorded row = read clock unknown at write. */
+export interface AuthoredInvalidation {
+  recorded: boolean
+  policy?: string
+  read_clock_ms: number | null
+  publish_clock_ms: number | null
+  groups?: number[]
+}
+
 export interface ScenarioDeath {
   plan_id: string
   version: number
@@ -329,6 +426,7 @@ export interface PlanToday {
   scenario_identity?: Record<string, ScenarioLevelIdentity>
   scenario_status?: Record<string, ScenarioStatusValue>
   scenario_liveness?: ScenarioLiveness
+  authored_invalidation?: AuthoredInvalidation
   scenario_deaths?: Record<string, ScenarioDeath>
   // A1/A4: verdict basis ("machine"|"heuristic") + scenarios with no anchor
   /** ONE SETUP (dispatch 102) — the arm seam's recorded verdict per scenario. */
@@ -379,6 +477,8 @@ export interface PlanToday {
           detail: string
         }>
         rule: string
+        /** W2 — 'stored' | 'authoring_default'; absent on pre-W2 records. */
+        rule_source?: string
         ref_price: number
         side: string
         met: boolean
@@ -403,10 +503,47 @@ export interface PlanToday {
   /** ITEM 15 — true when ?version= served a superseded version, not the latest. */
   historical?: boolean /** ITEM 15 — the newest stored version, so the card can offer the way back. */
   latest_version?: number
+  /** F17 (WAVE 117 PR-D) — the revision the server served: the client echoes
+   * plan_id + version + overlay_version back on every overlay edit, and a
+   * stale draft is refused 409 instead of overwriting a newer edit. */
+  plan_id?: string
+  overlay_version?: number
   created_at?: string
   /** W7 (weekly-bias wave) — the Sunday weekly-bias doc for the current week
    * (null → grey "none" chip). Advisory view only. */
   weekly?: PlanWeekly | null
+  /** W-EXEC-TRUTH W0 (CTO Q6) — Picture HTF's plan-mode verdict, READ by the
+   * server from the trader (null when the trader is not loaded). */
+  picture?: PicturePlanGate | null
+  /** W-EXEC-TRUTH W5 — what composed plan_final (kernel.ResolvePlanFinal's
+   * record): the user overlay versions applied, and each machine scenario with
+   * the overlay that carried it. ABSENT on a server that does not record it —
+   * the card then renders no composed-of line. */
+  composed_of?: PlanComposedOf
+  /** W5 — true when the served row is a MACHINE plan (the no-plan door: a
+   * Picture scenario recorded before any AI plan existed). */
+  machine_plan?: boolean
+}
+
+/** W5 — /api/plan/today composed_of. */
+export interface PlanComposedOf {
+  user_overlays?: number[]
+  machine?: Array<{
+    overlay_version: number
+    scenario_id: string
+    ref: string
+  }>
+}
+
+/** W-EXEC-TRUTH W0 (CTO Q6) — /api/plan/today picture payload. */
+export interface PicturePlanGate {
+  /** Picture HTF is on for this trader (resolved knob, NT8 path). */
+  enabled: boolean
+  /** W5 — how Picture reaches the market, READ from the trader, e.g.
+   * "Day Plan scenario (market_in_zone limit)". Absent on a pre-W5 server. */
+  route?: string
+  /** A real refusal only, verbatim; "" or absent when nothing refuses Picture. */
+  refusal?: string
 }
 
 export interface StructuralGeometryView {
@@ -744,11 +881,18 @@ export const planApi = {
   // ── P5.1 overlay editing ──
   // Post an RFC-6902 overlay. Returns {ok, error?} — non-silent so armor/conflict
   // rejections (409/422) surface their message for the sheet to show inline.
+  // F17 (WAVE 117 PR-D) — the edit names the plan revision the user VIEWED; a
+  // stale draft is refused 409 by the server, never applied.
   async postOverlay(
     traderId: string,
     patch: PatchOp[],
     origin: 'owner' | 'planner-revised' = 'owner',
-    symbol = 'MNQ'
+    symbol = 'MNQ',
+    revision: {
+      expected_plan_id: string
+      expected_plan_version: number
+      expected_overlay_version: number
+    } | null = null
   ): Promise<{ ok: boolean; error?: string; overlay_version?: number }> {
     const res = await httpClient.request<{ overlay_version: number }>(
       `${API_BASE}/plan/overlay`,
@@ -759,6 +903,7 @@ export const planApi = {
           symbol,
           patch: JSON.stringify(patch),
           origin,
+          ...(revision ?? {}),
         },
         silent: true,
       }
