@@ -1,0 +1,9 @@
+p50_p75_tick_floor A_touch n 737 net -2.5709 optimistic_bound 7.479 simultaneous_CI -3.4798 -1.6738
+p50_p75_tick_floor B_through n 701 net -2.8827 optimistic_bound 7.4643 simultaneous_CI -3.7629 -2.0005
+p50_p75_tick_floor C_adverse_tick n 737 net -2.8209 optimistic_bound 7.229 simultaneous_CI -3.7298 -1.9238
+p90 A_touch n 515 net -2.9636 optimistic_bound 8.4102 simultaneous_CI -4.2204 -1.7658
+p90 B_through n 496 net -3.3432 optimistic_bound 8.3327 simultaneous_CI -4.5641 -2.2125
+p90 C_adverse_tick n 515 net -3.2136 optimistic_bound 8.1602 simultaneous_CI -4.4704 -2.0158
+p95 A_touch n 207 net -2.6039 optimistic_bound 11.4903 simultaneous_CI -5.5682 0.2896
+p95 B_through n 202 net -3.0817 optimistic_bound 11.2698 simultaneous_CI -5.9188 -0.3747
+p95 C_adverse_tick n 207 net -2.8539 optimistic_bound 11.2403 simultaneous_CI -5.8182 0.0396

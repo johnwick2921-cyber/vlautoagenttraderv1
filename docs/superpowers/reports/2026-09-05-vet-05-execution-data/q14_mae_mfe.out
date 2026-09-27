@@ -1,0 +1,19 @@
+era rows used n= 65 (excluded NULL/test/flat/unresolved: 6 ) ids: [521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532, 533, 534, 535, 536, 537, 538, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551, 552, 553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567, 568, 569, 570, 571, 575, 578, 580, 581, 582, 583, 584, 585, 586, 587, 588, 589, 590, 591]
+winners 20 losers 42 scratch 2
+win rate (ex-scratch) 20/62 = 32.3% Wilson (22.0, 44.6)
+winners: MAE n=20 p50=10.88 p80=18.3 p95=44.64 | MFE n=20 p50=67.75 p80=86.6 p95=138.46
+losers: MAE n=42 p50=40.38 p80=50.8 p95=75.0 | MFE n=42 p50=16.62 p80=28.4 p95=47.77
+exit reasons: {'tp': 13, 'sl': 44, 'manual': 4, 'limit': 3, 'unknown': 1}
+stop-hit share 44/65 = 67.7% Wilson (55.6, 77.8); target-hit 13/65 = 20.0% Wilson (12.1, 31.3)
+stop-hit trades: risk_pts p50/p80/p95 = 31.25 44.25 69.96  ids: [522, 525, 527, 528, 531, 533, 534, 535, 537, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 550, 551, 552, 553, 554, 556, 557, 559, 561, 562, 563, 564, 565, 567, 568, 570, 571, 583, 585, 586, 587, 588, 589, 590, 591]
+stop-hit losers' MFE before death: p50/p80 = 19.62 41.2 ; share with MFE>=10pts: 30 / 44  >=20: 21  >=30: 12
+winners' MAE: share with MAE>=10: 11 / 20  >=20: 4  >=30: 2  >=40: 2
+floor (1.5xATR5m at entry) available for winners 11 losers 23
+winners with MAE > floor (floor would NOT have saved them, but a stop AT the floor would have killed them): 0 / 11  ids: []
+winners MAE/floor ratio p50/p80/p95: 0.12 0.47 0.68
+stop-hit trades: risk_pts vs floor — risk<floor (pre-0B tighter-than-floor stops): 18 / 25 ; risk/floor p50: 0.8
+ATR5m at entry p50/p80: 24.43 32.16  floor p50: 36.64
+post-0B trades: [(589, 'sl', 77.5, 65.73, -155.0), (590, 'sl', 49.5, 49.42, -99.0), (591, 'sl', 70.0, 80.38, -140.0)]
+avg win 115.55 avg loss -70.76 payoff 1.63 expectancy/trade -8.68 total -563.93
+MFE>=2R? for each trade need R; using stop-hit risk median as R proxy: 31.25
+share of all trades with MFE >= 2x median risk (62.5 pts): 13/65  >=1x: 27

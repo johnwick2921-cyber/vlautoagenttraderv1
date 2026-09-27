@@ -1,0 +1,25 @@
+B=5000 day-resampled 100-trade runs, compliant n=58
+rolling-20 max DD over 100 trades: p50=970 p90=1283 p95=1401 p99=1614
+  P(any rolling-20 DD > $1236) = 0.1370
+  P(any rolling-20 DD > $1400) = 0.0502
+  P(any rolling-20 DD > $1500) = 0.0248
+  P(any rolling-20 DD > $1600) = 0.0114
+  P(any rolling-20 DD > $1700) = 0.0048
+min WINS in any rolling 30 (integer):
+  P(some rolling-30 window has <= 0 wins of 30) = 0.0004
+  P(some rolling-30 window has <= 1 wins of 30) = 0.0014
+  P(some rolling-30 window has <= 2 wins of 30) = 0.0166
+  P(some rolling-30 window has <= 3 wins of 30) = 0.0476
+  P(some rolling-30 window has <= 4 wins of 30) = 0.1834
+  P(some rolling-30 window has <= 5 wins of 30) = 0.4198
+  P(some rolling-30 window has <= 6 wins of 30) = 0.6762   <- report's 0.229 bound = <=6 wins
+  P(some rolling-30 window has <= 7 wins of 30) = 0.8664
+  P(some rolling-30 window has <= 8 wins of 30) = 0.9554
+  P(some rolling-30 window has <= 9 wins of 30) = 0.9880
+  P(some rolling-30 window has <= 10 wins of 30) = 0.9984
+  distribution of min-wins-of-30: p01=2 p05=4 p50=6
+8-streak: E[fires per 100]=1.037  P(>=1)=0.6878
+AS WRITTEN P(DD>1236 or <=6 wins of 30) = 0.6816; with 8-streak leg 0.8314
+RECAL P(DD>$1600 or <=3 wins of 30) = 0.0516  (DD leg alone 0.0114, WR leg alone 0.0476)
+RECAL P(DD>$1700 or <=3 wins of 30) = 0.0490  (DD leg alone 0.0048, WR leg alone 0.0476)
+RECAL P(DD>$1600 or <=4 wins of 30) = 0.1848  (DD leg alone 0.0114, WR leg alone 0.1834)

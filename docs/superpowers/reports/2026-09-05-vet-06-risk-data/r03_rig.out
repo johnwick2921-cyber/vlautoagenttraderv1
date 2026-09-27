@@ -1,0 +1,145 @@
+====================================================================================
+COMPLIANT n=58 (PRIMARY)  ids 521 .. 591
+EXPECTANCY: n=58 sum=-466.43 mean=-8.0419 sd=104.893 se=13.773 95% CI [-35.04, +18.95] t=-0.584
+  W/L/F=18/38/2  p(win) flats-excluded 18/56=0.321 Wilson [0.214, 0.452] | flats-in-denominator 18/58=0.310 Wilson [0.206, 0.438]
+  avg win +125.47 (n=18)  avg loss -71.71 (n=38)  payoff 1.750
+  edge $5/trade -> n(CI clears at observed mean)=1691  n(80% power)=3454
+  edge $7/trade -> n(CI clears at observed mean)=863  n(80% power)=1762
+  edge $10/trade -> n(CI clears at observed mean)=423  n(80% power)=864
+  edge $15/trade -> n(CI clears at observed mean)=188  n(80% power)=384
+  edge $20/trade -> n(CI clears at observed mean)=106  n(80% power)=216
+  at the CURRENT effect |-8.042|: n(CI)=654  n(80% power)=1335
+  Stage-A mean required (lower 95% CI > 0  =>  mean > 1.96*sd/sqrt(n)):
+    n=  30  $37.54  (18.8 MNQ pts)
+    n=  50  $29.07  (14.5 MNQ pts)
+    n=  58  $27.00  (13.5 MNQ pts)
+    n=  65  $25.50  (12.8 MNQ pts)
+    n= 100  $20.56  (10.3 MNQ pts)
+    n= 200  $14.54  (7.3 MNQ pts)
+    n= 400  $10.28  (5.1 MNQ pts)
+DAYS D=12
+    2026-08-18: n= 4 sum= +469.00
+    2026-08-19: n= 7 sum=  +33.57
+    2026-08-20: n=11 sum= -407.50
+    2026-08-23: n= 3 sum=  -24.50
+    2026-08-24: n=11 sum=  -26.50
+    2026-08-25: n= 3 sum= -200.00
+    2026-08-26: n= 2 sum= -131.50
+    2026-08-27: n= 4 sum=   +6.00
+    2026-08-30: n= 2 sum= +124.50
+    2026-08-31: n= 6 sum= +212.00
+    2026-09-01: n= 4 sum= -381.50
+    2026-09-02: n= 1 sum= -140.00
+  day mean=-38.87 sd=243.69 median=-25.50 min=-407.50(2026-08-20) max=+469.00(2026-08-18) green=5 red=7 trades/day med=4
+  per-day 95% t-CI (df=11) [-193.70, +115.97] t=-0.553
+  day-bootstrap pct-CI [-165.42, +95.60] P(mean>0)=0.279
+  days required at current day effect: CI=151  80% power=309
+    at +$50/day: CI=91  80% power=186
+    at +$100/day: CI=23  80% power=47
+  ICC=0.085 design effect=1.31 effective n(trades)=44.3 effective DAYS=12
+  MAX DRAWDOWN ($, 1 lot):
+       h   method     p50     p90     p95     p99   worst
+      20      iid     503     877    1000    1209    1694
+      20   block5     513     853     969    1181    1672
+      20      day     482     882    1002    1216    1770
+      50      iid     933    1584    1783    2195    3136
+      50   block5     908    1502    1684    2021    3017
+      50      day     927    1600    1805    2250    3824
+     100      iid    1510    2524    2830    3422    4606
+     100   block5    1455    2319    2587    3169    4624
+     100      day    1499    2506    2820    3442    4648
+      53      day     967    1656    1875    2300    3146
+      65      day    1108    1887    2116    2616    3684
+  MAX DRAWDOWN over N session-DAYS:
+     10d p50=796 p90=1466 p95=1681 p99=2114 worst=3087
+     20d p50=1352 p90=2339 p95=2662 p99=3251 worst=5057
+     40d p50=2285 p90=3809 p95=4278 p99=5206 worst=6517
+  P(losing streak>=k in 50, day-resampled): k4=0.987 k6=0.765 k8=0.428 k10=0.198
+  8-loss breaker: E[fires per 100 trades]=1.034 P(>=1 in 100)=0.686 | 10-loss E=0.449
+  REALISED: final=-466.43 peak=+502.57 at #11 maxDD=969.00 span trades #11->#58 (47 trades) losing-streak=7 nonwin-streak=7
+    realised 969 sits at percentile 93.9 of the 20-trade day-resampled DD distribution (p50=482)
+    realised 969 sits at percentile 53.5 of the 50-trade day-resampled DD distribution (p50=927)
+    realised 969 sits at percentile 50.2 of the 53-trade day-resampled DD distribution (p50=967)
+    realised 969 sits at percentile 39.0 of the 65-trade day-resampled DD distribution (p50=1108)
+  REALISED by day: red-day streak=5 maxDD(days)=969.00
+  KILL-SWITCH calibration (B=2000 day-resampled 100-trade runs):
+    P(any rolling-20 DD > $1236) = 0.135
+    P(any rolling-20 DD > $1400) = 0.051
+    P(any rolling-20 DD > $1574) = 0.015
+    P(any rolling-20 DD > $1800) = 0.000
+    rolling-20 DD max over 100 trades: p50=970 p90=1281 p95=1403 p99=1609
+    P(any rolling-30 win rate < 0.229) = 0.675
+    P(any rolling-30 win rate < 0.200) = 0.428
+    P(any rolling-30 win rate < 0.167) = 0.428
+    P(any rolling-30 win rate < 0.133) = 0.049
+    min rolling-30 win rate: p50=0.200 p05=0.133 p01=0.067
+    P(DD-leg OR WR-leg trips as WRITTEN in the report) = 0.682
+    P(any of the three legs incl. 8-streak) = 0.841
+  WEEK: P(5-day sum <= -900)=0.081  P(4-day<=-900)=0.051  5-day p05=-1008
+
+====================================================================================
+BROAD n=65 (sensitivity)  ids 521 .. 591
+EXPECTANCY: n=65 sum=-563.93 mean=-8.6758 sd=101.162 se=12.548 95% CI [-33.27, +15.92] t=-0.691
+  W/L/F=21/42/2  p(win) flats-excluded 21/63=0.333 Wilson [0.229, 0.456] | flats-in-denominator 21/65=0.323 Wilson [0.222, 0.444]
+  avg win +114.67 (n=21)  avg loss -70.76 (n=42)  payoff 1.620
+  edge $5/trade -> n(CI clears at observed mean)=1573  n(80% power)=3213
+  edge $7/trade -> n(CI clears at observed mean)=802  n(80% power)=1639
+  edge $10/trade -> n(CI clears at observed mean)=393  n(80% power)=803
+  edge $15/trade -> n(CI clears at observed mean)=175  n(80% power)=357
+  edge $20/trade -> n(CI clears at observed mean)=98  n(80% power)=201
+  at the CURRENT effect |-8.676|: n(CI)=522  n(80% power)=1067
+  Stage-A mean required (lower 95% CI > 0  =>  mean > 1.96*sd/sqrt(n)):
+    n=  30  $36.20  (18.1 MNQ pts)
+    n=  50  $28.04  (14.0 MNQ pts)
+    n=  58  $26.04  (13.0 MNQ pts)
+    n=  65  $24.59  (12.3 MNQ pts)
+    n= 100  $19.83  (9.9 MNQ pts)
+    n= 200  $14.02  (7.0 MNQ pts)
+    n= 400  $9.91  (5.0 MNQ pts)
+DAYS D=12
+    2026-08-18: n= 4 sum= +469.00
+    2026-08-19: n= 8 sum=  +46.57
+    2026-08-20: n=12 sum= -492.00
+    2026-08-23: n= 5 sum= -142.50
+    2026-08-24: n=11 sum=  -26.50
+    2026-08-25: n= 3 sum= -200.00
+    2026-08-26: n= 3 sum=  -34.50
+    2026-08-27: n= 4 sum=   +6.00
+    2026-08-30: n= 4 sum= +119.50
+    2026-08-31: n= 6 sum= +212.00
+    2026-09-01: n= 4 sum= -381.50
+    2026-09-02: n= 1 sum= -140.00
+  day mean=-46.99 sd=256.60 median=-30.50 min=-492.00(2026-08-20) max=+469.00(2026-08-18) green=5 red=7 trades/day med=4
+  per-day 95% t-CI (df=11) [-210.03, +116.04] t=-0.634
+  day-bootstrap pct-CI [-181.29, +91.47] P(mean>0)=0.251
+  days required at current day effect: CI=115  80% power=234
+    at +$50/day: CI=101  80% power=207
+    at +$100/day: CI=25  80% power=52
+  ICC=0.087 design effect=1.37 effective n(trades)=47.5 effective DAYS=12
+  MAX DRAWDOWN ($, 1 lot):
+       h   method     p50     p90     p95     p99   worst
+      20      iid     497     864     979    1192    1508
+      20   block5     496     854     978    1209    1672
+      20      day     492     873     992    1215    1656
+      50      iid     934    1572    1757    2134    2908
+      50   block5     912    1528    1724    2086    2884
+      50      day     932    1574    1778    2210    3097
+     100      iid    1520    2482    2801    3364    4927
+     100   block5    1465    2410    2673    3240    4558
+     100      day    1523    2545    2857    3416    4990
+      53      day     964    1647    1865    2230    2964
+      65      day    1123    1900    2146    2551    3777
+  MAX DRAWDOWN over N session-DAYS:
+     10d p50=863 p90=1593 p95=1840 p99=2301 worst=3354
+     20d p50=1480 p90=2602 p95=2948 p99=3571 worst=4998
+     40d p50=2551 p90=4249 p95=4768 p99=5765 worst=7251
+  P(losing streak>=k in 50, day-resampled): k4=0.989 k6=0.716 k8=0.343 k10=0.141
+  8-loss breaker: E[fires per 100 trades]=0.817 P(>=1 in 100)=0.594 | 10-loss E=0.302
+  REALISED: final=-563.93 peak=+515.57 at #12 maxDD=1079.50 span trades #12->#65 (53 trades) losing-streak=7 nonwin-streak=10
+    realised 1080 sits at percentile 97.0 of the 20-trade day-resampled DD distribution (p50=492)
+    realised 1080 sits at percentile 62.9 of the 50-trade day-resampled DD distribution (p50=932)
+    realised 1080 sits at percentile 59.4 of the 53-trade day-resampled DD distribution (p50=964)
+    realised 1080 sits at percentile 46.7 of the 65-trade day-resampled DD distribution (p50=1123)
+  REALISED by day: red-day streak=5 maxDD(days)=1079.50
+  KILL-SWITCH calibration (B=2000 day-resampled 100-trade runs):
+    P(any rolling-20 DD > $1236) = 0.129

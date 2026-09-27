@@ -1,0 +1,47 @@
+--- per CT day: rows, pnl_corrected non-null, sources, plan_id set, min id, max id
+d|n|pc|sys|rec|arm|e7|pid|mn|mx|sum_pc
+2026-08-05|8|5|8|0|0|0|0|352|359|101.0
+2026-08-06|13|13|13|0|0|0|0|360|372|68.25
+2026-08-07|9|9|9|0|0|0|0|373|381|248.5
+2026-08-09|11|11|11|0|0|0|0|382|395|-12.95
+2026-08-10|71|71|71|0|0|0|0|396|466|-3200.04
+2026-08-11|37|37|37|0|0|0|0|467|503|398.5
+2026-08-12|9|9|9|0|0|0|0|504|512|-388.6
+2026-08-13|7|7|7|0|0|0|0|513|519|-81.0
+2026-08-19|7|7|7|0|0|0|7|521|527|268.57
+2026-08-20|9|9|9|0|0|0|9|528|536|219.5
+2026-08-21|8|8|8|0|0|0|8|537|544|-464.5
+2026-08-23|1|1|1|0|0|0|1|545|545|-29.5
+2026-08-24|8|8|8|0|0|0|8|546|553|-232.0
+2026-08-25|8|8|8|0|0|0|8|554|561|40.5
+2026-08-26|2|2|2|0|0|0|2|562|563|-148.0
+2026-08-27|3|3|2|1|0|0|3|564|566|-34.5
+2026-08-28|4|4|0|4|0|0|4|567|570|6.0
+2026-08-30|4|3|0|1|0|3|4|571|574|-39.5
+2026-08-31|6|3|0|3|3|0|6|575|580|164.0
+2026-09-01|6|6|2|2|2|0|6|581|586|212.0
+2026-09-02|4|4|4|0|0|0|4|587|590|-381.5
+2026-09-03|1|1|0|1|0|0|1|591|591|-140.0
+--- id 361..520: source, plan_id, pnl_corrected null
+source|pid|pc|COUNT(*)
+system|0|156|156
+--- all-time count by plan_id set
+pid|COUNT(*)|SUM(pnl_corrected IS NOT NULL)
+0|516|163
+1|71|67
+--- first row with plan_id set
+id|datetime(entry_time/1000,'unixepoch','-5 hours')|plan_id|source
+521|2026-08-19 03:22:03|2026-08-19:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|system
+522|2026-08-19 07:17:31|2026-08-19:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|system
+523|2026-08-19 09:06:52|2026-08-19:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|system
+--- the 4 era NULL pnl_corrected rows
+id|et|source|side|entry_price|exit_price|realized_pnl|note|plan_session
+572|2026-08-30 22:34:16|e7_farside_test|SHORT|29346.25|29346.25|0.0||TEST-E7
+576|2026-08-31 10:00:01|armed_entry|short|29437.0|29437.0|0.0||NY
+577|2026-08-31 12:25:29|armed_entry|long|29413.0|29413.0|0.0|class-27 backfill: duplicate of row 578 (same NT8 position, same entry order)|NY
+579|2026-08-31 13:09:28|armed_entry|short|29459.0|0.0|0.0|class-27 backfill: S3 entry netted the S1 long — no position ever existed; exit |NY
+--- the 3 e7 rows
+id|et|source|pnl_corrected|plan_session
+572|2026-08-30 22:34:16|e7_farside_test||TEST-E7
+573|2026-08-30 22:52:16|e7_farside_test|6.0|
+574|2026-08-30 23:00:16|e7_farside_test|-1.0|

@@ -1,0 +1,50 @@
+=== r08: position 591 stop — what the BROKER held vs what the ledger holds (revision re-measure) ===
+--- Go log, 09-03, the arm's stop recomputed every cycle (⚔️/🛑 lines) ---
+09-03 09:00:54 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29349.90 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:02:54 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29354.91 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:02:54 [INFO] trader/auto_trader.go:43  ⚔️ armed NY S1 leg 1 short limit 29285.00 SL 29354.91 TP 29144.50 (tick-managed placement is Phase 2)
+09-03 09:02:54 [INFO] trader/auto_trader.go:43  📌 armed S1 → WORKING limit 29285.00 signal=f2b1eb20-f89e-4a88-bcff-5ce971d17861 (band ±100t)
+09-03 09:05:35 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29351.63 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:06:54 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29352.65 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:06:54 [INFO] trader/auto_trader.go:43  ⚔️ armed NY S1 leg 1 short limit 29285.00 SL 29352.65 TP 29144.50 (tick-managed placement is Phase 2)
+09-03 09:08:54 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29354.44 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:08:54 [INFO] trader/auto_trader.go:43  ⚔️ armed NY S1 leg 1 short limit 29285.00 SL 29354.44 TP 29144.50 (tick-managed placement is Phase 2)
+09-03 09:10:54 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29352.40 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:10:54 [INFO] trader/auto_trader.go:43  ⚔️ armed NY S1 leg 1 short limit 29285.00 SL 29352.40 TP 29144.50 (tick-managed placement is Phase 2)
+09-03 09:12:54 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29354.86 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:12:54 [INFO] trader/auto_trader.go:43  ⚔️ armed NY S1 leg 1 short limit 29285.00 SL 29354.86 TP 29144.50 (tick-managed placement is Phase 2)
+09-03 09:15:01 [INFO] trader/auto_trader.go:43  🛑 arm stop NY S1 leg 1 short: stop 29350.67 (authored 29340.00 WIDENED) · anchor ONH 29293.00 → beyond 29293.50 · atr_floor 2
+09-03 09:15:01 [INFO] trader/auto_trader.go:43  ⚔️ armed NY S1 leg 1 short limit 29285.00 SL 29350.67 TP 29144.50 (tick-managed placement is Phase 2)
+09-03 09:20:45 [WARN] ninjatrader/close_sync.go:196 📕 NT position closed: MNQ SHORT qty=1.00 exit=29355.00 reason=sl pnl=-140.00 (owner=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d
+
+--- ledger row + position row ---
+id  scenario  side   entry_px  stop_px           fill_price  state   signal_id                             created_ct           updated_ct         
+--  --------  -----  --------  ----------------  ----------  ------  ------------------------------------  -------------------  -------------------
+35  S1        short  29285.0   29351.6284728996  29285.0     filled  f2b1eb20-f89e-4a88-bcff-5ce971d17861  2026-09-03 09:02:54  2026-09-03 10:28:29
+id   side   entry_price  exit_price  pnl_corrected  close_reason  entry_order_id                        exit_order_id                       
+---  -----  -----------  ----------  -------------  ------------  ------------------------------------  ------------------------------------
+591  SHORT  29285.0      29355.0     -140.0         sync          f2b1eb20-f89e-4a88-bcff-5ce971d17861  f2b1eb20-f89e-4a88-bcff-5ce971d17861
+
+--- code: the bracket is sent AT PLACEMENT and only re-specced through ModifyBracket behind churnNeedsModify; the LEDGER field is overwritten unconditionally ---
+armed_executor.go:596-603:
+				if row.State == "working" && churnNeedsModify(row.StopPx, row.TargetPx, leg.Stop, leg.Target, tick) {
+					if nt := at.armedTrader(); nt != nil {
+						_ = nt.ModifyBracket(row.SignalID, leg.Stop, leg.Target)
+						at.logInfof("📌 armed %s leg %d bracket modify (churn guard) SL %.2f→%.2f TP %.2f→%.2f",
+							sc.ID, li+1, row.StopPx, leg.Stop, row.TargetPx, leg.Target)
+					}
+				}
+				row.EntryPx, row.StopPx, row.TargetPx = leg.Entry, leg.Stop, leg.Target
+armed_executor.go:965:
+				sid, perr := nt.PlaceLimitEntry(at.futuresSymbol(), r.Side, 1, r.EntryPx, r.StopPx, r.TargetPx)
+churnNeedsModify (:1008-1010):
+func churnNeedsModify(oldStop, oldTarget, newStop, newTarget, tick float64) bool {
+	return math.Abs(oldStop-newStop) >= 2*tick || math.Abs(oldTarget-newTarget) >= 2*tick
+}
+
+--- no 'bracket modify' line exists on 09-03 ---
+0 0 0 0
+
+CONCLUSION: broker bracket at placement = SL 29354.91 (09:02:54, signal f2b1eb20 = position 591 entry_order_id);
+NT8's own order log (section 05 :67-68,102) shows Stop price=29355 (round-to-tick) and the exit Filled at Stop price=29355.
+Stop slippage = 0.00 pt / 0 ticks. armed_orders.stop_px = 29351.6284728996 is the 09:05:35 cycle's in-place rewrite, AFTER the fill.

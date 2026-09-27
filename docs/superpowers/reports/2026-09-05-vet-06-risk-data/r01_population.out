@@ -1,0 +1,38 @@
+=== A. plan_id='UNRESOLVABLE' rows, all-time ===
+530|UNRESOLVABLE|system|13.0||2026-08-20 08:12:02
+539|UNRESOLVABLE|system|-84.5||2026-08-21 03:54:09
+545|UNRESOLVABLE|system|-29.5||2026-08-23 22:28:10
+546|UNRESOLVABLE|system|-88.5||2026-08-24 07:06:42
+566|UNRESOLVABLE|reconcile|97.0||2026-08-27 11:32:53
+571|UNRESOLVABLE|reconcile|-44.5||2026-08-30 17:38:33
+573|UNRESOLVABLE|e7_farside_test|6.0||2026-08-30 22:52:16
+574|UNRESOLVABLE|e7_farside_test|-1.0||2026-08-30 23:00:16
+580|UNRESOLVABLE|reconcile|39.5||2026-08-31 13:37:08
+=== B. count + sum ===
+9|-92.5
+=== C. distinct plan_id values in era (id>=521) ===
+(real)|62
+UNRESOLVABLE|9
+=== D. the 7 ids the report calls EMPTY-condition ===
+id|plan_id|cited_scenario_id|plan_session|pnl_corrected|source
+530|UNRESOLVABLE|off-plan||13.0|system
+539|UNRESOLVABLE|off-plan||-84.5|system
+545|UNRESOLVABLE|||-29.5|system
+546|UNRESOLVABLE|||-88.5|system
+566|UNRESOLVABLE|||97.0|reconcile
+571|UNRESOLVABLE|||-44.5|reconcile
+580|UNRESOLVABLE|||39.5|reconcile
+=== E. n=65 sample: exclusions ===
+71
+65|-563.93
+=== F. compliant (exclude UNRESOLVABLE) ===
+58|-466.43|-8.0419
+=== G. UNRESOLVABLE within the 65 sample ===
+id|ROUND(pnl_corrected,2)|plan_session|source|pnl_correction_note
+530|13.0||system|T7 2026-08-27: pnl_corrected = recompute (stored prices × row qty × $2) — realized was 13.00 (Δ+0.00)
+539|-84.5||system|T7 2026-08-27: pnl_corrected = recompute (stored prices × row qty × $2) — realized was -84.50 (Δ+0.00)
+545|-29.5||system|T7 2026-08-27: pnl_corrected = recompute (stored prices × row qty × $2) — realized was -29.50 (Δ+0.00)
+546|-88.5||system|T7 2026-08-27: pnl_corrected = recompute (stored prices × row qty × $2) — realized was -88.50 (Δ+0.00)
+566|97.0||reconcile|T7 2026-08-27: pnl_corrected = recompute (stored prices × row qty × $2) — realized was 97.00 (Δ+0.00)
+571|-44.5||reconcile|T7 close-path: pnl_corrected = recompute (Δ+0.00 vs realized)
+580|39.5||reconcile|T7 close-path: pnl_corrected = recompute (Δ+0.00 vs realized)

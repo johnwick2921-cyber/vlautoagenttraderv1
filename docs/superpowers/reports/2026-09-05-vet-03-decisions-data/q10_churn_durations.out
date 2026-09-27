@@ -1,0 +1,42 @@
+s
+## q10a: plan versions per session-day since 09-01 + trigger mix
+trade_date | session | versions | level_event | scheduled | fail_closed | owner_reset | dormant | rearmed | exhausted
+2026-09-01 | ASIA | 10 | 4 | 0 | 4 | 1 | 0 | 1 | 0
+2026-09-01 | LONDON | 6 | 4 | 0 | 1 | 0 | 1 | 0 | 0
+2026-09-01 | NY | 5 | 1 | 1 | 0 | 0 | 2 | 1 | 0
+2026-09-02 | ASIA | 15 | 11 | 1 | 0 | 0 | 2 | 1 | 0
+2026-09-02 | LONDON | 6 | 4 | 0 | 1 | 1 | 0 | 0 | 0
+2026-09-02 | NY | 12 | 11 | 0 | 0 | 0 | 1 | 0 | 0
+2026-09-03 | ASIA | 7 | 6 | 1 | 0 | 0 | 0 | 0 | 0
+2026-09-03 | LONDON | 2 | 1 | 0 | 0 | 0 | 1 | 0 | 0
+2026-09-03 | NY | 7 | 5 | 0 | 0 | 0 | 2 | 0 | 0
+2026-09-04 | LONDON | 3 | 2 | 1 | 0 | 0 | 0 | 0 | 0
+2026-09-04 | NY | 6 | 4 | 0 | 1 | 1 | 0 | 0 | 0
+s
+## q10b: inter-version minutes since 09-01 (all sessions)
+n | mean_min | min_min | max_min | median_min
+68 | 60.8 | 6.5 | 400.9 | 35.7
+s
+## q10c: trigger_reason mix since 09-01
+tr | n
+level_event | 53
+dormant:* | 9
+planner_fail_closed | 7
+rearmed:* | 3
+owner_reset | 3
+ASIA_scheduled_read | 2
+NY_scheduled_read | 1
+LONDON_scheduled_read | 1
+s
+## q10d: executor ai_request_duration_ms since 09-01 (non-null)
+n | p50 | p90 | max
+2332 | 16691 | 51076 | 600000
+s
+## q10e: cited_scenario_id distribution of executor cycles since 09-01
+c | n
+ | 2319
+S1 | 15
+S2 | 8
+S3 | 2
+off-plan | 1
+S4 | 1

@@ -1,0 +1,22 @@
+72:   finding — has **zero production callers**; only tests. The NT8 AddOn computes `slippageTicks`
+86:   as a fade. On the other side of the trade, plans claim a median **2.55:1** while the book
+87:   realises **1.66:1**, because the R:R floor is checked against a target the model itself chose;
+88:   only **3 of 36** trades ever produced enough favourable excursion to reach a 2.0R target
+106:   marketable-guard rejections in particular are not risk management — they are a systematic
+125:**One disagreement I am ruling on.** A reports win rate **33.87%** and payoff **1.66**
+128:— a scratch is not a loss and should not sit in the win-rate denominator — so **33.87% / 1.66 /
+137:1. **The reward side is fiction `[T]`.** Plans claim a median **2.55:1**; realised is **1.66:1**.
+139:   bigger number. Only **3 of 36** trades produced enough favourable excursion to reach a 2.0R
+161:my own independent computation to four decimals. (2) B's arms tally, **5 of 15 marketable-guard
+184:2. **The marketable guard is the largest killer of arms and is invisible to every counter `[T]`.**
+185:   5 of 15 arms died to it and never reached the wire; one was cancelled for closing **1.70
+189:3. **The broker computes your slippage and Go bins it `[T]`.** The AddOn calculates
+190:   `slippageTicks` (`ninjascript/VLTraderTCPClient.cs:1383`) and ships it (`:1430`); Go declares
+323:`SlippageTicks` (`provider/ninjatrader/tcp_framing.go:86`, declared, set in a mock and a test,
+359:**5. Convert the marketable guard from a cancel into a bounded entry.**
+360:*Why:* **5 of 15 arms (33%) died "level accepted through — marketable, never placed"** against
+364:limit that refuses to become marketable is not saving you slippage; it is selecting for slow
+367:*What it takes:* code + an owner ruling on a slippage cap. And a counter, so it stops being
+378:**7. Read the slippage the broker is already sending you.**
+379:*Why:* the AddOn computes `slippageTicks` and ships it; Go never reads it `[T]`. Meanwhile 3 of 3
+384:*Watch:* mean and 90th-percentile slippage per fill, by condition.

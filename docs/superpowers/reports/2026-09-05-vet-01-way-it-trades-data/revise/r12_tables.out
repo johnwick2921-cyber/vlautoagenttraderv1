@@ -1,0 +1,112 @@
+
+#### n58 COMPLIANT
+-- by session
+  ASIA                   n 16  2/13/1  Σ   -552.43  meanR -0.520 (nR 16) medR -1.000
+  LONDON                 n 21  7/14/0  Σ    +24.00  meanR +0.145 (nR 21) medR -1.000
+  NY                     n 21  9/11/1  Σ    +62.00  meanR +0.280 (nR 21) medR -1.000
+-- by hour bucket (CT)
+  17:00-02:00            n 16  2/13/1  Σ   -552.43  meanR -0.520 (nR 16) medR -1.000
+  02:00-08:00            n 20  6/14/0  Σ    -82.00  meanR +0.041 (nR 20) medR -1.000
+  08:00-11:00            n 16  5/10/1  Σ   -411.00  meanR -0.156 (nR 16) medR -1.000
+  11:00-13:00            n  4  4/0/0  Σ   +552.00  meanR +2.415 (nR 4) medR +1.555
+  13:00-15:00            n  2  1/1/0  Σ    +27.00  meanR +0.465 (nR 2) medR +0.465
+-- prompt's privileged window, rendered
+  07:30-10:00 CT         n 15  5/9/1  Σ   -249.50  meanR -0.058 (nR 15) medR -1.000
+  08:30-11:00 CT         n 16  5/10/1  Σ   -411.00  meanR -0.156 (nR 16) medR -1.000
+  09:00-10:00 CT         n  9  3/6/0  Σ   -183.50  meanR -0.232 (nR 9) medR -1.000
+-- ATR5m tercile (cuts from THIS population)
+   cuts 22.57 / 27.94  (n with ATR 55)
+  low                    n 19  3/16/0  Σ   -772.00  meanR -0.475 (nR 19) medR -1.000
+  mid                    n 18  8/9/1  Σ   +510.57  meanR +0.386 (nR 18) medR -0.190
+  high                   n 18  5/12/1  Σ   -400.50  meanR -0.031 (nR 18) medR -1.000
+-- by side
+  short                  n 39  14/23/2  Σ   +342.07  meanR +0.271 (nR 39) medR -1.000
+  long                   n 19  4/15/0  Σ   -808.50  meanR -0.523 (nR 19) medR -1.000
+-- session x side
+  ASIA short             n 13  2/10/1  Σ   -394.93  meanR -0.409 (nR 13) medR -1.000
+  ASIA long              n  3  0/3/0  Σ   -157.50  meanR -1.000 (nR 3) medR -1.000
+  LONDON short           n 12  5/7/0  Σ   +250.00  meanR +0.513 (nR 12) medR -0.595
+  LONDON long            n  9  2/7/0  Σ   -226.00  meanR -0.347 (nR 9) medR -1.000
+  NY short               n 14  7/6/1  Σ   +487.00  meanR +0.694 (nR 14) medR +0.190
+  NY long                n  7  2/5/0  Σ   -425.00  meanR -0.546 (nR 7) medR -1.000
+-- by entry path (stop_src)
+  arm                    n  7  3/4/0  Σ    -53.00  meanR +0.021 (nR 7) medR -0.190
+  decision               n 47  12/33/2  Σ   -560.93  meanR -0.059 (nR 47) medR -1.000
+  plan                   n  4  3/1/0  Σ   +147.50  meanR +0.810 (nR 4) medR +0.885
+-- by confirm rule
+  1x5m_close             n 29  5/23/1  Σ  -1135.00  meanR -0.473 (nR 29) medR -1.000
+  2x5m_close             n 10  5/4/1  Σ   +449.50  meanR +0.567 (nR 10) medR +0.290
+  touch                  n  9  5/4/0  Σ   +216.50  meanR +0.523 (nR 9) medR +0.380
+  (none)                 n  7  3/4/0  Σ   +268.57  meanR +0.994 (nR 7) medR -0.560
+  15m_close              n  3  0/3/0  Σ   -266.00  meanR -1.000 (nR 3) medR -1.000
+-- reject x session
+  reject ASIA            n 11  2/8/1  Σ   -234.00  meanR -0.341 (nR 11) medR -1.000
+  reject LONDON          n  8  5/3/0  Σ   +538.50  meanR +1.169 (nR 8) medR +2.035
+  reject NY              n 12  7/5/0  Σ   +281.50  meanR +0.717 (nR 12) medR +0.320
+-- plan bias vs side
+  neutral/none           n  6  2/4/0  Σ    -27.00  meanR +0.070 (nR 6) medR -1.000
+  with                   n 49  16/31/2  Σ   -155.43  meanR +0.065 (nR 49) medR -1.000
+  against                n  3  0/3/0  Σ   -284.00  meanR -1.000 (nR 3) medR -1.000
+-- day_type
+  balance                n 23  6/17/0  Σ   -736.43  meanR -0.270 (nR 23) medR -1.000
+  trend                  n 17  6/10/1  Σ   +321.00  meanR +0.168 (nR 17) medR -1.000
+  trend-down             n 13  3/9/1  Σ   -537.50  meanR -0.336 (nR 13) medR -1.000
+  trend_down             n  4  2/2/0  Σ   +213.00  meanR +0.512 (nR 4) medR +0.430
+  balance (short-lean pullback) n  1  1/0/0  Σ   +273.50  meanR +6.290 (nR 1) medR +6.290
+
+#### n65 sensitivity
+-- by session
+  ASIA                   n 16  2/13/1  Σ   -552.43  meanR -0.520 (nR 16) medR -1.000
+  LONDON                 n 21  7/14/0  Σ    +24.00  meanR +0.145 (nR 21) medR -1.000
+  NY                     n 21  9/11/1  Σ    +62.00  meanR +0.280 (nR 21) medR -1.000
+  (off-plan)             n  7  3/4/0  Σ    -97.50  meanR -0.710 (nR 4) medR -1.000
+-- by hour bucket (CT)
+  17:00-02:00            n 18  2/15/1  Σ   -626.43  meanR -0.548 (nR 17) medR -1.000
+  02:00-08:00            n 22  6/16/0  Σ   -255.00  meanR -0.054 (nR 22) medR -1.000
+  08:00-11:00            n 17  6/10/1  Σ   -398.00  meanR -0.136 (nR 17) medR -1.000
+  11:00-13:00            n  5  5/0/0  Σ   +649.00  meanR +2.415 (nR 4) medR +1.555
+  13:00-15:00            n  3  2/1/0  Σ    +66.50  meanR +0.465 (nR 2) medR +0.465
+-- prompt's privileged window, rendered
+  07:30-10:00 CT         n 16  6/9/1  Σ   -236.50  meanR -0.044 (nR 16) medR -0.690
+  08:30-11:00 CT         n 16  5/10/1  Σ   -411.00  meanR -0.156 (nR 16) medR -1.000
+  09:00-10:00 CT         n  9  3/6/0  Σ   -183.50  meanR -0.232 (nR 9) medR -1.000
+-- ATR5m tercile (cuts from THIS population)
+   cuts 22.46 / 27.93  (n with ATR 62)
+  low                    n 21  4/17/0  Σ   -795.50  meanR -0.475 (nR 19) medR -1.000
+  mid                    n 20  7/12/1  Σ   +158.57  meanR +0.062 (nR 20) medR -0.780
+  high                   n 21  8/12/1  Σ   -122.50  meanR +0.115 (nR 20) medR -1.000
+-- by side
+  short                  n 42  16/24/2  Σ   +310.07  meanR +0.237 (nR 41) medR -1.000
+  long                   n 23  5/18/0  Σ   -874.00  meanR -0.569 (nR 21) medR -1.000
+-- session x side
+  ASIA short             n 13  2/10/1  Σ   -394.93  meanR -0.409 (nR 13) medR -1.000
+  ASIA long              n  3  0/3/0  Σ   -157.50  meanR -1.000 (nR 3) medR -1.000
+  LONDON short           n 12  5/7/0  Σ   +250.00  meanR +0.513 (nR 12) medR -0.595
+  LONDON long            n  9  2/7/0  Σ   -226.00  meanR -0.347 (nR 9) medR -1.000
+  NY short               n 14  7/6/1  Σ   +487.00  meanR +0.694 (nR 14) medR +0.190
+  NY long                n  7  2/5/0  Σ   -425.00  meanR -0.546 (nR 7) medR -1.000
+-- by entry path (stop_src)
+  arm                    n  7  3/4/0  Σ    -53.00  meanR +0.021 (nR 7) medR -0.190
+  decision               n 51  13/36/2  Σ   -750.43  meanR -0.110 (nR 51) medR -1.000
+  plan                   n  4  3/1/0  Σ   +147.50  meanR +0.810 (nR 4) medR +0.885
+-- by confirm rule
+  1x5m_close             n 29  5/23/1  Σ  -1135.00  meanR -0.473 (nR 29) medR -1.000
+  (none)                 n 14  6/8/0  Σ   +171.07  meanR +0.375 (nR 11) medR -1.000
+  2x5m_close             n 10  5/4/1  Σ   +449.50  meanR +0.567 (nR 10) medR +0.290
+  touch                  n  9  5/4/0  Σ   +216.50  meanR +0.523 (nR 9) medR +0.380
+  15m_close              n  3  0/3/0  Σ   -266.00  meanR -1.000 (nR 3) medR -1.000
+-- reject x session
+  reject ASIA            n 11  2/8/1  Σ   -234.00  meanR -0.341 (nR 11) medR -1.000
+  reject LONDON          n  8  5/3/0  Σ   +538.50  meanR +1.169 (nR 8) medR +2.035
+  reject NY              n 12  7/5/0  Σ   +281.50  meanR +0.717 (nR 12) medR +0.320
+-- plan bias vs side
+  neutral/none           n 13  5/8/0  Σ   -124.50  meanR -0.242 (nR 10) medR -1.000
+  with                   n 49  16/31/2  Σ   -155.43  meanR +0.065 (nR 49) medR -1.000
+  against                n  3  0/3/0  Σ   -284.00  meanR -1.000 (nR 3) medR -1.000
+-- day_type
+  balance                n 23  6/17/0  Σ   -736.43  meanR -0.270 (nR 23) medR -1.000
+  trend                  n 17  6/10/1  Σ   +321.00  meanR +0.168 (nR 17) medR -1.000
+  trend-down             n 13  3/9/1  Σ   -537.50  meanR -0.336 (nR 13) medR -1.000
+  (none)                 n  7  3/4/0  Σ    -97.50  meanR -0.710 (nR 4) medR -1.000
+  trend_down             n  4  2/2/0  Σ   +213.00  meanR +0.512 (nR 4) medR +0.430
+  balance (short-lean pullback) n  1  1/0/0  Σ   +273.50  meanR +6.290 (nR 1) medR +6.290

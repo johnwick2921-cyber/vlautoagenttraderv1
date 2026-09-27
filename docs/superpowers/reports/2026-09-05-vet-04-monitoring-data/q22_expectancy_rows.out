@@ -1,0 +1,44 @@
+as_of_utc 2026-09-03T14:20:45Z min_n 30 excluded {'unresolved_pnl': 3, 'unresolvable': 7, 'test_seam': 3, 'no_condition': 0, 'crypto_era': 0} counterfactual_e8 [{'key': {'session': 'ASIA'}, 'rule': 'touch', 'n': 7, 'usable_n': 0, 'wins': 0, 'losses': 0, 'sum_net_pnl': None, 'mean': None, 'excluded_price_scale': 0, 'excluded_zero_pnl': 7, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · NO USABLE net_pnl in 7 rows (0 price-scale, 7 uncomputed zero) — no mean is computable'}, {'key': {'session': 'LONDON'}, 'rule': 'touch', 'n': 5, 'usable_n': 0, 'wins': 0, 'losses': 0, 'sum_net_pnl': None, 'mean': None, 'excluded_price_scale': 0, 'excluded_zero_pnl': 5, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · NO USABLE net_pnl in 5 rows (0 price-scale, 5 uncomputed zero) — no mean is computable'}, {'key': {'session': 'NY'}, 'rule': '1x5m_close', 'n': 18, 'usable_n': 0, 'wins': 0, 'losses': 0, 'sum_net_pnl': None, 'mean': None, 'excluded_price_scale': 0, 'excluded_zero_pnl': 18, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · NO USABLE net_pnl in 18 rows (0 price-scale, 18 uncomputed zero) — no mean is computable'}, {'key': {'condition': 'reclaim', 'session': 'NY'}, 'rule': '1m_mss', 'n': 4, 'usable_n': 3, 'wins': 0, 'losses': 0, 'sum_net_pnl': -25.459999999999127, 'mean': -8.486666666666375, 'excluded_price_scale': 0, 'excluded_zero_pnl': 1, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · SHORT ROWS SUSPECT (E8 sign bug) — direction is not stored on ab_confirm_log; an unrecovered direction stays suspect'}, {'key': {'condition': 'reject', 'session': 'ASIA'}, 'rule': '1x5m_close', 'n': 48, 'usable_n': 15, 'wins': 0, 'losses': 0, 'sum_net_pnl': -63.919999999998254, 'mean': -4.261333333333217, 'excluded_price_scale': 9, 'excluded_zero_pnl': 24, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · SHORT ROWS SUSPECT (E8 sign bug) — direction is not stored on ab_confirm_log; an unrecovered direction stays suspect'}, {'key': {'condition': 'reject', 'session': 'LONDON'}, 'rule': '1x5m_close', 'n': 39, 'usable_n': 14, 'wins': 0, 'losses': 0, 'sum_net_pnl': -445.61999999999534, 'mean': -31.829999999999668, 'excluded_price_scale': 6, 'excluded_zero_pnl': 19, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · SHORT ROWS SUSPECT (E8 sign bug) — direction is not stored on ab_confirm_log; an unrecovered direction stays suspect'}, {'key': {'condition': 'reject', 'session': 'NY'}, 'rule': '1x5m_close', 'n': 86, 'usable_n': 18, 'wins': 0, 'losses': 0, 'sum_net_pnl': -206.20000000000437, 'mean': -11.455555555555797, 'excluded_price_scale': 20, 'excluded_zero_pnl': 48, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · SHORT ROWS SUSPECT (E8 sign bug) — direction is not stored on ab_confirm_log; an unrecovered direction stays suspect'}, {'key': {'condition': 'sweep_reclaim', 'session': 'LONDON'}, 'rule': '1x5m_close', 'n': 4, 'usable_n': 3, 'wins': 0, 'losses': 0, 'sum_net_pnl': -20.5, 'mean': -6.833333333333333, 'excluded_price_scale': 0, 'excluded_zero_pnl': 1, 'counterfactual': True, 'short_suspect': False, 'note': 'counterfactual (E8) — never comparable with a realized cell'}, {'key': {'condition': 'sweep_reclaim', 'session': 'NY'}, 'rule': '1m_mss', 'n': 12, 'usable_n': 10, 'wins': 0, 'losses': 0, 'sum_net_pnl': -154.05999999999767, 'mean': -15.405999999999768, 'excluded_price_scale': 0, 'excluded_zero_pnl': 2, 'counterfactual': True, 'short_suspect': True, 'note': 'counterfactual (E8) · SHORT ROWS SUSPECT (E8 sign bug) — direction is not stored on ab_confirm_log; an unrecovered direction stays suspect'}] era 2026-09-02T12:49:06Z
+row keys: ['avg_planned_rr', 'avg_realized_r', 'descriptive_only', 'excluded_unresolved', 'flats', 'key', 'losses', 'mean', 'mean_hi', 'mean_lo', 'median_mae', 'median_mfe', 'n', 'row_ids', 'sd', 'status', 'stop_hit_share', 'sum_pnl_corrected', 't_stat', 'target_hit_share', 'wilson_hi', 'wilson_lo', 'win_rate', 'wins']
+{'n': 6, 'wins': 1, 'losses': 4, 'flats': 1, 'mean': 0.7619046666671542, 'sum_pnl_corrected': 4.571428000002925, 'sd': 155.41836675092955, 'win_rate': 0.16666666666666666, 'wilson_lo': 0.030052585871730264, 'wilson_hi': 0.5635094365636462, 't_stat': 0.012008089552058482, 'median_mae': None, 'median_mfe': None, 'stop_hit_share': None, 'target_hit_share': None, 'status': 'NOT ENOUGH DATA'}
+{'n': 9, 'wins': 1, 'losses': 8, 'flats': 0, 'mean': -64.61111111111111, 'sum_pnl_corrected': -581.5, 'sd': 57.59545217385754, 'win_rate': 0.1111111111111111, 'wilson_lo': 0.01989037132713045, 'wilson_hi': 0.4350062147680602, 't_stat': -3.3654277554454883, 'median_mae': None, 'median_mfe': None, 'stop_hit_share': None, 'target_hit_share': None, 'status': 'NOT ENOUGH DATA'}
+{'n': 1, 'wins': 1, 'losses': 0, 'flats': 0, 'mean': 168, 'sum_pnl_corrected': 168, 'sd': 0, 'win_rate': 1, 'wilson_lo': 0.2065432914738929, 'wilson_hi': 1, 't_stat': 0, 'median_mae': None, 'median_mfe': None, 'stop_hit_share': None, 'target_hit_share': None, 'status': 'NOT ENOUGH DATA'}
+{'n': 5, 'wins': 0, 'losses': 5, 'flats': 0, 'mean': -87.3, 'sum_pnl_corrected': -436.5, 'sd': 39.42334333868704, 'win_rate': 0, 'wilson_lo': 0, 'wilson_hi': 0.4344914947520811, 't_stat': -4.951602728329964, 'median_mae': None, 'median_mfe': None, 'stop_hit_share': None, 'target_hit_share': None, 'status': 'NOT ENOUGH DATA'}
+{'n': 31, 'wins': 14, 'losses': 16, 'flats': 1, 'mean': 18.903225806451612, 'sum_pnl_corrected': 586, 'sd': 105.56241592495871, 'win_rate': 0.45161290322580644, 'wilson_lo': 0.29161482836586106, 'wilson_hi': 0.6222812039633087, 't_stat': 0.9970282137395222, 'median_mae': None, 'median_mfe': None, 'stop_hit_share': None, 'target_hit_share': None, 'status': 'FAILS'}
+{'n': 6, 'wins': 1, 'losses': 5, 'flats': 0, 'mean': -34.5, 'sum_pnl_corrected': -207, 'sd': 64.70703207534712, 'win_rate': 0.16666666666666666, 'wilson_lo': 0.030052585871730264, 'wilson_hi': 0.5635094365636462, 't_stat': -1.3060001890925284, 'median_mae': None, 'median_mfe': None, 'stop_hit_share': None, 'target_hit_share': None, 'status': 'NOT ENOUGH DATA'}
+--- row 0 full ---
+{
+"key": {
+"condition": "acceptance"
+},
+"n": 6,
+"wins": 1,
+"losses": 4,
+"flats": 1,
+"sum_pnl_corrected": 4.571428000002925,
+"mean": 0.7619046666671542,
+"sd": 155.41836675092955,
+"win_rate": 0.16666666666666666,
+"wilson_lo": 0.030052585871730264,
+"wilson_hi": 0.5635094365636462,
+"mean_lo": -123.59868909752811,
+"mean_hi": 125.12249843086241,
+"t_stat": 0.012008089552058482,
+"avg_realized_r": null,
+"avg_planned_rr": null,
+"median_mae": null,
+"median_mfe": null,
+"stop_hit_share": null,
+"target_hit_share": null,
+"excluded_unresolved": 0,
+"row_ids": [
+522,
+526,
+527,
+532,
+542,
+543
+],
+"descriptive_only": true,
+"status": "NOT ENOUGH DATA"
+}

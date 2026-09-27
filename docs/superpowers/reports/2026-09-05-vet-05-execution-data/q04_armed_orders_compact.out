@@ -1,0 +1,72 @@
+id|plan(date:sess)|v|scen|side|entry|stop|tgt|state|reason|cls|sig|created_ct|updated_ct|fill|kind|li/lc|seq|cond
+31|2026-09-01:ASIA:8d5|7|S3|long|29068.05|29044.0|29131.66|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|dc8405f1|2026-09-02 00:16:32|2026-09-02 00:31:48|0.0|limit|0/0|0|
+32|2026-09-02:NY:8d5c8|5|S3|long|29070.0|29019.66913116825|29171.25|cancelled|session ended (EOD flat)|armed_fill||2026-09-02 10:30:30|2026-09-02 14:45:01|0.0||1/2|0|
+33|2026-09-02:NY:8d5c8|12|S3|short|29166.8|29199.5|29058.75|cancelled|level accepted through — marketable, never placed|armed_fill||2026-09-02 14:10:29|2026-09-02 14:10:29|0.0|limit|0/0|0|
+34|2026-09-02:ASIA:8d5|13|S1|short|29199.5|29226.0|29132.5|cancelled|level accepted through — marketable, never placed|armed_fill||2026-09-02 22:15:01|2026-09-02 22:15:01|0.0|limit|0/0|0|
+35|2026-09-03:NY:8d5c8|2|S1|short|29285.0|29351.62847289964|29144.5|filled||armed_fill|f2b1eb20|2026-09-03 09:02:54|2026-09-03 10:28:29|29285.0|limit|0/0|0|
+36|2026-09-03:NY:8d5c8|3|S2|short|29351.05|29418.934363141587|29209.25|cancelled|level accepted through — marketable, never placed|armed_fill||2026-09-03 09:20:47|2026-09-03 09:20:47|0.0|limit|0/0|0|
+37|2026-09-03:NY:8d5c8|7|S3|short|29543.75|29592.5|29397.11|cancelled|cancelled in NT8|armed_fill|43512e1d|2026-09-03 11:58:33|2026-09-03 12:15:01|0.0|limit|0/0|0|
+38|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.62037041913|29481.5|cancelled|gate changed: rr||e38f1774|2026-09-04 10:05:00|2026-09-04 10:06:05|0.0|stop_entry|0/0|0|sweep_recl
+39|2026-09-04:NY:8d5c8|3|S1|SHORT|29657.38|29720.5|29503.38|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|89339298|2026-09-04 09:10:08|2026-09-04 09:26:06|0.0|limit|0/0|0|reject
+62|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|gate changed: rr|armed_fill|f869f788|2026-09-04 10:10:04|2026-09-04 10:12:04|0.0|stop_entry|0/0|1|reclaim
+65|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|gate changed: rr|armed_fill|c1d016b2|2026-09-04 10:15:01|2026-09-04 10:18:03|0.0|stop_entry|0/0|2|reclaim
+67|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|gate changed: rr|armed_fill|a0054682|2026-09-04 10:16:03|2026-09-04 10:18:03|0.0|stop_entry|0/0|3|reclaim
+70|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|gate changed: rr|armed_fill|ccaab035|2026-09-04 10:20:03|2026-09-04 10:22:03|0.0|stop_entry|0/0|4|reclaim
+73|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|719f4bbb|2026-09-04 10:25:01|2026-09-04 10:40:01|0.0|stop_entry|0/0|5|reclaim
+75|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.5759174815|29481.5|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|c794d0ce|2026-09-04 10:26:02|2026-09-04 10:42:01|0.0|stop_entry|0/0|6|reclaim
+77|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.5759174815|29481.5|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|4646df81|2026-09-04 10:28:02|2026-09-04 10:44:01|0.0|stop_entry|0/0|7|reclaim
+79|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|c5d4860a|2026-09-04 10:30:02|2026-09-04 10:46:01|0.0|stop_entry|0/0|8|reclaim
+81|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|9fcd8c7c|2026-09-04 10:32:02|2026-09-04 10:48:00|0.0|stop_entry|0/0|9|reclaim
+83|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|9b146ffa|2026-09-04 10:34:01|2026-09-04 10:50:00|0.0|stop_entry|0/0|10|reclaim
+85|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|no order_update within stale window (reconnect/reconcile)|armed_fill|7dd07a19|2026-09-04 10:36:01|2026-09-04 10:52:00|0.0|stop_entry|0/0|11|reclaim
+87|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|6a5da3fa|2026-09-04 10:38:01|2026-09-04 10:53:10|0.0|stop_entry|0/0|12|reclaim
+89|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|183d16ad|2026-09-04 10:40:01|2026-09-04 10:53:10|0.0|stop_entry|0/0|13|reclaim
+91|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|993322b9|2026-09-04 10:42:01|2026-09-04 10:53:11|0.0|stop_entry|0/0|14|reclaim
+92|2026-09-04:NY:8d5c8|3|S1|SHORT|29657.38|29720.5|29503.38|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)|armed_fill||2026-09-04 10:44:01|2026-09-04 11:05:09|0.0|limit|0/0|1|reject
+93|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|b42631c8|2026-09-04 10:44:01|2026-09-04 10:53:11|0.0|stop_entry|0/0|15|reclaim
+94|2026-09-04:NY:8d5c8|3|S1|SHORT|29657.38|29720.5|29503.38|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)|armed_fill||2026-09-04 10:46:01|2026-09-04 11:05:09|0.0|limit|0/0|2|reject
+95|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|fa195d44|2026-09-04 10:46:01|2026-09-04 10:53:11|0.0|stop_entry|0/0|16|reclaim
+96|2026-09-04:NY:8d5c8|3|S1|SHORT|29657.38|29720.5|29503.38|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)|armed_fill||2026-09-04 10:48:00|2026-09-04 11:05:09|0.0|limit|0/0|3|reject
+97|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|60adff7a|2026-09-04 10:48:00|2026-09-04 10:53:11|0.0|stop_entry|0/0|17|reclaim
+98|2026-09-04:NY:8d5c8|3|S1|SHORT|29657.38|29720.5|29503.38|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)|armed_fill||2026-09-04 10:50:00|2026-09-04 11:05:09|0.0|limit|0/0|4|reject
+99|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|3bea0045|2026-09-04 10:50:00|2026-09-04 10:53:11|0.0|stop_entry|0/0|18|reclaim
+100|2026-09-04:NY:8d5c8|5|S1|SHORT|29720.0|29765.0|29553.75|cancelled|no active plan|||2026-09-04 11:29:07|2026-09-04 11:59:02|0.0|limit|0/2|5|reject
+101|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|boot_sweep: pre-boot order, process restarted|armed_fill|04b3e307|2026-09-04 10:52:00|2026-09-04 10:53:11|0.0|stop_entry|0/0|19|reclaim
+102|2026-09-04:NY:8d5c8|3|S2|SHORT|29591.02|29645.25|29481.5|cancelled|cancelled in NT8|armed_fill|931a761a|2026-09-04 10:53:11|2026-09-04 11:59:02|0.0|stop_entry|0/0|20|reclaim
+103|2026-09-04:NY:8d5c8|5|S1|SHORT|29720.0|29765.0|29553.75|cancelled|no active plan|armed_fill||2026-09-04 11:29:07|2026-09-04 11:59:02|0.0|limit|1/2|0|sweep_recl
+104|2026-09-04:NY:8d5c8|6|S2|SHORT|29720.0|29755.06314687017|29635.0|armed||armed_fill||2026-09-04 12:11:02|2026-09-04 13:27:48|0.0|limit|0/2|21|sweep_recl
+105|2026-09-04:NY:8d5c8|6|S2|SHORT|29720.0|29755.06314687017|29635.0|armed||armed_fill||2026-09-04 12:11:02|2026-09-04 13:27:48|0.0|limit|1/2|0|sweep_recl
+
+-- all-time state x reason
+('cancelled', 'no order_update within stale window (reconnect/reconcile)', 12, 22, 85)
+('cancelled', 'boot_sweep: pre-boot order, process restarted', 8, 87, 101)
+('cancelled', 'level accepted through — marketable, never placed', 6, 17, 36)
+('cancelled', 'gate changed: rr', 5, 38, 70)
+('cancelled', 'test seam cancel', 5, 1, 16)
+('cancelled', 'session ended (EOD flat)', 4, 11, 32)
+('superseded', 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)', 4, 92, 98)
+('cancelled', 'cancelled in NT8', 3, 8, 102)
+('cancelled', 'gate changed: min_sl', 3, 12, 23)
+('cancelled', 'no active plan', 3, 7, 103)
+('filled', '', 3, 24, 35)
+('armed', '', 2, 104, 105)
+('cancelled', 'e7_incident_kill:manual_cancel_respected', 2, 13, 14)
+('filled', 'e7_farside_test:', 1, 15, 15)
+('filled', 'fill@29413.00', 1, 21, 21)
+('filled', 'fill@29459.00', 1, 20, 20)
+('filled', 'fill@29463.25', 1, 10, 10)
+('filled', 'fill@29621.00', 1, 5, 5)
+('filled', 'fill@29642.00', 1, 6, 6)
+('filled', 'fill@29700.00', 1, 9, 9)
+
+-- all-time by state
+('armed', 2)
+('cancelled', 51)
+('filled', 10)
+('superseded', 4)
+
+-- since 09-02 by state
+('armed', 2)
+('cancelled', 30)
+('filled', 1)
+('superseded', 4)

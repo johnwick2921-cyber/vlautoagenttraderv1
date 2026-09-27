@@ -1,0 +1,26 @@
+-- marketable guard all-time: last 1m close at cancel vs entry (through-by pts) + nearest approach while the row lived
+    17 S1 long 29437.0 created 2026-08-31 08:13:51 cancel 2026-08-31 08:15:51 close@cancel 29414.25 through_by 22.75 | nearest approach while alive -39.75
+    25 S3 long 29161.96 created 2026-09-01 05:35:28 cancel 2026-09-01 07:10:01 close@cancel 29155.0 through_by 6.96 | nearest approach while alive -8.71
+    27 S1 short 29170.0 created 2026-09-01 11:27:07 cancel 2026-09-01 11:27:07 close@cancel 29169.5 through_by -0.5 | nearest approach while alive -12.5
+    33 S3 short 29166.8 created 2026-09-02 14:10:29 cancel 2026-09-02 14:10:29 close@cancel 29167.5 through_by 0.7 | nearest approach while alive -1.7
+    34 S1 short 29199.5 created 2026-09-02 22:15:01 cancel 2026-09-02 22:15:01 close@cancel 29205.5 through_by 6.0 | nearest approach while alive -12.5
+    36 S2 short 29351.05 created 2026-09-03 09:20:47 cancel 2026-09-03 09:20:47 close@cancel 29348.0 through_by -3.05 | nearest approach while alive -8.95
+-- limit rows since 09-02 that reached the broker: lifetime, nearest approach, terminal
+    31 S3 long 29068.05 dc8405f1 cancelled no order_update within stale window (rec | lived 2026-09-02 00:16:32 → 2026-09-02 00:31:48 | extreme 29068.5 | nearest approach 0.45
+    35 S1 short 29285.0 f2b1eb20 filled  | lived 2026-09-03 09:02:54 → 2026-09-03 10:28:29 | extreme 29525.0 | nearest approach -240.0
+    37 S3 short 29543.75 43512e1d cancelled cancelled in NT8 | lived 2026-09-03 11:58:33 → 2026-09-03 12:15:01 | extreme 29548.0 | nearest approach -4.25
+    39 S1 short 29657.38 89339298 cancelled no order_update within stale window (rec | lived 2026-09-04 09:10:08 → 2026-09-04 09:26:06 | extreme 29654.5 | nearest approach 2.88
+-- all-time placed limit arms (signal_id set): state histogram
+    ('cancelled', 'cancelled in NT8', 2)
+    ('cancelled', 'e7_incident_kill:manual_cancel_respected', 1)
+    ('cancelled', 'gate changed: min_sl', 3)
+    ('cancelled', 'no order_update within stale window (rec', 5)
+    ('cancelled', 'test seam cancel', 5)
+    ('filled', '', 3)
+    ('filled', 'e7_farside_test:', 1)
+    ('filled', 'fill@29413.00', 1)
+    ('filled', 'fill@29459.00', 1)
+    ('filled', 'fill@29463.25', 1)
+    ('filled', 'fill@29621.00', 1)
+    ('filled', 'fill@29642.00', 1)
+    ('filled', 'fill@29700.00', 1)

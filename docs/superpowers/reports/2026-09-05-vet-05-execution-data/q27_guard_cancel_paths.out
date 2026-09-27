@@ -1,0 +1,7 @@
+arm | side entry | cancel_ct | close@cancel | thru_pts | ret_to_entry_5m/15m/30m | MFE30(dir) | MAE30 | stop_hit30 | tgt_hit30
+ 17 S1 | long 29437.00 | 2026-08-31 08:15:51 | 29414.25 | +22.75 | True/True/True | 102.75 | 24.25 | True | True  (stop 29416.00 tgt 29498.50, bars=30)
+ 25 S3 | long 29161.96 | 2026-09-01 07:10:01 | 29155.00 | +6.96 | True/True/True | 18.75 | 29.50 | True | False  (stop 29140.00 tgt 29212.50, bars=30)
+ 27 S1 | short 29170.00 | 2026-09-01 11:27:07 | 29169.50 | -0.50 | True/True/True | 39.50 | 19.25 | False | False  (stop 29210.00 tgt 29082.75, bars=30)
+ 33 S3 | short 29166.80 | 2026-09-02 14:10:29 | 29167.50 | +0.70 | True/True/True | 17.50 | 6.00 | False | False  (stop 29199.50 tgt 29058.75, bars=30)
+ 34 S1 | short 29199.50 | 2026-09-02 22:15:01 | 29205.50 | +6.00 | True/True/True | 2.00 | 29.50 | True | False  (stop 29226.00 tgt 29132.50, bars=30)
+ 36 S2 | short 29351.05 | 2026-09-03 09:20:47 | 29348.00 | -3.05 | True/True/True | 75.50 | 16.75 | False | False  (stop 29418.93 tgt 29209.25, bars=30)

@@ -1,0 +1,38 @@
+plan 2026-09-04:NY:8d5c8af5_8ef641a v 6 top keys: ['reasoning', 'bias', 'levels', 'scenarios', 'no_trade', 'death_condition', 'day_type', 'death', 'flip', 'bias_label', 'no_trade_windows']
+-- reasoning: "bias-tree: inside-day short LOW. Price 29569.75 sits 27.5 below PDC and at 94% of the 29101.75–29601.00 range — premium, so longs are barred above the 50% mark (branch 5). 1h is up, but 15m is down and 5m is compressing under the 29579.56 VWAP magnet into lunch; the core post-13:30 play is a stall/reject at VWAP, not a chase. FRESH FVG list is empty, so no fvg_entry. The only other short entry with a valid role is the 29720.00 ONH liquidity sweep-reclaim; nearby consumed/target_only levels are used only for targets and invalidations. The sole long fallback sits below the 50% mark at 29144.50 
+-- bias: {"direction": "short", "conviction": "low", "flip_condition": "5m close above 29601.00 PDH flips the session to long"}
+-- levels: [{"price": 29579.56, "label": "VWAP", "grade": "A", "instruction": "fade/reject trigger", "machine_grade": "A"}, {"price": 29585, "label": "RTH-H", "grade": "B", "instruction": "confluence/target", "machine_grade": "B"}, {"price": 29597.25, "label": "PDC", "grade": "B", "instruction": "target", "machine_grade": "B"}, {"price": 29601, "label": "PDH", "grade": "B", "instruction": "flip trigger", "machine_grade": "B"}, {"price": 29635, "label": "OR-H", "grade": "C", "instruction": "death trigger", "machine_grade": "C"}, {"price": 29720, "label": "ONH", "grade": "A", "instruction": "liquidity swee
+-- no_trade: ["🔴 Average Hourly Earnings m/m 07:30 CT ±15m — HARD no-trade (red news)", "🔴 Non-Farm Employment Change 07:30 CT ±15m — HARD no-trade (red news)", "🔴 Unemployment Rate 07:30 CT ±15m — HARD no-trade (red news)"]
+-- death_condition: "A 5m close above 29635.00 OR-H invalidates the entire short plan."
+-- day_type: "balance"
+-- death: {"price": 29635, "side": "above", "rule": "5m_close"}
+-- flip: {"price": 29601, "side": "above", "rule": "5m_close", "flip_to": "long"}
+-- bias_label: "bias: AI short · tree short · regime up"
+-- no_trade_windows: [{"start_min": 510, "end_min": 515, "kind": "first_n", "label": "first 5m after the NY open (08:30–08:35 CT)", "source": "code-constant"}, {"start_min": 720, "end_min": 810, "kind": "lunch", "label": "lunch 12:00–13:30 CT", "source": "code-constant"}, {"start_min": 435, "end_min": 465, "kind": "t1", "label": "🔴 Average Hourly Earnings m/m 07:30 CT ±15m — HARD no-trade (red news)", "source": "calendar"}, {"start_min": 435, "end_min": 465, "kind": "t1", "label": "🔴 Non-Farm Employment Change 07:30 CT ±15m — HARD no-trade (red news)", "source": "calendar"}, {"start_min": 435, "end_min": 465, "kin
+scenarios n 3
+scenario keys ['id', 'trigger', 'condition', 'direction', 'target_chain', 'invalid', 'confirm', 'quality', 'arm']
+{
+ "id": "S1",
+ "trigger": "After 13:30 CT, price rallies into 29579.56 VWAP and stalls; sell the touch, not a chase.",
+ "condition": "reject",
+ "direction": "short",
+ "target_chain": [
+  29553.75,
+  29503.38,
+  29481.5
+ ],
+ "invalid": "A 5m close above 29601.00 PDH invalidates this fade.",
+ "confirm": {
+  "rule": "touch",
+  "ref_price": 29579.56,
+  "side": "below"
+ },
+ "quality": "B",
+ "arm": {
+  "enabled": true,
+  "entry": 29579.56,
+  "stop": 29614.5,
+  "target": 29503.38,
+  "wait_confirm": true
+ }
+}

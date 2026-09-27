@@ -1,0 +1,84 @@
+exit_order_id                         close_reason  n  ids            
+------------------------------------  ------------  -  ---------------
+Close                                 sync          4  526,530,538,575
+060192ea-7281-4b55-b7f7-11a9c11adbe7  sync          1  580            
+07ab6d26-e856-4d24-85b8-e6ffbd29363a  sync          1  524            
+09a2153c-6260-45ff-84e4-e5a076bf19a7  sync          1  562            
+09c7f512-50b9-45dc-8af1-6e2b2058a1d2  sync          1  557            
+0b175d0f-945e-4b81-9dc5-40fc9aebf73f  sync          1  588            
+0c77307d-92df-4400-86ef-e6b4f8f71c2d  sync          1  582            
+0e40f2f2-0bb9-494e-bd1c-7882a99a67e2  sync          1  551            
+1155bb01-4607-4592-9dce-e3cd0b143718  sync          1  521            
+12332276-36d1-4b16-9bc5-5b66bbbfdaad  sync          1  554            
+16b59a18-5678-4222-b652-489ac2dd8635  sync          1  531            
+18a7cc55-7a5b-4885-af2e-149340d49538  sync          1  585            
+1a0989a7-82e1-420d-807c-29c8634b19cd  sync          1  545            
+1b594750-ab9c-4b36-9316-033b7cab508a  sync          1  543            
+219c5f0c-514a-4614-b402-0e1210cea390  sync          1  539            
+28705df3-4612-48b3-bb9a-b5a8ee605d25  sync          1  547            
+29479f0b-bcbd-47dc-8e33-3a20b167d763  sync          1  552            
+2b9e7105-2dfd-4785-a56d-d5f96bd9b582  sync          1  560            
+2c6ee3e0-c6d7-468f-b603-8a932278e82a  sync          1  533            
+31fa7391-4f66-49dc-a189-bfb82bb92223  sync          1  522            
+3a33c8c9-7b23-4d37-befd-3fd73b6221aa  sync          1  549            
+3aad562c-56ed-4638-947c-d61f247adcd1  sync          1  558            
+3d543275-7369-48f5-912a-e6ff370be846  sync          1  548            
+4063a4ae-3ab4-4d97-b8b5-873b386ba0ce  sync          1  553            
+447ef539-0ca7-48f7-b3bf-a5d5ce8cef06  sync          1  590            
+52be3baf-fc01-4900-9ff9-c5ba03a1fe51  sync          1  546            
+54ece976-6d62-4350-8234-ddac5a06e65f  sync          1  570            
+56d0fa5b-031b-4f9f-be54-0539ae6d6768  sync          1  589            
+5721a277-5c69-4b8e-b323-1011ff072beb  sync          1  527            
+5b01c26b-0415-491f-9019-84b1b8f2d8b2  sync          1  536            
+5c4432b3-6c03-4929-bb8a-36716b763596  sync          1  550            
+5f5e5bc9-e53d-4dfa-be03-f3b4b3186cb5  sync          1  544            
+636c6b42-ad27-421f-ae00-a9b207cd1837  sync          1  532            
+670f2545-98e4-49c0-8964-e07080313a77  sync          1  537            
+6b5b89c6-7abc-4897-93a0-c97c7679acc4  sync          1  584            
+7a497c53-6bb9-487f-99ef-5dffbc62cb48  sync          1  525            
+845ea5ae-a9db-4941-b365-eb13b1892ca0  sync          1  569            
+84f15f79-d9e2-4d6e-98a8-04ffe2dbafbb  sync          1  571            
+879de528-a98b-4db1-9f5d-7eafd112f9d8  sync          1  540            
+888bcd99-e89a-4d9d-b989-cf2db1b238df  sync          1  568            
+88a1eb20-2e90-4573-be8e-2e7d5b6b9417  sync          1  566            
+9a273bb2-a526-45af-8741-08c9e8a81ff7  sync          1  528            
+a6cb6c6a-1bd9-49e8-a10d-b6219a334fe4  sync          1  563            
+abfc78b9-a9d1-4231-8a82-e8f8d233744e  sync          1  535            
+b1601144-7d07-4dce-adc4-fd4c55435210  sync          1  564            
+bc4ac949-e138-4747-9b1a-49387c16e004  sync          1  534            
+c445664b-a12d-427c-8c48-87319ce745d3  sync          1  581            
+c5c22c44-2cb0-4e9e-9826-b2c4a9a4bd87  sync          1  561            
+c8219490-f2ac-489f-883b-f9bb6fe3d4a4  sync          1  541            
+cfd6d2f8-1caf-48e8-94a0-ca4fe4b43dfb  sync          1  523            
+d1e5c248-c186-465d-b44e-6e13acda477d  sync          1  587            
+d5fed440-0814-4d9b-97f2-ae010ab28c35  sync          1  586            
+d62ca658-584a-4f70-9765-c7fe25d8de51  sync          1  565            
+da8540fb-7936-48db-af99-802d72be2b05  sync          1  556            
+daab8348-9ad3-4c41-b7fa-10f65e5c4689  sync          1  559            
+dc462279-b0b3-477c-99d4-b77dbcc42106  sync          1  583            
+e874f7f3-0e8e-4452-8179-cc19cb4247ef  sync          1  555            
+f14ea5dd-206e-47c7-af92-b421e4cac885  sync          1  567            
+f2b1eb20-f89e-4a88-bcff-5ce971d17861  sync          1  591            
+f9990e3a-206b-4160-9285-ea84d02f3d85  sync          1  529            
+fd288581-abe5-4691-9c06-6b3c7f60c487  sync          1  542            
+netting_fill                          sync          1  578            
+id   source     exit_order_id                         close_reason  pnl_corrected    
+---  ---------  ------------------------------------  ------------  -----------------
+526  system     Close                                 sync          -69.4285719999971
+530  system     Close                                 sync          13.0             
+538  system     Close                                 sync          30.5             
+542  system     fd288581-abe5-4691-9c06-6b3c7f60c487  sync          0.0              
+551  system     0e40f2f2-0bb9-494e-bd1c-7882a99a67e2  sync          0.0              
+557  system     09c7f512-50b9-45dc-8af1-6e2b2058a1d2  sync          46.5             
+558  system     3aad562c-56ed-4638-947c-d61f247adcd1  sync          -22.5            
+560  system     2b9e7105-2dfd-4785-a56d-d5f96bd9b582  sync          81.0             
+566  reconcile  88a1eb20-2e90-4573-be8e-2e7d5b6b9417  sync          97.0             
+568  reconcile  888bcd99-e89a-4d9d-b989-cf2db1b238df  sync          -32.0            
+569  reconcile  845ea5ae-a9db-4941-b365-eb13b1892ca0  sync          63.0             
+570  reconcile  54ece976-6d62-4350-8234-ddac5a06e65f  sync          17.0             
+571  reconcile  84f15f79-d9e2-4d6e-98a8-04ffe2dbafbb  sync          -44.5            
+575  reconcile  Close                                 sync          32.5             
+578  reconcile  netting_fill                          sync          92.0             
+580  reconcile  060192ea-7281-4b55-b7f7-11a9c11adbe7  sync          39.5             
+581  system     c445664b-a12d-427c-8c48-87319ce745d3  sync          190.5            
+591  reconcile  f2b1eb20-f89e-4a88-bcff-5ce971d17861  sync          -140.0           

@@ -1,0 +1,8 @@
+kernel/levels_score.go:513: l.Research.Score = scoreValue(score) -> l.Research.Score = nil
+09-08 16:08:14 [INFO] kernel/levels_score.go:611 🗺️ seated 2/3 in-band levels (proximity band ±150pt, 2 of them retained)
+--- FAIL: TestStageACandidateRecorderKeepsComputedEvidence (0.00s)
+    --- FAIL: TestStageACandidateRecorderKeepsComputedEvidence/PDH (0.00s)
+        stage_a_score_capture_test.go:34: captured propensity was discarded: score=0 grade="A"; scorer supplied score=1 grade="A"
+FAIL
+FAIL	nofx/kernel	0.012s
+FAIL

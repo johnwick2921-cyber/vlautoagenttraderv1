@@ -1,0 +1,21 @@
+-- trader_fills columns: ['id', 'trader_id', 'exchange_id', 'exchange_type', 'order_id', 'exchange_order_id', 'exchange_trade_id', 'symbol', 'side', 'price', 'quantity', 'quote_quantity', 'commission', 'commission_asset', 'realized_pnl', 'is_maker', 'created_at']
+-- trader_orders columns: ['id', 'trader_id', 'exchange_id', 'exchange_type', 'exchange_order_id', 'client_order_id', 'symbol', 'side', 'position_side', 'type', 'time_in_force', 'quantity', 'price', 'stop_price', 'status', 'filled_quantity', 'avg_fill_price', 'commission', 'commission_asset', 'leverage', 'reduce_only', 'close_position', 'working_type', 'price_protect', 'order_action', 'related_position_id', 'created_at', 'updated_at', 'filled_at']
+-- trader_fills typeof(created_at), count by month
+   ('integer', '2026-06', 247)
+   ('integer', '2026-07', 2)
+   ('integer', '2026-08', 167)
+   ('integer', '2026-09', 17)
+-- trader_fills since 09-02 CT (all cols)
+   id|trader_id|exchange_id|exchange_type|order_id|exchange_order_id|exchange_trade_id|symbol|side|price|quantity|quote_quantity|commission|commission_asset|realized_pnl|is_maker|created_at
+   425|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|2|<nil>|<nil>-1788326264538590981|MNQ|BUY|29079.25|1.0|29079.25|0.0|USDT|0.0|0|1788326264538
+   426|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|0|d1e5c248-c186-465d-b44e-6e13acda477d|nt8-exit-587|MNQ|SELL|29048.0|1.0|29048.0|0.0|USD|-62.5|0|1788329021861
+   427|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|2|<nil>|<nil>-1788352865663585523|MNQ|BUY|29082.5|1.0|29082.5|0.0|USDT|0.0|0|1788352865663
+   428|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|0|0b175d0f-945e-4b81-9dc5-40fc9aebf73f|nt8-exit-588|MNQ|SELL|29050.0|1.0|29050.0|0.0|USD|-65.0|0|1788353498565
+   429|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|2|<nil>|<nil>-1788360064832742774|MNQ|BUY|29192.5|1.0|29192.5|0.0|USDT|0.0|0|1788360064832
+   430|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|0|56d0fa5b-031b-4f9f-be54-0539ae6d6768|nt8-exit-589|MNQ|SELL|29115.0|1.0|29115.0|0.0|USD|-155.0|0|1788361167398
+   431|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|2|<nil>|<nil>-1788363437167069135|MNQ|BUY|29193.25|1.0|29193.25|0.0|USDT|0.0|0|1788363437167
+   432|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|0|447ef539-0ca7-48f7-b3bf-a5d5ce8cef06|nt8-exit-590|MNQ|SELL|29143.75|1.0|29143.75|0.0|USD|-99.0|0|1788364170319
+   433|8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|8d5c8af5-5366-4646-b1b6-0958db9e6f69|ninjatrader|0|f2b1eb20-f89e-4a88-bcff-5ce971d17861|nt8-exit-591|MNQ|BUY|29355.0|1.0|29355.0|0.0|USD|-140.0|0|1788445245677
+-- trader_orders row(s)
+   (2, '1ef40f05_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1779909574', '8d5c8af5-5366-4646-b1b6-0958db9e6f69', 'ninjatrader', '<nil>', '', 'MNQ', 'SELL', 'SHORT', 'MARKET', 'GTC', 1.0, 30629.75, 0.0, 'FILLED', 1.0, 29193.25, 0.0, 'USDT', 1, 0, 0, 'CONTRACT_PRICE', 0, 'open_short', 0, 1780426159360, 1788363437166, 1788363437166)
+-- trader_fills: filled_at typeof + sample of columns that may hold time

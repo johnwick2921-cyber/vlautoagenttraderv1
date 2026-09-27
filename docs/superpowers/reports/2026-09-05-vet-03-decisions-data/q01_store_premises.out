@@ -1,0 +1,56 @@
+## row counts
+trader_positions           587
+armed_orders               67
+plans                      254
+plan_lifecycle_log         7
+touch_outcomes             677
+candidate_pool             360
+trade_excursions           0
+decision_records           37768
+ab_confirm_log             223
+nt8_order_snapshots        4461
+bars                       79769
+planner_rejected_prompts   64
+planner_read_facts         32
+level_state                675
+level_stats                234
+touch_episodes             1315
+trader_fills               433
+trader_orders              1
+## trader_positions era (entry_time >= 2026-08-15 CT epoch ms)
+all_rows|era_rows|era_pnlc|era_plan|era_cited|pnlc_null_all|era_mae|era_mfe
+587|71|67|71|64|357|70|70
+## typeof entry_time
+t|COUNT(*)
+integer|587
+source|COUNT(*)
+armed_entry|5
+e7_farside_test|3
+reconcile|12
+system|567
+plan_session|COUNT(*)
+|525
+ASIA|16
+LONDON|21
+NY|24
+TEST-E7|1
+status|COUNT(*)
+CLOSED|587
+## touch_outcomes outcome
+outcome|COUNT(*)
+ambiguous_horizon|151
+break|264
+hold|262
+## store as-of (max created_at)
+trader_positions           1788444314627
+armed_orders               2026-09-04 12:11:02.176920212-05:00
+plans                      2026-09-04 17:10:35.724026458+00:00
+plan_lifecycle_log         2026-09-04 12:05:01.63645235-05:00
+touch_outcomes             2026-09-04 17:01:01.821854419+00:00
+candidate_pool             2026-09-04 17:01:01.821976443+00:00
+decision_records           2026-09-04 18:28:01.631065336+00:00
+ab_confirm_log             2026-09-04 12:15:01.409916359-05:00
+planner_rejected_prompts   2026-09-04 15:34:21.28301676+00:00
+planner_read_facts         2026-09-04 17:01:01.822523157+00:00
+bars max open_time_ms CT: 2026-09-04 12:19:00
+decision_records max timestamp: 2026-09-04 18:28:01.630959341+00:00

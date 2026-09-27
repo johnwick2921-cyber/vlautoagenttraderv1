@@ -1,0 +1,9 @@
+source           n   mae_nonnull  mfe_nonnull  pnl_corr_nonnull  cited
+---------------  --  -----------  -----------  ----------------  -----
+armed_entry      5   5            5            2                 5    
+e7_farside_test  3   3            3            2                 1    
+reconcile        12  11           11           12                9    
+system           51  51           51           51                49   
+what            n   mae_nonnull  pnl_nonnull  plan_id
+--------------  --  -----------  -----------  -------
+total era rows  71  70           67           71     

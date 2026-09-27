@@ -1,0 +1,102 @@
+trader/class33_boot_sweep.go:84:			at.log🛡 boot sweep: %s %s pre-boot but never placed (no signal id) — left ar
+trader/auto_trader_reread.go:108:	at.log🗓️ OWNER RE-READ requested for %s %s (v%d, %d of %d re-reads left) — s
+main.go:105:	logger.🧾 log-shipping active: WARN+ → log_events (retention %s days; async, d
+main.go:145:	logger.🕐 Timezone pinned: %s (CT) — all prompts, cards, digests and logs rend
+main.go:151:	logger.🧠 AI params in force: model=%s client_max_tokens=%d planner_max_tokens
+main.go:207:		logger.🩹 acceptance-rule migration: strategy-level=%d session=%d (2x5m → 5m_c
+main.go:307:			logger.🖥 %s
+main.go:323:	logger.📜 %s
+main.go:327:	logger.🔐 %s
+main.go:330:	logger.🧮 %s
+main.go:332:	logger.🗓 %s
+main.go:335:	logger.🛑 %s
+main.go:338:	logger.📜 %s
+main.go:343:	logger.🛡 %s
+main.go:345:	logger.🧮 %s
+main.go:346:	logger.🧮 %s
+main.go:374:					logger.🧮 e8 short rows recomputed=%d · unrecomputable fill-bar=%d no-inputs=%
+main.go:397:					logger.🩹 adherence distribution before %v → after %v (cleared rows are ungrad
+main.go:401:		logger.🩹 %s
+main.go:404:		logger.🔬 %s
+main.go:408:	logger.📜 %s
+main.go:411:	logger.🗓 %s
+main.go:415:	logger.📐 %s
+main.go:426:	logger.🧾 %s
+main.go:431:	logger.🎛 %s
+trader/auto_trader_calendar.go:43:				at.log📅 calendar: skip-fresh — slice for %s already stored (src %s)
+trader/auto_trader_calendar.go:47:		at.log📅 calendar: live slice for %s is %s old — re-fetching for same-day cor
+trader/auto_trader_calendar.go:84:					at.log📅 calendar: %s slice corrected by the fresh feed
+trader/auto_trader_calendar.go:100:		at.log📅 calendar: fetched %d events — %d day slice(s) stored, %d upgraded (s
+trader/auto_trader_calendar.go:102:		at.log📅 calendar: fetched %d events — %d day slice(s) stored (src forexfacto
+trader/auto_trader.go:596:		logger.🔧 [%s] Custom config - URL: %s, Model: %s
+trader/auto_trader.go:834:	at.log💰 Initial balance: %.2f USDT
+trader/auto_trader.go:932:			at.log🔧 NinjaTrader position-reconcile enabled (entry→NT8 avg, orphan clear)
+trader/auto_trader.go:1148:				logger.💰 [%s] USDC Balance: $%.2f | Daily AI cost: ~$%.2f | Runway: ~%.1f day
+trader/auto_trader_weekly.go:185:			at.log📅 WEEKLY READ skip-fresh — week %s doc already stored (v%d), idempoten
+trader/auto_trader_weekly.go:192:		at.log📅 WEEKLY READ already in flight for week %s — skipping duplicate call.
+trader/auto_trader_weekly.go:195:	at.log📅 WEEKLY READ starting for week %s (boot_backfill=%v)
+trader/auto_trader_weekly.go:216:	at.log📅 WEEKLY READ %s: %d bar(s) from %s → %d completed week(s) (ladder %v;
+trader/auto_trader_weekly.go:258:		at.log📅 WEEKLY SHADOW (never a direction): rule bias would have been %s — %s
+trader/auto_trader_weekly.go:279:		at.log📅 WEEKLY READ written %s v%d refs_only=true PWH=%.2f PWL=%.2f levels=%
+trader/auto_trader_halfdays.go:170:			logger.📅 half-days: %s removed from %s — pruned from the registry (deletion h
+trader/auto_trader_halfdays.go:226:		at.log📅 half-days seeded: %d entr%s updated in the session registry — %s. Ef
+trader/auto_trader_halfdays.go:240:		logger.📅 half-days [boot]: %d loaded from %s · next half-day: %s %s CT (%s)
+trader/auto_trader_halfdays.go:243:		logger.📅 half-days [boot]: %d loaded from %s · no upcoming half-day registere
+trader/detector_record.go:40:		at.log🔬 detector: no bars in scope — nothing recorded this read (not zero ep
+trader/detector_record.go:104:	at.log🔬 detector recorded: %d new episode(s) · pool %d candidate(s) (%d seat
+trader/auto_trader_pause.go:202:	at.log🧾 ledger boot: sessions[%s] · stop_until=%s · cadence=%s %v · position
+trader/auto_trader_reset.go:111:	at.log🗓️ OWNER RESET %s %s — chain abandoned at v%d; budget re-armed (%d re-
+trader/trade_excursion_hook.go:67:		at.log📐 excursion opened row=%d pos=%d %s %s entry=%.2f stop=%.2f target=%.2
+trader/trade_excursion_hook.go:117:	at.log📐 excursion row=%d levels resolved from the opening decision: stop=%.2
+trader/trade_excursion_hook.go:205:		at.log📐 excursion closed row=%d pos=%d exit=%.2f reason=%s ambiguous=%v
+trader/position_snapshot.go:31:	logger.📡 Fetching current positions from exchange...
+kernel/engine.go:980:	logger.💰 Fetching NetFlow ranking data (duration: %s, limit: %d)
+kernel/levels_volume_boot.go:15:	logger.🎯 touch telemetry: band=%dt(%.1fpt) max_bars=%d vol_lookback=%d approa
+kernel/levels_volume_boot.go:17:	logger.📐 fvg_entry: on min_disp=%.1f×ATR ce_width=%.0fpt lookback=%d bars — a
+kernel/levels_volume_boot.go:19:	logger.🔧 S-wave (2026-08-26): stale_confirm=%.1f×ATR5m · eod_flat=session-end
+kernel/levels_volume_boot.go:21:	logger.📜 planner playbook (2026-08-26): playbook=v2 bias_tree=on chain_after=
+kernel/levels_volume_boot.go:22:	logger.🛡 plan facts guards: 0-levels-on-a-side + empty machine map = fail-clo
+kernel/levels_volume_boot.go:25:	logger.🗓 session reads (owner ruling 2026-08-31, open−30): ASIA 16:30 · LONDO
+kernel/levels_volume_boot.go:46:	logger.⚖ arm normalizer: legs on non-sweep → single arm + WARN (class 39); sw
+kernel/levels_volume_boot.go:48:	logger.🩹 repair (class 44): contract=full-doc restated head+tail · extractor=
+kernel/levels_volume_boot.go:49:	logger.🛡 cutover safety (class 33): flat gate legs=5 (db_open_positions · api
+trader/auto_trader_dayplan.go:57:		at.log🛑 min-sl guard: atr_mult=%.1f level_clearance=%dtick(s)
+trader/auto_trader_dayplan.go:69:		at.log🩹 move_stop identity: materialized positions persist armed-ledger sign
+trader/auto_trader_dayplan.go:71:		at.log🛡️ htf veto: mode=%s tf=%s (1h|cross|4h via HTF_VETO_MODE; cross = 1h 
+trader/auto_trader_dayplan.go:74:		at.log📐 planner cap: plan_max_tokens=%d (AI_PLAN_MAX_TOKENS; default 65536) 
+trader/auto_trader_loop.go:685:		at.log🛡️ SAFE MODE DEACTIVATED — AI is working again. Resuming normal tradin
+trader/auto_trader_loop.go:840:			at.log🛡️ Safe mode: all decisions were open positions, nothing to execute
+trader/auto_trader_loop.go:1215:		logger.💰 [%s] Fetching NetFlow ranking data...
+trader/auto_trader_loop.go:1218:			logger.💰 [%s] NetFlow ranking data ready: inst_in=%d, inst_out=%d
+trader/auto_trader_loop.go:1292:	logger.💰 [%s] Estimated daily AI cost: ~$%.2f (model: %s, interval: %dm)
+trader/auto_trader_loop.go:1313:		logger.💰 [%s] USDC Balance: $%.2f | Daily AI cost: ~$%.2f | Runway: ~%.1f day
+trader/auto_trader_loop.go:1404:	logger.🧾 [%s] Track record: %+.2f over %d resolved trades (%d unresolved excl
+trader/auto_trader_clock.go:794:	at.log📐🎓 %s close: MAE %.2f / MFE %.2f pts · adherence %s (%s) cited=%q matc
+trader/auto_trader_planner.go:77:		at.log🧠 planner model: empty binding → using primary, pinned %q
+trader/auto_trader_planner.go:108:	at.log🧠 planner model resolved (pinned): %q
+trader/auto_trader_planner.go:126:			at.log🧠 model %q is a provider alias → pinned exact %q
+trader/auto_trader_planner.go:324:			at.log🗓️ plan %s %s v%d DIED — %s. Re-planning (cap %d/session, %d spent, %d
+trader/auto_trader_planner.go:327:				at.log🗓️   ↳ %s
+trader/auto_trader_planner.go:376:	at.log🗓️ re-plan %s v%d carries %d owner overlay(s) forward by price identit
+trader/auto_trader_planner.go:459:		at.log🗓️ carried %d owner level(s) into %s v%d.
+trader/auto_trader_planner.go:866:		at.log🗓️ planner read for %s already in flight — skipping duplicate call.
+trader/auto_trader_planner.go:904:		at.log🧠 planner mode: fast-market (drift %.1f pts = %.1f×ATR5m) — reasoning 
+trader/auto_trader_planner.go:1009:		at.log🧠 planner call (reasoning=%s wire=%s/%s cap=%d stream idle=%ds total=%
+trader/auto_trader_planner.go:1618:					at.log⚖ arms_normalized_class39 = %d (recorded)
+trader/auto_trader_planner.go:1964:	at.log🗓️ PLAN written %s %s v%d (model %s, lifecycle %s, prompt %s, ai_confi
+trader/auto_trader_planner.go:1973:			at.log🧮 replan budget: %s spent one — %d/%d used, %d left (%s %s v%d; class 
+trader/auto_trader_levelstate.go:71:			logger.🩹 level-state repair: %d legacy consumed rows stamped with their consu
+trader/auto_trader_levelstate.go:277:				at.log🎯 scenario %s → ≈%s @ %.2f (%s — display-only estimate, never executio
+kernel/clock_health.go:164:	logger.🛡 clock-guard [boot] rtc_vs_go=%s timer=%s last_check=%s%s warn_ms=%d 
+kernel/engine_analysis.go:360:			logger.📐 SVP ON but omitted this cycle for %s — no session profile available 
+api/handler_trader.go:509:	logger.🔧 DEBUG: Starting to create trader config, ID=%s, Name=%s, AIModel=%s,
+api/handler_trader.go:535:	logger.🔧 DEBUG: Preparing to call CreateTrader
+api/handler_trader.go:547:	logger.🔧 DEBUG: CreateTrader succeeded
+api/handler_trader.go:550:	logger.🔧 DEBUG: Preparing to call LoadUserTraders
+api/handler_trader.go:557:	logger.🔧 DEBUG: LoadUserTraders completed
+kernel/regime_ledger.go:11:	logger.🛡️ regime ledger: htf_veto=%s (Studio regime.htf_veto, default ON) · h
+kernel/regime_ledger.go:12:	logger.🛡️ regime ledger: transition_standdown=%s (Studio regime.transition_st
+kernel/regime_ledger.go:13:	logger.🛡️ regime ledger: flip hysteresis hold=%dmin (env FLIP_MIN_HOLD_MIN)
+kernel/regime_ledger.go:14:	logger.🛡️ regime ledger: structure engine TFs=%v (5m/15m/1h, swing k=%d, min-
+kernel/regime_ledger.go:15:	logger.🛡️ regime ledger: flip-eval freshness cap=%dms (env FLIP_EVAL_MAX_STAL
+kernel/engine_position.go:187:			logger.📐 R:R eval %s %s: entry=%.4f (%s) SL=%.4f TP=%.4f → risk=%.4f reward=%

@@ -1,0 +1,9 @@
+researchsnapshot/recorder.go:78: default:
+		r.drop("queue full: " + name) -> default:
+ r.queue <- work{name:name,build:build} // MUTATION: blocking admission
+		r.drop("queue full: " + name)
+--- FAIL: TestResearchOfferNeverWaitsForWriter (0.01s)
+    recorder_test.go:145: offer blocked behind the writer beyond admission budget
+FAIL
+FAIL	nofx/researchsnapshot	0.008s
+FAIL

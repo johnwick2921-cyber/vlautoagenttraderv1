@@ -1,0 +1,81 @@
+what                    
+------------------------
+log_events ts_utc sample
+id     ts_utc         level  component    
+-----  -------------  -----  -------------
+29609  1788619566983  error  logger.go:166
+29608  1788619494668  error  logger.go:166
+what                   
+-----------------------
+log_events around 25754
+id     ts_utc         level    component      msg                                                         
+-----  -------------  -------  -------------  ------------------------------------------------------------
+25750  1788456093030  warning  logger.go:158  bars: ingest drop summary: intrabar_dropped=0 current_droppe
+                                              d=0 historical_dropp                                        
+
+25751  1788456153001  warning  logger.go:158  ⚠️ Strategy Studio: risk guardrails master OFF — daily loss/
+                                              profit/trade limits                                         
+
+25752  1788456153124  warning  logger.go:158  bars: ingest drop summary: intrabar_dropped=0 current_droppe
+                                              d=0 historical_dropp                                        
+
+25753  1788456213027  warning  logger.go:158  bars: ingest drop summary: intrabar_dropped=0 current_droppe
+                                              d=0 historical_dropp                                        
+
+25754  1788456273000  warning  logger.go:158  bars: ingest drop summary: intrabar_dropped=0 current_droppe
+                                              d=0 historical_dropp                                        
+
+25755  1788463104320  warning  logger.go:158  ⚠️ AI params at UNSET defaults (nobody chose these explicitl
+                                              y): [AI_TEMPERATURE                                         
+
+25756  1788463107126  warning  logger.go:158  [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_dee
+                                              pseek_1781246265 tra                                        
+
+25757  1788463107368  warning  logger.go:158  [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_dee
+                                              pseek_1781246265 tra                                        
+
+25758  1788463107368  warning  logger.go:158  🚨 NEW ERROR CLASS "no_balance_frame" (trader 8d5c8af5_8ef641
+                                              a7-815c-4bb5-9798-b0                                        
+
+25759  1788463226995  warning  logger.go:158  [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_dee
+                                              pseek_1781246265 tra                                        
+
+25760  1788463347201  warning  logger.go:158  [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_dee
+                                              pseek_1781246265 tra                                        
+what                          
+------------------------------
+log_events gaps 09-03 by epoch
+what                                           
+-----------------------------------------------
+day_plan_alerts 09-03 CT (epoch-mix normalised)
+id   ct                   level  kind         title                                acked
+---  -------------------  -----  -----------  -----------------------------------  -----
+615  2026-09-03 00:08:45  P1     armed        ASIA plan v14 armed                  0    
+616  2026-09-03 00:34:14  P1     armed        ASIA plan v15 armed                  0    
+617  2026-09-03 01:30:56  P1     regime-dark  LONDON plan: 1/7 regime fields dark  0    
+618  2026-09-03 01:34:53  P1     armed        LONDON plan v1 armed                 0    
+619  2026-09-03 08:00:54  P1     regime-dark  NY plan: 1/7 regime fields dark      0    
+620  2026-09-03 08:05:19  P1     armed        NY plan v1 armed                     0    
+621  2026-09-03 08:15:44  P1     armed        LONDON plan v2 armed                 0    
+622  2026-09-03 08:45:05  P1     armed        NY plan v2 armed                     0    
+623  2026-09-03 09:15:31  P1     armed        NY plan v3 armed                     0    
+624  2026-09-03 09:20:47  P0     close        Closed MNQ — P&L -140.00             0    
+625  2026-09-03 09:44:33  P1     armed        NY plan v4 armed                     0    
+626  2026-09-03 10:14:45  P1     armed        NY plan v5 armed                     0    
+627  2026-09-03 10:49:57  P1     armed        NY plan v6 armed                     0    
+628  2026-09-03 11:27:53  P1     armed        NY plan v7 armed                     0    
+629  2026-09-03 14:28:39  P0     feed-down    NT8 bar feed DOWN                    0    
+630  2026-09-03 16:30:21  P1     regime-dark  ASIA plan: 1/7 regime fields dark    0    
+631  2026-09-03 16:37:36  P1     armed        ASIA plan v1 armed                   0    
+632  2026-09-03 18:47:53  P1     armed        ASIA plan v2 armed                   0    
+633  2026-09-03 19:28:36  P1     armed        ASIA plan v3 armed                   0    
+634  2026-09-03 19:53:35  P1     armed        ASIA plan v4 armed                   0    
+635  2026-09-03 20:32:32  P1     armed        ASIA plan v5 armed                   0    
+636  2026-09-03 21:33:58  P0     feed-down    NT8 bar feed DOWN                    0    
+what                           
+-------------------------------
+day_plan_alerts epoch-mix count
+unit  n    MIN(id)  MAX(id)
+----  ---  -------  -------
+ms    3    3        5      
+s     652  1        655    

@@ -1,0 +1,23 @@
+-- bars tf values: [('12h', 2004, '2022-10-19 04:00:00', '2026-09-03 17:00:00'), ('15m', 2166, '2026-08-04 00:00:00', '2026-09-04 12:15:00'), ('1d', 1898, '2019-05-02 00:00:00', '2026-09-03 00:00:00'), ('1h', 2042, '2026-05-04 06:00:00', '2026-09-04 12:00:00'), ('1m', 16703, '2026-08-19 10:00:00', '2026-09-04 12:19:00'), ('1w', 384, '2019-04-26 00:00:00', '2026-08-28 00:00:00'), ('2h', 2021, '2026-01-12 00:00:00', '2026-09-04 11:00:00'), ('30m', 2083, '2026-07-03 02:00:00', '2026-09-04 12:00:00'), ('3d', 634, '2019-05-04 00:00:00', '2026-09-01 00:00:00'), ('3m', 2829, '2026-08-27 08:54:00', '2026-09-04 12:18:00'), ('4h', 2010, '2025-05-18 17:00:00', '2026-09-04 09:00:00'), ('5m', 2497, '2026-08-24 11:15:00', '2026-09-04 12:15:00'), ('6h', 2006, '2024-09-25 05:00:00', '2026-09-04 05:00:00'), ('8h', 2007, '2024-02-01 18:00:00', '2026-09-04 01:00:00')]
+-- NT8 log Filled names indexed: 141
+rows 65 computable 62
+inside bar: 58 at_high: 0 at_low: 1 adverse_extreme: 1 favorable_extreme: 0
+system(market) n= 48 pos_in_range p50= 0.384 adverse_extreme= 1 favorable= 0 inside= 48
+   mean adverse-share of bar range (0=best,1=worst): 0.585
+armed(limit) n= 14 pos_in_range p50= 0.759 adverse_extreme= 0 favorable= 0 inside= 10
+   mean adverse-share of bar range (0=best,1=worst): 0.2
+-- how column histogram: {'trader_fills': 51, 'entry_time': 0, 'nt8_log': 9, 'entry_time(materialized,late)': 5}
+  arm: (566, 'LONG', 29611.5, 'entry_time(materialized,late)', '08-27 11:32', 29608.5, 29611.0, 29602.75, 29610.25, 1.061, 97.0, False, False, False, False, False)
+  arm: (567, 'SHORT', 29621.0, 'entry_time(materialized,late)', '08-28 01:22', 29615.0, 29621.75, 29615.0, 29617.5, 0.889, -42.0, True, False, False, False, False)
+  arm: (568, 'SHORT', 29642.0, 'nt8_log:888bcd99', '08-28 07:18', 29633.75, 29645.75, 29632.5, 29637.25, 0.717, -32.0, True, False, False, False, False)
+  arm: (569, 'SHORT', 29700.0, 'entry_time(materialized,late)', '08-28 08:44', 29693.0, 29696.5, 29676.5, 29687.25, 1.175, 63.0, False, False, False, False, False)
+  arm: (570, 'LONG', 29463.25, 'nt8_log:54ece976', '08-28 12:09', 29464.0, 29467.5, 29450.0, 29450.5, 0.757, 17.0, True, False, False, False, False)
+  arm: (571, 'LONG', 29437.0, 'entry_time(materialized,late)', '08-30 17:38', 29442.0, 29450.75, 29442.0, 29448.75, -0.571, -44.5, False, False, False, False, False)
+  arm: (575, 'SHORT', 29437.0, 'nt8_log:0aa6032e', '08-31 09:57', 29426.5, 29443.5, 29425.25, 29442.0, 0.644, 32.5, True, False, False, False, False)
+  arm: (578, 'LONG', 29413.0, 'nt8_log:f0bbe9af', '08-31 12:25', 29418.5, 29420.0, 29404.25, 29405.5, 0.556, 92.0, True, False, False, False, False)
+  arm: (580, 'SHORT', 29417.25, 'entry_time(materialized,late)', '08-31 13:37', 29412.25, 29413.75, 29405.75, 29407.75, 1.438, 39.5, False, False, False, False, False)
+  arm: (582, 'SHORT', 29246.75, 'nt8_log:0c77307d', '09-01 05:23', 29244.0, 29248.25, 29243.25, 29244.75, 0.7, 129.5, True, False, False, False, False)
+  arm: (584, 'SHORT', 29138.0, 'nt8_log:6b5b89c6', '09-01 08:35', 29099.5, 29140.5, 29093.75, 29117.25, 0.947, 106.0, True, False, False, False, False)
+  arm: (585, 'SHORT', 29182.0, 'nt8_log:18a7cc55', '09-01 09:30', 29165.25, 29188.0, 29162.5, 29186.5, 0.765, -77.5, True, False, False, False, False)
+  arm: (586, 'LONG', 29082.75, 'nt8_log:d5fed440', '09-01 13:31', 29086.0, 29090.75, 29082.5, 29085.5, 0.03, -54.0, True, False, False, False, False)
+  arm: (591, 'SHORT', 29285.0, 'nt8_log:f2b1eb20', '09-03 09:03', 29278.5, 29291.75, 29263.75, 29291.5, 0.759, -140.0, True, False, False, False, False)

@@ -1,0 +1,8 @@
+kernel/research_score.go:46: reason := fmt.Sprintf("%s %.2f [%s]: %s", l.Kind, l.Price, l.Label, stage) -> reason := "shared cap reason"
+09-08 16:08:17 [INFO] kernel/levels_score.go:611 🗺️ seated 2/3 in-band levels (proximity band ±150pt, 2 of them retained)
+--- FAIL: TestStageACandidateRecorderKeepsComputedEvidence (0.00s)
+    --- FAIL: TestStageACandidateRecorderKeepsComputedEvidence/PDH (0.00s)
+        stage_a_score_capture_test.go:43: cut reason does not identify this candidate's actual exclusion: "shared cap reason"
+FAIL
+FAIL	nofx/kernel	0.010s
+FAIL

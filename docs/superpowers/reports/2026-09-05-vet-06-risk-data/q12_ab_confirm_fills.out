@@ -1,0 +1,45 @@
+--- ab_confirm_log net_pnl distribution
+n|mn|mx|avg|zeros|gt1000
+223|-117664.24|27.5|-18321.96|125|35
+--- ab_confirm_log: rows with |net_pnl|>1000 (ids, session, condition, rule, entry/exit, net_pnl, normalized)
+id|session|condition|rule|entry_px|stop_px|target_px|ROUND(net_pnl,2)|normalized|recompute
+33|LONDON|reject|1m_mss|29413.0|29500.21|29418.62|-117664.24|0|unrecomputable:fill-bar
+41|LONDON|reject|2x5m_close|29239.25|29385.0|29280.0|-117039.5|0|unrecomputable:fill-bar
+44|LONDON|reject|1m_mss|29192.75|29385.0|29280.0|-116946.5|0|unrecomputable:fill-bar
+39|LONDON|reject|2x5m_close|29239.25|29212.5|29154.38|-116904.5|0|unrecomputable:fill-bar
+71|NY|reject|2x5m_close|29238.5|29210.0|29082.75|-116898.0|0|unrecomputable:fill-bar
+72|NY|reject|1m_mss|29233.0|29210.0|29082.75|-116887.0|0|unrecomputable:fill-bar
+--- ab_confirm_log: rule x condition x n, usable (net_pnl<>0)
+rule|condition|n|nonzero|avg_nonzero
+1x5m_close|reject|59|24|-53477.28
+2x5m_close|reject|59|17|-54930.26
+1m_mss|reject|47|33|-56613.45
+1m_mss||9|0|
+1x5m_close||9|0|
+2x5m_close||8|0|
+touch|reject|8|8|-10.59
+1m_mss|sweep_reclaim|7|7|-14.72
+touch||4|0|
+1x5m_close|sweep_reclaim|3|2|-9.75
+--- trader_fills columns
+cid|name|type|notnull|dflt_value|pk
+0|id|INTEGER|0||1
+1|trader_id|TEXT|1||0
+2|exchange_id|TEXT|1|""|0
+3|exchange_type|TEXT|1|""|0
+4|order_id|INTEGER|1||0
+5|exchange_order_id|TEXT|1||0
+6|exchange_trade_id|TEXT|1||0
+7|symbol|TEXT|1||0
+8|side|TEXT|1||0
+9|price|REAL|1||0
+10|quantity|REAL|1||0
+11|quote_quantity|REAL|1||0
+12|commission|REAL|1||0
+13|commission_asset|TEXT|1||0
+14|realized_pnl|REAL|0|0|0
+15|is_maker|numeric|0|false|0
+16|created_at|INTEGER|0||0
+--- trader_fills era: n, nonzero commission, sum
+COUNT(*)|SUM(COALESCE(commission,0)<>0)|ROUND(SUM(COALESCE(commission,0)),2)
+433|0|0.0

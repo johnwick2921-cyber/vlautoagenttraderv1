@@ -1,0 +1,12 @@
+trader/auto_trader_planner.go:2461: recordResearchCandidates(in.ResearchSnapshotID, symbol, researchRaw, scored, now) -> _ = researchRaw // MUTATION removed candidate emission
+09-08 16:06:40 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 16:06:40 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🗺️ G2 HTF detection @ASIA: 90 level(s) map[EQH·15m:1 EQH·1h:1 EQH·4h:1 EQL·15m:1 EQL·1h:1 EQL·4h:1 iFVG(bull)·15m:28 iFVG(bull)·1h:28 iFVG(bull)·4h:28]
+09-08 16:06:40 [INFO] kernel/levels_score.go:611 🗺️ seated 9/22 in-band levels (proximity band ±38pt, 9 of them retained)
+09-08 16:06:40 [WARN] trader/auto_trader.go:49 [trader_id=t1] 🌑 dark regime at the ASIA read: 1/7 regime fields unavailable (vix_level) — plan still trustworthy
+09-08 16:06:40 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🔬 detector recorded: 114 new episode(s) · pool 9 candidate(s) (8 seated, 1 cut) · k=3 Δ=1.84 band=±5.53 H=12 close · pre-formation bars skipped=41 · levels with no formation time=6
+09-08 16:06:40 [INFO] trader/auto_trader.go:44 [trader_id=t1] 📓 read facts: void=8 · floor=19.3 pts (1.5×ATR5m 12.89) · scope=1m×300 since=1788818400000 (cap 500)
+--- FAIL: TestStageACandidateProductionAssembly (0.35s)
+    research_snapshot_test.go:119: production assembly lost candidate hook: id="ef320785-85e9-4d19-8542-93a08710a789" counts=map[candidate:0 exec:0 market:0 plan:0 scenario:0]
+FAIL
+FAIL	nofx/trader	0.361s
+FAIL

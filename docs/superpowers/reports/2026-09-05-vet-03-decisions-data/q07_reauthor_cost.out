@@ -1,0 +1,42 @@
+## reject clusters (reads with ≥1 rejected attempt): 28
+  ('2026-09-01', 'NY') first_reject_utc=2026-09-01 16:59:57 attempts=2 -> next plan v5 level_event/active after 3605s  reasons=['arm on S2 needs EXACTLY 2 legs (split co', 'scenario[0].confirm2.rule "1m_mss" not a']
+  ('2026-09-01', 'NY') first_reject_utc=2026-09-01 17:33:07 attempts=4 -> next plan v5 level_event/active after 1615s  reasons=['stream interrupted: context deadline exc', 'stream interrupted: context deadline exc', 'S2 breakdown_continue: a close came back', 'S1 breakdown_continue: a close came back']
+  ('2026-09-01', 'ASIA') first_reject_utc=2026-09-01 22:10:09 attempts=3 -> next plan v1 planner_fail_closed/no_trade after 785s  reasons=['S1 breakdown_continue: a close came back', 'scenario[0].confirm.rule "1x5m_close" — ', 'S2 breakdown_continue: a close came back']
+  ('2026-09-01', 'ASIA') first_reject_utc=2026-09-01 22:47:32 attempts=3 -> next plan v2 planner_fail_closed/no_trade after 789s  reasons=['scenario[0].confirm2.rule "1m_mss" not a', 'scenario[0].confirm2.rule "2x5m" invalid', 'arm legs on breakdown_continue — arm_leg']
+  ('2026-09-01', 'ASIA') first_reject_utc=2026-09-02 01:59:42 attempts=3 -> next plan v3 planner_fail_closed/no_trade after 910s  reasons=['scenario[3].confirm2.rule "touch" not al', 'scenario[3].confirm2.rule "displacement"', 'S4 breakdown_continue: a close came back']
+  ('2026-09-01', 'ASIA') first_reject_utc=2026-09-02 02:44:29 attempts=3 -> next plan v4 planner_fail_closed/no_trade after 557s  reasons=['arm on S1 needs EXACTLY 2 legs (split co', 'arm on S1 top-level entry/stop/target mu', 'arm on S1 leg 2 must chain (wait_confirm']
+  ('2026-09-01', 'ASIA') first_reject_utc=2026-09-02 04:47:33 attempts=2 -> next plan v7 level_event/active after 643s  reasons=['still failed after 2 retries: stream int', 'S3 breakup_continue: a close came back a']
+  ('2026-09-01', 'ASIA') first_reject_utc=2026-09-02 06:15:50 attempts=3 -> next plan v10 level_event/active after 2131s  reasons=['still failed after 2 retries: API error ', 'still failed after 2 retries: API error ', 'still failed after 2 retries: API error ']
+  ('2026-09-02', 'LONDON') first_reject_utc=2026-09-02 06:32:54 attempts=3 -> next plan v1 planner_fail_closed/no_trade after 290s  reasons=['S1 breakdown_continue: a close came back', 'scenario[0].confirm.rule "1x5m_close" — ', 'S2 breakdown_continue: a close came back']
+  ('2026-09-02', 'NY') first_reject_utc=2026-09-02 17:57:32 attempts=2 -> next plan v10 level_event/active after 283s  reasons=['S4 broken level 29001.75 is 168.0 pts fr', 'S4 breakdown_continue: a close came back']
+  ('2026-09-02', 'NY') first_reject_utc=2026-09-02 18:56:32 attempts=1 -> next plan v12 level_event/active after 27s  reasons=['too many levels: 13 (max 12)']
+  ('2026-09-02', 'NY') first_reject_utc=2026-09-02 19:22:33 attempts=3 -> NO subsequent plan row
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-02 23:00:42 attempts=2 -> next plan v4 level_event/active after 240s  reasons=['S3 breakdown_continue: a close came back', 'S4 breakdown_continue: a close came back']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-02 23:38:26 attempts=2 -> next plan v6 level_event/active after 307s  reasons=['S3 breakdown_continue: a close came back', 'scenario[2].confirm.rule "1x5m_close" — ']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-03 00:35:00 attempts=3 -> next plan v8 dormant:flip:flip-condition: 2x5m close above 29175.66 (buffer 0.5×ATR14, 2× 5m closes) → bias long/dormant after 1855s  reasons=['S2 breakdown_continue: a close came back', 'scenario[1].confirm.rule "1x5m_close" — ', 'S2 breakdown_continue: a close came back']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-03 01:03:55 attempts=1 -> next plan v8 dormant:flip:flip-condition: 2x5m close above 29175.66 (buffer 0.5×ATR14, 2× 5m closes) → bias long/dormant after 120s  reasons=['S2 breakdown_continue: a close came back']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-03 01:36:47 attempts=1 -> next plan v9 level_event/active after 93s  reasons=['S2 breakdown_continue: a close came back']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-03 01:58:23 attempts=1 -> next plan v10 level_event/active after 280s  reasons=['S2 breakdown_continue: a close came back']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-03 02:29:06 attempts=3 -> next plan v11 level_event/active after 172s  reasons=['S4 breakdown_continue: a close came back', 'scenario[1].confirm2.rule "1m_mss" not a', 'S2 breakdown_continue: a close came back']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-03 05:07:05 attempts=1 -> next plan v14 level_event/active after 100s  reasons=['S3 breakdown_continue: measured displace']
+  ('2026-09-02', 'ASIA') first_reject_utc=2026-09-03 05:33:15 attempts=1 -> next plan v15 dormant:death:death-condition: 5m_close close above 29132.50 (buffer 0.5×ATR14, 2× 5m closes)/dormant after 59s  reasons=['S2 breakdown_continue: measured displace']
+  ('2026-09-03', 'ASIA') first_reject_utc=2026-09-04 05:37:17 attempts=1 -> next plan v6 level_event/active after 176s  reasons=['gap-up at 29622.25 (> PDH 29601.00): the']
+  ('2026-09-04', 'LONDON') first_reject_utc=2026-09-04 12:52:37 attempts=1 -> next plan v3 level_event/active after 220s  reasons=['S2 breakdown_continue: measured displace']
+  ('2026-09-04', 'NY') first_reject_utc=2026-09-04 13:07:20 attempts=3 -> next plan v1 planner_fail_closed/no_trade after 265s  reasons=['scenario[0].confirm2.rule "touch" not al', 'S1 breakdown_continue: the tape shows NO', 'S1 arm requires entry_mode=pullback (imm']
+  ('2026-09-04', 'LONDON') first_reject_utc=2026-09-04 13:25:34 attempts=2 -> NO subsequent plan row
+  ('2026-09-04', 'NY') first_reject_utc=2026-09-04 13:41:25 attempts=1 -> next plan v2 owner_reset/active after 201s  reasons=['gap-up at 29607.75 (> PDH 29601.00): the']
+  ('2026-09-04', 'NY') first_reject_utc=2026-09-04 14:37:05 attempts=6 -> next plan v4 level_event/active after 5185s  reasons=['S2 breakdown_continue: the tape shows NO', 'S2 arm requires entry_mode=pullback (imm', 'S2 breakdown_continue: measured displace', 'S1 breakdown_continue: the tape shows NO', 'S1 arm requires entry_mode=pullback (imm', 'S2 breakdown_continue: measured displace']
+  ('2026-09-04', 'NY') first_reject_utc=2026-09-04 15:30:39 attempts=3 -> next plan v4 level_event/active after 1971s  reasons=['S1 breakdown_continue: the tape shows NO', 'S1 arm requires entry_mode=pullback (imm', 'S2 breakdown_continue: measured displace']
+## re-author cost seconds (first reject → next plan row): n=26 median=286 min=27 max=5185; next row was planner_fail_closed in 6/26
+## planner_fail_closed plans by date/session: [('2026-08-15 NY', 1), ('2026-08-17 ASIA', 1), ('2026-08-18 ASIA', 3), ('2026-08-23 ASIA', 4), ('2026-08-24 ASIA', 1), ('2026-08-24 LONDON', 1), ('2026-08-25 ASIA', 2), ('2026-08-26 ASIA', 1), ('2026-08-27 ASIA', 1), ('2026-08-27 NY', 2), ('2026-08-30 ASIA', 1), ('2026-08-31 ASIA', 2), ('2026-08-31 LONDON', 2), ('2026-08-31 NY', 2), ('2026-09-01 ASIA', 4), ('2026-09-01 LONDON', 1), ('2026-09-02 LONDON', 1), ('2026-09-04 NY', 1)]
+## plan rows (ASIA/LONDON/NY) = 253; rejected attempts = 64; reject share of all authoring attempts = 0.202
+## rejects by rule family:
+   continuation law (void/displacement/BD_MIN_CLOSES) 38
+   TRANSPORT (503/stream/EOF) 6
+   fade_requires_touch 5
+   arm requires entry_mode=pullback (09-04 rule) 5
+   arm legs contract 4
+   confirm-rule vocabulary 2
+   gap-up trigger law 2
+   retest distance 1
+   level cap 1

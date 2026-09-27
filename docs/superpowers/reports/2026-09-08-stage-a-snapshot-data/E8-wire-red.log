@@ -1,0 +1,11 @@
+provider/ninjatrader/tcp_server.go:1677: researchWire.observe(env.Type, env.Payload) -> removed
+2026/09/08 16:04:37 WARN tcp_server: data frame before hello — LEGACY (pre-P5.2) AddOn assumed first_frame=bar_update action="redeploy the C# AddOn (cp → F5 → NT8 restart) to enable the protocol handshake"
+09-08 16:04:37 [WARN] ninjatrader/bar_persist.go:350 bars: ingest drop summary: intrabar_dropped=0 current_dropped=0 historical_dropped=0 peak_depth=1/4096 (1-line/min; intra-bar drops self-heal on the next tick — closed bars are NEVER dropped on this path)
+2026/09/08 16:04:37 INFO tcp_server: received frame type=order_snapshot
+2026/09/08 16:04:37 WARN tcp_server: bad order_snapshot payload err="order_snapshot: no account — unaddressable frame"
+2026/09/08 16:04:37 INFO tcp_server: client disconnected
+--- FAIL: TestStageAWireProductionReadLoop (0.03s)
+    research_wire_test.go:56: received frames never reached archive: counts=map[candidate:0 exec:0 market:0 plan:0 scenario:0] dropped=0
+FAIL
+FAIL	nofx/provider/ninjatrader	0.035s
+FAIL

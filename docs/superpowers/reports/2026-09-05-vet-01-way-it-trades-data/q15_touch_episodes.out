@@ -1,0 +1,77 @@
+touch_episodes n= 1315 distinct (label,price,opened)= 1315
+
+== hold(rejection) rate by level family, n>=30 reported, Wilson 95% ==
+SWG-L      hold  166/ 216 = 0.769 [0.708,0.820]
+SWG-H      hold  146/ 198 = 0.737 [0.672,0.794]
+EQL        hold   92/ 127 = 0.724 [0.641,0.795]
+ONH        hold   88/  97 = 0.907 [0.833,0.950]
+OR-H       hold   64/  88 = 0.727 [0.626,0.809]
+PDC        hold   53/  77 = 0.688 [0.578,0.781]
+ONL        hold   70/  74 = 0.946 [0.869,0.979]
+OB         hold   44/  63 = 0.698 [0.576,0.798]
+EQH        hold   34/  53 = 0.642 [0.507,0.757]
+OR-L       hold   35/  52 = 0.673 [0.538,0.785]
+PDH        hold   26/  40 = 0.650 [0.495,0.779]
+RTH-H      hold   19/  32 = 0.594 [0.423,0.745]
+Demand     hold   25/  31 = 0.806 [0.637,0.908]
+iFVG       hold   25/  31 = 0.806 [0.637,0.908]
+VWAP+1σ    hold   16/  22 = 0.727 [0.518,0.868]  (n<30 no verdict)
+VWAP       hold    9/  20 = 0.450 [0.258,0.658]  (n<30 no verdict)
+POC        hold   12/  20 = 0.600 [0.387,0.781]  (n<30 no verdict)
+Supply     hold   10/  18 = 0.556 [0.337,0.754]  (n<30 no verdict)
+PDL        hold   13/  15 = 0.867 [0.621,0.963]  (n<30 no verdict)
+RTH-L      hold   10/  13 = 0.769 [0.497,0.918]  (n<30 no verdict)
+VWAP−1σ    hold    6/   8 = 0.750 [0.409,0.929]  (n<30 no verdict)
+eVWAP      hold    2/   4 = 0.500 [0.150,0.850]  (n<30 no verdict)
+VAH        hold    1/   3 = 0.333 [0.061,0.792]  (n<30 no verdict)
+FVG        hold    3/   3 = 1.000 [0.438,1.000]  (n<30 no verdict)
+SETT       hold    1/   2 = 0.500 [0.095,0.905]  (n<30 no verdict)
+pdVWAP     hold    2/   2 = 1.000 [0.342,1.000]  (n<30 no verdict)
+IB+1.5x    hold    1/   2 = 0.500 [0.095,0.905]  (n<30 no verdict)
+RN 29500   hold    1/   1 = 1.000 [0.207,1.000]  (n<30 no verdict)
+RN 29400   hold    1/   1 = 1.000 [0.207,1.000]  (n<30 no verdict)
+RN 29375   hold    0/   1 = 0.000 [0.000,0.793]  (n<30 no verdict)
+VWAP−2σ    hold    1/   1 = 1.000 [0.207,1.000]  (n<30 no verdict)
+
+== by ordinal (1 / 2 / 3+) pooled ==
+ordinal 1: hold 451/567 = 0.795 [0.760,0.827]
+ordinal 2: hold 200/257 = 0.778 [0.724,0.825]
+ordinal 3: hold 325/491 = 0.662 [0.619,0.702]
+
+== family x ordinal (n>=30 only) ==
+EQH        ord1: hold 22/32 = 0.688 [0.514,0.820]
+EQL        ord1: hold 40/51 = 0.784 [0.654,0.875]
+EQL        ord2: hold 26/30 = 0.867 [0.703,0.947]
+EQL        ord3: hold 26/46 = 0.565 [0.422,0.698]
+ONH        ord1: hold 54/54 = 1.000 [0.934,1.000]
+ONH        ord3: hold 21/30 = 0.700 [0.521,0.833]
+ONL        ord1: hold 56/56 = 1.000 [0.936,1.000]
+OR-H       ord3: hold 42/61 = 0.689 [0.564,0.791]
+PDC        ord3: hold 32/49 = 0.653 [0.513,0.771]
+SWG-H      ord1: hold 69/93 = 0.742 [0.645,0.820]
+SWG-H      ord2: hold 40/52 = 0.769 [0.639,0.863]
+SWG-H      ord3: hold 37/53 = 0.698 [0.565,0.805]
+SWG-L      ord1: hold 73/91 = 0.802 [0.709,0.871]
+SWG-L      ord2: hold 43/51 = 0.843 [0.720,0.918]
+SWG-L      ord3: hold 50/74 = 0.676 [0.563,0.771]
+
+== close_5m reject rate by family (n>=30) ==
+SWG-L      5m-reject 166/216 = 0.769 [0.708,0.820]
+SWG-H      5m-reject 146/198 = 0.737 [0.672,0.794]
+EQL        5m-reject 92/127 = 0.724 [0.641,0.795]
+ONH        5m-reject 88/97 = 0.907 [0.833,0.950]
+OR-H       5m-reject 64/88 = 0.727 [0.626,0.809]
+PDC        5m-reject 53/77 = 0.688 [0.578,0.781]
+ONL        5m-reject 70/74 = 0.946 [0.869,0.979]
+OB         5m-reject 44/63 = 0.698 [0.576,0.798]
+EQH        5m-reject 34/53 = 0.642 [0.507,0.757]
+OR-L       5m-reject 35/52 = 0.673 [0.538,0.785]
+PDH        5m-reject 26/40 = 0.650 [0.495,0.779]
+RTH-H      5m-reject 19/32 = 0.594 [0.423,0.745]
+Demand     5m-reject 25/31 = 0.806 [0.637,0.908]
+iFVG       5m-reject 25/31 = 0.806 [0.637,0.908]
+
+== by session ==
+NY      hold 299/434 = 0.689 [0.644,0.731]
+ASIA    hold 446/552 = 0.808 [0.773,0.839]
+LONDON  hold 231/329 = 0.702 [0.651,0.749]

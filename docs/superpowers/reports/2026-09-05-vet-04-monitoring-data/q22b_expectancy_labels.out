@@ -1,0 +1,7 @@
+{'condition': 'acceptance'} n= 6 sum= 4.57 win= 0.167 wilson=[0.030,0.564] mean_ci=[-123.6,125.1] NOT ENOUGH DATA ids= [522, 526, 527, 532, 542, 543]
+{'condition': 'breakout_retest'} n= 9 sum= -581.5 win= 0.111 wilson=[0.020,0.435] mean_ci=[-102.2,-27.0] NOT ENOUGH DATA ids= [528, 534, 556, 557, 558, 562, 563, 589, 590]
+{'condition': 'hold'} n= 1 sum= 168 win= 1 wilson=[0.207,1.000] mean_ci=[168.0,168.0] NOT ENOUGH DATA ids= [555]
+{'condition': 'reclaim'} n= 5 sum= -436.5 win= 0 wilson=[0.000,0.434] mean_ci=[-121.9,-52.7] NOT ENOUGH DATA ids= [525, 531, 540, 541, 588]
+{'condition': 'reject'} n= 31 sum= 586 win= 0.452 wilson=[0.292,0.622] mean_ci=[-18.3,56.1] FAILS ids= [521, 523, 524, 529, 533, 535, 536, 537, 538, 544, 547, 548, 549, 550, 551, 552, 553, 554, 560, 564, 565, 567, 569, 570, 575, 581, 582, 584, 585, 587, 591]
+{'condition': 'sweep_reclaim'} n= 6 sum= -207 win= 0.167 wilson=[0.030,0.564] mean_ci=[-86.3,17.3] NOT ENOUGH DATA ids= [559, 561, 568, 578, 583, 586]
+total n 58

@@ -1,0 +1,80 @@
+================================================================================
+COMPLIANT n=58
+  per-day: n, total, running-min (intraday worst realised running sum)
+    2026-08-18: n= 4 tot= +469.00 runmin=  +77.50
+    2026-08-19: n= 7 tot=  +33.57 runmin= -297.93
+    2026-08-20: n=11 tot= -407.50 runmin= -407.50
+    2026-08-23: n= 3 tot=  -24.50 runmin= -194.00
+    2026-08-24: n=11 tot=  -26.50 runmin= -181.00
+    2026-08-25: n= 3 tot= -200.00 runmin= -200.00
+    2026-08-26: n= 2 tot= -131.50 runmin= -131.50
+    2026-08-27: n= 4 tot=   +6.00 runmin=  -74.00
+    2026-08-30: n= 2 tot= +124.50 runmin=  +32.50
+    2026-08-31: n= 6 tot= +212.00 runmin= +190.50
+    2026-09-01: n= 4 tot= -381.50 runmin= -381.50
+    2026-09-02: n= 1 tot= -140.00 runmin= -140.00
+  DAILY-LIMIT calibration (trip = running realised sum <= -L at any close in the day):
+    $ 225: trips 3/12 days ['2026-08-19', '2026-08-20', '2026-09-01'] forfeited P&L after trip = +82.50
+    $ 300: trips 2/12 days ['2026-08-20', '2026-09-01'] forfeited P&L after trip = -61.50
+    $ 450: trips 0/12 days [] forfeited P&L after trip = +0.00
+    $ 600: trips 0/12 days [] forfeited P&L after trip = +0.00
+    $ 900: trips 0/12 days [] forfeited P&L after trip = +0.00
+  at 2 LOTS the $450 limit is $225/lot: 3/12 days trip
+  MAX_DAILY_TRADES=3: exceeds on 7/12 days (58.3%); forfeited after 3rd = +209.50 (+17.46/day); kept mean/day = -56.33
+  WEEKS (ISO): 2026-W34 +70.57 (runmin +70.57) · 2026-W35 -227.50 (runmin -358.00) · 2026-W36 -309.50 (runmin -309.50)
+  WEEKS (SUNDAY17): 2026-08-16 +95.07 (runmin +95.07) · 2026-08-23 -376.50 (runmin -382.50) · 2026-08-30 -185.00 (runmin -185.00)
+  BUCKETS (mean, 95% t-CI, p(win) Wilson with both denominators):
+    session=ASIA                   n=16 mean=  -34.53 CI[  -62.90,   -6.15] t=-2.59 p(win) 2/15=0.133[0.037,0.379] 2/16=[0.035,0.360]
+    session=LONDON                 n=21 mean=   +1.14 CI[  -45.55,  +47.83] t=+0.05 p(win) 7/21=0.333[0.172,0.546] 7/21=[0.172,0.546]
+    session=NY                     n=21 mean=   +2.95 CI[  -58.00,  +63.91] t=+0.10 p(win) 9/20=0.450[0.258,0.658] 9/21=[0.245,0.635]
+    condition=S1                     n=27 mean=  +11.89 CI[  -32.72,  +56.50] t=+0.53 p(win) 10/27=0.370[0.215,0.558] 10/27=[0.215,0.558]
+    condition=S2                     n=22 mean=   -6.47 CI[  -49.02,  +36.07] t=-0.32 p(win) 7/20=0.350[0.181,0.567] 7/22=[0.164,0.527]
+    condition=S3                     n= 7 mean=  -66.79 CI[ -138.79,   +5.22] t=-2.27 p(win) 1/7=0.143[0.026,0.513] 1/7=[0.026,0.513]
+    condition=S4                     n= 2 mean=  -88.75 CI[ -218.99,  +41.49] t=-8.66 p(win) 0/2=0.000[0.000,0.658] 0/2=[0.000,0.658]
+    side=LONG                   n=19 mean=  -42.55 CI[  -78.41,   -6.69] t=-2.37 p(win) 4/19 [0.085,0.433]
+    side=SHORT                  n=39 mean=   +8.77 CI[  -27.36,  +44.90] t=+0.49 p(win) 14/37 [0.241,0.539]
+
+================================================================================
+BROAD n=65
+  per-day: n, total, running-min (intraday worst realised running sum)
+    2026-08-18: n= 4 tot= +469.00 runmin=  +77.50
+    2026-08-19: n= 8 tot=  +46.57 runmin= -297.93
+    2026-08-20: n=12 tot= -492.00 runmin= -492.00
+    2026-08-23: n= 5 tot= -142.50 runmin= -312.00
+    2026-08-24: n=11 tot=  -26.50 runmin= -181.00
+    2026-08-25: n= 3 tot= -200.00 runmin= -200.00
+    2026-08-26: n= 3 tot=  -34.50 runmin= -131.50
+    2026-08-27: n= 4 tot=   +6.00 runmin=  -74.00
+    2026-08-30: n= 4 tot= +119.50 runmin=  -44.50
+    2026-08-31: n= 6 tot= +212.00 runmin= +190.50
+    2026-09-01: n= 4 tot= -381.50 runmin= -381.50
+    2026-09-02: n= 1 tot= -140.00 runmin= -140.00
+  DAILY-LIMIT calibration (trip = running realised sum <= -L at any close in the day):
+    $ 225: trips 4/12 days ['2026-08-19', '2026-08-20', '2026-08-23', '2026-09-01'] forfeited P&L after trip = +127.50
+    $ 300: trips 3/12 days ['2026-08-20', '2026-08-23', '2026-09-01'] forfeited P&L after trip = +19.50
+    $ 450: trips 1/12 days ['2026-08-20'] forfeited P&L after trip = +0.00
+    $ 600: trips 0/12 days [] forfeited P&L after trip = +0.00
+    $ 900: trips 0/12 days [] forfeited P&L after trip = +0.00
+  at 2 LOTS the $450 limit is $225/lot: 4/12 days trip
+  MAX_DAILY_TRADES=3: exceeds on 9/12 days (75.0%); forfeited after 3rd = +292.50 (+24.38/day); kept mean/day = -71.37
+  WEEKS (ISO): 2026-W34 -118.93 (runmin -118.93) · 2026-W35 -135.50 (runmin -261.00) · 2026-W36 -309.50 (runmin -309.50)
+  WEEKS (SUNDAY17): 2026-08-16 +23.57 (runmin +23.57) · 2026-08-23 -397.50 (runmin -403.50) · 2026-08-30 -190.00 (runmin -190.00)
+  BUCKETS (mean, 95% t-CI, p(win) Wilson with both denominators):
+    session=(empty)                n= 7 mean=  -13.93 CI[  -76.66,  +48.80] t=-0.54 p(win) 3/7=0.429[0.158,0.750] 3/7=[0.158,0.750]
+    session=ASIA                   n=16 mean=  -34.53 CI[  -62.90,   -6.15] t=-2.59 p(win) 2/15=0.133[0.037,0.379] 2/16=[0.035,0.360]
+    session=LONDON                 n=21 mean=   +1.14 CI[  -45.55,  +47.83] t=+0.05 p(win) 7/21=0.333[0.172,0.546] 7/21=[0.172,0.546]
+    session=NY                     n=21 mean=   +2.95 CI[  -58.00,  +63.91] t=+0.10 p(win) 9/20=0.450[0.258,0.658] 9/21=[0.245,0.635]
+    condition=(empty)                n= 5 mean=   -5.20 CI[  -96.25,  +85.85] t=-0.16 p(win) 2/5=0.400[0.118,0.769] 2/5=[0.118,0.769]
+    condition=S1                     n=27 mean=  +11.89 CI[  -32.72,  +56.50] t=+0.53 p(win) 10/27=0.370[0.215,0.558] 10/27=[0.215,0.558]
+    condition=S2                     n=22 mean=   -6.47 CI[  -49.02,  +36.07] t=-0.32 p(win) 7/20=0.350[0.181,0.567] 7/22=[0.164,0.527]
+    condition=S3                     n= 7 mean=  -66.79 CI[ -138.79,   +5.22] t=-2.27 p(win) 1/7=0.143[0.026,0.513] 1/7=[0.026,0.513]
+    condition=S4                     n= 2 mean=  -88.75 CI[ -218.99,  +41.49] t=-8.66 p(win) 0/2=0.000[0.000,0.658] 0/2=[0.000,0.658]
+    condition=off-plan               n= 2 mean=  -35.75 CI[ -655.17, +583.67] t=-0.73 p(win) 1/2=0.500[0.095,0.905] 1/2=[0.095,0.905]
+    side=LONG                   n=23 mean=  -38.00 CI[  -71.40,   -4.60] t=-2.36 p(win) 5/23 [0.097,0.419]
+    side=SHORT                  n=42 mean=   +7.38 CI[  -26.80,  +41.57] t=+0.44 p(win) 16/40 [0.263,0.554]
+
+LONG/SHORT by 1d bar direction of the session-day ( COMPLIANT n=58 ):
+    LONG   on DOWN days: n= 6 mean=  -36.33 sum= -218.00 wins=2
+    LONG   on UP   days: n=13 mean=  -45.42 sum= -590.50 wins=2
+    SHORT  on DOWN days: n=20 mean=  +51.93 sum=+1038.57 wins=11
+    SHORT  on UP   days: n=19 mean=  -36.66 sum= -696.50 wins=3

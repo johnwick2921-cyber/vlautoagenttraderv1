@@ -1,0 +1,11 @@
+{'condition': 'acceptance'} n 6 W/L/F 1 4 1 sum 4.57 mean 0.76 win 0.167 [ 0.03 0.564 ] status NOT ENOUGH DATA ids [522, 526, 527, 532, 542, 543]
+{'condition': 'breakout_retest'} n 9 W/L/F 1 8 0 sum -581.5 mean -64.61 win 0.111 [ 0.02 0.435 ] status NOT ENOUGH DATA ids [528, 534, 556, 557, 558, 562, 563, 589, 590]
+{'condition': 'hold'} n 1 W/L/F 1 0 0 sum 168 mean 168 win 1 [ 0.207 1 ] status NOT ENOUGH DATA ids [555]
+{'condition': 'reclaim'} n 5 W/L/F 0 5 0 sum -436.5 mean -87.3 win 0 [ 0 0.434 ] status NOT ENOUGH DATA ids [525, 531, 540, 541, 588]
+{'condition': 'reject'} n 31 W/L/F 14 16 1 sum 586 mean 18.9 win 0.452 [ 0.292 0.622 ] status FAILS ids 31 ids
+{'condition': 'sweep_reclaim'} n 6 W/L/F 1 5 0 sum -207 mean -34.5 win 0.167 [ 0.03 0.564 ] status NOT ENOUGH DATA ids [559, 561, 568, 578, 583, 586]
+--- by session
+{'session': 'ASIA'} n 16 W/L/F 2 13 1 sum -552.43 mean -34.53 win 0.125 status NOT ENOUGH DATA
+{'session': 'LONDON'} n 21 W/L/F 7 14 0 sum 24 mean 1.14 win 0.333 status NOT ENOUGH DATA
+{'session': 'NY'} n 21 W/L/F 9 11 1 sum 62 mean 2.95 win 0.429 status NOT ENOUGH DATA
+excluded: {'unresolved_pnl': 3, 'unresolvable': 7, 'test_seam': 3, 'no_condition': 0, 'crypto_era': 0} as_of 2026-09-03T14:20:45Z

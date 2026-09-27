@@ -1,0 +1,5 @@
+armed_orders planned R:R (non-test rows): n=62 median=2.17 p25=2.02 p75=2.44
+plan-doc authored arm R:R since 08-19: n=132 median=2.36
+plan-doc authored arm R:R since 09-02: n=57 median=2.53
+armed fills: authored stop/target vs realized
+   arm 20 pos 579 planned RR 2.64 realized R 0.00 pnl None

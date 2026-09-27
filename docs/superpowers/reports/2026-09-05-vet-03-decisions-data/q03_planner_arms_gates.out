@@ -1,0 +1,327 @@
+s
+## planner_rejected_prompts by reject_reason
+reject_reason | n | first_ct | last_ct
+S2 breakdown_continue: a close came back across 29141.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 4 | 2026
+still failed after 2 retries: API error (status 503): {"error":{"message":"Server Overloaded","type":"service_unavailable_error","param":null,"code":"service_unavailable_error"}} | 3 | 2026-09-02 | 20
+S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the disp
+S1 arm requires entry_mode=pullback (immediate-mode entries are AI-path only) | 3 | 2026-09-04 | 2026-09-04
+stream interrupted: context deadline exceeded (Client.Timeout or context cancellation while reading body) | 2 | 2026-09-01 | 2026-09-01
+scenario[1].confirm.rule "1x5m_close" — fade_requires_touch (a reject fade enters on the touch at the level, never on a close-confirm: touch-entry at the level (limit), stop behind structure by ≥2
+scenario[0].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 2x5m legal ONLY here | 2 | 2026-09
+scenario[0].confirm.rule "1x5m_close" — fade_requires_touch (a reject fade enters on the touch at the level, never on a close-confirm: touch-entry at the level (limit), stop behind structure by ≥2
+S3 breakdown_continue: a close came back across 29149.00 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 2 | 2026
+S2 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the disp
+S2 arm requires entry_mode=pullback (immediate-mode entries are AI-path only) | 2 | 2026-09-04 | 2026-09-04
+too many levels: 13 (max 12) | 1 | 2026-09-02 | 2026-09-02
+still failed after 2 retries: stream interrupted: unexpected EOF | 1 | 2026-09-01 | 2026-09-01
+scenario[3].confirm2.rule "touch" not allowed for breakup_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 2x5m legal ONLY here | 1 | 2026-09-01
+scenario[3].confirm2.rule "displacement" invalid (touch|1x5m_close|2x5m_close|1m_mss|time_hold) | 1 | 2026-09-01 | 2026-09-01
+scenario[2].confirm.rule "1x5m_close" — fade_requires_touch (a reject fade enters on the touch at the level, never on a close-confirm: touch-entry at the level (limit), stop behind structure by ≥2
+scenario[1].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 2x5m_close legal ONLY here | 1 | 2
+scenario[0].confirm2.rule "touch" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 2x5m_close legal ONLY here | 1 | 20
+scenario[0].confirm2.rule "2x5m" invalid (touch|1x5m_close|2x5m_close|1m_mss|time_hold) | 1 | 2026-09-01 | 2026-09-01
+gap-up at 29622.25 (> PDH 29601.00): the long scenario's trigger must reference a level ≥ current price (breakout/retest), not a dip back below | 1 | 2026-09-04 | 2026-09-04
+gap-up at 29607.75 (> PDH 29601.00): the long scenario's trigger must reference a level ≥ current price (breakout/retest), not a dip back below | 1 | 2026-09-04 | 2026-09-04
+arm on S2 needs EXACTLY 2 legs (split contract), got 1 | 1 | 2026-09-01 | 2026-09-01
+arm on S1 top-level entry/stop/target must equal leg 1's (legacy readers read the top-level) | 1 | 2026-09-01 | 2026-09-01
+arm on S1 needs EXACTLY 2 legs (split contract), got 1 | 1 | 2026-09-01 | 2026-09-01
+arm on S1 leg 2 must chain (wait_confirm true) on its confirm rule | 1 | 2026-09-01 | 2026-09-01
+arm legs on breakdown_continue — arm_legs_sweep_reclaim_only (the split entry is the sweep_reclaim contract; other conditions arm single) | 1 | 2026-09-01 | 2026-09-01
+S4 broken level 29001.75 is 168.0 pts from price 29169.75 (> 5.0×ATR5m=119.4 — the retest is unreachable; author a nearer broken level) | 1 | 2026-09-02 | 2026-09-02
+S4 breakdown_continue: a close came back across 29149.00 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S4 breakdown_continue: a close came back across 29132.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S4 breakdown_continue: a close came back across 29058.75 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S4 breakdown_continue: a close came back across 29047.75 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S3 breakup_continue: a close came back across 29068.05 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026-0
+S3 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (15.2 pts) — not a displacement move, author a normal `reject` play instead (do NOT combine condition names; `rejec
+S3 breakdown_continue: a close came back across 29109.65 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (40.9 pts) — not a displacement move, author a normal `reject` play instead (do NOT combine condition names; `rejec
+S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (37.3 pts) — not a displacement move, author a normal `reject` play instead (do NOT combine condition names; `rejec
+S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (36.1 pts) — not a displacement move, author a normal `reject` play instead (do NOT combine condition names; `rejec
+S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (34.7 pts) — not a displacement move, author a normal `reject` play instead (do NOT combine condition names; `rejec
+S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (21.5 pts) — not a displacement move, author a normal `reject` play instead (do NOT combine condition names; `rejec
+S2 breakdown_continue: a close came back across 29176.29 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S2 breakdown_continue: a close came back across 29167.66 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S2 breakdown_continue: a close came back across 29132.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S2 breakdown_continue: a close came back across 29130.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S2 breakdown_continue: a close came back across 29125.00 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S2 breakdown_continue: a close came back across 29021.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S1 breakdown_continue: a close came back across 29130.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S1 breakdown_continue: a close came back across 29100.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+S1 breakdown_continue: a close came back across 29021.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition names; `reject_retest` is not a valid condition) | 1 | 2026
+s
+## rejected by session/attempt
+session | attempt | n
+ASIA | 1 | 17
+ASIA | 2 | 10
+ASIA | 3 | 6
+LONDON | 1 | 3
+LONDON | 2 | 2
+LONDON | 3 | 1
+NY | 1 | 10
+NY | 2 | 8
+NY | 3 | 7
+s
+## rejected by CT date
+d | n | reads
+2026-09-01 | 20 | 2
+2026-09-02 | 25 | 4
+2026-09-03 | 2 | 1
+2026-09-04 | 17 | 3
+s
+## plans by session x lifecycle
+session | lifecycle | n
+ASIA | active | 80
+ASIA | dormant | 6
+ASIA | no_trade | 24
+LONDON | active | 53
+LONDON | dormant | 2
+LONDON | no_trade | 7
+NY | active | 66
+NY | dormant | 7
+NY | expired | 2
+NY | no_trade | 6
+WEEKLY | active | 1
+s
+## plans by trigger_reason
+trigger_reason | n
+level_event | 110
+planner_fail_closed | 31
+owner_reset | 24
+ASIA_scheduled_read | 24
+NY_scheduled_read | 19
+LONDON_scheduled_read | 17
+replans_exhausted | 5
+structure_mss | 2
+e7_incident_kill:manual_cancel_respected | 2
+demo_seed | 2
+weekly_boot_backfill | 1
+rearmed:5m_close close back below 29211.00 (buffer 0.5×ATR14, 2× 5m closes) | 1
+rearmed:2x5m close back below 29678.25 (buffer 0.5×ATR14, 2× 5m closes) | 1
+rearmed:2x5m close back below 29212.50 (buffer 0.5×ATR14, 2× 5m closes) | 1
+rearmed:2x5m close back above 29426.92 (buffer 0.5×ATR14, 2× 5m closes) | 1
+rearmed:2x5m close back above 29035.25 (buffer 0.5×ATR14, 2× 5m closes) | 1
+dormant:flip:flip-condition: 5m_close close above 29058.75 (buffer 0.5×ATR14, 6× 5m closes) → bias long | 1
+dormant:flip:flip-condition: 2x5m close above 29231.63 (buffer 0.5×ATR14, 2× 5m closes) → bias long | 1
+dormant:flip:flip-condition: 2x5m close above 29221.98 (buffer 0.5×ATR14, 2× 5m closes) → bias long | 1
+dormant:flip:flip-condition: 2x5m close above 29177.50 (buffer 0.5×ATR14, 8× 5m closes) → bias long | 1
+dormant:flip:flip-condition: 2x5m close above 29175.66 (buffer 0.5×ATR14, 2× 5m closes) → bias long | 1
+dormant:flip:flip-condition: 15m_close close below 29464.82 (buffer 0.5×ATR14, 2× 15m closes) → bias short | 1
+dormant:death:death-condition: 5m_close close above 29132.50 (buffer 0.5×ATR14, 2× 5m closes) | 1
+dormant:death:death-condition: 2x5m close below 29502.25 (buffer 0.5×ATR14, 2× 5m closes) | 1
+dormant:death:death-condition: 2x5m close above 29631.14 (buffer 0.5×ATR14, 2× 5m closes) | 1
+s
+## plans by trade_date (versions per plan)
+trade_date | session | versions | maxv | degraded | lc
+2026-08-15 | NY | 2 | 2 | 0 | expired
+2026-08-16 | ASIA | 6 | 6 | 0 | active,no_trade
+2026-08-16 | NY | 2 | 2 | 0 | active
+2026-08-17 | ASIA | 6 | 6 | 0 | active,no_trade
+2026-08-17 | LONDON | 1 | 1 | 0 | active
+2026-08-17 | NY | 3 | 3 | 0 | active
+2026-08-18 | ASIA | 6 | 6 | 3 | active,no_trade
+2026-08-18 | LONDON | 1 | 1 | 0 | active
+2026-08-18 | NY | 1 | 1 | 0 | active
+2026-08-19 | ASIA | 4 | 4 | 0 | active
+2026-08-19 | LONDON | 3 | 3 | 0 | active
+2026-08-19 | NY | 3 | 3 | 0 | active
+2026-08-20 | ASIA | 3 | 3 | 0 | active
+2026-08-20 | LONDON | 2 | 2 | 0 | active
+2026-08-20 | NY | 2 | 2 | 0 | active
+2026-08-21 | LONDON | 4 | 4 | 0 | active
+2026-08-21 | NY | 1 | 1 | 0 | active
+2026-08-23 | ASIA | 4 | 4 | 0 | no_trade
+2026-08-24 | ASIA | 5 | 5 | 0 | active,no_trade
+2026-08-24 | LONDON | 1 | 1 | 0 | no_trade
+2026-08-24 | NY | 8 | 8 | 2 | active
+2026-08-25 | ASIA | 16 | 16 | 0 | active,no_trade
+2026-08-25 | LONDON | 2 | 2 | 0 | active
+2026-08-25 | NY | 2 | 2 | 0 | active
+2026-08-26 | ASIA | 10 | 10 | 0 | active,no_trade,dormant
+2026-08-26 | LONDON | 15 | 15 | 0 | active,no_trade
+2026-08-26 | NY | 8 | 8 | 0 | active,no_trade
+2026-08-27 | ASIA | 13 | 13 | 0 | no_trade,active
+2026-08-27 | LONDON | 7 | 7 | 0 | active
+2026-08-27 | NY | 5 | 5 | 0 | no_trade,active
+2026-08-28 | LONDON | 6 | 6 | 1 | active
+2026-08-28 | NY | 7 | 7 | 0 | active,dormant
+2026-08-30 | ASIA | 3 | 3 | 0 | no_trade
+2026-08-31 | ASIA | 2 | 2 | 0 | no_trade
+2026-08-31 | LONDON | 3 | 3 | 0 | no_trade,active
+2026-08-31 | NY | 7 | 7 | 0 | no_trade,active
+2026-08-31 | WEEKLY | 1 | 1 | 0 | active
+2026-09-01 | ASIA | 10 | 10 | 0 | no_trade,active
+2026-09-01 | LONDON | 6 | 6 | 0 | no_trade,active,dormant
+2026-09-01 | NY | 5 | 5 | 0 | active,dormant
+2026-09-02 | ASIA | 15 | 15 | 0 | active,dormant
+2026-09-02 | LONDON | 6 | 6 | 0 | no_trade,active
+2026-09-02 | NY | 12 | 12 | 0 | dormant,active
+2026-09-03 | ASIA | 7 | 7 | 0 | active,dormant
+2026-09-03 | LONDON | 2 | 2 | 0 | dormant,active
+2026-09-03 | NY | 7 | 7 | 0 | dormant,active
+2026-09-04 | LONDON | 3 | 3 | 0 | active
+2026-09-04 | NY | 6 | 6 | 0 | no_trade,active
+s
+## plan_lifecycle_log all rows
+id | plan_id | version | event | reason | at
+1 | 2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 | 2 | dormant | dormant:flip:flip-condition: 5m_close close above 29513.00 (buffer 0.5×ATR14, 2× 5m closes) → 
+2 | 2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 | 5 | dormant | dormant:flip:flip-condition: 2x5m close above 29548.00 (buffer 0.5×ATR14, 2× 5m closes) → bias
+3 | 2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 | 7 | dormant | dormant:flip:flip-condition: 5m_close close below 29619.50 (buffer 0.5×ATR14, 4× 5m closes) → 
+4 | 2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 | 2 | dormant | dormant:flip:flip-condition: 5m_close close above 29601.00 (buffer 0.5×ATR14, 5× 5m closes) �
+5 | 2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 | 2 | active | rearmed:5m_close close back below 29585.11 (buffer 0.5×ATR14, 2× 5m closes) | 2026-09-04 07:40:
+6 | 2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 | 5 | dormant | dormant:flip:flip-condition: 2x5m close above 29585.00 (buffer 0.5×ATR14, 2× 5m closes) → bias l
+7 | 2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 | 5 | active | rearmed:2x5m close back below 29585.00 (buffer 0.5×ATR14, 2× 5m closes) | 2026-09-04 12:05:01.63645
+s
+## armed_orders by state x state_reason
+state | reason | n
+cancelled | no order_update within stale window (reconnect/reconcile) | 12
+cancelled | boot_sweep: pre-boot order, process restarted | 8
+cancelled | level accepted through — marketable, never placed | 6
+cancelled | gate changed: rr | 5
+cancelled | test seam cancel | 5
+cancelled | session ended (EOD flat) | 4
+superseded | superseded: never placed (no signal id) and plan moved v3 → v4 (class | 4
+cancelled | cancelled in NT8 | 3
+cancelled | gate changed: min_sl | 3
+cancelled | no active plan | 3
+filled | | 3
+armed | | 2
+cancelled | e7_incident_kill:manual_cancel_respected | 2
+filled | e7_farside_test: | 1
+filled | fill@29413.00 | 1
+filled | fill@29459.00 | 1
+filled | fill@29463.25 | 1
+filled | fill@29621.00 | 1
+filled | fill@29642.00 | 1
+filled | fill@29700.00 | 1
+s
+## armed_orders by kind x condition x side
+kind | condition | side | n | filled
+stop_entry | reclaim | SHORT | 20 | 0
+limit | | short | 11 | 3
+ | | long | 10 | 2
+limit | | long | 9 | 2
+ | | short | 7 | 3
+limit | reject | SHORT | 6 | 0
+limit | sweep_reclaim | SHORT | 3 | 0
+stop_entry | sweep_reclaim | SHORT | 1 | 0
+s
+## armed_orders by session
+session | n | filled | cancelled | working
+ASIA | 8 | 1 | 7 | 0
+LONDON | 8 | 2 | 6 | 0
+NY | 45 | 6 | 33 | 0
+TEST-E2 | 4 | 0 | 4 | 0
+TEST-E7 | 2 | 1 | 1 | 0
+s
+## armed_orders by CT date (created_at normalised)
+d | n | filled
+2026-08-27 | 5 | 1
+2026-08-28 | 6 | 3
+2026-08-30 | 4 | 1
+2026-08-31 | 7 | 2
+2026-09-01 | 8 | 2
+2026-09-02 | 4 | 0
+2026-09-03 | 3 | 1
+2026-09-04 | 30 | 0
+s
+## decision_records entry_gate refusals by CT day since 09-02
+d | n
+2026-09-02 | 5
+2026-09-03 | 14
+s
+## decision_records entry_gate refusal reasons since 09-02
+reason | n | first_ct | last_ct
+entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path onl | 13 | 2026-09-03 20:35:06 | 2026-09-03 21:12:40
+entry_gate: entry_gate: stop 29231.00 too close (25.25 < 450.56 = 1.5×ATR5m) | 1 | 2026-09-02 18:48:49 | 2026-09-02 18:48:49
+entry_gate: entry_gate: stop 29230.00 too close (22.00 < 450.56 = 1.5×ATR5m) | 1 | 2026-09-02 18:52:33 | 2026-09-02 18:52:33
+entry_gate: entry_gate: stop 29226.50 too close (21.00 < 450.56 = 1.5×ATR5m) | 1 | 2026-09-02 18:50:36 | 2026-09-02 18:50:36
+entry_gate: entry_gate: R:R 1.76 below floor 2.00 at execution price 29193.2500 (SL 29242. | 1 | 2026-09-03 02:12:56 | 2026-09-03 02:12:56
+entry_gate: entry_gate: R:R 1.73 below floor 2.00 at execution price 29159.7500 (SL 29193. | 1 | 2026-09-02 20:53:52 | 2026-09-02 20:53:52
+entry_gate: entry_gate: R:R 1.42 below floor 2.00 at execution price 29197.0000 (SL 29228. | 1 | 2026-09-02 19:00:23 | 2026-09-02 19:00:23
+s
+## decision_records ALL risk_check_error classes since 09-02 (non-null)
+cls | n
+superseded_wait | 30
+entry_gate strict | 13
+entry_gate rr | 3
+entry_gate min_sl | 3
+schema_parse_failed | 1
+last_entry_cutoff: past last-entry 01:45 CT (ASIA) | 1
+s
+## decision intents by CT day since 08-27
+d | cycles | open_long | open_short | risk_failed
+2026-08-27 | 602 | 0 | 4 | 28
+2026-08-28 | 472 | 2 | 2 | 75
+2026-08-30 | 186 | 0 | 0 | 35
+2026-08-31 | 496 | 1 | 1 | 39
+2026-09-01 | 694 | 1 | 2 | 60
+2026-09-02 | 682 | 6 | 6 | 70
+2026-09-03 | 596 | 2 | 15 | 33
+2026-09-04 | 374 | 1 | 1 | 8
+s
+## planner_read_facts bias columns
+trade_date | session | version | bias_ai | bias_tree | bias_regime | void_count | stop_floor_pts | atr5m | tokens_in
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 18 | 20.2200457271066 | 13.4800304847377 | 0
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 13 | 31.7702404634836 | 21.1801603089891 | 0
+2026-09-03 | LONDON | 0 | | | up/NORMAL | 18 | 33.1531643563856 | 22.1021095709237 | 0
+2026-09-03 | NY | 0 | | | up/NORMAL | 16 | 43.5231119105787 | 29.0154079403858 | 0
+2026-09-03 | LONDON | 0 | | | up/NORMAL | 14 | 43.3722271165022 | 28.9148180776681 | 0
+2026-09-03 | NY | 0 | | | up/NORMAL | 14 | 54.6119168345225 | 36.4079445563483 | 0
+2026-09-03 | NY | 0 | | | up/NORMAL | 20 | 67.6463281653098 | 45.0975521102065 | 0
+2026-09-03 | NY | 0 | | | up/NORMAL | 18 | 70.8055331933464 | 47.2036887955643 | 0
+2026-09-03 | NY | 0 | | | up/NORMAL | 19 | 72.60753557529 | 48.40502371686 | 0
+2026-09-03 | NY | 0 | | | up/NORMAL | 21 | 60.8820979662981 | 40.5880653108654 | 0
+2026-09-03 | NY | 0 | | | up/NORMAL | 18 | 48.6916266569734 | 32.4610844379823 | 0
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 22 | 19.1140669636911 | 12.7427113091274 | 0
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 2 | 15.5521217476219 | 10.3680811650812 | 0
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 4 | 13.5956014602978 | 9.06373430686523 | 0
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 2 | 16.854930244696 | 11.2366201631307 | 0
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 6 | 15.5897320029668 | 10.3931546686445 | 0
+2026-09-03 | ASIA | 0 | | | up/NORMAL | 8 | 16.6948337128688 | 11.1298891419125 | 0
+2026-09-04 | ASIA | 0 | | | up/NORMAL | 15 | 18.2239686891163 | 12.1493124594109 | 0
+2026-09-04 | ASIA | 0 | | | up/NORMAL | 17 | 19.3787478490554 | 12.9191652327036 | 0
+2026-09-04 | LONDON | 0 | | | up/NORMAL | 17 | 19.977536476377 | 13.318357650918 | 0
+2026-09-04 | LONDON | 0 | | | up/NORMAL | 16 | 21.0882675155563 | 14.0588450103709 | 0
+2026-09-04 | LONDON | 0 | | | up/NORMAL | 10 | 47.2094512214235 | 31.472967480949 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 8 | 51.3218601431318 | 34.2145734287545 | 0
+2026-09-04 | LONDON | 0 | | | up/NORMAL | 8 | 47.932013925094 | 31.9546759500626 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 48.8833366003374 | 32.5888910668916 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 53.6138447675809 | 35.7425631783873 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 58.616521156849 | 39.0776807712327 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 58.3551501847424 | 38.903433456495 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 54.5559168982542 | 36.3706112655028 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 47.0172543484383 | 31.3448362322922 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 40.5946391600858 | 27.0630927733905 | 0
+2026-09-04 | NY | 0 | | | up/NORMAL | 12 | 34.9332558035262 | 23.2888372023508 | 0
+s
+## system_config counters
+key | value
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:ASIA:rr | 2
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:NY:rr | 3
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:LONDON:rr | 1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:NY:rr | 1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:entry_gate:invalidated | 1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:rr | 1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:entry_gate:invalidated | 1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:rr | 3
+arms_boot_swept_class33 | 8
+s
+## ab_confirm_log rule x condition
+rule | condition | n | cf | usable_pnl | mfe_r | mae_r
+1x5m_close | reject | 59 | 0 | 24 | 0.04 | 0.26
+2x5m_close | reject | 59 | 0 | 17 | 0.02 | 0.19
+1m_mss | reject | 47 | 0 | 33 | 0.06 | 0.45
+1m_mss | | 9 | 0 | 0 | 0.0 | 0.0
+1x5m_close | | 9 | 0 | 0 | 0.0 | 0.0
+2x5m_close | | 8 | 0 | 0 | 0.0 | 0.0
+touch | reject | 8 | 0 | 8 | 0.3 | 0.38
+1m_mss | sweep_reclaim | 7 | 0 | 7 | 0.07 | 0.05
+touch | | 4 | 0 | 0 | 0.0 | 0.0
+1x5m_close | sweep_reclaim | 3 | 0 | 2 | 0.51 | 0.23
+2x5m_close | sweep_reclaim | 3 | 0 | 1 | 0.05 | 0.01
+touch | sweep_reclaim | 3 | 0 | 3 | 0.24 | 0.2
+1m_mss | reclaim | 1 | 0 | 1 | 0.0 | 0.0
+1x5m_close | reclaim | 1 | 0 | 1 | 0.0 | 0.32
+2x5m_close | reclaim | 1 | 0 | 0 | 0.0 | 0.0
+touch | reclaim | 1 | 0 | 1 | 0.22 | 0.32

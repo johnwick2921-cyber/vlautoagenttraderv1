@@ -1,0 +1,19 @@
+## (gg) 1m MNQ bars per CT hour, 09-03 and 09-04
+2026-09-03 00:60 01:60 02:60 03:60 04:60 05:60 06:60 07:60 08:60 09:60 10:60 11:60 12:60 13:60 14:60 15:60 17:60 18:60 19:60 20:60 21:60 22:60 23:60
+   last 1m bar 2026-09-03 23:59:00
+2026-09-04 00:60 01:60 02:60 03:60 04:60 05:60 06:60 07:60 08:60 09:60 10:60 11:60 12:20
+   last 1m bar 2026-09-04 12:19:00
+## (ii) leg-3 (invalidation) refusal counterfactuals on 09-04
+ NY S1 short @29657.38 stop 29720.5 tgt 29503.38 → (1788530520000, 'TARGET', 1788533760000, 154.0) (bars end 12:19 CT — horizon truncated)
+ LONDON v1 S2 reject long confirm={'rule': 'touch', 'ref_price': 29579.5, 'side': 'above'} arm={'enabled': True, 'entry': 29579.5, 'stop': 29558.34, 'target': 29639.5, 'wait_confirm': True}
+ LONDON v2 S2 acceptance short confirm={'rule': 'time_hold', 'ref_price': 29561.43, 'side': 'below'} arm={}
+ LONDON v3 S2 reject short confirm={'rule': 'touch', 'ref_price': 29503.38, 'side': 'above'} arm={}
+## (mm) nt8_order_snapshots 09-04 10:00–11:00 CT: snapshots, with working orders
+  snapshots (242, 203, 9, '2026-09-04 10:00:07', '2026-09-04 10:59:38')
+   ('2026-09-04 10:05:00', 1, '[{"order_id":"67485fd929444d15b7e554a5a065c685","symbol":"MNQ","name":"e38f1774-9b80-46b2-907a-5fc35485a188","action":"sell","type":"stop","limit_price":29590.5')
+   ('2026-09-04 10:05:00', 1, '[{"order_id":"67485fd929444d15b7e554a5a065c685","symbol":"MNQ","name":"e38f1774-9b80-46b2-907a-5fc35485a188","action":"sell","type":"stop","limit_price":29590.5')
+   ('2026-09-04 10:05:00', 1, '[{"order_id":"67485fd929444d15b7e554a5a065c685","symbol":"MNQ","name":"e38f1774-9b80-46b2-907a-5fc35485a188","action":"sell","type":"stop","limit_price":29590.5')
+## (qq) plan levels vs seated candidate_pool (same plan_id+version), since 09-01
+  plans with a seated pool: 10; plan levels 105; matching a seated candidate within 1pt: 54 = 0.514
+## (rr) planned arm R:R bins (all versions, arm-enabled, n=132)
+  n 132 {'[2.0,2.1)': 19, '<2.0': 15, '[2.1,2.3)': 28, '[2.3,3.0)': 44, '>=3.0': 26} share in [2.0,2.3): 0.356

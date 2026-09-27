@@ -1,0 +1,25 @@
+copies  groups  rows
+------  ------  ----
+1       388     388 
+2       1       2   
+3       2       6   
+5       10      50  
+7       1       7   
+8       1       8   
+9       2       18  
+11      18      198 
+'--- of the duplicated groups, how many opened before the se
+------------------------------------------------------------
+--- of the duplicated groups, how many opened before the ses
+sion day of their FIRST write                               
+dup_groups  approx_prior_day
+----------  ----------------
+35          35              
+'--- distinct opened days vs created days'
+------------------------------------------
+--- distinct opened days vs created days  
+opened_ct   rows  grp  created_days
+----------  ----  ---  ------------
+2026-09-02  3     1    2026-09-04  
+2026-09-03  516   264  2026-09-04  
+2026-09-04  158   158  2026-09-04  

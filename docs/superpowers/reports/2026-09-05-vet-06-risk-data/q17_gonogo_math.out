@@ -1,0 +1,36 @@
+== Stage-A lower-CI clause: the per-trade MEAN it demands at sd=101.2 (lower 95% CI > 0  <=>  mean > 1.96*sd/sqrt(n)) ==
+  n=  30: mean must exceed $ 36.20/trade  (=  18.1 MNQ pts/contract)  -- at n=65 the measured mean is -8.68
+  n=  50: mean must exceed $ 28.04/trade  (=  14.0 MNQ pts/contract)  -- at n=65 the measured mean is -8.68
+  n=  65: mean must exceed $ 24.59/trade  (=  12.3 MNQ pts/contract)  -- at n=65 the measured mean is -8.68
+  n= 100: mean must exceed $ 19.83/trade  (=   9.9 MNQ pts/contract)  -- at n=65 the measured mean is -8.68
+  n= 200: mean must exceed $ 14.02/trade  (=   7.0 MNQ pts/contract)  -- at n=65 the measured mean is -8.68
+  n= 400: mean must exceed $  9.91/trade  (=   5.0 MNQ pts/contract)  -- at n=65 the measured mean is -8.68
+  n= 800: mean must exceed $  7.01/trade  (=   3.5 MNQ pts/contract)  -- at n=65 the measured mean is -8.68
+
+== n required (alpha .05 two-sided, power .80) at hypothetical TRUE edges, sd=101.2 ==
+  true mean +$  5.0/trade: n_req =    3213 trades  -> at 5.4/day (pre-strict)    595 session-days; at 1.5/day (arm-only)   2142; at 0.5/day (09-03/09-04 observed)   6426
+  true mean +$ 10.0/trade: n_req =     803 trades  -> at 5.4/day (pre-strict)    149 session-days; at 1.5/day (arm-only)    535; at 0.5/day (09-03/09-04 observed)   1606
+  true mean +$ 15.0/trade: n_req =     357 trades  -> at 5.4/day (pre-strict)     66 session-days; at 1.5/day (arm-only)    238; at 0.5/day (09-03/09-04 observed)    714
+  true mean +$ 20.0/trade: n_req =     201 trades  -> at 5.4/day (pre-strict)     37 session-days; at 1.5/day (arm-only)    134; at 0.5/day (09-03/09-04 observed)    402
+  true mean +$ 30.0/trade: n_req =      89 trades  -> at 5.4/day (pre-strict)     17 session-days; at 1.5/day (arm-only)     59; at 0.5/day (09-03/09-04 observed)    178
+  true mean +$ 36.2/trade: n_req =      61 trades  -> at 5.4/day (pre-strict)     11 session-days; at 1.5/day (arm-only)     41; at 0.5/day (09-03/09-04 observed)    123
+
+== day-level: n_days required at the measured day effect ==
+  day mean -46.99, day sd 256.60: n_days_req = 234 session-days (~47 weeks) to resolve the CURRENT effect; 95% t-CI at D=12 is [-210.03, +116.04]
+  at a true +$25/day edge (sd 257): n_days_req = 827
+  at a true +$50/day edge (sd 257): n_days_req = 207
+  at a true +$100/day edge (sd 257): n_days_req = 52
+
+== time to n>=30 post-0B (n=3 today, strict since 2026-09-03 20:35 CT) ==
+  at 0.5/session-day: 54 more session-days (~10.8 weeks)
+  at 1.0/session-day: 27 more session-days (~5.4 weeks)
+  at 1.5/session-day: 18 more session-days (~3.6 weeks)
+  at 2.0/session-day: 14 more session-days (~2.7 weeks)
+
+== dollar risk per trade as it ran (armed_orders stop_pts, $2/pt) ==
+  distinct-arm stop pts: n=46 p25=24.0 p50=37.5 p75=49.9 p90=58.9 max=150.0  -> $ at 1 lot: p50=$75 p90=$118 max=$300
+  post-0B filled arm (id 35): 66.63 pts = $133; worst realised trade in sample: id 589 -$155 (77.5 pts)
+
+== daily limit vs per-trade risk ==
+  $450 limit / $100 median stop = 4.5 median stops; / $133 (post-0B fill) = 3.4; / $155 worst = 2.9
+  worst-case realised day under a $450 REALIZED-ONLY trip with one-open-position: trip at <= -450 then the open trade runs to its stop -> floor ~ -450 - one stop; at p90 stop ($127) ~ -$577; at the 150-pt max ($300) ~ -$750

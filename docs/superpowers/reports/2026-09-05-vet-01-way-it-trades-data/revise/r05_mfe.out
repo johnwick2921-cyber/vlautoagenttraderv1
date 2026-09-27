@@ -1,0 +1,52 @@
+== rows with atr5m: 62
+== rows with atr and mfe: 61
+== rows with atr and stop: 59
+== ids missing atr: [521, 522, 523]
+== ids with atr but no mfe: [566]
+
+== reject MFE/ATR n=29
+   p40 = 1.072
+   p50 = 1.398
+   p55 = 1.507
+   p60 = 1.835
+   p70 = 2.433
+   p80 = 2.658
+   p95 = 3.483
+   >= 1.4: 14/29 = 0.483 [0.314,0.656]
+   >= 1.5: 13/29 = 0.448 [0.284,0.625]
+   >= 1.835: 12/29 = 0.414 [0.255,0.593]
+   >= 1.88: 11/29 = 0.379 [0.227,0.560]
+   >= 2.0: 11/29 = 0.379 [0.227,0.560]
+
+== all-trades MFE/ATR n=61 p50 1.035 p80 2.470 p95 3.133
+   >=3.0x: 5
+
+== P8 base (atr+mfe) n=61 ; >=2x minstop 5 [524, 529, 555, 557, 581] ; >=1x minstop 22
+   2x: [0.036,0.178]
+   1x: [0.252,0.486]
+   2x ACTUAL stop: 14/62 [0.140,0.344] [521, 524, 529, 532, 536, 548, 549, 551, 552, 555, 560, 581, 582, 584]
+
+== winners n=21 ; with atr+mae n=18
+   id 529 mae 43.75 atr 23.990 floor 35.98 ratio 1.2158 pnl 168.0
+   id 532 mae 61.50 atr 61.080 floor 91.62 ratio 0.6713 pnl 311.0
+   id 578 mae 24.75 atr 24.880 floor 37.32 ratio 0.6632 pnl 92.0
+   id 555 mae 22.50 atr 27.940 floor 41.91 ratio 0.5369 pnl 168.0
+   id 557 mae 17.25 atr 22.900 floor 34.35 ratio 0.5022 pnl 46.5
+   id 524 mae 16.50 atr 32.930 floor 49.39 ratio 0.3340 pnl 273.5
+   id 582 mae 11.25 atr 24.300 floor 36.45 ratio 0.3086 pnl 129.5
+   id 570 mae 14.50 atr 47.380 floor 71.07 ratio 0.2040 pnl 17.0
+   id 536 mae 6.75 atr 22.200 floor 33.30 ratio 0.2027 pnl 124.0
+   id 549 mae 10.50 atr 34.610 floor 51.91 ratio 0.2023 pnl 169.5
+   id 530 mae 6.25 atr 31.420 floor 47.13 ratio 0.1326 pnl 13.0
+   id 538 mae 2.75 atr 16.310 floor 24.46 ratio 0.1124 pnl 30.5
+   id 560 mae 3.00 atr 19.720 floor 29.58 ratio 0.1014 pnl 81.0
+   id 575 mae 6.00 atr 40.110 floor 60.16 ratio 0.0997 pnl 32.5
+   id 581 mae 2.50 atr 24.350 floor 36.53 ratio 0.0684 pnl 190.5
+   id 569 mae 0.00 atr 25.630 floor 38.45 ratio 0.0000 pnl 63.0
+   id 580 mae 0.00 atr 21.790 floor 32.69 ratio 0.0000 pnl 39.5
+   id 584 mae 0.00 atr 24.390 floor 36.59 ratio 0.0000 pnl 106.0
+
+== losers n=42 with stop+mae n=41
+   MAE>=0.95xstop: 38 / 41
+   MFE<0.5xstop: 21
+   MFE>=1xstop: 8 [533, 534, 539, 548, 552, 554, 563, 567]

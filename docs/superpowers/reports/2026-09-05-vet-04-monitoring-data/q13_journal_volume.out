@@ -1,0 +1,13 @@
+disk-usage: Archived and active journals take up 397.2M in the file system.
+lines last 60 min total: 1429
+of which tcp_server received frame: 908
+frame types last 60 min:
+    240 received frame type=account_balance
+     40 received frame type=accounts_list
+    120 received frame type=ack
+     28 received frame type=bars_historical
+    120 received frame type=heartbeat
+    120 received frame type=order_snapshot
+    240 received frame type=positions
+journal span: 2026-09-04T17:27:17-05:00 .. 2026-09-05T10:02:24-05:00
+total lines retained: 26794

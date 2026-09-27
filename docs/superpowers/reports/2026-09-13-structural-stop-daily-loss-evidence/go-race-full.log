@@ -1,0 +1,73 @@
+	nofx		coverage: 0.0% of statements
+ok  	nofx/agent	14.709s	coverage: 29.5% of statements
+ok  	nofx/api	5.933s	coverage: 14.2% of statements
+	nofx/auth		coverage: 0.0% of statements
+ok  	nofx/branding	1.442s	coverage: 100.0% of statements
+ok  	nofx/calendar	1.011s	coverage: 82.4% of statements
+	nofx/cmd/arm-state-sql		coverage: 0.0% of statements
+	nofx/cmd/bars-export		coverage: 0.0% of statements
+	nofx/cmd/dayplan-arm		coverage: 0.0% of statements
+	nofx/cmd/dayplan-level-repair		coverage: 0.0% of statements
+	nofx/cmd/dayplan-sessions		coverage: 0.0% of statements
+	nofx/cmd/decisive-test		coverage: 0.0% of statements
+	nofx/cmd/detector-report		coverage: 0.0% of statements
+	nofx/cmd/excursions		coverage: 0.0% of statements
+	nofx/cmd/gate-jwt		coverage: 0.0% of statements
+	nofx/cmd/levelstats-backfill		coverage: 0.0% of statements
+	nofx/cmd/nq_smoke		coverage: 0.0% of statements
+	nofx/cmd/planner_ab		coverage: 0.0% of statements
+	nofx/cmd/research_export		coverage: 0.0% of statements
+	nofx/cmd/sandbox-seed		coverage: 0.0% of statements
+	nofx/config		coverage: 0.0% of statements
+	nofx/crypto		coverage: 0.0% of statements
+ok  	nofx/deploy	1.060s	coverage: [no statements]
+ok  	nofx/discipline	1.010s	coverage: 98.3% of statements
+	nofx/docs/superpowers/reports/2026-09-04-research-conformance-data/d10dump		coverage: 0.0% of statements
+	nofx/docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905		coverage: 0.0% of statements
+ok  	nofx/docs/superpowers/reports/2026-09-12-structural-stop/harness	1.031s	coverage: 12.8% of statements
+	nofx/docs/superpowers/research/2026-09-12-backtest-structure-fade/harness		coverage: 0.0% of statements
+	nofx/docs/superpowers/research/2026-09-12-backtest-zone-fade/harness		coverage: 0.0% of statements
+ok  	nofx/expectancy	1.155s	coverage: 73.1% of statements
+	nofx/hook		coverage: 0.0% of statements
+ok  	nofx/internal/retry	2.691s	coverage: 97.1% of statements
+ok  	nofx/kernel	6.466s	coverage: 73.9% of statements
+	nofx/levelidentity		coverage: 0.0% of statements
+ok  	nofx/logger	1.010s	coverage: 65.9% of statements
+	nofx/manager		coverage: 0.0% of statements
+ok  	nofx/market	1.034s	coverage: 46.4% of statements
+ok  	nofx/mcp	46.123s	coverage: 73.0% of statements
+	nofx/mcp/payment		coverage: 0.0% of statements
+ok  	nofx/mcp/provider	1.010s	coverage: 8.5% of statements
+	nofx/provider/alpaca		coverage: 0.0% of statements
+	nofx/provider/coinank		coverage: 0.0% of statements
+ok  	nofx/provider/coinank/coinank_api	66.454s	coverage: 85.5% of statements
+?   	nofx/provider/coinank/coinank_enum	[no test files]
+ok  	nofx/provider/databento	1.114s	coverage: 77.6% of statements
+ok  	nofx/provider/hyperliquid	3.407s	coverage: 39.4% of statements
+ok  	nofx/provider/ninjatrader	20.039s	coverage: 70.0% of statements
+	nofx/provider/nofxos		coverage: 0.0% of statements
+	nofx/provider/twelvedata		coverage: 0.0% of statements
+ok  	nofx/researchsnapshot	1.359s	coverage: 59.0% of statements
+	nofx/safe		coverage: 0.0% of statements
+	nofx/security		coverage: 0.0% of statements
+ok  	nofx/store	86.916s	coverage: 51.6% of statements
+	nofx/telegram		coverage: 0.0% of statements
+ok  	nofx/telegram/agent	1.145s	coverage: 62.8% of statements
+	nofx/telegram/session		coverage: 0.0% of statements
+ok  	nofx/telemetry	1.039s	coverage: 22.2% of statements
+ok  	nofx/trader	190.160s	coverage: 53.1% of statements
+ok  	nofx/trader/aster	1.182s	coverage: 50.2% of statements
+ok  	nofx/trader/binance	16.356s	coverage: 36.7% of statements
+	nofx/trader/bitget		coverage: 0.0% of statements
+	nofx/trader/bybit		coverage: 0.0% of statements
+ok  	nofx/trader/gate	1.105s	coverage: 3.9% of statements
+ok  	nofx/trader/hyperliquid	1.061s	coverage: 0.8% of statements
+ok  	nofx/trader/indodax	1.025s	coverage: 12.3% of statements
+ok  	nofx/trader/kucoin	1.036s	coverage: 0.7% of statements
+ok  	nofx/trader/lighter	1.152s	coverage: 0.0% of statements
+ok  	nofx/trader/ninjatrader	12.453s	coverage: 55.6% of statements
+ok  	nofx/trader/okx	1.038s	coverage: 26.0% of statements
+	nofx/trader/testutil		coverage: 0.0% of statements
+	nofx/trader/types		coverage: 0.0% of statements
+	nofx/wallet		coverage: 0.0% of statements
+	nofx/web/node_modules/flatted/golang/pkg/flatted		coverage: 0.0% of statements

@@ -1,0 +1,12 @@
+id  session  scenario  side   entry_px  fill_price  adverse_pts  entry_class  kind   filled_ct          
+--  -------  --------  -----  --------  ----------  -----------  -----------  -----  -------------------
+5   ASIA     S1        short  29621.01  0.0         29621.01     armed_fill          2026-08-28 01:43:06
+6   LONDON   S1        short  29702.0   0.0         29702.0      armed_fill          2026-08-28 08:27:26
+9   NY       S1        long   29464.25  0.0         29464.25     armed_fill          2026-08-28 13:07:07
+10  NY       S2        long   29480.0   0.0         29480.0      armed_fill          2026-08-28 12:59:07
+15  TEST-E7  TEST-E7   short  28700.0   29346.25    -646.25                          2026-09-04 13:25:47
+20  NY       S3        short  29458.38  29459.0     -0.62        armed_fill   limit  2026-08-31 13:09:28
+21  NY       S1        long   29413.0   29413.0     0.0          armed_fill   limit  2026-08-31 12:25:29
+24  LONDON   S2        short  29138.0   29138.0     0.0                       limit  2026-09-01 17:24:00
+28  NY       S3        long   29082.75  29082.75    0.0          armed_fill   limit  2026-09-01 17:24:00
+35  NY       S1        short  29285.0   29285.0     0.0          armed_fill   limit  2026-09-03 10:28:29

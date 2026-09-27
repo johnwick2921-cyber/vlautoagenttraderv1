@@ -1,0 +1,47 @@
+boot block 09-04 13:25:47-13:26:47 total lines: 301
+of which emoji-led (owner-facing boot lines):
+nofx/main.go:187 ⚠️ AI params at UNSET defaults (nobody chose these explicitly): [AI_TEMPERATURE AI_TOP_P AI_RETRY_BACKOFF_SECONDS AI_TASKSTATE_SU
+manager/trader_manager.go:717 🔄 Auto-starting trader (was running before shutdown)...
+manager/trader_manager.go:727 ✅ Trader auto-started successfully
+trader/auto_trader.go:43 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, 
+trader/auto_trader.go:43 💰 Initial balance: 50000.00 USDT
+trader/auto_trader.go:43 ⚙️  Scan interval: 2m0s
+trader/auto_trader.go:43 🔄 NinjaTrader close-sync enabled (SL/TP exits → position history)
+trader/auto_trader.go:43 🔧 NinjaTrader position-reconcile enabled (entry→NT8 avg, orphan clear)
+trader/auto_trader.go:43 📅 WEEKLY READ skip-fresh — week 2026-08-31 doc already stored (v1), idempotent.
+trader/auto_trader.go:43 📅 calendar: live slice for 2026-09-04 is 123h48m0s old — re-fetching for same-day corrections
+kernel/regime_ledger.go:14 🛡️ regime ledger: structure engine TFs=[5m 15m 1h] (5m/15m/1h, swing k=2, min-swing 0.25×ATR, MSS body 1.5×ATR)
+kernel/levels_volume_boot.go:30 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shad
+trader/auto_trader.go:43 📅 calendar: fetched 13 events — 0 day slice(s) stored (src forexfactory)
+trader/auto_trader.go:48 🚨 dead-man watchdog: NT8 TCP link DOWN — NEW entries BLOCKED until a clean reconciliation. Open positions & exits are un
+trader/auto_trader.go:43 🗺️ day-plan knobs: seat_1h_zone=true min_scenario_quality=C ob_lookback_bars=8
+trader/auto_trader.go:43 🛑 min-sl guard: atr_mult=1.5 level_clearance=2tick(s)
+trader/auto_trader.go:43 🧬 plan lifecycle: hysteresis=buffer0.5×ATR14 confirm=2close(s) · flip/death→dormant+auto-rearm (version unchanged, bud
+trader/auto_trader.go:43 ⚔️ armed_orders=on place_band=100t stale_working=15m test_seam=off arm_rr=2.0 (gate-at-arm only; market-entry floor 2.0 u
+trader/auto_trader.go:43 🩹 move_stop identity: materialized positions persist armed-ledger signal_id → entry_order_id; move_stop/trailing resolve
+trader/auto_trader.go:43 🛡️ htf veto: mode=cross tf=1h (1h|cross|4h via HTF_VETO_MODE; cross = 1h AND 4h agree)
+trader/auto_trader.go:43 📐 planner cap: plan_max_tokens=65536 (AI_PLAN_MAX_TOKENS; default 65536) · truncation → 🚨 WARN, never silent
+trader/auto_trader.go:43 🛰 executor client: provider_row=8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek retries=2 backoff=2s http_ceiling=600s (non-
+trader/auto_trader.go:43 🛰 planner client: tries=3 backoff=2s→15s→45s keepalive_set=30s observed=n/a watchdog=pre600s/post90s→eff30s(data) re
+trader/auto_trader.go:43 🔬 shadow A/B (root-fix part B): OFF target_n=10 done=0 (SHADOW_AB_ENABLED, SHADOW_AB_N) — fast-mode plans validated offl
+trader/auto_trader.go:43 🚫 no-chase: max_dist=1.00×ATR max_run=1.5×ATR5m(stop floor) mode=warn counters=on [I] PROVISIONAL — the numbers are a 
+trader/auto_trader.go:43 📊 bars: 1w own1m via 1m since 2026-08-13 (3) · 1d own1m via 1m since 2026-08-19 (14) · 4h own1m via 1m since 2026-08-19 
+trader/auto_trader.go:48 📐 excursion for MNQ pos=572 has no 1m coverage — mae/mfe left NULL, not zeroed
+trader/auto_trader.go:43 🧪 adherence SKIPPED for MNQ pos 572 — source "e7_farside_test" is a test seam, never a real trade
+trader/auto_trader.go:43 🛡 boot sweep: NY S2 pre-boot but never placed (no signal id) — left armed for this process to place
+trader/auto_trader.go:43 🛡 boot sweep: NY S2 pre-boot but never placed (no signal id) — left armed for this process to place
+trader/auto_trader.go:43 🛡 cutover safety (class 33): gate legs=5 · leg4=ledger (no snapshot yet) · boot sweep cancelled 0 pre-boot arm(s) (2 aut
+trader/auto_trader.go:43 🔌 nt8 addon: build_id=2026-09-03-f12 expected=2026-09-03-f12 match=yes
+trader/auto_trader.go:43 🔌 order_snapshot: last=none · leg4 source=ledger (no snapshot yet)
+trader/auto_trader.go:43 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [bre
+trader/auto_trader.go:43 🛑 arm stop NY S2 leg 1 short: stop 29755.00 · anchor none (stop_unanchored) · atr_floor n/a (no ATR) · bound=authored
+trader/auto_trader.go:48 🛑 stop_unanchored NY S2 leg 1 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=217 (p
+trader/auto_trader.go:48 🛡 entry_gate: invalidation check unavailable for S2 — leg PASSED (no verdict is not a refusal)
+trader/auto_trader.go:43 🚫 no-chase: arm S2 has no recorded touch — run stored NULL, judged on dist alone (0.00×ATR)
+trader/auto_trader.go:43 🛑 arm stop NY S2 leg 2 short: stop 29755.00 · anchor none (stop_unanchored) · atr_floor n/a (no ATR) · bound=authored
+trader/auto_trader.go:48 🛑 stop_unanchored NY S2 leg 2 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=218 (p
+trader/auto_trader.go:43 📊 Account equity: 51906.50 USDT | Available: 51906.50 USDT | Positions: 0
+trader/auto_trader.go:43 🤖 Requesting AI analysis and decision... [Strategy Engine]
+trader/auto_trader.go:43 ⏱️ AI call (reasoning=fast→low) duration: 7.15 seconds
+trader/auto_trader.go:43 📊 bars after backfill: 1w nt8_agg via 1d since 2019-05-02 (383) · 1d nt8 since 2019-05-05 (1897) · 4h nt8 since 2025-05-
+trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 1h6m47s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, dete

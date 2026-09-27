@@ -1,0 +1,8 @@
+archive.go:123: 
+			f.Clocks.ObservationMS, f.Clocks.ReceiptMS, f.Clocks.PublicationMS, f.Clocks.PermissionMS, -> 
+			f.Clocks.ObservationMS, f.Clocks.ObservationMS, f.Clocks.PublicationMS, f.Clocks.PermissionMS,
+--- FAIL: TestResearchExportFourClocksAndEmptyRange (0.02s)
+    recorder_test.go:70: distinct clocks lost: {"manifest":{"schema_version":1,"from_ms":1788881400000,"to_ms":1788881400001,"range_basis":"receipt_ms [from,to)","counts":{"candidate":0,"exec":0,"market":0,"plan":0,"scenario":0},"writer_revisions":[],"unknown_receipt_excluded":0,"objects_sha256":"256848c0cc9bd7985c0d49cb4d3b663d1eb9b43f3b049583ef03b1aacbba127c"},"objects":{"candidate":[],"exec":[],"market":[],"plan":[],"scenario":[]}}
+FAIL
+FAIL	nofx/researchsnapshot	0.021s
+FAIL

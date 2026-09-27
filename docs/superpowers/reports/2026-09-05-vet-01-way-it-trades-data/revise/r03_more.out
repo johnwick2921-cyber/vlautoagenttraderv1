@@ -1,0 +1,27 @@
+'--- arm-path era positions: entry price vs arm fill'
+--- arm-path era positions: entry price vs arm fill
+id|entry_price|entry_order_id|source|datetime(entry_time/1000,'unixepoch','-5 hours')
+567|29621.0||reconcile|2026-08-28 01:22:04
+568|29642.0|888bcd99-e89a-4d9d-b989-cf2db1b238df|reconcile|2026-08-28 07:19:46
+569|29700.0||reconcile|2026-08-28 08:44:28
+570|29463.25|54ece976-6d62-4350-8234-ddac5a06e65f|reconcile|2026-08-28 12:10:21
+575|29437.0|0aa6032e-c6b6-4b65-9730-204538d8babd|reconcile|2026-08-31 09:59:18
+576|29437.0|0aa6032e-c6b6-4b65-9730-204538d8babd|armed_entry|2026-08-31 10:00:01
+578|29413.0|f0bbe9af-c6ce-4444-8243-974c1ce03208|reconcile|2026-08-31 12:26:48
+582|29246.75|0c77307d-92df-4400-86ef-e6b4f8f71c2d|armed_entry|2026-09-01 05:23:28
+584|29138.0|6b5b89c6-7abc-4897-93a0-c97c7679acc4|reconcile|2026-09-01 08:36:47
+585|29182.0|18a7cc55-7a5b-4885-af2e-149340d49538|armed_entry|2026-09-01 09:31:08
+586|29082.75|d5fed440-0814-4d9b-97f2-ae010ab28c35|reconcile|2026-09-01 13:33:06
+591|29285.0|f2b1eb20-f89e-4a88-bcff-5ce971d17861|reconcile|2026-09-03 09:05:14
+'--- plans with zero scenarios (doc json)'
+--- plans with zero scenarios (doc json)
+plan_id|version|session|length(doc)
+2026-08-31:WEEKLY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|1|WEEKLY|637
+'--- plans distinct plan_id/version count'
+--- plans distinct plan_id/version count
+count(*)
+254
+'--- exit near-close decisions: any close_* action in decision_json for era'
+--- exit near-close decisions: any close_* action in decision_json for era
+count(*)
+4039

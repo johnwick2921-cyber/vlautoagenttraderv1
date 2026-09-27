@@ -1,0 +1,20 @@
+09-03 14:18:26 [INFO] trader/auto_trader.go:43 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, flat 08:30) | NY 08:30→14:45 CT (last-entry 14:30, flat 14:45)] · stop_until=none · 
+09-03 14:18:26 [INFO] trader/auto_trader_halfdays.go:240 📅 half-days [boot]: 4 loaded from half_days.json · next half-day: 2026-09-07 12:00 CT (Labor Day — equity futures halt 12:00 CT, reopen 17:00 CT)
+09-03 14:18:26 [INFO] api/server.go:874   • GET  /api/equity-history?trader_id=xxx - Public return rate historical data (no auth required, for competition)
+09-03 14:18:26 [INFO] api/server.go:875   • GET  /api/equity-history-batch?trader_ids=a,b,c - Batch get historical data (no auth required, performance comparison optimization)
+09-03 14:18:27 [WARN] trader/auto_trader.go:48 🚨 dead-man watchdog: NT8 TCP link DOWN — NEW entries BLOCKED until a clean reconciliation. Open positions & exits are unaffected.
+09-03 14:18:27 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #1 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:18:27 [WARN] config/config.go:242 🚨 NEW ERROR CLASS "no_balance_frame" (trader 8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265): equity 0 and no account_balance frame received yet [cost none]
+09-03 14:20:26 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #2 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:22:27 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #3 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:24:27 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #4 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:26:27 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #5 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:28:39 [ERRO] trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 10m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side — the AddOn reconnect
+09-03 14:28:39 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #6 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:29:27 [ERRO] trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 11m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side — the AddOn reconnect
+09-03 14:30:27 [ERRO] trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 12m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side — the AddOn reconnect
+09-03 14:30:27 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #7 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:31:27 [ERRO] trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 13m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side — the AddOn reconnect
+09-03 14:32:27 [ERRO] trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 14m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side — the AddOn reconnect
+09-03 14:32:27 [WARN] trader/auto_trader.go:48 ⏳ skipping decision cycle #8 — no balance frame yet (equity 0, waiting for the NT8 AddOn)
+09-03 14:33:27 [ERRO] trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 15m0s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all blind. Check NT8 on the Windows side — the AddOn reconnect

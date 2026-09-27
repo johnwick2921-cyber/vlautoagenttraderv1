@@ -1,0 +1,31 @@
+id seq state reason sig created_ct updated_ct stop target
+   38  0 cancelled gate changed: rr             sig=Y(e38f1774) 10:05:00 -> 10:06:05 stop=29645.62037041913 tgt=29481.5
+   62  1 cancelled gate changed: rr             sig=Y(f869f788) 10:10:04 -> 10:12:04 stop=29645.25 tgt=29481.5
+   65  2 cancelled gate changed: rr             sig=Y(c1d016b2) 10:15:01 -> 10:18:03 stop=29645.25 tgt=29481.5
+   67  3 cancelled gate changed: rr             sig=Y(a0054682) 10:16:03 -> 10:18:03 stop=29645.25 tgt=29481.5
+   70  4 cancelled gate changed: rr             sig=Y(ccaab035) 10:20:03 -> 10:22:03 stop=29645.25 tgt=29481.5
+   73  5 cancelled no order_update within stale sig=Y(719f4bbb) 10:25:01 -> 10:40:01 stop=29645.25 tgt=29481.5
+   75  6 cancelled no order_update within stale sig=Y(c794d0ce) 10:26:02 -> 10:42:01 stop=29645.5759174815 tgt=29481.5
+   77  7 cancelled no order_update within stale sig=Y(4646df81) 10:28:02 -> 10:44:01 stop=29645.5759174815 tgt=29481.5
+   79  8 cancelled no order_update within stale sig=Y(c5d4860a) 10:30:02 -> 10:46:01 stop=29645.25 tgt=29481.5
+   81  9 cancelled no order_update within stale sig=Y(9fcd8c7c) 10:32:02 -> 10:48:00 stop=29645.25 tgt=29481.5
+   83 10 cancelled no order_update within stale sig=Y(9b146ffa) 10:34:01 -> 10:50:00 stop=29645.25 tgt=29481.5
+   85 11 cancelled no order_update within stale sig=Y(7dd07a19) 10:36:01 -> 10:52:00 stop=29645.25 tgt=29481.5
+   87 12 cancelled boot_sweep: pre-boot order,  sig=Y(6a5da3fa) 10:38:01 -> 10:53:10 stop=29645.25 tgt=29481.5
+   89 13 cancelled boot_sweep: pre-boot order,  sig=Y(183d16ad) 10:40:01 -> 10:53:10 stop=29645.25 tgt=29481.5
+   91 14 cancelled boot_sweep: pre-boot order,  sig=Y(993322b9) 10:42:01 -> 10:53:11 stop=29645.25 tgt=29481.5
+   93 15 cancelled boot_sweep: pre-boot order,  sig=Y(b42631c8) 10:44:01 -> 10:53:11 stop=29645.25 tgt=29481.5
+   95 16 cancelled boot_sweep: pre-boot order,  sig=Y(fa195d44) 10:46:01 -> 10:53:11 stop=29645.25 tgt=29481.5
+   97 17 cancelled boot_sweep: pre-boot order,  sig=Y(60adff7a) 10:48:00 -> 10:53:11 stop=29645.25 tgt=29481.5
+   99 18 cancelled boot_sweep: pre-boot order,  sig=Y(3bea0045) 10:50:00 -> 10:53:11 stop=29645.25 tgt=29481.5
+  101 19 cancelled boot_sweep: pre-boot order,  sig=Y(04b3e307) 10:52:00 -> 10:53:11 stop=29645.25 tgt=29481.5
+  102 20 cancelled cancelled in NT8             sig=Y(931a761a) 10:53:11 -> 11:59:02 stop=29645.25 tgt=29481.5
+with signal id: 21 distinct signal ids: 21
+rows already live (per ledger created..updated) when each was created: [(38, 0), (62, 0), (65, 0), (67, 1), (70, 0), (73, 0), (75, 1), (77, 2), (79, 3), (81, 4), (83, 5), (85, 6), (87, 7), (89, 7), (91, 7), (93, 7), (95, 7), (97, 7), (99, 7), (101, 7), (102, 0)]
+max simultaneous per ledger: 8
+snapshots 10:00-11:00 CT: 242 with working>0: 203 max working: 9
+  working_count histogram: [(0, 39), (1, 50), (2, 19), (3, 8), (4, 8), (5, 8), (6, 8), (7, 8), (8, 58), (9, 36)]
+  max working per 10-min: {'10:0x': 1, '10:1x': 2, '10:2x': 3, '10:3x': 8, '10:4x': 9, '10:5x': 9}
+  distinct broker order records at 29591.02 during 10:00-11:00: 0
+  example order record keys: None
+S1 @29657.38 rows: (5, 39, 98, 1, 'no order_update within stale window (reconnect/reconcile),superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)')

@@ -1,0 +1,16 @@
+=== r03: git diff --stat 36648655 origin/dev -- <section source trees> (revision re-measure, 2026-09-05) ===
+ deploy/RELEASE                          |  2 +-
+ kernel/engine_analysis.go               | 13 ++++-
+ kernel/risk_limits.go                   | 65 +++++++++++++++++++++++
+ kernel/wiring_riskforceflat_pin_test.go | 77 +++++++++++++++++++++++++++
+ trader/auto_trader_planner.go           | 14 +++++
+ trader/entry_gate.go                    | 26 ++++++++++
+ trader/wiring_pins_test.go              | 92 +++++++++++++++++++++++++++++++++
+ web/src/guide/types.ts                  |  2 +-
+ 8 files changed, 288 insertions(+), 3 deletions(-)
+
+--- q44 (first run, too-narrow path set) recorded only: ---
+ kernel/risk_limits.go         | 65 +++++++++++++++++++++++++++++++++++++++++++
+ trader/auto_trader_planner.go | 14 ++++++++++
+ web/src/guide/types.ts        |  2 +-
+ 3 files changed, 80 insertions(+), 1 deletion(-)

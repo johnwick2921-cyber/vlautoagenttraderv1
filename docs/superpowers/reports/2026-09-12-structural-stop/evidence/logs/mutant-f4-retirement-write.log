@@ -1,0 +1,11 @@
+── mutating trader/armed_executor.go
+   edit landed:
+     -					if !saved || !retired {
+     +					if false && (!saved || !retired) {
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestStructuralStopF4RetirementWriteFailureCannotReachWire (0.54s)
+     FAIL
+     FAIL	nofx/trader	0.550s
+     FAIL

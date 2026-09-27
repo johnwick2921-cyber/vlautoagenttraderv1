@@ -1,0 +1,40 @@
+==============================================================================
+DAYS D=12  trades n=65  ids 521..591
+  2026-08-18: n= 4  sum= +469.00  seq=['+138', '-60', '+118', '+274']
+  2026-08-19: n= 8  sum=  +46.57  seq=['-43', '-69', '-88', '-98', '+168', '+13', '-148', '+311']
+  2026-08-20: n=12  sum= -492.00  seq=['-54', '-66', '-31', '+124', '-80', '+30', '-84', '-98', '-83', '+0', '-88', '-62']
+  2026-08-23: n= 5  sum= -142.50  seq=['-30', '-88', '-140', '-54', '+170']
+  2026-08-24: n=11  sum=  -26.50  seq=['-84', '+0', '-8', '-27', '-62', '+168', '-40', '+46', '-22', '-78', '+81']
+  2026-08-25: n= 3  sum= -200.00  seq=['-52', '-98', '-50']
+  2026-08-26: n= 3  sum=  -34.50  seq=['-69', '-62', '+97']
+  2026-08-27: n= 4  sum=   +6.00  seq=['-42', '-32', '+63', '+17']
+  2026-08-30: n= 4  sum= +119.50  seq=['-44', '+32', '+92', '+40']
+  2026-08-31: n= 6  sum= +212.00  seq=['+190', '+130', '-82', '+106', '-78', '-54']
+  2026-09-01: n= 4  sum= -381.50  seq=['-62', '-65', '-155', '-99']
+  2026-09-02: n= 1  sum= -140.00  seq=['-140']
+
+DAY P&L: mean=-46.99  sd=256.60  median=-30.50  min=-492.00 (2026-08-20)  max=+469.00 (2026-08-18)
+  green days=5  red days=7  trades/day median=4 mean=5.42
+  per-day expectancy 95% t-CI (df=11, t=2.201): [-210.03, +116.04]  t=-0.634
+  per-day expectancy day-bootstrap 95% pct-CI: [-181.29, +91.47]  P(mean>0)=0.251
+  per-TRADE expectancy, day-cluster bootstrap: mean=-8.676  95% pct-CI [-34.29, +18.97]  P(>0)=0.259
+  intra-day ICC=0.087  design effect=1.37  effective n (trades)=47.5  effective sample in DAYS=12
+
+MAX DRAWDOWN by DAY resampling ($, 1 contract):
+ horizon     p50     p90     p95     p99   worst
+      20     489     873     990    1236    1810
+      50     930    1592    1786    2152    3171
+  P(losing streak >= k in 50 trades, day-resampled): k4=0.988  k6=0.717  k8=0.340  k10=0.136
+     100    1515    2530    2822    3346    4802
+
+MAX DRAWDOWN over N session-DAYS (day resampling):
+   10 days: p50=863 p90=1641 p95=1868 p99=2356 worst=3266
+           P(>=3 red days in a row)=0.668  P(>=5)=0.209
+   20 days: p50=1487 p90=2600 p95=2951 p99=3633 worst=4844
+           P(>=3 red days in a row)=0.912  P(>=5)=0.439
+   40 days: p50=2577 p90=4250 p95=4752 p99=5683 worst=8724
+           P(>=3 red days in a row)=0.993  P(>=5)=0.715
+
+REALISED: final=-563.93  peak=+515.57 at trade #12  max DD=1079.50  realised max losing streak=7
+REALISED by day: peak=+515.57  max DD (days)=1079.50  red-day streak=5
+==============================================================================

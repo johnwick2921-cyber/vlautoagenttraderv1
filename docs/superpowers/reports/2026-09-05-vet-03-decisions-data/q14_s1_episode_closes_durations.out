@@ -1,0 +1,17 @@
+## (ss) 09-04 08:55–10:05 CT 5-min OHLC from 1m bars (MNQ)
+   08:5x [29660.25, 29692.0, 29651.75, 29691.25]
+   09:0x [29691.0, 29691.25, 29641.0, 29644.25]
+   09:1x [29644.75, 29654.5, 29594.0, 29601.25]
+   09:2x [29601.5, 29612.5, 29564.0, 29595.75]
+   09:3x [29596.0, 29598.25, 29554.75, 29588.0]
+   09:4x [29587.75, 29587.75, 29510.0, 29511.0]
+   09:5x [29510.5, 29535.5, 29498.5, 29520.75]
+   10:0x [29520.5, 29529.5, 29491.0, 29511.25]
+## (tt) LONDON 09-04 v1 S2 long reject arm 29579.5 / stop 29558.34 / target 29639.5 — refused by leg 3 at 02:00:46; cf 02:00→08:30
+   ('02:00', 'TARGET', '02:30', 60.0)
+   NY S1 recheck:  ('09:02', 'TARGET', '09:56', 154.0)
+## (uu) AI close actions since 08-19 vs close_reason
+  close_* decisions since 08-19: 2 {'2026-08-25': 1, '2026-08-28': 1}
+  close_reason of era positions: [('reconcile_flat', 2), ('sync', 65), ('unresolved', 1)]
+## (vv) era holding minutes (pnl_corrected not null, excl test seam)
+  n 65 median 26.0 p25 12.2 p75 55.4 max 219.7

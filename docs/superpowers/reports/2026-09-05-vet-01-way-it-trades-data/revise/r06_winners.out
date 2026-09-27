@@ -1,0 +1,7 @@
+winners: 21
+winners w/o atr: [('521', '138.0'), ('523', '118.0')]
+winners with atr: 19
+winners with atr and mae!='': 18
+winners with atr and mae truthy-float: 15
+store era: n, mae NULL, mae=0, mfe NULL: (65, 1, 3, 1)
+winners with mae 0/NULL in store: [(566, None, None, 97.0), (569, 0.0, 36.0, 63.0), (580, 0.0, 20.75, 39.5), (584, 0.0, 58.0, 106.0)]

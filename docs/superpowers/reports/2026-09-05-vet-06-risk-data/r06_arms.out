@@ -1,0 +1,19 @@
+ALL rows incl. test seam (what the report used):
+  raw: n=67  stop pts p25=26.75 p50=49.75 p75=54.23 p90=63.12 max=150.00 ($300)  | $ p50=$100 p90=$126
+      planned R:R n=67 mean=2.360 min=1.333 max=4.877
+REAL only (session NOT LIKE 'TEST%') — the report's own exclusion law:
+  raw placements: n=61  stop pts p25=25.79 p50=50.00 p75=54.23 p90=63.12 max=67.88 ($136)  | $ p50=$100 p90=$126
+      planned R:R n=61 mean=2.418 min=2.006 max=4.877
+  distinct spec (plan,version,scenario,leg,entry,stop,target): n=39  stop pts p25=22.73 p50=30.00 p75=49.25 p90=54.56 max=67.88 ($136)  | $ p50=$60 p90=$109
+      planned R:R n=39 mean=2.600 min=2.006 max=4.877
+  distinct (plan,scenario,entry,stop): n=37  stop pts p25=22.25 p50=27.00 p75=49.75 p90=54.57 max=67.88 ($136)  | $ p50=$54 p90=$109
+      planned R:R n=37 mean=2.575 min=2.006 max=4.877
+  LARGEST REAL arm stop: id=36 session=NY scenario=S2 state=cancelled stop=67.88 pts = $136
+  filled real arms: n=9  stop pts p25=24.12 p50=27.00 p75=49.75 p90=53.33 max=66.63 ($133)  | $ p50=$54 p90=$107
+      planned R:R n=9 mean=2.312 min=2.090 max=2.935
+  a 75-pt ($150) per-trade cap would have refused 0 of 61 real arm placements (0 of 39 distinct specs)
+  ids 62..103: 26 rows
+      scenario=S2 state=cancelled stop=54.23 -> 18 rows
+      scenario=S1 state=superseded stop=63.12 -> 4 rows
+      scenario=S2 state=cancelled stop=54.56 -> 2 rows
+      scenario=S1 state=cancelled stop=45.0 -> 2 rows

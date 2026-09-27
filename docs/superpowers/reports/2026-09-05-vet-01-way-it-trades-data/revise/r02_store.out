@@ -1,0 +1,133 @@
+'--- A: bars coverage per era trade (first 6 by id)'
+--- A: bars coverage per era trade (first 6 by id)
+id|entry_ct|nb
+521|2026-08-19 03:22:03|0
+522|2026-08-19 07:17:31|0
+523|2026-08-19 09:06:52|0
+524|2026-08-19 11:18:15|65
+525|2026-08-19 18:22:04|39
+526|2026-08-19 20:28:22|50
+'--- A2: how many era trades have zero 1m bars'
+--- A2: how many era trades have zero 1m bars
+count(*)
+3
+'--- A3: MNQ 1m min/max in CT'
+--- A3: MNQ 1m min/max in CT
+tf|coalesce(convention,'<NULL>')|count(*)|count(DISTINCT open_time_ms)|datetime(min(open_time_ms)/1000,'unixepoch','-5 hours')|datetime(max(open_time_ms)/1000,'unixepoch','-5 hours')
+12h|epoch_floor|2004|2004|2022-10-19 04:00:00|2026-09-03 17:00:00
+15m|<NULL>|22|22|2026-08-04 00:00:00|2026-08-04 05:15:00
+15m|epoch_floor|2144|2144|2026-08-04 05:30:00|2026-09-04 12:15:00
+1d|epoch_floor|1898|1898|2019-05-02 00:00:00|2026-09-03 00:00:00
+1h|<NULL>|6|6|2026-05-04 06:00:00|2026-05-04 11:00:00
+1h|epoch_floor|2036|2036|2026-05-04 12:00:00|2026-09-04 12:00:00
+1m|<NULL>|12548|12548|2026-08-19 10:00:00|2026-09-01 12:04:00
+1m|epoch_floor|4155|4155|2026-09-01 12:05:00|2026-09-04 12:19:00
+1w|fri_thu|384|384|2019-04-26 00:00:00|2026-08-28 00:00:00
+2h|epoch_floor|2021|2021|2026-01-12 00:00:00|2026-09-04 11:00:00
+30m|epoch_floor|2083|2083|2026-07-03 02:00:00|2026-09-04 12:00:00
+3d|epoch_floor|634|634|2019-05-04 00:00:00|2026-09-01 00:00:00
+3m|epoch_floor|2829|2829|2026-08-27 08:54:00|2026-09-04 12:18:00
+4h|epoch_floor|2010|2010|2025-05-18 17:00:00|2026-09-04 09:00:00
+5m|<NULL>|66|66|2026-08-24 11:15:00|2026-08-24 17:40:00
+5m|epoch_floor|2431|2431|2026-08-24 17:45:00|2026-09-04 12:15:00
+6h|epoch_floor|2006|2006|2024-09-25 05:00:00|2026-09-04 05:00:00
+8h|epoch_floor|2007|2007|2024-02-01 18:00:00|2026-09-04 01:00:00
+'--- A4: duplicate open_time_ms in MNQ 1m'
+--- A4: duplicate open_time_ms in MNQ 1m
+count(*)
+0
+'--- A5: ES bars by tf'
+--- A5: ES bars by tf
+tf|count(*)
+12h|2007
+15m|2166
+1d|2001
+1h|2042
+1m|12301
+1w|949
+2h|2021
+30m|2083
+3d|1562
+3m|2830
+4h|2009
+5m|2497
+6h|2006
+8h|2011
+'--- B: strict refusals by CT day and UTC day'
+--- B: strict refusals by CT day and UTC day
+ct_day|utc_day|count(*)|min(timestamp)|max(timestamp)
+2026-09-03|2026-09-04|13|2026-09-04 01:35:06.219368968+00:00|2026-09-04 02:12:40.9842155+00:00
+'--- C: nt8 snapshots working_count>=8 on 09-04'
+--- C: nt8 snapshots working_count>=8 on 09-04
+count(*)|min(id)|max(id)|datetime(min(received_at_ms)/1000,'unixepoch','-5 hours')|datetime(max(received_at_ms)/1000,'unixepoch','-5 hours')
+94|1597|1690|2026-09-04 10:38:01|2026-09-04 10:53:11
+'--- D: S2 arm rows 09-04 NY'
+--- D: S2 arm rows 09-04 NY
+id|state_reason|datetime(strftime('%s',created_at),'unixepoch','-5 hours')
+38|gate changed: rr|2026-09-04 10:05:00
+62|gate changed: rr|2026-09-04 10:10:04
+65|gate changed: rr|2026-09-04 10:15:01
+67|gate changed: rr|2026-09-04 10:16:03
+70|gate changed: rr|2026-09-04 10:20:03
+73|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:25:01
+75|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:26:02
+77|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:28:02
+79|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:30:02
+81|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:32:02
+83|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:34:01
+85|no order_update within stale window (reconnect/reconcile)|2026-09-04 10:36:01
+87|boot_sweep: pre-boot order, process restarted|2026-09-04 10:38:01
+89|boot_sweep: pre-boot order, process restarted|2026-09-04 10:40:01
+91|boot_sweep: pre-boot order, process restarted|2026-09-04 10:42:01
+93|boot_sweep: pre-boot order, process restarted|2026-09-04 10:44:01
+95|boot_sweep: pre-boot order, process restarted|2026-09-04 10:46:01
+97|boot_sweep: pre-boot order, process restarted|2026-09-04 10:48:00
+99|boot_sweep: pre-boot order, process restarted|2026-09-04 10:50:00
+101|boot_sweep: pre-boot order, process restarted|2026-09-04 10:52:00
+102|cancelled in NT8|2026-09-04 10:53:11
+104||2026-09-04 12:11:02
+105||2026-09-04 12:11:02
+'--- E: plans count'
+--- E: plans count
+total|since|min(trade_date)|max(trade_date)
+254|254|2026-08-15|2026-09-04
+'--- F: ab_confirm_log recompute classes'
+--- F: ab_confirm_log recompute classes
+coalesce(recompute,'<NULL>')|count(*)|min(net_pnl)|max(net_pnl)|sum(net_pnl < -1000)
+|102|-164.5|12.0|0
+recomputed|55|-12.8199999999997|27.5|0
+unrecomputable:fill-bar|54|-117664.24|0.0|35
+unrecomputable:no-inputs|12|0.0|0.0|0
+'--- G: armed_orders filled rows'
+--- G: armed_orders filled rows
+id|entry_px|fill_price|state|scenario|kind
+5|29621.01|0.0|filled|S1|
+6|29702.0|0.0|filled|S1|
+9|29464.25|0.0|filled|S1|
+10|29480.0|0.0|filled|S2|
+15|28700.0|29346.25|filled|TEST-E7|
+20|29458.38|29459.0|filled|S3|limit
+21|29413.0|29413.0|filled|S1|limit
+24|29138.0|29138.0|filled|S2|limit
+28|29082.75|29082.75|filled|S3|limit
+35|29285.0|29285.0|filled|S1|limit
+'--- H: touch_outcomes window'
+--- H: touch_outcomes window
+count(*)|datetime(min(opened_at_ms)/1000,'unixepoch','-5 hours')|datetime(max(opened_at_ms)/1000,'unixepoch','-5 hours')
+677|2026-09-02 22:10:00|2026-09-04 11:49:00
+'--- H2: era trades entering inside touch_outcomes window'
+--- H2: era trades entering inside touch_outcomes window
+count(*)
+1
+'--- I: touch_episodes window'
+--- I: touch_episodes window
+count(*)|datetime(min(opened_at_ms)/1000,'unixepoch','-5 hours')|datetime(max(opened_at_ms)/1000,'unixepoch','-5 hours')
+1315|2026-08-26 10:07:00|2026-09-04 12:12:00
+'--- I2: era trades inside touch_episodes window'
+--- I2: era trades inside touch_episodes window
+count(*)
+22
+'--- J: candidate_pool round numbers'
+--- J: candidate_pool round numbers
+total|m100|m50|m25
+360|0|0|5

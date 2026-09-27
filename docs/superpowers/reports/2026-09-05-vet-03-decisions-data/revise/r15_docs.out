@@ -1,0 +1,92 @@
+### D1 refusals.csv strict rows + per-leg sums
+docs/superpowers/reports/2026-09-04-two-day-audit-data/refusals.csv
+ts_ct,path,session,scenario,leg,knob,knob_value,numbers,entry_px,stop_px,target_px,cf_touched,cf_outcome,cf_pts,cf_usd,cf_time_ct,cf_horizon_session_flat,cf_outcome_cme,cf_pts_cme,cf_usd_cme,cf_time_cme,cf_horizon_cme_day,cf_fill_ct,decision_cycle,evidence_cmd
+2026-09-03 20:35:06,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:37:51,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:39:40,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:42:27,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:43:53,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:49:04,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:52:05,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:54:28,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 20:58:56,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 21:03:22,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 21:06:44,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 21:09:03,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+2026-09-03 21:12:40,decision,ASIA,S1,strict (EntryGate leg 0),day_plan.plan_mode,strict (strategies.a5b7662e config.day_plan.plan_mode='strict' ; strategies.updated_at=2026-09-01 08:13:06 CT so the KN
+### D2 q12 out
+## refusals.csv rows 61 (two-day audit window 09-02 00:00 → 09-03 23:34 CT)
+min_sl (validateDecision A3): n=34 cf_session_flat=$-435.00 (n=34) cf_cme_day=$-499.00 outcomes={'STOP': 25, 'FLAT_AT_HORIZON': 1, 'TARGET': 8}
+    biggest saved loss: (-101.5, '2026-09-02 10:36:09', 'NY', '', '29196.5', '29145.75', '29298.25', 'STOP', '2026-09-02 10:49', '26500')
+    biggest missed win: (112.5, '2026-09-02 18:49:46', 'ASIA', '', 'TARGET')
+strict (EntryGate leg 0): n=13 cf_session_flat=$-511.00 (n=13) cf_cme_day=$-511.00 outcomes={'STOP': 13}
+    biggest saved loss: (-43.5, '2026-09-03 20:42:27', 'ASIA', 'S1', '29538.25', '29560.0', '29481.5', 'STOP', '2026-09-03 21:30', '27385')
+    biggest missed win: (-35.5, '2026-09-03 20:49:04', 'ASIA', 'S1', 'STOP')
+rr (armGateVerdictFor): n=7 cf_session_flat=$-43.14 (n=7) cf_cme_day=$-71.02 outcomes={'FLAT_AT_HORIZON': 3, 'NEVER_FILLED': 1, 'TARGET': 1, 'STOP': 2}
+    biggest saved loss: (-96.52, '2026-09-03 08:30:54', 'NY', 'S1', '29259.67', '29307.93', '29178.73', 'STOP', '2026-09-03 08:39', '')
+    biggest missed win: (78.7, '2026-09-02 09:55:01', 'NY', 'S1', 'FLAT_AT_HORIZON')
+min_sl (EntryGate leg 6): n=3 cf_session_flat=$317.00 (n=3) cf_cme_day=$317.00 outcomes={'TARGET': 3}
+    biggest saved loss: (85.5, '2026-09-02 18:50:36', 'ASIA', 'S2', '29205.5', '29226.5', '29162.75', 'TARGET', '2026-09-02 19:15', '26719')
+    biggest missed win: (118.0, '2026-09-02 18:52:33', 'ASIA', 'S2', 'TARGET')
+rr_at_fill (EntryGate leg 5): n=3 cf_session_flat=$-76.50 (n=3) cf_cme_day=$-76.50 outcomes={'TARGET': 1, 'STOP': 2}
+    biggest saved loss: (-97.5, '2026-09-03 02:12:56', 'LONDON', 'S1', '29193.25', '29242.0', '29107.25', 'STOP', '2026-09-03 02:42', '26942')
+    biggest missed win: (88.0, '2026-09-02 19:00:23', 'ASIA', 'S2', 'TARGET')
+last_entry_cutoff (P2.3): n=1 cf_session_flat=$22.50 (n=1) cf_cme_day=$-61.50 outcomes={'FLAT_AT_HORIZON': 1}
+    biggest saved loss: (22.5, '2026-09-02 01:51:52', 'ASIA', 'S2', '29065.5', '29034.75', '29128.25', 'FLAT_AT_HORIZON', '2026-09-02 01:59', '26242')
+    biggest missed win: (22.5, '2026-09-02 01:51:52', 'ASIA', 'S2', 'FLAT_AT_HORIZON')
+TOTAL cf session-flat $-726.14 · CME-day $-902.02  (audit states −$860.64 / −$1,036.52 over 44 DISTINCT opportunities; this sum is over 61 EVENTS incl. re-proposals)
+### D3 part-a 158-161, 405-409
+centres is the classic signature of a stop that is too wide, and `[I]` in my experience that shape is one
+of the few things in this business that replicates. The min-SL floor was moved from 1.0 to 1.5 by owner
+ruling on 2026-09-02 (`kernel/min_sl.go:40-68`, SYSTEM-MAP §4, labelled `[O]`). **That ruling moved the
+stop away from where the winners live.** I would re-open it.
+the touch); whether the level has already been swept in the overnight; and time-of-day conditioning.
+The engine computes a 120-bin profile (`kernel/levels_volume.go:129-232`) and then throws the *shape*
+away, keeping only POC/VAH/VAL as three prices. `[R]` for the underlying idea — this is the standard
+market-profile / volume-at-price literature and the auction framework behind it — but **`[I]` for whether
+it would work here, and I have not tested it on this tape.** It is the first experiment I would fund,
+### D4 bias-calibration 55,64-75,93-97
+A signal is **USABLE** iff on HOLD OUT: (a) hit-rate Wilson **lower bound > 0.50**, AND (b) net-of-friction mean next-period return **t > 2**. Otherwise **NOT USABLE at this n** — stated per signal.
+| S1-63 MNQ | hold | 690 | .509 | .4714 | .3377 | +.0002 (0.50) | +.0017 (1.37) | −0.18 | 0.31 | −71.2 | 70.3 | −6.14 |
+| S1-252 MNQ | expl | 953 | .556 | .5244 | .0003 | +.0006 (1.57) | +.0001 (0.06) | +0.43 | 0.28 | −16.6 | 16.2 | −2.89 |
+| S1-252 MNQ | hold | 690 | .564 | **.5265** | **.0005** | +.0005 (1.18) | +.0082 (0.54) | +0.27 | 0.32 | −12.7 | 12.3 | **−2.56** |
+| MNQ | hold | 139 | **.252** | .1870 | 77 | .455 | .3481 | −13.56 |
+| ES | expl | 264 | .330 | .2756 | 156 | .558 | .4793 | −17.47 |
+| ES | hold | 139 | **.281** | .2126 | 77 | .507 | .3972 | −14.15 |
+### D5 two-day-audit 923
+| **D36** | **The no-chase leg cannot fire on the arm path** — 40 evaluations, all `dist = 0.00×ATR`, `run = NULL`, 0 `would_refuse`, because `citedLevelFor` returns `sc.Confirm.RefPrice` which equals the arm entry in every plan in the window. Its 27 log lines are noise |
+### D6 part-c 279
+| 3 | Bias-tree branch 5: "longs ONLY below the 50% mark of the dealing range, shorts ONLY above it" | `:162`, veto rendered `:183-189` | **[I]** dressed as a machine branch | `adv-refute-A1b-branch5.csv` measured it: **own tape n=100 of 251 stored plans cite "branch 5"; 58 cite a side-specific veto
+### D7 q04 out cycle types + q06b session ends
+10:## cycle_type x cycle_trigger [(('', ''), 3400), (('', 'stale_dodge'), 436), (('watch', ''), 210), (('watch', 'stale_dodge'), 29), (('', 'post_exit'), 24), (('watch', 'post_exit'), 3)]
+11:SESS_END_CT={'ASIA':(1,30,1),'LONDON':(8,30,0),'NY':(15,0,0)}
+22:        y,m,dd=map(int,td.split('-')); hh,mm,plus=SESS_END_CT[sess]
+## mode=inforce: fired 263/592 = 0.444 Wilson (0.405, 0.485) · no ref_price: 128 {'hold': 45, 'reclaim': 15, 'reject': 30, 'breakout_retest': 13, 'acceptance': 12, 'sweep_reclaim': 13} · no bars: 18
+   reject: 84/198 Wilson (0.357, 0.494)
+   sweep_reclaim: 58/167 Wilson (0.279, 0.422)
+   breakout_retest: 54/109 Wilson (0.403, 0.588)
+   reclaim: 30/47 Wilson (0.495, 0.76)
+   acceptance: 24/42 Wilson (0.422, 0.709)
+   hold: 11/26 Wilson (0.255, 0.611)
+   breakdown_continue: 2/3 Wilson (0.208, 0.939)
+## mode=first: fired 62/82 = 0.756 Wilson (0.653, 0.836) · no ref_price: 45 {'hold': 15, 'reclaim': 7, 'breakout_retest': 5, 'reject': 9, 'sweep_reclaim': 4, 'acceptance': 5} · no bars: 0
+   reject: 16/21 Wilson (0.549, 0.894)
+   breakout_retest: 15/19 Wilson (0.567, 0.915)
+   sweep_reclaim: 12/19 Wilson (0.41, 0.809)
+   reclaim: 8/10 Wilson (0.49, 0.943)
+   acceptance: 5/7 Wilson (0.359, 0.918)
+   hold: 5/5 Wilson (0.566, 1.0)
+   breakdown_continue: 1/1 Wilson (0.207, 1.0)
+in-force window minutes: median 32.0 p25 22 p75 56 n 592
+### D8 verify-numbers v13 in-force with ledger windows
+5:condition [('reject', 234), ('sweep_reclaim', 186), ('breakout_retest', 124), ('hold', 72), ('reclaim', 63), ('acceptance', 56), ('breakdown_continue', 3)]
+18:inforce ends={'ASIA': (1, 30, 1), 'LONDON': (8, 30, 0), 'NY': (15, 0, 0)}: fired 263/592=44.4% (40.5, 48.5) noref=128 {'hold': 45, 'reclaim': 15, 'reject': 30, 'breakout_retest': 13, 'acceptance': 12, 'sweep_reclaim': 13} nobars=18
+25:   breakdown_continue: 2/3
+27:first ends={'ASIA': (1, 30, 1), 'LONDON': (8, 30, 0), 'NY': (15, 0, 0)}: fired 62/82=75.6% (65.3, 83.6) noref=45 {'hold': 15, 'reclaim': 7, 'breakout_retest': 5, 'reject': 9, 'sweep_reclaim': 4, 'acceptance': 5} nobars=0
+34:   breakdown_continue: 1/1
+35:inforce ends={'ASIA': (2, 0, 1), 'LONDON': (8, 30, 0), 'NY': (15, 0, 0)}: fired 269/603=44.6% (40.7, 48.6) noref=128 {'hold': 45, 'reclaim': 15, 'reject': 30, 'breakout_retest': 13, 'acceptance': 12, 'sweep_reclaim': 13} nobars=7
+42:   breakdown_continue: 2/3
+43:   in-force window min: median 31.733333333333334 p25 21.833333333333332 p75 55.5 n 603
+44:first ends={'ASIA': (2, 0, 1), 'LONDON': (8, 30, 0), 'NY': (15, 0, 0)}: fired 62/82=75.6% (65.3, 83.6) noref=45 {'hold': 15, 'reclaim': 7, 'breakout_retest': 5, 'reject': 9, 'sweep_reclaim': 4, 'acceptance': 5} nobars=0
+51:   breakdown_continue: 1/1
+### D9 config_resolved wake knobs

@@ -1,0 +1,204 @@
+### C1 no_chase.go:95-120,195-225 @dev
+func EvaluateNoChase(in NoChaseInputs) NoChaseVerdict {
+	v := NoChaseVerdict{MaxDistATR: NoChaseMaxDistATR(), MaxRunPts: noChaseMaxRunPts(in)}
+	if in.Entry <= 0 || in.CitedLevel <= 0 {
+		return v // not applicable — no level cited; the caller counts this case
+	}
+	v.Applicable = true
+	v.DistPts = math.Abs(in.Entry - in.CitedLevel)
+	if in.ATR5m > 0 {
+		v.DistATR = v.DistPts / in.ATR5m
+	}
+	if in.HasTouch && in.LastTouchPx > 0 {
+		v.RunKnown = true
+		v.RunPts = math.Abs(in.Entry - in.LastTouchPx)
+	}
+	var why []string
+	if v.DistATR > 0 && v.DistATR > v.MaxDistATR {
+// the confirm's ref_price (the price its closes are counted against — the most
+// precise statement of "the level this play is about") and falling back to the
+// plan level nearest that reference. Returns 0 when the scenario names none:
+// the leg abstains rather than guessing which level was meant.
+func citedLevelFor(sc kernel.PlanScenario, plan *kernel.ActivePlan) (float64, string) {
+	px := 0.0
+	if sc.Confirm != nil && sc.Confirm.RefPrice > 0 {
+		px = sc.Confirm.RefPrice
+	}
+	if px <= 0 {
+		return 0, ""
+	}
+	kind := ""
+	if plan != nil {
+		best := math.MaxFloat64
+		for _, l := range plan.Doc.Levels {
+			if d := math.Abs(l.Price - px); d < best {
+				best, kind = d, l.Label
+			}
+		}
+		if best > 1.0 { // no plan level within a point of the reference
+			kind = "confirm_ref"
+		}
+	}
+	if kind == "" {
+		kind = "confirm_ref"
+	}
+	return px, kind
+}
+
+// lastTouchFor returns the price of the most recent recorded touch of a level,
+### diff no_chase dev vs 36648655
+### C4 armed_orders.go:60-80,150-225 @36648655
+	BootID string `gorm:"index"`
+
+	LegIndex int    `gorm:"default:0"`
+	LegCount int    `gorm:"default:0"`
+	Kind     string `gorm:"default:''"`
+	// Condition (arms-follow-bias 2026-09-04) — the scenario condition this arm
+	// was authored from. The executor needs it to tell a PRIMARY stop-entry
+	// (reclaim) from the E7 no-retest FALLBACK, which share a Kind. Legacy rows
+	// carry '' = UNKNOWN, which is never treated as a condition.
+	Condition string `gorm:"default:''"`
+	// PlacementSeq (D5, arms-follow-bias 2026-09-04) — every BROKER PLACEMENT is
+	// one row forever. A terminal row that reached the broker is never revived
+	// in place; the next authorization lands as seq+1 and the old row keeps its
+	// prices, its signal id and its ending. Rows that never reached the broker
+	// still revive in place (PRE-REOPEN F3), because there is nothing to keep.
+	PlacementSeq int `gorm:"default:0"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+		}
+		// E4 (entry-mechanics 2026-08-30): the split entry writes TWO rows per
+		// (plan_id, scenario) distinguished by leg_index — the legacy 2-column
+		// unique index would reject the second leg. Replace it with the
+		// 3-column form (idempotent: DROP IF EXISTS + CREATE IF NOT EXISTS).
+		if err := s.db.Exec("DROP INDEX IF EXISTS idx_armed_orders_plan_scenario").Error; err != nil {
+			return err
+		}
+		// D5 (2026-09-04): the placement sequence joins the key so a cancelled
+		// placement and its replacement can coexist. Without it the replacement
+		// had to overwrite the row the broker had already acted on.
+		return s.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_armed_orders_plan_scenario_seq ON armed_orders(plan_id, scenario, leg_index, placement_seq)").Error
+	}
+	return s.db.AutoMigrate(&ArmedOrderDB{})
+}
+
+	// cycle: one NY scenario reached 24 rows in 100 minutes and pushed the
+	// cutover gate's leg 4 to "broker 1 vs ledger 23 — MISMATCH". The
+	// record-keeping law was right; the row it was applied to was wrong.
+	err := s.db.Where("plan_id = ? AND scenario = ? AND leg_index = ?", row.PlanID, row.Scenario, row.LegIndex).
+		Order("CASE WHEN state IN ('armed','working') THEN 0 ELSE 1 END, placement_seq DESC, id DESC").First(&existing).Error
+	if err == nil {
+		// D5 — a WORKING row is a LIVE BROKER ORDER. Rewriting its prices in
+		// place overwrote the slot and lost the brackets (rows 582, 585): the
+		// ledger and the broker then held two different orders under one id.
+		// Replacing a live order requires a cancel, and the store cannot issue
+		// one, so it declines rather than diverge.
+		if existing.State == "working" {
+			return fmt.Errorf("armed_orders: refusing to rewrite %s/%s — the row is working (a live broker order, signal %q); replace requires cancel first",
+				row.PlanID, row.Scenario, existing.SignalID)
+		}
+		// A TERMINAL row that reached the broker keeps its record forever; the
+		// new authorization becomes the NEXT placement rather than erasing it.
+		// A row that never reached the broker has nothing to keep and still
+		// revives in place (PRE-REOPEN F3).
+		if existing.State != "armed" && strings.TrimSpace(existing.SignalID) != "" {
+			var maxSeq int
+			s.db.Model(&ArmedOrderDB{}).
+				Where("plan_id = ? AND scenario = ? AND leg_index = ?", row.PlanID, row.Scenario, row.LegIndex).
+				Select("COALESCE(MAX(placement_seq), 0)").Scan(&maxSeq)
+			row.ID = 0
+			row.PlacementSeq = maxSeq + 1
+			// A fresh authorization is ARMED and carries no lineage from the
+			// placement it follows: a new row must never inherit the old row's
+			// signal id or fill, or the two placements become indistinguishable.
+			row.State = "armed"
+			row.StateReason = ""
+### 59d01948 / 8f103d1d / c8c90dcc / 51916172 ancestry
+59d01948 in 70af663d: YES
+59d01948 in 36648655: YES
+8f103d1d in 70af663d: YES
+8f103d1d in 36648655: YES
+c8c90dcc in 70af663d: YES
+c8c90dcc in 36648655: YES
+51916172 in 70af663d: NO
+51916172 in 36648655: YES
+### git log since 09-04 on the two files
+51916172 2026-09-04 09:48:03 -0500 fix(reaper): read the broker's book, not order_update silence
+59d01948 2026-09-04 08:11:25 -0500 feat(arms D1/D4/D5/D6): the prompt names what can be armed; the ledger stops lying
+8f103d1d 2026-09-04 07:48:43 -0500 feat(arms D3/B): reclaim arms as a stop-entry; waterfalls stay pullback limits
+### diff 70af663d..36648655 stat
+ .../guide/components/MockPlanCard.mode.test.tsx    |  61 ++
+ web/src/guide/components/MockPlanCard.tsx          |  14 +-
+ web/src/guide/components/useResolvedPlanMode.ts    |  57 ++
+ web/src/guide/types.ts                             |   2 +-
+ 113 files changed, 7030 insertions(+), 25 deletions(-)
+### C3 wake readers
+99:	if cfg.WakeOn15mZoneEnabled() {
+124:	if cfg.WakeOnHTFZoneEnabled() {
+140:	if cfg.WakeOnHTFOBEnabled() {
+156:	if cfg.WakeOnIFVGEnabled() {
+176:	if cfg.WakeOnSeatedInvalidationEnabled() {
+185:				freshMs := int64(cfg.WakeMinIntervalMinutes()) * 2 * int64(time.Minute/time.Millisecond)
+274:	if !at.lastPlannerWakeAt.IsZero() && now.Sub(at.lastPlannerWakeAt) < time.Duration(cfg.WakeMinIntervalMinutes())*time.Minute {
+276:			ev.desc, session, tradeDate, now.Sub(at.lastPlannerWakeAt).Minutes(), cfg.WakeMinIntervalMinutes())
+186:		time.Since(at.lastPlannerWakeAt) < time.Duration(at.config.StrategyConfig.DayPlan.WakeMinIntervalMinutes())*time.Minute {
+187:		at.logWarnf("🗓️ structure MSS on %s %s — SKIPPED: %.0fm elapsed < wake_min_interval_min (%dm).", session, tradeDate, time.Since(at.lastPlannerWakeAt).Minutes(), at.config.StrategyConfig.DayPlan.WakeMinIntervalMinutes())
+### C2 approval W9
+934:	// ApprovalRequired: OFF (default) = fully automatic.
+935:	ApprovalRequired bool `json:"approval_required"`
+1419:		ApprovalRequired:   false,
+			return nil
+		}
+	}
+
+	// W9 — APPROVAL gate: when approval_required is ON, entries are HELD until the
+	// owner approves this CME session-day (POST /api/plan/approve). Default OFF =
+	// fully automatic. Closes are never held.
+	switch decision.Action {
+	case "open_long", "open_short":
+		if at.approvalRequired() && !at.approvalGranted(time.Now()) {
+			at.logWarnf("✋ approval required: %s %s HELD — awaiting owner approval for this session.", decision.Symbol, decision.Action)
+			telemetry.IncGateBlock(at.id, "approval_required")
+			at.emitAlert("P0", "approval", "approval:"+kernel.CMESessionDayKey(time.Now()),
+				"✋ Entry held — approval required", decision.Symbol+" "+decision.Action)
+			actionRecord.Success = false
+			actionRecord.Error = "approval_required"
+			return nil
+		}
+	}
+594:			s.routeWithSchema(protected, "POST", "/plan/approve", "Approve entries for this trader's current CME session-day",
+// ApproveButton — the spec-mandated PlanHeader approve action (PLAN-CARD
+// component tree). When approval_required is ON for a session, entries stay
+// gated until the owner reviews the plan and clicks Approve; the server grants
+// entries for that CME session-day (W9, POST /api/plan/approve).
+//
+// The button renders only when the plan payload carries approval state, so an
+// advisory-mode plan (approval OFF) shows nothing — no noise, no dead control.
+
+17:import { ApproveButton } from './ApproveButton'
+112:            <ApproveButton
+| # | Item | Anchor |
+|---|---|---|
+| 2.1 | PlanHeader **Approve** button (endpoint exists) | `web/.../plan/*` + `/api/plan/approve` |
+| 2.2 | Running **rev in UI/API** | `api/server.go:582` handleHealth + Settings |
+| 2.3 | **Machine grade** beside model grade | `ZoneTable.tsx` + `levels_score.go` |
+	"altcoin_max_leverage":             {Path: "altcoin_max_leverage", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:552"}, Note: ""},
+	"altcoin_max_position_value_ratio": {Path: "altcoin_max_position_value_ratio", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:554"}, Note: ""},
+	"approval_required":                {Path: "approval_required", Status: KnobLive, Consumers: []string{"trader/auto_trader_planconfig.go:155"}, Note: ""},
+	"atr_multiplier":                   {Path: "atr_multiplier", Status: KnobLive, Consumers: []string{"trader/auto_trader_grid_levels.go:35"}, Note: ""},
+	"atr_periods":                      {Path: "atr_periods", Status: KnobLive, Consumers: []string{"kernel/engine_analysis.go:791"}, Note: ""},
+-- approv in arm seam:
+0
+0
+// approvalGranted reports whether the owner has approved entries for the current
+// CME session-day.
+func (at *AutoTrader) approvalGranted(now time.Time) bool {
+	if at.store == nil {
+		return false
+	}
+	v, _ := at.store.GetSystemConfig(ApprovalKey(at.id, kernel.CMESessionDayKey(now)))
+	return v == "granted"
+}

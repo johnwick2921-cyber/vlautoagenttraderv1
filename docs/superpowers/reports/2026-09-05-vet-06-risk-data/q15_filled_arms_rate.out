@@ -1,0 +1,80 @@
+--- filled arms (all): id, session, scenario, side, entry, stop_pts, tgt_pts, planned RR, fill_price, updated CT
+id|session|scenario|side|entry_px|stop_pts|tgt_pts|rr|fill_price|upd_ct
+5|ASIA|S1|short|29621.01|20.99|44.51|2.12|0.0|2026-08-28 01:43:06
+6|LONDON|S1|short|29702.0|24.7|57.62|2.33|0.0|2026-08-28 08:27:26
+9|NY|S1|long|29464.25|44.25|97.75|2.21|0.0|2026-08-28 13:07:07
+10|NY|S2|long|29480.0|50.0|108.25|2.17|0.0|2026-08-28 12:59:07
+15|TEST-E7|TEST-E7|short|28700.0|150.0|200.0|1.33|29346.25|2026-09-04 13:25:47
+20|NY|S3|short|29458.38|24.12|63.63|2.64|29459.0|2026-08-31 13:09:28
+21|NY|S1|long|29413.0|49.75|104.0|2.09|29413.0|2026-08-31 12:25:29
+24|LONDON|S2|short|29138.0|24.0|53.0|2.21|29138.0|2026-09-01 17:24:00
+28|NY|S3|long|29082.75|27.0|79.25|2.94|29082.75|2026-09-01 17:24:00
+35|NY|S1|short|29285.0|66.63|140.5|2.11|29285.0|2026-09-03 10:28:29
+--- armed_entry/reconcile positions since 08-31 (arm fills materialised): id, entry CT, side, entry, exit, pnl, pts
+id|et|side|entry_price|exit_price|pnl_corrected|source|cited_scenario_id
+566|2026-08-27 11:32:53|LONG|29611.5|29660.0|97.0|reconcile|
+567|2026-08-28 01:22:04|SHORT|29621.0|29642.0|-42.0|reconcile|S1
+568|2026-08-28 07:19:46|SHORT|29642.0|29658.0|-32.0|reconcile|S1
+569|2026-08-28 08:44:28|SHORT|29700.0|29668.5|63.0|reconcile|S1
+570|2026-08-28 12:10:21|LONG|29463.25|29471.75|17.0|reconcile|S2
+571|2026-08-30 17:38:33|LONG|29437.0|29414.75|-44.5|reconcile|
+575|2026-08-31 09:59:18|SHORT|29437.0|29420.75|32.5|reconcile|S2
+576|2026-08-31 10:00:01|short|29437.0|29437.0||armed_entry|S2
+577|2026-08-31 12:25:29|long|29413.0|29413.0||armed_entry|S1
+578|2026-08-31 12:26:48|LONG|29413.0|29459.0|92.0|reconcile|S1
+579|2026-08-31 13:09:28|short|29459.0|0.0||armed_entry|S3
+580|2026-08-31 13:37:08|SHORT|29417.25|29397.5|39.5|reconcile|
+582|2026-09-01 05:23:28|SHORT|29246.75|29182.0|129.5|armed_entry|S2
+584|2026-09-01 08:36:47|SHORT|29138.0|29085.0|106.0|reconcile|S2
+585|2026-09-01 09:31:08|SHORT|29182.0|29220.75|-77.5|armed_entry|S1
+586|2026-09-01 13:33:06|LONG|29082.75|29055.75|-54.0|reconcile|S3
+591|2026-09-03 09:05:14|SHORT|29285.0|29355.0|-140.0|reconcile|S1
+--- planned RR across ALL arms with prices (mean/min/max)
+n|rr_mean|rr_min|rr_max
+67|2.36|1.33|4.88
+--- trade rate: positions per CT day since 0B (2026-09-02 07:49 CT = 1788353340000)
+d|n|src
+2026-09-02|2|system,system
+2026-09-03|1|reconcile
+--- strict since when? first entry_gate strict refusal in decision_records
+MIN(datetime(timestamp,'-5 hours'))|COUNT(*)
+2026-09-03 20:35:06|13
+--- decision-path refusals by class since 09-02 (execution_log LIKE entry_gate)
+d|COUNT(*)
+2026-09-02|5
+2026-09-03|14
+--- arm refusal counters (system_config arm_refusals_0b) since 09-02
+key|value
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:ASIA:rr|2
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:NY:rr|3
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:LONDON:rr|1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:NY:rr|1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:entry_gate:invalidated|1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:rr|1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:entry_gate:invalidated|1
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:rr|3
+--- armed rows 104/105 + broker latest snapshot
+id|state|signal_id|entry_px|stop_px|target_px|condition|boot_id|created_ct
+104|armed||29720.0|29755.0631468702|29635.0|sweep_reclaim||2026-09-04 12:11:02
+105|armed||29720.0|29755.0631468702|29635.0|sweep_reclaim|1090293-1788537190995|2026-09-04 12:11:02
+--- latest nt8_order_snapshots
+id|account|reason|order_count|working_count|recv_ct
+4491|Sim101|periodic|0|0|2026-09-05 10:10:08
+4490|Sim101|periodic|0|0|2026-09-05 10:09:38
+4489|Sim101|periodic|0|0|2026-09-05 10:09:08
+--- 1d closes: 08-17 and 09-03 (drift over the window)
+d|c
+2026-08-17|29586.0
+2026-08-18|29512.75
+2026-08-19|29300.5
+2026-08-20|29387.75
+2026-08-23|29105.75
+2026-08-24|29276.75
+2026-08-25|29289.5
+2026-08-26|29695.75
+2026-08-27|29491.75
+2026-08-30|29513.0
+2026-08-31|29125.5
+2026-09-01|29186.25
+2026-09-02|29524.75
+2026-09-03|29531.5

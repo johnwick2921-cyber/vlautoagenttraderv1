@@ -1,0 +1,6 @@
+researchsnapshot/fact.go:49: f.Fields[name] = nil -> f.Fields[name] = 0
+--- FAIL: TestResearchSQLNullAndComputedZero (0.06s)
+    recorder_test.go:217: SQL null/zero contract broken: missing=0 zero=0
+FAIL
+FAIL	nofx/researchsnapshot	0.066s
+FAIL

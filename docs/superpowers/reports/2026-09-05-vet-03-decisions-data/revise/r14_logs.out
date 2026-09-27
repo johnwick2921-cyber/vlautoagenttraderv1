@@ -1,0 +1,31 @@
+### L1 log rotation boundaries 09-04
+data/nofx_2026-09-03.log: first=09-03 10:28:29 [INFO] cleanclone/main.go last=09-04 07:38:34 [INFO] manager/trader_man count(^09-04 08:)=0 count(^09-04 0[0-7]:)=8720
+data/nofx_2026-09-04.log: first=09-04 07:38:40 [INFO] nofx/main.go:43 � last=09-05 16:18:41 [INFO] trader/auto_trader count(^09-04 08:)=4079 count(^09-04 0[0-7]:)=1860
+data/nofx_2026-09-04.log
+09-04 02:00:46 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoan
+09-04 02:00:46 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoan
+09-04 02:00:46 [INFO] trader/auto_trader_loop.go:177 
+09-04 02:00:46 [INFO] trader/auto_trader_loop.go:178 ⏰ 2026-09-04 02:00 CT - AI decision cycle #84
+### L2 gate changed rr cancels 09-04
+09-04 10:06:05 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ arm
+09-04 10:12:04 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ arm
+09-04 10:18:03 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ arm
+09-04 10:18:03 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ arm
+09-04 10:22:03 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ arm
+### L3 cycle 26500 09-02 10:36-10:38
+09-02 10:36:09 [INFO] kernel/engine_position.go:187 📐 R:R eval MNQ open_long: entry=29196.5000 (current_price_snapshot) SL=29145.7500 TP=29298.2500 → risk=50.7500 reward=101.7500 R:R=2.00 (min 2.00) → PASS
+09-02 10:36:09 [WARN] kernel/engine_position.go:229 🛑 MIN-SL REJECT MNQ open_long: sl_too_tight: 50.8 < 1.5×ATR (34.8) — widen or skip
+09-02 10:36:09 [WARN] kernel/engine_analysis.go:695 ⚠️ AI response parse failed (attempt 2/3) — retrying with the error fed back: decision validation failed: decision #1 validation failed: sl_too_tight: 50.8 < 1.5×ATR (34.8
+09-02 10:37:16 [INFO] kernel/engine_position.go:187 📐 R:R eval MNQ open_long: entry=29196.5000 (current_price_snapshot) SL=29143.7500 TP=29317.2500 → risk=52.7500 reward=120.7500 R:R=2.29 (min 2.00) → PASS
+09-02 10:37:16 [INFO] trader/auto_trader_loop.go:816   [1] MNQ open_long
+09-02 10:37:16 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📋 advisory: open_long cited S4 ✓ matched (plan v5).
+09-02 10:37:16 [INFO] trader/auto_trader_decision.go:356   📝 Order recorded: <nil> [open_long] MNQ
+09-02 10:37:17 [INFO] trader/auto_trader_decision.go:403   📝 Recording position (ID: <nil>, action: open_long, price: 29193.250000, qty: 1.000000, fee: 0.0000)
+09-02 10:37:18 [INFO] trader/auto_trader_decision.go:62 📝 Decision record saved: trader=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265, cycle=26500
+09-02 10:37:18 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏱ cycle overran the scan interval (4m47.665s > 2m0s) — next tick delayed, in-flight
+09-02 10:37:18 [INFO] trader/auto_trader_loop.go:178 ⏰ 2026-09-02 10:37 CT - AI decision cycle #73
+09-02 10:37:43 [INFO] trader/auto_trader_decision.go:62 📝 Decision record saved: trader=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265, cycle=26501
+09-02 10:38:30 [INFO] trader/auto_trader_loop.go:178 ⏰ 2026-09-02 10:38 CT - AI decision cycle #74
+09-02 10:38:40 [INFO] trader/auto_trader_decision.go:62 📝 Decision record saved: trader=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265, cycle=26502
+### L4 no-chase touch line 09-04 09:10
+09-04 09:10:08 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🚫 no-chase: ar

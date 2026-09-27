@@ -1,0 +1,25 @@
+csv rows 65 compliant 58
+
+== n65: n 65 W 21 L 42 F 2 sum -563.93 mean -8.6758
+   sd_pop 100.3808 sd_samp 101.1620  CI_pop [-33.08,15.73]  CI_samp [-33.27,15.92]
+   win 21/63 = 0.3333 [0.229,0.456]  avgW 114.67 avgL -70.76 payoff 1.6205 BE 0.3816
+   under BE by 4.83 pts
+   n@95%sig-only pop 514 samp 522 ; n@80%power pop 1051 samp 1067
+
+== n58: n 58 W 18 L 38 F 2 sum -466.43 mean -8.0419
+   sd_pop 103.9844 sd_samp 104.8926  CI_pop [-34.80,18.72]  CI_samp [-35.04,18.95]
+   win 18/56 = 0.3214 [0.214,0.452]  avgW 125.47 avgL -71.71 payoff 1.7498 BE 0.3637
+   under BE by 4.22 pts
+   n@95%sig-only pop 642 samp 654 ; n@80%power pop 1312 samp 1335
+
+== by side (n58)
+  short: n 39 14/23/2 sum 342.07
+  long: n 19 4/15/0 sum -808.50
+
+== by condition (n58) dollars + mean R
+  reject             n 31  14/16/1  sum   +586.00  win  46.7 [30.2,63.9]  meanR 0.45806451612903226 (nR=31)
+  breakout_retest    n  9  1/8/0  sum   -581.50  win  11.1 [2.0,43.5]  meanR -0.7566666666666667 (nR=9)
+  acceptance         n  6  1/4/1  sum     +4.57  win  20.0 [3.6,62.4]  meanR -0.19999999999999998 (nR=6)
+  sweep_reclaim      n  6  1/5/0  sum   -207.00  win  16.7 [3.0,56.4]  meanR -0.545 (nR=6)
+  reclaim            n  5  0/5/0  sum   -436.50  win   0.0 [-0.0,43.4]  meanR -1.0 (nR=5)
+  hold               n  1  1/0/0  sum   +168.00  win 100.0 [20.7,100.0]  meanR 2.69 (nR=1)

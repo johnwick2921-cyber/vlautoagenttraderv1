@@ -1,0 +1,6 @@
+main.go:76: closeResearch := researchsnapshot.Start(cfg.DBPath+".research.db", func(line string) { logger.Infof("%s", line) }) -> closeResearch := func() {} // MUTATION: registration removed
+--- FAIL: TestStageAProductionWriterCensus (0.02s)
+    wiring_test.go:90: research recorder must install before trader/TCP producers start
+FAIL
+FAIL	nofx/researchsnapshot	0.018s
+FAIL

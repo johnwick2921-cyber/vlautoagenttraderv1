@@ -1,0 +1,33 @@
+d           n    hold  brk  amb
+----------  ---  ----  ---  ---
+2026-09-04  158  79    61   18 
+2026-09-03  516  183   200  133
+2026-09-02  3    0     3    0  
+w                    
+---------------------
+--- 09-03 by kind ---
+level_kind  hold  brk  amb  n  
+----------  ----  ---  ---  ---
+DEMAND      56    72   11   139
+RTH-L       42    79   16   137
+VWAP        51    22   61   134
+SWG-H       9     6    14   29 
+SWG-L       3     4    8    15 
+POC         5     1    6    12 
+eVWAP       1     4    5    10 
+PDL         8     0    0    8  
+SUPPLY      2     3    3    8  
+OB          1     2    4    7  
+OR-L        0     1    3    4  
+ONL         2     1    0    3  
+RTH-H       1     1    1    3  
+FVG         0     2    0    2  
+PDC         0     1    1    2  
+VWAP±2σ     1     1    0    2  
+PDH         1     0    0    1  
+w                                     
+--------------------------------------
+--- planner_read_facts null census ---
+n   v0  tok0  bias_ai_empty  bias_tree_empty  bias_regime_empty
+--  --  ----  -------------  ---------------  -----------------
+32  32  32    32             32               0                

@@ -1,0 +1,11 @@
+09-13 00:31:14 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-13 00:31:14 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-13 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-13 00:31:14 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛡 boot sweep DEFERRED (class 33): NT8 link not ready — pre-boot arms are UNVERIFIED this cycle; retrying next cycle
+09-13 00:31:14 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (per-trader resolved, 0C shadow demotion)
+09-13 00:31:14 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-13 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-13 00:31:14 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🎯 stop/target composition {"trade_date":"2026-09-12","trader_id":"trader-1","plan_id":"2026-09-12:ASIA:trader-1","version":1,"scenario":"S1","leg":1,"time_ms":1789277474543,"symbol":"MNQ","side":"long","entry":29010,"stop":28995,"target":29120,"zone_lo":29000,"zone_hi":29010,"target_lo":29120,"target_hi":29124,"zone_names":["PDL"],"target_names":["ONH"],"buffer":5,"buffer_source":"day_plan.structural_stop.buffer_points","calibration":"owner_override[I]","stop_source":"zone_edge","risk_points":15,"gain_points":110,"net_gain_points":108,"loss_usd":34,"quantity":0,"reason":"risk_cap_missing","detail":"owner_per_trade_dollar_cap_unset"}
+--- FAIL: TestStructuralStopF1F2ProductionArmCycle (0.52s)
+    structural_stop_seam_test.go:77: F1/F2: structural stop 28995 must stand despite authored/ATR floors; rows=[]
+FAIL
+FAIL	nofx/trader	0.529s
+FAIL

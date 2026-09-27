@@ -1,0 +1,13 @@
+=== r05: GUIDE_BUILT_REV — source at running rev vs served bundle (revision re-measure) ===
+source @ running rev 36648655:
+export const GUIDE_BUILT_REV = 'ebe07d5f366af5811a19aed9d0b3d5d12ef944aa'
+source @ origin/dev:
+export const GUIDE_BUILT_REV = '36648655cfe03fc8dccd03403a10922f1621b24a'
+served bundle hit:
+/home/hoang/nofx/web/dist/assets/index-DmfrO2d8.js
+value in bundle:
+36648655cfe03fc8dccd03403a10922f1621b24a
+bundle mtime:
+-rw-r--r-- 1 hoang hoang 2380419 2026-09-04 13:24:55 /home/hoang/nofx/web/dist/assets/index-DmfrO2d8.js
+/api/health:
+{"revision":"36648655cfe0","status":"ok","time":null}

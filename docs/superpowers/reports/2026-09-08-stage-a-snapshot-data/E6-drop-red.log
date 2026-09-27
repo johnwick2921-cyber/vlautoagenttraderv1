@@ -1,0 +1,9 @@
+recorder.go:85: r.dropped.Add(1) -> r.dropped.Add(0)
+--- FAIL: TestResearchRecorderContainsFaults (0.00s)
+    --- FAIL: TestResearchRecorderContainsFaults/panic (0.00s)
+        recorder_test.go:107: loop continuation=true dropped=0
+    --- FAIL: TestResearchRecorderContainsFaults/db_error (0.00s)
+        recorder_test.go:107: loop continuation=true dropped=0
+FAIL
+FAIL	nofx/researchsnapshot	0.006s
+FAIL

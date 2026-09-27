@@ -1,0 +1,27 @@
+distinct touches (kind, opened_at_ms): 370  rows: 677
+kind     hold brk amb  n_dec  p_hold [Wilson]
+VWAP       56  37  53    93  0.602 [0.501,0.696]
+OR-H        9   9   4    18  0.500 [0.290,0.710]  no verdict (n<30)
+DEMAND      9   8   1    17  0.529 [0.310,0.738]  no verdict (n<30)
+SWG-H       9   6  14    15  0.600 [0.357,0.802]  no verdict (n<30)
+SUPPLY      7   7   8    14  0.500 [0.268,0.732]  no verdict (n<30)
+POC         9   5   6    14  0.643 [0.388,0.837]  no verdict (n<30)
+RTH-L       4   9   1    13  0.308 [0.127,0.576]  no verdict (n<30)
+PDC         5   6   1    11  0.455 [0.213,0.720]  no verdict (n<30)
+RTH-H       7   3   2    10  0.700 [0.397,0.892]  no verdict (n<30)
+PDH         4   5   1     9  0.444 [0.189,0.733]  no verdict (n<30)
+SWG-L       4   4   8     8  0.500 [0.215,0.785]  no verdict (n<30)
+OR-L        4   4   4     8  0.500 [0.215,0.785]  no verdict (n<30)
+OB          5   2   4     7  0.714 [0.359,0.918]  no verdict (n<30)
+eVWAP       1   4   5     5  0.200 [0.036,0.624]  no verdict (n<30)
+VWAP±2σ     2   2   0     4  0.500 [0.150,0.850]  no verdict (n<30)
+ONL         3   1   0     4  0.750 [0.301,0.954]  no verdict (n<30)
+ONH         3   0   0     3  1.000 [0.438,1.000]  no verdict (n<30)
+EQL         2   0   0     2  1.000 [0.342,1.000]  no verdict (n<30)
+PDL         2   0   0     2  1.000 [0.342,1.000]  no verdict (n<30)
+FVG         0   1   0     1  0.000 [0.000,0.793]  no verdict (n<30)
+POOLED   145 113 112  258  0.562 [0.501,0.621]  (D1' IID calibration p_hold=0.5067)
+ordinal (recomputed as touch sequence per kind over the 1.5-day corpus): {1: (7, 19, 0.368), 2: (8, 16, 0.5), 3: (130, 223, 0.583)}
+session ASIA: hold 25/47 = 0.532 [0.392,0.667]
+session LONDON: hold 43/81 = 0.531 [0.423,0.636]
+session NY: hold 77/130 = 0.592 [0.506,0.673]

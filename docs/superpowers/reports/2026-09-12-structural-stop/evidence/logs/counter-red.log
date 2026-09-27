@@ -1,0 +1,6 @@
+09-12 20:07:30 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+--- FAIL: TestStructuralGeometryPersistenceAndCounts (0.14s)
+    structural_geometry_test.go:37: pending gate cycle inflated distinct refusals: map[rr:3] <nil>
+FAIL
+FAIL	nofx/store	0.146s
+FAIL

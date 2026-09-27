@@ -1,0 +1,28 @@
+'groups with >1 distinct outcome'  COUNT(*)
+---------------------------------  --------
+groups with >1 distinct outcome    6       
+'groups with >1 distinct price'  COUNT(*)
+-------------------------------  --------
+groups with >1 distinct price    25      
+level_kind  grp  conflicting
+----------  ---  -----------
+VWAP        146  4          
+SWG-H       29   0          
+SUPPLY      22   0          
+OR-H        22   0          
+POC         20   0          
+DEMAND      18   1          
+SWG-L       16   0          
+RTH-L       14   1          
+RTH-H       12   0          
+PDC         12   0          
+OR-L        12   0          
+OB          11   0          
+eVWAP       10   0          
+PDH         10   0          
+VWAP±2σ     4    0          
+ONL         4    0          
+ONH         3    0          
+PDL         2    0          
+EQL         2    0          
+FVG         1    0          

@@ -1,0 +1,64 @@
+--- all-time rows / status
+587|CLOSED
+--- entry_time typeof sample
+integer|587
+--- rows entry_time >= 2026-08-15 CT (epoch ms 1786899600000 = 2026-08-15 00:00 CT)
+71
+--- created_at >= 2026-08-15
+0
+--- era rows: pnl_corrected NULL / non-NULL
+Error: in prepare, near "isnull": syntax error
+  SELECT (pnl_corrected IS NULL) AS isnull, COUNT(*) FROM trader_positions WHERE
+                      error here ---^
+--- era rows by source
+armed_entry|5
+e7_farside_test|3
+reconcile|12
+system|51
+--- era rows by plan_session
+|9
+ASIA|16
+LONDON|21
+NY|24
+TEST-E7|1
+--- all-time pnl_corrected NULL count
+357
+--- era rows with plan_id / cited_scenario_id
+71|71
+--- era mae/mfe populated
+66|65|71
+--- min/max id, entry_time CT of era
+521|591|2026-08-19 03:22:03|2026-09-03 09:05:14
+--- table counts
+armed_orders|67
+plans|254
+plan_lifecycle_log|7
+touch_outcomes|677
+candidate_pool|360
+decision_records|37768
+ab_confirm_log|223
+nt8_order_snapshots|4462
+trade_excursions|0
+bars|79769
+planner_rejected_prompts|64
+planner_read_facts|32
+trader_positions|587
+--- as-of: max created_at per table
+trader_positions|1788444314627|1788201500000
+armed_orders|2026-09-04 12:11:02.176920212-05:00|2026-09-04 18:25:47.501481828+00:00
+plans|2026-09-04 17:10:35.724026458+00:00|
+decision_records|2026-09-04 18:28:01.630959341+00:00|
+ab_confirm_log|2026-09-04 12:15:01.409916359-05:00|
+bars|2026-09-04 12:19:00|
+--- pnl_correction_note UNRESOLVABLE count (era)
+0|
+--- distinct pnl_correction_note prefixes (era)
+T7 2026-08-27: pnl_corrected = recompute|43
+T7 close-path: pnl_corrected = recompute|20
+|2
+class-27 backfill: netting exit reconstr|1
+class-27 backfill: duplicate of row 578 |1
+class-27 backfill: S3 entry netted the S|1
+P0 2026-08-20: recorded -1458.00 disagre|1
+0A-2 verified genuine scratch: priced cl|1
+0A-2 verified genuine scratch: NT8 trace|1

@@ -1,0 +1,6 @@
+recorder.go:71: if clock().Sub(start) > OfferBudget { -> if false && clock().Sub(start) > OfferBudget {
+--- FAIL: TestResearchOfferExceededCaptureBudgetDrops (0.00s)
+    recorder_test.go:167: over-budget capture was enqueued
+FAIL
+FAIL	nofx/researchsnapshot	0.002s
+FAIL

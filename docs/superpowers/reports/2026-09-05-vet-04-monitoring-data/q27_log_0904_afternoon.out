@@ -1,0 +1,15 @@
+first FEED DOWN 09-04:
+09-04 12:30:01 [ERRO] trader/auto_trader.go:53 🚨 FEED DOWN: no NT8 bar for 10m1s while CME is OPEN (newest-bar stamp age; threshold 10m0s; holding=false). Charts, detectors and the planner are all 
+last FEED DOWN 09-04:
+09-04 15:59:35 [ERRO] trader/auto_trader.go:53 [trader_id=8d
+feed-down last line of 09-04 (any):
+09-05 10:11:24 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+--- why no decision rows after 13:28: skip/guard lines 13:29-14:10 (uniq by message) ---
+     15 ⏭ cycle_skip=no_new_data — newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 13:
+      5 ⏭ cycle_skip=no_new_data — newest 5m bar unchanged since the last cycle and flat; not burning an AI call on an identical snapshot. (2026-09-04 14:
+      1 flip_eval_skipped plan=2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 v6 legacy-consumption=stale_bars (age 6583s)
+      1 flip_eval_skipped plan=2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 v6 legacy-consumption=stale_bars (age 6464s)
+      1 flip_eval_skipped plan=2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 v6 legacy-consumption=stale_bars (age 6344s)
+      1 flip_eval_skipped plan=2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 v6 legacy-consumption=stale_bars (age 6224s)
+      1 flip_eval_skipped plan=2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 v6 legacy-consumption=stale_bars (age 6104s)
+      1 flip_eval_skipped plan=2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 v6 legacy-consumption=stale_bars (age 5984s)

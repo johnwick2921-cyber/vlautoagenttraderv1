@@ -1,0 +1,1230 @@
+
+ RUN  v4.0.16 /tmp/nofx-confirmation-build/nofx/web
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > shows n before any statistic and marks a sub-floor row DESCRIPTIVE ONLY
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/W16_gateblocks.test.tsx > GateBlocksPanel > lists refusals with their counts, most frequent first
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+
+stderr | src/components/plan/W16_gateblocks.test.tsx > GateBlocksPanel > folds in the process-wide bucket (B3 files under the empty trader id)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > renders a verdict only at or above the floor that the payload carries
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/W16_gateblocks.test.tsx > GateBlocksPanel > says nothing was refused rather than rendering a bare empty box
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > renders an unmeasured statistic blank, never as zero
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > exposes the row ids so any figure can be recomputed
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > dates the table by the last closed trade, not by page load
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/W16_gateblocks.test.tsx > GateBlocksPanel > always states that the counter resets — an empty table must not imply "never blocked"
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+Warning: An update to GateBlocksPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at GateBlocksPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/GateBlocksPanel.tsx:24:3)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > is COLLAPSED on load and shows only its label
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > expands to exactly the three sections, each naming its source and n
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+ ✓ src/components/plan/W16_gateblocks.test.tsx (5 tests) 189ms
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > says there are no excursion rows rather than averaging the legacy columns
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > states what was excluded and why, beside the table
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > renders MAE/MFE from trade_excursions once rows exist, with n
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > keeps counterfactual rows in their own table, flagged
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > labels the legacy level-gate chips RETIRED and never shows a bare rate
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > says so when there is nothing to show, instead of rendering an empty table
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > shows the discipline seam caveat honestly while the seam wave is not in the build
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > ExpectancyPanel > shows why, not a number, when no counterfactual row is usable
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > renders the frozen weekly verdict, still inside the RETIRED scope
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/W16_decline.test.tsx > Ask-Planner · decline is its own recorded outcome > declining calls the DECLINE endpoint, not apply
+Warning: An update to AskPlannerPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AskPlannerPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/AskPlannerPanel.tsx:450:3)
+
+stderr | src/components/plan/DeskStrip.test.tsx > DeskStrip > renders every line with its age and never leaves one undated
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > the instruments drawer is not inside the expectancy panel > does not render the drawer even when the panel has data
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > says first eval Sunday when no weekly verdict is frozen yet
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer > says so when an instrument has nothing to show
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > the expectancy table is a collapsed dropdown > is COLLAPSED on load, showing the label and the as-of only
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > the expectancy table is a collapsed dropdown > expands to the full table, status column and all
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+ ✓ src/components/plan/NoTradeBand.test.tsx (5 tests) 97ms
+stderr | src/components/plan/ExpectancyPanel.test.tsx > the expectancy table is a collapsed dropdown > keeps the as-of on the closed toggle, not only inside
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > the expectancy table is a collapsed dropdown > folds the E8 counterfactual block inside, under its own sub-heading
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer toggle is a visible control > is a real button that declares its expanded state
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/DeskStrip.test.tsx > DeskStrip > renders UNKNOWN with its reason, never a zero and never a dash
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+stderr | src/components/plan/W16_decline.test.tsx > Ask-Planner · decline is its own recorded outcome > after declining the card says the plan was NOT changed
+Warning: An update to AskPlannerPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AskPlannerPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/AskPlannerPanel.tsx:450:3)
+
+stderr | src/components/plan/ExpectancyPanel.test.tsx > the expectancy table is a collapsed dropdown > is a real control at the drawer convention, not a 9px caption
+Warning: An update to ExpectancyPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at ExpectancyPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/ExpectancyPanel.tsx:10:61)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer toggle is a visible control > renders above the sub-AA floor: not --vl-faint, not 9px
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+ ✓ src/components/plan/ResetButton.test.tsx (4 tests) 107ms
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer toggle is a visible control > is a labelled row with a chevron that flips
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+ ✓ src/components/plan/ExpectancyPanel.test.tsx (15 tests) 291ms
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer toggle is a visible control > shows the toggle even when every instrument is empty
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/InstrumentsDrawer.test.tsx > InstrumentsDrawer survives an empty expectancy day > still renders when the expectancy endpoint returns nothing
+Warning: An update to InstrumentsDrawer inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at InstrumentsDrawer (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/InstrumentsDrawer.tsx:6:30)
+
+stderr | src/components/plan/DeskStrip.test.tsx > DeskStrip > shows the accepted stop in PROTECTION and the difference in DRIFT
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+stderr | src/components/plan/DeskStrip.test.tsx > DeskStrip > marks a stale source amber rather than showing the last value as current
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+stderr | src/components/plan/DeskStrip.test.tsx > DeskStrip > states an unreachable endpoint instead of blanking the card
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+stderr | src/components/plan/W16_decline.test.tsx > Ask-Planner · decline is its own recorded outcome > an already-applied proposal still renders the applied state
+Warning: An update to AskPlannerPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AskPlannerPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/AskPlannerPanel.tsx:450:3)
+
+ ✓ src/components/plan/W16_decline.test.tsx (3 tests) 312ms
+ ✓ src/components/plan/InstrumentsDrawer.test.tsx (14 tests) 194ms
+stderr | src/components/plan/DeskStrip.test.tsx > DeskStrip > shows the UNKNOWN count and the resolved cadence in its header
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+stderr | src/components/plan/DeskStrip.test.tsx > Desk loading and accessible disclosure > announces expanded state and keeps the toggle reachable while collapsed
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+stderr | src/components/plan/DeskStrip.test.tsx > Received book and missing link labels > shows receipt age and received build, preserving known facts beside UNKNOWN link state
+Warning: An update to DeskStrip inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at DeskStrip (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/DeskStrip.tsx:99:22)
+
+ ✓ src/components/plan/DeskStrip.test.tsx (9 tests) 402ms
+ ✓ src/components/plan/AskPlannerPanel.test.tsx (4 tests) 262ms
+ ✓ src/components/plan/P5_door.test.tsx (10 tests) 261ms
+ ✓ src/components/plan/W21_alert_controls.test.tsx (5 tests) 139ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/charts/ChartTabs.test.tsx (3 tests) 213ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+stderr | src/components/plan/W19_ask_noplan.test.tsx > SessionPlanCard — asking with no plan > opens the thread labelled NO PLAN so it cannot read as live
+Warning: An update to AskPlannerPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AskPlannerPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/AskPlannerPanel.tsx:450:3)
+    at SessionPlanCard (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/SessionPlanCard.tsx:99:3)
+
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+stderr | src/components/plan/W19_ask_noplan.test.tsx > AskPlannerPanel — context labelling > shows no banner for a live plan
+Warning: An update to AskPlannerPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AskPlannerPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/AskPlannerPanel.tsx:450:3)
+
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+stderr | src/components/plan/W19_ask_noplan.test.tsx > AskPlannerPanel — context labelling > warns when the thread is historical
+Warning: An update to AskPlannerPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at AskPlannerPanel (/tmp/nofx-confirmation-build/nofx/web/src/components/plan/AskPlannerPanel.tsx:450:3)
+
+ ✓ src/components/plan/W19_ask_noplan.test.tsx (6 tests) 128ms
+ ✓ src/components/plan/W15_door.test.tsx (5 tests) 131ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/Class35_budget.test.tsx (3 tests) 144ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/W17_no_levels.test.tsx (7 tests) 219ms
+ ✓ src/components/plan/W13_integration.test.tsx (1 test) 231ms
+ ✓ src/components/plan/P4_3.test.tsx (15 tests) 234ms
+ ✓ src/components/plan/F7_reading_transition.test.tsx (4 tests) 249ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/strategy/DayPlanEditor.test.tsx (16 tests) 716ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/P7_no_trade_map.test.tsx (5 tests) 356ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/guide/components/MockPlanCard.mode.test.tsx (3 tests) 134ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/NoTradeBandRider.test.tsx (4 tests) 189ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/W13_realign.test.tsx (8 tests) 128ms
+ ✓ src/components/plan/W18_versions.test.tsx (22 tests) 663ms
+stderr | src/pages/TraderDashboardPage.test.tsx > Dashboard production composition > does not render Planner for crypto and retains its crypto-only hidden columns
+Warning: An update to TraderDashboardPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at TraderDashboardPage (/tmp/nofx-confirmation-build/nofx/web/src/pages/TraderDashboardPage.tsx:78:3)
+
+ ✓ src/components/auth/RegistrationDisabled.test.tsx (9 tests) 139ms
+stderr | src/pages/TraderDashboardPage.test.tsx > Dashboard production composition > keeps all six futures Entry/Mark/Value header and cell surfaces available on mobile
+Warning: An update to TraderDashboardPage inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at TraderDashboardPage (/tmp/nofx-confirmation-build/nofx/web/src/pages/TraderDashboardPage.tsx:78:3)
+
+ ✓ src/pages/TraderDashboardPage.test.tsx (4 tests) 394ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/OrderTerms.test.tsx (2 tests) 188ms
+ ✓ src/components/plan/W20_reread.test.tsx (5 tests) 83ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/P6_reset.test.tsx (5 tests) 113ms
+ ✓ src/components/plan/W20_weekly_chip.test.tsx (5 tests) 131ms
+ ✓ src/components/plan/P4_2.test.tsx (7 tests) 154ms
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at /tmp/nofx-confirmation-build/nofx/web/src/components/plan/PlanMiniChart.tsx:78:53
+    at commitHookEffectListMount (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:23189:26)
+    at commitPassiveMountOnFiber (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24970:11)
+    at commitPassiveMountEffects_complete (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24930:9)
+    at commitPassiveMountEffects_begin (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24917:7)
+    at commitPassiveMountEffects (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:24905:3)
+    at flushPassiveEffectsImpl (/home/hoang/nofx/web/node_modules/react-dom/cjs/react-dom.development.js:27078:3) undefined
+ ✓ src/components/plan/ArmedUnder.test.tsx (4 tests) 44ms
+ ✓ src/components/plan/PlanLiveness.test.tsx (1 test) 90ms
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl._locationObjectNavigate (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:31:5)
+    at LocationImpl._locationObjectSetterNavigate (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:25:17)
+    at LocationImpl.set href [as href] (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:47:10)
+    at Location.set href [as href] (/home/hoang/nofx/web/node_modules/jsdom/lib/jsdom/living/generated/Location.js:125:37)
+    at HttpClient.handleError (/tmp/nofx-confirmation-build/nofx/web/src/lib/httpClient.ts:157:25)
+    at /tmp/nofx-confirmation-build/nofx/web/src/lib/httpClient.ts:99:21
+    at processTicksAndRejections (node:internal/process/task_queues:103:5) undefined
+ ✓ src/components/plan/PlacementTruth.test.tsx (1 test) 45ms
+ ✓ src/lib/apiGuard.test.ts (25 tests) 4ms
+ ✓ src/router/selectedTrader.test.ts (8 tests) 11ms
+ ✓ src/lib/chartTime.test.ts (6 tests) 21ms
+ ✓ src/components/settings/ResolvedKnobPanel.test.tsx (4 tests) 67ms
+ ✓ src/components/plan/ConfirmationTruth.test.tsx (2 tests) 29ms
+ ✓ src/components/plan/P4_4.test.tsx (5 tests) 123ms
+ ✓ src/components/auth/RegisterPage.test.tsx (28 tests) 8ms
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ src/components/trader/PositionHistory.fixtures.test.ts (5 tests) 15ms
+ ✓ src/lib/registrationToggle.test.ts (21 tests) 5ms
+ ✓ src/components/trader/LedgerDayPnl.test.tsx (3 tests) 35ms
+ ✓ src/components/trader/editPutFieldAudit.test.ts (1 test) 3ms
+ ✓ src/components/plan/bulkParse.test.ts (6 tests) 5ms
+ ✓ src/lib/agentChatStorage.test.ts (5 tests) 4ms
+ ✓ src/router/paths.test.ts (3 tests) 3ms
+ ✓ src/router/traderSlug.test.ts (9 tests) 5ms
+ ✓ src/components/plan/W15_tabs.test.tsx (6 tests) 3ms
+ ✓ src/guide/GuidePage.test.tsx (12 tests) 1767ms
+     ✓ renders all 14 sections with deep-link ids  520ms
+     ✓ renders the live-component examples (guide-example testids)  335ms
+
+ Test Files  51 passed (51)
+      Tests  368 passed (368)
+   Start at  14:36:53
+   Duration  3.40s (transform 8.67s, setup 3.64s, import 18.38s, tests 9.48s, environment 22.26s)

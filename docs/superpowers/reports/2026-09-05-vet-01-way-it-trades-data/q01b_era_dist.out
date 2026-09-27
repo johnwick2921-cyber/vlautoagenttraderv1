@@ -1,0 +1,200 @@
+scope            n   pnl_null  has_plan  has_scn  has_mae  has_mfe  MIN(id)  MAX(id)
+---------------  --  --------  --------  -------  -------  -------  -------  -------
+ERA>=2026-08-15  71  4         71        71       70       70       521      591    
+source           n   pnl_null  sum_pnl  ids                                                         
+---------------  --  --------  -------  ------------------------------------------------------------
+armed_entry      5   3         52.0     576,577,579,582,585                                         
+
+e7_farside_test  3   1         5.0      572,573,574                                                 
+
+reconcile        12  0         134.5    566,567,568,569,570,571,575,578,580,584,586,591             
+
+system           51  0         -750.43  521,522,523,524,525,526,527,528,529,530,531,532,533,534,535,
+                                        536,537,538,539,540,541,542,543,544,545,546,547,548,549,550,
+                                        551,552,553,554,555,556,557,558,559,560,561,562,563,564,565,
+                                        581,583,587,588,589,590                                     
+plan_session  n   pnl_null  sum_pnl  wins  losses  flat
+------------  --  --------  -------  ----  ------  ----
+              7   0         -97.5    3     4       0   
+ASIA          16  0         -552.43  2     13      1   
+LONDON        21  0         24.0     7     14      0   
+NY            24  3         62.0     9     11      1   
+side   n   sum_pnl  wins  losses
+-----  --  -------  ----  ------
+LONG   23  -874.0   5     18    
+SHORT  42  310.07   16    24    
+close_reason    n   sum_pnl
+--------------  --  -------
+sync            65  -563.93
+reconcile_flat  2          
+unresolved      1          
+trader_id                                                     account  n   MIN(id)  MAX(id)  ROUND(SUM(pnl_corrected),2)
+------------------------------------------------------------  -------  --  -------  -------  ---------------------------
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_17812  Sim101   71  521      591      -558.93                    
+46265                                                                                                                   
+pnl_correction_note                                           COUNT(*)
+------------------------------------------------------------  --------
+                                                              2       
+
+0A-2 verified genuine scratch: NT8 trace shows the close fil  1       
+led BUY @ 29310.00 (exit == entry, $0 real)                           
+
+0A-2 verified genuine scratch: priced close fill BUY @ 29163  1       
+.00 (exit == entry, $0 real)                                          
+
+P0 2026-08-20: recorded -1458.00 disagreed with stored price  1       
+s × row qty by -1388.57 — corrected to the recompute (aggreg          
+ate-frame / contamination class; original preserved); stored          
+ price itself is a non-tick AVERAGE from an aggregate frame           
+— best available truth                                                
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -139.50 (Δ+0.00)                           
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -147.50 (Δ+0.00)                           
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -22.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -27.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -29.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -31.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -40.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -43.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -49.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -52.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  2       
+w qty × $2) — realized was -54.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -60.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -61.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -62.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -62.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -66.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -69.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -7.50 (Δ+0.00)                             
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -78.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -79.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -83.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  2       
+w qty × $2) — realized was -84.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -88.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  2       
+w qty × $2) — realized was -88.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -97.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -98.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was -98.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 118.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 124.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 13.00 (Δ+0.00)                             
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 138.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  2       
+w qty × $2) — realized was 168.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 169.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 273.50 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 30.50 (Δ+0.00)                             
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 311.00 (Δ+0.00)                            
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 46.50 (Δ+0.00)                             
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 81.00 (Δ+0.00)                             
+
+T7 2026-08-27: pnl_corrected = recompute (stored prices × ro  1       
+w qty × $2) — realized was 97.00 (Δ+0.00)                             
+
+T7 close-path: pnl_corrected = recompute (Δ+0.00 vs realized  20      
+)                                                                     
+
+class-27 backfill: S3 entry netted the S1 long — no position  1       
+ ever existed; exit UNKNOWN                                           
+
+class-27 backfill: duplicate of row 578 (same NT8 position,   1       
+same entry order)                                                     
+
+class-27 backfill: netting exit reconstructed from S3 fill@2  1       
+9459.00 (2026-08-31)                                                  
+id   source           plan_session  side   pnl_corrected  realized_pnl  close_reason     datetime(entry_time/1000,'unixepoch','-5 hours')
+---  ---------------  ------------  -----  -------------  ------------  ---------------  ------------------------------------------------
+566  reconcile                      LONG   97.0           97.0          sync             2026-08-27 11:32:53                             
+567  reconcile        ASIA          SHORT  -42.0          -42.0         sync             2026-08-28 01:22:04                             
+568  reconcile        LONDON        SHORT  -32.0          -32.0         sync             2026-08-28 07:19:46                             
+569  reconcile        NY            SHORT  63.0           63.0          sync             2026-08-28 08:44:28                             
+570  reconcile        NY            LONG   17.0           17.0          sync             2026-08-28 12:10:21                             
+571  reconcile                      LONG   -44.5          -44.5         sync             2026-08-30 17:38:33                             
+572  e7_farside_test  TEST-E7       SHORT                 0.0           e7_farside_test  2026-08-30 22:34:16                             
+573  e7_farside_test                LONG   6.0            6.0           e7_farside_test  2026-08-30 22:52:16                             
+574  e7_farside_test                LONG   -1.0           -1.0          e7_farside_test  2026-08-30 23:00:16                             
+575  reconcile        NY            SHORT  32.5           32.5          sync             2026-08-31 09:59:18                             
+576  armed_entry      NY            short                 0.0           reconcile_flat   2026-08-31 10:00:01                             
+577  armed_entry      NY            long                  0.0           reconcile_flat   2026-08-31 12:25:29                             
+578  reconcile        NY            LONG   92.0           92.0          sync             2026-08-31 12:26:48                             
+579  armed_entry      NY            short                 0.0           unresolved       2026-08-31 13:09:28                             
+580  reconcile                      SHORT  39.5           39.5          sync             2026-08-31 13:37:08                             
+582  armed_entry      LONDON        SHORT  129.5          129.5         sync             2026-09-01 05:23:28                             
+584  reconcile        LONDON        SHORT  106.0          106.0         sync             2026-09-01 08:36:47                             
+585  armed_entry      NY            SHORT  -77.5          -77.5         sync             2026-09-01 09:31:08                             
+586  reconcile        NY            LONG   -54.0          -54.0         sync             2026-09-01 13:33:06                             
+591  reconcile        NY            SHORT  -140.0         -140.0        sync             2026-09-03 09:05:14                             

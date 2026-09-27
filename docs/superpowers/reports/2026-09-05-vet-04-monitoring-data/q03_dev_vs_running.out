@@ -1,0 +1,13 @@
+2a66d91c Merge #91: fix(risk,planner) wire RiskForceFlat and BiasArmWarning — both shipped uncalled
+1c7de161 Merge remote-tracking branch 'origin/dev' into fix/wire-riskforceflat-biasarmwarning
+eb99e9ea Merge #90: fix(mcp) stop reassigning ctx under the watchdog goroutine — 60 data races
+01ce8088 fix(risk,planner): wire RiskForceFlat and BiasArmWarning — both shipped uncalled
+b70b7d2f fix(mcp): stop reassigning ctx under the watchdog goroutine — 60 data races
+e75a5b13 merge docs/veteran-review-0905: veteran review — lead report + parts A-D (docs-only, 5 files, verified by path)
+676f239c docs(review): veteran review COMPLETE — parts C and D, lead sections rewritten
+ee147a42 docs(review): veteran review parts A and B, folded into the lead report
+643df6b8 docs(review): veteran review — lead report (interim)
+b44ce31c partner-sync: Binnie update runbook — re-clone (not pull), 8 boot lines, bound-row lesson, tree-guard absent
+e7fd564b partner-sync: PUSH STOPPED — partner main is not an ancestor; histories are UNRELATED (no merge-base). Evidence recorded, nothing pushed.
+51f3cc14 claim: partner sync — push dev to vlautoagenttraderv1 + Binnie update runbook — nofx-c6, 2026-09-04T13:27:01-05:00
+b2d3826e deploy: boot 10 marker — RELEASE=36648655 + GUIDE_BUILT_REV=36648655, FROM THE MAIN TREE after the passed boot

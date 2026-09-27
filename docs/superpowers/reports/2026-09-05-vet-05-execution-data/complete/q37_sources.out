@@ -1,0 +1,544 @@
+Source base b4376246; captured 2026-09-05T22:46:05.512417+00:00
+trader/armed_executor.go:380: 			}
+trader/armed_executor.go:381: 			continue
+trader/armed_executor.go:382: 		}
+trader/armed_executor.go:383: 		for li, leg := range legs {
+trader/armed_executor.go:384: 			// 0B (2026-09-02) — STOP ANCHORED TO SEATED STRUCTURE. Compose the
+trader/armed_executor.go:385: 			// leg's stop BEFORE every downstream consumer (the gate's R:R and
+trader/armed_executor.go:386: 			// min-SL legs, the ledger row, the churn guard, placement): stop =
+trader/armed_executor.go:387: 			// beyond the nearest seated level on the risk side + clearance,
+trader/armed_executor.go:388: 			// floored at MIN_SL_ATR_MULT×ATR5m, widest wins, never tighter than
+trader/armed_executor.go:389: 			// authored. Logged once per (plan, version, scenario, leg, stop).
+trader/armed_executor.go:390: 			if comp := composeArmStop(strings.ToLower(strings.TrimSpace(sc.Direction)), leg.Entry, leg.Stop, atr5m,
+trader/armed_executor.go:391: 				market.FuturesTickSize(at.futuresSymbol()), doc.Levels, kernel.MinSLATRMult(),
+trader/armed_executor.go:392: 				kernel.MinSLTickClearance, armStopAnchorMaxATR()); comp.Stop != leg.Stop || comp.Unanchored {
+trader/armed_executor.go:393: 				skey := plan.PlanID + ":" + strconv.Itoa(plan.Version) + ":" + sc.ID + ":leg" + strconv.Itoa(li+1) + ":stop"
+trader/armed_executor.go:394: 				if armRefusalChanged(&at.armStopCompLast, skey, fmt.Sprintf("%.2f/%s", comp.Stop, comp.Bound)) {
+trader/armed_executor.go:395: 					at.logInfof("%s", armStopCompositionLine(plan.Session, sc.ID, li+1, sc.Direction, comp, atr5m, kernel.MinSLATRMult()))
+trader/armed_executor.go:396: 					// OWNER RULING 1 (0B): ARM_STOP_ANCHOR_MAX_ATR 3.0 is a
+trader/armed_executor.go:397: 					// PROVISIONAL [I] default, reviewed at n≥30 dead zones. The
+trader/armed_executor.go:398: 					// count is RECORDED (class-35 law), never inferred from logs.
+trader/armed_executor.go:399: 					if comp.Unanchored && at.store != nil {
+trader/armed_executor.go:400: 						if n, cerr := store.IncStopUnanchored(at.store); cerr != nil {
+trader/armed_executor.go:401: 							at.logWarnf("🛑 stop_unanchored counter write failed: %v", cerr)
+trader/armed_executor.go:402: 						} else {
+trader/armed_executor.go:403: 							at.logWarnf("🛑 stop_unanchored %s %s leg %d — no seated level within %.1f×ATR5m on the risk side; ATR floor governs. Recorded n=%d (provisional bound reviewed at n≥%d).",
+trader/armed_executor.go:404: 								plan.Session, sc.ID, li+1, armStopAnchorMaxATR(), n, store.StopUnanchoredReviewN)
+trader/armed_executor.go:405: 						}
+trader/armed_executor.go:406: 					}
+trader/armed_executor.go:407: 				}
+trader/armed_executor.go:408: 				leg.Stop = comp.Stop
+trader/armed_executor.go:409: 			}
+trader/armed_executor.go:410: 			// S2b chained arm (autopsy-response wave): wait_confirm legs stay
+trader/armed_executor.go:411: 			// DORMANT until the chain confirm is machine-MET. E4: leg 1 chains
+trader/armed_executor.go:412: 			// on confirm2 (1m_mss|1x5m_close); a legacy single arm chains on
+trader/armed_executor.go:413: 			// its own confirm{}.
+trader/armed_executor.go:414: 			if leg.WaitConfirm {
+trader/armed_executor.go:415: 				chain := sc.Confirm2
+trader/armed_executor.go:416: 				if len(sc.Arm.Legs) == 0 {
+trader/armed_executor.go:417: 					chain = sc.Confirm
+trader/armed_executor.go:418: 				}
+trader/armed_executor.go:419: 				if chain == nil {
+trader/armed_executor.go:420: 					continue
+trader/armed_executor.go:421: 				}
+trader/armed_executor.go:422: 				v := kernel.EvaluateConfirm(*chain, bars, plan.BirthMs, now.UnixMilli())
+trader/armed_executor.go:423: 				if !v.Met {
+trader/armed_executor.go:424: 					continue
+trader/armed_executor.go:425: 				}
+trader/armed_executor.go:426: 				at.logInfof("⚔️ arm %s leg %d wait_confirm MET (%s) — arming", sc.ID, li+1, leg.Rule)
+trader/armed_executor.go:427: 			}
+trader/armed_executor.go:428: 			// gates AT ARM TIME — a resting order is a pre-passed entry; each gate
+trader/armed_executor.go:429: 			// input that changes materially later triggers a cancel (1.3).
+trader/armed_executor.go:430: 			if verdict := at.armGateVerdictFor(sc, leg, biasDirectionFor(doc.Bias.Direction), snap, atr5m, minQuality, cfg, plan.Session); verdict != "" {
+trader/armed_executor.go:431: 				// F4 (LONDON-FORENSICS 2026-08-28) — log the REFUSED verdict ONCE
+trader/armed_executor.go:432: 				// per arm-spec (the same infeasible arm re-refused every cycle
+trader/armed_executor.go:1345: // armGateVerdictFor runs the arm-time gate chain for ONE LEG's prices (E4: the
+trader/armed_executor.go:1346: // split legs gate independently — each leg is a pre-passed entry of its own).
+trader/armed_executor.go:1347: // The min-confidence gate is N/A for arms — the AI's authorization IS the
+trader/armed_executor.go:1348: // confidence signal (no per-scenario confidence exists to check).
+trader/armed_executor.go:1349: func (at *AutoTrader) armGateVerdictFor(sc kernel.PlanScenario, leg kernel.PlanArmLeg, biasDirection string, snap map[string]kernel.StructureState, atr5m float64, minQuality string, cfg *store.StrategyConfig, session string) string {
+trader/armed_executor.go:1350: 	a := sc.Arm
+trader/armed_executor.go:1351: 	if err := kernel.ArmSpecValid(sc); err != nil {
+trader/armed_executor.go:1352: 		return err.Error()
+trader/armed_executor.go:1353: 	}
+trader/armed_executor.go:1354: 	side := strings.ToLower(strings.TrimSpace(sc.Direction))
+trader/armed_executor.go:1355: 	if side != "long" && side != "short" {
+trader/armed_executor.go:1356: 		return fmt.Sprintf("direction %q not armable", sc.Direction)
+trader/armed_executor.go:1357: 	}
+trader/armed_executor.go:1358: 	// plan_mode direction — the plan is the law, same as the entry path.
+trader/armed_executor.go:1359: 	//
+trader/armed_executor.go:1360: 	// R2 (owner ruling 2026-09-03): this passed "" and so ALWAYS resolved the
+trader/armed_executor.go:1361: 	// strategy-level mode, silently dropping a per-session override. A session
+trader/armed_executor.go:1362: 	// set to direction (or strict) was honoured on the decision path and
+trader/armed_executor.go:1363: 	// ignored at the arm seam — the same plan, two different laws.
+trader/armed_executor.go:1364: 	if at.planModeFor(session) == "direction" {
+trader/armed_executor.go:1365: 		bias := strings.ToLower(strings.TrimSpace(biasDirection))
+trader/armed_executor.go:1366: 		if bias != "" && bias != side {
+trader/armed_executor.go:1367: 			return fmt.Sprintf("against plan bias %q (plan_mode=direction)", bias)
+trader/armed_executor.go:1368: 		}
+trader/armed_executor.go:1369: 	}
+trader/armed_executor.go:1370: 	// quality floor (min_scenario_quality).
+trader/armed_executor.go:1371: 	if minQuality != "" {
+trader/armed_executor.go:1372: 		if kernel.ScenarioQualityRank(sc.Quality) < kernel.ScenarioQualityRank(minQuality) {
+trader/armed_executor.go:1373: 			return fmt.Sprintf("quality %s below min_scenario_quality %s", sc.Quality, minQuality)
+trader/armed_executor.go:1374: 		}
+trader/armed_executor.go:1375: 	}
+trader/armed_executor.go:1376: 	// R:R gate — ARM_MIN_RR (default 2.0), the gate-at-arm floor. Autopsy
+trader/armed_executor.go:1377: 	// response (2026-08-27): resting limits fill AT the level (better entry by
+trader/armed_executor.go:1378: 	// construction) — the global 3.0 floor for AI market entries is untouched.
+trader/armed_executor.go:1379: 	rr := 0.0
+trader/armed_executor.go:1380: 	if side == "long" && leg.Entry > leg.Stop && leg.Stop > 0 {
+trader/armed_executor.go:1381: 		rr = (leg.Target - leg.Entry) / (leg.Entry - leg.Stop)
+trader/armed_executor.go:1382: 	} else if side == "short" && leg.Stop > leg.Entry && leg.Entry > 0 {
+trader/armed_executor.go:1383: 		rr = (leg.Entry - leg.Target) / (leg.Stop - leg.Entry)
+trader/armed_executor.go:1384: 	}
+trader/armed_executor.go:1385: 	if rr+1e-9 < at.armMinRRFor(cfg) {
+trader/armed_executor.go:1386: 		return fmt.Sprintf("R:R %.2f below arm min %.2f (studio min_risk_reward_ratio)", rr, at.armMinRRFor(cfg))
+trader/armed_executor.go:1387: 	}
+trader/armed_executor.go:1388: 	// min-SL — the same floor (×ATR5m) the entry path enforces.
+trader/armed_executor.go:1389: 	if atr5m > 0 {
+trader/armed_executor.go:1390: 		dist := leg.Entry - leg.Stop
+trader/armed_executor.go:1391: 		if side == "short" {
+trader/armed_executor.go:1392: 			dist = leg.Stop - leg.Entry
+trader/armed_executor.go:1393: 		}
+trader/armed_executor.go:1394: 		if dist+1e-9 < kernel.MinSLATRMult()*atr5m {
+trader/armed_executor.go:1395: 			return fmt.Sprintf("stop %.2f too close (%.2f < %.2f = %.1f×ATR5m)", leg.Stop, dist, kernel.MinSLATRMult()*atr5m, kernel.MinSLATRMult())
+trader/armed_executor.go:1396: 		}
+trader/armed_executor.go:1397: 	}
+trader/armed_executor.go:1398: 	// HTF veto — the same veto the entry path enforces, AND the same switch.
+trader/armed_executor.go:1399: 	//
+trader/armed_executor.go:1400: 	// R3 (owner ruling 2026-09-03): this ran unconditionally. regime.htf_veto
+trader/armed_executor.go:1401: 	// = false turned the veto off for the decision path and left the arm chain
+trader/armed_executor.go:1402: 	// vetoing forever, so an owner who switched it off still could not arm.
+trader/armed_executor.go:1403: 	// One switch, both consumers.
+trader/armed_executor.go:1404: 	if cfg != nil && !cfg.HTFVetoEnabled() {
+trader/armed_executor.go:1405: 		// off by owner ruling — fall through to the remaining gates
+trader/armed_executor.go:1406: 	} else if blocked, vetoReason := kernel.HTFVetoVerdict(snap, "open_"+side, kernel.HTFVetoTF()); blocked {
+trader/armed_executor.go:1407: 		return "HTF veto: " + vetoReason
+trader/armed_executor.go:1408: 	}
+trader/armed_executor.go:1409: 	_ = a
+trader/armed_executor.go:1410: 	return ""
+kernel/min_sl.go:18: // MinSLATRMultDefault is the shipped minimum stop width in 5m ATR(14) units.
+kernel/min_sl.go:19: //
+kernel/min_sl.go:20: // 0B (owner ruling 2026-09-02): 1.0 → 1.5. The 1.0 was [C] code-canon with no
+kernel/min_sl.go:21: // citation (knob census). Round-7 research tests the day-trade range at
+kernel/min_sl.go:22: // 1.5–2.5×ATR and finds stop-out rates above 60% on noise alone below 1.0×;
+kernel/min_sl.go:23: // our own tape has 6 of 8 losers printing MAE beyond the stop and 15 of 27
+kernel/min_sl.go:24: // losers stopped-too-tight. 1.5 is the bottom of the researched range, not the
+kernel/min_sl.go:25: // middle — the deliberate first step from an uncited number to a cited one.
+kernel/min_sl.go:26: //
+kernel/min_sl.go:27: // This value is read by THREE gates: the arm-time gate
+kernel/min_sl.go:28: // (trader/armed_executor.go), the AI-entry decision gate
+kernel/min_sl.go:29: // (kernel/engine_position.go) and the planner's authoring WARNING
+kernel/min_sl.go:30: // (trader/auto_trader_planner.go, ArmFeasibilityWarnings). Raising it tightens
+kernel/min_sl.go:31: // all three at once — intended: the same floor everywhere is the point.
+kernel/min_sl.go:32: //
+kernel/min_sl.go:33: // Env MIN_SL_ATR_MULT overrides; 0 disables the gate entirely.
+kernel/min_sl.go:34: const MinSLATRMultDefault = 1.5
+kernel/min_sl.go:35:
+kernel/min_sl.go:36: // MinSLTickClearance is the level-clearance leg: a cited-scenario stop must
+kernel/min_sl.go:37: // sit at least this many ticks BEYOND the anchor level/zone far edge. Stops
+kernel/min_sl.go:38: // parked exactly at a level get run by the sweep; 2 ticks of clearance puts
+kernel/min_sl.go:39: // the stop on the far side of the resting orders.
+kernel/min_sl.go:40: const MinSLTickClearance = 2
+kernel/min_sl.go:41:
+kernel/min_sl.go:42: // MinSLATRMult resolves the min-SL ATR multiplier (env MIN_SL_ATR_MULT,
+kernel/min_sl.go:43: // default 1.0; 0 = gate off).
+kernel/min_sl.go:44: func MinSLATRMult() float64 {
+kernel/min_sl.go:45: 	if v := os.Getenv("MIN_SL_ATR_MULT"); v != "" {
+kernel/min_sl.go:46: 		if f, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err == nil && f >= 0 {
+kernel/min_sl.go:47: 			return f
+kernel/min_sl.go:48: 		}
+kernel/min_sl.go:49: 	}
+kernel/min_sl.go:50: 	return MinSLATRMultDefault
+trader/auto_trader_clock.go:454: // enforceEODFlat (P2.3, session-scoped 2026-08-18) force-flattens any open
+trader/auto_trader_clock.go:455: // position at/after the ACTIVE session's flat time (session end −
+trader/auto_trader_clock.go:456: // eod_flat_offset_min, half-day pull-in preserved) by routing DIRECTLY through
+trader/auto_trader_clock.go:457: // the trader close path — bypassing hold-lock naturally (RECON #10). Returns
+trader/auto_trader_clock.go:458: // true when it acted (the caller then skips the rest of the cycle). Gated on
+trader/auto_trader_clock.go:459: // day_plan.
+trader/auto_trader_clock.go:460: //
+trader/auto_trader_clock.go:461: // THE TWIN BUG (class 7 of the last-entry fix): the old body was
+trader/auto_trader_clock.go:462: // timeReachedCT(now, "14:45") — day-scoped, true 14:45 CT → midnight — which
+trader/auto_trader_clock.go:463: // never mattered while the 13:00 last-entry bug guaranteed no Asia positions,
+trader/auto_trader_clock.go:464: // but the moment Asia entries flow it would flatten each one ON SIGHT at, say,
+trader/auto_trader_clock.go:465: // 21:00 CT. Fixing last-entry without this would have been worse than fixing
+trader/auto_trader_clock.go:466: // neither.
+trader/auto_trader_clock.go:467: //
+trader/auto_trader_clock.go:468: // Scope: INSIDE the active session, flatten past its resolved flat time.
+trader/auto_trader_clock.go:469: // BETWEEN sessions (the 14:45→17:00 CT gap, weekends) any open position is
+trader/auto_trader_clock.go:470: // flattened too — that is by definition past the previous session's flat, and
+trader/auto_trader_clock.go:471: // it preserves the old rule's one virtue: nothing rides through the close.
+trader/auto_trader_clock.go:472: func (at *AutoTrader) enforceEODFlat() bool {
+trader/auto_trader_clock.go:473: 	return at.enforceEODFlatAt(time.Now())
+trader/auto_trader_clock.go:474: }
+trader/auto_trader_clock.go:475:
+trader/auto_trader_clock.go:476: func (at *AutoTrader) enforceEODFlatAt(now time.Time) bool {
+trader/auto_trader_clock.go:477: 	if !at.dayPlanEnabled() || at.store == nil || at.trader == nil {
+trader/auto_trader_clock.go:478: 		return false
+trader/auto_trader_clock.go:479: 	}
+trader/auto_trader_clock.go:480: 	reg := at.sessionRegistry(now)
+trader/auto_trader_clock.go:481: 	flat := "" // resolved wall-clock, for the log only
+trader/auto_trader_clock.go:482: 	if sess, ok := reg.ActiveSession(now); ok {
+trader/auto_trader_clock.go:483: 		offset := at.config.StrategyConfig.DayPlan.EODFlatOffsetFor(sess.Name)
+trader/auto_trader_clock.go:484: 		flatMin, hhmm, okC := sessionCutoffCT(sess, offset)
+trader/auto_trader_clock.go:485: 		if !okC {
+trader/auto_trader_clock.go:486: 			return false // malformed registry times — never invent a flatten
+trader/auto_trader_clock.go:487: 		}
+trader/auto_trader_clock.go:488: 		// Half-day early close pulls the flat IN. P4 (ledger-close 2026-08-19):
+trader/auto_trader_clock.go:489: 		// the flat now resolves against early_close_CT − eod_flat_offset (the
+trader/auto_trader_clock.go:490: 		// dispatch 4.4 contract) — with the default offset 0 this is byte-
+trader/auto_trader_clock.go:491: 		// identical to the original effectiveEODFlatCT pull-in.
+trader/auto_trader_clock.go:492: 		if adj, adjHHMM, okH := halfDayCutoffMin(reg, kernel.CMESessionDayKey(now), offset); okH && halfDayPullsIn(sess, adj, flatMin) {
+trader/auto_trader_clock.go:493: 			flatMin, hhmm = adj, adjHHMM
+trader/auto_trader_clock.go:494: 		}
+trader/auto_trader_clock.go:495: 		if !pastSessionCutoff(now, sess, flatMin) {
+trader/auto_trader_clock.go:496: 			return false
+trader/auto_trader_clock.go:497: 		}
+trader/auto_trader_clock.go:498: 		flat = fmt.Sprintf("%s CT (%s)", hhmm, sess.Name)
+trader/auto_trader_clock.go:499: 	} else {
+trader/auto_trader_clock.go:500: 		// No active session: past every session's flat by definition.
+trader/auto_trader_clock.go:501: 		flat = "no active session"
+trader/auto_trader_clock.go:502: 	}
+trader/auto_trader_clock.go:503: 	positions, err := at.store.Position().GetOpenPositions(at.id)
+trader/auto_trader_clock.go:504: 	if err != nil || len(positions) == 0 {
+trader/auto_trader_clock.go:505: 		return false
+trader/auto_trader_clock.go:506: 	}
+trader/auto_trader_clock.go:507: 	// S-LIST CLOSER (2026-08-27) — cancel ALL resting arms FIRST, synchronously
+trader/auto_trader_clock.go:508: 	// (ack-waited, one retry), THEN flatten. This kills the ≤2m window where a
+trader/auto_trader_clock.go:509: 	// working limit could fill after the flat (deep-verify hole 11). The same
+trader/auto_trader_clock.go:510: 	// ordering guards the session-end branch (no active session above), the T1
+trader/auto_trader_clock.go:511: 	// force-flat, and the dormancy path in maybeManageArmedOrders.
+trader/auto_trader_clock.go:512: 	n, unacked := at.cancelArmedOrdersSync("session close — EOD flat")
+trader/auto_trader_clock.go:513: 	if n > 0 {
+trader/auto_trader_clock.go:514: 		at.logWarnf("🔒 EOD-FLAT: %d armed order(s) cancelled before flattening", n)
+trader/auto_trader_clock.go:515: 	}
+trader/auto_trader_clock.go:516: 	if unacked > 0 {
+trader/auto_trader_clock.go:517: 		at.logWarnf("⚠️ EOD-FLAT: %d armed cancel(s) unacked after retry — flattening anyway (wire reconciles next cycle)", unacked)
+trader/auto_trader_clock.go:518: 	}
+trader/auto_trader_clock.go:519: 	// A fill that won the race mid-cancel must be flattened too — re-read.
+trader/auto_trader_clock.go:520: 	if fresh, err2 := at.store.Position().GetOpenPositions(at.id); err2 == nil {
+trader/auto_trader_clock.go:521: 		positions = fresh
+trader/auto_trader_clock.go:522: 	}
+trader/auto_trader_clock.go:736: func (at *AutoTrader) recordClosedTradeAnalyticsAt(now time.Time, p *store.TraderPosition) {
+trader/auto_trader_clock.go:737: 	if p == nil || p.AdherenceGrade != "" { // already processed
+trader/auto_trader_clock.go:738: 		return
+trader/auto_trader_clock.go:739: 	}
+trader/auto_trader_clock.go:740: 	if !at.dayPlanEnabled() || at.store == nil || market.FuturesBarsProvider == nil {
+trader/auto_trader_clock.go:741: 		return
+trader/auto_trader_clock.go:742: 	}
+trader/auto_trader_clock.go:743: 	if p.EntryPrice <= 0 || p.EntryTime <= 0 {
+trader/auto_trader_clock.go:744: 		return
+trader/auto_trader_clock.go:745: 	}
+trader/auto_trader_clock.go:746: 	exitMs := p.ExitTime
+trader/auto_trader_clock.go:747: 	if exitMs <= 0 {
+trader/auto_trader_clock.go:748: 		exitMs = now.UnixMilli()
+trader/auto_trader_clock.go:749: 	}
+trader/auto_trader_clock.go:750: 	bars := market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount)
+trader/auto_trader_clock.go:751: 	// E4 (wave 1A, 2026-09-02) — the same path computation the excursion table
+trader/auto_trader_clock.go:752: 	// uses, so trader_positions.mae/mfe and trade_excursions cannot disagree.
+trader/auto_trader_clock.go:753: 	// It INCLUDES the bar containing the fill; ComputeExcursion dropped it
+trader/auto_trader_clock.go:754: 	// whenever a fill did not land exactly on a bar boundary.
+trader/auto_trader_clock.go:755: 	path := kernel.ComputePathExcursion(p.EntryPrice, p.Side, 0, 0, bars, p.EntryTime, exitMs, "1m")
+trader/auto_trader_clock.go:756: 	if !path.Computed {
+trader/auto_trader_clock.go:757: 		// No coverage. The columns stay NULL: an uncomputed excursion is not a
+trader/auto_trader_clock.go:758: 		// zero, and writing 0 here is what made 517 closed rows unreadable.
+trader/auto_trader_clock.go:759: 		at.logWarnf("📐 excursion for %s pos=%d has no 1m coverage — mae/mfe left NULL, not zeroed", p.Symbol, p.ID)
+trader/auto_trader_clock.go:760: 	} else if err := at.store.Position().UpdateExcursion(p.ID, path.MAEPts, path.MFEPts); err != nil {
+trader/auto_trader_clock.go:761: 		at.logWarnf("📐 excursion update failed for %s: %v", p.Symbol, err)
+trader/auto_trader_clock.go:762: 		return
+trader/auto_trader_clock.go:763: 	}
+trader/auto_trader_clock.go:764: 	ex := kernel.Excursion{MAE: path.MAEPts, MFE: path.MFEPts}
+trader/auto_trader_clock.go:765: 	// E3 (wave 1A) — the excursion row's exit half. This funnel is reached by
+trader/auto_trader_clock.go:766: 	// EVERY exit path (AI close, NT8 OCO, EOD-flat, manual), which is why the
+trader/auto_trader_clock.go:767: 	// hook lives here and not in one of them.
+trader/auto_trader_clock.go:768: 	at.excursionOnClose(p)
+trader/exit_mechs_suspend.go:10:
+trader/exit_mechs_suspend.go:11: 	ntTrader "nofx/trader/ninjatrader"
+trader/exit_mechs_suspend.go:12: )
+trader/exit_mechs_suspend.go:13:
+trader/exit_mechs_suspend.go:14: // ── 0B (2026-09-02) — BE+40 AND THE ATR TRAIL ARE SUSPENDED ─────────────────
+trader/exit_mechs_suspend.go:15: //
+trader/exit_mechs_suspend.go:16: // Both mechanisms are LIVE and FIRING (full audit 09-01: 2 breakeven moves, 8
+trader/exit_mechs_suspend.go:17: // trail ratchets that day) with NO measurement of whether they help. Round-7
+trader/exit_mechs_suspend.go:18: // research ranks ATR/Chandelier trails in the worst group of 15 exit families
+trader/exit_mechs_suspend.go:19: // across 567,000 backtests, and the net effect of breakeven moves is contested.
+trader/exit_mechs_suspend.go:20: // Our own tape shows $719.50 of giveback with ZERO trail EXITS ever recorded.
+trader/exit_mechs_suspend.go:21: //
+trader/exit_mechs_suspend.go:22: // The problem is not the direction of the effect — it is that unmeasured
+trader/exit_mechs_suspend.go:23: // mechanisms are moving live stops. Suspended (not deleted) until MFE data
+trader/exit_mechs_suspend.go:24: // exists (wave 1A). Exits while suspended: fixed stop · fixed target · EOD flat
+trader/exit_mechs_suspend.go:25: // · the existing invalidation/dormant logic.
+trader/exit_mechs_suspend.go:26: //
+trader/exit_mechs_suspend.go:27: // Env EXIT_MECHS_SUSPENDED=0 re-enables both (the knobs are retained; per-
+trader/exit_mechs_suspend.go:28: // strategy breakeven_enabled / trailing_enabled still gate them underneath).
+trader/exit_mechs_suspend.go:29:
+trader/exit_mechs_suspend.go:30: // ExitMechSuspendedLabel is the one-line reason shown in logs and the Guide.
+trader/exit_mechs_suspend.go:31: const ExitMechSuspendedLabel = "suspended 2026-09-02 pending MFE data (wave 1A)"
+trader/exit_mechs_suspend.go:32:
+trader/exit_mechs_suspend.go:33: // exitMechsSuspended resolves the suspension (env EXIT_MECHS_SUSPENDED,
+trader/exit_mechs_suspend.go:34: // default TRUE = suspended).
+trader/exit_mechs_suspend.go:35: func exitMechsSuspended() bool {
+trader/exit_mechs_suspend.go:36: 	if v := strings.TrimSpace(os.Getenv("EXIT_MECHS_SUSPENDED")); v != "" {
+trader/exit_mechs_suspend.go:37: 		switch strings.ToLower(v) {
+trader/exit_mechs_suspend.go:38: 		case "0", "false", "off", "no":
+trader/exit_mechs_suspend.go:39: 			return false
+trader/exit_mechs_suspend.go:40: 		}
+trader/exit_mechs_suspend.go:41: 	}
+trader/exit_mechs_suspend.go:42: 	return true
+trader/exit_mechs_suspend.go:43: }
+trader/exit_mechs_suspend.go:44:
+trader/exit_mechs_suspend.go:45: // moveStopWire is the LAST hop before the socket: both suspended mechanisms
+trader/exit_mechs_suspend.go:46: // reach the broker only through this variable. Fixtures substitute a recorder
+trader/exit_mechs_suspend.go:47: // and assert ZERO calls, so "no move_stop frame was sent" is proved at the wire
+trader/exit_mechs_suspend.go:48: // boundary rather than from internal state.
+trader/exit_mechs_suspend.go:49: var moveStopWire = func(nt *ntTrader.TCPTrader, side string, newStop float64) error {
+trader/exit_mechs_suspend.go:50: 	return nt.MoveStopToBreakeven(side, newStop)
+trader/exit_mechs_suspend.go:51: }
+trader/exit_mechs_suspend.go:52:
+trader/exit_mechs_suspend.go:53: // suspendedOnce keeps the suspension notice to one line per mechanism per
+trader/exit_mechs_suspend.go:54: // process — loud enough to see, quiet enough not to flood a 60s monitor.
+trader/exit_mechs_suspend.go:55: var suspendedOnce sync.Map
+trader/exit_mechs_suspend.go:56:
+trader/exit_mechs_suspend.go:57: // exitMechSuspendedRefuse reports the suspension for `mech` and returns true
+trader/exit_mechs_suspend.go:58: // when the caller must return WITHOUT touching the wire. A9: never a silent
+trader/exit_mechs_suspend.go:59: // skip — the first refusal per mechanism logs, with the trigger that would
+trader/exit_mechs_suspend.go:60: // have fired.
+trader/exit_mechs_suspend.go:61: func (at *AutoTrader) exitMechSuspendedRefuse(mech, detail string) bool {
+trader/exit_mechs_suspend.go:62: 	if !exitMechsSuspended() {
+trader/exit_mechs_suspend.go:63: 		return false
+trader/exit_mechs_suspend.go:64: 	}
+trader/exit_mechs_suspend.go:65: 	key := at.id + ":" + mech
+trader/exit_mechs_suspend.go:66: 	if _, seen := suspendedOnce.LoadOrStore(key, struct{}{}); !seen {
+trader/f12_leg4.go:193:
+trader/f12_leg4.go:194: // OrderSnapshotInterval is the AddOn's snapshot period N, RESOLVED (A11): env
+trader/f12_leg4.go:195: // override first, else the default the AddOn also ships with. Leg 4 calls a
+trader/f12_leg4.go:196: // book older than 2N stale.
+trader/f12_leg4.go:197: func OrderSnapshotInterval() time.Duration {
+trader/f12_leg4.go:198: 	if v := strings.TrimSpace(os.Getenv("NT8_ORDER_SNAPSHOT_SECS")); v != "" {
+trader/f12_leg4.go:199: 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+trader/f12_leg4.go:200: 			return time.Duration(n) * time.Second
+trader/f12_leg4.go:201: 		}
+trader/f12_leg4.go:202: 	}
+trader/f12_leg4.go:203: 	return DefaultOrderSnapshotSecs * time.Second
+trader/f12_leg4.go:204: }
+trader/f12_leg4.go:205:
+trader/f12_leg4.go:206: // DefaultOrderSnapshotSecs is the ONE definition of the snapshot period. The C#
+trader/f12_leg4.go:207: // side reads its own constant; the protocol doc names this as the contract so
+trader/f12_leg4.go:208: // the two cannot silently disagree about what "stale" means.
+trader/f12_leg4.go:209: const DefaultOrderSnapshotSecs = 30
+trader/f12_leg4.go:210:
+kernel/session_registry.go:78: // NY CONTRACT (owner, 2026-08-16): the NY session ENDS at 15:45 ET = 14:45 CT and
+kernel/session_registry.go:79: // the EOD flat is at that same instant. Window end and FlatCT are therefore the
+kernel/session_registry.go:80: // SAME value: before this they drifted (window ran to 15:00 CT while the flat
+kernel/session_registry.go:81: // fired at 14:45), leaving a 15-minute band where the gate still called the
+kernel/session_registry.go:82: // session open even though positions had already been flattened.
+kernel/session_registry.go:83: func DefaultSessionRegistry() SessionRegistry {
+kernel/session_registry.go:84: 	return SessionRegistry{
+kernel/session_registry.go:85: 		Sessions: []SessionDef{
+kernel/session_registry.go:86: 			{
+kernel/session_registry.go:87: 				Name:          SessionAsia,
+kernel/session_registry.go:88: 				WindowStartCT: "17:00",
+kernel/session_registry.go:89: 				WindowEndCT:   "02:00", // wraps midnight
+kernel/session_registry.go:90: 				ReadCT:        "16:30", // owner ruling 2026-08-31: open−30 (was 16:55)
+kernel/session_registry.go:91: 				FlatCT:        "02:00",
+kernel/session_registry.go:92: 				Killzones:     []KillzoneCT{{Name: "asia_kz", StartCT: "19:00", EndCT: "23:00"}},
+kernel/session_registry.go:93: 				Enabled:       false,
+kernel/session_registry.go:94: 			},
+kernel/session_registry.go:95: 			{
+kernel/session_registry.go:96: 				Name:          SessionLondon,
+kernel/session_registry.go:97: 				WindowStartCT: "02:00",
+kernel/session_registry.go:98: 				WindowEndCT:   "08:30",
+kernel/session_registry.go:99: 				ReadCT:        "01:30", // owner ruling 2026-08-31: open−30 (was 01:55)
+kernel/session_registry.go:100: 				FlatCT:        "08:30",
+kernel/session_registry.go:101: 				Killzones:     []KillzoneCT{{Name: "london_kz", StartCT: "02:00", EndCT: "05:00"}},
+kernel/session_registry.go:102: 				Enabled:       false,
+kernel/session_registry.go:103: 			},
+kernel/session_registry.go:104: 			{
+kernel/session_registry.go:105: 				Name:          SessionNY,
+kernel/session_registry.go:106: 				WindowStartCT: "08:30",
+kernel/session_registry.go:107: 				WindowEndCT:   "14:45", // = 15:45 ET — session end == EOD flat (owner contract)
+kernel/session_registry.go:108: 				ReadCT:        "08:00", // owner ruling 2026-08-31: open−30 (was 08:25)
+kernel/session_registry.go:109: 				FlatCT:        "14:45", // = 15:45 ET — same instant as WindowEndCT by contract
+kernel/session_registry.go:110: 				Killzones: []KillzoneCT{
+kernel/session_registry.go:111: 					{Name: "ny_am", StartCT: "08:30", EndCT: "11:00"},
+kernel/session_registry.go:112: 					{Name: "ny_pm", StartCT: "13:00", EndCT: "14:45"},
+kernel/session_registry.go:113: 				},
+kernel/session_registry.go:114: 				Enabled: true,
+store/strategy.go:1005:
+store/strategy.go:1006: // DefaultLastEntryOffsetMin / DefaultEODFlatOffsetMin are the session-relative
+store/strategy.go:1007: // defaults (minutes before session end). R-A15 (owner ruling, S-wave
+store/strategy.go:1008: // 2026-08-26): EOD flat = the session END — NY flattens at 14:45 CT (the
+store/strategy.go:1009: // standing R5 ruling), not the drifted 14:30. Last-entry keeps its 15-min
+store/strategy.go:1010: // lead (entries stop 14:30, flat at 14:45).
+store/strategy.go:1011: const (
+store/strategy.go:1012: 	DefaultLastEntryOffsetMin = 15
+store/strategy.go:1013: 	DefaultEODFlatOffsetMin   = 0
+store/strategy.go:1014: )
+store/strategy.go:1015:
+store/strategy.go:1016: // LastEntryOffsetFor resolves the per-session last-entry offset (minutes before
+store/strategy.go:1017: // session end). Override → default. Config only — no caller may carry a literal.
+store/strategy.go:1018: func (c *DayPlanConfig) LastEntryOffsetFor(session string) int {
+store/strategy.go:1019: 	if ov := c.SessionOverride(session); ov != nil && ov.LastEntryOffsetMin != nil && *ov.LastEntryOffsetMin >= 0 {
+store/strategy.go:1020: 		return *ov.LastEntryOffsetMin
+store/strategy.go:1021: 	}
+store/strategy.go:1022: 	return DefaultLastEntryOffsetMin
+store/strategy.go:1023: }
+store/strategy.go:1024:
+store/strategy.go:1025: // EODFlatOffsetFor resolves the per-session EOD-flat offset (minutes before
+store/strategy.go:1026: // session end). Override → default.
+store/strategy.go:1027: func (c *DayPlanConfig) EODFlatOffsetFor(session string) int {
+store/strategy.go:1028: 	if ov := c.SessionOverride(session); ov != nil && ov.EODFlatOffsetMin != nil && *ov.EODFlatOffsetMin >= 0 {
+store/strategy.go:1029: 		return *ov.EODFlatOffsetMin
+store/strategy.go:1030: 	}
+store/strategy.go:1031: 	return DefaultEODFlatOffsetMin
+store/strategy.go:1032: }
+store/strategy.go:1033:
+store/strategy.go:1034: // SessionOverride returns the named session's override block, or nil. Shared by
+store/strategy.go:1035: // the trader gates, the kernel prompt path, and the API card renderer so all
+store/strategy.go:1036: // three resolve a per-session setting the SAME way.
+store/strategy.go:1037: func (c *DayPlanConfig) SessionOverride(session string) *DayPlanSessionOverride {
+store/strategy.go:1038: 	if c == nil {
+store/strategy.go:1039: 		return nil
+store/strategy.go:1040: 	}
+ninjascript/VLTraderTCPClient.cs:1338:             string status;
+ninjascript/VLTraderTCPClient.cs:1339:             switch (e.OrderState)
+ninjascript/VLTraderTCPClient.cs:1340:             {
+ninjascript/VLTraderTCPClient.cs:1341:                 case OrderState.Filled:     status = "filled";   break;
+ninjascript/VLTraderTCPClient.cs:1342:                 case OrderState.Rejected:   status = "rejected"; break;
+ninjascript/VLTraderTCPClient.cs:1343:                 case OrderState.PartFilled: status = "partial";  break;
+ninjascript/VLTraderTCPClient.cs:1344:                 default:                    return;
+ninjascript/VLTraderTCPClient.cs:1345:             }
+ninjascript/VLTraderTCPClient.cs:1346:
+ninjascript/VLTraderTCPClient.cs:1347:             // Entry just filled → place the protective SL/TP now that the
+ninjascript/VLTraderTCPClient.cs:1348:             // position exists (deferred from HandleSignal to dodge the OCO
+ninjascript/VLTraderTCPClient.cs:1349:             // cancel-on-entry-fill bug). On rejection, drop the pending bracket.
+ninjascript/VLTraderTCPClient.cs:1350:             if (e.OrderState == OrderState.Filled)
+ninjascript/VLTraderTCPClient.cs:1351:             {
+ninjascript/VLTraderTCPClient.cs:1352:                 SubmitBracketOnEntryFill(signalId);
+ninjascript/VLTraderTCPClient.cs:1353:                 lock (signalMapLock) { workingEntries.Remove(signalId); } // PHASE 2: resting limit consumed
+ninjascript/VLTraderTCPClient.cs:1354:                 // PHASE 4: record which account now holds this symbol's open position so a
+ninjascript/VLTraderTCPClient.cs:1355:                 // later close flattens the RIGHT account (not the active one). Sourced from
+ninjascript/VLTraderTCPClient.cs:1356:                 // the order's own account — account-agnostic, correct per routed account.
+ninjascript/VLTraderTCPClient.cs:1357:                 try
+ninjascript/VLTraderTCPClient.cs:1587:                     ["quantity"]   = e.Filled,
+ninjascript/VLTraderTCPClient.cs:1588:                     ["symbol"]     = sym ?? "",
+ninjascript/VLTraderTCPClient.cs:1589:                     ["account"]    = e.Order.Account != null ? e.Order.Account.Name
+ninjascript/VLTraderTCPClient.cs:1590:                                          : (account != null ? account.Name : "")
+ninjascript/VLTraderTCPClient.cs:1591:                 };
+ninjascript/VLTraderTCPClient.cs:1592:                 StampIdentity(payload, signalId);
+ninjascript/VLTraderTCPClient.cs:1593:                 WriteEnvelope("order_update", payload);
+ninjascript/VLTraderTCPClient.cs:1594:                 // F12 — a state change makes the book stale the instant it
+ninjascript/VLTraderTCPClient.cs:1595:                 // happens, so the snapshot follows the event rather than waiting
+ninjascript/VLTraderTCPClient.cs:1596:                 // up to 30s. The Go side is idempotent: a snapshot simply
+ninjascript/VLTraderTCPClient.cs:1597:                 // replaces the cached book.
+ninjascript/VLTraderTCPClient.cs:1598:                 try
+ninjascript/VLTraderTCPClient.cs:1599:                 {
+ninjascript/VLTraderTCPClient.cs:1600:                     SendOrderSnapshot(e.Order.Account != null ? e.Order.Account : account, "state_change");
+ninjascript/VLTraderTCPClient.cs:1601:                 }
+ninjascript/VLTraderTCPClient.cs:1602:                 catch (Exception exSnap)
+ninjascript/VLTraderTCPClient.cs:1603:                 {
+ninjascript/VLTraderTCPClient.cs:1604:                     LogWarn("VLTraderTCPClient: post-update order_snapshot failed: " + exSnap.Message);
+ninjascript/VLTraderTCPClient.cs:1605:                 }
+ninjascript/VLTraderTCPClient.cs:1606:             }
+ninjascript/VLTraderTCPClient.cs:1607:             catch (Exception ex)
+ninjascript/VLTraderTCPClient.cs:2351:         // === Heartbeat loop (spec L4408: 30s interval) ===
+ninjascript/VLTraderTCPClient.cs:2352:         private void RunHeartbeatLoop(CancellationToken ct)
+ninjascript/VLTraderTCPClient.cs:2353:         {
+ninjascript/VLTraderTCPClient.cs:2354:             int beatCount = 0;
+ninjascript/VLTraderTCPClient.cs:2355:             while (!ct.IsCancellationRequested)
+ninjascript/VLTraderTCPClient.cs:2356:             {
+ninjascript/VLTraderTCPClient.cs:2357:                 Thread.Sleep(HEARTBEAT_INTERVAL_MS);
+ninjascript/VLTraderTCPClient.cs:2358:                 if (ct.IsCancellationRequested) return;
+ninjascript/VLTraderTCPClient.cs:2359:                 WriteEnvelope("heartbeat", new Dictionary<string, object>
+ninjascript/VLTraderTCPClient.cs:2360:                 {
+ninjascript/VLTraderTCPClient.cs:2361:                     ["build_id"] = VL_BUILD_ID,
+ninjascript/VLTraderTCPClient.cs:2362:                 });
+ninjascript/VLTraderTCPClient.cs:2363:
+ninjascript/VLTraderTCPClient.cs:2364:                 // F12 — the PERIODIC working-order snapshot. It rides this loop
+ninjascript/VLTraderTCPClient.cs:2365:                 // because HEARTBEAT_INTERVAL_MS and ORDER_SNAPSHOT_INTERVAL_MS are
+ninjascript/VLTraderTCPClient.cs:2366:                 // both 30s; a second thread on the same period would buy nothing
+ninjascript/VLTraderTCPClient.cs:2367:                 // but another thing to get out of step. If the periods ever
+ninjascript/VLTraderTCPClient.cs:2368:                 // diverge this needs its own timer, and the constants sit beside
+ninjascript/VLTraderTCPClient.cs:2369:                 // each other so that is visible.
+ninjascript/VLTraderTCPClient.cs:2370:                 try { SendOrderSnapshot(account, "periodic"); }
+ninjascript/VLTraderTCPClient.cs:2371:                 catch (Exception exSnap)
+ninjascript/VLTraderTCPClient.cs:2372:                 {
+ninjascript/VLTraderTCPClient.cs:2373:                     LogWarn("RunHeartbeatLoop: order_snapshot failed (will retry): " + exSnap.Message);
+ninjascript/VLTraderTCPClient.cs:2374:                 }
+ninjascript/VLTraderTCPClient.cs:2375:
+ninjascript/VLTraderTCPClient.cs:2376:                 // Periodic re-emit of accounts every 3 heartbeats (90s) to ensure
+ninjascript/VLTraderTCPClient.cs:2377:                 // Go always has them after a restart (not just on connect/change)
+trader/ninjatrader/tcp_trader.go:232: 				delete(t.pending, fill.SignalID)
+trader/ninjatrader/tcp_trader.go:233: 				delete(t.pendingAt, fill.SignalID)
+trader/ninjatrader/tcp_trader.go:234: 			}
+trader/ninjatrader/tcp_trader.go:235: 			t.pendingMu.Unlock()
+trader/ninjatrader/tcp_trader.go:236: 			t.mu.Lock()
+trader/ninjatrader/tcp_trader.go:237: 			t.lastFill = fill
+trader/ninjatrader/tcp_trader.go:238: 			t.hasFill = true
+trader/ninjatrader/tcp_trader.go:239: 			// Class 27 (2026-08-31): retain confirmed fills in the netting ring
+trader/ninjatrader/tcp_trader.go:240: 			// so reconcile can reconstruct a netting-close's real exit price.
+trader/ninjatrader/tcp_trader.go:241: 			if strings.EqualFold(fill.Status, "filled") || strings.EqualFold(fill.Status, "partial") {
+trader/ninjatrader/tcp_trader.go:242: 				t.recordRecentFill(fill)
+trader/ninjatrader/tcp_trader.go:243: 			}
+trader/ninjatrader/tcp_trader.go:244: 			t.mu.Unlock()
+trader/ninjatrader/tcp_trader.go:245: 		}
+trader/trade_excursion_hook.go:35: func (at *AutoTrader) excursionsEnabled() bool {
+trader/trade_excursion_hook.go:36: 	return at != nil && at.store != nil && at.dayPlanEnabled()
+trader/trade_excursion_hook.go:37: }
+trader/trade_excursion_hook.go:38:
+trader/trade_excursion_hook.go:39: // excursionOnOpen (E1) writes the entry half. Every excursion column stays
+trader/trade_excursion_hook.go:40: // NULL: nothing has been measured yet.
+trader/trade_excursion_hook.go:41: func (at *AutoTrader) excursionOnOpen(p *store.TraderPosition, stopPx, targetPx, atr5m float64) {
+trader/trade_excursion_hook.go:42: 	if p == nil || !at.excursionsEnabled() {
+trader/trade_excursion_hook.go:43: 		return
+trader/trade_excursion_hook.go:44: 	}
+trader/trade_excursion_hook.go:45: 	at.safeExcursion(fmt.Sprintf("open pos=%d", p.ID), func() error {
+trader/trade_excursion_hook.go:46: 		row := store.TradeExcursion{
+trader/trade_excursion_hook.go:47: 			PositionID: p.ID, PlanID: p.PlanID, Version: p.PlanVersion,
+trader/trade_excursion_hook.go:48: 			Session: p.PlanSession, Scenario: p.CitedScenarioID,
+trader/trade_excursion_hook.go:49: 			Condition: excursionCondition(at.store, p.PlanID, p.PlanVersion, p.CitedScenarioID),
+trader/trade_excursion_hook.go:50: 			Side:      p.Side, EntryPx: p.EntryPrice, EntryTs: p.EntryTime,
+trader/trade_excursion_hook.go:51: 			StopPxInitial: stopPx, TargetPx: targetPx,
+trader/trade_excursion_hook.go:52: 			Size: p.Quantity, ATR5mAtEntry: atr5m, Source: "live",
+trader/trade_excursion_hook.go:53: 		}
+trader/trade_excursion_hook.go:54: 		// atr_mult_stop_at_entry: how many ATR5m the initial stop sat away from
+trader/trade_excursion_hook.go:55: 		// the fill. NULL when either input is unknown — never a computed 0/0.
+trader/trade_excursion_hook.go:56: 		if atr5m > 0 && stopPx > 0 && p.EntryPrice > 0 {
+trader/trade_excursion_hook.go:57: 			mult := (p.EntryPrice - stopPx) / atr5m
+trader/trade_excursion_hook.go:58: 			if mult < 0 {
+trader/trade_excursion_hook.go:59: 				mult = -mult
+trader/trade_excursion_hook.go:60: 			}
+trader/trade_excursion_hook.go:61: 			row.ATRMultStopEntry = &mult
+trader/trade_excursion_hook.go:62: 		}
+trader/trade_excursion_hook.go:63: 		id, err := at.store.TradeExcursions().Open(row)
+trader/trade_excursion_hook.go:64: 		if err != nil {
+trader/trade_excursion_hook.go:65: 			return err
+trader/trade_excursion_hook.go:66: 		}
+trader/trade_excursion_hook.go:67: 		at.logInfof("📐 excursion opened row=%d pos=%d %s %s entry=%.2f stop=%.2f target=%.2f atr5m=%.2f",
+trader/trade_excursion_hook.go:68: 			id, p.ID, p.Symbol, p.Side, p.EntryPrice, stopPx, targetPx, atr5m)
+trader/trade_excursion_hook.go:69: 		return nil
+trader/trade_excursion_hook.go:70: 	})
+trader/trade_excursion_hook.go:71: }
+trader/trade_excursion_hook.go:72:
+trader/trade_excursion_hook.go:73: // excursionOnBarTick (E2) recomputes the path for every open position of this
+trader/trade_excursion_hook.go:74: // trader. It runs from monitorTick, i.e. about once a minute, and rebuilds the
+trader/trade_excursion_hook.go:75: // WHOLE path from the stored bars each time rather than accumulating — so a
+trader/trade_excursion_hook.go:76: // missed tick, a restart or a late bar costs nothing.
+trader/trade_excursion_hook.go:77: func (at *AutoTrader) excursionOnBarTick() {
+trader/trade_excursion_hook.go:78: 	if !at.excursionsEnabled() {
+trader/trade_excursion_hook.go:79: 		return
+trader/trade_excursion_hook.go:80: 	}
+trader/trade_excursion_hook.go:81: 	at.safeExcursion("bar tick", func() error {
+trader/trade_excursion_hook.go:82: 		open, err := at.store.Position().GetOpenPositions(at.id)
+trader/trade_excursion_hook.go:83: 		if err != nil {
+trader/trade_excursion_hook.go:84: 			return err
+trader/trade_excursion_hook.go:85: 		}
+COMPARE 2a66d91c to b4376246 selected execution paths: NO DIFFERENCES
+COMPARE 36648655 to b4376246 selected execution paths: NO DIFFERENCES
+exit-bar query [{"bar_id": 440271, "open_time_ms": 1788445200000, "o": 29343.5, "h": 29360.0, "l": 29342.25, "c": 29348.0}]
+exit fill433 [{"id": 433, "exchange_trade_id": "nt8-exit-591", "side": "BUY", "price": 29355.0, "created_at": 1788445245677}]
+Selected stored session fields; missing offsets use source default, not a runtime override audit {"plan_enabled": true, "plan_mode": "strict", "eod_flat_ct": "14:45", "eod_flat_offset_min": null, "sessions": [{"session": "NY", "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 10}, {"session": "ASIA", "enable": true, "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 7}, {"session": "LONDON", "enable": true, "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 10}]}
+first distinct stop snapshot states 105 see stop_snapshot_states.json
+trace position591 selected fields [{"id": 591, "source": "reconcile", "entry_time": 1788444314627, "exit_time": 1788445245677, "entry_price": 29285.0, "exit_price": 29355.0, "pnl_corrected": -140.0, "mae": 75.0, "mfe": 43.5, "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265", "plan_version": 2, "cited_scenario_id": "S1", "adherence_grade": "A", "plan_matched": 1}]
+trace arm35 selected fields [{"id": 35, "plan_id": "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265", "version": 2, "scenario": "S1", "leg_index": 0, "state": "filled", "signal_id": "f2b1eb20-f89e-4a88-bcff-5ce971d17861", "entry_px": 29285.0, "stop_px": 29351.62847289964, "target_px": 29144.5, "fill_price": 29285.0, "created_at": "2026-09-03 09:02:54.662235809-05:00", "updated_at": "2026-09-03 15:28:29.204123431+00:00"}]

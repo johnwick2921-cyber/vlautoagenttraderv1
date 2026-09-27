@@ -1,0 +1,42 @@
+cycles since 08-19: 7810
+actions: [('wait', 6399), ('<unparsable>', 1301), ('open_short', 85), ('open_long', 22), ('close_short', 2), ('hold', 1)]
+
+open_* by day:
+2026-08-19 open_long 1 open_short 11 wait 290 hold 0 close 0
+2026-08-20 open_long 1 open_short 17 wait 399 hold 0 close 0
+2026-08-21 open_long 2 open_short 14 wait 277 hold 0 close 0
+2026-08-23 open_long 0 open_short 1 wait 53 hold 0 close 0
+2026-08-24 open_long 2 open_short 6 wait 520 hold 0 close 0
+2026-08-25 open_long 5 open_short 6 wait 440 hold 0 close 1
+2026-08-26 open_long 5 open_short 5 wait 486 hold 0 close 0
+2026-08-27 open_long 0 open_short 4 wait 556 hold 0 close 0
+2026-08-28 open_long 0 open_short 0 wait 553 hold 1 close 1
+2026-08-30 open_long 0 open_short 0 wait 39 hold 0 close 0
+2026-08-31 open_long 0 open_short 0 wait 430 hold 0 close 0
+2026-09-01 open_long 1 open_short 2 wait 639 hold 0 close 0
+2026-09-02 open_long 5 open_short 3 wait 622 hold 0 close 0
+2026-09-03 open_long 0 open_short 3 wait 600 hold 0 close 0
+2026-09-04 open_long 0 open_short 13 wait 495 hold 0 close 0
+
+risk_check_error top:
+  238 superseded_wait
+  27 stale_bar_discarded
+  13 entry_gate: refused: strict — plan_mode=strict executes plan scenarios
+  6 session_gate: ASIA trade cap reached (3/3 this session)
+  6 last_entry_cutoff: past last-entry 13:00 CT
+  2 last_entry_cutoff: past last-entry 01:45 CT (ASIA)
+  2 session_gate: outside all session windows (overnight/interim)
+  2 last_entry_cutoff: past last-entry 08:15 CT (LONDON)
+  1 entry_gate: entry_gate: R:R 1.76 below floor 2.00 at execution price 2
+  1 entry_gate: entry_gate: R:R 1.73 below floor 2.00 at execution price 2
+  1 entry_gate: entry_gate: R:R 1.42 below floor 2.00 at execution price 2
+  1 entry_gate: entry_gate: stop 29230.00 too close (22.00 < 450.56 = 1.5×
+  1 entry_gate: entry_gate: stop 29226.50 too close (21.00 < 450.56 = 1.5×
+  1 entry_gate: entry_gate: stop 29231.00 too close (25.25 < 450.56 = 1.5×
+  1 stale_reeval_refused: sl_breached_in_fresh_bar (high 29158.00 >= sl 29
+
+execution_log refusal classes top:
+  19 entry_gate
+  10 last_entry_cutoff
+  10 session_gate
+  1 dead_man_watchdog

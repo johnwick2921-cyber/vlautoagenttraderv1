@@ -1,0 +1,12 @@
+trader/auto_trader_levelstate.go:262: recordResearchPermissions(resolvedPlanID, plan.Version, string(metaBlob), now) -> // MUTATION removed permission emission
+09-08 16:06:42 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 16:06:42 [INFO] kernel/levels_score.go:611 🗺️ seated 4/5 in-band levels (proximity band ±50pt, 4 of them retained)
+09-08 16:06:42 [INFO] kernel/confirmation_telemetry.go:33 🔎 confirmation verdict: rule=1x5m_close outcome=NOT MET evaluated_ms=1788879600000 · best run 0/1 completed closes below 30000.00 · 5m bucket 2026-09-08 09:50 CT–2026-09-08 09:55 CT · close 2026-09-08 09:55 CT · closed=true · reference=2026-09-08 09:00 CT (plan publication)
+09-08 16:06:42 [INFO] trader/auto_trader.go:44 [trader_id=t1] scenario death recorded: NY v2 S1 cause=invalidated anchor=30000.00 price=30027.00 first observed=2026-09-08 10:00 CT basis=heuristic — price accepted through the level against the trade — it flipped roles
+09-08 16:06:42 [WARN] trader/auto_trader.go:49 [trader_id=t1] plan exhaustion observed at 2026-09-08 10:00 CT: v2 tradeable 0/1 by current scenario evaluator; warn-only, no exhaustion wake; replan budget 2 remaining; wake_min_interval_min=30; cutoff=25m, cooldown=30m unchanged
+09-08 16:06:42 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🎯 scenario S1 → ≈invalidated @ 30000.00 (price accepted through the level against the trade — it flipped roles — anchor estimate; arm gate uses this verdict, authored invalidation is separate)
+--- FAIL: TestStageAPermissionAndOutcomeProductionPaths (0.17s)
+    research_snapshot_test.go:165: production record hooks absent: map[candidate:0 exec:1 market:0 plan:0 scenario:0]
+FAIL
+FAIL	nofx/trader	0.176s
+FAIL

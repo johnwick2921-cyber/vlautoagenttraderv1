@@ -1,0 +1,26 @@
+=== MFE in ATR5m units by condition (p50/p80/p95) and target distance in ATR ===
+reject           n=29 MFE/ATR p50=1.4 p80=2.66 p95=3.48 | MAE/ATR p50=0.79 p80=1.59 | planned target/ATR p50=3.01 p25=2.49  <n<30>
+breakout_retest  n= 9 MFE/ATR p50=1.17 p80=1.8 p95=2.6 | MAE/ATR p50=1.56 p80=1.9 | planned target/ATR p50=3.75 p25=3.68  <n<30>
+(none)           n= 6 MFE/ATR p50=0.57 p80=0.95 p95=1.81 | MAE/ATR p50=0.79 p80=2.03 | planned target/ATR p50=3.97 p25=2.97  <n<30>
+acceptance       n= 5 MFE/ATR p50=0.58 p80=2.61 p95=2.74 | MAE/ATR p50=1.1 p80=1.91 | planned target/ATR p50=3.58 p25=3.32  <n<30>
+sweep_reclaim    n= 6 MFE/ATR p50=0.83 p80=1.2 p95=1.72 | MAE/ATR p50=1.48 p80=2.08 | planned target/ATR p50=4.18 p25=3.27  <n<30>
+reclaim          n= 5 MFE/ATR p50=0.42 p80=1.02 p95=1.31 | MAE/ATR p50=1.93 p80=2.24 | planned target/ATR p50=6.28 p25=5.79  <n<30>
+hold             n= 1 MFE/ATR p50=3.29 p80=3.29 p95=3.29 | MAE/ATR p50=0.81 p80=0.81 | planned target/ATR p50=3.01 p25=3.01  <n<30>
+
+=== all trades: MFE/ATR and planned target/ATR ===
+MFE/ATR n 61 p25 0.31 p50 1.03 p80 2.47 p95 3.13
+planned target/ATR n 59 p25 2.72 p50 3.44 p75 4.44
+share of trades whose MFE reached the planned target distance: 8 of 59
+
+=== exit-at-target check (|exit - planned target| <= 2 pts) ===
+target-hit ids: ['521', '523', '524', '529', '532', '536', '549', '555', '582', '584'] n= 10
+stop-hit ids n= 37 ['522', '525', '527', '528', '531', '533', '534', '535', '537', '539', '540', '541', '543', '544', '545', '546', '547', '548', '550', '552', '553', '554', '556', '559', '561', '562', '563', '564', '565', '567', '583', '585', '586', '587', '588', '589', '590']
+neither (EOD/manual/close/unknown) n= 18 ['526', '530', '538', '542', '551', '557', '558', '560', '566', '568', '569', '570', '571', '575', '578', '580', '581', '591']
+
+=== post-0B subset (entry >= 2026-09-02 07:49 CT) ===
+[('589', '-155.0', 'breakout_retest', '2.07'), ('590', '-99.0', 'breakout_retest', '1.47'), ('591', '-140.0', 'reject', '1.43')]
+
+=== winners: hold and MFE timing proxies ===
+winners hold p50 38.4 losers hold p50 21.4
+losers with MFE >= 1.0×stop before dying (had a 1R paper gain): 8 of 41 ['533', '534', '539', '548', '552', '554', '563', '567']
+losers with MFE >= 0.5×stop: 20

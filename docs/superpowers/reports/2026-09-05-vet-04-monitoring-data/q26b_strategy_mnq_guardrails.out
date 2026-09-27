@@ -1,0 +1,14 @@
+ai_config.risk_control.min_risk_reward_ratio = 2
+ai_config.risk_control.guardrails_enabled = False
+ai_config.risk_control.daily_loss_limit_usd = 450
+ai_config.risk_control.daily_loss_enabled = False
+ai_config.risk_control.daily_profit_target_usd = 900
+ai_config.risk_control.daily_profit_enabled = False
+ai_config.risk_control.max_daily_trades = 3
+ai_config.risk_control.max_daily_trades_enabled = False
+ai_config.risk_control.max_contracts_per_order = 2
+ai_config.risk_control.max_contracts_enabled = False
+ai_config.risk_control.breakeven_enabled = True
+ai_config.risk_control.breakeven_trigger_points = 40
+ai_config.risk_control.trailing_enabled = True
+ai_config.risk_control.trailing_atr_period = 14

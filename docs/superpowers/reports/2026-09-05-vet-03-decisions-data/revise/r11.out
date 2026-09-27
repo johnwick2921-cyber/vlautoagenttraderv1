@@ -1,0 +1,145 @@
+### A1 plan_band + side on armed rows / long-short splits (compliant 58)
+    566 reconcile UNRESOLVABLE   band=  97.0 LONG 2026-08-27 11:32:53
+    567 reconcile 2026-08-27:A S1 ASIA band= armed_fill -42.0 SHORT 2026-08-28 01:22:04
+    568 reconcile 2026-08-28:L S1 LONDON band= armed_fill -32.0 SHORT 2026-08-28 07:19:46
+    569 reconcile 2026-08-28:N S1 NY band= armed_fill 63.0 SHORT 2026-08-28 08:44:28
+    570 reconcile 2026-08-28:N S2 NY band= armed_fill 17.0 LONG 2026-08-28 12:10:21
+    571 reconcile UNRESOLVABLE   band=  -44.5 LONG 2026-08-30 17:38:33
+    575 reconcile 2026-08-31:N S2 NY band= armed_fill 32.5 SHORT 2026-08-31 09:59:18
+    578 reconcile 2026-08-31:N S1 NY band= armed_fill 92.0 LONG 2026-08-31 12:26:48
+    580 reconcile UNRESOLVABLE   band=  39.5 SHORT 2026-08-31 13:37:08
+    582 armed_entry 2026-09-01:L S2 LONDON band=  129.5 SHORT 2026-09-01 05:23:28
+    584 reconcile 2026-09-01:L S2 LONDON band= armed_fill 106.0 SHORT 2026-09-01 08:36:47
+    585 armed_entry 2026-09-01:N S1 NY band=  -77.5 SHORT 2026-09-01 09:31:08
+    586 reconcile 2026-09-01:N S3 NY band= armed_fill -54.0 LONG 2026-09-01 13:33:06
+    591 reconcile 2026-09-03:N S1 NY band= armed_fill -140.0 SHORT 2026-09-03 09:05:14
+ == BROAD65
+  armed_fill band (reconcile+armed_fill): n=9 sum=42.50 mean=4.72 sd=79.15 se=26.38 t=0.18 W/L/F=5/4/0 win=55.6% [26.7%,81.1%] ids=[567, 568, 569, 570, 575, 578, 584, 586, 591]
+  armed lineage any (reconcile|armed_entry): n=14 sum=186.50 mean=13.32 sd=80.17 se=21.43 t=0.62 W/L/F=8/6/0 win=57.1% [32.6%,78.6%] ids=[566, 567, 568, 569, 570, 571, 575, 578, 580, 582, 584, 585, 586, 591]
+  non-system remainder not armed_fill: n=5 sum=144.00 mean=28.80 sd=88.85 se=39.74 t=0.72 W/L/F=3/2/0 win=60.0% [23.1%,88.2%] ids=[566, 571, 580, 582, 585]
+  LONG: n=23 sum=-874.00 mean=-38.00 sd=77.23 se=16.10 t=-2.36 W/L/F=5/18/0 win=21.7% [9.7%,41.9%] ids=[525, 531, 540, 541, 545, 546, 555, 556, 557, 558, 559, 561, 563, 566, 570, 571, 578, 583, 586, 587, 588, 589, 590]
+  SHORT: n=42 sum=310.07 mean=7.38 sd=109.67 se=16.92 t=0.44 W/L/F=16/24/2 win=40.0% [26.3%,55.4%] ids=[521, 522, 523, 524, 526, 527, 528, 529, 530, 532, 533, 534, 535, 536, 537, 538, 539, 542, 543, 544, 547, 548, 549, 550, 551, 552, 553, 554, 560, 562, 564, 565, 567, 568, 569, 575, 580, 581, 582, 584, 585, 591]
+  LONG system: n=18 sum=-981.50 mean=-54.53 sd=71.89 se=16.94 t=-3.22 W/L/F=2/16/0 win=11.1% [3.1%,32.8%] ids=[525, 531, 540, 541, 545, 546, 555, 556, 557, 558, 559, 561, 563, 583, 587, 588, 589, 590]
+  LONG armed: n=5 sum=107.50 mean=21.50 sd=72.02 se=32.21 t=0.67 W/L/F=3/2/0 win=60.0% [23.1%,88.2%] ids=[566, 570, 571, 578, 586]
+  SHORT system: n=33 sum=231.07 mean=7.00 sd=116.03 se=20.20 t=0.35 W/L/F=11/20/2 win=35.5% [21.1%,53.1%] ids=[521, 522, 523, 524, 526, 527, 528, 529, 530, 532, 533, 534, 535, 536, 537, 538, 539, 542, 543, 544, 547, 548, 549, 550, 551, 552, 553, 554, 560, 562, 564, 565, 581]
+  SHORT armed: n=9 sum=79.00 mean=8.78 sd=88.24 se=29.41 t=0.30 W/L/F=5/4/0 win=55.6% [26.7%,81.1%] ids=[567, 568, 569, 575, 580, 582, 584, 585, 591]
+  S1 vs S2-S4: diff=37.29 se=27.83 t=1.34
+  ASIA vs LONDON+NY: diff=-36.57 se=22.53 t=-1.62; ASIA one-sample t=-2.59; LONDON+NY mean CI=[-33.58,37.68]
+  system one-sample: mean=-14.71 se=14.86 t=-0.99 CI=[-43.83,14.40]
+ == COMPLIANT58
+  armed_fill band (reconcile+armed_fill): n=9 sum=42.50 mean=4.72 sd=79.15 se=26.38 t=0.18 W/L/F=5/4/0 win=55.6% [26.7%,81.1%] ids=[567, 568, 569, 570, 575, 578, 584, 586, 591]
+  armed lineage any (reconcile|armed_entry): n=11 sum=94.50 mean=8.59 sd=85.02 se=25.63 t=0.34 W/L/F=6/5/0 win=54.5% [28.0%,78.7%] ids=[567, 568, 569, 570, 575, 578, 582, 584, 585, 586, 591]
+  non-system remainder not armed_fill: n=2 sum=52.00 mean=26.00 sd=146.37 se=103.50 t=0.25 W/L/F=1/1/0 win=50.0% [9.5%,90.5%] ids=[582, 585]
+  LONG: n=19 sum=-808.50 mean=-42.55 sd=78.15 se=17.93 t=-2.37 W/L/F=4/15/0 win=21.1% [8.5%,43.3%] ids=[525, 531, 540, 541, 555, 556, 557, 558, 559, 561, 563, 570, 578, 583, 586, 587, 588, 589, 590]
+  SHORT: n=39 sum=342.07 mean=8.77 sd=112.81 se=18.06 t=0.49 W/L/F=14/23/2 win=37.8% [24.1%,53.9%] ids=[521, 522, 523, 524, 526, 527, 528, 529, 532, 533, 534, 535, 536, 537, 538, 542, 543, 544, 547, 548, 549, 550, 551, 552, 553, 554, 560, 562, 564, 565, 567, 568, 569, 575, 581, 582, 584, 585, 591]
+  LONG system: n=16 sum=-863.50 mean=-53.97 sd=75.75 se=18.94 t=-2.85 W/L/F=2/14/0 win=12.5% [3.5%,36.0%] ids=[525, 531, 540, 541, 555, 556, 557, 558, 559, 561, 563, 583, 587, 588, 589, 590]
+  LONG armed: n=3 sum=55.00 mean=18.33 sd=73.01 se=42.15 t=0.43 W/L/F=2/1/0 win=66.7% [20.8%,93.9%] ids=[570, 578, 586]
+  SHORT system: n=31 sum=302.57 mean=9.76 sd=118.63 se=21.31 t=0.46 W/L/F=10/19/2 win=34.5% [19.9%,52.7%] ids=[521, 522, 523, 524, 526, 527, 528, 529, 532, 533, 534, 535, 536, 537, 538, 542, 543, 544, 547, 548, 549, 550, 551, 552, 553, 554, 560, 562, 564, 565, 581]
+  SHORT armed: n=8 sum=39.50 mean=4.94 sd=93.53 se=33.07 t=0.15 W/L/F=4/4/0 win=50.0% [21.5%,78.5%] ids=[567, 568, 569, 575, 582, 584, 585, 591]
+  S1 vs S2-S4: diff=37.29 se=27.83 t=1.34
+  ASIA vs LONDON+NY: diff=-36.57 se=22.53 t=-1.62; ASIA one-sample t=-2.59; LONDON+NY mean CI=[-33.58,37.68]
+  system one-sample: mean=-11.93 se=15.97 t=-0.75 CI=[-43.23,19.36]
+### A2 rejects classified by the STATED definition (void close-back / displacement 0.00 / BD_MIN_CLOSES) vs the q07 classifier
+  total rejects 64
+  q07 classifier ('breakdown_continue' in s): 38 [70, 73, 74, 75, 77, 78, 80, 81, 83, 88, 92, 94, 96, 98, 100, 101, 102, 103, 105, 107, 108, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119, 121, 124, 126, 127, 129, 130, 132]
+  stated definition: 32 [73, 74, 75, 77, 83, 88, 92, 94, 96, 98, 100, 101, 102, 103, 105, 107, 108, 109, 110, 111, 113, 114, 115, 117, 119, 121, 124, 126, 127, 129, 130, 132]
+    by kind: Counter({'void': 21, 'disp': 6, 'bdmin': 5})
+  q07-but-not-stated: 6
+      (70, 'scenario[0].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displa')
+      (78, 'scenario[0].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displa')
+      (80, 'arm legs on breakdown_continue — arm_legs_sweep_reclaim_only (the split entry is the sweep_reclaim contract; o')
+      (81, 'scenario[3].confirm2.rule "touch" not allowed for breakup_continue — entry law: 1 confirming close + displacem')
+      (112, 'scenario[1].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displa')
+      (118, 'scenario[0].confirm2.rule "touch" not allowed for breakdown_continue — entry law: 1 confirming close + displac')
+  stated/64: 32/64 = 50.0% [38.1%, 61.9%]
+  q07/64: 38/64 = 59.4% [47.1%, 70.5%]
+  families with stated def:
+      continuation law (stated def) 32
+      confirm-rule vocabulary/not-allowed 7
+      TRANSPORT 6
+      arm legs contract 5
+      fade_requires_touch 5
+      arm requires entry_mode=pullback 5
+      gap-up trigger law 2
+      retest distance 1
+      level cap 1
+   id 70 scenario[0].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7);
+   id 78 scenario[0].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7);
+   id 80 arm legs on breakdown_continue — arm_legs_sweep_reclaim_only (the split entry is the sweep_reclaim contract; other conditions arm single)
+   id 81 scenario[3].confirm2.rule "touch" not allowed for breakup_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 2x
+   id 112 scenario[1].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7);
+   id 118 scenario[0].confirm2.rule "touch" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 
+### A3 armed_orders: flap deaths ids 62-102; reaper; marketable; created_at CT
+  ids 62-102 count 25 with entry_px 29591.02: 20
+  deaths in 62-102 (all): Counter({'boot_sweep: pre-boot order, process restarted': 8, 'no order_update within stale window (reconnect/reconcile)': 7, 'gate changed: rr': 4, 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)': 4, 'no active plan': 1, 'cancelled in NT8': 1})
+  deaths in 62-102 @29591.02: Counter({'boot_sweep: pre-boot order, process restarted': 8, 'no order_update within stale window (reconnect/reconcile)': 7, 'gate changed: rr': 4, 'cancelled in NT8': 1})
+  other rows in range: [(92, 'S1', 29657.38, 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)'), (94, 'S1', 29657.38, 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)'), (96, 'S1', 29657.38, 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)'), (98, 'S1', 29657.38, 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)'), (100, 'S1', 29720.0, 'no active plan')]
+  62-102 created CT min/max: 2026-09-04 10:10:04 2026-09-04 11:29:07 ; id 101: 2026-09-04 10:52:00 id 102: 2026-09-04 10:53:11
+  placement_seq in 62-102 @29591.02: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  id 38: [(38, 'cancelled', 'gate changed: rr', 29591.02, 'S2', 'sweep_reclaim', 0, '2026-09-04 10:05:00', '2026-09-04 10:06:05')]
+  all 'gate changed: rr' rows: [(38, '2026-09-04 10:05:00', '2026-09-04 10:06:05'), (62, '2026-09-04 10:10:04', '2026-09-04 10:12:04'), (65, '2026-09-04 10:15:01', '2026-09-04 10:18:03'), (67, '2026-09-04 10:16:03', '2026-09-04 10:18:03'), (70, '2026-09-04 10:20:03', '2026-09-04 10:22:03')]
+  stale-window rows: 12 [(22, '2026-08-31'), (29, '2026-09-01'), (30, '2026-09-01'), (31, '2026-09-02'), (39, '2026-09-04'), (73, '2026-09-04'), (75, '2026-09-04'), (77, '2026-09-04'), (79, '2026-09-04'), (81, '2026-09-04'), (83, '2026-09-04'), (85, '2026-09-04')]
+  marketable rows: 6 [(17, '2026-08-31 08:13:51'), (25, '2026-09-01 05:35:28'), (27, '2026-09-01 11:27:07'), (33, '2026-09-02 14:10:29'), (34, '2026-09-02 22:15:01'), (36, '2026-09-03 09:20:47')]
+  boot_sweep rows: 8 [(87, '2026-09-04'), (89, '2026-09-04'), (91, '2026-09-04'), (93, '2026-09-04'), (95, '2026-09-04'), (97, '2026-09-04'), (99, '2026-09-04'), (101, '2026-09-04')]
+  test-session arms: [1, 2, 3, 4, 15, 16]
+  filled: [(5, 'fill@29621.00'), (6, 'fill@29642.00'), (9, 'fill@29700.00'), (10, 'fill@29463.25'), (15, 'e7_farside_test:'), (20, 'fill@29459.00'), (21, 'fill@29413.00'), (24, ''), (28, ''), (35, '')]
+  arm 6: [(6, 'filled', 'fill@29642.00', 29702.0, 'short')]
+  stop_px arm 6: (6, 29702.0, 29726.7, 29644.38, 0.0, 'fill@29642.00')
+  kind x condition x side: Counter({('stop_entry', 'reclaim', 'SHORT'): 20, ('stop_entry', 'sweep_reclaim', 'SHORT'): 1})
+### A4 decision_records open intents 09-03 CT and since strict 10:43 CT
+    (36864, '2026-09-03 02:12:56', '["AI call duration: 36469 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: R:R 1.76 ', 'entry_gate: entry_gate: R:R 1.76 below floor 2.00 at executi')
+    (37304, '2026-09-03 20:35:06', '["AI call duration: 60074 ms","stale_reeval outcome=pass (superseded entry re-validated on', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37305, '2026-09-03 20:37:51', '["AI call duration: 31852 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37306, '2026-09-03 20:39:40', '["AI call duration: 95399 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37307, '2026-09-03 20:42:27', '["AI call duration: 44451 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37308, '2026-09-03 20:43:53', '["AI call duration: 41086 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37310, '2026-09-03 20:49:04', '["AI call duration: 144482 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pl', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37311, '2026-09-03 20:52:05', '["AI call duration: 35594 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37313, '2026-09-03 20:54:28', '["AI call duration: 85895 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37315, '2026-09-03 20:58:56', '["AI call duration: 84566 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37318, '2026-09-03 21:03:22', '["AI call duration: 82148 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37319, '2026-09-03 21:06:44', '["AI call duration: 98968 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37320, '2026-09-03 21:09:03', '["AI call duration: 60890 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37322, '2026-09-03 21:12:40', '["AI call duration: 123727 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pl', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+    (37382, '2026-09-03 23:35:11', '["AI call duration: 5935 ms","✓ MNQ wait succeeded"]', '')
+    (37392, '2026-09-03 23:55:15', '["AI call duration: 8798 ms","✓ MNQ wait succeeded"]', '')
+  count 09-03: 16 since 10:43: 15
+  c8c90dcc: c8c90dcc 2026-09-03 10:43:09 -0500 feat(R4): plan_mode strict — first implementation, by owner ruling, as leg 0 of the ONE EntryGate
+### A5 plans bias_label by date
+  by UTC date: [('2026-09-03', 13), ('2026-09-04', 14)]
+  by CT date: [('2026-09-03', 16), ('2026-09-04', 11)]
+  first: ('2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265', 14, '2026-09-02', 'ASIA', '2026-09-03 05:08:45.841316629+00:00')
+  total plans: (254,) distinct versions with doc: (254,)
+  by trade_date: [('2026-09-02', 2), ('2026-09-03', 16), ('2026-09-04', 9)]
+### A6 inter-version gaps since 09-01 (ASIA/LONDON/NY)
+  n=68 versions=79 median(statistics)=35.47 sorted[32..35]=[33.02, 35.2, 35.73, 35.83] mean=60.8 min=6.5 max=400.9
+### A7 MFE>=2R on compliant 58: own authored stop; 568 via armed_orders state_reason fill@
+  resolved n=54; excluded [(569, 'no stop'), (575, 'no stop'), (582, 'no stop'), (585, 'no stop')]
+  MFE>=2R: 13/54 = 24.1% [14.6%, 36.9%]
+  MFE>=1R: 21/54 = 38.9% [27.0%, 52.2%]
+  mfe_R median=0.75 p75(interp)=1.85 p75(rank 3n//4)=1.87
+  568 row: [(568, 'SHORT', 29642.0, 84.70000000000073, 1.75, 0.020661157024793212, 17.0, -32.0, 'arm 6')]
+  winners n=15 MAE/R median=0.370 max=0.967; losers n=37 MAE/R median=1.048 min=0.201
+  losers with MAE/R<0.9: [(568, 0.201)]
+  R pts median: 33.625
+  fixed-R target counterfactual EV (per trade, R units): +T if mfe_R>=T; else -1 if mae_R>=1; else realized R
+    T=0.5: EV=+0.035R reach=36/54
+    T=0.67: EV=-0.069R reach=29/54
+    T=1.0: EV=-0.099R reach=21/54
+    T=1.5: EV=-0.090R reach=17/54
+    T=1.79: EV=-0.039R reach=15/54
+    T=2.0: EV=-0.062R reach=13/54
+    T=3.0: EV=-0.062R reach=4/54
+  realized mean R=-0.050
+### A8 saved MNQ strategy config knobs
+  strategies bound: [('a5b7662e-7bf7-49bb-9f09-7efa48f95ac8', 'MNQ')]
+  sessions_enabled: ['NY'] | replan_cap: 4 | approval_required: False | plan_mode: strict
+    session override: {'session': 'NY', 'enable': None, 'replan_cap': 4}
+    session override: {'session': 'ASIA', 'enable': True, 'replan_cap': 4}
+    session override: {'session': 'LONDON', 'enable': True, 'replan_cap': 4}
+  traders scan_interval: [('hoang', 2)]
+### A9 cycle_type x trigger since 08-27
+[('', '', 3400), ('', 'post_exit', 24), ('', 'stale_dodge', 436), ('watch', '', 210), ('watch', 'post_exit', 3), ('watch', 'stale_dodge', 29)]
+### A10 position 590 and cycle 26500
+(590, 29193.25, 29143.75, 'LONG', -99.0, 49.75, 1.0, '2026-09-02 10:37:17')
+[(36422, 26500, '2026-09-02 10:37:18', '["AI call duration: 67092 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","✓ MNQ open_l', '[\n  {\n    "symbol": "MNQ",\n    "action": "open_long",\n    "leverage": 1,\n    "position_size_usd": 58393,\n    "stop_loss": 29143.75,\n    "take_profit": 29317.25,\n    "confidence": 68,\n    "reasoning": "\\u003cdecision\\u003e\\n```json",\n    "cited_scenario": "S4"\n  }\n]')]
