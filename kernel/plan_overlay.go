@@ -1,6 +1,7 @@
 package kernel
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -31,8 +32,17 @@ func ApplyPatchStrict(doc []byte, patchJSON string) ([]byte, error) {
 	if err := json.Unmarshal([]byte(patchJSON), &ops); err != nil {
 		return nil, fmt.Errorf("patch is not a JSON op array: %w", err)
 	}
+	// UseNumber: a base machine scenario carries int64 run_epoch (UnixNano,
+	// ~1.79e18 — above float64's 2^53 exactness). Decoding through
+	// interface{} would round it to the nearest ~128ns on re-marshal, and
+	// every later fold would serve the ROUNDED epoch, so the placement gate
+	// refuses the recorded Picture entry forever with a false
+	// 'recorded by a previous run (reload)'. json.Number preserves the
+	// literal byte-for-byte through the patch application.
+	dec := json.NewDecoder(bytes.NewReader(doc))
+	dec.UseNumber()
 	var root interface{}
-	if err := json.Unmarshal(doc, &root); err != nil {
+	if err := dec.Decode(&root); err != nil {
 		return nil, fmt.Errorf("base doc invalid JSON: %w", err)
 	}
 	for i, op := range ops {
@@ -229,8 +239,13 @@ func decodeValue(raw json.RawMessage) (interface{}, error) {
 	if len(raw) == 0 {
 		return nil, fmt.Errorf("op requires a value")
 	}
+	// Same UseNumber discipline as ApplyPatchStrict: a `test` op compares the
+	// decoded op value against the decoded current value, and json.Number vs
+	// float64 would never DeepEqual.
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
 	var v interface{}
-	if err := json.Unmarshal(raw, &v); err != nil {
+	if err := dec.Decode(&v); err != nil {
 		return nil, fmt.Errorf("bad value JSON: %w", err)
 	}
 	return v, nil

@@ -1,0 +1,13 @@
+id  trade_date  session  kind     created_ct           head                                                                                      
+--  ----------  -------  -------  -------------------  ------------------------------------------------------------------------------------------
+55  2026-09-02  LONDON   session  2026-09-02 00:01:07  LONDON 2026-09-02 — — | 0 entries · realized +0.0 | outcome: flat                         
+56  2026-09-02  NY       session  2026-09-02 00:01:07  NY 2026-09-02 — — | 0 entries · realized +0.0 | outcome: flat                             
+57  2026-09-02  ASIA     session  2026-09-02 02:00:01  ASIA 2026-09-02 — — | 1 entries · realized -62.5 | outcome: red                           
+58  2026-09-02           daily    2026-09-02 15:00:29  2026-09-02 (daily) — — | 3 session(s), 4 entries · realized -381.5 | outcome: red | learni
+59  2026-09-03  LONDON   session  2026-09-03 00:00:56  LONDON 2026-09-03 — — | 0 entries · realized +0.0 | outcome: flat                         
+60  2026-09-03  NY       session  2026-09-03 00:00:56  NY 2026-09-03 — — | 0 entries · realized +0.0 | outcome: flat                             
+61  2026-09-03  ASIA     session  2026-09-03 02:00:56  ASIA 2026-09-03 — — | 0 entries · realized +0.0 | outcome: flat                           
+62  2026-09-03           daily    2026-09-03 15:01:15  2026-09-03 (daily) — — | 3 session(s), 1 entries · realized -140.0 | outcome: red | learni
+63  2026-09-04  LONDON   session  2026-09-04 00:00:56  LONDON 2026-09-04 — — | 0 entries · realized +0.0 | outcome: flat                         
+64  2026-09-04  NY       session  2026-09-04 00:00:56  NY 2026-09-04 — — | 0 entries · realized +0.0 | outcome: flat                             
+65  2026-09-04  ASIA     session  2026-09-04 02:00:46  ASIA 2026-09-04 — — | 0 entries · realized +0.0 | outcome: flat                           

@@ -1,0 +1,15 @@
+real filled arms: 9
+  arm   5 -> NO MATCHED POSITION (signal_id f14ea5dd…)
+  arm   6 -> pos 568  LONDON  S1   risk= 24.70pts ($ 49.40)  planned R:R=2.333  pnl=  -32.00  realised R=-0.648  src=reconcile
+  arm   9 -> NO MATCHED POSITION (signal_id 57cff804…)
+  arm  10 -> pos 570  NY      S2   risk= 50.00pts ($100.00)  planned R:R=2.165  pnl=  +17.00  realised R=+0.170  src=reconcile
+  arm  20 -> NO MATCHED POSITION (signal_id 060192ea…)
+  arm  21 -> NO MATCHED POSITION (signal_id f0bbe9af…)
+  arm  24 -> pos 584  LONDON  S2   risk= 24.00pts ($ 48.00)  planned R:R=2.208  pnl= +106.00  realised R=+2.208  src=reconcile
+  arm  28 -> pos 586  NY      S3   risk= 27.00pts ($ 54.00)  planned R:R=2.935  pnl=  -54.00  realised R=-1.000  src=reconcile
+  arm  35 -> pos 591  NY      S1   risk= 66.63pts ($133.26)  planned R:R=2.109  pnl= -140.00  realised R=-1.051  src=reconcile
+
+MATCHED n=5 ids arms [6, 10, 24, 28, 35] / positions [568, 570, 584, 586, 591]
+  planned R:R  mean=2.350  min=2.109  max=2.935
+  realised R   mean=-0.064  min=-1.051  max=+2.208  sum$=-103.00
+  wins 2/5; realised-to-planned ratio of means = -0.027

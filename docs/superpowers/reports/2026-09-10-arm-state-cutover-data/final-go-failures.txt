@@ -1,0 +1,35 @@
+09-10 12:00:46 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 arm REFUSED (session risk): no_trade_band: lunch no-trade window (12:00–13:30 CT) · no_trade_band refusals this session: 1
+--- FAIL: TestShadowDemotionAuthorsInertRow (0.77s)
+    shadow_demotion_test.go:145: shadowed arm must still AUTHOR a ledger row, got 0 (err=<nil>)
+09-10 12:00:47 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+
+09-10 12:00:47 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 arm REFUSED (session risk): no_trade_band: lunch no-trade window (12:00–13:30 CT) · no_trade_band refusals this session: 1
+--- FAIL: TestShadowDemotionE8WritesCounterfactual (0.61s)
+    shadow_demotion_test.go:190: E8 counterfactual rows = 0 err=<nil>, want ≥1 for the shadowed fvg setup
+2026/09/10 12:00:47 INFO tcp_server: listening addr=127.0.0.1:0
+
+2026/09/10 12:00:48 INFO tcp_server: client disconnected
+--- FAIL: TestShadowDemotionNoWireFrameOnLoopback (1.11s)
+    shadow_demotion_test.go:219: expected exactly one inert shadowed row, got []
+2026/09/10 12:00:48 INFO tcp_server: listening addr=127.0.0.1:0
+
+2026/09/10 12:00:51 INFO tcp_server: client disconnected
+--- FAIL: TestLiveConditionPlacesOnLoopback (2.72s)
+    shadow_demotion_test.go:251: live condition did NOT place — regression in the arm seam
+2026/09/10 12:00:51 INFO tcp_server: listening addr=127.0.0.1:0
+
+2026/09/10 12:00:56 INFO tcp_server: client disconnected
+--- FAIL: TestShadowedRestingOrderCancelledAtBoot (5.00s)
+    shadow_demotion_test.go:287: resting order must be swept to shadowed, got {ID:1 TraderID:trader-1 PlanID:2026-09-10:TEST:trader-1 Version:1 ArmedUnderVersion:1 Session:TEST Scenario:S1 Side:LONG EntryPx:100 StopPx:95 TargetPx:110 State:cancelled StateReason:no-trade band opened — no_trade_band: lunch no-trade window (12:00–13:30 CT) (ack timeout — flatten proceeds) EntryClass: SignalID:sig-pre-wave FillPrice:0 FillQuantity:0 BootID:2327252-1789059518260 LegIndex:0 LegCount:0 Kind: Condition: PlacementSeq:0 CancelRequestedAtMs:0 CancelAttempts:0 CancelSettledSnapshotID:0 CreatedAt:2026-09-10 17:00:52.086950737 +0000 UTC UpdatedAt:2026-09-10 17:00:56.114952186 +0000 UTC}
+09-10 12:00:56 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+
+09-10 12:00:56 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 arm REFUSED (session risk): no_trade_band: lunch no-trade window (12:00–13:30 CT) · no_trade_band refusals this session: 1
+--- FAIL: TestConfigFlipToLiveAllowsArming (0.56s)
+    shadow_demotion_test.go:307: live-configured condition must arm normally, got [] (err=<nil>)
+09-10 12:00:57 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+
+09-10 12:01:02 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 arm REFUSED (session risk): no_trade_band: lunch no-trade window (12:00–13:30 CT) · no_trade_band refusals this session: 1
+--- FAIL: TestSplitArmWritesTwoLedgerRows (0.83s)
+    split_entry_test.go:139: split arm must write 2 ledger rows (legs), got 0 ([])
+09-10 12:01:03 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+

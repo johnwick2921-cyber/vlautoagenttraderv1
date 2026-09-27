@@ -1,0 +1,12 @@
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received frame type=heartbeat
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received frame type=order_snapshot
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received frame type=accounts_list
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received accounts_list frame count=0
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 WARN tcp_server: accounts_list frame received but empty
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received frame type=account_balance
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received frame type=account_balance
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received frame type=positions
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: positions snapshot account=Sim101 count=0
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: received frame type=positions
+2026-09-04T17:27:17-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:17 INFO tcp_server: positions snapshot account=SimAccount1 count=0
+2026-09-04T17:27:25-05:00 DESKTOP-S4IA601 nofx-bin[1137991]: 2026/09/04 17:27:25 INFO tcp_server: received frame type=ack

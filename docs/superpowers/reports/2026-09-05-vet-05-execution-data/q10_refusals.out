@@ -1,0 +1,68 @@
+-- decision-path refusals (execution_log LIKE '%entry_gate%') by CT day since 09-02
+   ('2026-09-02', 5)
+   ('2026-09-03', 14)
+-- decision cycles by day since 09-02, with execution_status histogram
+   ('2026-09-02', 682, 6, 5)
+   ('2026-09-03', 596, 14, 14)
+   ('2026-09-04', 374, 0, 0)
+-- distinct refusal phrases in execution_log since 09-02 (first 90 chars)
+   1 ["AI call duration: 107225 ms","⛔ MNQ open_long refused: last_entry_cutoff: past last-entry 01:45 CT (ASIA)"]
+   1 ["AI call duration: 36043 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: stop 29231.00 too close (25.2
+   1 ["AI call duration: 50125 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","⛔
+   1 ["AI call duration: 29310 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: stop 29230.00 too close (22.0
+   1 ["AI call duration: 46385 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","⛔
+   1 ["AI call duration: 79711 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: R:R 1.73 below floor 2.00 at
+   1 ["AI call duration: 36469 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: R:R 1.76 below floor 2.00 at
+   1 ["AI call duration: 60074 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","⛔
+   1 ["AI call duration: 31852 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 95399 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 44451 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 41086 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 144482 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execu
+   1 ["AI call duration: 35594 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 85895 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 84566 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 82148 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 98968 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 60890 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execut
+   1 ["AI call duration: 123727 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict execu
+-- system_config arm_refusals counters
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:ASIA:rr', '2')
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:NY:rr', '3')
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:LONDON:rr', '1')
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:NY:rr', '1')
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:entry_gate:invalidated', '1')
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:rr', '1')
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:entry_gate:invalidated', '1')
+   ('arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:rr', '3')
+-- system_config keys resembling counters (distinct prefixes)
+   ('scenario_status', 43)
+   ('scenario_meta', 35)
+   ('plan_dormant_since', 23)
+   ('dayplan_reset', 19)
+   ('scenario_invalidated_at', 12)
+   ('arm_refusals_0b', 8)
+   ('transition', 7)
+   ('wake_cooldown_class47', 4)
+   ('wake_cutoff_class47', 3)
+   ('wake_stream_defer_class47', 1)
+   ('session_registry', 1)
+   ('repair_outcome_ok', 1)
+   ('repair_outcome_content', 1)
+   ('pnl_correction_2026_08_20_done', 1)
+   ('pnl_backfill_all_2026_08_27_done', 1)
+   ('nochase_arm_run_null', 1)
+   ('nochase_arm_ok', 1)
+   ('installation_id', 1)
+   ('half_days_seeded_keys', 1)
+   ('dayplan_pinned_model', 1)
+   ('dayplan_approval', 1)
+   ('dayplan_analytics_since', 1)
+   ('confirm_grace_sessions_seen', 1)
+   ('backfill_entry_confidence_done', 1)
+   ('attribution_sentinel_converge_2026_09_02', 1)
+   ('arms_boot_swept_class33', 1)
+   ('arm_superseded_unplaced_class47', 1)
+   ('arm_stop_unanchored_0b', 1)
+   ('agent_task_state_1406654900701708774', 1)
+   ('agent_task_stack_1406654900701708774', 1)

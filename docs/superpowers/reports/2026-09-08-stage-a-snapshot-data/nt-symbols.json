@@ -1,0 +1,1 @@
+[{"path": "/api/nt/symbols", "captured_ct": "2026-09-08T15:19:04.230928-05:00", "status": 200, "body": {"primary": "MNQ", "runtime_enabled": true, "states": {"ES": {"state": "subscribed", "contract": "ES 09-26", "updated_at": "2026-09-08T15:17:31.873638597-05:00"}, "MNQ": {"state": "subscribed", "contract": "MNQ 09-26", "updated_at": "2026-09-08T15:17:31.873618842-05:00"}}}}]

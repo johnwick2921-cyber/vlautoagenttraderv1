@@ -1,0 +1,5 @@
+table,writer_func,writer_file_line,production_call_site,call_site_file_line,gating,first_commit,commit_ts_ct
+touch_outcomes,TouchOutcomeStore.SaveOutcome,store/touch_outcomes.go:89,AutoTrader.recordDetectorOutputs,trader/detector_record.go:74,"at.store != nil (no feature flag)",130a4e70,2026-09-03 17:42:32
+touch_outcomes,AutoTrader.recordDetectorOutputs,trader/detector_record.go:23,assemblePlannerInputWithCtx,trader/auto_trader_planner.go:2333,"at.store != nil; upstream at.dayPlanEnabled() + plannerPreflight",f1d7cf51,2026-09-03 21:31:00
+candidate_pool,CandidatePoolStore.SavePool,store/candidate_pool.go:69,AutoTrader.recordDetectorOutputs,trader/detector_record.go:101,"at.store != nil (no feature flag)",130a4e70,2026-09-03 17:42:32
+candidate_pool,AutoTrader.recordDetectorOutputs,trader/detector_record.go:23,assemblePlannerInputWithCtx,trader/auto_trader_planner.go:2333,"at.store != nil; upstream at.dayPlanEnabled() + plannerPreflight",f1d7cf51,2026-09-03 21:31:00

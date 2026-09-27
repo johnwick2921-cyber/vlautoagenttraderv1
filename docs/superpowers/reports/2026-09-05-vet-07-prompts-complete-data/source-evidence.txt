@@ -1,0 +1,510 @@
+
+api/config_resolved.go
+--- api/config_resolved.go:83 ---
+81: 		return []resolvedField{}
+82: 	}
+83: 	out := make([]resolvedField, 0, 3)
+84: 
+85: 	// R1 — one R:R floor for the arm seam and the decision path.
+86: 	rr, rrSrc := store.ResolveMinRiskReward(cfg)
+87: 	savedRR := unsetSaved
+88: 	if cfg.RiskControl.MinRiskRewardRatio > 0 {
+
+kernel/arm_kind.go
+--- kernel/arm_kind.go:37 ---
+35: // fails if the two drift apart.
+36: func ArmKindFor(condition string) string {
+37: 	switch strings.ToLower(strings.TrimSpace(condition)) {
+38: 	// Rests AT a price: the entry is the level itself.
+39: 	//   reject                    — the anchor, one tick into the trade's favour
+40: 	//   fvg_entry                 — the gap edge or CE
+41: 	//   sweep_reclaim             — the split arm's legs rest at the sweep ref
+42: 	//   breakup/breakdown_continue — the PULLBACK limit at the broken level,
+--- kernel/arm_kind.go:89 ---
+87: // same hand typed both — checks nothing. Derived here, one source, and adding a
+88: // condition to ArmableCondition needs no edit in either place.
+89: func ArmableConditionsPipe() string {
+90: 	out := make([]string, 0, 8)
+91: 	for _, c := range KnownConditions() {
+92: 		if ArmableCondition(c) {
+93: 			out = append(out, c)
+94: 		}
+--- kernel/arm_kind.go:103 ---
+101: // used to type "breakout_retest|reclaim|hold|acceptance NEVER arm", which
+102: // contradicted the armable set outright once reclaim joined it.
+103: func NonArmableConditionsPipe() string {
+104: 	out := make([]string, 0, 8)
+105: 	for _, c := range KnownConditions() {
+106: 		if !ArmableCondition(c) && c != "sweep_reclaim" {
+107: 			out = append(out, c)
+108: 		}
+
+kernel/armed.go
+--- kernel/armed.go:17 ---
+15: // breakdown_continue/breakup_continue (waterfall-class, 2026-08-28) ARE
+16: // armable: the retest entry rests AT the broken level.
+17: func ArmableCondition(condition string) bool {
+18: 	switch strings.ToLower(strings.TrimSpace(condition)) {
+19: 	// reclaim added 2026-09-04 by owner ruling (arms-follow-bias, B): it arms
+20: 	// as a STOP-ENTRY beyond the reclaim trigger (ArmKindFor). Until then every
+21: 	// long-side play the planner favoured was un-armable, which is why long
+22: 	// arm-enablement sat at 4.3% while shorts ran at 44%.
+
+kernel/breakdown_continue.go
+--- kernel/breakdown_continue.go:74 ---
+72: }
+73: 
+74: func bdMaxLevelDistATR() float64 {
+75: 	if v := os.Getenv("BD_MAX_LEVEL_DIST_ATR"); v != "" {
+76: 		if n, err := strconv.ParseFloat(strings.TrimSpace(v), 64); err == nil && n > 0 {
+77: 			return n
+78: 		}
+79: 	}
+--- kernel/breakdown_continue.go:261 ---
+259: 		}
+260: 		if !immediate && !st.Leg1Met {
+261: 			return fmt.Errorf("%s %s: the tape shows NO confirming close beyond %.2f yet (%d confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)",
+262: 				s.ID, s.Condition, bd.Level, bdConfirmCloses())
+263: 		}
+264: 		if atr5m > 0 && st.BreakLegPts < bdMinDispATR()*atr5m {
+265: 			return fmt.Errorf("%s %s: measured displacement %.2f pts < BD_MIN_DISP_ATR %.1f×ATR5m (%.1f pts) — not a displacement move, %s",
+266: 				s.ID, s.Condition, st.BreakLegPts, bdMinDispATR(), bdMinDispATR()*atr5m, BreakdownDisplacementHint)
+
+kernel/condition_status.go
+--- kernel/condition_status.go:8 ---
+6: 	"strings"
+7: )
+8: 
+9: // SHADOW DEMOTION (0C, owner ruling 2026-08-31) — per-condition live|shadow
+10: // status. A shadowed condition MAY still be authored, validated, and scored by
+11: // the E8 counterfactual logger; it MUST NOT place any order at the arm seam.
+12: //
+13: // Resolution chain (class-8: quote the RESOLVED value, never the file default):
+--- kernel/condition_status.go:104 ---
+102: 		"breakout_retest", "fvg_entry", "breakdown_continue", "breakup_continue",
+103: 	}
+104: }
+105: 
+106: // ResolvedConditionStatuses resolves the status of EVERY known condition for
+107: // the given base/session maps + env (nil-safe). Used by the boot line and the
+108: // per-trader boot log so the ledger renders the RESOLVED map, never literals.
+109: func ResolvedConditionStatuses(base, session map[string]string, env string) map[string]string {
+
+kernel/displacement_feeds_forward.go
+--- kernel/displacement_feeds_forward.go:111 ---
+109: 			side = "down"
+110: 		}
+111: 		verdict := "BELOW the floor — not authorable as a waterfall"
+112: 		if r.Pts >= floor {
+113: 			verdict = "at or above the floor — authorable"
+114: 		}
+115: 		fmt.Fprintf(&b, "  %.2f %s — %.2f pts %s · %s\n", r.Price, label, r.Pts, side, verdict)
+116: 	}
+
+kernel/entry_law.go
+--- kernel/entry_law.go:1 ---
+1: package kernel
+2: 
+3: import (
+4: 	"fmt"
+5: 	"os"
+6: 	"sort"
+
+kernel/min_sl.go
+--- kernel/min_sl.go:34 ---
+32: //
+33: // Env MIN_SL_ATR_MULT overrides; 0 disables the gate entirely.
+34: const MinSLATRMultDefault = 1.5
+35: 
+36: // MinSLTickClearance is the level-clearance leg: a cited-scenario stop must
+37: // sit at least this many ticks BEYOND the anchor level/zone far edge. Stops
+38: // parked exactly at a level get run by the sweep; 2 ticks of clearance puts
+39: // the stop on the far side of the resting orders.
+
+kernel/plan_confirm.go
+--- kernel/plan_confirm.go:225 ---
+223: }
+224: 
+225: // AcceptHoldMin resolves ACCEPT_HOLD_MIN (E6, default 10) — the minutes of
+226: // 1m closes a time_hold confirm requires price to hold beyond its ref.
+227: func AcceptHoldMin() int {
+228: 	if v := strings.TrimSpace(os.Getenv("ACCEPT_HOLD_MIN")); v != "" {
+229: 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+230: 			return n
+
+kernel/plan_doc.go
+--- kernel/plan_doc.go:860 ---
+858: 	for i := 0; i < len(d.Levels); i++ {
+859: 		for j := i + 1; j < len(d.Levels); j++ {
+860: 			if math.Abs(d.Levels[i].Price-d.Levels[j].Price) <= LevelClusterTicks*0.25 {
+861: 				return fmt.Errorf("levels[%d] and [%d] are %.2f apart — duplicates within the cluster tolerance; collapse them into one entry",
+862: 					i, j, math.Abs(d.Levels[i].Price-d.Levels[j].Price))
+863: 			}
+864: 		}
+865: 	}
+--- kernel/plan_doc.go:882 ---
+880: 		return fmt.Errorf("machine level map is EMPTY at price %.2f — refusing to validate a plan against no universe (never stale, never uncalibrated)", facts.Price)
+881: 	}
+882: 	// OWNER RULING 2026-08-31 — the per-side COUNT concept is deleted. The
+883: 	// only surviving side guard is the data-earned 0-on-a-side hard fail
+884: 	// (the 2026-08-18 one-sided-map pathology). No quota, no WARN, no note.
+885: 	if below == 0 {
+886: 		return fmt.Errorf("0 levels below price %.2f — a plan must map both directions (the 2026-08-18 one-sided-map pathology)", facts.Price)
+887: 	}
+--- kernel/plan_doc.go:903 ---
+901: 	// continuation play, it is a re-entry into the old range. The trigger's
+902: 	// nearest numeric level must sit AT or beyond price in the gap direction.
+903: 	if facts.PDL > 0 && facts.Price < facts.PDL {
+904: 		if !continuationReachable(d.Scenarios, "short", facts.Price) {
+905: 			return fmt.Errorf("gap-down at %.2f (< PDL %.2f): the short scenario's trigger must reference a level ≤ current price (breakdown/retest), not a rally back above", facts.Price, facts.PDL)
+906: 		}
+907: 	}
+908: 	if facts.PDH > 0 && facts.Price > facts.PDH {
+--- kernel/plan_doc.go:905 ---
+903: 	if facts.PDL > 0 && facts.Price < facts.PDL {
+904: 		if !continuationReachable(d.Scenarios, "short", facts.Price) {
+905: 			return fmt.Errorf("gap-down at %.2f (< PDL %.2f): the short scenario's trigger must reference a level ≤ current price (breakdown/retest), not a rally back above", facts.Price, facts.PDL)
+906: 		}
+907: 	}
+908: 	if facts.PDH > 0 && facts.Price > facts.PDH {
+909: 		if !continuationReachable(d.Scenarios, "long", facts.Price) {
+910: 			return fmt.Errorf("gap-up at %.2f (> PDH %.2f): the long scenario's trigger must reference a level ≥ current price (breakout/retest), not a dip back below", facts.Price, facts.PDH)
+--- kernel/plan_doc.go:914 ---
+912: 	}
+913: 	// P0.2b — targets must be reachable: inside the proximity band.
+914: 	band := 1.5 * facts.DATR
+915: 	if band <= 0 {
+916: 		band = 0.012 * facts.Price // warm-up fallback
+917: 	}
+918: 	for i, s := range d.Scenarios {
+919: 		for _, t := range s.TargetChain {
+
+kernel/plan_render.go
+--- kernel/plan_render.go:161 ---
+159: 		b.WriteString("Levels:\n")
+160: 		for _, l := range doc.Levels {
+161: 			fmt.Fprintf(&b, "  %.2f %s [%s] %s\n", l.Price, l.Label, l.Grade, l.Instruction)
+162: 		}
+163: 	}
+164: 	b.WriteString("Scenarios:\n")
+165: 	for _, s := range doc.Scenarios {
+166: 		fmt.Fprintf(&b, "  %s [%s] %s %s: %s → %s · invalid %s\n",
+--- kernel/plan_render.go:166 ---
+164: 	b.WriteString("Scenarios:\n")
+165: 	for _, s := range doc.Scenarios {
+166: 		fmt.Fprintf(&b, "  %s [%s] %s %s: %s → %s · invalid %s\n",
+167: 			s.ID, s.Quality, s.Condition, s.Direction, s.Trigger, joinFloats(s.TargetChain), s.Invalid)
+168: 	}
+169: 	if len(doc.NoTrade) > 0 {
+170: 		// H4 (hygiene 2026-09-03) — the model's no_trade entries are PROSE it
+171: 		// wrote, not machine-evaluated constraints. Rendering them under a bare
+
+kernel/planner_prompt.go
+--- kernel/planner_prompt.go:162 ---
+160: 	b.WriteString("  3. inside the day (between PDH/PDL) → direction of close vs PDC (prior close), conviction LOW\n")
+161: 	b.WriteString("  4. closed OUTSIDE the prior day's range but now inside → NO bias (write neutral; trade the structure, not a thesis)\n")
+162: 	b.WriteString("  5. premium/discount: longs ONLY below the 50% mark of the dealing range, shorts ONLY above it\n")
+163: 	b.WriteString("  6. draw-on-liquidity: the runner target is the DRAW — the nearest opposing liquidity pool beyond the first target\n")
+164: 	fmt.Fprintf(&b, "  computed: PDH %.2f · PDL %.2f · PDC %.2f", pdh, pdl, pdc)
+165: 	// S-dispatch (2026-08-27) — the branch-5 premium/discount anchor is the
+166: 	// DEALING RANGE (prior-day swing hi/lo = PDH/PDL), not the value area. The
+167: 	// VA can be a few points wide (the 17:46 read printed "376% of range" off
+--- kernel/planner_prompt.go:416 ---
+414: 	}
+415: 	if in.Warming != "" {
+416: 		fmt.Fprintf(&b, "WARMING: %s (first-week honesty — narrate the machinery, not an edge).\n", in.Warming)
+417: 	}
+418: 	if in.FastTape {
+419: 		fmt.Fprintf(&b, "⚡ FAST TAPE — %s. Write the SHORTEST valid plan you can: fewer scenarios, tight prose. A fast market does not reward long deliberation.\n", in.FastTapeNote)
+420: 	}
+421: 	b.WriteString("\n")
+--- kernel/planner_prompt.go:654 ---
+652: 	// A4 — killzone weighting (advisory, not a gate).
+653: 	b.WriteString("## Killzone weighting (advisory)\n")
+654: 	b.WriteString(fmt.Sprintf("  NY AM %s–%s CT is the primary window; %s–%s CT is the premium FVG window; mind the macro minutes. ",
+655: 		ETtoCT("08:30"), ETtoCT("11:00"), ETtoCT("10:00"), ETtoCT("11:00")))
+656: 	b.WriteString("Conviction: down on Monday, up Thursday/Friday.\n\n")
+657: 
+658: 	// A5 — stop-doing line: bare acceptance entries have no edge.
+659: 	b.WriteString("## STOP-DOING (week evidence, advisory)\n")
+--- kernel/planner_prompt.go:690 ---
+688: 	}
+689: 	if has1HSDZone {
+690: 		htfRule += " — the nearest 1h supply/demand zone row in that section MUST be one of your included rows (setup-rung context, never a standalone trigger)"
+691: 	}
+692: 	return "## OUTPUT — one JSON object, reasoning FIRST, no prose outside it\n" +
+693: 		"{\n" +
+694: 		`  "reasoning": "<your read: what the auction is doing and why this plan — ≤200 words, decision-focused>",` + "\n" +
+695: 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
+--- kernel/planner_prompt.go:696 ---
+694: 		`  "reasoning": "<your read: what the auction is doing and why this plan — ≤200 words, decision-focused>",` + "\n" +
+695: 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
+696: 		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d, MUST include ≥3 below AND ≥3 above the current price`, maxL) + "\n" +
+697: 		fmt.Sprintf(`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B|C", "chain_after": "<S# of the sweep_reclaim this fvg_entry follows, or omit>", "confirm": {"rule": "touch|1x5m_close|2x5m_close|1m_mss|time_hold", "ref_price": <n>, "side": "above|below"}, "confirm2": {"rule": "<leg 2 rule>", "ref_price": <n>, "side": "above|below"} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), "fvg": {"fvg_lo": <n>, "fvg_hi": <n>, "entry_mode": "edge|ce", "displacement_atr": <n>, "origin_level": "<label>", "direction": "long|short"}, "breakdown": {"level": <n>, "level_label": "<label>", "entry_mode": "pullback|immediate"} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \"none — no break\" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), "arm": {"enabled": true, "entry": <n>, "stop": <n>, "target": <n>, "wait_confirm": true, "legs": [{"entry": <n>, "stop": <n>, "target": <n>, "size": 1, "wait_confirm": false, "rule": "<rule>"}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..%d — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition=="fvg_entry" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on %s (sweep_reclaim arms only via wait_confirm; %s NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules`, maxS, ArmableConditionsPipe(), NonArmableConditionsPipe()) + "\n" +
+698: 		NoTradeSchemaExample() + "\n" +
+699: 		`  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
+700: 		`  "death": {"price": <level>, "side": "below|above", "rule": "2x5m|5m_close"},` + "\n" +
+701: 		`  "flip": {"price": <level>, "side": "below|above", "rule": "2x5m|5m_close", "flip_to": "long|short"},  // NOTE: death/flip rules use their OWN vocabulary (2x5m | 5m_close) — NEVER the confirm enum; do not move a token between the two` + "\n" +
+--- kernel/planner_prompt.go:697 ---
+695: 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
+696: 		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d, MUST include ≥3 below AND ≥3 above the current price`, maxL) + "\n" +
+697: 		fmt.Sprintf(`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B|C", "chain_after": "<S# of the sweep_reclaim this fvg_entry follows, or omit>", "confirm": {"rule": "touch|1x5m_close|2x5m_close|1m_mss|time_hold", "ref_price": <n>, "side": "above|below"}, "confirm2": {"rule": "<leg 2 rule>", "ref_price": <n>, "side": "above|below"} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), "fvg": {"fvg_lo": <n>, "fvg_hi": <n>, "entry_mode": "edge|ce", "displacement_atr": <n>, "origin_level": "<label>", "direction": "long|short"}, "breakdown": {"level": <n>, "level_label": "<label>", "entry_mode": "pullback|immediate"} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \"none — no break\" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), "arm": {"enabled": true, "entry": <n>, "stop": <n>, "target": <n>, "wait_confirm": true, "legs": [{"entry": <n>, "stop": <n>, "target": <n>, "size": 1, "wait_confirm": false, "rule": "<rule>"}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..%d — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition=="fvg_entry" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on %s (sweep_reclaim arms only via wait_confirm; %s NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules`, maxS, ArmableConditionsPipe(), NonArmableConditionsPipe()) + "\n" +
+698: 		NoTradeSchemaExample() + "\n" +
+699: 		`  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
+700: 		`  "death": {"price": <level>, "side": "below|above", "rule": "2x5m|5m_close"},` + "\n" +
+701: 		`  "flip": {"price": <level>, "side": "below|above", "rule": "2x5m|5m_close", "flip_to": "long|short"},  // NOTE: death/flip rules use their OWN vocabulary (2x5m | 5m_close) — NEVER the confirm enum; do not move a token between the two` + "\n" +
+702: 		`  "day_type": "trend|balance|<optional>"` + "\n" +
+--- kernel/planner_prompt.go:704 ---
+702: 		`  "day_type": "trend|balance|<optional>"` + "\n" +
+703: 		"}\n" +
+704: 		"Rules: levels chosen ONLY from the ranked table above" + htfRule + "; levels MUST be at least 3 points apart — near-duplicates are merged by the system; S/D & FVG are confluence, never standalone. " +
+705: 		"Copy the EXACT label from the table row for the price you choose — never re-label a table level as a different anchor (a zone price relabeled 'PDH/PDL/PDC' is a phantom level and is REJECTED at write). " +
+706: 		"Quality: A+ = highest-conviction setup, A = strong, B = workable, C = machine-demoted (trigger level consumed at write — G5) — use C honestly for a demoted setup, never as a default. " +
+707: 		"The scenario MIX must follow the regime + day_type: a trend-down day gets breakdown/pullback-short plays, a trend-up day the reverse, balance days get two-sided plays — do NOT default to 2 longs + 1 rally-rejection short on every day. " +
+708: 		// CLASS 45 (2026-09-02): this used to order a CONDITION ("a continuation
+709: 		// short"), which the WATERFALL PLAY rule below binds to
+--- kernel/planner_prompt.go:730 ---
+728: 		"ARM SPLIT vs ARM SINGLE (class 38 — the validator refuses every other shape): legs[] are the sweep_reclaim SPLIT contract and nothing else — EXACTLY 2 legs, confirm=touch at the sweep ref, leg 1 rests there (wait_confirm false) and leg 2 chains (wait_confirm true) on confirm2 = 1m_mss or 1x5m_close with leg 2's rule EQUAL to confirm2.rule, and the top-level entry/stop/target mirror leg 1. EVERY other condition — breakdown_continue, breakup_continue, reject, fvg_entry — must arm SINGLE: arm{} with wait_confirm:true and no legs. A breakdown/breakup arm additionally needs breakdown{} with entry_mode=pullback. " +
+729: 		"ARMED ORDERS (the resting order IS the fast path — prefer it over a 2-minute debate at the touch). " +
+730: 		"ARMS FOLLOW THE BIAS: with the decision path closed, a RESTING ORDER IS THE ONLY WAY INTO THE MARKET — a scenario with no arm cannot trade, however well argued. Every scenario in the plan's bias direction that has a concrete trigger price MUST carry an arm. A long plan with no long arm is invalid; a short plan with no short arm is invalid, for the same reason and in the same words. If you cannot arm your own bias direction, say so in reasoning and state a NEUTRAL bias rather than arguing for a direction you have left no way to take. " +
+731: 		"WHICH CONDITIONS CAN BE ARMED — " + ArmableConditionsLine(ResolvedConditionStatuses(nil, nil, ShadowConditionsEnv())) + " " +
+732: 		"ENTRY TYPE FOLLOWS THE CONDITION (the machine derives it and REFUSES a contradiction): a play that rests AT a price is a limit (reject→limit, fvg_entry→limit, sweep_reclaim→limit); a play that is only valid once price travels BEYOND its trigger is a stop entry (reclaim→stop_entry — a BUY STOP above the reclaim level for a long, a SELL STOP below it for a short). A waterfall (breakup_continue→limit / breakdown_continue→limit) rests as a PULLBACK limit AT the broken level and chains on confirm leg 1 — do not author a stop entry for it. " +
+733: 		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 " + fmt.Sprintf("%.1f", MinSLATRMult()) + "\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). " +
+734: 		// A2 (2026-08-26) — condition×session guidance from the week ledger:
+735: 		// reject 75% win +665 in NY RTH vs acceptance 0% −157 and sweep_reclaim
+--- kernel/planner_prompt.go:733 ---
+731: 		"WHICH CONDITIONS CAN BE ARMED — " + ArmableConditionsLine(ResolvedConditionStatuses(nil, nil, ShadowConditionsEnv())) + " " +
+732: 		"ENTRY TYPE FOLLOWS THE CONDITION (the machine derives it and REFUSES a contradiction): a play that rests AT a price is a limit (reject→limit, fvg_entry→limit, sweep_reclaim→limit); a play that is only valid once price travels BEYOND its trigger is a stop entry (reclaim→stop_entry — a BUY STOP above the reclaim level for a long, a SELL STOP below it for a short). A waterfall (breakup_continue→limit / breakdown_continue→limit) rests as a PULLBACK limit AT the broken level and chains on confirm leg 1 — do not author a stop entry for it. " +
+733: 		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 " + fmt.Sprintf("%.1f", MinSLATRMult()) + "\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). " +
+734: 		// A2 (2026-08-26) — condition×session guidance from the week ledger:
+735: 		// reject 75% win +665 in NY RTH vs acceptance 0% −157 and sweep_reclaim
+736: 		// 0% −192. Advisory truth, not a hard rule.
+737: 		"Condition×session guidance (week evidence): reject-based setups are best in NY RTH (75% win, +665 this week); acceptance needs a clear displacement or skip (0% win this week); sweep_reclaim requires the reclaim CLOSE on the decision TF, never the wick alone (0% win this week). " +
+738: 		// WATERFALL PLAY (F1, 2026-08-28) — the momentum-follow class the 2026-08-28
+--- kernel/planner_prompt.go:752 ---
+750: 		// next liquidity below (above for longs); SL beyond the failed pullback
+751: 		// extreme, ≥1×ATR5m.
+752: 		"WATERFALL PLAY (F1): author breakdown_continue|breakup_continue when the tape shows one-sided delivery, a >1.2×ATR gap-and-go, or a waterfall after a failed rally — the momentum-follow class. breakdown{} = broken level + entry_mode; confirm = leg 1 (breakdown), confirm2 = leg 2 (failed retest). entry_mode=immediate is AI-path ONLY (no arm; the machine rejects immediate arms): the market entry fires on the CONFIRMING close (BD_MIN_CLOSES, default 1) and runs the FULL gate chain (min-SL ≥ 1.0×ATR5m, R:R ≥ min_risk_reward_ratio, min-conf, HTF veto) — CHOOSE immediate for no-retest waterfalls (one-sided delivery, displacement EXPANDING, price running away from the level): SL beyond the pullback extreme, target at the next liquidity pool. entry_mode=pullback is the ARM path (resting limit AT the broken level, chains on leg 1 — the pullback-that-fails FILLS it) — CHOOSE pullback when a retest is likely. " + // B3 (2026-08-26) — the ≤5-line noise-filter gate: the plan may include		// at most 5 near-duplicate LINE rows (within 3 points of each other);
+753: 		// keep the strongest anchor, drop the crowd.
+754: 		"NOISE FILTER (≤5): at most 5 of your included level rows may be line-levels clustered within 3 points of each other — keep the strongest of any such cluster, never a crowd. " +
+755: 		// FVG ENTRY MODEL (2026-08-26) — the 5th condition's ≤6-line playbook.
+756: 		"FVG ENTRY (fvg_entry): author when displacement off a Tier-1 level (VWAP/POC/PDH/PDL/ON/IB/fresh S/D) leaves a FRESH gap toward the trade direction · prefer the FIRST retrace (the freshness ladder applies to the gap as a zone) · entry_mode=ce for gaps > 20pts, edge for tighter · SL beyond the DISTAL edge · targets chain to the next liquidity (EQH/EQL, ON, PDH/PDL). Citations: NQ gap sweet spot 20–80pts; 1h+ fill ~70–80%; displacement floor per MSS research. " +
+757: 		NoTradeInstruction() +
+
+kernel/planner_repair.go
+--- kernel/planner_repair.go:53 ---
+51: // EVERY applicable excerpt, and the generic line is the fallback only when
+52: // nothing matched.
+53: func lawExcerptsFor(errors string) string {
+54: 	var out []string
+55: 	add := func(s string) {
+56: 		for _, have := range out {
+57: 			if have == s {
+58: 				return
+
+kernel/prompt_contract.go
+--- kernel/prompt_contract.go:24 ---
+22: // The list is deliberately literal: it is a contract, not a heuristic.
+23: 
+24: // PromptContract is one validator restriction and the prompt text that states
+25: // it to the author.
+26: type PromptContract struct {
+27: 	// Rule is the human name of the restriction.
+28: 	Rule string
+29: 	// Site is the validator branch that enforces it (file:line at authoring).
+
+kernel/session_registry.go
+--- kernel/session_registry.go:111 ---
+109: 				FlatCT:        "14:45", // = 15:45 ET — same instant as WindowEndCT by contract
+110: 				Killzones: []KillzoneCT{
+111: 					{Name: "ny_am", StartCT: "08:30", EndCT: "11:00"},
+112: 					{Name: "ny_pm", StartCT: "13:00", EndCT: "14:45"},
+113: 				},
+114: 				Enabled: true,
+115: 			},
+116: 		},
+
+trader/auto_trader_loop.go
+--- trader/auto_trader_loop.go:876 ---
+874: 		// untouched.
+875: 		if d.Action == "close_long" || d.Action == "close_short" {
+876: 			if at.holdLockSuppressesClose(&d, &actionRecord) {
+877: 				record.ExecutionLog = append(record.ExecutionLog, fmt.Sprintf("🔒 %s %s suppressed (hold-lock: riding to stop/target)", d.Symbol, d.Action))
+878: 				record.Decisions = append(record.Decisions, actionRecord)
+879: 				continue
+880: 			}
+881: 		}
+
+trader/auto_trader_orders.go
+--- trader/auto_trader_orders.go:77 ---
+75: // drawdown monitor call the trader directly and never reach this path, so human
+76: // and safety closes always go through. Default OFF ⇒ behavior byte-identical.
+77: func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.DecisionAction) bool {
+78: 	if d.Action != "close_long" && d.Action != "close_short" {
+79: 		return false
+80: 	}
+81: 	if at.store == nil || at.config.StrategyConfig == nil {
+82: 		return false
+--- trader/auto_trader_orders.go:84 ---
+82: 		return false
+83: 	}
+84: 	if !hlBool(at.config.StrategyConfig.RiskControl.HoldDisciplineEnabled, false) {
+85: 		return false
+86: 	}
+87: 	side := "LONG"
+88: 	if d.Action == "close_short" {
+89: 		side = "SHORT"
+--- trader/auto_trader_orders.go:100 ---
+98: 		px = md.CurrentPrice
+99: 	}
+100: 	at.logWarnf("🔒 HOLD-LOCK: AI %s suppressed for %s (price %.2f, entry %.2f) — trade rides to stop/target.",
+101: 		d.Action, d.Symbol, px, openPos.EntryPrice)
+102: 	rec.Price = px
+103: 	rec.Success = true // deliberate no-op, not a failure
+104: 	return true
+105: }
+--- trader/auto_trader_orders.go:349 ---
+347: 	case "open_short":
+348: 		return at.executeOpenShortWithRecord(decision, actionRecord)
+349: 	case "close_long":
+350: 		return at.executeCloseLongWithRecord(decision, actionRecord)
+351: 	case "close_short":
+352: 		return at.executeCloseShortWithRecord(decision, actionRecord)
+353: 	case "hold", "wait":
+354: 		// No execution needed, just record
+
+trader/entry_gate.go
+--- trader/entry_gate.go:157 ---
+155: 	}
+156: 
+157: 	// Leg D — DAILY LOSS LIMIT (wiring wave 2026-09-05). Runs BEFORE leg 0:
+158: 	// a tripped daily limit outranks every other reason to take or refuse an
+159: 	// entry, and its refusal is the one the journal should show.
+160: 	//
+161: 	// This leg is the half of the daily guardrail that was missing.
+162: 	// DailyGuardrails.Check() always returned RiskForceFlat on a daily-loss
+--- trader/entry_gate.go:169 ---
+167: 	// Fail-open per the file's contract: a nil resolver, or an empty reason,
+168: 	// is not evidence of a trip and never refuses.
+169: 	if in.DailyForceFlat != nil {
+170: 		if why := in.DailyForceFlat(); strings.TrimSpace(why) != "" {
+171: 			return fmt.Sprintf("entry_gate: refused: daily_force_flat — %s (new entries blocked on the %s path until the daily window resets; open positions are not closed by this leg)", why, in.Path), true
+172: 		}
+173: 	}
+174: 
+--- trader/entry_gate.go:171 ---
+169: 	if in.DailyForceFlat != nil {
+170: 		if why := in.DailyForceFlat(); strings.TrimSpace(why) != "" {
+171: 			return fmt.Sprintf("entry_gate: refused: daily_force_flat — %s (new entries blocked on the %s path until the daily window resets; open positions are not closed by this leg)", why, in.Path), true
+172: 		}
+173: 	}
+174: 
+175: 	// Leg 0 — plan_mode STRICT (R4, OWNER RULING 2026-09-03). FIRST
+176: 	// IMPLEMENTATION, not a restoration: "strict" was listed in a doc comment
+--- trader/entry_gate.go:184 ---
+182: 	// scenario and its side matches; the decision path's market entries are
+183: 	// refused outright.
+184: 	if in.PlanMode == "strict" {
+185: 		if in.Path != "arm" {
+186: 			return fmt.Sprintf("entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a %s-path market entry", in.Path), true
+187: 		}
+188: 		if strings.TrimSpace(in.CitedScenario) == "" {
+189: 			return "entry_gate: refused: strict — plan_mode=strict requires the entry to cite a plan scenario (none cited)", true
+--- trader/entry_gate.go:186 ---
+184: 	if in.PlanMode == "strict" {
+185: 		if in.Path != "arm" {
+186: 			return fmt.Sprintf("entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, and this is a %s-path market entry", in.Path), true
+187: 		}
+188: 		if strings.TrimSpace(in.CitedScenario) == "" {
+189: 			return "entry_gate: refused: strict — plan_mode=strict requires the entry to cite a plan scenario (none cited)", true
+190: 		}
+191: 		dir := strings.ToLower(strings.TrimSpace(in.ScenarioDir))
+--- trader/entry_gate.go:229 ---
+227: 	// a trade is well-formed; this asks whether the setup still exists at all,
+228: 	// and a well-formed trade into a dead setup is the 09:02 arm.
+229: 	if in.Path == "arm" && in.CitedScenario != "" && in.ScenarioInvalidation != nil {
+230: 		v, ok := in.ScenarioInvalidation(in.CitedScenario)
+231: 		switch {
+232: 		case !ok:
+233: 			// Fail-open, loudly. An unresolved check is not a refusal.
+234: 			if in.OnInvalidationUnavailable != nil {
+--- trader/entry_gate.go:261 ---
+259: 	}
+260: 
+261: 	// Leg 5 — R:R at the REAL entry price (the fix for 587/589): the floor is
+262: 	// judged at the price the order will transact at, not the prompt snapshot.
+263: 	// entry<=0 or stop<=0 → skip (fail-open; validateDecision owns wrong-side).
+264: 	rr := 0.0
+265: 	ok := false
+266: 	if in.Entry > 0 && in.Stop > 0 && in.Target > 0 && in.Entry != in.Stop {
+--- trader/entry_gate.go:285 ---
+283: 	}
+284: 
+285: 	// Leg 6 — min-SL ×ATR5m (same floor as both legacy chains).
+286: 	if in.ATR5m > 0 && in.MinSLMult > 0 && in.Entry > 0 && in.Stop > 0 {
+287: 		dist := in.Entry - in.Stop
+288: 		if side == "short" {
+289: 			dist = in.Stop - in.Entry
+290: 		}
+--- trader/entry_gate.go:301 ---
+299: 	// An explicitly authored exit leg is exempt — that is how a position is
+300: 	// flattened, and exits are out of this wave's scope.
+301: 	if in.OpenPositionSide != "" && !in.IsExitLeg {
+302: 		open := strings.ToLower(strings.TrimSpace(in.OpenPositionSide))
+303: 		if open == "long" || open == "short" {
+304: 			return fmt.Sprintf("entry_gate: %s entry refused: %s (one_open_position, owner ruling 2026-09-03); no adds, no flips",
+305: 				side, openPositionLabel(in)), true
+306: 		}
+
+trader/exit_mechs_suspend.go
+--- trader/exit_mechs_suspend.go:33 ---
+31: const ExitMechSuspendedLabel = "suspended 2026-09-02 pending MFE data (wave 1A)"
+32: 
+33: // exitMechsSuspended resolves the suspension (env EXIT_MECHS_SUSPENDED,
+34: // default TRUE = suspended).
+35: func exitMechsSuspended() bool {
+36: 	if v := strings.TrimSpace(os.Getenv("EXIT_MECHS_SUSPENDED")); v != "" {
+37: 		switch strings.ToLower(v) {
+38: 		case "0", "false", "off", "no":
+
+Exact source diff from historical prompt revision to audited dev:
+diff --git a/kernel/planner_prompt.go b/kernel/planner_prompt.go
+index 29c9db49..9bf80f30 100644
+--- a/kernel/planner_prompt.go
++++ b/kernel/planner_prompt.go
+@@ -694,7 +694,7 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
+ 		`  "reasoning": "<your read: what the auction is doing and why this plan — ≤200 words, decision-focused>",` + "\n" +
+ 		`  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},` + "\n" +
+ 		fmt.Sprintf(`  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max %d, MUST include ≥3 below AND ≥3 above the current price`, maxL) + "\n" +
+-		fmt.Sprintf(`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B|C", "chain_after": "<S# of the sweep_reclaim this fvg_entry follows, or omit>", "confirm": {"rule": "touch|1x5m_close|2x5m_close|1m_mss|time_hold", "ref_price": <n>, "side": "above|below"}, "confirm2": {"rule": "<leg 2 rule>", "ref_price": <n>, "side": "above|below"} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), "fvg": {"fvg_lo": <n>, "fvg_hi": <n>, "entry_mode": "edge|ce", "displacement_atr": <n>, "origin_level": "<label>", "direction": "long|short"}, "breakdown": {"level": <n>, "level_label": "<label>", "entry_mode": "pullback|immediate"} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \"none — no break\" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), "arm": {"enabled": true, "entry": <n>, "stop": <n>, "target": <n>, "wait_confirm": true, "legs": [{"entry": <n>, "stop": <n>, "target": <n>, "size": 1, "wait_confirm": false, "rule": "<rule>"}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..%d — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition=="fvg_entry" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on fvg_entry|reject|breakdown_continue|breakup_continue (sweep_reclaim arms only via wait_confirm; breakout_retest|reclaim|hold|acceptance NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules`, maxS) + "\n" +
++		fmt.Sprintf(`  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest|fvg_entry|breakdown_continue|breakup_continue", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B|C", "chain_after": "<S# of the sweep_reclaim this fvg_entry follows, or omit>", "confirm": {"rule": "touch|1x5m_close|2x5m_close|1m_mss|time_hold", "ref_price": <n>, "side": "above|below"}, "confirm2": {"rule": "<leg 2 rule>", "ref_price": <n>, "side": "above|below"} (OPTIONAL second trigger leg — a two-leg setup MUST carry both legs; the machine renders EVERY leg and a partial NEVER reads MET), "fvg": {"fvg_lo": <n>, "fvg_hi": <n>, "entry_mode": "edge|ce", "displacement_atr": <n>, "origin_level": "<label>", "direction": "long|short"}, "breakdown": {"level": <n>, "level_label": "<label>", "entry_mode": "pullback|immediate"} (REQUIRED iff condition==breakdown_continue|breakup_continue — author ONLY at a level whose MEASURED displacement in the block above is ≥ the stated floor; a level reading \"none — no break\" or below the floor is REFUSED at write — see the WATERFALL PLAY rule), "arm": {"enabled": true, "entry": <n>, "stop": <n>, "target": <n>, "wait_confirm": true, "legs": [{"entry": <n>, "stop": <n>, "target": <n>, "size": 1, "wait_confirm": false, "rule": "<rule>"}, …] (ONLY if condition is sweep_reclaim — the split contract, EXACTLY 2 legs; EVERY other condition arms SINGLE: omit legs)}}],  // 1..%d — confirm{} is REQUIRED per scenario; fvg{} REQUIRED iff condition=="fvg_entry" (ce is COMPUTED, never written); breakdown{} REQUIRED iff waterfall-class; chain_after is OPTIONAL; arm{} is OPTIONAL and legal ONLY on %s (sweep_reclaim arms only via wait_confirm; %s NEVER arm) — see the ARMED ORDERS + ENTRY LAW rules`, maxS, ArmableConditionsPipe(), NonArmableConditionsPipe()) + "\n" +
+ 		NoTradeSchemaExample() + "\n" +
+ 		`  "death_condition": "<the single line that invalidates this whole plan>",` + "\n" +
+ 		`  "death": {"price": <level>, "side": "below|above", "rule": "2x5m|5m_close"},` + "\n" +
+@@ -730,7 +730,7 @@ func plannerOutputContract(maxLevels, maxScenarios int, hasHTFZones, has1HSDZone
+ 		"ARMS FOLLOW THE BIAS: with the decision path closed, a RESTING ORDER IS THE ONLY WAY INTO THE MARKET — a scenario with no arm cannot trade, however well argued. Every scenario in the plan's bias direction that has a concrete trigger price MUST carry an arm. A long plan with no long arm is invalid; a short plan with no short arm is invalid, for the same reason and in the same words. If you cannot arm your own bias direction, say so in reasoning and state a NEUTRAL bias rather than arguing for a direction you have left no way to take. " +
+ 		"WHICH CONDITIONS CAN BE ARMED — " + ArmableConditionsLine(ResolvedConditionStatuses(nil, nil, ShadowConditionsEnv())) + " " +
+ 		"ENTRY TYPE FOLLOWS THE CONDITION (the machine derives it and REFUSES a contradiction): a play that rests AT a price is a limit (reject→limit, fvg_entry→limit, sweep_reclaim→limit); a play that is only valid once price travels BEYOND its trigger is a stop entry (reclaim→stop_entry — a BUY STOP above the reclaim level for a long, a SELL STOP below it for a short). A waterfall (breakup_continue→limit / breakdown_continue→limit) rests as a PULLBACK limit AT the broken level and chains on confirm leg 1 — do not author a stop entry for it. " +
+-		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 1.0\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). " +
++		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets a resting order, not a mid-touch argument. Long: stop < entry < target. Short: target < entry < stop. CHAINED ARMS: when a sweep_reclaim you believe in confirms, its RETRACE entry should already be resting — author that retrace as its own arm with wait_confirm:true, or add wait_confirm:true to the sweep scenario's arm: the system holds the arm dormant until the scenario's confirm{} is machine-MET, then places it (the sweep fast path). NEVER arm acceptance or a raw sweep WITHOUT the wait_confirm chain. Keep targets REAL: a planned R:R above ~6 is a fantasy target and gets WARN-flagged at write. The system places arms within a tick band, manages them tick-level, and cancels on veto/dormant/session-end. FEASIBILITY CONTRACT: an arm{} MUST be gate-feasible or it is REFUSED every cycle and learns nothing — R:R = |target\u2212entry| \u00f7 |stop\u2212entry| must be \u2265 2.0 (ARM_MIN_RR) AND the stop distance must be \u2265 " + fmt.Sprintf("%.1f", MinSLATRMult()) + "\u00d7 the current 5m ATR (the facts list the session ATR5m — cite the live value; a 10-point stop when ATR5m is ~16 is an instant refuse). If your setup cannot meet BOTH, OMIT arm{} and let the AI path take it. WATERFALL ARMS (F1): a breakdown_continue / breakup_continue at quality A or B SHOULD carry arm{} with wait_confirm:true + entry_mode=pullback — the resting limit sits AT the broken level and chains on confirm leg 1, so the pullback-that-fails FILLS it (immediate-mode waterfall plays stay on the AI path). " +
+ 		// A2 (2026-08-26) — condition×session guidance from the week ledger:
+ 		// reject 75% win +665 in NY RTH vs acceptance 0% −157 and sweep_reclaim
+ 		// 0% −192. Advisory truth, not a hard rule.
+diff --git a/kernel/prompt_contract.go b/kernel/prompt_contract.go
+index fd86d80d..89731c75 100644
+--- a/kernel/prompt_contract.go
++++ b/kernel/prompt_contract.go
+@@ -60,7 +60,7 @@ func PromptContracts() []PromptContract {
+ 		{
+ 			Rule:       "arm{} legal only on armable conditions",
+ 			Site:       "plan_doc.go ArmSpecValid (arm enabled on non-armable condition)",
+-			MustAppear: []string{"legal ONLY on fvg_entry|reject|breakdown_continue|breakup_continue"},
++			MustAppear: []string{"legal ONLY on " + ArmableConditionsPipe()},
+ 		},
+ 		{
+ 			Rule:       "legs[] only on sweep_reclaim (arm_legs_sweep_reclaim_only)",
+
+trader/auto_trader_orders.go:68:// holdLockSuppressesClose reports whether the "Hold discipline" hold-lock should
+trader/auto_trader_orders.go:77:func (at *AutoTrader) holdLockSuppressesClose(d *kernel.Decision, rec *store.DecisionAction) bool {
+trader/auto_trader_loop.go:876:			if at.holdLockSuppressesClose(&d, &actionRecord) {
+

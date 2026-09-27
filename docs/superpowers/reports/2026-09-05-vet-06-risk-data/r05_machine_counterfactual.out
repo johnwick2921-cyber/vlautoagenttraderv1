@@ -1,0 +1,34 @@
+era first entry_time: 1787127723941 2026-08-18
+machine population: 67 closed rows over 12 session-days
+  per-day: n, total, running-min
+    2026-08-18: n= 4 tot= +469.00 runmin=  +77.50  ids=[521, 522, 523, 524]
+    2026-08-19: n= 8 tot=  +46.57 runmin= -297.93  ids=[525, 526, 527, 528, 529, 530, 531, 532]
+    2026-08-20: n=12 tot= -492.00 runmin= -492.00  ids=[533, 534, 535, 536, 537, 538, 539, 540, 541, 542, 543, 544]
+    2026-08-23: n= 5 tot= -142.50 runmin= -312.00  ids=[545, 546, 547, 548, 549]
+    2026-08-24: n=11 tot=  -26.50 runmin= -181.00  ids=[550, 551, 552, 553, 554, 555, 556, 557, 558, 559, 560]
+    2026-08-25: n= 3 tot= -200.00 runmin= -200.00  ids=[561, 562, 563]
+    2026-08-26: n= 3 tot=  -34.50 runmin= -131.50  ids=[564, 565, 566]
+    2026-08-27: n= 4 tot=   +6.00 runmin=  -74.00  ids=[567, 568, 569, 570]
+    2026-08-30: n= 6 tot= +124.50 runmin=  -44.50  ids=[571, 573, 574, 575, 578, 580]
+    2026-08-31: n= 6 tot= +212.00 runmin= +190.50  ids=[581, 582, 583, 584, 585, 586]
+    2026-09-01: n= 4 tot= -381.50 runmin= -381.50  ids=[587, 588, 589, 590]
+    2026-09-02: n= 1 tot= -140.00 runmin= -140.00  ids=[591]
+  DAILY-LOSS counterfactual on the MACHINE's input:
+    $300: 3/12 days ['2026-08-20', '2026-08-23', '2026-09-01']  forfeited after trip = +19.50
+    $450: 1/12 days ['2026-08-20']  forfeited after trip = +0.00
+    $600: 0/12 days []  forfeited after trip = +0.00
+    $900: 0/12 days []  forfeited after trip = +0.00
+  ENTRY COUNT the machine sees (all rows, no filter) vs the compliant analysis count:
+    2026-08-18: machine entries= 4  compliant trades= 4
+    2026-08-19: machine entries= 8  compliant trades= 7
+    2026-08-20: machine entries=12  compliant trades=11
+    2026-08-23: machine entries= 5  compliant trades= 3
+    2026-08-24: machine entries=11  compliant trades=11
+    2026-08-25: machine entries= 3  compliant trades= 3
+    2026-08-26: machine entries= 3  compliant trades= 2
+    2026-08-27: machine entries= 4  compliant trades= 4
+    2026-08-30: machine entries=10  compliant trades= 2
+    2026-08-31: machine entries= 6  compliant trades= 6
+    2026-09-01: machine entries= 4  compliant trades= 4
+    2026-09-02: machine entries= 1  compliant trades= 1
+  MAX_DAILY_TRADES=3 on the machine's count: exceeded on 9/12 session-days

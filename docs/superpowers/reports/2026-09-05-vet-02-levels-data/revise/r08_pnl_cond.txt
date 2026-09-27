@@ -1,0 +1,18 @@
+cited era rows: 64
+== COMPLIANT (excl e7 572, excl UNRESOLVABLE 530/539)
+  reject: n=31 sum=586.0 mean=18.9 wins=14 t=1.0 nulls=[576, 579] ids=[521, 523, 524, 529, 533, 535, 536, 537, 538, 544, 547, 548, 549, 550, 551, 552, 553, 554, 560, 564, 565, 567, 569, 570, 575, 581, 582, 584, 585, 587, 591]
+  breakout_retest: n=9 sum=-581.5 mean=-64.61 wins=1 t=-3.37 nulls=[] ids=[528, 534, 556, 557, 558, 562, 563, 589, 590]
+  acceptance: n=6 sum=4.57 mean=0.76 wins=1 t=0.01 nulls=[] ids=[522, 526, 527, 532, 542, 543]
+  sweep_reclaim: n=6 sum=-207.0 mean=-34.5 wins=1 t=-1.31 nulls=[577] ids=[559, 561, 568, 578, 583, 586]
+  reclaim: n=5 sum=-436.5 mean=-87.3 wins=0 t=-4.95 nulls=[] ids=[525, 531, 540, 541, 588]
+  hold: n=1 sum=168.0 mean=168.0 wins=1 t=nan nulls=[] ids=[555]
+  TOTAL usable n=58 sum=-466.43
+== SENSITIVITY (incl UNRESOLVABLE)
+  reject: n=31 sum=586.0 mean=18.9 wins=14 t=1.0 nulls=[576, 579] ids=[521, 523, 524, 529, 533, 535, 536, 537, 538, 544, 547, 548, 549, 550, 551, 552, 553, 554, 560, 564, 565, 567, 569, 570, 575, 581, 582, 584, 585, 587, 591]
+  breakout_retest: n=9 sum=-581.5 mean=-64.61 wins=1 t=-3.37 nulls=[] ids=[528, 534, 556, 557, 558, 562, 563, 589, 590]
+  acceptance: n=6 sum=4.57 mean=0.76 wins=1 t=0.01 nulls=[] ids=[522, 526, 527, 532, 542, 543]
+  sweep_reclaim: n=6 sum=-207.0 mean=-34.5 wins=1 t=-1.31 nulls=[577] ids=[559, 561, 568, 578, 583, 586]
+  reclaim: n=5 sum=-436.5 mean=-87.3 wins=0 t=-4.95 nulls=[] ids=[525, 531, 540, 541, 588]
+  NO-SCEN: n=2 sum=-71.5 mean=-35.75 wins=1 t=-0.73 nulls=[] ids=[530, 539]
+  hold: n=1 sum=168.0 mean=168.0 wins=1 t=nan nulls=[] ids=[555]
+  TOTAL usable n=60 sum=-537.93

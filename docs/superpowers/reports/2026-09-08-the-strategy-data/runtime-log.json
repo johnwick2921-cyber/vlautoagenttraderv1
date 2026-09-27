@@ -1,0 +1,66 @@
+[
+  {
+    "journal_line": 10405,
+    "text": "2026-09-08T15:17:31-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 15:17:31 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev f8bc7044cc44 · built 2026-09-08T19:50:07Z · expected f8bc7044 · goldens PASS"
+  },
+  {
+    "journal_line": 10407,
+    "text": "2026-09-08T15:17:31-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 15:17:31 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, flat 08:30) | NY 08:30→14:45 CT (last-entry 14:30, flat 14:45)] · stop_until=none · cadence=interval 2m0s · position_mode=ai_watch (source: db) · watcher[min_conf=70 hold=2 warn_consec=2] · trailing=2.0×ATR14 arm=after_breakeven (source: studio) · stale_dodge=on reeval_drift=0.25×ATR14 · post_exit_rescan=on delay=2000ms · guardrails=master=OFF (soft-audit only) · roll=pending AddOn ACK · balance-alert=off"
+  },
+  {
+    "journal_line": 10438,
+    "text": "2026-09-08T15:17:31-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 15:17:31 [INFO] kernel/levels_volume_boot.go:25 🗓 session reads (owner ruling 2026-08-31, open−30): ASIA 16:30 · LONDON 01:30 · NY 08:00 CT — windows/flats unchanged; Sunday weekly 16:30 → ASIA follows"
+  },
+  {
+    "journal_line": 10440,
+    "text": "2026-09-08T15:17:31-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 15:17:31 [INFO] kernel/levels_volume_boot.go:30 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (process-level: defaults+env; per-trader resolved map prints at first arm cycle)"
+  },
+  {
+    "journal_line": 10464,
+    "text": "2026-09-08T15:17:31-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 15:17:31 [INFO] nofx/main.go:451 🗓 no-trade band: first_n=5m lunch=12:00–13:30 (source=code-constant, shared by gate+grader+card) · T1 taken from the enforcing gate at plan time (widening and fail-closed fallback included) · every window judged against the reader's clock, not the write clock · model prose renders as notes"
+  },
+  {
+    "journal_line": 29535,
+    "text": "2026-09-08T17:01:20-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 17:01:20 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (per-trader resolved, 0C shadow demotion)"
+  },
+  {
+    "journal_line": 29537,
+    "text": "2026-09-08T17:01:20-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 17:01:20 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🛑 arm stop ASIA S2 leg 1 short: stop 29617.49 (authored 29616.99 WIDENED) · anchor POC 29616.99 → beyond 29617.49 · atr_floor 29613.74 (1.5×ATR5m 18.83) · bound=anchor"
+  },
+  {
+    "journal_line": 29539,
+    "text": "2026-09-08T17:01:20-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 17:01:20 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🎯 stop-entry: seam=OFF — NO stop entry is placed (owner ruling 2026-09-05: cancel-confirmation wave owed; broker-side stacking) · slots=stop_price · guard=stop-side · unknown=no-op · addon build_id=2026-09-07-h1 expected=2026-09-07-h1 match=yes"
+  },
+  {
+    "journal_line": 32566,
+    "text": "2026-09-08T17:21:16-05:00 DESKTOP-S4IA601 nofx-bin[3566770]: 09-08 17:21:16 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🛑 arm stop ASIA S2 leg 1 short: stop 29794.75 · anchor none (stop_unanchored) · atr_floor 29789.58 (1.5×ATR5m 16.55) · bound=authored"
+  },
+  {
+    "journal_line": 43583,
+    "text": "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] nofx/main.go:294 🔐 BOOT INTEGRITY OK — rev 6f677b55daa1 · built 2026-09-08T23:01:58Z · expected 6f677b55 · goldens PASS"
+  },
+  {
+    "journal_line": 43585,
+    "text": "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, flat 08:30) | NY 08:30→14:45 CT (last-entry 14:30, flat 14:45)] · stop_until=none · cadence=interval 2m0s · position_mode=ai_watch (source: db) · watcher[min_conf=70 hold=2 warn_consec=2] · trailing=2.0×ATR14 arm=after_breakeven (source: studio) · stale_dodge=on reeval_drift=0.25×ATR14 · post_exit_rescan=on delay=2000ms · guardrails=master=OFF (soft-audit only) · roll=pending AddOn ACK · balance-alert=off"
+  },
+  {
+    "journal_line": 43618,
+    "text": "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] kernel/levels_volume_boot.go:26 🗓 session reads (owner ruling 2026-08-31, open−30): ASIA 16:30 · LONDON 01:30 · NY 08:00 CT — windows/flats unchanged; Sunday weekly 16:30 → ASIA follows"
+  },
+  {
+    "journal_line": 43620,
+    "text": "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] kernel/levels_volume_boot.go:31 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (process-level: defaults+env; per-trader resolved map prints at first arm cycle)"
+  },
+  {
+    "journal_line": 43644,
+    "text": "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] nofx/main.go:455 🗓 no-trade band: first_n=5m lunch=12:00–13:30 (source=code-constant, shared by gate+grader+card) · T1 taken from the enforcing gate at plan time (widening and fail-closed fallback included) · every window judged against the reader's clock, not the write clock · model prose renders as notes"
+  },
+  {
+    "journal_line": 43763,
+    "text": "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (per-trader resolved, 0C shadow demotion)"
+  },
+  {
+    "journal_line": 43769,
+    "text": "2026-09-08T18:11:54-05:00 DESKTOP-S4IA601 nofx-bin[3726840]: 09-08 18:11:54 [INFO] trader/auto_trader.go:44 [trader_id=[redacted] trader_name=hoang] 🎯 stop-entry: seam=OFF — NO stop entry is placed (owner ruling 2026-09-05: cancel-confirmation wave owed; broker-side stacking) · slots=stop_price · guard=stop-side · unknown=no-op · addon build_id=2026-09-07-h1 expected=2026-09-07-h1 match=yes"
+  }
+]

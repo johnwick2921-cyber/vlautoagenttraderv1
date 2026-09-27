@@ -1,0 +1,399 @@
+{
+  "assignment": 14,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "ninjascript/VLBarsSubscriptionManager.cs",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          914
+        ]
+      ],
+      "sha256": "ed14e5d19c4d94fdb1059db60cee7b33402b69772e90bfbaf422d3b7b00a924b",
+      "notes": "Native per-root/timeframe BarsRequest lifecycle, DoNotMerge, event range emission, close stamps, platform contract resolution; reconnect preserves cursor and emits no subscribed ACK; watchdog rebuilds 3 fast attempts then75min backstop."
+    },
+    {
+      "path": "ninjascript/VLContractResolver.cs",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          239
+        ]
+      ],
+      "sha256": "f609d20e68ec98786ea224c1a53c37a3c3b37c7ec3000b397589c78cc5248244",
+      "notes": "Quarterly-root normalization and rolling ##-## naming; old expiry-minus8days calculation retained as explicit fallback, not primary. ResolveFrontMonthContractAt documentation remains stale."
+    },
+    {
+      "path": "ninjascript/VLHistoryPull.cs",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          328
+        ]
+      ],
+      "sha256": "9c64dd3c827c35aac2118b8c76e1bdd53aca3c4cc0938a775cd216ea91244186",
+      "notes": "Independent explicit-contract DoNotMerge request; 8000-bar chunks with request id/seq/last; unguarded dictionary writes race callback removals; duplicate-tail timestamps can skip final flush."
+    },
+    {
+      "path": "ninjascript/VLInstrumentLookup.cs",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          115
+        ]
+      ],
+      "sha256": "6a1c6d5e403a15aaca5ca6ebd4c36f2f5264ba41028ee64b8a3d5e6866e3e6d0",
+      "notes": "Rolling instrument -> MasterInstrument.GetNextExpiry(DateTime.Now) -> concrete instrument, logged date fallback. A qualified input still goes through next-expiry resolution, so passthrough comments do not describe Resolve behavior."
+    },
+    {
+      "path": "ninjascript/VLTraderTCPClient.cs",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          3079
+        ]
+      ],
+      "sha256": "78565bce3703fea028a82217117d64fd29e9c69e6c0e879e87df27c63bbb472e",
+      "notes": "NT8 AddOn v3/h1: connection, SIM/account guards, entries, deferred partial-fill brackets, standalone stops, account/position/order snapshots and JSON codec. See report for cancel/fill race, close identity, periodic account scope, absent map reattachment and partial outcome risks."
+    },
+    {
+      "path": "provider/ninjatrader/bar_cache.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          529
+        ]
+      ],
+      "sha256": "62b4e06848ce3572b75fbdbcc8b36f8c731d2b3496ac3bc1b9cf9586bb80ee48",
+      "notes": "2500 bounded open-stamped cache; placeholder rejection; historical union preserving live; append/update tail; older-store extension only after warm seed. Keys retain incoming case despite case-insensitive admission."
+    },
+    {
+      "path": "provider/ninjatrader/bar_persist.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          354
+        ]
+      ],
+      "sha256": "c5cabbdda79b1400efe1fd7be78672e5151d11b8087687851b44cec35a80361a",
+      "notes": "Global bounded4096 queue,300ms/256 flush batching; close-bearing enqueue retries6s then drops counted. Watchdog runs on same blocked worker as callback and stamps successful after contained panic; cannot independently detect synchronous callback hang."
+    },
+    {
+      "path": "provider/ninjatrader/bar_source.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          240
+        ]
+      ],
+      "sha256": "7319d974f57b6e6bb8c950b90d682c13b738fb1901b75df07575197ca78bf808",
+      "notes": "Live/historical/mixed provenance and first-live-after-seed percent AND median-body scale test; historical purge on mismatch; async listeners. PurgeSymbol does not reset metadata; empty seed resets verdict despite retaining data."
+    },
+    {
+      "path": "provider/ninjatrader/contract_roll.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          144
+        ]
+      ],
+      "sha256": "bcc0abee9cd42a9d2223baaec9d67791923037237b6b086b9727943f620a0b1a",
+      "notes": "Current contract from subscribed ACK only; changed named contract purges ring and fires listeners. Bar contract field is not decoded, reconnect rebuild emits no ACK. Queued old messages have no epoch and can repopulate after purge."
+    },
+    {
+      "path": "provider/ninjatrader/csv_tailer.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          110
+        ]
+      ],
+      "sha256": "f10a234f627b1799ff062d633fed9a5e673b17101060186fe0f3b62f6351e5ce",
+      "notes": "Legacy full-file poll with row-count cursor; shrink resets; malformed row skipped and cursor advanced. Not live trading path."
+    },
+    {
+      "path": "provider/ninjatrader/csv_writer.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "sha256": "e2d5416c1db5248aea32396e44b2642a617fc0e9e7cf9bf1bfe24adf0a0bf8e6",
+      "notes": "Legacy validated one-row signal CSV written via temp+rename,3 retries; uppercases direction and rounds2decimal. Does not queue multiple outstanding orders."
+    },
+    {
+      "path": "provider/ninjatrader/echo_verify.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          206
+        ]
+      ],
+      "sha256": "7b53cf1d66c4a93cf81466984ca56df10c14169a3c9a93f22508f7b226841367",
+      "notes": "Seq identity registry bounded4096; known mismatch freezes; seq0/unknown retired accepted; rejected-empty-account tolerated. Compares trader/account, not echoed signal id; seq reused only per server object lifecycle."
+    },
+    {
+      "path": "provider/ninjatrader/mock_nt.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          155
+        ]
+      ],
+      "sha256": "ab6c88fd33460112be9351a5d43c6c4c6f7b93e0b9b53d6d27f6950422b0087e",
+      "notes": "Offline CSV mock polling100ms, dedup timestamp+direction+entry, delayed synthetic fills. No real execution semantics."
+    },
+    {
+      "path": "provider/ninjatrader/order_snapshot.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          259
+        ]
+      ],
+      "sha256": "d95f2151df7ee0f8f8555dec08965bc72478f2e6a404538ac05f446468d008fc",
+      "notes": "Per-account latest book cache and receipt ages; conservative terminal filtering; missing/null orders coerced empty; cache retains mutable slices and separate latest/age accessor can describe different arrivals."
+    },
+    {
+      "path": "provider/ninjatrader/order_state.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          170
+        ]
+      ],
+      "sha256": "b02f3d8a7a99179b1a03683acc21e71029e6ba1d9ea83ac4f532c3e6e0c808e7",
+      "notes": "Normalized6-class liveness; unknown nonterminal; suspended/partfilled live in Go versus Working/Accepted only C#."
+    },
+    {
+      "path": "provider/ninjatrader/research_wire.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          217
+        ]
+      ],
+      "sha256": "39e38c148f88012e444ce68ee35d3faae437441bbb40dcf6f145fe1c7e9ce6ae",
+      "notes": "Research fact recording for MNQ bars and selected execution fields; connection-scoped prior observations12000; contract inferred preceding ACK despite contract on bar wire. Outer broker_frame orders raw can retain unknown nested fields; sanitized child facts do not sanitize parent."
+    },
+    {
+      "path": "provider/ninjatrader/tcp_client_mock.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          228
+        ]
+      ],
+      "sha256": "8f0ba444fa3f6aa0e176056f5ba0cd1723893d8658a8ecc4d7200a66eb2491e0",
+      "notes": "Test-only TCP peer with delayed fills and signal channel; no hello/identity/account echo by default; concurrent WriteFrame calls lack shared write mutex; deadline continuation retains old partial-frame desync pattern."
+    },
+    {
+      "path": "provider/ninjatrader/tcp_framing.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          690
+        ]
+      ],
+      "sha256": "17deef59013a41dd33f9263de0b93b37b5cc7114db239236ed32d4722bf7e617",
+      "notes": "4-byte BE JSON1MB envelopes; v3 identity, h1 capability, account/order/history payloads; live bar payloads omit emitted contract. WriteFrame assumes full writes without checking n."
+    },
+    {
+      "path": "provider/ninjatrader/tcp_server.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          2332
+        ]
+      ],
+      "sha256": "8284240bc92299e0c9e6742957cd7076f8ae6d41eb1514a56b7b0f6e398ccf32",
+      "notes": "Single connection, account/symbol fanout, lifecycle, metadata, queued60s-valid signals and nonqueued management; serialized writes, bar drain, history import channels. See findings: import send/close race, epoch/hello gaps, contract discard, queue and stale cache semantics."
+    },
+    {
+      "path": "provider/ninjatrader/types.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "sha256": "f89ea1644d231ccf5a03fe4f188dea0ec2fa60f219fa317e322e03963d186747",
+      "notes": "Legacy CSV types; direction/geometry validation checks positive values but NaN can bypass comparisons. No live TCP schema role."
+    },
+    {
+      "path": "trader/protection_reconciler.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          430
+        ]
+      ],
+      "sha256": "69c3ab28b87dc07145443cf614441c3aa433e006099d3dfeedcaa2a422cc92e4",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "trader/bracket_cancel_addon_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          271
+        ]
+      ],
+      "sha256": "3c299608d197ea33693dc60f19ca59dc24420e73b143a3a0b7e0682791e08f1c",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "provider/ninjatrader/order_snapshot_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          195
+        ]
+      ],
+      "sha256": "ccb9f08e6e377d0a7a8e93f3dfb78fa47c4201e824002214127b0f6c98c5fa77",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "provider/ninjatrader/contract_roll_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          153
+        ]
+      ],
+      "sha256": "11184cea454913d88724f528a401e4667c8328da4f5f20597be32c2f5194d224",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "trader/ninjatrader/tcp_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          705,
+          851
+        ]
+      ],
+      "sha256": "da3a72adbac538f89495d192e115a4c02f5a01543149a580b6c5b110ca3ba477",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "trader/ninjatrader/bar_persist_wire.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          70,
+          125
+        ]
+      ],
+      "sha256": "a2d7f7990b8323dab54eae0ff45e1a261b6a1cfc751e4c9642072d5c0b5f64f8",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "trader/auto_trader.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          85,
+          119
+        ]
+      ],
+      "sha256": "e12c6c53a5cde83caa8927dac1ed52a9fdf8800c749e0884d8f6301c0d829004",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "trader/auto_trader_risk.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          43,
+          66
+        ]
+      ],
+      "sha256": "ae55d02221798a7ac37b97d7345250e971aa5972038f0ae417529ba77cb7e9d5",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          2281,
+          2316
+        ],
+        [
+          2741,
+          2923
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          252,
+          267
+        ],
+        [
+          290,
+          300
+        ]
+      ],
+      "sha256": "04905d4e659519c1459daa4b96872f3395a83f0c564324ad779301484904d417",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          215,
+          265
+        ]
+      ],
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "notes": "Supplementary dependency/test/policy read; excluded from assigned coverage."
+    }
+  ],
+  "unread": []
+}

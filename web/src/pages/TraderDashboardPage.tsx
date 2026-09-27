@@ -829,6 +829,7 @@ export function TraderDashboardPage({
               marketOnly
               traderId={selectedTrader.trader_id}
               selectedSymbol={selectedChartSymbol}
+              selectedAccount={selectedAccount}
               updateKey={chartUpdateKey}
               exchangeId={getExchangeTypeFromList(
                 selectedTrader.exchange_id,

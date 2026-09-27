@@ -1,7 +1,6 @@
 package coinank_api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"nofx/provider/coinank/coinank_enum"
@@ -10,7 +9,7 @@ import (
 )
 
 func TestKlineWs(t *testing.T) {
-	ctx := context.TODO()
+	ctx := liveNetworkGate(t)
 	ws, err := WsConn(ctx, true, true)
 	if err != nil {
 		t.Fatal(err)

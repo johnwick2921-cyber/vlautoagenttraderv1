@@ -1,0 +1,13 @@
+{
+  "old_revision": "400ea26c12c8b6daa7069d14a88eddfe1c9297e5",
+  "old_binary_md5": "93e8bd17fe2d86a928e41a76768b1fae",
+  "old_main_head": "379713e30abed379983a932f045b92b6c43a766b",
+  "old_binary_backup": "/home/hoang/nofx-backups/structural-stop-20260912/release-20260913/nofx-bin.old.400ea26c12c8b6daa7069d14a88eddfe1c9297e5",
+  "old_dist_backup": "/home/hoang/nofx-backups/structural-stop-20260912/release-20260913/dist.old.400ea26c12c8b6daa7069d14a88eddfe1c9297e5",
+  "prepared_revision": "4127979f2fcc5615f4e8b17540f7aba74bb4ea92",
+  "swap_at_ct": "2026-09-13T00:20:55.839070-05:00",
+  "gate_age_seconds": 36.156448,
+  "new_binary_md5": "300dc70535f708be9f6278d252124ba4",
+  "new_revision": "4127979f2fcc5615f4e8b17540f7aba74bb4ea92",
+  "verified_before_kill": true
+}

@@ -2,7 +2,6 @@
 package trader
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -122,12 +121,16 @@ func (at *AutoTrader) BackfillOneSetupVerdicts(sinceMs int64, now time.Time) sto
 		// The scenario this episode belongs to: the plan's scenario whose anchor
 		// sits on the level (price within the map's width). None → not a
 		// scenario's level; two → ambiguous. Both are honest NULLs.
-		key := r.PlanID + "#" + fmt.Sprint(r.PlanVersion)
+		// Skeptic F8: the fold is per EPISODE-OPEN — overlays written after
+		// r.OpenedAtMs never rewrite the attribution of a closed episode — and
+		// the match runs on plannerScenariosOnly, the SAME D8 exclusion the
+		// live stamper applies (one_setup governs PLANNER plays only).
+		key := r.PlanID + "#" + fmt.Sprint(r.PlanVersion) + "@" + fmt.Sprint(r.OpenedAtMs)
 		doc, seen := docs[key]
 		if !seen {
 			if p, err := at.store.Plan().GetPlan(r.PlanID, r.PlanVersion); err == nil && p != nil {
-				var d kernel.PlanDoc
-				if json.Unmarshal([]byte(p.Doc), &d) == nil {
+				if d, ok := resolveActivePlanDocAsOf(at.store, p, r.OpenedAtMs); ok {
+					d = plannerScenariosOnly(d)
 					doc = &d
 				}
 			}

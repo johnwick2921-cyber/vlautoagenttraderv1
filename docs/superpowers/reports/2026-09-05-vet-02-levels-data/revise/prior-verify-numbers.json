@@ -1,0 +1,126 @@
+{
+ "lens": "NUMBERS \u2014 every count, rate, mean, median, percentile, point figure, n, Wilson interval and row-id list in docs/superpowers/reports/2026-09-05-vet-02-levels.md (272 lines, numbered with nl -ba), re-derived from data/data.db (mode=ro), the committed -data/ files, the API (GET, token never printed) and git; scratch under ~/nofx-analysis/vet-02-0905/verify-numbers/ (v01\u2013v16 SQL/py + outputs, rerun_q11_*, rerun_q12b_*)",
+ "checked": 330,
+ "findings": [
+  {
+   "severity": "WRONG",
+   "location": "report:11",
+   "claim": "`git diff --stat 36648655 2a66d91c -- kernel/levels*.go kernel/level*.go kernel/plan_doc.go kernel/planner_prompt.go trader/armed_executor.go kernel/min_sl.go` lists only `kernel/risk_limits.go` (+65) and `trader/entry_gate.go` (+26) \u2026 Every `path:line` below is read on `2a66d91c` and describes the running binary.",
+   "evidence": "Ran the quoted command in /home/hoang/nofx-vet-02: output is EMPTY (neither file is under those paths). `git diff --stat 36648655 2a66d91c` (no paths) lists 18 files incl. kernel/engine_analysis.go (13 lines), kernel/risk_limits.go (+65), trader/auto_trader_planner.go (+14), trader/entry_gate.go (+26). The +14 in auto_trader_planner.go is a BiasArmWarning warn-only insert at :1684-1697, so every planner anchor the report cites (:1995-2012, :2136-2150, :2320, :2340-2348) sits 14 lines lower on the running rev: `git show 36648655:trader/auto_trader_planner.go` puts the min_grade block at 1977-1994 vs 1991-2008 on 2a66d91c. engine_analysis.go's max_levels/proximity consumer is :362-375 on 36648655 vs :373-386 on dev (the API's consumer cites, :366/:375, match the RUNNING rev).",
+   "correction": "Replace with: \"`git diff --stat 36648655 2a66d91c` touches kernel/engine_analysis.go (13), kernel/risk_limits.go (+65), trader/auto_trader_planner.go (+14, a warn-only insert at :1684-1697) and trader/entry_gate.go (+26); no kernel/levels*, detector, recorder, scorer or planner_prompt file differs. auto_trader_planner.go cites are on 2a66d91c and read 14 lines lower on the running binary (e.g. :1995-2012 \u2192 :1981-1998, :2320 \u2192 :2306, :2340-2348 \u2192 :2326-2334).\""
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:126",
+   "claim": "`level_state` shows 110 of 675 rows \"consumed\" with `times_tested = 1`.",
+   "evidence": "v10_legacy_tables.sql: SELECT COUNT(*), SUM(consumed=1), SUM(consumed=1 AND times_tested=1) FROM level_state \u2192 675, 384, 384 (consumed\u00d7times_tested: 0/0 275 \u00b7 0/1 16 \u00b7 1/1 384). The 110 is the `level_type='other'` bucket of q05_other_level_tables.txt, not the table.",
+   "correction": "\"384 of 675 rows are consumed, every one of them with times_tested = 1 (110 of the 384 are level_type 'other').\""
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:215",
+   "claim": "reject n=31 usable +$586.00 \u2026 2 NULL excluded, ids 567, 587 \u2026 sweep_reclaim n=6 \u2212$207.00 (1 NULL excluded, id 578)",
+   "evidence": "v06/v07: trader_positions 567 pnl_corrected \u221242.0, 587 \u221262.5, 578 +92.0 \u2014 all non-NULL and all inside the report's own 'usable' id lists at report:268. The NULL pnl_corrected rows among cited non-e7 positions are 576, 577, 579 (source armed_entry; SELECT GROUP_CONCAT(id) \u2026 pnl_corrected IS NULL \u2192 '576,577,579'). q13's own per-family rows put the nulls in ('PDL','reject') ids [575,576] and ('SWG-H','sweep_reclaim') ids [577,578]; /api/expectancy reject excluded_unresolved=2, sweep_reclaim=1. Sums/wins/t-stats themselves reproduce: reject +586.00 (14 wins, mean +18.90, CI \u221218.26\u2026+56.06, t +1.00), breakout_retest \u2212581.50 (t \u22123.37), reclaim \u2212436.50 (t \u22124.95), sweep_reclaim \u2212207.00 (t \u22121.31).",
+   "correction": "\"reject: 2 NULL excluded, ids 576, 579 \u00b7 sweep_reclaim: 1 NULL excluded, id 577\" (delete 567/587/578 from the NULL parentheticals; they stay in the usable lists)."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:84",
+   "claim": "VWAP\u00b12\u03c3 \u2026 Seat freq (of 47): 4 sessions",
+   "evidence": "v12/v13 plan-doc census over non-WEEKLY plans: labels LIKE 'VWAP%2\u03c3%' appear in 13 distinct (trade_date, session) plan-sessions, 37 rows (VWAP\u22122\u03c3 19 rows / 10 sessions; VWAP+2\u03c3 18 rows / 8 sessions).",
+   "correction": "\"13 sessions (37 rows: \u22122\u03c3 19, +2\u03c3 18)\". The seat-economy argument at report:143 should be re-read against 13, not 4."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:36 (also :52 P1, :170, :233, :234)",
+   "claim": "Twelve of twelve seats fill in 11 of 12 recorded reads (`q04`) \u2026 \"the 12 reads\" \u2026 \"On 09-04, 12 of 12 seats filled in 11 of 12 reads; the twelfth had 11\"",
+   "evidence": "v04_pool.sql: candidate_pool has 15 distinct read_at_ms (00:30, 01:10, 01:30, 02:00, 07:45, 08:00, 08:17, 08:32, 08:46, 09:26, 09:58, 10:28, 10:55, 11:25, 12:01 CT) but only 12 distinct plan/version (NY v3 was read four times); 14 reads seated 12/12 and one (LONDON v0 at 01:30 CT) seated 11. The committed q04_pool_detail.txt itself lists 15 rows. touch_outcomes likewise has 15 recorder passes (v03), which is why RTH-L copies reach 11 while its plan/version count is 8.",
+   "correction": "\"12 of 12 in 14 of 15 recorder passes (11 of 12 plan-versions); the 01:30 CT LONDON v0 read seated 11.\" Use 'plan-versions' where 12 is meant and 'reads/passes' where 15 is meant."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:30",
+   "claim": "a fifth of the seats sit more than 100 points from price where they are reached one time in fifteen",
+   "evidence": "q12b_plan_levels_forward_dedup.csv (985 rows, reproduced byte-identically by rerun_q12b): dist>100 \u2192 217 seats (22.0%), 68 touched = 31.3% = one in 3.2. dist\u2265200 \u2192 76 seats (7.7%), 5 touched = 6.6% = one in 15.2. The report's own :36 and :172 split the buckets correctly (44.7% <200, 6.6% 200+); the summary sentence conflates them.",
+   "correction": "\"a fifth of the seats (217) sit more than 100 points from price and are reached one time in three; the 8 % (76) that sit 200+ points away are reached one time in fifteen.\""
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:41 (and :98)",
+   "claim": "EQH first touch holds 0.711 [0.566, 0.823] (n=45) \u2026 Both are n-tiny, both overlap 0.5 at the bottom \u2026 [T, no verdict]; :98 \"the plan-forward column's largest cells (VWAP 147, EQH 45, EQL 55) are a different measure \u2026 with the same verdict\"",
+   "evidence": "v14_wilson.py hand arithmetic: 32/45, z\u00b2=3.8416, den 1.08537, centre 0.69451, half 0.12819 \u2192 [0.5663, 0.8227]. The lower bound is above 0.5 and above the replay null's upper bound 0.517 (NULL 3977/7857 \u2192 [0.4951, 0.5172]); n=45 clears the report's own n\u226530 floor. No plan-forward null was computed (q11 only nulls the replay), so \"same verdict\" is asserted, not measured.",
+   "correction": "\"EQH 0.711 [0.566, 0.823], n=45: the interval excludes 0.5 and the replay null 0.506 [0.495, 0.517]; it is one of ~25 kind-cells (multiple comparisons) with no plan-forward null of its own \u2014 pre-register, do not call it null.\" Delete \"both overlap 0.5 at the bottom\" (true only of the n=25 RTH-L cell)."
+  },
+  {
+   "severity": "UNSUPPORTED",
+   "location": "report:129 (also :42, :193 Rec 6, :262)",
+   "claim": "Forward from `read_at`: seated 179 rows, touched 52.5 %, first-touch 0.644 [0.529, 0.744] (n=73); cut 181 rows, touched 16.0 %, 0.476 [0.283, 0.676] (n=21). Mean distance at read: seated 134 pts, cut 218 pts.",
+   "evidence": "SELECT seated, COUNT(*), COUNT(DISTINCT level_kind||'|'||level_price), COUNT(DISTINCT read_at_ms), COUNT(DISTINCT CT day) FROM candidate_pool GROUP BY seated \u2192 seated 179 rows = 55 distinct levels, cut 181 rows = 37 distinct levels, 15 reads, ONE CT day (2026-09-04). q12_grade_vs_outcome.py scans forward from every read_at without collapsing copies \u2014 its own kind table shows ('PDH','S') 15 seats, i.e. one level counted 15 times, and the same first touch is re-counted per read. The report deduplicated touch_outcomes for exactly this defect (:34) but not here; the Wilson arithmetic on 47/73 and 10/21 reproduces, the n does not. Rec 6's \"[T] seated 52.5 % touched vs cut 16.0 %\" rests on this.",
+   "correction": "State \"179/181 row-reads = 55/37 distinct levels, 15 reads, one day; the first-touch n's (73, 21) are row-reads, not independent touches\"; recompute per distinct (kind, price) or drop the intervals, and label Rec 6's number a one-day description rather than [T]."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:214",
+   "claim": "Arms 62\u2013102 (09-04) are the same `S2 reclaim SHORT @ 29591.02` upserted twenty times, cancelled by `gate changed: rr` (5), stale-window (8), `boot_sweep` (7)",
+   "evidence": "v05_arms.sql: the 20 S2 SHORT 29591.02 condition=reclaim rows in ids 62\u2013102 split rr 4 (62,65,67,70) \u00b7 stale-window 7 (73,75,77,79,81,83,85) \u00b7 boot_sweep 8 (87,89,91,93,95,97,99,101) \u00b7 cancelled in NT8 1 (102). id 38 (same price, condition sweep_reclaim, outside the range) is a fifth rr cancel. q08's state_reason totals (rr 5, boot_sweep 8, stale 12 table-wide) agree.",
+   "correction": "\"rr 4 (5 counting id 38), stale-window 7, boot_sweep 8, cancelled-in-NT8 1 \u2014 20 rows (21 with id 38).\""
+  },
+  {
+   "severity": "MISSING-N",
+   "location": "report:54 (P3), :137, :143 (and :82)",
+   "claim": "VWAP\u00b12\u03c3 n=71 (replay, 0.56) \u2026 ONH n=40 (replay, 0.429) \u2026 ONL n=25 (0.522) \u2026 PDL n=43 (0.605) \u2026 \"n=71 at 0.56 is null\"; :82 \"IB \u2026 4 \u00b7 0.500 \u00b7 50 %\"",
+   "evidence": "q11_replay.txt (reproduced byte-identically by rerun_q11): +2\u03c3 47 rows = 22/16/9 and \u22122\u03c3 24 = 12/10/2 \u2192 resolved 60, hold 34 \u2192 0.567; ONH 40 rows = 15/20/5 \u2192 resolved 35; ONL 25 rows = 12/11/2 \u2192 resolved 23; PDL 56 rows = 26/17/13 \u2192 resolved 43. So on one line 'n' is rows-incl-ambiguous for three kinds and the resolved denominator for the fourth. q12b IB* : 4 seats, first touch 1/1/0 \u2192 resolved n=2 (the \u00a71 column convention elsewhere, e.g. POC '4' of 6 seats, is the resolved n).",
+   "correction": "\"VWAP\u00b12\u03c3 34/60 = 0.567 [0.441, 0.684] n=60 \u00b7 ONH n=35 \u00b7 ONL n=23 \u00b7 PDL n=43\" (one convention: n = hold+break); :82 \"IB 2 \u00b7 0.500 \u00b7 50 % (4 seats)\"."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:161",
+   "claim": "[T] n=10: ON/RTH range ratio median 1.23 (0.35\u20131.55)",
+   "evidence": "q16_tod_gap_onrange.py computes `sorted(ratios)[len(ratios)//2]` \u2014 the upper median of an even-length list. The ten ratios (v09 recomputes the same values) sorted: 0.35, 0.57, 0.93, 0.99, 1.01, 1.23, 1.25, 1.47, 1.49, 1.55 \u2192 median (1.01+1.23)/2 = 1.12.",
+   "correction": "\"median 1.12 (0.35\u20131.55), n=10\" (or say 'upper median 1.23')."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:35 (also :190)",
+   "claim": "calendar \u2260 session on 5 of 8 measurable days (\u2212182.75, +78.75, +218.5/+37.5, +80.5, +42.5)",
+   "evidence": "v09_bars_days.py (all eight deltas reproduce the appendix at :264): 08-21 (\u22121.75, 0) \u00b7 08-25 (\u2212182.75, 0) \u00b7 08-26 (0, +78.75) \u00b7 08-27 (+218.5, +37.5) \u00b7 08-28 (0, 0) \u00b7 09-01 (\u22124.75, +80.5) \u00b7 09-02 (0, 0) \u00b7 09-03 (+42.5, 0) \u2192 the two definitions differ on 6 of 8 days; on 5 of them by \u226537 pts.",
+   "correction": "\"differs on 6 of 8 measurable days, by 37\u2013218 pts on five of them (08-21 by 1.75)\"."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:22",
+   "claim": "11 completed session days 08-20\u202609-03 at 1,380 bars each",
+   "evidence": "v02_bars_sessiondays.sql (17:00 CT roll): 08-20 1381, 08-21 1381 (each carries a 16:00:00 bar), 08-24\u202609-03 nine days at 1380.",
+   "correction": "\"11 completed session days, nine at 1,380 bars and two (08-20, 08-21) at 1,381\"."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:52 (P1)",
+   "claim": "8 is the code default (`levels_score.go:54`) and the value in the three inactive \"MNQ SIM Default\"/\u5747\u8861 strategies",
+   "evidence": "strategies table (9 rows): every strategy other than a5b7662e \u2014 two 'MNQ SIM Default', \u5747\u8861/\u7a33\u5065/\u79ef\u6781, three 'New Strategy' \u2014 carries max_levels 8 and proximity_filter_atr 1.5; only a5b7662e ('MNQ', bound to trader 8d5c8af5_\u2026) carries 12 / 1. DefaultMaxLevels = 8 at levels_score.go:54 confirmed.",
+   "correction": "\"and the value in the other eight strategies (all inactive)\"."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:64 (P13) and :160",
+   "claim": "The `bars` table now holds 17 days of 1m, unused by the level assembler (`trader/auto_trader_dayplan.go:20` fetches `AISVPBarCount = 2000`)",
+   "evidence": "bars 1m MNQ: 16,703 rows, 08-19 10:00 \u2192 09-04 12:19 CT = 15 calendar days with bars / 13 session days (a 17-day calendar span). `grep -n AISVPBarCount trader/auto_trader_dayplan.go` \u2192 :97 and :191 (line 20 is a comment); the constant is kernel/svp.go:47 (confirmed = 2000); the 12,000-bar candle fetch at auto_trader_planner.go:2320 confirmed.",
+   "correction": "\"15 calendar days (13 session days) of 1m \u2026 (`auto_trader_dayplan.go:97/:191` fetch `kernel.AISVPBarCount` = 2000, `svp.go:47`)\"."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:215",
+   "claim": "Positions citing a scenario (63, since 08-15, `pnl_corrected`)",
+   "evidence": "v06: 64 rows with cited_scenario_id and entry_time \u2265 08-15; minus source=e7_farside_test (572) = 63; two of those (530, 539) are 'off-plan' with plan_id 'UNRESOLVABLE' \u2014 the standing rule excludes them and q13 lists them as 'NO-SCEN' \u2014 leaving 61 in scope, of which 3 (576, 577, 579) have pnl_corrected NULL. The excluded counts are not shown.",
+   "correction": "\"61 in scope (64 \u2212 1 test-seam \u2212 2 UNRESOLVABLE, ids 530/539), 3 NULL excluded (576, 577, 579)\"."
+  },
+  {
+   "severity": "UNLABELLED",
+   "location": "report:53 (P2) and :252",
+   "claim": "deduplicated: 4 hold / 8 break / 2 ambiguous, p(hold)=0.333 [0.138, 0.609], n=12",
+   "evidence": "v03: the 14 RTH-L episodes carry one conflicting episode (opened 04:21 CT 09-03: 'break' in some reads, 'ambiguous_horizon' in others). q06/q10 collapse copies with MIN(outcome) \u2014 alphabetical \u2014 so it counts as ambiguous (and the DEMAND conflict hold/break counts as break). Honouring the 'break' reads gives 4/9/1 \u2192 0.308 [0.127, 0.576], n=13. Wilson for 4/12 reproduces exactly ([0.1381, 0.6094]).",
+   "correction": "Disclose the tie-break: \"4/8/2 (n=12) with the one conflicting episode counted ambiguous; 4/9/1 \u2192 0.308 [0.127, 0.576] if counted break \u2014 not separable from 0.5 either way\"."
+  }
+ ],
+ "overall": "The section's verdict survives this pass. Everything load-bearing reproduces from my own queries: the store as-of counts (all eleven tables), 677 rows = 423 episodes with RTH-L 140\u219214 and all 14 opened 22:10 CT 09-02 \u2192 08:36 CT 09-03 (the 09-03 RTH low 29199.25 printed at 08:36), the 15-read candidate pool with 181 cut rows all `max_levels: 12 seated, cap 12` at score 0.0 and `score_components='{}'` on 360/360, the plan census (2,391/249, A 1,920 = 80.3 %, dedup 906/985), the eight calendar-vs-session PDH/PDL deltas, 08-27's 218.5, the 09-02 13:58 CT engine PDH 29317.25 vs 29571@00h, the ASIA D-2 plans on 08-24/25/27, the strategy config (12/1/5/B), 167 knobs, arms (67; 6 marketable incl. ids 25/27/33/34/36 of 23\u201337; filled 24/28/35), the P&L sums and t-stats by condition, the checklist count (78 entries, 46 absent, CLASS 75 at 2002), the hour-of-day \u0394, 5/10 gap fills and 5/10 opening drives; the D1\u2032 port is faithful to kernel/detector_d1prime.go:120-187 and both q11 and q12b re-run byte-identically from my scratch dir, so every replay and plan-forward cell in \u00a71, \u00a72, \u00a73 and the appendix (~100 cells) stands, and all 66 Wilson intervals in the report check to \u00b10.001 (five by hand). The defects are in the framing layer, not the tape: the L11 \"same code [A]\" evidence is a command that prints nothing, and the planner line cites are 14 lines off on the running binary; 384 (not 110) level_state rows are consumed; the NULL-excluded position ids are the wrong ids (576/579/577, not 567/587/578); VWAP\u00b12\u03c3 seats in 13 sessions, not 4; the pool was read 15 times, not 12; the summary's \"one in fifteen\" belongs to the 200+ bucket, not to \">100 pts\"; EQH n=45 is mis-described as overlapping 0.5 when its interval clears both 0.5 and the replay null; and the seated-vs-cut reachability numbers that carry Recommendation 6 are one day of un-deduplicated row-reads (55/37 distinct levels), the same defect the report diagnosed in touch_outcomes. None of these reverses a ruling \u2014 retract-the-RTH-L-break, retire-nothing-under-30, fix-the-recorder and session-day PDH all hold \u2014 but Rec 6 and the EQH \"no verdict\" need their n's restated before they are quoted onward. Not checked: the 09-02 replay's 0.727 (n=22) / 0.625 (n=16) and grand-audit.md:74's missed-turn percentages (other reports, outside the store), and the q13 arm\u2192level-family mapping itself (I confirmed the ids and P&L it feeds, not its 1-pt nearest-level matching)."
+}

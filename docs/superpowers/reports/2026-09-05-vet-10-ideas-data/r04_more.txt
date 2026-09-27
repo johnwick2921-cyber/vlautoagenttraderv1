@@ -1,0 +1,58 @@
+== RTH-L touches by CT day and session ==
+2026-09-02|LONDON|2|2|2
+2026-09-02|NY|1|1|1
+2026-09-03|LONDON|26|24|16
+2026-09-03|NY|111|97|63
+== all touch_outcomes by CT day ==
+2026-09-02|3
+2026-09-03|516
+2026-09-04|158
+== NY kinds touched 09-04 ==
+VWAP|60
+OR-H|22
+SUPPLY|14
+POC|8
+OR-L|8
+RTH-H|6
+PDC|5
+PDH|4
+OB|3
+ONL|1
+== episode<->outcome join rate (tight) ==
+22
+== loose join (same trader, price +-0.26, same CT day) ==
+283
+== episodes day range from opened_at_ms ==
+2026-08-26|2026-09-04|1315
+== does session_day match opened_at_ms day? ==
+392|1315
+== approach_atr populated? ==
+1315|0|0.0|5.267
+== armed_entry rows ==
+576|armed_entry||2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|NY|29437.0|29437.0
+577|armed_entry||2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|NY|29413.0|29413.0
+579|armed_entry||2026-08-31:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|NY|29459.0|0.0
+582|armed_entry|129.5|2026-09-01:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|LONDON|29246.75|29182.0
+585|armed_entry|-77.5|2026-09-01:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|NY|29182.0|29220.75
+== entry hours CT, era non-test ==
+00|2
+01|2
+02|3
+03|3
+04|2
+05|4
+06|5
+07|5
+08|5
+09|9
+10|4
+11|3
+12|3
+13|4
+17|2
+18|1
+19|2
+20|2
+21|3
+22|3
+23|1

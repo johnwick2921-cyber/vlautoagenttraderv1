@@ -101,7 +101,7 @@ func armStateListViolations(path string, data []byte) []string {
 	// naming an arm classifier's argument "status" must not bypass the guard.
 	brokerFunctions := map[string]string{
 		"api/handler_trader_status.go":   "pollAndUpdateOrderStatus",
-		"trader/auto_trader_decision.go": "recordAndConfirmOrder",
+		"trader/auto_trader_decision.go": "recordAndConfirmOrderAs", // W1b FOLD-2 moved the broker-status poll here; recordAndConfirmOrder is now a thin wrapper
 		"trader/bybit/trader_orders.go":  "GetOrderStatus",
 		"trader/kucoin/trader_orders.go": "GetOrderStatus",
 	}

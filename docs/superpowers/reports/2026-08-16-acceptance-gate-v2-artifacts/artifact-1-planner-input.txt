@@ -1,0 +1,67 @@
+SYSTEM:
+You are a disciplined CME index-futures day-plan reasoner. Output ONLY the single JSON object requested — reasoning first, then the answer fields. No prose outside the JSON.
+
+USER:
+# DAY-PLAN READER — CME MNQ futures
+You are a disciplined pro reading the market ONCE, carefully. Write ONE structured day plan for this session. Facts below are Go-computed; your job is JUDGMENT, not re-deriving the map.
+
+## Session
+trade_date 2026-08-15 · session NY · NY scheduled read (stored+cached data) · price 30154.75 · dATR 197.2
+WARMING: session-profile store warming (0/10) (first-week honesty — narrate the machinery, not an edge).
+
+## Regime
+REGIME: trend D=n/a 1h=n/a · RV=72%-of-normal · VIX=n/a
+
+## Indicators (executor mirror — your ai_config toggles, computed values)
+### 4h
+EMA50: [29395.6025, 29405.4710, 29415.3937, 29427.1626, 29442.4013, 29460.6307, 29478.2432, 29491.1454, 29505.5123, 29520.3451, 29534.3512, 29559.5041, 29584.7883, 29609.5515, 29630.8142, 29652.1156, 29674.9738, 29696.6023, 29711.6865, 29729.0615]
+EMA200: [29315.5255, 29318.8262, 29322.2061, 29326.1194, 29330.9914, 29336.7253, 29342.4271, 29347.0522, 29352.1312, 29357.4210, 29362.5959, 29370.6870, 29378.9811, 29387.3122, 29394.9185, 29402.6706, 29410.9525, 29419.0674, 29425.6562, 29432.9109]
+RSI14: [50.2179, 51.2045, 51.8382, 55.0252, 60.0342, 63.9777, 64.0820, 56.8193, 59.2571, 60.5114, 60.0375, 71.5055, 72.3228, 72.6782, 67.6503, 68.4609, 70.6333, 69.9107, 58.8337, 62.1057]
+ATR14: 148.4619
+### 15m
+EMA50: [30179.0587, 30176.0172, 30171.7518, 30167.3106, 30163.4651, 30159.3978, 30155.4312, 30152.5222, 30149.6488, 30146.4174, 30144.0971, 30141.9071, 30139.6068, 30137.9065, 30136.7631, 30137.0665, 30136.9071, 30136.6852, 30136.9034, 30137.6033]
+EMA200: [30033.7808, 30034.4546, 30034.7809, 30035.0169, 30035.3575, 30035.6003, 30035.8256, 30036.2776, 30036.7052, 30037.0091, 30037.5090, 30038.0139, 30038.4640, 30039.0390, 30039.7327, 30040.7751, 30041.6928, 30042.5839, 30043.5756, 30044.6818]
+RSI14: [30.5548, 36.4606, 31.8184, 30.7416, 33.7099, 32.3888, 32.1744, 38.8579, 38.5026, 36.3548, 42.1474, 42.4295, 41.3438, 45.2654, 48.8093, 57.3206, 54.1988, 53.7194, 56.3342, 59.1580]
+ATR14: 29.4907
+### 3m
+EMA50: [30096.3527, 30098.0448, 30099.4352, 30100.8495, 30102.1103, 30103.2236, 30104.3521, 30105.3285, 30106.2666, 30107.2463, 30108.5602, 30109.7735, 30110.8706, 30112.0620, 30113.2458, 30114.2656, 30115.4807, 30116.7265, 30117.8451, 30119.2924]
+EMA200: [30156.9708, 30156.7969, 30156.5651, 30156.3555, 30156.1231, 30155.8682, 30155.6307, 30155.3682, 30155.1083, 30154.8709, 30154.7304, 30154.5788, 30154.4114, 30154.2804, 30154.1607, 30154.0124, 30153.9252, 30153.8587, 30153.7731, 30153.7828]
+RSI14: [75.8273, 74.0195, 68.0307, 68.9330, 66.4098, 63.8913, 64.7550, 61.8349, 61.8349, 63.2333, 69.0370, 67.5266, 65.3703, 67.5988, 68.2279, 64.2007, 68.2386, 69.4745, 66.6801, 72.3659]
+ATR14: 8.6066
+### 5m
+EMA50: [30093.9045, 30093.9965, 30094.3103, 30094.7491, 30095.2982, 30096.2473, 30097.4337, 30099.2794, 30101.1116, 30102.3817, 30103.5824, 30104.6772, 30105.6507, 30106.6546, 30107.9917, 30109.1488, 30110.4469, 30111.6549, 30112.9920, 30114.6295]
+EMA200: [30167.6594, 30166.9488, 30166.3026, 30165.6976, 30165.1309, 30164.6769, 30164.2970, 30164.1000, 30163.9199, 30163.6172, 30163.3126, 30162.9960, 30162.6627, 30162.3502, 30162.1353, 30161.8901, 30161.6947, 30161.4913, 30161.3346, 30161.2691]
+RSI14: [52.3699, 56.7009, 59.1854, 60.6649, 62.0409, 66.2469, 68.6804, 73.8929, 74.2771, 65.6119, 65.2838, 64.2459, 62.8121, 63.5781, 67.4925, 64.9218, 66.9058, 66.0587, 68.0208, 71.5617]
+ATR14: 12.6410
+
+## Ranked levels (Go-graded; you never re-sort)
+  30150.00  👤 GATE REHEARSAL (acceptance gate A6 — delete me) grade A  owner    -4.8
+  30154.75  PDC            grade A  fresh    +0.0
+  30218.00  EQH            grade A  fresh    +63.2
+  30219.50  EQH            grade A  fresh    +64.8
+  30223.50  EQL            grade A  fresh    +68.8
+  30280.75  RTH-H          grade A  fresh    +126.0
+  30025.00  PDL            grade A  fresh    -129.8
+  30025.00  RTH-L          grade A  fresh    -129.8
+  30287.25  PDH            grade A  fresh    +132.5
+
+## Structure (1 line/TF)
+  D: structure read
+  4h: structure read
+  1h: structure read
+  15m: structure read
+
+## Calendar (this session's window)
+  (no filtered events)
+
+## OUTPUT — one JSON object, reasoning FIRST, no prose outside it
+{
+  "reasoning": "<your read: what the auction is doing and why this plan>",
+  "bias": {"direction": "long|short|neutral", "conviction": "high|medium|low", "flip_condition": "<explicit>"},
+  "levels": [{"price": <n>, "label": "<PDH|ONH|nPOC…>", "grade": "A|B|C", "instruction": "<verb>"}],  // max 8
+  "scenarios": [{"id": "S1", "trigger": "<setup>", "condition": "reclaim|hold|sweep_reclaim|reject|acceptance|breakout_retest", "direction": "long|short", "target_chain": [<n>,…], "invalid": "<line>", "quality": "A+|A|B"}],  // 1..3
+  "no_trade": ["first 5m", "12:00-13:30 lunch", "<calendar blackouts>"],
+  "death_condition": "<the single line that invalidates this whole plan>",
+  "day_type": "trend|balance|<optional>"
+}
+Rules: levels chosen ONLY from the ranked table above; S/D & FVG are confluence, never standalone. Respect the no-trade windows. If you cannot form a credible plan, say so in reasoning and output a neutral/no-trade plan.

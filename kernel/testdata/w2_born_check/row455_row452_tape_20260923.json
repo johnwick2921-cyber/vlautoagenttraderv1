@@ -1,0 +1,379 @@
+{
+ "provenance": "W-EXEC-TRUTH W2 A1/A2 fixture. Point reads, read-only (sqlite3 -readonly) from data/data.db on 2026-09-23 10:36 CT by lane Claude-101: plans rowid 455 (2026-09-23:LONDON v1, created 01:51:47 CDT) and rowid 452 (2026-09-22:ASIA v1, created 16:36:51 CDT) — scenario id/condition/direction/trigger/invalid + death/flip/price_at_write only; bars MNQ 1m (contract MNQ 12-26, source live) open_time_ms 1790144400000..1790146500000 (01:20..01:55 CDT). Read clock of row 455 = 01:30:27 CDT (1790145027000, as stated in CTO amendment msg 1790166603535); publish clock = row created_at 01:51:47 CDT (1790146307000). log_events 92916-92919 are row 455's four 'UNKNOWN ... ACCEPTED' warnings.",
+ "read_clock_ms": 1790145027000,
+ "publish_clock_ms": 1790146307000,
+ "rows": {
+  "455": {
+   "rowid": 455,
+   "plan": "2026-09-23:LONDON v1",
+   "created_at": "2026-09-23 01:51:47.925812345-05:00",
+   "price_at_write": 31057.5,
+   "death": {
+    "price": 31075.75,
+    "side": "above",
+    "rule": "2x5m"
+   },
+   "flip": {
+    "price": 31066.32,
+    "side": "above",
+    "rule": "5m_close",
+    "flip_to": "long"
+   },
+   "bias": "short",
+   "scenarios": [
+    {
+     "id": "S1",
+     "condition": "reject",
+     "direction": "short",
+     "trigger": "Rally into 31075.75 PDH stalls at the top of the inside range, at 95% premium; fade the first re-test after the level was consumed.",
+     "invalid": "Any 5m close above 31075.75 invalidates the fade; stand aside for the breakout."
+    },
+    {
+     "id": "S2",
+     "condition": "reject",
+     "direction": "short",
+     "trigger": "Price pulls back to 31066.32 VWAP+2σ from below after the break from the highs; the re-test stalls below the level and rejects. The 83pt down displacement is above the waterfall floor.",
+     "invalid": "Any 5m close above 31066.32 invalidates the fade; stand aside for the breakout."
+    },
+    {
+     "id": "S3",
+     "condition": "sweep_reclaim",
+     "direction": "long",
+     "trigger": "Price sweeps 30983.25 ONL and then prints a 1m_mss above 30998.26 VWAP−2σ to reclaim the low; a liquidity-reclaim long is the only permitted long this high in the range.",
+     "invalid": "A 2x5m close below 30983.25 means the pool is not reclaimed; stand aside."
+    },
+    {
+     "id": "S4",
+     "condition": "hold",
+     "direction": "short",
+     "trigger": "Price prints 1m closes holding below 31050.00 RTH-H for ACCEPT_HOLD_MIN minutes with no reclaim of the level; the retest-hold after consumption is new short evidence.",
+     "invalid": "A 5m close back above 31050.00 invalidates the hold; abandon the continuation."
+    }
+   ]
+  },
+  "452": {
+   "rowid": 452,
+   "plan": "2026-09-22:ASIA v1",
+   "created_at": "2026-09-22 16:36:51.688892997-05:00",
+   "price_at_write": 31002.5,
+   "death": {
+    "price": 31018.25,
+    "side": "above",
+    "rule": "2x5m"
+   },
+   "flip": {
+    "price": 31015.23,
+    "side": "above",
+    "rule": "5m_close",
+    "flip_to": "long"
+   },
+   "bias": "short",
+   "scenarios": [
+    {
+     "id": "S1",
+     "condition": "reject",
+     "direction": "short",
+     "trigger": "Price touches 31015.23 eVWAP from below and rejects.",
+     "invalid": "5m close above 31015.23 invalidates the fade."
+    },
+    {
+     "id": "S2",
+     "condition": "acceptance",
+     "direction": "long",
+     "trigger": "Price breaks above 31009.75 SWG-H·5m, retests it from above, and holds above it for 3 minutes of 1m closes.",
+     "invalid": "1m close below 31009.75 breaks the acceptance and invalidates the long."
+    }
+   ]
+  }
+ },
+ "bars_mnq_1m": [
+  {
+   "open_time_ms": 1790144400000,
+   "o": 31055.25,
+   "h": 31057.5,
+   "l": 31052.75,
+   "c": 31055.0,
+   "v": 260.0
+  },
+  {
+   "open_time_ms": 1790144460000,
+   "o": 31054.25,
+   "h": 31056.0,
+   "l": 31039.0,
+   "c": 31042.25,
+   "v": 1982.0
+  },
+  {
+   "open_time_ms": 1790144520000,
+   "o": 31041.75,
+   "h": 31049.5,
+   "l": 31039.5,
+   "c": 31048.0,
+   "v": 779.0
+  },
+  {
+   "open_time_ms": 1790144580000,
+   "o": 31048.5,
+   "h": 31051.75,
+   "l": 31045.25,
+   "c": 31047.25,
+   "v": 304.0
+  },
+  {
+   "open_time_ms": 1790144640000,
+   "o": 31046.75,
+   "h": 31050.75,
+   "l": 31046.25,
+   "c": 31049.75,
+   "v": 252.0
+  },
+  {
+   "open_time_ms": 1790144700000,
+   "o": 31050.5,
+   "h": 31056.5,
+   "l": 31049.75,
+   "c": 31054.25,
+   "v": 447.0
+  },
+  {
+   "open_time_ms": 1790144760000,
+   "o": 31054.5,
+   "h": 31059.75,
+   "l": 31054.25,
+   "c": 31058.0,
+   "v": 679.0
+  },
+  {
+   "open_time_ms": 1790144820000,
+   "o": 31058.25,
+   "h": 31062.75,
+   "l": 31055.5,
+   "c": 31056.75,
+   "v": 730.0
+  },
+  {
+   "open_time_ms": 1790144880000,
+   "o": 31056.5,
+   "h": 31059.75,
+   "l": 31055.5,
+   "c": 31057.0,
+   "v": 252.0
+  },
+  {
+   "open_time_ms": 1790144940000,
+   "o": 31058.0,
+   "h": 31059.0,
+   "l": 31056.25,
+   "c": 31057.5,
+   "v": 251.0
+  },
+  {
+   "open_time_ms": 1790145000000,
+   "o": 31057.25,
+   "h": 31059.25,
+   "l": 31056.0,
+   "c": 31059.25,
+   "v": 137.0
+  },
+  {
+   "open_time_ms": 1790145060000,
+   "o": 31060.5,
+   "h": 31073.0,
+   "l": 31058.5,
+   "c": 31072.75,
+   "v": 1352.0
+  },
+  {
+   "open_time_ms": 1790145120000,
+   "o": 31073.0,
+   "h": 31075.25,
+   "l": 31065.25,
+   "c": 31074.5,
+   "v": 1458.0
+  },
+  {
+   "open_time_ms": 1790145180000,
+   "o": 31074.25,
+   "h": 31077.5,
+   "l": 31071.75,
+   "c": 31073.0,
+   "v": 937.0
+  },
+  {
+   "open_time_ms": 1790145240000,
+   "o": 31072.75,
+   "h": 31081.5,
+   "l": 31071.5,
+   "c": 31081.0,
+   "v": 1115.0
+  },
+  {
+   "open_time_ms": 1790145300000,
+   "o": 31081.0,
+   "h": 31088.5,
+   "l": 31078.5,
+   "c": 31087.0,
+   "v": 1236.0
+  },
+  {
+   "open_time_ms": 1790145360000,
+   "o": 31087.0,
+   "h": 31089.25,
+   "l": 31083.0,
+   "c": 31088.75,
+   "v": 955.0
+  },
+  {
+   "open_time_ms": 1790145420000,
+   "o": 31089.0,
+   "h": 31089.75,
+   "l": 31086.25,
+   "c": 31087.0,
+   "v": 427.0
+  },
+  {
+   "open_time_ms": 1790145480000,
+   "o": 31087.25,
+   "h": 31090.5,
+   "l": 31084.25,
+   "c": 31089.75,
+   "v": 645.0
+  },
+  {
+   "open_time_ms": 1790145540000,
+   "o": 31089.25,
+   "h": 31094.75,
+   "l": 31088.0,
+   "c": 31090.75,
+   "v": 985.0
+  },
+  {
+   "open_time_ms": 1790145600000,
+   "o": 31090.5,
+   "h": 31091.5,
+   "l": 31082.75,
+   "c": 31083.75,
+   "v": 694.0
+  },
+  {
+   "open_time_ms": 1790145660000,
+   "o": 31083.75,
+   "h": 31084.5,
+   "l": 31079.75,
+   "c": 31081.0,
+   "v": 573.0
+  },
+  {
+   "open_time_ms": 1790145720000,
+   "o": 31081.0,
+   "h": 31085.75,
+   "l": 31081.0,
+   "c": 31083.75,
+   "v": 388.0
+  },
+  {
+   "open_time_ms": 1790145780000,
+   "o": 31084.25,
+   "h": 31085.5,
+   "l": 31078.25,
+   "c": 31079.0,
+   "v": 453.0
+  },
+  {
+   "open_time_ms": 1790145840000,
+   "o": 31078.25,
+   "h": 31083.5,
+   "l": 31073.75,
+   "c": 31083.0,
+   "v": 927.0
+  },
+  {
+   "open_time_ms": 1790145900000,
+   "o": 31082.75,
+   "h": 31083.0,
+   "l": 31074.0,
+   "c": 31074.25,
+   "v": 600.0
+  },
+  {
+   "open_time_ms": 1790145960000,
+   "o": 31074.25,
+   "h": 31075.25,
+   "l": 31057.25,
+   "c": 31058.5,
+   "v": 1754.0
+  },
+  {
+   "open_time_ms": 1790146020000,
+   "o": 31058.5,
+   "h": 31075.0,
+   "l": 31057.25,
+   "c": 31072.5,
+   "v": 1146.0
+  },
+  {
+   "open_time_ms": 1790146080000,
+   "o": 31072.25,
+   "h": 31081.0,
+   "l": 31072.0,
+   "c": 31079.0,
+   "v": 785.0
+  },
+  {
+   "open_time_ms": 1790146140000,
+   "o": 31079.25,
+   "h": 31081.0,
+   "l": 31078.0,
+   "c": 31079.75,
+   "v": 307.0
+  },
+  {
+   "open_time_ms": 1790146200000,
+   "o": 31079.75,
+   "h": 31081.0,
+   "l": 31071.0,
+   "c": 31071.5,
+   "v": 646.0
+  },
+  {
+   "open_time_ms": 1790146260000,
+   "o": 31072.0,
+   "h": 31077.25,
+   "l": 31070.75,
+   "c": 31074.25,
+   "v": 441.0
+  },
+  {
+   "open_time_ms": 1790146320000,
+   "o": 31074.25,
+   "h": 31075.5,
+   "l": 31068.25,
+   "c": 31072.0,
+   "v": 442.0
+  },
+  {
+   "open_time_ms": 1790146380000,
+   "o": 31071.75,
+   "h": 31071.75,
+   "l": 31065.0,
+   "c": 31066.25,
+   "v": 492.0
+  },
+  {
+   "open_time_ms": 1790146440000,
+   "o": 31066.25,
+   "h": 31068.75,
+   "l": 31062.75,
+   "c": 31063.75,
+   "v": 478.0
+  },
+  {
+   "open_time_ms": 1790146500000,
+   "o": 31063.75,
+   "h": 31064.75,
+   "l": 31061.25,
+   "c": 31062.25,
+   "v": 387.0
+  }
+ ]
+}

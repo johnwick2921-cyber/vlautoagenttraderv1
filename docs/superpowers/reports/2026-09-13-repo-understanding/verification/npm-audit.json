@@ -1,0 +1,20 @@
+{
+  "task": "npm-audit",
+  "command": [
+    "npm",
+    "audit",
+    "--json"
+  ],
+  "cwd": "/tmp/nofx-audit-repairs-20260913/web",
+  "source_revision": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+  "end_revision": "e333de41bfffec2ea2cce67ab4296ce8bbd12fc0",
+  "source_clean_before": true,
+  "source_clean_after": true,
+  "started_utc": "2026-09-13T14:43:49.664338+00:00",
+  "duration_seconds": 0.38,
+  "exit_code": 0,
+  "log": "/tmp/nofx-final-verification/npm-audit.log",
+  "log_bytes": 365,
+  "log_sha256": "7edb01b7767ffc8fa3a722cf36eed29fd4f75b67ca8654e780534bf23ded10dd",
+  "revision_unchanged": true
+}

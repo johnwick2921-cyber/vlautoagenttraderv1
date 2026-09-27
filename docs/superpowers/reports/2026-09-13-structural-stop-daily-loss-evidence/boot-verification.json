@@ -1,0 +1,24 @@
+{
+  "observed_at_ct": "2026-09-13T01:04:20.177698-05:00",
+  "pid": "24534",
+  "health": {
+    "revision": "0c9d4f30a047",
+    "status": "ok",
+    "time": null
+  },
+  "binary_revision": "0c9d4f30a0470510a15e4aa92d7fa6ec96e9c38d",
+  "running_md5": "1dba3de51d4813481546ecb933325d4c",
+  "vcs_modified": false,
+  "boot_lines": [
+    "09-13 01:04:16 [INFO] nofx/main.go:295 \ud83d\udd10 BOOT INTEGRITY OK \u2014 rev 0c9d4f30a047 \u00b7 built 2026-09-13T05:58:55Z \u00b7 expected 0c9d4f30a047 \u00b7 goldens PASS",
+    "09-13 01:04:16 [INFO] nofx/main.go:548 \ud83c\udfaf stop/target: stop=zone-edge+buffer buffer=4.50[I] (p95 of measured overshoot; resolver=ResolveStructuralStop:C5_MNQ_default[I]; calibration=C5-H12-IS-6181-p95-20260912; sweep=[0.25 1.25 4.5] points[I]) \u00b7 atr-fallback=0 \u00b7 refused today=0 (no_target=0 net<=0=0 rr<2.00=0 no_provenance=0 other=0) \u00b7 target=first-distinct-eligible-zone \u00b7 never-widened=asserted \u00b7 research-candidate"
+  ],
+  "release_disk": "0c9d4f30a0470510a15e4aa92d7fa6ec96e9c38d",
+  "release_head": "0c9d4f30a0470510a15e4aa92d7fa6ec96e9c38d",
+  "guide_source": "0c9d4f30a0470510a15e4aa92d7fa6ec96e9c38d",
+  "dist_files_verified": 92,
+  "dist_revision_assets": [
+    "assets/index-COvgwytr.js"
+  ],
+  "bound_config_sha256_unchanged": "3e63209e52f9709b6366c1e7164ecdbaea5069567c0159e98593f170b5158a51"
+}

@@ -179,7 +179,7 @@ func TestEntryGateArmSeamBuilderRefusesShadow(t *testing.T) {
 	// Breakout_retest is shadowed by env in this test process — resolve through
 	// the real chain so the arm seam's builder exercises conditionShadowedFor.
 	t.Setenv("SHADOW_CONDITIONS", "breakout_retest")
-	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0)
+	reason, refused := at.entryGateForArm(plan, sc, leg, "long", "long", 0, time.Date(2026, 9, 2, 15, 0, 0, 0, time.UTC))
 	if !refused {
 		t.Fatalf("arm seam must refuse the shadowed arm through EntryGate; got allow")
 	}
@@ -197,7 +197,7 @@ func TestEntryGateDecisionBuilderRefusesRRAtLivePrice(t *testing.T) {
 		TakeProfit: 29113.25,
 	}
 	// live price = 587's real fill.
-	reason, refused := at.entryGateForDecision(d, 29079.25)
+	reason, refused := at.entryGateForDecisionAt(d, 29079.25, time.Now())
 	if !refused {
 		t.Fatalf("decision builder must refuse 587's intent at the live fill; got allow")
 	}
@@ -263,8 +263,11 @@ func TestArmSeamATR5mIsTheOneResolver(t *testing.T) {
 	live := 29200.0
 	wantDist := 0.95 * floor // sub-floor → min-SL leg must fire
 	d := &kernel.Decision{Action: "open_short", Symbol: "MNQ",
-		StopLoss: live + wantDist, TakeProfit: live - 3*wantDist}
-	reason, refused := at.entryGateForDecision(d, live)
+		// W1b E12(a): the target sits at 4× (was 3×). At exactly 3.00 the R:R
+		// leg judged on the WIRE-rounded stop (ceil for a short) reads 2.98 and
+		// refuses first, hiding the min-SL leg this test is about.
+		StopLoss: live + wantDist, TakeProfit: live - 4*wantDist}
+	reason, refused := at.entryGateForDecisionAt(d, live, time.Now())
 	if !refused {
 		t.Fatalf("decision path must refuse the sub-floor stop; got allow")
 	}

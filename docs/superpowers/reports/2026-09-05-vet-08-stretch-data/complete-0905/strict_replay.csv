@@ -1,0 +1,25 @@
+opportunity,decision_id,current_verdict,source,counterfactual_pnl
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S3,36122,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S2,36164,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,36336,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,36394,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S4,36422,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,36640,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,36641,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,36642,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,36645,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S2,36703,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,36864,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37304,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37305,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37306,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37307,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37308,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37310,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37311,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37313,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37315,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37318,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37319,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37320,strict_refused,trader/entry_gate.go:179,not inferred
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,37322,strict_refused,trader/entry_gate.go:179,not inferred

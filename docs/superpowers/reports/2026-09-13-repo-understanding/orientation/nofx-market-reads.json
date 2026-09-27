@@ -1,0 +1,956 @@
+{
+  "assignment": "orientation1-market-planning",
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "worktree": "/tmp/nofx-understanding-market-20260913",
+  "scope_note": "Manual critical-path orientation, NOT complete repository or function coverage. No runtime reads, tests, code/config changes or CGC reindex. Absent subsystem AGENTS files verified via tracked-file inventory.",
+  "reads": [
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 7824,
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "last_change": "07b53e6500c18b2531ec30a78675393cf09caef4 2026-09-10T17:13:53-05:00 cleanup batch 1 \u2014 B5 the mutation harness that cannot fake a verdict, B6 the worktree-add check"
+    },
+    {
+      "path": "market/bar_resolver.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 10642,
+      "sha256": "ec6a958bd7a73616bd08d1722a035bd6341b017ce6dbf927d3adf7e58ecd0046",
+      "last_change": "5821ae55f9b00d8201c5edf1ab0c3566ce03bbd4 2026-09-02T12:25:16-05:00 feat(bars): persist EVERY cached TF (owner ruling) + per-TF retention + convention label"
+    },
+    {
+      "path": "market/futures_data.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 815,
+      "sha256": "7cc445f976e664d27bb110268ab245c489d5d9d0bbbef00d2ea6d33191e0a844",
+      "last_change": "0fa6eb5dc8510b77ff4ffcf0134b0687ad94faaf 2026-05-28T15:58:14-05:00 feat(nt8): Stage 3 \u2014 futures kernel data path reads NT8 BarCache (real MNQ bars, crypto untouched)"
+    },
+    {
+      "path": "market/data_freshness.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 6471,
+      "sha256": "fd5731444db4f4e53ef51ac5d3ecc0f10ca1b7b02e65d44e779b9a7e7e7335ce",
+      "last_change": "925665d8eacde35e3e9d6caf4a6dff29112bdd8a 2026-05-26T13:16:02-05:00 feat(plan3): risk limits + force-flat kill switch + stale-data drift detection"
+    },
+    {
+      "path": "market/timeframe.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 1637,
+      "sha256": "f10a3f082871866587f2386607eeabf5021cdc4ad0499681738f499dd93d8b93",
+      "last_change": "85794a72df275db4d7ae17e1f0a59cb357a55c81 2026-03-15T11:50:08+08:00 feat: add X-Client-ID header for claw402 monitoring"
+    },
+    {
+      "path": "market/futures_symbol.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 8061,
+      "sha256": "686034bb8bfeee4aa97ffbcdb65be8f152acdafc02bbe75da617daee2aaa3eea",
+      "last_change": "227172fcff6c72fd1d88052274fd25ceb9e577d4 2026-06-02T18:10:02-05:00 feat(kernel): Phase 3 \u2014 parameterize the futures AI prompt by the active symbol"
+    },
+    {
+      "path": "market/data_indicators.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 5717,
+      "sha256": "76cc3925520e711876df1346bd817aba7930bd4649da177f720698395d9dd4b3",
+      "last_change": "85794a72df275db4d7ae17e1f0a59cb357a55c81 2026-03-15T11:50:08+08:00 feat: add X-Client-ID header for claw402 monitoring"
+    },
+    {
+      "path": "market/types.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 11170,
+      "sha256": "ef779f970213c5a4283a01ce7a78d0716429ab9370177cb5c65e6f51b9ba42cd",
+      "last_change": "cc9dd9199bb217935e0d78a73676567dd867e603 2026-08-13T18:26:08-05:00 fix(prompt): F9 \u2014 honest RSI snapshot label from the configured period"
+    },
+    {
+      "path": "market/bar_resolver_test.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 9025,
+      "sha256": "f5eb323d39988eab76f1de6532f2262395bce58176fd973bf76e859dd527b44d",
+      "last_change": "f9d1ca4d9a67041685f313439aa3c413343bc791 2026-09-02T12:18:09-05:00 feat(bars): the one resolver \u2014 CompletedBars/CompletedBar, per-TF fallback ladder as DATA, repaint law at one chokepoint"
+    },
+    {
+      "path": "provider/ninjatrader/contract_roll.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 5688,
+      "sha256": "bcc0abee9cd42a9d2223baaec9d67791923037237b6b086b9727943f620a0b1a",
+      "last_change": "3ef6efd75b3e317b943482c520de864d960a1c0a 2026-09-10T21:58:52-05:00 roll: pins E1/E3/E4/E5/E6 + D1/D4, mutation matrix 7/7 killed via scripts/mutate.sh"
+    },
+    {
+      "path": "provider/ninjatrader/bar_source.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 7960,
+      "sha256": "7319d974f57b6e6bb8c950b90d682c13b738fb1901b75df07575197ca78bf808",
+      "last_change": "7c34480432a5b04629769f9b13bb29e76f5b7eac 2026-09-10T23:27:28-05:00 bar-source: an unverified replay is not the record \u2014 held out of the store until the ring judges it"
+    },
+    {
+      "path": "provider/ninjatrader/bar_cache.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 19274,
+      "sha256": "62b4e06848ce3572b75fbdbcc8b36f8c731d2b3496ac3bc1b9cf9586bb80ee48",
+      "last_change": "7c34480432a5b04629769f9b13bb29e76f5b7eac 2026-09-10T23:27:28-05:00 bar-source: an unverified replay is not the record \u2014 held out of the store until the ring judges it"
+    },
+    {
+      "path": "provider/ninjatrader/bar_persist.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 13697,
+      "sha256": "c5cabbdda79b1400efe1fd7be78672e5151d11b8087687851b44cec35a80361a",
+      "last_change": "f5912fbb4c5f3b1309d3c911fc86a954af1c10af 2026-09-03T23:32:32-05:00 fix(persist): a counter must survive being reported (class 77)"
+    },
+    {
+      "path": "kernel/levels.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 7631,
+      "sha256": "18e747b5c320de92d9be4117ff9be4ecda8f44e778eeadd2d2e47f1286660224",
+      "last_change": "8cfc739499c74f9567ff35a44c95b5e4fc4c2daa 2026-09-11T12:51:47-05:00 feat(level-zones): preserve full map with bounded nearest-cluster presentation"
+    },
+    {
+      "path": "kernel/level_zone_inputs.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 2265,
+      "sha256": "7b7c22bd96c3aaf70a34e36a0e39f0d8a7b5c977bc76c3039a10855d29517c3e",
+      "last_change": "5e81db95c1ac9788fd26caa23fa4bfaee119dfff 2026-09-11T13:09:08-05:00 fix(level-zones): require known merge bounds and record pre-existing suite blocker"
+    },
+    {
+      "path": "kernel/level_identity.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 775,
+      "sha256": "bdb480b65261c2e245a186b7ea933477d002654b8fd305b07de0ef0293ccd0a0",
+      "last_change": "958cbd61a55ce5a74a406047ef18e53a5092e655 2026-08-15T11:59:48-05:00 feat(dayplan): W7 \u2014 wire the level-state writer (cross-session burn memory)"
+    },
+    {
+      "path": "kernel/level_zones.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 10816,
+      "sha256": "757ac84f4da1b65292d60cf307666b600cc86b1a5cebfc9b58e0214f9efa379b",
+      "last_change": "5e81db95c1ac9788fd26caa23fa4bfaee119dfff 2026-09-11T13:09:08-05:00 fix(level-zones): require known merge bounds and record pre-existing suite blocker"
+    },
+    {
+      "path": "kernel/one_setup.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 8210,
+      "sha256": "bf69fe5de11e6e249fe14fb173bb399ddba2bbc1c605a6b83b8b05323dd5c464",
+      "last_change": "f047696e09adb5f52b5d7f4cffd7f99dfb8cb8be 2026-09-11T00:55:52-05:00 one-setup: E0 map pin (green on the untouched tree) + the predicate, pure, takes now \u2014 E1/E3/E4 RED then GREEN"
+    },
+    {
+      "path": "kernel/fade_permission.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 8754,
+      "sha256": "d2730d6bd33c61c79e2d8ea1ffdeebb273591d01e2bcecfc86fc0c09e37f426f",
+      "last_change": "375bca460a686f17903611ad955f67290fac9b4c 2026-09-10T17:27:25-05:00 feat(W2 1/n): the fade-permission predicate \u2014 pure, and honest about what it misses"
+    },
+    {
+      "path": "kernel/entry_law.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 10616,
+      "sha256": "255be26dccf85852ebf7270219c1eb42a30b047ca8aec7211dc258a15fecc6e6",
+      "last_change": "575e9c05f2a38680b2541009094ac134582e0955 2026-09-02T19:01:33-05:00 fix(repair): the rider attaches the per-condition CONFIRM TABLE, not the enum (owner ruling 2026-09-02)"
+    },
+    {
+      "path": "kernel/levels_assemble.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 27597,
+      "sha256": "2fd66c237761b3400aa80c6119e308ffc1010f100a8df619988f46ac5d64ae23",
+      "last_change": "285838b5a1359f0dee56a8cb12a9880250113ced 2026-09-10T18:31:48-05:00 fix(identity): retain exact merged-member provenance beside the primary id"
+    },
+    {
+      "path": "kernel/scenario_level_identity.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 8617,
+      "sha256": "6807739da4d77efff9fd8b9a288ea76c7cb3f06161c4733fb32aa9aa30b0aa06",
+      "last_change": "285838b5a1359f0dee56a8cb12a9880250113ced 2026-09-10T18:31:48-05:00 fix(identity): retain exact merged-member provenance beside the primary id"
+    },
+    {
+      "path": "kernel/scenario_economics.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 11868,
+      "sha256": "e61567716e228f2802c886d0a6dc34b9545d202a309b4e3cdccef70c73a9868a",
+      "last_change": "c40bb45a6e47c796810441cbf15069f2bee19e1e 2026-09-08T16:43:32-05:00 docs(scenario-economics): state legacy UNKNOWN intent and superseding C5 correction"
+    },
+    {
+      "path": "kernel/feed_policy.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 2283,
+      "sha256": "3e8c91863f3c89d92d247c4efe7ab399cbc83eebca168a2c9fa964ad745a2340",
+      "last_change": "99850b2fe231f5db233eb0eaa64f0847e411abbe 2026-08-20T00:55:15-05:00 fix(T6): one feed-aliveness policy \u2014 flat FEED_ALERT_S=600 / in-position INTRADE_FEED_ALERT_S=120 consumed by BOTH the B4 entry gate (new any-subscribed-TF fallback kills the {15m,1h}-only blindness; the 1m/5m per-period contract stays primary) and the feed-down alerts (10-min const now env-tunable, same default)"
+    },
+    {
+      "path": "kernel/stale_data.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 7661,
+      "sha256": "91e8307531547cce4f53d3932d3bf5ad9795dff567ea1752e3821bbf1b4809f5",
+      "last_change": "99850b2fe231f5db233eb0eaa64f0847e411abbe 2026-08-20T00:55:15-05:00 fix(T6): one feed-aliveness policy \u2014 flat FEED_ALERT_S=600 / in-position INTRADE_FEED_ALERT_S=120 consumed by BOTH the B4 entry gate (new any-subscribed-TF fallback kills the {15m,1h}-only blindness; the 1m/5m per-period contract stays primary) and the feed-down alerts (10-min const now env-tunable, same default)"
+    },
+    {
+      "path": "kernel/timeframes.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 1563,
+      "sha256": "29f78c851e8c66c16d6c47257ae7e14f5cc97ccd31e179779bbc08b3847a39ff",
+      "last_change": "e424ec41bf60bbf18ec05a12ee5b6945aa46876e 2026-08-20T00:53:41-05:00 fix(T3): ONE timeframe table (kernel/timeframes.go) \u2014 the three drifted private copies delegated (stale_data 1m/5m/15m-only, dodge, NT8 bridge with its silent unknown\u219260s CloseTime fabrication); unmapped primary TF is now a named BOOT FAIL; 3m/30m gain forming labels + correct interval math"
+    },
+    {
+      "path": "kernel/ensure_market_data.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 1316,
+      "sha256": "29934611cf2673f292c07c2feaf32bba5957a33184d8a9542468a6ad316a19c1",
+      "last_change": "d910d51ced9a8fce6fcd6214ea2a9bff49c9ce39 2026-08-19T18:09:58-05:00 fix(watcher-eyes): U1 \u2014 watch cycles fetch real market data (kernel.EnsureMarketData: MarketDataMap + SnapshotMs + prompt-snapshot stamped like the decision path); the #55 observer was market-blind (PR #56 census FAIL U1) \u2014 price/PnL read 0 and the prompt had no bars; fail-safe heartbeat on fetch failure"
+    },
+    {
+      "path": "kernel/ask_planner.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 5767,
+      "sha256": "ea8ae5d36634a74bb1a89fcc347d54a6c7fdd16e7b2b4735dacea2e2ebb7056f",
+      "last_change": "22b91aefc7bb225b2e7c7cb8759ae5ca033c656b 2026-08-15T10:01:17-05:00 fix(dayplan): P5 hardening \u2014 adversarial-review findings (12 confirmed)"
+    },
+    {
+      "path": "kernel/planner_repair.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 6405,
+      "sha256": "abba469746b572467dee7960f76fd89b7a0bba6de67f14f8ea802ec1736761cc",
+      "last_change": "575e9c05f2a38680b2541009094ac134582e0955 2026-09-02T19:01:33-05:00 fix(repair): the rider attaches the per-condition CONFIRM TABLE, not the enum (owner ruling 2026-09-02)"
+    },
+    {
+      "path": "kernel/plan_lifecycle.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 17318,
+      "sha256": "35734bfbf91667f8b0172318e5d12eb13398b8e5cd36c2db2c160c52041b55b0",
+      "last_change": "1a6878bc3dcd05d97111be99101e426172e9bd1f 2026-08-30T16:42:02-05:00 docs: entry-mechanics wave park report (E1-E9 + acceptance-rule ADDENDUM, D-rule sequencing); gofmt touched files"
+    },
+    {
+      "path": "kernel/confirmation_bucket.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 2867,
+      "sha256": "bb6382a5d43e2df222746b6f7ea935c158cc94e9a6da3944238533df570a7496",
+      "last_change": "e020885b86621d68534fbc237472fc3171688d62 2026-09-08T14:21:34-05:00 fix(confirmation): require closed buckets and ordered reference evidence"
+    },
+    {
+      "path": "kernel/confirmation_evidence.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 4923,
+      "sha256": "9454f309eb527438aa44d03900113f3b5171e9fac0e0e2a1ccd6c5f5b9be24f0",
+      "last_change": "b99963857c453f909570eba7a854a8ec23eed087 2026-09-08T14:30:06-05:00 test(confirmation): pin the ruled carve-out and publish mutation evidence"
+    },
+    {
+      "path": "kernel/bar_horizon.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 8584,
+      "sha256": "f39a1f283a96ee061ba171ded201581d9d1fbd57d9b127ad616bdb9f16653285",
+      "last_change": "a2d85bad7c85dfe81ef73651d9a74ee91abeb102 2026-09-09T14:29:52-05:00 feat(bars-horizon): the SERVED bar scope is observable \u2014 one warn at the bridge, three arms"
+    },
+    {
+      "path": "kernel/session_registry.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 11474,
+      "sha256": "e6a712af9cbace7ea9a0100e217c88ac9a8997aeda28e93bf58403bab0d876f9",
+      "last_change": "3f23d9bb5404696c7eeabc43bb133c118d60a6f7 2026-09-07T17:24:16-05:00 feat(session-calendar): the fold \u2014 one calendar, one owner, and the sourced close times win"
+    },
+    {
+      "path": "kernel/cme_calendar.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 9480,
+      "sha256": "a3f8c0aec13e2cd4c2645c7e4495b5f011bba043cbf537cc254ca62bc4240e8f",
+      "last_change": "5457ac5accd97c3519bf6d16ead147a0db2ab0d0 2026-09-07T19:39:02-05:00 fix(session-calendar): five bare \"15:04\" layouts the tz guard caught \u2014 and the guard is worktree-blind"
+    },
+    {
+      "path": "kernel/one_setup_test.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 7515,
+      "sha256": "0e360bd6d40336eb030076aa8b71d4df696c2fdea6a06df846d858834922dd80",
+      "last_change": "9a5873f7a11bb01990932ee519b472b083b9d833 2026-09-11T01:01:49-05:00 one-setup: the follow-plan, pure \u2014 break (closed bucket beyond, never forming) \u2192 role reversal \u2192 retest from the far side \u2192 passive-limit entry (a touch is not a fill) \u2192 MAE/MFE/net at 10 and 20 buckets \u2192 bias_would_flip_to. E8 RED (undefined: ComputeFollowPlan) then GREEN"
+    },
+    {
+      "path": "kernel/level_zones_test.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 9828,
+      "sha256": "39420f8bbbe3af921fe9eec136e59a70c6880add511314183d0f883e7ef2a82d",
+      "last_change": "5e81db95c1ac9788fd26caa23fa4bfaee119dfff 2026-09-11T13:09:08-05:00 fix(level-zones): require known merge bounds and record pre-existing suite blocker"
+    },
+    {
+      "path": "kernel/plan_confirm.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 11539,
+      "sha256": "7ae76490a0497de6656890aec9e30ea6b58e3c4b3584c59a24df332e27fce942",
+      "last_change": "b99963857c453f909570eba7a854a8ec23eed087 2026-09-08T14:30:06-05:00 test(confirmation): pin the ruled carve-out and publish mutation evidence"
+    },
+    {
+      "path": "kernel/map_candidates.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 19672,
+      "sha256": "0ee8fab62675ee17203e15620ce254eb63542f34e07028080f14c28e7b28f2e7",
+      "last_change": "5e81db95c1ac9788fd26caa23fa4bfaee119dfff 2026-09-11T13:09:08-05:00 fix(level-zones): require known merge bounds and record pre-existing suite blocker"
+    },
+    {
+      "path": "kernel/levels_multiday.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 9594,
+      "sha256": "39faaf89d326f45c00c0d0eadf11a8b3a63dfc7a652e9a226967f9ebe90896fd",
+      "last_change": "ceb8ad4d6adadc3e371995d9d07691f829741812 2026-09-10T18:04:01-05:00 feat(identity): capture separate formation close and preserve trading inputs"
+    },
+    {
+      "path": "kernel/level_state_provider.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 1547,
+      "sha256": "ccf1045205dd54f4f6a4b13fc962c7cceb3fb83150e4bcc676ddf4e8af0d568b",
+      "last_change": "7b19e7533975225964613ba4bc976f7f7f969e56 2026-09-03T23:00:08-05:00 style(kernel): gofmt the 10 files that were unformatted on dev \u2014 formatting ONLY"
+    },
+    {
+      "path": "kernel/min_sl.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 3459,
+      "sha256": "e9bfaaf9bffe6b1521f4efc9fedf189e3dbed259e41ca572c388e575e2667834",
+      "last_change": "4657560bbaf616fcde7457816da5b8aff22431dc 2026-09-02T07:31:12-05:00 fix(0B): exit sanity \u2014 stop floor 1.5xATR, stop anchored to seated structure, BE+trail suspended, size 1, re-arm after boot sweep"
+    },
+    {
+      "path": "trader/ninjatrader/bars_market_bridge.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 4230,
+      "sha256": "68f5aa70572c851569f5d89695c42d0e05f286697aa61fa07a318305911cceb4",
+      "last_change": "a2d85bad7c85dfe81ef73651d9a74ee91abeb102 2026-09-09T14:29:52-05:00 feat(bars-horizon): the SERVED bar scope is observable \u2014 one warn at the bridge, three arms"
+    },
+    {
+      "path": "trader/ninjatrader/replay_hold.go",
+      "mode": "full/manual",
+      "notes": "Full source text read across focused tool batches; no execution proof.",
+      "bytes": 5565,
+      "sha256": "79d3ef2655b2160c1b95436c71b783427e830f374ed51d24f409a99eafaee7bc",
+      "last_change": "7c34480432a5b04629769f9b13bb29e76f5b7eac 2026-09-10T23:27:28-05:00 bar-source: an unverified replay is not the record \u2014 held out of the store until the ring judges it"
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "notes": "Sections1\u20132 (bars, levels; source-dependent prose including historical measurements), heading/call-reference scan; not full document.",
+      "bytes": 104783,
+      "sha256": "04905d4e659519c1459daa4b96872f3395a83f0c564324ad779301484904d417",
+      "last_change": "565e8fbea215e1e0e7851f5e933a311387bbdb10 2026-09-13T00:39:02-05:00 fix: use owner daily-loss controls without requiring a per-trade cap"
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "notes": "Lines1\u2013210: evidence boundary, additions, A Parts1\u20136; not full document.",
+      "bytes": 46628,
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "last_change": "565e8fbea215e1e0e7851f5e933a311387bbdb10 2026-09-13T00:39:02-05:00 fix: use owner daily-loss controls without requiring a per-trade cap"
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "notes": "Lines1\u2013185,4154\u20134362,4418\u20134589; heading inventory; classes115\u2013118,120\u2013123 read. Historical numbers not remeasured.",
+      "bytes": 332364,
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "last_change": "dfda15e1425ba38671deb7ffa7a4f211a27846e2 2026-09-13T00:48:28-05:00 test: isolate session clock fixtures from weekly backfill workers"
+    },
+    {
+      "path": "market/data.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines1\u2013365,665\u2013710 plus declaration/call inventory; GetWithTimeframes fully read, remaining file not fully read.",
+      "bytes": 27171,
+      "sha256": "35ffe0a4f32144e8ee6406cb79bc96ad861fb99c8710ff7b4b442a5ea4589587",
+      "last_change": "9470a79d6895fa6be87c4c550220a55d07ed3aa7 2026-08-20T01:04:14-05:00 fix(E5): v1 strays \u2014 the chat-path OHLCV table renders CT like every trading prompt (the last Time(UTC) site), and the Studio min-confidence display fallback mirrors the real shared default 60 (was a stale 75)"
+    },
+    {
+      "path": "provider/ninjatrader/tcp_server.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines360\u2013430,490\u2013580,1550\u20131720,1900\u20131985; bar-ingest and contract-ACK path excerpts, declaration/search hits only elsewhere.",
+      "bytes": 90056,
+      "sha256": "8284240bc92299e0c9e6742957cd7076f8ae6d41eb1514a56b7b0f6e398ccf32",
+      "last_change": "0aea0c2e6a11cd194973115bb4cf7b30b6af5f9c 2026-09-11T21:39:47-05:00 feat(history import, wave 101): years of named-contract MNQ history through the wire"
+    },
+    {
+      "path": "kernel/weekly_bias.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines1\u2013160: weekly calendar bucketing and CompletedWeekCandles; remaining functions not read.",
+      "bytes": 9963,
+      "sha256": "8641bd63bde530571e26540166143f88f3658910d86c387cf146a585271c42b3",
+      "last_change": "23243670af359f41eba0f86f3b700eb9049668b5 2026-08-30T09:40:45-05:00 fix(weekly-bias): calendar-anchored week governing Monday \u2014 Sunday-morning boot mis-mapped the week one back (wrong-week boot-backfill at cutover); regression test added"
+    },
+    {
+      "path": "kernel/levels_score.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines428\u2013708: score, confluence, grade adjustment, seating and capped pool; declaration inventory elsewhere.",
+      "bytes": 42841,
+      "sha256": "9e699f238d6190c3e782681624abbb543c7b8efe468f347f54047961fc09beef",
+      "last_change": "0a260391698d3bc0cbb0b0f45df2149913d971c1 2026-09-10T17:39:44-05:00 fix(collapse): a cross-timeframe cluster collapse carries the loser's name to the map"
+    },
+    {
+      "path": "kernel/plan_doc.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines455\u2013530,620\u2013770,865\u2013965: parser/write validation and map checks; declaration inventory elsewhere.",
+      "bytes": 57552,
+      "sha256": "b850a86ba30a5d5e5667b30d65cf473e9591f41e267554c6b2ffc9354ecf06be",
+      "last_change": "8cfc739499c74f9567ff35a44c95b5e4fc4c2daa 2026-09-11T12:51:47-05:00 feat(level-zones): preserve full map with bounded nearest-cluster presentation"
+    },
+    {
+      "path": "kernel/engine_analysis.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines50\u2013205,435\u2013650,775\u2013870: selected preflight, prompt context, postparse gates, fetch path; not full function/file.",
+      "bytes": 53572,
+      "sha256": "528e83a5c7a442d9ecce3e94311cf03c59cad1f14a2d841b76e1fd56b3a276e2",
+      "last_change": "32c1cfb5c198cbd2fed90d9de155e1b71a4cfcd1 2026-09-10T13:03:38-05:00 W-TF D6: the boot line, the detector table, and the docs in the same commit"
+    },
+    {
+      "path": "kernel/engine.go",
+      "mode": "excerpts/manual",
+      "notes": "Declaration and caller inventory only, no full function reading; mode excerpts/manual explicitly denotes inventory-only.",
+      "bytes": 38389,
+      "sha256": "ae5b105ab826509425a686803b1610ee73f96b1600a745c2facd7698ad392c0d",
+      "last_change": "882c2b7ab51d5811715420cb9ca9a0264f6e9456 2026-09-02T21:16:06-05:00 fix(class50): weekly doc REFS ONLY \u2014 kernel side: validator rejects directional tokens instead of demanding bias (r1 levels, r2 lines, r3 weekday, r4 direction), prompt asks for weekly_levels+narrative only, chips render 'WEEKLY: refs only \u2014 PWH x \u00b7 PWL y', WeeklyRuleBias survives as SHADOW (shadow_bias/shadow_why stamped, never read as direction)"
+    },
+    {
+      "path": "trader/auto_trader_weekly.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines95\u2013160: barResolver, weeklyDailyBars; call-reference inventory elsewhere.",
+      "bytes": 20582,
+      "sha256": "8079961c268bd232b5a62c35cafd398bc25c921565c8e366c690397f60edc8cb",
+      "last_change": "a53359ceeb6b149a919783af27c17a43274fe8e0 2026-09-10T21:52:34-05:00 roll: contract column + backfill, CurrentContract from the ACK, ring purge on roll, every store reader filtered"
+    },
+    {
+      "path": "trader/auto_trader_planner.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines2100\u20132220,2470\u20132545: assembly entry, HTF callbacks, frozen zone evidence; call-reference inventory elsewhere.",
+      "bytes": 146511,
+      "sha256": "d33af09ef066dcbb92f0faa81002ed63b1b11bec6f5cc020c98592b6cd94de3c",
+      "last_change": "8cfc739499c74f9567ff35a44c95b5e4fc4c2daa 2026-09-11T12:51:47-05:00 feat(level-zones): preserve full map with bounded nearest-cluster presentation"
+    },
+    {
+      "path": "trader/ninjatrader/bar_persist_wire.go",
+      "mode": "excerpts/manual",
+      "notes": "Lines1\u201335,70\u2013120,130\u2013192: persistence/hold callbacks, mismatch and roll listeners; other call sites via rg only.",
+      "bytes": 22571,
+      "sha256": "a2d7f7990b8323dab54eae0ff45e1a261b6a1cfc751e4c9642072d5c0b5f64f8",
+      "last_change": "7c34480432a5b04629769f9b13bb29e76f5b7eac 2026-09-10T23:27:28-05:00 bar-source: an unverified replay is not the record \u2014 held out of the store until the ring judges it"
+    }
+  ],
+  "remaining_production": [
+    {
+      "path": "market/api_client.go",
+      "status": "inventory-only/not-read",
+      "lines": 160
+    },
+    {
+      "path": "market/data.go",
+      "status": "partially-read",
+      "lines": 823
+    },
+    {
+      "path": "market/data_klines.go",
+      "status": "inventory-only/not-read",
+      "lines": 494
+    },
+    {
+      "path": "market/databento_adapter.go",
+      "status": "inventory-only/not-read",
+      "lines": 30
+    },
+    {
+      "path": "market/decimal_safe.go",
+      "status": "inventory-only/not-read",
+      "lines": 88
+    },
+    {
+      "path": "market/historical.go",
+      "status": "inventory-only/not-read",
+      "lines": 104
+    },
+    {
+      "path": "kernel/adherence.go",
+      "status": "inventory-only/not-read",
+      "lines": 163
+    },
+    {
+      "path": "kernel/arm_kind.go",
+      "status": "inventory-only/not-read",
+      "lines": 111
+    },
+    {
+      "path": "kernel/armed.go",
+      "status": "inventory-only/not-read",
+      "lines": 79
+    },
+    {
+      "path": "kernel/arms_bias_coherent.go",
+      "status": "inventory-only/not-read",
+      "lines": 123
+    },
+    {
+      "path": "kernel/boot_integrity.go",
+      "status": "inventory-only/not-read",
+      "lines": 209
+    },
+    {
+      "path": "kernel/breakdown_continue.go",
+      "status": "inventory-only/not-read",
+      "lines": 304
+    },
+    {
+      "path": "kernel/calendar_blackout.go",
+      "status": "inventory-only/not-read",
+      "lines": 146
+    },
+    {
+      "path": "kernel/candle_disclosure.go",
+      "status": "inventory-only/not-read",
+      "lines": 408
+    },
+    {
+      "path": "kernel/class45_feeds_forward.go",
+      "status": "inventory-only/not-read",
+      "lines": 214
+    },
+    {
+      "path": "kernel/clock_drift.go",
+      "status": "inventory-only/not-read",
+      "lines": 178
+    },
+    {
+      "path": "kernel/clock_health.go",
+      "status": "inventory-only/not-read",
+      "lines": 188
+    },
+    {
+      "path": "kernel/condition_status.go",
+      "status": "inventory-only/not-read",
+      "lines": 135
+    },
+    {
+      "path": "kernel/confirmation_telemetry.go",
+      "status": "inventory-only/not-read",
+      "lines": 60
+    },
+    {
+      "path": "kernel/detector_d1prime.go",
+      "status": "inventory-only/not-read",
+      "lines": 282
+    },
+    {
+      "path": "kernel/detector_recorder.go",
+      "status": "inventory-only/not-read",
+      "lines": 122
+    },
+    {
+      "path": "kernel/digest.go",
+      "status": "inventory-only/not-read",
+      "lines": 116
+    },
+    {
+      "path": "kernel/displacement_feeds_forward.go",
+      "status": "inventory-only/not-read",
+      "lines": 142
+    },
+    {
+      "path": "kernel/engine.go",
+      "status": "partially-read",
+      "lines": 1084
+    },
+    {
+      "path": "kernel/engine_analysis.go",
+      "status": "partially-read",
+      "lines": 1133
+    },
+    {
+      "path": "kernel/engine_position.go",
+      "status": "inventory-only/not-read",
+      "lines": 310
+    },
+    {
+      "path": "kernel/engine_prompt.go",
+      "status": "inventory-only/not-read",
+      "lines": 1112
+    },
+    {
+      "path": "kernel/engine_prompt_futures.go",
+      "status": "inventory-only/not-read",
+      "lines": 454
+    },
+    {
+      "path": "kernel/engine_prompt_observer.go",
+      "status": "inventory-only/not-read",
+      "lines": 164
+    },
+    {
+      "path": "kernel/excursion_path.go",
+      "status": "inventory-only/not-read",
+      "lines": 123
+    },
+    {
+      "path": "kernel/flip_freshness.go",
+      "status": "inventory-only/not-read",
+      "lines": 78
+    },
+    {
+      "path": "kernel/follow_plan.go",
+      "status": "inventory-only/not-read",
+      "lines": 221
+    },
+    {
+      "path": "kernel/formatter.go",
+      "status": "inventory-only/not-read",
+      "lines": 645
+    },
+    {
+      "path": "kernel/fvg_entry.go",
+      "status": "inventory-only/not-read",
+      "lines": 438
+    },
+    {
+      "path": "kernel/golden_selfcheck.go",
+      "status": "inventory-only/not-read",
+      "lines": 158
+    },
+    {
+      "path": "kernel/grid_engine.go",
+      "status": "inventory-only/not-read",
+      "lines": 621
+    },
+    {
+      "path": "kernel/htf_veto.go",
+      "status": "inventory-only/not-read",
+      "lines": 122
+    },
+    {
+      "path": "kernel/level_stats_calc.go",
+      "status": "inventory-only/not-read",
+      "lines": 141
+    },
+    {
+      "path": "kernel/levels_intraday.go",
+      "status": "inventory-only/not-read",
+      "lines": 205
+    },
+    {
+      "path": "kernel/levels_role.go",
+      "status": "inventory-only/not-read",
+      "lines": 449
+    },
+    {
+      "path": "kernel/levels_score.go",
+      "status": "partially-read",
+      "lines": 1198
+    },
+    {
+      "path": "kernel/levels_swing.go",
+      "status": "inventory-only/not-read",
+      "lines": 231
+    },
+    {
+      "path": "kernel/levels_volume.go",
+      "status": "inventory-only/not-read",
+      "lines": 429
+    },
+    {
+      "path": "kernel/levels_volume_boot.go",
+      "status": "inventory-only/not-read",
+      "lines": 61
+    },
+    {
+      "path": "kernel/levels_zones.go",
+      "status": "inventory-only/not-read",
+      "lines": 357
+    },
+    {
+      "path": "kernel/mae_mfe.go",
+      "status": "inventory-only/not-read",
+      "lines": 59
+    },
+    {
+      "path": "kernel/map_projections.go",
+      "status": "inventory-only/not-read",
+      "lines": 211
+    },
+    {
+      "path": "kernel/matched_random.go",
+      "status": "inventory-only/not-read",
+      "lines": 192
+    },
+    {
+      "path": "kernel/mss.go",
+      "status": "inventory-only/not-read",
+      "lines": 145
+    },
+    {
+      "path": "kernel/naked_poc.go",
+      "status": "inventory-only/not-read",
+      "lines": 73
+    },
+    {
+      "path": "kernel/no_trade_band.go",
+      "status": "inventory-only/not-read",
+      "lines": 265
+    },
+    {
+      "path": "kernel/plan_authored_invalidation.go",
+      "status": "inventory-only/not-read",
+      "lines": 83
+    },
+    {
+      "path": "kernel/plan_chain_date.go",
+      "status": "inventory-only/not-read",
+      "lines": 92
+    },
+    {
+      "path": "kernel/plan_doc.go",
+      "status": "partially-read",
+      "lines": 1333
+    },
+    {
+      "path": "kernel/plan_overlay.go",
+      "status": "inventory-only/not-read",
+      "lines": 275
+    },
+    {
+      "path": "kernel/plan_overlay_carry.go",
+      "status": "inventory-only/not-read",
+      "lines": 184
+    },
+    {
+      "path": "kernel/plan_render.go",
+      "status": "inventory-only/not-read",
+      "lines": 385
+    },
+    {
+      "path": "kernel/planner_indicators.go",
+      "status": "inventory-only/not-read",
+      "lines": 47
+    },
+    {
+      "path": "kernel/planner_prompt.go",
+      "status": "inventory-only/not-read",
+      "lines": 835
+    },
+    {
+      "path": "kernel/planner_speed.go",
+      "status": "inventory-only/not-read",
+      "lines": 58
+    },
+    {
+      "path": "kernel/price_sanity.go",
+      "status": "inventory-only/not-read",
+      "lines": 77
+    },
+    {
+      "path": "kernel/prompt_builder.go",
+      "status": "inventory-only/not-read",
+      "lines": 376
+    },
+    {
+      "path": "kernel/prompt_contract.go",
+      "status": "inventory-only/not-read",
+      "lines": 172
+    },
+    {
+      "path": "kernel/prompt_ownership.go",
+      "status": "inventory-only/not-read",
+      "lines": 33
+    },
+    {
+      "path": "kernel/realign.go",
+      "status": "inventory-only/not-read",
+      "lines": 112
+    },
+    {
+      "path": "kernel/regime.go",
+      "status": "inventory-only/not-read",
+      "lines": 259
+    },
+    {
+      "path": "kernel/regime_baseline.go",
+      "status": "inventory-only/not-read",
+      "lines": 112
+    },
+    {
+      "path": "kernel/regime_dark.go",
+      "status": "inventory-only/not-read",
+      "lines": 90
+    },
+    {
+      "path": "kernel/regime_ledger.go",
+      "status": "inventory-only/not-read",
+      "lines": 16
+    },
+    {
+      "path": "kernel/repair_outcome.go",
+      "status": "inventory-only/not-read",
+      "lines": 64
+    },
+    {
+      "path": "kernel/research_score.go",
+      "status": "inventory-only/not-read",
+      "lines": 92
+    },
+    {
+      "path": "kernel/risk_limits.go",
+      "status": "inventory-only/not-read",
+      "lines": 459
+    },
+    {
+      "path": "kernel/scenario_facts.go",
+      "status": "inventory-only/not-read",
+      "lines": 499
+    },
+    {
+      "path": "kernel/scenario_state.go",
+      "status": "inventory-only/not-read",
+      "lines": 261
+    },
+    {
+      "path": "kernel/schema.go",
+      "status": "inventory-only/not-read",
+      "lines": 555
+    },
+    {
+      "path": "kernel/session_calendar.go",
+      "status": "inventory-only/not-read",
+      "lines": 425
+    },
+    {
+      "path": "kernel/shadow_ab.go",
+      "status": "inventory-only/not-read",
+      "lines": 271
+    },
+    {
+      "path": "kernel/structure.go",
+      "status": "inventory-only/not-read",
+      "lines": 449
+    },
+    {
+      "path": "kernel/svp.go",
+      "status": "inventory-only/not-read",
+      "lines": 392
+    },
+    {
+      "path": "kernel/touch_telemetry.go",
+      "status": "inventory-only/not-read",
+      "lines": 605
+    },
+    {
+      "path": "kernel/transition.go",
+      "status": "inventory-only/not-read",
+      "lines": 107
+    },
+    {
+      "path": "kernel/tz.go",
+      "status": "inventory-only/not-read",
+      "lines": 87
+    },
+    {
+      "path": "kernel/validator_hints.go",
+      "status": "inventory-only/not-read",
+      "lines": 216
+    },
+    {
+      "path": "kernel/void_scope.go",
+      "status": "inventory-only/not-read",
+      "lines": 124
+    },
+    {
+      "path": "kernel/weekly_bias.go",
+      "status": "partially-read",
+      "lines": 322
+    },
+    {
+      "path": "kernel/weekly_knobs.go",
+      "status": "inventory-only/not-read",
+      "lines": 128
+    },
+    {
+      "path": "kernel/weekly_prompt.go",
+      "status": "inventory-only/not-read",
+      "lines": 565
+    },
+    {
+      "path": "provider/ninjatrader/csv_tailer.go",
+      "status": "inventory-only/not-read",
+      "lines": 110
+    },
+    {
+      "path": "provider/ninjatrader/csv_writer.go",
+      "status": "inventory-only/not-read",
+      "lines": 74
+    },
+    {
+      "path": "provider/ninjatrader/echo_verify.go",
+      "status": "inventory-only/not-read",
+      "lines": 206
+    },
+    {
+      "path": "provider/ninjatrader/mock_nt.go",
+      "status": "inventory-only/not-read",
+      "lines": 155
+    },
+    {
+      "path": "provider/ninjatrader/order_snapshot.go",
+      "status": "inventory-only/not-read",
+      "lines": 259
+    },
+    {
+      "path": "provider/ninjatrader/order_state.go",
+      "status": "inventory-only/not-read",
+      "lines": 170
+    },
+    {
+      "path": "provider/ninjatrader/research_wire.go",
+      "status": "inventory-only/not-read",
+      "lines": 217
+    },
+    {
+      "path": "provider/ninjatrader/tcp_client_mock.go",
+      "status": "inventory-only/not-read",
+      "lines": 228
+    },
+    {
+      "path": "provider/ninjatrader/tcp_framing.go",
+      "status": "inventory-only/not-read",
+      "lines": 690
+    },
+    {
+      "path": "provider/ninjatrader/tcp_server.go",
+      "status": "partially-read",
+      "lines": 2332
+    },
+    {
+      "path": "provider/ninjatrader/types.go",
+      "status": "inventory-only/not-read",
+      "lines": 59
+    }
+  ]
+}

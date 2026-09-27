@@ -48,3 +48,30 @@ func TestPlannerRejectedRoundTrip(t *testing.T) {
 		t.Fatalf("verbatim text lost: %q", row.PromptText)
 	}
 }
+
+// WAVE PLANNER B2 follow-up — the AI's RAW answer is persisted with the
+// rejected attempt, so a future replay can re-check the SAME text the live
+// attempt produced (the historical rows 339..370 carry no response; new rows
+// do). RED: the column did not exist and the save dropped the response.
+func TestSaveRejectedPromptPersistsTheRawResponse(t *testing.T) {
+	st, err := New(filepath.Join(t.TempDir(), "pr.db"))
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	defer st.Close()
+	const raw = `{"bias":{"direction":"short"},"scenarios":[{"id":"S1"}]}`
+	if err := st.PlannerRejected().SaveRejectedPromptWithFacts("t1", "2026-09-25", "NY",
+		"hash1", 2, "born-dead authored scenario", "the prompt text", raw, `{"atr5m":12.5}`); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	got, err := st.PlannerRejected().Latest()
+	if err != nil {
+		t.Fatalf("latest: %v", err)
+	}
+	if got.ResponseText != raw {
+		t.Fatalf("the raw AI answer must round-trip, got %q", got.ResponseText)
+	}
+	if got.Attempt != 2 || got.RejectReason != "born-dead authored scenario" || got.Facts == "" {
+		t.Fatalf("the row carries the attempt, reason and facts beside the response: %+v", got)
+	}
+}

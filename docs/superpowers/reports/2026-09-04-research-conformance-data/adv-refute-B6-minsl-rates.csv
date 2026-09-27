@@ -1,0 +1,4 @@
+era,window_CT,multiplier_live,opens_reaching_gate_n,ATR_leg_rejects,reject_rate_pct,method
+pre-0B,2026-09-01 00:00 -> 2026-09-02 07:49:01,1.0,17,3,17.6,grep -c 'R:R eval MNQ open_' vs grep -c 'MIN-SL REJECT' in data/nofx_2026-09-0{1;2}.log split at the 07:49:01 boot
+post-0B,2026-09-02 07:49:01 -> 2026-09-03 23:59,1.5,47,33,70.2,same
+peer_blended,2026-09-01 -> 2026-09-03,mixed 1.0+1.5,64,36,56.3,peer figure - reproduces exactly but blends two rule eras

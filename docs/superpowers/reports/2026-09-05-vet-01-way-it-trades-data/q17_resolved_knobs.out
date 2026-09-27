@@ -1,0 +1,32 @@
+top keys: ['knobs', 'summary']
+summary: {"schema": 57, "classified": 167, "live": 144, "ineffective": 7, "candidate_unverified": 16, "suspended": 0, "advisory": 0, "display_only": 0, "infra": 0, "env_shadows": 0, "env_shadow_paths": []}
+  {"path": "breakeven_enabled", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader.go:196"], "dual_level": false}
+  {"path": "breakeven_trigger_points", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader.go:199"], "dual_level": false}
+  {"path": "consecutive_loss_halt", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_orders.go:116"], "dual_level": false}
+  {"path": "daily_loss_enabled", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:157"], "dual_level": false}
+  {"path": "daily_loss_limit_pct", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_grid.go:187"], "dual_level": false}
+  {"path": "daily_loss_limit_usd", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:158"], "dual_level": false}
+  {"path": "daily_profit_enabled", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:160"], "dual_level": false}
+  {"path": "daily_profit_target_usd", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:161"], "dual_level": false}
+  {"path": "enable_raw_klines", "status": "live", "ui_label": "live", "consumers": ["agent/skill_management_handlers.go:1197"], "dual_level": false}
+  {"path": "eod_flat_ct", "status": "ineffective", "ui_label": "read; does not take effect (unreachable (auto_trader_clock.go))", "consumers": [], "dual_level": false, "note": "unreachable (auto_trader_clock.go)"}
+  {"path": "eod_flat_offset_min", "status": "candidate-unverified", "ui_label": "no known reader \u2014 pending verification", "consumers": [], "dual_level": false, "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader 
+  {"path": "max_contracts_enabled", "status": "ineffective", "ui_label": "read; does not take effect (parse-only (strategy.go))", "consumers": [], "dual_level": false, "note": "parse-only (strategy.go)"}
+  {"path": "max_contracts_per_order", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_orders.go:57"], "dual_level": false}
+  {"path": "max_daily_trades", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:164"], "dual_level": false}
+  {"path": "max_daily_trades_enabled", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:163"], "dual_level": false}
+  {"path": "max_trades", "status": "candidate-unverified", "ui_label": "no known reader \u2014 pending verification", "consumers": [], "dual_level": false, "note": "no consumer found by a FIELD grep on 2026-09-03 (grep -rn \".<Field>\\b\" kernel trader api agent
+  {"path": "min_confidence", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:556"], "dual_level": false}
+  {"path": "min_position_size", "status": "ineffective", "ui_label": "read; does not take effect (crypto path hardcodes 12/60 (engine_position.go))", "consumers": [], "dual_level": false, "note": "crypto path hardcodes 12/60 (engine_position.go)"}
+  {"path": "min_risk_reward_ratio", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:555"], "dual_level": false}
+  {"path": "plan_mode", "status": "live", "ui_label": "live", "consumers": ["trader/entry_gate.go:160"], "dual_level": false}
+  {"path": "proximity_filter_atr", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:375"], "dual_level": false}
+  {"path": "session", "status": "live", "ui_label": "live", "consumers": ["kernel/engine_analysis.go:403"], "dual_level": false}
+  {"path": "sessions_enabled", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_planconfig.go:77"], "dual_level": false}
+  {"path": "stop_loss_pct", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_grid_orders.go:362"], "dual_level": false}
+  {"path": "trailing_arm", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_trailing.go:52"], "dual_level": false}
+  {"path": "trailing_arm_points", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_trailing.go:58"], "dual_level": false}
+  {"path": "trailing_atr_mult", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_trailing.go:44"], "dual_level": false}
+  {"path": "trailing_atr_period", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_trailing.go:48"], "dual_level": false}
+  {"path": "trailing_enabled", "status": "live", "ui_label": "live", "consumers": ["trader/auto_trader_trailing.go:43"], "dual_level": false}
+  {"path": "updated_at", "status": "live", "ui_label": "live", "consumers": ["trader/armed_executor.go:1027"], "dual_level": false}

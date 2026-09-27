@@ -1,0 +1,39 @@
+--- traders (id, name, strategy_id, exchange, is_running) ---
+8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265|hoang|a5b7662e-7bf7-49bb-9f09-7efa48f95ac8|8d5c8af5-5366-4646-b1b6-0958db9e6f69|1
+--- strategies columns ---
+id user_id name description is_active is_default is_public config_visible config created_at updated_at 
+--- bound strategy config: risk-related keys ---
+trader=hoang strategy=MNQ (a5b7662e…)
+  .ai_config.indicators.enable_atr = True
+  .ai_config.indicators.atr_periods[0] = 14
+  .ai_config.risk_control.max_positions = 3
+  .ai_config.risk_control.btc_eth_max_leverage = 5
+  .ai_config.risk_control.altcoin_max_leverage = 5
+  .ai_config.risk_control.btc_eth_max_position_value_ratio = 5
+  .ai_config.risk_control.altcoin_max_position_value_ratio = 1
+  .ai_config.risk_control.max_margin_usage = 0.9
+  .ai_config.risk_control.min_position_size = 12
+  .ai_config.risk_control.min_risk_reward_ratio = 2
+  .ai_config.risk_control.min_confidence = 60
+  .ai_config.risk_control.guardrails_enabled = False
+  .ai_config.risk_control.daily_loss_limit_usd = 450
+  .ai_config.risk_control.daily_loss_enabled = False
+  .ai_config.risk_control.daily_profit_target_usd = 900
+  .ai_config.risk_control.daily_profit_enabled = False
+  .ai_config.risk_control.max_daily_trades = 3
+  .ai_config.risk_control.max_daily_trades_enabled = False
+  .ai_config.risk_control.max_contracts_per_order = 2
+  .ai_config.risk_control.max_contracts_enabled = False
+  .ai_config.risk_control.notional_cap_enabled = False
+  .ai_config.risk_control.blackout_enabled = False
+  .ai_config.risk_control.hold_discipline = True
+  .ai_config.risk_control.breakeven_enabled = True
+  .ai_config.risk_control.breakeven_trigger_points = 40
+  .ai_config.risk_control.trailing_enabled = True
+  .ai_config.risk_control.trailing_atr_period = 14
+  .day_plan.plan_mode = 'strict'
+  .day_plan.proximity_filter_atr = 1
+  .day_plan.eod_flat_ct = '14:45'
+  .day_plan.sessions[0].max_trades = 10
+  .day_plan.sessions[1].max_trades = 7
+  .day_plan.sessions[2].max_trades = 10

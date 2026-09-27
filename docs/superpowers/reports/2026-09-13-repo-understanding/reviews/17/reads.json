@@ -1,0 +1,1377 @@
+{
+  "assignment": 17,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "files": [
+    {
+      "path": "docs/superpowers/reports/2026-09-03-mc-drawdown-data/mc_drawdown.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          177
+        ]
+      ],
+      "sha256": "cc7909b6a1c57e14a309dd936d479493805c51932160f7e5889cf464a3d02716",
+      "notes": "Seeded iid/block/day bootstrap of historical corrected trade sample; zero-baseline maxDD; policy examples and friction-free historical calibration only."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-complete-data/audit.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          201
+        ]
+      ],
+      "sha256": "66691eaf793a466268a5fd6a741ed720a93cf4ef592481ad5cd8ad14bce779c0",
+      "notes": "Completed vet01 snapshot audit: exact plan/version and signal/order joins; excludes test/sentinel/NULL; pins58 trades/12days; day-cluster resampling; MFE proxies explicitly unordered."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-complete-data/binding.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "sha256": "0d0a694ab67ae95fabb24e4350ce64eeea74b521241b1b24e7412258799f9bcd",
+      "notes": "Recursively visits saved configuration with allowlisted fields; saved settings are not proof of runtime binding."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-complete-data/legacy_check.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          22
+        ]
+      ],
+      "sha256": "5226ac75f2df06c7cedb472c72c482c0642f1b587eeeffa1ed117a22b8d0feea",
+      "notes": "Recomputes archived MFE-floor arithmetic and labels limitations; not an ordered fill simulator."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-data/q13_enrich.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          91
+        ]
+      ],
+      "sha256": "28e9e7a4d525c6d1c6465e06e422b68415f37457d65a01a875d974b0904276e2",
+      "notes": "Enriches corrected trades with approximate nearby arms/decisions/stop snapshots; fixed UTC-5; identity not authoritative."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-data/revise/r04_close.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          36
+        ]
+      ],
+      "sha256": "0554057118c1c1cdc9631e092e12101ee1d52997c61614e1ae4f15de6b9a6b8a",
+      "notes": "Approximate close-decision \u00b14minute joins and exit reason extraction; historical heuristics."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-data/revise/r05_mfe.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "sha256": "c923d90f0aa072d8d05f3f4b79295c97e4981e7f42b218e42b75edcfff1c8c57",
+      "notes": "MFE reach and ATR ratios from external helper; winners/threshold reach not ordered trade outcomes."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades-data/revise/r12_tables.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          72
+        ]
+      ],
+      "sha256": "c7efb44f53e8926cfea9a75de4bb2f6ac62a4dc14d0a46b2a32aec76bbf71d83",
+      "notes": "Revised tables exclude named row IDs; whole-sample descriptive buckets, no prospective validation."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-02-levels-data/q10_live_dedup_wilson.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          29
+        ]
+      ],
+      "sha256": "8d8c8942c7f94d1a78f38264603a8b7909c989ebe5588a8d8bea90d4c336fd47",
+      "notes": "Deduplicates touches and Wilson intervals; MIN(outcome) can collapse contradictory outcomes lexically."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-02-levels-data/q12_grade_vs_outcome.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "sha256": "1edaf23fb5c6bf768b0fde2d4ac28caffd10a1609585a84d9ec4807befb32de7",
+      "notes": "Grade/outcome exploration; delta fallback uses current entire day on insufficient prior days; external replay dependency."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-02-levels-data/q12b_grade_vs_outcome_dedup.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          69
+        ]
+      ],
+      "sha256": "1bca4d5a05609ab033161212a3ccaa4fde82c1ab4e4530a56a61c50fb8102036",
+      "notes": "First-seat day/label/price dedup reduces repetition; retains current-day delta fallback and no trader/contract identity."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-02-levels-data/revise/r03_dedup.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          64
+        ]
+      ],
+      "sha256": "847b8c30b100df59c2faed4e0325933b7d05ef95ec709f5d4f481a89168839f8",
+      "notes": "Additional dedup and subgroup exploration; repeated related events and multiple comparisons remain."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-02-levels-data/revise/r04_q12b.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          29
+        ]
+      ],
+      "sha256": "4e6f85732f984b8c32266ac112acfb483743137a1d2948e263117625151051ef",
+      "notes": "Touch/grade bucket tabulation with Wilson uncertainty; observation is not broker execution."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-02-levels-data/revise/r07_pnl_pop_SUPERSEDED.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "sha256": "288b896fa7147f4b7521b22f2269bfe9ad99a01479ff09fdf91f51834fbc1c1e",
+      "notes": "Explicitly SUPERSEDED wrong-year/latest-version population analysis; archived correction trail, not current bug."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/complete/supplement.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          82
+        ]
+      ],
+      "sha256": "89b79ed1bd0928f61593ec3422a01f4ffb52da170876e36b7f604e21c70c1357",
+      "notes": "Supplement reads snapshot and exports diagnostics; forward minute counterfactuals censor missing tape and ambiguous chronology."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/q01_store_premises.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          24
+        ]
+      ],
+      "sha256": "880d776f8fb65b1332622ba4e12e499562a39c091539f55b20e514b1bd2cc914",
+      "notes": "Shell schema/population premises; each sqlite query separate, not one atomic snapshot."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/q06_plan_corpus.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          99
+        ]
+      ],
+      "sha256": "d9a301c8cc5bcf1278fd0e308fd63581cdef3b94271f20309e8088104d773eee",
+      "notes": "Plan corpus/latest version and price-touch FIRED proxies; fixed UTC-5 and no confirmation/fill guarantee."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/q07_reauthor_cost.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          52
+        ]
+      ],
+      "sha256": "39fc3fea72bd686e28a382504a0c038e59cd6ba3387162bc615d65c2107b0df2",
+      "notes": "Clusters reauthor attempts over20minutes; next publication may fail closed and is not acceptance latency."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/q11_wilson_pnl_2r.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          75
+        ]
+      ],
+      "sha256": "56a1ab984e90ac4ab4e74f02256edd207a411d0f8e81b2aad3e6c96d64d359d2",
+      "notes": "Historical Wilson/P&L/2R summaries; nearest \u00b13minute stop lookup lacks exact broker identity."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/q12_refusals_by_leg.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          25
+        ]
+      ],
+      "sha256": "5bf09dc018cc50b487ca0e496db19ed1a67fa7e9cc7783422fb915007585dc1e",
+      "notes": "Refusal-by-leg event counts; repeated rows are not deduplicated opportunities."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/revise/r01_rejects_arms_intents.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          66
+        ]
+      ],
+      "sha256": "0e002aad4ab76f5a1406d5bfa287eff6e7dca9733693a8574a3a6a579e817f04",
+      "notes": "Historical reject/arm/intent ledger classification and exact exported row IDs."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/revise/r11_store_rechecks.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          200
+        ]
+      ],
+      "sha256": "ddf9c97beb9b286c46224aecffae4f7ea1347b4f896187908e65626252aa3e20",
+      "notes": "Store rechecks and author geometry; MFE target-first counterfactual ignores ordered path; nearest stop association."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/revise/r16_minsl_repairs_rr_wilson.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          60
+        ]
+      ],
+      "sha256": "1fc8131ce1abb6b7f2d98e8cacb3be796d6ade335975025bbf2feaf2f13e685f",
+      "notes": "Minimum-stop repairs/RR with nearby cycle rows; matching lacks exact trader/side identity at some joins."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/revise/r18_flap_overlap.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          39
+        ]
+      ],
+      "sha256": "f3f2f51e226b792392e9c254f9580f1f079eaee17d8e2017e5a4f89366e5c016",
+      "notes": "Overlap from arm created/updated lifetime and short-name grouping; timestamps are not broker lifetime."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions-data/revise/x02_refusals.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          45
+        ]
+      ],
+      "sha256": "8a7730b35d4316ba676446da7458863c0131a4bb3d037c4ee291c794ce9fc15f",
+      "notes": "Raw refusal totals and hardcoded reconciliation values; event and opportunity denominators differ."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q01_store_asof.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          8
+        ]
+      ],
+      "sha256": "ddc71e51c6741070b4ad81df9ccbba67e0eb189f35e71ba0a145659d17db97a1",
+      "notes": "Shell as-of schema census; live path literals are archived instructions, never executed by this review."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q50_eod_verified.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          53
+        ]
+      ],
+      "sha256": "634d5f67b648ed36376190b033f3f84fe47de97ae5363805fa1fe62558d17259",
+      "notes": "EOD diagnostic marks future-updated arm state UNKNOWN; decision silence and read availability do not prove flatness."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/r07_rth_vs_atr.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "77bad70ad49292050621d97ed458c0aca0a215d02ea681179ca177233ebe4ef4",
+      "notes": "RTH counts permit389/390 as full; simple true-range averages differ from Wilder ATR."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/complete/q31_verified.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          94
+        ]
+      ],
+      "sha256": "fc490d07650a7599b6fe9afe693fc565a6ac0db5bba2665bdda84ed5d9aaca71",
+      "notes": "Completed execution audit corrects closed5m availability and zero-lifetime invention; still distinguishes proxy stop joins from broker facts."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/complete/q33_metrics.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          15
+        ]
+      ],
+      "sha256": "5651ce24deb0b46644c943d10579aeca1c6241cf53fa9faf62393df258cf3a29",
+      "notes": "Hardcoded historical rate/bar-bucket display; not a fresh query."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/complete/q34_integration.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "sha256": "48441181a70bf9cd2339a11769578e096a1735949ee2d8ccd8b8c9e4cf76216a",
+      "notes": "Completed integration detail reconstructs historical snapshots and literal broker stop; no current runtime assertion."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q14_mae_mfe.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "sha256": "72acd092ff51015d67b1083696de0c0d47e936fd389dd49d3ba023c58cabd197",
+      "notes": "Older excursion audit includes5m open before entry rather than close before entry; superseded by completed q31."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q15b_cycle_drift.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          32
+        ]
+      ],
+      "sha256": "f358c9b31ff3e5feec1682bdbd0dda7d3c0a66b5a1d028800664f7ce453a0907",
+      "notes": "Cycle drift pairs nearby decision and bar close at open<=cycle; can use incomplete-minute close."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q16_funnel.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          69
+        ]
+      ],
+      "sha256": "eba951b10aae50b44f5a24a8c734fdda8b8a964890e03c91cbd35de441070129",
+      "notes": "Old funnel lacks version identity and invents2minute life for zero duration; corrected q31 explicitly avoids this."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q19_snapshot_stop_price.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          14
+        ]
+      ],
+      "sha256": "d49c82b5c870fff8f39d995cc55d8c9e1e4086b58e058e9ae3378c75c76a0052",
+      "notes": "Snapshot stop-price inventory truncates names to8characters; grouping may alias identifiers."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q20_plan_scenarios.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          12
+        ]
+      ],
+      "sha256": "16712ec5df0e8e545ff412ab453a16fcd09da21b12228a0fa1d8b70c3e1ab57e",
+      "notes": "Plan-scenario lookup uses ID prefix for exploration, not canonical full identity."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q27_guard_cancel_paths.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          27
+        ]
+      ],
+      "sha256": "515ea5bead8a69464f50890846de9c8a61af98eab55d0e0b36910f8b41184763",
+      "notes": "Cancel-path nearby windows and close at cancel minute; not ordered broker fill evidence."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q28_guard_counterfactual.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          40
+        ]
+      ],
+      "sha256": "b34342f9a195eaed4e56fc0db0e19cc2d5902af8ce4ff25c46bd27098b497fcf",
+      "notes": "Guard counterfactual skips fillbar, uses exact execution prices and no friction; approximate research only."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/q34_integration.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          16
+        ]
+      ],
+      "sha256": "a4758ad355b96af2df91eaef234a2abe8444893cc8cdad418bd5d054c3407a33",
+      "notes": "Integration diagnostics duplicate completed variant; runtime bindings not verified."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/revise/apply_edits2.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          31
+        ]
+      ],
+      "sha256": "b18b3967f04e80d1466bb38fd5e134f1cef6324809fbb54e4b483f57deb6f4d6",
+      "notes": "Historical markdown replacement utility writes despite failed replacement counts; never run as an offline validator."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-05-execution-data/revise/r02_legs_floor.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          77
+        ]
+      ],
+      "sha256": "17b61466aa2bd042529238d4c0ef243d5b5d8656bd3f31e3018098bd1ffe9b93",
+      "notes": "Revised floor/legs tables compare historical populations and excursion proxies, not causal policy improvements."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/complete/recompute.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          123
+        ]
+      ],
+      "sha256": "a87a618b7bf56076cb0fb44a1021093557be2f68813d01405a24066960034a88",
+      "notes": "Completed risk recomputation snapshot pins58/12, exact IDs and strict corrected values; seeded day bootstrap and cost sensitivity."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/complete/validate.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          36
+        ]
+      ],
+      "sha256": "ba531d0fdea02def6b16eb447559b12292f97e895ee3c217d1a44a6b40a23b87",
+      "notes": "Committed-fixture risk validator checks exact58IDs/drawdown/streak and deterministic outputs; not run here."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q01_census.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          19
+        ]
+      ],
+      "sha256": "9ec20d90e5342215adf1755c89c94b7628d569ded5aa52f6ed9d21a8e5eccc7a",
+      "notes": "Initial risk census has documented epoch premise error; archived supersession."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q02_premise_227.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "sha256": "a64358035d9882f2859fc939bfcf0cc80ef92762882a40d3820034d758a0b1a3",
+      "notes": "Premise shell computes timestamps but queries conflicting literals; do not reuse as current cohort."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q04_build_sample.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          30
+        ]
+      ],
+      "sha256": "eedae164e5081d18d459e53785be72be7738b14ce4510d70a7f58e1c95624afb",
+      "notes": "Initial sample excludes correction notes rather than unresolved plan sentinel; compliant recut supersedes it."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q08_bars_regime.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "sha256": "0c66d276149e18811d913fdf21f6831ef42ae6361e3afd2dc3ad0b61d4812334",
+      "notes": "Bar regime/true-range summaries lack explicit percontract continuity; retrospective descriptors."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q11_daily_regime.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          49
+        ]
+      ],
+      "sha256": "f8d817d35e0b2cba24eda06acfa7af5598863212e730ca31cdb6b653efc2b9b2",
+      "notes": "Daily simple ATR/range classification is retrospective whole-day context, not a causal feature at entry."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q13_calendar.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "sha256": "053b0d9e6150424b3a68c809bc0be365446a087a5d32deda5dfb038ff892d6bc",
+      "notes": "Shell discovers calendar tables; no live news-service validation."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q14_weekly_intraday.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          37
+        ]
+      ],
+      "sha256": "1bd2f4c5bf381fa76a81f2baddab6d5fc23c5f08b928a014597abd70b94552f5",
+      "notes": "Realized day/week summaries for historical corrected rows; not forward risk bounds."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q15_filled_arms_rate.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          14
+        ]
+      ],
+      "sha256": "194af4971524807766ac46b7893818212ec23bdc140cfa3eec8f4bf9c6bba617",
+      "notes": "Filled-arm shell ratios use historical literal cutoff; no present fill-rate claim."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/q17_gonogo_math.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          33
+        ]
+      ],
+      "sha256": "4f06693f2e7a2132d5b1b214415f6b8157a2a640c987aa74857826e1968a0e0e",
+      "notes": "Hardcoded65-row go/no-go arithmetic and policy examples; no current permission or recommendation."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/r01_population.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "sha256": "584fc2e1f57a7552488e978c5ff5b4c6ede0ba0dd264327329ec236f6ecafd73",
+      "notes": "Population reconciliation shell enumerates exclusions and counts."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/r02_build_sample_compliant.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          38
+        ]
+      ],
+      "sha256": "1f76f94727738d74804cf2e963f8aa4d65dc242b52b4444006706f584d1fcf4f",
+      "notes": "Compliant sample fixes unresolved plan sentinel and exports member IDs; field created_ms actually holds entry time."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/r04_limits_buckets.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          106
+        ]
+      ],
+      "sha256": "94c6a713186cbc0a39fdd780e43621017e3a5b65fe0a13b4f03dddf156dedbc9",
+      "notes": "Limits/buckets and approximate mean intervals; posthoc day direction uses full-day close only as retrospective stratification."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/r05_machine_counterfactual.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          51
+        ]
+      ],
+      "sha256": "8cb21bb8ef29c05c6db1a04b6a7ab74d9a095fc08bd8804e9a5474167890a327",
+      "notes": "Machine counterfactual says account-scoped but SQL lacks account restriction and groups only by day; multiaccount limitation."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/r08_rr_matched.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          25
+        ]
+      ],
+      "sha256": "e084b0b19cb4ca9e78845971ce230f332cce591370fca9d4c645902f0b44d1de",
+      "notes": "Matched entry signal improves identity but mutable ledger stop/assumed one lot do not freeze initial broker risk."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-06-risk-data/r09_killswitch.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "f74ee76fe4d1cc1649bc44a0b4be4b7a422e5cfa5e9b6ac0ad368b0801dfdfdb",
+      "notes": "Kill-switch bootstrap on historical daily sequence; synthetic thresholds and tail estimates are not guarantees."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-07-prompts-complete-data/capture.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          63
+        ]
+      ],
+      "sha256": "7fd8666838fed88e70235f4b6978b2a4552cc543c1a1d4546e8f7fc740b05fbd",
+      "notes": "Capture utility reads snapshots and HTTP endpoints;401 branch reads .env and mintsJWT; not offline safe, never executed."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-07-prompts-data/q12_classify.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "sha256": "effe4a0a544edcb7abed26612ff5834fbc8c8a9e2c66577601257a8656b592b7",
+      "notes": "Priority regex prompt-refusal classifier counts rows, residualOTHER retained; not semantic complete attribution."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-07-prompts-data/q14_tokens.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "sha256": "56e74116df84b571d211e9bb9163efd6b0199d419ca69c285c003e16a0bc1592",
+      "notes": "Tokenizer estimates use o200k/cl100k proxy encodings, not DeepSeek bill; runtime may retrieve encoding assets."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/common.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          39
+        ]
+      ],
+      "sha256": "2647a905bdaa71937954d68dc4875898ff4cab2ba640d1adb9d21973bb177bf7",
+      "notes": "Shared CT conversion,1m loads,5m aggregation and Wilder ATR; aggregation permits partial buckets."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/analyze.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          56
+        ]
+      ],
+      "sha256": "a391aac5aea6b816258b76b885f3b60534194c072921e985eaf6e9b9d3ad6621",
+      "notes": "Completed replay analyzer preserves plan/version/scenario identities and unknown opportunities; no fabricated realized profits."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/bounds.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          35
+        ]
+      ],
+      "sha256": "028a1d4d19d290a217b50ab960fdb4e793df7da9e483ed6db946cd9a09024ee9",
+      "notes": "Candidate fill bounds0..1 measure opportunity uncertainty, not queue/cancel/portfolio fill probability."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905/replay.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          161
+        ]
+      ],
+      "sha256": "f1c3afc31c73ab9873bad321f5787df4740ed88a829b19a6b10d707a49c4959e",
+      "notes": "Go necessary-condition replay calls production kernel validators/confirm evaluators on closed prefixes; copied historical stop composition, not broker simulation."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/q01_store_asof.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          10
+        ]
+      ],
+      "sha256": "c5d5a67bb92baede19ae6f392478163940de62fc496a8bc832f27dec84813676",
+      "notes": "Replay schema/as-of shell; no replay execution here."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/q25_payoff.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          47
+        ]
+      ],
+      "sha256": "f7aa44cc7f650d8d76c8b72a503eb401ed624967fcebbca1a6d58e763dc26f99",
+      "notes": "Historical payoff stats use host-local naive era and nearest-stop association; no sentinel filter in this exploratory version."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/q30_atr.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          29
+        ]
+      ],
+      "sha256": "0ea87231ebdd4628e499634525d3916ac90786e47c3aefecb3631ed16fdba482",
+      "notes": "ATR enrichment uses host-local era and partial aggregation; older context helper."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/replay.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          273
+        ]
+      ],
+      "sha256": "79b4f037428b1f771bcfec6eb8d9c9a1c37d77165806fcc5b23e97165ce4e691",
+      "notes": "Original Python replay advances120seconds but checks last1m only, uses mutable live stops, unsupported confirms false, no fees, open-end0pts; superseded qualification matters."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-09-complete-data/final_validate.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          41
+        ]
+      ],
+      "sha256": "38cb36ae819ea55bcc4e4cf0eba2129d8794064e823e55f7a69f9ce8058820dc",
+      "notes": "Final archive validator checks six exports same58IDs, coverage/links/privacy patterns; not production parity."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-09-top-ten-data/q01_verify.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          46
+        ]
+      ],
+      "sha256": "4b88492ce20395e35c0e29af8c69ed49b684ad7eb7d9ccc4cdc7cd529f4e6ea6",
+      "notes": "Top-ten verification calls HTTPhealth and original cohort filter; not offline safe and not executed."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/complete/recompute.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          77
+        ]
+      ],
+      "sha256": "8e95b024ae87780742c77521b5f022e27550789a2714b7fd014f5f2294fca192",
+      "notes": "Completed idea recut pins58/12 and exports denominators, bootstrap/cost assumptions."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/q03_entry_time_units.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          14
+        ]
+      ],
+      "sha256": "57ff16e6836c652a5385b6a8c3a3d38b649986a2e653ac86ccbfc36ba9e6ec92",
+      "notes": "Shell compares timestamp units/entry observations; historical literal population."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/q05_trades_deep.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          18
+        ]
+      ],
+      "sha256": "a0600d11d5c23535d282ba26d8cea6db54d3c8bde69429f56b419353d50dd4fc",
+      "notes": "Shell deep-trade diagnostic queries historical rows; not an execution proof."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/q06_planner_and_decisions.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          22
+        ]
+      ],
+      "sha256": "d8120e36524861fcf619fa6972a6f8adcfc563f0b99f303cf44343632d997bbe",
+      "notes": "Shell planner/decision cadence uses LIKE and labels; multiple actions/empty labels can collapse."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/q08_churn_silence.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          20
+        ]
+      ],
+      "sha256": "11ca38ad36eb26720f8087de8d5e7658ce83d83be7c71e8838e9b9f26da7060c",
+      "notes": "Shell churn/silence diagnostics count recorded events, not opportunities or actual broker cancels."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/q12_exit_reasons.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          32
+        ]
+      ],
+      "sha256": "3c1b41c21ce46d57eb66bd200778936b7b16515b0a0aeaa58a394cba78a120ab",
+      "notes": "Exit reasons inferred from nearby timestamp/price without side; native broker exit cause is separate."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/r01_pop.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          12
+        ]
+      ],
+      "sha256": "5078301877795ad62cca97fedca4c8b7df2480cd2bdec645ce9accc19c77d956",
+      "notes": "Ideas population shell reconciles corrected exclusions."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/r02_recut.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          66
+        ]
+      ],
+      "sha256": "12846426657c83fe7e1f0337de33c0e8add5fcd202978a4a5132f7d714e590e2",
+      "notes": "Ideas recut/mean intervals enumerate eligible historical groups; posthoc subgroups not validated edge."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/r03_touch.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          28
+        ]
+      ],
+      "sha256": "dd244c92b2995cc0c1439652c2b3815c6e75d557155f19f4694ba92a022c46e0",
+      "notes": "Touch proxy joins and grouped diagnostics; no canonical immutable opportunity guarantee."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/r04_more.sh",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          21
+        ]
+      ],
+      "sha256": "1aefd24d4846d292674aa25454541115a77faddb56eff475e4aaca2eb2742e85",
+      "notes": "Additional touch/snapshot diagnostic shell; interpretation remains descriptive."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/r09_dedup.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          53
+        ]
+      ],
+      "sha256": "d48f245b8cd8f49f883b0096e0df9b5a87cda54bdc69b68ba7c6230829a31dc7",
+      "notes": "Dedup uses lexical first outcome and narrow VWAP dynamic family; different dedup contracts yield different estimands."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas-data/wilson.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          10
+        ]
+      ],
+      "sha256": "02132bcd5df65593756d3fc7f48eca3978d82a403a48d5cb9542969bbf6fc28b",
+      "notes": "Wilson and approximate mean confidence interval helpers for static research."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-08-scenario-economics-data/measure.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          58
+        ]
+      ],
+      "sha256": "9675ced4c1462ad854218368cde52a7fb03e047634cc8e602f690c1d18c3413f",
+      "notes": "Decimal frozen scenario geometry from pinned git cohort6095ca58 and DB snapshot; signed first target vs absolute arm R, no trade profitability claim."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-08-the-strategy-data/analyze.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          175
+        ]
+      ],
+      "sha256": "30bc78ab30cbc06fc18dd4c90e430092d25ad9cabfa5073a2f61a737e487b0f5",
+      "notes": "Strategy style census preserves version/slot identities and ambiguous hold; publication close proxy and lifecycle cutoff; sample differs from Sep5 cohort."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-08-the-strategy-data/build_report.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          151
+        ]
+      ],
+      "sha256": "2fe0f10fc84acfff725df7194aa45b15b2356fdc6fb816bd144f7fcd8c4c6725",
+      "notes": "Report generator mixes computed tables and hardcoded historical prose/runtime revision; not a self-updating current-system report."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-08-the-strategy-data/validate.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "sha256": "7d98fa562a85c5ad0bb5a79a410fc189b14cbab52317c514726167015b45c2b9",
+      "notes": "Style validator AST/fixture checks plus liveDBaccounts and.env privacy scans; not wholly offline despite header."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-10-scenario-level-identity-data/census.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          136
+        ]
+      ],
+      "sha256": "5e4d5cfaac92a14b9bc0410cf705052779f565270fd37939bd8343cce2b7f82f",
+      "notes": "Two read-only bounded DB snapshots with explicit non-atomic caveat; stage/schema and formation census."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-11-level-zones-evidence/overlap_replay.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          46
+        ]
+      ],
+      "sha256": "f49ef05b77f0437832017ba18e24b34cda6fdbd2187e4d6da8e8a5c3b20c0ad8",
+      "notes": "Exploratory union-find overlap uses native overlap or anchor distance; not exact production non-transitive zone merge."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-11-one-setup-data/sectionC.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          118
+        ]
+      ],
+      "sha256": "c6eadb4954d2d949a3c10bb074705eb4f1db40124e0a65163de42b159b9179ae",
+      "notes": "One-setup diagnostic uses host timezone, strategy_id=trader premise, fallback condition without version and nearby bar close; unresolved identity/causality."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-12-structural-stop/harness/audit_ledger.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          27
+        ]
+      ],
+      "sha256": "1f0fbd04997a5dd12a309d2a675642cfb314c2691fee289e6df7b4284f57c999",
+      "notes": "Frozen200positive-price ledger geometry and plan inventory; copied database, not current account truth."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-12-structural-stop/harness/detect.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          146
+        ]
+      ],
+      "sha256": "46ddd9dcbdf9b0b5576628f91855c64950ef3b954e1b4f409138b71933d826d4",
+      "notes": "Closed-prefix level detection, production map helpers, allfresh/owner omissions; session profile availability/contract provenance not established by key alone."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-12-structural-stop/harness/summarize_overshoot.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          37
+        ]
+      ],
+      "sha256": "28c0c008d165963d58de8b00f3f022bcabe4d855aa42c0b4b3c1ec1c8dddf955",
+      "notes": "Held-conditioned overshoot quantiles exclude breakouts; touchbar extremes upper bounds, training buffer not validated profitability."
+    },
+    {
+      "path": "docs/superpowers/reports/2026-09-12-structural-stop/harness/sweep.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          209
+        ]
+      ],
+      "sha256": "ab9ffccdf60c123e17d50b7633f39e7da9887d566b3ae538054634a7c24542db",
+      "notes": "Corrected geometry sweep calls production frozen-zone core; fillbar included, adverse tick, stopgap and target-through handling; old missing per-trade-cap diagnostic superseded by daily-only owner rule."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-structure-fade/harness/data.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          193
+        ]
+      ],
+      "sha256": "a416d8b9c7f2a512471252c71eeb5639382cc64a2e4fb680fbe9567be4162c8b",
+      "notes": "Read-only DB opening and percontract/source bars; closed-prefix selectors and session windows; no explicit last-bar freshness or duplicate-time rejection."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-structure-fade/harness/eval.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          334
+        ]
+      ],
+      "sha256": "9d4bb5eace9205b75b0cd38e7324906100bdc6e3e3cad43bdbbeac32d971c1ef",
+      "notes": "Band/line outcomes and trade model skipfillbar/exactstop;2pt friction, grossR; structural buffer grid and nearest-qualified target are research policy."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-structure-fade/harness/extract.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "sha256": "5ad913bd99af2d08bc73727f6dffbe8dceb1db027a4aa9e61bd6fdd2a0bf8cc0",
+      "notes": "JSON extraction/rendering from prior run outputs; not recomputation."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-structure-fade/harness/seam.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          134
+        ]
+      ],
+      "sha256": "c5de8bbeccd185bd6d6a2a604cddfdfa267b1004733851cbf5f5db88f4f88e3e",
+      "notes": "Seam report counts and flags, ignores SQL/JSON errors; flags not asserted by caller; same-contract grouping check is not callsite parity."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-structure-fade/harness/stats.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          154
+        ]
+      ],
+      "sha256": "97d91dc52bcf071e8d2deda68bdee86154e1b2c2996794fd24cc32d66510c0b7",
+      "notes": "Wilson/independent difference/quantiles/RNG/streak helpers; maxDD starts at first cumulative observation; empty values often0."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/detect.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          146
+        ]
+      ],
+      "sha256": "46ddd9dcbdf9b0b5576628f91855c64950ef3b954e1b4f409138b71933d826d4",
+      "notes": "Same closed-prefix detector as structural-stop harness; allfresh inputs do not reproduce historical observation receipt."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/eval.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          264
+        ]
+      ],
+      "sha256": "73f0c7659d5109ff722501e7759518be110b09b449af15c4676241d5cfde33ab",
+      "notes": "Original zone trade model skipsfillbar and exactstopgap;2point friction; touch and through variants remain hypothetical executions."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/extract.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          68
+        ]
+      ],
+      "sha256": "978f0ee0520a6adcf9d6eed78762fbdd54a302f3228e965a9d19552bc39de54a",
+      "notes": "Loads saved run and C4 rendering; output describes archived simulation only."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/main.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          653
+        ]
+      ],
+      "sha256": "91b5d2b2192dc9e0e4740eabaa7e833186895e02916002338270289dacaa567b",
+      "notes": "Zone main orchestrates sessions/maps/holdout and surfaces; bandtouchA alwaysfilled at anchor, C tick favorable; independent overlapping trades; startupport guard rejects changed production source."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/out.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          277
+        ]
+      ],
+      "sha256": "e2ef91f978dc2dcad93aa63f3ce095eb523dc7d4e03f6c000b09035d4a3c6ee8",
+      "notes": "C1/C4 grouping and rendering: net points*$2, grossR, PF0 for no losses; cumulative series omits initial0 so early drawdown missed."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/render_c1.py",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          19
+        ]
+      ],
+      "sha256": "d8830d0444150debaf854f74e570c8517ea7cd7c56a2bedca74b3d5bd550cbe0",
+      "notes": "Markdown table renderer with n<30 decided flag; consume saved JSON, no computation of sample validity."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/stop_port.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          237
+        ]
+      ],
+      "sha256": "be5eb912ab14fa675d992749c413d696ab6abb2e88a7939c6915894a511fb5a4",
+      "notes": "Legacy stop widest-wins port and startup byteguard; current production variadic structural signature differs so replay aborts; guard compares embedded string, not callable copiedbody."
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          522,
+          550
+        ],
+        [
+          2260,
+          2310
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "Dependency/rule excerpt only; outside assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          301,
+          309
+        ],
+        [
+          404,
+          425
+        ]
+      ],
+      "sha256": "04905d4e659519c1459daa4b96872f3395a83f0c564324ad779301484904d417",
+      "notes": "Dependency/rule excerpt only; outside assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          181,
+          216
+        ],
+        [
+          290,
+          335
+        ]
+      ],
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "notes": "Dependency/rule excerpt only; outside assigned coverage."
+    },
+    {
+      "path": "trader/structural_geometry.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          106,
+          157
+        ]
+      ],
+      "sha256": "fd9a254e526a955749671943b951d6bd42a838013ce185ba31a850e50c4ed739",
+      "notes": "Dependency/rule excerpt only; outside assigned coverage."
+    },
+    {
+      "path": "trader/arm_stop_anchor.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          70,
+          95
+        ]
+      ],
+      "sha256": "0ff03dfc9378dca4240a503e625cbebff78c3133b89a875a4ca6644b56664b41",
+      "notes": "Dependency/rule excerpt only; outside assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/stats.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          68,
+          87
+        ]
+      ],
+      "sha256": "97d91dc52bcf071e8d2deda68bdee86154e1b2c2996794fd24cc32d66510c0b7",
+      "notes": "Dependency/rule excerpt only; outside assigned coverage."
+    },
+    {
+      "path": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/surface.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          110
+        ]
+      ],
+      "sha256": "1e6165746f5e5bd8afb77e88605650d1493214c4dc7662800f4ab6d4881c4a2f",
+      "notes": "Dependency/rule excerpt only; outside assigned coverage."
+    }
+  ],
+  "unread": [],
+  "assigned_full_files": 106,
+  "assigned_full_lines": 8052
+}

@@ -1,0 +1,23 @@
+2026/09/12 20:27:29 INFO tcp_server: listening addr=127.0.0.1:0
+2026/09/12 20:27:29 INFO tcp_server: client connected addr=127.0.0.1:45454
+2026/09/12 20:27:29 INFO tcp_server: sent bars_subscribe symbol=MNQ timeframes="[1m 3m 5m 15m 30m 1h 2h 4h 6h 8h 12h 1d 3d 1w]" bars_back=2000
+09-12 20:27:30 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-12 20:27:30 [INFO] ninjatrader/tcp_trader.go:157 🔗 ninjatrader/tcp: trader MNQ BOUND to account Sim101 (P5.4 per-(symbol,account) routing)
+2026/09/12 20:27:30 INFO tcp_server: sent account_register allowlist accounts=[Sim101]
+09-12 20:27:30 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🛡 cutover safety (class 33): gate legs=5 · leg4=STALE · boot sweep cancelled 0 pre-boot arm(s) (0 authorized-but-never-placed left for this process)
+09-12 20:27:30 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🔌 nt8 addon: build_id=none expected=2026-09-07-h1 match=NO (no frame carrying a build_id received yet)
+09-12 20:27:30 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🔌 order_snapshot: last age=124050s orders=0 · leg4 source=broker
+09-12 20:27:30 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (per-trader resolved, 0C shadow demotion)
+09-12 20:27:30 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-11 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 20:27:30 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🕰 clock-hold: T1 no-trade windows widened by |drift| 124050029ms for 2026-09-11 TEST (F6)
+09-12 20:27:30 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🎯 stop/target composition {"trade_date":"2026-09-10","trader_id":"trader-1","plan_id":"2026-09-11:TEST:trader-1","version":1,"scenario":"S1","leg":1,"time_ms":1789138800000,"symbol":"MNQ","side":"long","entry":100,"stop":77,"target":104,"zone_lo":82,"zone_hi":100,"target_lo":104,"target_hi":105,"zone_names":["PDL"],"target_names":["target"],"buffer":5,"buffer_source":"day_plan.structural_stop.buffer_points","calibration":"owner_override[I]","stop_source":"zone_edge","risk_points":23,"gain_points":4,"net_gain_points":2,"loss_usd":50,"quantity":0,"reason":"rr","detail":"gain=4.0000 risk=23.0000 rr=0.173913 min=2.000000"}
+09-12 20:27:30 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🎯 geometry retirement failed row=1: fixture: retirement write failed
+09-12 20:27:30 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🎯 stop-entry: seam=OFF — NO stop entry is placed (owner ruling 2026-09-05: cancel-confirmation wave owed; broker-side stacking) · slots=unproven(addon build) · guard=stop-side · unknown=no-op · addon build_id=none expected=2026-09-07-h1 match=NO
+09-12 20:27:30 [WARN] config/config.go:122 ⚠️  JWT_SECRET env var not set; using INSECURE default. Acceptable for localhost-only paper trading. Set JWT_SECRET in .env (e.g. `openssl rand -base64 64`) before any network-exposed deploy.
+09-12 20:27:30 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 📌 armed S1 placement requested limit 100.00 signal=34c770cf-c626-469a-b2e4-d6b3787f0b4c (band ±100t)
+2026/09/12 20:27:30 INFO tcp_server: client disconnected
+--- FAIL: TestStructuralStopF4RetirementWriteFailureCannotReachWire (0.59s)
+    structural_geometry_wire_test.go:19: geometry refusal reached broker: {Symbol:MNQ Account:Sim101 Side:long Quantity:1 Entry:100 StopLoss:77 TakeProfit:104 SignalID:34c770cf-c626-469a-b2e4-d6b3787f0b4c Timestamp:2026-09-13T01:27:30.053Z TraderID: Seq:1 OrderType:limit LimitPrice:100 StopPrice:0}
+FAIL
+FAIL	nofx/trader	0.599s
+FAIL

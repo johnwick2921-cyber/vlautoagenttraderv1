@@ -1,0 +1,44 @@
+what                                                  
+------------------------------------------------------
+log_events gaps 09-03 CT (>10 min; ts_utc is EPOCH MS)
+pid    id     prev_ct              ct                   gap_min
+-----  -----  -------------------  -------------------  -------
+25754  25755  2026-09-03 12:24:33  2026-09-03 14:18:24  113.86 
+25948  25949  2026-09-03 16:03:19  2026-09-03 16:30:20  27.02  
+what                                     
+-----------------------------------------
+day_plan_alerts ack/dismiss rate all-time
+level  n    acked  dismissed
+-----  ---  -----  ---------
+P0     152  62     56       
+P1     500  160    169      
+P2     3    3      3        
+what                  
+----------------------
+feed-down alert bodies
+id   ct                   title              body                                                          acked  dismissed
+---  -------------------  -----------------  ------------------------------------------------------------  -----  ---------
+629  2026-09-03 14:28:39  NT8 bar feed DOWN  No bar frames for 10m0s while the market is open. Nothing ca  0      0        
+                                             n trade and the planner will refuse to run until bars return                  
+                                             . Start/check NinjaTrader on Windows.                                         
+
+636  2026-09-03 21:33:58  NT8 bar feed DOWN  No bar frames for 11m0s while the market is open. Nothing ca  0      0        
+                                             n trade and the planner will refuse to run until bars return                  
+                                             . Start/check NinjaTrader on Windows.                                         
+
+654  2026-09-04 12:30:01  NT8 bar feed DOWN  No bar frames for 10m0s while the market is open. Nothing ca  0      0        
+                                             n trade and the planner will refuse to run until bars return                  
+                                             . Start/check NinjaTrader on Windows.                                         
+what                         
+-----------------------------
+alerts per CT day last 7 days
+d           n   p0  acked
+----------  --  --  -----
+2026-09-04  19  3   0    
+2026-09-03  22  3   0    
+2026-09-02  49  9   3    
+2026-09-01  33  10  0    
+2026-08-31  25  10  0    
+2026-08-30  10  5   0    
+2026-08-28  39  4   0    
+2026-08-27  58  7   1    

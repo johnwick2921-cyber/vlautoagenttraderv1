@@ -1,0 +1,6 @@
+provider/ninjatrader/research_wire.go:170: of.Set("order_semantics", map[string]any{"prices": prices, -> of.Set("accepted_entry", map[string]any{"prices": prices,
+--- FAIL: TestStageAUnlinkedBrokerPricesStayUnclassified (0.00s)
+    research_wire_test.go:89: protective book price was promoted to accepted entry or lost
+FAIL
+FAIL	nofx/provider/ninjatrader	0.006s
+FAIL

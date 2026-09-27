@@ -110,6 +110,9 @@ func twoX5mReserved(condition string) bool {
 // geomRefIDs is the RESOLVED day_plan.geometry_reference_levels knob
 // (W-GEOMETRY-REFUSAL, 2026-09-18); nil = the process cannot know it yet
 // (per-strategy) and the line says so instead of inventing a value.
+// bd_min_closes and accept_hold_min print with the planner's own authoring-
+// default label (ConfirmSourceAuthoringDefault): since W2 the STORED rule
+// governs, and the process-level value is only the authoring default (#190).
 func EntryLawBootLedger(geomRefIDs *bool) string {
 	geom := "n/a (per-strategy; day_plan.geometry_reference_levels default ON)"
 	if geomRefIDs != nil {
@@ -118,8 +121,8 @@ func EntryLawBootLedger(geomRefIDs *bool) string {
 			geom = "on"
 		}
 	}
-	return fmt.Sprintf("entry law: bd_min_closes=%d bd_min_disp_atr=%.2f mss_min_disp_atr=%.2f accept_hold_min=%d stop_entry_offset_ticks=%d retest_wait_bars=%d stop_entry_seam=%s geom_ref_ids=%s",
-		bdConfirmCloses(), bdMinDispATR(), MSSMinDispATR(), AcceptHoldMin(), StopEntryOffsetTicks(), RetestWaitBars(), seamWord(StopEntrySeamOn()), geom)
+	return fmt.Sprintf("entry law: bd_min_closes=%d (%s) bd_min_disp_atr=%.2f mss_min_disp_atr=%.2f accept_hold_min=%d (%s) stop_entry_offset_ticks=%d retest_wait_bars=%d stop_entry_seam=%s geom_ref_ids=%s",
+		bdConfirmCloses(), ConfirmSourceAuthoringDefault, bdMinDispATR(), MSSMinDispATR(), AcceptHoldMin(), ConfirmSourceAuthoringDefault, StopEntryOffsetTicks(), RetestWaitBars(), seamWord(StopEntrySeamOn()), geom)
 }
 
 func seamWord(on bool) string {

@@ -1,0 +1,13 @@
+
+> nofx-web@1.0.0 test
+> vitest run --run src/guide/GuidePage.test.tsx
+
+
+ RUN  v4.1.11 /tmp/structural-stop-release-build/nofx/web
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  00:14:29
+   Duration  1.34s (transform 179ms, setup 39ms, import 222ms, tests 831ms, environment 182ms)
+

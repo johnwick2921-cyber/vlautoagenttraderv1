@@ -1,0 +1,21 @@
+plans since 09-02: 58 versions; 8 plan ids
+authored scenario-versions: 177 | distinct (plan,scenario): 33
+authored with arm.enabled: 57 | distinct (plan,scenario) with arm: 22
+by condition (authored, armed): {'reclaim': [25, 1], 'sweep_reclaim': [54, 6], 'breakout_retest': [24, 0], 'reject': [69, 50], 'hold': [4, 0], 'acceptance': [1, 0]}
+ledger rows: 37 | distinct (plan,scenario,leg): 11 | placed rows (signal_id): 25 | distinct specs placed: 5
+placed by kind: {'stop_entry': 21, 'limit': 4}
+reached (price touched entry while the row lived): all rows 6 / 37 | placed rows 3 / 25
+filled: 1 [35]
+   filled arm 35 -> position (591, -140.0)
+won: 0
+-- never placed (no signal): reasons Counter({'superseded: never placed (no signal id) and p': 4, 'level accepted through — marketable, never pl': 3, 'no active plan': 2, '': 2, 'session ended (EOD flat)': 1})
+-- placed: terminal reasons Counter({'cancelled:no order_update within stale window (reconnec': 9, 'cancelled:boot_sweep: pre-boot order, process restarted': 8, 'cancelled:gate changed: rr': 5, 'cancelled:cancelled in NT8': 2, 'filled:': 1})
+-- reached-but-not-filled rows: [(33, 'S3', 'limit', 'cancelled', 'level accepted through — marketable, nev'), (34, 'S1', 'limit', 'cancelled', 'level accepted through — marketable, nev'), (36, 'S2', 'limit', 'cancelled', 'level accepted through — marketable, nev'), (37, 'S3', 'limit', 'cancelled', 'cancelled in NT8'), (102, 'S2', 'stop_entry', 'cancelled', 'cancelled in NT8')]
+-- marketable-guard cancels since 09-02: [(33, 'S3', 29166.8), (34, 'S1', 29199.5), (36, 'S2', 29351.05)]
+RATES: armed→placed 45.5% [21.3, 72.0] (distinct specs); rows 67.6% [51.5, 80.4]
+       placed→reached 12.0% [4.2, 30.0]
+       reached→filled (placed) 33.3% [6.1, 79.2]
+       filled→won 0.0% [0.0, 79.3]
+       authored-with-arm(distinct)→ledger spec 50.0% [30.7, 69.3]
+-- marketable guard all-time rows with distance (last 1m close at cancel vs entry)
+    17 S1 long 29437.0 close@cancel 29414.25 through by 22.75 pts

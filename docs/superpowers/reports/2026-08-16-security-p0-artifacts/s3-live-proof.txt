@@ -1,0 +1,7 @@
+S3 LIVE PROOF — isolated fixed binary (821c895a), temp DB
+1. seeded orphan credential: ai_models(id=orphan-model, user_id=ghost-user-9999, api_key=sk-VICTIM-...)
+2. deleted all users → system reads 'uninitialized' (the state a reset used to create)
+3. POST /api/register attacker@example.invalid → 200 Registration successful, user_id=f6687eab...
+4. AFTER: ai_models.user_id for orphan-model = ghost-user-9999  (UNCHANGED)
+   pre-fix, adoptOrphanRecords would have set it to f6687eab... = credential inheritance
+VERDICT: registration inherits ZERO credential rows.

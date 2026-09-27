@@ -1,5 +1,7 @@
 package trader
 
+import "sync/atomic"
+
 // B5 — dead-man's watchdog. On an NT8 TCP disconnect / missed heartbeats, NEW
 // entries are blocked; a reconnect alone does NOT resume trading — the link must
 // first pass a clean positions/orders reconciliation (so the bot never opens on top
@@ -22,37 +24,43 @@ const (
 	dmAwaitingReconcile                     // reconnected but not yet reconciled → blocked
 )
 
+// state is atomic (W-EXEC-TRUTH W0 Q15): runCycle is the ONLY writer (step),
+// but the admission gate reads it from Picture's live-bar goroutine too.
 type deadManWatchdog struct {
-	state deadManState
+	st atomic.Int32
 }
+
+func (w *deadManWatchdog) get() deadManState  { return deadManState(w.st.Load()) }
+func (w *deadManWatchdog) set(s deadManState) { w.st.Store(int32(s)) }
 
 // observe updates the state from the current link status. Returns (newState,
 // changed) so the caller can log transitions.
 func (w *deadManWatchdog) observe(connected bool) (deadManState, bool) {
-	prev := w.state
-	switch w.state {
+	prev := w.get()
+	switch prev {
 	case dmLive:
 		if !connected {
-			w.state = dmDisconnected
+			w.set(dmDisconnected)
 		}
 	case dmDisconnected:
 		if connected {
-			w.state = dmAwaitingReconcile // reconnected → must reconcile before resuming
+			w.set(dmAwaitingReconcile) // reconnected → must reconcile before resuming
 		}
 	case dmAwaitingReconcile:
 		if !connected {
-			w.state = dmDisconnected // flapped back down
+			w.set(dmDisconnected) // flapped back down
 		}
 	}
-	return w.state, w.state != prev
+	cur := w.get()
+	return cur, cur != prev
 }
 
 // reconciled marks a clean positions/orders reconciliation complete. It resumes
 // trading ONLY from the awaiting-reconcile state (a reconcile while merely live is
 // a no-op). Returns true if it resumed.
 func (w *deadManWatchdog) reconciled() bool {
-	if w.state == dmAwaitingReconcile {
-		w.state = dmLive
+	if w.get() == dmAwaitingReconcile {
+		w.set(dmLive)
 		return true
 	}
 	return false
@@ -60,7 +68,7 @@ func (w *deadManWatchdog) reconciled() bool {
 
 // entriesBlocked reports whether NEW entries are currently blocked.
 func (w *deadManWatchdog) entriesBlocked() bool {
-	return w.state != dmLive
+	return w.get() != dmLive
 }
 
 // watchdogEvent is what a single per-cycle step() produced, so the caller can log
@@ -89,8 +97,8 @@ const (
 // reconcileOK is invoked ONLY when the link is up and entries are already blocked
 // (awaiting reconciliation), never on the reconnect cycle itself.
 func (w *deadManWatchdog) step(connected bool, reconcileOK func() bool) watchdogEvent {
-	if _, changed := w.observe(connected); changed {
-		switch w.state {
+	if cur, changed := w.observe(connected); changed {
+		switch cur {
 		case dmDisconnected:
 			return wdWentDown
 		case dmAwaitingReconcile:

@@ -1,0 +1,35 @@
+-- SELECT is_counterfactual, COUNT(*) FROM ab_confirm_log GROUP BY 1
+   (0, 223)
+-- SELECT rule, is_counterfactual, COUNT(*) FROM ab_confirm_log GROUP BY 1,2
+   ('1m_mss', 0, 64)
+   ('1x5m_close', 0, 72)
+   ('2x5m_close', 0, 71)
+   ('touch', 0, 16)
+-- SELECT condition, COUNT(*) FROM ab_confirm_log GROUP BY 1 ORDER BY 2 DESC
+   ('reject', 173)
+   ('', 30)
+   ('sweep_reclaim', 16)
+   ('reclaim', 4)
+-- SELECT outcome, COUNT(*) FROM ab_confirm_log GROUP BY 1
+   ('open', 163)
+   ('stop', 23)
+   ('target', 37)
+-- SELECT direction, COUNT(*) FROM ab_confirm_log GROUP BY 1
+   ('', 35)
+   ('long', 67)
+   ('short', 121)
+-- SELECT MIN(created_at), MAX(created_at) FROM ab_confirm_log
+   ('2026-08-30 18:37:46.041147573-05:00', '2026-09-04 12:15:01.409916359-05:00')
+-- SELECT COUNT(*), SUM(net_pnl IS NOT NULL), SUM(mfe_r IS NOT NULL), SUM(mae_r IS NOT NULL), SUM(ambiguous=1) FROM ab_confirm_log
+   (223, 223, 223, 223, 0)
+-- SELECT session, COUNT(*) FROM ab_confirm_log GROUP BY 1
+   ('ASIA', 55)
+   ('LONDON', 48)
+   ('NY', 120)
+-- SELECT COUNT(DISTINCT plan_id||version||scenario) FROM ab_confirm_log
+   (83,)
+-- sample rows
+   id|trader_id|plan_id|version|session|scenario|rule|fill_px|mfe|mae|outcome|time_to_fill_ms|created_at|updated_at|condition|entry_px|stop_px|target_px|rr|atr5m|mfe_r|mae_r|mfe_atr|mae_atr|time_to_mfe_bars|time_to_mae_bars|time_to_resolve_bars|net_pnl|ambiguous|is_counterfactual|normalized|dropped_legs|direction|recompute
+   223|8d5c8af5_8ef641a7-81|2026-09-04:NY:8d5c8a|6|NY|S1|2x5m_close|29534.25|0.0|0.0|open|264276|2026-09-04 12:15:01.|2026-09-04 12:15:01.|reject|29534.25|29614.5|29503.38|0.384672897196249|22.2861455324933|0.0|0.0|0.0|0.0|0|0|0|0.0|0|0|0|||
+   222|8d5c8af5_8ef641a7-81|2026-09-04:NY:8d5c8a|6|NY|S1|1x5m_close|29541.75|0.0|0.0|open|24276|2026-09-04 12:11:02.|2026-09-04 12:11:02.|reject|29541.75|29614.5|29503.38|0.5274226804123572|23.33013474927816|0.0|0.0|0.0|0.0|0|0|0|0.0|0|0|0|||
+   221|8d5c8af5_8ef641a7-81|2026-09-04:NY:8d5c8a|5|NY|S1|1m_mss|29568.0|4.75|1.0|open|909914|2026-09-04 11:45:05.|2026-09-04 11:45:05.|sweep_reclaim|29568.0|29765.0|29553.75|0.07233502538071065|24.009533620066055|0.024111675126903553|0.005076142131979695|0.1978380786218259|0.04165012181512124|0|0|0|-1.0|0|0|0|||

@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "Real Desk announces pending read then renders returned facts",
+    "One market chart and one separate equity chart, aligned beside each other",
+    "Actual PlanCard and Desk stay mounted, collapsed and polling on Decisions",
+    "Real mobile selector changes markets and preserves visible entry/mark/value columns",
+    "No JavaScript page errors or unknown API paths"
+  ],
+  "passed": 5,
+  "errors": [],
+  "unknown": [],
+  "deskReads": 2,
+  "scope": "Actual branch page, components, AuthContext and HTTP client. Synthetic responses intercepted at browser request boundary; no live backend calls."
+}

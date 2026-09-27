@@ -1,0 +1,24 @@
+## LATEST version per session-day: plans=47 scenarios=128 sc/plan dist=Counter({3: 28, 1: 7, 2: 6, 4: 5, 5: 1})
+  condition: [('reject', 47), ('sweep_reclaim', 30), ('breakout_retest', 17), ('acceptance', 13), ('hold', 11), ('reclaim', 10)]
+  direction: [('short', 72), ('long', 56)]
+  quality: [('B', 81), ('C', 24), ('A', 23)]
+  arm_enabled: {False: 110, True: 18}  by dir: {('long', False): 52, ('short', False): 58, ('short', True): 14, ('long', True): 4}  arm cond: [('reject', 14), ('sweep_reclaim', 4)]
+  bias.direction: [('short', 18), ('neutral', 17), ('long', 12)]  day_type: [('balance', 22), ('trend', 10), ('no-trade', 7), ('trend-down', 4), ('trend_down', 2), ('balance/breakdown attempt', 1), ('balance (short-lean pullback)', 1)]
+  bias_label (AI,tree): [((None, None), 41), (('short', 'short'), 3), (('long', 'long'), 2), (('neutral', 'neutral'), 1)]
+  planned R:R (arm-enabled, n=18): median=2.26 min=0.60 max=4.71
+## ALL versions: plans=253 scenarios=738 sc/plan dist=Counter({3: 127, 4: 57, 1: 36, 2: 24, 5: 9})
+  condition: [('reject', 234), ('sweep_reclaim', 186), ('breakout_retest', 124), ('hold', 72), ('reclaim', 63), ('acceptance', 56), ('breakdown_continue', 3)]
+  direction: [('short', 395), ('long', 343)]
+  quality: [('B', 460), ('C', 160), ('A', 117), ('A+', 1)]
+  arm_enabled: {False: 606, True: 132}  by dir: {('long', False): 307, ('short', False): 299, ('short', True): 96, ('long', True): 36}  arm cond: [('reject', 96), ('sweep_reclaim', 25), ('breakout_retest', 10), ('reclaim', 1)]
+  bias.direction: [('short', 109), ('neutral', 73), ('long', 71)]  day_type: [('balance', 135), ('trend', 55), ('no-trade', 36), ('trend-down', 18), ('trend_down', 5), ('balance/breakdown attempt', 1), ('balance (short-lean pullback)', 1), ('premium-fade', 1), ('premium_rejection', 1)]
+  bias_label (AI,tree): [((None, None), 226), (('long', 'long'), 11), (('short', 'short'), 8), (('short', 'neutral'), 4), (('neutral', 'neutral'), 2), (('neutral', 'long'), 1), (('neutral', 'short'), 1)]
+  planned R:R (arm-enabled, n=132): median=2.36 min=0.56 max=5.55
+## trigger-fired (LATEST version, confirm.ref_price touched by a 1m bar between plan creation and session end): 33/72 = 0.458 Wilson (0.34828438695135916, 0.5726033580329238)  (scenarios w/o bars coverage: 18)
+   reject: 15/30  Wilson (0.332, 0.668)
+   acceptance: 7/8  Wilson (0.529, 0.978)
+   breakout_retest: 6/10  Wilson (0.313, 0.832)
+   reclaim: 2/4  Wilson (0.15, 0.85)
+   sweep_reclaim: 2/18  Wilson (0.031, 0.328)
+   hold: 1/2  Wilson (0.095, 0.905)
+bars coverage: 2026-08-19 10:00:00-05:00 → 2026-09-04 12:19:00-05:00 n 16703

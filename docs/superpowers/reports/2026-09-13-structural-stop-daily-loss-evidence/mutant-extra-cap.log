@@ -1,0 +1,10 @@
+── mutating trader/structural_geometry.go
+   edit landed:
+     +	if p.BufferKnown { return refuse("risk_cap_missing", "regression: extra per-trade cap") }
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestStructuralStopF1F2ProductionArmCycle (0.52s)
+     FAIL
+     FAIL	nofx/trader	0.531s
+     FAIL

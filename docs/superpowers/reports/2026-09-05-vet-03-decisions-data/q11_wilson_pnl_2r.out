@@ -1,0 +1,37 @@
+## rates
+era win rate excl scratch (pnl_corrected>0 of !=0): 21/63 = 0.333  Wilson [0.229, 0.456]
+S1 win rate: 10/27 = 0.370  Wilson [0.215, 0.558]
+S2+ win rate: 8/31 = 0.258  Wilson [0.137, 0.432]
+ASIA win rate: 2/15 = 0.133  Wilson [0.037, 0.379]
+LONDON: 7/21 = 0.333  Wilson [0.172, 0.546]
+NY (21 resolved): 9/20 = 0.450  Wilson [0.258, 0.658]
+decision-path (source=system) win rate: 13/49 = 0.265  Wilson [0.162, 0.403]
+armed_fill (reconcile armed_fill rows) win rate: 5/9 = 0.556  Wilson [0.267, 0.811]
+all-time arm fill rate (real fills / non-test arms; test rows = sessions TEST-E2 x4 + TEST-E7 x2): 9/61 = 0.148  Wilson [0.080, 0.257]
+two-day-window arm fill (ids 23-37): 3/15 = 0.200  Wilson [0.070, 0.452]
+marketable-guard deaths (all non-test arms): 6/61 = 0.098  Wilson [0.046, 0.198]
+stale-window reaper deaths (all non-test arms): 12/61 = 0.197  Wilson [0.116, 0.313]
+trigger-fired in-force: 263/592 = 0.444  Wilson [0.405, 0.485]
+trigger-fired first-version: 62/82 = 0.756  Wilson [0.653, 0.836]
+reject share of authoring attempts since 09-01: 64/143 = 0.448  Wilson [0.368, 0.529]
+continuation-law share of rejects: 38/64 = 0.594  Wilson [0.471, 0.705]
+open intents per executor cycle since 08-27: 31/4102 = 0.008  Wilson [0.005, 0.011]
+open intents refused by a gate: 19/31 = 0.613  Wilson [0.438, 0.763]
+strict refusals / decision-path intents 09-03: 13/14 = 0.929  Wilson [0.685, 0.987]
+level_event share of plan versions since 09-01: 53/79 = 0.671  Wilson [0.561, 0.764]
+long scenarios arm-enabled (latest): 4/56 = 0.071  Wilson [0.028, 0.170]
+short scenarios arm-enabled (latest): 14/72 = 0.194  Wilson [0.120, 0.300]
+bias_label AI==tree (versions carrying a label): 21/27 = 0.778  Wilson [0.592, 0.894]
+## P&L split (pnl_corrected, plan-linked, excl e7 test seam, excl NULL)
+  decision path (source=system): n=51 null_excl=0 sum=-750.43 W=13 L=36 ids=521,522,523,524,525,526,527,528,529,530,531,532,533,534,535,536,537,538,539,540,541,542,543,544,545,546,547,548,549,550,551,552,553,554,555,556,557,558,559,560,561,562,563,564,565,581,583,587,588,589,590
+  armed_fill lineage (source=reconcile AND plan_band=armed_fill): n=9 null_excl=0 sum=42.5 W=5 L=4 ids=567,568,569,570,575,578,584,586,591
+  reconcile non-armed (566,571,580): n=3 null_excl=0 sum=92.0 W=2 L=1 ids=566,571,580
+  armed_entry ghosts: n=5 null_excl=3 sum=52.0 W=1 L=1 ids=576,577,579,582,585
+## MFE >= 2R re-measure: system trades use the stop_loss in the open_* decision at entry minute; armed rows use armed_orders.stop_px matched on fill price/side/day
+resolved n=57 (unresolved ids: [568, 569, 571, 575, 580, 582, 585])
+MFE >= 2.0R (own authored stop): 13/57 = 0.228  Wilson [0.138, 0.352]
+MFE >= 1.0R: 22/57 = 0.386  Wilson [0.271, 0.516]
+mfe_R median 0.67 p75 1.79
+winners n 16 MAE/R median 0.353 max 0.967
+losers  n 39 MAE/R median 1.048
+R (stop distance pts) median 34.25

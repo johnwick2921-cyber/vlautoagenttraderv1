@@ -1,0 +1,434 @@
+{
+  "assignment": 5,
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "assigned_files": 14,
+  "assigned_lines": 9224,
+  "files": [
+    {
+      "path": "agent/entity_field_catalog.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          111
+        ]
+      ],
+      "sha256": "2e6d58e8e38235b2b8fc348b029ce501b163e6997f17a53c8873166311dc4d59",
+      "notes": "ASSIGNED. Catalogs manual versus agent-editable trader/model/exchange fields and keyword aliases; metadata is not validation. Crypto oriented fields."
+    },
+    {
+      "path": "agent/i18n.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          90
+        ]
+      ],
+      "sha256": "95873c56465b2ffdfef2e0e165a1bd9d540442641044092e2d7fd8589bd083b8",
+      "notes": "ASSIGNED. Static bilingual message catalog; msg selects language with fallback and optional fmt arguments."
+    },
+    {
+      "path": "agent/memory.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          509
+        ]
+      ],
+      "sha256": "81cdbdc37bfb53c11e5406e6f590babd3d8e5e2993917be434d90662a0c84aae",
+      "notes": "ASSIGNED. Numeric-session-keyed normalized TaskState JSON, conservative open-loop filtering, estimated token caps, AI incremental summarization and compress-then-replace history."
+    },
+    {
+      "path": "agent/model_provider_catalog.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          242
+        ]
+      ],
+      "sha256": "c67dea2fcdf464d177a47b94d79d8ba5d927472475a17a769d5f3e62ecc94f4c",
+      "notes": "ASSIGNED. Static eleven-provider capabilities, defaults, API/custom-model support and bilingual credential/onboarding prompts; no online capability verification."
+    },
+    {
+      "path": "agent/onboard.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          607
+        ]
+      ],
+      "sha256": "99d487a992edbdf3e3bbd29c34d5edb20c4c914548d812450cd3db307a0334fc",
+      "notes": "ASSIGNED. Legacy bilingual stepwise crypto exchange and AI onboarding, numeric session state; secrets memory-only; owned store objects may be reused/updated; stopped trader creation."
+    },
+    {
+      "path": "agent/preferences.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          166
+        ]
+      ],
+      "sha256": "6339b644bc663cd50e47c43a43629611eda9f8b4fd8ef5f4c53919d4912a3805",
+      "notes": "ASSIGNED. Numeric-session-keyed persistent preference CRUD and prompt context; add limits 500 runes and 20 entries, update omits length validation."
+    },
+    {
+      "path": "agent/sentinel.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          223
+        ]
+      ],
+      "sha256": "65ed8451bf78fd504750347526708f680e63c88dcc6cb59b4ea6cbcbe5244d5a",
+      "notes": "ASSIGNED. Independent Binance rolling ticker watcher, minute scan cadence, short price history, price and rolling24h-volume alerts; not the NT8 live data path."
+    },
+    {
+      "path": "agent/skill_dag_runtime.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "sha256": "cc176ceabfdb01a6150aad3da32af9f0d8df9c824d549ecc92465536f690c859",
+      "notes": "ASSIGNED. First-node/first-successor DAG cursor helpers; terminal advance leaves cursor unchanged."
+    },
+    {
+      "path": "agent/skill_execution_handlers.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          3199
+        ]
+      ],
+      "sha256": "9decf00c902b9605f635cc2ed27cb62e862cf2f2fc42bcb1b733da2f6b9264c9",
+      "notes": "ASSIGNED. Management action execution and confirmation, sparse entity patches, legacy crypto parsers, strategy clamping/pending config updates, owner-scoped trader diagnosis."
+    },
+    {
+      "path": "agent/skill_management_handlers.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          2638
+        ]
+      ],
+      "sha256": "bc4552ae92355520fae1fd8c0566ae7fa155563b8051b753c7939698103eb3c7",
+      "notes": "ASSIGNED. Session fields/target resolution, strategy draft construction/readiness, entity detail formatting, exchange/model/strategy creation, and dispatch to execution handlers."
+    },
+    {
+      "path": "agent/skill_registry.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          721
+        ]
+      ],
+      "sha256": "0df19efb5e350fd5001cc09d9ce6ac06d438719e8b1ea45631d3e72e58e15a4f",
+      "notes": "ASSIGNED. Embedded JSON registry normalization and cached prompt summaries/action contracts/field guidance; syntactic metadata separate from enforcing tools."
+    },
+    {
+      "path": "agent/skill_semantic_gate.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          246
+        ]
+      ],
+      "sha256": "84539b09cc78d6100e0cfb2f4c853dd2d14e13f04ad5dcc2b23893546857a4e9",
+      "notes": "ASSIGNED. Visible field/option summaries using catalog metadata and owner-scoped options; English/Chinese enum labels and AI/grid strategy discrimination."
+    },
+    {
+      "path": "agent/stream_text.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          49
+        ]
+      ],
+      "sha256": "17c9269e27ff26f879003fdf810474ffc09bb9c487d8bd4de54c8ec11d83d29c",
+      "notes": "ASSIGNED. Splits generated text and emits callback chunks; callback behavior grouped under parent inventory."
+    },
+    {
+      "path": "agent/web.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          373
+        ]
+      ],
+      "sha256": "842338208b4cef97228858699c7c7495b0fe58d7e288b1c4c7eeae589b1547df",
+      "notes": "ASSIGNED. HTTP chat/context/SSE entrypoints and Binance public proxies. Body-supplied numeric session ID remains trusted when nonzero, independently of authenticated owner context."
+    },
+    {
+      "path": "api/agent_routes.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          42
+        ]
+      ],
+      "sha256": "5a9baec454a412d323ce3945fd4422a00e5b3d01e72c24de283a271e0fd6f600",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/agent.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          410,
+          525
+        ]
+      ],
+      "sha256": "f4d1bc167fa05c53ef208c28ecbad104b4873dc507c09c6f0ec0b354d9e8a88f",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/trade.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          150
+        ],
+        [
+          175,
+          290
+        ],
+        [
+          350,
+          526
+        ]
+      ],
+      "sha256": "98d5d1285ff64f6e98598175c7693626fb2ed848fc35b415a633f7758530c831",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/tools.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          2710,
+          2780
+        ]
+      ],
+      "sha256": "0cc757711ff8244e0498ba2d1806721c9500121299cea31430f77c26e9623bf5",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/central_brain.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          290,
+          400
+        ],
+        [
+          590,
+          665
+        ],
+        [
+          895,
+          940
+        ]
+      ],
+      "sha256": "25c735b64e05d1f35597c37ad9da48e430b026747935d25ae6b362ff429cca0d",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/planner_runtime.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1224,
+          1252
+        ],
+        [
+          2450,
+          2490
+        ],
+        [
+          2500,
+          2550
+        ]
+      ],
+      "sha256": "65941d16b9fb258a8f1d1e515794e33e434d34551a39f9fc2ea53e0403de937b",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/atomic_skill_executor.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "sha256": "b277318a86c73d7afedfb9b525258e40da2652311c8ed282718ea497f17aa380",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/skill_dispatcher.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          295,
+          322
+        ]
+      ],
+      "sha256": "cb27e21c8395ef549b64b4e8bb09edc8f620aec4198a2ee1ae8e0f2e2e048630",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/skill_runner.go",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          208,
+          244
+        ]
+      ],
+      "sha256": "71c391f96b797c5909892d8be8d45c06b804dc60ee4a371a08f3b9e138034902",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/preferences_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          31
+        ]
+      ],
+      "sha256": "5251fd6882438af0f19004edb0f27f02be5a192a68fcbe97edb724bba79da232",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/onboard_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          27
+        ]
+      ],
+      "sha256": "117eaa2e63800e5865dccd87572781c5d3c0113f5b75919a90bc2f9f01782dc0",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/model_provider_catalog_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          57
+        ]
+      ],
+      "sha256": "5efd4e8692e76418aaafb1ef7e9667f0ae3a27356b105657fe4b543acd97b312",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/skill_registry_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "sha256": "0144c1809232b99afbc7c7be8a9a573e7fec381aa794dcef31b1f7be08f8059f",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "agent/memory_test.go",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          134
+        ]
+      ],
+      "sha256": "9402377c1e70e864f3121dd5da4a5e5ff0de136e068dbacd8726f6a106f5a8c4",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "docs/superpowers/CLAUDE-canon.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "sha256": "1b498eed50f406c5c05f33f943ba2b73a47b04e71391a8eee017261de9b83e29",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "docs/superpowers/AUDIT-CHECKLIST.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          160
+        ],
+        [
+          2281,
+          2310
+        ]
+      ],
+      "sha256": "4e1be1984c5f68a494d0db78316680c85b1f2355845e25815987ab2a12a89ae6",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "docs/superpowers/SYSTEM-MAP.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          329,
+          359
+        ]
+      ],
+      "sha256": "04905d4e659519c1459daa4b96872f3395a83f0c564324ad779301484904d417",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "docs/superpowers/VL-TRADING-RULEBOOK-v1.md",
+      "mode": "excerpts/manual",
+      "ranges": [
+        [
+          1,
+          65
+        ]
+      ],
+      "sha256": "d0b7a8726694d28a06c32fdfc817999d0438743553ec130bab65072b5aa91d1e",
+      "notes": "ADDITIONAL dependency/test/rule read, outside assigned coverage. Unlisted ranges not reviewed. Tests read, not executed."
+    },
+    {
+      "path": "/home/hoang/nofx/AGENTS.md",
+      "mode": "full/manual",
+      "ranges": [
+        [
+          1,
+          317
+        ]
+      ],
+      "sha256": "583a47100a126a96a204a2a6c18eb6946355485ec49d7acc9fd17e70e512211e",
+      "notes": "ADDITIONAL instruction-only main-tree read, authorized by dispatch; not repository source coverage."
+    }
+  ],
+  "unread": [],
+  "limits": "unread=[] refers to assigned source only; dependency excerpts are explicitly bounded. Prior manual reading retained across context compaction; hashes checked during artifact assembly."
+}

@@ -15,7 +15,7 @@ export const planCard: GuideSection = {
     { kind: 'h', text: 'Scenario level identity' },
     {
       kind: 'p',
-      text: 'A new scenario can name the candidate shown on its map with a level ID. The card shows that candidate beside the evaluator’s own anchor. A disagreement is recorded; it does not change a trading decision, gate or order.',
+      text: 'A new scenario names the map level it trades with a level ID. The card shows that level beside the evaluator’s own anchor. At write, the named level must sit at the price the scenario trades — its trigger/confirm anchor, within the level’s own zone ±3.00 pts. A disagreement is REFUSED at write: the planner re-authors within the same three attempts, and if every attempt disagrees the read fails closed to the NO-TRADE plan. An anchor inside the named level’s own zone (an FVG’s distal edge, a reject at a supply/demand edge) is not a disagreement. Plans stored before this rule keep their IDs untouched: an old plan’s recorded disagreement is still shown and never rewritten. While a plan is live, a disagreement the evaluator observes is recorded; it does not change a trading decision, gate or order.',
     },
     {
       kind: 'p',
@@ -23,7 +23,7 @@ export const planCard: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'Legacy scenarios keep NULL IDs by design. Missing or unknown IDs on new plans are accepted with WARN and recorded counters for the first two boots. A refusal requires a later owner ruling after at least five plans have been measured. A named level can belong to several scenarios; the episode record does not choose one arbitrarily.',
+      text: 'Legacy scenarios keep NULL IDs by design. On a new plan a NULL level ID is still accepted with WARN (a map row whose own ID is NULL cannot be named). An ID the frozen map does not carry — invented, altered, or a ref| ID whose digest matches no map row — is REFUSED at write and re-authored. A two-anchor setup (a sweep of one level, a reclaim of another) names both in sweep_level_id and reclaim_level_id: two different map IDs, each the level at its own leg’s reference price. Reusing one ID for both, or naming a level at an unrelated price, is refused. A named level can belong to several scenarios; the episode record does not choose one arbitrarily.',
     },
     {
       kind: 'p',
@@ -39,7 +39,11 @@ export const planCard: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'Legacy scenarios retain UNKNOWN by design for economics they never declared. Reading them does not invent or backfill fields and never invokes the new-authoring refusal. At new authoring, missing complete economics is a schema refusal; off-path targets without an explicit exception, obstacles beyond the arm target, and implied R inconsistent with geometry by more than one tick of price distance are contradiction refusals. EXCEPTION (owner ruling): when the machine-computed arm-target R is at or above the minimum R:R floor, the stated value is auto-corrected to the computed value and accepted — the floor gates still refuse every arm below the minimum. An obstacle below 1R and a known role/use difference are WARN plus counter only. A response at an obstacle declares intent; it does not change order management or make a half-contract exit executable. Hypothetical geometry never authorizes an arm.',
+      text: 'Legacy scenarios retain UNKNOWN by design for economics they never declared. Reading them does not invent or backfill fields and never invokes the new-authoring refusal. At new authoring, missing complete economics is a schema refusal; off-path targets without an explicit exception, obstacles beyond the arm target, and implied R inconsistent with geometry by more than one tick of price distance are contradiction refusals. EXCEPTION (owner ruling): when the machine-computed arm-target R is at or above the minimum R:R floor, the stated value is auto-corrected to the computed value and accepted — the floor gates still refuse every arm below the minimum. An obstacle below 1R and a known role/use difference are WARN plus counter only. A response at an obstacle declares intent; it does not change order management. A reduce on a single-contract arm is refused at write (one contract cannot be halved). Hypothetical geometry never authorizes an arm.',
+    },
+    {
+      kind: 'p',
+      text: 'Obstacle chain (refused at write, new plans only): target_chain must run outward from entry in the trade direction (the entry anchor is the arm entry when one is authored, else the confirm ref_price — a chain on the wrong side of that entry is refused, 1a-plan P5 (#190)). The first obstacle must be the nearest seated map level strictly between entry and the arm target; a level the seat race cut may be named instead when it is nearer, but it is never required, because the planner never sees the cut pool. With no seated level in between, the first obstacle is the arm target itself. Every other seated level on that path must be listed in path_levels with its role (pass through, reduce or exit); a missing level is refused by name, for example “S4 omits SWG-H·5m 31043.00 (4.00 pts from entry)”. Authored obstacle-chain prices are normalized to the tick grid and the normalization is recorded, never refused. A reduce role on a single-contract arm is refused. The boot line “scenario write truth” prints the recorded count per refusal class, retries included; every count reads n/a until the first check is recorded — but the wrong-side refusal is NOT one of its classes: it is refused by the plan-facts validator BEFORE the write-truth check runs, so its only traces are the planner-attempt “rejected” WARN and the planner_rejected row (a day of wrong-side refusals leaves the boot line unchanged).',
     },
     {
       kind: 'p',
@@ -83,7 +87,7 @@ export const planCard: GuideSection = {
     },
     {
       kind: 'p',
-      text: 'At publication, supported authored invalidation rules are checked against the latest completed five-minute windows using complete minute bars. Explicit one- or two-close above/below price rules can refuse a candidate and re-author inside the existing attempt budget; a refused candidate is never published active. Conditional annotations, compound, sequential, subjective or unsupported wording, and missing or malformed tape, are UNKNOWN and accepted for this check with a warning and recorded count. This check is separate from the live anchor heuristic and changes no entry-gate verdict.',
+      text: 'At publication, every scenario invalid line must be exactly one of four forms: "5m close above <price>", "5m close below <price>", "2x5m close above <price>" or "2x5m close below <price>". Anything else (compound, sequential, conditional, subjective or other-timeframe wording) is REFUSED and re-authored inside the existing attempt budget; the refusal quotes each offending sentence and each is counted. The rule is then judged against EVERY five-minute group that closed between the read clock (when the prompt was assembled) and publication, plus the latest completed group, using complete minute bars. A breach in any of them refuses the candidate as born dead. The plan death line refuses the same way when it was met in that span, and a flip line that already fired refuses with a request to re-author on the flipped side. Missing or malformed minutes make that group UNKNOWN: accepted with a warning and a recorded count, never a refusal. A refused candidate is never published active; if every attempt is refused, the existing NO-TRADE plan is written. The card line "invalidation: enforced (grammar) · read … → publish … · N 5m groups judged" is read from the plan row; rows written before this check show n/a. This check is separate from the live anchor heuristic and changes no entry-gate verdict, buffer, window or flip hold.',
     },
     {
       kind: 'p',
@@ -115,7 +119,7 @@ export const planCard: GuideSection = {
         },
         {
           title: '5 · Scenario-row anatomy',
-          body: 'S# · condition (reclaim/hold/sweep_reclaim/reject/acceptance/breakout_retest/fvg_entry/breakdown_continue/breakup_continue) · direction · quality A+/A/B/C — a planner judgement, not a measured win rate — judged against the min_scenario_quality floor that MinScenarioQualityFor (store/strategy.go) resolves per session (session override → strategy value → the shipped no-restriction default). At the floor it resolves to today nothing is refused for quality; raise it in Strategy → Day Plan and the arm-time gate refuses a below-floor scenario before the resting order is placed · confirm{} chip CONFIRM MET / not met (machine, advisory; stale ones say so) · TWO-LEG confirms (breakdown/breakup plays) render leg-by-leg: "leg 1/2 MET · leg 2/2 NOT MET → overall NOT MET" — a partial never reads MET · fvg chip IN-ZONE/ABOVE/BELOW/FILLED_INVALID · chain_after: the S# this play FOLLOWS (e.g. fvg_entry after its sweep_reclaim) · targets a→b→c · invalid line. EXECUTOR verdict (W-ARM-STATE-UI): beside the evaluator\'s 🎯 verdict sits what the EXECUTOR decided for THIS plan version — "not attempted" / "refused: <reason> (<detail>)" / "armed #<id>" / "filled #<id>" / "cancelled: <state_reason>", sourced only from armed_orders rows and the executor geometry records, with the raw reason + record time on hover; no record → nothing renders, never a dash.',
+          body: 'S# · condition (reclaim/hold/sweep_reclaim/reject/acceptance/breakout_retest/fvg_entry/breakdown_continue/breakup_continue) · direction · quality A+/A/B/C — a planner judgement, not a measured win rate — judged against the min_scenario_quality floor that MinScenarioQualityFor (store/strategy.go) resolves per session (session override → strategy value → the shipped no-restriction default). At the floor it resolves to today nothing is refused for quality; raise it in Strategy → Day Plan and the arm-time gate refuses a below-floor scenario before the resting order is placed · confirm{} chip CONFIRM MET / not met (machine, advisory; stale ones say so) · TWO-LEG confirms (breakdown/breakup plays) render leg-by-leg: "leg 1/2 MET · leg 2/2 NOT MET → overall NOT MET" — a partial never reads MET · the chip names the rule the machine COUNTED — the scenario\'s STORED confirm.rule / confirm.hold_min (a breakdown storing 2x5m_close reads 2×5m and needs two completed 5m closes); a count taken from the BD_MIN_CLOSES / ACCEPT_HOLD_MIN authoring default because nothing valid was stored reads "(authoring default)" · fvg chip IN-ZONE/ABOVE/BELOW/FILLED_INVALID · chain_after: the S# this play FOLLOWS (e.g. fvg_entry after its sweep_reclaim) · targets a→b→c · invalid line. An owner or Ask-Planner edit may never change a machine scenario: the merge compares them SEMANTICALLY (W5 D18, P14) — re-ordering the evidence JSON is not an alteration, but losing or changing one is refused. EXECUTOR verdict (W-ARM-STATE-UI): beside the evaluator\'s 🎯 verdict sits what the EXECUTOR decided for THIS plan version — "not attempted" / "refused: <reason> (<detail>)" / "armed #<id>" / "filled #<id>" / "cancelled: <state_reason>", sourced only from armed_orders rows and the executor geometry records, with the raw reason + record time on hover; no record → nothing renders, never a dash.',
           cite: 'web/src/components/plan/ScenarioList.tsx',
         },
         {
@@ -218,6 +222,35 @@ export const planCard: GuideSection = {
     {
       kind: 'p',
       text: "The chart across a roll derives the prior contract's segment from ITS stored 1m rows (the planner's own bucket helper) and shifts the whole prior segment by the basis measured at THAT timeframe's own seam, so the roll day shows neither a seam hole nor the ~290-point basis cliff. Where the prior contract's 1m rows have interior gaps the current contract's 1m rows cover, the gaps are filled with the current rows converted into the prior contract's price space; gaps neither contract has stay gaps (never fabricated). Derived prior bars draw muted with a one-line legend read from the response envelope — 'pre-roll (Sep) · basis-adjusted +290.00', or unadjusted with the reason when the basis pair cannot be measured; hovering a derived bar shows its raw and adjusted close. The current contract is never touched and volume is never shifted. CHART_ROLL_STITCH=legacy serves the pre-wave stored-aggregate stitch byte-identically.",
+    },
+    { kind: 'h', text: 'Picture HTF scenarios on the card (W5)' },
+    {
+      kind: 'p',
+      text: "A Picture HTF setup is recorded as a Day Plan scenario before any order exists, in its own id namespace (P1, P2 …) so it never collides with the planner's S ids. Its row carries a 📷 PICTURE badge. Hover the badge: the rule and its version (h1_close_break), the H1 close against the 4H body it broke, the eligibility window ('window until HH:MM:SS CT' — it is never placed after that), the stop and where the stop came from, and the R:R floor it was admitted on. All of it is read from the scenario's machine record and the evidence frozen when the setup was handed to the plan; the card recomputes nothing, and no owner edit or AI commentary can change it. A missing number reads n/a, never 0; evidence the card cannot read says 'evidence unavailable', and a scenario recorded without evidence says 'evidence not recorded'.",
+    },
+    {
+      kind: 'p',
+      text: "Its entry line is the market_in_zone line with the source added: 'Entry: around <entry> (zone <lo>–<hi>) · <status> · source picture (h1_close_break)', and while the order is still armed '· window closes HH:MM:SS CT'. Hover the line for the method (for example market_in_zone limit — read from the order record, never guessed) and the opportunity key. The plan API serves these as source, source_ref, rule, method and eligible_until_ms on the scenario's order leg; a planner scenario's leg carries none of them, so its line and its API output are unchanged.",
+    },
+    {
+      kind: 'p',
+      text: "The 📷 chip in the header: a NEUTRAL grey '📷 PICTURE → <route>' says how Picture reaches the market (for example 'Day Plan scenario (market_in_zone limit)'); it is not a refusal. A RED '📷 PICTURE <reason>' appears only when something actually refuses Picture. Neither appears while Picture is off for the trader. Both texts are read from the trader, never composed by the card.",
+    },
+    {
+      kind: 'p',
+      text: "MACHINE-AUTHORED plan banner: when a Picture setup arrives and the session has no plan yet, the machine writes plan v1 holding only that scenario, and the card says 'MACHINE-AUTHORED plan — Picture HTF; the first AI plan supersedes it'. The AI's session read still runs and writes the next version.",
+    },
+    {
+      kind: 'p',
+      text: "composed of: under the header a small line reads what made the plan on screen, from the fold's own record — 'composed of: base + overlays o1,o3 · machine P1 (o4)': the base version, your applied overlays by overlay version, and each Picture scenario with the overlay that carried it (hover for its opportunity key). Picture scenarios are folded after your overlays and never count against the scenario cap. When the server sends no such record the line is not shown; a missing overlay number reads n/a.",
+    },
+    {
+      kind: 'p',
+      text: "Dashboard → Picture HTF opportunities: an opportunity the Day Plan took over shows, under its stage, '→ Day Plan P1 · <plan id> v<n> · arm #<row> <state>' — the armed order that carries it, read from the armed-order ledger. No line means no armed order carries that opportunity yet. If the server could not read the armed orders at all, the panel says 'Day Plan links unread: <reason>' rather than showing every row without a link.",
+    },
+    {
+      kind: 'p',
+      text: "Strategy → Day Plan → Picture HTF: under the 'Include Picture HTF setups' switch the hint reads 'Source selector: Picture HTF setups become Day Plan scenarios (limit at the far edge of a small zone, 1 contract, under the Day Plan master)'. The switch's default is unchanged (off).",
     },
   ],
 }

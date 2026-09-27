@@ -1,0 +1,12 @@
+=== day_plan_digests kinds ===
+kind     n   first       last      
+-------  --  ----------  ----------
+daily    14  2026-08-17  2026-09-03
+session  51  2026-08-16  2026-09-04
+=== latest digest (head 600 chars) ===
+2026-09-04 ASIA session :: ASIA 2026-09-04 — —
+0 entries · realized +0.0
+outcome: flat
+=== who reads digests (Go/web) ===
+store/store.go store/digest.go trader/auto_trader_planner.go 
+web/src/components/strategy/DayPlanEditor.tsx web/src/components/plan/AlertCenter.tsx 

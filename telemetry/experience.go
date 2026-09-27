@@ -4,22 +4,36 @@ package telemetry
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
+var telemetryEndpoint = "https://www.google-analytics.com/mp/collect"
+
 const (
-	telemetryEndpoint = "https://www.google-analytics.com/mp/collect"
-	tid               = "G-14J8SY6F0J"
-	tk                = "sgPLmshGTPiF-X57rzEIKA"
+	tid = "G-14J8SY6F0J"
+	tk  = "sgPLmshGTPiF-X57rzEIKA"
 )
 
 var (
 	client     *Client
 	clientOnce sync.Once
 	httpClient = &http.Client{Timeout: 5 * time.Second}
+
+	// ga4Failures counts every GA4 send that failed: transport error, request
+	// construction error, or a non-2xx response. P2-9: before this counter a
+	// 100%-dead GA4 pipe was indistinguishable from a healthy one.
+	ga4Failures atomic.Int64
 )
+
+// IncGA4Failure records one failed GA4 send (any class).
+func IncGA4Failure() { ga4Failures.Add(1) }
+
+// GA4Failures returns the lifetime GA4 send-failure count.
+func GA4Failures() int64 { return ga4Failures.Load() }
 
 type Client struct {
 	enabled        bool
@@ -108,9 +122,11 @@ func TrackTrade(event TradeEvent) {
 	}
 
 	// Send asynchronously to not block trading
-	go func() {
-		_ = sendTradeEvent(event)
-	}()
+	goTracked("ga4-trade", func() {
+		if err := sendTradeEvent(event); err != nil {
+			IncGA4Failure()
+		}
+	})
 }
 
 // sendTradeEvent sends the trade event to GA4
@@ -156,6 +172,9 @@ func sendTradeEvent(event TradeEvent) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("GA4 non-2xx: %d", resp.StatusCode)
+	}
 
 	return nil
 }
@@ -165,7 +184,7 @@ func TrackStartup(version string) {
 		return
 	}
 
-	go func() {
+	goTracked("ga4-event", func() {
 		client.mu.RLock()
 		installationID := client.installationID
 		client.mu.RUnlock()
@@ -184,17 +203,10 @@ func TrackStartup(version string) {
 			},
 		}
 
-		jsonData, _ := json.Marshal(payload)
-		url := telemetryEndpoint + "?measurement_id=" + tid + "&api_secret=" + tk
-		req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-		if req != nil {
-			req.Header.Set("Content-Type", "application/json")
-			resp, err := httpClient.Do(req)
-			if err == nil {
-				resp.Body.Close()
-			}
+		if err := postTelemetryEvent(payload); err != nil {
+			IncGA4Failure()
 		}
-	}()
+	})
 }
 
 func TrackAIUsage(event AIUsageEvent) {
@@ -202,7 +214,7 @@ func TrackAIUsage(event AIUsageEvent) {
 		return
 	}
 
-	go func() {
+	goTracked("ga4-event", func() {
 		client.mu.RLock()
 		installationID := client.installationID
 		client.mu.RUnlock()
@@ -228,15 +240,49 @@ func TrackAIUsage(event AIUsageEvent) {
 			},
 		}
 
-		jsonData, _ := json.Marshal(payload)
-		url := telemetryEndpoint + "?measurement_id=" + tid + "&api_secret=" + tk
-		req, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-		if req != nil {
-			req.Header.Set("Content-Type", "application/json")
-			resp, err := httpClient.Do(req)
-			if err == nil {
-				resp.Body.Close()
-			}
+		if err := postTelemetryEvent(payload); err != nil {
+			IncGA4Failure()
 		}
+	})
+}
+
+// goTracked runs a fire-and-forget telemetry post in its own goroutine under
+// the panic net: a panic counts a GA4 failure and an error, never kills the
+// process. safe.GoNet cannot be imported here (safe counts via telemetry —
+// an import cycle), so the recover lives inline.
+func goTracked(name string, fn func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				IncGA4Failure()
+				RecordError("", "goroutine_panic", name+": "+fmt.Sprint(r), CostNone)
+			}
+		}()
+		fn()
 	}()
+}
+
+// postTelemetryEvent marshals and POSTs one GA4 payload; ANY failure (marshal,
+// request construction, transport, non-2xx) returns an error so the caller
+// counts it — a swallowed send is a silent dead pipe.
+func postTelemetryEvent(payload telemetryPayload) error {
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	url := telemetryEndpoint + "?measurement_id=" + tid + "&api_secret=" + tk
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("GA4 non-2xx: %d", resp.StatusCode)
+	}
+	return nil
 }

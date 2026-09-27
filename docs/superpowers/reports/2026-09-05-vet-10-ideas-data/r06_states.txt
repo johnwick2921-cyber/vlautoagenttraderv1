@@ -1,0 +1,122 @@
+--- 10:38:01 wc=8 oc=8 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Initialized'}
+--- 10:38:01 wc=8 oc=8 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Submitted'}
+--- 10:38:01 wc=8 oc=8 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+--- 10:38:08 wc=8 oc=8 reason=periodic
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+--- 10:38:38 wc=8 oc=8 reason=periodic
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+--- 10:39:08 wc=8 oc=8 reason=periodic
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+--- 10:39:38 wc=8 oc=8 reason=periodic
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+--- 10:40:01 wc=9 oc=9 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '183d16ad-75df-4fcf-bd9c-685900a8aa25', 'type': 'stop', 'quantity': 1, 'state': 'Initialized'}
+--- 10:40:01 wc=9 oc=9 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '183d16ad-75df-4fcf-bd9c-685900a8aa25', 'type': 'stop', 'quantity': 1, 'state': 'Submitted'}
+--- 10:40:01 wc=9 oc=9 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'CancelPending'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '183d16ad-75df-4fcf-bd9c-685900a8aa25', 'type': 'stop', 'quantity': 1, 'state': 'Submitted'}
+--- 10:40:01 wc=9 oc=9 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'CancelSubmitted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '183d16ad-75df-4fcf-bd9c-685900a8aa25', 'type': 'stop', 'quantity': 1, 'state': 'Submitted'}
+--- 10:40:01 wc=9 oc=9 reason=state_change
+      {'symbol': 'MNQ', 'name': '719f4bbb-069a-4c81-8df0-f0d1e112335a', 'type': 'stop', 'quantity': 1, 'state': 'CancelSubmitted'}
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '183d16ad-75df-4fcf-bd9c-685900a8aa25', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+--- 10:40:01 wc=8 oc=8 reason=state_change
+      {'symbol': 'MNQ', 'name': 'c794d0ce-0ca7-4c03-894c-25ddf4468935', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '4646df81-f408-48bc-9834-477105ed801c', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': 'c5d4860a-1d7f-4480-bd27-fc6958221dae', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9fcd8c7c-7d13-4e97-871c-21a49f44c643', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '9b146ffa-d569-44f9-a6b6-0701073418e9', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '7dd07a19-701e-4afa-9b15-655f65810e9e', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '6a5da3fa-2992-426f-b56e-9d1eb805c350', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}
+      {'symbol': 'MNQ', 'name': '183d16ad-75df-4fcf-bd9c-685900a8aa25', 'type': 'stop', 'quantity': 1, 'state': 'Accepted'}

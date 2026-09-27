@@ -1,0 +1,14 @@
+=== RUN   TestResearchStartupRelativePathReportsWorkingSchema
+=== RUN   TestResearchStartupRelativePathReportsWorkingSchema/data/data.db.research.db
+    runtime_test.go:42: working startup: 🗄 research snapshot: schema=1 · objects=5 · rows today market=0 candidate=1 plan=0 scenario=0 exec=0 · null-fields=27 · dropped=0 · added latency p50=UNKNOWN
+=== RUN   TestResearchStartupRelativePathReportsWorkingSchema/data/space_?#%/archive.db
+    runtime_test.go:42: working startup: 🗄 research snapshot: schema=1 · objects=5 · rows today market=0 candidate=1 plan=0 scenario=0 exec=0 · null-fields=27 · dropped=0 · added latency p50=UNKNOWN
+--- PASS: TestResearchStartupRelativePathReportsWorkingSchema (0.10s)
+    --- PASS: TestResearchStartupRelativePathReportsWorkingSchema/data/data.db.research.db (0.05s)
+    --- PASS: TestResearchStartupRelativePathReportsWorkingSchema/data/space_?#%/archive.db (0.05s)
+=== RUN   TestResearchReadOnlyRelativePathReadsExistingArchive
+--- PASS: TestResearchReadOnlyRelativePathReadsExistingArchive (0.05s)
+=== RUN   TestResearchFailedStartupStillWarnsAndReportsUnknown
+--- PASS: TestResearchFailedStartupStillWarnsAndReportsUnknown (0.00s)
+PASS
+ok  	nofx/researchsnapshot	0.160s

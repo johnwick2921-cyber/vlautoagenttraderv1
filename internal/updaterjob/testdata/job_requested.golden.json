@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "job_id": "0123456789abcdef0123456789abcdef",
+  "release_id": "v1.2.0",
+  "state": "requested",
+  "phase": "done",
+  "attempts": 0,
+  "created_at": "2026-09-24T18:02:11.123456789Z",
+  "updated_at": "2026-09-24T18:02:11.123456789Z",
+  "transitions": [
+    {
+      "state": "requested",
+      "phase": "done",
+      "at": "2026-09-24T18:02:11.123456789Z",
+      "receipts": 0
+    }
+  ],
+  "receipts": []
+}

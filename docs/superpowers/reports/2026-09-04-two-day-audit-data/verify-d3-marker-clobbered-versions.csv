@@ -1,0 +1,9 @@
+trade_date,session,version,lifecycle,trigger_reason,created_ct
+2026-09-01,ASIA,9,active,"rearmed:2x5m close back above 29035.25 (buffer 0.5×ATR14, 2× 5m closes)","2026-09-02 00:47:12"
+2026-09-02,NY,1,dormant,"dormant:flip:flip-condition: 5m_close close above 29058.75 (buffer 0.5×ATR14, 6× 5m closes) → bias long","2026-09-02 08:09:44"
+2026-09-02,ASIA,8,dormant,"dormant:flip:flip-condition: 2x5m close above 29175.66 (buffer 0.5×ATR14, 2× 5m closes) → bias long","2026-09-02 20:05:55"
+2026-09-02,ASIA,13,active,"rearmed:5m_close close back below 29211.00 (buffer 0.5×ATR14, 2× 5m closes)","2026-09-02 22:12:42"
+2026-09-02,ASIA,15,dormant,"dormant:death:death-condition: 5m_close close above 29132.50 (buffer 0.5×ATR14, 2× 5m closes)","2026-09-03 00:34:14"
+2026-09-03,LONDON,1,dormant,"dormant:flip:flip-condition: 2x5m close above 29221.98 (buffer 0.5×ATR14, 2× 5m closes) → bias long","2026-09-03 01:34:53"
+2026-09-03,NY,1,dormant,"dormant:death:death-condition: 2x5m close above 29293.00 (buffer 0.5×ATR14, 2× 5m closes)","2026-09-03 08:05:19"
+2026-09-03,NY,7,dormant,"dormant:death:death-condition: 2x5m close below 29502.25 (buffer 0.5×ATR14, 2× 5m closes)","2026-09-03 11:27:53"

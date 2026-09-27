@@ -1,0 +1,46 @@
+--- armed_orders kind x condition x state (non-test)
+||cancelled|7
+||filled|4
+limit||cancelled|15
+limit||filled|5
+limit|reject|cancelled|2
+limit|reject|superseded|4
+limit|sweep_reclaim|armed|2
+limit|sweep_reclaim|cancelled|1
+stop_entry|reclaim|cancelled|20
+stop_entry|sweep_reclaim|cancelled|1
+--- arms in ASIA/LONDON after 0B (09-02 07:49 CT), by state
+ASIA|cancelled|level accepted through — marketable, never pl|1|2026-09-02 22:15:01
+--- distinct arms (plan_id, scenario, entry_px) non-test: count and fill count
+35|9|6
+--- era arms funnel per session (distinct arms)
+ASIA|8|1|1|3|1
+LONDON|8|2|2|0|2
+NY|19|6|3|3|1
+--- decision_records 09-03 12:00-14:45 CT: per 10-min bucket, and open intents that day
+12:00|5
+12:10|5
+12:20|2
+--- 09-03 NY count of decisions & waits 08:30-14:45
+117|109|0|0
+--- touch_outcomes: ordinal=1 hold rate, all and by kind; RTH-L pooled; ambiguous share per kind
+1|177|200|94
+2|5|7|24
+3|12|3|16
+4|12|5|7
+5|6|11|3
+6|7|8|2
+DEMAND|56|72|11
+RTH-L|42|82|16
+VWAP|42|20|40
+SWG-H|8|5|9
+1|262|264|151
+12|3.0|13.3990745372686|66
+12|3.0|13.59979989995|65
+12|3.0|13.0265132566283|60
+12|3.0|12.9045772886443|52
+12|3.0|13.1634567283642|49
+--- touch_outcomes mfe/mae after touch by outcome (pts)
+ambiguous_horizon|151|9.7|-8.9|13.0
+break|264|26.8|-6.0|4.7
+hold|262|4.6|-26.1|4.0

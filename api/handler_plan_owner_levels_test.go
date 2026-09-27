@@ -63,6 +63,8 @@ func newOwnerLevelsServer(t *testing.T) (*Server, string) {
 	}
 
 	auth.SetJWTSecret("owner-levels-test-secret")
+	seedTokenOwner(t, st, olTestUser, "ol@test")    // M3 H2: a token needs its account row
+	seedTokenOwner(t, st, "someone-else", "x@test") // the foreign-trader probe's user
 	tok, err := auth.GenerateJWT(olTestUser, "ol@test")
 	if err != nil {
 		t.Fatalf("jwt: %v", err)

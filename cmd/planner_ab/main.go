@@ -93,7 +93,7 @@ func callProvider(key, mode, effort, prompt string) (abRow, string) {
 		}
 		// Offline schema gate: parse + caps, byte-identical to the live loop.
 		content := parsed.Choices[0].Message.Content
-		if _, perr := kernel.ParsePlanDocCapped(content, 12, 5); perr != nil {
+		if _, perr := kernel.ParsePlanDocForAuthoring(content, 12, 5, kernel.AuthoringOpts{}); perr != nil {
 			row.Legal = false
 			row.Defect = perr.Error()
 		} else {

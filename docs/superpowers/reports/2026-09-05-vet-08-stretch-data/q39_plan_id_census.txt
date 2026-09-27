@@ -1,0 +1,13 @@
+# q39 — where the dispatch's 227 comes from (trader_positions)
+entry_time >= 2026-08-15 05:00Z (era)|71
+id >= 361|227
+id >= 361 entry_time min..max CT|2026-08-06 03:24:37 .. 2026-09-03 09:05:14
+id >= 361 pnl_corrected NOT NULL|223
+id >= 361 cited_scenario_id nonempty|64
+id >= 361 mae<>0|66
+plan_id IS NOT NULL (all-time; column is TEXT, empty string on pre-era rows)|587
+plan_id <> "" (all-time)|71
+era rows pnl_corrected NULL|4
+created_at >= 2026-08-15 (created_at is not a text date here)|0
+typeof(plan_id)=text|587
+-- reading: the dispatch's 227 / 223 / 64 / 66 are the id>=361 population (entry_time from 2026-08-06 03:24 CT), not entry_time>=08-15; the era (>=08-15) is 71 rows, 4 pnl_corrected NULL.

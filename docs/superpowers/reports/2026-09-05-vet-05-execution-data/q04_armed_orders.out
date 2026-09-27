@@ -1,0 +1,208 @@
+id    plan_id                             v     session  scenario              side   entry_px   stop_px    target_px  state         reason                      cls               sig     created_ct           updated_ct           fill_pric  fill_quan  kind   li   lc   seq    cond
+----  ----------------------------------  ----  -------  --------------------  -----  ---------  ---------  ---------  ------------  --------------------------  ----------------  ------  -------------------  -------------------  ---------  ---------  -----  ---  ---  -----  -------
+31    2026-09-01:ASIA:8d5c8af5_8ef641a7-  7     ASIA     S3                    long   29068.05   29044.0    29131.66   cancelled     no order_update within sta  armed_fill        dc8405  2026-09-02 00:16:32  2026-09-02 00:31:48  0.0        0          limit  0    0    0
+      815c-4bb5-9798-b070b67d7998_deepse
+      ek_1781246265
+
+32    2026-09-02:NY:8d5c8af5_8ef641a7-81  5     NY       S3                    long   29070.0    29019.669  29171.25   cancelled     session ended (EOD flat)    armed_fill                2026-09-02 10:30:30  2026-09-02 14:45:01  0.0        0                 1    2    0
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         1311683
+      _1781246265
+
+33    2026-09-02:NY:8d5c8af5_8ef641a7-81  12    NY       S3                    short  29166.8    29199.5    29058.75   cancelled     level accepted through — m  armed_fill                2026-09-02 14:10:29  2026-09-02 14:10:29  0.0        0          limit  0    0    0
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+34    2026-09-02:ASIA:8d5c8af5_8ef641a7-  13    ASIA     S1                    short  29199.5    29226.0    29132.5    cancelled     level accepted through — m  armed_fill                2026-09-02 22:15:01  2026-09-02 22:15:01  0.0        0          limit  0    0    0
+      815c-4bb5-9798-b070b67d7998_deepse
+      ek_1781246265
+
+35    2026-09-03:NY:8d5c8af5_8ef641a7-81  2     NY       S1                    short  29285.0    29351.628  29144.5    filled                                    armed_fill        f2b1eb  2026-09-03 09:02:54  2026-09-03 10:28:29  29285.0    0          limit  0    0    0
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         4728996
+      _1781246265
+
+36    2026-09-03:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    short  29351.05   29418.934  29209.25   cancelled     level accepted through — m  armed_fill                2026-09-03 09:20:47  2026-09-03 09:20:47  0.0        0          limit  0    0    0
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         3631416
+      _1781246265
+
+37    2026-09-03:NY:8d5c8af5_8ef641a7-81  7     NY       S3                    short  29543.75   29592.5    29397.11   cancelled     cancelled in NT8            armed_fill        43512e  2026-09-03 11:58:33  2026-09-03 12:15:01  0.0        0          limit  0    0    0
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+38    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.620  29481.5    cancelled     gate changed: rr                              e38f17  2026-09-04 10:05:00  2026-09-04 10:06:05  0.0        0          stop_  0    0    0      sweep_r
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         3704191                                                                                                                                                   entry
+      _1781246265
+
+39    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S1                    SHORT  29657.38   29720.5    29503.38   cancelled     no order_update within sta  armed_fill        893392  2026-09-04 09:10:08  2026-09-04 09:26:06  0.0        0          limit  0    0    0      reject
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+62    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     gate changed: rr            armed_fill        f869f7  2026-09-04 10:10:04  2026-09-04 10:12:04  0.0        0          stop_  0    0    1      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+65    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     gate changed: rr            armed_fill        c1d016  2026-09-04 10:15:01  2026-09-04 10:18:03  0.0        0          stop_  0    0    2      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+67    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     gate changed: rr            armed_fill        a00546  2026-09-04 10:16:03  2026-09-04 10:18:03  0.0        0          stop_  0    0    3      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+70    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     gate changed: rr            armed_fill        ccaab0  2026-09-04 10:20:03  2026-09-04 10:22:03  0.0        0          stop_  0    0    4      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+73    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     no order_update within sta  armed_fill        719f4b  2026-09-04 10:25:01  2026-09-04 10:40:01  0.0        0          stop_  0    0    5      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+75    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.575  29481.5    cancelled     no order_update within sta  armed_fill        c794d0  2026-09-04 10:26:02  2026-09-04 10:42:01  0.0        0          stop_  0    0    6      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         9174815                                                                                                                                                   entry
+      _1781246265
+
+77    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.575  29481.5    cancelled     no order_update within sta  armed_fill        4646df  2026-09-04 10:28:02  2026-09-04 10:44:01  0.0        0          stop_  0    0    7      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         9174815                                                                                                                                                   entry
+      _1781246265
+
+79    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     no order_update within sta  armed_fill        c5d486  2026-09-04 10:30:02  2026-09-04 10:46:01  0.0        0          stop_  0    0    8      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+81    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     no order_update within sta  armed_fill        9fcd8c  2026-09-04 10:32:02  2026-09-04 10:48:00  0.0        0          stop_  0    0    9      reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+83    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     no order_update within sta  armed_fill        9b146f  2026-09-04 10:34:01  2026-09-04 10:50:00  0.0        0          stop_  0    0    10     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+85    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     no order_update within sta  armed_fill        7dd07a  2026-09-04 10:36:01  2026-09-04 10:52:00  0.0        0          stop_  0    0    11     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+87    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        6a5da3  2026-09-04 10:38:01  2026-09-04 10:53:10  0.0        0          stop_  0    0    12     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+89    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        183d16  2026-09-04 10:40:01  2026-09-04 10:53:10  0.0        0          stop_  0    0    13     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+91    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        993322  2026-09-04 10:42:01  2026-09-04 10:53:11  0.0        0          stop_  0    0    14     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+92    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S1                    SHORT  29657.38   29720.5    29503.38   superseded    superseded: never placed (  armed_fill                2026-09-04 10:44:01  2026-09-04 11:05:09  0.0        0          limit  0    0    1      reject
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+93    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        b42631  2026-09-04 10:44:01  2026-09-04 10:53:11  0.0        0          stop_  0    0    15     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+94    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S1                    SHORT  29657.38   29720.5    29503.38   superseded    superseded: never placed (  armed_fill                2026-09-04 10:46:01  2026-09-04 11:05:09  0.0        0          limit  0    0    2      reject
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+95    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        fa195d  2026-09-04 10:46:01  2026-09-04 10:53:11  0.0        0          stop_  0    0    16     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+96    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S1                    SHORT  29657.38   29720.5    29503.38   superseded    superseded: never placed (  armed_fill                2026-09-04 10:48:00  2026-09-04 11:05:09  0.0        0          limit  0    0    3      reject
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+97    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        60adff  2026-09-04 10:48:00  2026-09-04 10:53:11  0.0        0          stop_  0    0    17     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+98    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S1                    SHORT  29657.38   29720.5    29503.38   superseded    superseded: never placed (  armed_fill                2026-09-04 10:50:00  2026-09-04 11:05:09  0.0        0          limit  0    0    4      reject
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+99    2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        3bea00  2026-09-04 10:50:00  2026-09-04 10:53:11  0.0        0          stop_  0    0    18     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+100   2026-09-04:NY:8d5c8af5_8ef641a7-81  5     NY       S1                    SHORT  29720.0    29765.0    29553.75   cancelled     no active plan                                        2026-09-04 11:29:07  2026-09-04 11:59:02  0.0        0          limit  0    2    5      reject
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+101   2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     boot_sweep: pre-boot order  armed_fill        04b3e3  2026-09-04 10:52:00  2026-09-04 10:53:11  0.0        0          stop_  0    0    19     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+102   2026-09-04:NY:8d5c8af5_8ef641a7-81  3     NY       S2                    SHORT  29591.02   29645.25   29481.5    cancelled     cancelled in NT8            armed_fill        931a76  2026-09-04 10:53:11  2026-09-04 11:59:02  0.0        0          stop_  0    0    20     reclaim
+      5c-4bb5-9798-b070b67d7998_deepseek                                                                                                                                                                                                                   entry
+      _1781246265
+
+103   2026-09-04:NY:8d5c8af5_8ef641a7-81  5     NY       S1                    SHORT  29720.0    29765.0    29553.75   cancelled     no active plan              armed_fill                2026-09-04 11:29:07  2026-09-04 11:59:02  0.0        0          limit  1    2    0      sweep_r
+      5c-4bb5-9798-b070b67d7998_deepseek
+      _1781246265
+
+104   2026-09-04:NY:8d5c8af5_8ef641a7-81  6     NY       S2                    SHORT  29720.0    29755.063  29635.0    armed                                     armed_fill                2026-09-04 12:11:02  2026-09-04 13:27:48  0.0        0          limit  0    2    21     sweep_r
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         1468702
+      _1781246265
+
+105   2026-09-04:NY:8d5c8af5_8ef641a7-81  6     NY       S2                    SHORT  29720.0    29755.063  29635.0    armed                                     armed_fill                2026-09-04 12:11:02  2026-09-04 13:27:48  0.0        0          limit  1    2    0      sweep_r
+      5c-4bb5-9798-b070b67d7998_deepseek                                                         1468702
+      _1781246265
+state       reason                                                        n   minid  maxid
+----------  ------------------------------------------------------------  --  -----  -----
+cancelled   no order_update within stale window (reconnect/reconcile)     12  22     85
+cancelled   boot_sweep: pre-boot order, process restarted                 8   87     101
+cancelled   level accepted through — marketable, never placed             6   17     36
+cancelled   gate changed: rr                                              5   38     70
+cancelled   test seam cancel                                              5   1      16
+cancelled   session ended (EOD flat)                                      4   11     32
+superseded  superseded: never placed (no signal id) and plan moved v3 →   4   92     98
+cancelled   cancelled in NT8                                              3   8      102
+cancelled   gate changed: min_sl                                          3   12     23
+cancelled   no active plan                                                3   7      103
+filled                                                                    3   24     35
+armed                                                                     2   104    105
+cancelled   e7_incident_kill:manual_cancel_respected                      2   13     14
+filled      e7_farside_test:                                              1   15     15
+filled      fill@29413.00                                                 1   21     21
+filled      fill@29459.00                                                 1   20     20
+filled      fill@29463.25                                                 1   10     10
+filled      fill@29621.00                                                 1   5      5
+filled      fill@29642.00                                                 1   6      6
+filled      fill@29700.00                                                 1   9      9
+31|cancelled|no order_update within stale window (reconnect/reconcile)
+32|cancelled|session ended (EOD flat)
+33|cancelled|level accepted through — marketable, never placed
+34|cancelled|level accepted through — marketable, never placed
+35|filled|
+36|cancelled|level accepted through — marketable, never placed
+37|cancelled|cancelled in NT8
+38|cancelled|gate changed: rr
+39|cancelled|no order_update within stale window (reconnect/reconcile)
+62|cancelled|gate changed: rr
+65|cancelled|gate changed: rr
+67|cancelled|gate changed: rr
+70|cancelled|gate changed: rr
+73|cancelled|no order_update within stale window (reconnect/reconcile)
+75|cancelled|no order_update within stale window (reconnect/reconcile)
+77|cancelled|no order_update within stale window (reconnect/reconcile)
+79|cancelled|no order_update within stale window (reconnect/reconcile)
+81|cancelled|no order_update within stale window (reconnect/reconcile)
+83|cancelled|no order_update within stale window (reconnect/reconcile)
+85|cancelled|no order_update within stale window (reconnect/reconcile)
+87|cancelled|boot_sweep: pre-boot order, process restarted
+89|cancelled|boot_sweep: pre-boot order, process restarted
+91|cancelled|boot_sweep: pre-boot order, process restarted
+92|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)
+93|cancelled|boot_sweep: pre-boot order, process restarted
+94|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)
+95|cancelled|boot_sweep: pre-boot order, process restarted
+96|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)
+97|cancelled|boot_sweep: pre-boot order, process restarted
+98|superseded|superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)
+99|cancelled|boot_sweep: pre-boot order, process restarted
+100|cancelled|no active plan
+101|cancelled|boot_sweep: pre-boot order, process restarted
+102|cancelled|cancelled in NT8
+103|cancelled|no active plan
+104|armed|
+105|armed|

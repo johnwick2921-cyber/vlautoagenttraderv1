@@ -22,7 +22,11 @@ services:
     networks:
       - nofx-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      # CLASS 251: 127.0.0.1, NOT localhost — busybox resolves localhost to
+      # [::1] and the API binds 127.0.0.1:8080 (IPv4 only) since the 08-15 P0
+      # fix (api/server.go:916-925), so an IPv6 probe is refused forever. The
+      # frontend probe below already had this right.
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -33,6 +37,10 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.frontend
+      args:
+        # CLASS 250: the `:?` form makes compose REFUSE with this message rather
+        # than build a guide whose revision nobody can check.
+        VITE_GUIDE_BUILT_REV: ${VITE_GUIDE_BUILT_REV:?set to the 40-hex sha being built}
     container_name: nofx-frontend
     restart: unless-stopped
     ports:

@@ -1,0 +1,10 @@
+id,entry,initial_stop,initial_target,R,ledger_arm_ids,ledger_final_stops,exit_cause_by_order,stop_fill_price,stop_price_at_fill,stop_slippage,exit_ref
+568,29642.0,29658.0,29606.0,-1.0,6,29726.7,broker_stop,29658.0,29658.0,0.0,/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260828.00000.txt:4616
+570,29463.25,29430.0,29588.25,0.2556390977443609,10,29430.0,broker_stop,29471.75,29471.75,0.0,/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260828.00000.txt:9085
+575,29437.0,29479.75,29351.5,0.38011695906432746,,,unresolved,,,,
+578,29413.0,29363.25,29517.0,0.9246231155778895,21,29363.25,unresolved,,,,
+582,29246.75,29273.0,29182.0,2.466666666666667,,,broker_target,,,,/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260901.00000.txt:3928
+584,29138.0,29162.0,29085.0,2.2083333333333335,24,29162.0,broker_target,,,,/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260901.00000.txt:5554
+585,29182.0,29220.75,29085.0,-1.0,,,broker_stop,29220.75,29220.75,0.0,/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260901.00000.txt:6224
+586,29082.75,29055.75,29162.0,-1.0,28,29055.75,broker_stop,29055.75,29055.75,0.0,/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260901.00000.txt:8738
+591,29285.0,29355.0,29144.5,-1.0,35,29351.62847289964,broker_stop,29355.0,29355.0,0.0,/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00000.txt:6260

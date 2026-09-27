@@ -1,0 +1,30 @@
+1d bars: 1898 first 2019-05-02 last 2026-09-03
+WORST day by range%: 2025-04-08 rng=2653.00 pts = 12.94% (o=18438.25 h=20600.25 l=17947.25 c=20501.0)
+WORST day by range pts: 2025-04-08 2653.00 pts = 12.94%
+  2026-04-08: rng=320.25 = 1.25%
+  2025-04-08: rng=2653.00 = 12.94%
+SAMPLE (12 session-days): n=12
+  range pts 270-569  range% 0.91-1.95
+  ATR14 pts 395-490 median 407
+  ATR14% 1.331-1.659 median 1.387
+  2026-09-03 (NOT a sample day, no trade): rng=242.25 = 0.82%  ATR14%=1.390
+  5m bars in session-day 2026-09-03: 232 (a full CME session-day is 276)
+HISTORY: 1885 days with ATR14
+  days with ATR14% above the sample MAX (1.659%): 815 = 43.2%
+  days with range% above the sample's widest (1.95%): 546 = 29.0%
+  2x sample median ATR% = 2.77%: 112 days
+    by year: {'2020': 34, '2022': 48, '2024': 6, '2025': 20, '2026': 4}
+    last such day: 2026-06-25
+  by-year: year n medianRange maxRange% medianATR
+    2019 n= 159 medRng=   100 maxRng%= 3.22 medATR14=   112
+    2020 n= 259 medRng=   231 maxRng%= 9.50 medATR14=   250
+    2021 n= 259 medRng=   211 maxRng%= 4.28 medATR14=   209
+    2022 n= 257 medRng=   343 maxRng%= 5.82 medATR14=   366
+    2023 n= 258 medRng=   230 maxRng%= 3.39 medATR14=   240
+    2024 n= 259 medRng=   266 maxRng%= 5.25 medATR14=   287
+    2025 n= 258 medRng=   351 maxRng%=12.94 medATR14=   388
+    2026 n= 176 medRng=   475 maxRng%= 5.61 medATR14=   529
+5m bars: 2497
+  RTH ATR5m(14): n=702 p50=28.06 p90=49.66 max=76.04
+    1.5x floor: p50 -> 42.1 pts ($84), p90 -> 74.5 pts ($149)
+    share of RTH bars where 1.5xATR5m >= 75 pts (a $150 cap would refuse every arm): 10.0%

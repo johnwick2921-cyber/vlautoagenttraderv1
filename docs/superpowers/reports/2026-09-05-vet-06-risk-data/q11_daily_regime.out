@@ -1,0 +1,37 @@
+1d rows: 1898 first 2019-05-02 last 2026-09-03
+gaps >5 days: [] count 0
+daily RANGE pts (all): n=1898 p10=113 p50=266 p90=547 p99=992 max=2653 (2025-04-08)
+daily RANGE % of close (all): p10=0.71 p50=1.47 p90=2.86 p99=5.26 max=12.94
+ATR14 daily pts (all): p10=158 p50=284 p90=512 p99=833 max=1077
+--- by year: n, median range pts, median range %, max range %, median ATR14 ---
+2019: n=172 range p50=  102 p90=  194  range% p50=0.92 max=3.22  ATR14 p50=  116
+2020: n=259 range p50=  231 p90=  492  range% p50=1.70 max=9.50  ATR14 p50=  250
+2021: n=259 range p50=  211 p90=  401  range% p50=1.18 max=4.28  ATR14 p50=  209
+2022: n=257 range p50=  343 p90=  582  range% p50=2.16 max=5.82  ATR14 p50=  366
+2023: n=258 range p50=  230 p90=  361  range% p50=1.35 max=3.39  ATR14 p50=  240
+2024: n=259 range p50=  266 p90=  504  range% p50=1.28 max=5.25  ATR14 p50=  287
+2025: n=258 range p50=  351 p90=  639  range% p50=1.48 max=12.94  ATR14 p50=  388
+2026: n=176 range p50=  475 p90=  841  range% p50=1.74 max=5.61  ATR14 p50=  529
+
+SAMPLE WINDOW 2026-08-18..09-03: n=13 days  range p50=375 min=242 max=569  range% p50=1.27  ATR14 p50=410 min=395 max=490
+history days with range% inside the sample's [0.82,1.95]: 1063/1898 = 56.0%  ABOVE (never seen): 549 = 28.9%  below: 286
+ATR14 as % of price: sample [1.33,1.66]  history days ABOVE the sample max: 815/1898 = 42.9%  (p99 of history = 5.07%, max 6.31% on 2020-03-22)
+days with ATR14% > 2x sample median (2.78%): 111  first/last: 2020-03-04 .. 2026-06-25
+  by year: {2020: 34, 2022: 47, 2024: 6, 2025: 20, 2026: 4}
+
+--- last 15 days: date, range, range%, ATR14 ---
+  2026-08-16 range=   286 0.95% ATR14=574
+  2026-08-17 range=   610 2.06% ATR14=548
+  2026-08-18 range=   383 1.30% ATR14=490
+  2026-08-19 range=   486 1.66% ATR14=478
+  2026-08-20 range=   320 1.09% ATR14=454
+  2026-08-23 range=   533 1.83% ATR14=412
+  2026-08-24 range=   403 1.38% ATR14=402
+  2026-08-25 range=   342 1.17% ATR14=395
+  2026-08-26 range=   305 1.03% ATR14=395
+  2026-08-27 range=   375 1.27% ATR14=403
+  2026-08-30 range=   270 0.91% ATR14=397
+  2026-08-31 range=   569 1.95% ATR14=411
+  2026-09-01 range=   285 0.98% ATR14=396
+  2026-09-02 range=   510 1.73% ATR14=414
+  2026-09-03 range=   242 0.82% ATR14=410

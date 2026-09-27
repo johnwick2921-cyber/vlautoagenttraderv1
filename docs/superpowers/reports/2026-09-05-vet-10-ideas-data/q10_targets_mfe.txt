@@ -1,0 +1,36 @@
+n with stop: 60
+  all: MFE>=0.5R: 38/60=0.633 wilson[0.507,0.744]
+  all: MFE>=1.0R: 22/60=0.367 wilson[0.256,0.493]
+  all: MFE>=1.5R: 17/60=0.283 wilson[0.185,0.408]
+  all: MFE>=2.0R: 13/60=0.217 wilson[0.131,0.336]
+  all: MFE>=3.0R: 4/60=0.067 wilson[0.026,0.159]
+  all: MFE>=planned target dist: 9/60=0.150 wilson[0.081,0.261] ids=['521', '523', '524', '529', '532', '536', '549', '555', '584']
+  all: wins 18 losses 40; avg planned RR 3.31; median planned RR 2.71
+  all: realized payoff avgW/avgL = 1.75; avg win R 1.87; avg loss R -0.96
+  all: mean R -0.077 CI [-0.465,0.312] n=60
+  all: risk pts min 3.75 p25 26.0 median 34.5 p75 48.75 max 280.0
+  excl 568/569: MFE>=0.5R: 38/58=0.655 wilson[0.527,0.764]
+  excl 568/569: MFE>=1.0R: 22/58=0.379 wilson[0.266,0.508]
+  excl 568/569: MFE>=1.5R: 17/58=0.293 wilson[0.192,0.420]
+  excl 568/569: MFE>=2.0R: 13/58=0.224 wilson[0.136,0.347]
+  excl 568/569: MFE>=3.0R: 4/58=0.069 wilson[0.027,0.164]
+  excl 568/569: MFE>=planned target dist: 9/58=0.155 wilson[0.084,0.269] ids=['521', '523', '524', '529', '532', '536', '549', '555', '584']
+  excl 568/569: wins 17 losses 39; avg planned RR 3.41; median planned RR 2.76
+  excl 568/569: realized payoff avgW/avgL = 1.77; avg win R 1.97; avg loss R -0.97
+  excl 568/569: mean R -0.078 CI [-0.480,0.324] n=58
+  excl 568/569: risk pts min 3.75 p25 24.75 median 34.25 p75 45.25 max 92.75
+--- 1R-target counterfactual (excl 568/569): if every trade exited at +1R when MFE>=1R else at actual outcome
+  1R-exit counterfactual mean R -0.092 CI [-0.341,0.157] n=58; wins 26
+  NOTE: MFE is a 1m-extreme; a resting 1R limit would need MFE>=1R+slip, and the 1m extreme may have been one tick — this is an UPPER bound, not a result
+  0.5R-exit counterfactual mean R 0.021 CI [-0.157,0.198]
+  0.75R-exit counterfactual mean R -0.088 CI [-0.310,0.134]
+--- per session (excl 568/569)
+  ASIA: n=16 wins=2 sumR=-8.32 meanR=-0.520 CI[-1.090,0.050] sum$=-552.4
+  LONDON: n=20 wins=7 sumR=1.52 meanR=0.076 CI[-0.602,0.754] sum$=56.0
+  NY: n=18 wins=7 sumR=5.12 meanR=0.284 CI[-0.617,1.186] sum$=44.0
+  off-plan: n=4 wins=1 sumR=-2.84 meanR=-0.710 CI[-1.285,-0.135] sum$=-189.5
+--- per side (excl 568/569)
+  LONG: n=21 wins=4 (0.190 wilson[0.077,0.400]) meanR=-0.569 CI[-0.973,-0.165]
+  SHORT: n=37 wins=13 (0.351 wilson[0.218,0.512]) meanR=0.201 CI[-0.371,0.772]
+--- losers by MFE bucket (excl 568/569): how far did losers go our way first
+  {'<0.25R': 16, '0.25-0.5R': 3, '0.5-1R': 12, '>=1R': 8} n= 39

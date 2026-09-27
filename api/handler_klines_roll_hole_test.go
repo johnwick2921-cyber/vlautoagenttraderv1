@@ -134,6 +134,7 @@ func newRollHoleServer(t *testing.T) (*Server, string) {
 	}
 
 	auth.SetJWTSecret("roll-hole-test-secret")
+	seedTokenOwner(t, st, "u-roll", "roll@test") // M3 H2: a token needs its account row
 	tok, err := auth.GenerateJWT("u-roll", "roll@test")
 	if err != nil {
 		t.Fatalf("jwt: %v", err)

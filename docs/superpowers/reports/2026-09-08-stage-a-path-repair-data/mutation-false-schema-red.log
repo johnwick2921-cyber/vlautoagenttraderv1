@@ -1,0 +1,7 @@
+researchsnapshot/runtime.go:69: exact mutation 'schema := "UNKNOWN"' -> 'schema := fmt.Sprint(SchemaVersion)'
+exit=1
+--- FAIL: TestResearchFailedStartupStillWarnsAndReportsUnknown (0.00s)
+    runtime_test.go:112: failed startup must not fabricate working schema: 🗄 research snapshot: schema=1 · objects=5 · rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN · null-fields=UNKNOWN · dropped=UNKNOWN · added latency p50=UNKNOWN
+FAIL
+FAIL	nofx/researchsnapshot	0.003s
+FAIL

@@ -1,0 +1,43 @@
+all seats n=985 touched 779 = 79.1% (0.764, 0.815)
+dist<50: seats 554 (56.2% of map) touched 529 = 95.5% (0.934, 0.969)
+dist<100: seats 768 (78.0% of map) touched 711 = 92.6% (0.905, 0.942)
+dist<175: seats 887 (90.1% of map) touched 773 = 87.1% (0.848, 0.892)
+dist<200: seats 909 (92.3% of map) touched 774 = 85.1% (0.827, 0.873)
+dist>100: seats 217 touched 68 = 31.3% (one in 3.2)
+100-200: 141 touched 63 = 44.7%
+200+: 76 touched 5 = 6.6% (one in 15.2)
+EQH seats 75 1st hold/brk 32 13 p 0.711 (0.566, 0.823)
+EQL seats 87 1st hold/brk 26 29 p 0.473 (0.347, 0.602)
+eVWAP seats 18 1st hold/brk 11 3 p 0.786 (0.524, 0.924)
+IB* seats 4 1st hold/brk 1 1 p 0.5 (0.095, 0.905)
+SWG-L seats 56 1st hold/brk 17 25 p 0.405 (0.27, 0.555)
+POC seats 6 1st hold/brk 2 2 p 0.5 (0.15, 0.85)
+A 906 avg dist 69.8
+C 63 avg dist 74.5
+--- wilson batch ---
+EQH 32/45 0.711 (0.566, 0.823)
+RTH-L dedup 4/12 0.333 (0.138, 0.609)
+RTH-L dedup 4/13 0.308 (0.127, 0.576)
+VWAP2s 34/60 0.567 (0.441, 0.684)
+eVWAP 11/14 0.786 (0.524, 0.924)
+IB 1/2 0.5 (0.095, 0.905)
+RTH-H below 17/26 0.654 (0.462, 0.806)
+RTH-H above 11/19 0.579 (0.363, 0.769)
+flip 34/56 0.607 (0.476, 0.724)
+classic 33/58 0.569 (0.441, 0.688)
+prior-day dedup 0.562 (0.504, 0.617)
+null 3977/7857 0.506 (0.495, 0.517)
+RTH-L 27/43 0.628 (0.479, 0.756)
+PDL 26/43 0.605 (0.456, 0.736)
+NY eps 1468 hold 640 brk 607 p 0.513 (0.485, 0.541) amb 221 15.1%
+ASIA eps 720 hold 235 brk 217 p 0.52 (0.474, 0.566) amb 268 37.2%
+LONDON eps 606 hold 241 brk 208 p 0.537 (0.491, 0.582) amb 157 25.9%
+prior-day dedup exact 164 128 0.562 (0.504, 0.617)
+ONH eps 40 res 35 p 0.429 (0.28, 0.591)
+ONL eps 25 res 23 p 0.522 (0.33, 0.708)
+PDL eps 56 res 43 p 0.605 (0.456, 0.736)
+PDH eps 28 res 22 p 0.5 (0.307, 0.693)
+PDH_cal eps 21 res 16 p 0.562 (0.332, 0.769)
+VWAP+2σ@0830 eps 47 res 38 p 0.579 (0.422, 0.721)
+VWAP-2σ@0830 eps 24 res 22 p 0.545 (0.347, 0.731)
+SETT eps 110 res 77 p 0.545 (0.435, 0.652)

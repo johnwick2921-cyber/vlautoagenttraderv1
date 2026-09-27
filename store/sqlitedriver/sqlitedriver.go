@@ -25,6 +25,8 @@ package sqlitedriver
 
 import (
 	"database/sql"
+	"path/filepath"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -43,7 +45,55 @@ func GormDialector(dsn string) gorm.Dialector {
 	return gormDialector(dsn)
 }
 
+// DialectorConn returns the GORM dialector for the compiled-in backend bound to
+// an EXISTING database/sql connection (or *sql.Tx) instead of opening a DSN.
+// Callers use it for transactions whose BEGIN must be issued manually — e.g.
+// BEGIN IMMEDIATE, which GORM's own Transaction cannot express.
+func DialectorConn(conn gorm.ConnPool) gorm.Dialector {
+	return dialectorConn(conn)
+}
+
+// IsBusy reports whether err is a SQLite lock-contention error
+// (SQLITE_BUSY / SQLITE_BUSY_SNAPSHOT: "database is locked"), across both
+// backends. The mattn text is "database is locked"; modernc (and glebarez over
+// it) appends the code, e.g. "database is locked (5) (SQLITE_BUSY)".
+func IsBusy(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "database is locked") || strings.Contains(s, "SQLITE_BUSY")
+}
+
 // Backend names the compiled-in backend (for boot lines / diagnostics).
 func Backend() string {
 	return backendName
+}
+
+// busyTimeoutDSN makes the per-connection busy_timeout guarantee EXPLICIT in
+// the DSN. Both compiled-in backends happen to carry PRAGMA busy_timeout=5000
+// on every connection open today (mattn/go-sqlite3 applies it by default,
+// sqlite3.go:1098,1491; glebarez/go-sqlite bakes it in), but the guarantee is
+// a driver default, not a contract — a driver upgrade could silently drop it
+// and the other 3 pooled connections would then fail writes with SQLITE_BUSY
+// immediately under contention (P1-B, audit 2026-09-26). The DSN parameter is
+// backend-specific: _busy_timeout for mattn, _pragma=busy_timeout(5000) for
+// modernc/glebarez.
+func busyTimeoutDSN(dsn, param string) string {
+	if strings.Contains(dsn, "_busy_timeout") || strings.Contains(dsn, "_pragma") || strings.Contains(dsn, ":memory:") {
+		// already explicit, or an in-memory database whose driver-level default
+		// covers every connection; never rewrite special DSN forms (":memory:"
+		// must not become a file on disk).
+		return dsn
+	}
+	if !strings.HasPrefix(dsn, "file:") {
+		if abs, err := filepath.Abs(dsn); err == nil {
+			dsn = "file:" + abs
+		}
+	}
+	sep := "?"
+	if strings.Contains(dsn, "?") {
+		sep = "&"
+	}
+	return dsn + sep + param
 }

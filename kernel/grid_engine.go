@@ -52,22 +52,22 @@ type GridContext struct {
 	IsPaused         bool            `json:"is_paused"`
 
 	// Market data
-	ATR14           float64 `json:"atr14"`
-	BollingerUpper  float64 `json:"bollinger_upper"`
-	BollingerMiddle float64 `json:"bollinger_middle"`
-	BollingerLower  float64 `json:"bollinger_lower"`
-	BollingerWidth  float64 `json:"bollinger_width"` // Percentage
-	EMA20           float64 `json:"ema20"`
-	EMA50           float64 `json:"ema50"`
-	EMADistance     float64 `json:"ema_distance"` // Percentage
-	RSI14           float64 `json:"rsi14"`
-	MACD            float64 `json:"macd"`
-	MACDSignal      float64 `json:"macd_signal"`
-	MACDHistogram   float64 `json:"macd_histogram"`
-	FundingRate     float64 `json:"funding_rate"`
-	Volume24h       float64 `json:"volume_24h"`
-	PriceChange1h   float64 `json:"price_change_1h"`
-	PriceChange4h   float64 `json:"price_change_4h"`
+	ATR14           float64  `json:"atr14"`
+	BollingerUpper  float64  `json:"bollinger_upper"`
+	BollingerMiddle float64  `json:"bollinger_middle"`
+	BollingerLower  float64  `json:"bollinger_lower"`
+	BollingerWidth  float64  `json:"bollinger_width"` // Percentage
+	EMA20           float64  `json:"ema20"`
+	EMA50           float64  `json:"ema50"`
+	EMADistance     float64  `json:"ema_distance"` // Percentage
+	RSI14           float64  `json:"rsi14"`
+	MACD            float64  `json:"macd"`
+	MACDSignal      float64  `json:"macd_signal"`
+	MACDHistogram   float64  `json:"macd_histogram"`
+	FundingRate     float64  `json:"funding_rate"`
+	Volume24h       float64  `json:"volume_24h"`
+	PriceChange1h   *float64 `json:"price_change_1h"` // nil = absent (W1): renders n/a
+	PriceChange4h   *float64 `json:"price_change_4h"`
 
 	// Account info
 	TotalEquity      float64 `json:"total_equity"`
@@ -224,8 +224,8 @@ func buildGridUserPromptZh(ctx *GridContext) string {
 	// Market data section
 	sb.WriteString("## 市场数据\n")
 	sb.WriteString(fmt.Sprintf("- 当前价格: $%.2f\n", ctx.CurrentPrice))
-	sb.WriteString(fmt.Sprintf("- 1小时涨跌: %.2f%%\n", ctx.PriceChange1h))
-	sb.WriteString(fmt.Sprintf("- 4小时涨跌: %.2f%%\n", ctx.PriceChange4h))
+	sb.WriteString(fmt.Sprintf("- 1小时涨跌: %s\n", market.PctOrNA(ctx.PriceChange1h, false)))
+	sb.WriteString(fmt.Sprintf("- 4小时涨跌: %s\n", market.PctOrNA(ctx.PriceChange4h, false)))
 	sb.WriteString(fmt.Sprintf("- ATR14: $%.2f (%.2f%%)\n", ctx.ATR14, ctx.ATR14/ctx.CurrentPrice*100))
 	sb.WriteString(fmt.Sprintf("- 布林带: 上轨 $%.2f, 中轨 $%.2f, 下轨 $%.2f\n", ctx.BollingerUpper, ctx.BollingerMiddle, ctx.BollingerLower))
 	sb.WriteString(fmt.Sprintf("- 布林带宽度: %.2f%%\n", ctx.BollingerWidth))
@@ -335,8 +335,8 @@ func buildGridUserPromptEn(ctx *GridContext) string {
 	// Market data section
 	sb.WriteString("## Market Data\n")
 	sb.WriteString(fmt.Sprintf("- Current Price: $%.2f\n", ctx.CurrentPrice))
-	sb.WriteString(fmt.Sprintf("- 1h Change: %.2f%%\n", ctx.PriceChange1h))
-	sb.WriteString(fmt.Sprintf("- 4h Change: %.2f%%\n", ctx.PriceChange4h))
+	sb.WriteString(fmt.Sprintf("- 1h Change: %s\n", market.PctOrNA(ctx.PriceChange1h, false)))
+	sb.WriteString(fmt.Sprintf("- 4h Change: %s\n", market.PctOrNA(ctx.PriceChange4h, false)))
 	sb.WriteString(fmt.Sprintf("- ATR14: $%.2f (%.2f%%)\n", ctx.ATR14, ctx.ATR14/ctx.CurrentPrice*100))
 	sb.WriteString(fmt.Sprintf("- Bollinger Bands: Upper $%.2f, Middle $%.2f, Lower $%.2f\n", ctx.BollingerUpper, ctx.BollingerMiddle, ctx.BollingerLower))
 	sb.WriteString(fmt.Sprintf("- Bollinger Width: %.2f%%\n", ctx.BollingerWidth))

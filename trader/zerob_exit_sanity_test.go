@@ -289,52 +289,95 @@ func TestZeroBReArmAfterBootSweep(t *testing.T) {
 	s3 := seed("S3", "sig-old-3", "working", "", "dead-boot")
 	owner := seed("S9", "sig-owner", "cancelled", "owner cancelled in NT8", "dead-boot")
 
-	// 1. THE SWEEP cancels the two pre-boot rows AT THE BROKER (wire recorder).
+	// 1. THE SWEEP requests the cancel at the broker (wire recorder). B2: the
+	// rows become cancel_pending — a REQUEST, never a settlement.
 	var cancelled []string
 	at := &AutoTrader{id: "t1", exchange: "ninjatrader", store: st,
 		config: AutoTraderConfig{NinjaTraderSymbol: "MNQ", StrategyConfig: &store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true}}}}
 	n := at.sweepPreBootArmsWith(ledger, func(signalID string) error { cancelled = append(cancelled, signalID); return nil })
 	if n != 2 {
-		t.Fatalf("the sweep must cancel the two pre-boot WORKING rows, swept %d", n)
+		t.Fatalf("the sweep must request cancel on the two pre-boot WORKING rows, swept %d", n)
 	}
 	if len(cancelled) != 2 || !strings.Contains(strings.Join(cancelled, ","), "sig-old-1") || !strings.Contains(strings.Join(cancelled, ","), "sig-old-3") {
 		t.Fatalf("both old broker orders must be cancelled at the wire, got %v", cancelled)
 	}
 	for _, id := range []int64{s1, s3} {
 		row := armedRowByID(t, ledger, id)
-		if !store.IsTerminalArmState(row.State) {
-			t.Fatalf("row %d must be terminal after the sweep, got %q", id, row.State)
+		if row.State != store.StateCancelPending {
+			t.Fatalf("row %d must be cancel_pending after the sweep (a request, not a settlement), got %q", id, row.State)
 		}
 		if !store.IsBootSweepReason(row.StateReason) {
 			t.Fatalf("row %d must carry the boot_sweep reason, got %q", id, row.StateReason)
 		}
-	}
-
-	// 2. THE EXECUTOR re-authors the SAME scenarios at the SAME plan version.
-	for _, sc := range []string{"S1", "S3", "S9"} {
-		if err := ledger.UpsertArm(&store.ArmedOrderDB{
-			TraderID: "t1", PlanID: planID, Version: version, Session: "ASIA",
-			Scenario: sc, Side: "long", EntryPx: 29044, StopPx: 29014, TargetPx: 29104,
-			State: "armed", EntryClass: "armed_fill", CreatedAt: now, UpdatedAt: now,
-			LegIndex: 0, LegCount: 1, Kind: "limit",
-		}); err != nil {
-			t.Fatal(err)
+		if row.CancelRequestedAtMs <= 0 {
+			t.Fatalf("row %d must carry a cancel request stamp", id)
 		}
 	}
 
-	// 3. The swept rows are ARMED again with a FRESH identity; the owner's is not.
-	//
-	// D5 (owner ruling 2026-09-04) — CHANGED HERE. A swept row REACHED the
-	// broker, so it is no longer revived in place: it keeps its cancelled
-	// record forever and the re-authorization lands as the next placement.
-	// The subject of this test is unchanged — the swept scenario is armed
-	// again with no dead broker identity — so it now follows the SCENARIO
+	// 1b. FAIL-CLOSED (B2): with NO fresh broker book, the executor's
+	// re-authorization at the same version must NOT re-arm — the slot is not
+	// free while the cancel is in flight, and no fresh armed row appears.
+	reAuthorize := func() {
+		for _, sc := range []string{"S1", "S3", "S9"} {
+			_ = ledger.UpsertArm(&store.ArmedOrderDB{
+				TraderID: "t1", PlanID: planID, Version: version, Session: "ASIA",
+				Scenario: sc, Side: "long", EntryPx: 29044, StopPx: 29014, TargetPx: 29104,
+				State: "armed", EntryClass: "armed_fill", CreatedAt: now, UpdatedAt: now,
+				LegIndex: 0, LegCount: 1, Kind: "limit",
+			})
+		}
+	}
+	reAuthorize()
+	for _, id := range []int64{s1, s3} {
+		if row := armedRowByID(t, ledger, id); row.State != store.StateCancelPending {
+			t.Fatalf("no fresh book: row %d must stay cancel_pending, got %q", id, row.State)
+		}
+	}
+	// Fail-closed: no fresh armed row may exist for either swept scenario.
+	live, lerr := ledger.ListNonTerminal("t1")
+	if lerr != nil {
+		t.Fatal(lerr)
+	}
+	for _, r := range live {
+		// The pending row itself is listed; only a fresh ARMED row proves a re-arm.
+		if r.PlanID == planID && (r.Scenario == "S1" || r.Scenario == "S3") && r.State == store.StateArmed && r.SignalID == "" {
+			t.Fatalf("no fresh book: scenario %s must NOT re-arm while the cancel is unconfirmed, got %+v", r.Scenario, r)
+		}
+	}
+	// The owner's sticky row is untouched by the sweep's request path.
+	if row := armedRowByID(t, ledger, owner); row.State != "cancelled" || row.SignalID != "sig-owner" {
+		t.Fatalf("MANUAL-CANCEL-WINS: the owner's cancel must stay sticky, got %+v", row)
+	}
+
+	// 2. SETTLEMENT: a fresh post-request book shows the orders absent —
+	// ConfirmCancel (the settlement pass's write) settles both rows with the
+	// persisted snapshot id. Only now is the slot provably free.
+	if err := ledger.ConfirmCancel(s1, 9001, BootSweepReason); err != nil {
+		t.Fatalf("settle S1: %v", err)
+	}
+	if err := ledger.ConfirmCancel(s3, 9002, BootSweepReason); err != nil {
+		t.Fatalf("settle S3: %v", err)
+	}
+	for _, id := range []int64{s1, s3} {
+		row := armedRowByID(t, ledger, id)
+		if !store.IsTerminalArmState(row.State) || !store.IsBootSweepReason(row.StateReason) {
+			t.Fatalf("settled row %d must be cancelled with the boot_sweep reason, got %q %q", id, row.State, row.StateReason)
+		}
+	}
+
+	// 3. THE EXECUTOR re-authors the SAME scenarios at the SAME plan version —
+	// now the swept rows re-arm as the NEXT placement (0B), the owner's does not.
+	reAuthorize()
+	// D5 (owner ruling 2026-09-04) — a swept row REACHED the broker, so it keeps
+	// its cancelled record forever and the re-authorization lands as the next
+	// placement. The subject of this test is unchanged — the swept scenario is
+	// armed again with no dead broker identity — so it now follows the SCENARIO
 	// rather than the row id.
 	for _, id := range []int64{s1, s3} {
 		swept := armedRowByID(t, ledger, id)
 		row := latestArmedForScenario(t, ledger, swept.PlanID, swept.Scenario)
 		if row.State != "armed" {
-			t.Fatalf("swept row %d must re-arm under the same version, got state %q reason %q", id, row.State, row.StateReason)
+			t.Fatalf("swept row %d must re-arm under the same version after settlement, got state %q reason %q", id, row.State, row.StateReason)
 		}
 		if row.SignalID != "" {
 			t.Fatalf("a re-armed row must drop the dead broker identity, still carries %q", row.SignalID)

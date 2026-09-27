@@ -101,11 +101,11 @@ func TestClass45PinLondon0132(t *testing.T) {
 	}
 
 	// (E3) The floor the composer enforces, stated from its own resolver.
-	floor := RenderStopFloorLine(26.02, 1.5)
+	floor := RenderStopFloorLine(26.02, 1.5, false)
 	if !strings.Contains(floor, "Minimum stop distance") || !strings.Contains(floor, "39.0 pts") {
 		t.Errorf("E3: the floor line must state the resolved points, got %q", floor)
 	}
-	if RenderStopFloorLine(0, 1.5) != "" {
+	if RenderStopFloorLine(0, 1.5, false) != "" {
 		t.Error("E3: no ATR → no floor line, never an invented number")
 	}
 }

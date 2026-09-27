@@ -1,0 +1,54 @@
+=== RUN   TestStructuralStopF1F2ProductionArmCycle
+09-12 19:21:55 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛡 boot sweep DEFERRED (class 33): NT8 link not ready — pre-boot arms are UNVERIFIED this cycle; retrying next cycle
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🔬 conditions: live [acceptance, breakdown_continue, breakup_continue, hold, reclaim, reject, sweep_reclaim] · shadow [breakout_retest, fvg_entry] (per-trader resolved, 0C shadow demotion)
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🕰 clock-hold: T1 no-trade windows widened by |drift| 55611ms for 2026-09-12 ASIA (F6)
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🛑 arm stop ASIA S1 leg 1 long: stop 28960.00 · anchor none (stop_unanchored) · atr_floor 28980.00 (1.5×ATR5m 20.00) · bound=authored
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 stop_unanchored ASIA S1 leg 1 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=1 (provisional bound reviewed at n≥30).
+09-12 19:21:55 [WARN] kernel/htf_veto.go:106 🛡️ HTF veto SKIPPED — no 1h structure snapshot this cycle (detector unavailable); entry proceeds (fail-open).
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛡 entry_gate: invalidation check unavailable for S1 — leg PASSED (no verdict is not a refusal)
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🚫 no-chase: arm S1 has no recorded touch — run stored NULL, judged on dist alone (0.00×ATR)
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] ⚔️ armed ASIA S1 leg 1 long limit 29010.00 SL 28960.00 TP 29120.00 (tick-managed placement is Phase 2)
+    structural_stop_seam_test.go:61: F1/F2: structural stop 28995 must stand despite authored/ATR floors; rows=[map[condition:reject entry:29010 kind:limit leg:0 scenario:S1 side:LONG state:armed stop:28960 target:29120]]
+--- FAIL: TestStructuralStopF1F2ProductionArmCycle (0.15s)
+=== RUN   TestStructuralStopF3FallbackRefusesMissingProvenance
+09-12 19:21:55 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛡 boot sweep DEFERRED (class 33): NT8 link not ready — pre-boot arms are UNVERIFIED this cycle; retrying next cycle
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🕰 clock-hold: T1 no-trade windows widened by |drift| 55757ms for 2026-09-12 ASIA (F6)
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🛑 arm stop ASIA S1 leg 1 long: stop 28960.00 · anchor none (stop_unanchored) · atr_floor 28980.00 (1.5×ATR5m 20.00) · bound=authored
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 stop_unanchored ASIA S1 leg 1 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=1 (provisional bound reviewed at n≥30).
+09-12 19:21:55 [WARN] kernel/htf_veto.go:106 🛡️ HTF veto SKIPPED — no 1h structure snapshot this cycle (detector unavailable); entry proceeds (fail-open).
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛡 entry_gate: invalidation check unavailable for S1 — leg PASSED (no verdict is not a refusal)
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🚫 no-chase: arm S1 has no recorded touch — run stored NULL, judged on dist alone (0.00×ATR)
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] ⚔️ armed ASIA S1 leg 1 long limit 29010.00 SL 28960.00 TP 29120.00 (tick-managed placement is Phase 2)
+    structural_stop_seam_test.go:79: missing durable geometry/refusal record: n=0 err=<nil>
+--- FAIL: TestStructuralStopF3FallbackRefusesMissingProvenance (0.15s)
+=== RUN   TestStructuralStopF4F5Refuses23For4WithoutMoving
+09-12 19:21:55 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛡 boot sweep DEFERRED (class 33): NT8 link not ready — pre-boot arms are UNVERIFIED this cycle; retrying next cycle
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🕰 clock-hold: T1 no-trade windows widened by |drift| 55900ms for 2026-09-12 ASIA (F6)
+09-12 19:21:55 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🛑 arm stop ASIA S1 leg 1 long: stop 28980.00 (authored 28987.00 WIDENED) · anchor none (stop_unanchored) · atr_floor 28980.00 (1.5×ATR5m 20.00) · bound=atr_floor
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 stop_unanchored ASIA S1 leg 1 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=1 (provisional bound reviewed at n≥30).
+09-12 19:21:55 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] ⚔️ arm REFUSED ASIA S1 leg 1: R:R 0.13 below arm min 2.00 (studio min_risk_reward_ratio) · rr refusals this session: 1
+    structural_stop_seam_test.go:86: missing durable geometry/refusal record: n=0 err=<nil>
+--- FAIL: TestStructuralStopF4F5Refuses23For4WithoutMoving (0.14s)
+=== RUN   TestStructuralStopF6NetGainBeforeRR
+09-12 19:21:56 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-12 19:21:56 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:56 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛡 boot sweep DEFERRED (class 33): NT8 link not ready — pre-boot arms are UNVERIFIED this cycle; retrying next cycle
+09-12 19:21:56 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-12 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-12 19:21:56 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🕰 clock-hold: T1 no-trade windows widened by |drift| 56067ms for 2026-09-12 ASIA (F6)
+09-12 19:21:56 [INFO] trader/auto_trader.go:44 [trader_id=trader-1] 🛑 arm stop ASIA S1 leg 1 long: stop 28980.00 (authored 29009.50 WIDENED) · anchor none (stop_unanchored) · atr_floor 28980.00 (1.5×ATR5m 20.00) · bound=atr_floor
+09-12 19:21:56 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] 🛑 stop_unanchored ASIA S1 leg 1 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=1 (provisional bound reviewed at n≥30).
+09-12 19:21:56 [WARN] trader/auto_trader.go:49 [trader_id=trader-1] ⚔️ arm REFUSED ASIA S1 leg 1: R:R 0.07 below arm min 2.00 (studio min_risk_reward_ratio) · rr refusals this session: 1
+    structural_stop_seam_test.go:93: missing durable geometry/refusal record: n=0 err=<nil>
+--- FAIL: TestStructuralStopF6NetGainBeforeRR (0.17s)
+FAIL
+FAIL	nofx/trader	0.614s
+FAIL

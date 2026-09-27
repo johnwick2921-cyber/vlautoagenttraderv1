@@ -162,3 +162,44 @@ func TestCancelPendingRowNeverMintsAReplacement(t *testing.T) {
 		t.Fatalf("the pending row must be left exactly as it was: state=%q entry=%.2f", row.State, row.EntryPx)
 	}
 }
+
+// F8 (port of #117 234b0262) — CANCELLATION SETTLES ONLY ON BROKER EVIDENCE.
+// A cancel "confirmed" with no persisted snapshot id, from a state that never
+// asked, or through a store that does not exist, is not a confirmation at all.
+func TestConfirmCancelRequiresAPersistedSnapshotID(t *testing.T) {
+	st, id := cancelStore(t)
+	if err := st.RequestCancel(id, "gate changed", time.Now().UnixMilli()); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.ConfirmCancel(id, 0, "no snapshot"); err == nil {
+		t.Fatal("a cancel was CONFIRMED with no persisted snapshot id — the broker book is the whole point")
+	}
+	var row ArmedOrderDB
+	if err := st.db.First(&row, id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.State != StateCancelPending {
+		t.Fatalf("a refused confirmation must leave the row %q, got %q", StateCancelPending, row.State)
+	}
+}
+
+func TestConfirmCancelRefusesARowThatIsNotCancelPending(t *testing.T) {
+	st, id := cancelStore(t) // the seed leaves the row StateWorking
+	if err := st.ConfirmCancel(id, 1664, "jumped the queue"); err == nil {
+		t.Fatal("a working arm was CONFIRMED cancelled — only cancel_pending rows may settle")
+	}
+	var row ArmedOrderDB
+	if err := st.db.First(&row, id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.State != StateWorking {
+		t.Fatalf("the refusal must not change the state, got %q", row.State)
+	}
+}
+
+func TestConfirmCancelRefusesOnAnUnavailableStore(t *testing.T) {
+	var st *ArmedOrderStore
+	if err := st.ConfirmCancel(1, 1664, "x"); err == nil {
+		t.Fatal("a nil store returned nil — 'unavailable' is not 'confirmed'")
+	}
+}

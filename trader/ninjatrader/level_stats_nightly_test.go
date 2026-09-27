@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -141,7 +142,7 @@ func TestLevelStatsNightlyProofDB(t *testing.T) {
 		t.Fatalf("clear copy day rows: %v", err)
 	}
 	before, _ := ls.Count()
-	n, err := runLevelStatsDayAt(st, ls, traderID, now)
+	n, err := runLevelStatsDayAt(st, ls, traderID, now, nil)
 	if err != nil {
 		t.Fatalf("nightly replay: %v", err)
 	}
@@ -159,4 +160,108 @@ func TestLevelStatsNightlyProofDB(t *testing.T) {
 	if after <= before {
 		t.Fatalf("nightly replay wrote nothing for %s (before=%d after=%d)", dayKey, before, after)
 	}
+}
+
+// TestLevelStatsFoldsOverlay (WAVE 1a-plan P2) — the nightly level stats read
+// the ONE fold: an owner overlay adding a level must be evaluated. RED on the
+// base-only reader: 1 evaluated row. GREEN: 2.
+func TestLevelStatsFoldsOverlay(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "ls2.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	ls := st.LevelStats()
+	if err := ls.Migrate(); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.BarHistory().Migrate(); err != nil {
+		t.Fatal(err)
+	}
+
+	loc := kernel.CTLocation()
+	start := time.Date(2026, 8, 26, 17, 0, 0, 0, loc)
+	rows := make([]store.BarHistoryDB, 0, 120)
+	for i := 0; i < 120; i++ {
+		ms := start.Add(time.Duration(i) * time.Minute).UnixMilli()
+		px := 100.0 + float64(i)*0.1
+		rows = append(rows, store.BarHistoryDB{Contract: "MNQ 09-26", Source: store.BarSourceLive, Symbol: "MNQ", TF: "1m", OpenTimeMs: ms, O: px, H: px + 1, L: px - 1, C: px, V: 10})
+	}
+	if err := st.BarHistory().InsertBars(rows); err != nil {
+		t.Fatal(err)
+	}
+
+	doc := kernel.PlanDoc{
+		Reasoning:      "wave-1a-p2-ls",
+		Bias:           kernel.PlanBias{Direction: "neutral"},
+		DeathCondition: "flat",
+		Levels:         []kernel.PlanLevel{{Price: 100, Label: "PDH", Grade: "A", Instruction: "fade"}},
+		Scenarios:      []kernel.PlanScenario{{ID: "S1", Condition: "reject", Direction: "long", Quality: "A"}},
+	}
+	blob, _ := json.Marshal(doc)
+	if _, err := st.Plan().AppendPlan(&store.PlanDB{
+		PlanID: "2026-08-26:NY:trader-1", TradeDate: "2026-08-26", Session: "NY",
+		StrategyID: "trader-1", Lifecycle: "active", Doc: string(blob),
+		CreatedAt: time.Now(),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.Plan().AppendOverlay(&store.PlanOverlayDB{PlanID: "2026-08-26:NY:trader-1", PlanVersion: 1, OverlayID: "owner-add-pdl", Origin: "owner",
+		Patch: `[{"op":"add","path":"/levels/-","value":{"price":101,"label":"PDL","grade":"B","instruction":"fade"}}]`}); err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := runLevelStatsDayOnce(st, ls, "trader-1", "2026-08-26",
+		start.UnixMilli(), start.Add(24*time.Hour).UnixMilli(), time.Now().UnixMilli())
+	if err != nil {
+		t.Fatalf("nightly evaluation: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("the folded plan must evaluate 2 rows (PDH + overlay PDL), got %d", n)
+	}
+}
+
+// FIX-LEAKS NOTE RED→GREEN — the nightly goroutine had no stop path and idled
+// ~24h between 17:05 CT runs. StopLevelStatsNightly must end it promptly, even
+// while it sleeps on the next boundary. Production call sites:
+// WireLevelStatsNightly / StopLevelStatsNightly (the Stop hook lives in
+// AutoTrader.Stop).
+func TestStopLevelStatsNightlyStopsTheGoroutine(t *testing.T) {
+	st, err := store.New(filepath.Join(t.TempDir(), "ls-stop.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	if err := st.LevelStats().Migrate(); err != nil {
+		t.Fatal(err)
+	}
+
+	const id = "stop-test-trader"
+	WireLevelStatsNightly(st, id)
+
+	// Let the goroutine get running (it may still be mid-first-evaluation);
+	// the stop is asynchronous and must end it whenever it reaches the select.
+	time.Sleep(300 * time.Millisecond)
+	runtime.GC()
+	base := runtime.NumGoroutine() // INCLUDES the nightly goroutine
+
+	StopLevelStatsNightly(id)
+
+	// The observable is the goroutine LEAVING: the count must drop below the
+	// baseline that includes it. A goroutine that ignores its stop keeps the
+	// count at base forever and fails the deadline.
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		if got := runtime.NumGoroutine(); got <= base-1 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("level-stats nightly goroutine ignored its stop: %d goroutines (base %d)", runtime.NumGoroutine(), base)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	// Restart shape: the same trader id can re-wire after the stop.
+	WireLevelStatsNightly(st, id)
+	StopLevelStatsNightly(id)
 }

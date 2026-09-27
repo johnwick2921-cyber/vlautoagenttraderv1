@@ -1,0 +1,328 @@
+{
+  "tokenizer_note": "tiktoken o200k_base primary; cl100k_base sensitivity. Neither is DeepSeek provider billing. Same encoding used within each comparison. No model call.",
+  "tokenizers": {
+    "o200k_base": {
+      "planner-132-actual.txt": {
+        "whole_tokens": 10948,
+        "category_tokens": {
+          "F": 6063,
+          "I": 4049,
+          "S": 839
+        },
+        "category_sum": 10951,
+        "facts_share": 0.5536480686695279,
+        "instruction_plus_schema_share": 0.44635193133047213
+      },
+      "planner-132-current-contract-replay.txt": {
+        "whole_tokens": 10948,
+        "category_tokens": {
+          "F": 6063,
+          "I": 4049,
+          "S": 839
+        },
+        "category_sum": 10951,
+        "facts_share": 0.5536480686695279,
+        "instruction_plus_schema_share": 0.44635193133047213
+      },
+      "executor-37768-system_prompt.txt": {
+        "whole_tokens": 3318,
+        "category_tokens": {
+          "F": 1778,
+          "I": 1421,
+          "S": 120
+        },
+        "category_sum": 3319,
+        "facts_share": 0.5357035251581802,
+        "instruction_plus_schema_share": 0.46429647484181985
+      },
+      "executor-37768-input_prompt.txt": {
+        "whole_tokens": 8504,
+        "category_tokens": {
+          "F": 8440,
+          "I": 64,
+          "S": 0
+        },
+        "category_sum": 8504,
+        "facts_share": 0.9924741298212606,
+        "instruction_plus_schema_share": 0.007525870178739417
+      },
+      "rewrite": {
+        "original_tokens": 4888,
+        "rewrite_tokens": 2414,
+        "ratio": 0.4938625204582651,
+        "half_length_pass": true
+      },
+      "rules": {
+        "tokens": 2480,
+        "characters": 9951,
+        "words": 1623,
+        "paragraphs": 1,
+        "sentences_per_paragraph": [
+          52
+        ],
+        "mean_sentences": 52,
+        "max_sentences": 52,
+        "uppercase_modals": {
+          "MUST": 8,
+          "NEVER": 2,
+          "SHOULD": 4
+        },
+        "case_insensitive_modals": {
+          "MUST": 14,
+          "NEVER": 14,
+          "SHOULD": 5
+        }
+      }
+    },
+    "cl100k_base": {
+      "planner-132-actual.txt": {
+        "whole_tokens": 10974,
+        "category_tokens": {
+          "F": 6083,
+          "I": 4055,
+          "S": 839
+        },
+        "category_sum": 10977,
+        "facts_share": 0.5541586954541313,
+        "instruction_plus_schema_share": 0.4458413045458686
+      },
+      "planner-132-current-contract-replay.txt": {
+        "whole_tokens": 10974,
+        "category_tokens": {
+          "F": 6083,
+          "I": 4055,
+          "S": 839
+        },
+        "category_sum": 10977,
+        "facts_share": 0.5541586954541313,
+        "instruction_plus_schema_share": 0.4458413045458686
+      },
+      "executor-37768-system_prompt.txt": {
+        "whole_tokens": 3312,
+        "category_tokens": {
+          "F": 1771,
+          "I": 1422,
+          "S": 119
+        },
+        "category_sum": 3312,
+        "facts_share": 0.5347222222222222,
+        "instruction_plus_schema_share": 0.4652777777777778
+      },
+      "executor-37768-input_prompt.txt": {
+        "whole_tokens": 8514,
+        "category_tokens": {
+          "F": 8450,
+          "I": 64,
+          "S": 0
+        },
+        "category_sum": 8514,
+        "facts_share": 0.9924829692271553,
+        "instruction_plus_schema_share": 0.007517030772844727
+      },
+      "rewrite": {
+        "original_tokens": 4894,
+        "rewrite_tokens": 2427,
+        "ratio": 0.4959133633020025,
+        "half_length_pass": true
+      },
+      "rules": {
+        "tokens": 2490,
+        "characters": 9951,
+        "words": 1623,
+        "paragraphs": 1,
+        "sentences_per_paragraph": [
+          52
+        ],
+        "mean_sentences": 52,
+        "max_sentences": 52,
+        "uppercase_modals": {
+          "MUST": 8,
+          "NEVER": 2,
+          "SHOULD": 4
+        },
+        "case_insensitive_modals": {
+          "MUST": 14,
+          "NEVER": 14,
+          "SHOULD": 5
+        }
+      }
+    }
+  },
+  "shape": {
+    "planner-132-actual.txt": {
+      "characters": 31595,
+      "words": 4482,
+      "paragraphs": 43,
+      "sentences_per_paragraph": [
+        5,
+        1,
+        3,
+        4,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        3,
+        2,
+        1,
+        3,
+        1,
+        2,
+        1,
+        52,
+        4
+      ],
+      "mean_sentences": 2.6744,
+      "max_sentences": 52,
+      "uppercase_modals": {
+        "MUST": 12,
+        "NEVER": 8,
+        "SHOULD": 5
+      },
+      "case_insensitive_modals": {
+        "MUST": 18,
+        "NEVER": 25,
+        "SHOULD": 6
+      }
+    },
+    "executor-37768-system_prompt.txt": {
+      "characters": 11120,
+      "words": 1713,
+      "paragraphs": 30,
+      "sentences_per_paragraph": [
+        1,
+        3,
+        2,
+        3,
+        1,
+        6,
+        1,
+        1,
+        5,
+        2,
+        1,
+        1,
+        2,
+        5,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "mean_sentences": 1.8,
+      "max_sentences": 6,
+      "uppercase_modals": {
+        "MUST": 3,
+        "NEVER": 1,
+        "SHOULD": 0
+      },
+      "case_insensitive_modals": {
+        "MUST": 8,
+        "NEVER": 5,
+        "SHOULD": 1
+      }
+    },
+    "executor-37768-input_prompt.txt": {
+      "characters": 16447,
+      "words": 1804,
+      "paragraphs": 39,
+      "sentences_per_paragraph": [
+        1,
+        1,
+        11,
+        3,
+        1,
+        1,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "mean_sentences": 1.3333,
+      "max_sentences": 11,
+      "uppercase_modals": {
+        "MUST": 0,
+        "NEVER": 0,
+        "SHOULD": 0
+      },
+      "case_insensitive_modals": {
+        "MUST": 0,
+        "NEVER": 2,
+        "SHOULD": 0
+      }
+    }
+  },
+  "rewrite_checks": {
+    "numbered_lines": 28,
+    "all_lines_numbered": true,
+    "uppercase_words": [],
+    "sha256": "77ea8a106f76b0b40532f9c791465d1d6731cbee138e1660d202a2d5b0fca1bf"
+  }
+}

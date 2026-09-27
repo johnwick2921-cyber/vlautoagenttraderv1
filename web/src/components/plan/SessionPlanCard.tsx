@@ -15,6 +15,8 @@ import type {
 } from '../../lib/api/plan'
 import { LifecycleChip, VersionChips } from './chips'
 import { WeeklyChip } from './WeeklyChip'
+import { PictureGateChip } from './PictureGateChip'
+import { MachinePlanBanner, ComposedOfLine } from './MachinePlanBanner'
 import { BiasBlock } from './BiasBlock'
 import { ZoneTable } from './ZoneTable'
 import { LevelZoneMap } from './LevelZoneMap'
@@ -300,6 +302,7 @@ export function SessionPlanCard({
           title={tp('noPlanYet', language)}
           hint={tp('noPlanYetHint', language)}
         />
+        <PictureGateChip picture={plan?.picture} language={language} />
         {noPlanAsk}
       </>
     )
@@ -380,7 +383,10 @@ export function SessionPlanCard({
       role="region"
       aria-label={`${tp('title', language)}, v${plan.version ?? 1}, ${plan.lifecycle ?? 'active'}`}
     >
-      <PlanLiveness value={plan.scenario_liveness} />
+      <PlanLiveness
+        value={plan.scenario_liveness}
+        authored={plan.authored_invalidation}
+      />
       {/* UI-verification (2026-08-18): the owner tapped Reset while a death
           re-plan was writing and the card showed NOTHING for minutes — the reset
           worked but read as "does nothing". F7 (2026-08-30): once a plan row is
@@ -460,6 +466,7 @@ export function SessionPlanCard({
               saying so is what sent a later wave hunting a bug that was already
               fixed. The rendered label is the contract; a comment is not. */}
           <WeeklyChip weekly={plan.weekly} />
+          <PictureGateChip picture={plan.picture} language={language} />
           {plan.degraded && (
             <span
               data-testid="degraded-badge"
@@ -512,6 +519,12 @@ export function SessionPlanCard({
           </button>
         </div>
       </div>
+
+      {/* W-EXEC-TRUTH W5 — a MACHINE plan (Picture HTF, the no-plan door)
+          says so, and the card reads what composed plan_final. Both READ
+          from the server; absent renders nothing. */}
+      <MachinePlanBanner machinePlan={plan.machine_plan} language={language} />
+      <ComposedOfLine composedOf={plan.composed_of} language={language} />
 
       {/* badges + banners */}
       <div className="flex flex-wrap items-center gap-2">
@@ -979,6 +992,11 @@ export function SessionPlanCard({
             level={edit.level}
             levelIndex={edit.index}
             scenarioIds={(doc.scenarios ?? []).map((s) => s.id)}
+            planRevision={{
+              planId: plan?.plan_id,
+              planVersion: plan?.version,
+              overlayVersion: plan?.overlay_version,
+            }}
             onClose={() => setEdit({ open: false })}
             onSaved={(change) => {
               onChanged?.()

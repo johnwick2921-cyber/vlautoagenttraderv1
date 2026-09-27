@@ -1,0 +1,122 @@
+kind    role               n   touched  reacted  broke  chopped  days
+------  -----------------  --  -------  -------  -----  -------  ----
+VWAP    magnet_meanrevert  35  28       21       15     13       7   
+OB      react_zone         26  20       12       9      11       8   
+SWG-H   react_zone         15  13       7        4      9        4   
+SWG-L   react_zone         13  13       11       6      7        5   
+ONL     liquidity_break    14  11       7        3      7        8   
+PDC     pivot              13  11       8        4      7        9   
+EQL     liquidity_break    14  10       9        5      5        5   
+SUPPLY  react_zone         14  10       7        4      6        8   
+ONH     liquidity_break    12  9        8        6      3        8   
+EQH     liquidity_break    11  8        5        3      5        5   
+PDH     react_zone         12  8        4        4      4        7   
+DEMAND  react_zone         7   6        5        2      4        5   
+RTH-H   react_zone         8   6        5        2      4        7   
+OR-H    liquidity_break    6   5        3        1      4        6   
+OR-L    liquidity_break    6   4        2        2      2        6   
+PDL     react_zone         9   4        3        1      3        8   
+POC     magnet_meanrevert  3   3        3        1      2        3   
+eVWAP   magnet_meanrevert  4   3        3        1      2        4   
+FVG     react_zone         1   1        1        0      1        1   
+IFVG    react_zone         1   1        1        0      1        1   
+PWL     react_zone         1   1        1        1      0        1   
+RN      pivot              1   1        1        1      0        1   
+RTH-L   react_zone         7   1        1        1      0        6   
+pdVWAP  magnet_meanrevert  1   1        1        0      1        1   
+MIN(session_day)  MAX(session_day)  COUNT(DISTINCT session_day)
+----------------  ----------------  ---------------------------
+2026-08-24        2026-09-03        9                          
+label          n    days  pen   wick  body  shape     
+-------------  ---  ----  ----  ----  ----  ----------
+SWG-L·5m       125  6     6.5   6.5   2.3   rejection 
+SWG-H·5m       122  7     5.5   5.5   1.7   rejection 
+ONH            88   7     1.3   1.3   0.1   rejection 
+ONL            70   7     1.3   1.3   0.1   rejection 
+OR-H           64   8     5.5   5.5   2.3   rejection 
+PDC            53   8     7.9   7.9   2.8   rejection 
+SWG-L·15m      41   4     2.9   2.9   1.0   rejection 
+SWG-H·5m       40   6     24.1  24.1  19.7  acceptance
+SWG-L·5m       39   6     21.4  21.4  16.7  acceptance
+EQL·1h         36   4     11.4  11.4  7.7   rejection 
+OR-L           35   6     5.9   5.9   2.9   rejection 
+EQL·4h         30   4     6.9   6.9   4.3   rejection 
+EQL            26   3     9.1   9.1   5.4   rejection 
+PDH            26   5     6.3   6.3   1.2   rejection 
+OR-H           24   8     31.1  31.1  24.9  acceptance
+PDC            24   7     29.2  29.2  24.5  acceptance
+SWG-H·15m      24   7     2.7   2.7   0.5   rejection 
+RTH-H          19   4     7.4   7.4   2.4   rejection 
+iFVG(bear)·1h  18   1     4.6   4.6   2.4   rejection 
+EQL·1h         17   4     26.4  26.4  22.6  acceptance
+OR-L           17   5     30.2  30.2  23.5  acceptance
+EQH            16   5     3.7   3.7   1.1   rejection 
+EQH·1h         16   5     4.7   4.7   1.2   rejection 
+OB(bull)·1h    16   4     2.9   2.9   1.1   rejection 
+VWAP+1σ        16   4     3.5   3.5   2.5   rejection 
+Demand·1h      14   4     7.8   7.8   2.4   rejection 
+OB(bull)·4h    14   4     7.0   7.0   0.3   rejection 
+PDH            14   4     28.8  28.8  24.2  acceptance
+PDL            13   2     8.7   8.7   1.1   rejection 
+RTH-H          13   3     29.7  29.7  23.1  acceptance
+OB(bear)·1h    12   5     5.2   5.2   0.3   rejection 
+POC            12   4     2.0   2.0   0.6   rejection 
+SWG-H·15m      12   4     19.2  19.2  15.5  acceptance
+Demand·4h      11   4     4.4   4.4   1.7   rejection 
+SWG-L·15m      11   4     23.0  23.0  20.2  acceptance
+VWAP           11   4     16.4  16.4  13.2  acceptance
+RTH-L          10   2     7.3   7.3   0.1   rejection 
+EQH            9    3     32.3  32.3  26.9  acceptance
+EQH·1h         9    3     27.9  27.9  24.3  acceptance
+EQL            9    3     37.1  37.1  33.1  acceptance
+shape       COUNT(*)
+----------  --------
+acceptance  339     
+rejection   976     
+MIN(session_day)  MAX(session_day)  COUNT(DISTINCT session_day)  MAX(touch_number)
+----------------  ----------------  ---------------------------  -----------------
+2026-08-25        2026-09-03        8                            22               
+id    trader_id                                                     session_day  symbol  label  level_price   touch_number  opened_at_ms   closed_at_ms   bars_in  penetration_pts    wick_pen_pts       body_pen_pts  close_1m  close_5m  vol_ratio         approach_atr      shape       created_at                         
+----  ------------------------------------------------------------  -----------  ------  -----  ------------  ------------  -------------  -------------  -------  -----------------  -----------------  ------------  --------  --------  ----------------  ----------------  ----------  -----------------------------------
+1315  8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_17812  2026-09-03   MNQ     POC    29530.634375  2             1788541920000  1788542339999  7        0.884375000001455  0.884375000001455  0.0           reject    reject    5.1363416988417   1.56018573958212  rejection   2026-09-04 17:19:05.445145526+00:00
+      46265                                                                                                                                                                                                                                                                                                                   
+
+1314  8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_17812  2026-09-03   MNQ     OR-L   29553.75      6             1788541320000  1788541859999  9        15.25              15.25              14.25         accept    accept    10.8499402368793  3.13902126614528  acceptance  2026-09-04 17:11:06.325454799+00:00
+      46265                                                                                                                                                                                                                                                                                                                   
+
+1313  8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_17812  2026-09-03   MNQ     RTH-H  29585.0       9             1788540600000  1788541259999  11       20.75              20.75              15.25         accept    accept    12.4911691327224  3.52134444648035  acceptance  2026-09-04 17:01:05.992476305+00:00
+      46265                                                                                                                                                                                                                                                                                                                   
+trade_date  session  version  stop_floor_pts    atr5m             stop_floor_mlt  bias_ai  bias_tree  bias_regime  void_count  scope_bars
+----------  -------  -------  ----------------  ----------------  --------------  -------  ---------  -----------  ----------  ----------
+2026-09-03  ASIA     0        20.2200457271066  13.4800304847377  1.5                                 up/NORMAL    18          2000      
+2026-09-03  ASIA     0        31.7702404634836  21.1801603089891  1.5                                 up/NORMAL    13          2000      
+2026-09-03  LONDON   0        33.1531643563856  22.1021095709237  1.5                                 up/NORMAL    18          2000      
+2026-09-03  NY       0        43.5231119105787  29.0154079403858  1.5                                 up/NORMAL    16          2000      
+2026-09-03  LONDON   0        43.3722271165022  28.9148180776681  1.5                                 up/NORMAL    14          2000      
+2026-09-03  NY       0        54.6119168345225  36.4079445563483  1.5                                 up/NORMAL    14          2000      
+2026-09-03  NY       0        67.6463281653098  45.0975521102065  1.5                                 up/NORMAL    20          2000      
+2026-09-03  NY       0        70.8055331933464  47.2036887955643  1.5                                 up/NORMAL    18          2000      
+2026-09-03  NY       0        72.60753557529    48.40502371686    1.5                                 up/NORMAL    19          2000      
+2026-09-03  NY       0        60.8820979662981  40.5880653108654  1.5                                 up/NORMAL    21          2000      
+2026-09-03  NY       0        48.6916266569734  32.4610844379823  1.5                                 up/NORMAL    18          2000      
+2026-09-03  ASIA     0        19.1140669636911  12.7427113091274  1.5                                 up/NORMAL    22          2000      
+2026-09-03  ASIA     0        15.5521217476219  10.3680811650812  1.5                                 up/NORMAL    2           2000      
+2026-09-03  ASIA     0        13.5956014602978  9.06373430686523  1.5                                 up/NORMAL    4           2000      
+2026-09-03  ASIA     0        16.854930244696   11.2366201631307  1.5                                 up/NORMAL    2           2000      
+2026-09-03  ASIA     0        15.5897320029668  10.3931546686445  1.5                                 up/NORMAL    6           2000      
+2026-09-03  ASIA     0        16.6948337128688  11.1298891419125  1.5                                 up/NORMAL    8           2000      
+2026-09-04  ASIA     0        18.2239686891163  12.1493124594109  1.5                                 up/NORMAL    15          2000      
+2026-09-04  ASIA     0        19.3787478490554  12.9191652327036  1.5                                 up/NORMAL    17          2000      
+2026-09-04  LONDON   0        19.977536476377   13.318357650918   1.5                                 up/NORMAL    17          2000      
+2026-09-04  LONDON   0        21.0882675155563  14.0588450103709  1.5                                 up/NORMAL    16          2000      
+2026-09-04  LONDON   0        47.2094512214235  31.472967480949   1.5                                 up/NORMAL    10          2000      
+2026-09-04  NY       0        51.3218601431318  34.2145734287545  1.5                                 up/NORMAL    8           2000      
+2026-09-04  LONDON   0        47.932013925094   31.9546759500626  1.5                                 up/NORMAL    8           2000      
+2026-09-04  NY       0        48.8833366003374  32.5888910668916  1.5                                 up/NORMAL    12          2000      
+2026-09-04  NY       0        53.6138447675809  35.7425631783873  1.5                                 up/NORMAL    12          2000      
+2026-09-04  NY       0        58.616521156849   39.0776807712327  1.5                                 up/NORMAL    12          2000      
+2026-09-04  NY       0        58.3551501847424  38.903433456495   1.5                                 up/NORMAL    12          2000      
+2026-09-04  NY       0        54.5559168982542  36.3706112655028  1.5                                 up/NORMAL    12          2000      
+2026-09-04  NY       0        47.0172543484383  31.3448362322922  1.5                                 up/NORMAL    12          2000      
+2026-09-04  NY       0        40.5946391600858  27.0630927733905  1.5                                 up/NORMAL    12          2000      
+2026-09-04  NY       0        34.9332558035262  23.2888372023508  1.5                                 up/NORMAL    12          2000      

@@ -10,6 +10,7 @@ import (
 	"nofx/kernel"
 	"nofx/logger"
 	ntwire "nofx/provider/ninjatrader"
+	"nofx/safe"
 	"nofx/store"
 	"nofx/telemetry"
 )
@@ -148,7 +149,7 @@ func WireBarPersistence(st *store.Store) {
 		// first trader load; poll for it briefly, then flush the cache. The
 		// AddOn's bars_historical replay lands a few seconds after our restart,
 		// so retry while the flush stays empty.
-		go func() {
+		safe.GoNet("nt8-bar-backfill", "", func() {
 			for i := 0; i < 90; i++ {
 				server, err := getOrStartTCPServer()
 				if err == nil && server != nil && server.BarCache() != nil {
@@ -228,7 +229,7 @@ func WireBarPersistence(st *store.Store) {
 							m.Symbol, m.Timeframe, kernel.ClockCTSeconds(m.At), m.LastHistoricalC, m.FirstLiveC, m.DeltaPts, ntwire.ScaleMismatchPct*100, m.HistoricalDropped, refill, events, bars, srcCensus)
 					})
 					ntwire.OnContractRoll(func(symbol, from, to string, at time.Time) {
-						go func() {
+						safe.GoNet("nt8-contract-roll", "", func() {
 							// Let the AddOn's post-subscribe replay land first —
 							// the ring must not be cold when the reseed reads
 							// AllPairs(), and the replay is the new contract's
@@ -238,7 +239,7 @@ func WireBarPersistence(st *store.Store) {
 							census, _ := bh.ContractCensus(symbol)
 							logger.Errorf("🚨 P0 — CONTRACT ROLLED %s → %s at %s: the ring was purged and reseeded from the store for %s only; bars by contract now %v. Levels seated on %s are on the retired scale and will re-seat on the next planner read. (roll wave 2026-09-10)",
 								from, to, at.Format("2006-01-02 15:04:05 MST"), to, census, from)
-						}()
+						})
 					})
 					// R1 (2026-09-02) — the boot 📊 bars line ran before this
 					// replay landed, so it reported own1m for every TF on a
@@ -246,13 +247,13 @@ func WireBarPersistence(st *store.Store) {
 					// resolver can ACTUALLY reach.
 					fireAfterBackfillHook()
 					logger.Infof("%s", barHorizonBootLine(server.BarCache(), time.Now()))
-					go pruneLoop(bh)
+					safe.GoNet("nt8-bar-prune", "", func() { pruneLoop(bh) })
 					return
 				}
 				time.Sleep(time.Second)
 			}
 			logger.Warnf("bars: TCP server never came up — boot backfill skipped")
-		}()
+		})
 	})
 }
 

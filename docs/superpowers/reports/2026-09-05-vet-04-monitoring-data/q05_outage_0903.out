@@ -1,0 +1,30 @@
+what                       
+---------------------------
+decision_records around gap
+id     ct                   cycle_type  exec                                                 
+-----  -------------------  ----------  -----------------------------------------------------
+37163  2026-09-03 12:11:00              ["AI call duration: 20960 ms","✓ MNQ wait succeeded"]
+37164  2026-09-03 12:13:17              ["AI call duration: 38480 ms","✓ MNQ wait succeeded"]
+37165  2026-09-03 12:15:21              ["AI call duration: 14894 ms","✓ MNQ wait succeeded"]
+37166  2026-09-03 12:16:42              ["AI call duration: 4438 ms","✓ MNQ wait succeeded"] 
+37167  2026-09-03 12:18:44              ["AI call duration: 5906 ms","✓ MNQ wait succeeded"] 
+37168  2026-09-03 12:20:43              ["AI call duration: 4540 ms","✓ MNQ wait succeeded"] 
+37169  2026-09-03 12:22:44              ["AI call duration: 6434 ms","✓ MNQ wait succeeded"] 
+37170  2026-09-03 15:08:51              ["AI call duration: 27595 ms","✓ MNQ wait succeeded"]
+37171  2026-09-03 15:10:52              ["AI call duration: 28097 ms","✓ MNQ wait succeeded"]
+37172  2026-09-03 15:12:47              ["AI call duration: 23466 ms","✓ MNQ wait succeeded"]
+37173  2026-09-03 15:14:40              ["AI call duration: 16288 ms","✓ MNQ wait succeeded"]
+what                       
+---------------------------
+largest decision gaps 09-03
+pid    id     ct                   gap_min         
+-----  -----  -------------------  ----------------
+37169  37170  2026-09-03 15:08:51  166.116666666667
+37195  37196  2026-09-03 17:01:19  62.4666666666667
+37328  37329  2026-09-03 21:50:28  27.3            
+what                                   
+---------------------------------------
+nt8_order_snapshots gaps 09-03 (>5 min)
+what                           
+-------------------------------
+log_events gaps 09-03 (>10 min)

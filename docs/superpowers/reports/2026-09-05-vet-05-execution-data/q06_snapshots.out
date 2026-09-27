@@ -1,0 +1,34 @@
+-- snapshots per CT day, working_count distribution, reason
+   ('2026-09-03', 263, 0, 0, 'periodic')
+   ('2026-09-04', 3008, 360, 9, 'periodic,state_change')
+   ('2026-09-05', 1195, 0, 0, 'periodic')
+-- typical cadence (sec between snapshots) on 09-04 10:00-11:00 CT
+   n= 241 p50= 7.815 p90= 30.133 min= 0.0 max= 32.516
+-- emitted vs received lag (ms) p50/p95 all-time
+   n= 4466 p50= 0 p95= 452 min= -2651 max= 1710
+-- snapshots with working orders on 09-03 09:00–10:35 CT (arm 35 window)
+-- count of working>0 snapshots in that window
+   (0, None, None)
+-- distinct order types/states seen in orders_json (09-02..)
+   ('stop', 'Accepted', '931a761a-d0c8-492b-a815-a5f41cc9d9ae') 132
+   ('stop', 'Accepted', '7dd07a19-701e-4afa-9b15-655f65810e9e') 74
+   ('stop', 'Accepted', '6a5da3fa-2992-426f-b56e-9d1eb805c350') 73
+   ('stop', 'Accepted', '9b146ffa-d569-44f9-a6b6-0701073418e9') 71
+   ('stop', 'Accepted', '9fcd8c7c-7d13-4e97-871c-21a49f44c643') 68
+   ('stop', 'Accepted', '183d16ad-75df-4fcf-bd9c-685900a8aa25') 66
+   ('stop', 'Accepted', 'c5d4860a-1d7f-4480-bd27-fc6958221dae') 65
+   ('stop', 'Accepted', '4646df81-f408-48bc-9834-477105ed801c') 62
+   ('stop', 'Accepted', 'c794d0ce-0ca7-4c03-894c-25ddf4468935') 59
+   ('stop', 'Accepted', '993322b9-6c27-42af-8afb-2a3620b797eb') 58
+   ('stop', 'Accepted', '719f4bbb-069a-4c81-8df0-f0d1e112335a') 54
+   ('stop', 'Accepted', 'b42631c8-4737-4e59-aa42-e51b5a7237db') 50
+   ('stop', 'Accepted', 'fa195d44-705e-46c9-be53-5d4a2198e3c8') 42
+   ('stop', 'Accepted', '60adff7a-afe7-4b11-be91-1c6e8a413c8f') 34
+   ('limit', 'Working', '89339298-8a82-490f-ad06-91b29c81fa33') 32
+   ('stop', 'Accepted', '3bea0045-32b4-469d-ae5c-ca24ba366509') 26
+   ('stop', 'Accepted', '04b3e307-eb7f-4bc8-88fe-7088dff9f6a5') 18
+   ('stop', 'CancelSubmitted', '6a5da3fa-2992-426f-b56e-9d1eb805c350') 17
+   ('stop', 'CancelSubmitted', '183d16ad-75df-4fcf-bd9c-685900a8aa25') 16
+   ('stop', 'CancelSubmitted', '993322b9-6c27-42af-8afb-2a3620b797eb') 15
+-- one full orders_json sample with working>0 (latest)
+   1831 2026-09-04 11:59:02 [{"order_id":"8373c7bf6a664d48bba76fd144d423fe","symbol":"MNQ","name":"931a761a-d0c8-492b-a815-a5f41cc9d9ae","action":"sell","type":"stop","limit_price":29590.5,"quantity":1,"state":"CancelSubmitted"}]

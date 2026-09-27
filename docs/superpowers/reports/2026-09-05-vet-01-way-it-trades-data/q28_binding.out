@@ -1,0 +1,23 @@
+traders cols: ['id', 'name', 'exchange_id', 'strategy_id', 'scan_interval_minutes', 'is_running', 'cadence_mode', 'position_mode']
+trader ('8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265', 'hoang', 'a5b7662e-7bf7-49bb-9f09-7efa48f95ac8', 1, 2, 'ai_watch', '')
+plans.strategy_id (latest 3): [('8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265', 79)]
+
+[MNQ] id=a5b7662e-7bf7-49bb-9f09-7efa48f95ac8 active=0
+  sessions_enabled= ['NY']  plan_mode= strict  replan_cap= 4  proximity= 1
+   session: {"session": "NY", "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 10}
+   session: {"session": "ASIA", "enable": true, "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 7}
+   session: {"session": "LONDON", "enable": true, "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 10}
+  risk: {'min_risk_reward_ratio': 2, 'min_confidence': 60, 'daily_loss_enabled': False, 'daily_loss_limit_usd': 450, 'max_daily_trades_enabled': False, 'max_daily_trades': 3, 'consecutive_loss_halt': None, 'breakeven_enabled': True, 'breakeven_trigger_points': 40, 'trailing_enabled': True, 'trailing_atr_mult': None, 'max_contracts_enabled': False, 'max_contracts_per_order': 2}
+
+entry_quantity on era rows: [(1.0, 70), (2.0, 1)]
+
+arm refusal / unanchored counters:
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:ASIA:rr = 2
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-02:NY:rr = 3
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:LONDON:rr = 1
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-03:NY:rr = 1
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:entry_gate:invalidated = 1
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:LONDON:rr = 1
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:entry_gate:invalidated = 1
+   arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265:2026-09-04:NY:rr = 3
+   arm_stop_unanchored_0b = 220

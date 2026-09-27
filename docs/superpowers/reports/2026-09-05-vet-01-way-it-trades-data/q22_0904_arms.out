@@ -1,0 +1,39 @@
+id   scenario  kind        condition      state       r                                         has_sig  c                    u                  
+---  --------  ----------  -------------  ----------  ----------------------------------------  -------  -------------------  -------------------
+38   S2        stop_entry  sweep_reclaim  cancelled   gate changed: rr                          1        2026-09-04 10:05:00  2026-09-04 10:06:05
+39   S1        limit       reject         cancelled   no order_update within stale window (rec  1        2026-09-04 09:10:08  2026-09-04 09:26:06
+62   S2        stop_entry  reclaim        cancelled   gate changed: rr                          1        2026-09-04 10:10:04  2026-09-04 10:12:04
+65   S2        stop_entry  reclaim        cancelled   gate changed: rr                          1        2026-09-04 10:15:01  2026-09-04 10:18:03
+67   S2        stop_entry  reclaim        cancelled   gate changed: rr                          1        2026-09-04 10:16:03  2026-09-04 10:18:03
+70   S2        stop_entry  reclaim        cancelled   gate changed: rr                          1        2026-09-04 10:20:03  2026-09-04 10:22:03
+73   S2        stop_entry  reclaim        cancelled   no order_update within stale window (rec  1        2026-09-04 10:25:01  2026-09-04 10:40:01
+75   S2        stop_entry  reclaim        cancelled   no order_update within stale window (rec  1        2026-09-04 10:26:02  2026-09-04 10:42:01
+77   S2        stop_entry  reclaim        cancelled   no order_update within stale window (rec  1        2026-09-04 10:28:02  2026-09-04 10:44:01
+79   S2        stop_entry  reclaim        cancelled   no order_update within stale window (rec  1        2026-09-04 10:30:02  2026-09-04 10:46:01
+81   S2        stop_entry  reclaim        cancelled   no order_update within stale window (rec  1        2026-09-04 10:32:02  2026-09-04 10:48:00
+83   S2        stop_entry  reclaim        cancelled   no order_update within stale window (rec  1        2026-09-04 10:34:01  2026-09-04 10:50:00
+85   S2        stop_entry  reclaim        cancelled   no order_update within stale window (rec  1        2026-09-04 10:36:01  2026-09-04 10:52:00
+87   S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:38:01  2026-09-04 10:53:10
+89   S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:40:01  2026-09-04 10:53:10
+91   S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:42:01  2026-09-04 10:53:11
+92   S1        limit       reject         superseded  superseded: never placed (no signal id)   0        2026-09-04 10:44:01  2026-09-04 11:05:09
+93   S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:44:01  2026-09-04 10:53:11
+94   S1        limit       reject         superseded  superseded: never placed (no signal id)   0        2026-09-04 10:46:01  2026-09-04 11:05:09
+95   S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:46:01  2026-09-04 10:53:11
+96   S1        limit       reject         superseded  superseded: never placed (no signal id)   0        2026-09-04 10:48:00  2026-09-04 11:05:09
+97   S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:48:00  2026-09-04 10:53:11
+98   S1        limit       reject         superseded  superseded: never placed (no signal id)   0        2026-09-04 10:50:00  2026-09-04 11:05:09
+99   S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:50:00  2026-09-04 10:53:11
+100  S1        limit       reject         cancelled   no active plan                            0        2026-09-04 11:29:07  2026-09-04 11:59:02
+101  S2        stop_entry  reclaim        cancelled   boot_sweep: pre-boot order, process rest  1        2026-09-04 10:52:00  2026-09-04 10:53:11
+102  S2        stop_entry  reclaim        cancelled   cancelled in NT8                          1        2026-09-04 10:53:11  2026-09-04 11:59:02
+103  S1        limit       sweep_reclaim  cancelled   no active plan                            0        2026-09-04 11:29:07  2026-09-04 11:59:02
+104  S2        limit       sweep_reclaim  armed                                                 0        2026-09-04 12:11:02  2026-09-04 13:27:48
+105  S2        limit       sweep_reclaim  armed                                                 0        2026-09-04 12:11:02  2026-09-04 13:27:48
+v 3 S1 reject short arm True 29657.38 29720 29503.38 legs 0 confirm touch
+v 3 S2 reclaim short arm True 29591.02 29645.25 29481.5 legs 0 confirm 1x5m_close
+v 5 S1 sweep_reclaim short arm True 29720 29765 29553.75 legs 2 confirm touch
+v 5 S2 breakout_retest short arm None None None None legs 0 confirm touch
+v 6 S1 reject short arm True 29579.56 29614.5 29503.38 legs 0 confirm touch
+v 6 S2 sweep_reclaim short arm True 29720 29755 29635 legs 2 confirm touch
+v 6 S3 sweep_reclaim long arm None None None None legs 0 confirm touch

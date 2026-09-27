@@ -53,24 +53,9 @@ func fieldKeysByCapability(catalog []entityFieldMeta, include func(entityFieldMe
 	return keys
 }
 
-func keywordsForField(catalog []entityFieldMeta, field string) []string {
-	for _, item := range catalog {
-		if item.Key == field {
-			return item.Keywords
-		}
-	}
-	return nil
-}
-
 func manualTraderEditableFieldKeys() []string {
 	return fieldKeysByCapability(traderFieldCatalog, func(field entityFieldMeta) bool {
 		return field.ManualEditable
-	})
-}
-
-func agentTraderUpdatableFieldKeys() []string {
-	return fieldKeysByCapability(traderFieldCatalog, func(field entityFieldMeta) bool {
-		return field.AgentUpdatable
 	})
 }
 
@@ -80,32 +65,8 @@ func manualModelEditableFieldKeys() []string {
 	})
 }
 
-func agentModelUpdatableFieldKeys() []string {
-	return fieldKeysByCapability(modelFieldCatalog, func(field entityFieldMeta) bool {
-		return field.AgentUpdatable
-	})
-}
-
 func manualExchangeEditableFieldKeys() []string {
 	return fieldKeysByCapability(exchangeFieldCatalog, func(field entityFieldMeta) bool {
 		return field.ManualEditable
 	})
-}
-
-func agentExchangeUpdatableFieldKeys() []string {
-	return fieldKeysByCapability(exchangeFieldCatalog, func(field entityFieldMeta) bool {
-		return field.AgentUpdatable
-	})
-}
-
-func traderFieldKeywords(field string) []string {
-	return keywordsForField(traderFieldCatalog, field)
-}
-
-func modelFieldKeywords(field string) []string {
-	return keywordsForField(modelFieldCatalog, field)
-}
-
-func exchangeFieldKeywords(field string) []string {
-	return keywordsForField(exchangeFieldCatalog, field)
 }

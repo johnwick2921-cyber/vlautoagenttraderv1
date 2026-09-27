@@ -1,0 +1,16 @@
+persistent journal dir: /var/log/journal
+volatile journal dir: /run/log/journal
+journald dropins: nofx.conf
+--- user timers ---
+NEXT                            LEFT LAST                              PASSED UNIT                           ACTIVATES
+Sat 2026-09-05 10:15:00 CDT    12min Sat 2026-09-05 10:00:01 CDT 2min 52s ago nofx-clock-guard.timer         nofx-clock-guard.service
+Sat 2026-09-05 14:20:39 CDT 4h 17min Fri 2026-09-04 14:22:59 CDT      19h ago launchpadlib-cache-clean.timer launchpadlib-cache-clean.service
+Sat 2026-09-05 17:30:00 CDT       7h Sat 2026-09-05 05:00:01 CDT  5h 3min ago nofx-backup.timer              nofx-backup.service
+Mon 2026-09-07 15:05:00 CDT   2 days Fri 2026-09-04 15:05:27 CDT      18h ago openclaw-s1-canary.timer       openclaw-s1-canary.service
+
+4 timers listed.
+--- nofx.service state ---
+Restart=on-failure
+NRestarts=12
+ExecMainStartTimestamp=Fri 2026-09-04 13:25:47 CDT
+ActiveState=active

@@ -126,7 +126,7 @@ func shadowABLine(n, target int, session, tradeDate string, v ShadowABVerdict, l
 // have been rejected for. It writes nothing.
 func (at *AutoTrader) shadowVerdictFor(raw string, maxLevels, scenarioCap int, facts kernel.PlanFacts, machineLabels, htfLabels map[float64]string, requiredBias string) (bool, []string) {
 	var reasons []string
-	d, perr := kernel.ParsePlanDocCappedWithMinRR(raw, maxLevels, scenarioCap, at.armMinRRFor(nil))
+	d, perr := kernel.ParsePlanDocForAuthoring(raw, maxLevels, scenarioCap, at.plannerAuthoringOpts()) // W3: same opts as the live write loop
 	if perr != nil {
 		return false, []string{"parse/schema: " + perr.Error()}
 	}
@@ -160,6 +160,18 @@ func (at *AutoTrader) shadowVerdictFor(raw string, maxLevels, scenarioCap int, f
 			reasons = append(reasons, verr.Error())
 		}
 	}
+	// W-EXEC-TRUTH W2 A1/A2 — the live chain's born check, PURE here (no
+	// liveness events): without it the shadow's legal rate overstates.
+	if market.FuturesBarsProvider != nil {
+		if berr := kernel.EvaluateBornCheck(d, market.FuturesBarsProvider(at.futuresSymbol(), "1m", kernel.AISVPBarCount), facts.ReadAt, time.Now()).Err(); berr != nil {
+			reasons = append(reasons, berr.Error())
+		}
+	}
+	// W-EXEC-TRUTH W2 A3+A4 — the SAME kernel check the write loop runs; the
+	// shadow records nothing.
+	if verr := kernel.CheckScenarioWriteTruth(d, facts.IdentityMap, facts.CapacityCut, market.FuturesTickSize(at.futuresSymbol())).Err(); verr != nil {
+		reasons = append(reasons, verr.Error())
+	}
 	return len(reasons) == 0, reasons
 }
 
@@ -186,13 +198,8 @@ func (at *AutoTrader) maybeRunShadowAB(session, tradeDate, userPrompt string, ma
 		at.logWarnf("🔬 shadow A/B skipped: another shadow call is still in flight (never concurrent)")
 		return
 	}
-	go func() {
+	at.goNetted("shadow-ab", func() {
 		defer shadowABInFlight.Store(false)
-		defer func() {
-			if r := recover(); r != nil { // A10 — a measurement never takes the bot down
-				at.logWarnf("🔬 shadow A/B panicked (measurement only, live path unaffected): %v", r)
-			}
-		}()
 		mcp.ApplyThinking(runner.client, runner.mode, runner.effort)
 		cap := runner.maxTokens
 		req := &mcp.Request{
@@ -221,7 +228,7 @@ func (at *AutoTrader) maybeRunShadowAB(session, tradeDate, userPrompt string, ma
 		// executor call is never left on the shadow mode.
 		pm, pe := planReasoningWire()
 		mcp.ApplyThinking(runner.client, pm, pe)
-	}()
+	})
 }
 
 // FactsSnapshotJSON (B-1) renders the facts a rejected attempt was validated

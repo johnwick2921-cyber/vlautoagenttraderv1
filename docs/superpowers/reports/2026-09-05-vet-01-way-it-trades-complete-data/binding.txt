@@ -1,0 +1,8 @@
+mode=ro; query_only=ON; captured 2026-09-05T17:43:33.618695 host local time
+SQL SELECT t.id,t.strategy_id,t.scan_interval_minutes,s.config FROM traders t JOIN strategies s ON s.id=t.strategy_id
+{"id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265", "strategy_id": "a5b7662e-7bf7-49bb-9f09-7efa48f95ac8", "scan_interval_minutes": 2}
+/ai_config/risk_control/min_risk_reward_ratio 2
+/ai_config/risk_control/daily_loss_enabled false
+/day_plan/plan_mode "strict"
+/day_plan/sessions_enabled ["NY"]
+/day_plan/sessions [{"session": "NY", "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 10}, {"session": "ASIA", "enable": true, "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 7}, {"session": "LONDON", "enable": true, "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 10}]

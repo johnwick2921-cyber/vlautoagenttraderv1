@@ -1,0 +1,40 @@
+==============================================================================
+SAMPLE  n=58  ids 521..591  sum=-466.43  mean=-8.042  sd=104.893
+        wins=18 losses=38 flat=2  p(win)=0.3214 (flats excluded from p(win))
+
+Q1 — MAX DRAWDOWN distribution ($, 1 contract, $2/pt)
+ horizon method       p50       p90       p95       p99      worst
+      20    iid       509       878       990      1207       1568
+      20  block       513       852       963      1166       1547
+      50    iid       939      1584      1788      2194       2910
+      50  block       916      1510      1706      2064       2822
+     100    iid      1504      2476      2786      3369       4876
+     100  block      1443      2333      2623      3132       4492
+
+Q2 — P(losing streak >= k within 50 trades)
+  k      exact   bootstrap
+  4     0.9956      0.9933
+  6     0.8492      0.7967
+  8     0.5233      0.4412
+ 10     0.2640      0.2031
+
+Q3 — guardrail counterfactual (day resample, B=10000 days-sequences)
+        realized session-days: 12  trades/day: min=1 median=4.0 max=11
+      daily_loss_450: trips on   0.0% of days · P&L kept   -41.08/day · forfeited    +0.00/day · net effect    +0.00/day
+  max_daily_trades_3: trips on  58.6% of days · P&L kept   -57.54/day · forfeited   +16.38/day · net effect   -16.38/day
+                both: trips on  59.0% of days · P&L kept   -55.73/day · forfeited   +17.10/day · net effect   -17.10/day
+
+Q4 — expectancy per trade
+  mean=-8.042  sd=104.893  se=13.773  95% CI [-35.037, +18.953]  t=-0.584
+  n_required = ((z_a+z_b)*sd/mu)^2 = ((1.960+0.842)*104.89/8.042)^2 = 1,335 trades
+
+Q5 — era split (0B cut over 2026-09-02 07:49 CT)
+    pre-0B: n= 55  mean=  -1.317  sum=   -72.43  maxDD@20 p50=   431 p95=   874
+   post-0B: n=3 (ids ['589', '590', '591']) values=['-155', '-99', '-140'] — FAR TOO FEW for any distribution claim; descriptive only
+
+M6 — sensitivity: drop the single largest win AND the single largest loss
+  full   : n=58  mean=-8.042  sum=-466.43
+  trimmed: n=56  mean=-11.115  sum=-622.43  (dropped id 532 +311 and id 589 -155)
+  maxDD@20  full p50=   514 p95=   998  |  trimmed p50=   511 p95=   976
+  maxDD@50  full p50=   946 p95=  1773  |  trimmed p50=   976 p95=  1807
+==============================================================================

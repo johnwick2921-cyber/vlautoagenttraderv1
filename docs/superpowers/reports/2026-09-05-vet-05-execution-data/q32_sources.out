@@ -1,0 +1,420 @@
+Read at 2026-09-05T15:56:06.130319-05:00
+Pinned source base 2a66d91c; historical running rev 36648655 from original health artifact; no new deployment assertion
+
+SOURCE ninjascript/VLTraderTCPClient.cs
+970:                 // E7 — a "stop_entry" signal places a STOP-MARKET entry at the
+971:                 // trigger price (the tick offset was applied Go-side).
+972:                 bool isLimit    = orderType == "limit" && limitPx > 0;
+973:                 bool isStopEntry = orderType == "stop_entry" && stopPx > 0;
+974:                 OrderType orderT = isLimit ? OrderType.Limit : (isStopEntry ? OrderType.StopMarket : OrderType.Market);
+975:                 double orderPx  = isLimit ? limitPx : (isStopEntry ? stopPx : 0);
+976:                 var entryOrder = submitAccount.CreateOrder(
+977:                     instrument, entryAction, orderT, OrderEntry.Manual,
+978:                     TimeInForce.Day, qty, orderPx, 0, string.Empty, signalId,
+979:                     Core.Globals.MaxDate, null);
+980:
+1338:             string status;
+1339:             switch (e.OrderState)
+1340:             {
+1341:                 case OrderState.Filled:     status = "filled";   break;
+1342:                 case OrderState.Rejected:   status = "rejected"; break;
+1343:                 case OrderState.PartFilled: status = "partial";  break;
+1344:                 default:                    return;
+1345:             }
+1346:
+1347:             // Entry just filled → place the protective SL/TP now that the
+1348:             // position exists (deferred from HandleSignal to dodge the OCO
+1349:             // cancel-on-entry-fill bug). On rejection, drop the pending bracket.
+1350:             if (e.OrderState == OrderState.Filled)
+1351:             {
+1352:                 SubmitBracketOnEntryFill(signalId);
+1353:                 lock (signalMapLock) { workingEntries.Remove(signalId); } // PHASE 2: resting limit consumed
+1354:                 // PHASE 4: record which account now holds this symbol's open position so a
+1355:                 // later close flattens the RIGHT account (not the active one). Sourced from
+1356:                 // the order's own account — account-agnostic, correct per routed account.
+1357:                 try
+1358:                 {
+1359:                     string entrySym = e.Order.Instrument.MasterInstrument.Name;
+1360:                     if (e.Order.Account != null && !string.IsNullOrEmpty(entrySym))
+1361:                         lock (posAcctLock) { positionAccountBySymbol[entrySym] = e.Order.Account; }
+1362:                 }
+1363:                 catch (Exception ex)
+1364:                 {
+1365:                     LogWarn("VLTraderTCPClient: PHASE 4 — failed to record position account for "
+1366:                             + signalId + ": " + ex.Message + " (a later close falls back to the active account)");
+1367:                 }
+1368:             }
+1369:             else if (e.OrderState == OrderState.Rejected)
+1370:             {
+1371:                 lock (signalMapLock) { pendingBrackets.Remove(signalId); workingEntries.Remove(signalId); } // PHASE 2: resting limit rejected → gone
+1372:             }
+1373:
+1374:             string sideStr = (action == OrderAction.Buy) ? "long" : "short";
+1375:
+1376:             double slippageTicks = 0.0;
+1377:             lock (signalMapLock)
+1378:             {
+1379:                 if (signalEntryByOco.TryGetValue(signalId, out var origEntry)
+1380:                     && signalTickSizeByOco.TryGetValue(signalId, out var tick)
+1381:                     && tick > 0)
+1382:                 {
+1383:                     slippageTicks = (e.AverageFillPrice - origEntry) / tick;
+1384:                 }
+1385:             }
+1425:                 ["signal_id"]      = signalId,
+1426:                 ["fill_price"]     = fillPrice,
+1427:                 ["fill_time"]      = DateTime.UtcNow.ToString("o"),
+1428:                 ["side"]           = side,
+1429:                 ["quantity"]       = qty,
+1430:                 ["slippage_ticks"] = slippageTicks,
+1431:                 ["status"]         = status,
+1432:                 // PHASE 4: which account this fill is on (e.Order.Account). Additive +
+1433:                 // back-compat: an un-updated Go binary ignores unknown JSON fields.
+1819:                 // routed to (stored in PendingBracket), not necessarily the active one.
+1820:                 Account ba = b.Account ?? account;
+1821:                 string exitOco = signalId + "-exit";
+1822:                 var slOrder = ba.CreateOrder(
+1823:                     b.Instrument, b.ExitAction, OrderType.StopMarket, OrderEntry.Manual,
+1824:                     TimeInForce.Day, b.Qty, 0, b.Sl, exitOco, signalId + "-sl",
+1825:                     Core.Globals.MaxDate, null);
+1826:                 var tpOrder = ba.CreateOrder(
+1827:                     b.Instrument, b.ExitAction, OrderType.Limit, OrderEntry.Manual,
+1828:                     TimeInForce.Day, b.Qty, b.Tp, 0, exitOco, signalId + "-tp",
+1829:                     Core.Globals.MaxDate, null);
+
+SOURCE trader/armed_executor.go
+935: 					trigger = r.EntryPx + offset
+936: 				}
+937: 				// WRONG-SIDE GUARD (2026-08-30 E7 incident class): a stop-market
+938: 				// whose trigger the market has already traded through fires the
+939: 				// instant it reaches NT8. Never place it — cancel the arm.
+940: 				if price > 0 && limitMarketableWrongSide(price, trigger, r.Side) {
+941: 					_ = ledger.SetState(r.ID, "cancelled", "trigger already traded through — never placed")
+942: 					at.logWarnf("✕ armed %s stop-entry cancelled — price %.2f already %s the trigger %.2f (never placed)", r.Scenario, price, throughWord(r.Side), trigger)
+943: 					continue
+944: 				}
+945: 				sid, perr := nt.PlaceStopEntry(at.futuresSymbol(), r.Side, 1, trigger, r.StopPx, r.TargetPx)
+978: 	at.consumeArmedOrderUpdates(nt, ledger)
+979: }
+980:
+981: // limitMarketableWrongSide (E7 incident guard, pure) reports whether price has
+982: // already traded THROUGH a resting limit in the trade's direction — i.e. a
+983: // long's entry sits above the market (buy limit marketable) or a short's entry
+984: // sits below it. Placing in that state fills instantly at a worse price.
+985: func limitMarketableWrongSide(price, entry float64, side string) bool {
+986: 	if price <= 0 || entry <= 0 {
+987: 		return false
+988: 	}
+989: 	switch strings.ToLower(strings.TrimSpace(side)) {
+990: 	case "long":
+991: 		return price < entry
+992: 	case "short":
+993: 		return price > entry
+994: 	}
+995: 	return false
+996: }
+1250: 		return // legacy lowercase row already exists for the same fill
+1251: 	}
+1252: 	tradeDate := r.PlanID
+1253: 	if i := strings.Index(r.PlanID, ":"); i > 0 {
+1254: 		tradeDate = r.PlanID[:i]
+1255: 	}
+1256: 	nowMs := time.Now().UTC().UnixMilli()
+1257: 	row := &store.TraderPosition{
+1258: 		TraderID:           at.id,
+1259: 		ExchangeType:       "ninjatrader",
+1260: 		ExchangePositionID: fmt.Sprintf("armed_%s_%d", r.SignalID, nowMs),
+1261: 		Symbol:             at.futuresSymbol(),
+1262: 		Side:               side,
+1263: 		Quantity:           1,
+1264: 		EntryQuantity:      1,
+1265: 		EntryPrice:         u.FillPrice,
+1266: 		EntryTime:          nowMs,
+1267: 		EntryOrderID:       r.SignalID,
+1268: 		Leverage:           1,
+1269: 		Status:             "OPEN",
+1270: 		Source:             "armed_entry",
+1271: 		Account:            u.Account,
+1272: 		PlanID:             r.PlanID,
+1273: 		PlanVersion:        r.Version,
+1274: 		PlanTradeDate:      tradeDate,
+1275: 		PlanSession:        r.Session,
+1276: 		CitedScenarioID:    r.Scenario,
+1277: 		CreatedAt:          nowMs,
+1278: 		UpdatedAt:          nowMs,
+1279: 	}
+1280: 	if err := at.store.Position().CreateOpenPosition(row); err != nil {
+1281: 		at.logWarnf("🧩 armed fill %s materialize OPEN failed: %v", r.Scenario, err)
+1282: 		return
+1283: 	}
+1284: 	at.logInfof("🧩 armed fill %s @ %.2f materialized OPEN (source=armed_entry — sub-60s round-trips are ledger-visible)", r.Scenario, u.FillPrice)
+1285: 	// E1 (wave 1A) — the excursion row's entry half. An armed fill carries its
+1286: 	// own levels in the ledger row, so nothing has to be resolved later.
+1287: 	at.excursionOnOpen(row, r.StopPx, r.TargetPx, plannerATR5m(at.futuresSymbol()))
+1288: }
+1289:
+1290: // stampArmedFillLineage links the freshly-filled position row to the plan the
+
+SOURCE kernel/risk_limits.go
+151: // DailyGuardrails.Check() has always returned RiskForceFlat on a daily-loss
+152: // trip, and its ONLY production caller discarded the value:
+153: //
+154: //	} else if _, gErr := g.Check(); gErr != nil {   // engine_analysis.go
+155: //
+156: // so the trip skipped the decision cycle and nothing else. The ARM path never
+157: // consulted the guardrail at all (entry_gate.go contained neither "daily" nor
+158: // "guardrail"), which meant a RESTING ARM FILLED STRAIGHT THROUGH A TRIPPED
+159: // DAILY LOSS LIMIT. The limit was believed and did not hold.
+160: //
+161: // The caller now publishes the trip here and EntryGate reads it, so both order
+162: // paths — arm seam and decision path — refuse new entries once it is set.
+163: //
+164: // SCOPE, deliberately: this blocks NEW ENTRIES only. Open positions are NOT
+165: // closed. Closing them stays operator-initiated via POST /api/risk/force-flat,
+166: // per the ForceFlatSignaler contract documented in engine_analysis.go — that
+167: // policy is unchanged by this wave.
+168: //
+169: // Cleared by the CME session-day reset (ResetDailyPnLAt), so a trip lasts the
+170: // session-day and lifts with the daily window.
+171: var (
+172: 	forceFlatMu     sync.RWMutex
+173: 	forceFlatReason = map[string]string{}
+174: )
+175:
+300: // ON AND its value is configured (>0); a tripped guardrail returns a non-nil err
+301: // with a clear reason. Daily-loss → ForceFlat; profit-target / max-trades →
+302: // BlockEntry. NB: this controls ONLY the prop-firm guardrails — it can never
+303: // affect the SIM-only / live-account block (that is enforced separately in the
+304: // broker layer and is untoggleable).
+305: func (g DailyGuardrails) Check() (RiskLimitDecision, error) {
+306: 	if !g.MasterEnabled {
+307: 		return RiskAllow, nil
+308: 	}
+309: 	if g.DailyLossEnabled && g.DailyLossLimitUSD > 0 && g.DailyRealizedPnL <= -g.DailyLossLimitUSD {
+310: 		return RiskForceFlat, fmt.Errorf("daily loss limit hit (realized today=%.2f, limit=-%.2f)", g.DailyRealizedPnL, g.DailyLossLimitUSD)
+311: 	}
+312: 	if g.DailyProfitEnabled && g.DailyProfitTargetUSD > 0 && g.DailyRealizedPnL >= g.DailyProfitTargetUSD {
+313: 		return RiskBlockEntry, fmt.Errorf("daily profit target reached (realized today=%.2f, target=%.2f)", g.DailyRealizedPnL, g.DailyProfitTargetUSD)
+314: 	}
+315: 	if g.MaxDailyTradesEnabled && g.MaxDailyTrades > 0 && g.TradesToday >= g.MaxDailyTrades {
+316: 		return RiskBlockEntry, fmt.Errorf("max daily trades reached (today=%d, max=%d)", g.TradesToday, g.MaxDailyTrades)
+317: 	}
+318: 	return RiskAllow, nil
+319: }
+320:
+321: // boolOrDefault resolves a three-state *bool toggle: nil → the default value.
+322: // Used so a guardrail's per-strategy "enabled" can be on/off/unset; unset
+323: // inherits the guardrail's safe default (daily-loss ON, new guardrails OFF).
+324: func boolOrDefault(p *bool, def bool) bool {
+325: 	if p == nil {
+326: 		return def
+327: 	}
+
+SOURCE kernel/engine_analysis.go
+180: 						SoftGuardrailFunc(ctx.TraderID, hit)
+181: 					}
+182: 				}
+183: 			} else if gDecision, gErr := g.Check(); gErr != nil {
+184: 				logger.Warnf("⚠️ Strategy Studio daily guardrail tripped: %v — skipping decision cycle (HOLD)", gErr)
+185: 				telemetry.RiskGateTrips.WithLabelValues("strategy_studio_daily").Inc()
+186: 				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_daily")
+187: 				// WIRING (2026-09-05) — the decision this call has always
+188: 				// returned used to be discarded (`_, gErr :=`), so a HOLD on the
+189: 				// decision cycle was the WHOLE effect of a daily-loss trip and a
+190: 				// resting arm filled straight through it. RiskForceFlat is now
+191: 				// published; EntryGate reads it and refuses on BOTH order paths.
+192: 				// Open positions are deliberately NOT closed here — that stays
+193: 				// operator-initiated via POST /api/risk/force-flat, per the
+194: 				// ForceFlatSignaler contract below.
+195: 				if gDecision == RiskForceFlat {
+196: 					SetDailyForceFlat(ctx.TraderID, gErr.Error())
+197: 				}
+198: 				return holdCycle("daily_guardrail"), nil
+199: 			} else if boolOrDefault(rc.BlackoutEnabled, false) && InBlackoutWindow(time.Now(), rc.BlackoutStartCT, rc.BlackoutEndCT) {
+200: 				// Chunk 4 — time/news blackout: go passive during a configured daily
+201: 				// [start,end] CT window (master + toggle governed). NT8-side SL/TP
+202: 				// still protect open positions; the bot just makes no new decisions.
+
+SOURCE trader/entry_gate.go
+145: // EntryGate runs the single canonical entry gate chain. Empty reason = allow.
+146: func EntryGate(in EntryIntent) (reason string, refused bool) {
+147: 	side := strings.ToLower(strings.TrimSpace(in.Action))
+148: 	if side == "open_long" {
+149: 		side = "long"
+150: 	} else if side == "open_short" {
+151: 		side = "short"
+152: 	}
+153: 	if side != "long" && side != "short" {
+154: 		return "", false // not an entry intent — not this gate's job
+155: 	}
+156:
+157: 	// Leg D — DAILY LOSS LIMIT (wiring wave 2026-09-05). Runs BEFORE leg 0:
+158: 	// a tripped daily limit outranks every other reason to take or refuse an
+159: 	// entry, and its refusal is the one the journal should show.
+160: 	//
+161: 	// This leg is the half of the daily guardrail that was missing.
+162: 	// DailyGuardrails.Check() always returned RiskForceFlat on a daily-loss
+
+SOURCE trader/exit_mechs_suspend.go
+10:
+11: 	ntTrader "nofx/trader/ninjatrader"
+12: )
+13:
+14: // ── 0B (2026-09-02) — BE+40 AND THE ATR TRAIL ARE SUSPENDED ─────────────────
+15: //
+16: // Both mechanisms are LIVE and FIRING (full audit 09-01: 2 breakeven moves, 8
+17: // trail ratchets that day) with NO measurement of whether they help. Round-7
+18: // research ranks ATR/Chandelier trails in the worst group of 15 exit families
+19: // across 567,000 backtests, and the net effect of breakeven moves is contested.
+20: // Our own tape shows $719.50 of giveback with ZERO trail EXITS ever recorded.
+21: //
+22: // The problem is not the direction of the effect — it is that unmeasured
+23: // mechanisms are moving live stops. Suspended (not deleted) until MFE data
+24: // exists (wave 1A). Exits while suspended: fixed stop · fixed target · EOD flat
+25: // · the existing invalidation/dormant logic.
+26: //
+27: // Env EXIT_MECHS_SUSPENDED=0 re-enables both (the knobs are retained; per-
+28: // strategy breakeven_enabled / trailing_enabled still gate them underneath).
+29:
+30: // ExitMechSuspendedLabel is the one-line reason shown in logs and the Guide.
+31: const ExitMechSuspendedLabel = "suspended 2026-09-02 pending MFE data (wave 1A)"
+32:
+33: // exitMechsSuspended resolves the suspension (env EXIT_MECHS_SUSPENDED,
+34: // default TRUE = suspended).
+35: func exitMechsSuspended() bool {
+36: 	if v := strings.TrimSpace(os.Getenv("EXIT_MECHS_SUSPENDED")); v != "" {
+37: 		switch strings.ToLower(v) {
+38: 		case "0", "false", "off", "no":
+39: 			return false
+40: 		}
+41: 	}
+42: 	return true
+43: }
+44:
+45: // moveStopWire is the LAST hop before the socket: both suspended mechanisms
+46: // reach the broker only through this variable. Fixtures substitute a recorder
+
+SOURCE kernel/min_sl.go
+25: // middle — the deliberate first step from an uncited number to a cited one.
+26: //
+27: // This value is read by THREE gates: the arm-time gate
+28: // (trader/armed_executor.go), the AI-entry decision gate
+29: // (kernel/engine_position.go) and the planner's authoring WARNING
+30: // (trader/auto_trader_planner.go, ArmFeasibilityWarnings). Raising it tightens
+31: // all three at once — intended: the same floor everywhere is the point.
+32: //
+33: // Env MIN_SL_ATR_MULT overrides; 0 disables the gate entirely.
+34: const MinSLATRMultDefault = 1.5
+35:
+36: // MinSLTickClearance is the level-clearance leg: a cited-scenario stop must
+37: // sit at least this many ticks BEYOND the anchor level/zone far edge. Stops
+38: // parked exactly at a level get run by the sweep; 2 ticks of clearance puts
+39: // the stop on the far side of the resting orders.
+40: const MinSLTickClearance = 2
+41:
+42: // MinSLATRMult resolves the min-SL ATR multiplier (env MIN_SL_ATR_MULT,
+43: // default 1.0; 0 = gate off).
+
+SOURCE trader/f12_leg4.go
+199: 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+200: 			return time.Duration(n) * time.Second
+201: 		}
+202: 	}
+203: 	return DefaultOrderSnapshotSecs * time.Second
+204: }
+205:
+206: // DefaultOrderSnapshotSecs is the ONE definition of the snapshot period. The C#
+207: // side reads its own constant; the protocol doc names this as the contract so
+208: // the two cannot silently disagree about what "stale" means.
+209: const DefaultOrderSnapshotSecs = 30
+210:
+
+SOURCE store/armed_orders.go
+190: 	//
+191: 	// This was First() with no ORDER BY, so SQLite returned the lowest rowid —
+192: 	// which, once a first placement had been cancelled, was always the TERMINAL
+193: 	// row. The "terminal row that reached the broker keeps its record" branch
+194: 	// below then fired on every re-authorization and minted a new placement each
+195: 	// cycle: one NY scenario reached 24 rows in 100 minutes and pushed the
+196: 	// cutover gate's leg 4 to "broker 1 vs ledger 23 — MISMATCH". The
+197: 	// record-keeping law was right; the row it was applied to was wrong.
+198: 	err := s.db.Where("plan_id = ? AND scenario = ? AND leg_index = ?", row.PlanID, row.Scenario, row.LegIndex).
+199: 		Order("CASE WHEN state IN ('armed','working') THEN 0 ELSE 1 END, placement_seq DESC, id DESC").First(&existing).Error
+200: 	if err == nil {
+201: 		// D5 — a WORKING row is a LIVE BROKER ORDER. Rewriting its prices in
+202: 		// place overwrote the slot and lost the brackets (rows 582, 585): the
+203: 		// ledger and the broker then held two different orders under one id.
+204: 		// Replacing a live order requires a cancel, and the store cannot issue
+205: 		// one, so it declines rather than diverge.
+206: 		if existing.State == "working" {
+207: 			return fmt.Errorf("armed_orders: refusing to rewrite %s/%s — the row is working (a live broker order, signal %q); replace requires cancel first",
+208: 				row.PlanID, row.Scenario, existing.SignalID)
+209: 		}
+210: 		// A TERMINAL row that reached the broker keeps its record forever; the
+COMMAND ['git', 'diff', '--name-only', '36648655', '2a66d91c', '--', 'trader/armed_executor.go', 'ninjascript/VLTraderTCPClient.cs', 'provider/ninjatrader/tcp_framing.go', 'trader/ninjatrader'] EXIT 0
+
+COMMAND ['rg', '-n', 'SlippageTicks', '--glob', '*.go', 'provider', 'trader'] EXIT 0
+provider/ninjatrader/tcp_framing_test.go:51:		SlippageTicks: 1.0,
+provider/ninjatrader/tcp_framing.go:86:	SlippageTicks float64 `json:"slippage_ticks"`
+provider/ninjatrader/tcp_client_mock.go:221:			SlippageTicks: 0,
+
+
+NT8 selected source logs (line numbers original)
+log.20260903.00000.en.txt:6059: 2026-09-03 09:02:54:664|1|16|VLTraderTCPClient: signal f2b1eb20-f89e-4a88-bcff-5ce971d17861 routed to account 'Sim101' (resolved, sim, connected)
+log.20260903.00000.en.txt:6061: 2026-09-03 09:02:54:672|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6062: 2026-09-03 09:02:54:672|1|16|VLTraderTCPClient: submitted entry signal_id=f2b1eb20-f89e-4a88-bcff-5ce971d17861 on account=Sim101 short 1 MNQ limit@29285 (SL=29355 TP=29144.5 on fill)
+log.20260903.00000.en.txt:6063: 2026-09-03 09:02:54:780|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Accepted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6064: 2026-09-03 09:02:54:780|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Working' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6078: 2026-09-03 09:03:53:694|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Filled' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=1 Fill price=29285 Error='No error' Native error=''
+log.20260903.00000.en.txt:6079: 2026-09-03 09:03:53:702|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6080: 2026-09-03 09:03:53:707|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6085: 2026-09-03 09:03:53:811|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Accepted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6086: 2026-09-03 09:03:53:811|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Accepted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6087: 2026-09-03 09:03:53:811|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Working' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6259: 2026-09-03 09:20:45:669|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Working' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6260: 2026-09-03 09:20:45:677|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Filled' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=1 Fill price=29355 Error='No error' Native error=''
+log.20260903.00000.en.txt:6261: 2026-09-03 09:20:45:677|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Cancel submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.en.txt:6265: 2026-09-03 09:20:45:782|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Cancelled' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6059: 2026-09-03 09:02:54:664|1|16|VLTraderTCPClient: signal f2b1eb20-f89e-4a88-bcff-5ce971d17861 routed to account 'Sim101' (resolved, sim, connected)
+log.20260903.00000.txt:6061: 2026-09-03 09:02:54:672|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6062: 2026-09-03 09:02:54:672|1|16|VLTraderTCPClient: submitted entry signal_id=f2b1eb20-f89e-4a88-bcff-5ce971d17861 on account=Sim101 short 1 MNQ limit@29285 (SL=29355 TP=29144.5 on fill)
+log.20260903.00000.txt:6063: 2026-09-03 09:02:54:780|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Accepted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6064: 2026-09-03 09:02:54:780|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Working' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6078: 2026-09-03 09:03:53:694|1|32|Order='8b14afd7df9043e6aafdbae51fb8abea/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861' New state='Filled' Instrument='MNQ 09-26' Action='Sell short' Limit price=29285 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='' Filled=1 Fill price=29285 Error='No error' Native error=''
+log.20260903.00000.txt:6079: 2026-09-03 09:03:53:702|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6080: 2026-09-03 09:03:53:707|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6085: 2026-09-03 09:03:53:811|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Accepted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6086: 2026-09-03 09:03:53:811|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Accepted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6087: 2026-09-03 09:03:53:811|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Working' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6259: 2026-09-03 09:20:45:669|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Working' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6260: 2026-09-03 09:20:45:677|1|32|Order='0a8102f73b7047d091eb919569c30d0f/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-sl' New state='Filled' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=0 Stop price=29355 Quantity=1 Type='Stop Market' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=1 Fill price=29355 Error='No error' Native error=''
+log.20260903.00000.txt:6261: 2026-09-03 09:20:45:677|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Cancel submitted' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260903.00000.txt:6265: 2026-09-03 09:20:45:782|1|32|Order='93d528233f3b40d9b4b40a2f29e18377/Sim101' Name='f2b1eb20-f89e-4a88-bcff-5ce971d17861-tp' New state='Cancelled' Instrument='MNQ 09-26' Action='Buy to cover' Limit price=29144.5 Stop price=0 Quantity=1 Type='Limit' Time in force=DAY Oco='f2b1eb20-f89e-4a88-bcff-5ce971d17861-exit' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:6494: 2026-09-04 10:05:00:086|1|16|VLTraderTCPClient: signal e38f1774-9b80-46b2-907a-5fc35485a188 routed to account 'Sim101' (resolved, sim, connected)
+log.20260904.00000.en.txt:6496: 2026-09-04 10:05:00:097|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:6497: 2026-09-04 10:05:00:097|1|16|VLTraderTCPClient: submitted entry signal_id=e38f1774-9b80-46b2-907a-5fc35485a188 on account=Sim101 SHORT 1 MNQ stop@29590.5 (SL=29645.5 TP=29481.5 on fill)
+log.20260904.00000.en.txt:6498: 2026-09-04 10:05:00:203|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Accepted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:6505: 2026-09-04 10:06:05:159|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Cancel submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:6507: 2026-09-04 10:06:05:284|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Cancelled' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:7220: 2026-09-04 10:53:11:151|1|16|VLTraderTCPClient: signal 931a761a-d0c8-492b-a815-a5f41cc9d9ae routed to account 'Sim101' (resolved, sim, connected)
+log.20260904.00000.en.txt:7222: 2026-09-04 10:53:11:163|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:7223: 2026-09-04 10:53:11:163|1|16|VLTraderTCPClient: submitted entry signal_id=931a761a-d0c8-492b-a815-a5f41cc9d9ae on account=Sim101 SHORT 1 MNQ stop@29590.5 (SL=29645.25 TP=29481.5 on fill)
+log.20260904.00000.en.txt:7234: 2026-09-04 10:53:11:469|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Accepted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:7939: 2026-09-04 11:59:02:375|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Cancel submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.en.txt:7941: 2026-09-04 11:59:02:497|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Cancelled' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:6494: 2026-09-04 10:05:00:086|1|16|VLTraderTCPClient: signal e38f1774-9b80-46b2-907a-5fc35485a188 routed to account 'Sim101' (resolved, sim, connected)
+log.20260904.00000.txt:6496: 2026-09-04 10:05:00:097|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:6497: 2026-09-04 10:05:00:097|1|16|VLTraderTCPClient: submitted entry signal_id=e38f1774-9b80-46b2-907a-5fc35485a188 on account=Sim101 SHORT 1 MNQ stop@29590.5 (SL=29645.5 TP=29481.5 on fill)
+log.20260904.00000.txt:6498: 2026-09-04 10:05:00:203|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Accepted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:6505: 2026-09-04 10:06:05:159|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Cancel submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:6507: 2026-09-04 10:06:05:284|1|32|Order='67485fd929444d15b7e554a5a065c685/Sim101' Name='e38f1774-9b80-46b2-907a-5fc35485a188' New state='Cancelled' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:7220: 2026-09-04 10:53:11:151|1|16|VLTraderTCPClient: signal 931a761a-d0c8-492b-a815-a5f41cc9d9ae routed to account 'Sim101' (resolved, sim, connected)
+log.20260904.00000.txt:7222: 2026-09-04 10:53:11:163|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:7223: 2026-09-04 10:53:11:163|1|16|VLTraderTCPClient: submitted entry signal_id=931a761a-d0c8-492b-a815-a5f41cc9d9ae on account=Sim101 SHORT 1 MNQ stop@29590.5 (SL=29645.25 TP=29481.5 on fill)
+log.20260904.00000.txt:7234: 2026-09-04 10:53:11:469|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Accepted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:7939: 2026-09-04 11:59:02:375|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Cancel submitted' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+log.20260904.00000.txt:7941: 2026-09-04 11:59:02:497|1|32|Order='8373c7bf6a664d48bba76fd144d423fe/Sim101' Name='931a761a-d0c8-492b-a815-a5f41cc9d9ae' New state='Cancelled' Instrument='MNQ 09-26' Action='Sell short' Limit price=29590.5 Stop price=0 Quantity=1 Type='Stop Market' Time in force=DAY Oco='' Filled=0 Fill price=0 Error='No error' Native error=''
+Slippage text occurrence count 0 files ['/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00000.en.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00000.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.en.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00001.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00002.en.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00002.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00003.en.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260903.00003.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.en.txt', '/mnt/c/Users/hoang/Documents/NinjaTrader 8/log/log.20260904.00000.txt']
+Strategy schema [('id', 'TEXT'), ('user_id', 'TEXT'), ('name', 'TEXT'), ('description', 'TEXT'), ('is_active', 'numeric'), ('is_default', 'numeric'), ('is_public', 'numeric'), ('config_visible', 'numeric'), ('config', 'TEXT'), ('created_at', 'datetime'), ('updated_at', 'datetime')]
+Known bound trader mapping [('8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265', 'a5b7662e-7bf7-49bb-9f09-7efa48f95ac8')]
+Bound strategy selected risk fields {"guardrails_enabled": false, "daily_loss_enabled": false, "daily_loss_limit_usd": 450, "breakeven_enabled": true, "trailing_enabled": true}

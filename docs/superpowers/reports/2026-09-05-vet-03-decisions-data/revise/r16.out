@@ -1,0 +1,74 @@
+### B1 min-SL validateDecision refusals (audit refusals.csv) — was the same cycle's final decision a taken open_*?
+  min_sl validateDecision rows: 34
+  taken in same cycle: 3
+     ('2026-09-02 09:40:09', '26472', 36394, '2026-09-02 09:41:05', '-44.0')
+     ('2026-09-02 10:34:48', '26500', 36422, '2026-09-02 10:37:18', '-52.0')
+     ('2026-09-02 10:36:09', '26500', 36422, '2026-09-02 10:37:18', '-101.5')
+  NOT taken: 31
+     ('2026-09-02 07:27:51', '26408', '-44.5', '["AI call duration: 66997 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-02 08:36:05', '26441', '-80.5', '["AI call duration: 25888 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-02 09:27:13', '26466', '-69.5', '["AI call duration: 80036 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-02 09:33:16', '26469', '-53.0', '["AI call duration: 52848 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-02 10:50:49', '26508', '60.0', '["AI call duration: 43223 ms"]')
+     ('2026-09-02 17:47:43', '26687', '-43.0', '["AI call duration: 32474 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-02 18:48:13', '26718', '60.0', '["AI call duration: 36043 ms","⛔ MNQ open_short refused: entry_gate: entry_gate:')
+     ('2026-09-02 18:49:46', '26719', '112.5', '["AI call duration: 50125 ms","stale_reeval outcome=pass (superseded entry re-va')
+     ('2026-09-02 18:52:04', '26720', '86.5', '["AI call duration: 29310 ms","⛔ MNQ open_short refused: entry_gate: entry_gate:')
+     ('2026-09-02 18:55:11', '26721', '73.0', '["AI call duration: 32538 ms"]')
+     ('2026-09-02 18:57:02', '26722', '74.5', '["last model output (truncated): \\u003cdecision\\u003e ```json [{\\"symbol\\":\\"MNQ')
+     ('2026-09-02 18:57:41', '26722', '82.0', '["last model output (truncated): \\u003cdecision\\u003e ```json [{\\"symbol\\":\\"MNQ')
+     ('2026-09-02 18:58:38', '26722', '111.0', '["last model output (truncated): \\u003cdecision\\u003e ```json [{\\"symbol\\":\\"MNQ')
+     ('2026-09-02 18:59:36', '26723', '108.0', '["AI call duration: 46385 ms","stale_reeval outcome=pass (superseded entry re-va')
+     ('2026-09-03 02:12:19', '26942', '-49.5', '["AI call duration: 36469 ms","⛔ MNQ open_short refused: entry_gate: entry_gate:')
+     ('2026-09-03 02:18:29', '26945', '-60.5', '["AI call duration: 48080 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-03 02:23:14', '26947', '-43.0', '["AI call duration: 34145 ms"]')
+     ('2026-09-03 02:24:41', '26947', '-65.5', '["AI call duration: 34145 ms"]')
+     ('2026-09-03 02:34:25', '26952', '-50.0', '["AI call duration: 63194 ms"]')
+     ('2026-09-03 02:35:28', '26952', '-66.0', '["AI call duration: 63194 ms"]')
+     ('2026-09-03 08:34:34', '27132', '-40.0', '["AI call duration: 45007 ms"]')
+     ('2026-09-03 11:48:22', '27229', '-85.5', '["AI call duration: 11678 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-03 19:10:58', '27340', '-29.0', '["AI call duration: 7999 ms","✓ MNQ wait succeeded"]')
+     ('2026-09-03 19:15:17', '27342', '-31.0', '["AI call duration: 51979 ms"]')
+     ('2026-09-03 20:37:19', '27383', '-32.0', '["AI call duration: 31852 ms","⛔ MNQ open_short refused: entry_gate: refused: st')
+     ('2026-09-03 20:40:45', '27385', '-32.5', '["AI call duration: 44451 ms","⛔ MNQ open_short refused: entry_gate: refused: st')
+     ('2026-09-03 20:41:43', '27385', '-32.0', '["AI call duration: 44451 ms","⛔ MNQ open_short refused: entry_gate: refused: st')
+     ('2026-09-03 20:43:12', '27386', '-18.5', '["AI call duration: 41086 ms","⛔ MNQ open_short refused: entry_gate: refused: st')
+     ('2026-09-03 20:51:30', '27389', '-34.5', '["AI call duration: 35594 ms","⛔ MNQ open_short refused: entry_gate: refused: st')
+     ('2026-09-03 20:57:31', '27393', '-34.5', '["AI call duration: 84566 ms","⛔ MNQ open_short refused: entry_gate: refused: st')
+     ('2026-09-03 21:08:02', '27398', '-10.5', '["AI call duration: 60890 ms","⛔ MNQ open_short refused: entry_gate: refused: st')
+  no cycle id: 0 []
+  cf sum of taken rows: -197.5 ; cf sum of not-taken: -237.5
+    position for cycle 26472 : [(589, 29192.5, 29115.0, -155.0, 'LONG', '2026-09-02 09:41:04')]
+    position for cycle 26500 : [(590, 29193.25, 29143.75, -99.0, 'LONG', '2026-09-02 10:37:17')]
+    position for cycle 26500 : [(590, 29193.25, 29143.75, -99.0, 'LONG', '2026-09-02 10:37:17')]
+### B2 like-for-like planned R:R — decision path (executor's own SL/TP), compliant system rows
+  n=47 planned R:R median=2.79 mean=3.59 min=0.98 max=18.73; MFE reached own target: 8/47
+  bins: {'>=3.0': 21, '<2.0': 7, '[2.0,2.1)': 1, '[2.3,3.0)': 16, '[2.1,2.3)': 2}
+  decision-path realized: avgW/avgL from r10: 151.54/72.10 = 2.10 (compliant n=47); broad 140.88/71.72 = 1.96 (n=51)
+  armed_fill 9: avgW 62.1 avgL 67 payoff 0.926865671641791
+  filled arms planned R:R: [2.12, 2.33, 2.21, 2.17, 2.64, 2.09, 2.21, 2.94, 2.11] median 2.21 n 9
+### B3 missing Wilson intervals
+  short arm-enabled all versions: 96/395 = 24.3% [20.3%, 28.8%]
+  long arm-enabled all versions: 36/343 = 10.5% [7.7%, 14.2%]
+  arms within 0.3 of floor: 47/132 = 35.6% [28.0%, 44.1%]
+  open intents refused: 19/31 = 61.3% [43.8%, 76.3%]
+  plan levels matching seated: 54/105 = 51.4% [42.0%, 60.8%]
+  transport: 6/64 = 9.4% [4.4%, 19.0%]
+  fade_requires_touch: 5/64 = 7.8% [3.4%, 17.0%]
+  entry_mode=pullback: 5/64 = 7.8% [3.4%, 17.0%]
+  arm legs: 5/64 = 7.8% [3.4%, 17.0%]
+  confirm-rule vocab incl not-allowed: 7/64 = 10.9% [5.4%, 20.9%]
+  gap-up: 2/64 = 3.1% [0.9%, 10.7%]
+  retest+levelcap: 2/64 = 3.1% [0.9%, 10.7%]
+  continuation stated: 32/64 = 50.0% [38.1%, 61.9%]
+  decision-path win compliant: 12/45 = 26.7% [16.0%, 41.0%]
+  armed lineage win compliant: 6/11 = 54.5% [28.0%, 78.7%]
+  LONG win compliant: 4/19 = 21.1% [8.5%, 43.3%]
+  SHORT win compliant: 14/37 = 37.8% [24.1%, 53.9%]
+  13 of 13 strict: 13/13 = 100.0% [77.2%, 100.0%]
+  MFE>=2R compliant: 13/54 = 24.1% [14.6%, 36.9%]
+  MFE>=1R compliant: 21/54 = 38.9% [27.0%, 52.2%]
+  S1 win: 10/27 = 37.0% [21.5%, 55.8%]
+  S2-S4 win: 8/29 = 27.6% [14.7%, 45.7%]
+  ASIA win: 2/15 = 13.3% [3.7%, 37.9%]
+  system long win compliant: 2/16 = 12.5% [3.5%, 36.0%]

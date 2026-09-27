@@ -239,12 +239,9 @@ The planner must return JSON only with step types:
 - `respond`
   generate final answer and mark completed
 
-After each completed step, `replanAfterStep(...)` may:
-
-- continue
-- replace remaining steps
-- ask user
-- finish
+Post-step replanning (`replanAfterStep`) was dead code (zero callers) and was
+removed in the 2026-09-26 dead-wire wave; the plan loop proceeds through the
+steps above without a replan sub-call.
 
 ## Resume Behavior
 

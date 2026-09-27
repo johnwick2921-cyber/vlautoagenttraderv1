@@ -1,0 +1,16 @@
+id   session  scenario  side   entry_px  stop_px           target_px  state       state_reason                                                               signal_id                             leg_index  created_ct           updated_ct           boot_id              
+---  -------  --------  -----  --------  ----------------  ---------  ----------  -------------------------------------------------------------------------  ------------------------------------  ---------  -------------------  -------------------  ---------------------
+105  NY       S2        SHORT  29720.0   29755.0631468702  29635.0    armed                                                                                                                        1          2026-09-04 12:11:02  2026-09-04 13:27:48  1090293-1788537190995
+104  NY       S2        SHORT  29720.0   29755.0631468702  29635.0    armed                                                                                                                        0          2026-09-04 12:11:02  2026-09-04 13:27:48                       
+103  NY       S1        SHORT  29720.0   29765.0           29553.75   cancelled   no active plan                                                                                                   1          2026-09-04 11:29:07  2026-09-04 11:59:02  1090293-1788537190995
+102  NY       S2        SHORT  29591.02  29645.25          29481.5    cancelled   cancelled in NT8                                                           931a761a-d0c8-492b-a815-a5f41cc9d9ae  0          2026-09-04 10:53:11  2026-09-04 11:59:02                       
+101  NY       S2        SHORT  29591.02  29645.25          29481.5    cancelled   boot_sweep: pre-boot order, process restarted                              04b3e307-eb7f-4bc8-88fe-7088dff9f6a5  0          2026-09-04 10:52:00  2026-09-04 10:53:11                       
+100  NY       S1        SHORT  29720.0   29765.0           29553.75   cancelled   no active plan                                                                                                   0          2026-09-04 11:29:07  2026-09-04 11:59:02  1090293-1788537190995
+99   NY       S2        SHORT  29591.02  29645.25          29481.5    cancelled   boot_sweep: pre-boot order, process restarted                              3bea0045-32b4-469d-ae5c-ca24ba366509  0          2026-09-04 10:50:00  2026-09-04 10:53:11                       
+98   NY       S1        SHORT  29657.38  29720.5           29503.38   superseded  superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)                                        0          2026-09-04 10:50:00  2026-09-04 11:05:09                       
+state       n 
+----------  --
+cancelled   51
+filled      10
+superseded  4 
+armed       2 

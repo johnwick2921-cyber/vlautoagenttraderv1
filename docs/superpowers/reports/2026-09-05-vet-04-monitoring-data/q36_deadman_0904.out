@@ -1,0 +1,4 @@
+=== dead-man lines 09-04 13:25-16:00 (uniq) ===
+09-04 13:25:47 🚨 dead-man watchdog: NT8 TCP link DOWN — NEW entries BLOCKED until a clean reconciliation. Open positions & exits are unaffected.
+09-04 13:27:48 🔌 dead-man watchdog: NT8 TCP link back UP — sweeping unfilled entries; entries stay BLOCKED until a clean positions/orders reconciliation.
+09-04 13:27:48 dead-man watchdog: 2 working order(s) visible post-reconnect — entry cancellation is a Part A AddOn capability (no-op on the current market-order path).

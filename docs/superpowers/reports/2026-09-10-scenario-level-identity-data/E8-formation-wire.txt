@@ -1,0 +1,14 @@
+E8-formation-wire
+path: kernel/levels_intraday.go
+BEFORE:
+out[i] = WithFormationClose(out[i], closeMs, count, "completed_window_source_close", now)
+AFTER:
+_ = WithFormationClose(out[i], closeMs, count, "completed_window_source_close", now)
+replacement confirmed: True
+go build ./kernel: PASS
+test rc: 1
+--- FAIL: TestIdentityE5OpeningRangeKeepsTradingFields (0.00s)
+    level_identity_test.go:52: OR OR-H has no recorded actual 08:35 formation close: <nil>
+FAIL
+FAIL	nofx/kernel	0.007s
+FAIL

@@ -1,0 +1,88 @@
+strategies cols: ['id', 'user_id', 'name', 'description', 'is_active', 'is_default', 'is_public', 'config_visible', 'config', 'created_at', 'updated_at']
+strategies: [('4104ca0a-cd27-4206-af79-e04375290b3e', '均衡策略', 1, '2026-08-30 22:10:47.785464868+00:00'), ('0362594e-77e6-4c5f-a350-5c3738529d28', '稳健策略', 0, '2026-08-30 22:10:47.785366096+00:00'), ('82b3d482-e018-46cc-984d-122d6f6ddf7e', '积极策略', 0, '2026-08-30 22:10:47.785286552+00:00'), ('', 'MNQ SIM Default', 1, '2026-08-30 22:10:47.785198495+00:00'), ('578ac8f6-2c16-4b0e-b7af-bca6e5413597', 'MNQ SIM Default', 1, '2026-08-30 22:10:47.785112964+00:00'), ('a79ba71f-cd7b-4fbb-8dd7-b85b3049d194', 'New Strategy', 0, '2026-08-30 22:10:47.785002803+00:00'), ('70695b25-01a3-4c38-9917-261260b49550', 'New Strategy', 0, '2026-08-30 22:10:47.784892771+00:00'), ('a5b7662e-7bf7-49bb-9f09-7efa48f95ac8', 'MNQ', 0, '2026-09-01 13:13:06.019911522+00:00'), ('08539e82-6ba5-417d-8afe-6077ace29ea0', 'New Strategy', 0, '2026-08-30 22:10:47.783454068+00:00')]
+  [均衡策略 act=1] config.ai_config.risk_control.min_confidence = 75
+  [均衡策略 act=1] config.ai_config.risk_control.min_risk_reward_ratio = 3
+  [均衡策略 act=1] config.day_plan.eod_flat_ct = "14:45"
+  [均衡策略 act=1] config.day_plan.plan_mode = "advisory"
+  [均衡策略 act=1] config.day_plan.proximity_filter_atr = 1.5
+  [均衡策略 act=1] config.day_plan.replan_cap = 2
+  [均衡策略 act=1] config.day_plan.sessions_enabled = ["NY"]
+  [稳健策略 act=0] config.ai_config.risk_control.min_confidence = 80
+  [稳健策略 act=0] config.ai_config.risk_control.min_risk_reward_ratio = 4
+  [稳健策略 act=0] config.day_plan.eod_flat_ct = "14:45"
+  [稳健策略 act=0] config.day_plan.plan_mode = "advisory"
+  [稳健策略 act=0] config.day_plan.proximity_filter_atr = 1.5
+  [稳健策略 act=0] config.day_plan.replan_cap = 2
+  [稳健策略 act=0] config.day_plan.sessions_enabled = ["NY"]
+  [积极策略 act=0] config.ai_config.risk_control.min_confidence = 70
+  [积极策略 act=0] config.ai_config.risk_control.min_risk_reward_ratio = 3
+  [积极策略 act=0] config.day_plan.eod_flat_ct = "14:45"
+  [积极策略 act=0] config.day_plan.plan_mode = "advisory"
+  [积极策略 act=0] config.day_plan.proximity_filter_atr = 1.5
+  [积极策略 act=0] config.day_plan.replan_cap = 2
+  [积极策略 act=0] config.day_plan.sessions_enabled = ["NY"]
+  [MNQ SIM Default act=1] config.ai_config.risk_control.min_confidence = 0
+  [MNQ SIM Default act=1] config.ai_config.risk_control.min_risk_reward_ratio = 0
+  [MNQ SIM Default act=1] config.day_plan.eod_flat_ct = "14:45"
+  [MNQ SIM Default act=1] config.day_plan.plan_mode = "advisory"
+  [MNQ SIM Default act=1] config.day_plan.proximity_filter_atr = 1.5
+  [MNQ SIM Default act=1] config.day_plan.replan_cap = 2
+  [MNQ SIM Default act=1] config.day_plan.sessions_enabled = ["NY"]
+  [MNQ SIM Default act=1] config.ai_config.risk_control.min_confidence = 0
+  [MNQ SIM Default act=1] config.ai_config.risk_control.min_risk_reward_ratio = 0
+  [MNQ SIM Default act=1] config.day_plan.eod_flat_ct = "14:45"
+  [MNQ SIM Default act=1] config.day_plan.plan_mode = "advisory"
+  [MNQ SIM Default act=1] config.day_plan.proximity_filter_atr = 1.5
+  [MNQ SIM Default act=1] config.day_plan.replan_cap = 2
+  [MNQ SIM Default act=1] config.day_plan.sessions_enabled = ["NY"]
+  [New Strategy act=0] config.ai_config.risk_control.min_confidence = 75
+  [New Strategy act=0] config.ai_config.risk_control.min_risk_reward_ratio = 3
+  [New Strategy act=0] config.day_plan.eod_flat_ct = "14:45"
+  [New Strategy act=0] config.day_plan.plan_mode = "advisory"
+  [New Strategy act=0] config.day_plan.proximity_filter_atr = 1.5
+  [New Strategy act=0] config.day_plan.replan_cap = 2
+  [New Strategy act=0] config.day_plan.sessions_enabled = ["NY"]
+  [New Strategy act=0] config.ai_config.risk_control.breakeven_enabled = true
+  [New Strategy act=0] config.ai_config.risk_control.consecutive_loss_halt = 2
+  [New Strategy act=0] config.ai_config.risk_control.daily_loss_enabled = true
+  [New Strategy act=0] config.ai_config.risk_control.daily_loss_limit_usd = 450
+  [New Strategy act=0] config.ai_config.risk_control.daily_profit_enabled = true
+  [New Strategy act=0] config.ai_config.risk_control.daily_profit_target_usd = 900
+  [New Strategy act=0] config.ai_config.risk_control.max_contracts_enabled = true
+  [New Strategy act=0] config.ai_config.risk_control.max_contracts_per_order = 2
+  [New Strategy act=0] config.ai_config.risk_control.max_daily_trades = 3
+  [New Strategy act=0] config.ai_config.risk_control.max_daily_trades_enabled = true
+  [New Strategy act=0] config.ai_config.risk_control.min_confidence = 65
+  [New Strategy act=0] config.ai_config.risk_control.min_risk_reward_ratio = 3
+  [New Strategy act=0] config.day_plan.eod_flat_ct = "14:45"
+  [New Strategy act=0] config.day_plan.plan_mode = "advisory"
+  [New Strategy act=0] config.day_plan.proximity_filter_atr = 1.5
+  [New Strategy act=0] config.day_plan.replan_cap = 2
+  [New Strategy act=0] config.day_plan.sessions_enabled = ["NY"]
+  [MNQ act=0] config.ai_config.risk_control.min_risk_reward_ratio = 2
+  [MNQ act=0] config.ai_config.risk_control.min_confidence = 60
+  [MNQ act=0] config.ai_config.risk_control.daily_loss_limit_usd = 450
+  [MNQ act=0] config.ai_config.risk_control.daily_loss_enabled = false
+  [MNQ act=0] config.ai_config.risk_control.daily_profit_target_usd = 900
+  [MNQ act=0] config.ai_config.risk_control.daily_profit_enabled = false
+  [MNQ act=0] config.ai_config.risk_control.max_daily_trades = 3
+  [MNQ act=0] config.ai_config.risk_control.max_daily_trades_enabled = false
+  [MNQ act=0] config.ai_config.risk_control.max_contracts_per_order = 2
+  [MNQ act=0] config.ai_config.risk_control.max_contracts_enabled = false
+  [MNQ act=0] config.ai_config.risk_control.breakeven_enabled = true
+  [MNQ act=0] config.ai_config.risk_control.breakeven_trigger_points = 40
+  [MNQ act=0] config.ai_config.risk_control.trailing_enabled = true
+  [MNQ act=0] config.ai_config.risk_control.trailing_atr_period = 14
+  [MNQ act=0] config.day_plan.plan_mode = "strict"
+  [MNQ act=0] config.day_plan.proximity_filter_atr = 1
+  [MNQ act=0] config.day_plan.replan_cap = 4
+  [MNQ act=0] config.day_plan.sessions_enabled = ["NY"]
+  [MNQ act=0] config.day_plan.eod_flat_ct = "14:45"
+  [MNQ act=0] config.day_plan.sessions = [{"session": "NY", "replan_cap": 4, "acceptance_rule": "5m_close", "min_grade": "B", "max_trades": 10}, {"session": "ASI
+  [New Strategy act=0] config.ai_config.risk_control.min_confidence = 75
+  [New Strategy act=0] config.ai_config.risk_control.min_risk_reward_ratio = 3
+  [New Strategy act=0] config.day_plan.eod_flat_ct = "14:45"
+  [New Strategy act=0] config.day_plan.plan_mode = "advisory"
+  [New Strategy act=0] config.day_plan.proximity_filter_atr = 1.5
+  [New Strategy act=0] config.day_plan.replan_cap = 2
+  [New Strategy act=0] config.day_plan.sessions_enabled = ["NY"]

@@ -1,0 +1,15 @@
+── mutating trader/structural_geometry.go
+   edit landed:
+     -	r.Target = geometryNumber(target)
+     +	target += 100; r.Target = geometryNumber(target)
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestStructuralStopF1F2ShortProductionArmCycle (0.14s)
+     --- FAIL: TestStructuralStopF5FirstTargetIsNeverSkipped (0.00s)
+     --- FAIL: TestStructuralStopF4F5Refuses23For4WithoutMoving (0.14s)
+     --- FAIL: TestStructuralStopF6NetGainBeforeRR (0.14s)
+     --- FAIL: TestStructuralStopF6BothFailNetReasonComesFirst (0.15s)
+     FAIL
+     FAIL	nofx/trader	0.868s
+     FAIL

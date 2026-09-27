@@ -1,0 +1,40 @@
+E8-stamp-wire
+path: trader/auto_trader_planner.go
+BEFORE:
+identityWarnings := at.stampPlanIdentity(doc, facts.IdentityMap)
+AFTER:
+identityWarnings := kernel.IdentityWarnings{}
+replacement confirmed: True
+go build ./trader: PASS
+test rc: 1
+09-10 18:22:52 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-10 18:22:52 [INFO] kernel/scenario_economics.go:319 📐 scenario economics PASS: S1 obstacle=15550.000000 fixture reference (reference) response=pass_through arm-target=15620.00 · obstacle R=7.000000 · arm R=14.000000 · issues=[] · WARN=[] · 📐 scenario economics: contract=on · obstacle-required=on · target-path-coherent=1/1 · sub-1R-first-obstacle=0 · role-use-disagreements=0 · contradictions refused=0 · schema refusals=0 · checked=1 (new-authoring checks since boot; legacy UNKNOWN by design)
+09-10 18:22:52 [WARN] trader/auto_trader.go:49 [trader_id=t1] 🧭 bias-coherent arms: ⚠ bias=long but no long scenario carries an arm — S1 sweep_reclaim is armable but carries no arm. bias_requires_an_arm (a plan whose bias direction carries no armed scenario cannot trade its own bias — arm a scenario in the bias direction using an armable, live condition, or state a neutral bias) (WARN — write proceeds; owner ruling 2026-09-04 is warn-first)
+09-10 18:22:52 [WARN] trader/auto_trader.go:49 [trader_id=t1] plan liveness write: 2026-09-10 NY S1 — UNKNOWN: missing completed minute tape for authored close window; ACCEPTED for this check
+09-10 18:22:53 [WARN] trader/auto_trader.go:49 [trader_id=t1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-10 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-10 18:22:53 [INFO] trader/auto_trader.go:44 [trader_id=t1] 📊 planner_candle_citations: 0 scenario line(s) cite "per candles" this read.
+09-10 18:22:53 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🗓️ PLAN written 2026-09-10 NY v1 (model fixture, lifecycle active, prompt hash, ai_config )
+09-10 18:22:53 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-10 18:22:53 [INFO] kernel/scenario_economics.go:319 📐 scenario economics PASS: S1 obstacle=15550.000000 fixture reference (reference) response=pass_through arm-target=15620.00 · obstacle R=7.000000 · arm R=14.000000 · issues=[] · WARN=[] · 📐 scenario economics: contract=on · obstacle-required=on · target-path-coherent=2/2 · sub-1R-first-obstacle=0 · role-use-disagreements=0 · contradictions refused=0 · schema refusals=0 · checked=2 (new-authoring checks since boot; legacy UNKNOWN by design)
+09-10 18:22:53 [WARN] trader/auto_trader.go:49 [trader_id=t1] 🧭 bias-coherent arms: ⚠ bias=long but no long scenario carries an arm — S1 sweep_reclaim is armable but carries no arm. bias_requires_an_arm (a plan whose bias direction carries no armed scenario cannot trade its own bias — arm a scenario in the bias direction using an armable, live condition, or state a neutral bias) (WARN — write proceeds; owner ruling 2026-09-04 is warn-first)
+09-10 18:22:53 [WARN] trader/auto_trader.go:49 [trader_id=t1] plan liveness write: 2026-09-10 NY S1 — UNKNOWN: missing completed minute tape for authored close window; ACCEPTED for this check
+09-10 18:22:53 [WARN] trader/auto_trader.go:49 [trader_id=t1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-10 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-10 18:22:53 [INFO] trader/auto_trader.go:44 [trader_id=t1] 📊 planner_candle_citations: 0 scenario line(s) cite "per candles" this read.
+09-10 18:22:53 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🗓️ PLAN written 2026-09-10 NY v1 (model fixture, lifecycle active, prompt hash, ai_config )
+09-10 18:22:53 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-10 18:22:53 [INFO] kernel/scenario_economics.go:319 📐 scenario economics PASS: S1 obstacle=15550.000000 fixture reference (reference) response=pass_through arm-target=15620.00 · obstacle R=7.000000 · arm R=14.000000 · issues=[] · WARN=[] · 📐 scenario economics: contract=on · obstacle-required=on · target-path-coherent=3/3 · sub-1R-first-obstacle=0 · role-use-disagreements=0 · contradictions refused=0 · schema refusals=0 · checked=3 (new-authoring checks since boot; legacy UNKNOWN by design)
+09-10 18:22:53 [WARN] trader/auto_trader.go:49 [trader_id=t1] 🧭 bias-coherent arms: ⚠ bias=long but no long scenario carries an arm — S1 sweep_reclaim is armable but carries no arm. bias_requires_an_arm (a plan whose bias direction carries no armed scenario cannot trade its own bias — arm a scenario in the bias direction using an armable, live condition, or state a neutral bias) (WARN — write proceeds; owner ruling 2026-09-04 is warn-first)
+09-10 18:22:53 [WARN] trader/auto_trader.go:49 [trader_id=t1] plan liveness write: 2026-09-10 NY S1 — UNKNOWN: missing completed minute tape for authored close window; ACCEPTED for this check
+09-10 18:22:53 [WARN] trader/auto_trader.go:49 [trader_id=t1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-10 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-10 18:22:53 [INFO] trader/auto_trader.go:44 [trader_id=t1] 📊 planner_candle_citations: 0 scenario line(s) cite "per candles" this read.
+09-10 18:22:53 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🗓️ PLAN written 2026-09-10 NY v1 (model fixture, lifecycle active, prompt hash, ai_config )
+--- FAIL: TestIdentityE1AuthoringToEpisodeAndE3WarnProduction (0.43s)
+    --- FAIL: TestIdentityE1AuthoringToEpisodeAndE3WarnProduction/named (0.14s)
+        scenario_level_identity_test.go:59: lost named evidence {ID:<nil> Symbol:<nil> Kind:<nil> Lo:<nil> Hi:<nil> OriginDate:<nil> TF:<nil> FormedAtMs:<nil> FormedCloseMs:<nil> LookbackBars:<nil> Names:[] Price:0 Label: Grade: Instruction: MachineGrade:} {Named:0 Unnamed:0 Unresolved:0 HeuristicDisagreed:0}
+    --- FAIL: TestIdentityE1AuthoringToEpisodeAndE3WarnProduction/unnamed (0.15s)
+        scenario_level_identity_test.go:52: WARN not recorded: {Named:0 Unnamed:0 Unresolved:0 HeuristicDisagreed:0}
+    --- FAIL: TestIdentityE1AuthoringToEpisodeAndE3WarnProduction/unresolved (0.14s)
+        scenario_level_identity_test.go:52: WARN not recorded: {Named:0 Unnamed:0 Unresolved:0 HeuristicDisagreed:0}
+FAIL
+FAIL	nofx/trader	0.435s
+FAIL

@@ -3,6 +3,7 @@ package researchsnapshot
 import (
 	"context"
 	"fmt"
+	"nofx/safe"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -90,7 +91,7 @@ func Start(path string, log func(string), warn func(string)) (closeRecorder func
 	retentionStop := make(chan struct{})
 	retentionDays := retainDays()
 	if retentionDays > 0 {
-		go func() {
+		safe.GoNet("research-prune", "", func() {
 			for {
 				pruneOldFacts(a, retentionDays, emit)
 				select {
@@ -99,7 +100,7 @@ func Start(path string, log func(string), warn func(string)) (closeRecorder func
 					return
 				}
 			}
-		}()
+		})
 	}
 	r := NewRecorderWithInfo(a, 128, warnEmit, emit)
 	Install(r)

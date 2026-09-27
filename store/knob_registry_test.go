@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -65,14 +66,24 @@ func TestRegistryDoesNotCallTheAuditsDeadKnobsLive(t *testing.T) {
 	}
 }
 
-// The boot line is counted from the registry, never typed.
+// The boot line is counted from the registry, never typed. W1 (f): schema= is
+// READ from the production enumeration (not a literal), and env-shadows — a
+// counter nothing writes — reads n/a instead of a fabricated 0 (L7).
 func TestKnobBootLineIsCounted(t *testing.T) {
-	line := KnobRegistryBootLine()
+	line := KnobRegistryBootLine() // the call main.go logs as "⚙ %s"
+	schema := fmt.Sprintf("settings: schema=%d ", len(EnumerateSchemaKnobs()))
+	envShadows := "env-shadows=n/a (not counted)"
+	if s := KnobStatusSummary(); s.EnvShadows != nil {
+		envShadows = fmt.Sprintf("env-shadows=%d", *s.EnvShadows)
+	}
 	// The ruling's two labels must BOTH appear — conflating them is the defect.
-	for _, want := range []string{"settings: schema=", "classified=", "live=", "ineffective=", "candidate-unverified=", "env-shadows=0"} {
+	for _, want := range []string{schema, "classified=", "live=", "ineffective=", "candidate-unverified=", envShadows} {
 		if !strings.Contains(line, want) {
 			t.Errorf("boot line missing %q: %s", want, line)
 		}
+	}
+	if strings.Contains(line, "env-shadows=0") {
+		t.Errorf("env-shadows printed 0 from a counter with no writer: %s", line)
 	}
 	if strings.Contains(line, "UNCLASSIFIED") {
 		t.Errorf("the registry has unclassified fields: %s", line)

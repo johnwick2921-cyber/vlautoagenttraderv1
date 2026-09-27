@@ -22,35 +22,68 @@ func NewScheduler(a *Agent, l *slog.Logger) *Scheduler {
 	return &Scheduler{agent: a, logger: l, stopCh: make(chan struct{})}
 }
 
+// schedulerStamps is the Scheduler's last-run state (P2-16). The daily
+// report stamps the CALENDAR DAY it last ran for, and the cleanup stamps the
+// last hour it ran in — a missed minute (pause, stall, restart) catches up on
+// the next tick instead of being skipped for the day/hour.
+type schedulerStamps struct {
+	lastReportDay   string // "2006-01-02" of the last daily-report run
+	lastCheckAt     time.Time
+	lastCleanupHour int // -1 = never ran this process
+}
+
+// schedulerStep is the pure decision core of the ticker (tested at the
+// production call site: Start consumes it). Returns which jobs this tick
+// should run. The daily report runs on the FIRST tick at or after 21:00 whose
+// calendar day differs from the stamp; the hourly cleanup runs once per
+// hour-CHANGE (never only on :00); the risk check keeps its 4h elapsed
+// cadence.
+func schedulerStep(now time.Time, st *schedulerStamps) (daily, cleanup, risk bool) {
+	day := now.Format("2006-01-02")
+	if now.Hour() >= 21 && st.lastReportDay != day {
+		daily = true
+		st.lastReportDay = day
+	}
+	if now.Sub(st.lastCheckAt) > 4*time.Hour {
+		risk = true
+		st.lastCheckAt = now
+	}
+	if now.Hour() != st.lastCleanupHour {
+		cleanup = true
+		st.lastCleanupHour = now.Hour()
+	}
+	return daily, cleanup, risk
+}
+
 func (s *Scheduler) Start(ctx context.Context) {
 	safe.GoNamed("agent-scheduler", func() {
-		ticker := time.NewTicker(1 * time.Minute)
-		defer ticker.Stop()
-		lastReport := time.Time{}
-		lastCheck := time.Time{}
+		// P2-16 — boundary-aligned ticker: the first tick lands on the next
+		// minute boundary, then once per minute; the stamps inside make a
+		// missed boundary a catch-up, never a skip.
+		first := time.Until(time.Now().Truncate(time.Minute).Add(time.Minute))
+		timer := time.NewTimer(first)
+		defer timer.Stop()
+		st := &schedulerStamps{lastCleanupHour: -1}
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-s.stopCh:
 				return
-			case now := <-ticker.C:
-				// Daily report at 21:00
-				if now.Hour() == 21 && now.Sub(lastReport) > 12*time.Hour {
+			case now := <-timer.C:
+				daily, cleanup, risk := schedulerStep(now, st)
+				if daily {
 					s.dailyReport()
-					lastReport = now
 				}
-				// Position risk check every 4h
-				if now.Sub(lastCheck) > 4*time.Hour {
+				if risk {
 					s.riskCheck()
-					lastCheck = now
 				}
-				// Clean expired pending trades every hour.
-				if now.Minute() == 0 {
+				if cleanup {
 					if s.agent.pending != nil {
 						s.agent.pending.CleanExpired()
 					}
 				}
+				timer.Reset(time.Minute)
 			}
 		}
 	})

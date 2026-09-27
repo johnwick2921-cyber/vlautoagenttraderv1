@@ -1,0 +1,52 @@
+--- 09-03 outage bounds: last decision before 13:00 and first after 13:00 CT
+2026-09-03 12:22:44
+2026-09-03 15:08:51
+--- post-0B executor totals (>= 2026-09-02 07:49 CT): cycles, watch, open intents, closes, entry_gate refusals, model-seconds
+1428|26|24|0|19|9.7|24.4
+--- era executor totals (>= 2026-08-15)
+8854|117|3|80.82
+--- open intents post-0B: what happened (execution_log head)
+2026-09-02 09:41:05|["AI call duration: 55003 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","✓ MNQ open_long succeeded"]
+2026-09-02 10:37:18|["AI call duration: 67092 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","✓ MNQ open_long succeeded"]
+2026-09-02 18:48:49|["AI call duration: 36043 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: stop 29231.00 too close (25.25 \u003c 450.56 = 1.5×ATR5m)"]
+2026-09-02 18:50:36|["AI call duration: 50125 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","⛔ MNQ open_short refused: entry_gate: entr
+2026-09-02 18:52:33|["AI call duration: 29310 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: stop 29230.00 too close (22.00 \u003c 450.56 = 1.5×ATR5m)"]
+2026-09-02 19:00:23|["AI call duration: 46385 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","⛔ MNQ open_short refused: entry_gate: entr
+2026-09-02 20:53:52|["AI call duration: 79711 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: R:R 1.73 below floor 2.00 at execution price 29159.7500 (SL 29193.250
+2026-09-03 02:12:56|["AI call duration: 36469 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: R:R 1.76 below floor 2.00 at execution price 29193.2500 (SL 29242.000
+2026-09-03 20:35:06|["AI call duration: 60074 ms","stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)","⛔ MNQ open_short refused: entry_gate: refu
+2026-09-03 20:37:51|["AI call duration: 31852 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 20:39:40|["AI call duration: 95399 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 20:42:27|["AI call duration: 44451 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 20:43:53|["AI call duration: 41086 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 20:49:04|["AI call duration: 144482 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only,
+2026-09-03 20:52:05|["AI call duration: 35594 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 20:54:28|["AI call duration: 85895 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 20:58:56|["AI call duration: 84566 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 21:03:22|["AI call duration: 82148 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 21:06:44|["AI call duration: 98968 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 21:09:03|["AI call duration: 60890 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only, 
+2026-09-03 21:12:40|["AI call duration: 123727 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — plan_mode=strict executes plan scenarios on the ARM path only,
+2026-09-03 23:35:11|["AI call duration: 5935 ms","✓ MNQ wait succeeded"]
+2026-09-03 23:55:15|["AI call duration: 8798 ms","✓ MNQ wait succeeded"]
+2026-09-04 06:22:44|["AI call duration: 8212 ms","✓ MNQ wait succeeded"]
+--- ab_confirm_log open rows: created range vs resolved rows
+open|163|2026-08-30 18:37:46|2026-09-04 12:15:01|0|0
+stop|23|2026-08-30 18:50:01|2026-09-04 09:08:08|0|0
+target|37|2026-08-30 18:50:01|2026-09-04 11:21:08|0|0
+2026-08-30|5|2
+2026-08-31|21|2
+2026-09-01|37|16
+2026-09-02|53|31
+2026-09-03|22|5
+2026-09-04|25|4
+--- e8 recompute / price-scale flags
+|102|0
+recomputed|55|0
+unrecomputable:fill-bar|54|35
+unrecomputable:no-inputs|12|0
+--- planner authoring latency proxy: plans per session-read attempt; plan created_at minus scheduled read time for NY (08:00 CT) scheduled reads
+2026-09-01|NY|1|NY_scheduled_read|2026-09-01 08:06:46
+2026-09-02|ASIA|1|ASIA_scheduled_read|2026-09-02 16:36:02
+2026-09-03|ASIA|1|ASIA_scheduled_read|2026-09-03 16:37:36
+2026-09-04|LONDON|1|LONDON_scheduled_read|2026-09-04 01:41:15

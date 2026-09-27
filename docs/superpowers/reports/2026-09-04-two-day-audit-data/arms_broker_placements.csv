@@ -1,0 +1,12 @@
+signal_id_8,placed_ct,plan_version_authoring_it,scenario,placed_px,surviving_armed_orders_row,ledger_state_now,note
+ca315135,2026-09-01 02:55:29,2026-09-01:LONDON v2,S1,29477.00,23,"cancelled / gate changed: min_sl / entry 29477.00 v2",slot still holds this generation
+0c77307d,2026-09-01 04:55:29,2026-09-01:LONDON v3,S2,29246.75,24 (slot),"filled / entry 29138.00 v6",DESTROYED — slot re-authorized to v4 then v6; this signal FILLED into position 582 and no armed_orders row records it
+6b5b89c6,2026-09-01 07:57:28,2026-09-01:LONDON v6,S2,29138.00,24,"filled / entry 29138.00 v6",slot still holds this generation (filled -> position 584)
+fd71b48f,2026-09-01 08:55:08,2026-09-01:NY v2,S2,29137.29,26 (slot),"cancelled / session ended (EOD flat) / entry 29162.00 v5",DESTROYED — placed 08:55:08 and CANCELLED IN NT8 08:57:08; slot later re-authorized to v5; no armed_orders row records it
+18a7cc55,2026-09-01 09:21:08,2026-09-01:NY v3,S1,29182.00,27 (slot),"cancelled / marketable / entry 29170.00 v4",DESTROYED — slot re-authorized to v4; this signal FILLED into position 585 and no armed_orders row records it
+d5fed440,2026-09-01 13:31:06,2026-09-01:NY v5,S3,29082.75,28,"filled / entry 29082.75 v5",slot still holds this generation (filled -> position 586)
+d00abc07,2026-09-01 23:21:03,2026-09-01:ASIA v6,S1,29035.25,29,"cancelled / stale-window / entry 29044.00 v7",LEDGER REPRICED UNDER A LIVE ORDER — row rewritten to ASIA v7 numbers (29044.00/29025/29099.85) at 23:58:16 while the NT8 limit rested at 29035.25; no cancel/replace sent
+c86c5cd0,2026-09-01 23:51:02,2026-09-01:ASIA v6,S1 leg 1,29035.25,30,"cancelled / stale-window / entry 29035.25 v6",orphaned leg — v7 dropped the 2-leg shape and never touched leg 1
+dc8405f1,2026-09-02 00:16:32,2026-09-01:ASIA v7,S3,29068.05,31,"cancelled / stale-window / entry 29068.05 v7",slot still holds this generation
+f2b1eb20,2026-09-03 09:02:54,2026-09-03:NY v2,S1,29285.00,35,"filled / entry 29285.00 v2",slot still holds this generation (filled -> position 591)
+43512e1d,2026-09-03 11:58:33,2026-09-03:NY v7,S3,29543.75,37,"cancelled / 'cancelled in NT8' / entry 29543.75 v7",reason string LAUNDERED — the cancel was OURS (plan went dormant 12:15:00)

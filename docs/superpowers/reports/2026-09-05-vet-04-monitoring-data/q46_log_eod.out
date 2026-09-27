@@ -1,0 +1,104 @@
+=== q46a: boots per CT day (BOOT INTEGRITY lines, all files, by prefix) ===
+      1 09-01 00:43:30
+      1 09-01 17:24:00
+      1 09-01 18:01:11
+      1 09-01 21:19:49
+      1 09-01 22:23:03
+      1 09-02 00:01:07
+      1 09-02 00:10:21
+      1 09-02 00:11:48
+      1 09-02 06:27:45
+      1 09-02 06:57:50
+      1 09-02 07:32:15
+      1 09-02 07:49:06
+      1 09-02 08:10:30
+      1 09-02 17:51:14
+      1 09-02 18:05:26
+      1 09-02 18:27:17
+      1 09-02 20:42:28
+      1 09-02 21:19:21
+      1 09-02 21:32:52
+      1 09-02 22:37:38
+      1 09-02 22:41:58
+      1 09-02 23:24:56
+      1 09-03 10:28:29
+      1 09-03 11:10:33
+      1 09-03 14:18:26
+      1 09-03 14:59:03
+      1 09-03 15:02:18
+      1 09-03 18:08:56
+      1 09-03 19:06:06
+      1 09-03 21:19:00
+      1 09-03 21:48:12
+      1 09-03 23:11:59
+      1 09-03 23:12:55
+      1 09-04 07:38:40
+      1 09-04 08:30:11
+      1 09-04 10:53:10
+      1 09-04 13:25:47
+--- boot timestamps 09-03/09-04 ---
+09-03 10:28:29 rev 528edd78e3b9 · built 2026-09-03T15:2
+09-03 11:10:33 rev f478ed880dc9 · built 2026-09-03T16:0
+09-03 14:18:26 rev f478ed880dc9 · built 2026-09-03T16:0
+09-03 14:59:03 rev 8d47cc2108f8 · built 2026-09-03T19:5
+09-03 15:02:18 rev 8d47cc2108f8 · built 2026-09-03T19:5
+09-03 18:08:56 rev 38a63a9bb289 · built 2026-09-03T20:2
+09-03 19:06:06 rev 042ff3608995 · built 2026-09-04T00:0
+09-03 21:19:00 rev 4d846e2664b4 · built 2026-09-04T02:1
+09-03 21:48:12 rev 89673ccc5984 · built 2026-09-04T02:4
+09-03 23:11:59 rev 89673ccc5984 · built 2026-09-04T02:4
+09-03 23:12:55 rev 530009ffd540 · built 2026-09-04T04:0
+09-04 07:38:40 rev 4f47ed2c2543 · built 2026-09-04T12:3
+09-04 08:30:11 rev 70af663dcb6f · built 2026-09-04T13:1
+09-04 10:53:10 rev ebe07d5f366a · built 2026-09-04T15:4
+09-04 13:25:47 rev 36648655cfe0 · built 2026-09-04T18:2
+
+=== q46b: FEED DOWN lines per CT day ===
+     46 09-03
+    209 09-04
+
+=== q46c: crypto-vestige lines per CT day (USDT|Altcoin|candidate coins|NetFlow) ===
+   1977 09-01
+   2048 09-02
+   1850 09-03
+   1129 09-04
+--- distinct vestige messages (sample) ---
+    146 Strategy leverage config: BTC/ETH=5x, Altcoin=5x
+    146 Strategy engine fetched candidate coins: 1
+    145 📊 Account equity: 51906.50 USDT | Available: 51906.50 USDT | Positions: 0
+      5 💰 Initial balance: 50000.00 USDT
+
+=== q46d: Track record lines (last 2) ===
+09-04 13:25:47 [INFO] trader/auto_trader_loop.go:1404 🧾 [hoang] Track record: -217.18 over 110 resolved trades (115 unresolved excluded), 36.4% win rate, PF=0.95, Sharpe=-0.02, DD=9.9%
+09-04 13:27:48 [INFO] trader/auto_trader_loop.go:1404 🧾 [hoang] Track record: -217.18 over 110 resolved trades (115 unresolved excluded), 36.4% win rate, PF=0.95, Sharpe=-0.02, DD=9.9%
+
+=== q46e: digest written lines ===
+09-01 02:01:29 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-01 15:00:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-02 00:01:07 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-02 00:01:07 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-02 02:00:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-02 15:00:29 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-03 00:00:56 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-03 00:00:56 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-03 02:00:56 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-03 15:01:15 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-04 00:00:56 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-04 00:00:56 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+09-04 02:00:46 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246
+
+=== q46f: 09-04 lines 12:19-12:31 feed-related (first symptom on the Go side) ===
+09-04 12:19:10 [WARN] ninjatrader/bar_persist.go:350 bars: ingest drop summary: intrabar_dropped=0 current_dropped=0 historical_dropped=0 peak_depth=4096/4096 (1-line/min
+09-04 12:23:44 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏭ cycle_skip=no_new_data 
+09-04 12:25:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏭ cycle_skip=no_new_data 
+09-04 12:27:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] flip_eval_skipped plan=2026
+09-04 12:27:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] flip_eval_skipped plan=2026
+09-04 12:27:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] flip_eval_skipped plan=2026
+09-04 12:27:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏭ cycle_skip=no_new_data 
+09-04 12:29:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] flip_eval_skipped plan=2026
+09-04 12:29:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] flip_eval_skipped plan=2026
+09-04 12:29:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] flip_eval_skipped plan=2026
+09-04 12:29:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏭ cycle_skip=no_new_data 
+09-04 12:30:01 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🚨 FEED DOWN: no NT8 bar 
+09-04 12:31:00 [ERRO] trader/auto_trader.go:53 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🚨 FEED DOWN: no NT8 bar 
+09-04 12:31:00 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] flip_eval_skipped plan=2026

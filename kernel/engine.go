@@ -260,6 +260,12 @@ type StrategyEngine struct {
 	// Empty by default → the futures prompt is byte-identical (golden safe).
 	svpContextLine string
 
+	// venue is the trading venue of the trader this engine serves (its
+	// exchange). The cycle's market reads route through it (CTO F2): the
+	// NinjaTrader venue never reads a non-CME symbol from a crypto source.
+	// Empty = route by symbol (Studio previews, agent tools).
+	venue string
+
 	// keyLevelsContextLine is the per-cycle day-plan KEY LEVELS block (P1.7),
 	// threaded in from the decision loop like svpContextLine. Consumed by the
 	// futures prompt ONLY when day_plan is enabled AND the line is non-empty, so
@@ -289,6 +295,10 @@ type StrategyEngine struct {
 	// active plan) → the prompt is unchanged.
 	planBlockLine  string
 	planStatusLine string
+	// planMode (W-EXEC-TRUTH W3 §3) — the RESOLVED plan mode the active PLAN
+	// BLOCK was rendered under (setExecutorPlanContext). "" = advisory: the
+	// field-description line stays byte-identical.
+	planMode string
 
 	// clockContextLine is the per-cycle labelled clock (P0 timezone fix):
 	// "## Clock\n07:06 CT (12:06 UTC) — ALL times in this prompt are CT…".
@@ -324,6 +334,29 @@ func (e *StrategyEngine) SetWeeklyContext(line string) { e.weeklyContextLine = l
 func (e *StrategyEngine) SetPlanContext(planBlock, planStatus string) {
 	e.planBlockLine = planBlock
 	e.planStatusLine = planStatus
+	e.planMode = "" // advisory unless setExecutorPlanContext names the mode
+}
+
+// executorPlanModeFor is the plan mode the executor prompt renders for a plan:
+// the RESOLVED mode (store.ResolvePlanMode — per-session override → strategy
+// → advisory) for the PLAN'S OWN session. The entry gate resolves the ACTIVE
+// session's mode; for an active plan the two are the same session.
+func executorPlanModeFor(dp *store.DayPlanConfig, session string) string {
+	return dp.PlanModeFor(session)
+}
+
+// setExecutorPlanContext is the ONE production selection of the executor PLAN
+// BLOCK (W3 §3): RenderPlanBlockForMode under the resolved mode, and the mode
+// remembered for the cited_scenario field line. kernel/engine_analysis.go
+// calls it; the boot self-check's strict fixture calls it too (canon 53).
+func (e *StrategyEngine) setExecutorPlanContext(doc PlanDoc, session, planStatus string) {
+	var dp *store.DayPlanConfig
+	if e.config != nil {
+		dp = e.config.DayPlan
+	}
+	mode := executorPlanModeFor(dp, session)
+	e.SetPlanContext(RenderPlanBlockForMode(doc, session, mode), planStatus)
+	e.planMode = mode
 }
 
 // SetClockContext sets the labelled per-cycle clock line (P0 timezone fix)
@@ -338,6 +371,10 @@ func (e *StrategyEngine) SetPromptSnapshotMs(ms int64) { e.promptSnapshotMs = ms
 
 // NewStrategyEngine creates strategy execution engine.
 // claw402WalletKey is optional — if provided, nofxos data requests are routed through claw402.
+// SetVenue records the venue (the trader's exchange) the cycle's market reads
+// route through (CTO F2).
+func (e *StrategyEngine) SetVenue(venue string) { e.venue = venue }
+
 func NewStrategyEngine(config *store.StrategyConfig, claw402WalletKey ...string) *StrategyEngine {
 	// Create NofxOS client with API key from config
 	apiKey := config.Indicators.NofxOSAPIKey

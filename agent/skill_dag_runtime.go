@@ -28,13 +28,6 @@ func setSkillDAGStep(session *skillSession, stepID string) {
 	session.Fields[skillDAGStepField] = stepID
 }
 
-func clearSkillDAGStep(session *skillSession) {
-	if session == nil || session.Fields == nil {
-		return
-	}
-	delete(session.Fields, skillDAGStepField)
-}
-
 func advanceSkillDAGStep(session *skillSession, currentStepID string) {
 	dag, ok := getSkillDAG(session.Name, session.Action)
 	if !ok {

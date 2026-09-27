@@ -1,0 +1,30 @@
+rows 61
+last_entry_cutoff (P2.3): n=1 cf_session_flat=+22.50
+min_sl (EntryGate leg 6): n=3 cf_session_flat=+317.00
+min_sl (validateDecision A3): n=34 cf_session_flat=-435.00
+rr (armGateVerdictFor): n=7 cf_session_flat=-43.14
+rr_at_fill (EntryGate leg 5): n=3 cf_session_flat=-76.50
+strict (EntryGate leg 0): n=13 cf_session_flat=-511.00
+TOTAL -726.14
+
+min_sl validateDecision n= 34
+  refusal whose own cycle went on to open a position: 3 [('2026-09-02 09:40:09', '26472', '-44.0'), ('2026-09-02 10:34:48', '26500', '-52.0'), ('2026-09-02 10:36:09', '26500', '-101.5')]
+  refusal after which no position opened that cycle: 31
+  cf sum taken: -197.5
+  cf sum not-taken: -237.5
+  biggest saved loss among not-taken: [('2026-09-03 11:48:22', 'NY', '-85.5', '29525.0', '29482.25', 'STOP', '2026-09-03 12:20', '27229'), ('2026-09-02 08:36:05', 'NY', '-80.5', '29078.25', '29038.0', 'STOP', '2026-09-02 08:37', '26441'), ('2026-09-02 09:27:13', 'NY', '-69.5', '29173.0', '29138.25', 'STOP', '2026-09-02 09:53', '26466')]
+  biggest missed win among not-taken: [('2026-09-02 18:59:36', 'ASIA', '108.0', 'TARGET'), ('2026-09-02 18:58:38', 'ASIA', '111.0', 'TARGET'), ('2026-09-02 18:49:46', 'ASIA', '112.5', 'TARGET')]
+  positions from cycle 26472 [(589, 29192.5, 29115.0, 'LONG', -155.0, '2026-09-02 09:41:04'), (590, 29193.25, 29143.75, 'LONG', -99.0, '2026-09-02 10:37:17')]
+  positions from cycle 26500 
+[(589, 29192.5, 29115.0, 'LONG', -155.0, 77.5, '2026-09-02 09:41:04'), (590, 29193.25, 29143.75, 'LONG', -99.0, 49.5, '2026-09-02 10:37:17')]
+
+DEDUPED REFUSED-SET LEDGER
+  min_sl (validateDecision A3) 31 not-taken: -237.50
+  min_sl (EntryGate leg 6): +317.00
+  rr_at_fill (EntryGate leg 5): -76.50
+  rr (armGateVerdictFor): -43.14
+  strict deduped to one position: -43.50
+  last_entry_cutoff: +22.50
+  leg 3 invalidation (09-04, mine): +428.00
+  TOTAL forgone: +366.86
+  with all 34 min-SL rows instead of 31: +169.36

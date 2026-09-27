@@ -39,7 +39,7 @@ export const tradingDay: GuideSection = {
           time: '14:45',
           label: 'EOD flat',
           detail:
-            'Open positions force-flattened at session end (limit-then-market ladder; R-A15 ruling).',
+            'Open positions force-flattened at session end (limit-then-market ladder; R-A15 ruling). No new entry is accepted after the flat.',
         },
         {
           time: '16:00–17:00',

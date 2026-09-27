@@ -1,0 +1,156 @@
+{
+  "updated_at": "2026-09-01 13:13:06.019911522+00:00",
+  "day_plan": {
+    "plan_enabled": true,
+    "plan_mode": "strict",
+    "planner_timeframes": [
+      "D",
+      "4h",
+      "1h",
+      "15m",
+      "5m"
+    ],
+    "proximity_filter_atr": 1,
+    "max_levels": 12,
+    "scenario_cap": 5,
+    "acceptance_rule": "5m_close",
+    "replan_cap": 4,
+    "sessions_enabled": [
+      "NY"
+    ],
+    "approval_required": false,
+    "evening_digest": true,
+    "realign_cap": 10,
+    "last_entry_ct": "13:00",
+    "eod_flat_ct": "14:45",
+    "sessions": [
+      {
+        "session": "NY",
+        "replan_cap": 4,
+        "acceptance_rule": "5m_close",
+        "min_grade": "B",
+        "max_trades": 10
+      },
+      {
+        "session": "ASIA",
+        "enable": true,
+        "replan_cap": 4,
+        "acceptance_rule": "5m_close",
+        "min_grade": "B",
+        "max_trades": 7
+      },
+      {
+        "session": "LONDON",
+        "enable": true,
+        "replan_cap": 4,
+        "acceptance_rule": "5m_close",
+        "min_grade": "B",
+        "max_trades": 10
+      }
+    ],
+    "wake_on_htf_ob": true
+  },
+  "regime": null,
+  "ai_config": {
+    "coin_source": {
+      "source_type": "static",
+      "static_coins": [
+        "MNQ"
+      ],
+      "use_ai500": false,
+      "ai500_limit": 3,
+      "use_oi_top": false,
+      "oi_top_limit": 3,
+      "use_oi_low": false,
+      "oi_low_limit": 3,
+      "use_hyper_all": false,
+      "use_hyper_main": false
+    },
+    "indicators": {
+      "klines": {
+        "primary_timeframe": "5m",
+        "primary_count": 20,
+        "longer_timeframe": "4h",
+        "longer_count": 10,
+        "enable_multi_timeframe": true,
+        "selected_timeframes": [
+          "1h",
+          "4h",
+          "1d",
+          "15m",
+          "3m",
+          "5m"
+        ]
+      },
+      "enable_raw_klines": true,
+      "enable_ema": true,
+      "enable_macd": false,
+      "enable_rsi": true,
+      "enable_atr": true,
+      "enable_boll": false,
+      "enable_volume": true,
+      "enable_oi": false,
+      "enable_funding_rate": true,
+      "enable_svp": true,
+      "ema_periods": [
+        50,
+        200
+      ],
+      "rsi_periods": [
+        14
+      ],
+      "atr_periods": [
+        14
+      ],
+      "boll_periods": [
+        20
+      ],
+      "nofxos_api_key": "<redacted>",
+      "enable_quant_data": false,
+      "enable_quant_oi": false,
+      "enable_quant_netflow": false,
+      "enable_oi_ranking": false,
+      "oi_ranking_duration": "1h",
+      "oi_ranking_limit": 10,
+      "enable_netflow_ranking": false,
+      "netflow_ranking_duration": "1h",
+      "netflow_ranking_limit": 10,
+      "enable_price_ranking": false,
+      "price_ranking_duration": "1h,4h,24h",
+      "price_ranking_limit": 10
+    },
+    "custom_prompt": "No trade inside sideway zone becareful \nall trade consider good stop loss abnd profit , no panic sell have to respect the stop loss we give out and target , discipline is a key \n",
+    "risk_control": {
+      "max_positions": 3,
+      "btc_eth_max_leverage": 5,
+      "altcoin_max_leverage": 5,
+      "btc_eth_max_position_value_ratio": 5,
+      "altcoin_max_position_value_ratio": 1,
+      "max_margin_usage": 0.9,
+      "min_position_size": 12,
+      "min_risk_reward_ratio": 2,
+      "min_confidence": 60,
+      "guardrails_enabled": false,
+      "daily_loss_limit_usd": 450,
+      "daily_loss_enabled": false,
+      "daily_profit_target_usd": 900,
+      "daily_profit_enabled": false,
+      "max_daily_trades": 3,
+      "max_daily_trades_enabled": false,
+      "max_contracts_per_order": 2,
+      "max_contracts_enabled": false,
+      "notional_cap_enabled": false,
+      "blackout_enabled": false,
+      "hold_discipline": true,
+      "breakeven_enabled": true,
+      "breakeven_trigger_points": 40,
+      "trailing_enabled": true,
+      "trailing_atr_period": 14
+    },
+    "prompt_sections": {
+      "role_definition": "# You are a professional day trade CME index-futures trader trade MNQ\n\nYou trade CME index futures (e.g. MNQ / ES) with disciplined technical analysis and risk management. You size by contract count and tick-aligned stops — NOT crypto leverage.",
+      "trading_frequency": "# ⏱️ Trading Frequency Awareness\n-Focus On Quality trtade and 50 point  move stop loss to breakeven \n- Excellent trader: 2-4 trades per day ≈ 0.1-0.2 trades per hour\n- >2 trades per hour = overtrading\n- Single position holding time ≥ 30-60 minutes\nIf you find yourself trading every cycle → standards are too low; if closing positions in <30 minutes → too impulsive.",
+      "entry_standards": "# 🎯 Entry Standards (Strict)\n\nOnly enter positions when multiple signals resonate. Freely use any effective analysis methods, avoid low-quality behaviors such as single indicators, contradictory signals, sideways oscillation, or immediately restarting after closing positions."
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+ "lens": "CODE + CHECKLIST \u2014 every path:line in the report opened on 2a66d91c (and on 36648655 where the claim is about live behaviour); every recommendation grepped against AUDIT-CHECKLIST.md, SYSTEM-MAP.md, git log origin/dev --since=2026-08-25, git branch -r; [A] store claims that the code reading depended on re-run read-only (mode=ro) against data/data.db. Scratch: ~/nofx-analysis/vet-02-0905/verify-code/q_verify{,2,3,4}.sql.",
+ "checked": 60,
+ "findings": [
+  {
+   "severity": "WRONG",
+   "location": "report:11",
+   "claim": "`git diff --stat 36648655 2a66d91c -- kernel/levels*.go kernel/level*.go kernel/plan_doc.go kernel/planner_prompt.go trader/armed_executor.go kernel/min_sl.go` lists only `kernel/risk_limits.go` (+65) and `trader/entry_gate.go` (+26); no level, detector, recorder, scorer, seater or planner-prompt file differs. Every `path:line` below is read on `2a66d91c` and describes the running binary. [A]",
+   "evidence": "Ran the command verbatim in /home/hoang/nofx-vet-02: output is EMPTY (rc=0) \u2014 neither risk_limits.go nor entry_gate.go matches that pathspec. The unfiltered `git diff --stat 36648655 2a66d91c` lists 18 files incl. kernel/risk_limits.go +65, trader/entry_gate.go +26, trader/auto_trader_planner.go +14 (hunk `@@ -1681,6 +1681,20 @@` in runPlannerReadCoreWithFactsGrades), kernel/engine_analysis.go, mcp/client.go. auto_trader_planner.go is cited four times in the report (:1995-2012, :2136-2150, :2320, :2340-2348) and on the running rev those lines sit 14 earlier: `git show 36648655:trader/auto_trader_planner.go | nl -ba | sed -n '1981p;2122p;2306p;2333,2334p'` \u2192 1981 `func resolveSessionPlanCfg`, 2122 `counts := map[string]int{}`, 2306 `bars1m = market.FuturesBarsProvider(symbol, \"1m\", 12000)`, 2333-2334 `at.recordDetectorOutputs(...)`. The detector/recorder/store/level files themselves have no diff (verified: `git diff --stat 36648655 2a66d91c -- kernel/detector*.go trader/detector_record.go store/touch_outcomes.go kernel/levels*.go` \u2192 only auto_trader_planner.go and entry_gate.go).",
+   "correction": "Replace with: \"`git diff --stat 36648655 2a66d91c` differs in 18 files; of the files this section cites only `trader/auto_trader_planner.go` (+14 at :1681, RiskForceFlat/BiasArmWarning wiring, #91) moved \u2014 its cited lines are :1981-1998 / :2122-2136 / :2306 / :2326-2334 on the running rev 36648655. No kernel/levels*.go, detector*.go, detector_record.go, touch_outcomes.go, planner_prompt.go or armed_executor.go line differs.\" Drop the [A] on the command-as-written."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:214",
+   "claim": "Arms 62\u2013102 (09-04) are the same `S2 reclaim SHORT @ 29591.02` upserted twenty times, cancelled by `gate changed: rr` (5), stale-window (8), `boot_sweep` (7)",
+   "evidence": "sqlite ro: `SELECT id,state_reason FROM armed_orders WHERE id BETWEEN 62 AND 102 AND scenario='S2' AND condition='reclaim' AND entry_px=29591.02` \u2192 20 rows (ids 62,65,67,70,73,75,77,79,81,83,85,87,89,91,93,95,97,99,101,102): `gate changed: rr` \u00d74 (62,65,67,70) \u00b7 `no order_update within stale window (reconnect/reconcile)` \u00d77 (73\u201385 odd) \u00b7 `boot_sweep: pre-boot order, process restarted` \u00d78 (87\u2013101 odd) \u00b7 `cancelled in NT8` \u00d71 (102). The 5/8/7 split does not match any subset; 5 is the ALL-TIME rr count in q08 (`gate changed: rr 5`), and ids 62\u2013102 also hold 5 other rows (S1 reject SHORT @29657.38, @29720.0).",
+   "correction": "\"\u2026upserted twenty times (ids 62\u2013102 odd + 102), cancelled by `gate changed: rr` (4: ids 62,65,67,70), stale-window (7: 73,75,77,79,81,83,85), `boot_sweep` (8: 87,89,91,93,95,97,99,101) and `cancelled in NT8` (1: 102).\""
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:36 (also :52 P1, :170)",
+   "claim": "Twelve of twelve seats fill in 11 of 12 recorded reads (`q04`) / \"the planner seats 12 of 12 in 11 of 12 recorded reads\" / \"On 09-04, 12 of 12 seats filled in 11 of 12 reads; the twelfth had 11\"",
+   "evidence": "The report's own q04_pool_detail.txt lists 15 rows (one per distinct read_at_ms), and sqlite ro `GROUP BY plan_id, plan_version, read_at_ms` on candidate_pool gives 15 detector reads 00:30:54 \u2192 12:01:01 CT 09-04: 14 at seated=12/24, 1 at 11/24 (LONDON v0, 01:30:48 CT). '12' is the count of distinct (plan_id, plan_version) pairs (NY v3 alone was read 4 times: 09:26, 09:58, 10:28, 10:55). touch_outcomes.created_at shows the same 15 write batches (05:30\u202617:01 UTC).",
+   "correction": "\"Twelve of twelve seats fill in 14 of the 15 recorded detector reads (12 plan-versions); the one exception (LONDON v0, 01:30:48 CT) seated 11.\" Use 'detector read' (distinct read_at_ms) consistently; q03/q06's 'plan_reads 8' for RTH-L are plan-version pairs while the 11 copies are 11 detector runs (12:45\u219217:01 UTC)."
+  },
+  {
+   "severity": "WRONG",
+   "location": "report:128",
+   "claim": "**HTF \u00d71.2** (line levels with HTF=true, `:475-478`) | PDH/PDL/PDC/PW/PM only",
+   "evidence": "kernel/levels_score.go:484 `score = typeEvidence(l.Kind) * fm * (1 + 0.20*effConf) * htf` applies to EVERY non-zone kind with l.HTF; kernel/levels_assemble.go:278-283 `tagHTFLevel` sets `l.HTF = true` on every level DetectHTFLevels emits, including `EqualHighsLows` (:250-252) \u2014 EQH/EQL are line levels (not in isZoneKind :123-125). So HTF-tagged EQH\u00b715m/1h/4h rows get \u00d71.2 too (the report's own \u00a71 row cites HTF EQ via :222-264, and commit be021283 'EQL\u00b715m(HTF) grade-A reproduced (confluence \u00d71.2)' is the golden for exactly that path). Only RTH-H/L, ON, OR/IB, VWAP-family, SETT, MID-O, RN carry htf=false.",
+   "correction": "\"HTF \u00d71.2 (:475-478, applied at :484) \u2014 every non-zone level with HTF=true: PDH/PDL/PDC/PWH/PWL/PMH/PML (levels_multiday.go:157-159,201-202,208-209) AND HTF-tagged EQH/EQL from DetectHTFLevels (levels_assemble.go:250-252, tagHTFLevel :278-283).\" The 'unmeasurable' verdict stands; the scope line is wrong."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:64 (P13)",
+   "claim": "The `bars` table now holds 17 days of 1m, unused by the level assembler (`trader/auto_trader_dayplan.go:20` fetches `AISVPBarCount = 2000`)",
+   "evidence": "trader/auto_trader_dayplan.go:20 is a comment line (`// enabled) so it is DORMANT by default \u2014 crypto and plan-off traders are a`); that file fetches AISVPBarCount at :97 and :191 (session-profile snapshot), not the level assembler. The planner read's assembler input is trader/auto_trader_planner.go:2119 `bars = market.FuturesBarsProvider(symbol, kernel.AISVPBarInterval, kernel.AISVPBarCount)` (:2105 on 36648655) feeding `AssembleScoredLevelsFullMinGrade` at :2146. Also: the bars table holds 79,769 rows across 14 TFs \u2014 1d 1,898 rows back to 2019-05-02, 1w 384, 4h 2,010 \u2014 not only 17 days of 1m (sqlite ro `SELECT tf, COUNT(*), MIN(...), MAX(...) FROM bars WHERE symbol='MNQ' GROUP BY tf`).",
+   "correction": "\"\u2026unused by the level assembler (`trader/auto_trader_planner.go:2119` fetches `AISVPBarInterval/AISVPBarCount` = 1m/2000 for `AssembleScoredLevelsFullMinGrade` at :2146). The `bars` table holds 16,703 1m rows (17 days) plus persisted 1d back to 2019-05 and 1w/4h/1h series (class 45).\""
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:21",
+   "claim": "`docs/superpowers/reports/2026-08-27-level-system-verify.md` \u2014 indexed at `research/INDEX.md:34` (\"weights off spec; grades not predictive\", action NONE)",
+   "evidence": "`nl -ba docs/superpowers/research/INDEX.md | sed -n 34p` \u2192 the 08-25 deep-status accounting row. The level-system-verify row is line 44: `| 08-27 | level-system verify | \u20262026-08-27-level-system-verify.md | docs/level-system-verify d6aa9669 | weights off spec; grades not predictive | NONE (documented) | \u2014 |` (a second, unclassified row at :102). The quoted verdict text is right; the line is wrong.",
+   "correction": "`research/INDEX.md:44` (and :102 for the unclassified sweep row)."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:64 (P13), :160",
+   "claim": "`kernel/levels_multiday.go:194-197` comment: PWH/PWL \"can never pass\" the 4,320-bar guard on the 33 h ring",
+   "evidence": "Lines 192-197 say the ring 'holds only ~33h, so a \"prior week\" bucket built from it is at best a few hours wide \u2026 thin buckets are omitted'. The phrase 'can never pass' is in the const block comment at :218-220: 'Prior-week needs \u22653 full days and prior-month \u22657 full days \u2014 with the ~33h 1m ring these can never pass, which is CORRECT'. Guards at :222-224 (900/4320/10080) \u2713.",
+   "correction": "Cite `levels_multiday.go:216-220` for \"can never pass\" (and :192-197 for the bogus-PWL rationale)."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:118, :125",
+   "claim": "zone width is not stored (verify report F6) / Lo/Hi not persisted (verify F6)",
+   "evidence": "2026-08-27-level-system-verify.md:253 `| F6 | 8 zones consumed with zero recorded touches (times_tested=0, last_play=0) | level_state | S | \u2026`. The width gap is a Part-5 note, not a numbered finding: :224-226 'zone Lo/Hi widths are not persisted in plans (single price rows only); flag as a persistence gap' and the verdict at :241-242 'missing width persistence'.",
+   "correction": "\"zone Lo/Hi width is not persisted (level-system-verify.md \u00a75 :224-226, verdict :241-242 \u2014 not a numbered F)\"."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:86",
+   "claim": "POC / VAH / VAL \u2026 POC 0.90 \u00b7 VAH/VAL 0.80 \u00b7 Tier-1 (R-A13)",
+   "evidence": "kernel/levels_score.go:264-271 `isTier1Kind`: `KindPDH, KindPDL, KindPDC, KindRTHH, KindRTHL, KindORH, KindORL, KindONH, KindONL, KindPWH, KindPWL, KindPMH, KindPML, KindVAH, KindVAL, KindSETT, KindNPOC` \u2014 POC is absent; the R-A13 comment at :262-263 names 'VAH/VAL/SETT/nPOC JOIN the set'. POC is therefore subject to the min_grade cut and the pattern-above-C anchor test does not treat it as an anchor.",
+   "correction": "\"POC 0.90 (not Tier-1) \u00b7 VAH/VAL 0.80 \u00b7 Tier-1 (R-A13: VAH/VAL/SETT/nPOC only)\". Row 'nPOC \u2026 Tier-1' at :87 is correct."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:34, :147(ii), :188",
+   "claim": "every episode that opened before 17:00 CT the prior evening is re-recorded, with ordinal 1, on every read \u2026 all 14 RTH-L episodes opened before the level existed \u2026 Watch: rows with `opened_at_ms < formed_at_ms` = 0",
+   "evidence": "(a) kernel/detector_recorder.go:99-107 `NewEpisodesSince` keeps only `e.OpenedAtMs > lastOpenedMs && e.ClosedAtMs != 0`; `last` = MAX(opened_at_ms) over rows with opened_at_ms \u2265 session-day start (touch_outcomes.go:259-262). So pre-day episodes are re-recorded on every read ONLY while the (trader,symbol,price) has no in-day episode yet; the first in-day episode raises `last` \u2265 dayMs and silences them. The RTH-L copies (3,7,9,11,11\u2026) and VWAP's 199 rows = 199 episodes (price changes per read, so the price-keyed watermark never matches) are both consistent with this. (b) sqlite ro on bars: the 09-03 RTH low 29199.25 printed on the 08:36:00 CT bar; the 14th RTH-L episode opened at 08:36:00 CT (`GROUP BY opened_at_ms` \u2192 last row 2026-09-03 08:36:00, 11 copies). Under the Rec-1 rule `scan from max(FormedAtMs, watermark)` that episode is ON the formation bar, not before it: 13 of 14 are pre-formation.",
+   "correction": "\"\u2026re-recorded, with ordinal 1, on every read until that level records its first episode opening after the session-day start (NewEpisodesSince, detector_recorder.go:102); dynamic lines never reach that point because their price moves.\" And: \"13 of 14 RTH-L episodes opened before the 08:36 CT bar that printed 29199.25; the 14th opened on that bar \u2014 all 14 before it was a PRIOR-day low.\""
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:35(c), :190, :246",
+   "claim": "the 900-bar coverage guard admits a bucket missing up to ~9 h: at the 09-02 13:58 CT read the engine emitted PDH 29317.25 (`level_state`, `q15`) [A]",
+   "evidence": "A CT calendar day holds at most 1,380 Globex 1m bars (the report's own :22); 1,380 \u2212 900 = 480 bars = 8.0 h, not ~9. The level_state row (created 2026-09-02 13:58:29 CT, price 29317.25) carries `level_type='PDH/PDL/PDC'` and `origin_date=''` \u2014 the store does not say which of the three it is (sqlite ro: all 59 family rows are labelled the family, none 'PDH'). The PDH identification is an inference from the tape, which I confirmed: bars 09-01 CT full-day high 29571.0 (00:xx CT) vs high from 04:58 CT onward = 29317.25 (10:xx CT) with 1,082 bars \u2265 900 \u2014 so the mechanism is real.",
+   "correction": "\"\u2026missing up to 8 h (1,380 \u2212 900 bars)\u2026 the engine wrote a PDH/PDL/PDC-family row at 29317.25 (level_state has no per-kind label) which the tape identifies as the truncated-bucket PDH: 09-01 high from 04:58 CT = 29317.25, full day 29571 at 00:xx CT [B from level_state + A from bars].\""
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:126, :198 (Rec 11)",
+   "claim": "The \"consumed \u2192 never entry\" doctrine demotes levels on a belief with no stable sign \u2026 Strip the ordinal/consumed term from role assignment (`levels_role.go:109-113`) + owner ruling (it is doctrine)",
+   "evidence": "grep RoleTargetOnly/RoleMismatches in kernel/ trader/ api/ (non-test): consumers are the prompt playbook string levels_role.go:55 and `RoleMismatches` :389-444, a validator WARN 'never a fail', called at trader/auto_trader_planner.go:1755. No gate, scorer or seater reads the role (the freshness SCORE term is separate: freshMult :367-368 = 0.5). This is already item 8 of the owner's demotion queue: 2026-09-04-research-conformance.md \u00a718 (line 857ff) '#8 consumed / 3rd-touch \u2192 target_only \u2026 WARN-only \u2014 RoleMismatches emits a string; no gate reads it \u2026 nothing is refused today', and belief-census.md:136 '#8 Consumed/3rd-touch \u2192 never entry'. The report neither cites the queue nor states that the doctrine refuses nothing.",
+   "correction": "State that target_only is prompt text + a WARN (levels_role.go:55, :389-444; auto_trader_planner.go:1755) and that Rec 11 is demotion-queue item 8 awaiting the owner (conformance \u00a718 #8; belief census D10/#8); keep the [T] null result as the new evidence for that queued ruling. The score-side decay (freshMult 0.5 'consumed', :367-368) is the part that actually moves seats."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:189 (Rec 2), :34, :118",
+   "claim": "Persist real scores for cut candidates; an uncomputed value is NULL, not 0 \u2026 a fabricated zero (canon \"no fabricated values\")",
+   "evidence": "AUDIT-CHECKLIST.md:1402-1405 (class 64, merged 09-03) already rules the fix as law: '`candidate_pool` records every level the constructor produced INCLUDING the cut ones with their propensities, because the selection question is off-policy and cannot be answered from the seated levels alone'. Shipped code kernel/detector_recorder.go:70-73 writes `Components: \"{}\"` and leaves Score/Grade zero-valued for cut rows (:28 comment: '\"{}\" = not computed, never \"\"'); store: 181/181 cut rows score 0.0 grade '', 360/360 `{}` (sqlite ro). The recommendation is correct but is an existing-law violation, not a new proposal, and the CandidateRecord comment shows `{}` was the designed 'not computed' sentinel rather than an accidental fabrication.",
+   "correction": "Cite it as \"class 64's own law (AUDIT-CHECKLIST.md:1402-1405) is unmet by the shipped writer (detector_recorder.go:70-73, 130a4e70/89aeb8be)\" and make the ask 'implement the class-64 law' \u2014 a bug against a ruling, which needs no new owner ruling."
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:196 (Rec 9), :160, :190 (Rec 3)",
+   "claim": "Wire PWH/PWL from the store \u2026 use the 12,000-bar fetch the planner already makes / Feed the level assembler from the durable store (12,000 bars or the `bars` table)",
+   "evidence": "Class 45 (AUDIT-CHECKLIST.md:686-722, shipped) already rules 'one resolver' \u2014 `market.CompletedBars` / `CompletedBar` with the ladder as data (`barLadder`), 'every cached TF is now persisted \u2026 1h and coarser forever', weekly ladder `1d \u2192 1m`, native 1w excluded as fri_thu. The store holds 1d 1,898 rows back to 2019-05-02 and 4h/1h series (sqlite ro `GROUP BY tf`). A prior-week/month extreme is a 1d/4h question; routing it through a 12,000-bar 1m fetch reinvents the aggregator class 45 retired and ignores the persisted coarse pantry. Rec 3's 'or bars' is fine; Rec 9's '12,000-bar fetch' is the wrong door.",
+   "correction": "\"Wire PWH/PWL/PMH/PML through `market.CompletedBars(symbol, \"1d\", \u2026)` (class-45 resolver, AUDIT-CHECKLIST.md:709-720) so the 4,320/10,080-bar 1m guards become a \u22653-day / \u22657-day 1d check; the same resolver can serve the session-day PDH bucket (Rec 3).\""
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:143-144, :192 (Rec 5), :177",
+   "claim": "VWAP\u00b12\u03c3 \u2014 DEMOTE to display-only (not seat-eligible) \u2026 eVWAP \u2014 DEMOTE to display-only",
+   "evidence": "Both are explicit owner rulings the report does not name: \u00b12\u03c3 \u2014 kernel/levels.go:57-58 'EMITTED at 0.85 per owner ruling (the dispatched spec listed them; they were missing)', kernel/levels_volume.go:56-57 same, kernel/levels_score.go:98-100, commit 00e3b370 2026-08-27 'level-truth T5: \u00b12\u03c3 fair-value bands emitted (KindVWAP2S, evidence 0.85, VWAP family)'; eVWAP's 15:00 CT anchor \u2014 kernel/levels.go:43 'A2 re-anchor 2026-08-26' and levels_volume.go:93-96. Reversing a ruling is allowed, but Rec 5 says 'Takes: knob + a checklist law' \u2014 there is no seat-eligibility knob today (typeEvidence is code, :87-121), and the owner's 08-27 ruling must be named as the thing being reversed.",
+   "correction": "\"Takes: code (typeEvidence/seat eligibility, levels_score.go:99-100,106-107 \u2014 no knob exists) + OWNER re-ruling, reversing the 2026-08-27 \u00b12\u03c3 emission ruling (00e3b370; levels.go:57-58) and the 2026-08-26 A2 eVWAP re-anchor (levels.go:43).\""
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:58 (P7), :221 (Surprise 8)",
+   "claim": "`AUDIT-CHECKLIST.md` skips class 46. Numbered 1\u201379 with 46 absent.",
+   "evidence": "Count confirmed (awk NR>=11&&NR<1845 on `^[0-9]+\\. \\*\\*` \u2192 78 entries, max 79, MISSING 46; `## CLASS 75` at :2002). The gap has a recorded cause the report should give: the wave claimed 46 on its branch \u2014 origin/fix/class46-instrument-honesty, commits 4587683c 'fix(class46 D4)\u2026', 0eba2cb5 'fix(class46 D5+D6)\u2026', 92b8d73b 'fix(class46): ONE classification' \u2014 and landed as class 49 at merge (f34925c0 'docs(class49): instrument-honesty report'; AUDIT-CHECKLIST.md:791 '49. **Instrument theatre\u2026**'), per the A27 numbers-at-merge rule. No entry was ever written as 46.",
+   "correction": "\"Numbered 1\u201379 with 46 absent: the class-46 wave (branch fix/class46-instrument-honesty) was renumbered 49 at merge (f34925c0; entry at :791), leaving 46 unused \u2014 78 entries.\""
+  },
+  {
+   "severity": "MINOR",
+   "location": "report:193 (Rec 6), :175",
+   "claim": "Seat by reachability \u2026 `proximity_filter_atr` 1.0 \u2192 0.5 on this trader (this trader runs `proximity_filter_atr = 1.0`, i.e. \u00b1~350 pts; the owner's other strategies carry 1.5)",
+   "evidence": "Store \u2713 (a5b7662e prox=1, eight other strategies 1.5). Not shipped, but prior measurement and rulings exist that the rec does not cite: 2026-08-28-grand-audit-bcde-verdict.md:75 'C6 proximity sweep (66 plan reads, 34 entry levels): mean in-band pool 4.5 (0.2\u00d7) / 5.6 (0.3\u00d7) / 6.4 (0.4\u00d7) / 9.3 (1.5\u00d7 live); entries excluded 0.2/0.2/0.1/0.0 per plan'; grand-audit-response 84543213 'F2 shared proximity clamp 0.1-3.0' (0.5 is inside the clamp); levels_score.go:415-417 'the proximity re-tune is config-side'. The live 1.0 is already a non-default owner-set value.",
+   "correction": "Add: \"prior sweep grand-audit-bcde-verdict.md:75 (C6) measured in-band pool 5.6 at 0.3\u00d7 vs 9.3 at 1.5\u00d7; the clamp is 0.1\u20133.0 (84543213 F2); 1.0 is the owner's current non-default choice \u2014 0.5 is a re-ruling of that knob, not a new lever.\""
+  }
+ ],
+ "overall": "The section's verdict survives this pass. Its three load-bearing code claims are exactly what the code says: the recorder scans the whole 2,000-bar scope (trader/detector_record.go:57; svp.go:47) against a session-day-scoped watermark and ordinal (store/touch_outcomes.go:254-266, :73-84) and never reads DetectedLevel.FormedAtMs (levels.go:89); PDH/PDL/PDC are a CT calendar-day bucket behind a 900-bar guard with `k < todayCal` (levels_multiday.go:15, :146-160, :222, :229-237) \u2014 I re-derived the 08-26 +218.5/+37.5 calendar-vs-session gap and the 09-02 truncated-bucket PDH 29317.25 (1,082 bars \u2265 900, true high 29571 at 00:xx CT) from the bars table; BuildCandidatePool writes score 0/grade ''/`{}` for every cut row (detector_recorder.go:70-73; 181/181 and 360/360 in the store); and grep finds zero grade consumers in the five downstream files. The store corroborates P1\u2013P6 and P11 (12/1.0/strict on a5b7662e; 677 rows = 423 episodes, RTH-L 140\u219214 with up to 11 copies opened 22:10 09-02\u201308:36 09-03; arms 23\u201337 and 6-of-67 marketable; one RTH-L arm). Nothing the report recommends has already shipped: no fix touched the recorder files after 09-03 (git log), the two-day audit's C6 only saw zero rows, and the post-soak plan has no session-day-PDH item. What did not survive: the Evidence-Basis diff command does not produce the output claimed and auto_trader_planner.go's cited lines are +14 versus the running binary (WRONG); the Surprise-1 cancel breakdown is 4/7/8/1 not 5/8/7 (WRONG); '11 of 12 reads' is 14 of 15 detector reads (WRONG); the HTF \u00d71.2 scope omits HTF-tagged EQH/EQL (WRONG); and a run of citation slips (auto_trader_dayplan.go:20, INDEX.md:34\u2192:44, 'can never pass' at :218-220, verify 'F6', POC as Tier-1, ~9 h\u21928 h). The more consequential omissions are rulings the recommendations restate or reverse without naming them: Rec 2 is class 64's own unmet law (AUDIT-CHECKLIST.md:1402-1405); Rec 9/3 should route through the class-45 resolver rather than a 12,000-bar 1m fetch (the store already holds 1d back to 2019); Rec 11 is demotion-queue item 8 and target_only is prompt text + a WARN, refusing nothing; Rec 5 reverses the 2026-08-27 \u00b12\u03c3 emission ruling (00e3b370) and the A2 eVWAP re-anchor; Rec 6 re-rules a knob the owner already set off-default with a prior C6 sweep on record. The [A] labels are honest except line 11's command claim and the level_state 'PDH' identification, which is a tape-corroborated inference rather than a read. Net: fix the four WRONG lines and add the ruling citations; the section's problems, refutations of the prior review, and 'fix the instrument first' ordering all stand."
+}

@@ -1,0 +1,192 @@
+{
+  "checked_ct": "2026-09-09T13:13:33.052943-05:00",
+  "pid": "438",
+  "running": {
+    "revision": "954f11b15f2e7615678f7d2b708c47895faebf1e",
+    "modified": "false"
+  },
+  "disk": {
+    "revision": "954f11b15f2e7615678f7d2b708c47895faebf1e",
+    "modified": "false"
+  },
+  "health": {
+    "revision": "954f11b15f2e",
+    "status": "ok",
+    "time": null
+  },
+  "boot_lines": [
+    {
+      "timestamp_us": "1788976926409173",
+      "line": "09-09 13:02:06 [INFO] kernel/levels_volume_boot.go:14 📐 scenario economics: contract=on · obstacle-required=on · target-path-coherent=0/0 · sub-1R-first-obstacle=0 · role-use-disagreements=0 · contradictions refused=0 · schema refusals=0 · checked=0 (new-authoring checks since boot; legacy UNKNOWN by design)"
+    },
+    {
+      "timestamp_us": "1788976926399143",
+      "line": "09-09 13:02:06 [INFO] nofx/main.go:296 🗄 research snapshot: schema=1 · objects=5 · rows today market=0 candidate=0 plan=0 scenario=0 exec=0 · null-fields=0 · dropped=0 · added latency p50=UNKNOWN"
+    },
+    {
+      "timestamp_us": "1788976926397694",
+      "line": "09-09 13:02:06 [INFO] nofx/main.go:294 🔐 BOOT INTEGRITY OK — rev 954f11b15f2e · built 2026-09-08T23:38:16Z · expected 954f11b1 · goldens PASS"
+    }
+  ],
+  "running_traders_n": 1,
+  "gates": [
+    {
+      "ready": false,
+      "legs": [
+        {
+          "n": 1,
+          "name": "db_open_positions",
+          "pass": true,
+          "source": "sqlite trader_positions"
+        },
+        {
+          "n": 2,
+          "name": "api_positions",
+          "pass": true,
+          "source": "trader.GetPositions"
+        },
+        {
+          "n": 3,
+          "name": "nt8_positions_snapshot",
+          "pass": true,
+          "source": "NT8 positions frame"
+        },
+        {
+          "n": 4,
+          "name": "working_orders",
+          "pass": true,
+          "source": "broker — NT8 order_snapshot frame (age 4s, build 2026-09-07-h1)"
+        },
+        {
+          "n": 5,
+          "name": "planner_in_flight",
+          "pass": false,
+          "source": "plannerReadInFlight claim"
+        }
+      ]
+    }
+  ],
+  "active_arms": [],
+  "restart_gate_pass": false,
+  "records_checked_utc": "2026-09-09T18:19:22.322386+00:00",
+  "record_scope": "captured_ms >= 1788976926000 (2026-09-09T18:02:06Z); read transaction",
+  "counts": [
+    {
+      "object": "candidate",
+      "count": 1651,
+      "min_id": 54982,
+      "max_id": 224363
+    },
+    {
+      "object": "exec",
+      "count": 50,
+      "min_id": 1,
+      "max_id": 238014
+    },
+    {
+      "object": "market",
+      "count": 241180,
+      "min_id": 4,
+      "max_id": 242898
+    },
+    {
+      "object": "plan",
+      "count": 10,
+      "min_id": 55783,
+      "max_id": 224366
+    },
+    {
+      "object": "scenario",
+      "count": 7,
+      "min_id": 211926,
+      "max_id": 223510
+    }
+  ],
+  "samples": {
+    "scored_candidate": {
+      "id": 54995,
+      "writer_revision": "954f11b15f2e7615678f7d2b708c47895faebf1e",
+      "event": "planner_read",
+      "receipt_ms": 1788977288691,
+      "captured_ms": 1788977288695,
+      "fields": {
+        "capped_score_components": {
+          "confluence": 3,
+          "grade": "A"
+        },
+        "exclusion_reason": null,
+        "final_score": 1.92,
+        "grade": "A",
+        "price": 29424.5,
+        "raw_score_components": {
+          "role": "react_zone",
+          "family": "prior",
+          "freshness": "A",
+          "zone_base": null,
+          "reversal_multiplier": null,
+          "evidence": 1,
+          "size_multiplier": null,
+          "fresh_multiplier": 1,
+          "confluence_raw": 4,
+          "confluence_capped": 3,
+          "confluence_multiplier": 1.6,
+          "tf_multiplier": null,
+          "htf_multiplier": 1.2,
+          "score": 1.92,
+          "grade": "A",
+          "overrides": [
+            "cluster confluence display 4 -> 9; score unchanged",
+            "cluster confluence display 9 -> 14; score unchanged",
+            "cluster confluence display 14 -> 19; score unchanged",
+            "cluster confluence display 19 -> 24; score unchanged",
+            "cluster confluence display 24 -> 29; score unchanged"
+          ],
+          "exclusion": null
+        },
+        "selection_outcome": "seated",
+        "stable_id": "05b846fa0ba00e7e8f38992df9305e9a978a61d7a1ab7b18e6e2ab80809a86cd"
+      }
+    },
+    "cut_candidate": {
+      "id": 54994,
+      "writer_revision": "954f11b15f2e7615678f7d2b708c47895faebf1e",
+      "event": "planner_read",
+      "receipt_ms": 1788977288691,
+      "captured_ms": 1788977288695,
+      "fields": {
+        "capped_score_components": null,
+        "exclusion_reason": "PDH 29739.50 [PDH]: proximity distance=283.75 exceeds band=245",
+        "final_score": null,
+        "grade": null,
+        "price": 29739.5,
+        "raw_score_components": null,
+        "selection_outcome": "cut",
+        "stable_id": "0b08146b8d1917c19b105dd26efeb5a8b06b1968400b98289df19a5478105db4"
+      }
+    },
+    "completed_attempt": {
+      "id": 211923,
+      "writer_revision": "954f11b15f2e7615678f7d2b708c47895faebf1e",
+      "event": "attempt_verdict",
+      "receipt_ms": 1788977852483,
+      "captured_ms": 1788977852483,
+      "fields": {
+        "attempt": 1,
+        "attempt_ended_ms": 1788977852480,
+        "attempt_mode": "author",
+        "attempt_started_ms": 1788977288694,
+        "duration_ms": 558090.835295,
+        "plan_version": null,
+        "rejection_reason": null
+      }
+    },
+    "repair_attempt": null
+  },
+  "binary_sha256": "c7c9c72321c89a56f5348cc0a9cee554b8f63633782cc6b29973e196fae2e4cf",
+  "binary_bytes": 72459208,
+  "release_file": "954f11b1",
+  "head_release": "954f11b1",
+  "guide_line": "export const GUIDE_BUILT_REV = '954f11b15f2e7615678f7d2b708c47895faebf1e'",
+  "dist_files_checked": 92,
+  "dist_mismatches": []
+}

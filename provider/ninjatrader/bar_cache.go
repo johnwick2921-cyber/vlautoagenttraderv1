@@ -34,6 +34,12 @@ type BarCache struct {
 	maxBars int
 	// dropped counts NT8 empty-minute placeholder bars refused at ingest.
 	dropped int64
+	// W4/D21: the AddOn's boundary frame carries the just-closed bar AFTER
+	// the new forming one, so it arrives with a smaller timestamp. finalisations
+	// counts those accepted as a close of a bar the ring already holds;
+	// outOfOrderDrops counts every other backwards bar, still refused.
+	finalisations   int64
+	outOfOrderDrops int64
 	// BAR-SOURCE WAVE: per key, whether a live bar has been seen this process
 	// (the scale-mismatch check runs once, on the first), and every mismatch
 	// detected, for the boot line.
@@ -119,6 +125,22 @@ func (c *BarCache) DroppedPlaceholders() int64 {
 
 // AllPairs enumerates every (symbol, timeframe) pair currently held — the
 // boot-backfill entry point for bar persistence.
+// Finalisations reports how many times a live bar's close reached the cache
+// via the AddOn's boundary re-emit (W4/D21). READ, never assumed.
+func (c *BarCache) Finalisations() int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.finalisations
+}
+
+// OutOfOrderDrops reports backwards bars refused because the ring has never
+// held their timestamp — a genuine misordering, not a close.
+func (c *BarCache) OutOfOrderDrops() int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.outOfOrderDrops
+}
+
 func (c *BarCache) AllPairs() [][2]string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -378,10 +400,47 @@ func (c *BarCache) Upsert(symbol, timeframe string, bars []Bar) {
 				existing = existing[:c.maxBars]
 			}
 		default:
-			// Out-of-order bar — defensive: ignore.
+			// W4/D21: a bar's own CLOSE always arrives "backwards". The AddOn
+			// builds the forming bars first and only then appends the
+			// just-closed previous bar with final=true
+			// (VLBarsSubscriptionManager.cs:518-533 then :539-551), so the
+			// finalisation carries a strictly smaller timestamp than the bar
+			// appended a moment earlier and used to land here and be dropped —
+			// which is why no LIVE-closed bar was ever Final in the cache and
+			// every Picture consumer, filtering on Final, saw only seed bars.
+			//
+			// Accept such a bar ONLY as the finalisation of a bar the ring
+			// ALREADY HOLDS at that exact timestamp. It is never an insert, so
+			// a genuine out-of-order bar — one for a time this ring has never
+			// seen — is still refused exactly as before.
+			if b.Final {
+				if idx := indexOfBarT(existing, b.T); idx >= 0 {
+					if !existing[idx].Final {
+						existing[idx] = b
+						c.finalisations++
+					}
+					continue
+				}
+			}
+			c.outOfOrderDrops++
 		}
 	}
 	c.bars[key] = existing
+}
+
+// indexOfBarT returns the index of the bar stamped t, or -1. The ring is
+// ascending and a finalisation targets the newest bars, so the scan runs
+// backwards and stops as soon as it passes t.
+func indexOfBarT(bars []Bar, t int64) int {
+	for i := len(bars) - 1; i >= 0; i-- {
+		if bars[i].T == t {
+			return i
+		}
+		if bars[i].T < t {
+			return -1
+		}
+	}
+	return -1
 }
 
 // Get returns a SNAPSHOT (defensive copy) of the cached bars for

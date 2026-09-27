@@ -1,0 +1,11 @@
+{
+ "trader_id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+ "daily_pnl_usd": 0,
+ "daily_loss_limit_usd": 500,
+ "concurrent_trades": 0,
+ "max_concurrent_trades": 2,
+ "current_notional_usd": 0,
+ "max_notional_usd": 50000,
+ "kill_switch_armed": true,
+ "last_reset_utc": "2026-09-05T15:09:24Z"
+}

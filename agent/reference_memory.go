@@ -73,14 +73,6 @@ func (a *Agent) semanticCurrentReferences(userID int64) *CurrentReferences {
 	return a.getReferenceMemory(userID).CurrentReferences
 }
 
-func (a *Agent) semanticReferenceHistory(userID int64) []ReferenceRecord {
-	state := a.getExecutionState(userID)
-	if history := normalizeReferenceHistory(state.ReferenceHistory); len(history) > 0 {
-		return history
-	}
-	return a.getReferenceMemory(userID).ReferenceHistory
-}
-
 func (a *Agent) rememberReferencesFromToolResult(userID int64, toolName, raw string) {
 	if a == nil {
 		return

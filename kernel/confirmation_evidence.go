@@ -11,13 +11,14 @@ import (
 // event boundary, not a new bar-open window (a 5m close can follow a touch
 // inside that same bucket).
 func evaluateConfirmAfter(c PlanConfirm, bars []market.Kline, sinceMs, nowMs int64, after *int64) (v ConfirmVerdict) {
-	v = ConfirmVerdict{Rule: c.Rule, RefPrice: c.RefPrice, Side: c.Side, EvaluatedMs: nowMs, ReferenceMs: &sinceMs, ReferenceSource: "plan publication"}
+	res := ResolveConfirm(c) // W2: the ONE resolver — the stored rule, never an env re-read
+	v = ConfirmVerdict{Rule: c.Rule, RefPrice: c.RefPrice, Side: c.Side, EvaluatedMs: nowMs, ReferenceMs: &sinceMs, ReferenceSource: "plan publication", RuleSource: res.Source}
 	if after != nil {
 		v.ReferenceMs = after
 		v.ReferenceSource = "part one recorded event"
 	}
 	defer func() { finishConfirmation(&v) }()
-	w := BarsSince(bars, sinceMs)
+	w := confirmationTape(bars, sinceMs, nowMs) // W2 (d): ordered, one bar per minute
 	if len(w) == 0 {
 		v.Detail = "no bars yet"
 		return
@@ -58,7 +59,7 @@ func evaluateConfirmAfter(c PlanConfirm, bars []market.Kline, sinceMs, nowMs int
 			v.EventSource = "completed 1m MSS close"
 		}
 	case "time_hold":
-		need, run, best := AcceptHoldMin(), 0, 0
+		need, run, best := res.HoldMin, 0, 0 // A5: stored hold_min, else the named authoring default
 		for _, b := range w {
 			if b.OpenTime >= nowMs {
 				continue

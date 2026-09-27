@@ -1,0 +1,7 @@
+impact vocabulary: {'T1': 24, 'T2': 35}
+sources: {'forexfactory', 'static'}
+2026-08-19 forexfactory [('2026-08-19T06:00:00Z', 'T1', 'CPI y/y'), ('2026-08-19T07:10:00Z', 'T2', 'ECB President Lagarde Speaks'), ('2026-08-19T18:00:00Z', 'T1', 'FOMC Meeting Minutes')]
+2026-09-04 forexfactory [('2026-09-04T08:50:00Z', 'T1', 'BOE Gov Bailey Speaks'), ('2026-09-04T12:30:00Z', 'T1', 'Average Hourly Earnings m/m'), ('2026-09-04T12:30:00Z', 'T1', 'Non-Farm Employment Change'), ('2026-09-04T12:30:00Z', 'T1', 'Unemployment Rate')]
+2026-09-10 static [('2026-09-10T12:30:00Z', 'T1', 'PPI m/m (static fallback)'), ('2026-09-10T12:30:00Z', 'T2', 'Unemployment Claims (static fallback)')]
+2026-09-11 static [('2026-09-11T12:30:00Z', 'T1', 'CPI m/m (static fallback)')]
+2026-09-16 static [('2026-09-16T12:30:00Z', 'T1', 'Retail Sales m/m (static fallback)'), ('2026-09-16T18:00:00Z', 'T1', 'FOMC Statement (static fallback)'), ('2026-09-16T18:30:00Z', 'T1', 'FOMC Press Conference (static fallback)')]

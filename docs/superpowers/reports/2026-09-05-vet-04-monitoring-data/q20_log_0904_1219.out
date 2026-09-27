@@ -1,0 +1,30 @@
+09-04 12:15:01 WARN 🗓️ level wake seated OB(bear)·4h invalidated: close 29535.25 above 29503.38 (noise 6.78) on NY 2026-09-04 — SKIPPED: 14m elapsed < wake_min_in
+09-04 12:15:01 INFO 
+09-04 12:15:01 INFO ======================================================================
+09-04 12:15:01 INFO 📅 calendar: live slice for 2026-09-04 is 122h37m0s old — re-fetching for same-day corrections
+09-04 12:15:01 WARN 📐 excursion for MNQ pos=572 has no 1m coverage — mae/mfe left NULL, not zeroed
+09-04 12:15:01 INFO 🧪 adherence SKIPPED for MNQ pos 572 — source "e7_farside_test" is a test seam, never a real trade
+09-04 12:15:01 INFO 🗺️ seated 12/543 in-band levels (proximity band ±483pt, 12 of them retained)
+09-04 12:15:01 INFO 🗺️ seated 12/543 in-band levels (proximity band ±483pt, 12 of them retained)
+09-04 12:15:01 INFO 📋 [hoang] Strategy engine fetched candidate coins: 1
+09-04 12:15:01 INFO 📋 [hoang] Strategy leverage config: BTC/ETH=5x, Altcoin=5x
+09-04 12:15:01 INFO 🧾 [hoang] Track record: -217.18 over 110 resolved trades (115 unresolved excluded), 36.4% win rate, PF=0.95, Sharpe=-0.02, DD=9.9%
+09-04 12:15:01 INFO 🛑 arm stop NY S2 leg 1 short: stop 29755.00 · anchor none (stop_unanchored) · atr_floor 29753.43 (1.5×ATR5m 22.29) · bound=authored
+09-04 12:15:01 WARN 🛑 stop_unanchored NY S2 leg 1 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=211 (provisional bound reviewed
+09-04 12:15:01 INFO 🚫 no-chase: arm S2 has no recorded touch — run stored NULL, judged on dist alone (0.00×ATR)
+09-04 12:15:01 WARN 📏 arm far: S2 short entry 29720.00 is 185.75 pts / 8.3×ATR5m from price 29534.25 (counted, not refused)
+09-04 12:15:01 INFO 🛑 arm stop NY S2 leg 2 short: stop 29755.00 · anchor none (stop_unanchored) · atr_floor 29753.43 (1.5×ATR5m 22.29) · bound=authored
+09-04 12:15:01 WARN 🛑 stop_unanchored NY S2 leg 2 — no seated level within 3.0×ATR5m on the risk side; ATR floor governs. Recorded n=212 (provisional bound reviewed
+09-04 12:15:01 INFO ⚔️ arm S2 leg 2 wait_confirm MET (1x5m_close) — arming
+09-04 12:15:01 INFO 🚫 no-chase: arm S2 has no recorded touch — run stored NULL, judged on dist alone (0.00×ATR)
+09-04 12:15:01 WARN 📏 arm far: S2 short entry 29720.00 is 185.75 pts / 8.3×ATR5m from price 29534.25 (counted, not refused)
+09-04 12:15:01 INFO ======================================================================
+09-04 12:15:01 WARN ⚠️ Strategy Studio: risk guardrails master OFF — daily loss/profit/trade limits + blackout NOT enforced this cycle (futures SIZE caps — notion
+09-04 12:15:05 INFO 🗺️ seated 24/666 in-band levels (proximity band ±483pt, 24 of them retained)
+09-04 12:15:05 INFO 🗺️ seated 24/666 in-band levels (proximity band ±483pt, 24 of them retained)
+09-04 12:15:05 INFO 🗺️ seated 12/543 in-band levels (proximity band ±483pt, 12 of them retained)
+09-04 12:15:05 INFO 📡 [[Provider: deepseek, Model: deepseek-v4-pro]] Request AI Server: BaseURL: https://api.deepseek.com
+09-04 12:15:05 INFO 📡 [MCP [Provider: deepseek, Model: deepseek-v4-pro]] Request URL: https://api.deepseek.com/chat/completions
+09-04 12:15:15 INFO ai_call model=deepseek-v4-pro duration_ms=9959 finish_reason=stop ok=true retries=1 ttfb_ms=0 reasoning_chars=1321 idle_before_ms=0 conn_reused=false 
+09-04 12:15:15 INFO ✓ Extracted reasoning chain using <reasoning> tag
+09-04 12:15:15 INFO ✓ Extracted JSON using <decision> tag

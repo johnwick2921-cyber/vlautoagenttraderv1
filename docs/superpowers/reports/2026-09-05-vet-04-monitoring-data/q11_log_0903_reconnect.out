@@ -1,0 +1,25 @@
+09-03 14:59:03 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 14:59:03 [INFO] trader/auto_trader.go:43 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDON 02:00→08:30 CT (last-entry 08:15, flat 08:30) | NY 08:30→14:45 CT (last-entry 14
+09-03 14:59:03 [INFO] trader/auto_trader.go:43 💰 Initial balance: 50000.00 USDT
+09-03 14:59:03 [INFO] ninjatrader/reconcile.go:564 🧩 reconcile: armed-fill lineage stamped — pos 572 ← TEST-E7:c15c48a6-a036-4991-b4d0-9c9e0b2295b3 v0 TEST-E7 (fill 29346.25, entry_id c15c48a6-a036-4991-b4d0-9c9e0
+09-03 14:59:03 [INFO] ninjatrader/reconcile.go:605 🩹 RepairArmedLineage: pos 572 lineage stamped (v0 TEST-E7) — grade "D" cleared for regrading
+09-03 14:59:03 [INFO] ninjatrader/reconcile.go:87 🩹 RepairArmedLineage: stamped 1 position(s) with their armed-fill plan linkage (the #567 class)
+09-03 14:59:03 [INFO] ninjatrader/reconcile.go:96 🔧 NinjaTrader position-reconcile started (anchors entry_price to NT8 avg + clears orphan rows)
+09-03 14:59:03 [INFO] trader/auto_trader.go:43 🔧 NinjaTrader position-reconcile enabled (entry→NT8 avg, orphan clear)
+09-03 14:59:03 [INFO] kernel/levels_volume_boot.go:49 🛡 cutover safety (class 33): flat gate legs=5 (db_open_positions · api_positions · nt8_positions_snapshot · working_orders · planner_in_flight) via GET /api/cu
+09-03 14:59:03 [WARN] trader/auto_trader.go:48 🚨 dead-man watchdog: NT8 TCP link DOWN — NEW entries BLOCKED until a clean reconciliation. Open positions & exits are unaffected.
+09-03 14:59:04 [INFO] trader/auto_trader.go:43 📊 bars: 1w own1m via 1m since 2026-08-13 (3) · 1d own1m via 1m since 2026-08-19 (13) · 4h own1m via 1m since 2026-08-19 (69) · 1h own1m via 1m since 2026-08-19 (259) �
+09-03 14:59:04 [WARN] config/config.go:242 🚨 NEW ERROR CLASS "no_balance_frame" (trader 8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265): equity 0 and no account_balance frame received yet [cost none
+09-03 14:59:18 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 14:59:33 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 14:59:48 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:00:03 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:00:18 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:00:33 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:00:48 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:01:15 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:01:18 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:01:33 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:01:48 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:02:03 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)
+09-03 15:02:18 [INFO] ninjatrader/bar_persist_wire.go:113 📦 bars: persisting 28 symbol×tf retention=90d rows=75140 (backfilled 0)

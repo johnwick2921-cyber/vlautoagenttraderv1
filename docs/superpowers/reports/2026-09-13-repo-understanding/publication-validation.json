@@ -1,0 +1,200 @@
+{
+  "baseline": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "audit_revision_at_check": "65e19141",
+  "review_reports": 30,
+  "indexed_reviews": 30,
+  "standard_artifacts": 120,
+  "primary_source_files": 1049,
+  "primary_source_lines": 250582,
+  "duplicate_primary_assignments": [],
+  "errors": [],
+  "reviews": [
+    {
+      "review": 1,
+      "primary_files": 24,
+      "primary_lines": 6649,
+      "artifact_files": 4
+    },
+    {
+      "review": 2,
+      "primary_files": 22,
+      "primary_lines": 6660,
+      "artifact_files": 4
+    },
+    {
+      "review": 3,
+      "primary_files": 15,
+      "primary_lines": 9219,
+      "artifact_files": 4
+    },
+    {
+      "review": 4,
+      "primary_files": 14,
+      "primary_lines": 9223,
+      "artifact_files": 4
+    },
+    {
+      "review": 5,
+      "primary_files": 14,
+      "primary_lines": 9224,
+      "artifact_files": 4
+    },
+    {
+      "review": 6,
+      "primary_files": 24,
+      "primary_lines": 9015,
+      "artifact_files": 4
+    },
+    {
+      "review": 7,
+      "primary_files": 25,
+      "primary_lines": 9071,
+      "artifact_files": 4
+    },
+    {
+      "review": 8,
+      "primary_files": 31,
+      "primary_lines": 7721,
+      "artifact_files": 4
+    },
+    {
+      "review": 9,
+      "primary_files": 30,
+      "primary_lines": 7725,
+      "artifact_files": 4
+    },
+    {
+      "review": 10,
+      "primary_files": 25,
+      "primary_lines": 7199,
+      "artifact_files": 4
+    },
+    {
+      "review": 11,
+      "primary_files": 22,
+      "primary_lines": 7100,
+      "artifact_files": 4
+    },
+    {
+      "review": 12,
+      "primary_files": 49,
+      "primary_lines": 7579,
+      "artifact_files": 4
+    },
+    {
+      "review": 13,
+      "primary_files": 42,
+      "primary_lines": 9436,
+      "artifact_files": 4
+    },
+    {
+      "review": 14,
+      "primary_files": 20,
+      "primary_lines": 10442,
+      "artifact_files": 4
+    },
+    {
+      "review": 15,
+      "primary_files": 41,
+      "primary_lines": 10001,
+      "artifact_files": 4
+    },
+    {
+      "review": 16,
+      "primary_files": 43,
+      "primary_lines": 10006,
+      "artifact_files": 4
+    },
+    {
+      "review": 17,
+      "primary_files": 106,
+      "primary_lines": 8052,
+      "artifact_files": 4
+    },
+    {
+      "review": 18,
+      "primary_files": 106,
+      "primary_lines": 8052,
+      "artifact_files": 4
+    },
+    {
+      "review": 19,
+      "primary_files": 95,
+      "primary_lines": 12529,
+      "artifact_files": 4
+    },
+    {
+      "review": 20,
+      "primary_files": 26,
+      "primary_lines": 7375,
+      "artifact_files": 4
+    },
+    {
+      "review": 21,
+      "primary_files": 15,
+      "primary_lines": 6816,
+      "artifact_files": 4
+    },
+    {
+      "review": 22,
+      "primary_files": 26,
+      "primary_lines": 7466,
+      "artifact_files": 4
+    },
+    {
+      "review": 23,
+      "primary_files": 27,
+      "primary_lines": 7481,
+      "artifact_files": 4
+    },
+    {
+      "review": 24,
+      "primary_files": 61,
+      "primary_lines": 12988,
+      "artifact_files": 4
+    },
+    {
+      "review": 25,
+      "primary_files": 54,
+      "primary_lines": 12309,
+      "artifact_files": 4
+    },
+    {
+      "review": 26,
+      "primary_files": 59,
+      "primary_lines": 12309,
+      "artifact_files": 4
+    },
+    {
+      "review": 27,
+      "primary_files": 17,
+      "primary_lines": 9463,
+      "artifact_files": 4
+    },
+    {
+      "review": 28,
+      "primary_files": 16,
+      "primary_lines": 9472,
+      "artifact_files": 4
+    },
+    {
+      "review": 29,
+      "primary_files": 0,
+      "primary_lines": 0,
+      "artifact_files": 4
+    },
+    {
+      "review": 30,
+      "primary_files": 0,
+      "primary_lines": 0,
+      "artifact_files": 4
+    }
+  ],
+  "limitations": [
+    "Independent artifact consistency check, not repeated semantic reading.",
+    "Full manual claims and hashes compared with assigned baseline manifest; no assertion that every tracked test/artifact was read.",
+    "Reviews29/30 add no primary coverage and are pinned to99a06543, not subsequent final repairs.",
+    "Named-function coverage checked against existing validator output; this script does not reparse sources.",
+    "Repair/test/runtime/publication status is separately revision-scoped in REPAIR-STATUS.md."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "historical_graph": {
+    "base": "July10@7a8adce0",
+    "nodes_total": 3121,
+    "edges_total": 9588,
+    "matching_assigned_nodes": [],
+    "matching_edges": [],
+    "conclusion": "All 22 assigned paths absent; historical graph cannot establish any current planner dependency."
+  },
+  "cgc": {
+    "source": "root-exported cgc-file-paths.json",
+    "indexed_files": 781,
+    "matching_assigned_files": []
+  },
+  "source_edges": [
+    {
+      "source": "trader/one_setup_wiring.go:152",
+      "target": "kernel/one_setup.go:89",
+      "meaning": "Caller supplies live FadePermissionAt result and candidate map"
+    },
+    {
+      "source": "trader/plan_liveness.go:22",
+      "target": "kernel/plan_authored_invalidation.go:32",
+      "meaning": "Known invalidated verdict refuses newly authored scenario"
+    },
+    {
+      "source": "trader/auto_trader_weekly.go:254",
+      "target": "kernel/weekly_prompt.go:236",
+      "meaning": "New weekly output validation passes reference universe that validator does not inspect"
+    },
+    {
+      "source": "trader/follow_plan_wiring.go:131",
+      "target": "kernel/follow_plan.go:92",
+      "meaning": "Recorded-only live outcomes"
+    }
+  ]
+}

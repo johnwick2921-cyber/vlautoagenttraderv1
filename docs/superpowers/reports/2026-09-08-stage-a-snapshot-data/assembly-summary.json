@@ -1,0 +1,25 @@
+{
+  "baseline": {
+    "mean_ns_per_run": [
+      21042842,
+      19141682,
+      21324307
+    ],
+    "median_of_three_means_ms": 21.042842,
+    "drops_per_run": []
+  },
+  "current": {
+    "mean_ns_per_run": [
+      21628321,
+      23165777,
+      23515908
+    ],
+    "median_of_three_means_ms": 23.165777,
+    "drops_per_run": [
+      573.0,
+      560.0,
+      565.0
+    ]
+  },
+  "delta_ms": 2.1229349999999982
+}

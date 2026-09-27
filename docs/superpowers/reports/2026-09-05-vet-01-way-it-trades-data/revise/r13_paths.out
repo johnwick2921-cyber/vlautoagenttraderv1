@@ -1,0 +1,28 @@
+### n58
+  arm path         n 11 6/5/0 Σ    +94.50 win  54.5 [28.0,78.7]
+  non-arm          n 47 12/33/2 Σ   -560.93 win  26.7 [16.0,41.0]
+  exit@target      n 10 10/0/0 Σ  +1705.50 win 100.0 [72.2,100.0]
+  exit@other       n 14 8/4/2 Σ   +289.07 win  66.7 [39.1,86.2]
+  exit@stop        n 34 0/34/0 Σ  -2461.00 win   0.0 [0.0,10.2]
+    target share 10/58 [0.096,0.289]
+    stop share [0.458,0.704]
+    other share [0.150,0.365]
+    session-days: 12
+    NY trades 21 Σ 62.0 days 10 net@2.5/RT 9.5
+    trades/day 4.83
+    reject n 31 mean 18.90 sd_samp 105.56 CI [-18.26,56.06]
+      (pop sd version [-17.65,55.46])
+### n65
+  arm path         n 11 6/5/0 Σ    +94.50 win  54.5 [28.0,78.7]
+  non-arm          n 54 15/37/2 Σ   -658.43 win  28.8 [18.3,42.3]
+  exit@target      n 10 10/0/0 Σ  +1705.50 win 100.0 [72.2,100.0]
+  exit@other       n 18 11/5/2 Σ   +394.07 win  68.8 [44.4,85.8]
+  exit@stop        n 37 0/37/0 Σ  -2663.50 win   0.0 [0.0,9.4]
+    target share 10/65 [0.086,0.261]
+    stop share [0.448,0.682]
+    other share [0.183,0.396]
+    session-days: 14
+    NY trades 21 Σ 62.0 days 10 net@2.5/RT 9.5
+    trades/day 4.64
+    reject n 31 mean 18.90 sd_samp 105.56 CI [-18.26,56.06]
+      (pop sd version [-17.65,55.46])

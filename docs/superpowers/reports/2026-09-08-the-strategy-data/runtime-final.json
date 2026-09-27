@@ -1,0 +1,246 @@
+{
+  "read_ct": "2026-09-08T18:43:07.059116-05:00",
+  "queries": {
+    "/api/health": {
+      "revision": "6f677b55daa1",
+      "status": "ok",
+      "time": null
+    },
+    "/api/positions": [],
+    "/api/cutover-gate": {
+      "ready": true,
+      "legs": [
+        {
+          "n": 1,
+          "name": "db_open_positions",
+          "pass": true,
+          "detail": "0 open row(s)",
+          "source": "sqlite trader_positions"
+        },
+        {
+          "n": 2,
+          "name": "api_positions",
+          "pass": true,
+          "detail": "0 position(s)",
+          "source": "trader.GetPositions"
+        },
+        {
+          "n": 3,
+          "name": "nt8_positions_snapshot",
+          "pass": true,
+          "detail": "count=0",
+          "source": "NT8 positions frame"
+        },
+        {
+          "n": 4,
+          "name": "working_orders",
+          "pass": true,
+          "detail": "0 working order(s) at the broker (ledger agrees: 0)",
+          "source": "broker \u2014 NT8 order_snapshot frame (age 0s, build 2026-09-07-h1)"
+        },
+        {
+          "n": 5,
+          "name": "planner_in_flight",
+          "pass": true,
+          "detail": "no planner read claimed",
+          "source": "plannerReadInFlight claim"
+        }
+      ],
+      "note": "class 33: leg 4 reads the armed_orders ledger (NT8 emits no working-order frame, audit F12); a leg that cannot be evaluated FAILS. Boot sweep counter key: arms_boot_swept_class33"
+    },
+    "/api/desk": {
+      "generated_at_ms": 1788910987051,
+      "cadence_ms": 15000,
+      "unknown_count": 4,
+      "stale_count": 0,
+      "lines": [
+        {
+          "n": 1,
+          "key": "mode",
+          "label": "MODE",
+          "text": "SIM \u00b7 plan_mode=strict \u00b7 session=ASIA \u00b7 CME OPEN \u00b7 18:43:07 CT \u00b7 process responding \u00b7 feed 7s since last bar \u00b7 link UNKNOWN (no feed_status received) \u00b7 book 0 working order(s) at the broker (ledger agrees: 0) \u00b7 received 18:43:06 CT \u00b7 age 0s \u00b7 AddOn build 2026-09-07-h1",
+          "state": "unknown",
+          "source": "strategy config \u00b7 session registry \u00b7 bars \u00b7 NT8 link",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": false,
+          "reason": "NT8 link state has not been received"
+        },
+        {
+          "n": 2,
+          "key": "position",
+          "label": "POSITION",
+          "text": "FLAT \u2014 no open position",
+          "state": "flat",
+          "source": "trader.GetPositions",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": true
+        },
+        {
+          "n": 3,
+          "key": "protection",
+          "label": "PROTECTION",
+          "text": "FLAT \u2014 nothing to protect",
+          "state": "flat",
+          "source": "accepted_risk",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": true
+        },
+        {
+          "n": 4,
+          "key": "drift",
+          "label": "DRIFT",
+          "text": "FLAT",
+          "state": "flat",
+          "source": "accepted_risk vs armed_orders",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": true
+        },
+        {
+          "n": 5,
+          "key": "target",
+          "label": "TARGET",
+          "text": "FLAT",
+          "state": "flat",
+          "source": "accepted_risk",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": true
+        },
+        {
+          "n": 6,
+          "key": "day",
+          "label": "DAY",
+          "text": "realized +0.00 USD on 0 trade(s) \u00b7 no enforced daily limit (guardrails master OFF \u2014 soft-audit only)",
+          "state": "ok",
+          "unit": "USD",
+          "source": "trader_positions.pnl_corrected \u00b7 strategy guardrails",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": true
+        },
+        {
+          "n": 7,
+          "key": "arms",
+          "label": "ARMS",
+          "text": "none resting",
+          "state": "flat",
+          "source": "armed_orders",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": true
+        },
+        {
+          "n": 8,
+          "key": "book",
+          "label": "BOOK",
+          "text": "0 working order(s) at the broker (ledger agrees: 0) \u00b7 received 18:43:06 CT \u00b7 age 0s \u00b7 AddOn build 2026-09-07-h1",
+          "state": "ok",
+          "source": "broker \u2014 NT8 order_snapshot frame (age 0s, build 2026-09-07-h1)",
+          "as_of_ms": 1788910986926,
+          "age_ms": 124,
+          "verified": true
+        },
+        {
+          "n": 9,
+          "key": "feed",
+          "label": "FEED",
+          "text": "last bar 7s ago \u00b7 link UNKNOWN (no feed_status received) \u00b7 AddOn build 2026-09-07-h1",
+          "state": "unknown",
+          "source": "bars \u00b7 NT8 link \u00b7 AddOn build id",
+          "as_of_ms": 1788910980000,
+          "age_ms": 7051,
+          "verified": false,
+          "reason": "NT8 link state has not been received"
+        },
+        {
+          "n": 10,
+          "key": "planner",
+          "label": "PLANNER",
+          "text": "idle \u2014 no planner read claimed \u00b7 tradeable UNKNOWN \u2014 no active plan",
+          "state": "ok",
+          "source": "plannerReadInFlight claim",
+          "as_of_ms": 1788910987051,
+          "age_ms": 0,
+          "verified": true
+        },
+        {
+          "n": 11,
+          "key": "range",
+          "label": "RANGE",
+          "text": "session 29502.00\u201329550.25 = 48.25 pts on 91 bar(s) \u00b7 4.01\u00d7 ATR5m (12.04)",
+          "state": "ok",
+          "unit": "pts",
+          "source": "bars (session-day) \u00b7 ATR5m",
+          "as_of_ms": 1788910980000,
+          "age_ms": 7051,
+          "verified": true
+        },
+        {
+          "n": 12,
+          "key": "lastfill",
+          "label": "LAST FILL",
+          "text": "SELL MNQ 29590.50 qty 1.00 \u00b7 slippage UNKNOWN (the intended price is not stored beside the fill; the AddOn's slippage_ticks has no consumer)",
+          "state": "ok",
+          "source": "trader_fills",
+          "as_of_ms": 1788890428200,
+          "age_ms": 20558851,
+          "verified": true
+        },
+        {
+          "n": 13,
+          "key": "confirmation",
+          "label": "CONFIRMATION",
+          "text": "UNKNOWN",
+          "state": "unknown",
+          "source": "versioned scenario_meta.confirm (recorded evaluator)",
+          "as_of_ms": 0,
+          "age_ms": 0,
+          "verified": false,
+          "reason": "no active plan or store"
+        },
+        {
+          "n": 14,
+          "key": "scenarios",
+          "label": "SCENARIOS",
+          "text": "UNKNOWN",
+          "state": "unknown",
+          "source": "versioned plan document; authored economics, not broker prices",
+          "as_of_ms": 0,
+          "age_ms": 0,
+          "verified": false,
+          "reason": "no dated active plan"
+        }
+      ]
+    }
+  },
+  "pid": "3726840",
+  "exe": "/home/hoang/nofx/nofx-bin",
+  "loaded_sha256": "418b08a44e81fb85f5f79524f0cd18d57d4e89b7d91c9100dc076bc7e82c375f",
+  "disk_sha256": "418b08a44e81fb85f5f79524f0cd18d57d4e89b7d91c9100dc076bc7e82c375f",
+  "build": "/proc/3726840/exe: go1.25.3\n\tpath\tnofx\n\tmod\tnofx\tv0.0.0-20260908230158-6f677b55daa1\t\n\tdep\tgithub.com/adshao/go-binance/v2\tv2.8.9\th1:NX+4u/LgEmrjTS7OMWU+9ZgfHKFM61RPhnr9/SqWPhc=\n\tdep\tgithub.com/antihax/optional\tv1.0.0\th1:xK2lYat7ZLaVVcIuj82J8kIro4V6kDe0AUDFboUCwcg=\n\tdep\tgithub.com/armon/go-radix\tv1.0.0\th1:F4z6KzEeeQIMeLFa97iZU6vupzoecKdU5TX24SNppXI=\n\tdep\tgithub.com/beorn7/perks\tv1.0.1\th1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=\n\tdep\tgithub.com/bitly/go-simplejson\tv0.5.1\th1:xgwPbetQScXt1gh9BmoJ6j9JMr3TElvuIyjR8pgdoow=\n\tdep\tgithub.com/bits-and-blooms/bitset\tv1.24.0\th1:H4x4TuulnokZKvHLfzVRTHJfFfnHEeSYJizujEZvmAM=\n\tdep\tgithub.com/bybit-exchange/bybit.go.api\tv0.0.0-20250727214011-c9347d6804d6\th1:41FLQtKmxWEdyjdgrAm9lZFdS0Ax2XsDxkd/fuztsyQ=\n\tdep\tgithub.com/cespare/xxhash/v2\tv2.3.0\th1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=\n\tdep\tgithub.com/consensys/gnark-crypto\tv0.19.0\th1:zXCqeY2txSaMl6G5wFpZzMWJU9HPNh8qxPnYJ1BL9vA=\n\tdep\tgithub.com/crate-crypto/go-eth-kzg\tv1.4.0\th1:WzDGjHk4gFg6YzV0rJOAsTK4z3Qkz5jd4RE3DAvPFkg=\n\tdep\tgithub.com/dustin/go-humanize\tv1.0.1\th1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=\n\tdep\tgithub.com/elastic/go-sysinfo\tv1.15.4\th1:A3zQcunCxik14MgXu39cXFXcIw2sFXZ0zL886eyiv1Q=\n\tdep\tgithub.com/elliottech/lighter-go\tv0.0.0-20251104171447-78b9b55ebc48\th1:gUQjmjTTDDYtB2BOYpZhIO4IU7Kx0p/XbWHraWnhK5E=\n\tdep\tgithub.com/elliottech/poseidon_crypto\tv0.0.11\th1:iX4rCg0m1XIX/7mhXVUEYUJIdQD57zNGNLeb6RZRl7g=\n\tdep\tgithub.com/ethereum/go-ethereum\tv1.17.0\th1:2D+1Fe23CwZ5tQoAS5DfwKFNI1HGcTwi65/kRlAVxes=\n\tdep\tgithub.com/gabriel-vasile/mimetype\tv1.4.8\th1:FfZ3gj38NjllZIeJAmMhr+qKL8Wu+nOoI3GqacKw1NM=\n\tdep\tgithub.com/gateio/gateapi-go/v6\tv6.104.3\th1:JQ2+s1pG4bL+JeLQyGy9c7YLr7hxRI8g7vkAuQYl75k=\n\tdep\tgithub.com/gin-contrib/sse\tv1.1.0\th1:n0w2GMuUpWDVp7qSpvze6fAu9iRxJY4Hmj6AmBOU05w=\n\tdep\tgithub.com/gin-gonic/gin\tv1.11.0\th1:OW/6PLjyusp2PPXtyxKHU0RbX6I/l28FTdDlae5ueWk=\n\tdep\tgithub.com/go-playground/locales\tv0.14.1\th1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/oXslEjJA=\n\tdep\tgithub.com/go-playground/universal-translator\tv0.18.1\th1:Bcnm0ZwsGyWbCzImXv+pAJnYK9S473LQFuzCbDbfSFY=\n\tdep\tgithub.com/go-playground/validator/v10\tv10.27.0\th1:w8+XrWVMhGkxOaaowyKH35gFydVHOvC0/uWoy2Fzwn4=\n\tdep\tgithub.com/go-telegram-bot-api/telegram-bot-api/v5\tv5.5.1\th1:wG8n/XJQ07TmjbITcGiUaOtXxdrINDz1b0J1w0SzqDc=\n\tdep\tgithub.com/goccy/go-yaml\tv1.18.0\th1:8W7wMFS12Pcas7KU+VVkaiCng+kG8QiFeFwzFb+rwuw=\n\tdep\tgithub.com/golang-jwt/jwt/v5\tv5.2.2\th1:Rl4B7itRWVtYIHFrSNd7vhTiz9UpLdi6gZhZ3wEeDy8=\n\tdep\tgithub.com/google/uuid\tv1.6.0\th1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=\n\tdep\tgithub.com/gorilla/websocket\tv1.5.3\th1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=\n\tdep\tgithub.com/holiman/uint256\tv1.3.2\th1:a9EgMPSC1AAaj1SZL5zIQD3WbwTuHrMGOerLjGmM/TA=\n\tdep\tgithub.com/jackc/pgpassfile\tv1.0.0\th1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=\n\tdep\tgithub.com/jackc/pgservicefile\tv0.0.0-20240606120523-5a60cdf6a761\th1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=\n\tdep\tgithub.com/jackc/pgx/v5\tv5.9.2\th1:3ZhOzMWnR4yJ+RW1XImIPsD1aNSz4T4fyP7zlQb56hw=\n\tdep\tgithub.com/jackc/puddle/v2\tv2.2.2\th1:PR8nw+E/1w0GLuRFSmiioY6UooMp6KJv0/61nB7icHo=\n\tdep\tgithub.com/jinzhu/inflection\tv1.0.0\th1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=\n\tdep\tgithub.com/jinzhu/now\tv1.1.5\th1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=\n\tdep\tgithub.com/joho/godotenv\tv1.5.1\th1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=\n\tdep\tgithub.com/josharian/intern\tv1.0.0\th1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=\n\tdep\tgithub.com/jpillora/backoff\tv1.0.0\th1:uvFg412JmmHBHw7iwprIxkPMI+sGQ4kzOWsMeHnm2EA=\n\tdep\tgithub.com/json-iterator/go\tv1.1.12\th1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=\n\tdep\tgithub.com/leodido/go-urn\tv1.4.0\th1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=\n\tdep\tgithub.com/lib/pq\tv1.10.9\th1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=\n\tdep\tgithub.com/mailru/easyjson\tv0.9.1\th1:LbtsOm5WAswyWbvTEOqhypdPeZzHavpZx96/n553mR8=\n\tdep\tgithub.com/mattn/go-colorable\tv0.1.14\th1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=\n\tdep\tgithub.com/mattn/go-isatty\tv0.0.20\th1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=\n\tdep\tgithub.com/mattn/go-sqlite3\tv1.14.32\th1:JD12Ag3oLy1zQA+BNn74xRgaBbdhbNIDYvQUEuuErjs=\n\tdep\tgithub.com/modern-go/concurrent\tv0.0.0-20180306012644-bacd9c7ef1dd\th1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=\n\tdep\tgithub.com/modern-go/reflect2\tv1.0.2\th1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=\n\tdep\tgithub.com/munnerz/goautoneg\tv0.0.0-20191010083416-a7dc8b61c822\th1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=\n\tdep\tgithub.com/pelletier/go-toml/v2\tv2.2.4\th1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=\n\tdep\tgithub.com/pkg/errors\tv0.9.1\th1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=\n\tdep\tgithub.com/prometheus/client_golang\tv1.23.2\th1:Je96obch5RDVy3FDMndoUsjAhG5Edi49h0RJWRi/o0o=\n\tdep\tgithub.com/prometheus/client_model\tv0.6.2\th1:oBsgwpGs7iVziMvrGhE53c/GrLUsZdHnqNwqPLxwZyk=\n\tdep\tgithub.com/prometheus/common\tv0.66.1\th1:h5E0h5/Y8niHc5DlaLlWLArTQI7tMrsfQjHV+d9ZoGs=\n\tdep\tgithub.com/prometheus/procfs\tv0.17.0\th1:FuLQ+05u4ZI+SS/w9+BWEM2TXiHKsUQ9TADiRH7DuK0=\n\tdep\tgithub.com/quic-go/qpack\tv0.6.0\th1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8=\n\tdep\tgithub.com/quic-go/quic-go\tv0.59.1\th1:0Gmua0HW1Tv7ANR7hUYwRyD0MG5OJfgvYSZasGZzBic=\n\tdep\tgithub.com/remyoudompheng/bigfft\tv0.0.0-20230129092748-24d4a6f8daec\th1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=\n\tdep\tgithub.com/rs/zerolog\tv1.34.0\th1:k43nTLIwcTVQAncfCw4KZ2VY6ukYoZaBPNOE8txlOeY=\n\tdep\tgithub.com/shopspring/decimal\tv1.4.0\th1:bxl37RwXBklmTi0C79JfXCEBD1cqqHt0bbgBAGFp81k=\n\tdep\tgithub.com/sirupsen/logrus\tv1.9.3\th1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=\n\tdep\tgithub.com/sonirico/go-hyperliquid\tv0.26.0\th1:C2KjaD2R/AxH1FOPl6W1LyvAx/XUHdTQYgjb4PUcPN0=\n\tdep\tgithub.com/sonirico/vago\tv0.10.0\th1:y+4Wo56tK+88a5lUwVrZUO2RRLaPcBgjI5cupKpT1Oc=\n\tdep\tgithub.com/sonirico/vago/lol\tv0.0.0-20250901170347-2d1d82c510bd\th1:rbvNORW8/0AtH/8W/SUwUykbuh2SeQBrNgFLqYpGTWY=\n\tdep\tgithub.com/ugorji/go/codec\tv1.3.0\th1:Qd2W2sQawAfG8XSvzwhBeoGq71zXOC/Q1E9y/wUcsUA=\n\tdep\tgithub.com/valyala/fastjson\tv1.6.7\th1:ZE4tRy0CIkh+qDc5McjatheGX2czdn8slQjomexVpBM=\n\tdep\tgithub.com/vmihailenco/msgpack/v5\tv5.4.1\th1:cQriyiUvjTwOHg8QZaPihLWeRAAVoCpE00IUPn0Bjt8=\n\tdep\tgithub.com/vmihailenco/tagparser/v2\tv2.0.0\th1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAhO7/IwNM9g=\n\tdep\tgo.elastic.co/apm/module/apmzerolog/v2\tv2.7.1\th1:C9+KrlqS8F4SZFu+ct0Jmv2YLmzDhWsI8htK6exd3vg=\n\tdep\tgo.elastic.co/apm/v2\tv2.7.1\th1:OFjARuESjBsxw7wHrEAnfSVNCHGBATXSI/kPvBARY/A=\n\tdep\tgo.elastic.co/fastjson\tv1.5.1\th1:zeh1xHrFH79aQ6Xsw7YxixvnOdAl3OSv0xch/jRDzko=\n\tdep\tgo.yaml.in/yaml/v2\tv2.4.2\th1:DzmwEr2rDGHl7lsFgAHxmNz/1NlQ7xLIrlN2h5d1eGI=\n\tdep\tgolang.org/x/crypto\tv0.53.0\th1:QZ4Muo8THX6CizN2vPPd5fBGHyogrdK9fG4wLPFUsto=\n\tdep\tgolang.org/x/exp\tv0.0.0-20250620022241-b7579e27df2b\th1:M2rDM6z3Fhozi9O7NWsxAkg/yqS/lQJ6PmkyIV3YP+o=\n\tdep\tgolang.org/x/net\tv0.56.0\th1:Rw8j/hFzGvJUZwNBXnAtf5sVDVt+65SK2C7IxCxZt5o=\n\tdep\tgolang.org/x/sync\tv0.21.0\th1:HLII4xRRTtCRkxYp4HNFF0Js/Og6q2i++KXbg0gHCwM=\n\tdep\tgolang.org/x/sys\tv0.46.0\th1:noSf2Fq6F8DBgS+LysIkx7rIExoNHJsxOAtPp4rthXw=\n\tdep\tgolang.org/x/text\tv0.39.0\th1:UbZz4pLOvn600D6Oh6GGEI6VAmndrEBLv8/6BEXzyus=\n\tdep\tgoogle.golang.org/protobuf\tv1.36.11\th1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=\n\tdep\tgorm.io/driver/postgres\tv1.6.0\th1:2dxzU8xJ+ivvqTRph34QX+WrRaJlmfyPqXmoGVjMBa4=\n\tdep\tgorm.io/driver/sqlite\tv1.6.0\th1:WHRRrIiulaPiPFmDcod6prc4l2VGVWHz80KspNsxSfQ=\n\tdep\tgorm.io/gorm\tv1.31.1\th1:7CA8FTFz/gRfgqgpeKIBcervUn3xSyPUmr6B2WXJ7kg=\n\tdep\tmodernc.org/libc\tv1.66.10\th1:yZkb3YeLx4oynyR+iUsXsybsX4Ubx7MQlSYEw4yj59A=\n\tdep\tmodernc.org/mathutil\tv1.7.1\th1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=\n\tdep\tmodernc.org/memory\tv1.11.0\th1:o4QC8aMQzmcwCK3t3Ux/ZHmwFPzE6hf2Y5LbkRs+hbI=\n\tdep\tmodernc.org/sqlite\tv1.40.0\th1:bNWEDlYhNPAUdUdBzjAvn8icAs/2gaKlj4vM+tQ6KdQ=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\tCGO_ENABLED=1\n\tbuild\tCGO_CFLAGS=\n\tbuild\tCGO_CPPFLAGS=\n\tbuild\tCGO_CXXFLAGS=\n\tbuild\tCGO_LDFLAGS=\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=6f677b55daa1c7da33b8c35f8bcc67883f36b470\n\tbuild\tvcs.time=2026-09-08T23:01:58Z\n\tbuild\tvcs.modified=false\n",
+  "process_started_ct": "Tue Sep  8 18:11:48 2026",
+  "dotenv_allowlist": {
+    "MIN_SL_ATR_MULT": "UNSET",
+    "ARM_STOP_ANCHOR_MAX_ATR": "UNSET",
+    "ARM_PLACE_TICKS": "UNSET",
+    "STOP_ENTRY_SEAM": "off",
+    "EXIT_MECHS_SUSPENDED": "UNSET",
+    "HTF_VETO_MODE": "cross",
+    "SHADOW_CONDITIONS": "UNSET",
+    "LIVE_CONDITIONS": "UNSET"
+  },
+  "initial_process_env_allowlist": {
+    "MIN_SL_ATR_MULT": "UNSET",
+    "ARM_STOP_ANCHOR_MAX_ATR": "UNSET",
+    "ARM_PLACE_TICKS": "UNSET",
+    "STOP_ENTRY_SEAM": "UNSET",
+    "EXIT_MECHS_SUSPENDED": "UNSET",
+    "HTF_VETO_MODE": "UNSET",
+    "SHADOW_CONDITIONS": "UNSET",
+    "LIVE_CONDITIONS": "UNSET"
+  }
+}

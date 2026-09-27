@@ -137,6 +137,13 @@ func FuturesPointValue(symbol string) float64 {
 	return 0
 }
 
+// FuturesRoot is the exported root resolver (W1b E12): the CME root of any
+// symbol form ("MNQU6", "MNQ 06-26", "mnq" → "MNQ"; "M2KU6" → "M2K";
+// "NQ.c.0" → "NQ"), or "" when no known root matches. The NT8 wire's tick lookup
+// (ninjatrader.InstrumentTickSize) and EntryGate legs 5/6 both resolve through
+// it, so the gate and the wire can never key the tick table on different roots.
+func FuturesRoot(symbol string) string { return futuresRoot(symbol) }
+
 // futuresRoot extracts the CME root from any symbol form. Longest-root-first
 // so "MNQ" wins over "NQ". Returns "" if no known root matches.
 func futuresRoot(symbol string) string {

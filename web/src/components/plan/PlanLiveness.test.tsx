@@ -74,5 +74,73 @@ describe('plan liveness on the production card', () => {
     expect(screen.getByTestId('scenario-death-S1').textContent).toContain(
       '29753.25'
     )
+    // W2 — no born check on this (pre-W2) row: the card says n/a, never a policy.
+    expect(screen.getByTestId('plan-authored-invalidation').textContent).toBe(
+      'invalidation: n/a (no born check recorded on this plan row)'
+    )
+  })
+
+  // W-EXEC-TRUTH W2 A1/A2 — the invalidation line is READ from the row's
+  // born check (plans rowid 455's clocks: read 01:30:27 CT, publish 01:51:47 CT,
+  // groups opening 01:30/01:35/01:40/01:45 CT).
+  it('reads the born check recorded on the row', () => {
+    const plan = {
+      found: true,
+      trade_date: '2026-09-23',
+      session: 'LONDON',
+      version: 1,
+      lifecycle: 'active',
+      mode: 'advisory',
+      night: false,
+      doc: {
+        reasoning: '',
+        bias: { direction: 'short', conviction: 'low', flip_condition: '' },
+        levels: [],
+        no_trade: [],
+        death_condition: '',
+        day_type: 'balance',
+        scenarios: [],
+      },
+      authored_invalidation: {
+        recorded: true,
+        policy: 'enforced (grammar)',
+        read_clock_ms: 1790145027000,
+        publish_clock_ms: 1790146307000,
+        groups: [1790145000000, 1790145300000, 1790145600000, 1790145900000],
+      },
+    } as PlanToday
+    const { rerender } = render(
+      <SessionPlanCard
+        plan={plan}
+        traderId="test"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+      />
+    )
+    expect(screen.getByTestId('plan-authored-invalidation').textContent).toBe(
+      'invalidation: enforced (grammar) · read 01:30:27 CT → publish 01:51:47 CT · 4 5m groups judged'
+    )
+    rerender(
+      <SessionPlanCard
+        plan={{
+          ...plan,
+          authored_invalidation: {
+            recorded: true,
+            policy: 'enforced (grammar)',
+            read_clock_ms: null,
+            publish_clock_ms: 1790146307000,
+            groups: [1790145900000],
+          },
+        }}
+        traderId="test"
+        symbol="MNQ"
+        exchange="ninjatrader"
+        language="en"
+      />
+    )
+    expect(screen.getByTestId('plan-authored-invalidation').textContent).toBe(
+      'invalidation: enforced (grammar) · read n/a → publish 01:51:47 CT · 1 5m group judged'
+    )
   })
 })

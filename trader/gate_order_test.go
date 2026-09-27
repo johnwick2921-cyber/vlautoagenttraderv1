@@ -9,9 +9,10 @@ import (
 // E5 (ledger-close 2026-08-19) — interaction edge: when BOTH the stop_until
 // pause and the contract-roll window are active, the refusal must name
 // stop_until (gate-order contract 2.4: first among owner/policy gates). Pinned
-// on the source like the other ordering guards.
+// on the source like the other ordering guards. W-EXEC-TRUTH W0 (CTO Q1): the
+// chain moved into entry_admission.go — the SAME assertions, re-anchored.
 func TestOwnerGateOrderPauseBeforeRoll(t *testing.T) {
-	b, err := os.ReadFile("auto_trader_orders.go")
+	b, err := os.ReadFile("entry_admission.go")
 	if err != nil {
 		t.Fatal(err)
 	}

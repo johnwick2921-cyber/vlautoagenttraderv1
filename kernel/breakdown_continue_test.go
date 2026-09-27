@@ -119,15 +119,35 @@ func waterfallPlan() PlanDoc {
 
 // TestBreakdownContinueValidatorRealTape — the missed-200pt fixture: today's
 // 10:25-11:24 tape must produce a valid authored-and-triggerable instance.
+//
+// W-EXEC-TRUTH W2 CORRECTION (2026-09-23): waterfallPlan() STORES
+// confirm.rule 2x5m_close. At the 10:51 cut the tape holds exactly ONE
+// completed 5m close beyond 29657.39 (the 10:45–10:50 bucket, 29623.50 — the
+// 10:40–10:45 bucket closed 29662.75, above). The pre-W2 validator passed it
+// because it counted BD_MIN_CLOSES=1 and never read the stored rule; that PASS
+// was the defect. Pinned now: 2x5m_close is REFUSED at 10:51 naming the stored
+// rule, PASSES at 10:51 when the scenario stores 1x5m_close, and PASSES stored
+// 2x5m_close at the 10:56 cut once the second close (10:50–10:55, 29584.25) is in.
 func TestBreakdownContinueValidatorRealTape(t *testing.T) {
+	t.Setenv("BD_MIN_CLOSES", "1") // the live env [A] — never consulted for a stored rule
 	bars, start := waterfallTape(29657.39)
 	plan := waterfallPlan()
 	plan.Scenarios[0].Arm.Stop = plan.Scenarios[0].Arm.Entry + 20.0 // ≥1×ATR15
 	writeTime := start.Add(26 * time.Minute)                        // 10:51 cut — the real v4 birth
 	price := 29600.0
-	// Write-time validation: displacement ≥ BD_MIN_DISP_ATR×ATR, no reclaim.
-	if err := ValidateBreakdownContinueScenarios(&plan, tapeScope(bars), 15.0, price, writeTime.UnixMilli()); err != nil {
-		t.Fatalf("real-tape plan rejected at write: %v", err)
+	err := ValidateBreakdownContinueScenarios(&plan, tapeScope(bars), 15.0, price, writeTime.UnixMilli())
+	if err == nil || !strings.Contains(err.Error(), "NO confirming close") || !strings.Contains(err.Error(), "2 confirming close(s) needed — rule 2x5m_close [stored]") {
+		t.Fatalf("W2: stored 2x5m_close with ONE completed close at 10:51 must be refused naming the stored rule, got %v", err)
+	}
+	one := waterfallPlan()
+	one.Scenarios[0].Arm.Stop = one.Scenarios[0].Arm.Entry + 20.0
+	one.Scenarios[0].Confirm.Rule = "1x5m_close"
+	if err := ValidateBreakdownContinueScenarios(&one, tapeScope(bars), 15.0, price, writeTime.UnixMilli()); err != nil {
+		t.Fatalf("stored 1x5m_close with one completed close at 10:51 must pass: %v", err)
+	}
+	later := start.Add(31 * time.Minute) // 10:56 — the 10:50–10:55 bucket has closed
+	if err := ValidateBreakdownContinueScenarios(&plan, tapeScope(bars), 15.0, 29584.25, later.UnixMilli()); err != nil {
+		t.Fatalf("stored 2x5m_close with TWO completed closes at 10:56 must pass: %v", err)
 	}
 	// Triggerable: at birth, leg 1 MET (breakdown), leg 2 pending (no retest).
 	st := BreakdownContinueState(plan.Scenarios[0], bars, writeTime.UnixMilli(), bars[len(bars)-1].CloseTime)

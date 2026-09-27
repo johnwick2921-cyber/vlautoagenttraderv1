@@ -218,17 +218,6 @@ func detectCatalogDomainFromText(text string) string {
 	}
 }
 
-func (a *Agent) executeAtomicSkillWithSession(storeUserID string, userID int64, lang, text string, session skillSession) string {
-	if answer, ok := a.dispatchBridgedSkillSession(storeUserID, userID, lang, text, session); ok {
-		return answer
-	}
-	return ""
-}
-
-func parseLooseTextValue(text string) string {
-	return ""
-}
-
 func entityFieldExplicitlyMentioned(text string, keywords []string) bool {
 	if len(keywords) == 0 {
 		return false
@@ -248,10 +237,6 @@ type traderUpdateArgs struct {
 func (a traderUpdateArgs) hasAny() bool {
 	return a.AIModelID != "" || a.ExchangeID != "" || a.StrategyID != "" ||
 		a.ScanIntervalMinutes != nil || a.IsCrossMargin != nil || a.ShowInCompetition != nil
-}
-
-func parseStandaloneTraderUpdateArgs(text string) traderUpdateArgs {
-	return traderUpdateArgs{}
 }
 
 func mergeTraderUpdateArgs(base, patch traderUpdateArgs) traderUpdateArgs {
@@ -1071,79 +1056,6 @@ func applyStrategyConfigPatch(cfg *store.StrategyConfig, field, value string) er
 	return nil
 }
 
-func parseSourceTypeValue(text string) string {
-	lower := strings.ToLower(strings.TrimSpace(text))
-	switch {
-	case containsAny(lower, []string{"静态", "固定", "static"}):
-		return "static"
-	case containsAny(lower, []string{"ai500"}):
-		return "ai500"
-	case containsAny(lower, []string{"oi top"}):
-		return "oi_top"
-	case containsAny(lower, []string{"oi low"}):
-		return "oi_low"
-	default:
-		return ""
-	}
-}
-
-func extractSymbolList(text string, labels []string) []string {
-	segment := extractLongSegmentAfterKeywords(text, labels)
-	if segment == "" {
-		return nil
-	}
-	parts := strings.FieldsFunc(segment, func(r rune) bool {
-		return r == ',' || r == '，' || r == '、' || r == ' ' || r == '\n' || r == '\t'
-	})
-	out := make([]string, 0, len(parts))
-	for _, part := range parts {
-		if !looksLikeCoinSymbol(part) {
-			continue
-		}
-		part = normalizeCoinSymbol(part)
-		if part == "" {
-			continue
-		}
-		out = append(out, part)
-	}
-	return cleanStringList(out)
-}
-
-func looksLikeCoinSymbol(value string) bool {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return false
-	}
-	value = strings.Trim(value, `"'“”‘’()[]{}<>`)
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return false
-	}
-	return coinSymbolTokenRE.MatchString(value)
-}
-
-func normalizeCoinSymbol(symbol string) string {
-	symbol = strings.TrimSpace(strings.ToUpper(symbol))
-	if symbol == "" {
-		return ""
-	}
-	if strings.HasPrefix(symbol, "XYZ:") {
-		return symbol
-	}
-	if strings.HasSuffix(symbol, "USDT") || strings.HasSuffix(symbol, "USD") || strings.HasSuffix(symbol, "-USDC") {
-		return symbol
-	}
-	return symbol + "USDT"
-}
-
-func extractIntegerList(text string) []string {
-	matches := firstIntegerPattern.FindAllString(text, -1)
-	if len(matches) == 0 {
-		return nil
-	}
-	return matches
-}
-
 func parseCSVIntegers(value string) []int {
 	parts := strings.Split(value, ",")
 	out := make([]int, 0, len(parts))
@@ -1159,22 +1071,6 @@ func parseCSVIntegers(value string) []int {
 		out = append(out, n)
 	}
 	return out
-}
-
-func extractDurationValue(text string) string {
-	lower := strings.ToLower(strings.TrimSpace(text))
-	switch {
-	case strings.Contains(lower, "1h,4h,24h"):
-		return "1h,4h,24h"
-	case strings.Contains(lower, "24h"):
-		return "24h"
-	case strings.Contains(lower, "4h"):
-		return "4h"
-	case strings.Contains(lower, "1h"):
-		return "1h"
-	default:
-		return ""
-	}
 }
 
 func parseStrategyTypeValue(text string) string {
@@ -1237,230 +1133,6 @@ func extractDelimitedSegmentAfterKeywords(text string, keywords []string) string
 		}
 	}
 	return strings.Trim(segment, "“”\"'：: ")
-}
-
-func extractModelNameValue(text string) string {
-	lower := strings.ToLower(strings.TrimSpace(text))
-	if !containsAny(lower, []string{"模型名", "模型名称", "model name"}) {
-		return ""
-	}
-	if value := extractDelimitedSegmentAfterKeywords(text, []string{"model name", "模型名称", "模型名"}); value != "" {
-		return value
-	}
-	if containsAny(lower, []string{"改成", "改为"}) {
-		if value := extractDelimitedSegmentAfterKeywords(text, []string{"改成", "改为"}); value != "" {
-			return value
-		}
-	}
-	if value := extractQuotedContent(text); value != "" {
-		return value
-	}
-	return ""
-}
-
-func sanitizeExtractedURL(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return ""
-	}
-	for _, marker := range []string{"，", ",", "。", ";", "；", "并且", "然后"} {
-		if cut := strings.Index(raw, marker); cut > 0 {
-			raw = strings.TrimSpace(raw[:cut])
-			break
-		}
-	}
-	return raw
-}
-
-func strategyFieldKeywords(field string) []string {
-	switch field {
-	case "source_type":
-		return []string{"来源类型", "source type", "选币来源", "静态来源", "ai500来源", "oi top来源", "oi low来源"}
-	case "strategy_type":
-		return []string{"策略类型", "strategy type", "网格策略", "grid strategy", "ai策略"}
-	case "symbol":
-		return []string{"交易对", "symbol", "币对"}
-	case "grid_count":
-		return []string{"网格数量", "grid count", "grid levels"}
-	case "total_investment":
-		return []string{"总投入", "总投资", "total investment"}
-	case "upper_price":
-		return []string{"上沿价格", "上限价格", "upper price"}
-	case "lower_price":
-		return []string{"下沿价格", "下限价格", "lower price"}
-	case "use_atr_bounds":
-		return []string{"atr自动边界", "atr边界", "use atr bounds"}
-	case "atr_multiplier":
-		return []string{"atr倍数", "atr multiplier"}
-	case "distribution":
-		return []string{"分布方式", "distribution", "均匀分布", "高斯分布", "金字塔分布"}
-	case "enable_direction_adjust":
-		return []string{"方向调整", "direction adjust"}
-	case "direction_bias_ratio":
-		return []string{"方向偏置", "bias ratio", "direction bias"}
-	case "max_drawdown_pct":
-		return []string{"最大回撤", "max drawdown"}
-	case "stop_loss_pct":
-		return []string{"止损比例", "stop loss"}
-	case "daily_loss_limit_pct":
-		return []string{"日亏损限制", "daily loss limit"}
-	case "use_maker_only":
-		return []string{"maker only", "只挂maker", "仅maker"}
-	case "description":
-		return []string{"描述", "description"}
-	case "is_public":
-		return []string{"发布到市场", "公开", "publish"}
-	case "config_visible":
-		return []string{"配置可见", "显示配置", "config visible"}
-	case "nofxos_api_key":
-		return []string{"nofxos api key", "nofxos key", "api key"}
-	case "role_definition":
-		return []string{"角色定义", "role definition"}
-	case "trading_frequency":
-		return []string{"交易频率", "trading frequency"}
-	case "entry_standards":
-		return []string{"开仓标准", "入场标准", "entry standards"}
-	case "decision_process":
-		return []string{"决策流程", "decision process"}
-	case "custom_prompt":
-		return []string{"自定义prompt", "custom prompt", "提示词"}
-	case "ema_periods":
-		return []string{"ema周期", "ema periods"}
-	case "rsi_periods":
-		return []string{"rsi周期", "rsi periods"}
-	case "atr_periods":
-		return []string{"atr周期", "atr periods"}
-	case "boll_periods":
-		return []string{"boll周期", "布林周期", "boll periods"}
-	case "oi_ranking_duration":
-		return []string{"oi ranking duration", "oi排行周期"}
-	case "netflow_ranking_duration":
-		return []string{"netflow ranking duration", "资金流排行周期"}
-	case "price_ranking_duration":
-		return []string{"price ranking duration", "涨跌幅排行周期"}
-	case "oi_ranking_limit":
-		return []string{"oi ranking limit", "oi排行数量"}
-	case "netflow_ranking_limit":
-		return []string{"netflow ranking limit", "资金流排行数量"}
-	case "price_ranking_limit":
-		return []string{"price ranking limit", "涨跌幅排行数量"}
-	case "btceth_max_position_value_ratio":
-		return []string{"btc/eth仓位价值倍数", "btc eth position value", "主流币仓位价值倍数"}
-	case "altcoin_max_position_value_ratio":
-		return []string{"山寨币仓位价值倍数", "altcoin position value"}
-	case "max_margin_usage":
-		return []string{"最大保证金使用率", "max margin usage"}
-	default:
-		return nil
-	}
-}
-
-func matchesStrategyFieldKeywords(text, field string) bool {
-	keywords := strategyFieldKeywords(field)
-	if len(keywords) == 0 {
-		return true
-	}
-	return containsAny(strings.ToLower(text), keywords)
-}
-
-func strategyFieldExplicitlyMentioned(text, field string) bool {
-	keywords := strategyFieldKeywords(field)
-	if len(keywords) == 0 {
-		switch field {
-		case "max_positions":
-			keywords = []string{"最大持仓", "最多持仓", "max positions"}
-		case "symbol":
-			keywords = []string{"交易对", "symbol", "币对"}
-		case "grid_count":
-			keywords = []string{"网格数量", "grid count", "grid levels"}
-		case "total_investment":
-			keywords = []string{"总投入", "总投资", "total investment"}
-		case "upper_price":
-			keywords = []string{"上沿价格", "上限价格", "upper price"}
-		case "lower_price":
-			keywords = []string{"下沿价格", "下限价格", "lower price"}
-		case "use_atr_bounds":
-			keywords = []string{"atr自动边界", "atr边界", "use atr bounds"}
-		case "atr_multiplier":
-			keywords = []string{"atr倍数", "atr multiplier"}
-		case "distribution":
-			keywords = []string{"分布方式", "distribution", "均匀分布", "高斯分布", "金字塔分布"}
-		case "enable_direction_adjust":
-			keywords = []string{"方向调整", "direction adjust"}
-		case "direction_bias_ratio":
-			keywords = []string{"方向偏置", "bias ratio", "direction bias"}
-		case "max_drawdown_pct":
-			keywords = []string{"最大回撤", "max drawdown"}
-		case "stop_loss_pct":
-			keywords = []string{"止损比例", "stop loss"}
-		case "daily_loss_limit_pct":
-			keywords = []string{"日亏损限制", "daily loss limit"}
-		case "use_maker_only":
-			keywords = []string{"maker only", "只挂maker", "仅maker"}
-		case "min_confidence":
-			keywords = []string{"最低置信度", "最小置信度", "min confidence"}
-		case "min_risk_reward_ratio":
-			keywords = []string{"最小盈亏比", "风险回报比", "risk reward", "risk/reward"}
-		case "leverage":
-			keywords = []string{"杠杆", "leverage"}
-		case "btceth_max_leverage":
-			keywords = []string{"btc/eth杠杆", "btc eth杠杆", "btc/eth leverage", "btc eth leverage", "主流币杠杆"}
-		case "altcoin_max_leverage":
-			keywords = []string{"山寨币杠杆", "altcoin leverage", "alts leverage"}
-		case "btceth_max_position_value_ratio":
-			keywords = []string{"btc/eth仓位价值倍数", "btc eth position value", "主流币仓位价值倍数"}
-		case "altcoin_max_position_value_ratio":
-			keywords = []string{"山寨币仓位价值倍数", "altcoin position value"}
-		case "max_margin_usage":
-			keywords = []string{"最大保证金使用率", "max margin usage"}
-		case "primary_timeframe":
-			keywords = []string{"主周期", "主时间周期", "primary timeframe"}
-		case "primary_count":
-			keywords = []string{"k线数量", "k线根数", "primary count", "kline count"}
-		case "selected_timeframes":
-			keywords = []string{"多周期", "时间框架", "timeframes", "selected timeframes"}
-		case "enable_ema":
-			keywords = []string{"ema"}
-		case "enable_macd":
-			keywords = []string{"macd"}
-		case "enable_rsi":
-			keywords = []string{"rsi"}
-		case "enable_atr":
-			keywords = []string{"atr"}
-		case "enable_boll":
-			keywords = []string{"boll", "bollinger", "布林"}
-		case "enable_volume":
-			keywords = []string{"成交量", "volume"}
-		case "enable_oi":
-			keywords = []string{"持仓量", "open interest", "oi"}
-		case "enable_funding_rate":
-			keywords = []string{"资金费率", "funding rate"}
-		case "source_type":
-			keywords = []string{"来源类型", "source type", "选币来源"}
-		case "static_coins":
-			keywords = []string{"静态币", "固定币", "static coins", "static symbols"}
-		case "excluded_coins":
-			keywords = []string{"排除币", "排除币种", "excluded coins", "exclude coins"}
-		case "use_ai500":
-			keywords = []string{"ai500"}
-		case "ai500_limit":
-			keywords = []string{"ai500 limit", "ai500数量", "ai500上限"}
-		case "use_oi_top":
-			keywords = []string{"oi top", "持仓量增长", "持仓量排行上涨"}
-		case "oi_top_limit":
-			keywords = []string{"oi top limit", "oi top数量", "oi top上限"}
-		case "use_oi_low":
-			keywords = []string{"oi low", "持仓量下降", "持仓量排行下跌"}
-		case "oi_low_limit":
-			keywords = []string{"oi low limit", "oi low数量", "oi low上限"}
-		case "enable_all_core_indicators":
-			keywords = []string{"核心指标"}
-		}
-	}
-	if len(keywords) == 0 {
-		return false
-	}
-	return containsAny(strings.ToLower(text), keywords)
 }
 
 func (a *Agent) executeTraderManagementAction(storeUserID string, userID int64, lang, text string, session skillSession) string {
@@ -2733,59 +2405,6 @@ func extractQuotedContent(text string) string {
 	return ""
 }
 
-func extractLabeledInt(text string, labels []string) (int, bool) {
-	lower := strings.ToLower(text)
-	for _, label := range labels {
-		idx := strings.Index(lower, strings.ToLower(label))
-		if idx < 0 {
-			continue
-		}
-		segment := text[idx:]
-		if match := firstIntegerPattern.FindString(segment); match != "" {
-			if value, err := strconv.Atoi(match); err == nil {
-				return value, true
-			}
-		}
-	}
-	return 0, false
-}
-
-func extractTimeframeAfterKeywords(text string, labels []string) string {
-	lower := strings.ToLower(text)
-	for _, label := range labels {
-		idx := strings.Index(lower, strings.ToLower(label))
-		if idx < 0 {
-			continue
-		}
-		segment := text[idx:]
-		if match := timeframeTokenRE.FindString(segment); match != "" {
-			return strings.ToLower(match)
-		}
-	}
-	return ""
-}
-
-func extractTimeframes(text string) []string {
-	matches := timeframeTokenRE.FindAllString(text, -1)
-	if len(matches) == 0 {
-		return nil
-	}
-	seen := make(map[string]struct{}, len(matches))
-	out := make([]string, 0, len(matches))
-	for _, match := range matches {
-		tf := strings.ToLower(strings.TrimSpace(match))
-		if tf == "" {
-			continue
-		}
-		if _, ok := seen[tf]; ok {
-			continue
-		}
-		seen[tf] = struct{}{}
-		out = append(out, tf)
-	}
-	return out
-}
-
 func (a *Agent) handleTraderDiagnosisSkill(storeUserID, lang, text string) string {
 	target := resolveDiagnosisTraderTarget(a.loadTraderOptions(storeUserID), text)
 	if target == nil {
@@ -3113,36 +2732,6 @@ func firstPositiveFloat(values ...any) float64 {
 		}
 	}
 	return 0
-}
-
-func nonZeroPositions(positions []map[string]any) []map[string]any {
-	out := make([]map[string]any, 0, len(positions))
-	for _, position := range positions {
-		if toFloat(position["size"]) != 0 {
-			out = append(out, position)
-		}
-	}
-	return out
-}
-
-func joinAnyLines(values []any) string {
-	lines := make([]string, 0, len(values))
-	for _, value := range values {
-		switch typed := value.(type) {
-		case string:
-			lines = append(lines, typed)
-		default:
-			raw, _ := json.Marshal(typed)
-			if len(raw) > 0 {
-				lines = append(lines, string(raw))
-			}
-		}
-	}
-	return strings.Join(lines, "\n")
-}
-
-func valueOrUnset(value string) string {
-	return defaultIfEmpty(strings.TrimSpace(value), "未设置")
 }
 
 func modelName(model *safeModelToolConfig) string {

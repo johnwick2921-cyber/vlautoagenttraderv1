@@ -2,11 +2,15 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
+	"nofx/market"
 	"nofx/store"
+	"nofx/trader"
+	ntTrader "nofx/trader/ninjatrader"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -25,7 +29,21 @@ const (
 type tradeSelectedTrader interface {
 	GetStrategyConfig() *store.StrategyConfig
 	GetAccountInfo() (map[string]interface{}, error)
+	// OpenManualEntry is the trader's ONE door for a chat entry (W-EXEC-TRUTH
+	// W0 CTO Q17; W1b E9): it runs the ONE admission chain, exactly as for an
+	// AI decision, WITH the entry's own stop and target, then sends exactly
+	// those prices. In the interface — not a type assertion with a fallback —
+	// so no selected trader can send a chat entry any other way (W1b E9
+	// repair: the old no-door fallback sent on the broker's leftover SL/TP
+	// maps, and only test fakes could reach it). Errors are typed:
+	// *trader.ManualEntryRefusal (refused, nothing sent),
+	// *trader.ManualEntryUnprotected (OPENED, bracket failed), else the broker's.
+	OpenManualEntry(symbol, action string, quantity float64, leverage int, stop, target float64) (map[string]interface{}, error)
 }
+
+// The production selected trader (manager.GetAllTraders → *trader.AutoTrader)
+// owns the door (compile-time pin).
+var _ tradeSelectedTrader = (*trader.AutoTrader)(nil)
 
 type tradeUnderlyingTrader interface {
 	OpenLong(symbol string, quantity float64, leverage int) (map[string]interface{}, error)
@@ -37,11 +55,16 @@ type tradeUnderlyingTrader interface {
 
 // TradeAction represents a parsed trade intent from the LLM or user.
 type TradeAction struct {
-	ID                             string  `json:"id"`
-	Action                         string  `json:"action"`    // "open_long", "open_short", "close_long", "close_short"
-	Symbol                         string  `json:"symbol"`    // e.g. "BTCUSDT"
-	Quantity                       float64 `json:"quantity"`  // amount
-	Leverage                       int     `json:"leverage"`  // leverage multiplier
+	ID       string  `json:"id"`
+	Action   string  `json:"action"`   // "open_long", "open_short", "close_long", "close_short"
+	Symbol   string  `json:"symbol"`   // e.g. "BTCUSDT"
+	Quantity float64 `json:"quantity"` // amount
+	Leverage int     `json:"leverage"` // leverage multiplier
+	// W1b E9 — the entry's OWN bracket (absolute prices). An open without a
+	// stop is refused by the admission chain (fail-closed); one with a stop is
+	// sent with exactly these prices, never the broker's leftover SL/TP maps.
+	StopLoss                       float64 `json:"stop_loss,omitempty"`
+	TakeProfit                     float64 `json:"take_profit,omitempty"`
 	TraderID                       string  `json:"trader_id"` // which trader to use
 	Status                         string  `json:"status"`    // "pending", "confirmed", "executed", "failed", "expired"
 	CreatedAt                      int64   `json:"created_at"`
@@ -91,113 +114,38 @@ func (p *pendingTrades) CleanExpired() {
 	}
 }
 
-// parseTradeCommand parses natural language trade commands.
-// Returns nil if the message is not a trade command.
-func parseTradeCommand(text string) *TradeAction {
-	upper := strings.ToUpper(strings.TrimSpace(text))
-
-	// Pattern: "做多 BTC 0.01" / "做空 ETH 0.1" / "long BTC 0.01" / "short ETH 0.1"
-	// Also: "平多 BTC" / "平空 ETH" / "close long BTC" / "close short ETH"
-
-	var action, symbol string
-	var quantity float64
-	var leverage int
-
-	words := strings.Fields(upper)
-	if len(words) < 2 {
-		return nil
-	}
-
-	switch words[0] {
-	case "做多", "LONG", "BUY":
-		action = "open_long"
-	case "做空", "SHORT", "SELL":
-		action = "open_short"
-	case "平多":
-		action = "close_long"
-	case "平空":
-		action = "close_short"
-	case "CLOSE":
-		if len(words) >= 3 {
-			switch words[1] {
-			case "LONG":
-				action = "close_long"
-				words = append(words[:1], words[2:]...) // remove "LONG"
-			case "SHORT":
-				action = "close_short"
-				words = append(words[:1], words[2:]...) // remove "SHORT"
-			}
-		}
-		if action == "" {
-			return nil
-		}
-	default:
-		return nil
-	}
-
-	// Parse symbol
-	if len(words) < 2 {
-		return nil
-	}
-	symbol = words[1]
-	// Only append USDT for crypto symbols, not stock tickers
-	if !isStockSymbol(symbol) && !strings.HasSuffix(symbol, "USDT") {
-		symbol += "USDT"
-	}
-
-	// Parse quantity (optional)
-	if len(words) >= 3 {
-		fmt.Sscanf(words[2], "%f", &quantity)
-	}
-
-	// Parse leverage (optional, "x10" or "10x")
-	if len(words) >= 4 {
-		lev := strings.TrimSuffix(strings.TrimPrefix(words[3], "X"), "X")
-		fmt.Sscanf(lev, "%d", &leverage)
-	}
-
-	if action == "" || symbol == "" {
-		return nil
-	}
-
-	return &TradeAction{
-		ID:        fmt.Sprintf("trade_%d", time.Now().UnixNano()),
-		Action:    action,
-		Symbol:    symbol,
-		Quantity:  quantity,
-		Leverage:  leverage,
-		Status:    "pending",
-		CreatedAt: time.Now().Unix(),
-	}
-}
-
 // executeTrade performs the actual trade execution via TraderManager.
 func (a *Agent) executeTrade(ctx context.Context, trade *TradeAction) error {
-	if a.traderManager == nil {
-		return fmt.Errorf("no trader manager available")
-	}
-
+	// (W1b FOLD-5) "no trader manager available" is the resolver's own first
+	// answer (tradeCandidatesOf) — one place says it.
 	wantStock, selectedTrader, underlyingTrader, err := a.resolveTradeExecutionContext(trade)
 	if err != nil {
 		return err
 	}
+	return executeTradeWith(trade, wantStock, selectedTrader, underlyingTrader)
+}
+
+// executeTradeWith is executeTrade after the trader is resolved: validate,
+// ADMIT (for a new entry), then act.
+func executeTradeWith(trade *TradeAction, wantStock bool, selectedTrader tradeSelectedTrader, underlyingTrader tradeUnderlyingTrader) error {
 	if err := validateTradeAction(trade, wantStock, selectedTrader, underlyingTrader); err != nil {
 		return err
 	}
+	if trade.Action == "open_long" || trade.Action == "open_short" {
+		if selectedTrader == nil {
+			return fmt.Errorf("entry refused: no selected trader to admit it (fail-closed)")
+		}
+		if trade.Quantity <= 0 {
+			return fmt.Errorf("quantity must be > 0")
+		}
+		// W1b E9 — the door: admission WITH the chat's own stop and target,
+		// and the send of exactly those prices, in one call. The underlying
+		// broker's OpenLong/OpenShort never sends a chat entry.
+		_, err := selectedTrader.OpenManualEntry(trade.Symbol, trade.Action, trade.Quantity, trade.Leverage, trade.StopLoss, trade.TakeProfit)
+		return chatEntryError(err)
+	}
 
 	switch trade.Action {
-	case "open_long":
-		if trade.Quantity <= 0 {
-			return fmt.Errorf("quantity must be > 0")
-		}
-		_, err := underlyingTrader.OpenLong(trade.Symbol, trade.Quantity, trade.Leverage)
-		return err
-	case "open_short":
-		if trade.Quantity <= 0 {
-			return fmt.Errorf("quantity must be > 0")
-		}
-		_, err := underlyingTrader.OpenShort(trade.Symbol, trade.Quantity, trade.Leverage)
-		return err
 	case "close_long":
 		_, err := underlyingTrader.CloseLong(trade.Symbol, trade.Quantity)
 		return err
@@ -209,15 +157,79 @@ func (a *Agent) executeTrade(ctx context.Context, trade *TradeAction) error {
 	}
 }
 
-func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSelectedTrader, tradeUnderlyingTrader, error) {
-	if a.traderManager == nil {
-		return false, nil, nil, fmt.Errorf("no trader manager available")
+// tradeCandidate is what the chat door's resolver reads of one managed trader
+// (W1b FOLD-5): the manager's *trader.AutoTrader in production, through
+// managedTradeCandidate.
+type tradeCandidate interface {
+	tradeSelectedTrader
+	GetStatus() map[string]interface{}
+	GetExchange() string
+	tradeUnderlying() tradeUnderlyingTrader
+}
+
+// managedTradeCandidate adapts a managed *trader.AutoTrader to tradeCandidate.
+type managedTradeCandidate struct{ *trader.AutoTrader }
+
+func (m managedTradeCandidate) tradeUnderlying() tradeUnderlyingTrader {
+	if ut := m.GetUnderlyingTrader(); ut != nil {
+		return ut
 	}
-	traders := a.traderManager.GetAllTraders()
+	return nil
+}
+
+// The NT8 broker's wire instrument is what resolveCMETrader matches a CME
+// symbol's root against, by assertion on the underlying trader. Pinned at
+// compile time (W1b FOLD-5 repair): a renamed TCPTrader.WireSymbol would
+// otherwise make every CME chat entry silently unroutable.
+var _ interface{ WireSymbol() string } = (*ntTrader.TCPTrader)(nil)
+
+// tradeRosterOf is the manager's roster (GetAllTraders). A package var ONLY so
+// a test can hand the PRODUCTION adapter below (tradeCandidatesOf's body,
+// managedTradeCandidate) a roster of real *trader.AutoTrader (W1b FOLD-5
+// repair, canon 53); production reads the manager.
+var tradeRosterOf = func(a *Agent) (map[string]*trader.AutoTrader, error) {
+	if a.traderManager == nil {
+		return nil, fmt.Errorf("no trader manager available")
+	}
+	return a.traderManager.GetAllTraders(), nil
+}
+
+// tradeCandidatesOf lists the traders resolveTradeExecutionContext may select,
+// in trader-id order (the manager hands back a map; a stable order means the
+// same roster always resolves the same way). A package var ONLY so a test can
+// hand the production resolver a fake roster; production reads the manager
+// through tradeRosterOf.
+var tradeCandidatesOf = func(a *Agent) ([]tradeCandidate, error) {
+	all, err := tradeRosterOf(a)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(all))
+	for id := range all {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	out := make([]tradeCandidate, 0, len(ids))
+	for _, id := range ids {
+		if t := all[id]; t != nil {
+			out = append(out, managedTradeCandidate{t})
+		}
+	}
+	return out, nil
+}
+
+func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSelectedTrader, tradeUnderlyingTrader, error) {
+	traders, err := tradeCandidatesOf(a)
+	if err != nil {
+		return false, nil, nil, err
+	}
 	if len(traders) == 0 {
 		return false, nil, nil, fmt.Errorf("no traders configured")
 	}
 
+	if isCMEFuturesChatSymbol(trade.Symbol) {
+		return resolveCMETrader(trade.Symbol, traders)
+	}
 	wantStock := isStockSymbol(trade.Symbol)
 	for _, t := range traders {
 		s := t.GetStatus()
@@ -225,7 +237,7 @@ func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSel
 		if !running {
 			continue
 		}
-		ut := t.GetUnderlyingTrader()
+		ut := t.tradeUnderlying()
 		if ut == nil {
 			continue
 		}
@@ -244,6 +256,39 @@ func (a *Agent) resolveTradeExecutionContext(trade *TradeAction) (bool, tradeSel
 		return true, nil, nil, fmt.Errorf("no running stock trader (Alpaca) found — configure one to trade stocks")
 	}
 	return false, nil, nil, fmt.Errorf("no running trader supports trade execution")
+}
+
+// resolveCMETrader (W1b FOLD-5): a CME futures entry goes to the ONE running
+// NinjaTrader trader whose wire instrument has the symbol's root — never a
+// stock or crypto trader, never an NT8 trader of another instrument (the NT8
+// broker puts its OWN instrument on the wire whatever symbol it is handed),
+// and never a guess between two NT8 traders of the same instrument: which
+// account a chat entry lands on is not the resolver's to choose (fail-closed).
+func resolveCMETrader(symbol string, traders []tradeCandidate) (bool, tradeSelectedTrader, tradeUnderlyingTrader, error) {
+	root := market.FuturesRoot(symbol)
+	var hits []tradeCandidate
+	var hitUnd []tradeUnderlyingTrader
+	for _, t := range traders {
+		running, _ := t.GetStatus()["is_running"].(bool)
+		if !running || t.GetExchange() != "ninjatrader" {
+			continue
+		}
+		ut := t.tradeUnderlying()
+		ws, ok := ut.(interface{ WireSymbol() string })
+		if ut == nil || !ok || root == "" || market.FuturesRoot(ws.WireSymbol()) != root {
+			continue
+		}
+		hits = append(hits, t)
+		hitUnd = append(hitUnd, ut)
+	}
+	switch len(hits) {
+	case 1:
+		return false, hits[0], hitUnd[0], nil
+	case 0:
+		return false, nil, nil, fmt.Errorf("no running NinjaTrader (CME) trader trades %s — a CME entry is sent only by the NT8 trader of that instrument", symbol)
+	default:
+		return false, nil, nil, fmt.Errorf("%d running NinjaTrader traders trade %s — refused (fail-closed): the chat door never picks an account between them", len(hits), root)
+	}
 }
 
 func validateTradeAction(
@@ -313,7 +358,12 @@ func validateTradeAction(
 		trade.RequiresLargeOrderConfirmation = true
 	}
 
-	if wantStock {
+	// W1b FOLD-5 — a CME futures contract is not judged by the crypto
+	// leverage/USDT-size/ratio rules below (a stock's rule set, which MNQ
+	// was validated by while misclassified, stays its proposal check). Its
+	// real rails — reconcile-before-open, max positions, the same-side check,
+	// the max-contracts cap — are the execute path's, at the door.
+	if wantStock || isCMEFuturesChatSymbol(trade.Symbol) {
 		if trade.Leverage < 0 {
 			return fmt.Errorf("leverage must be >= 0")
 		}
@@ -375,65 +425,6 @@ func isBTCETHSymbol(symbol string) bool {
 	return strings.HasPrefix(symbol, "BTC") || strings.HasPrefix(symbol, "ETH")
 }
 
-// formatTradeConfirmation creates a confirmation message for a pending trade.
-func formatTradeConfirmation(trade *TradeAction, lang string) string {
-	actionNames := map[string]string{
-		"open_long":   "做多 (Long)",
-		"open_short":  "做空 (Short)",
-		"close_long":  "平多 (Close Long)",
-		"close_short": "平空 (Close Short)",
-	}
-
-	symbol := trade.Symbol
-	if strings.HasSuffix(symbol, "USDT") {
-		symbol = strings.TrimSuffix(symbol, "USDT")
-	}
-	actionName := actionNames[trade.Action]
-	if actionName == "" {
-		actionName = trade.Action
-	}
-
-	if lang == "zh" {
-		msg := fmt.Sprintf("⚠️ **交易确认**\n\n"+
-			"操作: %s\n"+
-			"品种: %s\n", actionName, symbol)
-		if trade.Quantity > 0 {
-			msg += fmt.Sprintf("数量: %.4f\n", trade.Quantity)
-		}
-		if trade.Leverage > 0 {
-			msg += fmt.Sprintf("杠杆: %dx\n", trade.Leverage)
-		}
-		if trade.EstimatedNotional > 0 {
-			msg += fmt.Sprintf("估算仓位价值: %.2f USDT\n", trade.EstimatedNotional)
-		}
-		if trade.RequiresLargeOrderConfirmation {
-			msg += fmt.Sprintf("\n⚠️ 该订单已触发大额风控，请发送 `"+tradeLargeOrderConfirmCommandZH+"` 执行交易，或忽略取消。", trade.ID)
-			return msg
-		}
-		msg += fmt.Sprintf("\n发送 `确认 %s` 执行交易，或忽略取消。", trade.ID)
-		return msg
-	}
-
-	msg := fmt.Sprintf("⚠️ **Trade Confirmation**\n\n"+
-		"Action: %s\n"+
-		"Symbol: %s\n", actionName, symbol)
-	if trade.Quantity > 0 {
-		msg += fmt.Sprintf("Quantity: %.4f\n", trade.Quantity)
-	}
-	if trade.Leverage > 0 {
-		msg += fmt.Sprintf("Leverage: %dx\n", trade.Leverage)
-	}
-	if trade.EstimatedNotional > 0 {
-		msg += fmt.Sprintf("Estimated notional: %.2f USDT\n", trade.EstimatedNotional)
-	}
-	if trade.RequiresLargeOrderConfirmation {
-		msg += fmt.Sprintf("\n⚠️ This order triggered high-risk protection. Send `"+tradeLargeOrderConfirmCommandEN+"` to execute, or ignore to cancel.", trade.ID)
-		return msg
-	}
-	msg += fmt.Sprintf("\nSend `confirm %s` to execute, or ignore to cancel.", trade.ID)
-	return msg
-}
-
 // handleTradeConfirmation processes a trade confirmation message.
 func (a *Agent) handleTradeConfirmation(ctx context.Context, userID int64, text, lang string) (string, bool) {
 	upper := strings.ToUpper(strings.TrimSpace(text))
@@ -487,12 +478,7 @@ func (a *Agent) handleTradeConfirmation(ctx context.Context, userID int64, text,
 
 	err := a.executeTrade(ctx, trade)
 	if err != nil {
-		trade.Status = "failed"
-		trade.Error = err.Error()
-		if lang == "zh" {
-			return fmt.Sprintf("❌ 交易执行失败: %s", err.Error()), true
-		}
-		return fmt.Sprintf("❌ Trade execution failed: %s", err.Error()), true
+		return tradeFailureReply(trade, err, lang), true
 	}
 
 	trade.Status = "executed"
@@ -519,8 +505,55 @@ func (a *Agent) handleTradeConfirmation(ctx context.Context, userID int64, text,
 	return fmt.Sprintf("%s Trade executed!\n%s %s%s", actionEmoji, trade.Action, symbol, qtyStr), true
 }
 
-// marshals trade action to JSON for embedding in responses
-func marshalTradeAction(trade *TradeAction) string {
-	b, _ := json.Marshal(trade)
-	return string(b)
+// chatEntryError tells the door's outcome as what HAPPENED (W1b E9 repair):
+// only the typed admission refusal is "refused by the admission gate" (a
+// refusal by the execute-side rails — the max-contracts cap, reconcile-before-
+// open, max positions — says so instead, W1b FOLD-2); an
+// entry that OPENED with no bracket is OPENED and UNPROTECTED; anything else
+// is the broker's send failure.
+func chatEntryError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var ref *trader.ManualEntryRefusal
+	if errors.As(err, &ref) {
+		if ref.FlattenSent { // FOLD-2 repair: reconcile-before-open sent an orphan flatten first
+			// Never say the orphan was CLOSED: reconcile also refuses with
+			// FlattenSent when the flatten submit failed, the feed dropped
+			// mid-flatten, or it was not confirmed flat in time — NT8 may still
+			// hold it (re-verify defect 1; L7: an outcome nobody confirmed).
+			return fmt.Errorf("a flatten of a position no ledger row explains was SENT first (reconcile-before-open) — it is flat only if the reason below says so, check NT8; the entry was NOT sent: %s", ref.Reason)
+		}
+		if ref.Execute { // W1b FOLD-2: refused by the AI entry's own execute-side rails
+			return fmt.Errorf("entry refused before any send (the same execute-side rails as an AI decision): %s", ref.Reason)
+		}
+		return fmt.Errorf("entry refused by the admission gate (the same chain as an AI decision): %s", ref.Reason)
+	}
+	var unp *trader.ManualEntryUnprotected
+	if errors.As(err, &unp) {
+		return fmt.Errorf("entry OPENED but UNPROTECTED — set a stop at the broker now: %w", err)
+	}
+	return fmt.Errorf("entry send failed at the broker (not an admission refusal): %w", err)
+}
+
+// tradeFailureReply records a failed execution on the trade and renders the
+// owner's reply. An entry that OPENED without its bracket is not a failure:
+// it is recorded executed, with the error, and told as a live, UNPROTECTED
+// position.
+func tradeFailureReply(trade *TradeAction, err error, lang string) string {
+	var unp *trader.ManualEntryUnprotected
+	if errors.As(err, &unp) {
+		trade.Status = "executed"
+		trade.Error = err.Error()
+		if lang == "zh" {
+			return fmt.Sprintf("🚨 已开仓但无保护（自身止损/止盈未设置成功）: %s", err.Error())
+		}
+		return fmt.Sprintf("🚨 Trade OPENED but UNPROTECTED — its own stop/target did not set: %s", err.Error())
+	}
+	trade.Status = "failed"
+	trade.Error = err.Error()
+	if lang == "zh" {
+		return fmt.Sprintf("❌ 交易执行失败: %s", err.Error())
+	}
+	return fmt.Sprintf("❌ Trade execution failed: %s", err.Error())
 }

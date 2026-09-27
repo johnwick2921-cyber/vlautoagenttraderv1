@@ -1,0 +1,15 @@
+{
+  "at_ct": "2026-09-08T15:36:55.126018-05:00",
+  "pid": 3566770,
+  "health": {
+    "revision": "f8bc7044cc44",
+    "status": "ok",
+    "time": null
+  },
+  "build": [
+    "build\tvcs.revision=f8bc7044cc44d58e84904a0a7761e78b420404af",
+    "build\tvcs.time=2026-09-08T19:50:07Z",
+    "build\tvcs.modified=false"
+  ],
+  "floor_environment_overrides": {}
+}

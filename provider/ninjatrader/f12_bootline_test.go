@@ -46,6 +46,35 @@ func TestBuildIDLineSaysYesOnlyOnAnExactMatch(t *testing.T) {
 	}
 }
 
+// U6 — ANY mismatch, older or newer, reads the neutral instruction: since F3
+// the in-process F5 reload is the primary path (runbook 2026-09-23-addon-m21-f5.md C3).
+func TestBuildIDLineMismatchSaysReloadOrRestart(t *testing.T) {
+	for _, line := range []string{
+		AddonBuildLine("2026-08-30-e7", "2026-09-03-f12"), // older DLL
+		AddonBuildLine("2026-09-04-x1", "2026-09-03-f12"), // newer DLL
+	} {
+		if !strings.Contains(line, "reload the AddOn (F5) or restart NT8") {
+			t.Fatalf("any mismatch must read the neutral instruction: %q", line)
+		}
+		if strings.Contains(line, "older DLL") {
+			t.Fatalf("the mismatch text must not call the build older: %q", line)
+		}
+	}
+}
+
+// U6 — the hello line prints an unknown NT8 process as n/a, never 0/"" —
+// an absent value is not a datum (C5, L7).
+func TestHelloProcessPairUnknownIsNA(t *testing.T) {
+	pid, mvid := helloProcessPair(0, "")
+	if pid != "n/a" || mvid != "n/a" {
+		t.Fatalf("absent hello identity must read n/a, got pid=%q mvid=%q", pid, mvid)
+	}
+	pid, mvid = helloProcessPair(4321, "0xfeed")
+	if pid != "4321" || mvid != "0xfeed" {
+		t.Fatalf("present hello identity must pass through, got pid=%q mvid=%q", pid, mvid)
+	}
+}
+
 // The snapshot half of the line: age and count READ from the cache, and an
 // explicit "none" when there is no book — never age=0, which would read as a
 // book received this instant.

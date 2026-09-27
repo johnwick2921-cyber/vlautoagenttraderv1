@@ -120,6 +120,10 @@ func breakdownShort(condition string) bool {
 // BreakdownState is the machine-evaluated two-leg trigger state of one
 // waterfall-class scenario against the 1m snapshot.
 type BreakdownState struct {
+	// Rule (W2) is leg 1's resolved rule — the stored confirm.rule, or the
+	// BD_MIN_CLOSES authoring default with its reason. Every reader of this
+	// state (render, record, desk, arm, validator, planner facts) counts it.
+	Rule        ResolvedConfirmRule
 	Bucket      *BucketClose
 	Leg1At      int64
 	Leg1Known   bool
@@ -140,15 +144,15 @@ type BreakdownState struct {
 // resets the run, matching the plan-status "best run N/M" convention).
 func BreakdownContinueState(sc PlanScenario, bars []market.Kline, sinceMs, nowMs int64) BreakdownState {
 	var st BreakdownState
-	if !IsBreakdownCondition(sc.Condition) || sc.Breakdown == nil || sc.Breakdown.Level <= 0 {
+	if !IsBreakdownCondition(sc.Condition) || sc.Breakdown == nil {
+		return st
+	}
+	st.Rule, _ = ResolveScenarioConfirm(sc) // W2: leg 1's count — the stored rule
+	if sc.Breakdown.Level <= 0 {
 		return st
 	}
 	lvl, short := sc.Breakdown.Level, breakdownShort(sc.Condition)
-	side := "above"
-	if short {
-		side = "below"
-	}
-	st.Leg1At, st.Leg1Known = ConfirmReferenceInstant(PlanConfirm{Rule: fmt.Sprintf("%dx5m_close", bdConfirmCloses()), RefPrice: lvl, Side: side}, bars, sinceMs, nowMs)
+	st.Leg1At, st.Leg1Known = ConfirmReferenceInstant(st.Rule.AsConfirm(), bars, sinceMs, nowMs)
 	judge, last := closedConfirmationBuckets(bars, sinceMs, nowMs, AcceptanceIntervalMinutes("5m-close"))
 	st.Bucket = last
 	touched := false
@@ -245,8 +249,10 @@ func ValidateBreakdownContinueScenarios(d *PlanDoc, scope VoidScope, atr5m, pric
 			return fmt.Errorf("%s %s: a close came back across %.2f — the breakdown is void; %s", s.ID, s.Condition, bd.Level, BreakdownReclaimedHint)
 		}
 		if !immediate && !st.Leg1Met {
-			return fmt.Errorf("%s %s: the tape shows NO confirming close beyond %.2f yet (%d confirming close(s) needed — BD_MIN_CLOSES, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)",
-				s.ID, s.Condition, bd.Level, bdConfirmCloses())
+			// W2: the count is the resolver's — the STORED rule, named with its
+			// source (a 2x5m_close is refused until the tape shows TWO closes).
+			return fmt.Errorf("%s %s: the tape shows NO confirming close beyond %.2f yet (%d confirming close(s) needed — rule %s, displacement + reclaim-check unchanged) — author it only after the displacement exists (or set entry_mode=immediate and accept the confirming-close trigger)",
+				s.ID, s.Condition, bd.Level, st.Rule.Closes, st.Rule.Label())
 		}
 		displacement := st.BreakLegPts
 		if immediate {

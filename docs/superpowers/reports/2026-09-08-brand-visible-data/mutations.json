@@ -1,0 +1,20 @@
+[
+  {
+    "path": "branding/persona.txt",
+    "actual_change": "VL \u2192 NOFXi",
+    "exit_code": 1,
+    "failed": true
+  },
+  {
+    "path": "branding/product.txt",
+    "actual_change": "VL Intelligent \u2192 NOFX",
+    "exit_code": 1,
+    "failed": true
+  },
+  {
+    "path": "web/src/i18n/translations.ts",
+    "actual_change": "appTitle: PERSONA_NAME \u2192 appTitle: 'NOFX' (EN only)",
+    "exit_code": 1,
+    "failed": true
+  }
+]

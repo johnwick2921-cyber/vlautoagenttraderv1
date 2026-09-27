@@ -1,0 +1,72 @@
+[
+  {
+    "phase": "all",
+    "variant": "implemented",
+    "send_opportunities": 7,
+    "reachable_opportunities": 4,
+    "ids": [
+      "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1",
+      "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2"
+    ]
+  },
+  {
+    "phase": "all",
+    "variant": "corrected",
+    "send_opportunities": 6,
+    "reachable_opportunities": 4,
+    "ids": [
+      "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1",
+      "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2"
+    ]
+  },
+  {
+    "phase": "even",
+    "variant": "implemented",
+    "send_opportunities": 7,
+    "reachable_opportunities": 4,
+    "ids": [
+      "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1",
+      "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2"
+    ]
+  },
+  {
+    "phase": "even",
+    "variant": "corrected",
+    "send_opportunities": 6,
+    "reachable_opportunities": 4,
+    "ids": [
+      "2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1",
+      "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2"
+    ]
+  },
+  {
+    "phase": "odd",
+    "variant": "implemented",
+    "send_opportunities": 7,
+    "reachable_opportunities": 3,
+    "ids": [
+      "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2"
+    ]
+  },
+  {
+    "phase": "odd",
+    "variant": "corrected",
+    "send_opportunities": 6,
+    "reachable_opportunities": 3,
+    "ids": [
+      "2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1",
+      "2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2"
+    ]
+  }
+]

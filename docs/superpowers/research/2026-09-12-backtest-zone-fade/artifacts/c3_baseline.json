@@ -1,0 +1,29 @@
+{
+ "all_zones_anchor_live_detector": {
+  "ambiguous_excluded": 89751,
+  "n": 189359,
+  "p_hold": 0.5085102899782952,
+  "wilson": [
+   0.5062584314843418,
+   0.5107618031887889
+  ]
+ },
+ "seated_line_anchor_live_detector": {
+  "ambiguous_excluded": 2670,
+  "n": 8350,
+  "p_hold": 0.5061077844311377,
+  "wilson": [
+   0.4953837957292436,
+   0.51682615588437
+  ]
+ },
+ "seated_zone_anchor_live_detector": {
+  "ambiguous_excluded": 3070,
+  "n": 8232,
+  "p_hold": 0.5058309037900874,
+  "wilson": [
+   0.49503040128559506,
+   0.5166259668560211
+  ]
+ }
+}

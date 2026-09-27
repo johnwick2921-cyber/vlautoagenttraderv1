@@ -1,0 +1,8 @@
+arm | side | A) limit-at-entry: fill_min outcome pnl_pts | B) bounded-market at close@cancel+1t: fill outcome pnl_pts | R(pts)
+ 17 S1 long  | A: 0m stop         -21.00 | B: fill 29414.50 stop          +1.50 | R=21.00
+ 25 S3 long  | A: 0m stop         -21.96 | B: fill 29155.25 stop         -15.25 | R=21.96
+ 27 S1 short | A: 0m open@120m    +77.25 | B: fill 29169.25 open@120m    +76.50 | R=40.00
+ 33 S3 short | A: 0m stop         -32.70 | B: fill 29167.25 stop         -32.25 | R=32.70
+ 34 S1 short | A: 0m stop         -26.50 | B: fill 29205.25 stop         -20.75 | R=26.50
+ 36 S2 short | A: 0m stop         -67.88 | B: fill 29347.75 stop         -71.18 | R=67.88
+TOTAL A (limit at entry, n=6): -92.79 pts = $-186 | TOTAL B (bounded market, n=6): -61.43 pts = $-123

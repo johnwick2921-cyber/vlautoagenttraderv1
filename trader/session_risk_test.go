@@ -66,7 +66,7 @@ func TestBreakerThresholdResolves(t *testing.T) {
 		t.Fatalf("unset → N=%d, want the [I] default %d", got, breakerHaltDefault)
 	}
 	cfg := &store.StrategyConfig{}
-	cfg.RiskControl.ConsecutiveLossHalt = 3
+	cfg.RiskControl.ConsecutiveLossHalt = store.IntPtr(3)
 	if got := breakerHaltN(cfg); got != 3 {
 		t.Fatalf("owner knob 3 → N=%d, want 3 (the owner's value always wins)", got)
 	}

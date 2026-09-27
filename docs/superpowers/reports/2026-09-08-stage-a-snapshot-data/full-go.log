@@ -1,0 +1,65 @@
+?   	nofx	[no test files]
+ok  	nofx/agent	30.316s
+ok  	nofx/api	3.501s
+?   	nofx/auth	[no test files]
+ok  	nofx/calendar	0.003s
+?   	nofx/cmd/bars-export	[no test files]
+?   	nofx/cmd/dayplan-arm	[no test files]
+?   	nofx/cmd/dayplan-level-repair	[no test files]
+?   	nofx/cmd/dayplan-sessions	[no test files]
+?   	nofx/cmd/decisive-test	[no test files]
+?   	nofx/cmd/detector-report	[no test files]
+?   	nofx/cmd/excursions	[no test files]
+?   	nofx/cmd/gate-jwt	[no test files]
+?   	nofx/cmd/levelstats-backfill	[no test files]
+?   	nofx/cmd/nq_smoke	[no test files]
+?   	nofx/cmd/planner_ab	[no test files]
+?   	nofx/cmd/research_export	[no test files]
+?   	nofx/cmd/sandbox-seed	[no test files]
+?   	nofx/config	[no test files]
+?   	nofx/crypto	[no test files]
+ok  	nofx/discipline	0.002s
+?   	nofx/docs/superpowers/reports/2026-09-04-research-conformance-data/d10dump	[no test files]
+?   	nofx/docs/superpowers/reports/2026-09-05-vet-08-stretch-data/complete-0905	[no test files]
+ok  	nofx/expectancy	0.039s
+?   	nofx/hook	[no test files]
+ok  	nofx/internal/retry	1.680s
+ok  	nofx/kernel	1.264s
+ok  	nofx/logger	0.003s
+?   	nofx/manager	[no test files]
+ok  	nofx/market	0.010s
+ok  	nofx/mcp	45.031s
+?   	nofx/mcp/payment	[no test files]
+ok  	nofx/mcp/provider	0.008s
+?   	nofx/provider/alpaca	[no test files]
+?   	nofx/provider/coinank	[no test files]
+ok  	nofx/provider/coinank/coinank_api	64.837s
+?   	nofx/provider/coinank/coinank_enum	[no test files]
+ok  	nofx/provider/databento	0.104s
+ok  	nofx/provider/hyperliquid	1.942s
+ok  	nofx/provider/ninjatrader	18.806s
+?   	nofx/provider/nofxos	[no test files]
+?   	nofx/provider/twelvedata	[no test files]
+ok  	nofx/researchsnapshot	0.154s
+?   	nofx/safe	[no test files]
+?   	nofx/security	[no test files]
+ok  	nofx/store	30.387s
+?   	nofx/telegram	[no test files]
+ok  	nofx/telegram/agent	0.132s
+?   	nofx/telegram/session	[no test files]
+ok  	nofx/telemetry	0.011s
+ok  	nofx/trader	92.506s
+ok  	nofx/trader/aster	0.079s
+ok  	nofx/trader/binance	15.352s
+?   	nofx/trader/bitget	[no test files]
+?   	nofx/trader/bybit	[no test files]
+ok  	nofx/trader/gate	0.105s
+ok  	nofx/trader/hyperliquid	0.020s
+ok  	nofx/trader/indodax	0.004s
+ok  	nofx/trader/kucoin	0.011s
+ok  	nofx/trader/lighter	0.114s
+ok  	nofx/trader/ninjatrader	10.432s
+ok  	nofx/trader/okx	0.012s
+?   	nofx/trader/testutil	[no test files]
+?   	nofx/trader/types	[no test files]
+?   	nofx/wallet	[no test files]

@@ -1,0 +1,10 @@
+condition,allowed_confirm_rules,style_quoted_in_rejection,fade_touch_only
+acceptance,"1x5m_close|time_hold","time_hold rule (E6) with 1x5m_close as the legal fallback",no
+breakdown_continue,"1x5m_close|2x5m_close","1 confirming close + displacement >= BD_MIN_DISP_ATR x ATR5m OR stop-entry (E7); 2x5m_close legal ONLY here",no
+breakout_retest,"1x5m_close|touch","touch at the retest limit + stop-entry fallback (E7); 1x5m_close legal for the break leg",no
+breakup_continue,"1x5m_close|2x5m_close","1 confirming close + displacement >= BD_MIN_DISP_ATR x ATR5m OR stop-entry (E7); 2x5m_close legal ONLY here",no
+fvg_entry,"touch","touch-entry inside the FVG (edge..CE band, checked vs the FRESH FVG list)",YES
+hold,"1x5m_close|time_hold","time_hold rule (E6) with 1x5m_close as the legal fallback",no
+reclaim,"1m_mss|1x5m_close","reclaim-close discipline - 1x5m_close or 1m_mss, never 2x5m_close",no
+reject,"touch","touch-entry at the level (limit), stop behind structure by >=2 ticks",YES
+sweep_reclaim,"1m_mss|1x5m_close|touch","split contract (E4): leg-1 touch at the sweep ref, leg-2 1m_mss (1x5m_close accepted as the leg-2 alternative)",no

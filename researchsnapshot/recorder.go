@@ -3,6 +3,7 @@ package researchsnapshot
 import (
 	"context"
 	"fmt"
+	"nofx/safe"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -66,7 +67,7 @@ func NewRecorderWithInfo(sink Sink, capacity int, warn, info func(string)) *Reco
 		rows:        make(map[string]uint64),
 		info:        info}
 	r.rollupT = time.NewTicker(r.rollupEvery)
-	go r.run()
+	safe.GoNet("research-recorder", "", func() { r.run() })
 	return r
 }
 

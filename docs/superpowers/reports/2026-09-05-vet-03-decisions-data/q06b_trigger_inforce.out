@@ -1,0 +1,17 @@
+## mode=inforce: fired 263/592 = 0.444 Wilson (0.405, 0.485) · no ref_price: 128 {'hold': 45, 'reclaim': 15, 'reject': 30, 'breakout_retest': 13, 'acceptance': 12, 'sweep_reclaim': 13} · no bars: 18
+   reject: 84/198 Wilson (0.357, 0.494)
+   sweep_reclaim: 58/167 Wilson (0.279, 0.422)
+   breakout_retest: 54/109 Wilson (0.403, 0.588)
+   reclaim: 30/47 Wilson (0.495, 0.76)
+   acceptance: 24/42 Wilson (0.422, 0.709)
+   hold: 11/26 Wilson (0.255, 0.611)
+   breakdown_continue: 2/3 Wilson (0.208, 0.939)
+## mode=first: fired 62/82 = 0.756 Wilson (0.653, 0.836) · no ref_price: 45 {'hold': 15, 'reclaim': 7, 'breakout_retest': 5, 'reject': 9, 'sweep_reclaim': 4, 'acceptance': 5} · no bars: 0
+   reject: 16/21 Wilson (0.549, 0.894)
+   breakout_retest: 15/19 Wilson (0.567, 0.915)
+   sweep_reclaim: 12/19 Wilson (0.41, 0.809)
+   reclaim: 8/10 Wilson (0.49, 0.943)
+   acceptance: 5/7 Wilson (0.359, 0.918)
+   hold: 5/5 Wilson (0.566, 1.0)
+   breakdown_continue: 1/1 Wilson (0.207, 1.0)
+in-force window minutes: median 32.0 p25 22 p75 56 n 592

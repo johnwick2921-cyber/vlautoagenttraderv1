@@ -1,0 +1,11 @@
+── mutating trader/structural_geometry.go
+   edit landed:
+     -			if best < 0 || *z.Lo < *zones[best].Lo {
+     +			if best < 0 || *z.Lo > *zones[best].Lo {
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestStructuralStopF5FirstTargetIsNeverSkipped (0.00s)
+     FAIL
+     FAIL	nofx/trader	0.859s
+     FAIL

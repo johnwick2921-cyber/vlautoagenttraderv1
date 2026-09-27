@@ -1,0 +1,16 @@
+[
+  {
+    "file": "data.go",
+    "pinned_source": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/data.go",
+    "revision": "6b3fddf7",
+    "byte_identical": true,
+    "sha256": "a416d8b9c7f2a512471252c71eeb5639382cc64a2e4fb680fbe9567be4162c8b"
+  },
+  {
+    "file": "detect.go",
+    "pinned_source": "docs/superpowers/research/2026-09-12-backtest-zone-fade/harness/detect.go",
+    "revision": "6b3fddf7",
+    "byte_identical": true,
+    "sha256": "46ddd9dcbdf9b0b5576628f91855c64950ef3b954e1b4f409138b71933d826d4"
+  }
+]

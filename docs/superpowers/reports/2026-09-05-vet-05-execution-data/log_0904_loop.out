@@ -1,0 +1,94 @@
+09-04 10:05:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed NY S2 leg 1 short limit 29591.02 SL 29645.62 TP 29481.50 (tick-managed pla
+09-04 10:05:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=e38f1774-9b80-46b2-907a-5fc35485a1
+09-04 10:06:05 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed cancel (gate changed rr): NY S2
+09-04 10:06:05 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 cancelled=1 cancelsubmitted=1 initialized=1
+09-04 10:08:04 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 cancelpending=1 submitted=1 accepted=1
+09-04 10:10:04 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=f869f788-7715-44b3-8018-da6e8f3c69
+09-04 10:12:04 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed cancel (gate changed rr): NY S2
+09-04 10:12:04 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 cancelled=1 cancelsubmitted=1 initialized=1
+09-04 10:14:03 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏳ stale_dodge deferred_ms=57182 — cycle start within avg_call×1.2 of the 5m close;
+09-04 10:15:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=c1d016b2-fd6f-43e1-945c-4475b38973
+09-04 10:15:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 cancelpending=1 submitted=1 accepted=1
+09-04 10:16:03 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=a0054682-f336-49f3-980e-a290f08dfe
+09-04 10:16:03 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 cancelled=1 cancelsubmitted=1 initialized=1
+09-04 10:18:03 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed cancel (gate changed rr): NY S2
+09-04 10:18:03 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed cancel (gate changed rr): NY S2
+09-04 10:18:03 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 initialized=1 submitted=1 accepted=1
+09-04 10:20:03 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=ccaab035-4f94-4a93-aac7-12086c2591
+09-04 10:20:03 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=7 cancelpending=2 cancelled=1 cancelsubmitted=2 submitted=1 accepted=1
+09-04 10:22:03 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed cancel (gate changed rr): NY S2
+09-04 10:22:03 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=2 cancelled=1 initialized=1
+09-04 10:24:03 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏳ stale_dodge deferred_ms=57782 — cycle start within avg_call×1.2 of the 5m close;
+09-04 10:25:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=719f4bbb-069a-4c81-8df0-f0d1e11233
+09-04 10:25:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=5 cancelpending=1 cancelled=1 cancelsubmitted=1 submitted=1 accepted=1
+09-04 10:26:02 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=c794d0ce-0ca7-4c03-894c-25ddf44689
+09-04 10:26:02 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=1 initialized=1
+09-04 10:28:02 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=4646df81-f408-48bc-9834-477105ed80
+09-04 10:28:02 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 initialized=1 submitted=1 accepted=1
+09-04 10:30:02 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=c5d4860a-1d7f-4480-bd27-fc6958221d
+09-04 10:30:02 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 initialized=1 submitted=1 accepted=1
+09-04 10:32:02 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=9fcd8c7c-7d13-4e97-871c-21a49f44c6
+09-04 10:32:02 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 initialized=1 submitted=1 accepted=1
+09-04 10:34:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=9b146ffa-d569-44f9-a6b6-0701073418
+09-04 10:34:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 initialized=1 submitted=1 accepted=1
+09-04 10:36:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=7dd07a19-701e-4afa-9b15-655f65810e
+09-04 10:36:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=4 initialized=1 submitted=2 accepted=1
+09-04 10:38:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=6a5da3fa-2992-426f-b56e-9d1eb805c3
+09-04 10:38:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=2 initialized=1 accepted=1
+09-04 10:40:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=183d16ad-75df-4fcf-bd9c-685900a8aa
+09-04 10:40:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
+09-04 10:40:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=4 initialized=1 submitted=2 accepted=1
+09-04 10:42:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=993322b9-6c27-42af-8afb-2a3620b797
+09-04 10:42:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
+09-04 10:42:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=3 initialized=1 submitted=1 accepted=1
+09-04 10:44:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=b42631c8-4737-4e59-aa42-e51b5a7237
+09-04 10:44:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
+09-04 10:44:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=6 cancelpending=1 cancelled=1 cancelsubmitted=1 initialized=1 submitted=1 accepted=1
+09-04 10:46:01 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=fa195d44-705e-46c9-be53-5d4a2198e3
+09-04 10:46:01 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
+09-04 10:46:01 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=5 cancelpending=1 cancelled=1 cancelsubmitted=1 initialized=1 accepted=1
+09-04 10:48:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=60adff7a-afe7-4b11-be91-1c6e8a413c
+09-04 10:48:00 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
+09-04 10:48:00 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=7 cancelpending=1 cancelled=1 cancelsubmitted=1 initialized=1 submitted=2 accepted=1
+09-04 10:50:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=3bea0045-32b4-469d-ae5c-ca24ba3665
+09-04 10:50:00 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
+09-04 10:50:00 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=5 cancelpending=1 cancelled=1 cancelsubmitted=1 initialized=1 accepted=1
+09-04 10:52:00 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=04b3e307-eb7f-4bc8-88fe-7088dff9f6
+09-04 10:52:00 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ✕ armed S2 cancelled — no order_update for 15m (reconnect/reconcile)
+09-04 10:52:00 [INFO] trader/armed_executor.go:1145 📡 armed order_update summary (1-line/min): frames=7 cancelpending=1 cancelled=1 cancelsubmitted=1 initialized=1 submitted=2 accepted=1
+09-04 10:53:10 [INFO] nofx/main.go:44 ║           🚀 NOFX - AI-Powered Trading System              ║
+09-04 10:53:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🧾 ledger boot: sessions[ASIA 17:00→02:00 CT (last-entry 01:45, flat 02:00) | LONDO
+09-04 10:53:10 [INFO] trader/auto_trader.go:833 🚀 AI-driven automatic trading system started
+09-04 10:53:10 [INFO] kernel/regime_ledger.go:15 🛡️ regime ledger: flip-eval freshness cap=90000ms (env FLIP_EVAL_MAX_STALE_S, default 90s)
+09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:19 🔧 S-wave (2026-08-26): stale_confirm=2.0×ATR5m · eod_flat=session-end (NY 14:45 CT, R-A15)
+09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:23 🚀 planner speed wave (2026-08-31): retry=repair stream=on stream_idle=30s stream_total=1200s (class 37: planner ceiling split from the HTTP ceiling) ttfb=on — reasoning/mo
+09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:26 🪢 netting-orphan wave (class 27, 2026-08-31): netting-flat cancels brackets (C# sweep + Go desync cancel_order) · exit reconstruction from the netting fill (never exit=entr
+09-04 10:53:10 [INFO] kernel/levels_volume_boot.go:49 🛡 cutover safety (class 33): flat gate legs=5 (db_open_positions · api_positions · nt8_positions_snapshot · working_orders · planner_in_flight) via GET /api/cutover-gate
+09-04 10:53:10 [INFO] nofx/main.go:340 ⏱ wakes: cutoff=25m(enforce) cooldown=30m(enforce, fast-market≥1.5×ATR exempt) cross-session=on stale-arm-expiry=on (class 47) — cutoffs govern LEVEL_EVENT/structure_mss wakes ONLY; sc
+09-04 10:53:10 [INFO] nofx/main.go:343 🛡 arm gate: invalidation-wired=on · armed-under surfaces=on — the evaluator's own ≈invalidated verdict REFUSES an arm (same function as the display path; unresolved = pass + a line),
+09-04 10:53:10 [INFO] nofx/main.go:431 🎛 entry law: bd_min_closes=1 bd_min_disp_atr=1.00 mss_min_disp_atr=0.50 accept_hold_min=10 stop_entry_offset_ticks=2 retest_wait_bars=6 stop_entry_seam=ON
+09-04 10:53:10 [INFO] nofx/main.go:473 📌 Tip: Use Ctrl+C to stop the system
+09-04 10:53:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed_orders=on place_band=100t stale_working=15m test_seam=off arm_rr=2.0 (gate
+09-04 10:53:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛰 planner client: tries=3 backoff=2s→15s→45s keepalive_set=30s observed=n/a watc
+09-04 10:53:10 [ERRO] kernel/clock_health.go:115 🚨 CLOCK EARLY-WARNING [session-roll:NY]: |drift| 49016ms exceeds CLOCK_WARN_MS 30000ms (tolerance 60000ms not yet breached) — fix WSL2 time-sync NOW, before staleness verdicts
+09-04 10:53:10 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep: NY S1 pre-boot but never placed (no signal id) — left armed for this
+09-04 10:53:11 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep: NY S1 pre-boot but never placed (no signal id) — left armed for this
+09-04 10:53:11 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep: NY S1 pre-boot but never placed (no signal id) — left armed for this
+09-04 10:53:11 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep: NY S1 pre-boot but never placed (no signal id) — left armed for this
+09-04 10:53:11 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep: NY S1 pre-boot but never placed (no signal id) — left armed for this
+09-04 10:53:11 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 boot sweep CANCELLED pre-boot arm (class 33): NY S2 SHORT entry=29591.02 stop=2964
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🛡 cutover safety (class 33): gate legs=5 · leg4=broker · boot sweep cancelled 8 pr
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🔌 order_snapshot: last age=0s orders=8 · leg4 source=broker
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⚔️ armed NY S2 leg 1 short limit 29591.02 SL 29645.25 TP 29481.50 (tick-managed pla
+09-04 10:53:11 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 📌 armed S2 → WORKING stop-entry 29590.52 signal=931a761a-d0c8-492b-a815-a5f41cc9d9
+09-04 10:55:10 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] dead-man watchdog: 6 working order(s) visible post-reconnect — entry cancellation is
+09-04 10:55:10 [INFO] trader/auto_trader.go:43 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] 🎯 scenario S2 → ≈armed @ 29591.02 (price is inside the activation window — dis
+09-04 10:55:10 [INFO] trader/armed_executor.go:1178 📡 armed order_update summary (1-line/min): frames=1 cancelsubmitted=1
+09-04 11:05:09 [WARN] trader/auto_trader.go:48 [trader_id=8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265 trader_name=hoang] ⏱ stale arms SUPERSEDED (class 47): 5 never-placed row(s) [92 94 96 98 100] retired a

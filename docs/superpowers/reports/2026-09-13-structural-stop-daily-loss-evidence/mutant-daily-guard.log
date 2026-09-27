@@ -1,0 +1,11 @@
+── mutating trader/entry_gate.go
+   edit landed:
+     -	if in.DailyForceFlat != nil {
+     +	if false && in.DailyForceFlat != nil {
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestStructuralStopProductionCycleStillRefusesDailyLossTrip (0.49s)
+     FAIL
+     FAIL	nofx/trader	0.503s
+     FAIL

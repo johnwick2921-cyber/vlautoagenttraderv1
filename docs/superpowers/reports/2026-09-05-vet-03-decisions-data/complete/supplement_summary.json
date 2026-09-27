@@ -1,0 +1,194 @@
+{
+  "weekly_MNQ": {
+    "all_holdout_n": 139,
+    "neutral_n": 62,
+    "called": {
+      "k": 35,
+      "n": 77,
+      "pct": 45.45454545454545,
+      "wilson95": [
+        34.81397836005049,
+        56.527113355106074
+      ]
+    },
+    "raw_success_over_all": {
+      "k": 35,
+      "n": 139,
+      "pct": 25.179856115107913,
+      "wilson95": [
+        18.698033218212508,
+        32.99671116997692
+      ]
+    }
+  },
+  "weekly_ES": {
+    "all_holdout_n": 139,
+    "neutral_n": 62,
+    "called": {
+      "k": 39,
+      "n": 77,
+      "pct": 50.649350649350644,
+      "wilson95": [
+        39.7198175343059,
+        61.51716936352884
+      ]
+    },
+    "raw_success_over_all": {
+      "k": 39,
+      "n": 139,
+      "pct": 28.05755395683453,
+      "wilson95": [
+        21.256139805764924,
+        36.03921392872137
+      ]
+    }
+  },
+  "tree": {
+    "called": {
+      "k": 10,
+      "n": 21,
+      "pct": 47.61904761904761,
+      "wilson95": [
+        28.343712296762945,
+        67.63078209973324
+      ]
+    },
+    "neutral_n": 81
+  },
+  "regime": {
+    "called": {
+      "k": 25,
+      "n": 46,
+      "pct": 54.347826086956516,
+      "wilson95": [
+        40.179934966080424,
+        67.845489578878
+      ]
+    },
+    "neutral_n": 56
+  },
+  "composite": {
+    "called": {
+      "k": 31,
+      "n": 62,
+      "pct": 50.0,
+      "wilson95": [
+        37.922532216457725,
+        62.077467783542275
+      ]
+    },
+    "neutral_n": 40
+  },
+  "counterfactuals": [
+    {
+      "case": "strict_first_37304",
+      "ts": "2026-09-03 20:35:06",
+      "end": "2026-09-04 02:00:00",
+      "side": "short",
+      "entry": 29541.25,
+      "stop": 29561.5,
+      "target": 29500.75,
+      "entry_model": "assumed_market_at_quoted_price",
+      "first_eligible_bar_ms": 1788485760000,
+      "entry_bar_ms": 1788485760000,
+      "exit_bar_ms": 1788489000000,
+      "result": "STOP",
+      "px": 29561.5,
+      "gross_usd_proxy": -40.5,
+      "bars_full_window": 324,
+      "bars_expected": 324,
+      "quality": "price-path illustration only; hypothetical execution, unknown live availability, fees/slippage and competing gates excluded; no saved-money claim"
+    },
+    {
+      "case": "minsl_cycle27229",
+      "ts": "2026-09-03 11:48:22",
+      "end": "2026-09-03 14:45:00",
+      "side": "long",
+      "entry": 29525,
+      "stop": 29482.25,
+      "target": 29610.5,
+      "entry_model": "assumed_market_at_quoted_price",
+      "first_eligible_bar_ms": 1788454140000,
+      "entry_bar_ms": 1788454140000,
+      "exit_bar_ms": 1788456000000,
+      "result": "STOP",
+      "px": 29482.25,
+      "gross_usd_proxy": -85.5,
+      "bars_full_window": 176,
+      "bars_expected": 176,
+      "quality": "price-path illustration only; hypothetical execution, unknown live availability, fees/slippage and competing gates excluded; no saved-money claim"
+    },
+    {
+      "case": "leg3_LONDON_v1_S2",
+      "ts": "2026-09-04 02:00:46",
+      "end": "2026-09-04 08:30:00",
+      "side": "long",
+      "entry": 29579.5,
+      "stop": 29557.84,
+      "target": 29639.5,
+      "entry_model": "hypothetical_touch_limit_no_other_gates",
+      "first_eligible_bar_ms": 1788505260000,
+      "entry_bar_ms": 1788505260000,
+      "exit_bar_ms": 1788507000000,
+      "result": "TARGET",
+      "px": 29639.5,
+      "gross_usd_proxy": 120.0,
+      "bars_full_window": 389,
+      "bars_expected": 389,
+      "quality": "price-path illustration only; hypothetical execution, unknown live availability, fees/slippage and competing gates excluded; no saved-money claim"
+    },
+    {
+      "case": "leg3_NY_v3_S1",
+      "ts": "2026-09-04 09:02:09",
+      "end": "2026-09-04 14:45:00",
+      "side": "short",
+      "entry": 29657.38,
+      "stop": 29720,
+      "target": 29503.38,
+      "entry_model": "hypothetical_touch_limit_no_other_gates",
+      "first_eligible_bar_ms": 1788530580000,
+      "entry_bar_ms": 1788530580000,
+      "exit_bar_ms": 1788533760000,
+      "result": "TARGET",
+      "px": 29503.38,
+      "gross_usd_proxy": 308.0,
+      "bars_full_window": 197,
+      "bars_expected": 342,
+      "quality": "price-path illustration only; hypothetical execution, unknown live availability, fees/slippage and competing gates excluded; no saved-money claim"
+    }
+  ],
+  "flap_ids": [
+    62,
+    65,
+    67,
+    70,
+    73,
+    75,
+    77,
+    79,
+    81,
+    83,
+    85,
+    87,
+    89,
+    91,
+    93,
+    95,
+    97,
+    99,
+    101,
+    102
+  ],
+  "rr_cancel_ids": [
+    38,
+    62,
+    65,
+    67,
+    70
+  ],
+  "marketable_since0902": [
+    33,
+    34,
+    36
+  ]
+}

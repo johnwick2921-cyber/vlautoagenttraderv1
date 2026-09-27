@@ -48,7 +48,7 @@ func TestStoredReplanCapReadsTheSessionOverride(t *testing.T) {
 		StrategyType: "ai_trading",
 		DayPlan: &store.DayPlanConfig{
 			PlanEnabled: true,
-			ReplanCap:   2, // strategy level
+			ReplanCap:   store.IntPtr(2), // strategy level
 			Sessions: []store.DayPlanSessionOverride{
 				{Session: "ASIA", ReplanCap: &four}, // the owner's mid-session edit
 			},

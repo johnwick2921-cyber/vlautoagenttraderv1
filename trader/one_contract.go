@@ -91,13 +91,15 @@ func (v contractVerdict) Refusal() string {
 	return ""
 }
 
-// isBracketChild reports whether a book order is a protective child rather than
-// an entry. NT8 names bracket children "<signal>-sl" / "<signal>-tp" — the same
-// join key orderBelongsToSlot uses (cancel_confirm.go). Counting a stop as an
-// "entry" would make a protected position block its own management.
+// isBracketChild reports whether a book order is a protective child or an exit
+// rather than an entry. NT8 names bracket children "<signal>-sl" / "<signal>-tp"
+// — the same join key orderBelongsToSlot uses (cancel_confirm.go) — and a limit
+// EXIT "<signal>-lx" (VLTraderTCPClient.cs). Counting a stop or an exit as an
+// "entry" would make a protected position block its own management (W-EXEC-TRUTH
+// W0: -lx was missing, so a resting limit exit read as a working entry).
 func isBracketChild(name string) bool {
 	n := strings.ToLower(strings.TrimSpace(name))
-	return strings.HasSuffix(n, "-sl") || strings.HasSuffix(n, "-tp")
+	return strings.HasSuffix(n, "-sl") || strings.HasSuffix(n, "-tp") || strings.HasSuffix(n, "-lx")
 }
 
 // adjudicateAccountContract is the whole decision as a PURE function: book in,
@@ -237,6 +239,22 @@ func (at *AutoTrader) cancelOtherArmsInPlan(ledger *store.ArmedOrderStore, rows 
 			continue
 		}
 		if store.IsTerminalArmState(rr.State) {
+			continue
+		}
+		// W5 D9 (CTO 1790191033566) + its mirror (CTO 1790192326583): a
+		// placement never cancels an UNPLACED arm of the OTHER source — a
+		// Picture placement leaves the plan's planner arms, a planner placement
+		// leaves a Picture arm. The one-live-entry guards (the entry latch,
+		// oneContractGuard, one_live_arm_guard, EntryGate leg 7) refuse the
+		// second order while the first is working or open, so the survivor is a
+		// refused authorization, not a second entry — and it places once the
+		// first is terminal and flat. A row of the other source already AT THE
+		// BROKER still gets its cancel requested below: one live entry per plan
+		// is never traded away (unreachable while the latch is wired — it
+		// refuses a placement while any placed row exists).
+		if rr.Source != placed.Source && strings.TrimSpace(rr.SignalID) == "" {
+			at.logInfof("↔ armed %s leg %d kept — %s (another source) placed; it is refused, not cancelled, while that entry is working/open (W5 D9)",
+				rr.Scenario, rr.LegIndex+1, placed.Scenario)
 			continue
 		}
 		// A ROW THAT CARRIES A SIGNAL ID IS AT THE BROKER, and it goes to

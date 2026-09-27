@@ -1,0 +1,29 @@
+{
+  "base": "63968be62e44db2fb07a92883e02127b9064b0be",
+  "historical_graph": {
+    "revision": "7a8adce0",
+    "date": "2026-07-10",
+    "nodes_total": 3121,
+    "edges_total": 9588,
+    "assigned_nodes": [],
+    "assigned_edges": [],
+    "interpretation": "Historical graph does not cover these newer archived scripts; source and current AST census are authority."
+  },
+  "current_edges": [
+    {
+      "source": "structural-stop/harness/sweep.go:85",
+      "target": "trader/structural_geometry.go:114",
+      "kind": "direct call to exported frozen geometry core; bypasses production scenario identity resolution"
+    },
+    {
+      "source": "zone-fade/harness/main.go:34",
+      "target": "zone-fade/harness/stop_port.go:129",
+      "kind": "startup drift guard"
+    },
+    {
+      "source": "zone-fade/harness/out.go:117",
+      "target": "zone-fade/harness/stats.go:70",
+      "kind": "drawdown aggregation; omits zero baseline"
+    }
+  ]
+}

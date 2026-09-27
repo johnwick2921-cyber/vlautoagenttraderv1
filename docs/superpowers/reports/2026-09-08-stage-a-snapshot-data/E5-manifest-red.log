@@ -1,0 +1,6 @@
+researchsnapshot/archive.go:263: !ok || b.Manifest.Counts[kind] != len(rows) -> !ok || (false && b.Manifest.Counts[kind] != len(rows))
+--- FAIL: TestResearchExportDetectsTampering (0.02s)
+    recorder_test.go:186: altered count passed checksum/count verification
+FAIL
+FAIL	nofx/researchsnapshot	0.026s
+FAIL

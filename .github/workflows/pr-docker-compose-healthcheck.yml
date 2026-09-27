@@ -19,6 +19,13 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    env:
+      # CLASS 250. This job never types "npm run build", but `docker compose up`
+      # BUILDS Dockerfile.frontend — so it is a producer, and docker-compose.yml
+      # now refuses (`:?`) without this. Found by the producers pin, not by the
+      # original census: it is the sixth producer and the only one nobody listed.
+      # Job-level because `compose down` reads the same file at cleanup.
+      VITE_GUIDE_BUILT_REV: ${{ github.event.pull_request.head.sha || github.sha }}
 
     steps:
       - name: Checkout code
@@ -34,6 +41,28 @@ jobs:
           DATA_ENCRYPTION_KEY=test-key-32-chars-minimum-length
           JWT_SECRET=test-jwt-secret-minimum-32-chars
           EOF
+
+          # CLASS 251: this file has never produced a green run. The backend
+          # FATALs at boot — "failed to load RSA private key: environment
+          # variable RSA_PRIVATE_KEY not set" (main.go:60) — and restarts until
+          # the healthcheck times out, because the .env above predates the key
+          # becoming mandatory. Four runs in this workflow's life, all red, and
+          # nobody saw it: its paths filter is narrow enough that almost nothing
+          # triggers it.
+          #
+          # An EPHEMERAL key, exactly as deploy/release/db-compat.sh mints one
+          # for its throwaway boots: generated fresh per run, used only by this
+          # container, never persisted and never echoed (A25). crypto/crypto.go:30
+          # documents the format as PEM with literal \n for newlines, so the
+          # PEM is folded onto one line here.
+          openssl genrsa -out /tmp/healthcheck-rsa.pem 2048 >/dev/null 2>&1 \
+            || { echo "::error::cannot generate an ephemeral RSA key (openssl missing?)"; exit 1; }
+          chmod 600 /tmp/healthcheck-rsa.pem
+          # Written straight into .env — the key itself never reaches stdout.
+          printf 'RSA_PRIVATE_KEY=%s\n' \
+            "$(awk '{printf "%s\\n", $0}' /tmp/healthcheck-rsa.pem)" >> .env
+          rm -f /tmp/healthcheck-rsa.pem
+          echo "wrote an ephemeral RSA_PRIVATE_KEY into .env ($(grep -c . .env) lines total)"
 
       - name: Create minimal config.json
         run: |
@@ -122,7 +151,9 @@ jobs:
 
           # Test backend healthcheck command
           echo "Testing backend healthcheck..."
-          docker exec nofx-trading wget --no-verbose --tries=1 --spider http://localhost:8080/api/health
+          # CLASS 251: 127.0.0.1 for the same reason as the compose probe —
+          # localhost is [::1] in busybox and the API is IPv4-loopback only.
+          docker exec nofx-trading wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/api/health
           echo "✅ Backend healthcheck command works"
 
           # Test frontend healthcheck command

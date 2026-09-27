@@ -1,0 +1,12 @@
+── mutating trader/structural_geometry.go
+   edit landed:
+     -		return refuse("rr", fmt.Sprintf("gain=%.4f risk=%.4f rr=%.6f min=%.6f", g, d, g/d, p.MinRR))
+     +		r.Quantity = 1; return r
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestStructuralStopF5FirstTargetIsNeverSkipped (0.00s)
+     --- FAIL: TestStructuralStopF4F5Refuses23For4WithoutMoving (0.14s)
+     FAIL
+     FAIL	nofx/trader	0.842s
+     FAIL

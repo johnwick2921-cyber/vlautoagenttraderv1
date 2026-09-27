@@ -1,0 +1,21 @@
+{
+  "task": "smoke-roundtrip-release",
+  "command": [
+    "go",
+    "run",
+    "./cmd/nq_smoke",
+    "roundtrip"
+  ],
+  "cwd": "/tmp/nofx-audit-repairs-20260913",
+  "source_revision": "13882f01f72c313f4454bd29a309d5e31b6ec0cd",
+  "end_revision": "13882f01f72c313f4454bd29a309d5e31b6ec0cd",
+  "source_clean_before": true,
+  "source_clean_after": true,
+  "started_utc": "2026-09-13T15:00:13.819848+00:00",
+  "duration_seconds": 2.518,
+  "exit_code": 0,
+  "log": "/tmp/nofx-final-verification/smoke-roundtrip-release.log",
+  "log_bytes": 75,
+  "log_sha256": "2c5667d128c75da4d38160b6a3b9ee2efbf4d57acd457efe9f3b6de35ba78d5e",
+  "revision_unchanged": true
+}

@@ -1,0 +1,79 @@
+=== q47a: NT8 log file boundaries (Windows side, CT stamps) ===
+log.20260903.00000.txt: first=2026-09-03 00:00:05 last=2026-09-03 12:24:50 lines=8686
+log.20260903.00001.txt: first=2026-09-03 15:06:15 last=2026-09-03 21:22:02 lines=4612
+log.20260903.00002.txt: first=2026-09-03 21:22:00 last=2026-09-03 21:22:00 lines=1
+log.20260903.00003.txt: first=2026-09-03 21:22:05 last=2026-09-03 23:59:54 lines=2281
+log.20260904.00000.txt: first=2026-09-04 00:00:24 last=2026-09-04 23:59:55 lines=16936
+NT8 lines between 2026-09-03 12:24:50 and 15:06:15: 0
+first NT8 lines after the gap:
+2026-09-03 15:06:15:851|2|4|Session Break (Version 8.1.8.1)
+2026-09-03 15:06:34:589|1|4|Global simulation mode disabled
+2026-09-03 15:06:35:684|1|4|Vendor assembly 'Apex.AAA' version='2.0.0.0' loaded.
+2026-09-03 15:06:39:012|1|16|VLTraderTCPClient: CONNECTED
+2026-09-03 15:06:43:900|1|2|lucid : Primary connection=Connected, Price feed=Connected
+
+=== q47b: Windows System event log 2026-09-03 11:30-15:30 CT (Ids 12,41,6005,6006,6008,1074) ===
+TimeCreated            Id ProviderName                     Msg                                                                                                                     
+-----------            -- ------------                     ---                                                                                                                     
+9/3/2026 12:25:14 PM   12 Microsoft-Windows-Kernel-General The operating system started at system time ?2026?-?09?-?03T17:25:13.500000000Z.                                        
+9/3/2026 12:25:22 PM   41 Microsoft-Windows-Kernel-Power   The system has rebooted without cleanly shutting down first. This error could be caused if the system stopped responding
+9/3/2026 12:25:37 PM   12 Microsoft-Windows-Wininit        LSASS.exe was started as a protected process with level: 4.                                                             
+9/3/2026 12:25:38 PM 6008 EventLog                         The previous system shutdown at 12:24:02 PM on ?9/?3/?2026 was unexpected.                                              
+9/3/2026 12:25:38 PM 6005 EventLog                         The Event log service was started.                                                                                      
+
+=== q47c: Kernel-Power 41 + EventLog 6008 (unclean reboot) last 60 days ===
+TimeCreated             Id
+-----------             --
+7/16/2026 3:49:05 PM    41
+7/16/2026 3:49:19 PM  6008
+7/23/2026 5:43:14 PM    41
+7/23/2026 5:43:28 PM  6008
+7/25/2026 2:24:48 PM    41
+7/25/2026 2:25:01 PM  6008
+8/16/2026 12:51:20 AM   41
+8/16/2026 12:51:34 AM 6008
+8/19/2026 12:24:59 AM   41
+8/19/2026 12:25:14 AM 6008
+8/21/2026 8:01:32 PM    41
+8/21/2026 8:01:48 PM  6008
+9/3/2026 12:25:22 PM    41
+9/3/2026 12:25:38 PM  6008
+
+=== q47d: WSL boot history + nofx unit + Windows autostart ===
+uptime -s: 2026-09-03 13:58:49
+reboot   system boot  6.6.87.2-microso Thu Sep  3 14:18   still running
+reboot   system boot  6.6.87.2-microso Fri Aug 21 21:57   still running
+reboot   system boot  6.6.87.2-microso Wed Aug 19 00:53   still running
+reboot   system boot  6.6.87.2-microso Sun Aug 16 00:56   still running
+nofx.service: enabled / WSL systemd=1
+Windows scheduled tasks matching wsl|nofx|ninja: 0
+Startup folder: Ollama.lnk desktop.ini 
+
+=== q47e: NT8 log 09-04 — the feed death as NT8 saw it ===
+2026-09-04 12:20:16:803|1|2|lucid : Primary connection=Connected, Price feed=Connection lost
+2026-09-04 12:20:16:805|2|16|VLTraderTCPClient: data feed lost (PriceStatus=ConnectionLost) — BarsRequests will be recreated on recovery
+2026-09-04 12:20:17:926|1|2|lucid : Primary connection=Connection lost, Price feed=Connection lost
+2026-09-04 12:20:20:104|3|2|Connection lost to the NinjaTrader Historical Data Server: hds-us-nt-011.ninjatrader.com
+2026-09-04 12:22:24:902|3|2|Connection lost to the NinjaTrader Information Server: is-us-nt-006.ninjatrader.com
+2026-09-04 12:22:26:412|3|4|Unable to load server side config file: The remote name could not be resolved: 'license2.ninjatrader.com'
+2026-09-04 12:22:29:193|0|2|lucid : Unable to re-establish the connection. (Panic)
+2026-09-04 12:22:29:193|1|2|lucid : Primary connection=Disconnecting, Price feed=Connection lost
+2026-09-04 12:22:29:198|1|2|lucid : Primary connection=Disconnecting, Price feed=Disconnecting
+2026-09-04 12:22:29:198|1|2|lucid : Primary connection=Disconnected, Price feed=Disconnected
+2026-09-04 12:22:54:904|1|2|lucid : Primary connection=Connecting, Price feed=Connecting
+2026-09-04 12:22:56:494|0|2|lucid : An error occurred while sending the request. (Logon failed)
+2026-09-04 12:22:56:494|1|2|lucid : Primary connection=Disconnected, Price feed=Disconnected
+2026-09-04 12:23:00:423|2|16|Error downloading A.P.E.X. announcements: The remote name could not be resolved: 'api.apexinvesting.com'
+2026-09-04 12:28:59:220|2|16|VLTraderTCPClient: read err Unable to read data from the transport connection: A connection attempt failed because the connected party did not pro
+2026-09-04 12:29:19:249|1|16|VLTraderTCPClient: CONNECTED
+2026-09-04 12:29:19:250|2|16|VLTraderTCPClient: read err Unable to read data from the transport connection: An existing connection was forcibly closed by the remote host.
+2026-09-04 12:29:24:259|1|16|VLTraderTCPClient: CONNECTED
+2026-09-04 12:29:29:268|1|16|VLTraderTCPClient: CONNECTED
+2026-09-04 12:29:29:269|2|16|VLTraderTCPClient: read err Unable to read data from the transport connection: An established connection was aborted by the software in your host 
+2026-09-04 12:29:34:284|1|16|VLTraderTCPClient: CONNECTED
+2026-09-04 12:29:34:285|2|16|VLTraderTCPClient: read err Unable to read data from the transport connection: An existing connection was forcibly closed by the remote host.
+2026-09-04 12:29:39:292|1|16|VLTraderTCPClient: CONNECTED
+2026-09-04 12:29:44:309|1|16|VLTraderTCPClient: CONNECTED
+dead-subscriptions>0 lines 09-04: 681 (first 2026-09-04 12:31:08, last 2026-09-04 23:59:32)
+Tradovate reconnected on 09-04 after 12:22? 0 line(s) — 0 = never
+NT8 AddOn Alert()/PlaySound anywhere: 0

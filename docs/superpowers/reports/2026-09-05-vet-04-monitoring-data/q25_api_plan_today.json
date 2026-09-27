@@ -1,0 +1,44 @@
+{
+ "acceptance_rule": "5m_close",
+ "active_session": "NY",
+ "approval_required": false,
+ "found": false,
+ "is_active": true,
+ "mode": "strict",
+ "night": false,
+ "reading": false,
+ "replan_in_flight": false,
+ "runnable_sessions": [
+  "ASIA",
+  "LONDON",
+  "NY"
+ ],
+ "session": "NY",
+ "trade_date": "2026-09-05",
+ "weekly": {
+  "narrative": "Latest outside bar after a lower low leaves sellers defending the upper boundary while price holds inside the prior range. Structure remains heavy below the prior week high. A 1h close above 29811.75 negates the bearish bias.",
+  "pwh": 29811.75,
+  "pwl": 28927.25,
+  "refs_only": true,
+  "shadow_bias": "",
+  "thin_history": false,
+  "weekly_levels": [
+   {
+    "name": "PWH",
+    "px": 29811.75
+   },
+   {
+    "name": "PWL",
+    "px": 28927.25
+   },
+   {
+    "name": "20d high",
+    "px": 31103.5
+   },
+   {
+    "name": "20d low",
+    "px": 26739
+   }
+  ]
+ }
+}

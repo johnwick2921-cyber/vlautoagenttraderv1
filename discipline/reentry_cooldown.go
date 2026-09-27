@@ -72,37 +72,56 @@ func NoteStopLossExit(trader, symbol, side string, stopPrice float64, atMs int64
 // price-move unlock cannot be evaluated, so the timer is the only unlock path
 // (fail-safe: rely on the cooldown, never crash). nowMs is the current time in ms.
 func ReentryBlocked(trader, symbol, side string, cooldownMinutes int, atr15, currentPrice float64, nowMs int64) (remainingSec int, reason string, blocked bool) {
-	if cooldownMinutes <= 0 {
-		return 0, "", false
+	remainingSec, reason, blocked, unlocked, key := reentryEvaluate(trader, symbol, side, cooldownMinutes, atr15, currentPrice, nowMs)
+	if unlocked {
+		clearReentry(key)
 	}
-	key := reentryKey{trader, symbol, normSide(side)}
+	return remainingSec, reason, blocked
+}
+
+// ReentryPeek is ReentryBlocked WITHOUT the unlock side effect (W-EXEC-TRUTH W0
+// Q5): it reports the same verdict but never clears the record, so a reader on
+// another entry path (the armed placement, Picture) can never erase the
+// cooldown the AI path relies on. The kernel's ReentryBlocked stays the one
+// that clears on unlock.
+func ReentryPeek(trader, symbol, side string, cooldownMinutes int, atr15, currentPrice float64, nowMs int64) (remainingSec int, reason string, blocked bool) {
+	remainingSec, reason, blocked, _, _ = reentryEvaluate(trader, symbol, side, cooldownMinutes, atr15, currentPrice, nowMs)
+	return remainingSec, reason, blocked
+}
+
+// reentryEvaluate is the ONE verdict both readers share. unlocked reports that a
+// record existed and its unlock condition is met (the caller decides whether
+// to clear it).
+func reentryEvaluate(trader, symbol, side string, cooldownMinutes int, atr15, currentPrice float64, nowMs int64) (remainingSec int, reason string, blocked, unlocked bool, key reentryKey) {
+	if cooldownMinutes <= 0 {
+		return 0, "", false, false, key
+	}
+	key = reentryKey{trader, symbol, normSide(side)}
 
 	reentryMu.Lock()
 	rec, ok := reentryRec[key]
 	reentryMu.Unlock()
 	if !ok {
-		return 0, "", false
+		return 0, "", false, false, key
 	}
 
 	// Price-move unlock: a full ATR15 away from the stop → conditions changed enough.
 	if atr15 > 0 && math.Abs(currentPrice-rec.stopPrice) >= atr15 {
-		clearReentry(key)
-		return 0, "", false
+		return 0, "", false, true, key
 	}
 
 	// Time unlock: cooldown elapsed.
 	elapsedMs := nowMs - rec.atStopMs
 	cooldownMs := int64(cooldownMinutes) * 60_000
 	if elapsedMs >= cooldownMs {
-		clearReentry(key)
-		return 0, "", false
+		return 0, "", false, true, key
 	}
 
 	remainingSec = int((cooldownMs - elapsedMs) / 1000)
 	moved := math.Abs(currentPrice - rec.stopPrice)
 	reason = fmt.Sprintf("stop-loss %s exit at %.4f — same-direction re-entry blocked for %dm (price %.4f is %.4f from stop, need ≥%.4f=1×ATR15)",
 		normSide(side), rec.stopPrice, cooldownMinutes, currentPrice, moved, atr15)
-	return remainingSec, reason, true
+	return remainingSec, reason, true, false, key
 }
 
 func clearReentry(key reentryKey) {

@@ -1,0 +1,157 @@
+USABLE n=65 ids=521..591 (excluded: e7 572-574; NULL pnl 576,577,579)
+with stop: 62  with ATR5m: 62  no-stop ids: [566, 571, 580]  no-ATR ids: [521, 522, 523]
+
+=== BOOK, all usable ===
+ALL                    n= 65 W/L/F=21/42/2 sum= -563.93 mean=  -8.68 [ -33.08,  15.73] win=0.333 [0.229,0.456] avgW= 114.67 avgL= -70.76 payoff=1.62 meanR=-0.04 medR=-1.0  ids=
+
+=== by session (plan_session) ===
+ASIA                   n= 16 W/L/F=2/13/1 sum= -552.43 mean= -34.53 [ -59.80,  -9.26] win=0.133 [0.037,0.379] avgW=  77.25 avgL= -54.38 payoff=1.42 meanR=-0.52 medR=-1.0  <n=30: no verdict>  ids=
+LONDON                 n= 21 W/L/F=7/14/0 sum=   24.00 mean=   1.14 [ -41.67,  43.96] win=0.333 [0.172,0.546] avgW= 135.21 avgL= -65.89 payoff=2.05 meanR=0.14 medR=-1.0  <n=30: no verdict>  ids=
+NY                     n= 21 W/L/F=9/11/1 sum=   62.00 mean=   2.95 [ -52.94,  58.85] win=0.450 [0.258,0.658] avgW= 128.61 avgL= -99.59 payoff=1.29 meanR=0.28 medR=-1.0  <n=30: no verdict>  ids=
+off-plan/NULL          n=  7 W/L/F=3/4/0 sum=  -97.50 mean= -13.93 [ -60.45,  32.59] win=0.429 [0.158,0.750] avgW=  49.83 avgL= -61.75 payoff=0.81 meanR=-0.71 medR=-1.0  <n=30: no verdict>  ids=[530, 539, 545, 546, 566, 571, 580]
+
+=== by side ===
+long                   n= 23 W/L/F=5/18/0 sum= -874.00 mean= -38.00 [ -68.87,  -7.13] win=0.217 [0.097,0.419] avgW=  84.10 avgL= -71.92 payoff=1.17 meanR=-0.57 medR=-1.0  <n=30: no verdict>  ids=
+short                  n= 42 W/L/F=16/24/2 sum=  310.07 mean=   7.38 [ -25.39,  40.15] win=0.400 [0.263,0.554] avgW= 124.22 avgL= -69.89 payoff=1.78 meanR=0.24 medR=-1.0  ids=
+
+=== by condition ===
+reject                 n= 31 W/L/F=14/16/1 sum=  586.00 mean=  18.90 [ -17.65,  55.46] win=0.467 [0.302,0.639] avgW= 117.21 avgL= -65.94 payoff=1.78 meanR=0.46 medR=-1.0  ids=
+breakout_retest        n=  9 W/L/F=1/8/0 sum= -581.50 mean= -64.61 [-100.09, -29.13] win=0.111 [0.020,0.435] avgW=  46.50 avgL= -78.50 payoff=0.59 meanR=-0.76 medR=-1.0  <n=30: no verdict>  ids=[528, 534, 556, 557, 558, 562, 563, 589, 590]
+(none)                 n=  7 W/L/F=3/4/0 sum=  -97.50 mean= -13.93 [ -60.45,  32.59] win=0.429 [0.158,0.750] avgW=  49.83 avgL= -61.75 payoff=0.81 meanR=-0.71 medR=-1.0  <n=30: no verdict>  ids=[530, 539, 545, 546, 566, 571, 580]
+acceptance             n=  6 W/L/F=1/4/1 sum=    4.57 mean=   0.76 [-112.76, 114.29] win=0.200 [0.036,0.624] avgW= 311.00 avgL= -76.61 payoff=4.06 meanR=-0.20 medR=-0.78  <n=30: no verdict>  ids=[522, 526, 527, 532, 542, 543]
+sweep_reclaim          n=  6 W/L/F=1/5/0 sum= -207.00 mean= -34.50 [ -81.77,  12.77] win=0.167 [0.030,0.564] avgW=  92.00 avgL= -59.80 payoff=1.54 meanR=-0.54 medR=-1.0  <n=30: no verdict>  ids=[559, 561, 568, 578, 583, 586]
+reclaim                n=  5 W/L/F=0/5/0 sum= -436.50 mean= -87.30 [-118.21, -56.39] win=0.000 [-0.000,0.434] avgW=   0.00 avgL= -87.30 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[525, 531, 540, 541, 588]
+hold                   n=  1 W/L/F=1/0/0 sum=  168.00 mean= 168.00 [ 168.00, 168.00] win=1.000 [0.207,1.000] avgW= 168.00 avgL=   0.00 payoff=nan meanR=2.69 medR=2.69  <n=30: no verdict>  ids=[555]
+
+=== by entry path ===
+decision (system)      n= 51 W/L/F=13/36/2 sum= -750.43 mean= -14.71 [ -43.54,  14.12] win=0.265 [0.162,0.403] avgW= 140.88 avgL= -71.72 payoff=1.96 meanR=-0.11 medR=-1.0  ids=
+arm fill (armed/reconcile) n= 11 W/L/F=6/5/0 sum=   94.50 mean=   8.59 [ -39.31,  56.50] win=0.545 [0.280,0.787] avgW=  73.33 avgL= -69.10 payoff=1.06 meanR=0.31 medR=0.26  <n=30: no verdict>  ids=[567, 568, 569, 570, 575, 578, 582, 584, 585, 586, 591]
+reconcile off-plan     n=  3 W/L/F=2/1/0 sum=   92.00 mean=  30.67 [ -35.08,  96.42] win=0.667 [0.208,0.939] avgW=  68.25 avgL= -44.50 payoff=1.53   <n=30: no verdict>  ids=[566, 571, 580]
+
+=== by entry hour CT ===
+hour 00                n=  2 W/L/F=0/2/0 sum= -142.00 mean= -71.00 [ -82.78, -59.22] win=0.000 [0.000,0.658] avgW=   0.00 avgL= -71.00 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[537, 587]
+hour 01                n=  2 W/L/F=1/1/0 sum=  -11.50 mean=  -5.75 [ -55.99,  44.49] win=0.500 [0.095,0.905] avgW=  30.50 avgL= -42.00 payoff=0.73 meanR=-0.08 medR=-0.08  <n=30: no verdict>  ids=[538, 567]
+hour 02                n=  3 W/L/F=1/2/0 sum=   30.00 mean=  10.00 [-135.41, 155.41] win=0.333 [0.061,0.792] avgW= 190.50 avgL= -80.25 payoff=2.37 meanR=0.26 medR=-1.0  <n=30: no verdict>  ids=[554, 562, 581]
+hour 03                n=  3 W/L/F=1/2/0 sum=  -44.00 mean= -14.67 [-136.97, 107.64] win=0.333 [0.061,0.792] avgW= 138.00 avgL= -91.00 payoff=1.52 meanR=0.34 medR=-1.0  <n=30: no verdict>  ids=[521, 528, 539]
+hour 04                n=  2 W/L/F=1/1/0 sum=   99.00 mean=  49.50 [-114.73, 213.73] win=0.500 [0.095,0.905] avgW= 168.00 avgL= -69.00 payoff=2.43 meanR=0.84 medR=0.84  <n=30: no verdict>  ids=[555, 564]
+hour 05                n=  4 W/L/F=2/2/0 sum=  137.00 mean=  34.25 [ -79.42, 147.92] win=0.500 [0.150,0.850] avgW= 148.75 avgL= -80.25 payoff=1.85 meanR=0.58 medR=0.43  <n=30: no verdict>  ids=[529, 540, 565, 582]
+hour 06                n=  5 W/L/F=1/4/0 sum= -208.50 mean= -41.70 [ -83.21,  -0.19] win=0.200 [0.036,0.624] avgW=  46.50 avgL= -63.75 payoff=0.73 meanR=-0.69 medR=-1.0  <n=30: no verdict>  ids=[541, 556, 557, 563, 583]
+hour 07                n=  5 W/L/F=0/5/0 sum= -268.50 mean= -53.70 [ -74.55, -32.85] win=0.000 [-0.000,0.434] avgW=   0.00 avgL= -53.70 payoff=0.00 meanR=-0.72 medR=-1.0  <n=30: no verdict>  ids=[522, 546, 558, 568, 588]
+hour 08                n=  5 W/L/F=3/1/1 sum=   34.50 mean=   6.90 [ -68.39,  82.19] win=0.750 [0.301,0.954] avgW=  60.67 avgL=-147.50 payoff=0.41 meanR=0.55 medR=0.17  <n=30: no verdict>  ids=[530, 531, 542, 569, 584]
+hour 09                n=  9 W/L/F=3/6/0 sum= -183.50 mean= -20.39 [-114.36,  73.58] win=0.333 [0.121,0.646] avgW= 153.83 avgL=-107.50 payoff=1.43 meanR=-0.23 medR=-1.0  <n=30: no verdict>  ids=[523, 532, 547, 548, 559, 575, 585, 589, 591]
+hour 10                n=  3 W/L/F=0/3/0 sum= -249.00 mean= -83.00 [-100.87, -65.13] win=0.000 [0.000,0.562] avgW=   0.00 avgL= -83.00 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[543, 544, 590]
+hour 11                n=  3 W/L/F=3/0/0 sum=  540.00 mean= 180.00 [  98.03, 261.97] win=1.000 [0.438,1.000] avgW= 180.00 avgL=   0.00 payoff=nan meanR=4.24 medR=4.24  <n=30: no verdict>  ids=[524, 549, 566]
+hour 12                n=  2 W/L/F=2/0/0 sum=  109.00 mean=  54.50 [   2.53, 106.47] win=1.000 [0.342,1.000] avgW=  54.50 avgL=   0.00 payoff=nan meanR=0.59 medR=0.59  <n=30: no verdict>  ids=[570, 578]
+hour 13                n=  3 W/L/F=2/1/0 sum=   66.50 mean=  22.17 [ -41.72,  86.06] win=0.667 [0.208,0.939] avgW=  60.25 avgL= -54.00 payoff=1.12 meanR=0.46 medR=0.46  <n=30: no verdict>  ids=[560, 580, 586]
+hour 17                n=  2 W/L/F=0/2/0 sum=  -99.00 mean= -49.50 [ -56.43, -42.57] win=0.000 [0.000,0.658] avgW=   0.00 avgL= -49.50 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[533, 571]
+hour 18                n=  1 W/L/F=0/1/0 sum=  -43.00 mean= -43.00 [ -43.00, -43.00] win=0.000 [0.000,0.793] avgW=   0.00 avgL= -43.00 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[525]
+hour 19                n=  2 W/L/F=0/2/0 sum= -118.00 mean= -59.00 [ -68.70, -49.30] win=0.000 [0.000,0.658] avgW=   0.00 avgL= -59.00 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[534, 561]
+hour 20                n=  2 W/L/F=0/2/0 sum= -153.93 mean= -76.96 [ -87.41, -66.52] win=0.000 [0.000,0.658] avgW=   0.00 avgL= -76.96 payoff=0.00 meanR=-0.78 medR=-0.78  <n=30: no verdict>  ids=[526, 550]
+hour 21                n=  3 W/L/F=1/1/1 sum=   93.00 mean=  31.00 [ -44.78, 106.78] win=0.500 [0.095,0.905] avgW= 124.00 avgL= -31.00 payoff=4.00 meanR=0.80 medR=0.0  <n=30: no verdict>  ids=[535, 536, 551]
+hour 22                n=  3 W/L/F=0/3/0 sum= -125.00 mean= -41.67 [ -80.11,  -3.22] win=0.000 [0.000,0.562] avgW=   0.00 avgL= -41.67 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[527, 545, 552]
+hour 23                n=  1 W/L/F=0/1/0 sum=  -27.00 mean= -27.00 [ -27.00, -27.00] win=0.000 [0.000,0.793] avgW=   0.00 avgL= -27.00 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[553]
+
+=== by hour bucket ===
+ASIA 17-01             n= 18 W/L/F=2/15/1 sum= -626.43 mean= -34.80 [ -57.30, -12.31] win=0.118 [0.033,0.343] avgW=  77.25 avgL= -52.06 payoff=1.48 meanR=-0.55 medR=-1.0  <n=30: no verdict>  ids=
+LDN 02-08              n= 22 W/L/F=6/16/0 sum= -255.00 mean= -11.59 [ -52.54,  29.35] win=0.273 [0.132,0.482] avgW= 140.08 avgL= -68.47 payoff=2.05 meanR=-0.05 medR=-1.0  <n=30: no verdict>  ids=
+NY AM 08-11            n= 17 W/L/F=6/10/1 sum= -398.00 mean= -23.41 [ -79.79,  32.97] win=0.375 [0.185,0.614] avgW= 107.25 avgL=-104.15 payoff=1.03 meanR=-0.14 medR=-1.0  <n=30: no verdict>  ids=
+NY MID 11-13           n=  5 W/L/F=5/0/0 sum=  649.00 mean= 129.80 [  53.94, 205.66] win=1.000 [0.566,1.000] avgW= 129.80 avgL=   0.00 payoff=nan meanR=2.41 medR=1.56  <n=30: no verdict>  ids=[524, 549, 566, 570, 578]
+NY PM 13-15            n=  3 W/L/F=2/1/0 sum=   66.50 mean=  22.17 [ -41.72,  86.06] win=0.667 [0.208,0.939] avgW=  60.25 avgL= -54.00 payoff=1.12 meanR=0.46 medR=0.46  <n=30: no verdict>  ids=[560, 580, 586]
+
+=== by confirm rule ===
+1x5m_close             n= 29 W/L/F=5/23/1 sum=-1135.00 mean= -39.14 [ -66.65, -11.62] win=0.179 [0.079,0.356] avgW=  99.70 avgL= -71.02 payoff=1.40 meanR=-0.47 medR=-1.0  <n=30: no verdict>  ids=
+(none)                 n= 14 W/L/F=6/8/0 sum=  171.07 mean=  12.22 [ -42.49,  66.93] win=0.429 [0.214,0.674] avgW= 113.17 avgL= -63.49 payoff=1.78 meanR=0.38 medR=-1.0  <n=30: no verdict>  ids=
+2x5m_close             n= 10 W/L/F=5/4/1 sum=  449.50 mean=  44.95 [ -28.25, 118.15] win=0.556 [0.267,0.811] avgW= 136.00 avgL= -57.62 payoff=2.36 meanR=0.56 medR=0.29  <n=30: no verdict>  ids=[529, 532, 536, 537, 538, 542, 543, 556, 557, 558]
+touch                  n=  9 W/L/F=5/4/0 sum=  216.50 mean=  24.06 [ -45.17,  93.28] win=0.556 [0.267,0.811] avgW= 110.10 avgL= -83.50 payoff=1.32 meanR=0.52 medR=0.38  <n=30: no verdict>  ids=[575, 578, 581, 582, 584, 585, 586, 587, 591]
+15m_close              n=  3 W/L/F=0/3/0 sum= -266.00 mean= -88.67 [-136.60, -40.74] win=0.000 [0.000,0.562] avgW=   0.00 avgL= -88.67 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[531, 563, 564]
+
+=== by day_type ===
+balance                n= 23 W/L/F=6/17/0 sum= -736.43 mean= -32.02 [ -69.06,   5.02] win=0.261 [0.125,0.465] avgW= 103.08 avgL= -79.70 payoff=1.29 meanR=-0.27 medR=-1.0  <n=30: no verdict>  ids=
+trend                  n= 17 W/L/F=6/10/1 sum=  321.00 mean=  18.88 [ -31.07,  68.84] win=0.375 [0.185,0.614] avgW= 140.33 avgL= -52.10 payoff=2.69 meanR=0.17 medR=-1.0  <n=30: no verdict>  ids=
+trend-down             n= 13 W/L/F=3/9/1 sum= -537.50 mean= -41.35 [ -78.39,  -4.30] win=0.250 [0.089,0.532] avgW=  62.33 avgL= -80.50 payoff=0.77 meanR=-0.34 medR=-1.0  <n=30: no verdict>  ids=
+(none)                 n=  7 W/L/F=3/4/0 sum=  -97.50 mean= -13.93 [ -60.45,  32.59] win=0.429 [0.158,0.750] avgW=  49.83 avgL= -61.75 payoff=0.81 meanR=-0.71 medR=-1.0  <n=30: no verdict>  ids=[530, 539, 545, 546, 566, 571, 580]
+trend_down             n=  4 W/L/F=2/2/0 sum=  213.00 mean=  53.25 [ -62.55, 169.05] win=0.500 [0.150,0.850] avgW= 168.75 avgL= -62.25 payoff=2.71 meanR=0.51 medR=0.43  <n=30: no verdict>  ids=[528, 529, 549, 553]
+balance (short-lean pullback) n=  1 W/L/F=1/0/0 sum=  273.50 mean= 273.50 [ 273.50, 273.50] win=1.000 [0.207,1.000] avgW= 273.50 avgL=   0.00 payoff=nan meanR=6.29 medR=6.29  <n=30: no verdict>  ids=[524]
+
+=== by plan bias vs side ===
+with-bias              n= 49 W/L/F=16/31/2 sum= -155.43 mean=  -3.17 [ -33.18,  26.83] win=0.340 [0.222,0.483] avgW= 128.59 avgL= -71.38 payoff=1.80 meanR=0.06 medR=-1.0  ids=
+against-bias           n=  3 W/L/F=0/3/0 sum= -284.00 mean= -94.67 [-138.94, -50.39] win=0.000 [0.000,0.562] avgW=   0.00 avgL= -94.67 payoff=0.00 meanR=-1.00 medR=-1.0  <n=30: no verdict>  ids=[531, 583, 586]
+neutral/none           n= 13 W/L/F=5/8/0 sum= -124.50 mean=  -9.58 [ -47.73,  28.58] win=0.385 [0.177,0.645] avgW=  70.10 avgL= -59.38 payoff=1.18 meanR=-0.24 medR=-1.0  <n=30: no verdict>  ids=
+
+=== by realized-vol tercile (ATR5m at entry) ===
+ATR5m terciles cut at (22.46, 27.93)
+low ATR                n= 21 W/L/F=4/17/0 sum= -795.50 mean= -37.88 [ -62.35, -13.41] win=0.190 [0.077,0.400] avgW=  68.75 avgL= -62.97 payoff=1.09 meanR=-0.48 medR=-1.0  <n=30: no verdict>  ids=
+mid ATR                n= 20 W/L/F=7/12/1 sum=  158.57 mean=   7.93 [ -29.84,  45.70] win=0.368 [0.191,0.590] avgW= 113.64 avgL= -53.08 payoff=2.14 meanR=0.06 medR=-0.78  <n=30: no verdict>  ids=
+high ATR               n= 21 W/L/F=8/12/1 sum= -122.50 mean=  -5.83 [ -62.90,  51.23] win=0.400 [0.219,0.613] avgW= 135.19 avgL=-100.33 payoff=1.35 meanR=0.11 medR=-1.0  <n=30: no verdict>  ids=
+
+=== regime label (plans.doc.bias_label) coverage === Counter({'absent': 64, ' · regime up': 1})
+
+=== hold time (min) ===
+all      n=65 p25=12.2 median=26.0 p75=55.4 max=219.7
+winners  n=21 p25=4.6 median=38.4 p75=76.3 max=203.8
+losers   n=42 p25=12.2 median=21.4 p75=47.58 max=219.7
+
+=== stops ===
+stop pts n=62 p25=25.06 median=33.75 p75=44.12 min=3.75 max=92.75
+stop/ATR5m n=59 p25=1.01 median=1.3 p75=1.77; share <1.0×: 14, in [1.0,1.5): 22, in [1.5,2.0): 13, >=2: 10
+stop source counts: Counter({'decision': 51, 'armed_orders': 7, 'plan_arm': 4, '': 3})
+
+=== planned R:R (decision/arm target vs stop) vs realized ===
+planned RR at entry n=62 p25=2.23 median=2.7 p75=3.41; in[2.0,2.3)=9 in[3.0,3.3)=4 <2=8
+
+=== excursions (trader_positions.mae/mfe, pts) ===
+winners  MFE n=20 p50=67.75 p80=86.6 p95=138.46 | MAE p50=10.88 p80=18.3 p95=44.64
+losers   MFE n=42 p50=16.62 p80=28.4 p95=47.77 | MAE p50=40.38 p80=50.8 p95=75.0
+
+=== MFE by condition (pts) p50/p80/p95 ===
+reject           n=31 p50=41.5 p80=69.75 p95=88.25
+breakout_retest  n= 9 p50=25.75 p80=43.5 p95=62.25  <n=30 descriptive>
+(none)           n= 6 p50=13.5 p80=20.75 p95=36.88  <n=30 descriptive>
+acceptance       n= 6 p50=17.62 p80=89.75 p95=140.0  <n=30 descriptive>
+sweep_reclaim    n= 6 p50=20.5 p80=25.0 p95=41.69  <n=30 descriptive>
+reclaim          n= 5 p50=16.25 p80=21.4 p95=26.35  <n=30 descriptive>
+hold             n= 1 p50=92.0 p80=92.0 p95=92.0  <n=30 descriptive>
+
+=== MFE/MAE in STOP units (actual initial stop) ===
+winners  n=19 MFE/stop p50=2.15 p80=2.76 max=6.32 | MAE/stop p50=0.37 p80=0.71 max=0.97 | >=2.0R: 11 | winners max MAE/stop list: [0.0, 0.0, 0.07, 0.14, 0.14, 0.15, 0.16, 0.24, 0.27, 0.37, 0.43, 0.43, 0.44, 0.5, 0.7, 0.72, 0.76, 0.94, 0.97]
+losers   n=41 MFE/stop p50=0.48 p80=0.98 max=2.67 | MAE/stop p50=1.04 p80=1.17 max=2.57 | >=2.0R: 2 | winners max MAE/stop list: [0.2, 0.92, 0.94, 1.0, 1.01, 1.01, 1.01, 1.01, 1.01, 1.02, 1.02, 1.02, 1.02, 1.02, 1.02, 1.02, 1.02, 1.02, 1.03, 1.04, 1.04, 1.05, 1.05, 1.05, 1.06, 1.06, 1.07, 1.11, 1.11, 1.13, 1.15, 1.15, 1.17, 1.19, 1.33, 1.47, 1.63, 1.64, 1.7, 1.9, 2.57]
+reached 2R off ACTUAL stop: 14 of 62 ids [521, 524, 529, 532, 536, 548, 549, 551, 552, 555, 560, 581, 582, 584]
+reached 2R off MIN stop (1.5×ATR5m): 5 of 59 ids [524, 529, 555, 557, 581] | reached 1R off min stop: 22
+winners MAE/floor(1.5xATR): [0.0, 0.0, 0.07, 0.1, 0.1, 0.11, 0.13, 0.2, 0.2, 0.2, 0.31, 0.33, 0.5, 0.54, 0.66, 0.67, 1.22]
+losers  MAE/floor(1.5xATR): [0.14, 0.38, 0.46, 0.53, 0.53, 0.66, 0.68, 0.69, 0.69, 0.7, 0.73, 0.75, 0.81, 0.92, 0.98, 0.99, 1.02, 1.02, 1.04, 1.05, 1.06, 1.07, 1.07, 1.09, 1.16, 1.21, 1.24, 1.28, 1.35, 1.39, 1.41, 1.42, 1.42, 1.43, 1.52, 1.55, 1.62, 1.69, 1.8, 1.93]
+losers MAE >= 0.95×stop (stopped): 38 of 41
+winners giveback (MFE-realized pts) n=20 median=4.0 p75=8.5; median MFE=67.75 median realized pts=53.0
+
+=== stop-in-ATR counterfactual (in-sample, descriptive) ===
+  stop 0.75×ATR5m: winners kept 12/17, losers stopped 37/40
+  stop 1.0×ATR5m: winners kept 15/17, losers stopped 34/40
+  stop 1.25×ATR5m: winners kept 16/17, losers stopped 27/40
+  stop 1.5×ATR5m: winners kept 16/17, losers stopped 24/40
+  stop 2.0×ATR5m: winners kept 17/17, losers stopped 12/40
+
+=== per-day ===
+  08-19 n=7 sum=  268.57
+  08-20 n=9 sum=  219.50
+  08-21 n=8 sum= -464.50
+  08-23 n=1 sum=  -29.50
+  08-24 n=8 sum= -232.00
+  08-25 n=8 sum=   40.50
+  08-26 n=2 sum= -148.00
+  08-27 n=3 sum=  -34.50
+  08-28 n=4 sum=    6.00
+  08-30 n=1 sum=  -44.50
+  08-31 n=3 sum=  164.00
+  09-01 n=6 sum=  212.00
+  09-02 n=4 sum= -381.50
+  09-03 n=1 sum= -140.00
+days with trades: 14  trades/day: 4.64
+
+=== reject in NY (prompt line 737 claims 75% win +665 'this week') ===
+reject×NY              n= 12 W/L/F=7/5/0 sum=  281.50 mean=  23.46 [ -44.78,  91.70] win=0.583 [0.320,0.807] avgW= 107.79 avgL= -94.60 payoff=1.14 meanR=0.72 medR=0.32  <n=30: no verdict>  ids=[523, 524, 544, 547, 548, 549, 560, 569, 570, 575, 585, 591]
+reject×LONDON          n=  8 W/L/F=5/3/0 sum=  538.50 mean=  67.31 [  -5.30, 139.92] win=0.625 [0.306,0.863] avgW= 146.40 avgL= -64.50 payoff=2.27 meanR=1.17 medR=2.03  <n=30: no verdict>  ids=[521, 529, 554, 564, 565, 581, 582, 584]
+reject×ASIA            n= 11 W/L/F=2/8/1 sum= -234.00 mean= -21.27 [ -54.69,  12.15] win=0.200 [0.057,0.510] avgW=  77.25 avgL= -48.56 payoff=1.59 meanR=-0.34 medR=-1.0  <n=30: no verdict>  ids=[533, 535, 536, 537, 538, 550, 551, 552, 553, 567, 587]
+
+=== spot-check stored mae/mfe vs 1m bars (3 trades) ===
+  532 short bars=205 recomputed MFE=156.75 MAE=61.50 | stored MFE=156.75 MAE=61.5
+  589 long bars=19 recomputed MFE=10.25 MAE=81.25 | stored MFE=10.25 MAE=80.5
+  591 short bars=16 recomputed MFE=43.50 MAE=75.00 | stored MFE=43.5 MAE=75.0

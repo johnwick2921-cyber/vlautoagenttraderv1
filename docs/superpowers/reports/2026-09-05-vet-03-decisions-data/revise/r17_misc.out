@@ -1,0 +1,98 @@
+### E1 code files differing 70af663d..36648655 (non-docs, non-web)
+.audit/arm_rules_trader_armed_executor_go_kerne.md
+.audit/c_computed_signals_belief_census_c1_c8_d.md
+.audit/cadence_wakes_class_47_w6_g4_6_wake_fami.md
+.audit/d_level_grader_belief_census_d1_d10_beli.md
+.audit/e_exits_lifecycle_belief_census_e1_e5_di.md
+.audit/expectancy_wave_1d_d10.md
+.audit/f_weekly_reader_belief_census_f1_f5_disp.md
+.audit/guardrails_sizing_dispatch_d9_monte_carl.md
+.audit/knob_registry_store_knob_registry_table_.md
+.audit/the_entry_gate_trader_entry_gate_go_disp.md
+deploy/RELEASE
+deploy/nofx-claim-test.sh
+deploy/nofx-claim.sh
+kernel/arm_kind.go
+kernel/armable_contract_derive_test.go
+kernel/levels_volume_boot.go
+kernel/planner_prompt.go
+kernel/prompt_contract.go
+kernel/prompt_floor_contract_test.go
+kernel/volume_boot_line_test.go
+store/armed_orders.go
+store/armed_placement_dup_test.go
+trader/armed_executor.go
+trader/armed_executor_test.go
+trader/entry_gate.go
+trader/entry_gate_d32_test.go
+trader/reaper_snapshot.go
+trader/reaper_snapshot_test.go
+-- 51916172 in ebe07d5f:
+YES
+-- ebe07d5f in 36648655:
+YES
+36648655 2026-09-04 13:22:30 -0500 Merge remote-tracking branch 'origin/dev' into dev
+15340faa 2026-09-04 13:22:07 -0500 Merge commit 'feba0ce5' into deploy/merge-claim
+0f87a2ca 2026-09-04 12:42:09 -0500 claim: mock plan card states the resolved plan_mode — nofx-47, 2026-09-04T12:42:09-05:00
+ebe07d5f 2026-09-04 10:49:56 -0500 merge fix/reaper-reads-snapshot (boot 9, owner ruling): the stale-working reaper reads the broker's book, never order_update silence
+24641ff6 2026-09-04 10:49:56 -0500 merge fix/prompt-floor-bootline-literals (boot 9): D5 regression fix — a live row wins the UpsertArm lookup; shadowed author derives kind
+3b8d6cd6 2026-09-04 10:15:43 -0500 fix(D5 regression): a live row wins the lookup — stop minting a placement per cycle
+789b31aa 2026-09-04 10:12:53 -0500 fix(step0): a claim must name its session — the checker that makes it a rule
+5bcb5455 2026-09-04 10:12:53 -0500 claim: claim-identity enforcement + worktree prune — nofx-b3, 2026-09-04T10:10:00-05:00
+af53e95f 2026-09-04 10:07:47 -0500 merge fix/prompt-floor-bootline-literals (boot 9, 2026-09-04): prompt stop-floor reads MinSLATRMult · volume-wave boot line read not typed · D32 decision-path refusal logged · D-25 armable set derived in prompt AND contract
+e54d0ad7 2026-09-04 09:51:48 -0500 fix(reaper): the unnameable-row guard, transient broker states, and the report
+51916172 2026-09-04 09:48:03 -0500 fix(reaper): read the broker's book, not order_update silence
+0c2b0c9e 2026-09-04 09:44:08 -0500 claim: reaper reads the broker snapshot, not order_update silence — nofx-47, 2026-09-04T09:44:08-05:00
+### E2 config_resolved shape
+<class 'dict'> ['knobs', 'summary']
+<class 'list'> {'path': 'acceptance_rule', 'status': 'candidate-unverified', 'ui_label': 'no known reader — pending verification', 'consumers': [], 'dual_level': False, 'note': 'no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the command quoted before any status change.'}
+  eod_flat_ct | ineffective | unreachable (auto_trader_clock.go)
+  wake_min_interval_min | candidate-unverified | no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the c
+  wake_on_15m_zone | candidate-unverified | no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the c
+  wake_on_htf_ob | candidate-unverified | no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the c
+  wake_on_htf_zone | candidate-unverified | no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the c
+  wake_on_ifvg | candidate-unverified | no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the c
+  wake_on_seated_invalidation | candidate-unverified | no consumer found by a FIELD grep on 2026-09-03 (grep -rn ".<Field>\b" kernel trader api agent provider). A METHOD-based reader would NOT appear, so this is NOT dead and must not be removed: it needs a method-level grep with the c
+### E3 committed data dir
+api_cutover-gate.json
+api_expectancy.json
+api_expectancy_by_session.json
+api_risk_gate-blocks.json
+q01_store_premises.out
+q02_entry_time_dist.out
+q02_entry_time_dist.sql
+q03_planner_arms_gates.out
+q03_planner_arms_gates.sql
+q04_decisions_parse.out
+q04_decisions_parse.py
+q05_plan_doc_peek.out
+q05_plan_doc_peek.py
+q06_plan_corpus.out
+q06_plan_corpus.py
+q06_trigger_fired.csv
+q06b_trigger_first.csv
+q06b_trigger_inforce.csv
+q06b_trigger_inforce.out
+q06b_trigger_inforce.py
+q07_reauthor_cost.out
+q07_reauthor_cost.py
+q08_arms_0904_and_era_positions.out
+q08_arms_0904_and_era_positions.sql
+q10_churn_durations.out
+q10_churn_durations.sql
+q11_mfe_r_rows.csv
+q11_wilson_pnl_2r.out
+q11_wilson_pnl_2r.py
+q12_refusals_by_leg.out
+q12_refusals_by_leg.py
+q13_coverage_leg3_broker_levels.out
+q13_coverage_leg3_broker_levels.py
+q14_s1_episode_closes_durations.out
+q14_s1_episode_closes_durations.py
+35
+docs/superpowers/reports/2026-09-05-vet-03-decisions-data/q01_store_premises.out
+### E4 secret scan of revise dir
+clean
+### E5 09-04 arm refusals line for 09:02:09 and 02:00:46
+ugrep: warning: data/nofx_2026-09-03.log: No such file or directory
+ugrep: warning: data/nofx_2026-09-04.log: No such file or directory

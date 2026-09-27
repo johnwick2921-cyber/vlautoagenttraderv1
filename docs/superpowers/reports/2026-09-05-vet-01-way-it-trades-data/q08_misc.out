@@ -1,0 +1,40 @@
+k                  COUNT(*)
+-----------------  --------
+created_at>=08-15  71      
+k                    SUM(cited_scenario_id IS NOT NULL AND cited_scenario_id<>'')
+-------------------  ------------------------------------------------------------
+era cited non-empty  64                                                          
+k                    SUM(mae IS NOT NULL)  SUM(mfe IS NOT NULL)  SUM(mae<>0 OR mfe<>0)
+-------------------  --------------------  --------------------  ---------------------
+era mae/mfe nonnull  70                    70                    70                   
+symbol  tf  convention   n      d    
+------  --  -----------  -----  -----
+ES      1m               7814   7814 
+ES      1m  epoch_floor  4487   4487 
+ES      5m  epoch_floor  2497   2497 
+MNQ     1m               12548  12548
+MNQ     1m  epoch_floor  4155   4155 
+MNQ     5m               66     66   
+MNQ     5m  epoch_floor  2431   2431 
+k                    COUNT(*)  SUM(working_count>0)  MAX(working_count)
+-------------------  --------  --------------------  ------------------
+nt8 snapshots 09-04  3008      360                   9                 
+id    reason        order_count  working_count  ct                   substr(orders_json,1,400)                                   
+----  ------------  -----------  -------------  -------------------  ------------------------------------------------------------
+1831  state_change  1            1              2026-09-04 11:59:02  [{"order_id":"8373c7bf6a664d48bba76fd144d423fe","symbol":"MN
+                                                                     Q","name":"931a761a-d0c8-492b-a815-a5f41cc9d9ae","action":"s
+                                                                     ell","type":"stop","limit_price":29590.5,"quantity":1,"state
+                                                                     ":"CancelSubmitted"}]                                       
+
+1830  state_change  1            1              2026-09-04 11:59:02  [{"order_id":"8373c7bf6a664d48bba76fd144d423fe","symbol":"MN
+                                                                     Q","name":"931a761a-d0c8-492b-a815-a5f41cc9d9ae","action":"s
+                                                                     ell","type":"stop","limit_price":29590.5,"quantity":1,"state
+                                                                     ":"CancelPending"}]                                         
+
+1829  periodic      1            1              2026-09-04 11:58:39  [{"order_id":"8373c7bf6a664d48bba76fd144d423fe","symbol":"MN
+                                                                     Q","name":"931a761a-d0c8-492b-a815-a5f41cc9d9ae","action":"s
+                                                                     ell","type":"stop","limit_price":29590.5,"quantity":1,"state
+                                                                     ":"Accepted"}]                                              
+k                id    reason    order_count  working_count  ct                   substr(orders_json,1,300)
+---------------  ----  --------  -----------  -------------  -------------------  -------------------------
+latest snapshot  4468  periodic  0            0              2026-09-05 09:58:38  []                       

@@ -1,0 +1,154 @@
+{
+  "query": "select id,source,plan_id,plan_version,cited_scenario_id,plan_session,entry_time,exit_time,pnl_corrected from trader_positions where entry_time>=1786770000000 and status='CLOSED' and pnl_corrected is not null and coalesce(source,'')!='e7_farside_test' and coalesce(plan_id,'')!='UNRESOLVABLE' order by id",
+  "n": 58,
+  "sum_pnl_corrected": -466.428572,
+  "wins": 18,
+  "losses": 38,
+  "flats": 2,
+  "days_17ct": [
+    "2026-08-19",
+    "2026-08-20",
+    "2026-08-21",
+    "2026-08-24",
+    "2026-08-25",
+    "2026-08-26",
+    "2026-08-27",
+    "2026-08-28",
+    "2026-08-31",
+    "2026-09-01",
+    "2026-09-02",
+    "2026-09-03"
+  ],
+  "win_wilson95": [
+    0.206219,
+    0.438033
+  ],
+  "conditions": {
+    "reject": {
+      "n": 31,
+      "wins": 14,
+      "pnl_corrected": 586.0,
+      "ids": [
+        521,
+        523,
+        524,
+        529,
+        533,
+        535,
+        536,
+        537,
+        538,
+        544,
+        547,
+        548,
+        549,
+        550,
+        551,
+        552,
+        553,
+        554,
+        560,
+        564,
+        565,
+        567,
+        569,
+        570,
+        575,
+        581,
+        582,
+        584,
+        585,
+        587,
+        591
+      ],
+      "win_wilson95": [
+        0.291615,
+        0.622281
+      ]
+    },
+    "acceptance": {
+      "n": 6,
+      "wins": 1,
+      "pnl_corrected": 4.571428,
+      "ids": [
+        522,
+        526,
+        527,
+        532,
+        542,
+        543
+      ],
+      "win_wilson95": [
+        0.030053,
+        0.563509
+      ]
+    },
+    "reclaim": {
+      "n": 5,
+      "wins": 0,
+      "pnl_corrected": -436.5,
+      "ids": [
+        525,
+        531,
+        540,
+        541,
+        588
+      ],
+      "win_wilson95": [
+        -0.0,
+        0.434491
+      ]
+    },
+    "breakout_retest": {
+      "n": 9,
+      "wins": 1,
+      "pnl_corrected": -581.5,
+      "ids": [
+        528,
+        534,
+        556,
+        557,
+        558,
+        562,
+        563,
+        589,
+        590
+      ],
+      "win_wilson95": [
+        0.01989,
+        0.435006
+      ]
+    },
+    "hold": {
+      "n": 1,
+      "wins": 1,
+      "pnl_corrected": 168.0,
+      "ids": [
+        555
+      ],
+      "win_wilson95": [
+        0.206543,
+        1.0
+      ]
+    },
+    "sweep_reclaim": {
+      "n": 6,
+      "wins": 1,
+      "pnl_corrected": -207.0,
+      "ids": [
+        559,
+        561,
+        568,
+        578,
+        583,
+        586
+      ],
+      "win_wilson95": [
+        0.030053,
+        0.563509
+      ]
+    }
+  },
+  "post_strict_boot_positions": [],
+  "trade_excursions_n": 0
+}

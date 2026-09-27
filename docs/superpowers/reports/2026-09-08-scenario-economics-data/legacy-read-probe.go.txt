@@ -1,0 +1,16 @@
+package main
+import("database/sql";"encoding/json";"fmt";"os";"nofx/kernel"; _ "github.com/mattn/go-sqlite3")
+func main(){
+ db,err:=sql.Open("sqlite3","file:/home/hoang/nofx/data/data.db?mode=ro");if err!=nil{panic(err)};defer db.Close()
+ rows,err:=db.Query("select rowid,doc from plans where trade_date >= '2026-08-15' order by rowid");if err!=nil{panic(err)};defer rows.Close()
+ type Row struct{RowID int `json:"plan_rowid"`; Scenarios int `json:"scenarios"`; Error string `json:"error,omitempty"`; ReadJSON string `json:"-"`}
+ out:=[]Row{};n,accepted:=0,0
+ for rows.Next(){var id int;var raw string;if err=rows.Scan(&id,&raw);err!=nil{panic(err)};var doc kernel.PlanDoc
+  var counts struct{Scenarios []json.RawMessage `json:"scenarios"`};if err=json.Unmarshal([]byte(raw),&counts);err!=nil{panic(err)}
+  r:=Row{RowID:id,Scenarios:len(counts.Scenarios)};n+=r.Scenarios
+  if err=json.Unmarshal([]byte(raw),&doc);err!=nil{r.Error="unmarshal: "+err.Error();out=append(out,r);continue}
+  if err=kernel.ValidatePlanDocWithCaps(&doc,kernel.PlanHardMaxLevels,kernel.PlanHardMaxScenarios);err!=nil{r.Error=err.Error()}else{accepted+=r.Scenarios}
+  out=append(out,r)
+ };if err=rows.Err();err!=nil{panic(err)}
+ b,_:=json.MarshalIndent(map[string]any{"scenario_n":n,"schema_accepted_scenarios":accepted,"rows":out},"","  ");if len(os.Args)>1 {if err=os.WriteFile(os.Args[1],append(b,'\n'),0600);err!=nil{panic(err)}};fmt.Printf("plans=%d scenarios=%d accepted_scenarios=%d\n",len(out),n,accepted)
+}

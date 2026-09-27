@@ -1,0 +1,61 @@
+planner prompt (id 132) chars 31596 o200k/cl100k (10948, 10974)
+executor system (37768) chars 11121 o200k/cl100k (3318, 3312)
+executor input  (37768) chars 16448 o200k/cl100k (8504, 8514)
+executor total chars 27569 o200k 11822
+
+section | kind | chars | o200k
+## CORRECTIONS FROM THIS READ — read the | INSTR | 788 | 177
+# DAY-PLAN READER — CME MNQ futures | INSTR | 222 | 57
+## Session | FACT | 527 | 157
+## Regime | FACT | 131 | 58
+## Candles (oldest→latest) | FACT | 26 | 9
+### 15m (last 12) | FACT | 956 | 483
+### 1h (last 12) | FACT | 955 | 483
+### 4h (last 8) | FACT | 666 | 332
+### daily session candles (last 8) | FACT | 254 | 105
+## Weekly Context | FACT | 66 | 27
+## Indicators (executor mirror — your ai | FACT | 73 | 15
+### 1h | FACT | 706 | 423
+### 4h | FACT | 707 | 423
+### 1d | FACT | 707 | 423
+### 15m | FACT | 707 | 423
+### 3m | FACT | 706 | 423
+### 5m | FACT | 707 | 424
+## VOID breakdown levels (a close came b | FACT | 465 | 120
+## Minimum stop distance this cycle | FACT | 246 | 64
+## Waterfall displacement floor this cyc | FACT | 204 | 51
+## Measured displacement per level (floo | FACT | 684 | 257
+## Ranked levels (Go-graded; you never r | FACT | 47 | 13
+## Consumed levels (already role-flipped | FACT | 268 | 129
+## FRESH FVGs (machine-computed candidat | FACT | 1157 | 359
+## Level roles (machine-assigned, 5-line | INSTR | 602 | 169
+## Structure (1 line/TF) | FACT | 223 | 101
+## HTF zones (nearest first — confluence | FACT | 294 | 124
+## Calendar (this session's window — tim | FACT | 426 | 115
+## Recent context (digest chain) | FACT | 1380 | 580
+## Prior plan invalidation (MANDATORY co | FACT | 137 | 44
+## Prior plan levels (continuity — carry | FACT | 280 | 128
+## Anchor roles (week evidence, advisory | INSTR | 309 | 77
+## BIAS-TREE (machine branches — your re | INSTR | 1040 | 302
+## Priority setup — THE CHAIN (A2, week  | INSTR | 555 | 140
+## No-trade gates (the machine enforces  | INSTR | 535 | 147
+## Killzone weighting (advisory) | INSTR | 193 | 59
+## STOP-DOING (week evidence, advisory) | INSTR | 136 | 33
+## OUTPUT — one JSON object, reasoning F | INSTR | 12790 | 3334
+## CORRECTIONS FROM THIS READ (repeated  | INSTR | 683 | 155
+
+FACT tokens 6293 (57.5%) chars 13705; INSTR tokens 4650 (42.5%) chars 17853
+
+RULES paragraph: chars 9951 words 1623 o200k 2480 sentences 52 allcaps 156 distinct 98 share_of_prompt_tokens 22.7%
+MUST 8 NEVER 2 SHOULD 4 ONLY 7
+Rules sentences mentioning fvg: 10 tokens 819
+fvg mentions whole prompt (any case): 32
+corrections header tokens 177
+corrections tail tokens 155
+OUTPUT schema block tokens 854
+
+executor: DAY PLAN block tokens 626 chars 1752
+executor: Live map + PLAN STATUS tokens 1242 chars 3617
+executor: owner-typed boxes tokens 215
+exec_sys paragraphs 30
+exec_in paragraphs 39

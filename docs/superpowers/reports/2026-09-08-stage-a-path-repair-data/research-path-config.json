@@ -1,0 +1,9 @@
+{
+  "process_DB_PATH": [],
+  "dotenv_DB_PATH": [
+    "DB_PATH=data/data.db"
+  ],
+  "code_default_DB_PATH": "data/data.db",
+  "startup_archive_argument": "cfg.DBPath + .research.db",
+  "expected_relative_argument": "data/data.db.research.db"
+}

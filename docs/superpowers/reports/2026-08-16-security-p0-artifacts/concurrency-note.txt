@@ -1,0 +1,10 @@
+CONCURRENCY NOTE — acceptance/security session e5053d62
+23:28:36 CT: a SECOND Claude session (554049f5) ran a deploy sequence:
+  cp nofx-bin $S/nofx-bin-rollback-* ; cp $S/nofx-bin-new nofx-bin ; kill -9 <oldpid>
+Result observed by this session:
+  - bot PID 1223827 -> 1344028 (systemd relaunched, NRestarts=1, active/running)
+  - /home/hoang/nofx/nofx-bin mtime UNCHANGED (19:08:45) and vcs.revision=298d75b0 modified=false
+    => the binary swap did NOT land; the restart relaunched the SAME pre-fix build
+  - listener still *:8080 (pre-S1), consistent with the above
+IMPACT: none on this fix (all S1-S3 work is committed, not deployed).
+BUT: STEP 0's 'one session only' precondition no longer holds. No amend/rebase was used.

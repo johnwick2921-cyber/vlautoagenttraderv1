@@ -1,7 +1,6 @@
 package coinank_api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"nofx/provider/coinank/coinank_enum"
@@ -10,7 +9,7 @@ import (
 )
 
 func TestKline(t *testing.T) {
-	resp, err := Kline(context.TODO(), "BTCUSDT", coinank_enum.Binance, time.Now().UnixMilli(), coinank_enum.To, 10, coinank_enum.Hour1)
+	resp, err := Kline(liveNetworkGate(t), "BTCUSDT", coinank_enum.Binance, time.Now().UnixMilli(), coinank_enum.To, 10, coinank_enum.Hour1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -22,7 +21,7 @@ func TestKline(t *testing.T) {
 }
 
 func TestKlineDaily(t *testing.T) {
-	resp, err := Kline(context.TODO(), "BTCUSDT", coinank_enum.Binance, time.Now().UnixMilli(), coinank_enum.To, 5, coinank_enum.Day1)
+	resp, err := Kline(liveNetworkGate(t), "BTCUSDT", coinank_enum.Binance, time.Now().UnixMilli(), coinank_enum.To, 5, coinank_enum.Day1)
 	if err != nil {
 		t.Fatal(err)
 	}

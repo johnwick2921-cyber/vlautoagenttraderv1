@@ -158,7 +158,17 @@ func TestPlaceStopEntryRefusedWithoutFarSideBuild(t *testing.T) {
 	if err == nil {
 		t.Fatal("stop-entry was sent without a far-side build id — the capability gate is broken")
 	}
-	if !strings.Contains(err.Error(), "does not prove stop_entry support") {
+	// TRACEABILITY PIN (B-rules, FIX-P1A): NO build id is "far side not proven
+	// since reconnect" — the ErrFarSideNotProven sentinel, never
+	// ErrAddonBuildTooOld (that one requires a REPORTED old build). A mutation
+	// reverting the reason text or the sentinel fails these assertions.
+	if !errors.Is(err, ntwire.ErrFarSideNotProven) {
+		t.Fatalf("a no-proof refusal must wrap ErrFarSideNotProven: %v", err)
+	}
+	if errors.Is(err, ntwire.ErrAddonBuildTooOld) {
+		t.Fatalf("a no-proof refusal must NOT read as addon-build-too-old: %v", err)
+	}
+	if !strings.Contains(err.Error(), "far side not proven since reconnect") {
 		t.Fatalf("wrong refusal: %v", err)
 	}
 

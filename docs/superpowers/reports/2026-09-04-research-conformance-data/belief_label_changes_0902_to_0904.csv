@@ -1,0 +1,12 @@
+belief,label_0902,census_line,label_now,evidence_now,live_effect_0902,live_effect_now
+B6 min-SL,[I/C],belief-census.md:46,[R]+[T],"kernel/min_sl.go:18-32 cites Round-7 research + own tape 15/27 stopped-too-tight, 6/8 losers MAE beyond stop",REJECT at 1.0xATR5m,REJECT at 1.5xATR5m (value RAISED)
+B2 BD_CONFIRM_CLOSES,[I],belief-census.md:42,[I],"unchanged label; value was ALREADY 1 on 09-02 (E3 2026-08-30) - census row stale",author-time refusal at 2 closes,author-time refusal at 1 close
+B2 BD_MAX_PULLBACK,[I],belief-census.md:42,[M] mechanics-dead,"kernel/breakdown_continue.go:52 bdMaxPullbackFrac() has zero callers",claimed author-time refusal,NONE - dead code
+B7 stale-confirm,[I],belief-census.md:47,[T],"kernel/plan_confirm.go:118-123 cites register S2 mega-research n=2908 (38/2908=1.3% at 1.0xdATR vs ~37% at 2.0xATR5m, median |price-ref| 58.75pt)",gate (arm/confirm),"advisory text on the prompt path (plan_confirm.go:155-156); hard gate only at armed_executor.go:180"
+E1 breakeven,[O],belief-census.md:84,[O] SUSPENDED,"trader/exit_mechs_suspend.go:34-41 default suspended; boot 8 BE=off",exit (fires),NONE - refused at the wire
+E2 trailing,[O],belief-census.md:85,[O] SUSPENDED,"same; boot 8 trail=off",exit (fires),NONE - refused at the wire
+E5 level-event wakes,[T]-weak,belief-census.md:88,[T]-weak,"unchanged evidence",full REPLAN budget-free,"REPLAN, throttled by class 47 enforcing cutoff 25m + cooldown 30m"
+A1 bias tree,[I],belief-census.md:25,[T]-null,"live-bias-replay.md:117,121-122 BIAS-TREE holdout p=0.4762 n=21 Wilson [0.2834,0.6763], net t +0.70; REGIME 0.5435 n=46; COMPOSITE 0.5000 n=62 - every leg NOT USABLE",advisory,advisory (unchanged)
+D1-D6/D8 grader ladders,[I],belief-census.md:70-76,[I],"level-kind-replay.md:366 'Grader ruling stands: nothing changes; every ladder term keeps its [I] label' (84 session days, 582 episodes, all kinds TOO FEW max n=54)",weight,weight (unchanged)
+D9 swing seats,[X],belief-census.md:77,[X],"unchanged - grand-audit.md:74",weight (seated),weight (still seated at 0.85)
+Queue7 pre-NY sessions,[X]-candidate,belief-census.md:135,[X]-candidate,"unchanged",LONDON/ASIA enabled,"still enabled via sessions[].enable=true: 46 ASIA + 26 LONDON plans since 2026-08-28"

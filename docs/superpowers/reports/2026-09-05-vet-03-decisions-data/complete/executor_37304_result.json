@@ -1,0 +1,8 @@
+{
+  "id": 37304,
+  "timestamp": "2026-09-04 01:35:06.219368968+00:00",
+  "decision_json": "[\n  {\n    \"symbol\": \"MNQ\",\n    \"action\": \"open_short\",\n    \"leverage\": 1,\n    \"position_size_usd\": 59082.5,\n    \"stop_loss\": 29561.5,\n    \"take_profit\": 29500.75,\n    \"confidence\": 70,\n    \"reasoning\": \"S1 sweep-reclaim confirmed: price swept above ONH 29543/29546.50 and the last closed 5m printed back below 29543. Bias remains short. Enter short at 29541.25 with stop above the recent swing high/invalidation at 29561.50 (20.25 pts risk) and target at 29500.75 (40.50 pts), giving exactly 2.0R. Target aligns with the plan\u2019s magnet/support zone. Confidence 70.\",\n    \"cited_scenario\": \"S1\"\n  }\n]",
+  "execution_log": "[\"AI call duration: 60074 ms\",\"stale_reeval outcome=pass (superseded entry re-validated on the fresh bar)\",\"\u26d4 MNQ open_short refused: entry_gate: refused: strict \u2014 plan_mode=strict executes plan scenarios on the ARM path only, and this is a decision-path market entry\"]",
+  "plan_id": "2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+  "plan_version": 5
+}

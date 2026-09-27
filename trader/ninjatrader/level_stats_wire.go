@@ -1,7 +1,6 @@
 package ninjatrader
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"sync"
@@ -10,6 +9,7 @@ import (
 	"nofx/kernel"
 	"nofx/logger"
 	"nofx/market"
+	"nofx/safe"
 	"nofx/store"
 )
 
@@ -30,6 +30,16 @@ import (
 // fine (ListVersionsForTrader matches strategy_id = trader id); the WIRING was
 // bound to the wrong trader. Per-trader wiring ends the T1 saga.
 var levelStatsWired sync.Map
+
+// levelStatsJobs holds the per-trader STOP handles (FIX-LEAKS NOTE): the
+// nightly goroutine idles ~24h between 17:05 CT runs and had no exit path —
+// it lived as long as the process. StopLevelStatsNightly closes the handle and
+// the goroutine exits promptly, even mid-sleep.
+type levelStatsJob struct {
+	stop chan struct{}
+}
+
+var levelStatsJobs sync.Map // traderID -> *levelStatsJob
 
 // wireLevelStatsForTrader is the pure once-per-trader decision (true = start
 // this trader's job).
@@ -53,17 +63,48 @@ func WireLevelStatsNightly(st *store.Store, traderID string) {
 	ls := st.LevelStats()
 	if err := ls.Migrate(); err != nil {
 		logger.Warnf("level_stats: migrate failed: %v", err)
+		levelStatsWired.Delete(traderID) // no half-wired entry: a restart may re-wire and retry
 		return
 	}
-	go func() {
-		_, _ = runLevelStatsDay(st, ls, traderID)
+	job := &levelStatsJob{stop: make(chan struct{})}
+	levelStatsJobs.Store(traderID, job)
+	// panic-net-complete: the 24h-idling nightly loop is LONG-LIVED — a panic
+	// here must freeze the owning trader and exit cleanly, never kill the
+	// process. A restarted trader re-wires it via WireLevelStatsNightly.
+	safe.GoNet("level-stats-nightly-"+traderID, traderID, func() {
+		// B1: the run's error is LOGGED (with the trader id) — never discarded.
+		if _, err := runLevelStatsDayWithStop(st, ls, traderID, job.stop); err != nil {
+			logger.Warnf("level_stats: nightly evaluation trader=%s failed: %v", traderID, err)
+		}
 		for {
 			// Next 17:05 CT boundary (the daily roll + 5m settling time).
 			next := kernel.NextSessionRollCT(time.Now()).Add(5 * time.Minute)
-			time.Sleep(time.Until(next))
-			_, _ = runLevelStatsDay(st, ls, traderID)
+			t := time.NewTimer(time.Until(next))
+			select {
+			case <-job.stop:
+				t.Stop()
+				return // FIX-LEAKS NOTE: the trader's Stop ends the nightly job
+			case <-t.C:
+			}
+			if _, err := runLevelStatsDayWithStop(st, ls, traderID, job.stop); err != nil {
+				logger.Warnf("level_stats: nightly evaluation trader=%s failed: %v", traderID, err)
+			}
 		}
-	}()
+	})
+}
+
+// StopLevelStatsNightly stops THIS trader's nightly job (FIX-LEAKS NOTE).
+// Idempotent; a restarted trader can re-wire via WireLevelStatsNightly.
+func StopLevelStatsNightly(traderID string) {
+	if traderID == "" {
+		return
+	}
+	if v, ok := levelStatsJobs.LoadAndDelete(traderID); ok {
+		levelStatsWired.Delete(traderID) // free the idempotency key for a restart
+		if job, ok := v.(*levelStatsJob); ok {
+			close(job.stop)
+		}
+	}
 }
 
 // runLevelStatsDay evaluates the PREVIOUS CME session-day (17:00→17:00 CT).
@@ -74,13 +115,21 @@ func WireLevelStatsNightly(st *store.Store, traderID string) {
 // now logged, and transient errors retry with backoff so the nightly evaluation
 // actually lands.
 func runLevelStatsDay(st *store.Store, ls *store.LevelStatsStore, traderID string) (int, error) {
-	return runLevelStatsDayAt(st, ls, traderID, time.Now())
+	return runLevelStatsDayAt(st, ls, traderID, time.Now(), nil)
+}
+
+// runLevelStatsDayWithStop is the cancellable form the nightly goroutine uses
+// (FIX-LEAKS NOTE): a Stop mid-evaluation aborts the retry backoff instead of
+// letting the job linger up to ~1 min before it can exit.
+func runLevelStatsDayWithStop(st *store.Store, ls *store.LevelStatsStore, traderID string, stop <-chan struct{}) (int, error) {
+	return runLevelStatsDayAt(st, ls, traderID, time.Now(), stop)
 }
 
 // runLevelStatsDayAt is the injectable-clock body (the DB-copy proof test pins
 // a fixed instant so the day under evaluation is deterministic). Returns the
 // number of seated levels evaluated and a descriptive error on total failure.
-func runLevelStatsDayAt(st *store.Store, ls *store.LevelStatsStore, traderID string, now time.Time) (int, error) {
+// stop (nil in tests) aborts the retry backoff.
+func runLevelStatsDayAt(st *store.Store, ls *store.LevelStatsStore, traderID string, now time.Time, stop <-chan struct{}) (int, error) {
 	cur := kernel.CMESessionDayStart(now)
 	dayStart := cur.AddDate(0, 0, -1)
 	dayKey := dayStart.In(kernel.CTLocation()).Format("2006-01-02")
@@ -99,7 +148,15 @@ func runLevelStatsDayAt(st *store.Store, ls *store.LevelStatsStore, traderID str
 			logger.Warnf("📊 level_stats: %s giving up after %d attempts — next run at the next session roll", dayKey, attempt)
 			return 0, err
 		}
-		time.Sleep(15 * time.Second)
+		if stop != nil {
+			select {
+			case <-stop:
+				return 0, fmt.Errorf("stopped mid-backoff")
+			case <-time.After(15 * time.Second):
+			}
+		} else {
+			time.Sleep(15 * time.Second)
+		}
 	}
 }
 
@@ -145,10 +202,14 @@ func runLevelStatsDayOnce(st *store.Store, ls *store.LevelStatsStore, traderID, 
 			continue
 		}
 		last := vers[len(vers)-1]
-		doc := kernel.PlanDoc{}
-		if err := json.Unmarshal([]byte(last.Doc), &doc); err != nil {
-			return 0, fmt.Errorf("plan doc unmarshal %s/%s v%d: %w", dayKey, sess, last.Version, err)
+		// WAVE 1a-plan P2 — the nightly stats read the ONE fold: an owner
+		// overlay adding a level must be evaluated. No overlay = the base.
+		overlays, _ := st.Plan().ListOverlays(last.PlanID, last.Version)
+		pf, perr := kernel.ResolvePlanFinal([]byte(last.Doc), kernel.OverlayRefsFrom(overlays))
+		if perr != nil {
+			return 0, fmt.Errorf("plan doc unmarshal %s/%s v%d: %w", dayKey, sess, last.Version, perr)
 		}
+		doc := pf.Doc
 		for _, l := range doc.Levels {
 			key := dayKey + "|" + strconv.FormatFloat(l.Price, 'f', 2, 64) + "|" + l.Label
 			if seen[key] {

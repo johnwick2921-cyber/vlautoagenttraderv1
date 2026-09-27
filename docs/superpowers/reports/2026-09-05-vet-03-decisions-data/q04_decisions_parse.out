@@ -1,0 +1,43 @@
+## actions by CT day (parsed)
+2026-08-27 cycles 602 {'wait': 585, 'NONE': 13, 'open_short': 4}
+2026-08-28 cycles 472 {'wait': 403, 'NONE': 67, 'hold': 1, 'close_short': 1}
+2026-08-30 cycles 186 {'wait': 155, 'NONE': 31}
+2026-08-31 cycles 496 {'wait': 463, 'NONE': 33}
+2026-09-01 cycles 694 {'wait': 640, 'NONE': 51, 'open_short': 2, 'open_long': 1}
+2026-09-02 cycles 682 {'wait': 623, 'NONE': 49, 'open_long': 5, 'open_short': 5}
+2026-09-03 cycles 596 {'wait': 574, 'open_short': 14, 'NONE': 8}
+2026-09-04 cycles 374 {'wait': 370, 'NONE': 4}
+## cycle_type x cycle_trigger [(('', ''), 3400), (('', 'stale_dodge'), 436), (('watch', ''), 210), (('watch', 'stale_dodge'), 29), (('', 'post_exit'), 24), (('watch', 'post_exit'), 3)]
+## open intents since 08-27 (id, ct, action, cited, risk_ok, err, exec_status, cycle_type)
+(33725, '2026-08-27 02:03:48', 'open_short', 'S2', 0, 'session_gate: LONDON first-5m no-trade window', '', '')
+(33793, '2026-08-27 04:19:46', 'open_short', 'S3', 1, '', '', '')
+(33841, '2026-08-27 05:53:13', 'open_short', 'S1', 1, '', '', '')
+(33903, '2026-08-27 07:56:15', 'open_short', 'S3', 0, 'stale_reeval_refused: drift_too_big (|5.25| >= 4.96 = 0.25 x ATR 19.84', 'guardrail_skip', '')
+(35508, '2026-09-01 02:52:45', 'open_short', 'S1', 1, '', '', '')
+(35621, '2026-09-01 06:35:05', 'open_long', 'S2', 1, '', '', '')
+(35879, '2026-09-01 15:08:00', 'open_short', 'off-plan', 0, 'stale_reeval_refused: sl_breached_in_fresh_bar (high 29158.00 >= sl 29', 'guardrail_skip', '')
+(36122, '2026-09-02 00:17:45', 'open_long', 'S3', 1, '', '', '')
+(36164, '2026-09-02 01:51:52', 'open_long', 'S2', 0, 'last_entry_cutoff: past last-entry 01:45 CT (ASIA)', '', '')
+(36336, '2026-09-02 07:41:06', 'open_long', 'S2', 1, '', '', '')
+(36394, '2026-09-02 09:41:05', 'open_long', 'S3', 1, '', '', '')
+(36422, '2026-09-02 10:37:18', 'open_long', 'S4', 1, '', '', '')
+(36640, '2026-09-02 18:48:49', 'open_short', 'S2', 0, 'entry_gate: entry_gate: stop 29231.00 too close (25.25 < 450.56 = 1.5×', '', '')
+(36641, '2026-09-02 18:50:36', 'open_short', 'S2', 0, 'entry_gate: entry_gate: stop 29226.50 too close (21.00 < 450.56 = 1.5×', '', '')
+(36642, '2026-09-02 18:52:33', 'open_short', 'S2', 0, 'entry_gate: entry_gate: stop 29230.00 too close (22.00 < 450.56 = 1.5×', '', '')
+(36645, '2026-09-02 19:00:23', 'open_short', 'S2', 0, 'entry_gate: entry_gate: R:R 1.42 below floor 2.00 at execution price 2', '', '')
+(36703, '2026-09-02 20:53:52', 'open_short', 'S2', 0, 'entry_gate: entry_gate: R:R 1.73 below floor 2.00 at execution price 2', '', '')
+(36864, '2026-09-03 02:12:56', 'open_short', 'S1', 0, 'entry_gate: entry_gate: R:R 1.76 below floor 2.00 at execution price 2', '', '')
+(37304, '2026-09-03 20:35:06', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37305, '2026-09-03 20:37:51', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37306, '2026-09-03 20:39:40', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37307, '2026-09-03 20:42:27', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37308, '2026-09-03 20:43:53', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37310, '2026-09-03 20:49:04', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37311, '2026-09-03 20:52:05', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37313, '2026-09-03 20:54:28', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37315, '2026-09-03 20:58:56', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37318, '2026-09-03 21:03:22', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37319, '2026-09-03 21:06:44', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37320, '2026-09-03 21:09:03', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+(37322, '2026-09-03 21:12:40', 'open_short', 'S1', 0, 'entry_gate: refused: strict — plan_mode=strict executes plan scenarios', '', '')
+n intents 31

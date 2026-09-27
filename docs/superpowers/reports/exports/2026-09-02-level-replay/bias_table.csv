@@ -1,0 +1,10 @@
+signal,period,n,agree,p,lo,hi
+tsmom_21d,all,9,3,0.3333,0.1206,0.6458
+tsmom_63d,all,9,4,0.4444,0.1888,0.7334
+tsmom_252d,all,9,5,0.5556,0.2666,0.8112
+overnight_to_rth,exploration,6,3,0.5,0.1876,0.8124
+overnight_to_rth,holdout,4,1,0.25,0.0456,0.6994
+overnight_to_rth,all,10,4,0.4,0.1682,0.6873
+first30_to_lasthour,exploration,6,3,0.5,0.1876,0.8124
+first30_to_lasthour,holdout,4,1,0.25,0.0456,0.6994
+first30_to_lasthour,all,10,4,0.4,0.1682,0.6873

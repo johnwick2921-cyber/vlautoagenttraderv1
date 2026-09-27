@@ -79,7 +79,7 @@ var traderTestBarsInstalled = false
 func TestFlipDeathMarksDormantAndSkipsBudget(t *testing.T) {
 	t.Setenv("FLIP_ATR_BUFFER", "0")
 	t.Setenv("DORMANT_MIN_HOLD_MIN", "0")
-	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: 4, SessionsEnabled: []string{"NY"}}}
+	cfg := store.StrategyConfig{DayPlan: &store.DayPlanConfig{PlanEnabled: true, ReplanCap: store.IntPtr(4), SessionsEnabled: []string{"NY"}}}
 	at, st := resetTrader(t, cfg)
 	// synthetic now inside the NY window (08:30–14:45 CT): 14:00 UTC = 09:00 CT.
 	now := time.Date(2026, 8, 18, 14, 0, 0, 0, time.UTC)
@@ -109,6 +109,7 @@ func TestFlipDeathMarksDormantAndSkipsBudget(t *testing.T) {
 	defer func() { market.FuturesBarsProvider = nil; traderTestBarsInstalled = false }()
 
 	at.maybeRunSessionReadsAt(now)
+	defer drainReReads(t) // CTO M4: join the async re-read before the seam resets
 
 	row, err := st.Plan().GetLatestPlanForTraderSession(td, "NY", at.id)
 	if err != nil || row == nil {

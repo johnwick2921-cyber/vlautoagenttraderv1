@@ -1,0 +1,1649 @@
+diff --git a/README.md b/README.md
+index b8021e4c..d8262fdb 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,4 @@
+-<h1 align="center">NOFX</h1>
++<h1 align="center">VL Intelligent</h1>
+ 
+ <p align="center">
+   <strong>Your personal AI trading assistant.</strong><br/>
+@@ -34,7 +34,7 @@
+ 
+ ---
+ 
+-NOFX is an open-source **autonomous** AI trading assistant. Unlike traditional AI tools that require you to manually configure models, manage API keys, and wire up data sources — NOFX's AI **perceives markets, selects models, and fetches data entirely on its own**. Zero human intervention. You set the strategy, the AI handles everything else.
++VL Intelligent is an open-source **autonomous** AI trading assistant. Unlike traditional AI tools that require you to manually configure models, manage API keys, and wire up data sources — VL Intelligent's AI **perceives markets, selects models, and fetches data entirely on its own**. Zero human intervention. You set the strategy, the AI handles everything else.
+ 
+ **Fully autonomous**: The AI decides which model to use, what market data to pull, when to trade — all by itself. No manual model configuration. No juggling API keys for different services. Just fund a USDC wallet and let it run.
+ 
+@@ -52,7 +52,7 @@ Open **http://127.0.0.1:3000**. Done.
+ 
+ <p align="center">
+   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
+-    <img src="screenshots/demo-cover.png" alt="NOFX quick demo video" width="900"/>
++    <img src="screenshots/demo-cover.png" alt="VL Intelligent quick demo video" width="900"/>
+   </a>
+ </p>
+ 
+@@ -268,7 +268,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
+ ## Architecture
+ 
+ ```
+-                              NOFX
++                              VL Intelligent
+     ┌─────────────────────────────────────────────────┐
+     │                 Web Dashboard                     │
+     │           React + TypeScript + TradingView        │
+@@ -310,7 +310,7 @@ See [Contributing Guide](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.m
+ 
+ ### Contributor Airdrop Program
+ 
+-All contributions are tracked. When NOFX generates revenue, contributors receive airdrops.
++All contributions are tracked. When VL Intelligent generates revenue, contributors receive airdrops.
+ 
+ **[Pinned Issues](https://github.com/NoFxAiOS/nofx/issues) get the highest rewards.**
+ 
+diff --git a/agent/agent.go b/agent/agent.go
+index 051924ce..475bffec 100644
+--- a/agent/agent.go
++++ b/agent/agent.go
+@@ -11,6 +11,7 @@ import (
+ 	"fmt"
+ 	"log/slog"
+ 	"net/http"
++	"nofx/branding"
+ 	"nofx/kernel"
+ 	"os"
+ 	"sort"
+@@ -373,7 +374,7 @@ func resolveModelRuntimeConfig(provider, customAPIURL, customModelName, fallback
+ }
+ 
+ func (a *Agent) Start() {
+-	a.logger.Info("starting NOFXi agent...")
++	a.logger.Info("starting " + branding.PersonaName() + " agent...")
+ 	a.EnsureAIClient()
+ 
+ 	if a.config.EnableSentinel {
+@@ -390,7 +391,7 @@ func (a *Agent) Start() {
+ 	a.scheduler = NewScheduler(a, a.logger)
+ 	a.scheduler.Start(context.Background())
+ 
+-	a.logger.Info("NOFXi agent is online 🚀")
++	a.logger.Info(branding.PersonaName() + " agent is online 🚀")
+ }
+ 
+ func (a *Agent) Stop() {
+@@ -556,7 +557,7 @@ func (a *Agent) buildSystemPromptForStoreUser(lang, storeUserID string) string {
+ 	skillCatalog := skillCatalogPrompt(lang)
+ 
+ 	if lang == "zh" {
+-		return fmt.Sprintf(`你是 NOFXi，一个专业的 AI 交易 Agent。你不是一个简单的聊天机器人——你是用户的交易伙伴。
++		return fmt.Sprintf(`你是 `+branding.PersonaName()+`，一个专业的 AI 交易 Agent。你不是一个简单的聊天机器人——你是用户的交易伙伴。
+ 
+ ## 你的核心能力
+ 1. **市场分析** — 加密货币（BTC/ETH/SOL等）有实时数据，A股/港股/美股/外汇你可以基于知识分析
+@@ -644,7 +645,7 @@ func (a *Agent) buildSystemPromptForStoreUser(lang, storeUserID string) string {
+ 当前时间: %s`, traderInfo, watchlist, skillCatalog, kernel.FormatCT(time.Now()))
+ 	}
+ 
+-	return fmt.Sprintf(`You are NOFXi, a professional AI trading agent. Not a chatbot — a trading partner.
++	return fmt.Sprintf(`You are `+branding.PersonaName()+`, a professional AI trading agent. Not a chatbot — a trading partner.
+ 
+ ## Capabilities
+ 1. Market analysis — crypto with real-time data, stocks/forex with knowledge
+@@ -920,9 +921,9 @@ func (a *Agent) noAIFallback(storeUserID, lang, text string) (string, error) {
+ 	}
+ 
+ 	if lang == "zh" {
+-		return "🤖 我是 NOFXi。配置 AI 模型后我就能理解你的任何问题——分析股票、制定策略、管理交易。\n\n现在可用：\n• 加密货币实时行情（试试「BTC」）\n• `/status` 查看系统状态\n• `/clear` 清空当前对话记忆\n\n发送 *开始配置* 配置 AI 模型。", nil
++		return "🤖 我是 " + branding.PersonaName() + "。配置 AI 模型后我就能理解你的任何问题——分析股票、制定策略、管理交易。\n\n现在可用：\n• 加密货币实时行情（试试「BTC」）\n• `/status` 查看系统状态\n• `/clear` 清空当前对话记忆\n\n发送 *开始配置* 配置 AI 模型。", nil
+ 	}
+-	return "🤖 I'm NOFXi. Configure an AI model and I can understand anything — analyze stocks, build strategies, manage trades.\n\nAvailable now:\n• Crypto real-time data (try 'BTC')\n• `/status` to check system status\n• `/clear` to clear the current conversation memory\n\nSend *setup* to configure AI.", nil
++	return "🤖 I'm " + branding.PersonaName() + ". Configure an AI model and I can understand anything — analyze stocks, build strategies, manage trades.\n\nAvailable now:\n• Crypto real-time data (try 'BTC')\n• `/status` to check system status\n• `/clear` to clear the current conversation memory\n\nSend *setup* to configure AI.", nil
+ }
+ 
+ func (a *Agent) aiServiceFailure(lang string, err error) (string, error) {
+diff --git a/agent/i18n.go b/agent/i18n.go
+index 3e5af0b8..06e3564e 100644
+--- a/agent/i18n.go
++++ b/agent/i18n.go
+@@ -1,8 +1,10 @@
+ package agent
+ 
++import "nofx/branding"
++
+ var i18nMessages = map[string]map[string]string{
+ 	"help": {
+-		"zh": "🤖 *NOFXi — 你的 AI 交易 Agent*\n\n" +
++		"zh": "🤖 *" + branding.PersonaName() + " — 你的 AI 交易 Agent*\n\n" +
+ 			"*交易:* 做多 BTC 0.01 x10 · 做空 ETH 0.1 · 平多 BTC · 平空 ETH\n" +
+ 			"       也支持 /buy /sell /long /short + 交易对 数量 杠杆\n" +
+ 			"*查询:* /positions /balance /pnl /traders\n" +
+@@ -11,7 +13,7 @@ var i18nMessages = map[string]map[string]string{
+ 			"*策略:* /strategy\n" +
+ 			"*系统:* /status /clear /help\n\n" +
+ 			"直接跟我说话就行，中英文都可以 💬",
+-		"en": "🤖 *NOFXi — Your AI Trading Agent*\n\n" +
++		"en": "🤖 *" + branding.PersonaName() + " — Your AI Trading Agent*\n\n" +
+ 			"*Trade:* long BTC 0.01 x10 · short ETH 0.1 · close long BTC · close short ETH\n" +
+ 			"         Also supports /buy /sell /long /short + symbol qty leverage\n" +
+ 			"*Query:* /positions /balance /pnl /traders\n" +
+@@ -22,8 +24,8 @@ var i18nMessages = map[string]map[string]string{
+ 			"Just talk to me in any language 💬",
+ 	},
+ 	"status": {
+-		"zh": "📊 *NOFXi 状态*\n\n• Traders: %d/%d 运行中\n• 监控: %d 个交易对\n• AI: %s\n• 时间: %s",
+-		"en": "📊 *NOFXi Status*\n\n• Traders: %d/%d running\n• Watching: %d symbols\n• AI: %s\n• Time: %s",
++		"zh": "📊 *" + branding.PersonaName() + " 状态*\n\n• Traders: %d/%d 运行中\n• 监控: %d 个交易对\n• AI: %s\n• 时间: %s",
++		"en": "📊 *" + branding.PersonaName() + " Status*\n\n• Traders: %d/%d running\n• Watching: %d symbols\n• AI: %s\n• Time: %s",
+ 	},
+ 	"no_traders": {
+ 		"zh": "📭 暂无 Trader。请在 Web UI 中创建和配置。",
+@@ -70,8 +72,8 @@ var i18nMessages = map[string]map[string]string{
+ 		"en": "⚠️ Sentinel not enabled.",
+ 	},
+ 	"system_prompt": {
+-		"zh": "你是 NOFXi，一个专业的 AI 交易 Agent。把用户当交易小白，用简单清楚的大白话回复，先说结论，再说下一步。使用少量交易相关 emoji。",
+-		"en": "You are NOFXi, a professional AI trading agent. Treat the user like a trading beginner, use plain language, lead with the conclusion, then the next step. Use a small amount of trading emojis.",
++		"zh": "你是 " + branding.PersonaName() + "，一个专业的 AI 交易 Agent。把用户当交易小白，用简单清楚的大白话回复，先说结论，再说下一步。使用少量交易相关 emoji。",
++		"en": "You are " + branding.PersonaName() + ", a professional AI trading agent. Treat the user like a trading beginner, use plain language, lead with the conclusion, then the next step. Use a small amount of trading emojis.",
+ 	},
+ }
+ 
+diff --git a/agent/onboard.go b/agent/onboard.go
+index cd022fe2..92ac102c 100644
+--- a/agent/onboard.go
++++ b/agent/onboard.go
+@@ -2,6 +2,7 @@ package agent
+ 
+ import (
+ 	"fmt"
++	"nofx/branding"
+ 	"strings"
+ 	"time"
+ 
+@@ -528,11 +529,11 @@ func containsAny(s string, words []string) bool {
+ 
+ var setupMessages = map[string]map[string]string{
+ 	"welcome": {
+-		"zh": "👋 你好！我是 *NOFXi*，你的 AI 交易 Agent。\n\n" +
++		"zh": "👋 你好！我是 *" + branding.PersonaName() + "*，你的 AI 交易 Agent。\n\n" +
+ 			"我发现你还没有配置交易所，让我帮你搞定吧！\n\n" +
+ 			"发送 *开始配置* 或 *setup* 开始\n" +
+ 			"发送 *取消* 随时退出",
+-		"en": "👋 Hi! I'm *NOFXi*, your AI trading agent.\n\n" +
++		"en": "👋 Hi! I'm *" + branding.PersonaName() + "*, your AI trading agent.\n\n" +
+ 			"I see you haven't configured an exchange yet. Let me help!\n\n" +
+ 			"Send *setup* to begin\n" +
+ 			"Send *cancel* to exit anytime",
+diff --git a/agent/planner_runtime.go b/agent/planner_runtime.go
+index d30c29c5..a2cf873b 100644
+--- a/agent/planner_runtime.go
++++ b/agent/planner_runtime.go
+@@ -5,6 +5,7 @@ import (
+ 	"encoding/json"
+ 	"errors"
+ 	"fmt"
++	"nofx/branding"
+ 	"sort"
+ 	"strings"
+ 	"time"
+@@ -3775,7 +3776,7 @@ func buildCompactObservationSummary(state ExecutionState) string {
+ 
+ func finalPlanResponseSystemPrompt(lang string) string {
+ 	if lang == "zh" {
+-		return `你是 NOFXi，用户的 AI 交易伙伴。像朋友聊天一样回复。
++		return `你是 ` + branding.PersonaName() + `，用户的 AI 交易伙伴。像朋友聊天一样回复。
+ 
+ 严格规则：
+ - 只回答 Goal 问的那一件事。用户问余额就只说余额，问持仓就只说持仓，问钱包就只说钱包。
+@@ -3785,7 +3786,7 @@ func finalPlanResponseSystemPrompt(lang string) string {
+ - 不要列"下一步建议"或"需要我帮你做什么"，除非用户主动问。
+ - 回复尽量短，能一句话说清的不要写一段话。`
+ 	}
+-	return `You are NOFXi, the user's AI trading partner. Reply like a friend chatting.
++	return `You are ` + branding.PersonaName() + `, the user's AI trading partner. Reply like a friend chatting.
+ 
+ Strict rules:
+ - Answer ONLY the one thing asked in Goal. If user asks balance, only say balance. If user asks positions, only say positions.
+diff --git a/agent/prompt_persona.go b/agent/prompt_persona.go
+index 9ae3337a..d38ea9c2 100644
+--- a/agent/prompt_persona.go
++++ b/agent/prompt_persona.go
+@@ -1,11 +1,14 @@
+ package agent
+ 
+-import "strings"
++import (
++	"nofx/branding"
++	"strings"
++)
+ 
+-const nofxiAdvisorSystemPreamble = `You are NOFXi, the core intelligence hub of the NOFX platform.
+-You understand NOFX's underlying logic, feature boundaries, and quantitative operating model.
+-Your first duty is not blind execution. You act as the user's senior quantitative advisor so every NOFX configuration is correct, safe, and logically consistent.
+-When the user runs into a problem, combine the current state with NOFX platform constraints, proactively diagnose what is wrong, and provide concrete next steps.
++var nofxiAdvisorSystemPreamble = `You are ` + branding.PersonaName() + `, the core intelligence hub of the ` + branding.ProductName() + ` platform.
++You understand ` + branding.ProductName() + `'s underlying logic, feature boundaries, and quantitative operating model.
++Your first duty is not blind execution. You act as the user's senior quantitative advisor so every ` + branding.ProductName() + ` configuration is correct, safe, and logically consistent.
++When the user runs into a problem, combine the current state with ` + branding.ProductName() + ` platform constraints, proactively diagnose what is wrong, and provide concrete next steps.
+ 
+ User-facing response style rules:
+ - Treat the user like a trading beginner, not a developer.
+diff --git a/agent/scheduler.go b/agent/scheduler.go
+index b2a8da2b..e27fc226 100644
+--- a/agent/scheduler.go
++++ b/agent/scheduler.go
+@@ -4,6 +4,7 @@ import (
+ 	"context"
+ 	"fmt"
+ 	"log/slog"
++	"nofx/branding"
+ 	"nofx/safe"
+ 	"strings"
+ 	"sync"
+@@ -72,7 +73,7 @@ func (s *Scheduler) dailyReport() {
+ 	}
+ 
+ 	var sb strings.Builder
+-	sb.WriteString(fmt.Sprintf("📊 *NOFXi 每日报告 — %s*\n\n", time.Now().Format("2006-01-02")))
++	sb.WriteString(fmt.Sprintf("📊 *"+branding.PersonaName()+" 每日报告 — %s*\n\n", time.Now().Format("2006-01-02")))
+ 
+ 	totalPnL := 0.0
+ 	for _, t := range traders {
+diff --git a/agent/skill_domain_context.go b/agent/skill_domain_context.go
+index 965f694b..4a10de90 100644
+--- a/agent/skill_domain_context.go
++++ b/agent/skill_domain_context.go
+@@ -1,6 +1,9 @@
+ package agent
+ 
+-import "strings"
++import (
++	"nofx/branding"
++	"strings"
++)
+ 
+ func buildSkillDomainPrimer(lang, skillName string) string {
+ 	skillName = strings.TrimSpace(skillName)
+@@ -24,7 +27,7 @@ func buildSkillDomainPrimer(lang, skillName string) string {
+ 				"- provider 指模型厂商，不是交易所类型。",
+ 				"- 关键字段：" + strings.Join(fields, "、"),
+ 				"- 候选 provider：" + modelProviderSummaryList(lang),
+-				"- 推荐 provider：claw402。claw402 是 NOFXi 官方推荐方案，按次付费，使用 Base 链 EVM 钱包 + USDC 支付。",
++				"- 推荐 provider：claw402。claw402 是 " + branding.PersonaName() + " 官方推荐方案，按次付费，使用 Base 链 EVM 钱包 + USDC 支付。",
+ 				"- 如果用户不确定选哪个 provider，可以优先推荐 claw402 并说明其优势，但绝不能替用户自动选中 claw402；必须先展示完整 provider 选项并让用户自己选择。",
+ 				"- 如果 provider 还没选定，下一步必须先让用户从完整 provider 列表里选一个，不能先收集 API Key、钱包私钥或其他凭证。",
+ 				"- 普通 provider（openai/deepseek/claude 等）通常要填 API Key；custom_model_name 和 custom_api_url 可以留空走默认值。",
+@@ -38,7 +41,7 @@ func buildSkillDomainPrimer(lang, skillName string) string {
+ 			"- provider means the model vendor, not an exchange venue.",
+ 			"- Key fields: " + strings.Join(fields, ", "),
+ 			"- Supported providers: " + modelProviderSummaryList(lang),
+-			"- Recommended provider: claw402. claw402 is the NOFXi recommended pay-per-use option that uses a Base chain wallet + USDC.",
++			"- Recommended provider: claw402. claw402 is the " + branding.PersonaName() + " recommended pay-per-use option that uses a Base chain wallet + USDC.",
+ 			"- If the user is unsure which provider to pick, you may recommend claw402 and explain its advantages, but you must not auto-select claw402 for them. Show the full provider options first and let the user choose.",
+ 			"- If provider is still missing, the next step must be to ask the user to choose one from the full provider list. Do not ask for an API key, wallet private key, or other credentials before the provider is chosen.",
+ 			"- Standard providers (openai/deepseek/claude etc.) usually require an API key; `custom_model_name` and `custom_api_url` can be omitted to use defaults.",
+diff --git a/docs/i18n/README.md b/docs/i18n/README.md
+index 0ab61fa9..42c9858a 100644
+--- a/docs/i18n/README.md
++++ b/docs/i18n/README.md
+@@ -1,8 +1,8 @@
+ # 🌍 International Documentation / 国际化文档
+ 
+-NOFX documentation is available in multiple languages.
++VL Intelligent documentation is available in multiple languages.
+ 
+-NOFX 文档提供多种语言版本。
++VL Intelligent 文档提供多种语言版本。
+ 
+ ---
+ 
+@@ -130,7 +130,7 @@ faq.zh-CN.md                 → Chinese FAQ
+ 
+ ## 🌐 Request a New Language / 请求新语言
+ 
+-### Want NOFX in your language? / 希望 NOFX 支持你的语言？
++### Want VL Intelligent in your language? / 希望 VL Intelligent 支持你的语言？
+ 
+ **Steps / 步骤:**
+ 
+diff --git a/docs/i18n/ja/README.md b/docs/i18n/ja/README.md
+index d57df2e3..c708818e 100644
+--- a/docs/i18n/ja/README.md
++++ b/docs/i18n/ja/README.md
+@@ -1,4 +1,4 @@
+-<h1 align="center">NOFX</h1>
++<h1 align="center">VL Intelligent</h1>
+ 
+ <p align="center">
+   <strong>あなた専属の AI トレーディングアシスタント。</strong><br/>
+@@ -31,7 +31,7 @@
+ 
+ ---
+ 
+-NOFX はオープンソースの**自律型** AI トレーディングアシスタントです。従来の AI ツールのように手動でモデルを設定し、API キーを管理し、データソースを接続する必要はありません — NOFX の AI は**市場を自ら認識し、モデルを自ら選択し、データを自ら取得します**。人間の介入はゼロ。あなたは戦略を設定するだけ、残りは AI が処理します。
++VL Intelligent はオープンソースの**自律型** AI トレーディングアシスタントです。従来の AI ツールのように手動でモデルを設定し、API キーを管理し、データソースを接続する必要はありません — VL Intelligent の AI は**市場を自ら認識し、モデルを自ら選択し、データを自ら取得します**。人間の介入はゼロ。あなたは戦略を設定するだけ、残りは AI が処理します。
+ 
+ **完全自律**: AI がどのモデルを使うか、どの市場データを取得するか、いつ取引するかを自ら判断します。手動のモデル設定不要。複数サービスの API キー管理不要。USDC ウォレットに入金して実行するだけ。
+ 
+@@ -49,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
+ 
+ <p align="center">
+   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
+-    <img src="../../../screenshots/demo-cover.png" alt="NOFX クイックデモ動画" width="900"/>
++    <img src="../../../screenshots/demo-cover.png" alt="VL Intelligent クイックデモ動画" width="900"/>
+   </a>
+ </p>
+ 
+diff --git a/docs/i18n/ko/README.md b/docs/i18n/ko/README.md
+index e2833e2c..e8260b04 100644
+--- a/docs/i18n/ko/README.md
++++ b/docs/i18n/ko/README.md
+@@ -1,4 +1,4 @@
+-<h1 align="center">NOFX</h1>
++<h1 align="center">VL Intelligent</h1>
+ 
+ <p align="center">
+   <strong>당신만의 AI 트레이딩 어시스턴트.</strong><br/>
+@@ -31,7 +31,7 @@
+ 
+ ---
+ 
+-NOFX는 오픈소스 **자율형** AI 트레이딩 어시스턴트입니다. 수동으로 모델을 설정하고, API 키를 관리하고, 데이터 소스를 연결해야 하는 기존 AI 도구와 달리 — NOFX의 AI는 **시장을 스스로 인식하고, 모델을 스스로 선택하고, 데이터를 스스로 가져옵니다**. 인간 개입 제로. 전략만 설정하면 나머지는 AI가 처리합니다.
++VL Intelligent는 오픈소스 **자율형** AI 트레이딩 어시스턴트입니다. 수동으로 모델을 설정하고, API 키를 관리하고, 데이터 소스를 연결해야 하는 기존 AI 도구와 달리 — VL Intelligent의 AI는 **시장을 스스로 인식하고, 모델을 스스로 선택하고, 데이터를 스스로 가져옵니다**. 인간 개입 제로. 전략만 설정하면 나머지는 AI가 처리합니다.
+ 
+ **완전 자율**: AI가 어떤 모델을 사용할지, 어떤 시장 데이터를 가져올지, 언제 거래할지를 스스로 결정합니다. 수동 모델 설정 불필요. 여러 서비스의 API 키 관리 불필요. USDC 지갑에 충전하고 실행하기만 하면 됩니다.
+ 
+@@ -49,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
+ 
+ <p align="center">
+   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
+-    <img src="../../../screenshots/demo-cover.png" alt="NOFX 빠른 데모 영상" width="900"/>
++    <img src="../../../screenshots/demo-cover.png" alt="VL Intelligent 빠른 데모 영상" width="900"/>
+   </a>
+ </p>
+ 
+diff --git a/docs/i18n/ru/README.md b/docs/i18n/ru/README.md
+index cc27a119..4a788692 100644
+--- a/docs/i18n/ru/README.md
++++ b/docs/i18n/ru/README.md
+@@ -1,4 +1,4 @@
+-<h1 align="center">NOFX</h1>
++<h1 align="center">VL Intelligent</h1>
+ 
+ <p align="center">
+   <strong>Ваш персональный AI торговый ассистент.</strong><br/>
+@@ -31,7 +31,7 @@
+ 
+ ---
+ 
+-NOFX — это **автономный** AI торговый ассистент с открытым исходным кодом. В отличие от традиционных AI инструментов, где нужно вручную настраивать модели, управлять API ключами и подключать источники данных — AI в NOFX **сам анализирует рынки, выбирает модели и получает данные**. Нулевое вмешательство человека. Вы задаёте стратегию, AI делает всё остальное.
++VL Intelligent — это **автономный** AI торговый ассистент с открытым исходным кодом. В отличие от традиционных AI инструментов, где нужно вручную настраивать модели, управлять API ключами и подключать источники данных — AI в VL Intelligent **сам анализирует рынки, выбирает модели и получает данные**. Нулевое вмешательство человека. Вы задаёте стратегию, AI делает всё остальное.
+ 
+ **Полная автономность**: AI сам решает, какую модель использовать, какие рыночные данные получить, когда торговать. Без ручной настройки моделей. Без жонглирования API ключами разных сервисов. Просто пополните USDC кошелёк и запустите.
+ 
+@@ -49,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
+ 
+ <p align="center">
+   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
+-    <img src="../../../screenshots/demo-cover.png" alt="Видео быстрого демо NOFX" width="900"/>
++    <img src="../../../screenshots/demo-cover.png" alt="Видео быстрого демо VL Intelligent" width="900"/>
+   </a>
+ </p>
+ 
+diff --git a/docs/i18n/uk/README.md b/docs/i18n/uk/README.md
+index 2605ff82..8fbf3c0a 100644
+--- a/docs/i18n/uk/README.md
++++ b/docs/i18n/uk/README.md
+@@ -1,4 +1,4 @@
+-<h1 align="center">NOFX</h1>
++<h1 align="center">VL Intelligent</h1>
+ 
+ <p align="center">
+   <strong>Ваш персональний AI торговий асистент.</strong><br/>
+@@ -31,7 +31,7 @@
+ 
+ ---
+ 
+-NOFX — це **автономний** AI торговий асистент з відкритим кодом. На відміну від традиційних AI інструментів, де потрібно вручну налаштовувати моделі, керувати API ключами та підключати джерела даних — AI у NOFX **сам аналізує ринки, обирає моделі та отримує дані**. Нульове втручання людини. Ви задаєте стратегію, AI робить все інше.
++VL Intelligent — це **автономний** AI торговий асистент з відкритим кодом. На відміну від традиційних AI інструментів, де потрібно вручну налаштовувати моделі, керувати API ключами та підключати джерела даних — AI у VL Intelligent **сам аналізує ринки, обирає моделі та отримує дані**. Нульове втручання людини. Ви задаєте стратегію, AI робить все інше.
+ 
+ **Повна автономність**: AI сам вирішує, яку модель використовувати, які ринкові дані отримати, коли торгувати. Без ручного налаштування моделей. Без жонглювання API ключами різних сервісів. Просто поповніть USDC гаманець і запустіть.
+ 
+@@ -49,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
+ 
+ <p align="center">
+   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
+-    <img src="../../../screenshots/demo-cover.png" alt="Відео швидкого демо NOFX" width="900"/>
++    <img src="../../../screenshots/demo-cover.png" alt="Відео швидкого демо VL Intelligent" width="900"/>
+   </a>
+ </p>
+ 
+diff --git a/docs/i18n/vi/README.md b/docs/i18n/vi/README.md
+index ccb711f0..74b7e19a 100644
+--- a/docs/i18n/vi/README.md
++++ b/docs/i18n/vi/README.md
+@@ -1,4 +1,4 @@
+-<h1 align="center">NOFX</h1>
++<h1 align="center">VL Intelligent</h1>
+ 
+ <p align="center">
+   <strong>Trợ lý giao dịch AI cá nhân của bạn.</strong><br/>
+@@ -31,7 +31,7 @@
+ 
+ ---
+ 
+-NOFX là trợ lý giao dịch AI **tự chủ** mã nguồn mở. Không giống các công cụ AI truyền thống yêu cầu bạn cấu hình mô hình thủ công, quản lý API key và kết nối nguồn dữ liệu — AI của NOFX **tự nhận diện thị trường, tự chọn mô hình và tự lấy dữ liệu**. Không cần con người can thiệp. Bạn chỉ cần đặt chiến lược, AI xử lý mọi thứ còn lại.
++VL Intelligent là trợ lý giao dịch AI **tự chủ** mã nguồn mở. Không giống các công cụ AI truyền thống yêu cầu bạn cấu hình mô hình thủ công, quản lý API key và kết nối nguồn dữ liệu — AI của VL Intelligent **tự nhận diện thị trường, tự chọn mô hình và tự lấy dữ liệu**. Không cần con người can thiệp. Bạn chỉ cần đặt chiến lược, AI xử lý mọi thứ còn lại.
+ 
+ **Hoàn toàn tự chủ**: AI tự quyết định sử dụng mô hình nào, lấy dữ liệu thị trường gì, khi nào giao dịch. Không cần cấu hình mô hình thủ công. Không cần quản lý API key của nhiều dịch vụ. Chỉ cần nạp ví USDC và chạy.
+ 
+@@ -49,7 +49,7 @@ Mở **http://127.0.0.1:3000**. Xong.
+ 
+ <p align="center">
+   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
+-    <img src="../../../screenshots/demo-cover.png" alt="Video demo nhanh của NOFX" width="900"/>
++    <img src="../../../screenshots/demo-cover.png" alt="Video demo nhanh của VL Intelligent" width="900"/>
+   </a>
+ </p>
+ 
+diff --git a/docs/i18n/zh-CN/README.md b/docs/i18n/zh-CN/README.md
+index 48560f2e..01b19039 100644
+--- a/docs/i18n/zh-CN/README.md
++++ b/docs/i18n/zh-CN/README.md
+@@ -1,4 +1,4 @@
+-<h1 align="center">NOFX</h1>
++<h1 align="center">VL Intelligent</h1>
+ 
+ <p align="center">
+   <strong>你的个人 AI 交易助手。</strong><br/>
+@@ -33,7 +33,7 @@
+ 
+ ---
+ 
+-NOFX 是一个开源的**自主式** AI 交易助手。与需要手动配置模型、管理 API Key、接入数据源的传统 AI 工具不同 —— NOFX 的 AI **自主感知市场、自选模型、自动获取数据**。零人工干预。你只需设定策略，AI 负责一切。
++VL Intelligent 是一个开源的**自主式** AI 交易助手。与需要手动配置模型、管理 API Key、接入数据源的传统 AI 工具不同 —— VL Intelligent 的 AI **自主感知市场、自选模型、自动获取数据**。零人工干预。你只需设定策略，AI 负责一切。
+ 
+ **完全自主**：AI 自行决定使用哪个模型、获取什么市场数据、何时交易。无需手动配置模型，无需管理各种服务的 API Key。只需充值 USDC 钱包，一键启动。
+ 
+@@ -51,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
+ 
+ <p align="center">
+   <a href="https://drive.google.com/file/d/1frzw-HDZ3viQvLOQKsAJGc9bT0dXs68D/view">
+-    <img src="../../../screenshots/demo-cover.png" alt="NOFX 快速演示视频" width="900"/>
++    <img src="../../../screenshots/demo-cover.png" alt="VL Intelligent 快速演示视频" width="900"/>
+   </a>
+ </p>
+ 
+@@ -216,7 +216,7 @@ curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bas
+ 
+ ### 贡献者空投计划
+ 
+-所有贡献在 GitHub 上追踪。当 NOFX 产生收入时，贡献者将获得空投。
++所有贡献在 GitHub 上追踪。当 VL Intelligent 产生收入时，贡献者将获得空投。
+ 
+ **解决 [置顶 Issue](https://github.com/NoFxAiOS/nofx/issues) 的 PR 获得最高奖励！**
+ 
+diff --git a/main.go b/main.go
+index 961335a5..fbc9f886 100644
+--- a/main.go
++++ b/main.go
+@@ -7,6 +7,7 @@ import (
+ 	nofxiagent "nofx/agent"
+ 	"nofx/api"
+ 	"nofx/auth"
++	"nofx/branding"
+ 	"nofx/config"
+ 	"nofx/crypto"
+ 	"nofx/expectancy"
+@@ -42,7 +43,7 @@ func main() {
+ 	logger.Init(nil)
+ 
+ 	logger.Info("╔════════════════════════════════════════════════════════════╗")
+-	logger.Info("║           🚀 NOFX - AI-Powered Trading System              ║")
++	logger.Info("║           🚀 " + branding.ProductName() + " - AI-Powered Trading System              ║")
+ 	logger.Info("╚════════════════════════════════════════════════════════════╝")
+ 
+ 	// Initialize global configuration (loaded from .env)
+diff --git a/telegram/agent/agent.go b/telegram/agent/agent.go
+index 2f54ddff..a4e6b92e 100644
+--- a/telegram/agent/agent.go
++++ b/telegram/agent/agent.go
+@@ -4,6 +4,7 @@ import (
+ 	"encoding/json"
+ 	"fmt"
+ 	"nofx/auth"
++	"nofx/branding"
+ 	"nofx/logger"
+ 	"nofx/mcp"
+ 	"nofx/telegram/session"
+@@ -19,7 +20,7 @@ var apiRequestTool = mcp.Tool{
+ 	Type: "function",
+ 	Function: mcp.FunctionDef{
+ 		Name:        "api_request",
+-		Description: "Call the NOFX trading system REST API",
++		Description: "Call the " + branding.ProductName() + " trading system REST API",
+ 		Parameters: map[string]any{
+ 			"type": "object",
+ 			"properties": map[string]any{
+diff --git a/telegram/agent/prompt.go b/telegram/agent/prompt.go
+index c54bf5ee..56f2d429 100644
+--- a/telegram/agent/prompt.go
++++ b/telegram/agent/prompt.go
+@@ -1,13 +1,16 @@
+ package agent
+ 
+-import "fmt"
++import (
++	"fmt"
++	"nofx/branding"
++)
+ 
+ // BuildAgentPrompt constructs the full system prompt with live API documentation injected.
+ // apiDocs is the output of api.GetAPIDocs() — reflects all currently registered routes with full schemas.
+ // userEmail is the registered email of the bound user (shown when user asks "who am I").
+ // userID is the internal DB UUID used for API authentication only.
+ func BuildAgentPrompt(apiDocs, userEmail, userID string) string {
+-	return fmt.Sprintf(`You are the NOFX quantitative trading system AI assistant.
++	return fmt.Sprintf(`You are the `+branding.ProductName()+` quantitative trading system AI assistant.
+ 
+ ## Your Identity
+ - You are operating as: %s
+@@ -16,12 +19,12 @@ func BuildAgentPrompt(apiDocs, userEmail, userID string) string {
+ - All API calls are made on behalf of this user
+ 
+ ## Tool: api_request
+-Use the api_request tool to call the NOFX REST API:
++Use the api_request tool to call the `+branding.ProductName()+` REST API:
+ - method: "GET" | "POST" | "PUT" | "DELETE"
+ - path: API path; query params go in the path: /api/positions?trader_id=xxx
+ - body: JSON object (use {} for GET requests)
+ 
+-## NOFX API Documentation
++## `+branding.ProductName()+` API Documentation
+ 
+ %s
+ 
+diff --git a/telegram/bot.go b/telegram/bot.go
+index 6cf81dc6..2746973c 100644
+--- a/telegram/bot.go
++++ b/telegram/bot.go
+@@ -2,6 +2,7 @@ package telegram
+ 
+ import (
+ 	"nofx/api"
++	"nofx/branding"
+ 	"nofx/config"
+ 	"nofx/logger"
+ 	"nofx/mcp"
+@@ -373,7 +374,7 @@ func statusMsg(st *store.Store, userID string, apiPort int, lang string) string
+ 
+ 	// All configured — show ready state.
+ 	if lang == "zh" {
+-		return `✅ *NOFX 就绪，开始交易吧！*
++		return `✅ *` + branding.ProductName() + ` 就绪，开始交易吧！*
+ 
+ 直接告诉我你想做什么：
+ 
+@@ -384,7 +385,7 @@ func statusMsg(st *store.Store, userID string, apiPort int, lang string) string
+ 
+ /help 查看更多 · /lang 切换语言`
+ 	}
+-	return `✅ *NOFX is ready!*
++	return `✅ *` + branding.ProductName() + ` is ready!*
+ 
+ Just tell me what you want:
+ 
+@@ -416,7 +417,7 @@ func parseLangChoice(text string) string {
+ 
+ func helpMsg(lang string) string {
+ 	if lang == "zh" {
+-		return `*NOFX 使用指南*
++		return `*` + branding.ProductName() + ` 使用指南*
+ 
+ *查询*
+ • "查看我的持仓"
+@@ -437,7 +438,7 @@ func helpMsg(lang string) string {
+ /lang  — 切换语言
+ /help  — 帮助`
+ 	}
+-	return `*NOFX Help*
++	return `*` + branding.ProductName() + ` Help*
+ 
+ *Query*
+ • "Show my positions"
+diff --git a/web/index.html b/web/index.html
+index 4c3944cb..4ba352a0 100644
+--- a/web/index.html
++++ b/web/index.html
+@@ -5,7 +5,7 @@
+     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+     <meta name="theme-color" content="#0C0E12" />
+-    <title>VL Trader - AI Trading System</title>
++    <title>%PRODUCT_NAME% - AI Trading System</title>
+   </head>
+   <body>
+     <div id="root"></div>
+diff --git a/web/src/components/agent/ChatInput.tsx b/web/src/components/agent/ChatInput.tsx
+index dfc83993..e9245c8e 100644
+--- a/web/src/components/agent/ChatInput.tsx
++++ b/web/src/components/agent/ChatInput.tsx
+@@ -1,3 +1,4 @@
++import { PERSONA_NAME } from '../../constants/branding'
+ import {
+   useRef,
+   useState,
+@@ -120,8 +121,8 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
+             }}
+             placeholder={
+               language === 'zh'
+-                ? '跟 NOFXi 聊点什么...  ⌘K'
+-                : 'Ask NOFXi anything...  ⌘K'
++                ? `跟 ${PERSONA_NAME} 聊点什么...  ⌘K`
++                : `Ask ${PERSONA_NAME} anything...  ⌘K`
+             }
+             rows={1}
+             style={{
+@@ -184,7 +185,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
+             color: '#4a4a62',
+           }}
+         >
+-          NOFXi may make mistakes. Always verify trading decisions.
++          {PERSONA_NAME} may make mistakes. Always verify trading decisions.
+         </div>
+       </div>
+     )
+diff --git a/web/src/components/agent/ChatMessages.tsx b/web/src/components/agent/ChatMessages.tsx
+index d10d2645..0feffab3 100644
+--- a/web/src/components/agent/ChatMessages.tsx
++++ b/web/src/components/agent/ChatMessages.tsx
+@@ -1,3 +1,4 @@
++import { PERSONA_NAME } from '../../constants/branding'
+ import { forwardRef } from 'react'
+ import { motion } from 'framer-motion'
+ import { AgentStepPanel } from './AgentStepPanel'
+@@ -94,13 +95,25 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
+                     border: '1px solid rgba(255,255,255,0.08)',
+                   }}
+                 >
+-                  <AgentStepPanel steps={m.steps} visible={hasMeaningfulExecutionSteps(m.steps)} />
++                  <AgentStepPanel
++                    steps={m.steps}
++                    visible={hasMeaningfulExecutionSteps(m.steps)}
++                  />
+                   {renderMessageContent(m.text)}
+                   {m.streaming && m.text === '' && (
+                     <div style={{ display: 'flex', gap: 4, padding: '4px 0' }}>
+-                      <span className="typing-dot" style={{ animationDelay: '0ms' }} />
+-                      <span className="typing-dot" style={{ animationDelay: '150ms' }} />
+-                      <span className="typing-dot" style={{ animationDelay: '300ms' }} />
++                      <span
++                        className="typing-dot"
++                        style={{ animationDelay: '0ms' }}
++                      />
++                      <span
++                        className="typing-dot"
++                        style={{ animationDelay: '150ms' }}
++                      />
++                      <span
++                        className="typing-dot"
++                        style={{ animationDelay: '300ms' }}
++                      />
+                     </div>
+                   )}
+                   {m.streaming && m.text !== '' && (
+@@ -130,7 +143,8 @@ export const ChatMessages = forwardRef<HTMLDivElement, ChatMessagesProps>(
+                     paddingRight: m.role === 'user' ? 4 : 0,
+                   }}
+                 >
+-                  {m.role === 'bot' && 'NOFXi · '}{m.time}
++                  {m.role === 'bot' && `${PERSONA_NAME} · `}
++                  {m.time}
+                 </div>
+               )}
+             </div>
+diff --git a/web/src/components/agent/WelcomeScreen.tsx b/web/src/components/agent/WelcomeScreen.tsx
+index cc7123bc..e2623f01 100644
+--- a/web/src/components/agent/WelcomeScreen.tsx
++++ b/web/src/components/agent/WelcomeScreen.tsx
+@@ -1,3 +1,4 @@
++import { PERSONA_NAME } from '../../constants/branding'
+ import { motion } from 'framer-motion'
+ import { Zap, BarChart3, Lightbulb, Search } from 'lucide-react'
+ 
+@@ -115,7 +116,9 @@ export function WelcomeScreen({ language, onSend }: WelcomeScreenProps) {
+             letterSpacing: '-0.02em',
+           }}
+         >
+-          {language === 'zh' ? '跟 NOFXi 聊点什么' : 'What can I help with?'}
++          {language === 'zh'
++            ? `跟 ${PERSONA_NAME} 聊点什么`
++            : 'What can I help with?'}
+         </h1>
+         <p
+           style={{
+diff --git a/web/src/components/auth/RegisterPage.tsx b/web/src/components/auth/RegisterPage.tsx
+index 6de1a3e6..d94744b8 100644
+--- a/web/src/components/auth/RegisterPage.tsx
++++ b/web/src/components/auth/RegisterPage.tsx
+@@ -193,7 +193,7 @@ export function RegisterPage() {
+                   value={email}
+                   onChange={(e) => setEmail(e.target.value)}
+                   className="w-full bg-black/50 border border-zinc-700 rounded px-4 py-3 text-sm focus:border-nofx-gold focus:ring-1 focus:ring-nofx-gold/50 outline-none transition-all placeholder-zinc-800 text-white font-mono"
+-                  placeholder="user@nofx.os"
++                  placeholder="user@example.com"
+                   required
+                 />
+               </div>
+diff --git a/web/src/components/common/HeaderBar.tsx b/web/src/components/common/HeaderBar.tsx
+index 09b3bb75..de551bbc 100644
+--- a/web/src/components/common/HeaderBar.tsx
++++ b/web/src/components/common/HeaderBar.tsx
+@@ -1,3 +1,4 @@
++import { PERSONA_NAME } from '../../constants/branding'
+ import { useState, useEffect, useRef } from 'react'
+ import { useLocation, useNavigate } from 'react-router-dom'
+ import { motion, AnimatePresence } from 'framer-motion'
+@@ -92,7 +93,9 @@ export default function HeaderBar({
+           className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+         >
+           <img src="/icons/vl.svg" alt="VL" className="w-7 h-7" />
+-          <span className="text-lg font-bold text-nofx-gold">VL</span>
++          <span className="text-lg font-bold text-nofx-gold">
++            {PERSONA_NAME}
++          </span>
+         </div>
+ 
+         {/* Desktop Menu */}
+diff --git a/web/src/constants/branding.ts b/web/src/constants/branding.ts
+index 9de2b7c8..9dc56832 100644
+--- a/web/src/constants/branding.ts
++++ b/web/src/constants/branding.ts
+@@ -1,3 +1,9 @@
++import productName from '../../../branding/product.txt?raw'
++import personaName from '../../../branding/persona.txt?raw'
++
++export const PRODUCT_NAME = productName
++export const PERSONA_NAME = personaName
++
+ // Project branding constants.
+ //
+ // This is a personal fork; original NoFx-era external links (twitter / telegram
+@@ -12,7 +18,7 @@ export const OFFICIAL_LINKS = {
+ } as const
+ 
+ export const BRAND_INFO = {
+-  name: 'VL',
++  name: PERSONA_NAME,
+   tagline: 'AI Trading Dashboard',
+   version: '1.0.0',
+ } as const
+diff --git a/web/src/guide/GuidePage.tsx b/web/src/guide/GuidePage.tsx
+index f3780147..4505f07e 100644
+--- a/web/src/guide/GuidePage.tsx
++++ b/web/src/guide/GuidePage.tsx
+@@ -1,3 +1,4 @@
++import { PRODUCT_NAME } from '../constants/branding'
+ // GuidePage — the in-app system guide (5th nav page). FE-only; renders typed
+ // content modules + the LIVE-COMPONENT examples. Rev-drift banner compares
+ // GUIDE_BUILT_REV against the running bot's /api/health revision.
+@@ -484,7 +485,7 @@ export function GuidePage() {
+           className="text-xl font-black uppercase tracking-widest"
+           style={{ color: 'var(--vl-gold)' }}
+         >
+-          NOFX System Guide
++          {PRODUCT_NAME} System Guide
+         </h1>
+         <p className="text-[12px]" style={muted}>
+           built against rev {GUIDE_BUILT_REV} · 12 sections · live-component
+diff --git a/web/src/guide/content/welcome.ts b/web/src/guide/content/welcome.ts
+index 9e7aaec7..5fbc43e0 100644
+--- a/web/src/guide/content/welcome.ts
++++ b/web/src/guide/content/welcome.ts
+@@ -1,3 +1,4 @@
++import { PRODUCT_NAME } from '../../constants/branding'
+ import { GUIDE_BUILT_REV, type GuideSection } from '../types'
+ 
+ export const welcome: GuideSection = {
+@@ -11,7 +12,7 @@ export const welcome: GuideSection = {
+       kind: 'cards',
+       cards: [
+         {
+-          title: 'NOFX / VL',
++          title: PRODUCT_NAME,
+           body: 'One structure-permissioned, level-anchored MNQ SIM trader — advisory-first. The Go engine computes the map; the AI (deepseek-v4-pro) writes one day-plan per session, then decides every cycle against it. You hold the knobs.',
+           tag: 'SIM',
+         },
+diff --git a/web/src/i18n/translations.ts b/web/src/i18n/translations.ts
+index a4e0b292..742a5181 100644
+--- a/web/src/i18n/translations.ts
++++ b/web/src/i18n/translations.ts
+@@ -1,9 +1,11 @@
++import { PERSONA_NAME } from '../constants/branding'
++
+ export type Language = 'en' | 'zh' | 'id'
+ 
+ export const translations = {
+   en: {
+     // Header
+-    appTitle: 'VL',
++    appTitle: PERSONA_NAME,
+     subtitle: 'Multi-AI Model Trading Platform',
+     aiTraders: 'AI Traders',
+     details: 'Details',
+@@ -25,7 +27,7 @@ export const translations = {
+     faqNav: 'FAQ',
+ 
+     // Footer
+-    footerTitle: 'VL - AI Trading System',
++    footerTitle: PERSONA_NAME + ' - AI Trading System',
+     footerWarning: '⚠️ Trading involves risk. Use at your own discretion.',
+ 
+     // Stats Cards
+@@ -558,19 +560,22 @@ export const translations = {
+     heroTitle1: 'Read the Market.',
+     heroTitle2: 'Write the Trade.',
+     heroDescription:
+-      'VL is the future standard for AI trading — an open, community-driven agentic trading OS. Supporting Binance, Aster DEX and other exchanges, self-hosted, multi-agent competition, let AI automatically make decisions, execute and optimize trades for you.',
++      PERSONA_NAME +
++      ' is the future standard for AI trading — an open, community-driven agentic trading OS. Supporting Binance, Aster DEX and other exchanges, self-hosted, multi-agent competition, let AI automatically make decisions, execute and optimize trades for you.',
+     poweredBy: 'Powered by Aster DEX and Binance.',
+ 
+     // Landing Page CTA
+     readyToDefine: 'Ready to define the future of AI trading?',
+     startWithCrypto:
+-      'Starting with crypto markets, expanding to TradFi. VL is the infrastructure of AgentFi.',
++      'Starting with crypto markets, expanding to TradFi. ' +
++      PERSONA_NAME +
++      ' is the infrastructure of AgentFi.',
+     getStartedNow: 'Get Started Now',
+     viewSourceCode: 'View Source Code',
+ 
+     // Features Section
+     coreFeatures: 'Core Features',
+-    whyChooseNofx: 'Why Choose VL?',
++    whyChooseNofx: 'Why Choose ' + PERSONA_NAME + '?',
+     openCommunityDriven:
+       'Open source, transparent, community-driven AI trading OS',
+     openSourceSelfHosted: '100% Open Source & Self-Hosted',
+@@ -596,10 +601,11 @@ export const translations = {
+     secureFeatures4: 'Trading log auditing',
+ 
+     // About Section
+-    aboutNofx: 'About VL',
+-    whatIsNofx: 'What is VL?',
++    aboutNofx: 'About ' + PERSONA_NAME,
++    whatIsNofx: 'What is ' + PERSONA_NAME + '?',
+     nofxNotAnotherBot:
+-      "VL is not another trading bot, but the 'Linux' of AI trading —",
++      PERSONA_NAME +
++      " is not another trading bot, but the 'Linux' of AI trading —",
+     nofxDescription1:
+       'a transparent, trustworthy open source OS that provides a unified',
+     nofxDescription2:
+@@ -617,7 +623,7 @@ export const translations = {
+     startupMessages3: 'Web console http://127.0.0.1:3000',
+ 
+     // How It Works Section
+-    howToStart: 'How to Get Started with VL',
++    howToStart: 'How to Get Started with ' + PERSONA_NAME,
+     fourSimpleSteps:
+       'Four simple steps to start your AI automated trading journey',
+     step1Title: 'Clone GitHub Repository',
+@@ -634,7 +640,9 @@ export const translations = {
+       'Monitor trading, submit PRs to improve framework. Join Telegram to share strategies.',
+     importantRiskWarning: 'Important Risk Warning',
+     riskWarningText:
+-      'Dev branch is unstable, do not use funds you cannot afford to lose. VL is non-custodial, no official strategies. Trading involves risks, invest carefully.',
++      'Dev branch is unstable, do not use funds you cannot afford to lose. ' +
++      PERSONA_NAME +
++      ' is non-custodial, no official strategies. Trading involves risks, invest carefully.',
+ 
+     // Community Section (testimonials are kept as-is since they are quotes)
+ 
+@@ -647,7 +655,7 @@ export const translations = {
+     strategicInvestment: '(Strategic Investment)',
+ 
+     // Login Modal
+-    accessNofxPlatform: 'Access VL Platform',
++    accessNofxPlatform: 'Access ' + PERSONA_NAME + ' Platform',
+     loginRegisterPrompt:
+       'Please login or register to access the full AI trading platform',
+     registerNewAccount: 'Register New Account',
+@@ -673,7 +681,7 @@ export const translations = {
+ 
+     // FAQ Page
+     faqTitle: 'Frequently Asked Questions',
+-    faqSubtitle: 'Find answers to common questions about VL',
++    faqSubtitle: 'Find answers to common questions about ' + PERSONA_NAME,
+     faqStillHaveQuestions: 'Still Have Questions?',
+     faqContactUs: 'Join our community or check our GitHub for more help',
+ 
+@@ -689,17 +697,21 @@ export const translations = {
+     faqCategoryContributing: 'Contributing',
+ 
+     // ===== GETTING STARTED =====
+-    faqWhatIsNOFX: 'What is VL?',
++    faqWhatIsNOFX: 'What is ' + PERSONA_NAME + '?',
+     faqWhatIsNOFXAnswer:
+-      'VL is an open-source AI-powered trading operating system for cryptocurrency and US stock markets. It uses large language models (LLMs) like DeepSeek, GPT, Claude, Gemini to analyze market data and make autonomous trading decisions. Key features include: multi-AI model support, multi-exchange trading, and visual strategy builder.',
++      PERSONA_NAME +
++      ' is an open-source AI-powered trading operating system for cryptocurrency and US stock markets. It uses large language models (LLMs) like DeepSeek, GPT, Claude, Gemini to analyze market data and make autonomous trading decisions. Key features include: multi-AI model support, multi-exchange trading, and visual strategy builder.',
+ 
+-    faqHowDoesItWork: 'How does VL work?',
++    faqHowDoesItWork: 'How does ' + PERSONA_NAME + ' work?',
+     faqHowDoesItWorkAnswer:
+-      'VL works in 5 steps: 1) Configure AI models and exchange API credentials; 2) Create a trading strategy (coin selection, indicators, risk controls); 3) Create a "Trader" combining AI model + Exchange + Strategy; 4) Start the trader - it will analyze market data at regular intervals and make buy/sell/hold decisions; 5) Monitor performance on the dashboard. The AI uses Chain of Thought reasoning to explain each decision.',
++      PERSONA_NAME +
++      ' works in 5 steps: 1) Configure AI models and exchange API credentials; 2) Create a trading strategy (coin selection, indicators, risk controls); 3) Create a "Trader" combining AI model + Exchange + Strategy; 4) Start the trader - it will analyze market data at regular intervals and make buy/sell/hold decisions; 5) Monitor performance on the dashboard. The AI uses Chain of Thought reasoning to explain each decision.',
+ 
+-    faqIsProfitable: 'Is VL profitable?',
++    faqIsProfitable: 'Is ' + PERSONA_NAME + ' profitable?',
+     faqIsProfitableAnswer:
+-      'AI trading is experimental and NOT guaranteed to be profitable. Cryptocurrency futures are highly volatile and risky. VL is designed for educational and research purposes. We strongly recommend: starting with small amounts (10-50 USDT), never investing more than you can afford to lose, thoroughly testing before live trading, and understanding that past performance does not guarantee future results.',
++      'AI trading is experimental and NOT guaranteed to be profitable. Cryptocurrency futures are highly volatile and risky. ' +
++      PERSONA_NAME +
++      ' is designed for educational and research purposes. We strongly recommend: starting with small amounts (10-50 USDT), never investing more than you can afford to lose, thoroughly testing before live trading, and understanding that past performance does not guarantee future results.',
+ 
+     faqSupportedExchanges: 'Which exchanges are supported?',
+     faqSupportedExchangesAnswer:
+@@ -707,14 +719,15 @@ export const translations = {
+ 
+     faqSupportedAIModels: 'Which AI models are supported?',
+     faqSupportedAIModelsAnswer:
+-      'VL supports 7+ AI models: DeepSeek (recommended for cost/performance), Alibaba Qwen, OpenAI (GPT-5.2), Anthropic Claude, Google Gemini, xAI Grok, and Kimi (Moonshot). You can also use any OpenAI-compatible API endpoint. Each model has different strengths - DeepSeek is cost-effective, OpenAI models are powerful but expensive, Claude excels at reasoning.',
++      PERSONA_NAME +
++      ' supports 7+ AI models: DeepSeek (recommended for cost/performance), Alibaba Qwen, OpenAI (GPT-5.2), Anthropic Claude, Google Gemini, xAI Grok, and Kimi (Moonshot). You can also use any OpenAI-compatible API endpoint. Each model has different strengths - DeepSeek is cost-effective, OpenAI models are powerful but expensive, Claude excels at reasoning.',
+ 
+     faqSystemRequirements: 'What are the system requirements?',
+     faqSystemRequirementsAnswer:
+       'Minimum: 2 CPU cores, 2GB RAM, 1GB disk space, stable internet. Recommended: 4GB RAM for running multiple traders. Supported OS: Linux, macOS, or Windows (via Docker or WSL2). Docker is the easiest installation method. For manual installation, you need Go 1.21+, Node.js 18+, and TA-Lib library.',
+ 
+     // ===== INSTALLATION =====
+-    faqHowToInstall: 'How do I install VL?',
++    faqHowToInstall: 'How do I install ' + PERSONA_NAME + '?',
+     faqHowToInstallAnswer:
+       'Easiest method (Linux/macOS): Run "curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash" - this installs Docker containers automatically. Then open http://127.0.0.1:3000 in your browser. For manual installation or development, clone the repository and follow the README instructions.',
+ 
+@@ -734,7 +747,7 @@ export const translations = {
+     faqServerDeploymentAnswer:
+       'Run the install script on your server - it auto-detects the server IP. Access via http://YOUR_SERVER_IP:3000. For HTTPS: 1) Use Cloudflare (free) - add domain, create A record pointing to server IP, set SSL to "Flexible"; 2) Enable TRANSPORT_ENCRYPTION=true in .env for browser-side encryption; 3) Access via https://your-domain.com',
+ 
+-    faqUpdateNOFX: 'How do I update VL?',
++    faqUpdateNOFX: 'How do I update ' + PERSONA_NAME + '?',
+     faqUpdateNOFXAnswer:
+       'For Docker: Run "docker compose pull && docker compose up -d" to pull latest images and restart. For manual installation: "git pull && go build -o nofx" for backend, "cd web && npm install && npm run build" for frontend. Your configurations in data.db are preserved during updates.',
+ 
+@@ -753,7 +766,9 @@ export const translations = {
+ 
+     faqHyperliquidSetup: 'How do I set up Hyperliquid?',
+     faqHyperliquidSetupAnswer:
+-      'Hyperliquid is a decentralized exchange requiring wallet authentication. Steps: 1) Go to app.hyperliquid.xyz; 2) Connect your wallet; 3) Generate an API wallet (recommended) or use your main wallet; 4) Copy the wallet address and private key; 5) In VL, add Hyperliquid exchange with these credentials. No KYC required, fully on-chain.',
++      'Hyperliquid is a decentralized exchange requiring wallet authentication. Steps: 1) Go to app.hyperliquid.xyz; 2) Connect your wallet; 3) Generate an API wallet (recommended) or use your main wallet; 4) Copy the wallet address and private key; 5) In ' +
++      PERSONA_NAME +
++      ', add Hyperliquid exchange with these credentials. No KYC required, fully on-chain.',
+ 
+     faqCreateStrategy: 'How do I create a trading strategy?',
+     faqCreateStrategyAnswer:
+@@ -784,13 +799,16 @@ export const translations = {
+     faqLeverageSettingsAnswer:
+       'Leverage is set in Strategy → Risk Controls: BTC/ETH leverage (typically 5-20x) and Altcoin leverage (typically 3-10x). Higher leverage = higher risk and potential returns. Subaccounts may have restrictions (e.g., Binance subaccounts limited to 5x). The AI respects these limits when placing orders.',
+ 
+-    faqStopLossTakeProfit: 'Does VL support stop-loss and take-profit?',
++    faqStopLossTakeProfit:
++      'Does ' + PERSONA_NAME + ' support stop-loss and take-profit?',
+     faqStopLossTakeProfitAnswer:
+       'The AI can suggest stop-loss/take-profit levels in its decisions, but these are guidance-based rather than hard-coded exchange orders. The AI monitors positions each cycle and may decide to close based on P/L. For guaranteed stop-loss, you can set exchange-level orders manually or adjust the strategy prompt to be more conservative.',
+ 
+     faqMultipleTraders: 'Can I run multiple traders?',
+     faqMultipleTradersAnswer:
+-      'Yes! VL supports running 20+ concurrent traders. Each trader can have different: AI model, exchange account, strategy, decision interval. Use this to A/B test strategies, compare AI models, or diversify across exchanges. Monitor all traders on the Competition page.',
++      'Yes! ' +
++      PERSONA_NAME +
++      ' supports running 20+ concurrent traders. Each trader can have different: AI model, exchange account, strategy, decision interval. Use this to A/B test strategies, compare AI models, or diversify across exchanges. Monitor all traders on the Competition page.',
+ 
+     faqAICosts: 'How much do AI API calls cost?',
+     faqAICostsAnswer:
+@@ -819,11 +837,15 @@ export const translations = {
+ 
+     faqBinancePositionMode: 'Binance error code -4061 (Position Mode)',
+     faqBinancePositionModeAnswer:
+-      'Error: "Order\'s position side does not match user\'s setting". You\'re in One-way Mode but VL requires Hedge Mode. Fix: 1) Close ALL positions first; 2) Binance Futures → Settings (gear icon) → Preferences → Position Mode → Switch to "Hedge Mode" (双向持仓); 3) Restart your trader.',
++      "Error: \"Order's position side does not match user's setting\". You're in One-way Mode but " +
++      PERSONA_NAME +
++      ' requires Hedge Mode. Fix: 1) Close ALL positions first; 2) Binance Futures → Settings (gear icon) → Preferences → Position Mode → Switch to "Hedge Mode" (双向持仓); 3) Restart your trader.',
+ 
+     faqBalanceShowsZero: 'Account balance shows 0',
+     faqBalanceShowsZeroAnswer:
+-      'Funds are likely in Spot wallet, not Futures wallet. Solution: 1) In Binance, go to Wallet → Futures → Transfer; 2) Transfer USDT from Spot to Futures; 3) Refresh VL dashboard. Also check: funds not locked in savings/staking products.',
++      'Funds are likely in Spot wallet, not Futures wallet. Solution: 1) In Binance, go to Wallet → Futures → Transfer; 2) Transfer USDT from Spot to Futures; 3) Refresh ' +
++      PERSONA_NAME +
++      ' dashboard. Also check: funds not locked in savings/staking products.',
+ 
+     faqDockerPullFailed: 'Docker image pull failed or slow',
+     faqDockerPullFailedAnswer:
+@@ -834,17 +856,23 @@ export const translations = {
+     faqAPIKeyStorageAnswer:
+       'API keys are encrypted using AES-256-GCM before storage in the local SQLite database. The encryption key (DATA_ENCRYPTION_KEY) is stored in your .env file. Keys are decrypted only in memory when needed for API calls. Never share your data.db or .env files.',
+ 
+-    faqEncryptionDetails: 'What encryption does VL use?',
++    faqEncryptionDetails: 'What encryption does ' + PERSONA_NAME + ' use?',
+     faqEncryptionDetailsAnswer:
+-      'VL uses multiple encryption layers: 1) AES-256-GCM for database storage (API keys, secrets); 2) RSA-2048 for optional transport encryption (browser to server); 3) JWT for authentication tokens. Keys are generated during installation. Enable TRANSPORT_ENCRYPTION=true for HTTPS environments.',
++      PERSONA_NAME +
++      ' uses multiple encryption layers: 1) AES-256-GCM for database storage (API keys, secrets); 2) RSA-2048 for optional transport encryption (browser to server); 3) JWT for authentication tokens. Keys are generated during installation. Enable TRANSPORT_ENCRYPTION=true for HTTPS environments.',
+ 
+     faqSecurityBestPractices: 'What are security best practices?',
+     faqSecurityBestPracticesAnswer:
+-      'Recommended: 1) Use exchange API keys with IP whitelist and minimal permissions (Futures Trading only); 2) Use dedicated subaccount for VL; 3) Enable TRANSPORT_ENCRYPTION for remote deployments; 4) Never share .env or data.db files; 5) Use HTTPS with valid certificates; 6) Regularly rotate API keys; 7) Monitor account activity.',
++      'Recommended: 1) Use exchange API keys with IP whitelist and minimal permissions (Futures Trading only); 2) Use dedicated subaccount for ' +
++      PERSONA_NAME +
++      '; 3) Enable TRANSPORT_ENCRYPTION for remote deployments; 4) Never share .env or data.db files; 5) Use HTTPS with valid certificates; 6) Regularly rotate API keys; 7) Monitor account activity.',
+ 
+-    faqCanNOFXStealFunds: 'Can VL steal my funds?',
++    faqCanNOFXStealFunds: 'Can ' + PERSONA_NAME + ' steal my funds?',
+     faqCanNOFXStealFundsAnswer:
+-      'VL is open-source (AGPL-3.0 license) - you can audit all code on GitHub. API keys are stored locally on YOUR machine, never sent to external servers. VL only has the permissions you grant via API keys. For maximum safety: use API keys with trading-only permissions (no withdrawal), enable IP whitelist, use a dedicated subaccount.',
++      PERSONA_NAME +
++      ' is open-source (AGPL-3.0 license) - you can audit all code on GitHub. API keys are stored locally on YOUR machine, never sent to external servers. ' +
++      PERSONA_NAME +
++      ' only has the permissions you grant via API keys. For maximum safety: use API keys with trading-only permissions (no withdrawal), enable IP whitelist, use a dedicated subaccount.',
+ 
+     // ===== FEATURES =====
+     faqStrategyStudio: 'What is Strategy Studio?',
+@@ -866,20 +894,25 @@ export const translations = {
+ 
+     faqCustomAIAPI: 'Can I use a custom AI API?',
+     faqCustomAIAPIAnswer:
+-      'Yes! VL supports any OpenAI-compatible API. In Config → AI Models → Custom API: 1) Enter your API endpoint URL (e.g., https://your-api.com/v1); 2) Enter API key; 3) Specify model name. This works with self-hosted models, alternative providers, or Claude via third-party proxies.',
++      'Yes! ' +
++      PERSONA_NAME +
++      ' supports any OpenAI-compatible API. In Config → AI Models → Custom API: 1) Enter your API endpoint URL (e.g., https://your-api.com/v1); 2) Enter API key; 3) Specify model name. This works with self-hosted models, alternative providers, or Claude via third-party proxies.',
+ 
+     faqAIHallucinations: 'What about AI hallucinations?',
+     faqAIHallucinationsAnswer:
+-      'AI models can sometimes produce incorrect or fabricated information ("hallucinations"). VL mitigates this by: 1) Providing structured prompts with real market data; 2) Enforcing JSON output format for decisions; 3) Validating orders before execution. However, AI trading is experimental - always monitor decisions and don\'t rely solely on AI judgment.',
++      'AI models can sometimes produce incorrect or fabricated information ("hallucinations"). ' +
++      PERSONA_NAME +
++      " mitigates this by: 1) Providing structured prompts with real market data; 2) Enforcing JSON output format for decisions; 3) Validating orders before execution. However, AI trading is experimental - always monitor decisions and don't rely solely on AI judgment.",
+ 
+     faqCompareAIModels: 'How do I compare different AI models?',
+     faqCompareAIModelsAnswer:
+       'Create multiple traders with different AI models but same strategy/exchange. Run them simultaneously and compare on Competition page. Metrics to watch: ROI, win rate, Sharpe ratio, max drawdown.',
+ 
+     // ===== CONTRIBUTING =====
+-    faqHowToContribute: 'How can I contribute to VL?',
++    faqHowToContribute: 'How can I contribute to ' + PERSONA_NAME + '?',
+     faqHowToContributeAnswer:
+-      'VL is open-source and welcomes contributions! Ways to contribute: 1) Code - fix bugs, add features (check GitHub Issues); 2) Documentation - improve guides, translate; 3) Bug Reports - report issues with details; 4) Feature Ideas - suggest improvements. Start with issues labeled "good first issue". All contributors may receive airdrop rewards.',
++      PERSONA_NAME +
++      ' is open-source and welcomes contributions! Ways to contribute: 1) Code - fix bugs, add features (check GitHub Issues); 2) Documentation - improve guides, translate; 3) Bug Reports - report issues with details; 4) Feature Ideas - suggest improvements. Start with issues labeled "good first issue". All contributors may receive airdrop rewards.',
+ 
+     faqPRGuidelines: 'What are the PR guidelines?',
+     faqPRGuidelinesAnswer:
+@@ -914,7 +947,9 @@ export const translations = {
+         'Avoid embedding the app in insecure HTTP iframes or reverse proxies that strip HTTPS.',
+       unsupportedTitle: 'Browser does not expose Web Crypto',
+       unsupportedDesc:
+-        'Open VL over HTTPS (or http://localhost during development) and avoid insecure iframes/reverse proxies so the browser can enable Web Crypto.',
++        'Open ' +
++        PERSONA_NAME +
++        ' over HTTPS (or http://localhost during development) and avoid insecure iframes/reverse proxies so the browser can enable Web Crypto.',
+       summary: 'Current origin: {origin} • Protocol: {protocol}',
+       disabledTitle: 'Transport encryption disabled',
+       disabledDesc:
+@@ -1411,7 +1446,7 @@ export const translations = {
+   },
+   zh: {
+     // Header
+-    appTitle: 'VL',
++    appTitle: PERSONA_NAME,
+     subtitle: '多AI模型交易平台',
+     aiTraders: 'AI交易员',
+     details: '详情',
+@@ -1433,7 +1468,7 @@ export const translations = {
+     faqNav: '常见问题',
+ 
+     // Footer
+-    footerTitle: 'VL - AI交易系统',
++    footerTitle: PERSONA_NAME + ' - AI交易系统',
+     footerWarning: '⚠️ 交易有风险，请谨慎使用。',
+ 
+     // Stats Cards
+@@ -1925,19 +1960,22 @@ export const translations = {
+     heroTitle1: 'Read the Market.',
+     heroTitle2: 'Write the Trade.',
+     heroDescription:
+-      'VL 是 AI 交易的未来标准——一个开放、社区驱动的代理式交易操作系统。支持 Binance、Aster DEX 等交易所，自托管、多代理竞争，让 AI 为你自动决策、执行和优化交易。',
++      PERSONA_NAME +
++      ' 是 AI 交易的未来标准——一个开放、社区驱动的代理式交易操作系统。支持 Binance、Aster DEX 等交易所，自托管、多代理竞争，让 AI 为你自动决策、执行和优化交易。',
+     poweredBy: '由 Aster DEX 和 Binance 提供支持。',
+ 
+     // Landing Page CTA
+     readyToDefine: '准备好定义 AI 交易的未来吗？',
+     startWithCrypto:
+-      '从加密市场起步，扩展到 TradFi。VL 是 AgentFi 的基础架构。',
++      '从加密市场起步，扩展到 TradFi。' +
++      PERSONA_NAME +
++      ' 是 AgentFi 的基础架构。',
+     getStartedNow: '立即开始',
+     viewSourceCode: '查看源码',
+ 
+     // Features Section
+     coreFeatures: '核心功能',
+-    whyChooseNofx: '为什么选择 VL？',
++    whyChooseNofx: '为什么选择 ' + PERSONA_NAME + '？',
+     openCommunityDriven: '开源、透明、社区驱动的 AI 交易操作系统',
+     openSourceSelfHosted: '100% 开源与自托管',
+     openSourceDesc: '你的框架，你的规则。非黑箱，支持自定义提示词和多模型。',
+@@ -1959,9 +1997,10 @@ export const translations = {
+     secureFeatures4: '交易日志审计',
+ 
+     // About Section
+-    aboutNofx: '关于 VL',
+-    whatIsNofx: '什么是 VL？',
+-    nofxNotAnotherBot: "VL 不是另一个交易机器人，而是 AI 交易的 'Linux' ——",
++    aboutNofx: '关于 ' + PERSONA_NAME,
++    whatIsNofx: '什么是 ' + PERSONA_NAME + '？',
++    nofxNotAnotherBot:
++      PERSONA_NAME + " 不是另一个交易机器人，而是 AI 交易的 'Linux' ——",
+     nofxDescription1: "一个透明、可信任的开源 OS，提供统一的 '决策-风险-执行'",
+     nofxDescription2: '层，支持所有资产类别。',
+     nofxDescription3:
+@@ -1976,7 +2015,7 @@ export const translations = {
+     startupMessages3: 'Web 控制台 http://127.0.0.1:3000',
+ 
+     // How It Works Section
+-    howToStart: '如何开始使用 VL',
++    howToStart: '如何开始使用 ' + PERSONA_NAME,
+     fourSimpleSteps: '四个简单步骤，开启 AI 自动交易之旅',
+     step1Title: '拉取 GitHub 仓库',
+     step1Desc:
+@@ -1991,7 +2030,9 @@ export const translations = {
+     step4Desc: '监控交易，提交 PR 改进框架。加入 Telegram 分享策略。',
+     importantRiskWarning: '重要风险提示',
+     riskWarningText:
+-      'dev 分支不稳定，勿用无法承受损失的资金。VL 非托管，无官方策略。交易有风险，投资需谨慎。',
++      'dev 分支不稳定，勿用无法承受损失的资金。' +
++      PERSONA_NAME +
++      ' 非托管，无官方策略。交易有风险，投资需谨慎。',
+ 
+     // Community Section (testimonials are kept as-is since they are quotes)
+ 
+@@ -2004,7 +2045,7 @@ export const translations = {
+     strategicInvestment: '(战略投资)',
+ 
+     // Login Modal
+-    accessNofxPlatform: '访问 VL 平台',
++    accessNofxPlatform: '访问 ' + PERSONA_NAME + ' 平台',
+     loginRegisterPrompt: '请选择登录或注册以访问完整的 AI 交易平台',
+     registerNewAccount: '注册新账号',
+ 
+@@ -2027,7 +2068,7 @@ export const translations = {
+ 
+     // FAQ Page
+     faqTitle: '常见问题',
+-    faqSubtitle: '查找关于 VL 的常见问题解答',
++    faqSubtitle: '查找关于 ' + PERSONA_NAME + ' 的常见问题解答',
+     faqStillHaveQuestions: '还有其他问题？',
+     faqContactUs: '加入我们的社区或查看 GitHub 获取更多帮助',
+ 
+@@ -2043,17 +2084,21 @@ export const translations = {
+     faqCategoryContributing: '参与贡献',
+ 
+     // ===== 入门指南 =====
+-    faqWhatIsNOFX: 'VL 是什么？',
++    faqWhatIsNOFX: PERSONA_NAME + ' 是什么？',
+     faqWhatIsNOFXAnswer:
+-      'VL 是一个开源的 AI 驱动交易操作系统，支持加密货币和美股市场。它使用大语言模型（LLM）如 DeepSeek、GPT、Claude、Gemini 来分析市场数据，进行自主交易决策。核心功能包括：多 AI 模型支持、多交易所交易、可视化策略构建器、回测系统。',
++      PERSONA_NAME +
++      ' 是一个开源的 AI 驱动交易操作系统，支持加密货币和美股市场。它使用大语言模型（LLM）如 DeepSeek、GPT、Claude、Gemini 来分析市场数据，进行自主交易决策。核心功能包括：多 AI 模型支持、多交易所交易、可视化策略构建器、回测系统。',
+ 
+-    faqHowDoesItWork: 'VL 是如何工作的？',
++    faqHowDoesItWork: PERSONA_NAME + ' 是如何工作的？',
+     faqHowDoesItWorkAnswer:
+-      'VL 分 5 步工作：1）配置 AI 模型和交易所 API 凭证；2）创建交易策略（币种选择、指标、风控）；3）创建"交易员"，组合 AI 模型 + 交易所 + 策略；4）启动交易员 - 它会定期分析市场数据并做出买入/卖出/持有决策；5）在仪表板上监控表现。AI 使用思维链（Chain of Thought）推理来解释每个决策。',
++      PERSONA_NAME +
++      ' 分 5 步工作：1）配置 AI 模型和交易所 API 凭证；2）创建交易策略（币种选择、指标、风控）；3）创建"交易员"，组合 AI 模型 + 交易所 + 策略；4）启动交易员 - 它会定期分析市场数据并做出买入/卖出/持有决策；5）在仪表板上监控表现。AI 使用思维链（Chain of Thought）推理来解释每个决策。',
+ 
+-    faqIsProfitable: 'VL 能盈利吗？',
++    faqIsProfitable: PERSONA_NAME + ' 能盈利吗？',
+     faqIsProfitableAnswer:
+-      'AI 交易是实验性的，不保证盈利。加密货币期货波动性大、风险高。VL 仅用于教育和研究目的。我们强烈建议：从小额开始（10-50 USDT），不要投入超过承受能力的资金，在实盘交易前充分回测，并理解过去的表现不代表未来的结果。',
++      'AI 交易是实验性的，不保证盈利。加密货币期货波动性大、风险高。' +
++      PERSONA_NAME +
++      ' 仅用于教育和研究目的。我们强烈建议：从小额开始（10-50 USDT），不要投入超过承受能力的资金，在实盘交易前充分回测，并理解过去的表现不代表未来的结果。',
+ 
+     faqSupportedExchanges: '支持哪些交易所？',
+     faqSupportedExchangesAnswer:
+@@ -2061,14 +2106,15 @@ export const translations = {
+ 
+     faqSupportedAIModels: '支持哪些 AI 模型？',
+     faqSupportedAIModelsAnswer:
+-      'VL 支持 7+ 种 AI 模型：DeepSeek（推荐性价比）、阿里云通义千问、OpenAI（GPT-5.2）、Anthropic Claude、Google Gemini、xAI Grok、Kimi（月之暗面）。您也可以使用任何 OpenAI 兼容的 API 端点。每个模型各有优势 - DeepSeek 性价比高，OpenAI 能力强但贵，Claude 擅长推理。',
++      PERSONA_NAME +
++      ' 支持 7+ 种 AI 模型：DeepSeek（推荐性价比）、阿里云通义千问、OpenAI（GPT-5.2）、Anthropic Claude、Google Gemini、xAI Grok、Kimi（月之暗面）。您也可以使用任何 OpenAI 兼容的 API 端点。每个模型各有优势 - DeepSeek 性价比高，OpenAI 能力强但贵，Claude 擅长推理。',
+ 
+     faqSystemRequirements: '系统要求是什么？',
+     faqSystemRequirementsAnswer:
+       '最低配置：2 核 CPU，2GB 内存，1GB 硬盘，稳定网络。推荐：4GB 内存用于运行多个交易员。支持系统：Linux、macOS 或 Windows（通过 Docker 或 WSL2）。Docker 是最简单的安装方式。手动安装需要 Go 1.21+、Node.js 18+ 和 TA-Lib 库。',
+ 
+     // ===== 安装部署 =====
+-    faqHowToInstall: '如何安装 VL？',
++    faqHowToInstall: '如何安装 ' + PERSONA_NAME + '？',
+     faqHowToInstallAnswer:
+       '最简单的方法（Linux/macOS）：运行 "curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash" - 这会自动安装 Docker 容器。然后在浏览器中打开 http://127.0.0.1:3000。手动安装或开发请克隆仓库并按照 README 说明操作。',
+ 
+@@ -2088,7 +2134,7 @@ export const translations = {
+     faqServerDeploymentAnswer:
+       '在服务器上运行安装脚本 - 它会自动检测服务器 IP。通过 http://服务器IP:3000 访问。配置 HTTPS：1）使用 Cloudflare（免费）- 添加域名，创建 A 记录指向服务器 IP，SSL 设为"灵活"；2）在 .env 中启用 TRANSPORT_ENCRYPTION=true 进行浏览器端加密；3）通过 https://你的域名.com 访问。',
+ 
+-    faqUpdateNOFX: '如何更新 VL？',
++    faqUpdateNOFX: '如何更新 ' + PERSONA_NAME + '？',
+     faqUpdateNOFXAnswer:
+       'Docker 方式：运行 "docker compose pull && docker compose up -d" 拉取最新镜像并重启。手动安装：后端 "git pull && go build -o nofx"，前端 "cd web && npm install && npm run build"。data.db 中的配置在更新时会保留。',
+ 
+@@ -2107,7 +2153,9 @@ export const translations = {
+ 
+     faqHyperliquidSetup: '如何设置 Hyperliquid？',
+     faqHyperliquidSetupAnswer:
+-      'Hyperliquid 是去中心化交易所，需要钱包认证。步骤：1）访问 app.hyperliquid.xyz；2）连接钱包；3）生成 API 钱包（推荐）或使用主钱包；4）复制钱包地址和私钥；5）在 VL 中添加 Hyperliquid 交易所并填入凭证。无需 KYC，完全链上。',
++      'Hyperliquid 是去中心化交易所，需要钱包认证。步骤：1）访问 app.hyperliquid.xyz；2）连接钱包；3）生成 API 钱包（推荐）或使用主钱包；4）复制钱包地址和私钥；5）在 ' +
++      PERSONA_NAME +
++      ' 中添加 Hyperliquid 交易所并填入凭证。无需 KYC，完全链上。',
+ 
+     faqCreateStrategy: '如何创建交易策略？',
+     faqCreateStrategyAnswer:
+@@ -2138,13 +2186,15 @@ export const translations = {
+     faqLeverageSettingsAnswer:
+       '杠杆在策略 → 风控中设置：BTC/ETH 杠杆（通常 5-20 倍）和山寨币杠杆（通常 3-10 倍）。更高杠杆 = 更高风险和潜在收益。子账户可能有限制（如币安子账户限制 5 倍）。AI 下单时会遵守这些限制。',
+ 
+-    faqStopLossTakeProfit: 'VL 支持止损止盈吗？',
++    faqStopLossTakeProfit: PERSONA_NAME + ' 支持止损止盈吗？',
+     faqStopLossTakeProfitAnswer:
+       'AI 可以在决策中建议止损/止盈价位，但这是基于指导而非交易所硬编码订单。AI 每个周期监控持仓，可能根据盈亏决定平仓。如需保证止损，可以手动在交易所设置订单，或调整策略提示词使其更保守。',
+ 
+     faqMultipleTraders: '可以运行多个交易员吗？',
+     faqMultipleTradersAnswer:
+-      '可以！VL 支持运行 20+ 个并发交易员。每个交易员可以有不同的：AI 模型、交易所账户、策略、决策间隔。用于 A/B 测试策略、比较 AI 模型或跨交易所分散风险。在竞赛页面监控所有交易员。',
++      '可以！' +
++      PERSONA_NAME +
++      ' 支持运行 20+ 个并发交易员。每个交易员可以有不同的：AI 模型、交易所账户、策略、决策间隔。用于 A/B 测试策略、比较 AI 模型或跨交易所分散风险。在竞赛页面监控所有交易员。',
+ 
+     faqAICosts: 'AI API 调用费用是多少？',
+     faqAICostsAnswer:
+@@ -2173,11 +2223,15 @@ export const translations = {
+ 
+     faqBinancePositionMode: '币安错误代码 -4061（持仓模式）',
+     faqBinancePositionModeAnswer:
+-      '错误："Order\'s position side does not match user\'s setting"。您处于单向持仓模式，但 VL 需要双向持仓模式。修复：1）先平掉所有持仓；2）币安合约 → 设置（齿轮图标）→ 偏好设置 → 持仓模式 → 切换为"双向持仓"；3）重启交易员。',
++      '错误："Order\'s position side does not match user\'s setting"。您处于单向持仓模式，但 ' +
++      PERSONA_NAME +
++      ' 需要双向持仓模式。修复：1）先平掉所有持仓；2）币安合约 → 设置（齿轮图标）→ 偏好设置 → 持仓模式 → 切换为"双向持仓"；3）重启交易员。',
+ 
+     faqBalanceShowsZero: '账户余额显示 0',
+     faqBalanceShowsZeroAnswer:
+-      '资金可能在现货钱包而非合约钱包。解决方案：1）在币安进入钱包 → 合约 → 划转；2）将 USDT 从现货划转到合约；3）刷新 VL 仪表板。也检查：资金未被理财/质押产品锁定。',
++      '资金可能在现货钱包而非合约钱包。解决方案：1）在币安进入钱包 → 合约 → 划转；2）将 USDT 从现货划转到合约；3）刷新 ' +
++      PERSONA_NAME +
++      ' 仪表板。也检查：资金未被理财/质押产品锁定。',
+ 
+     faqDockerPullFailed: 'Docker 镜像拉取失败或缓慢',
+     faqDockerPullFailedAnswer:
+@@ -2188,17 +2242,23 @@ export const translations = {
+     faqAPIKeyStorageAnswer:
+       'API 密钥使用 AES-256-GCM 加密后存储在本地 SQLite 数据库中。加密密钥（DATA_ENCRYPTION_KEY）存储在您的 .env 文件中。密钥仅在 API 调用需要时在内存中解密。切勿分享您的 data.db 或 .env 文件。',
+ 
+-    faqEncryptionDetails: 'VL 使用什么加密？',
++    faqEncryptionDetails: PERSONA_NAME + ' 使用什么加密？',
+     faqEncryptionDetailsAnswer:
+-      'VL 使用多层加密：1）AES-256-GCM 用于数据库存储（API 密钥、密钥）；2）RSA-2048 用于可选的传输加密（浏览器到服务器）；3）JWT 用于认证令牌。密钥在安装时生成。HTTPS 环境启用 TRANSPORT_ENCRYPTION=true。',
++      PERSONA_NAME +
++      ' 使用多层加密：1）AES-256-GCM 用于数据库存储（API 密钥、密钥）；2）RSA-2048 用于可选的传输加密（浏览器到服务器）；3）JWT 用于认证令牌。密钥在安装时生成。HTTPS 环境启用 TRANSPORT_ENCRYPTION=true。',
+ 
+     faqSecurityBestPractices: '安全最佳实践是什么？',
+     faqSecurityBestPracticesAnswer:
+-      '建议：1）使用带 IP 白名单和最小权限（仅合约交易）的交易所 API 密钥；2）为 VL 使用专用子账户；3）远程部署启用 TRANSPORT_ENCRYPTION；4）切勿分享 .env 或 data.db 文件；5）使用有效证书的 HTTPS；6）定期轮换 API 密钥；7）监控账户活动。',
++      '建议：1）使用带 IP 白名单和最小权限（仅合约交易）的交易所 API 密钥；2）为 ' +
++      PERSONA_NAME +
++      ' 使用专用子账户；3）远程部署启用 TRANSPORT_ENCRYPTION；4）切勿分享 .env 或 data.db 文件；5）使用有效证书的 HTTPS；6）定期轮换 API 密钥；7）监控账户活动。',
+ 
+-    faqCanNOFXStealFunds: 'VL 会盗取我的资金吗？',
++    faqCanNOFXStealFunds: PERSONA_NAME + ' 会盗取我的资金吗？',
+     faqCanNOFXStealFundsAnswer:
+-      'VL 是开源的（AGPL-3.0 许可）- 您可以在 GitHub 审计所有代码。API 密钥存储在您的机器本地，从不发送到外部服务器。VL 只有您通过 API 密钥授予的权限。为最大安全：使用仅交易权限（无提现）的 API 密钥，启用 IP 白名单，使用专用子账户。',
++      PERSONA_NAME +
++      ' 是开源的（AGPL-3.0 许可）- 您可以在 GitHub 审计所有代码。API 密钥存储在您的机器本地，从不发送到外部服务器。' +
++      PERSONA_NAME +
++      ' 只有您通过 API 密钥授予的权限。为最大安全：使用仅交易权限（无提现）的 API 密钥，启用 IP 白名单，使用专用子账户。',
+ 
+     // ===== 功能介绍 =====
+     faqStrategyStudio: '什么是策略工作室？',
+@@ -2220,20 +2280,25 @@ export const translations = {
+ 
+     faqCustomAIAPI: '可以使用自定义 AI API 吗？',
+     faqCustomAIAPIAnswer:
+-      '可以！VL 支持任何 OpenAI 兼容的 API。在配置 → AI 模型 → 自定义 API 中：1）输入 API 端点 URL（如 https://your-api.com/v1）；2）输入 API 密钥；3）指定模型名称。适用于自托管模型、替代提供商或通过第三方代理的 Claude。',
++      '可以！' +
++      PERSONA_NAME +
++      ' 支持任何 OpenAI 兼容的 API。在配置 → AI 模型 → 自定义 API 中：1）输入 API 端点 URL（如 https://your-api.com/v1）；2）输入 API 密钥；3）指定模型名称。适用于自托管模型、替代提供商或通过第三方代理的 Claude。',
+ 
+     faqAIHallucinations: 'AI 幻觉问题怎么办？',
+     faqAIHallucinationsAnswer:
+-      'AI 模型有时会产生不正确或虚构的信息（"幻觉"）。VL 通过以下方式缓解：1）提供带真实市场数据的结构化提示词；2）强制 JSON 输出格式；3）执行前验证订单。但 AI 交易是实验性的 - 始终监控决策，不要完全依赖 AI 判断。',
++      'AI 模型有时会产生不正确或虚构的信息（"幻觉"）。' +
++      PERSONA_NAME +
++      ' 通过以下方式缓解：1）提供带真实市场数据的结构化提示词；2）强制 JSON 输出格式；3）执行前验证订单。但 AI 交易是实验性的 - 始终监控决策，不要完全依赖 AI 判断。',
+ 
+     faqCompareAIModels: '如何比较不同 AI 模型？',
+     faqCompareAIModelsAnswer:
+       '创建多个交易员，使用不同 AI 模型但相同策略/交易所。同时运行并在竞赛页面比较。关注指标：ROI、胜率、夏普比率、最大回撤。',
+ 
+     // ===== 参与贡献 =====
+-    faqHowToContribute: '如何为 VL 做贡献？',
++    faqHowToContribute: '如何为 ' + PERSONA_NAME + ' 做贡献？',
+     faqHowToContributeAnswer:
+-      'VL 是开源项目，欢迎贡献！贡献方式：1）代码 - 修复 bug、添加功能（查看 GitHub Issues）；2）文档 - 改进指南、翻译；3）Bug 报告 - 详细报告问题；4）功能建议 - 提出改进意见。从标记为"good first issue"的问题开始。所有贡献者可能获得空投奖励。',
++      PERSONA_NAME +
++      ' 是开源项目，欢迎贡献！贡献方式：1）代码 - 修复 bug、添加功能（查看 GitHub Issues）；2）文档 - 改进指南、翻译；3）Bug 报告 - 详细报告问题；4）功能建议 - 提出改进意见。从标记为"good first issue"的问题开始。所有贡献者可能获得空投奖励。',
+ 
+     faqPRGuidelines: 'PR 指南是什么？',
+     faqPRGuidelinesAnswer:
+@@ -2265,7 +2330,9 @@ export const translations = {
+         '避免把应用嵌入在不安全的 HTTP iframe 或会降级协议的反向代理中。',
+       unsupportedTitle: '浏览器未提供 Web Crypto',
+       unsupportedDesc:
+-        '请通过 HTTPS 或本机 localhost 访问 VL，并避免嵌入不安全 iframe/反向代理，以符合浏览器的 Web Crypto 规则。',
++        '请通过 HTTPS 或本机 localhost 访问 ' +
++        PERSONA_NAME +
++        '，并避免嵌入不安全 iframe/反向代理，以符合浏览器的 Web Crypto 规则。',
+       summary: '当前来源：{origin} · 协议：{protocol}',
+       disabledTitle: '传输加密已禁用',
+       disabledDesc:
+@@ -2739,7 +2806,7 @@ export const translations = {
+   },
+   id: {
+     // Header
+-    appTitle: 'VL',
++    appTitle: PERSONA_NAME,
+     subtitle: 'Platform Trading Multi-AI',
+     aiTraders: 'Trader AI',
+     details: 'Detail',
+@@ -2761,7 +2828,7 @@ export const translations = {
+     faqNav: 'FAQ',
+ 
+     // Footer
+-    footerTitle: 'VL - Sistem Trading AI',
++    footerTitle: PERSONA_NAME + ' - Sistem Trading AI',
+     footerWarning: '⚠️ Trading memiliki risiko. Gunakan dengan bijak.',
+ 
+     // Stats Cards
+@@ -3280,15 +3347,18 @@ export const translations = {
+     heroTitle1: 'Read the Market.',
+     heroTitle2: 'Write the Trade.',
+     heroDescription:
+-      'VL adalah standar masa depan untuk trading AI — OS trading agensi yang terbuka dan didorong komunitas. Mendukung Binance, Aster DEX dan bursa lainnya, self-hosted, kompetisi multi-agen, biarkan AI secara otomatis membuat keputusan, mengeksekusi dan mengoptimalkan trading untuk Anda.',
++      PERSONA_NAME +
++      ' adalah standar masa depan untuk trading AI — OS trading agensi yang terbuka dan didorong komunitas. Mendukung Binance, Aster DEX dan bursa lainnya, self-hosted, kompetisi multi-agen, biarkan AI secara otomatis membuat keputusan, mengeksekusi dan mengoptimalkan trading untuk Anda.',
+     poweredBy: 'Didukung oleh Aster DEX dan Binance.',
+     readyToDefine: 'Siap mendefinisikan masa depan trading AI?',
+     startWithCrypto:
+-      'Dimulai dari pasar kripto, berkembang ke TradFi. VL adalah infrastruktur AgentFi.',
++      'Dimulai dari pasar kripto, berkembang ke TradFi. ' +
++      PERSONA_NAME +
++      ' adalah infrastruktur AgentFi.',
+     getStartedNow: 'Mulai Sekarang',
+     viewSourceCode: 'Lihat Kode Sumber',
+     coreFeatures: 'Fitur Inti',
+-    whyChooseNofx: 'Mengapa Memilih VL?',
++    whyChooseNofx: 'Mengapa Memilih ' + PERSONA_NAME + '?',
+     openCommunityDriven:
+       'Open source, transparan, OS trading AI yang didorong komunitas',
+     openSourceSelfHosted: '100% Open Source & Self-Hosted',
+@@ -3312,10 +3382,11 @@ export const translations = {
+     secureFeatures2: 'Kontrol izin API granular',
+     secureFeatures3: 'Pemantauan risiko realtime',
+     secureFeatures4: 'Audit log trading',
+-    aboutNofx: 'Tentang VL',
+-    whatIsNofx: 'Apa itu VL?',
++    aboutNofx: 'Tentang ' + PERSONA_NAME,
++    whatIsNofx: 'Apa itu ' + PERSONA_NAME + '?',
+     nofxNotAnotherBot:
+-      "VL bukan bot trading biasa, melainkan 'Linux' dari trading AI —",
++      PERSONA_NAME +
++      " bukan bot trading biasa, melainkan 'Linux' dari trading AI —",
+     nofxDescription1:
+       'OS open source yang transparan dan terpercaya yang menyediakan lapisan',
+     nofxDescription2:
+@@ -3330,7 +3401,7 @@ export const translations = {
+     startupMessages1: 'Memulai sistem trading otomatis...',
+     startupMessages2: 'Server API dimulai di port 8080',
+     startupMessages3: 'Konsol Web http://127.0.0.1:3000',
+-    howToStart: 'Cara Memulai VL',
++    howToStart: 'Cara Memulai ' + PERSONA_NAME,
+     fourSimpleSteps:
+       'Empat langkah sederhana untuk memulai perjalanan trading AI otomatis Anda',
+     step1Title: 'Clone Repository GitHub',
+@@ -3347,14 +3418,16 @@ export const translations = {
+       'Pantau trading, kirim PR untuk meningkatkan framework. Bergabung ke Telegram untuk berbagi strategi.',
+     importantRiskWarning: 'Peringatan Risiko Penting',
+     riskWarningText:
+-      'Branch dev tidak stabil, jangan gunakan dana yang tidak sanggup Anda rugi. VL non-custodial, tanpa strategi resmi. Trading memiliki risiko, investasi dengan hati-hati.',
++      'Branch dev tidak stabil, jangan gunakan dana yang tidak sanggup Anda rugi. ' +
++      PERSONA_NAME +
++      ' non-custodial, tanpa strategi resmi. Trading memiliki risiko, investasi dengan hati-hati.',
+     futureStandardAI: 'Standar masa depan trading AI',
+     links: 'Tautan',
+     resources: 'Sumber Daya',
+     documentation: 'Dokumentasi',
+     supporters: 'Pendukung',
+     strategicInvestment: '(Investasi Strategis)',
+-    accessNofxPlatform: 'Akses Platform VL',
++    accessNofxPlatform: 'Akses Platform ' + PERSONA_NAME,
+     loginRegisterPrompt:
+       'Silakan masuk atau daftar untuk mengakses platform trading AI lengkap',
+     registerNewAccount: 'Daftar Akun Baru',
+@@ -3379,7 +3452,8 @@ export const translations = {
+ 
+     // FAQ Page
+     faqTitle: 'Pertanyaan yang Sering Diajukan',
+-    faqSubtitle: 'Temukan jawaban untuk pertanyaan umum tentang VL',
++    faqSubtitle:
++      'Temukan jawaban untuk pertanyaan umum tentang ' + PERSONA_NAME,
+     faqStillHaveQuestions: 'Masih Punya Pertanyaan?',
+     faqContactUs:
+       'Bergabunglah dengan komunitas kami atau kunjungi GitHub untuk bantuan lebih lanjut',
+@@ -3392,25 +3466,30 @@ export const translations = {
+     faqCategoryFeatures: 'Fitur',
+     faqCategoryAIModels: 'Model AI',
+     faqCategoryContributing: 'Kontribusi',
+-    faqWhatIsNOFX: 'Apa itu VL?',
++    faqWhatIsNOFX: 'Apa itu ' + PERSONA_NAME + '?',
+     faqWhatIsNOFXAnswer:
+-      'VL adalah sistem operasi trading bertenaga AI open-source untuk pasar kripto dan saham AS. Ia menggunakan model bahasa besar (LLM) seperti DeepSeek, GPT, Claude, Gemini untuk menganalisis data pasar dan membuat keputusan trading secara otonom. Fitur utama: dukungan multi-model AI, trading multi-bursa, dan pembangun strategi visual.',
+-    faqHowDoesItWork: 'Bagaimana cara kerja VL?',
++      PERSONA_NAME +
++      ' adalah sistem operasi trading bertenaga AI open-source untuk pasar kripto dan saham AS. Ia menggunakan model bahasa besar (LLM) seperti DeepSeek, GPT, Claude, Gemini untuk menganalisis data pasar dan membuat keputusan trading secara otonom. Fitur utama: dukungan multi-model AI, trading multi-bursa, dan pembangun strategi visual.',
++    faqHowDoesItWork: 'Bagaimana cara kerja ' + PERSONA_NAME + '?',
+     faqHowDoesItWorkAnswer:
+-      'VL bekerja dalam 5 langkah: 1) Konfigurasi model AI dan kredensial API bursa; 2) Buat strategi trading (pemilihan koin, indikator, kontrol risiko); 3) Buat "Trader" menggabungkan Model AI + Bursa + Strategi; 4) Mulai trader - dia akan menganalisis data pasar secara berkala dan membuat keputusan beli/jual/tahan; 5) Pantau performa di dasbor.',
+-    faqIsProfitable: 'Apakah VL menguntungkan?',
++      PERSONA_NAME +
++      ' bekerja dalam 5 langkah: 1) Konfigurasi model AI dan kredensial API bursa; 2) Buat strategi trading (pemilihan koin, indikator, kontrol risiko); 3) Buat "Trader" menggabungkan Model AI + Bursa + Strategi; 4) Mulai trader - dia akan menganalisis data pasar secara berkala dan membuat keputusan beli/jual/tahan; 5) Pantau performa di dasbor.',
++    faqIsProfitable: 'Apakah ' + PERSONA_NAME + ' menguntungkan?',
+     faqIsProfitableAnswer:
+-      'Trading AI bersifat eksperimental dan TIDAK dijamin menguntungkan. Futures kripto sangat volatil dan berisiko. VL dirancang untuk tujuan edukasi dan riset. Kami sangat menyarankan: mulai dengan jumlah kecil (10-50 USDT), jangan investasi melebihi yang sanggup Anda rugi, uji sebelum trading nyata.',
++      'Trading AI bersifat eksperimental dan TIDAK dijamin menguntungkan. Futures kripto sangat volatil dan berisiko. ' +
++      PERSONA_NAME +
++      ' dirancang untuk tujuan edukasi dan riset. Kami sangat menyarankan: mulai dengan jumlah kecil (10-50 USDT), jangan investasi melebihi yang sanggup Anda rugi, uji sebelum trading nyata.',
+     faqSupportedExchanges: 'Bursa mana yang didukung?',
+     faqSupportedExchangesAnswer:
+       'CEX (Tersentralisasi): Binance Futures, Bybit, OKX, Bitget. DEX (Terdesentralisasi): Hyperliquid, Aster DEX, Lighter. Setiap bursa memiliki fitur berbeda - Binance memiliki likuiditas terbesar, Hyperliquid sepenuhnya on-chain tanpa KYC.',
+     faqSupportedAIModels: 'Model AI mana yang didukung?',
+     faqSupportedAIModelsAnswer:
+-      'VL mendukung 7+ model AI: DeepSeek (direkomendasikan untuk biaya/performa), Qwen, OpenAI (GPT), Claude, Gemini, Grok, dan Kimi. Anda juga dapat menggunakan endpoint API yang kompatibel dengan OpenAI.',
++      PERSONA_NAME +
++      ' mendukung 7+ model AI: DeepSeek (direkomendasikan untuk biaya/performa), Qwen, OpenAI (GPT), Claude, Gemini, Grok, dan Kimi. Anda juga dapat menggunakan endpoint API yang kompatibel dengan OpenAI.',
+     faqSystemRequirements: 'Apa persyaratan sistem?',
+     faqSystemRequirementsAnswer:
+       'Minimum: 2 core CPU, 2GB RAM, 1GB disk, internet stabil. Direkomendasikan: 4GB RAM untuk menjalankan beberapa trader. OS yang didukung: Linux, macOS, atau Windows (via Docker atau WSL2).',
+-    faqHowToInstall: 'Bagaimana cara menginstal VL?',
++    faqHowToInstall: 'Bagaimana cara menginstal ' + PERSONA_NAME + '?',
+     faqHowToInstallAnswer:
+       'Metode termudah (Linux/macOS): Jalankan "curl -fsSL https://raw.githubusercontent.com/NoFxAiOS/nofx/main/install.sh | bash" - ini menginstal kontainer Docker secara otomatis. Lalu buka http://127.0.0.1:3000 di browser Anda.',
+     faqWindowsInstallation: 'Bagaimana cara menginstal di Windows?',
+@@ -3426,7 +3505,7 @@ export const translations = {
+     faqServerDeployment: 'Bagaimana cara deploy ke server remote?',
+     faqServerDeploymentAnswer:
+       'Jalankan skrip instal di server Anda. Akses via http://IP_SERVER:3000. Untuk HTTPS: Gunakan Cloudflare (gratis) dan aktifkan TRANSPORT_ENCRYPTION=true di .env.',
+-    faqUpdateNOFX: 'Bagaimana cara memperbarui VL?',
++    faqUpdateNOFX: 'Bagaimana cara memperbarui ' + PERSONA_NAME + '?',
+     faqUpdateNOFXAnswer:
+       'Docker: "docker compose pull && docker compose up -d". Manual: "git pull && go build -o nofx" untuk backend, "cd web && npm install && npm run build" untuk frontend.',
+     faqConfigureAIModels: 'Bagaimana cara mengonfigurasi model AI?',
+@@ -3440,7 +3519,9 @@ export const translations = {
+       'Langkah penting: 1) Buat API key di Binance → Manajemen API; 2) Aktifkan HANYA izin "Enable Futures"; 3) PENTING: Beralih ke Hedge Mode di pengaturan Futures; 4) Pastikan dana di dompet Futures.',
+     faqHyperliquidSetup: 'Bagaimana cara mengatur Hyperliquid?',
+     faqHyperliquidSetupAnswer:
+-      'Hyperliquid adalah bursa terdesentralisasi. Langkah: 1) Kunjungi app.hyperliquid.xyz; 2) Hubungkan wallet; 3) Buat API wallet; 4) Salin alamat dan private key; 5) Tambahkan di VL. Tanpa KYC.',
++      'Hyperliquid adalah bursa terdesentralisasi. Langkah: 1) Kunjungi app.hyperliquid.xyz; 2) Hubungkan wallet; 3) Buat API wallet; 4) Salin alamat dan private key; 5) Tambahkan di ' +
++      PERSONA_NAME +
++      '. Tanpa KYC.',
+     faqCreateStrategy: 'Bagaimana cara membuat strategi trading?',
+     faqCreateStrategyAnswer:
+       'Buka Strategy Studio: 1) Sumber Koin; 2) Indikator teknikal; 3) Kontrol Risiko; 4) Prompt Kustom (opsional). Simpan dan tetapkan ke trader.',
+@@ -3462,12 +3543,15 @@ export const translations = {
+     faqLeverageSettings: 'Bagaimana cara kerja pengaturan leverage?',
+     faqLeverageSettingsAnswer:
+       'Leverage diatur di Strategi → Kontrol Risiko: leverage BTC/ETH (biasanya 5-20x) dan leverage Altcoin (biasanya 3-10x).',
+-    faqStopLossTakeProfit: 'Apakah VL mendukung stop-loss dan take-profit?',
++    faqStopLossTakeProfit:
++      'Apakah ' + PERSONA_NAME + ' mendukung stop-loss dan take-profit?',
+     faqStopLossTakeProfitAnswer:
+       'AI dapat menyarankan level stop-loss/take-profit dalam keputusannya, tetapi ini bersifat panduan bukan order bursa yang dikodekan keras.',
+     faqMultipleTraders: 'Bisakah saya menjalankan beberapa trader?',
+     faqMultipleTradersAnswer:
+-      'Ya! VL mendukung 20+ trader bersamaan. Gunakan untuk A/B test strategi, bandingkan model AI, atau diversifikasi lintas bursa.',
++      'Ya! ' +
++      PERSONA_NAME +
++      ' mendukung 20+ trader bersamaan. Gunakan untuk A/B test strategi, bandingkan model AI, atau diversifikasi lintas bursa.',
+     faqAICosts: 'Berapa biaya panggilan API AI?',
+     faqAICostsAnswer:
+       'Perkiraan biaya harian per trader (interval 5 menit): DeepSeek: $0.10-0.50; Qwen: $0.20-0.80; OpenAI: $2-5; Claude: $1-3.',
+@@ -3488,7 +3572,9 @@ export const translations = {
+       'Periksa: 1) API key valid; 2) Jaringan bisa mengakses endpoint; 3) Penyedia tidak down; 4) VPN/firewall tidak memblokir.',
+     faqBinancePositionMode: 'Kode error Binance -4061 (Mode Posisi)',
+     faqBinancePositionModeAnswer:
+-      'Anda dalam mode One-way tetapi VL memerlukan Hedge Mode. Tutup semua posisi, beralih ke Hedge Mode, restart trader.',
++      'Anda dalam mode One-way tetapi ' +
++      PERSONA_NAME +
++      ' memerlukan Hedge Mode. Tutup semua posisi, beralih ke Hedge Mode, restart trader.',
+     faqBalanceShowsZero: 'Saldo akun menunjukkan 0',
+     faqBalanceShowsZeroAnswer:
+       'Dana mungkin di dompet Spot, bukan dompet Futures. Transfer USDT dari Spot ke Futures.',
+@@ -3498,15 +3584,17 @@ export const translations = {
+     faqAPIKeyStorage: 'Bagaimana API key disimpan?',
+     faqAPIKeyStorageAnswer:
+       'API key dienkripsi menggunakan AES-256-GCM sebelum disimpan di database SQLite lokal. Jangan pernah bagikan file data.db atau .env Anda.',
+-    faqEncryptionDetails: 'Enkripsi apa yang digunakan VL?',
++    faqEncryptionDetails: 'Enkripsi apa yang digunakan ' + PERSONA_NAME + '?',
+     faqEncryptionDetailsAnswer:
+-      'VL menggunakan: 1) AES-256-GCM untuk penyimpanan database; 2) RSA-2048 untuk enkripsi transport opsional; 3) JWT untuk token autentikasi.',
++      PERSONA_NAME +
++      ' menggunakan: 1) AES-256-GCM untuk penyimpanan database; 2) RSA-2048 untuk enkripsi transport opsional; 3) JWT untuk token autentikasi.',
+     faqSecurityBestPractices: 'Apa praktik terbaik keamanan?',
+     faqSecurityBestPracticesAnswer:
+       'Disarankan: 1) Gunakan API key dengan whitelist IP dan izin minimal; 2) Gunakan sub-akun khusus; 3) Aktifkan TRANSPORT_ENCRYPTION; 4) Gunakan HTTPS.',
+-    faqCanNOFXStealFunds: 'Bisakah VL mencuri dana saya?',
++    faqCanNOFXStealFunds: 'Bisakah ' + PERSONA_NAME + ' mencuri dana saya?',
+     faqCanNOFXStealFundsAnswer:
+-      'VL open-source (lisensi AGPL-3.0) - Anda bisa audit semua kode. API key disimpan lokal di mesin ANDA, tidak pernah dikirim ke server eksternal.',
++      PERSONA_NAME +
++      ' open-source (lisensi AGPL-3.0) - Anda bisa audit semua kode. API key disimpan lokal di mesin ANDA, tidak pernah dikirim ke server eksternal.',
+     faqStrategyStudio: 'Apa itu Strategy Studio?',
+     faqStrategyStudioAnswer:
+       'Strategy Studio adalah pembangun strategi visual untuk konfigurasi: Sumber Koin, Indikator Teknikal, Kontrol Risiko, dan Prompt Kustom. Tanpa coding.',
+@@ -3521,16 +3609,20 @@ export const translations = {
+       'Direkomendasikan: DeepSeek untuk rasio biaya/performa terbaik. Alternatif: OpenAI untuk penalaran terbaik; Claude untuk analisis mendalam; Qwen harga kompetitif.',
+     faqCustomAIAPI: 'Bisakah saya menggunakan API AI kustom?',
+     faqCustomAIAPIAnswer:
+-      'Ya! VL mendukung API yang kompatibel dengan OpenAI. Masukkan URL endpoint, API key, dan nama model.',
++      'Ya! ' +
++      PERSONA_NAME +
++      ' mendukung API yang kompatibel dengan OpenAI. Masukkan URL endpoint, API key, dan nama model.',
+     faqAIHallucinations: 'Bagaimana dengan halusinasi AI?',
+     faqAIHallucinationsAnswer:
+-      'VL memitigasi dengan: prompt terstruktur, format output JSON, dan validasi order sebelum eksekusi. Namun trading AI tetap eksperimental.',
++      PERSONA_NAME +
++      ' memitigasi dengan: prompt terstruktur, format output JSON, dan validasi order sebelum eksekusi. Namun trading AI tetap eksperimental.',
+     faqCompareAIModels: 'Bagaimana cara membandingkan model AI yang berbeda?',
+     faqCompareAIModelsAnswer:
+       'Buat beberapa trader dengan model AI berbeda tapi strategi/bursa sama. Jalankan bersamaan dan bandingkan di halaman Kompetisi.',
+-    faqHowToContribute: 'Bagaimana cara berkontribusi ke VL?',
++    faqHowToContribute: 'Bagaimana cara berkontribusi ke ' + PERSONA_NAME + '?',
+     faqHowToContributeAnswer:
+-      'VL open-source dan menyambut kontribusi! Cara: 1) Kode - perbaiki bug, tambah fitur; 2) Dokumentasi; 3) Laporan Bug; 4) Ide Fitur. Semua kontributor mungkin mendapat reward airdrop.',
++      PERSONA_NAME +
++      ' open-source dan menyambut kontribusi! Cara: 1) Kode - perbaiki bug, tambah fitur; 2) Dokumentasi; 3) Laporan Bug; 4) Ide Fitur. Semua kontributor mungkin mendapat reward airdrop.',
+     faqPRGuidelines: 'Apa panduan PR?',
+     faqPRGuidelinesAnswer:
+       'Proses PR: 1) Fork repo; 2) Buat branch fitur dari dev; 3) Buat perubahan, jalankan lint; 4) Commit dengan format Conventional Commits; 5) Push dan buat PR ke NoFxAiOS/nofx:dev.',
+@@ -3561,7 +3653,9 @@ export const translations = {
+         'Hindari menyematkan aplikasi dalam iframe HTTP yang tidak aman.',
+       unsupportedTitle: 'Browser tidak mengekspos Web Crypto',
+       unsupportedDesc:
+-        'Buka VL melalui HTTPS (atau http://localhost saat pengembangan).',
++        'Buka ' +
++        PERSONA_NAME +
++        ' melalui HTTPS (atau http://localhost saat pengembangan).',
+       summary: 'Origin saat ini: {origin} · Protokol: {protocol}',
+       disabledTitle: 'Enkripsi transport dinonaktifkan',
+       disabledDesc:
+diff --git a/web/src/pages/TraderDashboardPage.tsx b/web/src/pages/TraderDashboardPage.tsx
+index 4068b570..3add2df1 100644
+--- a/web/src/pages/TraderDashboardPage.tsx
++++ b/web/src/pages/TraderDashboardPage.tsx
+@@ -1,3 +1,4 @@
++import { PRODUCT_NAME } from '../constants/branding'
+ import { LedgerDayPnl } from '../components/trader/LedgerDayPnl'
+ import { useEffect, useState, useRef } from 'react'
+ import { mutate } from 'swr'
+@@ -458,7 +459,7 @@ export function TraderDashboardPage({
+               <div className="flex flex-col">
+                 <span className="text-xs font-mono text-nofx-text-muted opacity-60 flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 bg-nofx-gold rounded-full" />
+-                  VL Trader · {t('dashboardNav', language)} ·{' '}
++                  {PRODUCT_NAME} · {t('dashboardNav', language)} ·{' '}
+                   {selectedTrader.trader_name} · ID:{' '}
+                   {selectedTrader.trader_id.slice(0, 8)}...
+                 </span>
+diff --git a/web/vite.config.ts b/web/vite.config.ts
+index ca6d87bc..7ce5e54e 100644
+--- a/web/vite.config.ts
++++ b/web/vite.config.ts
+@@ -1,8 +1,21 @@
++import { readFileSync } from 'node:fs'
+ import { defineConfig } from 'vite'
+ import react from '@vitejs/plugin-react'
+ 
+ export default defineConfig({
+-  plugins: [react()],
++  plugins: [
++    react(),
++    {
++      name: 'visible-product-name',
++      transformIndexHtml(html) {
++        const name = readFileSync(
++          new URL('../branding/product.txt', import.meta.url),
++          'utf8'
++        )
++        return html.replace('%PRODUCT_NAME%', name)
++      },
++    },
++  ],
+   server: {
+     // LOOPBACK ONLY. This dev server proxies /api straight to the bot on :8080,
+     // so binding it to 0.0.0.0 handed the whole API to the LAN and defeated the

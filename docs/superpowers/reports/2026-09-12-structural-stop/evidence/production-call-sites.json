@@ -1,0 +1,47 @@
+{
+  "ComposeLevelFadeGeometry": [
+    "trader/arm_stop_anchor.go:81:8 in composeArmStop"
+  ],
+  "FirstGeometryTarget": [
+    "trader/structural_geometry.go:169:13 in composeGeometry"
+  ],
+  "ResolveEntryGeometryZone": [
+    "trader/structural_geometry.go:107:14 in ComposeLevelFadeGeometry"
+  ],
+  "ResolveStructuralStop": [
+    "trader/armed_executor.go:488:15 in maybeManageArmedOrdersAt",
+    "trader/structural_geometry_boot.go:16:7 in StructuralGeometryBootLine"
+  ],
+  "SaveStructuralGeometry": [
+    "trader/structural_geometry.go:231:12 in saveArmGeometry"
+  ],
+  "StructuralGeometryBootLine": [
+    "main.go:548:23 in main"
+  ],
+  "StructuralGeometryCounts": [
+    "trader/structural_geometry_boot.go:30:17 in StructuralGeometryBootLine"
+  ],
+  "StructuralGeometryFor": [
+    "api/handler_plan_geometry.go:6:15 in planStructuralGeometry"
+  ],
+  "composeGeometry": [
+    "trader/structural_geometry.go:108:9 in ComposeLevelFadeGeometry",
+    "trader/structural_geometry.go:120:9 in ComposeFrozenLevelFadeGeometry"
+  ],
+  "planStructuralGeometry": [
+    "api/handler_plan.go:505:26 in handlePlanToday"
+  ],
+  "retireGeometryRefusal": [
+    "trader/armed_executor.go:506:17 in maybeManageArmedOrdersAt"
+  ],
+  "saveArmGeometry": [
+    "trader/armed_executor.go:505:15 in maybeManageArmedOrdersAt",
+    "trader/armed_executor.go:521:9 in maybeManageArmedOrdersAt",
+    "trader/armed_executor.go:592:10 in maybeManageArmedOrdersAt",
+    "trader/armed_executor.go:664:10 in maybeManageArmedOrdersAt",
+    "trader/armed_executor.go:711:10 in maybeManageArmedOrdersAt",
+    "trader/armed_executor.go:751:10 in maybeManageArmedOrdersAt",
+    "trader/armed_executor.go:765:10 in maybeManageArmedOrdersAt",
+    "trader/armed_executor.go:776:9 in maybeManageArmedOrdersAt"
+  ]
+}

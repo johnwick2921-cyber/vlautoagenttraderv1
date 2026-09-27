@@ -1,0 +1,113 @@
+# Review 07 — retained crypto broker adapters
+
+Source base: `63968be62e44db2fb07a92883e02127b9064b0be`. Isolated worktree `/tmp/nofx-understanding-market-20260913`; initial `git status --porcelain` empty and revision verified. Review date: 2026-09-13 America/Chicago. All **25 assigned files, 9,071 lines**, manually read in bounded chunks; **184 named functions plus 9 callbacks** catalogued. Extra dependency/test reads are separately marked. No production/source edits, broker calls, credentials/environment reads, DB changes, test executions or restarts occurred.
+
+[A] means directly read current source, [B] a consequence inferred from those source boundaries. The findings below are **static legacy-path defects/limitations**, not demonstrations of live failures, exploits, or the owner's MNQ behavior. No production rows were inspected, so there are no sample-ID/PnL population claims.
+
+## Scope and authority
+
+The parent's claimed documentation dispatch owns publication. This worker follows `/tmp/nofx-understanding-review-instructions.md`, root AGENTS instructions, tracked `CLAUDE-canon.md`, and `AUDIT-CHECKLIST.md` pre-audit R1–R10. Applicable audit classes include wrong owner/identity, timestamp conventions, incomplete state presented as success, canonical identifiers, missing values, and tests exercising production call sites. No separate per-trade loss cap is proposed; the owner's daily-loss clarification remains authoritative.
+
+Reference freshness at this source base:
+
+- `git log -1 --oneline -- docs/superpowers/AUDIT-CHECKLIST.md`: `dfda15e1 test: isolate session clock fixtures from weekly backfill workers`
+- `git log -1 --oneline -- docs/superpowers/SYSTEM-MAP.md`: `565e8fbe fix: use owner daily-loss controls without requiring a per-trade cap`
+- `git log -1 --oneline -- docs/superpowers/VL-TRADING-RULEBOOK-v1.md`: `565e8fbe fix: use owner daily-loss controls without requiring a per-trade cap`
+
+No implementation was built against those documents. Tracked `trader/AGENTS.md` is absent in this worktree; the parent-supplied root instructions still apply.
+
+[A] `trader/auto_trader.go:632–688` chooses these broker constructors using `config.Exchange`; `ninjatrader` is a separate case. Startup invokes these crypto sync loops only under matching `at.exchange` branches (`:868–934`). Therefore these are retained selectable integrations, not dead source, but none of their broker-specific problems establish a defect in the owner's current NT8 SIM MNQ path. The shared `store.PositionBuilder` is also used outside crypto; consequences of its generic behavior require caller-specific evidence. This review did not recertify NT8 guards or the running process.
+
+## End-to-end connections and state ownership
+
+[A] The common `trader/types/interface.go:44` interface has 19 methods. It asks for selective SL/TP cancellation, normalized maps, and historical closure records. `GridTrader` extends it with limit placement, individual cancellation and book reads; `LimitOrderRequest` carries `PositionSide`, `ReduceOnly`, `PostOnly`, and `ClientID`. Implementing method names does not establish equivalent behavior across venues.
+
+The flow for these integrations is configuration → `NewAutoTrader` broker choice → per-instance signed HTTP/SDK client → venue market/account/order API → shared balance/position/order maps. Fill-history sync then follows venue execution history → chronological sorting → order record → fill record → `PositionBuilder.ProcessTrade`. The account UUID passed as `exchangeID` is distinct from exchange type; history dedup commonly uses `(exchangeID, tradeID)`, while order records deliberately store a trade ID in `ExchangeOrderID`. Fill records often retain the real broker order ID separately. A consumer must not treat every such order row as one original exchange order.
+
+[A] Balance consumers require `float64` values and either read explicit `totalEquity` or reconstruct wallet+unrealized (`auto_trader_decision.go:124–144`). Fill polling similarly reads `avgPrice` and `executedQty` as `float64` (`:363–374`). Numeric strings, synthesized zeros, and equity mislabeled as wallet have downstream consequences even though Go's map type compiles.
+
+Account/position caches usually last 15 seconds. Binance/Bitget/KuCoin/OKX return cached fields after unlocking rather than capturing the field locally; returned maps/slices are also shared. [B] Concurrent refresh/invalidation can race with that field read, and external mutation can alter cached contents. This is a static synchronization concern; no race test or runtime race report was produced. Indodax and Lighter market-cache examples capture the cached reference while locked, though they still return shared data.
+
+SDK calls commonly use `context.Background()` or a trader context; Bybit's direct `http.DefaultClient` and `http.Get` paths have no local timeout. Bitget, KuCoin and XYZ auxiliary requests explicitly use 30 seconds. KuCoin stores local-minus-server offset, adjusts signing timestamps, and refreshes on timestamp rejection without replaying the failed request. All four assigned sync loops own unbounded tickers/goroutines and expose no shutdown handle.
+
+## Findings requiring attention before any crypto reuse
+
+### 1. Selective protection cancellation violates the shared contract
+
+[A] `types/interface.go:81–85` explicitly says cancelling SL must not delete TP and vice versa. Gate `CancelStopLossOrders`/`CancelTakeProfitOrders` (`trader_orders.go:423,428`) both call `cancelTriggerOrders(:433)` whose `orderType` argument is unused: it cancels every trigger returned for the symbol. OKX `cancelAlgoOrders(:496)` similarly ignores `orderType` and cancels every conditional algo. Lighter `orders.go:159–200` sends both selective methods through `CancelStopOrders`, which cancels **all active orders**, including ordinary limits; this contradicts even its warning that says only stop orders.
+
+[B] A caller adjusting one protective leg can remove the other; Lighter can additionally remove unrelated entries. These paths are not equivalent to NT8's separate order/bracket semantics. Remediation belongs in venue-specific filtering and acknowledgement handling with request-capture fixtures; do not globally weaken or reinterpret the interface.
+
+### 2. Failed or partial reads/cancels become successful empty/complete results
+
+[A] Binance `CancelAllOrders(:387)` and `CancelStopOrders(:537)` always return nil despite API errors. Selective Binance cancel methods (`:235,311`) omit list errors and return an error only if cancellation errors exist and no cancellation succeeded. `GetOpenOrders(:596)` returns legacy orders successfully when Algo enumeration fails. Bitget `cancelPlanOrders(:340)` discards each POST error; bulk cancel discards ordinary/plan errors after listing. Gate bulk/trigger cancellation also logs and returns nil. Lighter cancellation loops count successes but return nil despite per-order failure.
+
+[A] Bitget `GetOpenOrders(:494)` and OKX `GetOpenOrders(:657)` return nil error even when both ordinary and protective queries fail or JSON cannot decode. Gate `GetOpenOrders(:563)` drops the trigger portion on error. Hyperliquid `GetPositions(:11)` drops XYZ positions if the auxiliary query fails. None marks the successful result as partial.
+
+[B] Callers cannot distinguish an empty book/position subset from an uncomputed one or confirm a cancel-all operation from its nil error. The problem is source-proven loss of evidence, not proof that a venue presently rejects these operations.
+
+### 3. Submission or absence is represented as FILLED
+
+[A] Hyperliquid `trader_account.go:358` returns `FILLED` when `OpenOrders` fails and when the requested order is absent, with zero price/quantity/commission. An IOC cancellation is indistinguishable from a fill. Bitget market methods (`trader_orders.go:13,67,121,184`) decode only IDs and return `FILLED`; OKX market methods (`:13,92,171,282`) check acceptance `sCode` then return `FILLED` without an execution receipt. Gate (`:43,101,158,226`) ignores returned order status and always labels FILLED. Lighter `submitOrder(:352)` returns `submitted`, but `OpenLong/OpenShort/CloseLong/CloseShort(:20,61,102,146)` upgrade it to `FILLED`.
+
+[A] Lighter's actual `GetOrderStatus(orders.go:95)` correctly returns query failure as an error, a useful negative result. However it returns `avgPrice` and `executedQty` as strings from its DTO, while the common polling site expects float64. [B] Were that polling path used for Lighter, it would retain fallback price/quantity rather than the fetched strings. Lighter has its own startup sync, so this is an interface incompatibility, not proof of this caller's runtime reachability.
+
+### 4. Lighter cancellation identity is selected by recency, not transaction identity
+
+[A] `CreateOrder(trading.go:190)` invokes `pollForOrderIndex(:443)` after a limit submit. After 500 ms, the helper returns the highest active `OrderIndex`; its `txHash` argument is only logged. `PlaceLimitOrder(:929)` publishes that value to callers; `CancelOrder(orders.go:270)` treats numeric IDs as direct cancellation targets.
+
+[B] Existing concurrent orders or delayed visibility can cause the new placement to be identified as another order, allowing a later cancel to target it. No concurrent venue incident was reproduced. The nearby `getOrderIndexByTxHash(orders.go:329)` does exact matching, but it does not repair this numeric misidentification because the numeric path bypasses it.
+
+### 5. History synchronization has incomplete commit/replay semantics
+
+[A] Bybit `SyncOrdersFromBybit(:178)`, Hyperliquid `SyncOrdersFromHyperliquid(:17)`, and KuCoin `SyncOrdersFromKuCoin(:279)` first skip an existing order, then separately write order, fill and position. Failure after successful order insertion is logged; the next poll skips the whole trade, so it cannot repair the missing fill/position through this path. Success counters count inserted orders, not completed three-part processing. No transaction or durable processing stage appears in these functions.
+
+[A] Gate `SyncOrdersFromGate(:153)` attempts a different repair: it reprocesses **every existing close** on every poll (`:195–207`). `PositionBuilder.ProcessTrade(:29)` routes to `handleClose(:124)`, which reads the currently open symbol/side position and reduces/closes it without checking that the supplied order ID has already been applied. [B] Repeated partial-close history can be applied twice to a still-open position; an old full close replayed while a newer same-symbol/side position exists can act on the newer row. The observed code path lacks a per-fill idempotency guard. This was not run against any database; root should own a local fixture if repair is authorized.
+
+History coverage is bounded: Gate/KuCoin only fetch max 100 records without traversing pages; Bybit sends limit 1000 without a cursor despite parsing only one list; Binance income symbol discovery caps 1000; Bitget history max100; rolling 24h windows can omit earlier openings. This review makes no current exchange-limit compatibility claim. Gate comments acknowledge reversal fills but classify their entire size as one close; Bybit similarly treats any positive closedSize as wholly closing. KuCoin infers close from positive closing fee, leaving fee-free closure ambiguous. Hyperliquid falls back to nonzero PnL when Dir is unknown. These are incomplete reconstruction contracts.
+
+### 6. OKX response decoding and equity semantics disagree with their consumers
+
+[A] `OKXTrader.doRequest(trader.go:207–256)` unmarshals `OKXResponse` and returns `okxResp.Data`. `GetClosedPnL(trader_account.go:168–214)` then unmarshals those bytes into **another** `{code,msg,data}` envelope. Normal array Data cannot unmarshal into that struct; even `null` leaves Code empty and fails the later `Code != "0"` check. This mismatch is independent of live credentials. If decoded successfully through a changed wrapper, its quantity would still be raw contracts rather than the base-asset quantities emitted by GetPositions/GetOrderStatus.
+
+[A] `GetBalance(trader_account.go:14)` puts `totalEq` into `totalWalletBalance` and also returns USDT UPL, but no `totalEquity`. The shared account consumer adds wallet+UPL. [B] Nonzero UPL is counted again on that consumer path. The Hyperliquid/KuCoin implementations explicitly provide equity or subtract unrealized from wallet, demonstrating the intended distinction locally.
+
+[A] OKX `doRequest` also permits outer Code `1` for partial success. Market placements check each item `sCode`; `SetStopLoss`, `SetTakeProfit`, `CancelOrder`, and algo cancellation do not. [B] Individual failures can be reported as successful protection/cancellation despite a decoded body describing failure.
+
+### 7. Quantity, side and symbol normalization are inconsistent
+
+[A] Gate market/protective placement divides quantity by multiplier, truncates to int64, and forces all nonpositive results to one contract (`trader_orders.go:60–64`, mirrors). Thus zero/negative/tiny inputs can become an actual positive order request rather than refusal. The multiplier parse is unchecked. KuCoin `quantityToLots(trader.go:350)` rounds and caps, without lot-size alignment; missing position multiplier defaults to BTC's `.001` for every instrument (`trader_positions.go:64`), while history defaults non-BTC to `.01`. OKX `GetOpenOrders(:657)` leaves quantity in contracts while `GetPositions(:12)`/`GetOrderStatus(:584)` convert to base units; missing metadata silently leaves contracts under a base-quantity field.
+
+[A] Binance retains signed short `positionAmt` and correctly negates it for CloseShort quantity=0; Aster/Bitget/Hyperliquid/KuCoin/OKX generally return positive magnitude with side. Do not report Binance's negate as a defect without this producer/consumer pairing. Indodax returns uppercase `LONG`, unlike other positions. OKX net-mode negative position gets absolute magnitude but remains `long` because only `posSide == "short"` sets short; its close methods contain net-mode handling, so constructor mode-change failure is an important boundary to verify before reuse. Net-mode close order bodies omit reduceOnly, so a venue inventory change between read and execution is not guarded by that flag.
+
+[A] Lighter `normalizeSymbol(trading.go:471)` strips `USDT` before `/USDT`, so `BTC/USDT` becomes `BTC/`; lowercase suffixes are uppercased only after attempted stripping. Hyperliquid `GetOpenOrders(:528)` compares `order.Coin` directly with caller symbol instead of using the converter used by price/status/book methods, so canonical `BTCUSDT` cannot match venue `BTC`. KuCoin's symbol conversion is case-sensitive and appends its suffix even to an already converted string. Aster position decode checks only `positionAmt` type then directly asserts required price/leverage strings (`trader_positions.go:37–41`), permitting panic on malformed/missing fields.
+
+[A] Binance grid placement (`futures_orders.go:418`) derives position side only from BUY/SELL and ignores ReduceOnly, PostOnly, requested PositionSide and ClientID. OKX grid similarly derives side and does not use requested PositionSide for the transmitted body, though it echoes that field in its result. These are contract differences, not assurance that current grid callers exercise every combination.
+
+## Remaining per-file behavior and limits
+
+| File group | Read behavior and ownership boundaries |
+|---|---|
+| Aster positions | `GetPositions:12`, `SetMarginMode:66`, `SetLeverage:113`; unsigned normalized magnitude, signed request helper outside slice; most margin errors are tolerated, unified/portfolio errors refused. |
+| Binance account | `GetTrades:112` produces minimal income records with absent side/price/quantity/fee. `GetClosedPnL:55` wraps these as closures and defaults side to short for missing side; entry/exit/quantity remain zero. `GetTradesForSymbol:155` and `FromID:198` provide actual fill fields and are the better reconstruction boundary. |
+| Binance position helpers | Leverage update `:120` consults cached positions then sleeps 5 s after success. `CalculatePositionSize:185` allocates leveraged balance, not stop-loss risk. `GetMinNotional:193` is fixed 10, not exchange metadata. Formatters round decimal precision and return fallback values on metadata failure. |
+| Bitget core/positions | Constructor `trader.go:84` POSTs one-way account mode, so constructing for a read-only experiment is not harmless. `doRequest:138` signs exact path/body and unwraps Data, manually builds GET queries without escaping. `getContract:221` uses a shared refresh timestamp for per-symbol entries. `GetClosedPnL:96` parses history values but supplies no unique position/order ID. |
+| Bybit core | Constructor `trader.go:43` configures MAINNET and a Referer header. `getQtyStep:86` is a public mainnet GET with default step 1; `FormatQuantity:144` floors to step, a stronger behavior than plain decimal rounding. `parseOrderResult:179` preserves NEW. |
+| Gate order details | `SetMarginMode:34` is a logging no-op; `SetLeverage:16` returns nil on RISK_LIMIT_EXCEEDED. Protective requests set both nonzero Size and Close=true; SDK/venue compatibility not verified. `GetOrderStatus:502` sums Tkfr/Mkfr under commission; their external meaning was not independently checked, so this is an unresolved semantic concern, not a proven fee calculation. `GetOpenOrders:563` classifies trigger Rule alone, inverting the helper's intended labels for short-side protection. |
+| Hyperliquid account/positions | Balance combines spot USDC, perp and XYZ compartments; available excludes XYZ, optionally adds spot in unified mode. XYZ balance/price URLs are hardcoded mainnet even if SDK is configured elsewhere. Missing XYZ becomes a partial success. `GetClosedPnL:405` excludes zero-PnL closures even though `GetTrades:456` parses explicit close Dir. `GetTrades` ignores requested limit. Margin mode is trader-wide mutable state. |
+| Indodax account | `GetBalance:15` values IDR cash/holds only and publishes separate unvalued crypto balances. `GetPositions:87` synthesizes spot positions with mark as entry and zero unrealized, ignoring mark lookup failure. `GetClosedPnL:163` always fetches BTCIDR, emits buy rows too, and lacks quantity/PnL; decode failure is returned as nil success. It is not a generic futures closure ledger. |
+| KuCoin core/account/positions | `NewKuCoinTrader:98` immediately reads server time. Timestamp resync changes later requests only. `GetBalance:11` exposes explicit equity. Position cache invalidation is explicit `:110`. `getContract:284` refreshes all contracts, unlike per-symbol shared-TTL refresh in Bitget/OKX. Fallback multipliers/leverage carry no unknown marker. |
+| Lighter orders/trading/types | API key/account indices own signed requests. Some SDK signing calls provide explicit account/key and others only nonce; SDK default behavior was not inspected. Market IDs narrow uint16 to uint8 without range checking. Price/base fixed-point casts have no explicit bounds/finite guard; external SDK validation unresolved. Market and trigger execution bands are ±5%; limit expiry seven days, stops thirty days. `SetLeverage:625` always sends cross margin, so calling it after `SetMarginMode(false)` can change mode again. `SetMarginMode:687` silently uses 10x when position lookup fails. DTOs are not normalized float64 models. Checksum `types.go:118` validates length only, not hexadecimal content. |
+| OKX metadata/orders | Shared per-instrument TTL can make older entries look recently refreshed. FormatSize in dependency uses decimal rounding, not general lot multiple enforcement. Close reads fresh positions and actual margin mode, a useful positive distinction; ack is still not fill. `_sl`/`_tp` IDs in open-order output are display identities, not accepted by ordinary `CancelOrder` unless a caller strips/routes them. |
+
+## Tests and graph verification
+
+[A] Fully read `trader/okx/trader_margin_mode_test.go` (247 lines): its recording transport drives the actual SetMarginMode/SetLeverage/OpenLong/OpenShort/SetStopLoss/SetTakeProfit/PlaceLimitOrder request sites, asserting requested tdMode/mgnMode. It does not establish execution, partial response handling, cancellation selectivity, or net-mode position sign correctness.
+
+[A] Fully read `trader/lighter/orders_test.go` (421 lines): DTO parsing and duplicated conversion logic are tested. Its mock-server test uses direct `http.Get`, **not** `LighterTraderV2.GetActiveOrders`, so it does not prove production auth construction or index selection. These tests illustrate checklist call-site parity limits. Excerpts of KuCoin order-sync tests show credential-gated live HTTP construction, and Binance futures test setup shows a mock SDK suite. No tests were run: source review did not require network-capable constructors or broad suites, and root owns repairs/reproduction. Recommended focused future fixtures are failure/partial-read propagation, selective cancellation preserving the other leg, ack-vs-fill, Lighter exact ID attribution, Gate replay idempotency, OKX Data decoding/equity, and mixed-unit normalization.
+
+[A] Historical Understand Anything graph was read from the supplied July-10@7a8adce0 stash, filtered to the assigned paths: **195 nodes** and **222 outgoing non-containment/export edges**. All 25 file summaries and the first 20 dependency/testing edges were manually inspected; this does not certify every historical edge. Source broadly confirms adapter roles, but corrects Bybit's summary: its RoundTripper adds Referer, not API credentials. Indodax's “closed PnL reconstruction” overstates its incomplete BTCIDR rows. A tested_by edge is merely a test association, not proof the real call site is exercised. `graph.json` records these corrections and explicit current boundaries. CGC export/service was not independently queried by this worker; root owns that evidence.
+
+## Review conclusion
+
+This slice is understood as a heterogeneous legacy integration layer with shared method signatures but divergent units, identity, acknowledgement, cancellation and history semantics. The most actionable source-proven issues are selective cancellation breadth, successful unknown/partial state, Lighter misattributed order identity, non-idempotent/incomplete sync, and OKX double-unwrapping. They warrant offline regression fixtures before any authorized crypto reuse. They do **not** justify changes to the owner's accounts, NT8 execution, daily-loss policy, or SIM restriction. All assigned source reading is complete; runtime compatibility and unexamined dependency paths remain explicitly unverified.

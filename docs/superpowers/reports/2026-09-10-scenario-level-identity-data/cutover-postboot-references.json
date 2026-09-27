@@ -1,0 +1,16 @@
+{
+  "on_disk_binary": {
+    "revision": "cd8f99780eafe20fbb0b51a9c87955d3a2a4e887",
+    "md5": "b32d80dba7d9dcfb335a194c71fcd7d9"
+  },
+  "running_inode": {
+    "revision": "cd8f99780eafe20fbb0b51a9c87955d3a2a4e887",
+    "md5": "b32d80dba7d9dcfb335a194c71fcd7d9"
+  },
+  "RELEASE": "cd8f9978",
+  "Guide_source": "cd8f99780eafe20fbb0b51a9c87955d3a2a4e887",
+  "dist_revision": "cd8f99780eafe20fbb0b51a9c87955d3a2a4e887",
+  "dist_files_verified": 92,
+  "pid": "2826476",
+  "health_revision": "cd8f99780eaf (browser observed 2026-09-11T02:15:41.110Z)"
+}

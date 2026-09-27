@@ -1,0 +1,425 @@
+[
+  {
+    "section": 1,
+    "question": 1,
+    "requirement": "Describe the book as you'd brief a risk manager: what it fades, what it follows, when, with what stop and target, how often. Pull the real distribution since 2026-08-15: trades by condition · side · session · hold time · realized R (trader_positions ⋈ plans ⋈ trade_excursions).",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-01-way-it-trades.md",
+    "line": 31,
+    "heading": "1. The book I would brief to a risk manager"
+  },
+  {
+    "section": 1,
+    "question": 2,
+    "requirement": "Where is the edge, if anywhere? Test each candidate: (a) fades — touch_outcomes hold by kind × ordinal; (b) breaks — the same inverted; (c) time of day — realized R by session and hour; (d) regime — realized R by machine regime label and realized- vol tercile. Wilson, n; \"no verdict\" below n=30.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-01-way-it-trades.md",
+    "line": 101,
+    "heading": "2. Where, if anywhere, is the edge?"
+  },
+  {
+    "section": 1,
+    "question": 3,
+    "requirement": "Is one contract + resting limits + 1.5×ATR5m floor + 2.0 R:R + flat 14:45 a SHAPE that can make money on NQ? What would you change in the shape, not the parameters?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-01-way-it-trades.md",
+    "line": 197,
+    "heading": "3. Is the one-contract/limit/ATR-floor/2R/flat shape viable?"
+  },
+  {
+    "section": 1,
+    "question": 4,
+    "requirement": "Reward side: plans claim median 2.55:1, book realizes 1.66:1, 3 of 36 reached 2R off the minimum stop — verify all three. Where should targets come from: the model, the level map, the MFE distribution (trade_excursions p50/p80/p95 by condition), or a fixed multiple?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-01-way-it-trades.md",
+    "line": 213,
+    "heading": "4. Reward: verify the three claims, then choose a source"
+  },
+  {
+    "section": 1,
+    "question": 5,
+    "requirement": "Three things a 30-year hand sees that the builders don't, each with the query that shows it.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-01-way-it-trades.md",
+    "line": 262,
+    "heading": "5. Three trader-method observations, each with its query"
+  },
+  {
+    "section": 2,
+    "question": 1,
+    "requirement": "Inventory every seated kind (kernel/levels_*.go): definition (file:line), window, grade terms, seat frequency (candidate_ pool), touch count, hold/break with n + Wilson, ambiguous share. One table.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-02-levels.md",
+    "line": 31,
+    "heading": "1. Inventory: definitions, windows, grading, seating, touches and ambiguity"
+  },
+  {
+    "section": 2,
+    "question": 2,
+    "requirement": "Which kinds would you seat on NQ from experience; which does the tape say; where they disagree, which you trust and why.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-02-levels.md",
+    "line": 87,
+    "heading": "2. Which kinds I would retain, what the tape supports, and what I trust"
+  },
+  {
+    "section": 2,
+    "question": 3,
+    "requirement": "The grading ladders (zone size, TF, freshness, anchor decay, confluence, HTF ×1.2) are all [I]. Per term: any evidence in the store it changes outcomes (score-at-seat vs outcome; cut reasons vs what the cut levels did next)?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-02-levels.md",
+    "line": 101,
+    "heading": "3. Grading ladders and whether a term improves outcomes"
+  },
+  {
+    "section": 2,
+    "question": 4,
+    "requirement": "The veteran review says retire eVWAP, VWAP±2σ, EQL, ONH, ONL, PDL as decision inputs (n=2–5) and that RTH-L breaks 68% (n=63) but is traded as a fade. Verify both. Then rule as a trader: retire / keep-measuring / flip.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-02-levels.md",
+    "line": 141,
+    "heading": "4. Verify the retirement list and the claimed RTH-L break edge"
+  },
+  {
+    "section": 2,
+    "question": 5,
+    "requirement": "What's missing: volume-profile depth, prior-week structure, overnight-vs-RTH range, opening drive, time-of-day volatility profile, gap fill/no-fill? For each: [R]/[I], and what you'd need to see before seating it.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-02-levels.md",
+    "line": 164,
+    "heading": "5. Missing information: what belongs in the map and what belongs in context"
+  },
+  {
+    "section": 2,
+    "question": 6,
+    "requirement": "Seats: 8 of a 12 cap, ranked by an [I] score. Would you seat fewer, more, or by a different rule (nearest-N, confluence- only, volume-anchored)?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-02-levels.md",
+    "line": 177,
+    "heading": "6. Seats: fewer, more, or another rule?"
+  },
+  {
+    "section": 3,
+    "question": 1,
+    "requirement": "The division of labor: planner (LLM, one plan per session, re-plans on level-event wakes), executor (2-min LLM loop; under strict only plan arms trade), gates. Draw it from the code (file:line), then say whether you'd draw it that way.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-03-decisions.md",
+    "line": 53,
+    "heading": "1. Division of labor: actual chain, and how I would draw it"
+  },
+  {
+    "section": 3,
+    "question": 2,
+    "requirement": "Would you let an LLM author plans at all? If yes: what exactly should it author (direction? levels? scenarios? targets? nothing but the narrative?) and what must be mechanical? Measure: from planner_rejected_prompts + plans, the reject rate by rule, the re-author cost in seconds, the share of scenarios whose trigger ever fired (plans ⋈ bars).",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-03-decisions.md",
+    "line": 120,
+    "heading": "2. May the LLM author plans? What, and with what measured results?"
+  },
+  {
+    "section": 3,
+    "question": 3,
+    "requirement": "Bias: both bias systems calibrated non-predictive (weekly anti-predictive; machine tree 0.48–0.54). The card now shows \"AI x · tree y\" as labels. Should any bias exist? What would you replace it with, and what's the evidence bar?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-03-decisions.md",
+    "line": 212,
+    "heading": "3. Should bias exist? Context yes; forced direction no"
+  },
+  {
+    "section": 3,
+    "question": 4,
+    "requirement": "The gate chain, leg by leg: which legs protect money (cite a refusal that saved a loss from the store), which are engineering, which would you remove or reorder. Count refusals by leg since 09-02 with the counterfactual (the two-day audit's refusals CSVs).",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-03-decisions.md",
+    "line": 246,
+    "heading": "4. Gate by gate: money protection, engineering and counterfactual quality"
+  },
+  {
+    "section": 3,
+    "question": 5,
+    "requirement": "Where does human judgment go back in — a morning review, a session veto, a kill switch, plan approval? Design it in one paragraph.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-03-decisions.md",
+    "line": 290,
+    "heading": "5. Where human judgment belongs — proposed pre-session review"
+  },
+  {
+    "section": 4,
+    "question": 1,
+    "requirement": "Inventory what the owner sees: plan card (fields), expectancy table, instruments drawer, boot lines, Guide, Telegram/alerts. Quote each surface's source (file:line) and what it reads.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-04-monitoring.md",
+    "line": 31,
+    "heading": "Q1 — Inventory of what the owner can see and what it reads"
+  },
+  {
+    "section": 4,
+    "question": 2,
+    "requirement": "What a trader needs on screen DURING a session that isn't there: open risk in $, distance to stop/target in pts and ticks, session P&L vs the limit, arms resting with age, the broker book vs the ledger, last fill slippage, planner state (in flight / next read / wake suppressed), regime, the day's range vs ATR. Mock the layout in text.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-04-monitoring.md",
+    "line": 91,
+    "heading": "Q2 — What I need during a session, and the owner workflow"
+  },
+  {
+    "section": 4,
+    "question": 3,
+    "requirement": "What's on screen that's noise or misleading (mock strings, stale labels, rates without n, \"DESCRIPTIVE ONLY\" rows a trader can't use).",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-04-monitoring.md",
+    "line": 128,
+    "heading": "Q3 — What I would remove, relabel or move out of the trading view"
+  },
+  {
+    "section": 4,
+    "question": 4,
+    "requirement": "The 09-03 outage: 113 minutes silent, 50 minutes blind, no alert. What would your desk have had that fired? (The owner has declined a new alert channel — design within what exists.)",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-04-monitoring.md",
+    "line": 150,
+    "heading": "Q4 — September 3: what should have fired, and what the owner would do"
+  },
+  {
+    "section": 4,
+    "question": 5,
+    "requirement": "End-of-day review: what one page would you read at 15:00 CT every day? Specify the queries.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-04-monitoring.md",
+    "line": 167,
+    "heading": "Q5 — My 15:00 CT page and exact query specification"
+  },
+  {
+    "section": 5,
+    "question": 1,
+    "requirement": "Trace one arm end to end with row ids: authored → composed (0B stop) → gated → placed (limit/stop-entry) → order_update → fill → materialized → excursions → exit. Quote each hop.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-05-execution.md",
+    "line": 47,
+    "heading": "Q1 — One arm end to end, with row ids"
+  },
+  {
+    "section": 5,
+    "question": 2,
+    "requirement": "Fill quality: for every fill, entry vs the bar's range at fill time; count fills at the bar's extreme; the AddOn's slippageTicks (never read by Go — verify) — what does the NT8 log say the slippage was? What does SIM hide vs live (queue, partial fills, stop-market gaps, the 14:45 flat into thin tape)?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-05-execution.md",
+    "line": 141,
+    "heading": "Q2 — Every fill against its bar; slippage; SIM versus live"
+  },
+  {
+    "section": 5,
+    "question": 3,
+    "requirement": "The marketable guard: 5 of 15 arms cancelled \"accepted through — never placed\", one over 1.7 pts, 3 filled; verify. Trader's ruling: cancel / bounded market entry within N ticks / stop- limit with a cap — and the N you'd set on MNQ, with the reasoning.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-05-execution.md",
+    "line": 167,
+    "heading": "Q3 — Marketable guard: verification, trader ruling and N ticks"
+  },
+  {
+    "section": 5,
+    "question": 4,
+    "requirement": "The funnel: authored → armed → placed → reached → filled → won. Build the table since 09-02. Where does it leak most?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-05-execution.md",
+    "line": 181,
+    "heading": "Q4 — Funnel since September 2, in one opportunity currency"
+  },
+  {
+    "section": 5,
+    "question": 5,
+    "requirement": "Exits: stop composition (anchor + 1.5×ATR5m), BE/trail suspended, EOD flat. From trade_excursions: MAE of winners vs losers (p50/p80/p95), stop-hit share, target-hit share. Is the floor inside or outside what winners need? What exit design would you run, and what evidence gate before switching?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-05-execution.md",
+    "line": 202,
+    "heading": "Q5 — Exits, stop floor, target/stop shares and the exit I would test"
+  },
+  {
+    "section": 5,
+    "question": 6,
+    "requirement": "Live-money breakpoints: the day this runs real money, what breaks first? Order type, size, the AddOn, reconnects, the broker snapshot cadence, the daily-limit leg (blocks entries, doesn't flatten).",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-05-execution.md",
+    "line": 254,
+    "heading": "Q6 — Technical live-money breakpoints (analysis only; SIM remains)"
+  },
+  {
+    "section": 6,
+    "question": 1,
+    "requirement": "Re-run ~/nofx-analysis/mc-drawdown against the current store (by session-day, not trade); report expectancy CI, drawdown quantiles at 20/50/100 trades, streak probabilities, effective sample in DAYS.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-06-risk.md",
+    "line": 25,
+    "heading": "1. Re-run the Monte Carlo by session-day"
+  },
+  {
+    "section": 6,
+    "question": 2,
+    "requirement": "The Stage-A rule (1 contract until n≥30 with a positive lower- CI expectancy): the veteran calls it the best rule in the checklist. Agree? What's the honest go/no-go for live money, in numbers (days, n, lower CI, max DD, worst day)?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-06-risk.md",
+    "line": 99,
+    "heading": "2. Stage A and an honest numerical live-money gate"
+  },
+  {
+    "section": 6,
+    "question": 3,
+    "requirement": "Daily limit $450 (now wired, owner turning it on), no trade cap (owner-ruled): design the rest of a professional's risk framework at this size — per-trade risk, daily, weekly, kill switch, size ladder, what resets it.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-06-risk.md",
+    "line": 117,
+    "heading": "3. One-lot risk framework: trade, day, week, kill and resets"
+  },
+  {
+    "section": 6,
+    "question": 4,
+    "requirement": "Sizing: when, if ever, does this go to 2 contracts, and what must be true? Write the ladder.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-06-risk.md",
+    "line": 161,
+    "heading": "4. The size ladder: when, if ever, two contracts"
+  },
+  {
+    "section": 6,
+    "question": 5,
+    "requirement": "Correlation and regime: one instrument, one strategy — what kills it (a regime it's never seen; a vol shift; a roll week; FOMC). What would you refuse to trade through, and how would the system know?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-06-risk.md",
+    "line": 178,
+    "heading": "5. Correlation, session, regime, news and roll: what I refuse"
+  },
+  {
+    "section": 7,
+    "question": 1,
+    "requirement": "Render the planner prompt and the executor prompt at a real read (planner_read_facts / planner_rejected_prompts). Measure: tokens, share facts vs instruction, MUST/NEVER/SHOULD counts, sentences per paragraph, the Rules paragraph length.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-07-prompts.md",
+    "line": 35,
+    "heading": "1. Rendered prompts and measurements"
+  },
+  {
+    "section": 7,
+    "question": 2,
+    "requirement": "Read both as a junior's checklist: what's asked that no one could answer, what contradicts itself, what's missing, what you'd delete. Quote every line you'd cut.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-07-prompts.md",
+    "line": 70,
+    "heading": "2. Both prompts as a junior's checklist"
+  },
+  {
+    "section": 7,
+    "question": 3,
+    "requirement": "Rejects by rule (last 7 days, n): which prompt sentences cause them; the class-45 pattern (a rule the validator knows and the prompt withholds) — any instances left?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-07-prompts.md",
+    "line": 152,
+    "heading": "3. Last seven days of rejects, rule by rule"
+  },
+  {
+    "section": 7,
+    "question": 4,
+    "requirement": "Rewrite the planner prompt's instruction half to what YOU would give a junior: same information, half the length, numbered, no ALL-CAPS. Deliver it as an appendix (not applied).",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-07-prompts.md",
+    "line": 187,
+    "heading": "4. Actual half-length rewrite and semantic coverage"
+  },
+  {
+    "section": 7,
+    "question": 5,
+    "requirement": "The laws (AUDIT-CHECKLIST PART 2–3): which protect P&L, which are hygiene, which are missing from a trader's view.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-07-prompts.md",
+    "line": 204,
+    "heading": "5. Which laws protect money, which are hygiene, and what is missing"
+  },
+  {
+    "section": 7,
+    "question": 6,
+    "requirement": "Settings (/api/config/resolved): which knobs a trader would turn daily/weekly/never; which shouldn't exist.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-07-prompts.md",
+    "line": 224,
+    "heading": "6. Settings: daily, weekly, never, and controls that should not appear as live"
+  },
+  {
+    "section": 8,
+    "question": 1,
+    "requirement": "Re-derive 09-02 → 09-04 from the store and bars yourself: every trade, every refusal, every arm, every plan version, the tape per session. Agree or disagree with the two-day audit's findings (its 5/55/30 split has no denominator — don't quote it; count in one currency: opportunities).",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-08-stretch.md",
+    "line": 33,
+    "heading": "1. Re-derive September 2–4: every trade, refusal, arm, plan version and session"
+  },
+  {
+    "section": 8,
+    "question": 2,
+    "requirement": "The trader's question: 10:00 CT on 09-03, +483-pt day, long bias, empty book 09:20–11:58 while price ran +199. What would you have done, and what would the system have needed to do it?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-08-stretch.md",
+    "line": 94,
+    "heading": "2. What I would do at 10:00 CT on September 3"
+  },
+  {
+    "section": 8,
+    "question": 3,
+    "requirement": "Replay those three days under the CURRENT rules (strict, reclaim stop-entry, arms-follow-bias warn, daily-limit leg, reaper on snapshot): count what would have been armed, filled, refused, and the P&L in points. Ids.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-08-stretch.md",
+    "line": 115,
+    "heading": "3. Replay under CURRENT rules: measurable components, bounded result, unknown broker path"
+  },
+  {
+    "section": 8,
+    "question": 4,
+    "requirement": "The outage and the blind boot: what would your desk's runbook have been at 12:30 when the log went silent?",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-08-stretch.md",
+    "line": 165,
+    "heading": "4. The 12:30 outage and blind boot: my runbook"
+  },
+  {
+    "section": 9,
+    "question": 1,
+    "requirement": "Read final sections 1–8 on dev; ten ranked recommendations with what, why evidence label, implementation category, metric; at least two removals; checklist cross-check.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-09-top-ten.md",
+    "line": 129,
+    "heading": "2. Ten priorities — proposals, not implementation"
+  },
+  {
+    "section": 9,
+    "question": 2,
+    "requirement": "Owner yes/no rulings with recommendation and reason; marketable tick cap, six level kinds, FVG block, Rules paragraph, wake blackout, acceptance/hold armability, target ownership.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-09-top-ten.md",
+    "line": 146,
+    "heading": "3. Owner rulings — all deferred"
+  },
+  {
+    "section": 10,
+    "question": 1,
+    "requirement": "What other bot traders you know do that this doesn't: entry timing, regime filters, volatility sizing, session selection, order types, review loops, how they use an LLM. Each labelled [R]/[I], each with what it would take here.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-10-ideas.md",
+    "line": 47,
+    "heading": "1. What other systematic approaches suggest, and what they would take here"
+  },
+  {
+    "section": 10,
+    "question": 2,
+    "requirement": "What this system does that you have never seen work. Name it, say why, say what would change your mind.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-10-ideas.md",
+    "line": 125,
+    "heading": "2. Designs I would not fund yet, and what would change my mind"
+  },
+  {
+    "section": 10,
+    "question": 3,
+    "requirement": "If you had this codebase and one month: the single project you'd run, its evidence gate, and its kill criterion.",
+    "status": "reviewed: answer/proposal/explicit measurement limits",
+    "report": "2026-09-05-vet-10-ideas.md",
+    "line": 138,
+    "heading": "3. One month: test structural-target-first admission within the existing method"
+  }
+]

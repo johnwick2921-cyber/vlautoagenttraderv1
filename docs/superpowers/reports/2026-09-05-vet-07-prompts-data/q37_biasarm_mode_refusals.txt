@@ -1,0 +1,52 @@
+=== BiasArmWarning dev
+		}
+		for _, w := range kernel.ArmFeasibilityWarnings(d, atr5m, at.armMinRRFor(nil), kernel.MinSLATRMult()) {
+			at.logWarnf("⚔️ arm feasibility: %s (WARN — write proceeds; the gate-at-arm chain enforces)", w)
+		}
+		// D2 (arms-follow-bias) — WIRED 2026-09-05. BiasArmWarning shipped
+		// 2026-09-04 to answer the planner-shape finding and had ZERO
+		// production callers: it was written, tested, and never called, so a
+		// plan whose bias direction carried no armed scenario shipped silently.
+		// With plan_mode=strict the arm path is the ONLY entry, so such a plan
+		// cannot trade the direction it just argued for.
+		//
+		// WARN-FIRST per the owner ruling of 2026-09-04 recorded in
+		// kernel/arms_bias_coherent.go: a hard reject would have refused
+		// 50/68 longs and 66/103 shorts across 171 stored plans. The write
+		// proceeds; this makes the condition visible instead of silent.
+		if w := kernel.BiasArmWarning(d, kernel.ResolvedConditionStatuses(nil, nil, kernel.ShadowConditionsEnv())); w != "" {
+			at.logWarnf("🧭 bias-coherent arms: %s (WARN — write proceeds; owner ruling 2026-09-04 is warn-first)", w)
+		}
+		// FVG ENTRY MODEL (2026-08-26) — write-time re-verification from stored
+		// bars: the 3-candle relation, the gap floor, the displacement body vs
+		// 5m ATR, and the origin-level membership. A fake/stale gap fails the
+trader/auto_trader_planner.go:1684:		// D2 (arms-follow-bias) — WIRED 2026-09-05. BiasArmWarning shipped
+trader/auto_trader_planner.go:1695:		if w := kernel.BiasArmWarning(d, kernel.ResolvedConditionStatuses(nil, nil, kernel.ShadowConditionsEnv())); w != "" {
+kernel/arms_bias_coherent.go:70:// BiasArmWarning returns the D2 warning for a plan, or "" when the plan can
+kernel/arms_bias_coherent.go:74:func BiasArmWarning(d *PlanDoc, statuses map[string]string) string {
+=== on running rev
+0
+=== read facts 09-03 ASIA evening
+id|trade_date|session|atr5m|floor|ct
+12|2026-09-03|ASIA|12.74|19.11|2026-09-03 16:30:21
+13|2026-09-03|ASIA|10.37|15.55|2026-09-03 18:00:24
+14|2026-09-03|ASIA|9.06|13.6|2026-09-03 18:41:09
+15|2026-09-03|ASIA|11.24|16.85|2026-09-03 19:18:06
+16|2026-09-03|ASIA|10.39|15.59|2026-09-03 19:50:05
+17|2026-09-03|ASIA|11.13|16.69|2026-09-03 20:24:03
+18|2026-09-04|ASIA|12.15|18.22|2026-09-04 00:30:54
+19|2026-09-04|ASIA|12.92|19.38|2026-09-04 01:10:50
+20|2026-09-04|LONDON|13.32|19.98|2026-09-04 01:30:48
+=== plan_mode in logs (first/last per day)
+=== strategies updated_at
+id|name|updated_at
+a5b7662e|MNQ|2026-09-01 13:13:06.019911522+00:00
+=== other entry_gate refusals 09-02/03
+id|ct|r
+36164|2026-09-02 01:51:52|refused: last_entry_cutoff: past last-entry 01:45 CT (ASIA)"]
+36640|2026-09-02 18:48:49|refused: entry_gate: entry_gate: stop 29231.00 too close (25.25 \u003c 450.56 = 1.5×ATR5m)"]
+36641|2026-09-02 18:50:36|refused: entry_gate: entry_gate: stop 29226.50 too close (21.00 \u003c 450.56 = 1.5×ATR5m)"]
+36642|2026-09-02 18:52:33|refused: entry_gate: entry_gate: stop 29230.00 too close (22.00 \u003c 450.56 = 1.5×ATR5m)"]
+36645|2026-09-02 19:00:23|refused: entry_gate: entry_gate: R:R 1.42 below floor 2.00 at execution price 29197.0000 (SL 29228.0000 TP 29153.0000)"]
+36703|2026-09-02 20:53:52|refused: entry_gate: entry_gate: R:R 1.73 below floor 2.00 at execution price 29159.7500 (SL 29193.2500 TP 29101.7500)"]
+36864|2026-09-03 02:12:56|refused: entry_gate: entry_gate: R:R 1.76 below floor 2.00 at execution price 29193.2500 (SL 29242.0000 TP 29107.2500)"]

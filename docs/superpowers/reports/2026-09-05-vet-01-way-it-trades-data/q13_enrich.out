@@ -1,0 +1,76 @@
+/home/hoang/nofx-analysis/vet-01-0905/q13_enrich.py:34: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+  print('snapshots since era:', len(snaps), 'min', datetime.datetime.utcfromtimestamp(min(s['received_at_ms'] for s in snaps)/1000) if snaps else None)
+/home/hoang/nofx-analysis/vet-01-0905/q13_enrich.py:88: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+  out.append(dict(id=t['id'], source=t['source'], session=t['plan_session'] or '', side=side, entry_ct=datetime.datetime.utcfromtimestamp(et/1000-5*3600).strftime('%m-%d %H:%M'), hour_ct=int(datetime.datetime.utcfromtimestamp(et/1000-5*3600).strftime('%H')), hold_min=round((int(t['exit_time'])-et)/60000,1) if t['exit_time'] else None, entry=ep, exit=xp, pnl=t['pnl_corrected'], pnl_pts=round(pnl_pts,2) if pnl_pts is not None else None, cond=cond, quality=q, rule=rule, scen_dir=sdir, plan_bias=bias, regime=regime, day_type=daytype, stop=stop, stop_pts=round(stop_pts,2) if stop_pts else None, stop_src=stop_src, tgt=tgt, plan_rr=round(abs(tgt-ep)/stop_pts,2) if (tgt and stop_pts) else None, R=round(R,2) if R is not None else None, mfe=mfe, mae=mae, mfe_over_stop=round(mfe/stop_pts,2) if (mfe is not None and stop_pts) else None, mae_over_stop=round(mae/stop_pts,2) if (mae is not None and stop_pts) else None, nt8_stop=nt8stop, nt8_stop_pts=round(nt8_stop_pts,2) if nt8_stop_pts else None, nt8src=nt8src, close_reason=t['close_reason'], grade=t['adherence_grade'], conf=t['entry_confidence'], plan_ver=ver, cited=sid))
+snapshots since era: 4474 min 2026-09-04 02:48:22.073000
+521 syste LONDON s 08-19 03:22   81.5    138.0 reject          -          stop  22.75 decision#30040     nt8   None R   3.03 mfe/s  3.13 mae/s   0.7 pRR 3.03 -
+522 syste LONDON s 08-19 07:17   15.6    -60.5 acceptance      -          stop  30.25 decision#30071     nt8   None R   -1.0 mfe/s  0.34 mae/s  1.63 pRR 3.88 -
+523 syste NY     s 08-19 09:06    4.3    118.0 reject          -          stop  48.75 decision#30084     nt8   None R   1.21 mfe/s  1.63 mae/s  0.24 pRR 1.21 -
+524 syste NY     s 08-19 11:18   63.3    273.5 reject          -          stop  21.75 decision#30123     nt8   None R   6.29 mfe/s  6.32 mae/s  0.76 pRR 6.29 -
+525 syste ASIA   l 08-19 18:22   37.6    -43.0 reclaim         -          stop   21.5 decision#30297     nt8   None R   -1.0 mfe/s  0.92 mae/s  1.01 pRR 5.72 -
+526 syste ASIA   s 08-19 20:28   48.1 -69.42857199999708 acceptance      -          stop  62.25 decision#30357     nt8   None R  -0.56 mfe/s  0.04 mae/s  0.92 pRR 2.03 -
+527 syste ASIA   s 08-19 22:37   29.8    -88.0 acceptance      -          stop  43.75 decision#30417     nt8   None R  -1.01 mfe/s  0.11 mae/s  1.01 pRR 3.07 -
+528 syste LONDON s 08-20 03:26  105.2    -97.5 breakout_retest 1x5m_close stop  48.75 decision#30557     nt8   None R   -1.0 mfe/s  0.98 mae/s  1.01 pRR 2.62 -
+529 syste LONDON s 08-20 05:26   55.4    168.0 reject          2x5m_close stop  45.25 decision#30616     nt8   None R   1.86 mfe/s  2.01 mae/s  0.97 pRR 1.86 -
+530 syste        s 08-20 08:12    3.4     13.0 -               -          stop   38.0 decision#30698     nt8   None R   0.17 mfe/s  0.26 mae/s  0.16 pRR 2.68 -
+531 syste NY     l 08-20 08:41    6.8   -147.5 reclaim         15m_close  stop  73.75 decision#30713     nt8   None R   -1.0 mfe/s  0.22 mae/s  1.02 pRR 3.32 -
+532 syste NY     s 08-20 09:41  203.8    311.0 acceptance      2x5m_close stop  65.75 decision#30744     nt8   None R   2.37 mfe/s  2.38 mae/s  0.94 pRR 2.37 -
+533 syste ASIA   s 08-20 17:59   73.4    -54.5 reject          1x5m_close stop  27.25 decision#30962     nt8   None R   -1.0 mfe/s  1.32 mae/s  1.11 pRR 3.07 -
+534 syste ASIA   s 08-20 19:22   87.4    -66.0 breakout_retest 1x5m_close stop   33.0 decision#31002     nt8   None R   -1.0 mfe/s  1.23 mae/s  1.11 pRR 2.79 -
+535 syste ASIA   s 08-20 21:08   12.2    -31.0 reject          1x5m_close stop   15.5 decision#31057     nt8   None R   -1.0 mfe/s  0.45 mae/s  1.15 pRR 5.63 -
+536 syste ASIA   s 08-20 21:36  111.2    124.0 reject          2x5m_close stop  18.25 decision#31070     nt8   None R    3.4 mfe/s  3.41 mae/s  0.37 pRR 3.4 -
+537 syste ASIA   s 08-21 00:25   70.5    -79.5 reject          2x5m_close stop  39.75 decision#31155     nt8   None R   -1.0 mfe/s  0.51 mae/s  1.06 pRR 2.62 -
+538 syste ASIA   s 08-21 01:40    4.6     30.5 reject          2x5m_close stop   18.0 decision#31192     nt8   None R   0.85 mfe/s   0.9 mae/s  0.15 pRR 2.76 -
+539 syste        s 08-21 03:54   66.0    -84.5 -               -          stop  42.25 decision#31255     nt8   None R   -1.0 mfe/s   1.0 mae/s  1.02 pRR 2.24 -
+540 syste LONDON l 08-21 05:04   56.6    -98.0 reclaim         1x5m_close stop   49.0 decision#31289     nt8   None R   -1.0 mfe/s  0.13 mae/s  1.02 pRR 2.64 -
+541 syste LONDON l 08-21 06:26  106.9    -83.0 reclaim         1x5m_close stop   41.5 decision#31331     nt8   None R   -1.0 mfe/s  0.67 mae/s  1.02 pRR 4.22 -
+542 syste NY     s 08-21 08:49   38.7      0.0 acceptance      2x5m_close stop  92.75 decision#31401     nt8   None R   -0.0 mfe/s  0.97 mae/s  0.38 pRR 1.16 -
+543 syste NY     s 08-21 10:12   21.8    -88.5 acceptance      2x5m_close stop  44.25 decision#31443     nt8   None R   -1.0 mfe/s  0.56 mae/s  1.02 pRR 3.46 -
+544 syste NY     s 08-21 10:47    4.1    -61.5 reject          1x5m_close stop  30.75 decision#31462     nt8   None R   -1.0 mfe/s  0.63 mae/s  1.02 pRR 2.82 -
+545 syste        l 08-23 22:28    4.3    -29.5 -               -          stop  14.75 decision#31749     nt8   None R   -1.0 mfe/s   0.2 mae/s  1.03 pRR 3.81 -
+546 syste        l 08-24 07:06   26.2    -88.5 -               -          stop  43.75 decision#31993     nt8   None R  -1.01 mfe/s  0.22 mae/s  1.17 pRR 3.19 -
+547 syste NY     s 08-24 09:09   21.1   -139.5 reject          1x5m_close stop  69.75 decision#32044     nt8   None R   -1.0 mfe/s  0.22 mae/s  1.05 pRR 2.57 -
+548 syste NY     s 08-24 09:55   33.8    -54.5 reject          1x5m_close stop  27.25 decision#32065     nt8   None R   -1.0 mfe/s  2.15 mae/s  1.64 pRR 3.77 -
+549 syste NY     s 08-24 11:26   88.9    169.5 reject          1x5m_close stop  38.75 decision#32108     nt8   None R   2.19 mfe/s  2.21 mae/s  0.27 pRR 2.19 -
+550 syste ASIA   s 08-24 20:43   48.3    -84.5 reject          1x5m_close stop  42.25 decision#32344     nt8   None R   -1.0 mfe/s  0.48 mae/s  1.01 pRR 0.98 -
+551 syste ASIA   s 08-24 21:43   26.0      0.0 reject          1x5m_close stop    6.5 decision#32374     nt8   None R   -0.0 mfe/s 10.73 mae/s  0.08 pRR 12.69 -
+552 syste ASIA   s 08-24 22:17    2.7     -7.5 reject          1x5m_close stop   3.75 decision#32390     nt8   None R   -1.0 mfe/s  2.67 mae/s  1.47 pRR 18.73 -
+553 syste ASIA   s 08-24 23:03    2.3    -27.0 reject          1x5m_close stop   13.5 decision#32402     nt8   None R   -1.0 mfe/s   0.0 mae/s  1.33 pRR 7.11 -
+554 syste LONDON s 08-25 02:09   75.3    -62.0 reject          1x5m_close stop   31.0 decision#32486     nt8   None R   -1.0 mfe/s  1.87 mae/s   1.9 pRR 2.23 -
+555 syste LONDON l 08-25 04:19   38.4    168.0 hold            1x5m_close stop  31.25 decision#32546     nt8   None R   2.69 mfe/s  2.94 mae/s  0.72 pRR 2.69 -
+556 syste LONDON l 08-25 06:04    5.6    -40.0 breakout_retest 2x5m_close stop  19.75 decision#32599     nt8   None R  -1.01 mfe/s  0.04 mae/s   1.7 pRR 4.06 -
+557 syste LONDON l 08-25 06:14   76.3     46.5 breakout_retest 2x5m_close stop   40.0 decision#32605     nt8   None R   0.58 mfe/s  1.79 mae/s  0.43 pRR 2.6 -
+558 syste LONDON l 08-25 07:56   18.3    -22.5 breakout_retest 2x5m_close stop  29.25 decision#32656     nt8   None R  -0.38 mfe/s   0.2 mae/s  0.94 pRR 2.9 -
+559 syste NY     l 08-25 09:14   15.3    -78.5 sweep_reclaim   1x5m_close stop  39.25 decision#32687     nt8   None R   -1.0 mfe/s   0.6 mae/s  2.57 pRR 4.43 -
+560 syste NY     s 08-25 13:53   37.1     81.0 reject          1x5m_close stop   21.0 decision#32807     nt8   None R   1.93 mfe/s   2.4 mae/s  0.14 pRR 2.71 -
+561 syste ASIA   l 08-25 19:11   13.9    -52.0 sweep_reclaim   1x5m_close stop   26.0 decision#32923     nt8   None R   -1.0 mfe/s  0.67 mae/s  1.15 pRR 3.41 -
+562 syste LONDON s 08-26 02:22  219.7    -98.5 breakout_retest 1x5m_close stop  49.25 decision#33115     nt8   None R   -1.0 mfe/s  0.52 mae/s  1.04 pRR 1.69 -
+563 syste LONDON l 08-26 06:12   25.3    -49.5 breakout_retest 15m_close  stop  24.75 decision#33229     nt8   None R   -1.0 mfe/s   1.4 mae/s  1.19 pRR 2.67 -
+564 syste LONDON s 08-27 04:19   12.6    -69.0 reject          15m_close  stop   34.5 decision#33793     nt8   None R   -1.0 mfe/s   0.2 mae/s  1.07 pRR 4.51 -
+565 syste LONDON s 08-27 05:53   12.4    -62.5 reject          1x5m_close stop  31.25 decision#33841     nt8   None R   -1.0 mfe/s  0.14 mae/s  1.05 pRR 3.35 -
+566 recon        l 08-27 11:32   28.9     97.0 -               -          stop   None                    nt8   None R   None mfe/s  None mae/s  None pRR None -
+567 recon ASIA   s 08-28 01:22   35.7    -42.0 reject          1x5m_close stop   21.0 plan_arm           nt8   None R   -1.0 mfe/s  1.36 mae/s  1.02 pRR 2.12 -
+568 recon LONDON s 08-28 07:19    3.3    -32.0 sweep_reclaim   1x5m_close stop   84.7 plan_arm           nt8   None R  -0.19 mfe/s  0.02 mae/s   0.2 pRR 0.03 -
+569 recon NY     s 08-28 08:44    1.0     63.0 reject          1x5m_close stop  22.62 plan_arm           nt8   None R   1.39 mfe/s  1.59 mae/s   0.0 pRR 2.82 -
+570 recon NY     l 08-28 12:10   98.2     17.0 reject          1x5m_close stop  33.25 plan_arm           nt8   None R   0.26 mfe/s  1.99 mae/s  0.44 pRR 3.76 -
+571 recon        l 08-30 17:38   34.7    -44.5 -               -          stop   None                    nt8   None R   None mfe/s  None mae/s  None pRR None -
+572 e7_fa TEST-E s 08-30 22:34   12.0     None -               -          stop   None                    nt8   None R   None mfe/s  None mae/s  None pRR None -
+573 e7_fa        l 08-30 22:52    6.3      6.0 -               -          stop   None                    nt8   None R   None mfe/s  None mae/s  None pRR None -
+574 e7_fa        l 08-30 23:00    4.4     -1.0 -               -          stop   None                    nt8   None R   None mfe/s  None mae/s  None pRR None -
+575 recon NY     s 08-31 09:59   16.2     32.5 reject          touch      stop  42.75 plan_arm           nt8   None R   0.38 mfe/s  0.97 mae/s  0.14 pRR 2.0 -
+576 armed NY     s 08-31 10:00    3.6     None reject          touch      stop  42.75 plan_arm           nt8   None R   -0.0 mfe/s  0.97 mae/s   0.1 pRR 2.0 -
+577 armed NY     l 08-31 12:25    3.7     None sweep_reclaim   touch      stop  49.75 armed_orders#21    nt8   None R    0.0 mfe/s   0.0 mae/s  0.33 pRR 2.09 -
+578 recon NY     l 08-31 12:26   44.0     92.0 sweep_reclaim   touch      stop  49.75 plan_arm           nt8   None R   0.92 mfe/s  0.95 mae/s   0.5 pRR 2.09 -
+579 armed NY     s 08-31 13:09    3.7     None reject          touch      stop   23.5 armed_orders#20    nt8   None R   None mfe/s  0.66 mae/s   0.0 pRR 2.73 -
+580 recon        s 08-31 13:37    1.2     39.5 -               -          stop   None                    nt8   None R   None mfe/s  None mae/s  None pRR None -
+581 syste LONDON s 09-01 02:52   13.8    190.5 reject          touch      stop  34.25 decision#35508     nt8   None R   2.78 mfe/s  2.15 mae/s  0.07 pRR 2.5 -
+582 armed LONDON s 09-01 05:23   42.1    129.5 reject          touch      stop  26.25 plan_arm           nt8   None R   2.47 mfe/s  2.64 mae/s  0.43 pRR 2.47 -
+583 syste LONDON l 09-01 06:35   21.7    -82.5 sweep_reclaim   1x5m_close stop  41.25 decision#35621     nt8   None R   -1.0 mfe/s  0.61 mae/s  1.05 pRR 3.41 -
+584 recon LONDON s 09-01 08:36    1.5    106.0 reject          touch      stop   24.0 plan_arm           nt8   None R   2.21 mfe/s  2.42 mae/s   0.0 pRR 2.21 -
+585 armed NY     s 09-01 09:31    9.5    -77.5 reject          touch      stop  38.75 plan_arm           nt8   None R   -1.0 mfe/s   0.0 mae/s   1.0 pRR 2.5 -
+586 recon NY     l 09-01 13:33    8.1    -54.0 sweep_reclaim   touch      stop   27.0 plan_arm           nt8   None R   -1.0 mfe/s   0.0 mae/s  1.02 pRR 2.94 -
+587 syste ASIA   l 09-02 00:17   46.0    -62.5 reject          touch      stop  31.25 decision#36122     nt8   None R   -1.0 mfe/s  0.82 mae/s  1.06 pRR 1.09 -
+588 syste LONDON l 09-02 07:41   10.5    -65.0 reclaim         1x5m_close stop   32.5 decision#36336     nt8   None R   -1.0 mfe/s   0.0 mae/s  1.02 pRR 2.54 -
+589 syste NY     l 09-02 09:41   18.4   -155.0 breakout_retest 1x5m_close stop   77.5 decision#36394     nt8   None R   -1.0 mfe/s  0.13 mae/s  1.04 pRR 1.61 -
+590 syste NY     l 09-02 10:37   12.2    -99.0 breakout_retest 1x5m_close stop   49.5 decision#36422     nt8   None R   -1.0 mfe/s  0.02 mae/s  1.01 pRR 2.51 -
+591 recon NY     s 09-03 09:05   15.5   -140.0 reject          touch      stop   55.0 plan_arm           nt8   None R  -1.27 mfe/s  0.79 mae/s  1.36 pRR 2.55  · regime up

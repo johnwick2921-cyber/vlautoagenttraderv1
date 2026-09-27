@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 
+	"nofx/logger"
 	ntwire "nofx/provider/ninjatrader"
 	"nofx/trader/types"
 )
@@ -119,7 +120,21 @@ func NewTraderFromEnv(cfg Config) (types.Trader, error) {
 		cfg.Symbol = primary // every downstream consumer sees ONLY the trading symbol
 	}
 	switch transport {
-	case "", "csv":
+	case "":
+		// P2-18 — an UNSET transport no longer falls back SILENTLY: the boot
+		// line names the effective (deprecated) transport so a config that
+		// forgot the var is visible instead of silently running legacy CSV.
+		// Behaviour is unchanged (unset still resolves to the CSV path —
+		// flipping the default would be a trading-behaviour change); only the
+		// silence is fixed. Live .env sets NT_TRANSPORT, so this WARN fires
+		// only where the setting is genuinely absent.
+		logger.Warnf("⚠️ transport: %s UNSET — using the deprecated CSV transport (set NT_TRANSPORT=tcp for the live TCP bridge); effective transport: csv", TransportEnvVar)
+		if len(extras) > 0 {
+			fmt.Printf("⚠️ transport: extra symbols %v ignored on the CSV transport (no bar feed); trading %s\n", extras, cfg.Symbol)
+		}
+		return New(cfg), nil
+	case "csv":
+		// Explicit opt-in to the deprecated CSV path — honored as chosen.
 		if len(extras) > 0 {
 			fmt.Printf("⚠️ transport: extra symbols %v ignored on the CSV transport (no bar feed); trading %s\n", extras, cfg.Symbol)
 		}

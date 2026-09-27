@@ -1,0 +1,43 @@
+{
+  "at": "2026-09-09T18:50:06.712Z",
+  "status": 200,
+  "trader_id": "8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265",
+  "ready": false,
+  "legs": [
+    {
+      "n": 1,
+      "name": "db_open_positions",
+      "pass": true,
+      "source": "sqlite trader_positions",
+      "detail": "0 open row(s)"
+    },
+    {
+      "n": 2,
+      "name": "api_positions",
+      "pass": true,
+      "source": "trader.GetPositions",
+      "detail": "0 position(s)"
+    },
+    {
+      "n": 3,
+      "name": "nt8_positions_snapshot",
+      "pass": true,
+      "source": "NT8 positions frame",
+      "detail": "count=0"
+    },
+    {
+      "n": 4,
+      "name": "working_orders",
+      "pass": false,
+      "source": "broker — NT8 order_snapshot frame (age 2s, build 2026-09-07-h1) × armed_orders ledger",
+      "detail": "broker 1 vs ledger 3 — MISMATCH; broker[db758fae647843aa93b691bc8ffc6df6] ledger[5d4716c8-298a-4f86-bc72-4d6529d73483,,]"
+    },
+    {
+      "n": 5,
+      "name": "planner_in_flight",
+      "pass": true,
+      "source": "plannerReadInFlight claim",
+      "detail": "no planner read claimed"
+    }
+  ]
+}

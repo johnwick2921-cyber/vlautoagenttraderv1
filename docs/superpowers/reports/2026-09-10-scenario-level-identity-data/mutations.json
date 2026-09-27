@@ -1,0 +1,44 @@
+[
+  {
+    "name": "E2-alias",
+    "replacement_confirmed": true,
+    "build": "PASS",
+    "mutation": "KILLED"
+  },
+  {
+    "name": "E3-refusal",
+    "replacement_confirmed": true,
+    "build": "PASS",
+    "mutation": "KILLED"
+  },
+  {
+    "name": "E4-authority",
+    "replacement_confirmed": true,
+    "build": "PASS",
+    "mutation": "KILLED"
+  },
+  {
+    "name": "E8-episode-wire",
+    "replacement_confirmed": true,
+    "build": "PASS",
+    "mutation": "KILLED"
+  },
+  {
+    "name": "E8-stamp-wire",
+    "replacement_confirmed": true,
+    "build": "PASS",
+    "mutation": "KILLED"
+  },
+  {
+    "name": "E8-boot-wire",
+    "replacement_confirmed": true,
+    "build": "PASS",
+    "mutation": "KILLED"
+  },
+  {
+    "name": "E8-formation-wire",
+    "replacement_confirmed": true,
+    "build": "PASS",
+    "mutation": "KILLED"
+  }
+]

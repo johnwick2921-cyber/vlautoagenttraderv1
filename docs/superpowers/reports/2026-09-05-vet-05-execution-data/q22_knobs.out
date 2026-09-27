@@ -1,0 +1,18 @@
+entry keys: ['consumers', 'dual_level', 'note', 'path', 'status', 'ui_label']
+{"path": "breakeven_enabled", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "breakeven_trigger_points", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "daily_loss_enabled", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "daily_loss_limit_pct", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "daily_loss_limit_usd", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "eod_flat_ct", "status": "ineffective", "ui_label": "read; does not take effect (unreachable (auto_trader_clock.go))", "dual_level": false}
+{"path": "eod_flat_offset_min", "status": "candidate-unverified", "ui_label": "no known reader — pending verification", "dual_level": false}
+{"path": "max_daily_trades", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "max_daily_trades_enabled", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "plan_mode", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "trailing_arm", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "trailing_arm_points", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "trailing_atr_mult", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "trailing_atr_period", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "trailing_enabled", "status": "live", "ui_label": "live", "dual_level": false}
+{"path": "wake_min_interval_min", "status": "candidate-unverified", "ui_label": "no known reader — pending verification", "dual_level": false}
+--- summary: {"schema": 57, "classified": 167, "live": 144, "ineffective": 7, "candidate_unverified": 16, "suspended": 0, "advisory": 0, "display_only": 0, "infra": 0, "env_shadows": 0, "env_shadow_paths": []}

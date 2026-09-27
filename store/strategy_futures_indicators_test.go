@@ -21,8 +21,8 @@ func TestApplyFuturesIndicatorDefaults(t *testing.T) {
 		t.Errorf("futures default must enable ATR/EMA/RSI; got ATR=%v EMA=%v RSI=%v",
 			ind.EnableATR, ind.EnableEMA, ind.EnableRSI)
 	}
-	// Open Interest is the Binance crypto-perp feed (empty zeros on MNQ) — off on
-	// futures so a new strategy doesn't list/value an empty OI section.
+	// Open Interest is the Binance crypto-perp feed — absent (n/a) on MNQ since
+	// W-NO-BINANCE A — off on futures so a new strategy doesn't list it.
 	if ind.EnableOI {
 		t.Errorf("futures default must disable Open Interest (crypto-perp feed, empty on MNQ); got EnableOI=%v", ind.EnableOI)
 	}

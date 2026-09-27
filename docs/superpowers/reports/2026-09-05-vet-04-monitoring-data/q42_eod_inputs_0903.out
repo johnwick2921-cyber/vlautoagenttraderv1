@@ -1,0 +1,90 @@
+what                                                        
+------------------------------------------------------------
+--- touch_outcomes 2026-09-03 (CT) by level_kind × outcome -
+--                                                          
+what                                 
+-------------------------------------
+--- planner_read_facts 2026-09-03 ---
+session  version  void_count  stop_floor_pts    atr5m             bias_ai  bias_tree  bias_regime  tokens_in  scope_bars  ct                 
+-------  -------  ----------  ----------------  ----------------  -------  ---------  -----------  ---------  ----------  -------------------
+ASIA     0        18          20.2200457271066  13.4800304847377                      up/NORMAL    0          2000        2026-09-03 00:00:56
+ASIA     0        13          31.7702404634836  21.1801603089891                      up/NORMAL    0          2000        2026-09-03 00:30:56
+LONDON   0        18          33.1531643563856  22.1021095709237                      up/NORMAL    0          2000        2026-09-03 01:30:56
+NY       0        16          43.5231119105787  29.0154079403858                      up/NORMAL    0          2000        2026-09-03 08:00:54
+LONDON   0        14          43.3722271165022  28.9148180776681                      up/NORMAL    0          2000        2026-09-03 08:06:54
+NY       0        14          54.6119168345225  36.4079445563483                      up/NORMAL    0          2000        2026-09-03 08:36:54
+NY       0        20          67.6463281653098  45.0975521102065                      up/NORMAL    0          2000        2026-09-03 09:06:54
+NY       0        18          70.8055331933464  47.2036887955643                      up/NORMAL    0          2000        2026-09-03 09:38:54
+NY       0        19          72.60753557529    48.40502371686                        up/NORMAL    0          2000        2026-09-03 10:10:54
+NY       0        21          60.8820979662981  40.5880653108654                      up/NORMAL    0          2000        2026-09-03 10:45:01
+NY       0        18          48.6916266569734  32.4610844379823                      up/NORMAL    0          2000        2026-09-03 11:20:33
+ASIA     0        22          19.1140669636911  12.7427113091274                      up/NORMAL    0          2000        2026-09-03 16:30:21
+ASIA     0        2           15.5521217476219  10.3680811650812                      up/NORMAL    0          2000        2026-09-03 18:00:24
+ASIA     0        4           13.5956014602978  9.06373430686523                      up/NORMAL    0          2000        2026-09-03 18:41:09
+ASIA     0        2           16.854930244696   11.2366201631307                      up/NORMAL    0          2000        2026-09-03 19:18:06
+ASIA     0        6           15.5897320029668  10.3931546686445                      up/NORMAL    0          2000        2026-09-03 19:50:05
+ASIA     0        8           16.6948337128688  11.1298891419125                      up/NORMAL    0          2000        2026-09-03 20:24:03
+what                                                      
+----------------------------------------------------------
+--- plans 2026-09-03: versions per session + lifecycle ---
+session  versions  max_v  lifecycles      degraded  triggers                                                    
+-------  --------  -----  --------------  --------  ------------------------------------------------------------
+ASIA     7         7      active,dormant  0         ASIA_scheduled_read,level_event                             
+
+LONDON   2         2      dormant,active  0         dormant:flip:flip-condition: 2x5m close above 29221.98 (buff
+                                                    er 0.5×ATR14, 2× 5m closes) → bias long,level_event         
+
+NY       7         7      dormant,active  0         dormant:death:death-condition: 2x5m close above 29293.00 (bu
+                                                    ffer 0.5×ATR14, 2× 5m closes),level_event,dormant:death:deat
+                                                    h-condition: 2x5m close below 29502.25 (buffer 0.5×ATR14, 2×
+                                                     5m closes)                                                 
+what                                                        
+------------------------------------------------------------
+--- silent entry_gate refusals per CT day (decision_records.
+execution_log) ---                                          
+d           cycles  entry_gate_mentions  refused_mentions  no_balance
+----------  ------  -------------------  ----------------  ----------
+2026-09-01  694     0                    0                 0         
+2026-09-02  682     5                    6                 0         
+2026-09-03  596     14                   14                0         
+2026-09-04  374     0                    0                 0         
+what                                        
+--------------------------------------------
+--- arm refusal counters (system_config) ---
+key                                                           value
+------------------------------------------------------------  -----
+arms_boot_swept_class33                                       8    
+
+arm_superseded_unplaced_class47                               2    
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  3    
+8_deepseek_1781246265:2026-09-04:NY:rr                             
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  1    
+8_deepseek_1781246265:2026-09-04:NY:entry_gate:invalidated         
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  1    
+8_deepseek_1781246265:2026-09-04:LONDON:rr                         
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  1    
+8_deepseek_1781246265:2026-09-04:LONDON:entry_gate:invalidat       
+ed                                                                 
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  1    
+8_deepseek_1781246265:2026-09-03:NY:rr                             
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  1    
+8_deepseek_1781246265:2026-09-03:LONDON:rr                         
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  3    
+8_deepseek_1781246265:2026-09-02:NY:rr                             
+
+arm_refusals_0b:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d799  2    
+8_deepseek_1781246265:2026-09-02:ASIA:rr                           
+what                                     
+-----------------------------------------
+--- nt8_order_snapshots freshness now ---
+id    received_ct          reason    order_count  working_count  build_id        age_s
+----  -------------------  --------  -----------  -------------  --------------  -----
+4511  2026-09-05 10:20:09  periodic  0            0              2026-09-03-f12  12   
+4510  2026-09-05 10:19:38  periodic  0            0              2026-09-03-f12  43   

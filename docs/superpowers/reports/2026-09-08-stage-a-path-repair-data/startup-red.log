@@ -1,0 +1,10 @@
+--- FAIL: TestResearchStartupRelativePathReportsWorkingSchema (0.00s)
+    --- FAIL: TestResearchStartupRelativePathReportsWorkingSchema/data/data.db.research.db (0.00s)
+        runtime_test.go:26: working recorder required at relative path "data/data.db.research.db"; boot line: 🗄 research snapshot: schema=UNKNOWN · objects=5 · rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN · null-fields=UNKNOWN · dropped=UNKNOWN · added latency p50=UNKNOWN
+    --- FAIL: TestResearchStartupRelativePathReportsWorkingSchema/data/space_?#%/archive.db (0.00s)
+        runtime_test.go:26: working recorder required at relative path "data/space ?#%/archive.db"; boot line: 🗄 research snapshot: schema=UNKNOWN · objects=5 · rows today market=UNKNOWN candidate=UNKNOWN plan=UNKNOWN scenario=UNKNOWN exec=UNKNOWN · null-fields=UNKNOWN · dropped=UNKNOWN · added latency p50=UNKNOWN
+--- FAIL: TestResearchReadOnlyRelativePathReadsExistingArchive (0.05s)
+    runtime_test.go:89: read-only relative path failed: SQL logic error: out of memory (1)
+FAIL
+FAIL	nofx/researchsnapshot	0.054s
+FAIL

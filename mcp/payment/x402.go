@@ -20,6 +20,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"nofx/mcp"
+	"nofx/safe"
 )
 
 // x402WarnLast rate-limits the per-cycle 402 retry noise (F5, LONDON-FORENSICS
@@ -477,7 +478,7 @@ func X402CallStream(c *mcp.Client, signFn X402SignFunc, tag string, systemPrompt
 
 	// Start idle-timeout watchdog AFTER the 402 dance is done.
 	resetCh := make(chan struct{}, 1)
-	go func() {
+	safe.GoNamed("x402-idle-watchdog", func() {
 		t := time.NewTimer(x402StreamIdleTimeout)
 		defer t.Stop()
 		for {
@@ -498,7 +499,7 @@ func X402CallStream(c *mcp.Client, signFn X402SignFunc, tag string, systemPrompt
 				t.Reset(x402StreamIdleTimeout)
 			}
 		}
-	}()
+	})
 
 	onLine := func() {
 		select {

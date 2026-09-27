@@ -1,0 +1,14 @@
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > legacy missing obstacle and R stay UNKNOWN even with an arm
+TestingLibraryElementError: Unable to find an element by: [data-testid="economics-S1"]
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > E3 renders both Rs and sub-1R fact even with unevaluable activation
+TestingLibraryElementError: Unable to find an element by: [data-testid="economics-S1"]
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > E5 row 170 recomputes geometry
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > E5 row 180 recomputes geometry
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > E5 row 182 recomputes geometry
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > E5 row 185 recomputes geometry
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > E5 row 187 recomputes geometry
+ FAIL  src/components/plan/ScenarioEconomics.test.tsx > E5 row 252 recomputes geometry
+TestingLibraryElementError: Unable to find an element by: [data-testid="economics-S1"]
+ Test Files  1 failed (1)
+      Tests  8 failed (8)

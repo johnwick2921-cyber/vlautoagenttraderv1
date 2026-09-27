@@ -1,0 +1,53 @@
+# Adversarial re-verification of the "591 stop = 8.3x invalidation, caused by the 0B ATR floor" claim
+# All times CT (UTC-5). Store opened read-only.
+
+# 1. The armed order that became position 591
+sqlite3 -header -column "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT id,plan_id,version,scenario,side,entry_px,stop_px,target_px,state,entry_class,created_at,updated_at FROM armed_orders WHERE id IN (35,36,37);"
+#  -> 35 | version 2 | short | entry 29285.0 | stop 29351.6284728996 | target 29144.5 | filled | created 2026-09-03 09:02:54.662235809-05:00
+
+# 2. Position 591 (table is trader_positions, NOT positions)
+sqlite3 -line "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT id,side,entry_price,exit_price,status,close_reason,source,pnl_corrected,mae,mfe,plan_version,adherence_grade,
+   datetime(entry_time/1000,'unixepoch','-5 hours') entry_ct, datetime(exit_time/1000,'unixepoch','-5 hours') exit_ct,
+   datetime(created_at/1000,'unixepoch','-5 hours') created_ct FROM trader_positions WHERE id=591;"
+#  -> entry_ct 2026-09-03 09:05:14, created_ct 09:05:14, exit_ct 09:20:45 @29355.00, pnl_corrected -140.0, mae 75.0, source=reconcile
+
+# 3. The scenario the arm cites, at the version the arm carries (v2)
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT json_extract(plans.doc,'\$.scenarios[0]') FROM plans
+  WHERE plan_id='2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265' AND version=2;"
+#  -> invalid = "A 5m close above 29293.00 ONH voids the fade."   arm = {entry:29285, stop:29340, target:29144.5}
+# and for v1 (the version the peer's cited 08:30:54 line belongs to):
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT version, json_extract(plans.doc,'\$.scenarios[0].arm') FROM plans
+  WHERE plan_id='2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265' AND version IN (1,2);"
+#  -> v1 {entry:29259.67, stop:29289}   v2 {entry:29285, stop:29340}
+
+# 4. Every NY S1 arm-stop recompute on 09-03 (the 09-02 FILE spans 09-02 00:01 -> 09-03 10:28; not a CT/UTC bug)
+grep "arm stop NY S1" /home/hoang/nofx/data/nofx_2026-09-02.log | grep "^09-03" | wc -l   # 22
+grep "arm stop NY S1" /home/hoang/nofx/data/nofx_2026-09-02.log | grep "^09-03" | grep -c "authored 29289.00"  # 7  (plan v1)
+grep "arm stop NY S1" /home/hoang/nofx/data/nofx_2026-09-02.log | grep "^09-03" | grep -c "authored 29340.00"  # 15 (plan v2)
+grep "arm stop NY S1" /home/hoang/nofx/data/nofx_2026-09-02.log | grep "^09-03" | grep "authored 29340.00" \
+  | grep -oP 'stop \K[0-9.]+' | sort -n | sed -n '1p;$p'   # 29344.69 .. 29354.91
+
+# 5. Where 29351.63 actually comes from -- it appears exactly ONCE in the whole 09-03 log
+grep -n "29351" /home/hoang/nofx/data/nofx_2026-09-02.log | grep "^[0-9]*:09-03"
+#  -> 09-03 09:05:35 "arm stop NY S1 leg 1 short: stop 29351.63 (authored 29340.00 WIDENED)
+#     anchor ONH 29293.00 -> beyond 29293.50 · atr_floor 29351.63 (1.5xATR5m 44.42) · bound=atr_floor"
+
+# 6. Fill / exit truth
+awk '/^09-03 09:0[456]/' /home/hoang/nofx/data/nofx_2026-09-02.log | grep -i reconcile
+#  -> 09-03 09:05:14 "reconcile: MATERIALIZED untracked NT8 position MNQ SHORT qty=1 @ 29285.00 (acct=Sim101)"
+awk '/^09-03 09:2[0-9]/' /home/hoang/nofx/data/nofx_2026-09-02.log | grep -i "NT position closed"
+#  -> 09-03 09:20:45 "NT position closed: MNQ SHORT qty=1.00 exit=29355.00 reason=sl pnl=-140.00"
+
+# 7. Broker-side stop price is NOT recoverable for this window
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" \
+ "SELECT min(datetime(received_at_ms/1000,'unixepoch','-5 hours')), max(datetime(received_at_ms/1000,'unixepoch','-5 hours')),
+         count(*), sum(order_count>0) FROM nt8_order_snapshots;"
+#  -> 2026-09-03 21:48:22 .. 23:47:55, 239 rows, 0 with any orders. Nothing covers 09:05-09:20.
+
+# 8. Source of truth for the composition rule
+sed -n '68,140p' /home/hoang/nofx-2day04/trader/arm_stop_anchor.go   # composeArmStop: c.Stop starts at AUTHORED; pick() only widens
+sed -n '525,560p' /home/hoang/nofx-2day04/trader/armed_executor.go   # F4 comment: the post-fill "armed" re-logs are a known logging defect

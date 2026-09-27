@@ -146,14 +146,42 @@ func ResolvedSessionRegistryFor(traderID string) SessionRegistry {
 	return DefaultSessionRegistry()
 }
 
-// RenderPlanBlock renders the byte-stable PLAN BLOCK for the cached prefix.
+// RenderPlanBlock renders the byte-stable PLAN BLOCK for the cached prefix —
+// the ADVISORY header. It is the boot self-check's golden
+// (testdata/futures_mnq_plan.golden) and the planner-facing api callers'
+// render; W3 keeps it BYTE-IDENTICAL. The executor renders through
+// RenderPlanBlockForMode with the resolved plan mode.
 func RenderPlanBlock(doc PlanDoc, session string) string {
+	return RenderPlanBlockForMode(doc, session, "advisory")
+}
+
+// Plan-mode headers (W-EXEC-TRUTH W3 §3, 2026-09-23). The header tells the
+// executor model the rule the ENTRY GATE enforces under the resolved mode —
+// decision 45139 (live, strict) read "a valid off-plan setup may still be
+// traded" while the gate refused every decision-path entry (log 92685).
+const (
+	PlanHeaderStrictRule    = "plan_mode=strict: entries execute ONLY through armed plan scenarios (market_in_zone policy); an AI decision is a nudge — cite the scenario; off-plan is refused"
+	PlanHeaderDirectionRule = "plan_mode=direction: an entry AGAINST the plan bias is refused; a with-bias setup may be traded on-plan or off-plan (cite \"off-plan\")"
+)
+
+// RenderPlanBlockForMode renders the PLAN BLOCK under the RESOLVED plan mode:
+// strict and direction state their gate's rule in the header; advisory (and
+// any unrecognised mode — the gate treats it as advisory) renders exactly
+// today's text. Only the header line differs between modes.
+func RenderPlanBlockForMode(doc PlanDoc, session, mode string) string {
 	var b strings.Builder
-	// W-why-no-trades (2026-08-18): "follow it; entries per plan only" read as
-	// DIRECTION by persuasion — the advisory plan was cited by the model as the
-	// reason to refuse every setup. The plan stays informative; valid off-plan
-	// entries are now explicitly permitted (cite "off-plan").
-	fmt.Fprintf(&b, "# DAY PLAN (%s) — preferred: follow it · a valid off-plan setup may still be traded (cite \"off-plan\")\n", session)
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "strict":
+		fmt.Fprintf(&b, "# DAY PLAN (%s) — %s\n", session, PlanHeaderStrictRule)
+	case "direction":
+		fmt.Fprintf(&b, "# DAY PLAN (%s) — %s\n", session, PlanHeaderDirectionRule)
+	default:
+		// W-why-no-trades (2026-08-18): "follow it; entries per plan only" read as
+		// DIRECTION by persuasion — the advisory plan was cited by the model as the
+		// reason to refuse every setup. The plan stays informative; valid off-plan
+		// entries are now explicitly permitted (cite "off-plan").
+		fmt.Fprintf(&b, "# DAY PLAN (%s) — preferred: follow it · a valid off-plan setup may still be traded (cite \"off-plan\")\n", session)
+	}
 	fmt.Fprintf(&b, "Bias: %s (%s) · flips: %s\n", doc.Bias.Direction, doc.Bias.Conviction, doc.Bias.FlipCondition)
 	if len(doc.Levels) > 0 {
 		b.WriteString("Levels:\n")

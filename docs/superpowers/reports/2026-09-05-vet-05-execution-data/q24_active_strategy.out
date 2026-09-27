@@ -1,0 +1,18 @@
+traders cols with 'strategy': ['strategy_id']
+trader: 8d5c8af5_8ef641a7-81 hoang -> a5b7662e-7bf7-49bb-9f09-7efa48f95ac8
+bound strategy: a5b7662e-7bf7-49bb-9f09-7efa48f95ac8 MNQ is_active 0
+   ai_config.risk_control.min_position_size = 12
+   ai_config.risk_control.min_confidence = 60
+   ai_config.risk_control.guardrails_enabled = False
+   ai_config.risk_control.daily_loss_limit_usd = 450
+   ai_config.risk_control.daily_loss_enabled = False
+   ai_config.risk_control.max_daily_trades = 3
+   ai_config.risk_control.max_daily_trades_enabled = False
+   ai_config.risk_control.max_contracts_per_order = 2
+   ai_config.risk_control.max_contracts_enabled = False
+   ai_config.risk_control.breakeven_enabled = True
+   ai_config.risk_control.breakeven_trigger_points = 40
+   ai_config.risk_control.trailing_enabled = True
+   ai_config.risk_control.trailing_atr_period = 14
+   day_plan.plan_mode = strict
+   day_plan.eod_flat_ct = 14:45

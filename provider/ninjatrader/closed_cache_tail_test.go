@@ -3,8 +3,9 @@ package ninjatrader
 import "testing"
 
 // ClosedCacheTail: the live path reads final CLOSED bars from the cache tail
-// (the frame only ever carries the forming bar) — forming tail bars are
-// excluded, the window trims, and ascending order is preserved.
+// (the AddOn re-emits the just-closed bar and the cache finalises it) —
+// forming tail bars are excluded, the window trims, and ascending order is
+// preserved.
 func TestClosedCacheTail(t *testing.T) {
 	now := int64(1_800_000_000_000)
 	cache := map[string][]Bar{
@@ -34,5 +35,28 @@ func TestClosedCacheTail(t *testing.T) {
 	// Empty cache → no bars, no panic.
 	if got := ClosedCacheTail(func(string, string) []Bar { return nil }, "MNQ", "1m", now, 8); len(got) != 0 {
 		t.Fatalf("ClosedCacheTail empty cache = %+v want nil", got)
+	}
+}
+
+// TestClosedCacheTailReEmittedFinalBar (WAVE 1a-plan N2, #192) — the AddOn
+// DOES re-emit the just-closed bar (VLBarsSubscriptionManager.cs:539-551) and
+// the cache finalises it (Final + matching timestamp, no duplicate ring
+// entry). The tail must return that finalised bar exactly once.
+func TestClosedCacheTailReEmittedFinalBar(t *testing.T) {
+	now := int64(1_800_000_000_000)
+	cache := map[string][]Bar{
+		"1m": {
+			{T: now - 2*60_000},                     // closed
+			{T: now - 60_000, Final: true},          // finalised by the re-emit
+			{T: now - 10_000, C: 99.5, Final: true}, // forming-final — still excluded (T+dur > now)
+		},
+	}
+	get := func(symbol, tf string) []Bar { return cache[tf] }
+	got := ClosedCacheTail(get, "MNQ", "1m", now, 8)
+	if len(got) != 2 {
+		t.Fatalf("the re-emitted final bar must appear exactly once alongside the prior closed bar, got %+v", got)
+	}
+	if got[1].Final == false || got[1].T != now-60_000 {
+		t.Fatalf("the re-emitted final bar must be returned as the cache's final closed bar, got %+v", got[1])
 	}
 }

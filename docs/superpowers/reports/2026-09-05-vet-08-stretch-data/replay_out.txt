@@ -1,0 +1,20 @@
+=== RUN A: candidates 63
+ states: {'never-confirmed': 45, 'rr-refused': 8, 'filled': 3, 'cancelled': 6, 'armed': 1}
+ reasons: {'marketable (price through entry) — never placed': 2, 'plan dormant': 2, 'superseded/session end': 1, 'trigger already traded through — never placed': 1}
+ bias-arm warnings (arm side != plan bias): 15
+ stop-entry live-guard inversions (would have been refused by the live predicate): 0
+  FILL 2026-09-02 NY v12 S3 short reject entry 29166.80 stop 29199.50(live-ledger) tgt 29058.75 fill 2026-09-02 14:11:00 exit 2026-09-02 14:46:00 flat -10.20 pts $-20
+  FILL 2026-09-03 NY v2 S1 short reject entry 29285.00 stop 29351.63(live-ledger) tgt 29144.50 fill 2026-09-03 09:03:00 exit 2026-09-03 09:22:00 stop -66.63 pts $-133
+  FILL 2026-09-03 NY v3 S2 short reject entry 29351.05 stop 29418.93(live-ledger) tgt 29209.25 fill 2026-09-03 09:23:00 exit 2026-09-03 10:04:00 stop -67.88 pts $-136
+ fills 3, net -144.71 pts = $-289.43
+ by day/side: {('2026-09-02', 'short'): -10.2, ('2026-09-03', 'short'): -134.51}
+=== RUN B: candidates 87
+ states: {'never-confirmed': 45, 'rr-refused': 28, 'cancelled': 10, 'filled': 3, 'armed': 1}
+ reasons: {'trigger already traded through — never placed': 5, 'marketable (price through entry) — never placed': 2, 'plan dormant': 2, 'superseded/session end': 1}
+ bias-arm warnings (arm side != plan bias): 16
+ stop-entry live-guard inversions (would have been refused by the live predicate): 0
+  FILL 2026-09-02 NY v12 S3 short reject entry 29166.80 stop 29199.50(live-ledger) tgt 29058.75 fill 2026-09-02 14:11:00 exit 2026-09-02 14:46:00 flat -10.20 pts $-20
+  FILL 2026-09-03 NY v2 S1 short reject entry 29285.00 stop 29351.63(live-ledger) tgt 29144.50 fill 2026-09-03 09:03:00 exit 2026-09-03 09:22:00 stop -66.63 pts $-133
+  FILL 2026-09-03 NY v3 S2 short reject entry 29351.05 stop 29418.93(live-ledger) tgt 29209.25 fill 2026-09-03 09:23:00 exit 2026-09-03 10:04:00 stop -67.88 pts $-136
+ fills 3, net -144.71 pts = $-289.43
+ by day/side: {('2026-09-02', 'short'): -10.2, ('2026-09-03', 'short'): -134.51}

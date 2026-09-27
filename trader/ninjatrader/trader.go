@@ -19,6 +19,7 @@ import (
 	"nofx/logger"
 	"nofx/provider/databento"
 	"nofx/provider/ninjatrader"
+	"nofx/safe"
 	"nofx/trader/types"
 )
 
@@ -37,6 +38,12 @@ type Trader struct {
 	writer *ninjatrader.CSVWriter
 	tailer *ninjatrader.CSVTailer
 
+	// entryPermit (WAVE 1a-plan N5) — the installation-wide maintenance
+	// permit, mirroring TCPTrader site 4. Taken by placeEntry around the
+	// signal write. nil = allow (standalone fixtures); the AutoTrader wires
+	// it at construction (NewAutoTrader).
+	entryPermit func() (func(), bool)
+
 	mu       sync.Mutex
 	stopLoss map[string]float64 // key: "<symbol>:<side>"
 	takePrft map[string]float64
@@ -52,14 +59,14 @@ func New(cfg Config) *Trader {
 		stopLoss: map[string]float64{},
 		takePrft: map[string]float64{},
 	}
-	go func() {
+	safe.GoNet("nt8-csv-tailer", "", func() {
 		_ = t.tailer.TailFills(context.Background(), func(f ninjatrader.FillRow) {
 			t.mu.Lock()
 			defer t.mu.Unlock()
 			t.lastFill = f
 			t.hasFill = true
 		})
-	}()
+	})
 	return t
 }
 
@@ -68,6 +75,14 @@ func New(cfg Config) *Trader {
 var _ types.Trader = (*Trader)(nil)
 
 // --- Trader interface methods ---
+
+// SetEntryPermit installs the maintenance permit (N5). Only entry sends
+// take it; it is held across the signal write.
+func (t *Trader) SetEntryPermit(fn func() (func(), bool)) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.entryPermit = fn
+}
 
 func (t *Trader) OpenLong(symbol string, quantity float64, leverage int) (map[string]interface{}, error) {
 	return t.placeEntry(symbol, "LONG", quantity)
@@ -104,6 +119,22 @@ func (t *Trader) placeEntry(symbol, side string, quantity float64) (map[string]i
 	entry := RoundToTick(entryRef, tick)
 	sl = RoundToTick(sl, tick)
 	tp = RoundToTick(tp, tick)
+
+	// WAVE 1a-plan N5 — the CSV transport takes the installation
+	// maintenance permit around the signal write (the same predicate the TCP
+	// path uses). Refused = explicit and READ, never an opaque fail-closed.
+	t.mu.Lock()
+	fn := t.entryPermit
+	t.mu.Unlock()
+	if fn != nil {
+		release, ok := fn()
+		if !ok {
+			return nil, fmt.Errorf("ninjatrader/csv: refusing %s entry: %w", side, ErrMaintenanceHold)
+		}
+		if release != nil {
+			defer release()
+		}
+	}
 
 	sig := ninjatrader.SignalRow{
 		DateTime:   time.Now().Format("01/02/2006 15:04:05"),

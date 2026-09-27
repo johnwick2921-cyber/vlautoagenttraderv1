@@ -1,0 +1,13 @@
+bucket,count,ids
+[R] pure,5,"A11 B5 B9 B10 C6"
+[R/O],2,"A9 D1"
+[T],6,"A4 B1 B8 C5 C7 E5"
+[T]+[I] mixed,1,"C4 (swing-k [T]; min-move/MSS [I])"
+[O],14,"A5 A6 A7 A10 B3 B4 C1 D7 E1 E2 E3 E4 F3 F4"
+[I],19,"A1 A2 A3 A8 B2 B7 C2 C3 C8 D2 D3 D4 D5 D6 D8 D10 F1 F2 F5"
+[I/C],1,"B6"
+[X],1,"D9"
+TOTAL,49,
+GROUNDED [R]/[T]/[O],28,"5+2+6+1+14"
+INVENTED [I]-family,20,"19+1"
+CONTRADICTED [X],1,"D9"

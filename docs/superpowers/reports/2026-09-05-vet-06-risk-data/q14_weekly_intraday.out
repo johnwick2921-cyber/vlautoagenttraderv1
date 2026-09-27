@@ -1,0 +1,25 @@
+== per session-day: seq, sum, running-min (worst point in the day), peak-to-trough within day ==
+  2026-08-18: n= 4 sum= +469.00 worst_running=   +0.00 peak_to_trough=   60.50
+  2026-08-19: n= 8 sum=  +46.57 worst_running= -297.93 peak_to_trough=  297.93
+  2026-08-20: n=12 sum= -492.00 worst_running= -492.00 peak_to_trough=  492.00
+  2026-08-23: n= 5 sum= -142.50 worst_running= -312.00 peak_to_trough=  312.00
+  2026-08-24: n=11 sum=  -26.50 worst_running= -181.00 peak_to_trough=  181.00
+  2026-08-25: n= 3 sum= -200.00 worst_running= -200.00 peak_to_trough=  200.00
+  2026-08-26: n= 3 sum=  -34.50 worst_running= -131.50 peak_to_trough=  131.50
+  2026-08-27: n= 4 sum=   +6.00 worst_running=  -74.00 peak_to_trough=   74.00
+  2026-08-30: n= 4 sum= +119.50 worst_running=  -44.50 peak_to_trough=   44.50
+  2026-08-31: n= 6 sum= +212.00 worst_running=   +0.00 peak_to_trough=  131.50
+  2026-09-01: n= 4 sum= -381.50 worst_running= -381.50 peak_to_trough=  381.50
+  2026-09-02: n= 1 sum= -140.00 worst_running= -140.00 peak_to_trough=  140.00
+worst running point within a day: min=-492.00 median=-160.50; days below -450: 1/12; below -300: 3
+peak-to-trough within day: max=492.00 median=160.50
+
+== weekly (ISO week of session-day) ==
+  2026-W34: days=4 n=29 sum= -118.93 worst_running= -288.43
+  2026-W35: days=5 n=25 sum= -135.50 worst_running= -358.00
+  2026-W36: days=3 n=11 sum= -309.50 worst_running= -309.50
+
+== daily-limit calibration: with a $450 realized trip, which trades would NOT have happened? ==
+  limit $300: trips on 3/12 days; P&L of trades after the trip (forfeited, + means we would have lost that profit): +19.50
+  limit $450: trips on 1/12 days; P&L of trades after the trip (forfeited, + means we would have lost that profit): +0.00
+  limit $600: trips on 0/12 days; P&L of trades after the trip (forfeited, + means we would have lost that profit): +0.00

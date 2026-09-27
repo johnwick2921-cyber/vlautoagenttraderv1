@@ -1,0 +1,20 @@
+non-WEEKLY plan-sessions: 47  plan rows: 253
+  VWAP+2σ: rows=18 plan-sessions=8
+  eVWAP: rows=19 plan-sessions=8
+  VWAP: rows=72 plan-sessions=20
+  VAL: rows=1 plan-sessions=1
+  POC: rows=27 plan-sessions=9
+  RTH-L: rows=91 plan-sessions=26
+  RTH-H: rows=108 plan-sessions=29
+  PDL: rows=115 plan-sessions=33
+  PDH: rows=148 plan-sessions=39
+  PDC: rows=160 plan-sessions=42
+  ONH: rows=183 plan-sessions=40
+  ONL: rows=175 plan-sessions=40
+  EQH: rows=107 plan-sessions=26
+  EQL: rows=120 plan-sessions=31
+  SWG-H: rows=86 plan-sessions=17
+  SWG-L: rows=78 plan-sessions=17
+  PWH: rows=1 plan-sessions=1
+  PWL: rows=8 plan-sessions=2
+2σ labels: {'VWAP+2σ': (18, 8), 'VWAP−2σ': (19, 10)}  union plan-sessions: 13

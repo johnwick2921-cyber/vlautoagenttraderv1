@@ -5,12 +5,27 @@
 // CSV signal. NQ/MNQ/ES/MES tick = 0.25 (4 ticks per point).
 package ninjatrader
 
-import "math"
+import (
+	"fmt"
+	"math"
+	"strings"
+
+	"nofx/market"
+)
 
 // InstrumentTickSize returns the tick size in points for a CME instrument.
 // Returns 0.25 for NQ/MNQ/ES/MES (index futures default). Other instruments
 // can be added as needed.
+//
+// W1b E12: the table is keyed on the instrument ROOT, resolved by
+// market.FuturesRoot, so every symbol form of one instrument ("M2K", "M2KU6",
+// "M2K 12-26", "RTY.c.0") gets the same tick. This is the ONE tick lookup the
+// wire and EntryGate legs 5/6 share. A symbol with no known root is looked up
+// as given (bare roots and unknown symbols are byte-identical to before).
 func InstrumentTickSize(symbol string) float64 {
+	if root := market.FuturesRoot(symbol); root != "" {
+		symbol = root
+	}
 	switch symbol {
 	case "NQ", "MNQ", "ES", "MES":
 		return 0.25
@@ -28,12 +43,73 @@ func InstrumentTickSize(symbol string) float64 {
 }
 
 // RoundToTick rounds price to the nearest tick boundary.
-// Uses math.Round (round-half-away-from-zero). For tick rounding the bias
-// at exact halves is operationally irrelevant — CME only requires the price
-// land on a tick boundary. If tick <= 0, returns price unchanged.
+// Uses math.Round (round-half-away-from-zero). CME only requires the price
+// land on a tick boundary, so nearest is right for an entry or a target — but
+// NOT for a protective stop judged against a floor: nearest can move it toward
+// the entry. Entry stops go through WireStop / WireBracket (W1b E12(a)).
+// If tick <= 0, returns price unchanged.
 func RoundToTick(price, tick float64) float64 {
 	if tick <= 0 {
 		return price
 	}
 	return math.Round(price/tick) * tick
+}
+
+// wireTickEps keeps an ON-GRID price fixed under Floor/Ceil. price/tick is not
+// exact in binary for every tick (2000.3/0.10 = 20002.999999999996), so a bare
+// Floor would move an on-grid stop a whole tick. 1e-6 of a tick is far below
+// any price the wire can carry and far above float noise at index levels.
+const wireTickEps = 1e-6
+
+// WireMoved reports whether the wire's rounding moved a price: |wire −
+// authored| beyond wireTickEps of a tick, the same epsilon that keeps an
+// on-grid stop fixed in WireStop. A bare != is wrong on a non-power-of-two
+// tick: RoundToTick(2000.3, 0.10) = 2000.3000000000002, a "move" no tick can
+// see (W1b FOLD-7). On a power-of-two tick (0.25, 1.0) an on-grid price
+// rounds bit-identical, so this agrees with != there. tick <= 0 (no rounding)
+// compares exactly.
+func WireMoved(authored, wire, tick float64) bool {
+	if tick <= 0 {
+		return wire != authored
+	}
+	return math.Abs(wire-authored) > wireTickEps*tick
+}
+
+// WireStop is the stop the wire sends (W1b E12(a)): on the tick grid and
+// rounded AWAY from the entry — a long's stop DOWN, a short's stop UP — so the
+// order NT8 receives is never tighter than the one the gate approved. Nearest
+// rounding (RoundToTick) put a stop composed exactly on the min-SL floor up to
+// half a tick INSIDE it (29575.90 → 29576.00 on a 24.10 floor = 24.00).
+//
+// An on-grid stop is returned byte-identical to RoundToTick's result (same
+// integer × tick). side accepts long/short in any case; anything else
+// (buy/sell included — the AddOn reads side == "long" ? Buy : SellShort, so a
+// "buy" would not even be sent as a buy) is an ERROR, and the caller refuses
+// the send rather than guess a direction. tick <= 0 returns the price
+// unchanged, like RoundToTick.
+func WireStop(side string, stop, tick float64) (float64, error) {
+	if tick <= 0 {
+		return stop, nil
+	}
+	switch strings.ToLower(strings.TrimSpace(side)) {
+	case "long":
+		return math.Floor(stop/tick+wireTickEps) * tick, nil
+	case "short":
+		return math.Ceil(stop/tick-wireTickEps) * tick, nil
+	default:
+		return 0, fmt.Errorf("ninjatrader: wire stop rounding needs a long/short side, got %q — refusing to guess which way is away from the entry", side)
+	}
+}
+
+// WireBracket is THE rounding the wire applies to an entry's prices, shared by
+// the sender (tcp_trader.go) and the gate that judges them (trader.EntryGate
+// legs 5 and 6), so the R:R and min-SL floors are judged on exactly the numbers
+// the broker receives: entry and target to the NEAREST tick, the stop AWAY
+// from the entry (WireStop). An unknown side is an error (fail-closed).
+func WireBracket(side string, entry, stop, target, tick float64) (wEntry, wStop, wTarget float64, err error) {
+	wStop, err = WireStop(side, stop, tick)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	return RoundToTick(entry, tick), wStop, RoundToTick(target, tick), nil
 }

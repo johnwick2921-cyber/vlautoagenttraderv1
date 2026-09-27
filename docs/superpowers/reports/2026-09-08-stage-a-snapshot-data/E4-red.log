@@ -1,0 +1,15 @@
+trader/auto_trader_planner.go:1555: researchTrace.Reply(raw, err) -> removed call
+09-08 16:01:26 [INFO] store/store.go:89 ✅ Database initialized (GORM, SQLite)
+09-08 16:01:26 [WARN] trader/auto_trader.go:49 [trader_id=t1] 📐 planner attempt 1/3 parse/schema rejected: plan JSON unmarshal: invalid character 'i' looking for beginning of object key string
+09-08 16:01:26 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🧩 planner attempt 2/3 repair: prompt ~313 tokens (full-author ~4 tokens)
+09-08 16:01:26 [WARN] trader/auto_trader.go:49 [trader_id=t1] 🧭 bias-coherent arms: ⚠ bias=long but no long scenario carries an arm — S1 sweep_reclaim is armable but carries no arm. bias_requires_an_arm (a plan whose bias direction carries no armed scenario cannot trade its own bias — arm a scenario in the bias direction using an armable, live condition, or state a neutral bias) (WARN — write proceeds; owner ruling 2026-09-04 is warn-first)
+09-08 16:01:26 [WARN] trader/auto_trader.go:49 [trader_id=t1] plan liveness write: 2026-09-07 ASIA S1 — UNKNOWN: missing completed minute tape for authored close window; ACCEPTED for this check
+09-08 16:01:26 [WARN] trader/auto_trader.go:49 [trader_id=t1] 📐 confirm-grace: 1 scenario(s) missing confirm{} — accepted during the grace window (CONFIRM_GRACE_SESSIONS).
+09-08 16:01:26 [WARN] trader/auto_trader.go:49 [trader_id=t1] 📅 calendar FAIL-CLOSED: no slice for 2026-09-07 — using the static T1 fallback (0 window(s)) instead of zero protection
+09-08 16:01:26 [INFO] trader/auto_trader.go:44 [trader_id=t1] 📊 planner_candle_citations: 0 scenario line(s) cite "per candles" this read.
+09-08 16:01:26 [INFO] trader/auto_trader.go:44 [trader_id=t1] 🗓️ PLAN written 2026-09-07 ASIA v2 (model fixture, lifecycle active, prompt hash, ai_config config-fixture)
+--- FAIL: TestStageAAuthoringAttemptRepairProductionPath (0.20s)
+    research_snapshot_test.go:74: audit duration sequence lost: first=<nil> repair=<nil>
+FAIL
+FAIL	nofx/trader	0.203s
+FAIL

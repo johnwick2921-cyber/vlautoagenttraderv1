@@ -1,0 +1,102 @@
+=== r04: IncGateBlock gate-name census (revision re-measure) ===
+--- all call sites (non-test) ---
+kernel/stale_data.go:161:			telemetry.IncGateBlock(ctx.TraderID, "stale_data")
+kernel/engine_position.go:177:				telemetry.IncGateBlock(traderID, "rr_gate")
+kernel/engine_position.go:190:				telemetry.IncGateBlock(traderID, "rr_gate")
+kernel/engine_position.go:228:						telemetry.IncGateBlock(ctx.TraderID, "min_sl_gate")
+kernel/engine_position.go:249:						telemetry.IncGateBlock(ctx.TraderID, "min_sl_gate")
+kernel/engine_position.go:263:				telemetry.IncGateBlock(ctx.TraderID, "htf_veto")
+kernel/engine_position.go:276:				telemetry.IncGateBlock(ctx.TraderID, "transition_standdown")
+kernel/engine_position.go:287:				telemetry.IncGateBlock(ctx.TraderID, "executor_plan_dead")
+kernel/engine_position.go:302:				telemetry.IncGateBlock(ctx.TraderID, "scenario_below_min_quality")
+trader/auto_trader_planner.go:790:	telemetry.IncGateBlock(at.id, "plan_replans_exhausted")
+trader/auto_trader_planner.go:1790:			telemetry.IncGateBlock(at.id, "arm_authored")
+trader/auto_trader_planner.go:1908:		telemetry.IncGateBlock(at.id, "planner_fail_closed")
+trader/auto_trader_planner.go:2731:		telemetry.IncGateBlock(at.id, "plan_off_plan")
+trader/auto_trader_planner.go:2734:		telemetry.IncGateBlock(at.id, "plan_matched")
+trader/auto_trader_planner.go:2737:		telemetry.IncGateBlock(at.id, "plan_cited_mismatch")
+telemetry/gate_blocks.go:38:func IncGateBlock(trader, gate string) {
+telemetry/gate_blocks.go:51:	IncGateBlock(trader, "clock_skew_observed")
+telemetry/gate_blocks.go:58:	IncGateBlock(trader, "no_breakdown_scenario_authored")
+kernel/engine_analysis.go:68:		telemetry.IncGateBlock(ctx.TraderID, "task18_cme_closed")
+kernel/engine_analysis.go:92:			telemetry.IncGateBlock(ctx.TraderID, "task19_contract_roll")
+kernel/engine_analysis.go:139:			telemetry.IncGateBlock(ctx.TraderID, "task21_concurrent_cap")
+kernel/engine_analysis.go:186:				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_daily")
+kernel/engine_analysis.go:205:				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_blackout")
+kernel/engine_analysis.go:213:				telemetry.IncGateBlock(ctx.TraderID, "strategy_studio_consistency")
+kernel/engine_analysis.go:530:		telemetry.IncGateBlock(ctx.TraderID, "prompt_ownership")
+kernel/engine_analysis.go:663:			telemetry.IncGateBlock(ctx.TraderID, "reentry_cooldown")
+kernel/engine_analysis.go:742:			telemetry.IncGateBlock(ctx.TraderID, "price_sanity")
+telemetry/weekly.go:37:	IncGateBlock(trader, "weekly_counter")
+telemetry/weekly.go:44:	IncGateBlock(trader, "weekly_counter_block")
+telemetry/weekly.go:51:	IncGateBlock(trader, "weekly_counter_resize")
+telemetry/weekly.go:57:	IncGateBlock(trader, "weekly_read_failed")
+trader/entry_gate.go:504:	telemetry.IncGateBlock(at.id, "entry_gate")
+trader/auto_trader_session.go:166:		telemetry.IncGateBlock(at.id, "night_transition") // event row (until the P4 alert center)
+trader/ninjatrader/tcp_trader.go:352:			telemetry.IncGateBlock("", gate)
+trader/auto_trader_loop.go:777:			telemetry.IncGateBlock(at.id, "stale_bar_discarded")
+trader/auto_trader_loop.go:787:			telemetry.IncGateBlock(at.id, "superseded_wait")
+trader/auto_trader_loop.go:792:				telemetry.IncGateBlock(at.id, "decline_fresh_met")
+trader/auto_trader_loop.go:800:				telemetry.IncGateBlock(at.id, "stale_reeval_refused")
+trader/auto_trader_clock.go:818:			telemetry.IncGateBlock(at.id, "pnl_integrity_mismatch")
+trader/auto_trader_orders.go:151:			telemetry.IncGateBlock(at.id, "feed_down")
+trader/auto_trader_orders.go:171:			telemetry.IncGateBlock(at.id, "dead_man")
+trader/auto_trader_orders.go:187:			telemetry.IncGateBlock(at.id, "frozen")
+trader/auto_trader_orders.go:203:			telemetry.IncGateBlock(at.id, "boot_integrity")
+trader/auto_trader_orders.go:221:			telemetry.IncGateBlock(at.id, "stop_until")
+trader/auto_trader_orders.go:238:			telemetry.IncGateBlock(at.id, "contract_roll_resolved")
+trader/auto_trader_orders.go:252:			telemetry.IncGateBlock(at.id, "consecutive_loss")
+trader/auto_trader_orders.go:269:			telemetry.IncGateBlock(at.id, "last_entry")
+trader/auto_trader_orders.go:283:			telemetry.IncGateBlock(at.id, "session_gate")
+trader/auto_trader_orders.go:297:			telemetry.IncGateBlock(at.id, "plan_mode")
+trader/auto_trader_orders.go:311:			telemetry.IncGateBlock(at.id, "approval_required")
+trader/auto_trader_levelstate.go:129:			telemetry.IncGateBlock(at.id, "level_burned_retouch")
+
+distinct string literals: 47
+variable-set names (trader/ninjatrader/tcp_trader.go:343-352): b3_order_dedup b3_rate_breaker
+reachable total: 49
+panel labels GATE_LABELS (GateBlocksPanel.tsx:20-33): 14
+overlap: 14  go-only(render raw): 35  panel-only: 0
+--- the 35 that render raw ---
+arm_authored
+contract_roll_resolved
+decline_fresh_met
+entry_gate
+executor_plan_dead
+htf_veto
+min_sl_gate
+no_breakdown_scenario_authored
+plan_cited_mismatch
+plan_matched
+plan_off_plan
+plan_replans_exhausted
+planner_fail_closed
+pnl_integrity_mismatch
+price_sanity
+prompt_ownership
+reentry_cooldown
+rr_gate
+scenario_below_min_quality
+stale_bar_discarded
+stale_data
+stale_reeval_refused
+stop_until
+strategy_studio_blackout
+strategy_studio_consistency
+strategy_studio_daily
+superseded_wait
+task18_cme_closed
+task19_contract_roll
+task21_concurrent_cap
+transition_standdown
+weekly_counter
+weekly_counter_block
+weekly_counter_resize
+weekly_read_failed
+--- fires: decision_records.execution_log LIKE '%<gate>%' over 37,768 rows ---
+entry_gate|19
+rr_gate|0
+min_sl_gate|0
+htf_veto|0
+stale_data|0
+plan_off_plan|0

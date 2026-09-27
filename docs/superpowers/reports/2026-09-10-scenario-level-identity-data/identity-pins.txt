@@ -1,0 +1,4 @@
+ok  	nofx/branding	0.368s
+ok  	nofx/kernel	0.013s
+ok  	nofx/trader	0.883s
+ok  	nofx/store	0.213s

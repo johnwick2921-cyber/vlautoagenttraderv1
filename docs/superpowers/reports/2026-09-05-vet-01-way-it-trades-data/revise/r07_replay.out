@@ -1,0 +1,96 @@
+== sanity: point value check
+   521 short pnl 138.0 pts 69.0 => PV 2.0
+   528 short pnl -97.5 pts -48.75 => PV 2.0
+   532 short pnl 311.0 pts 155.5 => PV 2.0
+
+######## n65: realized -563.93 (n=65)
+-- A: no-progress scratch grid (minutes x thresh) : book / #scratched / winners killed
+   10min x 0.2: book   -423.50  delta   +140.43  scratched 13  winners killed 2
+   10min x 0.3: book   -179.50  delta   +384.43  scratched 16  winners killed 2
+   10min x 0.5: book   -329.00  delta   +234.93  scratched 21  winners killed 4
+   15min x 0.2: book   -307.00  delta   +256.93  scratched  7  winners killed 0
+   15min x 0.3: book   -143.00  delta   +420.93  scratched  9  winners killed 0
+   15min x 0.5: book   -172.50  delta   +391.43  scratched 12  winners killed 2
+   20min x 0.2: book   -436.00  delta   +127.93  scratched  4  winners killed 0
+   20min x 0.3: book   -211.00  delta   +352.93  scratched  7  winners killed 0
+   20min x 0.5: book   -156.00  delta   +407.93  scratched  8  winners killed 0
+   30min x 0.2: book   -496.00  delta    +67.93  scratched  2  winners killed 0
+   30min x 0.3: book   -496.00  delta    +67.93  scratched  2  winners killed 0
+   30min x 0.5: book   -313.00  delta   +250.93  scratched  4  winners killed 0
+   45min x 0.2: book   -522.00  delta    +41.93  scratched  2  winners killed 0
+   45min x 0.3: book   -522.00  delta    +41.93  scratched  2  winners killed 0
+   45min x 0.5: book   -486.00  delta    +77.93  scratched  3  winners killed 0
+   >> 15/0.3 detail: scratched [526, 527, 537, 540, 546, 547, 550, 558, 589]
+      winners killed []
+      losers helped [(527, -88.0, -47.0), (537, -79.5, 10.5), (540, -98.0, -65.0), (546, -88.5, -3.5), (547, -139.5, -65.5), (550, -84.5, -15.0), (558, -22.5, -9.5), (589, -155.0, -131.5)]
+-- B: target = k x ATR5m
+   k=1.000: book     64.29  delta   +628.22  trades re-priced 31
+   k=1.200: book     84.74  delta   +648.67  trades re-priced 28
+   k=1.400: book   -184.40  delta   +379.52  trades re-priced 24
+   k=1.500: book   -219.65  delta   +344.28  trades re-priced 22
+   k=1.835: book   -432.70  delta   +131.23  trades re-priced 18
+   k=2.000: book   -414.25  delta   +149.68  trades re-priced 16
+   k=2.500: book   -296.73  delta   +267.20  trades re-priced 12
+   k=3.000: book   -617.77  delta    -53.84  trades re-priced 5
+-- B on the reject cell only
+   reject realized 586.00 n=31
+   k=1.000: reject book    541.78  delta    -44.22
+   k=1.200: reject book    669.07  delta    +83.07
+   k=1.400: reject book    420.62  delta   -165.38
+   k=1.500: reject book    472.35  delta   -113.65
+   k=1.835: reject book    555.61  delta    -30.39
+   k=2.000: reject book    519.12  delta    -66.88
+   k=2.500: reject book    657.60  delta    +71.60
+-- C: stop tightened to k x current
+   k=0.60: book   -737.76  delta   -173.83  winners killed 5 [(521, 138.0, -27.3), (524, 273.5, -26.1), (529, 168.0, -54.3), (532, 311.0, -78.9), (555, 168.0, -37.5)]
+   k=0.70: book  -1072.88  delta   -508.95  winners killed 5 [(521, 138.0, -31.85), (524, 273.5, -30.45), (529, 168.0, -63.35), (532, 311.0, -92.05), (555, 168.0, -43.75)]
+   k=0.75: book   -853.44  delta   -289.52  winners killed 3 [(524, 273.5, -32.62), (529, 168.0, -67.88), (532, 311.0, -98.62)]
+   k=0.80: book   -707.31  delta   -143.38  winners killed 2 [(529, 168.0, -72.4), (532, 311.0, -105.2)]
+   k=0.90: book  -1027.28  delta   -463.36  winners killed 2 [(529, 168.0, -81.45), (532, 311.0, -118.35)]
+   k=1.00: book   -555.19  delta     +8.74  winners killed 0 []
+
+######## n58: realized -466.43 (n=58)
+-- A: no-progress scratch grid (minutes x thresh) : book / #scratched / winners killed
+   10min x 0.2: book   -393.50  delta    +72.93  scratched 12  winners killed 2
+   10min x 0.3: book   -149.50  delta   +316.93  scratched 15  winners killed 2
+   10min x 0.5: book   -299.00  delta   +167.43  scratched 20  winners killed 4
+   15min x 0.2: book   -294.50  delta   +171.93  scratched  6  winners killed 0
+   15min x 0.3: book   -130.50  delta   +335.93  scratched  8  winners killed 0
+   15min x 0.5: book   -160.00  delta   +306.43  scratched 11  winners killed 2
+   20min x 0.2: book   -338.50  delta   +127.93  scratched  4  winners killed 0
+   20min x 0.3: book   -204.00  delta   +262.43  scratched  6  winners killed 0
+   20min x 0.5: book   -149.00  delta   +317.43  scratched  7  winners killed 0
+   30min x 0.2: book   -398.50  delta    +67.93  scratched  2  winners killed 0
+   30min x 0.3: book   -398.50  delta    +67.93  scratched  2  winners killed 0
+   30min x 0.5: book   -215.50  delta   +250.93  scratched  4  winners killed 0
+   45min x 0.2: book   -424.50  delta    +41.93  scratched  2  winners killed 0
+   45min x 0.3: book   -424.50  delta    +41.93  scratched  2  winners killed 0
+   45min x 0.5: book   -388.50  delta    +77.93  scratched  3  winners killed 0
+   >> 15/0.3 detail: scratched [526, 527, 537, 540, 547, 550, 558, 589]
+      winners killed []
+      losers helped [(527, -88.0, -47.0), (537, -79.5, 10.5), (540, -98.0, -65.0), (547, -139.5, -65.5), (550, -84.5, -15.0), (558, -22.5, -9.5), (589, -155.0, -131.5)]
+-- B: target = k x ATR5m
+   k=1.000: book     36.95  delta   +503.38  trades re-priced 30
+   k=1.200: book     49.33  delta   +515.76  trades re-priced 27
+   k=1.400: book   -227.88  delta   +238.55  trades re-priced 23
+   k=1.500: book   -267.16  delta   +199.27  trades re-priced 21
+   k=1.835: book   -493.73  delta    -27.30  trades re-priced 17
+   k=2.000: book   -481.93  delta    -15.50  trades re-priced 15
+   k=2.500: book   -199.23  delta   +267.20  trades re-priced 12
+   k=3.000: book   -520.27  delta    -53.84  trades re-priced 5
+-- B on the reject cell only
+   reject realized 586.00 n=31
+   k=1.000: reject book    541.78  delta    -44.22
+   k=1.200: reject book    669.07  delta    +83.07
+   k=1.400: reject book    420.62  delta   -165.38
+   k=1.500: reject book    472.35  delta   -113.65
+   k=1.835: reject book    555.61  delta    -30.39
+   k=2.000: reject book    519.12  delta    -66.88
+   k=2.500: reject book    657.60  delta    +71.60
+-- C: stop tightened to k x current
+   k=0.60: book   -721.86  delta   -255.43  winners killed 5 [(521, 138.0, -27.3), (524, 273.5, -26.1), (529, 168.0, -54.3), (532, 311.0, -78.9), (555, 168.0, -37.5)]
+   k=0.70: book  -1036.83  delta   -570.40  winners killed 5 [(521, 138.0, -31.85), (524, 273.5, -30.45), (529, 168.0, -63.35), (532, 311.0, -92.05), (555, 168.0, -43.75)]
+   k=0.75: book   -807.32  delta   -340.89  winners killed 3 [(524, 273.5, -32.62), (529, 168.0, -67.88), (532, 311.0, -98.62)]
+   k=0.80: book   -651.11  delta   -184.68  winners killed 2 [(529, 168.0, -72.4), (532, 311.0, -105.2)]
+   k=0.90: book   -950.93  delta   -484.51  winners killed 2 [(529, 168.0, -81.45), (532, 311.0, -118.35)]
+   k=1.00: book   -458.69  delta     +7.74  winners killed 0 []

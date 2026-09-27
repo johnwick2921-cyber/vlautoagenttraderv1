@@ -1,0 +1,231 @@
+### C5 sessions: planconfig + session_registry
+	return ""
+}
+
+// sessionEnabledForStrategy gates which sessions THIS trader runs (on top of the
+// registry Enabled flag): the SessionsEnabled subset (default [NY]). A per-session
+// Enable override wins over the subset.
+func (at *AutoTrader) sessionEnabledForStrategy(session string) bool {
+	if ov := at.sessionOverride(session); ov != nil && ov.Enable != nil {
+		return *ov.Enable
+	}
+	dp := at.dayPlanCfg()
+func (at *AutoTrader) sessionRunnable(s *kernel.SessionDef) (bool, string) {
+	if s == nil {
+		return false, "no session"
+	}
+	if ov := at.sessionOverride(s.Name); ov != nil && ov.Enable != nil {
+		if *ov.Enable {
+			return true, ""
+		}
+		return false, s.Name + " switched off for this strategy"
+			{
+				Name:          SessionAsia,
+				WindowStartCT: "17:00",
+				WindowEndCT:   "02:00", // wraps midnight
+				ReadCT:        "16:30", // owner ruling 2026-08-31: open−30 (was 16:55)
+				FlatCT:        "02:00",
+				Killzones:     []KillzoneCT{{Name: "asia_kz", StartCT: "19:00", EndCT: "23:00"}},
+				Enabled:       false,
+			},
+			{
+				Name:          SessionLondon,
+				WindowStartCT: "02:00",
+				WindowEndCT:   "08:30",
+				ReadCT:        "01:30", // owner ruling 2026-08-31: open−30 (was 01:55)
+				FlatCT:        "08:30",
+				Killzones:     []KillzoneCT{{Name: "london_kz", StartCT: "02:00", EndCT: "05:00"}},
+				Enabled:       false,
+			},
+			{
+				Name:          SessionNY,
+				WindowStartCT: "08:30",
+				WindowEndCT:   "14:45", // = 15:45 ET — session end == EOD flat (owner contract)
+				ReadCT:        "08:00", // owner ruling 2026-08-31: open−30 (was 08:25)
+				FlatCT:        "14:45", // = 15:45 ET — same instant as WindowEndCT by contract
+				Killzones: []KillzoneCT{
+					{Name: "ny_am", StartCT: "08:30", EndCT: "11:00"},
+					{Name: "ny_pm", StartCT: "13:00", EndCT: "14:45"},
+### C9 entry_gate.go:160-170 + #91 body
+	// a tripped daily limit outranks every other reason to take or refuse an
+	// entry, and its refusal is the one the journal should show.
+	//
+	// This leg is the half of the daily guardrail that was missing.
+	// DailyGuardrails.Check() always returned RiskForceFlat on a daily-loss
+	// trip, its only caller discarded the value, and this file contained
+	// neither "daily" nor "guardrail" — so the limit stopped the decision cycle
+	// and a RESTING ARM FILLED STRAIGHT THROUGH IT.
+	//
+	// Fail-open per the file's contract: a nil resolver, or an empty reason,
+	// is not evidence of a trip and never refuses.
+	if in.DailyForceFlat != nil {
+		if why := in.DailyForceFlat(); strings.TrimSpace(why) != "" {
+			return fmt.Sprintf("entry_gate: refused: daily_force_flat — %s (new entries blocked on the %s path until the daily window resets; open positions are not closed by this leg)", why, in.Path), true
+		}
+	}
+
+	// Leg 0 — plan_mode STRICT (R4, OWNER RULING 2026-09-03). FIRST
+fix(risk,planner): wire RiskForceFlat and BiasArmWarning — both shipped uncalled
+
+Two mechanisms this repo built, tested and never called. A passing suite and a
+green checklist row did not establish that either was live.
+
+1. RiskForceFlat — a resting arm filled through a tripped daily loss limit.
+   DailyGuardrails.Check() (kernel/risk_limits.go:245) has always returned
+   RiskForceFlat on a daily-loss trip. Its ONLY production caller discarded it:
+   `} else if _, gErr := g.Check(); gErr != nil {` (kernel/engine_analysis.go:183),
+   which skipped the decision cycle and did nothing else. trader/entry_gate.go
+   contained neither "daily" nor "guardrail", so the ARM PATH never consulted
+   the guardrail at all — and with plan_mode=strict the arm path is the only
+### C10 checklist 754-790 / 940-950 / 1005-1012 / 1818-1824
+48. **The decision path bypassed the arm-seam gates.** Root cause: the five
+    entry protections lived ONLY at the arm seam (`armed_executor.go`): the
+    R:R floor (`armMinRR`), the 0C shadow map (`conditionShadowedFor`),
+    not a protection — it is a suggestion.
+
+    **RIDER — "one gate, two ATRs" (no-trade-forensic 2026-09-03):** the
+    class-48 decision-path min-SL leg initially read `kernel.PlanDATRFor`, but
+    `SetPlanDATR(..., dATR)` stores the **DAILY ATR** (`plan_render.go:370`) —
+    not ATR5m. Measured: decision records 36640/36641/36642 (09-02 18:48-18:52)
+    refused against `1.5×ATR5m = 450.56` (dATR 300.4) while the arm seam in the
+    same minutes used ATR5m 12.78-14.12; all three targets printed within 28
+    minutes (19:07/19:15/19:16). Fix: both seams now read ONE resolver —
+    `armSeamATR5m` = the arm seam's chain (`FuturesBarsProvider`
+    AISVPBarInterval/Count → `AcceptanceBars(...,"2x5m")` → `ExportCalculateATR`
+    14) — and the doubled `entry_gate: entry_gate:` prefix collapsed. **Law:**
+    when one gate serves two paths, it reads ONE resolver per input — a gate
+    with two ATRs is two gates, and one of them is lying.
+
+    text — and a rule with more than one definition has none.
+
+53. **One question, two answers: a predicate shared by two callers that fed it
+    different inputs.** (Numbered 51 at merge against a tree that did not
+    yet carry class 50's entry; renumbered to 53 by owner ruling 2026-09-02 —
+    tell them apart. Measured 2026-09-02: of 586 closed positions **517 carried
+    mae=0 AND mfe=0** — the never-computed signature, since price always moves —
+    while 9 carried a single genuine zero beside a real number. Round 7 ruled
+    that exit rules, stop sizes and targets come from MAE/MFE distributions, so
+    every one of those rulings was waiting on a column that was 88% unreadable.
+    Two more faces of the same defect: `kernel.LearningLine` guarded its average
+-- class count:
+78
+gap after 45
+max 79
+2002:## CLASS 75 — SYSTEM-MAP CONTRACT (born 2026-09-04, docs/system-map-0904)
+### C11 arm_stop_anchor.go:18-75
+// The rule (owner ruling): stop = BEYOND the nearest seated level on the risk
+// side + tick clearance, then floored at MIN_SL_ATR_MULT×ATR5m — WHICHEVER IS
+// WIDER WINS. The authored stop is a third floor: this composition never
+// TIGHTENS what the planner wrote, it only widens. When no seated level sits
+// within a sane range on the risk side, the arm is `stop_unanchored` and the
+// ATR floor governs — a level is never invented.
+
+//	side      long|short
+//	entry     the arm's entry price
+//	authored  the planner's stop (never tightened)
+//	atr5m     ATR(14) on 5m; ≤0 → the ATR leg is skipped (fail-open)
+//	tick      instrument tick size
+//	levels    the plan's seated levels
+//	mult      MIN_SL_ATR_MULT (resolved)
+//	clearTicks the level-clearance leg (MinSLTickClearance)
+//	maxAnchorATR the dead-zone bound in ATR units; ≤0 disables anchoring
+func composeArmStop(side string, entry, authored, atr5m, tick float64, levels []kernel.PlanLevel, mult float64, clearTicks int, maxAnchorATR float64) StopComposition {
+	c := StopComposition{Stop: authored, Authored: authored, Bound: "authored"}
+	long := strings.EqualFold(strings.TrimSpace(side), "long")
+	if entry <= 0 || authored <= 0 {
+0
+### C12 replan_cap
+		// handled below.
+		handledDeath := false
+		// P3.6 — RE-PLAN ON DEATH (cap replan_cap/session → NO-TRADE).
+		if detail, dead := at.describeActivePlanDeath(existing); dead {
+			handledDeath = true
+}
+
+// ReplanCapFor resolves the re-read cap for a session: per-session override →
+// strategy-level → the shipped default of 2. A 0 override is meaningful (no
+// re-plan after death), hence the >= 0 test rather than > 0.
+func (c *DayPlanConfig) ReplanCapFor(session string) int {
+	n := 2
+	if c != nil && c.ReplanCap > 0 {
+		n = c.ReplanCap
+	}
+	if ov := c.SessionOverride(session); ov != nil && ov.ReplanCap != nil && *ov.ReplanCap >= 0 {
+		n = *ov.ReplanCap
+	}
+	return n
+}
+
+### C13 engine_prompt_futures.go:235-246 + :15 :122
+	sb.WriteString("<decision>\n")
+	sb.WriteString("```json\n[\n")
+	sb.WriteString("  {\"symbol\": \"" + sym + "\", \"action\": \"open_long\", \"leverage\": 1, \"position_size_usd\": 60000, \"stop_loss\": 21480.00, \"take_profit\": 21560.00, \"confidence\": 80, \"cit
+	sb.WriteString("]\n```\n")
+	sb.WriteString("</decision>\n\n")
+	sb.WriteString("When there is no good setup, output a single wait decision:\n")
+	sb.WriteString("<decision>\n```json\n[{\"symbol\": \"" + sym + "\", \"action\": \"wait\"}]\n```\n</decision>\n\n")
+
+	// 6. Field description.
+	sb.WriteString("## Field Description\n")
+	sb.WriteString("- `action`: open_long | open_short | close_long | close_short | hold | wait\n")
+	sb.WriteString("- `symbol`: always \"" + sym + "\"\n")
+### C14 handler_trader.go:447-455 / agent/tools.go:2485-2490 / SYSTEM-MAP:211
+
+	// Set scan interval default value. Minimum lowered 3 → 1 (2026-06-09,
+	// scalper request): any positive value is accepted; unset/invalid (<= 0)
+	// still defaults to the recommended 3.
+	scanIntervalMinutes := req.ScanIntervalMinutes
+	if scanIntervalMinutes <= 0 {
+		scanIntervalMinutes = 3 // unset → the recommended default
+	}
+
+	if args.ScanIntervalMinutes != nil && *args.ScanIntervalMinutes > 0 {
+		record.ScanIntervalMinutes = *args.ScanIntervalMinutes
+		if record.ScanIntervalMinutes < 3 {
+			record.ScanIntervalMinutes = 3
+		}
+	}
+## 12 · CADENCE — clock and session rhythm
+
+- Scan interval: `scan_interval_minutes` default **3**, min 3 — store/trader.go:28-29, api/handler_trader.go:451-453, agent/tools.go:2487-2488 `[X]` per census (never tape-tested).
+- Cadence modes: `CadenceInterval` / `CadenceBarClose` — auto_trader_clock.go:42-50; main loop ticker `auto_trader.go:936`; bar-close gate :905; stale-dodge :921.
+### armed_executor.go:436-450
+				// refusal every few minutes (LONDON S4 min-SL 18.29→18.67).
+				// PRE-REOPEN F3 (2026-08-28) — the missing 1.3 clause: a gate input
+				// that changes materially while the arm is WORKING cancels it the
+				// same cycle (the LONDON S4 class stayed resting through repeated
+				// re-refusals until the 08:30 sweep).
+				if rows, lerr := ledger.ListNonTerminal(at.id); lerr == nil {
+					for _, r := range rows {
+						if r.TraderID == at.id && r.PlanID == plan.PlanID && r.Scenario == sc.ID &&
+							r.State == "working" && r.SignalID != "" {
+							if nt := at.armedTrader(); nt != nil {
+								if cerr := nt.CancelOrder(r.SignalID); cerr == nil {
+									_ = ledger.SetState(r.ID, "cancelled", "gate changed: "+armRefusalClass(verdict))
+									at.logWarnf("✕ armed cancel (gate changed %s): %s %s", armRefusalClass(verdict), plan.Session, sc.ID)
+								}
+							}
+### arms_bias_coherent.go:9-16
+// WARN-FIRST (owner ruling 2026-09-04). Measured across 171 stored directional
+// plans, a hard reject would have refused 50/68 longs and 66/103 shorts —
+// roughly two thirds of everything the planner has ever written. A reject that
+// fires that often teaches the model nothing, because it cannot produce a
+// compliant plan at all: 18 of those longs lean on breakout_retest, which is
+// BOTH un-armable and shadowed, and nothing ever told the model. So this counts
+// per side, D1 tells the model which conditions can actually be armed, and a
+// later ruling promotes it to a reject once the numbers have moved.
+### planner_prompt.go 722/733/183-189
+			b.WriteString(" · price BEYOND range high (extended) — longs disallowed by branch 5 (premium)")
+		case pos < 0:
+			b.WriteString(" · price BEYOND range low (extended) — shorts disallowed by branch 5 (discount)")
+		case pos >= 0.5:
+			fmt.Fprintf(&b, " · price at %.0f%% of the range (PREMIUM — longs disallowed by branch 5)", pos*100)
+		default:
+			fmt.Fprintf(&b, " · price at %.0f%% of the range (DISCOUNT — shorts disallowed by branch 5)", pos*100)
+		"target_chain is GUIDANCE for the executor AI (which sets the actual take_profit) — it is validated for reachability at write time but never enforced at execution (D2 ruling). " +
+		"Every armed scenario at quality A or B SHOULD carry arm{} — enabled:true + EXACT entry/stop/target (breakout_retest stays a normal AI play: the machine never arms it — GAR-F4). A setup the planner believes in gets
+### boot-8 line
+09-04 07:38:40 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev 4f47ed2c2543 · built 2026-09-04T12:35:20Z · expected 4f47ed2c2543 · goldens PASS
+09-04 08:30:11 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev 70af663dcb6f · built 2026-09-04T13:16:34Z · expected 70af663d · goldens PASS
+09-04 10:53:10 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev ebe07d5f366a · built 2026-09-04T15:49:56Z · expected ebe07d5f · goldens PASS
+09-04 13:25:47 [INFO] nofx/main.go:291 🔐 BOOT INTEGRITY OK — rev 36648655cfe0 · built 2026-09-04T18:22:30Z · expected 36648655 · goldens PASS

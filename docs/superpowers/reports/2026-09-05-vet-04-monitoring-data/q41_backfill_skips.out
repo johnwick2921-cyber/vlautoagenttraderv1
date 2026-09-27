@@ -1,0 +1,12 @@
+=== 09-03 backfill lines (backfilled>0) ===
+09-03 10:28:29 📐 excursions: logging=on rows=0 backfilled=0 unresolved=0 (unresolved = no 1m coverage; those rows keep NULLs, never zeros)
+09-03 10:28:44 📦 bars: persisting 28 symbol×tf retention=90d rows=74752 (backfilled 48889)
+09-03 11:10:33 📐 excursions: logging=on rows=0 backfilled=0 unresolved=0 (unresolved = no 1m coverage; those rows keep NULLs, never zeros)
+09-03 11:10:48 📦 bars: persisting 28 symbol×tf retention=90d rows=74898 (backfilled 38894)
+09-03 14:18:26 📐 excursions: logging=on rows=0 backfilled=0 unresolved=0 (unresolved = no 1m coverage; those rows keep NULLs, never zeros)
+09-03 14:59:03 📐 excursions: logging=on rows=0 backfilled=0 unresolved=0 (unresolved = no 1m coverage; those rows keep NULLs, never zeros)
+=== cycle_skip=no_new_data per CT day ===
+09-01: 29
+09-02: 29
+09-03: 41
+09-04: 347

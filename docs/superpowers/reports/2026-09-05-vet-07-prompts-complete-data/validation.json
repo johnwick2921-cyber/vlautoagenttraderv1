@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "base": "b4376246",
+  "eligible_population": 58,
+  "eligible_pnl_corrected": -466.428572,
+  "cme_days": 12,
+  "rewrite_o200k": {
+    "original_tokens": 4888,
+    "rewrite_tokens": 2414,
+    "ratio": 0.4938625204582651,
+    "half_length_pass": true
+  },
+  "rewrite_cl100k": {
+    "original_tokens": 4894,
+    "rewrite_tokens": 2427,
+    "ratio": 0.4959133633020025,
+    "half_length_pass": true
+  },
+  "mapped_constraint_units": 120,
+  "all_source_spans_reconstruct": true,
+  "reject_ids_classified": 64,
+  "uppercase_words": 0,
+  "numbered_lines": 28,
+  "executor_flow_included": true,
+  "joined_real_executor_plan_and_result": true,
+  "docs_only_scope": true,
+  "credential_scan": "PASS",
+  "whitespace_scope": "report prose and scripts PASS; raw prompt/source/CSV/exact-cut quotation whitespace intentionally preserved",
+  "limits": "Artifact/content checks only; no production model calls, behavioral parity, validator changes or trading mutations. Parent owns merge."
+}

@@ -1,0 +1,15 @@
+{
+  "source_sections_on_remote_dev": "55dde65e8256570ac97dd11d16e0a0f45e89fb54",
+  "source_report_hashes_verified": true,
+  "source_packet_changed_paths": 340,
+  "changed_path_scope": "docs/superpowers/reports only",
+  "health": {
+    "http": 200,
+    "body": {
+      "revision": "36648655cfe0",
+      "status": "ok",
+      "time": null
+    }
+  },
+  "runtime_changed": false
+}

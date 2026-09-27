@@ -1,0 +1,72 @@
+[
+  {
+    "id": 16480357,
+    "event": "bar_update",
+    "receipt_ms": 1789092896969,
+    "contract": "MNQ 09-26",
+    "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+    "bar_open_ms": 1789092840000,
+    "open": 29134,
+    "close": 29131
+  },
+  {
+    "id": 16480343,
+    "event": "bar_update",
+    "receipt_ms": 1789092896969,
+    "contract": "MNQ 09-26",
+    "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+    "bar_open_ms": 1789092840000,
+    "open": 29134,
+    "close": 29131
+  },
+  {
+    "id": 16480329,
+    "event": "bar_update",
+    "receipt_ms": 1789092896969,
+    "contract": "MNQ 09-26",
+    "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+    "bar_open_ms": 1789092840000,
+    "open": 29134,
+    "close": 29131
+  },
+  {
+    "id": 16480315,
+    "event": "bar_update",
+    "receipt_ms": 1789092896969,
+    "contract": "MNQ 09-26",
+    "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+    "bar_open_ms": 1789092840000,
+    "open": 29134,
+    "close": 29131.25
+  },
+  {
+    "id": 16480301,
+    "event": "bar_update",
+    "receipt_ms": 1789092896968,
+    "contract": "MNQ 09-26",
+    "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+    "bar_open_ms": 1789092840000,
+    "open": 29134,
+    "close": 29131.25
+  },
+  {
+    "id": 16480287,
+    "event": "bar_update",
+    "receipt_ms": 1789092896759,
+    "contract": "MNQ 09-26",
+    "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+    "bar_open_ms": 1789092840000,
+    "open": 29134,
+    "close": 29131.75
+  },
+  {
+    "id": 16480273,
+    "event": "bar_update",
+    "receipt_ms": 1789092896344,
+    "contract": "MNQ 09-26",
+    "contract_basis": "preceding received subscription acknowledgement; historical per-bar contract UNKNOWN",
+    "bar_open_ms": 1789092840000,
+    "open": 29134,
+    "close": 29132
+  }
+]

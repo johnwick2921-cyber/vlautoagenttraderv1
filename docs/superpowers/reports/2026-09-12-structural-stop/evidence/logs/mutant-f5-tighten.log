@@ -1,0 +1,13 @@
+── mutating trader/structural_geometry.go
+   edit landed:
+     -	stop := math.Floor((*z.Lo-p.BufferPoints)/tick) * tick
+     +	stop := math.Floor((*z.Lo-p.BufferPoints)/tick) * tick + tick
+   mutant builds
+
+KILLED — a pin caught it.
+     --- FAIL: TestStructuralStopF1F2ProductionArmCycle (0.15s)
+     --- FAIL: TestStructuralStopF5FirstTargetIsNeverSkipped (0.00s)
+     --- FAIL: TestStructuralStopF4F5Refuses23For4WithoutMoving (0.13s)
+     FAIL
+     FAIL	nofx/trader	0.845s
+     FAIL

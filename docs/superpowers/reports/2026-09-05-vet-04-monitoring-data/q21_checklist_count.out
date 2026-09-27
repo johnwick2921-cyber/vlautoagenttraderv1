@@ -1,0 +1,18 @@
+PART1 numbered classes (lines 11-1844, '^N. **'): 78
+max numbered in PART1: 79. **
+'## CLASS NN' headers: 1
+CLASS header numbers: 75 
+PART markers:
+11:## PART 1 — THE BUG CLASSES (name · root cause · probe · law)
+1845:## PART 2 — PRE-AUDIT (standing hard rules)
+1867:## PART 3 — PRE-CUTOVER (standing 8-step protocol, 0-7; flat gate = 5 legs, class 33)
+monitoring/alert-related classes (grep):
+51:6. **Go-side theater.** Root cause: a confident Go log line ("⚔️ armed S1 …")
+91:12. **Log-flood retention.** Root cause: per-frame INFO floods — bar_update
+149:20. **OS-side fix that silently regresses.** Root cause: an OS-level remediation
+175:22. **Log-lie counters.** Root cause: a success log reports a WRITE DELTA or
+258:29. **The silent-aggregate family.** Root cause: aggregates that answer
+267:30. **GORM alias scan silently reads 0.** Root cause: a `Scan` target struct
+791:49. **Instrument theatre: a boot line that could not be wrong, a label that
+1715:75. **The build directory is in every log line.** (Found 2026-09-03 in boot 7's
+1980:5. **Owner ack:** explicit "go" — reachable and acking the boot line within

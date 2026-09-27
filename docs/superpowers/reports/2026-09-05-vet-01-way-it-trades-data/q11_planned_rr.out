@@ -1,0 +1,19 @@
+plans since 08-15: 253 scenarios: 738
+condition mix: [('reject', 234), ('sweep_reclaim', 186), ('breakout_retest', 124), ('hold', 72), ('reclaim', 63), ('acceptance', 56), ('breakdown_continue', 3)]
+direction mix: [('short', 395), ('long', 343)]
+quality mix: [('B', 460), ('C', 160), ('A', 117), ('A+', 1)]
+arm enabled: Counter({False: 606, True: 132})
+arm enabled by condition: [(('sweep_reclaim', False), 161), (('reject', False), 138), (('breakout_retest', False), 114), (('reject', True), 96), (('hold', False), 72), (('reclaim', False), 62), (('acceptance', False), 56), (('sweep_reclaim', True), 25), (('breakout_retest', True), 10), (('breakdown_continue', False), 3), (('reclaim', True), 1)]
+armed scenarios with full arm: 132
+planned RR: n 132 p25 2.1 median 2.36 p75 2.93 min 0.56 max 5.55
+planned RR in [2.0,2.3): 47 of 132 ; <2.0: 15 ; >=3: 26
+stop pts: median 26.38 p25 20.19 p75 36.54 min 5 max 129.75
+  ASIA n 43 median RR 2.26 in[2,2.3) 16
+  LONDON n 32 median RR 2.29 in[2,2.3) 11
+  NY n 57 median RR 2.5 in[2,2.3) 20
+window 09-01..09-02: n 59 median 2.54 in[2,2.3) 16
+armed by condition: [('reject', 96), ('sweep_reclaim', 25), ('breakout_retest', 10), ('reclaim', 1)]
+armed by direction: [('short', 96), ('long', 36)]
+tc sample 2026-08-27:ASIA: S1 29694.69 29710.5 29673.5 [29673.5, 29668.54, 29647.36, 29619.5]
+tc sample 2026-08-27:ASIA: S2 29694.69 29704.25 29673.5 [29673.5, 29668.54, 29647.36]
+tc sample 2026-08-27:ASIA: S1 29676 29692 29643.5 [29652.97, 29643.5, 29623.48, 29591.5]

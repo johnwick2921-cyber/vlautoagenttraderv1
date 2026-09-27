@@ -1,0 +1,65 @@
+[
+  {
+    "section": 1,
+    "path": "docs/superpowers/reports/2026-09-05-vet-01-way-it-trades.md",
+    "lines": 375,
+    "sha256": "d80f4e40cb12a9a079f1c316d05169e63e9c4fe3dbeba5c29d0ea91a8523c66a",
+    "branch_tip": "9ce006a9a3fb7b7b1c3abb72167478db84fec33c"
+  },
+  {
+    "section": 2,
+    "path": "docs/superpowers/reports/2026-09-05-vet-02-levels.md",
+    "lines": 272,
+    "sha256": "3dcb9cf6d3ad22f0cf116c43157ce3b9c29554dec798beee0f1e2cd56e60412a",
+    "branch_tip": "070ef9961de621368d185860107bc6b762b5aff8"
+  },
+  {
+    "section": 3,
+    "path": "docs/superpowers/reports/2026-09-05-vet-03-decisions.md",
+    "lines": 356,
+    "sha256": "2e93f65f76034be732d05b5de37e300f6637933682e415df9447c1a743e9757e",
+    "branch_tip": "307ddcb60bd5f8241ddddc6e4cfc30d0da51d3b3"
+  },
+  {
+    "section": 4,
+    "path": "docs/superpowers/reports/2026-09-05-vet-04-monitoring.md",
+    "lines": 327,
+    "sha256": "b583e2c89a7b0b8efdc9c1af53046a1bb4d818b568377129f5329e49bcbf788e",
+    "branch_tip": "e41f2c230976440719870dd13fa23b36136a7f46"
+  },
+  {
+    "section": 5,
+    "path": "docs/superpowers/reports/2026-09-05-vet-05-execution.md",
+    "lines": 248,
+    "sha256": "ee2d8aac53076ad30a3b94e7dca47fa09b90c818cd73605638e13d5c90da773c",
+    "branch_tip": "56fca3d861f3bf0fe6e2f0e945842c6e81592ce5"
+  },
+  {
+    "section": 6,
+    "path": "docs/superpowers/reports/2026-09-05-vet-06-risk.md",
+    "lines": 266,
+    "sha256": "2f333ec18231aa07b7ba790d25bb9a2ab92e4baf05ca740899640cd1b2f70f9c",
+    "branch_tip": "6ad009b2e346ba348066945222132fc22a4a2045"
+  },
+  {
+    "section": 7,
+    "path": "docs/superpowers/reports/2026-09-05-vet-07-prompts.md",
+    "lines": 614,
+    "sha256": "57a7fe5e2cdc150d5f72469e2ecf94814f8879cfb2937c4252dd63562461a1e2",
+    "branch_tip": "0c07286c4dd95101d9e5fc1eb71d128a160840be"
+  },
+  {
+    "section": 8,
+    "path": "docs/superpowers/reports/2026-09-05-vet-08-stretch.md",
+    "lines": 301,
+    "sha256": "75f7699691c630c89c038cc960ca94b6525bdd4896d2d82251c66bb5b03f997d",
+    "branch_tip": "6b48627861b99d5b526ef959543e7a308a02fe06"
+  },
+  {
+    "section": 10,
+    "path": "docs/superpowers/reports/2026-09-05-vet-10-ideas.md",
+    "lines": 326,
+    "sha256": "820e78b7743747e267f0dd14cb93bdd1790f363d4c2a05d9cbd0ca95baec4227",
+    "branch_tip": "279af5f63adf95511ff4fcf35d86bcdec8a2758b"
+  }
+]

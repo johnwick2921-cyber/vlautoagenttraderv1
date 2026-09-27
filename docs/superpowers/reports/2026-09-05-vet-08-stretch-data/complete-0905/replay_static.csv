@@ -1,0 +1,194 @@
+opportunity,leg,status,reason,kind,entry,authored_stop,target
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1,0,checkpoint_evaluated,,limit,29044,29025,29099.85
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S3,0,checkpoint_evaluated,,limit,29068.05,29044,29131.66
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S0,,disabled,stored arm is absent or disabled,,,,
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-01:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S2,0,checkpoint_evaluated,,limit,29317.25,29342,29212.5
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S3,0,checkpoint_evaluated,,limit,29317.25,29345.25,29246.25
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S4,0,checkpoint_evaluated,,limit,29317.25,29350,29246.25
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S5,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S3,0,checkpoint_evaluated,,limit,29001.75,28927.25,29171.25
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S4,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S5,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,0,checkpoint_evaluated,,limit,29014.19,28985.5,29171.25
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S4,0,checkpoint_evaluated,,limit,29317.25,29343,29246.25
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,0,checkpoint_evaluated,,limit,29001.75,28975.75,29058.75
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S4,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S3,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S4,0,checkpoint_evaluated,,limit,29317.25,29355,29209.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,0,checkpoint_evaluated,,limit,29135.65,29099,29209.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,0,checkpoint_evaluated,,limit,29317.25,29354,29209.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S2,0,checkpoint_evaluated,,limit,29102,29060,29209.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S3,0,checkpoint_evaluated,,limit,29058.75,29020,29143.97
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S3,1,checkpoint_evaluated,,limit,29070,29033,29171.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S4,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S4,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S4,0,checkpoint_evaluated,,limit,29317.25,29348,29246.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S2,0,checkpoint_evaluated,,limit,29058.75,29032,29161.16
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S3,0,checkpoint_evaluated,,limit,29317.25,29344.75,29246.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S1,0,checkpoint_evaluated,,limit,29163.99,29138.75,29246.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S3,0,checkpoint_evaluated,,limit,29317.25,29342.5,29246.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S4,0,checkpoint_evaluated,,limit,29058.75,29086.75,28927.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S2,0,checkpoint_evaluated,,limit,29001.75,28972.75,29102
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S4,0,checkpoint_evaluated,,limit,29317.25,29345.25,29246.25
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3,0,checkpoint_evaluated,,limit,29166.8,29199.5,29058.75
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S4,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,0,checkpoint_evaluated,,limit,29199.68,29216.25,29149
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,0,checkpoint_evaluated,,limit,29208.75,29228.75,29149
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S3,0,checkpoint_evaluated,,limit,29149,29170,29058.75
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,0,checkpoint_evaluated,,limit,29197.57,29212.5,29149
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S4,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,0,checkpoint_evaluated,,limit,29209.25,29223,29181.64
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1,0,checkpoint_evaluated,,limit,29218.25,29232,29149
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S1,0,checkpoint_evaluated,,limit,29157.03,29175.66,29102
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S2,0,checkpoint_evaluated,,limit,29141.25,29157.03,29102
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v8/S3,0,checkpoint_evaluated,,limit,29175.66,29194.3,29136.25
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v9/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S1,0,checkpoint_evaluated,,limit,29200.5,29228,29141.25
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v10/S3,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S1,0,checkpoint_evaluated,,limit,29199.5,29227.9,29141.25
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v11/S4,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S1,0,checkpoint_evaluated,,limit,29208.69,29237.75,29141.25
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S2,0,checkpoint_evaluated,,limit,29132.5,29161.5,29042.75
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v12/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v13/S1,0,checkpoint_evaluated,,limit,29199.5,29226,29132.5
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v13/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v13/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v14/S1,0,checkpoint_evaluated,,limit,29228.75,29250,29186.14
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v14/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v14/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v14/S4,0,checkpoint_evaluated,,limit,29255,29275.25,29214.5
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v15/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v15/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,0,checkpoint_evaluated,,limit,29259.67,29289,29178.73
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,0,checkpoint_evaluated,,limit,29219.97,29255,29144.5
+2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,0,checkpoint_evaluated,,limit,29285,29340,29144.5
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,0,checkpoint_evaluated,,limit,29351.05,29418.75,29209.25
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S4,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S3,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,0,checkpoint_evaluated,,limit,29481.05,29414,29619.5
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,0,checkpoint_evaluated,,limit,29543.75,29610.25,29364.75
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S3,0,checkpoint_evaluated,,limit,29543.75,29592.5,29397.11
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S4,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S3,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,0,checkpoint_evaluated,,limit,29548,29558.5,29522.22
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S3,0,checkpoint_evaluated,,limit,29585,29603,29548
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,0,checkpoint_evaluated,,limit,29585,29568,29622.17
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S4,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S1,,disabled,stored arm is absent or disabled,,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S2,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-03:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v7/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S1,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S2,0,checkpoint_evaluated,,limit,29579.5,29558.34,29639.5
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S4,,disabled,stored arm is absent or disabled,stop_entry,,,
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,0,checkpoint_evaluated,,limit,29649.59,29670.69,29597.25
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-04:LONDON:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v1/S0,,disabled,stored arm is absent or disabled,,,,
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,0,checkpoint_evaluated,,limit,29611.25,29481.5,29720
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S1,1,checkpoint_evaluated,,limit,29611.25,29481.5,29720
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,0,checkpoint_evaluated,,limit,29720,29770,29601
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v2/S2,1,checkpoint_evaluated,,limit,29720,29770,29601
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S1,0,checkpoint_evaluated,,limit,29657.38,29720,29503.38
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v3/S2,0,checkpoint_evaluated,,stop_entry,29591.02,29645.25,29481.5
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S1,0,checkpoint_evaluated,,limit,29585,29636,29481.5
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,0,checkpoint_evaluated,,limit,29720,29770,29585
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S2,1,checkpoint_evaluated,,limit,29720,29770,29585
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v4/S3,,disabled,stored arm is absent or disabled,limit,,,
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,0,checkpoint_evaluated,,limit,29720,29765,29553.75
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S1,1,checkpoint_evaluated,,limit,29720,29765,29553.75
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v5/S2,,disabled,stored arm is absent or disabled,,,,
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S1,0,checkpoint_evaluated,,limit,29579.56,29614.5,29503.38
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,0,checkpoint_evaluated,,limit,29720,29755,29635
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S2,1,checkpoint_evaluated,,limit,29720,29755,29635
+2026-09-04:NY:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265/v6/S3,,disabled,stored arm is absent or disabled,limit,,,

@@ -18,11 +18,14 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"nofx/auth"
 	"nofx/config"
 	"nofx/store"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
@@ -256,13 +259,22 @@ func seedUser(t *testing.T, s *Server, email string) {
 	}
 }
 
-// doResetAccount drives the handler with an authenticated context (user_id set,
-// as authMiddleware would) so the test exercises the env + token gates rather
-// than the JWT layer, which the route registration covers.
+// doResetAccount drives the handler with an authenticated context — the
+// seeded owner's claims, set exactly as authMiddleware sets them — so the test
+// exercises the env + token gates rather than the JWT layer, which the route
+// registration covers. (M3 red-team H1: the handler now refuses any actor
+// whose token email is not its row's, so a bare user_id no longer suffices.)
 func doResetAccount(s *Server, body string) *httptest.ResponseRecorder {
+	users, _ := s.store.User().GetAll()
+	claims := &auth.Claims{}
+	if len(users) > 0 {
+		claims = &auth.Claims{UserID: users[0].ID, Email: users[0].Email, RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt: jwt.NewNumericDate(time.Now()),
+		}}
+	}
 	router := gin.New()
 	router.POST("/api/reset-account", func(c *gin.Context) {
-		c.Set("user_id", "test-user")
+		setAuthContext(c, claims)
 		s.handleResetAccount(c)
 	})
 	rec := httptest.NewRecorder()

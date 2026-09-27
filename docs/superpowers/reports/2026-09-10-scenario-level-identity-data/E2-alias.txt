@@ -1,0 +1,14 @@
+E2-alias
+path: levelidentity/identity.go
+BEFORE:
+identity := fmt.Sprintf("%s|%s|%g|%g|%s|%s|%d", in.Symbol, in.Kind, *in.Lo, *in.Hi, in.OriginDate, in.TF, *in.FormedCloseMs)
+AFTER:
+identity := fmt.Sprintf("%s|%s|%g|%g|%s|%s", in.Symbol, in.Kind, *in.Lo, *in.Hi, in.OriginDate, in.TF)
+replacement confirmed: True
+go build ./kernel: PASS
+test rc: 1
+--- FAIL: TestIdentityE2DistinctCloseAndMissingInputs (0.00s)
+    level_identity_test.go:83: different formation closes aliased
+FAIL
+FAIL	nofx/kernel	0.005s
+FAIL

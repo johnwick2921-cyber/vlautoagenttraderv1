@@ -1,0 +1,152 @@
+=== N1: planner_rejected_prompts classification by STATED definition ===
+total 64
+void: 21 [73, 74, 75, 77, 83, 88, 92, 94, 96, 98, 100, 101, 102, 103, 105, 107, 108, 109, 110, 111, 113]
+disp0: 6 [114, 115, 117, 126, 129, 132]
+minclose: 5 [119, 121, 124, 127, 130]
+stated-def total: 32
+mention-only (continuation named but not one of the three): 6 [70, 78, 80, 81, 112, 118]
+    70 scenario[0].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7);
+    78 scenario[0].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7);
+    80 arm legs on breakdown_continue — arm_legs_sweep_reclaim_only (the split entry is the sweep_reclaim contract; other conditions arm single)
+    81 scenario[3].confirm2.rule "touch" not allowed for breakup_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 2x
+    112 scenario[1].confirm2.rule "1m_mss" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7);
+    118 scenario[0].confirm2.rule "touch" not allowed for breakdown_continue — entry law: 1 confirming close + displacement ≥ BD_MIN_DISP_ATR×ATR5m OR stop-entry (E7); 
+other: 26
+any-mention classifier: 38
+
+=== reasons for the 'void' group (short) ===
+    73 S2 breakdown_continue: a close came back across 29125.00 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    74 S1 breakdown_continue: a close came back across 29100.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    75 S1 breakdown_continue: a close came back across 29130.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    77 S2 breakdown_continue: a close came back across 29130.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    83 S4 breakdown_continue: a close came back across 29047.75 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    88 S3 breakup_continue: a close came back across 29068.05 — the breakdown is void; author a `reject` play instead (do NOT combine condition nam
+    92 S1 breakdown_continue: a close came back across 29021.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    94 S2 breakdown_continue: a close came back across 29021.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    96 S4 breakdown_continue: a close came back across 29058.75 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    98 S2 breakdown_continue: a close came back across 29167.66 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    100 S3 breakdown_continue: a close came back across 29109.65 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    101 S3 breakdown_continue: a close came back across 29149.00 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    102 S4 breakdown_continue: a close came back across 29149.00 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    103 S3 breakdown_continue: a close came back across 29149.00 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    105 S2 breakdown_continue: a close came back across 29141.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    107 S2 breakdown_continue: a close came back across 29141.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    108 S2 breakdown_continue: a close came back across 29141.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    109 S2 breakdown_continue: a close came back across 29176.29 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    110 S2 breakdown_continue: a close came back across 29141.25 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    111 S4 breakdown_continue: a close came back across 29132.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    113 S2 breakdown_continue: a close came back across 29132.50 — the breakdown is void; author a `reject` play instead (do NOT combine condition n
+    114 S3 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (15.2 pts) — not a displacement move, author a normal `rej
+    115 S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (21.5 pts) — not a displacement move, author a normal `rej
+    117 S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (34.7 pts) — not a displacement move, author a normal `rej
+    119 S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + 
+    121 S2 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + 
+    124 S2 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + 
+    126 S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (40.9 pts) — not a displacement move, author a normal `rej
+    127 S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + 
+    129 S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (37.3 pts) — not a displacement move, author a normal `rej
+    130 S1 breakdown_continue: the tape shows NO confirming close beyond 29481.50 yet (1 confirming close(s) needed — BD_MIN_CLOSES, displacement + 
+    132 S2 breakdown_continue: measured displacement 0.00 pts < BD_MIN_DISP_ATR 1.0×ATR5m (36.1 pts) — not a displacement move, author a normal `rej
+
+=== N2/C7: flap rows ids 62-102 ===
+rows in 62-102: 25
+Counter({(29591.02, 'S2'): 20, (29657.38, 'S1'): 4, (29720.0, 'S1'): 1})
+S2@29591.02 rows: 20 seq [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+Counter({'boot_sweep: pre-boot order, process restarted': 8, 'no order_update within stale window (reconnect/reconcile)': 7, 'gate changed: rr': 4, 'cancelled in NT8': 1})
+ct range S2: 2026-09-04 10:10:04 2026-09-04 10:53:11
+all 62-102 reasons: Counter({'boot_sweep: pre-boot order, process restarted': 8, 'no order_update within stale window (reconnect/reconcile)': 7, 'gate changed: rr': 4, 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)': 4, 'no active plan': 1, 'cancelled in NT8': 1})
+   (62, 'S2', 'reclaim', 29591.02, 'cancelled', 'gate changed: rr', 1, '2026-09-04 10:10:04')
+   (65, 'S2', 'reclaim', 29591.02, 'cancelled', 'gate changed: rr', 2, '2026-09-04 10:15:01')
+   (67, 'S2', 'reclaim', 29591.02, 'cancelled', 'gate changed: rr', 3, '2026-09-04 10:16:03')
+   (70, 'S2', 'reclaim', 29591.02, 'cancelled', 'gate changed: rr', 4, '2026-09-04 10:20:03')
+   (73, 'S2', 'reclaim', 29591.02, 'cancelled', 'no order_update within stale window (reconnect/reconcile)', 5, '2026-09-04 10:25:01')
+   (75, 'S2', 'reclaim', 29591.02, 'cancelled', 'no order_update within stale window (reconnect/reconcile)', 6, '2026-09-04 10:26:02')
+   (77, 'S2', 'reclaim', 29591.02, 'cancelled', 'no order_update within stale window (reconnect/reconcile)', 7, '2026-09-04 10:28:02')
+   (79, 'S2', 'reclaim', 29591.02, 'cancelled', 'no order_update within stale window (reconnect/reconcile)', 8, '2026-09-04 10:30:02')
+   (81, 'S2', 'reclaim', 29591.02, 'cancelled', 'no order_update within stale window (reconnect/reconcile)', 9, '2026-09-04 10:32:02')
+   (83, 'S2', 'reclaim', 29591.02, 'cancelled', 'no order_update within stale window (reconnect/reconcile)', 10, '2026-09-04 10:34:01')
+   (85, 'S2', 'reclaim', 29591.02, 'cancelled', 'no order_update within stale window (reconnect/reconcile)', 11, '2026-09-04 10:36:01')
+   (87, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 12, '2026-09-04 10:38:01')
+   (89, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 13, '2026-09-04 10:40:01')
+   (91, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 14, '2026-09-04 10:42:01')
+   (92, 'S1', 'reject', 29657.38, 'superseded', 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)', 1, '2026-09-04 10:44:01')
+   (93, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 15, '2026-09-04 10:44:01')
+   (94, 'S1', 'reject', 29657.38, 'superseded', 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)', 2, '2026-09-04 10:46:01')
+   (95, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 16, '2026-09-04 10:46:01')
+   (96, 'S1', 'reject', 29657.38, 'superseded', 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)', 3, '2026-09-04 10:48:00')
+   (97, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 17, '2026-09-04 10:48:00')
+   (98, 'S1', 'reject', 29657.38, 'superseded', 'superseded: never placed (no signal id) and plan moved v3 → v4 (class 47)', 4, '2026-09-04 10:50:00')
+   (99, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 18, '2026-09-04 10:50:00')
+   (100, 'S1', 'reject', 29720.0, 'cancelled', 'no active plan', 5, '2026-09-04 11:29:07')
+   (101, 'S2', 'reclaim', 29591.02, 'cancelled', 'boot_sweep: pre-boot order, process restarted', 19, '2026-09-04 10:52:00')
+   (102, 'S2', 'reclaim', 29591.02, 'cancelled', 'cancelled in NT8', 20, '2026-09-04 10:53:11')
+
+id 38: [(38, 'S2', 'sweep_reclaim', 29591.02, 'cancelled', 'gate changed: rr', 0, '2026-09-04 10:05:00', '2026-09-04 10:06:05')]
+
+=== N3: stale window deaths all-time ===
+   (22, 'NY', '2026-08-31 12:41:29', '2026-08-31 13:09:28', 'no order_update within stale window (reconnect/reconcile)')
+   (29, 'ASIA', '2026-09-01 23:21:03', '2026-09-02 00:31:48', 'no order_update within stale window (reconnect/reconcile)')
+   (30, 'ASIA', '2026-09-01 23:49:02', '2026-09-02 00:07:07', 'no order_update within stale window (reconnect/reconcile)')
+   (31, 'ASIA', '2026-09-02 00:16:32', '2026-09-02 00:31:48', 'no order_update within stale window (reconnect/reconcile)')
+   (39, 'NY', '2026-09-04 09:10:08', '2026-09-04 09:26:06', 'no order_update within stale window (reconnect/reconcile)')
+   (73, 'NY', '2026-09-04 10:25:01', '2026-09-04 10:40:01', 'no order_update within stale window (reconnect/reconcile)')
+   (75, 'NY', '2026-09-04 10:26:02', '2026-09-04 10:42:01', 'no order_update within stale window (reconnect/reconcile)')
+   (77, 'NY', '2026-09-04 10:28:02', '2026-09-04 10:44:01', 'no order_update within stale window (reconnect/reconcile)')
+   (79, 'NY', '2026-09-04 10:30:02', '2026-09-04 10:46:01', 'no order_update within stale window (reconnect/reconcile)')
+   (81, 'NY', '2026-09-04 10:32:02', '2026-09-04 10:48:00', 'no order_update within stale window (reconnect/reconcile)')
+   (83, 'NY', '2026-09-04 10:34:01', '2026-09-04 10:50:00', 'no order_update within stale window (reconnect/reconcile)')
+   (85, 'NY', '2026-09-04 10:36:01', '2026-09-04 10:52:00', 'no order_update within stale window (reconnect/reconcile)')
+
+=== N4: marketable guard all-time ===
+   (17, 'LONDON', '2026-08-31 08:13:51', '2026-08-31 08:15:51', 'level accepted through — marketable, never placed')
+   (25, 'LONDON', '2026-09-01 05:35:28', '2026-09-01 07:10:01', 'level accepted through — marketable, never placed')
+   (27, 'NY', '2026-09-01 11:27:07', '2026-09-01 11:27:07', 'level accepted through — marketable, never placed')
+   (33, 'NY', '2026-09-02 14:10:29', '2026-09-02 14:10:29', 'level accepted through — marketable, never placed')
+   (34, 'ASIA', '2026-09-02 22:15:01', '2026-09-02 22:15:01', 'level accepted through — marketable, never placed')
+   (36, 'NY', '2026-09-03 09:20:47', '2026-09-03 09:20:47', 'level accepted through — marketable, never placed')
+
+=== boot_sweep all-time ===
+   (87, 'NY', '2026-09-04 10:38:01', 'boot_sweep: pre-boot order, process restarted')
+   (89, 'NY', '2026-09-04 10:40:01', 'boot_sweep: pre-boot order, process restarted')
+   (91, 'NY', '2026-09-04 10:42:01', 'boot_sweep: pre-boot order, process restarted')
+   (93, 'NY', '2026-09-04 10:44:01', 'boot_sweep: pre-boot order, process restarted')
+   (95, 'NY', '2026-09-04 10:46:01', 'boot_sweep: pre-boot order, process restarted')
+   (97, 'NY', '2026-09-04 10:48:00', 'boot_sweep: pre-boot order, process restarted')
+   (99, 'NY', '2026-09-04 10:50:00', 'boot_sweep: pre-boot order, process restarted')
+   (101, 'NY', '2026-09-04 10:52:00', 'boot_sweep: pre-boot order, process restarted')
+
+=== gate changed: rr all-time ===
+   (38, 'NY', 29591.02, '2026-09-04 10:05:00', '2026-09-04 10:06:05', 'gate changed: rr')
+   (62, 'NY', 29591.02, '2026-09-04 10:10:04', '2026-09-04 10:12:04', 'gate changed: rr')
+   (65, 'NY', 29591.02, '2026-09-04 10:15:01', '2026-09-04 10:18:03', 'gate changed: rr')
+   (67, 'NY', 29591.02, '2026-09-04 10:16:03', '2026-09-04 10:18:03', 'gate changed: rr')
+   (70, 'NY', 29591.02, '2026-09-04 10:20:03', '2026-09-04 10:22:03', 'gate changed: rr')
+
+=== N5: open intents 09-03 CT ===
+   (36864, '2026-09-03 02:12:56', '["AI call duration: 36469 ms","⛔ MNQ open_short refused: entry_gate: entry_gate: R:R 1.76 ', 'entry_gate: entry_gate: R:R 1.76 below floor 2.00 at executi')
+   (37304, '2026-09-03 20:35:06', '["AI call duration: 60074 ms","stale_reeval outcome=pass (superseded entry re-validated on', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37305, '2026-09-03 20:37:51', '["AI call duration: 31852 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37306, '2026-09-03 20:39:40', '["AI call duration: 95399 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37307, '2026-09-03 20:42:27', '["AI call duration: 44451 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37308, '2026-09-03 20:43:53', '["AI call duration: 41086 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37310, '2026-09-03 20:49:04', '["AI call duration: 144482 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pl', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37311, '2026-09-03 20:52:05', '["AI call duration: 35594 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37313, '2026-09-03 20:54:28', '["AI call duration: 85895 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37315, '2026-09-03 20:58:56', '["AI call duration: 84566 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37318, '2026-09-03 21:03:22', '["AI call duration: 82148 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37319, '2026-09-03 21:06:44', '["AI call duration: 98968 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37320, '2026-09-03 21:09:03', '["AI call duration: 60890 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pla', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37322, '2026-09-03 21:12:40', '["AI call duration: 123727 ms","⛔ MNQ open_short refused: entry_gate: refused: strict — pl', 'entry_gate: refused: strict — plan_mode=strict executes plan')
+   (37382, '2026-09-03 23:35:11', '["AI call duration: 5935 ms","✓ MNQ wait succeeded"]', '')
+   (37392, '2026-09-03 23:55:15', '["AI call duration: 8798 ms","✓ MNQ wait succeeded"]', '')
+
+=== N6: bias_label by created_at ===
+  UTC ('2026-09-03', 13)
+  UTC ('2026-09-04', 14)
+  CT ('2026-09-03', 16)
+  CT ('2026-09-04', 11)
+  trade_date ('2026-09-02', 2)
+  trade_date ('2026-09-03', 16)
+  trade_date ('2026-09-04', 9)
+  first: [('2026-09-02:ASIA:8d5c8af5_8ef641a7-815c-4bb5-9798-b070b67d7998_deepseek_1781246265', 14, '2026-09-02', 'ASIA', '2026-09-03 05:08:45.841316629+00:00')]
+  total plans: [(254, 254)]

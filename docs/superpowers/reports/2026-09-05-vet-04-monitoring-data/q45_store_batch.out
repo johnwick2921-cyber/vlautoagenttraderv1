@@ -1,0 +1,167 @@
+what                                                        
+------------------------------------------------------------
+--- q45a: alert bell right now (unacked & not dismissed) ---
+level  n  
+-----  ---
+P0     90 
+P1     331
+unacked_undismissed_total
+-------------------------
+421                      
+what                                                        
+------------------------------------------------------------
+--- q45b: RTH day range vs daily ATR(14) for 09-01..09-04 (1
+m MNQ 08:30-15:00 CT) ---                                   
+d           n1m  hi        lo        rth_range  atr14_daily  range_over_atr
+----------  ---  --------  --------  ---------  -----------  --------------
+2026-08-31  390  29538.0   29354.0   184.0      410.73       0.45          
+2026-09-01  390  29317.25  29001.75  315.5      395.91       0.8           
+2026-09-02  390  29211.75  29017.25  194.5      413.61       0.47          
+2026-09-03  390  29585.0   29199.25  385.75     410.45       0.94          
+2026-09-04  230  29692.0   29477.75  214.25                                
+what                                                        
+------------------------------------------------------------
+--- q45c: arm working ages (created→updated, both normalised
+ to CT) by terminal state ---                               
+state       n   avg_min  min_min  max_min
+----------  --  -------  -------  -------
+armed       2   76.8     76.8     76.8   
+cancelled   50  27.8     0.0      254.5  
+filled      9   167.1    5.5      566.5  
+superseded  4   18.1     15.2     21.1   
+what                                                     
+---------------------------------------------------------
+--- q45c2: the two arms still armed — age now (hours) ---
+id   session  scenario  state  created_ct           age_h
+---  -------  --------  -----  -------------------  -----
+104  NY       S2        armed  2026-09-04 12:11:02  23.1 
+105  NY       S2        armed  2026-09-04 12:11:02  23.1 
+what                                                        
+------------------------------------------------------------
+--- q45d: arms per CT day by state_reason (09-01..09-04) ---
+d           state       reason                                    n  ids                     
+----------  ----------  ----------------------------------------  -  ------------------------
+2026-09-01  cancelled   gate changed: min_sl                      1  23                      
+2026-09-01  cancelled   level accepted through — marketable, nev  2  25,27                   
+2026-09-01  cancelled   no order_update within stale window (rec  2  29,30                   
+2026-09-01  cancelled   session ended (EOD flat)                  1  26                      
+2026-09-01  filled      (none)                                    2  24,28                   
+2026-09-02  cancelled   level accepted through — marketable, nev  2  33,34                   
+2026-09-02  cancelled   no order_update within stale window (rec  1  31                      
+2026-09-02  cancelled   session ended (EOD flat)                  1  32                      
+2026-09-03  cancelled   cancelled in NT8                          1  37                      
+2026-09-03  cancelled   level accepted through — marketable, nev  1  36                      
+2026-09-03  filled      (none)                                    1  35                      
+2026-09-04  armed       (none)                                    2  104,105                 
+2026-09-04  cancelled   boot_sweep: pre-boot order, process rest  8  87,89,91,93,95,97,99,101
+2026-09-04  cancelled   cancelled in NT8                          1  102                     
+2026-09-04  cancelled   gate changed: rr                          5  38,62,65,67,70          
+2026-09-04  cancelled   no active plan                            2  100,103                 
+2026-09-04  cancelled   no order_update within stale window (rec  8  39,73,75,77,79,81,83,85 
+2026-09-04  superseded  superseded: never placed (no signal id)   4  92,94,96,98             
+what                                                        
+------------------------------------------------------------
+--- q45e: decision gaps > 10 min per CT day 09-01..09-04 ---
+d           pid    id     prev_utc             gap_min
+----------  -----  -----  -------------------  -------
+2026-09-01  35906  35907  2026-09-01 20:59:43  61.6   
+2026-09-02  36137  36138  2026-09-02 05:47:07  12.7   
+2026-09-02  36585  36586  2026-09-02 20:59:03  61.8   
+2026-09-03  37169  37170  2026-09-03 17:22:44  166.1  
+2026-09-03  37195  37196  2026-09-03 20:58:51  62.5   
+2026-09-03  37328  37329  2026-09-04 02:23:10  27.3   
+2026-09-04  37765  37766  2026-09-04 17:23:44  55.4   
+what                                               
+---------------------------------------------------
+--- q45f: cycle_type distribution 09-03 / 09-04 ---
+d           cycle_type  n  
+----------  ----------  ---
+2026-09-03              588
+2026-09-03  watch       8  
+2026-09-04              374
+what                                                        
+------------------------------------------------------------
+--- q45g: planner reads per session per day (planner_read_fa
+cts) ---                                                    
+trade_date  session  reads  avg_atr5m  avg_floor
+----------  -------  -----  ---------  ---------
+2026-09-03  ASIA     8      12.45      18.7     
+2026-09-03  LONDON   2      25.51      38.3     
+2026-09-03  NY       7      39.88      59.8     
+2026-09-04  ASIA     2      12.53      18.8     
+2026-09-04  LONDON   4      22.7       34.1     
+2026-09-04  NY       9      33.18      49.8     
+what                                                        
+------------------------------------------------------------
+--- q45h: silent refusals 09-03 — execution_log samples with
+ entry_gate ---                                             
+id     ct                   exec                                                        
+-----  -------------------  ------------------------------------------------------------
+36864  2026-09-03 02:12:56  ["AI call duration: 36469 ms","⛔ MNQ open_short refused: ent
+                            ry_gate: entry_gate: R:R 1.76 below floor 2.00 at execution 
+                            price 29193.2500 (SL 29242.0000 TP 29107.2500)"]            
+
+37304  2026-09-03 20:35:06  ["AI call duration: 60074 ms","stale_reeval outcome=pass (su
+                            perseded entry re-validated on the fresh bar)","⛔ MNQ open_s
+                            hort refused: entry_gate: refused: strict — plan_mode=strict
+                             executes plan scenarios on the ARM path                    
+
+37305  2026-09-03 20:37:51  ["AI call duration: 31852 ms","⛔ MNQ open_short refused: ent
+                            ry_gate: refused: strict — plan_mode=strict executes plan sc
+                            enarios on the ARM path only, and this is a decision-path ma
+                            rket entry"]                                                
+
+37306  2026-09-03 20:39:40  ["AI call duration: 95399 ms","⛔ MNQ open_short refused: ent
+                            ry_gate: refused: strict — plan_mode=strict executes plan sc
+                            enarios on the ARM path only, and this is a decision-path ma
+                            rket entry"]                                                
+
+37307  2026-09-03 20:42:27  ["AI call duration: 44451 ms","⛔ MNQ open_short refused: ent
+                            ry_gate: refused: strict — plan_mode=strict executes plan sc
+                            enarios on the ARM path only, and this is a decision-path ma
+                            rket entry"]                                                
+
+37308  2026-09-03 20:43:53  ["AI call duration: 41086 ms","⛔ MNQ open_short refused: ent
+                            ry_gate: refused: strict — plan_mode=strict executes plan sc
+                            enarios on the ARM path only, and this is a decision-path ma
+                            rket entry"]                                                
+what                                                        
+------------------------------------------------------------
+--- q45i: ab_confirm_log time_to_fill for real fills (last 1
+0) ---                                                      
+id   session  scenario  condition      rule        fill_px   entry_px  fill_minus_entry  ttf_s  is_counterfactual  ct                 
+---  -------  --------  -------------  ----------  --------  --------  ----------------  -----  -----------------  -------------------
+223  NY       S1        reject         2x5m_close  29534.25  29534.25  0.0               264    0                  2026-09-04 12:15:01
+222  NY       S1        reject         1x5m_close  29541.75  29541.75  0.0               24     0                  2026-09-04 12:11:02
+221  NY       S1        sweep_reclaim  1m_mss      29568.0   29568.0   0.0               909    0                  2026-09-04 11:45:05
+220  NY       S2        sweep_reclaim  1m_mss      29554.5   29554.5   0.0               989    0                  2026-09-04 11:21:08
+218  NY       S1        reject         1x5m_close  29514.25  29514.25  0.0               29     0                  2026-09-04 11:05:09
+219  NY       S1        reject         2x5m_close  29519.0   29519.0   0.0               89     0                  2026-09-04 11:05:09
+217  NY       S2        reclaim        2x5m_close  29558.5   29558.5   0.0               2388   0                  2026-09-04 09:35:01
+216  NY       S2        reclaim        1x5m_close  29583.0   29583.0   0.0               1788   0                  2026-09-04 09:26:06
+215  NY       S2        reclaim        touch       29591.02  29591.02  0.0               1488   0                  2026-09-04 09:22:07
+214  NY       S1        reject         2x5m_close  29647.75  29647.75  0.0               888    0                  2026-09-04 09:10:08
+what                                        
+--------------------------------------------
+--- q45j: day_plan_alerts kinds on 09-04 ---
+id   ct                   level  kind               title                                               acked  dismissed
+---  -------------------  -----  -----------------  --------------------------------------------------  -----  ---------
+637  2026-09-04 00:40:13  P1     armed              ASIA plan v6 armed                                  0      0        
+638  2026-09-04 01:20:35  P1     armed              ASIA plan v7 armed                                  0      0        
+639  2026-09-04 01:30:48  P1     regime-dark        LONDON plan: 1/7 regime fields dark                 0      0        
+640  2026-09-04 01:40:48  P1     level-burned       Consumed level re-touched: PDH                      0      0        
+641  2026-09-04 01:41:15  P1     armed              LONDON plan v1 armed                                0      0        
+642  2026-09-04 02:04:14  P1     armed              LONDON plan v2 armed                                0      0        
+643  2026-09-04 07:34:25  P0     ai-payment         AI CREDIT EXHAUSTED — no decisions until topped up  0      0        
+644  2026-09-04 07:56:17  P1     armed              LONDON plan v3 armed                                0      0        
+645  2026-09-04 08:00:38  P1     regime-dark        NY plan: 1/7 regime fields dark                     0      0        
+646  2026-09-04 08:11:45  P0     read-fail          NY planner fail-closed — NO-TRADE                   0      0        
+647  2026-09-04 08:17:32  P1     owner-reset        LONDON plan chain reset on request                  0      0        
+648  2026-09-04 08:32:00  P1     owner-reset        NY plan chain reset on request                      0      0        
+649  2026-09-04 08:44:46  P1     armed              NY plan v2 armed                                    0      0        
+650  2026-09-04 08:55:11  P1     armed              NY plan v3 armed                                    0      0        
+651  2026-09-04 11:03:30  P1     armed              NY plan v4 armed                                    0      0        
+652  2026-09-04 11:28:50  P1     armed              NY plan v5 armed                                    0      0        
+653  2026-09-04 12:10:35  P1     armed              NY plan v6 armed                                    0      0        
+654  2026-09-04 12:30:01  P0     feed-down          NT8 bar feed DOWN                                   0      0        
+655  2026-09-04 12:31:00  P1     planner-preflight  NY planner read held — no bar data                  0      0        

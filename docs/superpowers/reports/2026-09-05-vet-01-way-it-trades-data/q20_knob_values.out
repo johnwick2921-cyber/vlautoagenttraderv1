@@ -1,0 +1,21 @@
+one knob entry keys: ['path', 'status', 'ui_label', 'consumers', 'dual_level', 'note']
+  breakeven_enabled => {'path': 'breakeven_enabled', 'status': 'live'}
+  breakeven_trigger_points => {'path': 'breakeven_trigger_points', 'status': 'live'}
+  consecutive_loss_halt => {'path': 'consecutive_loss_halt', 'status': 'live'}
+  daily_loss_enabled => {'path': 'daily_loss_enabled', 'status': 'live'}
+  daily_loss_limit_usd => {'path': 'daily_loss_limit_usd', 'status': 'live'}
+  eod_flat_offset_min => {'path': 'eod_flat_offset_min', 'status': 'candidate-unverified'}
+  max_contracts_per_order => {'path': 'max_contracts_per_order', 'status': 'live'}
+  max_daily_trades => {'path': 'max_daily_trades', 'status': 'live'}
+  max_daily_trades_enabled => {'path': 'max_daily_trades_enabled', 'status': 'live'}
+  max_levels => {'path': 'max_levels', 'status': 'live'}
+  min_confidence => {'path': 'min_confidence', 'status': 'live'}
+  min_risk_reward_ratio => {'path': 'min_risk_reward_ratio', 'status': 'live'}
+  plan_mode => {'path': 'plan_mode', 'status': 'live'}
+  proximity_filter_atr => {'path': 'proximity_filter_atr', 'status': 'live'}
+  replan_cap => {'path': 'replan_cap', 'status': 'live'}
+  scenario_cap => {'path': 'scenario_cap', 'status': 'live'}
+  sessions_enabled => {'path': 'sessions_enabled', 'status': 'live'}
+  stop_loss_pct => {'path': 'stop_loss_pct', 'status': 'live'}
+  trailing_atr_mult => {'path': 'trailing_atr_mult', 'status': 'live'}
+  trailing_enabled => {'path': 'trailing_enabled', 'status': 'live'}

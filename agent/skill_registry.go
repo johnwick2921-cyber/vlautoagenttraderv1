@@ -397,31 +397,6 @@ func buildSkillForbiddenSummary(lang string, skillNames []string) string {
 	return strings.Join(lines, "\n")
 }
 
-func buildManagementSkillContext(lang string, session *skillSession) string {
-	key := fmt.Sprintf("full|%s|", lang)
-	if session != nil {
-		key = fmt.Sprintf("full|%s|%s|%s", lang, strings.TrimSpace(session.Name), strings.TrimSpace(session.Action))
-	}
-	return cachedSkillContext(key, func() string {
-		parts := make([]string, 0, 3)
-		if summary := buildSkillDefinitionSummary(lang, defaultManagementSkillNames()); summary != "" {
-			parts = append(parts, "Management skill summary:\n"+summary)
-		}
-		if forbidden := buildSkillForbiddenSummary(lang, defaultManagementSkillNames()); forbidden != "" {
-			parts = append(parts, "Management skill negative constraints:\n"+forbidden)
-		}
-		if session != nil {
-			if dependency := buildSkillDependencySummary(lang, *session); dependency != "" {
-				parts = append(parts, "Active skill dependency summary:\n"+dependency)
-			}
-			if contract := buildSkillActionContractSummary(lang, *session); contract != "" {
-				parts = append(parts, contract)
-			}
-		}
-		return strings.Join(parts, "\n\n")
-	})
-}
-
 func buildManagementSkillRoutingContext(lang string) string {
 	return buildManagementSkillRoutingContextWithSession(lang, nil)
 }

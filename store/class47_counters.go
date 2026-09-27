@@ -75,7 +75,13 @@ func (s *ArmedOrderStore) SupersedeUnplacedArms(traderID, planID string, current
 		// sweep / stale-reconcile paths' business, never this one (stop-line:
 		// "Placed/working rows untouched"). The signal-id predicate is belt and
 		// braces on top of that.
-		"trader_id = ? AND plan_id = ? AND version < ? AND (signal_id IS NULL OR signal_id = '') AND state = 'armed'",
+		//
+		// W5: a MACHINE-SOURCED row (source_ref set) is exempt. Its scenario is
+		// re-appended to the version that supersedes a machine plan, and it
+		// retires by its own eligibility deadline or by Stop / Day Plan OFF —
+		// retiring it here, before the new version's pass re-authorizes it,
+		// would kill a live opportunity the plan still carries.
+		"trader_id = ? AND plan_id = ? AND version < ? AND (signal_id IS NULL OR signal_id = '') AND state = 'armed' AND source_ref = ''",
 		traderID, planID, currentVersion).Find(&rows).Error; err != nil {
 		return nil, fmt.Errorf("superseded scan: %w", err)
 	}

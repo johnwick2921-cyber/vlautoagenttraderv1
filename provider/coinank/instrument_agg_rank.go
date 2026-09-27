@@ -7,88 +7,6 @@ import (
 	"strconv"
 )
 
-// VisualScreener Visual Screener
-func (c *CoinankClient) VisualScreener(ctx context.Context, interval coinank_enum.Interval) ([]VisualScreenerResponse, error) {
-	paramsMap := make(map[string]string, 1)
-	paramsMap["interval"] = string(interval)
-	resp, err := c.Get(ctx, "/api/instruments/visualScreener", paramsMap)
-	if err != nil {
-		return nil, err
-	}
-	var result CoinankResponse[[]VisualScreenerResponse]
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
-		return nil, err
-	}
-	if !result.Success {
-		return nil, HttpError
-	}
-	return result.Data, nil
-}
-
-// OiRank Open Interest Ranking
-func (c *CoinankClient) OiRank(ctx context.Context, sortBy coinank_enum.InstrumentAggSortBy,
-	sortType coinank_enum.SortType, page int, size int) ([]OiRankResponse, error) {
-	resp, err := c.Get(ctx, "/api/instruments/oiRank", c.rankParam(sortBy, sortType, page, size))
-	if err != nil {
-		return nil, err
-	}
-	var result CoinankResponse[CoinankResponse[PageData[OiRankResponse]]]
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
-		return nil, err
-	}
-	if !result.Success {
-		return nil, HttpError
-	}
-	if !result.Data.Success {
-		return nil, HttpError
-	}
-	return result.Data.Data.List, nil
-}
-
-// LongShortRank longShortRatio Ranking
-func (c *CoinankClient) LongShortRank(ctx context.Context, sortBy coinank_enum.InstrumentAggSortBy,
-	sortType coinank_enum.SortType, page int, size int) ([]LongShortRankResponse, error) {
-	resp, err := c.Get(ctx, "/api/instruments/longShortRank", c.rankParam(sortBy, sortType, page, size))
-	if err != nil {
-		return nil, err
-	}
-	var result CoinankResponse[CoinankResponse[PageData[LongShortRankResponse]]]
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
-		return nil, err
-	}
-	if !result.Success {
-		return nil, HttpError
-	}
-	if !result.Data.Success {
-		return nil, HttpError
-	}
-	return result.Data.Data.List, nil
-}
-
-// LiquidationRank Liquidation Ranking
-func (c *CoinankClient) LiquidationRank(ctx context.Context, sortBy coinank_enum.InstrumentAggSortBy,
-	sortType coinank_enum.SortType, page int, size int) ([]LiquidationRankResponse, error) {
-	resp, err := c.Get(ctx, "/api/instruments/liquidationRank", c.rankParam(sortBy, sortType, page, size))
-	if err != nil {
-		return nil, err
-	}
-	var result CoinankResponse[CoinankResponse[PageData[LiquidationRankResponse]]]
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
-		return nil, err
-	}
-	if !result.Success {
-		return nil, HttpError
-	}
-	if !result.Data.Success {
-		return nil, HttpError
-	}
-	return result.Data.Data.List, nil
-}
-
 // PriceRank PriceChg Ranking
 func (c *CoinankClient) PriceRank(ctx context.Context, sortBy coinank_enum.InstrumentAggSortBy,
 	sortType coinank_enum.SortType, page int, size int) ([]PriceRankResponse, error) {
@@ -97,27 +15,6 @@ func (c *CoinankClient) PriceRank(ctx context.Context, sortBy coinank_enum.Instr
 		return nil, err
 	}
 	var result CoinankResponse[CoinankResponse[PageData[PriceRankResponse]]]
-	err = json.Unmarshal([]byte(resp), &result)
-	if err != nil {
-		return nil, err
-	}
-	if !result.Success {
-		return nil, HttpError
-	}
-	if !result.Data.Success {
-		return nil, HttpError
-	}
-	return result.Data.Data.List, nil
-}
-
-// VolumeRank VolumeChg Ranking
-func (c *CoinankClient) VolumeRank(ctx context.Context, sortBy coinank_enum.InstrumentAggSortBy,
-	sortType coinank_enum.SortType, page int, size int) ([]VolumeRankResponse, error) {
-	resp, err := c.Get(ctx, "/api/instruments/volumeRank", c.rankParam(sortBy, sortType, page, size))
-	if err != nil {
-		return nil, err
-	}
-	var result CoinankResponse[CoinankResponse[PageData[VolumeRankResponse]]]
 	err = json.Unmarshal([]byte(resp), &result)
 	if err != nil {
 		return nil, err

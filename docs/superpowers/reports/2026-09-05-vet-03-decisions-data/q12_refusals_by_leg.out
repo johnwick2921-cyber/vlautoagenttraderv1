@@ -1,0 +1,20 @@
+## refusals.csv rows 61 (two-day audit window 09-02 00:00 → 09-03 23:34 CT)
+min_sl (validateDecision A3): n=34 cf_session_flat=$-435.00 (n=34) cf_cme_day=$-499.00 outcomes={'STOP': 25, 'FLAT_AT_HORIZON': 1, 'TARGET': 8}
+    biggest saved loss: (-101.5, '2026-09-02 10:36:09', 'NY', '', '29196.5', '29145.75', '29298.25', 'STOP', '2026-09-02 10:49', '26500')
+    biggest missed win: (112.5, '2026-09-02 18:49:46', 'ASIA', '', 'TARGET')
+strict (EntryGate leg 0): n=13 cf_session_flat=$-511.00 (n=13) cf_cme_day=$-511.00 outcomes={'STOP': 13}
+    biggest saved loss: (-43.5, '2026-09-03 20:42:27', 'ASIA', 'S1', '29538.25', '29560.0', '29481.5', 'STOP', '2026-09-03 21:30', '27385')
+    biggest missed win: (-35.5, '2026-09-03 20:49:04', 'ASIA', 'S1', 'STOP')
+rr (armGateVerdictFor): n=7 cf_session_flat=$-43.14 (n=7) cf_cme_day=$-71.02 outcomes={'FLAT_AT_HORIZON': 3, 'NEVER_FILLED': 1, 'TARGET': 1, 'STOP': 2}
+    biggest saved loss: (-96.52, '2026-09-03 08:30:54', 'NY', 'S1', '29259.67', '29307.93', '29178.73', 'STOP', '2026-09-03 08:39', '')
+    biggest missed win: (78.7, '2026-09-02 09:55:01', 'NY', 'S1', 'FLAT_AT_HORIZON')
+min_sl (EntryGate leg 6): n=3 cf_session_flat=$317.00 (n=3) cf_cme_day=$317.00 outcomes={'TARGET': 3}
+    biggest saved loss: (85.5, '2026-09-02 18:50:36', 'ASIA', 'S2', '29205.5', '29226.5', '29162.75', 'TARGET', '2026-09-02 19:15', '26719')
+    biggest missed win: (118.0, '2026-09-02 18:52:33', 'ASIA', 'S2', 'TARGET')
+rr_at_fill (EntryGate leg 5): n=3 cf_session_flat=$-76.50 (n=3) cf_cme_day=$-76.50 outcomes={'TARGET': 1, 'STOP': 2}
+    biggest saved loss: (-97.5, '2026-09-03 02:12:56', 'LONDON', 'S1', '29193.25', '29242.0', '29107.25', 'STOP', '2026-09-03 02:42', '26942')
+    biggest missed win: (88.0, '2026-09-02 19:00:23', 'ASIA', 'S2', 'TARGET')
+last_entry_cutoff (P2.3): n=1 cf_session_flat=$22.50 (n=1) cf_cme_day=$-61.50 outcomes={'FLAT_AT_HORIZON': 1}
+    biggest saved loss: (22.5, '2026-09-02 01:51:52', 'ASIA', 'S2', '29065.5', '29034.75', '29128.25', 'FLAT_AT_HORIZON', '2026-09-02 01:59', '26242')
+    biggest missed win: (22.5, '2026-09-02 01:51:52', 'ASIA', 'S2', 'FLAT_AT_HORIZON')
+TOTAL cf session-flat $-726.14 · CME-day $-902.02  (audit states −$860.64 / −$1,036.52 over 44 DISTINCT opportunities; this sum is over 61 EVENTS incl. re-proposals)

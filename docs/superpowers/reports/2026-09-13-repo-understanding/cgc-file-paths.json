@@ -1,0 +1,2350 @@
+{
+  "success": true,
+  "query": "MATCH (f:File) WHERE f.path STARTS WITH '/home/hoang/nofx/' RETURN f.path AS path ORDER BY path",
+  "record_count": 781,
+  "results": [
+    {
+      "path": "/home/hoang/nofx/.cgcignore"
+    },
+    {
+      "path": "/home/hoang/nofx/.dockerignore"
+    },
+    {
+      "path": "/home/hoang/nofx/.env"
+    },
+    {
+      "path": "/home/hoang/nofx/.env.example"
+    },
+    {
+      "path": "/home/hoang/nofx/.env.save"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/CLA.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/CODEOWNERS"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/ISSUE_TEMPLATE/bounty_claim.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/ISSUE_TEMPLATE/bug_report.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/ISSUE_TEMPLATE/feature_request.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/PR_TITLE_GUIDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/PULL_REQUEST_TEMPLATE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/PULL_REQUEST_TEMPLATE/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/PULL_REQUEST_TEMPLATE/backend.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/PULL_REQUEST_TEMPLATE/docs.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/PULL_REQUEST_TEMPLATE/frontend.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/PULL_REQUEST_TEMPLATE/general.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/SECURITY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/labeler.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/labels.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/docker-build.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/pr-checks-comment.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/pr-checks-run.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/pr-checks.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/pr-docker-check.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/pr-docker-compose-healthcheck.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/pr-go-test-coverage.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/pr-template-suggester.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/scripts/calculate_coverage.py"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/scripts/comment_pr.py"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/scripts/requirements.txt"
+    },
+    {
+      "path": "/home/hoang/nofx/.github/workflows/test.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/.gitignore"
+    },
+    {
+      "path": "/home/hoang/nofx/.husky/_/husky.sh"
+    },
+    {
+      "path": "/home/hoang/nofx/.husky/pre-commit"
+    },
+    {
+      "path": "/home/hoang/nofx/CHANGELOG.md"
+    },
+    {
+      "path": "/home/hoang/nofx/CHANGELOG.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/CODE_OF_CONDUCT.md"
+    },
+    {
+      "path": "/home/hoang/nofx/CONTRIBUTING.md"
+    },
+    {
+      "path": "/home/hoang/nofx/DISCLAIMER.md"
+    },
+    {
+      "path": "/home/hoang/nofx/Dockerfile.railway"
+    },
+    {
+      "path": "/home/hoang/nofx/ENCRYPTION_README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/INSTALL.md"
+    },
+    {
+      "path": "/home/hoang/nofx/LICENSE"
+    },
+    {
+      "path": "/home/hoang/nofx/Makefile"
+    },
+    {
+      "path": "/home/hoang/nofx/README.ja.md"
+    },
+    {
+      "path": "/home/hoang/nofx/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/SECURITY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/account-dropdown.md"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/active_session.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/agent.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/agent_model_name_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/agent_model_selection_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/ai_service_failure_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/atomic_skill_executor.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/backend_logs_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/brain.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/central_brain.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/clear_memory_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/config_tools_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/config_validation.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/config_visibility_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/entity_field_catalog.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/execution_state.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/history.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/i18n.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/llm_flow_extractor.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/llm_flow_extractor_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/llm_skill_router.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/market_snapshot_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/memory.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/memory_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/model_create_flow_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/model_provider_catalog.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/model_provider_catalog_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/model_wallet_fastpath.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/onboard.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/onboard_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/planner_runtime.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/planner_runtime_state_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/planner_tools_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/preferences.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/preferences_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/prompt_context.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/prompt_persona.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/reference_memory.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/scheduler.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/sentinel.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_catalog.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_catalog_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_dag.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_dag_runtime.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_dag_runtime_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_dag_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_dispatcher.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_dispatcher_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_domain_context.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_execution_handlers.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_management_handlers.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_outcome.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_registry.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_registry_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_runner.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skill_semantic_gate.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/exchange_diagnosis.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/exchange_management.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/model_diagnosis.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/model_management.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/strategy_diagnosis.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/strategy_management.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/trade_execution.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/trader_diagnosis.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/skills/trader_management.json"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/stock.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/strategy_draft.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/strategy_field_catalog.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/stream_text.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/tools.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/tools_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/trade.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/trader_scope_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/unified_turn_router_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/user_facing_prompt.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/user_facing_prompt_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/web.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/workflow.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agent/workflow_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/agents.md"
+    },
+    {
+      "path": "/home/hoang/nofx/api/agent_preferences.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/agent_routes.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/crypto_handler.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/errors.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/exchange_account_state.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_ai_cost.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_ai_model.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_bars_sse.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_competition.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_debug.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_decisions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_exchange.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_exchange_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_klines.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_onboarding.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_order.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_risk.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_risk_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_telegram.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_trader_config.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_trader_status.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_trader_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_user.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/handler_wallet.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/route_registry.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/server.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/server_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/strategy.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/stream_ticket.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/traderid_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/utils.go"
+    },
+    {
+      "path": "/home/hoang/nofx/api/utils_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/auth/auth.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/check-db/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/check-strategy/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/create-strategy/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/link-strategy/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/help.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/smoke_all.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/smoke_databento.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/smoke_prompt.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/smoke_resolver.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/smoke_roundtrip.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/nq_smoke/smoke_tcp.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/recover-traders/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/restore-strategy/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/cmd/start-trader/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/config/config.go"
+    },
+    {
+      "path": "/home/hoang/nofx/crypto/crypto.go"
+    },
+    {
+      "path": "/home/hoang/nofx/dashboard-before-switch.md"
+    },
+    {
+      "path": "/home/hoang/nofx/deploy/install-autostart.sh"
+    },
+    {
+      "path": "/home/hoang/nofx/deploy/nofx-web.service"
+    },
+    {
+      "path": "/home/hoang/nofx/deploy/nofx.service"
+    },
+    {
+      "path": "/home/hoang/nofx/docker-compose.prod.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/docker-compose.stable.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/docker-compose.yml"
+    },
+    {
+      "path": "/home/hoang/nofx/docker/Dockerfile.backend"
+    },
+    {
+      "path": "/home/hoang/nofx/docker/Dockerfile.frontend"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/AUTOSTART.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/CONTRACT-ROLL.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/Git工作流规范.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/MIGRATION_GUIDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/ONBOARDING.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/adr/ADR-001-csv-bridge-vs-tcp.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/adr/ADR-002-ict-smc-with-confluence-scoring.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/adr/ADR-003-int64-ticks-for-monetary-math.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/adr/ADR-004-forceflatsignaler-package-decoupling.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/adr/ADR-005-parallel-subagent-dispatch.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/adr/ADR-006-cme-calendar-session-gating.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/adr/ADR-007-plan1-critical-file-integrity.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/agent-skills/diagnostic-skills.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/api/API_REFERENCE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/AGENT_CURRENT_DESIGN.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/AGENT_MEMORY_AND_PLANNING.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/AGENT_MEMORY_AND_PLANNING.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/README.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/STRATEGY_MODULE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/STRATEGY_MODULE.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/architecture/X402_STREAMING_PAYMENT.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/HOW_TO_MIGRATE_YOUR_PR.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/HOW_TO_MIGRATE_YOUR_PR.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/MIGRATION_ANNOUNCEMENT.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/MIGRATION_ANNOUNCEMENT.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/OFFICIAL_ACCOUNTS.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/PR_COMMENT_TEMPLATE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/bounty-aster.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/bounty-guide.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/community/bounty-hyperliquid.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/README.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/aster-api-wallet.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/binance-api.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/bybit-api.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/custom-api.en.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/custom-api.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/hyperliquid-agent-wallet.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/lighter-agent-wallet.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/getting-started/okx-api.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/guides/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/guides/README.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/guides/TROUBLESHOOTING.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/guides/TROUBLESHOOTING.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/guides/faq.en.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/guides/faq.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/en/PRIVACY POLICY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/en/TERMS OF SERVICE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/ja/PRIVACY POLICY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/ja/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/ja/TERMS OF SERVICE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/ko/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/ru/PRIVACY POLICY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/ru/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/ru/TERMS OF SERVICE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/uk/PRIVACY POLICY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/uk/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/uk/TERMS OF SERVICE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/vi/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/zh-CN/CONTRIBUTING.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/zh-CN/PRIVACY POLICY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/zh-CN/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/i18n/zh-CN/TERMS OF SERVICE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/external-reviews/2026-05-28-comparison-vs-canonical-plan.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/external-reviews/2026-05-28-end-to-end-architecture.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/inventory/BACKEND.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/inventory/INDEX.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/inventory/page-1-vl-root.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/inventory/page-2-agentbeta.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/inventory/page-3-config-settings.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/inventory/page-4-dashboard.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/internal/inventory/page-5-strategy.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/legal/AGPL-VIOLATION-REPORT-ChainOpera-EN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/legal/AGPL-VIOLATION-REPORT-ChainOpera.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/PROJECT_MANAGEMENT.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/PROJECT_MANAGEMENT.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/PR_REVIEW_GUIDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/PR_REVIEW_GUIDE.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/README.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/SETUP_GUIDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/maintainers/SETUP_GUIDE.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/market-regime-classification-en.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/market-regime-classification-zh.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/operations/DR.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/operations/MONITORING.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/operations/ROLLBACK.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/operations/STARTUP.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/operations/TRADER_MODE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/plans/2026-01-14-grid-trading-fixes.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/plans/2026-01-17-grid-market-regime-design.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/plans/2026-01-17-grid-market-regime-impl.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/plans/2026-03-06-telegram-agent-redesign.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/plans/2026-03-06-telegram-bot.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/plans/2026-05-23-rename-claudetrader-to-vltrader.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/pnl.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/prompt-guide.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/prompt-guide.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/research/AI-Trader-Analysis-Report.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/roadmap/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/roadmap/README.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/superpowers/plans/2026-05-22-PLAN1-SHIPPED.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/superpowers/plans/2026-05-22-nq-databento-ninjatrader.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/superpowers/plans/2026-05-29-account-rebinding.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/superpowers/plans/AUDIT-2026-05-22-nq-databento-ninjatrader.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/superpowers/reports/2026-06-02-strategy-studio-universal-futures-map.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/superpowers/reports/2026-07-10-architecture-codebase-map.md"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/superpowers/reports/2026-07-10-subsystem-maps.json"
+    },
+    {
+      "path": "/home/hoang/nofx/docs/token-estimation.zh-CN.md"
+    },
+    {
+      "path": "/home/hoang/nofx/go.mod"
+    },
+    {
+      "path": "/home/hoang/nofx/go.sum"
+    },
+    {
+      "path": "/home/hoang/nofx/hook/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/hook/hooks.go"
+    },
+    {
+      "path": "/home/hoang/nofx/hook/http_client_hook.go"
+    },
+    {
+      "path": "/home/hoang/nofx/hook/ip_hook.go"
+    },
+    {
+      "path": "/home/hoang/nofx/hook/trader_hook.go"
+    },
+    {
+      "path": "/home/hoang/nofx/install-stable.sh"
+    },
+    {
+      "path": "/home/hoang/nofx/install.sh"
+    },
+    {
+      "path": "/home/hoang/nofx/internal/retry/circuit_breaker.go"
+    },
+    {
+      "path": "/home/hoang/nofx/internal/retry/circuit_breaker_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/internal/retry/retry.go"
+    },
+    {
+      "path": "/home/hoang/nofx/internal/retry/retry_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/cme_calendar.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/cme_calendar_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_analysis.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_coinsource_guard_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_position.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_position_futures_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_prompt.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_prompt_emaperiods_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_prompt_futures.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_prompt_futures_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_prompt_golden_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_prompt_oi_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/engine_prompt_timeframes_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/formatter.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/futures_prompt_boxes_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/grid_engine.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/guardrails_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/prompt_builder.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/prompt_builder_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/risk_limits.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/risk_limits_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/schema.go"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/testdata/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/testdata/futures_mnq_empty.golden"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/testdata/golden/futures_system_aggressive.txt"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/testdata/golden/futures_system_conservative.txt"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/testdata/golden/futures_user_basic.txt"
+    },
+    {
+      "path": "/home/hoang/nofx/kernel/validate_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/logger/config.go"
+    },
+    {
+      "path": "/home/hoang/nofx/logger/logger.go"
+    },
+    {
+      "path": "/home/hoang/nofx/main.go"
+    },
+    {
+      "path": "/home/hoang/nofx/manager/trader_manager.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/market/api_client.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/data.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/data_emaperiods_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/data_freshness.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/data_freshness_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/data_indicators.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/data_klines.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/data_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/databento_adapter.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/databento_adapter_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/decimal_safe.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/decimal_safe_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/futures_data.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/futures_symbol.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/futures_symbol_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/historical.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/timeframe.go"
+    },
+    {
+      "path": "/home/hoang/nofx/market/types.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/client.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/client_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/config.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/config_usage_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/context_guard.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/context_guard_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/examples_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/hooks.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/interface.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/intro/BUILDER_EXAMPLES.md"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/intro/BUILDER_PATTERN_BENEFITS.md"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/intro/LOGRUS_INTEGRATION.md"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/intro/MIGRATION_GUIDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/intro/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/logger.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/mock_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/options.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/options_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/payment/claw402.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/payment/x402.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/claude.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/deepseek.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/gemini.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/grok.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/kimi.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/minimax.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/openai.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/options_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/provider/qwen.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/providers.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/registry.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/request.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/request_builder.go"
+    },
+    {
+      "path": "/home/hoang/nofx/mcp/request_builder_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/nginx/nginx.conf"
+    },
+    {
+      "path": "/home/hoang/nofx/ninjascript/VLBarsSubscriptionManager.cs"
+    },
+    {
+      "path": "/home/hoang/nofx/ninjascript/VLContractResolver.cs"
+    },
+    {
+      "path": "/home/hoang/nofx/ninjascript/VLContractResolver_VERIFY.md"
+    },
+    {
+      "path": "/home/hoang/nofx/ninjascript/VLTraderTCPClient.cs"
+    },
+    {
+      "path": "/home/hoang/nofx/ninjascript/vltrader_tcp_PROTOCOL.md"
+    },
+    {
+      "path": "/home/hoang/nofx/ninjascript/vltrader_tcp_README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/nofx"
+    },
+    {
+      "path": "/home/hoang/nofx/nofx-bin"
+    },
+    {
+      "path": "/home/hoang/nofx/nq_smoke"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/alpaca/kline.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/base_coin.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/base_coin.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/base_coin_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/depth_ws.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/depth_ws_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/kline.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/kline_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/kline_ws.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_api/kline_ws_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_enum/exchange.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_enum/instrument_agg_sort_by.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_enum/interval.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_enum/product_type.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_enum/side.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_enum/sort_type.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_enum/url.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/coinank_http.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/instrument_agg_rank.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/instruments.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/kline.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/liquidation.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/net_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/coinank/open_interest.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/client.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/contract_calendar.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/contract_calendar_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/fixtures/nq-ohlcv-1m-real.json"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/fixtures/resolve-nqm6.json"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/historical.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/historical_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/mock_server.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/mock_server_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/resolve.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/databento/resolve_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/hyperliquid/coins.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/hyperliquid/kline.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/hyperliquid/kline_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/bar_cache.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/bar_cache_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/csv_tailer.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/csv_tailer_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/csv_writer.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/csv_writer_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/fanout_router_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/feed_freshness_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/mock_nt.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/mock_nt_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/multisymbol_subscribe_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/runtime_symbols_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_client_mock.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_framing.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_framing_bars_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_framing_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_account_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_accounts_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_bars_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_close_rejected_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_close_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_feed_status_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_instrument_info_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_positions_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/tcp_server_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/timeframes_parity_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/ninjatrader/types.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/ai500.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/claw402.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/client.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/coin.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/netflow.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/oi.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/price.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/nofxos/util.go"
+    },
+    {
+      "path": "/home/hoang/nofx/provider/twelvedata/kline.go"
+    },
+    {
+      "path": "/home/hoang/nofx/railway.toml"
+    },
+    {
+      "path": "/home/hoang/nofx/railway/start.sh"
+    },
+    {
+      "path": "/home/hoang/nofx/safe/go.go"
+    },
+    {
+      "path": "/home/hoang/nofx/safe/io.go"
+    },
+    {
+      "path": "/home/hoang/nofx/security/url_validator.go"
+    },
+    {
+      "path": "/home/hoang/nofx/start.sh"
+    },
+    {
+      "path": "/home/hoang/nofx/store/ai_charge.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/ai_model.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/decision.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/decision_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/driver.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/equity.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/exchange.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/gorm.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/grid.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/order.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/position.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/position_builder.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/position_entry_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/position_history.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/position_query.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/store.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/strategy.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/strategy_futures_indicators_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/strategy_futures_symbol_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/strategy_prompt_variant_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/strategy_schema_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/strategy_token_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/telegram_config.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/user.go"
+    },
+    {
+      "path": "/home/hoang/nofx/store/visibility.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telegram/agent/agent.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telegram/agent/agent_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telegram/agent/apicall.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telegram/agent/manager.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telegram/agent/prompt.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telegram/bot.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telegram/session/memory.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telemetry/experience.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telemetry/metrics.go"
+    },
+    {
+      "path": "/home/hoang/nofx/telemetry/metrics_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/aster/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/aster/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/aster/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/aster/trader_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/aster/trader_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/aster/trader_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_decision.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_grid.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_grid_levels.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_grid_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_grid_regime.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_loop.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_loop_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_orders_futures_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/auto_trader_risk.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/futures.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/futures_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/futures_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/futures_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/futures_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/order_sync_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/sync_e2e_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/binance/sync_verify_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bitget/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bitget/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bitget/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bitget/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bitget/trader_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bybit/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bybit/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bybit/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bybit/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/bybit/trader_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/exchange_sync_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/gate/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/gate/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/gate/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/gate/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/gate/trader_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/grid_regime.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/grid_regime_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/helpers.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/sync_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/trader_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/trader_race_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/hyperliquid/trader_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/indodax/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/indodax/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/indodax/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/indodax/trader_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/interface.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/kucoin/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/kucoin/order_sync_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/kucoin/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/kucoin/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/kucoin/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/kucoin/trader_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/integration_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/orders_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/trading.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/lighter/types.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/account_binding_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/bars_market_bridge.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/close_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/integration_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/reconcile.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/symbol_list_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/tcp_trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/tcp_trader_orderstatus_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/tcp_trader_subscribe_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/tick_rounding.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/tick_rounding_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/trader_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/ninjatrader/transport.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/okx/order_sync.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/okx/trader.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/okx/trader_account.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/okx/trader_margin_mode_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/okx/trader_orders.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/okx/trader_positions.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/position_rebuild.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/position_snapshot.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/prompt_variant_test.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/testutil/test_suite.go"
+    },
+    {
+      "path": "/home/hoang/nofx/trader/types/interface.go"
+    },
+    {
+      "path": "/home/hoang/nofx/wallet/balance_cache.go"
+    },
+    {
+      "path": "/home/hoang/nofx/wallet/usdc.go"
+    },
+    {
+      "path": "/home/hoang/nofx/web/.dockerignore"
+    },
+    {
+      "path": "/home/hoang/nofx/web/.husky/pre-commit"
+    },
+    {
+      "path": "/home/hoang/nofx/web/.prettierignore"
+    },
+    {
+      "path": "/home/hoang/nofx/web/.prettierrc.json"
+    },
+    {
+      "path": "/home/hoang/nofx/web/CHANGELOG.md"
+    },
+    {
+      "path": "/home/hoang/nofx/web/CLAUDE.md"
+    },
+    {
+      "path": "/home/hoang/nofx/web/README.md"
+    },
+    {
+      "path": "/home/hoang/nofx/web/eslint.config.js"
+    },
+    {
+      "path": "/home/hoang/nofx/web/index.html"
+    },
+    {
+      "path": "/home/hoang/nofx/web/package-lock.json"
+    },
+    {
+      "path": "/home/hoang/nofx/web/package.json"
+    },
+    {
+      "path": "/home/hoang/nofx/web/postcss.config.js"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/App.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/AgentStepPanel.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/ChatInput.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/ChatMessages.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/MarketTicker.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/MessageRenderer.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/PositionsPanel.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/TraderStatusPanel.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/UserPreferencesPanel.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/agent/WelcomeScreen.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/LoginPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/LoginRequiredOverlay.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/OnboardingModeSelector.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/RegisterPage.test.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/RegisterPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/RegistrationDisabled.test.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/RegistrationDisabled.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/auth/ResetPasswordPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/charts/AdvancedChart.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/charts/ChartTabs.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/charts/ChartWithOrders.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/charts/ChartWithOrdersSimple.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/charts/ComparisonChart.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/charts/EquityChart.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/charts/TradingViewChart.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/ConfirmDialog.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/Container.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/DeepVoidBackground.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/ExchangeIcons.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/Header.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/HeaderBar.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/LanguageSwitcher.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/MetricTooltip.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/ModelIcons.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/PunkAvatar.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/SiteFooter.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/WebCryptoEnvironmentCheck.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/common/WhitelistFullPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/faq/FAQContent.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/faq/FAQLayout.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/faq/FAQSearchBar.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/faq/FAQSidebar.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/modals/SetupPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/modals/TwoStageKeyModal.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/CoinSourceEditor.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/GridConfigEditor.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/GridRiskPanel.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/IndicatorEditor.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/PromptSectionsEditor.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/PublishSettingsEditor.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/RiskControlEditor.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/strategy/TokenEstimateBar.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/AITradersPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/AccountSelector.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/BeginnerGuideCards.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/ConfigStatusGrid.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/DecisionAudit.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/DecisionCard.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/EmergencyFlatButton.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/ExchangeConfigModal.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/ModelCard.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/ModelConfigModal.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/ModelStepIndicator.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/PositionHistory.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/TelegramConfigModal.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/Tooltip.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/TraderConfigModal.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/TraderConfigViewModal.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/TradersList.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/model-constants.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/trader/utils.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/ui/alert-dialog.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/ui/input.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/components/ui/select.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/constants/branding.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/contexts/AuthContext.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/contexts/LanguageContext.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/hooks/useCounterAnimation.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/hooks/useGitHubStats.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/hooks/useSystemConfig.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/i18n/strategy-translations.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/i18n/translations.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/index.css"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/agentChatStorage.test.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/agentChatStorage.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/api/config.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/api/data.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/api/helpers.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/api/index.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/api/strategies.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/api/telegram.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/api/traders.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/apiGuard.test.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/autoRefresh.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/clipboard.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/cn.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/config.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/crypto.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/httpClient.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/instrument.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/notify.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/onboarding.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/registrationToggle.test.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/lib/text.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/main.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/pages/AgentChatPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/pages/BeginnerOnboardingPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/pages/FAQPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/pages/PageNotFound.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/pages/SettingsPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/pages/StrategyStudioPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/pages/TraderDashboardPage.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/router/AppRoutes.tsx"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/router/paths.test.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/router/paths.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/stores/agentChatStore.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/stores/index.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/stores/tradersConfigStore.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/stores/tradersModalStore.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/test/setup.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/types/agent.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/types/config.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/types/index.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/types/strategy.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/types/trading.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/utils/format.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/utils/indicators.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/utils/traderColors.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/src/vite-env.d.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/tailwind.config.js"
+    },
+    {
+      "path": "/home/hoang/nofx/web/tsconfig.json"
+    },
+    {
+      "path": "/home/hoang/nofx/web/tsconfig.node.json"
+    },
+    {
+      "path": "/home/hoang/nofx/web/vite.config.ts"
+    },
+    {
+      "path": "/home/hoang/nofx/web/vitest.config.ts"
+    }
+  ]
+}

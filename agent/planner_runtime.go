@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"nofx/mcp"
+	"nofx/safe"
 	"nofx/store"
 )
 
@@ -154,23 +155,6 @@ func isConfigOrTraderIntent(text string) bool {
 		"交易员", "trader", "exchange", "交易所", "模型", "model", "api key", "apikey",
 		"绑定", "配置", "setup", "configure", "deepseek", "openai", "claude", "gemini",
 		"okx", "binance", "bybit", "gate", "kucoin", "hyperliquid", "aster", "lighter",
-	}
-	for _, kw := range keywords {
-		if strings.Contains(lower, kw) {
-			return true
-		}
-	}
-	return false
-}
-
-func isStrategyIntent(text string) bool {
-	lower := strings.ToLower(strings.TrimSpace(text))
-	if lower == "" {
-		return false
-	}
-	keywords := []string{
-		"策略", "strategy", "template", "模板", "激进", "趋势跟踪", "网格策略",
-		"量化策略", "策略模板", "strategy studio",
 	}
 	for _, kw := range keywords {
 		if strings.Contains(lower, kw) {
@@ -565,27 +549,6 @@ func isEphemeralReadFastPathKind(kind string) bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func (a *Agent) executeReadFastPath(storeUserID string, _ int64, req *readFastPathRequest) string {
-	switch req.Kind {
-	case "get_balance":
-		return a.toolGetBalance(storeUserID)
-	case "get_positions":
-		return a.toolGetPositions(storeUserID)
-	case "get_trade_history":
-		return a.toolGetTradeHistory(req.ArgsJSON)
-	case "get_strategies":
-		return a.toolGetStrategies(storeUserID)
-	case "list_traders":
-		return a.toolListTraders(storeUserID)
-	case "get_model_configs":
-		return a.toolGetModelConfigs(storeUserID)
-	case "get_exchange_configs":
-		return a.toolGetExchangeConfigs(storeUserID)
-	default:
-		return `{"error":"unsupported fast path"}`
 	}
 }
 
@@ -1021,19 +984,6 @@ func (a *Agent) tryStatePriorityPath(ctx context.Context, storeUserID string, us
 	}
 
 	return "", false, nil
-}
-
-func isTraderCreateWaitingState(state ExecutionState) bool {
-	lowerGoal := strings.ToLower(strings.TrimSpace(state.Goal))
-	if strings.Contains(lowerGoal, "创建交易员") || strings.Contains(lowerGoal, "新建交易员") || strings.Contains(lowerGoal, "create trader") {
-		return true
-	}
-	if state.Waiting == nil {
-		return false
-	}
-	lowerIntent := strings.ToLower(strings.TrimSpace(state.Waiting.Intent))
-	lowerTarget := strings.ToLower(strings.TrimSpace(state.Waiting.ConfirmationTarget))
-	return lowerIntent == "complete_trader_setup" || (lowerIntent == "confirm_action" && lowerTarget == "trader")
 }
 
 func hasSkillBridgeSignal(a *Agent, storeUserID, skillName, action, text string, extraction executionFlowExtractionResult) bool {
@@ -2624,7 +2574,7 @@ func (a *Agent) runPostResponseMaintenanceAsync(userID int64) {
 	if a == nil || a.aiClient == nil || a.history == nil {
 		return
 	}
-	go func() {
+	safe.GoNamed("post-response-maintenance", func() {
 		defer func() {
 			if r := recover(); r != nil {
 				a.log().Warn("post-response maintenance panicked", "user_id", userID, "panic", r)
@@ -2640,7 +2590,7 @@ func (a *Agent) runPostResponseMaintenanceAsync(userID int64) {
 		}
 		a.maybeUpdateTaskStateIncrementally(ctx, userID)
 		a.maybeCompressHistory(ctx, userID)
-	}()
+	})
 }
 
 func (a *Agent) prepareExecutionState(ctx context.Context, storeUserID string, userID int64, lang, text, contextMode string) (ExecutionState, error) {
@@ -3385,142 +3335,6 @@ func parseRFC3339(value string) time.Time {
 	return t
 }
 
-func (a *Agent) replanAfterStep(ctx context.Context, userID int64, lang string, state ExecutionState, completedStep PlanStep) (replannerDecision, error) {
-	obsJSON, _ := json.Marshal(buildObservationContext(state))
-	stepsJSON, _ := json.Marshal(state.Steps)
-	systemPrompt := prependNOFXiAdvisorPreamble(`You are the replanning module for NOFXi.
-Return JSON only.
-
-Decide what to do after a plan step completed.
-Allowed actions:
-- continue
-- replace_remaining
-- ask_user
-- finish
-
-Rules:
-- Use continue when the current remaining steps still make sense.
-- Use replace_remaining when the observations materially change the remaining plan.
-- Use ask_user when execution is blocked on missing user input.
-- Use finish when there is enough information to answer and remaining steps are unnecessary.
-- If action=replace_remaining, return a fresh list of remaining steps only.
-- Keep plans short and safe.
-- Never invent tools.`)
-
-	userPrompt := fmt.Sprintf("Language: %s\nGoal: %s\nCompleted step: %s (%s)\nCompleted summary: %s\n\nCurrent steps JSON:\n%s\n\nObservations JSON:\n%s\n\nPersistent preferences:\n%s\n\nTask state:\n%s\n\nReturn JSON with this exact shape:\n{\"action\":\"continue|replace_remaining|ask_user|finish\",\"goal\":\"\",\"instruction\":\"\",\"question\":\"\",\"steps\":[{\"id\":\"step_x\",\"type\":\"tool|reason|ask_user|respond\",\"title\":\"\",\"tool_name\":\"\",\"tool_args\":{},\"instruction\":\"\",\"requires_confirmation\":false}]}", lang, state.Goal, completedStep.ID, completedStep.Type, completedStep.OutputSummary, string(stepsJSON), string(obsJSON), a.buildPersistentPreferencesContext(userID), buildTaskStateContext(a.getTaskState(userID)))
-
-	stageCtx, cancel := withPlannerStageTimeout(ctx, plannerReplanTimeout)
-	defer cancel()
-
-	startedAt := time.Now()
-	raw, err := a.aiClient.CallWithRequest(&mcp.Request{
-		Messages: []mcp.Message{
-			mcp.NewSystemMessage(systemPrompt),
-			mcp.NewUserMessage(userPrompt),
-		},
-		Ctx:       stageCtx,
-		MaxTokens: intPtr(aiEnvInt("AI_REPLANNER_MAX_TOKENS", 500)),
-	})
-	a.logPlannerTiming(state.SessionID, userID, "replan_after_step_llm", startedAt, err)
-	if err != nil {
-		return replannerDecision{}, err
-	}
-	return parseReplannerDecisionJSON(raw)
-}
-
-func parseReplannerDecisionJSON(raw string) (replannerDecision, error) {
-	raw = strings.TrimSpace(raw)
-	raw = strings.TrimPrefix(raw, "```json")
-	raw = strings.TrimPrefix(raw, "```")
-	raw = strings.TrimSuffix(raw, "```")
-	raw = strings.TrimSpace(raw)
-
-	var decision replannerDecision
-	if err := json.Unmarshal([]byte(raw), &decision); err == nil {
-		return normalizeReplannerDecision(decision), nil
-	}
-	start := strings.Index(raw, "{")
-	end := strings.LastIndex(raw, "}")
-	if start >= 0 && end > start {
-		if err := json.Unmarshal([]byte(raw[start:end+1]), &decision); err == nil {
-			return normalizeReplannerDecision(decision), nil
-		}
-	}
-	return replannerDecision{}, fmt.Errorf("invalid replanner decision json")
-}
-
-func normalizeReplannerDecision(decision replannerDecision) replannerDecision {
-	decision.Action = strings.TrimSpace(decision.Action)
-	decision.Goal = strings.TrimSpace(decision.Goal)
-	decision.Instruction = strings.TrimSpace(decision.Instruction)
-	decision.Question = strings.TrimSpace(decision.Question)
-	for i := range decision.Steps {
-		if decision.Steps[i].ID == "" {
-			decision.Steps[i].ID = fmt.Sprintf("step_%d", i+1)
-		}
-		if decision.Steps[i].Status == "" {
-			decision.Steps[i].Status = planStepStatusPending
-		}
-		decision.Steps[i].Type = strings.TrimSpace(decision.Steps[i].Type)
-		decision.Steps[i].Title = strings.TrimSpace(decision.Steps[i].Title)
-		decision.Steps[i].ToolName = strings.TrimSpace(decision.Steps[i].ToolName)
-		decision.Steps[i].Instruction = strings.TrimSpace(decision.Steps[i].Instruction)
-	}
-	return decision
-}
-
-func applyReplannerDecision(state *ExecutionState, decision replannerDecision) bool {
-	switch decision.Action {
-	case "", "continue":
-		return false
-	case "finish":
-		state.Steps = append(completedSteps(state.Steps), PlanStep{
-			ID:          fmt.Sprintf("step_finish_%d", time.Now().UTC().UnixNano()),
-			Type:        planStepTypeRespond,
-			Title:       "final response",
-			Status:      planStepStatusPending,
-			Instruction: decision.Instruction,
-		})
-		state.CurrentStepID = ""
-		if decision.Goal != "" {
-			state.Goal = decision.Goal
-		}
-		state.Waiting = nil
-		return true
-	case "ask_user":
-		question := decision.Question
-		if question == "" {
-			question = decision.Instruction
-		}
-		state.Steps = append(completedSteps(state.Steps), PlanStep{
-			ID:          fmt.Sprintf("step_ask_%d", time.Now().UTC().UnixNano()),
-			Type:        planStepTypeAskUser,
-			Title:       "need user input",
-			Status:      planStepStatusPending,
-			Instruction: question,
-		})
-		state.CurrentStepID = ""
-		if decision.Goal != "" {
-			state.Goal = decision.Goal
-		}
-		state.Waiting = buildWaitingState(*state, state.Steps[len(state.Steps)-1], question)
-		return true
-	case "replace_remaining":
-		if len(decision.Steps) == 0 {
-			return false
-		}
-		state.Steps = append(completedSteps(state.Steps), decision.Steps...)
-		state.CurrentStepID = ""
-		if decision.Goal != "" {
-			state.Goal = decision.Goal
-		}
-		state.Waiting = nil
-		return true
-	default:
-		return false
-	}
-}
-
 func shouldAttemptReplan(state ExecutionState, step PlanStep, referencesChanged bool) bool {
 	if step.Type != planStepTypeTool {
 		return false
@@ -3627,31 +3441,6 @@ func formatStepCompleteStatus(step PlanStep, lang string) string {
 		return fmt.Sprintf("✅ 已完成: %s", label)
 	}
 	return fmt.Sprintf("✅ Completed: %s", label)
-}
-
-func formatReplanStatus(decision replannerDecision, lang string) string {
-	switch decision.Action {
-	case "replace_remaining":
-		if lang == "zh" {
-			return "🔄 已根据新结果更新后续步骤"
-		}
-		return "🔄 Updated the remaining steps based on new results"
-	case "ask_user":
-		if lang == "zh" {
-			return "📝 当前流程需要用户补充信息"
-		}
-		return "📝 This flow needs more user input"
-	case "finish":
-		if lang == "zh" {
-			return "🏁 已提前收敛到最终回复"
-		}
-		return "🏁 Converged early to the final response"
-	default:
-		if lang == "zh" {
-			return "🔄 已重新评估计划"
-		}
-		return "🔄 Re-evaluated the plan"
-	}
 }
 
 func (a *Agent) executePlanTool(ctx context.Context, storeUserID string, userID int64, lang string, step PlanStep) string {

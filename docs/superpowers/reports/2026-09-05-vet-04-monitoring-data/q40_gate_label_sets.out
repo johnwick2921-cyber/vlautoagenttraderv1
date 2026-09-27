@@ -1,0 +1,6 @@
+Go IncGateBlock literals: 41
+panel labels: 14
+labelled: 11 ['approval_required', 'boot_integrity', 'consecutive_loss', 'dead_man', 'feed_down', 'frozen', 'last_entry', 'level_burned_retouch', 'night_transition', 'plan_mode', 'session_gate']
+Go gates with NO label (render raw): 30
+['arm_authored', 'contract_roll_resolved', 'decline_fresh_met', 'entry_gate', 'executor_plan_dead', 'htf_veto', 'min_sl_gate', 'plan_cited_mismatch', 'plan_matched', 'plan_off_plan', 'plan_replans_exhausted', 'planner_fail_closed', 'pnl_integrity_mismatch', 'price_sanity', 'prompt_ownership', 'reentry_cooldown', 'rr_gate', 'scenario_below_min_quality', 'stale_bar_discarded', 'stale_data', 'stale_reeval_refused', 'stop_until', 'strategy_studio_blackout', 'strategy_studio_consistency', 'strategy_studio_daily', 'superseded_wait', 'task18_cme_closed', 'task19_contract_roll', 'task21_concurrent_cap', 'transition_standdown']
+panel labels with NO Go counter: ['b3_order_dedup', 'b3_rate_breaker', 'clock_skew_observed']

@@ -1,0 +1,19 @@
+winner MAE/floor 529 reject mae 43.75 atr 23.99 ratio 1.22 pnl 168.0
+winner MAE/floor 532 acceptance mae 61.5 atr 61.08 ratio 0.67 pnl 311.0
+winner MAE/floor 578 sweep_reclaim mae 24.75 atr 24.88 ratio 0.66 pnl 92.0
+qty=2 row: [(574, 'LONG', 2.0, 2.0, 29348.25, 29348.0, -1.0, 'e7_farside_test')]
+2R off min stop 5 / 59 (0.085, 0.037, 0.184)
+2R off actual stop 14 / 62 (0.226, 0.14, 0.344)
+losers at stop 38 / 41 (0.927, 0.806, 0.975)
+arm fill rate 9 / 61 (0.148, 0.08, 0.257)
+armed RR in [2,2.3) 47 / 132 (0.356, 0.28, 0.441)
+marketable guard all-time 6 / 61 (0.098, 0.046, 0.198)
+marketable window 5 / 15 (0.333, 0.152, 0.583)
+confidence 62-65 90 / 107 (0.841, 0.76, 0.898)
+exit at target 10 / 65 (0.154, 0.086, 0.261)
+exit at stop 37 / 65 (0.569, 0.448, 0.682)
+MFE reached planned target 8 / 59 (0.136, 0.07, 0.245)
+losers MFE>=0.5 stop 20 / 41 (0.488, 0.343, 0.635)
+win rate 21 / 63 (0.333, 0.229, 0.456)
+winners MAE<0.7 floor 16 / 17 (0.941, 0.73, 0.99)
+losers MAE>=floor 24 / 40 (0.6, 0.446, 0.737)

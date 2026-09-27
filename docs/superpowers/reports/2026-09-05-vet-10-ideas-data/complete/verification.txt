@@ -1,0 +1,10 @@
+Offline exact-byte reproduction PASS: results.json sha256=f7dc6f65678b920b123cbe10b84b7b89ecb720825f9b742ca68f892485eba1da
+Offline exact-byte reproduction PASS: days.csv sha256=d0b83f9e5dcd6cdf31789ea1a2fec287687323a807521b0102f513f4d3efaed6
+Offline exact-byte reproduction PASS: evidence.txt sha256=97b791d91ca4b08799fb0e7b76fabe553fbc0b463374a4c531a1461aa3b9a0ef
+Population/count invariants PASS: 58/12, 18W38L2F, sum -466.428572; strict n0; touches677/423; RTHL140/14; excursions0
+All 44 full source/report path:line citations resolve at this worktree; cited source excerpts inspected.
+Structure PASS: 3 original numbered questions; 7 Q1 subparts; summary 3 problems/3 opportunities; recommendation columns; detailed coverage table.
+Read-only extraction PASS: mode=ro, query_only=1, BEGIN read transaction; no store.New or gate-jwt invocation.
+Scope: only 2026-09-05-vet-10-ideas.md and its own data/complete directory. No production modifications or deployments. Parent owns dev integration.
+Source base: 488ce82748ca570804240630677c90d3055f128e; branch docs/vet-10-0905-complete; worktree retained.
+Read-only GET /api/health HTTP 200; no authentication token constructed; allowlisted response {"status": "ok", "revision": "36648655cfe0"}

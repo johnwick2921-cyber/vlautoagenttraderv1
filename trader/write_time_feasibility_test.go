@@ -72,6 +72,11 @@ func feasPlannerTrader(t *testing.T, writeFeas *bool) *AutoTrader {
 	t.Helper()
 	at := plannerTestTrader(t)
 	at.config.StrategyConfig.DayPlan.WriteTimeFeasibility = writeFeas
+	// W-EXEC-TRUTH W3: these tests pin the LEGACY feasibility path (an arm with
+	// no entry policy). With the shipped default (market_in_zone) the arm would
+	// be stamped and judged by writeTimeZoneVerdicts instead — that path is
+	// pinned in entry_policy_write_test.go. "legacy" = the explicit off.
+	at.config.StrategyConfig.DayPlan.EntryPolicyDefault = store.EntryPolicyLegacy
 	return at
 }
 
@@ -196,6 +201,36 @@ func TestWriteTimeFeasibilityLastAttemptDisablesArm(t *testing.T) {
 	key := "arm_disabled_at_write:t1:2026-08-14:NY:rr"
 	if n, err := store.SystemCounter(at.store, key); err != nil || n != 1 {
 		t.Fatalf("counter %q = %d, %v (want 1)", key, n, err)
+	}
+}
+
+// TestTargetAtArmEntryRefusedByStrictArmGeometry (CTO pin request,
+// 2026-09-24 15:33; renamed skeptic F2 — its old name asserted the opposite
+// of its body): a target AT the arm entry composes R:R = 0. The refusal this
+// pin proves is the PARSE-TIME strict arm geometry — armPricesValid
+// (kernel/plan_doc.go:288-290) requires stop < entry < target — which fails
+// the whole plan closed to no_trade BEFORE any R:R floor (armMinRRFor) is
+// ever read. That is the downstream guard that lets the P5 side check stay
+// strict. RED: relaxing the geometry comparator ('< target' → '<= target')
+// lets the R=0 arm parse and this pin fails.
+func TestTargetAtArmEntryRefusedByStrictArmGeometry(t *testing.T) {
+	at := feasPlannerTrader(t, nil)
+	feasStubBars(t)
+	zero := strings.ReplaceAll(infeasibleFeasPlanJSON, `"target":15620`, `"target":15550`)
+	zero = strings.Replace(zero, `"target_chain": [15550, 15620]`, `"target_chain": [15550]`, 1)
+	zero = strings.Replace(zero, `"r_to_arm_target":7.0`, `"r_to_arm_target":0.0`, 1)
+	logBuf := captureTraderLog(t)
+	_, lc, err := at.runPlannerReadCoreWithFactsGradesClock(feasClock(), "NY", "2026-08-14", "owner_reset",
+		"deepseek-v4-pro", "hashFeasZero", "", "", "", "FULLPROMPT",
+		kernel.PlanFacts{Price: 15550, DATR: 300}, nil, map[float64]string{15480: "PWL", 15620: "PDH"}, nil, true,
+		func(userPrompt string) (string, error) { return zero, nil })
+	if err != nil || lc != "no_trade" {
+		t.Fatalf("target == entry (R:R 0.00) must FAIL CLOSED: lc=%q err=%v", lc, err)
+	}
+	// The refusal is kernel/plan_doc.go's strict arm geometry — stop < entry <
+	// target — the downstream floor the side check defers to.
+	if !strings.Contains(logBuf.String(), "stop 15540.00 < entry 15550.00 < target 15550.00 required") {
+		t.Fatalf("the fail-closed reason must name the strict arm geometry; log:\n%s", logBuf.String())
 	}
 }
 

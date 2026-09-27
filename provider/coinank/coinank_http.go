@@ -37,11 +37,6 @@ type PageData[T any] struct {
 
 var HttpError error = errors.New("http client error")
 
-// NewCoinankClient new coinank http client for coinank openapi
-func NewCoinankClient(url, apikey string) *CoinankClient {
-	return &CoinankClient{url, apikey}
-}
-
 // Get coinank openapi get request
 func (c *CoinankClient) Get(ctx context.Context, path string, paramsMap map[string]string) (string, error) {
 	data := url.Values{}

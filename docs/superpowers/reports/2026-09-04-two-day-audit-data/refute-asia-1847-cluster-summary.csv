@@ -1,0 +1,11 @@
+metric,peer_claim,verified_value,note
+refusal_events,13,"8 min-SL retry rejections + 6 cycle-terminal records + 1 arm refusal","peer's 13 = 8 + 4 + 1, mixes intra-cycle attempts with cycle-terminal records and omits records 36643/36644"
+distinct_opportunities,7,"6 decision cycles (#11-#16) + 1 arm refusal","cycle #14 terminated superseded_wait (AI chose wait), not a system refusal"
+cycles_refused_by_min_sl,implied 7,0,"decision_records 09-02..09-03: min_sl terminal refusals = 0 of 1278; min-SL only feeds the parse-retry loop"
+cycles_refused_by_entry_gate,not stated,4,"36640/36641/36642 stop_too_close; 36645 rr_floor"
+max_high_1848_1916_ct,29212.25,29212.25,CONFIRMED
+min_low_1848_1916_ct,29148.50,29148.50,CONFIRMED
+lowest_stop_in_cluster,29223,29223.00,CONFIRMED (never touched; 10.75 pt margin)
+all_targets_hit,yes,yes,"lowest TP 29149.00 hit 19:16 (l=29148.50); no stop approached"
+usd_independent,644.22,"707.50 (8 min-SL proposals) / 604.00 (6 cycle-terminal) / 1127.50 (all 12) / 420.00 (4 cited records)","MNQ = $2.00/pt, tick 0.25pt = $0.50; $644.22 is not a multiple of $0.50 and cannot be an MNQ qty-1 P&L"
+usd_sequential,55.22,">= 60.00","smallest single winner in the cluster is 30.00 pts = $60.00; $55.22 is below every one of the 7"

@@ -1,0 +1,22 @@
+{
+  "api/server.go": "b2802752 2026-09-06T14:25:22-05:00 feat(desk-strip): the endpoint and the twelve lines \u2014 every number dated, every unverifiable one UNKNOWN with its reason",
+  "docs/superpowers/AUDIT-CHECKLIST.md": "8941ec68 2026-09-09T21:27:01-05:00 merge cd5b59ac into the combined boot head \u2014 104 session risk",
+  "docs/superpowers/SYSTEM-MAP.md": "a59b6c9d 2026-09-09T21:26:37-05:00 merge 35fa69cc into the combined boot head \u2014 103 candidates",
+  "docs/superpowers/reports/2026-09-05-vet-04-monitoring-data/q51_complete.py": "a1774fd2 2026-09-05T17:43:05-05:00 docs: complete Section 4 trader monitoring audit and correct stop slippage",
+  "docs/superpowers/reports/2026-09-05-vet-08-stretch-data/replay.py": "75dca939 2026-09-05T11:09:00-05:00 docs(vet-08): resume \u2014 carry forward the prior attempt",
+  "store/armed_orders.go": "0babd090 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes",
+  "store/armed_placement_dup_test.go": "3b8d6cd6 2026-09-04T10:15:43-05:00 fix(D5 regression): a live row wins the lookup \u2014 stop minting a placement per cycle",
+  "store/boot_sweep.go": "6262bf42 2026-09-07T23:34:58-05:00 fix: stamp entry creation time and await received placement truth",
+  "store/wave_a_migration.go": "6262bf42 2026-09-07T23:34:58-05:00 fix: stamp entry creation time and await received placement truth",
+  "trader/arm_cancel_safety.go": "6262bf42 2026-09-07T23:34:58-05:00 fix: stamp entry creation time and await received placement truth",
+  "trader/armed_executor.go": "2bb9c03e 2026-09-09T14:20:06-05:00 fix(flat): a live row is never retired by our own plumbing being absent; T1 stops reading a failed query as flat",
+  "trader/armed_row_hygiene_test.go": "beb42e04 2026-09-03T11:02:48-05:00 fix(invalidation-wired): the re-arm guard was store-derived all along \u2014 my F4 fix was the broken part",
+  "trader/class33_boot_sweep.go": "6310eaf8 2026-09-07T23:51:51-05:00 merge: reconcile placement confirmation with pre-send identity and owner ruling",
+  "trader/class33_cutover_gate.go": "268ee609 2026-09-03T19:46:13-05:00 feat(F12): cutover leg 4 reads the broker; the override guard becomes a check",
+  "trader/f12_leg4.go": "c84bd247 2026-09-03T20:04:23-05:00 feat(F12): the AddOn emits its order book; leg 4 asks the broker; build_id is proven by receipt",
+  "trader/one_contract.go": "7797b36f 2026-09-07T10:25:18-05:00 fix(cancel): D4 \u2014 every cancel sender is guarded, and the census proves it",
+  "trader/zerob_exit_sanity_test.go": "59d01948 2026-09-04T08:11:25-05:00 feat(arms D1/D4/D5/D6): the prompt names what can be armed; the ledger stops lying",
+  "web/src/guide/content/guards.ts": "27e062ea 2026-09-09T14:55:48-05:00 merge dev (W5) + correct the three sentences this boot makes false",
+  "trader/types/interface.go": "c84bd247 2026-09-03T20:04:23-05:00 feat(F12): the AddOn emits its order book; leg 4 asks the broker; build_id is proven by receipt",
+  "web/src/guide/content/status.ts": "20dd8ac5 2026-09-09T14:13:40-05:00 docs(guide+map): session risk surfaces, and a guide line that was wrong"
+}

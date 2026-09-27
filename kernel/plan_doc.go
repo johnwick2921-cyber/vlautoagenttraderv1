@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // P3.3 — the day-plan document (the schema-strict JSON the planner AI emits).
@@ -59,10 +60,18 @@ type PlanConfirm struct {
 	Rule     string  `json:"rule"`      // touch | 1x5m_close | 2x5m_close | 1m_mss | time_hold (E1: 15m dead)
 	RefPrice float64 `json:"ref_price"` // the price the closes are counted against
 	Side     string  `json:"side"`      // above | below
+	// HoldMin (W2 A5, 2026-09-23) — time_hold ONLY: the minutes of completed
+	// 1m closes the prose states. Absent = the ACCEPT_HOLD_MIN authoring
+	// default (ResolveConfirm names it); never inferred from prose at read.
+	HoldMin *int `json:"hold_min,omitempty"`
 }
 
 type PlanScenario struct {
-	LevelID *string `json:"level_id"` // NULL on legacy; WARN-only on new authoring.
+	LevelID *string `json:"level_id"` // NULL on legacy; refused at write when it does not resolve or names another price (W2 A3).
+	// W2 A3 — a two-anchor setup (sweep + reclaim) names each leg's level.
+	// Additive: absent on legacy rows; checked only at the write site.
+	SweepLevelID   *string `json:"sweep_level_id,omitempty"`
+	ReclaimLevelID *string `json:"reclaim_level_id,omitempty"`
 	// Absent on legacy records: never inferred or required during stored reads.
 	Economics *ScenarioEconomics `json:"economics,omitempty"`
 	ID        string             `json:"id"`        // S1, S2, S3
@@ -118,6 +127,13 @@ type PlanScenario struct {
 	// this scenario as a resting order with exact deterministic prices. The
 	// LLM chooses WHAT to arm; Go manages WHEN it fills (advisory law holds).
 	Arm *PlanArmSpec `json:"arm,omitempty"`
+	// W-EXEC-TRUTH W5 — a MACHINE-authored scenario (the Picture HTF source,
+	// ScenarioSourcePicture). Absent on every planner-authored scenario: the
+	// planner write path refuses both fields, a P<n> id is legal only with
+	// them, and they reach a plan only through a machine overlay or a machine
+	// plan (plan_machine.go). A planner scenario re-marshals byte-identically.
+	Source  string             `json:"source,omitempty"`
+	Machine *PlanMachineSource `json:"machine,omitempty"`
 }
 
 // PlanArmSpec is the machine-manageable arming contract for one scenario.
@@ -144,6 +160,11 @@ type PlanArmSpec struct {
 	// the reason instead of a silent WARN. NULL on legacy rows and on every
 	// path where the arm was never judged.
 	DisabledReason string `json:"arm_disabled_reason,omitempty"`
+	// Policy (W3) — the entry policy: "market_in_zone" | "planned_order".
+	// Absent = LEGACY (today's arm kinds, byte-identical). A newly authored
+	// plan is stamped with day_plan.entry_policy_default at parse; a stored
+	// doc is never stamped. A leg's own Policy overrides this one.
+	Policy string `json:"policy,omitempty"`
 }
 
 // PlanArmLeg is one child order of a split arm.
@@ -155,6 +176,7 @@ type PlanArmLeg struct {
 	WaitConfirm bool    `json:"wait_confirm,omitempty"` // leg chains on its confirm rule before placement
 	Rule        string  `json:"rule,omitempty"`         // the confirm rule the leg chains on (1m_mss | 1x5m_close)
 	Kind        string  `json:"kind,omitempty"`         // limit (default) | stop_entry (E7)
+	Policy      string  `json:"policy,omitempty"`       // W3: overrides PlanArmSpec.Policy for this leg
 }
 
 // ArmSpecValid checks the arming contract of one scenario. ok=false with a
@@ -162,6 +184,12 @@ type PlanArmLeg struct {
 func ArmSpecValid(sc PlanScenario) error {
 	if sc.Arm == nil || !sc.Arm.Enabled {
 		return nil // not armed — nothing to validate
+	}
+	// W-EXEC-TRUTH W3 (2026-09-23) — an arm carrying an entry policy (on the arm
+	// or on any leg) is judged by the policy branch. An arm with no policy
+	// anywhere is LEGACY and runs the code below byte-for-byte as before (R4).
+	if armHasPolicy(sc.Arm) {
+		return armSpecValidPolicy(sc)
 	}
 	// Autopsy-response wave (2026-08-27): sweep_reclaim becomes armable ONLY
 	// as a CHAINED arm (wait_confirm) — the arm rests until the scenario's own
@@ -194,6 +222,16 @@ func ArmSpecValid(sc PlanScenario) error {
 	} else if !ArmableCondition(sc.Condition) {
 		return fmt.Errorf("arm enabled on non-armable condition %q (fvg_entry | reject | breakdown_continue | breakup_continue; sweep_reclaim via wait_confirm; breakout_retest is a normal AI play and never arms — GAR-F4)", sc.Condition)
 	}
+	if err := armSplitLock(sc); err != nil {
+		return err
+	}
+	return armPricesValid(sc)
+}
+
+// armSplitLock is the E4 split-leg contract, extracted UNCHANGED (W3) so the
+// legacy path and the policy path refuse a malformed split with the IDENTICAL
+// error strings.
+func armSplitLock(sc PlanScenario) error {
 	a := sc.Arm
 	// E4 (2026-08-30) — split-entry legs. sweep_reclaim ONLY for now; exactly
 	// two; leg 0 = the touch leg resting AT the sweep ref (no chain), leg 1 =
@@ -235,6 +273,14 @@ func ArmSpecValid(sc PlanScenario) error {
 			return fmt.Errorf("arm on %s top-level entry/stop/target must equal leg 1's (legacy readers read the top-level)", sc.ID)
 		}
 	}
+	return nil
+}
+
+// armPricesValid is the bracket-shape tail of ArmSpecValid (extracted
+// UNCHANGED, W3): exact positive prices and the long/short ordering of the
+// arm and every leg.
+func armPricesValid(sc PlanScenario) error {
+	a := sc.Arm
 	if a.Entry <= 0 || a.Stop <= 0 || a.Target <= 0 {
 		return fmt.Errorf("arm on %s needs exact entry/stop/target > 0 (got %.2f/%.2f/%.2f)", sc.ID, a.Entry, a.Stop, a.Target)
 	}
@@ -483,7 +529,7 @@ func planGradeRank(g string) int {
 // schema at the SHIPPED caps (8 levels / 3 scenarios). Any failure → error, which
 // the planner treats as a retryable/fail-closed event.
 func ParsePlanDoc(raw string) (*PlanDoc, error) {
-	return parsePlanDocument(raw, 0, 0, false, 0)
+	return parsePlanDocument(raw, 0, 0, false, AuthoringOpts{})
 }
 
 // ParsePlanDocCapped is ParsePlanDoc with the RESOLVED config caps (max_levels,
@@ -491,7 +537,7 @@ func ParsePlanDoc(raw string) (*PlanDoc, error) {
 // pass validation instead of making every read fail-closed against the hardcoded
 // 8/3.
 func ParsePlanDocCapped(raw string, maxLevels, maxScenarios int) (*PlanDoc, error) {
-	return parsePlanDocument(raw, maxLevels, maxScenarios, true, 0)
+	return parsePlanDocument(raw, maxLevels, maxScenarios, true, AuthoringOpts{})
 }
 
 // ParsePlanDocCappedWithMinRR is ParsePlanDocCapped plus the resolved R:R floor
@@ -499,11 +545,33 @@ func ParsePlanDocCapped(raw string, maxLevels, maxScenarios int) (*PlanDoc, erro
 // misstated r_to_arm_target is auto-corrected to the computed value; minRR <= 0
 // keeps the strict contradiction refusal.
 func ParsePlanDocCappedWithMinRR(raw string, maxLevels, maxScenarios int, minRR float64) (*PlanDoc, error) {
-	return parsePlanDocument(raw, maxLevels, maxScenarios, true, minRR)
+	return parsePlanDocument(raw, maxLevels, maxScenarios, true, AuthoringOpts{MinRR: minRR})
+}
+
+// AuthoringOpts (W-EXEC-TRUTH W3, 2026-09-23) are the RESOLVED knobs a NEW
+// authoring parse applies. The zero value is exactly ParsePlanDocCapped: no R:R
+// auto-correct floor, no policy stamp, no hold floor.
+type AuthoringOpts struct {
+	// MinRR — the resolved R:R floor (see ParsePlanDocCappedWithMinRR).
+	MinRR float64
+	// EntryPolicyDefault — day_plan.entry_policy_default resolved. market_in_zone
+	// | planned_order is STAMPED on every arm it is legal for, BEFORE the
+	// validator runs (R4); "" or legacy stamps nothing.
+	EntryPolicyDefault string
+	// MinHoldMin — day_plan.min_hold_min resolved; ≤0 = no floor.
+	MinHoldMin int
+}
+
+// ParsePlanDocForAuthoring is the new-authoring parse with the resolved W3
+// knobs: the default entry policy is stamped (StampEntryPolicyDefault) before
+// ValidatePlanDocWithCaps, and the armable hold floor runs beside the A5 prose
+// check. A stored reader never calls this — a stored doc is never stamped.
+func ParsePlanDocForAuthoring(raw string, maxLevels, maxScenarios int, opts AuthoringOpts) (*PlanDoc, error) {
+	return parsePlanDocument(raw, maxLevels, maxScenarios, true, opts)
 }
 
 // The boolean is a trusted call-site boundary, never a JSON version switch.
-func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring bool, minRR float64) (*PlanDoc, error) {
+func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring bool, opts AuthoringOpts) (*PlanDoc, error) {
 	js := extractJSONObject(raw)
 	if js == "" {
 		return nil, fmt.Errorf("no JSON object found in planner output")
@@ -512,11 +580,34 @@ func parsePlanDocument(raw string, maxLevels, maxScenarios int, newAuthoring boo
 	if err := json.Unmarshal([]byte(js), &doc); err != nil {
 		return nil, fmt.Errorf("plan JSON unmarshal: %w", err)
 	}
+	// W3 R4: the default policy is stamped BEFORE the validator, so the
+	// validator judges the arm the executor will run (ArmSpecValid's legacy
+	// branch refuses acceptance/hold/breakout_retest arms that the policy
+	// branch accepts).
+	if newAuthoring {
+		// W5 D18 — only the machine writes a machine scenario. A planner
+		// output carrying source/machine is refused before anything else, so
+		// the model can never author (or forge) Picture evidence.
+		if err := RefuseModelAuthoredMachineFields(&doc); err != nil {
+			return nil, err
+		}
+		StampEntryPolicyDefault(&doc, opts.EntryPolicyDefault)
+	}
 	if err := ValidatePlanDocWithCaps(&doc, maxLevels, maxScenarios); err != nil {
 		return nil, err
 	}
 	if newAuthoring && scenarioEconomicsRequired {
-		if err := validateNewScenarioEconomics(&doc, minRR); err != nil {
+		if err := validateNewScenarioEconomics(&doc, opts.MinRR); err != nil {
+			return nil, err
+		}
+	}
+	// W2 A5: a time_hold's stated minutes must be STORED (new authoring only).
+	if newAuthoring {
+		if err := ValidateConfirmHoldProse(&doc); err != nil {
+			return nil, err
+		}
+		// W3 D10: the armable hold floor (CTO ruling 1790181002671).
+		if err := ValidateArmableHoldFloor(&doc, opts.MinHoldMin); err != nil {
 			return nil, err
 		}
 	}
@@ -697,8 +788,14 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 		}
 		// A5 (F11, fail-register wave): the id format is a contract now — the
 		// cite rule, the status map, the chips and adherence all key on it.
-		if !scenarioIDRe.MatchString(strings.TrimSpace(s.ID)) {
-			return fmt.Errorf("scenario[%d].id %q invalid (format: S1..S99)", i, s.ID)
+		if s.Source == "" && s.Machine == nil {
+			if !scenarioIDRe.MatchString(strings.TrimSpace(s.ID)) {
+				return fmt.Errorf("scenario[%d].id %q invalid (format: S1..S99)", i, s.ID)
+			}
+		} else if err := machineScenarioIdentity(s); err != nil {
+			// W5 — a machine scenario: a known source, its machine record, and
+			// a P<n> id (never the planner's S namespace).
+			return fmt.Errorf("scenario[%d]: %w", i, err)
 		}
 		if !scenarioConds[s.Condition] {
 			return fmt.Errorf("scenario[%d].condition %q invalid", i, s.Condition)
@@ -734,6 +831,9 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 			if !numberNearInText(s.Trigger+" "+s.Invalid, s.Confirm.RefPrice, 2.0) {
 				return fmt.Errorf("scenario[%d].confirm.ref_price %.2f does not match any number in the trigger/invalid prose (object and prose must agree)", i, s.Confirm.RefPrice)
 			}
+			if err := validateConfirmHoldMin(i, "confirm", s.Confirm); err != nil {
+				return err
+			}
 		}
 		if s.Confirm2 != nil {
 			if confirmRuleMentions15m(s.Confirm2.Rule) {
@@ -747,6 +847,9 @@ func ValidatePlanDocWithCaps(d *PlanDoc, maxLevels, maxScenarios int) error {
 			}
 			if s.Confirm2.RefPrice <= 0 {
 				return fmt.Errorf("scenario[%d].confirm2.ref_price %v invalid", i, s.Confirm2.RefPrice)
+			}
+			if err := validateConfirmHoldMin(i, "confirm2", s.Confirm2); err != nil {
+				return err
 			}
 		}
 	}
@@ -870,9 +973,10 @@ func FlipLineBeyondPrice(flip *PlanCondition, price float64) error {
 }
 
 // DeathLineBeyondPrice is FlipLineBeyondPrice for the death object: a death
-// line already crossed at authoring is a plan born dead (the scenario
-// born-dead check, validateAuthoredScenariosAt, evaluates ONLY the
-// scenario.invalid prose grammar on 1m closes and never reads death{}).
+// line already crossed at authoring is a plan born dead. This judges the READ
+// price only; since W-EXEC-TRUTH W2 D5 the born check (EvaluateBornCheck, via
+// validateAuthoredScenariosAt) also judges death{}/flip{} on every 5m group
+// closed between the read clock and publication.
 func DeathLineBeyondPrice(death *PlanCondition, price float64) error {
 	if death == nil {
 		return nil
@@ -1014,7 +1118,8 @@ func MislabeledStructuralLevels(d *PlanDoc, machineLabels map[float64]string) []
 
 type PlanFacts struct {
 	Zones       *LevelZoneMap  `json:"-"` // presentation only
-	IdentityMap []MapCandidate `json:"-"` // record-only snapshot, ignored by every trading validator
+	IdentityMap []MapCandidate `json:"-"` // frozen seated map; read by the W2 A3/A4 write-time checks (nil = UNKNOWN → skipped)
+	CapacityCut []MapCandidate `json:"-"` // W2 A4 — pool references the seat race dropped; accepted as a first obstacle, never required
 	Price       float64        // reference price at read time
 	DATR        float64        // daily ATR proxy
 	PDH         float64        // prior day high (0 = unknown → gap rules skipped)
@@ -1022,6 +1127,11 @@ type PlanFacts struct {
 	PDC         float64        // prior day close (CLASS 50b — the bias-label tree leg)
 	Regime      RegimeBlock    // CLASS 50b — the bias-label regime leg (read-time copy)
 	Structure   *StructureMap  `json:"-"` // S1 — stamped onto the doc at write when non-nil
+	// ReadAt (W-EXEC-TRUTH W2 A2) — the read clock the prompt was assembled at.
+	// The write site re-judges every 5m group closed between it and publication.
+	// Zero (legacy facts-less callers) = latest-window check, read clock n/a.
+	// json:"-": FactsSnapshotJSON marshals PlanFacts and must not change shape.
+	ReadAt time.Time `json:"-"`
 }
 
 // ValidatePlanDocWithFacts = schema rules + facts rules:
@@ -1144,7 +1254,30 @@ func ValidatePlanDocWithFactsMachine(d *PlanDoc, facts PlanFacts, machine map[fl
 		band = 0.012 * facts.Price // warm-up fallback
 	}
 	for i, s := range d.Scenarios {
+		// P5 (WAVE 1a-plan, #190) — a target must sit on the FAR side of the
+		// scenario's own entry, not merely near the current price: a long
+		// target below entry (or a short target above entry) is refused at
+		// write. The entry is the arm's entry when armed, else the confirm's
+		// reference price; no anchored entry = nothing to judge a side against.
+		entry := 0.0
+		if s.Arm != nil && s.Arm.Enabled && s.Arm.Entry > 0 {
+			entry = s.Arm.Entry
+		} else if s.Confirm != nil && s.Confirm.RefPrice > 0 {
+			entry = s.Confirm.RefPrice
+		}
+		long := strings.EqualFold(strings.TrimSpace(s.Direction), "long")
 		for _, t := range s.TargetChain {
+			if entry > 0 {
+				// Strictly wrong SIDE: a target AT the entry is degenerate, not
+				// on the wrong side — the write-time feasibility fixtures author
+				// entry==target hint plans the economics/proximity checks own.
+				if long && t < entry {
+					return fmt.Errorf("scenario[%d] target %.2f is on the WRONG SIDE of entry %.2f — a long target must be ABOVE the entry (target_chain is the ordered take-profit path from entry)", i, t, entry)
+				}
+				if !long && t > entry {
+					return fmt.Errorf("scenario[%d] target %.2f is on the WRONG SIDE of entry %.2f — a short target must be BELOW the entry (target_chain is the ordered take-profit path from entry)", i, t, entry)
+				}
+			}
 			if math.Abs(t-facts.Price) > band {
 				return fmt.Errorf("scenario[%d] target %.2f is %.0f pts from price %.2f — outside the %.0f-pt proximity band (unreachable target)", i, t, math.Abs(t-facts.Price), facts.Price, band)
 			}

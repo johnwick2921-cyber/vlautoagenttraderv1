@@ -1,0 +1,153 @@
+[
+  {
+    "file": "docs/superpowers/SYSTEM-MAP.md",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"docs/superpowers/SYSTEM-MAP.md\"",
+    "output": "954f11b15f2e7615678f7d2b708c47895faebf1e 2026-09-08T18:38:16-05:00 fix(research): resolve archive paths before SQLite URI construction"
+  },
+  {
+    "file": "docs/superpowers/AUDIT-CHECKLIST.md",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"docs/superpowers/AUDIT-CHECKLIST.md\"",
+    "output": "954f11b15f2e7615678f7d2b708c47895faebf1e 2026-09-08T18:38:16-05:00 fix(research): resolve archive paths before SQLite URI construction"
+  },
+  {
+    "file": "docs/superpowers/research/2026-09-08-trading-policy/README.md",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"docs/superpowers/research/2026-09-08-trading-policy/README.md\"",
+    "output": "0ec5bd2cb4c678e524cc21033d7622a7783765c1 2026-09-08T08:30:15-05:00 docs(research): publish four-policy trading study with 28 cited sources"
+  },
+  {
+    "file": "docs/superpowers/reports/2026-09-04-two-day-audit.md",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"docs/superpowers/reports/2026-09-04-two-day-audit.md\"",
+    "output": "f3c640c3f9799e6fa80ce124ae87ee915cad63ed 2026-09-04T07:26:52-05:00 docs(two-day audit D3): why the blindness went unalerted \u2014 a note, not a build"
+  },
+  {
+    "file": "store/attribution.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"store/attribution.go\"",
+    "output": "60333cd5e7f8e66794bdbf2a5a72c0f40e378a77 2026-09-03T18:32:06-05:00 feat(data-integrity): D6 backfill (three states) + D7 boot lines + Guide + checklist 63"
+  },
+  {
+    "file": "kernel/plan_doc.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"kernel/plan_doc.go\"",
+    "output": "d5e2414e0d30a275b6239f5d609f9e22f8e381d7 2026-09-08T16:02:39-05:00 feat(scenario-economics): enforce new authoring contract and preserve legacy unknowns"
+  },
+  {
+    "file": "kernel/levels_role.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"kernel/levels_role.go\"",
+    "output": "0cb06ae57ac8c818eabf58630f972ffe27e7d58f 2026-08-28T18:40:39-05:00 fix(pre-reopen): waterfall scenarioConds, GORM pool + persist watchdog, armed re-arm/cancel/dedup, stamp_pending lineage, SWG kinds, wake log verbs, WSL2 clock script"
+  },
+  {
+    "file": "store/strategy.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"store/strategy.go\"",
+    "output": "5710cb5d353046aca531eb9ce049ab3bd780fdcb 2026-09-08T09:00:25-05:00 test(plan-liveness): pin unknown qualifiers and versioned readers"
+  },
+  {
+    "file": "store/armed_orders.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"store/armed_orders.go\"",
+    "output": "0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+  },
+  {
+    "file": "trader/armed_executor.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/armed_executor.go\"",
+    "output": "0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+  },
+  {
+    "file": "trader/entry_gate.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/entry_gate.go\"",
+    "output": "01ce808839becd61120140e178bffa7cbc225d30 2026-09-05T12:12:00+00:00 fix(risk,planner): wire RiskForceFlat and BiasArmWarning \u2014 both shipped uncalled"
+  },
+  {
+    "file": "trader/arm_stop_anchor.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/arm_stop_anchor.go\"",
+    "output": "4657560bbaf616fcde7457816da5b8aff22431dc 2026-09-02T07:33:39-05:00 fix(0B): exit sanity \u2014 stop floor 1.5xATR, stop anchored to seated structure, BE+trail suspended, size 1, re-arm after boot sweep"
+  },
+  {
+    "file": "kernel/min_sl.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"kernel/min_sl.go\"",
+    "output": "4657560bbaf616fcde7457816da5b8aff22431dc 2026-09-02T07:33:39-05:00 fix(0B): exit sanity \u2014 stop floor 1.5xATR, stop anchored to seated structure, BE+trail suspended, size 1, re-arm after boot sweep"
+  },
+  {
+    "file": "kernel/condition_status.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"kernel/condition_status.go\"",
+    "output": "d4c811698a819226a7a66d2acd6016591059c859 2026-08-31T16:53:40-05:00 0C shadow demotion: config-driven condition-status map (fvg_entry+breakout_retest shadow), arm-seam refusal + telemetry counter, inert 'shadowed' ledger state (boot sweep cancels resting), E8 complete counterfactual rows (R/ATR units, time bars, net-of-friction, ambiguous flag), resolved-map boot line; tests: wire-loopback silence, boot cancel, config flip, E8 coverage"
+  },
+  {
+    "file": "trader/one_contract.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/one_contract.go\"",
+    "output": "7797b36f8fcfca80c7a391d16e4b0eddbd054963 2026-09-07T10:25:18-05:00 fix(cancel): D4 \u2014 every cancel sender is guarded, and the census proves it"
+  },
+  {
+    "file": "trader/auto_trader.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/auto_trader.go\"",
+    "output": "6310eaf8941f53194fa2c5e7368552eed1ed8d64 2026-09-07T23:51:51-05:00 merge: reconcile placement confirmation with pre-send identity and owner ruling"
+  },
+  {
+    "file": "trader/auto_trader_trailing.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/auto_trader_trailing.go\"",
+    "output": "4657560bbaf616fcde7457816da5b8aff22431dc 2026-09-02T07:33:39-05:00 fix(0B): exit sanity \u2014 stop floor 1.5xATR, stop anchored to seated structure, BE+trail suspended, size 1, re-arm after boot sweep"
+  },
+  {
+    "file": "trader/exit_mechs_suspend.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/exit_mechs_suspend.go\"",
+    "output": "4657560bbaf616fcde7457816da5b8aff22431dc 2026-09-02T07:33:39-05:00 fix(0B): exit sanity \u2014 stop floor 1.5xATR, stop anchored to seated structure, BE+trail suspended, size 1, re-arm after boot sweep"
+  },
+  {
+    "file": "trader/auto_trader_loop.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/auto_trader_loop.go\"",
+    "output": "0eddf90e95184c106d5a8c6f8fabaa8059d667f5 2026-09-07T19:30:13-05:00 feat(session-calendar): D5 the MODE line, D6 the boot line, the Guide, the map and class 84"
+  },
+  {
+    "file": "trader/auto_trader_orders.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/auto_trader_orders.go\"",
+    "output": "0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+  },
+  {
+    "file": "trader/auto_trader_session.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/auto_trader_session.go\"",
+    "output": "9a230d26da8194b8206e872f5daef7867c4e7c25 2026-09-02T22:46:11-05:00 fix(no-trade-band): one definition each for first-N and lunch \u2014 gate, grader and card read the same window (owner ruling 2026-09-02)"
+  },
+  {
+    "file": "trader/auto_trader_clock.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/auto_trader_clock.go\"",
+    "output": "0babd0902d1bb74e5f44fce1fc4350e42a8cbdeb 2026-09-08T16:22:32-05:00 feat(research): link attempts, permissions, broker receipts and corrected outcomes"
+  },
+  {
+    "file": "kernel/calendar_blackout.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"kernel/calendar_blackout.go\"",
+    "output": "0b28dc788d58c955845519596af6ffc06109111e 2026-09-02T22:46:11-05:00 feat(no-trade-band): read-time evaluation + drop the false clock-drift claim"
+  },
+  {
+    "file": "kernel/no_trade_band.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"kernel/no_trade_band.go\"",
+    "output": "6ce5bdc290e72922802d04067bfd7d5141d774f3 2026-09-03T00:33:49-05:00 fix(no-trade-band): close the seam \u2014 the instruction names no machine window at all"
+  },
+  {
+    "file": "trader/ninjatrader/tcp_trader.go",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"trader/ninjatrader/tcp_trader.go\"",
+    "output": "1fb3c21ecd3f7adb144cc9c40e108cc097349b09 2026-09-08T01:30:26-05:00 fix(signal-clock): the last bar-clock on an outgoing command, and class 89"
+  },
+  {
+    "file": "web/src/guide/content/plays.ts",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"web/src/guide/content/plays.ts\"",
+    "output": "7b1af151e2025ffe9d7bb2678e8d658a908be7ec 2026-09-05T22:45:55-05:00 docs(guide+checklist): the gate ORDER production runs, and class 77"
+  },
+  {
+    "file": "web/src/guide/content/planCard.ts",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"web/src/guide/content/planCard.ts\"",
+    "output": "c40bb45a6e47c796810441cbf15069f2bee19e1e 2026-09-08T16:43:32-05:00 docs(scenario-economics): state legacy UNKNOWN intent and superseding C5 correction"
+  },
+  {
+    "file": "web/src/guide/content/levels.ts",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"web/src/guide/content/levels.ts\"",
+    "output": "4d159022c114983ad1b58aae1b73314afbf9f418 2026-09-02T12:30:48-05:00 docs(bars): class-45 report \u2014 measured cache depth, the Fri\u2192Thu weekly finding that reshaped the ladder, per-TF retention trap, consumers re-pointed (exactly one), F1 red/green, storage projection, export, A15"
+  },
+  {
+    "file": "web/src/guide/content/settings.ts",
+    "command": "git log -1 --format=\"%H %cI %s\" -- \"web/src/guide/content/settings.ts\"",
+    "output": "09e110b5a5c62c76308471de12aeb0eaa21b9f5e 2026-09-03T22:39:03-05:00 fix(guide): the drift banner could never have been right, plus the label rules"
+  },
+  {
+    "file": "docs/superpowers/reports/2026-09-07-planner-preparation-audit/README.md",
+    "command": "git log -1 6095ca58 --format=\"%H %cI %s\" -- \"docs/superpowers/reports/2026-09-07-planner-preparation-audit/README.md\"",
+    "output": "6095ca58fe5901ba398be374e4f9d3488d0bed6b 2026-09-07T23:09:02-05:00 docs: record owner approval for public audit evidence publication",
+    "note": "Read pinned blob; absent from current dev tree."
+  }
+]

@@ -1,0 +1,42 @@
+id|ct|cited|outcome
+37304|2026-09-03 20:35:06|"cited_scenario": "S1"
+  }
+]|strict
+37305|2026-09-03 20:37:51|"cited_scenario": "S1"
+  }
+]|strict
+37306|2026-09-03 20:39:40|"cited_scenario": "S1"
+  }
+]|strict
+37307|2026-09-03 20:42:27|"cited_scenario": "S1"
+  }
+]|strict
+37308|2026-09-03 20:43:53|"cited_scenario": "S1"
+  }
+]|strict
+37310|2026-09-03 20:49:04|"cited_scenario": "S1"
+  }
+]|strict
+37311|2026-09-03 20:52:05|"cited_scenario": "S1"
+  }
+]|strict
+37313|2026-09-03 20:54:28|"cited_scenario": "S1"
+  }
+]|strict
+37315|2026-09-03 20:58:56|"cited_scenario": "S1"
+  }
+]|strict
+37318|2026-09-03 21:03:22|"cited_scenario": "S1"
+  }
+]|strict
+37319|2026-09-03 21:06:44|"cited_scenario": "S1"
+  }
+]|strict
+37320|2026-09-03 21:09:03|"cited_scenario": "S1"
+  }
+]|strict
+37322|2026-09-03 21:12:40|"cited_scenario": "S1"
+  }
+]|strict
+=== malformed decision_json rows 7d
+176

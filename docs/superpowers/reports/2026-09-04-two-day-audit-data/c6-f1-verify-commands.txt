@@ -1,0 +1,20 @@
+# C6-F1 adversarial verification — commands actually run (2026-09-04 audit, CT)
+grep -n "detector: D1" /home/hoang/nofx/data/nofx_2026-09-03.log      # 5 hits, first at line 16299 19:06:08
+grep -c "detector: D1" /home/hoang/nofx/data/nofx_2026-09-03.log      # 5
+grep -n "🔬 detector recorded" /home/hoang/nofx/data/nofx_2026-09-03.log | wc -l   # 0  -> hook has NEVER fired
+sqlite3 "file:/home/hoang/nofx/data/data.db?mode=ro" "select 'touch_outcomes',count(*) from touch_outcomes union all select 'candidate_pool',count(*) from candidate_pool;"  # 0 | 0
+# rev -> line-number / call-site map (run in /home/hoang/nofx-2day04)
+for c in 829a6176 4d846e26 f1d7cf51 89673ccc 26594412 dfbfa660 530009ff; do \
+  line=$(git show $c:main.go | grep -n DetectorBootLine | cut -d: -f1); \
+  w=$(git show $c:trader/auto_trader_planner.go | grep -c recordDetectorOutputs); \
+  echo "$c $(git show -s --format=%cI $c) line=$line prod_callsites=$w"; done
+# 829a6176 18:49:27 line=341 prod_callsites=0
+# 4d846e26 21:11:20 line=368 prod_callsites=0
+# f1d7cf51 21:31:57 line=368 prod_callsites=1   (author date 21:31:00)
+# 89673ccc 21:43:57 line=404 prod_callsites=1
+# dfbfa660 23:21:28 line=404 prod_callsites=1
+git merge-base --is-ancestor f1d7cf51 89673ccc  # YES
+git merge-base --is-ancestor f1d7cf51 4d846e26  # NO
+git show 0b877204:deploy/RELEASE   # 4d846e26...
+git show 26594412:deploy/RELEASE   # 89673ccc...
+sed -n '1475,1497p' /home/hoang/nofx-2day04/docs/superpowers/AUDIT-CHECKLIST.md   # class 69 text
